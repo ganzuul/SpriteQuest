@@ -1,4 +1,5 @@
 import { operationFor } from './workflow/catalog.js?v=0.19.1';
+import { isNativeWorkflow } from './workflow/contracts.js?v=0.19.1';
 /**
  * Lattice — the canvas renderer.
  *
@@ -153,6 +154,8 @@ export class Canvas {
         host.innerHTML = '';
 
         this.layer = mountCanvas(host, {
+            hostResult: id => this.hooks.onHostResult?.(this.graph?.nodes[id]),
+            hoverPin: pin => { this.hoverPin = pin; this.#applyFocus(); },
             hover: id => this.setHover(id),
             toggle: id => { const node = this.graph?.nodes[id]; if (!node) return; node.enabled = node.enabled === false; touchGraph(this.graph); this.render(); this.hooks.onChange?.(); },
             help: id => this.hooks.onHelp?.(this.graph?.nodes[id]),
@@ -171,10 +174,12 @@ export class Canvas {
             let changed = false;
             for (const entry of entries) {
                 const id = entry.target.dataset.id ?? `group:${entry.target.dataset.group}`;
-                const height = entry.borderBoxSize?.[0]?.blockSize ?? entry.target.offsetHeight;
-                changed = this.geometry.update(id, height) || changed;
+                changed = this.#measureCard(entry.target, id) || changed;
             }
-            if (changed && this.graph) this.frames.schedule(2);
+            if (changed && this.graph) {
+                this.layer.setGroups(Object.values(this.graph.groups ?? {}).map(group => this.#groupCard(group)));
+                this.frames.schedule(2);
+            }
         });
 
         this.#bind();
@@ -200,7 +205,7 @@ export class Canvas {
     setGraph(graph) {
         if (!graph) return;
         this.cancelGesture();
-        if (graph !== this.graph) { this.trace = null; this.tokens = null; this.tokensKey = ''; this.geometry.clear(); }
+        if (graph !== this.graph) { this.trace = null; this.tokens = null; this.tokensKey = ''; this.hoverPin = null; this.geometry.clear(); }
         this.graph = graph;
         this.selection = null;
         this.multi.clear();
@@ -264,7 +269,7 @@ export class Canvas {
     }
 
     fit() {
-        const boxes = Object.values(this.graph?.nodes ?? {}).filter(n => !this.#folded(n)).map(n => ({ x: n.x, y: n.y, w: n.w || 260, h: this.heightOf(n) || 160 }));
+        const boxes = Object.values(this.graph?.nodes ?? {}).filter(n => !this.#folded(n)).map(n => ({ x: n.x, y: n.y, w: this.widthOf(n), h: this.heightOf(n) || 160 }));
         for (const g of Object.values(this.graph?.groups ?? {})) {
             if (g.collapsed) boxes.push({ x: g.x, y: g.y, w: g.w || 260, h: this.geometry.get(`group:${g.id}`, 160) || 160 });
             else if (g.frame) boxes.push(g.frame);
@@ -288,9 +293,9 @@ export class Canvas {
     /* rendering                                                       */
     /* -------------------------------------------------------------- */
 
-    render() {
+    render(presentationOnly = false) {
         if (!this.graph) return;
-        this.hooks.prepareRender?.();
+        if (!presentationOnly && !isNativeWorkflow(this.graph)) this.hooks.prepareRender?.();
         this.incident = indexIncidentWires(Object.values(this.graph.wires));
         this.applyTransform();
         this.#drawNodes();
@@ -330,6 +335,17 @@ export class Canvas {
 
     /** Light up what feeds the hovered block, or else the selected one. */
     #applyFocus() {
+        if (isNativeWorkflow(this.graph)) {
+            this.host.classList.remove('pc-focusing');
+            for (const node of this.nodeLayer.querySelectorAll('.pc-node')) node.classList.remove('pc-feeds', 'pc-switches', 'pc-focus');
+            const pin = this.hoverPin;
+            for (const path of this.svg.querySelectorAll('path.pc-wire')) {
+                const wire = this.graph.wires[path.dataset.id];
+                const attached = pin && wire && (pin.dir === 'in' ? wire.to === pin.nodeId && (wire.toPort || 'in') === pin.port : wire.from === pin.nodeId && (wire.fromPort || 'out') === pin.port);
+                path.classList.toggle('pc-wire-feeds', !!attached);
+            }
+            return;
+        }
         const id = this.hoverId ?? (this.selection?.kind === 'node' ? this.selection.id : null);
         const f = id && this.graph?.nodes[id] ? this.feeders(id) : null;
         this.host.classList.toggle('pc-focusing', !!f && (f.nodes.size + f.switches.size) > 0);
@@ -387,8 +403,24 @@ export class Canvas {
     #measureCards(selector) {
         for (const el of this.nodeLayer.querySelectorAll(selector)) {
             const id = el.dataset.id ?? 'group:' + el.dataset.group;
-            this.nodeElements.set(id, el); this.geometry.update(id, el.offsetHeight); this.resizeObserver?.observe(el);
+            this.nodeElements.set(id, el); this.#measureCard(el, id); this.resizeObserver?.observe(el);
         }
+    }
+
+    #measureCard(el, id) {
+        if (!el.classList.contains('pc-node-native')) return this.geometry.update(id, el.offsetHeight);
+        const box = el.getBoundingClientRect(), zoom = this.view.zoom || 1;
+        const pins = [...el.querySelectorAll('.pc-port')].map(port => {
+            const dot = port.getBoundingClientRect();
+            return { id: port.dataset.port, direction: port.dataset.dir, side: port.dataset.side, kind: port.dataset.kind, x: (dot.left + dot.width / 2 - box.left) / zoom, y: (dot.top + dot.height / 2 - box.top) / zoom };
+        });
+        return this.geometry.measure(id, box.width / zoom, box.height / zoom, pins);
+    }
+
+    /** Shared graph-space resolver for native paths, drafts and future named-pin gestures. No DOM reads. */
+    endpoint(nodeId, direction, portId = direction) {
+        const node = this.graph?.nodes[nodeId], offset = this.geometry.endpoint(nodeId, direction, portId);
+        return node && offset ? { ...offset, x: node.x + offset.x, y: node.y + offset.y } : null;
     }
 
     #folded(node) {
@@ -433,6 +465,8 @@ export class Canvas {
         return this.geometry.get(node?.id);
     }
 
+    widthOf(node) { return operationFor(node) ? this.geometry.width(node.id) : node?.w || 260; }
+
     /**
      * An open group: a blanket on the canvas. Whatever rests on it is in the
      * group. It grows to keep its blocks on it, has a corner to resize it,
@@ -447,14 +481,14 @@ export class Canvas {
             let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
             for (const n of members) {
                 x0 = Math.min(x0, n.x); y0 = Math.min(y0, n.y);
-                x1 = Math.max(x1, n.x + (n.w || 260)); y1 = Math.max(y1, n.y + this.heightOf(n));
+                x1 = Math.max(x1, n.x + this.widthOf(n)); y1 = Math.max(y1, n.y + this.heightOf(n));
             }
             g.frame = { x: x0 - 24, y: y0 - 48, w: x1 - x0 + 48, h: y1 - y0 + 72 };
         }
         const f = g.frame;
         // Blocks grow as you type; the blanket grows with them.
         for (const n of members) {
-            const right = n.x + (n.w || 260) + 16, bottom = n.y + this.heightOf(n) + 16;
+            const right = n.x + this.widthOf(n) + 16, bottom = n.y + this.heightOf(n) + 16;
             if (right > f.x + f.w) f.w = Math.round(right - f.x);
             if (bottom > f.y + f.h) f.h = Math.round(bottom - f.y);
         }
@@ -477,7 +511,7 @@ export class Canvas {
      */
     settle(ids) {
         if (!this.graph) return false;
-        return settleOnBlankets(this.graph, ids, (n) => this.heightOf(n));
+        return settleOnBlankets(this.graph, ids, (n) => this.heightOf(n), (n) => this.widthOf(n));
     }
 
     /** While blocks are dragged, light up the blanket they would land on. */
@@ -486,7 +520,7 @@ export class Canvas {
         for (const id of ids) {
             const n = this.graph.nodes[id];
             if (!n || n.type === NODE_TYPES.OUTPUT) continue;
-            target = blanketAt(this.graph, n.x + (n.w || 260) / 2, n.y + this.heightOf(n) / 2)?.id ?? null;
+            target = blanketAt(this.graph, n.x + this.widthOf(n) / 2, n.y + this.heightOf(n) / 2)?.id ?? null;
             break;
         }
         for (const fr of this.nodeLayer.querySelectorAll('.pc-group-frame')) {
@@ -550,7 +584,7 @@ export class Canvas {
             if (g) {
                 if (groups.has(g.id)) continue; groups.add(g.id);
                 boxes.push({ x: g.x, y: g.y, w: g.w || 260, h: this.geometry.get(`group:${g.id}`, 80) });
-            } else boxes.push({ x: n.x, y: n.y, w: n.w || 260, h: this.heightOf(n) || 90 });
+            } else boxes.push({ x: n.x, y: n.y, w: this.widthOf(n), h: this.heightOf(n) || 90 });
         }
         if (!boxes.length) return;
         const minX = Math.min(...boxes.map(b => b.x)) - 60, minY = Math.min(...boxes.map(b => b.y)) - 60;
@@ -613,7 +647,7 @@ export class Canvas {
         Object.assign(m.box.style, { display: '', left: `${r.x}px`, top: `${r.y}px`, width: `${r.w}px`, height: `${r.h}px` });
         const hits = [];
         for (const n of Object.values(this.graph.nodes)) {
-            if (!this.#folded(n) && intersects(r, { x: n.x, y: n.y, w: n.w || 260, h: this.heightOf(n) || 90 })) hits.push(n.id);
+            if (!this.#folded(n) && intersects(r, { x: n.x, y: n.y, w: this.widthOf(n), h: this.heightOf(n) || 90 })) hits.push(n.id);
         }
         for (const g of Object.values(this.graph.groups ?? {})) {
             if (!g.collapsed) continue;
@@ -628,7 +662,7 @@ export class Canvas {
         if (!g) return;
         if (collapsed) {
             // Whatever rests on the blanket is the group.
-            if (g.frame) gatherBlanket(this.graph, gid, (n) => this.heightOf(n));
+            if (g.frame) gatherBlanket(this.graph, gid, (n) => this.heightOf(n), (n) => this.widthOf(n));
             const members = groupMembers(this.graph, gid);
             if (!members.length) {
                 this.hooks.onToast?.('Put some blocks on the blanket first, then fold it.');
@@ -732,6 +766,12 @@ export class Canvas {
         const link = this.linking;
         if (!link) return null;
         const under = document.elementFromPoint?.(e.clientX, e.clientY) ?? e.target;
+        if (isNativeWorkflow(this.graph)) {
+            const pin = under?.closest?.('.pc-port[data-node]');
+            const valid = pin && pin.dataset.node !== link.nodeId && pin.dataset.dir === (link.dir === 'out' ? 'in' : 'out');
+            link.targetPort = valid ? { nodeId: pin.dataset.node, dir: pin.dataset.dir, port: pin.dataset.port } : null;
+            return link.targetPort?.nodeId ?? null;
+        }
         // A folded group under the pointer: the group itself, sorted out on drop.
         const gel = under?.closest?.('.pc-node-group');
         if (gel && gel.dataset.group !== link.groupId && link.dir !== 'tie') return `group:${gel.dataset.group}`;
@@ -829,6 +869,7 @@ export class Canvas {
         }
         const w = node.w || 260;
         const h = this.geometry.get(nodeId);
+        if (operationFor(node)) return this.endpoint(nodeId, dir, portId || dir) ?? { x: node.x + (dir === 'out' ? this.widthOf(node) : 0), y: node.y + h / 2 };
         if (dir === 'out' && hasPorts(node)) {
             const keys = outPorts(node);
             const i = Math.max(0, keys.findIndex(k => k.id === portId));
@@ -887,6 +928,11 @@ export class Canvas {
     }
 
     #path(from, to) {
+        if (from.side || to.side) {
+            const dx = Math.max(40, Math.abs(to.x - from.x) * .5);
+            const a = from.side === 'left' ? -1 : 1, b = to.side === 'right' ? 1 : -1;
+            return `M ${from.x} ${from.y} C ${from.x + a * dx} ${from.y}, ${to.x + b * dx} ${to.y}, ${to.x} ${to.y}`;
+        }
         // Right-angled wires, for themes that ask for them: down, across,
         // down, with small rounded turns (none on sharp themes).
         const look = globalThis.document?.documentElement?.dataset ?? {};
@@ -913,8 +959,8 @@ export class Canvas {
             visible.add(wire.id); if (affected && !affected.has(wire.id)) continue;
             const tie = wire.kind === WIRE_KINDS.TOGETHER;
             const left = tie && this.graph.nodes[wire.from] && this.graph.nodes[wire.to] && this.graph.nodes[wire.from].x <= this.graph.nodes[wire.to].x;
-            const from = tie ? this.#sidePos(left ? wire.from : wire.to, 'right') : this.#portPos(wire.from, 'out', wire.port ?? null);
-            const to = tie ? this.#sidePos(left ? wire.to : wire.from, 'left') : this.#portPos(wire.to, 'in');
+            const from = tie ? this.#sidePos(left ? wire.from : wire.to, 'right') : this.#portPos(wire.from, 'out', wire.fromPort ?? wire.port ?? null);
+            const to = tie ? this.#sidePos(left ? wire.to : wire.from, 'left') : this.#portPos(wire.to, 'in', wire.toPort ?? null);
             const back = wire.loop || (wire.kind === WIRE_KINDS.SAVE && to.y < from.y + 20);
             const d = tie ? this.#tiePath(from, to) : back ? this.#loopPath(from, to, wire) : this.#path(from, to);
             const src = this.graph.nodes[wire.from], isKey = hasPorts(src), chosen = isKey ? this.trace?.get(wire.from)?.decision : undefined;
@@ -929,7 +975,8 @@ export class Canvas {
             if (!tie && !wire.loop && wire.condition && wire.condition.mode !== 'always') { text += ' · if ' + ruleLabel(wire.condition); labelClass += ' pc-wire-label-filter'; className += ' pc-wire-conditional'; }
             const filter = !tie && !wire.loop && !mode ? selectLabel(wire.select) : '';
             if (filter) { text += ' · ' + filter; if (!labelClass.includes('pc-wire-label-filter')) labelClass += ' pc-wire-label-filter'; }
-            this.wireViews.set(wire.id, { id: wire.id, d, className, arrow: !!back, label: { x: side ? side.x + 10 : (from.x + to.x) / 2, y: side ? side.y + 4 : (from.y + to.y) / 2, text, className: labelClass, anchor: back ? 'start' : undefined, id: wire.loop ? wire.id : undefined, title: wire.loop ? 'Loop: runs this section again, at most this many times. Click to change.' : undefined } });
+            if (from.kind) { text = from.kind; className += ' pc-wire-native'; }
+            this.wireViews.set(wire.id, { id: wire.id, kind: from.kind, d, className, arrow: !!back, label: { x: side ? side.x + 10 : (from.x + to.x) / 2, y: side ? side.y + 4 : (from.y + to.y) / 2, text, className: labelClass, anchor: back ? 'start' : undefined, id: wire.loop ? wire.id : undefined, title: wire.loop ? 'Loop: runs this section again, at most this many times. Click to change.' : undefined } });
         }
         if (!affected) for (const id of this.wireViews.keys()) if (!visible.has(id)) this.wireViews.delete(id);
         const ghost = this.linking?.ghost ? { d: this.linking.dir === 'tie' ? this.#tiePath(this.linking.from, this.linking.ghost) : this.#path(this.linking.from, this.linking.ghost), className: 'pc-wire pc-wire-ghost' + (this.linking.dir === 'tie' ? ' pc-wire-ghost-tie' : '') } : null;
@@ -949,7 +996,7 @@ export class Canvas {
     }
 
     #crossedDragThreshold(e) {
-        return this.drag?.moved || Math.hypot(e.clientX - (this.gestureStart?.cx ?? e.clientX), e.clientY - (this.gestureStart?.cy ?? e.clientY)) >= 4;
+        return this.drag?.moved || Math.hypot(e.clientX - (this.gestureStart?.cx ?? e.clientX), e.clientY - (this.gestureStart?.cy ?? e.clientY)) >= (isNativeWorkflow(this.graph) ? 8 : 4);
     }
 
     #bind() {
@@ -970,6 +1017,7 @@ export class Canvas {
         on(window, 'blur', () => this.cancelGesture());
         on(window, 'resize', () => this.cancelGesture());
         on(host, 'pointercancel', () => this.cancelGesture());
+        on(host, 'lostpointercapture', e => { if (e.buttons) this.cancelGesture(); });
         on(host, 'pointerdown', (e) => {
             if (e.pointerType !== 'mouse' || ![0, 1].includes(e.button) || e.target.closest('button, input, textarea, select, summary, a, [contenteditable="true"]')) return;
             try { host.setPointerCapture(e.pointerId); } catch { /* synthetic events have no active pointer */ }
@@ -1157,8 +1205,10 @@ export class Canvas {
                     this.#nodeEl(this.linking.hover)?.classList.remove('pc-link-target');
                     this.#groupEl(this.linking.hover)?.classList.remove('pc-link-target');
                     this.linking.hover = target;
-                    this.#nodeEl(target)?.classList.add('pc-link-target');
-                    this.#groupEl(target)?.classList.add('pc-link-target');
+                    if (!isNativeWorkflow(this.graph)) {
+                        this.#nodeEl(target)?.classList.add('pc-link-target');
+                        this.#groupEl(target)?.classList.add('pc-link-target');
+                    }
                 }
                 return;
             }
@@ -1270,7 +1320,7 @@ export class Canvas {
                 const d = this.drag;
                 this.drag = null;
                 if (d.moved) {
-                    gatherBlanket(this.graph, d.resize, (n) => this.heightOf(n));
+                    gatherBlanket(this.graph, d.resize, (n) => this.heightOf(n), (n) => this.widthOf(n));
                     touchGraph(this.graph);
                     this.hooks.onChange?.();
                 }
@@ -1285,10 +1335,10 @@ export class Canvas {
                     const g = d.group ? this.graph.groups?.[d.group] : null;
                     // A blanket put down picks up what it now lies under;
                     // blocks put down join the blanket they land on.
-                    if (g && !g.collapsed) gatherBlanket(this.graph, g.id, (n) => this.heightOf(n));
-                    else if (d.several) this.settle(d.several.map(([id]) => id));
+                    if (g && !g.collapsed) gatherBlanket(this.graph, g.id, (n) => this.heightOf(n), (n) => this.widthOf(n));
+                    else if (d.several && !isNativeWorkflow(this.graph)) this.settle(d.several.map(([id]) => id));
                     touchGraph(this.graph);
-                    this.hooks.onChange?.();
+                    if (isNativeWorkflow(this.graph) && !d.group) this.hooks.onPresentationChange?.(); else this.hooks.onChange?.();
                 }
                 else if (d.clicked) this.setMulti([d.clicked]);
                 else if (d.clickedGroup) { this.setMulti([]); this.select({ kind: 'group', id: d.clickedGroup }); }
@@ -1309,9 +1359,9 @@ export class Canvas {
                         this.hooks.onNodeDropOnFolder?.(node, drop.overFolder.dataset.folder || null);
                     }
                 } else if (drop.moved) {
-                    this.settle([drop.id]);
+                    if (!isNativeWorkflow(this.graph)) this.settle([drop.id]);
                     touchGraph(this.graph);
-                    this.hooks.onChange?.();
+                    if (isNativeWorkflow(this.graph)) this.hooks.onPresentationChange?.(); else this.hooks.onChange?.();
                 }
                 this.#hoverBlanket([]);
                 this.render();
@@ -1406,7 +1456,9 @@ export class Canvas {
             // Dragged up from a block onto a Decider: use the key nearest where it landed.
             port = this.#nearestKey(from, this.toGraph(e.clientX, e.clientY));
         }
-        const res = connect(this.graph, from, to, tie ? WIRE_KINDS.TOGETHER : WIRE_KINDS.MERGE, { port });
+        // Schema-2 primitive edges have implicit in/out endpoints; their port option
+        // is reserved for legacy keyed outputs. Schema-3 editing uses the prepared graph-edit API.
+        const res = connect(this.graph, from, to, tie ? WIRE_KINDS.TOGETHER : WIRE_KINDS.MERGE, { port: this.graph.schema === 2 ? null : port });
         if (!res.ok) this.hooks.onToast?.(res.reason);
         else {
             this.hooks.onChange?.();

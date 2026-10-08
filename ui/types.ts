@@ -1,9 +1,10 @@
 export interface TokenChip { text: string; title: string; className: string }
 export interface CardRow { id: string; name: string; text: string; chosen: boolean; fallback?: boolean }
 export interface Notice { className: string; icon: string; text: string; title?: string }
-export interface Port { id: string; className: string; dir: string; side?: string; port?: string; left?: number; title: string; label?: string; icon?: string }
+export interface Port { id: string; className: string; dir: string; side?: string; port?: string; left?: number; title: string; label?: string; icon?: string; row?: number; kind?: string }
 export interface NodeCardData {
     id: string; x: number; y: number; w: number; type: string; className: string; hint?: string;
+    native?: boolean; compact?: boolean; hostResult?: boolean; iconPath?: string;
     title: string; titleHint: string; label: string; icon: string; token?: TokenChip | null; offHint?: string;
     enabled: boolean; toggle: boolean; help: boolean; body: string | null; rows: CardRow[]; rowClass: string; mode?: { text: string; className: string };
     model?: { where: string; actual: string; title: string; pick: boolean } | null; notices: Notice[]; ports: Port[];
@@ -13,10 +14,13 @@ export interface GroupCardData {
     title: string; enabled: boolean; body: string; io: string; count: string; token?: TokenChip | null;
 }
 export interface WireData {
+    kind?: string;
     id: string; d: string; className: string; arrow: boolean;
     label: { x: number; y: number; text: string; className: string; anchor?: string; id?: string; title?: string };
 }
 export interface CanvasActions {
+    hostResult: (id: string) => void;
+    hoverPin: (pin: { nodeId: string; dir: string; port: string } | null) => void;
     hover: (id: string | null) => void; toggle: (id: string) => void; help: (id: string) => void;
     model: (id: string, anchor: HTMLElement) => void; group: (id: string, action: string) => void;
 }
@@ -40,7 +44,7 @@ export interface WorkbenchActions {
 
 
 export interface WorkflowControl { key: string; label: string; value: string | number | boolean; kind: string; options: string[] | null }
-export interface WorkflowNodeView { id: string; title: string; operation: string; family: string; phase: string; input: string; output: string; terminal: boolean; modelRole: string | null; profileId: string; model: string; effective: string; enabled: boolean; controls: WorkflowControl[] }
+export interface WorkflowNodeView { id: string; title: string; canonicalTitle: string; alias: string; compact: boolean; operation: string; family: string; phase: string; input: string; output: string; terminal: boolean; modelRole: string | null; profileId: string; model: string; effective: string; enabled: boolean; controls: WorkflowControl[] }
 export interface WorkflowView {
     graphId: string; name: string; native: boolean; phase: string; workflowMode: string; assigned: boolean; selectedId: string | null;
     roles: { name: string; profileId: string; model: string }[]; profiles: { id: string; name: string }[];
@@ -51,6 +55,7 @@ export interface WorkflowView {
     result: { ok: boolean; error: string; actualCalls: number; callBound: number; guidance: string; original: string; candidate: string; findings: unknown[]; changes: unknown[]; reports: unknown[]; calls: unknown[]; tokenMethods: string[]; applyAvailable: boolean; applyIssue: string } | null;
 }
 export interface WorkflowActions {
+    presentNode: (id: string, key: 'alias' | 'compact', value: string | boolean) => void;
     install: (id: string) => void; setMode: (mode: string) => void; bindRole: (name: string, profileId: string, model: string) => void; assign: (phase: string) => void;
     run: () => void; apply: () => void; reject: () => void; inspect: (id: string) => void; expand: (id: string) => void;
     duplicate: (id: string) => void; remove: (id: string) => void;

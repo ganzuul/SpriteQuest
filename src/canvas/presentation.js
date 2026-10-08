@@ -1,8 +1,21 @@
-import { operationFor } from '../workflow/catalog.js?v=0.19.1';
+import { operationFor, portsForNode } from '../workflow/catalog.js?v=0.19.1';
 import { NODE_TYPES, deciderKeys, outPorts, hasPorts, inOffGroup } from '../state.js?v=0.19.1';
 const took = (chosen, id) => Array.isArray(chosen) ? chosen.includes(id) : chosen === id;
 const ROUTING_WORDS = { all: 'every output that matches fires', first: 'the first output that matches fires', random: 'a weighted random pick', ai: 'the AI picks the outputs that apply' };
 const routingOf = node => node.mode === null || node.mode === '' ? null : node.mode === undefined || node.mode === 'rules' ? 'first' : ROUTING_WORDS[node.mode] ? node.mode : 'first';
+const NATIVE_ICONS = { 'scene-context': 'fa-book-open', 'reply-snapshot': 'fa-camera', 'smart-compactor': 'fa-compress', 'response-plan': 'fa-list-check', 'pattern-scan': 'fa-magnifying-glass', repair: 'fa-wand-magic-sparkles', 'validate-patches': 'fa-check-double', guidance: 'fa-compass', 'review-gate': 'fa-eye', 'apply-reply': 'fa-paper-plane', reroute: 'fa-arrow-right' };
+const NATIVE_ICON_PATHS = {
+    'scene-context': 'M12 5c-3-2-6-2-9-1v15c3-1 6-1 9 1 3-2 6-2 9-1V4c-3-1-6-1-9 1Zm0 0v15',
+    'reply-snapshot': 'M3 6h4l2-3h6l2 3h4v15H3ZM16 13a4 4 0 1 0-8 0 4 4 0 0 0 8 0',
+    'smart-compactor': 'M3 3l6 6M3 9h6V3M21 21l-6-6m0 6v-6h6M3 21l6-6M3 15h6v6M21 3l-6 6m0-6v6h6',
+    'response-plan': 'm3 5 2 2 3-4M11 5h10M3 12h3m5 0h10M3 19h3m5 0h10',
+    'pattern-scan': 'M16 10a6 6 0 1 0-12 0 6 6 0 0 0 12 0Zm-1 5 6 6',
+    repair: 'm4 20 12-12 4 4L8 24ZM3 4h6M6 1v6m10-5v4m-2-2h4',
+    'validate-patches': 'm2 12 4 4 8-9m-3 8 3 3 8-10',
+    guidance: 'M21 12a9 9 0 1 0-18 0 9 9 0 0 0 18 0ZM15 9l-2 4-4 2 2-4Z',
+    'review-gate': 'M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Zm13 0a3 3 0 1 0-6 0 3 3 0 0 0 6 0',
+    'apply-reply': 'm2 11 20-9-8 20-4-8Zm8 3L22 2', reroute: 'M3 12h18m-7-7 7 7-7 7',
+};
 
 export function tokenChip(node, tokens, trace) {
     const fmt = n => n >= 1000 ? `${(n / 1000).toFixed(n >= 10000 ? 0 : 1)}k` : `${n}`;
@@ -41,8 +54,14 @@ export function nodeCard(node, { graph, selection, multi, trace, tokens, reachin
         body: preview(node), rows: [], rowClass: 'pc-dec-keys', mode: undefined, model: null, notices: [], ports: [],
     };
     if (operation) {
+        card.native = true;
+        card.compact = node.presentation?.compact === true;
+        card.title = String(node.presentation?.alias || node.title || operation.title).slice(0, 80);
+        card.titleHint = operation.title;
+        card.className += ' pc-node-native' + (card.compact ? ' pc-node-compact' : '');
         const bound = typeof operation.requestBound === 'function' ? operation.requestBound(node) : operation.requestBound;
-        card.label = operation.title; card.icon = operation.terminal ? 'fa-paper-plane' : 'fa-cube';
+        card.label = operation.title; card.icon = NATIVE_ICONS[operation.id] || 'fa-cube';
+        card.iconPath = NATIVE_ICON_PATHS[operation.id] || 'M3 7 12 2l9 5v10l-9 5-9-5ZM3 7l9 5 9-5M12 12v10';
         card.body = operation.family + ' · ' + operation.phase + ' phase · ' + (operation.input || 'snapshot') + ' → ' + (operation.output || (operation.id === 'guidance' ? 'Guidance for native reply' : 'Reviewed reply'));
         card.offHint = node.enabled === false || groupOff ? 'Disabled operations block native preflight. They cannot be bypassed.' : undefined;
         card.notices.push({ className: 'pc-node-wave', icon: 'fa-bolt', text: 'maximum ' + bound + ' auxiliary request' + (bound === 1 ? '' : 's') });
@@ -51,11 +70,12 @@ export function nodeCard(node, { graph, selection, multi, trace, tokens, reachin
             const resolved = hooks.nativeBinding?.(node, graph);
             card.model = { where: resolved?.display || hooks.profileName?.(binding?.profileId) || binding?.profileId || 'Missing ' + (node.modelRole || operation.modelRole) + ' binding', actual: node.model || binding?.model || '', title: 'Fixed node override or workflow role. Never follows the active chat connection.', pick: false };
         }
-        if (operation.input) card.ports.push({ id: 'in', className: 'pc-port pc-port-in', dir: 'in', title: 'Input: ' + operation.input });
-        if (!operation.terminal) {
-            card.ports.push({ id: 'out', className: 'pc-port pc-port-out', dir: 'out', title: 'Output: ' + operation.output });
-            card.ports.push({ id: 'strip', className: 'pc-port pc-port-strip', dir: 'out', title: 'Wire the ' + operation.output + ' artifact' });
-        }
+        const rows = { in: 0, out: 0 };
+        card.ports = portsForNode(graph, node).map(port => {
+            const dir = port.direction === 'input' ? 'in' : 'out';
+            return { id: `${dir}:${port.id}`, port: port.id, dir, side: dir === 'in' ? 'left' : 'right', row: ++rows[dir], kind: port.kind, label: port.label, className: `pc-port pc-port-${dir}`, title: `${port.label}: ${port.kind}` };
+        });
+        card.hostResult = !!operation.terminal;
         return card;
     }
     if (node.type === NODE_TYPES.DECIDER) {

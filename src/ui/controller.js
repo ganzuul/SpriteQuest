@@ -97,12 +97,34 @@ export function profiles() {
 
 
 let workflowLibrary = null, workflowInspector = null, workflowRevision = null;
+let workflowProjection = null, workflowProjectionGraph = null;
 let workflowState = { result: null, busy: false, status: '', applyIssue: '' };
 const workflowSession = createWorkflowSession({ runtime: () => workflowRuntime.getNativeWorkflowController?.(), current: () => current, epoch: () => uiEpoch, active: isOpen, changed: state => { workflowState = state; if (isOpen()) updateWorkflowProjection(); } });
 const receiveAutomaticWorkflow = () => workflowSession.receiveAutomatic(workflowRuntime.getNativeWorkflowController?.()?.lastAutomaticResult?.());
-function workflowView() { return projectWorkflow(current, { settings: settings(), profiles: profiles(), selectedId: selectedKind === 'node' ? selected?.id : null, resolveBinding: (node, graph) => resolveBinding(node, graph, ctx()), candidateStatus: candidate => workflowRuntime.getNativeWorkflowController?.()?.candidateStatus?.(candidate), ...workflowState }); }
+function workflowView(refresh = false) {
+    if (refresh || !workflowProjection || workflowProjectionGraph !== current) {
+        workflowProjection = projectWorkflow(current, { settings: settings(), profiles: profiles(), resolveBinding: (node, graph) => resolveBinding(node, graph, ctx()), candidateStatus: candidate => workflowRuntime.getNativeWorkflowController?.()?.candidateStatus?.(candidate), ...workflowState });
+        workflowProjectionGraph = current;
+    }
+    return { ...workflowProjection, selectedId: selectedKind === 'node' ? selected?.id : null, nodes: workflowProjection.nodes.map(node => {
+        const presentation = current?.nodes[node.id]?.presentation;
+        return { ...node, alias: String(presentation?.alias || '').slice(0, 80), compact: presentation?.compact === true, title: String(presentation?.alias || current?.nodes[node.id]?.title || node.canonicalTitle).slice(0, 80) };
+    }) };
+}
 function updateWorkflowProjection() {
-    const view = workflowView(); workflowLibrary?.update(view); workflowInspector?.update(view); workbench?.update({ workflow: view });
+    const view = workflowView(true); workflowLibrary?.update(view); workflowInspector?.update(view); workbench?.update({ workflow: view });
+}
+function presentNode(id, key, value) {
+    const node = current?.nodes[id];
+    if (!editableNative(current) || !operationFor(node) || !['alias', 'compact'].includes(key)) return;
+    node.presentation = { ...node.presentation, [key]: key === 'alias' ? String(value).slice(0, 80) : value === true };
+    touchGraph(current); canvas.render(true);
+    const view = workflowView(); workflowInspector?.update(view); workflowLibrary?.update(view); workbench?.update({ workflow: view });
+}
+function focusAlias(node) {
+    if (!operationFor(node)) return;
+    showSettings({ kind: 'node', id: node.id });
+    const input = root.querySelector('.pc-workflow-editor input[data-alias]'); input?.focus(); input?.select();
 }
 function syncNativeRevision(reason) {
     if (!isNativeWorkflow(current)) return false;
@@ -114,6 +136,7 @@ const editableNative = graph => isNativeWorkflow(graph) && (graph.schema === 2 &
 const executableNative = graph => graph?.schema === 2 && graph.runtime === 1;
 function editNative(fn) { if (!editableNative(current)) return; fn(); syncNativeRevision('Workflow edited'); touchGraph(current); canvas.render(); updateWorkflowProjection(); renderStatus(); }
 const workflowActions = {
+    presentNode,
     setMode(mode) { if (!['legacy', 'native'].includes(mode)) return; workflowSession.cancel('Workflow mode changed'); settings().workflowMode = mode; save(); updateWorkflowProjection(); renderStatus(); },
     install(id) {
         workflowSession.cancel('New workflow'); current = installStarter(id, settings()); save();
@@ -152,7 +175,7 @@ function defaultNodeSpot() {
     const rect = canvas.host.getBoundingClientRect(), zoom = canvas.view.zoom || 1;
     const center = canvas.toGraph(rect.left + rect.width / 2 - Math.min(130 * zoom, rect.width / 4), rect.top + rect.height / 2 - 60 * zoom);
     const nodes = Object.values(current.nodes), width = 260, height = 140, gap = 24;
-    const vacant = spot => nodes.every(node => spot.x + width + gap <= node.x || spot.x >= node.x + (node.w || width) + gap || spot.y + height + gap <= node.y || spot.y >= node.y + canvas.heightOf(node) + gap);
+    const vacant = spot => nodes.every(node => spot.x + width + gap <= node.x || spot.x >= node.x + canvas.widthOf(node) + gap || spot.y + height + gap <= node.y || spot.y >= node.y + canvas.heightOf(node) + gap);
     if (vacant(center)) return center;
     for (let row = 0; row < 6; row++) for (let col = 0; col < 6; col++) {
         const spot = canvas.toGraph(rect.left + 16 + col * Math.max(36, (rect.width - 32) / 6), rect.top + 16 + row * Math.max(36, (rect.height - 32) / 6));
@@ -339,7 +362,7 @@ function build() {
     document.addEventListener('pc-theme', () => { if (canvas && isOpen()) canvas.render(); });
 
     canvas = new Canvas(canvasHost, {
-        prepareRender: () => { canvasAnalysis = graphAnalysis.prepare(current); },
+        prepareRender: () => { if (!isNativeWorkflow(current)) canvasAnalysis = graphAnalysis.prepare(current); },
         onSelect: (item, kind) => { selected = item; selectedKind = kind; updateSelectionCount(); surfaces.inspector.render(); },
         onView: camera => workbench.update({ camera }),
         onMulti: (ids) => {
@@ -359,6 +382,11 @@ function build() {
         },
         onToast: (m) => toast(m, 'error'),
         onReveal: (sel) => showSettings(sel),
+        onHostResult: (node) => {
+            showSettings({ kind: 'node', id: node.id });
+            const result = root.querySelector('.pc-workflow-result');
+            if (result) result.scrollIntoView({ block: 'nearest' }); else toast('No host result yet. Run the workflow to inspect its result.');
+        },
         onModelClick: (node, anchor) => surfaces.model.open(node, anchor),
         onHelp: (node) => {
             guideOpen = true;
@@ -374,7 +402,7 @@ function build() {
         stPreview: stPreviewText,
         memoryPreview: (node) => memoryAt(node, chatNow()).text,
         profileName,
-        nativeBinding: (node, graph) => { const resolved = resolveBinding({ ...node, modelRole: node.modelRole || operationFor(node)?.modelRole }, graph, ctx()); return resolved.ok ? { ...resolved.data, display: [resolved.data.profileName, resolved.data.model, resolved.data.endpoint, resolved.data.endpointOrigin].filter(Boolean).join(' · ') } : null; },
+        nativeBinding: node => { const projected = workflowProjectionGraph === current && workflowProjection?.nodes.find(item => item.id === node.id); return projected ? { display: projected.effective } : null; },
         effectiveModel,
         waveInfo,
         copiesOf: (node) => canvasAnalysis.counts.get(node.id) ?? 1,
@@ -405,6 +433,7 @@ function build() {
         // In a text box, Ctrl+Z undoes your typing as usual; on the canvas it
         // undoes the last change to the canvas.
         const mod = e.ctrlKey || e.metaKey;
+        if (e.key === 'F2' && !typing && selectedKind === 'node' && operationFor(selected)) { e.preventDefault(); focusAlias(selected); return; }
         if (mod && !typing && !e.altKey) {
             const k = e.key.toLowerCase();
             if (k === 'a') { e.preventDefault(); canvas.selectAll(); return; }
@@ -3780,7 +3809,11 @@ function onCanvasMenu({ event, node, wire, at, group = null, several = null }) {
         menu.append(item('Cut wire', 'fa-scissors', () => { disconnect(current, wire.id); canvas.render(); }));
     } else if (node) {
         menu.append(item('Inspect / Settings…', 'fa-sliders', () => showSettings({ kind: 'node', id: node.id })));
-        menu.append(item('Rename…', 'fa-pen', () => showSettings({ kind: 'node', id: node.id })));
+        menu.append(item('Rename…', 'fa-pen', () => operationFor(node) ? focusAlias(node) : showSettings({ kind: 'node', id: node.id })));
+        if (operationFor(node)) {
+            menu.append(item('Reset alias', 'fa-rotate-left', () => presentNode(node.id, 'alias', '')));
+            menu.append(item(node.presentation?.compact ? 'Normal card' : 'Compact card', 'fa-compress', () => presentNode(node.id, 'compact', !node.presentation?.compact)));
+        }
         if (node.type !== NODE_TYPES.OUTPUT) {
             menu.append(item('Copy', 'fa-copy', () => copySelection(false, { nodeIds: [node.id] })));
             menu.append(item('Save to library\u2026', 'fa-bookmark', () => savePickToLibrary({ nodeIds: [node.id] })));

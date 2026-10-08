@@ -71,7 +71,10 @@
         {#if node.id === view.selectedId}
             <div class="pc-workflow-editor">
                 <p>{node.family} · {node.phase} phase · {node.input} → {node.output}</p>
-                <label>Operation name<input class="text_pole" value={node.title} oninput={(event) => actions.updateNode(node.id, 'title', event.currentTarget.value)} /></label>
+                <p>Canonical type: {node.canonicalTitle}</p>
+                <label>Alias<input class="text_pole" data-alias maxlength="80" value={node.alias} oninput={(event) => actions.presentNode(node.id, 'alias', event.currentTarget.value)} /></label>
+                <button class="menu_button" onclick={() => actions.presentNode(node.id, 'alias', '')}>Reset alias</button>
+                <label><input type="checkbox" checked={node.compact} onchange={(event) => actions.presentNode(node.id, 'compact', event.currentTarget.checked)} /> Compact card</label>
                 <label><input type="checkbox" checked={node.enabled} onchange={(event) => actions.updateNode(node.id, 'enabled', event.currentTarget.checked)} /> Enabled</label>
                 <small>Disabled operations block preflight; they do not bypass.</small>
                 {#if node.modelRole}
@@ -108,7 +111,7 @@
     {/each}
     {#if view.status}<p role="status">{view.status}</p>{/if}
     {#if view.result}
-        <h4>Workflow result</h4>
+        <h4 class="pc-workflow-result">Workflow result</h4>
         {#if view.result.error}<p class="pc-error">{view.result.error}</p>{/if}
         <p>Actual auxiliary requests: {view.result.actualCalls} / {view.result.callBound}</p>
         <p>Token count method: {view.result.tokenMethods.join(', ') || 'Not reported'}</p>

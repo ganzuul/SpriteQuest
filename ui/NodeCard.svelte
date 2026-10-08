@@ -5,8 +5,20 @@
 </script>
 
 <div class={card.className} data-id={card.id} title={card.hint} role="group" aria-label={`${card.label}: ${card.title}`}
-    style:left={`${card.x}px`} style:top={`${card.y}px`} style:width={`${card.w}px`}
-    onmouseenter={() => actions.hover(card.id)} onmouseleave={() => actions.hover(null)}>
+    style:left={`${card.x}px`} style:top={`${card.y}px`} style:width={card.native ? undefined : `${card.w}px`}
+    onmouseenter={() => { if (!card.native) actions.hover(card.id); }} onmouseleave={() => actions.hover(null)}>
+    {#if card.native}
+        <div class="pc-native-heading"><svg class="pc-native-icon" viewBox="0 0 24 24" aria-hidden="true"><path d={card.iconPath} /></svg><span class="pc-node-title" title={card.titleHint}>{card.title}</span></div>
+        <div class="pc-native-pins">
+            {#each card.ports as port (port.id)}
+                <div class={`pc-native-row pc-native-row-${port.dir}`} style:grid-row={port.row}>
+                    <span class="pc-native-pin-label">{port.label}<small>{port.kind}</small></span>
+                    <div class={port.className} data-node={card.id} data-dir={port.dir} data-port={port.port} data-side={port.side} data-kind={port.kind} title={port.title} role="img" aria-label={port.title} onmouseenter={() => actions.hoverPin({ nodeId: card.id, dir: port.dir, port: port.port! })} onmouseleave={() => actions.hoverPin(null)}></div>
+                </div>
+            {/each}
+        </div>
+        {#if card.hostResult}<button type="button" class="pc-node-action pc-host-result" aria-label="Preview host result" onmousedown={stop} onclick={(event) => { stop(event); actions.hostResult(card.id); }}><i class="fa-solid fa-eye" aria-hidden="true"></i> Host result</button>{/if}
+    {:else}
     <div class="pc-node-head">
         <span class="pc-badge"><i class={`fa-solid ${card.icon} pc-badge-icon`}></i> {card.label}</span>
         <span class="pc-node-title" title={card.titleHint}>{card.title}</span>
@@ -37,4 +49,5 @@
     {#each card.ports as port (port.id)}
         <div class={port.className} data-node={card.id} data-dir={port.dir} data-port={port.port} data-side={port.side} style:left={port.left === undefined ? undefined : `${port.left}%`} title={port.title}>{#if port.label}<span class="pc-port-keyname">{port.label}</span>{/if}{#if port.icon}<i class={`fa-solid ${port.icon}`}></i>{/if}</div>
     {/each}
+    {/if}
 </div>

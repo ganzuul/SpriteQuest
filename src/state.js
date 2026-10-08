@@ -656,14 +656,14 @@ export function blanketAt(graph, x, y) {
  * @param {(node) => number} heightOf  block height on screen
  * @returns {boolean} whether anything changed
  */
-export function settleOnBlankets(graph, ids, heightOf = () => 90) {
+export function settleOnBlankets(graph, ids, heightOf = () => 90, widthOf = node => node.w || 260) {
     let changed = false;
     for (const id of ids) {
         const n = graph.nodes[id];
         if (!n || n.type === NODE_TYPES.OUTPUT) continue;
         // Blocks inside a folded group are out of sight and stay put.
         if (n.inGroup && graph.groups?.[n.inGroup]?.collapsed) continue;
-        const g = blanketAt(graph, n.x + (n.w || 260) / 2, n.y + heightOf(n) / 2);
+        const g = blanketAt(graph, n.x + widthOf(n) / 2, n.y + heightOf(n) / 2);
         const next = g?.id;
         if ((n.inGroup ?? undefined) !== next) {
             if (next) n.inGroup = next; else delete n.inGroup;
@@ -678,13 +678,13 @@ export function settleOnBlankets(graph, ids, heightOf = () => 90) {
  * Everything resting on a blanket joins it, and members that are no longer on
  * it leave. Used when a blanket is folded, moved or resized.
  */
-export function gatherBlanket(graph, groupId, heightOf = () => 90) {
+export function gatherBlanket(graph, groupId, heightOf = () => 90, widthOf = node => node.w || 260) {
     const g = graph.groups?.[groupId];
     if (!g?.frame) return false;
     const ids = Object.values(graph.nodes)
         .filter(n => n.inGroup === groupId || !n.inGroup || !graph.groups?.[n.inGroup]?.collapsed)
         .map(n => n.id);
-    return settleOnBlankets(graph, ids, heightOf);
+    return settleOnBlankets(graph, ids, heightOf, widthOf);
 }
 
 /** Switch a whole group on or off. The blocks keep their own switches. */

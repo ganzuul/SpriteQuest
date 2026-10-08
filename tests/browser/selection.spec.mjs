@@ -1,4 +1,26 @@
 import { test, expect } from '@playwright/test';
+test('native body dragging uses eight screen pixels and preserves group membership and cancellation', async ({ page }) => {
+    await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
+    await page.evaluate(async () => {
+        const { starterGraph } = await import('/src/workflow/starters.js?v=0.19.1');
+        const h = window.canvasHarness, graph = starterGraph('native-guidance');
+        graph.groups.blanket = { id: 'blanket', title: 'Blanket', enabled: true, collapsed: false, frame: { x: 60, y: 90, w: 300, h: 300 } };
+        h.canvas.setGraph(graph); await h.view({ x: 220, y: 0, zoom: .8 });
+    });
+    const title = page.locator('.pc-node[data-id="scene-context"] .pc-node-title');
+    const bounds = await title.boundingBox(), x = bounds.x + bounds.width / 2, y = bounds.y + bounds.height / 2;
+    const position = () => page.evaluate(() => { const n = window.canvasHarness.graph.nodes['scene-context']; return { x: n.x, y: n.y, group: n.inGroup || null }; });
+    const before = await position();
+    await page.mouse.move(x, y); await page.mouse.down(); await page.mouse.move(x + 6, y);
+    expect(await position()).toEqual(before);
+    await page.mouse.move(x + 12, y + 8); await page.mouse.up();
+    expect(await position()).toEqual({ x: before.x + 15, y: before.y + 10, group: null });
+    const next = await title.boundingBox();
+    await page.mouse.move(next.x + 10, next.y + 5); await page.mouse.down(); await page.mouse.move(next.x + 45, next.y + 30);
+    await page.evaluate(() => window.canvasHarness.canvas.host.dispatchEvent(new Event('pointercancel')));
+    await page.mouse.up();
+    expect(await position()).toEqual({ x: before.x + 15, y: before.y + 10, group: null });
+});
 test('Shift-drag preserves and moves the selected set with real mouse input', async ({ page }) => {
     const ids = await setup(page);
     const before = await page.evaluate(ids => {
