@@ -104,4 +104,60 @@ assert.equal(nestedArrayMetadata.error?.code,'MISSING_PATH');
 assert.equal(Object.hasOwn(nestedArrayMetadata,'data'),false);
 
 assert.equal(composeText({template:'{{data:/length}} {{data:/nested/length}}',data:{length:2,nested:{length:'own'}}}).data.text,'2 own');
+
+
+// Normal joining must not consult a prototype getter for absent template.
+let inheritedTemplateReads = 0;
+let inheritedTemplateJoin;
+Object.defineProperty(Object.prototype,'template',{configurable:true,get(){inheritedTemplateReads++; throw new Error('inherited template read');}});
+try {
+  inheritedTemplateJoin = composeText({sections:[{name:'s',text:'Constant'}]});
+} finally {
+  delete Object.prototype.template;
+}
+assert.equal(inheritedTemplateReads,0);
+assert.equal(inheritedTemplateJoin.ok,true);
+assert.equal(inheritedTemplateJoin.data.text,'Constant');
+
+// All optional configuration defaults use only own descriptors.
+for (const key of ['sections','data','separator']) {
+  let inheritedReads = 0;
+  let result;
+  Object.defineProperty(Object.prototype,key,{configurable:true,get(){inheritedReads++; throw new Error('inherited config read');}});
+  try {
+    result = composeText(key === 'sections' ? {} : {sections:[{name:'a',text:'First'},{name:'b',text:'Last'}]});
+  } finally {
+    delete Object.prototype[key];
+  }
+  assert.equal(inheritedReads,0,key);
+  assert.equal(result.ok,true,key);
+  assert.equal(result.data.text,key === 'sections' ? '' : 'First\n\nLast');
+}
+
+let inheritedSectionNameReads = 0;
+let inheritedSectionNameResult;
+Object.defineProperty(Object.prototype,'name',{configurable:true,get(){inheritedSectionNameReads++; throw new Error('inherited section name read');}});
+try {
+  inheritedSectionNameResult = composeText({sections:[{text:'Missing name'}]});
+} finally {
+  delete Object.prototype.name;
+}
+assert.equal(inheritedSectionNameReads,0);
+assert.equal(inheritedSectionNameResult.error?.code,'INVALID_COMPOSE');
+
+let inheritedToJsonReads = 0;
+let inheritedToJsonResult;
+let inheritedArrayToJsonResult;
+Object.defineProperty(Object.prototype,'toJSON',{configurable:true,get(){inheritedToJsonReads++; throw new Error('inherited JSON hook read');}});
+try {
+  inheritedToJsonResult = composeText({template:'{{data:}}',data:{name:'Ada',items:[1,2]}});
+  inheritedArrayToJsonResult = composeText({template:'{{data:}}',data:['Ada',{count:2}]});
+} finally {
+  delete Object.prototype.toJSON;
+}
+assert.equal(inheritedToJsonReads,0);
+assert.equal(inheritedToJsonResult.ok,true);
+assert.equal(inheritedToJsonResult.data.text,'{"name":"Ada","items":[1,2]}');
+assert.equal(inheritedArrayToJsonResult.ok,true);
+assert.equal(inheritedArrayToJsonResult.data.text,'["Ada",{"count":2}]');
 console.log('workflow-compose tests passed');

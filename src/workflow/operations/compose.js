@@ -1,4 +1,4 @@
-import { cloneJsonValue, readJsonPath } from './json-data.js?v=0.19.1';
+import { cloneJsonValue, readJsonPath, stringifyJsonValue } from './json-data.js?v=0.19.1';
 
 const failure = (code, message) => ({ok:false,error:{code,message}});
 
@@ -6,7 +6,7 @@ function readComposeSettings(settings) {
   try {
     if (!settings || typeof settings !== 'object' || Array.isArray(settings)) return failure('INVALID_COMPOSE', 'Settings must be an object');
     if (Object.keys(settings).some(key => !['template','sections','data','separator'].includes(key))) return failure('INVALID_COMPOSE', 'Unsupported setting');
-    const descriptors = Object.getOwnPropertyDescriptors(settings);
+    const descriptors = Object.setPrototypeOf(Object.getOwnPropertyDescriptors(settings), null);
     if (Object.values(descriptors).some(property => !Object.hasOwn(property, 'value'))) return failure('INVALID_COMPOSE', 'Settings must use data properties');
     const template = descriptors.template?.value;
     const inputSections = descriptors.sections ? descriptors.sections.value : [];
@@ -22,7 +22,7 @@ function readComposeSettings(settings) {
       if (!element || !Object.hasOwn(element, 'value')) return failure('INVALID_COMPOSE', 'Sections must be a dense data array');
       const raw = element.value;
       if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return failure('INVALID_COMPOSE', 'Section must be an object');
-      const fields = Object.getOwnPropertyDescriptors(raw);
+      const fields = Object.setPrototypeOf(Object.getOwnPropertyDescriptors(raw), null);
       if (Object.keys(fields).some(key => !['name','text'].includes(key)) || Object.values(fields).some(field => !Object.hasOwn(field,'value'))) return failure('INVALID_COMPOSE', 'Section must use name and text data properties');
       const section = {name:fields.name?.value,text:fields.text?.value};
       if (typeof section.name !== 'string' || !/^[A-Za-z_][A-Za-z0-9_]*$/u.test(section.name) || typeof section.text !== 'string') return failure('INVALID_COMPOSE', 'Sections require an identifier name and text');
@@ -76,7 +76,12 @@ export function composeText(settings = {}) {
         const result = readJsonPath(cloned, path);
         if (!result.ok) return result;
         if (!result.data.found) return failure('MISSING_PATH', 'Missing data path: ' + pointer);
-        text += typeof result.data.value === 'string' ? result.data.value : JSON.stringify(result.data.value);
+        if (typeof result.data.value === 'string') text += result.data.value;
+        else {
+          const encoded = stringifyJsonValue(result.data.value);
+          if (!encoded.ok) return encoded;
+          text += encoded.data.text;
+        }
       } else return failure('INVALID_TEMPLATE', 'Unsupported placeholder');
       if (text.length > 100000) return failure('TEXT_LIMIT', 'Output exceeds 100,000 UTF-16 units');
       position = end + 2;
