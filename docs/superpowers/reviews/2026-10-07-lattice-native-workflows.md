@@ -1,10 +1,10 @@
 # Native workflows implementation review
 
-Status: delivered in [draft PR #2](https://github.com/MentallyQuill/ComfyTavern/pull/2); implementation, independent review and acceptance evidence are ready for review. Product source is committed through 9524740. Main remains the integrated Svelte migration f5b3b61.
+Status: delivered in [draft PR #2](https://github.com/MentallyQuill/Lattice/pull/2); implementation, independent review and acceptance evidence are ready for review. Product source is committed through 9524740. Main remains the integrated Svelte migration f5b3b61.
 
 ## Delivered scope
 
-ComfyTavern adds schema-2 native workflows alongside the schema-1 legacy prompt engine. SillyTavern continues to assemble its normal prompt, run lore and extension processing, and generate the main reply. Auxiliary operations use fixed per-node or role Connection Manager bindings and operation-owned messages without globally activating a profile.
+Lattice adds schema-2 native workflows alongside the schema-1 legacy prompt engine. SillyTavern continues to assemble its normal prompt, run lore and extension processing, and generate the main reply. Auxiliary operations use fixed per-node or role Connection Manager bindings and operation-owned messages without globally activating a profile.
 
 Two independent portable examples provide first-use setup: Scene Context → Smart Compactor → Response Plan → additive Guidance, and Reply Snapshot → the editable Pattern Scan/Repair/Validate Patches formation → Review Gate → manual Apply Reply. The pre example has a maximum of two auxiliary requests; reviewed repair has a maximum of one. Installation, import, assignment, discovery and camera movement make no model calls. Arming is separate from setup, and post repair remains manual.
 
@@ -30,7 +30,7 @@ The later one-line, unbundled repair instruction change passed the existing mean
 
 ## Live acceptance
 
-See [sanitized evidence](2026-10-07-comfytavern-live-evidence.json). Functional acceptance is demonstrated across separately authorized sessions; no single all-in-one session is falsely labeled passed.
+See [sanitized evidence](2026-10-07-lattice-live-evidence.json). Functional acceptance is demonstrated across separately authorized sessions; no single all-in-one session is falsely labeled passed.
 
 - Earlier plain and thinking model canaries succeeded. They are distinct from production workflow acceptance.
 - The first production session stopped at the unused-proxy preflight before reserving or admitting a request.

@@ -74,9 +74,9 @@ test('reservation bridge refuses invalid and concurrent sends without replacing 
 });
 test('dedicated module routing refuses arbitrary files and serves an actual production module', async()=>{
     const root=fileURLToPath(new URL('../',import.meta.url));
-    const path=await productionModulePath(root,'http://127.0.0.1/__comfytavern-live-test/src/workflow/runtime.js?v=0.19.0');
+    const path=await productionModulePath(root,'http://127.0.0.1/__lattice-live-test/src/workflow/runtime.js?v=0.19.1');
     assert.equal(path,fileURLToPath(new URL('../src/workflow/runtime.js',import.meta.url)));
-    for (const url of ['http://127.0.0.1/__comfytavern-live-test/.git/config','http://127.0.0.1/__comfytavern-live-test/src/state.js','http://127.0.0.1/__comfytavern-live-test/src/workflow/../../.aws/credentials']) await assert.rejects(productionModulePath(root,url),/module/i);
+    for (const url of ['http://127.0.0.1/__lattice-live-test/.git/config','http://127.0.0.1/__lattice-live-test/src/state.js','http://127.0.0.1/__lattice-live-test/src/workflow/../../.aws/credentials']) await assert.rejects(productionModulePath(root,url),/module/i);
 });
 test('production fixture graphs compact pinned text, plan bounded guidance and return a reviewed candidate in exactly three requests', async()=>{
     const guard=createLiveGuard(options), bridge=createLiveReservationBridge(guard);

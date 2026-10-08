@@ -1,5 +1,5 @@
 /**
- * ComfyTavern — entry point.
+ * Lattice — entry point.
  *
  * Wires the extension into SillyTavern and, when armed, hands the compiled
  * prompt to the generation pipeline.
@@ -16,17 +16,18 @@
  * generation is worse than one that does nothing.
  */
 
-import { settings, save, resolveGraph, ctx, safe } from './src/state.js?v=0.19.0';
-import { run, callCount, getNativeWorkflowController, initializeNativeWorkflowController, workflowSignature, sendWorkflowState } from './src/run.js?v=0.19.0';
-import * as UI from './src/ui.js?v=0.19.0';
-import { jevSettings, jevYesNo } from './src/jev.js?v=0.19.0';
-import { applyTheme } from './src/theme.js?v=0.19.0';
-import { renderThemeEditor } from './src/theme-editor.js?v=0.19.0';
-import { renderThoughts, attachThoughts, repaintAll, livePanel, answersMode } from './src/thoughts.js?v=0.19.0';
+import { settings, save, resolveGraph, ctx, safe } from './src/state.js?v=0.19.1';
+import { run, callCount, getNativeWorkflowController, initializeNativeWorkflowController, workflowSignature, sendWorkflowState } from './src/run.js?v=0.19.1';
+import * as UI from './src/ui.js?v=0.19.1';
+import { jevSettings, jevYesNo } from './src/jev.js?v=0.19.1';
+import { applyTheme } from './src/theme.js?v=0.19.1';
+import { renderThemeEditor } from './src/theme-editor.js?v=0.19.1';
+import { renderThoughts, attachThoughts, repaintAll, livePanel, answersMode } from './src/thoughts.js?v=0.19.1';
 
 const MODULE = 'prompt-canvas';
 // SillyTavern awaits the global named by manifest.generate_interceptor.
-globalThis.comfyTavernGenerationInterceptor = async (chat, contextSize, abort, type) => {
+// Retain the former hook name for integrations while new manifests use Lattice.
+globalThis.latticeGenerationInterceptor = globalThis.comfyTavernGenerationInterceptor = async (chat, contextSize, abort, type) => {
     await initializeNativeWorkflowController();
     return getNativeWorkflowController().beforeGenerate(chat, contextSize, abort, type);
 };
@@ -55,7 +56,7 @@ function armed() {
 /**
  * Build the prompt for one send.
  *
- * Returns null when ComfyTavern should keep its hands off, in which case
+ * Returns null when Lattice should keep its hands off, in which case
  * SillyTavern's own prompt goes out untouched.
  */
 function legacyArmed() {
@@ -109,7 +110,7 @@ async function build(dryRun) {
         if (!plan.ok) {
             // An empty chat is a normal state, not a fault worth shouting about.
             if (plan.quiet) console.log(`[${MODULE}] ${plan.reason}`);
-            else warn(`ComfyTavern did not replace the prompt: ${plan.reason}`);
+            else warn(`Lattice did not replace the prompt: ${plan.reason}`);
             return null;
         }
 
@@ -182,7 +183,7 @@ async function onChatCompletionPromptReady(eventData) {
         console.log(`[${MODULE}] sent ${plan.messages.length} messages`);
     } catch (err) {
         console.error(`[${MODULE}] compile failed, leaving the prompt alone`, err);
-        warn('ComfyTavern hit an error and left SillyTavern\u2019s prompt untouched. See the console.');
+        warn('Lattice hit an error and left SillyTavern\u2019s prompt untouched. See the console.');
     }
 }
 
@@ -254,7 +255,7 @@ const progress = (() => {
     const paint = () => {
         if (!box) return;
         box.querySelector('.pc-progress-head').textContent =
-            `ComfyTavern \u00b7 ${Math.min(finished + running.size, total)} of ${total}`;
+            `Lattice \u00b7 ${Math.min(finished + running.size, total)} of ${total}`;
         list.innerHTML = '';
         for (const title of running) {
             const row = document.createElement('div');
@@ -292,7 +293,7 @@ const progress = (() => {
 
 function warn(message) {
     console.warn(`[${MODULE}] ${message}`);
-    safe(() => globalThis.toastr?.warning(message, 'ComfyTavern'));
+    safe(() => globalThis.toastr?.warning(message, 'Lattice'));
 }
 
 /* ------------------------------------------------------------------ */
@@ -307,7 +308,7 @@ function addLauncher() {
         item.id = 'pc-menu-launch';
         item.className = 'list-group-item flex-container flexGap5 interactable';
         item.tabIndex = 0;
-        item.innerHTML = '<i class="fa-solid fa-diagram-project"></i><span>ComfyTavern</span>';
+        item.innerHTML = '<i class="fa-solid fa-diagram-project"></i><span>Lattice</span>';
         item.addEventListener('click', () => UI.open());
         menu.append(item);
     }
@@ -322,7 +323,7 @@ function addLauncher() {
         block.innerHTML = `
             <div class="inline-drawer">
                 <div class="inline-drawer-toggle inline-drawer-header">
-                    <b>ComfyTavern</b>
+                    <b>Lattice</b>
                     <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
                 </div>
                 <div class="inline-drawer-content">
@@ -341,7 +342,7 @@ function addLauncher() {
                     </div>
                     <label class="checkbox_label" for="pc-sendbar-opt">
                         <input id="pc-sendbar-opt" type="checkbox">
-                        <span>Show a ComfyTavern button next to Send</span>
+                        <span>Show a Lattice button next to Send</span>
                     </label>
                     <div class="pc-settings-hint">
                         Tinted while the canvas is armed. Click to open, right-click to arm or disarm.
@@ -384,7 +385,7 @@ function addLauncher() {
                     <input id="pc-jev-key" class="text_pole" type="password" autocomplete="off" placeholder="paste your key">
                     <div class="pc-settings-hint">
                         Kept in SillyTavern's settings file, like other extension settings.
-                        TypeSafe's API cannot be called straight from a web page, so ComfyTavern goes through
+                        TypeSafe's API cannot be called straight from a web page, so Lattice goes through
                         SillyTavern's CORS proxy: set <code>enableCorsProxy: true</code> in <code>config.yaml</code> and restart SillyTavern.
                     </div>
                     <div id="pc-jev-test" class="menu_button menu_button_icon">
@@ -447,7 +448,7 @@ function addLauncher() {
             settings().concurrency = 2;
             save();
             paintThrottle();
-            safe(() => globalThis.toastr?.info('Independent Generate blocks will go out together again.', 'ComfyTavern'));
+            safe(() => globalThis.toastr?.info('Independent Generate blocks will go out together again.', 'Lattice'));
         });
 
         const jkey = block.querySelector('#pc-jev-key');
@@ -499,7 +500,7 @@ function addSendbarButton() {
         UI.refreshIfOpen();
         paintSendbar();
         const state = sendWorkflowState();
-        safe(() => globalThis.toastr?.info(armed() ? `Armed. ${state.armedText}` : state.offText, 'ComfyTavern'));
+        safe(() => globalThis.toastr?.info(armed() ? `Armed. ${state.armedText}` : state.offText, 'Lattice'));
     });
     b.addEventListener('mouseenter', paintSendbar);
 
@@ -519,7 +520,7 @@ function paintSendbar() {
     const on = armed();
     b.classList.toggle('pc-sendbar-on', on && state.automatic);
     b.classList.toggle('pc-sendbar-nograph', on && !state.automatic);
-    b.title = on ? `ComfyTavern is armed. ${state.armedText}\nClick to open. Right-click to switch off.` : `${state.offText}\nClick to open. Right-click to arm.`;
+    b.title = on ? `Lattice is armed. ${state.armedText}\nClick to open. Right-click to switch off.` : `${state.offText}\nClick to open. Right-click to arm.`;
 }
 
 function paintThrottle() {
@@ -548,7 +549,7 @@ function addSlashCommand() {
         const { SlashCommandParser, SlashCommand, SlashCommandNamedArgument, ARGUMENT_TYPE } = c;
         SlashCommandParser.addCommandObject(SlashCommand.fromProps({
             name: 'canvas',
-            helpString: 'Open ComfyTavern, or arm/disarm it: <code>/canvas arm</code>, <code>/canvas off</code>.',
+            helpString: 'Open Lattice, or arm/disarm it: <code>/canvas arm</code>, <code>/canvas off</code>.',
             unnamedArgumentList: [],
             callback: (_args, value) => {
                 const v = String(value ?? '').trim().toLowerCase();
@@ -625,7 +626,7 @@ export function getLastRun() {
             mountLauncher();
             addSlashCommand();
 
-            globalThis.sillyCanvas = globalThis.promptCanvas = { open: UI.open, close: UI.close, toggle: UI.toggle, getLastRun };
+            globalThis.lattice = globalThis.sillyCanvas = globalThis.promptCanvas = { open: UI.open, close: UI.close, toggle: UI.toggle, getLastRun };
             console.log(`[${MODULE}] ready`);
         } catch (err) {
             console.error(`[${MODULE}] failed to start`, err);

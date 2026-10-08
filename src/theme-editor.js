@@ -1,12 +1,12 @@
 /**
- * Silly Canvas: the theme picker and colour editor.
+ * Lattice: the theme picker and colour editor.
  *
  * One editor, shown in two places: the extension settings drawer and the
  * palette button in the canvas header. Colours change live as you pick them.
  */
 
-import { safe } from './state.js?v=0.19.0';
-import * as T from './theme.js?v=0.19.0';
+import { safe } from './state.js?v=0.19.1';
+import * as T from './theme.js?v=0.19.1';
 
 const make = (tag, cls, text) => {
     const n = document.createElement(tag);

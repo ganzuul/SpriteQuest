@@ -1,7 +1,7 @@
-import { runWorkflow, freezeArtifact, workflowSignature } from './runtime.js?v=0.19.0';
-import { resolveBinding, requestModel } from './connections.js?v=0.19.0';
+import { runWorkflow, freezeArtifact, workflowSignature } from './runtime.js?v=0.19.1';
+import { resolveBinding, requestModel } from './connections.js?v=0.19.1';
 
-const PREFIX = 'comfytavern:guidance:';
+const PREFIX = 'lattice:guidance:';
 const fail = (code,message) => ({ok:false,error:{code,message},reports:[],calls:[],trace:[]});
 const identity = c => ({chatId:c.getCurrentChatId?.() ?? c.chatId ?? null,characterId:c.characterId ?? null,groupId:c.groupId ?? null});
 const same = (a,b) => JSON.stringify(a) === JSON.stringify(b);
@@ -93,7 +93,8 @@ export function createNativeWorkflowController(ports) {
     };
     const clear=()=>{
         const c=context();
-        for(const key of Object.keys(c.extensionPrompts ?? {})) if(key.startsWith(PREFIX)) keys.add(key);
+        // Clear guidance left by the previous brand during an in-place upgrade.
+        for(const key of Object.keys(c.extensionPrompts ?? {})) if(key.startsWith(PREFIX) || key.startsWith('comfytavern:guidance:')) keys.add(key);
         for(const key of keys) { try{c.setExtensionPrompt?.(key,'',1,0,false,0);if(c.extensionPrompts?.[key])c.extensionPrompts[key].value='';}catch{if(c.extensionPrompts)delete c.extensionPrompts[key];} }
     };
     const cancel=(reason='Workflow canceled')=>{
@@ -140,7 +141,7 @@ export function createNativeWorkflowController(ports) {
         if(!value.ok) {
             clear();active=null;
             if(value.error.code==='ABORTED') {run.abortPrimary?.(true);run.abortPrimary=null;return notify(value,run);}
-            return notify({...value,fallback:'native',reports:[...value.reports,{code:'NATIVE_FALLBACK',message:'Preparation failed; SillyTavern will generate without ComfyTavern guidance.'}]},run);
+            return notify({...value,fallback:'native',reports:[...value.reports,{code:'NATIVE_FALLBACK',message:'Preparation failed; SillyTavern will generate without Lattice guidance.'}]},run);
         }
         try {
             if(typeof c.setExtensionPrompt!=='function')throw new Error('Prompt setter unavailable');
@@ -206,11 +207,11 @@ export function createNativeWorkflowController(ports) {
             // Capture after the public helper synchronizes current original metadata.
             const preserved=structuredClone({swipes:m.swipes,info:m.swipe_info});
             const swipeId=m.swipes.length,now=new Date().toISOString();
-            const revisionInfo={send_date:now,gen_started:now,gen_finished:now,extra:{comfyTavernRevision:{sourceToken:candidate.source.token,sourceSwipeId:candidate.source.swipeId,workflowId:entry.run.graph.id,at:now}}};
+            const revisionInfo={send_date:now,gen_started:now,gen_finished:now,extra:{latticeRevision:{sourceToken:candidate.source.token,sourceSwipeId:candidate.source.swipeId,workflowId:entry.run.graph.id,at:now}}};
             m.swipes.push(candidate.text);
             m.swipe_info.push(structuredClone(revisionInfo));
             if(!ports.syncSwipeToMes(index,swipeId,m))throw new Error('Cannot select revision');
-            const revisionMetadata=value=>value && ({send_date:value.send_date,gen_started:value.gen_started,gen_finished:value.gen_finished,revision:value.extra?.comfyTavernRevision});
+            const revisionMetadata=value=>value && ({send_date:value.send_date,gen_started:value.gen_started,gen_finished:value.gen_finished,revision:value.extra?.latticeRevision});
             const expectedMetadata=revisionMetadata(revisionInfo);
             const intactSwipes=()=>Array.isArray(m.swipes) && m.swipes.length===swipeId+1
                 && m.swipes[swipeId]===candidate.text && same(m.swipes.slice(0,swipeId),preserved.swipes)

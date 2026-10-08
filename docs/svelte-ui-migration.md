@@ -1,6 +1,6 @@
 # Svelte UI migration — 0.18.0
 
-ComfyTavern now uses keyed Svelte cards, groups, SVG wires and a Svelte workbench. Camera motion no longer redraws wires or asks every endpoint for its height. The controller batches visual work into animation frames, caches unscaled card dimensions and prepares duplication/Generate-wave analysis once per graph revision. ComfyUI-style selection is built into the same gesture controller.
+Lattice now uses keyed Svelte cards, groups, SVG wires and a Svelte workbench. Camera motion no longer redraws wires or asks every endpoint for its height. The controller batches visual work into animation frames, caches unscaled card dimensions and prepares duplication/Generate-wave analysis once per graph revision. ComfyUI-style selection is built into the same gesture controller.
 
 The agreed [design](superpowers/specs/2026-10-07-svelte-ui-migration-design.md) and [implementation plan](superpowers/plans/2026-10-07-svelte-ui-migration.md) define the acceptance contract. PomegranateUI informed the headless bindings, keyed presentation and host-adapter architecture; its source was not copied. The bundled Svelte MIT notice is in [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md).
 
@@ -27,7 +27,7 @@ flowchart LR
 | `src/canvas/camera.js`, `frame.js`, `selection.js`, `geometry.js` | Camera math, dirty-frame coalescing, rectangle operations, measured sizes and incident-wire indexing |
 | `src/canvas/presentation.js` | Plain card data; no DOM building |
 | `ui/*.svelte`, `ui/types.ts` | Actual card/group/port/SVG/workbench/control markup and typed props/actions |
-| `dist/silly-canvas-ui.js` | Committed, self-contained ESM containing Svelte and UI components |
+| `dist/lattice-ui.js` | Committed, self-contained ESM containing Svelte and UI components |
 
 Svelte receives data and callbacks. It imports no domain state, compiler or run modules. All native imports use the same `?v=0.18.0`, including nested adapter imports, so there is one authoritative state instance. Saved graph JSON, prompt order, generation hooks and compiler/runtime behavior are unchanged; version-query edits in those modules only invalidate browser caches.
 
@@ -81,4 +81,4 @@ Timings describe this synthetic local browser workload, not every device or arbi
 
 ## Building and updating
 
-Use Node.js 24+, `npm ci`, and `npx playwright install chromium`. Run `npm run check` after edits, and commit the regenerated `dist/silly-canvas-ui.js` with Svelte source. The extension install has no npm dependency or CDN request. The build is reproducible from the pinned lockfile. Before shipping a different version, run `node tools/bump-version.mjs <version>` and verify assets again; the tool updates nested native imports and package/lock metadata.
+Use Node.js 24+, `npm ci`, and `npx playwright install chromium`. Run `npm run check` after edits, and commit the regenerated `dist/lattice-ui.js` with Svelte source. The extension install has no npm dependency or CDN request. The build is reproducible from the pinned lockfile. Before shipping a different version, run `node tools/bump-version.mjs <version>` and verify assets again; the tool updates nested native imports and package/lock metadata.

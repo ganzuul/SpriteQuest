@@ -12,7 +12,7 @@
     export function getParts() { return { root, parts: { ...toolbar.getParts(), status: status.getElement(), sidebar: library.getElement(), inspector: inspector.getElement(), preview: preview.getElement(), canvasHost } }; }
     export function update(value: Partial<WorkbenchView>) { view = { ...view, ...value }; }
 </script>
-<div class="pc-root" role="dialog" aria-modal="true" aria-label="ComfyTavern" data-pc-workbench="svelte" bind:this={root}>
+<div class="pc-root" role="dialog" aria-modal="true" aria-label="Lattice" data-pc-workbench="svelte" bind:this={root}>
     <Toolbar state={view} {actions} bind:this={toolbar} />
     <StatusBar status={view.status} {actions} bind:this={status} />
     <div class="pc-body">

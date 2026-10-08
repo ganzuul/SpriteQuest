@@ -1,4 +1,4 @@
-# ComfyTavern node families: existing nodes and proposed additions
+# Lattice node families: existing nodes and proposed additions
 
 Research date: October 7, 2026. Status: design discussion. The family names and display order are selected by the user; placements, operation contents, runtime changes, and priorities below remain proposals.
 
@@ -6,7 +6,7 @@ Research date: October 7, 2026. Status: design discussion. The family names and 
 
 Make the existing nodes easier to discover and identify the smallest additions that enable useful, approachable workflows. Use the selected families in order: **Input, Shaping, Surface, Transpose, Derive, Output**. Family order describes the catalog, not an execution sequence.
 
-Keep the [host-owned pre/post recommendation](2026-10-07-comfytavern-approachability-and-workflows.md): SillyTavern assembles its native prompt and generates the main reply; ComfyTavern prepares auxiliary guidance and optional revision candidates. The separate UI Performance task owns Svelte rendering. This document changes no product code or shared runtime interface.
+Keep the [host-owned pre/post recommendation](2026-10-07-lattice-approachability-and-workflows.md): SillyTavern assembles its native prompt and generates the main reply; Lattice prepares auxiliary guidance and optional revision candidates. The separate UI Performance task owns Svelte rendering. This document changes no product code or shared runtime interface.
 
 ## Existing nodes
 
@@ -17,7 +17,7 @@ The checked-out runtime declares eleven node types in [state.js](../../src/state
 | Prompt | Input | Keep its text, library binding, role, and macro behavior. It supplies material, even when that material is instructions or a style reference. Descriptive library entries can distinguish Instructions and Reference Text. |
 | SillyTavern prompt | Input | Keep as a source reference for auxiliary work. Explain missing or unresolved markers; it is not a faithful representation of the entire native prompt. Do not automatically feed a duplicated preset back into native guidance. |
 | Chat history | Input | Reuse count, skip, speaker/prose presentation, and existing wire filters. Offer convenient Current Message and Recent Conversation entries. A new immutable Completed Reply source has a different lifecycle contract. |
-| Injections | Input | Clarify that it reads selected context contributions. The current resolver reads marker sources; it does not publish ComfyTavern guidance. Availability and timing must be explained, particularly for world info and extension contributions. |
+| Injections | Input | Clarify that it reads selected context contributions. The current resolver reads marker sources; it does not publish Lattice guidance. Availability and timing must be explained, particularly for world info and extension contributions. |
 | Lorebook | Input | Reuse explicit selection, filters, limits, and local scanning where appropriate. The native host still owns its authoritative lore selection for the main reply. The current context collector performs a world-info scan; a host-owned mode must avoid repeating that scan merely to obtain a preview or early source snapshot. |
 | Memory | Input for reads; Output for saves | Reuse chat-local storage, save modes, and optional lorebook mirroring. Make Read Memory and Save Memory distinct intentions in the catalog/setup. Preserve existing combined nodes and Save-wire semantics until any versioned change is designed. This is not an adapter for arbitrary third-party memory systems. |
 | State | Input | Reuse computed values, stage text, and activation ports. It supplies workflow state such as energy or tension. Its rules and bookkeeping already exist; explain them rather than replacing the node. |
@@ -44,7 +44,7 @@ The model operation should support inspectable results and explicit failure beha
 
 ### Lifecycle changes
 
-The main missing primitives are a frozen completed-response source and explicit host outputs. A Completed Reply source identifies the chat, message, swipe, and source content used by the revision. Guidance owns only ComfyTavern's prompt keys and their lifetime. Apply Reply rechecks source identity and produces an explicitly accepted candidate, initially through manual review and a new swipe where supported.
+The main missing primitives are a frozen completed-response source and explicit host outputs. A Completed Reply source identifies the chat, message, swipe, and source content used by the revision. Guidance owns only Lattice's prompt keys and their lifetime. Apply Reply rechecks source identity and produces an explicitly accepted candidate, initially through manual review and a new swipe where supported.
 
 Existing Prompt Manager references and injection readers must not be mistaken for this lifecycle. The current [host hook](../../index.js) replaces `eventData.chat`; it is not already an additive guidance system. The existing [per-block preview and test](../../src/run.js) provide useful infrastructure, but do not establish dependency-aware partial execution or a post-reply pipeline.
 
@@ -115,7 +115,7 @@ A later Check Constraints recipe could flag changes to facts or instructions bet
 | Inspect Result | Expose an available artifact with its source run and model information | Reuse previews/tests where possible; extend recorded run inspection |
 | Compare | Show original and candidate together, with a textual difference view where useful | New result presentation/operation; no model request required |
 | Apply Reply | Accept a reviewed candidate against the same source reply | Primitive guarded host write, not a second main generation |
-| Save Memory | Persist selected content to ComfyTavern-owned memory or its explicitly selected lorebook mirror | Reuse storage primitives; make ownership and write timing explicit |
+| Save Memory | Persist selected content to Lattice-owned memory or its explicitly selected lorebook mirror | Reuse storage primitives; make ownership and write timing explicit |
 
 Reaching Output does not automatically modify chat or another extension's storage. Guidance and Apply Reply can add zero auxiliary model requests, but they have host effects. Compare and Inspect are read operations. Third-party writes and automatic revisions require their own tested policies.
 
@@ -241,7 +241,7 @@ The compound can reuse existing Generate and selection primitives, but needs new
 
 ## Evidence and open decisions
 
-The [turnkey-node recommendations](2026-10-07-comfytavern-turnkey-node-recommendations.md) extend this catalog with concrete community needs, ComfyUI/Gaea references, candidate compound behaviors, and an AI De-slop formation. These are proposed reusable operations rather than additional families or independently implemented model engines.
+The [turnkey-node recommendations](2026-10-07-lattice-turnkey-node-recommendations.md) extend this catalog with concrete community needs, ComfyUI/Gaea references, candidate compound behaviors, and an AI De-slop formation. These are proposed reusable operations rather than additional families or independently implemented model engines.
 
 This mapping is based on the checked-out declarations, default node settings, source resolvers, connection rules, existing wire filters, model preview/test functions, host prompt hook, memory/state modules, per-node connection controls, and the installed host's request/completion services. No paid generations, live-host compatibility trials, or product changes were performed for this discussion.
 

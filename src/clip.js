@@ -1,5 +1,5 @@
 /**
- * Silly Canvas — copy and paste.
+ * Lattice — copy and paste.
  *
  * A clip is a piece of a canvas: some blocks, the wires between them, and any
  * groups they came in. It travels as JSON text on the system clipboard, so it
@@ -10,9 +10,9 @@
  * silently fed the original's targets would send its text twice.
  */
 
-import { NODE_TYPES, uid, touchGraph } from './state.js?v=0.19.0';
+import { NODE_TYPES, uid, touchGraph } from './state.js?v=0.19.1';
 
-export const CLIP_MARK = 'sillyCanvasClip';
+export const CLIP_MARK = 'latticeClip';
 
 /** What is in memory if the browser will not let us use the clipboard. */
 let memory = null;
@@ -55,7 +55,7 @@ export function makeClip(graph, { nodeIds = [], groupIds = [] } = {}) {
 export function readClip(text) {
     let o;
     try { o = JSON.parse(String(text ?? '').trim()); } catch { return null; }
-    if (!o || o[CLIP_MARK] !== 1 || !Array.isArray(o.nodes)) return null;
+    if (!o || (o[CLIP_MARK] !== 1 && o.sillyCanvasClip !== 1) || !Array.isArray(o.nodes)) return null;
     o.wires = Array.isArray(o.wires) ? o.wires : [];
     o.groups = Array.isArray(o.groups) ? o.groups : [];
     o.origin ??= { x: 0, y: 0 };

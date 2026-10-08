@@ -20,7 +20,7 @@ The deletion, dynamic-refresh and context-menu-paste bugs predated the migration
 
 The reviewer also confirmed the keyed Svelte ownership boundary, camera fast path, unscaled geometry cache, incident-wire updates, production integration and explicit teardown. All twelve changed authoritative/support modules differed from the baseline only in version queries.
 
-The final source and regression checkpoint is `a1e2332402ff13b56ee95ee0b0fda6722e478f51` on `codex/svelte-ui-migration`. [Draft PR #1](https://github.com/MentallyQuill/ComfyTavern/pull/1) targets the user's fork `main`; the managed worktree is retained for review. The workflow chat received the stable commit and adapter contracts under the human's explicit coordination authorization. The [execution record](2026-10-07-svelte-ui-migration-execution.md) preserves the ledger before its temporary plan workspace is cleaned up.
+The final source and regression checkpoint is `a1e2332402ff13b56ee95ee0b0fda6722e478f51` on `codex/svelte-ui-migration`. [Draft PR #1](https://github.com/MentallyQuill/Lattice/pull/1) targets the user's fork `main`; the managed worktree is retained for review. The workflow chat received the stable commit and adapter contracts under the human's explicit coordination authorization. The [execution record](2026-10-07-svelte-ui-migration-execution.md) preserves the ledger before its temporary plan workspace is cleaned up.
 
 ## Final verification
 
@@ -45,4 +45,4 @@ These decisions retain their original execution order. Costs describe the practi
 9. Re-grade marquee wire-effect suppression as Important because expensive Neon filters remain active during the newly requested drag-box workflow. Cost: effects briefly disappear even during a stationary empty-canvas click; no timing improvement is asserted for this correction.
 10. Accept the reviewer's declined judgment on production providers/live SillyTavern writes: the approved verification contract uses a mock host and excludes real generation/chat mutations. Cost: host/provider integration issues may still require real-host validation.
 11. Accept the reviewer's declined judgment on universal performance: timings apply to the documented local fixtures, with deterministic scheduling/identity checks as the portable contract. Cost: other hardware or unusually complex graphs may still render slowly.
-12. Use the already-approved committed branch and draft-PR handoff on `MentallyQuill/ComfyTavern`, retaining the managed worktree. Cost: the draft can be closed if desired; shared `main` is not merged by this task.
+12. Use the already-approved committed branch and draft-PR handoff on `MentallyQuill/Lattice`, retaining the managed worktree. Cost: the draft can be closed if desired; shared `main` is not merged by this task.

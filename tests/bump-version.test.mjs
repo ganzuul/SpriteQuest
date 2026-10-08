@@ -3,7 +3,7 @@ import { mkdtempSync, mkdirSync, copyFileSync, writeFileSync, readFileSync } fro
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
-const root = mkdtempSync(join(tmpdir(), 'sillycanvas-version-test-'));
+const root = mkdtempSync(join(tmpdir(), 'lattice-version-test-'));
 mkdirSync(join(root, 'tools')); mkdirSync(join(root, 'src', 'canvas'), { recursive: true });
 copyFileSync(new URL('../tools/bump-version.mjs', import.meta.url), join(root, 'tools', 'bump-version.mjs'));
 writeFileSync(join(root, 'manifest.json'), JSON.stringify({ version: '0.1.0', js: 'index.js?v=0.1.0' }));

@@ -1,19 +1,23 @@
-# ComfyTavern
+# Lattice
+
+Previously named ComfyTavern. Update your existing installation to keep your saved workflows, library, settings, and themes; avoid installing a second enabled copy.
 
 **Optional guidance before a reply. Reviewed revisions after it.**
 
-ComfyTavern adds editable native workflows to SillyTavern. Use **Scene guidance** to propose direction while SillyTavern builds the main prompt and writes its normal reply, or **Reviewed AI De-slop** to prepare a revision you can compare and apply. Each model-backed operation can use its own fixed connection. Existing prompt-replacement canvases remain available in **Legacy · Replace prompt** mode.
+Lattice adds editable native workflows to SillyTavern. Use **Scene guidance** to propose direction while SillyTavern builds the main prompt and writes its normal reply, or **Reviewed AI De-slop** to prepare a revision you can compare and apply. Each model-backed operation can use its own fixed connection. Existing prompt-replacement canvases remain available in **Legacy · Replace prompt** mode.
+
+![Lattice's scene-guidance workflow with editable operations and model-role setup](docs/lattice-workbench.png)
 
 This fork builds on [Silly Canvas](https://github.com/Dulgadurbit/SillyCanvas) by [Dulgadurbit](https://github.com/Dulgadurbit). It preserves the original canvas engine, saved-data compatibility, and MIT attribution.
 
-## Install ComfyTavern
+## Install Lattice
 
 Native workflows are included on `main`. The steps below install the repository's default branch.
 
-Keep **one enabled copy**. If your current installation points to `Dulgadurbit/SillyCanvas`, disable that extension before installing this fork. The fork preserves saved-data compatibility, so two enabled copies would share the same data and generation hooks. Existing installations from `MentallyQuill/ComfyTavern` should use the update or branch-switch flow below.
+Keep **one enabled copy**. If your current installation points to `Dulgadurbit/SillyCanvas`, disable that extension before installing this fork. The fork preserves saved-data compatibility, so two enabled copies would share the same data and generation hooks. Existing installations from `MentallyQuill/Lattice` should use the update or branch-switch flow below.
 
 1. In SillyTavern, open **Extensions → Install extension**.
-2. Enter the repository URL `https://github.com/MentallyQuill/ComfyTavern`.
+2. Enter the repository URL `https://github.com/MentallyQuill/Lattice`.
 3. Leave **Branch or tag name (optional)** blank to install the default branch, `main`.
 4. Click **Install** (or **Install just for me**), then reload SillyTavern.
 
@@ -36,7 +40,7 @@ See [native workflow setup, portable examples, controls, costs, and troubleshoot
 
 The original canvas controls exactly which prompt material reaches the model, and in what order. The sections below describe that retained **Replace prompt** workflow. Legacy Chat Completion supports OpenAI, OpenRouter, Claude, Gemini and others; legacy Text Completion has had limited testing.
 
-![A legacy canvas with two planning passes, a fight detector, energy stages, and background cast memory](docs/canvas.png)
+![Lattice's legacy canvas with scene planning, world lore, scene notes, and energy stages](docs/canvas.png)
 
 ### What you can do with the legacy canvas
 
@@ -50,7 +54,7 @@ The original canvas controls exactly which prompt material reaches the model, an
 
 Switch it off and SillyTavern builds the prompt exactly as it always has.
 
-![The State editor: energy across the chat, with its stages, what is sent at any message, and a message tried before it is sent](docs/state-window.png)
+![Lattice's State editor showing energy across the chat, stage ranges, and the message preview controls](docs/state-window.png)
 
 ## Getting started with a legacy canvas
 
@@ -221,7 +225,7 @@ Each Generate block can use its own connection profile and model. The model box 
 
 While the blocks run, their answers appear at the bottom of the chat as folded lines, each labelled with the block that wrote it; click one to read it. When the reply arrives they move under it. In the extension settings, **Generate answers in the chat** can open them as they arrive instead, or hide them (they are still kept with the message). Open **What it was asked** on any answer to see the exact messages that block was sent.
 
-Generate blocks that don't depend on each other are sent at the same time. If your provider refuses that, ComfyTavern switches to one at a time and tells you. Answers that went out together are marked under the reply with a ⚡ badge naming the others.
+Generate blocks that don't depend on each other are sent at the same time. If your provider refuses that, Lattice switches to one at a time and tells you. Answers that went out together are marked under the reply with a ⚡ badge naming the others.
 
 ## Loops
 
@@ -263,7 +267,7 @@ A new Decider starts empty and does nothing until you choose **how it routes**:
 
 Several rules on one output can be joined with AND or OR, and any rule can be flipped with **NOT**. An AI question is only asked when nothing before it has already settled things.
 
-**Jev.** AI questions and AI sorting can be answered by [Jev](https://docs.typesafe.ai), TypeSafe's decision model, instead of a chat model: set **Answered by** to Jev. It answers with a probability (in about a tenth of a second, for a fraction of the cost), and you choose how sure it has to be. For AI sorting, each output gets its own probability in one call. Jev needs a TypeSafe API key (Extensions → ComfyTavern → Jev, where **Test Jev** checks it), and, because TypeSafe's API cannot be called straight from a web page, SillyTavern's CORS proxy: set `enableCorsProxy: true` in `config.yaml` and restart SillyTavern.
+**Jev.** AI questions and AI sorting can be answered by [Jev](https://docs.typesafe.ai), TypeSafe's decision model, instead of a chat model: set **Answered by** to Jev. It answers with a probability (in about a tenth of a second, for a fraction of the cost), and you choose how sure it has to be. For AI sorting, each output gets its own probability in one call. Jev needs a TypeSafe API key (Extensions → Lattice → Jev, where **Test Jev** checks it), and, because TypeSafe's API cannot be called straight from a web page, SillyTavern's CORS proxy: set `enableCorsProxy: true` in `config.yaml` and restart SillyTavern.
 
 **Keep what it decided.** Wire an output into a Memory block to save the decision (see Memory blocks).
 
@@ -273,7 +277,7 @@ Combine it with the wire modes: an **Activate** wire from an output switches a b
 
 ## Themes
 
-Click the palette button in the canvas header, or open the ComfyTavern section in the Extensions settings. Each built-in theme has its own look, not just its own colours:
+Click the palette button in the canvas header, or open the Lattice section in the Extensions settings. Each built-in theme has its own look, not just its own colours:
 
 | Theme | Look |
 |---|---|

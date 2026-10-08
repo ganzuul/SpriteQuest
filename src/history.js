@@ -1,5 +1,5 @@
 /**
- * Silly Canvas — undo and redo.
+ * Lattice — undo and redo.
  *
  * Every change to a canvas goes through touchGraph(), so this listens there
  * rather than asking each button to remember to record itself. It keeps

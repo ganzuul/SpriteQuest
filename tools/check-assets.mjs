@@ -13,10 +13,10 @@ for (const file of files) for (const match of readFileSync(file, 'utf8').matchAl
     assert.equal(match[2], `?v=${version}`, `version mismatch in ${file}: ${match[1]}`);
     assert.ok(existsSync(resolve(dirname(file), match[1])), `missing installed asset: ${match[1]}`);
 }
-const bundle = readFileSync(join(root, 'dist/silly-canvas-ui.js'), 'utf8');
+const bundle = readFileSync(join(root, 'dist/lattice-ui.js'), 'utf8');
 assert.ok(bundle.includes('mountCanvas'), 'canvas mount is exported');
 assert.ok(bundle.includes('mountWorkbench'), 'workbench mount is exported');
-const parsed = ts.createSourceFile('silly-canvas-ui.js', bundle, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+const parsed = ts.createSourceFile('lattice-ui.js', bundle, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
 function checkImports(node) {
     assert.ok(!ts.isImportDeclaration(node) && !(ts.isExportDeclaration(node) && node.moduleSpecifier)
         && !(ts.isCallExpression(node) && node.expression.kind === ts.SyntaxKind.ImportKeyword), 'compiled UI has no runtime imports or CDN dependency');

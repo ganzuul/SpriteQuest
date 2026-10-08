@@ -4,7 +4,7 @@ Research date: October 7, 2026. Status: recommendations for discussion, not impl
 
 ## Aim
 
-Give users useful operations that can be dropped into a workflow as one node, with sensible controls, while allowing inspection and customization of the primitive steps inside. Preserve [native SillyTavern ownership and the node-family boundaries](2026-10-07-comfytavern-node-family-catalog.md). Each internal model operation can use its own supported connection profile through the proposed shared routing contract.
+Give users useful operations that can be dropped into a workflow as one node, with sensible controls, while allowing inspection and customization of the primitive steps inside. Preserve [native SillyTavern ownership and the node-family boundaries](2026-10-07-lattice-node-family-catalog.md). Each internal model operation can use its own supported connection profile through the proposed shared routing contract.
 
 These recommendations combine community reports with verified tool behaviors. The text operations are design inferences, not demonstrated fixes or claims of quality parity with terrain/image algorithms. The research sample does not establish the most popular nodes by votes, installations, downloads, or current market share.
 
@@ -46,7 +46,7 @@ All eight SillyTavern thread bodies were opened. Calendar dates appeared in sear
 
 ## Transferable behaviors
 
-| Reference behavior | ComfyTavern adaptation |
+| Reference behavior | Lattice adaptation |
 | --- | --- |
 | Impact Pack detector plus detailer | Find a specific problem, then transform only the relevant material. Package those stages behind a useful operation. |
 | Crop and Stitch; regional conditioning | Select spans or fields, provide surrounding context, revise selected material, and restore it into the original artifact. |
@@ -83,13 +83,13 @@ The following twenty entries are a design pool. Related entries can be variants 
 | Derive | **Knowledge Map** | Derive what each actor has observed or learned, linking evidence and marking unknowns. Can feed viewpoint guidance. It cannot guarantee secrecy if the native writer still sees all underlying facts. | 1 |
 | Derive | **Memory Distiller** | Produce proposed event/entity records from selected conversation, deduplicate them, and attach source references. Distinguish established events, guesses, proposed futures, and retcons; save only through an explicit output. | 1 for one bounded batch |
 | Derive | **Style Fingerprint** | Derive a reusable style/voice brief from approved examples, separating vocabulary, sentence rhythm, dialogue, and situational exceptions. Simple statistics can accompany the brief. | 1 brief; 0 optional literal statistics |
-| Output | **Guidance** | Publish a bounded artifact into ComfyTavern-owned prompt keys with declared placement/lifetime and cleanup. SillyTavern still assembles and generates the main reply. | 0 |
+| Output | **Guidance** | Publish a bounded artifact into Lattice-owned prompt keys with declared placement/lifetime and cleanup. SillyTavern still assembles and generates the main reply. | 0 |
 | Output | **Review Gate** | Combine original/candidate comparison, available issue reports, source freshness, and an accept/reject choice. Apply only an accepted candidate against its source identity; no hidden judge request. | 0; a model judge is a separate option |
-| Output | **Memory Commit** | Save explicitly selected records to ComfyTavern-owned memory or a selected supported lorebook mirror. Respect source/settlement rules; do not assume adapters to other extensions' stores. | 0 |
+| Output | **Memory Commit** | Save explicitly selected records to Lattice-owned memory or a selected supported lorebook mirror. Respect source/settlement rules; do not assume adapters to other extensions' stores. | 0 |
 
 Start with AI De-slop, Repetition Breaker, Next Beat, Voice Match, Continuity Audit, and Review Gate, backed by the required source and Guidance primitives. They express concrete value and span the selected families. Perspective Mixer, richer knowledge modeling, broad adapters, and map/collect pipelines can follow demonstrated demand rather than inflate the initial release.
 
-The [Smart Compactor discussion](2026-10-07-comfytavern-node-family-catalog.md) gives the former Context Distiller candidate concrete controls and distinguishes semantic compaction from existing output caps and whole-entry selection.
+The [Smart Compactor discussion](2026-10-07-lattice-node-family-catalog.md) gives the former Context Distiller candidate concrete controls and distinguishes semantic compaction from existing output caps and whole-entry selection.
 
 ## AI De-slop as the first compound example
 

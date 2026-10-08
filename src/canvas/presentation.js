@@ -1,5 +1,5 @@
-import { operationFor } from '../workflow/catalog.js?v=0.19.0';
-import { NODE_TYPES, deciderKeys, outPorts, hasPorts, inOffGroup } from '../state.js?v=0.19.0';
+import { operationFor } from '../workflow/catalog.js?v=0.19.1';
+import { NODE_TYPES, deciderKeys, outPorts, hasPorts, inOffGroup } from '../state.js?v=0.19.1';
 const took = (chosen, id) => Array.isArray(chosen) ? chosen.includes(id) : chosen === id;
 const ROUTING_WORDS = { all: 'every output that matches fires', first: 'the first output that matches fires', random: 'a weighted random pick', ai: 'the AI picks the outputs that apply' };
 const routingOf = node => node.mode === null || node.mode === '' ? null : node.mode === undefined || node.mode === 'rules' ? 'first' : ROUTING_WORDS[node.mode] ? node.mode : 'first';

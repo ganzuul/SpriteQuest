@@ -1,4 +1,4 @@
-# Gaea reference for ComfyTavern workflow discovery
+# Gaea reference for Lattice workflow discovery
 
 Research date: October 7, 2026. Status: reference research with user-selected family names; family contents and behavior remain proposals, not an approved UI or runtime implementation spec.
 
@@ -8,7 +8,7 @@ The user wants a toolbox whose vertically ordered families suggest how to build 
 
 The user selected these exact one-word family names, in this order: **Input, Shaping, Surface, Transpose, Derive, Output**. Technical wording is acceptable. Keep short descriptions and descriptive operation names available to explain each family's purpose.
 
-Keep the current [host-owned pre/post workflow recommendation](2026-10-07-comfytavern-approachability-and-workflows.md). Organizing the library does not require taking over SillyTavern's prompt assembler. The separate UI Performance task owns the Svelte migration; this document proposes discovery behavior and metadata for later coordination.
+Keep the current [host-owned pre/post workflow recommendation](2026-10-07-lattice-approachability-and-workflows.md). Organizing the library does not require taking over SillyTavern's prompt assembler. The separate UI Performance task owns the Svelte migration; this document proposes discovery behavior and metadata for later coordination.
 
 ## What the references establish
 
@@ -32,7 +32,7 @@ Utility
 
 The [current node-family reference](https://docs.gaea.app/reference/nodes/) also lists Macro. It describes families in terms of the task a user wants to perform. This supports the user's recollection of a catalog that roughly follows a construction process. Utility and reusable components are cross-cutting tools, so the catalog is not a mandatory sequence.
 
-The [nested toolbox screenshot](https://docs.gaea.app/.data/ui/interface/graph/toolbox-and-search/gaea-untitled-02.webp) shows a family opening subcategories and then a list of individual operations. It is a rail with nested menus, rather than evidence of a literal accordion-drawer interface. ComfyTavern can adapt the family idea into drawers if that is clearer for its audience.
+The [nested toolbox screenshot](https://docs.gaea.app/.data/ui/interface/graph/toolbox-and-search/gaea-untitled-02.webp) shows a family opening subcategories and then a list of individual operations. It is a rail with nested menus, rather than evidence of a literal accordion-drawer interface. Lattice can adapt the family idea into drawers if that is clearer for its audience.
 
 Gaea's [graph documentation](https://docs.gaea.app/ui/interface/graph/index.html) describes graph flow as left to right. The vertical ordering belongs to the toolbox; copying it does not require a vertical execution graph.
 
@@ -48,7 +48,7 @@ Gaea's [starter guide](https://docs.gaea.app/using/getting-started/index.html) t
 
 [Macro authoring](https://docs.gaea.app/developers/extensibility/macros/building-macros.html) describes packaging a graph behind named ports and exposed controls, with export metadata and installation. The [2.3 release announcement](https://blog.quadspinner.com/gaea-2-3-now-available/) confirms Macros as an introduced feature, despite the authoring page retaining older scheduled wording. Its [Macro guidance](https://docs.gaea.app/developers/extensibility/macros/best-practices.html) emphasizes meaningful names, parameter compatibility, and export/reload validation.
 
-This is a useful reference for ComfyTavern components: a simple control surface can represent a reusable, inspectable workflow. It requires a component contract beyond today's copied node groups.
+This is a useful reference for Lattice components: a simple control surface can represent a reusable, inspectable workflow. It requires a component contract beyond today's copied node groups.
 
 ### Small adjustments and focused inspection
 
@@ -62,7 +62,7 @@ QuadSpinner's [Gaea 3 page](https://www.quadspinner.com/Gaea3) currently describ
 
 I inspected its official [Command Bar image](https://cdn.gaea.app/web2026/img/gaea3/command-bar.png) and [toolbar image](https://cdn.gaea.app/web2026/img/gaea3/Toolbar_Contents%402x.png). They support search across different item kinds and compact graph controls. They do not establish a finalized Gaea 3 family hierarchy. Use the documented Gaea 2 toolbox for that concrete reference, and treat Gaea 3 material as evolving inspiration. The official page also links an Early Access preview video; this research did not watch or test it.
 
-## Selected ComfyTavern families and proposed contents
+## Selected Lattice families and proposed contents
 
 ### User-supplied node-building video
 
@@ -77,13 +77,13 @@ The [Gaea 2 clip supplied by the user](https://cdn.gaea.app/web2025/mp4/Gaea_Web
 
 The persistent family rail, compact graph, large result preview, and separate property panel remain visible. The clip supports studying construction and feedback together. It is promotional material, not a latency benchmark or proof of every mouse/keyboard gesture.
 
-For ComfyTavern, use this to explore an **Add next step** action near a node or connection, with phase/type-compatible suggestions, a visible insertion preview, and an inspector that edits the chosen operation. Preserve a result panel while users build the chain. These are proposed adaptations; the video does not establish how LLM costs, execution, or chat commits should work.
+For Lattice, use this to explore an **Add next step** action near a node or connection, with phase/type-compatible suggestions, a visible insertion preview, and an inspector that edits the chosen operation. Preserve a result panel while users build the chain. These are proposed adaptations; the video does not establish how LLM costs, execution, or chat commits should work.
 
 ### Translating terrain language into writing operations
 
 The user's [Crafting the Surface reference](https://docs.gaea.app/using/using-gaea/crafting-the-surface/index.html) adds a useful distinction: establish the broad form, then work on its surface character. The linked [Surface Nodes guide](https://docs.gaea.app/using/using-gaea/crafting-the-surface/surface-nodes.html) separates overall volume from surface treatment. [Transpose Shapes](https://docs.gaea.app/using/using-gaea/crafting-the-surface/transpose-shapes.html) describes transferring surface character from a reference terrain onto a target while preserving the target's volume.
 
-For ComfyTavern, the proposed analogy is **content and intent versus expression**. A response plan can describe events, facts, character intentions, and constraints. A style pass can work on voice, rhythm, diction, imagery, or dialogue. These can be separate, inspectable artifacts rather than one opaque instruction block.
+For Lattice, the proposed analogy is **content and intent versus expression**. A response plan can describe events, facts, character intentions, and constraints. A style pass can work on voice, rhythm, diction, imagery, or dialogue. These can be separate, inspectable artifacts rather than one opaque instruction block.
 
 Use the user's selected one-word family names. The following purpose descriptions and example operations are proposed contents for those families:
 
@@ -98,7 +98,7 @@ Use the user's selected one-word family names. The following purpose description
 
 These are analogies, not a one-to-one terrain taxonomy or guarantees of equivalent behavior. A model can alter facts during a stylistic rewrite. An Apply Style operation should expose the original, reference, candidate, and preservation instructions, with comparison before acceptance. A later checker can flag differences; its result is another assessment, not proof that meaning is unchanged.
 
-A style reference can also guide the native writer before generation. For example, a reusable style brief can feed ComfyTavern's named guidance alongside a response plan; after generation, a reference-guided revision can be an optional separate branch. Neither use requires decomposing the entire SillyTavern preset or replacing native prompt assembly.
+A style reference can also guide the native writer before generation. For example, a reusable style brief can feed Lattice's named guidance alongside a response plan; after generation, a reference-guided revision can be an optional separate branch. Neither use requires decomposing the entire SillyTavern preset or replacing native prompt assembly.
 
 Family labels stay technical and one word; operation labels can be descriptive, such as Response Plan, Apply Style, Extract Facts, and Compare Results. The proposed distinction between **Surface** and **Transpose** is expression adjustment versus reference-guided adaptation: Improve Dialogue belongs under Surface, while Apply Reference Style belongs under Transpose. Descriptions and search synonyms can explain this without changing the chosen labels.
 
@@ -143,7 +143,7 @@ Model selection belongs in the operation's setup or inspector. It does not need 
 
 ### Adapt Gaea's conveniences deliberately
 
-| Reference pattern | ComfyTavern proposal |
+| Reference pattern | Lattice proposal |
 | --- | --- |
 | Family rail and nested menus | Labeled expandable shelves, with icons/colors as secondary cues; add subfamilies when the catalog warrants them |
 | Search and creation beside a connection | Suggest operations compatible with the selected port and phase; use deterministic compatibility rules first |
@@ -153,7 +153,7 @@ Model selection belongs in the operation's setup or inspector. It does not need 
 | Modifier Stack | Compact deterministic text/data adjustments with inspectable order; keep model requests and writes visible |
 | Focused preview | Pin an artifact or comparison panel while editing; show its source run and whether it is stale |
 
-ComfyTavern should not copy automatic terrain recomputation into paid model execution. Editing settings can refresh deterministic previews and invalidate old results; executing a model stage remains an explicit action or part of an enabled chat workflow. Do not assume that a matching input makes a fresh model result deterministic.
+Lattice should not copy automatic terrain recomputation into paid model execution. Editing settings can refresh deterministic previews and invalidate old results; executing a model stage remains an explicit action or part of an enabled chat workflow. Do not assume that a matching input makes a fresh model result deterministic.
 
 Suggested stage recommendations do not need a learning system in the first delivery. Allowed input types, phase, and a small curated successor list can provide understandable next-step suggestions. Favorites and recent items can make frequent choices quick without a larger prediction subsystem.
 
@@ -163,7 +163,7 @@ The user's attached Gaea screenshot shows Refresh, Reset, Rename, Duplicate, Byp
 
 The useful design principle is that the graph offers ways to experiment with a stage where it sits, alongside the library used to create it. Proposed adaptations:
 
-| Reference action | ComfyTavern action | Proposed behavior |
+| Reference action | Lattice action | Proposed behavior |
 | --- | --- | --- |
 | Lock Preview | **Pin result** | Keep a selected run artifact in the result panel; show its run and freshness |
 | Use as Underlay | **Use as comparison baseline** | Compare a selected artifact with another result; selecting a baseline makes no model request |
@@ -183,7 +183,7 @@ The current checked-out fork already implements Copy, Save to library, Duplicate
 
 **Inspection comes before rerunning.** Add access to available inputs, the constructed auxiliary request, returned output, profile, errors, and available usage/timing information. Missing traces should be labeled unavailable rather than reconstructed as if captured. A pinned artifact is not frozen computation. Editing inputs or rerunning a stage can make dependent artifacts stale; selecting a preview must not trigger a paid call or install guidance, save memory, or apply a reply. Dependency-aware partial reruns require a runtime contract and are not a simple menu-only change.
 
-**Chokepoints are routing, not saved execution checkpoints.** Gaea's [Chokepoint reference](https://docs.gaea.app/reference/nodes/utility/chokepoint.html) describes a neutral junction that lets users change one upstream connection while keeping downstream consumers wired. ComfyTavern examples could be Shared Context, Response Plan, or Style Brief. This concept does not imply caching, persistence, or resume support. Keep it and named connections as later complexity tools unless starter workflows demonstrate a concrete need.
+**Chokepoints are routing, not saved execution checkpoints.** Gaea's [Chokepoint reference](https://docs.gaea.app/reference/nodes/utility/chokepoint.html) describes a neutral junction that lets users change one upstream connection while keeping downstream consumers wired. Lattice examples could be Shared Context, Response Plan, or Style Brief. This concept does not imply caching, persistence, or resume support. Keep it and named connections as later complexity tools unless starter workflows demonstrate a concrete need.
 
 For approachability, make the same applicable actions available from a visible node menu button and the inspector, with keyboard access. Common actions can remain near the top, with inspection and advanced operations grouped below. Show checked states for bypass/bookmarks, and explain unavailable actions. Reuse framework-independent commands and capability checks in all entry points. Graph-edit undo should not imply that paid calls or external writes can be undone.
 
@@ -197,6 +197,6 @@ This is a candidate interface for coordination, not a newly approved registry or
 
 ## Evidence limits and next design discussion
 
-I reviewed official documentation and release material, including the user's surface-crafting guide and its Surface Nodes and Transpose Shapes links; visually inspected five published UI images and the user's node-menu screenshot; and inspected timeline samples and detailed frames from the user's Gaea 2 video. I also read the checked-out fork's existing context menu and relevant disabled-node compilation paths. I did not run Gaea 2/3, verify every convenience in an installed build, or inspect a finalized Gaea 3 toolbox. No ComfyTavern product code or UI Performance files changed.
+I reviewed official documentation and release material, including the user's surface-crafting guide and its Surface Nodes and Transpose Shapes links; visually inspected five published UI images and the user's node-menu screenshot; and inspected timeline samples and detailed frames from the user's Gaea 2 video. I also read the checked-out fork's existing context menu and relevant disabled-node compilation paths. I did not run Gaea 2/3, verify every convenience in an installed build, or inspect a finalized Gaea 3 toolbox. No Lattice product code or UI Performance files changed.
 
-The family names and display order are now selected. The [node-family catalog discussion](2026-10-07-comfytavern-node-family-catalog.md) maps existing nodes, identifies presentation versus runtime changes, and proposes candidate operations and two starter workflows. Their contents and priorities remain proposals. A small library mockup can then test drawer expansion, search, descriptions, and phase-aware suggestions without committing to a broader editor redesign.
+The family names and display order are now selected. The [node-family catalog discussion](2026-10-07-lattice-node-family-catalog.md) maps existing nodes, identifies presentation versus runtime changes, and proposes candidate operations and two starter workflows. Their contents and priorities remain proposals. A small library mockup can then test drawer expansion, search, descriptions, and phase-aware suggestions without committing to a broader editor redesign.

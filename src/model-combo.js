@@ -1,5 +1,5 @@
 /**
- * Silly Canvas — a model picker you can search.
+ * Lattice — a model picker you can search.
  *
  * Providers such as OpenRouter offer hundreds of models, and a plain <select>
  * makes you scroll for them. This is one text box: click it and the whole

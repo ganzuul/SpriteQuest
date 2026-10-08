@@ -1,17 +1,17 @@
-# ComfyTavern native workflows design
+# Lattice native workflows design
 
 Status: implementation design, consolidated from the user's approved discussions. The user authorized specification, independent review, planning, implementation, UI Performance coordination, and bounded live NanoGPT tests overnight. Intermediate document approvals are already covered by that authorization.
 
 ## Product outcome
 
-An unfamiliar user can choose a working example, bind its model roles to SillyTavern connections, inspect its graph, and run it. SillyTavern assembles the main prompt and generates one ordinary reply. ComfyTavern supplies optional guidance beforehand and a separately reviewed revision afterward. Existing prompt-replacement canvases retain their current behavior.
+An unfamiliar user can choose a working example, bind its model roles to SillyTavern connections, inspect its graph, and run it. SillyTavern assembles the main prompt and generates one ordinary reply. Lattice supplies optional guidance beforehand and a separately reviewed revision afterward. Existing prompt-replacement canvases retain their current behavior.
 
 Two supported examples ship first:
 
 1. Scene Context → Smart Compactor → Response Plan → Guidance.
 2. Reply Snapshot → Pattern Scan → Repair → Validate Patches → Review Gate → Apply Reply. The middle three operations form the inspectable, versioned **AI De-slop** group.
 
-This release does not build a complete prompt converter, take over external memory, or implement the entire twenty-node research pool. [Research and future candidates](../../research/2026-10-07-comfytavern-turnkey-node-recommendations.md) remain design references.
+This release does not build a complete prompt converter, take over external memory, or implement the entire twenty-node research pool. [Research and future candidates](../../research/2026-10-07-lattice-turnkey-node-recommendations.md) remain design references.
 
 ## Families and discovery
 
@@ -42,7 +42,7 @@ Native wires explicitly connect upstream artifacts to downstream operations. The
 
 The AI De-slop formation is actual primitive nodes/wires in the saved graph, with group component ID/version and stable entry/exit IDs. Its collapsed presentation and exposed settings edit those same nodes. Expand/open the formation for inspection/customization. Definition updates never silently change saved instances. Arbitrary nested components and multi-port group authoring are deferred; do not claim this first formation is an unrestricted plugin framework.
 
-Portable JSON uses a versioned ComfyTavern workflow envelope containing the complete graph/formation, template identity, required role names, and minimum runtime. Export omits bound profile IDs and credentials. Import parses and preflights everything before changing settings; role bindings start unresolved and display setup. Continue accepting legacy `.canvas.json` envelopes/raw schema-1 graphs. Unsupported versions/dependencies produce actionable errors rather than half-imported graphs or empty prompts.
+Portable JSON uses a versioned Lattice workflow envelope containing the complete graph/formation, template identity, required role names, and minimum runtime. Export omits bound profile IDs and credentials. Import parses and preflights everything before changing settings; role bindings start unresolved and display setup. Continue accepting legacy `.canvas.json` envelopes/raw schema-1 graphs. Unsupported versions/dependencies produce actionable errors rather than half-imported graphs or empty prompts.
 
 ## Runtime contracts
 
@@ -77,7 +77,7 @@ Pass inputs already within budget unchanged and without a request. Reserve pinne
 
 Response Plan uses a compact, node-owned prompt to propose scene direction, actor intentions, constraints, and optional next beats without asserting those proposals happened. Expose purpose/initiative instructions and preserve user agency. Its output is derived guidance, not established lore.
 
-Run preprocessing through the supported generation interceptor before native budgeting, using a snapshot of chat/character/explicitly available material. Do not call `gatherContext`/world-info scanning just to construct this snapshot; do not claim it is the final native prompt. Publish only ComfyTavern-owned prompt keys, bounded to the configured guidance budget (default **768 artifact tokens**), with declared role/position/depth. Guidance does not participate in lore scanning by default. Clear own keys on next run, failure, abort, chat switch, generation stop/end, and unload where supported. Ignore quiet/background/internal and dry-run generations. No replacement of `CHAT_COMPLETION_PROMPT_READY` or text-completion prompts in native mode. One host send produces one native reply. Legacy replacement hooks remain gated to legacy mode.
+Run preprocessing through the supported generation interceptor before native budgeting, using a snapshot of chat/character/explicitly available material. Do not call `gatherContext`/world-info scanning just to construct this snapshot; do not claim it is the final native prompt. Publish only Lattice-owned prompt keys, bounded to the configured guidance budget (default **768 artifact tokens**), with declared role/position/depth. Guidance does not participate in lore scanning by default. Clear own keys on next run, failure, abort, chat switch, generation stop/end, and unload where supported. Ignore quiet/background/internal and dry-run generations. No replacement of `CHAT_COMPLETION_PROMPT_READY` or text-completion prompts in native mode. One host send produces one native reply. Legacy replacement hooks remain gated to legacy mode.
 
 Support normal, swipe, regenerate, and continue host generations; ignore impersonate and quiet. Use the host-supplied interceptor chat as-is: it already excludes the swipe/regenerate target where appropriate. Manual pre **Test workflow** computes an inspectable result without installing prompt guidance; sending later runs the enabled pre workflow again. Label this clearly with its request bound so testing does not imply cached reuse.
 
@@ -89,7 +89,7 @@ Reply Snapshot captures the explicitly selected/latest completed assistant reply
 
 Repair receives the frozen draft, allowed indexed spans, nearby context, rules/exemptions, and optional voice constraints. All ranges are half-open UTF-16 offsets into the frozen original. Normalize candidate edit ranges within the selected scope first: merge overlapping/adjacent ranges, sort by source offset, then assign stable indices. Distinct indices must never overlap; findings can still overlap without granting duplicate edit regions. It requests JSON patches for selected spans using one Prose call. Validate Patches rejects invalid JSON, duplicate/unknown span indices, changes outside the declared selection, removed protected literal content, blank replacements, and cut-off outputs. Unselected text is restored byte-for-byte from the original. Failure preserves the original and offers a useful report; do not fall back to unrestricted whole-reply rewriting. Literal scan-only is a zero-call path.
 
-Review Gate shows original/candidate, findings, changes, profile, usage, and source freshness. Accept/Apply is explicit. Recheck chat, message, swipe and source content immediately before mutation, and reject stale candidates. Apply as a new assistant swipe where the supported host API permits, preserving the original; emit the appropriate host update/save events without recursively triggering ComfyTavern. A failed apply must not claim acceptance. Report that other memory extensions may already have consumed the original; edit/swipe events do not guarantee re-extraction. No automatic external memory repair or arbitrary extension store writes.
+Review Gate shows original/candidate, findings, changes, profile, usage, and source freshness. Accept/Apply is explicit. Recheck chat, message, swipe and source content immediately before mutation, and reject stale candidates. Apply as a new assistant swipe where the supported host API permits, preserving the original; emit the appropriate host update/save events without recursively triggering Lattice. A failed apply must not claim acceptance. Report that other memory extensions may already have consumed the original; edit/swipe events do not guarantee re-extraction. No automatic external memory repair or arbitrary extension store writes.
 
 Initial host application supports the latest completed assistant reply only. If the target is older or generation is in progress, report the unsupported/busy state without redirecting to a different message. Track in-memory application separately from save status: this host's save wrapper can resolve after logging a network failure, so it provides no positive durability acknowledgment. Preserve original swipe metadata and attach revision provenance to the new swipe.
 

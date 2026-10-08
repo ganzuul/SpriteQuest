@@ -5,7 +5,7 @@ import { join, resolve, extname, sep } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 const root = fileURLToPath(new URL('../', import.meta.url));
-const install = await mkdtemp(join(tmpdir(), 'sillycanvas-install-'));
+const install = await mkdtemp(join(tmpdir(), 'lattice-install-'));
 for (const name of ['manifest.json', 'index.js', 'style.css', 'LICENSE', 'THIRD_PARTY_NOTICES.md', 'src', 'dist']) await cp(join(root, name), join(install, name), { recursive: true });
 // Only the host mock accompanies the install; no developer UI source or dependencies.
 await mkdir(join(install, 'tests', 'browser'), { recursive: true });
@@ -61,7 +61,7 @@ try {
         const publicHelpers = !helpers.isGenerating() && helpers.syncMesToSwipe(index) && message.swipe_info[0].extra.preserved === true && message.swipe_info[0].send_date === 1 && helpers.syncSwipeToMes(index, 1) && message.mes === 'Synthetic revision' && message.extra.revised === true && !helpers.syncMesToSwipe(index + 1) && !helpers.syncSwipeToMes(index, 9);
         context.chat.pop();
         const node = S.addNode(graph, 'prompt', 40, 40); canvas.render(); canvas.select({ kind: 'node', id: node.id });
-        UI.close(); window.sillyCanvas.open(); await settle();
+        UI.close(); window.lattice.open(); await settle();
         return { publicHelpers, mounted: root === document.querySelector('.pc-root'), sharedGraph: graph === window.canvasHarness.graph,
             launchers: !!document.getElementById('pc-sendbar') && !!document.getElementById('pc-menu-launch'), workbench: root.dataset.pcWorkbench,
             output: !!root.querySelector('.pc-node-output'), node: !!root.querySelector(`[data-id="${node.id}"]`) };

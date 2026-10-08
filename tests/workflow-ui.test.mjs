@@ -3,7 +3,7 @@ import { installMock } from './mock.js';
 installMock({ settings: { graphs: {} } });
 const starters = await import('../src/workflow/starters.js').catch(() => ({}));
 assert.equal(typeof starters.installStarter, 'function', 'users can install a native starter');
-const S = await import('../src/state.js?v=0.19.0');
+const S = await import('../src/state.js?v=0.19.1');
 const before = structuredClone(S.settings());
 const pre = starters.installStarter('native-guidance', S.settings());
 const second = starters.installStarter('native-guidance', S.settings());

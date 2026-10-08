@@ -1,14 +1,22 @@
 # Native workflows
 
-ComfyTavern can add guidance before SillyTavern writes its normal reply, or prepare a revision for you to review afterward. SillyTavern still builds the main prompt and generates the reply. The existing canvas engine remains available as **Legacy · Replace prompt**.
+## Updating from ComfyTavern
+
+Lattice is the new name for this extension. The repository is now `MentallyQuill/Lattice`; GitHub redirects the former repository address. Update the existing extension in **Manage Extensions** and reload rather than installing another enabled copy. Existing settings, chat assignments, saved canvases, and library material remain in the same storage.
+
+New workflow exports use `lattice-workflow`. Lattice still imports `comfytavern-workflow` packages and legacy canvas JSON. Newly shared themes and clipboard material use Lattice identifiers, while previously shared Silly Canvas themes and clips remain importable. New Lattice exports require Lattice to import them.
+
+For integrations, the browser API is `window.lattice` and the generation hook is `latticeGenerationInterceptor`. The previous browser API and hook names remain aliases. The original Silly Canvas attribution and licenses are retained.
+
+Lattice can add guidance before SillyTavern writes its normal reply, or prepare a revision for you to review afterward. SillyTavern still builds the main prompt and generates the reply. The existing canvas engine remains available as **Legacy · Replace prompt**.
 
 Native workflows are included on `main`. Install from the repository's default branch using the steps below.
 
 ## Start with an example
 
-Keep **one enabled copy**. If your current installation points to `Dulgadurbit/SillyCanvas`, disable that extension before installing this fork. The fork preserves saved-data compatibility, so two enabled copies would share the same data and generation hooks. Existing installations from `MentallyQuill/ComfyTavern` should use the update or branch-switch flow below.
+Keep **one enabled copy**. If your current installation points to `Dulgadurbit/SillyCanvas`, disable that extension before installing this fork. The fork preserves saved-data compatibility, so two enabled copies would share the same data and generation hooks. Existing installations from `MentallyQuill/Lattice` should use the update or branch-switch flow below.
 
-1. Open SillyTavern's **Extensions → Install extension**. Enter repository URL `https://github.com/MentallyQuill/ComfyTavern`, leave **Branch or tag name (optional)** blank to install `main`, click **Install** (or **Install just for me**), then reload. Open the canvas beside Send or with `/canvas`.
+1. Open SillyTavern's **Extensions → Install extension**. Enter repository URL `https://github.com/MentallyQuill/Lattice`, leave **Branch or tag name (optional)** blank to install `main`, click **Install** (or **Install just for me**), then reload. Open the canvas beside Send or with `/canvas`.
 2. Open the library and choose **Install Scene guidance** or **Install Reviewed AI De-slop**. Each install creates its own editable graph and opens setup. Installing, importing, and editing never arm generation or make a model call.
 3. Choose a SillyTavern Connection Manager profile for each role: **Analysis** for scene guidance, **Prose** for repair. An optional role model override uses that model with the chosen profile. Inspect a model operation to override its connection/model independently.
 4. Use **Assign pre phase and enable native mode** for guidance, or **Assign post phase and enable native mode** for reviewed repair. Arming is a separate action. A missing/deleted profile or unsupported route blocks the run with a useful issue.
@@ -18,7 +26,7 @@ For an existing installation from this same repository on `main`, update it in *
 
 **Test workflow can spend model tokens.** It computes guidance without publishing it. A later Send runs the enabled pre workflow again, with up to two more auxiliary requests; the test result is not cached for Send.
 
-Connections stay fixed to your bindings; ComfyTavern does not activate a profile globally. Auxiliary requests contain the operation's own instructions and supplied context. They use the bound profile's route and sampler preset, without copying the native main prompt's system text into every request. Credentials stay in SillyTavern's secret store.
+Connections stay fixed to your bindings; Lattice does not activate a profile globally. Auxiliary requests contain the operation's own instructions and supplied context. They use the bound profile's route and sampler preset, without copying the native main prompt's system text into every request. Credentials stay in SillyTavern's secret store.
 
 ## Two graphs
 
@@ -59,7 +67,7 @@ Apply reports local in-memory success separately from persistence. The host's sa
 
 ## Share JSON
 
-The complete portable examples are [native-guidance.json](../workflows/native-guidance.json) and [reviewed-de-slop.json](../workflows/reviewed-de-slop.json). Download one and use the canvas's JSON import control. Export uses a versioned `comfytavern-workflow` envelope with a schema-2 graph and minimum runtime; it omits bound profile IDs and credentials. Imported roles need local setup before running.
+The complete portable examples are [native-guidance.json](../workflows/native-guidance.json) and [reviewed-de-slop.json](../workflows/reviewed-de-slop.json). Download one and use the canvas's JSON import control. Export uses a versioned `lattice-workflow` envelope with a schema-2 graph and minimum runtime; it omits bound profile IDs and credentials. Imported roles need local setup before running.
 
 Do not paste API keys into workflow JSON, instructions, or model overrides. Unsupported package versions, dependencies, graph cycles, incompatible artifacts, and dangling wires are rejected before settings change. Existing `.canvas.json` packages and raw schema-1 canvases remain supported in legacy mode.
 

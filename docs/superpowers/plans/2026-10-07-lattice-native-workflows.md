@@ -1,4 +1,4 @@
-# ComfyTavern Native Workflows Implementation Plan
+# Lattice Native Workflows Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -8,7 +8,7 @@
 
 **Tech Stack:** Existing unbundled JavaScript/JSDoc, Svelte 5/TypeScript projections, Node 24+, existing Node/jsdom and Playwright tests; no new runtime dependencies.
 
-**Spec:** [Native workflows design](../specs/2026-10-07-comfytavern-native-workflows-design.md).
+**Spec:** [Native workflows design](../specs/2026-10-07-lattice-native-workflows-design.md).
 
 ## Global Constraints
 
@@ -56,7 +56,7 @@ assert.deepEqual(validateWorkflow(graph).data.orderedNodes.map(n => n.id),
 ```
 
 - [x] Incrementally red/green invalid cycle, dangling wire, wrong phase/kind, unknown operation/runtime, ambiguous input, disabled operation, invalid numbers and missing terminal. Validate all nodes/settings in package, then reachable execution; reject prototype-bearing/oversized malformed data safely. Bounds/roles derive from descriptors, not positions.
-- [x] Add portable round-trip tests: preserve complete graph/formation and group entry/exit; remove bound profile IDs from roles and nodes; retain role names/model preference; reject unknown package versions before settings mutation. Implement envelope `{kind:'comfytavern-workflow',schema:1,minRuntime:1,graph}`. `parseWorkflow` performs no host mutations.
+- [x] Add portable round-trip tests: preserve complete graph/formation and group entry/exit; remove bound profile IDs from roles and nodes; retain role names/model preference; reject unknown package versions before settings mutation. Implement envelope `{kind:'lattice-workflow',schema:1,minRuntime:1,graph}`. `parseWorkflow` performs no host mutations.
 - [x] Add a legacy JSON regression and a failing clipboard entry/exit remap regression; fix only the identified remap problem. Default operation is Scene Context; default native role bindings are unresolved.
 - [x] Run `node tools/test-all.mjs workflow-contracts clip state wiring`, then `npm.cmd test`; self-review and commit `feat(workflows): add portable native graph contracts`.
 
@@ -138,7 +138,7 @@ assert.equal(otherExtensionGuidance(), 'keep');
 
 ## Task 6: Live acceptance, documentation, release review and draft PR
 
-**Files:** Create `tools/live-workflow-test.mjs`, `docs/native-workflows.md`, `docs/superpowers/reviews/2026-10-07-comfytavern-native-workflows.md`; modify README/help/manifest/cache versions only as needed for release consistency. Test live harness control boundaries with `tests/live-workflow-harness.test.mjs` (no credentials).
+**Files:** Create `tools/live-workflow-test.mjs`, `docs/native-workflows.md`, `docs/superpowers/reviews/2026-10-07-lattice-native-workflows.md`; modify README/help/manifest/cache versions only as needed for release consistency. Test live harness control boundaries with `tests/live-workflow-harness.test.mjs` (no credentials).
 
 **Interfaces:** Harness explicitly opt-in, target host URL and allowlisted model IDs, max8 attempts/max4096 output, sessions/CSRF in memory, existing secret reference only. It calls production request/runtime modules against synthetic fixtures via host-backed service; label backend harness versus real browser request-service evidence separately.
 
@@ -152,4 +152,4 @@ assert.equal(otherExtensionGuidance(), 'keep');
 
 Each spec area maps to a task: discovery/first use/formation (5), persistence/ordering/import (1), connections/compaction (2), scoped repair (3), generation/review lifecycle (4), release/live evidence (6). Interfaces above use `modelRole` consistently and retain exact phase/artifact names. Every Review Focus condition has a owning regression step. Independent specification review may amend the plan before execution; record changes in the plan ledger.
 
-Delivery: [draft PR #2](https://github.com/MentallyQuill/ComfyTavern/pull/2), branch `codex/native-workflows` targeting `main`, attached to this task. The managed worktree is retained for review; live testing stopped at 7/8 attempts.
+Delivery: [draft PR #2](https://github.com/MentallyQuill/Lattice/pull/2), branch `codex/native-workflows` targeting `main`, attached to this task. The managed worktree is retained for review; live testing stopped at 7/8 attempts.

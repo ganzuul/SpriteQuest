@@ -83,7 +83,7 @@
 
 ## Task 5: Svelte canvas renderer and committed build
 
-**Files:** Create `ui/entry.js`, `ui/CanvasLayer.svelte`, `ui/NodeCard.svelte`, `ui/GroupCard.svelte`, `ui/WireLayer.svelte`, `ui/types.ts`, `vite.config.mjs`, `tsconfig.json`, `tools/check-assets.mjs`, `src/canvas/presentation.js`, committed `dist/silly-canvas-ui.js`; modify `src/canvas.js`, build scripts and version tooling as needed.
+**Files:** Create `ui/entry.js`, `ui/CanvasLayer.svelte`, `ui/NodeCard.svelte`, `ui/GroupCard.svelte`, `ui/WireLayer.svelte`, `ui/types.ts`, `vite.config.mjs`, `tsconfig.json`, `tools/check-assets.mjs`, `src/canvas/presentation.js`, committed `dist/lattice-ui.js`; modify `src/canvas.js`, build scripts and version tooling as needed.
 
 **Interfaces:** Compiled entry exports `mountCanvas(target, callbacks) -> {viewport,svg,nodeLayer,setNodes,setGroups,setWires,destroy}`. Presentation data has stable IDs and graph-space coordinates. Components import only UI types/helpers and Svelte, with domain data supplied as props/callbacks. Existing controller methods consume returned DOM anchors and preserve public APIs.
 
