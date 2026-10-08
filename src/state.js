@@ -735,7 +735,7 @@ export function outputNode(graph) {
  * cycle in a prompt graph is not a clever loop, it is an infinite prompt.
  */
 export function connect(graph, fromId, toId, kind = WIRE_KINDS.APPEND, { port = null } = {}) {
-    if (isNativeWorkflow(graph)) {
+    if (graph == null || isNativeWorkflow(graph)) {
         const validation = validateGraphStructure(graph);
         if (!validation.ok) return { ok: false, reason: validation.error.message };
         if (graph.schema !== 2 || graph.runtime !== 1) return { ok: false, reason: 'Native named connections require the prepared graph edit API.' };

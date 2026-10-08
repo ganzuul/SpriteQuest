@@ -3,8 +3,10 @@ const fail = (code, message, nodeId) => ({ ok: false, error: { code, message, ..
 const record = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 /** Native/unsafe routing guard: only plain legacy metadata may enter legacy paths. */
 export function isNativeWorkflow(graph) {
-    if (!record(graph)) return false;
     try {
+        // Missing bindings are UI sentinels; every supplied non-record fails closed.
+        if (graph === null || graph === undefined) return false;
+        if (!record(graph)) return true;
         const prototype = Object.getPrototypeOf(graph);
         if (prototype !== Object.prototype && prototype !== null) return true;
         const metadata = {};

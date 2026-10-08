@@ -119,8 +119,81 @@ for (const graph of unsafeRouting) {
     state.settings().workflowMode = 'native';
 }
 assert.equal(routingGetterReads, 0, 'routing never invokes own or inherited accessors');
+// Non-record roots must reject at the same public boundaries, before legacy work.
+const arrayAccessor = Object.assign([], structuredClone(legacy));
+Object.defineProperty(arrayAccessor, 'schema', { get() { routingGetterReads++; return 3; }, enumerable: true });
+const functionRoot = Object.defineProperties(function () {}, Object.getOwnPropertyDescriptors(structuredClone(legacy)));
+const revoked = Proxy.revocable([], {});
+revoked.revoke();
+const unsafeRoots = [arrayAccessor, Object.assign([], starterGraph('native-guidance')), functionRoot,
+    'graph', '', 1, 0, false, true, 1n, Symbol('graph'), revoked.proxy,
+    new Proxy({}, { getPrototypeOf() { throw new Error('uninspectable prototype'); } }),
+    new Proxy({}, { getOwnPropertyDescriptor() { throw new Error('uninspectable descriptor'); } })];
+for (const graph of unsafeRoots) {
+    loreScans = 0; snapshots = 0;
+    let saves = 0, touches = 0;
+    context.saveSettingsDebounced = () => { saves++; };
+    const unsubscribe = state.onGraphTouched(() => { touches++; });
+    assert.equal((await compile(graph, { dryRun: true })).ok, false);
+    assert.equal((await run(graph, { dryRun: true })).plan.ok, false);
+    assert.equal(loreScans, 0, 'non-record execution must never scan lore');
+    assert.equal(snapshots, 0, 'non-record execution must never gather character context');
+    assert.equal(isNativeWorkflow(graph), true, 'unsafe roots must fail closed');
+    assert.equal(callCount(graph), 0);
+    assert.equal(state.migrateGraph(graph), graph);
+    assert.equal(state.connect(graph, 'missing', 'also-missing').ok, false);
+    assert.equal(saves, 0);
+    assert.equal(touches, 0);
+    unsubscribe();
+    state.settings().graphs.unsafeRoot = graph;
+    state.settings().nativeBindings.preGraphId = 'unsafeRoot';
+    assert.equal(sendWorkflowState().automatic, false);
+    state.settings().activeGraphId = 'unsafeRoot';
+    state.settings().workflowMode = 'legacy';
+    assert.equal(sendWorkflowState().automatic, false);
+    state.settings().workflowMode = 'native';
+}
+for (const graph of [arrayAccessor, functionRoot]) assert.equal(Object.hasOwn(graph, 'migrated'), false);
+assert.equal(routingGetterReads, 0, 'unsafe shapes never invoke routing getters');
+for (const graph of [null, undefined]) {
+    loreScans = 0; snapshots = 0;
+    assert.equal(isNativeWorkflow(graph), false, 'absent bindings remain non-native UI sentinels');
+    assert.equal((await compile(graph, { dryRun: true })).ok, false);
+    const result = await run(graph, { dryRun: true });
+    assert.equal(result.plan.ok, false);
+    assert.match(result.plan.reason, /no canvas selected/i);
+    assert.equal(loreScans, 0, 'missing-root execution must never scan lore');
+    assert.equal(snapshots, 0, 'missing-root execution must never gather character context');
+    assert.equal(callCount(graph), 0);
+    assert.equal(state.migrateGraph(graph), graph);
+    assert.equal(state.connect(graph, 'missing', 'also-missing').ok, false);
+    assert.equal(loreScans, 0);
+    assert.equal(snapshots, 0);
+    state.settings().graphs.unsafeRoot = graph;
+    const labels = sendWorkflowState();
+    assert.equal(labels.automatic, false);
+    assert.match(labels.armedText, /no automatic pre workflow is assigned/i);
+    state.settings().workflowMode = 'legacy';
+    assert.equal(sendWorkflowState().automatic, false);
+    state.settings().workflowMode = 'native';
+}
+const legacyPlan = await compile(legacy, { dryRun: true });
 for (const prototype of [Object.prototype, null]) {
     assert.equal(isNativeWorkflow(Object.assign(Object.create(prototype), structuredClone(legacy))), false);
     assert.equal(isNativeWorkflow(Object.assign(Object.create(prototype), structuredClone(native))), true);
+    for (const schema of [1, undefined]) {
+        const graph = Object.assign(Object.create(prototype), structuredClone(legacy));
+        if (schema === undefined) delete graph.schema;
+        else graph.schema = schema;
+        loreScans = 0; snapshots = 0;
+        const compiled = await compile(graph, { dryRun: true });
+        const executed = await run(graph, { dryRun: true });
+        assert.equal(compiled.ok, legacyPlan.ok);
+        assert.equal(executed.plan.ok, legacyPlan.ok);
+        assert.deepEqual(compiled.messages, legacyPlan.messages);
+        assert.deepEqual(executed.plan.messages, legacyPlan.messages);
+        assert.equal(loreScans, 2, 'valid legacy roots retain legacy execution');
+        assert.equal(snapshots, 2);
+    }
 }
 console.log('workflow-dispatch: ok');

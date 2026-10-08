@@ -32,7 +32,7 @@ export function sendWorkflowState() {
     const s = settings();
     if (s.workflowMode === 'native') {
         const assigned = s.graphs[s.nativeBindings?.preGraphId];
-        if (isNativeWorkflow(assigned) && !safeWorkflowData(assigned)) return {
+        if (isNativeWorkflow(assigned) && (!safeWorkflowData(assigned) || typeof assigned !== 'object' || Array.isArray(assigned))) return {
             automatic: false,
             armLabel: 'Assigned native workflow contains invalid data',
             armedText: 'The assigned workflow contains invalid data and cannot run. SillyTavern builds its normal prompt.',
@@ -546,7 +546,7 @@ export function describeCutoff(title, usage, finish) {
  * @returns {Promise<{plan: object, results: Record<string,string>, thoughts: Array}>}
  */
 export async function run(graph, { dryRun = false, signal = null, onStage = null, onResult = null, swipe = false, reuse = null } = {}) {
-    if (isNativeWorkflow(graph)) return { plan: await compile(graph, { dryRun }), results: {}, thoughts: [], failures: [] };
+    if (graph == null || isNativeWorkflow(graph)) return { plan: await compile(graph, { dryRun }), results: {}, thoughts: [], failures: [] };
     graph = activeGraph(graph);
     const live = await gatherContext({ dryRun, swipe });
     const results = {};
@@ -1108,6 +1108,7 @@ export function callCount(graph) {
  * path or a pass changes nothing.
  */
 export function maxCalls(graph) {
+    if (graph == null) return 0;
     if (isNativeWorkflow(graph)) { const validation = validateWorkflow(graph); return validation.ok ? validation.data.callBound : 0; }
     graph = activeGraph(graph);
     const passes = (n) => Math.max(1, Math.min(10, Math.round(Number(n?.repeat) || 1)));
