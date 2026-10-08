@@ -52,6 +52,26 @@ assert.equal(view.callBound, 2);
 assert.deepEqual(view.families.map(family => family.name), ['Input','Shaping','Surface','Transpose','Derive','Output']);
 assert.equal(view.families.find(family => family.name === 'Transpose').operations.length, 0);
 assert.equal(view.nodes.find(node => node.operation === 'smart-compactor').controls.some(control => control.key === 'targetTokens'), true);
+// Native intent must never project a legacy workbench merely because execution is unsupported.
+for (const schema of [3, 99]) {
+    let nativeBindings = 0, freshnessChecks = 0;
+    const futureGraph = { ...pre, schema, runtime: 2 };
+    const futureView = surface.projectWorkflow(futureGraph, {
+        profiles: [{ id: 'analysis', name: 'Analysis connection' }],
+        resolveBinding: () => { nativeBindings++; return { ok: true, data: {} }; },
+        candidateStatus: () => { freshnessChecks++; return { ok: true }; },
+        result: { ok: true, artifact: { kind: 'candidate', original: 'Old', text: 'Old candidate' } },
+    });
+    assert.equal(futureView.native, true);
+    assert.equal(futureView.callBound, 0);
+    assert.ok(futureView.issues.some(issue => /schema 2.*runtime 1/i.test(issue)));
+    assert.equal(futureView.families.find(f => f.name === 'Input').operations.find(op => op.id === 'reply-snapshot').compatible, false);
+    assert.equal(futureView.families.find(f => f.name === 'Input').operations.find(op => op.id === 'scene-context').compatible, true);
+    assert.equal(futureView.result.applyAvailable, false);
+    assert.equal(nativeBindings, 0);
+    assert.equal(freshnessChecks, 0);
+}
+assert.equal(surface.projectWorkflow({ ...pre, schema: 99, mode: null }).native, true);
 assert.equal(typeof surface.createWorkflowSession, 'function', 'late workflow results are guarded by graph and UI epoch');
 let activeGraph = pre, epoch = 1, release;
 const updates = [];

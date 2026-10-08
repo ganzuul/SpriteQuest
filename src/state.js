@@ -20,8 +20,9 @@
  *   chat binding > character binding > activeGraphId
  */
 
-import { operationDefaults, operationFor } from './workflow/catalog.js?v=0.19.1';
+import { operationDefaults } from './workflow/catalog.js?v=0.19.1';
 import { exportWorkflow, parseWorkflow } from './workflow/packages.js?v=0.19.1';
+import { isNativeWorkflow, validateGraphStructure } from './workflow/contracts.js?v=0.19.1';
 import { stagePortId, parseStatePort, ensureStageIds } from './statevals.js?v=0.19.1';
 
 export const MODULE = 'prompt-canvas';
@@ -240,7 +241,7 @@ export function getGraph(id) {
  * something the UI can no longer express.
  */
 export function migrateGraph(graph) {
-    if (!graph || graph.schema === 2 || graph.migrated === 3) return graph;
+    if (!graph || isNativeWorkflow(graph) || graph.migrated === 3) return graph;
     if (!graph.migrated) {
         for (const w of Object.values(graph.wires ?? {})) {
             if (w.kind === WIRE_KINDS.SEQUENCE) w.kind = WIRE_KINDS.MERGE;
@@ -299,7 +300,7 @@ const touchListeners = new Set();
 
 /** Keep inspectable formation metadata tied to the same editable primitive nodes. */
 export function syncComponentMembers(graph) {
-    if (graph?.schema !== 2) return;
+    if (!isNativeWorkflow(graph)) return;
     for (const group of Object.values(graph.groups ?? {})) {
         if (!group.component && !Array.isArray(group.members)) continue;
         const members = Object.values(graph.nodes ?? {}).filter(node => node.inGroup === group.id).map(node => node.id);
@@ -701,6 +702,7 @@ export function setGroupEnabled(graph, groupId, on) {
  * is off, so it is cheap to call everywhere.
  */
 export function activeGraph(graph) {
+    if (isNativeWorkflow(graph)) return graph;
     if (!graph?.groups || !graph.nodes) return graph;
     const off = new Set(Object.values(graph.groups).filter(g => g.enabled === false).map(g => g.id));
     if (!off.size) return graph;
@@ -733,6 +735,20 @@ export function outputNode(graph) {
  * cycle in a prompt graph is not a clever loop, it is an infinite prompt.
  */
 export function connect(graph, fromId, toId, kind = WIRE_KINDS.APPEND, { port = null } = {}) {
+    if (isNativeWorkflow(graph)) {
+        if (graph.schema !== 2 || graph.runtime !== 1) return { ok: false, reason: 'Native named connections require the prepared graph edit API.' };
+        const validation = validateGraphStructure(graph);
+        if (!validation.ok) return { ok: false, reason: validation.error.message };
+        if (!['append', 'prepend', 'merge'].includes(kind) || port) return { ok: false, reason: 'Native workflows require direct artifact connections.' };
+        if (Object.values(graph.wires).some(wire => wire.from === fromId && wire.to === toId)) return { ok: false, reason: 'Those blocks are already wired.' };
+        const wire = { id: uid('w'), from: fromId, to: toId, kind, order: 0 };
+        const candidate = { ...graph, wires: { ...graph.wires, [wire.id]: wire } };
+        const proposed = validateGraphStructure(candidate);
+        if (!proposed.ok) return { ok: false, reason: proposed.error.message };
+        graph.wires[wire.id] = wire;
+        touchGraph(graph);
+        return { ok: true, wire };
+    }
     if (fromId === toId) {
         return { ok: false, reason: graph.nodes[fromId]?.type === NODE_TYPES.GENERATE
             ? 'A block cannot wire to itself. To run a Generate block several times, set Repeat in its settings.'
@@ -740,7 +756,6 @@ export function connect(graph, fromId, toId, kind = WIRE_KINDS.APPEND, { port = 
     }
     if (!graph.nodes[fromId] || !graph.nodes[toId]) return { ok: false, reason: 'Missing block.' };
 
-    if (graph.schema === 2 && operationFor(graph.nodes[fromId])?.terminal) return { ok: false, reason: 'Host output has no outgoing artifact.' };
     if (kind === WIRE_KINDS.TOGETHER) return tieTogether(graph, fromId, toId);
 
     // Anything wired into a Memory block saves into it; only an answer can.
@@ -795,7 +810,7 @@ export function connect(graph, fromId, toId, kind = WIRE_KINDS.APPEND, { port = 
         }
         loop = { max: 3, stopWhenSame: true };
     }
-    const wire = { id: uid('w'), from: fromId, to: toId, kind, ...(graph.schema === 2 ? { order: wiresInto(graph, toId).length } : {}), ...(port ? { port } : {}), ...(loop ? { loop } : {}) };
+    const wire = { id: uid('w'), from: fromId, to: toId, kind, ...(port ? { port } : {}), ...(loop ? { loop } : {}) };
     // A stage's own dot switches its block on while the value is in that
     // stage, so its wires start as Activate wires.
     if (src.type === NODE_TYPES.STATE && port && parseStatePort(port).stageId) wire.mode = 'activate';
@@ -942,14 +957,14 @@ export function togetherGroup(graph, nodeId) {
 export function exportGraph(id) {
     const g = getGraph(id);
     if (!g) return null;
-    if (g.schema === 2) return JSON.stringify(exportWorkflow(g), null, 2);
+    if (isNativeWorkflow(g)) return JSON.stringify(exportWorkflow(g), null, g.schema === 2 ? 2 : undefined);
     return JSON.stringify({ kind: 'prompt-canvas-graph', schema: 1, graph: g }, null, 2);
 }
 
 export function importGraph(json) {
     let parsed;
     try { parsed = JSON.parse(json); } catch { return { ok: false, reason: 'That is not valid JSON.' }; }
-    const isNative = ['lattice-workflow', 'comfytavern-workflow'].includes(parsed?.kind) || parsed?.graph?.schema === 2 || parsed?.schema === 2;
+    const isNative = ['lattice-workflow', 'comfytavern-workflow', 'lattice-subgraph'].includes(parsed?.kind) || isNativeWorkflow(parsed?.graph) || isNativeWorkflow(parsed);
     let g;
     if (isNative) {
         const result = parseWorkflow(json);

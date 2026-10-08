@@ -1,6 +1,15 @@
-import { operationFor } from './catalog.js?v=0.19.1';
+import { operationFor, portsForNode } from './catalog.js?v=0.19.1';
 const fail = (code, message, nodeId) => ({ ok: false, error: { code, message, ...(nodeId ? { nodeId } : {}) } });
 const record = value => value !== null && typeof value === 'object' && !Array.isArray(value);
+/** Recognize native intent, including unsupported future versions, without invoking getters. */
+export function isNativeWorkflow(graph) {
+    if (!record(graph)) return false;
+    try {
+        const schema = Object.getOwnPropertyDescriptor(graph, 'schema')?.value;
+        const mode = Object.getOwnPropertyDescriptor(graph, 'mode')?.value;
+        return Number.isInteger(schema) && schema >= 2 || mode === 'native-pre' || mode === 'native-post';
+    } catch { return false; }
+}
 /** Bound plain JSON data before reading untrusted graph properties. */
 export function safeWorkflowData(value) {
     let entries = 0, characters = 0;
@@ -24,6 +33,34 @@ export function safeWorkflowData(value) {
 }
 /** Validate a native graph without reading or mutating host state. */
 export function validateWorkflow(graph, { phase } = {}) {
+    return validatePrimitiveGraph(graph, { phase });
+}
+/** Authoring checks exclude terminal, required-input and enabled-dependency completeness.
+ * @returns {import('./types').Result<import('./types').StructureDiagnostics>}
+ */
+export function validateGraphStructure(graph) {
+    if (!safeWorkflowData(graph) || !record(graph)) return fail('MALFORMED_WORKFLOW', 'Expected a bounded plain workflow graph.');
+    if (graph.schema === 3 && graph.runtime === 2) return validateNamedGraph(graph);
+    return validatePrimitiveGraph(graph, { structureOnly: true });
+}
+function validateNamedGraph(graph) {
+    if (!record(graph.nodes) || !record(graph.wires) || !record(graph.portals ?? {}) || !record(graph.definitions ?? {})) return fail('MALFORMED_WORKFLOW', 'Expected native graph containers.');
+    // Composition is deliberately gated until pinned definitions and portal resolution are validated.
+    if (Object.keys(graph.portals ?? {}).length || Object.keys(graph.definitions ?? {}).length) return fail('UNSUPPORTED_COMPOSITION', 'Composition requires the definition and portal validator.');
+    const copy = structuredClone(graph);
+    copy.schema = 2; copy.runtime = 1;
+    for (const wire of Object.values(copy.wires)) {
+        if (!record(wire) || wire.route !== 'wire' || typeof wire.from !== 'string' || typeof wire.to !== 'string' || typeof wire.fromPort !== 'string' || typeof wire.toPort !== 'string' || wire.loop || wire.port) return fail('INVALID_WIRE', 'Native wires require named direct endpoints.');
+        if (!Object.hasOwn(copy.nodes, wire.from) || !Object.hasOwn(copy.nodes, wire.to)) return fail('DANGLING_WIRE', 'A wire refers to a missing block.');
+        const from = portsForNode(copy, copy.nodes[wire.from]).find(port => port.id === wire.fromPort && port.direction === 'output');
+        const to = portsForNode(copy, copy.nodes[wire.to]).find(port => port.id === wire.toPort && port.direction === 'input');
+        if (!from || !to) return fail('INVALID_PORT', 'A wire requires an existing output and input port.');
+        if (from.kind !== to.kind) return fail('ARTIFACT_KIND', 'These ports carry incompatible artifacts.');
+        wire.order ??= 0;
+    }
+    return validatePrimitiveGraph(copy, { structureOnly: true, named: true });
+}
+function validatePrimitiveGraph(graph, { phase, structureOnly = false, named = false } = {}) {
     if (!safeWorkflowData(graph) || !record(graph) || !record(graph.nodes) || !record(graph.wires) || (graph.groups !== undefined && !record(graph.groups))) return fail('MALFORMED_WORKFLOW', 'Expected a bounded plain workflow graph.');
     if (graph.schema !== 2 || graph.runtime !== 1) return fail('UNSUPPORTED_VERSION', 'This workflow requires schema 2 and runtime 1.');
     if (graph.name !== undefined && typeof graph.name !== 'string') return fail('INVALID_SETTINGS', 'Workflow name must be text.');
@@ -50,13 +87,13 @@ export function validateWorkflow(graph, { phase } = {}) {
     for (const node of nodes) {
         if (!bindingValid(node) || (node.modelRole !== undefined && node.modelRole !== null && typeof node.modelRole !== 'string')) return fail('INVALID_SETTINGS', 'Invalid node model binding.', node.id);
         const operation = operationFor(node);
-        if (!operation || (node.operationVersion !== undefined && node.operationVersion !== 1)) return fail('UNKNOWN_OPERATION', 'Unknown workflow operation or version.', node.id);
+        if (!operation || (!named && node.operation === 'reroute') || (node.operationVersion !== undefined && node.operationVersion !== 1)) return fail('UNKNOWN_OPERATION', 'Unknown workflow operation or version.', node.id);
         for (const [key, fallback] of Object.entries(operation.defaults)) {
             const value = node[key] === undefined ? fallback : node[key];
-            if (typeof fallback === 'string' && typeof value !== 'string' || typeof fallback === 'boolean' && typeof value !== 'boolean' || Array.isArray(fallback) && (!Array.isArray(value) || value.some(item => typeof item !== 'string' && !(key === 'rules' && record(item))))) return fail('INVALID_SETTINGS', `Invalid ${key}.`, node.id);
-            const choices = key === 'method' ? ['select', 'compress'] : key === 'scope' ? ['whole', 'narration', 'dialogue'] : key === 'mode' ? (node.operation === 'repair' ? ['repair', 'scan'] : ['literal']) : null;
-            if (choices && !choices.includes(value)) return fail('INVALID_SETTINGS', `Invalid ${key}.`, node.id);
-            if (typeof fallback === 'number' && (!Number.isSafeInteger(value) || value < (key === 'keepRecent' ? 0 : 1) || value > (key === 'keepRecent' ? 1000 : 65536))) return fail('INVALID_SETTINGS', `Invalid ${key}.`, node.id);
+            const control = operation.controlDescriptors[key];
+            if (control.type === 'string' && typeof value !== 'string' || control.type === 'boolean' && typeof value !== 'boolean' || control.type === 'array' && (!Array.isArray(value) || value.some(item => typeof item !== 'string' && !(control.items === 'string-or-record' && record(item))))) return fail('INVALID_SETTINGS', `Invalid ${key}.`, node.id);
+            if (control.type === 'enum' && !control.values.includes(value)) return fail('INVALID_SETTINGS', `Invalid ${key}.`, node.id);
+            if (control.type === 'integer' && (!Number.isSafeInteger(value) || value < control.min || value > control.max)) return fail('INVALID_SETTINGS', `Invalid ${key}.`, node.id);
         }
     }
     if (!['native-pre', 'native-post'].includes(graph.mode) || (phase && graph.mode !== 'native-' + phase) || nodes.some(node => operationFor(node).phase !== graph.mode.slice(7))) return fail('WRONG_PHASE', 'The workflow operation does not support this phase.');
@@ -64,7 +101,7 @@ export function validateWorkflow(graph, { phase } = {}) {
     for (const wire of wires) if (!graph.nodes[wire.from] || !graph.nodes[wire.to]) return fail('DANGLING_WIRE', 'A wire refers to a missing block.');
     for (const wire of wires) if (!operationFor(graph.nodes[wire.from]) || !operationFor(graph.nodes[wire.to])) return fail('ARTIFACT_KIND', 'Notes are annotations and carry no artifacts.');
     const terminals = nodes.filter(node => operationFor(node).terminal);
-    if (!terminals.length) return fail('MISSING_TERMINAL', 'Add Guidance or Apply Reply to finish the workflow.');
+    if (!structureOnly && !terminals.length) return fail('MISSING_TERMINAL', 'Add Guidance or Apply Reply to finish the workflow.');
     const orderedNodes = [], visited = new Set(), visiting = new Set();
     let cycle = false;
     const visit = node => {
@@ -80,6 +117,7 @@ export function validateWorkflow(graph, { phase } = {}) {
     for (const node of terminals) visit(node);
     for (const wire of wires) if (operationFor(graph.nodes[wire.from]).output !== operationFor(graph.nodes[wire.to]).input || operationFor(graph.nodes[wire.from]).terminal || !operationFor(graph.nodes[wire.to]).input) return fail('ARTIFACT_KIND', 'These operations carry incompatible artifacts.');
     for (const node of nodes) if (wires.filter(w => w.to === node.id).length > 1) return fail('AMBIGUOUS_INPUT', 'An operation accepts one primary artifact input.', node.id);
+    if (structureOnly) return { ok: true, data: { nodeCount: allNodes.length, wireCount: wires.length } };
     for (const node of orderedNodes) if (node.enabled === false || graph.groups?.[node.inGroup]?.enabled === false) return fail('DISABLED_OPERATION', 'Disabled workflow operations cannot be bypassed.', node.id);
     for (const node of orderedNodes) if (operationFor(node).input && !wires.some(w => w.to === node.id)) return fail('MISSING_INPUT', 'Connect the required input artifact.', node.id);
     const callBound = orderedNodes.reduce((sum, node) => { const bound = operationFor(node).requestBound; return sum + (typeof bound === 'function' ? bound(node) : bound); }, 0);

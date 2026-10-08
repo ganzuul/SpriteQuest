@@ -21,6 +21,7 @@ import { run, callCount, getNativeWorkflowController, initializeNativeWorkflowCo
 import * as UI from './src/ui.js?v=0.19.1';
 import { jevSettings, jevYesNo } from './src/jev.js?v=0.19.1';
 import { applyTheme } from './src/theme.js?v=0.19.1';
+import { isNativeWorkflow } from './src/workflow/contracts.js?v=0.19.1';
 import { renderThemeEditor } from './src/theme-editor.js?v=0.19.1';
 import { renderThoughts, attachThoughts, repaintAll, livePanel, answersMode } from './src/thoughts.js?v=0.19.1';
 
@@ -583,7 +584,7 @@ export function getLastRun() {
                 const s = settings();
                 const ids = [s.activeGraphId, s.nativeBindings?.preGraphId, s.nativeBindings?.postGraphId];
                 const graphs = ids.map(id => s.graphs[id]);
-                return { graphs, signature: JSON.stringify([s.enabled, s.workflowMode, ids, graphs.map(graph => graph?.schema === 2 ? workflowSignature(graph) : null)]) };
+                return { graphs, signature: JSON.stringify([s.enabled, s.workflowMode, ids, graphs.map(graph => isNativeWorkflow(graph) ? workflowSignature(graph) : null)]) };
             };
             let watchedNativeSettings = nativeSettingsSnapshot();
             document.addEventListener('pc-state', () => {

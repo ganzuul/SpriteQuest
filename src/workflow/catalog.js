@@ -1,6 +1,14 @@
 /** Native operation metadata. Artifact flow, rather than canvas placement, defines execution. */
 export const FAMILIES = ['Input', 'Shaping', 'Surface', 'Transpose', 'Derive', 'Output'];
-const descriptor = (id, title, family, phase, input, output, defaults = {}, extra = {}) => ({ id, title, family, phase, input, output, controls: Object.keys(defaults), defaults, requestBound: 0, modelRole: null, terminal: false, ...extra });
+export const ARTIFACT_KINDS = ['context', 'draft', 'patches', 'candidate', 'guidance'];
+function controlDescriptor(operation, key, value) {
+    const values = key === 'method' ? ['select', 'compress'] : key === 'scope' ? ['whole', 'narration', 'dialogue'] : key === 'mode' ? (operation === 'repair' ? ['repair', 'scan'] : ['literal']) : null;
+    if (values) return { type: 'enum', values, default: value };
+    if (typeof value === 'number') return { type: 'integer', min: key === 'keepRecent' ? 0 : 1, max: key === 'keepRecent' ? 1000 : 65536, default: value };
+    if (Array.isArray(value)) return { type: 'array', items: key === 'rules' ? 'string-or-record' : 'string', default: value };
+    return { type: typeof value, default: value };
+}
+const descriptor = (id, title, family, phase, input, output, defaults = {}, extra = {}) => ({ id, title, family, phase, input, output, controls: Object.keys(defaults), controlDescriptors: Object.fromEntries(Object.entries(defaults).map(([key, value]) => [key, controlDescriptor(id, key, value)])), defaults, requestBound: 0, modelRole: null, terminal: false, ...extra });
 export const OPERATIONS = {
     'scene-context': descriptor('scene-context', 'Scene Context', 'Input', 'pre', null, 'context', { recentMessages: 12, includeCharacter: true }),
     'reply-snapshot': descriptor('reply-snapshot', 'Reply Snapshot', 'Input', 'post', null, 'draft'),
@@ -12,8 +20,25 @@ export const OPERATIONS = {
     guidance: descriptor('guidance', 'Guidance', 'Output', 'pre', 'guidance', null, { budgetTokens: 768 }, { terminal: true }),
     'review-gate': descriptor('review-gate', 'Review Gate', 'Output', 'post', 'candidate', 'candidate'),
     'apply-reply': descriptor('apply-reply', 'Apply Reply', 'Output', 'post', 'candidate', null, {}, { terminal: true }),
+    reroute: descriptor('reroute', 'Reroute', 'Shaping', null, null, null),
 };
-export const operationFor = node => node?.type === 'workflow' && typeof node.operation === 'string' && Object.hasOwn(OPERATIONS, node.operation) ? OPERATIONS[node.operation] : null;
+export function operationFor(node) {
+    const op = node?.type === 'workflow' && typeof node.operation === 'string' && Object.hasOwn(OPERATIONS, node.operation) ? OPERATIONS[node.operation] : null;
+    if (op?.id !== 'reroute') return op;
+    return ARTIFACT_KINDS.includes(node.artifactKind) && ['pre', 'post'].includes(node.phase)
+        ? { ...op, phase: node.phase, input: node.artifactKind, output: node.artifactKind } : null;
+}
+/** Stable primitive pins; sources and terminals never fabricate unused endpoints.
+ * @returns {import('./types').PortDescriptor[]}
+ */
+export function portsForNode(graph, node) {
+    const op = operationFor(node);
+    if (!op) return [];
+    return [
+        ...(op.input ? [{ id: 'in', label: 'Input', kind: op.input, direction: 'input', required: true, cardinality: 'one' }] : []),
+        ...(op.output ? [{ id: 'out', label: 'Output', kind: op.output, direction: 'output', required: false, cardinality: 'one' }] : []),
+    ];
+}
 export function operationDefaults(id = 'scene-context') {
     const op = Object.hasOwn(OPERATIONS, id) ? OPERATIONS[id] : null;
     if (!op) throw new Error(`Unknown workflow operation: ${id}`);

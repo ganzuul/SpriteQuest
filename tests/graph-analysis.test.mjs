@@ -13,4 +13,14 @@ assert.equal(analysis.prepare(graph), first, 'camera work does not invalidate an
 graph.nodes.a.enabled = false;
 assert.notEqual(analysis.prepare(graph), first, 'a graph edit invalidates the projection');
 assert.equal(countRuns, 2); assert.equal(levelRuns, 2);
+for (const schema of [2, 3, 99]) {
+    graph.schema = schema;
+    const native = analysis.prepare(graph);
+    assert.equal(native.counts.size, 0, 'switching a cached legacy graph to native clears legacy analysis');
+    assert.deepEqual(native.waves, []);
+    graph.view.zoom += 0.1;
+    assert.equal(analysis.prepare(graph), native, 'native camera changes retain empty projection');
+}
+assert.equal(countRuns, 2, 'all native versions skip legacy emission work');
+assert.equal(levelRuns, 2, 'all native versions skip legacy scheduling');
 console.log('graph-analysis: ok');

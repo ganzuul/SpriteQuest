@@ -1,7 +1,7 @@
 import { workflowSignature } from '../workflow/runtime.js?v=0.19.1';
 import * as uiBundle from '../../dist/lattice-ui.js?v=0.19.1';
 import { FAMILIES, OPERATIONS, operationFor } from '../workflow/catalog.js?v=0.19.1';
-import { safeWorkflowData, validateWorkflow } from '../workflow/contracts.js?v=0.19.1';
+import { isNativeWorkflow, safeWorkflowData, validateWorkflow } from '../workflow/contracts.js?v=0.19.1';
 import { STARTERS } from '../workflow/starters.js?v=0.19.1';
 const descriptions = { Input: 'Bring material into a workflow.', Shaping: 'Change the plan or amount of material.', Surface: 'Refine expression.', Transpose: 'Apply a reference’s qualities.', Derive: 'Extract findings from a source.', Output: 'Inspect or commit an artifact.' };
 const legacy = { Input: ['prompt', 'st', 'history', 'injection', 'lorebook', 'state', 'memory'], Shaping: ['generate', 'decider'], Surface: [], Transpose: [], Derive: [], Output: ['output', 'memory'] };
@@ -32,7 +32,10 @@ export function parseWorkflowRules(text) {
     return { ok: true, data: rules };
 }
 export function projectWorkflow(graph, { profiles = [], settings = {}, selectedId = null, result = null, busy = false, status = '', applyIssue = '', resolveBinding, candidateStatus } = {}) {
-    const validation = graph?.schema === 2 ? validateWorkflow(graph) : null;
+    const native = isNativeWorkflow(graph);
+    const validation = native ? validateWorkflow(graph) : null;
+    const unsupported = native && (graph.schema !== 2 || graph.runtime !== 1);
+    const phase = typeof graph?.mode === 'string' ? graph.mode.slice(7) : '';
     const issues = validation && !validation.ok ? [validation.error.message] : [];
     const reachable = new Set(validation?.ok ? validation.data.orderedNodes.map(node => node.id) : []);
     const nodes = Object.values(graph?.nodes ?? {}).filter(node => operationFor(node)).map(node => {
@@ -50,14 +53,14 @@ export function projectWorkflow(graph, { profiles = [], settings = {}, selectedI
         return { id: node.id, title: node.title || op.title, operation: node.operation, family: op.family, phase: op.phase, input: op.input || 'snapshot', output: op.output || 'host output', terminal: op.terminal, modelRole: role, profileId: node.profileId || '', model: node.model || '', effective, enabled: node.enabled !== false, controls };
     });
     const artifact = result?.artifact?.kind === 'candidate' ? result.artifact : result?.candidate;
-    const freshness = artifact ? candidateStatus?.(artifact) : null;
+    const freshness = artifact && !unsupported ? candidateStatus?.(artifact) : null;
     const roleNames = [...new Set([...Object.keys(graph?.roles ?? {}), ...nodes.map(node => node.modelRole).filter(Boolean)])];
     const families = FAMILIES.map(name => ({
         name, description: descriptions[name],
         legacy: legacy[name].map(id => ({ id, title: id === 'memory' ? (name === 'Input' ? 'Memory reader' : 'Memory save') : legacyTitles[id] })),
         operations: Object.values(OPERATIONS)
             .filter(op => op.family === name || name === 'Surface' && ['pattern-scan', 'validate-patches'].includes(op.id))
-            .map(op => ({ id: op.id, title: op.title, phase: op.phase, compatible: !graph?.schema || graph.schema !== 2 || op.phase === graph.mode.slice(7) })),
+            .map(op => ({ id: op.id, title: op.title, phase: op.phase, compatible: !native || op.phase === phase })),
     }));
     const resultView = result ? {
         ok: result.ok, error: result.error?.message || '',
@@ -71,12 +74,12 @@ export function projectWorkflow(graph, { profiles = [], settings = {}, selectedI
             ...(result.reports || []).map(report => report.method || report.tokenMethod),
             ...(result.calls || []).map(call => call.tokenCount?.method),
         ].filter(Boolean))],
-        applyAvailable: !!artifact && result.ok === true,
-        applyIssue: freshness?.ok === false ? freshness.error.message : applyIssue,
+        applyAvailable: !unsupported && !!artifact && result.ok === true,
+        applyIssue: unsupported ? validation?.error?.message || 'Unsupported workflow execution version.' : freshness?.ok === false ? freshness.error.message : applyIssue,
     } : null;
     return {
-        graphId: graph?.id || '', name: graph?.name || '', native: graph?.schema === 2,
-        phase: graph?.mode?.slice(7) || '', workflowMode: settings.workflowMode || 'legacy',
+        graphId: graph?.id || '', name: graph?.name || '', native,
+        phase, workflowMode: settings.workflowMode || 'legacy',
         assigned: graph?.id === settings.nativeBindings?.[graph?.mode === 'native-pre' ? 'preGraphId' : 'postGraphId'],
         roles: roleNames.map(name => ({ name, profileId: graph?.roles?.[name]?.profileId || '', model: graph?.roles?.[name]?.model || '' })),
         profiles: profiles.map(profile => ({ id: profile.id, name: profile.name || profile.id })),

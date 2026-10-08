@@ -2,24 +2,10 @@ import { validateWorkflow } from './contracts.js?v=0.19.1';
 import { operationFor } from './catalog.js?v=0.19.1';
 import { compactContext, formatContext } from './compactor.js?v=0.19.1';
 import { scanDraft, repairDraft, validatePatches } from './repair.js?v=0.19.1';
+import { graphSemanticSignature } from './ports.js?v=0.19.1';
 
 /** Execution identity shared by the host and UI. Canvas presentation never invalidates work. */
-export function workflowSignature(graph) {
-    if (!graph) return 'null';
-    const binding = value => value && typeof value === 'object' && !Array.isArray(value) ? {profileId:value.profileId ?? null,model:value.model ?? null} : value;
-    const canonical = value => Array.isArray(value) ? value.map(canonical) : value && typeof value === 'object' ? Object.fromEntries(Object.keys(value).sort().map(key=>[key,canonical(value[key])])) : value;
-    const nodes = Object.entries(graph.nodes ?? {}).filter(([,node])=>node.type !== 'note' || node.inGroup !== undefined).map(([key,node])=>{
-        const operation = operationFor(node);
-        const controls = Object.fromEntries((operation?.controls ?? []).map(control=>[control,node[control] === undefined ? operation.defaults[control] : node[control]]));
-        // Patch validation accepts extra protected wording even without an inspector control.
-        if (node.operation === 'validate-patches') controls.protectedLiterals = node.protectedLiterals === undefined ? [] : node.protectedLiterals;
-        return {key,id:node.id,type:node.type,operation:node.operation,operationVersion:node.operationVersion === undefined ? 1 : node.operationVersion,enabled:node.enabled !== false,modelRole:node.modelRole ?? operation?.modelRole ?? null,...binding(node),inGroup:node.inGroup,controls};
-    });
-    const wires = Object.entries(graph.wires ?? {}).map(([key,wire])=>({key,id:wire.id,from:wire.from,to:wire.to,order:wire.order,kind:wire.kind,port:wire.port,loop:wire.loop}));
-    const groups = Object.entries(graph.groups ?? {}).map(([key,group])=>({key,id:group.id,enabled:group.enabled !== false,component:group.component === undefined ? undefined : group.component && {id:group.component.id,version:group.component.version},entry:group.entry,exit:group.exit,members:group.members}));
-    const roles = Object.fromEntries(Object.entries(graph.roles ?? {}).map(([role,value])=>[role,binding(value)]));
-    return JSON.stringify(canonical({schema:graph.schema,runtime:graph.runtime,mode:graph.mode,nodes,wires,groups,roles}));
-}
+export const workflowSignature = graphSemanticSignature;
 
 export function freezeArtifact(value) {
     if (value && typeof value === 'object' && !Object.isFrozen(value)) {

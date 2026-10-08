@@ -21,7 +21,7 @@ import { compile, collect, generateOrder, generateLevels, gatherContext, evaluat
 import { plannedSaves, writeSaves, mirrorToLorebook } from './memory.js?v=0.19.1';
 import { jevYesNo, jevSort } from './jev.js?v=0.19.1';
 import { applySelect } from './select.js?v=0.19.1';
-import { validateWorkflow } from './workflow/contracts.js?v=0.19.1';
+import { isNativeWorkflow, validateWorkflow } from './workflow/contracts.js?v=0.19.1';
 import { createNativeWorkflowController } from './workflow/host.js?v=0.19.1';
 export { runWorkflow, workflowSignature } from './workflow/runtime.js?v=0.19.1';
 export { createNativeWorkflowController, snapshotContext, snapshotReply } from './workflow/host.js?v=0.19.1';
@@ -32,7 +32,13 @@ export function sendWorkflowState() {
     const s = settings();
     if (s.workflowMode === 'native') {
         const assigned = s.graphs[s.nativeBindings?.preGraphId];
-        const graph = assigned?.schema === 2 && assigned.mode === 'native-pre' ? assigned : null;
+        const graph = isNativeWorkflow(assigned) && assigned.mode === 'native-pre' ? assigned : null;
+        if (graph && (graph.schema !== 2 || graph.runtime !== 1)) return {
+            automatic: false,
+            armLabel: 'Assigned native workflow requires a supported runtime',
+            armedText: `"${graph.name}" has an unsupported execution version. This runtime requires schema 2/runtime 1. SillyTavern builds its normal prompt.`,
+            offText: 'Native workflows are off. SillyTavern builds its normal prompt.',
+        };
         return {
             automatic: !!graph,
             armLabel: graph ? 'Arm native pre guidance for Send (post repair remains manual)' : 'Arm native workflows (no automatic pre workflow assigned; post repair is manual)',
@@ -534,7 +540,7 @@ export function describeCutoff(title, usage, finish) {
  * @returns {Promise<{plan: object, results: Record<string,string>, thoughts: Array}>}
  */
 export async function run(graph, { dryRun = false, signal = null, onStage = null, onResult = null, swipe = false, reuse = null } = {}) {
-    if (graph?.schema === 2) return { plan: await compile(graph, { dryRun }), results: {}, thoughts: [], failures: [] };
+    if (isNativeWorkflow(graph)) return { plan: await compile(graph, { dryRun }), results: {}, thoughts: [], failures: [] };
     graph = activeGraph(graph);
     const live = await gatherContext({ dryRun, swipe });
     const results = {};
@@ -1096,7 +1102,7 @@ export function callCount(graph) {
  * path or a pass changes nothing.
  */
 export function maxCalls(graph) {
-    if (graph?.schema === 2) { const validation = validateWorkflow(graph); return validation.ok ? validation.data.callBound : 0; }
+    if (isNativeWorkflow(graph)) { const validation = validateWorkflow(graph); return validation.ok ? validation.data.callBound : 0; }
     graph = activeGraph(graph);
     const passes = (n) => Math.max(1, Math.min(10, Math.round(Number(n?.repeat) || 1)));
     const gens = generateOrder(graph);

@@ -1,0 +1,77 @@
+import assert from 'node:assert/strict';
+import { installMock } from './mock.js';
+const context = installMock({ settings: { graphs: {} } });
+let loreScans = 0, snapshots = 0;
+context.getWorldInfoPrompt = async () => { loreScans++; return {}; };
+context.getCharacterCardFields = () => { snapshots++; return {}; };
+const state = await import('../src/state.js');
+const { compile } = await import('../src/compile.js');
+const { run, callCount, sendWorkflowState } = await import('../src/run.js');
+const { runWorkflow, workflowSignature } = await import('../src/workflow/runtime.js');
+const { graphSemanticSignature } = await import('../src/workflow/ports.js');
+const { starterGraph } = await import('../src/workflow/starters.js');
+const { normalizeNativeGraph } = await import('../src/workflow/migration.js');
+const { exportWorkflow } = await import('../src/workflow/packages.js');
+
+const native = normalizeNativeGraph(starterGraph('native-guidance')).data;
+for (const schema of [3, 99]) {
+    const graph = { ...structuredClone(native), schema };
+    const before = structuredClone(graph);
+    state.migrateGraph(graph);
+    assert.deepEqual(graph, before, 'native versions bypass destructive legacy migration');
+    assert.equal((await compile(graph)).ok, false);
+    assert.equal((await run(graph)).plan.ok, false);
+    assert.equal(callCount(graph), 0);
+    let calls = 0;
+    const executed = await runWorkflow(graph, { request: async () => { calls++; }, snapshot: () => { snapshots++; } });
+    assert.equal(executed.error.code, 'UNSUPPORTED_VERSION');
+    assert.equal(calls, 0);
+}
+assert.equal(loreScans, 0);
+assert.equal(snapshots, 0);
+assert.equal(workflowSignature(native), graphSemanticSignature(native));
+const namedChanged = structuredClone(native);
+Object.values(namedChanged.wires)[0].fromPort = 'changed';
+assert.notEqual(workflowSignature(namedChanged), workflowSignature(native));
+
+const imported = state.importGraph(JSON.stringify(exportWorkflow(native)));
+assert.equal(imported.ok, true);
+assert.equal(imported.graph.schema, 3);
+assert.equal(Object.values(imported.graph.nodes).some(node => node.type === 'output'), false);
+assert.equal(JSON.parse(state.exportGraph(imported.graph.id)).schema, 2);
+const settingsBefore = structuredClone(state.settings());
+for (const data of [{ ...native, schema: 99 }, { graph: { ...native, schema: 99 } }, { ...native, runtime: 99 }]) {
+    assert.equal(state.importGraph(JSON.stringify(data)).ok, false);
+}
+assert.deepEqual(state.settings(), settingsBefore);
+const ids = Object.keys(native.nodes);
+const beforeConnect = structuredClone(native);
+assert.equal(state.connect(native, ids[0], ids[1], 'together').ok, false, 'native schema3 cannot enter legacy edit commands');
+assert.deepEqual(native, beforeConnect);
+const old = starterGraph('native-guidance');
+const beforeOld = structuredClone(old);
+assert.equal(state.connect(old, 'scene-context', 'smart-compactor', 'together').ok, false);
+assert.equal(state.connect(old, 'scene-context', 'guidance').ok, false);
+assert.equal(state.connect(old, 'scene-context', 'response-plan').ok, false, 'occupied native input rejects atomically');
+assert.deepEqual(old, beforeOld);
+delete old.wires['wire-1'];
+const connected = state.connect(old, 'scene-context', 'smart-compactor');
+assert.equal(connected.ok, true);
+assert.equal(connected.wire.order, 0);
+assert.equal(old.schema, 2);
+const disabled = structuredClone(native);
+disabled.groups.off = { id: 'off', enabled: false };
+disabled.nodes['scene-context'].inGroup = 'off';
+assert.equal(state.activeGraph(disabled), disabled, 'native dependency validation retains disabled topology');
+assert.equal(workflowSignature({ schema: 2, runtime: 1, mode: 'native-pre', nodes: { s: { id: 's', type: 'workflow', operation: 'scene-context' } }, wires: {} }), '{"groups":[],"mode":"native-pre","nodes":[{"controls":{"includeCharacter":true,"recentMessages":12},"enabled":true,"id":"s","key":"s","model":null,"modelRole":null,"operation":"scene-context","operationVersion":1,"profileId":null,"type":"workflow"}],"roles":{},"runtime":1,"schema":2,"wires":[]}', 'literal established schema2 signature remains stable after delegation');
+const large = { ...native, id: 'large', description: '' };
+const overhead = new TextEncoder().encode(JSON.stringify(exportWorkflow(large))).length;
+large.description = 'x'.repeat(2000000 - overhead);
+state.settings().graphs.large = large;
+const largeJson = state.exportGraph('large');
+assert.ok(new TextEncoder().encode(largeJson).length <= 2000000, 'state writer must preserve envelope UTF-8 bound after serialization');
+state.settings().workflowMode = 'native';
+state.settings().nativeBindings.preGraphId = imported.graph.id;
+assert.equal(sendWorkflowState().automatic, false);
+assert.match(sendWorkflowState().armedText, /unsupported|requires schema/i);
+console.log('workflow-dispatch: ok');

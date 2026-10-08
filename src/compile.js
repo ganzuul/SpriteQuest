@@ -28,6 +28,7 @@ import { stPrompt, MARKER_SOURCES, getPrompt } from './library.js?v=0.19.1';
 import { applySelect } from './select.js?v=0.19.1';
 import { toEntry, selectLore, loreMessages, blockBooks, stripFromWorldInfo } from './lore.js?v=0.19.1';
 import { computeState, valueOutput, stageFor, stageText, parseStatePort, stagePortId } from './statevals.js?v=0.19.1';
+import { isNativeWorkflow } from './workflow/contracts.js?v=0.19.1';
 
 /** A library prompt's text, for stages linked to one. */
 const libraryText = (id) => safe(() => getPrompt(id)?.content) ?? null;
@@ -1891,7 +1892,7 @@ export function generateLevels(graph) {
  * @param {Record<string,string>} [options.results] answers from Generate blocks already run
  */
 export async function compile(graph, { dryRun = false, live = null, results = {}, decisions = {} } = {}) {
-    if (graph?.schema === 2) return fail('Native workflows use artifact Run/Test; they do not replace the native prompt.');
+    if (isNativeWorkflow(graph)) return fail('Native workflows use artifact Run/Test; they do not replace the native prompt.');
     graph = activeGraph(graph);
     if (!graph) return fail('No canvas selected.');
     const out = outputNode(graph);
