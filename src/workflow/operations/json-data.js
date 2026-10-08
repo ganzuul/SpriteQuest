@@ -1,8 +1,18 @@
 // Called only with validated clones; stringify primitives without object/array hooks.
 function encodeJson(value) {
     if (value === null || typeof value !== 'object') return JSON.stringify(value);
-    if (Array.isArray(value)) return `[${value.map(encodeJson).join(',')}]`;
-    return `{${Object.keys(value).map(key => `${JSON.stringify(key)}:${encodeJson(value[key])}`).join(',')}}`;
+    if (Array.isArray(value)) {
+        let text = '[';
+        for (let i = 0; i < value.length; i++) text += `${i ? ',' : ''}${encodeJson(value[i])}`;
+        return `${text}]`;
+    }
+    let text = '{';
+    const keys = Object.keys(value);
+    for (let i = 0; i < keys.length; i++) {
+        const key = keys[i];
+        text += `${i ? ',' : ''}${JSON.stringify(key)}:${encodeJson(value[key])}`;
+    }
+    return `${text}}`;
 }
 
 export function cloneJsonValue(value) {
@@ -40,9 +50,11 @@ export function cloneJsonValue(value) {
 }
 
 export function stringifyJsonValue(value) {
-    const checked = cloneJsonValue(value);
-    if (!checked.ok) return checked;
-    return { ok: true, data: { text: encodeJson(checked.data.value) } };
+    try {
+        const checked = cloneJsonValue(value);
+        if (!checked.ok) return checked;
+        return { ok: true, data: { text: encodeJson(checked.data.value) } };
+    } catch { return { ok: false, error: { code: 'INVALID_JSON_VALUE', message: 'Input must contain only plain JSON data.' } }; }
 }
 
 export function readJsonPath(value, path) {

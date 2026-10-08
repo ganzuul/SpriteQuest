@@ -87,4 +87,23 @@ try { descriptorResult = cloneJsonValue(ownAccessor); }
 finally { delete Object.prototype.value; }
 assert.equal(descriptorReads,0);
 assert.equal(descriptorResult.ok,false);
+const originalConstructor = Object.getOwnPropertyDescriptor(Array.prototype,'constructor');
+let statefulConstructorReads = 0, statefulConstructorResult, statefulConstructorThrown;
+Object.defineProperty(Array.prototype,'constructor',{configurable:true,get(){if (++statefulConstructorReads === 1) return Array; throw new Error('Second inherited constructor read.');}});
+try { statefulConstructorResult = helpers.stringifyJsonValue({a:1}); }
+catch (error) { statefulConstructorThrown = error; }
+finally { Object.defineProperty(Array.prototype,'constructor',originalConstructor); }
+assert.equal(statefulConstructorThrown,undefined,'stringifyJsonValue must return a Result when encoding fails');
+assert.equal(typeof statefulConstructorResult.ok,'boolean');
+let constructorReads = 0, constructorResults, constructorThrown;
+Object.defineProperty(Array.prototype,'constructor',{configurable:true,get(){constructorReads++;throw new Error('Inherited constructor must not be read.');}});
+try {
+    constructorResults = [cloneJsonValue({a:1}),cloneJsonValue([1,2]),helpers.stringifyJsonValue({a:1}),helpers.stringifyJsonValue([1,2])];
+} catch (error) { constructorThrown = error; }
+finally { Object.defineProperty(Array.prototype,'constructor',originalConstructor); }
+assert.equal(constructorReads,0);
+assert.equal(constructorThrown,undefined);
+assert.deepEqual(constructorResults,[{ok:true,data:{value:{a:1}}},{ok:true,data:{value:[1,2]}},{ok:true,data:{text:'{"a":1}'}},{ok:true,data:{text:'[1,2]'}}]);
+assert.equal(statefulConstructorReads,0);
+assert.deepEqual(statefulConstructorResult,{ok:true,data:{text:'{"a":1}'}});
 console.log('workflow JSON data tests passed');
