@@ -32,3 +32,13 @@ Reviewed: F:\git\SillyCanvas\docs\superpowers\specs\2026-10-07-comfytavern-nativ
 ## Requested disposition
 
 Add the endpoint/preset resolution rule and the span-normalization rule; carry the nonblocking decisions into the first adapter/runtime tasks. Proceed with the specified red/green coverage and real-host synthetic acceptance within the existing eight-request authorization. No new scope or user decision is required by this review.
+
+## Amendment verification and final disposition
+
+The scoped changes were rechecked in the current specification. Finding 1 is resolved by explicit endpoint inheritance/origin disclosure, missing named preset rejection, and binding execution to the resolved provider/model/endpoint (line 68). Finding 2's material defect is resolved by merging overlapping/adjacent candidate ranges before assigning stable, non-overlapping indices (line 90).
+
+The requested follow-up clarifications are also present: manual pre Test does not publish guidance and later Send reruns it; the supported host generation types are enumerated (line 82); initial Apply targets only the latest completed assistant reply and rejects older/busy targets; in-memory application and unacknowledged save durability are distinguished (line 94).
+
+Minor precision note: neither the specification nor the current implementation plan contains the stated UTF-16/half-open offset convention. Carry `half-open UTF-16 offsets into the frozen original` into the patch contract and Unicode tests. This does not leave the material overlapping-region defect open.
+
+Final verdict: READY for implementation. No remaining Critical or Important specification findings from this review. No broad re-review, implementation, or paid calls were performed during amendment verification.
