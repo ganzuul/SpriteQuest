@@ -1,4 +1,4 @@
-import { operationFor } from './workflow/catalog.js?v=0.18.0';
+import { operationFor } from './workflow/catalog.js?v=0.19.0';
 /**
  * Silly Canvas — the canvas renderer.
  *
@@ -15,14 +15,14 @@ import { operationFor } from './workflow/catalog.js?v=0.18.0';
 import {
     NODE_TYPES, WIRE_KINDS, connect, disconnect, removeNode, touchGraph, wiresInto, deciderKeys, outPorts, hasPorts,
     groupMembers, ungroup, deleteGroup, groupOf, inOffGroup, settleOnBlankets, gatherBlanket, setGroupEnabled, blanketAt, GROUP_MIN,
-} from './state.js?v=0.18.0';
-import { selectLabel } from './select.js?v=0.18.0';
-import { graphPoint, zoomAt, wheelFactor } from './canvas/camera.js?v=0.18.0';
-import { createFrameScheduler } from './canvas/frame.js?v=0.18.0';
-import { selectionMode, rectangle, intersects, combineSelection } from './canvas/selection.js?v=0.18.0';
-import { createGeometryCache, indexIncidentWires } from './canvas/geometry.js?v=0.18.0';
-import { nodeCard } from './canvas/presentation.js?v=0.18.0';
-import { mountCanvas } from '../dist/silly-canvas-ui.js?v=0.18.0';
+} from './state.js?v=0.19.0';
+import { selectLabel } from './select.js?v=0.19.0';
+import { graphPoint, zoomAt, wheelFactor } from './canvas/camera.js?v=0.19.0';
+import { createFrameScheduler } from './canvas/frame.js?v=0.19.0';
+import { selectionMode, rectangle, intersects, combineSelection } from './canvas/selection.js?v=0.19.0';
+import { createGeometryCache, indexIncidentWires } from './canvas/geometry.js?v=0.19.0';
+import { nodeCard } from './canvas/presentation.js?v=0.19.0';
+import { mountCanvas } from '../dist/silly-canvas-ui.js?v=0.19.0';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 

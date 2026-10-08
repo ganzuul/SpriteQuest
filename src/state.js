@@ -1,5 +1,5 @@
 /**
- * Silly Canvas — state layer.
+ * ComfyTavern — state layer.
  *
  * Everything here goes through SillyTavern.getContext(). No deep imports into
  * ST internals: those move between releases, the context object does not.
@@ -20,9 +20,9 @@
  *   chat binding > character binding > activeGraphId
  */
 
-import { operationDefaults, operationFor } from './workflow/catalog.js?v=0.18.0';
-import { exportWorkflow, parseWorkflow } from './workflow/packages.js?v=0.18.0';
-import { stagePortId, parseStatePort, ensureStageIds } from './statevals.js?v=0.18.0';
+import { operationDefaults, operationFor } from './workflow/catalog.js?v=0.19.0';
+import { exportWorkflow, parseWorkflow } from './workflow/packages.js?v=0.19.0';
+import { stagePortId, parseStatePort, ensureStageIds } from './statevals.js?v=0.19.0';
 
 export const MODULE = 'prompt-canvas';
 export const META_KEY = 'promptCanvasGraph';
@@ -166,7 +166,7 @@ export function safe(fn, fallback = undefined) {
 export function settings() {
     const c = ctx();
     const root = c.extensionSettings ?? c.extension_settings;
-    if (!root) throw new Error('Silly Canvas: getContext() exposed no extension settings');
+    if (!root) throw new Error('ComfyTavern: getContext() exposed no extension settings');
     if (!root[MODULE]) root[MODULE] = {};
     const s = root[MODULE];
     s.enabled ??= false;

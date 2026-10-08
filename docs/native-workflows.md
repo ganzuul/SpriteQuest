@@ -2,15 +2,19 @@
 
 ComfyTavern can add guidance before SillyTavern writes its normal reply, or prepare a revision for you to review afterward. SillyTavern still builds the main prompt and generates the reply. The existing canvas engine remains available as **Legacy · Replace prompt**.
 
-This work is prepared on `codex/native-workflows` for a draft PR. Until it is merged, the repository's default branch may not include native workflows. For draft testing, check out that branch in the installed extension before reloading; this guide does not claim a released or merged build.
+This work is prepared on `codex/native-workflows` for a draft PR. Until it is merged, the repository's default branch may not include native workflows. Select that branch during installation using the steps below; this guide does not claim a released or merged build.
 
 ## Start with an example
 
-1. Install the extension through SillyTavern's **Extensions → Install extension** using `https://github.com/MentallyQuill/ComfyTavern`, then reload. Open the canvas beside Send or with `/canvas`.
+Keep **one enabled copy**. If your current installation points to `Dulgadurbit/SillyCanvas`, disable that extension before installing this fork's preview. The fork preserves saved-data compatibility, so two enabled copies would share the same data and generation hooks. Existing installations from `MentallyQuill/ComfyTavern` should use the branch-switch flow below.
+
+1. Open SillyTavern's **Extensions → Install extension**. Enter repository URL `https://github.com/MentallyQuill/ComfyTavern`, set **Branch or tag name (optional)** to `codex/native-workflows`, click **Install** (or **Install just for me**), then reload. Open the canvas beside Send or with `/canvas`.
 2. Open the library and choose **Install Scene guidance** or **Install Reviewed AI De-slop**. Each install creates its own editable graph and opens setup. Installing, importing, and editing never arm generation or make a model call.
 3. Choose a SillyTavern Connection Manager profile for each role: **Analysis** for scene guidance, **Prose** for repair. An optional role model override uses that model with the chosen profile. Inspect a model operation to override its connection/model independently.
 4. Use **Assign pre phase and enable native mode** for guidance, or **Assign post phase and enable native mode** for reviewed repair. Arming is a separate action. A missing/deleted profile or unsupported route blocks the run with a useful issue.
 5. For guidance, use **Test workflow** to inspect the result. To use guidance on normal sends, arm the extension and send as usual. For repair, wait for a completed assistant reply, then choose **Run reviewed repair** and compare the candidate with the original.
+
+For an existing installation from this same repository, use **Manage Extensions → Switch branch**, select `origin/codex/native-workflows` (or the local branch entry), click **Switch**, then reload. Install URLs use the repository address above without a `/tree/` suffix.
 
 **Test workflow can spend model tokens.** It computes guidance without publishing it. A later Send runs the enabled pre workflow again, with up to two more auxiliary requests; the test result is not cached for Send.
 

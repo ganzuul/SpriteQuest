@@ -1,5 +1,5 @@
 /**
- * Silly Canvas — the compiler.
+ * ComfyTavern — the compiler.
  *
  * A graph is not executed. It is compiled into a plan, and the plan is what
  * runs. That separation is the whole point: a plan is inspectable before a
@@ -22,16 +22,16 @@
  * no exceptions, because a graph you have to trace to predict is not a tool.
  */
 
-import { ctx, safe, NODE_TYPES, WIRE_KINDS, wiresInto, wiresOutOf, outputNode, togetherGroup, groupWires, deciderKeys, settings, activeGraph, saveWires } from './state.js?v=0.18.0';
-import { memoryForSend } from './memory.js?v=0.18.0';
-import { stPrompt, MARKER_SOURCES, getPrompt } from './library.js?v=0.18.0';
-import { applySelect } from './select.js?v=0.18.0';
-import { toEntry, selectLore, loreMessages, blockBooks, stripFromWorldInfo } from './lore.js?v=0.18.0';
-import { computeState, valueOutput, stageFor, stageText, parseStatePort, stagePortId } from './statevals.js?v=0.18.0';
+import { ctx, safe, NODE_TYPES, WIRE_KINDS, wiresInto, wiresOutOf, outputNode, togetherGroup, groupWires, deciderKeys, settings, activeGraph, saveWires } from './state.js?v=0.19.0';
+import { memoryForSend } from './memory.js?v=0.19.0';
+import { stPrompt, MARKER_SOURCES, getPrompt } from './library.js?v=0.19.0';
+import { applySelect } from './select.js?v=0.19.0';
+import { toEntry, selectLore, loreMessages, blockBooks, stripFromWorldInfo } from './lore.js?v=0.19.0';
+import { computeState, valueOutput, stageFor, stageText, parseStatePort, stagePortId } from './statevals.js?v=0.19.0';
 
 /** A library prompt's text, for stages linked to one. */
 const libraryText = (id) => safe(() => getPrompt(id)?.content) ?? null;
-import { holds } from './expr.js?v=0.18.0';
+import { holds } from './expr.js?v=0.19.0';
 
 /* ------------------------------------------------------------------ */
 /* live context                                                        */
@@ -799,7 +799,7 @@ export function resolveNode(node, live) {
             if (def.marker) {
                 const raw = markerContent(def.identifier, live);
                 if (raw === null) {
-                    warnings.push(`"${def.name}" is assembled by SillyTavern and Silly Canvas cannot resolve it yet. It will be skipped.`);
+                    warnings.push(`"${def.name}" is assembled by SillyTavern and ComfyTavern cannot resolve it yet. It will be skipped.`);
                     return { messages: [], warnings };
                 }
                 const content = sub(raw).trim();
@@ -1957,7 +1957,7 @@ export async function compile(graph, { dryRun = false, live = null, results = {}
     const tokens = await countTokens(built.messages);
     const budget = Number(ctx().maxContext) || 0;
     if (budget && tokens > budget) {
-        warnings.push(`This prompt is about ${tokens.toLocaleString()} tokens against a context of ${budget.toLocaleString()}. Silly Canvas does not trim to fit — the provider will reject it or truncate for you.`);
+        warnings.push(`This prompt is about ${tokens.toLocaleString()} tokens against a context of ${budget.toLocaleString()}. ComfyTavern does not trim to fit — the provider will reject it or truncate for you.`);
     }
 
     stages.push({

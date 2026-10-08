@@ -1,7 +1,7 @@
-import { validateWorkflow } from './contracts.js?v=0.18.0';
-import { operationFor } from './catalog.js?v=0.18.0';
-import { compactContext, formatContext } from './compactor.js?v=0.18.0';
-import { scanDraft, repairDraft, validatePatches } from './repair.js?v=0.18.0';
+import { validateWorkflow } from './contracts.js?v=0.19.0';
+import { operationFor } from './catalog.js?v=0.19.0';
+import { compactContext, formatContext } from './compactor.js?v=0.19.0';
+import { scanDraft, repairDraft, validatePatches } from './repair.js?v=0.19.0';
 
 /** Execution identity shared by the host and UI. Canvas presentation never invalidates work. */
 export function workflowSignature(graph) {

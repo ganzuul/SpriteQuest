@@ -1,10 +1,10 @@
-import { resolveBinding } from '../workflow/connections.js?v=0.18.0';
-import * as workflowRuntime from '../run.js?v=0.18.0';
-import { installStarter } from '../workflow/starters.js?v=0.18.0';
-import { operationDefaults, operationFor } from '../workflow/catalog.js?v=0.18.0';
-import { projectWorkflow, createWorkflowSurface, createWorkflowSession } from './workflow-surface.js?v=0.18.0';
+import { resolveBinding } from '../workflow/connections.js?v=0.19.0';
+import * as workflowRuntime from '../run.js?v=0.19.0';
+import { installStarter } from '../workflow/starters.js?v=0.19.0';
+import { operationDefaults, operationFor } from '../workflow/catalog.js?v=0.19.0';
+import { projectWorkflow, createWorkflowSurface, createWorkflowSession } from './workflow-surface.js?v=0.19.0';
 /**
- * Silly Canvas — the panel.
+ * ComfyTavern — the panel.
  *
  * Layout: library on the left, canvas in the middle, inspector on the right,
  * a compile preview that slides up from the bottom. The preview is not a
@@ -19,27 +19,27 @@ import {
     chatBinding, setChatBinding, characterBinding, setCharacterBinding,
     exportGraph, importGraph, blankGraph, isFolderCollapsed, setFolderCollapsed, togetherGroup,
     newDeciderKey, removeDeciderKey, onGraphTouched, duplicateNode, newStateValue, groupNodes, ungroup, groupMembers, createBlanket, inOffGroup,
-} from '../state.js?v=0.18.0';
-import { applyTheme } from '../theme.js?v=0.18.0';
-import { makeClip, pasteClip, readClip, toClipboard, fromClipboard, lastClip, describeClip } from '../clip.js?v=0.18.0';
-import { renderThemeEditor } from '../theme-editor.js?v=0.18.0';
-import * as H from '../history.js?v=0.18.0';
-import * as L from '../library.js?v=0.18.0';
-import { compile, gatherContext, resolveNode, textOf, generateLevels, emissionCounts, wirePreview, countTokens, countTextTokens, routingMode, explainDecider, deciderInputList, collect } from '../compile.js?v=0.18.0';
-import { LORE_POSITIONS } from '../lore.js?v=0.18.0';
-import { computeState, stageFor, NUDGE_KEY } from '../statevals.js?v=0.18.0';
-import { openStateWindow, closeStateWindow } from '../state-window.js?v=0.18.0';
-import { memoryAt, memoryHistory, setMemoryNow, mirrorToLorebook, lorebookNames, DECIDER_SAVES } from '../memory.js?v=0.18.0';
-import { check as checkFormula } from '../expr.js?v=0.18.0';
-import { DEFAULT_SELECT, isActive as selectActive, selectLabel } from '../select.js?v=0.18.0';
-import { run, profileName, effectiveModel, callCount, testBlock, shapeForApi, inspectProfile, modelsForSource, sourceForBlock, cachedModels, fetchModelList, previewBlock } from '../run.js?v=0.18.0';
-import { Canvas, WIRE_LABEL, TYPE_LABEL, TYPE_ICON } from '../canvas.js?v=0.18.0';
-import { modelCombo } from '../model-combo.js?v=0.18.0';
-import { jevReady } from '../jev.js?v=0.18.0';
-import { createGraphAnalysis } from './graph-analysis.js?v=0.18.0';
+} from '../state.js?v=0.19.0';
+import { applyTheme } from '../theme.js?v=0.19.0';
+import { makeClip, pasteClip, readClip, toClipboard, fromClipboard, lastClip, describeClip } from '../clip.js?v=0.19.0';
+import { renderThemeEditor } from '../theme-editor.js?v=0.19.0';
+import * as H from '../history.js?v=0.19.0';
+import * as L from '../library.js?v=0.19.0';
+import { compile, gatherContext, resolveNode, textOf, generateLevels, emissionCounts, wirePreview, countTokens, countTextTokens, routingMode, explainDecider, deciderInputList, collect } from '../compile.js?v=0.19.0';
+import { LORE_POSITIONS } from '../lore.js?v=0.19.0';
+import { computeState, stageFor, NUDGE_KEY } from '../statevals.js?v=0.19.0';
+import { openStateWindow, closeStateWindow } from '../state-window.js?v=0.19.0';
+import { memoryAt, memoryHistory, setMemoryNow, mirrorToLorebook, lorebookNames, DECIDER_SAVES } from '../memory.js?v=0.19.0';
+import { check as checkFormula } from '../expr.js?v=0.19.0';
+import { DEFAULT_SELECT, isActive as selectActive, selectLabel } from '../select.js?v=0.19.0';
+import { run, profileName, effectiveModel, callCount, testBlock, shapeForApi, inspectProfile, modelsForSource, sourceForBlock, cachedModels, fetchModelList, previewBlock } from '../run.js?v=0.19.0';
+import { Canvas, WIRE_LABEL, TYPE_LABEL, TYPE_ICON } from '../canvas.js?v=0.19.0';
+import { modelCombo } from '../model-combo.js?v=0.19.0';
+import { jevReady } from '../jev.js?v=0.19.0';
+import { createGraphAnalysis } from './graph-analysis.js?v=0.19.0';
 
-import { createWorkbench } from './workbench.js?v=0.18.0';
-import { createDomainSurfaces } from './domain-surfaces.js?v=0.18.0';
+import { createWorkbench } from './workbench.js?v=0.19.0';
+import { createDomainSurfaces } from './domain-surfaces.js?v=0.19.0';
 
 let workbench = null;
 let root = null;
@@ -65,11 +65,11 @@ export function escapeHtml(s) {
 
 export function toast(msg, type = 'info') {
     const t = safe(() => globalThis.toastr);
-    if (t) t[type === 'error' ? 'error' : type === 'success' ? 'success' : 'info'](msg, 'Silly Canvas');
-    else console.log('[Silly Canvas]', msg);
+    if (t) t[type === 'error' ? 'error' : type === 'success' ? 'success' : 'info'](msg, 'ComfyTavern');
+    else console.log('[ComfyTavern]', msg);
 }
 
-export async function confirmBox(text, title = 'Silly Canvas') {
+export async function confirmBox(text, title = 'ComfyTavern') {
     const c = ctx();
     try {
         const res = await c.callGenericPopup(text, c.POPUP_TYPE.CONFIRM, '', { okButton: 'Yes', cancelButton: 'No', title });
@@ -82,7 +82,7 @@ export async function confirmBox(text, title = 'Silly Canvas') {
 export async function inputBox(text, value = '') {
     const c = ctx();
     try {
-        const res = await c.callGenericPopup(text, c.POPUP_TYPE.INPUT, value, { title: 'Silly Canvas' });
+        const res = await c.callGenericPopup(text, c.POPUP_TYPE.INPUT, value, { title: 'ComfyTavern' });
         return (res === false || res === null || res === undefined) ? null : String(res);
     } catch {
         return prompt(text, value);
@@ -270,7 +270,7 @@ function build() {
         },
         arm: enabled => {
             settings().enabled = enabled; save(); renderStatus();
-            toast(current?.schema === 2 ? (enabled ? 'Native workflows are armed for assigned phases.' : 'Native workflows are off.') : enabled ? 'Silly Canvas is armed. Your canvas now builds the prompt.' : 'Silly Canvas is off. SillyTavern builds the prompt as usual.', enabled ? 'success' : 'info');
+            toast(current?.schema === 2 ? (enabled ? 'Native workflows are armed for assigned phases.' : 'Native workflows are off.') : enabled ? 'ComfyTavern is armed. Your canvas now builds the prompt.' : 'ComfyTavern is off. SillyTavern builds the prompt as usual.', enabled ? 'success' : 'info');
         },
         command: name => {
             const commands = { new: onNewGraph, duplicate: onDuplicateGraph, rename: onRenameGraph, delete: onDeleteGraph, import: onImportGraph, export: onExportGraph, seed: onSeedFromST, undo: doUndo, redo: doRedo,
@@ -3103,7 +3103,7 @@ function renderAiEngine(box, holder, decider, kind) {
         : ''));
     if (engine === 'jev') {
         if (!jevReady()) {
-            box.append(el('div', 'pc-hint pc-warn', 'Jev needs your TypeSafe API key: Extensions \u2192 Silly Canvas \u2192 Jev.'));
+            box.append(el('div', 'pc-hint pc-warn', 'Jev needs your TypeSafe API key: Extensions \u2192 ComfyTavern \u2192 Jev.'));
         }
         const pct = el('input', 'text_pole pc-wide-num');
         pct.type = 'number'; pct.min = '1'; pct.max = '99';

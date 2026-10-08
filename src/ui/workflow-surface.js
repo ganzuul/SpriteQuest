@@ -1,8 +1,8 @@
-import { workflowSignature } from '../workflow/runtime.js?v=0.18.0';
-import * as uiBundle from '../../dist/silly-canvas-ui.js?v=0.18.0';
-import { FAMILIES, OPERATIONS, operationFor } from '../workflow/catalog.js?v=0.18.0';
-import { safeWorkflowData, validateWorkflow } from '../workflow/contracts.js?v=0.18.0';
-import { STARTERS } from '../workflow/starters.js?v=0.18.0';
+import { workflowSignature } from '../workflow/runtime.js?v=0.19.0';
+import * as uiBundle from '../../dist/silly-canvas-ui.js?v=0.19.0';
+import { FAMILIES, OPERATIONS, operationFor } from '../workflow/catalog.js?v=0.19.0';
+import { safeWorkflowData, validateWorkflow } from '../workflow/contracts.js?v=0.19.0';
+import { STARTERS } from '../workflow/starters.js?v=0.19.0';
 const descriptions = { Input: 'Bring material into a workflow.', Shaping: 'Change the plan or amount of material.', Surface: 'Refine expression.', Transpose: 'Apply a reference’s qualities.', Derive: 'Extract findings from a source.', Output: 'Inspect or commit an artifact.' };
 const legacy = { Input: ['prompt', 'st', 'history', 'injection', 'lorebook', 'state', 'memory'], Shaping: ['generate', 'decider'], Surface: [], Transpose: [], Derive: [], Output: ['output', 'memory'] };
 const legacyTitles = { prompt: 'Prompt', st: 'ST prompt reader', history: 'History', injection: 'Injection reader', lorebook: 'Lorebook', state: 'State', generate: 'Generate', decider: 'Decider', output: 'Replace prompt', memory: 'Memory' };

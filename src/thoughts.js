@@ -11,7 +11,7 @@
  * later turn — only the canvas decides what gets sent.
  */
 
-import { ctx, safe, settings } from './state.js?v=0.18.0';
+import { ctx, safe, settings } from './state.js?v=0.19.0';
 
 /**
  * How Generate answers appear in the chat: 'folded' (a closed line you can

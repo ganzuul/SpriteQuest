@@ -1,4 +1,4 @@
-import { safeWorkflowData, validateWorkflow } from './contracts.js?v=0.18.0';
+import { safeWorkflowData, validateWorkflow } from './contracts.js?v=0.19.0';
 function portableGraph(graph) {
     const copy = structuredClone(graph);
     for (const binding of Object.values(copy.roles ?? {})) if ('profileId' in binding) binding.profileId = null;

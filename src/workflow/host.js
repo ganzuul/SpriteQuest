@@ -1,5 +1,5 @@
-import { runWorkflow, freezeArtifact, workflowSignature } from './runtime.js?v=0.18.0';
-import { resolveBinding, requestModel } from './connections.js?v=0.18.0';
+import { runWorkflow, freezeArtifact, workflowSignature } from './runtime.js?v=0.19.0';
+import { resolveBinding, requestModel } from './connections.js?v=0.19.0';
 
 const PREFIX = 'comfytavern:guidance:';
 const fail = (code,message) => ({ok:false,error:{code,message},reports:[],calls:[],trace:[]});

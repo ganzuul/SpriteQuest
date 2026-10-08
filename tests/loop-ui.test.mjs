@@ -25,7 +25,7 @@ UI.open();
 await tick(30);
 
 // 1. the name
-assert.match(document.querySelector('.pc-brand').textContent, /Silly Canvas/);
+assert.match(document.querySelector('.pc-brand').textContent, /ComfyTavern/);
 assert.ok(!document.body.textContent.includes('Prompt Canvas'));
 
 // 2. the Generate face says where its instruction comes from

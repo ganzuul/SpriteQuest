@@ -16,15 +16,15 @@
  *    recorded as the error, the run continues, and you see it in the trace.
  */
 
-import { ctx, safe, settings, save as saveSettings, NODE_TYPES, togetherGroup, loopWires, loopSection, activeGraph } from './state.js?v=0.18.0';
-import { compile, collect, generateOrder, generateLevels, gatherContext, evaluateCondition, liveNodes, generateDeps, textOf, picks, wireHolds } from './compile.js?v=0.18.0';
-import { plannedSaves, writeSaves, mirrorToLorebook } from './memory.js?v=0.18.0';
-import { jevYesNo, jevSort } from './jev.js?v=0.18.0';
-import { applySelect } from './select.js?v=0.18.0';
-import { validateWorkflow } from './workflow/contracts.js?v=0.18.0';
-import { createNativeWorkflowController } from './workflow/host.js?v=0.18.0';
-export { runWorkflow, workflowSignature } from './workflow/runtime.js?v=0.18.0';
-export { createNativeWorkflowController, snapshotContext, snapshotReply } from './workflow/host.js?v=0.18.0';
+import { ctx, safe, settings, save as saveSettings, NODE_TYPES, togetherGroup, loopWires, loopSection, activeGraph } from './state.js?v=0.19.0';
+import { compile, collect, generateOrder, generateLevels, gatherContext, evaluateCondition, liveNodes, generateDeps, textOf, picks, wireHolds } from './compile.js?v=0.19.0';
+import { plannedSaves, writeSaves, mirrorToLorebook } from './memory.js?v=0.19.0';
+import { jevYesNo, jevSort } from './jev.js?v=0.19.0';
+import { applySelect } from './select.js?v=0.19.0';
+import { validateWorkflow } from './workflow/contracts.js?v=0.19.0';
+import { createNativeWorkflowController } from './workflow/host.js?v=0.19.0';
+export { runWorkflow, workflowSignature } from './workflow/runtime.js?v=0.19.0';
+export { createNativeWorkflowController, snapshotContext, snapshotReply } from './workflow/host.js?v=0.19.0';
 
 let nativeController, nativeHelpers, nativeInitialization;
 /** Stable adapter facade consumed by the projection-only workflow UI. */

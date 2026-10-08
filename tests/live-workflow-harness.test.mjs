@@ -74,7 +74,7 @@ test('reservation bridge refuses invalid and concurrent sends without replacing 
 });
 test('dedicated module routing refuses arbitrary files and serves an actual production module', async()=>{
     const root=fileURLToPath(new URL('../',import.meta.url));
-    const path=await productionModulePath(root,'http://127.0.0.1/__comfytavern-live-test/src/workflow/runtime.js?v=0.18.0');
+    const path=await productionModulePath(root,'http://127.0.0.1/__comfytavern-live-test/src/workflow/runtime.js?v=0.19.0');
     assert.equal(path,fileURLToPath(new URL('../src/workflow/runtime.js',import.meta.url)));
     for (const url of ['http://127.0.0.1/__comfytavern-live-test/.git/config','http://127.0.0.1/__comfytavern-live-test/src/state.js','http://127.0.0.1/__comfytavern-live-test/src/workflow/../../.aws/credentials']) await assert.rejects(productionModulePath(root,url),/module/i);
 });
@@ -89,7 +89,7 @@ test('production fixture graphs compact pinned text, plan bounded guidance and r
             return {choices:[{message:{content:text},finish_reason:'stop'}],usage:{prompt_tokens:50,completion_tokens:20,total_tokens:70,cost:0,currency:'USD',privateField:'must never reach report'}};
         }},
     };
-    const results=await runSyntheticFixtures({version:'0.18.0',profileId:'fixture-profile'},{runtime,connections,starters,host,reserve:bridge.reserve,finish:bridge.finish});
+    const results=await runSyntheticFixtures({version:'0.19.0',profileId:'fixture-profile'},{runtime,connections,starters,host,reserve:bridge.reserve,finish:bridge.finish});
     assert.equal(results.length,2);
     assert.deepEqual(results.map(result=>[result.ok,result.actualCalls]),[[true,2],[true,1]]);
     assert.deepEqual(results.flatMap(result=>result.calls.map(call=>call.model)),['z-ai/glm-5.2','z-ai/glm-5.2:thinking','z-ai/glm-5.2']);

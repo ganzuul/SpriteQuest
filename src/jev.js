@@ -1,5 +1,5 @@
 /**
- * Silly Canvas — Jev, TypeSafe's decision model.
+ * ComfyTavern — Jev, TypeSafe's decision model.
  *
  * Jev does not write text. It is shown some text (the "state") and typed
  * questions, and answers each with probabilities: a yes/no question ("noul")
@@ -17,7 +17,7 @@
  * config.yaml switches it on.
  */
 
-import { ctx, safe, settings, save } from './state.js?v=0.18.0';
+import { ctx, safe, settings, save } from './state.js?v=0.19.0';
 
 export const JEV_URL = 'https://api.typesafe.ai/v1/systemone';
 export const JEV_MODEL = 'jev-latest';
@@ -49,7 +49,7 @@ const doFetch = (...a) => (fetchImpl ?? globalThis.fetch)(...a);
  */
 export async function askJev(state, questions, { signal = null } = {}) {
     const key = String(jevSettings().key ?? '').trim();
-    if (!key) throw new JevError('No TypeSafe API key. Add it in Extensions → Silly Canvas → Jev.');
+    if (!key) throw new JevError('No TypeSafe API key. Add it in Extensions → ComfyTavern → Jev.');
     const body = JSON.stringify({ model: jevSettings().model || JEV_MODEL, state: state === '' ? '(empty)' : state, questions });
     const started = Date.now();
     const auth = { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` };

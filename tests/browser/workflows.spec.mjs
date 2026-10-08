@@ -184,7 +184,7 @@ async function reviewFixture(page) {
         c.setExtensionPrompt = (key, value, position, depth, scan, role) => { c.extensionPrompts[key] = { value, position, depth, scan, role }; };
         c.updateMessageBlock = () => {}; c.swipe = { refresh() {} };
         c.saveChat = async () => { window.workflowSaveAttempts = (window.workflowSaveAttempts || 0) + 1; };
-        await (await import('/src/run.js?v=0.18.0')).initializeNativeWorkflowController();
+        await (await import('/src/run.js?v=0.19.0')).initializeNativeWorkflowController();
     });
     await page.getByRole('button', { name: 'Install Reviewed AI De-slop' }).click();
     await page.getByLabel('Prose connection', { exact: true }).selectOption('prose');
@@ -299,7 +299,7 @@ test('native camera pan and zoom preserve the focused editor without domain work
     await page.getByLabel('instructions', { exact: true }).focus();
     const measured = await page.evaluate(async () => {
         const { context: c, canvas, settle } = window.canvasHarness;
-        const controller = (await import('/src/run.js?v=0.18.0')).getNativeWorkflowController();
+        const controller = (await import('/src/run.js?v=0.19.0')).getNativeWorkflowController();
         const editor = document.activeElement, node = canvas.nodeLayer.querySelector('.pc-node'), requests = window.workflowRequests.length;
         let analysis = 0, bindings = 0, freshness = 0, tokens = 0, lore = 0;
         const prepare = canvas.hooks.prepareRender, getProfile = c.ConnectionManagerRequestService.getProfile, candidateStatus = controller.candidateStatus, count = c.getTokenCountAsync;
@@ -318,12 +318,12 @@ test('native camera pan and zoom preserve the focused editor without domain work
         return { analysis, bindings, freshness, tokens, lore, requests: window.workflowRequests.length - requests, sameEditor: editor === document.activeElement && document.contains(editor), sameNode: node === canvas.nodeLayer.querySelector('.pc-node') };
     });
     expect(measured).toEqual({ analysis: 0, bindings: 0, freshness: 0, tokens: 0, lore: 0, requests: 0, sameEditor: true, sameNode: true });
-    expect(await page.evaluate(async () => { const controller = (await import('/src/run.js?v=0.18.0')).getNativeWorkflowController(); return controller.candidateStatus(controller.lastResult().artifact).ok; })).toBe(true);
+    expect(await page.evaluate(async () => { const controller = (await import('/src/run.js?v=0.19.0')).getNativeWorkflowController(); return controller.candidateStatus(controller.lastResult().artifact).ok; })).toBe(true);
     const title = await page.locator('.pc-node-title').filter({ hasText: /^Reply Snapshot$/ }).boundingBox();
     await page.mouse.move(title.x + 20, title.y + 8); await page.mouse.down();
     await page.mouse.move(title.x + 60, title.y + 28, { steps: 4 }); await page.mouse.up();
     await expect(page.getByRole('button', { name: 'Apply reviewed candidate', exact: true })).toBeEnabled();
-    expect(await page.evaluate(async () => { const controller = (await import('/src/run.js?v=0.18.0')).getNativeWorkflowController(); return controller.candidateStatus(controller.lastResult().artifact).ok; })).toBe(true);
+    expect(await page.evaluate(async () => { const controller = (await import('/src/run.js?v=0.19.0')).getNativeWorkflowController(); return controller.candidateStatus(controller.lastResult().artifact).ok; })).toBe(true);
     await page.getByRole('button', { name: 'Inspect Repair', exact: true }).click();
     await page.getByLabel('instructions', { exact: true }).fill('A semantic operation edit.');
     await expect(page.getByRole('button', { name: 'Apply reviewed candidate', exact: true })).toHaveCount(0);
@@ -355,7 +355,7 @@ test('narrow workflow inspection and review remain opaque during selection feedb
     await reviewFixture(page);
     await page.setViewportSize({ width: 760, height: 1000 });
     for (const theme of ['midnight', 'parchment']) {
-        await page.evaluate(async theme => (await import('/src/theme.js?v=0.18.0')).setPreset(theme), theme);
+        await page.evaluate(async theme => (await import('/src/theme.js?v=0.19.0')).setPreset(theme), theme);
         await page.getByRole('button', { name: 'Inspect Pattern Scan', exact: true }).click();
         const opacity = await page.locator('.pc-inspector').evaluate(inspector => {
             const animations = inspector.getAnimations();
@@ -386,7 +386,7 @@ test('narrow toolbar exposes readable labeled pane and theme controls', async ({
     await reviewFixture(page);
     await page.setViewportSize({ width: 760, height: 1000 });
     for (const theme of ['midnight', 'parchment']) {
-        await page.evaluate(async theme => (await import('/src/theme.js?v=0.18.0')).setPreset(theme), theme);
+        await page.evaluate(async theme => (await import('/src/theme.js?v=0.19.0')).setPreset(theme), theme);
         await expect(page.getByRole('button', { name: 'Toggle library', exact: true }).getByText('Library', { exact: true })).toBeVisible();
         await expect(page.getByRole('button', { name: 'Toggle inspector', exact: true }).getByText('Inspector', { exact: true })).toBeVisible();
         await expect(page.getByTitle('Theme and colours', { exact: true }).getByText('Theme', { exact: true })).toBeVisible();
