@@ -164,7 +164,7 @@ export async function repairDraft(draft, node = {}, ports = {}) {
     const frozen = freeze(structuredClone(draft));
     if (node.mode === 'scan' || frozen.spans?.length === 0) return success({ kind: 'patches', draft: frozen, patches: [], protectedLiterals: [...(frozen.protectedLiterals ?? []), ...(node.protectedLiterals ?? [])] });
     const messages = [
-        { role: 'system', content: 'Repair selected prose spans only. Return JSON {"patches":[{"index":0,"replacement":"..."}]}. Use only supplied indices; preserve protected wording. Unselected original text cannot change.' },
+        { role: 'system', content: 'Repair selected prose spans only. Return exactly one raw JSON object using exactly this schema: {"patches":[{"index":0,"replacement":"..."}]}. Do not include Markdown, code fences, backticks, commentary, or surrounding text. Use only supplied indices; preserve protected wording. Unselected original text cannot change.' },
         { role: 'user', content: JSON.stringify({ original: frozen.text, spans: frozen.spans, ...(frozen.context === undefined ? {} : { context: frozen.context.messages.map(({ id, role, text }) => ({ id, role, text })) }), rules: frozen.rules ?? [], exemptions: frozen.exemptions ?? [], protectedLiterals: [...(frozen.protectedLiterals ?? []), ...(node.protectedLiterals ?? [])], strength: node.strength ?? 'light', instructions: node.instructions ?? '' }) },
     ];
     const prompt = messages.map(message => message.content).join('\n');
