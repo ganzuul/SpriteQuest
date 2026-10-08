@@ -32,3 +32,22 @@ export interface WorkbenchActions {
     mode: (mode: string) => void; zoom: (factor: number) => void; fitSelection: () => void;
     unpin: () => void; pinChat: () => void; pinCharacter: () => void; makeDefault: () => void; preview: () => void;
 }
+
+
+export interface WorkflowControl { key: string; label: string; value: string | number | boolean; kind: string; options: string[] | null }
+export interface WorkflowNodeView { id: string; title: string; operation: string; family: string; phase: string; input: string; output: string; terminal: boolean; modelRole: string | null; profileId: string; model: string; effective: string; enabled: boolean; controls: WorkflowControl[] }
+export interface WorkflowView {
+    graphId: string; name: string; native: boolean; phase: string; workflowMode: string; assigned: boolean; selectedId: string | null;
+    roles: { name: string; profileId: string; model: string }[]; profiles: { id: string; name: string }[];
+    starters: { id: string; title: string; purpose: string; phase: string; roles: string[]; callBound: number }[];
+    families: { name: string; description: string; legacy: { id: string; title: string }[]; operations: { id: string; title: string; phase: string; compatible: boolean }[] }[];
+    nodes: WorkflowNodeView[]; groups: { id: string; title: string; members: string[]; collapsed: boolean }[];
+    callBound: number; issues: string[]; busy: boolean; status: string; quoteHelp: string;
+    result: { ok: boolean; error: string; actualCalls: number; callBound: number; guidance: string; original: string; candidate: string; findings: unknown[]; changes: unknown[]; reports: unknown[]; calls: unknown[]; tokenMethods: string[]; applyAvailable: boolean; applyIssue: string } | null;
+}
+export interface WorkflowActions {
+    install: (id: string) => void; setMode: (mode: string) => void; bindRole: (name: string, profileId: string, model: string) => void; assign: (phase: string) => void;
+    run: () => void; apply: () => void; reject: () => void; inspect: (id: string) => void; expand: (id: string) => void;
+    duplicate: (id: string) => void; remove: (id: string) => void;
+    updateNode: (id: string, key: string, value: unknown) => void; addNode: (operation: string) => void; addLegacyNode: (type: string) => void;
+}

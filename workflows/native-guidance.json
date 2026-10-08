@@ -1,0 +1,120 @@
+{
+  "kind": "comfytavern-workflow",
+  "schema": 1,
+  "minRuntime": 1,
+  "graph": {
+    "id": "native-guidance",
+    "name": "Scene guidance",
+    "schema": 2,
+    "runtime": 1,
+    "mode": "native-pre",
+    "template": {
+      "id": "native-guidance",
+      "version": 1
+    },
+    "roles": {
+      "Analysis": {
+        "profileId": null,
+        "model": null
+      }
+    },
+    "nodes": {
+      "scene-context": {
+        "id": "scene-context",
+        "type": "workflow",
+        "operationVersion": 1,
+        "enabled": true,
+        "x": 100,
+        "y": 140,
+        "w": 260,
+        "operation": "scene-context",
+        "title": "Scene Context",
+        "modelRole": null,
+        "profileId": null,
+        "model": null,
+        "recentMessages": 12,
+        "includeCharacter": true
+      },
+      "smart-compactor": {
+        "id": "smart-compactor",
+        "type": "workflow",
+        "operationVersion": 1,
+        "enabled": true,
+        "x": 410,
+        "y": 140,
+        "w": 260,
+        "operation": "smart-compactor",
+        "title": "Smart Compactor",
+        "modelRole": "Analysis",
+        "profileId": null,
+        "model": null,
+        "targetTokens": 1200,
+        "purpose": "",
+        "method": "compress",
+        "keepRecent": 2,
+        "pins": [],
+        "maxTokens": 1024
+      },
+      "response-plan": {
+        "id": "response-plan",
+        "type": "workflow",
+        "operationVersion": 1,
+        "enabled": true,
+        "x": 720,
+        "y": 140,
+        "w": 260,
+        "operation": "response-plan",
+        "title": "Response Plan",
+        "modelRole": "Analysis",
+        "profileId": null,
+        "model": null,
+        "instructions": "Suggest scene direction and actor intentions. Preserve user agency; proposals are not established events.",
+        "maxTokens": 768
+      },
+      "guidance": {
+        "id": "guidance",
+        "type": "workflow",
+        "operationVersion": 1,
+        "enabled": true,
+        "x": 1030,
+        "y": 140,
+        "w": 260,
+        "operation": "guidance",
+        "title": "Guidance",
+        "modelRole": null,
+        "profileId": null,
+        "model": null,
+        "budgetTokens": 768
+      }
+    },
+    "wires": {
+      "wire-1": {
+        "id": "wire-1",
+        "from": "scene-context",
+        "to": "smart-compactor",
+        "order": 0,
+        "kind": "merge"
+      },
+      "wire-2": {
+        "id": "wire-2",
+        "from": "smart-compactor",
+        "to": "response-plan",
+        "order": 0,
+        "kind": "merge"
+      },
+      "wire-3": {
+        "id": "wire-3",
+        "from": "response-plan",
+        "to": "guidance",
+        "order": 0,
+        "kind": "merge"
+      }
+    },
+    "groups": {},
+    "view": {
+      "x": 0,
+      "y": 0,
+      "zoom": 1
+    }
+  }
+}

@@ -1,3 +1,4 @@
+import { operationFor } from './workflow/catalog.js?v=0.18.0';
 /**
  * Silly Canvas — the canvas renderer.
  *
@@ -38,6 +39,7 @@ const WIRE_LABEL = {
 const TOGETHER_LABEL = 'together';
 
 const TYPE_LABEL = {
+    [NODE_TYPES.WORKFLOW]: 'Workflow',
     [NODE_TYPES.PROMPT]: 'Prompt',
     [NODE_TYPES.ST]: 'SillyTavern',
     [NODE_TYPES.HISTORY]: 'History',
@@ -53,6 +55,7 @@ const TYPE_LABEL = {
 
 /** A symbol per block type, so a canvas can be read at a glance. */
 const TYPE_ICON = {
+    [NODE_TYPES.WORKFLOW]: 'fa-cube',
     [NODE_TYPES.PROMPT]: 'fa-align-left',
     [NODE_TYPES.ST]: 'fa-book',
     [NODE_TYPES.HISTORY]: 'fa-comments',
@@ -419,7 +422,7 @@ export class Canvas {
             id: g.id, collapsed: !!g.collapsed, x: g.collapsed ? g.x : frame.x, y: g.collapsed ? g.y : frame.y, w: g.collapsed ? g.w || 260 : frame.w, h: frame.h,
             className: g.collapsed ? 'pc-node pc-node-group' + (selected ? ' pc-selected' : '') + (multi ? ' pc-multi' : '') + (g.enabled === false ? ' pc-off pc-group-is-off' : '') : 'pc-group-frame' + (selected ? ' pc-selected' : '') + (g.enabled === false ? ' pc-group-is-off' : '') + (members.length ? '' : ' pc-group-empty'),
             title: g.title || 'Group', enabled: g.enabled !== false,
-            body: members.length + ' blocks: ' + members.map(n => n.title || 'Untitled').join(' · '),
+            body: (g.component ? 'Surface · maximum ' + members.reduce((sum, node) => { const bound = operationFor(node)?.requestBound || 0; return sum + (typeof bound === 'function' ? bound(node) : bound); }, 0) + ' auxiliary requests · ' : '') + members.length + ' blocks: ' + members.map(n => n.title || 'Untitled').join(' · '),
             io: (ins.length ? 'in: ' + ins.join(', ') : 'nothing wired in') + '  →  ' + (outs.length ? 'out: ' + outs.join(', ') : 'goes nowhere'),
             count: members.length ? members.length + ' block' + (members.length === 1 ? '' : 's') : 'empty — drag blocks onto it',
             token: groupTokens && g.enabled !== false ? { className: 'pc-tok', text: groupTokens >= 1000 ? (groupTokens / 1000).toFixed(1) + 'k tok' : groupTokens + ' tok', title: 'The blocks in this group add ' + groupTokens.toLocaleString() + ' tokens of their own text.' } : null,

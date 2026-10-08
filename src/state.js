@@ -297,6 +297,19 @@ export function deleteGraph(id) {
 
 const touchListeners = new Set();
 
+/** Keep inspectable formation metadata tied to the same editable primitive nodes. */
+export function syncComponentMembers(graph) {
+    if (graph?.schema !== 2) return;
+    for (const group of Object.values(graph.groups ?? {})) {
+        if (!group.component && !Array.isArray(group.members)) continue;
+        const members = Object.values(graph.nodes ?? {}).filter(node => node.inGroup === group.id).map(node => node.id);
+        group.members = members;
+        if (group.component && (!members.includes(group.entry) || !members.includes(group.exit))) {
+            delete group.component; delete group.entry; delete group.exit;
+        }
+    }
+}
+
 /** Be told about every change to any canvas (undo history listens here). */
 export function onGraphTouched(fn) {
     touchListeners.add(fn);
@@ -304,6 +317,7 @@ export function onGraphTouched(fn) {
 }
 
 export function touchGraph(graph) {
+    syncComponentMembers(graph);
     if (graph) graph.updatedAt = Date.now();
     save();
     if (graph) for (const fn of touchListeners) { try { fn(graph); } catch { /* ignore */ } }

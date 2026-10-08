@@ -1,5 +1,12 @@
 import { installMock } from '../mock.js';
 const context = installMock({ settings: { graphs: {}, ui: { liveTokens: false } } });
+// Browser fixtures exercise the public host events used by workflow freshness.
+const listeners = new Map();
+context.eventSource = {
+    on(name, callback) { if (!listeners.has(name)) listeners.set(name, new Set()); listeners.get(name).add(callback); },
+    removeListener(name, callback) { listeners.get(name)?.delete(callback); },
+    async emit(name, ...args) { for (const callback of [...(listeners.get(name) ?? [])]) await callback(...args); },
+};
 context.eventTypes = new Proxy({}, { get: (_, key) => key });
 context.SlashCommandParser = { addCommandObject() {} }; context.SlashCommand = { fromProps: value => value };
 globalThis.toastr = { info() {}, success() {}, warning() {}, error() {} };

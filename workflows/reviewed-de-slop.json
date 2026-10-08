@@ -1,0 +1,190 @@
+{
+  "kind": "comfytavern-workflow",
+  "schema": 1,
+  "minRuntime": 1,
+  "graph": {
+    "id": "reviewed-de-slop",
+    "name": "Reviewed AI De-slop",
+    "schema": 2,
+    "runtime": 1,
+    "mode": "native-post",
+    "template": {
+      "id": "reviewed-de-slop",
+      "version": 1
+    },
+    "roles": {
+      "Prose": {
+        "profileId": null,
+        "model": null
+      }
+    },
+    "nodes": {
+      "reply-snapshot": {
+        "id": "reply-snapshot",
+        "type": "workflow",
+        "operationVersion": 1,
+        "enabled": true,
+        "x": 100,
+        "y": 140,
+        "w": 260,
+        "operation": "reply-snapshot",
+        "title": "Reply Snapshot",
+        "modelRole": null,
+        "profileId": null,
+        "model": null
+      },
+      "pattern-scan": {
+        "id": "pattern-scan",
+        "type": "workflow",
+        "operationVersion": 1,
+        "enabled": true,
+        "x": 410,
+        "y": 140,
+        "w": 260,
+        "operation": "pattern-scan",
+        "title": "Pattern Scan",
+        "modelRole": null,
+        "profileId": null,
+        "model": null,
+        "mode": "literal",
+        "scope": "whole",
+        "caseSensitive": false,
+        "rules": [
+          "a testament to",
+          "delve",
+          "tapestry"
+        ],
+        "exemptions": [],
+        "protectedLiterals": [],
+        "inGroup": "ai-de-slop"
+      },
+      "repair": {
+        "id": "repair",
+        "type": "workflow",
+        "operationVersion": 1,
+        "enabled": true,
+        "x": 720,
+        "y": 140,
+        "w": 260,
+        "operation": "repair",
+        "title": "Repair",
+        "modelRole": "Prose",
+        "profileId": null,
+        "model": null,
+        "mode": "repair",
+        "strength": "light",
+        "instructions": "",
+        "maxTokens": 2048,
+        "protectedLiterals": [],
+        "inGroup": "ai-de-slop"
+      },
+      "validate-patches": {
+        "id": "validate-patches",
+        "type": "workflow",
+        "operationVersion": 1,
+        "enabled": true,
+        "x": 1030,
+        "y": 140,
+        "w": 260,
+        "operation": "validate-patches",
+        "title": "Validate Patches",
+        "modelRole": null,
+        "profileId": null,
+        "model": null,
+        "inGroup": "ai-de-slop"
+      },
+      "review-gate": {
+        "id": "review-gate",
+        "type": "workflow",
+        "operationVersion": 1,
+        "enabled": true,
+        "x": 1340,
+        "y": 140,
+        "w": 260,
+        "operation": "review-gate",
+        "title": "Review Gate",
+        "modelRole": null,
+        "profileId": null,
+        "model": null
+      },
+      "apply-reply": {
+        "id": "apply-reply",
+        "type": "workflow",
+        "operationVersion": 1,
+        "enabled": true,
+        "x": 1650,
+        "y": 140,
+        "w": 260,
+        "operation": "apply-reply",
+        "title": "Apply Reply",
+        "modelRole": null,
+        "profileId": null,
+        "model": null
+      }
+    },
+    "wires": {
+      "wire-1": {
+        "id": "wire-1",
+        "from": "reply-snapshot",
+        "to": "pattern-scan",
+        "order": 0,
+        "kind": "merge"
+      },
+      "wire-2": {
+        "id": "wire-2",
+        "from": "pattern-scan",
+        "to": "repair",
+        "order": 0,
+        "kind": "merge"
+      },
+      "wire-3": {
+        "id": "wire-3",
+        "from": "repair",
+        "to": "validate-patches",
+        "order": 0,
+        "kind": "merge"
+      },
+      "wire-4": {
+        "id": "wire-4",
+        "from": "validate-patches",
+        "to": "review-gate",
+        "order": 0,
+        "kind": "merge"
+      },
+      "wire-5": {
+        "id": "wire-5",
+        "from": "review-gate",
+        "to": "apply-reply",
+        "order": 0,
+        "kind": "merge"
+      }
+    },
+    "groups": {
+      "ai-de-slop": {
+        "id": "ai-de-slop",
+        "title": "AI De-slop",
+        "collapsed": true,
+        "enabled": true,
+        "x": 410,
+        "y": 140,
+        "w": 260,
+        "component": {
+          "id": "ai-de-slop",
+          "version": 1
+        },
+        "entry": "pattern-scan",
+        "exit": "validate-patches",
+        "members": [
+          "pattern-scan",
+          "repair",
+          "validate-patches"
+        ]
+      }
+    },
+    "view": {
+      "x": 0,
+      "y": 0,
+      "zoom": 1
+    }
+  }
+}
