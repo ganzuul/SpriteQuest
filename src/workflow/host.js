@@ -241,6 +241,22 @@ export function createNativeWorkflowController(ports) {
         });
         on('GENERATION_STOPPED',()=>{generation.aborted=true;const m=context().chat?.at(-1);if(m && !m.is_user && (!generation.originalTail || m!==generation.originalTail.message || m.mes!==generation.originalTail.text || incompleteStream(context(),context().chat.length-1)))rememberStopped(context());cancel('Generation stopped');});
         on('GENERATION_ENDED',()=>{const c=context();if(incompleteStream(c,c.chat?.length-1) && c.chat?.at(-1))rememberStopped(c);if(active && !active.pending)active.abortPrimary=null;cancel('Generation ended');});
+        on('MESSAGE_SWIPE_DELETED',({messageId,swipeId}={})=>{
+            const m=context().chat?.[messageId],records=stopped.get(m);
+            if(records && Number.isInteger(messageId) && Number.isInteger(swipeId) && swipeId>=0 && Array.isArray(m.swipes) && swipeId<=m.swipes.length) {
+                const surviving=[];
+                for(const record of records) {
+                    if(record.revision.swipeId===swipeId)continue;
+                    const id=record.revision.swipeId-(record.revision.swipeId>swipeId?1:0);
+                    const revision={...record.revision,swipeId:id};
+                    const stored=replyRevision({...m.swipe_info?.[id],swipe_id:id,mes:m.swipes[id]});
+                    // Native deletion already spliced both arrays; only rebase a surviving failed revision.
+                    if(record.failedStarted!==null?record.failedStarted===stored.started:same(revision,stored))surviving.push({...record,revision});
+                }
+                stopped.set(m,surviving);
+            }
+            if(!internalEvents)cancel('MESSAGE_SWIPE_DELETED');
+        });
         for(const name of ['CHAT_CHANGED','MESSAGE_SENT','MESSAGE_RECEIVED','MESSAGE_DELETED','MESSAGE_SWIPED','MESSAGE_EDITED','MESSAGE_UPDATED'])on(name,()=>{if(!internalEvents)cancel(name);});
         unsubscribe=()=>{cancel('Controller disposed');for(const [event,fn]of subscriptions)(c.eventSource.removeListener ?? c.eventSource.off)?.call(c.eventSource,event,fn);unsubscribe=null;};
         return unsubscribe;

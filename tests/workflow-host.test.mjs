@@ -5,7 +5,7 @@ import { starterGraph } from '../src/workflow/starters.js';
 const pre = starterGraph('native-guidance'), post=starterGraph('reviewed-de-slop');
 function fixture(request,assignedGraph=pre) {
  const listeners={}; const original={mes:'We delve.',is_user:false,swipe_id:0,swipes:['We delve.'],swipe_info:[{extra:{old:'keep'},send_date:1,gen_started:1,gen_finished:2}],extra:{old:'keep'},send_date:1,gen_started:1,gen_finished:2};
- const c={chatId:'one',characterId:1,groupId:null,chat:[{mes:'Hello',is_user:true},original],extensionPrompts:{other:{value:'keep'}},eventTypes:Object.fromEntries(['GENERATION_STARTED','GENERATION_STOPPED','GENERATION_ENDED','CHAT_CHANGED','MESSAGE_EDITED','MESSAGE_UPDATED','MESSAGE_DELETED','MESSAGE_SWIPED','MESSAGE_SENT'].map(k=>[k,k])),eventSource:{on:(name,fn)=>{(listeners[name]??=[]).push(fn);},removeListener:()=>{},emit:async(name,...args)=>{for(const fn of listeners[name]??[])await fn(...args);}},setExtensionPrompt:(key,value,position,depth,scan,role)=>{c.extensionPrompts[key]={value,position,depth,scan,role};},saveChat:async()=>{c.saved=(c.saved??0)+1;},updateMessageBlock:()=>{},swipe:{refresh:()=>{}}};
+ const c={chatId:'one',characterId:1,groupId:null,chat:[{mes:'Hello',is_user:true},original],extensionPrompts:{other:{value:'keep'}},eventTypes:Object.fromEntries(['GENERATION_STARTED','GENERATION_STOPPED','GENERATION_ENDED','CHAT_CHANGED','MESSAGE_EDITED','MESSAGE_UPDATED','MESSAGE_DELETED','MESSAGE_SWIPED','MESSAGE_SWIPE_DELETED','MESSAGE_SENT'].map(k=>[k,k])),eventSource:{on:(name,fn)=>{(listeners[name]??=[]).push(fn);},removeListener:()=>{},emit:async(name,...args)=>{for(const fn of listeners[name]??[])await fn(...args);}},setExtensionPrompt:(key,value,position,depth,scan,role)=>{c.extensionPrompts[key]={value,position,depth,scan,role};},saveChat:async()=>{c.saved=(c.saved??0)+1;},updateMessageBlock:()=>{},swipe:{refresh:()=>{}}};
  let busy=false;
  const controller=createNativeWorkflowController({context:()=>c,isBusy:()=>busy,getGraph:()=>assignedGraph,isEnabled:()=>true,countTokens:async text=>({tokens:Math.ceil(text.length/4),method:'fixture'}),resolveBinding:()=>({ok:true,data:{profileId:'fake',model:'fake'}}),request:request??(async()=>({ok:true,data:{text:'{"patches":[{"index":0,"replacement":"explore"}]}',finish:'stop'}})),syncMesToSwipe:index=>{const m=c.chat[index]; m.swipes[m.swipe_id]=m.mes;Object.assign(m.swipe_info[m.swipe_id],{send_date:m.send_date,gen_started:m.gen_started,gen_finished:m.gen_finished,extra:structuredClone(m.extra)});return true;},syncSwipeToMes:(index,id)=>{const m=c.chat[index];m.swipe_id=id;m.mes=m.swipes[id];Object.assign(m,structuredClone(m.swipe_info[id]));return true;}});
  controller.subscribe();
@@ -187,12 +187,17 @@ function selectStoredSwipe(f,id) {
  for(const key of ['send_date','gen_started','gen_finished'])m[key]=info[key];
  m.extra=structuredClone(info.extra);
 }
-async function stoppedSwipeFixture() {
- const f=fixture();await f.c.eventSource.emit('GENERATION_STARTED','swipe',{},false);
+async function stoppedSwipeFixture({earlierSwipes=1,started=3}={}) {
+ const f=fixture();
+ while(f.original.swipes.length<earlierSwipes) {
+  f.original.swipes.push('Another completed reply');
+  f.original.swipe_info.push({send_date:1,gen_started:1,gen_finished:2,extra:{}});
+ }
+ await f.c.eventSource.emit('GENERATION_STARTED','swipe',{},false);
  f.original.swipes.push('We delve into an unfinished');
- f.original.swipe_info.push({send_date:3,gen_started:3,gen_finished:4,extra:{}});selectStoredSwipe(f,1);
+ f.original.swipe_info.push({send_date:3,gen_started:started,gen_finished:started===null?null:4,extra:{}});selectStoredSwipe(f,earlierSwipes);
  const abortController=new AbortController();abortController.abort();
- f.c.streamingProcessor={messageId:1,timeStarted:new Date(3),isFinished:true,isStopped:false,abortController};
+ f.c.streamingProcessor={messageId:1,timeStarted:started===null?undefined:new Date(started),isFinished:true,isStopped:false,abortController};
  await f.c.eventSource.emit('GENERATION_STOPPED');await f.c.eventSource.emit('GENERATION_ENDED',2);
  return f;
 }
@@ -228,6 +233,49 @@ for(const type of ['swipe','continue']) {
  assert.equal((await f.controller.runPost(scan)).ok,false,'late progress from the failed generation is not successful completion');
 }
 
+// Native deleteSwipe splices both arrays, updates the selected index, then emits before selecting a replacement.
+async function deleteStoredSwipe(f,id) {
+ const m=f.original,current=m.swipe_id;
+ m.swipes.splice(id,1);m.swipe_info.splice(id,1);
+ const next=id<current?current-1:id>current?current:Math.min(id,m.swipes.length-1);
+ m.swipe_id=next;
+ await f.c.eventSource.emit('MESSAGE_SWIPE_DELETED',{messageId:1,swipeId:id,newSwipeId:next});
+ if(id===current) {selectStoredSwipe(f,next);await f.c.eventSource.emit('MESSAGE_SWIPED',1);}
+}
+async function completeAnotherSwipe(f,started=5) {
+ await f.c.eventSource.emit('GENERATION_STARTED','swipe',{},false);
+ const id=f.original.swipes.length;
+ f.original.swipes.push('We delve into an unfinished');
+ f.original.swipe_info.push({send_date:5,gen_started:started,gen_finished:started===null?null:6,extra:{}});selectStoredSwipe(f,id);
+ f.c.streamingProcessor={messageId:1,timeStarted:started===null?undefined:new Date(started),isFinished:true,isStopped:false,abortController:new AbortController()};
+ await f.c.eventSource.emit('GENERATION_ENDED',2);f.c.streamingProcessor=null;
+}
+for(const [earlierSwipes,started] of [[1,3],[3,3],[3,null]]) {
+ await test(`Stopped swipe stays rejected after deleting ${earlierSwipes} earlier swipes (generation ${started??'unknown'})`,async()=>{
+  const f=await stoppedSwipeFixture({earlierSwipes,started}),scan=structuredClone(post);scan.nodes.repair.mode='scan';
+  await completeAnotherSwipe(f);
+  for(let remaining=earlierSwipes;remaining>0;remaining--) {
+   await deleteStoredSwipe(f,0);
+   assert.equal((await f.controller.runPost(scan)).ok,true,'the selected successful reply remains reviewable after reindexing');
+   selectStoredSwipe(f,remaining-1);await f.c.eventSource.emit('MESSAGE_SWIPED',1);
+   const rejected=await f.controller.runPost(scan);
+   assert.equal(rejected.ok,false,'the surviving stopped fragment remains ineligible at its new index');
+   assert.equal(rejected.error.code,'REPLY_UNAVAILABLE');
+   selectStoredSwipe(f,remaining);await f.c.eventSource.emit('MESSAGE_SWIPED',1);
+  }
+ });
+}
+for(const started of [3,null]) {
+ await test(`Deleting the failed swipe does not poison the completed replacement (generation ${started??'unknown'})`,async()=>{
+  const f=await stoppedSwipeFixture({started}),scan=structuredClone(post);scan.nodes.repair.mode='scan';
+  await completeAnotherSwipe(f,started===null?null:5);
+  selectStoredSwipe(f,1);await f.c.eventSource.emit('MESSAGE_SWIPED',1);
+  await deleteStoredSwipe(f,1);
+  assert.equal((await f.controller.runPost(scan)).ok,true,'a completed reply can occupy the deleted failed index, even with identical text and unknown timestamps');
+  selectStoredSwipe(f,0);await f.c.eventSource.emit('MESSAGE_SWIPED',1);
+  assert.equal((await f.controller.runPost(scan)).ok,true,'the earlier completed alternative remains reviewable');
+ });
+}
 // Awaited host callbacks must not corrupt the issued revision or the original it preserves.
 const applyCorruptions=[
  ['stored candidate text',m=>{m.swipes[m.swipe_id]='different stored text';}],
