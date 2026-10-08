@@ -1,0 +1,82 @@
+import assert from 'node:assert/strict';
+import { composeText } from '../src/workflow/operations/compose.js';
+
+const joined = composeText({sections:[{name:'intro',text:'First'},{name:'ending',text:'Last'}]});
+assert.equal(joined.ok, true);
+assert.equal(joined.data.text, 'First\n\nLast');
+assert.ok(Array.isArray(joined.data.report));
+
+
+assert.equal(composeText({template:'Hello {{section:who}}!',sections:[{name:'who',text:'world'}]}).data.text, 'Hello world!');
+
+assert.equal(composeText({template:'{{data:/profile/name}} {{data:/count}} {{data:}}',data:{profile:{name:'Ada'},count:2}}).data.text, 'Ada 2 {"profile":{"name":"Ada"},"count":2}');
+
+assert.equal(composeText({template:'{{{{section:missing}} {{section:raw}}',sections:[{name:'raw',text:'{{data:/notRead}}'}]}).data.text, '{{section:missing}} {{data:/notRead}}');
+
+const missing = composeText({template:'Before {{section:missing}} after'});
+assert.equal(missing.ok, false);
+assert.equal(missing.error.code, 'MISSING_SECTION');
+assert.equal(Object.hasOwn(missing, 'data'), false);
+
+assert.equal(composeText({template:'{{data:/missing}}',data:{present:null}}).error?.code, 'MISSING_PATH');
+
+assert.equal(composeText({template:'{{data:/a~2b}}',data:{'a~2b':'bad'}}).error?.code, 'INVALID_TEMPLATE');
+
+assert.equal(composeText({template:'Hi {{host:secret}}'}).error?.code, 'INVALID_TEMPLATE');
+
+assert.equal(composeText({sections:[{name:'same',text:'one'},{name:'same',text:'two'}]}).error?.code, 'INVALID_COMPOSE');
+
+for (const settings of [null, 5, [], {sections:null}, {sections:[{name:'bad-name',text:'x'}]}, {sections:[{name:'valid',text:42}]}, {separator:3}, {template:4}, {unknown:true}]) {
+  assert.equal(composeText(settings).error?.code, 'INVALID_COMPOSE');
+}
+
+assert.equal(composeText({sections:Array.from({length:65},(_,i)=>({name:'s'+i,text:''}))}).error?.code, 'INVALID_COMPOSE');
+
+for (const settings of [{template:'x'.repeat(100001)}, {separator:'x'.repeat(100001)}, {sections:[{name:'s',text:'x'.repeat(100001)}]}, {template:'{{section:s}}{{section:s}}',sections:[{name:'s',text:'x'.repeat(50001)}]}]) {
+  const result = composeText(settings);
+  assert.equal(result.error?.code, 'TEXT_LIMIT');
+  assert.equal(Object.hasOwn(result,'data'), false);
+}
+
+let reads = 0;
+const accessed = {get template(){reads++; return 'unsafe';}};
+assert.equal(composeText(accessed).error?.code, 'INVALID_COMPOSE');
+assert.equal(reads, 0);
+
+const accessedSection = {name:'s',get text(){reads++; return 'unsafe';}};
+assert.equal(composeText({sections:[accessedSection]}).error?.code, 'INVALID_COMPOSE');
+assert.equal(reads, 0);
+
+assert.equal(composeText({data:undefined}).error?.code, 'INVALID_JSON_VALUE');
+
+assert.equal(composeText({template:'{{data:}}'}).error?.code, 'MISSING_PATH');
+
+// Hand-checked RFC 6901 fixtures, including empty keys and own special keys.
+assert.equal(composeText({template:'{{data:/a~1b/~0key/0}}|{{data:/}}|{{data:/constructor}}|{{data:/__proto__}}',data:JSON.parse('{"a/b":{"~key":["yes"]},"":"empty","constructor":"own","__proto__":"safe"}')}).data.text, 'yes|empty|own|safe');
+assert.equal(composeText({template:'{{data:/nil}} {{data:/flag}} {{data:/list}}',data:{nil:null,flag:false,list:[1,2]}}).data.text, 'null false [1,2]');
+assert.equal(composeText({template:'{{data:/01}}',data:['zero','one']}).ok, false);
+assert.equal(composeText({template:'{{data:/toString}}',data:{}}).ok, false);
+assert.equal(composeText({template:'{{data:/x}}',data:{x:'{{host:eval}} ${1+1}'}}).data.text, '{{host:eval}} ${1+1}');
+assert.equal(composeText({template:'{{section:unfinished'}).error?.code,'INVALID_TEMPLATE');
+assert.equal(composeText({template:'{{data:relative}}',data:{}}).error?.code,'INVALID_TEMPLATE');
+assert.equal(composeText({sections:new Array(1)}).error?.code,'INVALID_COMPOSE');
+assert.equal(composeText({sections:[{text:'x'}]}).error?.code,'INVALID_COMPOSE');
+assert.equal(composeText({sections:[{name:'s',text:'x'}],separator:'|'}).data.text,'x');
+assert.equal(composeText({sections:[{name:'a',text:'x'},{name:'b',text:'y'}],separator:'|'}).data.text,'x|y');
+assert.equal(composeText().data.text,'');
+assert.equal(composeText({template:''}).data.text,'');
+assert.equal(composeText({template:'x'.repeat(100000)}).data.text.length,100000);
+assert.equal(composeText({sections:[{name:'s',text:'😀'.repeat(50000)}]}).data.text.length,100000);
+assert.equal(composeText({sections:[{name:'s',text:'😀'.repeat(50001)}]}).error?.code,'TEXT_LIMIT');
+assert.equal(composeText({sections:Array.from({length:64},(_,i)=>({name:'s'+i,text:''})),separator:''}).ok,true);
+const frozen = Object.freeze({template:'{{section:s}}:{{data:/name}}',sections:Object.freeze([Object.freeze({name:'s',text:'Intro'})]),data:Object.freeze({name:'Ada'})});
+assert.equal(composeText(frozen).data.text,'Intro:Ada');
+assert.deepEqual(frozen.data,{name:'Ada'});
+assert.deepEqual(composeText(frozen),composeText(frozen));
+const cyclic = {}; cyclic.self = cyclic;
+assert.equal(composeText({data:cyclic}).error?.code,'INVALID_JSON_VALUE');
+assert.equal(composeText({data:'x'.repeat(262143)}).error?.code,'INVALID_JSON_VALUE');
+assert.equal(composeText({template:'{{data:}}',data:'x'.repeat(100001)}).error?.code,'TEXT_LIMIT');
+
+assert.equal(composeText({sections:[{name:'x'.repeat(100001),text:''}]}).error?.code,'TEXT_LIMIT');
+console.log('workflow-compose tests passed');
