@@ -197,3 +197,32 @@ test('browser loss with an unfinished admitted reservation conservatively retain
     assert.equal(report.attemptLedger[0].outcome,'reserved');assert.equal(report.unknownUsageAttempts,1);
     assert.equal(report.completedFixtures,0);assert.equal(JSON.stringify(report).includes('private browser disconnect details'),false);
 });
+
+test('local OpenAI tokenizer admits the actual host count and encode/decode model queries without a paid reservation',()=>{
+    const guard=createLiveGuard(options),boundary=createRequestBoundary(guard,options.host);
+    for (const path of [
+        '/api/tokenizers/openai/count?model=gpt-4o',
+        '/api/tokenizers/openai/count?model=z-ai%2Fglm-5.2%3Athinking',
+        '/api/tokenizers/openai/encode?model=claude',
+        '/api/tokenizers/openai/decode?model=gpt-3.5-turbo',
+    ]) assert.equal(boundary.allow({url:options.host+path,method:'POST'}),true,path);
+    assert.equal(boundary.counts().backendAccepted,0);assert.equal(guard.attempts(),0);
+});
+test('local tokenizer query permission excludes duplicate unknown unbounded and nonlocal requests',()=>{
+    const boundary=createRequestBoundary(createLiveGuard(options),options.host);
+    for (const path of [
+        '/api/tokenizers/openai/count',
+        '/api/tokenizers/openai/count?model=',
+        '/api/tokenizers/openai/count?model=gpt-4o&model=claude',
+        '/api/tokenizers/openai/count?model=gpt-4o&other=value',
+        '/api/tokenizers/openai/count?other=gpt-4o',
+        '/api/tokenizers/openai/count?model='+ 'x'.repeat(129),
+        '/api/tokenizers/openai/count?model=gpt%0A4o',
+        '/api/tokenizers/openai/encode?model=gpt-4o&redirect=https://provider.example',
+        '/api/tokenizers/remote/kobold/count?model=gpt-4o',
+        '/api/backends/chat-completions/generate?model=gpt-4o',
+    ]) assert.equal(boundary.allow({url:options.host+path,method:'POST'}),false,path);
+    assert.equal(boundary.allow({url:options.host+'/api/tokenizers/openai/count?model=gpt-4o',method:'GET'}),false);
+    assert.equal(boundary.allow({url:'http://127.0.0.1:8001/api/tokenizers/openai/count?model=gpt-4o',method:'POST'}),false);
+    assert.equal(boundary.allow({url:'https://provider.example/api/tokenizers/openai/count?model=gpt-4o',method:'POST'}),false);
+});

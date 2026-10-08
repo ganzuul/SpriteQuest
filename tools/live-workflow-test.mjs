@@ -234,10 +234,12 @@ export function createRequestBoundary(guard,host) {
             let allowed=false;
             if (target.origin===origin && !target.username && !target.password) {
                 const path=target.pathname;
+                const modelQuery=[...target.searchParams];
+                const localOpenAIQuery=method==='POST' && /^\/api\/tokenizers\/openai\/(count|encode|decode)$/.test(path) && modelQuery.length===1 && modelQuery[0][0]==='model' && /^[a-zA-Z0-9][a-zA-Z0-9._:/-]{0,127}$/.test(modelQuery[0][1]);
                 if (path==='/api/backends/chat-completions/generate') {
                     allowed=method==='POST' && !target.search && guard.authorize(payload);
                     if (allowed) accepted++;
-                } else if (!target.search && (reads.has(`${method} ${path}`) || method==='POST' && tokenizers.test(path))) allowed=true;
+                } else if (localOpenAIQuery || !target.search && (reads.has(`${method} ${path}`) || method==='POST' && tokenizers.test(path))) allowed=true;
                 else if (method==='GET' && !path.startsWith('/api/') && !path.startsWith('/proxy/') && !/^\/(characters|chats|worlds)\//.test(path)) {
                     allowed=['/','/version','/csrf-token'].includes(path) || /\.(js|mjs|css|html|json|png|jpg|jpeg|svg|ico|gif|webp|woff2?|ttf|wasm)$/i.test(path);
                 }
