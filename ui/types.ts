@@ -41,7 +41,7 @@ export interface WorkflowView {
     roles: { name: string; profileId: string; model: string }[]; profiles: { id: string; name: string }[];
     starters: { id: string; title: string; purpose: string; phase: string; roles: string[]; callBound: number }[];
     families: { name: string; description: string; legacy: { id: string; title: string }[]; operations: { id: string; title: string; phase: string; compatible: boolean }[] }[];
-    nodes: WorkflowNodeView[]; groups: { id: string; title: string; members: string[]; collapsed: boolean }[];
+    nodes: WorkflowNodeView[]; groups: { id: string; title: string; members: string[]; collapsed: boolean; callBound: number }[];
     callBound: number; issues: string[]; busy: boolean; status: string; quoteHelp: string;
     result: { ok: boolean; error: string; actualCalls: number; callBound: number; guidance: string; original: string; candidate: string; findings: unknown[]; changes: unknown[]; reports: unknown[]; calls: unknown[]; tokenMethods: string[]; applyAvailable: boolean; applyIssue: string } | null;
 }
@@ -49,5 +49,6 @@ export interface WorkflowActions {
     install: (id: string) => void; setMode: (mode: string) => void; bindRole: (name: string, profileId: string, model: string) => void; assign: (phase: string) => void;
     run: () => void; apply: () => void; reject: () => void; inspect: (id: string) => void; expand: (id: string) => void;
     duplicate: (id: string) => void; remove: (id: string) => void;
+    editRules: (id: string, text: string) => string | null;
     updateNode: (id: string, key: string, value: unknown) => void; addNode: (operation: string) => void; addLegacyNode: (type: string) => void;
 }

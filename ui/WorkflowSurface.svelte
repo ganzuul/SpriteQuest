@@ -2,8 +2,16 @@
     import type { WorkflowView, WorkflowActions } from './types';
     let { actions, mode = 'setup' }: { actions: WorkflowActions; mode?: string } = $props();
     let view = $state.raw<WorkflowView | null>(null);
-    export function update(value: WorkflowView) { view = value; }
+    let ruleDraft = $state<{ text: string; error: string } | null>(null);
+    export function update(value: WorkflowView) {
+        if (value.graphId !== view?.graphId || value.selectedId !== view?.selectedId) ruleDraft = null;
+        view = value;
+    }
     const lines = (value: string) => value.split('\n').filter(line => line.trim());
+    function editRules(id: string, text: string) {
+        const error = actions.editRules(id, text);
+        ruleDraft = error ? { text, error } : null;
+    }
 </script>
 {#if view}
 <section class="pc-workflows" data-pc-workflows={mode} aria-label={mode === 'library' ? 'Workflow library' : 'Workflow setup and review'}>
@@ -52,10 +60,10 @@
     <button class="menu_button" onclick={() => actions.assign(view?.phase || '')}>Assign {view.phase} phase and enable native mode</button>
     <small>{view.assigned ? 'Assigned to this phase.' : 'Phase is not assigned.'} Mode: {view.workflowMode}. Arming is a separate action.</small>
     {#each view.issues as issue}<p class="pc-error">{issue}</p>{/each}
-    <button class="menu_button" disabled={view.busy || !!view.issues.length} onclick={() => actions.run()}>{view.busy ? 'Running…' : view.phase === 'pre' ? 'Test workflow' : 'Run reviewed repair'}</button>
+    <button class="menu_button" disabled={view.busy || !!view.issues.length || !!ruleDraft} onclick={() => actions.run()}>{view.busy ? 'Running…' : view.phase === 'pre' ? 'Test workflow' : 'Run reviewed repair'}</button>
     {#if view.phase === 'pre'}<small>Test workflow does not publish guidance. A later Send reruns the workflow and may incur up to {view.callBound} auxiliary requests again.</small>{/if}
     {#each view.groups as group (group.id)}
-        <button class="menu_button" onclick={() => actions.expand(group.id)}>{group.collapsed ? 'Open' : 'Fold'} {group.title} formation · Surface · maximum 1 request</button>
+        <button class="menu_button" onclick={() => actions.expand(group.id)}>{group.collapsed ? 'Open' : 'Fold'} {group.title} formation · Surface · maximum {group.callBound} {group.callBound === 1 ? 'request' : 'requests'}</button>
     {/each}
     <h4>Inspect operations</h4>
     {#each view.nodes as node (node.id)}
@@ -80,10 +88,16 @@
                         <input type="checkbox" checked={Boolean(control.value)} onchange={(event) => actions.updateNode(node.id, control.key, event.currentTarget.checked)} />
                     {:else if control.kind === 'number'}
                         <input aria-label={control.label} class="text_pole" type="number" min={control.key === 'keepRecent' ? 0 : 1} value={Number(control.value)} oninput={(event) => actions.updateNode(node.id, control.key, Number(event.currentTarget.value))} />
+                    {:else if control.kind === 'rules'}
+                        <textarea aria-label={control.label} aria-invalid={!!ruleDraft} aria-describedby={'rule-help-' + node.id + (ruleDraft ? ' rule-error-' + node.id : '')} class="text_pole" value={ruleDraft?.text ?? String(control.value)} oninput={(event) => editRules(node.id, event.currentTarget.value)}></textarea>
                     {:else}
                         <textarea class="text_pole" value={String(control.value)} oninput={(event) => actions.updateNode(node.id, control.key, control.kind === 'lines' ? lines(event.currentTarget.value) : event.currentTarget.value)}></textarea>
                     {/if}
                     </label>
+                    {#if control.kind === 'rules'}
+                        <small id={'rule-help-' + node.id}>One literal phrase per line. Imported objects use one JSON object per line with a "phrase" field; keep their other fields to preserve metadata. Quote a literal phrase that starts with &#123;, [ or &quot; as a JSON string.</small>
+                        {#if ruleDraft}<p id={'rule-error-' + node.id} class="pc-error" role="alert">{ruleDraft.error}</p>{/if}
+                    {/if}
                 {/each}
                 <button class="menu_button" onclick={() => actions.duplicate(node.id)}>Duplicate operation</button>
                 <button class="menu_button pc-danger" onclick={() => actions.remove(node.id)}>Delete operation</button>
@@ -102,7 +116,7 @@
         {#if view.result.applyAvailable}
             <div class="pc-workflow-comparison"><div>Original<pre>{view.result.original}</pre></div><div>Candidate<pre>{view.result.candidate}</pre></div></div>
             {#if view.result.applyIssue}<p class="pc-error">{view.result.applyIssue}</p>{/if}
-            <button class="menu_button" disabled={view.busy || !!view.result.applyIssue} onclick={() => actions.apply()}>Apply reviewed candidate</button>
+            <button class="menu_button" disabled={view.busy || !!view.result.applyIssue || !!ruleDraft} onclick={() => actions.apply()}>Apply reviewed candidate</button>
             <button class="menu_button" disabled={view.busy} onclick={() => actions.reject()}>Reject candidate</button>
             <small>Apply rechecks source freshness. Other memory extensions may already have consumed the original; saving does not confirm durability.</small>
         {/if}

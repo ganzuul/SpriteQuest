@@ -1,4 +1,74 @@
 import { test, expect } from '@playwright/test';
+test('editing imported structured scan rules preserves findings and metadata and rejects invalid drafts', async ({ page }) => {
+    await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
+    await page.getByRole('button', { name: 'Install Reviewed AI De-slop' }).click();
+    await page.evaluate(() => {
+        const node = Object.values(window.canvasHarness.graph.nodes).find(node => node.operation === 'pattern-scan');
+        node.rules = [{ phrase: 'delve', note: 'Keep this preference', details: { category: 'wording' } }, 'weave'];
+        node.caseSensitive = true; node.exemptions = ['delve safely']; node.protectedLiterals = ['weave'];
+        window.canvasHarness.S.touchGraph(window.canvasHarness.graph); window.canvasHarness.UI.refreshIfOpen();
+    });
+    await page.getByRole('button', { name: 'Inspect Pattern Scan' }).click();
+    const editor = page.getByLabel('rules', { exact: true });
+    const initial = await editor.inputValue();
+    await editor.focus(); await page.evaluate(() => { window.ruleEditorElement = document.activeElement; });
+    await editor.fill(initial + '\ntapestry');
+    const read = () => page.evaluate(async () => {
+        const node = Object.values(window.canvasHarness.graph.nodes).find(node => node.operation === 'pattern-scan');
+        const { scanDraft } = await import('/src/workflow/repair.js');
+        const text = 'Delve, delve, delve safely, weave, tapestry.';
+        return { node, scan: scanDraft({ kind: 'draft', text, source: { originalText: text } }, node) };
+    });
+    let state = await read();
+    expect(state.node.rules).toEqual([{ phrase: 'delve', note: 'Keep this preference', details: { category: 'wording' } }, 'weave', 'tapestry']);
+    expect(state.scan.artifact.findings.map(f => [f.text, f.protected])).toEqual([['delve', false], ['weave', true], ['tapestry', false]]);
+    expect(state.scan.artifact.caseSensitive).toBe(true);
+    expect(state.scan.artifact.exemptions).toEqual(['delve safely']);
+    await editor.fill((await editor.inputValue()).replace('"phrase":"delve"', '"phrase":"Delve"'));
+    state = await read();
+    expect(state.node.rules[0]).toEqual({ phrase: 'Delve', note: 'Keep this preference', details: { category: 'wording' } });
+    expect(state.scan.artifact.findings.map(f => f.text)).toEqual(['Delve', 'weave', 'tapestry']);
+    const saved = state.node.rules;
+    await editor.fill('{"phrase":');
+    await expect(editor).toHaveAttribute('aria-invalid', 'true');
+    await expect(page.getByRole('alert')).toContainText('not saved');
+    expect((await read()).node.rules).toEqual(saved);
+    await page.getByLabel('case Sensitive', { exact: true }).uncheck();
+    await expect(editor).toHaveValue('{"phrase":');
+    expect((await read()).node.rules).toEqual(saved);
+    await editor.fill('ordinary phrase\n{"phrase":"delve","note":"retained"}');
+    await expect(editor).toHaveAttribute('aria-invalid', 'false');
+    expect((await read()).node.rules).toEqual(['ordinary phrase', { phrase: 'delve', note: 'retained' }]);
+    expect(await page.evaluate(() => document.contains(window.ruleEditorElement))).toBe(true);
+});
+
+test('formation request summary follows scan mode and additional reachable repair members', async ({ page }) => {
+    await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
+    await page.getByRole('button', { name: 'Install Reviewed AI De-slop' }).click();
+    await page.getByRole('button', { name: 'Inspect Repair' }).click();
+    await page.getByLabel(/^mode/).selectOption('scan');
+    await expect(page.getByRole('button', { name: /Open AI De-slop formation/ })).toContainText('maximum 0 requests');
+    await expect(page.getByText('Maximum auxiliary requests: 0', { exact: true })).toBeVisible();
+    await expect(page.locator('.pc-node-group')).toContainText('maximum 0 auxiliary requests');
+    await page.getByLabel(/^mode/).selectOption('repair');
+    await page.evaluate(() => {
+        const { graph, S, UI } = window.canvasHarness;
+        const group = Object.values(graph.groups)[0];
+        const byOp = op => Object.values(graph.nodes).find(n => n.operation === op);
+        for (const op of ['repair', 'validate-patches', 'apply-reply']) {
+            const node = structuredClone(byOp(op)); node.id = op + '-extra'; node.inGroup = group.id;
+            graph.nodes[node.id] = node; group.members.push(node.id);
+        }
+        for (const [i, [from, to]] of [[byOp('reply-snapshot').id, 'repair-extra'], ['repair-extra', 'validate-patches-extra'], ['validate-patches-extra', 'apply-reply-extra']].entries()) {
+            const id = 'extra-wire-' + i; graph.wires[id] = { id, from, to, order: i };
+        }
+        S.touchGraph(graph); window.canvasHarness.canvas.render(); UI.refreshIfOpen();
+    });
+    await expect(page.getByRole('button', { name: /Open AI De-slop formation/ })).toContainText('maximum 2 requests');
+    await expect(page.getByText('Maximum auxiliary requests: 2', { exact: true })).toBeVisible();
+    await expect(page.locator('.pc-node-group')).toContainText('maximum 2 auxiliary requests');
+});
+
 test('install and explicitly bind and assign a pre workflow without arming it', async ({ page }) => {
     await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
     await page.evaluate(() => { window.canvasHarness.context.extensionSettings.connectionManager = { profiles: [{ id: 'analysis', name: 'Analysis connection' }] }; });

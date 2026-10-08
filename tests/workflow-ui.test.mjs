@@ -21,6 +21,31 @@ assert.deepEqual(formation.members, Object.values(post.nodes).filter(n => n.inGr
 assert.equal(validateWorkflow(post).data.callBound, 1);
 const surface = await import('../src/ui/workflow-surface.js').catch(() => ({}));
 assert.equal(typeof surface.projectWorkflow, 'function', 'native setup projects missing bindings and operation controls');
+assert.equal(typeof surface.parseWorkflowRules, 'function', 'rule editing parses structured preferences before changing the graph');
+const { scanDraft } = await import('../src/workflow/repair.js');
+const imported = starters.starterGraph('reviewed-de-slop');
+const scanNode = imported.nodes['pattern-scan'];
+scanNode.rules = [{ phrase: 'delve', note: 'word choice', details: { weight: 2 } }, 'weave'];
+scanNode.caseSensitive = true; scanNode.exemptions = ['delve safely']; scanNode.protectedLiterals = ['weave'];
+const ruleText = () => surface.projectWorkflow(imported).nodes.find(n => n.operation === 'pattern-scan').controls.find(c => c.key === 'rules').value;
+const appended = surface.parseWorkflowRules(ruleText() + '\ntapestry');
+assert.equal(appended.ok, true);
+scanNode.rules = appended.data;
+assert.deepEqual(scanNode.rules, [{ phrase: 'delve', note: 'word choice', details: { weight: 2 } }, 'weave', 'tapestry']);
+const sourceText = 'Delve, delve, delve safely, weave, tapestry.';
+const scanned = () => scanDraft({ kind: 'draft', text: sourceText, source: { originalText: sourceText } }, scanNode);
+assert.deepEqual(scanned().artifact.findings.map(f => [f.text, f.protected]), [['delve', false], ['weave', true], ['tapestry', false]]);
+scanNode.rules = surface.parseWorkflowRules(ruleText().replace('"phrase":"delve"', '"phrase":"Delve"')).data;
+assert.deepEqual(scanned().artifact.findings.map(f => f.text), ['Delve', 'weave', 'tapestry']);
+assert.deepEqual(scanned().artifact.rules[0], { phrase: 'Delve', note: 'word choice', details: { weight: 2 } });
+assert.equal(scanned().artifact.caseSensitive, true);
+assert.deepEqual(scanned().artifact.exemptions, ['delve safely']);
+for (const invalid of ['{"phrase":', '{"phrase":42}', '{}', '["delve"]', '""', JSON.stringify({ phrase: 'x'.repeat(2049) }), Array(129).fill('delve').join('\n'), '{"phrase":"delve","constructor":{}}']) {
+    assert.equal(surface.parseWorkflowRules(invalid).ok, false, 'invalid or unsupported rule text is rejected: ' + invalid.slice(0, 45));
+}
+scanNode.rules = ['{literal}', '"quoted"', '[literal]', 'first\nsecond', 'plain phrase'];
+assert.deepEqual(surface.parseWorkflowRules(ruleText()).data, scanNode.rules, 'JSON-looking and multiline literal strings round trip without changing meaning');
+assert.deepEqual(surface.parseWorkflowRules('delve\n\ntapestry').data, ['delve', 'tapestry']);
 const view = surface.projectWorkflow(pre, { profiles: [{ id: 'analysis', name: 'Analysis connection' }], settings: S.settings() });
 assert.equal(view.issues.some(issue => issue.includes('Analysis')), true);
 assert.equal(view.callBound, 2);
@@ -76,6 +101,8 @@ const scanView = surface.projectWorkflow(scanOnly, { resolveBinding: () => { res
 assert.equal(resolutions, 0, 'scan-only workflow never resolves a model connection');
 assert.equal(scanView.issues.length, 0);
 assert.equal(scanView.callBound, 0);
+assert.equal(scanView.groups[0].callBound, 0, 'formation bound follows scan-only members');
+assert.equal(surface.projectWorkflow(post).groups[0].callBound, 1);
 const guidanceView = surface.projectWorkflow(pre, { result: { ok: true, artifact: { kind: 'guidance', text: 'Keep agency.' }, actualCalls: 1, callBound: 2, calls: [{ tokenCount: { method: 'host tokenizer' } }] } });
 assert.equal(guidanceView.result.guidance, 'Keep agency.', 'manual pre test exposes its computed guidance without publishing');
 assert.equal(guidanceView.result.actualCalls, 1);
