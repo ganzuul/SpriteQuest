@@ -110,6 +110,45 @@ function freeze(value) {
     if (value && typeof value === 'object' && !Object.isFrozen(value)) { Object.freeze(value); for (const item of Object.values(value)) freeze(item); }
     return value;
 }
+/** Validate only newly consumed context; provenance keys such as source.token are valid JSON metadata. */
+function validContext(draft) {
+    let entries = 0, characters = 0;
+    const active = new Set();
+    const visit = (value, depth) => {
+        if (++entries > 20000 || depth > 40) return false;
+        if (typeof value === 'string') { characters += value.length; return characters <= 500000; }
+        if (value === null || typeof value === 'boolean') return true;
+        if (typeof value === 'number') return Number.isFinite(value);
+        if (typeof value !== 'object' || active.has(value)) return false;
+        const array = Array.isArray(value), prototype = Object.getPrototypeOf(value);
+        if (array ? prototype !== Array.prototype : prototype !== Object.prototype && prototype !== null) return false;
+        const descriptors = Object.getOwnPropertyDescriptors(value), keys = Reflect.ownKeys(descriptors);
+        if (array && keys.length !== descriptors.length.value + 1) return false;
+        active.add(value);
+        for (const key of keys) {
+            if (typeof key !== 'string') return false;
+            if (array && key !== 'length' && (!/^(0|[1-9][0-9]*)$/u.test(key) || Number(key) >= descriptors.length.value)) return false;
+            characters += key.length;
+            const property = descriptors[key];
+            if (characters > 500000 || !Object.hasOwn(property, 'value') || !visit(property.value, depth + 1)) return false;
+        }
+        active.delete(value);
+        return true;
+    };
+    try {
+        const descriptor = Object.getOwnPropertyDescriptor(draft, 'context');
+        if (!descriptor) return !('context' in draft);
+        if (!Object.hasOwn(descriptor, 'value')) return false;
+        const context = descriptor.value;
+        if (context === undefined) return true;
+        if (!visit(context, 0) || !context || !Object.hasOwn(context, 'kind') || context.kind !== 'context' || !Object.hasOwn(context, 'messages') || !Array.isArray(context.messages)) return false;
+        for (const message of context.messages) {
+            if (!message || Array.isArray(message) || typeof message !== 'object' || !['id', 'role', 'text'].every(key => Object.hasOwn(message, key) && typeof message[key] === 'string')) return false;
+            if (!message.id.trim() || !['system', 'user', 'assistant'].includes(message.role)) return false;
+        }
+        return true;
+    } catch { return false; }
+}
 /** Request one bounded JSON repair using the resolved ports.binding and request result envelope. */
 export async function repairDraft(draft, node = {}, ports = {}) {
     if (!validSettings(node)) return failure('INVALID_SETTINGS', 'Repair settings require repair/scan mode, bounded text preferences and a positive completion limit.', node, draft);
@@ -119,12 +158,13 @@ export async function repairDraft(draft, node = {}, ports = {}) {
     if (ports.signal?.aborted) return failure('ABORTED', 'Repair was stopped.', node, draft);
     if (draft.source.originalText !== draft.text) return failure('STALE_SOURCE', 'Draft text must match its frozen original source.', node, draft);
     if (invalidSpans(draft)) return failure('INVALID_SPANS', 'Editable spans must be ordered, normalized, nonoverlapping original ranges.', node, draft);
+    if (!validContext(draft)) return failure('INVALID_CONTEXT', 'Nearby context must be bounded plain JSON with dense messages containing id, role and text; no request was sent.', node, draft);
     node = { id: node.id, mode: node.mode ?? 'repair', modelRole: node.modelRole ?? 'Prose', maxTokens: node.maxTokens ?? 2048, strength: node.strength ?? 'light', instructions: node.instructions ?? '', protectedLiterals: [...(node.protectedLiterals ?? [])] };
     const frozen = freeze(structuredClone(draft));
     if (node.mode === 'scan' || frozen.spans?.length === 0) return success({ kind: 'patches', draft: frozen, patches: [], protectedLiterals: [...(frozen.protectedLiterals ?? []), ...(node.protectedLiterals ?? [])] });
     const messages = [
         { role: 'system', content: 'Repair selected prose spans only. Return JSON {"patches":[{"index":0,"replacement":"..."}]}. Use only supplied indices; preserve protected wording. Unselected original text cannot change.' },
-        { role: 'user', content: JSON.stringify({ original: frozen.text, spans: frozen.spans, rules: frozen.rules ?? [], exemptions: frozen.exemptions ?? [], protectedLiterals: [...(frozen.protectedLiterals ?? []), ...(node.protectedLiterals ?? [])], strength: node.strength ?? 'light', instructions: node.instructions ?? '' }) },
+        { role: 'user', content: JSON.stringify({ original: frozen.text, spans: frozen.spans, ...(frozen.context === undefined ? {} : { context: frozen.context.messages.map(({ id, role, text }) => ({ id, role, text })) }), rules: frozen.rules ?? [], exemptions: frozen.exemptions ?? [], protectedLiterals: [...(frozen.protectedLiterals ?? []), ...(node.protectedLiterals ?? [])], strength: node.strength ?? 'light', instructions: node.instructions ?? '' }) },
     ];
     const prompt = messages.map(message => message.content).join('\n');
     if (prompt.length > 500000) return failure('INPUT_LIMIT', 'Repair prompt exceeds 500,000 UTF-16 units. Narrow the preferences; no request was sent.', node, frozen);

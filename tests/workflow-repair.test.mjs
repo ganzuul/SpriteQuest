@@ -365,3 +365,98 @@ for (const findings of [17, {}, null, 'bad', [17], [null], [[]], [new Date(0)], 
         assert.equal(result.calls.length, 0);
     }
 }
+// Nearby frozen facts enter the one repair request as message data, without granting extra permissions.
+{
+    const input = scanned();
+    input.context = { kind: 'context', messages: [
+        { id: 'chat:2', role: 'user', text: 'The brass key remains on the table.', source: { chatId: 'identity-marker', token: 'token-marker' } },
+        { id: 'chat:3', role: 'assistant', text: 'Mara promised to wait outside.', settings: { marker: 'settings-marker' } },
+        { id: 'character:scenario', role: 'system', text: 'Keep the scene beside the harbor.', report: { marker: 'message-report-marker' } },
+    ], source: { chatId: 'context-identity-marker', token: 'context-token-marker' }, report: { marker: 'context-report-marker' }, liveHost: { marker: 'live-host-marker' } };
+    let attempts = 0, captured;
+    const result = await repairDraft(input, {}, { binding: { profileId: 'synthetic-prose', model: 'synthetic-model' }, countTokens: async () => {
+        input.context.messages[0].text = 'Changed after the snapshot';
+        return { tokens: 100, method: 'synthetic' };
+    }, request: async request => {
+        attempts++; captured = request;
+        return { ok: true, data: { text: '{"patches":[{"index":0,"replacement":"She paused."}]}', usage: { completion_tokens: 20 }, finish: 'stop' } };
+    } });
+    assert.equal(result.ok, true);
+    assert.equal(attempts, 1);
+    assert.equal(result.calls.length, 1);
+    assert.equal(captured.maxTokens, 2048);
+    assert.deepEqual(captured.messages.map(message => message.role), ['system', 'user']);
+    assert.match(captured.messages[0].content, /Repair selected prose spans only/);
+    const data = JSON.parse(captured.messages[1].content);
+    assert.deepEqual(data.context, [
+        { id: 'chat:2', role: 'user', text: 'The brass key remains on the table.' },
+        { id: 'chat:3', role: 'assistant', text: 'Mara promised to wait outside.' },
+        { id: 'character:scenario', role: 'system', text: 'Keep the scene beside the harbor.' },
+    ]);
+    assert.equal(data.original, 'Before. "A shiver ran down her spine." After.');
+    assert.deepEqual(data.spans, [{ index: 0, start: 9, end: 37, text: 'A shiver ran down her spine.' }]);
+    assert.deepEqual(data.rules, ['A shiver ran down her spine.']);
+    assert.doesNotMatch(captured.messages[1].content, /identity-marker|token-marker|settings-marker|report-marker|live-host-marker/);
+    assert.equal(result.artifact.draft.context.source.token, 'context-token-marker');
+    assert.equal(result.artifact.draft.context.report.marker, 'context-report-marker');
+    assert.equal(Object.isFrozen(result.artifact.draft.context.report), true);
+    const candidate = validatePatches(result.artifact);
+    assert.equal(candidate.artifact.text, 'Before. "She paused." After.');
+    assert.equal(candidate.artifact.original, 'Before. "A shiver ran down her spine." After.');
+}
+// Context must be safe bounded JSON plus dense, typed nearby messages before clone or request.
+{
+    let getterReads = 0;
+    const base = () => ({ kind: 'context', messages: [{ id: 'chat:2', role: 'user', text: 'Nearby fact.' }] });
+    const accessor = base(); Object.defineProperty(accessor, 'report', { enumerable: true, get() { getterReads++; throw Error('unsafe context getter read'); } });
+    const fieldAccessor = base(); Object.defineProperty(fieldAccessor.messages[0], 'text', { enumerable: true, get() { getterReads++; throw Error('unsafe message getter read'); } });
+    const cycle = base(); cycle.report = cycle;
+    const deep = base(); let nested = deep; for (let index = 0; index < 42; index++) { nested.report = {}; nested = nested.report; }
+    const symbol = base(); symbol[Symbol('unsafe')] = 'not JSON';
+    const alteredArray = base(); alteredArray.messages.map = 'not a method';
+    const contexts = [null, 17, [], {}, { kind: 'draft', messages: [] }, { kind: 'context', messages: 17 }, { kind: 'context', messages: Array(1) },
+        { kind: 'context', messages: [null] }, { kind: 'context', messages: [{ id: 'chat:2', role: 'user', text: 17 }] },
+        { kind: 'context', messages: [{ id: 17, role: 'user', text: 'Fact.' }] }, { kind: 'context', messages: [{ id: 'chat:2', role: 'tool', text: 'Fact.' }] },
+        { kind: 'context', messages: [{ role: 'user', text: 'Fact.' }] }, { ...base(), report: { host: new Date(0) } }, { ...base(), report: { callback() {} } },
+        { ...base(), report: { value: Infinity } }, { ...base(), report: { value: 7n } }, { ...base(), report: { text: 'x'.repeat(500001) } },
+        { ...base(), report: Array(20001).fill(0) }, accessor, fieldAccessor, cycle, deep, symbol, alteredArray];
+    for (const context of contexts) {
+        const input = scanned(); input.context = context;
+        let measurements = 0, attempts = 0, result;
+        await assert.doesNotReject(async () => {
+            result = await repairDraft(input, {}, { countTokens: async () => { measurements++; return { tokens: 10, method: 'synthetic' }; }, request: async () => {
+                attempts++;
+                return { ok: true, data: { text: '{"patches":[]}', usage: null, finish: 'stop' } };
+            } });
+        });
+        assert.equal(result.error?.code, 'INVALID_CONTEXT');
+        assert.equal(result.artifact.text, 'Before. "A shiver ran down her spine." After.');
+        assert.equal(result.calls.length, 0);
+        assert.equal(measurements, 0);
+        assert.equal(attempts, 0);
+    }
+    assert.equal(getterReads, 0);
+}
+// Optional context participates in the existing complete serialized-prompt limit without truncation.
+{
+    const input = scanned('cold' + 'x'.repeat(99996), { rules: ['cold'] });
+    input.context = { kind: 'context', messages: [{ id: 'chat:2', role: 'user', text: 'x'.repeat(400000) }] };
+    let measurements = 0, attempts = 0;
+    const result = await repairDraft(input, {}, { countTokens: async () => { measurements++; return { tokens: 1, method: 'synthetic' }; }, request: async () => { attempts++; return { ok: true, data: { text: '{"patches":[]}', usage: null, finish: 'stop' } }; } });
+    assert.equal(result.error?.code, 'INPUT_LIMIT');
+    assert.equal(measurements, 0);
+    assert.equal(attempts, 0);
+    assert.equal(result.calls.length, 0);
+    assert.equal(result.artifact.text.length, 100000);
+    assert.equal(result.artifact.context.messages[0].text.length, 400000);
+}
+// A getter for the optional context field itself is rejected without evaluation.
+{
+    const input = scanned(); let reads = 0;
+    Object.defineProperty(input, 'context', { enumerable: true, get() { reads++; throw Error('context getter evaluated'); } });
+    let result;
+    await assert.doesNotReject(async () => { result = await repairDraft(input); });
+    assert.equal(result.error?.code, 'INVALID_CONTEXT');
+    assert.equal(reads, 0);
+    assert.equal(result.calls.length, 0);
+}
