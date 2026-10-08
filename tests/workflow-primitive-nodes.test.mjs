@@ -43,6 +43,115 @@ test('static registration describes zero-request primitives and explicit editabl
     assert.deepEqual(api.PRIMITIVE_OPERATIONS['select-fields'].defaults, { fields: [] });
 });
 
+test('Draft source requires own originalText and rejects inherited provenance before Worker creation', async () => {
+    let reads = 0, workers = 0;
+    Object.defineProperty(Object.prototype, 'originalText', { configurable: true, get() { reads++; return 'cold'; } });
+    try {
+        const draft = { kind: 'draft', text: 'cold', source: {} };
+        const node = { operation: 'text-rules', inputKind: 'draft', rules: [{ kind: 'literal', pattern: 'cold', replacement: 'warm' }] };
+        assert.equal(api.describePrimitive(node).ok, true);
+        const result = await api.executePrimitive(node, { in: draft }, { createWorker() { workers++; throw Error('must not create Worker'); } });
+        assert.equal(result.error?.code, 'INVALID_DRAFT');
+        assert.equal(Object.hasOwn(result, 'artifact'), false);
+        assert.equal(Object.hasOwn(draft.source, 'originalText'), false);
+        assert.equal(reads, 0);
+        assert.equal(workers, 0);
+    } finally { delete Object.prototype.originalText; }
+});
+
+test('raw Draft rules ignore inherited scope, finish and usage metadata', async () => {
+    const reads = { scope: 0, finish: 0, usage: 0 }, harness = workerHarness();
+    for (const key of Object.keys(reads)) Object.defineProperty(Object.prototype, key, { configurable: true, get() { reads[key]++; throw Error('inherited ' + key); } });
+    try {
+        const draft = { kind: 'draft', text: 'cold', source: { originalText: 'cold' } };
+        const node = { operation: 'text-rules', inputKind: 'draft', rules: [{ kind: 'literal', pattern: 'cold', replacement: 'warm' }] };
+        assert.equal(api.describePrimitive(node).ok, true);
+        const result = await api.executePrimitive(node, { in: draft }, { createWorker: harness.createWorker, timeoutMs: 2000 });
+        assert.equal(result.ok, true);
+        assert.equal(result.artifact.kind, 'patches');
+        assert.equal(result.artifact.draft.scope, 'whole');
+        assert.deepEqual(result.artifact.patches, [{ index: 0, replacement: 'warm' }]);
+        assert.equal(Object.hasOwn(draft, 'scope'), false);
+        assert.equal(Object.hasOwn(result.artifact, 'finish'), false);
+        assert.equal(Object.hasOwn(result.artifact, 'usage'), false);
+        assert.deepEqual(reads, { scope: 0, finish: 0, usage: 0 });
+        await harness.cleaned();
+    } finally { for (const key of Object.keys(reads)) delete Object.prototype[key]; }
+});
+
+test('inherited toJSON hooks cannot run during adapter Data cloning or Compose interpolation', async () => {
+    let calls = 0;
+    Object.defineProperty(Object.prototype, 'toJSON', { configurable: true, value() { calls++; throw Error('inherited toJSON'); } });
+    try {
+        const value = { token: 'ordinary', nested: { value: 7 } };
+        const compose = { operation: 'compose', mode: 'template', template: '{{data:}}' };
+        assert.equal(api.describePrimitive(compose, { phase: 'pre' }).ok, true);
+        const composed = await api.executePrimitive(compose, { data: { kind: 'data', value } }, { phase: 'pre' });
+        assert.deepEqual(composed, { ok: true, artifact: { kind: 'text', text: '{"token":"ordinary","nested":{"value":7}}' }, reports: [] });
+        const decode = { operation: 'json-decode', schema: '{"type":"object"}' };
+        assert.equal(api.describePrimitive(decode, { phase: 'pre' }).ok, true);
+        const parsed = await api.executePrimitive(decode, { in: { kind: 'text', text: '{"token":"ordinary","nested":{"value":7}}' } }, { phase: 'pre' });
+        assert.deepEqual(parsed.artifact, { kind: 'data', value });
+        const checked = await api.executePrimitive({ ...decode, mode: 'check' }, { in: { kind: 'data', value } }, { phase: 'post' });
+        assert.deepEqual(checked.artifact, { kind: 'data', value });
+        const select = { operation: 'select-fields', fields: [{ name: 'nested', path: ['nested'] }] };
+        assert.equal(api.describePrimitive(select, { phase: 'post' }).ok, true);
+        const selected = await api.executePrimitive(select, { in: { kind: 'data', value } }, { phase: 'post' });
+        assert.deepEqual(selected.artifact, { kind: 'data', value: { nested: { value: 7 } } });
+        assert.equal(calls, 0);
+    } finally { delete Object.prototype.toJSON; }
+});
+
+test('JSON Decode ignores inherited schema type in parse and check modes', async () => {
+    let reads = 0;
+    Object.defineProperty(Object.prototype, 'type', { configurable: true, get() { reads++; throw Error('inherited schema type'); } });
+    try {
+        const node = { operation: 'json-decode', schema: '{}' };
+        const described = api.describePrimitive(node, { phase: 'pre' });
+        assert.equal(described.ok, true);
+        assert.equal(described.data.descriptor.input, 'text');
+        assert.equal(described.data.descriptor.defaults.mode, 'parse');
+        const parsed = await api.executePrimitive(node, { in: { kind: 'text', text: '{"value":[7]}' } }, { phase: 'pre' });
+        assert.deepEqual(parsed, { ok: true, artifact: { kind: 'data', value: { value: [7] } }, reports: [] });
+        assert.equal(api.describePrimitive({ ...node, mode: 'check' }, { phase: 'post' }).ok, true);
+        const checked = await api.executePrimitive({ ...node, mode: 'check' }, { in: parsed.artifact }, { phase: 'post' });
+        assert.deepEqual(checked, parsed);
+        assert.notEqual(checked.artifact.value, parsed.artifact.value);
+        assert.equal(reads, 0);
+    } finally { delete Object.prototype.type; }
+});
+
+test('Select Fields ignores inherited required and keeps the declared required default', async () => {
+    let reads = 0;
+    Object.defineProperty(Object.prototype, 'required', { configurable: true, get() { reads++; throw Error('inherited required'); } });
+    try {
+        const node = { operation: 'select-fields', fields: [{ name: 'mustExist', path: ['missing'] }] };
+        assert.equal(api.describePrimitive(node, { phase: 'pre' }).ok, true);
+        const result = await api.executePrimitive(node, { in: { kind: 'data', value: {} } }, { phase: 'pre' });
+        assert.equal(result.error?.code, 'MISSING_FIELD');
+        assert.equal(result.error.name, 'mustExist');
+        assert.deepEqual(result.error.path, ['missing']);
+        const omitted = await api.executePrimitive({ operation: 'select-fields', fields: [{ name: 'optional', path: ['missing'], required: false }] }, { in: { kind: 'data', value: {} } }, { phase: 'post' });
+        assert.deepEqual(omitted, { ok: true, artifact: { kind: 'data', value: {} }, reports: [] });
+        assert.equal(reads, 0);
+    } finally { delete Object.prototype.required; }
+});
+
+test('Compose ignores inherited template and uses declared join defaults without getter reads', async () => {
+    let reads = 0;
+    Object.defineProperty(Object.prototype, 'template', { configurable: true, get() { reads++; throw Error('inherited template'); } });
+    try {
+        const node = { operation: 'compose', sections: [{ name: 'a', text: 'A' }, { name: 'b', text: 'B' }] };
+        const described = api.describePrimitive(node, { phase: 'pre' });
+        assert.equal(described.ok, true);
+        assert.equal(described.data.descriptor.defaults.mode, 'join');
+        assert.equal(described.data.descriptor.defaults.template, '');
+        const result = await api.executePrimitive(node, {}, { phase: 'pre' });
+        assert.deepEqual(result, { ok: true, artifact: { kind: 'text', text: 'A\n\nB' }, reports: [] });
+        assert.equal(reads, 0);
+    } finally { delete Object.prototype.template; }
+});
+
 test('external reflection failures return Results and unrelated core metadata stays unread', async () => {
     const revoked = Proxy.revocable({}, {}); revoked.revoke();
     let described;
@@ -150,7 +259,8 @@ test('Draft rules preserve authorized original spans and return patches accepted
     assert.equal(result.ok, true, JSON.stringify(result));
     assert.equal(result.artifact.kind, 'patches');
     assert.deepEqual(result.artifact.patches, [{ index: 0, replacement: 'hot' }, { index: 1, replacement: 'hot' }]);
-    assert.deepEqual(result.artifact.draft, original);
+    // Own data/permissions are preserved; engine snapshots use null-prototype records.
+    assert.deepEqual(structuredClone(result.artifact.draft), original);
     assert.deepEqual(draft, original);
     assert.equal(Object.isFrozen(result.artifact.draft.source), true);
     const candidate = validatePatches(result.artifact);
