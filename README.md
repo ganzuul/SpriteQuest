@@ -23,14 +23,24 @@ Switch it off and SillyTavern builds the prompt exactly as it always has.
 ## Install
 
 1. In SillyTavern, open **Extensions** and click **Install extension**.
-2. Paste `https://github.com/Dulgadurbit/SillyCanvas` and install.
+2. Paste `https://github.com/MentallyQuill/ComfyTavern` and install.
 3. Reload SillyTavern.
 
 Open the canvas with the button next to Send, from the wand menu, or by typing `/canvas`.
 
 Silly Canvas works with Chat Completion APIs (OpenAI, OpenRouter, Claude, Gemini and others). Text Completion is wired up but has had very little testing.
 
-## Getting started
+## Native guidance and reviewed replies
+
+Native workflows are being prepared on `codex/native-workflows` for a draft PR. Until merged, use that branch in the installed extension for testing; the default branch may not contain these features yet.
+
+Open the library to install **Scene guidance** or **Reviewed AI De-slop**, bind the Analysis/Prose roles to fixed SillyTavern connections, then explicitly assign the phase and enable native mode. Installation and import never arm generation or make a model call. Native guidance runs before SillyTavern builds its normal reply; repair produces a candidate for explicit review and Apply.
+
+Scene guidance uses at most two auxiliary requests and reviewed repair at most one. **Test workflow** can spend tokens and does not cache its result for a later Send. Repair supports the latest completed text-only assistant reply; Apply preserves the original swipe and reports local success separately from unverified durable saving. Other memory extensions may already have consumed the original.
+
+See [native workflow setup, examples, controls, costs, and troubleshooting](docs/native-workflows.md). Existing canvases remain available in **Legacy · Replace prompt** mode.
+
+## Getting started with a legacy canvas
 
 1. Open the canvas and click the wand button (**Seed from SillyTavern's current prompt order**). This copies your current prompt order onto the canvas, so you start from what you already send.
 2. Click **Preview prompt** to see the messages the canvas would send.
