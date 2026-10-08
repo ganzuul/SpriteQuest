@@ -127,15 +127,17 @@ export async function createDraftRulePatches(draft, settings = {}, execution = {
     catch { return failure('INVALID_DRAFT', 'Draft must contain cloneable original source and span data.'); }
     if (frozen.text.length > 100000) return failure('INPUT_LIMIT', 'Draft exceeds 100,000 UTF-16 units.');
     if (frozen.spans?.length > 256) return failure('SPAN_LIMIT', 'Draft accepts at most 256 original editable spans.');
-    const artifact = { kind: 'patches', draft: frozen, patches: [], protectedLiterals: [...(frozen.protectedLiterals ?? [])] };
-    const initial = validatePatches(artifact);
+    // The unchanged gate must also receive own-only wrapper records for optional reads.
+    const artifact = Object.assign(Object.create(null), { kind: 'patches', draft: frozen, patches: [], protectedLiterals: [...(frozen.protectedLiterals ?? [])] });
+    const validationNode = Object.create(null);
+    const initial = validatePatches(artifact, validationNode);
     if (!initial.ok) return { ok: false, error: initial.error };
     const result = await execute(frozen.spans.map(span => span.text), normalized, options);
     if (!result.ok) return result;
     artifact.patches = frozen.spans.flatMap((span, index) => result.data.segments[index] === span.text ? [] : [{ index: span.index, replacement: result.data.segments[index] }]);
     const outputLength = frozen.text.length + artifact.patches.reduce((sum, patch) => sum + patch.replacement.length - frozen.spans[patch.index].text.length, 0);
     if (outputLength > 100000) return failure('OUTPUT_LIMIT', 'Proposed Draft text exceeds 100,000 UTF-16 units.');
-    const validated = validatePatches(artifact);
+    const validated = validatePatches(artifact, validationNode);
     if (!validated.ok) return { ok: false, error: validated.error };
     return { ok: true, data: { artifact, report: result.data.report } };
 }
@@ -158,7 +160,8 @@ function snapshotDraft(draft) {
         if (array ? prototype !== Array.prototype : ![Object.prototype, null].includes(prototype)) throw new Error('Invalid Draft metadata.');
         const descriptors = Object.getOwnPropertyDescriptors(value), keys = Reflect.ownKeys(descriptors);
         if (array && keys.length !== descriptors.length.value + 1) throw new Error('Sparse Draft metadata.');
-        const output = array ? [] : Object.create(prototype);
+        // Records expose only snapshotted own data; absent Draft/provenance fields stay absent.
+        const output = array ? [] : Object.create(null);
         active.add(value);
         for (const key of keys) {
             if (array && key === 'length') continue;
@@ -173,7 +176,7 @@ function snapshotDraft(draft) {
         return output;
     }
     const result = clone(draft, 0);
-    if (!result || result.kind !== 'draft' || typeof result.text !== 'string' || !result.source || typeof result.source.originalText !== 'string') throw new Error('Invalid Draft.');
+    if (!result || !['kind', 'text', 'source'].every(key => Object.hasOwn(result, key)) || result.kind !== 'draft' || typeof result.text !== 'string' || !result.source || !Object.hasOwn(result.source, 'originalText') || typeof result.source.originalText !== 'string') throw new Error('Invalid Draft.');
     const pins = result.protectedLiterals === undefined ? [] : result.protectedLiterals;
     if (!Array.isArray(pins) || pins.length > 128 || pins.some(pin => typeof pin !== 'string' || !pin.trim() || pin.length > 2048)) throw new Error('Invalid protected literals.');
     return result;

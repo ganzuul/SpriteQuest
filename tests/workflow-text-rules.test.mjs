@@ -195,11 +195,14 @@ test('Draft rules emit one validated patch per original span and freeze the sour
     const result = await pending;
     assert.equal(result.ok, true);
     assert.deepEqual(result.data.artifact.patches, [{ index: 0, replacement: 'hot' }, { index: 1, replacement: 'hot' }]);
-    assert.deepEqual(result.data.artifact.draft, original);
+    // Compare complete own payload; safe record prototypes deliberately differ from the input.
+    assert.deepEqual(structuredClone(result.data.artifact.draft), original);
+    assert.equal(Object.getPrototypeOf(result.data.artifact.draft), null);
+    assert.equal(Object.getPrototypeOf(result.data.artifact.draft.source), null);
     assert.equal(Object.isFrozen(result.data.artifact.draft.source), true);
     assert.equal(Object.isFrozen(result.data.artifact.draft.spans[0]), true);
     assert.equal(result.data.artifact.draft.text, text);
-    assert.deepEqual(result.data.artifact.draft.spans, original.spans);
+    assert.deepEqual(structuredClone(result.data.artifact.draft.spans), original.spans);
     assert.equal(draft.text, text);
     assert.deepEqual(draft.spans, original.spans);
     const candidate = validatePatches(result.data.artifact);
@@ -400,4 +403,72 @@ test('exact Text rule pattern and finding boundaries remain usable', async () =>
     assert.equal(result.data.report.length, 4096);
     assert.deepEqual(result.data.report.at(-1), { ruleIndex: 0, segmentIndex: 0, start: 4095, end: 4096, text: 'x' });
     await harness.cleaned();
+});
+async function withInheritedGetter(key, value, operation) {
+    const previous = Object.getOwnPropertyDescriptor(Object.prototype, key);
+    let reads = 0, result;
+    Object.defineProperty(Object.prototype, key, { configurable: true, get() { reads++; return value; } });
+    try { result = await operation(); }
+    finally {
+        if (previous) Object.defineProperty(Object.prototype, key, previous); else delete Object.prototype[key];
+    }
+    return { result, reads };
+}
+test('absent Draft scope never consults an inherited getter or widens raw permissions', async () => {
+    const harness = workerHarness();
+    const { result, reads } = await withInheritedGetter('scope', 'dialogue', () => createDraftRulePatches({ kind: 'draft', text: 'cold', source: { originalText: 'cold', token: 'own-token' } }, { rules: [literal('cold', 'warm')] }, { workerFactory: harness.factory }));
+    assert.equal(reads, 0);
+    assert.equal(result.ok, true);
+    assert.equal(result.data.artifact.draft.scope, 'whole');
+    assert.equal(result.data.artifact.draft.source.token, 'own-token');
+    assert.deepEqual(result.data.artifact.patches, [{ index: 0, replacement: 'warm' }]);
+    await harness.cleaned();
+});
+test('patch gate wrapper never reads inherited optional pins usage or finish', async () => {
+    const { validatePatches } = await import('../src/workflow/repair.js');
+    for (const [key, inherited] of [['protectedLiterals', ['inherited wording']], ['usage', { marker: 'inherited usage' }], ['finish', 'length']]) {
+        const harness = workerHarness();
+        const { result, reads } = await withInheritedGetter(key, inherited, async () => {
+            const transformed = await createDraftRulePatches({ kind: 'draft', text: 'cold', source: { originalText: 'cold', metadata: { keep: 'own source' } }, spans: [{ index: 0, start: 0, end: 4, text: 'cold', note: 'own permission' }] }, { rules: [literal('cold', 'warm')] }, { workerFactory: harness.factory });
+            if (!transformed.ok) return { transformed };
+            return { transformed, candidate: validatePatches(transformed.data.artifact, Object.create(null)) };
+        });
+        if (harness.workers.length) await harness.cleaned();
+        assert.equal(reads, 0, `${key} must remain absent rather than inherited`);
+        assert.equal(result.transformed.ok, true);
+        assert.equal(result.candidate.ok, true);
+        assert.equal(result.candidate.artifact.text, 'warm');
+        assert.equal(result.transformed.data.artifact.draft.source.metadata.keep, 'own source');
+        assert.equal(result.transformed.data.artifact.draft.spans[0].note, 'own permission');
+    }
+});
+test('required original provenance cannot come from an inherited source getter', async () => {
+    const harness = workerHarness();
+    const { result, reads } = await withInheritedGetter('originalText', 'cold', () => createDraftRulePatches({ kind: 'draft', text: 'cold', source: { token: 'own-token' } }, { rules: [literal('cold', 'warm')] }, { workerFactory: harness.factory }));
+    assert.equal(reads, 0);
+    assert.equal(result.error?.code, 'INVALID_DRAFT');
+    assert.equal(result.data, undefined);
+    assert.equal(harness.workers.length, 0);
+});
+test('own source span scope and pin payloads survive prototype-safe Draft validation', async () => {
+    const { validatePatches } = await import('../src/workflow/repair.js');
+    const harness = workerHarness();
+    const text = 'cold "cold"';
+    const metadata = JSON.parse('{"__proto__":{"keep":"own data"},"constructor":"own constructor"}');
+    const draft = { kind: 'draft', text, source: { originalText: text, token: 'own identity', metadata }, scope: 'narration', protectedLiterals: ['"cold"'], spans: [{ index: 0, start: 0, end: 4, text: 'cold', permission: { marker: 'own span metadata' } }] };
+    const original = structuredClone(draft);
+    const { result, reads } = await withInheritedGetter('originalText', 'forged source', async () => {
+        const transformed = await createDraftRulePatches(draft, { rules: [literal('cold', 'warm')] }, { workerFactory: harness.factory });
+        return { transformed, candidate: transformed.ok ? validatePatches(transformed.data.artifact, Object.create(null)) : null };
+    });
+    await harness.cleaned();
+    assert.equal(reads, 0);
+    assert.equal(result.transformed.ok, true);
+    assert.deepEqual(structuredClone(result.transformed.data.artifact.draft), original);
+    assert.deepEqual(draft, original);
+    assert.equal(Object.isFrozen(result.transformed.data.artifact.draft.spans[0].permission), true);
+    assert.equal(Object.getPrototypeOf(result.transformed.data.artifact), null);
+    assert.equal(result.candidate.ok, true);
+    assert.equal(result.candidate.artifact.text, 'warm "cold"');
+    assert.equal(result.candidate.artifact.source.token, 'own identity');
 });
