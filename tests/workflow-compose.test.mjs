@@ -79,4 +79,29 @@ assert.equal(composeText({data:'x'.repeat(262143)}).error?.code,'INVALID_JSON_VA
 assert.equal(composeText({template:'{{data:}}',data:'x'.repeat(100001)}).error?.code,'TEXT_LIMIT');
 
 assert.equal(composeText({sections:[{name:'x'.repeat(100001),text:''}]}).error?.code,'TEXT_LIMIT');
+
+
+const revokedSettings = Proxy.revocable({}, {});
+revokedSettings.revoke();
+assert.equal(composeText(revokedSettings.proxy).error?.code, 'INVALID_COMPOSE');
+
+const revokedSection = Proxy.revocable({name:'s',text:'x'}, {});
+revokedSection.revoke();
+const revokedSections = Proxy.revocable([], {});
+revokedSections.revoke();
+for (const settings of [{sections:[revokedSection.proxy]}, {sections:revokedSections.proxy}]) {
+  const result = composeText(settings);
+  assert.equal(result.error?.code, 'INVALID_COMPOSE');
+  assert.equal(Object.hasOwn(result,'data'), false);
+}
+
+const rootArrayMetadata = composeText({template:'{{data:/length}}',data:['a','b']});
+assert.equal(rootArrayMetadata.error?.code,'MISSING_PATH');
+assert.equal(Object.hasOwn(rootArrayMetadata,'data'),false);
+
+const nestedArrayMetadata = composeText({template:'{{data:/items/length}}',data:{items:['a','b']}});
+assert.equal(nestedArrayMetadata.error?.code,'MISSING_PATH');
+assert.equal(Object.hasOwn(nestedArrayMetadata,'data'),false);
+
+assert.equal(composeText({template:'{{data:/length}} {{data:/nested/length}}',data:{length:2,nested:{length:'own'}}}).data.text,'2 own');
 console.log('workflow-compose tests passed');
