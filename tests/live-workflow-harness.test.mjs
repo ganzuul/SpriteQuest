@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import * as runtime from '../src/workflow/runtime.js';
 import * as connections from '../src/workflow/connections.js';
 import * as starters from '../src/workflow/starters.js';
-import { createLiveGuard, createLiveReservationBridge, productionModulePath, runSyntheticFixtures } from '../tools/live-workflow-test.mjs';
+import { createLiveGuard, createRequestBoundary, runLiveSession, createLiveReservationBridge, productionModulePath, runSyntheticFixtures } from '../tools/live-workflow-test.mjs';
 const model = 'z-ai/glm-5.2';
 const owned = [{role:'system',content:'Synthetic fixture only.'},{role:'user',content:'A synthetic blue lantern.'}];
 const options = { live:true, host:'http://127.0.0.1:8000', priorAttempts:3, maxAttempts:3 };
@@ -103,4 +103,97 @@ test('production fixture graphs compact pinned text, plan bounded guidance and r
     assert.equal(results[1].constraints.reviewRequired,true);
     assert.equal(JSON.stringify(results).includes('privateField'),false);
     assert.equal(guard.attempts(),3);
+});
+const backendUrl='http://127.0.0.1:8000/api/backends/chat-completions/generate';
+const backendPayload={model,max_tokens:1024,messages:owned,chat_completion_source:'nanogpt'};
+test('outbound boundary blocks actual host hyphenated generation and direct-provider endpoints before reservation',()=>{
+    const boundary=createRequestBoundary(createLiveGuard(options),options.host);
+    for (const url of [
+        'http://127.0.0.1:8000/api/horde/generate-text',
+        'http://127.0.0.1:8000/api/openai/generate-image',
+        'http://127.0.0.1:8000/api/google/generate-video',
+        'http://127.0.0.1:8000/api/novelai/generate-voice',
+        'http://127.0.0.1:8000/api/google/generate-native-tts',
+        'http://127.0.0.1:8000/api/unknown/charge',
+        'http://127.0.0.1:8000/unapproved-generation',
+        'https://api.nanogpt.com/v1/chat/completions',
+        'https://api.openai.com/v1/responses',
+        backendUrl,
+    ]) assert.equal(boundary.allow({url,method:'POST',payload:backendPayload}),false,url);
+    assert.equal(boundary.counts().backendAccepted,0);
+});
+test('outbound boundary admits only exact origin POST path and one active owned request',async()=>{
+    const guard=createLiveGuard(options),boundary=createRequestBoundary(guard,options.host);
+    await guard.request(request,async()=>{
+        for (const attempt of [
+            {url:backendUrl.replace(':8000',':8001'),method:'POST'},
+            {url:backendUrl.replace('127.0.0.1','localhost'),method:'POST'},
+            {url:backendUrl,method:'GET'},
+            {url:backendUrl+'/extra',method:'POST'},
+            {url:backendUrl+'?redirect=external',method:'POST'},
+            {url:backendUrl.replace('chat-completions','text-completions'),method:'POST'},
+        ]) assert.equal(boundary.allow({...attempt,payload:backendPayload}),false);
+        assert.equal(boundary.allow({url:backendUrl,method:'POST',payload:backendPayload}),true);
+        assert.equal(boundary.allow({url:backendUrl,method:'POST',payload:backendPayload}),false);
+        return response;
+    });
+    assert.equal(boundary.counts().backendAccepted,1);
+    assert.equal(guard.attempts(),1);
+});
+test('outbound boundary keeps only required local readiness and tokenizer APIs available',()=>{
+    const boundary=createRequestBoundary(createLiveGuard(options),options.host);
+    for (const [path,method] of [['/','GET'],['/script.js','GET'],['/scripts/text-completion.js','GET'],['/csrf-token','GET'],['/api/extensions/discover','GET'],['/api/settings/get','POST'],['/api/tokenizers/openai/encode','POST']]) assert.equal(boundary.allow({url:options.host+path,method}),true);
+    for (const [path,method] of [['/api/settings/save','POST'],['/api/secrets/find','POST'],['/api/secrets/view','POST'],['/api/chats/get','POST'],['/api/tokenizers/remote/kobold/count','POST'],['/proxy/https://provider.example/generate','GET']]) assert.equal(boundary.allow({url:options.host+path,method}),false);
+});
+
+test('exception after one admitted attempt returns a sanitized ledger with unknown usage and no retry',async()=>{
+    let executions=0;
+    const report=await runLiveSession(options,{execute:async({guard,boundary,stage})=>{
+        stage('evaluate');
+        await guard.request(request,async()=>{
+            executions++;
+            assert.equal(boundary.allow({url:backendUrl,method:'POST',payload:backendPayload}),true);
+            throw Error('private-cookie-and-provider-body');
+        });
+    }});
+    assert.equal(report.status,'failed'); assert.equal(report.failureStage,'evaluate');
+    assert.equal(report.priorAttempts,3); assert.equal(report.attempts,1); assert.equal(report.totalAttempts,4);
+    assert.equal(report.backendAccepted,1); assert.equal(report.attemptLedger[0].usageStatus,'unknown');
+    assert.equal(report.attemptLedger[0].usage,null); assert.equal(executions,1);
+    assert.equal(JSON.stringify(report).includes('private-cookie-and-provider-body'),false);
+});
+test('cleanup failure preserves completed fixture progress and the paid ledger',async()=>{
+    const fixture={label:'plain compactor + thinking planner',ok:true,actualCalls:1,callBound:2,calls:[],reports:[],constraints:{pinPreserved:true},artifact:{kind:'guidance',text:'Synthetic guidance'}};
+    let cleanups=0;
+    const report=await runLiveSession(options,{execute:async({guard,boundary,recordFixture})=>{
+        await guard.request(request,async()=>{assert.equal(boundary.allow({url:backendUrl,method:'POST',payload:backendPayload}),true);return response;});
+        recordFixture(fixture);
+    },cleanup:async()=>{cleanups++;throw Error('private cleanup details');}});
+    assert.equal(report.status,'failed'); assert.equal(report.failureStage,'cleanup');
+    assert.equal(report.totalAttempts,4); assert.equal(report.backendAccepted,1);
+    assert.equal(report.completedFixtures,1); assert.equal(report.fixtures[0].artifact.text,'Synthetic guidance');
+    assert.equal(report.attemptLedger[0].usageStatus,'reported');
+    assert.equal(report.attemptLedger[0].usage.completion_tokens,3);
+    assert.equal(cleanups,1); assert.equal(JSON.stringify(report).includes('private cleanup details'),false);
+});
+test('startup exceptions and missing live opt-in produce machine-readable zero-attempt reports',async()=>{
+    for (const failureStage of ['manifest','browser','navigation']) {
+        const report=await runLiveSession(options,{execute:async({stage})=>{stage(failureStage);throw Error('private startup details');}});
+        assert.equal(report.status,'failed'); assert.equal(report.failureStage,failureStage);assert.equal(report.totalAttempts,3);assert.equal(report.attempts,0);
+    }
+    let starts=0;
+    const disabled=await runLiveSession({...options,live:false},{execute:async()=>{starts++;}});
+    assert.equal(disabled.status,'disabled');assert.equal(disabled.totalAttempts,3);assert.equal(starts,0);
+});
+
+test('browser loss with an unfinished admitted reservation conservatively retains the unknown attempt',async()=>{
+    const report=await runLiveSession(options,{execute:async({guard,boundary,stage})=>{
+        stage('evaluate');
+        await createLiveReservationBridge(guard).reserve(request);
+        assert.equal(boundary.allow({url:backendUrl,method:'POST',payload:backendPayload}),true);
+        throw Error('private browser disconnect details');
+    }});
+    assert.equal(report.attempts,1);assert.equal(report.totalAttempts,4);assert.equal(report.backendAccepted,1);
+    assert.equal(report.attemptLedger[0].outcome,'reserved');assert.equal(report.unknownUsageAttempts,1);
+    assert.equal(report.completedFixtures,0);assert.equal(JSON.stringify(report).includes('private browser disconnect details'),false);
 });
