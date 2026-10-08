@@ -43,10 +43,20 @@ function validSettings(node, scan = false) {
     return ['repair', 'scan'].includes(node.mode ?? 'repair') && typeof (node.instructions ?? '') === 'string' && (node.instructions ?? '').length <= 10000 && typeof (node.strength ?? 'light') === 'string' && (node.strength ?? '').length <= 1000 && Number.isSafeInteger(node.maxTokens ?? 2048) && (node.maxTokens ?? 2048) > 0 && (node.maxTokens ?? 2048) <= 65536;
 }
 const validDraft = draft => draft?.kind === 'draft' && typeof draft.text === 'string' && draft.source && typeof draft.source.originalText === 'string';
+function validFindings(findings) {
+    if (findings === undefined) return true;
+    if (!Array.isArray(findings)) return false;
+    for (let index = 0; index < findings.length; index++) {
+        const finding = findings[index];
+        if (!finding || typeof finding !== 'object' || ![Object.prototype, null].includes(Object.getPrototypeOf(finding))) return false;
+    }
+    return true;
+}
 /** Scan editable literal preferences without changing source text or calling a model. */
 export function scanDraft(draft, node = {}) {
     if (!validSettings(node, true)) return failure('INVALID_SETTINGS', 'Use a supported scope/case policy and at most 128 nonblank literal preferences, each at most 2,048 UTF-16 units.', node, draft);
     if (!validDraft(draft)) return failure('INVALID_DRAFT', 'Expected a draft with frozen original source text.', node, draft);
+    if (!validFindings(draft.findings)) return failure('INVALID_DRAFT', 'Draft findings must be a dense array of plain inspection records.', node, draft);
     if (draft?.text?.length > MAX_TEXT) return failure('INPUT_LIMIT', 'Draft exceeds the 100,000 UTF-16-unit scan/repair limit. Narrow the source before running; no text was truncated.', node, draft);
     const spans = [], findings = [];
     const text = draft.text;
@@ -83,7 +93,10 @@ export function scanDraft(draft, node = {}) {
 }
 function invalidSpans(draft) {
     if (draft.scope !== undefined && !['whole', 'narration', 'dialogue'].includes(draft.scope)) return true;
-    const exempted = literalRanges(draft.text, draft.exemptions ?? [], draft.caseSensitive ?? false);
+    if (draft.caseSensitive !== undefined && typeof draft.caseSensitive !== 'boolean') return true;
+    const exemptions = draft.exemptions === undefined ? [] : draft.exemptions;
+    if (!Array.isArray(exemptions) || exemptions.length > 128 || !literalList(Array.from(exemptions))) return true;
+    const exempted = literalRanges(draft.text, exemptions, draft.caseSensitive ?? false);
     const allowed = scopeRanges(draft.text, draft.scope ?? 'whole');
     const boundary = offset => !(offset > 0 && offset < draft.text.length && /[\uD800-\uDBFF]/u.test(draft.text[offset - 1]) && /[\uDC00-\uDFFF]/u.test(draft.text[offset]));
     return !Array.isArray(draft?.spans) || draft.spans.some((span, index) =>

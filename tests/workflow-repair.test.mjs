@@ -323,3 +323,45 @@ for (const [text, node, newFinding] of [
     assert.deepEqual(candidate.artifact.findings, [upstream, newFinding]);
     assert.equal(candidate.artifact.text, text);
 }
+// Stored exemptions are a bounded dense literal list, not arbitrary iterable metadata.
+for (const exemptions of [17, {}, 'cold', null, true, [17], [null], [''], ['cold', null], Array(1), Array(129).fill('cold'), ['x'.repeat(2049)]]) {
+    const input = scanned('cold', { rules: ['cold'] }); input.exemptions = exemptions;
+    let attempts = 0, result;
+    await assert.doesNotReject(async () => {
+        result = await repairDraft(input, {}, { countTokens: async () => ({ tokens: 10, method: 'synthetic' }), request: async () => {
+            attempts++;
+            return { ok: true, data: { text: '{"patches":[]}', usage: null, finish: 'stop' } };
+        } });
+    });
+    assert.equal(result.error?.code, 'INVALID_SPANS');
+    assert.equal(attempts, 0);
+    assert.equal(result.calls.length, 0);
+    let validated;
+    assert.doesNotThrow(() => { validated = validatePatches({ kind: 'patches', draft: input, patches: [] }); });
+    assert.equal(validated.error?.code, 'INVALID_SPANS');
+}
+// Stored case policy cannot silently coerce strings, scalars or objects into permissions.
+for (const caseSensitive of ['false', 0, null, [], {}]) {
+    const input = scanned('cold', { rules: ['cold'] }); input.caseSensitive = caseSensitive;
+    let attempts = 0;
+    const result = await repairDraft(input, {}, { countTokens: async () => ({ tokens: 10, method: 'synthetic' }), request: async () => {
+        attempts++;
+        return { ok: true, data: { text: '{"patches":[]}', usage: null, finish: 'stop' } };
+    } });
+    assert.equal(result.error?.code, 'INVALID_SPANS');
+    assert.equal(attempts, 0);
+    assert.equal(result.calls.length, 0);
+    assert.equal(validatePatches({ kind: 'patches', draft: input, patches: [] }).error?.code, 'INVALID_SPANS');
+}
+// Preserving upstream findings requires a dense array of inspection records on both scan paths.
+for (const findings of [17, {}, null, 'bad', [17], [null], [[]], [new Date(0)], Array(1)]) {
+    for (const [text, node] of [['cold', { rules: ['cold'] }], ['cold "cold', { rules: ['cold'], scope: 'narration' }]]) {
+        const input = draft(text); input.findings = findings;
+        let result;
+        assert.doesNotThrow(() => { result = scanDraft(input, node); });
+        assert.equal(result.error?.code, 'INVALID_DRAFT');
+        assert.equal(result.artifact.text, text);
+        assert.equal(result.artifact.findings, findings);
+        assert.equal(result.calls.length, 0);
+    }
+}
