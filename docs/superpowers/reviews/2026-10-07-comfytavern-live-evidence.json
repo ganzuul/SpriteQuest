@@ -1,0 +1,540 @@
+{
+  "recordedAt": "2026-10-08T07:33:14.5975607Z",
+  "releaseCommit": "fa7354d9c4b00e012c621d5935f5560d16a42094",
+  "authorizedSession": {
+    "explicitOptIn": true,
+    "host": "http://127.0.0.1:8000",
+    "priorAttempts": 3,
+    "maxAttempts": 3,
+    "maximumCompletionCap": 4096,
+    "syntheticOnly": true,
+    "nativeSendInvoked": false,
+    "applyInvoked": false,
+    "settingsOrInstalledExtensionMutated": false,
+    "secretValuesRetrievedOrCopied": false,
+    "implicitRetry": false
+  },
+  "priorEvidence": {
+    "evidenceType": "Earlier real-browser synthetic canaries; distinct from production runtime acceptance",
+    "canaries": [
+      {
+        "model": "z-ai/glm-5.2",
+        "ok": true,
+        "output": "READY",
+        "finish": "stop",
+        "elapsedMs": 4105,
+        "usage": {
+          "prompt_tokens": 26,
+          "completion_tokens": 2,
+          "total_tokens": 28
+        }
+      },
+      {
+        "model": "z-ai/glm-5.2:thinking",
+        "ok": true,
+        "output": "READY",
+        "finish": "stop",
+        "elapsedMs": 6843,
+        "usage": {
+          "prompt_tokens": 32,
+          "completion_tokens": 131,
+          "total_tokens": 163
+        }
+      }
+    ],
+    "conservativelyCountedPreReadinessAttempt": 1,
+    "previousTotal": 3,
+    "repeated": false
+  },
+  "productionSession": {
+    "status": "failed",
+    "evidenceType": "real-browser production runtime + host request service",
+    "manifestVersion": "0.19.0",
+    "failureStage": null,
+    "cleanupFailed": false,
+    "priorAttempts": 3,
+    "attempts": 0,
+    "totalAttempts": 3,
+    "backendAccepted": 0,
+    "backendBlocked": 1,
+    "attemptLedger": [],
+    "unknownUsageAttempts": 0,
+    "ownedMessageOnly": true,
+    "allReservationsReachedBackend": true,
+    "providerCost": {
+      "reported": false,
+      "note": "Provider metadata only; not a verified billing total"
+    },
+    "completedFixtures": 1,
+    "fixtures": [
+      {
+        "label": "plain compactor + thinking planner",
+        "ok": false,
+        "error": "UNSUPPORTED_BINDING",
+        "callBound": 2,
+        "actualCalls": 0,
+        "reports": [],
+        "constraints": {
+          "pinPreserved": false,
+          "compactionWithinBudget": false,
+          "guidanceWithinBudget": false,
+          "guidancePublished": false
+        },
+        "calls": [],
+        "artifact": null
+      }
+    ],
+    "ledgerAction": "Advance the external attempt ledger from totalAttempts before any separately authorized rerun. No retry was made."
+  },
+  "acceptance": {
+    "passed": true,
+    "limitation": "Artifact acceptance was obtained across two separate production sessions and source commits; historical failures are retained. Native Send, Apply and durable saving were not exercised. The repair-only full-suite status remains failed by the unchanged two-fixture criterion, with scoped repairOnlyOutcome true.",
+    "originalOrPrivateContentAccessed": false,
+    "furtherRunRequiresSeparateAuthorization": true,
+    "scope": "Combined bounded production artifact proof: prior compaction/planning plus separately authorized canonical repair-only candidate"
+  },
+  "readOnlyDiagnosis": {
+    "diagnosticOnly": true,
+    "generationBoundary": "Closed; no active reservation",
+    "profileApi": "nanogpt",
+    "profileModel": "z-ai/glm-5.2:thinking",
+    "profileProxyPresent": true,
+    "apiMapAvailable": true,
+    "apiMapEntryAvailable": true,
+    "routeSelected": "openai",
+    "routeSource": "nanogpt",
+    "routeType": null,
+    "mode": "openai",
+    "code": "UNSUPPORTED_BINDING",
+    "message": "Named proxy routes cannot be verified through the public host context. Use a directly resolved connection.",
+    "attempts": 0,
+    "backendAccepted": 0,
+    "backendBlocked": 1
+  },
+  "correctedProductionSessions": [
+    {
+      "recordedAt": "2026-10-08T08:04:47.3798296Z",
+      "sourceCommit": "c1cba11f0dbc64c9b0540afc909d07cc19bebdcb",
+      "fixes": "70a358f source-aware unused Nano proxy guard; c1cba11 reviewed integration fixes",
+      "explicitlyAuthorized": true,
+      "priorAttempts": 3,
+      "maxAttempts": 3,
+      "productionSession": {
+        "status": "failed",
+        "evidenceType": "real-browser production runtime + host request service",
+        "manifestVersion": "0.19.0",
+        "failureStage": null,
+        "cleanupFailed": false,
+        "priorAttempts": 3,
+        "attempts": 3,
+        "totalAttempts": 6,
+        "backendAccepted": 3,
+        "backendBlocked": 14,
+        "attemptLedger": [
+          {
+            "attempt": 1,
+            "model": "z-ai/glm-5.2",
+            "maxTokens": 1024,
+            "outcome": "complete",
+            "backendAccepted": true,
+            "usageStatus": "reported",
+            "usage": {
+              "prompt_tokens": 934,
+              "completion_tokens": 44,
+              "total_tokens": 978,
+              "input_tokens": 931,
+              "reasoning_tokens": 0,
+              "cache_read_input_tokens": 3,
+              "cache_creation_input_tokens": 0,
+              "cost": 0,
+              "currency": "USD"
+            },
+            "finish": "stop",
+            "elapsedMs": 2683,
+            "output": "A fictional traveler waits at a blue lantern beside a closed gate. The traveler has not decided whether to enter. This setup repeats identically throughout the supplied history, with no change in details, action, or resolution."
+          },
+          {
+            "attempt": 2,
+            "model": "z-ai/glm-5.2:thinking",
+            "maxTokens": 4096,
+            "outcome": "complete",
+            "backendAccepted": true,
+            "usageStatus": "reported",
+            "usage": {
+              "prompt_tokens": 156,
+              "completion_tokens": 177,
+              "total_tokens": 333,
+              "input_tokens": 156,
+              "reasoning_tokens": 0,
+              "cache_read_input_tokens": 0,
+              "cache_creation_input_tokens": 0,
+              "cost": 0,
+              "currency": "USD"
+            },
+            "finish": "stop",
+            "elapsedMs": 18074,
+            "output": "**Option A — Examine the lantern.** The traveler studies the blue lantern more closely — its make, any markings, whether the flame flickers or burns steady. Direction: slow, contemplative; intention to find meaning in the wait itself. Constraint: nothing opens or changes; the gate stays closed.\n\n**Option B — Speak aloud.** The traveler addresses the gate, the lantern, or the dark beyond — a question, a name, or a confession. Direction: vulnerable, testing whether anything listens. Intention: provoke a response without forcing one. Constraint: silence is a valid outcome; no reply is guaranteed.\n\nBoth preserve LANTERN-KEEP-26. The traveler's choice remains the only engine of change."
+          },
+          {
+            "attempt": 3,
+            "model": "z-ai/glm-5.2",
+            "maxTokens": 2048,
+            "outcome": "complete",
+            "backendAccepted": true,
+            "usageStatus": "reported",
+            "usage": {
+              "prompt_tokens": 134,
+              "completion_tokens": 18,
+              "total_tokens": 152,
+              "input_tokens": 134,
+              "reasoning_tokens": 0,
+              "cache_read_input_tokens": 0,
+              "cache_creation_input_tokens": 0
+            },
+            "finish": "stop",
+            "elapsedMs": 4187,
+            "output": "```json\n{\"patches\":[{\"index\":0,\"replacement\":\"proof of\"}]}\n```"
+          }
+        ],
+        "unknownUsageAttempts": 0,
+        "ownedMessageOnly": true,
+        "allReservationsReachedBackend": true,
+        "providerCost": {
+          "reported": true,
+          "note": "Provider metadata only; not a verified billing total"
+        },
+        "completedFixtures": 2,
+        "fixtures": [
+          {
+            "label": "plain compactor + thinking planner",
+            "ok": true,
+            "error": null,
+            "callBound": 2,
+            "actualCalls": 2,
+            "reports": [
+              {
+                "code": "CONTEXT_PRESERVATION",
+                "retainedMessageIds": [
+                  "recent"
+                ],
+                "removedMessageIds": [
+                  "history"
+                ],
+                "summarizedMessageIds": [
+                  "history"
+                ],
+                "inputOmittedMessageIds": [],
+                "originalRetained": true
+              },
+              {
+                "code": "COMPACTION",
+                "tokens": 80,
+                "method": "host-tokenizer"
+              },
+              {
+                "code": "GUIDANCE_BUDGET",
+                "tokens": 153,
+                "method": "host-tokenizer",
+                "budget": 768
+              }
+            ],
+            "constraints": {
+              "pinPreserved": true,
+              "compactionWithinBudget": true,
+              "guidanceWithinBudget": true,
+              "guidancePublished": false
+            },
+            "calls": [
+              {
+                "nodeId": "smart-compactor",
+                "model": "z-ai/glm-5.2",
+                "maxTokens": 1024,
+                "elapsedMs": 2686,
+                "tokenCount": {
+                  "tokens": 938,
+                  "method": "host-tokenizer"
+                },
+                "finish": "stop",
+                "usage": {
+                  "prompt_tokens": 934,
+                  "completion_tokens": 44,
+                  "total_tokens": 978,
+                  "input_tokens": 931,
+                  "reasoning_tokens": 0,
+                  "cache_read_input_tokens": 3,
+                  "cache_creation_input_tokens": 0,
+                  "cost": 0,
+                  "currency": "USD"
+                },
+                "error": null,
+                "output": "A fictional traveler waits at a blue lantern beside a closed gate. The traveler has not decided whether to enter. This setup repeats identically throughout the supplied history, with no change in details, action, or resolution."
+              },
+              {
+                "nodeId": "response-plan",
+                "model": "z-ai/glm-5.2:thinking",
+                "maxTokens": 4096,
+                "elapsedMs": 18075,
+                "tokenCount": {
+                  "tokens": 153,
+                  "method": "host-tokenizer"
+                },
+                "finish": "stop",
+                "usage": {
+                  "prompt_tokens": 156,
+                  "completion_tokens": 177,
+                  "total_tokens": 333,
+                  "input_tokens": 156,
+                  "reasoning_tokens": 0,
+                  "cache_read_input_tokens": 0,
+                  "cache_creation_input_tokens": 0,
+                  "cost": 0,
+                  "currency": "USD"
+                },
+                "error": null,
+                "output": "**Option A — Examine the lantern.** The traveler studies the blue lantern more closely — its make, any markings, whether the flame flickers or burns steady. Direction: slow, contemplative; intention to find meaning in the wait itself. Constraint: nothing opens or changes; the gate stays closed.\n\n**Option B — Speak aloud.** The traveler addresses the gate, the lantern, or the dark beyond — a question, a name, or a confession. Direction: vulnerable, testing whether anything listens. Intention: provoke a response without forcing one. Constraint: silence is a valid outcome; no reply is guaranteed.\n\nBoth preserve LANTERN-KEEP-26. The traveler's choice remains the only engine of change."
+              }
+            ],
+            "artifact": {
+              "kind": "guidance",
+              "text": "**Option A — Examine the lantern.** The traveler studies the blue lantern more closely — its make, any markings, whether the flame flickers or burns steady. Direction: slow, contemplative; intention to find meaning in the wait itself. Constraint: nothing opens or changes; the gate stays closed.\n\n**Option B — Speak aloud.** The traveler addresses the gate, the lantern, or the dark beyond — a question, a name, or a confession. Direction: vulnerable, testing whether anything listens. Intention: provoke a response without forcing one. Constraint: silence is a valid outcome; no reply is guaranteed.\n\nBoth preserve LANTERN-KEEP-26. The traveler's choice remains the only engine of change."
+            }
+          },
+          {
+            "label": "plain repair; candidate only, no Apply",
+            "ok": false,
+            "error": "INVALID_PATCHES",
+            "callBound": 1,
+            "actualCalls": 1,
+            "reports": [],
+            "constraints": {
+              "originalPreserved": false,
+              "unselectedTextPreserved": true,
+              "reviewRequired": false,
+              "applyInvoked": false
+            },
+            "calls": [
+              {
+                "nodeId": "repair",
+                "model": "z-ai/glm-5.2",
+                "maxTokens": 2048,
+                "elapsedMs": 4188,
+                "tokenCount": {
+                  "tokens": 137,
+                  "method": "host-tokenizer"
+                },
+                "finish": "stop",
+                "usage": {
+                  "prompt_tokens": 134,
+                  "completion_tokens": 18,
+                  "total_tokens": 152,
+                  "input_tokens": 134,
+                  "reasoning_tokens": 0,
+                  "cache_read_input_tokens": 0,
+                  "cache_creation_input_tokens": 0
+                },
+                "error": null,
+                "output": "```json\n{\"patches\":[{\"index\":0,\"replacement\":\"proof of\"}]}\n```"
+              }
+            ],
+            "artifact": {
+              "kind": "draft",
+              "text": "The lantern was a testament to the keeper's patience. The gate stayed shut."
+            }
+          }
+        ],
+        "ledgerAction": "Advance the external attempt ledger from totalAttempts before any separately authorized rerun. No retry was made."
+      },
+      "interpretation": {
+        "compactionAndGuidancePassed": true,
+        "repairCandidateProduced": false,
+        "repairReturnedOriginalDraftTextUnchanged": true,
+        "candidateOriginalFieldUnavailable": true,
+        "note": "Repair failed strict patch validation on fenced JSON. Its draft fallback text equals the original synthetic text; the candidate-only originalPreserved/reviewRequired fields are false because no candidate was produced. No publication or Apply occurred.",
+        "providerUsage": {
+          "prompt_tokens": 1224,
+          "completion_tokens": 239,
+          "total_tokens": 1463
+        },
+        "providerCost": "Zero cost metadata exposed for first two responses; no repair cost field; billing total unverified."
+      }
+    }
+  ],
+  "currentLedger": {
+    "initialPriorAttempts": 3,
+    "previousTotalAttempts": 6,
+    "additionalReservedAttempts": 1,
+    "cumulativeNewReservedAttempts": 4,
+    "backendAcceptedThisSession": 1,
+    "totalAttempts": 7,
+    "maximumAttempts": 8,
+    "remainingAttempts": 1,
+    "unknownUsageAttempts": 0,
+    "implicitRetry": false,
+    "separatelyAuthorizedRerunRequired": true
+  },
+  "repairOnlySessions": [
+    {
+      "recordedAt": "2026-10-08T08:15:33.1929882Z",
+      "sourceCommit": "9524740dbeafb0b0b282ffc179443cda914b3ad0",
+      "scope": "Exactly one canonical production post starter; no pre/planning/canary replay",
+      "explicitlyAuthorized": true,
+      "wrapper": {
+        "sha256": "27DC9DB0BB860ED8B6396FEFF5F6A285C663BE1B5582EBDCE74F217E5CCB7760",
+        "guardReview": "comfytavern-repair-only-guard-review.md: READY",
+        "productionPromptReview": "comfytavern-repair-format-instruction-review.md: READY",
+        "offlineTestsPassed": 5,
+        "fixtureInstructionsOverride": false,
+        "strictParserUnchanged": true
+      },
+      "session": {
+        "status": "failed",
+        "evidenceType": "real-browser production runtime + host request service",
+        "manifestVersion": "0.19.0",
+        "failureStage": null,
+        "cleanupFailed": false,
+        "priorAttempts": 6,
+        "attempts": 1,
+        "totalAttempts": 7,
+        "backendAccepted": 1,
+        "backendBlocked": 14,
+        "attemptLedger": [
+          {
+            "attempt": 1,
+            "model": "z-ai/glm-5.2",
+            "maxTokens": 2048,
+            "outcome": "complete",
+            "backendAccepted": true,
+            "usageStatus": "reported",
+            "usage": {
+              "prompt_tokens": 160,
+              "completion_tokens": 15,
+              "total_tokens": 175,
+              "input_tokens": 160,
+              "reasoning_tokens": 0,
+              "cache_read_input_tokens": 0,
+              "cache_creation_input_tokens": 0,
+              "cost": 0,
+              "currency": "USD"
+            },
+            "finish": "stop",
+            "elapsedMs": 3789,
+            "output": "{\"patches\":[{\"index\":0,\"replacement\":\"a tribute to\"}]}"
+          }
+        ],
+        "unknownUsageAttempts": 0,
+        "ownedMessageOnly": true,
+        "allReservationsReachedBackend": true,
+        "providerCost": {
+          "reported": true,
+          "note": "Provider metadata only; not a verified billing total"
+        },
+        "completedFixtures": 1,
+        "fixtures": [
+          {
+            "label": "plain repair; candidate only, no Apply",
+            "ok": true,
+            "error": null,
+            "callBound": 1,
+            "actualCalls": 1,
+            "reports": [],
+            "constraints": {
+              "originalPreserved": true,
+              "unselectedTextPreserved": true,
+              "reviewRequired": true,
+              "applyInvoked": false
+            },
+            "calls": [
+              {
+                "nodeId": "repair",
+                "model": "z-ai/glm-5.2",
+                "maxTokens": 2048,
+                "elapsedMs": 3791,
+                "tokenCount": {
+                  "tokens": 163,
+                  "method": "host-tokenizer"
+                },
+                "finish": "stop",
+                "usage": {
+                  "prompt_tokens": 160,
+                  "completion_tokens": 15,
+                  "total_tokens": 175,
+                  "input_tokens": 160,
+                  "reasoning_tokens": 0,
+                  "cache_read_input_tokens": 0,
+                  "cache_creation_input_tokens": 0,
+                  "cost": 0,
+                  "currency": "USD"
+                },
+                "error": null,
+                "output": "{\"patches\":[{\"index\":0,\"replacement\":\"a tribute to\"}]}"
+              }
+            ],
+            "artifact": {
+              "kind": "candidate",
+              "text": "The lantern was a tribute to the keeper's patience. The gate stayed shut."
+            }
+          }
+        ],
+        "ledgerAction": "Advance the external attempt ledger from totalAttempts before any separately authorized rerun. No retry was made.",
+        "scope": "repair-only canonical post starter",
+        "fullSessionStatusExplanation": "The unchanged full harness requires two successful fixtures. A single repair fixture cannot pass that full-suite status; repairOnlyOutcome reports this separately authorized scope.",
+        "repairOnlyOutcome": {
+          "ok": true,
+          "candidateOriginalPreserved": true,
+          "candidateSourcePreserved": true,
+          "unselectedTextPreserved": true,
+          "reviewRequired": true,
+          "applyInvoked": false
+        }
+      },
+      "candidateProof": {
+        "originalSyntheticText": "The lantern was a testament to the keeper's patience. The gate stayed shut.",
+        "changedSpan": {
+          "index": 0,
+          "start": 16,
+          "end": 30,
+          "original": "a testament to",
+          "replacement": "a tribute to"
+        },
+        "candidateText": "The lantern was a tribute to the keeper's patience. The gate stayed shut.",
+        "originalPreserved": true,
+        "sourcePreserved": true,
+        "unselectedTextPreserved": true,
+        "reviewRequired": true,
+        "applyInvoked": false
+      },
+      "limitation": "Unchanged full-session status requires two fixtures and remains failed for one fixture; repairOnlyOutcome is the separately authorized scoped success. Native Send/Apply/durable saving were not exercised. Zero USD cost is provider metadata, not billing verification."
+    }
+  ],
+  "currentComponentAcceptance": {
+    "interpretation": "Current component acceptance across separately authorized sessions; neither historical failed full session is reclassified as passed.",
+    "preWorkflow": {
+      "status": "passed",
+      "sourceCommit": "c1cba11f0dbc64c9b0540afc909d07cc19bebdcb",
+      "evidence": "correctedProductionSessions[0].productionSession.fixtures[0]",
+      "fullSessionStatus": "failed",
+      "reasonFullSessionFailed": "Later repair output used Markdown fences and strict patch validation rejected it.",
+      "pinPreserved": true,
+      "compactionWithinMeasuredBudget": true,
+      "guidanceWithinMeasuredBudget": true,
+      "guidancePublished": false
+    },
+    "repairWorkflow": {
+      "scopedStatus": "passed",
+      "sourceCommit": "9524740dbeafb0b0b282ffc179443cda914b3ad0",
+      "evidence": "repairOnlySessions[0].session",
+      "repairOnlyOutcome": true,
+      "fullSessionStatus": "failed",
+      "reasonFullSessionStatus": "Unchanged full harness requires two fixtures; this separately authorized scope intentionally runs one repair fixture.",
+      "candidateOriginalAndSourcePreserved": true,
+      "unselectedTextPreserved": true,
+      "reviewRequired": true,
+      "applyInvoked": false
+    },
+    "combinedArtifactAcceptance": true,
+    "singleAllInOnePassedSession": false,
+    "nativeSendApplyOrDurableSavingTested": false,
+    "liveWorkStopped": true,
+    "remainingAttemptUnused": 1
+  }
+}
