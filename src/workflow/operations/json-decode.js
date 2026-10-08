@@ -96,7 +96,7 @@ export function decodeJson(input, options = {}) {
     if (hasSchema && !validatedSchema) return {ok:false,error:{code:'UNSUPPORTED_SCHEMA',message:'Schema must use only the supported bounded subset.'}};
     let value = input;
     if (mode === 'parse') {
-        if (typeof input !== 'string' || new TextEncoder().encode(input).byteLength > 262144) return {ok:false,error:{code:'INVALID_JSON',message:'Parse mode requires bounded raw JSON text.'}};
+        if (typeof input !== 'string' || input.length > 100000 || new TextEncoder().encode(input).byteLength > 262144) return {ok:false,error:{code:'INVALID_JSON',message:'Parse mode requires bounded raw JSON text.'}};
         try { value = JSON.parse(input); }
         catch { return {ok:false,error:{code:'INVALID_JSON',message:'Input is not valid raw JSON text.'}}; }
     }

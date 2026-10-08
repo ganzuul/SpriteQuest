@@ -21,4 +21,10 @@ const missingPath=['absent'];
 const missingIsolated=selectFields({}, {fields:[{name:'x',path:missingPath}]});
 missingIsolated.error.path.push('changed');
 assert.deepEqual(missingPath,['absent']);
+for (const [value,path] of [[['a','b'],['length']], [{items:['a','b']},['items','length']]]) {
+    const result = selectFields(value,{fields:[{name:'metadata',path}]});
+    assert.equal(result.error?.code,'MISSING_FIELD');
+    assert.equal(Object.hasOwn(result,'data'),false);
+}
+assert.deepEqual(selectFields({length:2,items:['a','b']},{fields:[{name:'length',path:['length']},{name:'first',path:['items',0]}]}).data.value,{length:2,first:'a'});
 console.log('workflow select fields tests passed');

@@ -10,6 +10,15 @@ class FancyArray extends Array {}
 assert.equal(cloneJsonValue(new FancyArray(1,2)).ok,false);
 assert.deepEqual(helpers.readJsonPath(JSON.parse('{"__proto__":{"constructor":["safe"]}}'), ['__proto__', 'constructor', 0]), {ok:true, data:{found:true,value:'safe'}});
 assert.deepEqual(helpers.readJsonPath({}, ['toString']), {ok:true,data:{found:false}});
+assert.deepEqual(helpers.readJsonPath(['a','b'],['length']), {ok:true,data:{found:false}});
+for (const selector of ['length','constructor','__proto__','toString','01','+0','-0','1.0','1e0','-','2']) {
+    assert.deepEqual(helpers.readJsonPath({items:['a','b']},['items',selector]), {ok:true,data:{found:false}});
+}
+for (const selector of [0,'0']) assert.deepEqual(helpers.readJsonPath(['a','b'],[selector]), {ok:true,data:{found:true,value:'a'}});
+for (const selector of ['length','01','constructor','__proto__']) {
+    const object = JSON.parse('{"length":"kept","01":"kept","constructor":"kept","__proto__":"kept"}');
+    assert.deepEqual(helpers.readJsonPath(object,[selector]), {ok:true,data:{found:true,value:'kept'}});
+}
 // Rejecting unsafe values must not call accessors or toJSON hooks.
 let invoked = 0;
 const accessor = Object.defineProperty({}, 'secret', {enumerable:true,get(){invoked++;return 1;}});

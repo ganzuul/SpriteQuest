@@ -42,8 +42,9 @@ export function readJsonPath(value, path) {
     let current = checked.data.value;
     for (const key of checkedPath.data.value) {
         if (!current || typeof current !== 'object') return { ok: true, data: { found: false } };
+        if (Array.isArray(current) && !/^(0|[1-9]\d*)$/.test(String(key))) return { ok: true, data: { found: false } };
         const property = Object.getOwnPropertyDescriptor(current, key);
-        if (!property) return { ok: true, data: { found: false } };
+        if (!property?.enumerable || !('value' in property)) return { ok: true, data: { found: false } };
         current = property.value;
     }
     return { ok: true, data: { found: true, value: current } };
