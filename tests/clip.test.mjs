@@ -85,3 +85,16 @@ S.connect(b, one.nodeIds[0], outB.id, 'merge');
 const live = { chat: [], substitute: t => t, worldInfo: {}, extensionPrompts: {}, card: {} };
 assert.equal(C.collect(b, outB.id, live).messages.map(m => m.content).join(), 'P');
 console.log('clip: ok');
+// Pasted native formations retain their new entry/exit/member identities.
+const native = { id: 'native', schema: 2, nodes: {
+    scan: { id: 'scan', type: 'workflow', operation: 'pattern-scan', x: 0, y: 0, inGroup: 'formation' },
+    repair: { id: 'repair', type: 'workflow', operation: 'repair', x: 0, y: 100, inGroup: 'formation' },
+    validate: { id: 'validate', type: 'workflow', operation: 'validate-patches', x: 0, y: 200, inGroup: 'formation' },
+}, wires: { one: { id: 'one', from: 'scan', to: 'repair', order: 0 }, two: { id: 'two', from: 'repair', to: 'validate', order: 0 } }, groups: {
+    formation: { id: 'formation', component: { id: 'ai-de-slop', version: 1 }, entry: 'scan', exit: 'validate', members: ['scan', 'repair', 'validate'], x: 0, y: 0, collapsed: true },
+} };
+const nativePaste = K.pasteClip(b, K.makeClip(native, { groupIds: ['formation'] }));
+const pastedFormation = b.groups[nativePaste.groupIds[0]];
+assert.equal(pastedFormation.entry, nativePaste.nodeIds[0]);
+assert.equal(pastedFormation.exit, nativePaste.nodeIds[2]);
+assert.deepEqual(pastedFormation.members, nativePaste.nodeIds);
