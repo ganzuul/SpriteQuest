@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 test('editing imported structured scan rules preserves findings and metadata and rejects invalid drafts', async ({ page }) => {
     await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
+    await page.getByRole('button', { name: 'Toggle library', exact: true }).click();
     await page.getByRole('button', { name: 'Install Reviewed AI De-slop' }).click();
     await page.evaluate(() => {
         const node = Object.values(window.canvasHarness.graph.nodes).find(node => node.operation === 'pattern-scan');
@@ -44,6 +45,7 @@ test('editing imported structured scan rules preserves findings and metadata and
 
 test('formation request summary follows scan mode and additional reachable repair members', async ({ page }) => {
     await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
+    await page.getByRole('button', { name: 'Toggle library', exact: true }).click();
     await page.getByRole('button', { name: 'Install Reviewed AI De-slop' }).click();
     await page.getByRole('button', { name: 'Inspect Repair' }).click();
     await page.getByLabel(/^mode/).selectOption('scan');
@@ -71,6 +73,7 @@ test('formation request summary follows scan mode and additional reachable repai
 
 test('install and explicitly bind and assign a pre workflow without arming it', async ({ page }) => {
     await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
+    await page.getByRole('button', { name: 'Toggle library', exact: true }).click();
     await page.evaluate(() => { window.canvasHarness.context.extensionSettings.connectionManager = { profiles: [{ id: 'analysis', name: 'Analysis connection' }] }; });
     await page.getByRole('button', { name: 'Install Scene guidance' }).click();
     await expect(page.getByText('Bind Analysis to an available connection before running.', { exact: true })).toBeVisible();
@@ -90,6 +93,7 @@ test('install and explicitly bind and assign a pre workflow without arming it', 
 
 test('post setup opens the same AI De-slop primitives and preserves a focused editor', async ({ page }) => {
     await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
+    await page.getByRole('button', { name: 'Toggle library', exact: true }).click();
     await page.evaluate(() => {
         const c = window.canvasHarness.context;
         c.extensionSettings.connectionManager = { profiles: [{ id: 'prose', name: 'Prose connection', api: 'openai', model: 'workflow-test-model', preset: null }] };
@@ -119,6 +123,7 @@ test('post setup opens the same AI De-slop primitives and preserves a focused ed
 
 test('native preview opens setup without legacy prompt compilation or lore scans', async ({ page }) => {
     await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
+    await page.getByRole('button', { name: 'Toggle library', exact: true }).click();
     await page.getByRole('button', { name: 'Install Scene guidance' }).click();
     await page.evaluate(async () => {
         window.nativeLoreScans = 0;
@@ -133,6 +138,7 @@ test('native preview opens setup without legacy prompt compilation or lore scans
 
 test('mode is explicit and can return to legacy without changing arming', async ({ page }) => {
     await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
+    await page.getByRole('button', { name: 'Toggle library', exact: true }).click();
     await page.getByRole('button', { name: 'Install Scene guidance' }).click();
     await page.getByRole('button', { name: 'Assign pre phase and enable native mode' }).click();
     await page.getByLabel('Workflow mode', { exact: true }).selectOption('legacy');
@@ -143,6 +149,7 @@ test('mode is explicit and can return to legacy without changing arming', async 
 
 test('legacy Input discovery adds a Prompt while preserving its controls', async ({ page }) => {
     await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
+    await page.getByRole('button', { name: 'Toggle library', exact: true }).click();
     await page.locator('.pc-workflow-family').filter({ has: page.locator('summary', { hasText: /^Input$/ }) }).locator('summary').click();
     const add = page.getByRole('button', { name: 'Add legacy Prompt', exact: true });
     await expect(add).toBeVisible();
@@ -154,7 +161,9 @@ test('legacy Input discovery adds a Prompt while preserving its controls', async
 
 test('native empty-canvas creation offers compatible operations without adding a legacy prompt', async ({ page }) => {
     await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
+    await page.getByRole('button', { name: 'Toggle library', exact: true }).click();
     await page.getByRole('button', { name: 'Install Scene guidance' }).click();
+    await page.getByRole('button', { name: 'Toggle library', exact: true }).click();
     await page.locator('.pc-canvas-host').dblclick({ position: { x: 8, y: 8 } });
     expect(await page.evaluate(() => Object.values(window.canvasHarness.graph.nodes).some(node => node.type === 'prompt'))).toBe(false);
     await expect(page.locator('.pc-menu').getByText('Scene Context', { exact: true })).toBeVisible();
@@ -169,6 +178,7 @@ async function reviewFixture(page) {
         export function syncSwipeToMes(index, swipeId) { const m = context().chat[index]; m.swipe_id = swipeId; m.mes = m.swipes[swipeId]; Object.assign(m, structuredClone(m.swipe_info[swipeId])); return true; }
     ` }));
     await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
+    await page.getByRole('button', { name: 'Toggle library', exact: true }).click();
     await page.evaluate(async () => {
         const c = window.canvasHarness.context;
         c.chatId = 'synthetic-workflow-ui';
@@ -323,8 +333,8 @@ test('native graphs reject legacy prompt seeding before confirmation while legac
         c.callGenericPopup = async () => { window.seedConfirmations = (window.seedConfirmations || 0) + 1; return 1; };
         window.beforeNativeSeed = JSON.stringify(window.canvasHarness.graph);
     });
-    await page.getByLabel('Canvas actions', { exact: true }).click();
-    const seed = page.getByRole('button', { name: 'Seed from SillyTavern’s current prompt order', exact: true });
+    await page.getByRole('button', { name: 'Graph', exact: true }).click();
+    const seed = page.getByRole('menuitem', { name: 'Seed from SillyTavern’s current prompt order', exact: true });
     await expect(seed).toBeDisabled();
     // A stale/programmatic toolbar activation must still hit the controller guard.
     await seed.evaluate(button => { button.disabled = false; button.click(); });
@@ -334,7 +344,7 @@ test('native graphs reject legacy prompt seeding before confirmation while legac
     expect(await page.evaluate(async () => (await import('/src/workflow/contracts.js?v=0.19.1')).validateWorkflow(window.canvasHarness.graph).ok)).toBe(true);
     const legacy = await page.evaluate(() => window.canvasHarness.S.allGraphs().find(graph => graph.schema !== 2).id);
     await page.locator('.pc-graph-select').selectOption(legacy);
-    await page.getByLabel('Canvas actions', { exact: true }).click();
+    await page.getByRole('button', { name: 'Graph', exact: true }).click();
     await expect(seed).toBeEnabled(); await seed.click();
     await expect.poll(() => page.evaluate(() => window.seedConfirmations || 0)).toBe(1);
     expect(await page.evaluate(() => Object.values(window.canvasHarness.graph.nodes).some(node => node.identifier === 'fixture-prompt'))).toBe(true);
@@ -392,6 +402,7 @@ test('review controls and comparison stay usable in a narrow viewport', async ({
 
 test('native wire inspection describes artifact flow without legacy prompt controls', async ({ page }) => {
     await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
+    await page.getByRole('button', { name: 'Toggle library', exact: true }).click();
     await page.getByRole('button', { name: 'Install Scene guidance' }).click();
     await page.evaluate(() => { const h = window.canvasHarness; h.canvas.select({ kind: 'wire', id: Object.keys(h.graph.wires)[0] }); });
     await expect(page.getByText('Artifact wire', { exact: true })).toBeVisible();
@@ -402,6 +413,7 @@ test('native wire inspection describes artifact flow without legacy prompt contr
 
 test('the native inspector provides a keyboard-accessible duplicate action', async ({ page }) => {
     await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
+    await page.getByRole('button', { name: 'Toggle library', exact: true }).click();
     await page.getByRole('button', { name: 'Install Scene guidance' }).click();
     await page.getByRole('button', { name: 'Inspect Response Plan', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Duplicate operation', exact: true })).toBeVisible();
@@ -508,8 +520,10 @@ test('narrow toolbar exposes readable labeled pane and theme controls', async ({
     for (const theme of ['midnight', 'parchment']) {
         await page.evaluate(async theme => (await import('/src/theme.js?v=0.19.1')).setPreset(theme), theme);
         await expect(page.getByRole('button', { name: 'Toggle library', exact: true }).getByText('Library', { exact: true })).toBeVisible();
-        await expect(page.getByRole('button', { name: 'Toggle inspector', exact: true }).getByText('Inspector', { exact: true })).toBeVisible();
-        await expect(page.getByTitle('Theme and colours', { exact: true }).getByText('Theme', { exact: true })).toBeVisible();
+        await expect(page.getByRole('button', { name: 'Toggle inspector', exact: true }).getByText('Details', { exact: true })).toBeVisible();
+        await page.getByRole('button', { name: 'Tools', exact: true }).click();
+        await expect(page.getByRole('menuitem', { name: 'Theme and colours', exact: true })).toBeVisible();
+        await page.keyboard.press('Escape');
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     }
     const library = page.getByRole('button', { name: 'Toggle library', exact: true });

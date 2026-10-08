@@ -1,5 +1,7 @@
 # Bundled UI runtime
 
+Bricolage Grotesque is bundled as a local variable font from the Google Fonts repository, under the SIL Open Font License 1.1. Its full copyright and license are in `assets/Bricolage-Grotesque-OFL.txt`.
+
 The compiled UI includes the Svelte runtime, distributed under the MIT license below. PomegranateUI informed the architecture; its source was not copied.
 
 Copyright (c) 2016-2025 [Svelte Contributors](https://github.com/sveltejs/svelte/graphs/contributors)

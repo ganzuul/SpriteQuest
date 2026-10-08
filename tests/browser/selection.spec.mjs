@@ -13,7 +13,12 @@ test('Shift-drag preserves and moves the selected set with real mouse input', as
 async function setup(page) {
     await page.goto('/tests/browser/harness.html');
     await page.waitForFunction(() => !!window.canvasHarness);
-    return page.evaluate(() => window.canvasHarness.reset());
+    return page.evaluate(async () => {
+        const ids = await window.canvasHarness.reset();
+        // Gesture fixtures begin outside the screen-space floating shelf.
+        await window.canvasHarness.view({ x: 180, y: 0, zoom: 1 });
+        return ids;
+    });
 }
 async function graphPosition(page, x, y) {
     return page.evaluate(({ x, y }) => {
@@ -55,7 +60,7 @@ test('drag direction and a non-default camera do not change rectangle hit testin
     await page.evaluate(id => {
         const { graph, canvas } = window.canvasHarness;
         graph.nodes[id].x = -80; graph.nodes[id].y = -60;
-        canvas.render(); Object.assign(graph.view, { x: 140, y: 140, zoom: 0.8 }); canvas.applyTransform();
+        canvas.render(); Object.assign(graph.view, { x: 320, y: 140, zoom: 0.8 }); canvas.applyTransform();
     }, ids[0]);
     for (const [a, b] of [[[-100, -80], [200, 150]], [[200, -80], [-100, 150]], [[-100, 150], [200, -80]], [[200, 150], [-100, -80]]]) {
         expect(await marquee(page, a, b)).toEqual([ids[0]]);
@@ -86,10 +91,10 @@ test('Space and middle-button pan over selected blocks; blur cancels a gesture',
     const start = await graphPosition(page, 100, 80);
     await page.keyboard.down('Space'); await page.mouse.move(start.x, start.y); await page.mouse.down();
     await page.mouse.move(start.x + 50, start.y + 30); await page.mouse.up(); await page.keyboard.up('Space');
-    expect(await page.evaluate(() => ({ ...window.canvasHarness.canvas.view }))).toEqual({ x: 50, y: 30, zoom: 1 });
+    expect(await page.evaluate(() => ({ ...window.canvasHarness.canvas.view }))).toEqual({ x: 230, y: 30, zoom: 1 });
     expect(new Set(await page.evaluate(() => [...window.canvasHarness.canvas.multi]))).toEqual(new Set(ids.slice(0, 2)));
     await page.mouse.down({ button: 'middle' }); await page.mouse.move(start.x + 90, start.y + 60);
     await page.evaluate(() => window.dispatchEvent(new Event('blur'))); await page.mouse.up({ button: 'middle' });
     expect(await page.evaluate(() => window.canvasHarness.canvas.pan)).toBeNull();
-    expect(await page.evaluate(() => ({ ...window.canvasHarness.canvas.view }))).toEqual({ x: 50, y: 30, zoom: 1 });
+    expect(await page.evaluate(() => ({ ...window.canvasHarness.canvas.view }))).toEqual({ x: 230, y: 30, zoom: 1 });
 });

@@ -81,10 +81,12 @@ assert.equal(T.currentTheme().preset, 'petal');
 assert.equal(T.currentTheme().custom.decider, '#123456');
 assert.match(box.querySelector('.pc-th-msg').textContent, /Now using/);
 
-// the palette button in the canvas opens the same editor
+// the workspace Tools menu opens the same editor
 UI.open();
 await new Promise(r => setTimeout(r, 30));
-document.querySelector('.pc-theme-btn').click();
+document.querySelector('[data-menu="Tools"]').click();
+await new Promise(r => setTimeout(r, 10));
+[...document.querySelectorAll('.pc-workspace-menu-panel button')].find(button => button.textContent.includes('Theme and colours')).click();
 const pop = document.querySelector('.pc-theme-pop');
 assert.ok(pop?.querySelector('.pc-th-preset'), 'popover shows the editor');
 [...pop.querySelectorAll('.pc-th-preset')].find(b => b.textContent.includes('Parchment')).click();

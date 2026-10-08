@@ -94,7 +94,7 @@ test('a delayed rename is cancelled when another graph is opened', async ({ page
         context.POPUP_TYPE = { INPUT: 'input' }; context.callGenericPopup = () => new Promise(resolve => { window.answerPopup = resolve; });
         return { original: graph.id, originalName: graph.name, other: other.id };
     });
-    await page.locator('.pc-toolbar-menu summary').click();
+    await page.getByRole('button', { name: 'Graph', exact: true }).click();
     await page.getByText('Rename canvas', { exact: true }).click();
     await page.locator('.pc-graph-select').selectOption(graphs.other);
     const names = await page.evaluate(async ({ original, other }) => {

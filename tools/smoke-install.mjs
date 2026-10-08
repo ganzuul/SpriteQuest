@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const install = await mkdtemp(join(tmpdir(), 'lattice-install-'));
-for (const name of ['manifest.json', 'index.js', 'style.css', 'LICENSE', 'THIRD_PARTY_NOTICES.md', 'src', 'dist']) await cp(join(root, name), join(install, name), { recursive: true });
+for (const name of ['manifest.json', 'index.js', 'style.css', 'LICENSE', 'THIRD_PARTY_NOTICES.md', 'src', 'dist', 'assets']) await cp(join(root, name), join(install, name), { recursive: true });
 // Only the host mock accompanies the install; no developer UI source or dependencies.
 await mkdir(join(install, 'tests', 'browser'), { recursive: true });
 for (const name of ['tests/mock.js', 'tests/browser/harness.js', 'tests/browser/harness.html']) await cp(join(root, name), join(install, name));

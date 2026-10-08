@@ -25,4 +25,6 @@ function checkImports(node) {
 checkImports(parsed);
 assert.ok(!/extensionSettings|chatMetadata|function emissionCounts|function compile\(/.test(bundle), 'domain state and compiler remain outside the UI bundle');
 assert.ok(existsSync(join(root, 'THIRD_PARTY_NOTICES.md')), 'bundled runtime license accompanies the extension');
+for (const asset of ['lattice-logo.svg', 'bricolage-grotesque.ttf', 'Bricolage-Grotesque-OFL.txt']) assert.ok(existsSync(join(root, 'assets', asset)), `local brand asset accompanies the extension: ${asset}`);
+assert.ok(readFileSync(join(root, 'style.css'), 'utf8').includes('assets/bricolage-grotesque.ttf'), 'brand font loads from the installed extension');
 console.log(`Assets verified: ${imports} versioned local imports; self-contained Svelte UI; one native domain module graph.`);

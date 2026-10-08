@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 700" width="64" height="64" color="#fff"><title>Lattice: tighter weave with equal layer spacing</title><defs><mask id="lattice-brand-mask-04" maskUnits="userSpaceOnUse" x="0" y="0" width="700" height="700"><rect width="700" height="700" fill="white"/><path d="M110 220 350 95 590 220 350 345Z" fill="black" stroke="black" stroke-width="45" stroke-linejoin="round"/></mask><mask id="lattice-brand-base-gap" maskUnits="userSpaceOnUse" x="0" y="0" width="700" height="700"><rect width="700" height="700" fill="white"/><path d="M110 360 350 235 590 360 350 485Z" fill="black" stroke="black" stroke-width="45" stroke-linejoin="round"/></mask></defs>
+<g transform="rotate(-45 350 350)" stroke="currentColor" stroke-width="21" stroke-linejoin="round" stroke-linecap="round" fill="none">
+<path d="M110 500 350 375 590 500 350 625Z" fill="currentColor" mask="url(#lattice-brand-base-gap)"/>
+<g mask="url(#lattice-brand-mask-04)"><path d="M110 360 350 235 590 360 350 485Z"/><path d="M190.0 318.3333333333333 430.0 443.3333333333333 M190.0 401.6666666666667 430.0 276.6666666666667 M270.0 276.6666666666667 510.0 401.6666666666667 M270.0 443.3333333333333 510.0 318.3333333333333"/></g>
+<path d="M110 220 350 95 590 220 350 345Z"/>
+</g></svg>

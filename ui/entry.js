@@ -17,7 +17,7 @@ export function mountCanvas(target, actions) {
 }
 export function mountWorkbench(target, actions) {
     const component = mount(Workbench, { target, props: { actions } }); flushSync();
-    return { ...component.getParts(), update: view => flushSync(() => component.update(view)), destroy: () => unmount(component) };
+    return { ...component.getParts(), update: view => flushSync(() => component.update(view)), revealPreview: () => flushSync(() => component.revealPreview()), destroy: () => unmount(component) };
 }
 
 

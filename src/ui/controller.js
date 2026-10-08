@@ -101,7 +101,7 @@ const workflowSession = createWorkflowSession({ runtime: () => workflowRuntime.g
 const receiveAutomaticWorkflow = () => workflowSession.receiveAutomatic(workflowRuntime.getNativeWorkflowController?.()?.lastAutomaticResult?.());
 function workflowView() { return projectWorkflow(current, { settings: settings(), profiles: profiles(), selectedId: selectedKind === 'node' ? selected?.id : null, resolveBinding: (node, graph) => resolveBinding(node, graph, ctx()), candidateStatus: candidate => workflowRuntime.getNativeWorkflowController?.()?.candidateStatus?.(candidate), ...workflowState }); }
 function updateWorkflowProjection() {
-    const view = workflowView(); workflowLibrary?.update(view); workflowInspector?.update(view);
+    const view = workflowView(); workflowLibrary?.update(view); workflowInspector?.update(view); workbench?.update({ workflow: view });
 }
 function syncNativeRevision(reason) {
     if (current?.schema !== 2) return false;
@@ -132,21 +132,33 @@ const workflowActions = {
     addLegacyNode(type) {
         if (current?.schema === 2) return;
         if (type === NODE_TYPES.OUTPUT) { const output = outputNode(current); if (output) showSettings({ kind: 'node', id: output.id }); return; }
-        const rect = canvas.host.getBoundingClientRect();
-        onCanvasDrop({ kind: 'block', type }, canvas.toGraph(rect.left + rect.width / 2 - 130, rect.top + rect.height / 2));
+        onCanvasDrop({ kind: 'block', type }, defaultNodeSpot());
     },
     addNode(operation, at = null) {
         if (current?.schema !== 2) return;
-        const rect = canvas.host.getBoundingClientRect();
-        const spot = at || canvas.toGraph(rect.left + rect.width / 2, rect.top + rect.height / 2);
+        const spot = at || defaultNodeSpot();
         const node = addNode(current, NODE_TYPES.WORKFLOW, Math.round(spot.x), Math.round(spot.y));
         Object.assign(node, operationDefaults(operation), { operationVersion: 1 });
         touchGraph(current); canvas.select({ kind: 'node', id: node.id }); canvas.render(); updateWorkflowProjection();
     },
 };
+// Default shelf insertions search visible positions using Canvas's cached
+// unscaled geometry. Explicit graph-space creation coordinates stay exact.
+function defaultNodeSpot() {
+    const rect = canvas.host.getBoundingClientRect(), zoom = canvas.view.zoom || 1;
+    const center = canvas.toGraph(rect.left + rect.width / 2 - Math.min(130 * zoom, rect.width / 4), rect.top + rect.height / 2 - 60 * zoom);
+    const nodes = Object.values(current.nodes), width = 260, height = 140, gap = 24;
+    const vacant = spot => nodes.every(node => spot.x + width + gap <= node.x || spot.x >= node.x + (node.w || width) + gap || spot.y + height + gap <= node.y || spot.y >= node.y + canvas.heightOf(node) + gap);
+    if (vacant(center)) return center;
+    for (let row = 0; row < 6; row++) for (let col = 0; col < 6; col++) {
+        const spot = canvas.toGraph(rect.left + 16 + col * Math.max(36, (rect.width - 32) / 6), rect.top + 16 + row * Math.max(36, (rect.height - 32) / 6));
+        if (vacant(spot)) return spot;
+    }
+    return { x: center.x + nodes.length * 28, y: center.y + nodes.length * 28 };
+}
 function mountWorkflowLibrary(target) {
     workflowLibrary?.destroy(); const host = el('div', 'pc-workflow-library-host'); target.append(host);
-    workflowLibrary = createWorkflowSurface(host, workflowActions, 'library'); workflowLibrary.update(workflowView());
+    workflowLibrary = createWorkflowSurface(host, workflowActions, 'library'); updateWorkflowProjection();
 }
 function renderNativeInspector(box) {
     if (!workflowInspector) { box.replaceChildren(); workflowInspector = createWorkflowSurface(box, workflowActions); }
@@ -279,7 +291,11 @@ function build() {
         },
         command: name => {
             const commands = { new: onNewGraph, duplicate: onDuplicateGraph, rename: onRenameGraph, delete: onDeleteGraph, import: onImportGraph, export: onExportGraph, seed: onSeedFromST, undo: doUndo, redo: doRedo,
-                fit: () => canvas.fit(), theme: toggleThemePopover, sidebar: () => togglePane('sidebar'), inspector: () => togglePane('inspector'), close };
+                fit: () => canvas.fit(), 'fit-selection': () => canvas.fitSelection(), copy: () => copySelection(), cut: () => copySelection(true),
+                paste: async () => { const graph = current, epoch = uiEpoch, clip = await fromClipboard(); if (stillEditing(graph, epoch) && clip) pasteOnCanvas(clip); },
+                'delete-selection': () => canvas.deleteSelection().then(done => { if (done) { selected = null; selectedKind = null; renderAll(); } }),
+                'run-workflow': () => workflowActions.run(), 'stop-workflow': () => workflowSession.cancel('Stopped by user'),
+                theme: toggleThemePopover, sidebar: () => togglePane('sidebar'), inspector: () => togglePane('inspector'), close };
             commands[name]?.();
         },
         mode: mode => canvas.setMode(mode),
@@ -296,6 +312,9 @@ function build() {
         pinCharacter: async () => { if (!await setCharacterBinding(characterBinding() === current?.id ? null : current.id)) return toast('No character selected.', 'error'); if (isOpen()) renderStatus(); },
         makeDefault: () => { settings().activeGraphId = current.id; save(); renderStatus(); },
         preview: () => runPreview(),
+        resizeStart: () => canvas?.cancelGesture(),
+        addNode: (id, legacy) => legacy ? workflowActions.addLegacyNode(id) : workflowActions.addNode(id),
+        workflowSetup: workflowActions,
     });
     root = workbench.root;
     const { canvasHost, inspector } = workbench.parts;
@@ -307,9 +326,9 @@ function build() {
 
     // On a narrow window the side panes float over the canvas, so start with
     // them out of the way rather than covering the whole graph.
-    if (window.innerWidth < 860) {
-        root.classList.add('pc-hide-sidebar', 'pc-hide-inspector');
-    }
+    const panes = safe(() => JSON.parse(globalThis.localStorage?.getItem('lattice.workspace.panes') || '{}')) || {};
+    root.classList.toggle('pc-hide-sidebar', panes.sidebar !== true);
+    root.classList.toggle('pc-hide-inspector', typeof panes.inspector === 'boolean' ? !panes.inspector : window.innerWidth < 860);
     syncPaneToggles();
 
     document.addEventListener('pc-theme', () => { if (canvas && isOpen()) canvas.render(); });
@@ -472,9 +491,11 @@ function pasteOnCanvas(clipOrText, at = canvas.pointer ?? null) {
 }
 
 function togglePane(which) {
+    canvas?.cancelGesture();
     const cls = which === 'sidebar' ? 'pc-hide-sidebar' : 'pc-hide-inspector';
     root.classList.toggle(cls);
     syncPaneToggles();
+    safe(() => globalThis.localStorage?.setItem('lattice.workspace.panes', JSON.stringify({ sidebar: !root.classList.contains('pc-hide-sidebar'), inspector: !root.classList.contains('pc-hide-inspector') })));
     requestAnimationFrame(() => canvas.render());
 }
 
@@ -3307,6 +3328,7 @@ export function refreshPreview() {
 }
 
 export async function runPreview({ keepScroll = false } = {}) {
+    workbench?.revealPreview();
     if (current?.schema === 2) {
         root._parts.preview.classList.remove('pc-preview-open'); root.classList.remove('pc-hide-inspector');
         syncPaneToggles(); renderInspector(); return;

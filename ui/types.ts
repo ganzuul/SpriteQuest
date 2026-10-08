@@ -26,11 +26,15 @@ export interface StatusView { armed: boolean; warning: boolean; text: string; ov
 export interface WorkbenchView {
     graphs: { id: string; name: string }[]; graphId: string; nativeGraph?: boolean; armed: boolean; sideOpen: boolean; inspectorOpen: boolean;
     history: HistoryView; status: StatusView; camera: { x: number; y: number; zoom: number; mode: string }; selectionCount: number;
+    workflow?: WorkflowView;
 }
 export interface WorkbenchActions {
+    logoUrl?: string;
     pickGraph: (id: string) => void; arm: (enabled: boolean) => void; command: (name: string) => void;
     mode: (mode: string) => void; zoom: (factor: number) => void; fitSelection: () => void;
     unpin: () => void; pinChat: () => void; pinCharacter: () => void; makeDefault: () => void; preview: () => void;
+    resizeStart?: () => void; addNode?: (id: string, legacy: boolean) => void;
+    workflowSetup?: Pick<WorkflowActions, 'install' | 'setMode' | 'bindRole' | 'assign'>;
 }
 
 
