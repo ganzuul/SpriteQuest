@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import * as camera from '../src/canvas/camera.js';
+const { wheelFactor } = camera;
+assert.equal(wheelFactor(0, 0, 800), 1, 'a zero-delta wheel event does not change zoom');
+assert.ok(Math.abs(wheelFactor(1, 0, 800) - Math.exp(-0.002)) < 1e-12, 'small trackpad deltas produce small changes');
+assert.equal(wheelFactor(1, 1, 800), wheelFactor(16, 0, 800), 'line deltas normalize to pixels');
+const view = { x: 20, y: -30, zoom: 1 };
+camera.zoomAt(view, 2, { x: 120, y: 70 });
+assert.deepEqual(view, { x: -80, y: -130, zoom: 2 }, 'zoom keeps the graph point (100,100) under the cursor');
+assert.deepEqual(camera.graphPoint(view, { x: 120, y: 70 }), { x: 100, y: 100 });
+camera.zoomAt(view, 100, { x: 120, y: 70 }); assert.equal(view.zoom, 2.5);
+camera.zoomAt(view, 0.0001, { x: 120, y: 70 }); assert.equal(view.zoom, 0.25);
+assert.equal(camera.zoomAt(view, NaN, { x: 0, y: 0 }), false);
+assert.equal(wheelFactor(1, 2, 800), wheelFactor(240, 0), 'page mode is bounded to prevent abrupt jumps');
+assert.equal(wheelFactor(-Infinity), 1);
+console.log('camera: ok');

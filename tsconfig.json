@@ -1,0 +1,4 @@
+{
+  "compilerOptions": { "target": "ES2022", "module": "ESNext", "moduleResolution": "bundler", "strict": true, "allowJs": true, "checkJs": false, "noEmit": true, "skipLibCheck": true, "verbatimModuleSyntax": true, "types": ["svelte", "node"] },
+  "include": ["ui/**/*.svelte", "ui/**/*.ts", "ui/**/*.js"]
+}

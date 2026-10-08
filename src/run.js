@@ -16,11 +16,11 @@
  *    recorded as the error, the run continues, and you see it in the trace.
  */
 
-import { ctx, safe, settings, save as saveSettings, NODE_TYPES, togetherGroup, loopWires, loopSection, activeGraph } from './state.js?v=0.17.0';
-import { compile, collect, generateOrder, generateLevels, gatherContext, evaluateCondition, liveNodes, generateDeps, textOf, picks, wireHolds } from './compile.js?v=0.17.0';
-import { plannedSaves, writeSaves, mirrorToLorebook } from './memory.js?v=0.17.0';
-import { jevYesNo, jevSort } from './jev.js?v=0.17.0';
-import { applySelect } from './select.js?v=0.17.0';
+import { ctx, safe, settings, save as saveSettings, NODE_TYPES, togetherGroup, loopWires, loopSection, activeGraph } from './state.js?v=0.18.0';
+import { compile, collect, generateOrder, generateLevels, gatherContext, evaluateCondition, liveNodes, generateDeps, textOf, picks, wireHolds } from './compile.js?v=0.18.0';
+import { plannedSaves, writeSaves, mirrorToLorebook } from './memory.js?v=0.18.0';
+import { jevYesNo, jevSort } from './jev.js?v=0.18.0';
+import { applySelect } from './select.js?v=0.18.0';
 
 /** The connection the chat itself is using, when a block does not name one. */
 function currentProfileId() {

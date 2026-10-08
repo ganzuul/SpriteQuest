@@ -145,7 +145,7 @@ Any wire can carry a condition: right-click it and choose **Add a condition**, o
 
 An open group is a **blanket**: a sheet on the canvas, and whatever rests on it is in the group. Drag a block onto it to add it (the blanket lights up), drag it off to take it out, and pull the corner to resize it. **Fold** it (the button on its title bar, or double-click the title) and everything on it becomes one block that shows what comes in and what goes out. Open it again with the button on that block, or double-click it.
 
-To make one: right-click empty canvas and choose **New group here** for an empty blanket, or Shift-click blocks (or Shift-drag a box on empty canvas) and choose **Group**. A block added on an open blanket, by dropping, pasting or double-clicking there, joins it.
+To make one: right-click empty canvas and choose **New group here** for an empty blanket, or select blocks and press Ctrl/Cmd+G (or choose **Group**). A block added on an open blanket, by dropping, pasting or double-clicking there, joins it.
 
 **Wiring a folded group:** drag from its bottom dot to wire a block inside it out, and drop a wire onto the group (or its top dot) to wire something in. The block inside is picked for you when there is one obvious one: the block nothing else in the group feeds (for wires in), or the one that feeds nothing else in it (for wires out). Otherwise a small menu asks. In the group's panel, **Wires in go to** and **Wires out leave from** set it once.
 
@@ -271,6 +271,25 @@ Under **Customise colours** you can change any colour, starting from the theme y
 
 ## Canvases
 
+The canvas defaults to **Select**. Drag a box on empty space to select intersecting blocks; drag selected blocks to move them together. A folded group is selected as one visible unit and carries its hidden blocks with it. Small pointer movements stay clicks.
+
+| Gesture | Action |
+| --- | --- |
+| Shift-click or Shift-drag a box | Add to the selection |
+| Ctrl/Cmd-click | Toggle a block in the selection |
+| Ctrl/Cmd-drag a box | Add to the selection |
+| Alt-click or Alt-drag a box | Remove from the selection |
+| Shift-drag selected blocks | Move the selected set together |
+| Middle-drag or Space + left-drag | Pan, including over blocks |
+| Pan tool | Drag to pan until you choose Select |
+| Mouse wheel / + / − | Zoom; wheel zoom stays anchored under the pointer |
+| Ctrl/Cmd+A | Select all blocks |
+| Ctrl/Cmd+G | Group selected blocks; Output stays outside |
+| Period / Fit beside the zoom readout | Fit selection, or the whole canvas when nothing is selected |
+| Escape | Cancel an unfinished gesture, then clear selection, then close |
+
+Text fields and editable content keep their normal selection and undo shortcuts. Output can be selected and moved; it cannot be deleted or grouped.
+
 You can keep several canvases and choose which one runs:
 
 - **Pin to this chat**: this chat always uses it.
@@ -299,15 +318,21 @@ Sends that other extensions or `/gen` make in the background ("quiet" sends) kee
 
 ## Development
 
-There is no build step. Edit the files and reload SillyTavern with Ctrl+Shift+R.
+Ordinary extension installs use the committed Svelte bundle in `dist/`; they need no Node.js or build step. Development uses Node.js 24 or newer.
 
-Tests run with Node. The ones that use a fake page need jsdom (`npm install jsdom`):
+Install the pinned development tools, then build and check the extension:
 
+```powershell
+npm ci
+npx playwright install chromium
+npm run check
 ```
-node tests/decider.test.mjs
-```
 
-To release a new version, run `node tools/bump-version.mjs 0.7.0`. It updates the manifest and the `?v=` on every import, so browsers load the new code instead of a cached copy.
+The check runs the Node/jsdom behavior suite, Svelte type checking, the production build, installed-asset checks and Chromium interaction tests. `npm run harness` opens a mock SillyTavern host at http://127.0.0.1:4178; it makes no model calls. Change `ui/*.svelte`, run `npm run build`, and commit the generated bundle with its source. Native domain code remains in `src/`; `src/ui.js` preserves the public UI API.
+
+`npm run benchmark` measures 25/100/250-node zoom, pan and multi-drag cases with the real renderer and camera controls. `npm run capture` saves desktop/narrow/theme screenshots. `npm run smoke:install` verifies a fresh extension copy without developer source or `node_modules`. Generated measurements and images stay in ignored `benchmark-results/`.
+
+See [the migration architecture, parity record and performance evidence](docs/svelte-ui-migration.md). To change the release version, run `node tools/bump-version.mjs 0.18.0`; it updates the manifest, package metadata and every nested native import query so browsers load one consistent module graph. Reload SillyTavern with Ctrl+Shift+R after changing installed assets.
 
 ## License
 

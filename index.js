@@ -16,13 +16,13 @@
  * generation is worse than one that does nothing.
  */
 
-import { settings, save, resolveGraph, ctx, safe } from './src/state.js?v=0.17.0';
-import { run, callCount } from './src/run.js?v=0.17.0';
-import * as UI from './src/ui.js?v=0.17.0';
-import { jevSettings, jevYesNo } from './src/jev.js?v=0.17.0';
-import { applyTheme } from './src/theme.js?v=0.17.0';
-import { renderThemeEditor } from './src/theme-editor.js?v=0.17.0';
-import { renderThoughts, attachThoughts, repaintAll, livePanel, answersMode } from './src/thoughts.js?v=0.17.0';
+import { settings, save, resolveGraph, ctx, safe } from './src/state.js?v=0.18.0';
+import { run, callCount } from './src/run.js?v=0.18.0';
+import * as UI from './src/ui.js?v=0.18.0';
+import { jevSettings, jevYesNo } from './src/jev.js?v=0.18.0';
+import { applyTheme } from './src/theme.js?v=0.18.0';
+import { renderThemeEditor } from './src/theme-editor.js?v=0.18.0';
+import { renderThoughts, attachThoughts, repaintAll, livePanel, answersMode } from './src/thoughts.js?v=0.18.0';
 
 const MODULE = 'prompt-canvas';
 let lastRun = null;

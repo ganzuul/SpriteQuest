@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import { createFrameScheduler } from '../src/canvas/frame.js';
+const callbacks = new Map(); let id = 0; const renders = [];
+const scheduler = createFrameScheduler(flags => renders.push(flags), { request: fn => { callbacks.set(++id, fn); return id; }, cancel: id => callbacks.delete(id) });
+scheduler.schedule(1); scheduler.schedule(2); scheduler.schedule(1);
+assert.equal(callbacks.size, 1, 'many input events request one frame');
+callbacks.get(id)(); callbacks.delete(id);
+assert.deepEqual(renders, [3], 'the frame processes all accumulated dirty work once');
+scheduler.schedule(4); const stale = callbacks.get(id); scheduler.flush(); stale();
+assert.deepEqual(renders, [3, 4], 'flush renders once and invalidates an already queued callback');
+scheduler.schedule(8); const cancelled = callbacks.get(id); scheduler.cancel(); cancelled();
+assert.deepEqual(renders, [3, 4], 'cancellation invalidates queued work');
+scheduler.destroy(); scheduler.schedule(16); scheduler.flush();
+assert.equal(callbacks.size, 0, 'destroyed schedulers cannot queue more work');
+console.log('frame: ok');

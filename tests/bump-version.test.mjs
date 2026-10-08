@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import { mkdtempSync, mkdirSync, copyFileSync, writeFileSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
+import { spawnSync } from 'node:child_process';
+const root = mkdtempSync(join(tmpdir(), 'sillycanvas-version-test-'));
+mkdirSync(join(root, 'tools')); mkdirSync(join(root, 'src', 'canvas'), { recursive: true });
+copyFileSync(new URL('../tools/bump-version.mjs', import.meta.url), join(root, 'tools', 'bump-version.mjs'));
+writeFileSync(join(root, 'manifest.json'), JSON.stringify({ version: '0.1.0', js: 'index.js?v=0.1.0' }));
+writeFileSync(join(root, 'index.js'), "import { x } from './src/state.js?v=0.1.0';");
+writeFileSync(join(root, 'src', 'state.js'), 'export const x = 1;');
+writeFileSync(join(root, 'src', 'canvas', 'presentation.js'), "import { x } from '../state.js?v=0.1.0';");
+const result = spawnSync(process.execPath, [join(root, 'tools', 'bump-version.mjs'), '0.2.0'], { encoding: 'utf8' });
+assert.equal(result.status, 0, result.stderr);
+assert.match(readFileSync(join(root, 'src', 'canvas', 'presentation.js'), 'utf8'), /state\.js\?v=0\.2\.0/, 'nested native modules use the same domain URL as the extension entry');
+console.log('bump-version: ok');

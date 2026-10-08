@@ -8,3 +8,9 @@ Thumbs.db
 # Local notes, not published
 HANDOFF.md
 ROADMAP.md
+
+# Development artifacts
+.superpowers/
+test-results/
+playwright-report/
+benchmark-results/
