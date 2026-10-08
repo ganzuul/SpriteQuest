@@ -1,5 +1,5 @@
 /**
- * Silly Canvas — entry point.
+ * ComfyTavern — entry point.
  *
  * Wires the extension into SillyTavern and, when armed, hands the compiled
  * prompt to the generation pipeline.
@@ -16,15 +16,20 @@
  * generation is worse than one that does nothing.
  */
 
-import { settings, save, resolveGraph, ctx, safe } from './src/state.js?v=0.18.0';
-import { run, callCount } from './src/run.js?v=0.18.0';
-import * as UI from './src/ui.js?v=0.18.0';
-import { jevSettings, jevYesNo } from './src/jev.js?v=0.18.0';
-import { applyTheme } from './src/theme.js?v=0.18.0';
-import { renderThemeEditor } from './src/theme-editor.js?v=0.18.0';
-import { renderThoughts, attachThoughts, repaintAll, livePanel, answersMode } from './src/thoughts.js?v=0.18.0';
+import { settings, save, resolveGraph, ctx, safe } from './src/state.js?v=0.19.0';
+import { run, callCount, getNativeWorkflowController, initializeNativeWorkflowController, workflowSignature, sendWorkflowState } from './src/run.js?v=0.19.0';
+import * as UI from './src/ui.js?v=0.19.0';
+import { jevSettings, jevYesNo } from './src/jev.js?v=0.19.0';
+import { applyTheme } from './src/theme.js?v=0.19.0';
+import { renderThemeEditor } from './src/theme-editor.js?v=0.19.0';
+import { renderThoughts, attachThoughts, repaintAll, livePanel, answersMode } from './src/thoughts.js?v=0.19.0';
 
 const MODULE = 'prompt-canvas';
+// SillyTavern awaits the global named by manifest.generate_interceptor.
+globalThis.comfyTavernGenerationInterceptor = async (chat, contextSize, abort, type) => {
+    await initializeNativeWorkflowController();
+    return getNativeWorkflowController().beforeGenerate(chat, contextSize, abort, type);
+};
 let lastRun = null;
 /**
  * A real send in progress. Only a real send blocks another: SillyTavern fires
@@ -50,10 +55,16 @@ function armed() {
 /**
  * Build the prompt for one send.
  *
- * Returns null when Silly Canvas should keep its hands off, in which case
+ * Returns null when ComfyTavern should keep its hands off, in which case
  * SillyTavern's own prompt goes out untouched.
  */
+function legacyArmed() {
+    if (!armed() || safe(() => settings().workflowMode) !== 'legacy') return false;
+    const graph = safe(() => resolveGraph().graph);
+    return !!graph && (graph.schema === undefined || graph.schema === 1) && !String(graph.mode ?? '').startsWith('native-') && !Object.values(graph.nodes ?? {}).some(node => node.type === 'workflow');
+}
 async function build(dryRun) {
+    if (!legacyArmed()) return null;
     const { graph } = resolveGraph();
     if (!graph) return null;
 
@@ -98,7 +109,7 @@ async function build(dryRun) {
         if (!plan.ok) {
             // An empty chat is a normal state, not a fault worth shouting about.
             if (plan.quiet) console.log(`[${MODULE}] ${plan.reason}`);
-            else warn(`Silly Canvas did not replace the prompt: ${plan.reason}`);
+            else warn(`ComfyTavern did not replace the prompt: ${plan.reason}`);
             return null;
         }
 
@@ -161,7 +172,7 @@ function previousAnswers() {
 }
 
 async function onChatCompletionPromptReady(eventData) {
-    if (!armed()) return;
+    if (!legacyArmed()) return;
     if (!eventData || !Array.isArray(eventData.chat)) return;
     try {
         const plan = await build(!!eventData.dryRun);
@@ -171,12 +182,12 @@ async function onChatCompletionPromptReady(eventData) {
         console.log(`[${MODULE}] sent ${plan.messages.length} messages`);
     } catch (err) {
         console.error(`[${MODULE}] compile failed, leaving the prompt alone`, err);
-        warn('Silly Canvas hit an error and left SillyTavern\u2019s prompt untouched. See the console.');
+        warn('ComfyTavern hit an error and left SillyTavern\u2019s prompt untouched. See the console.');
     }
 }
 
 async function onTextCompletionPromptReady(eventData) {
-    if (!armed()) return;
+    if (!legacyArmed()) return;
     if (!eventData || typeof eventData.prompt !== 'string') return;
     // SillyTavern fires this event for chat completion too, just before
     // CHAT_COMPLETION_PROMPT_READY, and then throws the string away. Building
@@ -243,7 +254,7 @@ const progress = (() => {
     const paint = () => {
         if (!box) return;
         box.querySelector('.pc-progress-head').textContent =
-            `Silly Canvas \u00b7 ${Math.min(finished + running.size, total)} of ${total}`;
+            `ComfyTavern \u00b7 ${Math.min(finished + running.size, total)} of ${total}`;
         list.innerHTML = '';
         for (const title of running) {
             const row = document.createElement('div');
@@ -281,7 +292,7 @@ const progress = (() => {
 
 function warn(message) {
     console.warn(`[${MODULE}] ${message}`);
-    safe(() => globalThis.toastr?.warning(message, 'Silly Canvas'));
+    safe(() => globalThis.toastr?.warning(message, 'ComfyTavern'));
 }
 
 /* ------------------------------------------------------------------ */
@@ -296,7 +307,7 @@ function addLauncher() {
         item.id = 'pc-menu-launch';
         item.className = 'list-group-item flex-container flexGap5 interactable';
         item.tabIndex = 0;
-        item.innerHTML = '<i class="fa-solid fa-diagram-project"></i><span>Silly Canvas</span>';
+        item.innerHTML = '<i class="fa-solid fa-diagram-project"></i><span>ComfyTavern</span>';
         item.addEventListener('click', () => UI.open());
         menu.append(item);
     }
@@ -311,13 +322,13 @@ function addLauncher() {
         block.innerHTML = `
             <div class="inline-drawer">
                 <div class="inline-drawer-toggle inline-drawer-header">
-                    <b>Silly Canvas</b>
+                    <b>ComfyTavern</b>
                     <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
                 </div>
                 <div class="inline-drawer-content">
                     <label class="checkbox_label" for="pc-enabled">
                         <input id="pc-enabled" type="checkbox">
-                        <span>Arm the canvas (it builds the prompt instead of SillyTavern)</span>
+                        <span id="pc-arm-label">${sendWorkflowState().armLabel}</span>
                     </label>
                     <div class="pc-settings-hint">
                         While this is off SillyTavern behaves exactly as it always has.
@@ -330,7 +341,7 @@ function addLauncher() {
                     </div>
                     <label class="checkbox_label" for="pc-sendbar-opt">
                         <input id="pc-sendbar-opt" type="checkbox">
-                        <span>Show a Silly Canvas button next to Send</span>
+                        <span>Show a ComfyTavern button next to Send</span>
                     </label>
                     <div class="pc-settings-hint">
                         Tinted while the canvas is armed. Click to open, right-click to arm or disarm.
@@ -373,7 +384,7 @@ function addLauncher() {
                     <input id="pc-jev-key" class="text_pole" type="password" autocomplete="off" placeholder="paste your key">
                     <div class="pc-settings-hint">
                         Kept in SillyTavern's settings file, like other extension settings.
-                        TypeSafe's API cannot be called straight from a web page, so Silly Canvas goes through
+                        TypeSafe's API cannot be called straight from a web page, so ComfyTavern goes through
                         SillyTavern's CORS proxy: set <code>enableCorsProxy: true</code> in <code>config.yaml</code> and restart SillyTavern.
                     </div>
                     <div id="pc-jev-test" class="menu_button menu_button_icon">
@@ -436,7 +447,7 @@ function addLauncher() {
             settings().concurrency = 2;
             save();
             paintThrottle();
-            safe(() => globalThis.toastr?.info('Independent Generate blocks will go out together again.', 'Silly Canvas'));
+            safe(() => globalThis.toastr?.info('Independent Generate blocks will go out together again.', 'ComfyTavern'));
         });
 
         const jkey = block.querySelector('#pc-jev-key');
@@ -487,9 +498,8 @@ function addSendbarButton() {
         save();
         UI.refreshIfOpen();
         paintSendbar();
-        safe(() => globalThis.toastr?.info(armed()
-            ? 'Armed. Your canvas builds the prompt.'
-            : 'Off. SillyTavern builds the prompt as usual.', 'Silly Canvas'));
+        const state = sendWorkflowState();
+        safe(() => globalThis.toastr?.info(armed() ? `Armed. ${state.armedText}` : state.offText, 'ComfyTavern'));
     });
     b.addEventListener('mouseenter', paintSendbar);
 
@@ -501,18 +511,15 @@ function addSendbarButton() {
 }
 
 function paintSendbar() {
+    const state = sendWorkflowState();
+    const label = document.getElementById('pc-arm-label');
+    if (label) label.textContent = state.armLabel;
     const b = document.getElementById('pc-sendbar');
     if (!b) return;
     const on = armed();
-    const r = safe(() => resolveGraph()) ?? { graph: null, source: 'none' };
-    const from = { chat: 'pinned to this chat', character: 'pinned to this character', default: 'the default canvas' }[r.source];
-    b.classList.toggle('pc-sendbar-on', on && !!r.graph);
-    b.classList.toggle('pc-sendbar-nograph', on && !r.graph);
-    b.title = !on
-        ? 'Silly Canvas is off — SillyTavern builds the prompt.\nClick to open. Right-click to arm.'
-        : r.graph
-            ? `Silly Canvas is armed: "${r.graph.name}" (${from}) builds the prompt.\nClick to open. Right-click to switch off.`
-            : 'Silly Canvas is armed but no canvas applies here, so SillyTavern builds the prompt.\nClick to open. Right-click to switch off.';
+    b.classList.toggle('pc-sendbar-on', on && state.automatic);
+    b.classList.toggle('pc-sendbar-nograph', on && !state.automatic);
+    b.title = on ? `ComfyTavern is armed. ${state.armedText}\nClick to open. Right-click to switch off.` : `${state.offText}\nClick to open. Right-click to arm.`;
 }
 
 function paintThrottle() {
@@ -541,7 +548,7 @@ function addSlashCommand() {
         const { SlashCommandParser, SlashCommand, SlashCommandNamedArgument, ARGUMENT_TYPE } = c;
         SlashCommandParser.addCommandObject(SlashCommand.fromProps({
             name: 'canvas',
-            helpString: 'Open Silly Canvas, or arm/disarm it: <code>/canvas arm</code>, <code>/canvas off</code>.',
+            helpString: 'Open ComfyTavern, or arm/disarm it: <code>/canvas arm</code>, <code>/canvas off</code>.',
             unnamedArgumentList: [],
             callback: (_args, value) => {
                 const v = String(value ?? '').trim().toLowerCase();
@@ -569,6 +576,22 @@ export function getLastRun() {
         try {
             const c = ctx();
             settings();
+            void initializeNativeWorkflowController();
+            globalThis.addEventListener?.('unload', () => getNativeWorkflowController().dispose(), { once: true });
+            const nativeSettingsSnapshot = () => {
+                const s = settings();
+                const ids = [s.activeGraphId, s.nativeBindings?.preGraphId, s.nativeBindings?.postGraphId];
+                const graphs = ids.map(id => s.graphs[id]);
+                return { graphs, signature: JSON.stringify([s.enabled, s.workflowMode, ids, graphs.map(graph => graph?.schema === 2 ? workflowSignature(graph) : null)]) };
+            };
+            let watchedNativeSettings = nativeSettingsSnapshot();
+            document.addEventListener('pc-state', () => {
+                const next = nativeSettingsSnapshot();
+                if (next.signature !== watchedNativeSettings.signature || next.graphs.some((graph, index) => graph !== watchedNativeSettings.graphs[index])) {
+                    getNativeWorkflowController().cancel('Workflow settings changed');
+                }
+                watchedNativeSettings = next;
+            });
             safe(() => applyTheme());
 
             if (c.eventTypes.GENERATION_STARTED) {

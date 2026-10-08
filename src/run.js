@@ -16,11 +16,68 @@
  *    recorded as the error, the run continues, and you see it in the trace.
  */
 
-import { ctx, safe, settings, save as saveSettings, NODE_TYPES, togetherGroup, loopWires, loopSection, activeGraph } from './state.js?v=0.18.0';
-import { compile, collect, generateOrder, generateLevels, gatherContext, evaluateCondition, liveNodes, generateDeps, textOf, picks, wireHolds } from './compile.js?v=0.18.0';
-import { plannedSaves, writeSaves, mirrorToLorebook } from './memory.js?v=0.18.0';
-import { jevYesNo, jevSort } from './jev.js?v=0.18.0';
-import { applySelect } from './select.js?v=0.18.0';
+import { ctx, safe, settings, save as saveSettings, resolveGraph, NODE_TYPES, togetherGroup, loopWires, loopSection, activeGraph } from './state.js?v=0.19.0';
+import { compile, collect, generateOrder, generateLevels, gatherContext, evaluateCondition, liveNodes, generateDeps, textOf, picks, wireHolds } from './compile.js?v=0.19.0';
+import { plannedSaves, writeSaves, mirrorToLorebook } from './memory.js?v=0.19.0';
+import { jevYesNo, jevSort } from './jev.js?v=0.19.0';
+import { applySelect } from './select.js?v=0.19.0';
+import { validateWorkflow } from './workflow/contracts.js?v=0.19.0';
+import { createNativeWorkflowController } from './workflow/host.js?v=0.19.0';
+export { runWorkflow, workflowSignature } from './workflow/runtime.js?v=0.19.0';
+export { createNativeWorkflowController, snapshotContext, snapshotReply } from './workflow/host.js?v=0.19.0';
+
+let nativeController, nativeHelpers, nativeInitialization;
+/** Send-adjacent labels follow the automatic execution binding, not the open canvas. */
+export function sendWorkflowState() {
+    const s = settings();
+    if (s.workflowMode === 'native') {
+        const assigned = s.graphs[s.nativeBindings?.preGraphId];
+        const graph = assigned?.schema === 2 && assigned.mode === 'native-pre' ? assigned : null;
+        return {
+            automatic: !!graph,
+            armLabel: graph ? 'Arm native pre guidance for Send (post repair remains manual)' : 'Arm native workflows (no automatic pre workflow assigned; post repair is manual)',
+            armedText: graph ? `"${graph.name}" adds guidance before Send (maximum ${callCount(graph)} auxiliary requests). SillyTavern builds its normal prompt. Post repair remains manual.` : 'No automatic pre workflow is assigned. Post repair is manual via Run and review. SillyTavern builds its normal prompt.',
+            offText: 'Native workflows are off. SillyTavern builds its normal prompt. Post repair requires manual Run and review.',
+        };
+    }
+    const resolved = resolveGraph(), graph = resolved.graph;
+    const automatic = !!graph && (graph.schema === undefined || graph.schema === 1) && !String(graph.mode ?? '').startsWith('native-') && !Object.values(graph.nodes ?? {}).some(node => node.type === 'workflow');
+    const from = { chat: 'pinned to this chat', character: 'pinned to this character', default: 'the default canvas' }[resolved.source];
+    return {
+        automatic,
+        armLabel: 'Arm the canvas (it builds the prompt instead of SillyTavern)',
+        armedText: automatic ? `"${graph.name}" (${from}) builds the prompt.` : 'No legacy canvas applies here, so SillyTavern builds the prompt.',
+        offText: 'ComfyTavern is off. SillyTavern builds the prompt as usual.',
+    };
+}
+/** Stable adapter facade consumed by the projection-only workflow UI. */
+export function getNativeWorkflowController() {
+    return nativeController ??= createNativeWorkflowController({
+        context:ctx,
+        isEnabled:()=>settings().enabled === true && settings().workflowMode === 'native',
+        getGraph:phase=>settings().graphs[settings().nativeBindings?.[phase === 'pre' ? 'preGraphId' : 'postGraphId']],
+        isBusy:()=>!nativeHelpers || nativeHelpers.isGenerating(),
+        syncMesToSwipe:(...args)=>nativeHelpers?.syncMesToSwipe(...args),
+        syncSwipeToMes:(...args)=>nativeHelpers?.syncSwipeToMes(...args),
+        countTokens:async text=>{
+            const count=ctx().getTokenCountAsync;
+            if(typeof count==='function') { const tokens=await count(text);if(Number.isFinite(tokens) && tokens>=0)return {tokens,method:'host-tokenizer'}; }
+            return {tokens:Math.ceil(text.length/4),method:'character-estimate'};
+        },
+        onResult:(value,origin)=>{
+            if(!value.ok) safe(()=>globalThis.toastr?.warning(value.error.message,'ComfyTavern workflow'));
+            if(origin) safe(()=>globalThis.document?.dispatchEvent(new CustomEvent('pc-native-result')));
+        },
+    });
+}
+/** Public host helpers are exports of script.js, not getContext properties. */
+export function initializeNativeWorkflowController() {
+    const controller=getNativeWorkflowController();controller.subscribe();
+    nativeInitialization ??= import('/script.js').then(module=>{
+        if(['isGenerating','syncMesToSwipe','syncSwipeToMes'].every(key=>typeof module[key]==='function'))nativeHelpers=module;
+    }).catch(()=>{ /* Review stays unavailable if the host lacks these public APIs. */ });
+    return nativeInitialization;
+}
 
 /** The connection the chat itself is using, when a block does not name one. */
 function currentProfileId() {
@@ -477,6 +534,7 @@ export function describeCutoff(title, usage, finish) {
  * @returns {Promise<{plan: object, results: Record<string,string>, thoughts: Array}>}
  */
 export async function run(graph, { dryRun = false, signal = null, onStage = null, onResult = null, swipe = false, reuse = null } = {}) {
+    if (graph?.schema === 2) return { plan: await compile(graph, { dryRun }), results: {}, thoughts: [], failures: [] };
     graph = activeGraph(graph);
     const live = await gatherContext({ dryRun, swipe });
     const results = {};
@@ -1038,14 +1096,20 @@ export function callCount(graph) {
  * path or a pass changes nothing.
  */
 export function maxCalls(graph) {
+    if (graph?.schema === 2) { const validation = validateWorkflow(graph); return validation.ok ? validation.data.callBound : 0; }
     graph = activeGraph(graph);
     const passes = (n) => Math.max(1, Math.min(10, Math.round(Number(n?.repeat) || 1)));
     const gens = generateOrder(graph);
-    let n = gens.reduce((sum, g) => sum + passes(g), 0);
+    const deciderCalls = node => {
+        if (node?.type !== NODE_TYPES.DECIDER || node.enabled === false || node.mode === null || node.mode === '' || node.mode === 'random') return 0;
+        if (node.mode === 'ai') return node.keys?.length ? 1 : 0;
+        return (node.keys ?? []).flatMap(key => key.conditions ?? []).filter(rule => rule?.mode === 'ai' && String(rule.question ?? '').trim()).reduce((sum,rule)=>sum+(rule.engine === 'jev' ? 1 : 2),0);
+    };
+    let n = gens.reduce((sum, g) => sum + passes(g), 0) + Object.values(graph.nodes).reduce((sum,node)=>sum+deciderCalls(node),0);
     for (const w of loopWires(graph)) {
         const max = Math.max(1, Math.min(20, Math.round(Number(w.loop.max) || 1)));
         const inSection = [...loopSection(graph, w)].map(id => graph.nodes[id]).filter(x => x?.type === NODE_TYPES.GENERATE && x.enabled !== false);
-        n += max * inSection.reduce((sum, g) => sum + passes(g), 0);
+        n += max * (inSection.reduce((sum, g) => sum + passes(g), 0) + [...loopSection(graph, w)].reduce((sum,id)=>sum+deciderCalls(graph.nodes[id]),0));
     }
     return n;
 }

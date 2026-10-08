@@ -1,0 +1,255 @@
+import assert from 'node:assert/strict';
+import {resolveBinding, requestModel} from '../src/workflow/connections.js';
+let calls = 0;
+const deleted = await resolveBinding({profileId:'deleted'}, {}, {ConnectionManagerRequestService:{getProfile:()=>undefined,sendRequest:()=>{calls++;}}});
+assert.equal(deleted.error?.code, 'PROFILE_MISSING');
+assert.equal(calls, 0);
+const profiles = {
+    role:{id:'role',name:'Role',api:'oai',model:'role-model'},
+    own:{id:'own',name:'Own',api:'custom',model:'own-model','api-url':'https://owned.example/v1'},
+};
+const context = {
+    CONNECT_API_MAP:{oai:{selected:'openai',source:'openai'},custom:{selected:'openai',source:'custom'}},
+    ConnectionManagerRequestService:{getProfile:id=>profiles[id]},
+    chatCompletionSettings:{chat_completion_source:'unrelated',custom_url:'https://live.example'},
+};
+const graph = {roles:{Analysis:{profileId:'role',model:'role-override'}}};
+assert.deepEqual(resolveBinding({modelRole:'Analysis',profileId:'own',model:'node-model'},graph,context).data,
+    {profileId:'own',profileName:'Own',model:'node-model',source:'custom',api:'openai',endpoint:'https://owned.example/v1',endpointOrigin:'profile',preset:null,instruct:null});
+assert.equal(resolveBinding({modelRole:'Analysis'},graph,context).data.model,'role-override');
+assert.equal(resolveBinding({},graph,context).error?.code,'BINDING_MISSING');
+assert.equal(resolveBinding({profileId:'role'},graph,{}).error?.code,'SERVICE_UNAVAILABLE');
+profiles.bad={name:'Bad',api:'legacy',model:'model'};
+assert.equal(resolveBinding({profileId:'bad'},graph,context).error?.code,'UNSUPPORTED_BINDING');
+profiles.empty={name:'Empty',api:'oai'};
+assert.equal(resolveBinding({profileId:'empty'},graph,context).error?.code,'MODEL_MISSING');
+context.getChatCompletionModel = settings => settings.chat_completion_source === 'openai' ? 'resolved-model' : 'unrelated-model';
+assert.equal(resolveBinding({profileId:'empty'},graph,context).data.model,'resolved-model');
+profiles.own.preset='missing';
+assert.equal(resolveBinding({profileId:'own'},graph,context).error?.code,'PRESET_MISSING');
+context.getPresetManager = api => ({getCompletionPresetByName:name=>api==='openai' && name==='first' ? {custom_url:'https://preset.example',temperature:0.2} : undefined});
+profiles.own.preset='first';
+delete profiles.own['api-url'];
+assert.equal(resolveBinding({profileId:'own'},graph,context).data.endpoint,'https://preset.example');
+assert.equal(resolveBinding({profileId:'own'},graph,context).data.endpointOrigin,'preset');
+context.chatCompletionSettings.custom_url='';
+context.getPresetManager=()=>({getPresetList:()=>({presets:[{temperature:0.2}],preset_names:{first:0}})});
+assert.equal(resolveBinding({profileId:'own'},graph,context).error?.code,'ENDPOINT_MISSING');
+profiles.own['api-url']='https://owned.example/v1';
+assert.equal(resolveBinding({profileId:'own'},graph,context).ok,true);
+assert.equal(resolveBinding({profileId:'role'},graph,context).data.endpoint,null);
+profiles.role.proxy='named-proxy';
+assert.equal(resolveBinding({profileId:'role'},graph,context).error?.code,'UNSUPPORTED_BINDING');
+delete profiles.role.proxy;
+profiles.tc={id:'tc',name:'Text',api:'generic',preset:'text',instruct:'format'};
+context.CONNECT_API_MAP.generic={selected:'textgenerationwebui',type:'generic'};
+context.textCompletionSettings={type:'generic',generic_model:'resolved-text'};
+context.getTextGenServer=type=>type==='generic' ? 'https://text.example' : '';
+context.getPresetManager=api=>({getPresetList:()=>({presets:api==='instruct' ? [{name:'format',enabled:true}] : [{temperature:0.1}],preset_names:api==='instruct' ? ['format'] : ['text']})});
+assert.equal(resolveBinding({profileId:'tc'},graph,context).data.source,'generic');
+assert.equal(resolveBinding({profileId:'tc'},graph,context).data.model,'resolved-text');
+assert.equal(resolveBinding({profileId:'tc'},graph,context).data.endpoint,'https://text.example');
+profiles.tc.instruct='deleted-format';
+assert.equal(resolveBinding({profileId:'tc'},graph,context).error?.code,'INSTRUCT_MISSING');
+profiles.tc.instruct='format';
+context.textCompletionSettings.type='ooba';
+assert.equal(resolveBinding({profileId:'tc'},graph,context).error?.code,'UNSUPPORTED_BINDING');
+context.textCompletionSettings.type='generic';
+context.CONNECT_API_MAP.azure={selected:'openai',source:'azure'};
+profiles.azure={name:'Azure',api:'azure',model:'deployment'};
+assert.equal(resolveBinding({profileId:'azure'},graph,context).error?.code,'ENDPOINT_MISSING');
+Object.assign(context.chatCompletionSettings,{azure_base_url:'https://azure.example',azure_deployment_name:'deployment',azure_api_version:'2024-01-01'});
+assert.equal(resolveBinding({profileId:'azure'},graph,context).data.endpoint,'https://azure.example');
+context.getPresetManager=api=>({getCompletionPresetByName:name=>api==='openai' && name==='first' ? {temperature:0.25,custom_include_body:'messages: native',custom_exclude_body:'messages'} : undefined});
+context.ChatCompletionService={presetToGeneratePayload:async(preset,overrides,payload)=>({temperature:preset.temperature ?? 0.7,...payload,convertedSource:overrides.chat_completion_source})};
+context.ConnectionManagerRequestService.sendRequest=async(id,messages,maxTokens,options,payload)=>({choices:[{message:{content:JSON.stringify({id,messages,maxTokens,options:{stream:options.stream,extractData:options.extractData,includePreset:options.includePreset},payload})},finish_reason:'stop'}],usage:{completion_tokens:12}});
+const bound = resolveBinding({profileId:'own',model:'node-model'},graph,context).data;
+const ownMessages=[{role:'system',content:'Owned system instruction'},{role:'user',content:'Synthetic input'}];
+const reply=await requestModel({binding:bound,messages:ownMessages,maxTokens:45},context);
+assert.equal(reply.ok,true);
+assert.equal(reply.data.finish,'stop');
+assert.deepEqual(reply.data.usage,{completion_tokens:12});
+const sent=JSON.parse(reply.data.text);
+assert.deepEqual(sent.messages,ownMessages);
+assert.deepEqual(sent.payload.messages,ownMessages);
+assert.equal(sent.payload.temperature,0.25);
+assert.equal(sent.payload.model,'node-model');
+assert.equal(sent.payload.custom_url,'https://owned.example/v1');
+assert.equal(sent.payload.chat_completion_source,'custom');
+assert.equal(sent.payload.convertedSource,'custom');
+assert.equal(sent.payload.custom_include_body,'');
+assert.equal(sent.payload.custom_exclude_body,'');
+assert.equal(sent.options.includePreset,false);
+const attemptStatuses=[];
+context.ConnectionManagerRequestService.sendRequest=async()=>{attemptStatuses.push('sent');throw new Error('transport failed');};
+const rejected=await requestModel({binding:bound,messages:ownMessages,maxTokens:45},context);
+assert.equal(rejected.error?.code,'REQUEST_FAILED');
+assert.equal(attemptStatuses.length,1);
+context.ConnectionManagerRequestService.sendRequest=async()=>({choices:[{message:{content:'unfinished'},finish_reason:'length'}],usage:{completion_tokens:45,prompt_tokens:20}});
+const cutOffReply=await requestModel({binding:bound,messages:ownMessages,maxTokens:45},context);
+assert.equal(cutOffReply.error?.code,'TRUNCATED_OUTPUT');
+assert.equal(cutOffReply.error?.finish,'length');
+assert.deepEqual(cutOffReply.error?.usage,{completion_tokens:45,prompt_tokens:20});
+context.ConnectionManagerRequestService.sendRequest=async()=>({choices:[{message:{content:'   '},finish_reason:'stop'}]});
+assert.equal((await requestModel({binding:bound,messages:ownMessages,maxTokens:45},context)).error?.code,'EMPTY_OUTPUT');
+const lateStop=new AbortController();
+context.ConnectionManagerRequestService.sendRequest=async()=>{lateStop.abort();return {choices:[{message:{content:'late'},finish_reason:'stop'}]};};
+assert.equal((await requestModel({binding:bound,messages:ownMessages,maxTokens:45,signal:lateStop.signal},context)).error?.code,'ABORTED');
+const stop=new AbortController(); stop.abort();
+assert.equal((await requestModel({binding:bound,messages:ownMessages,maxTokens:45,signal:stop.signal},context)).error?.code,'ABORTED');
+assert.equal(attemptStatuses.length,1);
+profiles.own['api-url']='https://changed.example';
+assert.equal((await requestModel({binding:bound,messages:ownMessages,maxTokens:45},context)).error?.code,'BINDING_CHANGED');
+assert.equal(resolveBinding({profileId:'deleted'},graph,{ConnectionManagerRequestService:{getProfile:()=>{throw new Error('Profile not found');}}}).error?.code,'PROFILE_MISSING');
+context.CONNECT_API_MAP.workers={selected:'openai',source:'workers_ai'};
+profiles.workers={name:'Workers',api:'workers',model:'model'};
+assert.equal(resolveBinding({profileId:'workers'},graph,context).error?.code,'ENDPOINT_MISSING');
+context.chatCompletionSettings.workers_ai_account_id='account';
+assert.equal(resolveBinding({profileId:'workers'},graph,context).data.endpoint,'account');
+profiles.own['api-url']='https://owned.example/v1';
+const changedDuring=resolveBinding({profileId:'own'},graph,context).data;
+let unexpectedCalls=0;
+context.ConnectionManagerRequestService.sendRequest=async()=>{unexpectedCalls++;return 'wrong endpoint';};
+context.ChatCompletionService.presetToGeneratePayload=async(preset,override,payload)=>{profiles.own['api-url']='https://changed-during-conversion.example';return payload;};
+assert.equal((await requestModel({binding:changedDuring,messages:ownMessages,maxTokens:45},context)).error?.code,'BINDING_CHANGED');
+assert.equal(unexpectedCalls,0);
+const invalidRequest=await requestModel({binding:resolveBinding({profileId:'role'},graph,context).data,messages:ownMessages,maxTokens:0},context);
+assert.equal(invalidRequest.error?.code,'INVALID_REQUEST');
+assert.equal(unexpectedCalls,0);
+profiles.own['api-url']='https://owned.example/v1';
+context.ChatCompletionService.presetToGeneratePayload=async(preset,override,payload)=>payload;
+const tampered=resolveBinding({profileId:'own'},graph,context).data;
+tampered.source='another-provider';
+assert.equal((await requestModel({binding:tampered,messages:ownMessages,maxTokens:45},context)).error?.code,'BINDING_CHANGED');
+assert.equal(unexpectedCalls,0);
+context.getPresetManager=api=>({getCompletionPresetByName:name=>api==='instruct' && name==='format' ? {enabled:true,system_sequence:'[SYS]'} : api==='textgenerationwebui' && name==='text' ? {temperature:0.3} : undefined});
+context.ConnectionManagerRequestService.sendRequest=async(id,messages,maxTokens,options,payload)=>({choices:[{text:JSON.stringify({id,messages,maxTokens,includePreset:options.includePreset,includeInstruct:options.includeInstruct,payload}),finish_reason:'stop'}]});
+const textReply=await requestModel({binding:resolveBinding({profileId:'tc'},graph,context).data,messages:ownMessages,maxTokens:21},context);
+assert.equal(textReply.ok,true);
+const textSent=JSON.parse(textReply.data.text);
+assert.deepEqual(textSent.messages,ownMessages);
+assert.equal(textSent.payload.api_type,'generic');
+assert.equal(textSent.payload.api_server,'https://text.example');
+assert.equal(textSent.payload.model,'resolved-text');
+assert.equal(textSent.includePreset,true);
+assert.equal(textSent.includeInstruct,true);
+context.chatCompletionSettings.reverse_proxy='https://unrelated-proxy.example';
+assert.equal(resolveBinding({profileId:'role'},graph,context).error?.code,'UNSUPPORTED_BINDING');
+profiles.own.preset='';
+assert.equal(resolveBinding({profileId:'own'},graph,context).ok,true);
+delete context.chatCompletionSettings.reverse_proxy;
+context.chatCompletionSettings.reverse_proxy='https://live-proxy.example';
+profiles.role.preset='clear-proxy';
+context.getPresetManager=()=>({getCompletionPresetByName:name=>name==='clear-proxy' ? {reverse_proxy:''} : undefined});
+assert.equal(resolveBinding({profileId:'role'},graph,context).ok,true);
+delete context.chatCompletionSettings.reverse_proxy;
+
+profiles.role.preset='';
+const opaqueBinding=resolveBinding({profileId:'role'},graph,context).data;
+context.ConnectionManagerRequestService.sendRequest=async()=>({choices:[{message:{content:'Cut off mid-sentence'}}],content:[{type:'text',text:'Cut off mid-sentence'}]});
+const opaque=await requestModel({binding:opaqueBinding,messages:ownMessages,maxTokens:45},context);
+assert.equal(opaque.error?.code,'COMPLETION_UNVERIFIED');
+assert.equal(opaque.data,undefined);
+context.CONNECT_API_MAP.ollama={selected:'textgenerationwebui',type:'ollama'};
+profiles.ollama={name:'Ollama',api:'ollama',model:'fixture-model','api-url':'http://ollama.example'};
+context.textCompletionSettings.type='ollama';
+const ollamaBinding=resolveBinding({profileId:'ollama'},graph,context).data;
+context.ConnectionManagerRequestService.sendRequest=async()=>({response:'Cut off mid-sentence',done:true,done_reason:'length',eval_count:8,prompt_eval_count:12});
+const ollamaCutoff=await requestModel({binding:ollamaBinding,messages:ownMessages,maxTokens:8},context);
+assert.equal(ollamaCutoff.error?.code,'TRUNCATED_OUTPUT');
+assert.equal(ollamaCutoff.error?.finish,'length');
+assert.deepEqual(ollamaCutoff.error?.usage,{prompt_tokens:12,completion_tokens:8,total_tokens:20});
+context.ConnectionManagerRequestService.sendRequest=async()=>({response:'Complete Ollama answer',done:true,done_reason:'stop',eval_count:5,prompt_eval_count:12});
+const ollamaComplete=await requestModel({binding:ollamaBinding,messages:ownMessages,maxTokens:8},context);
+assert.equal(ollamaComplete.ok,true);
+assert.equal(ollamaComplete.data?.text,'Complete Ollama answer');
+assert.deepEqual(ollamaComplete.data?.usage,{prompt_tokens:12,completion_tokens:5,total_tokens:17});
+context.ConnectionManagerRequestService.sendRequest=async()=>({choices:[{message:{content:'Blocked partial output'},finish_reason:'content_filter'}],usage:{completion_tokens:2}});
+const unverifiable=await requestModel({binding:opaqueBinding,messages:ownMessages,maxTokens:45},context);
+assert.equal(unverifiable.error?.code,'COMPLETION_UNVERIFIED');
+assert.equal(unverifiable.error?.finish,'content_filter');
+assert.deepEqual(unverifiable.error?.usage,{completion_tokens:2});
+for (const source of ['claude','makersuite','vertexai']) {
+    context.CONNECT_API_MAP[source]={selected:'openai',source};
+    profiles[source]={name:source,api:source,model:'fixture-model','api-url':'us-central1'};
+    assert.equal(resolveBinding({profileId:source},graph,context).error?.code,'UNSUPPORTED_BINDING');
+}
+context.CONNECT_API_MAP.infermaticai={selected:'textgenerationwebui',type:'infermaticai'};
+profiles.infermaticai={name:'Infermatic',api:'infermaticai',model:'fixture-model','api-url':'https://infermatic.example'};
+context.textCompletionSettings.type='infermaticai';
+assert.equal(resolveBinding({profileId:'infermaticai'},graph,context).error?.code,'UNSUPPORTED_BINDING');
+context.textCompletionSettings.type='ollama';
+context.ConnectionManagerRequestService.sendRequest=async()=>({response:'Partial not done',done:false,done_reason:'stop',eval_count:4});
+assert.equal((await requestModel({binding:ollamaBinding,messages:ownMessages,maxTokens:8},context)).error?.code,'COMPLETION_UNVERIFIED');
+context.ConnectionManagerRequestService.sendRequest=async()=>({choices:[{message:{content:'Cut off by native provider'},finish_reason:'stop',native_finish_reason:'max_tokens'}],usage:{completion_tokens:8}});
+assert.equal((await requestModel({binding:opaqueBinding,messages:ownMessages,maxTokens:8},context)).error?.code,'TRUNCATED_OUTPUT');
+context.CONNECT_API_MAP.cohere={selected:'openai',source:'cohere'};
+profiles.cohere={name:'Cohere',api:'cohere',model:'fixture-model'};
+const cohereBinding=resolveBinding({profileId:'cohere'},graph,context).data;
+const cohereUsage={tokens:{input_tokens:12,output_tokens:5},billed_units:{input_tokens:12,output_tokens:5}};
+context.ConnectionManagerRequestService.sendRequest=async()=>({message:{role:'assistant',content:[{type:'text',text:'Native Cohere answer'}]},finish_reason:'COMPLETE',usage:cohereUsage});
+const cohereReply=await requestModel({binding:cohereBinding,messages:ownMessages,maxTokens:8},context);
+assert.equal(cohereReply.ok,true);
+assert.equal(cohereReply.data?.text,'Native Cohere answer');
+assert.equal(cohereReply.data?.finish,'COMPLETE');
+assert.deepEqual(cohereReply.data?.usage,cohereUsage);
+context.ConnectionManagerRequestService.sendRequest=async()=>({message:{role:'assistant',content:[{type:'text',text:'Partial Cohere'}]},finish_reason:'MAX_TOKENS',usage:cohereUsage});
+const cohereCutoff=await requestModel({binding:cohereBinding,messages:ownMessages,maxTokens:8},context);
+assert.equal(cohereCutoff.error?.code,'TRUNCATED_OUTPUT');
+assert.equal(cohereCutoff.error?.finish,'MAX_TOKENS');
+assert.deepEqual(cohereCutoff.error?.usage,cohereUsage);
+context.ConnectionManagerRequestService.sendRequest=async()=>({choices:[{message:{content:'Conflicting evidence'},finish_reason:'stop',native_finish_reason:'unknown'}]});
+assert.equal((await requestModel({binding:opaqueBinding,messages:ownMessages,maxTokens:8},context)).error?.code,'COMPLETION_UNVERIFIED');
+context.ConnectionManagerRequestService.sendRequest=async()=>({choices:[{message:{content:'Cut off Google text'}}],responseContent:{parts:[{text:'Cut off Google text'}]}});
+assert.equal((await requestModel({binding:opaqueBinding,messages:ownMessages,maxTokens:8},context)).error?.code,'COMPLETION_UNVERIFIED');
+context.ConnectionManagerRequestService.sendRequest=async()=>({choices:[{text:'Cut off Infermatic text',logprobs:null,index:0}],usage:{completion_tokens:8}});
+assert.equal((await requestModel({binding:opaqueBinding,messages:ownMessages,maxTokens:8},context)).error?.code,'COMPLETION_UNVERIFIED');
+
+context.extractMessageFromData=raw=>raw.message?.content?.[0]?.text ?? '';
+context.ConnectionManagerRequestService.sendRequest=async()=>({message:{role:'assistant',content:[{type:'text',text:'First text block. '},{type:'text',text:'Second text block.'}]},finish_reason:'COMPLETE',usage:cohereUsage});
+const multiBlockCohere=await requestModel({binding:cohereBinding,messages:ownMessages,maxTokens:45},context);
+assert.equal(multiBlockCohere.ok,true);
+assert.equal(multiBlockCohere.data?.text,'First text block. Second text block.');
+assert.equal(multiBlockCohere.data?.finish,'COMPLETE');
+assert.deepEqual(multiBlockCohere.data?.usage,cohereUsage);
+
+const productionProfiles={
+    nano:{id:'nano',name:'Synthetic NanoGPT thinking',api:'nanogpt',model:'z-ai/glm-5.2:thinking',preset:'Synthetic sampler',proxy:'Selected proxy',instruct:''},
+    proxied:{id:'proxied',name:'Synthetic real proxy route',api:'oai',model:'fixed-openai-model',preset:'Synthetic sampler',proxy:'Selected proxy'},
+};
+let productionAttempts=0;
+const productionContext={
+    CONNECT_API_MAP:{nanogpt:{selected:'openai',source:'nanogpt'},oai:{selected:'openai',source:'openai'}},
+    chatCompletionSettings:{chat_completion_source:'openai',openai_model:'unrelated-chat-model',reverse_proxy:'https://unrelated-proxy.example'},
+    getPresetManager:api=>({getCompletionPresetByName:name=>api==='openai' && name==='Synthetic sampler' ? {temperature:0.17} : undefined}),
+    ChatCompletionService:{presetToGeneratePayload:async(preset,sourceOverride,payload)=>({temperature:preset.temperature,...payload,chat_completion_source:sourceOverride.chat_completion_source})},
+    ConnectionManagerRequestService:{getProfile:id=>productionProfiles[id],sendRequest:async(id,messages,cap,options,payload)=>{
+        productionAttempts++;
+        return {choices:[{message:{content:JSON.stringify({profile:id,source:payload.chat_completion_source,model:payload.model,messages:payload.messages,temperature:payload.temperature,cap})},finish_reason:'stop'}],usage:{completion_tokens:2}};
+    }},
+};
+const productionBinding=resolveBinding({profileId:'nano',modelRole:'Analysis'},{roles:{Analysis:{profileId:'proxied'}}},productionContext);
+assert.equal(productionBinding.ok,true);
+assert.equal(productionBinding.data?.endpointOrigin,'provider');
+productionContext.chatCompletionSettings.chat_completion_source='mistralai';
+const productionMessages=[{role:'system',content:'Owned workflow instruction; preserve this constraint.'},{role:'user',content:'Synthetic material.'}];
+const productionReply=await requestModel({binding:productionBinding.data,messages:productionMessages,maxTokens:37},productionContext);
+assert.equal(productionReply.ok,true);
+assert.deepEqual(JSON.parse(productionReply.data.text),{profile:'nano',source:'nanogpt',model:'z-ai/glm-5.2:thinking',messages:productionMessages,temperature:0.17,cap:37});
+assert.equal(productionAttempts,1);
+assert.equal(productionContext.chatCompletionSettings.chat_completion_source,'mistralai');
+assert.equal(resolveBinding({profileId:'proxied'},{},productionContext).error?.code,'UNSUPPORTED_BINDING');
+assert.equal(productionAttempts,1);
+productionContext.ConnectionManagerRequestService.sendRequest=async()=>{
+    productionAttempts++;
+    return {choices:[{message:{content:'Synthetic cutoff'},finish_reason:'length'}],usage:{completion_tokens:37,completion_tokens_details:{reasoning_tokens:31}}};
+};
+const productionCutoff=await requestModel({binding:productionBinding.data,messages:productionMessages,maxTokens:37},productionContext);
+assert.equal(productionCutoff.error?.code,'TRUNCATED_OUTPUT');
+assert.equal(productionCutoff.error?.finish,'length');
+assert.deepEqual(productionCutoff.error?.usage,{completion_tokens:37,completion_tokens_details:{reasoning_tokens:31}});
+assert.equal(productionAttempts,2);
+productionProfiles.nano.model='z-ai/glm-5.2';
+assert.equal((await requestModel({binding:productionBinding.data,messages:productionMessages,maxTokens:37},productionContext)).error?.code,'BINDING_CHANGED');
+assert.equal(productionAttempts,2);
+console.log('connections: ok');

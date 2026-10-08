@@ -9,6 +9,9 @@ export function createGraphAnalysis({ counts, levels, group }) {
             const key = JSON.stringify([graph.nodes, graph.wires, graph.groups ?? {}]);
             const previous = cache.get(graph);
             if (previous?.key === key) return previous.value;
+            if (graph.schema === 2) {
+                const value = { counts: new Map(), waves: [], waveById: new Map() }; cache.set(graph, { key, value }); return value;
+            }
             const waves = levels(graph);
             const total = waves.reduce((n, wave) => n + wave.length, 0);
             const waveById = new Map();

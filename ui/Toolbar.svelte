@@ -6,7 +6,7 @@
     const menu = [ ['duplicate', 'Duplicate canvas', 'fa-clone'], ['rename', 'Rename canvas', 'fa-i-cursor'], ['import', 'Import canvas', 'fa-file-import'], ['export', 'Export canvas', 'fa-file-export'], ['seed', 'Seed from SillyTavern’s current prompt order', 'fa-wand-magic-sparkles'], ['delete', 'Delete canvas', 'fa-trash-can'] ];
 </script>
 <header class="pc-header" data-pc-ui="svelte" bind:this={header}>
-    <div class="pc-brand"><i class="fa-solid fa-diagram-project"></i><span>Silly Canvas</span></div>
+    <div class="pc-brand"><i class="fa-solid fa-diagram-project"></i><span>ComfyTavern</span></div>
     <select class="pc-select pc-graph-select text_pole" aria-label="Canvas" value={state.graphId} bind:this={graphSelect} onchange={(event) => actions.pickGraph(event.currentTarget.value)}>
         {#each state.graphs as graph (graph.id)}<option value={graph.id}>{graph.name}</option>{/each}
     </select>
@@ -21,7 +21,7 @@
             <summary class="pc-btn menu_button" aria-label="Canvas actions">Canvas <span aria-hidden="true">⌄</span></summary>
             <div class="pc-toolbar-menu-panel">
                 {#each menu as [name, label, icon] (name)}
-                    <button type="button" class={`pc-btn menu_button${name === 'delete' ? ' pc-danger' : ''}`} title={label} onclick={(event) => { actions.command(name); event.currentTarget.closest('details')?.removeAttribute('open'); }}><i class={`fa-solid ${icon}`}></i> {label}</button>
+                    <button type="button" class={`pc-btn menu_button${name === 'delete' ? ' pc-danger' : ''}`} disabled={name === 'seed' && state.nativeGraph} title={name === 'seed' && state.nativeGraph ? 'Prompt-order seeding is available only for legacy canvases.' : label} onclick={(event) => { actions.command(name); event.currentTarget.closest('details')?.removeAttribute('open'); }}><i class={`fa-solid ${icon}`}></i> {label}</button>
                 {/each}
             </div>
         </details>

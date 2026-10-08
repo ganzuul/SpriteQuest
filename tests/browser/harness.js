@@ -1,8 +1,16 @@
 import { installMock } from '../mock.js';
 const context = installMock({ settings: { graphs: {}, ui: { liveTokens: false } } });
+// Browser fixtures exercise the public host events used by workflow freshness.
+const listeners = new Map();
+context.eventSource = {
+    on(name, callback) { if (!listeners.has(name)) listeners.set(name, new Set()); listeners.get(name).add(callback); },
+    removeListener(name, callback) { listeners.get(name)?.delete(callback); },
+    async emit(name, ...args) { for (const callback of [...(listeners.get(name) ?? [])]) await callback(...args); },
+};
 context.eventTypes = new Proxy({}, { get: (_, key) => key });
 context.SlashCommandParser = { addCommandObject() {} }; context.SlashCommand = { fromProps: value => value };
-globalThis.toastr = { info() {}, success() {}, warning() {}, error() {} };
+const toasts = [];
+globalThis.toastr = Object.fromEntries(['info', 'success', 'warning', 'error'].map(type => [type, message => toasts.push({ type, message })]));
 const version = (await (await fetch('/manifest.json')).json()).version;
 const S = await import(`/src/state.js?v=${version}`);
 const { Canvas } = await import(`/src/canvas.js?v=${version}`);
@@ -16,7 +24,7 @@ window.sillyCanvas.open();
 const settle = () => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 await settle();
 window.canvasHarness = {
-    context, S, UI, H,
+    context, S, UI, H, toasts,
     get canvas() { return canvas; },
     get graph() { return canvas.graph; },
     get selection() { return [...canvas.multi]; },

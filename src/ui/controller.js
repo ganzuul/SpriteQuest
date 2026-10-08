@@ -1,5 +1,10 @@
+import { resolveBinding } from '../workflow/connections.js?v=0.19.0';
+import * as workflowRuntime from '../run.js?v=0.19.0';
+import { installStarter } from '../workflow/starters.js?v=0.19.0';
+import { operationDefaults, operationFor } from '../workflow/catalog.js?v=0.19.0';
+import { projectWorkflow, createWorkflowSurface, createWorkflowSession } from './workflow-surface.js?v=0.19.0';
 /**
- * Silly Canvas — the panel.
+ * ComfyTavern — the panel.
  *
  * Layout: library on the left, canvas in the middle, inspector on the right,
  * a compile preview that slides up from the bottom. The preview is not a
@@ -14,27 +19,27 @@ import {
     chatBinding, setChatBinding, characterBinding, setCharacterBinding,
     exportGraph, importGraph, blankGraph, isFolderCollapsed, setFolderCollapsed, togetherGroup,
     newDeciderKey, removeDeciderKey, onGraphTouched, duplicateNode, newStateValue, groupNodes, ungroup, groupMembers, createBlanket, inOffGroup,
-} from '../state.js?v=0.18.0';
-import { applyTheme } from '../theme.js?v=0.18.0';
-import { makeClip, pasteClip, readClip, toClipboard, fromClipboard, lastClip, describeClip } from '../clip.js?v=0.18.0';
-import { renderThemeEditor } from '../theme-editor.js?v=0.18.0';
-import * as H from '../history.js?v=0.18.0';
-import * as L from '../library.js?v=0.18.0';
-import { compile, gatherContext, resolveNode, textOf, generateLevels, emissionCounts, wirePreview, countTokens, countTextTokens, routingMode, explainDecider, deciderInputList, collect } from '../compile.js?v=0.18.0';
-import { LORE_POSITIONS } from '../lore.js?v=0.18.0';
-import { computeState, stageFor, NUDGE_KEY } from '../statevals.js?v=0.18.0';
-import { openStateWindow, closeStateWindow } from '../state-window.js?v=0.18.0';
-import { memoryAt, memoryHistory, setMemoryNow, mirrorToLorebook, lorebookNames, DECIDER_SAVES } from '../memory.js?v=0.18.0';
-import { check as checkFormula } from '../expr.js?v=0.18.0';
-import { DEFAULT_SELECT, isActive as selectActive, selectLabel } from '../select.js?v=0.18.0';
-import { run, profileName, effectiveModel, callCount, testBlock, shapeForApi, inspectProfile, modelsForSource, sourceForBlock, cachedModels, fetchModelList, previewBlock } from '../run.js?v=0.18.0';
-import { Canvas, WIRE_LABEL, TYPE_LABEL, TYPE_ICON } from '../canvas.js?v=0.18.0';
-import { modelCombo } from '../model-combo.js?v=0.18.0';
-import { jevReady } from '../jev.js?v=0.18.0';
-import { createGraphAnalysis } from './graph-analysis.js?v=0.18.0';
+} from '../state.js?v=0.19.0';
+import { applyTheme } from '../theme.js?v=0.19.0';
+import { makeClip, pasteClip, readClip, toClipboard, fromClipboard, lastClip, describeClip } from '../clip.js?v=0.19.0';
+import { renderThemeEditor } from '../theme-editor.js?v=0.19.0';
+import * as H from '../history.js?v=0.19.0';
+import * as L from '../library.js?v=0.19.0';
+import { compile, gatherContext, resolveNode, textOf, generateLevels, emissionCounts, wirePreview, countTokens, countTextTokens, routingMode, explainDecider, deciderInputList, collect } from '../compile.js?v=0.19.0';
+import { LORE_POSITIONS } from '../lore.js?v=0.19.0';
+import { computeState, stageFor, NUDGE_KEY } from '../statevals.js?v=0.19.0';
+import { openStateWindow, closeStateWindow } from '../state-window.js?v=0.19.0';
+import { memoryAt, memoryHistory, setMemoryNow, mirrorToLorebook, lorebookNames, DECIDER_SAVES } from '../memory.js?v=0.19.0';
+import { check as checkFormula } from '../expr.js?v=0.19.0';
+import { DEFAULT_SELECT, isActive as selectActive, selectLabel } from '../select.js?v=0.19.0';
+import { run, profileName, effectiveModel, callCount, testBlock, shapeForApi, inspectProfile, modelsForSource, sourceForBlock, cachedModels, fetchModelList, previewBlock } from '../run.js?v=0.19.0';
+import { Canvas, WIRE_LABEL, TYPE_LABEL, TYPE_ICON } from '../canvas.js?v=0.19.0';
+import { modelCombo } from '../model-combo.js?v=0.19.0';
+import { jevReady } from '../jev.js?v=0.19.0';
+import { createGraphAnalysis } from './graph-analysis.js?v=0.19.0';
 
-import { createWorkbench } from './workbench.js?v=0.18.0';
-import { createDomainSurfaces } from './domain-surfaces.js?v=0.18.0';
+import { createWorkbench } from './workbench.js?v=0.19.0';
+import { createDomainSurfaces } from './domain-surfaces.js?v=0.19.0';
 
 let workbench = null;
 let root = null;
@@ -60,11 +65,11 @@ export function escapeHtml(s) {
 
 export function toast(msg, type = 'info') {
     const t = safe(() => globalThis.toastr);
-    if (t) t[type === 'error' ? 'error' : type === 'success' ? 'success' : 'info'](msg, 'Silly Canvas');
-    else console.log('[Silly Canvas]', msg);
+    if (t) t[type === 'error' ? 'error' : type === 'success' ? 'success' : 'info'](msg, 'ComfyTavern');
+    else console.log('[ComfyTavern]', msg);
 }
 
-export async function confirmBox(text, title = 'Silly Canvas') {
+export async function confirmBox(text, title = 'ComfyTavern') {
     const c = ctx();
     try {
         const res = await c.callGenericPopup(text, c.POPUP_TYPE.CONFIRM, '', { okButton: 'Yes', cancelButton: 'No', title });
@@ -77,7 +82,7 @@ export async function confirmBox(text, title = 'Silly Canvas') {
 export async function inputBox(text, value = '') {
     const c = ctx();
     try {
-        const res = await c.callGenericPopup(text, c.POPUP_TYPE.INPUT, value, { title: 'Silly Canvas' });
+        const res = await c.callGenericPopup(text, c.POPUP_TYPE.INPUT, value, { title: 'ComfyTavern' });
         return (res === false || res === null || res === undefined) ? null : String(res);
     } catch {
         return prompt(text, value);
@@ -89,6 +94,65 @@ export function profiles() {
     return Array.isArray(cm) ? cm : [];
 }
 
+
+let workflowLibrary = null, workflowInspector = null, workflowRevision = null;
+let workflowState = { result: null, busy: false, status: '', applyIssue: '' };
+const workflowSession = createWorkflowSession({ runtime: () => workflowRuntime.getNativeWorkflowController?.(), current: () => current, epoch: () => uiEpoch, active: isOpen, changed: state => { workflowState = state; if (isOpen()) updateWorkflowProjection(); } });
+const receiveAutomaticWorkflow = () => workflowSession.receiveAutomatic(workflowRuntime.getNativeWorkflowController?.()?.lastAutomaticResult?.());
+function workflowView() { return projectWorkflow(current, { settings: settings(), profiles: profiles(), selectedId: selectedKind === 'node' ? selected?.id : null, resolveBinding: (node, graph) => resolveBinding(node, graph, ctx()), candidateStatus: candidate => workflowRuntime.getNativeWorkflowController?.()?.candidateStatus?.(candidate), ...workflowState }); }
+function updateWorkflowProjection() {
+    const view = workflowView(); workflowLibrary?.update(view); workflowInspector?.update(view);
+}
+function syncNativeRevision(reason) {
+    if (current?.schema !== 2) return false;
+    const revision = workflowRuntime.workflowSignature(current);
+    if (revision === workflowRevision) return false;
+    workflowRevision = revision; workflowSession.cancel(reason); return true;
+}
+function editNative(fn) { if (current?.schema !== 2) return; fn(); syncNativeRevision('Workflow edited'); touchGraph(current); canvas.render(); updateWorkflowProjection(); renderStatus(); }
+const workflowActions = {
+    setMode(mode) { if (!['legacy', 'native'].includes(mode)) return; workflowSession.cancel('Workflow mode changed'); settings().workflowMode = mode; save(); updateWorkflowProjection(); renderStatus(); },
+    install(id) {
+        workflowSession.cancel('New workflow'); current = installStarter(id, settings()); save();
+        setCanvasGraph(); root.classList.remove('pc-hide-inspector'); syncPaneToggles(); renderAll(); canvas.fit();
+    },
+    bindRole(name, profileId, model) { editNative(() => { current.roles ??= {}; current.roles[name] = { profileId: profileId || null, model: model || null }; }); },
+    assign(phase) {
+        if (current?.mode !== 'native-' + phase) return;
+        workflowSession.cancel('Workflow assignment changed');
+        settings().nativeBindings[phase === 'pre' ? 'preGraphId' : 'postGraphId'] = current.id;
+        settings().workflowMode = 'native'; save(); updateWorkflowProjection(); renderStatus();
+    },
+    run: () => workflowSession.run(), apply: () => workflowSession.apply(), reject: () => workflowSession.reject(),
+    inspect(id) { if (current?.nodes[id]) showSettings({ kind: 'node', id }); },
+    expand(id) { if (current?.groups?.[id]) { canvas.setCollapsed(id, !current.groups[id].collapsed); updateWorkflowProjection(); } },
+    duplicate(id) { const node = current?.nodes[id]; if (node) duplicateSelected(node, false); },
+    remove(id) { if (current?.nodes[id]) deleteBlocks([id]); },
+    updateNode(id, key, value) { if (current?.nodes[id]) editNative(() => { current.nodes[id][key] = value; }); },
+    addLegacyNode(type) {
+        if (current?.schema === 2) return;
+        if (type === NODE_TYPES.OUTPUT) { const output = outputNode(current); if (output) showSettings({ kind: 'node', id: output.id }); return; }
+        const rect = canvas.host.getBoundingClientRect();
+        onCanvasDrop({ kind: 'block', type }, canvas.toGraph(rect.left + rect.width / 2 - 130, rect.top + rect.height / 2));
+    },
+    addNode(operation, at = null) {
+        if (current?.schema !== 2) return;
+        const rect = canvas.host.getBoundingClientRect();
+        const spot = at || canvas.toGraph(rect.left + rect.width / 2, rect.top + rect.height / 2);
+        const node = addNode(current, NODE_TYPES.WORKFLOW, Math.round(spot.x), Math.round(spot.y));
+        Object.assign(node, operationDefaults(operation), { operationVersion: 1 });
+        touchGraph(current); canvas.select({ kind: 'node', id: node.id }); canvas.render(); updateWorkflowProjection();
+    },
+};
+function mountWorkflowLibrary(target) {
+    workflowLibrary?.destroy(); const host = el('div', 'pc-workflow-library-host'); target.append(host);
+    workflowLibrary = createWorkflowSurface(host, workflowActions, 'library'); workflowLibrary.update(workflowView());
+}
+function renderNativeInspector(box) {
+    if (!workflowInspector) { box.replaceChildren(); workflowInspector = createWorkflowSurface(box, workflowActions); }
+    workflowInspector.update(workflowView());
+}
+
 let lastPlan = null;
 let liveCache = null;
 
@@ -98,6 +162,7 @@ let liveCache = null;
  * prompt currently contains without re-scanning on every keystroke.
  */
 async function refreshLive() {
+    if (current?.schema === 2) { liveCache = null; return null; }
     try { liveCache = await gatherContext({ dryRun: true }); }
     catch { liveCache = null; }
     return liveCache;
@@ -135,6 +200,7 @@ export function isOpen() {
 export function open() {
     build();
     root.classList.add('pc-open');
+    document.addEventListener('pc-native-result', receiveAutomaticWorkflow);
     // Your SillyTavern theme may have changed since the last look, and the
     // light/dark adjustment depends on it.
     safe(() => applyTheme());
@@ -152,6 +218,8 @@ export function open() {
 }
 
 export function close() {
+    document.removeEventListener('pc-native-result', receiveAutomaticWorkflow);
+    workflowSession.cancel('Workflow view closed');
     uiEpoch++;
     tokenRun++; previewRun++;
     clearTimeout(tokenTimer); clearTimeout(previewTimer);
@@ -165,6 +233,8 @@ export function toggle() {
 }
 
 function setCanvasGraph() {
+    workflowSession.cancel('Workflow graph changed');
+    workflowInspector?.destroy(); workflowInspector = null;
     uiEpoch++;
     previewRun++; lastPlan = null;
     clearTimeout(previewTimer);
@@ -172,6 +242,9 @@ function setCanvasGraph() {
     closeStateWindow();
     selected = null; selectedKind = null;
     canvas.setGraph(current);
+    workflowRevision = current?.schema === 2 ? workflowRuntime.workflowSignature(current) : null;
+    receiveAutomaticWorkflow();
+    if (current?.schema === 2) root._parts.preview.classList.remove('pc-preview-open');
     if (root._parts.preview.classList.contains('pc-preview-open')) {
         root._parts.preview.replaceChildren(el('div', 'pc-preview-head', 'Compiling…'));
         surfaces.preview.refresh();
@@ -201,7 +274,8 @@ function build() {
         },
         arm: enabled => {
             settings().enabled = enabled; save(); renderStatus();
-            toast(enabled ? 'Silly Canvas is armed. Your canvas now builds the prompt.' : 'Silly Canvas is off. SillyTavern builds the prompt as usual.', enabled ? 'success' : 'info');
+            const state = workflowRuntime.sendWorkflowState();
+            toast(enabled ? `Armed. ${state.armedText}` : state.offText, enabled ? 'success' : 'info');
         },
         command: name => {
             const commands = { new: onNewGraph, duplicate: onDuplicateGraph, rename: onRenameGraph, delete: onDeleteGraph, import: onImportGraph, export: onExportGraph, seed: onSeedFromST, undo: doUndo, redo: doRedo,
@@ -226,6 +300,10 @@ function build() {
     root = workbench.root;
     const { canvasHost, inspector } = workbench.parts;
     hookHistory();
+    const nativeContext = ctx();
+    for (const name of ['CHAT_CHANGED', 'MESSAGE_EDITED', 'MESSAGE_UPDATED', 'MESSAGE_DELETED', 'MESSAGE_SWIPED', 'MESSAGE_SENT', 'GENERATION_STARTED', 'GENERATION_ENDED', 'GENERATION_STOPPED']) {
+        if (nativeContext.eventTypes?.[name]) nativeContext.eventSource?.on?.(nativeContext.eventTypes[name], () => { if (isOpen()) workflowSession.refreshFreshness(); });
+    }
 
     // On a narrow window the side panes float over the canvas, so start with
     // them out of the way rather than covering the whole graph.
@@ -245,7 +323,7 @@ function build() {
             if (ids.length > 1) { selected = ids; selectedKind = 'multi'; renderInspector(); }
             else if (selectedKind === 'multi') { selected = null; selectedKind = null; renderInspector(); }
         },
-        onChange: () => { renderStatus(); refreshPreview(); scheduleTokenCount(); },
+        onChange: () => { if (syncNativeRevision('Canvas edited')) updateWorkflowProjection(); renderStatus(); refreshPreview(); scheduleTokenCount(); },
         onOpen: (node) => {
             if (node?.type === NODE_TYPES.STATE) { canvas.select({ kind: 'node', id: node.id }); surfaces.state.open(node); return; }
             selected = node; selectedKind = 'node';
@@ -272,6 +350,7 @@ function build() {
         stPreview: stPreviewText,
         memoryPreview: (node) => memoryAt(node, chatNow()).text,
         profileName,
+        nativeBinding: (node, graph) => { const resolved = resolveBinding({ ...node, modelRole: node.modelRole || operationFor(node)?.modelRole }, graph, ctx()); return resolved.ok ? { ...resolved.data, display: [resolved.data.profileName, resolved.data.model, resolved.data.endpoint, resolved.data.endpointOrigin].filter(Boolean).join(' · ') } : null; },
         effectiveModel,
         waveInfo,
         copiesOf: (node) => canvasAnalysis.counts.get(node.id) ?? 1,
@@ -448,6 +527,7 @@ const liveTokensOn = () => safe(() => settings().ui?.liveTokens) !== false;
 export function scheduleTokenCount(delay = 700) {
     clearTimeout(tokenTimer);
     if (!canvas) return;
+    if (current?.schema === 2) { canvas.setTokens(null); return; }
     if (!liveTokensOn()) { canvas.setTokens(null); return; }
     tokenTimer = setTimeout(() => { if (isOpen()) countBlockTokens(); }, delay);
 }
@@ -455,7 +535,7 @@ export function scheduleTokenCount(delay = 700) {
 async function countBlockTokens() {
     const run = ++tokenRun;
     const graph = current;
-    if (!graph) return;
+    if (!graph || graph.schema === 2) return;
     let plan;
     try { plan = await compile(graph, { dryRun: true }); } catch { return; }
     if (run !== tokenRun || graph !== current) return;
@@ -559,7 +639,7 @@ let historyHooked = false;
 function hookHistory() {
     if (historyHooked) return;
     historyHooked = true;
-    onGraphTouched((g) => H.noteChange(g));
+    onGraphTouched((g) => { H.noteChange(g); if (g === current) syncNativeRevision('Workflow edited'); });
     H.onHistoryChange((g) => { if (g === current) paintHistory(); });
 }
 
@@ -601,13 +681,18 @@ function doUndo() { if (current) afterHistory(H.undo(current), 'Undid'); }
 function doRedo() { if (current) afterHistory(H.redo(current), 'Redid'); }
 
 function renderGraphSelect() {
-    workbench.update({ graphs: allGraphs().map(g => ({ id: g.id, name: g.name })), graphId: current?.id ?? '', armed: !!settings().enabled });
+    workbench.update({ graphs: allGraphs().map(g => ({ id: g.id, name: g.name })), graphId: current?.id ?? '', nativeGraph: current?.schema === 2, armed: !!settings().enabled });
 }
 
 function renderStatus() {
     safe(() => document.dispatchEvent(new CustomEvent('pc-state')));
     const r = resolveGraph(), armed = !!settings().enabled, c = ctx();
     const charName = safe(() => c.characters?.[c.characterId]?.name) ?? null;
+    if (settings().workflowMode === 'native') {
+        const assignments = settings().nativeBindings;
+        const text = !armed ? 'Native workflows are off. SillyTavern builds its normal reply.' : 'Native reply with ' + (assignments.preGraphId ? 'assigned pre guidance' : 'no pre guidance') + '. Post repair requires Run and review.';
+        workbench.update({ armed, status: { armed, warning: false, text, overrideTitle: '', chatPinned: false, charPinned: false, charTitle: '', isDefault: false } }); return;
+    }
     const overridden = !!(armed && r.graph && current && r.graph.id !== current.id);
     const text = !armed ? 'SillyTavern builds the prompt as usual.'
         : !r.graph ? 'No canvas resolves — SillyTavern will build the prompt.'
@@ -623,7 +708,10 @@ function renderStatus() {
 
 function renderSidebar() {
     const sb = root._parts.sidebar;
+    workflowLibrary?.destroy(); workflowLibrary = null;
     sb.innerHTML = '';
+    mountWorkflowLibrary(sb);
+    if (current?.schema === 2) return;
 
     const head = el('div', 'pc-side-head');
     head.append(el('span', 'pc-side-title', 'Library'));
@@ -862,6 +950,10 @@ function dropLibrary(id, at) {
  */
 function onCreateBlockAt(at) {
     if (!current) return;
+    if (current.schema === 2) {
+        const rect = canvas.host.getBoundingClientRect(), view = canvas.view;
+        onCanvasMenu({ event: { clientX: rect.left + view.x + at.x * view.zoom, clientY: rect.top + view.y + at.y * view.zoom }, at }); return;
+    }
     const n = addNode(current, NODE_TYPES.PROMPT, Math.round(at.x) - 130, Math.round(at.y) - 40);
     n.title = 'New prompt';
     autoWire(n);
@@ -978,6 +1070,8 @@ function dropdown(pairs, value, onChange) {
 
 function renderInspector() {
     const box = root._parts.inspector;
+    if (current?.schema === 2 && !['multi', 'group', 'wire'].includes(selectedKind)) return renderNativeInspector(box);
+    workflowInspector?.destroy(); workflowInspector = null;
     box.innerHTML = '';
 
     if (!selected) {
@@ -1194,6 +1288,17 @@ function renderWireInspector(box) {
     const wire = selected;
     const from = current.nodes[wire.from];
     const to = current.nodes[wire.to];
+    if (current.schema === 2) {
+        box.append(el('div', 'pc-insp-title', 'Artifact wire'));
+        box.append(el('div', 'pc-hint', (from?.title || '?') + ' → ' + (to?.title || '?')));
+        box.append(el('p', 'pc-hint', (operationFor(from)?.output || 'Unknown') + ' artifact. Explicit wires determine dependency order; canvas position does not change execution.'));
+        const order = el('input', 'text_pole'); order.type = 'number'; order.min = '0'; order.value = wire.order ?? 0;
+        order.addEventListener('input', () => { wire.order = Number(order.value); touch(); updateWorkflowProjection(); });
+        box.append(field('Input order', order));
+        const cut = el('button', 'pc-btn menu_button', 'Cut artifact wire'); cut.type = 'button';
+        cut.addEventListener('click', () => { disconnect(current, wire.id); selected = null; canvas.render(); renderInspector(); });
+        box.append(cut); return;
+    }
 
     if (wire.kind === WIRE_KINDS.TOGETHER) {
         box.append(el('div', 'pc-insp-title', 'Sent together'));
@@ -3003,7 +3108,7 @@ function renderAiEngine(box, holder, decider, kind) {
         : ''));
     if (engine === 'jev') {
         if (!jevReady()) {
-            box.append(el('div', 'pc-hint pc-warn', 'Jev needs your TypeSafe API key: Extensions \u2192 Silly Canvas \u2192 Jev.'));
+            box.append(el('div', 'pc-hint pc-warn', 'Jev needs your TypeSafe API key: Extensions \u2192 ComfyTavern \u2192 Jev.'));
         }
         const pct = el('input', 'text_pole pc-wide-num');
         pct.type = 'number'; pct.min = '1'; pct.max = '99';
@@ -3202,6 +3307,10 @@ export function refreshPreview() {
 }
 
 export async function runPreview({ keepScroll = false } = {}) {
+    if (current?.schema === 2) {
+        root._parts.preview.classList.remove('pc-preview-open'); root.classList.remove('pc-hide-inspector');
+        syncPaneToggles(); renderInspector(); return;
+    }
     const graph = current, epoch = uiEpoch, request = ++previewRun;
     const active = () => stillEditing(graph, epoch) && request === previewRun;
     const box = root._parts.preview;
@@ -3463,11 +3572,12 @@ function onImportGraph() {
 }
 
 async function onSeedFromST() {
+    if (current?.schema === 2) return toast('Prompt-order seeding is available only for legacy canvases.', 'error');
     const graph = current, epoch = uiEpoch;
     const count = L.stPrompts().filter(p => p.inOrder).length;
     if (!count) return toast('No chat completion prompt order found. Open a chat completion preset first.', 'error');
     if (!await confirmBox(`Replace the blocks on "${current.name}" with SillyTavern’s current prompt order (${count} prompts)?`)) return;
-    if (!stillEditing(graph, epoch)) return;
+    if (!stillEditing(graph, epoch) || graph.schema === 2) return;
 
     const fresh = blankGraph(current.name);
     L.graphFromCurrentOrder(fresh, { NODE_TYPES, addNode, connect, outputNode, WIRE_KINDS });
@@ -3617,6 +3727,9 @@ function onCanvasMenu({ event, node, wire, at, group = null, several = null }) {
         menu.append(el('div', 'pc-menu-head', 'Saves the answer into memory'));
         menu.append(item('Settings\u2026', 'fa-sliders', () => showSettings({ kind: 'wire', id: wire.id })));
         menu.append(item('Stop saving (cut the wire)', 'fa-scissors', () => { disconnect(current, wire.id); canvas.render(); renderInspector(); }));
+    } else if (wire && current.schema === 2) {
+        menu.append(item('Inspect artifact wire', 'fa-sliders', () => showSettings({ kind: 'wire', id: wire.id })));
+        menu.append(item('Cut artifact wire', 'fa-scissors', () => { disconnect(current, wire.id); canvas.render(); renderInspector(); }));
     } else if (wire) {
         for (const [kind, label] of Object.entries(WIRE_LABEL)) {
             menu.append(item(`Make it "${label}"`, 'fa-shuffle', () => canvas.setWireKind(wire.id, kind)));
@@ -3631,6 +3744,8 @@ function onCanvasMenu({ event, node, wire, at, group = null, several = null }) {
         }
         menu.append(item('Cut wire', 'fa-scissors', () => { disconnect(current, wire.id); canvas.render(); }));
     } else if (node) {
+        menu.append(item('Inspect / Settings…', 'fa-sliders', () => showSettings({ kind: 'node', id: node.id })));
+        menu.append(item('Rename…', 'fa-pen', () => showSettings({ kind: 'node', id: node.id })));
         if (node.type !== NODE_TYPES.OUTPUT) {
             menu.append(item('Copy', 'fa-copy', () => copySelection(false, { nodeIds: [node.id] })));
             menu.append(item('Save to library\u2026', 'fa-bookmark', () => savePickToLibrary({ nodeIds: [node.id] })));
@@ -3670,7 +3785,7 @@ function onCanvasMenu({ event, node, wire, at, group = null, several = null }) {
             }
         }
 
-        menu.append(item('Wire into Output', 'fa-arrow-right-to-bracket', () => {
+        if (current.schema !== 2) menu.append(item('Wire into Output', 'fa-arrow-right-to-bracket', () => {
             const res = connect(current, node.id, outputNode(current).id, WIRE_KINDS.MERGE);
             if (!res.ok) toast(res.reason, 'error'); else canvas.render();
         }));
@@ -3678,23 +3793,29 @@ function onCanvasMenu({ event, node, wire, at, group = null, several = null }) {
             menu.append(item('Delete block', 'fa-trash-can', () => deleteBlocks([node.id])));
         }
     } else {
-        for (const [type, icon, label] of [
-            [NODE_TYPES.PROMPT, 'fa-comment', 'Prompt'],
-            [NODE_TYPES.GENERATE, 'fa-brain', 'Generate block'],
-            [NODE_TYPES.DECIDER, 'fa-code-fork', 'Decider'],
-            [NODE_TYPES.ST, 'fa-box-archive', 'SillyTavern prompt'],
-            [NODE_TYPES.HISTORY, 'fa-clock-rotate-left', 'Chat history'],
-            [NODE_TYPES.INJECTION, 'fa-syringe', 'Injection'],
-            [NODE_TYPES.LOREBOOK, 'fa-book-atlas', 'Lorebook'],
-            [NODE_TYPES.STATE, 'fa-gauge-high', 'State'],
-        [NODE_TYPES.MEMORY, 'fa-floppy-disk', 'Memory'],
-            [NODE_TYPES.NOTE, 'fa-note-sticky', 'Note'],
-        ]) {
-            menu.append(item(`Add ${label}`, icon, () => {
-                const n = addNode(current, type, Math.round(at.x), Math.round(at.y));
-                canvas.select({ kind: 'node', id: n.id });
-                renderAll();
-                landed([n.id]);
+        if (current.schema === 2) {
+            for (const family of workflowView().families) {
+                menu.append(el('div', 'pc-menu-head', family.name));
+                if (!family.operations.length) menu.append(el('div', 'pc-hint', 'No supported operations yet.'));
+                for (const operation of family.operations) {
+                    const choice = item(operation.title + (operation.compatible ? '' : ' · requires ' + operation.phase + ' phase'), 'fa-cube', () => { if (operation.compatible) workflowActions.addNode(operation.id, at); });
+                    if (!operation.compatible) { choice.setAttribute('aria-disabled', 'true'); choice.title = 'Operation requires ' + operation.phase + ' phase.'; }
+                    menu.append(choice);
+                }
+            }
+        } else {
+            for (const family of workflowView().families) {
+                menu.append(el('div', 'pc-menu-head', family.name));
+                if (!family.legacy.length) menu.append(el('div', 'pc-hint', family.name === 'Transpose' ? 'No supported operations yet.' : 'Use authored Generate recipes.'));
+                for (const choice of family.legacy) menu.append(item('Add ' + choice.title, TYPE_ICON[choice.id] || 'fa-cube', () => {
+                    if (choice.id === NODE_TYPES.OUTPUT) { const output = outputNode(current); if (output) showSettings({ kind: 'node', id: output.id }); return; }
+                    const node = addNode(current, choice.id, Math.round(at.x), Math.round(at.y));
+                    canvas.select({ kind: 'node', id: node.id }); renderAll(); landed([node.id]);
+                }));
+            }
+            menu.append(item('Add Note (annotation)', 'fa-note-sticky', () => {
+                const node = addNode(current, NODE_TYPES.NOTE, Math.round(at.x), Math.round(at.y));
+                canvas.select({ kind: 'node', id: node.id }); renderAll(); landed([node.id]);
             }));
         }
         menu.append(item(lastClip() ? `Paste ${describeClip(lastClip())} here` : 'Paste here', 'fa-paste', async () => {

@@ -1,13 +1,14 @@
 {
-    "display_name": "Silly Canvas",
+    "display_name": "ComfyTavern",
     "loading_order": 120,
+    "generate_interceptor": "comfyTavernGenerationInterceptor",
     "requires": [],
     "optional": [],
-    "js": "index.js?v=0.18.0",
+    "js": "index.js?v=0.19.0",
     "css": "style.css",
     "author": "Dulgadurbit",
-    "version": "0.18.0",
-    "homePage": "https://github.com/Dulgadurbit/SillyCanvas",
+    "version": "0.19.0",
+    "homePage": "https://github.com/MentallyQuill/ComfyTavern",
     "auto_update": false,
-    "description": "Build your SillyTavern prompt as a graph: blocks, wires, Generate passes and Deciders, with a full preview before anything is sent."
+    "description": "Add optional scene guidance and reviewed reply repairs to SillyTavern with editable workflows and per-node model connections. Legacy prompt-replacement canvases remain available."
 }

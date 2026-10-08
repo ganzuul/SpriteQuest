@@ -1,5 +1,5 @@
 /**
- * Silly Canvas — state layer.
+ * ComfyTavern — state layer.
  *
  * Everything here goes through SillyTavern.getContext(). No deep imports into
  * ST internals: those move between releases, the context object does not.
@@ -20,7 +20,9 @@
  *   chat binding > character binding > activeGraphId
  */
 
-import { stagePortId, parseStatePort, ensureStageIds } from './statevals.js?v=0.18.0';
+import { operationDefaults, operationFor } from './workflow/catalog.js?v=0.19.0';
+import { exportWorkflow, parseWorkflow } from './workflow/packages.js?v=0.19.0';
+import { stagePortId, parseStatePort, ensureStageIds } from './statevals.js?v=0.19.0';
 
 export const MODULE = 'prompt-canvas';
 export const META_KEY = 'promptCanvasGraph';
@@ -28,6 +30,7 @@ export const META_KEY = 'promptCanvasGraph';
 export const ROLES = ['system', 'user', 'assistant'];
 
 export const NODE_TYPES = {
+    WORKFLOW: 'workflow',
     PROMPT: 'prompt',
     ST: 'st',
     HISTORY: 'history',
@@ -163,10 +166,12 @@ export function safe(fn, fallback = undefined) {
 export function settings() {
     const c = ctx();
     const root = c.extensionSettings ?? c.extension_settings;
-    if (!root) throw new Error('Silly Canvas: getContext() exposed no extension settings');
+    if (!root) throw new Error('ComfyTavern: getContext() exposed no extension settings');
     if (!root[MODULE]) root[MODULE] = {};
     const s = root[MODULE];
     s.enabled ??= false;
+    s.workflowMode ??= 'legacy';
+    s.nativeBindings ??= { preGraphId: null, postGraphId: null };
     s.graphs ??= {};
     s.activeGraphId ??= null;
     s.library ??= { folders: [], prompts: [] };
@@ -235,7 +240,7 @@ export function getGraph(id) {
  * something the UI can no longer express.
  */
 export function migrateGraph(graph) {
-    if (!graph || graph.migrated === 3) return graph;
+    if (!graph || graph.schema === 2 || graph.migrated === 3) return graph;
     if (!graph.migrated) {
         for (const w of Object.values(graph.wires ?? {})) {
             if (w.kind === WIRE_KINDS.SEQUENCE) w.kind = WIRE_KINDS.MERGE;
@@ -292,6 +297,19 @@ export function deleteGraph(id) {
 
 const touchListeners = new Set();
 
+/** Keep inspectable formation metadata tied to the same editable primitive nodes. */
+export function syncComponentMembers(graph) {
+    if (graph?.schema !== 2) return;
+    for (const group of Object.values(graph.groups ?? {})) {
+        if (!group.component && !Array.isArray(group.members)) continue;
+        const members = Object.values(graph.nodes ?? {}).filter(node => node.inGroup === group.id).map(node => node.id);
+        group.members = members;
+        if (group.component && (!members.includes(group.entry) || !members.includes(group.exit))) {
+            delete group.component; delete group.entry; delete group.exit;
+        }
+    }
+}
+
 /** Be told about every change to any canvas (undo history listens here). */
 export function onGraphTouched(fn) {
     touchListeners.add(fn);
@@ -299,6 +317,7 @@ export function onGraphTouched(fn) {
 }
 
 export function touchGraph(graph) {
+    syncComponentMembers(graph);
     if (graph) graph.updatedAt = Date.now();
     save();
     if (graph) for (const fn of touchListeners) { try { fn(graph); } catch { /* ignore */ } }
@@ -366,6 +385,8 @@ export function defaultNode(type, x, y) {
         profileId: null,
     };
     switch (type) {
+        case NODE_TYPES.WORKFLOW:
+            return { ...base, ...operationDefaults() };
         case NODE_TYPES.PROMPT:
             return { ...base, title: 'New prompt', role: 'system', content: '', libraryId: null };
         case NODE_TYPES.ST:
@@ -719,6 +740,7 @@ export function connect(graph, fromId, toId, kind = WIRE_KINDS.APPEND, { port = 
     }
     if (!graph.nodes[fromId] || !graph.nodes[toId]) return { ok: false, reason: 'Missing block.' };
 
+    if (graph.schema === 2 && operationFor(graph.nodes[fromId])?.terminal) return { ok: false, reason: 'Host output has no outgoing artifact.' };
     if (kind === WIRE_KINDS.TOGETHER) return tieTogether(graph, fromId, toId);
 
     // Anything wired into a Memory block saves into it; only an answer can.
@@ -773,7 +795,7 @@ export function connect(graph, fromId, toId, kind = WIRE_KINDS.APPEND, { port = 
         }
         loop = { max: 3, stopWhenSame: true };
     }
-    const wire = { id: uid('w'), from: fromId, to: toId, kind, ...(port ? { port } : {}), ...(loop ? { loop } : {}) };
+    const wire = { id: uid('w'), from: fromId, to: toId, kind, ...(graph.schema === 2 ? { order: wiresInto(graph, toId).length } : {}), ...(port ? { port } : {}), ...(loop ? { loop } : {}) };
     // A stage's own dot switches its block on while the value is in that
     // stage, so its wires start as Activate wires.
     if (src.type === NODE_TYPES.STATE && port && parseStatePort(port).stageId) wire.mode = 'activate';
@@ -920,13 +942,20 @@ export function togetherGroup(graph, nodeId) {
 export function exportGraph(id) {
     const g = getGraph(id);
     if (!g) return null;
+    if (g.schema === 2) return JSON.stringify(exportWorkflow(g), null, 2);
     return JSON.stringify({ kind: 'prompt-canvas-graph', schema: 1, graph: g }, null, 2);
 }
 
 export function importGraph(json) {
     let parsed;
     try { parsed = JSON.parse(json); } catch { return { ok: false, reason: 'That is not valid JSON.' }; }
-    const g = parsed?.graph ?? parsed;
+    const isNative = parsed?.kind === 'comfytavern-workflow' || parsed?.graph?.schema === 2 || parsed?.schema === 2;
+    let g;
+    if (isNative) {
+        const result = parseWorkflow(json);
+        if (!result.ok) return { ...result, reason: result.error.message };
+        g = result.data;
+    } else g = parsed?.graph ?? parsed;
     if (!g || typeof g !== 'object' || !g.nodes) return { ok: false, reason: 'No graph found in that file.' };
     const copy = structuredClone(g);
     copy.id = uid('g');
@@ -938,7 +967,7 @@ export function importGraph(json) {
     copy.name = name;
     copy.createdAt = Date.now();
     copy.updatedAt = Date.now();
-    if (!outputNode(copy)) {
+    if (!isNative && !outputNode(copy)) {
         const out = defaultNode(NODE_TYPES.OUTPUT, 420, 640);
         copy.nodes[out.id] = out;
     }

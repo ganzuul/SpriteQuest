@@ -1,12 +1,44 @@
-# Silly Canvas
+# ComfyTavern
 
-**Decide exactly what the AI sees, when, and how.**
+**Optional guidance before a reply. Reviewed revisions after it.**
 
-Ever been frustrated by how little control you have over what the AI sees? How it drowns in story context, or in the instructions you piled on to fight that? Silly Canvas turns your SillyTavern prompt into a canvas of blocks and wires. Each block is a piece of the prompt, the wires say how they fit together, and you can read the exact messages before a single token is spent.
+ComfyTavern adds editable native workflows to SillyTavern. Use **Scene guidance** to propose direction while SillyTavern builds the main prompt and writes its normal reply, or **Reviewed AI De-slop** to prepare a revision you can compare and apply. Each model-backed operation can use its own fixed connection. Existing prompt-replacement canvases remain available in **Legacy · Replace prompt** mode.
 
-![A Silly Canvas canvas: two planning passes that run at the same time, a fight detector, an energy stat with stages, and a background cast kept in memory](docs/canvas.png)
+This fork builds on [Silly Canvas](https://github.com/Dulgadurbit/SillyCanvas) by [Dulgadurbit](https://github.com/Dulgadurbit). It preserves the original canvas engine, saved-data compatibility, and MIT attribution.
 
-## What you can do
+## Install ComfyTavern
+
+Native workflows are included on `main`. The steps below install the repository's default branch.
+
+Keep **one enabled copy**. If your current installation points to `Dulgadurbit/SillyCanvas`, disable that extension before installing this fork. The fork preserves saved-data compatibility, so two enabled copies would share the same data and generation hooks. Existing installations from `MentallyQuill/ComfyTavern` should use the update or branch-switch flow below.
+
+1. In SillyTavern, open **Extensions → Install extension**.
+2. Enter the repository URL `https://github.com/MentallyQuill/ComfyTavern`.
+3. Leave **Branch or tag name (optional)** blank to install the default branch, `main`.
+4. Click **Install** (or **Install just for me**), then reload SillyTavern.
+
+For an existing installation from this same repository on `main`, update it in **Manage Extensions**, then reload. If it is on another branch, choose **Switch branch**, select `origin/main` (or the local `main` entry), click **Switch**, then reload. Use the repository URL above without a `/tree/` suffix.
+
+Open the canvas with the button next to Send, from the wand menu, or by typing `/canvas`.
+
+## Try a native workflow
+
+1. Open the library and install **Scene guidance** or **Reviewed AI De-slop**. Installation and import create editable graphs without arming generation or making a model call.
+2. In setup, bind **Analysis** for guidance or **Prose** for repair to a SillyTavern Connection Manager profile. Inspect an operation for a node-specific profile/model override.
+3. Explicitly assign the pre/post phase and enable native mode. Arming remains a separate action.
+4. Use **Test workflow** to inspect guidance, or **Run reviewed repair** after a completed assistant reply. Review the original and candidate before **Apply reviewed candidate**.
+
+Scene guidance uses at most two auxiliary requests and reviewed repair at most one, in addition to the normal SillyTavern reply. **Test workflow** can spend tokens and does not cache its result for a later Send. Repair supports the latest completed text-only assistant reply. Apply preserves the original swipe and reports local success separately from unverified durable saving; other memory extensions may already have consumed the original.
+
+See [native workflow setup, portable examples, controls, costs, and troubleshooting](docs/native-workflows.md). Supported native connections must preserve completion evidence; the guide lists current route limitations.
+
+## Legacy canvas manual
+
+The original canvas controls exactly which prompt material reaches the model, and in what order. The sections below describe that retained **Replace prompt** workflow. Legacy Chat Completion supports OpenAI, OpenRouter, Claude, Gemini and others; legacy Text Completion has had limited testing.
+
+![A legacy canvas with two planning passes, a fight detector, energy stages, and background cast memory](docs/canvas.png)
+
+### What you can do with the legacy canvas
 
 - 📜 **Generate lore, events and info on the spot**, exactly when you want them (every few turns, when words come up, or by chance), and keep them in memory or a lorebook for when they matter.
 - 🔋 **Track health, energy, mana, any stat** in the background, with its own prompt for each level, so only what matters reaches the reply.
@@ -20,17 +52,7 @@ Switch it off and SillyTavern builds the prompt exactly as it always has.
 
 ![The State editor: energy across the chat, with its stages, what is sent at any message, and a message tried before it is sent](docs/state-window.png)
 
-## Install
-
-1. In SillyTavern, open **Extensions** and click **Install extension**.
-2. Paste `https://github.com/Dulgadurbit/SillyCanvas` and install.
-3. Reload SillyTavern.
-
-Open the canvas with the button next to Send, from the wand menu, or by typing `/canvas`.
-
-Silly Canvas works with Chat Completion APIs (OpenAI, OpenRouter, Claude, Gemini and others). Text Completion is wired up but has had very little testing.
-
-## Getting started
+## Getting started with a legacy canvas
 
 1. Open the canvas and click the wand button (**Seed from SillyTavern's current prompt order**). This copies your current prompt order onto the canvas, so you start from what you already send.
 2. Click **Preview prompt** to see the messages the canvas would send.
@@ -199,7 +221,7 @@ Each Generate block can use its own connection profile and model. The model box 
 
 While the blocks run, their answers appear at the bottom of the chat as folded lines, each labelled with the block that wrote it; click one to read it. When the reply arrives they move under it. In the extension settings, **Generate answers in the chat** can open them as they arrive instead, or hide them (they are still kept with the message). Open **What it was asked** on any answer to see the exact messages that block was sent.
 
-Generate blocks that don't depend on each other are sent at the same time. If your provider refuses that, Silly Canvas switches to one at a time and tells you. Answers that went out together are marked under the reply with a ⚡ badge naming the others.
+Generate blocks that don't depend on each other are sent at the same time. If your provider refuses that, ComfyTavern switches to one at a time and tells you. Answers that went out together are marked under the reply with a ⚡ badge naming the others.
 
 ## Loops
 
@@ -241,7 +263,7 @@ A new Decider starts empty and does nothing until you choose **how it routes**:
 
 Several rules on one output can be joined with AND or OR, and any rule can be flipped with **NOT**. An AI question is only asked when nothing before it has already settled things.
 
-**Jev.** AI questions and AI sorting can be answered by [Jev](https://docs.typesafe.ai), TypeSafe's decision model, instead of a chat model: set **Answered by** to Jev. It answers with a probability (in about a tenth of a second, for a fraction of the cost), and you choose how sure it has to be. For AI sorting, each output gets its own probability in one call. Jev needs a TypeSafe API key (Extensions → Silly Canvas → Jev, where **Test Jev** checks it), and, because TypeSafe's API cannot be called straight from a web page, SillyTavern's CORS proxy: set `enableCorsProxy: true` in `config.yaml` and restart SillyTavern.
+**Jev.** AI questions and AI sorting can be answered by [Jev](https://docs.typesafe.ai), TypeSafe's decision model, instead of a chat model: set **Answered by** to Jev. It answers with a probability (in about a tenth of a second, for a fraction of the cost), and you choose how sure it has to be. For AI sorting, each output gets its own probability in one call. Jev needs a TypeSafe API key (Extensions → ComfyTavern → Jev, where **Test Jev** checks it), and, because TypeSafe's API cannot be called straight from a web page, SillyTavern's CORS proxy: set `enableCorsProxy: true` in `config.yaml` and restart SillyTavern.
 
 **Keep what it decided.** Wire an output into a Memory block to save the decision (see Memory blocks).
 
@@ -251,7 +273,7 @@ Combine it with the wire modes: an **Activate** wire from an output switches a b
 
 ## Themes
 
-Click the palette button in the canvas header, or open the Silly Canvas section in the Extensions settings. Each built-in theme has its own look, not just its own colours:
+Click the palette button in the canvas header, or open the ComfyTavern section in the Extensions settings. Each built-in theme has its own look, not just its own colours:
 
 | Theme | Look |
 |---|---|
@@ -332,7 +354,7 @@ The check runs the Node/jsdom behavior suite, Svelte type checking, the producti
 
 `npm run benchmark` measures 25/100/250-node zoom, pan and multi-drag cases with the real renderer and camera controls. `npm run capture` saves desktop/narrow/theme screenshots. `npm run smoke:install` verifies a fresh extension copy without developer source or `node_modules`. Generated measurements and images stay in ignored `benchmark-results/`.
 
-See [the migration architecture, parity record and performance evidence](docs/svelte-ui-migration.md). To change the release version, run `node tools/bump-version.mjs 0.18.0`; it updates the manifest, package metadata and every nested native import query so browsers load one consistent module graph. Reload SillyTavern with Ctrl+Shift+R after changing installed assets.
+See [the migration architecture, parity record and performance evidence](docs/svelte-ui-migration.md). To change the release version, run `node tools/bump-version.mjs 0.19.0`; it updates the manifest, package metadata and every nested native import query so browsers load one consistent module graph. Reload SillyTavern with Ctrl+Shift+R after changing installed assets.
 
 ## License
 

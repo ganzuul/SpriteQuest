@@ -1,4 +1,5 @@
-import { NODE_TYPES, deciderKeys, outPorts, hasPorts, inOffGroup } from '../state.js?v=0.18.0';
+import { operationFor } from '../workflow/catalog.js?v=0.19.0';
+import { NODE_TYPES, deciderKeys, outPorts, hasPorts, inOffGroup } from '../state.js?v=0.19.0';
 const took = (chosen, id) => Array.isArray(chosen) ? chosen.includes(id) : chosen === id;
 const ROUTING_WORDS = { all: 'every output that matches fires', first: 'the first output that matches fires', random: 'a weighted random pick', ai: 'the AI picks the outputs that apply' };
 const routingOf = node => node.mode === null || node.mode === '' ? null : node.mode === undefined || node.mode === 'rules' ? 'first' : ROUTING_WORDS[node.mode] ? node.mode : 'first';
@@ -28,7 +29,8 @@ export function tokenChip(node, tokens, trace) {
 /** Plain presentation data; Svelte consumes this without importing domain state. */
 export function nodeCard(node, { graph, selection, multi, trace, tokens, reaching, hooks, preview, ruleLabel, labels, icons }) {
     const groupOff = inOffGroup(graph, node), tr = trace?.get(node.id);
-    const stranded = node.type !== NODE_TYPES.NOTE && node.type !== NODE_TYPES.OUTPUT && reaching && !reaching.has(node.id);
+    const operation = operationFor(node);
+    const stranded = !operation && node.type !== NODE_TYPES.NOTE && node.type !== NODE_TYPES.OUTPUT && reaching && !reaching.has(node.id);
     const card = {
         id: node.id, type: node.type, x: node.x, y: node.y, w: node.w || 260,
         className: `pc-node pc-node-${node.type}${node.enabled === false || groupOff ? ' pc-off' : ''}${groupOff ? ' pc-group-off' : ''}${stranded ? ' pc-stranded' : ''}${selection?.kind === 'node' && selection.id === node.id ? ' pc-selected' : ''}${multi.has(node.id) ? ' pc-multi' : ''}${tr ? ` pc-trace-${tr.status}` : ''}`,
@@ -38,6 +40,24 @@ export function nodeCard(node, { graph, selection, multi, trace, tokens, reachin
         enabled: node.enabled !== false, toggle: node.type !== NODE_TYPES.OUTPUT, help: node.type === NODE_TYPES.DECIDER,
         body: preview(node), rows: [], rowClass: 'pc-dec-keys', mode: undefined, model: null, notices: [], ports: [],
     };
+    if (operation) {
+        const bound = typeof operation.requestBound === 'function' ? operation.requestBound(node) : operation.requestBound;
+        card.label = operation.title; card.icon = operation.terminal ? 'fa-paper-plane' : 'fa-cube';
+        card.body = operation.family + ' · ' + operation.phase + ' phase · ' + (operation.input || 'snapshot') + ' → ' + (operation.output || (operation.id === 'guidance' ? 'Guidance for native reply' : 'Reviewed reply'));
+        card.offHint = node.enabled === false || groupOff ? 'Disabled operations block native preflight. They cannot be bypassed.' : undefined;
+        card.notices.push({ className: 'pc-node-wave', icon: 'fa-bolt', text: 'maximum ' + bound + ' auxiliary request' + (bound === 1 ? '' : 's') });
+        if (operation.modelRole) {
+            const binding = node.profileId ? node : graph.roles?.[node.modelRole || operation.modelRole];
+            const resolved = hooks.nativeBinding?.(node, graph);
+            card.model = { where: resolved?.display || hooks.profileName?.(binding?.profileId) || binding?.profileId || 'Missing ' + (node.modelRole || operation.modelRole) + ' binding', actual: node.model || binding?.model || '', title: 'Fixed node override or workflow role. Never follows the active chat connection.', pick: false };
+        }
+        if (operation.input) card.ports.push({ id: 'in', className: 'pc-port pc-port-in', dir: 'in', title: 'Input: ' + operation.input });
+        if (!operation.terminal) {
+            card.ports.push({ id: 'out', className: 'pc-port pc-port-out', dir: 'out', title: 'Output: ' + operation.output });
+            card.ports.push({ id: 'strip', className: 'pc-port pc-port-strip', dir: 'out', title: 'Wire the ' + operation.output + ' artifact' });
+        }
+        return card;
+    }
     if (node.type === NODE_TYPES.DECIDER) {
         card.body = null;
         const chosen = tr?.decision ?? null, routing = routingOf(node), keys = deciderKeys(node);

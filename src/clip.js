@@ -10,7 +10,7 @@
  * silently fed the original's targets would send its text twice.
  */
 
-import { NODE_TYPES, uid, touchGraph } from './state.js?v=0.18.0';
+import { NODE_TYPES, uid, touchGraph } from './state.js?v=0.19.0';
 
 export const CLIP_MARK = 'sillyCanvasClip';
 
@@ -93,6 +93,14 @@ export function pasteClip(graph, clip, at = null) {
     for (const n of clip.nodes) nodeMap.set(n.id, uid(n.type));
     for (const w of clip.wires) if (nodeMap.has(w.from) && nodeMap.has(w.to)) wireMap.set(w.id, uid('w'));
 
+    for (const g of clip.groups) {
+        const copy = graph.groups[groupMap.get(g.id)];
+        for (const key of ['entry', 'exit']) if (copy[key] !== undefined) {
+            if (nodeMap.has(copy[key])) copy[key] = nodeMap.get(copy[key]);
+            else delete copy[key];
+        }
+        if (Array.isArray(copy.members)) copy.members = copy.members.filter(id => nodeMap.has(id)).map(id => nodeMap.get(id));
+    }
     const loose = [];
     for (const n of clip.nodes) {
         const copy = structuredClone(n);

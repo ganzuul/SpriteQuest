@@ -76,7 +76,6 @@
 @media (max-width: 860px) {
     .pc-header { gap: 6px; padding: 7px 9px; }
     .pc-header .pc-graph-select { min-width: 130px; max-width: 200px; }
-    .pc-surface-actions .pc-btn span, .pc-theme-btn span { display: none; }
     .pc-status-text { flex: 1 1 70%; }
     .pc-canvas-controls { left: 9px; bottom: 10px; }
     .pc-gesture-hint { display: none; }
@@ -1420,3 +1419,33 @@
 .pc-model-caret { font-size: 0.8em; opacity: 0.6; }
 .pc-load-models { align-self: flex-start; }
 .pc-warn { color: var(--pc-warn, #e0a030); }
+
+
+/* Native workflow projections share the workbench theme and independent scroll panes. */
+.pc-workflow-library-host { flex: 0 0 auto; }
+.pc-workflows { padding: 12px; display: flex; flex-direction: column; gap: 10px; font-size: 13px; }
+.pc-workflows h3, .pc-workflows h4, .pc-workflows p { margin: 0; }
+.pc-workflows small { color: var(--pc-muted); line-height: 1.5; }
+.pc-workflows button { color: var(--pc-text); text-align: left; font: inherit; background: var(--pc-block); border: 1px solid var(--pc-border); border-radius: var(--pc-r-sm); padding: 7px; }
+.pc-workflows button:disabled { opacity: .5; cursor: default; }
+.pc-workflows button:focus-visible, .pc-workflows summary:focus-visible { outline: 2px solid var(--pc-flow); outline-offset: 2px; }
+.pc-workflow-starter, .pc-workflow-family, .pc-workflow-editor { border: 1px solid var(--pc-border); border-radius: var(--pc-r); padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+.pc-workflow-family summary { cursor: pointer; font-weight: 600; }
+.pc-workflow-family button { display: block; width: 100%; margin-top: 6px; }
+.pc-workflows label { display: flex; flex-direction: column; gap: 4px; }
+.pc-workflows input, .pc-workflows select, .pc-workflows textarea { max-width: 100%; width: 100%; box-sizing: border-box; }
+.pc-workflows input[type=checkbox] { width: auto; align-self: flex-start; }
+.pc-workflows textarea { min-height: 72px; resize: vertical; }
+.pc-workflows pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; max-height: 320px; overflow: auto; background: var(--pc-block); padding: 8px; }
+.pc-workflow-comparison { display: grid; grid-template-columns: 1fr; gap: 8px; min-width: 0; }
+.pc-sidebar:has(.pc-workflow-library-host) { overflow-y: auto; }
+
+
+@media (max-width: 860px) {
+    .pc-inspector:has(.pc-workflows) { background: var(--pc-panel-solid); }
+    .pc-inspector:has(.pc-workflows).pc-flash { animation-name: pc-workflow-flash; }
+}
+@keyframes pc-workflow-flash {
+    from { background: color-mix(in srgb, var(--pc-flow) 18%, var(--pc-panel-solid)); }
+    to { background: var(--pc-panel-solid); }
+}

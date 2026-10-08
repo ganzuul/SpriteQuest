@@ -20,7 +20,7 @@
  * holds the memory's latest text, so writing it again is harmless.
  */
 
-import { NODE_TYPES, WIRE_KINDS, saveWires, activeGraph, safe, ctx } from './state.js?v=0.18.0';
+import { NODE_TYPES, WIRE_KINDS, saveWires, activeGraph, safe, ctx } from './state.js?v=0.19.0';
 
 export const MEMORY_KEY = 'promptCanvasMemory';
 
