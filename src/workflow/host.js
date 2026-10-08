@@ -7,9 +7,20 @@ const identity = c => ({chatId:c.getCurrentChatId?.() ?? c.chatId ?? null,charac
 const same = (a,b) => JSON.stringify(a) === JSON.stringify(b);
 const sourceText = chat => JSON.stringify((chat ?? []).map(m=>[m?.mes,m?.swipe_id,m?.is_user,m?.is_system]));
 const token = () => globalThis.crypto.randomUUID();
+const generationStamp = value => {
+    if(typeof value!=='string' && typeof value!=='number' && !(value instanceof Date))return null;
+    const stamp=new Date(value).getTime();return Number.isFinite(stamp)?stamp:null;
+};
+const replyRevision = m => ({swipeId:m.swipe_id ?? 0,text:m.mes,started:generationStamp(m.gen_started),finished:generationStamp(m.gen_finished)});
 const incompleteStream = (c,index) => {
     const stream=c.streamingProcessor;
-    return stream?.messageId===index && (!stream.isFinished || stream.isStopped || stream.abortController?.signal?.aborted);
+    if(stream?.messageId!==index)return false;
+    const failed=stream.isStopped || stream.abortController?.signal?.aborted;
+    // The host can retain a stopped processor after selecting another completed swipe.
+    // Only a known, different generation identifies it as stale; missing evidence stays closed.
+    const started=generationStamp(stream.timeStarted),selected=generationStamp(c.chat?.[index]?.gen_started);
+    if(failed && started!==null && selected!==null && started!==selected)return false;
+    return !stream.isFinished || failed;
 };
 const completed = m => !!m && (!m.role || m.role==='assistant') && !['narrator','tool'].includes(m.extra?.type) && m.mes!=='...' && !m.is_user && !m.is_system && !m.is_tool && !m.is_intermediate && !m.extra?.tool_invocations?.length && !m.extra?.tool_calls?.length && !m.extra?.image && !m.extra?.media?.length && !m.extra?.isSmallSys && !m.extra?.is_intermediate && !m.extra?.partial && !m.extra?.unfinished && !(m.gen_started && !m.gen_finished) && typeof m.mes === 'string' && !!m.mes.trim();
 
@@ -57,7 +68,20 @@ export function createNativeWorkflowController(ports) {
     const context=ports.context;
     let epoch=0, active=null, result=null, applying=false, internalEvents=0, unsubscribe=null;
     let generation={dryRun:false,type:'normal'};
-    const keys=new Set(), sources=new Map(), stopped=new WeakSet();
+    const keys=new Set(), sources=new Map(), stopped=new WeakMap();
+    const rememberStopped=c=>{
+        const m=c.chat?.at(-1);if(!m)return;
+        const revision=replyRevision(m),stream=c.streamingProcessor,started=generationStamp(stream?.timeStarted);
+        // Pending progress can still change text/finish time after Stop; its generation stays failed.
+        const failedStarted=stream?.messageId===c.chat.length-1 && started===revision.started?started:null;
+        const records=stopped.get(m) ?? [];
+        if(!records.some(record=>same(record.revision,revision)))records.push({revision,failedStarted});
+        stopped.set(m,records);
+    };
+    const stoppedRevision=m=>{
+        const revision=replyRevision(m);
+        return (stopped.get(m) ?? []).some(record=>record.revision.swipeId===revision.swipeId && (record.failedStarted!==null?record.failedStarted===revision.started:same(record.revision,revision)));
+    };
     const notify=value=>{result=freezeArtifact(value);try{ports.onResult?.(result);}catch{/* UI observers cannot own lifecycle. */} return result;};
     const clear=()=>{
         const c=context();
@@ -128,7 +152,7 @@ export function createNativeWorkflowController(ports) {
         const c=context(), snapshot=snapshotReply(c,messageIndex);
         if(snapshot.ok===false)return notify(snapshot);
         const message=c.chat[snapshot.source.messageIndex];
-        if(stopped.has(message))return notify(fail('REPLY_UNAVAILABLE','The stopped reply is not a completed repair target.'));
+        if(stoppedRevision(message))return notify(fail('REPLY_UNAVAILABLE','The stopped reply is not a completed repair target.'));
         const run=start(graph), entry={message,chat:c.chat,refs:[...c.chat],prefix:sourceText(c.chat),swipeText:message.swipes?.[snapshot.source.swipeId],source:snapshot.source,run,candidate:null,applied:null};
         sources.set(snapshot.source.token,entry);
         const value=await execute(run,()=>snapshot,'post');
@@ -139,7 +163,7 @@ export function createNativeWorkflowController(ports) {
     }
     function validSource(entry) {
         const c=context(),s=entry.source;
-        return fresh(entry.run) && !ports.isBusy?.() && c.chat===entry.chat && c.chat.length===s.chatLength && c.chat.every((m,i)=>m===entry.refs[i]) && c.chat[s.messageIndex]===entry.message && s.messageIndex===c.chat.length-1 && completed(entry.message) && !incompleteStream(c,s.messageIndex) && !stopped.has(entry.message) && (entry.message.swipe_id ?? 0)===s.swipeId && entry.message.swipes?.[s.swipeId]===entry.swipeText && entry.message.mes===s.originalText && sourceText(c.chat)===entry.prefix;
+        return fresh(entry.run) && !ports.isBusy?.() && c.chat===entry.chat && c.chat.length===s.chatLength && c.chat.every((m,i)=>m===entry.refs[i]) && c.chat[s.messageIndex]===entry.message && s.messageIndex===c.chat.length-1 && completed(entry.message) && !incompleteStream(c,s.messageIndex) && !stoppedRevision(entry.message) && (entry.message.swipe_id ?? 0)===s.swipeId && entry.message.swipes?.[s.swipeId]===entry.swipeText && entry.message.mes===s.originalText && sourceText(c.chat)===entry.prefix;
     }
     function candidateStatus(candidate) {
         const entry=sources.get(candidate?.source?.token);
@@ -170,16 +194,29 @@ export function createNativeWorkflowController(ports) {
             if(!Number.isInteger(m.swipe_id) || typeof m.swipes[m.swipe_id]!=='string')throw new Error('Invalid swipe identity');
             m.swipe_info=Array.from({length:m.swipes.length},(_,i)=>structuredClone(m.swipe_info?.[i] ?? {send_date:m.send_date,extra:{}}));
             if(!ports.syncMesToSwipe(index))throw new Error('Cannot preserve original swipe');
+            if(m.swipes[entry.source.swipeId]!==candidate.original)throw new Error('Original swipe was not preserved');
+            // Capture after the public helper synchronizes current original metadata.
+            const preserved=structuredClone({swipes:m.swipes,info:m.swipe_info});
             const swipeId=m.swipes.length,now=new Date().toISOString();
+            const revisionInfo={send_date:now,gen_started:now,gen_finished:now,extra:{comfyTavernRevision:{sourceToken:candidate.source.token,sourceSwipeId:candidate.source.swipeId,workflowId:entry.run.graph.id,at:now}}};
             m.swipes.push(candidate.text);
-            m.swipe_info.push({send_date:now,gen_started:now,gen_finished:now,extra:{comfyTavernRevision:{sourceToken:candidate.source.token,sourceSwipeId:candidate.source.swipeId,workflowId:entry.run.graph.id,at:now}}});
+            m.swipe_info.push(structuredClone(revisionInfo));
             if(!ports.syncSwipeToMes(index,swipeId,m))throw new Error('Cannot select revision');
-            const stillApplied=()=>entry.run.epoch===epoch && same(identity(context()),entry.run.identity) && !ports.isBusy?.() && context().chat===entry.chat && c.chat.length===entry.source.chatLength && c.chat.every((item,i)=>item===entry.refs[i]) && m.mes===candidate.text && m.swipe_id===swipeId;
+            const revisionMetadata=value=>value && ({send_date:value.send_date,gen_started:value.gen_started,gen_finished:value.gen_finished,revision:value.extra?.comfyTavernRevision});
+            const expectedMetadata=revisionMetadata(revisionInfo);
+            const intactSwipes=()=>Array.isArray(m.swipes) && m.swipes.length===swipeId+1
+                && m.swipes[swipeId]===candidate.text && same(m.swipes.slice(0,swipeId),preserved.swipes)
+                && Array.isArray(m.swipe_info) && m.swipe_info.length===swipeId+1
+                && same(m.swipe_info.slice(0,swipeId),preserved.info)
+                && same(revisionMetadata(m.swipe_info[swipeId]),expectedMetadata) && same(revisionMetadata(m),expectedMetadata);
+            const stillApplied=()=>intactSwipes() && entry.run.epoch===epoch && same(identity(context()),entry.run.identity) && !ports.isBusy?.() && context().chat===entry.chat && c.chat.length===entry.source.chatLength && c.chat.every((item,i)=>item===entry.refs[i]) && m.mes===candidate.text && m.swipe_id===swipeId;
+            if(!stillApplied())throw new Error('Revision synchronization failed');
             internalEvents++;
             try {
                 for(const name of ['MESSAGE_SWIPED','MESSAGE_UPDATED']) { const event=(c.eventTypes ?? c.event_types)?.[name];if(event)await c.eventSource?.emit(event,index);if(!stillApplied())throw new Error('Reply changed during notification'); }
             } finally {internalEvents--;}
             await c.updateMessageBlock(index,m);
+            if(!stillApplied())throw new Error('Reply changed during render');
             await c.swipe.refresh(true,false);
             if(!stillApplied())throw new Error('Reply changed before save');
             saveAttempted=true;const saved=await c.saveChat();
@@ -202,8 +239,8 @@ export function createNativeWorkflowController(ports) {
             const owner=generation;
             if(options?.signal)options.signal.addEventListener('abort',()=>{if(generation===owner){generation.aborted=true;cancel('Generation aborted');}},{once:true});
         });
-        on('GENERATION_STOPPED',()=>{generation.aborted=true;const m=context().chat?.at(-1);if(m && !m.is_user && (!generation.originalTail || m!==generation.originalTail.message || m.mes!==generation.originalTail.text || incompleteStream(context(),context().chat.length-1)))stopped.add(m);cancel('Generation stopped');});
-        on('GENERATION_ENDED',()=>{const c=context();if(incompleteStream(c,c.chat?.length-1) && c.chat?.at(-1))stopped.add(c.chat.at(-1));if(active && !active.pending)active.abortPrimary=null;cancel('Generation ended');});
+        on('GENERATION_STOPPED',()=>{generation.aborted=true;const m=context().chat?.at(-1);if(m && !m.is_user && (!generation.originalTail || m!==generation.originalTail.message || m.mes!==generation.originalTail.text || incompleteStream(context(),context().chat.length-1)))rememberStopped(context());cancel('Generation stopped');});
+        on('GENERATION_ENDED',()=>{const c=context();if(incompleteStream(c,c.chat?.length-1) && c.chat?.at(-1))rememberStopped(c);if(active && !active.pending)active.abortPrimary=null;cancel('Generation ended');});
         for(const name of ['CHAT_CHANGED','MESSAGE_SENT','MESSAGE_RECEIVED','MESSAGE_DELETED','MESSAGE_SWIPED','MESSAGE_EDITED','MESSAGE_UPDATED'])on(name,()=>{if(!internalEvents)cancel(name);});
         unsubscribe=()=>{cancel('Controller disposed');for(const [event,fn]of subscriptions)(c.eventSource.removeListener ?? c.eventSource.off)?.call(c.eventSource,event,fn);unsubscribe=null;};
         return unsubscribe;

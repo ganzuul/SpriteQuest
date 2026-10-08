@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict';
+import test from 'node:test';
 import { createNativeWorkflowController, snapshotContext, snapshotReply } from '../src/workflow/host.js';
 import { starterGraph } from '../src/workflow/starters.js';
 const pre = starterGraph('native-guidance'), post=starterGraph('reviewed-de-slop');
 function fixture(request,assignedGraph=pre) {
- const listeners={}; const original={mes:'We delve.',is_user:false,swipe_id:0,swipes:['We delve.'],swipe_info:[{extra:{old:'keep'},send_date:1}],extra:{old:'keep'},gen_started:1,gen_finished:2};
+ const listeners={}; const original={mes:'We delve.',is_user:false,swipe_id:0,swipes:['We delve.'],swipe_info:[{extra:{old:'keep'},send_date:1,gen_started:1,gen_finished:2}],extra:{old:'keep'},send_date:1,gen_started:1,gen_finished:2};
  const c={chatId:'one',characterId:1,groupId:null,chat:[{mes:'Hello',is_user:true},original],extensionPrompts:{other:{value:'keep'}},eventTypes:Object.fromEntries(['GENERATION_STARTED','GENERATION_STOPPED','GENERATION_ENDED','CHAT_CHANGED','MESSAGE_EDITED','MESSAGE_UPDATED','MESSAGE_DELETED','MESSAGE_SWIPED','MESSAGE_SENT'].map(k=>[k,k])),eventSource:{on:(name,fn)=>{(listeners[name]??=[]).push(fn);},removeListener:()=>{},emit:async(name,...args)=>{for(const fn of listeners[name]??[])await fn(...args);}},setExtensionPrompt:(key,value,position,depth,scan,role)=>{c.extensionPrompts[key]={value,position,depth,scan,role};},saveChat:async()=>{c.saved=(c.saved??0)+1;},updateMessageBlock:()=>{},swipe:{refresh:()=>{}}};
  let busy=false;
- const controller=createNativeWorkflowController({context:()=>c,isBusy:()=>busy,getGraph:()=>assignedGraph,isEnabled:()=>true,countTokens:async text=>({tokens:Math.ceil(text.length/4),method:'fixture'}),resolveBinding:()=>({ok:true,data:{profileId:'fake',model:'fake'}}),request:request??(async()=>({ok:true,data:{text:'{"patches":[{"index":0,"replacement":"explore"}]}',finish:'stop'}})),syncMesToSwipe:index=>{const m=c.chat[index]; Object.assign(m.swipe_info[m.swipe_id],{extra:structuredClone(m.extra)});return true;},syncSwipeToMes:(index,id)=>{const m=c.chat[index];m.swipe_id=id;m.mes=m.swipes[id];Object.assign(m,structuredClone(m.swipe_info[id]));return true;}});
+ const controller=createNativeWorkflowController({context:()=>c,isBusy:()=>busy,getGraph:()=>assignedGraph,isEnabled:()=>true,countTokens:async text=>({tokens:Math.ceil(text.length/4),method:'fixture'}),resolveBinding:()=>({ok:true,data:{profileId:'fake',model:'fake'}}),request:request??(async()=>({ok:true,data:{text:'{"patches":[{"index":0,"replacement":"explore"}]}',finish:'stop'}})),syncMesToSwipe:index=>{const m=c.chat[index]; m.swipes[m.swipe_id]=m.mes;Object.assign(m.swipe_info[m.swipe_id],{send_date:m.send_date,gen_started:m.gen_started,gen_finished:m.gen_finished,extra:structuredClone(m.extra)});return true;},syncSwipeToMes:(index,id)=>{const m=c.chat[index];m.swipe_id=id;m.mes=m.swipes[id];Object.assign(m,structuredClone(m.swipe_info[id]));return true;}});
  controller.subscribe();
  return {c,controller,original,setGraph:value=>{assignedGraph=value;},setBusy:value=>{busy=value;},owned:()=>Object.entries(c.extensionPrompts).filter(([key])=>key.startsWith('comfytavern:guidance:')).map(([,v])=>v.value).join('')};
 }
@@ -179,3 +180,108 @@ for(const replace of [false,true]) {
  release({ok:true,data:{text:'Plan remains current',finish:'stop'}});const r=await pending;
  assert.equal(r.ok,!replace);assert.equal(f.owned(),replace?'':'Plan remains current');assert.equal(aborted,replace?1:0);
 }
+
+// A failed stream belongs to one generation of one swipe, not every future revision of its message.
+function selectStoredSwipe(f,id) {
+ const m=f.original,info=m.swipe_info[id];m.swipe_id=id;m.mes=m.swipes[id];
+ for(const key of ['send_date','gen_started','gen_finished'])m[key]=info[key];
+ m.extra=structuredClone(info.extra);
+}
+async function stoppedSwipeFixture() {
+ const f=fixture();await f.c.eventSource.emit('GENERATION_STARTED','swipe',{},false);
+ f.original.swipes.push('We delve into an unfinished');
+ f.original.swipe_info.push({send_date:3,gen_started:3,gen_finished:4,extra:{}});selectStoredSwipe(f,1);
+ const abortController=new AbortController();abortController.abort();
+ f.c.streamingProcessor={messageId:1,timeStarted:new Date(3),isFinished:true,isStopped:false,abortController};
+ await f.c.eventSource.emit('GENERATION_STOPPED');await f.c.eventSource.emit('GENERATION_ENDED',2);
+ return f;
+}
+{
+ const f=await stoppedSwipeFixture(),scan=structuredClone(post);scan.nodes.repair.mode='scan';
+ assert.equal((await f.controller.runPost(scan)).ok,false,'the selected stopped fragment must stay ineligible');
+ selectStoredSwipe(f,0);await f.c.eventSource.emit('MESSAGE_SWIPED',1);
+ assert.equal((await f.controller.runPost(scan)).ok,true,'a prior completed swipe remains reviewable with the stale stopped processor present');
+ selectStoredSwipe(f,1);await f.c.eventSource.emit('MESSAGE_SWIPED',1);
+ f.c.streamingProcessor=null;
+ assert.equal((await f.controller.runPost(scan)).ok,false,'returning to the stopped fragment must still fail after processor cleanup');
+}
+for(const type of ['swipe','continue']) {
+ const f=await stoppedSwipeFixture(),scan=structuredClone(post);scan.nodes.repair.mode='scan';
+ await f.c.eventSource.emit('GENERATION_STARTED',type,{},false);
+ const id=type==='swipe'?2:1;
+ // Even the same visible text is a different completed result when the new generation finishes.
+ f.original.swipes[id]='We delve into an unfinished';
+ f.original.swipe_info[id]={send_date:5,gen_started:5,gen_finished:6,extra:{}};selectStoredSwipe(f,id);
+ f.c.streamingProcessor={messageId:1,timeStarted:new Date(5),isFinished:true,isStopped:false,abortController:new AbortController()};
+ await f.c.eventSource.emit('GENERATION_ENDED',2);f.c.streamingProcessor=null;
+ assert.equal((await f.controller.runPost(scan)).ok,true,`a successful later ${type} must be reviewable on the same message object`);
+ if(type==='swipe') {
+  selectStoredSwipe(f,1);await f.c.eventSource.emit('MESSAGE_SWIPED',1);
+  assert.equal((await f.controller.runPost(scan)).ok,false,'a later success must not erase failure evidence for the older swipe');
+ }
+}
+{
+ const f=await stoppedSwipeFixture(),scan=structuredClone(post);scan.nodes.repair.mode='scan';
+ // A final pending progress callback can change the text/timestamp after Stop without completing the stream.
+ f.original.mes='We delve into an unfinished fragment';f.original.gen_finished=5;
+ f.original.swipes[1]=f.original.mes;f.original.swipe_info[1].gen_finished=5;f.c.streamingProcessor=null;
+ assert.equal((await f.controller.runPost(scan)).ok,false,'late progress from the failed generation is not successful completion');
+}
+
+// Awaited host callbacks must not corrupt the issued revision or the original it preserves.
+const applyCorruptions=[
+ ['stored candidate text',m=>{m.swipes[m.swipe_id]='different stored text';}],
+ ['new swipe metadata',m=>{delete m.swipe_info[m.swipe_id];}],
+ ['revision provenance',m=>{delete m.swipe_info[m.swipe_id].extra.comfyTavernRevision;}],
+ ['selected revision metadata',m=>{delete m.extra.comfyTavernRevision;}],
+ ['revision completion metadata',m=>{m.swipe_info[m.swipe_id].gen_finished='changed';}],
+ ['original swipe text',m=>{m.swipes[0]='rewritten original';}],
+ ['original swipe metadata',m=>{m.swipe_info[0].extra.old='lost';}],
+ ['swipe alignment',m=>{m.swipe_info.push({extra:{}});}],
+];
+for(const stage of ['MESSAGE_SWIPED','MESSAGE_UPDATED','render','refresh','save'])for(const [name,corrupt] of applyCorruptions) {
+ await test(`Apply rolls back ${name} changed during ${stage}`,async()=>{
+  const f=fixture(),r=await f.controller.runPost(post),before=structuredClone(f.original);
+  const mutate=()=>{if(f.original.swipe_id===1)corrupt(f.original);};
+  if(stage==='render')f.c.updateMessageBlock=mutate;
+  else if(stage==='refresh')f.c.swipe.refresh=mutate;
+  else if(stage==='save')f.c.saveChat=async()=>{f.c.saved=(f.c.saved??0)+1;mutate();};
+  else f.c.eventSource.on(stage,mutate);
+  const applied=await f.controller.apply(r.artifact);
+  assert.equal(applied.ok,false,`${stage} changed ${name}`);
+  assert.equal(applied.error.code,'APPLY_FAILED');assert.equal(applied.appliedLocally,false);
+  assert.deepEqual(f.original,before,'rollback restores the entire original local message');
+  assert.equal(f.c.saved,stage==='save'?1:undefined);
+  assert.equal(applied.persistence,stage==='save'?'unverified':'not-attempted');
+ });
+}
+
+await test('Apply preserves host synchronization of original metadata and harmless revision enrichment',async()=>{
+ const f=fixture();f.original.swipe_info[0].extra={stale:'replace from current message'};
+ f.original.extra.current='preserve';f.original.swipe_info[0].gen_finished=-1;
+ const r=await f.controller.runPost(post);
+ f.c.eventSource.on('MESSAGE_UPDATED',()=>{
+  f.original.extra.extensionDisplay='harmless';
+  Object.assign(f.original.swipe_info[f.original.swipe_id],{extra:structuredClone(f.original.extra)});
+ });
+ const applied=await f.controller.apply(r.artifact);
+ assert.equal(applied.ok,true);
+ assert.deepEqual(f.original.swipe_info[0].extra,{old:'keep',current:'preserve'});
+ assert.equal(f.original.swipe_info[0].gen_finished,2);
+ assert.equal(f.original.swipe_info[applied.swipeId].extra.extensionDisplay,'harmless');
+ assert.equal(f.original.swipe_info[applied.swipeId].extra.comfyTavernRevision.sourceSwipeId,0);
+});
+
+await test('Apply rollback after a chat switch does not render into the replacement chat',async()=>{
+ const f=fixture(),r=await f.controller.runPost(post),before=structuredClone(f.original);
+ let rendered=0,refreshed=0;
+ f.c.updateMessageBlock=()=>{rendered++;};f.c.swipe.refresh=()=>{refreshed++;};
+ const replacement=[{is_user:true,mes:'another chat'}];
+ f.c.eventSource.on('MESSAGE_UPDATED',()=>{
+  f.original.swipes[f.original.swipe_id]='listener corruption';
+  f.c.chat=replacement;f.c.chatId='two';
+ });
+ assert.equal((await f.controller.apply(r.artifact)).ok,false);
+ assert.deepEqual(f.original,before);assert.equal(f.c.chat,replacement);
+ assert.equal(rendered,0);assert.equal(refreshed,0);assert.equal(f.c.saved,undefined);
+});
