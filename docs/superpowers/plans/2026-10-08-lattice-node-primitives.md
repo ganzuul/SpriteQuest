@@ -34,10 +34,10 @@ Own new `src/workflow/operations/json-data.js`, `json-decode.js`, `select-fields
 
 Interfaces and exact limits are in the spec. Do not alter shared graph sanitizers. Build JSON cloning/paths, decode/check/subset validation and explicit projection incrementally.
 
-- [ ] Write one test for raw parse output; run it to prove RED; implement minimum; prove GREEN.
-- [ ] Repeat for schema mismatch/unsupported schema, boundaries, plain-data rejection, own-key reading, missing/default selection and clone isolation.
-- [ ] Run the three focused test files and self-review. Record red/green evidence in the task report.
-- [ ] Controller commits exact owned files and obtains scoped spec/quality review.
+- [x] Write one test for raw parse output; run it to prove RED; implement minimum; prove GREEN.
+- [x] Repeat for schema mismatch/unsupported schema, boundaries, plain-data rejection, own-key reading, missing/default selection and clone isolation.
+- [x] Run the three focused test files and self-review. Record red/green evidence in the task report.
+- [x] Controller commits exact owned files and obtains scoped spec/quality review.
 
 ### Task 2: Text Rules
 
@@ -45,26 +45,26 @@ Own new `src/workflow/operations/text-rules.js`, `text-rules-engine.js`, `text-r
 
 Build bounded ordered transformations in a real Worker, its cancellable lifetime and Draft adapter. Use existing validatePatches to prove envelope compatibility and preserve scope/spans/protected literals.
 
-- [ ] One literal replacement test RED -> GREEN, then regex captures, extraction, zero-width rejection, bounds and sequential behavior one at a time.
-- [ ] Add real Worker timeout/cancellation/cleanup behavior, using Node worker_threads fixture through an injected browser-shaped factory.
-- [ ] Add frozen Draft permission/nonblank/protected-literal tests and validate returned patches with the existing gate.
-- [ ] Run dedicated tests, self-review, report evidence, then controller commit and scoped review.
+- [x] One literal replacement test RED -> GREEN, then regex captures, extraction, zero-width rejection, bounds and sequential behavior one at a time.
+- [x] Add real Worker timeout/cancellation/cleanup behavior, using Node worker_threads fixture through an injected browser-shaped factory.
+- [x] Add frozen Draft permission/nonblank/protected-literal tests and validate returned patches with the existing gate.
+- [x] Run dedicated tests, self-review, report evidence, then controller commit and scoped review.
 
 ### Task 3: Compose
 
 Own new `src/workflow/operations/compose.js`, matching declaration if useful, and `tests/workflow-compose.test.mjs`. Consume cloneJsonValue/readJsonPath from Task 1; do not edit those files.
 
-- [ ] Ordered section join test RED -> GREEN, then template section/data pointers, escaping, missing paths, duplicate sections and limits incrementally.
-- [ ] Prove input isolation and no recursive or evaluated expansion.
-- [ ] Run dedicated tests, self-review, report evidence, then controller commit and scoped review.
+- [x] Ordered section join test RED -> GREEN, then template section/data pointers, escaping, missing paths, duplicate sections and limits incrementally.
+- [x] Prove input isolation and no recursive or evaluated expansion.
+- [x] Run dedicated tests, self-review, report evidence, then controller commit and scoped review.
 
 ### Task 4: Named-input adapter and registration metadata
 
 Own new `src/workflow/operations/nodes.js`, matching declarations if useful, and `tests/workflow-primitive-nodes.test.mjs`. Consume reviewed APIs from Tasks 1-3. No shared core edits.
 
-- [ ] Build plain metadata and Result-based describePrimitive/executePrimitive interfaces specified in the design's integration section.
-- [ ] Incrementally test correct dynamic mode ports/phases, stable section IDs, named input override, missing/stale inputs and native artifact envelopes.
-- [ ] Prove zero requests/no host calls, Guidance envelope compatibility and Draft patches passing existing validation.
+- [x] Build plain metadata and Result-based describePrimitive/executePrimitive interfaces specified in the design's integration section.
+- [x] Incrementally test correct dynamic mode ports/phases, stable section IDs, named input override, missing/stale inputs and native artifact envelopes.
+- [x] Prove zero requests/no host calls, Guidance envelope compatibility and Draft patches passing existing validation.
 - [ ] Review and deliver exact commits, report and commands to Architecture.
 
 ### Task 5: Shared integration owned by Architecture
