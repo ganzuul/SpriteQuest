@@ -204,4 +204,12 @@ context.ConnectionManagerRequestService.sendRequest=async()=>({choices:[{message
 assert.equal((await requestModel({binding:opaqueBinding,messages:ownMessages,maxTokens:8},context)).error?.code,'COMPLETION_UNVERIFIED');
 context.ConnectionManagerRequestService.sendRequest=async()=>({choices:[{text:'Cut off Infermatic text',logprobs:null,index:0}],usage:{completion_tokens:8}});
 assert.equal((await requestModel({binding:opaqueBinding,messages:ownMessages,maxTokens:8},context)).error?.code,'COMPLETION_UNVERIFIED');
+
+context.extractMessageFromData=raw=>raw.message?.content?.[0]?.text ?? '';
+context.ConnectionManagerRequestService.sendRequest=async()=>({message:{role:'assistant',content:[{type:'text',text:'First text block. '},{type:'text',text:'Second text block.'}]},finish_reason:'COMPLETE',usage:cohereUsage});
+const multiBlockCohere=await requestModel({binding:cohereBinding,messages:ownMessages,maxTokens:45},context);
+assert.equal(multiBlockCohere.ok,true);
+assert.equal(multiBlockCohere.data?.text,'First text block. Second text block.');
+assert.equal(multiBlockCohere.data?.finish,'COMPLETE');
+assert.deepEqual(multiBlockCohere.data?.usage,cohereUsage);
 console.log('connections: ok');

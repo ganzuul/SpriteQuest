@@ -64,9 +64,11 @@ export async function requestModel({binding,messages,maxTokens,signal},context) 
         const reason = typeof finish === 'string' ? finish.toLowerCase() : '';
         if (['length','max_tokens','max_output_tokens'].includes(reason)) return {ok:false,error:{code:'TRUNCATED_OUTPUT',message:'The request reached its completion limit.',finish,usage}};
         if (!COMPLETE_REASONS.has(reason)) return {ok:false,error:{code:'COMPLETION_UNVERIFIED',message:'The host response does not expose a verified complete text result; keep the original.',finish:typeof finish === 'string' ? finish : null,usage}};
-        let text;
-        try { text = context.extractMessageFromData?.(raw,binding.api); } catch { /* Provider fallback below. */ }
         const nativeText = Array.isArray(raw?.message?.content) ? raw.message.content.filter(part=>part.type === 'text' && typeof part.text === 'string').map(part=>part.text).join('') : undefined;
+        let text = binding.api === 'openai' && binding.source === 'cohere' ? nativeText : undefined;
+        if (text === undefined) {
+            try { text = context.extractMessageFromData?.(raw,binding.api); } catch { /* Provider fallback below. */ }
+        }
         text ||= choice?.message?.content ?? choice?.text ?? raw?.response ?? nativeText ?? raw?.results?.[0]?.text ?? raw?.content ?? raw?.text ?? (typeof raw === 'string' ? raw : '');
         if (typeof text !== 'string' || !text.trim()) return fail('EMPTY_OUTPUT', 'The auxiliary request returned no text.');
         return {ok:true,data:{text,usage,finish}};
