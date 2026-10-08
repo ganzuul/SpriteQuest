@@ -156,4 +156,67 @@ assert.equal(parseWorkflow('x'.repeat(2000001)).ok, false);
 assert.equal(parseWorkflow('{"kind":"comfytavern-workflow","schema":1,"minRuntime":1,"__proto__":{}}').ok, false);
 
 
+
+// A JSON object reference must produce typed failure before property-key coercion.
+const objectWireFrom = fixturePreGraph();
+objectWireFrom.wires.a.from = { toString: null, valueOf: null };
+assert.equal(parseWorkflow(JSON.stringify({ ...envelope, graph: objectWireFrom })).error?.code, 'INVALID_WIRE');
+const objectWireTo = fixturePreGraph();
+objectWireTo.wires.a.to = { toString: null, valueOf: null };
+assert.equal(parseWorkflow(JSON.stringify({ ...envelope, graph: objectWireTo })).error?.code, 'INVALID_WIRE');
+const objectGroupEntry = fixturePreGraph();
+objectGroupEntry.groups.ordinary = { id: 'ordinary', entry: { toString: null, valueOf: null } };
+assert.equal(parseWorkflow(JSON.stringify({ ...envelope, graph: objectGroupEntry })).error?.code, 'INVALID_GROUP');
+const objectGroupExit = fixturePreGraph();
+objectGroupExit.groups.ordinary = { id: 'ordinary', exit: { toString: null, valueOf: null } };
+assert.equal(parseWorkflow(JSON.stringify({ ...envelope, graph: objectGroupExit })).error?.code, 'INVALID_GROUP');
+const objectGroupMember = fixturePreGraph();
+objectGroupMember.groups.ordinary = { id: 'ordinary', members: [{ toString: null, valueOf: null }] };
+assert.equal(parseWorkflow(JSON.stringify({ ...envelope, graph: objectGroupMember })).error?.code, 'INVALID_GROUP');
+const objectNodeGroup = fixturePreGraph();
+objectNodeGroup.nodes.compact.inGroup = { toString: null, valueOf: null };
+assert.equal(parseWorkflow(JSON.stringify({ ...envelope, graph: objectNodeGroup })).error?.code, 'INVALID_GROUP');
+function fixtureComponentGraph() {
+    const graph = structuredClone(scanOnly);
+    graph.groups = { formation: { id: 'formation', component: { id: 'ai-de-slop', version: 1 }, entry: 'scan', exit: 'validate', members: ['scan', 'repair', 'validate'] } };
+    for (const id of ['scan', 'repair', 'validate']) graph.nodes[id].inGroup = 'formation';
+    return graph;
+}
+for (const field of ['entry', 'exit', 'members']) {
+    const incompleteComponent = fixtureComponentGraph();
+    delete incompleteComponent.groups.formation[field];
+    assert.equal(parseWorkflow(JSON.stringify({ ...envelope, graph: incompleteComponent })).error?.code, 'INVALID_GROUP', `canonical component requires ${field}`);
+}
+for (const port of ['entry', 'exit']) {
+    const outsidePort = fixtureComponentGraph();
+    outsidePort.groups.formation[port] = 'source';
+    assert.equal(parseWorkflow(JSON.stringify({ ...envelope, graph: outsidePort })).error?.code, 'INVALID_GROUP', `${port} must be a formation member`);
+}
+const detachedMember = fixtureComponentGraph();
+delete detachedMember.nodes.repair.inGroup;
+assert.equal(parseWorkflow(JSON.stringify({ ...envelope, graph: detachedMember })).error?.code, 'INVALID_GROUP', 'declared members must appear in the canvas group');
+const undeclaredMember = fixtureComponentGraph();
+undeclaredMember.nodes.source.inGroup = 'formation';
+assert.equal(parseWorkflow(JSON.stringify({ ...envelope, graph: undeclaredMember })).error?.code, 'INVALID_GROUP', 'canvas group members must all be declared in the component');
+const objectOperation = fixturePreGraph();
+objectOperation.nodes.plan.operation = { toString: null, valueOf: null };
+assert.equal(parseWorkflow(JSON.stringify({ ...envelope, graph: objectOperation })).error?.code, 'UNKNOWN_OPERATION');
+const objectGraphName = fixturePreGraph();
+objectGraphName.name = { toString: null, valueOf: null };
+assert.equal(S.importGraph(JSON.stringify({ ...envelope, graph: objectGraphName })).error?.code, 'INVALID_SETTINGS');
+const inheritedReference = fixturePreGraph();
+inheritedReference.groups.ordinary = { id: 'ordinary', entry: 'toString', members: ['toString'] };
+assert.equal(parseWorkflow(JSON.stringify({ ...envelope, graph: inheritedReference })).error?.code, 'INVALID_GROUP', 'references must point to saved own nodes');
+const inheritedGroup = fixturePreGraph();
+inheritedGroup.nodes.compact.inGroup = 'toString';
+assert.equal(parseWorkflow(JSON.stringify({ ...envelope, graph: inheritedGroup })).error?.code, 'INVALID_GROUP');
+const ordinaryGroup = fixturePreGraph();
+ordinaryGroup.groups.ordinary = { id: 'ordinary', title: 'Plain group' };
+assert.equal(parseWorkflow(JSON.stringify({ ...envelope, graph: ordinaryGroup })).ok, true, 'ordinary groups keep optional formation metadata');
+assert.equal(parseWorkflow(JSON.stringify({ ...envelope, graph: fixtureComponentGraph() })).ok, true, 'complete canvas-aligned components still import');
+const settingsBeforeMalformedReferences = structuredClone(S.settings());
+for (const invalid of [objectWireFrom, objectWireTo, objectGroupEntry, objectGroupExit, objectGroupMember, objectNodeGroup]) {
+    assert.equal(S.importGraph(JSON.stringify({ ...envelope, graph: invalid })).ok, false);
+}
+assert.deepEqual(S.settings(), settingsBeforeMalformedReferences, 'malformed references never mutate settings');
 console.log('workflow-contracts: ok');

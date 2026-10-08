@@ -13,7 +13,7 @@ export const OPERATIONS = {
     'review-gate': descriptor('review-gate', 'Review Gate', 'Output', 'post', 'candidate', 'candidate'),
     'apply-reply': descriptor('apply-reply', 'Apply Reply', 'Output', 'post', 'candidate', null, {}, { terminal: true }),
 };
-export const operationFor = node => node?.type === 'workflow' && Object.hasOwn(OPERATIONS, node.operation) ? OPERATIONS[node.operation] : null;
+export const operationFor = node => node?.type === 'workflow' && typeof node.operation === 'string' && Object.hasOwn(OPERATIONS, node.operation) ? OPERATIONS[node.operation] : null;
 export function operationDefaults(id = 'scene-context') {
     const op = Object.hasOwn(OPERATIONS, id) ? OPERATIONS[id] : null;
     if (!op) throw new Error(`Unknown workflow operation: ${id}`);

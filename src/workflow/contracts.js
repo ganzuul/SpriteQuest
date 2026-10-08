@@ -26,16 +26,27 @@ export function safeWorkflowData(value) {
 export function validateWorkflow(graph, { phase } = {}) {
     if (!safeWorkflowData(graph) || !record(graph) || !record(graph.nodes) || !record(graph.wires) || (graph.groups !== undefined && !record(graph.groups))) return fail('MALFORMED_WORKFLOW', 'Expected a bounded plain workflow graph.');
     if (graph.schema !== 2 || graph.runtime !== 1) return fail('UNSUPPORTED_VERSION', 'This workflow requires schema 2 and runtime 1.');
+    if (graph.name !== undefined && typeof graph.name !== 'string') return fail('INVALID_SETTINGS', 'Workflow name must be text.');
     const bindingValid = binding => record(binding) && ['profileId', 'model'].every(key => binding[key] === undefined || binding[key] === null || typeof binding[key] === 'string');
     if (!record(graph.roles ?? {}) || Object.values(graph.roles ?? {}).some(binding => !bindingValid(binding))) return fail('INVALID_SETTINGS', 'Workflow roles must contain valid profile/model bindings.');
     const allNodes = Object.values(graph.nodes), wires = Object.values(graph.wires);
     const nodes = allNodes.filter(node => node?.type !== 'note');
     if (allNodes.length > 1000 || wires.length > 2000 || allNodes.some(node => !record(node) || typeof node.id !== 'string' || graph.nodes[node.id] !== node) || wires.some(wire => !record(wire) || typeof wire.id !== 'string' || graph.wires[wire.id] !== wire)) return fail('MALFORMED_WORKFLOW', 'Invalid block or wire identity.');
     for (const [id, group] of Object.entries(graph.groups ?? {})) {
-        if (group?.component !== undefined && (!record(group.component) || group.component.id !== 'ai-de-slop' || group.component.version !== 1)) return fail('UNSUPPORTED_COMPONENT', 'This formation requires a supported component version.');
-        if (!record(group) || group.id !== id || ['entry', 'exit'].some(key => group[key] !== undefined && !graph.nodes[group[key]]) || (group.members !== undefined && (!Array.isArray(group.members) || group.members.some(member => !graph.nodes[member]) || new Set(group.members).size !== group.members.length))) return fail('INVALID_GROUP', 'Formation members and entry/exit must reference saved blocks.');
+        if (!record(group) || group.id !== id) return fail('INVALID_GROUP', 'Invalid group identity.');
+        if (group.component !== undefined && (!record(group.component) || group.component.id !== 'ai-de-slop' || group.component.version !== 1)) return fail('UNSUPPORTED_COMPONENT', 'This formation requires a supported component version.');
+        if (group.component && (typeof group.entry !== 'string' || typeof group.exit !== 'string' || !Array.isArray(group.members))) return fail('INVALID_GROUP', 'Components require entry, exit, and member block IDs.');
+        for (const key of ['entry', 'exit']) {
+            if (group[key] !== undefined && (typeof group[key] !== 'string' || !Object.hasOwn(graph.nodes, group[key]))) return fail('INVALID_GROUP', 'Formation entry and exit must reference saved block IDs.');
+        }
+        if (group.members !== undefined && (!Array.isArray(group.members) || group.members.some(member => typeof member !== 'string' || !Object.hasOwn(graph.nodes, member)) || new Set(group.members).size !== group.members.length)) return fail('INVALID_GROUP', 'Formation members must reference distinct saved block IDs.');
+        if (group.component) {
+            const members = new Set(group.members);
+            if (!members.has(group.entry) || !members.has(group.exit)) return fail('INVALID_GROUP', 'Component entry and exit must be member block IDs.');
+            if (group.members.some(member => graph.nodes[member].inGroup !== id) || allNodes.some(node => node.inGroup === id && !members.has(node.id))) return fail('INVALID_GROUP', 'Component members must match canvas group membership.');
+        }
     }
-    for (const node of allNodes) if (node.inGroup !== undefined && !graph.groups?.[node.inGroup]) return fail('INVALID_GROUP', 'A block refers to a missing group.', node.id);
+    for (const node of allNodes) if (node.inGroup !== undefined && (typeof node.inGroup !== 'string' || !Object.hasOwn(graph.groups ?? {}, node.inGroup))) return fail('INVALID_GROUP', 'A block refers to a missing group.', node.id);
     for (const node of nodes) {
         if (!bindingValid(node) || (node.modelRole !== undefined && node.modelRole !== null && typeof node.modelRole !== 'string')) return fail('INVALID_SETTINGS', 'Invalid node model binding.', node.id);
         const operation = operationFor(node);
@@ -49,7 +60,7 @@ export function validateWorkflow(graph, { phase } = {}) {
         }
     }
     if (!['native-pre', 'native-post'].includes(graph.mode) || (phase && graph.mode !== 'native-' + phase) || nodes.some(node => operationFor(node).phase !== graph.mode.slice(7))) return fail('WRONG_PHASE', 'The workflow operation does not support this phase.');
-    for (const wire of wires) if (!Number.isSafeInteger(wire.order) || wire.order < 0 || wire.loop || wire.port || (wire.kind !== undefined && !['append', 'prepend', 'merge'].includes(wire.kind))) return fail('INVALID_WIRE', 'Native wires require nonnegative order and direct artifact flow.');
+    for (const wire of wires) if (typeof wire.from !== 'string' || typeof wire.to !== 'string' || !Number.isSafeInteger(wire.order) || wire.order < 0 || wire.loop || wire.port || (wire.kind !== undefined && !['append', 'prepend', 'merge'].includes(wire.kind))) return fail('INVALID_WIRE', 'Native wires require nonnegative order and direct artifact flow.');
     for (const wire of wires) if (!graph.nodes[wire.from] || !graph.nodes[wire.to]) return fail('DANGLING_WIRE', 'A wire refers to a missing block.');
     for (const wire of wires) if (!operationFor(graph.nodes[wire.from]) || !operationFor(graph.nodes[wire.to])) return fail('ARTIFACT_KIND', 'Notes are annotations and carry no artifacts.');
     const terminals = nodes.filter(node => operationFor(node).terminal);
