@@ -2,7 +2,7 @@ const fail = (code, message) => ({ok:false,error:{code,message}});
 const resolved = new WeakMap();
 const safeSignature = value => JSON.stringify(value, (key,item) => /secret|password|api.?key|custom_headers|authorization/i.test(key) ? undefined : item);
 const ENDPOINT_FIELDS = {custom:'custom_url',vertexai:'vertexai_region',zai:'zai_endpoint',siliconflow:'siliconflow_endpoint',minimax:'minimax_endpoint',pollinations:'pollinations_endpoint'};
-// These host sources inherit reverse_proxy during preset conversion.
+// These installed CC sources can use a named or inherited reverse proxy.
 const PROXY_SOURCES = new Set(['claude','openai','mistralai','makersuite','vertexai','deepseek','xai','zai','moonshot']);
 // Installed nonstreaming wrappers discard the upstream completion reason.
 const LOSSY_CC_SOURCES = new Set(['claude','makersuite','vertexai']);
@@ -88,7 +88,7 @@ export function resolveBinding(node, graph, context) {
     const route = context.CONNECT_API_MAP?.[profile.api];
     if (!route || !['openai','textgenerationwebui'].includes(route.selected)) return fail('UNSUPPORTED_BINDING', 'Only mapped chat/text completion connections are supported.');
     if ((route.selected === 'openai' && LOSSY_CC_SOURCES.has(route.source)) || (route.selected === 'textgenerationwebui' && route.type === 'infermaticai')) return fail('UNSUPPORTED_BINDING', 'This installed host wrapper discards completion evidence. Use a connection that preserves its completion reason.');
-    if (profile.proxy) return fail('UNSUPPORTED_BINDING', 'Named proxy routes cannot be verified through the public host context. Use a directly resolved connection.');
+    if (route.selected === 'openai' && PROXY_SOURCES.has(route.source) && profile.proxy) return fail('UNSUPPORTED_BINDING', 'Named proxy routes cannot be verified through the public host context. Use a directly resolved connection.');
     const preset = presetByName(context,route.selected,profile.preset);
     if (!preset) return fail('PRESET_MISSING', 'The fixed profile sampler preset is missing.');
     const inheritedProxy = Object.hasOwn(preset,'reverse_proxy') ? preset.reverse_proxy : context.chatCompletionSettings?.reverse_proxy;

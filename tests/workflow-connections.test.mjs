@@ -38,9 +38,9 @@ assert.equal(resolveBinding({profileId:'own'},graph,context).error?.code,'ENDPOI
 profiles.own['api-url']='https://owned.example/v1';
 assert.equal(resolveBinding({profileId:'own'},graph,context).ok,true);
 assert.equal(resolveBinding({profileId:'role'},graph,context).data.endpoint,null);
-profiles.own.proxy='named-proxy';
-assert.equal(resolveBinding({profileId:'own'},graph,context).error?.code,'UNSUPPORTED_BINDING');
-delete profiles.own.proxy;
+profiles.role.proxy='named-proxy';
+assert.equal(resolveBinding({profileId:'role'},graph,context).error?.code,'UNSUPPORTED_BINDING');
+delete profiles.role.proxy;
 profiles.tc={id:'tc',name:'Text',api:'generic',preset:'text',instruct:'format'};
 context.CONNECT_API_MAP.generic={selected:'textgenerationwebui',type:'generic'};
 context.textCompletionSettings={type:'generic',generic_model:'resolved-text'};
@@ -212,4 +212,44 @@ assert.equal(multiBlockCohere.ok,true);
 assert.equal(multiBlockCohere.data?.text,'First text block. Second text block.');
 assert.equal(multiBlockCohere.data?.finish,'COMPLETE');
 assert.deepEqual(multiBlockCohere.data?.usage,cohereUsage);
+
+const productionProfiles={
+    nano:{id:'nano',name:'Synthetic NanoGPT thinking',api:'nanogpt',model:'z-ai/glm-5.2:thinking',preset:'Synthetic sampler',proxy:'Selected proxy',instruct:''},
+    proxied:{id:'proxied',name:'Synthetic real proxy route',api:'oai',model:'fixed-openai-model',preset:'Synthetic sampler',proxy:'Selected proxy'},
+};
+let productionAttempts=0;
+const productionContext={
+    CONNECT_API_MAP:{nanogpt:{selected:'openai',source:'nanogpt'},oai:{selected:'openai',source:'openai'}},
+    chatCompletionSettings:{chat_completion_source:'openai',openai_model:'unrelated-chat-model',reverse_proxy:'https://unrelated-proxy.example'},
+    getPresetManager:api=>({getCompletionPresetByName:name=>api==='openai' && name==='Synthetic sampler' ? {temperature:0.17} : undefined}),
+    ChatCompletionService:{presetToGeneratePayload:async(preset,sourceOverride,payload)=>({temperature:preset.temperature,...payload,chat_completion_source:sourceOverride.chat_completion_source})},
+    ConnectionManagerRequestService:{getProfile:id=>productionProfiles[id],sendRequest:async(id,messages,cap,options,payload)=>{
+        productionAttempts++;
+        return {choices:[{message:{content:JSON.stringify({profile:id,source:payload.chat_completion_source,model:payload.model,messages:payload.messages,temperature:payload.temperature,cap})},finish_reason:'stop'}],usage:{completion_tokens:2}};
+    }},
+};
+const productionBinding=resolveBinding({profileId:'nano',modelRole:'Analysis'},{roles:{Analysis:{profileId:'proxied'}}},productionContext);
+assert.equal(productionBinding.ok,true);
+assert.equal(productionBinding.data?.endpointOrigin,'provider');
+productionContext.chatCompletionSettings.chat_completion_source='mistralai';
+const productionMessages=[{role:'system',content:'Owned workflow instruction; preserve this constraint.'},{role:'user',content:'Synthetic material.'}];
+const productionReply=await requestModel({binding:productionBinding.data,messages:productionMessages,maxTokens:37},productionContext);
+assert.equal(productionReply.ok,true);
+assert.deepEqual(JSON.parse(productionReply.data.text),{profile:'nano',source:'nanogpt',model:'z-ai/glm-5.2:thinking',messages:productionMessages,temperature:0.17,cap:37});
+assert.equal(productionAttempts,1);
+assert.equal(productionContext.chatCompletionSettings.chat_completion_source,'mistralai');
+assert.equal(resolveBinding({profileId:'proxied'},{},productionContext).error?.code,'UNSUPPORTED_BINDING');
+assert.equal(productionAttempts,1);
+productionContext.ConnectionManagerRequestService.sendRequest=async()=>{
+    productionAttempts++;
+    return {choices:[{message:{content:'Synthetic cutoff'},finish_reason:'length'}],usage:{completion_tokens:37,completion_tokens_details:{reasoning_tokens:31}}};
+};
+const productionCutoff=await requestModel({binding:productionBinding.data,messages:productionMessages,maxTokens:37},productionContext);
+assert.equal(productionCutoff.error?.code,'TRUNCATED_OUTPUT');
+assert.equal(productionCutoff.error?.finish,'length');
+assert.deepEqual(productionCutoff.error?.usage,{completion_tokens:37,completion_tokens_details:{reasoning_tokens:31}});
+assert.equal(productionAttempts,2);
+productionProfiles.nano.model='z-ai/glm-5.2';
+assert.equal((await requestModel({binding:productionBinding.data,messages:productionMessages,maxTokens:37},productionContext)).error?.code,'BINDING_CHANGED');
+assert.equal(productionAttempts,2);
 console.log('connections: ok');
