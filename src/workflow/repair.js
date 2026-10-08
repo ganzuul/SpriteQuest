@@ -52,7 +52,7 @@ export function scanDraft(draft, node = {}) {
     const text = draft.text;
     const scope = scopeRanges(text, node.scope ?? 'whole');
     if (scope.unmatched.length && node.scope !== 'whole' && node.scope !== undefined) {
-        const result = success({ ...draft, spans: [], findings: [{ code: 'UNMATCHED_QUOTES', offsets: scope.unmatched }] });
+        const result = success({ ...draft, spans: [], findings: [...(draft.findings ?? []), { code: 'UNMATCHED_QUOTES', offsets: scope.unmatched }] });
         result.reports.push({ code: 'UNMATCHED_QUOTES', message: 'Unmatched double quotes prevent deterministic narration/dialogue scanning.', offsets: scope.unmatched });
         return result;
     }
@@ -77,17 +77,20 @@ export function scanDraft(draft, node = {}) {
         if (previous && span.start <= previous.end) previous.end = Math.max(previous.end, span.end);
         else normalized.push({ start: span.start, end: span.end });
     }
-    const result = success({ ...draft, spans: normalized.map((span, index) => ({ index, ...span, text: text.slice(span.start, span.end) })), findings, scope: node.scope ?? 'whole', rules: structuredClone(node.rules ?? []), exemptions: [...(node.exemptions ?? [])], protectedLiterals: [...(node.protectedLiterals ?? [])] });
+    const result = success({ ...draft, spans: normalized.map((span, index) => ({ index, ...span, text: text.slice(span.start, span.end) })), findings: [...(draft.findings ?? []), ...findings], scope: node.scope ?? 'whole', caseSensitive: node.caseSensitive ?? false, rules: structuredClone(node.rules ?? []), exemptions: [...(node.exemptions ?? [])], protectedLiterals: [...(node.protectedLiterals ?? [])] });
     if (scope.unmatched.length) result.reports.push({ code: 'UNMATCHED_QUOTES', message: 'Unmatched double quotes were found; whole-text scope remains explicit.', offsets: scope.unmatched });
     return result;
 }
 function invalidSpans(draft) {
+    if (draft.scope !== undefined && !['whole', 'narration', 'dialogue'].includes(draft.scope)) return true;
+    const exempted = literalRanges(draft.text, draft.exemptions ?? [], draft.caseSensitive ?? false);
     const allowed = scopeRanges(draft.text, draft.scope ?? 'whole');
     const boundary = offset => !(offset > 0 && offset < draft.text.length && /[\uD800-\uDBFF]/u.test(draft.text[offset - 1]) && /[\uDC00-\uDFFF]/u.test(draft.text[offset]));
     return !Array.isArray(draft?.spans) || draft.spans.some((span, index) =>
         !span || span.index !== index || !Number.isSafeInteger(span.start) || !Number.isSafeInteger(span.end) ||
         span.start < 0 || span.end <= span.start || span.end > draft.text.length || !boundary(span.start) || !boundary(span.end) ||
         !allowed.ranges.some(([from, to]) => span.start >= from && span.end <= to) || (draft.scope && draft.scope !== 'whole' && allowed.unmatched.length > 0) ||
+        exempted.some(([from, to]) => span.start < to && span.end > from) ||
         span.text !== draft.text.slice(span.start, span.end) || (index > 0 && span.start <= draft.spans[index - 1].end));
 }
 function freeze(value) {

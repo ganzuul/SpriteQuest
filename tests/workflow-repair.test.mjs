@@ -271,3 +271,55 @@ for (const patches of ['{"patches":[{"index":0,"replacement":"X","start":0}]}', 
     assert.equal(result.ok, true);
     assert.deepEqual(result.artifact.protectedLiterals, ['paused']);
 }
+// Altered permissions cannot authorize scanner-exempt wording, including case-insensitive exemptions.
+for (const exemption of ['cold heart', 'COLD HEART']) {
+    const input = scanned('cold heart and cold.', { rules: ['cold'], exemptions: [exemption] });
+    input.spans = [{ index: 0, start: 0, end: 10, text: 'cold heart' }];
+    let attempts = 0;
+    const result = await repairDraft(input, {}, { countTokens: async () => ({ tokens: 10, method: 'synthetic' }), request: async () => {
+        attempts++;
+        return { ok: true, data: { text: '{"patches":[{"index":0,"replacement":"icy mind"}]}', usage: null, finish: 'stop' } };
+    } });
+    assert.equal(result.error?.code, 'INVALID_SPANS');
+    assert.equal(attempts, 0);
+    assert.equal(result.calls.length, 0);
+    assert.equal(validatePatches({ kind: 'patches', draft: input, patches: [{ index: 0, replacement: 'icy mind' }] }).error?.code, 'INVALID_SPANS');
+}
+// Stored case-sensitive policy does not create exemptions that never matched the source.
+{
+    const input = scanned('cold heart and cold.', { rules: ['cold'], exemptions: ['COLD HEART'], caseSensitive: true });
+    input.spans = [{ index: 0, start: 0, end: 10, text: 'cold heart' }];
+    const result = validatePatches({ kind: 'patches', draft: input, patches: [{ index: 0, replacement: 'icy mind' }] });
+    assert.equal(result.ok, true);
+    assert.equal(result.artifact.text, 'icy mind and cold.');
+}
+// Unsupported stored scope cannot silently grant narration permissions.
+for (const scope of ['bogus', '', null, 7, {}]) {
+    const input = scanned('cold', { rules: ['cold'] }); input.scope = scope;
+    let attempts = 0;
+    const result = await repairDraft(input, {}, { countTokens: async () => ({ tokens: 10, method: 'synthetic' }), request: async () => {
+        attempts++;
+        return { ok: true, data: { text: '{"patches":[{"index":0,"replacement":"warm"}]}', usage: null, finish: 'stop' } };
+    } });
+    assert.equal(result.error?.code, 'INVALID_SPANS');
+    assert.equal(attempts, 0);
+    assert.equal(result.calls.length, 0);
+    assert.equal(validatePatches({ kind: 'patches', draft: input, patches: [{ index: 0, replacement: 'warm' }] }).error?.code, 'INVALID_SPANS');
+}
+// Upstream inspection findings survive new scans, including unmatched-quote reports.
+for (const [text, node, newFinding] of [
+    ['cold heart and cold.', { rules: ['cold'], exemptions: ['cold heart'] }, { rule: 'cold', start: 15, end: 19, text: 'cold', protected: false }],
+    ['cold "cold', { rules: ['cold'], scope: 'narration' }, { code: 'UNMATCHED_QUOTES', offsets: [5] }],
+]) {
+    const upstream = { code: 'UPSTREAM_FINDING', message: 'Keep this' };
+    const input = draft(text); input.findings = [upstream];
+    const result = scanDraft(input, node);
+    assert.equal(result.ok, true);
+    assert.deepEqual(result.artifact.findings, [upstream, newFinding]);
+    assert.deepEqual(input.findings, [upstream]);
+    const repaired = await repairDraft(result.artifact, { mode: 'scan' });
+    const candidate = validatePatches(repaired.artifact);
+    assert.equal(candidate.ok, true);
+    assert.deepEqual(candidate.artifact.findings, [upstream, newFinding]);
+    assert.equal(candidate.artifact.text, text);
+}
