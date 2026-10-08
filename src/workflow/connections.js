@@ -4,6 +4,9 @@ const safeSignature = value => JSON.stringify(value, (key,item) => /secret|passw
 const ENDPOINT_FIELDS = {custom:'custom_url',vertexai:'vertexai_region',zai:'zai_endpoint',siliconflow:'siliconflow_endpoint',minimax:'minimax_endpoint',pollinations:'pollinations_endpoint'};
 // These host sources inherit reverse_proxy during preset conversion.
 const PROXY_SOURCES = new Set(['claude','openai','mistralai','makersuite','vertexai','deepseek','xai','zai','moonshot']);
+// Installed nonstreaming wrappers discard the upstream completion reason.
+const LOSSY_CC_SOURCES = new Set(['claude','makersuite','vertexai']);
+const COMPLETE_REASONS = new Set(['stop','eos_token','eos','stop_sequence','end_turn','complete','completed']);
 const TC_MODELS = {ooba:'custom_model',generic:'generic_model',mancer:'mancer_model',togetherai:'togetherai_model',infermaticai:'infermaticai_model',dreamgen:'dreamgen_model',openrouter:'openrouter_model',vllm:'vllm_model',aphrodite:'aphrodite_model',ollama:'ollama_model',featherless:'featherless_model',tabby:'tabby_model',llamacpp:'llamacpp_model'};
 function presetByName(context, api, name) {
     if (!name) return {};
@@ -14,6 +17,20 @@ function presetByName(context, api, name) {
     const names = list?.preset_names;
     const index = Array.isArray(names) ? names.indexOf(name) : names?.[name];
     return index !== undefined && index >= 0 && list.presets?.[index] !== undefined ? structuredClone(list.presets[index]) : null;
+}
+function completionEvidence(raw, binding) {
+    if (binding.api === 'textgenerationwebui' && binding.source === 'ollama') {
+        const prompt = raw?.prompt_eval_count, completion = raw?.eval_count;
+        const hasPrompt = Number.isSafeInteger(prompt) && prompt >= 0;
+        const hasCompletion = Number.isSafeInteger(completion) && completion >= 0;
+        const usage = hasPrompt || hasCompletion ? {...(hasPrompt ? {prompt_tokens:prompt} : {}),...(hasCompletion ? {completion_tokens:completion} : {}),...(hasPrompt && hasCompletion ? {total_tokens:prompt + completion} : {})} : null;
+        return {finish:raw?.done === true ? raw?.done_reason : null,usage};
+    }
+    const choice = raw?.choices?.[0];
+    const reasons = [choice?.finish_reason,choice?.native_finish_reason,raw?.finish_reason,raw?.stop_reason,raw?.results?.[0]?.finish_reason];
+    const cutoff = reasons.find(reason=>typeof reason === 'string' && ['length','max_tokens','max_output_tokens'].includes(reason.toLowerCase()));
+    const unverified = reasons.find(reason=>reason !== undefined && reason !== null && (typeof reason !== 'string' || !COMPLETE_REASONS.has(reason.toLowerCase())));
+    return {finish:cutoff ?? unverified ?? reasons.find(reason=>reason !== undefined && reason !== null) ?? null,usage:raw?.usage ?? null};
 }
 /** Send node-owned messages through the fixed profile, without activating it. */
 export async function requestModel({binding,messages,maxTokens,signal},context) {
@@ -43,13 +60,16 @@ export async function requestModel({binding,messages,maxTokens,signal},context) 
         const raw = await context.ConnectionManagerRequestService.sendRequest(binding.profileId,messages,maxTokens,{stream:false,extractData:false,includePreset:tc,includeInstruct:true,signal},overrides);
         const choice = raw?.choices?.[0];
         if (signal?.aborted) return fail('ABORTED', 'The request was stopped; ignore its late output.');
-        const finish = choice?.finish_reason ?? choice?.native_finish_reason ?? null;
-        if (['length','max_tokens','max_output_tokens'].includes(finish)) return {ok:false,error:{code:'TRUNCATED_OUTPUT',message:'The request reached its completion limit.',finish,usage:raw?.usage ?? null}};
+        const {finish,usage} = completionEvidence(raw,binding);
+        const reason = typeof finish === 'string' ? finish.toLowerCase() : '';
+        if (['length','max_tokens','max_output_tokens'].includes(reason)) return {ok:false,error:{code:'TRUNCATED_OUTPUT',message:'The request reached its completion limit.',finish,usage}};
+        if (!COMPLETE_REASONS.has(reason)) return {ok:false,error:{code:'COMPLETION_UNVERIFIED',message:'The host response does not expose a verified complete text result; keep the original.',finish:typeof finish === 'string' ? finish : null,usage}};
         let text;
         try { text = context.extractMessageFromData?.(raw,binding.api); } catch { /* Provider fallback below. */ }
-        text ||= choice?.message?.content ?? choice?.text ?? raw?.content ?? raw?.text ?? (typeof raw === 'string' ? raw : '');
+        const nativeText = Array.isArray(raw?.message?.content) ? raw.message.content.filter(part=>part.type === 'text' && typeof part.text === 'string').map(part=>part.text).join('') : undefined;
+        text ||= choice?.message?.content ?? choice?.text ?? raw?.response ?? nativeText ?? raw?.results?.[0]?.text ?? raw?.content ?? raw?.text ?? (typeof raw === 'string' ? raw : '');
         if (typeof text !== 'string' || !text.trim()) return fail('EMPTY_OUTPUT', 'The auxiliary request returned no text.');
-        return {ok:true,data:{text,usage:raw?.usage ?? null,finish}};
+        return {ok:true,data:{text,usage,finish}};
     } catch {
         return fail(signal?.aborted ? 'ABORTED' : 'REQUEST_FAILED', 'The auxiliary request failed. Inspect the fixed connection; no retry was made.');
     }
@@ -65,6 +85,7 @@ export function resolveBinding(node, graph, context) {
     if (!profile) return fail('PROFILE_MISSING', 'The fixed connection profile is missing.');
     const route = context.CONNECT_API_MAP?.[profile.api];
     if (!route || !['openai','textgenerationwebui'].includes(route.selected)) return fail('UNSUPPORTED_BINDING', 'Only mapped chat/text completion connections are supported.');
+    if ((route.selected === 'openai' && LOSSY_CC_SOURCES.has(route.source)) || (route.selected === 'textgenerationwebui' && route.type === 'infermaticai')) return fail('UNSUPPORTED_BINDING', 'This installed host wrapper discards completion evidence. Use a connection that preserves its completion reason.');
     if (profile.proxy) return fail('UNSUPPORTED_BINDING', 'Named proxy routes cannot be verified through the public host context. Use a directly resolved connection.');
     const preset = presetByName(context,route.selected,profile.preset);
     if (!preset) return fail('PRESET_MISSING', 'The fixed profile sampler preset is missing.');
