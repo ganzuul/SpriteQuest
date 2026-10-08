@@ -20,6 +20,8 @@ The deletion, dynamic-refresh and context-menu-paste bugs predated the migration
 
 The reviewer also confirmed the keyed Svelte ownership boundary, camera fast path, unscaled geometry cache, incident-wire updates, production integration and explicit teardown. All twelve changed authoritative/support modules differed from the baseline only in version queries.
 
+The final source and regression checkpoint is `a1e2332402ff13b56ee95ee0b0fda6722e478f51` on `codex/svelte-ui-migration`. [Draft PR #1](https://github.com/MentallyQuill/ComfyTavern/pull/1) targets the user's fork `main`; the managed worktree is retained for review. The workflow chat received the stable commit and adapter contracts under the human's explicit coordination authorization. The [execution record](2026-10-07-svelte-ui-migration-execution.md) preserves the ledger before its temporary plan workspace is cleaned up.
+
 ## Final verification
 
 - `npm run check`: 44/44 Node test files, 25/25 Chromium cases, zero Svelte errors or warnings, production build, and 62 consistent local asset imports.

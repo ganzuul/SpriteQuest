@@ -119,7 +119,7 @@
 - [x] Run full `npm.cmd run check`, fresh production install/harness smoke, and reproducible build comparison. Record limitations and adapter boundaries explicitly.
 - [x] Commit final source, generated assets and documentation, then request a fresh-context whole-branch review against the spec, plan and ledger.
 - [x] Address important findings with RED/GREEN evidence; rerun affected checks and whole suite where warranted.
-- [ ] Mark the goal complete only after the full acceptance contract is met; hand off the committed branch and concise verification evidence.
+- [x] Mark the goal complete only after the full acceptance contract is met; hand off the committed branch and concise verification evidence.
 
 ## Execution ledger
 
