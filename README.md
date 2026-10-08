@@ -6,18 +6,18 @@ ComfyTavern adds editable native workflows to SillyTavern. Use **Scene guidance*
 
 This fork builds on [Silly Canvas](https://github.com/Dulgadurbit/SillyCanvas) by [Dulgadurbit](https://github.com/Dulgadurbit). It preserves the original canvas engine, saved-data compatibility, and MIT attribution.
 
-## Install the draft native-workflows branch
+## Install ComfyTavern
 
-Native workflows are prepared on `codex/native-workflows` for a draft PR. Until merged, the default branch may not contain these features. The steps below select the draft branch explicitly; they do not claim a released or merged build.
+Native workflows are included on `main`. The steps below install the repository's default branch.
 
-Keep **one enabled copy**. If your current installation points to `Dulgadurbit/SillyCanvas`, disable that extension before installing this fork's preview. The fork preserves saved-data compatibility, so two enabled copies would share the same data and generation hooks. Existing installations from `MentallyQuill/ComfyTavern` should use the branch-switch flow below.
+Keep **one enabled copy**. If your current installation points to `Dulgadurbit/SillyCanvas`, disable that extension before installing this fork. The fork preserves saved-data compatibility, so two enabled copies would share the same data and generation hooks. Existing installations from `MentallyQuill/ComfyTavern` should use the update or branch-switch flow below.
 
 1. In SillyTavern, open **Extensions → Install extension**.
 2. Enter the repository URL `https://github.com/MentallyQuill/ComfyTavern`.
-3. Set **Branch or tag name (optional)** to `codex/native-workflows`.
+3. Leave **Branch or tag name (optional)** blank to install the default branch, `main`.
 4. Click **Install** (or **Install just for me**), then reload SillyTavern.
 
-For an existing installation from this same repository, open **Manage Extensions**, choose **Switch branch**, select `origin/codex/native-workflows` (or the local branch entry), click **Switch**, then reload. Use the repository URL above without a `/tree/` suffix.
+For an existing installation from this same repository on `main`, update it in **Manage Extensions**, then reload. If it is on another branch, choose **Switch branch**, select `origin/main` (or the local `main` entry), click **Switch**, then reload. Use the repository URL above without a `/tree/` suffix.
 
 Open the canvas with the button next to Send, from the wand menu, or by typing `/canvas`.
 
