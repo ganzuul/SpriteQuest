@@ -1501,6 +1501,7 @@
 .pc-root .pc-graph-tab, :root[data-pc-own="1"] .pc-root .pc-graph-tab { box-sizing: border-box; position: relative; margin-bottom: -1px; border: 1px solid var(--pc-border); border-bottom: 0; border-radius: 4px 4px 0 0; background: var(--pc-panel-solid); box-shadow: inset 1px 1px 0 #ffffff09; padding: 7px 18px; font: inherit; font-size: 12px; color: var(--pc-text); }
 .pc-graph-tab::after { content: ''; position: absolute; left: -1px; right: -5px; bottom: -1px; height: 3px; background: var(--pc-panel-solid); border-left: 1px solid var(--pc-border); }
 .pc-graph-tab::before { content: ''; box-sizing: border-box; position: absolute; width: 5px; height: 5px; right: -5px; bottom: -1px; border-left: 1px solid var(--pc-border); border-bottom: 1px solid var(--pc-border); border-bottom-left-radius: 4px; background: transparent; z-index: 1; }
+.pc-root .pc-graph-tab:focus-visible { outline: 2px solid var(--pc-accent); outline-offset: -3px; }
 .pc-root .pc-canvas-area { border: 1px solid var(--pc-border); border-radius: 4px; background: var(--pc-panel-solid); box-shadow: var(--pc-recess); min-height: 140px; overflow: hidden; }
 .pc-canvas-host { border-radius: 4px; }
 .pc-node-shelf { position: absolute; top: 13px; left: 13px; display: flex; flex-direction: column; gap: 3px; width: 110px; max-height: calc(100% - 26px); overflow-y: auto; z-index: 6; scrollbar-width: thin; }

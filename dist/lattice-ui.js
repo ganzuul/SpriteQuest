@@ -1737,12 +1737,15 @@ var Pr = class {
 	}
 };
 function Fr(e) {
-	k === null && ge("onMount"), Ve && k.l !== null ? Ir(k).m.push(e) : bn(() => {
+	k === null && ge("onMount"), Ve && k.l !== null ? Lr(k).m.push(e) : bn(() => {
 		let t = ur(e);
 		if (typeof t == "function") return t;
 	});
 }
 function Ir(e) {
+	k === null && ge("onDestroy"), Fr(() => () => ur(e));
+}
+function Lr(e) {
 	var t = e.l;
 	return t.u ??= {
 		a: [],
@@ -1776,17 +1779,17 @@ function Y(e, t, n = !1) {
 }
 //#endregion
 //#region node_modules/svelte/src/internal/client/dom/blocks/each.js
-function Lr(e, t) {
+function Rr(e, t) {
 	return t;
 }
-function Rr(e, t, n) {
+function zr(e, t, n) {
 	for (var r = [], i = t.length, a, s = t.length, c = 0; c < i; c++) {
 		let n = t[c];
 		Nn(n, () => {
 			if (a) {
 				if (a.pending.delete(n), a.done.add(n), a.pending.size === 0) {
 					var t = e.outrogroups;
-					zr(e, o(a.done)), t.delete(a), t.size === 0 && (e.outrogroups = null);
+					Br(e, o(a.done)), t.delete(a), t.size === 0 && (e.outrogroups = null);
 				}
 			} else --s;
 		}, !1);
@@ -1797,13 +1800,13 @@ function Rr(e, t, n) {
 			var u = n, d = u.parentNode;
 			dn(d), d.append(u), e.items.clear();
 		}
-		zr(e, t, !l);
+		Br(e, t, !l);
 	} else a = {
 		pending: new Set(t),
 		done: /* @__PURE__ */ new Set()
 	}, (e.outrogroups ??= /* @__PURE__ */ new Set()).add(a);
 }
-function zr(e, t, n = !0) {
+function Br(e, t, n = !0) {
 	var r;
 	if (e.pending.size > 0) {
 		r = /* @__PURE__ */ new Set();
@@ -1814,7 +1817,7 @@ function zr(e, t, n = !0) {
 		r?.has(a) ? (a.f |= ne, Ln(a, document.createDocumentFragment())) : B(t[i], n);
 	}
 }
-var Br;
+var Vr;
 function X(e, t, n, i, a, s = null) {
 	var c = e, l = /* @__PURE__ */ new Map();
 	if (t & 4) {
@@ -1827,7 +1830,7 @@ function X(e, t, n, i, a, s = null) {
 		return r(e) ? e : e == null ? [] : o(e);
 	}), p, m = /* @__PURE__ */ new Map(), h = !0;
 	function g(e) {
-		v.effect.f & 16384 || (v.pending.delete(e), v.fallback = d, Hr(v, p, c, t, i), d !== null && (p.length === 0 ? d.f & 33554432 ? (d.f ^= ne, Wr(d, null, c)) : Fn(d) : Nn(d, () => {
+		v.effect.f & 16384 || (v.pending.delete(e), v.fallback = d, Ur(v, p, c, t, i), d !== null && (p.length === 0 ? d.f & 33554432 ? (d.f ^= ne, Gr(d, null, c)) : Fn(d) : Nn(d, () => {
 			d = null;
 		})));
 	}
@@ -1843,9 +1846,9 @@ function X(e, t, n, i, a, s = null) {
 			for (var o = /* @__PURE__ */ new Set(), u = N, v = fn(), y = 0; y < e; y += 1) {
 				E && D.nodeType === 8 && D.data === "]" && (c = D, r = !0, Me(!1));
 				var b = p[y], x = i(b, y), S = h ? null : l.get(x);
-				S ? (S.v && Yt(S.v, b), S.i && Yt(S.i, y), v && u.unskip_effect(S.e)) : (S = Ur(l, h ? c : Br ??= cn(), b, x, y, a, t, n), h || (S.e.f |= ne), l.set(x, S)), o.add(x);
+				S ? (S.v && Yt(S.v, b), S.i && Yt(S.i, y), v && u.unskip_effect(S.e)) : (S = Wr(l, h ? c : Vr ??= cn(), b, x, y, a, t, n), h || (S.e.f |= ne), l.set(x, S)), o.add(x);
 			}
-			if (e === 0 && s && !d && (h ? d = Dn(() => s(c)) : (d = Dn(() => s(Br ??= cn())), d.f |= ne)), e > o.size && ve("", "", ""), E && e > 0 && Ne(Ie()), !h) {
+			if (e === 0 && s && !d && (h ? d = Dn(() => s(c)) : (d = Dn(() => s(Vr ??= cn())), d.f |= ne)), e > o.size && ve("", "", ""), E && e > 0 && Ne(Ie()), !h) {
 				if (m.set(u, o), v) {
 					for (let [e, t] of l) o.has(e) || u.skip_effect(t.e);
 					u.oncommit(g), u.ondiscard(_);
@@ -1861,20 +1864,20 @@ function X(e, t, n, i, a, s = null) {
 	};
 	h = !1, E && (c = D);
 }
-function Vr(e) {
+function Hr(e) {
 	for (; e !== null && !(e.f & 32);) e = e.next;
 	return e;
 }
-function Hr(e, t, n, r, i) {
-	var a = !!(r & 8), s = t.length, c = e.items, l = Vr(e.effect.first), u, d = null, f, p = [], m = [], h, g, _, v;
+function Ur(e, t, n, r, i) {
+	var a = !!(r & 8), s = t.length, c = e.items, l = Hr(e.effect.first), u, d = null, f, p = [], m = [], h, g, _, v;
 	if (a) for (v = 0; v < s; v += 1) h = t[v], g = i(h, v), _ = c.get(g).e, _.f & 33554432 || (_.nodes?.a?.measure(), (f ??= /* @__PURE__ */ new Set()).add(_));
 	for (v = 0; v < s; v += 1) {
 		if (h = t[v], g = i(h, v), _ = c.get(g).e, e.outrogroups !== null) for (let t of e.outrogroups) t.pending.delete(_), t.done.delete(_);
 		if (_.f & 8192 && (Fn(_), a && (_.nodes?.a?.unfix(), (f ??= /* @__PURE__ */ new Set()).delete(_))), _.f & 33554432) {
-			if (_.f ^= ne, _ === l) Wr(_, null, n);
+			if (_.f ^= ne, _ === l) Gr(_, null, n);
 			else {
 				var y = d ? d.next : l;
-				_ === e.effect.last && (e.effect.last = _.prev), _.prev && (_.prev.next = _.next), _.next && (_.next.prev = _.prev), Gr(e, d, _), Gr(e, _, y), Wr(_, y, n), d = _, p = [], m = [], l = Vr(d.next);
+				_ === e.effect.last && (e.effect.last = _.prev), _.prev && (_.prev.next = _.next), _.next && (_.next.prev = _.prev), Kr(e, d, _), Kr(e, _, y), Gr(_, y, n), d = _, p = [], m = [], l = Hr(d.next);
 				continue;
 			}
 		}
@@ -1884,25 +1887,25 @@ function Hr(e, t, n, r, i) {
 					var b = m[0], x;
 					d = b.prev;
 					var S = p[0], ee = p[p.length - 1];
-					for (x = 0; x < p.length; x += 1) Wr(p[x], b, n);
+					for (x = 0; x < p.length; x += 1) Gr(p[x], b, n);
 					for (x = 0; x < m.length; x += 1) u.delete(m[x]);
-					Gr(e, S.prev, ee.next), Gr(e, d, S), Gr(e, ee, b), l = b, d = ee, --v, p = [], m = [];
-				} else u.delete(_), Wr(_, l, n), Gr(e, _.prev, _.next), Gr(e, _, d === null ? e.effect.first : d.next), Gr(e, d, _), d = _;
+					Kr(e, S.prev, ee.next), Kr(e, d, S), Kr(e, ee, b), l = b, d = ee, --v, p = [], m = [];
+				} else u.delete(_), Gr(_, l, n), Kr(e, _.prev, _.next), Kr(e, _, d === null ? e.effect.first : d.next), Kr(e, d, _), d = _;
 				continue;
 			}
-			for (p = [], m = []; l !== null && l !== _;) (u ??= /* @__PURE__ */ new Set()).add(l), m.push(l), l = Vr(l.next);
+			for (p = [], m = []; l !== null && l !== _;) (u ??= /* @__PURE__ */ new Set()).add(l), m.push(l), l = Hr(l.next);
 			if (l === null) continue;
 		}
-		_.f & 33554432 || p.push(_), d = _, l = Vr(_.next);
+		_.f & 33554432 || p.push(_), d = _, l = Hr(_.next);
 	}
 	if (e.outrogroups !== null) {
-		for (let t of e.outrogroups) t.pending.size === 0 && (zr(e, o(t.done)), e.outrogroups?.delete(t));
+		for (let t of e.outrogroups) t.pending.size === 0 && (Br(e, o(t.done)), e.outrogroups?.delete(t));
 		e.outrogroups.size === 0 && (e.outrogroups = null);
 	}
 	if (l !== null || u !== void 0) {
 		var C = [];
 		if (u !== void 0) for (_ of u) _.f & 8192 || C.push(_);
-		for (; l !== null;) !(l.f & 8192) && l !== e.fallback && C.push(l), l = Vr(l.next);
+		for (; l !== null;) !(l.f & 8192) && l !== e.fallback && C.push(l), l = Hr(l.next);
 		var w = C.length;
 		if (w > 0) {
 			var te = r & 4 && s === 0 ? n : null;
@@ -1910,14 +1913,14 @@ function Hr(e, t, n, r, i) {
 				for (v = 0; v < w; v += 1) C[v].nodes?.a?.measure();
 				for (v = 0; v < w; v += 1) C[v].nodes?.a?.fix();
 			}
-			Rr(e, C, te);
+			zr(e, C, te);
 		}
 	}
 	a && qe(() => {
 		if (f !== void 0) for (_ of f) _.nodes?.a?.apply();
 	});
 }
-function Ur(e, t, n, r, i, a, o, s) {
+function Wr(e, t, n, r, i, a, o, s) {
 	var c = o & 1 ? o & 16 ? qt(n) : /* @__PURE__ */ Jt(n, !1, !1) : null, l = o & 2 ? qt(i) : null;
 	return {
 		v: c,
@@ -1927,51 +1930,51 @@ function Ur(e, t, n, r, i, a, o, s) {
 		}))
 	};
 }
-function Wr(e, t, n) {
+function Gr(e, t, n) {
 	if (e.nodes) for (var r = e.nodes.start, i = e.nodes.end, a = t && !(t.f & 33554432) ? t.nodes.start : n; r !== null;) {
 		var o = /* @__PURE__ */ un(r);
 		if (a.before(r), r === i) return;
 		r = o;
 	}
 }
-function Gr(e, t, n) {
+function Kr(e, t, n) {
 	t === null ? e.effect.first = n : t.next = n, n === null ? e.effect.last = t : n.prev = t;
 }
 //#endregion
 //#region node_modules/clsx/dist/clsx.mjs
-function Kr(e) {
+function qr(e) {
 	var t, n, r = "";
 	if (typeof e == "string" || typeof e == "number") r += e;
 	else if (typeof e == "object") {
 		if (Array.isArray(e)) {
 			var i = e.length;
-			for (t = 0; t < i; t++) e[t] && (n = Kr(e[t])) && (r && (r += " "), r += n);
+			for (t = 0; t < i; t++) e[t] && (n = qr(e[t])) && (r && (r += " "), r += n);
 		} else for (n in e) e[n] && (r && (r += " "), r += n);
 	}
 	return r;
 }
-function qr() {
-	for (var e, t, n = 0, r = "", i = arguments.length; n < i; n++) (e = arguments[n]) && (t = Kr(e)) && (r && (r += " "), r += t);
+function Jr() {
+	for (var e, t, n = 0, r = "", i = arguments.length; n < i; n++) (e = arguments[n]) && (t = qr(e)) && (r && (r += " "), r += t);
 	return r;
 }
 //#endregion
 //#region node_modules/svelte/src/internal/shared/attributes.js
-function Jr(e) {
-	return typeof e == "object" ? qr(e) : e ?? "";
+function Yr(e) {
+	return typeof e == "object" ? Jr(e) : e ?? "";
 }
-var Yr = [..." 	\n\r\f\xA0\v﻿"];
-function Xr(e, t, n) {
+var Xr = [..." 	\n\r\f\xA0\v﻿"];
+function Zr(e, t, n) {
 	var r = e == null ? "" : "" + e;
 	if (t && (r = r ? r + " " + t : t), n) {
 		for (var i of Object.keys(n)) if (n[i]) r = r ? r + " " + i : i;
 		else if (r.length) for (var a = i.length, o = 0; (o = r.indexOf(i, o)) >= 0;) {
 			var s = o + a;
-			(o === 0 || Yr.includes(r[o - 1])) && (s === r.length || Yr.includes(r[s])) ? r = (o === 0 ? "" : r.substring(0, o)) + r.substring(s + 1) : o = s;
+			(o === 0 || Xr.includes(r[o - 1])) && (s === r.length || Xr.includes(r[s])) ? r = (o === 0 ? "" : r.substring(0, o)) + r.substring(s + 1) : o = s;
 		}
 	}
 	return r === "" ? null : r;
 }
-function Zr(e, t = !1) {
+function Qr(e, t = !1) {
 	var n = t ? " !important;" : ";", r = "";
 	for (var i of Object.keys(e)) {
 		var a = e[i];
@@ -1979,16 +1982,16 @@ function Zr(e, t = !1) {
 	}
 	return r;
 }
-function Qr(e) {
+function $r(e) {
 	return e[0] !== "-" || e[1] !== "-" ? e.toLowerCase() : e;
 }
-function $r(e, t) {
+function ei(e, t) {
 	if (t) {
 		var n = "", r, i;
 		if (Array.isArray(t) ? (r = t[0], i = t[1]) : r = t, e) {
 			e = String(e).replaceAll(/\/\*.*?\*\//g, "").trim();
 			var a = !1, o = 0, s = !1, c = [];
-			r && c.push(...Object.keys(r).map(Qr)), i && c.push(...Object.keys(i).map(Qr));
+			r && c.push(...Object.keys(r).map($r)), i && c.push(...Object.keys(i).map($r));
 			var l = 0, u = -1;
 			let t = e.length;
 			for (var d = 0; d < t; d++) {
@@ -1997,7 +2000,7 @@ function $r(e, t) {
 					if (f === ":" && u === -1) u = d;
 					else if (f === ";" || d === t - 1) {
 						if (u !== -1) {
-							var p = Qr(e.substring(l, u).trim());
+							var p = $r(e.substring(l, u).trim());
 							if (!c.includes(p)) {
 								f !== ";" && d++;
 								var m = e.substring(l, d).trim();
@@ -2009,7 +2012,7 @@ function $r(e, t) {
 				}
 			}
 		}
-		return r && (n += Zr(r)), i && (n += Zr(i, !0)), n = n.trim(), n === "" ? null : n;
+		return r && (n += Qr(r)), i && (n += Qr(i, !0)), n = n.trim(), n === "" ? null : n;
 	}
 	return e == null ? null : String(e);
 }
@@ -2018,7 +2021,7 @@ function $r(e, t) {
 function Z(e, t, n, r, i, a) {
 	var o = e[ue];
 	if (E || o !== n || o === void 0) {
-		var s = Xr(n, r, a);
+		var s = Zr(n, r, a);
 		(!E || s !== e.getAttribute("class")) && (s == null ? e.removeAttribute("class") : t ? e.className = s : e.setAttribute("class", s)), e[ue] = n;
 	} else if (a && i !== a) for (var c in a) {
 		var l = !!a[c];
@@ -2028,38 +2031,38 @@ function Z(e, t, n, r, i, a) {
 }
 //#endregion
 //#region node_modules/svelte/src/internal/client/dom/elements/style.js
-function ei(e, t = {}, n, r) {
+function ti(e, t = {}, n, r) {
 	for (var i in n) {
 		var a = n[i];
 		t[i] !== a && (n[i] == null ? e.style.removeProperty(i) : e.style.setProperty(i, a, r));
 	}
 }
-function ti(e, t, n, r) {
+function ni(e, t, n, r) {
 	var i = e[de];
 	if (E || i !== t) {
-		var a = $r(t, r);
+		var a = ei(t, r);
 		(!E || a !== e.getAttribute("style")) && (a == null ? e.removeAttribute("style") : e.style.cssText = a), e[de] = t;
-	} else r && (Array.isArray(r) ? (ei(e, n?.[0], r[0]), ei(e, n?.[1], r[1], "important")) : ei(e, n, r));
+	} else r && (Array.isArray(r) ? (ti(e, n?.[0], r[0]), ti(e, n?.[1], r[1], "important")) : ti(e, n, r));
 	return r;
 }
 //#endregion
 //#region node_modules/svelte/src/internal/client/dom/elements/bindings/select.js
-function ni(e, t, n = !1) {
+function ri(e, t, n = !1) {
 	if (e.multiple) {
 		if (t == null) return;
 		if (!r(t)) return Ae();
-		for (var i of e.options) i.selected = t.includes(ii(i));
+		for (var i of e.options) i.selected = t.includes(ai(i));
 	} else {
-		for (i of e.options) if (tn(ii(i), t)) {
+		for (i of e.options) if (tn(ai(i), t)) {
 			i.selected = !0;
 			return;
 		}
 		(!n || t !== void 0) && (e.selectedIndex = -1);
 	}
 }
-function ri(e) {
+function ii(e) {
 	var t = new MutationObserver(() => {
-		"__value" in e && ni(e, e.__value);
+		"__value" in e && ri(e, e.__value);
 	});
 	t.observe(e, {
 		childList: !0,
@@ -2070,13 +2073,13 @@ function ri(e) {
 		t.disconnect();
 	});
 }
-function ii(e) {
+function ai(e) {
 	return "__value" in e ? e.__value : e.value;
 }
 //#endregion
 //#region node_modules/svelte/src/internal/client/dom/elements/attributes.js
-var ai = Symbol("is custom element"), oi = Symbol("is html"), si = he ? "link" : "LINK", ci = he ? "progress" : "PROGRESS";
-function li(e) {
+var oi = Symbol("is custom element"), si = Symbol("is html"), ci = he ? "link" : "LINK", li = he ? "progress" : "PROGRESS";
+function ui(e) {
 	if (E) {
 		var t = !1, n = () => {
 			if (!t) {
@@ -2093,29 +2096,29 @@ function li(e) {
 		e[pe] = n, qe(n), at();
 	}
 }
-function ui(e, t) {
-	var n = fi(e);
-	n.value !== (n.value = t ?? void 0) && (e.value !== t || t === 0 && e.nodeName === ci) && (e.value = t ?? "");
-}
 function di(e, t) {
-	var n = fi(e);
+	var n = pi(e);
+	n.value !== (n.value = t ?? void 0) && (e.value !== t || t === 0 && e.nodeName === li) && (e.value = t ?? "");
+}
+function fi(e, t) {
+	var n = pi(e);
 	n.checked !== (n.checked = t ?? void 0) && (e.checked = t);
 }
 function Q(e, t, n, r) {
-	var i = fi(e);
-	E && (i[t] = e.getAttribute(t), t === "src" || t === "srcset" || t === "href" && e.nodeName === si) || i[t] !== (i[t] = n) && (t === "loading" && (e[ce] = n), n == null ? e.removeAttribute(t) : typeof n != "string" && mi(e).includes(t) ? e[t] = n : e.setAttribute(t, n));
+	var i = pi(e);
+	E && (i[t] = e.getAttribute(t), t === "src" || t === "srcset" || t === "href" && e.nodeName === ci) || i[t] !== (i[t] = n) && (t === "loading" && (e[ce] = n), n == null ? e.removeAttribute(t) : typeof n != "string" && hi(e).includes(t) ? e[t] = n : e.setAttribute(t, n));
 }
-function fi(e) {
+function pi(e) {
 	return e[le] ??= {
-		[ai]: e.nodeName.includes("-"),
-		[oi]: e.namespaceURI === n
+		[oi]: e.nodeName.includes("-"),
+		[si]: e.namespaceURI === n
 	};
 }
-var pi = /* @__PURE__ */ new Map();
-function mi(e) {
-	var t = e.getAttribute("is") || e.nodeName, n = pi.get(t);
+var mi = /* @__PURE__ */ new Map();
+function hi(e) {
+	var t = e.getAttribute("is") || e.nodeName, n = mi.get(t);
 	if (n) return n;
-	pi.set(t, n = []);
+	mi.set(t, n = []);
 	for (var r, i = e, a = Element.prototype; a !== i;) {
 		for (var o in r = l(i), r) r[o].set && o !== "innerHTML" && o !== "textContent" && o !== "innerText" && n.push(o);
 		i = f(i);
@@ -2124,36 +2127,36 @@ function mi(e) {
 }
 //#endregion
 //#region node_modules/svelte/src/internal/client/dom/elements/bindings/input.js
-function hi(e, t, n = t) {
+function gi(e, t, n = t) {
 	var r = /* @__PURE__ */ new WeakSet();
 	st(e, "input", async (i) => {
 		var a = i ? e.defaultValue : e.value;
-		if (a = gi(e) ? _i(a) : a, n(a), N !== null && r.add(N), await sr(), a !== (a = t())) {
+		if (a = _i(e) ? vi(a) : a, n(a), N !== null && r.add(N), await sr(), a !== (a = t())) {
 			var o = e.selectionStart, s = e.selectionEnd, c = e.value.length;
 			if (e.value = a ?? "", s !== null) {
 				var l = e.value.length;
 				o === s && s === c && l > c ? (e.selectionStart = l, e.selectionEnd = l) : (e.selectionStart = o, e.selectionEnd = Math.min(s, l));
 			}
 		}
-	}), (E && e.defaultValue !== e.value || ur(t) == null && e.value) && (n(gi(e) ? _i(e.value) : e.value), N !== null && r.add(N)), Tn(() => {
+	}), (E && e.defaultValue !== e.value || ur(t) == null && e.value) && (n(_i(e) ? vi(e.value) : e.value), N !== null && r.add(N)), Tn(() => {
 		var n = t();
 		if (e === document.activeElement) {
 			var i = N;
 			if (r.has(i)) return;
 		}
-		gi(e) && n === _i(e.value) || (e.type !== "date" || n || e.value) && n !== e.value && (e.value = n ?? "");
+		_i(e) && n === vi(e.value) || (e.type !== "date" || n || e.value) && n !== e.value && (e.value = n ?? "");
 	});
 }
-function gi(e) {
+function _i(e) {
 	var t = e.type;
 	return t === "number" || t === "range";
 }
-function _i(e) {
+function vi(e) {
 	return e === "" ? null : +e;
 }
 //#endregion
 //#region node_modules/svelte/src/internal/client/dom/elements/bindings/this.js
-function vi(e, t) {
+function yi(e, t) {
 	return e === t || e?.[oe] === t;
 }
 function $(e = {}, t, n, r) {
@@ -2162,13 +2165,13 @@ function $(e = {}, t, n, r) {
 		var o, s;
 		return Tn(() => {
 			o = s, s = r?.() || [], ur(() => {
-				vi(n(...s), e) || (t(e, ...s), o && vi(n(...o), e) && t(null, ...o));
+				yi(n(...s), e) || (t(e, ...s), o && yi(n(...o), e) && t(null, ...o));
 			});
 		}), () => {
 			let r = a;
 			for (; r !== i && r.parent !== null && r.parent.f & 33554432;) r = r.parent;
 			let o = () => {
-				s && vi(n(...s), e) && t(null, ...s);
+				s && yi(n(...s), e) && t(null, ...s);
 			}, c = r.teardown;
 			r.teardown = () => {
 				o(), c?.();
@@ -2178,7 +2181,7 @@ function $(e = {}, t, n, r) {
 }
 //#endregion
 //#region node_modules/svelte/src/internal/client/reactivity/props.js
-function yi(e, t, n, r) {
+function bi(e, t, n, r) {
 	var i = !Ve || !!(n & 2), a = !!(n & 8), o = !!(n & 16), s = r, l = !0, u = void 0, d = () => o && i ? (u ??= /* @__PURE__ */ gt(r), W(u)) : (l && (l = !1, s = o ? ur(r) : r), s);
 	let f;
 	if (a) {
@@ -2212,10 +2215,10 @@ function yi(e, t, n, r) {
 		return Bn && v || b.f & 16384 ? y.v : W(y);
 	});
 }
-var bi = /* @__PURE__ */ K("<article class=\"pc-workflow-starter\"><strong> </strong><p> </p> <small> </small> <button class=\"menu_button\"> </button></article>"), xi = /* @__PURE__ */ K("<small>No supported operations yet. Reference-based voice matching is a future candidate.</small>"), Si = /* @__PURE__ */ K("<button class=\"menu_button\"> <small> </small></button>"), Ci = /* @__PURE__ */ K("<button class=\"menu_button\" draggable=\"true\"> <small>· legacy</small></button>"), wi = /* @__PURE__ */ K("<details class=\"pc-workflow-family\"><summary> </summary><p> </p> <!> <!> <!></details>"), Ti = /* @__PURE__ */ K("<label>Workflow mode <select aria-label=\"Workflow mode\" class=\"text_pole\"><option>Legacy · Replace prompt</option><option>Native · Guidance and reviewed reply</option></select></label> <h3>Workflow examples</h3> <!> <h3>Node families</h3> <!>", 1), Ei = /* @__PURE__ */ K("<option> </option>"), Di = /* @__PURE__ */ K("<label> <select class=\"text_pole\"><option>Choose a connection</option><!></select></label> <label> <input class=\"text_pole\" placeholder=\"Use profile model\"/></label>", 1), Oi = /* @__PURE__ */ K("<p class=\"pc-error\"> </p>"), ki = /* @__PURE__ */ K("<small> </small>"), Ai = /* @__PURE__ */ K("<button class=\"menu_button\"> </button>"), ji = /* @__PURE__ */ K("<label>Model role<input class=\"text_pole\"/></label> <label>Node connection override<select class=\"text_pole\"><option>Use role binding</option><!></select></label> <label>Node model override<input class=\"text_pole\" placeholder=\"Use bound model\"/></label> <small> </small>", 1), Mi = /* @__PURE__ */ K("<select class=\"text_pole\"></select>"), Ni = /* @__PURE__ */ K("<input type=\"checkbox\"/>"), Pi = /* @__PURE__ */ K("<input class=\"text_pole\" type=\"number\"/>"), Fi = /* @__PURE__ */ K("<textarea class=\"text_pole\"></textarea>"), Ii = /* @__PURE__ */ K("<p class=\"pc-error\" role=\"alert\"> </p>"), Li = /* @__PURE__ */ K("<small>One literal phrase per line. Imported objects use one JSON object per line with a \"phrase\" field; keep their other fields to preserve metadata. Quote a literal phrase that starts with &#123;, [ or &quot; as a JSON string.</small> <!>", 1), Ri = /* @__PURE__ */ K("<label> <!></label> <!>", 1), zi = /* @__PURE__ */ K("<small>Protected literal pins reserve every source message containing an exact match verbatim. A missing pin reports PIN_MISSING. Source IDs are for inspection.</small>"), Bi = /* @__PURE__ */ K("<div class=\"pc-workflow-editor\"><p> </p> <label>Operation name<input class=\"text_pole\"/></label> <label><input type=\"checkbox\"/> Enabled</label> <small>Disabled operations block preflight; they do not bypass.</small> <!> <!> <button class=\"menu_button\">Duplicate operation</button> <button class=\"menu_button pc-danger\">Delete operation</button> <!> <!></div>"), Vi = /* @__PURE__ */ K("<button class=\"menu_button\"> </button> <!>", 1), Hi = /* @__PURE__ */ K("<p role=\"status\"> </p>"), Ui = /* @__PURE__ */ K("<h4>Computed guidance</h4><pre> </pre>", 1), Wi = /* @__PURE__ */ K("<div class=\"pc-workflow-comparison\"><div>Original<pre> </pre></div><div>Candidate<pre> </pre></div></div> <!> <button class=\"menu_button\">Apply reviewed candidate</button> <button class=\"menu_button\">Reject candidate</button> <small>Apply rechecks source freshness. Other memory extensions may already have consumed the original; saving does not confirm durability.</small>", 1), Gi = /* @__PURE__ */ K("<h4>Workflow result</h4> <!> <p> </p> <p> </p> <!> <!> <details><summary>Findings and changes</summary><pre> </pre></details> <details><summary>Reports and request trace</summary><pre> </pre></details>", 1), Ki = /* @__PURE__ */ K("<h3> </h3> <p> </p> <strong> </strong> <!> <button class=\"menu_button\"> </button> <small> </small> <!> <button class=\"menu_button\"> </button> <!> <!> <h4>Inspect operations</h4> <!> <!> <!>", 1), qi = /* @__PURE__ */ K("<section class=\"pc-workflows\"><!></section>");
-function Ji(e, t) {
+var xi = /* @__PURE__ */ K("<article class=\"pc-workflow-starter\"><strong> </strong><p> </p> <small> </small> <button class=\"menu_button\"> </button></article>"), Si = /* @__PURE__ */ K("<small>No supported operations yet. Reference-based voice matching is a future candidate.</small>"), Ci = /* @__PURE__ */ K("<button class=\"menu_button\"> <small> </small></button>"), wi = /* @__PURE__ */ K("<button class=\"menu_button\" draggable=\"true\"> <small>· legacy</small></button>"), Ti = /* @__PURE__ */ K("<details class=\"pc-workflow-family\"><summary> </summary><p> </p> <!> <!> <!></details>"), Ei = /* @__PURE__ */ K("<label>Workflow mode <select aria-label=\"Workflow mode\" class=\"text_pole\"><option>Legacy · Replace prompt</option><option>Native · Guidance and reviewed reply</option></select></label> <h3>Workflow examples</h3> <!> <h3>Node families</h3> <!>", 1), Di = /* @__PURE__ */ K("<option> </option>"), Oi = /* @__PURE__ */ K("<label> <select class=\"text_pole\"><option>Choose a connection</option><!></select></label> <label> <input class=\"text_pole\" placeholder=\"Use profile model\"/></label>", 1), ki = /* @__PURE__ */ K("<p class=\"pc-error\"> </p>"), Ai = /* @__PURE__ */ K("<small> </small>"), ji = /* @__PURE__ */ K("<button class=\"menu_button\"> </button>"), Mi = /* @__PURE__ */ K("<label>Model role<input class=\"text_pole\"/></label> <label>Node connection override<select class=\"text_pole\"><option>Use role binding</option><!></select></label> <label>Node model override<input class=\"text_pole\" placeholder=\"Use bound model\"/></label> <small> </small>", 1), Ni = /* @__PURE__ */ K("<select class=\"text_pole\"></select>"), Pi = /* @__PURE__ */ K("<input type=\"checkbox\"/>"), Fi = /* @__PURE__ */ K("<input class=\"text_pole\" type=\"number\"/>"), Ii = /* @__PURE__ */ K("<textarea class=\"text_pole\"></textarea>"), Li = /* @__PURE__ */ K("<p class=\"pc-error\" role=\"alert\"> </p>"), Ri = /* @__PURE__ */ K("<small>One literal phrase per line. Imported objects use one JSON object per line with a \"phrase\" field; keep their other fields to preserve metadata. Quote a literal phrase that starts with &#123;, [ or &quot; as a JSON string.</small> <!>", 1), zi = /* @__PURE__ */ K("<label> <!></label> <!>", 1), Bi = /* @__PURE__ */ K("<small>Protected literal pins reserve every source message containing an exact match verbatim. A missing pin reports PIN_MISSING. Source IDs are for inspection.</small>"), Vi = /* @__PURE__ */ K("<div class=\"pc-workflow-editor\"><p> </p> <label>Operation name<input class=\"text_pole\"/></label> <label><input type=\"checkbox\"/> Enabled</label> <small>Disabled operations block preflight; they do not bypass.</small> <!> <!> <button class=\"menu_button\">Duplicate operation</button> <button class=\"menu_button pc-danger\">Delete operation</button> <!> <!></div>"), Hi = /* @__PURE__ */ K("<button class=\"menu_button\"> </button> <!>", 1), Ui = /* @__PURE__ */ K("<p role=\"status\"> </p>"), Wi = /* @__PURE__ */ K("<h4>Computed guidance</h4><pre> </pre>", 1), Gi = /* @__PURE__ */ K("<div class=\"pc-workflow-comparison\"><div>Original<pre> </pre></div><div>Candidate<pre> </pre></div></div> <!> <button class=\"menu_button\">Apply reviewed candidate</button> <button class=\"menu_button\">Reject candidate</button> <small>Apply rechecks source freshness. Other memory extensions may already have consumed the original; saving does not confirm durability.</small>", 1), Ki = /* @__PURE__ */ K("<h4>Workflow result</h4> <!> <p> </p> <p> </p> <!> <!> <details><summary>Findings and changes</summary><pre> </pre></details> <details><summary>Reports and request trace</summary><pre> </pre></details>", 1), qi = /* @__PURE__ */ K("<h3> </h3> <p> </p> <strong> </strong> <!> <button class=\"menu_button\"> </button> <small> </small> <!> <button class=\"menu_button\"> </button> <!> <!> <h4>Inspect operations</h4> <!> <!> <!>", 1), Ji = /* @__PURE__ */ K("<section class=\"pc-workflows\"><!></section>");
+function Yi(e, t) {
 	A(t, !0);
-	let n = yi(t, "mode", 3, "setup"), r = /* @__PURE__ */ P(null), i = /* @__PURE__ */ P(null);
+	let n = bi(t, "mode", 3, "setup"), r = /* @__PURE__ */ P(null), i = /* @__PURE__ */ P(null);
 	function a(e) {
 		(e.graphId !== W(r)?.graphId || e.selectedId !== W(r)?.selectedId) && F(i, null), F(r, e);
 	}
@@ -2228,16 +2231,16 @@ function Ji(e, t) {
 		} : null, !0);
 	}
 	var c = { update: a }, l = Er(), u = L(l), d = (e) => {
-		var a = qi(), c = I(a), l = (e) => {
-			var n = Ti(), i = L(n), a = R(I(i)), o = I(a);
+		var a = Ji(), c = I(a), l = (e) => {
+			var n = Ei(), i = L(n), a = R(I(i)), o = I(a);
 			o.value = o.__value = "legacy";
 			var s = R(o);
 			s.value = s.__value = "native", O(a);
 			var c;
-			ri(a), O(i);
+			ii(a), O(i);
 			var l = R(i, 4);
 			X(l, 17, () => W(r).starters, (e) => e.id, (e, n) => {
-				var r = bi(), i = I(r), a = I(i, !0);
+				var r = xi(), i = I(r), a = I(i, !0);
 				O(i);
 				var o = R(i), s = I(o, !0);
 				O(o);
@@ -2248,19 +2251,19 @@ function Ji(e, t) {
 					J(a, W(n).title), J(s, W(n).purpose), J(l, `${W(n).phase === "pre" ? "Before reply · Guidance" : "After reply · Reviewed reply"} · Roles: ${e ?? ""} · Maximum ${W(n).callBound ?? ""} auxiliary requests`), J(d, `Install ${W(n).title ?? ""}`);
 				}, [() => W(n).roles.join(", ")]), G("click", u, () => t.actions.install(W(n).id)), q(e, r);
 			}), X(R(l, 4), 17, () => W(r).families, (e) => e.name, (e, n) => {
-				var i = wi(), a = I(i), o = I(a, !0);
+				var i = Ti(), a = I(i), o = I(a, !0);
 				O(a);
 				var s = R(a), c = I(s, !0);
 				O(s);
 				var l = R(s, 2), u = (e) => {
-					q(e, xi());
+					q(e, Si());
 				};
 				Y(l, (e) => {
 					W(n).name === "Transpose" && e(u);
 				});
 				var d = R(l, 2);
 				X(d, 17, () => W(n).operations, (e) => e.id, (e, n) => {
-					var i = Si(), a = I(i), o = R(a), s = I(o);
+					var i = Ci(), a = I(i), o = R(a), s = I(o);
 					O(o), O(i), z(() => {
 						i.disabled = !W(r).native || !W(n).compatible, Q(i, "title", W(r).native ? W(n).compatible ? "Add operation" : "This operation requires the " + W(n).phase + " phase." : "Install a native example first; legacy controls remain below."), J(a, `${W(n).title ?? ""} `), J(s, `· ${W(n).phase ?? ""}`);
 					}), G("click", i, () => t.actions.addNode(W(n).id)), q(e, i);
@@ -2268,7 +2271,7 @@ function Ji(e, t) {
 				var f = R(d, 2), p = (e) => {
 					var r = Er();
 					X(L(r), 17, () => W(n).legacy, (e) => e.id, (e, n) => {
-						var r = Ci(), i = I(r);
+						var r = wi(), i = I(r);
 						Fe(), O(r), z(() => {
 							Q(r, "aria-label", "Add legacy " + W(n).title), J(i, `${W(n).title ?? ""} `);
 						}), hr("dragstart", r, (e) => e.dataTransfer?.setData("application/x-prompt-canvas", JSON.stringify({
@@ -2283,10 +2286,10 @@ function Ji(e, t) {
 					i.open = W(r).native, J(o, W(n).name), J(c, W(n).description);
 				}), q(e, i);
 			}), z(() => {
-				c !== (c = W(r).workflowMode) && (a.value = (a.__value = W(r).workflowMode) ?? "", ni(a, W(r).workflowMode));
+				c !== (c = W(r).workflowMode) && (a.value = (a.__value = W(r).workflowMode) ?? "", ri(a, W(r).workflowMode));
 			}), G("change", a, (e) => t.actions.setMode(e.currentTarget.value)), q(e, n);
 		}, u = (e) => {
-			var n = Ki(), a = L(n), c = I(a, !0);
+			var n = qi(), a = L(n), c = I(a, !0);
 			O(a);
 			var l = R(a, 2), u = I(l, !0);
 			O(l);
@@ -2294,9 +2297,9 @@ function Ji(e, t) {
 			O(d);
 			var p = R(d, 2);
 			X(p, 17, () => W(r).roles, (e) => e.name, (e, n) => {
-				var i = Di(), a = L(i), o = I(a), s = R(o), c = I(s);
+				var i = Oi(), a = L(i), o = I(a), s = R(o), c = I(s);
 				c.value = c.__value = "", X(R(c), 17, () => W(r).profiles, (e) => e.id, (e, t) => {
-					var n = Ei(), r = I(n, !0);
+					var n = Di(), r = I(n, !0);
 					O(n);
 					var i = {};
 					z(() => {
@@ -2304,10 +2307,10 @@ function Ji(e, t) {
 					}), q(e, n);
 				}), O(s);
 				var l;
-				ri(s), O(a);
+				ii(s), O(a);
 				var u = R(a, 2), d = I(u), f = R(d);
-				li(f), O(u), z(() => {
-					J(o, `${W(n).name ?? ""} connection `), Q(s, "aria-label", W(n).name + " connection"), l !== (l = W(n).profileId) && (s.value = (s.__value = W(n).profileId) ?? "", ni(s, W(n).profileId)), J(d, `${W(n).name ?? ""} model override`), ui(f, W(n).model);
+				ui(f), O(u), z(() => {
+					J(o, `${W(n).name ?? ""} connection `), Q(s, "aria-label", W(n).name + " connection"), l !== (l = W(n).profileId) && (s.value = (s.__value = W(n).profileId) ?? "", ri(s, W(n).profileId)), J(d, `${W(n).name ?? ""} model override`), di(f, W(n).model);
 				}), G("change", s, (e) => t.actions.bindRole(W(n).name, e.currentTarget.value, W(n).model)), G("input", f, (e) => t.actions.bindRole(W(n).name, W(n).profileId, e.currentTarget.value)), q(e, i);
 			});
 			var m = R(p, 2), h = I(m);
@@ -2315,14 +2318,14 @@ function Ji(e, t) {
 			var g = R(m, 2), _ = I(g);
 			O(g);
 			var v = R(g, 2);
-			X(v, 17, () => W(r).issues, Lr, (e, t) => {
-				var n = Oi(), r = I(n, !0);
+			X(v, 17, () => W(r).issues, Rr, (e, t) => {
+				var n = ki(), r = I(n, !0);
 				O(n), z(() => J(r, W(t))), q(e, n);
 			});
 			var y = R(v, 2), b = I(y, !0);
 			O(y);
 			var x = R(y, 2), S = (e) => {
-				var t = ki(), n = I(t);
+				var t = Ai(), n = I(t);
 				O(t), z(() => J(n, `Test workflow does not publish guidance. A later Send reruns the workflow and may incur up to ${W(r).callBound ?? ""} auxiliary requests again.`)), q(e, t);
 			};
 			Y(x, (e) => {
@@ -2330,26 +2333,26 @@ function Ji(e, t) {
 			});
 			var ee = R(x, 2);
 			X(ee, 17, () => W(r).groups, (e) => e.id, (e, n) => {
-				var r = Ai(), i = I(r);
+				var r = ji(), i = I(r);
 				O(r), z(() => J(i, `${W(n).collapsed ? "Open" : "Fold"} ${W(n).title ?? ""} formation · Surface · maximum ${W(n).callBound ?? ""} ${W(n).callBound === 1 ? "request" : "requests"}`)), G("click", r, () => t.actions.expand(W(n).id)), q(e, r);
 			});
 			var C = R(ee, 4);
 			X(C, 17, () => W(r).nodes, (e) => e.id, (e, n) => {
-				var a = Vi(), c = L(a), l = I(c);
+				var a = Hi(), c = L(a), l = I(c);
 				O(c);
 				var u = R(c, 2), d = (e) => {
-					var a = Bi(), c = I(a), l = I(c);
+					var a = Vi(), c = I(a), l = I(c);
 					O(c);
 					var u = R(c, 2), d = R(I(u));
-					li(d), O(u);
+					ui(d), O(u);
 					var f = R(u, 2), p = I(f);
-					li(p), Fe(), O(f);
+					ui(p), Fe(), O(f);
 					var m = R(f, 4), h = (e) => {
-						var i = ji(), a = L(i), o = R(I(a));
-						li(o), O(a);
+						var i = Mi(), a = L(i), o = R(I(a));
+						ui(o), O(a);
 						var s = R(a, 2), c = R(I(s)), l = I(c);
 						l.value = l.__value = "", X(R(l), 17, () => W(r).profiles, (e) => e.id, (e, t) => {
-							var n = Ei(), r = I(n, !0);
+							var n = Di(), r = I(n, !0);
 							O(n);
 							var i = {};
 							z(() => {
@@ -2357,12 +2360,12 @@ function Ji(e, t) {
 							}), q(e, n);
 						}), O(c);
 						var u;
-						ri(c), O(s);
+						ii(c), O(s);
 						var d = R(s, 2), f = R(I(d));
-						li(f), O(d);
+						ui(f), O(d);
 						var p = R(d, 2), m = I(p);
 						O(p), z(() => {
-							ui(o, W(n).modelRole), u !== (u = W(n).profileId) && (c.value = (c.__value = W(n).profileId) ?? "", ni(c, W(n).profileId)), ui(f, W(n).model), J(m, `Effective connection: ${W(n).effective ?? ""}`);
+							di(o, W(n).modelRole), u !== (u = W(n).profileId) && (c.value = (c.__value = W(n).profileId) ?? "", ri(c, W(n).profileId)), di(f, W(n).model), J(m, `Effective connection: ${W(n).effective ?? ""}`);
 						}), G("input", o, (e) => t.actions.updateNode(W(n).id, "modelRole", e.currentTarget.value)), G("change", c, (e) => t.actions.updateNode(W(n).id, "profileId", e.currentTarget.value || null)), G("input", f, (e) => t.actions.updateNode(W(n).id, "model", e.currentTarget.value || null)), q(e, i);
 					};
 					Y(m, (e) => {
@@ -2370,10 +2373,10 @@ function Ji(e, t) {
 					});
 					var g = R(m, 2);
 					X(g, 17, () => W(n).controls, (e) => e.key, (e, r) => {
-						var a = Ri(), c = L(a), l = I(c), u = R(l), d = (e) => {
-							var i = Mi();
-							X(i, 21, () => W(r).options, Lr, (e, t) => {
-								var n = Ei(), r = I(n, !0);
+						var a = zi(), c = L(a), l = I(c), u = R(l), d = (e) => {
+							var i = Ni();
+							X(i, 21, () => W(r).options, Rr, (e, t) => {
+								var n = Di(), r = I(n, !0);
 								O(n);
 								var i = {};
 								z(() => {
@@ -2381,32 +2384,32 @@ function Ji(e, t) {
 								}), q(e, n);
 							}), O(i);
 							var a;
-							ri(i), z((e) => {
-								a !== (a = e) && (i.value = (i.__value = e) ?? "", ni(i, e));
+							ii(i), z((e) => {
+								a !== (a = e) && (i.value = (i.__value = e) ?? "", ri(i, e));
 							}, [() => String(W(r).value)]), G("change", i, (e) => t.actions.updateNode(W(n).id, W(r).key, e.currentTarget.value)), q(e, i);
 						}, f = (e) => {
-							var i = Ni();
-							li(i), z((e) => di(i, e), [() => !!W(r).value]), G("change", i, (e) => t.actions.updateNode(W(n).id, W(r).key, e.currentTarget.checked)), q(e, i);
-						}, p = (e) => {
 							var i = Pi();
-							li(i), z((e) => {
-								Q(i, "aria-label", W(r).label), Q(i, "min", W(r).key === "keepRecent" ? 0 : 1), ui(i, e);
+							ui(i), z((e) => fi(i, e), [() => !!W(r).value]), G("change", i, (e) => t.actions.updateNode(W(n).id, W(r).key, e.currentTarget.checked)), q(e, i);
+						}, p = (e) => {
+							var i = Fi();
+							ui(i), z((e) => {
+								Q(i, "aria-label", W(r).label), Q(i, "min", W(r).key === "keepRecent" ? 0 : 1), di(i, e);
 							}, [() => Number(W(r).value)]), G("input", i, (e) => t.actions.updateNode(W(n).id, W(r).key, Number(e.currentTarget.value))), q(e, i);
 						}, m = (e) => {
-							var t = Fi();
+							var t = Ii();
 							rt(t), z((e) => {
-								Q(t, "aria-label", W(r).label), Q(t, "aria-invalid", !!W(i)), Q(t, "aria-describedby", "rule-help-" + W(n).id + (W(i) ? " rule-error-" + W(n).id : "")), ui(t, e);
+								Q(t, "aria-label", W(r).label), Q(t, "aria-invalid", !!W(i)), Q(t, "aria-describedby", "rule-help-" + W(n).id + (W(i) ? " rule-error-" + W(n).id : "")), di(t, e);
 							}, [() => W(i)?.text ?? String(W(r).value)]), G("input", t, (e) => s(W(n).id, e.currentTarget.value)), q(e, t);
 						}, h = (e) => {
-							var i = Fi();
-							rt(i), z((e) => ui(i, e), [() => String(W(r).value)]), G("input", i, (e) => t.actions.updateNode(W(n).id, W(r).key, W(r).kind === "lines" ? o(e.currentTarget.value) : e.currentTarget.value)), q(e, i);
+							var i = Ii();
+							rt(i), z((e) => di(i, e), [() => String(W(r).value)]), G("input", i, (e) => t.actions.updateNode(W(n).id, W(r).key, W(r).kind === "lines" ? o(e.currentTarget.value) : e.currentTarget.value)), q(e, i);
 						};
 						Y(u, (e) => {
 							W(r).options ? e(d) : W(r).kind === "boolean" ? e(f, 1) : W(r).kind === "number" ? e(p, 2) : W(r).kind === "rules" ? e(m, 3) : e(h, -1);
 						}), O(c);
 						var g = R(c, 2), _ = (e) => {
-							var t = Li(), r = L(t), a = R(r, 2), o = (e) => {
-								var t = Ii(), r = I(t, !0);
+							var t = Ri(), r = L(t), a = R(r, 2), o = (e) => {
+								var t = Li(), r = I(t, !0);
 								O(t), z(() => {
 									Q(t, "id", "rule-error-" + W(n).id), J(r, W(i).error);
 								}), q(e, t);
@@ -2420,19 +2423,19 @@ function Ji(e, t) {
 						}), z(() => J(l, `${W(r).label ?? ""} `)), q(e, a);
 					});
 					var _ = R(g, 2), v = R(_, 2), y = R(v, 2), b = (e) => {
-						q(e, zi());
+						q(e, Bi());
 					};
 					Y(y, (e) => {
 						W(n).operation === "smart-compactor" && e(b);
 					});
 					var x = R(y, 2), S = (e) => {
-						var t = ki(), n = I(t, !0);
+						var t = Ai(), n = I(t, !0);
 						O(t), z(() => J(n, W(r).quoteHelp)), q(e, t);
 					};
 					Y(x, (e) => {
 						W(n).operation === "pattern-scan" && e(S);
 					}), O(a), z(() => {
-						J(l, `${W(n).family ?? ""} · ${W(n).phase ?? ""} phase · ${W(n).input ?? ""} → ${W(n).output ?? ""}`), ui(d, W(n).title), di(p, W(n).enabled);
+						J(l, `${W(n).family ?? ""} · ${W(n).phase ?? ""} phase · ${W(n).input ?? ""} → ${W(n).output ?? ""}`), di(d, W(n).title), fi(p, W(n).enabled);
 					}), G("input", d, (e) => t.actions.updateNode(W(n).id, "title", e.currentTarget.value)), G("change", p, (e) => t.actions.updateNode(W(n).id, "enabled", e.currentTarget.checked)), G("click", _, () => t.actions.duplicate(W(n).id)), G("click", v, () => t.actions.remove(W(n).id)), q(e, a);
 				};
 				Y(u, (e) => {
@@ -2442,15 +2445,15 @@ function Ji(e, t) {
 				}), G("click", c, () => t.actions.inspect(W(n).id)), q(e, a);
 			});
 			var w = R(C, 2), te = (e) => {
-				var t = Hi(), n = I(t, !0);
+				var t = Ui(), n = I(t, !0);
 				O(t), z(() => J(n, W(r).status)), q(e, t);
 			};
 			Y(w, (e) => {
 				W(r).status && e(te);
 			});
 			var ne = R(w, 2), re = (e) => {
-				var n = Gi(), a = R(L(n), 2), o = (e) => {
-					var t = Oi(), n = I(t, !0);
+				var n = Ki(), a = R(L(n), 2), o = (e) => {
+					var t = ki(), n = I(t, !0);
 					O(t), z(() => J(n, W(r).result.error)), q(e, t);
 				};
 				Y(a, (e) => {
@@ -2461,19 +2464,19 @@ function Ji(e, t) {
 				var l = R(s, 2), u = I(l);
 				O(l);
 				var d = R(l, 2), f = (e) => {
-					var t = Ui(), n = R(L(t)), i = I(n, !0);
+					var t = Wi(), n = R(L(t)), i = I(n, !0);
 					O(n), z(() => J(i, W(r).result.guidance)), q(e, t);
 				};
 				Y(d, (e) => {
 					W(r).result.guidance && e(f);
 				});
 				var p = R(d, 2), m = (e) => {
-					var n = Wi(), a = L(n), o = I(a), s = R(I(o)), c = I(s, !0);
+					var n = Gi(), a = L(n), o = I(a), s = R(I(o)), c = I(s, !0);
 					O(s), O(o);
 					var l = R(o), u = R(I(l)), d = I(u, !0);
 					O(u), O(l), O(a);
 					var f = R(a, 2), p = (e) => {
-						var t = Oi(), n = I(t, !0);
+						var t = ki(), n = I(t, !0);
 						O(t), z(() => J(n, W(r).result.applyIssue)), q(e, t);
 					};
 					Y(f, (e) => {
@@ -2527,34 +2530,34 @@ gr([
 ]);
 //#endregion
 //#region ui/NodeCard.svelte
-var Yi = /* @__PURE__ */ K("<span> </span>"), Xi = /* @__PURE__ */ K("<span class=\"pc-off-pill\">OFF</span>"), Zi = /* @__PURE__ */ K("<button type=\"button\" class=\"pc-node-action pc-help-btn fa-solid fa-circle-question\" title=\"How Deciders work\" aria-label=\"How Deciders work\"></button>"), Qi = /* @__PURE__ */ K("<button type=\"button\"></button>"), $i = /* @__PURE__ */ K("<div class=\"pc-node-body\"> </div>"), ea = /* @__PURE__ */ K("<div> </div>"), ta = /* @__PURE__ */ K("<div><b> </b><span> </span></div>"), na = /* @__PURE__ */ K("<div><!> <!></div>"), ra = /* @__PURE__ */ K("· <b> </b>", 1), ia = /* @__PURE__ */ K("<button type=\"button\" class=\"pc-node-action pc-node-model pc-node-model-pick\"><i class=\"fa-solid fa-microchip\"></i> <!> <i class=\"fa-solid fa-caret-down pc-model-caret\"></i></button>"), aa = /* @__PURE__ */ K("<div class=\"pc-node-model\"><i class=\"fa-solid fa-microchip\"></i> <!></div>"), oa = /* @__PURE__ */ K("<div><i></i> </div>"), sa = /* @__PURE__ */ K("<span class=\"pc-port-keyname\"> </span>"), ca = /* @__PURE__ */ K("<i></i>"), la = /* @__PURE__ */ K("<div><!><!></div>"), ua = /* @__PURE__ */ K("<div role=\"group\"><div class=\"pc-node-head\"><span class=\"pc-badge\"><i></i> </span> <span class=\"pc-node-title\"> </span> <!> <!> <!> <!></div> <!> <!> <!> <!> <!></div>");
-function da(e, t) {
+var Xi = /* @__PURE__ */ K("<span> </span>"), Zi = /* @__PURE__ */ K("<span class=\"pc-off-pill\">OFF</span>"), Qi = /* @__PURE__ */ K("<button type=\"button\" class=\"pc-node-action pc-help-btn fa-solid fa-circle-question\" title=\"How Deciders work\" aria-label=\"How Deciders work\"></button>"), $i = /* @__PURE__ */ K("<button type=\"button\"></button>"), ea = /* @__PURE__ */ K("<div class=\"pc-node-body\"> </div>"), ta = /* @__PURE__ */ K("<div> </div>"), na = /* @__PURE__ */ K("<div><b> </b><span> </span></div>"), ra = /* @__PURE__ */ K("<div><!> <!></div>"), ia = /* @__PURE__ */ K("· <b> </b>", 1), aa = /* @__PURE__ */ K("<button type=\"button\" class=\"pc-node-action pc-node-model pc-node-model-pick\"><i class=\"fa-solid fa-microchip\"></i> <!> <i class=\"fa-solid fa-caret-down pc-model-caret\"></i></button>"), oa = /* @__PURE__ */ K("<div class=\"pc-node-model\"><i class=\"fa-solid fa-microchip\"></i> <!></div>"), sa = /* @__PURE__ */ K("<div><i></i> </div>"), ca = /* @__PURE__ */ K("<span class=\"pc-port-keyname\"> </span>"), la = /* @__PURE__ */ K("<i></i>"), ua = /* @__PURE__ */ K("<div><!><!></div>"), da = /* @__PURE__ */ K("<div role=\"group\"><div class=\"pc-node-head\"><span class=\"pc-badge\"><i></i> </span> <span class=\"pc-node-title\"> </span> <!> <!> <!> <!></div> <!> <!> <!> <!> <!></div>");
+function fa(e, t) {
 	A(t, !0);
 	let n = (e) => e.stopPropagation();
-	var r = ua();
+	var r = da();
 	let i;
 	var a = I(r), o = I(a), s = I(o), c = R(s);
 	O(o);
 	var l = R(o, 2), u = I(l, !0);
 	O(l);
 	var d = R(l, 2), f = (e) => {
-		var n = Yi(), r = I(n, !0);
+		var n = Xi(), r = I(n, !0);
 		O(n), z(() => {
-			Z(n, 1, Jr(t.card.token.className)), Q(n, "title", t.card.token.title), J(r, t.card.token.text);
+			Z(n, 1, Yr(t.card.token.className)), Q(n, "title", t.card.token.title), J(r, t.card.token.text);
 		}), q(e, n);
 	};
 	Y(d, (e) => {
 		t.card.token && e(f);
 	});
 	var p = R(d, 2), m = (e) => {
-		var n = Xi();
+		var n = Zi();
 		z(() => Q(n, "title", t.card.offHint)), q(e, n);
 	};
 	Y(p, (e) => {
 		t.card.offHint && e(m);
 	});
 	var h = R(p, 2), g = (e) => {
-		var r = Zi();
+		var r = Qi();
 		G("mousedown", r, n), G("click", r, (e) => {
 			n(e), t.actions.help(t.card.id);
 		}), q(e, r);
@@ -2563,7 +2566,7 @@ function da(e, t) {
 		t.card.help && e(g);
 	});
 	var _ = R(h, 2), v = (e) => {
-		var r = Qi();
+		var r = $i();
 		z(() => {
 			Z(r, 1, `pc-node-action pc-toggle fa-solid ${t.card.enabled ? "fa-toggle-on pc-toggle-on" : "fa-toggle-off pc-toggle-off"}`), Q(r, "title", t.card.enabled ? "Switched on — click to switch off" : "Switched off — click to switch on"), Q(r, "aria-label", `Switch ${t.card.title} ${t.card.enabled ? "off" : "on"}`), Q(r, "aria-pressed", t.card.enabled);
 		}), G("mousedown", r, n), G("click", r, (e) => {
@@ -2574,37 +2577,37 @@ function da(e, t) {
 		t.card.toggle && e(v);
 	}), O(a);
 	var y = R(a, 2), b = (e) => {
-		var n = $i(), r = I(n, !0);
+		var n = ea(), r = I(n, !0);
 		O(n), z(() => J(r, t.card.body)), q(e, n);
 	};
 	Y(y, (e) => {
 		t.card.body !== null && e(b);
 	});
 	var x = R(y, 2), S = (e) => {
-		var n = na(), r = I(n), i = (e) => {
-			var n = ea(), r = I(n, !0);
+		var n = ra(), r = I(n), i = (e) => {
+			var n = ta(), r = I(n, !0);
 			O(n), z(() => {
-				Z(n, 1, Jr(t.card.mode.className)), J(r, t.card.mode.text);
+				Z(n, 1, Yr(t.card.mode.className)), J(r, t.card.mode.text);
 			}), q(e, n);
 		};
 		Y(r, (e) => {
 			t.card.mode && e(i);
 		}), X(R(r, 2), 17, () => t.card.rows, (e) => e.id, (e, t) => {
-			var n = ta(), r = I(n), i = I(r, !0);
+			var n = na(), r = I(n), i = I(r, !0);
 			O(r);
 			var a = R(r), o = I(a, !0);
 			O(a), O(n), z(() => {
 				Z(n, 1, `pc-dec-key${W(t).chosen ? " pc-dec-chosen" : ""}${W(t).fallback ? " pc-dec-fallback" : ""}`), J(i, W(t).name), J(o, W(t).text);
 			}), q(e, n);
-		}), O(n), z(() => Z(n, 1, Jr(t.card.rowClass))), q(e, n);
+		}), O(n), z(() => Z(n, 1, Yr(t.card.rowClass))), q(e, n);
 	};
 	Y(x, (e) => {
 		t.card.body === null && e(S);
 	});
 	var ee = R(x, 2), C = (e) => {
 		var r = Er(), i = L(r), a = (e) => {
-			var r = ia(), i = R(I(r)), a = R(i), o = (e) => {
-				var n = ra(), r = R(L(n)), i = I(r, !0);
+			var r = aa(), i = R(I(r)), a = R(i), o = (e) => {
+				var n = ia(), r = R(L(n)), i = I(r, !0);
 				O(r), z(() => J(i, t.card.model.actual)), q(e, n);
 			};
 			Y(a, (e) => {
@@ -2615,8 +2618,8 @@ function da(e, t) {
 				n(e), t.actions.model(t.card.id, e.currentTarget);
 			}), q(e, r);
 		}, o = (e) => {
-			var n = aa(), r = R(I(n)), i = R(r), a = (e) => {
-				var n = ra(), r = R(L(n)), i = I(r, !0);
+			var n = oa(), r = R(I(n)), i = R(r), a = (e) => {
+				var n = ia(), r = R(L(n)), i = I(r, !0);
 				O(r), z(() => J(i, t.card.model.actual)), q(e, n);
 			};
 			Y(i, (e) => {
@@ -2634,31 +2637,31 @@ function da(e, t) {
 	});
 	var w = R(ee, 2);
 	X(w, 19, () => t.card.notices, (e, t) => `${e.className}:${t}`, (e, t) => {
-		var n = oa(), r = I(n), i = R(r);
+		var n = sa(), r = I(n), i = R(r);
 		O(n), z(() => {
-			Z(n, 1, Jr(W(t).className)), Q(n, "title", W(t).title), Z(r, 1, `fa-solid ${W(t).icon}`), J(i, ` ${W(t).text ?? ""}`);
+			Z(n, 1, Yr(W(t).className)), Q(n, "title", W(t).title), Z(r, 1, `fa-solid ${W(t).icon}`), J(i, ` ${W(t).text ?? ""}`);
 		}), q(e, n);
 	}), X(R(w, 2), 17, () => t.card.ports, (e) => e.id, (e, n) => {
-		var r = la();
+		var r = ua();
 		let i;
 		var a = I(r), o = (e) => {
-			var t = sa(), r = I(t, !0);
+			var t = ca(), r = I(t, !0);
 			O(t), z(() => J(r, W(n).label)), q(e, t);
 		};
 		Y(a, (e) => {
 			W(n).label && e(o);
 		});
 		var s = R(a), c = (e) => {
-			var t = ca();
+			var t = la();
 			z(() => Z(t, 1, `fa-solid ${W(n).icon}`)), q(e, t);
 		};
 		Y(s, (e) => {
 			W(n).icon && e(c);
 		}), O(r), z(() => {
-			Z(r, 1, Jr(W(n).className)), Q(r, "data-node", t.card.id), Q(r, "data-dir", W(n).dir), Q(r, "data-port", W(n).port), Q(r, "data-side", W(n).side), Q(r, "title", W(n).title), i = ti(r, "", i, { left: W(n).left === void 0 ? void 0 : `${W(n).left}%` });
+			Z(r, 1, Yr(W(n).className)), Q(r, "data-node", t.card.id), Q(r, "data-dir", W(n).dir), Q(r, "data-port", W(n).port), Q(r, "data-side", W(n).side), Q(r, "title", W(n).title), i = ni(r, "", i, { left: W(n).left === void 0 ? void 0 : `${W(n).left}%` });
 		}), q(e, r);
 	}), O(r), z(() => {
-		Z(r, 1, Jr(t.card.className)), Q(r, "data-id", t.card.id), Q(r, "title", t.card.hint), Q(r, "aria-label", `${t.card.label}: ${t.card.title}`), i = ti(r, "", i, {
+		Z(r, 1, Yr(t.card.className)), Q(r, "data-id", t.card.id), Q(r, "title", t.card.hint), Q(r, "aria-label", `${t.card.label}: ${t.card.title}`), i = ni(r, "", i, {
 			left: `${t.card.x}px`,
 			top: `${t.card.y}px`,
 			width: `${t.card.w}px`
@@ -2672,8 +2675,8 @@ gr([
 ]);
 //#endregion
 //#region ui/GroupCard.svelte
-var fa = /* @__PURE__ */ K("<span class=\"pc-badge\"><i class=\"fa-solid fa-object-group pc-badge-icon\"></i> Group</span>"), pa = /* @__PURE__ */ K("<i class=\"fa-solid fa-object-group\"></i>"), ma = /* @__PURE__ */ K("<span class=\"pc-group-frame-count\"> </span>"), ha = /* @__PURE__ */ K("<span> </span>"), ga = /* @__PURE__ */ K("<span class=\"pc-off-pill\" title=\"This whole group is switched off. Nothing in it is sent, and nothing passes through it.\">OFF</span>"), _a = /* @__PURE__ */ K("<div class=\"pc-node-body\"> </div><div class=\"pc-node-model pc-group-io\"> </div> <div class=\"pc-node-cond\"> </div> <div class=\"pc-gport pc-gport-in\" data-gport=\"in\" title=\"Drag up to a block to wire it into this group\"></div> <div class=\"pc-gport pc-gport-out\" data-gport=\"out\" title=\"Drag to wire a block in this group into another block\"></div>", 1), va = /* @__PURE__ */ K("<div class=\"pc-group-resize\" data-action=\"resize\" title=\"Drag to resize the blanket\"></div>"), ya = /* @__PURE__ */ K("<div role=\"group\"><div><!> <span> </span> <!> <!> <!> <button type=\"button\"></button> <button type=\"button\" data-action=\"toggle\" aria-label=\"Toggle group\"></button></div> <!></div>");
-function ba(e, t) {
+var pa = /* @__PURE__ */ K("<span class=\"pc-badge\"><i class=\"fa-solid fa-object-group pc-badge-icon\"></i> Group</span>"), ma = /* @__PURE__ */ K("<i class=\"fa-solid fa-object-group\"></i>"), ha = /* @__PURE__ */ K("<span class=\"pc-group-frame-count\"> </span>"), ga = /* @__PURE__ */ K("<span> </span>"), _a = /* @__PURE__ */ K("<span class=\"pc-off-pill\" title=\"This whole group is switched off. Nothing in it is sent, and nothing passes through it.\">OFF</span>"), va = /* @__PURE__ */ K("<div class=\"pc-node-body\"> </div><div class=\"pc-node-model pc-group-io\"> </div> <div class=\"pc-node-cond\"> </div> <div class=\"pc-gport pc-gport-in\" data-gport=\"in\" title=\"Drag up to a block to wire it into this group\"></div> <div class=\"pc-gport pc-gport-out\" data-gport=\"out\" title=\"Drag to wire a block in this group into another block\"></div>", 1), ya = /* @__PURE__ */ K("<div class=\"pc-group-resize\" data-action=\"resize\" title=\"Drag to resize the blanket\"></div>"), ba = /* @__PURE__ */ K("<div role=\"group\"><div><!> <span> </span> <!> <!> <!> <button type=\"button\"></button> <button type=\"button\" data-action=\"toggle\" aria-label=\"Toggle group\"></button></div> <!></div>");
+function xa(e, t) {
 	A(t, !0);
 	function n(e, n) {
 		e.stopPropagation(), e.preventDefault(), t.actions.group(t.group.id, n);
@@ -2681,12 +2684,12 @@ function ba(e, t) {
 	function r(e, n) {
 		e.stopPropagation(), e.detail === 0 && t.actions.group(t.group.id, n);
 	}
-	var i = ya();
+	var i = ba();
 	let a;
 	var o = I(i), s = I(o), c = (e) => {
-		q(e, fa());
-	}, l = (e) => {
 		q(e, pa());
+	}, l = (e) => {
+		q(e, ma());
 	};
 	Y(s, (e) => {
 		t.group.collapsed ? e(c) : e(l, -1);
@@ -2694,23 +2697,23 @@ function ba(e, t) {
 	var u = R(s, 2), d = I(u, !0);
 	O(u);
 	var f = R(u, 2), p = (e) => {
-		var n = ma(), r = I(n, !0);
+		var n = ha(), r = I(n, !0);
 		O(n), z(() => J(r, t.group.count)), q(e, n);
 	};
 	Y(f, (e) => {
 		t.group.collapsed || e(p);
 	});
 	var m = R(f, 2), h = (e) => {
-		var n = ha(), r = I(n, !0);
+		var n = ga(), r = I(n, !0);
 		O(n), z(() => {
-			Z(n, 1, Jr(t.group.token.className)), Q(n, "title", t.group.token.title), J(r, t.group.token.text);
+			Z(n, 1, Yr(t.group.token.className)), Q(n, "title", t.group.token.title), J(r, t.group.token.text);
 		}), q(e, n);
 	};
 	Y(m, (e) => {
 		t.group.token && e(h);
 	});
 	var g = R(m, 2), _ = (e) => {
-		q(e, ga());
+		q(e, _a());
 	};
 	Y(g, (e) => {
 		t.group.enabled || e(_);
@@ -2718,7 +2721,7 @@ function ba(e, t) {
 	var v = R(g, 2), y = R(v, 2);
 	O(o);
 	var b = R(o, 2), x = (e) => {
-		var n = _a(), r = L(n), i = I(r, !0);
+		var n = va(), r = L(n), i = I(r, !0);
 		O(r);
 		var a = R(r), o = I(a, !0);
 		O(a);
@@ -2729,43 +2732,43 @@ function ba(e, t) {
 			J(i, t.group.body), J(o, t.group.io), J(c, t.group.enabled ? "double-click to open" : "switched off — nothing goes through"), Q(l, "data-group", t.group.id), Q(u, "data-group", t.group.id);
 		}), q(e, n);
 	}, S = (e) => {
-		q(e, va());
+		q(e, ya());
 	};
 	Y(b, (e) => {
 		t.group.collapsed ? e(x) : e(S, -1);
 	}), O(i), z(() => {
-		Z(i, 1, Jr(t.group.className)), Q(i, "data-group", t.group.id), Q(i, "aria-label", `Group: ${t.group.title}`), a = ti(i, "", a, {
+		Z(i, 1, Yr(t.group.className)), Q(i, "data-group", t.group.id), Q(i, "aria-label", `Group: ${t.group.title}`), a = ni(i, "", a, {
 			left: `${t.group.x}px`,
 			top: `${t.group.y}px`,
 			width: `${t.group.w}px`,
 			height: t.group.collapsed ? void 0 : `${t.group.h}px`
-		}), Z(o, 1, Jr(t.group.collapsed ? "pc-node-head" : "pc-group-frame-head")), Z(u, 1, Jr(t.group.collapsed ? "pc-node-title" : "pc-group-frame-title")), J(d, t.group.title), Z(v, 1, `pc-node-action fa-solid pc-group-btn ${t.group.collapsed ? "fa-up-right-and-down-left-from-center" : "fa-down-left-and-up-right-to-center"}`), Q(v, "data-action", t.group.collapsed ? "open" : "collapse"), Q(v, "title", t.group.collapsed ? "Open the group as a blanket" : "Fold the group"), Q(v, "aria-label", t.group.collapsed ? "Open group" : "Fold group"), Z(y, 1, `pc-node-action pc-toggle fa-solid ${t.group.enabled ? "fa-toggle-on pc-toggle-on" : "fa-toggle-off pc-toggle-off"}`), Q(y, "title", t.group.enabled ? "Switch the whole group off" : "Switch the whole group on"), Q(y, "aria-pressed", t.group.enabled);
+		}), Z(o, 1, Yr(t.group.collapsed ? "pc-node-head" : "pc-group-frame-head")), Z(u, 1, Yr(t.group.collapsed ? "pc-node-title" : "pc-group-frame-title")), J(d, t.group.title), Z(v, 1, `pc-node-action fa-solid pc-group-btn ${t.group.collapsed ? "fa-up-right-and-down-left-from-center" : "fa-down-left-and-up-right-to-center"}`), Q(v, "data-action", t.group.collapsed ? "open" : "collapse"), Q(v, "title", t.group.collapsed ? "Open the group as a blanket" : "Fold the group"), Q(v, "aria-label", t.group.collapsed ? "Open group" : "Fold group"), Z(y, 1, `pc-node-action pc-toggle fa-solid ${t.group.enabled ? "fa-toggle-on pc-toggle-on" : "fa-toggle-off pc-toggle-off"}`), Q(y, "title", t.group.enabled ? "Switch the whole group off" : "Switch the whole group on"), Q(y, "aria-pressed", t.group.enabled);
 	}), G("mousedown", v, (e) => n(e, t.group.collapsed ? "open" : "collapse")), G("click", v, (e) => r(e, t.group.collapsed ? "open" : "collapse")), G("mousedown", y, (e) => n(e, "toggle")), G("click", y, (e) => r(e, "toggle")), q(e, i), j();
 }
 gr(["mousedown", "click"]);
 //#endregion
 //#region ui/WireLayer.svelte
-var xa = /* @__PURE__ */ Tr("<title> </title>"), Sa = /* @__PURE__ */ Tr("<path class=\"pc-wire-hit\"></path><path></path><text> <!></text>", 1), Ca = /* @__PURE__ */ Tr("<path></path>"), wa = /* @__PURE__ */ Tr("<defs><marker viewBox=\"0 0 10 10\" refX=\"8\" refY=\"5\" markerWidth=\"7\" markerHeight=\"7\" orient=\"auto-start-reverse\"><path d=\"M 0 0 L 10 5 L 0 10 z\" class=\"pc-loop-arrow\"></path></marker></defs><!><!>", 1);
-function Ta(e, t) {
+var Sa = /* @__PURE__ */ Tr("<title> </title>"), Ca = /* @__PURE__ */ Tr("<path class=\"pc-wire-hit\"></path><path></path><text> <!></text>", 1), wa = /* @__PURE__ */ Tr("<path></path>"), Ta = /* @__PURE__ */ Tr("<defs><marker viewBox=\"0 0 10 10\" refX=\"8\" refY=\"5\" markerWidth=\"7\" markerHeight=\"7\" orient=\"auto-start-reverse\"><path d=\"M 0 0 L 10 5 L 0 10 z\" class=\"pc-loop-arrow\"></path></marker></defs><!><!>", 1);
+function Ea(e, t) {
 	A(t, !0);
-	var n = wa(), r = L(n), i = I(r);
+	var n = Ta(), r = L(n), i = I(r);
 	O(r);
 	var a = R(r);
 	X(a, 17, () => t.wires, (e) => e.id, (e, n) => {
-		var r = Sa(), i = L(r), a = R(i), o = R(a), s = I(o, !0), c = R(s), l = (e) => {
-			var t = xa(), r = I(t, !0);
+		var r = Ca(), i = L(r), a = R(i), o = R(a), s = I(o, !0), c = R(s), l = (e) => {
+			var t = Sa(), r = I(t, !0);
 			O(t), z(() => J(r, W(n).label.title)), q(e, t);
 		};
 		Y(c, (e) => {
 			W(n).label.title && e(l);
 		}), O(o), z(() => {
-			Q(i, "d", W(n).d), Q(i, "data-id", W(n).id), Q(a, "d", W(n).d), Z(a, 0, Jr(W(n).className)), Q(a, "data-id", W(n).id), Q(a, "marker-end", W(n).arrow ? `url(#${t.markerId})` : void 0), Q(o, "x", W(n).label.x), Q(o, "y", W(n).label.y), Z(o, 0, Jr(W(n).label.className)), Q(o, "data-id", W(n).label.id), Q(o, "text-anchor", W(n).label.anchor), J(s, W(n).label.text);
+			Q(i, "d", W(n).d), Q(i, "data-id", W(n).id), Q(a, "d", W(n).d), Z(a, 0, Yr(W(n).className)), Q(a, "data-id", W(n).id), Q(a, "marker-end", W(n).arrow ? `url(#${t.markerId})` : void 0), Q(o, "x", W(n).label.x), Q(o, "y", W(n).label.y), Z(o, 0, Yr(W(n).label.className)), Q(o, "data-id", W(n).label.id), Q(o, "text-anchor", W(n).label.anchor), J(s, W(n).label.text);
 		}), q(e, r);
 	});
 	var o = R(a), s = (e) => {
-		var n = Ca();
+		var n = wa();
 		z(() => {
-			Q(n, "d", t.ghost.d), Z(n, 0, Jr(t.ghost.className));
+			Q(n, "d", t.ghost.d), Z(n, 0, Yr(t.ghost.className));
 		}), q(e, n);
 	};
 	Y(o, (e) => {
@@ -2774,8 +2777,8 @@ function Ta(e, t) {
 }
 //#endregion
 //#region ui/CanvasLayer.svelte
-var Ea = /* @__PURE__ */ K("<div class=\"pc-viewport\" data-pc-renderer=\"svelte\"><svg class=\"pc-wires\" aria-label=\"Canvas connections\"><!></svg> <div class=\"pc-nodes\"><!> <!> <!></div></div>");
-function Da(e, t) {
+var Da = /* @__PURE__ */ K("<div class=\"pc-viewport\" data-pc-renderer=\"svelte\"><svg class=\"pc-wires\" aria-label=\"Canvas connections\"><!></svg> <div class=\"pc-nodes\"><!> <!> <!></div></div>");
+function Oa(e, t) {
 	A(t, !0);
 	let n = /* @__PURE__ */ P([]), r = /* @__PURE__ */ P([]), i = /* @__PURE__ */ P([]), a = /* @__PURE__ */ P(null), o = /* @__PURE__ */ P({
 		w: 4e3,
@@ -2813,8 +2816,8 @@ function Da(e, t) {
 		setGroups: f,
 		setWires: p,
 		setPositions: m
-	}, g = Ea(), _ = I(g);
-	Ta(I(_), {
+	}, g = Da(), _ = I(g);
+	Ea(I(_), {
 		get wires() {
 			return W(i);
 		},
@@ -2827,7 +2830,7 @@ function Da(e, t) {
 	}), O(_), $(_, (e) => c = e, () => c);
 	var v = R(_, 2), y = I(v);
 	X(y, 17, () => W(r).filter((e) => !e.collapsed), (e) => e.id, (e, n) => {
-		ba(e, {
+		xa(e, {
 			get group() {
 				return W(n);
 			},
@@ -2838,7 +2841,7 @@ function Da(e, t) {
 	});
 	var b = R(y, 2);
 	return X(b, 17, () => W(n), (e) => e.id, (e, n) => {
-		da(e, {
+		fa(e, {
 			get card() {
 				return W(n);
 			},
@@ -2847,7 +2850,7 @@ function Da(e, t) {
 			}
 		});
 	}), X(R(b, 2), 17, () => W(r).filter((e) => e.collapsed), (e) => e.id, (e, n) => {
-		ba(e, {
+		xa(e, {
 			get group() {
 				return W(n);
 			},
@@ -2861,8 +2864,8 @@ function Da(e, t) {
 }
 //#endregion
 //#region ui/WorkspaceMenus.svelte
-var Oa = /* @__PURE__ */ K("<button type=\"button\" class=\"pc-flat-menu\" aria-haspopup=\"menu\"> </button>"), ka = /* @__PURE__ */ K("<button type=\"button\" role=\"menuitem\"><span> </span><small> </small></button>"), Aa = /* @__PURE__ */ K("<div class=\"pc-workspace-menu-panel\" role=\"menu\" tabindex=\"-1\"></div>"), ja = /* @__PURE__ */ K("<nav class=\"pc-workspace-menus\" aria-label=\"Workspace menus\"><!> <!></nav>");
-function Ma(e, t) {
+var ka = /* @__PURE__ */ K("<button type=\"button\" class=\"pc-flat-menu\" aria-haspopup=\"menu\"> </button>"), Aa = /* @__PURE__ */ K("<button type=\"button\" role=\"menuitem\"><span> </span><small> </small></button>"), ja = /* @__PURE__ */ K("<div class=\"pc-workspace-menu-panel\" role=\"menu\" tabindex=\"-1\"></div>"), Ma = /* @__PURE__ */ K("<nav class=\"pc-workspace-menus\" aria-label=\"Workspace menus\"><!> <!></nav>");
+function Na(e, t) {
 	A(t, !0);
 	let n = /* @__PURE__ */ P(""), r, i = /* @__PURE__ */ P(null), a = null, o = /* @__PURE__ */ P(0), s = /* @__PURE__ */ P(0), c = [
 		"File",
@@ -2891,10 +2894,10 @@ function Ma(e, t) {
 			case "Edit": return [
 				l("Undo", "undo", "Ctrl Z", !t.state.history.undo),
 				l("Redo", "redo", "Ctrl Shift Z", !t.state.history.redo),
-				l("Copy", "copy", "Ctrl C", !t.state.selectionCount),
-				l("Cut", "cut", "Ctrl X", !t.state.selectionCount),
+				l("Copy", "copy", "Ctrl C", !t.state.selectionActions?.copy),
+				l("Cut", "cut", "Ctrl X", !t.state.selectionActions?.cut),
 				l("Paste", "paste", "Ctrl V"),
-				l("Delete selection", "delete-selection", "Del", !t.state.selectionCount)
+				l("Delete selection", "delete-selection", "Del", !t.state.selectionActions?.delete)
 			];
 			case "Graph": return [
 				l("Fit to view", "fit"),
@@ -2906,7 +2909,7 @@ function Ma(e, t) {
 			];
 			case "Node": return [
 				l("Add node…", "add-node"),
-				l("Inspect selection", "inspector"),
+				l("Inspect selection", "reveal-inspector"),
 				l("Library", "sidebar")
 			];
 			case "Preview": return [
@@ -2967,29 +2970,29 @@ function Ma(e, t) {
 			r[e.key === "Home" ? 0 : e.key === "End" ? r.length - 1 : (a + (e.key === "ArrowUp" ? r.length - 1 : 1)) % r.length]?.focus();
 		} else e.key === "Tab" && d();
 	}
-	var h = ja();
+	var h = Ma();
 	hr("pointerdown", nn, (e) => {
 		W(n) && !r.contains(e.target) && !W(i)?.contains(e.target) && d();
 	}), hr("resize", nn, () => d());
 	var g = I(h);
-	X(g, 17, () => c, Lr, (e, t) => {
-		var r = Oa(), i = I(r, !0);
+	X(g, 17, () => c, Rr, (e, t) => {
+		var r = ka(), i = I(r, !0);
 		O(r), z(() => {
 			Q(r, "data-menu", W(t)), Q(r, "aria-expanded", W(n) === W(t)), J(i, W(t));
 		}), G("click", r, (e) => f(W(t), e.currentTarget)), G("keydown", r, m), q(e, r);
 	});
 	var _ = R(g, 2), v = (e) => {
-		var t = Aa();
+		var t = ja();
 		let r;
-		X(t, 21, () => u(W(n)), Lr, (e, t) => {
-			var n = ka(), r = I(n), i = I(r, !0);
+		X(t, 21, () => u(W(n)), Rr, (e, t) => {
+			var n = Aa(), r = I(n), i = I(r, !0);
 			O(r);
 			var a = R(r), o = I(a, !0);
 			O(a), O(n), z(() => {
 				n.disabled = W(t).disabled, J(i, W(t).label), J(o, W(t).shortcut);
 			}), G("click", n, () => p(W(t).command)), q(e, n);
 		}), O(t), $(t, (e) => F(i, e), () => W(i)), z(() => {
-			Q(t, "aria-label", W(n)), r = ti(t, "", r, {
+			Q(t, "aria-label", W(n)), r = ni(t, "", r, {
 				left: `${W(o)}px`,
 				top: `${W(s)}px`
 			});
@@ -3002,8 +3005,8 @@ function Ma(e, t) {
 gr(["click", "keydown"]);
 //#endregion
 //#region ui/Toolbar.svelte
-var Na = /* @__PURE__ */ K("<option> </option>"), Pa = /* @__PURE__ */ K("<header class=\"pc-header\" data-pc-ui=\"svelte\"><div class=\"pc-menubar\"><div class=\"pc-brand\"><img width=\"30\" height=\"30\" alt=\"\"/><span>LATTICE</span></div> <!> <button type=\"button\" class=\"pc-btn menu_button pc-close\" title=\"Close\" aria-label=\"Close canvas\">×</button></div> <div class=\"pc-workflow-bar\"><select class=\"pc-select pc-graph-select text_pole\" aria-label=\"Canvas\"></select> <div class=\"pc-header-actions pc-history\"><button type=\"button\" aria-label=\"Undo\">↶</button> <button type=\"button\" aria-label=\"Redo\">↷</button> <span> </span></div> <button type=\"button\" class=\"pc-btn menu_button pc-root-run\"> </button> <span class=\"pc-root-workflow-status\" role=\"status\"> </span> <button type=\"button\" class=\"pc-btn menu_button\" title=\"Workflow setup\">Setup</button> <div class=\"pc-header-actions pc-surface-actions\"><button type=\"button\" title=\"Show or hide the Library\" aria-label=\"Toggle library\">Library</button> <button type=\"button\" title=\"Show or hide the inspector\" aria-label=\"Toggle inspector\">Details</button></div> <label class=\"pc-arm\"><input class=\"pc-arm-input\" type=\"checkbox\"/><span>Arm</span></label></div></header>");
-function Fa(e, t) {
+var Pa = /* @__PURE__ */ K("<option> </option>"), Fa = /* @__PURE__ */ K("<header class=\"pc-header\" data-pc-ui=\"svelte\"><div class=\"pc-menubar\"><div class=\"pc-brand\"><img width=\"30\" height=\"30\" alt=\"\"/><span>LATTICE</span></div> <!> <button type=\"button\" class=\"pc-btn menu_button pc-close\" title=\"Close\" aria-label=\"Close canvas\">×</button></div> <div class=\"pc-workflow-bar\"><select class=\"pc-select pc-graph-select text_pole\" aria-label=\"Canvas\"></select> <div class=\"pc-header-actions pc-history\"><button type=\"button\" aria-label=\"Undo\">↶</button> <button type=\"button\" aria-label=\"Redo\">↷</button> <span> </span></div> <button type=\"button\" class=\"pc-btn menu_button pc-root-run\"> </button> <span class=\"pc-root-workflow-status\" role=\"status\"> </span> <button type=\"button\" class=\"pc-btn menu_button\" title=\"Workflow setup\">Setup</button> <div class=\"pc-header-actions pc-surface-actions\"><button type=\"button\" title=\"Show or hide the Library\" aria-label=\"Toggle library\">Library</button> <button type=\"button\" title=\"Show or hide the inspector\" aria-label=\"Toggle inspector\">Details</button></div> <label class=\"pc-arm\"><input class=\"pc-arm-input\" type=\"checkbox\"/><span>Arm</span></label></div></header>");
+function Ia(e, t) {
 	A(t, !0);
 	let n, r, i, a, o;
 	function s() {
@@ -3021,10 +3024,10 @@ function Fa(e, t) {
 	var l = {
 		getParts: s,
 		focusGraphSelect: c
-	}, u = Pa(), d = I(u), f = I(d), p = I(f);
+	}, u = Fa(), d = I(u), f = I(d), p = I(f);
 	Fe(), O(f);
 	var m = R(f, 2);
-	Ma(m, {
+	Na(m, {
 		get state() {
 			return t.state;
 		},
@@ -3039,7 +3042,7 @@ function Fa(e, t) {
 	O(d);
 	var g = R(d, 2), _ = I(g);
 	X(_, 21, () => t.state.graphs, (e) => e.id, (e, t) => {
-		var n = Na(), r = I(n, !0);
+		var n = Pa(), r = I(n, !0);
 		O(n);
 		var i = {};
 		z(() => {
@@ -3047,7 +3050,7 @@ function Fa(e, t) {
 		}), q(e, n);
 	}), O(_), $(_, (e) => r = e, () => r);
 	var v;
-	ri(_);
+	ii(_);
 	var y = R(_, 2), b = I(y), x = R(b, 2), S = R(x, 2), ee = I(S, !0);
 	O(S), O(y);
 	var C = R(y, 2), w = I(C, !0);
@@ -3059,26 +3062,26 @@ function Fa(e, t) {
 	var T = R(ae, 2);
 	$(T, (e) => o = e, () => o), O(ie);
 	var oe = R(ie, 2), se = I(oe);
-	return li(se), $(se, (e) => i = e, () => i), Fe(), O(oe), O(g), O(u), $(u, (e) => n = e, () => n), z((e) => {
-		Q(p, "src", t.actions.logoUrl), v !== (v = t.state.graphId) && (_.value = (_.__value = t.state.graphId) ?? "", ni(_, t.state.graphId)), Z(b, 1, `pc-btn menu_button pc-undo${t.state.history.undo ? "" : " pc-disabled"}`), b.disabled = !t.state.history.undo, Q(b, "title", t.state.history.undoTitle), Z(x, 1, `pc-btn menu_button pc-redo${t.state.history.redo ? "" : " pc-disabled"}`), x.disabled = !t.state.history.redo, Q(x, "title", t.state.history.redoTitle), Z(S, 1, `pc-history-note${t.state.history.showNote ? " pc-show" : ""}`), J(ee, t.state.history.note), C.disabled = !t.state.workflow?.native || !t.state.workflow?.busy && !!t.state.workflow?.issues.length, Q(C, "title", e), J(w, t.state.workflow?.busy ? "■ Stop" : "▶ Run"), J(ne, `${t.state.workflow?.native ? `${t.state.workflow.phase} · ${t.state.workflow.assigned ? "Assigned" : "Unassigned"} · ≤ ${t.state.workflow.callBound} requests` : "Legacy prompt"} · Autosave`), Z(ae, 1, `pc-btn menu_button pc-pane-toggle${t.state.sideOpen ? " pc-on" : ""}`), Q(ae, "aria-pressed", t.state.sideOpen), Z(T, 1, `pc-btn menu_button pc-pane-toggle${t.state.inspectorOpen ? " pc-on" : ""}`), Q(T, "aria-pressed", t.state.inspectorOpen), di(se, t.state.armed);
+	return ui(se), $(se, (e) => i = e, () => i), Fe(), O(oe), O(g), O(u), $(u, (e) => n = e, () => n), z((e) => {
+		Q(p, "src", t.actions.logoUrl), v !== (v = t.state.graphId) && (_.value = (_.__value = t.state.graphId) ?? "", ri(_, t.state.graphId)), Z(b, 1, `pc-btn menu_button pc-undo${t.state.history.undo ? "" : " pc-disabled"}`), b.disabled = !t.state.history.undo, Q(b, "title", t.state.history.undoTitle), Z(x, 1, `pc-btn menu_button pc-redo${t.state.history.redo ? "" : " pc-disabled"}`), x.disabled = !t.state.history.redo, Q(x, "title", t.state.history.redoTitle), Z(S, 1, `pc-history-note${t.state.history.showNote ? " pc-show" : ""}`), J(ee, t.state.history.note), C.disabled = !t.state.workflow?.native || !t.state.workflow?.busy && !!t.state.workflow?.issues.length, Q(C, "title", e), J(w, t.state.workflow?.busy ? "■ Stop" : "▶ Run"), J(ne, `${t.state.workflow?.native ? `${t.state.workflow.phase} · ${t.state.workflow.assigned ? "Assigned" : "Unassigned"} · ≤ ${t.state.workflow.callBound} requests` : "Legacy prompt"} · Autosave`), Z(ae, 1, `pc-btn menu_button pc-pane-toggle${t.state.sideOpen ? " pc-on" : ""}`), Q(ae, "aria-pressed", t.state.sideOpen), Z(T, 1, `pc-btn menu_button pc-pane-toggle${t.state.inspectorOpen ? " pc-on" : ""}`), Q(T, "aria-pressed", t.state.inspectorOpen), fi(se, t.state.armed);
 	}, [() => t.state.workflow?.native ? t.state.workflow.issues.join("\n") || "Run the root workflow" : "Install a native workflow example to run"]), G("click", h, () => t.actions.command("close")), G("change", _, (e) => t.actions.pickGraph(e.currentTarget.value)), G("click", b, () => t.actions.command("undo")), G("click", x, () => t.actions.command("redo")), G("click", C, () => t.actions.command(t.state.workflow?.busy ? "stop-workflow" : "run-workflow")), G("click", re, () => t.local("workflow-setup")), G("click", ae, () => t.actions.command("sidebar")), G("click", T, () => t.actions.command("inspector")), G("change", se, (e) => t.actions.arm(e.currentTarget.checked)), q(e, u), j(l);
 }
 gr(["click", "change"]);
 //#endregion
 //#region ui/StatusBar.svelte
-var Ia = /* @__PURE__ */ K("<button type=\"button\" class=\"pc-btn menu_button pc-primary\">Run this one instead</button>"), La = /* @__PURE__ */ K("<div class=\"pc-status\"><span> </span> <span aria-live=\"polite\"> </span> <!> <span class=\"pc-spacer\"></span> <button type=\"button\" class=\"pc-btn menu_button\"><i class=\"fa-solid fa-thumbtack\"></i> </button> <button type=\"button\" class=\"pc-btn menu_button\"><i class=\"fa-solid fa-user-pen\"></i> </button> <button type=\"button\" class=\"pc-btn menu_button\"><i class=\"fa-solid fa-star\"></i> </button> <button type=\"button\" class=\"pc-btn menu_button pc-primary\"><i class=\"fa-solid fa-eye\"></i> Preview prompt</button></div>");
-function Ra(e, t) {
+var La = /* @__PURE__ */ K("<button type=\"button\" class=\"pc-btn menu_button pc-primary\">Run this one instead</button>"), Ra = /* @__PURE__ */ K("<div class=\"pc-status\"><span> </span> <span aria-live=\"polite\"> </span> <!> <span class=\"pc-spacer\"></span> <button type=\"button\" class=\"pc-btn menu_button\"><i class=\"fa-solid fa-thumbtack\"></i> </button> <button type=\"button\" class=\"pc-btn menu_button\"><i class=\"fa-solid fa-user-pen\"></i> </button> <button type=\"button\" class=\"pc-btn menu_button\"><i class=\"fa-solid fa-star\"></i> </button> <button type=\"button\" class=\"pc-btn menu_button pc-primary\"><i class=\"fa-solid fa-eye\"></i> Preview prompt</button></div>");
+function za(e, t) {
 	A(t, !0);
 	let n;
 	function r() {
 		return n;
 	}
-	var i = { getElement: r }, a = La(), o = I(a), s = I(o, !0);
+	var i = { getElement: r }, a = Ra(), o = I(a), s = I(o, !0);
 	O(o);
 	var c = R(o, 2), l = I(c, !0);
 	O(c);
 	var u = R(c, 2), d = (e) => {
-		var n = Ia();
+		var n = La();
 		z(() => Q(n, "title", t.status.overrideTitle)), G("click", n, function(...e) {
 			t.actions.unpin?.apply(this, e);
 		}), q(e, n);
@@ -3108,13 +3111,13 @@ function Ra(e, t) {
 gr(["click"]);
 //#endregion
 //#region ui/CanvasControls.svelte
-var za = /* @__PURE__ */ K("<span class=\"pc-selection-count\"> </span>"), Ba = /* @__PURE__ */ K("<div class=\"pc-canvas-controls\" role=\"toolbar\" aria-label=\"Canvas tools\"><button type=\"button\" aria-label=\"Select tool\" title=\"Drag empty canvas to select blocks\">Select</button> <button type=\"button\" aria-label=\"Pan tool\" title=\"Drag anywhere to pan; hold Space for temporary pan\">Pan</button> <span class=\"pc-control-separator\"></span> <button type=\"button\" class=\"pc-btn\" aria-label=\"Zoom out\" title=\"Zoom out\">−</button> <output class=\"pc-zoom-readout\" aria-label=\"Canvas zoom\"> </output> <button type=\"button\" class=\"pc-btn\" aria-label=\"Zoom in\" title=\"Zoom in\">+</button> <button type=\"button\" class=\"pc-btn\" title=\"Fit selection (.)\" aria-label=\"Fit selection\">Fit</button> <!></div> <div class=\"pc-gesture-hint\">Drag to select · Shift adds · Alt removes · Space pans</div>", 1);
-function Va(e, t) {
+var Ba = /* @__PURE__ */ K("<span class=\"pc-selection-count\"> </span>"), Va = /* @__PURE__ */ K("<div class=\"pc-canvas-controls\" role=\"toolbar\" aria-label=\"Canvas tools\"><button type=\"button\" aria-label=\"Select tool\" title=\"Drag empty canvas to select blocks\">Select</button> <button type=\"button\" aria-label=\"Pan tool\" title=\"Drag anywhere to pan; hold Space for temporary pan\">Pan</button> <span class=\"pc-control-separator\"></span> <button type=\"button\" class=\"pc-btn\" aria-label=\"Zoom out\" title=\"Zoom out\">−</button> <output class=\"pc-zoom-readout\" aria-label=\"Canvas zoom\"> </output> <button type=\"button\" class=\"pc-btn\" aria-label=\"Zoom in\" title=\"Zoom in\">+</button> <button type=\"button\" class=\"pc-btn\" title=\"Fit selection (.)\" aria-label=\"Fit selection\">Fit</button> <!></div> <div class=\"pc-gesture-hint\">Drag to select · Shift adds · Alt removes · Space pans</div>", 1);
+function Ha(e, t) {
 	A(t, !0);
-	var n = Ba(), r = L(n), i = I(r), a = R(i, 2), o = R(a, 4), s = R(o, 2), c = I(s);
+	var n = Va(), r = L(n), i = I(r), a = R(i, 2), o = R(a, 4), s = R(o, 2), c = I(s);
 	O(s);
 	var l = R(s, 2), u = R(l, 2), d = R(u, 2), f = (e) => {
-		var n = za(), r = I(n);
+		var n = Ba(), r = I(n);
 		O(n), z(() => J(r, `${t.count ?? ""} selected`)), q(e, n);
 	};
 	Y(d, (e) => {
@@ -3128,26 +3131,26 @@ function Va(e, t) {
 gr(["click"]);
 //#endregion
 //#region ui/DomainSurface.svelte
-var Ha = /* @__PURE__ */ K("<div></div>");
-function Ua(e, t) {
+var Ua = /* @__PURE__ */ K("<div></div>");
+function Wa(e, t) {
 	A(t, !0);
 	let n;
 	function r() {
 		return n;
 	}
-	var i = { getElement: r }, a = Ha();
+	var i = { getElement: r }, a = Ua();
 	return $(a, (e) => n = e, () => n), z(() => {
-		Z(a, 1, Jr(t.className)), Q(a, "aria-label", t.label);
+		Z(a, 1, Yr(t.className)), Q(a, "aria-label", t.label);
 	}), q(e, a), j(i);
 }
 //#endregion
 //#region ui/PaneDivider.svelte
-var Wa = /* @__PURE__ */ K("<div class=\"pc-pane-divider\" role=\"separator\" aria-label=\"Resize preview\" aria-orientation=\"horizontal\" tabindex=\"0\"></div>");
-function Ga(e, t) {
+var Ga = /* @__PURE__ */ K("<div class=\"pc-pane-divider\" role=\"separator\" aria-label=\"Resize preview\" aria-orientation=\"horizontal\" tabindex=\"0\"></div>");
+function Ka(e, t) {
 	A(t, !0);
-	let n = yi(t, "min", 3, 90), r = yi(t, "max", 3, 500), i, a = null, o = (e) => Math.max(n(), Math.min(r(), e));
+	let n = bi(t, "min", 3, 90), r = bi(t, "max", 3, 500), i, a = null, o = (e) => Math.max(n(), Math.min(r(), e));
 	function s(e) {
-		e.button === 0 && (e.preventDefault(), t.start(), a = {
+		e.button === 0 && (u(), e.preventDefault(), t.start(), a = {
 			id: e.pointerId,
 			y: e.clientY,
 			height: t.height
@@ -3156,19 +3159,23 @@ function Ga(e, t) {
 	function c(e) {
 		a?.id === e.pointerId && t.change(o(a.height + e.clientY - a.y));
 	}
-	function l(e, n = !1) {
-		if (a?.id !== e.pointerId) return;
-		let r = a.height;
-		a = null, n && t.change(r), i.hasPointerCapture(e.pointerId) && i.releasePointerCapture(e.pointerId);
+	function l(e = !1, n = a?.id) {
+		if (!a || a.id !== n) return;
+		let r = a;
+		a = null, e && t.change(r.height), i.hasPointerCapture(r.id) && i.releasePointerCapture(r.id);
 	}
-	function u(e) {
+	function u() {
+		l(!0);
+	}
+	function d(e) {
 		let i = e.shiftKey ? 40 : 12, s = e.key === "ArrowUp" ? t.height - i : e.key === "ArrowDown" ? t.height + i : e.key === "Home" ? n() : e.key === "End" ? r() : null;
-		s !== null && (e.preventDefault(), e.stopPropagation(), t.start(), t.change(o(s))), e.key === "Escape" && a && (t.change(a.height), a = null);
+		s !== null && (e.preventDefault(), e.stopPropagation(), t.start(), t.change(o(s))), e.key === "Escape" && a && (e.preventDefault(), e.stopPropagation(), u());
 	}
-	var d = Wa();
-	$(d, (e) => i = e, () => i), z((e, t) => {
-		Q(d, "aria-valuemin", n()), Q(d, "aria-valuemax", e), Q(d, "aria-valuenow", t);
-	}, [() => Math.round(r()), () => Math.round(t.height)]), G("pointerdown", d, s), G("pointermove", d, c), G("pointerup", d, (e) => l(e)), hr("pointercancel", d, (e) => l(e, !0)), hr("lostpointercapture", d, (e) => l(e, !0)), G("keydown", d, u), q(e, d), j();
+	Ir(u);
+	var f = Ga();
+	hr("blur", nn, u), $(f, (e) => i = e, () => i), z((e, t) => {
+		Q(f, "aria-valuemin", n()), Q(f, "aria-valuemax", e), Q(f, "aria-valuenow", t);
+	}, [() => Math.round(r()), () => Math.round(t.height)]), G("pointerdown", f, s), G("pointermove", f, c), G("pointerup", f, (e) => l(!1, e.pointerId)), hr("pointercancel", f, (e) => l(!0, e.pointerId)), hr("lostpointercapture", f, (e) => l(!0, e.pointerId)), G("keydown", f, d), q(e, f), j();
 }
 //#endregion
 //#region node_modules/svelte/src/internal/flags/legacy.js
@@ -3180,14 +3187,14 @@ gr([
 ]), He();
 //#endregion
 //#region ui/GraphTabs.svelte
-var Ka = /* @__PURE__ */ K("<nav class=\"pc-graph-tabs\" aria-label=\"Open graph views\"><button type=\"button\" class=\"pc-graph-tab\" aria-current=\"page\" title=\"Main graph\">Graph 1</button></nav>");
-function qa(e) {
-	q(e, Ka());
+var qa = /* @__PURE__ */ K("<nav class=\"pc-graph-tabs\" aria-label=\"Open graph views\"><button type=\"button\" class=\"pc-graph-tab\" aria-current=\"page\" title=\"Main graph\">Graph 1</button></nav>");
+function Ja(e) {
+	q(e, qa());
 }
 //#endregion
 //#region ui/NodeShelf.svelte
-var Ja = /* @__PURE__ */ K("<button type=\"button\" class=\"pc-family-row\" aria-haspopup=\"menu\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path></path></svg><span> </span></button>"), Ya = /* @__PURE__ */ K("<button type=\"button\" role=\"menuitem\">‹ Families</button>"), Xa = /* @__PURE__ */ K("<button type=\"button\" role=\"menuitem\" aria-haspopup=\"menu\"><span class=\"pc-subfamily-name\"> </span><span aria-hidden=\"true\">›</span></button>"), Za = /* @__PURE__ */ K("<div role=\"menu\" tabindex=\"-1\"><!> <!></div>"), Qa = /* @__PURE__ */ K("<button type=\"button\" role=\"menuitem\"> </button>"), $a = /* @__PURE__ */ K("<input class=\"text_pole\" aria-label=\"Search nodes\" placeholder=\"Search nodes…\"/>"), eo = /* @__PURE__ */ K("<button type=\"button\" role=\"menuitem\"><span class=\"pc-leaf-icon\" aria-hidden=\"true\">◇</span><span> </span><small> </small></button>"), to = /* @__PURE__ */ K("<div class=\"pc-shelf-menu pc-leaf-menu\" role=\"menu\" tabindex=\"-1\"><!> <!> <!></div>"), no = /* @__PURE__ */ K("<nav aria-label=\"Node families\"></nav> <!> <!>", 1);
-function ro(e, t) {
+var Ya = /* @__PURE__ */ K("<button type=\"button\" class=\"pc-family-row\" aria-haspopup=\"menu\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path></path></svg><span> </span></button>"), Xa = /* @__PURE__ */ K("<button type=\"button\" role=\"menuitem\">‹ Families</button>"), Za = /* @__PURE__ */ K("<button type=\"button\" role=\"menuitem\" aria-haspopup=\"menu\"><span class=\"pc-subfamily-name\"> </span><span aria-hidden=\"true\">›</span></button>"), Qa = /* @__PURE__ */ K("<div role=\"menu\" tabindex=\"-1\"><!> <!></div>"), $a = /* @__PURE__ */ K("<button type=\"button\" role=\"menuitem\"> </button>"), eo = /* @__PURE__ */ K("<input class=\"text_pole\" aria-label=\"Search nodes\" placeholder=\"Search nodes…\"/>"), to = /* @__PURE__ */ K("<button type=\"button\" role=\"menuitem\"><span class=\"pc-leaf-icon\" aria-hidden=\"true\">◇</span><span> </span><small> </small></button>"), no = /* @__PURE__ */ K("<div class=\"pc-shelf-menu pc-leaf-menu\" role=\"menu\" tabindex=\"-1\"><!> <!> <!></div>"), ro = /* @__PURE__ */ K("<nav aria-label=\"Node families\"></nav> <!> <!>", 1);
+function io(e, t) {
 	A(t, !0);
 	let n, r = /* @__PURE__ */ P(null), i = /* @__PURE__ */ P(null), a = /* @__PURE__ */ P(""), o = /* @__PURE__ */ P(""), s = /* @__PURE__ */ P(!1), c = /* @__PURE__ */ P(""), l = /* @__PURE__ */ P(!1), u = /* @__PURE__ */ P(0), d = /* @__PURE__ */ P(0), f = /* @__PURE__ */ P(0), p = /* @__PURE__ */ P(0), m = null, h = [
 		"Input",
@@ -3299,37 +3306,37 @@ function ro(e, t) {
 		let t = [...(e.target.closest("[role=\"menu\"]") || n).querySelectorAll("button:not(:disabled)")].filter((e) => e.getBoundingClientRect().height > 0), i = t.indexOf(e.target);
 		t[e.key === "Home" ? 0 : e.key === "End" ? t.length - 1 : (i + (e.key === "ArrowUp" ? t.length - 1 : 1)) % t.length]?.focus();
 	}
-	var re = { openSearch: w }, ie = no();
+	var re = { openSearch: w }, ie = ro();
 	hr("pointerdown", nn, (e) => {
 		e.target.closest(".pc-node-shelf, .pc-shelf-menu") || b();
 	}), hr("resize", nn, () => b());
 	var ae = L(ie);
-	X(ae, 21, () => h, Lr, (e, t, n) => {
-		var r = Ja();
+	X(ae, 21, () => h, Rr, (e, t, n) => {
+		var r = Ya();
 		let i;
 		var o = I(r), s = I(o);
 		O(o);
 		var c = R(o), l = I(c, !0);
 		O(c), O(r), z((e) => {
-			Q(r, "data-family", W(t)), r.disabled = e, Q(r, "title", W(t) === "Transpose" ? "No supported Transpose operations yet." : W(t) === "Subgraphs" ? "Reusable subgraphs are not available yet." : "Browse " + W(t) + " nodes"), Q(r, "aria-expanded", W(a) === W(t)), i = ti(r, "", i, { "--pc-family": _[n] }), Q(s, "d", g[n]), J(l, W(t));
+			Q(r, "data-family", W(t)), r.disabled = e, Q(r, "title", W(t) === "Transpose" ? "No supported Transpose operations yet." : W(t) === "Subgraphs" ? "Reusable subgraphs are not available yet." : "Browse " + W(t) + " nodes"), Q(r, "aria-expanded", W(a) === W(t)), i = ni(r, "", i, { "--pc-family": _[n] }), Q(s, "d", g[n]), J(l, W(t));
 		}, [() => !v(W(t)).length || W(t) === "Transpose" || W(t) === "Subgraphs"]), G("click", r, (e) => ee(W(t), e.currentTarget)), G("keydown", r, ne), q(e, r);
 	}), O(ae), $(ae, (e) => n = e, () => n);
 	var T = R(ae, 2), oe = (e) => {
-		var t = Za();
+		var t = Qa();
 		let n;
 		var i = I(t), s = (e) => {
-			var t = Ya();
+			var t = Xa();
 			G("click", t, () => b(!0)), q(e, t);
 		};
 		Y(i, (e) => {
 			W(l) && e(s);
-		}), X(R(i, 2), 17, () => [...new Set(v().map((e) => e.phase))], Lr, (e, t) => {
-			var n = Xa(), r = I(n), i = I(r, !0);
+		}), X(R(i, 2), 17, () => [...new Set(v().map((e) => e.phase))], Rr, (e, t) => {
+			var n = Za(), r = I(n), i = I(r, !0);
 			O(r), Fe(), O(n), z((e) => {
 				Q(n, "aria-expanded", W(o) === W(t)), J(i, e);
 			}, [() => y(W(t)).toUpperCase()]), G("click", n, (e) => C(W(t), e.currentTarget)), q(e, n);
 		}), O(t), $(t, (e) => F(r, e), () => W(r)), z((e) => {
-			Z(t, 1, `pc-shelf-menu pc-family-menu${W(l) && W(o) ? " pc-shelf-replaced" : ""}`), Q(t, "aria-label", W(a) + " categories"), n = ti(t, "", n, e);
+			Z(t, 1, `pc-shelf-menu pc-family-menu${W(l) && W(o) ? " pc-shelf-replaced" : ""}`), Q(t, "aria-label", W(a) + " categories"), n = ni(t, "", n, e);
 		}, [() => ({
 			left: `${W(u)}px`,
 			top: `${W(d)}px`,
@@ -3340,10 +3347,10 @@ function ro(e, t) {
 		W(a) && e(oe);
 	});
 	var se = R(T, 2), ce = (e) => {
-		var t = to();
+		var t = no();
 		let n;
 		var u = I(t), d = (e) => {
-			var t = Qa(), n = I(t);
+			var t = $a(), n = I(t);
 			O(t), z(() => J(n, `‹ ${W(a) ?? ""}`)), G("click", t, () => {
 				F(o, ""), sr().then(() => W(r).querySelector("button")?.focus());
 			}), q(e, t);
@@ -3352,20 +3359,20 @@ function ro(e, t) {
 			W(l) && W(o) && e(d);
 		});
 		var m = R(u, 2), g = (e) => {
-			var t = $a();
-			li(t), hi(t, () => W(c), (e) => F(c, e)), q(e, t);
+			var t = eo();
+			ui(t), gi(t, () => W(c), (e) => F(c, e)), q(e, t);
 		};
 		Y(m, (e) => {
 			W(s) && e(g);
 		}), X(R(m, 2), 17, () => W(s) ? h.flatMap((e) => v(e)).filter((e) => (e.title + " " + e.id + " " + e.family).toLowerCase().includes(W(c).toLowerCase())) : v().filter((e) => e.phase === W(o)), (e) => e.family + e.id, (e, t) => {
-			var n = eo(), r = R(I(n)), i = I(r, !0);
+			var n = to(), r = R(I(n)), i = I(r, !0);
 			O(r);
 			var a = R(r), o = I(a, !0);
 			O(a), O(n), z((e) => {
 				n.disabled = !W(t).compatible, Q(n, "title", W(t).compatible ? "Add " + W(t).title : "Requires the " + W(t).phase + " phase"), J(i, W(t).title), J(o, e);
 			}, [() => W(t).legacy ? "L" : W(t).phase.toUpperCase()]), G("click", n, () => te(W(t))), q(e, n);
 		}), O(t), $(t, (e) => F(i, e), () => W(i)), z(() => {
-			Q(t, "aria-label", W(s) ? "Search nodes" : W(a) + " nodes"), n = ti(t, "", n, {
+			Q(t, "aria-label", W(s) ? "Search nodes" : W(a) + " nodes"), n = ni(t, "", n, {
 				left: `${W(f)}px`,
 				top: `${W(p)}px`
 			});
@@ -3378,18 +3385,18 @@ function ro(e, t) {
 gr(["click", "keydown"]);
 //#endregion
 //#region ui/WorkflowSetup.svelte
-var io = /* @__PURE__ */ K("<option> </option>"), ao = /* @__PURE__ */ K("<label> <select class=\"text_pole\"><option>Choose a connection</option><!></select></label> <label> <input class=\"text_pole\" placeholder=\"Use profile model\"/></label>", 1), oo = /* @__PURE__ */ K("<p class=\"pc-error\"> </p>"), so = /* @__PURE__ */ K("<h3> </h3> <p> </p> <p> </p> <!> <button type=\"button\" class=\"pc-btn menu_button\"> </button> <p> </p> <!>", 1), co = /* @__PURE__ */ K("<article class=\"pc-workflow-starter\"><strong> </strong><p> </p><small> </small><button type=\"button\" class=\"pc-btn menu_button\"> </button></article>"), lo = /* @__PURE__ */ K("<label>Workflow mode<select class=\"text_pole\" aria-label=\"Workflow mode\"><option>Legacy · Replace prompt</option><option>Native · Guidance and reviewed reply</option></select></label> <!> <h3>Workflow examples</h3> <!>", 1);
-function uo(e, t) {
+var ao = /* @__PURE__ */ K("<option> </option>"), oo = /* @__PURE__ */ K("<label> <select class=\"text_pole\"><option>Choose a connection</option><!></select></label> <label> <input class=\"text_pole\" placeholder=\"Use profile model\"/></label>", 1), so = /* @__PURE__ */ K("<p class=\"pc-error\"> </p>"), co = /* @__PURE__ */ K("<h3> </h3> <p> </p> <p> </p> <!> <button type=\"button\" class=\"pc-btn menu_button\"> </button> <p> </p> <!>", 1), lo = /* @__PURE__ */ K("<article class=\"pc-workflow-starter\"><strong> </strong><p> </p><small> </small><button type=\"button\" class=\"pc-btn menu_button\"> </button></article>"), uo = /* @__PURE__ */ K("<label>Workflow mode<select class=\"text_pole\" aria-label=\"Workflow mode\"><option>Legacy · Replace prompt</option><option>Native · Guidance and reviewed reply</option></select></label> <!> <h3>Workflow examples</h3> <!>", 1);
+function fo(e, t) {
 	A(t, !0);
 	var n = Er(), r = L(n), i = (e) => {
-		var n = lo(), r = L(n), i = R(I(r)), a = I(i);
+		var n = uo(), r = L(n), i = R(I(r)), a = I(i);
 		a.value = a.__value = "legacy";
 		var o = R(a);
 		o.value = o.__value = "native", O(i);
 		var s;
-		ri(i), O(r);
+		ii(i), O(r);
 		var c = R(r, 2), l = (e) => {
-			var n = so(), r = L(n), i = I(r, !0);
+			var n = co(), r = L(n), i = I(r, !0);
 			O(r);
 			var a = R(r, 2), o = I(a, !0);
 			O(a);
@@ -3397,9 +3404,9 @@ function uo(e, t) {
 			O(s);
 			var l = R(s, 2);
 			X(l, 17, () => t.view.roles, (e) => e.name, (e, n) => {
-				var r = ao(), i = L(r), a = I(i), o = R(a), s = I(o);
+				var r = oo(), i = L(r), a = I(i), o = R(a), s = I(o);
 				s.value = s.__value = "", X(R(s), 17, () => t.view.profiles, (e) => e.id, (e, t) => {
-					var n = io(), r = I(n, !0);
+					var n = ao(), r = I(n, !0);
 					O(n);
 					var i = {};
 					z(() => {
@@ -3407,17 +3414,17 @@ function uo(e, t) {
 					}), q(e, n);
 				}), O(o);
 				var c;
-				ri(o), O(i);
+				ii(o), O(i);
 				var l = R(i, 2), u = I(l), d = R(u);
-				li(d), O(l), z(() => {
-					J(a, `${W(n).name ?? ""} connection`), Q(o, "aria-label", W(n).name + " connection"), c !== (c = W(n).profileId) && (o.value = (o.__value = W(n).profileId) ?? "", ni(o, W(n).profileId)), J(u, `${W(n).name ?? ""} model override`), ui(d, W(n).model);
+				ui(d), O(l), z(() => {
+					J(a, `${W(n).name ?? ""} connection`), Q(o, "aria-label", W(n).name + " connection"), c !== (c = W(n).profileId) && (o.value = (o.__value = W(n).profileId) ?? "", ri(o, W(n).profileId)), J(u, `${W(n).name ?? ""} model override`), di(d, W(n).model);
 				}), G("change", o, (e) => t.actions.workflowSetup?.bindRole(W(n).name, e.currentTarget.value, W(n).model)), G("input", d, (e) => t.actions.workflowSetup?.bindRole(W(n).name, W(n).profileId, e.currentTarget.value)), q(e, r);
 			});
 			var u = R(l, 2), d = I(u);
 			O(u);
 			var f = R(u, 2), p = I(f);
-			O(f), X(R(f, 2), 17, () => t.view.issues, Lr, (e, t) => {
-				var n = oo(), r = I(n, !0);
+			O(f), X(R(f, 2), 17, () => t.view.issues, Rr, (e, t) => {
+				var n = so(), r = I(n, !0);
 				O(n), z(() => J(r, W(t))), q(e, n);
 			}), z(() => {
 				J(i, t.view.name), J(o, t.view.phase === "pre" ? "Guidance helps SillyTavern plan its normal reply." : "Review a revision of the latest completed assistant reply."), J(c, `Maximum auxiliary requests: ${t.view.callBound ?? ""}`), J(d, `Assign ${t.view.phase ?? ""} phase and enable native mode`), J(p, `${t.view.assigned ? "Assigned to this phase." : "Phase is not assigned."} Arming is a separate action.`);
@@ -3426,7 +3433,7 @@ function uo(e, t) {
 		Y(c, (e) => {
 			t.view.native && e(l);
 		}), X(R(c, 4), 17, () => t.view.starters, (e) => e.id, (e, n) => {
-			var r = co(), i = I(r), a = I(i, !0);
+			var r = lo(), i = I(r), a = I(i, !0);
 			O(i);
 			var o = R(i), s = I(o, !0);
 			O(o);
@@ -3437,7 +3444,7 @@ function uo(e, t) {
 				J(a, W(n).title), J(s, W(n).purpose), J(l, `${W(n).phase === "pre" ? "Before reply" : "After reply"} · Maximum ${W(n).callBound ?? ""} auxiliary requests`), J(d, `Install ${W(n).title ?? ""}`);
 			}), G("click", u, () => t.actions.workflowSetup?.install(W(n).id)), q(e, r);
 		}), z(() => {
-			s !== (s = t.view.workflowMode) && (i.value = (i.__value = t.view.workflowMode) ?? "", ni(i, t.view.workflowMode));
+			s !== (s = t.view.workflowMode) && (i.value = (i.__value = t.view.workflowMode) ?? "", ri(i, t.view.workflowMode));
 		}), G("change", i, (e) => t.actions.workflowSetup?.setMode(e.currentTarget.value)), q(e, n);
 	};
 	Y(r, (e) => {
@@ -3451,8 +3458,8 @@ gr([
 ]);
 //#endregion
 //#region ui/Workbench.svelte
-var fo = /* @__PURE__ */ K("<p>Browse node families on the floating shelf. Middle mouse pans the graph; the wheel zooms around the pointer. Use the divider or its arrow keys to resize Preview.</p><p>Library holds personal blocks and saved material. Setup contains workflow examples, phase assignment and role defaults. Arm enables the selected host workflow; Run tests it explicitly.</p>", 1), po = /* @__PURE__ */ K("<div class=\"pc-workspace-overlay\"><div class=\"pc-workspace-dialog\" role=\"dialog\" tabindex=\"-1\" aria-modal=\"true\"><header><h2> </h2><button type=\"button\" class=\"pc-btn menu_button\" aria-label=\"Close panel\">×</button></header> <!></div></div>"), mo = /* @__PURE__ */ K("<div class=\"pc-root\" role=\"dialog\" aria-modal=\"true\" aria-label=\"Lattice\" data-pc-workbench=\"svelte\"><!> <!> <div class=\"pc-body\"><!> <div class=\"pc-stage\"><section aria-label=\"Output preview\"><header class=\"pc-preview-pane-head\"><strong>Preview</strong><button type=\"button\" class=\"pc-btn menu_button\"> </button></header> <div class=\"pc-preview-content\"><!> <p class=\"pc-preview-placeholder\"> </p></div></section> <!> <!> <div class=\"pc-canvas-area\"><div class=\"pc-canvas-host\" aria-label=\"Node canvas\"></div> <!> <!></div></div> <!></div> <!></div>");
-function ho(e, t) {
+var po = /* @__PURE__ */ K("<p>Browse node families on the floating shelf. Middle mouse pans the graph; the wheel zooms around the pointer. Use the divider or its arrow keys to resize Preview.</p><p>Library holds personal blocks and saved material. Setup contains workflow examples, phase assignment and role defaults. Arm enables the selected host workflow; Run tests it explicitly.</p>", 1), mo = /* @__PURE__ */ K("<div class=\"pc-workspace-overlay\"><div class=\"pc-workspace-dialog\" role=\"dialog\" tabindex=\"-1\" aria-modal=\"true\"><header><h2> </h2><button type=\"button\" class=\"pc-btn menu_button\" aria-label=\"Close panel\">×</button></header> <!></div></div>"), ho = /* @__PURE__ */ K("<div class=\"pc-root\" role=\"dialog\" aria-modal=\"true\" aria-label=\"Lattice\" data-pc-workbench=\"svelte\"><!> <!> <div class=\"pc-body\"><!> <div class=\"pc-stage\"><section aria-label=\"Output preview\"><header class=\"pc-preview-pane-head\"><strong>Preview</strong><button type=\"button\" class=\"pc-btn menu_button\"> </button></header> <div class=\"pc-preview-content\"><!> <p class=\"pc-preview-placeholder\"> </p></div></section> <!> <!> <div class=\"pc-canvas-area\"><div class=\"pc-canvas-host\" aria-label=\"Node canvas\"></div> <!> <!></div></div> <!></div> <!></div>");
+function go(e, t) {
 	A(t, !0);
 	let n = /* @__PURE__ */ P({
 		graphs: [],
@@ -3545,7 +3552,7 @@ function ho(e, t) {
 		F(y, ""), x?.focus({ preventScroll: !0 });
 	}
 	function ie(e) {
-		if (e.key === "Escape" && (e.preventDefault(), e.stopPropagation(), re()), e.key === "Tab") {
+		if (e.stopPropagation(), e.key === "Escape" && (e.preventDefault(), e.stopPropagation(), re()), e.key === "Tab") {
 			let t = [...W(b).querySelectorAll("button:not(:disabled), input, select, textarea, [tabindex=\"0\"]")], n = t[0], r = t.at(-1);
 			e.shiftKey && document.activeElement === n && (e.preventDefault(), r?.focus()), !e.shiftKey && document.activeElement === r && (e.preventDefault(), n?.focus());
 		}
@@ -3562,8 +3569,8 @@ function ho(e, t) {
 		getParts: d,
 		update: f,
 		revealPreview: te
-	}, T = mo(), oe = I(T);
-	$(Fa(oe, {
+	}, T = ho(), oe = I(T);
+	$(Ia(oe, {
 		get state() {
 			return W(n);
 		},
@@ -3573,7 +3580,7 @@ function ho(e, t) {
 		local: ne
 	}), (e) => o = e, () => o);
 	var se = R(oe, 2);
-	$(Ra(se, {
+	$(za(se, {
 		get status() {
 			return W(n).status;
 		},
@@ -3582,7 +3589,7 @@ function ho(e, t) {
 		}
 	}), (e) => s = e, () => s);
 	var ce = R(se, 2), le = I(ce);
-	$(Ua(le, {
+	$(Wa(le, {
 		className: "pc-sidebar",
 		label: "Block library"
 	}), (e) => c = e, () => c);
@@ -3591,7 +3598,7 @@ function ho(e, t) {
 	var me = I(de), he = R(I(me)), ge = I(he, !0);
 	O(he), O(me);
 	var _e = R(me, 2), ve = I(_e);
-	$(Ua(ve, {
+	$(Wa(ve, {
 		className: "pc-preview",
 		label: "Prompt preview"
 	}), (e) => u = e, () => u);
@@ -3600,7 +3607,7 @@ function ho(e, t) {
 	var xe = R(de, 2), Se = (e) => {
 		{
 			let t = /* @__PURE__ */ yt(() => Math.min(W(g), W(v)));
-			Ga(e, {
+			Ka(e, {
 				get height() {
 					return W(t);
 				},
@@ -3618,16 +3625,16 @@ function ho(e, t) {
 		W(_) || e(Se);
 	});
 	var Ce = R(xe, 2);
-	qa(Ce, {});
+	Ja(Ce, {});
 	var we = R(Ce, 2), Te = I(we);
 	$(Te, (e) => i = e, () => i);
 	var Ee = R(Te, 2);
-	$(ro(Ee, {
+	$(io(Ee, {
 		get view() {
 			return W(n).workflow;
 		},
 		add: (e, n) => t.actions.addNode?.(e, n)
-	}), (e) => S = e, () => S), Va(R(Ee, 2), {
+	}), (e) => S = e, () => S), Ha(R(Ee, 2), {
 		get camera() {
 			return W(n).camera;
 		},
@@ -3637,17 +3644,17 @@ function ho(e, t) {
 		get actions() {
 			return t.actions;
 		}
-	}), O(we), O(ue), $(ue, (e) => a = e, () => a), $(Ua(R(ue, 2), {
+	}), O(we), O(ue), $(ue, (e) => a = e, () => a), $(Wa(R(ue, 2), {
 		className: "pc-inspector",
 		label: "Selection inspector"
 	}), (e) => l = e, () => l), O(ce);
 	var De = R(ce, 2), Oe = (e) => {
-		var r = po(), i = I(r), a = I(i), o = I(a), s = I(o, !0);
+		var r = mo(), i = I(r), a = I(i), o = I(a), s = I(o, !0);
 		O(o);
 		var c = R(o);
 		O(a);
 		var l = R(a, 2), u = (e) => {
-			uo(e, {
+			fo(e, {
 				get view() {
 					return W(n).workflow;
 				},
@@ -3656,31 +3663,31 @@ function ho(e, t) {
 				}
 			});
 		}, d = (e) => {
-			var t = fo();
+			var t = po();
 			Fe(), q(e, t);
 		};
 		Y(l, (e) => {
 			W(y) === "workflow-setup" ? e(u) : e(d, -1);
 		}), O(i), $(i, (e) => F(b, e), () => W(b)), O(r), z(() => {
 			Q(i, "aria-label", W(y) === "workflow-setup" ? "Workflow setup" : "Workspace guide"), J(s, W(y) === "workflow-setup" ? "Workflow setup" : "Workspace guide");
-		}), G("keydown", i, ie), G("click", c, re), q(e, r);
+		}), G("keydown", i, ie), hr("paste", i, (e) => e.stopPropagation()), G("click", c, re), q(e, r);
 	};
 	return Y(De, (e) => {
 		W(y) && e(Oe);
 	}), O(T), $(T, (e) => r = e, () => r), z((e) => {
-		fe = Z(de, 1, "pc-preview-pane", null, fe, { "pc-preview-collapsed": W(_) }), pe = ti(de, "", pe, e), Q(he, "aria-expanded", !W(_)), J(ge, W(_) ? "Expand preview" : "Collapse preview"), Q(_e, "hidden", W(_)), J(be, W(n).workflow?.native ? "Run the workflow to review its result in Details." : "Choose Preview › Compile prompt to inspect the current prompt.");
+		fe = Z(de, 1, "pc-preview-pane", null, fe, { "pc-preview-collapsed": W(_) }), pe = ni(de, "", pe, e), Q(he, "aria-expanded", !W(_)), J(ge, W(_) ? "Expand preview" : "Collapse preview"), Q(_e, "hidden", W(_)), J(be, W(n).workflow?.native ? "Run the workflow to review its result in Details." : "Choose Preview › Compile prompt to inspect the current prompt.");
 	}, [() => ({ "--pc-preview-height": `${Math.min(W(g), W(v))}px` })]), G("click", he, () => w(!W(_))), q(e, T), j(ae);
 }
 gr(["click", "keydown"]);
 //#endregion
 //#region ui/entry.js
-var go = 0;
-function _o(e, t) {
-	let n = kr(Da, {
+var _o = 0;
+function vo(e, t) {
+	let n = kr(Oa, {
 		target: e,
 		props: {
 			actions: t,
-			markerId: `pc-loop-arrow-${++go}`
+			markerId: `pc-loop-arrow-${++_o}`
 		}
 	});
 	return Lt(), {
@@ -3692,8 +3699,8 @@ function _o(e, t) {
 		destroy: () => Nr(n)
 	};
 }
-function vo(e, t) {
-	let n = kr(ho, {
+function yo(e, t) {
+	let n = kr(go, {
 		target: e,
 		props: { actions: t }
 	});
@@ -3704,8 +3711,8 @@ function vo(e, t) {
 		destroy: () => Nr(n)
 	};
 }
-function yo(e, t, n = "setup") {
-	let r = kr(Ji, {
+function bo(e, t, n = "setup") {
+	let r = kr(Yi, {
 		target: e,
 		props: {
 			actions: t,
@@ -3718,4 +3725,4 @@ function yo(e, t, n = "setup") {
 	};
 }
 //#endregion
-export { _o as mountCanvas, vo as mountWorkbench, yo as mountWorkflowSurface };
+export { vo as mountCanvas, yo as mountWorkbench, bo as mountWorkflowSurface };

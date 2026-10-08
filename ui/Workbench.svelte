@@ -37,6 +37,9 @@
     }
     function closeOverlay() { overlay = ''; overlayAnchor?.focus({ preventScroll: true }); }
     function overlayKeys(event: KeyboardEvent) {
+        // Keep native input editing and modal button activation, while none
+        // of these keys can reach the background graph shortcut listeners.
+        event.stopPropagation();
         if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); closeOverlay(); }
         if (event.key === 'Tab') {
             const elements = [...dialog.querySelectorAll<HTMLElement>('button:not(:disabled), input, select, textarea, [tabindex="0"]')];
@@ -78,7 +81,7 @@
     </div>
     {#if overlay}
         <div class="pc-workspace-overlay">
-            <div class="pc-workspace-dialog" role="dialog" tabindex="-1" aria-modal="true" aria-label={overlay === 'workflow-setup' ? 'Workflow setup' : 'Workspace guide'} bind:this={dialog} onkeydown={overlayKeys}>
+            <div class="pc-workspace-dialog" role="dialog" tabindex="-1" aria-modal="true" aria-label={overlay === 'workflow-setup' ? 'Workflow setup' : 'Workspace guide'} bind:this={dialog} onkeydown={overlayKeys} onpaste={(event) => event.stopPropagation()}>
                 <header><h2>{overlay === 'workflow-setup' ? 'Workflow setup' : 'Workspace guide'}</h2><button type="button" class="pc-btn menu_button" aria-label="Close panel" onclick={closeOverlay}>×</button></header>
                 {#if overlay === 'workflow-setup'}<WorkflowSetup view={view.workflow} {actions} />{:else}<p>Browse node families on the floating shelf. Middle mouse pans the graph; the wheel zooms around the pointer. Use the divider or its arrow keys to resize Preview.</p><p>Library holds personal blocks and saved material. Setup contains workflow examples, phase assignment and role defaults. Arm enables the selected host workflow; Run tests it explicitly.</p>{/if}
             </div>

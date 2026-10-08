@@ -27,6 +27,7 @@ export interface WorkbenchView {
     graphs: { id: string; name: string }[]; graphId: string; nativeGraph?: boolean; armed: boolean; sideOpen: boolean; inspectorOpen: boolean;
     history: HistoryView; status: StatusView; camera: { x: number; y: number; zoom: number; mode: string }; selectionCount: number;
     workflow?: WorkflowView;
+    selectionActions?: { copy: boolean; cut: boolean; delete: boolean };
 }
 export interface WorkbenchActions {
     logoUrl?: string;

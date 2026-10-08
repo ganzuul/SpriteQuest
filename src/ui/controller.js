@@ -295,7 +295,8 @@ function build() {
                 paste: async () => { const graph = current, epoch = uiEpoch, clip = await fromClipboard(); if (stillEditing(graph, epoch) && clip) pasteOnCanvas(clip); },
                 'delete-selection': () => canvas.deleteSelection().then(done => { if (done) { selected = null; selectedKind = null; renderAll(); } }),
                 'run-workflow': () => workflowActions.run(), 'stop-workflow': () => workflowSession.cancel('Stopped by user'),
-                theme: toggleThemePopover, sidebar: () => togglePane('sidebar'), inspector: () => togglePane('inspector'), close };
+                theme: toggleThemePopover, sidebar: () => togglePane('sidebar'), inspector: () => togglePane('inspector'),
+                'reveal-inspector': () => { if (root.classList.contains('pc-hide-inspector')) togglePane('inspector'); }, close };
             commands[name]?.();
         },
         mode: mode => canvas.setMode(mode),
@@ -338,9 +339,9 @@ function build() {
         onSelect: (item, kind) => { selected = item; selectedKind = kind; updateSelectionCount(); surfaces.inspector.render(); },
         onView: camera => workbench.update({ camera }),
         onMulti: (ids) => {
-            updateSelectionCount();
             if (ids.length > 1) { selected = ids; selectedKind = 'multi'; renderInspector(); }
             else if (selectedKind === 'multi') { selected = null; selectedKind = null; renderInspector(); }
+            updateSelectionCount();
         },
         onChange: () => { if (syncNativeRevision('Canvas edited')) updateWorkflowProjection(); renderStatus(); refreshPreview(); scheduleTokenCount(); },
         onOpen: (node) => {
@@ -504,7 +505,14 @@ function syncPaneToggles() {
 }
 
 function updateSelectionCount() {
-    workbench?.update({ selectionCount: canvas?.multi.size || (canvas?.selection?.kind === 'node' ? 1 : 0) });
+    const pick = currentPick(), selection = canvas?.selection;
+    const editableNode = id => !!current?.nodes[id] && current.nodes[id].type !== NODE_TYPES.OUTPUT;
+    const copy = !!(pick?.nodeIds?.some(editableNode) || pick?.groupIds?.some(id => groupMembers(current, id).some(node => editableNode(node.id))));
+    const canDelete = !!(canvas?.multi.size > 1 ? [...canvas.multi].some(editableNode)
+        : selection?.kind === 'wire' ? current?.wires[selection.id]
+        : selection?.kind === 'group' ? current?.groups?.[selection.id]
+        : selection?.kind === 'node' && editableNode(selection.id));
+    workbench?.update({ selectionCount: canvas?.multi.size || (selection?.kind === 'node' ? 1 : 0), selectionActions: { copy, cut: copy, delete: canDelete } });
 }
 
 /**
