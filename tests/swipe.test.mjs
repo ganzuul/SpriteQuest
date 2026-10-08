@@ -76,3 +76,32 @@ sent = await send('quiet');
 assert.deepEqual(sent, ['ST']);
 assert.equal(asked.length, 2);
 console.log('swipe: ok');
+// Both final-prompt replacement hooks require explicit legacy mode and a legacy graph.
+{
+ const s=c.extensionSettings['prompt-canvas'];s.workflowMode='native';
+ for(const api of ['openai','textgenerationwebui']) {
+  c.mainApi=api;await fire('GENERATION_STARTED',['normal',{},false]);
+  const cc={chat:[{role:'user',content:'ST'}],dryRun:false};const tc={prompt:'ST',dryRun:false};
+  await fire('CHAT_COMPLETION_PROMPT_READY',[cc]);await fire('GENERATE_AFTER_COMBINE_PROMPTS',[tc]);
+  assert.deepEqual(cc.chat,[{role:'user',content:'ST'}]);assert.equal(tc.prompt,'ST');
+ }
+ assert.equal(asked.length,2,'Native mode makes no legacy auxiliary request');
+ s.workflowMode='legacy';graph.schema=2;
+ for(const api of ['openai','textgenerationwebui']) {
+  c.mainApi=api;await fire('GENERATION_STARTED',['normal',{},false]);
+  const cc={chat:[{role:'user',content:'ST'}],dryRun:false};const tc={prompt:'ST',dryRun:false};
+  await fire('CHAT_COMPLETION_PROMPT_READY',[cc]);await fire('GENERATE_AFTER_COMBINE_PROMPTS',[tc]);
+  assert.deepEqual(cc.chat,[{role:'user',content:'ST'}]);assert.equal(tc.prompt,'ST');
+ }
+ assert.equal(asked.length,2,'Selected schema 2 cannot use an already armed legacy hook');
+}
+// Status repaint and cosmetic canvas saves must not cancel a native review.
+{
+ const {getNativeWorkflowController}=await import(`../src/run.js?v=${v}`);const controller=getNativeWorkflowController();
+ const originalCancel=controller.cancel;let cancellations=0;controller.cancel=()=>{cancellations++;};
+ document.dispatchEvent(new CustomEvent('pc-state'));cancellations=0;
+ graph.view={x:550,y:220,zoom:0.8};graph.nodes.plan.x+=300;graph.nodes.plan.title='Cosmetic rename';graph.updatedAt=123;
+ document.dispatchEvent(new CustomEvent('pc-state'));assert.equal(cancellations,0);
+ c.extensionSettings['prompt-canvas'].workflowMode='native';document.dispatchEvent(new CustomEvent('pc-state'));assert.equal(cancellations,1);
+ controller.cancel=originalCancel;
+}

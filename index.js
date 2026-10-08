@@ -17,7 +17,7 @@
  */
 
 import { settings, save, resolveGraph, ctx, safe } from './src/state.js?v=0.18.0';
-import { run, callCount } from './src/run.js?v=0.18.0';
+import { run, callCount, getNativeWorkflowController, initializeNativeWorkflowController, workflowSignature } from './src/run.js?v=0.18.0';
 import * as UI from './src/ui.js?v=0.18.0';
 import { jevSettings, jevYesNo } from './src/jev.js?v=0.18.0';
 import { applyTheme } from './src/theme.js?v=0.18.0';
@@ -25,6 +25,11 @@ import { renderThemeEditor } from './src/theme-editor.js?v=0.18.0';
 import { renderThoughts, attachThoughts, repaintAll, livePanel, answersMode } from './src/thoughts.js?v=0.18.0';
 
 const MODULE = 'prompt-canvas';
+// SillyTavern awaits the global named by manifest.generate_interceptor.
+globalThis.comfyTavernGenerationInterceptor = async (chat, contextSize, abort, type) => {
+    await initializeNativeWorkflowController();
+    return getNativeWorkflowController().beforeGenerate(chat, contextSize, abort, type);
+};
 let lastRun = null;
 /**
  * A real send in progress. Only a real send blocks another: SillyTavern fires
@@ -53,7 +58,13 @@ function armed() {
  * Returns null when Silly Canvas should keep its hands off, in which case
  * SillyTavern's own prompt goes out untouched.
  */
+function legacyArmed() {
+    if (!armed() || safe(() => settings().workflowMode) !== 'legacy') return false;
+    const graph = safe(() => resolveGraph().graph);
+    return !!graph && (graph.schema === undefined || graph.schema === 1) && !String(graph.mode ?? '').startsWith('native-') && !Object.values(graph.nodes ?? {}).some(node => node.type === 'workflow');
+}
 async function build(dryRun) {
+    if (!legacyArmed()) return null;
     const { graph } = resolveGraph();
     if (!graph) return null;
 
@@ -161,7 +172,7 @@ function previousAnswers() {
 }
 
 async function onChatCompletionPromptReady(eventData) {
-    if (!armed()) return;
+    if (!legacyArmed()) return;
     if (!eventData || !Array.isArray(eventData.chat)) return;
     try {
         const plan = await build(!!eventData.dryRun);
@@ -176,7 +187,7 @@ async function onChatCompletionPromptReady(eventData) {
 }
 
 async function onTextCompletionPromptReady(eventData) {
-    if (!armed()) return;
+    if (!legacyArmed()) return;
     if (!eventData || typeof eventData.prompt !== 'string') return;
     // SillyTavern fires this event for chat completion too, just before
     // CHAT_COMPLETION_PROMPT_READY, and then throws the string away. Building
@@ -569,6 +580,22 @@ export function getLastRun() {
         try {
             const c = ctx();
             settings();
+            void initializeNativeWorkflowController();
+            globalThis.addEventListener?.('unload', () => getNativeWorkflowController().dispose(), { once: true });
+            const nativeSettingsSnapshot = () => {
+                const s = settings();
+                const ids = [s.activeGraphId, s.nativeBindings?.preGraphId, s.nativeBindings?.postGraphId];
+                const graphs = ids.map(id => s.graphs[id]);
+                return { graphs, signature: JSON.stringify([s.enabled, s.workflowMode, ids, graphs.map(graph => graph?.schema === 2 ? workflowSignature(graph) : null)]) };
+            };
+            let watchedNativeSettings = nativeSettingsSnapshot();
+            document.addEventListener('pc-state', () => {
+                const next = nativeSettingsSnapshot();
+                if (next.signature !== watchedNativeSettings.signature || next.graphs.some((graph, index) => graph !== watchedNativeSettings.graphs[index])) {
+                    getNativeWorkflowController().cancel('Workflow settings changed');
+                }
+                watchedNativeSettings = next;
+            });
             safe(() => applyTheme());
 
             if (c.eventTypes.GENERATION_STARTED) {

@@ -1891,6 +1891,7 @@ export function generateLevels(graph) {
  * @param {Record<string,string>} [options.results] answers from Generate blocks already run
  */
 export async function compile(graph, { dryRun = false, live = null, results = {}, decisions = {} } = {}) {
+    if (graph?.schema === 2) return fail('Native workflows use artifact Run/Test; they do not replace the native prompt.');
     graph = activeGraph(graph);
     if (!graph) return fail('No canvas selected.');
     const out = outputNode(graph);
