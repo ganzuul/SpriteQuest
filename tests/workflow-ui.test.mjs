@@ -120,3 +120,38 @@ scanOnly.nodes.unused = { id: 'unused', type: 'workflow', operation: 'repair', m
 assert.equal(surface.projectWorkflow(scanOnly).issues.length, 0, 'unreachable auxiliary operations do not block a zero-call workflow');
 const utility = starters.starterGraph('native-guidance'); utility.nodes['smart-compactor'].modelRole = 'Utility';
 assert.equal(surface.projectWorkflow(utility).roles.some(role => role.name === 'Utility' && role.profileId === ''), true, 'a chosen per-node Utility role has an explicit setup binding');
+
+// Missing result adoption, weak graph matching, or busy-result overwrites break these guards.
+{
+    const { workflowSignature } = await import('../src/workflow/runtime.js');
+    const graph = starters.starterGraph('native-guidance');
+    let selected = graph, open = true, latest, complete, state;
+    const controller = { lastAutomaticResult: () => latest, cancel() {}, runPre: () => new Promise(resolve => { complete = resolve; }) };
+    const view = surface.createWorkflowSession({ runtime: () => controller, current: () => selected, epoch: () => 1, active: () => open, changed: value => { state = value; } });
+    const record = runId => ({ origin: { graph, graphId: graph.id, signature: workflowSignature(graph), phase: 'pre', kind: 'send', runId }, result: { ok: true, artifact: { kind: 'guidance', text: 'Actual Send ' + runId }, calls: [], reports: [], actualCalls: 0, callBound: 2 } });
+    assert.equal(typeof view.receiveAutomatic, 'function');
+    latest = record(1); view.receiveAutomatic(latest);
+    assert.equal(view.result().artifact.text, 'Actual Send 1');
+    assert.match(state.status, /Automatic Send.*pre/);
+    assert.equal(Object.isFrozen(view.result()), true);
+    view.cancel(); selected = { ...graph }; view.receiveAutomatic(latest);
+    assert.equal(view.result(), null, 'same ID on a different graph object is not the original run');
+    selected = graph; open = false; view.receiveAutomatic(latest);
+    assert.equal(view.result(), null, 'closed views ignore result callbacks');
+    open = true; view.receiveAutomatic(latest);
+    assert.equal(view.result().artifact.text, 'Actual Send 1', 'reopening the original graph can inspect its completed Send');
+    view.cancel(); graph.nodes['response-plan'].instructions = 'changed'; view.receiveAutomatic(latest);
+    assert.equal(view.result(), null, 'a changed executable signature cannot display the old result');
+    latest = record(2); view.receiveAutomatic(latest);
+    const manual = view.run(); latest = record(3); view.receiveAutomatic(latest);
+    assert.equal(view.result(), null, 'an automatic notification cannot replace an active manual session');
+    complete({ ok: true, artifact: { kind: 'guidance', text: 'Manual test' } }); await manual;
+    view.receiveAutomatic(latest);
+    assert.equal(view.result().artifact.text, 'Manual test', 'replaying the ignored notification cannot replace the manual result');
+    view.cancel(); view.receiveAutomatic(latest);
+    assert.equal(view.result()?.artifact.text, 'Actual Send 3', 'leaving the manual session allows the original graph to inspect its latest Send on reopening');
+    latest = record(4); view.receiveAutomatic(latest);
+    assert.equal(view.result().artifact.text, 'Actual Send 4', 'a later fresh Send replaces a completed manual pre test');
+    selected = post; view.cancel(); view.receiveAutomatic(latest);
+    assert.equal(view.result(), null, 'pre evidence never belongs to a post review');
+}

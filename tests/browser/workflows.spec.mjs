@@ -239,23 +239,143 @@ test('switching graph or closing cancels a delayed run and ignores its late resu
     await page.evaluate(async () => { window.finishWorkflowRequest({ choices: [{ message: { content: '{"patches":[{"index":0,"replacement":"late"}]}' }, finish_reason: 'stop' }] }); window.canvasHarness.UI.open(); await window.canvasHarness.settle(); });
     await expect(page.getByRole('button', { name: 'Apply reviewed candidate', exact: true })).toHaveCount(0);
 });
-test('manual pre Test shows guidance without publishing and later Send reruns its request', async ({ page }) => {
+test('manual pre Test and actual Send show their distinct guidance and request evidence', async ({ page }) => {
     await reviewFixture(page);
     await page.getByRole('button', { name: 'Install Scene guidance' }).click();
     await page.getByLabel('Analysis connection', { exact: true }).selectOption('prose');
     await page.getByRole('button', { name: 'Assign pre phase and enable native mode' }).click();
     await page.evaluate(() => {
         const c = window.canvasHarness.context;
-        c.ConnectionManagerRequestService.sendRequest = async (...args) => { window.workflowRequests.push(args); return { choices: [{ message: { content: 'Keep user agency.' }, finish_reason: 'stop' }], usage: { prompt_tokens: 40, completion_tokens: 8 } }; };
+        c.ConnectionManagerRequestService.sendRequest = async (...args) => { window.workflowRequests.push(args); return { choices: [{ message: { content: window.workflowRequests.length === 1 ? 'Manual test guidance.' : 'Actual Send guidance.' }, finish_reason: 'stop' }], usage: { prompt_tokens: 40, completion_tokens: window.workflowRequests.length === 1 ? 8 : 17 } }; };
     });
     await page.getByRole('button', { name: 'Test workflow', exact: true }).click();
-    await expect(page.getByText('Keep user agency.', { exact: true })).toBeVisible();
+    await expect(page.getByText('Manual test guidance.', { exact: true })).toBeVisible();
     await expect(page.getByText('Actual auxiliary requests: 1 / 2', { exact: true })).toBeVisible();
     expect(await page.evaluate(() => Object.keys(window.canvasHarness.context.extensionPrompts).filter(key => key.startsWith('comfytavern:guidance:')).length)).toBe(0);
     await page.getByLabel('Arm', { exact: true }).check();
     await page.evaluate(async () => { const c = window.canvasHarness.context; await window.comfyTavernGenerationInterceptor(c.chat, 8192, () => {}, 'normal'); });
     expect(await page.evaluate(() => window.workflowRequests.length)).toBe(2);
-    expect(await page.evaluate(() => Object.values(window.canvasHarness.context.extensionPrompts).some(prompt => prompt.value === 'Keep user agency.'))).toBe(true);
+    expect(await page.evaluate(() => Object.values(window.canvasHarness.context.extensionPrompts).some(prompt => prompt.value === 'Actual Send guidance.'))).toBe(true);
+    await expect(page.getByText('Actual Send guidance.', { exact: true })).toBeVisible();
+    await expect(page.getByText('Manual test guidance.', { exact: true })).toHaveCount(0);
+    await expect(page.locator('.pc-workflows [role="status"]')).toContainText('Automatic Send');
+    await page.getByText('Reports and request trace', { exact: true }).click();
+    const trace = page.locator('details').filter({ has: page.getByText('Reports and request trace', { exact: true }) });
+    await expect(trace).toContainText('Actual Send guidance.');
+    expect(JSON.parse(await trace.locator('pre').textContent()).calls[0].result.usage.completion_tokens).toBe(17);
+    await expect(trace).toContainText('host-tokenizer');
+    await page.evaluate(async () => {
+        const c = window.canvasHarness.context;
+        await c.eventSource.emit(c.eventTypes.GENERATION_ENDED, c.chat.length);
+        await c.eventSource.emit(c.eventTypes.GENERATION_STARTED, 'normal', {}, false);
+        c.ConnectionManagerRequestService.sendRequest = async (...args) => { window.workflowRequests.push(args); throw new Error('Synthetic Send failure'); };
+        await window.comfyTavernGenerationInterceptor(c.chat, 8192, () => {}, 'normal');
+    });
+    await expect(trace).toContainText('REQUEST_FAILED');
+    await expect(trace).not.toContainText('Actual Send guidance.');
+    await expect(trace).toContainText('NATIVE_FALLBACK');
+    await expect(page.getByText('Actual auxiliary requests: 1 / 2', { exact: true })).toBeVisible();
+    expect(await page.evaluate(() => window.workflowRequests.length)).toBe(3);
+});
+
+test('automatic Send evidence stays with its original graph through post review, close, and reopen', async ({ page }) => {
+    await reviewFixture(page);
+    const preId = await page.evaluate(async () => {
+        const h = window.canvasHarness, s = h.S.settings();
+        const pre = (await import('/src/workflow/starters.js?v=0.19.0')).installStarter('native-guidance', s);
+        pre.roles.Analysis.profileId = 'prose';
+        s.nativeBindings.preGraphId = pre.id; s.workflowMode = 'native'; s.enabled = true;
+        h.S.save(); h.UI.refreshIfOpen(); return pre.id;
+    });
+    await page.getByRole('button', { name: 'Run reviewed repair', exact: true }).click();
+    await expect(page.getByText('We explore.', { exact: true })).toBeVisible();
+    await page.evaluate(async () => {
+        const c = window.canvasHarness.context;
+        c.ConnectionManagerRequestService.sendRequest = async (...args) => { window.workflowRequests.push(args); return { choices: [{ message: { content: 'First automatic guidance.' }, finish_reason: 'stop' }] }; };
+        await window.comfyTavernGenerationInterceptor(c.chat, 8192, () => {}, 'normal');
+    });
+    await expect(page.getByText('We explore.', { exact: true })).toBeVisible();
+    await expect(page.getByText('First automatic guidance.', { exact: true })).toHaveCount(0);
+    await page.locator('.pc-graph-select').selectOption(preId);
+    await expect(page.getByText('First automatic guidance.', { exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Close canvas', exact: true }).click();
+    await page.evaluate(async () => {
+        const c = window.canvasHarness.context;
+        c.ConnectionManagerRequestService.sendRequest = async (...args) => { window.workflowRequests.push(args); return { choices: [{ message: { content: 'Send while closed.' }, finish_reason: 'stop' }] }; };
+        await window.comfyTavernGenerationInterceptor(c.chat, 8192, () => {}, 'normal');
+        await window.canvasHarness.settle();
+    });
+    await expect(page.locator('.pc-root')).not.toHaveClass(/pc-open/);
+    expect((await page.locator('.pc-workflows').allTextContents()).join('')).not.toContain('Send while closed.');
+    await page.evaluate(async () => { window.canvasHarness.UI.open(); await window.canvasHarness.settle(); });
+    await expect(page.getByText('Send while closed.', { exact: true })).toBeVisible();
+    await expect(page.getByText('First automatic guidance.', { exact: true })).toHaveCount(0);
+    expect(await page.evaluate(() => window.workflowRequests.length)).toBe(3);
+});
+
+test('native graphs reject legacy prompt seeding before confirmation while legacy seeding works', async ({ page }) => {
+    await reviewFixture(page);
+    await page.evaluate(() => {
+        const c = window.canvasHarness.context;
+        c.chatCompletionSettings.prompts = [{ identifier: 'fixture-prompt', name: 'Fixture prompt', content: 'Seeded content', role: 'system' }];
+        c.chatCompletionSettings.prompt_order = [{ character_id: 100000, order: [{ identifier: 'fixture-prompt', enabled: true }] }];
+        c.POPUP_TYPE = { CONFIRM: 1 }; c.POPUP_RESULT = { AFFIRMATIVE: 1 };
+        c.callGenericPopup = async () => { window.seedConfirmations = (window.seedConfirmations || 0) + 1; return 1; };
+        window.beforeNativeSeed = JSON.stringify(window.canvasHarness.graph);
+    });
+    await page.getByLabel('Canvas actions', { exact: true }).click();
+    const seed = page.getByRole('button', { name: 'Seed from SillyTavern’s current prompt order', exact: true });
+    await expect(seed).toBeDisabled();
+    // A stale/programmatic toolbar activation must still hit the controller guard.
+    await seed.evaluate(button => { button.disabled = false; button.click(); });
+    await page.evaluate(() => window.canvasHarness.settle());
+    expect(await page.evaluate(() => window.seedConfirmations || 0)).toBe(0);
+    expect(await page.evaluate(() => JSON.stringify(window.canvasHarness.graph) === window.beforeNativeSeed)).toBe(true);
+    expect(await page.evaluate(async () => (await import('/src/workflow/contracts.js?v=0.19.0')).validateWorkflow(window.canvasHarness.graph).ok)).toBe(true);
+    const legacy = await page.evaluate(() => window.canvasHarness.S.allGraphs().find(graph => graph.schema !== 2).id);
+    await page.locator('.pc-graph-select').selectOption(legacy);
+    await page.getByLabel('Canvas actions', { exact: true }).click();
+    await expect(seed).toBeEnabled(); await seed.click();
+    await expect.poll(() => page.evaluate(() => window.seedConfirmations || 0)).toBe(1);
+    expect(await page.evaluate(() => Object.values(window.canvasHarness.graph.nodes).some(node => node.identifier === 'fixture-prompt'))).toBe(true);
+});
+
+test('Send indicator and arm messages follow native pre assignment, manual post-only, and legacy modes', async ({ page }) => {
+    await reviewFixture(page);
+    await page.getByRole('button', { name: 'Install Scene guidance' }).click();
+    const names = await page.evaluate(() => {
+        const h = window.canvasHarness, s = h.S.settings();
+        const legacy = h.S.allGraphs().find(graph => graph.schema !== 2), pre = h.graph;
+        legacy.name = 'Unrelated legacy prompt'; pre.name = 'Assigned native guidance';
+        s.nativeBindings.preGraphId = pre.id; s.workflowMode = 'native'; s.enabled = true;
+        s.activeGraphId = legacy.id; h.S.setChatBinding(legacy.id); h.S.save(); document.dispatchEvent(new CustomEvent('pc-state'));
+        return { pre: pre.name, legacy: legacy.name };
+    });
+    const indicator = page.locator('#pc-sendbar');
+    await expect(indicator).toHaveClass(/pc-sendbar-on/);
+    await expect(indicator).toHaveAttribute('title', /Assigned native guidance.*adds guidance/);
+    await expect(indicator).toHaveAttribute('title', /2 auxiliary requests/);
+    expect(await indicator.getAttribute('title')).not.toContain(names.legacy);
+    await expect(page.locator('label[for="pc-enabled"]')).toContainText('native');
+    expect(await page.locator('label[for="pc-enabled"]').textContent()).not.toContain('instead of SillyTavern');
+    await indicator.dispatchEvent('contextmenu'); await indicator.dispatchEvent('contextmenu');
+    expect(await page.evaluate(() => window.canvasHarness.toasts.at(-1).message)).toMatch(/Assigned native guidance.*guidance/);
+    await page.evaluate(() => {
+        const h = window.canvasHarness, s = h.S.settings();
+        s.nativeBindings.preGraphId = null;
+        s.nativeBindings.postGraphId = h.S.allGraphs().find(graph => graph.mode === 'native-post').id;
+        h.S.save(); document.dispatchEvent(new CustomEvent('pc-state'));
+    });
+    await expect(indicator).not.toHaveClass(/pc-sendbar-on/);
+    await expect(indicator).toHaveAttribute('title', /No automatic.*manual/i);
+    await indicator.dispatchEvent('contextmenu'); await indicator.dispatchEvent('contextmenu');
+    expect(await page.evaluate(() => window.canvasHarness.toasts.at(-1).message)).toMatch(/manual/i);
+    await page.evaluate(() => { const h = window.canvasHarness; h.S.settings().workflowMode = 'legacy'; h.S.save(); document.dispatchEvent(new CustomEvent('pc-state')); });
+    await expect(indicator).toHaveAttribute('title', /Unrelated legacy prompt.*builds the prompt/);
+    await expect(indicator).toHaveClass(/pc-sendbar-on/);
+    await expect(page.locator('label[for="pc-enabled"]')).toContainText('instead of SillyTavern');
+    await indicator.dispatchEvent('contextmenu'); await indicator.dispatchEvent('contextmenu');
+    expect(await page.evaluate(() => window.canvasHarness.toasts.at(-1).message)).toMatch(/builds the prompt/);
 });
 test('review controls and comparison stay usable in a narrow viewport', async ({ page }) => {
     await reviewFixture(page);

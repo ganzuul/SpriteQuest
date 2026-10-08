@@ -21,7 +21,7 @@
             <summary class="pc-btn menu_button" aria-label="Canvas actions">Canvas <span aria-hidden="true">⌄</span></summary>
             <div class="pc-toolbar-menu-panel">
                 {#each menu as [name, label, icon] (name)}
-                    <button type="button" class={`pc-btn menu_button${name === 'delete' ? ' pc-danger' : ''}`} title={label} onclick={(event) => { actions.command(name); event.currentTarget.closest('details')?.removeAttribute('open'); }}><i class={`fa-solid ${icon}`}></i> {label}</button>
+                    <button type="button" class={`pc-btn menu_button${name === 'delete' ? ' pc-danger' : ''}`} disabled={name === 'seed' && state.nativeGraph} title={name === 'seed' && state.nativeGraph ? 'Prompt-order seeding is available only for legacy canvases.' : label} onclick={(event) => { actions.command(name); event.currentTarget.closest('details')?.removeAttribute('open'); }}><i class={`fa-solid ${icon}`}></i> {label}</button>
                 {/each}
             </div>
         </details>

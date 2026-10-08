@@ -24,7 +24,7 @@ export interface PositionUpdate { id: string; x: number; y: number; w?: number; 
 export interface HistoryView { undo: boolean; redo: boolean; undoTitle: string; redoTitle: string; note: string; showNote: boolean }
 export interface StatusView { armed: boolean; warning: boolean; text: string; overrideTitle: string; chatPinned: boolean; charPinned: boolean; charTitle: string; isDefault: boolean }
 export interface WorkbenchView {
-    graphs: { id: string; name: string }[]; graphId: string; armed: boolean; sideOpen: boolean; inspectorOpen: boolean;
+    graphs: { id: string; name: string }[]; graphId: string; nativeGraph?: boolean; armed: boolean; sideOpen: boolean; inspectorOpen: boolean;
     history: HistoryView; status: StatusView; camera: { x: number; y: number; zoom: number; mode: string }; selectionCount: number;
 }
 export interface WorkbenchActions {

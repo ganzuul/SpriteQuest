@@ -2846,7 +2846,7 @@ function _a(e, t) {
 		let i = () => U(r)[0], a = () => U(r)[1], o = () => U(r)[2];
 		var s = ha(), c = P(s), l = I(c);
 		D(s), L(() => {
-			Z(s, 1, `pc-btn menu_button${i() === "delete" ? " pc-danger" : ""}`), Q(s, "title", a()), Z(c, 1, `fa-solid ${o()}`), q(l, ` ${a() ?? ""}`);
+			Z(s, 1, `pc-btn menu_button${i() === "delete" ? " pc-danger" : ""}`), s.disabled = i() === "seed" && t.state.nativeGraph, Q(s, "title", i() === "seed" && t.state.nativeGraph ? "Prompt-order seeding is available only for legacy canvases." : a()), Z(c, 1, `fa-solid ${o()}`), q(l, ` ${a() ?? ""}`);
 		}), W("click", s, (e) => {
 			t.actions.command(i()), e.currentTarget.closest("details")?.removeAttribute("open");
 		}), K(e, s);

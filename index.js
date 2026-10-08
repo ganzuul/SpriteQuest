@@ -17,7 +17,7 @@
  */
 
 import { settings, save, resolveGraph, ctx, safe } from './src/state.js?v=0.19.0';
-import { run, callCount, getNativeWorkflowController, initializeNativeWorkflowController, workflowSignature } from './src/run.js?v=0.19.0';
+import { run, callCount, getNativeWorkflowController, initializeNativeWorkflowController, workflowSignature, sendWorkflowState } from './src/run.js?v=0.19.0';
 import * as UI from './src/ui.js?v=0.19.0';
 import { jevSettings, jevYesNo } from './src/jev.js?v=0.19.0';
 import { applyTheme } from './src/theme.js?v=0.19.0';
@@ -328,7 +328,7 @@ function addLauncher() {
                 <div class="inline-drawer-content">
                     <label class="checkbox_label" for="pc-enabled">
                         <input id="pc-enabled" type="checkbox">
-                        <span>Arm the canvas (it builds the prompt instead of SillyTavern)</span>
+                        <span id="pc-arm-label">${sendWorkflowState().armLabel}</span>
                     </label>
                     <div class="pc-settings-hint">
                         While this is off SillyTavern behaves exactly as it always has.
@@ -498,9 +498,8 @@ function addSendbarButton() {
         save();
         UI.refreshIfOpen();
         paintSendbar();
-        safe(() => globalThis.toastr?.info(armed()
-            ? 'Armed. Your canvas builds the prompt.'
-            : 'Off. SillyTavern builds the prompt as usual.', 'ComfyTavern'));
+        const state = sendWorkflowState();
+        safe(() => globalThis.toastr?.info(armed() ? `Armed. ${state.armedText}` : state.offText, 'ComfyTavern'));
     });
     b.addEventListener('mouseenter', paintSendbar);
 
@@ -512,18 +511,15 @@ function addSendbarButton() {
 }
 
 function paintSendbar() {
+    const state = sendWorkflowState();
+    const label = document.getElementById('pc-arm-label');
+    if (label) label.textContent = state.armLabel;
     const b = document.getElementById('pc-sendbar');
     if (!b) return;
     const on = armed();
-    const r = safe(() => resolveGraph()) ?? { graph: null, source: 'none' };
-    const from = { chat: 'pinned to this chat', character: 'pinned to this character', default: 'the default canvas' }[r.source];
-    b.classList.toggle('pc-sendbar-on', on && !!r.graph);
-    b.classList.toggle('pc-sendbar-nograph', on && !r.graph);
-    b.title = !on
-        ? 'ComfyTavern is off — SillyTavern builds the prompt.\nClick to open. Right-click to arm.'
-        : r.graph
-            ? `ComfyTavern is armed: "${r.graph.name}" (${from}) builds the prompt.\nClick to open. Right-click to switch off.`
-            : 'ComfyTavern is armed but no canvas applies here, so SillyTavern builds the prompt.\nClick to open. Right-click to switch off.';
+    b.classList.toggle('pc-sendbar-on', on && state.automatic);
+    b.classList.toggle('pc-sendbar-nograph', on && !state.automatic);
+    b.title = on ? `ComfyTavern is armed. ${state.armedText}\nClick to open. Right-click to switch off.` : `${state.offText}\nClick to open. Right-click to arm.`;
 }
 
 function paintThrottle() {

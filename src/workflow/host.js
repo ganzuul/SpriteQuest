@@ -66,7 +66,7 @@ export function snapshotReply(context,messageIndex=context.chat?.length-1) {
 /** Owns cancellation, guidance lifetime and explicit local revision commits. */
 export function createNativeWorkflowController(ports) {
     const context=ports.context;
-    let epoch=0, active=null, result=null, applying=false, internalEvents=0, unsubscribe=null;
+    let epoch=0, active=null, result=null, automaticResult=null, applying=false, internalEvents=0, unsubscribe=null;
     let generation={dryRun:false,type:'normal'};
     const keys=new Set(), sources=new Map(), stopped=new WeakMap();
     const rememberStopped=c=>{
@@ -82,7 +82,15 @@ export function createNativeWorkflowController(ports) {
         const revision=replyRevision(m);
         return (stopped.get(m) ?? []).some(record=>record.revision.swipeId===revision.swipeId && (record.failedStarted!==null?record.failedStarted===revision.started:same(record.revision,revision)));
     };
-    const notify=value=>{result=freezeArtifact(value);try{ports.onResult?.(result);}catch{/* UI observers cannot own lifecycle. */} return result;};
+    const notify=(value,run=null)=>{
+        result=freezeArtifact(value);
+        // Keep the editable graph reference outside the frozen result. Only a fresh
+        // completed Send can replace this one bounded, inspectable origin record.
+        const origin=run?.native ? Object.freeze({graph:run.originalGraph,graphId:run.graph.id,graphName:run.graph.name,signature:run.signature,phase:'pre',kind:'send',runId:run.epoch}) : null;
+        if(origin)automaticResult=Object.freeze({result,origin});
+        try{ports.onResult?.(result,origin);}catch{/* UI observers cannot own lifecycle. */}
+        return result;
+    };
     const clear=()=>{
         const c=context();
         for(const key of Object.keys(c.extensionPrompts ?? {})) if(key.startsWith(PREFIX)) keys.add(key);
@@ -131,8 +139,8 @@ export function createNativeWorkflowController(ports) {
         if(!fresh(run) || sourceText(chat)!==original) {if(active===run)cancel('Source changed during preparation');return fail('STALE_RUN','Stopped or changed generation cannot publish guidance.');}
         if(!value.ok) {
             clear();active=null;
-            if(value.error.code==='ABORTED') {run.abortPrimary?.(true);run.abortPrimary=null;return notify(value);}
-            return notify({...value,fallback:'native',reports:[...value.reports,{code:'NATIVE_FALLBACK',message:'Preparation failed; SillyTavern will generate without ComfyTavern guidance.'}]});
+            if(value.error.code==='ABORTED') {run.abortPrimary?.(true);run.abortPrimary=null;return notify(value,run);}
+            return notify({...value,fallback:'native',reports:[...value.reports,{code:'NATIVE_FALLBACK',message:'Preparation failed; SillyTavern will generate without ComfyTavern guidance.'}]},run);
         }
         try {
             if(typeof c.setExtensionPrompt!=='function')throw new Error('Prompt setter unavailable');
@@ -142,9 +150,9 @@ export function createNativeWorkflowController(ports) {
                 if(c.extensionPrompts && c.extensionPrompts[key]?.value!==output.artifact.text)throw new Error('Prompt not accepted');
             }
             run.pending=false;
-            return notify({...value,published:true});
+            return notify({...value,published:true},run);
         } catch {
-            clear();active=null;return notify({...fail('GUIDANCE_UNAVAILABLE','Native guidance could not be installed; the native reply remains available.'),fallback:'native'});
+            clear();active=null;return notify({...value,ok:false,error:{code:'GUIDANCE_UNAVAILABLE',message:'Native guidance could not be installed; the native reply remains available.'},fallback:'native'},run);
         }
     }
     async function runPost(graph,messageIndex) {
@@ -261,5 +269,5 @@ export function createNativeWorkflowController(ports) {
         unsubscribe=()=>{cancel('Controller disposed');for(const [event,fn]of subscriptions)(c.eventSource.removeListener ?? c.eventSource.off)?.call(c.eventSource,event,fn);unsubscribe=null;};
         return unsubscribe;
     }
-    return {beforeGenerate,runPre,runPost,apply,candidateStatus,cancel,lastResult:()=>result,subscribe,dispose:()=>unsubscribe?.()};
+    return {beforeGenerate,runPre,runPost,apply,candidateStatus,cancel,lastResult:()=>result,lastAutomaticResult:()=>automaticResult,subscribe,dispose:()=>unsubscribe?.()};
 }

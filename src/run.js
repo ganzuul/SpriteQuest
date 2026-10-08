@@ -16,7 +16,7 @@
  *    recorded as the error, the run continues, and you see it in the trace.
  */
 
-import { ctx, safe, settings, save as saveSettings, NODE_TYPES, togetherGroup, loopWires, loopSection, activeGraph } from './state.js?v=0.19.0';
+import { ctx, safe, settings, save as saveSettings, resolveGraph, NODE_TYPES, togetherGroup, loopWires, loopSection, activeGraph } from './state.js?v=0.19.0';
 import { compile, collect, generateOrder, generateLevels, gatherContext, evaluateCondition, liveNodes, generateDeps, textOf, picks, wireHolds } from './compile.js?v=0.19.0';
 import { plannedSaves, writeSaves, mirrorToLorebook } from './memory.js?v=0.19.0';
 import { jevYesNo, jevSort } from './jev.js?v=0.19.0';
@@ -27,6 +27,29 @@ export { runWorkflow, workflowSignature } from './workflow/runtime.js?v=0.19.0';
 export { createNativeWorkflowController, snapshotContext, snapshotReply } from './workflow/host.js?v=0.19.0';
 
 let nativeController, nativeHelpers, nativeInitialization;
+/** Send-adjacent labels follow the automatic execution binding, not the open canvas. */
+export function sendWorkflowState() {
+    const s = settings();
+    if (s.workflowMode === 'native') {
+        const assigned = s.graphs[s.nativeBindings?.preGraphId];
+        const graph = assigned?.schema === 2 && assigned.mode === 'native-pre' ? assigned : null;
+        return {
+            automatic: !!graph,
+            armLabel: graph ? 'Arm native pre guidance for Send (post repair remains manual)' : 'Arm native workflows (no automatic pre workflow assigned; post repair is manual)',
+            armedText: graph ? `"${graph.name}" adds guidance before Send (maximum ${callCount(graph)} auxiliary requests). SillyTavern builds its normal prompt. Post repair remains manual.` : 'No automatic pre workflow is assigned. Post repair is manual via Run and review. SillyTavern builds its normal prompt.',
+            offText: 'Native workflows are off. SillyTavern builds its normal prompt. Post repair requires manual Run and review.',
+        };
+    }
+    const resolved = resolveGraph(), graph = resolved.graph;
+    const automatic = !!graph && (graph.schema === undefined || graph.schema === 1) && !String(graph.mode ?? '').startsWith('native-') && !Object.values(graph.nodes ?? {}).some(node => node.type === 'workflow');
+    const from = { chat: 'pinned to this chat', character: 'pinned to this character', default: 'the default canvas' }[resolved.source];
+    return {
+        automatic,
+        armLabel: 'Arm the canvas (it builds the prompt instead of SillyTavern)',
+        armedText: automatic ? `"${graph.name}" (${from}) builds the prompt.` : 'No legacy canvas applies here, so SillyTavern builds the prompt.',
+        offText: 'ComfyTavern is off. SillyTavern builds the prompt as usual.',
+    };
+}
 /** Stable adapter facade consumed by the projection-only workflow UI. */
 export function getNativeWorkflowController() {
     return nativeController ??= createNativeWorkflowController({
@@ -41,9 +64,9 @@ export function getNativeWorkflowController() {
             if(typeof count==='function') { const tokens=await count(text);if(Number.isFinite(tokens) && tokens>=0)return {tokens,method:'host-tokenizer'}; }
             return {tokens:Math.ceil(text.length/4),method:'character-estimate'};
         },
-        onResult:value=>{
+        onResult:(value,origin)=>{
             if(!value.ok) safe(()=>globalThis.toastr?.warning(value.error.message,'ComfyTavern workflow'));
-            safe(()=>globalThis.document?.dispatchEvent(new CustomEvent('pc-native-result')));
+            if(origin) safe(()=>globalThis.document?.dispatchEvent(new CustomEvent('pc-native-result')));
         },
     });
 }

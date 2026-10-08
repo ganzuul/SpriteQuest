@@ -106,13 +106,27 @@ export function createWorkflowSurface(target, actions, mode = 'setup') {
 const freezeCandidate = value => { if (value && typeof value === 'object') { for (const child of Object.values(value)) freezeCandidate(child); Object.freeze(value); } return value; };
 export function createWorkflowSession({ runtime, current, epoch, active, changed }) {
     let result = null, busy = false, status = '', applyIssue = '', generation = 0;
+    let ignoredAutomatic = new WeakSet();
+    let displayedAutomatic = null;
     const publish = () => changed({ result, busy, status, applyIssue });
     const signature = workflowSignature;
     const capture = () => { const graph = current(), uiEpoch = epoch(), serial = ++generation, revision = signature(graph); return { graph, valid: () => active() && current() === graph && epoch() === uiEpoch && generation === serial && signature(graph) === revision }; };
     return {
         result: () => result,
+        receiveAutomatic(record) {
+            const graph = current(), origin = record?.origin;
+            if (!active() || !record?.result || !origin || origin.kind !== 'send' || origin.phase !== 'pre' || graph?.mode !== 'native-pre' || origin.graph !== graph || origin.graphId !== graph.id || origin.signature !== signature(graph) || ignoredAutomatic.has(record) || displayedAutomatic === record) return;
+            if (busy) { ignoredAutomatic.add(record); return; }
+            generation++; displayedAutomatic = record;
+            result = freezeCandidate(structuredClone(record.result)); applyIssue = '';
+            status = `Automatic Send · pre phase · "${origin.graphName || graph.name}". ${result.ok ? 'Review the result.' : result.error?.message || 'Run failed.'}`;
+            publish();
+        },
         refreshFreshness() { const candidate = result?.artifact?.kind === 'candidate' ? result.artifact : null; const freshness = candidate ? runtime()?.candidateStatus?.(candidate) : null; applyIssue = freshness?.ok === false ? freshness.error.message : ''; publish(); },
         async run() {
+            const previous = runtime()?.lastAutomaticResult?.();
+            if (previous?.origin.graph === current()) ignoredAutomatic.add(previous);
+            displayedAutomatic = null;
             const transaction = capture(); result = null; busy = true; status = ''; applyIssue = ''; publish();
             try {
                 const controller = runtime();
@@ -137,7 +151,7 @@ export function createWorkflowSession({ runtime, current, epoch, active, changed
             } catch (error) { if (transaction.valid()) status = error.message; }
             finally { if (transaction.valid()) { busy = false; publish(); } }
         },
-        cancel(reason = 'Workflow view closed') { generation++; runtime()?.cancel(reason); result = null; busy = false; status = ''; applyIssue = ''; publish(); },
+        cancel(reason = 'Workflow view closed') { generation++; runtime()?.cancel(reason); displayedAutomatic = null; ignoredAutomatic = new WeakSet(); result = null; busy = false; status = ''; applyIssue = ''; publish(); },
         reject() { generation++; result = null; busy = false; applyIssue = ''; status = 'Candidate rejected. Original reply preserved.'; runtime()?.cancel('Candidate rejected'); publish(); },
     };
 }

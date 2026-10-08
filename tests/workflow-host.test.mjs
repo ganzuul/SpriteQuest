@@ -3,6 +3,32 @@ import test from 'node:test';
 import { createNativeWorkflowController, snapshotContext, snapshotReply } from '../src/workflow/host.js';
 import { starterGraph } from '../src/workflow/starters.js';
 const pre = starterGraph('native-guidance'), post=starterGraph('reviewed-de-slop');
+test('automatic Send retains request evidence with original graph identity separately from manual results', async () => {
+ const graph=starterGraph('native-guidance');
+ const f=fixture(async()=>({ok:true,data:{text:'Actual Send',usage:{completion_tokens:17},finish:'stop'}}),graph);
+ const sent=await f.controller.beforeGenerate(f.c.chat,8192,()=>{},'normal');
+ assert.equal(typeof f.controller.lastAutomaticResult,'function');
+ const record=f.controller.lastAutomaticResult();
+ assert.equal(record.result,sent);
+ assert.equal(record.origin.graph,graph);
+ assert.equal(record.origin.graphId,graph.id);
+ assert.equal(record.origin.phase,'pre');
+ assert.equal(record.origin.kind,'send');
+ assert.equal(typeof record.origin.signature,'string');
+ assert.equal(Number.isInteger(record.origin.runId),true);
+ assert.equal(record.result.actualCalls,1);
+ assert.equal(record.result.callBound,2);
+ assert.equal(record.result.calls[0].result.usage.completion_tokens,17);
+ assert.equal(Object.isFrozen(graph),false,'publishing origin must not freeze the editable original graph');
+ await f.controller.runPre(graph);
+ assert.equal(f.controller.lastAutomaticResult(),record,'manual test must not overwrite the automatic Send record');
+ f.c.setExtensionPrompt=()=>{throw new Error('Setter rejected');};
+ const failed=await f.controller.beforeGenerate(f.c.chat,8192,()=>{},'normal');
+ assert.equal(failed.error.code,'GUIDANCE_UNAVAILABLE');
+ assert.equal(failed.actualCalls,1,'a publication failure still exposes the incurred request');
+ assert.equal(failed.calls[0].result.usage.completion_tokens,17);
+ assert.ok(f.controller.lastAutomaticResult().origin.runId>record.origin.runId);
+});
 function fixture(request,assignedGraph=pre) {
  const listeners={}; const original={mes:'We delve.',is_user:false,swipe_id:0,swipes:['We delve.'],swipe_info:[{extra:{old:'keep'},send_date:1,gen_started:1,gen_finished:2}],extra:{old:'keep'},send_date:1,gen_started:1,gen_finished:2};
  const c={chatId:'one',characterId:1,groupId:null,chat:[{mes:'Hello',is_user:true},original],extensionPrompts:{other:{value:'keep'}},eventTypes:Object.fromEntries(['GENERATION_STARTED','GENERATION_STOPPED','GENERATION_ENDED','CHAT_CHANGED','MESSAGE_EDITED','MESSAGE_UPDATED','MESSAGE_DELETED','MESSAGE_SWIPED','MESSAGE_SWIPE_DELETED','MESSAGE_SENT'].map(k=>[k,k])),eventSource:{on:(name,fn)=>{(listeners[name]??=[]).push(fn);},removeListener:()=>{},emit:async(name,...args)=>{for(const fn of listeners[name]??[])await fn(...args);}},setExtensionPrompt:(key,value,position,depth,scan,role)=>{c.extensionPrompts[key]={value,position,depth,scan,role};},saveChat:async()=>{c.saved=(c.saved??0)+1;},updateMessageBlock:()=>{},swipe:{refresh:()=>{}}};
@@ -17,6 +43,7 @@ function fixture(request,assignedGraph=pre) {
  let aborted=0; const pending=f.controller.beforeGenerate(f.c.chat,8192,value=>{assert.equal(value,true);aborted++;},'normal');
  await waiting; f.controller.cancel('chat changed'); release({ok:true,data:{text:'late',finish:'stop'}}); await pending;
  assert.equal(f.owned(),''); assert.equal(f.c.extensionPrompts.other.value,'keep');assert.equal(aborted,1);
+ assert.equal(f.controller.lastAutomaticResult(),null,'a canceled interceptor never retains its late result for UI reopening');
 }
 {
  let requests=0; const f=fixture(async()=>{requests++;return {ok:true,data:{text:'Plan',finish:'stop'}};});

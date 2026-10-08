@@ -98,6 +98,7 @@ export function profiles() {
 let workflowLibrary = null, workflowInspector = null, workflowRevision = null;
 let workflowState = { result: null, busy: false, status: '', applyIssue: '' };
 const workflowSession = createWorkflowSession({ runtime: () => workflowRuntime.getNativeWorkflowController?.(), current: () => current, epoch: () => uiEpoch, active: isOpen, changed: state => { workflowState = state; if (isOpen()) updateWorkflowProjection(); } });
+const receiveAutomaticWorkflow = () => workflowSession.receiveAutomatic(workflowRuntime.getNativeWorkflowController?.()?.lastAutomaticResult?.());
 function workflowView() { return projectWorkflow(current, { settings: settings(), profiles: profiles(), selectedId: selectedKind === 'node' ? selected?.id : null, resolveBinding: (node, graph) => resolveBinding(node, graph, ctx()), candidateStatus: candidate => workflowRuntime.getNativeWorkflowController?.()?.candidateStatus?.(candidate), ...workflowState }); }
 function updateWorkflowProjection() {
     const view = workflowView(); workflowLibrary?.update(view); workflowInspector?.update(view);
@@ -199,6 +200,7 @@ export function isOpen() {
 export function open() {
     build();
     root.classList.add('pc-open');
+    document.addEventListener('pc-native-result', receiveAutomaticWorkflow);
     // Your SillyTavern theme may have changed since the last look, and the
     // light/dark adjustment depends on it.
     safe(() => applyTheme());
@@ -216,6 +218,7 @@ export function open() {
 }
 
 export function close() {
+    document.removeEventListener('pc-native-result', receiveAutomaticWorkflow);
     workflowSession.cancel('Workflow view closed');
     uiEpoch++;
     tokenRun++; previewRun++;
@@ -240,6 +243,7 @@ function setCanvasGraph() {
     selected = null; selectedKind = null;
     canvas.setGraph(current);
     workflowRevision = current?.schema === 2 ? workflowRuntime.workflowSignature(current) : null;
+    receiveAutomaticWorkflow();
     if (current?.schema === 2) root._parts.preview.classList.remove('pc-preview-open');
     if (root._parts.preview.classList.contains('pc-preview-open')) {
         root._parts.preview.replaceChildren(el('div', 'pc-preview-head', 'Compiling…'));
@@ -270,7 +274,8 @@ function build() {
         },
         arm: enabled => {
             settings().enabled = enabled; save(); renderStatus();
-            toast(current?.schema === 2 ? (enabled ? 'Native workflows are armed for assigned phases.' : 'Native workflows are off.') : enabled ? 'ComfyTavern is armed. Your canvas now builds the prompt.' : 'ComfyTavern is off. SillyTavern builds the prompt as usual.', enabled ? 'success' : 'info');
+            const state = workflowRuntime.sendWorkflowState();
+            toast(enabled ? `Armed. ${state.armedText}` : state.offText, enabled ? 'success' : 'info');
         },
         command: name => {
             const commands = { new: onNewGraph, duplicate: onDuplicateGraph, rename: onRenameGraph, delete: onDeleteGraph, import: onImportGraph, export: onExportGraph, seed: onSeedFromST, undo: doUndo, redo: doRedo,
@@ -676,7 +681,7 @@ function doUndo() { if (current) afterHistory(H.undo(current), 'Undid'); }
 function doRedo() { if (current) afterHistory(H.redo(current), 'Redid'); }
 
 function renderGraphSelect() {
-    workbench.update({ graphs: allGraphs().map(g => ({ id: g.id, name: g.name })), graphId: current?.id ?? '', armed: !!settings().enabled });
+    workbench.update({ graphs: allGraphs().map(g => ({ id: g.id, name: g.name })), graphId: current?.id ?? '', nativeGraph: current?.schema === 2, armed: !!settings().enabled });
 }
 
 function renderStatus() {
@@ -3567,11 +3572,12 @@ function onImportGraph() {
 }
 
 async function onSeedFromST() {
+    if (current?.schema === 2) return toast('Prompt-order seeding is available only for legacy canvases.', 'error');
     const graph = current, epoch = uiEpoch;
     const count = L.stPrompts().filter(p => p.inOrder).length;
     if (!count) return toast('No chat completion prompt order found. Open a chat completion preset first.', 'error');
     if (!await confirmBox(`Replace the blocks on "${current.name}" with SillyTavern’s current prompt order (${count} prompts)?`)) return;
-    if (!stillEditing(graph, epoch)) return;
+    if (!stillEditing(graph, epoch) || graph.schema === 2) return;
 
     const fresh = blankGraph(current.name);
     L.graphFromCurrentOrder(fresh, { NODE_TYPES, addNode, connect, outputNode, WIRE_KINDS });
