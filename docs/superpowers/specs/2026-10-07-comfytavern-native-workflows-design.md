@@ -21,9 +21,9 @@ The exact family names and display order are **Input, Shaping, Surface, Transpos
 | --- | --- | --- | --- |
 | Input | Bring material into a workflow | Prompt, ST prompt reader, History, Injection reader, Lorebook, State, Memory reader | Scene Context, Reply Snapshot |
 | Shaping | Change the underlying plan or amount of material | Decider, general Generate | Smart Compactor, Response Plan |
-| Surface | Refine expression | Authored Generate recipes | AI De-slop: Pattern Scan, Repair, Validate Patches |
+| Surface | Refine expression | Authored Generate recipes | Repair and AI De-slop formation; scan/validation helpers may appear as discovery aliases |
 | Transpose | Apply a reference's qualities | Authored Generate recipes | No unsupported placeholder actions; Voice Match remains a future candidate |
-| Derive | Extract findings without changing the source | Authored Generate recipes | Pattern Scan can also be discovered here by purpose, without duplicating its definition |
+| Derive | Extract findings without changing the source | Authored Generate recipes | Pattern Scan and Validate Patches (canonical family) |
 | Output | Inspect or commit an artifact | Output, Memory save | Guidance, Review Gate, Apply Reply |
 
 Note remains an editor annotation. Preserve all eleven legacy node IDs/settings. Explain legacy output as **Replace prompt** and new output as **Guidance** or **Reviewed reply**. Family assignment is catalog metadata, not a renaming of persisted legacy types.

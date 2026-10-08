@@ -70,10 +70,11 @@ Token counts identify their method: host tokenizer or character estimate. Artifa
 | Issue | What to do |
 | --- | --- |
 | Missing binding/profile/preset | Choose an available fixed Connection Manager profile and its existing sampler preset; confirm the effective model in the inspector. |
-| Unsupported binding | Use a supported direct route. The current host wrappers for Claude, Gemini/Makersuite, Vertex AI, and InfermaticAI discard completion evidence; named/inherited reverse proxies and cross-provider text-completion sampler conversion also fail preflight. |
+| Unsupported binding | Use a supported direct route. The current host wrappers for Claude, Gemini/Makersuite, Vertex AI, and InfermaticAI discard completion evidence; named/inherited reverse proxies fail when the selected route can use them, as does cross-provider text-completion sampler conversion. NanoGPT keeps its fixed provider endpoint and ignores unused proxy selections. |
 | Endpoint missing | Configure the profile/preset endpoint. The inspector reports an inherited host endpoint and its origin when the route supports that dependency. |
 | Budget exceeded or output cut off | Review the report, then change the target, protected material, or explicit completion cap. A failed run never silently removes pins or retries. |
 | No verified completion evidence | Use a route whose host response preserves a recognized completion reason. The original is retained. |
+| Invalid repair patches | Inspect the output and operation instructions. Repair requires a raw patches JSON object without Markdown fences. Correct the format or binding before a deliberate rerun; the original is retained. |
 | Apply unavailable/stale | Finish generation, return to the latest text-only reply, and run repair again. Do not reuse a candidate after the source changed. |
 | Main reply proceeded after pre failure | This is the native fallback. Inspect the visible preparation report and fix the binding/context before the next send. |
 | Changes missing after reload | Local Apply is separate from durable saving; inspect SillyTavern's save/network status. |
