@@ -460,3 +460,36 @@ for (const findings of [17, {}, null, 'bad', [17], [null], [[]], [new Date(0)], 
     assert.equal(reads, 0);
     assert.equal(result.calls.length, 0);
 }
+// Accepted context descriptors must survive JSON-compatible cloning without hidden field loss.
+{
+    const hide = (target, key) => Object.defineProperty(target, key, { value: target[key], enumerable: false, configurable: true, writable: true });
+    for (const alter of [
+        input => hide(input.context, 'messages'),
+        input => hide(input, 'context'),
+        input => hide(input.context, 'kind'),
+        input => hide(input.context.messages[0], 'text'),
+        input => hide(input.context.messages[0], 'id'),
+        input => hide(input.context.messages[0], 'role'),
+        input => hide(input.context.messages, '0'),
+        input => hide(input.context, 'source'),
+        input => hide(input.context.source, 'token'),
+        input => hide(input.context.report, 'code'),
+        input => hide(input.context.report.omissions, '0'),
+    ]) {
+        const input = scanned();
+        input.context = { kind: 'context', messages: [{ id: 'nearby', role: 'user', text: 'A fact.' }], source: { token: 'opaque-token' }, report: { code: 'BOUNDED_CONTEXT', omissions: [{ id: 'older' }] } };
+        alter(input);
+        let measurements = 0, attempts = 0, result;
+        await assert.doesNotReject(async () => {
+            result = await repairDraft(input, {}, { countTokens: async () => { measurements++; return { tokens: 1, method: 'synthetic' }; }, request: async () => {
+                attempts++;
+                return { ok: true, data: { text: '{"patches":[]}', usage: null, finish: 'stop' } };
+            } });
+        });
+        assert.equal(result.error?.code, 'INVALID_CONTEXT');
+        assert.equal(result.calls.length, 0);
+        assert.equal(measurements, 0);
+        assert.equal(attempts, 0);
+        assert.equal(result.artifact.text, 'Before. "A shiver ran down her spine." After.');
+    }
+}

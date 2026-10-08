@@ -130,6 +130,7 @@ function validContext(draft) {
             if (array && key !== 'length' && (!/^(0|[1-9][0-9]*)$/u.test(key) || Number(key) >= descriptors.length.value)) return false;
             characters += key.length;
             const property = descriptors[key];
+            if ((!array || key !== 'length') && !property.enumerable) return false;
             if (characters > 500000 || !Object.hasOwn(property, 'value') || !visit(property.value, depth + 1)) return false;
         }
         active.delete(value);
@@ -138,7 +139,7 @@ function validContext(draft) {
     try {
         const descriptor = Object.getOwnPropertyDescriptor(draft, 'context');
         if (!descriptor) return !('context' in draft);
-        if (!Object.hasOwn(descriptor, 'value')) return false;
+        if (!Object.hasOwn(descriptor, 'value') || !descriptor.enumerable) return false;
         const context = descriptor.value;
         if (context === undefined) return true;
         if (!visit(context, 0) || !context || !Object.hasOwn(context, 'kind') || context.kind !== 'context' || !Object.hasOwn(context, 'messages') || !Array.isArray(context.messages)) return false;
