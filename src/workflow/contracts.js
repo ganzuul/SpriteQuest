@@ -1,14 +1,24 @@
 import { operationFor, portsForNode } from './catalog.js?v=0.19.1';
 const fail = (code, message, nodeId) => ({ ok: false, error: { code, message, ...(nodeId ? { nodeId } : {}) } });
 const record = value => value !== null && typeof value === 'object' && !Array.isArray(value);
-/** Recognize native intent, including unsupported future versions, without invoking getters. */
+/** Native/unsafe routing guard: only plain legacy metadata may enter legacy paths. */
 export function isNativeWorkflow(graph) {
     if (!record(graph)) return false;
     try {
-        const schema = Object.getOwnPropertyDescriptor(graph, 'schema')?.value;
-        const mode = Object.getOwnPropertyDescriptor(graph, 'mode')?.value;
-        return Number.isInteger(schema) && schema >= 2 || mode === 'native-pre' || mode === 'native-post';
-    } catch { return false; }
+        const prototype = Object.getPrototypeOf(graph);
+        if (prototype !== Object.prototype && prototype !== null) return true;
+        const metadata = {};
+        for (const key of ['schema', 'runtime', 'mode']) {
+            const property = Object.getOwnPropertyDescriptor(graph, key);
+            if (property ? !('value' in property) : key in graph) return true;
+            metadata[key] = property?.value;
+        }
+        const { schema, runtime, mode } = metadata;
+        if (schema !== undefined && schema !== 1) return true;
+        if (runtime !== undefined && (!Number.isSafeInteger(runtime) || runtime < 1)) return true;
+        if (mode !== undefined && mode !== null && typeof mode !== 'string') return true;
+        return typeof mode === 'string' && mode.startsWith('native-');
+    } catch { return true; }
 }
 /** Bound plain JSON data before reading untrusted graph properties. */
 export function safeWorkflowData(value) {

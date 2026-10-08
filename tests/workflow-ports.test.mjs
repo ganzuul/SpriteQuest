@@ -16,7 +16,7 @@ assert.equal(typeof contracts.isNativeWorkflow, 'function');
 for (const schema of [2, 3, 99]) assert.equal(contracts.isNativeWorkflow({ schema }), true);
 assert.equal(contracts.isNativeWorkflow({ schema: 1 }), false);
 let getterCalls = 0;
-assert.equal(contracts.isNativeWorkflow({ get schema() { getterCalls++; return 3; } }), false);
+assert.equal(contracts.isNativeWorkflow({ get schema() { getterCalls++; return 3; } }), true, 'unsafe routing fails closed before legacy work');
 assert.equal(getterCalls, 0);
 assert.equal(typeof catalog.portsForNode, 'function');
 assert.deepEqual(catalog.portsForNode(fixture(), fixture().nodes.source).map(p => [p.id, p.direction, p.kind]), [['out', 'output', 'context']]);

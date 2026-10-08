@@ -736,9 +736,9 @@ export function outputNode(graph) {
  */
 export function connect(graph, fromId, toId, kind = WIRE_KINDS.APPEND, { port = null } = {}) {
     if (isNativeWorkflow(graph)) {
-        if (graph.schema !== 2 || graph.runtime !== 1) return { ok: false, reason: 'Native named connections require the prepared graph edit API.' };
         const validation = validateGraphStructure(graph);
         if (!validation.ok) return { ok: false, reason: validation.error.message };
+        if (graph.schema !== 2 || graph.runtime !== 1) return { ok: false, reason: 'Native named connections require the prepared graph edit API.' };
         if (!['append', 'prepend', 'merge'].includes(kind) || port) return { ok: false, reason: 'Native workflows require direct artifact connections.' };
         if (Object.values(graph.wires).some(wire => wire.from === fromId && wire.to === toId)) return { ok: false, reason: 'Those blocks are already wired.' };
         const wire = { id: uid('w'), from: fromId, to: toId, kind, order: 0 };

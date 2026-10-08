@@ -1,5 +1,6 @@
 import { runWorkflow, freezeArtifact, workflowSignature } from './runtime.js?v=0.19.1';
 import { resolveBinding, requestModel } from './connections.js?v=0.19.1';
+import { validateWorkflow } from './contracts.js?v=0.19.1';
 
 const PREFIX = 'lattice:guidance:';
 const fail = (code,message) => ({ok:false,error:{code,message},reports:[],calls:[],trace:[]});
@@ -102,6 +103,19 @@ export function createNativeWorkflowController(ports) {
         if(active) {active.controller.abort(reason); const abort=active.abortPrimary;active.abortPrimary=null;try{abort?.(true);}catch{/* Native abort callback is best effort. */}}
         active=null;
     };
+    // The shared execution validator is the sole version/phase gate. Run it before
+    // source identity, chat inspection or snapshots at every public run boundary.
+    const preflight=(graph,phase,native=false)=>{
+        const validation=validateWorkflow(graph,{phase});
+        if(validation.ok)return null;
+        cancel('Workflow preflight failed');
+        const rejected={...fail(validation.error.code,validation.error.message),error:validation.error};
+        if(native) {
+            rejected.fallback='native';
+            rejected.reports.push({code:'NATIVE_FALLBACK',message:'Preparation failed; SillyTavern will generate without Lattice guidance.'});
+        }
+        return notify(rejected);
+    };
     const fresh=(run)=>run.epoch===epoch && !run.controller.signal.aborted && same(run.identity,identity(context())) && run.signature===workflowSignature(run.originalGraph) && (!run.native || (ports.isEnabled?.() !== false && ports.getGraph?.('pre')===run.originalGraph));
     const start=(graph,native=false,abortPrimary=null)=>{
         cancel('Superseded by a new workflow');
@@ -117,6 +131,7 @@ export function createNativeWorkflowController(ports) {
     });
     const preSnapshots=(run,c,chat)=>new Map(Object.values(run.graph.nodes ?? {}).filter(node=>node.operation==='scene-context').map(node=>[node.id,snapshotContext(c,{chat,node})]));
     async function runPre(graph) {
+        const rejected=preflight(graph,'pre');if(rejected)return rejected;
         const run=start(graph);const c=context();const snapshots=preSnapshots(run,c,c.chat);
         const value=await execute(run,(_phase,node)=>snapshots.get(node.id), 'pre');
         if(!fresh(run)) return fail('STALE_RUN','Workflow source or settings changed.');
@@ -127,12 +142,13 @@ export function createNativeWorkflowController(ports) {
         if(generation.aborted) {abort?.(true);return notify(fail('ABORTED','The native generation was stopped before workflow preparation.'));}
         if(generation.dryRun || !['normal','swipe','regenerate','continue'].includes(type)) {if(active)cancel('Overlapping background generation');return {ok:true,skipped:true};}
         if(ports.isEnabled?.() === false) return {ok:true,skipped:true};
+        const graph=ports.getGraph?.('pre');if(!graph)return {ok:true,skipped:true};
+        const rejected=preflight(graph,'pre',true);if(rejected)return rejected;
         const tail=(chat ?? []).at(-1),liveTail=context().chat?.at(-1);
         if([tail,liveTail].some(message=>message?.is_tool || message?.extra?.tool_invocations?.length)) {
             if(active)cancel('Internal tool continuation');
             return {ok:true,skipped:true,reason:'internal-tool-continuation'};
         }
-        const graph=ports.getGraph?.('pre');if(!graph)return {ok:true,skipped:true};
         if(active?.native) {cancel('Overlapping native generation');abort?.(true);return notify(fail('OVERLAPPING_GENERATION','Overlapping native requests are unsupported; send again when settled.'));}
         const run=start(graph,true,abort), c=context(), snapshots=preSnapshots(run,c,chat), original=sourceText(chat);
         generation.originalTail ??= {message:c.chat?.at(-1),text:c.chat?.at(-1)?.mes};
@@ -157,6 +173,7 @@ export function createNativeWorkflowController(ports) {
         }
     }
     async function runPost(graph,messageIndex) {
+        const rejected=preflight(graph,'post');if(rejected)return rejected;
         if(ports.isBusy?.() || applying)return notify(fail('BUSY','Wait for generation or reply application to finish.'));
         const c=context(), snapshot=snapshotReply(c,messageIndex);
         if(snapshot.ok===false)return notify(snapshot);

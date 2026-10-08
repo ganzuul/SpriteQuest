@@ -12,6 +12,7 @@ const { graphSemanticSignature } = await import('../src/workflow/ports.js');
 const { starterGraph } = await import('../src/workflow/starters.js');
 const { normalizeNativeGraph } = await import('../src/workflow/migration.js');
 const { exportWorkflow } = await import('../src/workflow/packages.js');
+const { isNativeWorkflow } = await import('../src/workflow/contracts.js');
 
 const native = normalizeNativeGraph(starterGraph('native-guidance')).data;
 for (const schema of [3, 99]) {
@@ -74,4 +75,52 @@ state.settings().workflowMode = 'native';
 state.settings().nativeBindings.preGraphId = imported.graph.id;
 assert.equal(sendWorkflowState().automatic, false);
 assert.match(sendWorkflowState().armedText, /unsupported|requires schema/i);
+// A false routing predicate authorizes legacy context work, so unsafe metadata must fail closed.
+let routingGetterReads = 0;
+const legacy = state.blankGraph('Routing fixture');
+const unsafeRouting = [];
+for (const key of ['schema', 'mode', 'runtime']) {
+    const accessor = structuredClone(legacy);
+    Object.defineProperty(accessor, key, { get() { routingGetterReads++; return key === 'mode' ? 'native-pre' : 3; }, enumerable: true });
+    unsafeRouting.push(accessor);
+}
+const inherited = Object.assign(Object.create({ schema: 3, mode: 'native-pre' }), structuredClone(legacy));
+delete inherited.schema;
+unsafeRouting.push(inherited);
+const inheritedAccessor = Object.setPrototypeOf(structuredClone(legacy), { get schema() { routingGetterReads++; return 3; } });
+delete inheritedAccessor.schema;
+unsafeRouting.push(inheritedAccessor);
+for (const graph of unsafeRouting) {
+    loreScans = 0; snapshots = 0;
+    let saves = 0, touches = 0;
+    context.saveSettingsDebounced = () => { saves++; };
+    const unsubscribe = state.onGraphTouched(() => { touches++; });
+    assert.equal((await compile(graph, { dryRun: true })).ok, false);
+    assert.equal((await run(graph, { dryRun: true })).plan.ok, false);
+    assert.equal(callCount(graph), 0);
+    assert.equal(loreScans, 0, 'unsafe routing never activates legacy lore');
+    assert.equal(snapshots, 0, 'unsafe routing never reads legacy character context');
+    state.migrateGraph(graph);
+    assert.equal(Object.hasOwn(graph, 'migrated'), false, 'unsafe routing never receives legacy migration writes');
+    assert.equal(loreScans, 0, 'unsafe routing never activates legacy lore');
+    assert.equal(snapshots, 0, 'unsafe routing never reads legacy character context');
+    const wires = graph.wires;
+    assert.equal(state.connect(graph, 'missing', 'also-missing').ok, false);
+    assert.equal(graph.wires, wires);
+    assert.equal(saves, 0);
+    assert.equal(touches, 0);
+    unsubscribe();
+    state.settings().graphs.unsafeRouting = graph;
+    state.settings().nativeBindings.preGraphId = 'unsafeRouting';
+    assert.equal(sendWorkflowState().automatic, false);
+    state.settings().activeGraphId = 'unsafeRouting';
+    state.settings().workflowMode = 'legacy';
+    assert.equal(sendWorkflowState().automatic, false);
+    state.settings().workflowMode = 'native';
+}
+assert.equal(routingGetterReads, 0, 'routing never invokes own or inherited accessors');
+for (const prototype of [Object.prototype, null]) {
+    assert.equal(isNativeWorkflow(Object.assign(Object.create(prototype), structuredClone(legacy))), false);
+    assert.equal(isNativeWorkflow(Object.assign(Object.create(prototype), structuredClone(native))), true);
+}
 console.log('workflow-dispatch: ok');

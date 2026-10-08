@@ -21,7 +21,7 @@ import { compile, collect, generateOrder, generateLevels, gatherContext, evaluat
 import { plannedSaves, writeSaves, mirrorToLorebook } from './memory.js?v=0.19.1';
 import { jevYesNo, jevSort } from './jev.js?v=0.19.1';
 import { applySelect } from './select.js?v=0.19.1';
-import { isNativeWorkflow, validateWorkflow } from './workflow/contracts.js?v=0.19.1';
+import { isNativeWorkflow, safeWorkflowData, validateWorkflow } from './workflow/contracts.js?v=0.19.1';
 import { createNativeWorkflowController } from './workflow/host.js?v=0.19.1';
 export { runWorkflow, workflowSignature } from './workflow/runtime.js?v=0.19.1';
 export { createNativeWorkflowController, snapshotContext, snapshotReply } from './workflow/host.js?v=0.19.1';
@@ -32,6 +32,12 @@ export function sendWorkflowState() {
     const s = settings();
     if (s.workflowMode === 'native') {
         const assigned = s.graphs[s.nativeBindings?.preGraphId];
+        if (isNativeWorkflow(assigned) && !safeWorkflowData(assigned)) return {
+            automatic: false,
+            armLabel: 'Assigned native workflow contains invalid data',
+            armedText: 'The assigned workflow contains invalid data and cannot run. SillyTavern builds its normal prompt.',
+            offText: 'Native workflows are off. SillyTavern builds its normal prompt.',
+        };
         const graph = isNativeWorkflow(assigned) && assigned.mode === 'native-pre' ? assigned : null;
         if (graph && (graph.schema !== 2 || graph.runtime !== 1)) return {
             automatic: false,
@@ -47,7 +53,7 @@ export function sendWorkflowState() {
         };
     }
     const resolved = resolveGraph(), graph = resolved.graph;
-    const automatic = !!graph && (graph.schema === undefined || graph.schema === 1) && !String(graph.mode ?? '').startsWith('native-') && !Object.values(graph.nodes ?? {}).some(node => node.type === 'workflow');
+    const automatic = !!graph && !isNativeWorkflow(graph) && (graph.schema === undefined || graph.schema === 1) && !String(graph.mode ?? '').startsWith('native-') && !Object.values(graph.nodes ?? {}).some(node => node.type === 'workflow');
     const from = { chat: 'pinned to this chat', character: 'pinned to this character', default: 'the default canvas' }[resolved.source];
     return {
         automatic,
