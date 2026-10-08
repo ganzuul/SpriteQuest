@@ -45,4 +45,46 @@ assert.equal(invoked, 0);
 const whole = helpers.readJsonPath(input, []);
 whole.data.value.nested[1].ready = false;
 assert.equal(input.nested[1].ready, true);
+let inheritedJsonReads = 0, inheritedJsonResult, inheritedJsonThrown;
+Object.defineProperty(Object.prototype,'toJSON',{configurable:true,get(){inheritedJsonReads++;throw new Error('Inherited toJSON must not be read.');}});
+try { inheritedJsonResult = cloneJsonValue({a:1}); }
+catch (error) { inheritedJsonThrown = error; }
+finally { delete Object.prototype.toJSON; }
+assert.equal(inheritedJsonReads,0);
+assert.equal(inheritedJsonThrown,undefined);
+assert.deepEqual(inheritedJsonResult,{ok:true,data:{value:{a:1}}});
+assert.equal(typeof helpers.stringifyJsonValue,'function','stringifyJsonValue must exist');
+assert.deepEqual(helpers.stringifyJsonValue(JSON.parse('{"__proto__":[null,true,-0,"line\\nquote\\\""]}')), {ok:true,data:{text:'{"__proto__":[null,true,0,"line\\nquote\\\""]}'}});
+for (const prototype of [Object.prototype,Array.prototype]) {
+    let reads = 0, thrown, results;
+    Object.defineProperty(prototype,'toJSON',{configurable:true,get(){reads++;throw new Error('Inherited toJSON must not be read.');}});
+    try {
+        results = [
+            cloneJsonValue({nested:[1,{token:'keep'}]}),
+            cloneJsonValue({text:'a'.repeat(262133)}),
+            cloneJsonValue({text:'a'.repeat(262134)}),
+            helpers.stringifyJsonValue({nested:[1,{token:'keep'}]}),
+            helpers.stringifyJsonValue('a'.repeat(262142)),
+            helpers.stringifyJsonValue('a'.repeat(262143)),
+        ];
+    } catch (error) { thrown = error; }
+    finally { delete prototype.toJSON; }
+    assert.equal(reads,0);
+    assert.equal(thrown,undefined);
+    assert.deepEqual(results[0],{ok:true,data:{value:{nested:[1,{token:'keep'}]}}});
+    assert.equal(Object.getPrototypeOf(results[0].data.value),Object.prototype);
+    assert.equal(results[1].ok,true);
+    assert.equal(results[2].ok,false);
+    assert.deepEqual(results[3],{ok:true,data:{text:'{"nested":[1,{"token":"keep"}]}'}});
+    assert.equal(results[4].ok,true);
+    assert.equal(results[5].ok,false);
+}
+// An inherited descriptor value cannot disguise an own accessor as data.
+const ownAccessor = Object.defineProperty({},'secret',{enumerable:true,get(){throw new Error('Own accessor must not be read.');}});
+let descriptorReads = 0, descriptorResult;
+Object.defineProperty(Object.prototype,'value',{configurable:true,get(){descriptorReads++;throw new Error('Inherited descriptor value must not be read.');}});
+try { descriptorResult = cloneJsonValue(ownAccessor); }
+finally { delete Object.prototype.value; }
+assert.equal(descriptorReads,0);
+assert.equal(descriptorResult.ok,false);
 console.log('workflow JSON data tests passed');

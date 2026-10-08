@@ -11,13 +11,13 @@ function validateSchema(schema) {
         if (!isObject(value) || ![Object.prototype,null].includes(Object.getPrototypeOf(value))) throw new Error();
         return Reflect.ownKeys(value).map(key => {
             const property = Object.getOwnPropertyDescriptor(value,key);
-            if (typeof key !== 'string' || !property?.enumerable || !('value' in property)) throw new Error();
+            if (typeof key !== 'string' || !property?.enumerable || !Object.hasOwn(property,'value')) throw new Error();
             return [key,property.value];
         });
     };
     const visit = (node, depth) => {
         if (depth > 16 || ++nodes > 1000) throw new Error();
-        const output = {};
+        const output = Object.create(null);
         for (const [key,raw] of ownEntries(node)) {
             if (!keywords.has(key)) throw new Error();
             let value;
@@ -86,7 +86,7 @@ export function decodeJson(input, options = {}) {
         if (!isObject(options) || ![Object.prototype,null].includes(Object.getPrototypeOf(options))) return invalidOptions();
         for (const key of Reflect.ownKeys(options)) {
             const property = Object.getOwnPropertyDescriptor(options,key);
-            if (!['mode','schema'].includes(key) || !property?.enumerable || !('value' in property)) return invalidOptions();
+            if (!['mode','schema'].includes(key) || !property?.enumerable || !Object.hasOwn(property,'value')) return invalidOptions();
             if (key === 'mode') mode = property.value;
             else { schema = property.value; hasSchema = true; }
         }

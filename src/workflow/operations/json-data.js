@@ -1,3 +1,10 @@
+// Called only with validated clones; stringify primitives without object/array hooks.
+function encodeJson(value) {
+    if (value === null || typeof value !== 'object') return JSON.stringify(value);
+    if (Array.isArray(value)) return `[${value.map(encodeJson).join(',')}]`;
+    return `{${Object.keys(value).map(key => `${JSON.stringify(key)}:${encodeJson(value[key])}`).join(',')}}`;
+}
+
 export function cloneJsonValue(value) {
     const ancestors = new Set();
     let visited = 0;
@@ -17,7 +24,7 @@ export function cloneJsonValue(value) {
         for (const key of keys) {
             if (array && key === 'length') continue;
             const property = Object.getOwnPropertyDescriptor(input, key);
-            if (typeof key !== 'string' || !property || !('value' in property) || !property.enumerable) throw new Error('JSON requires enumerable own data properties.');
+            if (typeof key !== 'string' || !property || !Object.hasOwn(property,'value') || !property.enumerable) throw new Error('JSON requires enumerable own data properties.');
             if (array && (!/^(0|[1-9]\d*)$/.test(key) || Number(key) >= input.length)) throw new Error('JSON arrays cannot contain named properties.');
             Object.defineProperty(output, key, { value: clone(property.value, depth + 1), enumerable: true, configurable: true, writable: true });
         }
@@ -26,10 +33,16 @@ export function cloneJsonValue(value) {
     };
     try {
         const output = clone(value);
-        if (new TextEncoder().encode(JSON.stringify(output)).byteLength > 262144) throw new Error('JSON byte limit exceeded.');
+        if (new TextEncoder().encode(encodeJson(output)).byteLength > 262144) throw new Error('JSON byte limit exceeded.');
         return { ok: true, data: { value: output } };
     }
     catch { return { ok: false, error: { code: 'INVALID_JSON_VALUE', message: 'Input must contain only plain JSON data.' } }; }
+}
+
+export function stringifyJsonValue(value) {
+    const checked = cloneJsonValue(value);
+    if (!checked.ok) return checked;
+    return { ok: true, data: { text: encodeJson(checked.data.value) } };
 }
 
 export function readJsonPath(value, path) {
@@ -44,7 +57,7 @@ export function readJsonPath(value, path) {
         if (!current || typeof current !== 'object') return { ok: true, data: { found: false } };
         if (Array.isArray(current) && !/^(0|[1-9]\d*)$/.test(String(key))) return { ok: true, data: { found: false } };
         const property = Object.getOwnPropertyDescriptor(current, key);
-        if (!property?.enumerable || !('value' in property)) return { ok: true, data: { found: false } };
+        if (!property?.enumerable || !Object.hasOwn(property,'value')) return { ok: true, data: { found: false } };
         current = property.value;
     }
     return { ok: true, data: { found: true, value: current } };
