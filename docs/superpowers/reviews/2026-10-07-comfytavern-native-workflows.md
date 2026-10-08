@@ -1,6 +1,6 @@
 # Native workflows implementation review
 
-Status: implementation, independent review and acceptance evidence are ready for draft PR review. Product source is committed through 9524740. Main remains the integrated Svelte migration f5b3b61.
+Status: delivered in [draft PR #2](https://github.com/MentallyQuill/ComfyTavern/pull/2); implementation, independent review and acceptance evidence are ready for review. Product source is committed through 9524740. Main remains the integrated Svelte migration f5b3b61.
 
 ## Delivered scope
 
