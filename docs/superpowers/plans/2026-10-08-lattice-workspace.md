@@ -104,6 +104,8 @@ Address keys serialize tuples `[workflowId, instancePath, nodeId, portId]`; neve
 
 ## Task 6: One executor, safe events, bounded recordings and partial runs
 
+Before Task6 implementation, complete a separately reviewed Task5a node-tools integration: review the isolated Compose/Text Rules/JSON Decode/Select Fields handoff and the pure Context Join implementation; bring in owned commits normally; extend the shared catalog/dynamic ports, text/data/context DTOs, settings validation, semantic signatures, portable whitelist/hash/default materialization and composition fixtures. Preserve schema2 operation availability. Verify zero requests/no host effects, adversarial rule/path/schema/Context boundaries, stable ordered slots and connected-pin mode-change rejection. Task6 must execute these through the same resolved plan and event/recording path. Task9 supplies controls and artifact-appropriate previews without duplicate validators. Record exact handoff commits/ownership/evidence; no source-chat main push.
+
 **Files:** Modify `src/workflow/runtime.js`, `host.js`, `connections.js`, `src/run.js`; create `run-state.js`, `recording.js`; extend types and runtime/host/connection tests.
 
 **Interfaces:** Runtime consumes Task5 resolved plan. `runWorkflow(graph,ports)` gains optional `target/onEvent` while retaining existing callers; observer-safe old onStage remains. `reduceRunState(previous,event):RunState`, `projectRunRows(record,viewPath):RunRow[]` and bounded recording DTOs feed UI. Host adds explicit target run without Guidance/candidate authority and addressed terminal review handles.
