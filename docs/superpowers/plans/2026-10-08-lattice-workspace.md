@@ -102,9 +102,21 @@ Address keys serialize tuples `[workflowId, instancePath, nodeId, portId]`; neve
 - [ ] Test optional-boundary misuse, unmapped/duplicate ports, wrong phases, malicious nested packages, exact-ref conflicts, separator-containing IDs, shared ancestors versus distinct instances, override materialization and atomic history.
 - [ ] Commit Task5 after review.
 
+## Task 5a: Reviewed node-tools handoff and shared domain integration
+
+**Files:** Consume the reviewed isolated Compose/Text Rules/JSON Decode/Select Fields commits and existing Context Join leaf. Extend shared workflow catalog/contracts/ports/types, definition defaults/hash/validation and portable packages; add focused integration fixtures. Runtime/host and UI integration remain Tasks6/9.
+
+**Interfaces:** `PRIMITIVE_OPERATIONS`, `describePrimitive(node,{phase})` and `executePrimitive(node,namedInputs,execution)` supply the four zero-request operations; `describeContextJoin` and `executeContextJoin` supply ordered Context slots. Results are `{ok:true,artifact,reports:[]}` or `{ok:false,error}`. Text/Data are real bounded artifact kinds, separate from portable settings. Each descriptor declares its actual modes, ports, controls, phase and minimum schema.
+
+- [ ] Record exact handoff commits, source ownership and reviewed evidence; bring in only owned commits normally after Task5 review. Preserve the source worktree/evidence until consumed; no source-chat main push. Reuse its passing engine/worker evidence unless integration changes or a concrete issue require rerunning it.
+- [ ] Register schema3-only Compose, Text Rules, JSON Decode, Select Fields and Context Join through the shared catalog. Resolve `both` phase against the graph. Extend Text/Data/Context DTOs, safe settings/default materialization and dynamic named ports without admitting new operations to schema2 or legacy execution.
+- [ ] Test mode/slot/section changes through complete candidate validation: occupied or removed pins cannot silently lose wires, Context Join slot IDs/order remain stable, label changes remain presentation-only, and invalid changes are atomic. Include mixed new operations inside pinned subgraphs and targeted resolution.
+- [ ] Extend portable whitelist, structural profile stripping, semantic signatures and verified definition hashes for the declared operation controls. Round-trip composed/standalone packages with Text/Data boundaries, ordered Context slots and local models removed while portable roles/models remain.
+- [ ] Verify zero model/host effects and operation adapter contracts in integration fixtures; keep runtime artifact provenance distinct from portable graph sanitization. Run focused contracts/ports/packages/composition checks and type/asset checks after shared integration. Complete independent Task5a review before Task6 runtime integration.
+
 ## Task 6: One executor, safe events, bounded recordings and partial runs
 
-Before Task6 implementation, complete a separately reviewed Task5a node-tools integration: review the isolated Compose/Text Rules/JSON Decode/Select Fields handoff and the pure Context Join implementation; bring in owned commits normally; extend the shared catalog/dynamic ports, text/data/context DTOs, settings validation, semantic signatures, portable whitelist/hash/default materialization and composition fixtures. Preserve schema2 operation availability. Verify zero requests/no host effects, adversarial rule/path/schema/Context boundaries, stable ordered slots and connected-pin mode-change rejection. Task6 must execute these through the same resolved plan and event/recording path. Task9 supplies controls and artifact-appropriate previews without duplicate validators. Record exact handoff commits/ownership/evidence; no source-chat main push.
+Task6's disjoint run-state/recording foundation may precede Task5a; runtime integration consumes the reviewed shared operation/resolved-plan contracts. Task9 supplies controls and artifact-appropriate previews without duplicate validators.
 
 **Files:** Modify `src/workflow/runtime.js`, `host.js`, `connections.js`, `src/run.js`; create `run-state.js`, `recording.js`; extend types and runtime/host/connection tests.
 
