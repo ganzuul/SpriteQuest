@@ -3,10 +3,10 @@ import { cloneJsonValue, readJsonPath } from './json-data.js?v=0.19.1';
 const invalid = () => ({ok:false,error:{code:'INVALID_FIELDS',message:'Fields must be at most 128 unique named path mappings.'}});
 const ownObject = value => {
     if (!value || typeof value !== 'object' || ![Object.prototype,null].includes(Object.getPrototypeOf(value))) throw new Error();
-    const output = {};
+    const output = Object.create(null);
     for (const key of Reflect.ownKeys(value)) {
         const property = Object.getOwnPropertyDescriptor(value,key);
-        if (typeof key !== 'string' || !property?.enumerable || !('value' in property)) throw new Error();
+        if (typeof key !== 'string' || !property?.enumerable || !Object.hasOwn(property,'value')) throw new Error();
         Object.defineProperty(output,key,{value:property.value,enumerable:true});
     }
     return output;
@@ -23,7 +23,7 @@ export function selectFields(value, settings) {
         fields = [];
         for (let i = 0; i < raw.length; i++) {
             const property = Object.getOwnPropertyDescriptor(raw,String(i));
-            if (!property?.enumerable || !('value' in property)) return invalid();
+            if (!property?.enumerable || !Object.hasOwn(property,'value')) return invalid();
             const field = ownObject(property.value);
             if (Object.keys(field).some(key => !['name','path','required','default'].includes(key)) || typeof field.name !== 'string' || !field.name.length || names.has(field.name) || !Object.hasOwn(field,'path') || (Object.hasOwn(field,'required') && typeof field.required !== 'boolean')) return invalid();
             if (!readJsonPath(null,field.path).ok) return invalid();

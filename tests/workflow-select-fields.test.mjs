@@ -27,4 +27,40 @@ for (const [value,path] of [[['a','b'],['length']], [{items:['a','b']},['items',
     assert.equal(Object.hasOwn(result,'data'),false);
 }
 assert.deepEqual(selectFields({length:2,items:['a','b']},{fields:[{name:'length',path:['length']},{name:'first',path:['items',0]}]}).data.value,{length:2,first:'a'});
+let inheritedRequiredReads = 0, inheritedRequiredResult, inheritedRequiredThrown;
+Object.defineProperty(Object.prototype,'required',{configurable:true,get(){inheritedRequiredReads++;throw new Error('Inherited required must not be read.');}});
+try { inheritedRequiredResult = selectFields({}, {fields:[{name:'x',path:['missing']}]}); }
+catch (error) { inheritedRequiredThrown = error; }
+finally { delete Object.prototype.required; }
+assert.equal(inheritedRequiredReads,0);
+assert.equal(inheritedRequiredThrown,undefined);
+assert.equal(inheritedRequiredResult.error.code,'MISSING_FIELD');
+for (const key of ['fields','name','path','required','default']) {
+    let reads = 0, thrown, results;
+    Object.defineProperty(Object.prototype,key,{configurable:true,get(){reads++;throw new Error(`Inherited ${key} must not be read.`);}});
+    try {
+        results = [
+            selectFields({}, {fields:[{name:'missing',path:['absent']}]}),
+            selectFields({}, {fields:[{name:'omitted',path:['absent'],required:false},{name:'fallback',path:['absent'],required:false,default:null}]}),
+            selectFields({present:1}, {fields:[{name:'selected',path:['present']}]}),
+            selectFields({}, {}),
+            selectFields({}, {fields:[{path:[]}]}),
+            selectFields({}, {fields:[{name:'missingPath'}]}),
+        ];
+    } catch (error) { thrown = error; }
+    finally { delete Object.prototype[key]; }
+    assert.equal(reads,0,`Inherited ${key} getter was read`);
+    assert.equal(thrown,undefined);
+    assert.equal(results[0].error.code,'MISSING_FIELD');
+    assert.deepEqual(results[1].data.value,{fallback:null});
+    assert.deepEqual(results[2].data.value,{selected:1});
+    assert.equal(results.slice(3).every(result => result.error?.code === 'INVALID_FIELDS'),true);
+}
+const accessorField = Object.defineProperty({name:'x',path:[]},'required',{enumerable:true,get(){throw new Error('Own field accessor must not be read.');}});
+let descriptorReads = 0, descriptorFieldResult;
+Object.defineProperty(Object.prototype,'value',{configurable:true,get(){descriptorReads++;throw new Error('Inherited descriptor value must not be read.');}});
+try { descriptorFieldResult = selectFields({}, {fields:[accessorField]}); }
+finally { delete Object.prototype.value; }
+assert.equal(descriptorReads,0);
+assert.equal(descriptorFieldResult.error.code,'INVALID_FIELDS');
 console.log('workflow select fields tests passed');

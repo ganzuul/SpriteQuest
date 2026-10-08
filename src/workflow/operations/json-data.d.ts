@@ -11,5 +11,7 @@ export interface OperationError {
 export type Result<T> = { ok: true; data: T } | { ok: false; error: OperationError };
 /** Clone bounded plain JSON. Root depth is zero; limit failures have no value. */
 export function cloneJsonValue(value: unknown): Result<{ value: JsonValue }>;
+/** Validate and encode bounded JSON without invoking object or array toJSON hooks. */
+export function stringifyJsonValue(value: unknown): Result<{ text: string }>;
 /** Validate the value/path, traverse own data fields and return an isolated value. */
 export function readJsonPath(value: unknown, path: unknown): Result<{ found: false } | { found: true; value: JsonValue }>;

@@ -65,4 +65,36 @@ for (const [input,schema] of [
     ['{"name":"ok"}',{type:'object',properties:{name:{type:'string'}},required:['name'],additionalProperties:false}],
     ['{"b":2,"a":1}',{enum:[{a:1,b:2}],const:{a:1,b:2},title:'example',description:'metadata',$schema:'https://example.test/schema'}],
 ]) assert.equal(decodeJson(input,{schema}).ok,true);
+let inheritedTypeReads = 0, inheritedTypeResult, inheritedTypeThrown;
+Object.defineProperty(Object.prototype,'type',{configurable:true,get(){inheritedTypeReads++;throw new Error('Inherited schema type must not be read.');}});
+try { inheritedTypeResult = decodeJson('{}',{schema:{}}); }
+catch (error) { inheritedTypeThrown = error; }
+finally { delete Object.prototype.type; }
+assert.equal(inheritedTypeReads,0);
+assert.equal(inheritedTypeThrown,undefined);
+assert.equal(inheritedTypeResult.ok,true);
+// Every declared optional keyword and option must ignore inherited accessors.
+for (const key of ['type','enum','const','properties','required','additionalProperties','items','minItems','maxItems','minLength','maxLength','minimum','maximum','title','description','$schema','mode','schema']) {
+    let reads = 0, thrown, results;
+    Object.defineProperty(Object.prototype,key,{configurable:true,get(){reads++;throw new Error(`Inherited ${key} must not be read.`);}});
+    try {
+        results = [
+            decodeJson('null'),
+            ...['null','true','{}','[]','2','"text"'].map(text => decodeJson(text,{schema:{}})),
+            decodeJson('{"nested":{}}',{schema:{properties:{nested:{}}}}),
+            decodeJson([{}],{mode:'check',schema:{items:{}}}),
+        ];
+    } catch (error) { thrown = error; }
+    finally { delete Object.prototype[key]; }
+    assert.equal(reads,0,`Inherited ${key} getter was read`);
+    assert.equal(thrown,undefined);
+    assert.equal(results.every(result => result.ok),true);
+}
+const accessorSchema = Object.defineProperty({},'type',{enumerable:true,get(){throw new Error('Own schema accessor must not be read.');}});
+let descriptorReads = 0, descriptorSchemaResult;
+Object.defineProperty(Object.prototype,'value',{configurable:true,get(){descriptorReads++;throw new Error('Inherited descriptor value must not be read.');}});
+try { descriptorSchemaResult = decodeJson('null',{schema:accessorSchema}); }
+finally { delete Object.prototype.value; }
+assert.equal(descriptorReads,0);
+assert.equal(descriptorSchemaResult.error.code,'UNSUPPORTED_SCHEMA');
 console.log('workflow JSON decode tests passed');
