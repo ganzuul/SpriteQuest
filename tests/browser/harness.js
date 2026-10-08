@@ -20,7 +20,7 @@ Canvas.prototype.setGraph = function (graph) { canvas = this; return setGraph.ca
 const UI = await import(`/src/ui.js?v=${version}`);
 const H = await import(`/src/history.js?v=${version}`);
 await import(`/index.js?v=${version}`);
-window.sillyCanvas.open();
+window.lattice.open();
 const settle = () => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 await settle();
 window.canvasHarness = {

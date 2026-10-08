@@ -1,5 +1,5 @@
 {
-  "kind": "comfytavern-workflow",
+  "kind": "lattice-workflow",
   "schema": 1,
   "minRuntime": 1,
   "graph": {

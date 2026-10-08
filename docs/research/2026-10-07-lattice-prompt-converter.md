@@ -1,6 +1,6 @@
-# ComfyTavern: complete prompt conversion and ownership
+# Lattice: complete prompt conversion and ownership
 
-Research date: October 7, 2026. Status: proposed architecture for discussion, not an approved implementation spec. Companion to [the approachability and workflow assessment](2026-10-07-comfytavern-approachability-and-workflows.md).
+Research date: October 7, 2026. Status: proposed architecture for discussion, not an approved implementation spec. Companion to [the approachability and workflow assessment](2026-10-07-lattice-approachability-and-workflows.md).
 
 ## Reassessment: defer complete takeover
 
@@ -14,7 +14,7 @@ Make **Convert my current SillyTavern setup** a primary onboarding path. It shou
 
 Treat conversion as importing a prompt recipe, not rearranging a flat string into boxes. Keep both the source recipe and a resolved assembly trace, so the user can inspect what each component contributes and compare the complete result with SillyTavern.
 
-After verification, offer **Use this workflow for this chat**. ComfyTavern then owns the outgoing prompt, with live character, history, lore, and extension content supplied through explicit source nodes. SillyTavern continues to provide the chat and generation transport. Preserve the original preset as the source for comparison and recovery.
+After verification, offer **Use this workflow for this chat**. Lattice then owns the outgoing prompt, with live character, history, lore, and extension content supplied through explicit source nodes. SillyTavern continues to provide the chat and generation transport. Preserve the original preset as the source for comparison and recovery.
 
 This recommendation follows the user's priorities: approachability, compatibility with existing prompts, complete decomposition, and prevention of duplicate or competing prompt injection. Editable copies of preset instructions are a proposed default; the user has not separately selected a synchronization policy for later preset edits.
 
@@ -61,7 +61,7 @@ For an active converted workflow, required-source failures should stop that chat
 
 The host exposes `stopGeneration`, and its earlier generation-interceptor API has an abort callback. A reliable cancellation point for late assembly failure still needs an integration test; a mutable prompt-ready event alone is not a demonstrated cancellation contract. This is a prerequisite for exclusive workflow mode.
 
-Scope takeover to the intended chat generation. Background extension calls and workflow-internal requests need separate run identities and prompts. Changes from other extensions after ComfyTavern's handoff must be integrated deliberately or reported as downstream changes. Event registration order alone does not establish exclusive ownership.
+Scope takeover to the intended chat generation. Background extension calls and workflow-internal requests need separate run identities and prompts. Changes from other extensions after Lattice's handoff must be integrated deliberately or reported as downstream changes. Event registration order alone does not establish exclusive ownership.
 
 ## Three conversion approaches
 
@@ -158,7 +158,7 @@ Begin with the native chat-completion path and state its supported host versions
 
 The fixture matrix should cover main/jailbreak overrides and override protection, raw/resolved macros, disabled and generation-triggered entries, depth/priority/role collisions, extension filters, native Author's Note and summaries, lore activation, example/history budget precedence, character/group strategy, swipe/regenerate/continue, message consolidation, names, tool pairs, media, and failures/abort. These are proposed implementation acceptance checks, not a claim that such a converter has passed them.
 
-This becomes the leading approachability feature: users can bring a setup they already understand into ComfyTavern, then expand it. Recursion's source-bound checkpoints and invalidation are useful for the converter's trace and subsequent reasoning stages. Saga should retain ownership of its lore decisions, exposed through an adapter rather than duplicated retrieval. Recast-like revision passes remain a later completed-response workflow, not something prompt import alone provides.
+This becomes the leading approachability feature: users can bring a setup they already understand into Lattice, then expand it. Recursion's source-bound checkpoints and invalidation are useful for the converter's trace and subsequent reasoning stages. Saga should retain ownership of its lore decisions, exposed through an adapter rather than duplicated retrieval. Recast-like revision passes remain a later completed-response workflow, not something prompt import alone provides.
 
 ## Decision still to review
 

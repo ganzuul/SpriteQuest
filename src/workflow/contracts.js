@@ -1,4 +1,4 @@
-import { operationFor } from './catalog.js?v=0.19.0';
+import { operationFor } from './catalog.js?v=0.19.1';
 const fail = (code, message, nodeId) => ({ ok: false, error: { code, message, ...(nodeId ? { nodeId } : {}) } });
 const record = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 /** Bound plain JSON data before reading untrusted graph properties. */

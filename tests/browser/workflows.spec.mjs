@@ -184,7 +184,7 @@ async function reviewFixture(page) {
         c.setExtensionPrompt = (key, value, position, depth, scan, role) => { c.extensionPrompts[key] = { value, position, depth, scan, role }; };
         c.updateMessageBlock = () => {}; c.swipe = { refresh() {} };
         c.saveChat = async () => { window.workflowSaveAttempts = (window.workflowSaveAttempts || 0) + 1; };
-        await (await import('/src/run.js?v=0.19.0')).initializeNativeWorkflowController();
+        await (await import('/src/run.js?v=0.19.1')).initializeNativeWorkflowController();
     });
     await page.getByRole('button', { name: 'Install Reviewed AI De-slop' }).click();
     await page.getByLabel('Prose connection', { exact: true }).selectOption('prose');
@@ -251,9 +251,9 @@ test('manual pre Test and actual Send show their distinct guidance and request e
     await page.getByRole('button', { name: 'Test workflow', exact: true }).click();
     await expect(page.getByText('Manual test guidance.', { exact: true })).toBeVisible();
     await expect(page.getByText('Actual auxiliary requests: 1 / 2', { exact: true })).toBeVisible();
-    expect(await page.evaluate(() => Object.keys(window.canvasHarness.context.extensionPrompts).filter(key => key.startsWith('comfytavern:guidance:')).length)).toBe(0);
+    expect(await page.evaluate(() => Object.keys(window.canvasHarness.context.extensionPrompts).filter(key => key.startsWith('lattice:guidance:')).length)).toBe(0);
     await page.getByLabel('Arm', { exact: true }).check();
-    await page.evaluate(async () => { const c = window.canvasHarness.context; await window.comfyTavernGenerationInterceptor(c.chat, 8192, () => {}, 'normal'); });
+    await page.evaluate(async () => { const c = window.canvasHarness.context; await window.latticeGenerationInterceptor(c.chat, 8192, () => {}, 'normal'); });
     expect(await page.evaluate(() => window.workflowRequests.length)).toBe(2);
     expect(await page.evaluate(() => Object.values(window.canvasHarness.context.extensionPrompts).some(prompt => prompt.value === 'Actual Send guidance.'))).toBe(true);
     await expect(page.getByText('Actual Send guidance.', { exact: true })).toBeVisible();
@@ -269,7 +269,7 @@ test('manual pre Test and actual Send show their distinct guidance and request e
         await c.eventSource.emit(c.eventTypes.GENERATION_ENDED, c.chat.length);
         await c.eventSource.emit(c.eventTypes.GENERATION_STARTED, 'normal', {}, false);
         c.ConnectionManagerRequestService.sendRequest = async (...args) => { window.workflowRequests.push(args); throw new Error('Synthetic Send failure'); };
-        await window.comfyTavernGenerationInterceptor(c.chat, 8192, () => {}, 'normal');
+        await window.latticeGenerationInterceptor(c.chat, 8192, () => {}, 'normal');
     });
     await expect(trace).toContainText('REQUEST_FAILED');
     await expect(trace).not.toContainText('Actual Send guidance.');
@@ -282,7 +282,7 @@ test('automatic Send evidence stays with its original graph through post review,
     await reviewFixture(page);
     const preId = await page.evaluate(async () => {
         const h = window.canvasHarness, s = h.S.settings();
-        const pre = (await import('/src/workflow/starters.js?v=0.19.0')).installStarter('native-guidance', s);
+        const pre = (await import('/src/workflow/starters.js?v=0.19.1')).installStarter('native-guidance', s);
         pre.roles.Analysis.profileId = 'prose';
         s.nativeBindings.preGraphId = pre.id; s.workflowMode = 'native'; s.enabled = true;
         h.S.save(); h.UI.refreshIfOpen(); return pre.id;
@@ -292,7 +292,7 @@ test('automatic Send evidence stays with its original graph through post review,
     await page.evaluate(async () => {
         const c = window.canvasHarness.context;
         c.ConnectionManagerRequestService.sendRequest = async (...args) => { window.workflowRequests.push(args); return { choices: [{ message: { content: 'First automatic guidance.' }, finish_reason: 'stop' }] }; };
-        await window.comfyTavernGenerationInterceptor(c.chat, 8192, () => {}, 'normal');
+        await window.latticeGenerationInterceptor(c.chat, 8192, () => {}, 'normal');
     });
     await expect(page.getByText('We explore.', { exact: true })).toBeVisible();
     await expect(page.getByText('First automatic guidance.', { exact: true })).toHaveCount(0);
@@ -302,7 +302,7 @@ test('automatic Send evidence stays with its original graph through post review,
     await page.evaluate(async () => {
         const c = window.canvasHarness.context;
         c.ConnectionManagerRequestService.sendRequest = async (...args) => { window.workflowRequests.push(args); return { choices: [{ message: { content: 'Send while closed.' }, finish_reason: 'stop' }] }; };
-        await window.comfyTavernGenerationInterceptor(c.chat, 8192, () => {}, 'normal');
+        await window.latticeGenerationInterceptor(c.chat, 8192, () => {}, 'normal');
         await window.canvasHarness.settle();
     });
     await expect(page.locator('.pc-root')).not.toHaveClass(/pc-open/);
@@ -331,7 +331,7 @@ test('native graphs reject legacy prompt seeding before confirmation while legac
     await page.evaluate(() => window.canvasHarness.settle());
     expect(await page.evaluate(() => window.seedConfirmations || 0)).toBe(0);
     expect(await page.evaluate(() => JSON.stringify(window.canvasHarness.graph) === window.beforeNativeSeed)).toBe(true);
-    expect(await page.evaluate(async () => (await import('/src/workflow/contracts.js?v=0.19.0')).validateWorkflow(window.canvasHarness.graph).ok)).toBe(true);
+    expect(await page.evaluate(async () => (await import('/src/workflow/contracts.js?v=0.19.1')).validateWorkflow(window.canvasHarness.graph).ok)).toBe(true);
     const legacy = await page.evaluate(() => window.canvasHarness.S.allGraphs().find(graph => graph.schema !== 2).id);
     await page.locator('.pc-graph-select').selectOption(legacy);
     await page.getByLabel('Canvas actions', { exact: true }).click();
@@ -419,7 +419,7 @@ test('native camera pan and zoom preserve the focused editor without domain work
     await page.getByLabel('instructions', { exact: true }).focus();
     const measured = await page.evaluate(async () => {
         const { context: c, canvas, settle } = window.canvasHarness;
-        const controller = (await import('/src/run.js?v=0.19.0')).getNativeWorkflowController();
+        const controller = (await import('/src/run.js?v=0.19.1')).getNativeWorkflowController();
         const editor = document.activeElement, node = canvas.nodeLayer.querySelector('.pc-node'), requests = window.workflowRequests.length;
         let analysis = 0, bindings = 0, freshness = 0, tokens = 0, lore = 0;
         const prepare = canvas.hooks.prepareRender, getProfile = c.ConnectionManagerRequestService.getProfile, candidateStatus = controller.candidateStatus, count = c.getTokenCountAsync;
@@ -438,12 +438,12 @@ test('native camera pan and zoom preserve the focused editor without domain work
         return { analysis, bindings, freshness, tokens, lore, requests: window.workflowRequests.length - requests, sameEditor: editor === document.activeElement && document.contains(editor), sameNode: node === canvas.nodeLayer.querySelector('.pc-node') };
     });
     expect(measured).toEqual({ analysis: 0, bindings: 0, freshness: 0, tokens: 0, lore: 0, requests: 0, sameEditor: true, sameNode: true });
-    expect(await page.evaluate(async () => { const controller = (await import('/src/run.js?v=0.19.0')).getNativeWorkflowController(); return controller.candidateStatus(controller.lastResult().artifact).ok; })).toBe(true);
+    expect(await page.evaluate(async () => { const controller = (await import('/src/run.js?v=0.19.1')).getNativeWorkflowController(); return controller.candidateStatus(controller.lastResult().artifact).ok; })).toBe(true);
     const title = await page.locator('.pc-node-title').filter({ hasText: /^Reply Snapshot$/ }).boundingBox();
     await page.mouse.move(title.x + 20, title.y + 8); await page.mouse.down();
     await page.mouse.move(title.x + 60, title.y + 28, { steps: 4 }); await page.mouse.up();
     await expect(page.getByRole('button', { name: 'Apply reviewed candidate', exact: true })).toBeEnabled();
-    expect(await page.evaluate(async () => { const controller = (await import('/src/run.js?v=0.19.0')).getNativeWorkflowController(); return controller.candidateStatus(controller.lastResult().artifact).ok; })).toBe(true);
+    expect(await page.evaluate(async () => { const controller = (await import('/src/run.js?v=0.19.1')).getNativeWorkflowController(); return controller.candidateStatus(controller.lastResult().artifact).ok; })).toBe(true);
     await page.getByRole('button', { name: 'Inspect Repair', exact: true }).click();
     await page.getByLabel('instructions', { exact: true }).fill('A semantic operation edit.');
     await expect(page.getByRole('button', { name: 'Apply reviewed candidate', exact: true })).toHaveCount(0);
@@ -475,7 +475,7 @@ test('narrow workflow inspection and review remain opaque during selection feedb
     await reviewFixture(page);
     await page.setViewportSize({ width: 760, height: 1000 });
     for (const theme of ['midnight', 'parchment']) {
-        await page.evaluate(async theme => (await import('/src/theme.js?v=0.19.0')).setPreset(theme), theme);
+        await page.evaluate(async theme => (await import('/src/theme.js?v=0.19.1')).setPreset(theme), theme);
         await page.getByRole('button', { name: 'Inspect Pattern Scan', exact: true }).click();
         const opacity = await page.locator('.pc-inspector').evaluate(inspector => {
             const animations = inspector.getAnimations();
@@ -506,7 +506,7 @@ test('narrow toolbar exposes readable labeled pane and theme controls', async ({
     await reviewFixture(page);
     await page.setViewportSize({ width: 760, height: 1000 });
     for (const theme of ['midnight', 'parchment']) {
-        await page.evaluate(async theme => (await import('/src/theme.js?v=0.19.0')).setPreset(theme), theme);
+        await page.evaluate(async theme => (await import('/src/theme.js?v=0.19.1')).setPreset(theme), theme);
         await expect(page.getByRole('button', { name: 'Toggle library', exact: true }).getByText('Library', { exact: true })).toBeVisible();
         await expect(page.getByRole('button', { name: 'Toggle inspector', exact: true }).getByText('Inspector', { exact: true })).toBeVisible();
         await expect(page.getByTitle('Theme and colours', { exact: true }).getByText('Theme', { exact: true })).toBeVisible();

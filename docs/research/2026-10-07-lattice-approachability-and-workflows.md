@@ -1,4 +1,4 @@
-# ComfyTavern: approachability and workflow direction
+# Lattice: approachability and workflow direction
 
 Research date: October 7, 2026. Status: research and proposed product direction, not an approved implementation spec.
 
@@ -6,9 +6,9 @@ Research date: October 7, 2026. Status: research and proposed product direction,
 
 Make the first useful workflow easy to discover, configure, and understand. Start with a supported starter library and a small setup surface for each workflow. Use the canvas to let people inspect and customize something that already works.
 
-After reassessing development scope and extension compatibility, the recommendation is **a node-based pre- and post-processing workflow layer around SillyTavern's native generation**. Begin with supported examples and guided setup. SillyTavern should own preset assembly, character context, lore activation, extension injections, and the primary reply; ComfyTavern should own its auxiliary calls, guidance, and optional revision candidates.
+After reassessing development scope and extension compatibility, the recommendation is **a node-based pre- and post-processing workflow layer around SillyTavern's native generation**. Begin with supported examples and guided setup. SillyTavern should own preset assembly, character context, lore activation, extension injections, and the primary reply; Lattice should own its auxiliary calls, guidance, and optional revision candidates.
 
-The [complete prompt-conversion proposal](2026-10-07-comfytavern-prompt-converter.md) is retained as a deferred alternative. Its findings explain why full takeover carries substantial compatibility and maintenance work. Conversion should not be required to start using ComfyTavern.
+The [complete prompt-conversion proposal](2026-10-07-lattice-prompt-converter.md) is retained as a deferred alternative. Its findings explain why full takeover carries substantial compatibility and maintenance work. Conversion should not be required to start using Lattice.
 
 The subsequent [Gaea workflow and library reference](2026-10-07-gaea-workflow-and-node-library-reference.md) records the user-selected one-word families in display order: **Input, Shaping, Surface, Transpose, Derive, Output**. Proposed contents include reusable examples and explicit phase boundaries; family order does not dictate execution order. It is reference research for coordination with the Svelte task, not an approved UI change.
 
@@ -22,11 +22,11 @@ The initial request was to investigate the renamed fork, compare how it operates
 
 Working assumption: the easiest initial success happens in an existing SillyTavern chat. A new user can use a ready-made workflow without learning graph construction; the same workflow remains editable on the canvas. This is a recommendation, not a settled choice between chat and standalone workbench use.
 
-This research covers the checked-out ComfyTavern source, local Recursion and Saga source and documentation, installed default-user extension source, the scope of the separate UI Performance task, and current official ComfyUI documentation. It does not evaluate model output quality or run paid generations.
+This research covers the checked-out Lattice source, local Recursion and Saga source and documentation, installed default-user extension source, the scope of the separate UI Performance task, and current official ComfyUI documentation. It does not evaluate model output quality or run paid generations.
 
 ## Compatibility reassessment: preserve native assembly
 
-The latest user concern is whether complete conversion turns ComfyTavern into a costly second prompt engine and undermines extension interoperability. That concern changes the recommended boundary. Full takeover can preserve integrations, but it makes ComfyTavern responsible for reproducing the host's assembly decisions and accommodating extension behavior across versions. Fixing Seed's individual omissions is much smaller than fulfilling that complete compatibility promise.
+The latest user concern is whether complete conversion turns Lattice into a costly second prompt engine and undermines extension interoperability. That concern changes the recommended boundary. Full takeover can preserve integrations, but it makes Lattice responsible for reproducing the host's assembly decisions and accommodating extension behavior across versions. Fixing Seed's individual omissions is much smaller than fulfilling that complete compatibility promise.
 
 The local sources support host-owned assembly:
 
@@ -52,13 +52,13 @@ Read bounded context -> Analyze through selected connection -> Install guidance
     -> Optional critique/rewrite -> Compare -> Apply a verified candidate
 ```
 
-The native-reply step is a handoff to one ordinary host generation. It should not independently request a second main reply. Pre-processing publishes only ComfyTavern's namespaced guidance, with explicit placement, depth, size, and lifetime. Cleanup clears its own keys on cancellation, failure, chat change, and completion as required by the run lifecycle. Host token budgeting should include the guidance; replacing the final assembled array or appending after budgeting is not the intended default path.
+The native-reply step is a handoff to one ordinary host generation. It should not independently request a second main reply. Pre-processing publishes only Lattice's namespaced guidance, with explicit placement, depth, size, and lifetime. Cleanup clears its own keys on cancellation, failure, chat change, and completion as required by the run lifecycle. Host token budgeting should include the guidance; replacing the final assembled array or appending after budgeting is not the intended default path.
 
 The inspected native generation interceptor runs before the current world-info scan. Early analysis can therefore use a bounded source snapshot, but must not claim to have consumed the exact lore/context ultimately selected for this send. Later context readers need their own supported timing contract; replaying scans and other extensions' calls is not a general solution. Guidance's participation in lore scanning should be an explicit policy.
 
 Post-processing starts from a frozen completed reply and produces a candidate. Begin with manual execution and review, then add automatic application only where lifecycle behavior is verified. Before committing, recheck chat/message/swipe/source identity and prevent internal revision events from triggering another workflow.
 
-Memory settlement remains a shared-system concern. A memory extension may extract from the original reply before a revision is accepted; emitting an edit event does not prove it repairs that extraction. Automatic post-processing needs tested integration policies for the installed memory and rewriting extensions. Avoid claiming that generic event ordering can make every extension wait for a final revision. ComfyTavern can provide a settlement event for cooperating adapters, but third-party adoption cannot be assumed.
+Memory settlement remains a shared-system concern. A memory extension may extract from the original reply before a revision is accepted; emitting an edit event does not prove it repairs that extraction. Automatic post-processing needs tested integration policies for the installed memory and rewriting extensions. Avoid claiming that generic event ordering can make every extension wait for a final revision. Lattice can provide a settlement event for cooperating adapters, but third-party adoption cannot be assumed.
 
 A compatible default should add reasoning and writing capability without taking over external memory stores. Workflow-local state and memory can be explicit nodes; updating Saga canon, MemoryBooks lore, or VectFox storage requires a supported integration and reviewable write contract.
 
@@ -66,7 +66,7 @@ The converter itself could be deterministic and make zero model calls; its expen
 
 ## What is already here
 
-GitHub resolves the fork to [MentallyQuill/ComfyTavern](https://github.com/MentallyQuill/ComfyTavern). Its published main revision and this checkout both begin at `dc5b6034ac7e202ecb40f33fb8d84d5dc6b8c475`, version 0.17.0. The manifest, README, UI brand, and exported format still use Silly Canvas naming at this revision.
+GitHub resolves the fork to [MentallyQuill/Lattice](https://github.com/MentallyQuill/Lattice). Its published main revision and this checkout both begin at `dc5b6034ac7e202ecb40f33fb8d84d5dc6b8c475`, version 0.17.0. The manifest, README, UI brand, and exported format still use Silly Canvas naming at this revision.
 
 | Capability | Evidence in this checkout | Product implication |
 | --- | --- | --- |
@@ -92,9 +92,9 @@ These observations explain the learning burden. They are source-based findings, 
 
 ## What to borrow from ComfyUI first
 
-ComfyUI's [template browser](https://docs.comfy.org/interface/features/template) provides example workflows and checks for required model files when a template loads. The analogous ComfyTavern job is to resolve model roles, connection profiles, lorebooks, and optional extensions. The useful lesson is to make workflow requirements part of loading, rather than leave users to discover them during generation.
+ComfyUI's [template browser](https://docs.comfy.org/interface/features/template) provides example workflows and checks for required model files when a template loads. The analogous Lattice job is to resolve model roles, connection profiles, lorebooks, and optional extensions. The useful lesson is to make workflow requirements part of loading, rather than leave users to discover them during generation.
 
-ComfyUI's [APP mode](https://docs.comfy.org/interface/app-mode) allows authors to expose selected inputs and outputs through a simpler interface. ComfyTavern can apply that idea to controls such as a reasoning connection, recent-message count, recap frequency, and style instructions. One workflow can have a setup view and a canvas view, backed by the same saved configuration.
+ComfyUI's [APP mode](https://docs.comfy.org/interface/app-mode) allows authors to expose selected inputs and outputs through a simpler interface. Lattice can apply that idea to controls such as a reasoning connection, recent-message count, recap frequency, and style instructions. One workflow can have a setup view and a canvas view, backed by the same saved configuration.
 
 Later, [typed connections](https://docs.comfy.org/custom-nodes/backend/datatypes), [subgraphs](https://docs.comfy.org/interface/features/subgraph), [partial execution](https://docs.comfy.org/interface/features/partial-execution), and [change-aware execution](https://docs.comfy.org/custom-nodes/backend/server_overview) can make more sophisticated workflows easier to build and debug. These are separate capabilities; they need not all arrive before a starter library.
 
@@ -108,7 +108,7 @@ Later, [typed connections](https://docs.comfy.org/custom-nodes/backend/datatypes
 
 ## Proposed first-use journey
 
-1. Open ComfyTavern and choose **Start with a workflow**, **Import JSON**, or **Build your own**. Returning users go back to their saved work.
+1. Open Lattice and choose **Start with a workflow**, **Import JSON**, or **Build your own**. Returning users go back to their saved work.
 2. Browse examples by what they accomplish: **Think before replying**, **Manage context**, **Remember details**, **Track story state**, or **Route instructions**.
 3. Open an example's details: purpose, a small flow preview, required setup, extra model calls, and what successful behavior looks like.
 4. Choose **Use this workflow**. Create a personal copy and resolve only its actual requirements. A starter should work with the current chat model when appropriate; a separate profile is optional unless the workflow requires it.
@@ -143,7 +143,7 @@ Begin with two primary examples: a bounded pre-reply guidance pass and a manuall
 | **Review prose after replying** | A selected profile creates a revision candidate for comparison and acceptance | Usually 1 per run; 2 with separate analysis | Proposed completed-response phase and guarded commit |
 | **Inspect the native prompt** | See the assembled payload and clearly identified source information where available | 0 | Proposed read-only view; Seed is not a faithful native representation |
 | **Track energy or tension** | A visible value selects auxiliary guidance | 0 for deterministic rules | State/activation wires exist; native guidance integration is proposed |
-| **Keep workflow notes** | Refresh ComfyTavern-owned notes from accepted conversation context | 1 when scheduled | Existing memory primitives; settlement and review contract needs design |
+| **Keep workflow notes** | Refresh Lattice-owned notes from accepted conversation context | 1 when scheduled | Existing memory primitives; settlement and review contract needs design |
 | **Switch scene guidance** | Activate different guidance when configured terms match | 0 with word rules | Decider exists; native guidance handoff is proposed; matching is not semantic scene understanding |
 
 A second tier can demonstrate parallel perspectives, generated lore saved into a selected lorebook, and bounded draft/critique loops. Introduce one new idea per example before combining them.
@@ -154,7 +154,7 @@ The seed example must be checked against actual supported host behavior. The cur
 
 ## Make workflow JSON portable and supportable
 
-Retain a clear local JSON sharing path. ComfyTavern JSON will describe ComfyTavern nodes; arbitrary ComfyUI image workflows are not directly executable by the current extension.
+Retain a clear local JSON sharing path. Lattice JSON will describe Lattice nodes; arbitrary ComfyUI image workflows are not directly executable by the current extension.
 
 For a richer workflow package, consider these additions around the graph:
 
@@ -196,7 +196,7 @@ The transferable lessons are:
 - **Recover structured output narrowly.** Validate accepted results, distinguish malformed output from transport or cancellation failures, and repair damaged siblings without replaying successful siblings.
 - **Keep narrative judgment and runtime enforcement distinct.** Models can assess relevance or implications. Deterministic code checks identities, schemas, budgets, and whether a write is authorized by the current run.
 
-Recursion is intentionally a scene-reasoning product, with its own fixed and authored card workflows. ComfyTavern should generalize these boundaries into user-composable steps rather than make every graph follow Recursion's catalog or settings model. Its scheduler is a reference, not a drop-in generic engine: it has product-specific contracts and dependencies.
+Recursion is intentionally a scene-reasoning product, with its own fixed and authored card workflows. Lattice should generalize these boundaries into user-composable steps rather than make every graph follow Recursion's catalog or settings model. Its scheduler is a reference, not a drop-in generic engine: it has product-specific contracts and dependencies.
 
 ### A future example that expresses the full goal
 
@@ -214,11 +214,11 @@ flowchart TD
     I --> J[Review or configured memory commit]
 ```
 
-This is a proposed ComfyTavern recipe, not an existing supported graph. A user could begin with a few setup controls and open the nodes to add a critic, change connections, or reroute memory candidates. Schema checks alone cannot prove that a rewrite preserved events or character knowledge; comparison and review remain meaningful controls.
+This is a proposed Lattice recipe, not an existing supported graph. A user could begin with a few setup controls and open the nodes to add a critic, change connections, or reroute memory candidates. Schema checks alone cannot prove that a rewrite preserved events or character knowledge; comparison and review remain meaningful controls.
 
 ## What the other extensions contribute
 
-| Reference | Observed pattern | Useful ComfyTavern direction |
+| Reference | Observed pattern | Useful Lattice direction |
 | --- | --- | --- |
 | [Recast](https://github.com/closuretxt/recast-post-processing), installed version 1.86 | Sequential revision passes, per-pass connection profiles and optional context, macros, diff review, manual or automatic execution | Completed-response input, independent pass prompts, candidate comparison, and explicit application |
 | [Saga](https://github.com/MentallyQuill/Saga), local source `6c3cbcdc` | Context-aware lore selection, relevance tiers, reviewable lore changes, separate prompt lanes | Lore eligibility and relevance as distinct steps; preserve Saga's ownership of canon and context |
@@ -245,7 +245,7 @@ Prioritize these capabilities when the starter collection graduates to richer re
 
 Keep workflow execution and the editor separate. The UI Performance task can choose a renderer and state approach while these contracts remain framework-independent. Before large workflow libraries arrive, address coordinate-dependent prompt ordering so visual rearrangement does not unexpectedly change behavior.
 
-Later integrations could include a ComfyUI API workflow call returning an image or audio artifact, supported retrieval adapters, and tool calls. An image workflow can run in ComfyUI through its [queue and status API](https://docs.comfy.org/development/comfyui-server/comms_routes); ComfyTavern need not reproduce its Python inference nodes.
+Later integrations could include a ComfyUI API workflow call returning an image or audio artifact, supported retrieval adapters, and tool calls. An image workflow can run in ComfyUI through its [queue and status API](https://docs.comfy.org/development/comfyui-server/comms_routes); Lattice need not reproduce its Python inference nodes.
 
 ## Suggested delivery order
 

@@ -6,7 +6,7 @@
     const menu = [ ['duplicate', 'Duplicate canvas', 'fa-clone'], ['rename', 'Rename canvas', 'fa-i-cursor'], ['import', 'Import canvas', 'fa-file-import'], ['export', 'Export canvas', 'fa-file-export'], ['seed', 'Seed from SillyTavern’s current prompt order', 'fa-wand-magic-sparkles'], ['delete', 'Delete canvas', 'fa-trash-can'] ];
 </script>
 <header class="pc-header" data-pc-ui="svelte" bind:this={header}>
-    <div class="pc-brand"><i class="fa-solid fa-diagram-project"></i><span>ComfyTavern</span></div>
+    <div class="pc-brand"><i class="fa-solid fa-diagram-project"></i><span>Lattice</span></div>
     <select class="pc-select pc-graph-select text_pole" aria-label="Canvas" value={state.graphId} bind:this={graphSelect} onchange={(event) => actions.pickGraph(event.currentTarget.value)}>
         {#each state.graphs as graph (graph.id)}<option value={graph.id}>{graph.name}</option>{/each}
     </select>

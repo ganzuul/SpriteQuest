@@ -1,5 +1,5 @@
 /**
- * Silly Canvas — Memory blocks.
+ * Lattice — Memory blocks.
  *
  * A Memory block is prose the canvas remembers between sends. You type its
  * starting text; Generate blocks wired into it (save wires) write to it.
@@ -20,7 +20,7 @@
  * holds the memory's latest text, so writing it again is harmless.
  */
 
-import { NODE_TYPES, WIRE_KINDS, saveWires, activeGraph, safe, ctx } from './state.js?v=0.19.0';
+import { NODE_TYPES, WIRE_KINDS, saveWires, activeGraph, safe, ctx } from './state.js?v=0.19.1';
 
 export const MEMORY_KEY = 'promptCanvasMemory';
 

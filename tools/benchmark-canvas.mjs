@@ -12,7 +12,7 @@ const theme=await import('/src/theme.js?v='+version);
 const compiler=await import('/src/compile.js?v='+version);
 const state=await import('/src/state.js?v='+version);
 const {createGraphAnalysis}=await import('/src/ui/graph-analysis.js?v='+version);
-const {mountWorkbench}=await import('/dist/silly-canvas-ui.js?v='+version);
+const {mountWorkbench}=await import('/dist/lattice-ui.js?v='+version);
 let countsRuns=0,levelRuns=0, projection;
 const analysis=createGraphAnalysis({counts:g=>{countsRuns++;return compiler.emissionCounts(g)},levels:g=>{levelRuns++;return compiler.generateLevels(g)},group:state.togetherGroup});
 const workbench=mountWorkbench(document.body,{});workbench.root.classList.add('pc-open');

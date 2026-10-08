@@ -1,8 +1,8 @@
-# ComfyTavern native workflow specification review
+# Lattice native workflow specification review
 
 Verdict: Ready after two bounded contract amendments. No Critical defects found. The architecture does not need redesign, and these amendments can be folded into the implementation plan without another user approval.
 
-Reviewed: F:\git\SillyCanvas\docs\superpowers\specs\2026-10-07-comfytavern-native-workflows-design.md. Cross-checked the read-only Svelte migration checkout and the installed SillyTavern host. The requested temporary host-lifecycle report was absent when checked. No paid requests, implementation changes, or delegated work performed.
+Reviewed: F:\git\SillyCanvas\docs\superpowers\specs\2026-10-07-lattice-native-workflows-design.md. Cross-checked the read-only Svelte migration checkout and the installed SillyTavern host. The requested temporary host-lifecycle report was absent when checked. No paid requests, implementation changes, or delegated work performed.
 
 ## Important findings
 

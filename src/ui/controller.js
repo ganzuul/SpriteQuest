@@ -1,10 +1,10 @@
-import { resolveBinding } from '../workflow/connections.js?v=0.19.0';
-import * as workflowRuntime from '../run.js?v=0.19.0';
-import { installStarter } from '../workflow/starters.js?v=0.19.0';
-import { operationDefaults, operationFor } from '../workflow/catalog.js?v=0.19.0';
-import { projectWorkflow, createWorkflowSurface, createWorkflowSession } from './workflow-surface.js?v=0.19.0';
+import { resolveBinding } from '../workflow/connections.js?v=0.19.1';
+import * as workflowRuntime from '../run.js?v=0.19.1';
+import { installStarter } from '../workflow/starters.js?v=0.19.1';
+import { operationDefaults, operationFor } from '../workflow/catalog.js?v=0.19.1';
+import { projectWorkflow, createWorkflowSurface, createWorkflowSession } from './workflow-surface.js?v=0.19.1';
 /**
- * ComfyTavern — the panel.
+ * Lattice — the panel.
  *
  * Layout: library on the left, canvas in the middle, inspector on the right,
  * a compile preview that slides up from the bottom. The preview is not a
@@ -19,27 +19,27 @@ import {
     chatBinding, setChatBinding, characterBinding, setCharacterBinding,
     exportGraph, importGraph, blankGraph, isFolderCollapsed, setFolderCollapsed, togetherGroup,
     newDeciderKey, removeDeciderKey, onGraphTouched, duplicateNode, newStateValue, groupNodes, ungroup, groupMembers, createBlanket, inOffGroup,
-} from '../state.js?v=0.19.0';
-import { applyTheme } from '../theme.js?v=0.19.0';
-import { makeClip, pasteClip, readClip, toClipboard, fromClipboard, lastClip, describeClip } from '../clip.js?v=0.19.0';
-import { renderThemeEditor } from '../theme-editor.js?v=0.19.0';
-import * as H from '../history.js?v=0.19.0';
-import * as L from '../library.js?v=0.19.0';
-import { compile, gatherContext, resolveNode, textOf, generateLevels, emissionCounts, wirePreview, countTokens, countTextTokens, routingMode, explainDecider, deciderInputList, collect } from '../compile.js?v=0.19.0';
-import { LORE_POSITIONS } from '../lore.js?v=0.19.0';
-import { computeState, stageFor, NUDGE_KEY } from '../statevals.js?v=0.19.0';
-import { openStateWindow, closeStateWindow } from '../state-window.js?v=0.19.0';
-import { memoryAt, memoryHistory, setMemoryNow, mirrorToLorebook, lorebookNames, DECIDER_SAVES } from '../memory.js?v=0.19.0';
-import { check as checkFormula } from '../expr.js?v=0.19.0';
-import { DEFAULT_SELECT, isActive as selectActive, selectLabel } from '../select.js?v=0.19.0';
-import { run, profileName, effectiveModel, callCount, testBlock, shapeForApi, inspectProfile, modelsForSource, sourceForBlock, cachedModels, fetchModelList, previewBlock } from '../run.js?v=0.19.0';
-import { Canvas, WIRE_LABEL, TYPE_LABEL, TYPE_ICON } from '../canvas.js?v=0.19.0';
-import { modelCombo } from '../model-combo.js?v=0.19.0';
-import { jevReady } from '../jev.js?v=0.19.0';
-import { createGraphAnalysis } from './graph-analysis.js?v=0.19.0';
+} from '../state.js?v=0.19.1';
+import { applyTheme } from '../theme.js?v=0.19.1';
+import { makeClip, pasteClip, readClip, toClipboard, fromClipboard, lastClip, describeClip } from '../clip.js?v=0.19.1';
+import { renderThemeEditor } from '../theme-editor.js?v=0.19.1';
+import * as H from '../history.js?v=0.19.1';
+import * as L from '../library.js?v=0.19.1';
+import { compile, gatherContext, resolveNode, textOf, generateLevels, emissionCounts, wirePreview, countTokens, countTextTokens, routingMode, explainDecider, deciderInputList, collect } from '../compile.js?v=0.19.1';
+import { LORE_POSITIONS } from '../lore.js?v=0.19.1';
+import { computeState, stageFor, NUDGE_KEY } from '../statevals.js?v=0.19.1';
+import { openStateWindow, closeStateWindow } from '../state-window.js?v=0.19.1';
+import { memoryAt, memoryHistory, setMemoryNow, mirrorToLorebook, lorebookNames, DECIDER_SAVES } from '../memory.js?v=0.19.1';
+import { check as checkFormula } from '../expr.js?v=0.19.1';
+import { DEFAULT_SELECT, isActive as selectActive, selectLabel } from '../select.js?v=0.19.1';
+import { run, profileName, effectiveModel, callCount, testBlock, shapeForApi, inspectProfile, modelsForSource, sourceForBlock, cachedModels, fetchModelList, previewBlock } from '../run.js?v=0.19.1';
+import { Canvas, WIRE_LABEL, TYPE_LABEL, TYPE_ICON } from '../canvas.js?v=0.19.1';
+import { modelCombo } from '../model-combo.js?v=0.19.1';
+import { jevReady } from '../jev.js?v=0.19.1';
+import { createGraphAnalysis } from './graph-analysis.js?v=0.19.1';
 
-import { createWorkbench } from './workbench.js?v=0.19.0';
-import { createDomainSurfaces } from './domain-surfaces.js?v=0.19.0';
+import { createWorkbench } from './workbench.js?v=0.19.1';
+import { createDomainSurfaces } from './domain-surfaces.js?v=0.19.1';
 
 let workbench = null;
 let root = null;
@@ -65,11 +65,11 @@ export function escapeHtml(s) {
 
 export function toast(msg, type = 'info') {
     const t = safe(() => globalThis.toastr);
-    if (t) t[type === 'error' ? 'error' : type === 'success' ? 'success' : 'info'](msg, 'ComfyTavern');
-    else console.log('[ComfyTavern]', msg);
+    if (t) t[type === 'error' ? 'error' : type === 'success' ? 'success' : 'info'](msg, 'Lattice');
+    else console.log('[Lattice]', msg);
 }
 
-export async function confirmBox(text, title = 'ComfyTavern') {
+export async function confirmBox(text, title = 'Lattice') {
     const c = ctx();
     try {
         const res = await c.callGenericPopup(text, c.POPUP_TYPE.CONFIRM, '', { okButton: 'Yes', cancelButton: 'No', title });
@@ -82,7 +82,7 @@ export async function confirmBox(text, title = 'ComfyTavern') {
 export async function inputBox(text, value = '') {
     const c = ctx();
     try {
-        const res = await c.callGenericPopup(text, c.POPUP_TYPE.INPUT, value, { title: 'ComfyTavern' });
+        const res = await c.callGenericPopup(text, c.POPUP_TYPE.INPUT, value, { title: 'Lattice' });
         return (res === false || res === null || res === undefined) ? null : String(res);
     } catch {
         return prompt(text, value);
@@ -3108,7 +3108,7 @@ function renderAiEngine(box, holder, decider, kind) {
         : ''));
     if (engine === 'jev') {
         if (!jevReady()) {
-            box.append(el('div', 'pc-hint pc-warn', 'Jev needs your TypeSafe API key: Extensions \u2192 ComfyTavern \u2192 Jev.'));
+            box.append(el('div', 'pc-hint pc-warn', 'Jev needs your TypeSafe API key: Extensions \u2192 Lattice \u2192 Jev.'));
         }
         const pct = el('input', 'text_pole pc-wide-num');
         pct.type = 'number'; pct.min = '1'; pct.max = '99';

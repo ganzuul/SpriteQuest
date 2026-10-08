@@ -1,5 +1,5 @@
 /**
- * ComfyTavern: themes.
+ * Lattice: themes.
  *
  * A theme is a set of colours for named roles. Surfaces (panel, blocks, text)
  * and meanings (flow, append, Generate, Decider...) are separate roles, and
@@ -12,7 +12,7 @@
  * always be got back, and a shared theme is a short piece of JSON.
  */
 
-import { settings, save, safe } from './state.js?v=0.19.0';
+import { settings, save, safe } from './state.js?v=0.19.1';
 
 /** The roles, in the order the editor lists them. */
 export const ROLES = [
@@ -361,14 +361,14 @@ export function themeWarnings(colors = currentTheme().colors) {
 export function exportTheme(name = null) {
     const { preset, custom, customStyle } = currentTheme();
     const changed = Object.keys(custom).length + Object.keys(customStyle).length;
-    return JSON.stringify({ sillyCanvasTheme: 1, name: name || PRESETS[preset].name + (changed ? ' (custom)' : ''), base: preset, colors: custom, style: customStyle });
+    return JSON.stringify({ latticeTheme: 1, name: name || PRESETS[preset].name + (changed ? ' (custom)' : ''), base: preset, colors: custom, style: customStyle });
 }
 
 /** @returns {{ok: boolean, reason?: string, name?: string}} */
 export function importTheme(text) {
     let o;
-    try { o = JSON.parse(String(text ?? '').trim()); } catch { return { ok: false, reason: 'That is not a ComfyTavern theme. Paste the whole text you were given.' }; }
-    if (!o || o.sillyCanvasTheme !== 1 || typeof o.colors !== 'object') return { ok: false, reason: 'That is not a ComfyTavern theme.' };
+    try { o = JSON.parse(String(text ?? '').trim()); } catch { return { ok: false, reason: 'That is not a Lattice theme. Paste the whole text you were given.' }; }
+    if (!o || (o.latticeTheme !== 1 && o.sillyCanvasTheme !== 1) || typeof o.colors !== 'object') return { ok: false, reason: 'That is not a Lattice theme.' };
     const colors = {};
     for (const r of ROLES) {
         const v = o.colors[r.key];

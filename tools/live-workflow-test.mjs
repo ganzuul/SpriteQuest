@@ -61,7 +61,7 @@ export function createLiveGuard({live=false,host='http://127.0.0.1:8000',priorAt
 /** Serve only the narrowly required production dependency graph, never host files or secrets. */
 export async function productionModulePath(repoRoot,url) {
     const allowed = new Set(['runtime','contracts','catalog','compactor','repair','connections','starters']);
-    const match = /^\/__comfytavern-live-test\/src\/workflow\/([a-z-]+)\.js$/.exec(new URL(url).pathname);
+    const match = /^\/__lattice-live-test\/src\/workflow\/([a-z-]+)\.js$/.exec(new URL(url).pathname);
     if (!match || !allowed.has(match[1])) throw Error('Unapproved production module path.');
     const root=await realpath(repoRoot), target=await realpath(resolve(root,'src','workflow',`${match[1]}.js`));
     const rel=relative(root,target);
@@ -103,7 +103,7 @@ export async function runLiveFixtures(options) {
                     try {payload=request.postDataJSON();} catch { /* Never print the body. */ }
                 }
                 if (!boundary.allow({url,method,payload})) {await route.abort();return;}
-                if (new URL(url).pathname.startsWith('/__comfytavern-live-test/')) {
+                if (new URL(url).pathname.startsWith('/__lattice-live-test/')) {
                     try {
                         const path=await productionModulePath(repoRoot,url);
                         await route.fulfill({contentType:'text/javascript',body:await readFile(path,'utf8')});
@@ -161,7 +161,7 @@ export function createLiveReservationBridge(guard) {
     };
 }
 export async function runSyntheticFixtures({version,profileId},dependencies) {
-            const prefix='/__comfytavern-live-test/src/workflow/';
+            const prefix='/__lattice-live-test/src/workflow/';
             const runtime=dependencies?.runtime ?? await import(`${prefix}runtime.js?v=${version}`);
             const connections=dependencies?.connections ?? await import(`${prefix}connections.js?v=${version}`);
             const {starterGraph}=dependencies?.starters ?? await import(`${prefix}starters.js?v=${version}`);

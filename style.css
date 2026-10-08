@@ -1,8 +1,8 @@
-/* Silly Canvas: styling.
+/* Lattice: styling.
 
    Every colour is a named role, set on :root so the answers shown in the chat
    use them too. The defaults below follow SillyTavern's own theme for the
-   surfaces. A Silly Canvas theme (src/theme.js) overrides these variables and
+   surfaces. A Lattice theme (src/theme.js) overrides these variables and
    nothing else, so a theme is a list of colours, not edits to this file. */
 
 :root {

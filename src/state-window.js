@@ -1,5 +1,5 @@
 /**
- * Silly Canvas — the State block's own window.
+ * Lattice — the State block's own window.
  *
  * A State block holds values that change as the chat goes on. They are worked
  * out again from the whole chat every time, so what a value really has is a
@@ -17,8 +17,8 @@
  * It edits the block directly; the canvas and preview follow along.
  */
 
-import { computeState, stageFor, stageText, ensureStageIds, stagePortId } from './statevals.js?v=0.19.0';
-import { newStateValue, uid, ROLES } from './state.js?v=0.19.0';
+import { computeState, stageFor, stageText, ensureStageIds, stagePortId } from './statevals.js?v=0.19.1';
+import { newStateValue, uid, ROLES } from './state.js?v=0.19.1';
 
 const el = (tag, cls, text) => {
     const n = document.createElement(tag);

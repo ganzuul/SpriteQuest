@@ -72,7 +72,7 @@ box.querySelector('.pc-th-share').open = true;
 [...box.querySelectorAll('.pc-th-btn')].find(b => b.textContent === 'Copy my theme').click();
 await new Promise(r => setTimeout(r, 10));
 const shared = box.querySelector('.pc-th-text').value;
-assert.match(shared, /sillyCanvasTheme/);
+assert.match(shared, /latticeTheme/);
 T.setPreset('midnight');
 E.renderThemeEditor(box);
 box.querySelector('.pc-th-text').value = shared;

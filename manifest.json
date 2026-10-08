@@ -1,14 +1,14 @@
 {
-    "display_name": "ComfyTavern",
+    "display_name": "Lattice",
     "loading_order": 120,
-    "generate_interceptor": "comfyTavernGenerationInterceptor",
+    "generate_interceptor": "latticeGenerationInterceptor",
     "requires": [],
     "optional": [],
-    "js": "index.js?v=0.19.0",
+    "js": "index.js?v=0.19.1",
     "css": "style.css",
     "author": "Dulgadurbit",
-    "version": "0.19.0",
-    "homePage": "https://github.com/MentallyQuill/ComfyTavern",
+    "version": "0.19.1",
+    "homePage": "https://github.com/MentallyQuill/Lattice",
     "auto_update": false,
     "description": "Add optional scene guidance and reviewed reply repairs to SillyTavern with editable workflows and per-node model connections. Legacy prompt-replacement canvases remain available."
 }

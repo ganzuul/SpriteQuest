@@ -1,5 +1,5 @@
 /**
- * Silly Canvas — the executor.
+ * Lattice — the executor.
  *
  * Walks the Generate blocks in canvas order, asks the model each one's
  * question, and feeds each answer into whatever sits below it. The final
@@ -16,15 +16,15 @@
  *    recorded as the error, the run continues, and you see it in the trace.
  */
 
-import { ctx, safe, settings, save as saveSettings, resolveGraph, NODE_TYPES, togetherGroup, loopWires, loopSection, activeGraph } from './state.js?v=0.19.0';
-import { compile, collect, generateOrder, generateLevels, gatherContext, evaluateCondition, liveNodes, generateDeps, textOf, picks, wireHolds } from './compile.js?v=0.19.0';
-import { plannedSaves, writeSaves, mirrorToLorebook } from './memory.js?v=0.19.0';
-import { jevYesNo, jevSort } from './jev.js?v=0.19.0';
-import { applySelect } from './select.js?v=0.19.0';
-import { validateWorkflow } from './workflow/contracts.js?v=0.19.0';
-import { createNativeWorkflowController } from './workflow/host.js?v=0.19.0';
-export { runWorkflow, workflowSignature } from './workflow/runtime.js?v=0.19.0';
-export { createNativeWorkflowController, snapshotContext, snapshotReply } from './workflow/host.js?v=0.19.0';
+import { ctx, safe, settings, save as saveSettings, resolveGraph, NODE_TYPES, togetherGroup, loopWires, loopSection, activeGraph } from './state.js?v=0.19.1';
+import { compile, collect, generateOrder, generateLevels, gatherContext, evaluateCondition, liveNodes, generateDeps, textOf, picks, wireHolds } from './compile.js?v=0.19.1';
+import { plannedSaves, writeSaves, mirrorToLorebook } from './memory.js?v=0.19.1';
+import { jevYesNo, jevSort } from './jev.js?v=0.19.1';
+import { applySelect } from './select.js?v=0.19.1';
+import { validateWorkflow } from './workflow/contracts.js?v=0.19.1';
+import { createNativeWorkflowController } from './workflow/host.js?v=0.19.1';
+export { runWorkflow, workflowSignature } from './workflow/runtime.js?v=0.19.1';
+export { createNativeWorkflowController, snapshotContext, snapshotReply } from './workflow/host.js?v=0.19.1';
 
 let nativeController, nativeHelpers, nativeInitialization;
 /** Send-adjacent labels follow the automatic execution binding, not the open canvas. */
@@ -47,7 +47,7 @@ export function sendWorkflowState() {
         automatic,
         armLabel: 'Arm the canvas (it builds the prompt instead of SillyTavern)',
         armedText: automatic ? `"${graph.name}" (${from}) builds the prompt.` : 'No legacy canvas applies here, so SillyTavern builds the prompt.',
-        offText: 'ComfyTavern is off. SillyTavern builds the prompt as usual.',
+        offText: 'Lattice is off. SillyTavern builds the prompt as usual.',
     };
 }
 /** Stable adapter facade consumed by the projection-only workflow UI. */
@@ -65,7 +65,7 @@ export function getNativeWorkflowController() {
             return {tokens:Math.ceil(text.length/4),method:'character-estimate'};
         },
         onResult:(value,origin)=>{
-            if(!value.ok) safe(()=>globalThis.toastr?.warning(value.error.message,'ComfyTavern workflow'));
+            if(!value.ok) safe(()=>globalThis.toastr?.warning(value.error.message,'Lattice workflow'));
             if(origin) safe(()=>globalThis.document?.dispatchEvent(new CustomEvent('pc-native-result')));
         },
     });

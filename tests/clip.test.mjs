@@ -24,6 +24,11 @@ a.nodes.d.keys = [{ id: 'k1', name: 'yes', conditions: [{ mode: 'search', terms:
 
 // Output is never copied; wires only when both ends are copied.
 const clip = K.makeClip(a, { nodeIds: ['p', 'd', 'out'] });
+assert.equal(clip.latticeClip, 1);
+assert.equal(clip.sillyCanvasClip, undefined, 'new clips use the Lattice marker');
+const legacyClip = { ...clip, sillyCanvasClip: 1 };
+delete legacyClip.latticeClip;
+assert.deepEqual(K.readClip(JSON.stringify(legacyClip)).nodes, clip.nodes, 'old clipboard data remains usable');
 assert.deepEqual(clip.nodes.map(x => x.id).sort(), ['d', 'p']);
 assert.equal(clip.wires.length, 1, 'p -> d only');
 assert.deepEqual(clip.origin, { x: 0, y: 0 });

@@ -3,6 +3,15 @@ import test from 'node:test';
 import { createNativeWorkflowController, snapshotContext, snapshotReply } from '../src/workflow/host.js';
 import { starterGraph } from '../src/workflow/starters.js';
 const pre = starterGraph('native-guidance'), post=starterGraph('reviewed-de-slop');
+test('upgrade cleanup clears both guidance namespaces and preserves other extensions', () => {
+ const f=fixture();
+ f.c.extensionPrompts['comfytavern:guidance:old']={value:'obsolete guidance'};
+ f.c.extensionPrompts['lattice:guidance:new']={value:'current guidance'};
+ f.controller.cancel('upgrade');
+ assert.equal(f.c.extensionPrompts['comfytavern:guidance:old'].value,'');
+ assert.equal(f.c.extensionPrompts['lattice:guidance:new'].value,'');
+ assert.equal(f.c.extensionPrompts.other.value,'keep');
+});
 test('automatic Send retains request evidence with original graph identity separately from manual results', async () => {
  const graph=starterGraph('native-guidance');
  const f=fixture(async()=>({ok:true,data:{text:'Actual Send',usage:{completion_tokens:17},finish:'stop'}}),graph);
@@ -35,7 +44,7 @@ function fixture(request,assignedGraph=pre) {
  let busy=false;
  const controller=createNativeWorkflowController({context:()=>c,isBusy:()=>busy,getGraph:()=>assignedGraph,isEnabled:()=>true,countTokens:async text=>({tokens:Math.ceil(text.length/4),method:'fixture'}),resolveBinding:()=>({ok:true,data:{profileId:'fake',model:'fake'}}),request:request??(async()=>({ok:true,data:{text:'{"patches":[{"index":0,"replacement":"explore"}]}',finish:'stop'}})),syncMesToSwipe:index=>{const m=c.chat[index]; m.swipes[m.swipe_id]=m.mes;Object.assign(m.swipe_info[m.swipe_id],{send_date:m.send_date,gen_started:m.gen_started,gen_finished:m.gen_finished,extra:structuredClone(m.extra)});return true;},syncSwipeToMes:(index,id)=>{const m=c.chat[index];m.swipe_id=id;m.mes=m.swipes[id];Object.assign(m,structuredClone(m.swipe_info[id]));return true;}});
  controller.subscribe();
- return {c,controller,original,setGraph:value=>{assignedGraph=value;},setBusy:value=>{busy=value;},owned:()=>Object.entries(c.extensionPrompts).filter(([key])=>key.startsWith('comfytavern:guidance:')).map(([,v])=>v.value).join('')};
+ return {c,controller,original,setGraph:value=>{assignedGraph=value;},setBusy:value=>{busy=value;},owned:()=>Object.entries(c.extensionPrompts).filter(([key])=>key.startsWith('lattice:guidance:')).map(([,v])=>v.value).join('')};
 }
 {
  let release, started; const waiting=new Promise(r=>started=r);
@@ -56,7 +65,7 @@ function fixture(request,assignedGraph=pre) {
  const f=fixture(); const result=await f.controller.runPost(post); assert.equal(result.ok,true); assert.equal(f.original.mes,'We delve.');
  const candidate=structuredClone(result.artifact); const applied=await f.controller.apply(candidate);
  assert.equal(applied.ok,true); assert.equal(applied.appliedLocally,true); assert.equal(applied.persistence,'unverified'); assert.equal(f.original.mes,'We explore.');
- assert.equal(f.original.swipes[0],'We delve.'); assert.equal(f.original.swipe_info[0].extra.old,'keep');assert.equal(f.original.extra.old,undefined);assert.ok(f.original.extra.comfyTavernRevision);
+ assert.equal(f.original.swipes[0],'We delve.'); assert.equal(f.original.swipe_info[0].extra.old,'keep');assert.equal(f.original.extra.old,undefined);assert.ok(f.original.extra.latticeRevision);
  await f.controller.apply(candidate); assert.equal(f.original.swipes.length,2);assert.equal(f.c.saved,1);
 }
 for(const mutate of [f=>f.original.mes+=' external',f=>f.c.chat.push({is_user:true,mes:'new'}),f=>f.c.chat.reverse(),f=>f.c.chat.pop(),f=>f.c.chatId='two',f=>f.original.swipe_id=1,f=>f.setBusy(true),f=>f.controller.cancel('graph changed')]) {
@@ -307,8 +316,8 @@ for(const started of [3,null]) {
 const applyCorruptions=[
  ['stored candidate text',m=>{m.swipes[m.swipe_id]='different stored text';}],
  ['new swipe metadata',m=>{delete m.swipe_info[m.swipe_id];}],
- ['revision provenance',m=>{delete m.swipe_info[m.swipe_id].extra.comfyTavernRevision;}],
- ['selected revision metadata',m=>{delete m.extra.comfyTavernRevision;}],
+ ['revision provenance',m=>{delete m.swipe_info[m.swipe_id].extra.latticeRevision;}],
+ ['selected revision metadata',m=>{delete m.extra.latticeRevision;}],
  ['revision completion metadata',m=>{m.swipe_info[m.swipe_id].gen_finished='changed';}],
  ['original swipe text',m=>{m.swipes[0]='rewritten original';}],
  ['original swipe metadata',m=>{m.swipe_info[0].extra.old='lost';}],
@@ -344,7 +353,7 @@ await test('Apply preserves host synchronization of original metadata and harmle
  assert.deepEqual(f.original.swipe_info[0].extra,{old:'keep',current:'preserve'});
  assert.equal(f.original.swipe_info[0].gen_finished,2);
  assert.equal(f.original.swipe_info[applied.swipeId].extra.extensionDisplay,'harmless');
- assert.equal(f.original.swipe_info[applied.swipeId].extra.comfyTavernRevision.sourceSwipeId,0);
+ assert.equal(f.original.swipe_info[applied.swipeId].extra.latticeRevision.sourceSwipeId,0);
 });
 
 await test('Apply rollback after a chat switch does not render into the replacement chat',async()=>{
