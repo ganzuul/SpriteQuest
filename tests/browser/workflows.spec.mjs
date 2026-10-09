@@ -461,6 +461,65 @@ test('native camera pan and zoom preserve the focused editor without domain work
     await expect(page.getByRole('button', { name: 'Apply reviewed candidate', exact: true })).toHaveCount(0);
 });
 
+test('native presentation undo preserves reviewed authority while semantic undo and redo revoke it', async ({ page }) => {
+    await reviewFixture(page);
+    await page.evaluate(() => { const h = window.canvasHarness; h.H.flush(h.graph); });
+    await page.getByRole('button', { name: 'Run reviewed repair', exact: true }).click();
+    const apply = page.getByRole('button', { name: 'Apply reviewed candidate', exact: true });
+    await expect(apply).toBeEnabled();
+    await page.evaluate(async () => {
+        const h = window.canvasHarness, runtime = (await import('/src/run.js?v=0.19.1')).getNativeWorkflowController();
+        window.historyReviewedCandidate = runtime.lastResult().artifact;
+        const node = Object.values(h.graph.nodes).find(n => n.operation === 'repair');
+        node.presentation = { alias: 'Presentation alias', compact: true }; node.x += 25;
+        h.S.touchGraph(h.graph); h.H.flush(h.graph); h.UI.refreshIfOpen();
+    });
+    await page.keyboard.press('Control+z'); await expect(apply).toBeEnabled();
+    expect(await page.evaluate(async () => (await import('/src/run.js?v=0.19.1')).getNativeWorkflowController().candidateStatus(window.historyReviewedCandidate).ok)).toBe(true);
+    await page.keyboard.press('Control+Shift+z'); await expect(apply).toBeEnabled();
+    expect(await page.evaluate(async () => (await import('/src/run.js?v=0.19.1')).getNativeWorkflowController().candidateStatus(window.historyReviewedCandidate).ok)).toBe(true);
+    await page.evaluate(() => {
+        const h = window.canvasHarness, node = Object.values(h.graph.nodes).find(n => n.operation === 'repair');
+        node.instructions = 'Semantic history edit'; h.S.touchGraph(h.graph); h.H.flush(h.graph); h.UI.refreshIfOpen();
+    });
+    await expect(apply).toHaveCount(0);
+    await page.keyboard.press('Control+z'); await expect(apply).toHaveCount(0);
+    expect(await page.evaluate(async () => (await import('/src/run.js?v=0.19.1')).getNativeWorkflowController().candidateStatus(window.historyReviewedCandidate).ok)).toBe(false);
+    await page.keyboard.press('Control+Shift+z'); await expect(apply).toHaveCount(0);
+    expect(await page.evaluate(() => window.workflowRequests.length)).toBe(1);
+    expect(await page.evaluate(() => window.workflowSaveAttempts || 0)).toBe(0);
+    expect(await page.evaluate(() => window.canvasHarness.context.chat.at(-1).mes)).toBe('We delve.');
+});
+
+test('accepted additive import cancels a root request and history cannot resurrect its late authority', async ({ page }) => {
+    await reviewFixture(page);
+    await page.evaluate(() => {
+        const h = window.canvasHarness; h.H.flush(h.graph);
+        h.context.ConnectionManagerRequestService.sendRequest = (...args) => new Promise(resolve => { window.importPendingRequest = resolve; window.importRequestSignal = args[3].signal; });
+    });
+    await page.getByRole('button', { name: 'Run reviewed repair', exact: true }).click();
+    await page.waitForFunction(() => !!window.importPendingRequest);
+    const before = await page.evaluate(() => ({ nodes: Object.keys(window.canvasHarness.graph.nodes).length, chat: structuredClone(window.canvasHarness.context.chat) }));
+    await page.getByRole('button', { name: 'File', exact: true }).click();
+    const chooser = page.waitForEvent('filechooser');
+    await page.getByRole('menuitem', { name: 'Import into graph…', exact: true }).click();
+    await (await chooser).setFiles({ name: 'post-fragment.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify({ schema: 2, runtime: 1, mode: 'native-post', nodes: { note: { id: 'note', type: 'note', title: 'Imported note', x: 0, y: 0, content: 'Authoring note' } }, wires: {}, groups: {} })) });
+    const review = page.getByRole('dialog', { name: 'Import into graph' });
+    await expect(review).toBeVisible();
+    expect(await page.evaluate(() => window.importRequestSignal.aborted)).toBe(false);
+    await review.getByRole('button', { name: 'Insert into graph', exact: true }).click();
+    expect(await page.evaluate(() => window.importRequestSignal.aborted)).toBe(true);
+    await page.evaluate(async () => { window.importPendingRequest({ choices: [{ message: { content: '{"patches":[{"index":0,"replacement":"late"}]}' }, finish_reason: 'stop' }] }); await window.canvasHarness.settle(); });
+    const apply = page.getByRole('button', { name: 'Apply reviewed candidate', exact: true });
+    await expect(apply).toHaveCount(0);
+    expect(await page.evaluate(() => Object.keys(window.canvasHarness.graph.nodes).length)).toBe(before.nodes + 1);
+    await page.keyboard.press('Control+z'); await expect(apply).toHaveCount(0);
+    expect(await page.evaluate(() => Object.keys(window.canvasHarness.graph.nodes).length)).toBe(before.nodes);
+    await page.keyboard.press('Control+Shift+z'); await expect(apply).toHaveCount(0);
+    expect(await page.evaluate(() => window.canvasHarness.context.chat)).toEqual(before.chat);
+    expect(await page.evaluate(() => window.workflowSaveAttempts || 0)).toBe(0);
+});
+
 
 test('the legacy add-node menu shares the six family discovery order', async ({ page }) => {
     await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);

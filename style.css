@@ -1560,6 +1560,16 @@
 .pc-workspace-dialog h2 { font-size: 16px; margin: 0 0 12px; }
 .pc-workspace-dialog label { display: flex; flex-direction: column; gap: 4px; margin: 8px 0; }
 .pc-workspace-dialog input, .pc-workspace-dialog select { width: 100%; }
+.pc-import-overlay { z-index: 30; }
+.pc-import-review { width: 520px; }
+.pc-import-review p, .pc-import-review li, .pc-import-review dd { overflow-wrap: anywhere; font-size: 12px; line-height: 1.5; }
+.pc-import-review small, .pc-import-explanation { color: var(--pc-muted); }
+.pc-import-review dl { display: grid; grid-template-columns: minmax(90px, 1fr) minmax(0, 2fr); gap: 6px 12px; font-size: 12px; }
+.pc-import-review dd { margin: 0; }
+.pc-import-review h3 { margin: 14px 0 4px; font-size: 13px; }
+.pc-import-review footer { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.pc-import-review [role="alert"] { color: var(--pc-accent); }
+.pc-import-review .pc-import-accept { border-color: var(--pc-accent); }
 @media (max-width: 860px) {
     .pc-root .pc-inspector { top: 8px; right: 8px; bottom: 10px; width: min(320px, calc(100% - 16px)); }
     .pc-root .pc-body { padding: 6px; }

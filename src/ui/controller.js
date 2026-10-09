@@ -3,6 +3,8 @@ import * as workflowRuntime from '../run.js?v=0.19.1';
 import { installStarter } from '../workflow/starters.js?v=0.19.1';
 import { operationDefaults, operationFor } from '../workflow/catalog.js?v=0.19.1';
 import { isNativeWorkflow } from '../workflow/contracts.js?v=0.19.1';
+import { parseWorkflowInsertionFile, prepareWorkflowInsertion } from '../workflow/insertion.js?v=0.19.1';
+import { captureGraphEditContext } from '../workflow/transactions.js?v=0.19.1';
 import { projectWorkflow, createWorkflowSurface, createWorkflowSession } from './workflow-surface.js?v=0.19.1';
 /**
  * Lattice — the panel.
@@ -15,7 +17,7 @@ import { projectWorkflow, createWorkflowSurface, createWorkflowSession } from '.
 
 import {
     ctx, safe, settings, save, NODE_TYPES, WIRE_KINDS, ROLES,
-    allGraphs, getGraph, createGraph, duplicateGraph, deleteGraph, touchGraph,
+    allGraphs, getGraph, createGraph, duplicateGraph, deleteGraph, touchGraph, commitGraphEdit, stepGraphHistory,
     addNode, removeNode, outputNode, connect, disconnect, resolveGraph,
     chatBinding, setChatBinding, characterBinding, setCharacterBinding,
     exportGraph, importGraph, blankGraph, isFolderCollapsed, setFolderCollapsed, togetherGroup,
@@ -49,6 +51,20 @@ let current = null;      // graph in view
 let selected = null;     // node or wire
 let selectedKind = null;
 let uiEpoch = 0;
+let graphEditAdapter = null;
+let pendingImport = null;
+// Task7 can supply qualified view context/root identity and reconcile cached tabs.
+// This adapter is editor data/callbacks; it never creates another workflow runner.
+export function setGraphEditAdapter(adapter = null) { graphEditAdapter = adapter; }
+const activeEditRoot = () => graphEditAdapter?.root?.() ?? current;
+const readGraphEditContext = () => graphEditAdapter?.readContext?.() ?? { sessionId: String(uiEpoch), viewPath: [], readOnly: !isOpen() };
+const graphDocumentHooks = {
+    onSemanticChange(graph) {
+        workflowRevision = isNativeWorkflow(graph) ? workflowRuntime.workflowSignature(graph) : null;
+        workflowSession.cancel('Workflow document changed');
+    },
+    reconcileViews(graph, summary) { graphEditAdapter?.reconcileViews?.(graph, summary); },
+};
 const graphAnalysis = createGraphAnalysis({ counts: emissionCounts, levels: generateLevels, group: togetherGroup });
 let canvasAnalysis = graphAnalysis.prepare(null);
 const surfaces = createDomainSurfaces({ renderLibrary: renderSidebar, renderInspector, refreshPreview, openState: openStateEditor, renderTheme: renderThemeEditor, openModel: openModelPopover });
@@ -257,6 +273,7 @@ export function open() {
 }
 
 export function close() {
+    cancelImportReview();
     document.removeEventListener('pc-native-result', receiveAutomaticWorkflow);
     workflowSession.cancel('Workflow view closed');
     uiEpoch++;
@@ -317,7 +334,7 @@ function build() {
             toast(enabled ? `Armed. ${state.armedText}` : state.offText, enabled ? 'success' : 'info');
         },
         command: name => {
-            const commands = { new: onNewGraph, duplicate: onDuplicateGraph, rename: onRenameGraph, delete: onDeleteGraph, import: onImportGraph, export: onExportGraph, seed: onSeedFromST, undo: doUndo, redo: doRedo,
+            const commands = { new: onNewGraph, duplicate: onDuplicateGraph, rename: onRenameGraph, delete: onDeleteGraph, import: onImportGraph, 'import-into-graph': onImportIntoGraph, export: onExportGraph, seed: onSeedFromST, undo: doUndo, redo: doRedo,
                 fit: () => canvas.fit(), 'fit-selection': () => canvas.fitSelection(), copy: () => copySelection(), cut: () => copySelection(true),
                 paste: async () => { const graph = current, epoch = uiEpoch, clip = await fromClipboard(); if (stillEditing(graph, epoch) && clip) pasteOnCanvas(clip); },
                 'delete-selection': () => canvas.deleteSelection().then(done => { if (done) { selected = null; selectedKind = null; renderAll(); } }),
@@ -343,6 +360,7 @@ function build() {
         resizeStart: () => canvas?.cancelGesture(),
         addNode: (id, legacy) => legacy ? workflowActions.addLegacyNode(id) : workflowActions.addNode(id),
         workflowSetup: workflowActions,
+        acceptImport: acceptImportReview, cancelImport: cancelImportReview, prepareImportAgain,
     });
     root = workbench.root;
     const { canvasHost, inspector } = workbench.parts;
@@ -701,7 +719,7 @@ let historyHooked = false;
 function hookHistory() {
     if (historyHooked) return;
     historyHooked = true;
-    onGraphTouched((g) => { H.noteChange(g); if (g === current) syncNativeRevision('Workflow edited'); });
+    onGraphTouched((g, options) => { if (options?.history !== false) H.noteChange(g); if (g === current) syncNativeRevision('Workflow edited'); });
     H.onHistoryChange((g) => { if (g === current) paintHistory(); });
 }
 
@@ -716,8 +734,6 @@ function paintHistory() {
 /** After undo or redo the canvas objects are new, so find the selection again by id. */
 function afterHistory(label, verb) {
     if (!label) { paintHistory(); return; }
-    current.updatedAt = Date.now();
-    save();
     if (selectedKind === 'node' && selected) selected = current.nodes[selected.id] ?? null;
     if (selectedKind === 'wire' && selected) selected = current.wires[selected.id] ?? null;
     if (selectedKind === 'group' && selected) selected = current.groups?.[selected.id] ?? null;
@@ -739,8 +755,16 @@ function flashHistoryNote(text) {
     noteTimer = setTimeout(() => { historyNoteVisible = false; paintHistory(); }, 1600);
 }
 
-function doUndo() { if (current) afterHistory(H.undo(current), 'Undid'); }
-function doRedo() { if (current) afterHistory(H.redo(current), 'Redid'); }
+function restoreGraphHistory(direction, verb) {
+    const graph = activeEditRoot();
+    if (!graph) return;
+    const context = captureGraphEditContext(graph, readGraphEditContext);
+    if (!context.ok) return toast(context.error.message, 'error');
+    const result = stepGraphHistory(graph, direction, graphDocumentHooks);
+    if (result.ok) afterHistory(result.data.label, verb);
+}
+function doUndo() { restoreGraphHistory('undo', 'Undid'); }
+function doRedo() { restoreGraphHistory('redo', 'Redid'); }
 
 function renderGraphSelect() {
     workbench.update({ graphs: allGraphs().map(g => ({ id: g.id, name: g.name })), graphId: current?.id ?? '', nativeGraph: isNativeWorkflow(current), armed: !!settings().enabled });
@@ -3612,6 +3636,79 @@ function onExportGraph() {
     a.download = `${current.name.replace(/[^\w-]+/g, '_')}.canvas.json`;
     a.click();
     URL.revokeObjectURL(a.href);
+}
+
+function cancelImportReview() { pendingImport = null; workbench?.update({ importReview: null }); }
+
+function showImportReview(source, fileName, prepared) {
+    pendingImport = { source, fileName, prepared };
+    const { diagnostics, candidate, added } = prepared;
+    const review = {
+        fileName, name: String(source.name || 'Imported workflow'), phase: diagnostics.phase,
+        nodeCount: added.nodes.length, wireCount: added.wires.length, groupCount: added.groups.length,
+        callBound: diagnostics.callBound, importedCallBound: diagnostics.importedCallBound,
+        requiredRoles: diagnostics.requiredRoles,
+        unresolvedBindings: diagnostics.unresolvedBindings.map(binding => ({ role: binding.role || 'Per-node binding', title: String(candidate.nodes[binding.nodeId]?.title || candidate.nodes[binding.nodeId]?.operation || binding.nodeId), missing: binding.missing })),
+        inheritedBindingCount: diagnostics.inheritedBindings?.length ?? 0,
+        terminals: diagnostics.terminals.map(terminal => ({ title: String(candidate.nodes[terminal.nodeId]?.title || terminal.nodeId), operation: terminal.operation })),
+        bindingReviewRequired: diagnostics.bindingReviewRequired, error: '',
+    };
+    pendingImport.review = review;
+    workbench.update({ importReview: review });
+}
+
+function prepareImportReview(graph, source, fileName, context) {
+    const result = prepareWorkflowInsertion(graph, source, { viewPath: readGraphEditContext().viewPath });
+    if (!result.ok) return toast(result.error.message, 'error');
+    showImportReview(source, fileName, { ...result.data, context });
+}
+
+function onImportIntoGraph() {
+    const graph = activeEditRoot();
+    const captured = captureGraphEditContext(graph, readGraphEditContext);
+    if (!captured.ok) return toast(captured.error.message, 'error');
+    const input = document.createElement('input'); input.type = 'file'; input.accept = '.json,application/json';
+    input.addEventListener('change', async () => {
+        const file = input.files?.[0]; if (!file) return;
+        try {
+            const result = parseWorkflowInsertionFile(await file.text());
+            if (!result.ok) return toast(result.error.message, 'error');
+            if (!isOpen() || activeEditRoot() !== graph) return toast('The destination graph changed. Import the file again.', 'error');
+            prepareImportReview(graph, result.data, file.name, captured.data);
+        } catch { toast('Could not read this workflow file. Import the file again.', 'error'); }
+    });
+    input.click();
+}
+
+function prepareImportAgain() {
+    if (!pendingImport) return;
+    const { source, fileName } = pendingImport, graph = activeEditRoot();
+    const captured = captureGraphEditContext(graph, readGraphEditContext);
+    if (!captured.ok) return workbench.update({ importReview: { ...workbenchImportReview(), error: captured.error.message } });
+    prepareImportReview(graph, source, fileName, captured.data);
+}
+
+// Keep the review DTO alongside its opaque prepared capability, never in graph data.
+function workbenchImportReview() { return pendingImport?.review ?? {}; }
+function acceptImportReview() {
+    if (!pendingImport) return;
+    const reviewed = pendingImport;
+    // A content gesture holds draft coordinates/endpoints across render calls.
+    // Do not install new objects underneath it, or roll back a live camera pan.
+    if (canvas.drag || canvas.linking) {
+        reviewed.review = { ...reviewed.review, error: 'Finish or cancel the active graph gesture, then prepare this import again.' };
+        workbench.update({ importReview: reviewed.review }); return;
+    }
+    const result = commitGraphEdit(activeEditRoot(), reviewed.prepared, graphDocumentHooks);
+    if (!result.ok) {
+        const review = { ...reviewed.review, error: result.error.message };
+        reviewed.review = review; workbench.update({ importReview: review }); return;
+    }
+    if (!result.data.changed) { cancelImportReview(); return; }
+    const ids = reviewed.prepared.added.nodes;
+    cancelImportReview();
+    canvas.render(); canvas.setMulti(ids);
+    renderAll(); flashHistoryNote(`Imported ${ids.length} blocks`);
 }
 
 function onImportGraph() {

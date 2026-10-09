@@ -77,4 +77,38 @@ assert.equal(n, 50);
 // each canvas has its own history
 const g2 = S.createGraph('Other'); H.track(g2);
 assert.equal(H.peek(g2).undo, null);
+
+// Native root history restores the complete editable composition document,
+// without resurrecting runtime authority or rewinding view state.
+const native = { id: 'history-native', name: 'Native', schema: 2, runtime: 1, mode: 'native-pre', roles: { Analysis: { model: 'old' } }, nodes: {}, wires: {}, groups: {}, view: { x: 1 }, selection: ['old'], recording: { id: 'original' }, authority: { apply: false } };
+H.track(native);
+native.schema = 3; native.runtime = 2; native.mode = 'native-post';
+native.roles.Analysis.model = 'new';
+native.portals = { p: { id: 'p', label: 'Portal' } };
+native.definitions = { d: { id: 'd', version: 1, body: { nodes: { x: { id: 'x', instructions: 'Pinned body' } } } } };
+native.nodes.instance = { id: 'instance', type: 'subgraph', definition: { id: 'd', version: 1, semanticHash: 'hash' }, parameterOverrides: { tone: 'warm' }, roleOverrides: { Prose: { model: 'override' } }, nodeBindingOverrides: { x: { model: 'local' } } };
+H.noteChange(native); H.flush(native);
+native.view = { x: 999 }; native.selection = ['current'];
+native.recording = { id: 'latest' }; native.authority = { apply: false, generation: 2 };
+H.undo(native);
+assert.equal(native.schema, 2);
+assert.equal(native.runtime, 1);
+assert.equal(native.mode, 'native-pre');
+assert.equal(native.roles.Analysis.model, 'old');
+assert.equal(Object.hasOwn(native, 'portals'), false);
+assert.equal(Object.hasOwn(native, 'definitions'), false);
+assert.deepEqual(native.view, { x: 999 });
+assert.deepEqual(native.selection, ['current']);
+assert.deepEqual(native.recording, { id: 'latest' });
+assert.deepEqual(native.authority, { apply: false, generation: 2 });
+H.redo(native);
+assert.equal(native.schema, 3);
+assert.equal(native.runtime, 2);
+assert.equal(native.mode, 'native-post');
+assert.equal(native.roles.Analysis.model, 'new');
+assert.equal(native.definitions.d.body.nodes.x.instructions, 'Pinned body');
+assert.equal(native.portals.p.label, 'Portal');
+assert.deepEqual(native.nodes.instance.parameterOverrides, { tone: 'warm' });
+assert.deepEqual(native.nodes.instance.roleOverrides, { Prose: { model: 'override' } });
+assert.deepEqual(native.nodes.instance.nodeBindingOverrides, { x: { model: 'local' } });
 console.log('history: ok');

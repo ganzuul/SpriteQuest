@@ -23,6 +23,8 @@
 import { operationDefaults } from './workflow/catalog.js?v=0.19.1';
 import { exportWorkflow, parseWorkflow } from './workflow/packages.js?v=0.19.1';
 import { isNativeWorkflow, validateGraphStructure } from './workflow/contracts.js?v=0.19.1';
+import { commitPreparedGraph, graphEditSignature } from './workflow/transactions.js?v=0.19.1';
+import * as graphHistory from './history.js?v=0.19.1';
 import { stagePortId, parseStatePort, ensureStageIds } from './statevals.js?v=0.19.1';
 
 export const MODULE = 'prompt-canvas';
@@ -322,6 +324,34 @@ export function touchGraph(graph) {
     if (graph) graph.updatedAt = Date.now();
     save();
     if (graph) for (const fn of touchListeners) { try { fn(graph); } catch { /* ignore */ } }
+}
+
+// Complete documents already passed validation/history batching. Their persistence
+// must not schedule another history edit or restore historical runtime authority.
+function finishGraphDocumentEdit(graph, summary, hooks) {
+    if (summary.semanticChanged) safe(() => hooks.onSemanticChange?.(graph, summary));
+    safe(() => hooks.reconcileViews?.(graph, summary));
+    const timestamp = Object.getOwnPropertyDescriptor(graph, 'updatedAt');
+    if (timestamp?.writable || !timestamp && Object.isExtensible(graph)) graph.updatedAt = Date.now();
+    save();
+    for (const fn of touchListeners) safe(() => fn(graph, { history: false, semanticChanged: summary.semanticChanged }));
+}
+
+/** Commit a reviewed complete document, then invalidate/reconcile and persist once. */
+export function commitGraphEdit(graph, prepared, hooks = {}) {
+    const result = commitPreparedGraph(graph, prepared);
+    if (result.ok && result.data.changed) finishGraphDocumentEdit(graph, result.data, hooks);
+    return result;
+}
+
+/** Restore editable root history while preserving current camera and authority. */
+export function stepGraphHistory(graph, direction, hooks = {}) {
+    if (!['undo', 'redo'].includes(direction)) return { ok: false, error: { code: 'INVALID_HISTORY_ACTION', message: 'Choose Undo or Redo.' } };
+    const before = graphEditSignature(graph);
+    const label = graphHistory[direction](graph);
+    const summary = { changed: !!label, semanticChanged: !!label && before !== graphEditSignature(graph), rootId: graph.id, label };
+    if (summary.changed) finishGraphDocumentEdit(graph, summary, hooks);
+    return { ok: true, data: summary };
 }
 
 /* ------------------------------------------------------------------ */

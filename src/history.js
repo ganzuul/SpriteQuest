@@ -22,7 +22,10 @@ const stacks = new Map();
 const pending = new Map();      // graph id -> timer
 const listeners = new Set();
 
-const snapshot = (g) => JSON.stringify({ name: g.name, description: g.description ?? '', nodes: g.nodes, wires: g.wires, groups: g.groups ?? {} });
+// Keep root execution authority, recordings and per-view state outside undo data.
+// Instance parameters/model overrides and pinned bodies live inside nodes/definitions.
+export const GRAPH_DOCUMENT_FIELDS = Object.freeze(['name', 'description', 'nodes', 'wires', 'groups', 'schema', 'runtime', 'mode', 'roles', 'portals', 'definitions']);
+const snapshot = (g) => JSON.stringify(Object.fromEntries(GRAPH_DOCUMENT_FIELDS.filter(key => Object.hasOwn(g, key)).map(key => [key, g[key]])));
 
 /** The shape of a canvas: which blocks and wires exist, where, and on or off. */
 function signature(g) {
@@ -86,14 +89,42 @@ function commit(g) {
 
 function restore(g, state) {
     const o = JSON.parse(state);
-    g.nodes = o.nodes;
-    g.wires = o.wires;
-    g.groups = o.groups ?? {};
-    g.name = o.name;
-    g.description = o.description;
+    for (const key of GRAPH_DOCUMENT_FIELDS) {
+        if (Object.hasOwn(o, key)) g[key] = o[key];
+        else delete g[key];
+    }
     const s = stack(g);
     s.last = state;
     s.sig = signature(g);
+}
+
+/** Apply one reviewed editable document, preserving root identity and transient state. */
+export function commitGraphDocument(g, candidate) {
+    const state = snapshot(candidate);
+    const current = snapshot(g);
+    if (state === current) return false;
+    const nextSignature = signature(candidate);
+    const document = JSON.parse(state);
+    // Check every write/delete before touching pending history or any graph field.
+    for (const key of GRAPH_DOCUMENT_FIELDS) {
+        const descriptor = Object.getOwnPropertyDescriptor(g, key);
+        if (Object.hasOwn(document, key) ? (descriptor ? !('value' in descriptor) || !descriptor.writable : !Object.isExtensible(g)) : descriptor && !descriptor.configurable) throw new TypeError('The editable graph document is read-only.');
+    }
+    // Plan both the pending prior step and this batch before any mutation.
+    const previous = stacks.get(g.id) ?? { undo: [], redo: [], last: current };
+    const undo = [...previous.undo];
+    if (previous.last !== current) undo.push({ state: previous.last, label: describe(JSON.parse(previous.last), JSON.parse(current)) });
+    undo.push({ state: current, label: describe(JSON.parse(current), document) });
+    const next = { undo: undo.slice(-LIMIT), redo: [], last: state, sig: nextSignature };
+    clearTimeout(pending.get(g.id));
+    pending.delete(g.id);
+    for (const key of GRAPH_DOCUMENT_FIELDS) {
+        if (Object.hasOwn(document, key)) g[key] = document[key];
+        else delete g[key];
+    }
+    stacks.set(g.id, next);
+    notify(g);
+    return true;
 }
 
 /** Undo one step. Returns what was undone, or null if there was nothing. */

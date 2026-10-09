@@ -12,7 +12,7 @@
     const item = (label: string, command: string, shortcut = '', disabled = false): Item => ({ label, command, shortcut, disabled });
     function items(name: string): Item[] {
         switch (name) {
-            case 'File': return [item('New canvas', 'new'), item('Open workflow…', 'open-workflow'), item('Import canvas', 'import'), item('Export canvas', 'export'), item('Close workspace', 'close')];
+            case 'File': return [item('New canvas', 'new'), item('Open workflow…', 'open-workflow'), item('Import canvas', 'import'), item('Import into graph…', 'import-into-graph'), item('Export canvas', 'export'), item('Close workspace', 'close')];
             case 'Edit': return [item('Undo', 'undo', 'Ctrl Z', !view.history.undo), item('Redo', 'redo', 'Ctrl Shift Z', !view.history.redo), item('Copy', 'copy', 'Ctrl C', !view.selectionActions?.copy), item('Cut', 'cut', 'Ctrl X', !view.selectionActions?.cut), item('Paste', 'paste', 'Ctrl V'), item('Delete selection', 'delete-selection', 'Del', !view.selectionActions?.delete)];
             case 'Graph': return [item('Fit to view', 'fit'), item('Fit selection', 'fit-selection', '', !view.selectionCount), item('Duplicate canvas', 'duplicate'), item('Rename canvas', 'rename'), item('Seed from SillyTavern’s current prompt order', 'seed', '', !!view.nativeGraph), item('Delete canvas', 'delete')];
             case 'Node': return [item('Add node…', 'add-node'), item('Inspect selection', 'reveal-inspector'), item('Library', 'sidebar')];

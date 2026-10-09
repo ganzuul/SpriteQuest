@@ -8,6 +8,7 @@
     import GraphTabs from './GraphTabs.svelte';
     import NodeShelf from './NodeShelf.svelte';
     import WorkflowSetup from './WorkflowSetup.svelte';
+    import ImportReview from './ImportReview.svelte';
     import type { WorkbenchView, WorkbenchActions } from './types';
     let { actions }: { actions: WorkbenchActions } = $props();
     let view = $state.raw<WorkbenchView>({ graphs: [], graphId: '', armed: false, sideOpen: true, inspectorOpen: true, history: { undo: false, redo: false, undoTitle: 'Nothing to undo', redoTitle: 'Nothing to redo', note: '', showNote: false }, status: { armed: false, warning: false, text: '', overrideTitle: '', chatPinned: false, charPinned: false, charTitle: 'No character selected', isDefault: false }, camera: { x: 0, y: 0, zoom: 1, mode: 'select' }, selectionCount: 0 });
@@ -83,8 +84,9 @@
         <div class="pc-workspace-overlay">
             <div class="pc-workspace-dialog" role="dialog" tabindex="-1" aria-modal="true" aria-label={overlay === 'workflow-setup' ? 'Workflow setup' : 'Workspace guide'} bind:this={dialog} onkeydown={overlayKeys} onpaste={(event) => event.stopPropagation()}>
                 <header><h2>{overlay === 'workflow-setup' ? 'Workflow setup' : 'Workspace guide'}</h2><button type="button" class="pc-btn menu_button" aria-label="Close panel" onclick={closeOverlay}>×</button></header>
-                {#if overlay === 'workflow-setup'}<WorkflowSetup view={view.workflow} {actions} />{:else}<p>Browse node families on the floating shelf. Middle mouse pans the graph; the wheel zooms around the pointer. Use the divider or its arrow keys to resize Preview.</p><p>Library holds personal blocks and saved material. Setup contains workflow examples, phase assignment and role defaults. Arm enables the selected host workflow; Run tests it explicitly.</p>{/if}
+                {#if overlay === 'workflow-setup'}<WorkflowSetup view={view.workflow} {actions} />{:else}<p>Browse node families on the floating shelf. Middle mouse pans the graph; the wheel zooms around the pointer. Use the divider or its arrow keys to resize Preview.</p><p>Library holds personal blocks and saved material. Setup contains workflow examples, phase assignment and role defaults. Arm enables the selected host workflow; Run tests it explicitly.</p><p>File › Import into graph reviews a same-mode fragment before one undoable insertion. Import canvas opens a separate graph. Legacy canvases have one Output: use a fragment without another Output, or open the full workflow separately. Legacy request bounds conservatively include possible repeats and loops; actual reachable calls may be lower.</p>{/if}
             </div>
         </div>
     {/if}
+    {#if view.importReview}<ImportReview view={view.importReview} {actions} />{/if}
 </div>

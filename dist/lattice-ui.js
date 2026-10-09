@@ -2934,6 +2934,7 @@ function La(e, t) {
 				l("New canvas", "new"),
 				l("Open workflow…", "open-workflow"),
 				l("Import canvas", "import"),
+				l("Import into graph…", "import-into-graph"),
 				l("Export canvas", "export"),
 				l("Close workspace", "close")
 			];
@@ -3503,9 +3504,97 @@ _r([
 	"click"
 ]);
 //#endregion
+//#region ui/ImportReview.svelte
+var _o = /* @__PURE__ */ G("<p>A legacy graph has one Output. Import a fragment without another Output, or use Import canvas to open the full workflow separately.</p>"), vo = /* @__PURE__ */ G("<p> </p>"), yo = /* @__PURE__ */ G("<li> </li>"), bo = /* @__PURE__ */ G("<h3>Saved bindings to review</h3><ul></ul>", 1), xo = /* @__PURE__ */ G("<h3>Imported terminal effects</h3><ul></ul>", 1), So = /* @__PURE__ */ G("<p>No imported terminal effects.</p>"), Co = /* @__PURE__ */ G("<p role=\"alert\"> </p>"), wo = /* @__PURE__ */ G("<button type=\"button\" class=\"pc-btn menu_button\">Prepare again</button>"), To = /* @__PURE__ */ G("<div class=\"pc-workspace-overlay pc-import-overlay\"><div class=\"pc-workspace-dialog pc-import-review\" role=\"dialog\" aria-modal=\"true\" aria-label=\"Import into graph\" tabindex=\"-1\"><header><h2>Import into graph</h2><button type=\"button\" class=\"pc-btn menu_button\" aria-label=\"Cancel import\">×</button></header> <p><strong> </strong> <small> </small></p> <dl><dt>Phase</dt><dd> </dd><dt>Additions</dt><dd> </dd><dt>Conservative request bound</dt><dd> </dd></dl> <p class=\"pc-import-explanation\"> </p> <!> <!> <!> <!> <p>Insertion keeps internal wiring and relative layout. It does not connect matching names, arm or assign the graph, run requests, publish Guidance, or Apply a reply.</p> <!> <footer><button type=\"button\" class=\"pc-btn menu_button\">Cancel</button><!><button type=\"button\" class=\"pc-btn menu_button pc-import-accept\">Insert into graph</button></footer></div></div>");
+function Eo(e, t) {
+	j(t, !0);
+	let n;
+	Ir(() => {
+		let e = document.activeElement;
+		return n.querySelector("button")?.focus(), () => e?.focus({ preventScroll: !0 });
+	});
+	function r(e) {
+		if (e.stopPropagation(), e.key === "Escape" && (e.preventDefault(), t.actions.cancelImport?.()), e.key === "Tab") {
+			let t = [...n.querySelectorAll("button:not(:disabled)")], r = t[0], i = t.at(-1);
+			e.shiftKey && document.activeElement === r && (e.preventDefault(), i?.focus()), !e.shiftKey && document.activeElement === i && (e.preventDefault(), r?.focus());
+		}
+	}
+	var i = To(), a = L(i), o = L(a), s = z(L(o));
+	k(o);
+	var c = z(o, 2), l = L(c), u = L(l, !0);
+	k(l);
+	var d = z(l, 2), f = L(d, !0);
+	k(d), k(c);
+	var p = z(c, 2), m = z(L(p)), h = L(m, !0);
+	k(m);
+	var g = z(m, 2), _ = L(g);
+	k(g);
+	var v = z(g, 2), y = L(v);
+	k(v), k(p);
+	var b = z(p, 2), x = L(b);
+	k(b);
+	var S = z(b, 2), C = (e) => {
+		K(e, _o());
+	};
+	J(S, (e) => {
+		t.view.phase === "legacy" && e(C);
+	});
+	var w = z(S, 2), T = (e) => {
+		var n = vo(), r = L(n);
+		k(n), B((e) => q(r, `Imported model roles: ${e ?? ""}.`), [() => t.view.requiredRoles.join(", ")]), K(e, n);
+	};
+	J(w, (e) => {
+		t.view.requiredRoles.length && e(T);
+	});
+	var ee = z(w, 2), te = (e) => {
+		var n = bo(), r = z(R(n));
+		Y(r, 21, () => t.view.unresolvedBindings, zr, (e, t) => {
+			var n = yo(), r = L(n);
+			k(n), B((e) => q(r, `${U(t).title ?? ""} · ${U(t).role ?? ""}: missing ${e ?? ""}`), [() => U(t).missing.join(" and ")]), K(e, n);
+		}), k(r), K(e, n);
+	}, ne = (e) => {
+		var n = vo(), r = L(n);
+		k(n), B(() => q(r, `${t.view.phase === "legacy" ? `${t.view.inheritedBindingCount} imported model blocks inherit host defaults.` : "Saved model metadata is present."} Review local connections before running.`)), K(e, n);
+	};
+	J(ee, (e) => {
+		t.view.unresolvedBindings.length ? e(te) : t.view.bindingReviewRequired && e(ne, 1);
+	});
+	var re = z(ee, 2), ie = (e) => {
+		var n = xo(), r = z(R(n));
+		Y(r, 21, () => t.view.terminals, zr, (e, t) => {
+			var n = yo(), r = L(n);
+			k(n), B(() => q(r, `${U(t).title ?? ""} · ${U(t).operation ?? ""}`)), K(e, n);
+		}), k(r), K(e, n);
+	}, E = (e) => {
+		K(e, So());
+	};
+	J(re, (e) => {
+		t.view.terminals.length ? e(ie) : e(E, -1);
+	});
+	var ae = z(re, 4), oe = (e) => {
+		var n = Co(), r = L(n, !0);
+		k(n), B(() => q(r, t.view.error)), K(e, n);
+	};
+	J(ae, (e) => {
+		t.view.error && e(oe);
+	});
+	var se = z(ae, 2), ce = L(se), le = z(ce), ue = (e) => {
+		var n = wo();
+		W("click", n, () => t.actions.prepareImportAgain?.()), K(e, n);
+	};
+	J(le, (e) => {
+		t.view.error && e(ue);
+	});
+	var de = z(le);
+	k(se), k(a), $(a, (e) => n = e, () => n), k(i), B(() => {
+		q(u, t.view.name), q(f, t.view.fileName), q(h, t.view.phase), q(_, `${t.view.nodeCount ?? ""} blocks · ${t.view.wireCount ?? ""} wires · ${t.view.groupCount ?? ""} groups`), q(y, `${t.view.callBound ?? ""} total · ${t.view.importedCallBound ?? ""} imported`), q(x, `This authoring bound includes unfinished branches. ${t.view.phase === "legacy" ? "Legacy repeats and loops are conservatively overcounted; actual reachable calls may be lower." : "Bindings and reachable execution are checked when you explicitly run the workflow."}`), de.disabled = !!t.view.error;
+	}), W("keydown", a, r), gr("paste", a, (e) => e.stopPropagation()), W("click", s, () => t.actions.cancelImport?.()), W("click", ce, () => t.actions.cancelImport?.()), W("click", de, () => t.actions.acceptImport?.()), K(e, i), M();
+}
+_r(["keydown", "click"]);
+//#endregion
 //#region ui/Workbench.svelte
-var _o = /* @__PURE__ */ G("<p>Browse node families on the floating shelf. Middle mouse pans the graph; the wheel zooms around the pointer. Use the divider or its arrow keys to resize Preview.</p><p>Library holds personal blocks and saved material. Setup contains workflow examples, phase assignment and role defaults. Arm enables the selected host workflow; Run tests it explicitly.</p>", 1), vo = /* @__PURE__ */ G("<div class=\"pc-workspace-overlay\"><div class=\"pc-workspace-dialog\" role=\"dialog\" tabindex=\"-1\" aria-modal=\"true\"><header><h2> </h2><button type=\"button\" class=\"pc-btn menu_button\" aria-label=\"Close panel\">×</button></header> <!></div></div>"), yo = /* @__PURE__ */ G("<div class=\"pc-root\" role=\"dialog\" aria-modal=\"true\" aria-label=\"Lattice\" data-pc-workbench=\"svelte\"><!> <!> <div class=\"pc-body\"><!> <div class=\"pc-stage\"><section aria-label=\"Output preview\"><header class=\"pc-preview-pane-head\"><strong>Preview</strong><button type=\"button\" class=\"pc-btn menu_button\"> </button></header> <div class=\"pc-preview-content\"><!> <p class=\"pc-preview-placeholder\"> </p></div></section> <!> <!> <div class=\"pc-canvas-area\"><div class=\"pc-canvas-host\" aria-label=\"Node canvas\"></div> <!> <!></div></div> <!></div> <!></div>");
-function bo(e, t) {
+var Do = /* @__PURE__ */ G("<p>Browse node families on the floating shelf. Middle mouse pans the graph; the wheel zooms around the pointer. Use the divider or its arrow keys to resize Preview.</p><p>Library holds personal blocks and saved material. Setup contains workflow examples, phase assignment and role defaults. Arm enables the selected host workflow; Run tests it explicitly.</p><p>File › Import into graph reviews a same-mode fragment before one undoable insertion. Import canvas opens a separate graph. Legacy canvases have one Output: use a fragment without another Output, or open the full workflow separately. Legacy request bounds conservatively include possible repeats and loops; actual reachable calls may be lower.</p>", 1), Oo = /* @__PURE__ */ G("<div class=\"pc-workspace-overlay\"><div class=\"pc-workspace-dialog\" role=\"dialog\" tabindex=\"-1\" aria-modal=\"true\"><header><h2> </h2><button type=\"button\" class=\"pc-btn menu_button\" aria-label=\"Close panel\">×</button></header> <!></div></div>"), ko = /* @__PURE__ */ G("<div class=\"pc-root\" role=\"dialog\" aria-modal=\"true\" aria-label=\"Lattice\" data-pc-workbench=\"svelte\"><!> <!> <div class=\"pc-body\"><!> <div class=\"pc-stage\"><section aria-label=\"Output preview\"><header class=\"pc-preview-pane-head\"><strong>Preview</strong><button type=\"button\" class=\"pc-btn menu_button\"> </button></header> <div class=\"pc-preview-content\"><!> <p class=\"pc-preview-placeholder\"> </p></div></section> <!> <!> <div class=\"pc-canvas-area\"><div class=\"pc-canvas-host\" aria-label=\"Node canvas\"></div> <!> <!></div></div> <!></div> <!> <!></div>");
+function Ao(e, t) {
 	j(t, !0);
 	let n = /* @__PURE__ */ F({
 		graphs: [],
@@ -3615,7 +3704,7 @@ function bo(e, t) {
 		getParts: d,
 		update: f,
 		revealPreview: ee
-	}, E = yo(), ae = L(E);
+	}, E = ko(), ae = L(E);
 	$(Ba(ae, {
 		get state() {
 			return U(n);
@@ -3695,7 +3784,7 @@ function bo(e, t) {
 		label: "Selection inspector"
 	}), (e) => l = e, () => l), k(se);
 	var Ee = z(se, 2), De = (e) => {
-		var r = vo(), i = L(r), a = L(i), o = L(a), s = L(o, !0);
+		var r = Oo(), i = L(r), a = L(i), o = L(a), s = L(o, !0);
 		k(o);
 		var c = z(o);
 		k(a);
@@ -3709,8 +3798,8 @@ function bo(e, t) {
 				}
 			});
 		}, d = (e) => {
-			var t = _o();
-			Pe(), K(e, t);
+			var t = Do();
+			Pe(2), K(e, t);
 		};
 		J(l, (e) => {
 			U(y) === "workflow-setup" ? e(u) : e(d, -1);
@@ -3718,8 +3807,21 @@ function bo(e, t) {
 			Q(i, "aria-label", U(y) === "workflow-setup" ? "Workflow setup" : "Workspace guide"), q(s, U(y) === "workflow-setup" ? "Workflow setup" : "Workspace guide");
 		}), W("keydown", i, re), gr("paste", i, (e) => e.stopPropagation()), W("click", c, ne), K(e, r);
 	};
-	return J(Ee, (e) => {
+	J(Ee, (e) => {
 		U(y) && e(De);
+	});
+	var Oe = z(Ee, 2), ke = (e) => {
+		Eo(e, {
+			get view() {
+				return U(n).importReview;
+			},
+			get actions() {
+				return t.actions;
+			}
+		});
+	};
+	return J(Oe, (e) => {
+		U(n).importReview && e(ke);
 	}), k(E), $(E, (e) => r = e, () => r), B((e) => {
 		de = Z(ue, 1, "pc-preview-pane", null, de, { "pc-preview-collapsed": U(_) }), fe = ni(ue, "", fe, e), Q(me, "aria-expanded", !U(_)), q(he, U(_) ? "Expand preview" : "Collapse preview"), Q(ge, "hidden", U(_)), q(ye, U(n).workflow?.native ? "Run the workflow to review its result in Details." : "Choose Preview › Compile prompt to inspect the current prompt.");
 	}, [() => ({ "--pc-preview-height": `${Math.min(U(g), U(v))}px` })]), W("click", me, () => T(!U(_))), K(e, E), M(ie);
@@ -3727,13 +3829,13 @@ function bo(e, t) {
 _r(["click", "keydown"]);
 //#endregion
 //#region ui/entry.js
-var xo = 0;
-function So(e, t) {
+var jo = 0;
+function Mo(e, t) {
 	let n = Ar(Ma, {
 		target: e,
 		props: {
 			actions: t,
-			markerId: `pc-loop-arrow-${++xo}`
+			markerId: `pc-loop-arrow-${++jo}`
 		}
 	});
 	return It(), {
@@ -3745,8 +3847,8 @@ function So(e, t) {
 		destroy: () => Pr(n)
 	};
 }
-function Co(e, t) {
-	let n = Ar(bo, {
+function No(e, t) {
+	let n = Ar(Ao, {
 		target: e,
 		props: { actions: t }
 	});
@@ -3757,7 +3859,7 @@ function Co(e, t) {
 		destroy: () => Pr(n)
 	};
 }
-function wo(e, t, n = "setup") {
+function Po(e, t, n = "setup") {
 	let r = Ar(Yi, {
 		target: e,
 		props: {
@@ -3771,4 +3873,4 @@ function wo(e, t, n = "setup") {
 	};
 }
 //#endregion
-export { So as mountCanvas, Co as mountWorkbench, wo as mountWorkflowSurface };
+export { Mo as mountCanvas, No as mountWorkbench, Po as mountWorkflowSurface };

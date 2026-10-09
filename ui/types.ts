@@ -27,10 +27,18 @@ export interface CanvasActions {
 export interface PositionUpdate { id: string; x: number; y: number; w?: number; h?: number }
 export interface HistoryView { undo: boolean; redo: boolean; undoTitle: string; redoTitle: string; note: string; showNote: boolean }
 export interface StatusView { armed: boolean; warning: boolean; text: string; overrideTitle: string; chatPinned: boolean; charPinned: boolean; charTitle: string; isDefault: boolean }
+export interface ImportReviewView {
+    fileName: string; name: string; phase: string; nodeCount: number; wireCount: number; groupCount: number;
+    callBound: number; importedCallBound: number; requiredRoles: string[];
+    unresolvedBindings: { role: string; title: string; missing: string[] }[];
+    inheritedBindingCount: number; terminals: { title: string; operation: string }[];
+    bindingReviewRequired: boolean; error: string;
+}
 export interface WorkbenchView {
     graphs: { id: string; name: string }[]; graphId: string; nativeGraph?: boolean; armed: boolean; sideOpen: boolean; inspectorOpen: boolean;
     history: HistoryView; status: StatusView; camera: { x: number; y: number; zoom: number; mode: string }; selectionCount: number;
     workflow?: WorkflowView;
+    importReview?: ImportReviewView | null;
     selectionActions?: { copy: boolean; cut: boolean; delete: boolean };
 }
 export interface WorkbenchActions {
@@ -40,6 +48,7 @@ export interface WorkbenchActions {
     unpin: () => void; pinChat: () => void; pinCharacter: () => void; makeDefault: () => void; preview: () => void;
     resizeStart?: () => void; addNode?: (id: string, legacy: boolean) => void;
     workflowSetup?: Pick<WorkflowActions, 'install' | 'setMode' | 'bindRole' | 'assign'>;
+    acceptImport?: () => void; cancelImport?: () => void; prepareImportAgain?: () => void;
 }
 
 
