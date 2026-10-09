@@ -33,10 +33,11 @@ for (const f of files) {
 }
 // Retain each test's intentional module shape, but migrate existing cache URLs
 // so tests and the installed source do not load separate domain singletons.
+// Non-release markers deliberately isolate modules for cache/Worker tests.
 if (fs.existsSync(path.join(root, 'tests'))) for (const f of sources('tests', ['.js', '.mjs'])) {
     const p = path.join(root, f);
     const before = fs.readFileSync(p, 'utf8');
-    const after = before.replace(/((?:from\s+|import\s*\()\s*['"])(\.{1,2}\/[^'"?]+\.js)\?v=[^'"]*(['"])/g, `$1$2?v=${v}$3`);
+    const after = before.replace(/((?:from\s+|import\s*\()\s*['"])(\.{1,2}\/[^'"?]+\.js)\?v=\d+\.\d+\.\d+(['"])/g, `$1$2?v=${v}$3`);
     if (after !== before) fs.writeFileSync(p, after);
 }
 const stylesheet = path.join(root, 'style.css');
