@@ -1,6 +1,6 @@
-# Native workflows
+# LATTICE model connections and host integration
 
-For the workspace, zero-call examples, graph tabs, subgraphs, connection gestures and recorded previews, start with [the LATTICE workspace guide](lattice-workspace.md). This guide covers model-backed workflows, connection routes and review safeguards.
+For editor operation, graph tabs, subgraphs, node controls, and recorded previews, use the [operator's manual](operators-manual.md). The [node reference](node-reference.md) lists all operations and their contracts. This guide covers model-backed workflows, connection routes, phase assignment, and reply review safeguards.
 
 Install from the repository's default branch using the steps below.
 
