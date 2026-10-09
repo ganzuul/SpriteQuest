@@ -1,17 +1,42 @@
 import { safeWorkflowData, validateWorkflow, validateGraphStructure } from './contracts.js?v=0.19.1';
 import { operationFor } from './catalog.js?v=0.19.1';
+import { computeDefinitionIdentity, validateDefinition } from './definitions.js?v=0.19.1';
 const limit = 2000000;
 const fail = (code, message) => ({ ok: false, error: { code, message } });
 const pick = (value, keys) => Object.fromEntries(keys.filter(key => Object.hasOwn(value, key)).map(key => [key, value[key]]));
+const portableBindings = bindings => Object.fromEntries(Object.entries(bindings ?? {}).map(([id, binding]) => [id, { ...pick(binding, ['model']), ...(Object.hasOwn(binding, 'profileId') ? { profileId: null } : {}) }]));
+function portableDefinition(definition) {
+    const copy = pick(definition, ['id', 'version', 'semanticHash', 'name', 'description']);
+    copy.interface = definition.interface.map(port => pick(port, ['id', 'label', 'direction', 'kind', 'required', 'cardinality', 'boundaryNodeId']));
+    copy.parameters = definition.parameters.map(parameter => ({ ...pick(parameter, ['id', 'label']), target: pick(parameter.target, ['instancePath', 'nodeId', 'controlId']) }));
+    copy.body = portableNativeDocument(definition.body);
+    const materialized = computeDefinitionIdentity(copy);
+    return materialized.ok ? structuredClone(materialized.data.materializedDefinition) : copy;
+}
 function portableNativeDocument(graph) {
     const copy = pick(graph, ['id', 'name', 'description', 'schema', 'runtime', 'mode', 'nodes', 'wires', 'groups', 'roles', 'portals', 'definitions', 'template', 'view', 'createdAt', 'updatedAt']);
     copy.nodes = Object.fromEntries(Object.entries(graph.nodes).map(([id, node]) => [id, pick(node, [
         'id', 'type', 'operation', 'operationVersion', 'title', 'enabled', 'x', 'y', 'w', 'h', 'width', 'height', 'collapsed', 'compact', 'inGroup', 'color',
-        'profileId', 'model', 'modelRole', 'artifactKind', 'phase', ...(node.type === 'note' ? ['content'] : []),
+        'profileId', 'model', 'modelRole', 'artifactKind', 'phase', 'alias', ...(node.type === 'note' ? ['content'] : []),
+        ...(node.type === 'subgraph' ? ['definition', 'parameterOverrides', 'roleOverrides', 'nodeBindingOverrides'] : []),
+        ...(['subgraph-input', 'subgraph-output'].includes(node.type) ? ['interfacePortId'] : []),
         ...(operationFor(node)?.controls ?? []), ...(node.operation === 'validate-patches' ? ['protectedLiterals'] : []),
     ])]));
-    copy.wires = Object.fromEntries(Object.entries(graph.wires).map(([id, wire]) => [id, pick(wire, ['id', 'route', 'from', 'fromPort', 'to', 'toPort', 'order', 'kind'])]));
-    if (graph.roles) copy.roles = Object.fromEntries(Object.entries(graph.roles).map(([id, binding]) => [id, pick(binding, ['profileId', 'model'])]));
+    for (const node of Object.values(copy.nodes)) {
+        if (Object.hasOwn(node, 'profileId')) node.profileId = null;
+        if (node.type === 'subgraph') {
+            node.definition = pick(node.definition, ['id', 'version', 'semanticHash']);
+            node.roleOverrides = portableBindings(node.roleOverrides);
+            node.nodeBindingOverrides = portableBindings(node.nodeBindingOverrides);
+        }
+    }
+    copy.wires = Object.fromEntries(Object.entries(graph.wires).map(([id, wire]) => [id, pick(wire, ['id', 'route', 'from', 'fromPort', 'to', 'toPort', 'order', 'kind', 'portalId'])]));
+    if (graph.roles) copy.roles = portableBindings(graph.roles);
+    if (graph.portals) copy.portals = Object.fromEntries(Object.entries(graph.portals).map(([id, portal]) => {
+        if (Object.keys(portal.source).some(key => !['nodeId', 'portId'].includes(key))) throw new Error('Portal sources must be local endpoints.');
+        return [id, { ...pick(portal, ['id', 'label', 'kind']), source: pick(portal.source, ['nodeId', 'portId']) }];
+    }));
+    if (graph.definitions) copy.definitions = Object.fromEntries(Object.entries(graph.definitions).map(([key, definition]) => [key, portableDefinition(definition)]));
     if (graph.groups) copy.groups = Object.fromEntries(Object.entries(graph.groups).map(([id, group]) => {
         const portable = pick(group, ['id', 'title', 'name', 'description', 'x', 'y', 'w', 'h', 'width', 'height', 'color', 'collapsed', 'enabled', 'entry', 'exit', 'members']);
         if (group.component) portable.component = pick(group.component, ['id', 'version']);
@@ -31,10 +56,11 @@ function portableGraph(graph) {
 /** The caller serializes this envelope for download. No host state is consulted. */
 export function exportWorkflow(graph) {
     if (!safeWorkflowData(graph)) throw new Error('Expected a bounded plain workflow graph.');
-    const validation = graph?.schema === 3 ? validateGraphStructure(graph) : validateWorkflow(graph);
+    const portable = portableGraph(graph);
+    const validation = graph?.schema === 3 ? validateGraphStructure(portable) : validateWorkflow(graph);
     if (!validation.ok) throw new Error(validation.error.message);
     const version = graph.schema === 3 ? 2 : 1;
-    const envelope = { kind: 'lattice-workflow', schema: version, minRuntime: version, graph: portableGraph(graph) };
+    const envelope = { kind: 'lattice-workflow', schema: version, minRuntime: version, graph: portable };
     if (version === 2 && new TextEncoder().encode(JSON.stringify(envelope)).byteLength > limit) throw new Error('Workflow JSON must be at most 2,000,000 UTF-8 bytes.');
     return envelope;
 }
@@ -48,7 +74,32 @@ export function parseWorkflow(json) {
     if (envelope.schema === 2 && new TextEncoder().encode(json).byteLength > limit) return fail('MALFORMED_WORKFLOW', 'Workflow JSON must be at most 2,000,000 UTF-8 bytes.');
     const expected = envelope.schema === 1 ? [2, 1] : [3, 2];
     if (envelope.graph?.schema !== expected[0] || envelope.graph?.runtime !== expected[1]) return fail('UNSUPPORTED_VERSION', 'The graph version does not match its package version.');
-    const validation = envelope.schema === 1 ? validateWorkflow(envelope.graph) : validateGraphStructure(envelope.graph);
+    let portable;
+    try { portable = portableGraph(envelope.graph); } catch { return fail('MALFORMED_WORKFLOW', 'Malformed workflow package containers.'); }
+    const validation = envelope.schema === 1 ? validateWorkflow(envelope.graph) : validateGraphStructure(portable);
     if (!validation.ok) return validation;
-    return { ok: true, data: portableGraph(envelope.graph) };
+    return { ok: true, data: portable };
+}
+
+/** Portable standalone snapshots use one flat, local table for the complete pinned closure. */
+export function exportSubgraph(definition, snapshots = {}) {
+    if (!safeWorkflowData(definition) || !safeWorkflowData(snapshots)) throw new Error('Expected bounded plain subgraph data.');
+    const portable = portableDefinition(definition), definitions = Object.fromEntries(Object.entries(snapshots).map(([key, item]) => [key, portableDefinition(item)]));
+    const validation = validateDefinition(portable, definitions);
+    if (!validation.ok) throw new Error(validation.error.message);
+    const envelope = { kind: 'lattice-subgraph', schema: 1, minRuntime: 2, definition: portable, definitions };
+    if (new TextEncoder().encode(JSON.stringify(envelope)).byteLength > limit) throw new Error('Subgraph JSON must be at most 2,000,000 UTF-8 bytes.');
+    return envelope;
+}
+export function parseSubgraph(json) {
+    if (typeof json !== 'string' || json.length > limit || new TextEncoder().encode(json).byteLength > limit) return fail('MALFORMED_WORKFLOW', 'Subgraph JSON must be at most 2,000,000 UTF-8 bytes.');
+    let envelope;
+    try { envelope = JSON.parse(json); } catch { return fail('INVALID_JSON', 'That is not valid subgraph JSON.'); }
+    if (!safeWorkflowData(envelope)) return fail('DEFINITION_DATA', 'Invalid plain subgraph package data.');
+    if (envelope?.kind !== 'lattice-subgraph' || envelope.schema !== 1 || envelope.minRuntime !== 2) return fail('UNSUPPORTED_PACKAGE', 'Unsupported subgraph package/runtime pair.');
+    try {
+        const definition = portableDefinition(envelope.definition), definitions = Object.fromEntries(Object.entries(envelope.definitions ?? {}).map(([key, item]) => [key, portableDefinition(item)]));
+        const validation = validateDefinition(definition, definitions);
+        return validation.ok ? { ok: true, data: { definition: validation.data.definition, definitions } } : validation;
+    } catch { return fail('DEFINITION_DATA', 'Malformed subgraph package containers.'); }
 }

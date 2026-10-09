@@ -32,6 +32,17 @@ export function operationFor(node) {
  * @returns {import('./types').PortDescriptor[]}
  */
 export function portsForNode(graph, node) {
+    // Projection of checked DTO metadata only: no graph analysis, preparation or host work.
+    if (node?.type === 'subgraph') {
+        const ref = node.definition;
+        const key = ref && JSON.stringify([ref.id, ref.version, ref.semanticHash]);
+        const definition = key && Object.hasOwn(graph?.definitions ?? {}, key) ? graph.definitions[key] : null;
+        return Array.isArray(definition?.interface) ? definition.interface.map(({ boundaryNodeId, ...port }) => ({ ...port })) : [];
+    }
+    if (node?.type === 'subgraph-input' || node?.type === 'subgraph-output') {
+        const port = Array.isArray(graph?.interface) ? graph.interface.find(port => port.id === node.interfacePortId && port.boundaryNodeId === node.id) : null;
+        return port ? [{ id: node.type === 'subgraph-input' ? 'out' : 'in', label: port.label, kind: port.kind, direction: node.type === 'subgraph-input' ? 'output' : 'input', required: node.type === 'subgraph-output', cardinality: 'one' }] : [];
+    }
     const op = operationFor(node);
     if (!op) return [];
     return [

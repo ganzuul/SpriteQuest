@@ -1,4 +1,6 @@
-import { operationFor, portsForNode } from './catalog.js?v=0.19.1';
+import { operationFor } from './catalog.js?v=0.19.1';
+import { safeWorkflowData, validateNamedGraphStructure } from './graph-validation.js?v=0.19.1';
+export { safeWorkflowData } from './graph-validation.js?v=0.19.1';
 const fail = (code, message, nodeId) => ({ ok: false, error: { code, message, ...(nodeId ? { nodeId } : {}) } });
 const record = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 /** Native/unsafe routing guard: only plain legacy metadata may enter legacy paths. */
@@ -22,27 +24,6 @@ export function isNativeWorkflow(graph) {
         return typeof mode === 'string' && mode.startsWith('native-');
     } catch { return true; }
 }
-/** Bound plain JSON data before reading untrusted graph properties. */
-export function safeWorkflowData(value) {
-    let entries = 0, characters = 0;
-    const seen = new Set();
-    const visit = (item, depth) => {
-        if (++entries > 20000 || depth > 40) return false;
-        if (typeof item === 'string') { characters += item.length; return characters <= 2000000; }
-        if (item === null || typeof item === 'boolean') return true;
-        if (typeof item === 'number') return Number.isFinite(item);
-        if (typeof item !== 'object' || seen.has(item)) return false;
-        const prototype = Object.getPrototypeOf(item);
-        if (prototype !== Object.prototype && prototype !== Array.prototype && prototype !== null) return false;
-        seen.add(item);
-        for (const [key, property] of Object.entries(Object.getOwnPropertyDescriptors(item))) {
-            if (/^(api[_-]?key|api[_-]?token|access[_-]?token|token|password|secret|credentials?|authorization|headers?|provider|endpoint|base[_-]?url)$/i.test(key) || ['__proto__', 'prototype', 'constructor'].includes(key) || !('value' in property) || !visit(property.value, depth + 1)) return false;
-        }
-        seen.delete(item);
-        return true;
-    };
-    try { return visit(value, 0); } catch { return false; }
-}
 /** Validate a native graph without reading or mutating host state. */
 export function validateWorkflow(graph, { phase } = {}) {
     return validatePrimitiveGraph(graph, { phase });
@@ -52,25 +33,8 @@ export function validateWorkflow(graph, { phase } = {}) {
  */
 export function validateGraphStructure(graph) {
     if (!safeWorkflowData(graph) || !record(graph)) return fail('MALFORMED_WORKFLOW', 'Expected a bounded plain workflow graph.');
-    if (graph.schema === 3 && graph.runtime === 2) return validateNamedGraph(graph);
+    if (graph.schema === 3 && graph.runtime === 2) return validateNamedGraphStructure(graph);
     return validatePrimitiveGraph(graph, { structureOnly: true });
-}
-function validateNamedGraph(graph) {
-    if (!record(graph.nodes) || !record(graph.wires) || !record(graph.portals ?? {}) || !record(graph.definitions ?? {})) return fail('MALFORMED_WORKFLOW', 'Expected native graph containers.');
-    // Composition is deliberately gated until pinned definitions and portal resolution are validated.
-    if (Object.keys(graph.portals ?? {}).length || Object.keys(graph.definitions ?? {}).length) return fail('UNSUPPORTED_COMPOSITION', 'Composition requires the definition and portal validator.');
-    const copy = structuredClone(graph);
-    copy.schema = 2; copy.runtime = 1;
-    for (const wire of Object.values(copy.wires)) {
-        if (!record(wire) || wire.route !== 'wire' || typeof wire.from !== 'string' || typeof wire.to !== 'string' || typeof wire.fromPort !== 'string' || typeof wire.toPort !== 'string' || wire.loop || wire.port) return fail('INVALID_WIRE', 'Native wires require named direct endpoints.');
-        if (!Object.hasOwn(copy.nodes, wire.from) || !Object.hasOwn(copy.nodes, wire.to)) return fail('DANGLING_WIRE', 'A wire refers to a missing block.');
-        const from = portsForNode(copy, copy.nodes[wire.from]).find(port => port.id === wire.fromPort && port.direction === 'output');
-        const to = portsForNode(copy, copy.nodes[wire.to]).find(port => port.id === wire.toPort && port.direction === 'input');
-        if (!from || !to) return fail('INVALID_PORT', 'A wire requires an existing output and input port.');
-        if (from.kind !== to.kind) return fail('ARTIFACT_KIND', 'These ports carry incompatible artifacts.');
-        wire.order ??= 0;
-    }
-    return validatePrimitiveGraph(copy, { structureOnly: true, named: true });
 }
 function validatePrimitiveGraph(graph, { phase, structureOnly = false, named = false } = {}) {
     if (!safeWorkflowData(graph) || !record(graph) || !record(graph.nodes) || !record(graph.wires) || (graph.groups !== undefined && !record(graph.groups))) return fail('MALFORMED_WORKFLOW', 'Expected a bounded plain workflow graph.');

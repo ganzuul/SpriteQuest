@@ -1,0 +1,24 @@
+import { inspectExpandedGraph } from './graph-validation.js?v=0.19.1';
+import { definitionChain, ownsDefinitionPath, samePath } from './composition-edit.js?v=0.19.1';
+
+/** Prepare only after content changes. Navigation/camera/selection read this cached DTO.
+ * Structural validation has no terminal/completeness requirement and makes no host calls.
+ * savedGraph is the editing source; effectiveNodes are display/planning values, never drafts.
+ * @returns {import('./types').Result<import('./types').CompositionViews>}
+ */
+export function prepareCompositionViews(root) {
+    const checked = inspectExpandedGraph(root); if (!checked.ok) return checked;
+    const views = checked.data.scopes.map(({ instancePath, graph }) => {
+        const definition = instancePath.length ? definitionChain(root, instancePath).at(-1).definition : null;
+        const saved = definition?.body ?? root;
+        const savedGraph = Object.fromEntries(['schema', 'runtime', 'mode', 'nodes', 'wires', 'groups', 'roles', 'portals'].filter(key => saved[key] !== undefined).map(key => [key, structuredClone(saved[key])]));
+        return {
+            instancePath: [...instancePath], editable: !instancePath.length || ownsDefinitionPath(root, instancePath),
+            ...(definition ? { definitionRef: { id: definition.id, version: definition.version, semanticHash: definition.semanticHash } } : {}),
+            savedGraph, effectiveNodes: structuredClone(graph.nodes),
+            interface: structuredClone(definition?.interface ?? []),
+            ports: structuredClone(checked.data.pins.filter(pin => samePath(pin.address.instancePath, instancePath))),
+        };
+    });
+    return { ok: true, data: { workflowId: checked.data.workflowId, views } };
+}
