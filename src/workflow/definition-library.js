@@ -42,15 +42,17 @@ export function installDefinition(library, definition, snapshots = {}) {
     return { ok: true, data: { library: frozen.data, ref: reference(validation.data.definition), changed: addedDefinitionKeys.length > 0, addedDefinitionKeys } };
 }
 
-export function createRevision(library, draft) {
-    if (!safeWorkflowData(library) || !record(library) || !record(library.definitions) || !safeWorkflowData(draft) || !record(draft)) return fail('DEFINITION_DATA', 'Expected a library and editable definition draft.');
-    const versions = Object.values(library.definitions).filter(item => item?.id === draft.id).map(item => item.version);
+export function createRevision(library, draft, snapshots = {}) {
+    if (!safeWorkflowData(library) || !record(library) || !record(library.definitions) || !safeWorkflowData(draft) || !record(draft) || !safeWorkflowData(snapshots) || !record(snapshots)) return fail('DEFINITION_DATA', 'Expected a library, editable definition draft and plain pinned snapshots.');
+    const merged = mergeSnapshots(library.definitions, snapshots);
+    if (!merged.ok) return merged;
+    const versions = Object.values(merged.data).filter(item => item?.id === draft.id).map(item => item.version);
     const version = Math.max(0, ...versions) + 1;
     if (!Number.isSafeInteger(version)) return fail('DEFINITION_METADATA', 'Definition version limit reached.');
     const candidate = { ...structuredClone(draft), version }; delete candidate.semanticHash;
     const identity = computeDefinitionIdentity(candidate);
     if (!identity.ok) return identity;
-    return installDefinition(library, { ...identity.data.materializedDefinition, semanticHash: identity.data.semanticHash });
+    return installDefinition(library, { ...identity.data.materializedDefinition, semanticHash: identity.data.semanticHash }, snapshots);
 }
 
 export function removeLibraryEntry(library, ref) {

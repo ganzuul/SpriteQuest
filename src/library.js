@@ -63,8 +63,8 @@ function changeSubgraphLibrary(prepare) {
 export function installSubgraphDefinition(definition, snapshots = {}) {
     return changeSubgraphLibrary(library => installDefinition(library, definition, snapshots));
 }
-export function reviseSubgraphDefinition(draft) {
-    return changeSubgraphLibrary(library => createRevision(library, draft));
+export function reviseSubgraphDefinition(draft, snapshots = {}) {
+    return changeSubgraphLibrary(library => createRevision(library, draft, snapshots));
 }
 export function removeSubgraphDefinition(ref) {
     return changeSubgraphLibrary(library => removeLibraryEntry(library, ref));

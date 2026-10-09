@@ -1,6 +1,6 @@
 import { safeWorkflowData, validateWorkflow, validateGraphStructure } from './contracts.js?v=0.19.1';
 import { OPERATIONS } from './catalog.js?v=0.19.1';
-import { computeDefinitionIdentity, validateDefinition } from './definitions.js?v=0.19.1';
+import { cloneDefinitionData, computeDefinitionIdentity, definitionRefKey, inspectDefinitionMetadata, validateDefinition } from './definitions.js?v=0.19.1';
 const limit = 2000000;
 const fail = (code, message) => ({ ok: false, error: { code, message } });
 const pick = (value, keys) => Object.fromEntries(keys.filter(key => Object.hasOwn(value, key)).map(key => [key, value[key]]));
@@ -79,6 +79,39 @@ export function parseWorkflow(json) {
     const validation = envelope.schema === 1 ? validateWorkflow(envelope.graph) : validateGraphStructure(portable);
     if (!validation.ok) return validation;
     return { ok: true, data: portable };
+}
+
+/** Select a checked exact closure for a standalone export or atomic shelf save.
+ * Unrelated snapshots never enter the returned package; no source or saved pin changes.
+ * @returns {import('./types').Result<{definition: import('./types').DefinitionSnapshot, definitions: import('./types').SnapshotTable}>}
+ */
+export function selectSubgraphClosure(definition, snapshots = {}) {
+    const top = cloneDefinitionData(definition), table = cloneDefinitionData(snapshots);
+    if (!top.ok) return top;
+    if (!table.ok) return table;
+    if (!table.data || typeof table.data !== 'object' || Array.isArray(table.data)) return fail('DEFINITION_DATA', 'Expected a plain pinned snapshot table.');
+    const metadata = inspectDefinitionMetadata(top.data);
+    if (!metadata.ok) return metadata;
+    const topKey = definitionRefKey(top.data), selected = {}, visited = new Set(), pending = [top.data];
+    if (Object.hasOwn(table.data, topKey)) selected[topKey] = table.data[topKey];
+    while (pending.length) {
+        const item = pending.pop(), checked = inspectDefinitionMetadata(item);
+        if (!checked.ok) return checked;
+        const key = definitionRefKey(item);
+        if (visited.has(key)) continue;
+        visited.add(key);
+        for (const node of Object.values(item.body.nodes)) if (node?.type === 'subgraph') {
+            if (!node.definition || typeof node.definition !== 'object' || Array.isArray(node.definition)) return fail('DEFINITION_REF', 'An instance requires an exact pinned reference.');
+            const childKey = definitionRefKey(node.definition);
+            if (!Object.hasOwn(table.data, childKey)) return fail('MISSING_DEFINITION', 'The exact pinned snapshot is not bundled.');
+            selected[childKey] = table.data[childKey];
+            pending.push(table.data[childKey]);
+        }
+    }
+    const validation = validateDefinition(top.data, selected);
+    if (!validation.ok) return validation;
+    delete selected[topKey];
+    return cloneDefinitionData({ definition: validation.data.definition, definitions: selected });
 }
 
 /** Portable standalone snapshots use one flat, local table for the complete pinned closure. */
