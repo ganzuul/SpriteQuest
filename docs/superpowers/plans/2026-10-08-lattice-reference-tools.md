@@ -76,7 +76,7 @@
 
 ### Task 5: Category-based slop policy data
 
-**Files:** Create `data/ai-slop-policy.json`, `src/workflow/library/slop-policies.js`, `.d.ts`, `tests/workflow-slop-policies.test.mjs`.
+**Files:** Create `data/ai-slop-policy.json`, `src/workflow/library/slop-policies.js`, `.d.ts`, `tests/workflow-slop-policies.test.mjs`, `tests/fixtures/ai-slop-source.md` (exact source copy for portable verification).
 
 **Interfaces:** Read the user's source file as data. Produce selectSlopPolicies(library,{mode,scope,categories})→Result<{value}>; source metadata/IDs/categories/entries exactly as spec.
 
