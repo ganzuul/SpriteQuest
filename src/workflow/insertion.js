@@ -142,6 +142,9 @@ export function prepareWorkflowInsertion(destination, imported, options = {}) {
         for (const node of Object.values(source.data.nodes)) {
             const role = native ? node.modelRole ?? operationFor(node)?.modelRole : null;
             if (role) node.modelRole = identityMap.roles[role];
+            if (!native && node.type === 'decider') for (const key of node.keys ?? []) for (const condition of key.conditions ?? []) {
+                if (condition?.input) condition.input = identityMap.wires[condition.input];
+            }
             translate(node);
             node.id = identityMap.nodes[node.id];
             if (node.inGroup !== undefined) node.inGroup = identityMap.groups[node.inGroup];

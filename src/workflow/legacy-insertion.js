@@ -64,6 +64,17 @@ export function validateLegacyInsertionGraph(graph) {
         if (wire.loop !== undefined && (!record(wire.loop) || !['generate', 'decider'].includes(source.type) || ['save', 'together'].includes(wire.kind) || !['string', 'number'].includes(typeof wire.loop.max) || !Number.isFinite(Number(wire.loop.max)) || Number(wire.loop.max) <= 0 || wire.loop.stopWhenSame !== undefined && typeof wire.loop.stopWhenSame !== 'boolean')) return fail('INVALID_LOOP', 'A legacy loop requires a bounded Generate or Decider return wire.');
         if (!['save', 'together'].includes(wire.kind) && !wire.loop) forward.get(wire.from).push(wire.to);
     }
+    for (const node of Object.values(graph.nodes)) if (node.type === 'decider') {
+        for (const key of node.keys ?? []) {
+            if (!Array.isArray(key.conditions ?? [])) return fail('INVALID_DECIDER_INPUT', 'Decider rules require a saved list of conditions.');
+            for (const condition of key.conditions ?? []) {
+                // Empty/absent means all inputs together; every selected input is a wire ID.
+                if (!condition?.input) continue;
+                const wire = typeof condition.input === 'string' && Object.hasOwn(graph.wires ?? {}, condition.input) ? graph.wires[condition.input] : null;
+                if (!wire || wire.to !== node.id || wire.mode === 'activate') return fail('INVALID_DECIDER_INPUT', 'A selected Decider incoming wire is missing or cannot supply text. Include that incoming wire, choose all inputs together, or Open separately.');
+            }
+        }
+    }
     for (const [id, group] of Object.entries(graph.groups ?? {})) {
         if (!id || !record(group) || group.id !== id || group.component !== undefined) return fail('INVALID_GROUP', 'Expected a saved legacy group identity.');
         for (const key of ['entry', 'exit']) if (group[key] !== undefined && (typeof group[key] !== 'string' || !Object.hasOwn(graph.nodes, group[key]))) return fail('INVALID_GROUP', 'Group endpoints must reference saved blocks.');
