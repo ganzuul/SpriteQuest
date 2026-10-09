@@ -39,10 +39,10 @@ export function sendWorkflowState() {
             offText: 'Native workflows are off. SillyTavern builds its normal prompt.',
         };
         const graph = isNativeWorkflow(assigned) && assigned.mode === 'native-pre' ? assigned : null;
-        if (graph && (graph.schema !== 2 || graph.runtime !== 1)) return {
+        if (graph && !((graph.schema === 2 && graph.runtime === 1) || (graph.schema === 3 && graph.runtime === 2))) return {
             automatic: false,
             armLabel: 'Assigned native workflow requires a supported runtime',
-            armedText: `"${graph.name}" has an unsupported execution version. This runtime requires schema 2/runtime 1. SillyTavern builds its normal prompt.`,
+            armedText: `"${graph.name}" has an unsupported execution version. This runtime supports schema 2/runtime 1 and schema 3/runtime 2. SillyTavern builds its normal prompt.`,
             offText: 'Native workflows are off. SillyTavern builds its normal prompt.',
         };
         return {

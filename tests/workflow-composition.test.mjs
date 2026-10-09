@@ -12,7 +12,7 @@ portals: { shared: { id: 'shared', label: 'Context', kind: 'context', source: { 
 
 // Hidden dependencies participate in named validation before any execution completeness checks.
 assert.equal(validateGraphStructure(root()).ok, true);
-assert.equal(validateWorkflow(root()).error.code, 'UNSUPPORTED_VERSION');
+assert.equal(validateWorkflow(root()).error.code, 'MISSING_TERMINAL', 'supported schema3 authoring still needs a terminal for a full run');
 for (const [change, code] of [
     [g => { delete g.portals.shared; }, 'MISSING_PORTAL'],
     [g => { g.portals.shared.source.nodeId = 'other/scope'; }, 'DANGLING_WIRE'],

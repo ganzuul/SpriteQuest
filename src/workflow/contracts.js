@@ -1,5 +1,6 @@
 import { operationFor } from './catalog.js?v=0.19.1';
 import { safeWorkflowData, validateNamedGraphStructure } from './graph-validation.js?v=0.19.1';
+import { resolveWorkflow } from './resolve.js?v=0.19.1';
 export { safeWorkflowData } from './graph-validation.js?v=0.19.1';
 const fail = (code, message, nodeId) => ({ ok: false, error: { code, message, ...(nodeId ? { nodeId } : {}) } });
 const record = value => value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -26,6 +27,10 @@ export function isNativeWorkflow(graph) {
 }
 /** Validate a native graph without reading or mutating host state. */
 export function validateWorkflow(graph, { phase } = {}) {
+    if (safeWorkflowData(graph) && record(graph) && graph.schema === 3 && graph.runtime === 2) {
+        if (phase && graph.mode !== 'native-' + phase) return fail('WRONG_PHASE', 'The workflow operation does not support this phase.');
+        return resolveWorkflow(graph);
+    }
     return validatePrimitiveGraph(graph, { phase });
 }
 /** Authoring checks exclude terminal, required-input and enabled-dependency completeness.

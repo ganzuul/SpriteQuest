@@ -5,7 +5,7 @@ import { starterGraph } from '../src/workflow/starters.js';
 const pre = starterGraph('native-guidance'), post=starterGraph('reviewed-de-slop');
 
 for (const schema of [3, 99]) for (const entry of ['runPre', 'beforeGenerate', 'runPost']) {
- test(`${entry} rejects schema ${schema} before any host source or snapshot reads`, async () => {
+ test(`${entry} rejects ${schema===3?'malformed schema3 wires':'schema '+schema} before any host source or snapshot reads`, async () => {
   const graph = { ...structuredClone(entry === 'runPost' ? post : pre), schema, runtime: 2 };
   let requests=0;
   const f=fixture(async()=>{requests++;return {ok:true,data:{text:'Unexpected request',finish:'stop'}};},graph);
@@ -20,7 +20,7 @@ for (const schema of [3, 99]) for (const entry of ['runPre', 'beforeGenerate', '
   const result=entry==='beforeGenerate'
    ? await f.controller.beforeGenerate(chat,8192,()=>{},'normal')
    : await f.controller[entry](graph);
-  assert.equal(result.error.code,'UNSUPPORTED_VERSION');
+  assert.equal(result.error.code,schema===3?'INVALID_WIRE':'UNSUPPORTED_VERSION');
   assert.equal(result.fallback,entry==='beforeGenerate'?'native':undefined);
   assert.deepEqual(reads,{chat:0,message:0,character:0,identity:0});
   assert.equal(requests,0);

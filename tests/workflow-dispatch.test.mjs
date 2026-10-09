@@ -22,10 +22,14 @@ for (const schema of [3, 99]) {
     assert.deepEqual(graph, before, 'native versions bypass destructive legacy migration');
     assert.equal((await compile(graph)).ok, false);
     assert.equal((await run(graph)).plan.ok, false);
-    assert.equal(callCount(graph), 0);
-    let calls = 0;
-    const executed = await runWorkflow(graph, { request: async () => { calls++; }, snapshot: () => { snapshots++; } });
-    assert.equal(executed.error.code, 'UNSUPPORTED_VERSION');
+    assert.equal(callCount(graph), schema === 3 ? 2 : 0);
+    let calls = 0, bindings = 0;
+    const executed = await runWorkflow(graph, {
+        resolveBinding: () => { bindings++; return { ok: false, error: { code: 'FIXTURE_UNBOUND', message: 'This fixture has no connection.' } }; },
+        request: async () => { calls++; }, snapshot: () => { snapshots++; },
+    });
+    assert.equal(executed.error.code, schema === 3 ? 'FIXTURE_UNBOUND' : 'UNSUPPORTED_VERSION');
+    assert.equal(bindings, schema === 3 ? 1 : 0, 'supported schema3 reaches binding preflight; unsupported versions never do');
     assert.equal(calls, 0);
 }
 assert.equal(loreScans, 0);
@@ -73,8 +77,9 @@ const largeJson = state.exportGraph('large');
 assert.ok(new TextEncoder().encode(largeJson).length <= 2000000, 'state writer must preserve envelope UTF-8 bound after serialization');
 state.settings().workflowMode = 'native';
 state.settings().nativeBindings.preGraphId = imported.graph.id;
-assert.equal(sendWorkflowState().automatic, false);
-assert.match(sendWorkflowState().armedText, /unsupported|requires schema/i);
+assert.equal(sendWorkflowState().automatic, true);
+assert.match(sendWorkflowState().armedText, /maximum 2 auxiliary requests/i);
+assert.match(sendWorkflowState().armedText, /SillyTavern builds its normal prompt/i);
 // A false routing predicate authorizes legacy context work, so unsafe metadata must fail closed.
 let routingGetterReads = 0;
 const legacy = state.blankGraph('Routing fixture');

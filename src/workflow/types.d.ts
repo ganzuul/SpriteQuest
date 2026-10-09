@@ -165,3 +165,84 @@ export interface NodeControlChangeCommand { nodeId: string; controls: Record<str
 export interface TextArtifact { kind: 'text'; text: string; }
 export interface DataArtifact { kind: 'data'; value: import('./operations/json-data').JsonValue; }
 export type ContextArtifact = import('./operations/context-data').RuntimeContext;
+
+/** Frozen diagnostic data; authenticated connection objects never enter these DTOs. */
+export type RunStatus = 'empty' | 'waiting' | 'queued' | 'running' | 'cancelling' | 'completed' | 'failed' | 'blocked' | 'not-run' | 'cancelled' | 'invalid' | 'stale';
+export type RunSettlement = 'completed' | 'failed' | 'cancelled' | 'invalid' | 'stale';
+export interface SafeRunError { code: string; message: string; truncated?: boolean; }
+export interface BindingSummary { role?: string; profileId?: string | null; model?: string | null; fingerprint?: string; truncated?: boolean; }
+export interface SourceSummary {
+    kind?: string; phase?: string; chatId?: string | number | null; characterId?: string | number | null; groupId?: string | number | null;
+    messageIndex?: number; swipeId?: number; revision?: string | number; truncated?: boolean;
+    operation?: 'context-join'; inputs?: { portId: string; source: SourceSummary }[];
+}
+export type ReportedUsage = Partial<Record<'inputTokens' | 'outputTokens' | 'totalTokens' | 'promptTokens' | 'completionTokens' | 'input_tokens' | 'output_tokens' | 'total_tokens' | 'prompt_tokens' | 'completion_tokens' | 'cached_tokens' | 'reasoning_tokens', number>>;
+export interface RequestSummary {
+    attempt: number; status: 'running' | 'completed' | 'failed' | 'cancelled'; maxTokens: number;
+    inputTokens: number | null; startedAt: number; durationMs?: number; finish?: string | null; usage?: ReportedUsage | null; error?: SafeRunError;
+}
+interface EventClock { runId: string; seq: number; at: number; elapsedMs: number; }
+export type RunEvent = EventClock & (
+    | { type: 'plan'; plan: RunPlan }
+    | { type: 'run-cancelling'; reason?: SafeRunError }
+    | { type: 'run-settled'; status: RunSettlement; error?: SafeRunError; failedAddress?: NodeAddress }
+    | { type: 'node-phase'; address: NodeAddress; phase: 'binding' | 'executing'; binding?: BindingSummary }
+    | { type: 'request-start'; address: NodeAddress; attempt: number; maxTokens: number; inputTokens?: number | null }
+    | { type: 'request-settled'; address: NodeAddress; attempt: number; status: 'completed' | 'failed' | 'cancelled'; durationMs: number; finish?: string | null; usage?: ReportedUsage | null; error?: SafeRunError }
+    | { type: 'node-settled'; address: NodeAddress; status: 'completed' | 'failed' | 'cancelled'; error?: SafeRunError }
+);
+export interface RunNodeState extends RunUnit {
+    status: RunStatus; subphase: 'binding' | 'executing' | 'request' | 'cancelling' | null;
+    attempts: number; request: RequestSummary | null; startedAt: number | null; settledAt: number | null; durationMs: number | null;
+    binding?: BindingSummary; error?: SafeRunError; metadataTruncated?: boolean;
+}
+export interface RunState { runId: string; lastSeq: number; status: RunStatus; plan: RunPlan | null; nodes: RunNodeState[]; elapsedMs: number; at: number | null; error?: SafeRunError; }
+export interface RunRow {
+    address: NodeAddress; kind: 'instance' | 'primitive'; status: RunStatus;
+    executableCount: number; completedCount: number; children: RunRow[];
+    included?: boolean; operation?: string; label?: string; request?: RequestSummary | null;
+}
+export type RecordedTarget = { kind: 'terminal'; address: number } | { address: number; port: number };
+export interface RecordedUnit {
+    address: number; included: boolean; dependencies: number[]; requestBound: number; status: RunStatus;
+    subphase: RunNodeState['subphase']; attempts: number; startedAt: number | null; settledAt: number | null; durationMs: number | null;
+    ports: { direction: 'input' | 'output'; port: number; artifact: number | null }[];
+    operation?: string; label?: string; request?: RequestSummary; binding?: BindingSummary; source?: SourceSummary;
+    error?: SafeRunError; reports?: Record<string, string | number | boolean>[]; metadataTruncated?: boolean; metadataOmitted?: boolean;
+}
+export type RecordedArtifact = {
+    id: number; origin: { address: number; direction: 'input' | 'output' | 'terminal'; port?: number }; kind: string;
+} & (
+    | { format: 'structured'; value: unknown }
+    | { format: 'json-prefix-text'; text: string; truncated: true }
+    | { format: 'omitted'; reason: string }
+);
+export interface Recording {
+    version: 1; runId: string; lastSeq: number; status: RunStatus; at: number | null; elapsedMs: number;
+    plan: { workflowId: number; phase: WorkflowPhase; mode: 'root' | 'target'; callBound: number; target?: RecordedTarget; resolvedTarget?: RecordedTarget } | null;
+    identities: { strings: string[]; paths: (null | [number, number])[]; addresses: [number, number, number][] };
+    units: RecordedUnit[]; hierarchy: { address: number; kind: 'instance' | 'primitive'; included: boolean; parent?: number }[];
+    terminals: { kind: 'terminal'; address: number; artifact: number | null }[]; artifacts: RecordedArtifact[];
+    error?: SafeRunError; metadataOmitted?: boolean;
+    retention?: { policy: 'canonical-prefix'; payloadAllowance: number; pendingBytes: number; metadataAllowance: number; pendingMetadataBytes: number };
+}
+export interface TerminalReviewHandle { handleId: string; runId: string; terminal: TerminalTarget; }
+interface BoundedRunData { runId: string; ok: boolean; callBound: number; actualCalls: number; recording: Recording; error?: WorkflowError; preview?: true; }
+export type BoundedWorkflowRunResult = BoundedRunData & (
+    | { schema: 3; runtime: 2; mode: 'root' | 'target' }
+    | { schema: 2; runtime: 1; mode: 'target' }
+);
+/** Historical full schema-2 caller fields remain intact, including trace === calls. */
+export interface LegacyWorkflowRunResult {
+    schema?: 2; runtime?: 1; mode: 'root'; runId?: string; ok: boolean; artifact?: unknown; error?: WorkflowError;
+    reports: Record<string, unknown>[]; calls: Record<string, unknown>[]; trace: Record<string, unknown>[];
+    outputs: { nodeId: string; artifact: unknown }[]; callBound: number; actualCalls: number; recording?: Recording; preview?: true;
+}
+/** A failed factory can return no recording; consumers preserve their prior bounded record. */
+export interface WorkflowPreparationFailure { schema?: number; runtime?: number; mode: 'root' | 'target'; runId?: string; ok: false; callBound: number; actualCalls: number; error: WorkflowError; recording?: never; }
+export type WorkflowRunResult = LegacyWorkflowRunResult | BoundedWorkflowRunResult | WorkflowPreparationFailure;
+export type HostWorkflowRunResult = WorkflowRunResult & { reviewHandles?: TerminalReviewHandle[]; published?: boolean; fallback?: 'native'; };
+export interface WorkflowRunOptions {
+    target?: WorkflowTarget; onEvent?: (event: RunEvent) => unknown; runId?: string;
+    clock?: { now(): number; monotonic(): number }; phase?: WorkflowPhase; signal?: AbortSignal; preview?: boolean; dryRun?: boolean;
+}

@@ -1,5 +1,6 @@
 const fail = (code, message) => ({ok:false,error:{code,message}});
 const resolved = new WeakMap();
+const fingerprint = () => globalThis.crypto.randomUUID();
 const safeSignature = value => JSON.stringify(value, (key,item) => /secret|password|api.?key|custom_headers|authorization/i.test(key) ? undefined : item);
 const ENDPOINT_FIELDS = {custom:'custom_url',vertexai:'vertexai_region',zai:'zai_endpoint',siliconflow:'siliconflow_endpoint',minimax:'minimax_endpoint',pollinations:'pollinations_endpoint'};
 // These installed CC sources can use a named or inherited reverse proxy.
@@ -32,17 +33,30 @@ function completionEvidence(raw, binding) {
     const unverified = reasons.find(reason=>reason !== undefined && reason !== null && (typeof reason !== 'string' || !COMPLETE_REASONS.has(reason.toLowerCase())));
     return {finish:cutoff ?? unverified ?? reasons.find(reason=>reason !== undefined && reason !== null) ?? null,usage:raw?.usage ?? null};
 }
+/** Authenticate a captured binding and recheck its effective host dependencies. */
+export function bindingStatus(binding, context) {
+    try {
+        const remembered = resolved.get(binding);
+        if (!remembered || safeSignature(binding) !== remembered.metadata) return fail('BINDING_CHANGED', 'Resolve the fixed connection again before requesting.');
+        const current = resolveBinding(remembered.node, remembered.graph, context);
+        return current.ok && resolved.get(current.data).signature === remembered.signature
+            ? { ok: true }
+            : fail('BINDING_CHANGED', 'The fixed connection changed after preflight. Run preflight again.');
+    } catch { return fail('BINDING_CHANGED', 'The fixed connection is no longer available. Run preflight again.'); }
+}
+/** Safe provenance is a detached selector, never request authority or a private signature. */
+export function bindingSummary(binding) {
+    const remembered = binding && resolved.get(binding);
+    return remembered ? Object.freeze({...remembered.summary,fingerprint:remembered.fingerprint}) : undefined;
+}
 /** Send node-owned messages through the fixed profile, without activating it. */
 export async function requestModel({binding,messages,maxTokens,signal},context) {
     if (signal?.aborted) return fail('ABORTED', 'The request was stopped.');
     if (!Number.isSafeInteger(maxTokens) || maxTokens <= 0 || maxTokens > 65536 || !Array.isArray(messages) || !messages.length || messages.length > 1000 || messages.some(message=>!message || !['system','user','assistant','tool'].includes(message.role) || typeof message.content !== 'string')) return fail('INVALID_REQUEST', 'Provide owned messages and a positive bounded completion limit.');
     if (typeof context.ConnectionManagerRequestService?.sendRequest !== 'function') return fail('SERVICE_UNAVAILABLE', 'SillyTavern Connection Manager is unavailable.');
-    const remembered = resolved.get(binding);
-    if (!remembered || safeSignature(binding) !== remembered.metadata) return fail('BINDING_CHANGED', 'Resolve the fixed connection again before requesting.');
-    const check = () => {
-        const current = resolveBinding(remembered.node,remembered.graph,context);
-        return current.ok && resolved.get(current.data).signature === remembered.signature;
-    };
+    const authentication = bindingStatus(binding, context);
+    if (!authentication.ok) return authentication;
+    const check = () => bindingStatus(binding, context).ok;
     if (!check()) return fail('BINDING_CHANGED', 'The fixed connection changed after preflight. Run preflight again.');
     try {
         const tc = binding.api === 'textgenerationwebui';
@@ -105,6 +119,6 @@ export function resolveBinding(node, graph, context) {
     const endpoint = tc ? profile['api-url'] || context.getTextGenServer?.(route.type) : field ? profile['api-url'] || preset[field] || context.chatCompletionSettings?.[field] : extras.azure_base_url || extras.workers_ai_account_id || null;
     if ((tc || field) && !endpoint) return fail('ENDPOINT_MISSING', 'The fixed profile requires an available endpoint.');
     const data = {profileId,profileName:profile.name,model:model || null,source:tc ? route.type : route.source,api:route.selected,endpoint:endpoint || null,endpointOrigin:(tc || field) && profile['api-url'] ? 'profile' : (field && preset[field]) || (extraFields.length && preset[extraFields[0]]) ? 'preset' : endpoint ? 'host' : 'provider',preset:profile.preset || null,instruct:profile.instruct || null,...(extraFields.length ? {endpointDependencies:extras} : {})};
-    resolved.set(data,{node:{profileId:node.profileId,model:node.model,modelRole:node.modelRole},graph:{roles:{[node.modelRole]:{profileId:role?.profileId,model:role?.model}}},metadata:safeSignature(data),signature:safeSignature([data,preset,tc ? presetByName(context,'instruct',profile.instruct) : null])});
+    resolved.set(data,{node:{profileId:node.profileId,model:node.model,modelRole:node.modelRole},graph:{roles:{[node.modelRole]:{profileId:role?.profileId,model:role?.model}}},metadata:safeSignature(data),signature:safeSignature([data,preset,tc ? presetByName(context,'instruct',profile.instruct) : null]),summary:{role:node.modelRole??null,profileId,model:data.model},fingerprint:fingerprint()});
     return {ok:true,data};
 }
