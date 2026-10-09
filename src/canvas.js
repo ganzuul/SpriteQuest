@@ -525,7 +525,7 @@ export class Canvas {
         if (!element || !this.host.contains(element)) return { kind: 'outside' };
         const pin = this.#nativePin(element); if (pin) return { kind: 'pin', pin };
         if (element.closest('.pc-node, .pc-group-frame')) return { kind: 'body' };
-        if (element.closest('button, input, textarea, select, summary, a, [contenteditable="true"], .pc-wire-hit')) return { kind: 'surface' };
+        if (element.closest('button, input, textarea, select, summary, a, [contenteditable="true"], .pc-wire-hit, .pc-comment-header, .pc-comment-resize')) return { kind: 'surface' };
         return { kind: 'empty' };
     }
 

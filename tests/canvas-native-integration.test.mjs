@@ -122,6 +122,21 @@ test('native empty drop opens captured search and genuine body drop cancels', as
     await env.canvas.destroy(); document.elementFromPoint = () => null;
 });
 
+test('releasing a connection on comment header padding cancels instead of opening search', async () => {
+    const env = nativeFixture();
+    try {
+        env.draw.nodes.comment = { id: 'comment', type: 'note', commentFrame: true, title: 'Comment', content: '', x: 250, y: 20, w: 360, h: 220 };
+        env.draw.nativeCards.comment = { canonicalTitle: 'Comment', family: 'Organization', body: '', ports: [], iconPath: 'M1 1', hostResult: false };
+        env.canvas.render(); env.measure();
+        pointer(env.pin('source', 'out'), 'pointerdown', 180, 54);
+        document.elementFromPoint = () => env.host.querySelector('.pc-comment-header');
+        pointer(window, 'pointerup', 255, 25);
+        assert.equal(env.bridge.project().search, null);
+        assert.equal(env.canvas.hasContentGesture(), false);
+        assert.deepEqual(env.commands, []);
+    } finally { await env.canvas.destroy(); document.elementFromPoint = () => null; }
+});
+
 test('Escape cancels the real native bridge and unexpected native node capture loss restores positions', async () => {
     const env = nativeFixture();
     pointer(env.pin('source', 'out'), 'pointerdown', 180, 54);
