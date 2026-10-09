@@ -4,7 +4,7 @@ import { prepareWorkflowInsertion, parseWorkflowInsertionFile } from '../src/wor
 import { exportWorkflow } from '../src/workflow/packages.js';
 import { starterGraph } from '../src/workflow/starters.js';
 import { graphDocumentSignature, graphSemanticSignature } from '../src/workflow/ports.js';
-import { checkKey } from '../src/compile.js';
+import { checkKey, deciderInputList } from '../src/compile.js';
 
 test('file preview parses real native and legacy envelopes purely without creating an Output', () => {
     const native = starterGraph('native-guidance'), legacy = legacyFragment();
@@ -139,6 +139,11 @@ test('legacy missing or unreadable selected-input references reject before alloc
         graph => { delete graph.wires.all; },
         graph => { graph.wires['chosen-wire'].to = 'other'; },
         graph => { graph.wires['chosen-wire'].mode = 'activate'; },
+        graph => {
+            graph.nodes.chosen.type = 'generate';
+            graph.wires['chosen-wire'].loop = { max: 3, stopWhenSame: true };
+            assert.deepEqual(deciderInputList(graph, graph.nodes.decider).map(input => input.wireId), ['all']);
+        },
         graph => { graph.nodes.decider.keys[0].conditions[0].input = 12; },
     ];
     let allocations = 0;

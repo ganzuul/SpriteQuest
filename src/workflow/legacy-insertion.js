@@ -71,7 +71,7 @@ export function validateLegacyInsertionGraph(graph) {
                 // Empty/absent means all inputs together; every selected input is a wire ID.
                 if (!condition?.input) continue;
                 const wire = typeof condition.input === 'string' && Object.hasOwn(graph.wires ?? {}, condition.input) ? graph.wires[condition.input] : null;
-                if (!wire || wire.to !== node.id || wire.mode === 'activate') return fail('INVALID_DECIDER_INPUT', 'A selected Decider incoming wire is missing or cannot supply text. Include that incoming wire, choose all inputs together, or Open separately.');
+                if (!wire || wire.to !== node.id || wire.mode === 'activate' || wire.loop) return fail('INVALID_DECIDER_INPUT', 'A selected Decider incoming wire is missing or cannot supply text. Include that incoming wire, choose all inputs together, or Open separately.');
             }
         }
     }
