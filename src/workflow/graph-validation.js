@@ -236,6 +236,18 @@ function inspectSnapshots(value) {
  * @returns {import('./types').Result<import('./types').DefinitionDiagnostics>}
  */
 export function validateDefinition(definition, snapshots = {}) {
+    return inspectDefinition(definition, snapshots, false);
+}
+
+/** Read-only library display inventory from the same checked definition expansion.
+ * This inspects a real definition and closure, never an invented root workflow.
+ * Returned data is owned; it does not freeze or modify either caller input.
+ */
+export function inspectDefinitionGraph(definition, snapshots = {}) {
+    return inspectDefinition(definition, snapshots, true);
+}
+
+function inspectDefinition(definition, snapshots, includeExpansion) {
     if (!safeWorkflowData(definition) || !safeWorkflowData(snapshots) || !record(definition) || !record(snapshots)) return fail('DEFINITION_DATA', 'Expected bounded plain definition data.');
     const key = definitionRefKey(definition);
     if (Object.hasOwn(snapshots, key)) {
@@ -260,7 +272,7 @@ export function validateDefinition(definition, snapshots = {}) {
         if (!descriptor.ok) return descriptor;
         parameterDescriptors[parameter.id] = descriptor.data;
     }
-    return { ok: true, data: { ref: { id: snapshot.id, version: snapshot.version, semanticHash: snapshot.semanticHash }, definition: snapshot, interface: snapshot.interface, parameters: snapshot.parameters, parameterDescriptors, nodeCount: ownExpansion.nodeCount, wireCount: ownExpansion.wireCount } };
+    return { ok: true, data: { ref: { id: snapshot.id, version: snapshot.version, semanticHash: snapshot.semanticHash }, definition: snapshot, interface: snapshot.interface, parameters: snapshot.parameters, parameterDescriptors, nodeCount: ownExpansion.nodeCount, wireCount: ownExpansion.wireCount, ...(includeExpansion ? { expansion: ownExpansion } : {}) } };
 }
 
 /** Checked structural inventory shared by authoring validation and execution planning. */
