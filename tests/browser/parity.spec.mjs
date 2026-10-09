@@ -82,11 +82,17 @@ test('copy and paste selected blocks preserve their internal wire and one undo s
 });
 test('contenteditable keeps typing shortcuts and narrow tools remain usable', async ({ page }) => {
     await page.setViewportSize({ width: 700, height: 900 }); await setup(page);
+    const inspectorToggle = page.getByRole('button', { name: 'Toggle inspector', exact: true });
+    if (await inspectorToggle.getAttribute('aria-pressed') === 'false') await inspectorToggle.click();
+    await expect(page.locator('.pc-inspector')).toBeVisible();
     await page.evaluate(() => {
         const editor = document.createElement('div'); editor.contentEditable = 'true'; editor.setAttribute('aria-label', 'Editable probe'); editor.textContent = 'Typing';
-        document.querySelector('.pc-inspector').append(editor); document.querySelector('.pc-root').classList.remove('pc-hide-inspector'); editor.focus();
+        document.querySelector('.pc-inspector').append(editor); editor.focus();
     });
+    const editor = page.getByLabel('Editable probe', { exact: true });
+    await expect(editor).toBeVisible(); await expect(editor).toBeFocused();
     await page.keyboard.press('Control+a'); await page.keyboard.press('Backspace'); await page.keyboard.press('Space'); await page.keyboard.press('Escape');
+    expect(await editor.textContent()).toMatch(/^\s$/);
     expect(await page.evaluate(() => ({ open: window.canvasHarness.UI.isOpen(), nodes: Object.keys(window.canvasHarness.graph.nodes).length, pan: window.canvasHarness.canvas.spaceDown }))).toEqual({ open: true, nodes: 4, pan: false });
     await page.getByRole('button', { name: 'Toggle inspector', exact: true }).click();
     await page.getByRole('button', { name: 'Pan tool', exact: true }).focus(); await page.keyboard.press('Space');

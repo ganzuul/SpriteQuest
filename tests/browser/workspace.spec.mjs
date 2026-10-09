@@ -1,16 +1,23 @@
 import { test, expect } from '@playwright/test';
 
+async function previewMenu(page, command) {
+    await page.getByRole('button', { name: 'Preview', exact: true }).focus();
+    await page.keyboard.press('ArrowDown');
+    const item = page.getByRole('menu', { name: 'Preview', exact: true }).getByRole('menuitem', { name: command, exact: true });
+    await expect(item).toBeVisible(); await item.focus(); await page.keyboard.press('Enter');
+}
+
 async function interruptDivider(page, interruption) {
     if (interruption === 'Escape') await page.keyboard.press('Escape');
+    else if (interruption === 'unmount') await previewMenu(page, 'Collapse preview');
     else await page.evaluate(interruption => {
         const handle = document.querySelector('.pc-pane-divider');
         if (interruption === 'pointercancel') handle.dispatchEvent(new PointerEvent('pointercancel', { pointerId: window.dividerPointer, bubbles: true }));
         else if (interruption === 'lost capture') handle.releasePointerCapture(window.dividerPointer);
         else if (interruption === 'blur') window.dispatchEvent(new Event('blur'));
-        else document.querySelector('.pc-preview-pane-head button').click();
     }, interruption);
     await page.mouse.up();
-    if (interruption === 'unmount') await page.getByRole('button', { name: 'Expand preview' }).click();
+    if (interruption === 'unmount') await previewMenu(page, 'Show preview');
 }
 
 for (const selected of [true, false]) for (const interruption of ['pointercancel', 'lost capture', 'blur', 'unmount']) test(`divider ${interruption} rolls back with ${selected ? 'a selection' : 'no selection'} and permits another drag`, async ({ page }) => {
@@ -156,14 +163,14 @@ test('shelf stays outside the camera and cascades align with their opening rows'
     await page.evaluate(() => window.canvasHarness.view({ x: -200, y: 150, zoom: 1.5 }));
     expect(await shelf.boundingBox()).toEqual(first);
     await expect(page.locator('[data-family="Transpose"]')).toBeDisabled();
-    const input = page.locator('[data-family="Input"]'); await input.click();
+    const input = page.locator('[data-family="Input"]'); await input.focus(); await page.keyboard.press('ArrowRight');
     const row = await input.boundingBox(), family = await page.locator('.pc-family-menu').boundingBox();
     expect(family.y).toBeCloseTo(row.y, 0); expect(family.x).toBeGreaterThanOrEqual(row.x + row.width);
-    const category = page.getByRole('menuitem', { name: 'LEGACY BLOCKS', exact: false }); await category.click();
+    const category = page.getByRole('menu', { name: 'Input categories', exact: true }).getByRole('menuitem', { name: 'BLOCKS', exact: true }); await category.focus(); await page.keyboard.press('ArrowRight');
     const opening = await category.boundingBox(), leaf = await page.locator('.pc-leaf-menu').boundingBox();
     expect(leaf.y).toBeCloseTo(opening.y, 0); expect(leaf.x).toBeGreaterThanOrEqual(family.x + family.width);
     const count = await page.evaluate(() => Object.keys(window.canvasHarness.graph.nodes).length);
-    await page.getByRole('menuitem', { name: 'Prompt L', exact: true }).click();
+    await page.getByRole('menu', { name: 'Input nodes', exact: true }).getByRole('menuitem', { name: 'Prompt', exact: true }).click();
     expect(await page.evaluate(() => Object.keys(window.canvasHarness.graph.nodes).length)).toBe(count + 1);
 });
 
@@ -182,8 +189,9 @@ for (const width of [1024, 736, 360, 320]) test(`workspace fits ${width}px and l
     expect(requests.every(url => new URL(url).hostname === '127.0.0.1')).toBe(true);
     await expect(page.locator('.pc-brand span')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Help', exact: true })).toBeInViewport();
-    await page.locator('[data-family="Input"]').click();
-    await page.getByRole('menuitem', { name: 'LEGACY BLOCKS', exact: false }).click();
+    await page.locator('[data-family="Input"]').focus(); await page.keyboard.press('ArrowRight');
+    const category = page.getByRole('menu', { name: 'Input categories', exact: true }).getByRole('menuitem', { name: 'BLOCKS', exact: true });
+    await category.focus(); await page.keyboard.press('ArrowRight');
     const menu = await page.locator('.pc-leaf-menu').boundingBox(), graph = await page.locator('.pc-canvas-area').boundingBox();
     expect(menu.x).toBeGreaterThanOrEqual(graph.x); expect(menu.x + menu.width).toBeLessThanOrEqual(graph.x + graph.width + 1);
 });
@@ -256,8 +264,8 @@ test('preview divider redistributes panes without changing the graph camera, sel
     expect((await preview.boundingBox()).height).toBeGreaterThan(before.preview.height + 60);
     expect((await graph.boundingBox()).height).toBeLessThan(before.graph.height - 60);
     await divider.focus(); await page.keyboard.press('ArrowUp');
-    await page.getByRole('button', { name: 'Collapse preview' }).click();
-    await page.getByRole('button', { name: 'Expand preview' }).click();
+    await previewMenu(page, 'Collapse preview');
+    await previewMenu(page, 'Show preview');
     const preserved = await page.evaluate(id => {
         const { canvas } = window.canvasHarness, probe = window.workspaceProbe;
         return { card: probe.card === document.querySelector(`.pc-node[data-id="${id}"]`), camera: { ...canvas.view }, selection: canvas.selection.id, preview: probe.preview === document.querySelector('.pc-preview') && probe.previewText === document.querySelector('.pc-preview').textContent };

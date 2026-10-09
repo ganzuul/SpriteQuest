@@ -1,5 +1,5 @@
-import { operationFor } from './workflow/catalog.js?v=0.19.1';
-import { isNativeWorkflow } from './workflow/contracts.js?v=0.19.1';
+import { operationFor } from './workflow/catalog.js?v=0.20.0';
+import { isNativeWorkflow } from './workflow/contracts.js?v=0.20.0';
 /**
  * Lattice — the canvas renderer.
  *
@@ -16,14 +16,14 @@ import { isNativeWorkflow } from './workflow/contracts.js?v=0.19.1';
 import {
     NODE_TYPES, WIRE_KINDS, connect, disconnect, removeNode, touchGraph, wiresInto, deciderKeys, outPorts, hasPorts,
     groupMembers, ungroup, deleteGroup, groupOf, inOffGroup, settleOnBlankets, gatherBlanket, setGroupEnabled, blanketAt, GROUP_MIN,
-} from './state.js?v=0.19.1';
-import { selectLabel } from './select.js?v=0.19.1';
-import { graphPoint, zoomAt, wheelFactor } from './canvas/camera.js?v=0.19.1';
-import { createFrameScheduler } from './canvas/frame.js?v=0.19.1';
-import { selectionMode, rectangle, intersects, combineSelection } from './canvas/selection.js?v=0.19.1';
-import { createGeometryCache, indexIncidentWires } from './canvas/geometry.js?v=0.19.1';
-import { nodeCard } from './canvas/presentation.js?v=0.19.1';
-import { mountCanvas } from '../dist/lattice-ui.js?v=0.19.1';
+} from './state.js?v=0.20.0';
+import { selectLabel } from './select.js?v=0.20.0';
+import { graphPoint, zoomAt, wheelFactor } from './canvas/camera.js?v=0.20.0';
+import { createFrameScheduler } from './canvas/frame.js?v=0.20.0';
+import { selectionMode, rectangle, intersects, combineSelection } from './canvas/selection.js?v=0.20.0';
+import { createGeometryCache, indexIncidentWires } from './canvas/geometry.js?v=0.20.0';
+import { nodeCard } from './canvas/presentation.js?v=0.20.0';
+import { mountCanvas } from '../dist/lattice-ui.js?v=0.20.0';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -287,6 +287,7 @@ export class Canvas {
         const boxes = Object.values(this.graph?.nodes ?? {}).filter(n => !this.#folded(n)).map(n => ({ x: n.x, y: n.y, w: this.widthOf(n), h: this.heightOf(n) || 160 }));
         for (const g of Object.values(this.graph?.groups ?? {})) {
             if (g.collapsed) boxes.push({ x: g.x, y: g.y, w: g.w || 260, h: this.geometry.get(`group:${g.id}`, 160) || 160 });
+            else if (isNativeWorkflow(this.graph)) boxes.push(this.#nativeGroupFrame(g));
             else if (g.frame) boxes.push(g.frame);
         }
         if (!boxes.length) return;
@@ -462,11 +463,23 @@ export class Canvas {
         return { ins, outs };
     }
 
+    /** Native blankets use cached display geometry without changing saved groups. */
+    #nativeGroupFrame(g) {
+        const members = groupMembers(this.graph, g.id);
+        if (!members.length) return g.frame ?? { x: g.x ?? 0, y: g.y ?? 0, w: g.w || 260, h: 140 };
+        const x = Math.min(...members.map(node => node.x)) - 24, y = Math.min(...members.map(node => node.y)) - 48;
+        const right = Math.max(...members.map(node => node.x + this.widthOf(node))) + 24;
+        const bottom = Math.max(...members.map(node => node.y + this.heightOf(node))) + 24;
+        if (!g.frame) return { x, y, w: right - x, h: bottom - y };
+        const left = Math.min(g.frame.x, x), top = Math.min(g.frame.y, y);
+        return { x: left, y: top, w: Math.max(g.frame.x + g.frame.w, right) - left, h: Math.max(g.frame.y + g.frame.h, bottom) - top };
+    }
+
     /** A folded group, drawn as one block. */
     #groupCard(g) {
         const members = groupMembers(this.graph, g.id).sort((a, b) => (a.y - b.y) || (a.x - b.x));
         if (!g.collapsed && !isNativeWorkflow(this.graph)) this.#groupFrame(g);
-        const frame = g.frame ?? { x: g.x, y: g.y, w: g.w || 260, h: 140 };
+        const frame = !g.collapsed && isNativeWorkflow(this.graph) ? this.#nativeGroupFrame(g) : g.frame ?? { x: g.x, y: g.y, w: g.w || 260, h: 140 };
         const selected = this.selection?.kind === 'group' && this.selection.id === g.id;
         const multi = members.length && members.every(n => this.multi.has(n.id));
         const groupTokens = members.reduce((n, m) => n + (this.tokens?.get(m.id)?.own ?? 0), 0);
@@ -616,6 +629,8 @@ export class Canvas {
                 boxes.push({ x: g.x, y: g.y, w: g.w || 260, h: this.geometry.get(`group:${g.id}`, 80) });
             } else boxes.push({ x: n.x, y: n.y, w: this.widthOf(n), h: this.heightOf(n) || 90 });
         }
+        const selectedGroup = isNativeWorkflow(this.graph) && this.selection?.kind === 'group' ? this.graph.groups?.[this.selection.id] : null;
+        if (selectedGroup && !selectedGroup.collapsed) boxes.push(this.#nativeGroupFrame(selectedGroup));
         if (!boxes.length) return;
         const minX = Math.min(...boxes.map(b => b.x)) - 60, minY = Math.min(...boxes.map(b => b.y)) - 60;
         const maxX = Math.max(...boxes.map(b => b.x + b.w)) + 60, maxY = Math.max(...boxes.map(b => b.y + b.h)) + 60;
