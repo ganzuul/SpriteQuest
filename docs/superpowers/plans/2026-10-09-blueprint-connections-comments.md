@@ -61,4 +61,4 @@
 - [x] Coordinate cleanup integration order and apply the latest cleanup baseline safely.
 - [x] Run full Node/type/build/assets/browser/smoke checks appropriate to the final baseline.
 - [x] Independently review the combined change, fix actionable findings and reverify affected behavior.
-- [ ] Commit only owned changes, fetch and integrate remote updates normally, push main without force, verify remote SHA and report completion.
+- [x] Commit only owned changes, fetch and integrate remote updates normally, push main without force, verify remote SHA and report completion.

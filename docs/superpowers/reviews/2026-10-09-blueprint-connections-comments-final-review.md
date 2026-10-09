@@ -14,4 +14,4 @@ The renderer benchmark passed 36 scenarios across three themes, two zoom levels,
 
 The final `npm run check` passed all 102 Node test files, zero Svelte errors/warnings, the production build, 223 versioned local asset imports, and all 137 browser tests. Documentation validation also passed. The final rebuilt UI bundle matches the inspected capture hash above.
 
-Main publication is the remaining delivery step, authorized by the user.
+Release 0.22.0 was normally pushed to main as feature commit `6f7b5c6e7f7cd6a5cbde0990041a5ee6fab4c649`. The network-enabled GitHub CLI independently returned that exact SHA for remote main. This documentation follow-up records publication and completes the plan; it changes no release source or assets.
