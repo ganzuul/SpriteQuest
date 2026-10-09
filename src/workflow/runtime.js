@@ -6,6 +6,8 @@ import { scanDraft, repairDraft, validatePatches } from './repair.js?v=0.22.0';
 import { graphSemanticSignature } from './ports.js?v=0.22.0';
 import { executePrimitive, PRIMITIVE_OPERATIONS } from './operations/nodes.js?v=0.22.0';
 import { executeContextJoin } from './operations/context-join.js?v=0.22.0';
+import { executeTranspose, TRANSPOSE_OPERATIONS } from './operations/transpose-nodes.js?v=0.22.0';
+import { cleanupDraft, CLEANUP_MODES } from './operations/prose-cleanup.js?v=0.22.0';
 import { admitRunPlan, createRunRecorder } from './recording.js?v=0.22.0';
 import { addressKey, freeze, own, parseRunPlan, safeBinding, safeError, safeUsage, boundedText } from './record-data.js?v=0.22.0';
 
@@ -29,6 +31,7 @@ async function executeNode(node,inputs,op,local) {
     const input=inputs.in;
     if(Object.hasOwn(PRIMITIVE_OPERATIONS,node.operation))return executePrimitive(node,inputs,{phase:local.phase,...(local.signal?{signal:local.signal}:{}),...(local.createWorker?{createWorker:local.createWorker}:{}),...(local.timeoutMs!==undefined?{timeoutMs:local.timeoutMs}:{})});
     if(node.operation==='context-join')return executeContextJoin(node,inputs);
+    if(Object.hasOwn(TRANSPOSE_OPERATIONS,node.operation))return executeTranspose(node,inputs,{phase:local.phase,request:local.request,countTokens:local.countTokens,binding:local.binding,...(local.signal?{signal:local.signal}:{})});
     switch(node.operation) {
         case 'scene-context':case 'reply-snapshot': {
             const snapshot=await local.snapshot(op.phase,node),result=snapshot?.ok===false?snapshot:success(structuredClone(snapshot));
@@ -46,7 +49,12 @@ async function executeNode(node,inputs,op,local) {
             result.reports=[{code:'GUIDANCE_BUDGET',nodeId:node.id,...measured,budget:node.budgetTokens??768}];return result;
         }
         case 'pattern-scan':return scanDraft(input,node);
-        case 'repair':return repairDraft(input,node,local);
+        case 'repair': {
+            if(!CLEANUP_MODES.includes(node.mode))return repairDraft(input,node,local);
+            const settings=Object.fromEntries(op.controls.filter(key=>key!=='policyVersion').map(key=>[key,node[key]===undefined?op.defaults[key]:node[key]]));
+            const result=await cleanupDraft(input,settings,{request:local.request,countTokens:local.countTokens,binding:local.binding,...(local.signal?{signal:local.signal}:{}),...(inputs.context?{context:inputs.context}:{})});
+            return result.ok?{ok:true,artifact:result.data.artifact,reports:result.data.report}:result;
+        }
         case 'validate-patches':return validatePatches(input,node);
         case 'review-gate':case 'apply-reply':return success({...input,reviewRequired:true});
         case 'reroute':return success(input);

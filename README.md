@@ -44,7 +44,7 @@ These are combinations of the shipped tools. The four included examples are star
 
 ## Available nodes
 
-The current toolset contains **16 operations**, plus subgraph instances and their input/output boundaries. **0** means no auxiliary model call; counts are per operation execution, separate from the normal SillyTavern reply.
+This development branch contains **19 operations**, plus subgraph instances and their input/output boundaries. **0** means no auxiliary model call; counts are per operation execution, separate from the normal SillyTavern reply.
 
 | Family | Node | Purpose | Model calls |
 | --- | --- | --- | ---: |
@@ -57,6 +57,9 @@ The current toolset contains **16 operations**, plus subgraph instances and thei
 | Shaping | **Reroute** | Route a typed connection through a compact graph point | 0 |
 | Surface | **Text Rules** | Replace or extract text with literal/regex rules; propose Draft patches | 0 |
 | Surface | **Repair** | Generate bounded patches for scanned spans | 0–1 |
+| Transpose | **Style Transfer** | Apply reference voice, rhythm, diction or register to permitted draft text | 0–1 |
+| Transpose | **Format Transfer** | Apply an example or template without inventing missing content | 0–1 |
+| Transpose | **Terminology Map** | Apply a canonical glossary with simultaneous literal replacements | 0 |
 | Derive | **Pattern Scan** | Identify configured literal patterns in a reply | 0 |
 | Derive | **JSON Decode** | Parse JSON text or check Data against a supported schema | 0 |
 | Derive | **Select Fields** | Extract and rename structured fields by path | 0 |
@@ -65,7 +68,7 @@ The current toolset contains **16 operations**, plus subgraph instances and thei
 | Output | **Review Gate** | Mark a candidate for explicit review | 0 |
 | Output | **Apply Reply** | Expose the final reviewed reply result | 0 |
 
-Transpose is a visible shelf family with no supported operation yet. Nodes have phase and artifact requirements; the [node reference](docs/node-reference.md) explains their ports, controls, and compatible uses.
+Repair also offers Inspect, Contextual Cleanup and Strict Avoidance modes using the complete category-based policy. Nodes have phase and artifact requirements; the [node reference](docs/node-reference.md) explains their ports and controls. The [reference library guide](docs/lattice-reference-library.md) covers reusable Context Lens, Scene Compass and cleanup workflows.
 
 ## Reuse a process, inspect its internals
 

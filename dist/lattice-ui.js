@@ -5083,6 +5083,21 @@ var Ds = "M3 7 12 2l9 5v10l-9 5-9-5ZM3 7l9 5 9-5M12 12v10", Os = "m2 7 5-3 5 3v6
 		"rr",
 		"m4 19 11-11 3 3L7 22ZM3 4h6M6 1v6m11-5v4m-2-2h4"
 	],
+	"style-transfer": [
+		"Reference voice",
+		"st",
+		"M3 7h18m-4-4 4 4-4 4M5 17h14M8 14l-3 3 3 3"
+	],
+	"format-transfer": [
+		"Reference format",
+		"ft",
+		"M4 3h7v7H4zM13 14h7v7h-7zM14 6h6m-3-3 3 3-3 3M4 17h6"
+	],
+	"terminology-map": [
+		"Canonical terms",
+		"tm",
+		"M3 5h7v14H3zM14 5h7v14h-7zM10 12h4m-2-2 2 2-2 2"
+	],
 	"text-rules": [
 		"Revision",
 		"tr",
@@ -5269,8 +5284,8 @@ function Ks(e, t) {
 		F(a);
 		var c = V(a), l = B(c, !0);
 		F(c), F(r), H((e) => {
-			$(r, "data-family", G(n).name), r.disabled = e, $(r, "title", G(n).name === "Transpose" ? "No supported Transpose operations yet." : "Browse " + G(n).name + " nodes"), $(r, "aria-expanded", G(o) === G(n).name), i = ni(r, "", i, { "--pc-family": G(n).color }), $(s, "d", G(n).icon), Y(l, G(n).name);
-		}, [() => !v(G(n).name).length && !(G(n).name === "Subgraphs" && t.manageSubgraphs) || G(n).name === "Transpose"]), K("click", r, (e) => C(G(n).name, e.currentTarget)), _r("pointerenter", r, (e) => {
+			$(r, "data-family", G(n).name), r.disabled = e, $(r, "title", "Browse " + G(n).name + " nodes"), $(r, "aria-expanded", G(o) === G(n).name), i = ni(r, "", i, { "--pc-family": G(n).color }), $(s, "d", G(n).icon), Y(l, G(n).name);
+		}, [() => !v(G(n).name).length && !(G(n).name === "Subgraphs" && t.manageSubgraphs)]), K("click", r, (e) => C(G(n).name, e.currentTarget)), _r("pointerenter", r, (e) => {
 			e.pointerType !== "touch" && !e.currentTarget.disabled && C(G(n).name, e.currentTarget, !1);
 		}), K("keydown", r, O), J(e, r);
 	}), F(te), yi(te, (e) => r = e, () => r);

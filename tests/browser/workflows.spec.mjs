@@ -171,9 +171,9 @@ test('formation request summary follows scan mode and additional reachable repai
     await installWorkflow(page, 'Reviewed AI De-slop');
     await fixtureRole(page, 'Prose', 'prose');
     await inspectOperation(page, 'repair');
-    await page.getByLabel(/^mode/).selectOption('scan');
+    await page.getByLabel('Mode', { exact: true }).selectOption('scan');
     await expectBound(page, 0);
-    await page.getByLabel(/^mode/).selectOption('repair');
+    await page.getByLabel('Mode', { exact: true }).selectOption('repair');
     await page.evaluate(() => {
         const { graph, S, UI } = window.canvasHarness;
         const group = Object.values(graph.groups)[0];
@@ -504,7 +504,7 @@ test('native camera pan and zoom preserve the focused editor without domain work
     await runRoot(page);
     await expect(page.getByRole('button', { name: 'Apply reviewed candidate', exact: true })).toBeVisible();
     await inspectOperation(page, 'repair');
-    await page.getByLabel('instructions', { exact: true }).focus();
+    await page.getByLabel('Instructions', { exact: true }).focus();
     const measured = await page.evaluate(async () => {
         const { context: c, canvas, settle } = window.canvasHarness;
         const controller = (await import('/src/run.js?v=' + window.canvasHarness.version)).getNativeWorkflowController();
@@ -533,8 +533,8 @@ test('native camera pan and zoom preserve the focused editor without domain work
     await expect(page.getByRole('button', { name: 'Apply reviewed candidate', exact: true })).toBeEnabled();
     expect(await page.evaluate(async () => { const controller = (await import('/src/run.js?v=' + window.canvasHarness.version)).getNativeWorkflowController(); return controller.candidateStatus(controller.lastResult().reviewHandles[0]).ok; })).toBe(true);
     await inspectOperation(page, 'repair');
-    await page.getByLabel('instructions', { exact: true }).fill('A semantic operation edit.');
-    await page.getByLabel('instructions', { exact: true }).press('Tab');
+    await page.getByLabel('Instructions', { exact: true }).fill('A semantic operation edit.');
+    await page.getByLabel('Instructions', { exact: true }).press('Tab');
     await expect(page.getByRole('button', { name: 'Apply reviewed candidate', exact: true })).toHaveCount(0);
 });
 

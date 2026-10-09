@@ -40,6 +40,44 @@ function workerHarness() {
     };
 }
 const literal = (pattern, replacement, flags) => ({ kind: 'literal', pattern, replacement, ...(flags ? { flags } : {}) });
+test('raw Draft rules require explicit scope before running a Worker', async () => {
+    const harness = workerHarness();
+    const result = await createDraftRulePatches({ kind: 'draft', text: 'cold', source: { originalText: 'cold' } }, { rules: [literal('cold', 'warm')] }, { workerFactory: harness.factory });
+    assert.equal(result.error?.code, 'SCOPE_REQUIRED');
+    assert.equal(harness.workers.length, 0);
+});
+test('Draft rules narrow narration and pins into windows while retaining original parent indices', async () => {
+    const { validatePatches } = await import('../src/workflow/repair.js');
+    const harness = workerHarness();
+    const text = 'anchor | cold keep cold "cold" cold';
+    const input = { kind: 'draft', text, source: { originalText: text, token: 'original-parent' }, scope: 'whole', spans: [
+        { index: 0, start: 0, end: 6, text: 'anchor' }, { index: 1, start: 9, end: text.length, text: text.slice(9), permission: 'original parent' },
+    ] };
+    const result = await createDraftRulePatches(input, { scope: 'narration', protectedLiterals: ['keep cold'], rules: [literal('cold', 'warm')] }, { workerFactory: harness.factory });
+    assert.equal(result.ok, true);
+    assert.deepEqual(structuredClone(result.data.artifact.patches), [{ index: 1, replacement: 'warm keep cold "cold" warm' }]);
+    assert.deepEqual(structuredClone(result.data.artifact.draft.spans), input.spans);
+    assert.deepEqual(result.data.artifact.protectedLiterals, ['keep cold']);
+    assert.equal(validatePatches(result.data.artifact).artifact.text, 'anchor | warm keep cold "cold" warm');
+    assert.equal(result.data.artifact.draft.source.token, 'original-parent');
+    await harness.cleaned();
+});
+test('Text Rules adapter authors and executes explicit Draft scope and protected literals', async () => {
+    const { describePrimitive, executePrimitive } = await import('../src/workflow/operations/nodes.js');
+    const described = describePrimitive({ operation: 'text-rules', inputKind: 'draft' });
+    assert.equal(described.ok, true);
+    assert.equal(described.data.descriptor.defaults.scope, 'authorized');
+    assert.deepEqual(described.data.descriptor.defaults.protectedLiterals, []);
+    assert.ok(described.data.descriptor.controls.includes('scope'));
+    assert.ok(described.data.descriptor.controls.includes('protectedLiterals'));
+    const harness = workerHarness();
+    const text = 'cold keep cold "cold"';
+    const result = await executePrimitive({ operation: 'text-rules', inputKind: 'draft', scope: 'narration', protectedLiterals: ['keep cold'], rules: [literal('cold', 'warm')] }, { in: { kind: 'draft', text, source: { originalText: text } } }, { createWorker: harness.factory });
+    assert.equal(result.ok, true);
+    const { validatePatches } = await import('../src/workflow/repair.js');
+    assert.equal(validatePatches(result.artifact).artifact.text, 'warm keep cold "cold"');
+    await harness.cleaned();
+});
 test('literal replacements are global literal strings and terminate the real Worker', async () => {
     assert.equal(typeof applyTextRules, 'function');
     const harness = workerHarness();
@@ -194,7 +232,7 @@ test('Draft rules emit one validated patch per original span and freeze the sour
     draft.source.token = 'changed-after-snapshot';
     const result = await pending;
     assert.equal(result.ok, true);
-    assert.deepEqual(result.data.artifact.patches, [{ index: 0, replacement: 'hot' }, { index: 1, replacement: 'hot' }]);
+    assert.deepEqual(structuredClone(result.data.artifact.patches), [{ index: 0, replacement: 'hot' }, { index: 1, replacement: 'hot' }]);
     // Compare complete own payload; safe record prototypes deliberately differ from the input.
     assert.deepEqual(structuredClone(result.data.artifact.draft), original);
     assert.equal(Object.getPrototypeOf(result.data.artifact.draft), null);
@@ -211,17 +249,17 @@ test('Draft rules emit one validated patch per original span and freeze the sour
     assert.equal(candidate.artifact.reviewRequired, true);
     await harness.cleaned();
 });
-test('raw unscoped Draft derives only a whole-text original span and empty Draft has none', async () => {
+test('explicit whole scope constructs only a whole-text original span and empty Draft has none', async () => {
     const { validatePatches } = await import('../src/workflow/repair.js');
     const harness = workerHarness();
     const draft = { kind: 'draft', text: 'cold', source: { originalText: 'cold' } };
-    const result = await createDraftRulePatches(draft, { rules: [literal('cold', 'warm')] }, { workerFactory: harness.factory });
+    const result = await createDraftRulePatches(draft, { scope: 'whole', rules: [literal('cold', 'warm')] }, { workerFactory: harness.factory });
     assert.equal(result.ok, true);
-    assert.equal(result.data.artifact.draft.scope, 'whole');
+    assert.equal(Object.hasOwn(result.data.artifact.draft, 'scope'), false, 'original metadata remains unannotated');
     assert.deepEqual(result.data.artifact.draft.spans, [{ index: 0, start: 0, end: 4, text: 'cold' }]);
     assert.equal(Object.hasOwn(draft, 'spans'), false);
     assert.equal(validatePatches(result.data.artifact).artifact.text, 'warm');
-    const empty = await createDraftRulePatches({ kind: 'draft', text: '', source: { originalText: '' } }, {}, { workerFactory: harness.factory });
+    const empty = await createDraftRulePatches({ kind: 'draft', text: '', source: { originalText: '' } }, { scope: 'whole' }, { workerFactory: harness.factory });
     assert.equal(empty.ok, true);
     assert.deepEqual(empty.data.artifact.draft.spans, []);
     assert.deepEqual(empty.data.artifact.patches, []);
@@ -312,24 +350,27 @@ test('Text may delete freely while Draft deletion fails the existing nonblank pa
     const text = await applyTextRules('cold', settings, { workerFactory: harness.factory });
     assert.equal(text.ok, true);
     assert.equal(text.data.text, '');
-    const draft = await createDraftRulePatches({ kind: 'draft', text: 'cold', source: { originalText: 'cold' } }, settings, { workerFactory: harness.factory });
+    const draft = await createDraftRulePatches({ kind: 'draft', text: 'cold', source: { originalText: 'cold' } }, { ...settings, scope: 'whole' }, { workerFactory: harness.factory });
     assert.equal(draft.error?.code, 'INVALID_PATCHES');
     assert.equal(draft.data, undefined);
     await harness.cleaned();
 });
 test('Draft protected wording is preserved by the existing gate across span boundaries', async () => {
+    const { validatePatches } = await import('../src/workflow/repair.js');
     const harness = workerHarness();
     const text = 'keep cold now';
     const draft = { kind: 'draft', text, source: { originalText: text }, spans: [{ index: 0, start: 5, end: 9, text: 'cold' }], protectedLiterals: ['keep cold'] };
-    const rejected = await createDraftRulePatches(draft, { rules: [literal('cold', 'warm')] }, { workerFactory: harness.factory });
+    const rejected = validatePatches({ kind: 'patches', draft, patches: [{ index: 0, replacement: 'warm' }] });
     assert.equal(rejected.error?.code, 'PROTECTED_LITERAL_REMOVED');
-    assert.equal(rejected.data, undefined);
+    assert.equal(validatePatches({ kind: 'patches', draft, patches: [{ index: 0, replacement: 'cold and warm' }] }).artifact.text, 'keep cold and warm now');
+    const protectedResult = await createDraftRulePatches(draft, { rules: [literal('cold', 'warm')] }, { workerFactory: harness.factory });
+    assert.equal(protectedResult.ok, true);
+    assert.deepEqual(protectedResult.data.artifact.patches, []);
     assert.equal(draft.text, text);
     const accepted = await createDraftRulePatches(draft, { rules: [literal('cold', 'cold and warm')] }, { workerFactory: harness.factory });
     assert.equal(accepted.ok, true);
     assert.deepEqual(accepted.data.artifact.protectedLiterals, ['keep cold']);
-    const { validatePatches } = await import('../src/workflow/repair.js');
-    assert.equal(validatePatches(accepted.data.artifact).artifact.text, 'keep cold and warm now');
+    assert.equal(validatePatches(accepted.data.artifact).artifact.text, text, 'protected windows are never transformed');
     await harness.cleaned();
 });
 
@@ -366,7 +407,7 @@ test('malformed protected-literal metadata cannot weaken Draft permissions', asy
 });
 test('invalid regex syntax fails even when an empty Draft has no segments', async () => {
     const harness = workerHarness();
-    const result = await createDraftRulePatches({ kind: 'draft', text: '', source: { originalText: '' } }, { rules: [{ kind: 'regex', pattern: '(' }] }, { workerFactory: harness.factory });
+    const result = await createDraftRulePatches({ kind: 'draft', text: '', source: { originalText: '' } }, { scope: 'whole', rules: [{ kind: 'regex', pattern: '(' }] }, { workerFactory: harness.factory });
     assert.equal(result.error?.code, 'INVALID_RULES');
     await harness.cleaned();
 });
@@ -416,12 +457,12 @@ async function withInheritedGetter(key, value, operation) {
 }
 test('absent Draft scope never consults an inherited getter or widens raw permissions', async () => {
     const harness = workerHarness();
-    const { result, reads } = await withInheritedGetter('scope', 'dialogue', () => createDraftRulePatches({ kind: 'draft', text: 'cold', source: { originalText: 'cold', token: 'own-token' } }, { rules: [literal('cold', 'warm')] }, { workerFactory: harness.factory }));
+    const { result, reads } = await withInheritedGetter('scope', 'dialogue', () => createDraftRulePatches({ kind: 'draft', text: 'cold', source: { originalText: 'cold', token: 'own-token' } }, { scope: 'whole', rules: [literal('cold', 'warm')] }, { workerFactory: harness.factory }));
     assert.equal(reads, 0);
     assert.equal(result.ok, true);
-    assert.equal(result.data.artifact.draft.scope, 'whole');
+    assert.equal(Object.hasOwn(result.data.artifact.draft, 'scope'), false);
     assert.equal(result.data.artifact.draft.source.token, 'own-token');
-    assert.deepEqual(result.data.artifact.patches, [{ index: 0, replacement: 'warm' }]);
+    assert.deepEqual(structuredClone(result.data.artifact.patches), [{ index: 0, replacement: 'warm' }]);
     await harness.cleaned();
 });
 test('patch gate wrapper never reads inherited optional pins usage or finish', async () => {

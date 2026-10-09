@@ -160,7 +160,7 @@ async function metrics(env) {
                 radius: css.borderTopRightRadius, border: css.borderTopColor, shadow: css.boxShadow,
                 fontFamily: css.fontFamily, fontSize: css.fontSize, fontWeight: css.fontWeight, letterSpacing: css.letterSpacing };
         };
-        return { viewport: { width: innerWidth, height: innerHeight, dpr: devicePixelRatio },
+        return { mode: window.canvasHarness.S.settings().graphs[rootId].mode, viewport: { width: innerWidth, height: innerHeight, dpr: devicePixelRatio },
             brand: { text: document.querySelector('.pc-brand').textContent.trim(), ...read('.pc-brand'), wordmark: read('.pc-brand span'), fontReady: document.fonts.check('600 20px "Bricolage Grotesque"'), logo: read('.pc-brand img') },
             header: read('.pc-header'), graph: read('.pc-canvas-area'), preview: read('.pc-preview-pane'), inspector: read('.pc-inspector'), shelf: read('.pc-node-shelf'),
             activeTab: read('.pc-graph-tab[aria-selected="true"]'), breadcrumbs: read('.pc-graph-location', true),
@@ -190,7 +190,7 @@ async function metrics(env) {
     assert(value.nativeWorkbench && value.brand.text === 'LATTICE' && value.brand.fontReady, 'Production native workspace brand/font is unavailable.');
     assert(!value.overflow && value.graph.width > 100 && value.graph.height > 140, 'Native workspace overflowed or graph collapsed.');
     assert(value.families.length === 7, 'All seven approved native family shelf entries must remain present.');
-    assert(value.families.find(family => family.name === 'Transpose')?.disabled, 'Unavailable Transpose must remain disabled.');
+    assert(value.families.find(family => family.name === 'Transpose')?.disabled === (value.mode !== 'native-post'), 'Transpose availability must follow the active phase.');
     return { ...value, fixture: env.fixture, workerRequests: env.workerRequests, issues: [...env.issues] };
 }
 

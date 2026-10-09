@@ -21,10 +21,10 @@ async function fixture(view,actions,mode='setup') {
 }
 const { starterGraph } = await import('../src/workflow/starters.js?v=0.22.0');
 const { prepareWorkflowProjection, projectPreparedWorkflow } = await import('../src/ui/workflow-surface.js?v=0.22.0');
-test('actual Setup lists the four current examples and forwards a selected installation without arming',async()=>{
+test('actual Setup lists all eight current examples and forwards a selected installation without arming',async()=>{
     const graph=starterGraph('structured-guidance'), view=projectPreparedWorkflow(prepareWorkflowProjection(graph)),calls=[];
     const f=await fixture(view,{install:id=>calls.push(['install',id]),assign:phase=>calls.push(['assign',phase]),bindRole(){}});
-    try { assert.equal(f.host.querySelector('select[aria-label="Workflow mode"]'),null);assert.equal(f.host.querySelectorAll('.pc-workflow-starter').length,4);assert.match(f.host.textContent,/Maximum 0 auxiliary requests/);assert.match(f.host.textContent,/Arming is a separate action/);
+    try { assert.equal(f.host.querySelector('select[aria-label="Workflow mode"]'),null);assert.equal(f.host.querySelectorAll('.pc-workflow-starter').length,8);assert.match(f.host.textContent,/Maximum 0 auxiliary requests/);assert.match(f.host.textContent,/Arming is a separate action/);
         [...f.host.querySelectorAll('button')].find(button=>button.textContent==='Install Structured guidance').click();flushSync();assert.deepEqual(calls,[['install','structured-guidance']]);
         [...f.host.querySelectorAll('button')].find(button=>button.textContent==='Assign pre phase').click();flushSync();assert.deepEqual(calls.at(-1),['assign','pre']);
     } finally {await f.close();}

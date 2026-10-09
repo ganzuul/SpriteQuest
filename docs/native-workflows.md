@@ -27,7 +27,7 @@ Connections stay fixed to your bindings; Lattice does not activate a profile glo
 
 The normal SillyTavern reply is an additional request. Selection-only compaction, context already within budget, and literal scan-only repair can avoid their respective model calls. Results show actual requests against the configured bound; failed attempts can still cost tokens. There are no implicit retries.
 
-Native graph wires determine execution order. Moving a card does not change message order. The family list is a discovery guide, in this order: **Input, Shaping, Surface, Transpose, Derive, Output**. Transpose currently has no native operation. Disabled native operations block validation rather than silently bypassing.
+Native graph wires determine execution order. Moving a card does not change message order. The family list is a discovery guide, in this order: **Input, Shaping, Surface, Transpose, Derive, Output**. Transpose offers Style Transfer, Format Transfer and Terminology Map in Post workflows. Disabled native operations block validation rather than silently bypassing.
 
 The **AI De-slop** formation is an ordinary group of three editable operations: Pattern Scan, Repair, and Validate Patches. Use **Open group** on its collapsed card, or double-click the group, to reveal its nodes. Reusable subgraphs instead open in graph tabs, and their pinned definitions do not silently update.
 

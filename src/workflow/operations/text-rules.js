@@ -1,4 +1,4 @@
-import { validatePatches } from '../repair.js?v=0.22.0';
+import { prepareReferenceDraft, createReferencePatches } from './reference-draft.js?v=0.22.0';
 const failure = (code, message) => ({ ok: false, error: { code, message } });
 function defaultWorkerFactory() {
     // Preserve Vite's statically recognized Worker expression in bundled development/production.
@@ -104,42 +104,28 @@ function normalizeExecution(execution) {
     } catch { return null; }
 }
 
-function freeze(value) {
-    if (value && typeof value === 'object' && !Object.isFrozen(value)) {
-        Object.freeze(value);
-        for (const item of Object.values(value)) freeze(item);
-    }
-    return value;
-}
 /** Propose reviewed patches against the immutable original Draft spans. */
 export async function createDraftRulePatches(draft, settings = {}, execution = {}) {
-    const normalized = normalizeSettings(settings), options = normalizeExecution(execution);
+    let draftSettings;
+    try { draftSettings = ownRecord(settings, ['mode', 'rules', 'separator', 'scope', 'protectedLiterals']); }
+    catch { return failure('INVALID_RULES', 'Use supported bounded text rules and execution options.'); }
+    if (!draftSettings) return failure('INVALID_RULES', 'Use supported bounded text rules and execution options.');
+    const normalized = normalizeSettings(Object.assign(Object.create(null), { mode: draftSettings.mode, rules: draftSettings.rules, separator: draftSettings.separator })), options = normalizeExecution(execution);
     if (!normalized || !options || normalized.mode !== 'replace') return failure('INVALID_RULES', 'Use supported bounded text rules and execution options.');
     let frozen;
     try {
         frozen = snapshotDraft(draft);
-        if (frozen.spans === undefined && (frozen.scope === undefined || frozen.scope === 'whole') && typeof frozen.text === 'string') {
-            frozen.scope = 'whole';
-            frozen.spans = frozen.text.length ? [{ index: 0, start: 0, end: frozen.text.length, text: frozen.text }] : [];
-        }
-        freeze(frozen);
     }
     catch { return failure('INVALID_DRAFT', 'Draft must contain cloneable original source and span data.'); }
     if (frozen.text.length > 100000) return failure('INPUT_LIMIT', 'Draft exceeds 100,000 UTF-16 units.');
     if (frozen.spans?.length > 256) return failure('SPAN_LIMIT', 'Draft accepts at most 256 original editable spans.');
-    // The unchanged gate must also receive own-only wrapper records for optional reads.
-    const artifact = Object.assign(Object.create(null), { kind: 'patches', draft: frozen, patches: [], protectedLiterals: [...(frozen.protectedLiterals ?? [])] });
-    const validationNode = Object.create(null);
-    const initial = validatePatches(artifact, validationNode);
-    if (!initial.ok) return { ok: false, error: initial.error };
-    const result = await execute(frozen.spans.map(span => span.text), normalized, options);
+    const prepared = prepareReferenceDraft(frozen, Object.assign(Object.create(null), { scope: draftSettings.scope, protectedLiterals: draftSettings.protectedLiterals }));
+    if (!prepared.ok) return prepared;
+    const result = await execute(prepared.data.windows.map(window => window.text), normalized, options);
     if (!result.ok) return result;
-    artifact.patches = frozen.spans.flatMap((span, index) => result.data.segments[index] === span.text ? [] : [{ index: span.index, replacement: result.data.segments[index] }]);
-    const outputLength = frozen.text.length + artifact.patches.reduce((sum, patch) => sum + patch.replacement.length - frozen.spans[patch.index].text.length, 0);
-    if (outputLength > 100000) return failure('OUTPUT_LIMIT', 'Proposed Draft text exceeds 100,000 UTF-16 units.');
-    const validated = validatePatches(artifact, validationNode);
-    if (!validated.ok) return { ok: false, error: validated.error };
-    return { ok: true, data: { artifact, report: result.data.report } };
+    const reconstructed = createReferencePatches(prepared.data, result.data.segments);
+    if (!reconstructed.ok) return reconstructed;
+    return { ok: true, data: { artifact: reconstructed.data.artifact, report: result.data.report } };
 }
 
 // Draft provenance can include a bounded host context; retain its complete data snapshot.

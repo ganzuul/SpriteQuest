@@ -17,6 +17,18 @@ const initial = { native: true, families: [
     { name: 'Shaping', operations: [{ id: 'smart-compactor', title: 'Smart Compactor', phase: 'pre', compatible: true }, { id: 'response-plan', title: 'Response Plan', phase: 'pre', compatible: true }] },
     { name: 'Output', operations: [{ id: 'guidance', title: 'Guidance', phase: 'pre', compatible: true }, { id: 'apply-reply', title: 'Apply Reply', phase: 'post', compatible: false }] },
 ] };
+
+test('a populated Transpose family opens and dispatches its checked creation choice', async () => {
+    const calls = [], choices = [{ id: 'operation:style-transfer', label: 'Style Transfer', family: 'Transpose', phase: 'post', purpose: 'Reference voice', shortcode: 'st', ports: [] }];
+    await fixture({ view: initial, choices, choose: id => calls.push(id) }, async host => {
+        const family = host.querySelector('[data-family="Transpose"]');
+        assert.equal(family.disabled, false);
+        await click(family);
+        await click(host.querySelector('[data-subfamily="Reference voice"]'));
+        await click(host.querySelector('[data-shelf-choice="operation:style-transfer"]'));
+        assert.deepEqual(calls, ['operation:style-transfer']);
+    });
+});
 async function fixture(props, check) {
     const directory = await mkdtemp(join(tmpdir(), 'lattice-node-shelf-')), host = document.createElement('div');
     host.className = 'pc-canvas-area'; host.getBoundingClientRect = () => ({ left: 0, top: 0, right: 1024, bottom: 600, width: 1024, height: 600 });

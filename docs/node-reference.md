@@ -2,7 +2,7 @@
 
 [Documentation](README.md) · [Operator's manual](operators-manual.md) · [Model setup](native-workflows.md)
 
-This reference covers the **16 shipped operations** in LATTICE 0.21.0 and the structural nodes used by subgraphs. A starter is a complete workflow built from operations; a subgraph is a reusable process with its own interface. Neither is an extra model engine.
+This reference covers the **19 operations** in this LATTICE 0.22.0 development branch and the structural nodes used by subgraphs. A starter is a complete workflow built from operations; a subgraph is a reusable process with its own interface. Neither is an extra model engine.
 
 ## Read the graph's types
 
@@ -33,6 +33,9 @@ Model calls below are maximum auxiliary calls **per execution of that operation*
 | Shaping | [Reroute](#reroute) | Both | Same artifact in and out | 0 |
 | Surface | [Text Rules](#text-rules) | Both; Draft in Post | Text → Text, or Draft → Patches | 0 |
 | Surface | [Repair](#repair) | Post | Draft → Patches | 0–1 |
+| Transpose | [Style Transfer](#style-transfer) | Post | Draft + Text/Data reference → Patches | 0–1 |
+| Transpose | [Format Transfer](#format-transfer) | Post | Draft + Text/Data reference → Patches | 0–1 |
+| Transpose | [Terminology Map](#terminology-map) | Post | Draft + Data glossary → Patches | 0 |
 | Derive | [Pattern Scan](#pattern-scan) | Post | Draft → Draft with findings/spans | 0 |
 | Derive | [JSON Decode](#json-decode) | Both | Text → Data, or Data → Data | 0 |
 | Derive | [Select Fields](#select-fields) | Both | Data → Data | 0 |
@@ -41,7 +44,7 @@ Model calls below are maximum auxiliary calls **per execution of that operation*
 | Output | [Review Gate](#review-gate) | Post | Candidate → Candidate requiring review | 0 |
 | Output | [Apply Reply](#apply-reply) | Post | Candidate → Host result | 0 |
 
-The shelf also has a **Subgraphs** family for reusable definitions. **Transpose** has no available operations in this release.
+The shelf also has a **Subgraphs** family for reusable definitions. **Transpose** contains Style Transfer, Format Transfer and Terminology Map; see [the reference library guide](lattice-reference-library.md).
 
 ## Input
 
@@ -145,6 +148,8 @@ Apply a sequence of literal or regex rules. Text input can use **replace** or **
 
 **Controls:** Input (`text`/`draft`), Mode (`replace`/`extract`), Rules JSON, Separator for extracted results. Up to 64 rules; regex execution is bounded in a worker.
 
+Draft mode also exposes Scope (`authorized` by default, or explicit `whole`/`narration`/`dialogue`) and Protected literals. Raw snapshots need an explicit construction scope; existing permissions, including an empty span set, can only narrow. The Draft shelf preset and existing literal starter explicitly select whole.
+
 ```json
 [
   {
@@ -169,6 +174,24 @@ Use a model to propose JSON patches for the selected spans in a scanned Draft. *
 **Controls:** `mode`, `strength` (default `light`), `instructions`, `maxTokens` (default 2,048), `protectedLiterals`, and model bindings. Strength is an instruction, not a measured preservation guarantee.
 
 **Connect:** Pattern Scan → Repair → Validate Patches. The requested result is a raw patches JSON object. Malformed or unacceptable output fails without a whole-reply fallback or implicit retry.
+
+**Cleanup modes:** Inspect returns unchanged Patches plus literal findings without a model. Contextual Cleanup and Strict Avoidance use at most one raw-prose Prose request with the complete selected policy. Categories, scope and protected wording are independent controls; new presets default to narration. Optional Context supports contextual policies. Exact source permissions are checked before proposal; semantic preservation still requires review. See [the reference library guide](lattice-reference-library.md).
+
+## Transpose
+
+### Style Transfer
+
+Transfer narration, character voice, rhythm or register from Text or Data reference material to permitted Draft windows. Required inputs are Draft and Reference; optional Context can supply relevant background. Output is Patches, with at most one Prose request. The Character Voice preset explicitly chooses dialogue; changing mode preserves the current scope.
+
+Controls include Reference kind, Mode, Scope, Strength, Instructions, Output tokens and Protected literals. Default scope is narration. Connect a Compose Text reference or Compose -> JSON Decode Data reference, then Validate Patches -> Review Gate -> Apply Reply.
+
+### Format Transfer
+
+Reorganize permitted Draft material using a Text example or Data template, producing Patches with at most one Prose request. Data may include `requiredContent`, exact strings that must already exist in the draft. Missing required content fails before a request. Controls match Style Transfer except its style mode; reference material cannot authorize new story facts.
+
+### Terminology Map
+
+Apply a Data glossary to permitted Draft text without a model. Data is `{"entries":[{"from":"Captain","to":"Commander"}]}`. Controls are Scope, Protected literals, Case sensitive and Match (`word` or `phrase`). Unicode boundaries preserve offsets; replacements are simultaneous and never cascade. Output is Patches for the same validation/review/apply flow.
 
 ## Derive
 

@@ -39,7 +39,7 @@ const literalList = (value, rules = false) => Array.isArray(value) && value.leng
 });
 function validSettings(node, scan = false) {
     if (!node || typeof node !== 'object' || !literalList(node.protectedLiterals ?? [])) return false;
-    if (scan) return ['whole', 'narration', 'dialogue'].includes(node.scope ?? 'whole') && typeof (node.caseSensitive ?? false) === 'boolean' && literalList(node.rules ?? [], true) && literalList(node.exemptions ?? []);
+    if (scan) return ['authorized', 'whole', 'narration', 'dialogue'].includes(node.scope ?? 'authorized') && typeof (node.caseSensitive ?? false) === 'boolean' && literalList(node.rules ?? [], true) && literalList(node.exemptions ?? []);
     return ['repair', 'scan'].includes(node.mode ?? 'repair') && typeof (node.instructions ?? '') === 'string' && (node.instructions ?? '').length <= 10000 && typeof (node.strength ?? 'light') === 'string' && (node.strength ?? '').length <= 1000 && Number.isSafeInteger(node.maxTokens ?? 2048) && (node.maxTokens ?? 2048) > 0 && (node.maxTokens ?? 2048) <= 65536;
 }
 const validDraft = draft => draft?.kind === 'draft' && typeof draft.text === 'string' && draft.source && typeof draft.source.originalText === 'string';
@@ -57,25 +57,44 @@ export function scanDraft(draft, node = {}) {
     if (!validSettings(node, true)) return failure('INVALID_SETTINGS', 'Use a supported scope/case policy and at most 128 nonblank literal preferences, each at most 2,048 UTF-16 units.', node, draft);
     if (!validDraft(draft)) return failure('INVALID_DRAFT', 'Expected a draft with frozen original source text.', node, draft);
     if (!validFindings(draft.findings)) return failure('INVALID_DRAFT', 'Draft findings must be a dense array of plain inspection records.', node, draft);
+    if ((draft.findings?.length ?? 0) > 4096) return failure('SCAN_LIMIT', 'Scan accepts at most 4,096 total findings. Narrow the source or rules; no findings were truncated.', node, draft);
     if (draft?.text?.length > MAX_TEXT) return failure('INPUT_LIMIT', 'Draft exceeds the 100,000 UTF-16-unit scan/repair limit. Narrow the source before running; no text was truncated.', node, draft);
+    if (draft.source.originalText !== draft.text) return failure('STALE_SOURCE', 'Draft text must match its frozen original source.', node, draft);
+    const hasSpans = Object.hasOwn(draft, 'spans');
+    if (draft.spans?.length > MAX_SPANS) return failure('SPAN_LIMIT', 'Scan accepts at most 256 original editable spans.', node, draft);
+    if (hasSpans && (!Array.isArray(draft.spans) || Array.from(draft.spans).some(span => !span))) return failure('INVALID_SPANS', 'Existing permissions require a dense original span array.', node, draft);
+    if (!hasSpans && draft.scope !== undefined) return failure('INVALID_SPANS', 'Scoped Drafts require existing original permissions.', node, draft);
+    if (!hasSpans && (node.scope ?? 'authorized') === 'authorized') return failure('SCOPE_REQUIRED', 'An unannotated Draft requires explicit whole, narration or dialogue scope.', node, draft);
+    if (hasSpans && invalidSpans(draft)) return failure('INVALID_SPANS', 'Existing editable spans must remain valid original permissions.', node, draft);
     const spans = [], findings = [];
     const text = draft.text;
-    const scope = scopeRanges(text, node.scope ?? 'whole');
-    if (scope.unmatched.length && node.scope !== 'whole' && node.scope !== undefined) {
-        const result = success({ ...draft, spans: [], findings: [...(draft.findings ?? []), { code: 'UNMATCHED_QUOTES', offsets: scope.unmatched }] });
+    const storedLiterals = value => value === undefined || Array.isArray(value) && value.length <= 128 && literalList(Array.from(value));
+    if (!storedLiterals(draft.protectedLiterals) || !storedLiterals(draft.exemptions)) return failure('INVALID_DRAFT', 'Draft protections and exemptions must be bounded nonblank literal lists.', node, draft);
+    const protectedLiterals = [...new Set([...(draft.protectedLiterals ?? []), ...(node.protectedLiterals ?? [])])];
+    const exemptions = [...new Set([...(draft.exemptions ?? []), ...(node.exemptions ?? [])])];
+    // The Draft flag governs stored exemption authority; a later rule scan cannot reinterpret it.
+    const exemptionCaseSensitive = draft.exemptions?.length ? draft.caseSensitive ?? false : node.caseSensitive ?? false;
+    if (protectedLiterals.length > 128 || exemptions.length > 128) return failure('INVALID_SETTINGS', 'Combined protections and exemptions accept at most 128 unique literals.', node, draft);
+    const selectedScope = (node.scope ?? 'authorized') === 'authorized' ? 'whole' : node.scope;
+    const scope = scopeRanges(text, selectedScope);
+    if (scope.unmatched.length && selectedScope !== 'whole') {
+        if ((draft.findings?.length ?? 0) >= 4096) return failure('SCAN_LIMIT', 'The unmatched-quote finding exceeds the 4,096 total finding limit.', node, draft);
+        const result = success({ ...draft, spans: [], findings: [...(draft.findings ?? []), { code: 'UNMATCHED_QUOTES', offsets: scope.unmatched }], scope: draft.scope ?? selectedScope, caseSensitive: exemptionCaseSensitive, rules: structuredClone(node.rules ?? []), exemptions, protectedLiterals });
         result.reports.push({ code: 'UNMATCHED_QUOTES', message: 'Unmatched double quotes prevent deterministic narration/dialogue scanning.', offsets: scope.unmatched });
         return result;
     }
 
-    const protectedRanges = literalRanges(text, node.protectedLiterals ?? []);
-    const exempted = literalRanges(text, node.exemptions ?? [], node.caseSensitive ?? false);
+    const protectedRanges = literalRanges(text, protectedLiterals);
+    // New exemptions narrow by their requested policy and by the retained combined Draft policy.
+    const exempted = [...literalRanges(text, exemptions, exemptionCaseSensitive), ...literalRanges(text, node.exemptions ?? [], node.caseSensitive ?? false)];
     for (const rule of node.rules ?? []) {
         const phrase = typeof rule === 'string' ? rule : rule.phrase;
         for (const [start, end] of literalRanges(text, [phrase], node.caseSensitive ?? false)) {
             if (!scope.ranges.some(([from, to]) => start >= from && end <= to)) continue;
+            if (hasSpans && !draft.spans.some(span => start >= span.start && end <= span.end)) continue;
             if (exempted.some(([from, to]) => start < to && end > from)) continue;
             const protectedMatch = protectedRanges.some(([from, to]) => start < to && end > from);
-            if (findings.length >= 4096) return failure('SCAN_LIMIT', 'Scan exceeds 4,096 findings. Narrow the rules or scope; no permissions were truncated.', node, draft);
+            if ((draft.findings?.length ?? 0) + findings.length >= 4096) return failure('SCAN_LIMIT', 'Scan exceeds 4,096 total findings. Narrow the rules or scope; no permissions were truncated.', node, draft);
             findings.push({ rule: phrase, start, end, text: text.slice(start, end), protected: protectedMatch });
             if (protectedMatch) continue;
             spans.push({ index: spans.length, start, end, text: text.slice(start, end) });
@@ -87,7 +106,8 @@ export function scanDraft(draft, node = {}) {
         if (previous && span.start <= previous.end) previous.end = Math.max(previous.end, span.end);
         else normalized.push({ start: span.start, end: span.end });
     }
-    const result = success({ ...draft, spans: normalized.map((span, index) => ({ index, ...span, text: text.slice(span.start, span.end) })), findings: [...(draft.findings ?? []), ...findings], scope: node.scope ?? 'whole', caseSensitive: node.caseSensitive ?? false, rules: structuredClone(node.rules ?? []), exemptions: [...(node.exemptions ?? [])], protectedLiterals: [...(node.protectedLiterals ?? [])] });
+    if (normalized.length > MAX_SPANS) return failure('SPAN_LIMIT', 'Scan exceeds 256 normalized editable spans. Narrow the rules or scope; no permissions were truncated.', node, draft);
+    const result = success({ ...draft, spans: normalized.map((span, index) => ({ index, ...span, text: text.slice(span.start, span.end) })), findings: [...(draft.findings ?? []), ...findings], scope: draft.scope ?? selectedScope, caseSensitive: exemptionCaseSensitive, rules: structuredClone(node.rules ?? []), exemptions, protectedLiterals });
     if (scope.unmatched.length) result.reports.push({ code: 'UNMATCHED_QUOTES', message: 'Unmatched double quotes were found; whole-text scope remains explicit.', offsets: scope.unmatched });
     return result;
 }

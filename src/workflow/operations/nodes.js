@@ -18,8 +18,8 @@ export const PRIMITIVE_OPERATIONS = {
         { mode: 'join', outputKind: 'text', template: '', sections: [], separator: '\n\n' },
         [enumControl('mode', 'Mode', ['join', 'template']), enumControl('outputKind', 'Output', ['text', 'guidance']), textControl('template', 'Template'), jsonControl('sections', 'Sections'), textControl('separator', 'Separator')]),
     'text-rules': registration('text-rules', 'Text Rules', 'Surface', 'text', 'text',
-        { inputKind: 'text', mode: 'replace', rules: [], separator: '\n' },
-        [enumControl('inputKind', 'Input', ['text', 'draft']), enumControl('mode', 'Mode', ['replace', 'extract']), jsonControl('rules', 'Rules'), textControl('separator', 'Separator')]),
+        { inputKind: 'text', mode: 'replace', rules: [], separator: '\n', scope: 'authorized', protectedLiterals: [] },
+        [enumControl('inputKind', 'Input', ['text', 'draft']), enumControl('mode', 'Mode', ['replace', 'extract']), jsonControl('rules', 'Rules'), textControl('separator', 'Separator'), enumControl('scope', 'Draft scope', ['authorized', 'whole', 'narration', 'dialogue']), jsonControl('protectedLiterals', 'Protected Draft wording')]),
     'json-decode': registration('json-decode', 'JSON Decode', 'Derive', 'text', 'data',
         { mode: 'parse', schema: '' }, [enumControl('mode', 'Mode', ['parse', 'check']), jsonControl('schema', 'Schema')]),
     'select-fields': registration('select-fields', 'Select Fields', 'Derive', 'data', 'data',
@@ -65,6 +65,11 @@ function validateSettings(operation, settings) {
         if (!checked.ok) return checked;
     } else if (operation === 'text-rules') {
         if (!['text', 'draft'].includes(settings.inputKind) || !['replace', 'extract'].includes(settings.mode) || typeof settings.separator !== 'string' || settings.separator.length > 100000) return invalid();
+        if (!['authorized', 'whole', 'narration', 'dialogue'].includes(settings.scope)) return invalid();
+        settings.protectedLiterals = ownArray(settings.protectedLiterals, 128, pin => {
+            if (typeof pin !== 'string' || !pin.trim() || pin.length > 2048) throw new Error('Invalid protected literal.');
+            return pin;
+        });
         settings.rules = ownArray(settings.rules, 64, value => {
             const rule = ownRecord(value, ['kind', 'pattern', 'replacement', 'flags']);
             const flags = Object.hasOwn(rule, 'flags') ? rule.flags : '';
@@ -166,7 +171,7 @@ export async function executePrimitive(node, namedInputs, execution = {}) {
         const { inputs } = checkedInputs.data;
         if (descriptor.id === 'text-rules') {
             const apply = settings.inputKind === 'draft' ? createDraftRulePatches : applyTextRules;
-            const transformed = await apply(settings.inputKind === 'draft' ? inputs.in : inputs.in.text, { mode: settings.mode, rules: settings.rules, separator: settings.separator }, {
+            const transformed = await apply(settings.inputKind === 'draft' ? inputs.in : inputs.in.text, { mode: settings.mode, rules: settings.rules, separator: settings.separator, ...(settings.inputKind === 'draft' ? { scope: settings.scope, protectedLiterals: settings.protectedLiterals } : {}) }, {
                 workerFactory: executionOptions.createWorker, signal: executionOptions.signal, timeoutMs: executionOptions.timeoutMs,
             });
             if (!transformed.ok) return transformed;
