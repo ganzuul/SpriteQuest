@@ -1,4 +1,4 @@
-@import url('./dist/lattice.css?v=0.23.0');
+@import url('./dist/lattice.css?v=0.24.0');
 
 /* Current Lattice workspace. Explicit themes may replace these color roles. */
 :root {
@@ -416,8 +416,8 @@
 .pc-root .pc-graph-tab:focus-visible { outline: 2px solid var(--pc-accent); outline-offset: -3px; }
 .pc-root .pc-canvas-area { border: 1px solid var(--pc-border); border-radius: 4px; background: var(--pc-panel-solid); box-shadow: var(--pc-recess); min-height: 140px; overflow: hidden; }
 .pc-canvas-host { border-radius: 4px; }
-.pc-node-shelf { position: absolute; top: 13px; left: 13px; display: flex; flex-direction: column; gap: 3px; width: 120px; max-height: calc(100% - 62px); overflow-x: hidden; overflow-y: auto; z-index: 6; scrollbar-width: thin; scrollbar-color: #555 transparent; }
-.pc-root .pc-family-row, :root[data-pc-own="1"] .pc-root .pc-family-row { flex: 0 0 28px; width: 110px; height: 28px; display: flex; align-items: center; gap: 9px; padding: 4px 4px 4px 8px; text-align: left; font: inherit; font-size: 14px; font-weight: 400; color: #9b9ea1; border: 0; border-radius: 2px; background: var(--pc-control); box-shadow: inset 0 -1px 0 #00000018; cursor: pointer; }
+.pc-node-shelf { position: absolute; top: 13px; left: 13px; display: flex; flex-direction: column; gap: 3px; width: 138px; max-height: calc(100% - 62px); overflow-x: hidden; overflow-y: auto; z-index: 6; scrollbar-width: thin; scrollbar-color: #555 transparent; }
+.pc-root .pc-family-row, :root[data-pc-own="1"] .pc-root .pc-family-row { flex: 0 0 28px; width: 128px; height: 28px; display: flex; align-items: center; gap: 9px; padding: 4px 4px 4px 8px; text-align: left; font: inherit; font-size: 14px; font-weight: 400; color: #9b9ea1; border: 0; border-radius: 2px; background: var(--pc-control); box-shadow: inset 0 -1px 0 #00000018; cursor: pointer; }
 .pc-node-shelf::-webkit-scrollbar { width: 6px; height: 0; }
 .pc-node-shelf::-webkit-scrollbar-thumb { background: #555; border-radius: 3px; }
 .pc-node-shelf::-webkit-scrollbar-track { background: transparent; }

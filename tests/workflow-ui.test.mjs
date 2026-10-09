@@ -2,10 +2,10 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { installMock } from './mock.js';
 installMock();
-const S = await import('../src/state.js?v=0.23.0');
-const { starterGraph, installStarter } = await import('../src/workflow/starters.js?v=0.23.0');
-const { prepareWorkflowProjection, projectPreparedWorkflow, parseWorkflowRules } = await import('../src/ui/workflow-surface.js?v=0.23.0');
-const { prepareWorkspaceViews } = await import('../src/ui/workspace-preparation.js?v=0.23.0');
+const S = await import('../src/state.js?v=0.24.0');
+const { starterGraph, installStarter } = await import('../src/workflow/starters.js?v=0.24.0');
+const { prepareWorkflowProjection, projectPreparedWorkflow, parseWorkflowRules } = await import('../src/ui/workflow-surface.js?v=0.24.0');
+const { prepareWorkspaceViews } = await import('../src/ui/workspace-preparation.js?v=0.24.0');
 const project = (root, options) => projectPreparedWorkflow(prepareWorkflowProjection(root, options));
 test('installing any actual example leaves generation unarmed and phases unassigned', () => {
     const before = structuredClone(S.settings().nativeBindings);
@@ -18,7 +18,7 @@ test('actual zero-call examples and operation controls project without connectio
     let bindings=0;
     for (const id of ['literal-cleanup','structured-guidance']) {
         const view=project(starterGraph(id),{resolveBinding(){bindings++;throw new Error('No model needed');}});
-        assert.equal(view.callBound,0); assert.equal(view.issues.length,0); assert.equal(view.starters.length,8);
+        assert.equal(view.callBound,0); assert.equal(view.issues.length,0); assert.equal(view.starters.length,11);
         assert.equal(view.nodes.some(node=>node.controls.length>0),true);
     }
     assert.equal(bindings,0);

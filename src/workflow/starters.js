@@ -1,5 +1,6 @@
-import { operationDefaults } from './catalog.js?v=0.23.0';
-import { createLibraryWorkflow } from './library/subgraphs.js?v=0.23.0';
+import { operationDefaults } from './catalog.js?v=0.24.0';
+import { createLibraryWorkflow } from './library/subgraphs.js?v=0.24.0';
+import { createIntrospectionStarter } from './introspection/starters.js?v=0.24.0';
 export const STARTERS = [
     { id: 'native-guidance', version: 1, title: 'Scene guidance', purpose: 'Shape scene direction while SillyTavern writes the reply.', phase: 'pre', roles: ['Analysis'], callBound: 2, operations: ['scene-context', 'smart-compactor', 'response-plan', 'guidance'] },
     { id: 'reviewed-de-slop', version: 1, title: 'Reviewed AI De-slop', purpose: 'Find literal patterns and review a bounded repair before applying.', phase: 'post', roles: ['Prose'], callBound: 1, operations: ['reply-snapshot', 'pattern-scan', 'repair', 'validate-patches', 'review-gate', 'apply-reply'] },
@@ -9,11 +10,15 @@ export const STARTERS = [
     { id: 'library-literal-cleanup', libraryRecipe: 'literal-cleanup', version: 1, title: 'Literal phrase cleanup', purpose: 'Find configured phrases and propose a focused repair for review.', phase: 'post', roles: ['Prose'], callBound: 1, operations: [] },
     { id: 'formatting-cleanup', libraryRecipe: 'formatting-cleanup', version: 1, title: 'Formatting cleanup', purpose: 'Normalize line endings within explicitly permitted draft text.', phase: 'post', roles: [], callBound: 0, operations: [] },
     { id: 'prose-cleanup', libraryRecipe: 'prose-cleanup', version: 1, title: 'Prose cleanup', purpose: 'Inspect or revise prose using the complete category-based policy.', phase: 'post', roles: ['Prose'], callBound: 1, operations: [] },
+    { id: 'reflect-and-express', introspectionRecipe: true, version: 1, title: 'Reflect and express', purpose: 'Focus scene evidence and turn character reflection into optional behavior guidance.', phase: 'pre', roles: ['Analysis'], callBound: 1, operations: ['scene-context', 'context', 'memory', 'reflect', 'express', 'guidance'] },
+    { id: 'internalize-and-commit', introspectionRecipe: true, version: 1, title: 'Internalize and commit', purpose: 'Propose actor memory updates from settled events and commit after a successful root run.', phase: 'post', roles: ['Analysis'], callBound: 1, operations: ['memory', 'memory', 'internalize', 'memory'] },
+    { id: 'consequence-clock', introspectionRecipe: true, version: 1, title: 'Consequence clock', purpose: 'Track distinct settled events and commit deterministic state without a model.', phase: 'post', roles: [], callBound: 0, operations: ['memory', 'memory', 'state', 'memory'] },
 ];
 /** Canonical versioned definitions also generate the literal portable packages. */
 export function starterGraph(id) {
     const starter = STARTERS.find(item => item.id === id);
     if (!starter) throw new Error('Unknown workflow starter.');
+    if (starter.introspectionRecipe) return createIntrospectionStarter(starter);
     if (starter.libraryRecipe) {
         const result = createLibraryWorkflow(starter.libraryRecipe);
         if (!result.ok) throw new Error(result.error.code + ': ' + result.error.message);

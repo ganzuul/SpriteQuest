@@ -8,13 +8,13 @@ mkdirSync(join(root, 'tools')); mkdirSync(join(root, 'src', 'canvas'), { recursi
 mkdirSync(join(root, 'tests', 'browser'), { recursive: true });
 copyFileSync(new URL('../tools/bump-version.mjs', import.meta.url), join(root, 'tools', 'bump-version.mjs'));
 writeFileSync(join(root, 'manifest.json'), JSON.stringify({ version: '0.1.0', js: 'index.js?v=0.1.0' }));
-writeFileSync(join(root, 'index.js'), "import { x } from './src/state.js?v=0.23.0';");
+writeFileSync(join(root, 'index.js'), "import { x } from './src/state.js?v=0.24.0';");
 writeFileSync(join(root, 'src', 'state.js'), 'export const x = 1;');
-writeFileSync(join(root, 'src', 'canvas', 'presentation.js'), "import { x } from '../state.js?v=0.23.0';");
+writeFileSync(join(root, 'src', 'canvas', 'presentation.js'), "import { x } from '../state.js?v=0.24.0';");
 writeFileSync(join(root, 'style.css'), "@import url('./dist/lattice.css?v=0.1.0');");
 writeFileSync(join(root, 'package.json'), JSON.stringify({ version: '0.1.0' }));
 writeFileSync(join(root, 'package-lock.json'), JSON.stringify({ version: '0.1.0', packages: { '': { version: '0.1.0' } } }));
-writeFileSync(join(root, 'tests', 'browser', 'cache.spec.mjs'), "import { x } from '../../src/state.js?v=0.23.0';\nconst same = await import('../../src/state.js?v=0.23.0');\nconst helper = await import('../../src/helper.js');");
+writeFileSync(join(root, 'tests', 'browser', 'cache.spec.mjs'), "import { x } from '../../src/state.js?v=0.24.0';\nconst same = await import('../../src/state.js?v=0.24.0');\nconst helper = await import('../../src/helper.js');");
 writeFileSync(join(root, 'tests', 'cache-marker.test.mjs'), "const isolated = await import('../src/state.js?v=installed-cache-test');");
 const result = spawnSync(process.execPath, [join(root, 'tools', 'bump-version.mjs'), '0.2.0'], { encoding: 'utf8' });
 assert.equal(result.status, 0, result.stderr);

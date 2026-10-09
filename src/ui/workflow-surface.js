@@ -1,16 +1,16 @@
-import { prepareWorkflowPlanner, preparedWorkflowExpansion } from '../workflow/resolve.js?v=0.23.0';
-import { cloneWorkflowDocument } from '../workflow/document.js?v=0.23.0';
-import { sha256Text } from '../workflow/definition-data.js?v=0.23.0';
-import { prepareCompositionViews } from '../workflow/composition-views.js?v=0.23.0';
-import { createRunState, reduceRunState, projectRunRows } from '../workflow/run-state.js?v=0.23.0';
-import { formatRecordedArtifact } from '../workflow/recording.js?v=0.23.0';
-import { addressKey, nodeAddress, targetAddress, own, safeBinding, safeError, expandRecordAddress, freeze } from '../workflow/record-data.js?v=0.23.0';
-import { workflowSignature } from '../workflow/runtime.js?v=0.23.0';
-import { FAMILIES, OPERATIONS, operationFor } from '../workflow/catalog.js?v=0.23.0';
-import { safeWorkflowData } from '../workflow/contracts.js?v=0.23.0';
-import { STARTERS } from '../workflow/starters.js?v=0.23.0';
-import { readNodePresentation } from './node-palette.js?v=0.23.0';
-const descriptions = { Input: 'Bring material into a workflow.', Shaping: 'Change the plan or amount of material.', Surface: 'Refine expression.', Transpose: 'Apply a reference’s qualities.', Derive: 'Extract findings from a source.', Output: 'Inspect or commit an artifact.' };
+import { prepareWorkflowPlanner, preparedWorkflowExpansion } from '../workflow/resolve.js?v=0.24.0';
+import { cloneWorkflowDocument } from '../workflow/document.js?v=0.24.0';
+import { sha256Text } from '../workflow/definition-data.js?v=0.24.0';
+import { prepareCompositionViews } from '../workflow/composition-views.js?v=0.24.0';
+import { createRunState, reduceRunState, projectRunRows } from '../workflow/run-state.js?v=0.24.0';
+import { formatRecordedArtifact } from '../workflow/recording.js?v=0.24.0';
+import { addressKey, nodeAddress, targetAddress, own, plain, safeBinding, safeError, expandRecordAddress, freeze } from '../workflow/record-data.js?v=0.24.0';
+import { workflowSignature } from '../workflow/runtime.js?v=0.24.0';
+import { FAMILIES, OPERATIONS, operationFor } from '../workflow/catalog.js?v=0.24.0';
+import { safeWorkflowData } from '../workflow/contracts.js?v=0.24.0';
+import { STARTERS } from '../workflow/starters.js?v=0.24.0';
+import { readNodePresentation } from './node-palette.js?v=0.24.0';
+const descriptions = { Input: 'Bring material into a workflow.', Shaping: 'Change the plan or amount of material.', Surface: 'Refine expression.', Transpose: 'Apply a reference’s qualities.', Derive: 'Extract findings from a source.', Introspection: 'Reflect on experience, context and actor state.', Output: 'Inspect or commit an artifact.' };
 const choices = { method: ['select', 'compress'], scope: ['whole', 'narration', 'dialogue'], strength: ['light', 'medium', 'strong'] };
 const labels = { targetTokens: 'Target artifact tokens', keepRecent: 'Recent messages kept verbatim', maxTokens: 'Maximum response tokens', budgetTokens: 'Guidance artifact budget', includeCharacter: 'Include character fields', recentMessages: 'Recent messages', profileId: 'Node connection override', model: 'Node model override', modelRole: 'Model role', protectedLiterals: 'Protected literal wording' };
 export const QUOTE_SCOPE_HELP = 'Dialogue is text inside paired ASCII double quotes (") or paired curly double quotes (“…”). Narration is text outside those paired quotes, excluding the quote delimiters. Apostrophes and single quotes are ordinary text.';
@@ -43,6 +43,11 @@ const noRows = freeze([]);
 const pathKey = path => JSON.stringify(path);
 const targetKey = target => target?.kind === 'terminal' ? 'terminal:' + addressKey(target.address) : addressKey(target) + ':' + target.portId;
 const ownedPreviewTarget = raw => { const target = targetAddress(raw); return target ? freeze(target) : null; };
+function safeMemoryCommit(raw) {
+    if (!plain(raw)) return null;
+    const applied = own(raw, 'applied'), acknowledged = own(raw, 'acknowledged'), version = own(raw, 'version');
+    return typeof applied === 'boolean' && typeof acknowledged === 'boolean' && Number.isSafeInteger(version) && version >= 0 ? freeze({ applied, acknowledged, version }) : null;
+}
 const summaryView = result => result.ok ? { callBound: result.data.callBound, issues: [], requiredBindingAddresses: result.data.requiredBindingAddresses } : { callBound: 0, issues: [result.error.message], requiredBindingAddresses: [] };
 const emptyView = message => ({ graphId: '', name: '', phase: '', assigned: false, roles: [], profiles: [], starters: [], families: [], nodes: [], groups: [], selectedId: null, callBound: 0, issues: [message], busy: false, status: '', result: null, quoteHelp: QUOTE_SCOPE_HELP, rows: [], targets: [] });
 // Keep a fixed digest, never the semantic signature's saved controls/body text.
@@ -76,8 +81,9 @@ function nodeControls(node, op) {
     return Object.entries(op.defaults).map(([key, fallback]) => {
         const value = node[key] ?? fallback, descriptor = op.controlDescriptors?.[key];
         return { key, label: descriptor?.label || labels[key] || key.replace(/([A-Z])/g, ' $1'),
-            value: descriptor?.editor === 'json' ? JSON.stringify(value, null, 2) : Array.isArray(value) ? value.map(item => key === 'rules' ? formatRule(item) : typeof item === 'string' ? item : JSON.stringify(item)).join('\n') : value,
-            kind: descriptor?.editor === 'json' ? 'readonly-json' : key === 'rules' ? 'rules' : Array.isArray(fallback) ? 'lines' : typeof fallback,
+            value: descriptor?.editor === 'json' || descriptor?.type === 'object' ? JSON.stringify(value, null, 2) : Array.isArray(value) ? value.map(item => key === 'rules' ? formatRule(item) : typeof item === 'string' ? item : JSON.stringify(item)).join('\n') : value,
+            kind: descriptor?.editor === 'json' || descriptor?.type === 'object' ? 'readonly-json' : key === 'rules' ? 'rules' : Array.isArray(fallback) ? 'lines' : typeof fallback,
+            ...(['integer', 'number'].includes(descriptor?.type) ? { min: descriptor.min, max: descriptor.max, step: descriptor.step ?? (descriptor.type === 'integer' ? 1 : 'any') } : {}),
             options: descriptor?.values || (key === 'mode' ? node.operation === 'repair' ? ['repair', 'scan'] : ['literal'] : choices[key] || null) };
     });
 }
@@ -97,7 +103,7 @@ function baseWorkflowView(graph, profiles, settings) {
         roles: roles.map(name => ({ name, profileId: graph.roles?.[name]?.profileId || '', model: graph.roles?.[name]?.model || '' })),
         profiles: profiles.map(profile => ({ id: profile.id, name: profile.name || profile.id })),
         starters: STARTERS.map(({ operations, ...starter }) => structuredClone(starter)),
-        families: FAMILIES.map(name => ({ name, description: descriptions[name], operations: Object.values(OPERATIONS).filter(op => op.family === name || name === 'Surface' && ['pattern-scan', 'validate-patches'].includes(op.id)).map(op => ({ id: op.id, title: op.title, phase: op.phase || phase, compatible: (!op.phase || op.phase === phase) && (!op.minimumSchema || graph.schema >= op.minimumSchema) })) })),
+        families: FAMILIES.map(name => ({ name, description: descriptions[name], operations: Object.values(OPERATIONS).filter(op => op.family === name || name === 'Surface' && ['pattern-scan', 'validate-patches'].includes(op.id)).map(op => ({ id: op.id, title: op.title, phase: op.phase === 'both' ? phase : op.phase || phase, compatible: (!op.phase || op.phase === 'both' || op.phase === phase) && (!op.minimumSchema || graph.schema >= op.minimumSchema) })) })),
         quoteHelp: QUOTE_SCOPE_HELP };
 }
 /** Root preparation boundary. The returned token is branded and contains no public authority. */
@@ -210,10 +216,10 @@ export function projectPreparedWorkflow(prepared, { viewPath = [], selectedId = 
     const selector = safeHandle(selectedReviewHandle), cached = selector ? owner.handles.get(selector.handleId) : null;
     const validHandle = cached && selector.runId === cached.handle.runId && targetKey(selector.terminal) === targetKey(cached.handle.terminal) && target?.kind === 'terminal' && targetKey(target) === targetKey(cached.handle.terminal)
         && result?.mode === 'root' && result?.ok && result.runId === selector.runId && recording?.runId === selector.runId && availability === 'current' && !view.instancePath.length;
-    const preview = historicalPreviewTarget(recording, pinned || target), displayedTarget = preview.target;
+    const preview = historicalPreviewTarget(recording, pinned || target), displayedTarget = preview.target, memoryCommit = safeMemoryCommit(own(result, 'memoryCommit'));
     const resultView = result || recording ? { kind: 'bounded', ok: result?.ok === true, error: result?.error?.message || '', actualCalls: result?.actualCalls || 0, callBound: result?.callBound ?? recording?.plan?.callBound ?? summary.callBound,
         runId: recording?.runId || result?.runId || '', sections: preview.unavailable ? [{ kind: 'diagnostic', ...formatRecordedArtifact({ format: 'omitted', reason: 'historical wrapper mapping unavailable' }) }] : boundedSections(recording, displayedTarget), previewTarget: displayedTarget, applyAvailable: !!validHandle,
-        selectedReviewHandle: validHandle ? cached.handle : null, applyIssue: validHandle ? cached.issue || applyIssue : applyIssue, tokenMethods: [...new Set((recording?.units || []).map(unit => unit.request?.tokenCount?.method).filter(Boolean))] } : null;
+        selectedReviewHandle: validHandle ? cached.handle : null, applyIssue: validHandle ? cached.issue || applyIssue : applyIssue, tokenMethods: [...new Set((recording?.units || []).map(unit => unit.request?.tokenCount?.method).filter(Boolean))], ...(memoryCommit ? { memoryCommit } : {}) } : null;
     const rowSource = progressSource(recording, runState);
     return { ...owner.base, nodes: view.nodes, groups: view.groups, selectedId: address && address.workflowId === owner.base.graphId && pathKey(address.instancePath) === path ? address.nodeId : selectedId,
         instancePath: view.instancePath, editable: view.editable, targets: view.targets, targetSummary: summary, callBound: summary.callBound, issues: summary.issues,
@@ -222,6 +228,7 @@ export function projectPreparedWorkflow(prepared, { viewPath = [], selectedId = 
 function boundedResult(raw, handles) {
     const result = { schema: raw.schema, runtime: raw.runtime, mode: raw.mode, runId: raw.runId, ok: raw.ok === true, callBound: raw.callBound, actualCalls: raw.actualCalls, recording: raw.recording, reviewHandles: handles };
     const error = safeError(raw.error); if (error) result.error = error;
+    const memoryCommit = safeMemoryCommit(own(raw, 'memoryCommit')); if (memoryCommit) result.memoryCommit = memoryCommit;
     for (const key of ['preview', 'published', 'fallback']) if (raw[key] !== undefined) result[key] = raw[key];
     return freeze(result);
 }

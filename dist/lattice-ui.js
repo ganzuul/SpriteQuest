@@ -1,5 +1,5 @@
 /*! Svelte runtime: Copyright (c) 2016-2025 Svelte Contributors. MIT license; see THIRD_PARTY_NOTICES.md. */
-//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/shared/utils.js
+//#region node_modules/svelte/src/internal/shared/utils.js
 var e = Array.isArray, t = Array.prototype.indexOf, n = Array.prototype.includes, r = Array.from, i = Object.defineProperty, a = Object.getOwnPropertyDescriptor, o = Object.getOwnPropertyDescriptors, s = Object.prototype, c = Array.prototype, l = Object.getPrototypeOf, u = Object.isExtensible, d = () => {};
 function f(e) {
 	for (var t = 0; t < e.length; t++) e[t]();
@@ -22,7 +22,7 @@ function se(e) {
 	throw Error("https://svelte.dev/e/lifecycle_outside_component");
 }
 //#endregion
-//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/errors.js
+//#region node_modules/svelte/src/internal/client/errors.js
 function ce() {
 	throw Error("https://svelte.dev/e/async_derived_orphan");
 }
@@ -57,7 +57,7 @@ function ve() {
 	throw Error("https://svelte.dev/e/svelte_boundary_reset_onerror");
 }
 //#endregion
-//#region F:/git/SillyCanvas/node_modules/svelte/src/constants.js
+//#region node_modules/svelte/src/constants.js
 var ye = {}, be = Symbol("uninitialized"), xe = "http://www.w3.org/1999/xhtml";
 function Se() {
 	console.warn("https://svelte.dev/e/derived_inert");
@@ -72,7 +72,7 @@ function Te() {
 	console.warn("https://svelte.dev/e/svelte_boundary_reset_noop");
 }
 //#endregion
-//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/dom/hydration.js
+//#region node_modules/svelte/src/internal/client/dom/hydration.js
 var M = !1;
 function Ee(e) {
 	M = e;
@@ -115,7 +115,7 @@ function je(e) {
 	return e.data;
 }
 //#endregion
-//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/reactivity/equality.js
+//#region node_modules/svelte/src/internal/client/reactivity/equality.js
 function Me(e) {
 	return e === this.v;
 }
@@ -126,7 +126,7 @@ function Pe(e) {
 	return !Ne(e, this.v);
 }
 //#endregion
-//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/shared/clone.js
+//#region node_modules/svelte/src/internal/shared/clone.js
 var Fe = [];
 function Ie(e, t = !1, n = !1) {
 	return Le(e, /* @__PURE__ */ new Map(), "", Fe, null, n);
@@ -162,7 +162,7 @@ function Le(t, n, r, i, a = null, o = !1) {
 	}
 }
 //#endregion
-//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/context.js
+//#region node_modules/svelte/src/internal/client/context.js
 var Re = null;
 function ze(e) {
 	Re = e;
@@ -191,7 +191,7 @@ function He() {
 	return !0;
 }
 //#endregion
-//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/dom/task.js
+//#region node_modules/svelte/src/internal/client/dom/task.js
 var Ue = [];
 function We() {
 	var e = Ue;
@@ -233,7 +233,7 @@ function Je(e, t) {
 	}
 }
 //#endregion
-//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/reactivity/status.js
+//#region node_modules/svelte/src/internal/client/reactivity/status.js
 var Ye = ~(h | g | m);
 function Xe(e, t) {
 	e.f = e.f & Ye | t;
@@ -242,7 +242,7 @@ function Ze(e) {
 	e.f & 512 || e.deps === null ? Xe(e, m) : Xe(e, g);
 }
 //#endregion
-//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/reactivity/utils.js
+//#region node_modules/svelte/src/internal/client/reactivity/utils.js
 function Qe(e) {
 	if (e !== null) for (let t of e) t.f & 2 && t.f & 65536 && (t.f ^= T, Qe(t.deps));
 }
@@ -250,7 +250,7 @@ function $e(e, t, n) {
 	e.f & 2048 ? t.add(e) : e.f & 4096 && n.add(e), Qe(e.deps), Xe(e, m);
 }
 //#endregion
-//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/reactivity/store.js
+//#region node_modules/svelte/src/internal/client/reactivity/store.js
 var et = !1;
 function tt(e) {
 	var t = et;
@@ -261,7 +261,7 @@ function tt(e) {
 	}
 }
 //#endregion
-//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/dom/elements/misc.js
+//#region node_modules/svelte/src/internal/client/dom/elements/misc.js
 function nt(e) {
 	M && /* @__PURE__ */ sn(e) !== null && un(e);
 }
@@ -274,7 +274,7 @@ function it() {
 	}, { capture: !0 }));
 }
 //#endregion
-//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/dom/elements/bindings/shared.js
+//#region node_modules/svelte/src/internal/client/dom/elements/bindings/shared.js
 function at(e) {
 	var t = H, n = U;
 	Un(null), Wn(null);
@@ -292,7 +292,7 @@ function ot(e, t, n, r = n) {
 	} : () => r(!0), it();
 }
 //#endregion
-//#region F:/git/SillyCanvas/node_modules/svelte/src/reactivity/create-subscriber.js
+//#region node_modules/svelte/src/reactivity/create-subscriber.js
 function st(e) {
 	let t = 0, n = Gt(0), r;
 	return () => {
@@ -304,7 +304,7 @@ function st(e) {
 	};
 }
 //#endregion
-//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/dom/blocks/boundary.js
+//#region node_modules/svelte/src/internal/client/dom/blocks/boundary.js
 var ct = x | S;
 function lt(e, t, n, r) {
 	new ut(e, t, n, r);
@@ -473,7 +473,7 @@ var ut = class {
 	}
 };
 //#endregion
-//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/reactivity/async.js
+//#region node_modules/svelte/src/internal/client/reactivity/async.js
 function dt(e, t, n, r) {
 	let i = He() ? ht : vt;
 	var a = e.filter((e) => !e.settled), o = t.map(i);
@@ -618,7 +618,7 @@ function Ct(e) {
 	if (e.effects !== null) for (let t of e.effects) t.teardown && t.fn !== null && sr(t);
 }
 //#endregion
-//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/reactivity/batch.js
+//#region node_modules/svelte/src/internal/client/reactivity/batch.js
 var wt = null, I = null, Tt = null, Et = null, Dt = null, Ot = !1, kt = !1, At = null, jt = null, Mt = 0, Nt = 1, Pt = class e {
 	id = Nt++;
 	#e = !1;
@@ -911,7 +911,7 @@ function Vt(e) {
 	for (var t = e.first; t !== null;) Vt(t), t = t.next;
 }
 //#endregion
-//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/reactivity/sources.js
+//#region node_modules/svelte/src/internal/client/reactivity/sources.js
 var Ht = /* @__PURE__ */ new Set(), Ut = /* @__PURE__ */ new Map(), Wt = !1;
 function Gt(e, t) {
 	return {
@@ -1158,7 +1158,7 @@ function pn(e) {
 	for (; t !== null && t.nodeType === 3;) t.remove(), e.nodeValue += t.nodeValue, t = e.nextSibling;
 }
 //#endregion
-//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/reactivity/effects.js
+//#region node_modules/svelte/src/internal/client/reactivity/effects.js
 function mn(e) {
 	U === null && (H === null && fe(e), de()), Bn && ue(e);
 }
@@ -1346,7 +1346,7 @@ function Ln(e, t) {
 	}
 }
 //#endregion
-//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/legacy.js
+//#region node_modules/svelte/src/internal/client/legacy.js
 var Rn = null, zn = !1, Bn = !1;
 function Vn(e) {
 	Bn = e;
@@ -1508,7 +1508,7 @@ function pr(e) {
 	return fr.includes(e);
 }
 //#endregion
-//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/dom/elements/events.js
+//#region node_modules/svelte/src/internal/client/dom/elements/events.js
 var mr = Symbol("events"), hr = /* @__PURE__ */ new Set(), gr = /* @__PURE__ */ new Set();
 function _r(e, t, n, r = {}) {
 	function i(e) {
@@ -1583,7 +1583,7 @@ function xr(e) {
 	}
 }
 //#endregion
-//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/dom/reconciler.js
+//#region node_modules/svelte/src/internal/client/dom/reconciler.js
 var Sr = globalThis?.window?.trustedTypes && /* @__PURE__ */ globalThis.window.trustedTypes.createPolicy("svelte-trusted-html", { createHTML: (e) => e });
 function Cr(e) {
 	return Sr?.createHTML(e) ?? e;
@@ -1593,7 +1593,7 @@ function wr(e) {
 	return t.innerHTML = Cr(e.replaceAll("<!>", "<!---->")), t.content;
 }
 //#endregion
-//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/dom/template.js
+//#region node_modules/svelte/src/internal/client/dom/template.js
 function Tr(e, t) {
 	var n = U;
 	n.nodes === null && (n.nodes = {
@@ -1714,7 +1714,7 @@ function Fr(e, t) {
 	return n ? (Pr.delete(e), n(t)) : Promise.resolve();
 }
 //#endregion
-//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/dom/blocks/branches.js
+//#region node_modules/svelte/src/internal/client/dom/blocks/branches.js
 var Ir = class {
 	anchor;
 	#e = /* @__PURE__ */ new Map();
@@ -1778,7 +1778,7 @@ var Ir = class {
 	}
 };
 //#endregion
-//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/dom/blocks/if.js
+//#region node_modules/svelte/src/internal/client/dom/blocks/if.js
 function X(e, t, n = !1) {
 	var r;
 	M && (r = N, Oe());
@@ -1802,7 +1802,7 @@ function X(e, t, n = !1) {
 	}, a);
 }
 //#endregion
-//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/dom/blocks/key.js
+//#region node_modules/svelte/src/internal/client/dom/blocks/key.js
 var Lr = Symbol("NaN");
 function Rr(e, t, n) {
 	M && Oe();
@@ -1813,7 +1813,7 @@ function Rr(e, t, n) {
 	});
 }
 //#endregion
-//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/dom/blocks/each.js
+//#region node_modules/svelte/src/internal/client/dom/blocks/each.js
 function zr(e, t) {
 	return t;
 }
@@ -1976,7 +1976,7 @@ function qr(e, t, n) {
 	t === null ? e.effect.first = n : t.next = n, n === null ? e.effect.last = t : n.prev = t;
 }
 //#endregion
-//#region F:/git/SillyCanvas/node_modules/clsx/dist/clsx.mjs
+//#region node_modules/clsx/dist/clsx.mjs
 function Jr(e) {
 	var t, n, r = "";
 	if (typeof e == "string" || typeof e == "number") r += e;
@@ -1993,7 +1993,7 @@ function Yr() {
 	return r;
 }
 //#endregion
-//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/shared/attributes.js
+//#region node_modules/svelte/src/internal/shared/attributes.js
 function Xr(e) {
 	return typeof e == "object" ? Yr(e) : e ?? "";
 }
@@ -2052,7 +2052,7 @@ function ti(e, t) {
 	return e == null ? null : String(e);
 }
 //#endregion
-//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/dom/elements/class.js
+//#region node_modules/svelte/src/internal/client/dom/elements/class.js
 function ni(e, t, n, r, i, a) {
 	var o = e[A];
 	if (M || o !== n || o === void 0) {
@@ -2065,7 +2065,7 @@ function ni(e, t, n, r, i, a) {
 	return a;
 }
 //#endregion
-//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/dom/elements/style.js
+//#region node_modules/svelte/src/internal/client/dom/elements/style.js
 function ri(e, t = {}, n, r) {
 	for (var i in n) {
 		var a = n[i];
@@ -2081,7 +2081,7 @@ function ii(e, t, n, r) {
 	return r;
 }
 //#endregion
-//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/dom/elements/bindings/select.js
+//#region node_modules/svelte/src/internal/client/dom/elements/bindings/select.js
 function ai(t, n, r = !1) {
 	if (t.multiple) {
 		if (n == null) return;
@@ -2112,7 +2112,7 @@ function si(e) {
 	return "__value" in e ? e.__value : e.value;
 }
 //#endregion
-//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/dom/elements/attributes.js
+//#region node_modules/svelte/src/internal/client/dom/elements/attributes.js
 var ci = Symbol("is custom element"), li = Symbol("is html"), ui = oe ? "link" : "LINK", di = oe ? "progress" : "PROGRESS";
 function Q(e) {
 	if (M) {
@@ -2161,7 +2161,7 @@ function gi(e) {
 	return n;
 }
 //#endregion
-//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/dom/elements/bindings/input.js
+//#region node_modules/svelte/src/internal/client/dom/elements/bindings/input.js
 function _i(e, t, n = t) {
 	var r = /* @__PURE__ */ new WeakSet();
 	ot(e, "input", async (i) => {
@@ -2190,7 +2190,7 @@ function yi(e) {
 	return e === "" ? null : +e;
 }
 //#endregion
-//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/dom/elements/bindings/this.js
+//#region node_modules/svelte/src/internal/client/dom/elements/bindings/this.js
 function bi(e, t) {
 	return e === t || e?.[O] === t;
 }
@@ -2215,7 +2215,7 @@ function xi(e = {}, t, n, r) {
 	}), e;
 }
 //#endregion
-//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/reactivity/props.js
+//#region node_modules/svelte/src/internal/client/reactivity/props.js
 function Si(e, t, n, r) {
 	var i = !0, o = !!(n & 8), s = !!(n & 16), c = r, l = !0, u = void 0, d = () => s && i ? (u ??= /* @__PURE__ */ ht(r), W(u)) : (l && (l = !1, c = s ? dr(r) : r), c);
 	let f;
@@ -2260,7 +2260,7 @@ function wi(e) {
 	Re === null && se("onDestroy"), Ci(() => () => dr(e));
 }
 //#endregion
-//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/disclose-version.js
+//#region node_modules/svelte/src/internal/disclose-version.js
 typeof window < "u" && ((window.__svelte ??= {}).v ??= /* @__PURE__ */ new Set()).add("5");
 //#endregion
 //#region ui/NodeCard.svelte
@@ -3112,12 +3112,23 @@ function Fa(e, t) {
 	function v(e, t) {
 		n().editControl && h(e.key, !1, (r) => n().editControl(r, e.key, t));
 	}
-	function y(e, t, r) {
-		b(e)?.allowedModes.some((e) => e.value === t) && n().editBinding && h(e, !1, (i) => n().editBinding(i, e, t, r));
+	function y(e, r) {
+		if (!t.view || t.view.readOnly || !n().editControl) return;
+		let i = Number(r.value);
+		!r.value.trim() || !Number.isFinite(i) ? R(a, {
+			...W(a),
+			[e.key]: "Enter a finite number before saving."
+		}, !0) : r.validity.valid ? v(e, i) : R(a, {
+			...W(a),
+			[e.key]: "Enter a number within the allowed range and step."
+		}, !0);
 	}
-	let b = (e) => e === "profileId" ? t.view?.model?.profile : t.view?.model?.model, x = (e) => W(i)[e] ? "override" : b(e)?.mode, S = (e) => W(i)[e]?.text ?? b(e)?.value ?? "";
-	function C(e, r) {
-		t.view && !t.view.readOnly && n().editBinding && b(e)?.allowedModes.some((e) => e.value === "override") && (l.delete(e), R(i, {
+	function b(e, t, r) {
+		x(e)?.allowedModes.some((e) => e.value === t) && n().editBinding && h(e, !1, (i) => n().editBinding(i, e, t, r));
+	}
+	let x = (e) => e === "profileId" ? t.view?.model?.profile : t.view?.model?.model, S = (e) => W(i)[e] ? "override" : x(e)?.mode, C = (e) => W(i)[e]?.text ?? x(e)?.value ?? "";
+	function w(e, r) {
+		t.view && !t.view.readOnly && n().editBinding && x(e)?.allowedModes.some((e) => e.value === "override") && (l.delete(e), R(i, {
 			...W(i),
 			[e]: {
 				text: r,
@@ -3129,11 +3140,11 @@ function Fa(e, t) {
 			[e]: ""
 		}, !0));
 	}
-	function w(e, r) {
-		let o = b(e);
+	function T(e, r) {
+		let o = x(e);
 		if (!t.view || t.view.readOnly || !n().editBinding || !o?.allowedModes.some((e) => e.value === r)) return;
 		if (r === "override") {
-			C(e, S(e));
+			w(e, C(e));
 			return;
 		}
 		l.delete(e);
@@ -3141,10 +3152,10 @@ function Fa(e, t) {
 		delete s[e], R(i, s, !0), R(a, {
 			...W(a),
 			[e]: ""
-		}, !0), r !== o.mode && y(e, r, null);
+		}, !0), r !== o.mode && b(e, r, null);
 	}
-	function T(e, r) {
-		t.view && !t.view.readOnly && x(e) === "override" && n().editBinding && b(e)?.allowedModes.some((e) => e.value === "override") && (C(e, r), r.trim() ? y(e, "override", r) : R(i, {
+	function E(e, r) {
+		t.view && !t.view.readOnly && S(e) === "override" && n().editBinding && x(e)?.allowedModes.some((e) => e.value === "override") && (w(e, r), r.trim() ? b(e, "override", r) : R(i, {
 			...W(i),
 			[e]: {
 				text: r,
@@ -3153,39 +3164,39 @@ function Fa(e, t) {
 			}
 		}, !0));
 	}
-	var E = Pa(), D = z(E), ee = (e) => {
+	var D = Pa(), ee = z(D), O = (e) => {
 		var o = Ma(), s = ln(o), c = z(s), l = z(c);
 		P(c);
 		var u = B(c), d = z(u), p = z(d, !0);
 		P(d);
-		var y = B(d), b = z(y);
-		P(y), P(u), P(s);
-		var E = B(s, 2), D = z(E), ee = B(D), O = (e) => {
+		var b = B(d), x = z(b);
+		P(b), P(u), P(s);
+		var D = B(s, 2), ee = z(D), O = B(ee), te = (e) => {
 			J(e, Or("· Read-only body"));
 		};
-		X(ee, (e) => {
-			t.view.readOnly && e(O);
-		}), P(E);
-		var te = B(E, 2), ne = B(z(te), 2), k = B(z(ne));
-		Q(k), P(ne);
-		var A = B(ne, 2), j = B(A, 2), re = z(j);
-		Q(re), ke(), P(j);
-		var ie = B(j, 2), ae = (e) => {
+		X(O, (e) => {
+			t.view.readOnly && e(te);
+		}), P(D);
+		var ne = B(D, 2), k = B(z(ne), 2), A = B(z(k));
+		Q(A), P(k);
+		var j = B(k, 2), re = B(j, 2), ie = z(re);
+		Q(ie), ke(), P(re);
+		var ae = B(re, 2), oe = (e) => {
 			var t = ha(), n = z(t, !0);
 			P(t), V(() => Y(n, W(a).alias || W(a).compact)), J(e, t);
 		};
-		X(ie, (e) => {
-			(W(a).alias || W(a).compact) && e(ae);
-		}), P(te);
-		var oe = B(te, 2), se = B(z(oe), 2), ce = z(se);
-		Q(ce), ke(), P(se);
-		var le = B(se, 4), ue = (e) => {
+		X(ae, (e) => {
+			(W(a).alias || W(a).compact) && e(oe);
+		}), P(ne);
+		var se = B(ne, 2), ce = B(z(se), 2), le = z(ce);
+		Q(le), ke(), P(ce);
+		var ue = B(ce, 4), de = (e) => {
 			var t = ha(), n = z(t, !0);
 			P(t), V(() => Y(n, W(a).enabled)), J(e, t);
 		};
-		X(le, (e) => {
-			W(a).enabled && e(ue);
-		}), Z(B(le, 2), 17, () => t.view.controls, (e) => e.key, (e, o) => {
+		X(ue, (e) => {
+			W(a).enabled && e(de);
+		}), Z(B(ue, 2), 17, () => t.view.controls, (e) => e.key, (e, o) => {
 			var s = wa(), c = ln(s), l = z(c), u = B(l), d = (e) => {
 				var r = _a();
 				Z(r, 21, () => W(o).options ?? [], (e) => e.value, (e, t) => {
@@ -3206,48 +3217,48 @@ function Fa(e, t) {
 					$(r, "aria-label", W(o).label), pi(r, e), r.disabled = t.view.readOnly || !n().editControl;
 				}, [() => !!W(o).value]), K("change", r, (e) => v(W(o), e.currentTarget.checked)), J(e, r);
 			}, p = (e) => {
-				var r = ya();
-				Q(r), V((e) => {
-					$(r, "aria-label", W(o).label), $(r, "min", W(o).min), $(r, "max", W(o).max), fi(r, e), r.disabled = t.view.readOnly || !n().editControl;
-				}, [() => Number(W(o).value)]), K("change", r, (e) => v(W(o), Number(e.currentTarget.value))), J(e, r);
+				var i = ya();
+				Q(i), V((e) => {
+					$(i, "aria-label", W(o).label), $(i, "min", W(o).min), $(i, "max", W(o).max), $(i, "step", W(o).step ?? 1), $(i, "aria-invalid", !!W(a)[W(o).key]), $(i, "aria-describedby", W(a)[W(o).key] ? r() + "-error-" + W(o).key : void 0), fi(i, e), i.disabled = t.view.readOnly || !n().editControl;
+				}, [() => Number(W(o).value)]), K("change", i, (e) => y(W(o), e.currentTarget)), J(e, i);
 			}, h = (e) => {
 				var s = ba();
 				nt(s), V((e) => {
 					$(s, "aria-label", W(o).label), $(s, "aria-invalid", !!(W(i)[W(o).key]?.error || W(a)[W(o).key])), $(s, "aria-describedby", W(i)[W(o).key]?.error || W(a)[W(o).key] ? r() + "-error-" + W(o).key : void 0), fi(s, e), s.disabled = t.view.readOnly || !n().editControl;
 				}, [() => W(i)[W(o).key]?.text ?? m(W(o))]), K("input", s, (e) => g(W(o), e.currentTarget.value)), J(e, s);
-			}, y = (e) => {
+			}, b = (e) => {
 				var r = ba();
 				nt(r), V((e) => {
 					$(r, "aria-label", W(o).label), fi(r, e), r.disabled = t.view.readOnly || !n().editControl;
 				}, [() => m(W(o))]), K("change", r, (e) => v(W(o), e.currentTarget.value)), J(e, r);
 			};
 			X(u, (e) => {
-				W(o).editor === "enum" ? e(d) : W(o).editor === "boolean" ? e(f, 1) : W(o).editor === "number" ? e(p, 2) : W(o).editor === "json" || W(o).editor === "lines" ? e(h, 3) : e(y, -1);
+				W(o).editor === "enum" ? e(d) : W(o).editor === "boolean" ? e(f, 1) : W(o).editor === "number" ? e(p, 2) : W(o).editor === "json" || W(o).editor === "lines" ? e(h, 3) : e(b, -1);
 			}), P(c);
-			var b = B(c, 2), x = (e) => {
+			var x = B(c, 2), S = (e) => {
 				var r = xa(), a = z(r, !0);
 				P(r), V(() => {
 					$(r, "data-save-control", W(o).key), r.disabled = t.view.readOnly || !n().editControl || !!W(i)[W(o).key]?.pending, Y(a, W(i)[W(o).key]?.pending ? "Validating…" : "Save " + W(o).label);
 				}), K("click", r, () => _(W(o))), J(e, r);
 			};
-			X(b, (e) => {
-				(W(o).editor === "json" || W(o).editor === "lines") && e(x);
+			X(x, (e) => {
+				(W(o).editor === "json" || W(o).editor === "lines") && e(S);
 			});
-			var S = B(b, 2), C = (e) => {
+			var C = B(x, 2), w = (e) => {
 				var t = Sa(), n = z(t, !0);
 				P(t), V(() => Y(n, W(o).help)), J(e, t);
 			};
-			X(S, (e) => {
-				W(o).help && e(C);
+			X(C, (e) => {
+				W(o).help && e(w);
 			});
-			var w = B(S, 2), T = (e) => {
+			var T = B(C, 2), E = (e) => {
 				var t = Sa(), n = z(t, !0);
 				P(t), V(() => Y(n, W(o).exposureNote)), J(e, t);
 			};
-			X(w, (e) => {
-				W(o).exposureNote && e(T);
+			X(T, (e) => {
+				W(o).exposureNote && e(E);
 			});
-			var E = B(w, 2), D = (e) => {
+			var D = B(T, 2), ee = (e) => {
 				var t = Ca(), n = z(t), r = B(n), i = (e) => {
 					var t = Or();
 					V(() => Y(t, `· ${W(o).source ?? ""}`)), J(e, t);
@@ -3256,20 +3267,20 @@ function Fa(e, t) {
 					W(o).source && e(i);
 				}), P(t), V(() => Y(n, `Effective: ${W(o).effective ?? ""}`)), J(e, t);
 			};
-			X(E, (e) => {
-				W(o).effective !== void 0 && e(D);
+			X(D, (e) => {
+				W(o).effective !== void 0 && e(ee);
 			});
-			var ee = B(E, 2), O = (e) => {
+			var O = B(D, 2), te = (e) => {
 				var t = ha(), n = z(t, !0);
 				P(t), V(() => {
 					$(t, "id", r() + "-error-" + W(o).key), Y(n, W(i)[W(o).key]?.error || W(a)[W(o).key]);
 				}), J(e, t);
 			};
-			X(ee, (e) => {
-				(W(i)[W(o).key]?.error || W(a)[W(o).key]) && e(O);
+			X(O, (e) => {
+				(W(i)[W(o).key]?.error || W(a)[W(o).key]) && e(te);
 			}), V(() => Y(l, `${W(o).label ?? ""} `)), J(e, s);
-		}), P(oe);
-		var de = B(oe, 2), fe = (e) => {
+		}), P(se);
+		var fe = B(se, 2), pe = (e) => {
 			var r = Oa(), o = B(z(r), 2), s = B(z(o));
 			Q(s), P(o);
 			var c = B(o, 2), l = B(z(c));
@@ -3296,8 +3307,8 @@ function Fa(e, t) {
 				var o;
 				oi(i), P(r), V((e) => {
 					i.disabled = t.view.readOnly || !n().editBinding, o !== (o = e) && (i.value = (i.__value = e) ?? "", ai(i, e));
-				}, [() => S("profileId")]), K("change", i, (e) => T("profileId", e.currentTarget.value)), J(e, r);
-			}, p = /* @__PURE__ */ F(() => x("profileId") === "override");
+				}, [() => C("profileId")]), K("change", i, (e) => E("profileId", e.currentTarget.value)), J(e, r);
+			}, p = /* @__PURE__ */ F(() => S("profileId") === "override");
 			X(d, (e) => {
 				W(p) && e(f);
 			});
@@ -3316,14 +3327,14 @@ function Fa(e, t) {
 				var r = Ea(), i = B(z(r));
 				Q(i), P(r), V((e) => {
 					fi(i, e), i.disabled = t.view.readOnly || !n().editBinding;
-				}, [() => S("model")]), K("input", i, (e) => C("model", e.currentTarget.value)), K("change", i, (e) => T("model", e.currentTarget.value)), J(e, r);
-			}, b = /* @__PURE__ */ F(() => x("model") === "override");
+				}, [() => C("model")]), K("input", i, (e) => w("model", e.currentTarget.value)), K("change", i, (e) => E("model", e.currentTarget.value)), J(e, r);
+			}, b = /* @__PURE__ */ F(() => S("model") === "override");
 			X(v, (e) => {
 				W(b) && e(y);
 			});
-			var E = B(v, 2), D = z(E);
-			P(E);
-			var ee = B(E), O = z(ee, !0);
+			var x = B(v, 2), D = z(x);
+			P(x);
+			var ee = B(x), O = z(ee, !0);
 			P(ee);
 			var te = B(ee, 2), ne = (e) => {
 				var n = Da(), r = z(n, !0);
@@ -3340,15 +3351,15 @@ function Fa(e, t) {
 				(W(a).modelRole || W(i).profileId?.error || W(a).profileId || W(i).model?.error || W(a).model) && e(A);
 			}), P(r), V((e, r) => {
 				fi(s, t.view.model.role), s.disabled = t.view.readOnly || !t.view.model.roleEditable || !n().editField, l.disabled = t.view.readOnly || !n().editBinding, u !== (u = e) && (l.value = (l.__value = e) ?? "", ai(l, e)), g.disabled = t.view.readOnly || !n().editBinding, _ !== (_ = r) && (g.value = (g.__value = r) ?? "", ai(g, r)), Y(D, `Effective connection: ${t.view.model.effective ?? ""}`), Y(O, t.view.model.source);
-			}, [() => x("profileId"), () => x("model")]), K("change", s, (e) => {
+			}, [() => S("profileId"), () => S("model")]), K("change", s, (e) => {
 				let r = e.currentTarget.value;
 				t.view?.model?.roleEditable && n().editField && h("modelRole", !1, (e) => n().editField(e, "modelRole", r));
-			}), K("change", l, (e) => w("profileId", e.currentTarget.value)), K("change", g, (e) => w("model", e.currentTarget.value)), J(e, r);
+			}), K("change", l, (e) => T("profileId", e.currentTarget.value)), K("change", g, (e) => T("model", e.currentTarget.value)), J(e, r);
 		};
-		X(de, (e) => {
-			t.view.model && e(fe);
+		X(fe, (e) => {
+			t.view.model && e(pe);
 		});
-		var pe = B(de, 2), me = (e) => {
+		var me = B(fe, 2), he = (e) => {
 			var n = Aa();
 			Z(B(z(n)), 17, () => t.view.ports, (e) => e.direction + ":" + e.id, (e, t) => {
 				var n = ka(), r = z(n), i = B(r), a = z(i, !0);
@@ -3357,46 +3368,46 @@ function Fa(e, t) {
 				}), J(e, n);
 			}), P(n), J(e, n);
 		};
-		X(pe, (e) => {
-			t.view.ports.length && e(me);
+		X(me, (e) => {
+			t.view.ports.length && e(he);
 		});
-		var he = B(pe, 2), ge = (e) => {
+		var ge = B(me, 2), _e = (e) => {
 			var n = ja(), r = z(n, !0);
 			P(n), V(() => Y(r, t.view.status)), J(e, n);
 		};
-		X(he, (e) => {
-			t.view.status && e(ge);
+		X(ge, (e) => {
+			t.view.status && e(_e);
 		});
-		var _e = B(he, 2);
-		Z(_e, 17, () => t.view.issues ?? [], zr, (e, t) => {
+		var ve = B(ge, 2);
+		Z(ve, 17, () => t.view.issues ?? [], zr, (e, t) => {
 			var n = Da(), r = z(n, !0);
 			P(n), V(() => Y(r, W(t))), J(e, n);
 		});
-		var ve = B(_e, 2), ye = z(ve), be = B(ye);
-		P(ve), V(() => {
-			$(l, "d", t.view.iconPath), Y(p, t.view.title), Y(b, `Canonical type: ${t.view.canonicalTitle ?? ""}`), Y(D, `${t.view.family ?? ""} · ${t.view.phase ?? ""} phase`), fi(k, t.view.alias), k.disabled = !t.view.canPresent || !n().present, A.disabled = !t.view.canPresent || !n().present, pi(re, t.view.compact), re.disabled = !t.view.canPresent || !n().present, pi(ce, t.view.enabled), ce.disabled = t.view.readOnly || !n().editField, ye.disabled = t.view.readOnly || !n().duplicate, be.disabled = t.view.readOnly || !n().remove;
-		}), K("change", k, (e) => {
+		var ye = B(ve, 2), be = z(ye), xe = B(be);
+		P(ye), V(() => {
+			$(l, "d", t.view.iconPath), Y(p, t.view.title), Y(x, `Canonical type: ${t.view.canonicalTitle ?? ""}`), Y(ee, `${t.view.family ?? ""} · ${t.view.phase ?? ""} phase`), fi(A, t.view.alias), A.disabled = !t.view.canPresent || !n().present, j.disabled = !t.view.canPresent || !n().present, pi(ie, t.view.compact), ie.disabled = !t.view.canPresent || !n().present, pi(le, t.view.enabled), le.disabled = t.view.readOnly || !n().editField, be.disabled = t.view.readOnly || !n().duplicate, xe.disabled = t.view.readOnly || !n().remove;
+		}), K("change", A, (e) => {
 			let t = e.currentTarget.value;
 			n().present && h("alias", !0, (e) => n().present(e, "alias", t));
-		}), K("click", A, () => {
+		}), K("click", j, () => {
 			n().present && h("alias", !0, (e) => n().present(e, "alias", ""));
-		}), K("change", re, (e) => {
+		}), K("change", ie, (e) => {
 			let t = e.currentTarget.checked;
 			n().present && h("compact", !0, (e) => n().present(e, "compact", t));
-		}), K("change", ce, (e) => {
+		}), K("change", le, (e) => {
 			let t = e.currentTarget.checked;
 			n().editField && h("enabled", !1, (e) => n().editField(e, "enabled", t));
-		}), K("click", ye, () => {
-			t.view && !t.view.readOnly && n().duplicate?.(f(t.view));
 		}), K("click", be, () => {
+			t.view && !t.view.readOnly && n().duplicate?.(f(t.view));
+		}), K("click", xe, () => {
 			t.view && !t.view.readOnly && n().remove?.(f(t.view));
 		}), J(e, o);
-	}, O = (e) => {
+	}, te = (e) => {
 		J(e, Na());
 	};
-	X(D, (e) => {
-		t.view ? e(ee) : e(O, -1);
-	}), P(E), J(e, E), Ve();
+	X(ee, (e) => {
+		t.view ? e(O) : e(te, -1);
+	}), P(D), J(e, D), Ve();
 }
 vr([
 	"change",
@@ -3673,12 +3684,12 @@ function no(e, t) {
 vr(["change", "click"]);
 //#endregion
 //#region ui/RunDetails.svelte
-var ro = /* @__PURE__ */ q("<p class=\"pc-run-error svelte-f9s2fm\"> </p>"), io = /* @__PURE__ */ q("<p class=\"pc-run-empty svelte-f9s2fm\">No execution plan has been recorded.</p>"), ao = /* @__PURE__ */ q("<span aria-hidden=\"true\" class=\"svelte-f9s2fm\">▱</span>"), oo = /* @__PURE__ */ q("<small class=\"svelte-f9s2fm\"> </small>"), so = /* @__PURE__ */ q("<details class=\"svelte-f9s2fm\"><summary class=\"svelte-f9s2fm\">Reported usage</summary><div class=\"pc-run-usage svelte-f9s2fm\"><small class=\"svelte-f9s2fm\"> </small><small class=\"svelte-f9s2fm\"> </small><small class=\"svelte-f9s2fm\"> </small><small class=\"svelte-f9s2fm\"> </small></div></details>"), co = /* @__PURE__ */ q("<li class=\"svelte-f9s2fm\"><div class=\"pc-run-row-heading svelte-f9s2fm\"><button type=\"button\" class=\"svelte-f9s2fm\"><!> </button><span class=\"pc-run-status svelte-f9s2fm\"> </span></div> <!> <div class=\"pc-run-row-meta svelte-f9s2fm\"><small class=\"svelte-f9s2fm\"> </small><small class=\"svelte-f9s2fm\"> </small></div> <!> <!></li>"), lo = /* @__PURE__ */ q("<header class=\"svelte-f9s2fm\"><h3 class=\"svelte-f9s2fm\">Run details</h3><span class=\"pc-run-status svelte-f9s2fm\"> </span></header> <div class=\"pc-run-summary svelte-f9s2fm\"><p class=\"svelte-f9s2fm\"> </p><p class=\"svelte-f9s2fm\"> </p><p class=\"svelte-f9s2fm\"> </p></div> <!> <!> <ol class=\"pc-run-rows svelte-f9s2fm\"></ol>", 1), uo = /* @__PURE__ */ q("<p class=\"pc-run-empty svelte-f9s2fm\">Run a workflow to inspect its processing stages.</p>"), fo = /* @__PURE__ */ q("<section class=\"pc-run-details svelte-f9s2fm\" aria-label=\"Run details\"><!></section>");
-function po(e, t) {
+var ro = /* @__PURE__ */ q("<p class=\"pc-run-memory svelte-f9s2fm\" role=\"status\"> </p>"), io = /* @__PURE__ */ q("<p class=\"pc-run-error svelte-f9s2fm\"> </p>"), ao = /* @__PURE__ */ q("<p class=\"pc-run-empty svelte-f9s2fm\">No execution plan has been recorded.</p>"), oo = /* @__PURE__ */ q("<span aria-hidden=\"true\" class=\"svelte-f9s2fm\">▱</span>"), so = /* @__PURE__ */ q("<small class=\"svelte-f9s2fm\"> </small>"), co = /* @__PURE__ */ q("<details class=\"svelte-f9s2fm\"><summary class=\"svelte-f9s2fm\">Reported usage</summary><div class=\"pc-run-usage svelte-f9s2fm\"><small class=\"svelte-f9s2fm\"> </small><small class=\"svelte-f9s2fm\"> </small><small class=\"svelte-f9s2fm\"> </small><small class=\"svelte-f9s2fm\"> </small></div></details>"), lo = /* @__PURE__ */ q("<li class=\"svelte-f9s2fm\"><div class=\"pc-run-row-heading svelte-f9s2fm\"><button type=\"button\" class=\"svelte-f9s2fm\"><!> </button><span class=\"pc-run-status svelte-f9s2fm\"> </span></div> <!> <div class=\"pc-run-row-meta svelte-f9s2fm\"><small class=\"svelte-f9s2fm\"> </small><small class=\"svelte-f9s2fm\"> </small></div> <!> <!></li>"), uo = /* @__PURE__ */ q("<header class=\"svelte-f9s2fm\"><h3 class=\"svelte-f9s2fm\">Run details</h3><span class=\"pc-run-status svelte-f9s2fm\"> </span></header> <div class=\"pc-run-summary svelte-f9s2fm\"><p class=\"svelte-f9s2fm\"> </p><p class=\"svelte-f9s2fm\"> </p><p class=\"svelte-f9s2fm\"> </p></div> <!> <!> <!> <ol class=\"pc-run-rows svelte-f9s2fm\"></ol>", 1), fo = /* @__PURE__ */ q("<p class=\"pc-run-empty svelte-f9s2fm\">Run a workflow to inspect its processing stages.</p>"), po = /* @__PURE__ */ q("<section class=\"pc-run-details svelte-f9s2fm\" aria-label=\"Run details\"><!></section>");
+function mo(e, t) {
 	Be(t, !0);
 	let n = Si(t, "actions", 19, () => ({})), r = (e) => e === "not-run" ? "Not run" : e === "empty" ? "Ready" : e.charAt(0).toUpperCase() + e.slice(1), i = (e) => e !== null && Number.isFinite(e) && e >= 0 ? (e / 1e3).toFixed(2) + "s" : "Unknown", a = (e) => e != null && Number.isFinite(e) && e >= 0 ? String(e) : "Unknown";
-	var o = fo(), s = z(o), c = (e) => {
-		var o = lo(), s = ln(o), c = B(z(s)), l = z(c, !0);
+	var o = po(), s = z(o), c = (e) => {
+		var o = uo(), s = ln(o), c = B(z(s)), l = z(c, !0);
 		P(c), P(s);
 		var u = B(s, 2), d = z(u), f = z(d);
 		P(d);
@@ -3688,23 +3699,30 @@ function po(e, t) {
 		P(h), P(u);
 		var _ = B(u, 2), v = (e) => {
 			var n = ro(), r = z(n, !0);
-			P(n), V(() => Y(r, t.view.issue)), J(e, n);
+			P(n), V(() => Y(r, t.view.memoryStatus)), J(e, n);
 		};
 		X(_, (e) => {
-			t.view.issue && e(v);
+			t.view.memoryStatus && e(v);
 		});
 		var y = B(_, 2), b = (e) => {
-			J(e, io());
+			var n = io(), r = z(n, !0);
+			P(n), V(() => Y(r, t.view.issue)), J(e, n);
 		};
 		X(y, (e) => {
-			t.view.rows.length || e(b);
+			t.view.issue && e(b);
 		});
-		var x = B(y, 2);
-		Z(x, 21, () => t.view.rows, (e) => e.key, (e, o) => {
-			var s = co();
+		var x = B(y, 2), S = (e) => {
+			J(e, ao());
+		};
+		X(x, (e) => {
+			t.view.rows.length || e(S);
+		});
+		var C = B(x, 2);
+		Z(C, 21, () => t.view.rows, (e) => e.key, (e, o) => {
+			var s = lo();
 			let c;
 			var l = z(s), u = z(l), d = z(u), f = (e) => {
-				J(e, ao());
+				J(e, oo());
 			};
 			X(d, (e) => {
 				W(o).kind === "instance" && e(f);
@@ -3714,7 +3732,7 @@ function po(e, t) {
 			var m = B(u), h = z(m, !0);
 			P(m), P(l);
 			var g = B(l, 2), _ = (e) => {
-				var t = oo(), n = z(t, !0);
+				var t = so(), n = z(t, !0);
 				P(t), V((e) => Y(n, e), [() => r(W(o).subphase)]), J(e, t);
 			};
 			X(g, (e) => {
@@ -3725,14 +3743,14 @@ function po(e, t) {
 			var x = B(y), S = z(x);
 			P(x), P(v);
 			var C = B(v, 2), w = (e) => {
-				var t = ro(), n = z(t, !0);
+				var t = io(), n = z(t, !0);
 				P(t), V(() => Y(n, W(o).issue)), J(e, t);
 			};
 			X(C, (e) => {
 				W(o).issue && e(w);
 			});
 			var T = B(C, 2), E = (e) => {
-				var t = so(), n = B(z(t)), r = z(n), i = z(r);
+				var t = co(), n = B(z(t)), r = z(n), i = z(r);
 				P(r);
 				var s = B(r), c = z(s);
 				P(s);
@@ -3761,11 +3779,11 @@ function po(e, t) {
 					instancePath: [...W(o).address.instancePath]
 				});
 			}), J(e, s);
-		}), P(x), V((e, n) => {
+		}), P(C), V((e, n) => {
 			$(c, "data-status", t.view.status), Y(l, e), Y(f, `${t.view.completedCount ?? ""} of ${t.view.executableCount ?? ""} stages complete`), Y(m, `${t.view.actualCalls ?? ""} of ${t.view.callBound ?? ""} requests`), Y(g, `Elapsed: ${n ?? ""}`);
 		}, [() => r(t.view.status), () => i(t.view.elapsedMs)]), J(e, o);
 	}, l = (e) => {
-		J(e, uo());
+		J(e, fo());
 	};
 	X(s, (e) => {
 		t.view ? e(c) : e(l, -1);
@@ -3774,8 +3792,8 @@ function po(e, t) {
 vr(["click"]);
 //#endregion
 //#region ui/RunMeter.svelte
-var mo = /* @__PURE__ */ q("<span class=\"pc-run-meter-elapsed svelte-1tkcp3\" data-run-elapsed=\"\"> </span>"), ho = /* @__PURE__ */ q("<span class=\"pc-run-pixel svelte-1tkcp3\" data-run-pixel=\"\"></span>"), go = /* @__PURE__ */ q("<button class=\"pc-run-meter svelte-1tkcp3\"><span class=\"pc-run-meter-label svelte-1tkcp3\"> </span> <!> <span class=\"pc-run-meter-pixels svelte-1tkcp3\" aria-hidden=\"true\"></span></button>");
-function _o(e, t) {
+var ho = /* @__PURE__ */ q("<span class=\"pc-run-meter-elapsed svelte-1tkcp3\" data-run-elapsed=\"\"> </span>"), go = /* @__PURE__ */ q("<span class=\"pc-run-pixel svelte-1tkcp3\" data-run-pixel=\"\"></span>"), _o = /* @__PURE__ */ q("<button class=\"pc-run-meter svelte-1tkcp3\"><span class=\"pc-run-meter-label svelte-1tkcp3\"> </span> <!> <span class=\"pc-run-meter-pixels svelte-1tkcp3\" aria-hidden=\"true\"></span></button>");
+function vo(e, t) {
 	Be(t, !0);
 	let n = (e) => e === "empty" ? "Ready" : e === "not-run" ? "Not run" : e.charAt(0).toUpperCase() + e.slice(1), r = [
 		"cancelling",
@@ -3806,10 +3824,10 @@ function _o(e, t) {
 		return e;
 	}), a = /* @__PURE__ */ F(() => t.view ? "Open run details. " + n(t.view.status) + ". " + t.view.completedCount + " of " + t.view.executableCount + " stages complete. " + t.view.actualCalls + " of " + t.view.callBound + " requests." : "Open run details");
 	var o = kr(), s = ln(o), c = (e) => {
-		var r = go(), o = z(r), s = z(o, !0);
+		var r = _o(), o = z(r), s = z(o, !0);
 		P(o);
 		var c = B(o, 2), l = (e) => {
-			var n = mo(), r = z(n);
+			var n = ho(), r = z(n);
 			P(n), V((e) => Y(r, `${e ?? ""}s`), [() => (t.view.elapsedMs / 1e3).toFixed(1)]), J(e, n);
 		}, u = /* @__PURE__ */ F(() => t.view.elapsedMs !== null && Number.isFinite(t.view.elapsedMs) && t.view.elapsedMs >= 0);
 		X(c, (e) => {
@@ -3817,7 +3835,7 @@ function _o(e, t) {
 		});
 		var d = B(c, 2);
 		Z(d, 21, () => W(i), (e) => e.key, (e, t) => {
-			var n = ho();
+			var n = go();
 			V(() => {
 				$(n, "data-status", W(t).status), $(n, "title", W(t).title);
 			}), J(e, n);
@@ -3832,8 +3850,8 @@ function _o(e, t) {
 vr(["click"]);
 //#endregion
 //#region ui/PortalManager.svelte
-var vo = /* @__PURE__ */ q("<button type=\"button\" class=\"svelte-mnv790\">Close</button>"), yo = /* @__PURE__ */ q("<option class=\"svelte-mnv790\"> </option>"), bo = /* @__PURE__ */ q("<label class=\"svelte-mnv790\">Portal name<input aria-label=\"Portal name\" class=\"svelte-mnv790\"/></label> <p class=\"pc-note svelte-mnv790\"> </p> <div class=\"pc-actions svelte-mnv790\"><button type=\"button\" data-portal-rename=\"\" class=\"svelte-mnv790\">Rename</button></div>", 1), xo = /* @__PURE__ */ q("<p class=\"pc-note svelte-mnv790\">Select a portal or create one from an output.</p>"), So = /* @__PURE__ */ q("<button type=\"button\" data-portal-jump-source=\"\" class=\"svelte-mnv790\">Jump to source</button>"), Co = /* @__PURE__ */ q("<label class=\"pc-check svelte-mnv790\"><input type=\"checkbox\" aria-label=\"Replace existing connection\" class=\"svelte-mnv790\"/>Replace existing connection</label>"), wo = /* @__PURE__ */ q("<button type=\"button\" data-portal-jump-consumer=\"\" class=\"svelte-mnv790\">Jump</button>"), To = /* @__PURE__ */ q("<div class=\"pc-consumer svelte-mnv790\"><span class=\"svelte-mnv790\"> </span><div class=\"pc-actions svelte-mnv790\"><button type=\"button\" data-portal-restore=\"\" class=\"svelte-mnv790\">Restore wire</button> <!></div></div>"), Eo = /* @__PURE__ */ q("<p class=\"pc-note svelte-mnv790\">No consumers.</p>"), Do = /* @__PURE__ */ q("<label class=\"svelte-mnv790\">Existing consumers<select aria-label=\"Existing consumers\" class=\"svelte-mnv790\"><option class=\"svelte-mnv790\">Choose before deleting…</option><option class=\"svelte-mnv790\">Restore visible wires</option><option class=\"svelte-mnv790\">Disconnect consumers</option></select></label>"), Oo = /* @__PURE__ */ q("<details open=\"\" class=\"svelte-mnv790\"><summary class=\"svelte-mnv790\">Consumers</summary> <label class=\"svelte-mnv790\">Compatible receiver<select aria-label=\"Compatible receiver\" class=\"svelte-mnv790\"><option class=\"svelte-mnv790\">Select input…</option><!></select></label> <!> <div class=\"pc-actions svelte-mnv790\"><button type=\"button\" data-portal-connect=\"\" class=\"svelte-mnv790\">Connect receiver</button></div> <!> <!> <!> <div class=\"pc-actions svelte-mnv790\"><button type=\"button\" data-portal-delete=\"\" class=\"svelte-mnv790\">Delete portal</button></div></details>"), ko = /* @__PURE__ */ q("<details open=\"\" class=\"svelte-mnv790\"><summary class=\"svelte-mnv790\">Convert to portal</summary><p class=\"pc-note svelte-mnv790\"> </p><div class=\"pc-actions svelte-mnv790\"><button type=\"button\" data-portal-convert=\"\" class=\"svelte-mnv790\"> </button></div></details>"), Ao = /* @__PURE__ */ q("<p class=\"pc-error svelte-mnv790\"> </p>"), jo = /* @__PURE__ */ q("<p class=\"pc-error svelte-mnv790\" role=\"alert\"> </p>"), Mo = /* @__PURE__ */ q("<p class=\"pc-note svelte-mnv790\" role=\"status\">Preparing change…</p>"), No = /* @__PURE__ */ q("<p class=\"pc-note svelte-mnv790\"> </p> <label class=\"svelte-mnv790\">Portal<select aria-label=\"Selected portal\" class=\"svelte-mnv790\"><option class=\"svelte-mnv790\">Select portal…</option><!></select></label> <!> <details open=\"\" class=\"svelte-mnv790\"><summary class=\"svelte-mnv790\">Source</summary> <label class=\"svelte-mnv790\">Output<select aria-label=\"Portal source\" class=\"svelte-mnv790\"><option class=\"svelte-mnv790\">Select output…</option><!></select></label> <label class=\"svelte-mnv790\">New portal name<input aria-label=\"New portal name\" class=\"svelte-mnv790\"/></label> <div class=\"pc-actions svelte-mnv790\"><button type=\"button\" data-portal-create=\"\" class=\"svelte-mnv790\">Create portal</button> <button type=\"button\" data-portal-retarget=\"\" class=\"svelte-mnv790\">Retarget</button> <!></div></details> <!> <!> <!> <!> <!>", 1), Po = /* @__PURE__ */ q("<p class=\"pc-note svelte-mnv790\">Open a graph to manage its portals.</p>"), Fo = /* @__PURE__ */ q("<section class=\"pc-manager svelte-mnv790\" aria-label=\"Manage portals\"><header class=\"svelte-mnv790\"><h2 class=\"svelte-mnv790\">Manage portals</h2><!></header> <!></section>");
-function Io(e, t) {
+var yo = /* @__PURE__ */ q("<button type=\"button\" class=\"svelte-mnv790\">Close</button>"), bo = /* @__PURE__ */ q("<option class=\"svelte-mnv790\"> </option>"), xo = /* @__PURE__ */ q("<label class=\"svelte-mnv790\">Portal name<input aria-label=\"Portal name\" class=\"svelte-mnv790\"/></label> <p class=\"pc-note svelte-mnv790\"> </p> <div class=\"pc-actions svelte-mnv790\"><button type=\"button\" data-portal-rename=\"\" class=\"svelte-mnv790\">Rename</button></div>", 1), So = /* @__PURE__ */ q("<p class=\"pc-note svelte-mnv790\">Select a portal or create one from an output.</p>"), Co = /* @__PURE__ */ q("<button type=\"button\" data-portal-jump-source=\"\" class=\"svelte-mnv790\">Jump to source</button>"), wo = /* @__PURE__ */ q("<label class=\"pc-check svelte-mnv790\"><input type=\"checkbox\" aria-label=\"Replace existing connection\" class=\"svelte-mnv790\"/>Replace existing connection</label>"), To = /* @__PURE__ */ q("<button type=\"button\" data-portal-jump-consumer=\"\" class=\"svelte-mnv790\">Jump</button>"), Eo = /* @__PURE__ */ q("<div class=\"pc-consumer svelte-mnv790\"><span class=\"svelte-mnv790\"> </span><div class=\"pc-actions svelte-mnv790\"><button type=\"button\" data-portal-restore=\"\" class=\"svelte-mnv790\">Restore wire</button> <!></div></div>"), Do = /* @__PURE__ */ q("<p class=\"pc-note svelte-mnv790\">No consumers.</p>"), Oo = /* @__PURE__ */ q("<label class=\"svelte-mnv790\">Existing consumers<select aria-label=\"Existing consumers\" class=\"svelte-mnv790\"><option class=\"svelte-mnv790\">Choose before deleting…</option><option class=\"svelte-mnv790\">Restore visible wires</option><option class=\"svelte-mnv790\">Disconnect consumers</option></select></label>"), ko = /* @__PURE__ */ q("<details open=\"\" class=\"svelte-mnv790\"><summary class=\"svelte-mnv790\">Consumers</summary> <label class=\"svelte-mnv790\">Compatible receiver<select aria-label=\"Compatible receiver\" class=\"svelte-mnv790\"><option class=\"svelte-mnv790\">Select input…</option><!></select></label> <!> <div class=\"pc-actions svelte-mnv790\"><button type=\"button\" data-portal-connect=\"\" class=\"svelte-mnv790\">Connect receiver</button></div> <!> <!> <!> <div class=\"pc-actions svelte-mnv790\"><button type=\"button\" data-portal-delete=\"\" class=\"svelte-mnv790\">Delete portal</button></div></details>"), Ao = /* @__PURE__ */ q("<details open=\"\" class=\"svelte-mnv790\"><summary class=\"svelte-mnv790\">Convert to portal</summary><p class=\"pc-note svelte-mnv790\"> </p><div class=\"pc-actions svelte-mnv790\"><button type=\"button\" data-portal-convert=\"\" class=\"svelte-mnv790\"> </button></div></details>"), jo = /* @__PURE__ */ q("<p class=\"pc-error svelte-mnv790\"> </p>"), Mo = /* @__PURE__ */ q("<p class=\"pc-error svelte-mnv790\" role=\"alert\"> </p>"), No = /* @__PURE__ */ q("<p class=\"pc-note svelte-mnv790\" role=\"status\">Preparing change…</p>"), Po = /* @__PURE__ */ q("<p class=\"pc-note svelte-mnv790\"> </p> <label class=\"svelte-mnv790\">Portal<select aria-label=\"Selected portal\" class=\"svelte-mnv790\"><option class=\"svelte-mnv790\">Select portal…</option><!></select></label> <!> <details open=\"\" class=\"svelte-mnv790\"><summary class=\"svelte-mnv790\">Source</summary> <label class=\"svelte-mnv790\">Output<select aria-label=\"Portal source\" class=\"svelte-mnv790\"><option class=\"svelte-mnv790\">Select output…</option><!></select></label> <label class=\"svelte-mnv790\">New portal name<input aria-label=\"New portal name\" class=\"svelte-mnv790\"/></label> <div class=\"pc-actions svelte-mnv790\"><button type=\"button\" data-portal-create=\"\" class=\"svelte-mnv790\">Create portal</button> <button type=\"button\" data-portal-retarget=\"\" class=\"svelte-mnv790\">Retarget</button> <!></div></details> <!> <!> <!> <!> <!>", 1), Fo = /* @__PURE__ */ q("<p class=\"pc-note svelte-mnv790\">Open a graph to manage its portals.</p>"), Io = /* @__PURE__ */ q("<section class=\"pc-manager svelte-mnv790\" aria-label=\"Manage portals\"><header class=\"svelte-mnv790\"><h2 class=\"svelte-mnv790\">Manage portals</h2><!></header> <!></section>");
+function Lo(e, t) {
 	Be(t, !0);
 	let n = Si(t, "actions", 19, () => ({})), r = /* @__PURE__ */ L(""), i = /* @__PURE__ */ L(""), a = /* @__PURE__ */ L(""), o = /* @__PURE__ */ L(""), s = /* @__PURE__ */ L(""), c = /* @__PURE__ */ L(!1), l = /* @__PURE__ */ L(""), u = /* @__PURE__ */ L(""), d = "", f = 0, p = !0, m = (e) => JSON.stringify(e.kind === "graph" ? [
 		"graph",
@@ -3887,19 +3905,19 @@ function Io(e, t) {
 			p && a === f && t.view?.managerKey === i.managerKey && t.view.revision === i.revision && m(t.view.scope) === m(i.scope) && t.view.selectedPortalId === o && (R(u, ""), R(l, e instanceof Error ? e.message : "The portal change could not be accepted.", !0));
 		}
 	}
-	var E = Fo(), D = z(E), ee = B(z(D)), O = (e) => {
-		var t = vo();
+	var E = Io(), D = z(E), ee = B(z(D)), O = (e) => {
+		var t = yo();
 		K("click", t, () => n().close?.()), J(e, t);
 	};
 	X(ee, (e) => {
 		n().close && e(O);
 	}), P(D);
 	var te = B(D, 2), ne = (e) => {
-		var d = No(), f = ln(d), p = z(f);
+		var d = Po(), f = ln(d), p = z(f);
 		P(f);
 		var m = B(f, 2), E = B(z(m)), D = z(E);
 		D.value = D.__value = "", Z(B(D), 17, () => t.view.publishers, (e) => e.id, (e, t) => {
-			var n = yo(), r = z(n);
+			var n = bo(), r = z(n);
 			P(n);
 			var i = {};
 			V(() => {
@@ -3909,7 +3927,7 @@ function Io(e, t) {
 		var ee;
 		oi(E), P(m);
 		var O = B(m, 2), te = (e) => {
-			var i = bo(), a = ln(i), o = B(z(a));
+			var i = xo(), a = ln(i), o = B(z(a));
 			Q(o), P(a);
 			var s = B(a, 2), c = z(s);
 			P(s);
@@ -3923,14 +3941,14 @@ function Io(e, t) {
 				e && i && n().rename && T("rename", W(g), (t) => n().rename(t, e, a, i));
 			}), J(e, i);
 		}, ne = (e) => {
-			J(e, xo());
+			J(e, So());
 		};
 		X(O, (e) => {
 			W(h) ? e(te) : e(ne, -1);
 		});
 		var k = B(O, 2), A = B(z(k), 2), j = B(z(A)), re = z(j);
 		re.value = re.__value = "", Z(B(re), 17, () => t.view.sources, (e) => e.key, (e, t) => {
-			var n = yo(), r = z(n);
+			var n = bo(), r = z(n);
 			P(n);
 			var i = {};
 			V(() => {
@@ -3942,7 +3960,7 @@ function Io(e, t) {
 		var ae = B(A, 2), oe = B(z(ae));
 		Q(oe), P(ae);
 		var se = B(ae, 2), ce = z(se), le = B(ce, 2), ue = B(le, 2), de = (e) => {
-			var r = So();
+			var r = Co();
 			K("click", r, () => {
 				t.view && W(h) && n().jumpSource?.(x(t.view), S(W(h).source));
 			}), J(e, r);
@@ -3951,9 +3969,9 @@ function Io(e, t) {
 			W(h) && n().jumpSource && e(de);
 		}), P(se), P(k);
 		var fe = B(k, 2), pe = (e) => {
-			var r = Oo(), i = B(z(r), 2), a = B(z(i)), l = z(a);
+			var r = ko(), i = B(z(r), 2), a = B(z(i)), l = z(a);
 			l.value = l.__value = "", Z(B(l), 17, () => t.view.receivers, (e) => e.key, (e, t) => {
-				var n = yo(), r = z(n);
+				var n = bo(), r = z(n);
 				P(n);
 				var i = {};
 				V(() => {
@@ -3963,7 +3981,7 @@ function Io(e, t) {
 			var d;
 			oi(a), P(i);
 			var f = B(i, 2), p = (e) => {
-				var t = Co(), n = z(t);
+				var t = wo(), n = z(t);
 				Q(n), ke(), P(t), V((e) => {
 					pi(n, W(c)), n.disabled = e;
 				}, [() => !C("connect")]), K("change", n, (e) => {
@@ -3977,10 +3995,10 @@ function Io(e, t) {
 			P(m);
 			var _ = B(m, 2);
 			Z(_, 17, () => t.view.consumers, (e) => e.edgeId, (e, r) => {
-				var i = To(), a = z(i), o = z(a, !0);
+				var i = Eo(), a = z(i), o = z(a, !0);
 				P(a);
 				var s = B(a), c = z(s), l = B(c, 2), d = (e) => {
-					var i = wo();
+					var i = To();
 					K("click", i, () => {
 						let e = t.view?.consumers.find((e) => e.edgeId === W(r).edgeId);
 						t.view && e && n().jumpConsumer?.(x(t.view), e.edgeId, S(e.to));
@@ -3996,13 +4014,13 @@ function Io(e, t) {
 				}), J(e, i);
 			});
 			var E = B(_, 2), D = (e) => {
-				J(e, Eo());
+				J(e, Do());
 			};
 			X(E, (e) => {
 				t.view.consumers.length || e(D);
 			});
 			var ee = B(E, 2), O = (e) => {
-				var t = Do(), n = B(z(t)), r = z(n);
+				var t = Oo(), n = B(z(t)), r = z(n);
 				r.value = r.__value = "";
 				var i = B(r);
 				i.value = i.__value = "restore";
@@ -4035,7 +4053,7 @@ function Io(e, t) {
 			W(h) && e(pe);
 		});
 		var me = B(fe, 2), he = (e) => {
-			var r = ko(), i = B(z(r)), a = z(i, !0);
+			var r = Ao(), i = B(z(r)), a = z(i, !0);
 			P(i);
 			var o = B(i), s = z(o), c = z(s);
 			P(s), P(o), P(r), V((e) => {
@@ -4049,21 +4067,21 @@ function Io(e, t) {
 			t.view.conversion && e(he);
 		});
 		var ge = B(me, 2), _e = (e) => {
-			var n = Ao(), r = z(n, !0);
+			var n = jo(), r = z(n, !0);
 			P(n), V(() => Y(r, t.view.issue)), J(e, n);
 		};
 		X(ge, (e) => {
 			t.view.issue && e(_e);
 		});
 		var ve = B(ge, 2), ye = (e) => {
-			var t = jo(), n = z(t, !0);
+			var t = Mo(), n = z(t, !0);
 			P(t), V(() => Y(n, W(l))), J(e, t);
 		};
 		X(ve, (e) => {
 			W(l) && e(ye);
 		});
 		var be = B(ve, 2), xe = (e) => {
-			J(e, Mo());
+			J(e, No());
 		};
 		X(be, (e) => {
 			W(u) && e(xe);
@@ -4089,7 +4107,7 @@ function Io(e, t) {
 			e && t && n().retarget && T("retarget", C("retarget"), (r) => n().retarget(r, t, S(e)));
 		}), J(e, d);
 	}, k = (e) => {
-		J(e, Po());
+		J(e, Fo());
 	};
 	X(te, (e) => {
 		t.view ? e(ne) : e(k, -1);
@@ -4102,8 +4120,8 @@ vr([
 ]);
 //#endregion
 //#region ui/SubgraphManager.svelte
-var Lo = /* @__PURE__ */ q("<button type=\"button\" class=\"svelte-xi74w\">Close</button>"), Ro = /* @__PURE__ */ q("<option class=\"svelte-xi74w\"> </option>"), zo = /* @__PURE__ */ q("<p class=\"pc-note svelte-xi74w\"> </p> <label class=\"svelte-xi74w\">Definition name<input aria-label=\"Definition name\" class=\"svelte-xi74w\"/></label> <div class=\"pc-actions svelte-xi74w\"><button type=\"button\" data-subgraph-open-library=\"\" class=\"svelte-xi74w\">Open definition</button> <button type=\"button\" data-subgraph-rename=\"\" class=\"svelte-xi74w\">Save name as revision</button> <button type=\"button\" data-subgraph-duplicate=\"\" class=\"svelte-xi74w\">Duplicate</button> <button type=\"button\" data-subgraph-export=\"\" class=\"svelte-xi74w\">Export .json</button> <button type=\"button\" data-subgraph-remove=\"\" class=\"svelte-xi74w\">Remove revision</button></div> <label class=\"svelte-xi74w\">Insert into<select aria-label=\"Insert destination\" class=\"svelte-xi74w\"><option class=\"svelte-xi74w\">Choose editable graph…</option><!></select></label> <div class=\"pc-actions svelte-xi74w\"><button type=\"button\" data-subgraph-insert=\"\" class=\"svelte-xi74w\"> </button></div>", 1), Bo = /* @__PURE__ */ q("<p class=\"pc-note svelte-xi74w\"> </p>"), Vo = /* @__PURE__ */ q("<div class=\"pc-row svelte-xi74w\"><p class=\"pc-note svelte-xi74w\"> </p><div class=\"pc-port-fields svelte-xi74w\"><label class=\"svelte-xi74w\">Label<input class=\"svelte-xi74w\"/></label> <label class=\"svelte-xi74w\">Kind<select class=\"svelte-xi74w\"></select></label></div><label class=\"pc-check svelte-xi74w\"><input type=\"checkbox\" class=\"svelte-xi74w\"/>Required</label> <div class=\"pc-actions svelte-xi74w\"><button type=\"button\" data-save-interface=\"\" class=\"svelte-xi74w\">Save port</button><button type=\"button\" data-remove-interface=\"\" class=\"svelte-xi74w\">Remove port</button></div></div>"), Ho = /* @__PURE__ */ q("<div class=\"pc-port-fields svelte-xi74w\"><label class=\"svelte-xi74w\">New port<input aria-label=\"New interface label\" class=\"svelte-xi74w\"/></label><label class=\"svelte-xi74w\">Direction<select aria-label=\"New interface direction\" class=\"svelte-xi74w\"><option class=\"svelte-xi74w\">Input</option><option class=\"svelte-xi74w\">Output</option></select></label></div> <label class=\"svelte-xi74w\">Kind<select aria-label=\"New interface kind\" class=\"svelte-xi74w\"></select></label> <label class=\"pc-check svelte-xi74w\"><input type=\"checkbox\" aria-label=\"New interface required\" class=\"svelte-xi74w\"/>Required</label> <div class=\"pc-actions svelte-xi74w\"><button type=\"button\" data-add-interface=\"\" class=\"svelte-xi74w\">Add boundary</button></div>", 1), Uo = /* @__PURE__ */ q("<div class=\"pc-row svelte-xi74w\"><label class=\"svelte-xi74w\">Label<input class=\"svelte-xi74w\"/></label><p class=\"pc-note svelte-xi74w\"> </p> <div class=\"pc-actions svelte-xi74w\"><button type=\"button\" data-save-parameter=\"\" class=\"svelte-xi74w\">Save parameter</button><button type=\"button\" data-remove-parameter=\"\" class=\"svelte-xi74w\">Remove parameter</button></div></div>"), Wo = /* @__PURE__ */ q("<label class=\"svelte-xi74w\">New parameter<input aria-label=\"New parameter label\" class=\"svelte-xi74w\"/></label> <label class=\"svelte-xi74w\">Target<select aria-label=\"Exposed parameter target\" class=\"svelte-xi74w\"><option class=\"svelte-xi74w\">Select eligible control…</option><!></select></label> <div class=\"pc-actions svelte-xi74w\"><button type=\"button\" data-add-parameter=\"\" class=\"svelte-xi74w\">Expose parameter</button></div>", 1), Go = /* @__PURE__ */ q("<details open=\"\" class=\"svelte-xi74w\"><summary class=\"svelte-xi74w\">Interface</summary> <p class=\"pc-note svelte-xi74w\"> </p> <!> <!> <!> <p class=\"pc-note svelte-xi74w\">Ports keep stable IDs. Connected incompatible edits must be resolved before saving.</p></details> <details open=\"\" class=\"svelte-xi74w\"><summary class=\"svelte-xi74w\">Exposed parameters</summary> <!> <!> <!></details>", 1), Ko = /* @__PURE__ */ q("<label class=\"svelte-xi74w\">Revision target<select aria-label=\"Shelf revision target\" class=\"svelte-xi74w\"><option class=\"svelte-xi74w\">Select exact shelf revision…</option><!></select></label>"), qo = /* @__PURE__ */ q("<input type=\"checkbox\" class=\"svelte-xi74w\"/>"), Jo = /* @__PURE__ */ q("<textarea class=\"svelte-xi74w\"></textarea>"), Yo = /* @__PURE__ */ q("<select class=\"svelte-xi74w\"></select>"), Xo = /* @__PURE__ */ q("<input class=\"svelte-xi74w\"/>"), Zo = /* @__PURE__ */ q("<div class=\"pc-row svelte-xi74w\"><label class=\"svelte-xi74w\"> <!></label><p class=\"pc-note svelte-xi74w\"> </p> <div class=\"pc-actions svelte-xi74w\"><button type=\"button\" class=\"svelte-xi74w\">Save override</button><button type=\"button\" class=\"svelte-xi74w\">Use definition value</button></div></div>"), Qo = /* @__PURE__ */ q("<details open=\"\" class=\"svelte-xi74w\"><summary class=\"svelte-xi74w\">Parameter overrides</summary> <!></details>"), $o = /* @__PURE__ */ q("<select class=\"svelte-xi74w\"><option class=\"svelte-xi74w\">Select connection…</option><!></select>"), es = /* @__PURE__ */ q("<label class=\"svelte-xi74w\">Saved connection<!></label>"), ts = /* @__PURE__ */ q("<label class=\"svelte-xi74w\">Saved model<input class=\"svelte-xi74w\"/></label>"), ns = /* @__PURE__ */ q("<p class=\"pc-error svelte-xi74w\"> </p>"), rs = /* @__PURE__ */ q("<div class=\"pc-row svelte-xi74w\"><p class=\"svelte-xi74w\"> </p> <label class=\"svelte-xi74w\">Connection mode<select class=\"svelte-xi74w\"></select></label> <!> <label class=\"svelte-xi74w\">Model mode<select class=\"svelte-xi74w\"></select></label> <!> <p class=\"pc-note svelte-xi74w\"> </p><!></div>"), is = /* @__PURE__ */ q("<details open=\"\" data-instance-model=\"\" class=\"svelte-xi74w\"><summary class=\"svelte-xi74w\">Model bindings</summary> <!></details>"), as = /* @__PURE__ */ q("<option class=\"svelte-xi74w\">Drop override</option>"), os = /* @__PURE__ */ q("<label class=\"svelte-xi74w\"> <select class=\"svelte-xi74w\"><!><!></select></label>"), ss = /* @__PURE__ */ q("<p class=\"pc-note svelte-xi74w\">No mappings.</p>"), cs = /* @__PURE__ */ q("<details open=\"\" class=\"svelte-xi74w\"><summary class=\"svelte-xi74w\"> </summary><!><!></details>"), ls = /* @__PURE__ */ q("<p class=\"pc-note svelte-xi74w\">Mappings changed. Prepare the update before accepting.</p>"), us = /* @__PURE__ */ q("<details open=\"\" class=\"svelte-xi74w\"><summary class=\"svelte-xi74w\">Update instance</summary> <label class=\"svelte-xi74w\">Target revision<select aria-label=\"Instance update revision\" class=\"svelte-xi74w\"><option class=\"svelte-xi74w\">Choose exact revision…</option><!></select></label> <!> <!> <!> <div class=\"pc-actions svelte-xi74w\"><button type=\"button\" data-prepare-instance-update=\"\" class=\"svelte-xi74w\">Prepare update</button><button type=\"button\" data-accept-instance-update=\"\" class=\"svelte-xi74w\">Accept prepared update</button></div></details>"), ds = /* @__PURE__ */ q("<details open=\"\" class=\"svelte-xi74w\"><summary class=\"svelte-xi74w\">Instance</summary><p class=\"pc-note svelte-xi74w\"> </p><div class=\"pc-actions svelte-xi74w\"><button type=\"button\" class=\"svelte-xi74w\">Open graph</button> <button type=\"button\" data-subgraph-local-copy=\"\" class=\"svelte-xi74w\">Make local copy</button> <button type=\"button\" data-subgraph-unpack=\"\" class=\"svelte-xi74w\">Unpack</button></div> <label class=\"svelte-xi74w\">Saved definition name<input aria-label=\"Saved definition name\" class=\"svelte-xi74w\"/></label> <label class=\"svelte-xi74w\">Save to shelf<select aria-label=\"Shelf save mode\" class=\"svelte-xi74w\"><option class=\"svelte-xi74w\">New entry with private identity</option><option class=\"svelte-xi74w\">Revision of selected entry</option></select></label> <!> <div class=\"pc-actions svelte-xi74w\"><button type=\"button\" data-subgraph-save-shelf=\"\" class=\"svelte-xi74w\">Save definition to shelf</button></div> <p class=\"pc-note svelte-xi74w\">Instance overrides remain on the wrapper. Saving does not bake them into the definition.</p></details> <!> <!> <!>", 1), fs = /* @__PURE__ */ q("<details open=\"\" class=\"svelte-xi74w\"><summary class=\"svelte-xi74w\">Create subgraph</summary><p class=\"pc-note svelte-xi74w\"> </p><label class=\"svelte-xi74w\">Name<input aria-label=\"Selection subgraph name\" class=\"svelte-xi74w\"/></label><div class=\"pc-actions svelte-xi74w\"><button type=\"button\" data-subgraph-convert-selection=\"\" class=\"svelte-xi74w\">Convert selection</button></div></details>"), ps = /* @__PURE__ */ q("<p class=\"pc-error svelte-xi74w\" role=\"alert\"> </p>"), ms = /* @__PURE__ */ q("<p class=\"pc-note svelte-xi74w\" role=\"status\">Preparing change…</p>"), hs = /* @__PURE__ */ q("<p class=\"pc-note svelte-xi74w\"> </p> <details open=\"\" class=\"svelte-xi74w\"><summary class=\"svelte-xi74w\">Library</summary> <label class=\"svelte-xi74w\">Revision<select aria-label=\"Library revision\" class=\"svelte-xi74w\"><option class=\"svelte-xi74w\">Select revision…</option><!></select></label> <!> <div class=\"pc-actions svelte-xi74w\"><button type=\"button\" data-subgraph-import=\"\" class=\"svelte-xi74w\">Import .json</button></div> <p class=\"pc-note svelte-xi74w\">Shelf revisions are immutable. Removing one keeps placed instances intact.</p></details> <!> <!> <!> <!> <!> <!>", 1), gs = /* @__PURE__ */ q("<p class=\"pc-note svelte-xi74w\">Open a graph to manage subgraphs.</p>"), _s = /* @__PURE__ */ q("<section class=\"pc-manager svelte-xi74w\" aria-label=\"Manage subgraphs\"><header class=\"svelte-xi74w\"><h2 class=\"svelte-xi74w\">Manage subgraphs</h2><!></header> <!></section>");
-function vs(e, t) {
+var Ro = /* @__PURE__ */ q("<button type=\"button\" class=\"svelte-xi74w\">Close</button>"), zo = /* @__PURE__ */ q("<option class=\"svelte-xi74w\"> </option>"), Bo = /* @__PURE__ */ q("<p class=\"pc-note svelte-xi74w\"> </p> <label class=\"svelte-xi74w\">Definition name<input aria-label=\"Definition name\" class=\"svelte-xi74w\"/></label> <div class=\"pc-actions svelte-xi74w\"><button type=\"button\" data-subgraph-open-library=\"\" class=\"svelte-xi74w\">Open definition</button> <button type=\"button\" data-subgraph-rename=\"\" class=\"svelte-xi74w\">Save name as revision</button> <button type=\"button\" data-subgraph-duplicate=\"\" class=\"svelte-xi74w\">Duplicate</button> <button type=\"button\" data-subgraph-export=\"\" class=\"svelte-xi74w\">Export .json</button> <button type=\"button\" data-subgraph-remove=\"\" class=\"svelte-xi74w\">Remove revision</button></div> <label class=\"svelte-xi74w\">Insert into<select aria-label=\"Insert destination\" class=\"svelte-xi74w\"><option class=\"svelte-xi74w\">Choose editable graph…</option><!></select></label> <div class=\"pc-actions svelte-xi74w\"><button type=\"button\" data-subgraph-insert=\"\" class=\"svelte-xi74w\"> </button></div>", 1), Vo = /* @__PURE__ */ q("<p class=\"pc-note svelte-xi74w\"> </p>"), Ho = /* @__PURE__ */ q("<div class=\"pc-row svelte-xi74w\"><p class=\"pc-note svelte-xi74w\"> </p><div class=\"pc-port-fields svelte-xi74w\"><label class=\"svelte-xi74w\">Label<input class=\"svelte-xi74w\"/></label> <label class=\"svelte-xi74w\">Kind<select class=\"svelte-xi74w\"></select></label></div><label class=\"pc-check svelte-xi74w\"><input type=\"checkbox\" class=\"svelte-xi74w\"/>Required</label> <div class=\"pc-actions svelte-xi74w\"><button type=\"button\" data-save-interface=\"\" class=\"svelte-xi74w\">Save port</button><button type=\"button\" data-remove-interface=\"\" class=\"svelte-xi74w\">Remove port</button></div></div>"), Uo = /* @__PURE__ */ q("<div class=\"pc-port-fields svelte-xi74w\"><label class=\"svelte-xi74w\">New port<input aria-label=\"New interface label\" class=\"svelte-xi74w\"/></label><label class=\"svelte-xi74w\">Direction<select aria-label=\"New interface direction\" class=\"svelte-xi74w\"><option class=\"svelte-xi74w\">Input</option><option class=\"svelte-xi74w\">Output</option></select></label></div> <label class=\"svelte-xi74w\">Kind<select aria-label=\"New interface kind\" class=\"svelte-xi74w\"></select></label> <label class=\"pc-check svelte-xi74w\"><input type=\"checkbox\" aria-label=\"New interface required\" class=\"svelte-xi74w\"/>Required</label> <div class=\"pc-actions svelte-xi74w\"><button type=\"button\" data-add-interface=\"\" class=\"svelte-xi74w\">Add boundary</button></div>", 1), Wo = /* @__PURE__ */ q("<div class=\"pc-row svelte-xi74w\"><label class=\"svelte-xi74w\">Label<input class=\"svelte-xi74w\"/></label><p class=\"pc-note svelte-xi74w\"> </p> <div class=\"pc-actions svelte-xi74w\"><button type=\"button\" data-save-parameter=\"\" class=\"svelte-xi74w\">Save parameter</button><button type=\"button\" data-remove-parameter=\"\" class=\"svelte-xi74w\">Remove parameter</button></div></div>"), Go = /* @__PURE__ */ q("<label class=\"svelte-xi74w\">New parameter<input aria-label=\"New parameter label\" class=\"svelte-xi74w\"/></label> <label class=\"svelte-xi74w\">Target<select aria-label=\"Exposed parameter target\" class=\"svelte-xi74w\"><option class=\"svelte-xi74w\">Select eligible control…</option><!></select></label> <div class=\"pc-actions svelte-xi74w\"><button type=\"button\" data-add-parameter=\"\" class=\"svelte-xi74w\">Expose parameter</button></div>", 1), Ko = /* @__PURE__ */ q("<details open=\"\" class=\"svelte-xi74w\"><summary class=\"svelte-xi74w\">Interface</summary> <p class=\"pc-note svelte-xi74w\"> </p> <!> <!> <!> <p class=\"pc-note svelte-xi74w\">Ports keep stable IDs. Connected incompatible edits must be resolved before saving.</p></details> <details open=\"\" class=\"svelte-xi74w\"><summary class=\"svelte-xi74w\">Exposed parameters</summary> <!> <!> <!></details>", 1), qo = /* @__PURE__ */ q("<label class=\"svelte-xi74w\">Revision target<select aria-label=\"Shelf revision target\" class=\"svelte-xi74w\"><option class=\"svelte-xi74w\">Select exact shelf revision…</option><!></select></label>"), Jo = /* @__PURE__ */ q("<input type=\"checkbox\" class=\"svelte-xi74w\"/>"), Yo = /* @__PURE__ */ q("<textarea class=\"svelte-xi74w\"></textarea>"), Xo = /* @__PURE__ */ q("<select class=\"svelte-xi74w\"></select>"), Zo = /* @__PURE__ */ q("<input class=\"svelte-xi74w\"/>"), Qo = /* @__PURE__ */ q("<div class=\"pc-row svelte-xi74w\"><label class=\"svelte-xi74w\"> <!></label><p class=\"pc-note svelte-xi74w\"> </p> <div class=\"pc-actions svelte-xi74w\"><button type=\"button\" class=\"svelte-xi74w\">Save override</button><button type=\"button\" class=\"svelte-xi74w\">Use definition value</button></div></div>"), $o = /* @__PURE__ */ q("<details open=\"\" class=\"svelte-xi74w\"><summary class=\"svelte-xi74w\">Parameter overrides</summary> <!></details>"), es = /* @__PURE__ */ q("<select class=\"svelte-xi74w\"><option class=\"svelte-xi74w\">Select connection…</option><!></select>"), ts = /* @__PURE__ */ q("<label class=\"svelte-xi74w\">Saved connection<!></label>"), ns = /* @__PURE__ */ q("<label class=\"svelte-xi74w\">Saved model<input class=\"svelte-xi74w\"/></label>"), rs = /* @__PURE__ */ q("<p class=\"pc-error svelte-xi74w\"> </p>"), is = /* @__PURE__ */ q("<div class=\"pc-row svelte-xi74w\"><p class=\"svelte-xi74w\"> </p> <label class=\"svelte-xi74w\">Connection mode<select class=\"svelte-xi74w\"></select></label> <!> <label class=\"svelte-xi74w\">Model mode<select class=\"svelte-xi74w\"></select></label> <!> <p class=\"pc-note svelte-xi74w\"> </p><!></div>"), as = /* @__PURE__ */ q("<details open=\"\" data-instance-model=\"\" class=\"svelte-xi74w\"><summary class=\"svelte-xi74w\">Model bindings</summary> <!></details>"), os = /* @__PURE__ */ q("<option class=\"svelte-xi74w\">Drop override</option>"), ss = /* @__PURE__ */ q("<label class=\"svelte-xi74w\"> <select class=\"svelte-xi74w\"><!><!></select></label>"), cs = /* @__PURE__ */ q("<p class=\"pc-note svelte-xi74w\">No mappings.</p>"), ls = /* @__PURE__ */ q("<details open=\"\" class=\"svelte-xi74w\"><summary class=\"svelte-xi74w\"> </summary><!><!></details>"), us = /* @__PURE__ */ q("<p class=\"pc-note svelte-xi74w\">Mappings changed. Prepare the update before accepting.</p>"), ds = /* @__PURE__ */ q("<details open=\"\" class=\"svelte-xi74w\"><summary class=\"svelte-xi74w\">Update instance</summary> <label class=\"svelte-xi74w\">Target revision<select aria-label=\"Instance update revision\" class=\"svelte-xi74w\"><option class=\"svelte-xi74w\">Choose exact revision…</option><!></select></label> <!> <!> <!> <div class=\"pc-actions svelte-xi74w\"><button type=\"button\" data-prepare-instance-update=\"\" class=\"svelte-xi74w\">Prepare update</button><button type=\"button\" data-accept-instance-update=\"\" class=\"svelte-xi74w\">Accept prepared update</button></div></details>"), fs = /* @__PURE__ */ q("<details open=\"\" class=\"svelte-xi74w\"><summary class=\"svelte-xi74w\">Instance</summary><p class=\"pc-note svelte-xi74w\"> </p><div class=\"pc-actions svelte-xi74w\"><button type=\"button\" class=\"svelte-xi74w\">Open graph</button> <button type=\"button\" data-subgraph-local-copy=\"\" class=\"svelte-xi74w\">Make local copy</button> <button type=\"button\" data-subgraph-unpack=\"\" class=\"svelte-xi74w\">Unpack</button></div> <label class=\"svelte-xi74w\">Saved definition name<input aria-label=\"Saved definition name\" class=\"svelte-xi74w\"/></label> <label class=\"svelte-xi74w\">Save to shelf<select aria-label=\"Shelf save mode\" class=\"svelte-xi74w\"><option class=\"svelte-xi74w\">New entry with private identity</option><option class=\"svelte-xi74w\">Revision of selected entry</option></select></label> <!> <div class=\"pc-actions svelte-xi74w\"><button type=\"button\" data-subgraph-save-shelf=\"\" class=\"svelte-xi74w\">Save definition to shelf</button></div> <p class=\"pc-note svelte-xi74w\">Instance overrides remain on the wrapper. Saving does not bake them into the definition.</p></details> <!> <!> <!>", 1), ps = /* @__PURE__ */ q("<details open=\"\" class=\"svelte-xi74w\"><summary class=\"svelte-xi74w\">Create subgraph</summary><p class=\"pc-note svelte-xi74w\"> </p><label class=\"svelte-xi74w\">Name<input aria-label=\"Selection subgraph name\" class=\"svelte-xi74w\"/></label><div class=\"pc-actions svelte-xi74w\"><button type=\"button\" data-subgraph-convert-selection=\"\" class=\"svelte-xi74w\">Convert selection</button></div></details>"), ms = /* @__PURE__ */ q("<p class=\"pc-error svelte-xi74w\" role=\"alert\"> </p>"), hs = /* @__PURE__ */ q("<p class=\"pc-note svelte-xi74w\" role=\"status\">Preparing change…</p>"), gs = /* @__PURE__ */ q("<p class=\"pc-note svelte-xi74w\"> </p> <details open=\"\" class=\"svelte-xi74w\"><summary class=\"svelte-xi74w\">Library</summary> <label class=\"svelte-xi74w\">Revision<select aria-label=\"Library revision\" class=\"svelte-xi74w\"><option class=\"svelte-xi74w\">Select revision…</option><!></select></label> <!> <div class=\"pc-actions svelte-xi74w\"><button type=\"button\" data-subgraph-import=\"\" class=\"svelte-xi74w\">Import .json</button></div> <p class=\"pc-note svelte-xi74w\">Shelf revisions are immutable. Removing one keeps placed instances intact.</p></details> <!> <!> <!> <!> <!> <!>", 1), _s = /* @__PURE__ */ q("<p class=\"pc-note svelte-xi74w\">Open a graph to manage subgraphs.</p>"), vs = /* @__PURE__ */ q("<section class=\"pc-manager svelte-xi74w\" aria-label=\"Manage subgraphs\"><header class=\"svelte-xi74w\"><h2 class=\"svelte-xi74w\">Manage subgraphs</h2><!></header> <!></section>");
+function ys(e, t) {
 	Be(t, !0);
 	let n = Si(t, "actions", 19, () => ({})), r = /* @__PURE__ */ L(""), i = /* @__PURE__ */ L(""), a = /* @__PURE__ */ L(""), o = /* @__PURE__ */ L(Zt({})), s = /* @__PURE__ */ L(Zt({})), c = /* @__PURE__ */ L(Zt({})), l = [
 		"portMap",
@@ -4288,19 +4306,19 @@ function vs(e, t) {
 			l() && (R(a, ""), R(i, e instanceof Error ? e.message : "The subgraph change could not be accepted.", !0));
 		}
 	}
-	var ge = _s(), _e = z(ge), ve = B(z(_e)), ye = (e) => {
-		var t = Lo();
+	var ge = vs(), _e = z(ge), ve = B(z(_e)), ye = (e) => {
+		var t = Ro();
 		K("click", t, () => n().close?.()), J(e, t);
 	};
 	X(ve, (e) => {
 		n().close && e(ye);
 	}), P(_e);
 	var be = B(_e, 2), xe = (e) => {
-		var o = hs(), c = ln(o), x = z(c, !0);
+		var o = gs(), c = ln(o), x = z(c, !0);
 		P(c);
 		var S = B(c, 2), C = B(z(S), 2), w = B(z(C)), T = z(w);
 		T.value = T.__value = "", Z(B(T), 17, () => t.view.entries, (e) => e.key, (e, t) => {
-			var n = Ro(), r = z(n);
+			var n = zo(), r = z(n);
 			P(n);
 			var i = {};
 			V(() => {
@@ -4310,7 +4328,7 @@ function vs(e, t) {
 		var re;
 		oi(w), P(C);
 		var oe = B(C, 2), ge = (e) => {
-			var i = zo(), o = ln(i), s = z(o);
+			var i = Bo(), o = ln(i), s = z(o);
 			P(o);
 			var c = B(o, 2), l = B(z(c));
 			Q(l), P(c);
@@ -4318,7 +4336,7 @@ function vs(e, t) {
 			P(u);
 			var g = B(u, 2), _ = B(z(g)), v = z(_);
 			v.value = v.__value = "", Z(B(v), 17, () => t.view.destinations, (e) => e.key, (e, t) => {
-				var n = Ro(), r = z(n, !0);
+				var n = zo(), r = z(n, !0);
 				P(n);
 				var i = {};
 				V(() => {
@@ -4366,10 +4384,10 @@ function vs(e, t) {
 		var _e = B(oe, 2), ve = z(_e);
 		P(_e), ke(2), P(S);
 		var ye = B(S, 2), be = (e) => {
-			var r = Go(), i = ln(r), o = B(z(i), 2), c = z(o);
+			var r = Ko(), i = ln(r), o = B(z(i), 2), c = z(o);
 			P(o);
 			var l = B(o, 2), u = (e) => {
-				var n = Bo(), r = z(n, !0);
+				var n = Vo(), r = z(n, !0);
 				P(n), V(() => Y(r, t.view.definition.description)), J(e, n);
 			};
 			X(l, (e) => {
@@ -4377,13 +4395,13 @@ function vs(e, t) {
 			});
 			var d = B(l, 2);
 			Z(d, 17, () => t.view.definition.interface, (e) => e.id, (e, r) => {
-				var i = Vo(), o = z(i), s = z(o);
+				var i = Ho(), o = z(i), s = z(o);
 				P(o);
 				var c = B(o), l = z(c), u = B(z(l));
 				Q(u), P(l);
 				var d = B(l, 2), f = B(z(d));
 				Z(f, 21, () => t.view.definition.kinds, zr, (e, t) => {
-					var n = Ro(), r = z(n, !0);
+					var n = zo(), r = z(n, !0);
 					P(n);
 					var i = {};
 					V(() => {
@@ -4416,7 +4434,7 @@ function vs(e, t) {
 				})), J(e, i);
 			});
 			var v = B(d, 2), y = (e) => {
-				var r = Ho(), i = ln(r), o = z(i), s = B(z(o));
+				var r = Uo(), i = ln(r), o = z(i), s = B(z(o));
 				Q(s), P(o);
 				var c = B(o), l = B(z(c)), u = z(l);
 				u.value = u.__value = "input";
@@ -4426,7 +4444,7 @@ function vs(e, t) {
 				oi(l), P(c), P(i);
 				var _ = B(i, 2), v = B(z(_));
 				Z(v, 21, () => t.view.definition.kinds, zr, (e, t) => {
-					var n = Ro(), r = z(n, !0);
+					var n = zo(), r = z(n, !0);
 					P(n);
 					var i = {};
 					V(() => {
@@ -4464,7 +4482,7 @@ function vs(e, t) {
 			}), ke(2), P(i);
 			var x = B(i, 2), S = B(z(x), 2);
 			Z(S, 17, () => t.view.definition.parameters, (e) => e.id, (e, t) => {
-				var r = Uo(), i = z(r), o = B(z(i));
+				var r = Wo(), i = z(r), o = B(z(i));
 				Q(o), P(i);
 				var c = B(i), l = z(c);
 				P(c);
@@ -4491,11 +4509,11 @@ function vs(e, t) {
 				})), J(e, r);
 			});
 			var C = B(S, 2), w = (e) => {
-				var r = Wo(), i = ln(r), o = B(z(i));
+				var r = Go(), i = ln(r), o = B(z(i));
 				Q(o), P(i);
 				var s = B(i, 2), c = B(z(s)), l = z(c);
 				l.value = l.__value = "", Z(B(l), 17, () => t.view.definition.eligibleTargets, (e) => e.key, (e, t) => {
-					var n = Ro(), r = z(n, !0);
+					var n = zo(), r = z(n, !0);
 					P(n);
 					var i = {};
 					V(() => {
@@ -4524,7 +4542,7 @@ function vs(e, t) {
 				W(T) && e(w);
 			});
 			var E = B(C, 2), D = (e) => {
-				var n = Bo(), r = z(n, !0);
+				var n = Vo(), r = z(n, !0);
 				P(n), V(() => Y(r, t.view.definition.exposureNote)), J(e, n);
 			};
 			X(E, (e) => {
@@ -4535,7 +4553,7 @@ function vs(e, t) {
 			t.view.definition && e(be);
 		});
 		var xe = B(ye, 2), Se = (e) => {
-			var i = ds(), o = ln(i), s = B(z(o)), c = z(s);
+			var i = fs(), o = ln(i), s = B(z(o)), c = z(s);
 			P(s);
 			var f = B(s), p = z(f), m = B(p, 2), h = B(m, 2);
 			P(f);
@@ -4548,9 +4566,9 @@ function vs(e, t) {
 			var w;
 			oi(x), P(b);
 			var T = B(b, 2), E = (e) => {
-				var n = Ko(), r = B(z(n)), i = z(r);
+				var n = qo(), r = B(z(n)), i = z(r);
 				i.value = i.__value = "", Z(B(i), 17, () => t.view.entries, (e) => e.key, (e, t) => {
-					var n = Ro(), r = z(n);
+					var n = zo(), r = z(n);
 					P(n);
 					var i = {};
 					V(() => {
@@ -4570,23 +4588,23 @@ function vs(e, t) {
 			var D = B(T, 2), ee = z(D);
 			P(D), ke(2), P(o);
 			var re = B(o, 2), oe = (e) => {
-				var r = Qo();
+				var r = $o();
 				Z(B(z(r), 2), 17, () => t.view.instance.parameters, (e) => e.id, (e, r) => {
 					let i = /* @__PURE__ */ F(() => W(r).control);
-					var o = Zo(), s = z(o), c = z(s), l = B(c), u = (e) => {
-						var t = qo();
+					var o = Qo(), s = z(o), c = z(s), l = B(c), u = (e) => {
+						var t = Jo();
 						Q(t), V((e, n) => {
 							$(t, "aria-label", "Override " + W(r).label), pi(t, e), t.disabled = n;
 						}, [() => se(W(r).id, W(i)) === !0, () => !A("editParameterOverride", "instanceEdit") || !n().editParameterOverride]), K("change", t, (e) => ce(W(r).id, e.currentTarget.checked)), J(e, t);
 					}, d = (e) => {
-						var t = Jo();
+						var t = Yo();
 						nt(t), V((e, n) => {
 							$(t, "aria-label", "Override " + W(r).label), fi(t, e), t.disabled = n;
 						}, [() => String(se(W(r).id, W(i))), () => !A("editParameterOverride", "instanceEdit") || !n().editParameterOverride]), K("input", t, (e) => ce(W(r).id, e.currentTarget.value)), J(e, t);
 					}, f = (e) => {
-						var t = Yo();
+						var t = Xo();
 						Z(t, 21, () => W(i).options ?? [], zr, (e, t) => {
-							var n = Ro(), r = z(n, !0);
+							var n = zo(), r = z(n, !0);
 							P(n);
 							var i = {};
 							V(() => {
@@ -4598,7 +4616,7 @@ function vs(e, t) {
 							$(t, "aria-label", "Override " + W(r).label), t.disabled = e, a !== (a = n) && (t.value = (t.__value = n) ?? "", ai(t, n));
 						}, [() => !A("editParameterOverride", "instanceEdit") || !n().editParameterOverride, () => String(se(W(r).id, W(i)))]), K("change", t, (e) => ce(W(r).id, e.currentTarget.value)), J(e, t);
 					}, p = (e) => {
-						var t = Xo();
+						var t = Zo();
 						Q(t), V((e, n) => {
 							$(t, "type", W(i).editor === "number" ? "number" : "text"), $(t, "aria-label", "Override " + W(r).label), fi(t, e), $(t, "min", W(i).min), $(t, "max", W(i).max), t.disabled = n;
 						}, [() => String(se(W(r).id, W(i))), () => !A("editParameterOverride", "instanceEdit") || !n().editParameterOverride]), K("input", t, (e) => ce(W(r).id, e.currentTarget.value)), J(e, t);
@@ -4620,13 +4638,13 @@ function vs(e, t) {
 				t.view.instance.parameters.length && e(oe);
 			});
 			var de = B(re, 2), fe = (e) => {
-				var r = is();
+				var r = as();
 				Z(B(z(r), 2), 17, () => t.view.instance.bindings, (e) => e.key, (e, t) => {
-					var r = rs(), i = z(r), o = z(i, !0);
+					var r = is(), i = z(r), o = z(i, !0);
 					P(i);
 					var s = B(i, 2), c = B(z(s));
 					Z(c, 21, () => W(t).profile.allowedModes, zr, (e, t) => {
-						var n = Ro(), r = z(n, !0);
+						var n = zo(), r = z(n, !0);
 						P(n);
 						var i = {};
 						V(() => {
@@ -4636,10 +4654,10 @@ function vs(e, t) {
 					var l;
 					oi(c), P(s);
 					var u = B(s, 2), d = (e) => {
-						var r = es(), i = B(z(r)), o = (e) => {
-							var r = $o(), i = z(r);
+						var r = ts(), i = B(z(r)), o = (e) => {
+							var r = es(), i = z(r);
 							i.value = i.__value = "", Z(B(i), 17, () => W(t).profile.options, zr, (e, t) => {
-								var n = Ro(), r = z(n, !0);
+								var n = zo(), r = z(n, !0);
 								P(n);
 								var i = {};
 								V(() => {
@@ -4651,7 +4669,7 @@ function vs(e, t) {
 								$(r, "aria-label", "Connection override " + W(t).key), r.disabled = e, o !== (o = W(t).profile.value ?? "") && (r.value = (r.__value = W(t).profile.value ?? "") ?? "", ai(r, W(t).profile.value ?? ""));
 							}, [() => !W(t).editable || !A("editBindingOverride", "instanceEdit") || !n().editBindingOverride || !!W(a)]), K("change", r, (e) => ue(W(t).key, "profileId", "override", e.currentTarget.value, !0)), J(e, r);
 						}, s = (e) => {
-							var r = Xo();
+							var r = Zo();
 							Q(r), V((e) => {
 								$(r, "aria-label", "Connection override " + W(t).key), fi(r, W(t).profile.value ?? ""), r.disabled = e;
 							}, [() => !W(t).editable || !A("editBindingOverride", "instanceEdit") || !n().editBindingOverride || !!W(a)]), K("change", r, (e) => ue(W(t).key, "profileId", "override", e.currentTarget.value, !0)), J(e, r);
@@ -4665,7 +4683,7 @@ function vs(e, t) {
 					});
 					var f = B(u, 2), p = B(z(f));
 					Z(p, 21, () => W(t).model.allowedModes, zr, (e, t) => {
-						var n = Ro(), r = z(n, !0);
+						var n = zo(), r = z(n, !0);
 						P(n);
 						var i = {};
 						V(() => {
@@ -4675,7 +4693,7 @@ function vs(e, t) {
 					var m;
 					oi(p), P(f);
 					var h = B(f, 2), g = (e) => {
-						var r = ts(), i = B(z(r));
+						var r = ns(), i = B(z(r));
 						Q(i), P(r), V((e) => {
 							$(i, "aria-label", "Model override " + W(t).key), fi(i, W(t).model.value ?? ""), i.disabled = e;
 						}, [() => !W(t).editable || !A("editBindingOverride", "instanceEdit") || !n().editBindingOverride || !!W(a)]), K("change", i, (e) => ue(W(t).key, "model", "override", e.currentTarget.value, !0)), J(e, r);
@@ -4686,7 +4704,7 @@ function vs(e, t) {
 					var _ = B(h, 2), v = z(_);
 					P(_);
 					var y = B(_), b = (e) => {
-						var n = ns(), r = z(n, !0);
+						var n = rs(), r = z(n, !0);
 						P(n), V(() => Y(r, W(t).issue)), J(e, n);
 					};
 					X(y, (e) => {
@@ -4700,9 +4718,9 @@ function vs(e, t) {
 				t.view.instance.bindings.length && e(fe);
 			});
 			var pe = B(de, 2), me = (e) => {
-				var r = us(), i = B(z(r), 2), o = B(z(i)), s = z(o);
+				var r = ds(), i = B(z(r), 2), o = B(z(i)), s = z(o);
 				s.value = s.__value = "", Z(B(s), 17, () => t.view.update.choices, (e) => e.key, (e, t) => {
-					var n = Ro(), r = z(n, !0);
+					var n = zo(), r = z(n, !0);
 					P(n);
 					var i = {};
 					V(() => {
@@ -4713,13 +4731,13 @@ function vs(e, t) {
 				oi(o), P(i);
 				var f = B(i, 2);
 				Z(f, 17, () => l, zr, (e, r) => {
-					var i = cs(), a = z(i), o = z(a, !0);
+					var i = ls(), a = z(i), o = z(a, !0);
 					P(a);
 					var s = B(a);
 					Z(s, 17, () => t.view.update[W(r)], (e) => e.from, (e, t) => {
-						var i = os(), a = z(i, !0), o = B(a), s = z(o);
+						var i = ss(), a = z(i, !0), o = B(a), s = z(o);
 						Z(s, 17, () => W(t).options, zr, (e, t) => {
-							var n = Ro(), r = z(n, !0);
+							var n = zo(), r = z(n, !0);
 							P(n);
 							var i = {};
 							V((e) => {
@@ -4727,7 +4745,7 @@ function vs(e, t) {
 							}, [() => JSON.stringify(W(t).id)]), J(e, n);
 						});
 						var c = B(s), l = (e) => {
-							var t = as();
+							var t = os();
 							t.value = t.__value = "null", J(e, t);
 						};
 						X(c, (e) => {
@@ -4739,7 +4757,7 @@ function vs(e, t) {
 						}, [() => !A("prepareUpdate", "instanceEdit") || !n().prepareUpdate, () => JSON.stringify(Object.hasOwn(W(d)[W(r)], W(t).from) ? W(d)[W(r)][W(t).from] : W(t).to)]), K("change", o, (e) => ie(W(r), W(t).from, e.currentTarget.value)), J(e, i);
 					});
 					var c = B(s), l = (e) => {
-						J(e, ss());
+						J(e, cs());
 					};
 					X(c, (e) => {
 						t.view.update[W(r)].length || e(l);
@@ -4747,11 +4765,11 @@ function vs(e, t) {
 				});
 				var p = B(f, 2);
 				Z(p, 17, () => t.view.update.summary, zr, (e, t) => {
-					var n = Bo(), r = z(n, !0);
+					var n = Vo(), r = z(n, !0);
 					P(n), V(() => Y(r, W(t))), J(e, n);
 				});
 				var m = B(p, 2), h = (e) => {
-					J(e, ls());
+					J(e, us());
 				};
 				X(m, (e) => {
 					W(te) && e(h);
@@ -4796,7 +4814,7 @@ function vs(e, t) {
 			t.view.instance && e(Se);
 		});
 		var Ce = B(xe, 2), we = (e) => {
-			var r = fs(), i = B(z(r)), o = z(i, !0);
+			var r = ps(), i = B(z(r)), o = z(i, !0);
 			P(i);
 			var s = B(i), c = B(z(s));
 			Q(c), P(s);
@@ -4814,21 +4832,21 @@ function vs(e, t) {
 			t.view.selection && e(we);
 		});
 		var Te = B(Ce, 2), M = (e) => {
-			var n = ns(), r = z(n, !0);
+			var n = rs(), r = z(n, !0);
 			P(n), V(() => Y(r, t.view.issue)), J(e, n);
 		};
 		X(Te, (e) => {
 			t.view.issue && e(M);
 		});
 		var Ee = B(Te, 2), N = (e) => {
-			var t = ps(), n = z(t, !0);
+			var t = ms(), n = z(t, !0);
 			P(t), V(() => Y(n, W(i))), J(e, t);
 		};
 		X(Ee, (e) => {
 			W(i) && e(N);
 		});
 		var De = B(Ee, 2), Oe = (e) => {
-			J(e, ms());
+			J(e, hs());
 		};
 		X(De, (e) => {
 			W(a) && e(Oe);
@@ -4841,7 +4859,7 @@ function vs(e, t) {
 			n().importJSON && he("importJSON", A("importJSON", "libraryWrite"), (e) => n().importJSON(e));
 		}), J(e, o);
 	}, Se = (e) => {
-		J(e, gs());
+		J(e, _s());
 	};
 	X(be, (e) => {
 		t.view ? e(xe) : e(Se, -1);
@@ -4854,8 +4872,8 @@ vr([
 ]);
 //#endregion
 //#region ui/NodeSearch.svelte
-var ys = /* @__PURE__ */ q("<label class=\"pc-context-check svelte-golf61\"><input type=\"checkbox\" class=\"svelte-golf61\"/>Context sensitive</label>"), bs = /* @__PURE__ */ q("<span class=\"pc-search-context svelte-golf61\"> </span>"), xs = /* @__PURE__ */ q("<label class=\"pc-search-field svelte-golf61\"><input type=\"search\" aria-label=\"Search nodes and subgraphs\" placeholder=\"Search…\" autocomplete=\"off\" role=\"combobox\" aria-expanded=\"true\" class=\"svelte-golf61\"/></label> <!> <!>", 1), Ss = /* @__PURE__ */ q("<p class=\"pc-search-context svelte-golf61\">Choose the named port to connect.</p>"), Cs = /* @__PURE__ */ q("<button type=\"button\" class=\"pc-search-result svelte-golf61\" role=\"option\"><span class=\"svelte-golf61\"> </span> <span class=\"pc-family svelte-golf61\"> </span></button>"), ws = /* @__PURE__ */ q("<p class=\"pc-empty svelte-golf61\">No nodes match.</p>"), Ts = /* @__PURE__ */ q("<p class=\"pc-feedback svelte-golf61\" role=\"status\"> </p>"), Es = /* @__PURE__ */ q("<div class=\"pc-node-search svelte-golf61\" role=\"dialog\" aria-modal=\"false\" tabindex=\"-1\"><!> <div class=\"pc-search-results svelte-golf61\" role=\"listbox\"></div> <!></div>");
-function Ds(e, t) {
+var bs = /* @__PURE__ */ q("<label class=\"pc-context-check svelte-golf61\"><input type=\"checkbox\" class=\"svelte-golf61\"/>Context sensitive</label>"), xs = /* @__PURE__ */ q("<span class=\"pc-search-context svelte-golf61\"> </span>"), Ss = /* @__PURE__ */ q("<label class=\"pc-search-field svelte-golf61\"><input type=\"search\" aria-label=\"Search nodes and subgraphs\" placeholder=\"Search…\" autocomplete=\"off\" role=\"combobox\" aria-expanded=\"true\" class=\"svelte-golf61\"/></label> <!> <!>", 1), Cs = /* @__PURE__ */ q("<p class=\"pc-search-context svelte-golf61\">Choose the named port to connect.</p>"), ws = /* @__PURE__ */ q("<button type=\"button\" class=\"pc-search-result svelte-golf61\" role=\"option\"><span class=\"svelte-golf61\"> </span> <span class=\"pc-family svelte-golf61\"> </span></button>"), Ts = /* @__PURE__ */ q("<p class=\"pc-empty svelte-golf61\">No nodes match.</p>"), Es = /* @__PURE__ */ q("<p class=\"pc-feedback svelte-golf61\" role=\"status\"> </p>"), Ds = /* @__PURE__ */ q("<div class=\"pc-node-search svelte-golf61\" role=\"dialog\" aria-modal=\"false\" tabindex=\"-1\"><!> <div class=\"pc-search-results svelte-golf61\" role=\"listbox\"></div> <!></div>");
+function Os(e, t) {
 	let n = Ar();
 	Be(t, !0);
 	let r = Si(t, "view", 3, null), i = Si(t, "actions", 19, () => ({})), a = /* @__PURE__ */ L(void 0), o = /* @__PURE__ */ L(void 0), s = /* @__PURE__ */ L(""), c = /* @__PURE__ */ L(0), l = /* @__PURE__ */ L(8), u = /* @__PURE__ */ L(8), d, f, p = (e) => [
@@ -4911,13 +4929,13 @@ function Ds(e, t) {
 	var T = kr();
 	G("resize", en, x);
 	var E = ln(T), D = (e) => {
-		var t = Es();
+		var t = Ds();
 		let i;
 		var d = z(t), f = (e) => {
-			var t = xs(), i = ln(t), a = z(i);
+			var t = Ss(), i = ln(t), a = z(i);
 			Q(a), xi(a, (e) => R(o, e), () => W(o)), P(i);
 			var l = B(i, 2), u = (e) => {
-				var t = ys(), n = z(t);
+				var t = bs(), n = z(t);
 				Q(n), ke(), P(t), V(() => {
 					pi(n, r().contextSensitive), n.disabled = r().readOnly;
 				}), K("change", n, C), J(e, t);
@@ -4926,7 +4944,7 @@ function Ds(e, t) {
 				r().origin && e(u);
 			});
 			var d = B(l, 2), f = (e) => {
-				var t = bs(), n = z(t, !0);
+				var t = xs(), n = z(t, !0);
 				P(t), V(() => Y(n, (r().origin.dir === "out" ? "Accepts " : "Produces ") + r().origin.kind)), J(e, t);
 			};
 			X(d, (e) => {
@@ -4935,14 +4953,14 @@ function Ds(e, t) {
 				$(a, "aria-controls", n + "-results"), $(a, "aria-activedescendant", e);
 			}, [() => W(y) ? n + "-item-" + W(h).indexOf(W(y)) : void 0]), K("input", a, () => R(c, 0)), _i(a, () => W(s), (e) => R(s, e)), J(e, t);
 		}, p = (e) => {
-			J(e, Ss());
+			J(e, Cs());
 		};
 		X(d, (e) => {
 			r().mode === "nodes" ? e(f) : e(p, -1);
 		});
 		var m = B(d, 2);
 		Z(m, 21, () => W(h), (e) => g(e), (e, t) => {
-			var r = Cs(), i = z(r), a = z(i, !0);
+			var r = ws(), i = z(r), a = z(i, !0);
 			P(i);
 			var o = B(i, 1, !0);
 			o.nodeValue = " ";
@@ -4961,10 +4979,10 @@ function Ds(e, t) {
 				e >= 0 && R(c, e, !0);
 			}), J(e, r);
 		}, (e) => {
-			J(e, ws());
+			J(e, Ts());
 		}), P(m);
 		var x = B(m, 2), T = (e) => {
-			var t = Ts(), n = z(t, !0);
+			var t = Es(), n = z(t, !0);
 			P(t), V(() => Y(n, r().feedback)), J(e, t);
 		};
 		X(x, (e) => {
@@ -4988,8 +5006,8 @@ vr([
 ]);
 //#endregion
 //#region ui/PinMenu.svelte
-var Os = /* @__PURE__ */ q("<button type=\"button\" class=\"pc-pin-action svelte-i73q0t\"> </button>"), ks = /* @__PURE__ */ q("<p class=\"pc-empty svelte-i73q0t\">No attached links.</p>"), As = /* @__PURE__ */ q("<div class=\"pc-pin-menu svelte-i73q0t\" role=\"dialog\" aria-label=\"Pin actions\" aria-modal=\"false\" tabindex=\"-1\"><div class=\"pc-menu-head svelte-i73q0t\"><h2 class=\"svelte-i73q0t\"> </h2><button type=\"button\" aria-label=\"Close pin actions\" class=\"svelte-i73q0t\">Close</button></div> <p class=\"pc-kind svelte-i73q0t\"> </p> <!></div>");
-function js(e, t) {
+var ks = /* @__PURE__ */ q("<button type=\"button\" class=\"pc-pin-action svelte-i73q0t\"> </button>"), As = /* @__PURE__ */ q("<p class=\"pc-empty svelte-i73q0t\">No attached links.</p>"), js = /* @__PURE__ */ q("<div class=\"pc-pin-menu svelte-i73q0t\" role=\"dialog\" aria-label=\"Pin actions\" aria-modal=\"false\" tabindex=\"-1\"><div class=\"pc-menu-head svelte-i73q0t\"><h2 class=\"svelte-i73q0t\"> </h2><button type=\"button\" aria-label=\"Close pin actions\" class=\"svelte-i73q0t\">Close</button></div> <p class=\"pc-kind svelte-i73q0t\"> </p> <!></div>");
+function Ms(e, t) {
 	Be(t, !0);
 	let n = Si(t, "view", 3, null), r = Si(t, "actions", 19, () => ({})), i = /* @__PURE__ */ L(void 0), a = /* @__PURE__ */ L(8), o = /* @__PURE__ */ L(8), s, c = (e) => !!e.disabled || !!n()?.readOnly && e.capability !== "navigation";
 	function l() {
@@ -5028,7 +5046,7 @@ function js(e, t) {
 	var f = kr();
 	G("resize", en, l);
 	var p = ln(f), m = (e) => {
-		var t = As();
+		var t = js();
 		let s;
 		var l = z(t), f = z(l), p = z(f, !0);
 		P(f);
@@ -5036,12 +5054,12 @@ function js(e, t) {
 		P(l);
 		var h = B(l, 2), g = z(h);
 		P(h), Z(B(h, 2), 17, () => n().entries, (e) => e.id, (e, t) => {
-			var n = Os(), r = z(n, !0);
+			var n = ks(), r = z(n, !0);
 			P(n), V((e) => {
 				$(n, "data-entry", W(t).id), n.disabled = e, $(n, "title", W(t).reason), Y(r, W(t).label);
 			}, [() => c(W(t))]), K("click", n, () => u(W(t))), J(e, n);
 		}, (e) => {
-			J(e, ks());
+			J(e, As());
 		}), P(t), xi(t, (e) => R(i, e), () => W(i)), V(() => {
 			s = ii(t, "", s, {
 				left: `${W(a) ?? ""}px`,
@@ -5056,11 +5074,11 @@ function js(e, t) {
 vr(["keydown", "click"]);
 //#endregion
 //#region src/ui/node-palette.js
-var Ms = "M3 7 12 2l9 5v10l-9 5-9-5ZM3 7l9 5 9-5M12 12v10", Ns = "M3 6l4-2 4 2v5l-4 2-4-2ZM3 6l4 2 4-2M7 8v5M13 6l4-2 4 2v5l-4 2-4-2ZM13 6l4 2 4-2M17 8v5M8 15l4-2 4 2v5l-4 2-4-2ZM8 15l4 2 4-2M12 17v5", Ps = Object.freeze([
+var Ns = "M3 7 12 2l9 5v10l-9 5-9-5ZM3 7l9 5 9-5M12 12v10", Ps = "M3 6l4-2 4 2v5l-4 2-4-2ZM3 6l4 2 4-2M7 8v5M13 6l4-2 4 2v5l-4 2-4-2ZM13 6l4 2 4-2M17 8v5M8 15l4-2 4 2v5l-4 2-4-2ZM8 15l4 2 4-2M12 17v5", Fs = Object.freeze([
 	{
 		name: "Input",
 		color: "#96ad52",
-		icon: Ms
+		icon: Ns
 	},
 	{
 		name: "Shaping",
@@ -5083,16 +5101,21 @@ var Ms = "M3 7 12 2l9 5v10l-9 5-9-5ZM3 7l9 5 9-5M12 12v10", Ns = "M3 6l4-2 4 2v5
 		icon: "M5 20v-6M12 20V8M19 20V3"
 	},
 	{
+		name: "Introspection",
+		color: "#b39d71",
+		icon: "M21 12s-4-7-9-7-9 7-9 7 4 7 9 7 9-7 9-7ZM15 12a3 3 0 1 0-6 0 3 3 0 0 0 6 0"
+	},
+	{
 		name: "Output",
 		color: "#c96d82",
-		icon: Ms
+		icon: Ns
 	},
 	{
 		name: "Subgraphs",
 		color: "#a3aa99",
-		icon: Ns
+		icon: Ps
 	}
-].map((e) => Object.freeze(e))), Fs = {
+].map((e) => Object.freeze(e))), Is = {
 	Sources: "M14 2H5v20h14V7Zm0 0v5h5M2 13h10m-3-3 3 3-3 3",
 	Context: "M3 5h18M6 12h12M9 19h6",
 	Planning: "M4 5h8a4 4 0 0 1 0 8H8a4 4 0 0 0 0 8h12m-3-3 3 3-3 3",
@@ -5105,13 +5128,18 @@ var Ms = "M3 7 12 2l9 5v10l-9 5-9-5ZM3 7l9 5 9-5M12 12v10", Ns = "M3 6l4-2 4 2v5
 	Guidance: "M5 2h10l4 4v16H5ZM15 2v4h4M8 11h8m-8 5h6",
 	Review: "m2 12 4 4 8-9m-3 8 3 3 8-10",
 	Delivery: "m2 11 20-9-8 20-4-8Zm8 3L22 2",
-	Library: Ns,
+	Library: Ps,
 	Routing: "M3 12h18m-7-7 7 7-7 7",
-	Blocks: Ms
-}, Is = Object.freeze(Object.fromEntries(Object.entries(Fs).map(([e, t]) => [e, Object.freeze({
+	Blocks: Ns,
+	Reflect: "M21 12s-4-7-9-7-9 7-9 7 4 7 9 7 9-7 9-7ZM15 12a3 3 0 1 0-6 0 3 3 0 0 0 6 0",
+	Internalize: "M4 4h16v16H4M8 8l4 4 4-4M12 12v5",
+	Express: "M4 4h16v12H9l-5 4ZM8 8h8M8 12h5",
+	Memory: "M5 3h14v18H5ZM8 7h8M8 11h8M8 15h5",
+	State: "M3 12h4l3-7 4 14 3-7h4"
+}, Ls = Object.freeze(Object.fromEntries(Object.entries(Is).map(([e, t]) => [e, Object.freeze({
 	name: e,
 	icon: t
-})]))), Ls = {
+})]))), Rs = {
 	"scene-context": [
 		"Sources",
 		"sc",
@@ -5135,12 +5163,12 @@ var Ms = "M3 7 12 2l9 5v10l-9 5-9-5ZM3 7l9 5 9-5M12 12v10", Ns = "M3 6l4-2 4 2v5
 	"response-plan": [
 		"Planning",
 		"rp",
-		Fs.Planning
+		Is.Planning
 	],
 	compose: [
 		"Assembly",
 		"co",
-		Fs.Assembly
+		Is.Assembly
 	],
 	repair: [
 		"Revision",
@@ -5175,17 +5203,17 @@ var Ms = "M3 7 12 2l9 5v10l-9 5-9-5ZM3 7l9 5 9-5M12 12v10", Ns = "M3 6l4-2 4 2v5
 	"validate-patches": [
 		"Validation",
 		"vp",
-		Fs.Validation
+		Is.Validation
 	],
 	"json-decode": [
 		"Parsing",
 		"jd",
-		Fs.Parsing
+		Is.Parsing
 	],
 	"select-fields": [
 		"Extraction",
 		"sf",
-		Fs.Extraction
+		Is.Extraction
 	],
 	guidance: [
 		"Guidance",
@@ -5200,28 +5228,58 @@ var Ms = "M3 7 12 2l9 5v10l-9 5-9-5ZM3 7l9 5 9-5M12 12v10", Ns = "M3 6l4-2 4 2v5
 	"apply-reply": [
 		"Delivery",
 		"ar",
-		Fs.Delivery
+		Is.Delivery
 	],
 	reroute: [
 		"Routing",
 		"rt",
-		Fs.Routing
+		Is.Routing
+	],
+	reflect: [
+		"Reflect",
+		"rf",
+		Is.Reflect
+	],
+	internalize: [
+		"Internalize",
+		"in",
+		Is.Internalize
+	],
+	express: [
+		"Express",
+		"ex",
+		Is.Express
+	],
+	context: [
+		"Context",
+		"cx",
+		Is.Context
+	],
+	memory: [
+		"Memory",
+		"mm",
+		Is.Memory
+	],
+	state: [
+		"State",
+		"sv",
+		Is.State
 	]
-}, Rs = Object.freeze(Object.fromEntries(Object.entries(Ls).map(([e, [t, n, r]]) => [e, Object.freeze({
+}, zs = Object.freeze(Object.fromEntries(Object.entries(Rs).map(([e, [t, n, r]]) => [e, Object.freeze({
 	group: t,
 	shortcode: n,
 	icon: r
-})]))), zs = Object.freeze({
+})]))), Bs = Object.freeze({
 	group: "Blocks",
 	shortcode: "",
-	icon: Ms
-}), Bs = (e) => Object.hasOwn(Rs, e) ? Rs[e] : zs, Vs = /* @__PURE__ */ q("<button type=\"button\" class=\"pc-family-row\" aria-haspopup=\"menu\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path></path></svg><span> </span></button>"), Hs = /* @__PURE__ */ q("<button type=\"button\" role=\"menuitem\">‹ Families</button>"), Us = /* @__PURE__ */ q("<button type=\"button\" role=\"menuitem\" aria-haspopup=\"menu\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path></path></svg><span class=\"pc-subfamily-name\"> </span><svg class=\"pc-sub-chevron\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m9 5 7 7-7 7\"></path></svg></button>"), Ws = /* @__PURE__ */ q("<div role=\"menu\" tabindex=\"-1\"><!> <!></div>"), Gs = /* @__PURE__ */ q("<button type=\"button\" role=\"menuitem\"> </button>"), Ks = /* @__PURE__ */ q("<input class=\"text_pole\" aria-label=\"Search nodes\" placeholder=\"Search nodes…\"/>"), qs = /* @__PURE__ */ q("<button type=\"button\" role=\"menuitem\"><svg class=\"pc-leaf-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path></path></svg><span class=\"pc-catalog-name\"> </span><small> </small></button>"), Js = /* @__PURE__ */ q("<button type=\"button\" role=\"menuitem\" data-shelf-manage=\"\"><svg class=\"pc-leaf-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M3 6h18M3 18h18M8 3v6m8 6v6M3 12h18m-5-3v6\"></path></svg><span class=\"pc-catalog-name\">Manage subgraphs…</span></button>"), Ys = /* @__PURE__ */ q("<div class=\"pc-shelf-menu pc-leaf-menu\" role=\"menu\" tabindex=\"-1\"><!> <!> <!> <!></div>"), Xs = /* @__PURE__ */ q("<nav aria-label=\"Node families\"></nav> <!> <!>", 1);
-function Zs(e, t) {
+	icon: Ns
+}), Vs = (e) => Object.hasOwn(zs, e) ? zs[e] : Bs, Hs = /* @__PURE__ */ q("<button type=\"button\" class=\"pc-family-row\" aria-haspopup=\"menu\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path></path></svg><span> </span></button>"), Us = /* @__PURE__ */ q("<button type=\"button\" role=\"menuitem\">‹ Families</button>"), Ws = /* @__PURE__ */ q("<button type=\"button\" role=\"menuitem\" aria-haspopup=\"menu\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path></path></svg><span class=\"pc-subfamily-name\"> </span><svg class=\"pc-sub-chevron\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m9 5 7 7-7 7\"></path></svg></button>"), Gs = /* @__PURE__ */ q("<div role=\"menu\" tabindex=\"-1\"><!> <!></div>"), Ks = /* @__PURE__ */ q("<button type=\"button\" role=\"menuitem\"> </button>"), qs = /* @__PURE__ */ q("<input class=\"text_pole\" aria-label=\"Search nodes\" placeholder=\"Search nodes…\"/>"), Js = /* @__PURE__ */ q("<button type=\"button\" role=\"menuitem\"><svg class=\"pc-leaf-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path></path></svg><span class=\"pc-catalog-name\"> </span><small> </small></button>"), Ys = /* @__PURE__ */ q("<button type=\"button\" role=\"menuitem\" data-shelf-manage=\"\"><svg class=\"pc-leaf-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M3 6h18M3 18h18M8 3v6m8 6v6M3 12h18m-5-3v6\"></path></svg><span class=\"pc-catalog-name\">Manage subgraphs…</span></button>"), Xs = /* @__PURE__ */ q("<div class=\"pc-shelf-menu pc-leaf-menu\" role=\"menu\" tabindex=\"-1\"><!> <!> <!> <!></div>"), Zs = /* @__PURE__ */ q("<nav aria-label=\"Node families\"></nav> <!> <!>", 1);
+function Qs(e, t) {
 	Be(t, !0);
-	let n = Si(t, "readOnly", 3, !1), r, i = /* @__PURE__ */ L(null), a = /* @__PURE__ */ L(null), o = /* @__PURE__ */ L(""), s = /* @__PURE__ */ L(""), c = /* @__PURE__ */ L(!1), l = /* @__PURE__ */ L(""), u = /* @__PURE__ */ L(!1), d = /* @__PURE__ */ L(0), f = /* @__PURE__ */ L(0), p = /* @__PURE__ */ L(0), m = /* @__PURE__ */ L(0), h = null, g = 0, _ = Ps.map((e) => e.name);
+	let n = Si(t, "readOnly", 3, !1), r, i = /* @__PURE__ */ L(null), a = /* @__PURE__ */ L(null), o = /* @__PURE__ */ L(""), s = /* @__PURE__ */ L(""), c = /* @__PURE__ */ L(!1), l = /* @__PURE__ */ L(""), u = /* @__PURE__ */ L(!1), d = /* @__PURE__ */ L(0), f = /* @__PURE__ */ L(0), p = /* @__PURE__ */ L(0), m = /* @__PURE__ */ L(0), h = null, g = 0, _ = Fs.map((e) => e.name);
 	function v(e = W(o)) {
 		if (t.choices !== void 0) return t.choices.filter((t) => t.family === e).map((n) => {
-			let r = Bs(n.id.startsWith("operation:") ? n.id.split(":")[1] : "");
+			let r = Vs(n.id.startsWith("operation:") ? n.id.split(":")[1] : "");
 			return {
 				...n,
 				title: n.label,
@@ -5229,13 +5287,13 @@ function Zs(e, t) {
 				catalog: !0,
 				group: e === "Subgraphs" ? "Library" : r.group,
 				shortcode: n.shortcode ?? r.shortcode,
-				icon: e === "Subgraphs" ? Is.Library.icon : r.icon
+				icon: e === "Subgraphs" ? Ls.Library.icon : r.icon
 			};
 		});
 		let n = t.view?.families.find((t) => t.name === e);
 		return n ? n.operations.filter((t) => e !== "Surface" || !["pattern-scan", "validate-patches"].includes(t.id)).map((t) => ({
 			...t,
-			...Bs(t.id),
+			...Vs(t.id),
 			family: e
 		})) : [];
 	}
@@ -5336,13 +5394,13 @@ function Zs(e, t) {
 		let n = [...(e.target.closest("[role=\"menu\"]") || r).querySelectorAll("button:not(:disabled)")], i = n.indexOf(e.target);
 		n[e.key === "Home" ? 0 : e.key === "End" ? n.length - 1 : (i + (e.key === "ArrowUp" ? n.length - 1 : 1)) % n.length]?.focus();
 	}
-	var O = { openSearch: T }, te = Xs();
+	var O = { openSearch: T }, te = Zs();
 	G("pointerdown", en, (e) => {
 		e.target.closest(".pc-node-shelf, .pc-shelf-menu") || b();
 	}), G("resize", en, () => b());
 	var ne = ln(te);
-	Z(ne, 21, () => Ps, zr, (e, n) => {
-		var r = Vs();
+	Z(ne, 21, () => Fs, zr, (e, n) => {
+		var r = Hs();
 		let i;
 		var a = z(r), s = z(a);
 		P(a);
@@ -5354,20 +5412,20 @@ function Zs(e, t) {
 		}), K("keydown", r, ee), J(e, r);
 	}), P(ne), xi(ne, (e) => r = e, () => r);
 	var k = B(ne, 2), A = (e) => {
-		var t = Ws();
+		var t = Gs();
 		let n;
 		var r = z(t), a = (e) => {
-			var t = Hs();
+			var t = Us();
 			K("click", t, () => b(!0)), J(e, t);
 		};
 		X(r, (e) => {
 			W(u) && e(a);
 		}), Z(B(r, 2), 17, y, zr, (e, t) => {
-			var n = Us(), r = z(n), i = z(r);
+			var n = Ws(), r = z(n), i = z(r);
 			P(r);
 			var a = B(r), o = z(a, !0);
 			P(a), ke(), P(n), V((e) => {
-				$(n, "data-subfamily", W(t)), $(n, "aria-expanded", W(s) === W(t)), $(i, "d", Is[W(t)]?.icon), Y(o, e);
+				$(n, "data-subfamily", W(t)), $(n, "aria-expanded", W(s) === W(t)), $(i, "d", Ls[W(t)]?.icon), Y(o, e);
 			}, [() => W(t).toUpperCase()]), K("click", n, (e) => w(W(t), e.currentTarget)), G("pointerenter", n, (e) => {
 				e.pointerType !== "touch" && w(W(t), e.currentTarget, !1);
 			}), J(e, n);
@@ -5376,24 +5434,24 @@ function Zs(e, t) {
 		}, [() => ({
 			left: `${W(d)}px`,
 			top: `${W(f)}px`,
-			"--pc-family": Ps.find((e) => e.name === W(o))?.color
+			"--pc-family": Fs.find((e) => e.name === W(o))?.color
 		})]), K("keydown", t, ee), J(e, t);
 	};
 	X(k, (e) => {
 		W(o) && e(A);
 	});
 	var j = B(k, 2), re = (e) => {
-		var r = Ys();
+		var r = Xs();
 		let i;
 		var d = z(r), f = (e) => {
-			var t = Gs(), n = z(t);
+			var t = Ks(), n = z(t);
 			P(t), V(() => Y(n, `‹ ${W(o) ?? ""}`)), K("click", t, D), J(e, t);
 		};
 		X(d, (e) => {
 			W(u) && W(s) && e(f);
 		});
 		var h = B(d, 2), g = (e) => {
-			var t = Ks();
+			var t = qs();
 			Q(t), _i(t, () => W(l), (e) => R(l, e)), J(e, t);
 		};
 		X(h, (e) => {
@@ -5408,7 +5466,7 @@ function Zs(e, t) {
 			e.shortcode,
 			...e.searchAliases ?? []
 		].join(" ").toLowerCase().includes(W(l).toLowerCase())) : v().filter((e) => e.group === W(s)), (e) => e.family + e.id, (e, t) => {
-			var r = qs(), i = z(r), a = z(i);
+			var r = Js(), i = z(r), a = z(i);
 			P(i);
 			var o = B(i), s = z(o, !0);
 			P(o);
@@ -5418,7 +5476,7 @@ function Zs(e, t) {
 			}), K("click", r, () => E(W(t))), J(e, r);
 		});
 		var x = B(y, 2), S = (e) => {
-			var n = Js();
+			var n = Ys();
 			K("click", n, () => {
 				b(!0), t.manageSubgraphs?.();
 			}), J(e, n);
@@ -5439,11 +5497,11 @@ function Zs(e, t) {
 vr(["click", "keydown"]);
 //#endregion
 //#region ui/WorkflowSetup.svelte
-var Qs = /* @__PURE__ */ q("<option> </option>"), $s = /* @__PURE__ */ q("<label> <select class=\"text_pole\"><option>Choose a connection</option><!></select></label> <label> <input class=\"text_pole\" placeholder=\"Use profile model\"/></label>", 1), ec = /* @__PURE__ */ q("<p class=\"pc-error\"> </p>"), tc = /* @__PURE__ */ q("<article class=\"pc-workflow-starter\"><strong> </strong><p> </p><small> </small><button type=\"button\" class=\"pc-btn menu_button\"> </button></article>"), nc = /* @__PURE__ */ q("<h3> </h3> <p> </p> <p> </p> <!> <button type=\"button\" class=\"pc-btn menu_button\"> </button> <p> </p> <!> <h3>Workflow examples</h3> <!>", 1);
-function rc(e, t) {
+var $s = /* @__PURE__ */ q("<option> </option>"), ec = /* @__PURE__ */ q("<label> <select class=\"text_pole\"><option>Choose a connection</option><!></select></label> <label> <input class=\"text_pole\" placeholder=\"Use profile model\"/></label>", 1), tc = /* @__PURE__ */ q("<p class=\"pc-error\"> </p>"), nc = /* @__PURE__ */ q("<article class=\"pc-workflow-starter\"><strong> </strong><p> </p><small> </small><button type=\"button\" class=\"pc-btn menu_button\"> </button></article>"), rc = /* @__PURE__ */ q("<h3> </h3> <p> </p> <p> </p> <!> <button type=\"button\" class=\"pc-btn menu_button\"> </button> <p> </p> <!> <h3>Workflow examples</h3> <!>", 1);
+function ic(e, t) {
 	Be(t, !0);
 	var n = kr(), r = ln(n), i = (e) => {
-		var n = nc(), r = ln(n), i = z(r, !0);
+		var n = rc(), r = ln(n), i = z(r, !0);
 		P(r);
 		var a = B(r, 2), o = z(a, !0);
 		P(a);
@@ -5451,9 +5509,9 @@ function rc(e, t) {
 		P(s);
 		var l = B(s, 2);
 		Z(l, 17, () => t.view.roles, (e) => e.name, (e, n) => {
-			var r = $s(), i = ln(r), a = z(i), o = B(a), s = z(o);
+			var r = ec(), i = ln(r), a = z(i), o = B(a), s = z(o);
 			s.value = s.__value = "", Z(B(s), 17, () => t.view.profiles, (e) => e.id, (e, t) => {
-				var n = Qs(), r = z(n, !0);
+				var n = $s(), r = z(n, !0);
 				P(n);
 				var i = {};
 				V(() => {
@@ -5473,10 +5531,10 @@ function rc(e, t) {
 		P(f);
 		var m = B(f, 2);
 		Z(m, 17, () => t.view.issues, zr, (e, t) => {
-			var n = ec(), r = z(n, !0);
+			var n = tc(), r = z(n, !0);
 			P(n), V(() => Y(r, W(t))), J(e, n);
 		}), Z(B(m, 4), 17, () => t.view.starters, (e) => e.id, (e, n) => {
-			var r = tc(), i = z(r), a = z(i, !0);
+			var r = nc(), i = z(r), a = z(i, !0);
 			P(i);
 			var o = B(i), s = z(o, !0);
 			P(o);
@@ -5501,8 +5559,8 @@ vr([
 ]);
 //#endregion
 //#region ui/ImportReview.svelte
-var ic = /* @__PURE__ */ q("<p> </p>"), ac = /* @__PURE__ */ q("<li> </li>"), oc = /* @__PURE__ */ q("<h3>Saved bindings to review</h3><ul></ul>", 1), sc = /* @__PURE__ */ q("<p>Saved model metadata is present. Review local connections before running.</p>"), cc = /* @__PURE__ */ q("<h3>Imported terminal effects</h3><ul></ul>", 1), lc = /* @__PURE__ */ q("<p>No imported terminal effects.</p>"), uc = /* @__PURE__ */ q("<p role=\"alert\"> </p>"), dc = /* @__PURE__ */ q("<button type=\"button\" class=\"pc-btn menu_button\">Prepare again</button>"), fc = /* @__PURE__ */ q("<div class=\"pc-workspace-overlay pc-import-overlay\"><div class=\"pc-workspace-dialog pc-import-review\" role=\"dialog\" aria-modal=\"true\" aria-label=\"Import into graph\" tabindex=\"-1\"><header><h2>Import into graph</h2><button type=\"button\" class=\"pc-btn menu_button\" aria-label=\"Cancel import\">×</button></header> <p><strong> </strong> <small> </small></p> <dl><dt>Phase</dt><dd> </dd><dt>Additions</dt><dd> </dd><dt>Conservative request bound</dt><dd> </dd></dl> <p class=\"pc-import-explanation\">This authoring bound includes unfinished branches. Bindings and reachable execution are checked when you explicitly run the workflow.</p> <!> <!> <!> <p>Insertion keeps internal wiring and relative layout. It does not connect matching names, arm or assign the graph, run requests, publish Guidance, or Apply a reply.</p> <!> <footer><button type=\"button\" class=\"pc-btn menu_button\">Cancel</button><!><button type=\"button\" class=\"pc-btn menu_button pc-import-accept\">Insert into graph</button></footer></div></div>");
-function pc(e, t) {
+var ac = /* @__PURE__ */ q("<p> </p>"), oc = /* @__PURE__ */ q("<li> </li>"), sc = /* @__PURE__ */ q("<h3>Saved bindings to review</h3><ul></ul>", 1), cc = /* @__PURE__ */ q("<p>Saved model metadata is present. Review local connections before running.</p>"), lc = /* @__PURE__ */ q("<h3>Imported terminal effects</h3><ul></ul>", 1), uc = /* @__PURE__ */ q("<p>No imported terminal effects.</p>"), dc = /* @__PURE__ */ q("<p role=\"alert\"> </p>"), fc = /* @__PURE__ */ q("<button type=\"button\" class=\"pc-btn menu_button\">Prepare again</button>"), pc = /* @__PURE__ */ q("<div class=\"pc-workspace-overlay pc-import-overlay\"><div class=\"pc-workspace-dialog pc-import-review\" role=\"dialog\" aria-modal=\"true\" aria-label=\"Import into graph\" tabindex=\"-1\"><header><h2>Import into graph</h2><button type=\"button\" class=\"pc-btn menu_button\" aria-label=\"Cancel import\">×</button></header> <p><strong> </strong> <small> </small></p> <dl><dt>Phase</dt><dd> </dd><dt>Additions</dt><dd> </dd><dt>Conservative request bound</dt><dd> </dd></dl> <p class=\"pc-import-explanation\">This authoring bound includes unfinished branches. Bindings and reachable execution are checked when you explicitly run the workflow.</p> <!> <!> <!> <p>Insertion keeps internal wiring and relative layout. It does not connect matching names, arm or assign the graph, run requests, publish Guidance, or Apply a reply.</p> <!> <footer><button type=\"button\" class=\"pc-btn menu_button\">Cancel</button><!><button type=\"button\" class=\"pc-btn menu_button pc-import-accept\">Insert into graph</button></footer></div></div>");
+function mc(e, t) {
 	Be(t, !0);
 	let n;
 	Ci(() => {
@@ -5515,7 +5573,7 @@ function pc(e, t) {
 			e.shiftKey && document.activeElement === r && (e.preventDefault(), i?.focus()), !e.shiftKey && document.activeElement === i && (e.preventDefault(), r?.focus());
 		}
 	}
-	var i = fc(), a = z(i), o = z(a), s = B(z(o));
+	var i = pc(), a = z(i), o = z(a), s = B(z(o));
 	P(o);
 	var c = B(o, 2), l = z(c), u = z(l, !0);
 	P(l);
@@ -5528,45 +5586,45 @@ function pc(e, t) {
 	var v = B(g, 2), y = z(v);
 	P(v), P(p);
 	var b = B(p, 4), x = (e) => {
-		var n = ic(), r = z(n);
+		var n = ac(), r = z(n);
 		P(n), V((e) => Y(r, `Imported model roles: ${e ?? ""}.`), [() => t.view.requiredRoles.join(", ")]), J(e, n);
 	};
 	X(b, (e) => {
 		t.view.requiredRoles.length && e(x);
 	});
 	var S = B(b, 2), C = (e) => {
-		var n = oc(), r = B(ln(n));
+		var n = sc(), r = B(ln(n));
 		Z(r, 21, () => t.view.unresolvedBindings, zr, (e, t) => {
-			var n = ac(), r = z(n);
+			var n = oc(), r = z(n);
 			P(n), V((e) => Y(r, `${W(t).title ?? ""} · ${W(t).role ?? ""}: missing ${e ?? ""}`), [() => W(t).missing.join(" and ")]), J(e, n);
 		}), P(r), J(e, n);
 	}, w = (e) => {
-		J(e, sc());
+		J(e, cc());
 	};
 	X(S, (e) => {
 		t.view.unresolvedBindings.length ? e(C) : t.view.bindingReviewRequired && e(w, 1);
 	});
 	var T = B(S, 2), E = (e) => {
-		var n = cc(), r = B(ln(n));
+		var n = lc(), r = B(ln(n));
 		Z(r, 21, () => t.view.terminals, zr, (e, t) => {
-			var n = ac(), r = z(n);
+			var n = oc(), r = z(n);
 			P(n), V(() => Y(r, `${W(t).title ?? ""} · ${W(t).operation ?? ""}`)), J(e, n);
 		}), P(r), J(e, n);
 	}, D = (e) => {
-		J(e, lc());
+		J(e, uc());
 	};
 	X(T, (e) => {
 		t.view.terminals.length ? e(E) : e(D, -1);
 	});
 	var ee = B(T, 4), O = (e) => {
-		var n = uc(), r = z(n, !0);
+		var n = dc(), r = z(n, !0);
 		P(n), V(() => Y(r, t.view.error)), J(e, n);
 	};
 	X(ee, (e) => {
 		t.view.error && e(O);
 	});
 	var te = B(ee, 2), ne = z(te), k = B(ne), A = (e) => {
-		var n = dc();
+		var n = fc();
 		K("click", n, () => t.actions.prepareImportAgain?.()), J(e, n);
 	};
 	X(k, (e) => {
@@ -5580,8 +5638,8 @@ function pc(e, t) {
 vr(["keydown", "click"]);
 //#endregion
 //#region ui/Workbench.svelte
-var mc = /* @__PURE__ */ q("<p class=\"pc-native-diagnostic svelte-1dr9aew\" role=\"alert\"> </p>"), hc = /* @__PURE__ */ q("<p>Browse node families on the floating shelf. Middle mouse pans the graph; the wheel zooms around the pointer. Use the divider or its arrow keys to resize Preview.</p><p>Setup contains workflow examples, phase assignment and role defaults. Subgraphs manages reusable definitions. Arm enables the selected host workflow; Run tests it explicitly.</p><p>File › Import into graph reviews a same-phase fragment before one undoable insertion. Import workflow opens a separate graph.</p><p>Right-click empty graph space or drag from a pin to search for compatible nodes. Double-click a subgraph to open its saved body in a graph tab. Pinned bodies are read-only; Make local copy enables edits through the real parent instance.</p><p>The Subgraphs shelf manages individual subgraph JSON files. Portals connect pins through named references. Preview artifact tabs show results for the selected node; Run to here checks the request bound before running. Apply reviews the fresh result against the full root workflow.</p>", 1), gc = /* @__PURE__ */ q("<div class=\"pc-workspace-overlay\"><div class=\"pc-workspace-dialog\" role=\"dialog\" tabindex=\"-1\" aria-modal=\"true\"><header><h2> </h2><button type=\"button\" class=\"pc-btn menu_button\" aria-label=\"Close panel\">×</button></header> <!></div></div>"), _c = /* @__PURE__ */ q("<div class=\"pc-workspace-overlay\"><div class=\"pc-manager-dialog svelte-1dr9aew\" role=\"dialog\" tabindex=\"-1\" aria-modal=\"true\" aria-label=\"Manage portals\"><!></div></div>"), vc = /* @__PURE__ */ q("<div class=\"pc-workspace-overlay\"><div class=\"pc-manager-dialog svelte-1dr9aew\" role=\"dialog\" tabindex=\"-1\" aria-modal=\"true\" aria-label=\"Manage subgraphs\"><!></div></div>"), yc = /* @__PURE__ */ q("<div role=\"dialog\" aria-modal=\"true\" aria-label=\"Lattice\" data-pc-workbench=\"svelte\"><!> <div class=\"pc-body\" role=\"region\" aria-label=\"Workspace panels\" tabindex=\"0\"><div class=\"pc-stage\"><section aria-label=\"Output preview\"><header class=\"pc-preview-pane-head\"><strong>Preview</strong><button type=\"button\" class=\"pc-btn menu_button\"> </button></header> <div class=\"pc-preview-content\"><!></div></section> <!> <!> <div class=\"pc-canvas-area\" id=\"pc-workspace-graph\" role=\"tabpanel\"><div class=\"pc-workspace-run svelte-1dr9aew\"><!></div> <!> <div class=\"pc-canvas-host\" aria-label=\"Node canvas\"></div> <!> <!></div></div> <!> <div class=\"pc-inspector pc-workspace-details svelte-1dr9aew\"><header class=\"pc-details-heading svelte-1dr9aew\"><strong class=\"svelte-1dr9aew\">Details</strong><button type=\"button\" class=\"svelte-1dr9aew\">Portals</button><button type=\"button\" class=\"svelte-1dr9aew\">Subgraphs</button></header> <!></div></div> <!> <!> <!> <!> <!> <!></div>");
-function bc(e, t) {
+var hc = /* @__PURE__ */ q("<p class=\"pc-native-diagnostic svelte-1dr9aew\" role=\"alert\"> </p>"), gc = /* @__PURE__ */ q("<p>Browse node families on the floating shelf. Middle mouse pans the graph; the wheel zooms around the pointer. Use the divider or its arrow keys to resize Preview.</p><p>Setup contains workflow examples, phase assignment and role defaults. Subgraphs manages reusable definitions. Arm enables the selected host workflow; Run tests it explicitly.</p><p>File › Import into graph reviews a same-phase fragment before one undoable insertion. Import workflow opens a separate graph.</p><p>Right-click empty graph space or drag from a pin to search for compatible nodes. Double-click a subgraph to open its saved body in a graph tab. Pinned bodies are read-only; Make local copy enables edits through the real parent instance.</p><p>The Subgraphs shelf manages individual subgraph JSON files. Portals connect pins through named references. Preview artifact tabs show results for the selected node; Run to here checks the request bound before running. Apply reviews the fresh result against the full root workflow.</p>", 1), _c = /* @__PURE__ */ q("<div class=\"pc-workspace-overlay\"><div class=\"pc-workspace-dialog\" role=\"dialog\" tabindex=\"-1\" aria-modal=\"true\"><header><h2> </h2><button type=\"button\" class=\"pc-btn menu_button\" aria-label=\"Close panel\">×</button></header> <!></div></div>"), vc = /* @__PURE__ */ q("<div class=\"pc-workspace-overlay\"><div class=\"pc-manager-dialog svelte-1dr9aew\" role=\"dialog\" tabindex=\"-1\" aria-modal=\"true\" aria-label=\"Manage portals\"><!></div></div>"), yc = /* @__PURE__ */ q("<div class=\"pc-workspace-overlay\"><div class=\"pc-manager-dialog svelte-1dr9aew\" role=\"dialog\" tabindex=\"-1\" aria-modal=\"true\" aria-label=\"Manage subgraphs\"><!></div></div>"), bc = /* @__PURE__ */ q("<div role=\"dialog\" aria-modal=\"true\" aria-label=\"Lattice\" data-pc-workbench=\"svelte\"><!> <div class=\"pc-body\" role=\"region\" aria-label=\"Workspace panels\" tabindex=\"0\"><div class=\"pc-stage\"><section aria-label=\"Output preview\"><header class=\"pc-preview-pane-head\"><strong>Preview</strong><button type=\"button\" class=\"pc-btn menu_button\"> </button></header> <div class=\"pc-preview-content\"><!></div></section> <!> <!> <div class=\"pc-canvas-area\" id=\"pc-workspace-graph\" role=\"tabpanel\"><div class=\"pc-workspace-run svelte-1dr9aew\"><!></div> <!> <div class=\"pc-canvas-host\" aria-label=\"Node canvas\"></div> <!> <!></div></div> <!> <div class=\"pc-inspector pc-workspace-details svelte-1dr9aew\"><header class=\"pc-details-heading svelte-1dr9aew\"><strong class=\"svelte-1dr9aew\">Details</strong><button type=\"button\" class=\"svelte-1dr9aew\">Portals</button><button type=\"button\" class=\"svelte-1dr9aew\">Subgraphs</button></header> <!></div></div> <!> <!> <!> <!> <!> <!></div>");
+function xc(e, t) {
 	Be(t, !0);
 	let n = Si(t, "actions", 7), r = /* @__PURE__ */ L({
 		graphs: [],
@@ -5708,7 +5766,7 @@ function bc(e, t) {
 		focusCommentTitle: p,
 		revealPreview: ne,
 		revealWorkflowSetup: k
-	}, oe = yc();
+	}, oe = bc();
 	let se, ce;
 	var le = z(oe);
 	xi(Qi(le, {
@@ -5771,7 +5829,7 @@ function bc(e, t) {
 	var Ce = B(Se, 2), we = z(Ce), Te = z(we);
 	{
 		let e = /* @__PURE__ */ F(() => W(r).runMeter ?? null);
-		_o(Te, {
+		vo(Te, {
 			get view() {
 				return W(e);
 			},
@@ -5796,12 +5854,12 @@ function bc(e, t) {
 	var Ee = B(M, 2);
 	xi(Ee, (e) => o = e, () => o);
 	var N = B(Ee, 2), De = (e) => {
-		var t = mc(), n = z(t, !0);
+		var t = hc(), n = z(t, !0);
 		P(t), V(() => Y(n, W(r).nativeDiagnostic)), J(e, t);
 	};
 	X(N, (e) => {
 		W(r).nativeDiagnostic && e(De);
-	}), xi(Zs(B(N, 2), {
+	}), xi(Qs(B(N, 2), {
 		get view() {
 			return W(r).workflow;
 		},
@@ -5866,14 +5924,14 @@ function bc(e, t) {
 		W(r).commentDetails ? e(Ie) : e(Le, -1);
 	}), P(je), xi(je, (e) => c = e, () => c), P(ue), xi(ue, (e) => a = e, () => a);
 	var Re = B(ue, 2), ze = (e) => {
-		var t = gc(), i = z(t), a = z(i), o = z(a), s = z(o, !0);
+		var t = _c(), i = z(t), a = z(i), o = z(a), s = z(o, !0);
 		P(o);
 		var c = B(o);
 		P(a);
 		var l = B(a, 2), u = (e) => {
 			{
 				let t = /* @__PURE__ */ F(() => W(r).runDetails ?? null);
-				po(e, {
+				mo(e, {
 					get view() {
 						return W(t);
 					},
@@ -5885,7 +5943,7 @@ function bc(e, t) {
 		}, d = (e) => {
 			{
 				let t = /* @__PURE__ */ F(() => W(r).rootWorkflow ?? W(r).workflow);
-				rc(e, {
+				ic(e, {
 					get view() {
 						return W(t);
 					},
@@ -5895,7 +5953,7 @@ function bc(e, t) {
 				});
 			}
 		}, f = (e) => {
-			var t = hc();
+			var t = gc();
 			ke(4), J(e, t);
 		};
 		X(l, (e) => {
@@ -5908,7 +5966,7 @@ function bc(e, t) {
 		W(w) && e(ze);
 	});
 	var He = B(Re, 2);
-	Ds(He, {
+	Os(He, {
 		get view() {
 			return W(r).nativeSearch;
 		},
@@ -5917,7 +5975,7 @@ function bc(e, t) {
 		}
 	});
 	var Ue = B(He, 2);
-	js(Ue, {
+	Ms(Ue, {
 		get view() {
 			return W(r).nativePinMenu;
 		},
@@ -5926,8 +5984,8 @@ function bc(e, t) {
 		}
 	});
 	var We = B(Ue, 2), Ge = (e) => {
-		var t = _c(), i = z(t);
-		Io(z(i), {
+		var t = vc(), i = z(t);
+		Lo(z(i), {
 			get view() {
 				return W(r).portalManager;
 			},
@@ -5940,8 +5998,8 @@ function bc(e, t) {
 		W(r).portalManager && e(Ge);
 	});
 	var Ke = B(We, 2), qe = (e) => {
-		var t = vc(), i = z(t);
-		vs(z(i), {
+		var t = yc(), i = z(t);
+		ys(z(i), {
 			get view() {
 				return W(r).subgraphManager;
 			},
@@ -5954,7 +6012,7 @@ function bc(e, t) {
 		W(r).subgraphManager && e(qe);
 	});
 	var Je = B(Ke, 2), Ye = (e) => {
-		pc(e, {
+		mc(e, {
 			get view() {
 				return W(r).importReview;
 			},
@@ -5972,7 +6030,7 @@ function bc(e, t) {
 vr(["click", "keydown"]);
 //#endregion
 //#region ui/entry.js
-function xc(e, t) {
+function Sc(e, t) {
 	let n = jr(Wi, {
 		target: e,
 		props: { actions: t }
@@ -5987,8 +6045,8 @@ function xc(e, t) {
 		destroy: () => Fr(n)
 	};
 }
-function Sc(e, t) {
-	let n = jr(bc, {
+function Cc(e, t) {
+	let n = jr(xc, {
 		target: e,
 		props: { actions: t }
 	});
@@ -6003,4 +6061,4 @@ function Sc(e, t) {
 	};
 }
 //#endregion
-export { xc as mountCanvas, Sc as mountWorkbench };
+export { Sc as mountCanvas, Cc as mountWorkbench };

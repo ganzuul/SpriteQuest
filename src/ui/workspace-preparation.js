@@ -1,13 +1,13 @@
-import { inspectDefinitionGraph } from '../workflow/graph-validation.js?v=0.23.0';
-import { projectRunRows } from '../workflow/run-state.js?v=0.23.0';
-import { definitionRefKey } from '../workflow/definition-data.js?v=0.23.0';
-import { prepareWorkflowPlanner } from '../workflow/resolve.js?v=0.23.0';
-import { prepareCompositionViews } from '../workflow/composition-views.js?v=0.23.0';
-import { prepareWorkflowProjection, projectPreparedWorkflow } from './workflow-surface.js?v=0.23.0';
-import { operationFor, portsForNode } from '../workflow/catalog.js?v=0.23.0';
-import { definitionChain } from '../workflow/composition-edit.js?v=0.23.0';
-import { FAMILY_PALETTE, paletteForOperation, readNodePresentation } from './node-palette.js?v=0.23.0';
-import { isCommentFrame } from '../canvas/comment-frames.js?v=0.23.0';
+import { inspectDefinitionGraph } from '../workflow/graph-validation.js?v=0.24.0';
+import { projectRunRows } from '../workflow/run-state.js?v=0.24.0';
+import { definitionRefKey } from '../workflow/definition-data.js?v=0.24.0';
+import { prepareWorkflowPlanner } from '../workflow/resolve.js?v=0.24.0';
+import { prepareCompositionViews } from '../workflow/composition-views.js?v=0.24.0';
+import { prepareWorkflowProjection, projectPreparedWorkflow } from './workflow-surface.js?v=0.24.0';
+import { operationFor, portsForNode } from '../workflow/catalog.js?v=0.24.0';
+import { definitionChain } from '../workflow/composition-edit.js?v=0.24.0';
+import { FAMILY_PALETTE, paletteForOperation, readNodePresentation } from './node-palette.js?v=0.24.0';
+import { isCommentFrame } from '../canvas/comment-frames.js?v=0.24.0';
 const rootIdentity = root => ({ kind: 'root', workflowId: root.id });
 /** First activation favors readable named cards; users can pan or explicitly Fit. */
 export function initialWorkspaceCamera(node, { width, shelf, meter } = {}) {
@@ -53,6 +53,7 @@ export function projectEditorDraw(editor) {
 }
 
 const targetKey = target => JSON.stringify(target);
+const memoryStatus = commit => commit ? (commit.acknowledged ? 'Memory saved' : 'Memory updated; save unconfirmed') + ' · version ' + commit.version : '';
 function previewChoicesFor(prepared, targets = []) {
     const path = prepared.identity.instancePath ?? [];
     return targets.map(target => {
@@ -69,9 +70,9 @@ export function projectWorkspacePanels(editor, workflow, state, revision, select
     const address = library ? {kind:'library',definitionRef:editor.prepared.definitionRef,nodeId:selectedId} : { workflowId: workflow.graphId, instancePath: [...path], nodeId: selectedId };
     const presentation = readNodePresentation(saved, editor?.view.nodePresentation[selectedId]);
     const controls = metadata ? Object.entries(metadata.controlDescriptors).map(([key, descriptor]) => {
-        const value = saved?.[key] ?? metadata.defaults[key], effectiveValue = editor.prepared.effectiveNodes[selectedId]?.[key] ?? metadata.defaults[key];
-        const editorType = descriptor.editor === 'json' || descriptor.type === 'array' && descriptor.items !== 'string' ? 'json' : descriptor.type === 'enum' ? 'enum' : descriptor.type === 'array' ? 'lines' : descriptor.type === 'integer' || descriptor.type === 'number' ? 'number' : descriptor.type === 'boolean' ? 'boolean' : 'text';
-        return { key, label: descriptor.label || key.replace(/([A-Z])/g,' $1'), value, editor: editorType, ...(editorType === 'json' ? { representation: 'json-value' } : {}), ...(descriptor.values ? { options: descriptor.values.map(value => ({ value, label: value })) } : {}), ...(descriptor.min !== undefined ? { min: descriptor.min } : {}), ...(descriptor.max !== undefined ? { max: descriptor.max } : {}), effective: JSON.stringify(effectiveValue), source: JSON.stringify(value) === JSON.stringify(effectiveValue) ? 'Saved setting' : 'Effective instance override' };
+        const fallback = metadata.defaults[key] ?? descriptor.default;
+        const value = saved?.[key] ?? fallback, effectiveValue = editor.prepared.effectiveNodes[selectedId]?.[key] ?? fallback;
+        return { ...detailControl(key, descriptor.label || key.replace(/([A-Z])/g,' $1'), descriptor, value), effective: JSON.stringify(effectiveValue), source: JSON.stringify(value) === JSON.stringify(effectiveValue) ? 'Saved setting' : 'Effective instance override' };
     }) : [];
     const modes = [{ value: 'inherit', label: 'Inherit role' }, { value: 'override', label: 'Override' }];
     const field = (key, options) => ({ mode: saved?.[key] ? 'override' : 'inherit', value: saved?.[key] ?? null, allowedModes: modes, ...(options ? { options } : {}) });
@@ -84,11 +85,11 @@ export function projectWorkspacePanels(editor, workflow, state, revision, select
     const target = pinnedPreview || selectedTarget, selectedKey = choices.find(choice => targetKey(choice.target) === targetKey(target))?.key ?? '';
     const result = workflow.result, sections = result ? result.sections.map((section,i) => ({ id: String(i), label: section.kind, ...section })) : [];
     const selector = editor?.view.identity.kind === 'root' ? result?.selectedReviewHandle ?? null : null;
-    const outputPreview = { sourceKey: revision, title: 'Output preview', statusDetail: state.status || '', status: !library && target && !selectedKey ? 'removed' : !result ? 'not-run' : state.availability === 'current' ? 'current' : 'stale', choices, selectedKey, pinned: !!pinnedPreview, followSelection: !pinnedPreview, sections: library || target && !selectedKey ? [] : sections, issues: library ? ['Library inspection is read-only and has no runtime output.'] : workflow.issues, busy: state.busy, runHere: library || !selectedKey ? null : { enabled: !state.busy && !workflow.targetSummary?.issues?.length, callBound: workflow.targetSummary?.callBound ?? workflow.callBound, issue: workflow.targetSummary?.issues?.join(' ') }, review: selector ? { selector, canApply: result.applyAvailable, fresh: !result.applyIssue && state.availability === 'current', selectedRootTerminal: editor?.view.identity.kind === 'root' && target?.kind === 'terminal' && !target.address.instancePath.length, mode: 'root', issue: result.applyIssue } : null };
+    const outputPreview = { sourceKey: revision, title: 'Output preview', statusDetail: [!library && memoryStatus(result?.memoryCommit), state.status].filter(Boolean).join(' · '), status: !library && target && !selectedKey ? 'removed' : !result ? 'not-run' : state.availability === 'current' ? 'current' : 'stale', choices, selectedKey, pinned: !!pinnedPreview, followSelection: !pinnedPreview, sections: library || target && !selectedKey ? [] : sections, issues: library ? ['Library inspection is read-only and has no runtime output.'] : workflow.issues, busy: state.busy, runHere: library || !selectedKey ? null : { enabled: !state.busy && !workflow.targetSummary?.issues?.length, callBound: workflow.targetSummary?.callBound ?? workflow.callBound, issue: workflow.targetSummary?.issues?.join(' ') }, review: selector ? { selector, canApply: result.applyAvailable, fresh: !result.applyIssue && state.availability === 'current', selectedRootTerminal: editor?.view.identity.kind === 'root' && target?.kind === 'terminal' && !target.address.instancePath.length, mode: 'root', issue: result.applyIssue } : null };
     const rowSource = state.runState || state.recording, rows = rootWorkflow.rows?.length ? rootWorkflow.rows : idleRunRows, flat = [];
     const visit = (items, depth) => { for (const row of items) { flat.push({ key: JSON.stringify(row.address), address: row.address, title: readNodePresentation(row.node).alias || (typeof row.node?.title === 'string' ? row.node.title : '') || row.node?.operation || row.address.nodeId, kind: row.kind, depth, status: row.status, subphase: row.subphase, durationMs: row.durationMs ?? null, attempts: row.attempts ?? 0, callBound: row.requestBound ?? 0, usage: row.request?.usage ?? null, issue: row.error?.message }); visit(row.children ?? [],depth+1); } }; visit(rows,0);
     const executableCount = rows.reduce((sum,row) => sum+row.executableCount,0), completedCount = rows.reduce((sum,row) => sum+row.completedCount,0), status = state.busy ? rowSource?.status || 'running' : rowSource?.status || (result ? result.ok ? 'completed' : 'failed' : 'not-run');
-    const runDetails = { runId: rowSource?.runId || '', status, elapsedMs: rowSource?.elapsedMs ?? null, actualCalls: state.busy ? flat.filter(row=>row.kind==='primitive').reduce((sum,row)=>sum+row.attempts,0) : rootWorkflow.result?.actualCalls ?? flat.filter(row=>row.kind==='primitive').reduce((sum,row)=>sum+row.attempts,0), callBound: rowSource?.plan?.callBound ?? rootWorkflow.result?.callBound ?? rootWorkflow.callBound, completedCount, executableCount, rows: flat, issue: state.preparationError?.message || result?.error || '' };
+    const runDetails = { runId: rowSource?.runId || '', status, elapsedMs: rowSource?.elapsedMs ?? null, actualCalls: state.busy ? flat.filter(row=>row.kind==='primitive').reduce((sum,row)=>sum+row.attempts,0) : rootWorkflow.result?.actualCalls ?? flat.filter(row=>row.kind==='primitive').reduce((sum,row)=>sum+row.attempts,0), callBound: rowSource?.plan?.callBound ?? rootWorkflow.result?.callBound ?? rootWorkflow.callBound, completedCount, executableCount, rows: flat, issue: state.preparationError?.message || result?.error || '', memoryStatus: memoryStatus(rootWorkflow.result?.memoryCommit) };
     const runMeter = { ...runDetails, rows: rows.map(row => ({ id: JSON.stringify(row.address), title: row.address.nodeId, status: row.status, executableCount: row.executableCount, completedCount: row.completedCount })) };
     return { nodeDetails, commentDetails, outputPreview, runDetails, runMeter };
 }
@@ -178,8 +179,8 @@ export function prepareLibraryViews(workflowId, snapshots) {
 }
 
 function detailControl(key,label,descriptor,value) {
- const editor=descriptor.editor==='json'||descriptor.type==='array'&&descriptor.items!=='string'?'json':descriptor.type==='enum'?'enum':descriptor.type==='array'?'lines':['integer','number'].includes(descriptor.type)?'number':descriptor.type==='boolean'?'boolean':'text';
- return {key,label,value,editor,...(editor==='json'?{representation:'json-value'}:{}),...(descriptor.values?{options:descriptor.values.map(value=>({value,label:value}))}:{}),...(descriptor.min!==undefined?{min:descriptor.min}:{}),...(descriptor.max!==undefined?{max:descriptor.max}:{})};
+ const editor=descriptor.editor==='json'||descriptor.type==='object'||descriptor.type==='array'&&descriptor.items!=='string'?'json':descriptor.type==='enum'?'enum':descriptor.type==='array'?'lines':['integer','number'].includes(descriptor.type)?'number':descriptor.type==='boolean'?'boolean':'text';
+ return {key,label,value:value ?? descriptor.default,editor,...(editor==='json'?{representation:'json-value'}:{}),...(descriptor.values?{options:descriptor.values.map(value=>({value,label:value}))}:{}),...(descriptor.min!==undefined?{min:descriptor.min}:{}),...(descriptor.max!==undefined?{max:descriptor.max}:{}),...(editor==='number'?{step:descriptor.step ?? (descriptor.type==='integer'?1:'any')}:{})};
 }
 export function projectDefinitionInstance(info,wrapper,profiles=[],effectiveControls={},effectiveBindings={}) {
  const modes=[{value:'inherit',label:'Inherit definition'},{value:'override',label:'Override'},{value:'block',label:'Block inheritance'}];

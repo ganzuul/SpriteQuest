@@ -1,10 +1,11 @@
-import { PRIMITIVE_OPERATIONS, describePrimitive } from './operations/nodes.js?v=0.23.0';
-import { describeContextJoin } from './operations/context-join.js?v=0.23.0';
-import { TRANSPOSE_OPERATIONS, describeTranspose } from './operations/transpose-nodes.js?v=0.23.0';
-import { CLEANUP_MODES, validateCleanupSettings } from './operations/prose-cleanup.js?v=0.23.0';
+import { PRIMITIVE_OPERATIONS, describePrimitive } from './operations/nodes.js?v=0.24.0';
+import { describeContextJoin } from './operations/context-join.js?v=0.24.0';
+import { TRANSPOSE_OPERATIONS, describeTranspose } from './operations/transpose-nodes.js?v=0.24.0';
+import { CLEANUP_MODES, validateCleanupSettings } from './operations/prose-cleanup.js?v=0.24.0';
+import { INTROSPECTION_NATIVE_OPERATIONS, describeNativeIntrospection, introspectionDefaults } from './introspection/native.js?v=0.24.0';
 
 /** Native operation metadata. Artifact flow, rather than canvas placement, defines execution. */
-export const FAMILIES = ['Input', 'Shaping', 'Surface', 'Transpose', 'Derive', 'Output'];
+export const FAMILIES = ['Input', 'Shaping', 'Surface', 'Transpose', 'Introspection', 'Derive', 'Output'];
 export const ARTIFACT_KINDS = ['context', 'draft', 'patches', 'candidate', 'guidance', 'text', 'data'];
 function controlDescriptor(operation, key, value) {
     const values = key === 'method' ? ['select', 'compress'] : key === 'scope' ? operation === 'repair' ? ['authorized', 'whole', 'narration', 'dialogue'] : ['whole', 'narration', 'dialogue'] : key === 'mode' ? (operation === 'repair' ? ['repair', 'scan', ...CLEANUP_MODES] : ['literal']) : null;
@@ -45,13 +46,15 @@ const transposeDescriptor = source => ({ ...source, minimumSchema: 3,
     }])),
 });
 Object.assign(OPERATIONS, Object.fromEntries(Object.entries(TRANSPOSE_OPERATIONS).map(([id, source]) => [id, transposeDescriptor(source)])));
+Object.assign(OPERATIONS, INTROSPECTION_NATIVE_OPERATIONS);
 OPERATIONS.repair.controlDescriptors.categories.label = 'Policy categories (empty selects all)';
 for (const [key, label] of Object.entries({ mode: 'Mode', scope: 'Scope', caseSensitive: 'Case sensitive', strength: 'Strength', instructions: 'Instructions', maxTokens: 'Output tokens', protectedLiterals: 'Protected literals' })) OPERATIONS.repair.controlDescriptors[key].label = label;
 const contextJoinDescriptor = source => ({ ...source, controlDescriptors: { inputs: { ...source.controlDescriptors.inputs, label: 'Inputs', editor: 'json', exposable: false } } });
 OPERATIONS['context-join'] = contextJoinDescriptor(describeContextJoin({ type: 'workflow', operation: 'context-join', operationVersion: 1, inputs: [{ id: 'context-1', label: 'Context 1' }, { id: 'context-2', label: 'Context 2' }] }).data.descriptor);
-const newOperation = id => Object.hasOwn(PRIMITIVE_OPERATIONS, id) || Object.hasOwn(TRANSPOSE_OPERATIONS, id) || id === 'context-join' || id === 'repair';
+const newOperation = id => Object.hasOwn(PRIMITIVE_OPERATIONS, id) || Object.hasOwn(TRANSPOSE_OPERATIONS, id) || Object.hasOwn(INTROSPECTION_NATIVE_OPERATIONS, id) || id === 'context-join' || id === 'repair';
 const failure = (code, message) => ({ ok: false, error: { code, message } });
 function dynamicDescription(node, phase) {
+    if (Object.hasOwn(INTROSPECTION_NATIVE_OPERATIONS, node.operation)) return describeNativeIntrospection(node, { phase });
     if (node.operation === 'repair') {
         if (phase !== 'post') return failure('INVALID_PHASE', 'Repair requires the post phase.');
         try {
@@ -93,7 +96,7 @@ export function operationFor(node, { phase } = {}) {
     const op = node?.type === 'workflow' && typeof node.operation === 'string' && Object.hasOwn(OPERATIONS, node.operation) ? OPERATIONS[node.operation] : null;
     if (!op) return null;
     if (newOperation(op.id)) {
-        const effectivePhase = phase ?? node.phase ?? (op.phase === 'post' || op.id === 'text-rules' && node.inputKind === 'draft' ? 'post' : 'pre');
+        const effectivePhase = phase ?? node.phase ?? (op.phase === 'post' || op.id === 'memory' && node.mode === 'commit' || op.id === 'text-rules' && node.inputKind === 'draft' ? 'post' : 'pre');
         const described = dynamicDescription(node, effectivePhase);
         return described.ok ? described.data.descriptor : null;
     }
@@ -159,8 +162,14 @@ export function portsForNode(graph, node) {
     const described = describeOperation(graph, node);
     return described.ok ? described.data.ports : [];
 }
-export function operationDefaults(id = 'scene-context') {
-    const op = Object.hasOwn(OPERATIONS, id) ? OPERATIONS[id] : null;
+export function operationDefaults(id = 'scene-context', { mode } = {}) {
+    const registered = Object.hasOwn(OPERATIONS, id) ? OPERATIONS[id] : null;
+    let op = registered;
+    if (registered && Object.hasOwn(INTROSPECTION_NATIVE_OPERATIONS, id) && mode !== undefined) {
+        const described = describeNativeIntrospection({ type: 'workflow', operation: id, operationVersion: 1, ...introspectionDefaults(id, mode) }, { phase: id === 'memory' && mode === 'commit' ? 'post' : 'pre' });
+        if (!described.ok) throw new Error(described.error.message);
+        op = described.data.descriptor;
+    }
     if (!op) throw new Error(`Unknown workflow operation: ${id}`);
     return { operation: id, ...(op.minimumSchema === 3 ? { operationVersion: 1 } : {}), title: op.title, modelRole: op.modelRole, profileId: null, model: null, ...structuredClone(op.defaults) };
 }

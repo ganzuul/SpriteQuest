@@ -1,6 +1,6 @@
-import { inspectExpandedGraph, nodeAddressKey, safeWorkflowData } from './graph-validation.js?v=0.23.0';
-import { artifactAddressKey } from './definition-data.js?v=0.23.0';
-import { freeze } from './record-data.js?v=0.23.0';
+import { inspectExpandedGraph, nodeAddressKey, safeWorkflowData } from './graph-validation.js?v=0.24.0';
+import { artifactAddressKey } from './definition-data.js?v=0.24.0';
+import { freeze } from './record-data.js?v=0.24.0';
 
 const fail = (code, message, address) => ({ ok: false, error: { code, message, ...(address ? { nodeId: address.nodeId, address } : {}) } });
 const planners = new WeakMap();
@@ -44,7 +44,7 @@ function selectClosure(index, target) {
             starts = [unit];
         }
     } else {
-        if (!terminals.length) return fail('MISSING_TERMINAL', 'Add Guidance or Apply Reply to finish the workflow.');
+        if (!terminals.length) return fail('MISSING_TERMINAL', 'Add Guidance, Apply Reply or Memory Commit to finish the workflow.');
         starts = terminals.map(terminal => byKey.get(nodeAddressKey(terminal.address)));
     }
     const included = new Set();

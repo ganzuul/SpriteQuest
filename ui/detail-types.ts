@@ -9,7 +9,7 @@ export type DetailEditResult = { ok: true } | { ok: false; error: DetailError };
 export type DetailEditResponse = DetailEditResult | Promise<DetailEditResult>;
 interface DetailControlBase {
     key: string; label: string; value: unknown;
-    options?: { value: string; label: string }[]; min?: number; max?: number;
+    options?: { value: string; label: string }[]; min?: number; max?: number; step?: number | 'any';
     effective?: string; source?: string; help?: string; exposureNote?: string;
 }
 export type DetailControl = DetailControlBase & (
@@ -68,6 +68,6 @@ export interface DetailRunRow {
 }
 export interface RunDetailsView {
     runId: string; status: string; elapsedMs: number | null; actualCalls: number; callBound: number;
-    completedCount: number; executableCount: number; rows: DetailRunRow[]; issue?: string;
+    completedCount: number; executableCount: number; rows: DetailRunRow[]; issue?: string; memoryStatus?: string;
 }
 export interface RunDetailsActions { jump?: (runId: string, address: DetailNodeAddress) => void; }

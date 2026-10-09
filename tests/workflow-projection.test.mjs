@@ -3,7 +3,7 @@ import test from 'node:test';
 import { installMock } from './mock.js';
 installMock();
 const surface=await import('../src/ui/workflow-surface.js');
-const { prepareWorkflowPlanner }=await import('../src/workflow/resolve.js?v=0.23.0');
+const { prepareWorkflowPlanner }=await import('../src/workflow/resolve.js?v=0.24.0');
 const { starterGraph }=await import('../src/workflow/starters.js');
 const { cloneWorkflowDocument }=await import('../src/workflow/document.js');
 const { runWorkflow }=await import('../src/workflow/runtime.js');
@@ -66,7 +66,7 @@ test('bounded artifact previews and zero-call starter metadata come from the act
     assert.equal(typeof surface.prepareWorkflowProjection,'function');const root=starterGraph('structured-guidance');let bindings=0;
     const result=await runWorkflow(root,{countTokens:async()=>({tokens:1,method:'fixture'})});assert.equal(result.ok,true,JSON.stringify(result.error));
     const prepared=surface.prepareWorkflowProjection(root,{result,resolveBinding:()=>{bindings++;throw new Error('zero call');}}),target={kind:'terminal',address:{workflowId:root.id,instancePath:[],nodeId:'guidance'}};
-    const view=surface.projectPreparedWorkflow(prepared,{result,recording:result.recording,selectedTarget:target});assert.equal(bindings,0);assert.equal(view.callBound,0);assert.equal(view.starters.length,8);assert.equal(view.result.applyAvailable,false);assert.ok(view.result.sections[0].text.includes('quiet conversation'));assert.ok(!('calls' in view.result));assert.equal(view.rows.length,5);
+    const view=surface.projectPreparedWorkflow(prepared,{result,recording:result.recording,selectedTarget:target});assert.equal(bindings,0);assert.equal(view.callBound,0);assert.equal(view.starters.length,11);assert.equal(view.result.applyAvailable,false);assert.ok(view.result.sections[0].text.includes('quiet conversation'));assert.ok(!('calls' in view.result));assert.equal(view.rows.length,5);
     assert.equal(surface.projectPreparedWorkflow(prepared,{selectedTarget:target,status:'Selection only'}).rows,view.rows,'unchanged recording/view uses the prepared row lookup');
 });
 test('original current full rendering and cached target recordings retain separate compatible result shapes',async()=>{

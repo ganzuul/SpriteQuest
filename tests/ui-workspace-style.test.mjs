@@ -125,9 +125,10 @@ test('shelf rows leave room for a thin vertical scrollbar without shrinking thei
     const shelf = dom.window.document.querySelector('.pc-node-shelf'), row = dom.window.document.createElement('button');
     row.className = 'pc-family-row'; row.innerHTML = '<svg></svg><span>Subgraphs</span>'; shelf.append(row);
     const shelfPaint = style('.pc-node-shelf'), rowPaint = style('.pc-family-row');
-    assert.equal(shelfPaint.overflowX, 'hidden'); assert.equal(shelfPaint.width, '120px');
+    assert.equal(shelfPaint.overflowX, 'hidden');
     assert.equal(shelfPaint.scrollbarWidth, 'thin'); assert.equal(shelfPaint.scrollbarColor, 'rgb(85, 85, 85)');
-    assert.equal(rowPaint.height, '28px'); assert.equal(rowPaint.flexBasis, '28px'); assert.equal(rowPaint.width, '110px');
+    assert.equal(rowPaint.height, '28px'); assert.equal(rowPaint.flexBasis, '28px');
+    assert.ok(parseFloat(shelfPaint.width) >= parseFloat(rowPaint.width) + 6, 'the shelf reserves room for its vertical scrollbar beside the full-width rows');
     assert.equal(rowPaint.alignItems, 'center'); assert.equal(style('.pc-family-row svg').flexShrink, '0');
 });
 

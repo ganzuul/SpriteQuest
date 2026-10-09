@@ -1,7 +1,11 @@
-import { runWorkflowForHost, freezeArtifact, workflowSignature } from './runtime.js?v=0.23.0';
-import { resolveBinding, requestModel, bindingStatus, bindingSummary } from './connections.js?v=0.23.0';
-import { addressKey, safeError } from './record-data.js?v=0.23.0';
-import { cloneWorkflowDocument } from './document.js?v=0.23.0';
+import { runWorkflowForHost, freezeArtifact, workflowSignature } from './runtime.js?v=0.24.0';
+import { resolveBinding, requestModel, bindingStatus, bindingSummary } from './connections.js?v=0.24.0';
+import { addressKey, safeError } from './record-data.js?v=0.24.0';
+import { cloneWorkflowDocument } from './document.js?v=0.24.0';
+import { projectIntrospectionNode } from './introspection/native.js?v=0.24.0';
+import { executeIntrospection } from './introspection/nodes.js?v=0.24.0';
+import { parseRecord } from './introspection/contracts.js?v=0.24.0';
+import { createNativeMemoryAdapter, nativeMemoryFingerprint, nativeMemoryScope, nativeVisibility } from './introspection/host-memory.js?v=0.24.0';
 
 // Internal review seam: observations contain no authority or retained payload values.
 const retentionInspectors=new WeakMap();
@@ -11,7 +15,16 @@ const PREFIX = 'lattice:guidance:';
 const fail = (code,message) => ({ok:false,error:{code,message}});
 const identity = c => ({chatId:c.getCurrentChatId?.() ?? c.chatId ?? null,characterId:c.characterId ?? null,groupId:c.groupId ?? null});
 const same = (a,b) => JSON.stringify(a) === JSON.stringify(b);
-const sourceText = chat => JSON.stringify((chat ?? []).map(m=>[m?.mes,m?.swipe_id,m?.is_user,m?.is_system]));
+const visibilityStamp = material => { const visibility=nativeVisibility(material);return visibility.ok?JSON.stringify(visibility.data):null; };
+const characterVisibility = c => visibilityStamp(c.characters?.[c.characterId]?.data ?? c.characters?.[c.characterId]);
+const sourceText = chat => {
+    const source=[];
+    for(const m of chat??[]) {
+        const visibility=visibilityStamp(m);if(visibility===null)return null;
+        source.push([m?.mes,m?.swipe_id,m?.is_user,m?.is_system,visibility]);
+    }
+    return JSON.stringify(source);
+};
 const token = () => globalThis.crypto.randomUUID();
 const generationStamp = value => {
     if(typeof value!=='string' && typeof value!=='number' && !(value instanceof Date))return null;
@@ -31,8 +44,15 @@ const incompleteStream = (c,index) => {
 const completed = m => !!m && (!m.role || m.role==='assistant') && !['narrator','tool'].includes(m.extra?.type) && m.mes!=='...' && !m.is_user && !m.is_system && !m.is_tool && !m.is_intermediate && !m.extra?.tool_invocations?.length && !m.extra?.tool_calls?.length && !m.extra?.image && !m.extra?.media?.length && !m.extra?.isSmallSys && !m.extra?.is_intermediate && !m.extra?.partial && !m.extra?.unfinished && !(m.gen_started && !m.gen_finished) && typeof m.mes === 'string' && !!m.mes.trim();
 
 /** Explicit bounded material only; this never assembles a native prompt or activates lore. */
-export function snapshotContext(context,{phase='pre',chat=context.chat,node={}}={}) {
+export function snapshotContext(context,{phase='pre',chat=context.chat,node={},visibilityActorId}={}) {
     const messages=[], omissions=[],characterMessages=[];
+    const actorIdValid=value=>typeof value==='string' && value.trim().length>0 && value.length<=128;
+    if(visibilityActorId!==undefined && !actorIdValid(visibilityActorId))return fail('INVALID_CONTEXT_VISIBILITY','Host context visibility requires a bounded selected actor identifier.');
+    const visibility=material=>{
+        const explicit=nativeVisibility(material);if(!explicit.ok)return explicit;
+        if(explicit.data.present)return {ok:true,data:{visibleTo:explicit.data.visibleTo}};
+        return {ok:true,data:visibilityActorId===undefined?{}:{visibleTo:[visibilityActorId]}};
+    };
     let remaining=100000;
     const available=Array.isArray(chat)?chat:[];
     const start=Math.max(0,available.length-Math.min(1000,node.recentMessages ?? 12));
@@ -46,8 +66,9 @@ export function snapshotContext(context,{phase='pre',chat=context.chat,node={}}=
             if(reserved<2)return fail('INPUT_LIMIT','The two latest context messages exceed the 100,000-character snapshot limit. Narrow the explicit source before running.');
             omissions.push({id,omittedCharacters:m.mes.length,reason:'snapshot character limit'});continue;
         }
+        const visible=visibility(m);if(!visible.ok)return visible;
         reserved++;remaining-=m.mes.length;
-        messages.unshift({id,role:m.is_user?'user':m.is_system?'system':'assistant',text:m.mes,source:'chat'});
+        messages.unshift({id,role:m.is_user?'user':m.is_system?'system':'assistant',text:m.mes,source:'chat',...visible.data});
     }
     if(node.includeCharacter!==false) {
         const character=context.characters?.[context.characterId],data=character?.data ?? character;
@@ -55,10 +76,11 @@ export function snapshotContext(context,{phase='pre',chat=context.chat,node={}}=
             const text=data?.[key],id=`character:${key}`;
             if(typeof text!=='string' || !text)continue;
             if(text.length>16000 || text.length>remaining) {omissions.push({id,omittedCharacters:text.length,reason:'character field or snapshot limit'});continue;}
-            remaining-=text.length;characterMessages.push({id,role:'system',text,source:'character'});
+            const visible=visibility(data);if(!visible.ok)return visible;
+            remaining-=text.length;characterMessages.push({id,role:'system',text,source:'character',...visible.data});
         }
     }
-    return freezeArtifact({kind:'context',messages:[...characterMessages,...messages],source:{...identity(context),phase},report:{code:'BOUNDED_CONTEXT',omissions,limitCharacters:100000,nativeLoreIncluded:false}});
+    return freezeArtifact({kind:'context',messages:[...characterMessages,...messages],source:{...identity(context),phase,...(visibilityActorId!==undefined?{actorId:visibilityActorId}:{})},report:{code:'BOUNDED_CONTEXT',omissions,limitCharacters:100000,nativeLoreIncluded:false,...(visibilityActorId!==undefined?{message:'Visibility identifies public host material supplied to the selected actor; it does not establish in-world knowledge.'}:{})}});
 }
 /** The opaque source token is JSON-safe; live message references stay in the controller. */
 export function snapshotReply(context,messageIndex=context.chat?.length-1) {
@@ -75,6 +97,7 @@ export function createNativeWorkflowController(ports) {
     let epoch=0, active=null, result=null, automaticResult=null, applying=false, internalEvents=0, unsubscribe=null;
     let generation={dryRun:false,type:'normal'};
     const keys=new Set(), sources=new Map(), candidates=new Map(), stopped=new WeakMap();
+    const memoryAdapter=createNativeMemoryAdapter({context,selectActor:ports.selectIntrospectionActor,isSettled:(message,index,c)=>!stoppedRevision(message) && !incompleteStream(c,index)});
     const observe=(fn,...args)=>{try{const pending=fn?.(...args);if(pending&&typeof pending.then==='function')Promise.resolve(pending).catch(()=>{});}catch{/* Observers cannot own lifecycle. */}};
     const rememberStopped=c=>{
         const m=c.chat?.at(-1);if(!m)return;
@@ -135,10 +158,10 @@ export function createNativeWorkflowController(ports) {
         return {ok:true};
     };
     const fresh=(run)=>run.epoch===epoch && !run.controller.signal.aborted && same(run.identity,identity(context())) && run.signature===workflowSignature(run.originalGraph) && (!run.native || (ports.isEnabled?.() !== false && ports.getGraph?.('pre')===run.originalGraph));
-    const sourceFresh=run=>[...(run.pendingSources?.values()??[])].every(validSource) && [...(run.sceneSources??[])].every(entry=>sourceText(entry.chat)===entry.text);
+    const sourceFresh=run=>[...(run.pendingSources?.values()??[])].every(validSource) && [...(run.sceneSources??[])].every(entry=>entry.text!==null && sourceText(entry.chat)===entry.text && (entry.characterVisibility===undefined || (entry.characterVisibility!==null && characterVisibility(context())===entry.characterVisibility)));
     const start=(graph,native=false,abortPrimary=null,target)=>{
         cancel('Superseded by a new workflow');
-        const run={epoch,runId:token(),controller:new AbortController(),originalGraph:graph,native,abortPrimary,pending:true,target,mode:target===undefined?'root':'target',pendingSources:new Map(),sceneSources:[],bindingContexts:new Map(),bindingChecks:[],reviewHandles:[]};
+        const run={epoch,runId:token(),controller:new AbortController(),originalGraph:graph,native,abortPrimary,pending:true,target,mode:target===undefined?'root':'target',pendingSources:new Map(),sceneSources:[],bindingContexts:new Map(),bindingChecks:[],reviewHandles:[],memoryTerminals:new Map(),memoryIntents:new Map(),memorySession:null,memoryCommit:null};
         active=run;return run;
     };
     function prepareRun(run,plan,controls,options) {
@@ -146,6 +169,8 @@ export function createNativeWorkflowController(ports) {
         const captured=controls.originalGraphSnapshot;
         run.graph={id:captured.id,name:captured.name,schema:captured.schema,runtime:captured.runtime,mode:captured.mode};
         run.signature=workflowSignature(captured);run.identity=identity(context());
+        for(const unit of plan.primitives)if(unit.included && unit.terminal && unit.address.instancePath.length===0 && unit.node.operation==='memory' && unit.node.mode==='commit')run.memoryTerminals.set(addressKey(unit.address),unit.node);
+        if(run.memoryTerminals.size>1)return fail('MULTIPLE_MEMORY_COMMITS','Use one Memory Commit terminal per native root run.');
         if(!fresh(run))return fail('STALE_RUN','Workflow source or settings changed.');
         if(options.phase==='post' && (ports.isBusy?.()||applying))return fail('BUSY','Wait for generation or reply application to finish.');
         if(run.native) {
@@ -155,13 +180,42 @@ export function createNativeWorkflowController(ports) {
         }
         return {ok:true};
     }
+    function scopedMemory(run) {
+        if(run.memorySession)return {ok:true,data:run.memorySession};
+        const session=memoryAdapter.capture({signal:run.controller.signal,isCurrent:()=>fresh(run)});
+        if(session.ok)run.memorySession=session.data;
+        return session;
+    }
+    async function introspect(run,node,inputs,operationPorts) {
+        if(!fresh(run))return fail('STALE_RUN','Workflow source or settings changed.');
+        const projected=projectIntrospectionNode(node);if(!projected.ok)return projected;
+        const settings=projected.data;
+        let session;
+        if(settings.operation==='memory' || (settings.operation==='state' && !inputs.state) || (settings.operation==='reflect' && !inputs.state) || (settings.operation==='context' && settings.mode==='perspective' && settings.actorId==='character')) {
+            const scoped=scopedMemory(run);if(!scoped.ok)return scoped;session=scoped.data;
+        }
+        if(settings.operation==='context' && settings.mode==='perspective' && settings.actorId==='character')settings.actorId=session.scope.actorId;
+        if(settings.operation==='memory' && settings.mode==='commit' && settings.idempotencyKey==='lattice-memory-commit')settings.idempotencyKey='lattice:'+await nativeMemoryFingerprint(JSON.stringify([run.graph.id,node.id,inputs.proposal]));
+        if(!fresh(run))return fail('STALE_RUN','Workflow source changed before Introspection execution.');
+        const {address,...boundedPorts}=operationPorts;
+        if(settings.operation==='reflect' && !inputs.state) {
+            const base=await session.memory.read({view:'state'});if(!base.ok)return base;
+            boundedPorts.scope=base.artifact.value.scope;boundedPorts.store=base.artifact.value.store;
+        }
+        const result=await executeIntrospection(settings,inputs,{...boundedPorts,...(session?{memory:{read:session.memory.read,recall:session.memory.recall}}:{})});
+        if(result.ok && settings.operation==='memory' && settings.mode==='commit' && run.memoryTerminals.has(addressKey(address)))run.memoryIntents.set(addressKey(address),structuredClone(result.artifact));
+        return result;
+    }
     function selectedSnapshot(run,phase,node,options) {
         const c=context();
         if(!fresh(run))return fail('STALE_RUN','Workflow source or settings changed.');
         if(phase==='pre') {
             const chat=options.chat??c.chat;
-            if(!run.sceneSources.some(entry=>entry.chat===chat))run.sceneSources.push({chat,text:sourceText(chat)});
-            return snapshotContext(c,{chat,node});
+            let sceneSource=run.sceneSources.find(entry=>entry.chat===chat);
+            if(!sceneSource){sceneSource={chat,text:sourceText(chat)};run.sceneSources.push(sceneSource);}
+            if(node.includeCharacter!==false && sceneSource.characterVisibility===undefined)sceneSource.characterVisibility=characterVisibility(c);
+            const scope=nativeMemoryScope(c,ports.selectIntrospectionActor);
+            return snapshotContext(c,{chat,node,...(scope.ok?{visibilityActorId:scope.data.actorId}:{})});
         }
         const snapshot=snapshotReply(c,options.messageIndex);
         if(snapshot.ok===false)return snapshot;
@@ -171,11 +225,21 @@ export function createNativeWorkflowController(ports) {
         run.pendingSources.set(snapshot.source.token,entry);
         return snapshot;
     }
-    function settleRun(run,transport) {
+    async function settleRun(run,transport) {
         if(!fresh(run)||!sourceFresh(run))return fail('STALE_SOURCE','The workflow source changed during preparation.');
         run.bindingChecks=transport.bindings.map(({address,binding})=>({address,binding,...run.bindingContexts.get(binding)}));
         const effective=bindingFresh(run);if(!effective.ok)return effective;
         if(transport.mode==='target')return {ok:true};
+        const memoryOutputs=[];
+        for(const output of transport.terminals) {
+            const record=output.artifact?.kind==='data'?parseRecord(output.artifact):null;
+            if(record?.ok && record.data.recordType==='commit-intent') {
+                const key=addressKey(output.terminal.address),expected=run.memoryIntents.get(key);
+                if(!run.memoryTerminals.has(key) || !expected || !same(output.artifact,expected))return fail('UNTRUSTED_MEMORY_INTENT','Only the compiled Memory Commit terminal may settle its exact intent.');
+                memoryOutputs.push(output);
+            }
+        }
+        if(memoryOutputs.length!==run.memoryTerminals.size)return fail('INVALID_MEMORY_TERMINAL','The compiled Memory Commit terminal did not provide its exact intent.');
         if(run.native) {
             const c=context();
             try {
@@ -198,6 +262,13 @@ export function createNativeWorkflowController(ports) {
             sources.set(entry.source.token,source);candidates.set(handle.handleId,entry);
             run.reviewHandles.push(handle);
         }
+        for(const output of memoryOutputs) {
+            if(!fresh(run)||!sourceFresh(run)||!bindingFresh(run).ok)return fail('STALE_SOURCE','The workflow source changed before memory settlement.');
+            const scoped=scopedMemory(run);if(!scoped.ok)return scoped;
+            const committed=await scoped.data.memory.commit(output.artifact,{root:true,preview:false,dryRun:false});
+            if(!committed.ok)return committed;
+            run.memoryCommit={applied:committed.data.applied,acknowledged:committed.data.acknowledged,version:committed.data.version};
+        }
         return {ok:true};
     }
     async function execute(run,options) {
@@ -216,11 +287,11 @@ export function createNativeWorkflowController(ports) {
             bindingSummary:ports.bindingSummary??bindingSummary,
             request:ports.request??(request=>requestModel(request,context())),
             onStage:ports.onStage,onEvent:event=>{observe(ports.onEvent,event);observe(options.onEvent,event);},
-        },{prepare:(plan,controls)=>prepareRun(run,plan,controls,options),settle:transport=>settleRun(run,transport)});}
-        finally {delete run.cancel;run.bindingContexts.clear();}
+        },{prepare:(plan,controls)=>prepareRun(run,plan,controls,options),executeIntrospection:(node,inputs,operationPorts)=>introspect(run,node,inputs,operationPorts),settle:transport=>settleRun(run,transport)});}
+        finally {delete run.cancel;run.bindingContexts.clear();run.memoryIntents.clear();run.memoryTerminals.clear();run.memorySession?.release();run.memorySession=null;}
         if(!value.ok||run.mode==='target') {run.pendingSources.clear();run.sceneSources.length=0;run.bindingChecks=[];for(const [id,entry]of candidates)if(entry.run===run)candidates.delete(id);for(const [id,entry]of sources)if(entry.run===run)sources.delete(id);if(run.native)clear();}
         else run.pendingSources.clear();
-        const publicValue=freezeArtifact({...value,reviewHandles:value.ok?run.reviewHandles:[]});
+        const publicValue=freezeArtifact({...value,...(run.memoryCommit?{memoryCommit:run.memoryCommit}:{}),reviewHandles:value.ok?run.reviewHandles:[]});
         run.publicResult=publicValue;
         return publicValue;
     }

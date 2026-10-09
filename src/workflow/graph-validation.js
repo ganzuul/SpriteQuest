@@ -1,6 +1,6 @@
-import { ARTIFACT_KINDS, operationFor, describeOperation, portsForNode } from './catalog.js?v=0.23.0';
-import { cloneDefinitionData, computeDefinitionIdentity, definitionRefKey, inspectDefinitionMetadata, describeExposedParameter, nodeBindingOverrideKey, artifactAddressKey } from './definition-data.js?v=0.23.0';
-import { samePath, safeId } from './composition-edit.js?v=0.23.0';
+import { ARTIFACT_KINDS, operationFor, describeOperation, portsForNode } from './catalog.js?v=0.24.0';
+import { cloneDefinitionData, computeDefinitionIdentity, definitionRefKey, inspectDefinitionMetadata, describeExposedParameter, nodeBindingOverrideKey, artifactAddressKey } from './definition-data.js?v=0.24.0';
+import { samePath, safeId } from './composition-edit.js?v=0.24.0';
 
 const record = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 const idText = value => typeof value === 'string' && value.length > 0;
@@ -38,7 +38,9 @@ export function safeWorkflowData(value) {
 
 function controlValid(value, descriptor) {
     return descriptor.type === 'integer' ? Number.isSafeInteger(value) && value >= descriptor.min && value <= descriptor.max
+        : descriptor.type === 'number' ? Number.isFinite(value) && value >= descriptor.min && value <= descriptor.max
         : descriptor.type === 'enum' ? descriptor.values.includes(value)
+        : descriptor.type === 'object' ? record(value) && [Object.prototype, null].includes(Object.getPrototypeOf(value)) && (descriptor.max === undefined || Object.keys(value).length <= descriptor.max) && cloneDefinitionData(value).ok
         : descriptor.type === 'array' ? Array.isArray(value) && value.every(item => typeof item === 'string' || ['string-or-record', 'record', 'context-slot'].includes(descriptor.items) && record(item))
         : typeof value === descriptor.type;
 }
@@ -59,6 +61,7 @@ function inspectScope(graph, { definition, snapshots = {} } = {}) {
         if (group.members !== undefined && (!Array.isArray(group.members) || group.members.some(member => !idText(member) || !Object.hasOwn(graph.nodes, member)) || new Set(group.members).size !== group.members.length)) return fail('INVALID_GROUP', 'Invalid group membership.');
         if (group.members && (group.members.some(member => graph.nodes[member]?.inGroup !== id) || nodes.some(node => node?.inGroup === id && !group.members.includes(node.id)))) return fail('INVALID_GROUP', 'Declared membership must agree with node membership.');
     }
+    let memoryCommits = 0;
     for (const [id, node] of Object.entries(graph.nodes)) {
         if (!record(node) || !idText(id) || node.id !== id) return fail('MALFORMED_WORKFLOW', 'Invalid node identity.');
         if (!presentationValid(node) || node.presentation !== undefined && !presentationValid(node.presentation)) return fail('INVALID_SETTINGS', 'Invalid node presentation or layout.', id);
@@ -80,7 +83,9 @@ function inspectScope(graph, { definition, snapshots = {} } = {}) {
         const operation = described.data.descriptor;
         if (node.operationVersion !== undefined && node.operationVersion !== 1) return fail('UNKNOWN_OPERATION', 'Unknown operation or version.', id);
         if (operation.phase !== graph.mode.slice(7)) return fail('WRONG_PHASE', 'An operation does not support the containing phase.', id);
-        if (definition && ['scene-context', 'reply-snapshot', 'guidance', 'apply-reply'].includes(operation.id)) return fail('ROOT_ONLY_OPERATION', 'Root-only operations cannot appear in reusable definitions.', id);
+        if (definition && (operation.rootOnly || ['scene-context', 'reply-snapshot', 'guidance', 'apply-reply'].includes(operation.id))) return fail('ROOT_ONLY_OPERATION', 'Root-only operations cannot appear in reusable definitions.', id);
+        if (definition && operation.requiresStateInDefinition && !wires.some(wire => wire?.to === id && wire.toPort === 'state')) return fail('ROOT_ONLY_OPERATION', 'State inside a reusable definition requires an explicit snapshot input.', id);
+        if (operation.id === 'memory' && operation.terminal && node.enabled !== false && ++memoryCommits > 1) return fail('MULTIPLE_MEMORY_COMMITS', 'A root workflow supports one Memory Commit terminal.', id);
         if (!bindingValid(node) || node.modelRole !== undefined && node.modelRole !== null && typeof node.modelRole !== 'string') return fail('INVALID_SETTINGS', 'Invalid model binding.', id);
         for (const [key, descriptor] of Object.entries(operation.controlDescriptors)) if (!controlValid(node[key] === undefined ? descriptor.default : node[key], descriptor)) return fail('INVALID_SETTINGS', `Invalid ${key}.`, id);
         if (node.operation === 'validate-patches' && node.protectedLiterals !== undefined && (!Array.isArray(node.protectedLiterals) || node.protectedLiterals.some(value => typeof value !== 'string'))) return fail('INVALID_SETTINGS', 'Invalid protected literals.', id);
@@ -342,7 +347,7 @@ function expandChecked(root, snapshots, rootDefinition) {
         }
         for (const node of Object.values(graph.nodes ?? {})) if (operationFor(node, { phase: graph.mode.slice(7) })) {
             const operation = operationFor(node, { phase: graph.mode.slice(7) });
-            for (const [id, descriptor] of Object.entries(operation.controlDescriptors)) if (node[id] === undefined) node[id] = structuredClone(descriptor.default);
+            for (const [id, descriptor] of Object.entries(operation.controlDescriptors)) if (node[id] === undefined && (operation.family !== 'Introspection' || Object.hasOwn(operation.defaults, id))) node[id] = structuredClone(descriptor.default);
             node.operationVersion ??= 1;
             node.modelRole ??= operation.modelRole;
             const explicitBinding = {};

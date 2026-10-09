@@ -67,6 +67,17 @@
         if (!actions.editControl) return;
         void perform(control.key, false, captured => actions.editControl!(captured, control.key, value));
     }
+    function editNumber(control: DetailControl, input: HTMLInputElement) {
+        if (!view || view.readOnly || !actions.editControl) return;
+        const value = Number(input.value);
+        if (!input.value.trim() || !Number.isFinite(value)) {
+            errors = { ...errors, [control.key]: 'Enter a finite number before saving.' }; return;
+        }
+        if (!input.validity.valid) {
+            errors = { ...errors, [control.key]: 'Enter a number within the allowed range and step.' }; return;
+        }
+        editControl(control, value);
+    }
     function editBinding(field: 'profileId' | 'model', mode: string, value: string | null) {
         const binding = bindingFor(field);
         if (!binding?.allowedModes.some(option => option.value === mode) || !actions.editBinding) return;
@@ -123,7 +134,7 @@
             {:else if control.editor === 'boolean'}
                 <input aria-label={control.label} type="checkbox" checked={Boolean(control.value)} disabled={view.readOnly || !actions.editControl} onchange={event => editControl(control, event.currentTarget.checked)} />
             {:else if control.editor === 'number'}
-                <input aria-label={control.label} type="number" min={control.min} max={control.max} value={Number(control.value)} disabled={view.readOnly || !actions.editControl} onchange={event => editControl(control, Number(event.currentTarget.value))} />
+                <input aria-label={control.label} type="number" min={control.min} max={control.max} step={control.step ?? 1} aria-invalid={!!errors[control.key]} aria-describedby={errors[control.key] ? idPrefix + '-error-' + control.key : undefined} value={Number(control.value)} disabled={view.readOnly || !actions.editControl} onchange={event => editNumber(control, event.currentTarget)} />
             {:else if control.editor === 'json' || control.editor === 'lines'}
                 <textarea aria-label={control.label} aria-invalid={!!(drafts[control.key]?.error || errors[control.key])} aria-describedby={(drafts[control.key]?.error || errors[control.key]) ? idPrefix + '-error-' + control.key : undefined} value={drafts[control.key]?.text ?? textFor(control)} disabled={view.readOnly || !actions.editControl} oninput={event => draft(control, event.currentTarget.value)}></textarea>
             {:else}

@@ -19,12 +19,12 @@ async function fixture(view,actions,mode='setup') {
     const mounted=mount(component,{target:host,props:{actions:{workflowSetup:actions},view}});flushSync();
     return {host,update(next){view=next;flushSync();},async close(){await unmount(mounted);host.remove();const rel=relative(resolve(tmpdir()),resolve(directory));assert.ok(rel&&!rel.startsWith('..')&&!isAbsolute(rel));await rm(directory,{recursive:true,force:true});}};
 }
-const { starterGraph } = await import('../src/workflow/starters.js?v=0.23.0');
-const { prepareWorkflowProjection, projectPreparedWorkflow } = await import('../src/ui/workflow-surface.js?v=0.23.0');
-test('actual Setup lists all eight current examples and forwards a selected installation without arming',async()=>{
+const { starterGraph } = await import('../src/workflow/starters.js?v=0.24.0');
+const { prepareWorkflowProjection, projectPreparedWorkflow } = await import('../src/ui/workflow-surface.js?v=0.24.0');
+test('actual Setup lists all eleven current examples and forwards a selected installation without arming',async()=>{
     const graph=starterGraph('structured-guidance'), view=projectPreparedWorkflow(prepareWorkflowProjection(graph)),calls=[];
     const f=await fixture(view,{install:id=>calls.push(['install',id]),assign:phase=>calls.push(['assign',phase]),bindRole(){}});
-    try { assert.equal(f.host.querySelector('select[aria-label="Workflow mode"]'),null);assert.equal(f.host.querySelectorAll('.pc-workflow-starter').length,8);assert.match(f.host.textContent,/Maximum 0 auxiliary requests/);assert.match(f.host.textContent,/Arming is a separate action/);
+    try { assert.equal(f.host.querySelector('select[aria-label="Workflow mode"]'),null);assert.equal(f.host.querySelectorAll('.pc-workflow-starter').length,11);assert.match(f.host.textContent,/Maximum 0 auxiliary requests/);assert.match(f.host.textContent,/Arming is a separate action/);
         [...f.host.querySelectorAll('button')].find(button=>button.textContent==='Install Structured guidance').click();flushSync();assert.deepEqual(calls,[['install','structured-guidance']]);
         [...f.host.querySelectorAll('button')].find(button=>button.textContent==='Assign pre phase').click();flushSync();assert.deepEqual(calls.at(-1),['assign','pre']);
     } finally {await f.close();}

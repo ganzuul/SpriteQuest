@@ -1,15 +1,17 @@
-import { operationFor } from './catalog.js?v=0.23.0';
-import { cloneWorkflowDocument } from './document.js?v=0.23.0';
-import { resolveWorkflow } from './resolve.js?v=0.23.0';
-import { compactContext, formatContext } from './compactor.js?v=0.23.0';
-import { scanDraft, repairDraft, validatePatches } from './repair.js?v=0.23.0';
-import { graphSemanticSignature } from './ports.js?v=0.23.0';
-import { executePrimitive, PRIMITIVE_OPERATIONS } from './operations/nodes.js?v=0.23.0';
-import { executeContextJoin } from './operations/context-join.js?v=0.23.0';
-import { executeTranspose, TRANSPOSE_OPERATIONS } from './operations/transpose-nodes.js?v=0.23.0';
-import { cleanupDraft, CLEANUP_MODES } from './operations/prose-cleanup.js?v=0.23.0';
-import { admitRunPlan, createRunRecorder } from './recording.js?v=0.23.0';
-import { addressKey, freeze, own, parseRunPlan, safeBinding, safeError, safeUsage, boundedText } from './record-data.js?v=0.23.0';
+import { operationFor } from './catalog.js?v=0.24.0';
+import { cloneWorkflowDocument } from './document.js?v=0.24.0';
+import { resolveWorkflow } from './resolve.js?v=0.24.0';
+import { compactContext, formatContext } from './compactor.js?v=0.24.0';
+import { scanDraft, repairDraft, validatePatches } from './repair.js?v=0.24.0';
+import { graphSemanticSignature } from './ports.js?v=0.24.0';
+import { executePrimitive, PRIMITIVE_OPERATIONS } from './operations/nodes.js?v=0.24.0';
+import { executeContextJoin } from './operations/context-join.js?v=0.24.0';
+import { executeTranspose, TRANSPOSE_OPERATIONS } from './operations/transpose-nodes.js?v=0.24.0';
+import { cleanupDraft, CLEANUP_MODES } from './operations/prose-cleanup.js?v=0.24.0';
+import { executeIntrospection } from './introspection/nodes.js?v=0.24.0';
+import { INTROSPECTION_NATIVE_OPERATIONS, projectIntrospectionNode } from './introspection/native.js?v=0.24.0';
+import { admitRunPlan, createRunRecorder } from './recording.js?v=0.24.0';
+import { addressKey, freeze, own, parseRunPlan, safeBinding, safeError, safeUsage, boundedText } from './record-data.js?v=0.24.0';
 
 /** Execution identity shared by the host and UI. Canvas presentation never invalidates work. */
 export const workflowSignature = graphSemanticSignature;
@@ -32,6 +34,18 @@ async function executeNode(node,inputs,op,local) {
     if(Object.hasOwn(PRIMITIVE_OPERATIONS,node.operation))return executePrimitive(node,inputs,{phase:local.phase,...(local.signal?{signal:local.signal}:{}),...(local.createWorker?{createWorker:local.createWorker}:{}),...(local.timeoutMs!==undefined?{timeoutMs:local.timeoutMs}:{})});
     if(node.operation==='context-join')return executeContextJoin(node,inputs);
     if(Object.hasOwn(TRANSPOSE_OPERATIONS,node.operation))return executeTranspose(node,inputs,{phase:local.phase,request:local.request,countTokens:local.countTokens,binding:local.binding,...(local.signal?{signal:local.signal}:{})});
+    if(Object.hasOwn(INTROSPECTION_NATIVE_OPERATIONS,node.operation)) {
+        const projected=projectIntrospectionNode(node);if(!projected.ok)return projected;
+        const capabilities={phase:local.phase,root:local.root,request:local.request,countTokens:local.countTokens,binding:local.binding,...(local.signal?{signal:local.signal}:{})};
+        if(local.executeIntrospection)return local.executeIntrospection(node,inputs,{...capabilities,address:local.address});
+        // Public execution can consume explicitly injected reads, but never obtains
+        // the commit capability or trusted host settlement authority.
+        const memory=own(local,'memory');
+        if(memory)capabilities.memory=Object.fromEntries(['read','recall'].flatMap(key=>{
+            const method=own(memory,key);return typeof method==='function'?[[key,options=>method.call(memory,options)]]:[];
+        }));
+        return executeIntrospection(projected.data,inputs,capabilities);
+    }
     switch(node.operation) {
         case 'scene-context':case 'reply-snapshot': {
             const snapshot=await local.snapshot(op.phase,node),result=snapshot?.ok===false?snapshot:success(structuredClone(snapshot));
@@ -144,7 +158,7 @@ async function executeWorkflow(original,ports,hooks={}) {
                 const metadata=response.ok?response.data:response.error;
                 emit('request-settled',{address:unit.address,attempt,status:stopped()?'cancelled':response.ok?'completed':'failed',durationMs:Math.max(0,monotonic()-started-requestStarted),...(metadata?.finish!==undefined?{finish:boundedText(metadata.finish,128)??null}:{}),...(safeUsage(metadata?.usage)!==undefined?{usage:safeUsage(metadata.usage)}:{}),...(!response.ok?{error:safeError(response.error)}:{})});return response;
             };
-            const result=await executeNode(node,inputs,op,{...ports,phase:plan.phase,binding,request});
+            const result=await executeNode(node,inputs,op,{...ports,phase:plan.phase,binding,request,root:unit.address.instancePath.length===0,address:unit.address,executeIntrospection:hooks.executeIntrospection});
             if(stopped())return finish(failure('ABORTED','Workflow was stopped.',node.id));
             if(!result?.ok){emit('node-settled',{address:unit.address,status:'failed',error:safeError(result?.error)});return finish(result??failure('WORKFLOW_FAILED','The operation returned no result.',node.id));}
             const artifact=freezeArtifact(result.artifact);

@@ -1,12 +1,12 @@
-import { safeWorkflowData } from './contracts.js?v=0.23.0';
-import { cloneWorkflowDocument } from './document.js?v=0.23.0';
-import { operationFor } from './catalog.js?v=0.23.0';
-import { definitionRefKey, nodeBindingOverrideKey } from './definition-data.js?v=0.23.0';
-import { inspectExpandedGraph, inspectDefinitionGraph } from './graph-validation.js?v=0.23.0';
-import { compositionIds, samePath, pathStartsWith } from './composition-edit.js?v=0.23.0';
-import { materializeInstanceControls } from './composition-transform.js?v=0.23.0';
-import { exportWorkflow, parseWorkflow, selectSubgraphClosure } from './packages.js?v=0.23.0';
-import { prepareWorkflowInsertion } from './insertion.js?v=0.23.0';
+import { safeWorkflowData } from './contracts.js?v=0.24.0';
+import { cloneWorkflowDocument } from './document.js?v=0.24.0';
+import { operationFor } from './catalog.js?v=0.24.0';
+import { definitionRefKey, nodeBindingOverrideKey } from './definition-data.js?v=0.24.0';
+import { inspectExpandedGraph, inspectDefinitionGraph } from './graph-validation.js?v=0.24.0';
+import { compositionIds, samePath, pathStartsWith } from './composition-edit.js?v=0.24.0';
+import { materializeInstanceControls } from './composition-transform.js?v=0.24.0';
+import { exportWorkflow, parseWorkflow, selectSubgraphClosure } from './packages.js?v=0.24.0';
+import { prepareWorkflowInsertion } from './insertion.js?v=0.24.0';
 
 const fail = (message, code = 'INVALID_CLIPBOARD') => ({ ok: false, error: { code, message } });
 

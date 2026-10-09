@@ -56,4 +56,4 @@ Pattern Scan now narrows supplied permissions and retains upstream protections/e
 
 The category editor accepts source category IDs, one per line. See [the canonical policy](../data/ai-slop-policy.json) for labels and entries. Source wording is data. The browser policy module is generated from the JSON and checked for equality by tests.
 
-Introspection and actor memory/state are being implemented by their separate chat and are outside this branch.
+The **Introspection** family is available alongside these tools. Its [three native starters](introspection-package.md#native-workflow-examples) cover character reflection and behavior guidance, experience internalization, and a deterministic consequence clock. Memory access stays in the root graph; reusable State bodies need an explicit snapshot input.

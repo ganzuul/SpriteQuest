@@ -7,6 +7,7 @@ export const FAMILY_PALETTE = Object.freeze([
     { name: 'Surface', color: '#92c9ad', icon: 'M3 14L14 6l7 4-11 8Z' },
     { name: 'Transpose', color: '#9080b6', icon: 'M3 7h18m-4-4 4 4-4 4M21 17H3m4-4-4 4 4 4' },
     { name: 'Derive', color: '#b65b9e', icon: 'M5 20v-6M12 20V8M19 20V3' },
+    { name: 'Introspection', color: '#b39d71', icon: 'M21 12s-4-7-9-7-9 7-9 7 4 7 9 7 9-7 9-7ZM15 12a3 3 0 1 0-6 0 3 3 0 0 0 6 0' },
     { name: 'Output', color: '#c96d82', icon: cube },
     { name: 'Subgraphs', color: '#a3aa99', icon: boxes },
 ].map(item => Object.freeze(item)));
@@ -26,6 +27,11 @@ const groups = {
     Library: boxes,
     Routing: 'M3 12h18m-7-7 7 7-7 7',
     Blocks: cube,
+    Reflect: 'M21 12s-4-7-9-7-9 7-9 7 4 7 9 7 9-7 9-7ZM15 12a3 3 0 1 0-6 0 3 3 0 0 0 6 0',
+    Internalize: 'M4 4h16v16H4M8 8l4 4 4-4M12 12v5',
+    Express: 'M4 4h16v12H9l-5 4ZM8 8h8M8 12h5',
+    Memory: 'M5 3h14v18H5ZM8 7h8M8 11h8M8 15h5',
+    State: 'M3 12h4l3-7 4 14 3-7h4',
 };
 export const PALETTE_GROUPS = Object.freeze(Object.fromEntries(Object.entries(groups).map(([name, icon]) => [name, Object.freeze({ name, icon })])));
 const metadata = {
@@ -48,6 +54,12 @@ const metadata = {
     'review-gate': ['Review', 'rg', 'M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Zm13 0a3 3 0 1 0-6 0 3 3 0 0 0 6 0'],
     'apply-reply': ['Delivery', 'ar', groups.Delivery],
     reroute: ['Routing', 'rt', groups.Routing],
+    reflect: ['Reflect', 'rf', groups.Reflect],
+    internalize: ['Internalize', 'in', groups.Internalize],
+    express: ['Express', 'ex', groups.Express],
+    context: ['Context', 'cx', groups.Context],
+    memory: ['Memory', 'mm', groups.Memory],
+    state: ['State', 'sv', groups.State],
 };
 const palette = Object.freeze(Object.fromEntries(Object.entries(metadata).map(([id, [group, shortcode, icon]]) => [id, Object.freeze({ group, shortcode, icon })])));
 const unknown = Object.freeze({ group: 'Blocks', shortcode: '', icon: cube });

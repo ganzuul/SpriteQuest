@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { installMock } from './mock.js';
 installMock();
-const S = await import('../src/state.js?v=0.23.0');
+const S = await import('../src/state.js?v=0.24.0');
 const source = await readFile(new URL('../src/ui/controller.js', import.meta.url), 'utf8');
 function actual(name, env) {
     const start = source.indexOf('function '+name+'('), end = source.indexOf('\nfunction ', start+1);

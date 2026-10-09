@@ -50,7 +50,7 @@ export interface WorkflowNodeView { id: string; title: string; canonicalTitle: s
 export interface WorkflowAddress { workflowId: string; instancePath: string[]; nodeId: string }
 export type WorkflowTarget = (WorkflowAddress & { portId: string }) | { kind: 'terminal'; address: WorkflowAddress };
 export interface WorkflowReviewSelector { handleId: string; runId: string; terminal: { kind: 'terminal'; address: WorkflowAddress } }
-export interface WorkflowBoundedResultView { kind: 'bounded'; ok: boolean; error: string; actualCalls: number; callBound: number; runId?: string; sections: { kind: string; format: string; text: string; truncated: boolean }[]; previewTarget?: WorkflowTarget | null; tokenMethods: string[]; applyAvailable: boolean; selectedReviewHandle?: WorkflowReviewSelector | null; applyIssue: string }
+export interface WorkflowBoundedResultView { kind: 'bounded'; ok: boolean; error: string; actualCalls: number; callBound: number; runId?: string; sections: { kind: string; format: string; text: string; truncated: boolean }[]; previewTarget?: WorkflowTarget | null; tokenMethods: string[]; applyAvailable: boolean; selectedReviewHandle?: WorkflowReviewSelector | null; applyIssue: string; memoryCommit?: Readonly<{ applied: boolean; acknowledged: boolean; version: number }> }
 export interface WorkflowView {
     graphId: string; name: string; phase: string; assigned: boolean; selectedId: string | null;
     roles: { name: string; profileId: string; model: string }[]; profiles: { id: string; name: string }[];

@@ -189,7 +189,7 @@ async function metrics(env) {
     assert(value.viewport.width === env.width && value.viewport.dpr === env.dpr, 'Viewport/DPR differs from the required capture case.');
     assert(value.nativeWorkbench && value.brand.text === 'LATTICE' && value.brand.fontReady, 'Production native workspace brand/font is unavailable.');
     assert(!value.overflow && value.graph.width > 100 && value.graph.height > 140, 'Native workspace overflowed or graph collapsed.');
-    assert(value.families.length === 7, 'All seven approved native family shelf entries must remain present.');
+    assert(value.families.length === 8 && value.families.some(family => family.name === 'Introspection' && !family.disabled), 'All eight native family shelf entries, including Introspection, must remain present.');
     assert(value.families.find(family => family.name === 'Transpose')?.disabled === (value.mode !== 'native-post'), 'Transpose availability must follow the active phase.');
     return { ...value, fixture: env.fixture, workerRequests: env.workerRequests, issues: [...env.issues] };
 }

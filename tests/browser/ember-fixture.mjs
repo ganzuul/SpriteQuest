@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 export const approvedEmber = JSON.parse(readFileSync(new URL('../../docs/superpowers/handoffs/2026-10-09-ember-theme-tokens.json', import.meta.url), 'utf8'));
-export const familyColors = { Input:'#96ad52', Shaping:'#589aab', Surface:'#92c9ad', Transpose:'#9080b6', Derive:'#b65b9e', Output:'#c96d82', Subgraphs:'#a3aa99' };
+export const familyColors = { Input:'#96ad52', Shaping:'#589aab', Surface:'#92c9ad', Transpose:'#9080b6', Derive:'#b65b9e', Introspection:'#b39d71', Output:'#c96d82', Subgraphs:'#a3aa99' };
 export const pinColors = { context:'#72adc0', guidance:'#c190be', draft:'#92c9ad', findings:'#b65b9e', patches:'#b65b9e', text:'#a5bfa0', data:'#7e9bc5', candidate:'#cca56d' };
 
 export function colorChannels(value) {

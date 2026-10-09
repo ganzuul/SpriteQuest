@@ -1,6 +1,6 @@
 # LATTICE model connections and host integration
 
-For editor operation, graph tabs, subgraphs, node controls, and recorded previews, use the [operator's manual](operators-manual.md). The [node reference](node-reference.md) lists all operations and their contracts. This guide covers model-backed workflows, connection routes, phase assignment, and reply review safeguards.
+For editor operation, graph tabs, subgraphs, node controls, and recorded previews, use the [operator's manual](operators-manual.md). The [node reference](node-reference.md) lists all operations and their contracts. This guide covers model-backed workflows, connection routes, phase assignment, reply review, and actor memory settlement.
 
 Install from the repository's default branch using the steps below.
 
@@ -24,10 +24,13 @@ Connections stay fixed to your bindings; Lattice does not activate a profile glo
 | --- | --- | --- |
 | Scene guidance | Scene Context → Smart Compactor → Response Plan → Guidance | 2: one compression, one plan |
 | Reviewed AI De-slop | Reply Snapshot → Pattern Scan → Repair → Validate Patches → Review Gate → Apply Reply | 1: repair |
+| Reflect and express | Scene Context → Context Focus Select → Reflect Character → Express Behavior → Guidance; Memory Read State feeds Reflect | 1 Analysis: reflection |
+| Internalize and commit | Memory Read State + Memory Read Events → Internalize Experience → Memory Commit | 1 Analysis: state proposal |
+| Consequence clock | Memory Read State + Memory Read Events → State Track → Memory Commit | 0 |
 
 The normal SillyTavern reply is an additional request. Selection-only compaction, context already within budget, and literal scan-only repair can avoid their respective model calls. Results show actual requests against the configured bound; failed attempts can still cost tokens. There are no implicit retries.
 
-Native graph wires determine execution order. Moving a card does not change message order. The family list is a discovery guide, in this order: **Input, Shaping, Surface, Transpose, Derive, Output**. Transpose offers Style Transfer, Format Transfer and Terminology Map in Post workflows. Disabled native operations block validation rather than silently bypassing.
+Native graph wires determine execution order. Moving a card does not change message order. The family list is a discovery guide, in this order: **Input, Shaping, Surface, Transpose, Introspection, Derive, Output**. Transpose offers Style Transfer, Format Transfer and Terminology Map in Post workflows. Introspection offers six operations with eighteen mode presets in the shelf and contextual search. Disabled native operations block validation rather than silently bypassing.
 
 The **AI De-slop** formation is an ordinary group of three editable operations: Pattern Scan, Repair, and Validate Patches. Use **Open group** on its collapsed card, or double-click the group, to reveal its nodes. Reusable subgraphs instead open in graph tabs, and their pinned definitions do not silently update.
 
@@ -55,9 +58,25 @@ After a full **Run**, select the root **Apply Reply · Host result** entry in **
 
 Apply reports local in-memory success separately from persistence. The host's save wrapper gives no positive durability acknowledgment, so a resolved save does not prove the revision reached disk. Other memory extensions may already have consumed the original reply. Edit/swipe events do not guarantee they re-extract it; review those extensions separately if needed.
 
+## Actor memory and state
+
+Install **Reflect and express**, **Internalize and commit** or **Consequence clock** from Workflow examples. Installation creates an independent graph without assigning a phase or arming. Bind **Analysis** for Reflect/Internalize; the deterministic Consequence clock requires no connection. The [Introspection guide](introspection-package.md) covers all modes, typed records and controls.
+
+Reflect Character makes one bounded assessment request; Express Behavior renders its hints as Guidance without another request. Context Focus defaults to Select, so the Pre starter's bound is one Analysis call. Run previews its guidance; an assigned, armed Pre send runs it again. Internalize Experience makes one Analysis request to propose supported actor updates. State Track proposes a count of distinct settled event IDs without a model. Neither proposal persists on its own.
+
+Memory Read, Recall and Commit require the root graph. Memory uses the active chat and host-selected character; group chats require an active actor. It reads settled selected public message text, excluding private reasoning and unsupported unfinished/system/tool/intermediate/media content. Scope, store, prior version and source revisions accompany each record. A source edit, swipe, deletion, actor/chat switch, changed settings or cancellation can invalidate a pending commit.
+
+**A successful full Post root Run ending in Memory Commit may write immediately.** There is no separate reply-review action for this memory terminal. Commit takes `proposal` Data and has no output pin. One Commit is allowed, and all independent branches must succeed before it settles. Run to here, target execution, dry-run, public runner calls and failed runs never write. In reusable subgraphs, supply State's `state` input explicitly and keep Memory in the parent root.
+
+Settlement rechecks fresh sources, active scope and store version before one compare-and-swap update, preserving other metadata namespaces. The default Commit key `lattice-memory-commit` becomes a native key for that graph, terminal and exact proposal. A custom key must identify a single transaction. Identical receipt replay applies nothing again; changed content using the same key fails. State Track never counts a repeated settled event ID twice.
+
+Memory's local application and durable saving are separate. The public SillyTavern metadata save wrapper returns no durability acknowledgment. When local application succeeds, the result is `memoryCommit: { applied: true, acknowledged: false, version: ... }`, and Preview shows **Memory updated; save unconfirmed**. Save rejection can also leave an unknown outcome. Confirm a fresh metadata load containing the receipt before retrying; subsequent writes stay blocked while that outcome is unknown. Positively acknowledged adapters report `acknowledged: true`.
+
 ## Share JSON
 
 The complete portable examples include [native-guidance.json](../workflows/native-guidance.json), [reviewed-de-slop.json](../workflows/reviewed-de-slop.json), and the zero-call examples in [the workspace guide](lattice-workspace.md). Use **File → Open workflow…** to open a workflow, or **Import into graph…** to review an addition to the current graph. Export uses a versioned `lattice-workflow` package; composed workflows include their pinned subgraph definitions. Individual subgraphs export as their own JSON packages. Exports omit bound profile IDs and credentials, so imported model roles need local setup before running.
+
+The three [native Introspection examples](../examples/introspection/native/) are portable schema-3/runtime-2 workflows. The version-1 manifests directly under `examples/introspection/` are package-harness inputs requiring injected services; use the native directory for canvas import. Both formats have synthetic fixture coverage without API calls.
 
 Do not paste API keys into workflow JSON, instructions, or model overrides. Unsupported package versions, dependencies, graph cycles, incompatible artifacts, and dangling wires are rejected before settings change.
 
@@ -76,4 +95,7 @@ Token counts identify their method: host tokenizer or character estimate. Artifa
 | Apply unavailable/stale | Finish generation, return to the latest text-only reply, and run repair again. Do not reuse a candidate after the source changed. |
 | Main reply proceeded after pre failure | This is the native fallback. Inspect the visible preparation report and fix the binding/context before the next send. |
 | Changes missing after reload | Local Apply is separate from durable saving; inspect SillyTavern's save/network status. |
+| Memory updated; save unconfirmed / `PERSISTENCE_UNKNOWN` | The local update succeeded without a durability acknowledgment. Reload confirmed metadata and verify its receipt before another write; do not blindly retry. |
+| Actor required / invalid memory evidence | Select an active group actor and use current settled public message evidence. Run again after source edits, swipes or deletion; inspect historical invalidation reports. |
+| Memory idempotency conflict / stale version | A custom key was reused for changed content, or state changed after the proposal. Read fresh state and use a key for the intended transaction; the default native key derives from the exact proposal. |
 | Old assets after an update | Hard reload SillyTavern with Ctrl+Shift+R so all versioned modules load together. |

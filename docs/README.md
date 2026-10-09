@@ -11,6 +11,6 @@ Build writing processes from typed operations, inspect their intermediate result
 | [Connections and workflow comments](connection-comments.md) | Follow connections and label, annotate, move, and resize workflow sections |
 | [Model connections and host integration](native-workflows.md) | Bind profiles, assign phases, publish guidance, review replies, and troubleshoot |
 | [Development guide](development.md) | Build the extension and reproduce documentation screenshots |
-| [Introspection package](introspection-package.md) | Develop scoped records and Memory adapters, including the required host and canvas integration |
+| [Introspection](introspection-package.md) | Use the six native nodes, eighteen modes, actor memory starters, scoped records and package APIs |
 
 The [repository README](../README.md) introduces capabilities and starter workflows. All public screenshots show the current interface. Development research and execution records in the research/superpowers directories are historical working material, not the operator reference.

@@ -1,4 +1,4 @@
-import { ARTIFACT_KINDS, operationFor, semanticControlsForNode } from './catalog.js?v=0.23.0';
+import { ARTIFACT_KINDS, operationFor, semanticControlsForNode } from './catalog.js?v=0.24.0';
 
 const fail = (code, message) => ({ ok: false, error: { code, message } });
 const record = value => value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -103,7 +103,9 @@ export function describeExposedControl(value, controlId) {
     const descriptor = operation.controlDescriptors[controlId];
     const current = node[controlId] === undefined ? descriptor.default : node[controlId];
     const valid = descriptor.type === 'integer' ? Number.isSafeInteger(current) && current >= descriptor.min && current <= descriptor.max
+        : descriptor.type === 'number' ? Number.isFinite(current) && current >= descriptor.min && current <= descriptor.max
         : descriptor.type === 'enum' ? descriptor.values.includes(current)
+        : descriptor.type === 'object' ? record(current) && [Object.prototype, null].includes(Object.getPrototypeOf(current)) && (descriptor.max === undefined || Object.keys(current).length <= descriptor.max)
         : descriptor.type === 'array' ? Array.isArray(current) && current.every(item => typeof item === 'string' || ['string-or-record', 'record', 'context-slot'].includes(descriptor.items) && record(item))
         : typeof current === descriptor.type;
     if (!valid) return fail('DEFINITION_PARAMETER', 'Saved control default does not match its catalog descriptor.');
@@ -151,6 +153,7 @@ export function computeDefinitionIdentity(value) {
                 if (!operation) return fail('UNKNOWN_OPERATION', 'Cannot hash an unknown operation.');
                 const controls = {};
                 for (const controlId of operation.controls) {
+                    if (operation.family === 'Introspection' && node[controlId] === undefined && !Object.hasOwn(operation.defaults, controlId)) continue;
                     const control = describeExposedControl(node, controlId);
                     if (!control.ok) return control;
                     node[controlId] = structuredClone(control.data.default);

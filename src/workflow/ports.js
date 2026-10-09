@@ -1,7 +1,8 @@
-import { safeWorkflowData, validateGraphStructure } from './contracts.js?v=0.23.0';
-import { cloneWorkflowDocument } from './document.js?v=0.23.0';
-import { operationFor, describeOperation, semanticControlsForNode } from './catalog.js?v=0.23.0';
-export { portsForNode } from './catalog.js?v=0.23.0';
+import { safeWorkflowData, validateGraphStructure } from './contracts.js?v=0.24.0';
+import { cloneWorkflowDocument } from './document.js?v=0.24.0';
+import { operationFor, describeOperation, semanticControlsForNode } from './catalog.js?v=0.24.0';
+import { INTROSPECTION_NATIVE_OPERATIONS, introspectionDefaults } from './introspection/native.js?v=0.24.0';
+export { portsForNode } from './catalog.js?v=0.24.0';
 
 const fail = (code, message) => ({ ok: false, error: { code, message } });
 const endpoint = value => value && typeof value === 'object' && !Array.isArray(value) && typeof value.nodeId === 'string' && typeof value.portId === 'string';
@@ -114,13 +115,27 @@ export function applyDeclaredNodeControlChange(context, command) {
     const candidate = context.scope, node = Object.hasOwn(candidate.nodes, command.nodeId) && candidate.nodes[command.nodeId];
     const described = describeOperation(context.metadata(), node);
     if (!described.ok) return described;
-    if (Object.keys(command.controls).some(key => !described.data.descriptor.controls.includes(key))) return fail('INVALID_SETTINGS', 'Only declared operation controls may change.');
+    let defaults, declaredControls=described.data.descriptor.controls;
+    const changesMode=Object.hasOwn(INTROSPECTION_NATIVE_OPERATIONS,node.operation) && Object.hasOwn(command.controls,'mode') && command.controls.mode!==node.mode;
+    if(changesMode) {
+        if(!INTROSPECTION_NATIVE_OPERATIONS[node.operation].modes.includes(command.controls.mode))return fail('INVALID_SETTINGS','Choose a supported Introspection mode.');
+        defaults=introspectionDefaults(node.operation,command.controls.mode);
+        const next=describeOperation(context.metadata(),{...node,...defaults});
+        if(!next.ok)return next;
+        declaredControls=next.data.descriptor.controls;
+    }
+    if (Object.keys(command.controls).some(key => !declaredControls.includes(key))) return fail('INVALID_SETTINGS', 'Only declared operation controls may change.');
     const removed = [...new Set(command.removeEdgeIds ?? [])];
     for (const id of removed) {
         const edge = Object.hasOwn(candidate.wires, id) && candidate.wires[id];
         const publisher = edge?.route === 'portal' ? candidate.portals?.[edge.portalId]?.source.nodeId : edge?.from;
         if (!edge || edge.to !== node.id && publisher !== node.id) return fail('INVALID_WIRE', 'Explicit removal must identify an existing incident wire.');
         delete candidate.wires[id];
+    }
+    if(changesMode) {
+        const settings=new Set(INTROSPECTION_NATIVE_OPERATIONS[node.operation].modes.flatMap(mode=>operationFor({...node,...introspectionDefaults(node.operation,mode)},{phase:node.operation==='memory'&&mode==='commit'?'post':'pre'}).controls));
+        for(const key of settings)delete node[key];
+        Object.assign(node,defaults);
     }
     Object.assign(node, structuredClone(command.controls));
     return { ok: true, data: { removedEdgeIds: removed } };

@@ -2,7 +2,7 @@
 
 [Documentation](README.md) · [Operator's manual](operators-manual.md) · [Model setup](native-workflows.md)
 
-This reference covers the **19 operations** in this LATTICE 0.22.0 development branch and the structural nodes used by subgraphs. A starter is a complete workflow built from operations; a subgraph is a reusable process with its own interface. Neither is an extra model engine.
+This reference covers the **25 operations** in this LATTICE 0.23.0 development branch and the structural nodes used by subgraphs. A starter is a complete workflow built from operations; a subgraph is a reusable process with its own interface. Neither is an extra model engine.
 
 ## Read the graph's types
 
@@ -36,6 +36,12 @@ Model calls below are maximum auxiliary calls **per execution of that operation*
 | Transpose | [Style Transfer](#style-transfer) | Post | Draft + Text/Data reference → Patches | 0–1 |
 | Transpose | [Format Transfer](#format-transfer) | Post | Draft + Text/Data reference → Patches | 0–1 |
 | Transpose | [Terminology Map](#terminology-map) | Post | Draft + Data glossary → Patches | 0 |
+| Introspection | [Reflect](#reflect) | Both | Context + optional State/Episodes Data → Reflection Data | 1 |
+| Introspection | [Internalize](#internalize) | Both | State + Events Data → State proposal Data | 1 |
+| Introspection | [Express](#express) | Both | Reflection Data + optional evidence → Guidance or Text | 0–1 |
+| Introspection | [Context](#context) | Both | Context inputs → Context | 0–1 |
+| Introspection | [Memory](#memory) | Both; Commit Post | Scoped source → Data; Proposal Data → Host result | 0 |
+| Introspection | [State](#state) | Both | State + optional Events Data → Snapshot/proposal Data | 0 |
 | Derive | [Pattern Scan](#pattern-scan) | Post | Draft → Draft with findings/spans | 0 |
 | Derive | [JSON Decode](#json-decode) | Both | Text → Data, or Data → Data | 0 |
 | Derive | [Select Fields](#select-fields) | Both | Data → Data | 0 |
@@ -44,7 +50,7 @@ Model calls below are maximum auxiliary calls **per execution of that operation*
 | Output | [Review Gate](#review-gate) | Post | Candidate → Candidate requiring review | 0 |
 | Output | [Apply Reply](#apply-reply) | Post | Candidate → Host result | 0 |
 
-The shelf also has a **Subgraphs** family for reusable definitions. **Transpose** contains Style Transfer, Format Transfer and Terminology Map; see [the reference library guide](lattice-reference-library.md).
+The shelf also has a **Subgraphs** family for reusable definitions. **Transpose** contains Style Transfer, Format Transfer and Terminology Map; see [the reference library guide](lattice-reference-library.md). **Introspection** contains six available operations with eighteen mode presets; their named pins and controls change with the selected mode.
 
 ## Input
 
@@ -192,6 +198,70 @@ Reorganize permitted Draft material using a Text example or Data template, produ
 ### Terminology Map
 
 Apply a Data glossary to permitted Draft text without a model. Data is `{"entries":[{"from":"Captain","to":"Commander"}]}`. Controls are Scope, Protected literals, Case sensitive and Match (`word` or `phrase`). Unicode boundaries preserve offsets; replacements are simultaneous and never cascade. Output is Patches for the same validation/review/apply flow.
+
+## Introspection
+
+Introspection Data uses scoped versioned records with evidence references. Plain JSON Data from JSON Decode is not an actor-state, reflection or events record. A proposal does not change memory until a root Memory Commit settles. Modes preserve observation, interpretation and possibility labels; supplied evidence cannot decide the player's actions or private state.
+
+### Reflect
+
+Use one **Analysis** request to appraise supplied evidence. **Character** considers beliefs, goals, relationships and conflicts; **Recall** connects supplied episodes to present evidence; **Scene** considers conditions, opportunities, pressures and attention. Output is Reflection Data, a candidate assessment.
+
+**Pins:** required `context` (Context); optional `state` and `episodes` (Data); `out` (Data). An unwired State pin uses the active actor's empty scoped state for the assessment; wire Memory Read State to include stored state.
+
+**Controls:** Mode, Output tokens (`maxTokens`, default 2,048), Instructions. Recall cannot invent an episode ID absent from the supplied records.
+
+**Connect:** Scene Context → Context Focus → Reflect Character → Express Behavior. Memory Read State can feed Reflect's `state` pin. The [Reflect and express starter](../examples/introspection/native/reflect-and-express.json) ends in Guidance.
+
+### Internalize
+
+Use one **Analysis** request to propose actor updates from settled events. **Experience** extracts supported experience updates; **Pattern** interprets supported recurrence; **Recovery** considers temporary conditions while retaining guarded beliefs and unresolved consequences. Enduring traits cannot be rewritten.
+
+**Pins:** required `state` and `events` (Data), `out` (state-proposal Data). Both input records must match scope, store and prior version.
+
+**Controls:** Mode, Output tokens (`maxTokens`, default 2,048), Instructions. Changed items require exact references to supplied settled events.
+
+**Connect:** Memory Read State + Memory Read Events → Internalize Experience → Memory Commit in a Post root graph. Inspect the proposal with Run to here; a full root Run with Commit may write it.
+
+### Express
+
+**Behavior** and **Attention** render the reflection's corresponding hints as Guidance without a model. **Inner Voice** uses at most one **Prose** request to produce fictional Text. Inner Voice is authored characterization, not access to private model reasoning.
+
+**Pins:** required `assessment` (Reflection Data); optional `state`, `events`, `episodes` (Data) and `context` (Context). `out` is Guidance for Behavior/Attention and Text for Inner Voice. Supporting records must match the assessment's identity and evidence.
+
+**Controls:** Mode, Output tokens (`maxTokens`, default 2,048), Instructions. Output tokens applies to Inner Voice's request; deterministic modes do not resolve a model.
+
+**Connect:** Reflect → Express Behavior → Guidance. Express Inner Voice can feed a Compose Text section. Changing mode changes the output type, so review incompatible connections.
+
+### Context
+
+**Assemble** joins ordered Context inputs and rejects conflicting duplicate identities. **Perspective** retains only messages whose explicit `visibleTo` array includes the chosen Actor ID; unmarked messages are omitted. The default Actor ID `character` resolves to the active host actor. Visibility applies to the returned artifact; independently assembled prompts may contain other material. **Focus** selects or compresses Context using the same protected-material contract as Smart Compactor.
+
+**Pins:** Assemble has required `in1`…`inN` (Context), with Inputs (`inputCount`) from 2 to 16. Perspective and Focus have required `context` (Context). All modes produce Context on `out`.
+
+**Controls:** Assemble: Inputs. Perspective: Actor ID. Focus: Method (`select`/`compress`), Target tokens (default 1,200), Output tokens (default 1,024), Keep recent (default 2), Pins, Purpose. Selection makes zero requests; compression makes at most one **Analysis** request when needed.
+
+**Connect:** Scene Context → Context Focus → Reflect, or Scene Context → Context Perspective → Reflect. The native host marks provided public chat and selected character material visible to its active actor, preserving explicit visibility exclusions. This identifies supplied material; it does not infer who witnessed an in-world event. Imported unmarked Context still requires explicit visibility for Perspective.
+
+### Memory
+
+**Read** returns the selected State, Events or Episodes view as Data. **Recall** finds bounded stored episodes using Query and Results (`limit`, default 8, range 1–64). **Commit** consumes a state proposal and is a Post terminal. All three modes require the root graph and use the active host chat/actor; group chats require a selected actor. Model output cannot choose a store or actor authority.
+
+**Pins:** Read and Recall have no inputs and produce Data on `out`. Commit requires `proposal` (Data) and has **no output pin**. Its commit intent is recorded as a Host result for diagnostics.
+
+**Controls:** Read: View (`state`/`events`/`episodes`). Recall: Query, Results. Commit: Commit key (`idempotencyKey`). The default `lattice-memory-commit` lets the native host derive a key from the graph, terminal and exact proposal. A custom key must identify one intended transaction; reusing it for changed content fails.
+
+**Connect:** Memory Read State + Memory Read Events → State Track or Internalize → Memory Commit. One Memory Commit may appear in a Post root graph. Settlement occurs after all branches succeed and checks fresh source revisions, actor/chat selection, cancellation and the store version before one compare-and-swap write. Public runner calls, previews, Run to here, dry-runs and failed runs never write. See [memory settlement and save status](native-workflows.md#actor-memory-and-state).
+
+### State
+
+Deterministically read or propose state with zero model calls. **Value** returns the state snapshot when Values is absent; configured Values propose numeric updates within Minimum/Maximum (defaults 0–1). **Curve** advances a bounded recovery curve toward Baseline through onset, peak, plateau, decline, aftermath and baseline. **Track** counts distinct settled event IDs; repeats do not advance it. These controls do not infer emotional truth.
+
+**Pins:** optional `state` (Data), falling back to scoped Memory Read at the root. Track also requires `events` (Data). `out` is snapshot or state-proposal Data. Inside a subgraph, explicitly wire `state`; implicit Memory access is root-only.
+
+**Controls:** Value: Values JSON object, Minimum, Maximum. For example `{"trust":0.35}`; arrays are invalid and fractional numeric bounds are supported. Curve: Curve ID, Steps (1–64), Decay (0–1, fractions allowed), Baseline (finite number), Phase durations JSON object, with positive integer durations (1–64) for `onset`, `peak`, `plateau`, `decline`, `aftermath`. Track: Track ID. Save object edits in Details before running.
+
+**Connect:** Memory Read State + Memory Read Events → State Track → Memory Commit. The [Consequence clock starter](../examples/introspection/native/consequence-clock.json) makes zero model requests. State proposals never persist on their own.
 
 ## Derive
 

@@ -1,13 +1,13 @@
-import { ARTIFACT_KINDS, FAMILIES, OPERATIONS, describeOperation, operationDefaults } from '../workflow/catalog.js?v=0.23.0';
-import { cloneDefinitionData, definitionRefKey } from '../workflow/definitions.js?v=0.23.0';
-import { selectSubgraphClosure } from '../workflow/packages.js?v=0.23.0';
+import { ARTIFACT_KINDS, FAMILIES, OPERATIONS, describeOperation, operationDefaults } from '../workflow/catalog.js?v=0.24.0';
+import { cloneDefinitionData, definitionRefKey } from '../workflow/definitions.js?v=0.24.0';
+import { selectSubgraphClosure } from '../workflow/packages.js?v=0.24.0';
 
 const registries = new WeakMap();
 const fail = message => ({ ok: false, error: { code: 'INVALID_SEARCH_CATALOG', message } });
 const text = value => typeof value === 'string' && value.length > 0;
 const record = value => value && typeof value === 'object' && !Array.isArray(value);
 const exact = (value, keys) => record(value) && Object.keys(value).every(key => keys.includes(key));
-const rootOnly = new Set(['scene-context', 'reply-snapshot', 'guidance', 'apply-reply']);
+const rootOnly = new Set(['scene-context', 'reply-snapshot', 'guidance', 'apply-reply', 'memory']);
 const presets = [
     ['text-rules', 'draft', 'Text Rules · Draft', { inputKind: 'draft', mode: 'replace', scope: 'whole' }],
     ['json-decode', 'check', 'JSON Decode · Check', { mode: 'check' }],
@@ -20,6 +20,18 @@ const presets = [
     ['repair', 'inspect', 'Repair · Slop Inspect', { mode: 'inspect', scope: 'narration' }],
     ['repair', 'contextual', 'Repair · Contextual Cleanup', { mode: 'contextual', scope: 'narration' }],
     ['repair', 'strict', 'Repair · Strict Avoidance', { mode: 'strict', scope: 'narration' }],
+    ['reflect', 'recall', 'Reflect · Recall', { mode: 'recall' }],
+    ['reflect', 'scene', 'Reflect · Scene', { mode: 'scene' }],
+    ['internalize', 'pattern', 'Internalize · Pattern', { mode: 'pattern' }],
+    ['internalize', 'recovery', 'Internalize · Recovery', { mode: 'recovery' }],
+    ['express', 'attention', 'Express · Attention', { mode: 'attention' }],
+    ['express', 'inner-voice', 'Express · Inner Voice', { mode: 'inner-voice' }],
+    ['context', 'perspective', 'Context · Perspective', { mode: 'perspective' }],
+    ['context', 'focus', 'Context · Focus', { mode: 'focus' }],
+    ['memory', 'recall', 'Memory · Recall', { mode: 'recall' }],
+    ['memory', 'commit', 'Memory · Commit', { mode: 'commit' }],
+    ['state', 'curve', 'State · Curve', { mode: 'curve' }],
+    ['state', 'track', 'State · Track', { mode: 'track' }],
 ];
 const freeze = value => {
     if (value && typeof value === 'object' && !Object.isFrozen(value)) {
@@ -53,6 +65,12 @@ const searchMetadata = cloneDefinitionData({
     'style-transfer': { purpose: 'Apply reference voice, rhythm or diction to permitted draft text.', shortcode: 'st', searchAliases: ['style-transfer', 'character voice', 'recast'] },
     'format-transfer': { purpose: 'Reorganize permitted draft text using an example or template.', shortcode: 'ft', searchAliases: ['format-transfer', 'screenplay', 'recap template'] },
     'terminology-map': { purpose: 'Apply a canonical glossary without a model call.', shortcode: 'tm', searchAliases: ['terminology-map', 'glossary', 'spelling', 'titles'] },
+    reflect: { purpose: 'Assess a character, recalled experience or scene from grounded evidence.', shortcode: 'rf', searchAliases: ['introspection', 'character assessment', 'scene reflection'] },
+    internalize: { purpose: 'Propose state changes from settled experience, patterns or recovery.', shortcode: 'in', searchAliases: ['introspection', 'state proposal', 'experience', 'recovery'] },
+    express: { purpose: 'Turn an assessment into behavior, attention guidance or inner voice.', shortcode: 'ex', searchAliases: ['introspection', 'behavior', 'attention', 'inner voice'] },
+    context: { purpose: 'Assemble, filter perspective or focus bounded context.', shortcode: 'cx', searchAliases: ['introspection', 'perspective', 'focus context'] },
+    memory: { purpose: 'Read, recall or explicitly commit scoped actor memory.', shortcode: 'mm', searchAliases: ['introspection', 'actor memory', 'episodes', 'commit'] },
+    state: { purpose: 'Inspect numeric values, advance a curve or track settled events.', shortcode: 'sv', searchAliases: ['introspection', 'state values', 'curve', 'consequence track'] },
 }).data;
 const variantSearchMetadata = cloneDefinitionData({
     'text-rules:draft': { purpose: 'Produce guarded patches from literal draft rules.', shortcode: 'trd', searchAliases: ['draft replacement'] },
@@ -80,7 +98,7 @@ export function prepareNativeSearchCatalog(scope, options = {}) {
     const phase = input.mode.slice(7), choices = [], commands = new Map();
     const addOperation = (operation, variant, label, controls, artifactKind) => {
         if (operation === 'reroute' && !artifactKind || input.inDefinition && rootOnly.has(operation)) return;
-        const description = describeOperation(input, { type: 'workflow', ...operationDefaults(operation), ...controls,
+        const description = describeOperation(input, { type: 'workflow', ...operationDefaults(operation, { mode: controls?.mode }), ...controls,
             ...(artifactKind ? { artifactKind, phase } : {}) });
         if (!description.ok || description.data.descriptor.phase !== phase) return;
         const id = 'operation:' + operation + (variant ? ':' + variant : '');

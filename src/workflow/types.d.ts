@@ -17,15 +17,18 @@ export interface PortDescriptor {
 }
 export type ControlDescriptor = ({ label?: string; editor?: 'text' | 'json'; exposable?: boolean } & (
     | { type: 'integer'; min: number; max: number; default: number }
+    | { type: 'number'; min: number; max: number; step?: number | 'any'; default: number }
     | { type: 'enum'; values: string[]; default: string }
     | { type: 'string'; default: string }
     | { type: 'boolean'; default: boolean }
-    | { type: 'array'; items: 'string' | 'string-or-record' | 'record' | 'context-slot'; min?: number; max?: number; default: unknown[] }));
+    | { type: 'array'; items: 'string' | 'string-or-record' | 'record' | 'context-slot'; min?: number; max?: number; default: unknown[] }
+    | { type: 'object'; max?: number; default: { [key: string]: import('./operations/json-data').JsonValue } }));
 export interface OperationDescriptor {
     id: string; title: string; family: string; phase: WorkflowPhase | 'both' | null;
     minimumSchema?: 3; input: ArtifactKind | null; output: ArtifactKind | null;
     controls: string[]; controlDescriptors: Record<string, ControlDescriptor>; defaults: Record<string, unknown>;
     requestBound: number | ((node: NativeNode) => number); modelRole: string | null; terminal: boolean; dynamicPorts?: boolean;
+    rootOnly?: boolean; requiresStateInDefinition?: boolean; modes?: string[];
 }
 export interface OperationDescription { descriptor: OperationDescriptor; ports: PortDescriptor[]; }
 export interface Binding { profileId?: string | null; model?: string | null; }
@@ -224,7 +227,7 @@ export type BoundedWorkflowRunResult = BoundedRunData & { schema: 3; runtime: 2;
 /** A failed factory can return no recording; consumers preserve their prior bounded record. */
 export interface WorkflowPreparationFailure { schema?: number; runtime?: number; mode: 'root' | 'target'; runId?: string; ok: false; callBound: number; actualCalls: number; error: WorkflowError; recording?: never; }
 export type WorkflowRunResult = BoundedWorkflowRunResult | WorkflowPreparationFailure;
-export type HostWorkflowRunResult = WorkflowRunResult & { reviewHandles?: TerminalReviewHandle[]; published?: boolean; fallback?: 'native'; };
+export type HostWorkflowRunResult = WorkflowRunResult & { reviewHandles?: TerminalReviewHandle[]; published?: boolean; fallback?: 'native'; memoryCommit?: { applied: boolean; acknowledged: boolean; version: number }; };
 export interface WorkflowRunOptions {
     target?: WorkflowTarget; onEvent?: (event: RunEvent) => unknown; runId?: string;
     clock?: { now(): number; monotonic(): number }; phase?: WorkflowPhase; signal?: AbortSignal; preview?: boolean; dryRun?: boolean;

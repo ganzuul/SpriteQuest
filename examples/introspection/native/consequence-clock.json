@@ -1,0 +1,118 @@
+{
+  "kind": "lattice-workflow",
+  "schema": 2,
+  "minRuntime": 2,
+  "graph": {
+    "id": "consequence-clock",
+    "name": "Consequence clock",
+    "description": "Track distinct settled events and commit deterministic state without a model.",
+    "schema": 3,
+    "runtime": 2,
+    "mode": "native-post",
+    "nodes": {
+      "prior": {
+        "id": "prior",
+        "type": "workflow",
+        "operation": "memory",
+        "operationVersion": 1,
+        "title": "Memory",
+        "enabled": true,
+        "x": 100,
+        "y": 140,
+        "w": 260,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "read",
+        "view": "state"
+      },
+      "events": {
+        "id": "events",
+        "type": "workflow",
+        "operation": "memory",
+        "operationVersion": 1,
+        "title": "Memory",
+        "enabled": true,
+        "x": 100,
+        "y": 400,
+        "w": 260,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "read",
+        "view": "events"
+      },
+      "update": {
+        "id": "update",
+        "type": "workflow",
+        "operation": "state",
+        "operationVersion": 1,
+        "title": "State",
+        "enabled": true,
+        "x": 410,
+        "y": 140,
+        "w": 260,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "track",
+        "trackId": "consequences"
+      },
+      "commit": {
+        "id": "commit",
+        "type": "workflow",
+        "operation": "memory",
+        "operationVersion": 1,
+        "title": "Memory",
+        "enabled": true,
+        "x": 720,
+        "y": 140,
+        "w": 260,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "commit",
+        "idempotencyKey": "lattice-memory-commit"
+      }
+    },
+    "wires": {
+      "wire-1": {
+        "id": "wire-1",
+        "route": "wire",
+        "from": "prior",
+        "fromPort": "out",
+        "to": "update",
+        "toPort": "state"
+      },
+      "wire-2": {
+        "id": "wire-2",
+        "route": "wire",
+        "from": "events",
+        "fromPort": "out",
+        "to": "update",
+        "toPort": "events"
+      },
+      "wire-3": {
+        "id": "wire-3",
+        "route": "wire",
+        "from": "update",
+        "fromPort": "out",
+        "to": "commit",
+        "toPort": "proposal"
+      }
+    },
+    "groups": {},
+    "roles": {},
+    "portals": {},
+    "definitions": {},
+    "template": {
+      "id": "consequence-clock",
+      "version": 1
+    },
+    "view": {
+      "x": 0,
+      "y": 0,
+      "zoom": 1
+    }
+  }
+}
