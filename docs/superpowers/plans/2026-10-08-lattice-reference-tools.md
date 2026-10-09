@@ -46,10 +46,10 @@
 
 **Interfaces:** Consume Task1 prepared windows and createReferencePatches. Produce mapTerminology(draft,{entries:[{from,to}]},{scope,protectedLiterals,caseSensitive,match}) as specified.
 
-- [ ] Canonical term replacement test RED→GREEN, asserting compatible patches and source preservation.
-- [ ] Incrementally cover simultaneous A→B/B→C, leftmost-longest overlaps, duplicate rules, exact literal dollar replacement, word vs phrase, Unicode letters/marks/offsets, protected and scoped exclusions.
-- [ ] Cover128 mappings/4,096 findings/100,000 output, nonblank2,048 entries, malformed/accessor data, no-change and input isolation.
-- [ ] Run focused tests/self-review/report; controller commits owned files and obtains scoped review.
+- [x] Canonical term replacement test RED→GREEN, asserting compatible patches and source preservation.
+- [x] Incrementally cover simultaneous A→B/B→C, leftmost-longest overlaps, duplicate rules, exact literal dollar replacement, word vs phrase, Unicode letters/marks/offsets, protected and scoped exclusions.
+- [x] Cover128 mappings/4,096 findings/100,000 output, nonblank2,048 entries, malformed/accessor data, no-change and input isolation.
+- [x] Run focused tests/self-review/report; controller commits owned files and obtains scoped review.
 
 ### Task 3: Raw-prose reference transfer service
 
@@ -57,11 +57,11 @@
 
 **Interfaces:** Consume Task1 prepareReferenceDraft/alignReferenceCandidate and existing JSON clone/stringify. Produce transferDraft(draft,reference,{kind,mode?,scope,strength,instructions,maxTokens,protectedLiterals},ports).
 
-- [ ] One Style Transfer raw-prose request test RED→GREEN with real patch validation; exactly one injected service call.
-- [ ] Incrementally cover four style modes, format prompts, Text/Data references, requiredContent missing preflight, explicit Context and Draft context, max limits and no-window/no-change behavior.
-- [ ] Assert prompt excludes full source token/profile metadata, treats references as material, preserves immutable anchors and never returns Candidate/host effects.
-- [ ] Cover request/tokenizer failures, malformed responses, truncated/unverified finish, abort before and during both awaits, changed caller data during await and exact whitespace preservation. Never strip fences; test wrapper rejection with immutable prefix/suffix anchors, with authorized text remaining review-dependent.
-- [ ] Run focused tests/self-review/report; controller commits owned files and obtains scoped review.
+- [x] One Style Transfer raw-prose request test RED→GREEN with real patch validation; exactly one injected service call.
+- [x] Incrementally cover four style modes, format prompts, Text/Data references, requiredContent missing preflight, explicit Context and Draft context, max limits and no-window/no-change behavior.
+- [x] Assert prompt excludes full source token/profile metadata, treats references as material, preserves immutable anchors and never returns Candidate/host effects.
+- [x] Cover request/tokenizer failures, malformed responses, truncated/unverified finish, abort before and during both awaits, changed caller data during await and exact whitespace preservation. Never strip fences; test wrapper rejection with immutable prefix/suffix anchors, with authorized text remaining review-dependent.
+- [x] Run focused tests/self-review/report; controller commits owned files and obtains scoped review.
 
 ### Task 4: Transpose metadata and named-input adapter
 
@@ -93,11 +93,11 @@
 
 **Review correction:** Deliver Context Lens and Scene Compass subgraphs plus the Scene Compass root. Literal Cleanup and Formatting Cleanup return visible permission-prerequisite errors and remain documented recipes; remove their executable JSON files. The base cannot safely guard existing Pattern Scan's permission replacement or Text Rules' implicit construction without changing core. The superseding spec ruling preserves the global permission constraint.
 
-- [ ] Context Lens standalone parse/round-trip/verified-hash test RED→GREEN; roots remain outside body.
-- [ ] Add Scene Compass with stable typed boundaries/exposed controls/unresolved roles and canonical generated files; defer both cleanup factory IDs with visible prerequisite errors and documented recipes/defaults.
-- [ ] Execute Scene Compass through current runtime using fixed request/snapshot ports; default bound1, no installation/arming/Apply side effect. Context Lens remains a0-call utility subgraph inside Scene Compass; requesting it as a complete root fails visibly. Verify no deferred cleanup executable files remain.
-- [ ] Test package import/export and semantic identities, source/terminal exclusions, local profile stripping and pinned definitions. Document setup, mode distinctions and later Transpose registration.
-- [ ] Run focused tests/self-review/report; controller commits owned files and obtains scoped review.
+- [x] Context Lens standalone parse/round-trip/verified-hash test RED→GREEN; roots remain outside body.
+- [x] Add Scene Compass with stable typed boundaries/exposed controls/unresolved roles and canonical generated files; defer both cleanup factory IDs with visible prerequisite errors and documented recipes/defaults.
+- [x] Execute Scene Compass through current runtime using fixed request/snapshot ports; default bound1, no installation/arming/Apply side effect. Context Lens remains a0-call utility subgraph inside Scene Compass; requesting it as a complete root fails visibly. Verify no deferred cleanup executable files remain.
+- [x] Test package import/export and semantic identities, source/terminal exclusions, local profile stripping and pinned definitions. Document setup, mode distinctions and later Transpose registration.
+- [x] Run focused tests/self-review/report; controller commits owned files and obtains scoped review.
 
 ### Task 7: Joined verification and handoff
 
