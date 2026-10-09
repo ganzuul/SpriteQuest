@@ -1,13 +1,17 @@
 import { inspectExpandedGraph } from './graph-validation.js?v=0.19.1';
+import { preparedWorkflowExpansion } from './resolve.js?v=0.19.1';
+import { freeze } from './record-data.js?v=0.19.1';
 import { definitionChain, ownsDefinitionPath, samePath } from './composition-edit.js?v=0.19.1';
+const preparedViews = new WeakMap();
 
 /** Prepare only after content changes. Navigation/camera/selection read this cached DTO.
  * Structural validation has no terminal/completeness requirement and makes no host calls.
  * savedGraph is the editing source; effectiveNodes are display/planning values, never drafts.
  * @returns {import('./types').Result<import('./types').CompositionViews>}
  */
-export function prepareCompositionViews(root) {
-    const checked = inspectExpandedGraph(root); if (!checked.ok) return checked;
+export function prepareCompositionViews(root, planner) {
+    const checked = planner === undefined ? inspectExpandedGraph(root) : preparedWorkflowExpansion(root, planner); if (!checked.ok) return checked;
+    if (planner !== undefined && preparedViews.has(planner)) return preparedViews.get(planner);
     const views = checked.data.scopes.map(({ instancePath, graph }) => {
         const definition = instancePath.length ? definitionChain(root, instancePath).at(-1).definition : null;
         const saved = definition?.body ?? root;
@@ -20,5 +24,7 @@ export function prepareCompositionViews(root) {
             ports: structuredClone(checked.data.pins.filter(pin => samePath(pin.address.instancePath, instancePath))),
         };
     });
-    return { ok: true, data: { workflowId: checked.data.workflowId, views } };
+    const result = { ok: true, data: { workflowId: checked.data.workflowId, views } };
+    if (planner !== undefined) { freeze(result); preparedViews.set(planner, result); }
+    return result;
 }

@@ -25,7 +25,7 @@
     {#each view.starters as starter (starter.id)}
         <article class="pc-workflow-starter">
             <strong>{starter.title}</strong><p>{starter.purpose}</p>
-            <small>{starter.phase === 'pre' ? 'Before reply · Guidance' : 'After reply · Reviewed reply'} · Roles: {starter.roles.join(', ')} · Maximum {starter.callBound} auxiliary requests</small>
+            <small>{starter.phase === 'pre' ? 'Before reply · Guidance' : 'After reply · Reviewed reply'} · Roles: {starter.roles.join(', ') || 'None'} · Maximum {starter.callBound} auxiliary requests</small>
             <button class="menu_button" onclick={() => actions.install(starter.id)}>Install {starter.title}</button>
         </article>
     {/each}
@@ -91,6 +91,8 @@
                         <input type="checkbox" checked={Boolean(control.value)} onchange={(event) => actions.updateNode(node.id, control.key, event.currentTarget.checked)} />
                     {:else if control.kind === 'number'}
                         <input aria-label={control.label} class="text_pole" type="number" min={control.key === 'keepRecent' ? 0 : 1} value={Number(control.value)} oninput={(event) => actions.updateNode(node.id, control.key, Number(event.currentTarget.value))} />
+                    {:else if control.kind === 'readonly-json'}
+                        <textarea class="text_pole" readonly value={String(control.value)} aria-label={control.label}></textarea>
                     {:else if control.kind === 'rules'}
                         <textarea aria-label={control.label} aria-invalid={!!ruleDraft} aria-describedby={'rule-help-' + node.id + (ruleDraft ? ' rule-error-' + node.id : '')} class="text_pole" value={ruleDraft?.text ?? String(control.value)} oninput={(event) => editRules(node.id, event.currentTarget.value)}></textarea>
                     {:else}
@@ -109,12 +111,27 @@
             </div>
         {/if}
     {/each}
+    {#if view.preparationError}<p class="pc-error">{view.preparationError.message}</p>{/if}
+    {#if view.availability && view.availability !== 'current'}<p role="status">Retained diagnostic: {view.availability}. Run again for a current review.</p>{/if}
     {#if view.status}<p role="status">{view.status}</p>{/if}
     {#if view.result}
         <h4 class="pc-workflow-result">Workflow result</h4>
         {#if view.result.error}<p class="pc-error">{view.result.error}</p>{/if}
         <p>Actual auxiliary requests: {view.result.actualCalls} / {view.result.callBound}</p>
         <p>Token count method: {view.result.tokenMethods.join(', ') || 'Not reported'}</p>
+        {#if view.result.kind === 'bounded'}
+            {#if view.result.runId}<small>Run: {view.result.runId}</small>{/if}
+            {#each view.result.sections as section}
+                <h4>{section.kind} diagnostic</h4><pre>{section.text}</pre>
+                {#if section.truncated}<small>Diagnostic preview truncated.</small>{/if}
+            {/each}
+            {#if view.result.applyAvailable && view.result.selectedReviewHandle}
+                {#if view.result.applyIssue}<p class="pc-error">{view.result.applyIssue}</p>{/if}
+                <button class="menu_button" disabled={view.busy || !!view.result.applyIssue || !!ruleDraft} onclick={() => actions.apply(view?.result?.kind === 'bounded' ? view.result.selectedReviewHandle || undefined : undefined)}>Apply selected reviewed terminal</button>
+                <button class="menu_button" disabled={view.busy} onclick={() => actions.reject()}>Reject candidate</button>
+                <small>Apply rechecks the current source. This diagnostic preview is for inspection.</small>
+            {/if}
+        {:else}
         {#if view.result.guidance}<h4>Computed guidance</h4><pre>{view.result.guidance}</pre>{/if}
         {#if view.result.applyAvailable}
             <div class="pc-workflow-comparison"><div>Original<pre>{view.result.original}</pre></div><div>Candidate<pre>{view.result.candidate}</pre></div></div>
@@ -125,6 +142,7 @@
         {/if}
         <details><summary>Findings and changes</summary><pre>{JSON.stringify({ findings: view.result.findings, changes: view.result.changes }, null, 2)}</pre></details>
         <details><summary>Reports and request trace</summary><pre>{JSON.stringify({ reports: view.result.reports, calls: view.result.calls }, null, 2)}</pre></details>
+        {/if}
     {/if}
 {/if}
 </section>

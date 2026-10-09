@@ -54,6 +54,11 @@ export interface WorkbenchActions {
 
 export interface WorkflowControl { key: string; label: string; value: string | number | boolean; kind: string; options: string[] | null }
 export interface WorkflowNodeView { id: string; title: string; canonicalTitle: string; alias: string; compact: boolean; operation: string; family: string; phase: string; input: string; output: string; terminal: boolean; modelRole: string | null; profileId: string; model: string; effective: string; enabled: boolean; controls: WorkflowControl[] }
+export interface WorkflowAddress { workflowId: string; instancePath: string[]; nodeId: string }
+export type WorkflowTarget = (WorkflowAddress & { portId: string }) | { kind: 'terminal'; address: WorkflowAddress };
+export interface WorkflowReviewSelector { handleId: string; runId: string; terminal: { kind: 'terminal'; address: WorkflowAddress } }
+export interface WorkflowLegacyResultView { kind?: 'legacy'; ok: boolean; error: string; actualCalls: number; callBound: number; guidance: string; original: string; candidate: string; findings: unknown[]; changes: unknown[]; reports: unknown[]; calls: unknown[]; tokenMethods: string[]; applyAvailable: boolean; applyIssue: string }
+export interface WorkflowBoundedResultView { kind: 'bounded'; ok: boolean; error: string; actualCalls: number; callBound: number; runId?: string; sections: { kind: string; format: string; text: string; truncated: boolean }[]; previewTarget?: WorkflowTarget | null; tokenMethods: string[]; applyAvailable: boolean; selectedReviewHandle?: WorkflowReviewSelector | null; applyIssue: string }
 export interface WorkflowView {
     graphId: string; name: string; native: boolean; phase: string; workflowMode: string; assigned: boolean; selectedId: string | null;
     roles: { name: string; profileId: string; model: string }[]; profiles: { id: string; name: string }[];
@@ -61,12 +66,13 @@ export interface WorkflowView {
     families: { name: string; description: string; legacy: { id: string; title: string }[]; operations: { id: string; title: string; phase: string; compatible: boolean }[] }[];
     nodes: WorkflowNodeView[]; groups: { id: string; title: string; members: string[]; collapsed: boolean; callBound: number }[];
     callBound: number; issues: string[]; busy: boolean; status: string; quoteHelp: string;
-    result: { ok: boolean; error: string; actualCalls: number; callBound: number; guidance: string; original: string; candidate: string; findings: unknown[]; changes: unknown[]; reports: unknown[]; calls: unknown[]; tokenMethods: string[]; applyAvailable: boolean; applyIssue: string } | null;
+    availability?: 'current' | 'stale' | 'superseded' | 'cancelled'; preparationError?: { code: string; message: string } | null;
+    result: WorkflowLegacyResultView | WorkflowBoundedResultView | null;
 }
 export interface WorkflowActions {
     presentNode: (id: string, key: 'alias' | 'compact', value: string | boolean) => void;
     install: (id: string) => void; setMode: (mode: string) => void; bindRole: (name: string, profileId: string, model: string) => void; assign: (phase: string) => void;
-    run: () => void; apply: () => void; reject: () => void; inspect: (id: string) => void; expand: (id: string) => void;
+    run: () => void; apply: (selector?: WorkflowReviewSelector) => void; reject: () => void; inspect: (id: string) => void; expand: (id: string) => void;
     duplicate: (id: string) => void; remove: (id: string) => void;
     editRules: (id: string, text: string) => string | null;
     updateNode: (id: string, key: string, value: unknown) => void; addNode: (operation: string) => void; addLegacyNode: (type: string) => void;

@@ -64,7 +64,7 @@ for (const schema of [3, 99]) {
     });
     assert.equal(futureView.native, true);
     assert.equal(futureView.callBound, 0);
-    assert.ok(futureView.issues.some(issue => /schema 2.*runtime 1/i.test(issue)));
+    assert.match(futureView.issues.join(' '), schema === 3 ? /Invalid named wire metadata/ : /schema 2.*runtime 1/i);
     assert.equal(futureView.families.find(f => f.name === 'Input').operations.find(op => op.id === 'reply-snapshot').compatible, false);
     assert.equal(futureView.families.find(f => f.name === 'Input').operations.find(op => op.id === 'scene-context').compatible, true);
     assert.equal(futureView.result.applyAvailable, false);
