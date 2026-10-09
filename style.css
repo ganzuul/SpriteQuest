@@ -1,4 +1,4 @@
-@import url('./dist/lattice.css?v=0.25.0');
+@import url('./dist/lattice.css?v=0.26.0');
 
 /* Current Lattice workspace. Explicit themes may replace these color roles. */
 :root {
@@ -437,7 +437,7 @@
 :root[data-pc-own="1"] .pc-root .pc-family-row[aria-expanded="true"], :root[data-pc-own="1"] .pc-root .pc-family-row[aria-expanded="true"]:hover:enabled { background: color-mix(in srgb, var(--pc-text) 9%, var(--pc-control)); border-color: var(--pc-shelf-edge); font-weight: 600; }
 .pc-root .pc-family-row:disabled { opacity: .46; }
 .pc-shelf-menu { position: absolute; display: flex; flex-direction: column; gap: 3px; z-index: 9; border: 1px solid var(--pc-shelf-edge); border-radius: 10px; background: var(--pc-panel-solid); color: var(--pc-text); box-shadow: 0 3px 8px #00000035; padding: 3px; box-sizing: border-box; max-width: calc(100% - 8px); max-height: calc(100% - 8px); overflow: auto; }
-.pc-family-menu { width: 155px; }
+.pc-family-menu { width: 250px; }
 .pc-leaf-menu { width: 250px; z-index: 10; }
 .pc-root .pc-shelf-menu button, :root[data-pc-own="1"] .pc-root .pc-shelf-menu button { width: 100%; font-weight: 600; background: transparent; box-shadow: none; color: var(--pc-family, var(--pc-text)); }
 .pc-root .pc-shelf-menu button:is(:hover, :focus-visible):enabled, :root[data-pc-own="1"] .pc-root .pc-shelf-menu button:is(:hover, :focus-visible):enabled { background: color-mix(in srgb, var(--pc-text) 7%, var(--pc-control)); }

@@ -1,13 +1,14 @@
-import { PRIMITIVE_OPERATIONS, describePrimitive } from './operations/nodes.js?v=0.25.0';
-import { describeContextJoin } from './operations/context-join.js?v=0.25.0';
-import { TRANSPOSE_OPERATIONS, describeTranspose } from './operations/transpose-nodes.js?v=0.25.0';
-import { CLEANUP_MODES, validateCleanupSettings } from './operations/prose-cleanup.js?v=0.25.0';
-import { INTROSPECTION_NATIVE_OPERATIONS, describeNativeIntrospection, introspectionDefaults } from './introspection/native.js?v=0.25.0';
+import { PRIMITIVE_OPERATIONS, describePrimitive } from './operations/nodes.js?v=0.26.0';
+import { describeContextJoin } from './operations/context-join.js?v=0.26.0';
+import { TRANSPOSE_OPERATIONS, describeTranspose } from './operations/transpose-nodes.js?v=0.26.0';
+import { CLEANUP_MODES, validateCleanupSettings } from './operations/prose-cleanup.js?v=0.26.0';
+import { INTROSPECTION_NATIVE_OPERATIONS, describeNativeIntrospection, introspectionDefaults } from './introspection/native.js?v=0.26.0';
 
 /** Native operation metadata. Artifact flow, rather than canvas placement, defines execution. */
 export const FAMILIES = ['Input', 'Shaping', 'Surface', 'Transpose', 'Introspection', 'Derive', 'Output'];
 export const ARTIFACT_KINDS = ['context', 'draft', 'patches', 'candidate', 'guidance', 'text', 'data'];
 function controlDescriptor(operation, key, value) {
+    if (operation === 'reroute' && key === 'artifactKind') return { type: 'enum', values: ARTIFACT_KINDS, default: value, label: 'Artifact kind' };
     const values = key === 'method' ? ['select', 'compress'] : key === 'scope' ? operation === 'repair' ? ['authorized', 'whole', 'narration', 'dialogue'] : ['whole', 'narration', 'dialogue'] : key === 'mode' ? (operation === 'repair' ? ['repair', 'scan', ...CLEANUP_MODES] : ['literal']) : null;
     if (values) return { type: 'enum', values, default: value };
     if (typeof value === 'number') return { type: 'integer', min: key === 'keepRecent' ? 0 : 1, max: key === 'keepRecent' ? 1000 : 65536, default: value };
@@ -26,7 +27,7 @@ export const OPERATIONS = {
     guidance: descriptor('guidance', 'Guidance', 'Output', 'pre', 'guidance', null, { budgetTokens: 768 }, { terminal: true }),
     'review-gate': descriptor('review-gate', 'Review Gate', 'Output', 'post', 'candidate', 'candidate'),
     'apply-reply': descriptor('apply-reply', 'Apply Reply', 'Output', 'post', 'candidate', null, {}, { terminal: true }),
-    reroute: descriptor('reroute', 'Reroute', 'Shaping', null, null, null),
+    reroute: descriptor('reroute', 'Reroute', 'Shaping', null, null, null, { artifactKind: 'text' }),
 };
 const primitiveDescriptor = source => ({ ...source, minimumSchema: 3,
     controlDescriptors: Object.fromEntries(source.controlDescriptors.map(control => [control.key, {
@@ -80,8 +81,7 @@ function dynamicDescription(node, phase) {
         } catch { return failure('INVALID_SETTINGS', 'Repair controls require own data properties.'); }
     }
     if (Object.hasOwn(TRANSPOSE_OPERATIONS, node.operation)) {
-        if (phase !== 'post') return failure('INVALID_PHASE', 'Transpose operations require the post phase.');
-        const result = describeTranspose(node);
+        const result = describeTranspose(node, { phase });
         return result.ok ? { ok: true, data: { ...result.data, descriptor: transposeDescriptor(result.data.descriptor) } } : result;
     }
     if (node.operation === 'context-join') {
@@ -140,6 +140,9 @@ export function describeOperation(graph, node) {
 /** Slot labels are presentation; stable slot identity and order are semantic. */
 export function semanticControlsForNode(node, operation = operationFor(node)) {
     const controls = Object.fromEntries((operation?.controls ?? []).map(key => [key, node[key] === undefined ? operation.defaults[key] : node[key]]));
+    // Additive editor controls must preserve existing version-1 semantic pins.
+    if (Object.hasOwn(TRANSPOSE_OPERATIONS, node.operation) && controls.inputKind === 'draft') delete controls.inputKind;
+    if (node.operation === 'reroute') delete controls.artifactKind; // Already projected as typed node metadata.
     if (node.operation === 'context-join' && Array.isArray(controls.inputs)) controls.inputs = controls.inputs.map(slot => ({ id: slot.id }));
     if (node.operation === 'repair' && CLEANUP_MODES.includes(controls.mode)) controls.policyVersion = 1;
     return controls;

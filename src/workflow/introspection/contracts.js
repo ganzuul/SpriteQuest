@@ -1,4 +1,4 @@
-import { cloneJsonValue } from '../operations/json-data.js?v=0.25.0';
+import { cloneJsonValue } from '../operations/json-data.js?v=0.26.0';
 
 export const COLLECTIONS = Object.freeze(['traits', 'beliefs', 'goals', 'relationships', 'conflicts', 'conditions', 'episodes']);
 const WRITABLE = COLLECTIONS.filter(key => key !== 'traits');

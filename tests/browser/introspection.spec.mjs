@@ -6,10 +6,9 @@ async function launch(page, phase = 'pre') {
         await window.canvasHarness.activate({ id: 'introspection-browser-' + phase, name: 'Introspection authoring', schema: 3, runtime: 2, mode: 'native-' + phase, roles: {}, nodes: {}, wires: {}, groups: {}, portals: {}, definitions: {}, view: { x: 0, y: 0, zoom: 1 } });
     }, phase);
 }
-async function choose(page, group, choice, operation) {
+async function choose(page, operation) {
     await page.locator('[data-family="Introspection"]').click();
-    await page.locator(`[data-subfamily="${group}"]`).click();
-    await page.locator(`[data-shelf-choice="${choice}"]`).click();
+    await page.locator(`[data-shelf-choice="operation:${operation}"]`).click();
     const id = await page.evaluate(operation => Object.values(window.canvasHarness.graph.nodes).find(node => node.operation === operation).id, operation);
     await select(page, id); return id;
 }
@@ -31,14 +30,14 @@ for (const phase of ['pre', 'post']) test(`${phase} production picker and Detail
     const familyFit = await page.locator('[data-family="Introspection"]').evaluate(button => ({ buttonRight: button.getBoundingClientRect().right, labelRight: button.querySelector('span').getBoundingClientRect().right }));
     expect(familyFit.labelRight).toBeLessThanOrEqual(familyFit.buttonRight - 4);
     await page.locator('[data-family="Introspection"]').click();
-    await expect(page.locator('[data-subfamily]')).toHaveCount(6);
-    for (const title of ['Reflect', 'Internalize', 'Express', 'Context', 'Memory', 'State']) await expect(page.locator(`[data-subfamily="${title}"]`)).toBeVisible();
+    await expect(page.locator('.pc-family-menu [data-shelf-choice]')).toHaveCount(6);
+    for (const operation of ['reflect', 'internalize', 'express', 'context', 'memory', 'state']) await expect(page.locator(`[data-shelf-choice="operation:${operation}"]`)).toBeVisible();
     await page.keyboard.press('Escape');
-    const reflection = await choose(page, 'Reflect', 'operation:reflect', 'reflect');
+    const reflection = await choose(page, 'reflect');
     await expect(page.getByLabel('Mode', { exact: true })).toHaveValue('character');
     await page.getByLabel('Mode', { exact: true }).selectOption('scene');
     await expect.poll(() => page.evaluate(id => window.canvasHarness.graph.nodes[id].mode, reflection)).toBe('scene');
-    const context = await choose(page, 'Context', 'operation:context', 'context');
+    const context = await choose(page, 'context');
     await expect(page.locator(`.pc-node[data-id="${context}"] .pc-port[data-dir="in"]`)).toHaveCount(2);
     await page.getByLabel('Mode', { exact: true }).selectOption('focus');
     await expect(page.getByLabel('Inputs', { exact: true })).toHaveCount(0);
@@ -47,7 +46,7 @@ for (const phase of ['pre', 'post']) test(`${phase} production picker and Detail
     await expect(page.locator(`.pc-node[data-id="${context}"] .pc-port[data-dir="in"]`)).toHaveCount(1);
     await page.getByLabel('Pins', { exact: true }).fill('known fact\nprotected name'); await page.locator('[data-save-control="pins"]').click();
     await expect.poll(() => page.evaluate(id => window.canvasHarness.graph.nodes[id].pins, context)).toEqual(['known fact', 'protected name']);
-    const memory = await choose(page, 'Memory', 'operation:memory', 'memory');
+    const memory = await choose(page, 'memory');
     await expect(page.getByLabel('View', { exact: true })).toHaveValue('state');
     await page.getByLabel('Mode', { exact: true }).selectOption('recall');
     await expect(page.getByLabel('View', { exact: true })).toHaveCount(0); await expect(page.getByLabel('Query', { exact: true })).toBeVisible();
@@ -78,7 +77,8 @@ for (const phase of ['pre', 'post']) test(`${phase} production picker and Detail
 
 test('actual State Details saves fractional curve settings and JSON maps; post Memory Commit remains a terminal', async ({ page }) => {
     await launch(page, 'post');
-    const state = await choose(page, 'State', 'operation:state:curve', 'state');
+    const state = await choose(page, 'state');
+    await page.getByLabel('Mode', { exact: true }).selectOption('curve');
     await expect(page.getByLabel('Decay', { exact: true })).toHaveAttribute('step', '0.01');
     await expect(page.getByLabel('Baseline', { exact: true })).toHaveAttribute('step', 'any');
     await page.getByLabel('Decay', { exact: true }).fill('0.35'); await page.getByLabel('Decay', { exact: true }).blur();
@@ -88,7 +88,8 @@ test('actual State Details saves fractional curve settings and JSON maps; post M
     await page.getByLabel('Mode', { exact: true }).selectOption('value'); await expect(page.getByLabel('Phase durations', { exact: true })).toHaveCount(0);
     await page.getByLabel('Values', { exact: true }).fill('{"confidence":0.6}'); await page.locator('[data-save-control="updates"]').click();
     await expect.poll(() => page.evaluate(id => window.canvasHarness.graph.nodes[id].updates, state)).toEqual({ confidence: 0.6 });
-    const memory = await choose(page, 'Memory', 'operation:memory:commit', 'memory');
+    const memory = await choose(page, 'memory');
+    await page.getByLabel('Mode', { exact: true }).selectOption('commit');
     await expect(page.getByLabel('Mode', { exact: true })).toHaveValue('commit'); await expect(page.getByLabel('Commit key', { exact: true })).toHaveValue('lattice-memory-commit');
     await expect(page.locator(`.pc-node[data-id="${memory}"] .pc-port[data-dir="in"][data-port="proposal"]`)).toHaveAttribute('data-kind', 'data');
     await expect(page.locator(`.pc-node[data-id="${memory}"] .pc-port[data-dir="out"]`)).toHaveCount(0);

@@ -1,5 +1,6 @@
-import { transferDraft } from './reference-transfer.js?v=0.25.0';
-import { mapTerminology } from './terminology-map.js?v=0.25.0';
+import { transferDraft } from './reference-transfer.js?v=0.26.0';
+import { mapTerminology } from './terminology-map.js?v=0.26.0';
+import { validatePatches } from '../repair.js?v=0.26.0';
 const port = (id, label, direction, kind, required = false) => ({ id, label, direction, kind, required, cardinality: 'one' });
 const enumeration = (key, label, options) => ({ key, label, type: 'enum', options });
 const scopes = ['authorized', 'whole', 'narration', 'dialogue'];
@@ -11,7 +12,10 @@ function freeze(value) {
     if (value && typeof value === 'object') { Object.freeze(value); for (const child of Object.values(value)) freeze(child); }
     return value;
 }
-const registration = (id, title, defaults, controlDescriptors, requestBound) => ({ id, title, family: 'Transpose', phase: 'post', operationVersion: 1, input: 'draft', output: 'patches', defaults, controls: Object.keys(defaults), controlDescriptors, requestBound, modelRole: requestBound ? 'Prose' : null, terminal: false, dynamicPorts: true });
+const registration = (id, title, defaults, controlDescriptors, requestBound) => {
+    defaults = { inputKind: 'draft', ...defaults };
+    return { id, title, family: 'Transpose', phase: 'post', operationVersion: 1, input: 'draft', output: 'patches', defaults, controls: Object.keys(defaults), controlDescriptors: [enumeration('inputKind', 'Input type', ['draft', 'text']), ...controlDescriptors], requestBound, modelRole: requestBound ? 'Prose' : null, terminal: false, dynamicPorts: true };
+};
 /** Integration metadata only; registration and graph freshness belong to core intake. */
 export const TRANSPOSE_OPERATIONS = freeze({
     'style-transfer': registration('style-transfer', 'Style Transfer', { ...transferDefaults, mode: 'narration' }, [...transferControls, enumeration('mode', 'Mode', ['narration', 'character-voice', 'rhythm', 'register'])], 1),
@@ -54,16 +58,26 @@ function resolve(node, phase) {
         const operation = own(node, 'operation');
         if (typeof operation !== 'string' || !Object.hasOwn(TRANSPOSE_OPERATIONS, operation)) return failure('UNKNOWN_OPERATION', 'Unknown Transpose operation.');
         if (own(node, 'operationVersion', 1) !== 1) return failure('INVALID_VERSION', 'Transpose requires operation version 1.');
-        if (own(node, 'phase', 'post') !== 'post' || phase !== undefined && phase !== 'post') return failure('INVALID_PHASE', 'Transpose requires post phase.');
         const base = TRANSPOSE_OPERATIONS[operation];
         const settings = Object.fromEntries(base.controls.map(key => [key, own(node, key, structuredClone(base.defaults[key]))]));
         validateControls(settings, base.controlDescriptors);
-        const ports = [port('in', 'Input', 'input', 'draft', true), port('reference', 'Reference', 'input', base.requestBound ? settings.referenceKind : 'data', true), ...(base.requestBound ? [port('context', 'Context', 'input', 'context')] : []), port('out', 'Output', 'output', 'patches')];
-        return { ok: true, data: { descriptor: structuredClone(base), ports, settings } };
+        const nodePhase = own(node, 'phase');
+        const effectivePhase = phase ?? nodePhase ?? 'post';
+        if (!['pre', 'post'].includes(effectivePhase) || nodePhase !== undefined && nodePhase !== effectivePhase || settings.inputKind === 'draft' && effectivePhase !== 'post') return failure('INVALID_PHASE', 'Draft Transpose requires post phase; Text requires a matching pre or post phase.');
+        const output = settings.inputKind === 'text' ? 'text' : 'patches';
+        const descriptor = { ...structuredClone(base), phase: effectivePhase, input: settings.inputKind, output };
+        descriptor.defaults.inputKind = settings.inputKind;
+        descriptor.controlDescriptors.find(control => control.key === 'inputKind').options = effectivePhase === 'pre' ? ['text'] : ['draft', 'text'];
+        const ports = [port('in', 'Input', 'input', settings.inputKind, true), port('reference', 'Reference', 'input', base.requestBound ? settings.referenceKind : 'data', true), ...(base.requestBound ? [port('context', 'Context', 'input', 'context')] : []), port('out', 'Output', 'output', output)];
+        return { ok: true, data: { descriptor, ports, settings } };
     } catch { return failure('INVALID_SETTINGS', 'Declared node fields require own enumerable data.'); }
 }
-export function describeTranspose(node) {
-    const result = resolve(node);
+export function describeTranspose(node, options = {}) {
+    let result;
+    try {
+        if (!plainRecord(options)) return failure('INVALID_SETTINGS', 'Description options must be a plain record.');
+        result = resolve(node, own(options, 'phase'));
+    } catch { return failure('INVALID_SETTINGS', 'Description options require own enumerable data.'); }
     if (!result.ok) return result;
     const { descriptor, ports } = result.data;
     return { ok: true, data: { descriptor, ports } };
@@ -91,6 +105,21 @@ function transferPorts(execution) {
         return { ok: true, data: ports };
     } catch { return failure('INVALID_EXECUTION', 'Execution ports require own enumerable data.'); }
 }
+// Text owns its content, while the private Draft gives the existing bounded
+// reference engines editable windows. No reply identity or host permission exists.
+function contentDraft(input) {
+    if (Reflect.ownKeys(input).length !== 2 || !Object.hasOwn(input, 'text')) return failure('INVALID_INPUT', 'Text requires only own kind and text fields.');
+    const text = own(input, 'text');
+    if (typeof text !== 'string' || text.length > 100000) return failure('INVALID_INPUT', 'Text requires at most 100,000 UTF-16 units.');
+    return { ok: true, data: { kind: 'draft', text, source: { originalText: text }, spans: text.length ? [{ index: 0, start: 0, end: text.length, text }] : [] } };
+}
+function publishTranspose(result, inputKind) {
+    if (!result.ok) return result;
+    if (inputKind === 'draft') return { ok: true, artifact: result.data.artifact, reports: result.data.report };
+    const validated = validatePatches(result.data.artifact, Object.create(null));
+    if (!validated.ok) return { ok: false, error: validated.error };
+    return { ok: true, artifact: { kind: 'text', text: validated.artifact.text }, reports: result.data.report };
+}
 /** Injected services only; no runtime binding or provider resolution. */
 export async function executeTranspose(node, namedInputs, execution = {}) {
     try {
@@ -101,19 +130,23 @@ export async function executeTranspose(node, namedInputs, execution = {}) {
         const checkedInputs = validateInputs(namedInputs, namedPorts);
         if (!checkedInputs.ok) return checkedInputs;
         const inputs = checkedInputs.data;
+        const { inputKind, ...transformSettings } = settings;
+        let target = inputs.in;
+        if (inputKind === 'text') {
+            const detached = contentDraft(target);
+            if (!detached.ok) return detached;
+            target = detached.data;
+        }
         // Deterministic Terminology has no model authority: do not even read its ports.
         if (descriptor.id === 'terminology-map') {
-            const transformed = mapTerminology(inputs.in, own(inputs.reference, 'value'), settings);
-            if (!transformed.ok) return transformed;
-            return { ok: true, artifact: transformed.data.artifact, reports: transformed.data.report };
+            return publishTranspose(mapTerminology(target, own(inputs.reference, 'value'), transformSettings), inputKind);
         }
-        const { referenceKind, ...semanticSettings } = settings;
+        const { referenceKind, ...semanticSettings } = transformSettings;
         const checkedPorts = transferPorts(execution);
         if (!checkedPorts.ok) return checkedPorts;
         const ports = checkedPorts.data;
         if (Object.hasOwn(inputs, 'context')) ports.context = inputs.context;
-        const transformed = await transferDraft(inputs.in, inputs.reference, { ...semanticSettings, kind: descriptor.id === 'style-transfer' ? 'style' : 'format' }, ports);
-        if (!transformed.ok) return transformed;
-        return { ok: true, artifact: transformed.data.artifact, reports: transformed.data.report };
+        const transformed = await transferDraft(target, inputs.reference, { ...semanticSettings, kind: descriptor.id === 'style-transfer' ? 'style' : 'format' }, ports);
+        return publishTranspose(transformed, inputKind);
     } catch { return failure('INVALID_INPUTS', 'Use named inputs and execution with own data properties.'); }
 }

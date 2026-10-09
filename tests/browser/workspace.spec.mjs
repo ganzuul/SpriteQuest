@@ -156,19 +156,20 @@ test('flat workspace menus support keyboard navigation, Escape and outside dismi
     await expect(page.locator('.pc-root')).toHaveClass(/pc-open/);
 });
 
-test('shelf stays outside the camera and cascades align with their opening rows', async ({ page }) => {
+test('shelf stays outside the camera and canonical nodes align with their opening family', async ({ page }) => {
     await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
     await page.evaluate(() => window.canvasHarness.reset());
     const shelf = page.locator('.pc-node-shelf'), first = await shelf.boundingBox();
     await page.evaluate(() => window.canvasHarness.view({ x: -200, y: 150, zoom: 1.5 }));
     expect(await shelf.boundingBox()).toEqual(first);
-    await expect(page.locator('[data-family="Transpose"]')).toBeDisabled();
+    await expect(page.locator('[data-family="Transpose"]')).toBeEnabled();
     const input = page.locator('[data-family="Input"]'); await input.focus(); await page.keyboard.press('ArrowRight');
-    const row = await input.boundingBox(), family = await page.locator('.pc-family-menu').boundingBox(), firstCategory = await page.locator('.pc-family-menu button').first().boundingBox();
-    expect(Math.abs(firstCategory.y + firstCategory.height / 2 - row.y - row.height / 2)).toBeLessThanOrEqual(1); expect(family.x).toBeGreaterThanOrEqual(row.x + row.width);
-    const category = page.getByRole('menu', { name: 'Input categories', exact: true }).getByRole('menuitem', { name: 'SOURCES', exact: true }); await category.focus(); await page.keyboard.press('ArrowRight');
-    const opening = await category.boundingBox(), leaf = await page.locator('.pc-leaf-menu').boundingBox(), firstLeaf = await page.locator('.pc-leaf-menu button').first().boundingBox();
-    expect(Math.abs(firstLeaf.y + firstLeaf.height / 2 - opening.y - opening.height / 2)).toBeLessThanOrEqual(1); expect(leaf.x).toBeGreaterThanOrEqual(family.x + family.width);
+    const row = await input.boundingBox(), family = await page.locator('.pc-family-menu').boundingBox(), firstChoice = page.locator('.pc-family-menu [data-shelf-choice]').first(), opening = await firstChoice.boundingBox();
+    expect(Math.abs(opening.y + opening.height / 2 - row.y - row.height / 2)).toBeLessThanOrEqual(1); expect(family.x).toBeGreaterThanOrEqual(row.x + row.width);
+    await expect(firstChoice).toBeFocused();
+    await expect(page.locator('[data-subfamily], .pc-leaf-menu')).toHaveCount(0);
+    await page.keyboard.press('ArrowLeft'); await expect(input).toBeFocused(); await expect(page.locator('.pc-family-menu')).toHaveCount(0);
+    await page.keyboard.press('ArrowRight');
     const count = await page.evaluate(() => Object.keys(window.canvasHarness.graph.nodes).length);
     await page.getByRole('menu', { name: 'Input nodes', exact: true }).getByRole('menuitem', { name: /^Scene Context(?:\s|$)/ }).click();
     expect(await page.evaluate(() => Object.keys(window.canvasHarness.graph.nodes).length)).toBe(count + 1);
@@ -190,9 +191,7 @@ for (const width of [1024, 736, 360, 320]) test(`workspace fits ${width}px and l
     await expect(page.locator('.pc-brand span')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Help', exact: true })).toBeInViewport();
     await page.locator('[data-family="Input"]').focus(); await page.keyboard.press('ArrowRight');
-    const category = page.getByRole('menu', { name: 'Input categories', exact: true }).getByRole('menuitem', { name: 'SOURCES', exact: true });
-    await category.focus(); await page.keyboard.press('ArrowRight');
-    const menu = await page.locator('.pc-leaf-menu').boundingBox(), graph = await page.locator('.pc-canvas-area').boundingBox();
+    const menu = await page.locator('.pc-family-menu').boundingBox(), graph = await page.locator('.pc-canvas-area').boundingBox();
     expect(menu.x).toBeGreaterThanOrEqual(graph.x); expect(menu.x + menu.width).toBeLessThanOrEqual(graph.x + graph.width + 1);
 });
 

@@ -78,10 +78,17 @@ export function buildConnectionRoute(from, to) {
     const gap = dx * fromDirection;
     const progress = fromDirection === -toDirection ? Math.min(1, Math.max(0, gap / 24)) : 0;
     const blend = progress * progress * (3 - 2 * progress);
+    const backwardProgress = Math.min(1, Math.max(0, -gap / 24));
+    const backwardBlend = backwardProgress * backwardProgress * (3 - 2 * backwardProgress);
     const span = Math.hypot(dx, dy);
     const bow = Math.min(96, Math.max(32, span * 0.2));
+    const verticalProgress = Math.min(1, Math.abs(dy) / (2 * bow));
+    const verticalBlend = verticalProgress * verticalProgress * (3 - 2 * verticalProgress);
     const forwardHandle = Math.min(100, Math.max(0, gap) * 0.4);
-    const returningHandle = Math.min(72, Math.max(24, span * 0.22));
+    // Steep returns need only a small turn outside each neck. Keep the broader
+    // handles for level bows, with an even weight that is stable across dy=0.
+    const steepness = (dy / Math.hypot(span, 24)) ** 2;
+    const returningHandle = Math.min(72, Math.max(24, span * 0.22)) * (1 - 0.8 * backwardBlend * steepness);
     const endHandle = returningHandle * (1 - blend) + forwardHandle / 2 * blend;
     const forwardTangent = { x: (dx - fromDirection * forwardHandle) / 4, y: dy / 4 };
     const returningMiddleHandle = Math.min(64, Math.max(18, span * 0.18));
@@ -89,10 +96,16 @@ export function buildConnectionRoute(from, to) {
     // Rotating, instead of lerping opposite vectors, keeps the join tangent nonzero.
     // The forward angle is measured in the source side's local coordinate system.
     const forwardAngle = Math.atan2(fromDirection * forwardTangent.y, Math.max(0, fromDirection * forwardTangent.x));
-    const angle = Math.PI * (1 - blend) + forwardAngle * blend;
+    // Farther behind the source, follow the chord rather than flattening the
+    // middle. Unwrap around PI and fade to the existing close-pin turn so moving
+    // across either axis cannot flip the bow or collapse its join tangent.
+    const backwardTilt = Math.atan2(fromDirection * dy, Math.max(24, -gap));
+    const angle = Math.PI * (1 - blend) + forwardAngle * blend - backwardBlend * backwardTilt;
     const tangent = { x: fromDirection * Math.cos(angle), y: fromDirection * Math.sin(angle) };
+    // Level pins need a bow to avoid a doubled-back straight line. Vertical
+    // separation already supplies curvature, so let that bow recede smoothly.
     const middle = { x: (departure.x + arrival.x) / 2,
-        y: (departure.y + arrival.y) / 2 + fromDirection * bow * (1 - blend) };
+        y: (departure.y + arrival.y) / 2 + fromDirection * bow * (1 - blend) * (1 - backwardBlend * verticalBlend) };
     segments.push(
         [departure, offset(departure, fromDirection * endHandle), offset(middle, -tangent.x * middleHandle, -tangent.y * middleHandle), middle],
         [middle, offset(middle, tangent.x * middleHandle, tangent.y * middleHandle), offset(arrival, toDirection * endHandle), arrival],

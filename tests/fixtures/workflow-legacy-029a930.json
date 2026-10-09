@@ -1,0 +1,826 @@
+{
+  "baselineCommit": "029a930",
+  "baselineVersion": "0.25.0",
+  "canonicalContentById": {
+    "legacy-style-transfer": "{\"body\":{\"mode\":\"native-post\",\"nodes\":{\"boundary-reference\":{\"enabled\":true,\"id\":\"boundary-reference\",\"interfacePortId\":\"reference\",\"type\":\"subgraph-input\"},\"boundary-result\":{\"enabled\":true,\"id\":\"boundary-result\",\"interfacePortId\":\"result\",\"type\":\"subgraph-output\"},\"boundary-target\":{\"enabled\":true,\"id\":\"boundary-target\",\"interfacePortId\":\"target\",\"type\":\"subgraph-input\"},\"work\":{\"binding\":{\"model\":null},\"controls\":{\"instructions\":\"\",\"maxTokens\":2048,\"mode\":\"narration\",\"protectedLiterals\":[],\"referenceKind\":\"text\",\"scope\":\"narration\",\"strength\":\"light\"},\"enabled\":true,\"id\":\"work\",\"modelRole\":\"Prose\",\"operation\":\"style-transfer\",\"operationVersion\":1,\"type\":\"workflow\"}},\"portals\":{},\"roles\":{},\"runtime\":2,\"schema\":3,\"wires\":{\"a\":{\"from\":\"boundary-target\",\"fromPort\":\"out\",\"id\":\"a\",\"route\":\"wire\",\"to\":\"work\",\"toPort\":\"in\"},\"b\":{\"from\":\"work\",\"fromPort\":\"out\",\"id\":\"b\",\"route\":\"wire\",\"to\":\"boundary-result\",\"toPort\":\"in\"},\"reference\":{\"from\":\"boundary-reference\",\"fromPort\":\"out\",\"id\":\"reference\",\"route\":\"wire\",\"to\":\"work\",\"toPort\":\"reference\"}}},\"interface\":[{\"boundaryNodeId\":\"boundary-target\",\"cardinality\":\"one\",\"direction\":\"input\",\"id\":\"target\",\"kind\":\"draft\",\"required\":true},{\"boundaryNodeId\":\"boundary-reference\",\"cardinality\":\"one\",\"direction\":\"input\",\"id\":\"reference\",\"kind\":\"text\",\"required\":true},{\"boundaryNodeId\":\"boundary-result\",\"cardinality\":\"one\",\"direction\":\"output\",\"id\":\"result\",\"kind\":\"patches\",\"required\":false}],\"parameters\":[]}",
+    "legacy-format-transfer": "{\"body\":{\"mode\":\"native-post\",\"nodes\":{\"boundary-reference\":{\"enabled\":true,\"id\":\"boundary-reference\",\"interfacePortId\":\"reference\",\"type\":\"subgraph-input\"},\"boundary-result\":{\"enabled\":true,\"id\":\"boundary-result\",\"interfacePortId\":\"result\",\"type\":\"subgraph-output\"},\"boundary-target\":{\"enabled\":true,\"id\":\"boundary-target\",\"interfacePortId\":\"target\",\"type\":\"subgraph-input\"},\"work\":{\"binding\":{\"model\":null},\"controls\":{\"instructions\":\"\",\"maxTokens\":2048,\"protectedLiterals\":[],\"referenceKind\":\"text\",\"scope\":\"narration\",\"strength\":\"light\"},\"enabled\":true,\"id\":\"work\",\"modelRole\":\"Prose\",\"operation\":\"format-transfer\",\"operationVersion\":1,\"type\":\"workflow\"}},\"portals\":{},\"roles\":{},\"runtime\":2,\"schema\":3,\"wires\":{\"a\":{\"from\":\"boundary-target\",\"fromPort\":\"out\",\"id\":\"a\",\"route\":\"wire\",\"to\":\"work\",\"toPort\":\"in\"},\"b\":{\"from\":\"work\",\"fromPort\":\"out\",\"id\":\"b\",\"route\":\"wire\",\"to\":\"boundary-result\",\"toPort\":\"in\"},\"reference\":{\"from\":\"boundary-reference\",\"fromPort\":\"out\",\"id\":\"reference\",\"route\":\"wire\",\"to\":\"work\",\"toPort\":\"reference\"}}},\"interface\":[{\"boundaryNodeId\":\"boundary-target\",\"cardinality\":\"one\",\"direction\":\"input\",\"id\":\"target\",\"kind\":\"draft\",\"required\":true},{\"boundaryNodeId\":\"boundary-reference\",\"cardinality\":\"one\",\"direction\":\"input\",\"id\":\"reference\",\"kind\":\"text\",\"required\":true},{\"boundaryNodeId\":\"boundary-result\",\"cardinality\":\"one\",\"direction\":\"output\",\"id\":\"result\",\"kind\":\"patches\",\"required\":false}],\"parameters\":[]}",
+    "legacy-terminology-map": "{\"body\":{\"mode\":\"native-post\",\"nodes\":{\"boundary-reference\":{\"enabled\":true,\"id\":\"boundary-reference\",\"interfacePortId\":\"reference\",\"type\":\"subgraph-input\"},\"boundary-result\":{\"enabled\":true,\"id\":\"boundary-result\",\"interfacePortId\":\"result\",\"type\":\"subgraph-output\"},\"boundary-target\":{\"enabled\":true,\"id\":\"boundary-target\",\"interfacePortId\":\"target\",\"type\":\"subgraph-input\"},\"work\":{\"binding\":{\"model\":null},\"controls\":{\"caseSensitive\":true,\"match\":\"word\",\"protectedLiterals\":[],\"scope\":\"narration\"},\"enabled\":true,\"id\":\"work\",\"modelRole\":null,\"operation\":\"terminology-map\",\"operationVersion\":1,\"type\":\"workflow\"}},\"portals\":{},\"roles\":{},\"runtime\":2,\"schema\":3,\"wires\":{\"a\":{\"from\":\"boundary-target\",\"fromPort\":\"out\",\"id\":\"a\",\"route\":\"wire\",\"to\":\"work\",\"toPort\":\"in\"},\"b\":{\"from\":\"work\",\"fromPort\":\"out\",\"id\":\"b\",\"route\":\"wire\",\"to\":\"boundary-result\",\"toPort\":\"in\"},\"reference\":{\"from\":\"boundary-reference\",\"fromPort\":\"out\",\"id\":\"reference\",\"route\":\"wire\",\"to\":\"work\",\"toPort\":\"reference\"}}},\"interface\":[{\"boundaryNodeId\":\"boundary-target\",\"cardinality\":\"one\",\"direction\":\"input\",\"id\":\"target\",\"kind\":\"draft\",\"required\":true},{\"boundaryNodeId\":\"boundary-reference\",\"cardinality\":\"one\",\"direction\":\"input\",\"id\":\"reference\",\"kind\":\"data\",\"required\":true},{\"boundaryNodeId\":\"boundary-result\",\"cardinality\":\"one\",\"direction\":\"output\",\"id\":\"result\",\"kind\":\"patches\",\"required\":false}],\"parameters\":[]}",
+    "legacy-reroute": "{\"body\":{\"mode\":\"native-post\",\"nodes\":{\"boundary-result\":{\"enabled\":true,\"id\":\"boundary-result\",\"interfacePortId\":\"result\",\"type\":\"subgraph-output\"},\"boundary-target\":{\"enabled\":true,\"id\":\"boundary-target\",\"interfacePortId\":\"target\",\"type\":\"subgraph-input\"},\"work\":{\"artifactKind\":\"text\",\"binding\":{\"model\":null},\"controls\":{},\"enabled\":true,\"id\":\"work\",\"modelRole\":null,\"operation\":\"reroute\",\"operationVersion\":1,\"phase\":\"post\",\"type\":\"workflow\"}},\"portals\":{},\"roles\":{},\"runtime\":2,\"schema\":3,\"wires\":{\"a\":{\"from\":\"boundary-target\",\"fromPort\":\"out\",\"id\":\"a\",\"route\":\"wire\",\"to\":\"work\",\"toPort\":\"in\"},\"b\":{\"from\":\"work\",\"fromPort\":\"out\",\"id\":\"b\",\"route\":\"wire\",\"to\":\"boundary-result\",\"toPort\":\"in\"}}},\"interface\":[{\"boundaryNodeId\":\"boundary-target\",\"cardinality\":\"one\",\"direction\":\"input\",\"id\":\"target\",\"kind\":\"text\",\"required\":true},{\"boundaryNodeId\":\"boundary-result\",\"cardinality\":\"one\",\"direction\":\"output\",\"id\":\"result\",\"kind\":\"text\",\"required\":false}],\"parameters\":[]}",
+    "legacy-nested-style": "{\"body\":{\"mode\":\"native-post\",\"nodes\":{\"boundary-reference\":{\"enabled\":true,\"id\":\"boundary-reference\",\"interfacePortId\":\"reference\",\"type\":\"subgraph-input\"},\"boundary-result\":{\"enabled\":true,\"id\":\"boundary-result\",\"interfacePortId\":\"result\",\"type\":\"subgraph-output\"},\"boundary-target\":{\"enabled\":true,\"id\":\"boundary-target\",\"interfacePortId\":\"target\",\"type\":\"subgraph-input\"},\"child\":{\"definition\":{\"id\":\"legacy-style-transfer\",\"semanticHash\":\"sha256:934b149b2d0eeea9bd371239da4499f14d21b45e976ca3c06c6920ed47c4d828\",\"version\":1},\"enabled\":true,\"id\":\"child\",\"nodeBindingOverrides\":{},\"parameterOverrides\":{},\"roleOverrides\":{},\"type\":\"subgraph\"}},\"portals\":{},\"roles\":{},\"runtime\":2,\"schema\":3,\"wires\":{\"a\":{\"from\":\"boundary-target\",\"fromPort\":\"out\",\"id\":\"a\",\"route\":\"wire\",\"to\":\"child\",\"toPort\":\"target\"},\"b\":{\"from\":\"child\",\"fromPort\":\"result\",\"id\":\"b\",\"route\":\"wire\",\"to\":\"boundary-result\",\"toPort\":\"in\"},\"reference\":{\"from\":\"boundary-reference\",\"fromPort\":\"out\",\"id\":\"reference\",\"route\":\"wire\",\"to\":\"child\",\"toPort\":\"reference\"}}},\"interface\":[{\"boundaryNodeId\":\"boundary-target\",\"cardinality\":\"one\",\"direction\":\"input\",\"id\":\"target\",\"kind\":\"draft\",\"required\":true},{\"boundaryNodeId\":\"boundary-reference\",\"cardinality\":\"one\",\"direction\":\"input\",\"id\":\"reference\",\"kind\":\"text\",\"required\":true},{\"boundaryNodeId\":\"boundary-result\",\"cardinality\":\"one\",\"direction\":\"output\",\"id\":\"result\",\"kind\":\"patches\",\"required\":false}],\"parameters\":[]}",
+    "legacy-nested-terms": "{\"body\":{\"mode\":\"native-post\",\"nodes\":{\"boundary-reference\":{\"enabled\":true,\"id\":\"boundary-reference\",\"interfacePortId\":\"reference\",\"type\":\"subgraph-input\"},\"boundary-result\":{\"enabled\":true,\"id\":\"boundary-result\",\"interfacePortId\":\"result\",\"type\":\"subgraph-output\"},\"boundary-target\":{\"enabled\":true,\"id\":\"boundary-target\",\"interfacePortId\":\"target\",\"type\":\"subgraph-input\"},\"child\":{\"definition\":{\"id\":\"legacy-terminology-map\",\"semanticHash\":\"sha256:46bd0980a5bd32843d8d7541542d1026c47624df782031084f7e5f7d52411a88\",\"version\":1},\"enabled\":true,\"id\":\"child\",\"nodeBindingOverrides\":{},\"parameterOverrides\":{},\"roleOverrides\":{},\"type\":\"subgraph\"}},\"portals\":{},\"roles\":{},\"runtime\":2,\"schema\":3,\"wires\":{\"a\":{\"from\":\"boundary-target\",\"fromPort\":\"out\",\"id\":\"a\",\"route\":\"wire\",\"to\":\"child\",\"toPort\":\"target\"},\"b\":{\"from\":\"child\",\"fromPort\":\"result\",\"id\":\"b\",\"route\":\"wire\",\"to\":\"boundary-result\",\"toPort\":\"in\"},\"reference\":{\"from\":\"boundary-reference\",\"fromPort\":\"out\",\"id\":\"reference\",\"route\":\"wire\",\"to\":\"child\",\"toPort\":\"reference\"}}},\"interface\":[{\"boundaryNodeId\":\"boundary-target\",\"cardinality\":\"one\",\"direction\":\"input\",\"id\":\"target\",\"kind\":\"draft\",\"required\":true},{\"boundaryNodeId\":\"boundary-reference\",\"cardinality\":\"one\",\"direction\":\"input\",\"id\":\"reference\",\"kind\":\"data\",\"required\":true},{\"boundaryNodeId\":\"boundary-result\",\"cardinality\":\"one\",\"direction\":\"output\",\"id\":\"result\",\"kind\":\"patches\",\"required\":false}],\"parameters\":[]}"
+  },
+  "graphSignature": "{\"definitions\":{\"[\\\"legacy-format-transfer\\\",1,\\\"sha256:2f3b36d2de16cebf823487ffc4514991f6f624927e5c6ca782f594d70f4fedc2\\\"]\":{\"body\":{\"definitions\":{},\"mode\":\"native-post\",\"nodes\":[{\"controls\":{},\"enabled\":true,\"id\":\"boundary-target\",\"interfacePortId\":\"target\",\"key\":\"boundary-target\",\"model\":null,\"modelRole\":null,\"operationVersion\":1,\"profileId\":null,\"type\":\"subgraph-input\"},{\"controls\":{},\"enabled\":true,\"id\":\"boundary-reference\",\"interfacePortId\":\"reference\",\"key\":\"boundary-reference\",\"model\":null,\"modelRole\":null,\"operationVersion\":1,\"profileId\":null,\"type\":\"subgraph-input\"},{\"controls\":{},\"enabled\":true,\"id\":\"boundary-result\",\"interfacePortId\":\"result\",\"key\":\"boundary-result\",\"model\":null,\"modelRole\":null,\"operationVersion\":1,\"profileId\":null,\"type\":\"subgraph-output\"},{\"controls\":{\"instructions\":\"\",\"maxTokens\":2048,\"protectedLiterals\":[],\"referenceKind\":\"text\",\"scope\":\"narration\",\"strength\":\"light\"},\"enabled\":true,\"id\":\"work\",\"key\":\"work\",\"model\":null,\"modelRole\":\"Prose\",\"operation\":\"format-transfer\",\"operationVersion\":1,\"profileId\":null,\"type\":\"workflow\"}],\"portals\":{},\"roles\":{},\"runtime\":2,\"schema\":3,\"wires\":[{\"from\":\"boundary-target\",\"fromPort\":\"out\",\"id\":\"a\",\"key\":\"a\",\"route\":\"wire\",\"to\":\"work\",\"toPort\":\"in\"},{\"from\":\"work\",\"fromPort\":\"out\",\"id\":\"b\",\"key\":\"b\",\"route\":\"wire\",\"to\":\"boundary-result\",\"toPort\":\"in\"},{\"from\":\"boundary-reference\",\"fromPort\":\"out\",\"id\":\"reference\",\"key\":\"reference\",\"route\":\"wire\",\"to\":\"work\",\"toPort\":\"reference\"}]},\"id\":\"legacy-format-transfer\",\"interface\":[{\"boundaryNodeId\":\"boundary-target\",\"cardinality\":\"one\",\"direction\":\"input\",\"id\":\"target\",\"kind\":\"draft\",\"required\":true},{\"boundaryNodeId\":\"boundary-reference\",\"cardinality\":\"one\",\"direction\":\"input\",\"id\":\"reference\",\"kind\":\"text\",\"required\":true},{\"boundaryNodeId\":\"boundary-result\",\"cardinality\":\"one\",\"direction\":\"output\",\"id\":\"result\",\"kind\":\"patches\",\"required\":false}],\"parameters\":[],\"semanticHash\":\"sha256:2f3b36d2de16cebf823487ffc4514991f6f624927e5c6ca782f594d70f4fedc2\",\"version\":1},\"[\\\"legacy-nested-style\\\",1,\\\"sha256:a4607220976e661cc33d7eb5b0f44c3b3fadb24509173544927375cab85b9a15\\\"]\":{\"body\":{\"definitions\":{},\"mode\":\"native-post\",\"nodes\":[{\"controls\":{},\"enabled\":true,\"id\":\"boundary-target\",\"interfacePortId\":\"target\",\"key\":\"boundary-target\",\"model\":null,\"modelRole\":null,\"operationVersion\":1,\"profileId\":null,\"type\":\"subgraph-input\"},{\"controls\":{},\"enabled\":true,\"id\":\"boundary-reference\",\"interfacePortId\":\"reference\",\"key\":\"boundary-reference\",\"model\":null,\"modelRole\":null,\"operationVersion\":1,\"profileId\":null,\"type\":\"subgraph-input\"},{\"controls\":{},\"enabled\":true,\"id\":\"boundary-result\",\"interfacePortId\":\"result\",\"key\":\"boundary-result\",\"model\":null,\"modelRole\":null,\"operationVersion\":1,\"profileId\":null,\"type\":\"subgraph-output\"},{\"controls\":{},\"definition\":{\"id\":\"legacy-style-transfer\",\"semanticHash\":\"sha256:934b149b2d0eeea9bd371239da4499f14d21b45e976ca3c06c6920ed47c4d828\",\"version\":1},\"enabled\":true,\"id\":\"child\",\"key\":\"child\",\"model\":null,\"modelRole\":null,\"nodeBindingOverrides\":{},\"operationVersion\":1,\"parameterOverrides\":{},\"profileId\":null,\"roleOverrides\":{},\"type\":\"subgraph\"}],\"portals\":{},\"roles\":{},\"runtime\":2,\"schema\":3,\"wires\":[{\"from\":\"boundary-target\",\"fromPort\":\"out\",\"id\":\"a\",\"key\":\"a\",\"route\":\"wire\",\"to\":\"child\",\"toPort\":\"target\"},{\"from\":\"boundary-reference\",\"fromPort\":\"out\",\"id\":\"reference\",\"key\":\"reference\",\"route\":\"wire\",\"to\":\"child\",\"toPort\":\"reference\"},{\"from\":\"child\",\"fromPort\":\"result\",\"id\":\"b\",\"key\":\"b\",\"route\":\"wire\",\"to\":\"boundary-result\",\"toPort\":\"in\"}]},\"id\":\"legacy-nested-style\",\"interface\":[{\"boundaryNodeId\":\"boundary-target\",\"cardinality\":\"one\",\"direction\":\"input\",\"id\":\"target\",\"kind\":\"draft\",\"required\":true},{\"boundaryNodeId\":\"boundary-reference\",\"cardinality\":\"one\",\"direction\":\"input\",\"id\":\"reference\",\"kind\":\"text\",\"required\":true},{\"boundaryNodeId\":\"boundary-result\",\"cardinality\":\"one\",\"direction\":\"output\",\"id\":\"result\",\"kind\":\"patches\",\"required\":false}],\"parameters\":[],\"semanticHash\":\"sha256:a4607220976e661cc33d7eb5b0f44c3b3fadb24509173544927375cab85b9a15\",\"version\":1},\"[\\\"legacy-nested-terms\\\",1,\\\"sha256:b25ce3f695911918d760324a054f216e7b9753bb0dc593ee3378b09ff84f150b\\\"]\":{\"body\":{\"definitions\":{},\"mode\":\"native-post\",\"nodes\":[{\"controls\":{},\"enabled\":true,\"id\":\"boundary-target\",\"interfacePortId\":\"target\",\"key\":\"boundary-target\",\"model\":null,\"modelRole\":null,\"operationVersion\":1,\"profileId\":null,\"type\":\"subgraph-input\"},{\"controls\":{},\"enabled\":true,\"id\":\"boundary-reference\",\"interfacePortId\":\"reference\",\"key\":\"boundary-reference\",\"model\":null,\"modelRole\":null,\"operationVersion\":1,\"profileId\":null,\"type\":\"subgraph-input\"},{\"controls\":{},\"enabled\":true,\"id\":\"boundary-result\",\"interfacePortId\":\"result\",\"key\":\"boundary-result\",\"model\":null,\"modelRole\":null,\"operationVersion\":1,\"profileId\":null,\"type\":\"subgraph-output\"},{\"controls\":{},\"definition\":{\"id\":\"legacy-terminology-map\",\"semanticHash\":\"sha256:46bd0980a5bd32843d8d7541542d1026c47624df782031084f7e5f7d52411a88\",\"version\":1},\"enabled\":true,\"id\":\"child\",\"key\":\"child\",\"model\":null,\"modelRole\":null,\"nodeBindingOverrides\":{},\"operationVersion\":1,\"parameterOverrides\":{},\"profileId\":null,\"roleOverrides\":{},\"type\":\"subgraph\"}],\"portals\":{},\"roles\":{},\"runtime\":2,\"schema\":3,\"wires\":[{\"from\":\"boundary-target\",\"fromPort\":\"out\",\"id\":\"a\",\"key\":\"a\",\"route\":\"wire\",\"to\":\"child\",\"toPort\":\"target\"},{\"from\":\"boundary-reference\",\"fromPort\":\"out\",\"id\":\"reference\",\"key\":\"reference\",\"route\":\"wire\",\"to\":\"child\",\"toPort\":\"reference\"},{\"from\":\"child\",\"fromPort\":\"result\",\"id\":\"b\",\"key\":\"b\",\"route\":\"wire\",\"to\":\"boundary-result\",\"toPort\":\"in\"}]},\"id\":\"legacy-nested-terms\",\"interface\":[{\"boundaryNodeId\":\"boundary-target\",\"cardinality\":\"one\",\"direction\":\"input\",\"id\":\"target\",\"kind\":\"draft\",\"required\":true},{\"boundaryNodeId\":\"boundary-reference\",\"cardinality\":\"one\",\"direction\":\"input\",\"id\":\"reference\",\"kind\":\"data\",\"required\":true},{\"boundaryNodeId\":\"boundary-result\",\"cardinality\":\"one\",\"direction\":\"output\",\"id\":\"result\",\"kind\":\"patches\",\"required\":false}],\"parameters\":[],\"semanticHash\":\"sha256:b25ce3f695911918d760324a054f216e7b9753bb0dc593ee3378b09ff84f150b\",\"version\":1},\"[\\\"legacy-reroute\\\",1,\\\"sha256:187fadd41253d8afa6f340bdee2d75f32b20c3d1250e4701910d418e3289464a\\\"]\":{\"body\":{\"definitions\":{},\"mode\":\"native-post\",\"nodes\":[{\"controls\":{},\"enabled\":true,\"id\":\"boundary-target\",\"interfacePortId\":\"target\",\"key\":\"boundary-target\",\"model\":null,\"modelRole\":null,\"operationVersion\":1,\"profileId\":null,\"type\":\"subgraph-input\"},{\"controls\":{},\"enabled\":true,\"id\":\"boundary-result\",\"interfacePortId\":\"result\",\"key\":\"boundary-result\",\"model\":null,\"modelRole\":null,\"operationVersion\":1,\"profileId\":null,\"type\":\"subgraph-output\"},{\"artifactKind\":\"text\",\"controls\":{},\"enabled\":true,\"id\":\"work\",\"key\":\"work\",\"model\":null,\"modelRole\":null,\"operation\":\"reroute\",\"operationVersion\":1,\"phase\":\"post\",\"profileId\":null,\"type\":\"workflow\"}],\"portals\":{},\"roles\":{},\"runtime\":2,\"schema\":3,\"wires\":[{\"from\":\"boundary-target\",\"fromPort\":\"out\",\"id\":\"a\",\"key\":\"a\",\"route\":\"wire\",\"to\":\"work\",\"toPort\":\"in\"},{\"from\":\"work\",\"fromPort\":\"out\",\"id\":\"b\",\"key\":\"b\",\"route\":\"wire\",\"to\":\"boundary-result\",\"toPort\":\"in\"}]},\"id\":\"legacy-reroute\",\"interface\":[{\"boundaryNodeId\":\"boundary-target\",\"cardinality\":\"one\",\"direction\":\"input\",\"id\":\"target\",\"kind\":\"text\",\"required\":true},{\"boundaryNodeId\":\"boundary-result\",\"cardinality\":\"one\",\"direction\":\"output\",\"id\":\"result\",\"kind\":\"text\",\"required\":false}],\"parameters\":[],\"semanticHash\":\"sha256:187fadd41253d8afa6f340bdee2d75f32b20c3d1250e4701910d418e3289464a\",\"version\":1},\"[\\\"legacy-style-transfer\\\",1,\\\"sha256:934b149b2d0eeea9bd371239da4499f14d21b45e976ca3c06c6920ed47c4d828\\\"]\":{\"body\":{\"definitions\":{},\"mode\":\"native-post\",\"nodes\":[{\"controls\":{},\"enabled\":true,\"id\":\"boundary-target\",\"interfacePortId\":\"target\",\"key\":\"boundary-target\",\"model\":null,\"modelRole\":null,\"operationVersion\":1,\"profileId\":null,\"type\":\"subgraph-input\"},{\"controls\":{},\"enabled\":true,\"id\":\"boundary-reference\",\"interfacePortId\":\"reference\",\"key\":\"boundary-reference\",\"model\":null,\"modelRole\":null,\"operationVersion\":1,\"profileId\":null,\"type\":\"subgraph-input\"},{\"controls\":{},\"enabled\":true,\"id\":\"boundary-result\",\"interfacePortId\":\"result\",\"key\":\"boundary-result\",\"model\":null,\"modelRole\":null,\"operationVersion\":1,\"profileId\":null,\"type\":\"subgraph-output\"},{\"controls\":{\"instructions\":\"\",\"maxTokens\":2048,\"mode\":\"narration\",\"protectedLiterals\":[],\"referenceKind\":\"text\",\"scope\":\"narration\",\"strength\":\"light\"},\"enabled\":true,\"id\":\"work\",\"key\":\"work\",\"model\":null,\"modelRole\":\"Prose\",\"operation\":\"style-transfer\",\"operationVersion\":1,\"profileId\":null,\"type\":\"workflow\"}],\"portals\":{},\"roles\":{},\"runtime\":2,\"schema\":3,\"wires\":[{\"from\":\"boundary-target\",\"fromPort\":\"out\",\"id\":\"a\",\"key\":\"a\",\"route\":\"wire\",\"to\":\"work\",\"toPort\":\"in\"},{\"from\":\"work\",\"fromPort\":\"out\",\"id\":\"b\",\"key\":\"b\",\"route\":\"wire\",\"to\":\"boundary-result\",\"toPort\":\"in\"},{\"from\":\"boundary-reference\",\"fromPort\":\"out\",\"id\":\"reference\",\"key\":\"reference\",\"route\":\"wire\",\"to\":\"work\",\"toPort\":\"reference\"}]},\"id\":\"legacy-style-transfer\",\"interface\":[{\"boundaryNodeId\":\"boundary-target\",\"cardinality\":\"one\",\"direction\":\"input\",\"id\":\"target\",\"kind\":\"draft\",\"required\":true},{\"boundaryNodeId\":\"boundary-reference\",\"cardinality\":\"one\",\"direction\":\"input\",\"id\":\"reference\",\"kind\":\"text\",\"required\":true},{\"boundaryNodeId\":\"boundary-result\",\"cardinality\":\"one\",\"direction\":\"output\",\"id\":\"result\",\"kind\":\"patches\",\"required\":false}],\"parameters\":[],\"semanticHash\":\"sha256:934b149b2d0eeea9bd371239da4499f14d21b45e976ca3c06c6920ed47c4d828\",\"version\":1},\"[\\\"legacy-terminology-map\\\",1,\\\"sha256:46bd0980a5bd32843d8d7541542d1026c47624df782031084f7e5f7d52411a88\\\"]\":{\"body\":{\"definitions\":{},\"mode\":\"native-post\",\"nodes\":[{\"controls\":{},\"enabled\":true,\"id\":\"boundary-target\",\"interfacePortId\":\"target\",\"key\":\"boundary-target\",\"model\":null,\"modelRole\":null,\"operationVersion\":1,\"profileId\":null,\"type\":\"subgraph-input\"},{\"controls\":{},\"enabled\":true,\"id\":\"boundary-reference\",\"interfacePortId\":\"reference\",\"key\":\"boundary-reference\",\"model\":null,\"modelRole\":null,\"operationVersion\":1,\"profileId\":null,\"type\":\"subgraph-input\"},{\"controls\":{},\"enabled\":true,\"id\":\"boundary-result\",\"interfacePortId\":\"result\",\"key\":\"boundary-result\",\"model\":null,\"modelRole\":null,\"operationVersion\":1,\"profileId\":null,\"type\":\"subgraph-output\"},{\"controls\":{\"caseSensitive\":true,\"match\":\"word\",\"protectedLiterals\":[],\"scope\":\"narration\"},\"enabled\":true,\"id\":\"work\",\"key\":\"work\",\"model\":null,\"modelRole\":null,\"operation\":\"terminology-map\",\"operationVersion\":1,\"profileId\":null,\"type\":\"workflow\"}],\"portals\":{},\"roles\":{},\"runtime\":2,\"schema\":3,\"wires\":[{\"from\":\"boundary-target\",\"fromPort\":\"out\",\"id\":\"a\",\"key\":\"a\",\"route\":\"wire\",\"to\":\"work\",\"toPort\":\"in\"},{\"from\":\"work\",\"fromPort\":\"out\",\"id\":\"b\",\"key\":\"b\",\"route\":\"wire\",\"to\":\"boundary-result\",\"toPort\":\"in\"},{\"from\":\"boundary-reference\",\"fromPort\":\"out\",\"id\":\"reference\",\"key\":\"reference\",\"route\":\"wire\",\"to\":\"work\",\"toPort\":\"reference\"}]},\"id\":\"legacy-terminology-map\",\"interface\":[{\"boundaryNodeId\":\"boundary-target\",\"cardinality\":\"one\",\"direction\":\"input\",\"id\":\"target\",\"kind\":\"draft\",\"required\":true},{\"boundaryNodeId\":\"boundary-reference\",\"cardinality\":\"one\",\"direction\":\"input\",\"id\":\"reference\",\"kind\":\"data\",\"required\":true},{\"boundaryNodeId\":\"boundary-result\",\"cardinality\":\"one\",\"direction\":\"output\",\"id\":\"result\",\"kind\":\"patches\",\"required\":false}],\"parameters\":[],\"semanticHash\":\"sha256:46bd0980a5bd32843d8d7541542d1026c47624df782031084f7e5f7d52411a88\",\"version\":1}},\"mode\":\"native-post\",\"nodes\":[{\"controls\":{},\"definition\":{\"id\":\"legacy-nested-style\",\"semanticHash\":\"sha256:a4607220976e661cc33d7eb5b0f44c3b3fadb24509173544927375cab85b9a15\",\"version\":1},\"enabled\":true,\"id\":\"instance-0\",\"key\":\"instance-0\",\"model\":null,\"modelRole\":null,\"nodeBindingOverrides\":{},\"operationVersion\":1,\"parameterOverrides\":{},\"profileId\":null,\"roleOverrides\":{},\"type\":\"subgraph\"},{\"controls\":{},\"definition\":{\"id\":\"legacy-format-transfer\",\"semanticHash\":\"sha256:2f3b36d2de16cebf823487ffc4514991f6f624927e5c6ca782f594d70f4fedc2\",\"version\":1},\"enabled\":true,\"id\":\"instance-1\",\"key\":\"instance-1\",\"model\":null,\"modelRole\":null,\"nodeBindingOverrides\":{},\"operationVersion\":1,\"parameterOverrides\":{},\"profileId\":null,\"roleOverrides\":{},\"type\":\"subgraph\"},{\"controls\":{},\"definition\":{\"id\":\"legacy-nested-terms\",\"semanticHash\":\"sha256:b25ce3f695911918d760324a054f216e7b9753bb0dc593ee3378b09ff84f150b\",\"version\":1},\"enabled\":true,\"id\":\"instance-2\",\"key\":\"instance-2\",\"model\":null,\"modelRole\":null,\"nodeBindingOverrides\":{},\"operationVersion\":1,\"parameterOverrides\":{},\"profileId\":null,\"roleOverrides\":{},\"type\":\"subgraph\"},{\"controls\":{},\"definition\":{\"id\":\"legacy-reroute\",\"semanticHash\":\"sha256:187fadd41253d8afa6f340bdee2d75f32b20c3d1250e4701910d418e3289464a\",\"version\":1},\"enabled\":true,\"id\":\"instance-3\",\"key\":\"instance-3\",\"model\":null,\"modelRole\":null,\"nodeBindingOverrides\":{},\"operationVersion\":1,\"parameterOverrides\":{},\"profileId\":null,\"roleOverrides\":{},\"type\":\"subgraph\"}],\"portals\":{},\"roles\":{},\"runtime\":2,\"schema\":3,\"wires\":[]}",
+  "workflowPackage": {
+    "kind": "lattice-workflow",
+    "schema": 2,
+    "minRuntime": 2,
+    "graph": {
+      "id": "legacy-029a930-root",
+      "schema": 3,
+      "runtime": 2,
+      "mode": "native-post",
+      "nodes": {
+        "instance-0": {
+          "id": "instance-0",
+          "type": "subgraph",
+          "definition": {
+            "id": "legacy-nested-style",
+            "version": 1,
+            "semanticHash": "sha256:a4607220976e661cc33d7eb5b0f44c3b3fadb24509173544927375cab85b9a15"
+          },
+          "roleOverrides": {},
+          "nodeBindingOverrides": {}
+        },
+        "instance-1": {
+          "id": "instance-1",
+          "type": "subgraph",
+          "definition": {
+            "id": "legacy-format-transfer",
+            "version": 1,
+            "semanticHash": "sha256:2f3b36d2de16cebf823487ffc4514991f6f624927e5c6ca782f594d70f4fedc2"
+          },
+          "roleOverrides": {},
+          "nodeBindingOverrides": {}
+        },
+        "instance-2": {
+          "id": "instance-2",
+          "type": "subgraph",
+          "definition": {
+            "id": "legacy-nested-terms",
+            "version": 1,
+            "semanticHash": "sha256:b25ce3f695911918d760324a054f216e7b9753bb0dc593ee3378b09ff84f150b"
+          },
+          "roleOverrides": {},
+          "nodeBindingOverrides": {}
+        },
+        "instance-3": {
+          "id": "instance-3",
+          "type": "subgraph",
+          "definition": {
+            "id": "legacy-reroute",
+            "version": 1,
+            "semanticHash": "sha256:187fadd41253d8afa6f340bdee2d75f32b20c3d1250e4701910d418e3289464a"
+          },
+          "roleOverrides": {},
+          "nodeBindingOverrides": {}
+        }
+      },
+      "wires": {},
+      "roles": {},
+      "portals": {},
+      "definitions": {
+        "[\"legacy-style-transfer\",1,\"sha256:934b149b2d0eeea9bd371239da4499f14d21b45e976ca3c06c6920ed47c4d828\"]": {
+          "id": "legacy-style-transfer",
+          "version": 1,
+          "semanticHash": "sha256:934b149b2d0eeea9bd371239da4499f14d21b45e976ca3c06c6920ed47c4d828",
+          "name": "Legacy style-transfer",
+          "interface": [
+            {
+              "id": "target",
+              "label": "target",
+              "direction": "input",
+              "kind": "draft",
+              "required": true,
+              "cardinality": "one",
+              "boundaryNodeId": "boundary-target"
+            },
+            {
+              "id": "reference",
+              "label": "reference",
+              "direction": "input",
+              "kind": "text",
+              "required": true,
+              "cardinality": "one",
+              "boundaryNodeId": "boundary-reference"
+            },
+            {
+              "id": "result",
+              "label": "result",
+              "direction": "output",
+              "kind": "patches",
+              "required": false,
+              "cardinality": "one",
+              "boundaryNodeId": "boundary-result"
+            }
+          ],
+          "parameters": [],
+          "body": {
+            "schema": 3,
+            "runtime": 2,
+            "mode": "native-post",
+            "nodes": {
+              "boundary-target": {
+                "id": "boundary-target",
+                "type": "subgraph-input",
+                "interfacePortId": "target"
+              },
+              "boundary-reference": {
+                "id": "boundary-reference",
+                "type": "subgraph-input",
+                "interfacePortId": "reference"
+              },
+              "boundary-result": {
+                "id": "boundary-result",
+                "type": "subgraph-output",
+                "interfacePortId": "result"
+              },
+              "work": {
+                "id": "work",
+                "type": "workflow",
+                "operation": "style-transfer",
+                "operationVersion": 1,
+                "modelRole": "Prose",
+                "referenceKind": "text",
+                "scope": "narration",
+                "protectedLiterals": [],
+                "strength": "light",
+                "instructions": "",
+                "maxTokens": 2048,
+                "mode": "narration"
+              }
+            },
+            "wires": {
+              "a": {
+                "id": "a",
+                "route": "wire",
+                "from": "boundary-target",
+                "fromPort": "out",
+                "to": "work",
+                "toPort": "in"
+              },
+              "b": {
+                "id": "b",
+                "route": "wire",
+                "from": "work",
+                "fromPort": "out",
+                "to": "boundary-result",
+                "toPort": "in"
+              },
+              "reference": {
+                "id": "reference",
+                "route": "wire",
+                "from": "boundary-reference",
+                "fromPort": "out",
+                "to": "work",
+                "toPort": "reference"
+              }
+            }
+          }
+        },
+        "[\"legacy-format-transfer\",1,\"sha256:2f3b36d2de16cebf823487ffc4514991f6f624927e5c6ca782f594d70f4fedc2\"]": {
+          "id": "legacy-format-transfer",
+          "version": 1,
+          "semanticHash": "sha256:2f3b36d2de16cebf823487ffc4514991f6f624927e5c6ca782f594d70f4fedc2",
+          "name": "Legacy format-transfer",
+          "interface": [
+            {
+              "id": "target",
+              "label": "target",
+              "direction": "input",
+              "kind": "draft",
+              "required": true,
+              "cardinality": "one",
+              "boundaryNodeId": "boundary-target"
+            },
+            {
+              "id": "reference",
+              "label": "reference",
+              "direction": "input",
+              "kind": "text",
+              "required": true,
+              "cardinality": "one",
+              "boundaryNodeId": "boundary-reference"
+            },
+            {
+              "id": "result",
+              "label": "result",
+              "direction": "output",
+              "kind": "patches",
+              "required": false,
+              "cardinality": "one",
+              "boundaryNodeId": "boundary-result"
+            }
+          ],
+          "parameters": [],
+          "body": {
+            "schema": 3,
+            "runtime": 2,
+            "mode": "native-post",
+            "nodes": {
+              "boundary-target": {
+                "id": "boundary-target",
+                "type": "subgraph-input",
+                "interfacePortId": "target"
+              },
+              "boundary-reference": {
+                "id": "boundary-reference",
+                "type": "subgraph-input",
+                "interfacePortId": "reference"
+              },
+              "boundary-result": {
+                "id": "boundary-result",
+                "type": "subgraph-output",
+                "interfacePortId": "result"
+              },
+              "work": {
+                "id": "work",
+                "type": "workflow",
+                "operation": "format-transfer",
+                "operationVersion": 1,
+                "modelRole": "Prose",
+                "referenceKind": "text",
+                "scope": "narration",
+                "protectedLiterals": [],
+                "strength": "light",
+                "instructions": "",
+                "maxTokens": 2048
+              }
+            },
+            "wires": {
+              "a": {
+                "id": "a",
+                "route": "wire",
+                "from": "boundary-target",
+                "fromPort": "out",
+                "to": "work",
+                "toPort": "in"
+              },
+              "b": {
+                "id": "b",
+                "route": "wire",
+                "from": "work",
+                "fromPort": "out",
+                "to": "boundary-result",
+                "toPort": "in"
+              },
+              "reference": {
+                "id": "reference",
+                "route": "wire",
+                "from": "boundary-reference",
+                "fromPort": "out",
+                "to": "work",
+                "toPort": "reference"
+              }
+            }
+          }
+        },
+        "[\"legacy-terminology-map\",1,\"sha256:46bd0980a5bd32843d8d7541542d1026c47624df782031084f7e5f7d52411a88\"]": {
+          "id": "legacy-terminology-map",
+          "version": 1,
+          "semanticHash": "sha256:46bd0980a5bd32843d8d7541542d1026c47624df782031084f7e5f7d52411a88",
+          "name": "Legacy terminology-map",
+          "interface": [
+            {
+              "id": "target",
+              "label": "target",
+              "direction": "input",
+              "kind": "draft",
+              "required": true,
+              "cardinality": "one",
+              "boundaryNodeId": "boundary-target"
+            },
+            {
+              "id": "reference",
+              "label": "reference",
+              "direction": "input",
+              "kind": "data",
+              "required": true,
+              "cardinality": "one",
+              "boundaryNodeId": "boundary-reference"
+            },
+            {
+              "id": "result",
+              "label": "result",
+              "direction": "output",
+              "kind": "patches",
+              "required": false,
+              "cardinality": "one",
+              "boundaryNodeId": "boundary-result"
+            }
+          ],
+          "parameters": [],
+          "body": {
+            "schema": 3,
+            "runtime": 2,
+            "mode": "native-post",
+            "nodes": {
+              "boundary-target": {
+                "id": "boundary-target",
+                "type": "subgraph-input",
+                "interfacePortId": "target"
+              },
+              "boundary-reference": {
+                "id": "boundary-reference",
+                "type": "subgraph-input",
+                "interfacePortId": "reference"
+              },
+              "boundary-result": {
+                "id": "boundary-result",
+                "type": "subgraph-output",
+                "interfacePortId": "result"
+              },
+              "work": {
+                "id": "work",
+                "type": "workflow",
+                "operation": "terminology-map",
+                "operationVersion": 1,
+                "modelRole": null,
+                "scope": "narration",
+                "protectedLiterals": [],
+                "caseSensitive": true,
+                "match": "word"
+              }
+            },
+            "wires": {
+              "a": {
+                "id": "a",
+                "route": "wire",
+                "from": "boundary-target",
+                "fromPort": "out",
+                "to": "work",
+                "toPort": "in"
+              },
+              "b": {
+                "id": "b",
+                "route": "wire",
+                "from": "work",
+                "fromPort": "out",
+                "to": "boundary-result",
+                "toPort": "in"
+              },
+              "reference": {
+                "id": "reference",
+                "route": "wire",
+                "from": "boundary-reference",
+                "fromPort": "out",
+                "to": "work",
+                "toPort": "reference"
+              }
+            }
+          }
+        },
+        "[\"legacy-reroute\",1,\"sha256:187fadd41253d8afa6f340bdee2d75f32b20c3d1250e4701910d418e3289464a\"]": {
+          "id": "legacy-reroute",
+          "version": 1,
+          "semanticHash": "sha256:187fadd41253d8afa6f340bdee2d75f32b20c3d1250e4701910d418e3289464a",
+          "name": "Legacy reroute",
+          "interface": [
+            {
+              "id": "target",
+              "label": "target",
+              "direction": "input",
+              "kind": "text",
+              "required": true,
+              "cardinality": "one",
+              "boundaryNodeId": "boundary-target"
+            },
+            {
+              "id": "result",
+              "label": "result",
+              "direction": "output",
+              "kind": "text",
+              "required": false,
+              "cardinality": "one",
+              "boundaryNodeId": "boundary-result"
+            }
+          ],
+          "parameters": [],
+          "body": {
+            "schema": 3,
+            "runtime": 2,
+            "mode": "native-post",
+            "nodes": {
+              "boundary-target": {
+                "id": "boundary-target",
+                "type": "subgraph-input",
+                "interfacePortId": "target"
+              },
+              "boundary-result": {
+                "id": "boundary-result",
+                "type": "subgraph-output",
+                "interfacePortId": "result"
+              },
+              "work": {
+                "id": "work",
+                "type": "workflow",
+                "operation": "reroute",
+                "operationVersion": 1,
+                "modelRole": null,
+                "artifactKind": "text",
+                "phase": "post"
+              }
+            },
+            "wires": {
+              "a": {
+                "id": "a",
+                "route": "wire",
+                "from": "boundary-target",
+                "fromPort": "out",
+                "to": "work",
+                "toPort": "in"
+              },
+              "b": {
+                "id": "b",
+                "route": "wire",
+                "from": "work",
+                "fromPort": "out",
+                "to": "boundary-result",
+                "toPort": "in"
+              }
+            }
+          }
+        },
+        "[\"legacy-nested-style\",1,\"sha256:a4607220976e661cc33d7eb5b0f44c3b3fadb24509173544927375cab85b9a15\"]": {
+          "id": "legacy-nested-style",
+          "version": 1,
+          "semanticHash": "sha256:a4607220976e661cc33d7eb5b0f44c3b3fadb24509173544927375cab85b9a15",
+          "name": "Legacy nested Style",
+          "interface": [
+            {
+              "id": "target",
+              "label": "target",
+              "direction": "input",
+              "kind": "draft",
+              "required": true,
+              "cardinality": "one",
+              "boundaryNodeId": "boundary-target"
+            },
+            {
+              "id": "reference",
+              "label": "reference",
+              "direction": "input",
+              "kind": "text",
+              "required": true,
+              "cardinality": "one",
+              "boundaryNodeId": "boundary-reference"
+            },
+            {
+              "id": "result",
+              "label": "result",
+              "direction": "output",
+              "kind": "patches",
+              "required": false,
+              "cardinality": "one",
+              "boundaryNodeId": "boundary-result"
+            }
+          ],
+          "parameters": [],
+          "body": {
+            "schema": 3,
+            "runtime": 2,
+            "mode": "native-post",
+            "nodes": {
+              "boundary-target": {
+                "id": "boundary-target",
+                "type": "subgraph-input",
+                "interfacePortId": "target"
+              },
+              "boundary-reference": {
+                "id": "boundary-reference",
+                "type": "subgraph-input",
+                "interfacePortId": "reference"
+              },
+              "boundary-result": {
+                "id": "boundary-result",
+                "type": "subgraph-output",
+                "interfacePortId": "result"
+              },
+              "child": {
+                "id": "child",
+                "type": "subgraph",
+                "definition": {
+                  "id": "legacy-style-transfer",
+                  "version": 1,
+                  "semanticHash": "sha256:934b149b2d0eeea9bd371239da4499f14d21b45e976ca3c06c6920ed47c4d828"
+                },
+                "roleOverrides": {},
+                "nodeBindingOverrides": {}
+              }
+            },
+            "wires": {
+              "a": {
+                "id": "a",
+                "route": "wire",
+                "from": "boundary-target",
+                "fromPort": "out",
+                "to": "child",
+                "toPort": "target"
+              },
+              "reference": {
+                "id": "reference",
+                "route": "wire",
+                "from": "boundary-reference",
+                "fromPort": "out",
+                "to": "child",
+                "toPort": "reference"
+              },
+              "b": {
+                "id": "b",
+                "route": "wire",
+                "from": "child",
+                "fromPort": "result",
+                "to": "boundary-result",
+                "toPort": "in"
+              }
+            }
+          }
+        },
+        "[\"legacy-nested-terms\",1,\"sha256:b25ce3f695911918d760324a054f216e7b9753bb0dc593ee3378b09ff84f150b\"]": {
+          "id": "legacy-nested-terms",
+          "version": 1,
+          "semanticHash": "sha256:b25ce3f695911918d760324a054f216e7b9753bb0dc593ee3378b09ff84f150b",
+          "name": "Legacy nested Terms",
+          "interface": [
+            {
+              "id": "target",
+              "label": "target",
+              "direction": "input",
+              "kind": "draft",
+              "required": true,
+              "cardinality": "one",
+              "boundaryNodeId": "boundary-target"
+            },
+            {
+              "id": "reference",
+              "label": "reference",
+              "direction": "input",
+              "kind": "data",
+              "required": true,
+              "cardinality": "one",
+              "boundaryNodeId": "boundary-reference"
+            },
+            {
+              "id": "result",
+              "label": "result",
+              "direction": "output",
+              "kind": "patches",
+              "required": false,
+              "cardinality": "one",
+              "boundaryNodeId": "boundary-result"
+            }
+          ],
+          "parameters": [],
+          "body": {
+            "schema": 3,
+            "runtime": 2,
+            "mode": "native-post",
+            "nodes": {
+              "boundary-target": {
+                "id": "boundary-target",
+                "type": "subgraph-input",
+                "interfacePortId": "target"
+              },
+              "boundary-reference": {
+                "id": "boundary-reference",
+                "type": "subgraph-input",
+                "interfacePortId": "reference"
+              },
+              "boundary-result": {
+                "id": "boundary-result",
+                "type": "subgraph-output",
+                "interfacePortId": "result"
+              },
+              "child": {
+                "id": "child",
+                "type": "subgraph",
+                "definition": {
+                  "id": "legacy-terminology-map",
+                  "version": 1,
+                  "semanticHash": "sha256:46bd0980a5bd32843d8d7541542d1026c47624df782031084f7e5f7d52411a88"
+                },
+                "roleOverrides": {},
+                "nodeBindingOverrides": {}
+              }
+            },
+            "wires": {
+              "a": {
+                "id": "a",
+                "route": "wire",
+                "from": "boundary-target",
+                "fromPort": "out",
+                "to": "child",
+                "toPort": "target"
+              },
+              "reference": {
+                "id": "reference",
+                "route": "wire",
+                "from": "boundary-reference",
+                "fromPort": "out",
+                "to": "child",
+                "toPort": "reference"
+              },
+              "b": {
+                "id": "b",
+                "route": "wire",
+                "from": "child",
+                "fromPort": "result",
+                "to": "boundary-result",
+                "toPort": "in"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "subgraphPackage": {
+    "kind": "lattice-subgraph",
+    "schema": 1,
+    "minRuntime": 2,
+    "definition": {
+      "id": "legacy-nested-style",
+      "version": 1,
+      "semanticHash": "sha256:a4607220976e661cc33d7eb5b0f44c3b3fadb24509173544927375cab85b9a15",
+      "name": "Legacy nested Style",
+      "interface": [
+        {
+          "id": "target",
+          "label": "target",
+          "direction": "input",
+          "kind": "draft",
+          "required": true,
+          "cardinality": "one",
+          "boundaryNodeId": "boundary-target"
+        },
+        {
+          "id": "reference",
+          "label": "reference",
+          "direction": "input",
+          "kind": "text",
+          "required": true,
+          "cardinality": "one",
+          "boundaryNodeId": "boundary-reference"
+        },
+        {
+          "id": "result",
+          "label": "result",
+          "direction": "output",
+          "kind": "patches",
+          "required": false,
+          "cardinality": "one",
+          "boundaryNodeId": "boundary-result"
+        }
+      ],
+      "parameters": [],
+      "body": {
+        "schema": 3,
+        "runtime": 2,
+        "mode": "native-post",
+        "nodes": {
+          "boundary-target": {
+            "id": "boundary-target",
+            "type": "subgraph-input",
+            "interfacePortId": "target"
+          },
+          "boundary-reference": {
+            "id": "boundary-reference",
+            "type": "subgraph-input",
+            "interfacePortId": "reference"
+          },
+          "boundary-result": {
+            "id": "boundary-result",
+            "type": "subgraph-output",
+            "interfacePortId": "result"
+          },
+          "child": {
+            "id": "child",
+            "type": "subgraph",
+            "definition": {
+              "id": "legacy-style-transfer",
+              "version": 1,
+              "semanticHash": "sha256:934b149b2d0eeea9bd371239da4499f14d21b45e976ca3c06c6920ed47c4d828"
+            },
+            "roleOverrides": {},
+            "nodeBindingOverrides": {}
+          }
+        },
+        "wires": {
+          "a": {
+            "id": "a",
+            "route": "wire",
+            "from": "boundary-target",
+            "fromPort": "out",
+            "to": "child",
+            "toPort": "target"
+          },
+          "reference": {
+            "id": "reference",
+            "route": "wire",
+            "from": "boundary-reference",
+            "fromPort": "out",
+            "to": "child",
+            "toPort": "reference"
+          },
+          "b": {
+            "id": "b",
+            "route": "wire",
+            "from": "child",
+            "fromPort": "result",
+            "to": "boundary-result",
+            "toPort": "in"
+          }
+        }
+      }
+    },
+    "definitions": {
+      "[\"legacy-style-transfer\",1,\"sha256:934b149b2d0eeea9bd371239da4499f14d21b45e976ca3c06c6920ed47c4d828\"]": {
+        "id": "legacy-style-transfer",
+        "version": 1,
+        "semanticHash": "sha256:934b149b2d0eeea9bd371239da4499f14d21b45e976ca3c06c6920ed47c4d828",
+        "name": "Legacy style-transfer",
+        "interface": [
+          {
+            "id": "target",
+            "label": "target",
+            "direction": "input",
+            "kind": "draft",
+            "required": true,
+            "cardinality": "one",
+            "boundaryNodeId": "boundary-target"
+          },
+          {
+            "id": "reference",
+            "label": "reference",
+            "direction": "input",
+            "kind": "text",
+            "required": true,
+            "cardinality": "one",
+            "boundaryNodeId": "boundary-reference"
+          },
+          {
+            "id": "result",
+            "label": "result",
+            "direction": "output",
+            "kind": "patches",
+            "required": false,
+            "cardinality": "one",
+            "boundaryNodeId": "boundary-result"
+          }
+        ],
+        "parameters": [],
+        "body": {
+          "schema": 3,
+          "runtime": 2,
+          "mode": "native-post",
+          "nodes": {
+            "boundary-target": {
+              "id": "boundary-target",
+              "type": "subgraph-input",
+              "interfacePortId": "target"
+            },
+            "boundary-reference": {
+              "id": "boundary-reference",
+              "type": "subgraph-input",
+              "interfacePortId": "reference"
+            },
+            "boundary-result": {
+              "id": "boundary-result",
+              "type": "subgraph-output",
+              "interfacePortId": "result"
+            },
+            "work": {
+              "id": "work",
+              "type": "workflow",
+              "operation": "style-transfer",
+              "operationVersion": 1,
+              "modelRole": "Prose",
+              "referenceKind": "text",
+              "scope": "narration",
+              "protectedLiterals": [],
+              "strength": "light",
+              "instructions": "",
+              "maxTokens": 2048,
+              "mode": "narration"
+            }
+          },
+          "wires": {
+            "a": {
+              "id": "a",
+              "route": "wire",
+              "from": "boundary-target",
+              "fromPort": "out",
+              "to": "work",
+              "toPort": "in"
+            },
+            "b": {
+              "id": "b",
+              "route": "wire",
+              "from": "work",
+              "fromPort": "out",
+              "to": "boundary-result",
+              "toPort": "in"
+            },
+            "reference": {
+              "id": "reference",
+              "route": "wire",
+              "from": "boundary-reference",
+              "fromPort": "out",
+              "to": "work",
+              "toPort": "reference"
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -6,7 +6,7 @@ import { portsForNode } from '../src/workflow/catalog.js';
 import { computeDefinitionIdentity, definitionRefKey } from '../src/workflow/definitions.js';
 import { makeLocalCopy } from '../src/workflow/definition-library.js';
 import { captureGraphEditContext, commitPreparedGraph } from '../src/workflow/transactions.js';
-import * as history from '../src/history.js?v=0.25.0';
+import * as history from '../src/history.js?v=0.26.0';
 import { graphPoint as toGraph } from '../src/canvas/camera.js';
 import { createGeometryCache } from '../src/canvas/geometry.js';
 const api = await import('../src/workflow/connection-edits.js').catch(() => ({}));
@@ -49,7 +49,7 @@ test('typed reroute creation uses declared artifact metadata and actual containi
 
 test('unconfigured or malformed typed reroute metadata and metadata on other operations allocate nothing', () => {
     const graph = fixture(), before = structuredClone(graph); let calls = 0;
-    for (const extra of [{}, { artifactKind: 'unknown' }, { artifactKind: 'context', phase: 'post' }, { artifactKind: 'context', controls: { artifactKind: 'context' } }]) {
+    for (const extra of [{}, { artifactKind: 'unknown' }, { artifactKind: 'context', phase: 'post' }, { artifactKind: 'context', controls: { artifactKind: 'context' } }, { artifactKind: 'context', controls: { artifactKind: 'text' } }]) {
         assert.equal(prepare(graph, { kind: 'create', operation: 'reroute', graphPoint: { x: 0, y: 0 }, ...extra }, { idFactory() { calls++; return 'unused'; } }).ok, false);
     }
     assert.equal(prepare(graph, { kind: 'create', operation: 'smart-compactor', artifactKind: 'context', graphPoint: { x: 0, y: 0 } }, { idFactory() { calls++; return 'unused'; } }).ok, false);

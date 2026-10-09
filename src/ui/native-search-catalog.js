@@ -1,8 +1,10 @@
-import { ARTIFACT_KINDS, FAMILIES, OPERATIONS, describeOperation, operationDefaults } from '../workflow/catalog.js?v=0.25.0';
-import { cloneDefinitionData, definitionRefKey } from '../workflow/definitions.js?v=0.25.0';
-import { selectSubgraphClosure } from '../workflow/packages.js?v=0.25.0';
+import { ARTIFACT_KINDS, FAMILIES, OPERATIONS, describeOperation, operationDefaults } from '../workflow/catalog.js?v=0.26.0';
+import { cloneDefinitionData, definitionRefKey } from '../workflow/definitions.js?v=0.26.0';
+import { selectSubgraphClosure } from '../workflow/packages.js?v=0.26.0';
 
 const registries = new WeakMap();
+const choiceViews = new WeakMap();
+const choiceVariants = new WeakMap();
 const fail = message => ({ ok: false, error: { code: 'INVALID_SEARCH_CATALOG', message } });
 const text = value => typeof value === 'string' && value.length > 0;
 const record = value => value && typeof value === 'object' && !Array.isArray(value);
@@ -97,18 +99,26 @@ export function prepareNativeSearchCatalog(scope, options = {}) {
         || ['checkedLibraryEntries', 'checkedLibraryClosures'].some(key => settings[key] !== undefined && !Array.isArray(settings[key]))) return fail('Expected the checked schema-3 scope and local shelf metadata.');
     const phase = input.mode.slice(7), choices = [], commands = new Map();
     const addOperation = (operation, variant, label, controls, artifactKind) => {
-        if (operation === 'reroute' && !artifactKind || input.inDefinition && rootOnly.has(operation)) return;
+        if (input.inDefinition && rootOnly.has(operation)) return;
+        if (operation === 'reroute' && !artifactKind) artifactKind = 'text';
+        if (OPERATIONS[operation].family === 'Transpose' && !variant) controls = { inputKind: 'text', ...controls };
         const description = describeOperation(input, { type: 'workflow', ...operationDefaults(operation, { mode: controls?.mode }), ...controls,
             ...(artifactKind ? { artifactKind, phase } : {}) });
         if (!description.ok || description.data.descriptor.phase !== phase) return;
         const id = 'operation:' + operation + (variant ? ':' + variant : '');
-        const baseSearch = searchMetadata[operation] ?? { purpose: '', shortcode: '', searchAliases: [operation] }, variantSearch = variantSearchMetadata[operation + ':' + variant];
+        const baseSearch = searchMetadata[operation] ?? { purpose: '', shortcode: '', searchAliases: [operation] }, variantSearch = variantSearchMetadata[operation + ':' + (variant?.startsWith('text-') ? variant.slice(5) : variant)];
         const metadata = variantSearch ? { ...variantSearch, searchAliases: [...baseSearch.searchAliases, ...variantSearch.searchAliases] } : baseSearch;
         choices.push({ id, label: label ?? description.data.descriptor.title, family: description.data.descriptor.family, phase, ...metadata,
             ports: description.data.ports.map(portProjection) });
         commands.set(id, freeze({ operation, ...(controls ? { controls: structuredClone(controls) } : {}), ...(artifactKind ? { artifactKind } : {}) }));
     };
     for (const operation of Object.keys(OPERATIONS)) addOperation(operation);
+    for (const operation of Object.keys(OPERATIONS).filter(id => OPERATIONS[id].family === 'Transpose')) {
+        addOperation(operation, 'reply-draft', OPERATIONS[operation].title + ' · Reply edits', { inputKind: 'draft' });
+    }
+    for (const [operation, variant, label, controls] of presets) {
+        if (OPERATIONS[operation].family === 'Transpose') addOperation(operation, 'text-' + variant, label, { ...controls, inputKind: 'text' });
+    }
     for (const [operation, variant, label, controls] of presets) addOperation(operation, variant, label, controls);
     for (const kind of ARTIFACT_KINDS) addOperation('reroute', kind, 'Reroute · ' + kind[0].toUpperCase() + kind.slice(1), undefined, kind);
     const shelfIds = new Set();
@@ -147,8 +157,28 @@ export function prepareNativeSearchCatalog(scope, options = {}) {
             purpose: 'Reusable saved definition with named interface ports.', shortcode: 'sg', searchAliases: [] });
         commands.set(id, freeze({ kind: 'create-instance', definition, snapshots: definitions }));
     }
-    const data = freeze({ scope: input, families: [...FAMILIES, 'Subgraphs'], choices });
+    freeze(choices);
+    const variants = new Map(), views = new Map(choices.map(choice => [choice.id, choice]));
+    for (const item of choices) {
+        const id = item.id.startsWith('operation:') ? item.id.split(':').slice(0, 2).join(':') : item.id;
+        const entries = variants.get(id) ?? []; entries.push(item); variants.set(id, entries);
+    }
+    const canonical = [...variants].map(([id, entries]) => {
+        const selected = entries.find(item => item.id === id) ?? entries[0];
+        if (!id.startsWith('operation:')) return selected;
+        const operation = id.split(':')[1], metadata = searchMetadata[operation];
+        const aliases = [...new Set(entries.flatMap(item => [
+            ...item.searchAliases, ...(item.id === id ? [] : [item.label, item.shortcode]),
+        ]).filter(Boolean))];
+        const result = { ...selected, id, label: OPERATIONS[operation].title,
+            ...(metadata ? { purpose: metadata.purpose, shortcode: metadata.shortcode } : {}), searchAliases: aliases };
+        commands.set(id, commands.get(selected.id)); views.set(id, result);
+        return result;
+    });
+    const data = freeze({ scope: input, families: [...FAMILIES, 'Subgraphs'], choices: canonical });
     registries.set(data, commands);
+    choiceViews.set(data, views);
+    choiceVariants.set(data, variants);
     return { ok: true, data };
 }
 
@@ -163,7 +193,7 @@ export function matchNativeSearchPorts(catalog, id, origin) {
     if (!registries.has(catalog)) return [];
     const copied = cloneDefinitionData(origin);
     if (!copied.ok || !validOrigin(copied.data)) return [];
-    const choice = catalog.choices.find(item => item.id === id);
+    const choice = choiceViews.get(catalog)?.get(id);
     return matchingPorts(choice, copied.data);
 }
 
@@ -175,6 +205,12 @@ export function filterNativeSearchChoices(catalog, options = {}) {
     const { query = '', origin = null, contextSensitive = true } = copied.data;
     if (typeof query !== 'string' || typeof contextSensitive !== 'boolean' || origin !== null && !validOrigin(origin)) return [];
     const needle = query.toLocaleLowerCase().trim();
-    return catalog.choices.filter(choice => (!needle || queryText(choice).includes(needle))
-        && (!origin || !contextSensitive || matchingPorts(choice, origin).length > 0));
+    return catalog.choices.flatMap(choice => {
+        if (needle && !queryText(choice).includes(needle)) return [];
+        if (!origin || !contextSensitive || matchingPorts(choice, origin).length) return [choice];
+        const alternate = choiceVariants.get(catalog)?.get(choice.id)?.find(item =>
+            matchingPorts(item, origin).length && !(item.id.startsWith('operation:memory:')
+                && resolveNativeSearchChoice(catalog, item.id)?.controls?.mode === 'commit'));
+        return alternate ? [freeze({ ...choice, id: alternate.id, ports: alternate.ports })] : [];
+    });
 }

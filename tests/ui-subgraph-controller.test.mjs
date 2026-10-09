@@ -2,16 +2,16 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readFile } from 'node:fs/promises';
 import { JSDOM } from 'jsdom';
-import { operationFor } from '../src/workflow/catalog.js?v=0.25.0';
-import { isCommentFrame } from '../src/canvas/comment-frames.js?v=0.25.0';
-import { prepareCreateFromSelection } from '../src/workflow/composition.js?v=0.25.0';
-import { prepareOwnedDefinitionMetadataEdit } from '../src/workflow/definition-library.js?v=0.25.0';
-import { prepareWorkspaceViews, projectEditorDraw } from '../src/ui/workspace-preparation.js?v=0.25.0';
-import { createGraphViewSession } from '../src/ui/graph-view-session.js?v=0.25.0';
-import { captureGraphEditContext, commitPreparedGraph } from '../src/workflow/transactions.js?v=0.25.0';
-import { definitionRefKey } from '../src/workflow/definition-data.js?v=0.25.0';
-import * as H from '../src/history.js?v=0.25.0';
-import { captureRelocatedSubgraphViews, restoreSubgraphViews } from '../src/ui/subgraph-view-state.js?v=0.25.0';
+import { operationFor } from '../src/workflow/catalog.js?v=0.26.0';
+import { isCommentFrame } from '../src/canvas/comment-frames.js?v=0.26.0';
+import { prepareCreateFromSelection } from '../src/workflow/composition.js?v=0.26.0';
+import { prepareOwnedDefinitionMetadataEdit } from '../src/workflow/definition-library.js?v=0.26.0';
+import { prepareWorkspaceViews, projectEditorDraw } from '../src/ui/workspace-preparation.js?v=0.26.0';
+import { createGraphViewSession } from '../src/ui/graph-view-session.js?v=0.26.0';
+import { captureGraphEditContext, commitPreparedGraph } from '../src/workflow/transactions.js?v=0.26.0';
+import { definitionRefKey } from '../src/workflow/definition-data.js?v=0.26.0';
+import * as H from '../src/history.js?v=0.26.0';
+import { captureRelocatedSubgraphViews, restoreSubgraphViews } from '../src/ui/subgraph-view-state.js?v=0.26.0';
 
 const source = await readFile(new URL('../src/ui/controller.js', import.meta.url), 'utf8');
 function actual(name, env) {

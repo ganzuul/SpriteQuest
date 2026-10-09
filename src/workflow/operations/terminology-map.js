@@ -1,4 +1,4 @@
-import { prepareReferenceDraft, createReferencePatches } from './reference-draft.js?v=0.25.0';
+import { prepareReferenceDraft, createReferencePatches } from './reference-draft.js?v=0.26.0';
 
 const failure = (code, message) => ({ ok: false, error: { code, message } });
 const word = codePoint => codePoint !== undefined && /[\p{L}\p{M}\p{N}\p{Pc}]/u.test(String.fromCodePoint(codePoint));
@@ -46,7 +46,7 @@ export function mapTerminology(draft, glossary, settings = {}) {
     } catch { return failure('INVALID_SETTINGS', 'Use own plain matching and scope settings.'); }
     try { glossary = ownEntries(ownRecord(glossary, ['entries'], ['entries']).entries); }
     catch { return failure('INVALID_GLOSSARY', 'Use at most 128 own-data entries with nonblank literals of at most 2,048 UTF-16 units.'); }
-    const scopeSettings = {};
+    const scopeSettings = Object.create(null);
     for (const key of ['scope', 'protectedLiterals']) if (Object.hasOwn(settings, key)) scopeSettings[key] = settings[key];
     const prepared = prepareReferenceDraft(draft, scopeSettings);
     if (!prepared.ok) return prepared;

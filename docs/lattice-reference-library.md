@@ -1,18 +1,20 @@
 # Reference tools and reusable workflows
 
-Transpose applies an example or convention to a completed reply. Every edit produces source-bound Patches and follows Validate Patches -> Review Gate -> explicit Apply Reply. Installing a workflow does not assign it to a phase or enable it.
+Transpose applies an example or convention to Text or a completed reply Draft. New nodes accept and return Text in either phase. Draft edits produce source-bound Patches and follow Validate Patches → Review Gate → explicit Apply Reply. Installing a workflow does not assign it to a phase or enable it.
 
 ## Transpose
 
 | Operation | Inputs | Output | Calls |
 | --- | --- | --- | --- |
-| Style Transfer | Draft, reference Text or Data; optional Context | Patches | At most 1 Prose |
-| Format Transfer | Draft, example Text or Data template; optional Context | Patches | At most 1 Prose |
-| Terminology Map | Draft, Data glossary | Patches | 0 |
+| Style Transfer | Text or Draft, reference Text or Data; optional Context | Text or Patches | At most 1 Prose |
+| Format Transfer | Text or Draft, example Text or Data template; optional Context | Text or Patches | At most 1 Prose |
+| Terminology Map | Text or Draft, Data glossary | Text or Patches | 0 |
 
-Style modes are narration, character voice, rhythm and register. Narration is the default editing scope. Character Voice's shelf preset explicitly selects dialogue; changing the mode afterwards keeps the current scope. Strength, instructions and protected wording are independent controls.
+The Transpose family opens directly to these three nodes. Choose **Input type → Text** for Text → Text, or **Input type → Draft** in an After reply graph for Draft → Patches. New shelf/search nodes default to Text; existing saved nodes without Input type retain Draft behavior. Text transformations can run in Before reply or After reply graphs and inside reusable subgraphs. Host reply sources and application nodes retain their own context restrictions.
 
-Format Transfer uses material already present. Data templates can include `requiredContent`, an array of exact strings that must occur in the original draft. Missing content fails before a request. References supply expression and structure, not additional story facts.
+Style modes are narration, character voice, rhythm and register, selected in Details. Narration is the default editing scope. To target dialogue, choose **Mode → Character voice** and **Scope → Dialogue** separately. Changing Mode keeps the current Scope. Mode, Scope, Strength, instructions and protected wording are independent controls.
+
+Format Transfer uses material already present. Data templates can include `requiredContent`, an array of exact strings that must occur in the input text. Missing content fails before a request. References supply expression and structure, not additional story facts.
 
 Terminology Map consumes Data such as `{"entries":[{"from":"Captain","to":"Commander"}]}`. Choose word/phrase matching and case sensitivity. Replacements are simultaneous: A-to-B does not cascade into B-to-C. Compose -> JSON Decode can supply Data; Compose Text can supply a prose reference. An occupied Text reference pin cannot silently become Data: explicitly disconnect or replace the incompatible wire.
 
@@ -44,7 +46,7 @@ The prose writer receives selected typed policies and optional Context. Preservi
 | Formatting Cleanup | Draft -> Candidate | 0 |
 | Prose Cleanup | Draft and optional Context -> Candidate | 1 Prose; Inspect/empty permissions means 0 |
 
-Import packages from [examples/library/subgraphs](../examples/library/subgraphs/) with the existing Subgraphs manager. Definitions have verified identities and pinned dependencies; model bindings remain unresolved until configured. Reusable bodies contain neither root sources nor Apply authority.
+Import packages from [examples/library/subgraphs](../examples/library/subgraphs/) through **Subgraphs → Manage subgraphs…**. Definitions have verified identities and pinned dependencies; saved revisions remain separate shelf choices. Model bindings remain unresolved until configured. Reusable bodies contain neither root sources nor Apply authority.
 
 The workflow starter picker offers Scene Compass, Literal phrase cleanup, Formatting cleanup and Prose cleanup. Complete files are in [examples/library/workflows](../examples/library/workflows/). Context Lens is a utility without a standalone Guidance workflow. The existing Literal cleanup starter remains a separate deterministic Text Rules example.
 

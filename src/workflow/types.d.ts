@@ -40,6 +40,8 @@ export interface NativeNode extends Binding {
     enabled?: boolean;
     modelRole?: string | null;
     artifactKind?: ArtifactKind;
+    /** Explicit Text Transpose runs in either phase; omitted preserves legacy post Draft mode. */
+    inputKind?: 'text' | 'draft';
     phase?: WorkflowPhase;
     [key: string]: unknown;
 }

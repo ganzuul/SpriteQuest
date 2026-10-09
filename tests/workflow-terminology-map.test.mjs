@@ -140,3 +140,15 @@ test('literal regex metacharacters remain exact and glossary inputs stay isolate
     assert.equal(unchanged.report.at(-1).count, 0);
     assert.equal(unchanged.report[0].code, 'NO_CHANGES');
 });
+test('own scope settings bypass inherited getters without altering Draft provenance', () => {
+    let reads = 0;
+    Object.defineProperty(Object.prototype, 'protectedLiterals', { configurable: true, get() { reads++; throw Error('Inherited permissions'); } });
+    try {
+        const draft = rawDraft('Captain waits.'), before = structuredClone(draft);
+        const data = must(operation.mapTerminology(draft, { entries: [{ from: 'Captain', to: 'Commander' }] }, { scope: 'whole', protectedLiterals: [] }));
+        const validated = validatePatches(data.artifact, Object.create(null));
+        assert.equal(validated.ok, true); assert.equal(validated.artifact.text, 'Commander waits.');
+        assert.deepEqual(draft, before); assert.deepEqual(JSON.parse(JSON.stringify(data.artifact.draft.source)), draft.source);
+        assert.equal(reads, 0);
+    } finally { delete Object.prototype.protectedLiterals; }
+});

@@ -190,7 +190,7 @@ async function metrics(env) {
     assert(value.nativeWorkbench && value.brand.text === 'LATTICE' && value.brand.fontReady, 'Production native workspace brand/font is unavailable.');
     assert(!value.overflow && value.graph.width > 100 && value.graph.height > 140, 'Native workspace overflowed or graph collapsed.');
     assert(value.families.length === 8 && value.families.some(family => family.name === 'Introspection' && !family.disabled), 'All eight native family shelf entries, including Introspection, must remain present.');
-    assert(value.families.find(family => family.name === 'Transpose')?.disabled === (value.mode !== 'native-post'), 'Transpose availability must follow the active phase.');
+    assert(value.families.find(family => family.name === 'Transpose')?.disabled === false, 'Text Transpose must remain available in either native phase.');
     return { ...value, fixture: env.fixture, workerRequests: env.workerRequests, issues: [...env.issues] };
 }
 
@@ -257,12 +257,12 @@ try {
     for (const width of [1024, 736, 360, 320]) await caseRun('compact-' + width, {width}, async (env, record) => {
         await activate(env); await inspectCompact(env); record.images.push(await image(env, record.name));
     });
-    await caseRun('derive-purpose-flyout', {}, async (env, record) => {
+    await caseRun('derive-node-menu', {}, async (env, record) => {
         await activate(env, 'cleanup');
         await env.page.locator('[data-family="Derive"]').hover();
-        await env.page.getByRole('menuitem', { name: 'ANALYSIS', exact: true }).hover();
-        await env.page.locator('.pc-leaf-menu').waitFor({ state: 'visible' });
-        assert(await env.page.locator('.pc-leaf-menu [data-shelf-choice]').count() > 0, 'Actual Derive purpose flyout has no catalog choices.');
+        await env.page.locator('.pc-family-menu').waitFor({ state: 'visible' });
+        assert(await env.page.locator('.pc-family-menu [data-shelf-choice="operation:json-decode"]').count() === 1, 'Actual Derive node menu must contain one canonical JSON Decode.');
+        assert(await env.page.locator('[data-subfamily], .pc-leaf-menu').count() === 0, 'Actual family menu must not add category submenus.');
         record.images.push(await image(env, record.name));
     });
     await caseRun('literal-cleanup-child', {}, async (env, record) => {

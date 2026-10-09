@@ -4,7 +4,7 @@
 
 LATTICE is a workspace for designing writing processes as connected, inspectable systems. A workflow can prepare context, assemble structured direction, transform text, propose edits, and expose a reviewed result. Subgraphs let you turn a useful sequence into a reusable tool.
 
-This manual follows the 0.21.0 interface. Screenshots use synthetic writing material on the local demonstration host. Completed demonstrations are deterministic and make zero model calls. Model planning screenshots show configuration before a model connection is bound.
+This manual follows the 0.26.0 interface. Screenshots use synthetic writing material on the local demonstration host. Completed demonstrations are deterministic and make zero model calls. Model planning screenshots show configuration before a model connection is bound.
 
 ## Contents
 
@@ -34,13 +34,15 @@ This manual follows the 0.21.0 interface. Screenshots use synthetic writing mate
 | Preview above the graph | Inspect a recorded output and its artifact tabs; pin it or follow selection |
 | Graph tabs | Switch between the root **Graph 1** and opened subgraph bodies |
 | Graph editor | Arrange nodes and connect typed input/output pins |
-| Floating node shelf | Discover operations by family and category |
+| Floating node shelf | Open a family and choose a node directly |
 | Details on the right | Configure the selected node, its presentation, and any model binding |
 | Run meter at bottom left | Open execution details and expanded subgraph stages |
 
 The workflow bar reports phase, assignment, request bound, and autosave. Selecting a graph or editing it does not arm it or make a provider request.
 
 **Run** explicitly executes the root workflow. **Arm** enables configured host integration. A manual guidance run previews its result; a normal Send with assigned and armed guidance executes that workflow again. Reviewed reply editing needs its own explicit Apply action.
+
+**Before reply (Pre)** means the workflow can prepare guidance before SillyTavern writes its reply. Assign and arm it when you want a normal Send to run the graph and add that guidance. **After reply (Post)** means a graph can work from a completed reply: run a repair graph manually, review its proposed result, then choose Apply. Running a reply repair does not itself change the reply. Text transformations can run in either phase; reply-specific sources and review/application nodes require their matching host context.
 
 ## Start from a working example
 
@@ -66,11 +68,13 @@ There are three useful scales of work:
 
 ## Discover and connect nodes
 
-The shelf groups tools into **Input, Shaping, Surface, Transpose, Derive, Output, and Subgraphs**. Hover or click a family, then a category, to see available nodes. Transpose is disabled because no operations in that family are supported yet.
+The shelf groups tools into **Input, Shaping, Surface, Transpose, Derive, Introspection, Output, and Subgraphs**. Hover or click a family to see its nodes directly, then choose a node to add it. Transpose contains Style Transfer, Format Transfer and Terminology Map.
 
-![The Derive shelf expanded through Parsing to JSON Decode, alongside a connected structured guidance graph](images/node-shelf.png)
+![The Derive family menu showing JSON Decode directly alongside a connected structured guidance graph](images/node-shelf.png)
 
-*The shelf provides families, categories, operation names, and short codes. Phase-incompatible choices are disabled.*
+*Each family opens one node menu with operation names, icons and short codes. Phase-incompatible choices are disabled.*
+
+There is one entry per operation. Add **Reflect** once and choose Character, Recall or Scene in **Details → Mode**; add **JSON Decode** once and choose Parse or Check. Reroute's artifact kind and other operation variants also live in Details. The six Introspection nodes provide eighteen modes without eighteen shelf entries. Each saved subgraph revision keeps its own menu entry.
 
 Choose **Node → Add node…**, double-click empty graph space, or right-click empty graph space to search. Search includes node names, purposes, aliases, and installed subgraphs. Click outside the search panel or press Escape to close it.
 
@@ -108,6 +112,8 @@ Select a node to inspect its canonical type, family, phase, settings, and ports.
 
 Operation controls depend on the node. An **Enabled** checkbox is not a bypass: a disabled operation blocks validation. Delete and Duplicate act on the selected operation where editing is allowed.
 
+Mode, input/output type and other controls may change a node's pins. An edit that would make an existing wire incompatible is rejected without changing the node or its connections. Disconnect or replace the affected wire, then change the setting.
+
 ### Structured composition
 
 Compose has join/template modes, Text/Guidance output, named sections, a separator, and template placeholders. The Structured guidance example connects Select Fields to Compose's **Data** pin.
@@ -133,6 +139,12 @@ The original starter supplies direction and constraint. Add a tone field to its 
 *Literal cleanup proposes `very very` → `very`. Save Rules validates the editor before the graph can use the change.*
 
 Draft mode produces Patches for the reply-review pipeline. Text mode produces Text and can replace or extract material. Literal and regex rules make no model calls. A rule that has no match proposes no change.
+
+### Reference transformations
+
+New **Style Transfer**, **Format Transfer** and **Terminology Map** nodes use **Input type → Text** and return Text in either graph phase. Connect a Text source such as Compose, plus a reference: Text or Data for Style/Format Transfer, and a Data glossary for Terminology Map. Style/Format Transfer can also receive Context. They make at most one Prose request; Terminology Map makes none.
+
+To edit a completed reply, choose **Input type → Draft** in an After reply graph, connect Reply Snapshot, and route the resulting Patches through Validate Patches → Review Gate → Apply Reply. Saved Transpose nodes that omit Input type retain this Draft form. Mode, Scope, Strength and Protected literals are independent: for dialogue characterization, choose **Style Transfer → Mode → Character voice** and **Scope → Dialogue** separately. Changing Mode preserves the current Scope. See [Transpose](node-reference.md#transpose) for the full controls.
 
 ### Context and model controls
 
@@ -194,7 +206,7 @@ A subgraph packages operations behind named, typed inputs/outputs. You can expos
 
 ### Place and open a reusable tool
 
-Import the supplied [Literal cleanup subgraph JSON](../workflows/subgraphs/literal-cleanup.json) through **Subgraphs → Library → Manage subgraphs… → Import .json**. Choose an editable destination and insert the definition. Connect its Draft input from Reply Snapshot and its Patches output into Validate Patches.
+Import the supplied [Literal cleanup subgraph JSON](../workflows/subgraphs/literal-cleanup.json) through **Subgraphs → Manage subgraphs… → Import .json**. Choose an editable destination and insert the definition. Connect its Draft input from Reply Snapshot and its Patches output into Validate Patches.
 
 ![Literal cleanup subgraph instance connected between Reply Snapshot and Validate Patches in a parent workflow](images/subgraph-instance.png)
 
@@ -236,7 +248,7 @@ For a revision update, choose the target revision, prepare its interface/paramet
 
 ## Organize connections with portals and reroutes
 
-**Reroute** is a compact typed node inserted by double-clicking a direct wire. Use it to lay out a connection or organize consumers of one output.
+**Reroute** is a compact typed node inserted by double-clicking a direct wire, or added from the Shaping family. Use it to lay out a connection or organize consumers of one output. New shelf nodes default to Text; choose **Artifact kind** in Details to change the type. If the new type would invalidate a connected wire, the edit is rejected atomically: the node and its wires keep their previous types until you resolve the connection.
 
 **Portals** use named references to existing output pins. Open **Details → Portals** to manage a source, its consumers, labels, and visible-wire restoration. They preserve dependencies and artifact types. A portal cannot bypass a subgraph boundary: expose an input or output to cross that boundary.
 
@@ -274,7 +286,7 @@ Start from the material and result you need, then choose the operations between 
 
 The first, fourth, and fifth compositions ship as starter examples; Scene guidance supplies the second. Context assembly and subgraph composition demonstrate how the same tools combine beyond those starters.
 
-The current operations provide bounded host context, text/data processing, planning, and reply review. Do not assume arbitrary tool execution, general document import, persistent story-memory commits, image/audio workflows, or a free-form model generation node from the presence of a graph editor. Build with the [available node contracts](node-reference.md); new tools can extend that vocabulary in later releases.
+The current operations provide bounded host context, text/data processing, planning, scoped actor memory, and reply review. Do not assume arbitrary tool execution, general document import, image/audio workflows, or a free-form model generation node from the presence of a graph editor. Build with the [available node contracts](node-reference.md); new tools can extend that vocabulary in later releases.
 
 ## Keyboard and connection reference
 

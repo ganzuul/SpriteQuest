@@ -1,6 +1,6 @@
 # Introspection workflows and package
 
-Reflect, Internalize, Express, Context, Memory and State are registered native operations. Find them in the **Introspection** shelf family or contextual pin search. Their eighteen mode presets have editable controls and typed named pins in Details. They participate in the normal native validator, runner, model bindings, recorded Preview, and workflow import/export. The [node reference](node-reference.md#introspection) lists the native pin contracts.
+Reflect, Internalize, Express, Context, Memory and State are registered native operations. Open the **Introspection** shelf family to choose one of these six nodes directly, or find it through contextual pin search. Their eighteen modes are selected in **Details → Mode**; they are not separate shelf entries. Editable controls and typed named pins follow the chosen mode. Existing saved modes remain intact. They participate in the normal native validator, runner, model bindings, recorded Preview, and workflow import/export. The [node reference](node-reference.md#introspection) lists the native pin contracts.
 
 | Entry | Modes | Output | Requests |
 | --- | --- | --- | --- |

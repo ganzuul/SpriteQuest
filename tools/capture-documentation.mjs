@@ -207,9 +207,8 @@ try {
     await operationControls();
     await shot('json-decode-details', '.pc-inspector');
     await page.locator('[data-family="Derive"]').hover();
-    await page.locator('[data-subfamily="Parsing"]').hover();
-    await page.locator('.pc-leaf-menu').waitFor({ state: 'visible' });
-    // Keep the real flyouts open for the screenshot by retaining the hover.
+    await page.locator('.pc-family-menu').waitFor({ state: 'visible' });
+    // Keep the real canonical node menu open for the screenshot by retaining the hover.
     await page.screenshot({ path: join(output, 'node-shelf.png'), animations: 'disabled' });
     evidence.screenshots.push({ name: 'node-shelf' });
     console.log('Captured node-shelf');

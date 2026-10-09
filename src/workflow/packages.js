@@ -1,6 +1,6 @@
-import { safeWorkflowData, validateGraphStructure } from './contracts.js?v=0.25.0';
-import { OPERATIONS, operationFor } from './catalog.js?v=0.25.0';
-import { cloneDefinitionData, computeDefinitionIdentity, definitionRefKey, inspectDefinitionMetadata, validateDefinition } from './definitions.js?v=0.25.0';
+import { safeWorkflowData, validateGraphStructure } from './contracts.js?v=0.26.0';
+import { OPERATIONS, operationFor } from './catalog.js?v=0.26.0';
+import { cloneDefinitionData, computeDefinitionIdentity, definitionRefKey, inspectDefinitionMetadata, validateDefinition } from './definitions.js?v=0.26.0';
 const limit = 2000000;
 const fail = (code, message) => ({ ok: false, error: { code, message } });
 const pick = (value, keys) => Object.fromEntries(keys.filter(key => Object.hasOwn(value, key)).map(key => [key, value[key]]));

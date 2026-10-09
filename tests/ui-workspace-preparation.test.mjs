@@ -1,12 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { starterGraph } from '../src/workflow/starters.js?v=0.25.0';
-import { cloneWorkflowDocument } from '../src/workflow/document.js?v=0.25.0';
-import { createGraphViewSession } from '../src/ui/graph-view-session.js?v=0.25.0';
-import { createWorkflowSession, projectPreparedWorkflow } from '../src/ui/workflow-surface.js?v=0.25.0';
-import { makeClip, makeDefinitionClip, readClip } from '../src/workflow/clipboard.js?v=0.25.0';
-import { isCommentFrame } from '../src/canvas/comment-frames.js?v=0.25.0';
-const api = await import('../src/ui/workspace-preparation.js?v=0.25.0');
+import { starterGraph } from '../src/workflow/starters.js?v=0.26.0';
+import { cloneWorkflowDocument } from '../src/workflow/document.js?v=0.26.0';
+import { createGraphViewSession } from '../src/ui/graph-view-session.js?v=0.26.0';
+import { createWorkflowSession, projectPreparedWorkflow } from '../src/ui/workflow-surface.js?v=0.26.0';
+import { makeClip, makeDefinitionClip, readClip } from '../src/workflow/clipboard.js?v=0.26.0';
+import { isCommentFrame } from '../src/canvas/comment-frames.js?v=0.26.0';
+const api = await import('../src/ui/workspace-preparation.js?v=0.26.0');
 test('prepared editor drawing is detached and overlays never change the activated root', async () => {
     assert.equal(typeof api.prepareWorkspaceViews, 'function');
     const root = cloneWorkflowDocument(starterGraph('native-guidance')).data; root.id = 'workspace-root';
@@ -79,7 +79,7 @@ test('Edit availability uses the actual child saved scope and readonly library p
 });
 
 test('nested library Copy bundles only its real reachable pin closure and actual insertion accepts it',async()=>{
- const {nestedWorkflow}=await import('./fixtures/workflow-prepared-fixture.mjs');const source=nestedWorkflow(),root=starterGraph('structured-guidance'),content=api.prepareWorkspaceViews(root),library=api.prepareLibraryViews(root.id,source.definitions);const session=createGraphViewSession({root,activationId:'library-copy',navigation:[...content.data.navigation,...library.data.navigation],preparedViews:[...content.data.preparedViews,...library.data.preparedViews]}).data;session.openLibrary(library.data.preparedViews.find(view=>view.definitionRef.id==='prepared-outer').definitionRef);const {definitionRefKey}=await import('../src/workflow/definition-data.js?v=0.25.0'),{prepareWorkflowInsertion}=await import('../src/workflow/insertion.js?v=0.25.0');const env={current:root,graphViews:session,editorDraw:api.projectEditorDraw(session.readEditor()),workspacePrepared:{libraryDefinitions:source.definitions},makeClip,makeDefinitionClip,readClip,definitionRefKey};const copied=controllerFunction('clipForPick',env)({nodeIds:['work']});assert.equal(copied.ok,true,JSON.stringify(copied));const fragment=copied.data.graph;assert.equal(Object.keys(fragment.definitions).length,1);assert.ok(fragment.definitions[definitionRefKey(fragment.nodes.work.definition)]);assert.equal(fragment.nodes.work.localCopy,undefined);assert.deepEqual(root.definitions,{});const inserted=prepareWorkflowInsertion(root,fragment);assert.equal(inserted.ok,true,JSON.stringify(inserted));const conflict=structuredClone(root);conflict.definitions[definitionRefKey(fragment.nodes.work.definition)]={...fragment.definitions[definitionRefKey(fragment.nodes.work.definition)],body:{...fragment.definitions[definitionRefKey(fragment.nodes.work.definition)].body,nodes:{...fragment.definitions[definitionRefKey(fragment.nodes.work.definition)].body.nodes,work:{...fragment.definitions[definitionRefKey(fragment.nodes.work.definition)].body.nodes.work,instructions:'Conflicting canonical settings'}}}};assert.equal(prepareWorkflowInsertion(conflict,fragment).ok,false);
+ const {nestedWorkflow}=await import('./fixtures/workflow-prepared-fixture.mjs');const source=nestedWorkflow(),root=starterGraph('structured-guidance'),content=api.prepareWorkspaceViews(root),library=api.prepareLibraryViews(root.id,source.definitions);const session=createGraphViewSession({root,activationId:'library-copy',navigation:[...content.data.navigation,...library.data.navigation],preparedViews:[...content.data.preparedViews,...library.data.preparedViews]}).data;session.openLibrary(library.data.preparedViews.find(view=>view.definitionRef.id==='prepared-outer').definitionRef);const {definitionRefKey}=await import('../src/workflow/definition-data.js?v=0.26.0'),{prepareWorkflowInsertion}=await import('../src/workflow/insertion.js?v=0.26.0');const env={current:root,graphViews:session,editorDraw:api.projectEditorDraw(session.readEditor()),workspacePrepared:{libraryDefinitions:source.definitions},makeClip,makeDefinitionClip,readClip,definitionRefKey};const copied=controllerFunction('clipForPick',env)({nodeIds:['work']});assert.equal(copied.ok,true,JSON.stringify(copied));const fragment=copied.data.graph;assert.equal(Object.keys(fragment.definitions).length,1);assert.ok(fragment.definitions[definitionRefKey(fragment.nodes.work.definition)]);assert.equal(fragment.nodes.work.localCopy,undefined);assert.deepEqual(root.definitions,{});const inserted=prepareWorkflowInsertion(root,fragment);assert.equal(inserted.ok,true,JSON.stringify(inserted));const conflict=structuredClone(root);conflict.definitions[definitionRefKey(fragment.nodes.work.definition)]={...fragment.definitions[definitionRefKey(fragment.nodes.work.definition)],body:{...fragment.definitions[definitionRefKey(fragment.nodes.work.definition)].body,nodes:{...fragment.definitions[definitionRefKey(fragment.nodes.work.definition)].body.nodes,work:{...fragment.definitions[definitionRefKey(fragment.nodes.work.definition)].body.nodes.work,instructions:'Conflicting canonical settings'}}}};assert.equal(prepareWorkflowInsertion(conflict,fragment).ok,false);
 });
 
 test('native Cut waits for a successful write and rejects failure or a stale qualified continuation',async()=>{
@@ -122,10 +122,10 @@ test('actual Copy preserves selected local node and group presentation in curren
 });
 
 test('immediate group Cut removes its authored enclosure and ordinary nodes in one captured undoable edit', async () => {
-    const { captureGraphEditContext, commitPreparedGraph } = await import('../src/workflow/transactions.js?v=0.25.0');
-    const { prepareQualifiedScopeEdit, reconcileOwners } = await import('../src/workflow/definition-library.js?v=0.25.0');
-    const { ownershipEntries, prunePrivateSnapshots } = await import('../src/workflow/composition-edit.js?v=0.25.0');
-    const H = await import('../src/history.js?v=0.25.0');
+    const { captureGraphEditContext, commitPreparedGraph } = await import('../src/workflow/transactions.js?v=0.26.0');
+    const { prepareQualifiedScopeEdit, reconcileOwners } = await import('../src/workflow/definition-library.js?v=0.26.0');
+    const { ownershipEntries, prunePrivateSnapshots } = await import('../src/workflow/composition-edit.js?v=0.26.0');
+    const H = await import('../src/history.js?v=0.26.0');
     const root = starterGraph('structured-guidance'); root.id = 'captured-group-cut';
     root.groups.cut = { id: 'cut', title: 'Cut group', collapsed: true };
     for (const id of ['compose-json', 'json-decode']) root.nodes[id].inGroup = 'cut';
@@ -149,10 +149,10 @@ test('immediate group Cut removes its authored enclosure and ordinary nodes in o
 
 for (const nested of [false, true]) for (const cut of [false, true]) test(`actual ${nested ? 'nested' : 'root'} owned wrapper ${cut ? 'Cut' : 'Delete'} reconciles descendant ownership and private snapshots with one undo`, async () => {
     const fixtures = await import('./fixtures/workflow-prepared-fixture.mjs');
-    const { captureGraphEditContext, commitPreparedGraph } = await import('../src/workflow/transactions.js?v=0.25.0');
-    const { makeLocalCopy, prepareQualifiedScopeEdit, reconcileOwners } = await import('../src/workflow/definition-library.js?v=0.25.0');
-    const { ownershipEntries, prunePrivateSnapshots } = await import('../src/workflow/composition-edit.js?v=0.25.0');
-    const H = await import('../src/history.js?v=0.25.0');
+    const { captureGraphEditContext, commitPreparedGraph } = await import('../src/workflow/transactions.js?v=0.26.0');
+    const { makeLocalCopy, prepareQualifiedScopeEdit, reconcileOwners } = await import('../src/workflow/definition-library.js?v=0.26.0');
+    const { ownershipEntries, prunePrivateSnapshots } = await import('../src/workflow/composition-edit.js?v=0.26.0');
+    const H = await import('../src/history.js?v=0.26.0');
     const path = nested ? ['first/path', 'work'] : ['first/path'], preparedCopy = makeLocalCopy(fixtures.nestedWorkflow(), {instancePath:['first/path','work'],id:'private-deletion-review'});
     assert.equal(preparedCopy.ok,true,JSON.stringify(preparedCopy));
     const root = preparedCopy.data.candidate; root.id = `owned-${nested ? 'nested' : 'root'}-${cut ? 'cut' : 'delete'}`;
@@ -185,7 +185,7 @@ test('actual captured visual grouping keeps membership consistent, preserves exe
     const { captureGraphEditContext, commitPreparedGraph } = await import('../src/workflow/transactions.js');
     const { prepareQualifiedScopeEdit } = await import('../src/workflow/definition-library.js');
     const { workflowSignature } = await import('../src/workflow/runtime.js');
-    const H = await import('../src/history.js?v=0.25.0');
+    const H = await import('../src/history.js?v=0.26.0');
     const root = starterGraph('structured-guidance'), ids = ['compose-json', 'json-decode'];
     root.id = 'group-edit-history';
     root.groups.previous = { id: 'previous', title: 'Previous', members: ['compose-json', 'select-fields'], collapsed: false };
@@ -231,7 +231,7 @@ test('completed root movement commits authored geometry once while cancellation,
     const { prepareQualifiedScopeEdit } = await import('../src/workflow/definition-library.js');
     const { workflowSignature } = await import('../src/workflow/runtime.js');
     const { siblingWorkflow } = await import('./fixtures/workflow-prepared-fixture.mjs');
-    const H = await import('../src/history.js?v=0.25.0');
+    const H = await import('../src/history.js?v=0.26.0');
     const root = starterGraph('structured-guidance'); root.id = 'position-edit-history';
     const prepared = api.prepareWorkspaceViews(root), library = api.prepareLibraryViews(root.id,siblingWorkflow().definitions);
     const session = createGraphViewSession({ root, activationId:'move-root', navigation:[...prepared.data.navigation,...library.data.navigation], preparedViews:[...prepared.data.preparedViews,...library.data.preparedViews] }).data;
@@ -266,11 +266,11 @@ test('actual pin jump uses a current navigation token and an existing prepared o
 
 
 test('native plaintext paste uses valid Compose sections and one real root transaction in both phases', async () => {
-    const { captureGraphEditContext, commitPreparedGraph } = await import('../src/workflow/transactions.js?v=0.25.0');
-    const { prepareNativeConnectionEdit } = await import('../src/workflow/connection-edits.js?v=0.25.0');
-    const { composeText } = await import('../src/workflow/operations/compose.js?v=0.25.0');
+    const { captureGraphEditContext, commitPreparedGraph } = await import('../src/workflow/transactions.js?v=0.26.0');
+    const { prepareNativeConnectionEdit } = await import('../src/workflow/connection-edits.js?v=0.26.0');
+    const { composeText } = await import('../src/workflow/operations/compose.js?v=0.26.0');
     const { siblingWorkflow } = await import('./fixtures/workflow-prepared-fixture.mjs');
-    const H = await import('../src/history.js?v=0.25.0');
+    const H = await import('../src/history.js?v=0.26.0');
     const text = '  User 🌿\nSecond line: 界\n  ', point = { x: 13.125, y: -7.5 };
     for (const phase of ['pre', 'post']) {
         const root = { id: 'plaintext-root-' + phase, schema: 3, runtime: 2, mode: 'native-' + phase, nodes: {}, wires: {}, groups: {}, portals: {}, definitions: {} };

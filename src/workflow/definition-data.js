@@ -1,4 +1,4 @@
-import { ARTIFACT_KINDS, operationFor, semanticControlsForNode } from './catalog.js?v=0.25.0';
+import { ARTIFACT_KINDS, operationFor, semanticControlsForNode } from './catalog.js?v=0.26.0';
 
 const fail = (code, message) => ({ ok: false, error: { code, message } });
 const record = value => value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -156,8 +156,14 @@ export function computeDefinitionIdentity(value) {
                     if (operation.family === 'Introspection' && node[controlId] === undefined && !Object.hasOwn(operation.defaults, controlId)) continue;
                     const control = describeExposedControl(node, controlId);
                     if (!control.ok) return control;
+                    // Draft is the pre-existing Transpose behavior. Its newly declared
+                    // editor field must neither change old pins nor enter old bodies.
+                    if (operation.family === 'Transpose' && controlId === 'inputKind' && control.data.default === 'draft') {
+                        delete node.inputKind;
+                        continue;
+                    }
                     node[controlId] = structuredClone(control.data.default);
-                    controls[controlId] = node[controlId];
+                    if (node.operation !== 'reroute' || controlId !== 'artifactKind') controls[controlId] = node[controlId];
                 }
                 // Existing patch validation consumes these literals outside its catalog controls.
                 if (node.operation === 'validate-patches') {

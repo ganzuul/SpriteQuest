@@ -28,7 +28,7 @@ These are combinations of the shipped tools. The eleven workflow examples are st
 | **Typed node graphs** | Connect Context, Draft, Text, Data, Guidance, Patches, and Candidate artifacts through named pins. Connections determine dependencies. |
 | **Reusable subgraphs** | Package operations behind a typed interface, expose selected settings, and compose nested processes. |
 | **Graph tabs** | Open subgraph bodies without losing your place in the parent workflow. Each instance retains its own view. |
-| **Node shelf and contextual search** | Browse families and categories, search operations and subgraphs, or discover compatible nodes while connecting a pin. |
+| **Node shelf and contextual search** | Open a family to choose an operation directly, search operations and subgraphs, or discover compatible nodes while connecting a pin. |
 | **Node details** | Edit operation controls, aliases, compact cards, and model bindings; inspect effective values and validation issues. |
 | **Per-operation model connections** | Use role defaults or individual profile/model overrides without switching SillyTavern's active connection globally. |
 | **Recorded previews** | Inspect inputs and outputs, follow selection, pin an artifact, or run only a selected output's dependencies. |
@@ -58,7 +58,7 @@ This development branch contains **25 operations**, plus subgraph instances and 
 | Shaping | **Reroute** | Route a typed connection through a compact graph point | 0 |
 | Surface | **Text Rules** | Replace or extract text with literal/regex rules; propose Draft patches | 0 |
 | Surface | **Repair** | Generate bounded patches for scanned spans | 0–1 |
-| Transpose | **Style Transfer** | Apply reference voice, rhythm, diction or register to permitted draft text | 0–1 |
+| Transpose | **Style Transfer** | Apply reference voice, rhythm, diction or register to Text or permitted Draft text | 0–1 |
 | Transpose | **Format Transfer** | Apply an example or template without inventing missing content | 0–1 |
 | Transpose | **Terminology Map** | Apply a canonical glossary with simultaneous literal replacements | 0 |
 | Introspection | **Reflect** | Appraise supplied character, recall or scene evidence | 1 Analysis |
@@ -77,7 +77,11 @@ This development branch contains **25 operations**, plus subgraph instances and 
 
 Repair also offers Inspect, Contextual Cleanup and Strict Avoidance modes using the complete category-based policy. Nodes have phase and artifact requirements; the [node reference](docs/node-reference.md) explains their ports and controls. The [reference library guide](docs/lattice-reference-library.md) covers reusable Context Lens, Scene Compass and cleanup workflows.
 
-All six Introspection nodes and their eighteen mode presets are available in the canvas shelf and contextual search. Memory is root-only; Commit is a Post terminal and writes only after a successful full root Run. Run to here records a preview without writing. Memory uses the active chat and character, including a required selected actor in group chats. See the [Introspection guide](docs/introspection-package.md) for evidence, controls and persistence limits.
+The shelf and contextual search offer one entry per operation. Choose variants in **Details**: Reflect's Character/Recall/Scene modes, JSON Decode's Parse/Check modes, Reroute's Artifact kind, and the other operation controls. All six Introspection nodes expose their eighteen modes this way. Saved subgraph revisions remain separate choices.
+
+New Transpose nodes accept and return **Text** in either graph phase. Choose **Input type → Draft** in an After reply graph to produce source-bound Patches for validation and review. Existing saved nodes without an Input type setting retain their Draft behavior. See the [reference library guide](docs/lattice-reference-library.md) for reference inputs and independent mode/scope controls.
+
+Memory is root-only; Commit is a Post terminal and writes only after a successful full root Run. Run to here records a preview without writing. Memory uses the active chat and character, including a required selected actor in group chats. See the [Introspection guide](docs/introspection-package.md) for evidence, controls and persistence limits.
 
 ## Reuse a process, inspect its internals
 
@@ -96,6 +100,8 @@ Select processing nodes, right-click, and choose **Create Subgraph**. The editor
 5. Configure any model roles, click **Run**, and inspect the recorded results. Assign a phase and arm only when you want integration with normal sends.
 
 For updates, use **Manage Extensions**, then reload. Installation, import, and editing do not make model calls.
+
+**Before reply (Pre)** prepares material for a reply that has not been written yet. Assign and arm a Guidance workflow to add its bounded direction before a normal Send; a manual Run lets you inspect it first. **After reply (Post)** supports work on a completed reply: run a repair graph manually, inspect its candidate, then apply it explicitly. Ordinary Text tools, including Transpose, work in either phase; host reply sources and application nodes impose the reply-specific limits.
 
 | Starter | What it demonstrates | Maximum auxiliary calls |
 | --- | --- | ---: |

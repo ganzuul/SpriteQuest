@@ -18,6 +18,7 @@ npm run check
 | --- | --- |
 | `ui/*.svelte` | Workbench, nodes, shelf, Details, Preview, and manager presentation |
 | `src/ui/` | Host orchestration, editor projections, scoped editing, navigation, and presentation state |
+| `src/ui/native-search-catalog.js` | Canonical family node choices, search aliases, and checked pin-aware creation |
 | `src/canvas.js`, `src/canvas/` | Graph gestures, camera, selection, geometry, cards, and connections |
 | `src/workflow/catalog.js` | Registered operations, controls, phases, and artifact contracts |
 | `src/workflow/operations/` | Operation implementations and deterministic primitives |
@@ -45,7 +46,9 @@ This script uses the installed Playwright Chromium browser and a temporary local
 
 The fixtures supply synthetic writing material, saved workflow data, layout positions, and the supplied Literal cleanup subgraph. Captures use actual navigation, settings panels, runs, and review controls. Completed examples must succeed with zero auxiliary model calls. All nonlocal requests and mutating HTTP requests are blocked; any page error or blocked request fails the capture. The script closes its browser and server afterward.
 
-The 20 captures cover workspace orientation, context assembly, node shelf/search, setup, operation details, recorded preview, reply review, execution details, and subgraph instances, tabs, interfaces, and parameter overrides. An ignored evidence report is written to `benchmark-results/documentation-capture.json`.
+The 20 captures cover workspace orientation, context assembly, node shelf/search, setup, operation details, recorded preview, reply review, execution details, and subgraph instances, tabs, interfaces, and parameter overrides. The shelf capture opens a family directly to canonical node rows; operation modes belong in Details. The subgraph manager is reached through **Subgraphs → Manage subgraphs…**. An ignored evidence report is written to `benchmark-results/documentation-capture.json`.
+
+When changing discovery metadata, keep one public choice per operation and retain mode/kind names as search aliases. Pin-aware creation can select a compatible checked configuration without adding duplicate public rows. Preserve saved node settings and distinct subgraph revision identities. Transpose's new Text creation defaults must coexist with saved nodes whose omitted Input type retains Draft → Patches behavior.
 
 The capture also samples rendered wire paths to require forward flow and reject crossings through unrelated cards. Endpoint cards are excluded because wires originate at their pins.
 

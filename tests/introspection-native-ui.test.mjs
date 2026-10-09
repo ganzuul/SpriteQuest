@@ -6,16 +6,16 @@ import { join, resolve, relative, isAbsolute } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { compile } from 'svelte/compiler';
 import { JSDOM } from 'jsdom';
-import { prepareNativeSearchCatalog, filterNativeSearchChoices, resolveNativeSearchChoice } from '../src/ui/native-search-catalog.js?v=0.25.0';
-import { FAMILY_PALETTE, paletteForOperation } from '../src/ui/node-palette.js?v=0.25.0';
-import { prepareWorkspaceViews, projectWorkspacePanels } from '../src/ui/workspace-preparation.js?v=0.25.0';
-import { createGraphViewSession } from '../src/ui/graph-view-session.js?v=0.25.0';
-import { createWorkflowSession, projectPreparedWorkflow } from '../src/ui/workflow-surface.js?v=0.25.0';
-import { prepareNodeControlChange } from '../src/workflow/ports.js?v=0.25.0';
-import { exportWorkflow, parseWorkflow } from '../src/workflow/packages.js?v=0.25.0';
-import { runWorkflow } from '../src/workflow/runtime.js?v=0.25.0';
+import { prepareNativeSearchCatalog, filterNativeSearchChoices, resolveNativeSearchChoice } from '../src/ui/native-search-catalog.js?v=0.26.0';
+import { FAMILY_PALETTE, paletteForOperation } from '../src/ui/node-palette.js?v=0.26.0';
+import { prepareWorkspaceViews, projectWorkspacePanels } from '../src/ui/workspace-preparation.js?v=0.26.0';
+import { createGraphViewSession } from '../src/ui/graph-view-session.js?v=0.26.0';
+import { createWorkflowSession, projectPreparedWorkflow } from '../src/ui/workflow-surface.js?v=0.26.0';
+import { prepareNodeControlChange } from '../src/workflow/ports.js?v=0.26.0';
+import { exportWorkflow, parseWorkflow } from '../src/workflow/packages.js?v=0.26.0';
+import { runWorkflow } from '../src/workflow/runtime.js?v=0.26.0';
 import { state as actorState } from './fixtures/introspection.mjs';
-import { createNativeWorkflowController } from '../src/workflow/host.js?v=0.25.0';
+import { createNativeWorkflowController } from '../src/workflow/host.js?v=0.26.0';
 
 const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true });
 globalThis.window = dom.window; globalThis.document = dom.window.document;
@@ -63,8 +63,12 @@ test('native picker discovers all six Introspection tools and phase-safe mode ch
             assert.equal(paletteForOperation(operation).group, title); assert.ok(paletteForOperation(operation).icon.length > 0);
             assert.equal(resolveNativeSearchChoice(catalog, choice.id).operation, operation);
         }
-        for (const id of ['reflect:recall', 'reflect:scene', 'internalize:pattern', 'internalize:recovery', 'express:attention', 'express:inner-voice', 'context:perspective', 'context:focus', 'memory:recall', 'state:curve', 'state:track']) assert.ok(catalog.choices.some(item => item.id === 'operation:' + id), id);
-        assert.equal(catalog.choices.some(item => item.id === 'operation:memory:commit'), phase === 'post');
+        assert.equal(catalog.choices.filter(item => item.family === 'Introspection').length, 6);
+        for (const id of ['reflect:recall', 'reflect:scene', 'internalize:pattern', 'internalize:recovery', 'express:attention', 'express:inner-voice', 'context:perspective', 'context:focus', 'memory:recall', 'state:curve', 'state:track']) {
+            assert.ok(resolveNativeSearchChoice(catalog, 'operation:' + id), id);
+            assert.equal(catalog.choices.some(item => item.id === 'operation:' + id), false);
+        }
+        assert.equal(!!resolveNativeSearchChoice(catalog, 'operation:memory:commit'), phase === 'post');
         const inner = prepareNativeSearchCatalog({ ...scope('native-' + phase), viewPath: ['child'], inDefinition: true }); assert.equal(inner.ok, true);
         assert.equal(inner.data.choices.some(item => item.id === 'operation:memory:commit'), false);
     }

@@ -24,7 +24,7 @@ function flow(operation, controls = {}, reference = 'Plain sentences.') {
     return graph(nodes, wires);
 }
 
-test('Transpose is post-only with checked reference kinds, controls and named ports', () => {
+test('legacy Draft Transpose is post-only with checked reference kinds, controls and named ports', () => {
     for (const [operation, bound] of [['style-transfer', 1], ['format-transfer', 1], ['terminology-map', 0]]) {
         const n = node('change', operation), post = describeOperation(graph({ change: n }), n);
         assert.equal(post.ok, true, JSON.stringify(post));
@@ -56,16 +56,33 @@ test('reference kind rewiring is atomic and all semantic controls invalidate exe
     assert.equal(parsed.data.nodes.change.operation, 'style-transfer');
 });
 
-test('Transpose and cleanup presets are available only in the matching native shelf phase', () => {
+test('canonical Transpose uses Text in either phase while legacy presets retain Draft behavior', () => {
     const scope = phase => ({ schema: 3, runtime: 2, mode: 'native-' + phase, workflowId: 'fixture', viewPath: [], inDefinition: false });
     const post = prepareNativeSearchCatalog(scope('post')).data;
-    for (const id of ['operation:style-transfer', 'operation:format-transfer', 'operation:terminology-map', 'operation:repair:inspect', 'operation:repair:contextual', 'operation:repair:strict']) assert.ok(post.choices.some(choice => choice.id === id), id);
+    for (const phase of ['pre', 'post']) {
+        const catalog = prepareNativeSearchCatalog(scope(phase)).data;
+        assert.equal(catalog.choices.filter(choice => choice.family === 'Transpose').length, 3);
+        for (const operation of ['style-transfer', 'format-transfer', 'terminology-map']) {
+            const id = 'operation:' + operation;
+            assert.ok(catalog.choices.some(choice => choice.id === id), id);
+            const packet = resolveNativeSearchChoice(catalog, id);
+            assert.equal(packet.controls.inputKind, 'text');
+            const described = describeOperation(graph({}, {}, phase), node('change', operation, packet.controls));
+            assert.equal(described.ok, true, JSON.stringify(described));
+            assert.equal(described.data.ports.find(port => port.id === 'in').kind, 'text');
+            assert.equal(described.data.ports.find(port => port.id === 'out').kind, 'text');
+        }
+    }
+    assert.ok(post.choices.some(choice => choice.id === 'operation:repair'));
+    for (const mode of ['inspect', 'contextual', 'strict']) {
+        assert.equal(resolveNativeSearchChoice(post, 'operation:repair:' + mode).controls.mode, mode);
+    }
     const voice = resolveNativeSearchChoice(post, 'operation:style-transfer:character-voice');
     assert.equal(voice.controls.mode, 'character-voice');
     assert.equal(voice.controls.scope, 'dialogue');
+    assert.equal(voice.controls.inputKind ?? 'draft', 'draft');
+    assert.equal(resolveNativeSearchChoice(prepareNativeSearchCatalog(scope('pre')).data, 'operation:style-transfer:character-voice'), null);
     assert.equal(operationDefaults('style-transfer').scope, 'narration');
-    const pre = prepareNativeSearchCatalog(scope('pre')).data;
-    assert.equal(pre.choices.some(choice => choice.family === 'Transpose'), false);
 });
 
 test('raw Style Transfer flows through source-bound validation/review with one fixed Prose request', async () => {

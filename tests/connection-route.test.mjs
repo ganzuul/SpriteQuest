@@ -90,6 +90,44 @@ test('same-height backward connections retain a compact stable returning bow', (
     assert.deepEqual(route(from, to), result, 'same graph endpoints give deterministic geometry');
 });
 
+test('vertically separated backward connections flow diagonally through the middle', () => {
+    for (const side of ['right', 'left']) for (const dy of [-300, 300]) {
+        const sign = direction(side);
+        const from = { x: sign * 300, y: 100, side };
+        const to = { x: sign * 60, y: 100 + dy, side: side === 'right' ? 'left' : 'right' };
+        const result = route(from, to);
+        assertPinNecks(result.d, from, to);
+        const middle = samples(result.d, 1000).filter(point => Math.abs(point.x - sign * 180) <= 4);
+        assert.ok(middle.length >= 2, 'wire crosses the central strip');
+        assert.ok((middle.at(-1).y - middle[0].y) * Math.sign(dy) > 4,
+            'wire keeps moving toward the target instead of forming a horizontal shelf');
+    }
+});
+
+test('steep backward connections stay centered between their endpoints', () => {
+    for (const side of ['right', 'left']) for (const dy of [-300, 300]) {
+        const sign = direction(side);
+        const from = { x: sign * 300, y: 100, side };
+        const to = { x: sign * 60, y: 100 + dy, side: side === 'right' ? 'left' : 'right' };
+        const points = samples(route(from, to).d, 1000);
+        const middle = points.reduce((best, point) => Math.abs(point.x - sign * 180) < Math.abs(best.x - sign * 180) ? point : best);
+        assert.ok(Math.abs(middle.y - (100 + dy / 2)) < 2, 'steep wires have no artificial downward midpoint bias');
+        assert.ok(points.every((point, i) => !i || (point.y - points[i - 1].y) * Math.sign(dy) >= -1e-8),
+            'steep wires travel toward the target without vertical detours');
+    }
+});
+
+test('steep backward connections keep port turns close to the pins', () => {
+    for (const side of ['right', 'left']) for (const dx of [0, 80, 240]) for (const dy of [-300, 300]) {
+        const sign = direction(side);
+        const from = { x: sign * 300, y: 100, side };
+        const to = { x: sign * (300 - dx), y: 100 + dy, side: side === 'right' ? 'left' : 'right' };
+        const points = samples(route(from, to).d, 1000);
+        assert.ok(points.every(point => point.x * sign <= 330 && point.x * sign >= 270 - dx),
+            'port turns stay within 12px of the horizontal necks instead of forming wide hooks');
+    }
+});
+
 test('close, vertical, and overlapping pins keep finite smooth necks', () => {
     for (const [from, to] of [
         [{ x: 100, y: 100, side: 'right' }, { x: 101, y: 101, side: 'left' }],
@@ -157,10 +195,10 @@ function assertAdjacentRoutesStayClose(from, firstTo, secondTo, description) {
     assertPinNecks(second.d, from, secondTo);
 }
 
-for (const x of [36, 60]) test(`close necks and forward transition remain stable at target gap ${x}`, () => {
+for (const x of [12, 36, 60]) test(`backward, close necks, and forward transitions remain stable at target gap ${x}`, () => {
     for (const side of ['right', 'left']) {
         const from = { x: 0, y: 0, side }, sign = direction(side);
-        for (const y of [-20, 0, 20]) {
+        for (const y of [-300, -20, 0, 20, 300]) {
             const targetSide = side === 'right' ? 'left' : 'right';
             assertAdjacentRoutesStayClose(from,
                 { x: sign * (x - 0.001), y, side: targetSide },
@@ -187,5 +225,19 @@ test('intermediate close-to-forward shapes preserve smooth joins and labels on t
         assert.ok(points.every(point => Number.isFinite(point.x) && Number.isFinite(point.y)));
         assert.ok(Math.min(...points.map(point => distance(point, result.label))) < 0.2, 'transition label remains on visible curve');
         assert.ok(points.every(point => point.x >= -80 && point.x <= x + 80 && point.y >= Math.min(0, y) - 120 && point.y <= Math.max(0, y) + 120), 'transition bow stays local');
+    }
+});
+test('extreme finite separation keeps every routed control point and label finite for all pin sides', () => {
+    for (const fromSide of ['left', 'right']) for (const toSide of ['left', 'right']) {
+        for (const x of [-1e155, -100, 100, 1e155]) for (const y of [-1e155, 1e155]) {
+            const from = { x: 0, y: 0, side: fromSide }, to = { x, y, side: toSide };
+            const result = route(from, to);
+            assert.doesNotMatch(result.d, /NaN|Infinity/, `finite endpoints ${fromSide}/${toSide} ${x},${y} require finite SVG geometry`);
+            const parts = segments(result.d);
+            assert.deepEqual(parts[0][0], { x: 0, y: 0 });
+            assert.deepEqual(parts.at(-1).at(-1), { x, y });
+            assert.ok(parts.flat().every(point => Number.isFinite(point.x) && Number.isFinite(point.y)));
+            assert.ok(Number.isFinite(result.label.x) && Number.isFinite(result.label.y));
+        }
     }
 });

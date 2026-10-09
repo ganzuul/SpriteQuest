@@ -1,11 +1,11 @@
-import { cloneDefinitionData, definitionRefKey } from './definitions.js?v=0.25.0';
-import { cloneWorkflowDocument } from './document.js?v=0.25.0';
-import { ARTIFACT_KINDS, OPERATIONS, describeOperation, operationDefaults, portsForNode } from './catalog.js?v=0.25.0';
-import { prepareGraphCandidate } from './prepared-graph-edit.js?v=0.25.0';
-import { prepareLocalDefinitionEdit } from './definition-library.js?v=0.25.0';
-import { compositionIds, definitionChain, ownsDefinitionPath, safeId } from './composition-edit.js?v=0.25.0';
-import { prepareImportedDefinitionPins } from './definition-insertion.js?v=0.25.0';
-import { selectSubgraphClosure } from './packages.js?v=0.25.0';
+import { cloneDefinitionData, definitionRefKey } from './definitions.js?v=0.26.0';
+import { cloneWorkflowDocument } from './document.js?v=0.26.0';
+import { ARTIFACT_KINDS, OPERATIONS, describeOperation, operationDefaults, portsForNode } from './catalog.js?v=0.26.0';
+import { prepareGraphCandidate } from './prepared-graph-edit.js?v=0.26.0';
+import { prepareLocalDefinitionEdit } from './definition-library.js?v=0.26.0';
+import { compositionIds, definitionChain, ownsDefinitionPath, safeId } from './composition-edit.js?v=0.26.0';
+import { prepareImportedDefinitionPins } from './definition-insertion.js?v=0.26.0';
+import { selectSubgraphClosure } from './packages.js?v=0.26.0';
 
 const fail = (code, message) => ({ ok: false, error: { code, message } });
 const record = value => value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -144,7 +144,7 @@ function create(context, command) {
     if (!point(command.graphPoint)) return fail('INVALID_COMMAND', 'Capture a finite graph point before opening search.');
     if (typeof command.operation !== 'string' || !Object.hasOwn(OPERATIONS, command.operation)) return fail('UNKNOWN_OPERATION', 'Choose a declared operation.');
     const controls = command.controls === undefined ? {} : command.controls;
-    if (!keys(controls, OPERATIONS[command.operation].controls)) return fail('INVALID_SETTINGS', 'Presets may contain only declared operation controls.');
+    if (!keys(controls, OPERATIONS[command.operation].controls) || command.operation === 'reroute' && Object.hasOwn(controls, 'artifactKind')) return fail('INVALID_SETTINGS', 'Presets may contain only declared operation controls; Reroute creation requires its top-level artifact kind.');
     if (command.operation === 'reroute' ? !ARTIFACT_KINDS.includes(command.artifactKind) : command.artifactKind !== undefined) return fail('INVALID_SETTINGS', 'Only typed reroute creation accepts an actual artifact kind.');
     if (command.connection !== undefined && (!keys(command.connection, ['origin', 'portId', 'replace']) || !endpoint(command.connection.origin) || !safeId(command.connection.portId) || command.connection.replace !== undefined && typeof command.connection.replace !== 'boolean')) return fail('INVALID_COMMAND', 'Choose an existing origin and an explicit new-node port.');
     const id = context.allocate('node');

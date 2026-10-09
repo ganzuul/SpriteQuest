@@ -88,20 +88,18 @@ for (const width of [320, 360]) test(`Fit keeps the narrow graph reachable below
     await page.screenshot({ path: testInfo.outputPath(`narrow-fit-${width}.png`) });
 });
 
-test('approved floating shelf retains aligned purpose drawers and quiet shortcodes', async ({ page }) => {
+test('approved floating shelf retains an aligned canonical node menu and quiet shortcodes', async ({ page }) => {
     await page.setViewportSize({ width: 1024, height: 900 });
     await openNativeWorkspace(page);
     const family = page.locator('[data-family="Derive"]');
     await family.click();
-    const category = page.getByRole('menuitem', { name: 'PARSING', exact: true });
-    await category.click();
-    const leaf = page.locator('.pc-leaf-menu');
-    await expect(leaf).toBeVisible();
-    const [button, drawer, submenu] = await Promise.all([family.boundingBox(), page.locator('.pc-family-menu').boundingBox(), leaf.boundingBox()]);
+    const menu = page.locator('.pc-family-menu');
+    await expect(menu).toBeVisible();
+    await expect(page.locator('[data-subfamily], .pc-leaf-menu')).toHaveCount(0);
+    const [button, drawer] = await Promise.all([family.boundingBox(), menu.boundingBox()]);
     expect(button.width).toBe(128); expect(button.height).toBe(42);
-    expect(drawer.width).toBe(155); expect(submenu.width).toBe(250);
+    expect(drawer.width).toBe(250);
     expect(drawer.x - button.x - button.width).toBeCloseTo(3, 0);
-    expect(submenu.x - drawer.x - drawer.width).toBeCloseTo(3, 0);
     const rows = await page.evaluate(() => {
         const read = element => {
             const box = element.getBoundingClientRect(), icon = element.querySelector('svg').getBoundingClientRect();
@@ -111,21 +109,17 @@ test('approved floating shelf retains aligned purpose drawers and quiet shortcod
         };
         return { family: read(document.querySelector('[data-family="Derive"]')),
             families: [...document.querySelectorAll('.pc-family-row')].map(read),
-            category: read(document.querySelector('[data-subfamily="Parsing"]')),
-            categories: [...document.querySelectorAll('.pc-family-menu [data-subfamily]')].map(read),
-            leaves: [...document.querySelectorAll('.pc-leaf-menu [data-shelf-choice]')].map(read) };
+            choices: [...document.querySelectorAll('.pc-family-menu [data-shelf-choice]')].map(read) };
     });
-    for (const collection of [rows.families, rows.categories, rows.leaves]) {
+    for (const collection of [rows.families, rows.choices]) {
         expect(collection.length).toBeGreaterThanOrEqual(2);
         for (const row of collection) expect(row).toMatchObject({ height: 42, iconWidth: 24, iconHeight: 24 });
         for (let index = 1; index < collection.length; index++) expect(collection[index].y - collection[index - 1].y).toBeCloseTo(45, 1);
     }
     expect(rows.family.font).toBe('14px');
-    for (const row of rows.categories) expect(row.font).toBe('12px');
-    for (const row of rows.leaves) expect(row.font).toBe('14px');
-    expect(Math.abs(rows.categories[0].center - rows.family.center)).toBeLessThanOrEqual(1);
-    expect(Math.abs(rows.leaves[0].center - rows.category.center)).toBeLessThanOrEqual(1);
-    const codes = await leaf.locator('small').allTextContents();
+    for (const row of rows.choices) expect(row.font).toBe('14px');
+    expect(Math.abs(rows.choices[0].center - rows.family.center)).toBeLessThanOrEqual(1);
+    const codes = await menu.locator('small').allTextContents();
     expect(codes.some(code => code.trim().length > 0)).toBe(true);
 });
 
