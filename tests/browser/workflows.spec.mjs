@@ -1,19 +1,132 @@
 import { test, expect } from '@playwright/test';
+
+const preview = page => page.locator('.pc-output-preview');
+const details = page => page.getByRole('region', { name: 'Node details', exact: true });
+async function openSetup(page) {
+    const dialog = page.getByRole('dialog', { name: 'Workflow setup', exact: true });
+    if (!await dialog.isVisible()) await page.getByRole('button', { name: 'Setup', exact: true }).click();
+    await expect(dialog).toBeVisible(); return dialog;
+}
+async function closeSetup(page) {
+    const dialog = page.getByRole('dialog', { name: 'Workflow setup', exact: true });
+    if (await dialog.isVisible()) await dialog.getByRole('button', { name: 'Close panel', exact: true }).click();
+}
+async function installWorkflow(page, title) {
+    const dialog = await openSetup(page);
+    await dialog.getByRole('button', { name: 'Install ' + title, exact: true }).click();
+    await closeSetup(page);
+}
+async function bindRole(page, role, profile) {
+    const dialog = await openSetup(page);
+    await dialog.getByLabel(role + ' connection', { exact: true }).selectOption(profile);
+}
+async function assignPhase(page, phase) {
+    const dialog = await openSetup(page);
+    await dialog.getByRole('button', { name: 'Assign ' + phase + ' phase and enable native mode', exact: true }).click();
+    await closeSetup(page);
+}
+async function expectBound(page, bound) {
+    const dialog = await openSetup(page);
+    await expect(dialog.getByText('Maximum auxiliary requests: ' + bound, { exact: true })).toBeVisible();
+    await closeSetup(page);
+    await expect(page.locator('.pc-root-workflow-status')).toContainText('≤ ' + bound + ' requests');
+}
+async function hideLibrary(page) {
+    const toggle = page.getByRole('button', { name: 'Toggle library', exact: true });
+    if (await toggle.getAttribute('aria-pressed') === 'true') await toggle.click();
+}
+async function operationId(page, operation) {
+    return page.evaluate(operation => Object.values(window.canvasHarness.graph.nodes).find(node => node.operation === operation)?.id, operation);
+}
+async function openFormation(page) {
+    await closeSetup(page);
+    const group = page.getByRole('group', { name: 'Group: AI De-slop', exact: true });
+    await group.getByRole('button', { name: 'Open group', exact: true }).click();
+    const scan = await operationId(page, 'pattern-scan'), repair = await operationId(page, 'repair');
+    await expect(page.locator(`.pc-node-native[data-id="${scan}"]`)).toBeVisible();
+    await expect(page.locator(`.pc-node-native[data-id="${repair}"]`)).toBeVisible();
+}
+async function inspectOperation(page, operation) {
+    await closeSetup(page);
+    const id = await operationId(page, operation); expect(id).toBeTruthy();
+    const card = page.locator(`.pc-node-native[data-id="${id}"]`);
+    if (!await card.count()) await openFormation(page);
+    await card.locator('.pc-native-heading').click();
+    const toggle = page.getByRole('button', { name: 'Toggle inspector', exact: true });
+    if (await toggle.getAttribute('aria-pressed') !== 'true') await toggle.click();
+    await expect(details(page)).toBeVisible(); return details(page);
+}
+async function selectTerminal(page, operation, pin = true) {
+    await closeSetup(page);
+    const id = await operationId(page, operation); expect(id).toBeTruthy();
+    const leaf = preview(page), select = leaf.getByRole('combobox', { name: 'Preview output', exact: true });
+    const key = await select.locator('option').evaluateAll((options, id) => options.find(option => {
+        if (!option.value) return false;
+        const target = JSON.parse(option.value);
+        return target.kind === 'terminal' && target.address.nodeId === id && target.address.instancePath.length === 0;
+    })?.value, id);
+    expect(key, 'the actual root terminal must be an available Preview choice').toBeTruthy();
+    const unpin = leaf.getByRole('button', { name: 'Unpin preview', exact: true });
+    if (await unpin.isVisible()) await unpin.click();
+    await select.selectOption(key);
+    if (pin) await leaf.getByRole('button', { name: 'Pin preview', exact: true }).click();
+}
+async function runRoot(page, operation = 'apply-reply') {
+    await selectTerminal(page, operation);
+    await page.locator('.pc-root-run').click();
+}
+async function artifact(page, label) {
+    const leaf = preview(page);
+    await leaf.getByRole('tab', { name: label, exact: true }).click();
+    const panel = leaf.getByRole('tabpanel'); await expect(panel).toBeVisible(); return panel;
+}
+async function candidateText(page, text) {
+    const panel = await artifact(page, 'candidate');
+    await expect(panel.locator('pre')).toHaveText(text);
+}
+async function expectRequests(page, actual, bound) {
+    const meter = page.getByRole('button', { name: /^Open run details\./ });
+    await expect(meter).toHaveAttribute('aria-label', new RegExp(actual + ' of ' + bound + ' requests\\.'));
+    await meter.click();
+    const dialog = page.getByRole('dialog', { name: 'Run details', exact: true });
+    await expect(dialog.locator('.pc-run-summary').getByText(actual + ' of ' + bound + ' requests', { exact: true })).toBeVisible();
+    await dialog.getByRole('button', { name: 'Close panel', exact: true }).click();
+}
+async function saveRules(page, rules) {
+    const region = details(page);
+    await region.getByLabel('rules', { exact: true }).fill(JSON.stringify(rules, null, 2));
+    await region.getByRole('button', { name: 'Save rules', exact: true }).click();
+}
+// Review/Send compatibility fixtures use the public saved graph, never a panel
+// DTO or manufactured review handle. UI binding itself is tested separately.
+async function fixtureRole(page, role, profile) {
+    await page.evaluate(({ role, profile }) => {
+        const h = window.canvasHarness;
+        h.graph.roles ??= {}; h.graph.roles[role] = { profileId: profile, model: null };
+        h.S.touchGraph(h.graph); h.UI.refreshIfOpen();
+    }, { role, profile });
+}
+async function canvasHistory(page, key) {
+    await page.getByLabel('Node canvas', { exact: true }).focus();
+    await page.keyboard.press(key);
+}
+
 test('editing imported structured scan rules preserves findings and metadata and rejects invalid drafts', async ({ page }) => {
     await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
-    await page.getByRole('button', { name: 'Toggle library', exact: true }).click();
-    await page.getByRole('button', { name: 'Install Reviewed AI De-slop' }).click();
+    await installWorkflow(page, 'Reviewed AI De-slop');
     await page.evaluate(() => {
         const node = Object.values(window.canvasHarness.graph.nodes).find(node => node.operation === 'pattern-scan');
         node.rules = [{ phrase: 'delve', note: 'Keep this preference', details: { category: 'wording' } }, 'weave'];
         node.caseSensitive = true; node.exemptions = ['delve safely']; node.protectedLiterals = ['weave'];
         window.canvasHarness.S.touchGraph(window.canvasHarness.graph); window.canvasHarness.UI.refreshIfOpen();
     });
-    await page.getByRole('button', { name: 'Inspect Pattern Scan' }).click();
+    await inspectOperation(page, 'pattern-scan');
     const editor = page.getByLabel('rules', { exact: true });
     const initial = await editor.inputValue();
     await editor.focus(); await page.evaluate(() => { window.ruleEditorElement = document.activeElement; });
-    await editor.fill(initial + '\ntapestry');
+    await editor.fill(JSON.stringify([...JSON.parse(initial), 'tapestry'], null, 2));
+    expect(await page.evaluate(() => document.activeElement === window.ruleEditorElement && document.contains(window.ruleEditorElement))).toBe(true);
+    await details(page).getByRole('button', { name: 'Save rules', exact: true }).click();
     const read = () => page.evaluate(async () => {
         const node = Object.values(window.canvasHarness.graph.nodes).find(node => node.operation === 'pattern-scan');
         const { scanDraft } = await import('/src/workflow/repair.js?v=' + window.canvasHarness.version);
@@ -25,19 +138,23 @@ test('editing imported structured scan rules preserves findings and metadata and
     expect(state.scan.artifact.findings.map(f => [f.text, f.protected])).toEqual([['delve', false], ['weave', true], ['tapestry', false]]);
     expect(state.scan.artifact.caseSensitive).toBe(true);
     expect(state.scan.artifact.exemptions).toEqual(['delve safely']);
-    await editor.fill((await editor.inputValue()).replace('"phrase":"delve"', '"phrase":"Delve"'));
+    const revisedRules = JSON.parse(await editor.inputValue()); revisedRules[0].phrase = 'Delve';
+    await saveRules(page, revisedRules);
     state = await read();
     expect(state.node.rules[0]).toEqual({ phrase: 'Delve', note: 'Keep this preference', details: { category: 'wording' } });
     expect(state.scan.artifact.findings.map(f => f.text)).toEqual(['Delve', 'weave', 'tapestry']);
     const saved = state.node.rules;
     await editor.fill('{"phrase":');
+    await details(page).getByRole('button', { name: 'Save rules', exact: true }).click();
     await expect(editor).toHaveAttribute('aria-invalid', 'true');
-    await expect(page.getByRole('alert')).toContainText('not saved');
+    await expect(details(page).getByRole('alert')).toContainText('Enter valid JSON before saving.');
     expect((await read()).node.rules).toEqual(saved);
     await page.getByLabel('case Sensitive', { exact: true }).uncheck();
     await expect(editor).toHaveValue('{"phrase":');
+    await expect(editor).toHaveAttribute('aria-invalid', 'true');
+    await expect(details(page).getByRole('alert')).toContainText('Enter valid JSON before saving.');
     expect((await read()).node.rules).toEqual(saved);
-    await editor.fill('ordinary phrase\n{"phrase":"delve","note":"retained"}');
+    await saveRules(page, ['ordinary phrase', { phrase: 'delve', note: 'retained' }]);
     await expect(editor).toHaveAttribute('aria-invalid', 'false');
     expect((await read()).node.rules).toEqual(['ordinary phrase', { phrase: 'delve', note: 'retained' }]);
     expect(await page.evaluate(() => document.contains(window.ruleEditorElement))).toBe(true);
@@ -45,13 +162,17 @@ test('editing imported structured scan rules preserves findings and metadata and
 
 test('formation request summary follows scan mode and additional reachable repair members', async ({ page }) => {
     await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
-    await page.getByRole('button', { name: 'Toggle library', exact: true }).click();
-    await page.getByRole('button', { name: 'Install Reviewed AI De-slop' }).click();
-    await page.getByRole('button', { name: 'Inspect Repair' }).click();
+    await page.evaluate(() => {
+        const c = window.canvasHarness.context;
+        c.extensionSettings.connectionManager = { profiles: [{ id: 'prose', name: 'Prose connection', api: 'openai', model: 'workflow-test-model', preset: null }] };
+        c.CONNECT_API_MAP = { openai: { selected: 'openai', source: 'openai' } };
+        c.ConnectionManagerRequestService = { getProfile: id => c.extensionSettings.connectionManager.profiles.find(profile => profile.id === id) };
+    });
+    await installWorkflow(page, 'Reviewed AI De-slop');
+    await fixtureRole(page, 'Prose', 'prose');
+    await inspectOperation(page, 'repair');
     await page.getByLabel(/^mode/).selectOption('scan');
-    await expect(page.getByRole('button', { name: /Open AI De-slop formation/ })).toContainText('maximum 0 requests');
-    await expect(page.getByText('Maximum auxiliary requests: 0', { exact: true })).toBeVisible();
-    await expect(page.locator('.pc-node-group')).toContainText('maximum 0 auxiliary requests');
+    await expectBound(page, 0);
     await page.getByLabel(/^mode/).selectOption('repair');
     await page.evaluate(() => {
         const { graph, S, UI } = window.canvasHarness;
@@ -62,38 +183,35 @@ test('formation request summary follows scan mode and additional reachable repai
             graph.nodes[node.id] = node; group.members.push(node.id);
         }
         for (const [i, [from, to]] of [[byOp('reply-snapshot').id, 'repair-extra'], ['repair-extra', 'validate-patches-extra'], ['validate-patches-extra', 'apply-reply-extra']].entries()) {
-            const id = 'extra-wire-' + i; graph.wires[id] = { id, from, to, order: i };
+            const id = 'extra-wire-' + i; graph.wires[id] = { id, from, to, order: i, kind: 'merge', ...(graph.schema === 3 ? { route: 'wire', fromPort: 'out', toPort: 'in' } : {}) };
         }
         S.touchGraph(graph); window.canvasHarness.canvas.render(); UI.refreshIfOpen();
     });
-    await expect(page.getByRole('button', { name: /Open AI De-slop formation/ })).toContainText('maximum 2 requests');
-    await expect(page.getByText('Maximum auxiliary requests: 2', { exact: true })).toBeVisible();
-    await expect(page.locator('.pc-node-group')).toContainText('maximum 2 auxiliary requests');
+    await expectBound(page, 2);
 });
 
 test('install and explicitly bind and assign a pre workflow without arming it', async ({ page }) => {
     await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
-    await page.getByRole('button', { name: 'Toggle library', exact: true }).click();
     await page.evaluate(() => { window.canvasHarness.context.extensionSettings.connectionManager = { profiles: [{ id: 'analysis', name: 'Analysis connection' }] }; });
-    await page.getByRole('button', { name: 'Install Scene guidance' }).click();
-    await expect(page.getByText('Bind Analysis to an available connection before running.', { exact: true })).toBeVisible();
+    await installWorkflow(page, 'Scene guidance');
+    await expect((await openSetup(page)).getByText('Bind Analysis to an available connection before running.', { exact: true })).toBeVisible();
     const before = await page.evaluate(() => { const settings = window.canvasHarness.S.settings(); return { enabled: settings.enabled, mode: settings.workflowMode, assigned: settings.nativeBindings.preGraphId }; });
     expect(before).toEqual({ enabled: false, mode: 'legacy', assigned: null });
-    await page.getByLabel('Analysis connection', { exact: true }).selectOption('analysis');
-    await page.getByRole('button', { name: 'Assign pre phase and enable native mode' }).click();
+    await bindRole(page, 'Analysis', 'analysis');
+    await assignPhase(page, 'pre');
     expect(await page.evaluate(() => window.canvasHarness.S.settings().workflowMode)).toBe('native');
     expect(await page.evaluate(() => window.canvasHarness.S.settings().enabled)).toBe(false);
-    await page.getByRole('button', { name: 'Inspect Smart Compactor' }).click();
-    await page.getByLabel('Target artifact tokens').fill('900');
+    await inspectOperation(page, 'smart-compactor');
+    await page.getByLabel('target Tokens', { exact: true }).fill('900');
+    await page.getByLabel('target Tokens', { exact: true }).press('Tab');
     expect(await page.evaluate(() => Object.values(window.canvasHarness.graph.nodes).find(node => node.operation === 'smart-compactor').targetTokens)).toBe(900);
-    await expect(page.getByText('Maximum auxiliary requests: 2', { exact: true })).toBeVisible();
+    await expectBound(page, 2);
 });
 
 
 
 test('post setup opens the same AI De-slop primitives and preserves a focused editor', async ({ page }) => {
     await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
-    await page.getByRole('button', { name: 'Toggle library', exact: true }).click();
     await page.evaluate(() => {
         const c = window.canvasHarness.context;
         c.extensionSettings.connectionManager = { profiles: [{ id: 'prose', name: 'Prose connection', api: 'openai', model: 'workflow-test-model', preset: null }] };
@@ -101,30 +219,38 @@ test('post setup opens the same AI De-slop primitives and preserves a focused ed
         c.ConnectionManagerRequestService = { getProfile: id => c.extensionSettings.connectionManager.profiles.find(profile => profile.id === id) };
         c.getWorldInfoPrompt = () => { throw new Error('Native UI must not scan lore'); };
     });
-    await page.getByRole('button', { name: 'Install Reviewed AI De-slop' }).click();
+    await installWorkflow(page, 'Reviewed AI De-slop');
     const ids = await page.evaluate(() => Object.keys(window.canvasHarness.graph.nodes));
-    await expect(page.locator('.pc-node-group')).toContainText('Surface');
-    await page.getByLabel('Prose connection', { exact: true }).selectOption('prose');
-    await page.getByRole('button', { name: 'Assign post phase and enable native mode' }).click();
-    await expect(page.getByText('Maximum auxiliary requests: 1', { exact: true })).toBeVisible();
-    await page.getByRole('button', { name: 'Open AI De-slop formation' }).click();
+    await expect(page.getByRole('group', { name: 'Group: AI De-slop', exact: true })).toBeVisible();
+    await bindRole(page, 'Prose', 'prose');
+    await assignPhase(page, 'post');
+    await expectBound(page, 1);
+    await openFormation(page);
     expect(await page.evaluate(() => Object.keys(window.canvasHarness.graph.nodes))).toEqual(ids);
-    await page.getByRole('button', { name: 'Inspect Pattern Scan' }).click();
+    await inspectOperation(page, 'pattern-scan');
     const rules = page.getByLabel('rules', { exact: true });
     await rules.focus(); await page.evaluate(() => { window.workflowEditorProbe = document.activeElement; });
-    await rules.fill('tapestry\ndelve');
+    await rules.fill(JSON.stringify(['tapestry', 'delve'], null, 2));
     expect(await page.evaluate(() => document.activeElement === window.workflowEditorProbe && document.contains(window.workflowEditorProbe))).toBe(true);
-    await page.getByRole('button', { name: 'Inspect Repair' }).click();
-    await expect(page.getByText('Effective connection: Prose connection · workflow-test-model · provider', { exact: true })).toBeVisible();
-    await page.getByLabel('Node model override').fill('node-override-model');
+    await details(page).getByRole('button', { name: 'Save rules', exact: true }).click();
+    await inspectOperation(page, 'repair');
+    await expect(details(page).locator('.pc-detail-meta')).toHaveText('Surface · post phase');
+    await expect(details(page).getByText('Effective connection: prose · workflow-test-model', { exact: true })).toBeVisible();
+    await expect(details(page).getByText('Saved node override or containing role', { exact: true })).toBeVisible();
+    expect(await page.evaluate(() => window.canvasHarness.graph.roles.Prose)).toEqual({ profileId: 'prose', model: null });
+    await details(page).getByLabel('Model mode', { exact: true }).selectOption('override');
+    await expect(details(page).getByLabel('Model identifier', { exact: true })).toBeVisible();
+    expect(await page.evaluate(() => Object.values(window.canvasHarness.graph.nodes).find(node => node.operation === 'repair').model)).toBeNull();
+    await details(page).getByLabel('Model identifier', { exact: true }).fill('node-override-model');
+    await details(page).getByLabel('Model identifier', { exact: true }).press('Tab');
     expect(await page.evaluate(() => Object.values(window.canvasHarness.graph.nodes).find(node => node.operation === 'repair').model)).toBe('node-override-model');
+    await expect(details(page).getByText('Effective connection: prose · node-override-model', { exact: true })).toBeVisible();
 });
 
 
 test('native preview opens setup without legacy prompt compilation or lore scans', async ({ page }) => {
     await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
-    await page.getByRole('button', { name: 'Toggle library', exact: true }).click();
-    await page.getByRole('button', { name: 'Install Scene guidance' }).click();
+    await installWorkflow(page, 'Scene guidance');
     await page.evaluate(async () => {
         window.nativeLoreScans = 0;
         window.canvasHarness.context.getWorldInfoPrompt = async () => { window.nativeLoreScans++; return {}; };
@@ -132,16 +258,18 @@ test('native preview opens setup without legacy prompt compilation or lore scans
     });
     expect(await page.evaluate(() => window.nativeLoreScans)).toBe(0);
     await expect(page.locator('.pc-preview')).not.toHaveClass(/pc-preview-open/);
-    await expect(page.getByRole('button', { name: 'Test workflow', exact: true })).toBeVisible();
+    const setup = page.getByRole('dialog', { name: 'Workflow setup', exact: true });
+    await expect(setup).toBeVisible();
+    await expect(setup.getByLabel('Workflow mode', { exact: true })).toBeVisible();
 });
 
 
 test('mode is explicit and can return to legacy without changing arming', async ({ page }) => {
     await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
-    await page.getByRole('button', { name: 'Toggle library', exact: true }).click();
-    await page.getByRole('button', { name: 'Install Scene guidance' }).click();
-    await page.getByRole('button', { name: 'Assign pre phase and enable native mode' }).click();
-    await page.getByLabel('Workflow mode', { exact: true }).selectOption('legacy');
+    await installWorkflow(page, 'Scene guidance');
+    await assignPhase(page, 'pre');
+    await (await openSetup(page)).getByLabel('Workflow mode', { exact: true }).selectOption('legacy');
+    await closeSetup(page);
     expect(await page.evaluate(() => window.canvasHarness.S.settings().workflowMode)).toBe('legacy');
     expect(await page.evaluate(() => window.canvasHarness.S.settings().enabled)).toBe(false);
 });
@@ -161,12 +289,13 @@ test('legacy Input discovery adds a Prompt while preserving its controls', async
 
 test('native empty-canvas creation offers compatible operations without adding a legacy prompt', async ({ page }) => {
     await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
-    await page.getByRole('button', { name: 'Toggle library', exact: true }).click();
-    await page.getByRole('button', { name: 'Install Scene guidance' }).click();
-    await page.getByRole('button', { name: 'Toggle library', exact: true }).click();
+    await installWorkflow(page, 'Scene guidance');
+    await hideLibrary(page);
     await page.locator('.pc-canvas-host').dblclick({ position: { x: 8, y: 8 } });
     expect(await page.evaluate(() => Object.values(window.canvasHarness.graph.nodes).some(node => node.type === 'prompt'))).toBe(false);
-    await expect(page.locator('.pc-menu').getByText('Scene Context', { exact: true })).toBeVisible();
+    const search = page.getByRole('dialog', { name: 'Add node', exact: true });
+    await expect(search.getByRole('combobox', { name: 'Search nodes and subgraphs', exact: true })).toBeVisible();
+    await expect(search.getByRole('option').filter({ hasText: 'Scene Context' })).toBeVisible();
 });
 
 
@@ -178,7 +307,6 @@ async function reviewFixture(page) {
         export function syncSwipeToMes(index, swipeId) { const m = context().chat[index]; m.swipe_id = swipeId; m.mes = m.swipes[swipeId]; Object.assign(m, structuredClone(m.swipe_info[swipeId])); return true; }
     ` }));
     await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
-    await page.getByRole('button', { name: 'Toggle library', exact: true }).click();
     await page.evaluate(async () => {
         const c = window.canvasHarness.context;
         c.chatId = 'synthetic-workflow-ui';
@@ -196,14 +324,15 @@ async function reviewFixture(page) {
         c.saveChat = async () => { window.workflowSaveAttempts = (window.workflowSaveAttempts || 0) + 1; };
         await (await import('/src/run.js?v=' + window.canvasHarness.version)).initializeNativeWorkflowController();
     });
-    await page.getByRole('button', { name: 'Install Reviewed AI De-slop' }).click();
-    await page.getByLabel('Prose connection', { exact: true }).selectOption('prose');
+    await installWorkflow(page, 'Reviewed AI De-slop');
+    await fixtureRole(page, 'Prose', 'prose');
+    expect(await page.evaluate(() => [window.canvasHarness.graph.schema, window.canvasHarness.graph.runtime])).toEqual([2, 1]);
 }
 test('a real reviewed run requires Apply and preserves the original swipe', async ({ page }) => {
     await reviewFixture(page);
-    await page.getByRole('button', { name: 'Run reviewed repair', exact: true }).click();
-    await expect(page.getByText('Actual auxiliary requests: 1 / 1', { exact: true })).toBeVisible();
-    await expect(page.getByText('We explore.', { exact: true })).toBeVisible();
+    await runRoot(page);
+    await expectRequests(page, 1, 1);
+    await candidateText(page, 'We explore.');
     expect(await page.evaluate(() => window.canvasHarness.context.chat.at(-1).mes)).toBe('We delve.');
     await page.getByRole('button', { name: 'Apply reviewed candidate', exact: true }).click();
     await expect(page.getByText('Candidate applied in memory. Save durability is unconfirmed.', { exact: true })).toBeVisible();
@@ -213,7 +342,7 @@ test('a real reviewed run requires Apply and preserves the original swipe', asyn
 });
 test('an external reply edit disables Apply and a rejected candidate preserves the original', async ({ page }) => {
     await reviewFixture(page);
-    await page.getByRole('button', { name: 'Run reviewed repair', exact: true }).click();
+    await runRoot(page);
     const apply = page.getByRole('button', { name: 'Apply reviewed candidate', exact: true });
     await expect(apply).toBeEnabled();
     await page.evaluate(async () => { const c = window.canvasHarness.context; c.chat.at(-1).mes = 'External edit.'; await c.eventSource.emit(c.eventTypes.MESSAGE_EDITED, c.chat.length - 1); });
@@ -231,18 +360,18 @@ test('switching graph or closing cancels a delayed run and ignores its late resu
         const c = window.canvasHarness.context;
         c.ConnectionManagerRequestService.sendRequest = (...args) => new Promise(resolve => { window.finishWorkflowRequest = resolve; window.workflowSignal = args[3].signal; });
     });
-    await page.getByRole('button', { name: 'Run reviewed repair', exact: true }).click();
+    await runRoot(page);
     await page.waitForFunction(() => !!window.finishWorkflowRequest);
-    const legacy = await page.evaluate(() => window.canvasHarness.S.allGraphs().find(graph => graph.schema !== 2).id);
-    await page.locator('.pc-graph-select').selectOption(legacy);
+    const legacy = await page.evaluate(() => window.canvasHarness.S.allGraphs().find(graph => !graph.mode?.startsWith('native-')).id);
+    await page.getByRole('combobox', { name: 'Canvas', exact: true }).selectOption(legacy);
     expect(await page.evaluate(() => window.workflowSignal.aborted)).toBe(true);
     await page.evaluate(async () => { window.finishWorkflowRequest({ choices: [{ message: { content: '{"patches":[{"index":0,"replacement":"late"}]}' }, finish_reason: 'stop' }] }); await window.canvasHarness.settle(); });
     await expect(page.getByRole('button', { name: 'Apply reviewed candidate', exact: true })).toHaveCount(0);
     expect(await page.evaluate(() => window.canvasHarness.context.chat.at(-1).mes)).toBe('We delve.');
-    await page.getByRole('button', { name: 'Install Reviewed AI De-slop' }).click();
-    await page.getByLabel('Prose connection', { exact: true }).selectOption('prose');
+    await installWorkflow(page, 'Reviewed AI De-slop');
+    await fixtureRole(page, 'Prose', 'prose');
     await page.evaluate(() => { window.finishWorkflowRequest = null; });
-    await page.getByRole('button', { name: 'Run reviewed repair', exact: true }).click();
+    await runRoot(page);
     await page.waitForFunction(() => !!window.finishWorkflowRequest);
     await page.getByRole('button', { name: 'Close canvas', exact: true }).click();
     expect(await page.evaluate(() => window.workflowSignal.aborted)).toBe(true);
@@ -251,29 +380,29 @@ test('switching graph or closing cancels a delayed run and ignores its late resu
 });
 test('manual pre Test and actual Send show their distinct guidance and request evidence', async ({ page }) => {
     await reviewFixture(page);
-    await page.getByRole('button', { name: 'Install Scene guidance' }).click();
-    await page.getByLabel('Analysis connection', { exact: true }).selectOption('prose');
-    await page.getByRole('button', { name: 'Assign pre phase and enable native mode' }).click();
+    await installWorkflow(page, 'Scene guidance');
+    await fixtureRole(page, 'Analysis', 'prose');
+    await assignPhase(page, 'pre');
     await page.evaluate(() => {
         const c = window.canvasHarness.context;
         c.ConnectionManagerRequestService.sendRequest = async (...args) => { window.workflowRequests.push(args); return { choices: [{ message: { content: window.workflowRequests.length === 1 ? 'Manual test guidance.' : 'Actual Send guidance.' }, finish_reason: 'stop' }], usage: { prompt_tokens: 40, completion_tokens: window.workflowRequests.length === 1 ? 8 : 17 } }; };
     });
-    await page.getByRole('button', { name: 'Test workflow', exact: true }).click();
-    await expect(page.getByText('Manual test guidance.', { exact: true })).toBeVisible();
-    await expect(page.getByText('Actual auxiliary requests: 1 / 2', { exact: true })).toBeVisible();
+    await runRoot(page, 'guidance');
+    await expect((await artifact(page, 'guidance')).locator('pre')).toHaveText('Manual test guidance.');
+    await expectRequests(page, 1, 2);
     expect(await page.evaluate(() => Object.keys(window.canvasHarness.context.extensionPrompts).filter(key => key.startsWith('lattice:guidance:')).length)).toBe(0);
     await page.getByLabel('Arm', { exact: true }).check();
     await page.evaluate(async () => { const c = window.canvasHarness.context; await window.latticeGenerationInterceptor(c.chat, 8192, () => {}, 'normal'); });
     expect(await page.evaluate(() => window.workflowRequests.length)).toBe(2);
     expect(await page.evaluate(() => Object.values(window.canvasHarness.context.extensionPrompts).some(prompt => prompt.value === 'Actual Send guidance.'))).toBe(true);
-    await expect(page.getByText('Actual Send guidance.', { exact: true })).toBeVisible();
+    await expect((await artifact(page, 'guidance')).locator('pre')).toHaveText('Actual Send guidance.');
     await expect(page.getByText('Manual test guidance.', { exact: true })).toHaveCount(0);
-    await expect(page.locator('.pc-workflows [role="status"]')).toContainText('Automatic Send');
-    await page.getByText('Reports and request trace', { exact: true }).click();
-    const trace = page.locator('details').filter({ has: page.getByText('Reports and request trace', { exact: true }) });
+    await expect(preview(page)).toContainText('Automatic Send');
+    const trace = await artifact(page, 'Call trace');
     await expect(trace).toContainText('Actual Send guidance.');
-    expect(JSON.parse(await trace.locator('pre').textContent()).calls[0].result.usage.completion_tokens).toBe(17);
-    await expect(trace).toContainText('host-tokenizer');
+    expect(JSON.parse(await trace.locator('pre').textContent())[0].result.usage.completion_tokens).toBe(17);
+    const reports = await artifact(page, 'Reports');
+    await expect(reports).toContainText('host-tokenizer');
     await page.evaluate(async () => {
         const c = window.canvasHarness.context;
         await c.eventSource.emit(c.eventTypes.GENERATION_ENDED, c.chat.length);
@@ -281,10 +410,13 @@ test('manual pre Test and actual Send show their distinct guidance and request e
         c.ConnectionManagerRequestService.sendRequest = async (...args) => { window.workflowRequests.push(args); throw new Error('Synthetic Send failure'); };
         await window.latticeGenerationInterceptor(c.chat, 8192, () => {}, 'normal');
     });
+    await artifact(page, 'Call trace');
     await expect(trace).toContainText('REQUEST_FAILED');
     await expect(trace).not.toContainText('Actual Send guidance.');
-    await expect(trace).toContainText('NATIVE_FALLBACK');
-    await expect(page.getByText('Actual auxiliary requests: 1 / 2', { exact: true })).toBeVisible();
+    await artifact(page, 'Reports');
+    await expect(reports).toContainText('NATIVE_FALLBACK');
+    await expect(reports).not.toContainText('Actual Send guidance.');
+    await expectRequests(page, 1, 2);
     expect(await page.evaluate(() => window.workflowRequests.length)).toBe(3);
 });
 
@@ -297,17 +429,20 @@ test('automatic Send evidence stays with its original graph through post review,
         s.nativeBindings.preGraphId = pre.id; s.workflowMode = 'native'; s.enabled = true;
         h.S.save(); h.UI.refreshIfOpen(); return pre.id;
     });
-    await page.getByRole('button', { name: 'Run reviewed repair', exact: true }).click();
-    await expect(page.getByText('We explore.', { exact: true })).toBeVisible();
+    await runRoot(page);
+    await candidateText(page, 'We explore.');
     await page.evaluate(async () => {
         const c = window.canvasHarness.context;
         c.ConnectionManagerRequestService.sendRequest = async (...args) => { window.workflowRequests.push(args); return { choices: [{ message: { content: 'First automatic guidance.' }, finish_reason: 'stop' }] }; };
         await window.latticeGenerationInterceptor(c.chat, 8192, () => {}, 'normal');
     });
-    await expect(page.getByText('We explore.', { exact: true })).toBeVisible();
+    await candidateText(page, 'We explore.');
     await expect(page.getByText('First automatic guidance.', { exact: true })).toHaveCount(0);
-    await page.locator('.pc-graph-select').selectOption(preId);
-    await expect(page.getByText('First automatic guidance.', { exact: true })).toBeVisible();
+    await page.getByRole('combobox', { name: 'Canvas', exact: true }).selectOption(preId);
+    await selectTerminal(page, 'guidance', false);
+    await expect((await artifact(page, 'guidance')).locator('pre')).toHaveText('First automatic guidance.');
+    await expect(preview(page)).toContainText('Automatic Send');
+    expect(await page.evaluate(async () => (await import('/src/run.js?v=' + window.canvasHarness.version)).getNativeWorkflowController().lastAutomaticResult().origin.graphId)).toBe(preId);
     await page.getByRole('button', { name: 'Close canvas', exact: true }).click();
     await page.evaluate(async () => {
         const c = window.canvasHarness.context;
@@ -316,9 +451,11 @@ test('automatic Send evidence stays with its original graph through post review,
         await window.canvasHarness.settle();
     });
     await expect(page.locator('.pc-root')).not.toHaveClass(/pc-open/);
-    expect((await page.locator('.pc-workflows').allTextContents()).join('')).not.toContain('Send while closed.');
+    expect((await preview(page).allTextContents()).join('')).not.toContain('Send while closed.');
     await page.evaluate(async () => { window.canvasHarness.UI.open(); await window.canvasHarness.settle(); });
-    await expect(page.getByText('Send while closed.', { exact: true })).toBeVisible();
+    await selectTerminal(page, 'guidance', false);
+    await expect((await artifact(page, 'guidance')).locator('pre')).toHaveText('Send while closed.');
+    await expect(preview(page)).toContainText('Automatic Send');
     await expect(page.getByText('First automatic guidance.', { exact: true })).toHaveCount(0);
     expect(await page.evaluate(() => window.workflowRequests.length)).toBe(3);
 });
@@ -342,8 +479,8 @@ test('native graphs reject legacy prompt seeding before confirmation while legac
     expect(await page.evaluate(() => window.seedConfirmations || 0)).toBe(0);
     expect(await page.evaluate(() => JSON.stringify(window.canvasHarness.graph) === window.beforeNativeSeed)).toBe(true);
     expect(await page.evaluate(async () => (await import('/src/workflow/contracts.js?v=' + window.canvasHarness.version)).validateWorkflow(window.canvasHarness.graph).ok)).toBe(true);
-    const legacy = await page.evaluate(() => window.canvasHarness.S.allGraphs().find(graph => graph.schema !== 2).id);
-    await page.locator('.pc-graph-select').selectOption(legacy);
+    const legacy = await page.evaluate(() => window.canvasHarness.S.allGraphs().find(graph => !graph.mode?.startsWith('native-')).id);
+    await page.getByRole('combobox', { name: 'Canvas', exact: true }).selectOption(legacy);
     await page.getByRole('button', { name: 'Graph', exact: true }).click();
     await expect(seed).toBeEnabled(); await seed.click();
     await expect.poll(() => page.evaluate(() => window.seedConfirmations || 0)).toBe(1);
@@ -352,10 +489,10 @@ test('native graphs reject legacy prompt seeding before confirmation while legac
 
 test('Send indicator and arm messages follow native pre assignment, manual post-only, and legacy modes', async ({ page }) => {
     await reviewFixture(page);
-    await page.getByRole('button', { name: 'Install Scene guidance' }).click();
+    await installWorkflow(page, 'Scene guidance');
     const names = await page.evaluate(() => {
         const h = window.canvasHarness, s = h.S.settings();
-        const legacy = h.S.allGraphs().find(graph => graph.schema !== 2), pre = h.graph;
+        const legacy = h.S.allGraphs().find(graph => !graph.mode?.startsWith('native-')), pre = h.graph;
         legacy.name = 'Unrelated legacy prompt'; pre.name = 'Assigned native guidance';
         s.nativeBindings.preGraphId = pre.id; s.workflowMode = 'native'; s.enabled = true;
         s.activeGraphId = legacy.id; h.S.setChatBinding(legacy.id); h.S.save(); document.dispatchEvent(new CustomEvent('pc-state'));
@@ -390,8 +527,10 @@ test('Send indicator and arm messages follow native pre assignment, manual post-
 test('review controls and comparison stay usable in a narrow viewport', async ({ page }) => {
     await reviewFixture(page);
     await page.setViewportSize({ width: 760, height: 900 });
-    await page.getByRole('button', { name: 'Toggle library', exact: true }).click();
-    await page.getByRole('button', { name: 'Run reviewed repair', exact: true }).click();
+    await hideLibrary(page);
+    await runRoot(page);
+    await expect((await artifact(page, 'original')).locator('pre')).toHaveText('We delve.');
+    await candidateText(page, 'We explore.');
     await expect(page.getByRole('button', { name: 'Apply reviewed candidate', exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     await page.getByRole('button', { name: 'Reject candidate', exact: true }).click();
@@ -402,22 +541,40 @@ test('review controls and comparison stay usable in a narrow viewport', async ({
 
 test('native wire inspection describes artifact flow without legacy prompt controls', async ({ page }) => {
     await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
-    await page.getByRole('button', { name: 'Toggle library', exact: true }).click();
-    await page.getByRole('button', { name: 'Install Scene guidance' }).click();
-    await page.evaluate(() => { const h = window.canvasHarness; h.canvas.select({ kind: 'wire', id: Object.keys(h.graph.wires)[0] }); });
-    await expect(page.getByText('Artifact wire', { exact: true })).toBeVisible();
+    await installWorkflow(page, 'Scene guidance');
+    const before = await page.evaluate(() => {
+        const h = window.canvasHarness;
+        return { wire: Object.values(h.graph.wires)[0], nodes: structuredClone(h.graph.nodes), roles: structuredClone(h.graph.roles), wireIds: Object.keys(h.graph.wires) };
+    });
+    const pin = page.locator(`.pc-node-native[data-id="${before.wire.from}"] .pc-port[data-dir="out"][data-port="out"]`);
+    await pin.click({ button: 'right' });
+    const menu = page.getByRole('dialog', { name: 'Pin actions', exact: true });
+    await expect(menu.locator('.pc-kind')).toHaveText('context');
+    await expect(menu.getByRole('button', { name: 'Go to Smart Compactor · Input', exact: true })).toBeVisible();
     await expect(page.getByText('How it joins', { exact: true })).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Cut artifact wire', exact: true })).toBeVisible();
+    const cut = menu.getByRole('button', { name: 'Break link · ' + before.wire.id, exact: true });
+    await expect(cut).toBeVisible(); await cut.click();
+    const remaining = () => page.evaluate(() => ({ nodes: window.canvasHarness.graph.nodes, roles: window.canvasHarness.graph.roles, wireIds: Object.keys(window.canvasHarness.graph.wires) }));
+    await expect.poll(async () => (await remaining()).wireIds).toEqual(before.wireIds.filter(id => id !== before.wire.id));
+    expect((await remaining()).nodes).toEqual(before.nodes); expect((await remaining()).roles).toEqual(before.roles);
+    await page.getByRole('button', { name: 'Undo', exact: true }).click();
+    await expect.poll(async () => (await remaining()).wireIds).toEqual(before.wireIds);
+    // Use the existing public selection fixture, then the real graph keyboard
+    // control. Native wire deletion must not delete either endpoint node.
+    await page.evaluate(id => window.canvasHarness.canvas.select({ kind: 'wire', id }), before.wire.id);
+    await page.getByLabel('Node canvas', { exact: true }).focus(); await page.keyboard.press('Delete');
+    await expect.poll(async () => (await remaining()).wireIds).toEqual(before.wireIds.filter(id => id !== before.wire.id));
+    expect((await remaining()).nodes).toEqual(before.nodes); expect((await remaining()).roles).toEqual(before.roles);
+    await expect(page.getByText('How it joins', { exact: true })).toHaveCount(0);
 });
 
 
 test('the native inspector provides a keyboard-accessible duplicate action', async ({ page }) => {
     await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
-    await page.getByRole('button', { name: 'Toggle library', exact: true }).click();
-    await page.getByRole('button', { name: 'Install Scene guidance' }).click();
-    await page.getByRole('button', { name: 'Inspect Response Plan', exact: true }).click();
-    await expect(page.getByRole('button', { name: 'Duplicate operation', exact: true })).toBeVisible();
-    await page.getByRole('button', { name: 'Duplicate operation', exact: true }).focus();
+    await installWorkflow(page, 'Scene guidance');
+    await inspectOperation(page, 'response-plan');
+    await expect(details(page).getByRole('button', { name: 'Duplicate', exact: true })).toBeVisible();
+    await details(page).getByRole('button', { name: 'Duplicate', exact: true }).focus();
     await page.keyboard.press('Enter');
     expect(await page.evaluate(() => Object.values(window.canvasHarness.graph.nodes).filter(node => node.operation === 'response-plan').length)).toBe(2);
 });
@@ -425,14 +582,14 @@ test('the native inspector provides a keyboard-accessible duplicate action', asy
 
 test('native camera pan and zoom preserve the focused editor without domain work', async ({ page }) => {
     await reviewFixture(page);
-    await page.getByRole('button', { name: 'Run reviewed repair', exact: true }).click();
+    await runRoot(page);
     await expect(page.getByRole('button', { name: 'Apply reviewed candidate', exact: true })).toBeVisible();
-    await page.getByRole('button', { name: 'Inspect Repair', exact: true }).click();
+    await inspectOperation(page, 'repair');
     await page.getByLabel('instructions', { exact: true }).focus();
     const measured = await page.evaluate(async () => {
         const { context: c, canvas, settle } = window.canvasHarness;
         const controller = (await import('/src/run.js?v=' + window.canvasHarness.version)).getNativeWorkflowController();
-        const editor = document.activeElement, node = canvas.nodeLayer.querySelector('.pc-node'), requests = window.workflowRequests.length;
+        const editor = document.activeElement, node = canvas.nodeLayer.querySelector('.pc-node-native'), requests = window.workflowRequests.length;
         let analysis = 0, bindings = 0, freshness = 0, tokens = 0, lore = 0;
         const prepare = canvas.hooks.prepareRender, getProfile = c.ConnectionManagerRequestService.getProfile, candidateStatus = controller.candidateStatus, count = c.getTokenCountAsync;
         canvas.hooks.prepareRender = (...args) => { analysis++; return prepare(...args); };
@@ -447,7 +604,7 @@ test('native camera pan and zoom preserve the focused editor without domain work
         window.dispatchEvent(new MouseEvent('mousemove', { clientX: point.clientX + 30, clientY: point.clientY + 20, buttons: 4 }));
         window.dispatchEvent(new MouseEvent('mouseup', { clientX: point.clientX + 30, clientY: point.clientY + 20, button: 1 }));
         await settle();
-        return { analysis, bindings, freshness, tokens, lore, requests: window.workflowRequests.length - requests, sameEditor: editor === document.activeElement && document.contains(editor), sameNode: node === canvas.nodeLayer.querySelector('.pc-node') };
+        return { analysis, bindings, freshness, tokens, lore, requests: window.workflowRequests.length - requests, sameEditor: editor === document.activeElement && document.contains(editor), sameNode: node === canvas.nodeLayer.querySelector('.pc-node-native') };
     });
     expect(measured).toEqual({ analysis: 0, bindings: 0, freshness: 0, tokens: 0, lore: 0, requests: 0, sameEditor: true, sameNode: true });
     expect(await page.evaluate(async () => { const controller = (await import('/src/run.js?v=' + window.canvasHarness.version)).getNativeWorkflowController(); return controller.candidateStatus(controller.lastResult().artifact).ok; })).toBe(true);
@@ -456,15 +613,16 @@ test('native camera pan and zoom preserve the focused editor without domain work
     await page.mouse.move(title.x + 60, title.y + 28, { steps: 4 }); await page.mouse.up();
     await expect(page.getByRole('button', { name: 'Apply reviewed candidate', exact: true })).toBeEnabled();
     expect(await page.evaluate(async () => { const controller = (await import('/src/run.js?v=' + window.canvasHarness.version)).getNativeWorkflowController(); return controller.candidateStatus(controller.lastResult().artifact).ok; })).toBe(true);
-    await page.getByRole('button', { name: 'Inspect Repair', exact: true }).click();
+    await inspectOperation(page, 'repair');
     await page.getByLabel('instructions', { exact: true }).fill('A semantic operation edit.');
+    await page.getByLabel('instructions', { exact: true }).press('Tab');
     await expect(page.getByRole('button', { name: 'Apply reviewed candidate', exact: true })).toHaveCount(0);
 });
 
 test('native presentation undo preserves reviewed authority while semantic undo and redo revoke it', async ({ page }) => {
     await reviewFixture(page);
     await page.evaluate(() => { const h = window.canvasHarness; h.H.flush(h.graph); });
-    await page.getByRole('button', { name: 'Run reviewed repair', exact: true }).click();
+    await runRoot(page);
     const apply = page.getByRole('button', { name: 'Apply reviewed candidate', exact: true });
     await expect(apply).toBeEnabled();
     await page.evaluate(async () => {
@@ -474,18 +632,18 @@ test('native presentation undo preserves reviewed authority while semantic undo 
         node.presentation = { alias: 'Presentation alias', compact: true }; node.x += 25;
         h.S.touchGraph(h.graph); h.H.flush(h.graph); h.UI.refreshIfOpen();
     });
-    await page.keyboard.press('Control+z'); await expect(apply).toBeEnabled();
+    await canvasHistory(page, 'Control+z'); await expect(apply).toBeEnabled();
     expect(await page.evaluate(async () => (await import('/src/run.js?v=' + window.canvasHarness.version)).getNativeWorkflowController().candidateStatus(window.historyReviewedCandidate).ok)).toBe(true);
-    await page.keyboard.press('Control+Shift+z'); await expect(apply).toBeEnabled();
+    await canvasHistory(page, 'Control+Shift+z'); await expect(apply).toBeEnabled();
     expect(await page.evaluate(async () => (await import('/src/run.js?v=' + window.canvasHarness.version)).getNativeWorkflowController().candidateStatus(window.historyReviewedCandidate).ok)).toBe(true);
     await page.evaluate(() => {
         const h = window.canvasHarness, node = Object.values(h.graph.nodes).find(n => n.operation === 'repair');
         node.instructions = 'Semantic history edit'; h.S.touchGraph(h.graph); h.H.flush(h.graph); h.UI.refreshIfOpen();
     });
     await expect(apply).toHaveCount(0);
-    await page.keyboard.press('Control+z'); await expect(apply).toHaveCount(0);
+    await canvasHistory(page, 'Control+z'); await expect(apply).toHaveCount(0);
     expect(await page.evaluate(async () => (await import('/src/run.js?v=' + window.canvasHarness.version)).getNativeWorkflowController().candidateStatus(window.historyReviewedCandidate).ok)).toBe(false);
-    await page.keyboard.press('Control+Shift+z'); await expect(apply).toHaveCount(0);
+    await canvasHistory(page, 'Control+Shift+z'); await expect(apply).toHaveCount(0);
     expect(await page.evaluate(() => window.workflowRequests.length)).toBe(1);
     expect(await page.evaluate(() => window.workflowSaveAttempts || 0)).toBe(0);
     expect(await page.evaluate(() => window.canvasHarness.context.chat.at(-1).mes)).toBe('We delve.');
@@ -497,7 +655,7 @@ test('accepted additive import cancels a root request and history cannot resurre
         const h = window.canvasHarness; h.H.flush(h.graph);
         h.context.ConnectionManagerRequestService.sendRequest = (...args) => new Promise(resolve => { window.importPendingRequest = resolve; window.importRequestSignal = args[3].signal; });
     });
-    await page.getByRole('button', { name: 'Run reviewed repair', exact: true }).click();
+    await runRoot(page);
     await page.waitForFunction(() => !!window.importPendingRequest);
     const before = await page.evaluate(() => ({ nodes: Object.keys(window.canvasHarness.graph.nodes).length, chat: structuredClone(window.canvasHarness.context.chat) }));
     await page.getByRole('button', { name: 'File', exact: true }).click();
@@ -513,9 +671,9 @@ test('accepted additive import cancels a root request and history cannot resurre
     const apply = page.getByRole('button', { name: 'Apply reviewed candidate', exact: true });
     await expect(apply).toHaveCount(0);
     expect(await page.evaluate(() => Object.keys(window.canvasHarness.graph.nodes).length)).toBe(before.nodes + 1);
-    await page.keyboard.press('Control+z'); await expect(apply).toHaveCount(0);
+    await canvasHistory(page, 'Control+z'); await expect(apply).toHaveCount(0);
     expect(await page.evaluate(() => Object.keys(window.canvasHarness.graph.nodes).length)).toBe(before.nodes);
-    await page.keyboard.press('Control+Shift+z'); await expect(apply).toHaveCount(0);
+    await canvasHistory(page, 'Control+Shift+z'); await expect(apply).toHaveCount(0);
     expect(await page.evaluate(() => window.canvasHarness.context.chat)).toEqual(before.chat);
     expect(await page.evaluate(() => window.workflowSaveAttempts || 0)).toBe(0);
 });
@@ -536,8 +694,8 @@ test('an imported native graph with omitted role records can bind its required r
         delete envelope.graph.roles;
         const result = h.S.importGraph(JSON.stringify(envelope)); h.UI.refreshIfOpen(); return result.graph.id;
     });
-    await page.locator('.pc-graph-select').selectOption(imported);
-    await page.getByLabel('Prose connection', { exact: true }).selectOption('prose');
+    await page.getByRole('combobox', { name: 'Canvas', exact: true }).selectOption(imported);
+    await bindRole(page, 'Prose', 'prose');
     expect(await page.evaluate(() => window.canvasHarness.graph.roles?.Prose?.profileId)).toBe('prose');
 });
 
@@ -547,7 +705,7 @@ test('narrow workflow inspection and review remain opaque during selection feedb
     await page.setViewportSize({ width: 760, height: 1000 });
     for (const theme of ['midnight', 'parchment']) {
         await page.evaluate(async theme => (await import('/src/theme.js?v=' + window.canvasHarness.version)).setPreset(theme), theme);
-        await page.getByRole('button', { name: 'Inspect Pattern Scan', exact: true }).click();
+        await inspectOperation(page, 'pattern-scan');
         const opacity = await page.locator('.pc-inspector').evaluate(inspector => {
             const animations = inspector.getAnimations();
             const canvas = document.createElement('canvas'), context = canvas.getContext('2d');
@@ -563,11 +721,13 @@ test('narrow workflow inspection and review remain opaque during selection feedb
         expect(opacity, theme + ' must hide graph content throughout inspection feedback').toEqual([255, 255, 255]);
         const editor = page.getByLabel('rules', { exact: true });
         await editor.focus(); await page.evaluate(() => { window.narrowWorkflowEditor = document.activeElement; });
-        await editor.fill('delve');
+        await editor.fill(JSON.stringify(['delve'], null, 2));
         expect(await page.evaluate(() => document.activeElement === window.narrowWorkflowEditor && document.contains(window.narrowWorkflowEditor))).toBe(true);
     }
-    await page.getByRole('button', { name: 'Toggle library', exact: true }).click();
-    await page.getByRole('button', { name: 'Run reviewed repair', exact: true }).click();
+    await details(page).getByRole('button', { name: 'Save rules', exact: true }).click();
+    expect(await page.evaluate(() => Object.values(window.canvasHarness.graph.nodes).find(node => node.operation === 'pattern-scan').rules)).toEqual(['delve']);
+    await hideLibrary(page);
+    await runRoot(page);
     await expect(page.getByRole('button', { name: 'Apply reviewed candidate', exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
