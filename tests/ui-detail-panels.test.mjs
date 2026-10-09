@@ -68,7 +68,9 @@ test('model controls honor producer allowed modes and show inherited effective b
         assert.deepEqual([...connection.options].map(option => option.value), ['inherit', 'override'], 'historical null fallback does not acquire invented block semantics');
         assert.equal(f.host.querySelector('[aria-label="Model mode"]').value, 'block');
         change(connection, 'override');
-        assert.deepEqual(calls[0], [{ selectionKey: JSON.stringify(address), revision: 'revision1', address }, 'profileId', 'override', null]);
+        assert.equal(calls.length, 0, 'choosing Override only reveals the value editor');
+        change(f.host.querySelector('[aria-label="Connection profile"]'), 'profileA');
+        assert.deepEqual(calls[0], [{ selectionKey: JSON.stringify(address), revision: 'revision1', address }, 'profileId', 'override', 'profileA']);
         f.update(node({ model, readOnly: true })); change(f.host.querySelector('[aria-label="Model mode"]'), 'inherit');
         assert.equal(calls.length, 1);
         f.update(node({ model: null })); assert.equal(f.host.querySelector('[data-model-controls]'), null);
