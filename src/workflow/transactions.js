@@ -1,8 +1,8 @@
-import { commitGraphDocument, GRAPH_DOCUMENT_FIELDS } from '../history.js?v=0.19.1';
-import { graphDocumentSignature, graphSemanticSignature } from './ports.js?v=0.19.1';
-import { safeWorkflowData, validateGraphStructure, isNativeWorkflow } from './contracts.js?v=0.19.1';
-import { definitionChain, ownsDefinitionPath } from './composition-edit.js?v=0.19.1';
-import { legacyInsertionSignature, validateLegacyInsertionGraph } from './legacy-insertion.js?v=0.19.1';
+import { commitGraphDocument, GRAPH_DOCUMENT_FIELDS } from '../history.js?v=0.20.0';
+import { graphDocumentSignature, graphSemanticSignature } from './ports.js?v=0.20.0';
+import { safeWorkflowData, validateGraphStructure, isNativeWorkflow } from './contracts.js?v=0.20.0';
+import { definitionChain, ownsDefinitionPath } from './composition-edit.js?v=0.20.0';
+import { legacyInsertionSignature, validateLegacyInsertionGraph } from './legacy-insertion.js?v=0.20.0';
 
 const contexts = new WeakMap();
 const fail = (code, message) => ({ ok: false, error: { code, message } });

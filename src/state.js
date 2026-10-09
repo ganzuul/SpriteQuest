@@ -21,12 +21,12 @@
  *   chat binding > character binding > activeGraphId
  */
 
-import { operationDefaults } from './workflow/catalog.js?v=0.19.1';
-import { exportWorkflow, parseWorkflow } from './workflow/packages.js?v=0.19.1';
-import { isNativeWorkflow, validateGraphStructure } from './workflow/contracts.js?v=0.19.1';
-import { commitPreparedGraph, graphEditSignature } from './workflow/transactions.js?v=0.19.1';
-import * as graphHistory from './history.js?v=0.19.1';
-import { stagePortId, parseStatePort, ensureStageIds } from './statevals.js?v=0.19.1';
+import { operationDefaults } from './workflow/catalog.js?v=0.20.0';
+import { exportWorkflow, parseWorkflow } from './workflow/packages.js?v=0.20.0';
+import { isNativeWorkflow, validateGraphStructure } from './workflow/contracts.js?v=0.20.0';
+import { commitPreparedGraph, graphEditSignature } from './workflow/transactions.js?v=0.20.0';
+import * as graphHistory from './history.js?v=0.20.0';
+import { stagePortId, parseStatePort, ensureStageIds } from './statevals.js?v=0.20.0';
 
 export const MODULE = 'prompt-canvas';
 export const META_KEY = 'promptCanvasGraph';

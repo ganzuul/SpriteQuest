@@ -1,5 +1,5 @@
-import { safeWorkflowData } from './contracts.js?v=0.19.1';
-import { graphDocumentSignature } from './ports.js?v=0.19.1';
+import { safeWorkflowData } from './contracts.js?v=0.20.0';
+import { graphDocumentSignature } from './ports.js?v=0.20.0';
 
 const fail = (code, message) => ({ ok: false, error: { code, message } });
 const record = value => value !== null && typeof value === 'object' && !Array.isArray(value);

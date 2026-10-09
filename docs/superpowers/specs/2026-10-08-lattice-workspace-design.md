@@ -10,6 +10,8 @@ The user approved the prototype: “I like it. I think this is good enough to pu
 
 Approved visual source: `C:/Users/Keptin/.codex/visualizations/2026/10/08/01a11972-1aa4-7150-95aa-65ce26252718/lattice-workspace.html` (178,691 bytes). This is a presentation reference, not runtime code to paste into the product. The font comparison selected Bricolage Grotesque provisionally. The user-supplied logo is `C:/Users/Keptin/Downloads/lattice-logo.svg`.
 
+The user reiterated during implementation that the final UI must look like this approved interactive proposal. Its SHA256 is `C89442A03084032D95BD55668CFAA0AF3E2577FFC916F393F516A4D6089558A8`. Final acceptance compares production screenshots directly against its chrome, palette, density, drawer hierarchy, compact-card presentation and responsive panel placement; passing behavior checks alone does not establish visual fidelity. Keep icons original or similar as requested, while preserving the approved geometry and style.
+
 ## Workspace and brand
 
 Use white **LATTICE**, all caps, Bricolage Grotesque 600 at 20px with 0.015em tracking. Preserve the supplied SVG geometry, masks, and minus-45-degree rotation in a 30px square; keep a 4px element gap, vertically centered. Bundle the font and its license so the installed extension works without third-party font requests. Other interface typography remains the existing product font.

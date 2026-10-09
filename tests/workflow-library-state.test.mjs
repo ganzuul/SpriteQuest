@@ -5,8 +5,8 @@ import { normalizeNativeGraph } from '../src/workflow/migration.js';
 import { prepareCreateFromSelection } from '../src/workflow/composition.js';
 import { definitionRefKey } from '../src/workflow/definitions.js';
 import { resolveWorkflow } from '../src/workflow/resolve.js';
-import * as S from '../src/state.js?v=0.19.1';
-import * as L from '../src/library.js?v=0.19.1';
+import * as S from '../src/state.js?v=0.20.0';
+import * as L from '../src/library.js?v=0.20.0';
 
 const root = prepareCreateFromSelection(normalizeNativeGraph(starterGraph('native-guidance')).data, { nodeIds: ['smart-compactor'], definitionId: 'stored-definition', name: 'Stored definition' }).data.candidate;
 const snapshot = Object.values(root.definitions)[0];

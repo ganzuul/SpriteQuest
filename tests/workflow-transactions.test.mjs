@@ -4,7 +4,7 @@ import { starterGraph } from '../src/workflow/starters.js';
 import { prepareWorkflowInsertion } from '../src/workflow/insertion.js';
 import { prepareDisconnection } from '../src/workflow/ports.js';
 import { captureGraphEditContext, commitPreparedGraph } from '../src/workflow/transactions.js';
-import * as H from '../src/history.js?v=0.19.1';
+import * as H from '../src/history.js?v=0.20.0';
 
 let nextRoot = 0;
 test('legacy insertion commits through the legacy contract and reverses as one step', () => {

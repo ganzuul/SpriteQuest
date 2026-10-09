@@ -1,14 +1,14 @@
-import { isNativeWorkflow, safeWorkflowData, validateGraphStructure } from './contracts.js?v=0.19.1';
-import { normalizeNativeGraph } from './migration.js?v=0.19.1';
-import { operationFor } from './catalog.js?v=0.19.1';
-import { graphDocumentSignature, graphSemanticSignature } from './ports.js?v=0.19.1';
-import { normalizeLegacyInsertionGraph, validateLegacyInsertionGraph, legacyInsertionSignature, legacyInsertionDiagnostics } from './legacy-insertion.js?v=0.19.1';
-import { parseWorkflow } from './packages.js?v=0.19.1';
-import { inspectExpandedGraph } from './graph-validation.js?v=0.19.1';
-import { definitionRefKey, nodeBindingOverrideKey } from './definition-data.js?v=0.19.1';
-import { definitionChain, ownsDefinitionPath, pathStartsWith } from './composition-edit.js?v=0.19.1';
-import { prepareLocalDefinitionEdit } from './definition-library.js?v=0.19.1';
-import { prepareImportedDefinitionPins } from './definition-insertion.js?v=0.19.1';
+import { isNativeWorkflow, safeWorkflowData, validateGraphStructure } from './contracts.js?v=0.20.0';
+import { normalizeNativeGraph } from './migration.js?v=0.20.0';
+import { operationFor } from './catalog.js?v=0.20.0';
+import { graphDocumentSignature, graphSemanticSignature } from './ports.js?v=0.20.0';
+import { normalizeLegacyInsertionGraph, validateLegacyInsertionGraph, legacyInsertionSignature, legacyInsertionDiagnostics } from './legacy-insertion.js?v=0.20.0';
+import { parseWorkflow } from './packages.js?v=0.20.0';
+import { inspectExpandedGraph } from './graph-validation.js?v=0.20.0';
+import { definitionRefKey, nodeBindingOverrideKey } from './definition-data.js?v=0.20.0';
+import { definitionChain, ownsDefinitionPath, pathStartsWith } from './composition-edit.js?v=0.20.0';
+import { prepareLocalDefinitionEdit } from './definition-library.js?v=0.20.0';
+import { prepareImportedDefinitionPins } from './definition-insertion.js?v=0.20.0';
 
 const fail = (code, message) => ({ ok: false, error: { code, message } });
 

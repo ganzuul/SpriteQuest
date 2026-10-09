@@ -85,7 +85,7 @@ assert.equal(portable.nodes.plan.profileId, 'override-profile', 'export never mu
 const futurePackage = { ...envelope, schema: 2 };
 assert.equal(parseWorkflow(JSON.stringify(futurePackage)).error?.code, 'UNSUPPORTED_PACKAGE');
 assert.equal(parseWorkflow(JSON.stringify({ ...envelope, minRuntime: 2 })).error?.code, 'UNSUPPORTED_PACKAGE');
-const S = await import('../src/state.js?v=0.19.1');
+const S = await import('../src/state.js?v=0.20.0');
 assert.equal(S.defaultNode('workflow', 10, 20).operation, 'scene-context');
 assert.equal(S.defaultNode('workflow', 10, 20).recentMessages, 12);
 assert.equal(S.defaultNode('workflow', 10, 20).includeCharacter, true);

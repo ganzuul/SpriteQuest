@@ -16,14 +16,14 @@
  * generation is worse than one that does nothing.
  */
 
-import { settings, save, resolveGraph, ctx, safe } from './src/state.js?v=0.19.1';
-import { run, callCount, getNativeWorkflowController, initializeNativeWorkflowController, workflowSignature, sendWorkflowState } from './src/run.js?v=0.19.1';
-import * as UI from './src/ui.js?v=0.19.1';
-import { jevSettings, jevYesNo } from './src/jev.js?v=0.19.1';
-import { applyTheme } from './src/theme.js?v=0.19.1';
-import { isNativeWorkflow } from './src/workflow/contracts.js?v=0.19.1';
-import { renderThemeEditor } from './src/theme-editor.js?v=0.19.1';
-import { renderThoughts, attachThoughts, repaintAll, livePanel, answersMode } from './src/thoughts.js?v=0.19.1';
+import { settings, save, resolveGraph, ctx, safe } from './src/state.js?v=0.20.0';
+import { run, callCount, getNativeWorkflowController, initializeNativeWorkflowController, workflowSignature, sendWorkflowState } from './src/run.js?v=0.20.0';
+import * as UI from './src/ui.js?v=0.20.0';
+import { jevSettings, jevYesNo } from './src/jev.js?v=0.20.0';
+import { applyTheme } from './src/theme.js?v=0.20.0';
+import { isNativeWorkflow } from './src/workflow/contracts.js?v=0.20.0';
+import { renderThemeEditor } from './src/theme-editor.js?v=0.20.0';
+import { renderThoughts, attachThoughts, repaintAll, livePanel, answersMode } from './src/thoughts.js?v=0.20.0';
 
 const MODULE = 'prompt-canvas';
 // SillyTavern awaits the global named by manifest.generate_interceptor.

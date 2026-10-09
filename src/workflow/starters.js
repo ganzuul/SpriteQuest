@@ -1,4 +1,4 @@
-import { operationDefaults } from './catalog.js?v=0.19.1';
+import { operationDefaults } from './catalog.js?v=0.20.0';
 export const STARTERS = [
     { id: 'native-guidance', version: 1, title: 'Scene guidance', purpose: 'Shape scene direction while SillyTavern writes the reply.', phase: 'pre', roles: ['Analysis'], callBound: 2, operations: ['scene-context', 'smart-compactor', 'response-plan', 'guidance'] },
     { id: 'reviewed-de-slop', version: 1, title: 'Reviewed AI De-slop', purpose: 'Find literal patterns and review a bounded repair before applying.', phase: 'post', roles: ['Prose'], callBound: 1, operations: ['reply-snapshot', 'pattern-scan', 'repair', 'validate-patches', 'review-gate', 'apply-reply'] },

@@ -1,14 +1,14 @@
-import { inspectDefinitionGraph } from '../workflow/graph-validation.js?v=0.19.1';
-import { formatRecordedArtifact } from '../workflow/recording.js?v=0.19.1';
-import { projectRunRows } from '../workflow/run-state.js?v=0.19.1';
-import { normalizeNativeGraph } from '../workflow/migration.js?v=0.19.1';
-import { definitionRefKey } from '../workflow/definition-data.js?v=0.19.1';
-import { prepareWorkflowPlanner } from '../workflow/resolve.js?v=0.19.1';
-import { prepareCompositionViews } from '../workflow/composition-views.js?v=0.19.1';
-import { prepareWorkflowProjection, projectPreparedWorkflow } from './workflow-surface.js?v=0.19.1';
-import { operationFor, portsForNode } from '../workflow/catalog.js?v=0.19.1';
-import { definitionChain } from '../workflow/composition-edit.js?v=0.19.1';
-import { FAMILY_PALETTE, paletteForOperation } from './node-palette.js?v=0.19.1';
+import { inspectDefinitionGraph } from '../workflow/graph-validation.js?v=0.20.0';
+import { formatRecordedArtifact } from '../workflow/recording.js?v=0.20.0';
+import { projectRunRows } from '../workflow/run-state.js?v=0.20.0';
+import { normalizeNativeGraph } from '../workflow/migration.js?v=0.20.0';
+import { definitionRefKey } from '../workflow/definition-data.js?v=0.20.0';
+import { prepareWorkflowPlanner } from '../workflow/resolve.js?v=0.20.0';
+import { prepareCompositionViews } from '../workflow/composition-views.js?v=0.20.0';
+import { prepareWorkflowProjection, projectPreparedWorkflow } from './workflow-surface.js?v=0.20.0';
+import { operationFor, portsForNode } from '../workflow/catalog.js?v=0.20.0';
+import { definitionChain } from '../workflow/composition-edit.js?v=0.20.0';
+import { FAMILY_PALETTE, paletteForOperation } from './node-palette.js?v=0.20.0';
 const rootIdentity = root => ({ kind: 'root', workflowId: root.id });
 /** Content/host preparation only. The view session receives detached display DTOs. */
 export function prepareWorkspaceViews(root, options = {}) {

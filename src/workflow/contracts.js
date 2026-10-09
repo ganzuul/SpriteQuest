@@ -1,7 +1,7 @@
-import { operationFor } from './catalog.js?v=0.19.1';
-import { safeWorkflowData, validateNamedGraphStructure } from './graph-validation.js?v=0.19.1';
-import { resolveWorkflow } from './resolve.js?v=0.19.1';
-export { safeWorkflowData } from './graph-validation.js?v=0.19.1';
+import { operationFor } from './catalog.js?v=0.20.0';
+import { safeWorkflowData, validateNamedGraphStructure } from './graph-validation.js?v=0.20.0';
+import { resolveWorkflow } from './resolve.js?v=0.20.0';
+export { safeWorkflowData } from './graph-validation.js?v=0.20.0';
 const fail = (code, message, nodeId) => ({ ok: false, error: { code, message, ...(nodeId ? { nodeId } : {}) } });
 const record = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 /** Native/unsafe routing guard: only plain legacy metadata may enter legacy paths. */

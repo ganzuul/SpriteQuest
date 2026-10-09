@@ -1,8 +1,8 @@
-import { composeText } from './compose.js?v=0.19.1';
-import { selectFields } from './select-fields.js?v=0.19.1';
-import { cloneJsonValue } from './json-data.js?v=0.19.1';
-import { decodeJson } from './json-decode.js?v=0.19.1';
-import { applyTextRules, createDraftRulePatches } from './text-rules.js?v=0.19.1';
+import { composeText } from './compose.js?v=0.20.0';
+import { selectFields } from './select-fields.js?v=0.20.0';
+import { cloneJsonValue } from './json-data.js?v=0.20.0';
+import { decodeJson } from './json-decode.js?v=0.20.0';
+import { applyTextRules, createDraftRulePatches } from './text-rules.js?v=0.20.0';
 
 const enumControl = (key, label, options) => ({ key, label, type: 'enum', options });
 const textControl = (key, label) => ({ key, label, type: 'text' });

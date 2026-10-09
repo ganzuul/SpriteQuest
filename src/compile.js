@@ -22,17 +22,17 @@
  * no exceptions, because a graph you have to trace to predict is not a tool.
  */
 
-import { ctx, safe, NODE_TYPES, WIRE_KINDS, wiresInto, wiresOutOf, outputNode, togetherGroup, groupWires, deciderKeys, settings, activeGraph, saveWires } from './state.js?v=0.19.1';
-import { memoryForSend } from './memory.js?v=0.19.1';
-import { stPrompt, MARKER_SOURCES, getPrompt } from './library.js?v=0.19.1';
-import { applySelect } from './select.js?v=0.19.1';
-import { toEntry, selectLore, loreMessages, blockBooks, stripFromWorldInfo } from './lore.js?v=0.19.1';
-import { computeState, valueOutput, stageFor, stageText, parseStatePort, stagePortId } from './statevals.js?v=0.19.1';
-import { isNativeWorkflow } from './workflow/contracts.js?v=0.19.1';
+import { ctx, safe, NODE_TYPES, WIRE_KINDS, wiresInto, wiresOutOf, outputNode, togetherGroup, groupWires, deciderKeys, settings, activeGraph, saveWires } from './state.js?v=0.20.0';
+import { memoryForSend } from './memory.js?v=0.20.0';
+import { stPrompt, MARKER_SOURCES, getPrompt } from './library.js?v=0.20.0';
+import { applySelect } from './select.js?v=0.20.0';
+import { toEntry, selectLore, loreMessages, blockBooks, stripFromWorldInfo } from './lore.js?v=0.20.0';
+import { computeState, valueOutput, stageFor, stageText, parseStatePort, stagePortId } from './statevals.js?v=0.20.0';
+import { isNativeWorkflow } from './workflow/contracts.js?v=0.20.0';
 
 /** A library prompt's text, for stages linked to one. */
 const libraryText = (id) => safe(() => getPrompt(id)?.content) ?? null;
-import { holds } from './expr.js?v=0.19.1';
+import { holds } from './expr.js?v=0.20.0';
 
 /* ------------------------------------------------------------------ */
 /* live context                                                        */

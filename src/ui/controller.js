@@ -1,23 +1,23 @@
-import { resolveBinding } from '../workflow/connections.js?v=0.19.1';
-import * as workflowRuntime from '../run.js?v=0.19.1';
-import { installStarter } from '../workflow/starters.js?v=0.19.1';
-import { operationDefaults, operationFor } from '../workflow/catalog.js?v=0.19.1';
-import { isNativeWorkflow } from '../workflow/contracts.js?v=0.19.1';
-import { parseWorkflowInsertionFile, prepareWorkflowInsertion } from '../workflow/insertion.js?v=0.19.1';
-import { captureGraphEditContext } from '../workflow/transactions.js?v=0.19.1';
-import { viewIdentityKey } from './view-state.js?v=0.19.1';
-import { createGraphViewSession } from './graph-view-session.js?v=0.19.1';
-import { prepareNativeNodeEdit, prepareQualifiedScopeEdit, makeLocalCopy, prepareOwnedDefinitionMetadataEdit, prepareQualifiedInstanceUpdate } from '../workflow/definition-library.js?v=0.19.1';
-import { prepareNativeConnectionEdit } from '../workflow/connection-edits.js?v=0.19.1';
-import { preparePortalRename, prepareCreateFromSelection, prepareUnpack, prepareQualifiedPortalEdit } from '../workflow/composition.js?v=0.19.1';
-import { normalizeNativeGraph } from '../workflow/migration.js?v=0.19.1';
-import { prepareGraphCandidate } from '../workflow/prepared-graph-edit.js?v=0.19.1';
-import { definitionRefKey } from '../workflow/definition-data.js?v=0.19.1';
-import { exportSubgraph, parseSubgraph, selectSubgraphClosure } from '../workflow/packages.js?v=0.19.1';
-import { prepareNativeSearchCatalog, resolveNativeSearchChoice } from './native-search-catalog.js?v=0.19.1';
-import { createNativeWireBridge } from './native-wire-bridge.js?v=0.19.1';
-import { prepareWorkspaceViews, prepareLibraryViews, projectEditorDraw, projectWorkspacePanels, projectDefinitionInstance, projectDefinitionUpdate } from './workspace-preparation.js?v=0.19.1';
-import { prepareWorkflowProjection, projectPreparedWorkflow, createWorkflowSurface, createWorkflowSession } from './workflow-surface.js?v=0.19.1';
+import { resolveBinding } from '../workflow/connections.js?v=0.20.0';
+import * as workflowRuntime from '../run.js?v=0.20.0';
+import { installStarter } from '../workflow/starters.js?v=0.20.0';
+import { operationDefaults, operationFor } from '../workflow/catalog.js?v=0.20.0';
+import { isNativeWorkflow } from '../workflow/contracts.js?v=0.20.0';
+import { parseWorkflowInsertionFile, prepareWorkflowInsertion } from '../workflow/insertion.js?v=0.20.0';
+import { captureGraphEditContext } from '../workflow/transactions.js?v=0.20.0';
+import { viewIdentityKey } from './view-state.js?v=0.20.0';
+import { createGraphViewSession } from './graph-view-session.js?v=0.20.0';
+import { prepareNativeNodeEdit, prepareQualifiedScopeEdit, makeLocalCopy, prepareOwnedDefinitionMetadataEdit, prepareQualifiedInstanceUpdate } from '../workflow/definition-library.js?v=0.20.0';
+import { prepareNativeConnectionEdit } from '../workflow/connection-edits.js?v=0.20.0';
+import { preparePortalRename, prepareCreateFromSelection, prepareUnpack, prepareQualifiedPortalEdit } from '../workflow/composition.js?v=0.20.0';
+import { normalizeNativeGraph } from '../workflow/migration.js?v=0.20.0';
+import { prepareGraphCandidate } from '../workflow/prepared-graph-edit.js?v=0.20.0';
+import { definitionRefKey } from '../workflow/definition-data.js?v=0.20.0';
+import { exportSubgraph, parseSubgraph, selectSubgraphClosure } from '../workflow/packages.js?v=0.20.0';
+import { prepareNativeSearchCatalog, resolveNativeSearchChoice } from './native-search-catalog.js?v=0.20.0';
+import { createNativeWireBridge } from './native-wire-bridge.js?v=0.20.0';
+import { prepareWorkspaceViews, prepareLibraryViews, projectEditorDraw, projectWorkspacePanels, projectDefinitionInstance, projectDefinitionUpdate } from './workspace-preparation.js?v=0.20.0';
+import { prepareWorkflowProjection, projectPreparedWorkflow, createWorkflowSurface, createWorkflowSession } from './workflow-surface.js?v=0.20.0';
 /**
  * Lattice — the panel.
  *
@@ -34,27 +34,27 @@ import {
     chatBinding, setChatBinding, characterBinding, setCharacterBinding,
     exportGraph, importGraph, blankGraph, isFolderCollapsed, setFolderCollapsed, togetherGroup,
     newDeciderKey, removeDeciderKey, onGraphTouched, duplicateNode, newStateValue, groupNodes, ungroup, groupMembers, createBlanket, inOffGroup,
-} from '../state.js?v=0.19.1';
-import { applyTheme } from '../theme.js?v=0.19.1';
-import { makeClip, pasteClip, readClip, toClipboard, fromClipboard, lastClip, describeClip } from '../clip.js?v=0.19.1';
-import { renderThemeEditor } from '../theme-editor.js?v=0.19.1';
-import * as H from '../history.js?v=0.19.1';
-import * as L from '../library.js?v=0.19.1';
-import { compile, gatherContext, resolveNode, textOf, generateLevels, emissionCounts, wirePreview, countTokens, countTextTokens, routingMode, explainDecider, deciderInputList, collect } from '../compile.js?v=0.19.1';
-import { LORE_POSITIONS } from '../lore.js?v=0.19.1';
-import { computeState, stageFor, NUDGE_KEY } from '../statevals.js?v=0.19.1';
-import { openStateWindow, closeStateWindow } from '../state-window.js?v=0.19.1';
-import { memoryAt, memoryHistory, setMemoryNow, mirrorToLorebook, lorebookNames, DECIDER_SAVES } from '../memory.js?v=0.19.1';
-import { check as checkFormula } from '../expr.js?v=0.19.1';
-import { DEFAULT_SELECT, isActive as selectActive, selectLabel } from '../select.js?v=0.19.1';
-import { run, profileName, effectiveModel, callCount, testBlock, shapeForApi, inspectProfile, modelsForSource, sourceForBlock, cachedModels, fetchModelList, previewBlock } from '../run.js?v=0.19.1';
-import { Canvas, WIRE_LABEL, TYPE_LABEL, TYPE_ICON } from '../canvas.js?v=0.19.1';
-import { modelCombo } from '../model-combo.js?v=0.19.1';
-import { jevReady } from '../jev.js?v=0.19.1';
-import { createGraphAnalysis } from './graph-analysis.js?v=0.19.1';
+} from '../state.js?v=0.20.0';
+import { applyTheme } from '../theme.js?v=0.20.0';
+import { makeClip, pasteClip, readClip, toClipboard, fromClipboard, lastClip, describeClip } from '../clip.js?v=0.20.0';
+import { renderThemeEditor } from '../theme-editor.js?v=0.20.0';
+import * as H from '../history.js?v=0.20.0';
+import * as L from '../library.js?v=0.20.0';
+import { compile, gatherContext, resolveNode, textOf, generateLevels, emissionCounts, wirePreview, countTokens, countTextTokens, routingMode, explainDecider, deciderInputList, collect } from '../compile.js?v=0.20.0';
+import { LORE_POSITIONS } from '../lore.js?v=0.20.0';
+import { computeState, stageFor, NUDGE_KEY } from '../statevals.js?v=0.20.0';
+import { openStateWindow, closeStateWindow } from '../state-window.js?v=0.20.0';
+import { memoryAt, memoryHistory, setMemoryNow, mirrorToLorebook, lorebookNames, DECIDER_SAVES } from '../memory.js?v=0.20.0';
+import { check as checkFormula } from '../expr.js?v=0.20.0';
+import { DEFAULT_SELECT, isActive as selectActive, selectLabel } from '../select.js?v=0.20.0';
+import { run, profileName, effectiveModel, callCount, testBlock, shapeForApi, inspectProfile, modelsForSource, sourceForBlock, cachedModels, fetchModelList, previewBlock } from '../run.js?v=0.20.0';
+import { Canvas, WIRE_LABEL, TYPE_LABEL, TYPE_ICON } from '../canvas.js?v=0.20.0';
+import { modelCombo } from '../model-combo.js?v=0.20.0';
+import { jevReady } from '../jev.js?v=0.20.0';
+import { createGraphAnalysis } from './graph-analysis.js?v=0.20.0';
 
-import { createWorkbench } from './workbench.js?v=0.19.1';
-import { createDomainSurfaces } from './domain-surfaces.js?v=0.19.1';
+import { createWorkbench } from './workbench.js?v=0.20.0';
+import { createDomainSurfaces } from './domain-surfaces.js?v=0.20.0';
 
 let workbench = null;
 let root = null;

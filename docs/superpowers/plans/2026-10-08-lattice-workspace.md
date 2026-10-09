@@ -47,11 +47,11 @@ Address keys serialize tuples `[workflowId, instancePath, nodeId, portId]`; neve
 
 **Interfaces:** Consumes existing `WorkbenchView/Actions`, stable `getParts()` and native catalog projection. Produces additive typed workspace/menu/shelf/pane callbacks and stable `canvasHost/sidebar/inspector/preview` refs. Graph1 shell and root workflow controls are functional; instance tabs/recorded output arrive in Tasks7/9.
 
-- [ ] Add one failing browser case proving the divider expands preview/contracts graph while preserving root camera, selection and mounted card identity; run it and capture the expected missing-feature failure.
-- [ ] Implement stable shell rearrangement and divider pointer/keyboard/collapse state. Reconcile Canvas cached bounds on pane resize, never fit or project on each tick. Preserve fixed fullscreen host/z-index and narrow layouts.
-- [ ] Implement local logo/font lockup, flat eight-menu chrome, root workflow status/actions, recessed joined Graph1 frame and floating family shelf with measured aligned cascades. Route existing legacy/native commands through existing controller actions; do not create fake operations or competing runtime state.
-- [ ] Run the new case, Svelte checks and affected workbench/camera tests. Inspect 1,024/736/360/320px, actual local font load, shelf corners/flyouts and attached-tab bevel at multiple DPRs.
-- [ ] Commit only Task1 files after a task-scoped spec/quality review.
+- [x] Add one failing browser case proving the divider expands preview/contracts graph while preserving root camera, selection and mounted card identity; run it and capture the expected missing-feature failure.
+- [x] Implement stable shell rearrangement and divider pointer/keyboard/collapse state. Reconcile Canvas cached bounds on pane resize, never fit or project on each tick. Preserve fixed fullscreen host/z-index and narrow layouts.
+- [x] Implement local logo/font lockup, flat eight-menu chrome, root workflow status/actions, recessed joined Graph1 frame and floating family shelf with measured aligned cascades. Route existing legacy/native commands through existing controller actions; do not create fake operations or competing runtime state.
+- [x] Run the new case, Svelte checks and affected workbench/camera tests. Inspect 1,024/736/360/320px, actual local font load, shelf corners/flyouts and attached-tab bevel at multiple DPRs.
+- [x] Commit only Task1 files after a task-scoped spec/quality review.
 
 ## Task 2: Shared native schema, named ports and atomic edit preparation
 
@@ -59,11 +59,11 @@ Address keys serialize tuples `[workflowId, instancePath, nodeId, portId]`; neve
 
 **Interfaces:** Produces `isNativeWorkflow(graph)`, `normalizeNativeGraph(graph):Result<NativeGraph3>`, `portsForNode(graph,node):PortDescriptor[]`, `prepareConnection(graph,{from,to,replace}):Result<PreparedGraphEdit>`, `prepareDisconnection(graph,edgeIds):Result<PreparedGraphEdit>`, `validateGraphStructure(graph):Result<StructureDiagnostics>`. Existing schema2 execution remains supported.
 
-- [ ] Incrementally test/fix schema2 normalization: source has no input, terminal no output, IDs/fan-out preserved, ports in/out, presentation ignored in semantics. Example assertion: `normalizeNativeGraph(old).data.wires[0].fromPort === 'out'`.
-- [ ] Add typed control descriptors and native Reroute descriptor. Global structural validation handles named direction/type/phase/cardinality/cycles; full execution completeness remains separate. Rejected or duplicate edits leave source graph unchanged.
-- [ ] Support exact envelope version pairs and new UTF-8 limits while preserving old native/legacy readers. Update all schema2-only dispatch guards before allowing schema3 saves; unsupported versions never enter legacy compile/lore paths.
-- [ ] Test occupied-input replacement, fan-out, self/type/cycle/cardinality rejection, malformed/prototype/accessor data, multibyte caps and legacy keyed-port/wire-mode parity. Run focused unit suites and type/build checks.
-- [ ] Commit Task2 after independent review.
+- [x] Incrementally test/fix schema2 normalization: source has no input, terminal no output, IDs/fan-out preserved, ports in/out, presentation ignored in semantics. Example assertion: `normalizeNativeGraph(old).data.wires[0].fromPort === 'out'`.
+- [x] Add typed control descriptors and native Reroute descriptor. Global structural validation handles named direction/type/phase/cardinality/cycles; full execution completeness remains separate. Rejected or duplicate edits leave source graph unchanged.
+- [x] Support exact envelope version pairs and new UTF-8 limits while preserving old native/legacy readers. Update all schema2-only dispatch guards before allowing schema3 saves; unsupported versions never enter legacy compile/lore paths.
+- [x] Test occupied-input replacement, fan-out, self/type/cycle/cardinality rejection, malformed/prototype/accessor data, multibyte caps and legacy keyed-port/wire-mode parity. Run focused unit suites and type/build checks.
+- [x] Commit Task2 after independent review.
 
 ## Task 3: Intrinsic normal/compact cards and shared endpoint geometry
 
@@ -71,11 +71,11 @@ Address keys serialize tuples `[workflowId, instancePath, nodeId, portId]`; neve
 
 **Interfaces:** Consumes Task2 port descriptors; produces cached graph-space endpoint centers and unscaled card width/height used by drawing, snapping, fit/marquee/group frames. Alias/compact fields live in presentation metadata, with native semantic signatures unchanged.
 
-- [ ] Add one failing browser assertion that a native input cable meets its actual left pin center and output meets right pin center at nonidentity zoom, then implement shared endpoint geometry and horizontal native paths. Preserve legacy mode-specific endpoints/loops.
-- [ ] Implement intrinsic card rows/widths, compact icon/pins/caption, canonical details identity and escaped alias/F2/reset (80 characters). Source/terminal real endpoints only; separate host-result preview action.
-- [ ] Preserve whole-body dragging with 8-screen-pixel native threshold, pin-only linking/hover and cancellation rollback; keep legacy selection/movement semantics. Batch ResizeObserver geometry, never per-pin reads during camera frames.
-- [ ] Verify mixed compact/normal nodes, label/body dragging, editor focus and keyed identity; run camera/rendering/selection/parity suites. Check left canvas beneath shelf and no native fixed-width dead space.
-- [ ] Commit Task3 after review.
+- [x] Add one failing browser assertion that a native input cable meets its actual left pin center and output meets right pin center at nonidentity zoom, then implement shared endpoint geometry and horizontal native paths. Preserve legacy mode-specific endpoints/loops.
+- [x] Implement intrinsic card rows/widths, compact icon/pins/caption, canonical details identity and escaped alias/F2/reset (80 characters). Source/terminal real endpoints only; separate host-result preview action.
+- [x] Preserve whole-body dragging with 8-screen-pixel native threshold, pin-only linking/hover and cancellation rollback; keep legacy selection/movement semantics. Batch ResizeObserver geometry, never per-pin reads during camera frames.
+- [x] Verify mixed compact/normal nodes, label/body dragging, editor focus and keyed identity; run camera/rendering/selection/parity suites. Check left canvas beneath shelf and no native fixed-width dead space.
+- [x] Commit Task3 after review.
 
 ## Task 4: Complete graph transactions and additive import
 
@@ -83,11 +83,11 @@ Address keys serialize tuples `[workflowId, instancePath, nodeId, portId]`; neve
 
 **Interfaces:** Produces `prepareWorkflowInsertion(destination,imported,{at,allocateId,viewPath}):Result<{candidate,diagnostics,added,identityMap,baseSignature,baseDocumentSignature}>` and `commitPreparedGraph(root,prepared):Result<CommitSummary>`. Preparation is pure; commit checks root/semantic and editable-document signatures/view, preserves camera/selection, flushes prior history and creates exactly one undo step.
 
-- [ ] Incrementally test repeated imports into populated graph, identity collisions and implicit Analysis/Prose role remapping; recipient roles remain unchanged and imported defaults become explicit namespaced roles.
-- [ ] Extend root history to roles/schema/runtime/mode/portals/definition snapshots and instance overrides; exclude recordings/authority/view state. Undo/redo reconcile views and semantic invalidation rather than restoring Apply authority.
-- [ ] Add distinct File > Import into graph with review of phase, unresolved bindings, terminals and bound; parse first, reject mismatch/read-only/stale destination atomically, retain relative layout and select added nodes. Default births avoid overlap; explicit drop coordinates remain exact.
-- [ ] Test no arm/assign/request/publish/apply side effects, all internal-reference remapping, one-step undo/redo, intervening presentation edits requiring reprepare/preservation and error rollback. Preserve Open workflow behavior and legacy imports.
-- [ ] Commit Task4 after review.
+- [x] Incrementally test repeated imports into populated graph, identity collisions and implicit Analysis/Prose role remapping; recipient roles remain unchanged and imported defaults become explicit namespaced roles.
+- [x] Extend root history to roles/schema/runtime/mode/portals/definition snapshots and instance overrides; exclude recordings/authority/view state. Undo/redo reconcile views and semantic invalidation rather than restoring Apply authority.
+- [x] Add distinct File > Import into graph with review of phase, unresolved bindings, terminals and bound; parse first, reject mismatch/read-only/stale destination atomically, retain relative layout and select added nodes. Default births avoid overlap; explicit drop coordinates remain exact.
+- [x] Test no arm/assign/request/publish/apply side effects, all internal-reference remapping, one-step undo/redo, intervening presentation edits requiring reprepare/preservation and error rollback. Preserve Open workflow behavior and legacy imports.
+- [x] Commit Task4 after review.
 
 ## Task 5: Portals, immutable subgraph packages and expanded planning
 
@@ -95,12 +95,12 @@ Address keys serialize tuples `[workflowId, instancePath, nodeId, portId]`; neve
 
 **Interfaces:** Produces `validateDefinition(definition,snapshots):Result<DefinitionDiagnostics>`, verified semantic hashes, `resolveWorkflow(root,{target?}):Result<ResolvedPlan>`, pure portal changes and library `installDefinition/createRevision/prepareInstanceUpdate/makeLocalCopy/removeLibraryEntry`; conversion/unpack return PreparedGraphEdit. Resolved plan includes addressed ordered primitives, named edges/dependencies, hierarchy, terminals/target and root/per-node bounds.
 
-- [ ] Test/fix named portal alias resolution, missing publishers, same-input normal+portal conflicts, hidden cycles and scope escape; labels do not affect signatures. Resolve every hidden dependency before planning.
-- [ ] Define boundary/interface/exposed-control/ref validation and exact pinned snapshots; hash verified semantic content, handle ID/version conflicts explicitly, recursively strip local profiles/secrets/recordings on portable export. No external definition resolution.
-- [ ] Expand nested instances into one DAG with stable tuple addresses, materialized parameter/role/node-binding overrides and preview boundary mappings. Root-only operations forbidden in bodies. Bound recursion/depth8/1,000 nodes/2,000 wires and wrapper/boundary traversal before dispatch.
-- [ ] Implement Create from selection/Unpack preparation, library revisions/local copies/explicit update mappings and bundled nested JSON round trips. Root snapshots keep working after shelf deletion; two sibling instances remain independent.
-- [ ] Test optional-boundary misuse, unmapped/duplicate ports, wrong phases, malicious nested packages, exact-ref conflicts, separator-containing IDs, shared ancestors versus distinct instances, override materialization and atomic history.
-- [ ] Commit Task5 after review.
+- [x] Test/fix named portal alias resolution, missing publishers, same-input normal+portal conflicts, hidden cycles and scope escape; labels do not affect signatures. Resolve every hidden dependency before planning.
+- [x] Define boundary/interface/exposed-control/ref validation and exact pinned snapshots; hash verified semantic content, handle ID/version conflicts explicitly, recursively strip local profiles/secrets/recordings on portable export. No external definition resolution.
+- [x] Expand nested instances into one DAG with stable tuple addresses, materialized parameter/role/node-binding overrides and preview boundary mappings. Root-only operations forbidden in bodies. Bound recursion/depth8/1,000 nodes/2,000 wires and wrapper/boundary traversal before dispatch.
+- [x] Implement Create from selection/Unpack preparation, library revisions/local copies/explicit update mappings and bundled nested JSON round trips. Root snapshots keep working after shelf deletion; two sibling instances remain independent.
+- [x] Test optional-boundary misuse, unmapped/duplicate ports, wrong phases, malicious nested packages, exact-ref conflicts, separator-containing IDs, shared ancestors versus distinct instances, override materialization and atomic history.
+- [x] Commit Task5 after review.
 
 ## Task 5a: Reviewed node-tools handoff and shared domain integration
 
@@ -108,11 +108,11 @@ Address keys serialize tuples `[workflowId, instancePath, nodeId, portId]`; neve
 
 **Interfaces:** `PRIMITIVE_OPERATIONS`, `describePrimitive(node,{phase})` and `executePrimitive(node,namedInputs,execution)` supply the four zero-request operations; `describeContextJoin` and `executeContextJoin` supply ordered Context slots. Results are `{ok:true,artifact,reports:[]}` or `{ok:false,error}`. Text/Data are real bounded artifact kinds, separate from portable settings. Each descriptor declares its actual modes, ports, controls, phase and minimum schema.
 
-- [ ] Record exact handoff commits, source ownership and reviewed evidence; bring in only owned commits normally after Task5 review. Preserve the source worktree/evidence until consumed; no source-chat main push. Reuse its passing engine/worker evidence unless integration changes or a concrete issue require rerunning it.
-- [ ] Register schema3-only Compose, Text Rules, JSON Decode, Select Fields and Context Join through the shared catalog. Resolve `both` phase against the graph. Extend Text/Data/Context DTOs, safe settings/default materialization and dynamic named ports without admitting new operations to schema2 or legacy execution.
-- [ ] Test mode/slot/section changes through complete candidate validation: occupied or removed pins cannot silently lose wires, Context Join slot IDs/order remain stable, label changes remain presentation-only, and invalid changes are atomic. Include mixed new operations inside pinned subgraphs and targeted resolution.
-- [ ] Extend portable whitelist, structural profile stripping, semantic signatures and verified definition hashes for the declared operation controls. Round-trip composed/standalone packages with Text/Data boundaries, ordered Context slots and local models removed while portable roles/models remain.
-- [ ] Verify zero model/host effects and operation adapter contracts in integration fixtures; keep runtime artifact provenance distinct from portable graph sanitization. Run focused contracts/ports/packages/composition checks and type/asset checks after shared integration. Complete independent Task5a review before Task6 runtime integration.
+- [x] Record exact handoff commits, source ownership and reviewed evidence; bring in only owned commits normally after Task5 review. Preserve the source worktree/evidence until consumed; no source-chat main push. Reuse its passing engine/worker evidence unless integration changes or a concrete issue require rerunning it.
+- [x] Register schema3-only Compose, Text Rules, JSON Decode, Select Fields and Context Join through the shared catalog. Resolve `both` phase against the graph. Extend Text/Data/Context DTOs, safe settings/default materialization and dynamic named ports without admitting new operations to schema2 or legacy execution.
+- [x] Test mode/slot/section changes through complete candidate validation: occupied or removed pins cannot silently lose wires, Context Join slot IDs/order remain stable, label changes remain presentation-only, and invalid changes are atomic. Include mixed new operations inside pinned subgraphs and targeted resolution.
+- [x] Extend portable whitelist, structural profile stripping, semantic signatures and verified definition hashes for the declared operation controls. Round-trip composed/standalone packages with Text/Data boundaries, ordered Context slots and local models removed while portable roles/models remain.
+- [x] Verify zero model/host effects and operation adapter contracts in integration fixtures; keep runtime artifact provenance distinct from portable graph sanitization. Run focused contracts/ports/packages/composition checks and type/asset checks after shared integration. Complete independent Task5a review before Task6 runtime integration.
 
 ## Task 6: One executor, safe events, bounded recordings and partial runs
 
@@ -122,12 +122,12 @@ Task6's disjoint run-state/recording foundation may precede Task5a; runtime inte
 
 **Interfaces:** Runtime consumes Task5 resolved plan. `runWorkflow(graph,ports)` gains optional `target/onEvent` while retaining existing callers; observer-safe old onStage remains. `reduceRunState(previous,event):RunState`, `projectRunRows(record,viewPath):RunRow[]` and bounded recording DTOs feed UI. Host adds explicit target run without Guidance/candidate authority and addressed terminal review handles.
 
-- [ ] Add a failing test where two subgraph instances share one outer context but execute their own model nodes, with one root bound/signal and exact authenticated binding objects. Adapt primitive executor to inputs.in/outputs.out and per-address maps; do not recursively call runWorkflow.
-- [ ] Publish immutable plan before binding preflight, ordered safe node/request/run events, and derive Failed/Blocked/Not run/cancelled states through pure reducer. Throwing observers and duplicate/out-of-order/obsolete/late events cannot alter execution or resurrect a cancelled run.
-- [ ] Implement 4,194,304/262,144/65,536-byte diagnostic limits, metadata-first plan-order retention/omission, safe summaries without owned prompt messages/endpoints, all terminal recordings and authoritative candidate separation. Test oversized multibyte/structured/error artifacts and 1,000-node metadata.
-- [ ] Add target-rooted completeness/bindings/bounds; allow missing terminals/unrelated unfinished branch, reject unrelated structural cycle, execute dependencies once and forbid partial publication/Apply. Full root runs retain terminal validation.
-- [ ] Capture safe effective-binding provenance; Apply rechecks profiles/source/epoch/graph against private terminal handles, including multiple terminals and external profile changes. Preserve existing Send owned Guidance cleanup, latest reply, save/rollback and exact candidate checks.
-- [ ] Run focused runtime/host/connections/compactor/repair suites; commit Task6 after review.
+- [x] Add a failing test where two subgraph instances share one outer context but execute their own model nodes, with one root bound/signal and exact authenticated binding objects. Adapt primitive executor to inputs.in/outputs.out and per-address maps; do not recursively call runWorkflow.
+- [x] Publish immutable plan before binding preflight, ordered safe node/request/run events, and derive Failed/Blocked/Not run/cancelled states through pure reducer. Throwing observers and duplicate/out-of-order/obsolete/late events cannot alter execution or resurrect a cancelled run.
+- [x] Implement 4,194,304/262,144/65,536-byte diagnostic limits, metadata-first plan-order retention/omission, safe summaries without owned prompt messages/endpoints, all terminal recordings and authoritative candidate separation. Test oversized multibyte/structured/error artifacts and 1,000-node metadata.
+- [x] Add target-rooted completeness/bindings/bounds; allow missing terminals/unrelated unfinished branch, reject unrelated structural cycle, execute dependencies once and forbid partial publication/Apply. Full root runs retain terminal validation.
+- [x] Capture safe effective-binding provenance; Apply rechecks profiles/source/epoch/graph against private terminal handles, including multiple terminals and external profile changes. Preserve existing Send owned Guidance cleanup, latest reply, save/rollback and exact candidate checks.
+- [x] Run focused runtime/host/connections/compactor/repair suites; commit Task6 after review.
 
 ## Task 7: Root execution sessions and independent graph views
 
@@ -135,11 +135,11 @@ Task6's disjoint run-state/recording foundation may precede Task5a; runtime inte
 
 **Interfaces:** Root WorkflowSession owns root reference/run epoch/recording/authority; view store owns root-qualified instance/library paths, camera/selection/inspector/presentation. Actions `openInstance/focusView/closeView/reopenView/revealParent` never call root switching or fit. UI projection consumes cached prepared diagnostics/binding/freshness summaries.
 
-- [ ] Add a deferred-root-run test that opens/closes/reopens a child view before completion; assert accepted root completion and zero binding/snapshot/token/lore/request/freshness work for view/camera/selection operations.
-- [ ] Separate root epoch from view epoch, guard async editor continuations by captured path, and cache preparation outside projections. Preserve cross-root/workbench-close cancellation policies.
-- [ ] Persist independent instance/library view state with old graph.view fallback; Graph1 permanent, same path deduplicated, labels/breadcrumbs follow alias, deleted paths reconcile to nearest parent. Read-only bodies reject raw mutations; Make local copy is explicit.
-- [ ] Wire double-click/Open graph, child-only breadcrumbs, accessible tab overflow/close/reopen and root-wide controls. Pins remain qualified across tabs/source deletion; never rebind a removed source.
-- [ ] Test repeated definitions, nested paths, close/reopen/reload, stale callbacks, read-only gestures and semantic versus presentation invalidation; commit Task7 after review.
+- [x] Add a deferred-root-run test that opens/closes/reopens a child view before completion; assert accepted root completion and zero binding/snapshot/token/lore/request/freshness work for view/camera/selection operations.
+- [x] Separate root epoch from view epoch, guard async editor continuations by captured path, and cache preparation outside projections. Preserve cross-root/workbench-close cancellation policies.
+- [x] Persist independent instance/library view state with old graph.view fallback; Graph1 permanent, same path deduplicated, labels/breadcrumbs follow alias, deleted paths reconcile to nearest parent. Read-only bodies reject raw mutations; Make local copy is explicit.
+- [x] Wire double-click/Open graph, child-only breadcrumbs, accessible tab overflow/close/reopen and root-wide controls. Pins remain qualified across tabs/source deletion; never rebind a removed source.
+- [x] Test repeated definitions, nested paths, close/reopen/reload, stale callbacks, read-only gestures and semantic versus presentation invalidation; commit Task7 after review.
 
 ## Task 8: Native wire gestures and contextual node search
 
@@ -147,11 +147,11 @@ Task6's disjoint run-state/recording foundation may precede Task5a; runtime inte
 
 **Interfaces:** Consumes Task2 validated edit preparation, Task4 commit/history, Task5 portal/instance descriptors and Task7 view guards. Canvas gesture DTO captures origin endpoint/view/original bindings/drop graph point; Svelte chooser/menu only dispatches selections.
 
-- [ ] Test/fix live pin drag in both directions, validated direct connections and compatible/incompatible feedback. Genuine empty drop opens Context sensitive chooser with retained draft; select/create/connect is one transaction at captured graph point, independent of popup clamping/reflow.
-- [ ] Add wire multi-select/Delete/Backspace with editable-control protection, Alt cable/pin disconnect plus rapid-double-click guard, pin hover and pin-specific break/jump menu. Preserve deleted topology on reload.
-- [ ] Add atomic Ctrl input/output moves and exact typed reroute double-click, preserving originals on rejection/cancel. Escape/pointercancel/lostcapture/blur/view switch clear state. Real fresh-page MMB pan establishes keyboard ownership and Escape rollback without tab-order changes.
-- [ ] Verify hidden portal cycles, occupied input replacement, fan-out, exact nonidentity zoom placement/geometry and no invalid/no-op run cancellation. Run legacy mode/double-click parity and camera geometry/identity checks.
-- [ ] Commit Task8 after review.
+- [x] Test/fix live pin drag in both directions, validated direct connections and compatible/incompatible feedback. Genuine empty drop opens Context sensitive chooser with retained draft; select/create/connect is one transaction at captured graph point, independent of popup clamping/reflow.
+- [x] Add wire multi-select/Delete/Backspace with editable-control protection, Alt cable/pin disconnect plus rapid-double-click guard, pin hover and pin-specific break/jump menu. Preserve deleted topology on reload.
+- [x] Add atomic Ctrl input/output moves and exact typed reroute double-click, preserving originals on rejection/cancel. Escape/pointercancel/lostcapture/blur/view switch clear state. Real fresh-page MMB pan establishes keyboard ownership and Escape rollback without tab-order changes.
+- [x] Verify hidden portal cycles, occupied input replacement, fan-out, exact nonidentity zoom placement/geometry and no invalid/no-op run cancellation. Run legacy mode/double-click parity and camera geometry/identity checks.
+- [x] Commit Task8 after review.
 
 ## Task 9: Focused details, preview/progress and composition managers
 
@@ -159,12 +159,12 @@ Task6's disjoint run-state/recording foundation may precede Task5a; runtime inte
 
 **Interfaces:** Consumes Task6 run/recording/terminal authority DTOs, Task7 addressed view/pin actions and Task5/8 composition commands. Existing adapter entry points remain stable or are changed coherently with callers.
 
-- [ ] Add one meaningful selected-node test: canonical type/alias/control/model inheritance in right details, root setup elsewhere, semantic control edit stales/cancels while alias/compact/selection preserves run. Deterministic nodes omit unnecessary model fields.
-- [ ] Implement appropriate artifact input/output/original/changes previews, Not run/Current/Stale/removed status, pin/follow behavior and explicit Run to here with request bound. Only selected fresh root terminal review enables Apply through host private handle.
-- [ ] Project active/failed/blocked/cancelled/invalid states to cards, shared three-row 4px/2px/12-column meter and hierarchical run details. Stable plan-order rows, >36 aggregation, explicit navigation, truthful elapsed/request/usage, reduced-motion readability.
-- [ ] Implement full Subgraphs shelf manager, boundary/exposed-parameter editor, revisions/update mapping/local copy, JSON install/export/insert, conversion/unpack and deletion retaining instances. Implement Manage portals/P/convert wire/output scope/rename/consumer/source/restore controls.
-- [ ] Test failed-stage partial artifacts, multiple terminals, truncation without candidate mutation, profile freshness, pinned source deletion, library read-only guards, repeated-instance overrides, portable file round trips and zero implicit model calls. Inspect desktop/narrow/theme/bevel layouts.
-- [ ] Commit Task9 after review.
+- [x] Add one meaningful selected-node test: canonical type/alias/control/model inheritance in right details, root setup elsewhere, semantic control edit stales/cancels while alias/compact/selection preserves run. Deterministic nodes omit unnecessary model fields.
+- [x] Implement appropriate artifact input/output/original/changes previews, Not run/Current/Stale/removed status, pin/follow behavior and explicit Run to here with request bound. Only selected fresh root terminal review enables Apply through host private handle.
+- [x] Project active/failed/blocked/cancelled/invalid states to cards, shared three-row 4px/2px/12-column meter and hierarchical run details. Stable plan-order rows, >36 aggregation, explicit navigation, truthful elapsed/request/usage, reduced-motion readability.
+- [x] Implement full Subgraphs shelf manager, boundary/exposed-parameter editor, revisions/update mapping/local copy, JSON install/export/insert, conversion/unpack and deletion retaining instances. Implement Manage portals/P/convert wire/output scope/rename/consumer/source/restore controls.
+- [x] Test failed-stage partial artifacts, multiple terminals, truncation without candidate mutation, profile freshness, pinned source deletion, library read-only guards, repeated-instance overrides, portable file round trips and zero implicit model calls. Inspect desktop/narrow/theme/bevel layouts.
+- [x] Commit Task9 after review.
 
 ## Task 10: Integration, release checks and main push
 
@@ -172,9 +172,9 @@ Task6's disjoint run-state/recording foundation may precede Task5a; runtime inte
 
 **Interfaces:** Complete end-user flow from examples/import through graph editing/subgraph reuse, explicit execution/inspection and reviewed terminal application. All prior task interfaces are integrated.
 
-- [ ] Apply 0.20.0 using `tools/bump-version.mjs` after inspecting its usage; preserve legacy identifiers and update native query versions coherently. Regenerate bundle and local asset/install manifests.
-- [ ] Run `npm run check`, `npm run smoke:install` and matched `npm run benchmark -- --quick`; compare against `benchmark-results/baseline-workspace.json`. Verify camera/drag identity, zero height/domain reads and no material unexplained regression; timings include environment limits.
-- [ ] Capture and inspect approved layouts at 1,024/736/360/320px, compact/normal/failed/running states and tab joins at DPR1/1.25/2/4. Resolve integration findings through one focused implementation/re-review round as needed.
+- [x] Apply 0.20.0 using `tools/bump-version.mjs` after inspecting its usage; preserve legacy identifiers and update native query versions coherently. Regenerate bundle and local asset/install manifests.
+- [x] Run `npm run check`, `npm run smoke:install` and matched `npm run benchmark -- --quick`; compare against `benchmark-results/baseline-workspace.json`. Verify camera/drag identity, zero height/domain reads and no material unexplained regression; timings include environment limits.
+- [x] Capture and inspect production layouts at 1,024/736/360/320px, compact/normal/failed/running states and tab joins at DPR1/1.25/2/4. Compare directly against the exact approved interactive proposal, including family palette, meaningful aligned drawers, compact aliases, recessed frames and narrow panel placement; resolve visible deviations and integration findings before the main push.
 - [ ] Dispatch independent whole-branch review with spec, plan, ledger, full diff and validation evidence. Resolve material findings, then commit release/integration results. No unresolved load-bearing defects before main push.
 - [ ] Use network-enabled GitHub CLI with explicit `--repo MentallyQuill/Lattice` for remote checks; expired token requires user reauthentication. Fetch remote main, integrate concurrent changes normally and rerun affected verification. Push non-forcibly to main only when final reviewed commit is ready, then verify remote main SHA matches.
 - [ ] Update goal complete only after remote verification; report release/commit, verification and any material limitations. Keep unrelated root checkout files intact and archive managed worktree only when no longer needed.

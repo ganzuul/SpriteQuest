@@ -1,4 +1,4 @@
-import { isNativeWorkflow } from '../workflow/contracts.js?v=0.19.1';
+import { isNativeWorkflow } from '../workflow/contracts.js?v=0.20.0';
 /** Domain projections shared by every card in one graph revision. No UI runtime dependency. */
 export function createGraphAnalysis({ counts, levels, group }) {
     const cache = new WeakMap();

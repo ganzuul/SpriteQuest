@@ -1,5 +1,5 @@
-import { validateGraphStructure } from './contracts.js?v=0.19.1';
-export { isNativeWorkflow } from './contracts.js?v=0.19.1';
+import { validateGraphStructure } from './contracts.js?v=0.20.0';
+export { isNativeWorkflow } from './contracts.js?v=0.20.0';
 
 /** Clone a supported native document and give primitive wires stable named endpoints.
  * @returns {import('./types').Result<import('./types').NativeGraph3>}

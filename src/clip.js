@@ -10,7 +10,7 @@
  * silently fed the original's targets would send its text twice.
  */
 
-import { NODE_TYPES, uid, touchGraph } from './state.js?v=0.19.1';
+import { NODE_TYPES, uid, touchGraph } from './state.js?v=0.20.0';
 
 export const CLIP_MARK = 'latticeClip';
 

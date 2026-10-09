@@ -1,5 +1,7 @@
 # Native workflows
 
+For the Svelte workspace, zero-call examples, graph tabs, subgraphs, connection gestures and recorded previews, start with [the Lattice workspace guide](lattice-workspace.md). This guide covers the model-backed native operations, connection routes and compatibility safeguards.
+
 ## Updating from ComfyTavern
 
 Lattice is the new name for this extension. The repository is now `MentallyQuill/Lattice`; GitHub redirects the former repository address. Update the existing extension in **Manage Extensions** and reload rather than installing another enabled copy. Existing settings, chat assignments, saved canvases, and library material remain in the same storage.
@@ -17,18 +19,18 @@ Native workflows are included on `main`. Install from the repository's default b
 Keep **one enabled copy**. If your current installation points to `Dulgadurbit/SillyCanvas`, disable that extension before installing this fork. The fork preserves saved-data compatibility, so two enabled copies would share the same data and generation hooks. Existing installations from `MentallyQuill/Lattice` should use the update or branch-switch flow below.
 
 1. Open SillyTavern's **Extensions → Install extension**. Enter repository URL `https://github.com/MentallyQuill/Lattice`, leave **Branch or tag name (optional)** blank to install `main`, click **Install** (or **Install just for me**), then reload. Open the canvas beside Send or with `/canvas`.
-2. Open the library and choose **Install Scene guidance** or **Install Reviewed AI De-slop**. Each install creates its own editable graph and opens setup. Installing, importing, and editing never arm generation or make a model call.
+2. Open **Workflows → Workflow examples…** and choose **Install Scene guidance** or **Install Reviewed AI De-slop**. Each install creates its own editable graph and opens setup. Installing, importing, and editing never arm generation or make a model call.
 3. Choose a SillyTavern Connection Manager profile for each role: **Analysis** for scene guidance, **Prose** for repair. An optional role model override uses that model with the chosen profile. Inspect a model operation to override its connection/model independently.
 4. Use **Assign pre phase and enable native mode** for guidance, or **Assign post phase and enable native mode** for reviewed repair. Arming is a separate action. A missing/deleted profile or unsupported route blocks the run with a useful issue.
-5. For guidance, use **Test workflow** to inspect the result. To use guidance on normal sends, arm the extension and send as usual. For repair, wait for a completed assistant reply, then choose **Run reviewed repair** and compare the candidate with the original.
+5. Use **Run** to inspect the workflow's result. To use guidance on normal sends, arm the extension and send as usual. For repair, wait for a completed assistant reply before running, then compare the candidate with the original.
 
 For an existing installation from this same repository on `main`, update it in **Manage Extensions**, then reload. If it is on another branch, use **Manage Extensions → Switch branch**, select `origin/main` (or the local `main` entry), click **Switch**, then reload. Install URLs use the repository address above without a `/tree/` suffix.
 
-**Test workflow can spend model tokens.** It computes guidance without publishing it. A later Send runs the enabled pre workflow again, with up to two more auxiliary requests; the test result is not cached for Send.
+**Run can spend model tokens.** A manual guidance run computes guidance without publishing it. A later Send runs the enabled pre workflow again, with up to two more auxiliary requests; the manual result is not cached for Send.
 
 Connections stay fixed to your bindings; Lattice does not activate a profile globally. Auxiliary requests contain the operation's own instructions and supplied context. They use the bound profile's route and sampler preset, without copying the native main prompt's system text into every request. Credentials stay in SillyTavern's secret store.
 
-## Two graphs
+## Model-backed examples
 
 | Example | Operations | Maximum auxiliary requests |
 | --- | --- | --- |
@@ -39,7 +41,7 @@ The normal SillyTavern reply is an additional request. Selection-only compaction
 
 Native graph wires determine execution order. Moving a card does not change message order. The family list is a discovery guide, in this order: **Input, Shaping, Surface, Transpose, Derive, Output**. Transpose currently has no native operation. Disabled native operations block validation rather than silently bypassing.
 
-The **AI De-slop** formation is a saved group of three editable operations: Pattern Scan, Repair, and Validate Patches. Use **Open AI De-slop formation** to inspect them. Saved instances do not silently update when an example definition changes.
+The **AI De-slop** formation is an ordinary group of three editable operations: Pattern Scan, Repair, and Validate Patches. Use **Open group** on its collapsed card, or double-click the group, to reveal its nodes. Reusable subgraphs instead open in graph tabs, and their pinned definitions do not silently update.
 
 ## Shape scene context
 
@@ -61,13 +63,13 @@ Pattern Scan uses your literal preferences, exemptions, protected wording, and c
 
 Repair asks for JSON patches within the identified spans, with a default 2,048-token completion cap. Strength and instructions guide the model; they are not a measured preservation guarantee. Validation rejects malformed patches, unknown/duplicate indices, blank replacements, changes outside selected spans, and removed protected wording. Unselected text is restored exactly from the original. Rejected output leaves the original in place and is not retried as a whole-reply rewrite.
 
-Compare the original, candidate, findings, changes, selected model, and request trace. **Apply reviewed candidate** rechecks source freshness and adds a new assistant swipe while keeping the original. **Reject candidate** preserves the original without applying. Switching chat/swipe, editing the source, replacing the message, or starting generation can invalidate the candidate; run again against the current reply.
+After a full **Run**, select the root **Apply Reply · Host result** entry in **Preview output**. Inspect the original and proposed reply in the available artifact tabs: reviewed AI repair records separate **original** and **candidate** text tabs; Literal cleanup shows `original` and `text` in its structured **candidate** artifact. Review the recorded findings, changes, selected model and request trace too. **Apply reviewed candidate** rechecks source freshness and adds a new assistant swipe while keeping the original. **Reject candidate** preserves the original without applying. Intermediate outputs and **Run to here** are diagnostic previews. Switching chat/swipe, editing the source, replacing the message, or starting generation can invalidate the candidate; run again against the current reply.
 
 Apply reports local in-memory success separately from persistence. The host's save wrapper gives no positive durability acknowledgment, so a resolved save does not prove the revision reached disk. Other memory extensions may already have consumed the original reply. Edit/swipe events do not guarantee they re-extract it; review those extensions separately if needed.
 
 ## Share JSON
 
-The complete portable examples are [native-guidance.json](../workflows/native-guidance.json) and [reviewed-de-slop.json](../workflows/reviewed-de-slop.json). Download one and use the canvas's JSON import control. Export uses a versioned `lattice-workflow` envelope with a schema-2 graph and minimum runtime; it omits bound profile IDs and credentials. Imported roles need local setup before running.
+The complete portable examples include [native-guidance.json](../workflows/native-guidance.json), [reviewed-de-slop.json](../workflows/reviewed-de-slop.json), and the zero-call examples in [the workspace guide](lattice-workspace.md). Use **File → Import canvas** to open a workflow, or **Import into graph…** to review an addition to the current graph. Export uses a versioned `lattice-workflow` package; composed workflows include their pinned subgraph definitions. Individual subgraphs export as their own JSON packages. Exports omit bound profile IDs and credentials, so imported model roles need local setup before running.
 
 Do not paste API keys into workflow JSON, instructions, or model overrides. Unsupported package versions, dependencies, graph cycles, incompatible artifacts, and dangling wires are rejected before settings change. Existing `.canvas.json` packages and raw schema-1 canvases remain supported in legacy mode.
 
@@ -79,7 +81,7 @@ Token counts identify their method: host tokenizer or character estimate. Artifa
 | --- | --- |
 | Missing binding/profile/preset | Choose an available fixed Connection Manager profile and its existing sampler preset; confirm the effective model in the inspector. |
 | Unsupported binding | Use a supported direct route. The current host wrappers for Claude, Gemini/Makersuite, Vertex AI, and InfermaticAI discard completion evidence; named/inherited reverse proxies fail when the selected route can use them, as does cross-provider text-completion sampler conversion. NanoGPT keeps its fixed provider endpoint and ignores unused proxy selections. |
-| Endpoint missing | Configure the profile/preset endpoint. The inspector reports an inherited host endpoint and its origin when the route supports that dependency. |
+| Endpoint missing | Configure the endpoint in the bound Connection Manager profile or its sampler preset. |
 | Budget exceeded or output cut off | Review the report, then change the target, protected material, or explicit completion cap. A failed run never silently removes pins or retries. |
 | No verified completion evidence | Use a route whose host response preserves a recognized completion reason. The original is retained. |
 | Invalid repair patches | Inspect the output and operation instructions. Repair requires a raw patches JSON object without Markdown fences. Correct the format or binding before a deliberate rerun; the original is retained. |
@@ -94,6 +96,6 @@ To return to existing prompt-replacement behavior, choose **Legacy · Replace pr
 
 `node tools/live-workflow-test.mjs` is disabled by default and makes no requests. Unit guard tests run with `node tests/live-workflow-harness.test.mjs` without credentials or network.
 
-The live harness is for this acceptance run, with explicit readiness approval and synthetic material only. It uses production runtime/request modules in a fresh browser against a plain HTTP loopback SillyTavern host. It never calls native Send or Apply, reads private chat/character/lore, installs an extension, activates a profile, or fetches credential values. Its backend gate admits only the exact messages/model/cap owned by an active reservation and aborts unrelated generation traffic.
+The live harness requires explicit readiness approval and synthetic material only. It uses production runtime/request modules in a fresh browser against a plain HTTP loopback SillyTavern host. It never calls native Send or Apply, reads private chat/character/lore, installs an extension, activates a profile, or fetches credential values. Its backend gate admits only the exact messages/model/cap owned by an active reservation and aborts unrelated generation traffic.
 
-The acceptance allowance is eight attempted requests total, including three already consumed by the earlier canary phase. Only NanoGPT `z-ai/glm-5.2` and `z-ai/glm-5.2:thinking` are allowed, with at most 4,096 completion tokens each and no hidden retries. The default fixture run reserves at most three more attempts: plain compaction, thinking planning, and plain repair. Stop after quota/auth/provider failure. Prior canary evidence and production workflow fixtures must be reported separately; a canary is not full workflow acceptance.
+The historical native-workflow acceptance configured eight attempted requests total, including three consumed by its earlier canary phase. Its approved models were NanoGPT `z-ai/glm-5.2` and `z-ai/glm-5.2:thinking`, with at most 4,096 completion tokens each and no hidden retries. The default fixture reserves at most three attempts: plain compaction, thinking planning, and plain repair. A new live session needs an explicitly authorized current allowance and ledger; the historical consumed count does not describe this workspace release. Stop after quota/auth/provider failure. Report canary evidence separately from production workflow fixtures.

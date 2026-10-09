@@ -1,14 +1,14 @@
-import { validateWorkflow } from './contracts.js?v=0.19.1';
-import { operationFor, portsForNode } from './catalog.js?v=0.19.1';
-import { normalizeNativeGraph } from './migration.js?v=0.19.1';
-import { resolveWorkflow } from './resolve.js?v=0.19.1';
-import { compactContext, formatContext } from './compactor.js?v=0.19.1';
-import { scanDraft, repairDraft, validatePatches } from './repair.js?v=0.19.1';
-import { graphSemanticSignature } from './ports.js?v=0.19.1';
-import { executePrimitive, PRIMITIVE_OPERATIONS } from './operations/nodes.js?v=0.19.1';
-import { executeContextJoin } from './operations/context-join.js?v=0.19.1';
-import { admitRunPlan, createRunRecorder } from './recording.js?v=0.19.1';
-import { addressKey, freeze, own, parseRunPlan, safeBinding, safeError, safeUsage, boundedText } from './record-data.js?v=0.19.1';
+import { validateWorkflow } from './contracts.js?v=0.20.0';
+import { operationFor, portsForNode } from './catalog.js?v=0.20.0';
+import { normalizeNativeGraph } from './migration.js?v=0.20.0';
+import { resolveWorkflow } from './resolve.js?v=0.20.0';
+import { compactContext, formatContext } from './compactor.js?v=0.20.0';
+import { scanDraft, repairDraft, validatePatches } from './repair.js?v=0.20.0';
+import { graphSemanticSignature } from './ports.js?v=0.20.0';
+import { executePrimitive, PRIMITIVE_OPERATIONS } from './operations/nodes.js?v=0.20.0';
+import { executeContextJoin } from './operations/context-join.js?v=0.20.0';
+import { admitRunPlan, createRunRecorder } from './recording.js?v=0.20.0';
+import { addressKey, freeze, own, parseRunPlan, safeBinding, safeError, safeUsage, boundedText } from './record-data.js?v=0.20.0';
 
 /** Execution identity shared by the host and UI. Canvas presentation never invalidates work. */
 export const workflowSignature = graphSemanticSignature;

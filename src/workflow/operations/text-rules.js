@@ -1,4 +1,4 @@
-import { validatePatches } from '../repair.js?v=0.19.1';
+import { validatePatches } from '../repair.js?v=0.20.0';
 const failure = (code, message) => ({ ok: false, error: { code, message } });
 function defaultWorkerFactory() {
     // Preserve Vite's statically recognized Worker expression in bundled development/production.

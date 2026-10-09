@@ -4,9 +4,9 @@ Previously named ComfyTavern. Update your existing installation to keep your sav
 
 **Optional guidance before a reply. Reviewed revisions after it.**
 
-Lattice adds editable native workflows to SillyTavern. Use **Scene guidance** to propose direction while SillyTavern builds the main prompt and writes its normal reply, or **Reviewed AI De-slop** to prepare a revision you can compare and apply. Each model-backed operation can use its own fixed connection. Existing prompt-replacement canvases remain available in **Legacy · Replace prompt** mode.
+Lattice adds editable node workflows to SillyTavern. Start with **Literal cleanup** or **Structured guidance** to explore without model calls, then use **Scene guidance** to propose direction or **Reviewed AI De-slop** to prepare a revision you can compare and apply. Each model-backed operation can use its own fixed connection. SillyTavern continues to build its normal prompt; existing prompt-replacement canvases remain available in **Legacy · Replace prompt** mode.
 
-![Lattice's scene-guidance workflow with editable operations and model-role setup](docs/lattice-workbench.png)
+![Lattice's structured-guidance workflow with artifact preview, floating node shelf and node details](docs/lattice-workbench.png)
 
 This fork builds on [Silly Canvas](https://github.com/Dulgadurbit/SillyCanvas) by [Dulgadurbit](https://github.com/Dulgadurbit). It preserves the original canvas engine, saved-data compatibility, and MIT attribution.
 
@@ -27,14 +27,14 @@ Open the canvas with the button next to Send, from the wand menu, or by typing `
 
 ## Try a native workflow
 
-1. Open the library and install **Scene guidance** or **Reviewed AI De-slop**. Installation and import create editable graphs without arming generation or making a model call.
-2. In setup, bind **Analysis** for guidance or **Prose** for repair to a SillyTavern Connection Manager profile. Inspect an operation for a node-specific profile/model override.
+1. Open **Workflows → Workflow examples…** and install an example. **Literal cleanup** and **Structured guidance** need no model profile. Installation and import create editable graphs without arming generation or making a model call.
+2. For **Scene guidance** or **Reviewed AI De-slop**, bind **Analysis** or **Prose** in workflow setup to a SillyTavern Connection Manager profile. Select a model-backed node for a profile/model override in its details panel.
 3. Explicitly assign the pre/post phase and enable native mode. Arming remains a separate action.
-4. Use **Test workflow** to inspect guidance, or **Run reviewed repair** after a completed assistant reply. Review the original and candidate before **Apply reviewed candidate**.
+4. Run explicitly and inspect the recorded inputs and outputs. A manual guidance run previews its result; the configured Send integration publishes optional guidance. For reply editing, review the original and candidate before applying the selected reviewed result.
 
-Scene guidance uses at most two auxiliary requests and reviewed repair at most one, in addition to the normal SillyTavern reply. **Test workflow** can spend tokens and does not cache its result for a later Send. Repair supports the latest completed text-only assistant reply. Apply preserves the original swipe and reports local success separately from unverified durable saving; other memory extensions may already have consumed the original.
+Scene guidance uses at most two auxiliary requests and reviewed repair at most one, in addition to the normal SillyTavern reply. Literal cleanup and Structured guidance use zero auxiliary model calls. Testing a model-backed workflow can spend tokens and does not cache its result for a later Send. Repair supports the latest completed text-only assistant reply. Apply preserves the original swipe and reports local success separately from unverified durable saving; other memory extensions may already have consumed the original.
 
-See [native workflow setup, portable examples, controls, costs, and troubleshooting](docs/native-workflows.md). Supported native connections must preserve completion evidence; the guide lists current route limitations.
+Start with [the Lattice workspace guide](docs/lattice-workspace.md) for examples, graph tabs, contextual connections, subgraphs and recorded previews. See [native workflow setup, controls, costs, and troubleshooting](docs/native-workflows.md) for supported connection routes and completion evidence.
 
 ## Legacy canvas manual
 
@@ -58,8 +58,8 @@ Switch it off and SillyTavern builds the prompt exactly as it always has.
 
 ## Getting started with a legacy canvas
 
-1. Open the canvas and click the wand button (**Seed from SillyTavern's current prompt order**). This copies your current prompt order onto the canvas, so you start from what you already send.
-2. Click **Preview prompt** to see the messages the canvas would send.
+1. Open the canvas and choose **Graph → Seed from SillyTavern’s current prompt order**. This copies your current prompt order onto the canvas, so you start from what you already send.
+2. Choose **Preview → Compile prompt** to see the messages the canvas would send.
 3. Switch the canvas on with the **Arm** switch in the canvas header, or right-click the canvas button next to Send.
 4. Send a message as usual.
 
@@ -83,7 +83,7 @@ Each of these is a few blocks. The sections further down explain every block in 
 
 **Parallel and cheap.** Generate blocks that do not feed each other go out at the same time; a ⚡ badge under the reply shows which went together. Give each one its own connection profile and model: a fast, cheap model for planning and summaries, while the reply itself stays on your chat's model.
 
-**See everything.** **Preview prompt** shows the full prompt the canvas would send, with every block's share of the tokens on the canvas. **What was actually sent** shows the last real send, and **What it was asked** under each answer shows exactly what that block's model saw.
+**See everything.** **Preview → Compile prompt** shows the full prompt the canvas would send, with every block's share of the tokens on the canvas. **What was actually sent** shows the last real send, and **What it was asked** under each answer shows exactly what that block's model saw.
 
 **Keep and share.** Save any block, several, or a whole group to the library and drop them into other canvases. Ctrl+C / Ctrl+V copies blocks between canvases and tabs as text you can send to someone. Whole canvases export and import as JSON, and can be pinned to a character or a chat.
 
@@ -277,7 +277,7 @@ Combine it with the wire modes: an **Activate** wire from an output switches a b
 
 ## Themes
 
-Click the palette button in the canvas header, or open the Lattice section in the Extensions settings. Each built-in theme has its own look, not just its own colours:
+Choose **Tools → Theme and colours**, or open the Lattice section in the Extensions settings. Each built-in theme has its own look, not just its own colours:
 
 | Theme | Look |
 |---|---|
@@ -338,7 +338,7 @@ Sends that other extensions or `/gen` make in the background ("quiet" sends) kee
 
 ## Checking what was sent
 
-- **Preview prompt**: what would be sent right now, with a token count and a line for every block saying why it was included or skipped.
+- **Preview → Compile prompt**: what would be sent right now, with a token count and a line for every block saying why it was included or skipped.
 - **What was actually sent**: the last real send.
 - **Test** (on a Generate block): sends that block on its own and shows the reply, the token use and why it stopped.
 
@@ -358,7 +358,7 @@ The check runs the Node/jsdom behavior suite, Svelte type checking, the producti
 
 `npm run benchmark` measures 25/100/250-node zoom, pan and multi-drag cases with the real renderer and camera controls. `npm run capture` saves desktop/narrow/theme screenshots. `npm run smoke:install` verifies a fresh extension copy without developer source or `node_modules`. Generated measurements and images stay in ignored `benchmark-results/`.
 
-See [the migration architecture, parity record and performance evidence](docs/svelte-ui-migration.md). To change the release version, run `node tools/bump-version.mjs 0.19.0`; it updates the manifest, package metadata and every nested native import query so browsers load one consistent module graph. Reload SillyTavern with Ctrl+Shift+R after changing installed assets.
+See [the migration architecture, parity record and performance evidence](docs/svelte-ui-migration.md). Set a release version with `node tools/bump-version.mjs 0.20.0`; it updates the manifest, package metadata, installed stylesheet and nested source/test import queries so browsers load one consistent module graph. Rebuild the Svelte assets with `npm run build`, then reload SillyTavern with Ctrl+Shift+R after changing installed assets.
 
 ## License
 
