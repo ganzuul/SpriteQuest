@@ -2,6 +2,7 @@
     import { tick } from 'svelte';
     import type { WorkbenchView, WorkbenchActions } from './types';
     let { state: view, actions, local }: { state: WorkbenchView; actions: WorkbenchActions; local: (command: string) => void } = $props();
+    const rootWorkflow = $derived(view.rootWorkflow ?? view.workflow);
     let active = $state('');
     let nav: HTMLElement;
     let panel = $state<HTMLDivElement>(null!);
@@ -17,7 +18,7 @@
             case 'Graph': return [...(view.workflow?.native ? [item('Select tool', 'select-tool'), item('Pan tool', 'pan-tool'), item('Zoom in', 'zoom-in'), item('Zoom out', 'zoom-out')] : []), item('Fit to view', 'fit'), item('Fit selection', 'fit-selection', '', !view.selectionCount), item('Duplicate canvas', 'duplicate'), item('Rename canvas', 'rename'), item('Seed from SillyTavern’s current prompt order', 'seed', '', !!view.nativeGraph), item('Delete canvas', 'delete')];
             case 'Node': return [item('Add node…', 'add-node'), item('Inspect selection', 'reveal-inspector'), item('Library', 'sidebar')];
             case 'Preview': return [item('Compile prompt', 'preview'), item('Show preview', 'show-preview'), item('Collapse preview', 'collapse-preview')];
-            case 'Workflows': return [item('Workflow setup…', 'workflow-setup'), item('Workflow examples…', 'workflow-setup'), item('Run workflow', 'run-workflow', '', !view.workflow?.native || !!view.workflow?.busy || !!view.workflow?.issues.length), item('Stop workflow', 'stop-workflow', '', !view.workflow?.busy), item('Library', 'sidebar')];
+            case 'Workflows': return [item('Workflow setup…', 'workflow-setup'), item('Workflow examples…', 'workflow-setup'), item('Run workflow', 'run-workflow', '', !rootWorkflow?.native || !!rootWorkflow?.busy || !!rootWorkflow?.issues.length), item('Stop workflow', 'stop-workflow', '', !rootWorkflow?.busy), item('Library', 'sidebar')];
             case 'Tools': return [item('Theme and colours', 'theme'), item('Toggle inspector', 'inspector'), item('Toggle Library', 'sidebar')];
             default: return [item('Workspace guide', 'help')];
         }
