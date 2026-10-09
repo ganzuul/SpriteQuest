@@ -5,9 +5,10 @@ import { graphDocumentSignature, graphSemanticSignature } from './ports.js?v=0.1
 import { normalizeLegacyInsertionGraph, validateLegacyInsertionGraph, legacyInsertionSignature, legacyInsertionDiagnostics } from './legacy-insertion.js?v=0.19.1';
 import { parseWorkflow } from './packages.js?v=0.19.1';
 import { inspectExpandedGraph } from './graph-validation.js?v=0.19.1';
-import { computeDefinitionIdentity, definitionRefKey, nodeBindingOverrideKey } from './definition-data.js?v=0.19.1';
-import { definitionChain, ownsDefinitionPath, pathStartsWith, ownershipEntries } from './composition-edit.js?v=0.19.1';
+import { definitionRefKey, nodeBindingOverrideKey } from './definition-data.js?v=0.19.1';
+import { definitionChain, ownsDefinitionPath, pathStartsWith } from './composition-edit.js?v=0.19.1';
 import { prepareLocalDefinitionEdit } from './definition-library.js?v=0.19.1';
+import { prepareImportedDefinitionPins } from './definition-insertion.js?v=0.19.1';
 
 const fail = (code, message) => ({ ok: false, error: { code, message } });
 
@@ -109,14 +110,13 @@ export function prepareWorkflowInsertion(destination, imported, options = {}) {
         const translate = item => { item.x = (item.x ?? 0) + offset.x; item.y = (item.y ?? 0) + offset.y; };
         const identityMap = { nodes: {}, wires: {}, groups: {}, portals: {}, definitions: {}, roles: {} };
         const added = { nodes: [], wires: [], groups: [], portals: [], definitions: [], roles: [] };
-        if (native) for (const [key, definition] of Object.entries(source.data.definitions)) {
-            identityMap.definitions[key] = key;
-            if (Object.hasOwn(candidate.definitions, key)) {
-                if (computeDefinitionIdentity(candidate.definitions[key]).data.canonicalContent !== computeDefinitionIdentity(definition).data.canonicalContent) return fail('DEFINITION_CONFLICT', 'An exact snapshot pin has conflicting semantic content.');
-            } else { candidate.definitions[key] = structuredClone(definition); added.definitions.push(key); }
+        if (native) {
+            const merged = prepareImportedDefinitionPins(target.data, source.data.definitions, []);
+            if (!merged.ok) return merged;
+            candidate.definitions = merged.data.definitions;
+            added.definitions.push(...merged.data.addedDefinitionKeys);
+            for (const key of Object.keys(source.data.definitions)) identityMap.definitions[key] = key;
         }
-        // Check the original combined pins before any collision renaming can hide conflicts.
-        if (native) { const merged = validateGraphStructure({ ...target.data, definitions: candidate.definitions }); if (!merged.ok) return merged; }
         const occupied = new Set();
         const reserve = graph => {
             if (typeof graph.id === 'string') occupied.add(graph.id);
@@ -143,30 +143,15 @@ export function prepareWorkflowInsertion(destination, imported, options = {}) {
             }
         }
         if (native) {
-            const privateIds = new Set(ownershipEntries(target.data).map(entry => entry.definitionId)), replacements = new Map();
-            const copyPin = key => {
-                if (replacements.has(key)) return { ok: true, data: replacements.get(key) };
-                const saved = source.data.definitions[key], draft = structuredClone(saved);
-                let changed = privateIds.has(saved.id);
-                for (const node of Object.values(draft.body.nodes)) if (node.type === 'subgraph') {
-                    const child = copyPin(definitionRefKey(node.definition)); if (!child.ok) return child;
-                    if (definitionRefKey(child.data) !== definitionRefKey(node.definition)) { node.definition = child.data; changed = true; }
-                }
-                let next = { id: saved.id, version: saved.version, semanticHash: saved.semanticHash };
-                if (changed) {
-                    const allocated = allocate('definitions', key); if (!allocated.ok) return allocated;
-                    draft.id = allocated.data; draft.version = 1; delete draft.semanticHash;
-                    const identity = computeDefinitionIdentity(draft); if (!identity.ok) return identity;
-                    const snapshot = { ...structuredClone(identity.data.materializedDefinition), semanticHash: identity.data.semanticHash };
-                    next = { id: snapshot.id, version: snapshot.version, semanticHash: snapshot.semanticHash };
-                    const nextKey = definitionRefKey(next); candidate.definitions[nextKey] = snapshot; added.definitions.push(nextKey); identityMap.definitions[key] = nextKey;
-                    changedRefs.push({ sourceKey: key, before: { id: saved.id, version: saved.version, semanticHash: saved.semanticHash }, after: next });
-                }
-                replacements.set(key, next); return { ok: true, data: next };
-            };
-            for (const node of Object.values(source.data.nodes)) if (node.type === 'subgraph') {
-                const pin = copyPin(definitionRefKey(node.definition)); if (!pin.ok) return pin; node.definition = pin.data;
-            }
+            const wrappers = Object.values(source.data.nodes).filter(node => node.type === 'subgraph');
+            // Keep the established node/edge/group/portal callback order before definition copies.
+            const importedPins = prepareImportedDefinitionPins(target.data, source.data.definitions, wrappers.map(node => node.definition), key => allocate('definitions', key));
+            if (!importedPins.ok) return importedPins;
+            candidate.definitions = importedPins.data.definitions;
+            for (const key of importedPins.data.addedDefinitionKeys) if (!added.definitions.includes(key)) added.definitions.push(key);
+            for (const change of importedPins.data.changedRefs) identityMap.definitions[change.sourceKey] = definitionRefKey(change.after);
+            changedRefs.push(...importedPins.data.changedRefs);
+            wrappers.forEach((node, index) => { node.definition = importedPins.data.refs[index]; });
         }
         if (native) candidate.roles ??= {};
         const roles = new Set(native ? Object.keys(source.data.roles ?? {}) : []);

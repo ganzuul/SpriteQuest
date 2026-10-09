@@ -1,9 +1,11 @@
 import { cloneDefinitionData, definitionRefKey } from './definitions.js?v=0.19.1';
 import { normalizeNativeGraph } from './migration.js?v=0.19.1';
-import { OPERATIONS, describeOperation, operationDefaults, portsForNode } from './catalog.js?v=0.19.1';
+import { ARTIFACT_KINDS, OPERATIONS, describeOperation, operationDefaults, portsForNode } from './catalog.js?v=0.19.1';
 import { prepareGraphCandidate } from './prepared-graph-edit.js?v=0.19.1';
 import { prepareLocalDefinitionEdit } from './definition-library.js?v=0.19.1';
 import { compositionIds, definitionChain, ownsDefinitionPath, safeId } from './composition-edit.js?v=0.19.1';
+import { prepareImportedDefinitionPins } from './definition-insertion.js?v=0.19.1';
+import { selectSubgraphClosure } from './packages.js?v=0.19.1';
 
 const fail = (code, message) => ({ ok: false, error: { code, message } });
 const record = value => value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -18,7 +20,8 @@ const fields = {
     disconnect: ['edgeIds', 'publisherIds', 'publisherPolicy'],
     'disconnect-pin': ['pin', 'publisherPolicy'],
     reroute: ['edgeId', 'graphPoint'],
-    create: ['operation', 'controls', 'graphPoint', 'connection'],
+    create: ['operation', 'controls', 'artifactKind', 'graphPoint', 'connection'],
+    'create-instance': ['definition', 'snapshots', 'graphPoint', 'connection'],
 };
 
 function optionsFactory(options) {
@@ -142,14 +145,72 @@ function create(context, command) {
     if (typeof command.operation !== 'string' || !Object.hasOwn(OPERATIONS, command.operation)) return fail('UNKNOWN_OPERATION', 'Choose a declared operation.');
     const controls = command.controls === undefined ? {} : command.controls;
     if (!keys(controls, OPERATIONS[command.operation].controls)) return fail('INVALID_SETTINGS', 'Presets may contain only declared operation controls.');
+    if (command.operation === 'reroute' ? !ARTIFACT_KINDS.includes(command.artifactKind) : command.artifactKind !== undefined) return fail('INVALID_SETTINGS', 'Only typed reroute creation accepts an actual artifact kind.');
     if (command.connection !== undefined && (!keys(command.connection, ['origin', 'portId', 'replace']) || !endpoint(command.connection.origin) || !safeId(command.connection.portId) || command.connection.replace !== undefined && typeof command.connection.replace !== 'boolean')) return fail('INVALID_COMMAND', 'Choose an existing origin and an explicit new-node port.');
     const id = context.allocate('node');
     const node = { id, type: 'workflow', ...operationDefaults(command.operation), ...structuredClone(controls), x: command.graphPoint.x, y: command.graphPoint.y };
+    if (command.operation === 'reroute') Object.assign(node, { artifactKind: command.artifactKind, phase: context.scope.mode.slice(7), compact: true });
     if (OPERATIONS[command.operation].minimumSchema === 3) node.phase = context.scope.mode.slice(7);
     const described = describeOperation(context.metadata(), node);
     if (!described.ok) return described;
     context.scope.nodes[id] = node; context.addedNodeIds.push(id); context.changed = true;
     return command.connection ? connect(context, command.connection.origin, { nodeId: id, portId: command.connection.portId }, command.connection.replace) : { ok: true };
+}
+
+function createInstance(original, normalized, command, path, ref, factory) {
+    if (!point(command.graphPoint)) return fail('INVALID_COMMAND', 'Capture a finite graph point before inserting an instance.');
+    if (path.length && command.expectedRef === undefined) return fail('STALE_DEFINITION', 'Supply the exact containing definition pin.');
+    if (command.connection !== undefined && (!keys(command.connection, ['origin', 'portId', 'replace']) || !endpoint(command.connection.origin) || !safeId(command.connection.portId) || command.connection.replace !== undefined && typeof command.connection.replace !== 'boolean')) return fail('INVALID_COMMAND', 'Choose an existing origin and an explicit instance port.');
+    const selected = selectSubgraphClosure(command.definition, command.snapshots === undefined ? {} : command.snapshots);
+    if (!selected.ok) return selected;
+    const saved = selected.data.definition, source = { ...selected.data.definitions, [definitionRefKey(saved)]: saved };
+    const containing = path.length ? definitionChain(normalized, path).at(-1).definition : null;
+    if (saved.body.mode !== (containing?.body ?? normalized).mode) return fail('WRONG_PHASE', 'Insert a definition in its actual containing phase.');
+    const build = finalIds => {
+        const candidate = structuredClone(normalized), draft = containing ? structuredClone(containing) : null, scope = draft?.body ?? candidate;
+        scope.portals ??= {};
+        const initialDefinitions = { ...candidate.definitions, ...source }, initialKeys = new Set(Object.keys(initialDefinitions));
+        const ids = compositionIds({ ...candidate, definitions: initialDefinitions }), allocations = [];
+        let allocationFailure = false;
+        const context = { scope, changed: false, addedNodeIds: [], addedEdgeIds: [], removedEdgeIds: [],
+            metadata: () => ({ ...scope, definitions: candidate.definitions, ...(draft ? { interface: draft.interface } : {}) }),
+            allocate(kind) {
+                const planned = ids.next(kind), id = finalIds?.[allocations.length] ?? planned;
+                if (id !== planned && !ids.claim(id)) { allocationFailure = true; return planned; }
+                allocations.push({ kind, id: planned }); return id;
+            } };
+        const imported = prepareImportedDefinitionPins(candidate, source, [{ id: saved.id, version: saved.version, semanticHash: saved.semanticHash }], () => ({ ok: true, data: context.allocate('definition') }));
+        if (!imported.ok) return imported;
+        if (allocationFailure) return fail('IDENTITY_COLLISION', 'idFactory must preserve the fresh identity namespace.');
+        for (const key of imported.data.addedDefinitionKeys) if (!initialKeys.has(key) && !ids.claim(key)) return fail('IDENTITY_COLLISION', 'A copied snapshot table key must remain fresh.');
+        candidate.definitions = imported.data.definitions;
+        const id = context.allocate('node');
+        if (allocationFailure) return fail('IDENTITY_COLLISION', 'idFactory must preserve the fresh identity namespace.');
+        scope.nodes[id] = { id, type: 'subgraph', definition: imported.data.refs[0], parameterOverrides: {}, roleOverrides: {}, nodeBindingOverrides: {}, x: command.graphPoint.x, y: command.graphPoint.y };
+        context.addedNodeIds.push(id); context.changed = true;
+        if (command.connection) {
+            const connected = connect(context, command.connection.origin, { nodeId: id, portId: command.connection.portId }, command.connection.replace);
+            if (!connected.ok) return connected;
+            if (allocationFailure) return fail('IDENTITY_COLLISION', 'idFactory must preserve the fresh identity namespace.');
+        }
+        const revised = draft ? prepareLocalDefinitionEdit({ ...original, definitions: candidate.definitions }, { instancePath: path, expectedRef: ref, draft }) : { ok: true, data: { candidate } };
+        if (!revised.ok) return revised;
+        const prepared = prepareGraphCandidate(original, revised.data.candidate, context.addedEdgeIds, context.removedEdgeIds);
+        return prepared.ok ? { ok: true, data: { ...prepared.data, viewPath: [...path], ...(ref ? { expectedRef: structuredClone(ref) } : {}),
+            addedNodeIds: context.addedNodeIds, addedDefinitionKeys: Object.keys(prepared.data.candidate.definitions).filter(key => !Object.hasOwn(original.definitions ?? {}, key)),
+            changedRefs: [...imported.data.changedRefs, ...(revised.data.changedRefs ?? [])] }, allocations, ids } : prepared;
+    };
+    const provisional = build();
+    if (!provisional.ok) return provisional;
+    if (!factory) return { ok: true, data: provisional.data };
+    const finalIds = [];
+    for (const { kind, id } of provisional.allocations) {
+        const next = factory(kind);
+        if (!safeId(next) || next !== id && !provisional.ids.claim(next)) return fail('IDENTITY_COLLISION', 'idFactory must return a fresh safe ID for each new record.');
+        finalIds.push(next);
+    }
+    const final = build(finalIds);
+    return final.ok ? { ok: true, data: final.data } : final;
 }
 
 /** Pure native document producer. Context/cancellation/history remain caller-owned.
@@ -160,9 +221,10 @@ function create(context, command) {
  * - disconnect: edgeIds?, publisherIds?, publisherPolicy?: restore | disconnect
  * - disconnect-pin: pin, publisherPolicy?: retain (default) | disconnect
  * - reroute: edgeId, graphPoint (direct wires only)
- * - create: operation, controls?, graphPoint, connection?: {origin, portId, replace?}
+ * - create: operation, controls?, artifactKind (reroute only), graphPoint, connection?: {origin, portId, replace?}
+ * - create-instance: definition, snapshots?, graphPoint, connection?; child views require expectedRef
  * Only declared controls are presets; creation requires an explicit matching port.
- * IDs share the root/body/table namespace. idFactory(node | edge) runs at most
+ * IDs share the root/body/table namespace. idFactory(node | edge | definition) runs at most
  * once per new record, after a provisional complete root validates; no retries.
  * Returned added/removed IDs are local to viewPath; the candidate and both
  * preconditions always describe the whole root. This API grants no commit token.
@@ -185,6 +247,7 @@ export function prepareNativeConnectionEdit(root, input, options = {}) {
         if (path.length && (!chain || !ownsDefinitionPath(candidate, path))) return fail('READ_ONLY_VIEW', 'Make a local copy of the complete containing path before editing.');
         const definition = chain?.at(-1).definition, ref = chain?.at(-1).node.definition;
         if (command.expectedRef !== undefined && (!path.length || !keys(command.expectedRef, ['id', 'version', 'semanticHash']) || definitionRefKey(command.expectedRef) !== definitionRefKey(ref))) return fail('STALE_DEFINITION', 'The exact containing definition changed.');
+        if (command.kind === 'create-instance') return createInstance(original, candidate, command, path, ref, factory.data);
         const draft = definition ? structuredClone(definition) : null, scope = draft?.body ?? candidate;
         scope.portals ??= {};
         const ids = compositionIds(candidate), allocations = [];

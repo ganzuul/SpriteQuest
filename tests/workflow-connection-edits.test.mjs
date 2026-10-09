@@ -32,6 +32,30 @@ function accepted(result, original) {
     return result.data;
 }
 
+test('typed reroute creation uses declared artifact metadata and actual containing phase', () => {
+    for (const phase of ['pre', 'post']) {
+        const graph = { id: 'typed-' + phase, schema: 3, runtime: 2, mode: 'native-' + phase, nodes: {}, wires: {}, portals: {}, definitions: {} };
+        for (const artifactKind of ['context', 'draft', 'patches', 'candidate', 'guidance', 'text', 'data']) {
+            const edit = accepted(prepare(graph, { kind: 'create', operation: 'reroute', artifactKind, graphPoint: { x: -7.125, y: 2.875 } }), graph);
+            const added = edit.candidate.nodes[edit.addedNodeIds[0]];
+            assert.equal(added.phase, phase); assert.equal(added.artifactKind, artifactKind); assert.equal(added.compact, true);
+            assert.deepEqual(portsForNode(edit.candidate, added).map(port => [port.id, port.kind]), [['in', artifactKind], ['out', artifactKind]]);
+            assert.deepEqual({ x: added.x, y: added.y }, { x: -7.125, y: 2.875 });
+        }
+    }
+    const graph = fixture(), edit = accepted(prepare(graph, { kind: 'create', operation: 'reroute', artifactKind: 'context', graphPoint: { x: 0.125, y: 0.5 }, connection: { origin: endpoint('source'), portId: 'in' } }), graph);
+    assert.equal(edit.candidate.wires[edit.addedEdgeIds[0]].to, edit.addedNodeIds[0]);
+});
+
+test('unconfigured or malformed typed reroute metadata and metadata on other operations allocate nothing', () => {
+    const graph = fixture(), before = structuredClone(graph); let calls = 0;
+    for (const extra of [{}, { artifactKind: 'unknown' }, { artifactKind: 'context', phase: 'post' }, { artifactKind: 'context', controls: { artifactKind: 'context' } }]) {
+        assert.equal(prepare(graph, { kind: 'create', operation: 'reroute', graphPoint: { x: 0, y: 0 }, ...extra }, { idFactory() { calls++; return 'unused'; } }).ok, false);
+    }
+    assert.equal(prepare(graph, { kind: 'create', operation: 'smart-compactor', artifactKind: 'context', graphPoint: { x: 0, y: 0 } }, { idFactory() { calls++; return 'unused'; } }).ok, false);
+    assert.equal(calls, 0); assert.deepEqual(graph, before);
+});
+
 test('connect resolves actual named pins in both drag directions and preserves the source', () => {
     const graph = fixture(), before = structuredClone(graph);
     for (const [origin, target] of [[endpoint('first'), endpoint('second', 'in')], [endpoint('second', 'in'), endpoint('first')]]) {
