@@ -80,16 +80,18 @@
 
 **Interfaces:** Read the user's source file as data. Produce selectSlopPolicies(library,{mode,scope,categories})→Result<{value}>; source metadata/IDs/categories/entries exactly as spec.
 
-- [ ] Source completeness test RED→GREEN:14 categories,273 occurrences,271 unique entries,17 templates,2 behaviors; adequate/acceptable retain both tags.
-- [ ] Test inspect/contextual/strict selection, independent scope/category filtering, stable source wording, detached output, unknown modes/categories, malformed/accessor/oversized data and no truncation at128.
-- [ ] Confirm templates/behaviors are not compiled as literal rules; selection makes no calls and no mutations.
-- [ ] Run focused tests/self-review/report; controller commits owned files and obtains scoped review.
+- [x] Source completeness test RED→GREEN:14 categories,273 occurrences,271 unique entries,17 templates,2 behaviors; adequate/acceptable retain both tags.
+- [x] Test inspect/contextual/strict selection, independent scope/category filtering, stable source wording, detached output, unknown modes/categories, malformed/accessor/oversized data and no truncation at128.
+- [x] Confirm templates/behaviors are not compiled as literal rules; selection makes no calls and no mutations.
+- [x] Run focused tests/self-review/report; controller commits owned files and obtains scoped review.
 
 ### Task 6: Portable existing-operation library
 
 **Files:** Create `src/workflow/library/subgraphs.js`, `.d.ts`, `tests/workflow-library-subgraphs.test.mjs`, `examples/library/subgraphs/{context-lens,scene-compass,literal-cleanup,formatting-cleanup}.json`, three corresponding roots (excluding context-lens) in `examples/library/workflows`, and `docs/lattice-reference-library.md`.
 
 **Interfaces:** Consume existing definition/package/runtime APIs, not new Transpose engines. Produce createLibrarySubgraph(id)→Result<{definition,json}> and createLibraryWorkflow(id)→Result<{graph,json}>.
+
+**Review correction:** Deliver Context Lens and Scene Compass subgraphs plus the Scene Compass root. Literal Cleanup and Formatting Cleanup return visible permission-prerequisite errors and remain documented recipes; remove their executable JSON files. The base cannot safely guard existing Pattern Scan's permission replacement or Text Rules' implicit construction without changing core. The superseding spec ruling preserves the global permission constraint.
 
 - [ ] Context Lens standalone parse/round-trip/verified-hash test RED→GREEN; roots remain outside body.
 - [ ] Incrementally add Scene Compass, Literal Cleanup and Formatting Cleanup with stable typed boundaries/exposed controls/unresolved roles and canonical generated files.
