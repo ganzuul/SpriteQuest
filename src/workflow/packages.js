@@ -17,7 +17,7 @@ function portableNativeDocument(graph) {
     const copy = pick(graph, ['id', 'name', 'description', 'schema', 'runtime', 'mode', 'nodes', 'wires', 'groups', 'roles', 'portals', 'definitions', 'template', 'view', 'createdAt', 'updatedAt']);
     copy.nodes = Object.fromEntries(Object.entries(graph.nodes).map(([id, node]) => [id, pick(node, [
         'id', 'type', 'operation', 'operationVersion', 'title', 'enabled', 'x', 'y', 'w', 'h', 'width', 'height', 'collapsed', 'compact', 'inGroup', 'color',
-        'profileId', 'model', 'modelRole', 'artifactKind', 'phase', 'alias', ...(node.type === 'note' ? ['content'] : []),
+        'profileId', 'model', 'modelRole', 'artifactKind', 'phase', 'alias', ...(node.type === 'note' ? ['content', 'commentFrame', 'moveContents'] : []),
         ...(node.type === 'subgraph' ? ['definition', 'parameterOverrides', 'roleOverrides', 'nodeBindingOverrides'] : []),
         ...(['subgraph-input', 'subgraph-output'].includes(node.type) ? ['interfacePortId'] : []),
         ...(Object.hasOwn(OPERATIONS, node.operation) ? OPERATIONS[node.operation].controls : []), ...(node.operation === 'validate-patches' ? ['protectedLiterals'] : []),
