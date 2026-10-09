@@ -1204,7 +1204,9 @@ export class Canvas {
             this.gestureRect = host.getBoundingClientRect();
             if (e.button === 1 || (e.button === 0 && (this.spaceDown || this.mode === 'pan'))) {
                 e.preventDefault();
-                host.focus({ preventScroll: true });
+                const editor = inEditor({ target: document.activeElement });
+                const workspace = host.closest('.pc-root');
+                if (!this.#nativeEditor() || !editor || !(host.contains(editor) || workspace?.contains(editor))) host.focus({ preventScroll: true });
                 this.gestureStart = { selection: this.selection && { ...this.selection }, multi: [...this.multi], wireMulti: [...this.wireMulti] };
                 const v = this.view;
                 this.pan = { x: e.clientX - v.x, y: e.clientY - v.y, start: { ...v } };
