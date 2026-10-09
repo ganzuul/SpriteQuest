@@ -1,11 +1,11 @@
-import { runWorkflowForHost, freezeArtifact, workflowSignature } from './runtime.js?v=0.24.0';
-import { resolveBinding, requestModel, bindingStatus, bindingSummary } from './connections.js?v=0.24.0';
-import { addressKey, safeError } from './record-data.js?v=0.24.0';
-import { cloneWorkflowDocument } from './document.js?v=0.24.0';
-import { projectIntrospectionNode } from './introspection/native.js?v=0.24.0';
-import { executeIntrospection } from './introspection/nodes.js?v=0.24.0';
-import { parseRecord } from './introspection/contracts.js?v=0.24.0';
-import { createNativeMemoryAdapter, nativeMemoryFingerprint, nativeMemoryScope, nativeVisibility } from './introspection/host-memory.js?v=0.24.0';
+import { runWorkflowForHost, freezeArtifact, workflowSignature } from './runtime.js?v=0.25.0';
+import { resolveBinding, requestModel, bindingStatus, bindingSummary } from './connections.js?v=0.25.0';
+import { addressKey, safeError } from './record-data.js?v=0.25.0';
+import { cloneWorkflowDocument } from './document.js?v=0.25.0';
+import { projectIntrospectionNode } from './introspection/native.js?v=0.25.0';
+import { executeIntrospection } from './introspection/nodes.js?v=0.25.0';
+import { parseRecord } from './introspection/contracts.js?v=0.25.0';
+import { createNativeMemoryAdapter, nativeMemoryFingerprint, nativeMemoryScope, nativeVisibility } from './introspection/host-memory.js?v=0.25.0';
 
 // Internal review seam: observations contain no authority or retained payload values.
 const retentionInspectors=new WeakMap();

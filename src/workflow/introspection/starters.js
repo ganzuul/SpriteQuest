@@ -1,4 +1,4 @@
-import { operationDefaults } from '../catalog.js?v=0.24.0';
+import { operationDefaults } from '../catalog.js?v=0.25.0';
 
 /** Native starter factories preserve the operation modes and named typed pins. */
 export function createIntrospectionStarter(starter) {

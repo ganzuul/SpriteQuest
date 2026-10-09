@@ -81,6 +81,8 @@ All six Introspection nodes and their eighteen mode presets are available in the
 
 ## Reuse a process, inspect its internals
 
+Select processing nodes, right-click, and choose **Create Subgraph**. The editor opens their body in a new editable tab, creates and wires typed input/output boundaries, and reconnects the parent workflow through the new subgraph block. Click a boundary to edit its port name or use **Add input/output** to extend the interface. Undo restores the original nodes and connections in one step.
+
 ![LATTICE subgraph body open in a second graph tab, showing Draft and Patches boundaries around Text Rules](docs/images/subgraph-tab.png)
 
 *The Literal cleanup subgraph exposes Draft → Patches. Its body opens in a tab; validation, review, and application remain in the parent workflow. Pinned bodies are read-only until you make a local copy.*

@@ -1,6 +1,6 @@
-import { cloneDefinitionData } from '../workflow/definitions.js?v=0.24.0';
-import { safeId } from '../workflow/composition-edit.js?v=0.24.0';
-import { viewIdentityKey } from './view-state.js?v=0.24.0';
+import { cloneDefinitionData } from '../workflow/definitions.js?v=0.25.0';
+import { safeId } from '../workflow/composition-edit.js?v=0.25.0';
+import { viewIdentityKey } from './view-state.js?v=0.25.0';
 
 const MAX_BYTES = 262144;
 const record = value => value !== null && typeof value === 'object' && !Array.isArray(value);

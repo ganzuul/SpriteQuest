@@ -1,3 +1,5 @@
+import type { ManagerInterfaceEdit } from './manager-types';
+
 /** Prepared plain display contracts. These panels never resolve graphs, bindings or authority. */
 export interface DetailNodeAddress { workflowId: string; instancePath: string[]; nodeId: string; }
 export interface DetailArtifactAddress extends DetailNodeAddress { portId: string; }
@@ -30,6 +32,7 @@ export interface NodeDetailsView extends DetailSelection {
     title: string; canonicalTitle: string; iconPath: string; family: string; phase: string;
     alias: string; compact: boolean; enabled: boolean; readOnly: boolean; canPresent: boolean;
     controls: DetailControl[]; model: DetailModelBinding | null;
+    boundary?: { id: string; label: string; direction: 'input' | 'output'; kind: string; required: boolean; kinds: string[] };
     ports: { id: string; label: string; direction: 'input' | 'output'; kind: string }[];
     status?: string; issues?: string[];
 }
@@ -38,6 +41,8 @@ export interface NodeDetailsActions {
     editControl?: (selection: DetailSelection, key: string, value: unknown) => DetailEditResponse;
     editField?: (selection: DetailSelection, key: 'enabled' | 'modelRole', value: boolean | string) => DetailEditResponse;
     editBinding?: (selection: DetailSelection, field: 'profileId' | 'model', mode: DetailBindingMode, value: string | null) => DetailEditResponse;
+    editInterface?: (selection: DetailSelection, edit: ManagerInterfaceEdit) => DetailEditResponse;
+    addBoundary?: (selection: DetailSelection, direction: 'input' | 'output') => DetailEditResponse;
     duplicate?: (selection: DetailSelection) => void; remove?: (selection: DetailSelection) => void;
 }
 export interface PreviewSection {

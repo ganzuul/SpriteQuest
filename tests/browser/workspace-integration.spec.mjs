@@ -208,7 +208,7 @@ test('actual direct and portal pin menus jump to the opposite prepared endpoints
     await page.getByRole('button', { name: /Go to Response Plan.*Saved publisher/i }).click();
     expect(await page.evaluate(() => window.canvasHarness.canvas.selection)).toEqual({ kind: 'node', id: 'work' });
     await page.locator('.pc-port[data-node="work"][data-dir="out"][data-port="out"]').click({ button: 'right' });
-    await page.getByRole('button', { name: /Go to Output boundary.*Saved publisher/i }).click();
+    await page.getByRole('button', { name: /Go to Proposal.*Saved publisher/i }).click();
     expect(await page.evaluate(() => window.canvasHarness.canvas.selection)).toEqual({ kind: 'node', id: 'exit' });
     expect(await page.evaluate(id => JSON.stringify(window.canvasHarness.S.getGraph(id)), id)).toBe(before);
     await expect(page.getByRole('button', { name: 'Undo', exact: true })).toBeDisabled();

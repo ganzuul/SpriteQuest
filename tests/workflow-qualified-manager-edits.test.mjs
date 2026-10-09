@@ -171,7 +171,10 @@ test('owned interface commands create a real boundary and retain identity on lab
     const graph = owned(), path = ['one', 'work'];
     const added = library.prepareOwnedDefinitionMetadataEdit(graph, metadata(graph, path, { kind: 'interface', edit: { kind: 'add', label: 'Extra', direction: 'input', artifactKind: 'text', required: false } }));
     let next = accepted(graph, added), definition = at(next, path).definition, p = definition.interface.find(p => p.label === 'Extra');
-    assert.ok(p.id); assert.equal(p.cardinality, 'one'); assert.equal(p.kind, 'text'); assert.deepEqual(definition.body.nodes[p.boundaryNodeId], { id: p.boundaryNodeId, type: 'subgraph-input', interfacePortId: p.id });
+    assert.ok(p.id); assert.equal(p.cardinality, 'one'); assert.equal(p.kind, 'text');
+    const boundaryNode = definition.body.nodes[p.boundaryNodeId];
+    assert.equal(boundaryNode.id, p.boundaryNodeId); assert.equal(boundaryNode.type, 'subgraph-input'); assert.equal(boundaryNode.interfacePortId, p.id);
+    assert.equal(Number.isFinite(boundaryNode.x), true); assert.equal(Number.isFinite(boundaryNode.y), true);
     const id = p.id, boundary = p.boundaryNodeId;
     next = accepted(next, library.prepareOwnedDefinitionMetadataEdit(next, metadata(next, path, { kind: 'interface', edit: { kind: 'update', id, label: 'Renamed', artifactKind: 'text', required: false } })));
     p = at(next, path).definition.interface.find(p => p.id === id); assert.equal(p.label, 'Renamed'); assert.equal(p.direction, 'input'); assert.equal(p.boundaryNodeId, boundary);
@@ -187,6 +190,43 @@ test('owned interface changes reject connected incompatible ports rather than dr
     rejected(graph, () => library.prepareOwnedDefinitionMetadataEdit(graph, metadata(graph, path, { kind: 'interface', edit: { kind: 'update', id: 'input', label: 'Changed', artifactKind: 'text', required: true } })), 'ARTIFACT_KIND');
     rejected(graph, () => library.prepareOwnedDefinitionMetadataEdit(graph, metadata(graph, path, { kind: 'interface', edit: { kind: 'update', id: 'input', label: 'Changed', artifactKind: 'context', required: true, direction: 'output' } })), 'INVALID_COMMAND');
     rejected(root(), () => library.prepareOwnedDefinitionMetadataEdit(root(), metadata(root(), path, { kind: 'interface', edit: { kind: 'add', label: 'Extra', direction: 'input', artifactKind: 'text', required: false } })), 'READ_ONLY_DEFINITION');
+});
+
+test('owned interface add honors a captured finite graph point and propagates the owned branch', () => {
+    const graph = owned(), path = ['one', 'work'];
+    const result = library.prepareOwnedDefinitionMetadataEdit(graph, metadata(graph, path, { kind: 'interface', edit: { kind: 'add', label: 'Placed', direction: 'output', artifactKind: 'text', required: false, graphPoint: { x: 920, y: -80 } } }));
+    const next = accepted(graph, result), definition = at(next, path).definition, boundary = definition.body.nodes[result.data.addedBoundaryNodeId];
+    assert.deepEqual([boundary.x, boundary.y], [920, -80]);
+    assert.deepEqual(next.nodes.two, graph.nodes.two); assert.deepEqual(next.localDefinitionOwners, graph.localDefinitionOwners);
+    assert.equal(definition.interface.find(p => p.id === result.data.addedInterfaceId).boundaryNodeId, boundary.id);
+});
+
+test('default interface boundaries stay on their direction side without overlapping same-direction peers', () => {
+    const draft = structuredClone(leaf());
+    Object.assign(draft.body.nodes.work, { x: 400, y: 100, w: 260, h: 140 });
+    Object.assign(draft.body.nodes.entry, { x: 40, y: 100, w: 260, h: 180 });
+    Object.assign(draft.body.nodes.exit, { x: 740, y: 100, w: 260, h: 180 });
+    let graph = owned(finalize(draft)); const path = ['one', 'work'];
+    for (const direction of ['input', 'input', 'output', 'output']) {
+        const result = library.prepareOwnedDefinitionMetadataEdit(graph, metadata(graph, path, { kind: 'interface', edit: { kind: 'add', label: 'Extra', direction, artifactKind: 'text', required: false } }));
+        graph = accepted(graph, result);
+        const definition = at(graph, path).definition, node = definition.body.nodes[result.data.addedBoundaryNodeId];
+        assert.equal(direction === 'input' ? node.x + 260 < 400 : node.x > 660, true);
+        for (const p of definition.interface.filter(p => p.direction === direction && p.boundaryNodeId !== node.id)) {
+            const peer = definition.body.nodes[p.boundaryNodeId];
+            assert.equal(node.y >= peer.y + (peer.h ?? 120) || node.y + 120 <= peer.y, true, 'boundaries do not overlap vertically');
+        }
+    }
+});
+
+test('owned interface graph points reject incomplete, nonfinite and unsafe placement without mutation', () => {
+    const graph = owned(), path = ['one', 'work'];
+    for (const graphPoint of [null, [], { x: 1 }, { x: Infinity, y: 2 }, { x: 1, y: NaN }, { x: 1, y: 2, w: 80 }, new Date()]) {
+        rejected(graph, () => library.prepareOwnedDefinitionMetadataEdit(graph, metadata(graph, path, { kind: 'interface', edit: { kind: 'add', label: 'Invalid', direction: 'input', artifactKind: 'text', required: false, graphPoint } })));
+    }
+    let calls = 0; const graphPoint = { get x() { calls++; return 1; }, y: 2 };
+    rejected(graph, () => library.prepareOwnedDefinitionMetadataEdit(graph, metadata(graph, path, { kind: 'interface', edit: { kind: 'add', label: 'Invalid', direction: 'input', artifactKind: 'text', required: false, graphPoint } })));
+    assert.equal(calls, 0);
 });
 
 test('owned parameters use actual eligible controls and reject surviving ancestor exposures', () => {

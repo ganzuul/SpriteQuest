@@ -1,0 +1,152 @@
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import { readFile } from 'node:fs/promises';
+import { JSDOM } from 'jsdom';
+import { operationFor } from '../src/workflow/catalog.js?v=0.25.0';
+import { isCommentFrame } from '../src/canvas/comment-frames.js?v=0.25.0';
+import { prepareCreateFromSelection } from '../src/workflow/composition.js?v=0.25.0';
+import { prepareOwnedDefinitionMetadataEdit } from '../src/workflow/definition-library.js?v=0.25.0';
+import { prepareWorkspaceViews, projectEditorDraw } from '../src/ui/workspace-preparation.js?v=0.25.0';
+import { createGraphViewSession } from '../src/ui/graph-view-session.js?v=0.25.0';
+import { captureGraphEditContext, commitPreparedGraph } from '../src/workflow/transactions.js?v=0.25.0';
+import { definitionRefKey } from '../src/workflow/definition-data.js?v=0.25.0';
+import * as H from '../src/history.js?v=0.25.0';
+import { captureRelocatedSubgraphViews, restoreSubgraphViews } from '../src/ui/subgraph-view-state.js?v=0.25.0';
+
+const source = await readFile(new URL('../src/ui/controller.js', import.meta.url), 'utf8');
+function actual(name, env) {
+    const start = source.indexOf('function ' + name + '(');
+    assert.ok(start >= 0, 'Actual controller function ' + name);
+    const end = source.indexOf('\n}', start) + 2;
+    return Function('env', 'with(env){' + source.slice(start, end) + ';return ' + name + ';}')(env);
+}
+let sequence = 0;
+function fixture(mutator = null) {
+    const graph = { id: 'subgraph-editor-' + ++sequence, schema: 3, runtime: 2, mode: 'native-pre', definitions: {}, groups: {}, portals: {}, roles: {}, nodes: {
+        source: { id: 'source', type: 'workflow', operation: 'scene-context', x: 0, y: 40 },
+        first: { id: 'first', type: 'workflow', operation: 'smart-compactor', method: 'select', x: 300, y: 40 },
+        second: { id: 'second', type: 'workflow', operation: 'smart-compactor', method: 'select', x: 600, y: 40 },
+        outside: { id: 'outside', type: 'workflow', operation: 'response-plan', x: 900, y: 40 },
+    }, wires: {
+        a: { id: 'a', route: 'wire', from: 'source', fromPort: 'out', to: 'first', toPort: 'in' },
+        b: { id: 'b', route: 'wire', from: 'first', fromPort: 'out', to: 'second', toPort: 'in' },
+        c: { id: 'c', route: 'wire', from: 'second', fromPort: 'out', to: 'outside', toPort: 'in' },
+    } };
+    mutator?.(graph);
+    const prepared = prepareWorkspaceViews(graph); assert.equal(prepared.ok, true, JSON.stringify(prepared));
+    const session = createGraphViewSession({ root: graph, activationId: 'subgraph-' + sequence, ...prepared.data }).data;
+    let commits = 0, fits = 0;
+    const env = { current: graph, graphViews: session, editorDraw: projectEditorDraw(session.readEditor()), editorCaptures: new WeakMap(), workspaceRevision: 0,
+        isOpen: () => true, activeEditRoot: () => graph, readGraphEditContext: () => session.readEditContext(), captureGraphEditContext,
+        prepareCreateFromSelection, prepareOwnedDefinitionMetadataEdit, definitionRefKey, crypto: globalThis.crypto,
+        captureRelocatedSubgraphViews, restoreSubgraphViews, H, subgraphPresentationEffects: new WeakMap(), pendingSubgraphPresentation: new WeakMap(), viewIdentityKey: view => JSON.stringify(view),
+        workbench: { update() {}, parts: { inspector: { querySelector: () => null } } },
+        toast() {}, persistGraphViews() {}, requestAnimationFrame: callback => callback(),
+        canvas: { multi: new Set(), selection: null, widthOf: node => node.w ?? 260, heightOf: () => 100,
+            setMulti(ids) { this.multi = new Set(ids); },
+            select(selection) { this.selection = selection; session.updateView({ selection: { primary: selection, multi: [...this.multi] } }); },
+            fit() { fits++; }, cancelGesture() {} },
+        graphDocumentHooks: {},
+        commitGraphEdit(root, command) { const result = commitPreparedGraph(root, command); if (result.ok && result.data.changed) { commits++; refresh(); } return result; },
+    };
+    function refresh() {
+        const next = prepareWorkspaceViews(graph); assert.equal(next.ok, true, JSON.stringify(next));
+        assert.equal(session.replacePreparedViews(next.data).ok, true);
+        env.editorDraw = projectEditorDraw(session.readEditor());
+    }
+    env.navigateGraphView = (action, ...args) => { assert.equal(session[action](...args).ok, true); refresh(); };
+    env.activateEditorDraw = refresh;
+    env.showSettings = selection => { env.canvas.select(selection); };
+    for (const name of ['captureEditor', 'editorCurrent', 'scopeCommand', 'commitCaptured', 'detailCapture', 'commentDocumentState', 'queueSubgraphPresentation', 'createSubgraph', 'boundaryForNode', 'focusBoundaryLabel', 'editSubgraphInterface', 'addSubgraphBoundary']) env[name] = actual(name, env);
+    H.track(graph);
+    const selection = nodeId => ({ selectionKey: JSON.stringify([session.readEditor().view.key, nodeId]), revision: session.readEditContext().sessionId + ':0', address: { workflowId: graph.id, instancePath: session.readEditor().view.identity.instancePath ?? [], nodeId } });
+    return { graph, session, env, refresh, selection, commits: () => commits, fits: () => fits };
+}
+
+test('creation captures visible layout, rewires parent, selects wrapper and opens editable child in one undo step', () => {
+    const f = fixture(), before = structuredClone(f.graph);
+    f.session.updateView({ nodePresentation: { first: { x: 380, y: 140, alias: 'Keep recent', compact: true }, second: { x: 700, y: 180 } } }); f.refresh();
+    const result = f.env.createSubgraph(['first', 'second'], 'Cleanup'); assert.equal(result.ok, true, JSON.stringify(result));
+    const wrapper = Object.values(f.graph.nodes).find(node => node.type === 'subgraph'); assert.ok(wrapper);
+    assert.equal(f.graph.wires.a.to, wrapper.id); assert.equal(f.graph.wires.c.from, wrapper.id); assert.equal(f.graph.wires.b, undefined);
+    const child = f.session.readEditor(); assert.deepEqual(child.view.identity.instancePath, [wrapper.id]); assert.equal(child.readOnly, false);
+    assert.equal(child.prepared.savedGraph.nodes.first.x, 380); assert.equal(child.prepared.savedGraph.nodes.first.profileId, undefined);
+    assert.equal(child.view.nodePresentation.first.alias, 'Keep recent'); assert.equal(child.view.nodePresentation.first.compact, true);
+    assert.equal(f.commits(), 1); assert.equal(f.fits(), 1);
+    assert.ok(H.undo(f.graph)); f.refresh(); assert.deepEqual(f.graph, before);
+    assert.equal(f.session.readEditor().view.identity.kind, 'root');
+    assert.ok(H.redo(f.graph)); f.refresh();
+    f.session.openInstance([wrapper.id]); f.refresh(); assert.equal(f.session.readEditor().readOnly, false);
+    assert.equal(f.env.editorDraw.nodes.first.presentation.alias, 'Keep recent'); assert.equal(f.env.editorDraw.nodes.first.presentation.compact, true);
+    const rootKey = f.session.project().graphViews.tabs[0].key; f.session.focusView(rootKey);
+    assert.deepEqual(f.session.readEditor().view.selection.primary, { kind: 'node', id: wrapper.id });
+});
+
+test('creation carries the visible frame and collapse state of a selected group', () => {
+    const f = fixture(); f.graph.nodes.first.inGroup = 'selected-group'; f.graph.nodes.second.inGroup = 'selected-group';
+    f.graph.groups['selected-group'] = { id: 'selected-group', title: 'Cleanup group', collapsed: false, x: 280, y: 20, frame: { x: 280, y: 20, w: 600, h: 140 } }; f.refresh();
+    f.session.updateView({ groupPresentation: { 'selected-group': { x: 320, y: 100, collapsed: true, frame: { x: 320, y: 100, w: 660, h: 180 } } } }); f.refresh();
+    assert.equal(f.env.createSubgraph(['first', 'second']).ok, true);
+    const group = Object.values(f.session.readEditor().prepared.savedGraph.groups)[0];
+    assert.equal(group.x, 320); assert.equal(group.y, 100); assert.equal(group.collapsed, true);
+    assert.deepEqual(group.frame, { x: 320, y: 100, w: 660, h: 180 });
+});
+
+test('boundary edits change real interface labels and adding selects another usable typed pin', () => {
+    const f = fixture(); assert.equal(f.env.createSubgraph(['first', 'second']).ok, true);
+    let editor = f.session.readEditor(), port = editor.prepared.interface.find(port => port.direction === 'input');
+    const captured = f.selection(port.boundaryNodeId);
+    assert.equal(f.env.editSubgraphInterface(captured, { kind: 'update', id: port.id, label: 'Context to clean', artifactKind: port.kind, required: port.required }).ok, true);
+    assert.equal(f.session.readEditor().prepared.interface.find(item => item.id === port.id).label, 'Context to clean');
+    const count = f.session.readEditor().prepared.interface.length;
+    assert.equal(f.env.addSubgraphBoundary('input', port.boundaryNodeId).ok, true);
+    editor = f.session.readEditor(); assert.equal(editor.prepared.interface.length, count + 1);
+    const newPort = editor.prepared.interface.find(item => item.boundaryNodeId === f.env.canvas.selection.id);
+    assert.equal(newPort.direction, 'input'); assert.equal(newPort.kind, port.kind); assert.equal(newPort.required, false);
+    assert.equal(f.env.editSubgraphInterface(captured, { kind: 'remove', id: port.id }).ok, false, 'old captured revision cannot remove a changed boundary');
+    const other = editor.prepared.interface.find(item => item.direction === 'output');
+    assert.equal(f.env.editSubgraphInterface(f.selection(newPort.boundaryNodeId), { kind: 'update', id: other.id, label: 'Wrong port', artifactKind: other.kind, required: false }).ok, false, 'details capture cannot edit a different boundary');
+});
+
+test('empty child interface can gain input/output ports; root and read-only bodies reject boundary authoring', () => {
+    const f = fixture(); assert.equal(f.env.addSubgraphBoundary('input').ok, false);
+    assert.equal(f.env.createSubgraph(['first', 'second']).ok, true);
+    const before = structuredClone(f.graph); f.session.deactivate();
+    assert.equal(f.env.addSubgraphBoundary('output').ok, false); assert.deepEqual(f.graph, before);
+});
+
+function conversionMenu(f, nodeId) {
+    const dom = new JSDOM('<main></main>'), document = dom.window.document;
+    Object.assign(f.env, { document, window: dom.window, root: document.querySelector('main'), isCommentFrame, operationFor,
+        el(tag, cls, text) { const element = document.createElement(tag); if (cls) element.className = cls; if (text !== undefined) element.textContent = text; return element; },
+        canCreateSubgraph: (...args) => actual('canCreateSubgraph', f.env)(...args),
+    });
+    actual('onCanvasMenu', f.env)({ event: { clientX: 20, clientY: 20 }, node: f.env.editorDraw.nodes[nodeId], at: { x: 0, y: 0 } });
+    const item = [...document.querySelectorAll('[role="menuitem"]')].find(button => button.textContent === 'Create Subgraph');
+    assert.ok(item); return { item, close: () => dom.window.close() };
+}
+
+for (const mode of ['read', 'recall', 'commit']) test(`Memory ${mode} cannot be offered for subgraph extraction`, () => {
+    const f = fixture(graph => Object.assign(graph, { mode: mode === 'commit' ? 'native-post' : 'native-pre', wires: {}, nodes: {
+        memory: { id: 'memory', type: 'workflow', operation: 'memory', operationVersion: 1, mode, ...(mode === 'commit' ? { idempotencyKey: 'extract-test' } : {}) },
+    } }));
+    const menu = conversionMenu(f, 'memory');
+    assert.equal(menu.item.disabled, true); menu.close();
+});
+
+test('bare State cannot be offered for subgraph extraction', () => {
+    const f = fixture(graph => Object.assign(graph, { wires: {}, nodes: { state: { id: 'state', type: 'workflow', operation: 'state', operationVersion: 1, mode: 'value' } } }));
+    const menu = conversionMenu(f, 'state');
+    assert.equal(menu.item.disabled, true); menu.close();
+});
+
+test('State with an explicit snapshot remains available for subgraph extraction', () => {
+    const f = fixture(graph => Object.assign(graph, { nodes: {
+        memory: { id: 'memory', type: 'workflow', operation: 'memory', operationVersion: 1, mode: 'read', view: 'state' },
+        state: { id: 'state', type: 'workflow', operation: 'state', operationVersion: 1, mode: 'value' },
+    }, wires: { snapshot: { id: 'snapshot', route: 'wire', from: 'memory', fromPort: 'out', to: 'state', toPort: 'state' } } }));
+    const menu = conversionMenu(f, 'state');
+    assert.equal(menu.item.disabled, false); menu.close();
+    assert.equal(f.env.createSubgraph(['state'], 'Explicit State').ok, true);
+    assert.equal(f.commits(), 1);
+});

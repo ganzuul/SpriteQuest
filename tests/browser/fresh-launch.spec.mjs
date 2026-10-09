@@ -1,9 +1,9 @@
 import {test,expect} from '@playwright/test';
 for(const width of [1024,736,360,320])for(const dpr of [1,1.25,2])test('settings-free host base CSS launch '+width+'px DPR '+dpr,async({browser},testInfo)=>{
-    const context=await browser.newContext({viewport:{width,height:900},deviceScaleFactor:dpr,reducedMotion:'reduce'}),page=await context.newPage(),errors=[],requests=[];
+    const context=await browser.newContext({baseURL:testInfo.project.use.baseURL,viewport:{width,height:900},deviceScaleFactor:dpr,reducedMotion:'reduce'}),page=await context.newPage(),errors=[],requests=[];
     page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>requests.push(r.url()));
     try {
-        await page.goto('http://127.0.0.1:4178/tests/browser/harness.html?hostCss=1');await page.waitForFunction(()=>!!window.canvasHarness);
+        await page.goto('/tests/browser/harness.html?hostCss=1');await page.waitForFunction(()=>!!window.canvasHarness);
         await page.evaluate(()=>document.fonts.ready);
         const actual=await page.evaluate(async()=>{
             const h=window.canvasHarness,s=h.S.settings(),g=h.graph,{validateWorkflow}=await import('/src/workflow/contracts.js?v='+h.version),valid=validateWorkflow(g);
@@ -34,7 +34,7 @@ for(const width of [1024,736,360,320])for(const dpr of [1,1.25,2])test('settings
                 return {id:node.id,port:pin.dataset.port,label:label.textContent,width:a.width,height:a.height,pinInside:inside(a),labelInside:inside(l),pinOverlap:overlap(a),labelOverlap:overlap(l),hit:hit?.closest('.pc-port')===pin};
             });
             expect(scene.id).toBeTruthy();expect(scene.port).toBe('section.Scene');expect(scene.label).toBe('Scene');expect(scene.width).toBeGreaterThan(0);expect(scene.height).toBeGreaterThan(0);expect(scene.pinInside).toBe(true);expect(scene.labelInside).toBe(true);expect(scene.pinOverlap).toBe(false);expect(scene.labelOverlap).toBe(false);expect(scene.hit).toBe(true);
-            const rows=page.locator('.pc-node-shelf .pc-family-row');expect(await rows.count()).toBe(7);
+            const rows=page.locator('.pc-node-shelf .pc-family-row');expect(await rows.count()).toBe(8);
             for(let index=0;index<await rows.count();index++){
                 const clearance=await rows.nth(index).evaluate(row=>{
                     row.scrollIntoView({block:'nearest',inline:'nearest'});

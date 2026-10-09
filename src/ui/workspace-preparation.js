@@ -1,13 +1,13 @@
-import { inspectDefinitionGraph } from '../workflow/graph-validation.js?v=0.24.0';
-import { projectRunRows } from '../workflow/run-state.js?v=0.24.0';
-import { definitionRefKey } from '../workflow/definition-data.js?v=0.24.0';
-import { prepareWorkflowPlanner } from '../workflow/resolve.js?v=0.24.0';
-import { prepareCompositionViews } from '../workflow/composition-views.js?v=0.24.0';
-import { prepareWorkflowProjection, projectPreparedWorkflow } from './workflow-surface.js?v=0.24.0';
-import { operationFor, portsForNode } from '../workflow/catalog.js?v=0.24.0';
-import { definitionChain } from '../workflow/composition-edit.js?v=0.24.0';
-import { FAMILY_PALETTE, paletteForOperation, readNodePresentation } from './node-palette.js?v=0.24.0';
-import { isCommentFrame } from '../canvas/comment-frames.js?v=0.24.0';
+import { inspectDefinitionGraph } from '../workflow/graph-validation.js?v=0.25.0';
+import { projectRunRows } from '../workflow/run-state.js?v=0.25.0';
+import { definitionRefKey } from '../workflow/definition-data.js?v=0.25.0';
+import { prepareWorkflowPlanner } from '../workflow/resolve.js?v=0.25.0';
+import { prepareCompositionViews } from '../workflow/composition-views.js?v=0.25.0';
+import { prepareWorkflowProjection, projectPreparedWorkflow } from './workflow-surface.js?v=0.25.0';
+import { ARTIFACT_KINDS, operationFor, portsForNode } from '../workflow/catalog.js?v=0.25.0';
+import { definitionChain } from '../workflow/composition-edit.js?v=0.25.0';
+import { FAMILY_PALETTE, paletteForOperation, readNodePresentation } from './node-palette.js?v=0.25.0';
+import { isCommentFrame } from '../canvas/comment-frames.js?v=0.25.0';
 const rootIdentity = root => ({ kind: 'root', workflowId: root.id });
 /** First activation favors readable named cards; users can pan or explicitly Fit. */
 export function initialWorkspaceCamera(node, { width, shelf, meter } = {}) {
@@ -77,8 +77,10 @@ export function projectWorkspacePanels(editor, workflow, state, revision, select
     const modes = [{ value: 'inherit', label: 'Inherit role' }, { value: 'override', label: 'Override' }];
     const field = (key, options) => ({ mode: saved?.[key] ? 'override' : 'inherit', value: saved?.[key] ?? null, allowedModes: modes, ...(options ? { options } : {}) });
     const selection = { selectionKey: JSON.stringify([editor?.view.key, selectedId]), revision, address };
+    const interfacePort = metadata?.boundary ? editor.prepared.interface.find(port => port.id === saved?.interfacePortId && port.boundaryNodeId === selectedId) : null;
+    const boundary = interfacePort ? { id: interfacePort.id, label: interfacePort.label, direction: interfacePort.direction, kind: interfacePort.kind, required: interfacePort.required, kinds: [...ARTIFACT_KINDS] } : null;
     const commentDetails = isCommentFrame(saved) ? { selection, comment: { id: saved.id, x: saved.x, y: saved.y, w: saved.w, h: saved.h, title: saved.title ?? 'Comment', content: saved.content ?? '', color: saved.color ?? '#637d89', moveContents: saved.moveContents !== false, selected: true, readOnly: editor.readOnly || library } } : null;
-    const nodeDetails = saved && metadata && !commentDetails ? { ...selection, title: presentation.alias || (typeof saved.title === 'string' ? saved.title : metadata.canonicalTitle), canonicalTitle: metadata.canonicalTitle, iconPath: metadata.iconPath, family: metadata.family, phase: graph.mode.slice(7), alias: presentation.alias, compact: presentation.compact, enabled: saved.enabled !== false, readOnly: editor.readOnly || library, canPresent: true, controls,
+    const nodeDetails = saved && metadata && !commentDetails ? { ...selection, title: boundary?.label ?? (presentation.alias || (typeof saved.title === 'string' ? saved.title : metadata.canonicalTitle)), canonicalTitle: metadata.canonicalTitle, iconPath: metadata.iconPath, family: metadata.family, phase: graph.mode.slice(7), alias: presentation.alias, compact: presentation.compact, enabled: saved.enabled !== false, readOnly: editor.readOnly || library, canPresent: true, controls, ...(boundary ? { boundary } : {}),
         model: metadata.modelRole ? { role: saved.modelRole ?? metadata.modelRole, roleEditable: true, profile: field('profileId', workflow.profiles.map(profile => ({ value: profile.id, label: profile.name }))), model: field('model'), effective: effective?.effective || (library ? [editor.prepared.effectiveNodes[selectedId]?.profileId ?? graph.roles?.[saved.modelRole ?? metadata.modelRole]?.profileId,editor.prepared.effectiveNodes[selectedId]?.model ?? graph.roles?.[saved.modelRole ?? metadata.modelRole]?.model].filter(Boolean).join(' · ') : ''), source: 'Saved node override or containing role' } : null,
         ports: metadata.ports.map(port => ({ id: port.port, label: port.label, direction: port.dir === 'in' ? 'input' : 'output', kind: port.kind })), issues: [] } : null;
     const choices = library ? [] : previewChoices ?? previewChoicesFor(editor.prepared, workflow.targets);
@@ -108,11 +110,13 @@ function prepareEditorDrawBase(view,snapshots) {
             if (node.type === 'note') { drawBase.nativeCards[node.id] = { canonicalTitle: 'Note', family: 'Organization', familyColor: '#a3aa99', iconPath: 'M5 3h14v18H5zM8 7h8M8 11h8M8 15h5', body: typeof node.content === 'string' ? node.content : '', ports: [], hostResult: false, defaults: {}, controlDescriptors: {}, modelRole: null }; continue; }
             if (!operation && !wrapper && !boundary) continue;
             const actualPorts = portsForNode(metadata, node), rows = { in: 0, out: 0 };
-            const title = operation?.title || (wrapper ? snapshots?.[JSON.stringify([node.definition.id, node.definition.version, node.definition.semanticHash])]?.name || 'Subgraph' : node.type === 'subgraph-input' ? 'Input boundary' : 'Output boundary');
+            const interfacePort = boundary ? view.interface.find(port => port.id === node.interfacePortId && port.boundaryNodeId === node.id) : null;
+            const title = operation?.title || (wrapper ? snapshots?.[JSON.stringify([node.definition.id, node.definition.version, node.definition.semanticHash])]?.name || 'Subgraph' : interfacePort?.label || node.interfacePortId);
             const family = operation?.family || 'Subgraphs', palette = FAMILY_PALETTE.find(item => item.name === family), discovery = paletteForOperation(node.operation);
             drawBase.nativeCards[node.id] = { canonicalTitle: title, family, familyColor: palette?.color || '#a3aa99', iconPath: wrapper || boundary ? palette?.icon : discovery.icon,
                 body: wrapper ? 'Open the pinned subgraph' : boundary ? 'Definition interface' : operation.title,
                 hostResult: !!operation?.terminal, controlDescriptors: structuredClone(operation?.controlDescriptors ?? {}), defaults: structuredClone(operation?.defaults ?? {}), modelRole: operation?.modelRole ?? null,
+                ...(interfacePort ? { boundary: { direction: interfacePort.direction, editable: view.editable === true } } : {}),
                 ports: actualPorts.map(port => { const dir = port.direction === 'input' ? 'in' : 'out'; return { id: `${dir}:${port.id}`, port: port.id, dir, side: dir === 'in' ? 'left' : 'right', row: ++rows[dir], kind: port.kind, label: port.label, className: `pc-port pc-port-${dir}`, title: `${port.label}: ${port.kind}` }; }) };
         }
 

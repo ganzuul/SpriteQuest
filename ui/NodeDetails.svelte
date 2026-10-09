@@ -2,10 +2,10 @@
     import { onDestroy, untrack } from 'svelte';
     import type { DetailBindingMode, DetailControl, DetailEditResponse, DetailSelection, NodeDetailsActions, NodeDetailsView } from './detail-types';
     let { view, actions = {}, idPrefix = 'pc-node-details' }: { view: NodeDetailsView | null; actions?: NodeDetailsActions; idPrefix?: string } = $props();
-    let drafts = $state<Record<string, { text: string; error: string; pending: boolean }>>({});
+    let drafts = $state<Record<string, { text: string; error: string; pending: boolean; artifactKind?: string; required?: boolean }>>({});
     let errors = $state<Record<string, string>>({});
     let identity = '', revision = '';
-    let sequence = 0;
+    let sequence = 0, boundaryDraftSequence = 0;
     const requests = new Map<string, number>();
     const selectionIdentity = (node: DetailSelection) => JSON.stringify([node.selectionKey, 'kind' in node.address
         ? [node.address.kind, node.address.definitionRef.id, node.address.definitionRef.version, node.address.definitionRef.semanticHash, node.address.nodeId]
@@ -16,6 +16,7 @@
         const next = view ? selectionIdentity(view) : '', nextRevision = view?.revision ?? '';
         const changedSelection = next !== identity;
         if (changedSelection || nextRevision !== revision) {
+            if (changedSelection) boundaryDraftSequence++;
             identity = next; revision = nextRevision; requests.clear(); sequence++; errors = {};
             // A revision expires writes, while unsaved text still belongs to this node.
             drafts = changedSelection ? {} : untrack(() => Object.fromEntries(Object.entries(drafts).map(([key, value]) => [key, { ...value, pending: false }])));
@@ -111,19 +112,64 @@
         }
         editBinding(field, 'override', text);
     }
+    function boundaryValues() {
+        return { label: drafts.boundary?.text ?? view?.boundary?.label ?? '', artifactKind: drafts.boundary?.artifactKind ?? view?.boundary?.kind ?? '', required: drafts.boundary?.required ?? view?.boundary?.required ?? false };
+    }
+    function draftBoundary(field: 'label' | 'artifactKind' | 'required', value: string | boolean) {
+        if (!view?.boundary || view.readOnly || !actions.editInterface) return;
+        if (field === 'artifactKind' && !view.boundary.kinds.includes(String(value))) return;
+        const next = { ...boundaryValues(), [field]: value };
+        boundaryDraftSequence++;
+        requests.delete('boundary'); errors = { ...errors, boundary: '' };
+        drafts = { ...drafts, boundary: { text: String(next.label), artifactKind: String(next.artifactKind), required: next.required === true, error: '', pending: false } };
+    }
+    function editBoundary(remove = false) {
+        if (!view?.boundary || view.readOnly || !actions.editInterface || drafts.boundary?.pending) return;
+        const id = view.boundary.id, values = boundaryValues();
+        if (!remove && (!values.label.trim() || !view.boundary.kinds.includes(values.artifactKind))) return;
+        const draftSequence = ++boundaryDraftSequence;
+        drafts = { ...drafts, boundary: { text: values.label, artifactKind: values.artifactKind, required: values.required, error: '', pending: false } };
+        void perform('boundary', false, async captured => {
+            const result = await actions.editInterface!(captured, remove ? { kind: 'remove', id } : { kind: 'update', id, ...values });
+            // A successful interface transaction can publish its revision before this response settles.
+            // Only its acknowledged draft expires; newer local edits still belong to the selected port.
+            if (result.ok && alive && view?.boundary?.id === id && selectionIdentity(view) === selectionIdentity(captured) && boundaryDraftSequence === draftSequence) {
+                const next = { ...drafts }; delete next.boundary; drafts = next;
+            }
+            return result;
+        });
+    }
+    function addBoundary(direction: 'input' | 'output') {
+        if (!view?.boundary || view.readOnly || !actions.addBoundary || drafts['boundary-add']?.pending) return;
+        drafts = { ...drafts, 'boundary-add': { text: '', error: '', pending: false } };
+        void perform('boundary-add', false, captured => actions.addBoundary!(captured, direction));
+    }
 </script>
 
 <section class="pc-node-details" aria-label="Node details">
 {#if view}
-    <header><svg viewBox="0 0 24 24" aria-hidden="true"><path d={view.iconPath} /></svg><div><h3>{view.title}</h3><small>Canonical type: {view.canonicalTitle}</small></div></header>
+    <header><svg viewBox="0 0 24 24" aria-hidden="true"><path d={view.iconPath} /></svg><div><h3>{view.title}</h3><small>{#if view.boundary}Subgraph {view.boundary.direction}{:else}Canonical type: {view.canonicalTitle}{/if}</small></div></header>
     <p class="pc-detail-meta">{view.family} · {view.phase} phase{#if view.readOnly} · Read-only body{/if}</p>
+    {#if view.boundary}
+        <fieldset class="pc-detail-group" data-boundary-controls><legend>Subgraph {view.boundary.direction}</legend>
+            <label>Port label<input id={idPrefix + '-boundary-label'} aria-label="Subgraph port label" value={boundaryValues().label} disabled={view.readOnly || !actions.editInterface} oninput={event => draftBoundary('label', event.currentTarget.value)} /></label>
+            <label>Type<select aria-label="Subgraph port type" value={boundaryValues().artifactKind} disabled={view.readOnly || !actions.editInterface} onchange={event => draftBoundary('artifactKind', event.currentTarget.value)}>{#each view.boundary.kinds as kind}<option value={kind}>{kind}</option>{/each}</select></label>
+            <label class="pc-detail-check"><input aria-label="Required subgraph port" type="checkbox" checked={boundaryValues().required} disabled={view.readOnly || !actions.editInterface} onchange={event => draftBoundary('required', event.currentTarget.checked)} /> Required</label>
+            <div class="pc-detail-actions"><button type="button" data-save-boundary disabled={view.readOnly || !actions.editInterface || !boundaryValues().label.trim() || !!drafts.boundary?.pending} onclick={() => editBoundary()}>{drafts.boundary?.pending ? 'Validating…' : 'Save port'}</button><button type="button" data-remove-boundary class="pc-detail-danger" disabled={view.readOnly || !actions.editInterface || !!drafts.boundary?.pending} onclick={() => editBoundary(true)}>Remove {view.boundary.direction}</button></div>
+            <small>Labels appear on the subgraph block. Disconnect incompatible connections before changing the type or removing this port.</small>
+            <div class="pc-detail-actions"><button type="button" data-add-boundary="input" disabled={view.readOnly || !actions.addBoundary || !!drafts['boundary-add']?.pending} onclick={() => addBoundary('input')}>Add input</button><button type="button" data-add-boundary="output" disabled={view.readOnly || !actions.addBoundary || !!drafts['boundary-add']?.pending} onclick={() => addBoundary('output')}>Add output</button></div>
+            {#if drafts.boundary?.error || errors.boundary || drafts['boundary-add']?.error || errors['boundary-add']}<p class="pc-detail-error" role="alert">{drafts.boundary?.error || errors.boundary || drafts['boundary-add']?.error || errors['boundary-add']}</p>{/if}
+        </fieldset>
+    {/if}
     <fieldset class="pc-detail-group"><legend>Presentation</legend>
+        {#if !view.boundary}
         <label>Alias<input aria-label="Alias" maxlength="80" value={view.alias} disabled={!view.canPresent || !actions.present} onchange={event => { const value = event.currentTarget.value; if (actions.present) void perform('alias', true, captured => actions.present!(captured, 'alias', value)); }} /></label>
         <button type="button" disabled={!view.canPresent || !actions.present} onclick={() => { if (actions.present) void perform('alias', true, captured => actions.present!(captured, 'alias', '')); }}>Reset alias</button>
+        {/if}
         <label class="pc-detail-check"><input aria-label="Compact card" type="checkbox" checked={view.compact} disabled={!view.canPresent || !actions.present} onchange={event => { const value = event.currentTarget.checked; if (actions.present) void perform('compact', true, captured => actions.present!(captured, 'compact', value)); }} /> Compact card</label>
         {#if errors.alias || errors.compact}<p class="pc-detail-error" role="alert">{errors.alias || errors.compact}</p>{/if}
     </fieldset>
-    <fieldset class="pc-detail-group"><legend>Operation</legend>
+    {#if !view.boundary}<fieldset class="pc-detail-group"><legend>Operation</legend>
         <label class="pc-detail-check"><input aria-label="Enabled" type="checkbox" checked={view.enabled} disabled={view.readOnly || !actions.editField} onchange={event => { const value = event.currentTarget.checked; if (actions.editField) void perform('enabled', false, captured => actions.editField!(captured, 'enabled', value)); }} /> Enabled</label>
         <small>Disabled operations block execution.</small>
         {#if errors.enabled}<p class="pc-detail-error" role="alert">{errors.enabled}</p>{/if}
@@ -147,7 +193,7 @@
             {#if control.effective !== undefined}<small>Effective: {control.effective}{#if control.source} · {control.source}{/if}</small>{/if}
             {#if drafts[control.key]?.error || errors[control.key]}<p id={idPrefix + '-error-' + control.key} class="pc-detail-error" role="alert">{drafts[control.key]?.error || errors[control.key]}</p>{/if}
         {/each}
-    </fieldset>
+    </fieldset>{/if}
     {#if view.model}
         <fieldset class="pc-detail-group" data-model-controls><legend>Model</legend>
             <label>Model role<input aria-label="Model role" value={view.model.role} disabled={view.readOnly || !view.model.roleEditable || !actions.editField} onchange={event => { const value = event.currentTarget.value; if (view?.model?.roleEditable && actions.editField) void perform('modelRole', false, captured => actions.editField!(captured, 'modelRole', value)); }} /></label>
@@ -165,7 +211,7 @@
     {#if view.ports.length}<details><summary>Inputs and outputs</summary>{#each view.ports as port (port.direction + ':' + port.id)}<p class="pc-detail-port">{port.direction === 'input' ? 'In' : 'Out'} · {port.label}<small>{port.kind}</small></p>{/each}</details>{/if}
     {#if view.status}<p role="status">{view.status}</p>{/if}
     {#each view.issues ?? [] as issue}<p class="pc-detail-error">{issue}</p>{/each}
-    <footer><button type="button" disabled={view.readOnly || !actions.duplicate} onclick={() => { if (view && !view.readOnly) actions.duplicate?.(selection(view)); }}>Duplicate</button><button type="button" class="pc-detail-danger" disabled={view.readOnly || !actions.remove} onclick={() => { if (view && !view.readOnly) actions.remove?.(selection(view)); }}>Delete</button></footer>
+    {#if !view.boundary}<footer><button type="button" disabled={view.readOnly || !actions.duplicate} onclick={() => { if (view && !view.readOnly) actions.duplicate?.(selection(view)); }}>Duplicate</button><button type="button" class="pc-detail-danger" disabled={view.readOnly || !actions.remove} onclick={() => { if (view && !view.readOnly) actions.remove?.(selection(view)); }}>Delete</button></footer>{/if}
 {:else}
     <p class="pc-detail-empty">Select a node to inspect its settings.</p>
 {/if}
@@ -185,5 +231,5 @@
     button:hover:not(:disabled) { background: #35383a; } :is(button, input, select, textarea):focus-visible { outline: 2px solid var(--SmartThemeQuoteColor, #e18a24); outline-offset: 1px; }
     :disabled { opacity: .55; cursor: default; } .pc-detail-error { color: #e58d94; font-size: 11px; overflow-wrap: anywhere; } .pc-detail-danger { color: #e58d94; }
     .pc-detail-port { display: flex; justify-content: space-between; gap: 8px; margin: 8px 0; font-size: 11px; } details { padding: 8px 0; border-top: 1px solid #ffffff0c; } summary { cursor: pointer; font-size: 11px; }
-    footer { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; } .pc-detail-empty { color: #96a0a6; }
+    footer, .pc-detail-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; } .pc-detail-empty { color: #96a0a6; }
 </style>

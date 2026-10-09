@@ -135,7 +135,10 @@ export interface LocalCopyCommand extends QualifiedInstanceCommand { id: string;
 export interface LocalDefinitionEditCommand extends QualifiedInstanceCommand { expectedRef: DefinitionRef; draft: DefinitionSnapshot; }
 export interface ChangedDefinitionRef { instancePath: string[]; before: DefinitionRef; after: DefinitionRef; }
 export interface LocalDefinitionEdit extends PreparedGraphEdit { instancePath: string[]; changedRefs: ChangedDefinitionRef[]; copying: boolean; }
-export interface CreateFromSelectionCommand { viewPath?: string[]; nodeIds: string[]; definitionId: string; name: string; instanceId?: string; }
+export interface SelectionNodePosition { x: number; y: number; w?: number; h?: number; }
+export interface SelectionNodePresentation { alias?: string; compact?: boolean; }
+export interface SelectionGroupPresentation { x?: number; y?: number; collapsed?: boolean; frame?: { x: number; y: number; w: number; h: number }; }
+export interface CreateFromSelectionCommand { viewPath?: string[]; nodeIds: string[]; definitionId: string; name: string; instanceId?: string; nodePositions?: Record<string, SelectionNodePosition>; nodePresentation?: Record<string, SelectionNodePresentation>; groupPresentation?: Record<string, SelectionGroupPresentation>; }
 export interface SelectionCompositionEdit extends PreparedGraphEdit {
     instanceId: string; definitionRef: DefinitionRef;
     proposal: { inputs: InterfacePort[]; outputs: InterfacePort[]; selectedNodeIds: string[] };

@@ -2,10 +2,10 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { installMock } from './mock.js';
 installMock();
-const S = await import('../src/state.js?v=0.24.0');
-const { starterGraph, installStarter } = await import('../src/workflow/starters.js?v=0.24.0');
-const { prepareWorkflowProjection, projectPreparedWorkflow, parseWorkflowRules } = await import('../src/ui/workflow-surface.js?v=0.24.0');
-const { prepareWorkspaceViews } = await import('../src/ui/workspace-preparation.js?v=0.24.0');
+const S = await import('../src/state.js?v=0.25.0');
+const { starterGraph, installStarter } = await import('../src/workflow/starters.js?v=0.25.0');
+const { prepareWorkflowProjection, projectPreparedWorkflow, parseWorkflowRules } = await import('../src/ui/workflow-surface.js?v=0.25.0');
+const { prepareWorkspaceViews } = await import('../src/ui/workspace-preparation.js?v=0.25.0');
 const project = (root, options) => projectPreparedWorkflow(prepareWorkflowProjection(root, options));
 test('installing any actual example leaves generation unarmed and phases unassigned', () => {
     const before = structuredClone(S.settings().nativeBindings);

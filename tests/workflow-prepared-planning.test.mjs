@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import * as planning from '../src/workflow/resolve.js?v=0.24.0';
+import * as planning from '../src/workflow/resolve.js?v=0.25.0';
 import { prepareCompositionViews } from '../src/workflow/composition-views.js';
 import { starterGraph } from '../src/workflow/starters.js';
 import { cloneWorkflowDocument } from '../src/workflow/document.js';

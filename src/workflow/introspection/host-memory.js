@@ -1,5 +1,5 @@
-import { createChatMetadataBackend, createMemoryService } from './memory.js?v=0.24.0';
-import { fail, makeRecord, ownData, parseRecord, validateEvidence } from './contracts.js?v=0.24.0';
+import { createChatMetadataBackend, createMemoryService } from './memory.js?v=0.25.0';
+import { fail, makeRecord, ownData, parseRecord, validateEvidence } from './contracts.js?v=0.25.0';
 
 const good = data => ({ ok: true, data });
 const id = value => typeof value === 'string' && value.trim().length > 0 && value.length <= 128 && !['__proto__', 'prototype', 'constructor'].includes(value);

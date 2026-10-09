@@ -104,6 +104,7 @@
     {#if view}
         <p class="pc-note">{view.scopeLabel}</p>
         <details open><summary>Library</summary>
+            {#if !view.entries.length}<p class="pc-note">Your library is empty. Save subgraphs here to reuse them in other graphs.</p><p class="pc-note">To create a subgraph, select nodes on the canvas, right-click the selection, and choose Create Subgraph. Open its graph to edit the input and output blocks.</p>{/if}
             <label>Revision<select aria-label="Library revision" value={entry?.key ?? ''} disabled={!actions.selectRef} onchange={event => { const value = event.currentTarget.value, selected = view?.entries.find(item => item.key === value); if (event.currentTarget.selectedIndex >= 0 && view && actions.selectRef && (!value || selected)) actions.selectRef(capture(view), selected ? copyRef(selected.ref) : null); }}><option value="">Select revision…</option>{#each view.entries as item (item.key)}<option value={item.key}>{item.name} · v{item.ref.version} · {item.phase}</option>{/each}</select></label>
             {#if entry}
                 <p class="pc-note">Version {entry.ref.version} · {entry.nodeCount} nodes · {entry.wireCount} wires</p>

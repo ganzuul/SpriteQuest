@@ -1,11 +1,11 @@
-import { cloneDefinitionData, definitionRefKey } from './definitions.js?v=0.24.0';
-import { cloneWorkflowDocument } from './document.js?v=0.24.0';
-import { ARTIFACT_KINDS, OPERATIONS, describeOperation, operationDefaults, portsForNode } from './catalog.js?v=0.24.0';
-import { prepareGraphCandidate } from './prepared-graph-edit.js?v=0.24.0';
-import { prepareLocalDefinitionEdit } from './definition-library.js?v=0.24.0';
-import { compositionIds, definitionChain, ownsDefinitionPath, safeId } from './composition-edit.js?v=0.24.0';
-import { prepareImportedDefinitionPins } from './definition-insertion.js?v=0.24.0';
-import { selectSubgraphClosure } from './packages.js?v=0.24.0';
+import { cloneDefinitionData, definitionRefKey } from './definitions.js?v=0.25.0';
+import { cloneWorkflowDocument } from './document.js?v=0.25.0';
+import { ARTIFACT_KINDS, OPERATIONS, describeOperation, operationDefaults, portsForNode } from './catalog.js?v=0.25.0';
+import { prepareGraphCandidate } from './prepared-graph-edit.js?v=0.25.0';
+import { prepareLocalDefinitionEdit } from './definition-library.js?v=0.25.0';
+import { compositionIds, definitionChain, ownsDefinitionPath, safeId } from './composition-edit.js?v=0.25.0';
+import { prepareImportedDefinitionPins } from './definition-insertion.js?v=0.25.0';
+import { selectSubgraphClosure } from './packages.js?v=0.25.0';
 
 const fail = (code, message) => ({ ok: false, error: { code, message } });
 const record = value => value !== null && typeof value === 'object' && !Array.isArray(value);

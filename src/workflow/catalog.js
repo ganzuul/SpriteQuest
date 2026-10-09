@@ -1,8 +1,8 @@
-import { PRIMITIVE_OPERATIONS, describePrimitive } from './operations/nodes.js?v=0.24.0';
-import { describeContextJoin } from './operations/context-join.js?v=0.24.0';
-import { TRANSPOSE_OPERATIONS, describeTranspose } from './operations/transpose-nodes.js?v=0.24.0';
-import { CLEANUP_MODES, validateCleanupSettings } from './operations/prose-cleanup.js?v=0.24.0';
-import { INTROSPECTION_NATIVE_OPERATIONS, describeNativeIntrospection, introspectionDefaults } from './introspection/native.js?v=0.24.0';
+import { PRIMITIVE_OPERATIONS, describePrimitive } from './operations/nodes.js?v=0.25.0';
+import { describeContextJoin } from './operations/context-join.js?v=0.25.0';
+import { TRANSPOSE_OPERATIONS, describeTranspose } from './operations/transpose-nodes.js?v=0.25.0';
+import { CLEANUP_MODES, validateCleanupSettings } from './operations/prose-cleanup.js?v=0.25.0';
+import { INTROSPECTION_NATIVE_OPERATIONS, describeNativeIntrospection, introspectionDefaults } from './introspection/native.js?v=0.25.0';
 
 /** Native operation metadata. Artifact flow, rather than canvas placement, defines execution. */
 export const FAMILIES = ['Input', 'Shaping', 'Surface', 'Transpose', 'Introspection', 'Derive', 'Output'];

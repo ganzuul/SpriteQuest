@@ -1,4 +1,4 @@
-import { validatePatches } from '../repair.js?v=0.24.0';
+import { validatePatches } from '../repair.js?v=0.25.0';
 
 const failure = (code, message) => ({ ok: false, error: { code, message } });
 const authenticated = new WeakSet();

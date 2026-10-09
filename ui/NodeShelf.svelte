@@ -11,6 +11,7 @@
     let anchor: HTMLButtonElement | null = null;
     let opening = 0;
     const names = FAMILY_PALETTE.map(item => item.name);
+    const familyColor = (name: string) => FAMILY_PALETTE.find(item => item.name === name)?.color;
     type Entry = { id: string; title: string; compatible: boolean; phase: string; family: string; group: string; shortcode: string; icon: string; purpose?: string; searchAliases?: readonly string[]; disabledReason?: string; catalog?: boolean };
     function entries(name = family): Entry[] {
         if (choices !== undefined) return choices.filter(entry => entry.family === name).map(entry => {
@@ -34,11 +35,15 @@
         const left = roomRight >= width ? rect.right - pane.left + 3 : roomLeft >= width ? rect.left - pane.left - width - 3 : 13;
         return { x: Math.max(4, Math.min(left, pane.width - width - 4)), y: Math.max(4, Math.min(rect.top - pane.top, pane.height - height - 4)), compact: !fits || pane.width < width + parentWidth + 26 };
     }
+    function menuTop(rect: DOMRect, panel: HTMLDivElement, size: DOMRect) {
+        const first = panel.querySelector('button')?.getBoundingClientRect();
+        return first ? rect.top + (rect.height - first.height) / 2 - (first.top - size.top) : rect.top;
+    }
     async function open(name: string, button: HTMLButtonElement, focus = true) {
         if (family === name) { if (focus) familyPanel?.querySelector<HTMLButtonElement>('button')?.focus({ preventScroll: true }); return; }
         const request = ++opening; family = name; group = ''; search = false; anchor = button; await tick();
         if (request !== opening || family !== name || !familyPanel?.isConnected) return;
-        const rect = button.getBoundingClientRect(), size = familyPanel.getBoundingClientRect(), spot = position(rect, size.width, size.height, 110);
+        const rect = button.getBoundingClientRect(), size = familyPanel.getBoundingClientRect(), spot = position({ top: menuTop(rect, familyPanel, size), left: rect.left, right: rect.right }, size.width, size.height, 110);
         x = spot.x; y = spot.y; compact = spot.compact;
         if (focus) familyPanel.querySelector<HTMLButtonElement>('button')?.focus({ preventScroll: true });
     }
@@ -47,7 +52,7 @@
         const request = ++opening, currentFamily = family; group = value; await tick();
         if (request !== opening || group !== value || family !== currentFamily || !leafPanel?.isConnected) return;
         const rect = button.getBoundingClientRect(), parent = familyPanel.getBoundingClientRect(), size = leafPanel.getBoundingClientRect();
-        const spot = position({ top: rect.top, left: parent.left, right: parent.right }, size.width, size.height, 155);
+        const spot = position({ top: menuTop(rect, leafPanel, size), left: parent.left, right: parent.right }, size.width, size.height, 155);
         leafX = spot.x; leafY = spot.y; compact ||= spot.compact;
         if (focus) leafPanel.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus({ preventScroll: true });
     }
@@ -91,7 +96,7 @@
     {/each}
 </nav>
 {#if family}
-    <div class={`pc-shelf-menu pc-family-menu${compact && group ? ' pc-shelf-replaced' : ''}`} role="menu" tabindex="-1" aria-label={family + ' categories'} bind:this={familyPanel} style:left={`${x}px`} style:top={`${y}px`} style:--pc-family={FAMILY_PALETTE.find(item => item.name === family)?.color} onkeydown={keys}>
+    <div class={`pc-shelf-menu pc-family-menu${compact && group ? ' pc-shelf-replaced' : ''}`} role="menu" tabindex="-1" aria-label={family + ' categories'} bind:this={familyPanel} style:left={`${x}px`} style:top={`${y}px`} style:--pc-family={familyColor(family)} onkeydown={keys}>
         {#if compact}<button type="button" role="menuitem" onclick={() => close(true)}>‹ Families</button>{/if}
         {#each groups() as name}
             <button type="button" role="menuitem" data-subfamily={name} aria-haspopup="menu" aria-expanded={group === name} onclick={(event) => openGroup(name, event.currentTarget)} onpointerenter={(event) => { if (event.pointerType !== 'touch') openGroup(name, event.currentTarget, false); }}><svg viewBox="0 0 24 24" aria-hidden="true"><path d={(PALETTE_GROUPS as Record<string, { icon: string }>)[name]?.icon} /></svg><span class="pc-subfamily-name">{name.toUpperCase()}</span><svg class="pc-sub-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7" /></svg></button>
@@ -99,11 +104,11 @@
     </div>
 {/if}
 {#if group || search}
-    <div class="pc-shelf-menu pc-leaf-menu" role="menu" tabindex="-1" aria-label={search ? 'Search nodes' : family + ' nodes'} bind:this={leafPanel} style:left={`${leafX}px`} style:top={`${leafY}px`} onkeydown={keys}>
+    <div class="pc-shelf-menu pc-leaf-menu" role="menu" tabindex="-1" aria-label={search ? 'Search nodes' : family + ' nodes'} bind:this={leafPanel} style:left={`${leafX}px`} style:top={`${leafY}px`} style:--pc-family={familyColor(family)} onkeydown={keys}>
         {#if compact && group}<button type="button" role="menuitem" onclick={restoreGroup}>‹ {family}</button>{/if}
         {#if search}<input class="text_pole" aria-label="Search nodes" placeholder="Search nodes…" bind:value={query} />{/if}
         {#each (search ? names.flatMap(name => entries(name)).filter(entry => [entry.title, entry.id, entry.family, entry.purpose, entry.shortcode, ...(entry.searchAliases ?? [])].join(' ').toLowerCase().includes(query.toLowerCase())) : entries().filter(entry => entry.group === group)) as entry (entry.family + entry.id)}
-            <button type="button" role="menuitem" data-shelf-choice={entry.id} disabled={!entry.compatible || readOnly} title={readOnly ? 'This graph is read-only.' : entry.disabledReason || (entry.compatible ? entry.purpose || 'Add ' + entry.title : 'Requires the ' + entry.phase + ' phase')} onclick={() => select(entry)}><svg class="pc-leaf-icon" viewBox="0 0 24 24" aria-hidden="true"><path d={entry.icon} /></svg><span class="pc-catalog-name">{entry.title}</span><small>{entry.shortcode}</small></button>
+            <button type="button" role="menuitem" data-shelf-choice={entry.id} style:--pc-family={familyColor(entry.family)} disabled={!entry.compatible || readOnly} title={readOnly ? 'This graph is read-only.' : entry.disabledReason || (entry.compatible ? entry.purpose || 'Add ' + entry.title : 'Requires the ' + entry.phase + ' phase')} onclick={() => select(entry)}><svg class="pc-leaf-icon" viewBox="0 0 24 24" aria-hidden="true"><path d={entry.icon} /></svg><span class="pc-catalog-name">{entry.title}</span><small>{entry.shortcode}</small></button>
         {/each}
         {#if !search && family === 'Subgraphs' && manageSubgraphs}<button type="button" role="menuitem" data-shelf-manage onclick={() => { close(true); manageSubgraphs?.(); }}><svg class="pc-leaf-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M3 18h18M8 3v6m8 6v6M3 12h18m-5-3v6" /></svg><span class="pc-catalog-name">Manage subgraphs…</span></button>{/if}
     </div>

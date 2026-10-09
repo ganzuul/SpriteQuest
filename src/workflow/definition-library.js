@@ -1,11 +1,11 @@
-import { cloneDefinitionData, computeDefinitionIdentity, definitionRefKey, describeExposedParameter, nodeBindingOverrideKey, validateDefinition } from './definitions.js?v=0.24.0';
-import { safeWorkflowData, validateGraphStructure } from './contracts.js?v=0.24.0';
-import { cloneWorkflowDocument } from './document.js?v=0.24.0';
-import { ARTIFACT_KINDS, describeOperation, operationFor } from './catalog.js?v=0.24.0';
-import { applyDeclaredNodeControlChange, graphDocumentSignature } from './ports.js?v=0.24.0';
-import { selectSubgraphClosure } from './packages.js?v=0.24.0';
-import { prepareGraphCandidate } from './prepared-graph-edit.js?v=0.24.0';
-import { compositionIds, definitionChain, ownershipEntries, ownsDefinitionPath, samePath, safeId, prunePrivateSnapshots } from './composition-edit.js?v=0.24.0';
+import { cloneDefinitionData, computeDefinitionIdentity, definitionRefKey, describeExposedParameter, nodeBindingOverrideKey, validateDefinition } from './definitions.js?v=0.25.0';
+import { safeWorkflowData, validateGraphStructure } from './contracts.js?v=0.25.0';
+import { cloneWorkflowDocument } from './document.js?v=0.25.0';
+import { ARTIFACT_KINDS, describeOperation, operationFor } from './catalog.js?v=0.25.0';
+import { applyDeclaredNodeControlChange, graphDocumentSignature } from './ports.js?v=0.25.0';
+import { selectSubgraphClosure } from './packages.js?v=0.25.0';
+import { prepareGraphCandidate } from './prepared-graph-edit.js?v=0.25.0';
+import { compositionIds, definitionChain, ownershipEntries, ownsDefinitionPath, samePath, safeId, prunePrivateSnapshots } from './composition-edit.js?v=0.25.0';
 
 const fail = (code, message) => ({ ok: false, error: { code, message } });
 const record = value => value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -273,7 +273,7 @@ function applyQualifiedInstanceUpdate(context, command) {
     return applied;
 }
 
-const interfaceFields = { add: ['label', 'direction', 'artifactKind', 'required'], update: ['id', 'label', 'artifactKind', 'required'], remove: ['id'] };
+const interfaceFields = { add: ['label', 'direction', 'artifactKind', 'required', 'graphPoint'], update: ['id', 'label', 'artifactKind', 'required'], remove: ['id'] };
 const parameterFields = { add: ['label', 'target'], update: ['id', 'label'], remove: ['id'] };
 /** Typed owning-body metadata edits; matching boundaries and full-root refs change atomically. */
 export function prepareOwnedDefinitionMetadataEdit(root, input) {
@@ -281,8 +281,19 @@ export function prepareOwnedDefinitionMetadataEdit(root, input) {
     const command = admitted.data, fields = command?.kind === 'interface' ? interfaceFields : command?.kind === 'parameter' ? parameterFields : null, edit = command?.edit;
     if (!fields || !only(command, ['instancePath', 'expectedRef', 'kind', 'edit']) || !Array.isArray(command.instancePath) || !command.instancePath.length || !record(edit) || typeof edit.kind !== 'string' || !Object.hasOwn(fields, edit.kind) || !only(edit, ['kind', ...fields[edit.kind]]) || edit.kind !== 'add' && !safeId(edit.id) || edit.kind !== 'remove' && typeof edit.label !== 'string') return fail('INVALID_COMMAND', 'Expected a typed owned interface or parameter edit.');
     if (command.kind === 'interface' && edit.kind !== 'remove' && (!ARTIFACT_KINDS.includes(edit.artifactKind) || typeof edit.required !== 'boolean' || edit.kind === 'add' && !['input', 'output'].includes(edit.direction))) return fail('INVALID_COMMAND', 'Expected typed artifact kind and boundary direction.');
+    if (command.kind === 'interface' && edit.kind === 'add' && edit.graphPoint !== undefined && (!only(edit.graphPoint, ['x', 'y']) || !Number.isFinite(edit.graphPoint.x) || !Number.isFinite(edit.graphPoint.y))) return fail('INVALID_COMMAND', 'Expected a finite boundary graph point.');
     if (command.kind === 'parameter' && edit.kind === 'add' && (!only(edit.target, ['instancePath', 'nodeId', 'controlId']) || !Array.isArray(edit.target.instancePath) || edit.target.instancePath.length > 8 || !edit.target.instancePath.every(safeId) || !safeId(edit.target.nodeId) || !safeId(edit.target.controlId))) return fail('INVALID_COMMAND', 'Expected an actual relative control target.');
     return prepareQualifiedScopeEdit(root, { ...command, viewPath: command.instancePath }, applyDefinitionMetadataEdit);
+}
+
+function defaultBoundaryPoint(draft, direction) {
+    const bodyNodes = Object.values(draft.body.nodes).filter(node => !['subgraph-input', 'subgraph-output'].includes(node.type));
+    const rectangles = (bodyNodes.length ? bodyNodes : [{}]).map(node => ({ x: node.x ?? 0, y: node.y ?? 0, w: node.w ?? 260 }));
+    const left = Math.min(...rectangles.map(node => node.x)), right = Math.max(...rectangles.map(node => node.x + node.w));
+    let y = Math.min(...rectangles.map(node => node.y));
+    const peers = draft.interface.filter(port => port.direction === direction).map(port => draft.body.nodes[port.boundaryNodeId]).sort((a, b) => (a.y ?? 0) - (b.y ?? 0));
+    for (const peer of peers) if (y < (peer.y ?? 0) + (peer.h ?? 120) + 40 && y + 120 + 40 > (peer.y ?? 0)) y = (peer.y ?? 0) + (peer.h ?? 120) + 40;
+    return { x: direction === 'input' ? left - 340 : right + 80, y };
 }
 
 function applyDefinitionMetadataEdit(context, command) {
@@ -291,8 +302,9 @@ function applyDefinitionMetadataEdit(context, command) {
         if (edit.kind === 'add') {
             let id; do { id = context.ids.next('interface-port'); } while (draft.interface.some(port => port.id === id));
             const boundaryNodeId = context.ids.next('boundary');
+            const graphPoint = edit.graphPoint ?? defaultBoundaryPoint(draft, edit.direction);
             draft.interface.push({ id, label: edit.label, direction: edit.direction, kind: edit.artifactKind, required: edit.required, cardinality: 'one', boundaryNodeId });
-            draft.body.nodes[boundaryNodeId] = { id: boundaryNodeId, type: `subgraph-${edit.direction}`, interfacePortId: id };
+            draft.body.nodes[boundaryNodeId] = { id: boundaryNodeId, type: `subgraph-${edit.direction}`, interfacePortId: id, ...graphPoint };
             return { ok: true, data: { addedInterfaceId: id, addedBoundaryNodeId: boundaryNodeId } };
         }
         const port = draft.interface.find(port => port.id === edit.id);

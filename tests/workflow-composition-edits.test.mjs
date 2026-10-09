@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict';
+import test from 'node:test';
 import { computeDefinitionIdentity, definitionRefKey, validateDefinition } from '../src/workflow/definitions.js';
 import { validateGraphStructure } from '../src/workflow/contracts.js';
 import { resolveWorkflow } from '../src/workflow/resolve.js';
 import * as library from '../src/workflow/definition-library.js';
 import * as composition from '../src/workflow/composition.js';
 import { graphSemanticSignature } from '../src/workflow/ports.js';
+import { exportWorkflow } from '../src/workflow/packages.js';
 
 const finalize = draft => { const identity = computeDefinitionIdentity(draft); assert.equal(identity.ok, true); return { ...structuredClone(identity.data.materializedDefinition), semanticHash: identity.data.semanticHash }; };
 const ref = value => ({ id: value.id, version: value.version, semanticHash: value.semanticHash });
@@ -72,7 +74,7 @@ assert.equal(typeof composition.prepareCreateFromSelection, 'function');
 const converted = composition.prepareCreateFromSelection(selectionRoot, { nodeIds: ['one', 'other'], definitionId: 'selection-definition', name: 'Selection' });
 assert.equal(converted.ok, true, JSON.stringify(converted));
 assert.equal(converted.data.proposal.inputs.length, 1, 'shared external sources are deduplicated');
-assert.equal(converted.data.proposal.outputs.length, 1);
+assert.equal(converted.data.proposal.outputs.length, 2, 'crossing and unused selected outputs remain available');
 assert.equal(converted.data.candidate.portals.result.source.nodeId, converted.data.instanceId);
 assert.equal(resolveWorkflow(converted.data.candidate).data.callBound, resolveWorkflow(selectionRoot).data.callBound);
 assert.equal(composition.prepareCreateFromSelection(selectionRoot, { nodeIds: ['source'], definitionId: 'bad', name: 'Bad' }).error.code, 'ROOT_ONLY_OPERATION');
@@ -244,4 +246,180 @@ assert.equal(unchangedPrivateChain.ok, true, JSON.stringify(unchangedPrivateChai
 assert.deepEqual(unchangedPrivateChain.data.candidate.localDefinitionOwners, copied.data.candidate.localDefinitionOwners);
 let getterCalls = 0; const commandWithGetter = { get viewPath() { getterCalls++; return []; } };
 assert.equal(composition.prepareCreateFromSelection(root(), commandWithGetter).ok, false); assert.equal(getterCalls, 0);
+
+test('selection extraction preserves visible rectangles and centers the parent wrapper', () => {
+    const graph = structuredClone(selectionRoot), before = structuredClone(graph);
+    Object.assign(graph.nodes.one, { x: 5, y: 10, targetTokens: 345 });
+    const result = composition.prepareCreateFromSelection(graph, { nodeIds: ['one', 'other'], definitionId: 'visible-selection', name: 'Visible', nodePositions: {
+        one: { x: 400, y: 80, w: 300, h: 140 }, other: { x: 800, y: 300, w: 260, h: 120 },
+    } });
+    assert.equal(result.ok, true, JSON.stringify(result));
+    const definition = result.data.candidate.definitions[definitionRefKey(result.data.definitionRef)], wrapper = result.data.candidate.nodes[result.data.instanceId];
+    assert.deepEqual([definition.body.nodes.one.x, definition.body.nodes.one.y, definition.body.nodes.one.w, definition.body.nodes.one.h], [400, 80, 300, 140]);
+    assert.deepEqual([definition.body.nodes.other.x, definition.body.nodes.other.y], [800, 300]);
+    assert.equal(definition.body.nodes.one.targetTokens, 345);
+    assert.equal(Object.hasOwn(definition.body.nodes.one, 'profileId'), false);
+    assert.equal(Object.hasOwn(definition.body.nodes.one, 'model'), false);
+    assert.deepEqual([wrapper.x + 130, wrapper.y + 60], [730, 250]);
+    for (const p of definition.interface) {
+        const node = definition.body.nodes[p.boundaryNodeId];
+        assert.equal(p.direction === 'input' ? node.x + 260 < 400 : node.x > 1060, true, `${p.direction} is outside the selected rectangles`);
+    }
+    const outputNodes = definition.interface.filter(p => p.direction === 'output').map(p => definition.body.nodes[p.boundaryNodeId]);
+    assert.equal(Math.abs(outputNodes[0].y - outputNodes[1].y) >= 120, true);
+    assert.equal(new Set(result.data.proposal.outputs.map(p => p.label)).size, 2, 'separate feeds have distinguishable labels');
+    assert.equal(graph.nodes.one.x, 5); assert.equal(graph.nodes.one.y, 10);
+    assert.deepEqual(graph.nodes.other, before.nodes.other);
+});
+
+test('selection extraction retains authored coordinates when no visible overlay is supplied', () => {
+    const graph = structuredClone(selectionRoot); Object.assign(graph.nodes.one, { x: 20, y: 50, w: 280, h: 170 });
+    const result = composition.prepareCreateFromSelection(graph, { nodeIds: ['one'], definitionId: 'saved-layout', name: 'Saved' });
+    assert.equal(result.ok, true, JSON.stringify(result));
+    const node = result.data.candidate.definitions[definitionRefKey(result.data.definitionRef)].body.nodes.one;
+    assert.deepEqual([node.x, node.y, node.w, node.h], [20, 50, 280, 170]);
+});
+
+test('partial visible overlays preserve saved sizes and separate equal-labeled input feeds', () => {
+    const graph = structuredClone(selectionRoot); Object.assign(graph.nodes.one, { x: 20, y: 50, w: 280, h: 170 });
+    graph.nodes.secondSource = { id: 'secondSource', type: 'workflow', operation: 'scene-context' }; graph.wires.shared.from = 'secondSource';
+    const result = composition.prepareCreateFromSelection(graph, { nodeIds: ['one', 'other'], definitionId: 'distinct-feeds', name: 'Distinct', nodePositions: { one: { x: 400, y: 80 } } });
+    assert.equal(result.ok, true, JSON.stringify(result));
+    const definition = result.data.candidate.definitions[definitionRefKey(result.data.definitionRef)], node = definition.body.nodes.one;
+    assert.deepEqual([node.x, node.y, node.w, node.h], [400, 80, 280, 170]);
+    assert.equal(result.data.proposal.inputs.length, 2); assert.equal(new Set(result.data.proposal.inputs.map(p => p.label)).size, 2);
+    const boundaries = result.data.proposal.inputs.map(p => definition.body.nodes[p.boundaryNodeId]);
+    assert.equal(Math.abs(boundaries[0].y - boundaries[1].y) >= 120, true);
+    assert.equal(Object.hasOwn(definition.body.nodes.other, 'x'), false, 'uncovered saved nodes do not receive authored coordinates');
+});
+
+test('selection extraction exposes unused outputs while leaving internal-only outputs private', () => {
+    const graph = structuredClone(selectionRoot); graph.portals = {}; delete graph.wires.b; delete graph.wires.shared;
+    graph.wires.internal = { id: 'internal', route: 'wire', from: 'one', fromPort: 'out', to: 'other', toPort: 'in' };
+    const result = composition.prepareCreateFromSelection(graph, { nodeIds: ['one', 'other'], definitionId: 'internal-layout', name: 'Internal' });
+    assert.equal(result.ok, true, JSON.stringify(result)); assert.equal(result.data.proposal.outputs.length, 1);
+    const definition = result.data.candidate.definitions[definitionRefKey(result.data.definitionRef)], port = result.data.proposal.outputs[0];
+    assert.equal(Object.values(definition.body.wires).find(wire => wire.to === port.boundaryNodeId).from, 'other');
+    assert.deepEqual(definition.body.wires.internal, graph.wires.internal);
+});
+
+test('selection coordinate overlays reject nonfinite values, extra fields and unsafe records without mutation', () => {
+    const graph = structuredClone(selectionRoot), before = structuredClone(graph);
+    const positions = [null, [], { one: { x: 5 } }, { one: { x: 5, y: Infinity } }, { one: { x: NaN, y: 5 } }, { one: { x: 5, y: 5, w: Infinity } }, { one: { x: 5, y: 5, h: NaN } }, { one: { x: 5, y: 5, targetTokens: 900 } }, { other: { x: 5, y: 5 } }, { one: new Date() }];
+    for (const nodePositions of positions) assert.equal(composition.prepareCreateFromSelection(graph, { nodeIds: ['one'], definitionId: 'bad-layout', name: 'Invalid', nodePositions }).ok, false);
+    let calls = 0;
+    const point = { get x() { calls++; return 5; }, y: 5 };
+    assert.equal(composition.prepareCreateFromSelection(graph, { nodeIds: ['one'], definitionId: 'getter-layout', name: 'Invalid', nodePositions: { one: point } }).ok, false);
+    const hiddenPoint = Object.defineProperty({ y: 5 }, 'x', { value: 5 });
+    const symbolPoint = { x: 5, y: 5, [Symbol('hidden')]: 5 };
+    for (const one of [hiddenPoint, symbolPoint]) assert.equal(composition.prepareCreateFromSelection(graph, { nodeIds: ['one'], definitionId: 'hidden-layout', name: 'Invalid', nodePositions: { one } }).ok, false);
+    assert.equal(calls, 0); assert.deepEqual(graph, before);
+});
+
+test('selection presentation overlays survive saved definitions and export without changing semantics', () => {
+    const graph = structuredClone(selectionRoot);
+    Object.assign(graph.nodes.one, { targetTokens: 345, presentation: { alias: 'Saved', compact: false, x: 20, y: 30 } });
+    graph.nodes.other.presentation = { alias: 'Other saved', compact: true };
+    const before = structuredClone(graph), command = { nodeIds: ['one', 'other'], definitionId: 'presented-selection', name: 'Presented' };
+    const baseline = composition.prepareCreateFromSelection(graph, command), result = composition.prepareCreateFromSelection(graph, { ...command, nodePresentation: { one: { alias: 'Visible', compact: true }, other: { compact: false } } });
+    assert.equal(baseline.ok, true, JSON.stringify(baseline)); assert.equal(result.ok, true, JSON.stringify(result));
+    const definition = result.data.candidate.definitions[definitionRefKey(result.data.definitionRef)];
+    assert.deepEqual(definition.body.nodes.one.presentation, { alias: 'Visible', compact: true, x: 20, y: 30 });
+    assert.deepEqual(definition.body.nodes.other.presentation, { alias: 'Other saved', compact: false });
+    assert.deepEqual(result.data.definitionRef, baseline.data.definitionRef, 'display overlays retain semantic identity');
+    assert.equal(definition.body.nodes.one.targetTokens, 345);
+    assert.equal(resolveWorkflow(result.data.candidate).data.callBound, resolveWorkflow(graph).data.callBound);
+    const units = resolveWorkflow(result.data.candidate).data.primitives.filter(unit => unit.address.instancePath.includes(result.data.instanceId));
+    assert.equal(units.find(unit => unit.address.nodeId === 'one').node.model, 'parent-model');
+    assert.equal(Object.hasOwn(definition.body.nodes.one, 'model'), false);
+    const exported = exportWorkflow(result.data.candidate).graph.definitions[definitionRefKey(result.data.definitionRef)];
+    assert.equal(exported.body.nodes.one.alias, 'Visible'); assert.equal(exported.body.nodes.one.compact, true);
+    assert.equal(exported.body.nodes.other.alias, 'Other saved'); assert.equal(exported.body.nodes.other.compact, false);
+    assert.deepEqual(graph, before);
+});
+
+test('selection presentation permits alias reset and compact false while rejecting empty or invalid overlays', () => {
+    const graph = structuredClone(selectionRoot); graph.nodes.one.presentation = { alias: 'Saved', compact: true };
+    const before = structuredClone(graph), command = { nodeIds: ['one'], definitionId: 'presentation-reset', name: 'Reset' };
+    const reset = composition.prepareCreateFromSelection(graph, { ...command, nodePresentation: { one: { alias: '', compact: false } } });
+    assert.equal(reset.ok, true, JSON.stringify(reset));
+    assert.deepEqual(reset.data.candidate.definitions[definitionRefKey(reset.data.definitionRef)].body.nodes.one.presentation, { alias: '', compact: false });
+    const invalid = [null, [], { one: {} }, { one: null }, { one: [] }, { one: { alias: null } }, { one: { alias: 7 } }, { one: { alias: 'a'.repeat(81) } }, { one: { compact: 1 } }, { one: { compact: null } }, { one: { alias: 'Valid', x: 5 } }, { other: { alias: 'Wrong node' } }];
+    for (const nodePresentation of invalid) assert.equal(composition.prepareCreateFromSelection(graph, { ...command, nodePresentation }).ok, false);
+    let calls = 0; const getter = { get alias() { calls++; return 'Unsafe'; } };
+    const hidden = Object.defineProperty({}, 'alias', { value: 'Hidden' }), symbol = { alias: 'Unsafe', [Symbol('extra')]: true };
+    for (const one of [getter, hidden, symbol, new Date()]) assert.equal(composition.prepareCreateFromSelection(graph, { ...command, nodePresentation: { one } }).ok, false);
+    assert.equal(calls, 0); assert.deepEqual(graph, before);
+});
+
+test('selection group overlays preserve visible coordinates, frame and collapsed state in the moved group', () => {
+    const graph = structuredClone(selectionRoot);
+    graph.nodes.one.inGroup = 'pair'; graph.nodes.other.inGroup = 'pair';
+    graph.groups = { pair: { id: 'pair', title: 'Pair', members: ['one', 'other'], x: 20, y: 30, collapsed: false, frame: { x: 10, y: 20, w: 400, h: 200 } } };
+    const before = structuredClone(graph), command = { nodeIds: ['one', 'other'], definitionId: 'group-selection', name: 'Grouped' };
+    const baseline = composition.prepareCreateFromSelection(graph, command);
+    const result = composition.prepareCreateFromSelection(graph, { ...command, groupPresentation: { pair: { x: 500, y: 100, collapsed: true, frame: { x: 490, y: 90, w: 590, h: 370 } } } });
+    assert.equal(baseline.ok, true, JSON.stringify(baseline)); assert.equal(result.ok, true, JSON.stringify(result));
+    const definition = result.data.candidate.definitions[definitionRefKey(result.data.definitionRef)], groupId = definition.body.nodes.one.inGroup;
+    assert.notEqual(groupId, 'pair'); assert.equal(definition.body.nodes.other.inGroup, groupId);
+    assert.deepEqual(definition.body.groups[groupId], { id: groupId, title: 'Pair', members: ['one', 'other'], x: 500, y: 100, collapsed: true, frame: { x: 490, y: 90, w: 590, h: 370 } });
+    assert.deepEqual(result.data.definitionRef, baseline.data.definitionRef, 'group display overlays retain semantic identity');
+    const exported = exportWorkflow(result.data.candidate).graph.definitions[definitionRefKey(result.data.definitionRef)];
+    assert.deepEqual(exported.body.groups[groupId], definition.body.groups[groupId]);
+    assert.deepEqual(graph, before);
+});
+
+test('selection group overlays reject invalid geometry and unrelated groups without mutation', () => {
+    const graph = structuredClone(selectionRoot);
+    graph.nodes.one.inGroup = 'pair'; graph.nodes.other.inGroup = 'pair'; graph.nodes.plan.inGroup = 'unrelated';
+    graph.groups = { pair: { id: 'pair', members: ['one', 'other'] }, unrelated: { id: 'unrelated', members: ['plan'] } };
+    const before = structuredClone(graph), command = { nodeIds: ['one'], definitionId: 'invalid-group-selection', name: 'Invalid' };
+    const invalid = [null, [], { pair: {} }, { pair: null }, { pair: [] }, { pair: { x: Infinity } }, { pair: { y: NaN } }, { pair: { collapsed: 1 } }, { pair: { w: 400 } }, { pair: { frame: {} } }, { pair: { frame: { x: 0, y: 0, w: 0, h: 100 } } }, { pair: { frame: { x: 0, y: 0, w: 100, h: -1 } } }, { pair: { frame: { x: 0, y: 0, w: 100, h: 100, extra: 1 } } }, { missing: { x: 5 } }, { unrelated: { collapsed: false } }];
+    for (const groupPresentation of invalid) assert.equal(composition.prepareCreateFromSelection(graph, { ...command, groupPresentation }).ok, false);
+    let calls = 0; const getter = { get x() { calls++; return 5; } };
+    const hidden = Object.defineProperty({}, 'x', { value: 5 }), symbol = { x: 5, [Symbol('extra')]: true };
+    for (const pair of [getter, hidden, symbol, new Date()]) assert.equal(composition.prepareCreateFromSelection(graph, { ...command, groupPresentation: { pair } }).ok, false);
+    assert.equal(calls, 0); assert.deepEqual(graph, before);
+});
 console.log('workflow-composition-edits: nested ownership, bounded revisions, conversion and unpack passed');
+
+for (const mode of ['read', 'recall', 'commit']) test(`selection extraction rejects root-only Memory ${mode} without mutation`, () => {
+    const graph = { id: 'memory-extraction', schema: 3, runtime: 2, mode: mode === 'commit' ? 'native-post' : 'native-pre', nodes: {
+        memory: { id: 'memory', type: 'workflow', operation: 'memory', operationVersion: 1, mode, ...(mode === 'commit' ? { idempotencyKey: 'extract-test' } : {}) },
+    }, wires: {}, definitions: {} }, before = structuredClone(graph);
+    const result = composition.prepareCreateFromSelection(graph, { nodeIds: ['memory'], definitionId: 'memory-body', name: 'Memory' });
+    assert.equal(result.ok, false); assert.equal(result.error.code, 'ROOT_ONLY_OPERATION'); assert.deepEqual(graph, before);
+});
+
+test('selection extraction rejects State that depends on an implicit host snapshot', () => {
+    const graph = { id: 'bare-state-extraction', schema: 3, runtime: 2, mode: 'native-pre', nodes: {
+        state: { id: 'state', type: 'workflow', operation: 'state', operationVersion: 1, mode: 'value' },
+    }, wires: {}, definitions: {} }, before = structuredClone(graph);
+    const result = composition.prepareCreateFromSelection(graph, { nodeIds: ['state'], definitionId: 'state-body', name: 'State' });
+    assert.equal(result.ok, false); assert.equal(result.error.code, 'ROOT_ONLY_OPERATION'); assert.deepEqual(graph, before);
+});
+
+for (const internal of [false, true]) test(`selection extraction preserves State snapshot supplied by ${internal ? 'an internal wire' : 'an explicit boundary'}`, () => {
+    const graph = { id: 'wired-state-extraction', schema: 3, runtime: 2, mode: 'native-pre', nodes: {
+        memory: { id: 'memory', type: 'workflow', operation: 'memory', operationVersion: 1, mode: 'read', view: 'state' },
+        buffer: { id: 'buffer', type: 'workflow', operation: 'reroute', artifactKind: 'data', phase: 'pre' },
+        state: { id: 'state', type: 'workflow', operation: 'state', operationVersion: 1, mode: 'value' },
+    }, wires: {
+        snapshot: { id: 'snapshot', route: 'wire', from: 'memory', fromPort: 'out', to: 'buffer', toPort: 'in' },
+        stateInput: { id: 'stateInput', route: 'wire', from: 'buffer', fromPort: 'out', to: 'state', toPort: 'state' },
+    }, definitions: {} }, before = structuredClone(graph);
+    const result = composition.prepareCreateFromSelection(graph, { nodeIds: internal ? ['buffer', 'state'] : ['state'], definitionId: 'wired-state-body', name: 'Wired State' });
+    assert.equal(result.ok, true, JSON.stringify(result));
+    const definition = result.data.candidate.definitions[definitionRefKey(result.data.definitionRef)];
+    assert.equal(validateDefinition(definition).ok, true);
+    const wire = Object.values(definition.body.wires).find(wire => wire.to === 'state' && wire.toPort === 'state');
+    assert.ok(wire);
+    if (internal) assert.equal(wire.from, 'buffer');
+    else {
+        const port = definition.interface.find(port => port.boundaryNodeId === wire.from);
+        assert.equal(port.direction, 'input'); assert.equal(port.kind, 'data');
+        assert.equal(result.data.candidate.wires.stateInput.to, result.data.instanceId);
+        assert.equal(result.data.candidate.wires.stateInput.toPort, port.id);
+    }
+    assert.deepEqual(graph, before);
+});

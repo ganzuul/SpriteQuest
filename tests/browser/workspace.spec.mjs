@@ -164,11 +164,11 @@ test('shelf stays outside the camera and cascades align with their opening rows'
     expect(await shelf.boundingBox()).toEqual(first);
     await expect(page.locator('[data-family="Transpose"]')).toBeDisabled();
     const input = page.locator('[data-family="Input"]'); await input.focus(); await page.keyboard.press('ArrowRight');
-    const row = await input.boundingBox(), family = await page.locator('.pc-family-menu').boundingBox();
-    expect(family.y).toBeCloseTo(row.y, 0); expect(family.x).toBeGreaterThanOrEqual(row.x + row.width);
+    const row = await input.boundingBox(), family = await page.locator('.pc-family-menu').boundingBox(), firstCategory = await page.locator('.pc-family-menu button').first().boundingBox();
+    expect(Math.abs(firstCategory.y + firstCategory.height / 2 - row.y - row.height / 2)).toBeLessThanOrEqual(1); expect(family.x).toBeGreaterThanOrEqual(row.x + row.width);
     const category = page.getByRole('menu', { name: 'Input categories', exact: true }).getByRole('menuitem', { name: 'SOURCES', exact: true }); await category.focus(); await page.keyboard.press('ArrowRight');
-    const opening = await category.boundingBox(), leaf = await page.locator('.pc-leaf-menu').boundingBox();
-    expect(leaf.y).toBeCloseTo(opening.y, 0); expect(leaf.x).toBeGreaterThanOrEqual(family.x + family.width);
+    const opening = await category.boundingBox(), leaf = await page.locator('.pc-leaf-menu').boundingBox(), firstLeaf = await page.locator('.pc-leaf-menu button').first().boundingBox();
+    expect(Math.abs(firstLeaf.y + firstLeaf.height / 2 - opening.y - opening.height / 2)).toBeLessThanOrEqual(1); expect(leaf.x).toBeGreaterThanOrEqual(family.x + family.width);
     const count = await page.evaluate(() => Object.keys(window.canvasHarness.graph.nodes).length);
     await page.getByRole('menu', { name: 'Input nodes', exact: true }).getByRole('menuitem', { name: /^Scene Context(?:\s|$)/ }).click();
     expect(await page.evaluate(() => Object.keys(window.canvasHarness.graph.nodes).length)).toBe(count + 1);

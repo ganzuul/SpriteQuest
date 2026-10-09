@@ -1,6 +1,6 @@
-import { ownData, inspectCapabilities, fail, freeze, parseRecord } from './contracts.js?v=0.24.0';
-import { describeIntrospection, executeIntrospection } from './nodes.js?v=0.24.0';
-import { parseRuntimeContext } from '../operations/context-data.js?v=0.24.0';
+import { ownData, inspectCapabilities, fail, freeze, parseRecord } from './contracts.js?v=0.25.0';
+import { describeIntrospection, executeIntrospection } from './nodes.js?v=0.25.0';
+import { parseRuntimeContext } from '../operations/context-data.js?v=0.25.0';
 
 const object = value => value && typeof value === 'object' && !Array.isArray(value);
 const id = value => typeof value === 'string' && value.trim().length > 0 && value.length <= 128 && !['__proto__','prototype','constructor'].includes(value);

@@ -94,6 +94,8 @@ Connections define dependency order; card positions are your visual organization
 
 Drag a card by its body to move it. Drag a rectangle on empty space to select intersecting cards, then move the selected set together. Middle-drag or Space + left-drag pans, including over cards. Wheel zoom stays anchored under the pointer.
 
+Below 50% zoom, cards use an overview mode that hides small labels and extra controls and reduces shadows. Full detail returns at 60% zoom. Hover over a card, select it, or use Tab to focus it to reveal its details at any zoom. Card sizes and wire endpoints stay fixed; titles, ports, selection and execution indicators remain visible.
+
 Use **Graph → Fit to view** or **Fit selection** to recover your position. Select/Pan and zoom commands are also in the Graph menu. Keyboard shortcuts are listed at the end of this manual.
 
 Use **Details** to show or hide the right panel. Drag its left-edge handle to adjust its width. Drag the divider between Preview and the graph to resize them; both handles also respond to arrow keys. **Collapse preview** provides more graph space. Reopening Preview restores the selected output.
@@ -218,13 +220,17 @@ Use **Make local copy** when you need to edit the body's operations or interface
 
 ### Create and manage definitions
 
-To package your own sequence, select the desired nodes in an editable graph, open **Details → Subgraphs**, enter a name under **Create subgraph**, and choose **Convert selection**. Validation determines whether the selected process can be represented through a supported interface. Inspect the resulting boundaries and connections.
+To package your own sequence, select the desired nodes in an editable graph, right-click the selection, and choose **Create Subgraph**. You can also right-click a group to package its members. The selected nodes move into a new editable graph tab, with typed input blocks on the left and output blocks on the right. Crossing connections are wired through those boundaries, and the parent graph receives a connected subgraph block in place of the selection. Shared inputs and output fanout are preserved. Creation is one undoable edit.
+
+Click an input or output block, or its **Edit input/output** button, to rename the actual port and set its artifact type in Details. **Add input/output** creates another boundary and selects its label for editing; connect its pin to the interior nodes as usual. Names and ports update automatically on the parent block. In an editable subgraph tab, right-click empty canvas space to add an input or output even when the subgraph has no ports yet. New inputs are optional until you mark them required. Disconnect a port before removing it or changing its type when its existing connections would become invalid.
+
+Workflow input/output operations such as Scene Context, Reply Snapshot, Guidance, and Apply Reply stay in the root graph. Select the processing nodes between them to create a subgraph. Existing boundary blocks remain in their containing subgraph.
 
 ![Subgraph manager showing the reusable definition library, JSON import/export, and typed interface](images/subgraph-manager.png)
 
 *The library stores revisions. The Interface section describes the Draft input and Patches output of the selected definition.*
 
-The manager supports definition import/export, duplication, interface and parameter editing where allowed, saving revisions, and explicit instance updates. Exposed parameters map to eligible operation controls; they are not arbitrary code. Imported definitions and existing instances retain pinned snapshots. Removing a shelf revision does not break placed instances.
+The manager is the reusable subgraph library. It supports definition import/export, duplication, interface and parameter editing where allowed, saving revisions, and explicit instance updates. Its **Convert selection** action also opens the newly created editable tab. Exposed parameters map to eligible operation controls; they are not arbitrary code. Imported definitions and existing instances retain pinned snapshots. Removing a shelf revision does not break placed instances.
 
 For a revision update, choose the target revision, prepare its interface/parameter/binding mappings, inspect the result, then accept it. Existing instances do not silently adopt a changed library definition. Role and node binding overrides are also scoped to the instance where supported.
 

@@ -1,15 +1,27 @@
-import { safeWorkflowData, validateGraphStructure } from './contracts.js?v=0.24.0';
-import { portsForNode, operationFor } from './catalog.js?v=0.24.0';
-import { computeDefinitionIdentity, definitionRefKey, nodeBindingOverrideKey } from './definition-data.js?v=0.24.0';
-import { inspectExpandedGraph } from './graph-validation.js?v=0.24.0';
-import { prepareGraphCandidate } from './prepared-graph-edit.js?v=0.24.0';
-import { compositionIds, definitionChain, ownershipEntries, ownsDefinitionPath, samePath, pathStartsWith, safeId, prunePrivateSnapshots } from './composition-edit.js?v=0.24.0';
+import { safeWorkflowData, validateGraphStructure } from './contracts.js?v=0.25.0';
+import { portsForNode, operationFor } from './catalog.js?v=0.25.0';
+import { computeDefinitionIdentity, definitionRefKey, nodeBindingOverrideKey } from './definition-data.js?v=0.25.0';
+import { inspectExpandedGraph } from './graph-validation.js?v=0.25.0';
+import { prepareGraphCandidate } from './prepared-graph-edit.js?v=0.25.0';
+import { compositionIds, definitionChain, ownershipEntries, ownsDefinitionPath, samePath, pathStartsWith, safeId, prunePrivateSnapshots } from './composition-edit.js?v=0.25.0';
 
 const fail = (code, message) => ({ ok: false, error: { code, message } });
 const reference = definition => ({ id: definition.id, version: definition.version, semanticHash: definition.semanticHash });
 const clone = value => structuredClone(value);
 const sourceOf = (scope, wire) => wire.route === 'portal' ? scope.portals[wire.portalId].source : { nodeId: wire.from, portId: wire.fromPort };
 const endpointKey = source => JSON.stringify([source.nodeId, source.portId]);
+const record = value => value !== null && typeof value === 'object' && !Array.isArray(value) && Reflect.ownKeys(value).length === Object.keys(value).length;
+const groupPresentationValid = value => record(value) && Object.keys(value).length > 0
+    && Object.keys(value).every(key => ['x', 'y', 'collapsed', 'frame'].includes(key))
+    && ['x', 'y'].every(key => value[key] === undefined || Number.isFinite(value[key]))
+    && (value.collapsed === undefined || typeof value.collapsed === 'boolean')
+    && (value.frame === undefined || record(value.frame) && Object.keys(value.frame).every(key => ['x', 'y', 'w', 'h'].includes(key))
+        && ['x', 'y', 'w', 'h'].every(key => Number.isFinite(value.frame[key])) && value.frame.w > 0 && value.frame.h > 0);
+const layoutBounds = nodes => {
+    const rectangles = nodes.map(node => ({ x: node.x ?? 0, y: node.y ?? 0, w: node.w ?? 260, h: node.h ?? 120 }));
+    return { left: Math.min(...rectangles.map(node => node.x)), top: Math.min(...rectangles.map(node => node.y)),
+        right: Math.max(...rectangles.map(node => node.x + node.w)), bottom: Math.max(...rectangles.map(node => node.y + node.h)) };
+};
 
 function editScope(root, command, path) {
     if (!safeWorkflowData(command) || !command || typeof command !== 'object' || Array.isArray(command)) return fail('INVALID_COMPOSITION', 'Expected a plain edit command.');
@@ -79,17 +91,38 @@ export function prepareCreateFromSelection(root, command) {
     if (!Array.isArray(command.nodeIds) || !command.nodeIds.length || command.nodeIds.length > 1000 || new Set(command.nodeIds).size !== command.nodeIds.length || command.nodeIds.some(id => !safeId(id) || !Object.hasOwn(scope.nodes, id))) return fail('INVALID_SELECTION', 'Select existing unique nodes.');
     if (!ids.claim(command.definitionId) || typeof command.name !== 'string') return fail('DEFINITION_CONFLICT', 'A selection requires a fresh definition ID and name.');
     const selected = new Set(command.nodeIds);
-    for (const id of selected) if (['scene-context', 'reply-snapshot', 'guidance', 'apply-reply'].includes(scope.nodes[id].operation) || ['subgraph-input', 'subgraph-output'].includes(scope.nodes[id].type)) return fail('ROOT_ONLY_OPERATION', 'Root-only operations and existing boundaries cannot be selected.');
+    if (command.nodePositions !== undefined && (!record(command.nodePositions) || Object.entries(command.nodePositions).some(([id, point]) => !selected.has(id) || !record(point) || Object.keys(point).some(key => !['x', 'y', 'w', 'h'].includes(key)) || !Number.isFinite(point.x) || !Number.isFinite(point.y) || ['w', 'h'].some(key => point[key] !== undefined && !Number.isFinite(point[key]))))) return fail('INVALID_COMPOSITION', 'Supply only finite selected node rectangles.');
+    if (command.nodePresentation !== undefined && (!record(command.nodePresentation) || Object.entries(command.nodePresentation).some(([id, presentation]) => !selected.has(id) || !record(presentation) || !Object.keys(presentation).length || Object.keys(presentation).some(key => !['alias', 'compact'].includes(key)) || presentation.alias !== undefined && (typeof presentation.alias !== 'string' || presentation.alias.length > 80) || presentation.compact !== undefined && typeof presentation.compact !== 'boolean'))) return fail('INVALID_COMPOSITION', 'Supply selected node aliases and compact state only.');
+    const affectedGroups = new Set(command.nodeIds.map(id => scope.nodes[id].inGroup).filter(id => Object.hasOwn(scope.groups ?? {}, id)));
+    if (command.groupPresentation !== undefined && (!record(command.groupPresentation) || Object.entries(command.groupPresentation).some(([id, presentation]) => !affectedGroups.has(id) || !groupPresentationValid(presentation)))) return fail('INVALID_COMPOSITION', 'Supply finite presentation for affected groups only.');
+    for (const id of selected) {
+        const node = scope.nodes[id], operation = operationFor(node, { phase: scope.mode.slice(7) });
+        if (operation?.rootOnly || ['scene-context', 'reply-snapshot', 'guidance', 'apply-reply'].includes(node.operation) || ['subgraph-input', 'subgraph-output'].includes(node.type)) return fail('ROOT_ONLY_OPERATION', 'Root-only operations and existing boundaries cannot be selected.');
+        if (operation?.requiresStateInDefinition && !Object.values(scope.wires).some(wire => wire.to === id && wire.toPort === 'state')) return fail('ROOT_ONLY_OPERATION', 'State extraction requires an explicit snapshot connection.');
+    }
     const instanceId = command.instanceId ?? ids.next('subgraph');
     if (command.instanceId !== undefined && !ids.claim(instanceId)) return fail('INVALID_INSTANCE', 'The wrapper requires a fresh ID.');
     // The containing scope still owns its role defaults and overrides; inherit them exactly once.
     const body = { schema: 3, runtime: 2, mode: scope.mode, nodes: {}, wires: {}, portals: {}, groups: {}, roles: {} };
-    for (const id of selected) { body.nodes[id] = clone(scope.nodes[id]); delete body.nodes[id].localCopy; }
+    for (const id of selected) {
+        const node = body.nodes[id] = clone(scope.nodes[id]); Object.assign(node, command.nodePositions?.[id]); delete node.localCopy;
+        if (command.nodePresentation?.[id]) {
+            node.presentation = { ...node.presentation, ...command.nodePresentation[id] };
+            // Portable clipboard/export data carries aliases and compact state at the node level.
+            if (node.presentation.alias !== undefined) node.alias = node.presentation.alias;
+            if (node.presentation.compact !== undefined) node.compact = node.presentation.compact;
+        }
+    }
+    const bounds = layoutBounds(Object.values(body.nodes));
     const interfaces = [], inputs = new Map(), outputs = new Map(), addedEdgeIds = [], removedEdgeIds = [];
     const boundary = (direction, kind, required, label) => {
         const id = ids.next(direction), boundaryNodeId = ids.next(`boundary-${direction}`);
-        const port = { id, label, direction, kind, required, cardinality: 'one', boundaryNodeId };
-        interfaces.push(port); body.nodes[boundaryNodeId] = { id: boundaryNodeId, type: `subgraph-${direction}`, interfacePortId: id }; return port;
+        const peers = interfaces.filter(port => port.direction === direction), baseLabel = label.slice(0, 80);
+        let distinctLabel = baseLabel, suffix = 2;
+        while (peers.some(port => port.label === distinctLabel)) { const tail = ` (${suffix++})`; distinctLabel = baseLabel.slice(0, 80 - tail.length) + tail; }
+        const port = { id, label: distinctLabel, direction, kind, required, cardinality: 'one', boundaryNodeId };
+        interfaces.push(port); body.nodes[boundaryNodeId] = { id: boundaryNodeId, type: `subgraph-${direction}`, interfacePortId: id,
+            x: direction === 'input' ? bounds.left - 340 : bounds.right + 80, y: bounds.top + peers.length * 160 }; return port;
     };
     const bodyWire = (from, fromPort, to, toPort) => { const id = ids.next('edge'); body.wires[id] = { id, route: 'wire', from, fromPort, to, toPort }; addedEdgeIds.push(id); };
     const exposeOutput = source => {
@@ -99,6 +132,7 @@ export function prepareCreateFromSelection(root, command) {
         bodyWire(source.nodeId, source.portId, port.boundaryNodeId, 'in'); outputs.set(key, port); return port;
     };
     const originalWires = Object.values(scope.wires);
+    const usedOutputs = new Set(originalWires.map(wire => endpointKey(sourceOf(scope, wire))));
     for (const wire of originalWires) {
         const source = sourceOf(scope, wire), fromSelected = selected.has(source.nodeId), toSelected = selected.has(wire.to);
         if (fromSelected && toSelected) {
@@ -117,10 +151,14 @@ export function prepareCreateFromSelection(root, command) {
         if (originalWires.some(wire => wire.to === id && wire.toPort === descriptor.id)) continue;
         const port = boundary('input', descriptor.kind, descriptor.required, descriptor.label); inputs.set(JSON.stringify(['unbound', id, descriptor.id]), port); bodyWire(port.boundaryNodeId, 'out', id, descriptor.id);
     }
+    for (const id of selected) for (const descriptor of portsForNode({ ...scope, definitions: candidate.definitions }, scope.nodes[id]).filter(port => port.direction === 'output')) {
+        const source = { nodeId: id, portId: descriptor.id };
+        if (!usedOutputs.has(endpointKey(source))) exposeOutput(source);
+    }
     for (const [id, group] of Object.entries(scope.groups ?? {})) {
         const members = Object.keys(body.nodes).filter(nodeId => body.nodes[nodeId].inGroup === id);
         if (!members.length && !(group.members ?? []).some(nodeId => selected.has(nodeId))) continue;
-        const groupId = ids.next('group'), moved = clone(group); moved.id = groupId;
+        const groupId = ids.next('group'), moved = clone(group); Object.assign(moved, clone(command.groupPresentation?.[id] ?? {})); moved.id = groupId;
         if (moved.members) moved.members = moved.members.filter(nodeId => selected.has(nodeId));
         body.groups[groupId] = moved; for (const nodeId of members) body.nodes[nodeId].inGroup = groupId;
         if (group.members) group.members = group.members.filter(nodeId => !selected.has(nodeId));
@@ -128,7 +166,8 @@ export function prepareCreateFromSelection(root, command) {
     }
     for (const id of selected) delete scope.nodes[id];
     const saved = saveDefinition(candidate, { id: command.definitionId, version: 1, name: command.name, interface: interfaces, parameters: [], body }); if (!saved.ok) return saved;
-    scope.nodes[instanceId] = { id: instanceId, type: 'subgraph', definition: reference(saved.data), parameterOverrides: {}, roleOverrides: {}, nodeBindingOverrides: {} };
+    scope.nodes[instanceId] = { id: instanceId, type: 'subgraph', definition: reference(saved.data), parameterOverrides: {}, roleOverrides: {}, nodeBindingOverrides: {},
+        x: bounds.left + (bounds.right - bounds.left) / 2 - 130, y: bounds.top + (bounds.bottom - bounds.top) / 2 - 60 };
     const owners = ownershipEntries(root).map(entry => pathStartsWith(entry.instancePath, path) && selected.has(entry.instancePath[path.length]) ? { ...entry, instancePath: [...path, instanceId, ...entry.instancePath.slice(path.length)] } : entry);
     owners.push({ instancePath: [...path, instanceId], definitionId: saved.data.id });
     const relocate = at => pathStartsWith(at, path) && selected.has(at[path.length]) ? [...path, instanceId, ...at.slice(path.length)] : at;

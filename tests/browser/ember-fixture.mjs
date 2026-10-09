@@ -71,11 +71,11 @@ export function assertEmber(metrics,tokens=approvedEmber.settings.tokens) {
             assert.equal(node.borderWidth,'0px',node.id+' no ordinary border');
             const shadow=node.shadow.match(/^(.*?)\s+0px\s+1px\s+2px\s+0px$/);assert.ok(shadow,node.id+' only the approved soft shadow: '+node.shadow);assertColor(shadow[1],'#00000050',node.id+' shadow alpha');
         }
-        const heading=mixColor(familyColors[node.family],tokens.SmartThemeBodyColor,.68);
-        assertColor(node.heading.color,heading,node.id+' original family heading 68/32');assertColor(node.icon.color,heading,node.id+' heading icon inheritance');
-        if(node.alias)assertColor(node.alias.color,heading,node.id+' compact alias 68/32');
+        const heading=familyColors[node.family];
+        assertColor(node.heading.color,heading,node.id+' family heading');assertColor(node.icon.color,heading,node.id+' heading icon inheritance');
+        if(node.alias)assertColor(node.alias.color,heading,node.id+' compact family alias');
         for(const pin of node.pins){assert.equal(pin.opacity,'1');assertColor(pin.dot,mixColor(pinColors[pin.kind],tokens.SmartThemeBodyColor,.86),pin.kind+' original dot 86/14');assertColor(pin.label.color,mixColor(tokens.SmartThemeEmColor,tokens.SmartThemeBodyColor,.68),pin.kind+' original quiet label 68/32');}
     }
-    for(const row of metrics.shelf){assertColor(row.color,mixColor('#9b9ea1',tokens.SmartThemeBodyColor,.68),row.family+' shelf label');assertColor(row.icon.color,mixColor(familyColors[row.family],tokens.SmartThemeBodyColor,.68),row.family+' shelf semantic icon');assertColor(row.background,tokens.SmartThemeBotMesBlurTintColor,row.family+' shelf surface');if(row.disabled)assert.ok(Number(row.opacity)>0&&Number(row.opacity)<1);else assert.equal(row.opacity,'1');}
+    for(const row of metrics.shelf){assertColor(row.color,familyColors[row.family],row.family+' shelf label');assertColor(row.icon.color,familyColors[row.family],row.family+' shelf semantic icon');assertColor(row.background,tokens.SmartThemeBotMesBlurTintColor,row.family+' shelf surface');if(row.disabled)assert.ok(Number(row.opacity)>0&&Number(row.opacity)<1);else assert.equal(row.opacity,'1');}
     assert.equal(metrics.wires.length,4);for(const wire of metrics.wires)assertColor(wire.stroke,pinColors[wire.kind],wire.kind+' unchanged wire hue');
 }

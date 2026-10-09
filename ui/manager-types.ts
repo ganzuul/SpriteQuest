@@ -53,7 +53,7 @@ export interface SubgraphManagerView extends LibraryManagerCapture {
     destinations: { key: string; label: string }[]; selectedDestinationKey: string | null;
     update: ManagerUpdateDetail | null; selection: { nodeIds: string[]; label: string } | null; issue?: string;
 }
-export type ManagerInterfaceEdit = { kind: 'add'; label: string; direction: 'input' | 'output'; artifactKind: string; required: boolean } | { kind: 'update'; id: string; label: string; artifactKind: string; required: boolean } | { kind: 'remove'; id: string };
+export type ManagerInterfaceEdit = { kind: 'add'; label: string; direction: 'input' | 'output'; artifactKind: string; required: boolean; graphPoint?: { x: number; y: number } } | { kind: 'update'; id: string; label: string; artifactKind: string; required: boolean } | { kind: 'remove'; id: string };
 export type ManagerParameterEdit = { kind: 'add'; label: string; target: ManagerParameterTarget } | { kind: 'update'; id: string; label: string } | { kind: 'remove'; id: string };
 export interface SubgraphManagerActions {
     selectRef?: (capture: LibraryManagerCapture, ref: ManagerRef | null) => void;

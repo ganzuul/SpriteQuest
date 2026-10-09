@@ -1,4 +1,4 @@
-import { isWorkflowGraph, safeWorkflowData } from '../workflow/contracts.js?v=0.24.0';
+import { isWorkflowGraph, safeWorkflowData } from '../workflow/contracts.js?v=0.25.0';
 
 /** Rendering accepts only prepared data. Catalog and runtime work belongs to preparation. */
 export function preparedCardFor(graph, node, hooks = {}) {
@@ -61,9 +61,10 @@ function presentNodeCard(node, prepared, { selection, multi = new Set(), trace }
             + (node.enabled === false ? ' pc-off' : '')
             + (selection?.kind === 'node' && selection.id === node.id ? ' pc-selected' : '')
             + (multi.has(node.id) ? ' pc-multi' : '') + (tr ? ` pc-trace-${tr.status}` : '') + (compact ? ' pc-node-compact' : ''),
-        title: String(node.presentation?.alias || node.title || prepared.canonicalTitle).slice(0, 80),
+        title: String(prepared.boundary ? prepared.canonicalTitle : node.presentation?.alias || node.title || prepared.canonicalTitle).slice(0, 80),
         titleHint: prepared.canonicalTitle, label: prepared.canonicalTitle, iconPath: prepared.iconPath,
         compact, body: prepared.body, ports: prepared.ports, hostResult: prepared.hostResult === true,
+        ...(prepared.boundary ? { boundary: { ...prepared.boundary } } : {}),
         enabled: node.enabled !== false,
         offHint: node.enabled === false ? 'Disabled operations block workflow preflight.' : undefined,
     };

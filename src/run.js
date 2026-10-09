@@ -1,9 +1,9 @@
 /** Current Lattice host facade. Workflow requests never replace the host prompt. */
-import { ctx, safe, settings } from './state.js?v=0.24.0';
-import { validateWorkflow } from './workflow/contracts.js?v=0.24.0';
-import { createNativeWorkflowController } from './workflow/host.js?v=0.24.0';
-export { runWorkflow, workflowSignature } from './workflow/runtime.js?v=0.24.0';
-export { createNativeWorkflowController, snapshotContext, snapshotReply } from './workflow/host.js?v=0.24.0';
+import { ctx, safe, settings } from './state.js?v=0.25.0';
+import { validateWorkflow } from './workflow/contracts.js?v=0.25.0';
+import { createNativeWorkflowController } from './workflow/host.js?v=0.25.0';
+export { runWorkflow, workflowSignature } from './workflow/runtime.js?v=0.25.0';
+export { createNativeWorkflowController, snapshotContext, snapshotReply } from './workflow/host.js?v=0.25.0';
 
 let controller, helpers, initialization;
 export function callCount(graph) {

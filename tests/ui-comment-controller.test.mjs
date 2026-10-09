@@ -1,21 +1,21 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readFile } from 'node:fs/promises';
-import { prepareWorkspaceViews, prepareLibraryViews, projectEditorDraw, projectWorkspacePanels } from '../src/ui/workspace-preparation.js?v=0.24.0';
-import { createGraphViewSession } from '../src/ui/graph-view-session.js?v=0.24.0';
-import { captureGraphEditContext, commitPreparedGraph } from '../src/workflow/transactions.js?v=0.24.0';
-import { prepareCommentEdit } from '../src/workflow/comment-edits.js?v=0.24.0';
-import { createCommentFrame, fitCommentFrame, containedCommentNodes, isCommentFrame } from '../src/canvas/comment-frames.js?v=0.24.0';
-import { captureCommentPresentation, applyCommentPresentation, applyCommentGroupPresentation } from '../src/ui/comment-presentation.js?v=0.24.0';
-import { viewIdentityKey } from '../src/ui/view-state.js?v=0.24.0';
-import { workflowSignature } from '../src/workflow/runtime.js?v=0.24.0';
-import { makeLocalCopy, prepareQualifiedScopeEdit, reconcileOwners } from '../src/workflow/definition-library.js?v=0.24.0';
-import { ownershipEntries, prunePrivateSnapshots } from '../src/workflow/composition-edit.js?v=0.24.0';
-import { makeClip, makeDefinitionClip, readClip, prepareClipPaste } from '../src/workflow/clipboard.js?v=0.24.0';
-import { graphSemanticSignature } from '../src/workflow/ports.js?v=0.24.0';
-import { definitionRefKey } from '../src/workflow/definition-data.js?v=0.24.0';
+import { prepareWorkspaceViews, prepareLibraryViews, projectEditorDraw, projectWorkspacePanels } from '../src/ui/workspace-preparation.js?v=0.25.0';
+import { createGraphViewSession } from '../src/ui/graph-view-session.js?v=0.25.0';
+import { captureGraphEditContext, commitPreparedGraph } from '../src/workflow/transactions.js?v=0.25.0';
+import { prepareCommentEdit } from '../src/workflow/comment-edits.js?v=0.25.0';
+import { createCommentFrame, fitCommentFrame, containedCommentNodes, isCommentFrame } from '../src/canvas/comment-frames.js?v=0.25.0';
+import { captureCommentPresentation, applyCommentPresentation, applyCommentGroupPresentation } from '../src/ui/comment-presentation.js?v=0.25.0';
+import { viewIdentityKey } from '../src/ui/view-state.js?v=0.25.0';
+import { workflowSignature } from '../src/workflow/runtime.js?v=0.25.0';
+import { makeLocalCopy, prepareQualifiedScopeEdit, reconcileOwners } from '../src/workflow/definition-library.js?v=0.25.0';
+import { ownershipEntries, prunePrivateSnapshots } from '../src/workflow/composition-edit.js?v=0.25.0';
+import { makeClip, makeDefinitionClip, readClip, prepareClipPaste } from '../src/workflow/clipboard.js?v=0.25.0';
+import { graphSemanticSignature } from '../src/workflow/ports.js?v=0.25.0';
+import { definitionRefKey } from '../src/workflow/definition-data.js?v=0.25.0';
 import { siblingWorkflow, nestedWorkflow } from './fixtures/workflow-prepared-fixture.mjs';
-import * as H from '../src/history.js?v=0.24.0';
+import * as H from '../src/history.js?v=0.25.0';
 
 const controllerText = await readFile(new URL('../src/ui/controller.js', import.meta.url), 'utf8');
 function controllerFunction(name, env) {
@@ -40,7 +40,7 @@ function fixture(root = { id:'comment-controller-' + ++sequence,schema:3,runtime
     const session = createGraphViewSession({root,activationId:'comment-'+sequence,navigation:[...prepared.data.navigation,...library.data.navigation],preparedViews:[...prepared.data.preparedViews,...library.data.preparedViews]}).data;
     const stored = {workspaceViews:{}}, failures = []; let commits = 0;
     const canvas = {multi:new Set(),selection:null,pointer:{x:12,y:18},host:{getBoundingClientRect:()=>({left:0,top:0,width:800,height:600})},widthOf:n=>n.w ?? 160,heightOf:n=>n.h ?? 48,toGraph:(x,y)=>({x,y}),setMulti(ids){this.multi=new Set(ids);},select(item){this.selection=item;},cancelGesture(){}};
-    const env = { current:root,graphViews:session,canvas,editorDraw:projectEditorDraw(session.readEditor()),editorCaptures:new WeakMap(),commentCaptures:new WeakMap(),commentPresentationEffects:new WeakMap(),pendingCommentPresentation:new WeakMap(),workspaceRevision:0,workspaceIssue:'',selected:null,selectedKind:null,
+    const env = { current:root,graphViews:session,canvas,editorDraw:projectEditorDraw(session.readEditor()),editorCaptures:new WeakMap(),commentCaptures:new WeakMap(),commentPresentationEffects:new WeakMap(),pendingCommentPresentation:new WeakMap(),pendingSubgraphPresentation:new WeakMap(),workspaceRevision:0,workspaceIssue:'',selected:null,selectedKind:null,
         isOpen:()=>true,activeEditRoot:()=>env.current,readGraphEditContext:()=>env.graphViews.readEditContext(),captureGraphEditContext,prepareCommentEdit,createCommentFrame,fitCommentFrame,containedCommentNodes,isCommentFrame,captureCommentPresentation,applyCommentPresentation,applyCommentGroupPresentation,viewIdentityKey,projectEditorDraw,definitionRefKey,H,groupMembers:(graph,id)=>Object.values(graph.nodes).filter(node=>node.inGroup===id),
         prepareQualifiedScopeEdit,reconcileOwners,ownershipEntries,prunePrivateSnapshots,makeClip,makeDefinitionClip,readClip,prepareClipPaste,okToDelete:()=>true,detachedClip:null,flashHistoryNote(){},navigator:{clipboard:{async writeText(value){env.copied=value;}}},
         settings:()=>stored,save(){},toast(message){failures.push(message);},persistGraphViews(){const saved=env.graphViews?.serialize();if(saved?.ok)stored.workspaceViews[root.id]=saved.data;},workbench:{focusCommentTitle(id,check){if(check())env.focused=id;}},graphDocumentHooks:{},
@@ -48,6 +48,7 @@ function fixture(root = { id:'comment-controller-' + ++sequence,schema:3,runtime
     };
     function refresh(){const content=prepareWorkspaceViews(root);assert.equal(content.ok,true,JSON.stringify(content));const shelf=prepareLibraryViews(root.id,root.definitions);const result=session.replacePreparedViews({navigation:[...content.data.navigation,...shelf.data.navigation],preparedViews:[...content.data.preparedViews,...shelf.data.preparedViews]});assert.equal(result.ok,true);env.editorDraw=projectEditorDraw(session.readEditor());}
     for(const name of ['captureEditor','editorCurrent','scopeCommand','commitCaptured','detailCapture','captureCommentEdit','commentGroupOrigin','commentBounds','commentSelectionIds','commentLocation','commitComment','addComment','commentCommand','commentPatch','commentLayout','commentLayoutIds','commentLayoutGroups','commentDocumentState','commentPresentationFailure','commentPresentationCoordinates','deferCommentPresentation','applyCommentPresentationEffect','applyPendingCommentPresentation','handleCommentHistory','currentPick','clipForPick','copySelection','pasteOnCanvas','duplicateSelected','deleteNativeSelection'])env[name]=controllerFunction(name,env);
+    env.applyPendingSubgraphPresentation=controllerFunction('applyPendingSubgraphPresentation',env);
     env.activateEditorDraw=()=>{env.applyPendingCommentPresentation();env.editorDraw=projectEditorDraw(session.readEditor());};
     const actions=controllerActions('commentDetailsActions','nodeDetailsActions',env);
     const unlisten=H.onHistoryChange((graph,event)=>env.handleCommentHistory(graph,event)); H.track(root);

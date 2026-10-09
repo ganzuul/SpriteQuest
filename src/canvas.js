@@ -1,12 +1,12 @@
-import { isWorkflowGraph } from './workflow/contracts.js?v=0.24.0';
-import { graphPoint, zoomAt, zoomTo, wheelFactor } from './canvas/camera.js?v=0.24.0';
-import { createFrameScheduler } from './canvas/frame.js?v=0.24.0';
-import { selectionMode, rectangle, intersects, combineSelection } from './canvas/selection.js?v=0.24.0';
-import { createGeometryCache, indexIncidentWires } from './canvas/geometry.js?v=0.24.0';
-import { nodeCards, preparedCardFor } from './canvas/presentation.js?v=0.24.0';
-import { buildConnectionRoute, buildDragConnectionRoute } from './canvas/connection-route.js?v=0.24.0';
-import { isCommentFrame, containedCommentNodes } from './canvas/comment-frames.js?v=0.24.0';
-import { mountCanvas } from '../dist/lattice-ui.js?v=0.24.0';
+import { isWorkflowGraph } from './workflow/contracts.js?v=0.25.0';
+import { graphPoint, zoomAt, zoomTo, wheelFactor } from './canvas/camera.js?v=0.25.0';
+import { createFrameScheduler } from './canvas/frame.js?v=0.25.0';
+import { selectionMode, rectangle, intersects, combineSelection } from './canvas/selection.js?v=0.25.0';
+import { createGeometryCache, indexIncidentWires } from './canvas/geometry.js?v=0.25.0';
+import { nodeCards, preparedCardFor } from './canvas/presentation.js?v=0.25.0';
+import { buildConnectionRoute, buildDragConnectionRoute } from './canvas/connection-route.js?v=0.25.0';
+import { isCommentFrame, containedCommentNodes } from './canvas/comment-frames.js?v=0.25.0';
+import { mountCanvas } from '../dist/lattice-ui.js?v=0.25.0';
 const groupMembers = (graph, id) => Object.values(graph?.nodes ?? {}).filter(node => node.inGroup === id);
 const groupOf = (graph, node) => node && graph?.groups?.[node.inGroup];
 
@@ -72,6 +72,7 @@ export class Canvas {
         host.innerHTML = '';
         this.layer = mountCanvas(host, {
             hostResult: id => this.hooks.onHostResult?.(this.graph?.nodes[id]),
+            boundary: (id, action) => this.hooks.onBoundary?.(this.graph?.nodes[id], action),
             hoverPin: pin => { this.hoverPin = pin; this.#applyFocus(); },
             group: (id, action) => this.setCollapsed(id, action === 'collapse'),
         });
@@ -116,11 +117,15 @@ export class Canvas {
         this.cancelGesture();
         if (this.nativeSelectionKey) this.wireSelections.set(this.nativeSelectionKey, [...this.wireMulti]);
         if (graph !== this.graph) { this.trace = null; this.hoverPin = null; this.hoverWire = null; this.geometry.clear(); this.wireViews.clear(); }
-        this.graph = graph; this.selection = null; this.multi.clear();
         const scope = this.hooks.nativeScope?.();
+        const nativeSelectionKey = scope?.workflowId && Array.isArray(scope.instancePath) ? JSON.stringify([scope.workflowId, scope.instancePath]) : null;
+        const detailScopeKey = this.hooks.viewKey?.() ?? nativeSelectionKey;
+        if (graph.id !== this.graph?.id || detailScopeKey !== this.detailScopeKey) delete this.host.dataset.pcDetail;
+        this.detailScopeKey = detailScopeKey;
+        this.graph = graph; this.selection = null; this.multi.clear();
         if (scope?.workflowId && this.nativeSelectionRoot !== scope.workflowId) this.wireSelections.clear();
         this.nativeSelectionRoot = scope?.workflowId ?? this.nativeSelectionRoot;
-        this.nativeSelectionKey = scope?.workflowId && Array.isArray(scope.instancePath) ? JSON.stringify([scope.workflowId, scope.instancePath]) : null;
+        this.nativeSelectionKey = nativeSelectionKey;
         this.wireMulti = new Set((this.wireSelections.get(this.nativeSelectionKey) ?? []).filter(id => graph.wires[id]));
         this.nativeWireView = null; this.render();
     }
@@ -132,6 +137,11 @@ export class Canvas {
 
     applyTransform() {
         const v = this.view;
+        // Change detail only at zoom thresholds, without rebuilding cards or
+        // touching their intrinsic sizes and cached named-pin geometry.
+        const detail = this.host.dataset.pcDetail;
+        const next = v.zoom < .5 || detail === 'overview' && v.zoom < .6 ? 'overview' : 'full';
+        if (detail !== next) this.host.dataset.pcDetail = next;
         this.viewport.style.transform = `translate(${v.x}px, ${v.y}px) scale(${v.zoom})`;
         // The canvas background moves and scales with the graph. Each theme
         // background has its own layers, so each gets sizes to match.
@@ -212,7 +222,7 @@ export class Canvas {
         this.hooks.onViewCommit?.();
     }
 
-    fit() {
+    fit({ avoidShelf = false } = {}) {
         this.#finishZoom(false);
         const boxes = Object.values(this.graph?.nodes ?? {}).filter(n => !this.#folded(n)).map(n => ({ x: n.x, y: n.y, w: this.widthOf(n), h: this.heightOf(n) || 160 }));
         for (const g of Object.values(this.graph?.groups ?? {})) {
@@ -232,11 +242,14 @@ export class Canvas {
         const shelfRect = shelf?.getBoundingClientRect();
         const topInset = shelfRect && shelfRect.width > rect.width / 2
             ? Math.min(Math.max(0, rect.height - 80), Math.max(0, shelfRect.bottom - rect.top + 16)) : 0;
+        const leftInset = avoidShelf && shelfRect && shelfRect.width <= rect.width / 2
+            ? Math.min(Math.max(0, rect.width - 80), Math.max(0, shelfRect.right - rect.left + 24)) : 0;
+        const width = rect.width - leftInset;
         const height = rect.height - topInset;
-        const zoom = Math.max(0.25, Math.min(1.2, Math.min(rect.width / (maxX - minX), height / (maxY - minY))));
+        const zoom = Math.max(0.25, Math.min(1.2, Math.min(width / (maxX - minX), height / (maxY - minY))));
         const v = this.view;
         v.zoom = zoom;
-        v.x = -minX * zoom + (rect.width - (maxX - minX) * zoom) / 2;
+        v.x = leftInset - minX * zoom + (width - (maxX - minX) * zoom) / 2;
         v.y = topInset - minY * zoom + (height - (maxY - minY) * zoom) / 2;
         this.applyTransform();
     }
@@ -679,6 +692,17 @@ export class Canvas {
         const on = (target, type, handler, options = {}) => target.addEventListener(type, handler, { ...options, signal: this.eventController.signal });
         const inEditor = (e) => e.target?.closest?.('input, textarea, select, [contenteditable="true"]');
         const typing = (e) => inEditor(e) || document.activeElement?.matches?.('input, textarea, select, [contenteditable="true"]');
+        on(host, 'scroll', () => {
+            // Keyboard focus can scroll an overflow-hidden host to an offscreen
+            // card. Adopt that movement into the camera so hit testing and the
+            // background grid continue to match the graph's displayed position.
+            const x = host.scrollLeft, y = host.scrollTop;
+            if (!this.graph || !(x || y)) return;
+            this.#finishZoom(false);
+            this.view.x -= x; this.view.y -= y;
+            host.scrollLeft = 0; host.scrollTop = 0;
+            this.applyTransform(); this.hooks.onViewCommit?.();
+        });
         on(host, 'pointerover', event => {
             const wire = event.target.closest?.('.pc-wire-hit[data-id]');
             if (wire) { this.hoverWire = wire.dataset.id; this.#applyFocus(); }
@@ -1020,7 +1044,10 @@ export class Canvas {
                         readOnly: !this.#canEdit(), ...this.#nativeAttachments(pin) });
                     this.updateNativeWire(result.view, result.requests); return;
                 }
-                if (!e.target.closest('.pc-node, .pc-group-frame, .pc-wire-hit, .pc-comment-frame')) { this.#openNativeSearch(e); return; }
+                if (!e.target.closest('.pc-node, .pc-group-frame, .pc-wire-hit, .pc-comment-frame')) {
+                    if (this.hooks.onEmptyContextMenu?.({ event: e, at: this.toGraph(e.clientX, e.clientY) })) return;
+                    this.#openNativeSearch(e); return;
+                }
             }
             const nodeEl = e.target.closest('.pc-node[data-id], .pc-comment-frame[data-id]');
             const groupEl = e.target.closest('.pc-node-group, .pc-group-frame-head');

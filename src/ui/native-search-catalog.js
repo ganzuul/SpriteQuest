@@ -1,6 +1,6 @@
-import { ARTIFACT_KINDS, FAMILIES, OPERATIONS, describeOperation, operationDefaults } from '../workflow/catalog.js?v=0.24.0';
-import { cloneDefinitionData, definitionRefKey } from '../workflow/definitions.js?v=0.24.0';
-import { selectSubgraphClosure } from '../workflow/packages.js?v=0.24.0';
+import { ARTIFACT_KINDS, FAMILIES, OPERATIONS, describeOperation, operationDefaults } from '../workflow/catalog.js?v=0.25.0';
+import { cloneDefinitionData, definitionRefKey } from '../workflow/definitions.js?v=0.25.0';
+import { selectSubgraphClosure } from '../workflow/packages.js?v=0.25.0';
 
 const registries = new WeakMap();
 const fail = message => ({ ok: false, error: { code: 'INVALID_SEARCH_CATALOG', message } });

@@ -1,4 +1,4 @@
-import { validateGraphStructure } from './contracts.js?v=0.24.0';
+import { validateGraphStructure } from './contracts.js?v=0.25.0';
 
 /** Detach a current document and supply its absent optional authoring containers.
  * @param {unknown} graph

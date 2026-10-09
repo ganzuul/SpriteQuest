@@ -127,9 +127,12 @@ test('shelf rows leave room for a thin vertical scrollbar without shrinking thei
     const shelfPaint = style('.pc-node-shelf'), rowPaint = style('.pc-family-row');
     assert.equal(shelfPaint.overflowX, 'hidden');
     assert.equal(shelfPaint.scrollbarWidth, 'thin'); assert.equal(shelfPaint.scrollbarColor, 'rgb(85, 85, 85)');
-    assert.equal(rowPaint.height, '28px'); assert.equal(rowPaint.flexBasis, '28px');
     assert.ok(parseFloat(shelfPaint.width) >= parseFloat(rowPaint.width) + 6, 'the shelf reserves room for its vertical scrollbar beside the full-width rows');
-    assert.equal(rowPaint.alignItems, 'center'); assert.equal(style('.pc-family-row svg').flexShrink, '0');
+    assert.equal(shelfPaint.gap, '3px');
+    assert.equal(rowPaint.height, '42px'); assert.equal(rowPaint.flexBasis, '42px');
+    assert.equal(rowPaint.fontSize, '14px'); assert.equal(rowPaint.alignItems, 'center');
+    const iconPaint = style('.pc-family-row svg');
+    assert.equal(iconPaint.width, '24px'); assert.equal(iconPaint.height, '24px'); assert.equal(iconPaint.flexShrink, '0');
 });
 
 test('selected graph tab masks only its own canvas border without an extra right corner', () => {

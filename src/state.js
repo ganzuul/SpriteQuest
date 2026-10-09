@@ -1,10 +1,10 @@
 /** Current Lattice documents and settings. SillyTavern owns its normal prompt. */
-import { installStarter } from './workflow/starters.js?v=0.24.0';
-import { exportWorkflow, parseWorkflow } from './workflow/packages.js?v=0.24.0';
-import { safeWorkflowData, validateGraphStructure } from './workflow/contracts.js?v=0.24.0';
-import { cloneWorkflowDocument } from './workflow/document.js?v=0.24.0';
-import { commitPreparedGraph, graphEditSignature } from './workflow/transactions.js?v=0.24.0';
-import * as graphHistory from './history.js?v=0.24.0';
+import { installStarter } from './workflow/starters.js?v=0.25.0';
+import { exportWorkflow, parseWorkflow } from './workflow/packages.js?v=0.25.0';
+import { safeWorkflowData, validateGraphStructure } from './workflow/contracts.js?v=0.25.0';
+import { cloneWorkflowDocument } from './workflow/document.js?v=0.25.0';
+import { commitPreparedGraph, graphEditSignature } from './workflow/transactions.js?v=0.25.0';
+import * as graphHistory from './history.js?v=0.25.0';
 
 export const MODULE = 'lattice';
 export const ctx = () => globalThis.SillyTavern.getContext();
