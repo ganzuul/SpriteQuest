@@ -58,7 +58,7 @@ function parseSettings(input) {
     if (!cloned.ok) return null;
     const value = cloned.data.value;
     if (!value || Array.isArray(value) || typeof value !== 'object' || !Object.hasOwn(value, 'kind') || Object.keys(value).some(key => !['kind', 'mode', 'scope', 'strength', 'instructions', 'maxTokens', 'protectedLiterals'].includes(key)) || !['style', 'format'].includes(value.kind)) return null;
-    if (value.kind === 'format' ? Object.hasOwn(value, 'mode') : Object.hasOwn(value, 'mode') && !Object.hasOwn(modes, value.mode)) return null;
+    if (value.kind === 'format' ? Object.hasOwn(value, 'mode') : Object.hasOwn(value, 'mode') && (typeof value.mode !== 'string' || !Object.hasOwn(modes, value.mode))) return null;
     const strength = Object.hasOwn(value, 'strength') ? value.strength : 'light';
     const instructions = Object.hasOwn(value, 'instructions') ? value.instructions : '';
     const maxTokens = Object.hasOwn(value, 'maxTokens') ? value.maxTokens : 2048;

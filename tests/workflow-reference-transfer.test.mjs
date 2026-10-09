@@ -213,3 +213,23 @@ test('absent optional settings never inherit permission scope or style mode', as
         } })));
     } finally { delete Object.prototype.scope; delete Object.prototype.mode; }
 });
+
+test('array style modes return INVALID_SETTINGS before tokenizer or request calls', async () => {
+    let tokenizations = 0, requests = 0;
+    const result = await transfer.transferDraft(draft(), { kind: 'text', text: 'example' }, settings({ mode: ['narration'] }), ports({
+        countTokens: async () => { tokenizations++; return { tokens: 1 }; },
+        request: async () => { requests++; return { ok: true, data: { text: 'new prose', finish: 'stop' } }; },
+    }));
+    assert.equal(result.ok, false); assert.equal(result.error.code, 'INVALID_SETTINGS');
+    assert.equal(tokenizations, 0); assert.equal(requests, 0);
+});
+
+test('object style modes return a failure Result without property-key coercion or service calls', async () => {
+    let tokenizations = 0, requests = 0;
+    const result = await transfer.transferDraft(draft(), { kind: 'text', text: 'example' }, settings({ mode: { toString: 'narration' } }), ports({
+        countTokens: async () => { tokenizations++; return { tokens: 1 }; },
+        request: async () => { requests++; return { ok: true, data: { text: 'new prose', finish: 'stop' } }; },
+    }));
+    assert.equal(result.ok, false); assert.equal(result.error.code, 'INVALID_SETTINGS');
+    assert.equal(tokenizations, 0); assert.equal(requests, 0);
+});
