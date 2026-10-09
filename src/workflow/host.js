@@ -1,7 +1,7 @@
-import { runWorkflowForHost, freezeArtifact, workflowSignature } from './runtime.js?v=0.22.1';
-import { resolveBinding, requestModel, bindingStatus, bindingSummary } from './connections.js?v=0.22.1';
-import { addressKey, safeError } from './record-data.js?v=0.22.1';
-import { cloneWorkflowDocument } from './document.js?v=0.22.1';
+import { runWorkflowForHost, freezeArtifact, workflowSignature } from './runtime.js?v=0.23.0';
+import { resolveBinding, requestModel, bindingStatus, bindingSummary } from './connections.js?v=0.23.0';
+import { addressKey, safeError } from './record-data.js?v=0.23.0';
+import { cloneWorkflowDocument } from './document.js?v=0.23.0';
 
 // Internal review seam: observations contain no authority or retained payload values.
 const retentionInspectors=new WeakMap();

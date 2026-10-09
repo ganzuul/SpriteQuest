@@ -1,12 +1,12 @@
-import { isWorkflowGraph } from './workflow/contracts.js?v=0.22.1';
-import { graphPoint, zoomAt, wheelFactor } from './canvas/camera.js?v=0.22.1';
-import { createFrameScheduler } from './canvas/frame.js?v=0.22.1';
-import { selectionMode, rectangle, intersects, combineSelection } from './canvas/selection.js?v=0.22.1';
-import { createGeometryCache, indexIncidentWires } from './canvas/geometry.js?v=0.22.1';
-import { nodeCards, preparedCardFor } from './canvas/presentation.js?v=0.22.1';
-import { buildConnectionRoute, buildDragConnectionRoute } from './canvas/connection-route.js?v=0.22.1';
-import { isCommentFrame, containedCommentNodes } from './canvas/comment-frames.js?v=0.22.1';
-import { mountCanvas } from '../dist/lattice-ui.js?v=0.22.1';
+import { isWorkflowGraph } from './workflow/contracts.js?v=0.23.0';
+import { graphPoint, zoomAt, wheelFactor } from './canvas/camera.js?v=0.23.0';
+import { createFrameScheduler } from './canvas/frame.js?v=0.23.0';
+import { selectionMode, rectangle, intersects, combineSelection } from './canvas/selection.js?v=0.23.0';
+import { createGeometryCache, indexIncidentWires } from './canvas/geometry.js?v=0.23.0';
+import { nodeCards, preparedCardFor } from './canvas/presentation.js?v=0.23.0';
+import { buildConnectionRoute, buildDragConnectionRoute } from './canvas/connection-route.js?v=0.23.0';
+import { isCommentFrame, containedCommentNodes } from './canvas/comment-frames.js?v=0.23.0';
+import { mountCanvas } from '../dist/lattice-ui.js?v=0.23.0';
 const groupMembers = (graph, id) => Object.values(graph?.nodes ?? {}).filter(node => node.inGroup === id);
 const groupOf = (graph, node) => node && graph?.groups?.[node.inGroup];
 

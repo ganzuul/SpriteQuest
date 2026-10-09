@@ -1,15 +1,15 @@
-import { operationFor } from './catalog.js?v=0.22.1';
-import { cloneWorkflowDocument } from './document.js?v=0.22.1';
-import { resolveWorkflow } from './resolve.js?v=0.22.1';
-import { compactContext, formatContext } from './compactor.js?v=0.22.1';
-import { scanDraft, repairDraft, validatePatches } from './repair.js?v=0.22.1';
-import { graphSemanticSignature } from './ports.js?v=0.22.1';
-import { executePrimitive, PRIMITIVE_OPERATIONS } from './operations/nodes.js?v=0.22.1';
-import { executeContextJoin } from './operations/context-join.js?v=0.22.1';
-import { executeTranspose, TRANSPOSE_OPERATIONS } from './operations/transpose-nodes.js?v=0.22.1';
-import { cleanupDraft, CLEANUP_MODES } from './operations/prose-cleanup.js?v=0.22.1';
-import { admitRunPlan, createRunRecorder } from './recording.js?v=0.22.1';
-import { addressKey, freeze, own, parseRunPlan, safeBinding, safeError, safeUsage, boundedText } from './record-data.js?v=0.22.1';
+import { operationFor } from './catalog.js?v=0.23.0';
+import { cloneWorkflowDocument } from './document.js?v=0.23.0';
+import { resolveWorkflow } from './resolve.js?v=0.23.0';
+import { compactContext, formatContext } from './compactor.js?v=0.23.0';
+import { scanDraft, repairDraft, validatePatches } from './repair.js?v=0.23.0';
+import { graphSemanticSignature } from './ports.js?v=0.23.0';
+import { executePrimitive, PRIMITIVE_OPERATIONS } from './operations/nodes.js?v=0.23.0';
+import { executeContextJoin } from './operations/context-join.js?v=0.23.0';
+import { executeTranspose, TRANSPOSE_OPERATIONS } from './operations/transpose-nodes.js?v=0.23.0';
+import { cleanupDraft, CLEANUP_MODES } from './operations/prose-cleanup.js?v=0.23.0';
+import { admitRunPlan, createRunRecorder } from './recording.js?v=0.23.0';
+import { addressKey, freeze, own, parseRunPlan, safeBinding, safeError, safeUsage, boundedText } from './record-data.js?v=0.23.0';
 
 /** Execution identity shared by the host and UI. Canvas presentation never invalidates work. */
 export const workflowSignature = graphSemanticSignature;

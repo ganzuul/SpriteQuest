@@ -1,7 +1,7 @@
-import { safeWorkflowData, validateGraphStructure } from './contracts.js?v=0.22.1';
-import { cloneWorkflowDocument } from './document.js?v=0.22.1';
-import { operationFor, describeOperation, semanticControlsForNode } from './catalog.js?v=0.22.1';
-export { portsForNode } from './catalog.js?v=0.22.1';
+import { safeWorkflowData, validateGraphStructure } from './contracts.js?v=0.23.0';
+import { cloneWorkflowDocument } from './document.js?v=0.23.0';
+import { operationFor, describeOperation, semanticControlsForNode } from './catalog.js?v=0.23.0';
+export { portsForNode } from './catalog.js?v=0.23.0';
 
 const fail = (code, message) => ({ ok: false, error: { code, message } });
 const endpoint = value => value && typeof value === 'object' && !Array.isArray(value) && typeof value.nodeId === 'string' && typeof value.portId === 'string';

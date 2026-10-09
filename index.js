@@ -1,9 +1,9 @@
 /** Lattice launcher and host integration. The workflow never replaces SillyTavern's prompt. */
-import { MODULE, settings, save, ctx, safe } from './src/state.js?v=0.22.1';
-import { getNativeWorkflowController, initializeNativeWorkflowController, workflowSignature, sendWorkflowState } from './src/run.js?v=0.22.1';
-import * as UI from './src/ui.js?v=0.22.1';
-import { applyTheme } from './src/theme.js?v=0.22.1';
-import { renderThemeEditor } from './src/theme-editor.js?v=0.22.1';
+import { MODULE, settings, save, ctx, safe } from './src/state.js?v=0.23.0';
+import { getNativeWorkflowController, initializeNativeWorkflowController, workflowSignature, sendWorkflowState } from './src/run.js?v=0.23.0';
+import * as UI from './src/ui.js?v=0.23.0';
+import { applyTheme } from './src/theme.js?v=0.23.0';
+import { renderThemeEditor } from './src/theme-editor.js?v=0.23.0';
 const logoUrl = new URL('./assets/lattice-logo.svg', import.meta.url).href;
 
 globalThis.latticeGenerationInterceptor = async (chat, contextSize, abort, type) => {

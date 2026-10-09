@@ -14,6 +14,11 @@ let hasDependencies = true;
 try { await access(join(install, 'node_modules')); } catch { hasDependencies = false; }
 if (hasDependencies) throw new Error('The installation smoke must run without node_modules');
 const retired = new Set(['compile.js','memory.js','jev.js','thoughts.js','statevals.js','state-window.js','lore.js','expr.js','select.js','clip.js','model-combo.js','migration.js','legacy-insertion.js','domain-surfaces.js','graph-analysis.js']);
+// The new scoped Introspection adapter shares a basename with the retired
+// reader. Only its canonical installed path is allowed; all other copies and
+// imports of the retired names still fail the audit.
+const scopedMemory = join(install, 'src', 'workflow', 'introspection', 'memory.js');
+const isRetiredModule = path => retired.has(path.split(/[\\/]/).at(-1)) && resolve(path) !== scopedMemory;
 // Browser runtime specifiers have explicit file extensions; extensionless JSDoc
 // import('./types') annotations do not add an installed module dependency.
 const runtimeImports = /(?:from\s*|import\s*\(?\s*|new\s+URL\s*\(\s*)['"]([^'"]+\.(?:m?js|json)(?:[?#][^'"]*)?)['"]/g;
@@ -22,11 +27,12 @@ async function auditDirectory(path) {
         const full = join(path, entry.name);
         if (entry.isDirectory()) await auditDirectory(full);
         else if (/\.m?js$/.test(entry.name)) {
-            if (retired.has(entry.name)) throw Error('Retired installed module: ' + full);
+            if (isRetiredModule(full)) throw Error('Retired installed module: ' + full);
             const code = await readFile(full, 'utf8');
             for (const match of code.matchAll(runtimeImports)) {
                 const specifier = match[1].split(/[?#]/)[0];
-                if (retired.has(specifier.split('/').at(-1))) throw Error('Retired installed dependency: ' + match[1]);
+                const dependency = specifier.startsWith('.') ? resolve(full, '..', specifier) : specifier;
+                if (isRetiredModule(dependency)) throw Error('Retired installed dependency: ' + match[1]);
                 if (specifier.startsWith('.')) await access(resolve(full, '..', specifier));
             }
         }

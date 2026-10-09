@@ -19,8 +19,8 @@ async function fixture(view,actions,mode='setup') {
     const mounted=mount(component,{target:host,props:{actions:{workflowSetup:actions},view}});flushSync();
     return {host,update(next){view=next;flushSync();},async close(){await unmount(mounted);host.remove();const rel=relative(resolve(tmpdir()),resolve(directory));assert.ok(rel&&!rel.startsWith('..')&&!isAbsolute(rel));await rm(directory,{recursive:true,force:true});}};
 }
-const { starterGraph } = await import('../src/workflow/starters.js?v=0.22.1');
-const { prepareWorkflowProjection, projectPreparedWorkflow } = await import('../src/ui/workflow-surface.js?v=0.22.1');
+const { starterGraph } = await import('../src/workflow/starters.js?v=0.23.0');
+const { prepareWorkflowProjection, projectPreparedWorkflow } = await import('../src/ui/workflow-surface.js?v=0.23.0');
 test('actual Setup lists all eight current examples and forwards a selected installation without arming',async()=>{
     const graph=starterGraph('structured-guidance'), view=projectPreparedWorkflow(prepareWorkflowProjection(graph)),calls=[];
     const f=await fixture(view,{install:id=>calls.push(['install',id]),assign:phase=>calls.push(['assign',phase]),bindRole(){}});

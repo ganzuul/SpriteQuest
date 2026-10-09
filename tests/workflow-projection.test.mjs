@@ -3,7 +3,7 @@ import test from 'node:test';
 import { installMock } from './mock.js';
 installMock();
 const surface=await import('../src/ui/workflow-surface.js');
-const { prepareWorkflowPlanner }=await import('../src/workflow/resolve.js?v=0.22.1');
+const { prepareWorkflowPlanner }=await import('../src/workflow/resolve.js?v=0.23.0');
 const { starterGraph }=await import('../src/workflow/starters.js');
 const { cloneWorkflowDocument }=await import('../src/workflow/document.js');
 const { runWorkflow }=await import('../src/workflow/runtime.js');
