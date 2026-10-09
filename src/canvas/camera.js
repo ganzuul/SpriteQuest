@@ -11,7 +11,13 @@ export function graphPoint(view, point) {
 
 export function zoomAt(view, factor, point) {
     if (!Number.isFinite(factor) || factor <= 0) return false;
-    const next = Math.max(0.25, Math.min(2.5, view.zoom * factor));
+    return zoomTo(view, view.zoom * factor, point);
+}
+
+/** Set an absolute scale so an animated endpoint does not accumulate rounding. */
+export function zoomTo(view, zoom, point) {
+    if (!Number.isFinite(zoom) || zoom <= 0) return false;
+    const next = Math.max(0.25, Math.min(2.5, zoom));
     if (next === view.zoom) return false;
     const ratio = next / view.zoom;
     view.x = point.x - (point.x - view.x) * ratio;

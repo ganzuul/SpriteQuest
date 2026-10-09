@@ -17,10 +17,10 @@ function countWork(canvas, host) {
 }
 function holdFrames() {
     const request = globalThis.requestAnimationFrame, cancel = globalThis.cancelAnimationFrame;
-    let sequence = 0; const queued = new Map();
+    let sequence = 0, time = 0; const queued = new Map();
     globalThis.requestAnimationFrame = callback => { queued.set(++sequence, callback); return sequence; };
     globalThis.cancelAnimationFrame = ticket => queued.delete(ticket);
-    return { size: () => queued.size, flush() { const callbacks = [...queued.values()]; queued.clear(); callbacks.forEach(callback => callback(0)); }, restore() { globalThis.requestAnimationFrame = request; globalThis.cancelAnimationFrame = cancel; } };
+    return { size: () => queued.size, flush() { time += 16; const callbacks = [...queued.values()]; queued.clear(); callbacks.forEach(callback => callback(time)); }, restore() { globalThis.requestAnimationFrame = request; globalThis.cancelAnimationFrame = cancel; } };
 }
 
 test('node selection paints before returning without rebuilding cards, routes, geometry or camera', async () => {
@@ -50,6 +50,11 @@ test('rapid wheel and pan bursts paint once per frame and retain every final cam
         for (let index = 0; index < 60; index++) f.host.dispatchEvent(new dom.window.WheelEvent('wheel', { deltaY: -1, clientX: 200, clientY: 200, bubbles: true, cancelable: true }));
         assert.equal(frames.size(), 1); assert.equal(counts.views, 0); assert.equal(counts.bounds, 1);
         frames.flush(); assert.equal(counts.views, 1); assert.equal(counts.nodes, 0); assert.equal(counts.measure, 0);
+        assert.ok(f.graph.view.zoom > 1 && f.graph.view.zoom < Math.exp(0.12), 'the first frame eases toward the accumulated target');
+        for (let frame = 0; frames.size() && frame < 20; frame++) {
+            const paints = counts.views; frames.flush(); assert.equal(counts.views, paints + 1, 'each animation frame paints only once');
+        }
+        assert.equal(frames.size(), 0);
         assert.ok(Math.abs(f.graph.view.zoom - Math.exp(0.12)) < 1e-12);
         f.canvas.cancelGesture(); const before = { ...f.graph.view }; counts.views = 0; counts.bounds = 0;
         mouse(f.host, 'mousedown', 20, 20, { button: 1 });

@@ -1,5 +1,5 @@
 import { isWorkflowGraph } from './workflow/contracts.js?v=0.23.0';
-import { graphPoint, zoomAt, wheelFactor } from './canvas/camera.js?v=0.23.0';
+import { graphPoint, zoomAt, zoomTo, wheelFactor } from './canvas/camera.js?v=0.23.0';
 import { createFrameScheduler } from './canvas/frame.js?v=0.23.0';
 import { selectionMode, rectangle, intersects, combineSelection } from './canvas/selection.js?v=0.23.0';
 import { createGeometryCache, indexIncidentWires } from './canvas/geometry.js?v=0.23.0';
@@ -76,8 +76,8 @@ export class Canvas {
             group: (id, action) => this.setCollapsed(id, action === 'collapse'),
         });
         this.viewport = this.layer.viewport; this.svg = this.layer.svg; this.nodeLayer = this.layer.nodeLayer; this.commentLayer = this.layer.commentLayer;
-        this.frames = createFrameScheduler(flags => {
-            if (flags & 1) this.applyTransform();
+        this.frames = createFrameScheduler((flags, time) => {
+            if (flags & 1) this.#paintCamera(time);
             if (flags & 2) this.#drawWires();
             if (flags & 4) this.#renderDrag();
         });
@@ -161,11 +161,59 @@ export class Canvas {
 
     zoomBy(factor, clientX, clientY) {
         if (!this.graph) return;
-        const rect = this.host.getBoundingClientRect();
-        if (zoomAt(this.view, factor, { x: clientX - rect.left, y: clientY - rect.top })) this.applyTransform();
+        const rect = this.wheelRect ?? this.host.getBoundingClientRect();
+        if (this.#queueZoom(factor, { x: clientX - rect.left, y: clientY - rect.top })) this.wheelRect = rect;
+    }
+
+    #queueZoom(factor, point) {
+        // Accumulate input against the requested scale, while hit testing and
+        // geometry continue to use the camera actually displayed this frame.
+        const target = { ...this.view, zoom: this.zoomMotion?.to ?? this.view.zoom };
+        if (!zoomAt(target, factor, point)) return false;
+        if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+            this.zoomMotion = null;
+            zoomTo(this.view, target.zoom, point);
+        } else {
+            this.zoomMotion = { from: this.view.zoom, to: target.zoom, point, start: null };
+        }
+        this.host.classList.add('pc-interacting');
+        this.frames.schedule(1);
+        clearTimeout(this.wheelTimer);
+        this.wheelTimer = setTimeout(() => this.#finishZoom(), 180);
+        return true;
+    }
+
+    #paintCamera(time) {
+        const motion = this.zoomMotion;
+        if (motion) {
+            motion.start ??= time - 16;
+            const progress = Math.max(0, Math.min(1, (time - motion.start) / 160));
+            const eased = 1 - (1 - progress) ** 3;
+            const zoom = progress === 1 ? motion.to : motion.from * (motion.to / motion.from) ** eased;
+            zoomTo(this.view, zoom, motion.point);
+            if (progress === 1) this.zoomMotion = null;
+            else this.frames.schedule(1);
+        }
+        this.applyTransform();
+    }
+
+    #finishZoom(settle = true) {
+        if (!this.wheelRect) return;
+        clearTimeout(this.wheelTimer);
+        const motion = this.zoomMotion;
+        this.zoomMotion = null;
+        if (motion && settle) {
+            zoomTo(this.view, motion.to, motion.point);
+            this.frames.schedule(1);
+        }
+        this.frames.flush();
+        this.wheelRect = null;
+        this.host.classList.remove('pc-interacting');
+        this.hooks.onViewCommit?.();
     }
 
     fit() {
+        this.#finishZoom(false);
         const boxes = Object.values(this.graph?.nodes ?? {}).filter(n => !this.#folded(n)).map(n => ({ x: n.x, y: n.y, w: this.widthOf(n), h: this.heightOf(n) || 160 }));
         for (const g of Object.values(this.graph?.groups ?? {})) {
             if (g.collapsed) boxes.push({ x: g.x, y: g.y, w: g.w || 260, h: this.geometry.get(`group:${g.id}`, 160) || 160 });
@@ -383,6 +431,7 @@ export class Canvas {
     selectAll() { if (this.graph) this.setMulti(Object.keys(this.graph.nodes)); }
 
     fitSelection() {
+        this.#finishZoom(false);
         const ids = this.#pickedIds();
         if (!ids.size) { this.fit(); return; }
         const boxes = [];
@@ -411,7 +460,8 @@ export class Canvas {
         const bridge = this.#nativeBridge();
         const active = !!(this.drag || this.marquee || this.pan || bridge?.hasContentGesture());
         if (bridge) { const result = bridge.cancel(reason); this.updateNativeWire(result.view, result.requests); }
-        const wheeling = !!this.wheelRect, panning = !!this.pan;
+        const panning = !!this.pan;
+        this.#finishZoom();
         this.frames.cancel(); clearTimeout(this.wheelTimer);
         this.gestureRect = null; this.wheelRect = null;
         const d = this.drag;
@@ -438,7 +488,6 @@ export class Canvas {
             this.hooks.onSelect?.(picked, sel?.kind ?? null); this.hooks.onMulti?.([...this.multi]);
         }
         else {
-            if (wheeling && this.graph) this.applyTransform();
             if (bridge && this.graph) {
                 // An idle bridge may have queued cleanup after its ghost was
                 // painted. Cancelling that frame must still clear the draft.
@@ -446,7 +495,7 @@ export class Canvas {
                 this.#applyFocus();
             }
         }
-        if (wheeling || panning) this.hooks.onViewCommit?.();
+        if (panning) this.hooks.onViewCommit?.();
         return active;
     }
 
@@ -664,6 +713,7 @@ export class Canvas {
             }
         });
         on(host, 'pointerdown', (e) => {
+            this.#finishZoom(false);
             if (e.button === 0 && !inEditor(e) && !e.target.closest('.pc-node-action')) {
                 const pinElement = e.target.closest('.pc-port'), pin = this.#nativePin(e.target);
                 const wire = e.target.closest('.pc-wire-hit');
@@ -702,22 +752,16 @@ export class Canvas {
         on(host, 'wheel', (e) => {
             if (!this.graph || this.drag || this.marquee || this.pan || this.#nativeBridge()?.hasContentGesture()) return;
             e.preventDefault();
-            const rect = this.wheelRect ??= host.getBoundingClientRect();
+            const rect = this.wheelRect ?? host.getBoundingClientRect();
             const factor = wheelFactor(e.deltaY, e.deltaMode, rect.height);
-            if (!zoomAt(this.view, factor, { x: e.clientX - rect.left, y: e.clientY - rect.top })) return;
-            host.classList.add('pc-interacting');
-            this.frames.schedule();
-            clearTimeout(this.wheelTimer);
-            this.wheelTimer = setTimeout(() => {
-                this.frames.flush(); host.classList.remove('pc-interacting');
-                this.wheelRect = null; this.hooks.onViewCommit?.();
-            }, 160);
+            if (this.#queueZoom(factor, { x: e.clientX - rect.left, y: e.clientY - rect.top })) this.wheelRect = rect;
         }, { passive: false });
         on(host, 'mousedown', (e) => {
             if (!this.graph) return;
             if (this.nativeMouseSuppressed || e.target.closest('.pc-port')) { e.preventDefault(); return; }
             if (e.target.closest('.pc-node-action')) return;
             if (inEditor(e)) return;
+            this.#finishZoom(false);
             this.gestureRect = host.getBoundingClientRect();
             if (e.button === 1 || (e.button === 0 && (this.spaceDown || this.mode === 'pan'))) {
                 e.preventDefault();

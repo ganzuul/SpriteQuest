@@ -1,5 +1,5 @@
 /*! Svelte runtime: Copyright (c) 2016-2025 Svelte Contributors. MIT license; see THIRD_PARTY_NOTICES.md. */
-//#region node_modules/svelte/src/internal/shared/utils.js
+//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/shared/utils.js
 var e = Array.isArray, t = Array.prototype.indexOf, n = Array.prototype.includes, r = Array.from, i = Object.defineProperty, a = Object.getOwnPropertyDescriptor, o = Object.getOwnPropertyDescriptors, s = Object.prototype, c = Array.prototype, l = Object.getPrototypeOf, u = Object.isExtensible, d = () => {};
 function f(e) {
 	for (var t = 0; t < e.length; t++) e[t]();
@@ -22,7 +22,7 @@ function se(e) {
 	throw Error("https://svelte.dev/e/lifecycle_outside_component");
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/errors.js
+//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/errors.js
 function ce() {
 	throw Error("https://svelte.dev/e/async_derived_orphan");
 }
@@ -57,7 +57,7 @@ function ve() {
 	throw Error("https://svelte.dev/e/svelte_boundary_reset_onerror");
 }
 //#endregion
-//#region node_modules/svelte/src/constants.js
+//#region F:/git/SillyCanvas/node_modules/svelte/src/constants.js
 var ye = {}, be = Symbol("uninitialized"), xe = "http://www.w3.org/1999/xhtml";
 function Se() {
 	console.warn("https://svelte.dev/e/derived_inert");
@@ -72,7 +72,7 @@ function Te() {
 	console.warn("https://svelte.dev/e/svelte_boundary_reset_noop");
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/dom/hydration.js
+//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/dom/hydration.js
 var M = !1;
 function Ee(e) {
 	M = e;
@@ -115,7 +115,7 @@ function je(e) {
 	return e.data;
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/reactivity/equality.js
+//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/reactivity/equality.js
 function Me(e) {
 	return e === this.v;
 }
@@ -126,7 +126,7 @@ function Pe(e) {
 	return !Ne(e, this.v);
 }
 //#endregion
-//#region node_modules/svelte/src/internal/shared/clone.js
+//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/shared/clone.js
 var Fe = [];
 function Ie(e, t = !1, n = !1) {
 	return Le(e, /* @__PURE__ */ new Map(), "", Fe, null, n);
@@ -162,7 +162,7 @@ function Le(t, n, r, i, a = null, o = !1) {
 	}
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/context.js
+//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/context.js
 var Re = null;
 function ze(e) {
 	Re = e;
@@ -191,7 +191,7 @@ function He() {
 	return !0;
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/dom/task.js
+//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/dom/task.js
 var Ue = [];
 function We() {
 	var e = Ue;
@@ -233,7 +233,7 @@ function Je(e, t) {
 	}
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/reactivity/status.js
+//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/reactivity/status.js
 var Ye = ~(h | g | m);
 function Xe(e, t) {
 	e.f = e.f & Ye | t;
@@ -242,7 +242,7 @@ function Ze(e) {
 	e.f & 512 || e.deps === null ? Xe(e, m) : Xe(e, g);
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/reactivity/utils.js
+//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/reactivity/utils.js
 function Qe(e) {
 	if (e !== null) for (let t of e) t.f & 2 && t.f & 65536 && (t.f ^= T, Qe(t.deps));
 }
@@ -250,7 +250,7 @@ function $e(e, t, n) {
 	e.f & 2048 ? t.add(e) : e.f & 4096 && n.add(e), Qe(e.deps), Xe(e, m);
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/reactivity/store.js
+//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/reactivity/store.js
 var et = !1;
 function tt(e) {
 	var t = et;
@@ -261,7 +261,7 @@ function tt(e) {
 	}
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/dom/elements/misc.js
+//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/dom/elements/misc.js
 function nt(e) {
 	M && /* @__PURE__ */ sn(e) !== null && un(e);
 }
@@ -274,7 +274,7 @@ function it() {
 	}, { capture: !0 }));
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/dom/elements/bindings/shared.js
+//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/dom/elements/bindings/shared.js
 function at(e) {
 	var t = H, n = U;
 	Un(null), Wn(null);
@@ -292,7 +292,7 @@ function ot(e, t, n, r = n) {
 	} : () => r(!0), it();
 }
 //#endregion
-//#region node_modules/svelte/src/reactivity/create-subscriber.js
+//#region F:/git/SillyCanvas/node_modules/svelte/src/reactivity/create-subscriber.js
 function st(e) {
 	let t = 0, n = Gt(0), r;
 	return () => {
@@ -304,7 +304,7 @@ function st(e) {
 	};
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/dom/blocks/boundary.js
+//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/dom/blocks/boundary.js
 var ct = x | S;
 function lt(e, t, n, r) {
 	new ut(e, t, n, r);
@@ -473,7 +473,7 @@ var ut = class {
 	}
 };
 //#endregion
-//#region node_modules/svelte/src/internal/client/reactivity/async.js
+//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/reactivity/async.js
 function dt(e, t, n, r) {
 	let i = He() ? ht : vt;
 	var a = e.filter((e) => !e.settled), o = t.map(i);
@@ -618,7 +618,7 @@ function Ct(e) {
 	if (e.effects !== null) for (let t of e.effects) t.teardown && t.fn !== null && sr(t);
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/reactivity/batch.js
+//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/reactivity/batch.js
 var wt = null, I = null, Tt = null, Et = null, Dt = null, Ot = !1, kt = !1, At = null, jt = null, Mt = 0, Nt = 1, Pt = class e {
 	id = Nt++;
 	#e = !1;
@@ -911,7 +911,7 @@ function Vt(e) {
 	for (var t = e.first; t !== null;) Vt(t), t = t.next;
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/reactivity/sources.js
+//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/reactivity/sources.js
 var Ht = /* @__PURE__ */ new Set(), Ut = /* @__PURE__ */ new Map(), Wt = !1;
 function Gt(e, t) {
 	return {
@@ -1158,7 +1158,7 @@ function pn(e) {
 	for (; t !== null && t.nodeType === 3;) t.remove(), e.nodeValue += t.nodeValue, t = e.nextSibling;
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/reactivity/effects.js
+//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/reactivity/effects.js
 function mn(e) {
 	U === null && (H === null && fe(e), de()), Bn && ue(e);
 }
@@ -1346,7 +1346,7 @@ function Ln(e, t) {
 	}
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/legacy.js
+//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/legacy.js
 var Rn = null, zn = !1, Bn = !1;
 function Vn(e) {
 	Bn = e;
@@ -1508,7 +1508,7 @@ function pr(e) {
 	return fr.includes(e);
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/dom/elements/events.js
+//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/dom/elements/events.js
 var mr = Symbol("events"), hr = /* @__PURE__ */ new Set(), gr = /* @__PURE__ */ new Set();
 function _r(e, t, n, r = {}) {
 	function i(e) {
@@ -1583,7 +1583,7 @@ function xr(e) {
 	}
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/dom/reconciler.js
+//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/dom/reconciler.js
 var Sr = globalThis?.window?.trustedTypes && /* @__PURE__ */ globalThis.window.trustedTypes.createPolicy("svelte-trusted-html", { createHTML: (e) => e });
 function Cr(e) {
 	return Sr?.createHTML(e) ?? e;
@@ -1593,7 +1593,7 @@ function wr(e) {
 	return t.innerHTML = Cr(e.replaceAll("<!>", "<!---->")), t.content;
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/dom/template.js
+//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/dom/template.js
 function Tr(e, t) {
 	var n = U;
 	n.nodes === null && (n.nodes = {
@@ -1714,7 +1714,7 @@ function Fr(e, t) {
 	return n ? (Pr.delete(e), n(t)) : Promise.resolve();
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/dom/blocks/branches.js
+//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/dom/blocks/branches.js
 var Ir = class {
 	anchor;
 	#e = /* @__PURE__ */ new Map();
@@ -1778,7 +1778,7 @@ var Ir = class {
 	}
 };
 //#endregion
-//#region node_modules/svelte/src/internal/client/dom/blocks/if.js
+//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/dom/blocks/if.js
 function X(e, t, n = !1) {
 	var r;
 	M && (r = N, Oe());
@@ -1802,7 +1802,7 @@ function X(e, t, n = !1) {
 	}, a);
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/dom/blocks/key.js
+//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/dom/blocks/key.js
 var Lr = Symbol("NaN");
 function Rr(e, t, n) {
 	M && Oe();
@@ -1813,7 +1813,7 @@ function Rr(e, t, n) {
 	});
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/dom/blocks/each.js
+//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/dom/blocks/each.js
 function zr(e, t) {
 	return t;
 }
@@ -1976,7 +1976,7 @@ function qr(e, t, n) {
 	t === null ? e.effect.first = n : t.next = n, n === null ? e.effect.last = t : n.prev = t;
 }
 //#endregion
-//#region node_modules/clsx/dist/clsx.mjs
+//#region F:/git/SillyCanvas/node_modules/clsx/dist/clsx.mjs
 function Jr(e) {
 	var t, n, r = "";
 	if (typeof e == "string" || typeof e == "number") r += e;
@@ -1993,7 +1993,7 @@ function Yr() {
 	return r;
 }
 //#endregion
-//#region node_modules/svelte/src/internal/shared/attributes.js
+//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/shared/attributes.js
 function Xr(e) {
 	return typeof e == "object" ? Yr(e) : e ?? "";
 }
@@ -2052,7 +2052,7 @@ function ti(e, t) {
 	return e == null ? null : String(e);
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/dom/elements/class.js
+//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/dom/elements/class.js
 function ni(e, t, n, r, i, a) {
 	var o = e[A];
 	if (M || o !== n || o === void 0) {
@@ -2065,7 +2065,7 @@ function ni(e, t, n, r, i, a) {
 	return a;
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/dom/elements/style.js
+//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/dom/elements/style.js
 function ri(e, t = {}, n, r) {
 	for (var i in n) {
 		var a = n[i];
@@ -2081,7 +2081,7 @@ function ii(e, t, n, r) {
 	return r;
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/dom/elements/bindings/select.js
+//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/dom/elements/bindings/select.js
 function ai(t, n, r = !1) {
 	if (t.multiple) {
 		if (n == null) return;
@@ -2112,7 +2112,7 @@ function si(e) {
 	return "__value" in e ? e.__value : e.value;
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/dom/elements/attributes.js
+//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/dom/elements/attributes.js
 var ci = Symbol("is custom element"), li = Symbol("is html"), ui = oe ? "link" : "LINK", di = oe ? "progress" : "PROGRESS";
 function Q(e) {
 	if (M) {
@@ -2161,7 +2161,7 @@ function gi(e) {
 	return n;
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/dom/elements/bindings/input.js
+//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/dom/elements/bindings/input.js
 function _i(e, t, n = t) {
 	var r = /* @__PURE__ */ new WeakSet();
 	ot(e, "input", async (i) => {
@@ -2190,7 +2190,7 @@ function yi(e) {
 	return e === "" ? null : +e;
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/dom/elements/bindings/this.js
+//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/dom/elements/bindings/this.js
 function bi(e, t) {
 	return e === t || e?.[O] === t;
 }
@@ -2215,7 +2215,7 @@ function xi(e = {}, t, n, r) {
 	}), e;
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/reactivity/props.js
+//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/client/reactivity/props.js
 function Si(e, t, n, r) {
 	var i = !0, o = !!(n & 8), s = !!(n & 16), c = r, l = !0, u = void 0, d = () => s && i ? (u ??= /* @__PURE__ */ ht(r), W(u)) : (l && (l = !1, c = s ? dr(r) : r), c);
 	let f;
@@ -2260,7 +2260,7 @@ function wi(e) {
 	Re === null && se("onDestroy"), Ci(() => () => dr(e));
 }
 //#endregion
-//#region node_modules/svelte/src/internal/disclose-version.js
+//#region F:/git/SillyCanvas/node_modules/svelte/src/internal/disclose-version.js
 typeof window < "u" && ((window.__svelte ??= {}).v ??= /* @__PURE__ */ new Set()).add("5");
 //#endregion
 //#region ui/NodeCard.svelte

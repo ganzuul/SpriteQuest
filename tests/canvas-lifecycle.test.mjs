@@ -26,8 +26,9 @@ test('destroy releases window and host gesture listeners and unmounts the curren
 test('cancelling a pending wheel frame reconciles the camera and prevents stale paint', async () => {
     const wheeled=fixture();
     wheeled.host.dispatchEvent(new window.WheelEvent('wheel',{deltaY:-120,clientX:240,clientY:160,bubbles:true,cancelable:true}));
-    assert.ok(wheeled.graph.view.zoom>1);
+    assert.equal(wheeled.graph.view.zoom,1, 'wheel zoom waits for its first animation frame');
     window.dispatchEvent(new window.Event('resize'));
+    assert.ok(wheeled.graph.view.zoom>1, 'cancellation settles the requested zoom');
     const transform=`translate(${wheeled.graph.view.x}px, ${wheeled.graph.view.y}px) scale(${wheeled.graph.view.zoom})`;
     assert.equal(wheeled.canvas.viewport.style.transform,transform);
     await new Promise(resolve=>setTimeout(resolve,10)); assert.equal(wheeled.canvas.viewport.style.transform,transform);
