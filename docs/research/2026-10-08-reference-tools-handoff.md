@@ -48,11 +48,25 @@ The original source and portable fixture have identical SHA-256: `CA2AF9CDED518E
 
 ## Verification
 
-Pending joined verification and independent whole-branch review.
+Reviewed implementation HEAD: `28a1d8aa8fc2e35687fd4d0f57a6fdd6162570f0`. Final post-fix checks: all six new test files pass; full suite passes 88/91 with exactly the three baseline UI failures. Project types report zero errors/warnings and build succeeds; UI sources were unchanged by the final helper fix. Strict checking of all six new declarations succeeds with `--allowJs --checkJs false --skipLibCheck false`, matching the existing mixed-JS project. Assets verify 200 versioned local imports and the self-contained UI bundle. Git scope contains 28 added files and no modifications to existing base files.
+
+An initial build/test overlap caused a transient missing-bundle failure in `blankets.test.mjs`; a stable rerun after restoring generated build outputs resolved it. Generated bundle/CSS changes are excluded from delivery. Check logs and review evidence remain under `.superpowers/sdd/2026-10-08-lattice-reference-tools/` in the retained worktree.
+
+Independent task reviews are approved. Whole-branch review identified one helper restriction: changed whitespace-only windows were rejected even when their reconstructed parent patch was valid. The fix passed six RED→GREEN regressions, 51 affected tests and scoped independent re-review. Whole-parent blank rejection remains enforced by the unchanged validator. Final review disposition: ready for separate Architecture intake, subject to its registration/integration checks; no release or main-merge approval is implied.
 
 Baseline before product edits: `npm ci --offline` succeeded; `npm test` passed 82 of 85 files. Existing failures were `loop-ui.test.mjs` (brand case), `workflow-controller-dispatch.test.mjs` (old UI orderedNodes projection) and `workflow-ui.test.mjs` (old unsupported-version diagnostic). Architecture acknowledged ownership of those active UI changes.
 
-Final HEAD, exact changed paths, focused checks and review disposition will be recorded when delivery is ready.
+The final delivery tip adds completion documentation after the reviewed implementation HEAD; its exact SHA is supplied in the chat handoff. Exact paths are available with `git diff --name-status 193ebca23187fa6485735b1461b3b88fdd73bc65 <delivery-tip>`. All 28 paths are additions. A whitespace check reports two extra EOF blank lines in `terminology-map.js` and its test; this deferred formatting minor does not affect behavior.
+
+## Decisions and costs
+
+- Use disjoint parallel workers, serialized commits and joined checks: shared-interface defects can require rework at the join.
+- Preserve Architecture ownership of the three baseline UI failures: full-suite green depends on its later integration.
+- Keep JavaScript Results and declarations: implementation static checking is less comprehensive than a TypeScript build.
+- Preserve raw fences and enforce immutable anchors: unwanted fences inside authorized windows require review.
+- Deliver Context Lens as a utility subgraph: one fewer standalone root than the early proposal.
+- Defer both runnable cleanup recipes until permission prerequisites exist: their availability is delayed; a safe current composition would make that delay avoidable.
+- Preserve the branch/worktree/review evidence for intake: retained artifacts require disk space and later cleanup.
 
 ## Next intake: introspection modes
 
