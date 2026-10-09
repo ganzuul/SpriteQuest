@@ -8,6 +8,7 @@ export function mountCanvas(target, actions) {
     flushSync();
     return {
         ...component.getLayers(),
+        setComments: (comments, actions) => flushSync(() => component.setComments(comments, actions)),
         setNodes: nodes => flushSync(() => component.setNodes(nodes)),
         setGroups: groups => flushSync(() => component.setGroups(groups)),
         setWires: (wires, bounds, ghost) => flushSync(() => component.setWires(wires, bounds, ghost)),

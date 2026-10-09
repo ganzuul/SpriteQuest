@@ -8,7 +8,7 @@
     data-id={comment.id} role="group" aria-label={`Comment: ${comment.title}`}
     style:left={`${comment.x}px`} style:top={`${comment.y}px`} style:width={`${comment.w}px`} style:height={`${comment.h}px`} style:--frame-color={comment.color}>
     <header class="pc-comment-header">
-        <button type="button" class="pc-comment-select" aria-label={`Select comment: ${comment.title}`} title="Drag header to move comment" onclick={() => actions.select(comment.id)}>⋮⋮</button>
+        <button type="button" class="pc-comment-select" aria-label={`Select comment: ${comment.title}`} title="Drag header to move comment" onclick={event => { if (event.detail === 0) actions.select(comment.id); }}>⋮⋮</button>
         {#if comment.readOnly}
             <span class="pc-comment-title">{comment.title}</span>
         {:else}
@@ -19,7 +19,7 @@
     </header>
     <div class="pc-comment-notes">{comment.content}</div>
     {#if !comment.readOnly}
-        <button type="button" class="pc-comment-resize" aria-label={`Resize comment: ${comment.title}`} title="Drag to resize comment" onclick={() => actions.select(comment.id)}></button>
+        <button type="button" class="pc-comment-resize" aria-label={`Resize comment: ${comment.title}`} title="Drag to resize comment" onclick={event => { if (event.detail === 0) actions.select(comment.id); }}></button>
     {/if}
 </div>
 

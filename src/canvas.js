@@ -4,6 +4,8 @@ import { createFrameScheduler } from './canvas/frame.js?v=0.20.0';
 import { selectionMode, rectangle, intersects, combineSelection } from './canvas/selection.js?v=0.20.0';
 import { createGeometryCache, indexIncidentWires } from './canvas/geometry.js?v=0.20.0';
 import { nodeCard, preparedCardFor } from './canvas/presentation.js?v=0.20.0';
+import { buildConnectionRoute } from './canvas/connection-route.js?v=0.20.0';
+import { isCommentFrame, containedCommentNodes } from './canvas/comment-frames.js?v=0.20.0';
 import { mountCanvas } from '../dist/lattice-ui.js?v=0.20.0';
 const groupMembers = (graph, id) => Object.values(graph?.nodes ?? {}).filter(node => node.inGroup === id);
 const groupOf = (graph, node) => node && graph?.groups?.[node.inGroup];
@@ -39,7 +41,7 @@ export class Canvas {
             hoverPin: pin => { this.hoverPin = pin; this.#applyFocus(); },
             group: (id, action) => this.setCollapsed(id, action === 'collapse'),
         });
-        this.viewport = this.layer.viewport; this.svg = this.layer.svg; this.nodeLayer = this.layer.nodeLayer;
+        this.viewport = this.layer.viewport; this.svg = this.layer.svg; this.nodeLayer = this.layer.nodeLayer; this.commentLayer = this.layer.commentLayer;
         this.frames = createFrameScheduler(flags => {
             if (flags & 1) this.applyTransform();
             if (flags & 2) this.#drawWires();
@@ -79,7 +81,7 @@ export class Canvas {
         for (const node of Object.values(graph.nodes)) preparedCardFor(graph, node, this.hooks);
         this.cancelGesture();
         if (this.nativeSelectionKey) this.wireSelections.set(this.nativeSelectionKey, [...this.wireMulti]);
-        if (graph !== this.graph) { this.trace = null; this.hoverPin = null; this.geometry.clear(); this.wireViews.clear(); }
+        if (graph !== this.graph) { this.trace = null; this.hoverPin = null; this.hoverWire = null; this.geometry.clear(); this.wireViews.clear(); }
         this.graph = graph; this.selection = null; this.multi.clear();
         const scope = this.hooks.nativeScope?.();
         if (scope?.workflowId && this.nativeSelectionRoot !== scope.workflowId) this.wireSelections.clear();
@@ -160,22 +162,38 @@ export class Canvas {
     render() {
         if (!this.graph) return;
         this.incident = indexIncidentWires(Object.values(this.graph.wires));
-        this.applyTransform(); this.#drawNodes(); this.#drawWires(); this.#applyFocus();
+        this.applyTransform(); this.#drawNodes(); this.#drawWires();
     }
 
     #applyFocus() {
         const pin = this.hoverPin;
+        const pins = new Set();
         for (const path of this.svg.querySelectorAll('path.pc-wire')) {
             const wire = this.graph?.wires[path.dataset.id];
             const attached = pin && wire && (pin.dir === 'in' ? wire.to === pin.nodeId && wire.toPort === pin.port : wire.from === pin.nodeId && wire.fromPort === pin.port);
-            path.classList.toggle('pc-wire-feeds', !!attached);
+            const focused = wire && (attached || this.hoverWire === wire.id || this.wireMulti.has(wire.id) || this.selection?.kind === 'wire' && this.selection.id === wire.id);
+            path.classList.toggle('pc-wire-feeds', !!focused);
+            if (focused) {
+                pins.add(JSON.stringify([wire.from, 'out', wire.fromPort]));
+                pins.add(JSON.stringify([wire.to, 'in', wire.toPort]));
+            }
+        }
+        for (const element of this.nodeLayer.querySelectorAll('.pc-port[data-node][data-dir][data-port]')) {
+            element.classList.toggle('pc-pin-highlight', pins.has(JSON.stringify([element.dataset.node, element.dataset.dir, element.dataset.port])));
         }
     }
 
     #drawNodes() {
         const groups = this.graph.groups ?? {};
         const context = { graph: this.graph, selection: this.selection, multi: this.multi, trace: this.trace, hooks: this.hooks };
-        const cards = Object.values(this.graph.nodes).filter(n => !this.#folded(n)).sort((a, b) => (a.y - b.y) || (a.x - b.x)).map(node => nodeCard(node, context));
+        const cards = Object.values(this.graph.nodes).filter(n => !isCommentFrame(n) && !this.#folded(n)).sort((a, b) => (a.y - b.y) || (a.x - b.x)).map(node => nodeCard(node, context));
+        const draw = this.graph, capture = this.#canEdit() ? this.hooks.captureCommentEdit?.() : null;
+        const current = id => this.graph === draw && isCommentFrame(draw.nodes[id]);
+        this.layer.setComments(Object.values(draw.nodes).filter(isCommentFrame).map(node => this.#commentCard(node)), {
+            select: id => { if (current(id)) { this.setMulti([]); this.select({ kind: 'node', id }); } },
+            update: (id, patch) => { if (current(id) && this.#canEdit()) this.hooks.onCommentPatch?.(capture, id, patch); },
+            command: (id, command) => { if (current(id) && this.#canEdit()) this.hooks.onCommentCommand?.(capture, id, command); },
+        });
         this.layer.setNodes(cards);
         this.resizeObserver?.disconnect(); this.nodeElements.clear();
         this.#measureCards('.pc-node[data-id]');
@@ -237,12 +255,18 @@ export class Canvas {
     }
 
     heightOf(node) {
-        return this.geometry.get(node?.id);
+        return isCommentFrame(node) ? (Number.isFinite(node.h) && node.h > 0 ? node.h : 220) : this.geometry.get(node?.id);
     }
 
     #nativeCard(node) { return node && preparedCardFor(this.graph, node, this.hooks); }
 
-    widthOf(node) { return this.geometry.width(node?.id); }
+    widthOf(node) { return isCommentFrame(node) ? (Number.isFinite(node.w) && node.w > 0 ? node.w : 360) : this.geometry.width(node?.id); }
+
+    #commentCard(node) {
+        return { id: node.id, x: node.x ?? 0, y: node.y ?? 0, w: this.widthOf(node), h: this.heightOf(node),
+            title: node.title || 'Comment', content: node.content || '', color: node.color || '#637d89', moveContents: node.moveContents !== false,
+            selected: this.selection?.kind === 'node' && this.selection.id === node.id || this.multi.has(node.id), readOnly: !this.#canEdit() };
+    }
 
     #paintMulti() {
         for (const el of this.nodeLayer.querySelectorAll('.pc-node[data-id]')) {
@@ -251,6 +275,9 @@ export class Canvas {
         for (const el of this.nodeLayer.querySelectorAll('.pc-node-group')) {
             const members = groupMembers(this.graph, el.dataset.group);
             el.classList.toggle('pc-multi', members.length > 0 && members.every(n => this.multi.has(n.id)));
+        }
+        for (const el of this.commentLayer.querySelectorAll('.pc-comment-frame[data-id]')) {
+            el.classList.toggle('pc-comment-selected', this.multi.has(el.dataset.id) || this.selection?.kind === 'node' && this.selection.id === el.dataset.id);
         }
     }
 
@@ -269,7 +296,6 @@ export class Canvas {
         for (const el of this.nodeLayer.querySelectorAll('.pc-node-group, .pc-group-frame')) el.classList.remove('pc-selected');
         this.#paintMulti();
         this.#drawWires();
-        this.#applyFocus();
         this.hooks.onSelect?.(this.selection ? this.graph.nodes[this.selection.id] : null, this.selection?.kind ?? null);
         this.hooks.onMulti?.([...this.multi]);
     }
@@ -322,12 +348,7 @@ export class Canvas {
         this.frames.cancel(); clearTimeout(this.wheelTimer);
         this.gestureRect = null; this.wheelRect = null;
         const d = this.drag;
-        if (d && this.graph) {
-            for (const [id, x, y] of d.several ?? []) {
-                const n = this.graph.nodes[id]; if (n) { n.x = x; n.y = y; }
-            }
-            if (d.id && this.graph.nodes[d.id]) Object.assign(this.graph.nodes[d.id], { x: d.homeX, y: d.homeY });
-        }
+        if (d && this.graph) this.#restoreDrag(d);
         if (this.pan?.start && this.graph) Object.assign(this.view, this.pan.start);
         this.marquee?.box.remove();
         this.drag = null; this.marquee = null; this.pan = null;
@@ -351,6 +372,41 @@ export class Canvas {
         }
         else if (wheeling && this.graph) this.applyTransform();
         return active;
+    }
+
+    #restoreDrag(d) {
+        for (const [id, x, y] of d.several ?? []) {
+            const node = this.graph.nodes[id]; if (node) { node.x = x; node.y = y; }
+        }
+        const node = d.id && this.graph.nodes[d.id];
+        if (node) {
+            node.x = d.homeX; node.y = d.homeY;
+            if (d.sizeBefore) for (const axis of ['w', 'h']) {
+                if (d.sizeBefore[axis] === undefined) delete node[axis]; else node[axis] = d.sizeBefore[axis];
+            }
+        }
+    }
+
+    #focusCommentGesture(event) {
+        // Leaving a title editor may commit and replace the drawing. Capture the
+        // gesture only after that focus change, using the current graph and view.
+        this.host.focus({ preventScroll: true });
+        this.gestureRect = this.host.getBoundingClientRect();
+        this.gestureStart = { selection: this.selection && { ...this.selection }, multi: [...this.multi], wireMulti: [...this.wireMulti], cx: event.clientX, cy: event.clientY };
+    }
+
+    #beginCommentDrag(event, frame) {
+        if (!this.#canEdit()) return;
+        const capture = this.hooks.captureCommentEdit?.();
+        if (!capture) return;
+        const start = this.toGraph(event.clientX, event.clientY);
+        let nodes;
+        if (this.multi.size > 1 && this.multi.has(frame.id)) nodes = [...this.multi].map(id => this.graph.nodes[id]).filter(Boolean);
+        else {
+            nodes = [frame, ...(frame.moveContents !== false ? containedCommentNodes(this.graph, frame, node => ({ x: node.x, y: node.y, w: this.widthOf(node), h: this.heightOf(node) })).filter(node => !this.#folded(node)) : [])];
+            this.setMulti([]); this.select({ kind: 'node', id: frame.id });
+        }
+        this.drag = { comment: true, capture, several: nodes.map(node => [node.id, node.x, node.y]), sx: start.x, sy: start.y, moved: false };
     }
 
     #updateMarquee(e) {
@@ -378,11 +434,7 @@ export class Canvas {
         return this.hooks.onNativeGroupPresentation?.(gid, collapsed) === true;
     }
 
-    #path(from, to) {
-        const dx = Math.max(40, Math.abs(to.x - from.x) * .5);
-        const a = from.side === 'left' ? -1 : 1, b = to.side === 'right' ? 1 : -1;
-        return `M ${from.x} ${from.y} C ${from.x + a * dx} ${from.y}, ${to.x + b * dx} ${to.y}, ${to.x} ${to.y}`;
-    }
+    #path(from, to) { return buildConnectionRoute(from, to).d; }
 
     #drawWires(changedNodes = null) {
         if (!this.graph) return;
@@ -396,9 +448,10 @@ export class Canvas {
             visible.add(wire.id); if (affected && !affected.has(wire.id)) continue;
             const off = [wire.from, wire.to].some(id => this.graph.nodes[id]?.enabled === false);
             const selected = this.selection?.kind === 'wire' && this.selection.id === wire.id || this.wireMulti.has(wire.id);
-            this.wireViews.set(wire.id, { id: wire.id, kind: from.kind, d: this.#path(from, to),
+            const route = buildConnectionRoute(from, to);
+            this.wireViews.set(wire.id, { id: wire.id, kind: from.kind, d: route.d,
                 className: 'pc-wire pc-wire-native' + (off ? ' pc-wire-off' : '') + (selected ? ' pc-selected' : ''),
-                label: { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2, text: from.kind, className: 'pc-wire-label' } });
+                label: { ...route.label, text: from.kind, className: 'pc-wire-label' } });
         }
         for (const id of this.wireViews.keys()) if (!visible.has(id)) this.wireViews.delete(id);
         const native = this.nativeWireView?.gesture;
@@ -410,14 +463,15 @@ export class Canvas {
             className: 'pc-wire pc-wire-ghost pc-wire-native' + (native.feedback?.compatible === false ? ' pc-wire-invalid' : ''),
         } : null;
         this.layer.setWires([...this.wireViews.values()], bounds, ghost);
+        this.#applyFocus();
     }
 
     #renderDrag() {
         const d = this.drag; if (!d) return;
         const ids = d.id ? [d.id] : d.several.map(([id]) => id);
-        this.layer.setPositions(ids.map(id => this.graph.nodes[id]).filter(Boolean).map(n => ({ id: n.id, x: n.x, y: n.y })), []);
+        this.layer.setPositions(ids.map(id => this.graph.nodes[id]).filter(Boolean).map(n => ({ id: n.id, x: n.x, y: n.y, ...(isCommentFrame(n) ? { w: this.widthOf(n), h: this.heightOf(n) } : {}) })), []);
         this.layer.setGroups(Object.values(this.graph.groups ?? {}).map(g => this.#groupCard(g)));
-        this.#drawWires(new Set(ids)); this.#applyFocus();
+        this.#drawWires(new Set(ids));
     }
 
     #crossedDragThreshold(e) {
@@ -488,6 +542,14 @@ export class Canvas {
         const on = (target, type, handler, options = {}) => target.addEventListener(type, handler, { ...options, signal: this.eventController.signal });
         const inEditor = (e) => e.target?.closest?.('input, textarea, select, [contenteditable="true"]');
         const typing = (e) => inEditor(e) || document.activeElement?.matches?.('input, textarea, select, [contenteditable="true"]');
+        on(host, 'pointerover', event => {
+            const wire = event.target.closest?.('.pc-wire-hit[data-id]');
+            if (wire) { this.hoverWire = wire.dataset.id; this.#applyFocus(); }
+        });
+        on(host, 'pointerout', event => {
+            const wire = event.target.closest?.('.pc-wire-hit[data-id]');
+            if (wire && !wire.contains(event.relatedTarget)) { this.hoverWire = null; this.#applyFocus(); }
+        });
         on(document, 'keydown', (e) => {
             const root = host.closest('.pc-root');
             if (root && !root.classList.contains('pc-open')) return;
@@ -586,6 +648,38 @@ export class Canvas {
             const nodeEl = e.target.closest('.pc-node[data-id]');
             const groupEl = e.target.closest('.pc-node-group, .pc-group-frame-head, .pc-group-frame');
             const wireHit = e.target.closest('.pc-wire-hit');
+            const commentResize = e.target.closest('.pc-comment-resize');
+            if (commentResize) {
+                const id = commentResize.closest('.pc-comment-frame')?.dataset.id;
+                e.preventDefault(); this.#focusCommentGesture(e);
+                const frame = this.graph.nodes[id];
+                if (!isCommentFrame(frame) || !this.#canEdit()) return;
+                const capture = this.hooks.captureCommentEdit?.(); if (!capture) return;
+                e.preventDefault(); this.setMulti([]); this.select({ kind: 'node', id: frame.id });
+                const start = this.toGraph(e.clientX, e.clientY);
+                this.drag = { comment: true, resize: true, capture, id: frame.id, sx: start.x, sy: start.y, homeX: frame.x, homeY: frame.y,
+                    homeW: this.widthOf(frame), homeH: this.heightOf(frame), sizeBefore: { w: frame.w, h: frame.h }, moved: false };
+                return;
+            }
+            const commentHeader = e.target.closest('.pc-comment-header');
+            if (commentHeader) {
+                const id = commentHeader.closest('.pc-comment-frame')?.dataset.id;
+                e.preventDefault(); this.#focusCommentGesture(e);
+                const frame = this.graph.nodes[id];
+                if (isCommentFrame(frame)) {
+                    e.preventDefault();
+                    if (e.shiftKey || e.ctrlKey || e.metaKey || e.altKey) {
+                        const ids = this.#pickedIds();
+                        if (e.altKey || ((e.ctrlKey || e.metaKey) && !e.shiftKey && ids.has(frame.id))) ids.delete(frame.id);
+                        else ids.add(frame.id);
+                        this.setMulti([...ids]);
+                        if (!e.shiftKey || e.altKey) return;
+                    }
+                    if (!this.#canEdit()) { if (this.multi.size < 2 || !this.multi.has(frame.id)) { this.setMulti([]); this.select({ kind: 'node', id: frame.id }); } return; }
+                    this.#beginCommentDrag(e, frame);
+                }
+                return;
+            }
             if (groupEl && !port) {
                 const gid = groupEl.dataset.group ?? groupEl.closest('[data-group]')?.dataset.group;
                 if (!this.graph.groups?.[gid]) return;
@@ -606,8 +700,12 @@ export class Canvas {
                 }
                 if (this.multi.size > 1 && this.multi.has(id)) {
                     // Drag them all together.
+                    const comment = [...this.multi].some(id => isCommentFrame(this.graph.nodes[id]));
+                    if (comment && !this.#canEdit()) return;
+                    const capture = comment ? this.hooks.captureCommentEdit?.() : null;
+                    if (comment && !capture) return;
                     const start = this.toGraph(e.clientX, e.clientY);
-                    this.drag = { several: [...this.multi].map(m => [m, this.graph.nodes[m]?.x ?? 0, this.graph.nodes[m]?.y ?? 0]), clicked: e.shiftKey ? null : id, sx: start.x, sy: start.y, moved: false };
+                    this.drag = { comment, capture, several: [...this.multi].map(m => [m, this.graph.nodes[m]?.x ?? 0, this.graph.nodes[m]?.y ?? 0]), clicked: e.shiftKey ? null : id, sx: start.x, sy: start.y, moved: false };
                     return;
                 }
                 if (this.multi.size && !e.shiftKey) this.setMulti([]);
@@ -652,12 +750,21 @@ export class Canvas {
                 this.#updateMarquee(e);
                 return;
             }
+            if (this.drag?.resize) {
+                if (!this.#crossedDragThreshold(e)) return;
+                const d = this.drag, frame = this.graph.nodes[d.id], point = this.toGraph(e.clientX, e.clientY);
+                if (!isCommentFrame(frame)) return;
+                frame.w = Math.max(180, Math.round(d.homeW + point.x - d.sx));
+                frame.h = Math.max(100, Math.round(d.homeH + point.y - d.sy));
+                d.moved = true; host.classList.add('pc-interacting'); this.frames.schedule(4); return;
+            }
             if (this.drag?.several) {
                 if (!this.#crossedDragThreshold(e)) return;
                 const p = this.toGraph(e.clientX, e.clientY);
                 const d = this.drag;
                 const dx = Math.round(p.x - d.sx), dy = Math.round(p.y - d.sy);
                 if (!dx && !dy && !d.moved) return;
+                if (!d.moved && !d.comment) this.hooks.onDragBlock?.(true);
                 d.moved = true;
                 for (const [id, x, y] of d.several) {
                     const n = this.graph.nodes[id];
@@ -675,7 +782,7 @@ export class Canvas {
                 if (!node) return;
                 node.x = Math.round(p.x - this.drag.dx);
                 node.y = Math.round(p.y - this.drag.dy);
-                if (!this.drag.moved) this.hooks.onDragBlock?.(true);
+                if (!this.drag.moved && !this.drag.comment) this.hooks.onDragBlock?.(true);
                 this.drag.moved = true;
                 this.host.classList.add('pc-interacting');
                 this.frames.schedule(4);
@@ -698,14 +805,25 @@ export class Canvas {
             if (this.drag) {
                 const d = this.drag; this.drag = null;
                 const ids = d.id ? [d.id] : d.several.map(([id]) => id);
-                if (d.moved) { this.hooks.onDragBlock?.(false); this.hooks.onPresentationChange?.(ids); }
+                if (d.moved) {
+                    this.hooks.onDragBlock?.(false);
+                    if (d.comment) {
+                        const draw = this.graph;
+                        const positions = ids.map(id => draw.nodes[id]).filter(Boolean).map(node => ({ id: node.id, x: node.x, y: node.y, ...(isCommentFrame(node) ? { w: this.widthOf(node), h: this.heightOf(node) } : {}) }));
+                        const result = this.#canEdit() && this.hooks.onCommentLayout?.(d.capture, positions);
+                        if ((!result || result.ok === false) && this.graph === draw) this.#restoreDrag(d);
+                    } else this.hooks.onPresentationChange?.(ids);
+                }
                 else if (d.clicked) this.setMulti([d.clicked]);
                 this.render();
             }
             if (this.pan) { this.frames.flush(); this.pan = null; this.host.classList.remove('pc-panning'); }
         });
         on(host, 'dblclick', (e) => {
+            if (inEditor(e)) return;
             if (e.target.closest('[data-action]')) return;
+            const comment = e.target.closest('.pc-comment-header')?.closest('.pc-comment-frame');
+            if (comment) { this.hooks.onReveal?.({ kind: 'node', id: comment.dataset.id }); return; }
             const groupEl = e.target.closest('.pc-node-group, .pc-group-frame-head');
             if (groupEl) {
                 const gid = groupEl.dataset.group ?? groupEl.closest('[data-group]')?.dataset.group;
@@ -732,6 +850,7 @@ export class Canvas {
             this.#openNativeSearch(e);
         });
         on(host, 'contextmenu', (e) => {
+            if (inEditor(e)) return;
             e.preventDefault();
             {
                 const pin = this.#nativePin(e.target), bridge = this.#nativeBridge();
@@ -741,9 +860,9 @@ export class Canvas {
                         readOnly: !this.#canEdit(), ...this.#nativeAttachments(pin) });
                     this.updateNativeWire(result.view, result.requests); return;
                 }
-                if (!e.target.closest('.pc-node, .pc-group-frame, .pc-wire-hit')) { this.#openNativeSearch(e); return; }
+                if (!e.target.closest('.pc-node, .pc-group-frame, .pc-wire-hit, .pc-comment-frame')) { this.#openNativeSearch(e); return; }
             }
-            const nodeEl = e.target.closest('.pc-node[data-id]');
+            const nodeEl = e.target.closest('.pc-node[data-id], .pc-comment-frame[data-id]');
             const groupEl = e.target.closest('.pc-node-group, .pc-group-frame-head');
             const gid = groupEl ? (groupEl.dataset.group ?? groupEl.closest('[data-group]')?.dataset.group) : null;
             const wireHit = e.target.closest('.pc-wire-hit');

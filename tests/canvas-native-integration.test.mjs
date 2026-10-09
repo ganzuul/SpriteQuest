@@ -143,7 +143,9 @@ test('native ghost uses cached named endpoints without layout reads during point
     const rect = env.host.getBoundingClientRect;
     env.host.getBoundingClientRect = () => { throw new Error('camera gesture must retain its measured frame'); };
     pointer(window, 'pointermove', 250, 80); env.canvas.frames.flush();
-    assert.match(env.host.querySelector('.pc-wire-ghost')?.getAttribute('d') ?? '', /^M 180 54 C/);
+    const route = env.host.querySelector('.pc-wire-ghost')?.getAttribute('d') ?? '';
+    assert.match(route, /^M 180,54 L 198,54 C/);
+    assert.match(route, /L 250,80$/);
     env.host.getBoundingClientRect = rect;
     await env.canvas.destroy(); document.elementFromPoint = () => null;
 });
