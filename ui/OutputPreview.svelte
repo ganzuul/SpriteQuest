@@ -33,7 +33,8 @@
         if (view && choice) actions.select?.(view.sourceKey, choice.key, copyTarget(choice.target));
     }
     function copySelector(value: DetailReviewSelector): DetailReviewSelector {
-        return { handleId: value.handleId, runId: value.runId, terminal: { kind: 'terminal', address: { ...value.terminal.address, instancePath: [...value.terminal.address.instancePath] } } };
+        const terminal = { kind: 'terminal' as const, address: { ...value.terminal.address, instancePath: [...value.terminal.address.instancePath] } };
+        return 'kind' in value ? { kind: 'schema2-candidate', reviewId: value.reviewId, terminal } : { handleId: value.handleId, runId: value.runId, terminal };
     }
 </script>
 

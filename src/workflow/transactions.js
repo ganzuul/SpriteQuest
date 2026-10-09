@@ -1,6 +1,7 @@
 import { commitGraphDocument, GRAPH_DOCUMENT_FIELDS } from '../history.js?v=0.19.1';
 import { graphDocumentSignature, graphSemanticSignature } from './ports.js?v=0.19.1';
 import { safeWorkflowData, validateGraphStructure, isNativeWorkflow } from './contracts.js?v=0.19.1';
+import { definitionChain, ownsDefinitionPath } from './composition-edit.js?v=0.19.1';
 import { legacyInsertionSignature, validateLegacyInsertionGraph } from './legacy-insertion.js?v=0.19.1';
 
 const contexts = new WeakMap();
@@ -33,7 +34,10 @@ export function captureGraphEditContext(root, readContext) {
         const current = readContext();
         if (!validContext(current)) return fail('INVALID_CONTEXT', 'Provide the active session ID, instance path and read-only state.');
         if (current.readOnly) return fail('READ_ONLY_VIEW', 'This graph view is read-only.');
-        if (current.viewPath.length) return fail('UNSUPPORTED_VIEW', 'Root transactions require the main graph view.');
+        if (current.viewPath.length) {
+            if (root.schema !== 3 || root.runtime !== 2 || !definitionChain(root, current.viewPath)) return fail('UNSUPPORTED_VIEW', 'The qualified graph view does not exist.');
+            if (!ownsDefinitionPath(root, current.viewPath)) return fail('READ_ONLY_DEFINITION', 'Make a local copy before editing this definition.');
+        }
         const token = Object.freeze({});
         contexts.set(token, { root, rootId: root.id, readContext, captured: structuredClone(current), baseSignature: graphEditSignature(root), baseDocumentSignature: graphDocumentSignature(root) });
         return { ok: true, data: token };
@@ -61,6 +65,8 @@ export function commitPreparedGraph(root, prepared) {
         if (!validContext(current)) return fail('INVALID_CONTEXT', 'The active graph context is unavailable or malformed.');
         if (context.captured.readOnly || current.readOnly) return fail('READ_ONLY_VIEW', 'This graph view is read-only.');
         if (current.sessionId !== context.captured.sessionId || JSON.stringify(current.viewPath) !== JSON.stringify(context.captured.viewPath)) return fail('STALE_CONTEXT', 'The active graph session or view changed. Prepare the edit again.');
+        if (context.captured.viewPath.length && !ownsDefinitionPath(root, current.viewPath)) return fail('READ_ONLY_DEFINITION', 'The qualified graph view is no longer owned.');
+        if (context.captured.viewPath.length && prepared.viewPath === undefined) return fail('STALE_CONTEXT', 'A child edit must explicitly identify its captured graph view.');
         if (prepared.viewPath !== undefined && (!safeWorkflowData(prepared.viewPath) || JSON.stringify(prepared.viewPath) !== JSON.stringify(context.captured.viewPath))) return fail('STALE_CONTEXT', 'The prepared edit targets a different graph view.');
         if (prepared.baseSignature !== context.baseSignature || prepared.baseDocumentSignature !== context.baseDocumentSignature || context.baseSignature !== graphEditSignature(root) || context.baseDocumentSignature !== graphDocumentSignature(root)) return fail('STALE_DOCUMENT', 'The graph changed after import began. Prepare the edit again.');
         if (isNativeWorkflow(root) !== isNativeWorkflow(prepared.candidate) || root.mode !== prepared.candidate?.mode) return fail('MODE_MISMATCH', 'Import requires the same graph mode and phase. Open this workflow separately.');

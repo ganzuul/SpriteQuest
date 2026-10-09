@@ -1,3 +1,8 @@
+import type { GraphViews, GraphViewActions } from './view-types';
+import type { NodeDetailsView, NodeDetailsActions, OutputPreviewView, OutputPreviewActions, RunDetailsView, RunDetailsActions } from './detail-types';
+import type { RunMeterView } from './run-meter-types';
+import type { PortalManagerView, PortalManagerActions, SubgraphManagerView, SubgraphManagerActions } from './manager-types';
+import type { NodeSearchView, NodeSearchActions, PinMenuView, PinMenuActions, SearchChoice } from './native-wire-types';
 export interface TokenChip { text: string; title: string; className: string }
 export interface CardRow { id: string; name: string; text: string; chosen: boolean; fallback?: boolean }
 export interface Notice { className: string; icon: string; text: string; title?: string }
@@ -37,12 +42,19 @@ export interface ImportReviewView {
 export interface WorkbenchView {
     graphs: { id: string; name: string }[]; graphId: string; nativeGraph?: boolean; armed: boolean; sideOpen: boolean; inspectorOpen: boolean;
     history: HistoryView; status: StatusView; camera: { x: number; y: number; zoom: number; mode: string }; selectionCount: number;
-    workflow?: WorkflowView;
+    workflow?: WorkflowView; rootWorkflow?: WorkflowView;
+    nativeDefaultTheme?: boolean; nativeFlatCanvas?: boolean; nativeDiagnostic?: string; readOnly?: boolean; graphViews?: GraphViews;
+    nodeDetails?: NodeDetailsView | null; outputPreview?: OutputPreviewView | null; runDetails?: RunDetailsView | null; runMeter?: RunMeterView | null;
+    portalManager?: PortalManagerView | null; subgraphManager?: SubgraphManagerView | null;
+    nativeSearch?: NodeSearchView | null; nativePinMenu?: PinMenuView | null; nativeChoices?: readonly SearchChoice[];
     importReview?: ImportReviewView | null;
     selectionActions?: { copy: boolean; cut: boolean; delete: boolean };
 }
 export interface WorkbenchActions {
     logoUrl?: string;
+    graphViewActions?: GraphViewActions; nodeDetails?: NodeDetailsActions; outputPreview?: OutputPreviewActions; runDetails?: RunDetailsActions;
+    portalManager?: PortalManagerActions; subgraphManager?: SubgraphManagerActions; managePortals?: () => void; manageSubgraphs?: () => void;
+    chooseNative?: (id: string) => void; nativeSearch?: NodeSearchActions; nativePinMenu?: PinMenuActions; openRunDetails?: () => void;
     pickGraph: (id: string) => void; arm: (enabled: boolean) => void; command: (name: string) => void;
     mode: (mode: string) => void; zoom: (factor: number) => void; fitSelection: () => void;
     unpin: () => void; pinChat: () => void; pinCharacter: () => void; makeDefault: () => void; preview: () => void;

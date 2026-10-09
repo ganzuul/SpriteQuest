@@ -2,6 +2,7 @@
     import WorkspaceMenus from './WorkspaceMenus.svelte';
     import type { WorkbenchView, WorkbenchActions } from './types';
     let { state, actions, local }: { state: WorkbenchView; actions: WorkbenchActions; local: (command: string) => void } = $props();
+    const workflow = $derived(state.rootWorkflow ?? state.workflow);
     let header: HTMLElement, graphSelect: HTMLSelectElement, arm: HTMLInputElement, sideBtn: HTMLButtonElement, inspBtn: HTMLButtonElement;
     export function getParts() { return { header, graphSelect, arm, sideBtn, inspBtn }; }
     export function focusGraphSelect() { graphSelect.focus(); }
@@ -19,8 +20,8 @@
             <button type="button" class={`pc-btn menu_button pc-redo${state.history.redo ? '' : ' pc-disabled'}`} disabled={!state.history.redo} title={state.history.redoTitle} aria-label="Redo" onclick={() => actions.command('redo')}>↷</button>
             <span class={`pc-history-note${state.history.showNote ? ' pc-show' : ''}`}>{state.history.note}</span>
         </div>
-        <button type="button" class="pc-btn menu_button pc-root-run" disabled={!state.workflow?.native || (!state.workflow?.busy && !!state.workflow?.issues.length)} title={state.workflow?.native ? state.workflow.issues.join('\n') || 'Run the root workflow' : 'Install a native workflow example to run'} onclick={() => actions.command(state.workflow?.busy ? 'stop-workflow' : 'run-workflow')}>{state.workflow?.busy ? '■ Stop' : '▶ Run'}</button>
-        <span class="pc-root-workflow-status" role="status">{state.workflow?.native ? `${state.workflow.phase} · ${state.workflow.assigned ? 'Assigned' : 'Unassigned'} · ≤ ${state.workflow.callBound} requests` : 'Legacy prompt'} · Autosave</span>
+        <button type="button" class="pc-btn menu_button pc-root-run" disabled={!workflow?.native || (!workflow?.busy && !!workflow?.issues.length)} title={workflow?.native ? workflow.issues.join('\n') || 'Run the root workflow' : 'Install a native workflow example to run'} onclick={() => actions.command(workflow?.busy ? 'stop-workflow' : 'run-workflow')}>{workflow?.busy ? '■ Stop' : '▶ Run'}</button>
+        <span class="pc-root-workflow-status" role="status">{workflow?.native ? `${workflow.phase} · ${workflow.assigned ? 'Assigned' : 'Unassigned'} · ≤ ${workflow.callBound} requests` : 'Legacy prompt'} · Autosave</span>
         <button type="button" class="pc-btn menu_button" title="Workflow setup" onclick={() => local('workflow-setup')}>Setup</button>
         <div class="pc-header-actions pc-surface-actions">
             <button type="button" class={`pc-btn menu_button pc-pane-toggle${state.sideOpen ? ' pc-on' : ''}`} title="Show or hide the Library" aria-label="Toggle library" aria-pressed={state.sideOpen} bind:this={sideBtn} onclick={() => actions.command('sidebar')}>Library</button>

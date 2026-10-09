@@ -136,13 +136,13 @@ test('blank search has no fabricated origin or draft and readonly/schema-2 initi
     assert.equal(env.counts.capture, 1, 'unsupported schema does not enter the native bridge');
 });
 
-test('wrong root/path pins reject before semantic preparation and actual child Tx remains unsupported', () => {
+test('wrong root/path pins reject before preparation and a nonexistent qualified child cannot be captured', () => {
     const env = setup(), foreign = pin(env.root, 'source'); foreign.address.workflowId = 'other';
     begin(env, foreign); assert.equal(env.counts.capture, 0);
     begin(env, pin(env.root, 'source')); move(env, pin(env.root, 'first', 'in', 'context', 'in', ['child']));
     assert.equal(env.counts.prepare, 0); assert.equal(env.bridge.project().gesture.feedback.compatible, false);
     const child = setup(fixture(), { viewPath: ['instance'] }); begin(child, pin(child.root, 'first', 'out', 'context', 'out', ['instance']));
-    assert.equal(child.counts.prepare, 0); assert.match(child.bridge.project().feedback, /main graph view/i);
+    assert.equal(child.counts.capture, 1); assert.equal(child.counts.prepare, 0); assert.equal(child.counts.commit, 0); assert.equal(child.bridge.hasContentGesture(), false); assert.match(child.bridge.project().feedback, /qualified.*view.*does not exist/i);
 });
 
 test('compatible duplicate drops clear the draft without commit/history and invalid cycle retains original bindings', async () => {

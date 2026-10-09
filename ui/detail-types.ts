@@ -2,7 +2,8 @@
 export interface DetailNodeAddress { workflowId: string; instancePath: string[]; nodeId: string; }
 export interface DetailArtifactAddress extends DetailNodeAddress { portId: string; }
 export type DetailTarget = DetailArtifactAddress | { kind: 'terminal'; address: DetailNodeAddress };
-export interface DetailSelection { selectionKey: string; revision: string; address: DetailNodeAddress; }
+export interface DetailLibraryNode { kind: 'library'; definitionRef: { id: string; version: number; semanticHash: string }; nodeId: string; }
+export interface DetailSelection { selectionKey: string; revision: string; address: DetailNodeAddress | DetailLibraryNode; }
 export interface DetailError { code: string; message: string; }
 export type DetailEditResult = { ok: true } | { ok: false; error: DetailError };
 export type DetailEditResponse = DetailEditResult | Promise<DetailEditResult>;
@@ -44,7 +45,9 @@ export interface PreviewSection {
     format: 'structured-text' | 'json-prefix-text' | 'omitted'; truncated: boolean;
 }
 export interface PreviewChoice { key: string; label: string; kind: string; target: DetailTarget; }
-export interface DetailReviewSelector { handleId: string; runId: string; terminal: { kind: 'terminal'; address: DetailNodeAddress }; }
+export interface DetailHandleReviewSelector { handleId: string; runId: string; terminal: { kind: 'terminal'; address: DetailNodeAddress }; }
+export interface DetailSchema2ReviewSelector { kind: 'schema2-candidate'; reviewId: string; terminal: { kind: 'terminal'; address: DetailNodeAddress }; }
+export type DetailReviewSelector = DetailHandleReviewSelector | DetailSchema2ReviewSelector;
 export interface OutputPreviewView {
     sourceKey: string; title: string; status: 'not-run' | 'current' | 'stale' | 'removed'; statusDetail?: string;
     choices: PreviewChoice[]; selectedKey: string | null; pinned: boolean; followSelection: boolean;

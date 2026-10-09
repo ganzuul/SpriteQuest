@@ -111,7 +111,7 @@ const itemValid = item => item === null || (record(item) && ownKeys(item, ['kind
 
 function presentationPatch(value) {
     const patch = plain(value);
-    if (!record(patch) || !ownKeys(patch, ['camera', 'selection', 'inspector', 'nodePresentation'])) return null;
+    if (!record(patch) || !ownKeys(patch, ['camera', 'selection', 'inspector', 'nodePresentation', 'portalPresentation'])) return null;
     if (patch.camera !== undefined) {
         const camera = patch.camera;
         if (!record(camera) || !ownKeys(camera, ['x', 'y', 'zoom']) || ![camera.x, camera.y, camera.zoom].every(Number.isFinite) || camera.zoom <= 0) return null;
@@ -123,6 +123,13 @@ function presentationPatch(value) {
         if (!record(patch.nodePresentation) || Object.keys(patch.nodePresentation).length > 1000) return null;
         for (const [id, node] of Object.entries(patch.nodePresentation)) {
             if (!textId(id) || !record(node) || !ownKeys(node, ['alias', 'compact', 'x', 'y']) || (node.alias !== undefined && (typeof node.alias !== 'string' || node.alias.length > 80)) || (node.compact !== undefined && typeof node.compact !== 'boolean') || (node.x !== undefined && !Number.isFinite(node.x)) || (node.y !== undefined && !Number.isFinite(node.y))) return null;
+        }
+    }
+    if (patch.portalPresentation !== undefined) {
+        if (!record(patch.portalPresentation)) return null;
+        for (const [id, alias] of Object.entries(patch.portalPresentation)) {
+            if (!textId(id) || !record(alias) || !ownKeys(alias,['identity','definitionRef','source','label']) || !identityFrom(alias.identity) || typeof alias.label !== 'string' || alias.label.length > 80 || !record(alias.source) || !ownKeys(alias.source,['nodeId','portId']) || !textId(alias.source.nodeId) || !textId(alias.source.portId)) return null;
+            if (alias.definitionRef !== undefined && (!identityFrom({kind:'library',workflowId:alias.identity.workflowId,definitionRef:alias.definitionRef}) || alias.identity.kind==='root' || alias.identity.kind==='library'&&identityKey({kind:'library',workflowId:alias.identity.workflowId,definitionRef:alias.definitionRef})!==identityKey(alias.identity))) return null;
         }
     }
     return patch;
@@ -170,10 +177,10 @@ function restoreViews(value, workflowId, navigation, rootKey) {
     if (!record(saved) || !ownKeys(saved, ['version', 'workflowId', 'activeKey', 'views']) || saved.version !== 1 || saved.workflowId !== workflowId || typeof saved.activeKey !== 'string' || !Array.isArray(saved.views) || !saved.views.length || saved.views.length > MAX_VIEWS) return null;
     const all = new Map();
     for (const entry of saved.views) {
-        if (!record(entry) || Object.keys(entry).length !== 6 || !ownKeys(entry, ['identity', 'open', 'camera', 'selection', 'inspector', 'nodePresentation']) || typeof entry.open !== 'boolean') return null;
+        if (!record(entry) || ![6,7].includes(Object.keys(entry).length) || !ownKeys(entry, ['identity', 'open', 'camera', 'selection', 'inspector', 'nodePresentation', 'portalPresentation']) || typeof entry.open !== 'boolean') return null;
         const identity = identityFrom(entry.identity);
-        const presentation = presentationPatch({ camera: entry.camera, selection: entry.selection, inspector: entry.inspector, nodePresentation: entry.nodePresentation });
-        if (!identity || identity.workflowId !== workflowId || !presentation) return null;
+        const presentation = presentationPatch({ camera: entry.camera, selection: entry.selection, inspector: entry.inspector, nodePresentation: entry.nodePresentation, ...(entry.portalPresentation !== undefined ? {portalPresentation:entry.portalPresentation} : {}) });
+        if (!identity || identity.workflowId !== workflowId || !presentation || Object.values(presentation.portalPresentation ?? {}).some(alias => identityKey(alias.identity) !== identityKey(identity))) return null;
         const key = identityKey(identity);
         if (all.has(key)) return null;
         all.set(key, { identity, open: entry.open, ...presentation });
@@ -190,9 +197,10 @@ const VIEW_FIELDS = ['identity', 'open', 'camera', 'selection', 'inspector', 'no
 const ENTRY_OVERHEAD = bytes(Object.fromEntries(VIEW_FIELDS.map(key => [key, null]))) - VIEW_FIELDS.length * 4;
 function encodedEntry(view, previous, cached) {
     const fields = {};
-    let total = ENTRY_OVERHEAD;
-    for (const key of VIEW_FIELDS) {
-        fields[key] = cached && previous[key] === view[key] ? cached.fields[key] : bytes(view[key]);
+    const keys = view.portalPresentation === undefined ? VIEW_FIELDS : [...VIEW_FIELDS,'portalPresentation'];
+    let total = keys.length === VIEW_FIELDS.length ? ENTRY_OVERHEAD : bytes(Object.fromEntries(keys.map(key => [key,null]))) - keys.length * 4;
+    for (const key of keys) {
+        fields[key] = cached && Object.hasOwn(cached.fields,key) && previous[key] === view[key] ? cached.fields[key] : bytes(view[key]);
         total += fields[key];
     }
     return { fields, total };
@@ -300,7 +308,7 @@ export function createViewState(options) {
         invalidateContext() { epoch++; return success(); },
         updateView(value, target = activeKey) {
             const key = keyFor(target), view = views.get(key), patch = presentationPatch(value);
-            if (!view || !patch) return fail('VIEW_DATA', 'Expected bounded view presentation data.');
+            if (!view || !patch || Object.values(patch.portalPresentation ?? {}).some(alias => identityKey(alias.identity) !== identityKey(view.identity))) return fail('VIEW_DATA', 'Expected bounded view presentation data for this exact graph view.');
             if (!publishView(key, { ...view, ...patch })) return limit();
             return success();
         },
