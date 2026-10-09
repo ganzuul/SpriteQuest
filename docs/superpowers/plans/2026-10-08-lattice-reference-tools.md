@@ -69,10 +69,10 @@
 
 **Interfaces:** Consume Tasks2/3; produce TRANSPOSE_OPERATIONS, describeTranspose(node), executeTranspose(node,namedInputs,execution). Exact controls/ports/contracts are in the spec.
 
-- [ ] Describe post-only Style Transfer with in:Draft/reference:Text/context:Context/out:Patches RED→GREEN; test Data reference switch and version/phase validation.
-- [ ] Test default/invalid controls, node envelope getter immunity, stale/missing/extra/wrong-kind inputs, mode/scope separation and typed metadata bounds.
-- [ ] Execute all three operations against real helpers; validate patches with existing gate, preserve source, assert request bounds1/1/0 and zero binding/provider/host resolution.
-- [ ] Run focused tests/self-review/report; controller commits owned files and obtains scoped review.
+- [x] Describe post-only Style Transfer with in:Draft/reference:Text/context:Context/out:Patches RED→GREEN; test Data reference switch and version/phase validation.
+- [x] Test default/invalid controls, node envelope getter immunity, stale/missing/extra/wrong-kind inputs, mode/scope separation and typed metadata bounds.
+- [x] Execute all three operations against real helpers; validate patches with existing gate, preserve source, assert request bounds1/1/0 and zero binding/provider/host resolution.
+- [x] Run focused tests/self-review/report; controller commits owned files and obtains scoped review.
 
 ### Task 5: Category-based slop policy data
 
