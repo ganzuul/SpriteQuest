@@ -105,7 +105,7 @@
 
 - [x] Run all new focused tests, full npm test, project types/build/assets and strict declaration check; classify every baseline/new failure accurately.
 - [x] Obtain whole-branch independent review, resolve findings with a reviewed fix wave, and retain all evidence/rulings.
-- [ ] Deliver exact base/HEAD/owned paths, helper/engine/adapter contracts, package files, verification and integration checklist to Architecture for separate post-release intake.
+- [x] Deliver exact base/HEAD/owned paths, helper/engine/adapter contracts, package files, verification and integration checklist to Architecture for separate post-release intake.
 - [x] Preserve isolated branch/worktree; no main push, core integration or shelf installation from this chat.
 
 ## Execution order
