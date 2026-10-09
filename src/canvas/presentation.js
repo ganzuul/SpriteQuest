@@ -1,8 +1,12 @@
-import { isWorkflowGraph, safeWorkflowData } from '../workflow/contracts.js?v=0.22.0';
+import { isWorkflowGraph, safeWorkflowData } from '../workflow/contracts.js?v=0.22.1';
 
 /** Rendering accepts only prepared data. Catalog and runtime work belongs to preparation. */
 export function preparedCardFor(graph, node, hooks = {}) {
     if (!isWorkflowGraph(graph)) throw new Error('Expected a prepared current workflow graph.');
+    return checkedPreparedCard(graph, node, hooks);
+}
+
+function checkedPreparedCard(graph, node, hooks) {
     if (!safeWorkflowData(node) || !node || typeof node.id !== 'string'
         || !['workflow', 'note', 'subgraph', 'subgraph-input', 'subgraph-output'].includes(node.type)) throw new Error('Expected a prepared current workflow node.');
     const prepared = hooks.nativeCard?.(node) ?? graph?.nativeCards?.[node?.id];
@@ -22,8 +26,34 @@ export function preparedCardFor(graph, node, hooks = {}) {
 }
 
 /** Plain presentation data consumed by keyed Svelte cards. */
-export function nodeCard(node, { graph, selection, multi = new Set(), trace, hooks = {} }) {
-    const prepared = preparedCardFor(graph, node, hooks), tr = trace?.get(node.id);
+export function nodeCard(node, context) {
+    return presentNodeCard(node, preparedCardFor(context.graph, node, context.hooks), context);
+}
+
+/** Classify once per drawing batch; every node and prepared card still uses the same checks. */
+export function nodeCards(nodes, context) {
+    const graph = context.graph;
+    if (!isWorkflowGraph(graph)) throw new Error('Expected a prepared current workflow graph.');
+    const admitted = checkedNodeList(nodes), { hooks = {} } = context;
+    return admitted.map(node => presentNodeCard(node, checkedPreparedCard(graph, node, hooks), context));
+}
+
+// Inspect collection descriptors before iterating, without combining individual node budgets.
+function checkedNodeList(nodes) {
+    try {
+        if (!Array.isArray(nodes) || ![Array.prototype, null].includes(Object.getPrototypeOf(nodes))) throw new Error();
+        const fields = Object.getOwnPropertyDescriptors(nodes), length = fields.length?.value;
+        if (!Number.isInteger(length) || length < 0 || length > 1000 || Reflect.ownKeys(fields).length !== length + 1) throw new Error();
+        return Array.from({ length }, (_, index) => {
+            const field = fields[index];
+            if (!field || !('value' in field)) throw new Error();
+            return field.value;
+        });
+    } catch { throw new Error('Expected prepared current workflow nodes.'); }
+}
+
+function presentNodeCard(node, prepared, { selection, multi = new Set(), trace }) {
+    const tr = trace?.get(node.id);
     const compact = node.presentation?.compact === true;
     return {
         id: node.id, type: node.type, x: node.x ?? 0, y: node.y ?? 0, w: node.w || 260,

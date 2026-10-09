@@ -33,7 +33,7 @@ async function auditDirectory(path) {
     }
 }
 await auditDirectory(join(install, 'src')); await auditDirectory(join(install, 'dist'));
-const types = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json' };
+const types = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml' };
 // Host-owned public exports are separate from the copied extension distribution.
 // The synthetic host is idle and only synchronizes its own mock chat messages.
 const publicHostModule = `
@@ -83,7 +83,7 @@ try {
         const node = Object.values(graph.nodes).find(node => node.operation === 'compose' && node.sections?.length); canvas.select({ kind: 'node', id: node.id });
         UI.close(); window.lattice.open(); await settle();
         return { publicHelpers, mounted: root === document.querySelector('.pc-root'), sharedGraph: graph === window.canvasHarness.graph,
-            launchers: !!document.getElementById('pc-sendbar') && !!document.getElementById('pc-menu-launch'), workbench: root.dataset.pcWorkbench,
+            launchers: document.getElementById('pc-sendbar')?.parentElement?.id === 'leftSendForm' && !!document.getElementById('pc-sendbar')?.querySelector('img[src$="/assets/lattice-logo.svg"]') && !!document.getElementById('pc-menu-launch'), workbench: root.dataset.pcWorkbench,
             fresh: h.freshSettingsAbsent && graph.name === 'Structured guidance' && graph.schema === 3 && graph.runtime === 2 && !S.settings().enabled && S.settings().nativeBindings.preGraphId === null && S.settings().nativeBindings.postGraphId === null,
             providerCalls: h.providerCalls(), retiredPins: !!root.querySelector('.pc-node-output,.pc-port-key,.pc-port-stage,.pc-tok'), node: !!root.querySelector(`[data-id="${node.id}"]`) };
     });

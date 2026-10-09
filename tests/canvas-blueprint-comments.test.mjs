@@ -189,16 +189,22 @@ test('modifier clicks add frames without a later mouse click clearing the select
     } finally { await env.canvas.destroy(); }
 });
 
-test('previews from either pin direction use the same connection route', async () => {
+test('free previews from either pin direction start at the real source with one simple cubic', async () => {
     const env = fixture();
     try {
         for (const dir of ['out', 'in']) {
-            const nodeId = dir === 'out' ? 'a' : 'b', loose = { x: -30, y: 180, side: dir === 'out' ? 'left' : 'right' };
-            env.canvas.updateNativeWire({ gesture: { kind: 'drag', origin: { nodeId, dir, portId: dir }, ghost: { x: loose.x, y: loose.y } } });
+            const nodeId = dir === 'out' ? 'a' : 'b', origin = env.canvas.endpoint(nodeId, dir);
+            const loose = { x: origin.x + (dir === 'out' ? 5 : -5), y: origin.y + 2 };
+            env.canvas.updateNativeWire({ gesture: { kind: 'drag', origin: { nodeId, dir, portId: dir }, ghost: loose } });
             env.canvas.frames.flush();
-            const origin = env.canvas.endpoint(nodeId, dir);
-            const expected = dir === 'out' ? buildConnectionRoute(origin, loose) : buildConnectionRoute(loose, origin);
-            assert.equal(env.host.querySelector('.pc-wire-ghost').getAttribute('d'), expected.d);
+            const d = env.host.querySelector('.pc-wire-ghost').getAttribute('d');
+            assert.equal((d.match(/C/g) ?? []).length, 1);
+            assert.equal((d.match(/L/g) ?? []).length, 0, 'free pointer has no second pin neck');
+            const coordinates = d.match(/[-+]?(?:\d*\.\d+|\d+\.?\d*)(?:e[-+]?\d+)?/gi).map(Number);
+            assert.deepEqual(coordinates.slice(0, 2), [origin.x, origin.y]);
+            assert.deepEqual(coordinates.slice(-2), [loose.x, loose.y]);
+            assert.equal(coordinates[3], origin.y, 'source departure is horizontal');
+            assert.ok((coordinates[2] - origin.x) * (dir === 'out' ? 1 : -1) > 0, 'departure follows source pin side');
         }
     } finally { await env.canvas.destroy(); }
 });

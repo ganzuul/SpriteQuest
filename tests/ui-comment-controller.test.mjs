@@ -1,21 +1,21 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readFile } from 'node:fs/promises';
-import { prepareWorkspaceViews, prepareLibraryViews, projectEditorDraw, projectWorkspacePanels } from '../src/ui/workspace-preparation.js?v=0.22.0';
-import { createGraphViewSession } from '../src/ui/graph-view-session.js?v=0.22.0';
-import { captureGraphEditContext, commitPreparedGraph } from '../src/workflow/transactions.js?v=0.22.0';
-import { prepareCommentEdit } from '../src/workflow/comment-edits.js?v=0.22.0';
-import { createCommentFrame, fitCommentFrame, containedCommentNodes, isCommentFrame } from '../src/canvas/comment-frames.js?v=0.22.0';
-import { captureCommentPresentation, applyCommentPresentation, applyCommentGroupPresentation } from '../src/ui/comment-presentation.js?v=0.22.0';
-import { viewIdentityKey } from '../src/ui/view-state.js?v=0.22.0';
-import { workflowSignature } from '../src/workflow/runtime.js?v=0.22.0';
-import { makeLocalCopy, prepareQualifiedScopeEdit, reconcileOwners } from '../src/workflow/definition-library.js?v=0.22.0';
-import { ownershipEntries, prunePrivateSnapshots } from '../src/workflow/composition-edit.js?v=0.22.0';
-import { makeClip, makeDefinitionClip, readClip, prepareClipPaste } from '../src/workflow/clipboard.js?v=0.22.0';
-import { graphSemanticSignature } from '../src/workflow/ports.js?v=0.22.0';
-import { definitionRefKey } from '../src/workflow/definition-data.js?v=0.22.0';
+import { prepareWorkspaceViews, prepareLibraryViews, projectEditorDraw, projectWorkspacePanels } from '../src/ui/workspace-preparation.js?v=0.22.1';
+import { createGraphViewSession } from '../src/ui/graph-view-session.js?v=0.22.1';
+import { captureGraphEditContext, commitPreparedGraph } from '../src/workflow/transactions.js?v=0.22.1';
+import { prepareCommentEdit } from '../src/workflow/comment-edits.js?v=0.22.1';
+import { createCommentFrame, fitCommentFrame, containedCommentNodes, isCommentFrame } from '../src/canvas/comment-frames.js?v=0.22.1';
+import { captureCommentPresentation, applyCommentPresentation, applyCommentGroupPresentation } from '../src/ui/comment-presentation.js?v=0.22.1';
+import { viewIdentityKey } from '../src/ui/view-state.js?v=0.22.1';
+import { workflowSignature } from '../src/workflow/runtime.js?v=0.22.1';
+import { makeLocalCopy, prepareQualifiedScopeEdit, reconcileOwners } from '../src/workflow/definition-library.js?v=0.22.1';
+import { ownershipEntries, prunePrivateSnapshots } from '../src/workflow/composition-edit.js?v=0.22.1';
+import { makeClip, makeDefinitionClip, readClip, prepareClipPaste } from '../src/workflow/clipboard.js?v=0.22.1';
+import { graphSemanticSignature } from '../src/workflow/ports.js?v=0.22.1';
+import { definitionRefKey } from '../src/workflow/definition-data.js?v=0.22.1';
 import { siblingWorkflow, nestedWorkflow } from './fixtures/workflow-prepared-fixture.mjs';
-import * as H from '../src/history.js?v=0.22.0';
+import * as H from '../src/history.js?v=0.22.1';
 
 const controllerText = await readFile(new URL('../src/ui/controller.js', import.meta.url), 'utf8');
 function controllerFunction(name, env) {
@@ -223,9 +223,9 @@ for(const route of ['paste','duplicate'])test(`actual controller comment-only ${
     }finally{f.unlisten();}
 });
 
-test('generic comment deletion and Cut retain captured context through asynchronous approval and clipboard writes',async()=>{
-    const f=ownedNestedComments();try{const before=structuredClone(f.root);let approve;
-        f.env.okToDelete=()=>new Promise(resolve=>{approve=resolve;});const deletion=f.env.deleteNativeSelection({kind:'multi',ids:['frame','secondFrame']});f.session.invalidateEditorContext();approve(true);assert.equal(await deletion,false);assert.deepEqual(f.root,before);
+test('generic comment deletion rejects a stale capture and Cut retains context through clipboard writes',async()=>{
+    const f=ownedNestedComments();try{const before=structuredClone(f.root);
+        const deletionToken=f.env.captureEditor().data;f.session.invalidateEditorContext();const deletion=f.env.deleteNativeSelection({kind:'multi',ids:['frame','secondFrame']},deletionToken);assert.equal(await deletion,false);assert.deepEqual(f.root,before);
         let copied;f.env.navigator.clipboard.writeText=()=>new Promise(resolve=>{copied=resolve;});const cut=f.env.copySelection(true,{nodeIds:['frame','secondFrame']});f.session.invalidateEditorContext();copied();assert.equal(await cut,false);assert.deepEqual(f.root,before);assert.equal(f.commits(),0);
         const token=f.env.captureEditor().data,clip=f.env.clipForPick({nodeIds:['frame']}).data;f.session.invalidateEditorContext();assert.equal(f.env.pasteOnCanvas(clip,{x:500,y:300},token),false);assert.deepEqual(f.root,before);
     }finally{f.unlisten();}
@@ -243,4 +243,57 @@ test('alternate comment CRUD rejects shared child and library writes without cha
 test('mixed comment and executable deletion keeps the existing owned definition revision behavior',async()=>{
     const f=ownedNestedComments(false);try{const pin=structuredClone(f.root.nodes['first/path'].definition),signature=graphSemanticSignature(f.root);assert.equal(await f.env.deleteNativeSelection({kind:'multi',ids:['frame','work']}),true,JSON.stringify(f.failures));assert.equal(f.scope().nodes.frame,undefined);assert.equal(f.scope().nodes.work,undefined);assert.ok(f.root.nodes['first/path'].definition.version>pin.version);assert.notEqual(graphSemanticSignature(f.root),signature);assert.equal(f.commits(),1);assert.ok(H.undo(f.root));f.refresh();assert.deepEqual(f.root.nodes['first/path'].definition,pin);assert.ok(f.scope().nodes.work);
     }finally{f.unlisten();}
+});
+
+test('selected executable nodes delete immediately without a confirmation and restore in one Undo', async () => {
+    const f = fixture(); try {
+        const before = structuredClone(f.root), source = f.root.nodes.source;
+        f.env.okToDelete = () => assert.fail('Selected node deletion must not ask for approval');
+        f.env.confirmBox = () => assert.fail('Selected node deletion must not open a dialog');
+        const result = f.env.deleteNativeSelection({ kind: 'node', id: source.id });
+        assert.equal(f.root.nodes.source, undefined, 'The edit commits in the keyboard event turn');
+        assert.equal(await result, true); assert.equal(f.commits(), 1);
+        assert.ok(H.undo(f.root)); f.refresh(); assert.deepEqual(f.root.nodes, before.nodes); assert.equal(H.undo(f.root), null);
+    } finally { f.unlisten(); }
+});
+
+for (const key of ['Delete', 'Backspace']) test(`actual ${key} shortcut deletes current selected nodes immediately with one Undo`, async () => {
+    const f = fixture(), real = (await import('./canvas-fixture.mjs')).fixture({ onNativeDelete: selection => f.env.deleteNativeSelection(selection) });
+    try {
+        f.env.canvas = real.canvas; real.canvas.setGraph(f.env.editorDraw); real.canvas.select({ kind: 'node', id: 'source' });
+        const before = structuredClone(f.root);
+        f.env.okToDelete = () => assert.fail('Keyboard deletion cannot request confirmation');
+        f.env.confirmBox = () => assert.fail('Keyboard deletion cannot open a dialog');
+        f.env.typing = controllerFunction('typing', f.env);
+        const start = controllerText.indexOf("document.addEventListener('keydown', event => {");
+        const end = controllerText.indexOf('\n    });', start);
+        const handler = Function('env', 'with(env){return ' + controllerText.slice(start + "document.addEventListener('keydown', ".length, end + 6) + ';}')(f.env);
+        real.host.focus(); const event = new window.KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }); handler(event);
+        assert.equal(event.defaultPrevented, true); assert.equal(f.root.nodes.source, undefined); assert.equal(f.commits(), 1);
+        assert.ok(H.undo(f.root)); f.refresh(); assert.deepEqual(f.root.nodes, before.nodes); assert.equal(H.undo(f.root), null);
+        const input = document.createElement('input'); document.body.append(input); input.focus(); handler(new window.KeyboardEvent('keydown', { key, cancelable: true }));
+        assert.ok(f.root.nodes.source, 'Typing in a field preserves the selected node'); input.remove();
+    } finally { f.unlisten(); await real.canvas.destroy(); }
+});
+
+test('comment commit and Undo Redo synchronously persist authored coordinate-overlay changes', () => {
+    const f = fixture(), queued = new Map(); let ticket = 0, saves = 0;
+    try {
+        Object.assign(f.env, { viewSaveTimer: null, setTimeout(callback) { queued.set(++ticket, callback); return ticket; }, clearTimeout(id) { queued.delete(id); }, save() { saves++; } });
+        f.env.persistGraphViews = controllerFunction('persistGraphViews', f.env);
+        f.session.updateView({ nodePresentation: { source: { x: 100, y: 50, alias: 'Local source' }, outside: { x: 700, y: 200, alias: 'Retained' } } });
+        f.env.activateEditorDraw(); f.env.persistGraphViews(true);
+        const saved = () => f.stored.workspaceViews[f.root.id].views.find(view => view.identity.kind === 'root').nodePresentation;
+        const captured = f.env.captureCommentEdit();
+        assert.equal(f.env.commentLayout(captured, move(f.env)).ok, true);
+        assert.deepEqual(saved().source, { alias: 'Local source' }, 'The committed document cannot retain obsolete local coordinates');
+        assert.deepEqual(saved().outside, { x: 700, y: 200, alias: 'Retained' });
+        assert.ok(H.undo(f.root)); f.refresh(); f.env.activateEditorDraw();
+        assert.deepEqual(saved().source, { x: 100, y: 50, alias: 'Local source' }, 'Undo persists the restored local coordinates before returning');
+        assert.ok(H.redo(f.root)); f.refresh(); f.env.activateEditorDraw();
+        assert.deepEqual(saved().source, { alias: 'Local source' }, 'Redo persists removal before returning');
+        assert.deepEqual(saved().outside, { x: 700, y: 200, alias: 'Retained' });
+        assert.equal(saves, 1, 'Settings snapshots are immediate while external saves remain debounced');
+        [...queued.values()][0](); assert.equal(saves, 2);
+    } finally { f.unlisten(); }
 });

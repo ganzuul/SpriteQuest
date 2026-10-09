@@ -6,7 +6,7 @@ import { join, resolve, relative, isAbsolute } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { compile } from 'svelte/compiler';
 import { JSDOM } from 'jsdom';
-import { prepareNativeSearchCatalog, filterNativeSearchChoices } from '../src/ui/native-search-catalog.js?v=0.22.0';
+import { prepareNativeSearchCatalog, filterNativeSearchChoices } from '../src/ui/native-search-catalog.js?v=0.22.1';
 const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true });
 globalThis.window = dom.window; globalThis.document = dom.window.document;
 for (const key of ['Node', 'Element', 'Text', 'Comment', 'Document', 'HTMLElement', 'HTMLButtonElement', 'HTMLInputElement', 'HTMLMediaElement', 'MutationObserver']) Object.defineProperty(globalThis, key, { configurable: true, value: dom.window[key] });
@@ -141,12 +141,23 @@ test('current readonly changes guard already mounted controls and feedback updat
     }, true);
 });
 
-test('keyboard activation of search Close dismisses without choosing a node', async () => {
-    let dismissed = 0; const choices = [];
-    await mounted('NodeSearch', searchView(), { choose: id => choices.push(id), dismiss: () => dismissed++ }, async host => {
-        const close = [...host.querySelectorAll('button')].find(button => button.textContent === 'Close'); close.focus(); keydown(close, 'Enter');
-        assert.equal(dismissed, 1); assert.deepEqual(choices, []);
+test('search starts with an accessible input and outside presses dismiss anywhere without choosing a result', async () => {
+    let dismissed = 0; const selected = [];
+    await mounted('NodeSearch', searchView(), { choose: id => selected.push(id), dismiss: () => dismissed++ }, async host => {
+        const dialog = host.querySelector('[role="dialog"]'), input = host.querySelector('input[type="search"]');
+        assert.equal(dialog.firstElementChild.tagName, 'LABEL'); assert.equal(input.getAttribute('aria-label'), 'Search nodes and subgraphs');
+        assert.equal(host.querySelector('h2, [data-search-close]'), null);
+        assert.doesNotMatch(host.textContent, /Add node|Close|Search nodes and subgraphs/);
+        const press = element => element.dispatchEvent(new dom.window.MouseEvent('pointerdown', { bubbles: true }));
+        press(input); press(host.querySelector('[data-choice="first"]')); assert.equal(dismissed, 0);
+        for (const tag of ['header', 'div', 'button']) {
+            const outside = document.createElement(tag); outside.addEventListener('pointerdown', event => event.stopPropagation()); document.body.append(outside);
+            press(outside); outside.remove();
+        }
+        press(document.body); assert.equal(dismissed, 4); assert.deepEqual(selected, []);
+        keydown(input, 'Escape'); assert.equal(dismissed, 5); assert.deepEqual(selected, []);
     });
+    document.body.dispatchEvent(new dom.window.MouseEvent('pointerdown', { bubbles: true })); assert.equal(dismissed, 5, 'unmount removes outside listener');
 });
 
 test('real cached purpose, shortcode and known operation alias terms independently filter the source-compiled popup', async () => {

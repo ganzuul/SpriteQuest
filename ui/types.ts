@@ -20,7 +20,7 @@ export interface ImportReviewView {
     bindingReviewRequired: boolean; error: string;
 }
 export interface WorkbenchView {
-    graphs: { id: string; name: string }[]; graphId: string; armed: boolean; inspectorOpen: boolean;
+    graphs: { id: string; name: string }[]; graphId: string; armed: boolean; inspectorOpen: boolean; detailsWidth?: number;
     history: HistoryView; camera: { x: number; y: number; zoom: number; mode: string }; selectionCount: number;
     workflow?: WorkflowView; rootWorkflow?: WorkflowView;
     nativeFlatCanvas?: boolean; nativeDiagnostic?: string; readOnly?: boolean; graphViews?: GraphViews;
@@ -39,7 +39,7 @@ export interface WorkbenchActions {
     chooseNative?: (id: string) => void; nativeSearch?: NodeSearchActions; nativePinMenu?: PinMenuActions; openRunDetails?: () => void;
     pickGraph: (id: string) => void; arm: (enabled: boolean) => void; command: (name: string) => void;
     mode: (mode: string) => void; zoom: (factor: number) => void; fitSelection: () => void;
-    resizeStart?: () => void; addNode?: (id: string) => void;
+    resizeStart?: () => void; resizeDetails?: (width: number) => void; addNode?: (id: string) => void;
     workflowSetup?: Pick<WorkflowActions, 'install' | 'bindRole' | 'assign'>;
     acceptImport?: () => void; cancelImport?: () => void; prepareImportAgain?: () => void;
 }

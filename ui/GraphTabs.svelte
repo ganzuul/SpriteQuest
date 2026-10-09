@@ -78,7 +78,7 @@
     .pc-graph-tab > span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
     .pc-graph-tab-closeable { padding-right: 28px; }
     .pc-graph-tabs-multi .pc-graph-tab:not([aria-selected="true"]) { background: var(--pc-panel); margin-bottom: 0; color: var(--pc-muted); }
-    .pc-graph-tabs-multi .pc-graph-tab:not([aria-selected="true"])::before, .pc-graph-tabs-multi .pc-graph-tab:not([aria-selected="true"])::after { display: none; }
+    .pc-graph-tabs-multi .pc-graph-tab:not([aria-selected="true"])::after { display: none; }
     .pc-graph-tab-lock { font-size: 10px; }
     .pc-graph-tab-close { position: absolute; right: 4px; top: 7px; width: 18px; height: 18px; padding: 0; border: 0; border-radius: 2px; background: transparent; color: var(--pc-muted); font: inherit; line-height: 18px; }
     .pc-graph-view-overflow { flex: 0 0 26px; align-self: center; height: 24px; border: 1px solid var(--pc-border); border-radius: 2px; background: var(--pc-panel-solid); color: var(--pc-text); font: inherit; }

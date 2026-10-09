@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import * as S from '../src/state.js?v=0.22.0';
+import * as S from '../src/state.js?v=0.22.1';
 
 function host(extensionSettings = {}) {
     let effects = 0;
@@ -61,7 +61,7 @@ test('saved graph accessors reject without executing them or replacing settings'
 test('several individually bounded current workflows reload independently', async () => {
     host(); const stored = S.settings(), graph = S.createGraph('Large current workflow');
     for (let i = 0; i < 8; i++) graph.nodes['compose-' + i] = { id: 'compose-' + i, type: 'workflow', operation: 'compose', operationVersion: 1, outputKind: 'text', sections: [{ name: 'Text', text: 'x'.repeat(95000) }] };
-    const { validateGraphStructure } = await import('../src/workflow/contracts.js?v=0.22.0');
+    const { validateGraphStructure } = await import('../src/workflow/contracts.js?v=0.22.1');
     assert.equal(validateGraphStructure(graph).ok, true);
     const copies = [graph, S.duplicateGraph(graph.id), S.duplicateGraph(graph.id)];
     const saved = structuredClone(stored), h = host({ lattice: saved });

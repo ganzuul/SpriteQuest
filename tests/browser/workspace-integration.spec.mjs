@@ -106,7 +106,7 @@ test('actual root selection survives view roundtrips with matching paint and one
     page.on('dialog', async dialog => { deletionPrompts.push({ type: dialog.type(), message: dialog.message() }); await dialog.accept(); });
     await page.locator('.pc-canvas-host').focus(); await page.keyboard.press('Delete');
     await expect.poll(() => page.evaluate(id => !!window.canvasHarness.S.getGraph(id).nodes.one, id)).toBe(false);
-    expect(deletionPrompts).toEqual([{ type: 'confirm', message: 'Delete one?' }]);
+    expect(deletionPrompts).toEqual([]);
     await page.getByRole('button', { name: 'Undo', exact: true }).click();
     expect(await page.evaluate(id => !!window.canvasHarness.S.getGraph(id).nodes.one, id)).toBe(true);
     await expect(page.getByRole('button', { name: 'Undo', exact: true })).toBeDisabled();
@@ -151,7 +151,7 @@ test('owned child Edit and Cut use its saved scope and reject blocked or stale c
     page.on('dialog', async dialog => { deletionPrompts.push({ type: dialog.type(), message: dialog.message() }); await dialog.accept(); });
     await editCommand(page, 'Cut');
     await expect(page.locator('.pc-node-native[data-id="work"]')).toHaveCount(0);
-    expect(deletionPrompts).toEqual([{ type: 'confirm', message: 'Delete work?' }]);
+    expect(deletionPrompts).toEqual([]);
     await page.getByRole('button', { name: 'Undo', exact: true }).click();
     const restored = await page.evaluate(id => { const root = structuredClone(window.canvasHarness.S.getGraph(id)); delete root.updatedAt; return root; }, id), authored = JSON.parse(before); delete authored.updatedAt; expect(restored).toEqual(authored);
 });

@@ -1,9 +1,10 @@
 /** Lattice launcher and host integration. The workflow never replaces SillyTavern's prompt. */
-import { MODULE, settings, save, ctx, safe } from './src/state.js?v=0.22.0';
-import { getNativeWorkflowController, initializeNativeWorkflowController, workflowSignature, sendWorkflowState } from './src/run.js?v=0.22.0';
-import * as UI from './src/ui.js?v=0.22.0';
-import { applyTheme } from './src/theme.js?v=0.22.0';
-import { renderThemeEditor } from './src/theme-editor.js?v=0.22.0';
+import { MODULE, settings, save, ctx, safe } from './src/state.js?v=0.22.1';
+import { getNativeWorkflowController, initializeNativeWorkflowController, workflowSignature, sendWorkflowState } from './src/run.js?v=0.22.1';
+import * as UI from './src/ui.js?v=0.22.1';
+import { applyTheme } from './src/theme.js?v=0.22.1';
+import { renderThemeEditor } from './src/theme-editor.js?v=0.22.1';
+const logoUrl = new URL('./assets/lattice-logo.svg', import.meta.url).href;
 
 globalThis.latticeGenerationInterceptor = async (chat, contextSize, abort, type) => {
     await initializeNativeWorkflowController();
@@ -27,7 +28,7 @@ function addLauncher() {
     const host = document.getElementById('extensions_settings2') ?? document.getElementById('extensions_settings');
     if (!host || document.getElementById('pc-settings')) return;
     const block = document.createElement('div'); block.id = 'pc-settings'; block.className = 'pc-settings-block';
-    block.innerHTML = '<div class="inline-drawer"><div class="inline-drawer-toggle inline-drawer-header"><b>Lattice</b><div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div></div><div class="inline-drawer-content"><label class="checkbox_label" for="pc-enabled"><input id="pc-enabled" type="checkbox"><span id="pc-arm-label"></span></label><div class="pc-settings-hint">Assign optional pre-generation guidance in Setup. Reply repairs run manually and require review. SillyTavern builds its normal prompt.</div><label class="checkbox_label" for="pc-sendbar-opt"><input id="pc-sendbar-opt" type="checkbox"><span>Show Lattice next to Send</span></label><div id="pc-theme-editor"></div><button id="pc-open-btn" class="menu_button">Open Lattice</button></div></div>';
+    block.innerHTML = '<div class="inline-drawer"><div class="inline-drawer-toggle inline-drawer-header"><b>Lattice</b><div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div></div><div class="inline-drawer-content"><label class="checkbox_label" for="pc-enabled"><input id="pc-enabled" type="checkbox"><span id="pc-arm-label"></span></label><div class="pc-settings-hint">Assign optional pre-generation guidance in Setup. Reply repairs run manually and require review. SillyTavern builds its normal prompt.</div><label class="checkbox_label" for="pc-sendbar-opt"><input id="pc-sendbar-opt" type="checkbox"><span>Show Lattice in the chat bar</span></label><div id="pc-theme-editor"></div><button id="pc-open-btn" class="menu_button">Open Lattice</button></div></div>';
     host.append(block);
     const enabled = block.querySelector('#pc-enabled'); enabled.checked = armed();
     enabled.addEventListener('change', () => { settings().enabled = enabled.checked; updateState(); });
@@ -39,10 +40,11 @@ function addLauncher() {
 function addSendbarButton() {
     const existing = document.getElementById('pc-sendbar');
     if (settings().ui.sendbarButton === false) { existing?.remove(); return true; }
-    const bar = document.getElementById('rightSendForm'); if (!bar) return false;
-    if (existing) { paintSendbar(); return true; }
-    const button = document.createElement('div');
-    button.id = 'pc-sendbar'; button.className = 'fa-solid fa-diagram-project interactable'; button.tabIndex = 0; button.setAttribute('role', 'button');
+    const bar = document.getElementById('leftSendForm'); if (!bar) return false;
+    if (existing) { if (existing.parentElement !== bar) bar.append(existing); paintSendbar(); return true; }
+    const button = document.createElement('button');
+    button.id = 'pc-sendbar'; button.className = 'pc-chat-launcher interactable'; button.type = 'button'; button.setAttribute('aria-label', 'Open Lattice');
+    const logo = document.createElement('img'); logo.src = logoUrl; logo.alt = ''; logo.draggable = false; logo.setAttribute('aria-hidden', 'true'); button.append(logo);
     button.addEventListener('click', () => UI.open());
     button.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); UI.open(); } });
     button.addEventListener('contextmenu', event => {
@@ -50,8 +52,7 @@ function addSendbarButton() {
         const status = sendWorkflowState(); safe(() => globalThis.toastr?.info(armed() ? status.armedText : status.offText, 'Lattice'));
     });
     button.addEventListener('mouseenter', paintSendbar);
-    const send = document.getElementById('send_but');
-    if (send?.parentElement === bar) bar.insertBefore(button, send); else bar.append(button);
+    bar.append(button);
     paintSendbar(); return true;
 }
 function paintSendbar() {

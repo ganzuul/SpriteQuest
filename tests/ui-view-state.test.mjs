@@ -269,3 +269,18 @@ test('a thousand bounded nested instance views reload and an extra retained view
     assert.equal(view.openInstance(['p', '999']).error.code, 'VIEW_LIMIT');
     assert.deepEqual(accepted(view.serialize()), saved);
 });
+
+test('Details width survives graph focus, close/reopen and restore without accepting unsafe persistence', () => {
+    const view = store();
+    accepted(view.updateView({ inspector: { item: null, section: '', open: true, width: 400 } }));
+    accepted(view.openInstance(['a/b']));
+    accepted(view.updateView({ inspector: { item: null, section: '', open: true, width: 300 } }));
+    accepted(view.closeView()); assert.equal(active(view).inspector.width, 400);
+    accepted(view.reopenView(instance(['a/b']))); assert.equal(active(view).inspector.width, 300);
+    const persisted = accepted(view.serialize()), restored = store({ persisted }); assert.equal(active(restored).inspector.width, 300);
+    const before = JSON.stringify(accepted(view.serialize()));
+    for (const width of [219, 521, Infinity, NaN, '300']) assert.equal(view.updateView({ inspector: { item: null, section: '', open: true, width } }).ok, false);
+    assert.equal(JSON.stringify(accepted(view.serialize())), before);
+    const legacy = { ...persisted, views: persisted.views.map(entry => { const { width, ...inspector } = entry.inspector; return { ...entry, inspector }; }) };
+    assert.ok(store({ persisted: legacy }), 'existing inspector persistence remains readable');
+});

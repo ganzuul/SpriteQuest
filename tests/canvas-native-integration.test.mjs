@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { fixture, mouse, dom } from './canvas-fixture.mjs';
-import { nodeCard } from '../src/canvas/presentation.js?v=0.22.0';
-import { createNativeWireBridge } from '../src/ui/native-wire-bridge.js?v=0.22.0';
-import { prepareNativeSearchCatalog } from '../src/ui/native-search-catalog.js?v=0.22.0';
+import { nodeCard } from '../src/canvas/presentation.js?v=0.22.1';
+import { createNativeWireBridge } from '../src/ui/native-wire-bridge.js?v=0.22.1';
+import { prepareNativeSearchCatalog } from '../src/ui/native-search-catalog.js?v=0.22.1';
 import { prepareNativeConnectionEdit } from '../src/workflow/connection-edits.js';
 import { captureGraphEditContext, commitPreparedGraph } from '../src/workflow/transactions.js';
 
@@ -159,8 +159,8 @@ test('native ghost uses cached named endpoints without layout reads during point
     env.host.getBoundingClientRect = () => { throw new Error('camera gesture must retain its measured frame'); };
     pointer(window, 'pointermove', 250, 80); env.canvas.frames.flush();
     const route = env.host.querySelector('.pc-wire-ghost')?.getAttribute('d') ?? '';
-    assert.match(route, /^M 180,54 L 198,54 C/);
-    assert.match(route, /L 250,80$/);
+    assert.match(route, /^M 180,54 C/);
+    assert.match(route, /250,80$/);
     env.host.getBoundingClientRect = rect;
     await env.canvas.destroy(); document.elementFromPoint = () => null;
 });
@@ -377,4 +377,22 @@ test('setMulti empty early return clears cable paint restored independently of p
     assert.equal(env.canvas.wireMulti.size, 0); assert.deepEqual(selectedCables(env), []); assert.equal(presentations, 0);
     env.canvas.setMulti([]); assert.deepEqual(selectedCables(env), []);
     assert.equal(env.commands.length, 0); await env.canvas.destroy();
+});
+
+test('idle cancellation clears a painted ghost before its queued cleanup frame without rebuilding cards', async () => {
+    let presentations = 0;
+    const env = nativeFixture({ hooks: { nativeCard() { presentations++; } } });
+    try {
+        const card = env.host.querySelector('[data-id="first"]'); presentations = 0;
+        pointer(env.pin('source', 'out'), 'pointerdown', 180, 54);
+        document.elementFromPoint = () => env.host; pointer(window, 'pointermove', 250, 80); env.canvas.frames.flush();
+        assert.ok(env.host.querySelector('.pc-wire-ghost')); assert.ok(env.pin('source', 'out').classList.contains('pc-pin-highlight'));
+        document.elementFromPoint = () => card; pointer(window, 'pointerup', 340, 60);
+        assert.equal(env.bridge.hasContentGesture(), false);
+        presentations = 0;
+        env.canvas.cancelGesture(); env.canvas.select({ kind: 'node', id: 'first' });
+        assert.equal(env.host.querySelector('.pc-wire-ghost'), null);
+        assert.equal(env.pin('source', 'out').classList.contains('pc-pin-highlight'), false);
+        assert.equal(env.host.querySelector('[data-id="first"]'), card); assert.equal(presentations, 0); assert.equal(env.commands.length, 0);
+    } finally { await env.canvas.destroy(); document.elementFromPoint = () => null; }
 });

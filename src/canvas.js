@@ -1,12 +1,12 @@
-import { isWorkflowGraph } from './workflow/contracts.js?v=0.22.0';
-import { graphPoint, zoomAt, wheelFactor } from './canvas/camera.js?v=0.22.0';
-import { createFrameScheduler } from './canvas/frame.js?v=0.22.0';
-import { selectionMode, rectangle, intersects, combineSelection } from './canvas/selection.js?v=0.22.0';
-import { createGeometryCache, indexIncidentWires } from './canvas/geometry.js?v=0.22.0';
-import { nodeCard, preparedCardFor } from './canvas/presentation.js?v=0.22.0';
-import { buildConnectionRoute } from './canvas/connection-route.js?v=0.22.0';
-import { isCommentFrame, containedCommentNodes } from './canvas/comment-frames.js?v=0.22.0';
-import { mountCanvas } from '../dist/lattice-ui.js?v=0.22.0';
+import { isWorkflowGraph } from './workflow/contracts.js?v=0.22.1';
+import { graphPoint, zoomAt, wheelFactor } from './canvas/camera.js?v=0.22.1';
+import { createFrameScheduler } from './canvas/frame.js?v=0.22.1';
+import { selectionMode, rectangle, intersects, combineSelection } from './canvas/selection.js?v=0.22.1';
+import { createGeometryCache, indexIncidentWires } from './canvas/geometry.js?v=0.22.1';
+import { nodeCards, preparedCardFor } from './canvas/presentation.js?v=0.22.1';
+import { buildConnectionRoute, buildDragConnectionRoute } from './canvas/connection-route.js?v=0.22.1';
+import { isCommentFrame, containedCommentNodes } from './canvas/comment-frames.js?v=0.22.1';
+import { mountCanvas } from '../dist/lattice-ui.js?v=0.22.1';
 const groupMembers = (graph, id) => Object.values(graph?.nodes ?? {}).filter(node => node.inGroup === id);
 const groupOf = (graph, node) => node && graph?.groups?.[node.inGroup];
 
@@ -201,7 +201,11 @@ export class Canvas {
 
     #applyFocus() {
         const pin = this.hoverPin;
-        const pins = new Set();
+        const gesture = this.nativeWireView?.gesture;
+        const active = gesture && gesture.kind !== 'idle' ? gesture : null;
+        const pinKey = value => value && JSON.stringify([value.nodeId, value.dir, value.portId ?? value.port]);
+        const pins = new Set([pinKey(pin), pinKey(active?.origin)].filter(Boolean));
+        const targetKey = pinKey(active?.target);
         for (const path of this.svg.querySelectorAll('path.pc-wire')) {
             const wire = this.graph?.wires[path.dataset.id];
             const attached = pin && wire && (pin.dir === 'in' ? wire.to === pin.nodeId && wire.toPort === pin.port : wire.from === pin.nodeId && wire.fromPort === pin.port);
@@ -213,17 +217,24 @@ export class Canvas {
             }
         }
         for (const element of this.nodeLayer.querySelectorAll('.pc-port[data-node][data-dir][data-port]')) {
-            element.classList.toggle('pc-pin-highlight', pins.has(JSON.stringify([element.dataset.node, element.dataset.dir, element.dataset.port])));
+            const key = JSON.stringify([element.dataset.node, element.dataset.dir, element.dataset.port]);
+            const target = key === targetKey;
+            element.classList.toggle('pc-pin-highlight', pins.has(key));
+            element.classList.toggle('pc-pin-target', target);
+            element.classList.toggle('pc-pin-compatible', target && active.feedback?.compatible === true);
+            element.classList.toggle('pc-pin-invalid', target && active.feedback?.compatible === false);
         }
     }
 
     #drawNodes() {
         const groups = this.graph.groups ?? {};
         const context = { graph: this.graph, selection: this.selection, multi: this.multi, trace: this.trace, hooks: this.hooks };
-        const cards = Object.values(this.graph.nodes).filter(n => !isCommentFrame(n) && !this.#folded(n)).sort((a, b) => (a.y - b.y) || (a.x - b.x)).map(node => nodeCard(node, context));
-        const draw = this.graph, capture = this.#canEdit() ? this.hooks.captureCommentEdit?.() : null;
+        const nodes = Object.values(this.graph.nodes).filter(n => !isCommentFrame(n) && !this.#folded(n)).sort((a, b) => (a.y - b.y) || (a.x - b.x));
+        const cards = nodeCards(nodes, context);
+        const draw = this.graph, comments = Object.values(draw.nodes).filter(isCommentFrame);
+        const capture = comments.length && this.#canEdit() ? this.hooks.captureCommentEdit?.() : null;
         const current = id => this.graph === draw && isCommentFrame(draw.nodes[id]);
-        this.layer.setComments(Object.values(draw.nodes).filter(isCommentFrame).map(node => this.#commentCard(node)), {
+        this.layer.setComments(comments.map(node => this.#commentCard(node)), {
             select: id => { if (current(id)) { this.setMulti([]); this.select({ kind: 'node', id }); } },
             update: (id, patch) => { if (current(id) && this.#canEdit()) this.hooks.onCommentPatch?.(capture, id, patch); },
             command: (id, command) => { if (current(id) && this.#canEdit()) this.hooks.onCommentCommand?.(capture, id, command); },
@@ -315,21 +326,31 @@ export class Canvas {
         }
     }
 
+    #paintSelection() {
+        for (const el of this.nodeLayer.querySelectorAll('.pc-node[data-id]')) el.classList.toggle('pc-selected', this.selection?.kind === 'node' && this.selection.id === el.dataset.id);
+        for (const el of this.nodeLayer.querySelectorAll('.pc-node-group, .pc-group-frame')) el.classList.toggle('pc-selected', this.selection?.kind === 'group' && this.selection.id === el.dataset.group);
+        this.#paintMulti();
+        for (const [id, wire] of this.wireViews) {
+            const selected = this.wireMulti.has(id) || this.selection?.kind === 'wire' && this.selection.id === id;
+            const className = wire.className.replace(/ pc-selected\b/g, '') + (selected ? ' pc-selected' : '');
+            if (className !== wire.className) this.wireViews.set(id, { ...wire, className });
+        }
+        for (const path of this.svg.querySelectorAll('path.pc-wire[data-id]')) path.classList.toggle('pc-selected', this.wireMulti.has(path.dataset.id) || this.selection?.kind === 'wire' && this.selection.id === path.dataset.id);
+        this.#applyFocus();
+    }
+
     setMulti(ids) {
         const hadWireSelection = this.wireMulti.size > 0;
         this.wireMulti.clear();
         const next = new Set(ids.filter(id => this.graph?.nodes[id]));
         if (next.size === this.multi.size && [...next].every(id => this.multi.has(id))
             && (!this.selection || (next.size === 1 && this.selection.kind === 'node' && next.has(this.selection.id)))) {
-            if (hadWireSelection) this.#drawWires();
+            if (hadWireSelection) this.#paintSelection();
             return;
         }
         this.multi = next;
         this.selection = next.size === 1 ? { kind: 'node', id: [...next][0] } : null;
-        for (const el of this.nodeLayer.querySelectorAll('.pc-node[data-id]')) el.classList.toggle('pc-selected', this.selection?.id === el.dataset.id);
-        for (const el of this.nodeLayer.querySelectorAll('.pc-node-group, .pc-group-frame')) el.classList.remove('pc-selected');
-        this.#paintMulti();
-        this.#drawWires();
+        this.#paintSelection();
         this.hooks.onSelect?.(this.selection ? this.graph.nodes[this.selection.id] : null, this.selection?.kind ?? null);
         this.hooks.onMulti?.([...this.multi]);
     }
@@ -390,7 +411,7 @@ export class Canvas {
         const bridge = this.#nativeBridge();
         const active = !!(this.drag || this.marquee || this.pan || bridge?.hasContentGesture());
         if (bridge) { const result = bridge.cancel(reason); this.updateNativeWire(result.view, result.requests); }
-        const wheeling = !!this.wheelRect;
+        const wheeling = !!this.wheelRect, panning = !!this.pan;
         this.frames.cancel(); clearTimeout(this.wheelTimer);
         this.gestureRect = null; this.wheelRect = null;
         const d = this.drag;
@@ -416,7 +437,16 @@ export class Canvas {
             const picked = sel?.kind === 'node' ? this.graph.nodes[sel.id] : sel?.kind === 'group' ? this.graph.groups?.[sel.id] : sel?.kind === 'wire' ? this.graph.wires[sel.id] : null;
             this.hooks.onSelect?.(picked, sel?.kind ?? null); this.hooks.onMulti?.([...this.multi]);
         }
-        else if (wheeling && this.graph) this.applyTransform();
+        else {
+            if (wheeling && this.graph) this.applyTransform();
+            if (bridge && this.graph) {
+                // An idle bridge may have queued cleanup after its ghost was
+                // painted. Cancelling that frame must still clear the draft.
+                this.layer.setWires([...this.wireViews.values()], this.wireBounds ?? { w: 4000, h: 4000 }, null);
+                this.#applyFocus();
+            }
+        }
+        if (wheeling || panning) this.hooks.onViewCommit?.();
         return active;
     }
 
@@ -489,13 +519,15 @@ export class Canvas {
     #drawWires(changedNodes = null) {
         if (!this.graph) return;
         const affected = changedNodes ? new Set([...changedNodes].flatMap(id => [...(this.incident.get(id) ?? [])])) : null;
-        const visible = new Set(), bounds = { w: 4000, h: 4000 };
-        for (const n of Object.values(this.graph.nodes)) { bounds.w = Math.max(bounds.w, n.x + 800); bounds.h = Math.max(bounds.h, n.y + 800); }
-        for (const wire of Object.values(this.graph.wires)) {
+        const visible = affected ? null : new Set(), bounds = affected ? { ...this.wireBounds } : { w: 4000, h: 4000 };
+        const nodes = affected ? [...changedNodes].map(id => this.graph.nodes[id]).filter(Boolean) : Object.values(this.graph.nodes);
+        for (const n of nodes) { bounds.w = Math.max(bounds.w, n.x + 800); bounds.h = Math.max(bounds.h, n.y + 800); }
+        const wires = affected ? [...affected].map(id => this.graph.wires[id]).filter(Boolean) : Object.values(this.graph.wires);
+        for (const wire of wires) {
             if (!wire.from || !wire.fromPort || !wire.to || !wire.toPort) continue;
             const from = this.endpoint(wire.from, 'out', wire.fromPort), to = this.endpoint(wire.to, 'in', wire.toPort);
-            if (!from || !to || this.#folded(this.graph.nodes[wire.from]) || this.#folded(this.graph.nodes[wire.to])) continue;
-            visible.add(wire.id); if (affected && !affected.has(wire.id)) continue;
+            if (!from || !to || this.#folded(this.graph.nodes[wire.from]) || this.#folded(this.graph.nodes[wire.to])) { this.wireViews.delete(wire.id); continue; }
+            visible?.add(wire.id);
             const off = [wire.from, wire.to].some(id => this.graph.nodes[id]?.enabled === false);
             const selected = this.selection?.kind === 'wire' && this.selection.id === wire.id || this.wireMulti.has(wire.id);
             const route = buildConnectionRoute(from, to);
@@ -503,13 +535,14 @@ export class Canvas {
                 className: 'pc-wire pc-wire-native' + (off ? ' pc-wire-off' : '') + (selected ? ' pc-selected' : ''),
                 label: { ...route.label, text: from.kind, className: 'pc-wire-label' } });
         }
-        for (const id of this.wireViews.keys()) if (!visible.has(id)) this.wireViews.delete(id);
+        if (visible) for (const id of this.wireViews.keys()) if (!visible.has(id)) this.wireViews.delete(id);
+        this.wireBounds = bounds;
         const native = this.nativeWireView?.gesture;
         const origin = native?.origin && this.endpoint(native.origin.nodeId, native.origin.dir, native.origin.portId);
         const target = native?.target && this.endpoint(native.target.nodeId, native.target.dir, native.target.portId);
-        const loose = native?.ghost && { ...native.ghost, side: native.origin?.dir === 'in' ? 'right' : 'left' };
+        const loose = native?.ghost;
         const ghost = native && native.kind !== 'idle' && origin && loose ? {
-            d: native.origin.dir === 'out' ? this.#path(origin, target ?? loose) : this.#path(target ?? loose, origin),
+            d: target && native.feedback?.compatible === true ? (native.origin.dir === 'out' ? this.#path(origin, target) : this.#path(target, origin)) : buildDragConnectionRoute(origin, loose).d,
             className: 'pc-wire pc-wire-ghost pc-wire-native' + (native.feedback?.compatible === false ? ' pc-wire-invalid' : ''),
         } : null;
         this.layer.setWires([...this.wireViews.values()], bounds, ghost);
@@ -519,6 +552,11 @@ export class Canvas {
     #renderDrag() {
         const d = this.drag; if (!d) return;
         const ids = d.id ? [d.id] : d.several.map(([id]) => id);
+        this.#renderPositions(ids);
+        this.#paintSelection();
+    }
+
+    #renderPositions(ids) {
         this.layer.setPositions(ids.map(id => this.graph.nodes[id]).filter(Boolean).map(n => ({ id: n.id, x: n.x, y: n.y, ...(isCommentFrame(n) ? { w: this.widthOf(n), h: this.heightOf(n) } : {}) })), []);
         this.layer.setGroups(Object.values(this.graph.groups ?? {}).map(g => this.#groupCard(g)));
         this.#drawWires(new Set(ids));
@@ -672,7 +710,7 @@ export class Canvas {
             clearTimeout(this.wheelTimer);
             this.wheelTimer = setTimeout(() => {
                 this.frames.flush(); host.classList.remove('pc-interacting');
-                this.wheelRect = null;
+                this.wheelRect = null; this.hooks.onViewCommit?.();
             }, 160);
         }, { passive: false });
         on(host, 'mousedown', (e) => {
@@ -778,7 +816,7 @@ export class Canvas {
                     this.drag = { comment, capture, several: [...this.multi].map(m => [m, this.graph.nodes[m]?.x ?? 0, this.graph.nodes[m]?.y ?? 0]), groups: this.#dragGroups(this.multi), clicked: e.shiftKey ? null : id, sx: start.x, sy: start.y, moved: false };
                     return;
                 }
-                if (this.multi.size && !e.shiftKey) this.setMulti([]);
+                if (this.multi.size && !e.shiftKey) this.multi.clear();
                 this.select({ kind: 'node', id });
                 this.wireMulti.clear();
                 const start = this.toGraph(e.clientX, e.clientY);
@@ -888,14 +926,14 @@ export class Canvas {
                         const groups = (d.groups ?? []).map(saved => draw.groups?.[saved.id]).filter(Boolean)
                             .map(group => ({ id: group.id, x: group.x, y: group.y, ...(group.frame ? { frame: structuredClone(group.frame) } : {}) }));
                         const result = this.#canEdit() && this.hooks.onCommentLayout?.(d.capture, positions, groups);
-                        if ((!result || result.ok === false) && this.graph === draw) this.#restoreDrag(d);
+                        if ((!result || result.ok === false) && this.graph === draw) { this.#restoreDrag(d); if (!this.#canEdit()) this.render(); else this.#renderPositions(ids); }
                     } else this.hooks.onPresentationChange?.(ids, (d.groups ?? []).map(group => group.id));
                 }
                 else if (d.clickedGroup) { this.multi.clear(); this.select({ kind: 'group', id: d.clickedGroup }); }
                 else if (d.clicked) this.setMulti([d.clicked]);
-                this.render();
+                this.#paintSelection();
             }
-            if (this.pan) { this.frames.flush(); this.pan = null; this.host.classList.remove('pc-panning'); }
+            if (this.pan) { this.frames.flush(); this.pan = null; this.host.classList.remove('pc-panning'); this.hooks.onViewCommit?.(); }
         });
         on(host, 'dblclick', (e) => {
             if (inEditor(e)) return;
@@ -957,7 +995,7 @@ export class Canvas {
 
     select(sel) {
         if (sel?.kind === 'wire') this.wireMulti.add(sel.id); else this.wireMulti.clear();
-        this.selection = sel; this.render();
+        this.selection = sel; this.#paintSelection();
         const pick = !sel ? null : sel.kind === 'node' ? this.graph.nodes[sel.id] : sel.kind === 'group' ? this.graph.groups?.[sel.id] : this.graph.wires[sel.id];
         this.hooks.onSelect?.(pick ?? null, sel?.kind ?? null);
     }

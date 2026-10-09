@@ -1,10 +1,10 @@
 // Presentation-only discovery metadata. No graph, binding or runtime preparation.
 const cube = 'M3 7 12 2l9 5v10l-9 5-9-5ZM3 7l9 5 9-5M12 12v10';
-const boxes = 'm2 7 5-3 5 3v6l-5 3-5-3Zm10 0 5-3 5 3v6l-5 3-5-3ZM7 16v4l5 3 5-3v-4';
+const boxes = 'M3 6l4-2 4 2v5l-4 2-4-2ZM3 6l4 2 4-2M7 8v5M13 6l4-2 4 2v5l-4 2-4-2ZM13 6l4 2 4-2M17 8v5M8 15l4-2 4 2v5l-4 2-4-2ZM8 15l4 2 4-2M12 17v5';
 export const FAMILY_PALETTE = Object.freeze([
     { name: 'Input', color: '#96ad52', icon: cube },
     { name: 'Shaping', color: '#589aab', icon: 'M20 8a8 8 0 1 0 0 8M20 3v5h-5' },
-    { name: 'Surface', color: '#92c9ad', icon: 'M20 12a8 8 0 1 0-16 0 8 8 0 0 0 16 0ZM6 18 18 6' },
+    { name: 'Surface', color: '#92c9ad', icon: 'M3 14L14 6l7 4-11 8Z' },
     { name: 'Transpose', color: '#9080b6', icon: 'M3 7h18m-4-4 4 4-4 4M21 17H3m4-4-4 4 4 4' },
     { name: 'Derive', color: '#b65b9e', icon: 'M5 20v-6M12 20V8M19 20V3' },
     { name: 'Output', color: '#c96d82', icon: cube },

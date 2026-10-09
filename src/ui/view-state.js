@@ -118,7 +118,7 @@ function presentationPatch(value) {
         camera.zoom = Math.max(0.25, Math.min(2.5, camera.zoom));
     }
     if (patch.selection !== undefined && (!record(patch.selection) || !ownKeys(patch.selection, ['primary', 'multi']) || !itemValid(patch.selection.primary) || !Array.isArray(patch.selection.multi) || patch.selection.multi.length > 1000 || !patch.selection.multi.every(textId))) return null;
-    if (patch.inspector !== undefined && (!record(patch.inspector) || !ownKeys(patch.inspector, ['item', 'section', 'open']) || !itemValid(patch.inspector.item) || typeof patch.inspector.section !== 'string' || patch.inspector.section.length > 256 || typeof patch.inspector.open !== 'boolean')) return null;
+    if (patch.inspector !== undefined && (!record(patch.inspector) || !ownKeys(patch.inspector, ['item', 'section', 'open', 'width']) || !itemValid(patch.inspector.item) || typeof patch.inspector.section !== 'string' || patch.inspector.section.length > 256 || typeof patch.inspector.open !== 'boolean' || (patch.inspector.width !== undefined && (!Number.isFinite(patch.inspector.width) || patch.inspector.width < 220 || patch.inspector.width > 520)))) return null;
     if (patch.nodePresentation !== undefined) {
         if (!record(patch.nodePresentation) || Object.keys(patch.nodePresentation).length > 1000) return null;
         for (const [id, node] of Object.entries(patch.nodePresentation)) {

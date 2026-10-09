@@ -6,7 +6,7 @@ import { portsForNode } from '../src/workflow/catalog.js';
 import { computeDefinitionIdentity, definitionRefKey } from '../src/workflow/definitions.js';
 import { makeLocalCopy } from '../src/workflow/definition-library.js';
 import { captureGraphEditContext, commitPreparedGraph } from '../src/workflow/transactions.js';
-import * as history from '../src/history.js?v=0.22.0';
+import * as history from '../src/history.js?v=0.22.1';
 import { graphPoint as toGraph } from '../src/canvas/camera.js';
 import { createGeometryCache } from '../src/canvas/geometry.js';
 const api = await import('../src/workflow/connection-edits.js').catch(() => ({}));

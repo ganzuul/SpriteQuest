@@ -1,6 +1,6 @@
 /** Lattice workspace themes and explicit user overrides. */
 
-import { settings, save, safe } from './state.js?v=0.22.0';
+import { settings, save, safe } from './state.js?v=0.22.1';
 
 /** The roles, in the order the editor lists them. */
 export const ROLES = [

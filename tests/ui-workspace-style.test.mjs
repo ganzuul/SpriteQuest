@@ -120,3 +120,20 @@ test('ordinary run panels inherit theme tokens while semantic feedback retains i
         }
     }
 });
+
+test('shelf rows leave room for a thin vertical scrollbar without shrinking their icons or enabling horizontal scroll', () => {
+    const shelf = dom.window.document.querySelector('.pc-node-shelf'), row = dom.window.document.createElement('button');
+    row.className = 'pc-family-row'; row.innerHTML = '<svg></svg><span>Subgraphs</span>'; shelf.append(row);
+    const shelfPaint = style('.pc-node-shelf'), rowPaint = style('.pc-family-row');
+    assert.equal(shelfPaint.overflowX, 'hidden'); assert.equal(shelfPaint.width, '120px');
+    assert.equal(shelfPaint.scrollbarWidth, 'thin'); assert.equal(shelfPaint.scrollbarColor, 'rgb(85, 85, 85)');
+    assert.equal(rowPaint.height, '28px'); assert.equal(rowPaint.flexBasis, '28px'); assert.equal(rowPaint.width, '110px');
+    assert.equal(rowPaint.alignItems, 'center'); assert.equal(style('.pc-family-row svg').flexShrink, '0');
+});
+
+test('selected graph tab masks only its own canvas border without an extra right corner', () => {
+    const selected = [...dom.window.document.styleSheets[1].cssRules].find(rule => rule.selectorText === '.pc-graph-tab::after');
+    const foot = [...dom.window.document.styleSheets[1].cssRules].find(rule => rule.selectorText === '.pc-graph-tab::before');
+    assert.ok(selected); assert.equal(selected.style.right, '-1px'); assert.equal(selected.style.bottom, '-1px');
+    assert.equal(foot, undefined, 'the surplus corner painting must not remain');
+});

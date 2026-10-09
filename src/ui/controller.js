@@ -1,36 +1,36 @@
-import { resolveBinding } from '../workflow/connections.js?v=0.22.0';
-import * as workflowRuntime from '../run.js?v=0.22.0';
-import { workflowSignature } from '../workflow/runtime.js?v=0.22.0';
-import { installStarter } from '../workflow/starters.js?v=0.22.0';
-import { operationFor } from '../workflow/catalog.js?v=0.22.0';
-import { isWorkflowGraph } from '../workflow/contracts.js?v=0.22.0';
-import { parseWorkflowInsertionFile, prepareWorkflowInsertion } from '../workflow/insertion.js?v=0.22.0';
-import { captureGraphEditContext } from '../workflow/transactions.js?v=0.22.0';
-import { viewIdentityKey } from './view-state.js?v=0.22.0';
-import { createGraphViewSession } from './graph-view-session.js?v=0.22.0';
-import { prepareNativeNodeEdit, prepareQualifiedScopeEdit, makeLocalCopy, prepareOwnedDefinitionMetadataEdit, prepareQualifiedInstanceUpdate, reconcileOwners } from '../workflow/definition-library.js?v=0.22.0';
-import { ownershipEntries, prunePrivateSnapshots } from '../workflow/composition-edit.js?v=0.22.0';
-import { prepareNativeConnectionEdit } from '../workflow/connection-edits.js?v=0.22.0';
-import { prepareCommentEdit } from '../workflow/comment-edits.js?v=0.22.0';
-import { createCommentFrame, containedCommentNodes, fitCommentFrame, isCommentFrame } from '../canvas/comment-frames.js?v=0.22.0';
-import { captureCommentPresentation, applyCommentPresentation, applyCommentGroupPresentation } from './comment-presentation.js?v=0.22.0';
-import { preparePortalRename, prepareCreateFromSelection, prepareUnpack, prepareQualifiedPortalEdit } from '../workflow/composition.js?v=0.22.0';
-import { prepareGraphCandidate } from '../workflow/prepared-graph-edit.js?v=0.22.0';
-import { definitionRefKey } from '../workflow/definition-data.js?v=0.22.0';
-import { exportSubgraph, parseSubgraph } from '../workflow/packages.js?v=0.22.0';
-import { makeClip, makeDefinitionClip, readClip, prepareClipPaste } from '../workflow/clipboard.js?v=0.22.0';
-import { prepareNativeSearchCatalog, resolveNativeSearchChoice } from './native-search-catalog.js?v=0.22.0';
-import { createNativeWireBridge } from './native-wire-bridge.js?v=0.22.0';
-import { readNodePresentation } from './node-palette.js?v=0.22.0';
-import { prepareWorkspaceViews, prepareLibraryViews, projectEditorDraw, initialWorkspaceCamera, projectWorkspacePanels, projectDefinitionInstance, projectDefinitionUpdate } from './workspace-preparation.js?v=0.22.0';
-import { prepareWorkflowProjection, projectPreparedWorkflow, createWorkflowSession } from './workflow-surface.js?v=0.22.0';
-import { ctx, safe, settings, save, allGraphs, getGraph, createGraph, duplicateGraph, deleteGraph, touchGraph, commitGraphEdit, stepGraphHistory, resolveGraph, exportGraph, importGraph, onGraphTouched, groupMembers } from '../state.js?v=0.22.0';
-import { applyTheme } from '../theme.js?v=0.22.0';
-import { renderThemeEditor } from '../theme-editor.js?v=0.22.0';
-import * as H from '../history.js?v=0.22.0';
-import * as L from '../library.js?v=0.22.0';
-import { Canvas } from '../canvas.js?v=0.22.0';
-import { createWorkbench } from './workbench.js?v=0.22.0';
+import { resolveBinding } from '../workflow/connections.js?v=0.22.1';
+import * as workflowRuntime from '../run.js?v=0.22.1';
+import { workflowSignature } from '../workflow/runtime.js?v=0.22.1';
+import { installStarter } from '../workflow/starters.js?v=0.22.1';
+import { operationFor } from '../workflow/catalog.js?v=0.22.1';
+import { isWorkflowGraph } from '../workflow/contracts.js?v=0.22.1';
+import { parseWorkflowInsertionFile, prepareWorkflowInsertion } from '../workflow/insertion.js?v=0.22.1';
+import { captureGraphEditContext } from '../workflow/transactions.js?v=0.22.1';
+import { viewIdentityKey } from './view-state.js?v=0.22.1';
+import { createGraphViewSession } from './graph-view-session.js?v=0.22.1';
+import { prepareNativeNodeEdit, prepareQualifiedScopeEdit, makeLocalCopy, prepareOwnedDefinitionMetadataEdit, prepareQualifiedInstanceUpdate, reconcileOwners } from '../workflow/definition-library.js?v=0.22.1';
+import { ownershipEntries, prunePrivateSnapshots } from '../workflow/composition-edit.js?v=0.22.1';
+import { prepareNativeConnectionEdit } from '../workflow/connection-edits.js?v=0.22.1';
+import { prepareCommentEdit } from '../workflow/comment-edits.js?v=0.22.1';
+import { createCommentFrame, containedCommentNodes, fitCommentFrame, isCommentFrame } from '../canvas/comment-frames.js?v=0.22.1';
+import { captureCommentPresentation, applyCommentPresentation, applyCommentGroupPresentation } from './comment-presentation.js?v=0.22.1';
+import { preparePortalRename, prepareCreateFromSelection, prepareUnpack, prepareQualifiedPortalEdit } from '../workflow/composition.js?v=0.22.1';
+import { prepareGraphCandidate } from '../workflow/prepared-graph-edit.js?v=0.22.1';
+import { definitionRefKey } from '../workflow/definition-data.js?v=0.22.1';
+import { exportSubgraph, parseSubgraph } from '../workflow/packages.js?v=0.22.1';
+import { makeClip, makeDefinitionClip, readClip, prepareClipPaste } from '../workflow/clipboard.js?v=0.22.1';
+import { prepareNativeSearchCatalog, resolveNativeSearchChoice } from './native-search-catalog.js?v=0.22.1';
+import { createNativeWireBridge } from './native-wire-bridge.js?v=0.22.1';
+import { readNodePresentation } from './node-palette.js?v=0.22.1';
+import { prepareWorkspaceViews, prepareLibraryViews, projectEditorDraw, initialWorkspaceCamera, projectWorkspacePanels, projectDefinitionInstance, projectDefinitionUpdate } from './workspace-preparation.js?v=0.22.1';
+import { prepareWorkflowProjection, projectPreparedWorkflow, createWorkflowSession } from './workflow-surface.js?v=0.22.1';
+import { ctx, safe, settings, save, allGraphs, getGraph, createGraph, duplicateGraph, deleteGraph, touchGraph, commitGraphEdit, stepGraphHistory, resolveGraph, exportGraph, importGraph, onGraphTouched, groupMembers } from '../state.js?v=0.22.1';
+import { applyTheme } from '../theme.js?v=0.22.1';
+import { renderThemeEditor } from '../theme-editor.js?v=0.22.1';
+import * as H from '../history.js?v=0.22.1';
+import * as L from '../library.js?v=0.22.1';
+import { Canvas } from '../canvas.js?v=0.22.1';
+import { createWorkbench } from './workbench.js?v=0.22.1';
 
 let workbench = null;
 let root = null;
@@ -115,10 +115,20 @@ function refreshWorkflowPreparation() {
     if (!current || !workspacePrepared) return;
     workspacePrepared.workflow = prepareWorkflowProjection(current, { ...workspaceInputs(), ...(workspacePrepared.planner ? { planner: workspacePrepared.planner } : {}) });
 }
-function persistGraphViews(flush = false) {
-    if (graphViews) { const result = graphViews.serialize(); if (result.ok) { settings().workspaceViews ??= {}; settings().workspaceViews[graphViews.readRoot().id] = result.data; } }
+function persistGraphViews(flush = false, deferSerialization = false) {
     clearTimeout(viewSaveTimer);
-    if (flush) save(); else viewSaveTimer = setTimeout(() => save(), 180);
+    const snapshot = () => {
+        if (graphViews) { const result = graphViews.serialize(); if (result.ok) { settings().workspaceViews ??= {}; settings().workspaceViews[graphViews.readRoot().id] = result.data; } }
+    };
+    // Explicit presentation edits/history must publish their saved snapshot in
+    // the same turn. Only live camera and selection bursts defer that work.
+    if (!deferSerialization) snapshot();
+    const persist = () => {
+        viewSaveTimer = null;
+        if (deferSerialization) snapshot();
+        save();
+    };
+    if (flush) persist(); else viewSaveTimer = setTimeout(persist, 180);
 }
 function prepareWorkspaceDocument() {
     const result = prepareWorkspaceViews(current, workspaceInputs());
@@ -177,6 +187,7 @@ function refreshWorkspaceDocument() {
 }
 function navigateGraphView(action, ...args) {
     if (!graphViews) return;
+    canvas?.cancelGesture(); persistGraphViews(true);
     const result = graphViews[action](...args);
     if (!result.ok) return toast(result.error.message, 'error');
     activateEditorDraw(); persistGraphViews();
@@ -299,12 +310,12 @@ export function open() {
 export function close() {
     cancelImportReview(); document.removeEventListener('pc-native-result', receiveAutomaticWorkflow);
     documentTransition = true; workflowSession.cancel('Workflow view closed'); documentTransition = false;
-    persistGraphViews(true); graphViews?.deactivate(); graphViews = null; rootRunEpoch++; uiEpoch++;
-    nativeWireBridge?.cancel('view-close'); canvas?.cancelGesture(); root?.classList.remove('pc-open');
+    canvas?.cancelGesture(); persistGraphViews(true); graphViews?.deactivate(); graphViews = null; rootRunEpoch++; uiEpoch++;
+    nativeWireBridge?.cancel('view-close'); root?.classList.remove('pc-open');
 }
 export function toggle() { isOpen() ? close() : open(); }
 function setCanvasGraph() {
-    persistGraphViews(true); const initializeCamera = !settings().workspaceViews?.[current.id] && (!current.view || current.view.x === 0 && current.view.y === 0 && current.view.zoom === 1);
+    canvas?.cancelGesture(); persistGraphViews(true); const initializeCamera = !settings().workspaceViews?.[current.id] && (!current.view || current.view.x === 0 && current.view.y === 0 && current.view.zoom === 1);
     graphViews?.deactivate(); graphViews = null; workspacePrepared = null; editorDraw = null; rootRunEpoch++;
     documentTransition = true; workflowSession.cancel('Workflow graph changed'); documentTransition = false;
     uiEpoch++; selected = null; selectedKind = null; pinnedPreview = null; selectedPreview = null;
@@ -346,7 +357,7 @@ function build() {
             return commands[name]?.();
         },
         mode: mode => canvas.setMode(mode), zoom: factor => { const rect = canvas.host.getBoundingClientRect(); canvas.zoomBy(factor, rect.left + rect.width / 2, rect.top + rect.height / 2); }, fitSelection: () => canvas.fitSelection(),
-        resizeStart: () => canvas?.cancelGesture(), addNode: workflowActions.addNode,
+        resizeStart: () => canvas?.cancelGesture(), resizeDetails, addNode: workflowActions.addNode,
         workflowSetup: workflowActions, graphViewActions, nodeDetails: nodeDetailsActions, commentDetails: commentDetailsActions, outputPreview: outputPreviewActions, runDetails: runDetailsActions,
         chooseNative: chooseNativeNode, managePortals: () => openPortalManager(), manageSubgraphs: () => openSubgraphManager(),
         acceptImport: acceptImportReview, cancelImport: cancelImportReview, prepareImportAgain,
@@ -361,14 +372,13 @@ function build() {
     document.addEventListener('pc-theme', () => { if (canvas && isOpen()) { updateWorkflowProjection(); canvas.render(); } });
     canvas = new Canvas(workbench.parts.canvasHost, {
         onSelect(item, kind) {
-            selected = item; selectedKind = kind;
+            selected = canvas.multi.size > 1 ? [...canvas.multi] : item; selectedKind = canvas.multi.size > 1 ? 'multi' : kind;
             if (graphViews && !restoringEditor) { selectedPreview = null; const primary = item && kind ? { kind, id: item.id } : null;
-                graphViews.updateView({ selection: { primary, multi: [...canvas.multi] }, inspector: { ...graphViews.readEditor().view.inspector, item: primary } }); persistGraphViews(); updateWorkflowProjection(); }
+                graphViews.updateView({ selection: { primary, multi: [...canvas.multi] }, inspector: { ...graphViews.readEditor().view.inspector, item: primary } }); persistGraphViews(false, true); updateWorkflowProjection(); }
             updateSelectionCount();
         },
-        onView(camera) { workbench.update({ camera }); if (graphViews && !restoringEditor) { graphViews.updateView({ camera: { x: camera.x, y: camera.y, zoom: camera.zoom } }); persistGraphViews(); } },
-        onMulti(ids) { if (graphViews && !restoringEditor) { graphViews.updateView({ selection: { primary: canvas.selection, multi: [...ids] } }); persistGraphViews(); }
-            if (ids.length > 1) { selected = ids; selectedKind = 'multi'; } else if (selectedKind === 'multi') { selected = null; selectedKind = null; } updateWorkflowProjection(); updateSelectionCount(); },
+        onView(camera) { workbench.update({ camera }); if (graphViews && !restoringEditor) { graphViews.updateView({ camera: { x: camera.x, y: camera.y, zoom: camera.zoom } }); persistGraphViews(false, true); } },
+        onViewCommit: () => persistGraphViews(true),
         onOpen(node) { if (graphViews && node.type === 'subgraph') { const editor = graphViews.readEditor(); return editor.view.identity.kind === 'library' ? navigateGraphView('openLibrary', node.definition) : navigateGraphView('openInstance', [...(editor.view.identity.instancePath ?? []), node.id]); } showSettings({ kind: 'node', id: node.id }); },
         onToast: message => toast(message, 'error'), onReveal: showSettings,
         onHostResult(node) { showSettings({ kind: 'node', id: node.id }); workbench.revealPreview(); },
@@ -473,7 +483,12 @@ function completePositionEdit(ids, groupIds = []) {
     for (const [id, frame] of Object.entries(groups)) groupPresentation[id] = { ...groupPresentation[id], ...frame };
     const updated = graphViews.updateView({ nodePresentation, groupPresentation }); if (updated.ok) persistGraphViews(); return updated.ok;
 }
-function syncPaneToggles() { workbench.update({ inspectorOpen: !root.classList.contains('pc-details-hidden') }); }
+function resizeDetails(width) {
+    if (!graphViews || !Number.isFinite(width) || width < 220 || width > 520) return;
+    const editor = graphViews.readEditor(), result = graphViews.updateView({ inspector: { ...editor.view.inspector, width: Math.round(width) } });
+    if (result.ok) { persistGraphViews(); syncPaneToggles(); }
+}
+function syncPaneToggles() { workbench.update({ inspectorOpen: !root.classList.contains('pc-details-hidden'), detailsWidth: graphViews?.readEditor().view.inspector.width ?? 258 }); }
 function revealNarrowDetails() { if (window.innerWidth < 860 && !root.classList.contains('pc-details-hidden')) workbench.parts.inspector.scrollIntoView?.({ block: 'nearest' }); }
 function updateSelectionCount() {
     const editor = graphViews?.readEditor(), graph = editor?.prepared.savedGraph, pick = currentPick(), selection = canvas?.selection;
@@ -717,7 +732,6 @@ function onImportGraph() {
     input.click();
 }
 
-async function okToDelete(what) { return settings().ui?.confirmDelete === false || await confirmBox('Delete ' + what + '?'); }
 function duplicateSelected(node) {
     const token = captureEditor(); if (!token.ok) return token; const fragment = clipForPick({ nodeIds: [node.id] }); if (!fragment.ok) return fragment;
     return commitCaptured(token.data, prepareClipPaste(current, fragment.data, { at: { x: node.x + 28, y: node.y + 28 }, viewPath: scopeCommand(token.data).viewPath }));
@@ -1002,8 +1016,8 @@ function deleteNativeSelection(selection, existingToken = null) {
     const ids=selection?.kind === 'node' ? [selection.id] : ['nodes','multi'].includes(selection?.kind) ? selection.ids : selection?.kind === 'group' ? Object.values(editorDraw.nodes).filter(node=>node.inGroup===selection.id || editorDraw.groups?.[selection.id]?.members?.includes(node.id)).map(node=>node.id) : [...canvas.multi];
     if (!ids?.length && !(selection?.kind === 'group' && editorDraw.groups?.[selection.id])) return Promise.resolve(false);
     const groupIds = selection?.kind === 'group' ? [selection.id] : selection?.groupIds ?? [];
-    return Promise.resolve(okToDelete(ids.length === 1 ? editorDraw.nodes[ids[0]]?.title || ids[0] : 'these ' + ids.length + ' nodes')).then(approved => {
-        if (!approved || !editorCurrent(captured.data)) return false;
+    if (!editorCurrent(captured.data)) return Promise.resolve(false);
+    const remove = () => {
         if (!groupIds.length && ids.length && ids.every(id => isCommentFrame(editorDraw.nodes[id]))) {
             return commitCaptured(captured.data, prepareCommentEdit(current, { kind: 'delete-batch', nodeIds: ids, ...scopeCommand(captured.data) })).ok;
         }
@@ -1025,7 +1039,8 @@ function deleteNativeSelection(selection, existingToken = null) {
             return { ok: true, data: {} };
         });
         return commitCaptured(captured.data, prepared).ok;
-    });
+    };
+    return Promise.resolve(remove());
 }
 function managerScope(editor) { return editor.view.identity.kind === 'library' ? {kind:'library',definitionRef:editor.prepared.definitionRef} : {kind:'graph',workflowId:current.id,instancePath:[...(editor.view.identity.instancePath ?? [])],...(editor.prepared.definitionRef ? {definitionRef:editor.prepared.definitionRef} : {})}; }
 function managerOwner(kind) { const capture=captureEditor(true);if(!capture.ok)return null;const editor=graphViews.readEditor();return {kind,token:capture.data,key:kind+':'+editor.view.key,revision:graphViews.readEditContext().sessionId+':'+workspaceRevision,scope:managerScope(editor),libraryRevision:String(libraryRevision)}; }

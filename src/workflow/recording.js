@@ -1,5 +1,5 @@
-import { createRunState, reduceRunState } from './run-state.js?v=0.22.0';
-import { addressKey, nodeAddress, own, plain, dense, parseRunPlan, freeze, encode, bytes, textBytes, boundedText, safeSource, safeBinding, safeError, safeUsage, errorResult, successResult, TOTAL_RECORD_BYTES, ARTIFACT_RECORD_BYTES, RENDERED_TEXT_BYTES } from './record-data.js?v=0.22.0';
+import { createRunState, reduceRunState } from './run-state.js?v=0.22.1';
+import { addressKey, nodeAddress, own, plain, dense, parseRunPlan, freeze, encode, bytes, textBytes, boundedText, safeSource, safeBinding, safeError, safeUsage, errorResult, successResult, TOTAL_RECORD_BYTES, ARTIFACT_RECORD_BYTES, RENDERED_TEXT_BYTES } from './record-data.js?v=0.22.1';
 
 export { TOTAL_RECORD_BYTES, ARTIFACT_RECORD_BYTES, RENDERED_TEXT_BYTES };
 /** @template T @typedef {{ok:true,data:T}|{ok:false,error:{code:string,message:string}}} Result */

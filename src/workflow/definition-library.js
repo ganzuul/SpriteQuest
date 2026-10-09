@@ -1,11 +1,11 @@
-import { cloneDefinitionData, computeDefinitionIdentity, definitionRefKey, describeExposedParameter, nodeBindingOverrideKey, validateDefinition } from './definitions.js?v=0.22.0';
-import { safeWorkflowData, validateGraphStructure } from './contracts.js?v=0.22.0';
-import { cloneWorkflowDocument } from './document.js?v=0.22.0';
-import { ARTIFACT_KINDS, describeOperation, operationFor } from './catalog.js?v=0.22.0';
-import { applyDeclaredNodeControlChange, graphDocumentSignature } from './ports.js?v=0.22.0';
-import { selectSubgraphClosure } from './packages.js?v=0.22.0';
-import { prepareGraphCandidate } from './prepared-graph-edit.js?v=0.22.0';
-import { compositionIds, definitionChain, ownershipEntries, ownsDefinitionPath, samePath, safeId, prunePrivateSnapshots } from './composition-edit.js?v=0.22.0';
+import { cloneDefinitionData, computeDefinitionIdentity, definitionRefKey, describeExposedParameter, nodeBindingOverrideKey, validateDefinition } from './definitions.js?v=0.22.1';
+import { safeWorkflowData, validateGraphStructure } from './contracts.js?v=0.22.1';
+import { cloneWorkflowDocument } from './document.js?v=0.22.1';
+import { ARTIFACT_KINDS, describeOperation, operationFor } from './catalog.js?v=0.22.1';
+import { applyDeclaredNodeControlChange, graphDocumentSignature } from './ports.js?v=0.22.1';
+import { selectSubgraphClosure } from './packages.js?v=0.22.1';
+import { prepareGraphCandidate } from './prepared-graph-edit.js?v=0.22.1';
+import { compositionIds, definitionChain, ownershipEntries, ownsDefinitionPath, samePath, safeId, prunePrivateSnapshots } from './composition-edit.js?v=0.22.1';
 
 const fail = (code, message) => ({ ok: false, error: { code, message } });
 const record = value => value !== null && typeof value === 'object' && !Array.isArray(value);

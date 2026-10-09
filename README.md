@@ -77,7 +77,7 @@ Transpose is a visible shelf family with no supported operation yet. Nodes have 
 
 1. In SillyTavern, open **Extensions → Install extension**.
 2. Enter `https://github.com/MentallyQuill/Lattice`, leaving the branch field blank to install `main`.
-3. Install, then reload SillyTavern. Open LATTICE from the button beside Send or with `/lattice`. Fresh launch selects **Structured guidance**, with workflows disabled and no phase assigned.
+3. Install, then reload SillyTavern. Open LATTICE from its logo on the left of the chat bar or with `/lattice`. Fresh launch selects **Structured guidance**, with workflows disabled and no phase assigned.
 4. Try the selected zero-call graph, or open **Workflows → Workflow examples…** and install another starter.
 5. Configure any model roles, click **Run**, and inspect the recorded results. Assign a phase and arm only when you want integration with normal sends.
 

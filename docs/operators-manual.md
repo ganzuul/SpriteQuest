@@ -44,7 +44,7 @@ The workflow bar reports phase, assignment, request bound, and autosave. Selecti
 
 ## Start from a working example
 
-1. Open LATTICE beside Send or type `/lattice`.
+1. Open the LATTICE logo on the left of the chat bar or type `/lattice`.
 2. Open **Setup**, or **Workflows → Workflow examples…**.
 3. Install **Structured guidance** for a model-free graph without needing an existing reply.
 4. Close setup and click **Run**.
@@ -72,7 +72,7 @@ The shelf groups tools into **Input, Shaping, Surface, Transpose, Derive, Output
 
 *The shelf provides families, categories, operation names, and short codes. Phase-incompatible choices are disabled.*
 
-Choose **Node → Add node…**, double-click empty graph space, or use the empty-space context menu to search. Search includes node names, purposes, aliases, and installed subgraphs.
+Choose **Node → Add node…**, double-click empty graph space, or right-click empty graph space to search. Search includes node names, purposes, aliases, and installed subgraphs. Click outside the search panel or press Escape to close it.
 
 ![Contextual node search over the graph editor with a search field and available node choices](images/node-search.png)
 
@@ -96,7 +96,7 @@ Drag a card by its body to move it. Drag a rectangle on empty space to select in
 
 Use **Graph → Fit to view** or **Fit selection** to recover your position. Select/Pan and zoom commands are also in the Graph menu. Keyboard shortcuts are listed at the end of this manual.
 
-Use **Details** to show or hide the right panel. Drag the divider between Preview and the graph to resize them; its arrow keys also adjust it. **Collapse preview** provides more graph space. Reopening Preview restores the selected output.
+Use **Details** to show or hide the right panel. Drag its left-edge handle to adjust its width. Drag the divider between Preview and the graph to resize them; both handles also respond to arrow keys. **Collapse preview** provides more graph space. Reopening Preview restores the selected output.
 
 Edits participate in undo/redo. Text fields keep normal browser editing shortcuts. JSON and line-list editors retain drafts until their **Save …** action validates them; autosave does not commit an unfinished editor draft.
 
@@ -288,7 +288,7 @@ The current operations provide bounded host context, text/data processing, plann
 | F2 on selected node | Rename its presentation alias |
 | Click wire | Select a connection |
 | Shift/Ctrl-click wire | Extend connection selection |
-| Delete/Backspace | Delete selected connections outside an editor |
+| Delete/Backspace | Immediately delete selected nodes or connections outside an editor; Undo restores them |
 | Alt-click wire / pin | Disconnect the wire / pin's attached bindings |
 | Ctrl-drag connected input | Move its binding to another compatible input |
 | Ctrl-drag output | Move its consumers to another compatible output |

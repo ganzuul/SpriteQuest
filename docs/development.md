@@ -33,6 +33,8 @@ Use `node tools/bump-version.mjs <version>` for release metadata and versioned i
 
 `npm run smoke:install` checks an installed asset copy without developer source or `node_modules`. `npm run benchmark` measures camera and drag rendering on synthetic graphs. `npm run capture` records general renderer visuals in ignored development output.
 
+`node tools/profile-workspace-interactions.mjs --label=final` measures pan, zoom, drag, and selection in the full mounted workspace on 25, 100, and 250-node fixtures. `--source=<checkout>` profiles an existing build for a matched comparison. Timings include instrumentation overhead; use the operation counts alongside them. `node tools/capture-interaction-polish.mjs` captures the search, Details handle, shelf scrolling, pin feedback, and left chat-bar logo using synthetic data. Both tools block provider requests and write ignored evidence under `benchmark-results/`.
+
 ## Reproduce documentation screenshots
 
 ```powershell

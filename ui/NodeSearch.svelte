@@ -51,23 +51,27 @@
     function keydown(event: KeyboardEvent) {
         event.stopPropagation(); // Keep Canvas Delete/Space/Ctrl shortcuts out of text editing.
         if (event.key === 'Escape') { event.preventDefault(); actions.dismiss?.(); return; }
-        if (event.key === 'Enter' && (event.target as HTMLElement)?.closest('[data-search-close]')) { event.preventDefault(); actions.dismiss?.(); return; }
         if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
             event.preventDefault();
             active = event.key === 'Home' ? 0 : event.key === 'End' ? Math.max(0, enabled.length - 1)
                 : enabled.length ? (active + (event.key === 'ArrowDown' ? 1 : -1) + enabled.length) % enabled.length : 0;
         } else if (event.key === 'Enter') { event.preventDefault(); choose(selected); }
     }
+    $effect(() => {
+        if (!view) return;
+        const outside = (event: PointerEvent) => { if (popup && !popup.contains(event.target as Node)) actions.dismiss?.(); };
+        window.addEventListener('pointerdown', outside, true);
+        return () => window.removeEventListener('pointerdown', outside, true);
+    });
 </script>
 
 <svelte:window onresize={clamp} />
 {#if view}
 <div class="pc-node-search" role="dialog" aria-label={view.mode === 'ports' ? 'Choose connection port' : 'Add node'} aria-modal="false" tabindex="-1" bind:this={popup} onkeydown={keydown} style:left="{left}px" style:top="{top}px">
-    <div class="pc-popup-head"><h2>{view.mode === 'ports' ? 'Choose a port' : 'Add node'}</h2><button type="button" data-search-close onclick={() => actions.dismiss?.()}>Close</button></div>
     {#if view.mode === 'nodes'}
-        <label class="pc-search-field"><span>Search nodes and subgraphs</span><input type="search" placeholder="Search…" autocomplete="off" bind:this={input} bind:value={query} oninput={() => active = 0} role="combobox" aria-expanded="true" aria-controls={uid + '-results'} aria-activedescendant={selected ? uid + '-item-' + items.indexOf(selected) : undefined} /></label>
+        <label class="pc-search-field"><input type="search" aria-label="Search nodes and subgraphs" placeholder="Search…" autocomplete="off" bind:this={input} bind:value={query} oninput={() => active = 0} role="combobox" aria-expanded="true" aria-controls={uid + '-results'} aria-activedescendant={selected ? uid + '-item-' + items.indexOf(selected) : undefined} /></label>
         {#if view.origin}<label class="pc-context-check"><input type="checkbox" checked={view.contextSensitive} disabled={view.readOnly} onchange={contextChanged} />Context sensitive</label>{/if}
-        <span class="pc-search-context">{view.origin ? (view.origin.dir === 'out' ? 'Accepts ' : 'Produces ') + view.origin.kind : 'All nodes and subgraphs'}</span>
+        {#if view.origin}<span class="pc-search-context">{(view.origin.dir === 'out' ? 'Accepts ' : 'Produces ') + view.origin.kind}</span>{/if}
     {:else}<p class="pc-search-context">Choose the named port to connect.</p>{/if}
     <div class="pc-search-results" id={uid + '-results'} role="listbox" aria-label={view.mode === 'ports' ? 'Compatible ports' : 'Nodes and subgraphs'}>
         {#each items as item (itemId(item))}
@@ -82,16 +86,12 @@
 
 <style>
     .pc-node-search { position: fixed; z-index: 12; width: 284px; max-width: calc(100vw - 16px); max-height: calc(100vh - 16px); overflow: auto; box-sizing: border-box; padding: 9px; background: #222321; color: #deded9; border: 1px solid #41433b; border-radius: 4px; box-shadow: inset 1px 1px 0 #ffffff08, inset -1px -1px 0 #00000045, 0 8px 28px #0005; font: 400 14px/1.4 system-ui, sans-serif; }
-    .pc-popup-head { display: flex; align-items: center; gap: 8px; margin-bottom: 9px; }
-    h2 { margin: 0 auto 0 0; font-size: 14px; font-weight: 400; }
     button, input { font: inherit; color: inherit; box-sizing: border-box; border-radius: 2px; }
     button { background: transparent; border: 0; padding: 6px 9px; cursor: pointer; }
-    .pc-popup-head button { font-size: 12px; box-shadow: inset 1px 1px 0 #ffffff06, inset -1px -1px 0 #00000035; }
     button:hover:enabled, button[aria-selected="true"]:enabled { background: #353632; }
     button:disabled { opacity: .55; cursor: default; }
     button:focus-visible, input:focus-visible { outline: 2px solid var(--SmartThemeQuoteColor, #e18a24); outline-offset: 1px; }
-    .pc-search-field { display: block; margin-top: 9px; font-size: 12px; }
-    .pc-search-field > span { display: block; margin-bottom: 5px; }
+    .pc-search-field { display: block; margin: 0; font-size: 12px; }
     input[type="search"] { width: 100%; min-width: 0; background: #1d1e1d; border: 1px solid #3a3c35; padding: 7px 8px; box-shadow: inset 1px 1px 0 #ffffff06, inset -1px -1px 0 #00000035; }
     .pc-context-check { display: flex; align-items: center; gap: 7px; margin-top: 9px; min-height: 24px; font-size: 12px; }
     input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--SmartThemeQuoteColor, #e18a24); }

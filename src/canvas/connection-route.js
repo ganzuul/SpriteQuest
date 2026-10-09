@@ -42,9 +42,22 @@ function routeLabel(segments) {
 }
 
 /**
- * Direct graph-space spline shared by settled wires, hit targets and drag previews.
+ * A free pointer has no arrival pin. Keep its preview to one source-anchored
+ * cubic, with a horizontal departure that grows with the pull distance. Giving
+ * the cursor a pin neck would create a returning bow while it is near the source.
+ */
+export function buildDragConnectionRoute(origin, pointer) {
+    const start = { x: origin.x, y: origin.y }, end = { x: pointer.x, y: pointer.y };
+    const direction = origin.side === 'left' ? -1 : 1;
+    const handle = Math.min(100, Math.hypot(end.x - start.x, end.y - start.y) * 0.4);
+    const points = [start, offset(start, direction * handle), end, end];
+    return { d: `M ${pointText(start)} C ${points.slice(1).map(pointText).join(' ')}` };
+}
+
+/**
+ * Direct graph-space spline shared by settled wires and hit targets.
  * Endpoints have finite x/y and side: 'left' | 'right'. Omitted sides default to
- * source-right and target-left, including ghost endpoints. No card bounds required.
+ * source-right and target-left. No card bounds required.
  * Short horizontal necks clear the usual 12px pin inset; returning paths bow locally
  * and may pass behind cards. This helper does not perform obstacle routing.
  * @param {{x: number, y: number, side?: string}} from

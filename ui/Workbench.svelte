@@ -2,6 +2,7 @@
     import { onMount, tick } from 'svelte';
     import Toolbar from './Toolbar.svelte';
     import PaneDivider from './PaneDivider.svelte';
+    import DetailsDivider from './DetailsDivider.svelte';
     import GraphTabs from './GraphTabs.svelte';
     import GraphBreadcrumbs from './GraphBreadcrumbs.svelte';
     import NodeDetails from './NodeDetails.svelte';
@@ -19,7 +20,7 @@
     import type { WorkbenchView, WorkbenchActions } from './types';
     let { actions }: { actions: WorkbenchActions } = $props();
     let view = $state.raw<WorkbenchView>({ graphs: [], graphId: '', armed: false, inspectorOpen: true, history: { undo: false, redo: false, undoTitle: 'Nothing to undo', redoTitle: 'Nothing to redo', note: '', showNote: false }, camera: { x: 0, y: 0, zoom: 1, mode: 'select' }, selectionCount: 0 });
-    let root: HTMLDivElement, canvasHost: HTMLDivElement, stage: HTMLDivElement, inspector: HTMLDivElement;
+    let root: HTMLDivElement, body: HTMLDivElement, canvasHost: HTMLDivElement, stage: HTMLDivElement, inspector: HTMLDivElement;
     let toolbar: { focusGraphSelect(): void; getParts(): { header: HTMLElement; graphSelect: HTMLSelectElement; arm: HTMLInputElement; inspBtn: HTMLButtonElement } };
     export function getParts() { return { root, parts: { ...toolbar.getParts(), inspector, canvasHost } }; }
     export function updateActions(value: Partial<WorkbenchActions>) { actions = { ...actions, ...value }; }
@@ -35,6 +36,9 @@
     function savedPane() { try { const data = JSON.parse(localStorage.getItem(storageKey) || 'null'); return { height: Number.isFinite(data?.height) ? Math.max(90, Math.min(600, data.height)) : 240, collapsed: data?.collapsed === true }; } catch { return { height: 240, collapsed: false }; } }
     const initial = savedPane();
     let previewHeight = $state(initial.height), collapsed = $state(initial.collapsed), maxHeight = $state(500);
+    let detailsDraft = $state<number | null>(null), detailsMax = $state(520);
+    let detailsWidth = $derived(Math.max(220, Math.min(detailsMax, detailsDraft ?? view.detailsWidth ?? 258)));
+    function commitDetails(width: number) { detailsDraft = null; view = { ...view, detailsWidth: width }; actions.resizeDetails?.(width); }
     let overlay = $state('');
     let dialog = $state<HTMLDivElement>(null!);
     let overlayAnchor: HTMLElement | null = null;
@@ -75,17 +79,17 @@
         }
     }
     onMount(() => {
-        const measure = () => { maxHeight = Math.max(90, stage.clientHeight - 190); };
+        const measure = () => { maxHeight = Math.max(90, stage.clientHeight - 190); detailsMax = Math.max(220, Math.min(520, (body.clientWidth || root.clientWidth || window.innerWidth) - 368)); };
         const Resize = globalThis.ResizeObserver;
         if (!Resize) { measure(); window.addEventListener('resize', measure); return () => window.removeEventListener('resize', measure); }
         const observer = new Resize(measure);
-        observer.observe(stage); return () => observer.disconnect();
+        observer.observe(stage); observer.observe(body); measure(); return () => observer.disconnect();
     });
 </script>
-<div class="pc-root pc-native-workspace" class:pc-native-flat={view.nativeFlatCanvas} role="dialog" aria-modal="true" aria-label="Lattice" data-pc-workbench="svelte" bind:this={root}>
+<div class="pc-root pc-native-workspace" class:pc-native-flat={view.nativeFlatCanvas} role="dialog" aria-modal="true" aria-label="Lattice" data-pc-workbench="svelte" style:--pc-details-width={`${detailsWidth}px`} bind:this={root}>
     <Toolbar state={view} {actions} {local} bind:this={toolbar} />
     <!-- svelte-ignore a11y_no_noninteractive_tabindex (Keyboard users need to scroll the stacked canvas and Details panels.) -->
-    <div class="pc-body" role="region" aria-label="Workspace panels" tabindex="0">
+    <div class="pc-body" role="region" aria-label="Workspace panels" tabindex="0" bind:this={body}>
         <div class="pc-stage" bind:this={stage}>
             <section class="pc-preview-pane" class:pc-preview-collapsed={collapsed} aria-label="Output preview" style:--pc-preview-height={`${Math.min(previewHeight, maxHeight)}px`}>
                 <header class="pc-preview-pane-head"><strong>Preview</strong><button type="button" class="pc-btn menu_button" aria-expanded={!collapsed} onclick={() => collapse(!collapsed)}>{collapsed ? 'Expand preview' : 'Collapse preview'}</button></header>
@@ -103,6 +107,7 @@
                 <NodeShelf view={view.workflow} choices={view.nativeChoices} choose={actions.chooseNative} manageSubgraphs={actions.manageSubgraphs} readOnly={view.readOnly} add={(id) => actions.addNode?.(id)} bind:this={shelf} />
             </div>
         </div>
+        {#if view.inspectorOpen}{#key view.graphViews?.active.key ?? view.graphId}<DetailsDivider width={detailsWidth} max={detailsMax} start={resizeStart} preview={(width) => detailsDraft = width} change={commitDetails} />{/key}{/if}
         <div class="pc-inspector pc-workspace-details" hidden={!view.inspectorOpen} bind:this={inspector}>
             <header class="pc-details-heading"><strong>Details</strong><button type="button" onclick={() => actions.managePortals?.()}>Portals</button><button type="button" onclick={() => actions.manageSubgraphs?.()}>Subgraphs</button></header>
             {#if view.commentDetails}
@@ -128,7 +133,7 @@
 
 <style>
     .pc-manager-dialog { max-height: calc(100% - 24px); max-width: calc(100% - 24px); overflow: auto; border-radius: 4px; }
-    .pc-workspace-details { flex: 0 0 258px; width: 258px; min-width: 0; overflow: auto; border-left: 1px solid var(--pc-border); background: var(--pc-panel); }
+    .pc-workspace-details { flex: 0 0 var(--pc-details-width, 258px); width: var(--pc-details-width, 258px); min-width: 0; overflow: auto; border-left: 1px solid var(--pc-border); background: var(--pc-panel); }
     .pc-details-heading { display: flex; align-items: center; gap: 5px; padding: 8px 12px; font-size: 11px; border-bottom: 1px solid var(--pc-border); }
     .pc-details-heading strong { margin-right: auto; } .pc-details-heading button { padding: 3px 5px; border: 1px solid var(--pc-border); border-radius: 2px; background: var(--pc-block); color: inherit; font: inherit; font-size: 10px; }
     .pc-workspace-run { position: absolute; left: 14px; bottom: 13px; z-index: 20; }
@@ -144,10 +149,9 @@
     .pc-native-workspace.pc-native-workspace :global(.pc-graph-tab[aria-selected="true"]) { color: var(--pc-flow); border-color: var(--pc-flow); background: var(--pc-canvas); }
     .pc-native-workspace :global(.pc-graph-tab-list) { padding: 0 6px 3px 0; margin-bottom: -3px; }
     .pc-native-workspace :global(.pc-graph-tab[aria-selected="true"]::after) { background: var(--pc-canvas); border-color: var(--pc-flow); }
-    .pc-native-workspace :global(.pc-graph-tab[aria-selected="true"]::before) { border-color: var(--pc-flow); }
     .pc-native-workspace :global(.pc-graph-location) { position: absolute; top: 0; left: 0; right: 0; z-index: 5; }
     .pc-native-workspace :global(.pc-canvas-host) { border-radius: 4px; }
-    .pc-native-workspace :global(.pc-inspector) { box-sizing: border-box; flex-basis: 258px; width: 258px; padding: 0; position: static; }
+    .pc-native-workspace :global(.pc-inspector) { box-sizing: border-box; flex-basis: var(--pc-details-width, 258px); width: var(--pc-details-width, 258px); padding: 0; position: static; }
     .pc-native-workspace :global(.pc-node-native) { background: var(--pc-block); border-radius: 4px; }
     .pc-native-workspace :global(.pc-family-input .pc-native-heading), .pc-native-workspace :global(.pc-family-input .pc-native-alias) { color: #96ad52; }
     .pc-native-workspace :global(.pc-family-shaping .pc-native-heading), .pc-native-workspace :global(.pc-family-shaping .pc-native-alias) { color: #589aab; }

@@ -6,7 +6,7 @@ Begin with two working examples that use no model calls. One assembles a structu
 
 ## Open the workspace
 
-Install from `https://github.com/MentallyQuill/Lattice` in SillyTavern's **Extensions → Install extension**, leaving the branch field blank. Reload, then open LATTICE beside Send or type `/lattice`.
+Install from `https://github.com/MentallyQuill/Lattice` in SillyTavern's **Extensions → Install extension**, leaving the branch field blank. Reload, then open the LATTICE logo on the left of the chat bar or type `/lattice`.
 
 Fresh launch opens **Structured guidance**, with workflows disabled and no phase assigned. Use **Workflows → Workflow examples…** to install another copy or a different example. Opening, installing, or importing makes no provider request.
 

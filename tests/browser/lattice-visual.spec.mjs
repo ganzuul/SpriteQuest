@@ -98,7 +98,7 @@ test('approved floating shelf retains aligned purpose drawers and quiet shortcod
     const leaf = page.locator('.pc-leaf-menu');
     await expect(leaf).toBeVisible();
     const [button, drawer, submenu] = await Promise.all([family.boundingBox(), page.locator('.pc-family-menu').boundingBox(), leaf.boundingBox()]);
-    expect(button.width).toBe(110); expect(button.height).toBe(43);
+    expect(button.width).toBe(110); expect(button.height).toBe(28);
     expect(drawer.width).toBe(155); expect(submenu.width).toBe(250);
     expect(drawer.x - button.x - button.width).toBeCloseTo(3, 0);
     expect(drawer.y).toBeCloseTo(button.y, 0);

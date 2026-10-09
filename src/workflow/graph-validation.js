@@ -1,6 +1,6 @@
-import { ARTIFACT_KINDS, operationFor, describeOperation, portsForNode } from './catalog.js?v=0.22.0';
-import { cloneDefinitionData, computeDefinitionIdentity, definitionRefKey, inspectDefinitionMetadata, describeExposedParameter, nodeBindingOverrideKey, artifactAddressKey } from './definition-data.js?v=0.22.0';
-import { samePath, safeId } from './composition-edit.js?v=0.22.0';
+import { ARTIFACT_KINDS, operationFor, describeOperation, portsForNode } from './catalog.js?v=0.22.1';
+import { cloneDefinitionData, computeDefinitionIdentity, definitionRefKey, inspectDefinitionMetadata, describeExposedParameter, nodeBindingOverrideKey, artifactAddressKey } from './definition-data.js?v=0.22.1';
+import { samePath, safeId } from './composition-edit.js?v=0.22.1';
 
 const record = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 const idText = value => typeof value === 'string' && value.length > 0;
