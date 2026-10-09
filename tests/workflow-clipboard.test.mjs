@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { computeDefinitionIdentity, definitionRefKey } from '../src/workflow/definitions.js';
+import { computeDefinitionIdentity, definitionRefKey, nodeBindingOverrideKey } from '../src/workflow/definitions.js';
+import { inspectExpandedGraph } from '../src/workflow/graph-validation.js';
+import { makeLocalCopy } from '../src/workflow/definition-library.js';
+import { siblingWorkflow, nestedWorkflow } from './fixtures/workflow-prepared-fixture.mjs';
 
 let clipboard;
 try { clipboard = await import('../src/workflow/clipboard.js'); } catch { clipboard = {}; }
@@ -79,4 +82,80 @@ test('unsafe clipboard objects reject without getter execution or recipient muta
     let reads = 0; const hostile = { get kind() { reads++; throw new Error('Do not inspect'); } }, destination = graph(), before = structuredClone(destination);
     assert.equal(clipboard.readClip(hostile).ok, false); assert.equal(clipboard.prepareClipPaste(destination, hostile).ok, false);
     assert.equal(clipboard.makeClip(hostile, { nodeIds: ['source'] }).ok, false); assert.equal(reads, 0); assert.deepEqual(destination, before);
+});
+
+test('wrapper clips preserve inherited effective bindings through exact nested closures and conflicting destinations', () => {
+    for (const source of [siblingWorkflow(), nestedWorkflow()]) {
+        source.roles = { Analysis: { profileId: 'root-profile', model: 'root-model' } };
+        source.nodes['first/path'].roleOverrides = { Analysis: { model: 'instance-model' } };
+        const before = structuredClone(source), clip = clipboard.makeClip(source, { nodeIds: ['first/path', 'second'] });
+        assert.equal(clip.ok, true, JSON.stringify(clip));
+        const copied = inspectExpandedGraph(clip.data.graph); assert.equal(copied.ok, true, JSON.stringify(copied));
+        assert.deepEqual(copied.data.primitives.map(unit => [unit.address.instancePath[0], unit.node.model]), [['first/path', 'instance-model'], ['second', 'root-model']]);
+        assert.ok(copied.data.primitives.every(unit => unit.node.profileId === null));
+        const destination = graph(); destination.roles.Analysis = { profileId: 'destination-profile', model: 'destination-model' };
+        const pasted = clipboard.prepareClipPaste(destination, clip.data); assert.equal(pasted.ok, true, JSON.stringify(pasted));
+        const expanded = inspectExpandedGraph(pasted.data.candidate); assert.equal(expanded.ok, true);
+        const inserted = expanded.data.primitives.filter(unit => pasted.data.added.nodes.includes(unit.address.instancePath[0]));
+        assert.deepEqual(inserted.map(unit => unit.node.model).sort(), ['instance-model', 'root-model']);
+        assert.ok(inserted.every(unit => unit.node.profileId === null)); assert.deepEqual(source, before);
+    }
+});
+
+test('private ownership is detached before ordinary, private wrapper and nested selection export', () => {
+    const local = makeLocalCopy(nestedWorkflow(), { instancePath: ['first/path', 'work'], id: 'private-copy' });
+    assert.equal(local.ok, true, JSON.stringify(local)); const source = local.data.candidate, before = structuredClone(source);
+    for (const selection of [{ nodeIds: ['source'] }, { nodeIds: ['first/path'] }, { nodeIds: ['work'], viewPath: ['first/path'] }]) {
+        const copied = clipboard.makeClip(source, selection); assert.equal(copied.ok, true, JSON.stringify(copied));
+        assert.equal(copied.data.graph.localDefinitionOwners, undefined);
+        assert.ok(Object.values(copied.data.graph.nodes).every(node => node.localCopy === undefined));
+    }
+    assert.deepEqual(source, before);
+});
+
+test('qualified child copy captures effective controls and bindings while interface boundaries fail explicitly', () => {
+    const source = siblingWorkflow(); source.roles = { Analysis: { profileId: 'private', model: 'root-model' } };
+    source.nodes['first/path'].roleOverrides.Analysis = { model: 'child-model' };
+    const before = structuredClone(source), result = clipboard.makeClip(source, { nodeIds: ['work'], viewPath: ['first/path'] });
+    assert.equal(result.ok, true, JSON.stringify(result)); assert.deepEqual(Object.keys(result.data.graph.nodes), ['work']);
+    assert.equal(result.data.graph.nodes.work.model, 'child-model'); assert.equal(result.data.graph.nodes.work.profileId, null);
+    assert.equal(clipboard.makeClip(source, { nodeIds: ['entry', 'work'], viewPath: ['first/path'] }).error.code, 'BOUNDARY_SELECTION');
+    assert.equal(clipboard.makeClip(source, { nodeIds: ['work'], viewPath: ['missing'] }).ok, false);
+    assert.deepEqual(source, before);
+});
+
+test('library definition copy admits exact current definitions and selects ordinary nodes before root export', () => {
+    assert.equal(typeof clipboard.makeDefinitionClip, 'function');
+    const source = siblingWorkflow(), definition = Object.values(source.definitions)[0], before = structuredClone(source);
+    const result = clipboard.makeDefinitionClip(definition, source.definitions, { nodeIds: ['work'] });
+    assert.equal(result.ok, true, JSON.stringify(result)); assert.deepEqual(Object.keys(result.data.graph.nodes), ['work']);
+    assert.equal(clipboard.makeDefinitionClip(definition, source.definitions, { nodeIds: ['entry'] }).error.code, 'BOUNDARY_SELECTION');
+    const wrong = structuredClone(definition); wrong.semanticHash = 'sha256:' + '0'.repeat(64);
+    assert.equal(clipboard.makeDefinitionClip(wrong, {}, { nodeIds: ['work'] }).ok, false); assert.deepEqual(source, before);
+});
+
+test('qualified wrapper copy materializes inherited parameter values absent from the child interface', () => {
+    const source = nestedWorkflow(), wrapper = source.nodes['first/path'], previousKey = definitionRefKey(wrapper.definition), draft = structuredClone(source.definitions[previousKey]);
+    draft.parameters = [{ id: 'limit', label: 'Limit', target: { instancePath: ['work'], nodeId: 'work', controlId: 'maxTokens' } }];
+    const identity = computeDefinitionIdentity(draft); assert.equal(identity.ok, true, JSON.stringify(identity));
+    const definition = { ...identity.data.materializedDefinition, semanticHash: identity.data.semanticHash };
+    delete source.definitions[previousKey]; source.definitions[definitionRefKey(definition)] = definition;
+    wrapper.definition = { id: definition.id, version: definition.version, semanticHash: definition.semanticHash }; wrapper.parameterOverrides.limit = 321;
+    const before = structuredClone(source), result = clipboard.makeClip(source, { nodeIds: ['work'], viewPath: ['first/path'] });
+    assert.equal(result.ok, true, JSON.stringify(result));
+    const expanded = inspectExpandedGraph(result.data.graph); assert.equal(expanded.ok, true, JSON.stringify(expanded));
+    assert.equal(expanded.data.primitives[0].node.maxTokens, 321); assert.deepEqual(source, before);
+});
+
+test('portable nested wrapper bindings preserve explicit node precedence and null barriers', () => {
+    const source = nestedWorkflow(); source.roles = { Analysis: { model: 'root-model', profileId: 'private-root' } };
+    source.nodes['first/path'].roleOverrides.Analysis = { model: 'role-model' };
+    source.nodes['first/path'].nodeBindingOverrides[nodeBindingOverrideKey(['work'], 'work')] = { model: null, profileId: 'private-explicit' };
+    source.nodes.second.nodeBindingOverrides[nodeBindingOverrideKey([], 'work')] = { model: 'explicit-model', profileId: null };
+    const before = structuredClone(source), clip = clipboard.makeClip(source, { nodeIds: ['first/path', 'second'] }); assert.equal(clip.ok, true, JSON.stringify(clip));
+    const destination = graph(); destination.roles.Analysis.model = 'destination-model';
+    const paste = clipboard.prepareClipPaste(destination, clip.data); assert.equal(paste.ok, true, JSON.stringify(paste));
+    const units = inspectExpandedGraph(paste.data.candidate).data.primitives.filter(unit => paste.data.added.nodes.includes(unit.address.instancePath[0]));
+    assert.deepEqual(units.map(unit => unit.node.model), [null, 'explicit-model']); assert.ok(units.every(unit => unit.node.profileId === null));
+    assert.deepEqual(source, before);
 });

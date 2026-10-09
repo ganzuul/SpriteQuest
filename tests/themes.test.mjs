@@ -8,7 +8,7 @@ const v = JSON.parse((await import('node:fs')).readFileSync(new URL('../manifest
 const T = await import(`../src/theme.js?v=${v}`);
 const MEANING = T.ROLES.filter(r => r.group === 'meaning').map(r => r.key);
 
-const needed = ['lattice', 'sillytavern', 'midnight', 'blueprint', 'parchment', 'neon', 'terminal', 'petal'];
+const needed = ['ember', 'lattice', 'sillytavern', 'midnight', 'blueprint', 'parchment', 'neon', 'terminal', 'petal'];
 assert.deepEqual(needed.filter(k => !T.PRESETS[k]), []);
 const problems = [];
 for (const [key, p] of Object.entries(T.PRESETS)) {
@@ -87,8 +87,8 @@ assert.equal(T.currentTheme().preset, 'blueprint');
 assert.equal(T.currentTheme().style.font, 'serif');
 T.setStyle('font', 'comic-sans');                  // not an option: ignored
 assert.equal(T.currentTheme().style.font, 'mono');
-// a theme saved under an old name finds its successor
+// an unknown preset uses the current default
 const s = globalThis.SillyTavern.getContext().extensionSettings.lattice;
 s.ui.theme = { preset: 'pink-blink', colors: {} };
-assert.equal(T.currentTheme().preset, 'lattice');
+assert.equal(T.currentTheme().preset, 'ember');
 console.log('themes: ok');

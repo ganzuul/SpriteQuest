@@ -1,9 +1,10 @@
 /** Current Lattice documents and settings. SillyTavern owns its normal prompt. */
-import { installStarter } from './workflow/starters.js?v=0.20.0';
-import { exportWorkflow, parseWorkflow } from './workflow/packages.js?v=0.20.0';
-import { safeWorkflowData, validateGraphStructure } from './workflow/contracts.js?v=0.20.0';
-import { commitPreparedGraph, graphEditSignature } from './workflow/transactions.js?v=0.20.0';
-import * as graphHistory from './history.js?v=0.20.0';
+import { installStarter } from './workflow/starters.js?v=0.22.0';
+import { exportWorkflow, parseWorkflow } from './workflow/packages.js?v=0.22.0';
+import { safeWorkflowData, validateGraphStructure } from './workflow/contracts.js?v=0.22.0';
+import { cloneWorkflowDocument } from './workflow/document.js?v=0.22.0';
+import { commitPreparedGraph, graphEditSignature } from './workflow/transactions.js?v=0.22.0';
+import * as graphHistory from './history.js?v=0.22.0';
 
 export const MODULE = 'lattice';
 export const ctx = () => globalThis.SillyTavern.getContext();
@@ -12,17 +13,40 @@ export function safe(fn, fallback = undefined) { try { return fn(); } catch { re
 const admitted = new WeakSet();
 const plain = value => value && typeof value === 'object' && !Array.isArray(value) && [Object.prototype, null].includes(Object.getPrototypeOf(value));
 
+/** Settings registries contain independently bounded documents, not one package. */
+function dataRecord(value) {
+    try {
+        if (!plain(value)) return null;
+        const descriptors = Object.getOwnPropertyDescriptors(value), result = {};
+        for (const key of Reflect.ownKeys(descriptors)) {
+            const descriptor = descriptors[key];
+            if (typeof key !== 'string' || !descriptor.enumerable || !Object.hasOwn(descriptor, 'value') || !safeWorkflowData({ [key]: null })) return null;
+            result[key] = descriptor.value;
+        }
+        return result;
+    } catch { return null; }
+}
+
+function checkRegistry(value) {
+    const entries = dataRecord(value);
+    return entries && Object.values(entries).every(safeWorkflowData);
+}
+
 function checkSettings(value) {
-    if (!plain(value) || !safeWorkflowData(value) || value.schema !== 1 || typeof value.enabled !== 'boolean' || !plain(value.graphs) || !plain(value.nativeBindings) || !plain(value.ui) || !plain(value.subgraphLibrary)) throw new Error('Lattice settings must be a current plain-data document (schema 1).');
-    if (Object.hasOwn(value, 'workflowMode')) throw new Error('Lattice settings contain an unsupported workflow mode.');
-    for (const [id, graph] of Object.entries(value.graphs)) {
-        const checked = validateGraphStructure(graph);
-        if (graph.id !== id || graph.schema !== 3 || graph.runtime !== 2 || !checked.ok) throw new Error('Lattice workflow document ' + id + ' is invalid: ' + (checked.error?.message ?? 'unsupported schema or identity'));
+    const saved = dataRecord(value), metadata = {}, graphs = dataRecord(saved?.graphs), library = dataRecord(saved?.subgraphLibrary);
+    if (saved) for (const [key, item] of Object.entries(saved)) if (!['graphs', 'subgraphLibrary', 'workspaceViews'].includes(key)) metadata[key] = item;
+    if (!saved || !safeWorkflowData(metadata) || saved.schema !== 1 || typeof saved.enabled !== 'boolean' || !graphs || !plain(saved.nativeBindings) || !plain(saved.ui) || !library || !checkRegistry(library.definitions ?? {}) || !safeWorkflowData(Object.fromEntries(Object.entries(library).filter(([key]) => key !== 'definitions'))) || !checkRegistry(saved.workspaceViews ?? {})) throw new Error('Lattice settings must be a current plain-data document (schema 1).');
+    if (Object.hasOwn(saved, 'workflowMode')) throw new Error('Lattice settings contain an unsupported workflow mode.');
+    const checkedGraphs = {};
+    for (const [id, graph] of Object.entries(graphs)) {
+        const checked = cloneWorkflowDocument(graph);
+        if (!checked.ok || checked.data.id !== id) throw new Error('Lattice workflow document ' + id + ' is invalid: ' + (checked.error?.message ?? 'unsupported identity'));
+        checkedGraphs[id] = checked.data;
     }
-    if (value.activeGraphId !== null && !Object.hasOwn(value.graphs, value.activeGraphId)) throw new Error('Lattice settings refer to an unavailable active workflow.');
+    if (saved.activeGraphId !== null && !Object.hasOwn(graphs, saved.activeGraphId)) throw new Error('Lattice settings refer to an unavailable active workflow.');
     for (const [phase, field] of [['pre', 'preGraphId'], ['post', 'postGraphId']]) {
-        const id = value.nativeBindings[field];
-        if (id !== null && (typeof id !== 'string' || value.graphs[id]?.mode !== 'native-' + phase)) throw new Error('Lattice ' + phase + ' binding does not identify a current workflow.');
+        const id = saved.nativeBindings[field];
+        if (id !== null && (typeof id !== 'string' || checkedGraphs[id]?.mode !== 'native-' + phase)) throw new Error('Lattice ' + phase + ' binding does not identify a current workflow.');
     }
 }
 
@@ -71,17 +95,16 @@ export function deleteGraph(id) {
 }
 
 const touchListeners = new Set();
-export function syncComponentMembers(graph) {
+export function syncGroupMembers(graph) {
     for (const group of Object.values(graph?.groups ?? {})) {
-        if (!group.component && !Array.isArray(group.members)) continue;
+        if (!Array.isArray(group.members)) continue;
         const members = Object.values(graph.nodes).filter(node => node.inGroup === group.id).map(node => node.id);
         group.members = members;
-        if (group.component && (!members.includes(group.entry) || !members.includes(group.exit))) { delete group.component; delete group.entry; delete group.exit; }
     }
 }
 export function onGraphTouched(fn) { touchListeners.add(fn); return () => touchListeners.delete(fn); }
 export function touchGraph(graph) {
-    if (!graph) return; syncComponentMembers(graph); graph.updatedAt = Date.now(); save();
+    if (!graph) return; syncGroupMembers(graph); graph.updatedAt = Date.now(); save();
     for (const fn of touchListeners) safe(() => fn(graph));
 }
 function finishGraphDocumentEdit(graph, summary, hooks) {

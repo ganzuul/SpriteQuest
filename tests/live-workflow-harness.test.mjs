@@ -92,12 +92,14 @@ test('production fixture graphs compact pinned text, plan bounded guidance and r
     const results=await runSyntheticFixtures({version:'0.19.0',profileId:'fixture-profile'},{runtime,connections,starters,host,reserve:bridge.reserve,finish:bridge.finish});
     assert.equal(results.length,2);
     assert.deepEqual(results.map(result=>[result.ok,result.actualCalls]),[[true,2],[true,1]]);
-    assert.deepEqual(results.flatMap(result=>result.calls.map(call=>call.model)),['z-ai/glm-5.2','z-ai/glm-5.2:thinking','z-ai/glm-5.2']);
+    assert.deepEqual(results.flatMap(result=>result.recording.rows.filter(row=>row.attempts).map(row=>row.binding.model)),['z-ai/glm-5.2','z-ai/glm-5.2:thinking','z-ai/glm-5.2']);
     assert.equal(results[0].constraints.pinPreserved,true);
     assert.equal(results[0].constraints.compactionWithinBudget,true);
     assert.equal(results[0].constraints.guidanceWithinBudget,true);
-    assert.equal(results[1].artifact.kind,'candidate');
-    assert.equal(results[1].artifact.text,'The lantern was showed the keeper\'s patience. The gate stayed shut.');
+    assert.equal(results[1].recording.terminal.kind,'candidate');
+    assert.equal(results[1].recording.terminal.text,'The lantern was showed the keeper\'s patience. The gate stayed shut.');
+    assert.equal(results[1].review.required,true); assert.equal(results[1].review.handle,null,'public runtime diagnostics grant no Apply authority');
+    assert.ok(results.every(result=>!('artifact' in result)&&!('calls' in result)&&!('reports' in result)));
     assert.equal(results[1].constraints.originalPreserved,true);
     assert.equal(results[1].constraints.unselectedTextPreserved,true);
     assert.equal(results[1].constraints.reviewRequired,true);
@@ -163,7 +165,7 @@ test('exception after one admitted attempt returns a sanitized ledger with unkno
     assert.equal(JSON.stringify(report).includes('private-cookie-and-provider-body'),false);
 });
 test('cleanup failure preserves completed fixture progress and the paid ledger',async()=>{
-    const fixture={label:'plain compactor + thinking planner',ok:true,actualCalls:1,callBound:2,calls:[],reports:[],constraints:{pinPreserved:true},artifact:{kind:'guidance',text:'Synthetic guidance'}};
+    const fixture={label:'plain compactor + thinking planner',ok:true,actualCalls:1,callBound:2,constraints:{pinPreserved:true},recording:{status:'completed',rows:[],terminal:{kind:'guidance',format:'structured',text:'Synthetic guidance'}},review:{required:false,handle:null}};
     let cleanups=0;
     const report=await runLiveSession(options,{execute:async({guard,boundary,recordFixture})=>{
         await guard.request(request,async()=>{assert.equal(boundary.allow({url:backendUrl,method:'POST',payload:backendPayload}),true);return response;});
@@ -171,7 +173,7 @@ test('cleanup failure preserves completed fixture progress and the paid ledger',
     },cleanup:async()=>{cleanups++;throw Error('private cleanup details');}});
     assert.equal(report.status,'failed'); assert.equal(report.failureStage,'cleanup');
     assert.equal(report.totalAttempts,4); assert.equal(report.backendAccepted,1);
-    assert.equal(report.completedFixtures,1); assert.equal(report.fixtures[0].artifact.text,'Synthetic guidance');
+    assert.equal(report.completedFixtures,1); assert.equal(report.fixtures[0].recording.terminal.text,'Synthetic guidance');
     assert.equal(report.attemptLedger[0].usageStatus,'reported');
     assert.equal(report.attemptLedger[0].usage.completion_tokens,3);
     assert.equal(cleanups,1); assert.equal(JSON.stringify(report).includes('private cleanup details'),false);

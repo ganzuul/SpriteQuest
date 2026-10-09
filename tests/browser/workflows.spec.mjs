@@ -22,7 +22,7 @@ async function bindRole(page, role, profile) {
 }
 async function assignPhase(page, phase) {
     const dialog = await openSetup(page);
-    await dialog.getByRole('button', { name: 'Assign ' + phase + ' phase and enable native mode', exact: true }).click();
+    await dialog.getByRole('button', { name: 'Assign ' + phase + ' phase', exact: true }).click();
     await closeSetup(page);
 }
 async function expectBound(page, bound) {
@@ -31,9 +31,9 @@ async function expectBound(page, bound) {
     await closeSetup(page);
     await expect(page.locator('.pc-root-workflow-status')).toContainText('≤ ' + bound + ' requests');
 }
-async function hideLibrary(page) {
-    const toggle = page.getByRole('button', { name: 'Toggle library', exact: true });
-    if (await toggle.getAttribute('aria-pressed') === 'true') await toggle.click();
+async function closeSubgraphManager(page) {
+    const manager = page.getByRole('region', { name: 'Manage subgraphs', exact: true });
+    if (await manager.isVisible()) await manager.getByRole('button', { name: 'Close', exact: true }).click();
 }
 async function operationId(page, operation) {
     return page.evaluate(operation => Object.values(window.canvasHarness.graph.nodes).find(node => node.operation === operation)?.id, operation);
@@ -82,7 +82,7 @@ async function artifact(page, label) {
 }
 async function candidateText(page, text) {
     const panel = await artifact(page, 'candidate');
-    await expect(panel.locator('pre')).toHaveText(text);
+    await expect(panel.locator('pre')).toContainText(text);
 }
 async function expectRequests(page, actual, bound) {
     const meter = page.getByRole('button', { name: /^Open run details\./ });
@@ -97,7 +97,7 @@ async function saveRules(page, rules) {
     await region.getByLabel('rules', { exact: true }).fill(JSON.stringify(rules, null, 2));
     await region.getByRole('button', { name: 'Save rules', exact: true }).click();
 }
-// Review/Send compatibility fixtures use the public saved graph, never a panel
+// Review/Send fixtures use the public saved graph, never a panel
 // DTO or manufactured review handle. UI binding itself is tested separately.
 async function fixtureRole(page, role, profile) {
     await page.evaluate(({ role, profile }) => {
@@ -183,7 +183,7 @@ test('formation request summary follows scan mode and additional reachable repai
             graph.nodes[node.id] = node; group.members.push(node.id);
         }
         for (const [i, [from, to]] of [[byOp('reply-snapshot').id, 'repair-extra'], ['repair-extra', 'validate-patches-extra'], ['validate-patches-extra', 'apply-reply-extra']].entries()) {
-            const id = 'extra-wire-' + i; graph.wires[id] = { id, from, to, order: i, kind: 'merge', ...(graph.schema === 3 ? { route: 'wire', fromPort: 'out', toPort: 'in' } : {}) };
+            const id = 'extra-wire-' + i; graph.wires[id] = {id,route:'wire',from,fromPort:'out',to,toPort:'in'};
         }
         S.touchGraph(graph); window.canvasHarness.canvas.render(); UI.refreshIfOpen();
     });
@@ -194,12 +194,12 @@ test('install and explicitly bind and assign a pre workflow without arming it', 
     await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
     await page.evaluate(() => { window.canvasHarness.context.extensionSettings.connectionManager = { profiles: [{ id: 'analysis', name: 'Analysis connection' }] }; });
     await installWorkflow(page, 'Scene guidance');
-    await expect((await openSetup(page)).getByText('Bind Analysis to an available connection before running.', { exact: true })).toBeVisible();
-    const before = await page.evaluate(() => { const settings = window.canvasHarness.S.settings(); return { enabled: settings.enabled, mode: settings.workflowMode, assigned: settings.nativeBindings.preGraphId }; });
-    expect(before).toEqual({ enabled: false, mode: 'legacy', assigned: null });
+    const setup = await openSetup(page); await expect(setup.getByText('Assign a fixed connection to this node or its model role.', { exact: true })).toBeVisible(); await expect(setup.getByLabel('Analysis connection', { exact: true })).toHaveValue('');
+    const before = await page.evaluate(() => { const settings = window.canvasHarness.S.settings(); return { enabled: settings.enabled, assigned: settings.nativeBindings.preGraphId }; });
+    expect(before).toEqual({ enabled: false, assigned: null });
     await bindRole(page, 'Analysis', 'analysis');
     await assignPhase(page, 'pre');
-    expect(await page.evaluate(() => window.canvasHarness.S.settings().workflowMode)).toBe('native');
+    expect(await page.evaluate(() => Object.hasOwn(window.canvasHarness.S.settings(),'workflowMode'))).toBe(false);
     expect(await page.evaluate(() => window.canvasHarness.S.settings().enabled)).toBe(false);
     await inspectOperation(page, 'smart-compactor');
     await page.getByLabel('target Tokens', { exact: true }).fill('900');
@@ -248,49 +248,30 @@ test('post setup opens the same AI De-slop primitives and preserves a focused ed
 });
 
 
-test('native preview opens setup without legacy prompt compilation or lore scans', async ({ page }) => {
+test('current setup opens without domain scans or provider requests', async ({ page }) => {
     await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
     await installWorkflow(page, 'Scene guidance');
-    await page.evaluate(async () => {
+    await page.evaluate(() => {
         window.nativeLoreScans = 0;
         window.canvasHarness.context.getWorldInfoPrompt = async () => { window.nativeLoreScans++; return {}; };
-        await window.canvasHarness.UI.runPreview();
     });
+    await openSetup(page);
     expect(await page.evaluate(() => window.nativeLoreScans)).toBe(0);
-    await expect(page.locator('.pc-preview')).not.toHaveClass(/pc-preview-open/);
+    expect(await page.evaluate(() => window.canvasHarness.providerCalls())).toBe(0);
     const setup = page.getByRole('dialog', { name: 'Workflow setup', exact: true });
     await expect(setup).toBeVisible();
-    await expect(setup.getByLabel('Workflow mode', { exact: true })).toBeVisible();
+    await expect(setup.getByLabel('Workflow mode', { exact: true })).toHaveCount(0);
 });
 
 
-test('mode is explicit and can return to legacy without changing arming', async ({ page }) => {
+
+
+
+
+test('current empty-canvas creation offers compatible operations', async ({ page }) => {
     await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
     await installWorkflow(page, 'Scene guidance');
-    await assignPhase(page, 'pre');
-    await (await openSetup(page)).getByLabel('Workflow mode', { exact: true }).selectOption('legacy');
-    await closeSetup(page);
-    expect(await page.evaluate(() => window.canvasHarness.S.settings().workflowMode)).toBe('legacy');
-    expect(await page.evaluate(() => window.canvasHarness.S.settings().enabled)).toBe(false);
-});
-
-
-test('legacy Input discovery adds a Prompt while preserving its controls', async ({ page }) => {
-    await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
-    await page.getByRole('button', { name: 'Toggle library', exact: true }).click();
-    await page.locator('.pc-workflow-family').filter({ has: page.locator('summary', { hasText: /^Input$/ }) }).locator('summary').click();
-    const add = page.getByRole('button', { name: 'Add legacy Prompt', exact: true });
-    await expect(add).toBeVisible();
-    await add.click();
-    await expect(page.locator('.pc-inspector textarea').first()).toBeVisible();
-    expect(await page.evaluate(() => window.canvasHarness.graph.nodes[window.canvasHarness.canvas.selection.id].type)).toBe('prompt');
-});
-
-
-test('native empty-canvas creation offers compatible operations without adding a legacy prompt', async ({ page }) => {
-    await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
-    await installWorkflow(page, 'Scene guidance');
-    await hideLibrary(page);
+    await closeSubgraphManager(page);
     await page.locator('.pc-canvas-host').dblclick({ position: { x: 8, y: 8 } });
     expect(await page.evaluate(() => Object.values(window.canvasHarness.graph.nodes).some(node => node.type === 'prompt'))).toBe(false);
     const search = page.getByRole('dialog', { name: 'Add node', exact: true });
@@ -326,7 +307,7 @@ async function reviewFixture(page) {
     });
     await installWorkflow(page, 'Reviewed AI De-slop');
     await fixtureRole(page, 'Prose', 'prose');
-    expect(await page.evaluate(() => [window.canvasHarness.graph.schema, window.canvasHarness.graph.runtime])).toEqual([2, 1]);
+    expect(await page.evaluate(() => [window.canvasHarness.graph.schema, window.canvasHarness.graph.runtime])).toEqual([3, 2]);
 }
 test('a real reviewed run requires Apply and preserves the original swipe', async ({ page }) => {
     await reviewFixture(page);
@@ -362,8 +343,8 @@ test('switching graph or closing cancels a delayed run and ignores its late resu
     });
     await runRoot(page);
     await page.waitForFunction(() => !!window.finishWorkflowRequest);
-    const legacy = await page.evaluate(() => window.canvasHarness.S.allGraphs().find(graph => !graph.mode?.startsWith('native-')).id);
-    await page.getByRole('combobox', { name: 'Canvas', exact: true }).selectOption(legacy);
+    const other = await page.evaluate(() => window.canvasHarness.S.allGraphs().find(graph => graph.id !== window.canvasHarness.graph.id).id);
+    await page.getByRole('combobox', { name: 'Workflow', exact: true }).selectOption(other);
     expect(await page.evaluate(() => window.workflowSignal.aborted)).toBe(true);
     await page.evaluate(async () => { window.finishWorkflowRequest({ choices: [{ message: { content: '{"patches":[{"index":0,"replacement":"late"}]}' }, finish_reason: 'stop' }] }); await window.canvasHarness.settle(); });
     await expect(page.getByRole('button', { name: 'Apply reviewed candidate', exact: true })).toHaveCount(0);
@@ -378,46 +359,15 @@ test('switching graph or closing cancels a delayed run and ignores its late resu
     await page.evaluate(async () => { window.finishWorkflowRequest({ choices: [{ message: { content: '{"patches":[{"index":0,"replacement":"late"}]}' }, finish_reason: 'stop' }] }); window.canvasHarness.UI.open(); await window.canvasHarness.settle(); });
     await expect(page.getByRole('button', { name: 'Apply reviewed candidate', exact: true })).toHaveCount(0);
 });
-test('manual pre Test and actual Send show their distinct guidance and request evidence', async ({ page }) => {
-    await reviewFixture(page);
-    await installWorkflow(page, 'Scene guidance');
-    await fixtureRole(page, 'Analysis', 'prose');
-    await assignPhase(page, 'pre');
-    await page.evaluate(() => {
-        const c = window.canvasHarness.context;
-        c.ConnectionManagerRequestService.sendRequest = async (...args) => { window.workflowRequests.push(args); return { choices: [{ message: { content: window.workflowRequests.length === 1 ? 'Manual test guidance.' : 'Actual Send guidance.' }, finish_reason: 'stop' }], usage: { prompt_tokens: 40, completion_tokens: window.workflowRequests.length === 1 ? 8 : 17 } }; };
-    });
-    await runRoot(page, 'guidance');
-    await expect((await artifact(page, 'guidance')).locator('pre')).toHaveText('Manual test guidance.');
-    await expectRequests(page, 1, 2);
-    expect(await page.evaluate(() => Object.keys(window.canvasHarness.context.extensionPrompts).filter(key => key.startsWith('lattice:guidance:')).length)).toBe(0);
-    await page.getByLabel('Arm', { exact: true }).check();
-    await page.evaluate(async () => { const c = window.canvasHarness.context; await window.latticeGenerationInterceptor(c.chat, 8192, () => {}, 'normal'); });
-    expect(await page.evaluate(() => window.workflowRequests.length)).toBe(2);
-    expect(await page.evaluate(() => Object.values(window.canvasHarness.context.extensionPrompts).some(prompt => prompt.value === 'Actual Send guidance.'))).toBe(true);
-    await expect((await artifact(page, 'guidance')).locator('pre')).toHaveText('Actual Send guidance.');
-    await expect(page.getByText('Manual test guidance.', { exact: true })).toHaveCount(0);
-    await expect(preview(page)).toContainText('Automatic Send');
-    const trace = await artifact(page, 'Call trace');
-    await expect(trace).toContainText('Actual Send guidance.');
-    expect(JSON.parse(await trace.locator('pre').textContent())[0].result.usage.completion_tokens).toBe(17);
-    const reports = await artifact(page, 'Reports');
-    await expect(reports).toContainText('host-tokenizer');
-    await page.evaluate(async () => {
-        const c = window.canvasHarness.context;
-        await c.eventSource.emit(c.eventTypes.GENERATION_ENDED, c.chat.length);
-        await c.eventSource.emit(c.eventTypes.GENERATION_STARTED, 'normal', {}, false);
-        c.ConnectionManagerRequestService.sendRequest = async (...args) => { window.workflowRequests.push(args); throw new Error('Synthetic Send failure'); };
-        await window.latticeGenerationInterceptor(c.chat, 8192, () => {}, 'normal');
-    });
-    await artifact(page, 'Call trace');
-    await expect(trace).toContainText('REQUEST_FAILED');
-    await expect(trace).not.toContainText('Actual Send guidance.');
-    await artifact(page, 'Reports');
-    await expect(reports).toContainText('NATIVE_FALLBACK');
-    await expect(reports).not.toContainText('Actual Send guidance.');
-    await expectRequests(page, 1, 2);
-    expect(await page.evaluate(() => window.workflowRequests.length)).toBe(3);
+test('manual pre Run and actual Send retain bounded addressed request evidence', async ({ page }) => {
+    await reviewFixture(page); await installWorkflow(page, 'Scene guidance'); await fixtureRole(page, 'Analysis', 'prose'); await assignPhase(page, 'pre');
+    await page.evaluate(() => { const c=window.canvasHarness.context;c.ConnectionManagerRequestService.sendRequest=async(...args)=>{window.workflowRequests.push(args);return {choices:[{message:{content:window.workflowRequests.length===1?'Manual guidance.':'Send guidance.'},finish_reason:'stop'}],usage:{completion_tokens:17}};};});
+    await runRoot(page,'guidance'); await expectRequests(page,1,2);
+    const manual=await page.evaluate(async()=>{const h=window.canvasHarness,r=(await import('/src/run.js?v='+h.version)).getNativeWorkflowController().lastResult();return {ok:r.ok,calls:r.actualCalls,status:r.recording.status,raw:('calls' in r)||('artifact' in r)||('reports' in r),published:Object.keys(h.context.extensionPrompts).some(k=>k.startsWith('lattice:guidance:'))};});
+    expect(manual).toEqual({ok:true,calls:1,status:'completed',raw:false,published:false});
+    await page.getByLabel('Arm',{exact:true}).check(); await page.evaluate(async()=>{const c=window.canvasHarness.context;await window.latticeGenerationInterceptor(c.chat,8192,()=>{},'normal');});
+    const automatic=await page.evaluate(async()=>{const h=window.canvasHarness,r=(await import('/src/run.js?v='+h.version)).getNativeWorkflowController().lastAutomaticResult().result;return {ok:r.ok,calls:r.actualCalls,status:r.recording.status,usage:r.recording.units.find(u=>u.attempts).request.usage.completion_tokens,published:Object.values(h.context.extensionPrompts).some(p=>p.value==='Send guidance.')};});
+    expect(automatic).toEqual({ok:true,calls:1,status:'completed',usage:17,published:true}); expect(await page.evaluate(()=>window.workflowRequests.length)).toBe(2);
 });
 
 test('automatic Send evidence stays with its original graph through post review, close, and reopen', async ({ page }) => {
@@ -426,7 +376,7 @@ test('automatic Send evidence stays with its original graph through post review,
         const h = window.canvasHarness, s = h.S.settings();
         const pre = (await import('/src/workflow/starters.js?v=' + window.canvasHarness.version)).installStarter('native-guidance', s);
         pre.roles.Analysis.profileId = 'prose';
-        s.nativeBindings.preGraphId = pre.id; s.workflowMode = 'native'; s.enabled = true;
+        s.nativeBindings.preGraphId = pre.id; s.enabled = true;
         h.S.save(); h.UI.refreshIfOpen(); return pre.id;
     });
     await runRoot(page);
@@ -438,9 +388,9 @@ test('automatic Send evidence stays with its original graph through post review,
     });
     await candidateText(page, 'We explore.');
     await expect(page.getByText('First automatic guidance.', { exact: true })).toHaveCount(0);
-    await page.getByRole('combobox', { name: 'Canvas', exact: true }).selectOption(preId);
+    await page.getByRole('combobox', { name: 'Workflow', exact: true }).selectOption(preId);
     await selectTerminal(page, 'guidance', false);
-    await expect((await artifact(page, 'guidance')).locator('pre')).toHaveText('First automatic guidance.');
+    await expect((await artifact(page, 'guidance')).locator('pre')).toContainText('First automatic guidance.');
     await expect(preview(page)).toContainText('Automatic Send');
     expect(await page.evaluate(async () => (await import('/src/run.js?v=' + window.canvasHarness.version)).getNativeWorkflowController().lastAutomaticResult().origin.graphId)).toBe(preId);
     await page.getByRole('button', { name: 'Close canvas', exact: true }).click();
@@ -454,56 +404,30 @@ test('automatic Send evidence stays with its original graph through post review,
     expect((await preview(page).allTextContents()).join('')).not.toContain('Send while closed.');
     await page.evaluate(async () => { window.canvasHarness.UI.open(); await window.canvasHarness.settle(); });
     await selectTerminal(page, 'guidance', false);
-    await expect((await artifact(page, 'guidance')).locator('pre')).toHaveText('Send while closed.');
+    await expect((await artifact(page, 'guidance')).locator('pre')).toContainText('Send while closed.');
     await expect(preview(page)).toContainText('Automatic Send');
     await expect(page.getByText('First automatic guidance.', { exact: true })).toHaveCount(0);
     expect(await page.evaluate(() => window.workflowRequests.length)).toBe(3);
 });
 
-test('native graphs reject legacy prompt seeding before confirmation while legacy seeding works', async ({ page }) => {
-    await reviewFixture(page);
-    await page.evaluate(() => {
-        const c = window.canvasHarness.context;
-        c.chatCompletionSettings.prompts = [{ identifier: 'fixture-prompt', name: 'Fixture prompt', content: 'Seeded content', role: 'system' }];
-        c.chatCompletionSettings.prompt_order = [{ character_id: 100000, order: [{ identifier: 'fixture-prompt', enabled: true }] }];
-        c.POPUP_TYPE = { CONFIRM: 1 }; c.POPUP_RESULT = { AFFIRMATIVE: 1 };
-        c.callGenericPopup = async () => { window.seedConfirmations = (window.seedConfirmations || 0) + 1; return 1; };
-        window.beforeNativeSeed = JSON.stringify(window.canvasHarness.graph);
-    });
-    await page.getByRole('button', { name: 'Graph', exact: true }).click();
-    const seed = page.getByRole('menuitem', { name: 'Seed from SillyTavern’s current prompt order', exact: true });
-    await expect(seed).toBeDisabled();
-    // A stale/programmatic toolbar activation must still hit the controller guard.
-    await seed.evaluate(button => { button.disabled = false; button.click(); });
-    await page.evaluate(() => window.canvasHarness.settle());
-    expect(await page.evaluate(() => window.seedConfirmations || 0)).toBe(0);
-    expect(await page.evaluate(() => JSON.stringify(window.canvasHarness.graph) === window.beforeNativeSeed)).toBe(true);
-    expect(await page.evaluate(async () => (await import('/src/workflow/contracts.js?v=' + window.canvasHarness.version)).validateWorkflow(window.canvasHarness.graph).ok)).toBe(true);
-    const legacy = await page.evaluate(() => window.canvasHarness.S.allGraphs().find(graph => !graph.mode?.startsWith('native-')).id);
-    await page.getByRole('combobox', { name: 'Canvas', exact: true }).selectOption(legacy);
-    await page.getByRole('button', { name: 'Graph', exact: true }).click();
-    await expect(seed).toBeEnabled(); await seed.click();
-    await expect.poll(() => page.evaluate(() => window.seedConfirmations || 0)).toBe(1);
-    expect(await page.evaluate(() => Object.values(window.canvasHarness.graph.nodes).some(node => node.identifier === 'fixture-prompt'))).toBe(true);
-});
 
-test('Send indicator and arm messages follow native pre assignment, manual post-only, and legacy modes', async ({ page }) => {
+test('Send indicator and arm messages follow pre assignment and manual post-only operation', async ({ page }) => {
     await reviewFixture(page);
     await installWorkflow(page, 'Scene guidance');
     const names = await page.evaluate(() => {
         const h = window.canvasHarness, s = h.S.settings();
-        const legacy = h.S.allGraphs().find(graph => !graph.mode?.startsWith('native-')), pre = h.graph;
-        legacy.name = 'Unrelated legacy prompt'; pre.name = 'Assigned native guidance';
-        s.nativeBindings.preGraphId = pre.id; s.workflowMode = 'native'; s.enabled = true;
-        s.activeGraphId = legacy.id; h.S.setChatBinding(legacy.id); h.S.save(); document.dispatchEvent(new CustomEvent('pc-state'));
-        return { pre: pre.name, legacy: legacy.name };
+        const other = h.S.allGraphs().find(graph => graph.id !== h.graph.id), pre = h.graph;
+        other.name = 'Unrelated current workflow'; pre.name = 'Assigned native guidance';
+        s.nativeBindings.preGraphId = pre.id; s.enabled = true;
+        s.activeGraphId = other.id; h.S.save(); document.dispatchEvent(new CustomEvent('pc-state'));
+        return { pre: pre.name, other: other.name };
     });
     const indicator = page.locator('#pc-sendbar');
     await expect(indicator).toHaveClass(/pc-sendbar-on/);
     await expect(indicator).toHaveAttribute('title', /Assigned native guidance.*adds guidance/);
     await expect(indicator).toHaveAttribute('title', /2 auxiliary requests/);
-    expect(await indicator.getAttribute('title')).not.toContain(names.legacy);
-    await expect(page.locator('label[for="pc-enabled"]')).toContainText('native');
+    expect(await indicator.getAttribute('title')).not.toContain(names.other);
+    await expect(page.locator('label[for="pc-enabled"]')).toContainText('Enable');
     expect(await page.locator('label[for="pc-enabled"]').textContent()).not.toContain('instead of SillyTavern');
     await indicator.dispatchEvent('contextmenu'); await indicator.dispatchEvent('contextmenu');
     expect(await page.evaluate(() => window.canvasHarness.toasts.at(-1).message)).toMatch(/Assigned native guidance.*guidance/);
@@ -514,22 +438,17 @@ test('Send indicator and arm messages follow native pre assignment, manual post-
         h.S.save(); document.dispatchEvent(new CustomEvent('pc-state'));
     });
     await expect(indicator).not.toHaveClass(/pc-sendbar-on/);
-    await expect(indicator).toHaveAttribute('title', /No automatic.*manual/i);
+    await expect(indicator).toHaveAttribute('title', /No pre workflow.*Post repair.*manual/i);
     await indicator.dispatchEvent('contextmenu'); await indicator.dispatchEvent('contextmenu');
     expect(await page.evaluate(() => window.canvasHarness.toasts.at(-1).message)).toMatch(/manual/i);
-    await page.evaluate(() => { const h = window.canvasHarness; h.S.settings().workflowMode = 'legacy'; h.S.save(); document.dispatchEvent(new CustomEvent('pc-state')); });
-    await expect(indicator).toHaveAttribute('title', /Unrelated legacy prompt.*builds the prompt/);
-    await expect(indicator).toHaveClass(/pc-sendbar-on/);
-    await expect(page.locator('label[for="pc-enabled"]')).toContainText('instead of SillyTavern');
-    await indicator.dispatchEvent('contextmenu'); await indicator.dispatchEvent('contextmenu');
-    expect(await page.evaluate(() => window.canvasHarness.toasts.at(-1).message)).toMatch(/builds the prompt/);
+    expect(await page.evaluate(() => Object.hasOwn(window.canvasHarness.S.settings(),'workflowMode'))).toBe(false);
 });
 test('review controls and comparison stay usable in a narrow viewport', async ({ page }) => {
     await reviewFixture(page);
     await page.setViewportSize({ width: 760, height: 900 });
-    await hideLibrary(page);
+    await closeSubgraphManager(page);
     await runRoot(page);
-    await expect((await artifact(page, 'original')).locator('pre')).toHaveText('We delve.');
+    await expect((await artifact(page, 'candidate')).locator('pre')).toContainText('We delve.');
     await candidateText(page, 'We explore.');
     await expect(page.getByRole('button', { name: 'Apply reviewed candidate', exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
@@ -539,7 +458,7 @@ test('review controls and comparison stay usable in a narrow viewport', async ({
 
 
 
-test('native wire inspection describes artifact flow without legacy prompt controls', async ({ page }) => {
+test('named wire inspection describes artifact flow', async ({ page }) => {
     await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
     await installWorkflow(page, 'Scene guidance');
     const before = await page.evaluate(() => {
@@ -590,9 +509,9 @@ test('native camera pan and zoom preserve the focused editor without domain work
         const { context: c, canvas, settle } = window.canvasHarness;
         const controller = (await import('/src/run.js?v=' + window.canvasHarness.version)).getNativeWorkflowController();
         const editor = document.activeElement, node = canvas.nodeLayer.querySelector('.pc-node-native'), requests = window.workflowRequests.length;
-        let analysis = 0, bindings = 0, freshness = 0, tokens = 0, lore = 0;
-        const prepare = canvas.hooks.prepareRender, getProfile = c.ConnectionManagerRequestService.getProfile, candidateStatus = controller.candidateStatus, count = c.getTokenCountAsync;
-        canvas.hooks.prepareRender = (...args) => { analysis++; return prepare(...args); };
+        let drawAdmissions = 0, bindings = 0, freshness = 0, tokens = 0, lore = 0;
+        const setGraph = canvas.setGraph.bind(canvas), getProfile = c.ConnectionManagerRequestService.getProfile, candidateStatus = controller.candidateStatus, count = c.getTokenCountAsync;
+        canvas.setGraph = (...args) => { drawAdmissions++; return setGraph(...args); };
         c.ConnectionManagerRequestService.getProfile = (...args) => { bindings++; return getProfile(...args); };
         controller.candidateStatus = (...args) => { freshness++; return candidateStatus(...args); };
         c.getTokenCountAsync = (...args) => { tokens++; return count(...args); };
@@ -604,15 +523,15 @@ test('native camera pan and zoom preserve the focused editor without domain work
         window.dispatchEvent(new MouseEvent('mousemove', { clientX: point.clientX + 30, clientY: point.clientY + 20, buttons: 4 }));
         window.dispatchEvent(new MouseEvent('mouseup', { clientX: point.clientX + 30, clientY: point.clientY + 20, button: 1 }));
         await settle();
-        return { analysis, bindings, freshness, tokens, lore, requests: window.workflowRequests.length - requests, sameEditor: editor === document.activeElement && document.contains(editor), sameNode: node === canvas.nodeLayer.querySelector('.pc-node-native') };
+        return { drawAdmissions, bindings, freshness, tokens, lore, requests: window.workflowRequests.length - requests, sameEditor: editor === document.activeElement && document.contains(editor), sameNode: node === canvas.nodeLayer.querySelector('.pc-node-native') };
     });
-    expect(measured).toEqual({ analysis: 0, bindings: 0, freshness: 0, tokens: 0, lore: 0, requests: 0, sameEditor: true, sameNode: true });
-    expect(await page.evaluate(async () => { const controller = (await import('/src/run.js?v=' + window.canvasHarness.version)).getNativeWorkflowController(); return controller.candidateStatus(controller.lastResult().artifact).ok; })).toBe(true);
+    expect(measured).toEqual({ drawAdmissions: 0, bindings: 0, freshness: 0, tokens: 0, lore: 0, requests: 0, sameEditor: true, sameNode: true });
+    expect(await page.evaluate(async () => { const controller = (await import('/src/run.js?v=' + window.canvasHarness.version)).getNativeWorkflowController(); return controller.candidateStatus(controller.lastResult().reviewHandles[0]).ok; })).toBe(true);
     const title = await page.locator('.pc-node-title').filter({ hasText: /^Reply Snapshot$/ }).boundingBox();
     await page.mouse.move(title.x + 20, title.y + 8); await page.mouse.down();
     await page.mouse.move(title.x + 60, title.y + 28, { steps: 4 }); await page.mouse.up();
     await expect(page.getByRole('button', { name: 'Apply reviewed candidate', exact: true })).toBeEnabled();
-    expect(await page.evaluate(async () => { const controller = (await import('/src/run.js?v=' + window.canvasHarness.version)).getNativeWorkflowController(); return controller.candidateStatus(controller.lastResult().artifact).ok; })).toBe(true);
+    expect(await page.evaluate(async () => { const controller = (await import('/src/run.js?v=' + window.canvasHarness.version)).getNativeWorkflowController(); return controller.candidateStatus(controller.lastResult().reviewHandles[0]).ok; })).toBe(true);
     await inspectOperation(page, 'repair');
     await page.getByLabel('instructions', { exact: true }).fill('A semantic operation edit.');
     await page.getByLabel('instructions', { exact: true }).press('Tab');
@@ -627,7 +546,7 @@ test('native presentation undo preserves reviewed authority while semantic undo 
     await expect(apply).toBeEnabled();
     await page.evaluate(async () => {
         const h = window.canvasHarness, runtime = (await import('/src/run.js?v=' + window.canvasHarness.version)).getNativeWorkflowController();
-        window.historyReviewedCandidate = runtime.lastResult().artifact;
+        window.historyReviewedCandidate = runtime.lastResult().reviewHandles[0];
         const node = Object.values(h.graph.nodes).find(n => n.operation === 'repair');
         node.presentation = { alias: 'Presentation alias', compact: true }; node.x += 25;
         h.S.touchGraph(h.graph); h.H.flush(h.graph); h.UI.refreshIfOpen();
@@ -649,7 +568,7 @@ test('native presentation undo preserves reviewed authority while semantic undo 
     expect(await page.evaluate(() => window.canvasHarness.context.chat.at(-1).mes)).toBe('We delve.');
 });
 
-test('accepted additive import cancels a root request and history cannot resurrect its late authority', async ({ page }) => {
+test('accepted semantic additive import cancels a root request and history cannot resurrect its late authority', async ({ page }) => {
     await reviewFixture(page);
     await page.evaluate(() => {
         const h = window.canvasHarness; h.H.flush(h.graph);
@@ -657,16 +576,18 @@ test('accepted additive import cancels a root request and history cannot resurre
     });
     await runRoot(page);
     await page.waitForFunction(() => !!window.importPendingRequest);
-    const before = await page.evaluate(() => ({ nodes: Object.keys(window.canvasHarness.graph.nodes).length, chat: structuredClone(window.canvasHarness.context.chat) }));
+    const before = await page.evaluate(async () => { const h = window.canvasHarness, { graphSemanticSignature } = await import('/src/workflow/ports.js?v=' + h.version); return { nodes: Object.keys(h.graph.nodes).length, chat: structuredClone(h.context.chat), signature: graphSemanticSignature(h.graph) }; });
+    const imported = await page.evaluate(async () => { const h = window.canvasHarness, { exportWorkflow } = await import('/src/workflow/packages.js?v=' + h.version), { operationDefaults } = await import('/src/workflow/catalog.js?v=' + h.version), graph = h.S.blankGraph('Imported snapshot', 'post'); graph.nodes.snapshot = { ...operationDefaults('reply-snapshot'), id: 'snapshot', type: 'workflow', operationVersion: 1, x: 0, y: 0 }; return exportWorkflow(graph); });
     await page.getByRole('button', { name: 'File', exact: true }).click();
     const chooser = page.waitForEvent('filechooser');
     await page.getByRole('menuitem', { name: 'Import into graph…', exact: true }).click();
-    await (await chooser).setFiles({ name: 'post-fragment.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify({ schema: 2, runtime: 1, mode: 'native-post', nodes: { note: { id: 'note', type: 'note', title: 'Imported note', x: 0, y: 0, content: 'Authoring note' } }, wires: {}, groups: {} })) });
+    await (await chooser).setFiles({ name: 'post-fragment.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(imported)) });
     const review = page.getByRole('dialog', { name: 'Import into graph' });
     await expect(review).toBeVisible();
     expect(await page.evaluate(() => window.importRequestSignal.aborted)).toBe(false);
     await review.getByRole('button', { name: 'Insert into graph', exact: true }).click();
     expect(await page.evaluate(() => window.importRequestSignal.aborted)).toBe(true);
+    expect(await page.evaluate(async () => (await import('/src/workflow/ports.js?v=' + window.canvasHarness.version)).graphSemanticSignature(window.canvasHarness.graph))).not.toBe(before.signature);
     await page.evaluate(async () => { window.importPendingRequest({ choices: [{ message: { content: '{"patches":[{"index":0,"replacement":"late"}]}' }, finish_reason: 'stop' }] }); await window.canvasHarness.settle(); });
     const apply = page.getByRole('button', { name: 'Apply reviewed candidate', exact: true });
     await expect(apply).toHaveCount(0);
@@ -679,12 +600,6 @@ test('accepted additive import cancels a root request and history cannot resurre
 });
 
 
-test('the legacy add-node menu shares the six family discovery order', async ({ page }) => {
-    await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
-    await page.locator('.pc-canvas-host').click({ button: 'right', position: { x: 8, y: 8 } });
-    expect(await page.locator('.pc-menu-head').allTextContents()).toEqual(['Input', 'Shaping', 'Surface', 'Transpose', 'Derive', 'Output']);
-    await expect(page.locator('.pc-menu').getByText('Add Prompt', { exact: true })).toBeVisible();
-});
 
 
 test('an imported native graph with omitted role records can bind its required role', async ({ page }) => {
@@ -694,7 +609,7 @@ test('an imported native graph with omitted role records can bind its required r
         delete envelope.graph.roles;
         const result = h.S.importGraph(JSON.stringify(envelope)); h.UI.refreshIfOpen(); return result.graph.id;
     });
-    await page.getByRole('combobox', { name: 'Canvas', exact: true }).selectOption(imported);
+    await page.getByRole('combobox', { name: 'Workflow', exact: true }).selectOption(imported);
     await bindRole(page, 'Prose', 'prose');
     expect(await page.evaluate(() => window.canvasHarness.graph.roles?.Prose?.profileId)).toBe('prose');
 });
@@ -726,7 +641,7 @@ test('narrow workflow inspection and review remain opaque during selection feedb
     }
     await details(page).getByRole('button', { name: 'Save rules', exact: true }).click();
     expect(await page.evaluate(() => Object.values(window.canvasHarness.graph.nodes).find(node => node.operation === 'pattern-scan').rules)).toEqual(['delve']);
-    await hideLibrary(page);
+    await closeSubgraphManager(page);
     await runRoot(page);
     await expect(page.getByRole('button', { name: 'Apply reviewed candidate', exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -738,15 +653,18 @@ test('narrow toolbar exposes readable labeled pane and theme controls', async ({
     await page.setViewportSize({ width: 760, height: 1000 });
     for (const theme of ['midnight', 'parchment']) {
         await page.evaluate(async theme => (await import('/src/theme.js?v=' + window.canvasHarness.version)).setPreset(theme), theme);
-        await expect(page.getByRole('button', { name: 'Toggle library', exact: true }).getByText('Library', { exact: true })).toBeVisible();
+        await expect(page.locator('.pc-details-heading').getByRole('button', { name: 'Subgraphs', exact: true })).toBeVisible();
         await expect(page.getByRole('button', { name: 'Toggle inspector', exact: true }).getByText('Details', { exact: true })).toBeVisible();
         await page.getByRole('button', { name: 'Tools', exact: true }).click();
         await expect(page.getByRole('menuitem', { name: 'Theme and colours', exact: true })).toBeVisible();
         await page.keyboard.press('Escape');
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     }
-    const library = page.getByRole('button', { name: 'Toggle library', exact: true });
-    const previous = await library.getAttribute('aria-pressed');
-    await library.focus(); await page.keyboard.press('Enter');
-    await expect(library).toHaveAttribute('aria-pressed', previous === 'true' ? 'false' : 'true');
+    const subgraphs = page.locator('.pc-details-heading').getByRole('button', { name: 'Subgraphs', exact: true });
+    await subgraphs.focus(); await page.keyboard.press('Enter');
+    const manager = page.getByRole('region', { name: 'Manage subgraphs', exact: true });
+    await expect(manager).toBeVisible(); await manager.getByRole('button', { name: 'Close', exact: true }).click();
+    const detailsToggle = page.getByRole('button', { name: 'Toggle inspector', exact: true }), previous = await detailsToggle.getAttribute('aria-pressed');
+    await detailsToggle.focus(); await page.keyboard.press('Enter');
+    await expect(detailsToggle).toHaveAttribute('aria-pressed', previous === 'true' ? 'false' : 'true');
 });

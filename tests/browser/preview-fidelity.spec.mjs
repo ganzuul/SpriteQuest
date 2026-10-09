@@ -12,7 +12,7 @@ async function openRecordedFields(page) {
         h.S.save(); h.UI.refreshIfOpen();
         return graph.id;
     });
-    await page.getByRole('combobox', { name: 'Canvas', exact: true }).selectOption(graphId);
+    await page.getByRole('combobox', { name: 'Workflow', exact: true }).selectOption(graphId);
     await page.evaluate(() => window.canvasHarness.settle());
     await page.locator('.pc-root-run').click();
     await expect(page.locator('.pc-run-meter-label')).toHaveText('Completed');
@@ -64,9 +64,11 @@ for (const width of [1024, 320]) test(`recorded preview keeps a useful artifact 
         return { graph: JSON.stringify(h.S.getGraph(graphId)), camera: { ...h.canvas.view }, calls: result.actualCalls, runId: result.runId };
     }, graphId);
     expect(before.calls).toBe(0);
-    const nativeClipboard = await page.evaluate(graphId => {
-        const graph = window.canvasHarness.S.getGraph(graphId);
-        return JSON.stringify({ latticeClip: 1, nativeGraph: { id: 'clipboard-preview-fixture', schema: 3, runtime: 2, mode: graph.mode, nodes: { 'compose-json': structuredClone(graph.nodes['compose-json']) }, wires: {}, groups: {}, portals: {}, roles: structuredClone(graph.roles), definitions: {} } });
+    const nativeClipboard = await page.evaluate(async graphId => {
+        const h = window.canvasHarness, graph = h.S.getGraph(graphId), { makeClip } = await import('/src/workflow/clipboard.js?v=' + h.version);
+        const clip = makeClip(graph, { nodeIds: ['compose-json'] });
+        if (!clip.ok) throw Error(clip.error.message);
+        return JSON.stringify(clip.data);
     }, graphId);
     const tabs = leaf.locator('[role="tab"]');
     await tabs.first().focus();

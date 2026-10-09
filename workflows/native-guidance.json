@@ -84,9 +84,7 @@
         "from": "scene-context",
         "fromPort": "out",
         "to": "smart-compactor",
-        "toPort": "in",
-        "order": 0,
-        "kind": "merge"
+        "toPort": "in"
       },
       "wire-2": {
         "id": "wire-2",
@@ -94,9 +92,7 @@
         "from": "smart-compactor",
         "fromPort": "out",
         "to": "response-plan",
-        "toPort": "in",
-        "order": 0,
-        "kind": "merge"
+        "toPort": "in"
       },
       "wire-3": {
         "id": "wire-3",
@@ -104,9 +100,7 @@
         "from": "response-plan",
         "fromPort": "out",
         "to": "guidance",
-        "toPort": "in",
-        "order": 0,
-        "kind": "merge"
+        "toPort": "in"
       }
     },
     "groups": {},

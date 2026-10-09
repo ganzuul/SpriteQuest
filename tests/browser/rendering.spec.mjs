@@ -4,13 +4,10 @@ async function activateNative(page, variant = 'standard') {
     const id = await page.evaluate(async variant => {
         const h = window.canvasHarness, version = h.version;
         const { starterGraph } = await import('/src/workflow/starters.js?v=' + version);
-        const { normalizeNativeGraph } = await import('/src/workflow/migration.js?v=' + version);
-        const native = normalizeNativeGraph(starterGraph('native-guidance'));
-        if (!native.ok) throw new Error(native.error.message);
-        const graph = native.data; graph.id = 'rendering-native-' + variant; graph.name = 'Native rendering ' + variant;
+        const graph = starterGraph('native-guidance'); graph.id = 'rendering-native-' + variant; graph.name = 'Native rendering ' + variant;
         if (variant === 'group') {
             const member = graph.nodes['smart-compactor']; member.inGroup = 'group';
-            graph.groups.group = { id: 'group', title: 'Group', enabled: true, collapsed: true, members: [member.id], x: member.x, y: member.y, w: 260 };
+            graph.groups.group = { id: 'group', title: 'Group', collapsed: true, members: [member.id], x: member.x, y: member.y, w: 260 };
             graph.nodes['scene-context'].presentation = { compact: true, alias: 'Source' };
         } else if (variant === 'mixed') {
             const belowShelf = document.querySelector('.pc-node-shelf').getBoundingClientRect().height / .85 + 30;
@@ -21,9 +18,9 @@ async function activateNative(page, variant = 'standard') {
         }
         h.S.settings().graphs[graph.id] = graph; h.UI.refreshIfOpen(); return graph.id;
     }, variant);
-    await page.getByRole('combobox', { name: 'Canvas', exact: true }).selectOption(id);
+    await page.getByRole('combobox', { name: 'Workflow', exact: true }).selectOption(id);
     expect(await page.evaluate(id => { const h = window.canvasHarness; return h.graph === h.S.getGraph(id) && h.canvas.graph !== h.graph && h.canvas.graph.id === id && !!h.canvas.graph.nativeCards; }, id)).toBe(true);
-    for (const name of ['Toggle library', 'Toggle inspector']) {
+    for (const name of ['Toggle inspector']) {
         const toggle = page.getByRole('button', { name, exact: true }); if (await toggle.getAttribute('aria-pressed') === 'true') await toggle.click();
     }
     await page.evaluate(() => window.canvasHarness.settle()); return id;
@@ -132,8 +129,7 @@ test('native compact aliases preserve identity, real pins and the execution sign
         const h = window.canvasHarness, node = Object.values(h.graph.nodes).find(n => n.operation === 'smart-compactor');
         const { graphSemanticSignature } = await import('/src/workflow/ports.js?v=' + h.version);
         window.compactProbe = { card: h.canvas.nodeLayer.querySelector(`[data-id="${node.id}"]`), signature: graphSemanticSignature(h.graph), signatureOf: graphSemanticSignature, title: node.title };
-        window.compactProbe.port = window.compactProbe.card.querySelector('.pc-port-in'); window.compactProbe.prepares = 0;
-        const prepare = h.canvas.hooks.prepareRender; h.canvas.hooks.prepareRender = (...args) => { window.compactProbe.prepares++; return prepare(...args); }; return node.id;
+        window.compactProbe.port = window.compactProbe.card.querySelector('.pc-port-in'); window.compactProbe.draw = h.canvas.graph; return node.id;
     });
     const alias = page.getByLabel('Alias', { exact: true }); await expect(alias).toHaveAttribute('maxlength', '80');
     await alias.fill('<img src=x onerror=alert(1)> Quiet'); await alias.press('Tab');
@@ -145,7 +141,7 @@ test('native compact aliases preserve identity, real pins and the execution sign
     expect(await page.evaluate(id => { const h = window.canvasHarness, p = window.compactProbe; return { sameCard: h.canvas.nodeLayer.contains(p.card), samePin: p.card.contains(p.port), signature: p.signatureOf(h.graph) === p.signature, title: h.graph.nodes[id].title === p.title }; }, id)).toEqual({ sameCard: true, samePin: true, signature: true, title: true });
     await page.getByRole('button', { name: 'Reset alias', exact: true }).click(); await expect(alias).toHaveValue(''); await expect(card.locator('.pc-native-alias')).toHaveText('Smart Compactor');
     await card.locator('.pc-native-alias').click(); await page.keyboard.press('F2'); await expect(alias).toBeFocused();
-    expect(await page.evaluate(() => window.compactProbe.prepares)).toBe(0);
+    expect(await page.evaluate(() => window.compactProbe.draw === window.canvasHarness.canvas.graph)).toBe(true);
     await expect(page.locator('.pc-node-native[data-id="scene-context"] .pc-port-in')).toHaveCount(0);
     await expect(page.locator('.pc-node-native[data-id="guidance"] .pc-port-out')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Preview host result', exact: true })).toBeVisible();
@@ -178,17 +174,17 @@ test('ResizeObserver refreshes wire endpoints after a card grows', async ({ page
         const path = canvas.svg.querySelector(`.pc-wire[data-id="${wire.id}"]`);
         const node = canvas.nodeLayer.querySelector(`[data-id="${id}"]`);
         window.resizeProbe = { path, d: path.getAttribute('d') };
-        node.style.minHeight = '320px'; return window.resizeProbe.d;
+        node.querySelector('.pc-native-heading').style.minHeight = '220px'; return window.resizeProbe.d;
     }, ids[0]);
     await expect.poll(() => page.evaluate(() => window.resizeProbe.path.getAttribute('d'))).not.toBe(before);
     expect(await page.evaluate(() => window.canvasHarness.canvas.svg.contains(window.resizeProbe.path))).toBe(true);
 });
 test('graph projections and selection updates preserve mounted cards and ports', async ({ page }) => {
     const ids = await setup(page);
-    const result = await page.evaluate(id => {
+    const result = await page.evaluate(async id => {
         const { canvas, graph } = window.canvasHarness;
-        const card = canvas.nodeLayer.querySelector(`[data-id="${id}"]`), port = card.querySelector('.pc-port-in');
-        graph.nodes[id].title = 'Edited title'; canvas.render();
+        const card = canvas.nodeLayer.querySelector(`[data-id="${id}"]`), port = card.querySelector('.pc-port-out');
+        graph.nodes[id].title = 'Edited title'; window.canvasHarness.S.touchGraph(graph); window.canvasHarness.UI.refreshIfOpen(); await window.canvasHarness.settle();
         canvas.select({ kind: 'node', id });
         return { card: canvas.nodeLayer.contains(card), port: card.contains(port), title: card.querySelector('.pc-node-title').textContent };
     }, ids[0]);

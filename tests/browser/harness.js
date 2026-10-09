@@ -1,5 +1,20 @@
 import { installMock } from '../mock.js';
-const context = installMock({ settings: { graphs: {}, ui: { liveTokens: false } } });
+import { canvasWorkflow } from './native-fixture.mjs';
+let hostCss = 'synthetic';
+if (new URLSearchParams(location.search).has('hostCss')) {
+    const css = await (await fetch('/__host/style.css')).text(), style = document.createElement('style');
+    hostCss = css.startsWith('/* lattice-host-css:current */') ? 'current' : 'fallback';
+    style.dataset.hostCss = hostCss; style.textContent = css;
+    document.head.insertBefore(style, document.querySelector('link[rel="stylesheet"]'));
+    document.getElementById('synthetic-host-css')?.remove();
+}
+const context = installMock();
+// Exercise startup with no saved Lattice namespace; do not pick a fixture here.
+delete context.extensionSettings.lattice;
+const freshSettingsAbsent = !Object.hasOwn(context.extensionSettings, 'lattice');
+let providerCalls = 0;
+context.ConnectionManagerRequestService = { getProfile: () => null, sendRequest() { providerCalls++; throw Error('Browser fixtures must never request a model.'); } };
+context.ChatCompletionService = { processRequest() { providerCalls++; throw Error('Browser fixtures must never request a model.'); } };
 // Browser fixtures exercise the public host events used by workflow freshness.
 const listeners = new Map();
 context.eventSource = {
@@ -19,35 +34,32 @@ const setGraph = Canvas.prototype.setGraph;
 Canvas.prototype.setGraph = function (graph) { canvas = this; return setGraph.call(this, graph); };
 const UI = await import(`/src/ui.js?v=${version}`);
 const H = await import(`/src/history.js?v=${version}`);
+const { operationDefaults } = await import(`/src/workflow/catalog.js?v=${version}`);
+const { validateGraphStructure } = await import(`/src/workflow/contracts.js?v=${version}`);
 await import(`/index.js?v=${version}`);
 window.lattice.open();
 const settle = () => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 await settle();
+async function activate(graph) {
+    const checked = validateGraphStructure(graph); if (!checked.ok) throw Error(JSON.stringify(checked.error));
+    S.settings().graphs[graph.id] = graph; S.settings().activeGraphId = graph.id; S.save(); UI.refreshIfOpen(); await settle();
+    const picker = document.querySelector('select[aria-label="Workflow"]');
+    if (picker) { picker.value = graph.id; picker.dispatchEvent(new Event('change', { bubbles: true })); }
+    await settle(); return Object.keys(graph.nodes);
+}
 window.canvasHarness = {
-    context, S, UI, H, toasts, version,
+    context, S, UI, H, toasts, version, freshSettingsAbsent, hostCss, providerCalls: () => providerCalls, activate,
     get canvas() { return canvas; },
     // Native drawing tables are detached; fixture edits must reach the saved
     // root. Standalone Canvas-only fixtures retain their direct graph fallback.
     get graph() { return S.getGraph(canvas.graph?.id) ?? canvas.graph; },
     get selection() { return [...canvas.multi]; },
     async reset(count = 3, columns = 3) {
-        const g = canvas.graph;
-        const blank = S.blankGraph('Browser fixture');
-        g.nodes = blank.nodes; g.wires = {}; g.groups = {};
-        const output = S.outputNode(g);
-        output.x = 360; output.y = 430;
-        const nodes = [];
-        for (let i = 0; i < count; i++) {
-            const node = S.addNode(g, S.NODE_TYPES.PROMPT, (i % columns) * 300 + 40, Math.floor(i / columns) * 210 + 40);
-            node.title = `Prompt ${i + 1}`; node.content = 'A short prompt for rendering checks.';
-            nodes.push(node);
-        }
-        for (let i = 1; i < nodes.length; i++) S.connect(g, nodes[i - 1].id, nodes[i].id, 'merge');
-        if (nodes.length) S.connect(g, nodes.at(-1).id, output.id, 'merge');
-        canvas.setGraph(g); UI.refreshIfOpen();
+        const g = canvasWorkflow(operationDefaults, count, columns);
+        await activate(g);
         await settle();
-        Object.assign(g.view, { x: 0, y: 0, zoom: 1 }); canvas.applyTransform();
-        return nodes.map(node => node.id);
+        Object.assign(canvas.view, { x: 0, y: 0, zoom: 1 }); canvas.applyTransform();
+        return Object.keys(g.nodes);
     },
     async view(view) { Object.assign(canvas.view, view); canvas.applyTransform(); await settle(); },
     settle,

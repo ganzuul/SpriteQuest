@@ -1,11 +1,11 @@
-import { cloneDefinitionData, computeDefinitionIdentity, definitionRefKey, describeExposedParameter, nodeBindingOverrideKey, validateDefinition } from './definitions.js?v=0.20.0';
-import { safeWorkflowData, validateGraphStructure } from './contracts.js?v=0.20.0';
-import { cloneWorkflowDocument } from './document.js?v=0.20.0';
-import { ARTIFACT_KINDS, describeOperation, operationFor } from './catalog.js?v=0.20.0';
-import { applyDeclaredNodeControlChange, graphDocumentSignature } from './ports.js?v=0.20.0';
-import { selectSubgraphClosure } from './packages.js?v=0.20.0';
-import { prepareGraphCandidate } from './prepared-graph-edit.js?v=0.20.0';
-import { compositionIds, definitionChain, ownershipEntries, ownsDefinitionPath, samePath, safeId, prunePrivateSnapshots } from './composition-edit.js?v=0.20.0';
+import { cloneDefinitionData, computeDefinitionIdentity, definitionRefKey, describeExposedParameter, nodeBindingOverrideKey, validateDefinition } from './definitions.js?v=0.22.0';
+import { safeWorkflowData, validateGraphStructure } from './contracts.js?v=0.22.0';
+import { cloneWorkflowDocument } from './document.js?v=0.22.0';
+import { ARTIFACT_KINDS, describeOperation, operationFor } from './catalog.js?v=0.22.0';
+import { applyDeclaredNodeControlChange, graphDocumentSignature } from './ports.js?v=0.22.0';
+import { selectSubgraphClosure } from './packages.js?v=0.22.0';
+import { prepareGraphCandidate } from './prepared-graph-edit.js?v=0.22.0';
+import { compositionIds, definitionChain, ownershipEntries, ownsDefinitionPath, samePath, safeId, prunePrivateSnapshots } from './composition-edit.js?v=0.22.0';
 
 const fail = (code, message) => ({ ok: false, error: { code, message } });
 const record = value => value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -234,7 +234,7 @@ function applyInstanceUpdate(context, command) {
     return { ok: true, data: { fromRef, toRef: reference(installed.data.library.definitions[definitionRefKey(installed.data.ref)]) } };
 }
 
-function reconcileOwners(candidate, entries = ownershipEntries(candidate)) {
+export function reconcileOwners(candidate, entries = ownershipEntries(candidate)) {
     if (candidate.localDefinitionOwners === undefined && !entries.length) return;
     const owners = entries.filter(entry => definitionChain(candidate, entry.instancePath)?.at(-1).definition.id === entry.definitionId);
     candidate.localDefinitionOwners = owners.filter(entry => entry.instancePath.every((_, index) => owners.some(parent => samePath(parent.instancePath, entry.instancePath.slice(0, index + 1)))));

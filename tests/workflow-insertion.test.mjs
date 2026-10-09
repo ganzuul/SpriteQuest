@@ -4,6 +4,88 @@ import { prepareWorkflowInsertion, parseWorkflowInsertionFile } from '../src/wor
 import { exportWorkflow } from '../src/workflow/packages.js';
 import { starterGraph } from '../src/workflow/starters.js';
 import { graphDocumentSignature, graphSemanticSignature } from '../src/workflow/ports.js';
+import { computeDefinitionIdentity, definitionRefKey } from '../src/workflow/definitions.js';
+import { makeClip, prepareClipPaste } from '../src/workflow/clipboard.js';
+import { workflowSignature } from '../src/workflow/runtime.js';
+
+const definitionRef = definition => ({ id: definition.id, version: definition.version, semanticHash: definition.semanticHash });
+function nestedCommentDestination() {
+    const finalize = draft => {
+        const identity = computeDefinitionIdentity(draft);
+        assert.equal(identity.ok, true, JSON.stringify(identity));
+        return { ...structuredClone(identity.data.materializedDefinition), semanticHash: identity.data.semanticHash };
+    };
+    const leaf = finalize({ id: 'owned-leaf', version: 3, name: 'Leaf', interface: [], parameters: [], body: {
+        schema: 3, runtime: 2, mode: 'native-pre', nodes: { work: { id: 'work', type: 'workflow', operation: 'smart-compactor', x: 20, y: 80 } }, wires: {},
+    } });
+    const outer = finalize({ id: 'owned-outer', version: 4, name: 'Outer', interface: [], parameters: [], body: {
+        schema: 3, runtime: 2, mode: 'native-pre', nodes: { inner: { id: 'inner', type: 'subgraph', definition: definitionRef(leaf), x: 40, y: 60 } }, wires: {},
+    } });
+    const destination = { id: 'nested-comment-insertion', schema: 3, runtime: 2, mode: 'native-pre', nodes: {
+        outer: { id: 'outer', type: 'subgraph', definition: definitionRef(outer), x: 10, y: 30 },
+    }, wires: {}, definitions: { [definitionRefKey(leaf)]: leaf, [definitionRefKey(outer)]: outer },
+    localDefinitionOwners: [{ instancePath: ['outer'], definitionId: outer.id }, { instancePath: ['outer', 'inner'], definitionId: leaf.id }] };
+    return { destination, leaf, outer, viewPath: ['outer', 'inner'] };
+}
+
+test('comment-only workflow insertion and clipboard paste preserve nested owned pins and execution identity', () => {
+    const { destination, leaf, outer, viewPath } = nestedCommentDestination();
+    const imported = { id: 'comment-source', schema: 3, runtime: 2, mode: 'native-pre', nodes: {
+        first: { id: 'first', type: 'note', commentFrame: true, moveContents: true, title: 'First', alias: 'Discussion', compact: true, content: 'Line one\nLine two', color: '#637d89', x: -20, y: 10, w: 360, h: 220 },
+        second: { id: 'second', type: 'note', commentFrame: true, moveContents: false, title: 'Second', collapsed: false, content: 'More context', color: '#807c69', x: 30, y: 40, w: 400, h: 300 },
+    }, wires: {} };
+    const before = structuredClone(destination), importedBefore = structuredClone(imported);
+    const clip = makeClip(imported, { nodeIds: ['first', 'second'] });
+    assert.equal(clip.ok, true, JSON.stringify(clip));
+    const results = [
+        prepareWorkflowInsertion(destination, imported, { viewPath, at: { x: 100, y: 200 }, allocateId: (kind, id) => `pasted-${kind}-${id}` }),
+        prepareClipPaste(destination, clip.data, { viewPath, at: { x: 100, y: 200 }, allocateId: (kind, id) => `pasted-${kind}-${id}` }),
+    ];
+    for (const result of results) assert.equal(result.ok, true, JSON.stringify(result));
+    assert.deepEqual(results.map(result => result.data.candidate.nodes.outer.definition), [definitionRef(outer), definitionRef(outer)]);
+    for (const result of results) {
+        const { candidate, added, identityMap, diagnostics } = result.data;
+        assert.deepEqual(Object.keys(candidate.definitions), Object.keys(destination.definitions));
+        assert.deepEqual(candidate.definitions[definitionRefKey(outer)].body.nodes.inner.definition, definitionRef(leaf));
+        assert.deepEqual(candidate.definitions[definitionRefKey(outer)], outer);
+        assert.deepEqual(candidate.localDefinitionOwners, destination.localDefinitionOwners);
+        assert.deepEqual(added.definitions, []);
+        assert.deepEqual(added.nodes, ['pasted-nodes-first', 'pasted-nodes-second']);
+        const scope = candidate.definitions[definitionRefKey(leaf)].body;
+        assert.deepEqual(scope.nodes[identityMap.nodes.first], { ...imported.nodes.first, id: 'pasted-nodes-first', x: 100, y: 200 });
+        assert.deepEqual(scope.nodes[identityMap.nodes.second], { ...imported.nodes.second, id: 'pasted-nodes-second', x: 150, y: 230 });
+        assert.deepEqual(scope.nodes.work, leaf.body.nodes.work);
+        assert.equal(graphSemanticSignature(candidate), graphSemanticSignature(destination));
+        assert.equal(workflowSignature(candidate), workflowSignature(destination));
+        assert.notEqual(graphDocumentSignature(candidate), graphDocumentSignature(destination));
+        assert.equal(diagnostics.importedCallBound, 0);
+        assert.equal(diagnostics.bindingReviewRequired, false);
+    }
+    assert.deepEqual(destination, before);
+    assert.deepEqual(imported, importedBefore);
+});
+
+test('mixed executable fragments and ordinary notes retain nested definition revision semantics', () => {
+    const frame = { id: 'frame', type: 'note', commentFrame: true, x: 0, y: 0, w: 360, h: 220 };
+    const fragments = [
+        { nodes: { frame, reroute: { id: 'reroute', type: 'workflow', operation: 'reroute', artifactKind: 'context', phase: 'pre', x: 100, y: 100 } } },
+        { nodes: { ordinary: { id: 'ordinary', type: 'note', content: 'Ordinary note', x: 0, y: 0 } } },
+        { nodes: { frame: { ...frame, inGroup: 'group' } }, groups: { group: { id: 'group', members: ['frame'], x: 0, y: 0 } } },
+    ];
+    for (const fragment of fragments) {
+        const { destination, leaf, outer, viewPath } = nestedCommentDestination();
+        const result = prepareWorkflowInsertion(destination, { schema: 3, runtime: 2, mode: 'native-pre', wires: {}, ...fragment }, { viewPath });
+        assert.equal(result.ok, true, JSON.stringify(result));
+        const candidate = result.data.candidate, nextOuterRef = candidate.nodes.outer.definition;
+        assert.equal(nextOuterRef.id, outer.id);
+        assert.equal(nextOuterRef.version, 5);
+        const nextLeafRef = candidate.definitions[definitionRefKey(nextOuterRef)].body.nodes.inner.definition;
+        assert.equal(nextLeafRef.id, leaf.id);
+        assert.equal(nextLeafRef.version, 4);
+        assert.notEqual(graphSemanticSignature(candidate), graphSemanticSignature(destination));
+    }
+});
+
 test('file preview accepts only the current portable workflow and remains host-free', () => {
     const graph = starterGraph('native-guidance'), envelope = exportWorkflow(graph);
     const previous = Object.getOwnPropertyDescriptor(globalThis, 'SillyTavern');
@@ -172,7 +254,7 @@ test('allocation rejects unsafe identities and bounds collision retries atomical
     assert.deepEqual(destination, before);
 });
 
-test('explicit placement is exact, preserves relative layout and remaps component membership', () => {
+test('explicit placement is exact, preserves relative layout and remaps visual group membership', () => {
     const destination = starterGraph('reviewed-de-slop'), imported = starterGraph('reviewed-de-slop');
     imported.groups['ai-de-slop'].frame = { x: 400, y: 130, w: 900, h: 400 };
     const result = prepareWorkflowInsertion(destination, imported, { at: { x: -12.5, y: 33.25 } });
@@ -183,9 +265,7 @@ test('explicit placement is exact, preserves relative layout and remaps componen
     assert.equal(first.y, 33.25);
     const group = candidate.groups[identityMap.groups['ai-de-slop']];
     assert.deepEqual(group.members, imported.groups['ai-de-slop'].members.map(id => identityMap.nodes[id]));
-    assert.equal(group.entry, identityMap.nodes['pattern-scan']);
-    assert.equal(group.exit, identityMap.nodes['validate-patches']);
-    assert.deepEqual(group.component, { id: 'ai-de-slop', version: 1 });
+    for (const key of ['entry', 'exit', 'component', 'enabled']) assert.equal(Object.hasOwn(group, key), false);
     assert.deepEqual(group.frame, { x: 287.5, y: 23.25, w: 900, h: 400 });
     for (const node of Object.values(imported.nodes)) {
         const copy = candidate.nodes[identityMap.nodes[node.id]];

@@ -14,8 +14,8 @@ const { mount, unmount, flushSync, tick } = await import(client);
 const click = async element => { element.click(); flushSync(); await tick(); flushSync(); };
 const keys = async (element, key) => { element.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key, bubbles: true, cancelable: true })); flushSync(); await tick(); flushSync(); };
 const initial = { native: true, families: [
-    { name: 'Shaping', legacy: [], operations: [{ id: 'smart-compactor', title: 'Smart Compactor', phase: 'pre', compatible: true }, { id: 'response-plan', title: 'Response Plan', phase: 'pre', compatible: true }] },
-    { name: 'Output', legacy: [], operations: [{ id: 'guidance', title: 'Guidance', phase: 'pre', compatible: true }, { id: 'apply-reply', title: 'Apply Reply', phase: 'post', compatible: false }] },
+    { name: 'Shaping', operations: [{ id: 'smart-compactor', title: 'Smart Compactor', phase: 'pre', compatible: true }, { id: 'response-plan', title: 'Response Plan', phase: 'pre', compatible: true }] },
+    { name: 'Output', operations: [{ id: 'guidance', title: 'Guidance', phase: 'pre', compatible: true }, { id: 'apply-reply', title: 'Apply Reply', phase: 'post', compatible: false }] },
 ] };
 async function fixture(props, check) {
     const directory = await mkdtemp(join(tmpdir(), 'lattice-node-shelf-')), host = document.createElement('div');
@@ -41,7 +41,7 @@ test('approved shelf groups separate purpose from phase and show individual icon
         assert.ok(host.querySelector('[data-subfamily="Context"] svg'));
         await click(host.querySelector('[data-subfamily="Context"]'));
         const node = host.querySelector('[data-shelf-choice="smart-compactor"]'); assert.ok(node.querySelector('svg')); assert.equal(node.querySelector('small').textContent, 'cp');
-        await click(node); assert.deepEqual(calls, [['smart-compactor', false]]); assert.equal(host.querySelector('.pc-family-menu'), null);
+        await click(node); assert.deepEqual(calls, [['smart-compactor']]); assert.equal(host.querySelector('.pc-family-menu'), null);
     });
 });
 test('shelf keyboard traversal owns focus and an incompatible phase cannot dispatch through a raw click', async () => {
@@ -61,7 +61,7 @@ test('checked catalog variants and exact shelf choices route current IDs while r
         { id: 'operation:compose:input', label: 'Compose · Input', family: 'Shaping', phase: 'pre', purpose: 'Named text', shortcode: 'coi', ports: [] },
         { id: 'definition:exact-pin', label: 'Saved cleanup', family: 'Subgraphs', phase: 'pre', shortcode: 'sg', ports: [] },
     ];
-    await fixture({ view: initial, choices, choose: id => calls.push(id), add: () => assert.fail('No legacy creation for a catalog choice'), manageSubgraphs: () => calls.push('manage') }, async host => {
+    await fixture({ view: initial, choices, choose: id => calls.push(id), add: () => assert.fail('Catalog choices use the checked producer'), manageSubgraphs: () => calls.push('manage') }, async host => {
         await click(host.querySelector('[data-family="Subgraphs"]')); await click(host.querySelector('[data-subfamily="Library"]'));
         await click(host.querySelector('[data-shelf-choice="definition:exact-pin"]')); assert.deepEqual(calls, ['definition:exact-pin']);
         await click(host.querySelector('[data-family="Subgraphs"]')); await click(host.querySelector('[data-subfamily="Library"]')); await click(host.querySelector('[data-shelf-manage]')); assert.equal(calls.at(-1), 'manage');

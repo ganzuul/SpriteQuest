@@ -6,21 +6,24 @@ import { join, resolve, relative, isAbsolute } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { compile } from 'svelte/compiler';
 import { JSDOM } from 'jsdom';
-import { starterGraph } from '../src/workflow/starters.js?v=0.20.0';
-import { cloneWorkflowDocument } from '../src/workflow/document.js?v=0.20.0';
-import { computeDefinitionIdentity, definitionRefKey } from '../src/workflow/definitions.js?v=0.20.0';
-import { createNativeWorkflowController } from '../src/workflow/host.js?v=0.20.0';
-import { createWorkflowSession, prepareWorkflowProjection, projectPreparedWorkflow } from '../src/ui/workflow-surface.js?v=0.20.0';
-import { createGraphViewSession } from '../src/ui/graph-view-session.js?v=0.20.0';
-import { prepareWorkspaceViews, prepareLibraryViews, projectWorkspacePanels } from '../src/ui/workspace-preparation.js?v=0.20.0';
+import { starterGraph } from '../src/workflow/starters.js?v=0.22.0';
+import { cloneWorkflowDocument } from '../src/workflow/document.js?v=0.22.0';
+import { computeDefinitionIdentity, definitionRefKey } from '../src/workflow/definitions.js?v=0.22.0';
+import { createNativeWorkflowController } from '../src/workflow/host.js?v=0.22.0';
+import { createWorkflowSession, prepareWorkflowProjection, projectPreparedWorkflow } from '../src/ui/workflow-surface.js?v=0.22.0';
+import { createGraphViewSession } from '../src/ui/graph-view-session.js?v=0.22.0';
+import { prepareWorkspaceViews, prepareLibraryViews, projectWorkspacePanels } from '../src/ui/workspace-preparation.js?v=0.22.0';
+import { readNodePresentation } from '../src/ui/node-palette.js?v=0.22.0';
 
 const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true });
 globalThis.window = dom.window; globalThis.document = dom.window.document;
-for (const key of ['Node', 'Element', 'Text', 'Comment', 'Document', 'HTMLElement', 'HTMLButtonElement', 'HTMLInputElement', 'HTMLSelectElement', 'MutationObserver']) Object.defineProperty(globalThis, key, { configurable: true, value: dom.window[key] });
+for (const key of ['Node', 'Element', 'Text', 'Comment', 'Document', 'HTMLElement', 'HTMLMediaElement', 'HTMLButtonElement', 'HTMLInputElement', 'HTMLSelectElement', 'MutationObserver']) Object.defineProperty(globalThis, key, { configurable: true, value: dom.window[key] });
 const clientURL = new URL('../node_modules/svelte/src/index-client.js', import.meta.url).href;
 const { mount, unmount, flushSync } = await import(clientURL);
 const controllerText = await readFile(new URL('../src/ui/controller.js', import.meta.url), 'utf8');
 function controllerFunction(name, env) {
+    env.activeEditRoot ??= () => env.current;
+    env.readNodePresentation ??= readNodePresentation;
     const start = controllerText.indexOf('function ' + name + '(');
     if (start < 0) return null;
     const end = controllerText.indexOf('\nfunction ', start + 1);
@@ -55,7 +58,7 @@ function childDefinition() {
     assert.equal(checked.ok, true, JSON.stringify(checked));
     return { ...checked.data.materializedDefinition, semanticHash: checked.data.semanticHash };
 }
-function adapter(schema = 2, suppliedRoot = null) {
+function adapter(schema = 3, suppliedRoot = null) {
     const saved = starterGraph('reviewed-de-slop'); saved.nodes.repair.mode = 'scan';
     const root = suppliedRoot ?? (schema === 3 ? cloneWorkflowDocument(saved).data : saved), definition = childDefinition();
     if (schema === 3 && root.mode === 'native-post') {
@@ -71,56 +74,22 @@ function adapter(schema = 2, suppliedRoot = null) {
     const library = prepareLibraryViews(root.id, { [definitionRefKey(definition)]: definition }); assert.equal(library.ok, true, JSON.stringify(library));
     prepared.data.navigation.push(...library.data.navigation); prepared.data.preparedViews.push(...library.data.preparedViews);
     const graphViews = createGraphViewSession({ root, activationId: 'preview-review-' + schema, ...prepared.data }).data; assert.ok(graphViews);
-    const env = { current: root, graphViews, workspacePrepared: prepared.data, rootRunEpoch: 1, workspaceRevision: 1, uiEpoch: 1, editorCaptures: new WeakMap(), schema2ReviewOwner: null, selectedPreview: null, pinnedPreview: null, selectedKind: 'node', selected: root.nodes['apply-reply'], workflowProjection: null, workflowProjectionGraph: null, workflowState: { result: null, reviewHandles: [], busy: false, availability: 'current', applyIssue: '' }, workflowLibrary: null, workflowInspector: null, canvas: null, canvasTraceRows: null, editorDraw: null, isOpen: () => true, isWorkflowGraph: graph => graph?.mode?.startsWith('native-'), executableNative: graph => graph.schema === 2 && graph.runtime === 1 || graph.schema === 3 && graph.runtime === 2, settings: () => ({}), projectPreparedWorkflow, projectWorkspacePanels, workbench: { update(value) { env.panels = value; } } };
-    for (const name of ['captureEditor', 'editorCurrent', 'samePreviewTerminal', 'currentRootPreviewTerminal', 'schema2ReviewSelector', 'currentSchema2Review', 'currentPreviewHandle', 'applyPreviewReview', 'rejectPreviewReview', 'workflowView', 'updateWorkflowProjection']) { const fn = controllerFunction(name, env); if (fn) env[name] = fn; }
+    const env = { current: root, graphViews, workspacePrepared: prepared.data, rootRunEpoch: 1, workspaceRevision: 1, uiEpoch: 1, editorCaptures: new WeakMap(), workspaceIssue: '', selectedPreview: null, pinnedPreview: null, selectedKind: 'node', selected: root.nodes['apply-reply'], workflowProjection: null, workflowProjectionGraph: null, workflowState: { result: null, reviewHandles: [], busy: false, availability: 'current', applyIssue: '' }, canvas: null, canvasTraceRows: null, editorDraw: null, isOpen: () => true, settings: () => ({}), projectPreparedWorkflow, projectWorkspacePanels, workbench: { update(value) { env.panels = value; } } };
+    for (const name of ['captureEditor', 'editorCurrent', 'samePreviewTerminal', 'currentRootPreviewTerminal', 'currentPreviewHandle', 'applyPreviewReview', 'rejectPreviewReview', 'workflowView', 'updateWorkflowProjection']) { const fn = controllerFunction(name, env); if (fn) env[name] = fn; }
     env.workflowSession = createWorkflowSession({ runtime: () => runtime, rootCurrent: () => env.current, runEpoch: () => env.rootRunEpoch, active: () => env.isOpen(), changed(state) { const authorityChanged = state.result !== env.workflowState.result || state.reviewHandles !== env.workflowState.reviewHandles; env.workflowState = state; if (authorityChanged) env.workspacePrepared.workflow = prepareWorkflowProjection(env.current, { ...(prepared.data.planner ? { planner: prepared.data.planner } : {}), result: state.result, candidateStatus: candidate => runtime.candidateStatus(candidate) }); env.updateWorkflowProjection(); } });
     const actions = controllerActions(env);
     return { root, env, actions, graphViews, runtime, counters, context, message, definition, run: () => env.workflowSession.run(), refresh: () => env.updateWorkflowProjection(), terminal: { kind: 'terminal', address: { workflowId: root.id, instancePath: [], nodeId: 'apply-reply' } } };
 }
 
 // Real zero-call host results flow through the actual controller, cached projector and compiled leaf.
-test('schema2 candidate review appears in the single preview and applies the session candidate rather than displayed text', async () => {
-    const f = adapter(); await f.run();
-    assert.equal(f.env.workflowState.result.ok, true); assert.equal(f.env.workflowState.result.artifact.kind, 'candidate'); assert.deepEqual(f.env.workflowState.reviewHandles, []);
-    let applying, received;
-    const view = structuredClone(f.env.panels.outputPreview);
-    const leaf = await previewFixture(view, { ...f.actions, apply(selector) { received = selector; applying = f.actions.apply(selector); } });
-    try {
-        const button = leaf.host.querySelector('[data-preview-apply]'); assert.ok(button, 'a supported schema2 candidate needs a visible Apply path'); assert.equal(button.disabled, false);
-        assert.equal(view.review.selector.kind, 'schema2-candidate'); assert.deepEqual(Object.keys(view.review.selector).sort(), ['kind', 'reviewId', 'terminal']); assert.deepEqual(view.review.selector.terminal, f.terminal);
-        assert.ok(!('handleId' in view.review.selector) && !('candidate' in view.review.selector));
-        view.sections = [{ id: 'candidate', label: 'candidate', kind: 'candidate', text: 'FORGED visible text', format: 'structured-text', truncated: false }]; leaf.update(view);
-        button.click(); await applying; flushSync();
-        assert.notEqual(received, view.review.selector); assert.notEqual(received.terminal.address.instancePath, view.review.selector.terminal.address.instancePath); assert.deepEqual(received, view.review.selector);
-        assert.equal(f.counters.apply, 1); assert.equal(f.counters.saves, 1); assert.equal(f.message.mes, 'We delve.\n雪'); assert.equal(f.message.swipes.length, 2); assert.ok(f.message.extra.latticeRevision); assert.equal(f.counters.requests, 0);
-        await f.run(); const reviewed = f.env.panels.outputPreview; leaf.update(reviewed);
-        const rejected = [...leaf.host.querySelectorAll('button')].find(button => button.textContent === 'Reject candidate'); assert.equal(rejected.disabled, false); const retained = f.env.workflowSession.result(); rejected.click(); assert.equal(f.env.workflowSession.result(), retained); assert.equal(f.env.workflowState.availability, 'stale'); assert.equal(f.env.panels.outputPreview.review, null); assert.match(f.env.panels.outputPreview.statusDetail, /Candidate rejected/);
-    } finally { await leaf.close(); }
-});
-
-test('schema2 review callbacks reject forged, stale, readonly, replaced, busy and target ownership before host Apply work', async () => {
-    const f = adapter(); await f.run(); const original = structuredClone(f.root), selector = structuredClone(f.env.panels.outputPreview.review?.selector);
-    assert.ok(selector, 'schema2 review needs a distinct selector');
-    const unchanged = async (candidate = selector) => { const before = { ...f.counters }, result = f.env.workflowSession.result(); await f.actions.apply(candidate); f.actions.reject(candidate); assert.equal(f.counters.checks, before.checks); assert.equal(f.counters.apply, before.apply); assert.equal(f.counters.cancel, before.cancel); assert.equal(f.env.workflowSession.result(), result); assert.deepEqual(f.root, original); };
-    await unchanged({ ...selector, reviewId: 'forged' }); await unchanged({ ...selector, terminal: { ...selector.terminal, address: { ...selector.terminal.address, nodeId: 'repair' } } });
-    const opened = f.graphViews.openLibrary({ id: f.definition.id, version: f.definition.version, semanticHash: f.definition.semanticHash }); assert.equal(opened.ok, true); f.refresh(); assert.equal(f.env.panels.outputPreview.review, null); await unchanged();
-    f.graphViews.focusView(f.graphViews.project().graphViews.tabs[0].key); f.refresh(); await unchanged(); assert.notEqual(f.env.panels.outputPreview.review.selector.reviewId, selector.reviewId, 'returning to root issues fresh view ownership');
-    let live = structuredClone(f.env.panels.outputPreview.review.selector); f.env.rootRunEpoch++; await unchanged(live); f.refresh();
-    live = structuredClone(f.env.panels.outputPreview.review.selector); const root = f.env.current; f.env.current = structuredClone(root); await unchanged(live); f.env.current = root; f.refresh();
-    live = structuredClone(f.env.panels.outputPreview.review.selector); const pending = f.run(); assert.equal(f.env.workflowState.busy, true); await unchanged(live); await pending; await unchanged(live);
-    const current = structuredClone(f.env.panels.outputPreview.review.selector); await f.env.workflowSession.run({ target: f.terminal }); assert.equal(f.env.workflowState.result.mode, 'target'); assert.equal(f.env.panels.outputPreview.review, null); await unchanged(current);
-    await f.run(); const stale = structuredClone(f.env.panels.outputPreview.review.selector); f.env.workflowSession.invalidate('Changed root'); await unchanged(stale);
-    assert.equal(f.counters.requests, 0); assert.equal(f.counters.apply, 0);
-});
-
-test('schema2 preview preserves final host source freshness checks after review selection', async () => {
+test('current preview preserves final host source freshness checks after review selection', async () => {
     const f = adapter(); await f.run(); const selector = structuredClone(f.env.panels.outputPreview.review?.selector); assert.ok(selector);
     f.message.mes += ' externally edited'; const before = structuredClone(f.message), checks = f.counters.checks;
     await f.actions.apply(selector);
     assert.equal(f.counters.checks, checks + 1); assert.equal(f.counters.apply, 0); assert.equal(f.counters.saves, 0); assert.deepEqual(f.message, before); assert.match(f.env.workflowState.applyIssue, /source|changed|stale/i);
 });
 
-test('schema3 pinned root terminal keeps its actual handle across node selection and never applies from child or library views', async () => {
+test('current pinned root terminal keeps its actual handle across node selection and never applies from child or library views', async () => {
     const f = adapter(3); await f.run(); assert.equal(f.env.workflowState.result.ok, true, JSON.stringify(f.env.workflowState.result.error));
     const handle = f.env.workflowState.reviewHandles.find(handle => handle.terminal.address.nodeId === 'apply-reply'); assert.ok(handle);
     f.env.pinnedPreview = structuredClone(f.terminal); f.env.selectedPreview = null; f.env.selected = f.root.nodes['pattern-scan']; f.refresh();
@@ -136,24 +105,6 @@ test('schema3 pinned root terminal keeps its actual handle across node selection
         f.env.workflowSession.invalidate('Superseded run'); f.refresh(); await f.actions.apply(handle); assert.equal(f.counters.apply, 0); assert.equal(f.counters.requests, 0);
     } finally { await leaf.close(); }
 });
-test('single preview exposes actual session status and bounded schema2 findings changes reports and call trace', async () => {
-    const f = adapter(); await f.run(); const view = f.env.panels.outputPreview, projected = f.env.workflowProjection.result;
-    assert.equal(view.statusDetail, f.env.workflowState.status, 'session review and provenance status must remain visible');
-    for (const [id, label, values] of [['findings', 'Findings', projected.findings], ['changes', 'Changes', projected.changes], ['reports', 'Reports', projected.reports], ['calls', 'Call trace', projected.calls]]) {
-        const section = view.sections.find(section => section.id === id); assert.ok(section, label + ' needs a genuine diagnostic tab'); assert.equal(section.label, label); assert.deepEqual(JSON.parse(section.text), values); assert.equal(section.truncated, false);
-    }
-    const leaf = await previewFixture(view, f.actions);
-    try {
-        assert.match(leaf.host.textContent, /Run complete\. Review the result\./);
-        const reports = [...leaf.host.querySelectorAll('[role="tab"]')].find(tab => tab.textContent === 'Reports'); reports.click(); flushSync(); assert.deepEqual(JSON.parse(leaf.host.querySelector('[role="tabpanel"] pre').textContent), projected.reports);
-        const large = { ...f.env.workflowProjection, result: { ...projected, reports: [{ code: 'LONG_REPORT', message: '雪'.repeat(40000) }] } };
-        const panel = projectWorkspacePanels(f.graphViews.readEditor(), large, f.env.workflowState, 'bounded', f.env.selectedPreview, f.env.pinnedPreview, large, [], f.env.workspacePrepared.previewChoices);
-        const section = panel.outputPreview.sections.find(section => section.id === 'reports'); assert.equal(section.truncated, true); assert.ok(Buffer.byteLength(section.text) <= 65536); assert.equal(section.format, 'structured-text'); leaf.update(panel.outputPreview); assert.match(leaf.host.textContent, /Reports: Truncated diagnostic/);
-        await f.actions.apply(view.review.selector); leaf.update(f.env.panels.outputPreview); assert.match(leaf.host.textContent, /Candidate applied in memory\. Save durability is unconfirmed\./);
-        await f.run(); f.actions.reject(f.env.panels.outputPreview.review.selector); leaf.update(f.env.panels.outputPreview); assert.match(leaf.host.textContent, /Candidate rejected\. Original reply preserved\./);
-    } finally { await leaf.close(); }
-});
-
 async function workbenchFixture(actions) {
     const directory = await mkdtemp(join(tmpdir(), 'lattice-review-workbench-')), host = document.createElement('div'); document.body.append(host);
     const compiled = new Map();
@@ -175,15 +126,13 @@ async function workbenchFixture(actions) {
     catch (error) { await close(); throw error; }
 }
 
-test('public native runPreview opens the actual Workflow setup through the mounted bridge without legacy compile or host work', async () => {
+test('the actual Setup bridge opens examples without host work', async () => {
     const f = adapter(); await f.run(); const mounted = await workbenchFixture({ close() {}, resizeStart() {}, workflowSetup: {} });
     try {
         mounted.bridge.update(f.env.panels); const before = structuredClone(f.root), counters = { ...f.counters };
-        const runEnv = { ...f.env, workbench: mounted.bridge, root: mounted.bridge.root, syncPaneToggles() {}, renderInspector() {}, compile() { throw new Error('Native Preview must never compile a legacy prompt'); }, collect() { throw new Error('Native Preview must never gather legacy context'); }, gatherContext() { throw new Error('Native Preview must never gather lore'); }, countTokens() { throw new Error('Native Preview must never tokenize a legacy prompt'); } };
-        runEnv.root._parts = mounted.bridge.parts;
-        await controllerFunction('runPreview', runEnv)(); await (await import(clientURL)).tick(); flushSync();
-        const dialog = mounted.host.querySelector('[role="dialog"][aria-label="Workflow setup"]'); assert.ok(dialog, 'the public native Preview entry point must expose the existing Setup');
-        assert.ok(dialog.querySelector('[aria-label="Workflow mode"]')); assert.equal(dialog.querySelector('h3').textContent, f.root.name); assert.match(dialog.textContent, /latest completed assistant reply/); assert.equal(mounted.host.querySelectorAll('.pc-output-preview').length, 1); assert.deepEqual(f.root, before); assert.deepEqual(f.counters, counters); assert.equal(f.counters.requests, 0);
+        mounted.bridge.revealWorkflowSetup(); await (await import(clientURL)).tick(); flushSync();
+        const dialog = mounted.host.querySelector('[role="dialog"][aria-label="Workflow setup"]'); assert.ok(dialog, 'Setup opens the actual current panel');
+        assert.equal(dialog.querySelector('[aria-label="Workflow mode"]'), null); assert.equal(dialog.querySelector('h3').textContent, f.root.name); assert.match(dialog.textContent, /latest completed assistant reply/); assert.equal(mounted.host.querySelectorAll('.pc-output-preview').length, 1); assert.deepEqual(f.root, before); assert.deepEqual(f.counters, counters); assert.equal(f.counters.requests, 0);
     } finally { await mounted.close(); }
 });
 

@@ -32,10 +32,10 @@
 
 **Interfaces:** buildConnectionRoute(from, to) returns { d, label: { x, y } }. Endpoints carry graph x/y and side. Horizontal necks and compact rounded backward bows are encoded by the route.
 
-- [ ] Write and observe failing behavior tests for horizontal departure/arrival, forward compactness, equal-height backward bow, close/vertical cases, route label placement, finite coordinates.
-- [ ] Implement route helper; run focused tests and self-review.
-- [ ] Integrate shared path and label result for settled and preview wires; add endpoint highlighting and background translucency.
-- [ ] Verify renderer alignment and hover behavior with browser tests.
+- [x] Write and observe failing behavior tests for horizontal departure/arrival, forward compactness, equal-height backward bow, close/vertical cases, route label placement, finite coordinates.
+- [x] Implement route helper; run focused tests and self-review.
+- [x] Integrate shared path and label result for settled and preview wires; add endpoint highlighting and background translucency.
+- [x] Verify renderer alignment and hover behavior with browser tests.
 
 ### Task 2: Nonexecuting authored comment frames
 
@@ -43,22 +43,22 @@
 
 **Interfaces:** Pure helpers createCommentFrame(graph, ids, boundsFor, options), containedCommentNodes(graph, frame, boundsFor), fitCommentFrame(graph, frame, boundsFor), and isCommentFrame(node). Notes use commentFrame/moveContents metadata. Return a new frame from creation; root inserts through the qualified edit pipeline.
 
-- [ ] Write and observe failing tests for measured selection padding, empty frame, containment/fit, nonexecuting identity, export/import, clipboard and undo behavior.
-- [ ] Implement focused helpers and portable fields; ordinary notes remain unchanged.
-- [ ] Run focused tests and self-review the persisted model.
+- [x] Write and observe failing tests for measured selection padding, empty frame, containment/fit, nonexecuting identity, export/import, clipboard and undo behavior.
+- [x] Implement focused helpers and portable fields; ordinary notes remain unchanged.
+- [x] Run focused tests and self-review the persisted model.
 
 ### Task 3: Native comment interaction and presentation
 
 **Files:** Root owns src/canvas.js; ui/CanvasLayer.svelte; new ui/CommentFrame.svelte and ui/CommentDetails.svelte; ui/types.ts; src/ui/controller.js; style.css; browser/comment and Canvas integration tests. Coordinate cleanup changes before shared edits.
 
-- [ ] Write and observe failing tests for selection/right-click/C creation, title/notes, resize/fit/move/delete-only, read-only/scoped edits and interior click-through.
-- [ ] Add frame layer behind wires and nodes, measured geometry, frame selection and header/resize gestures using captured containment.
-- [ ] Add context/keyboard commands and dedicated details editing through existing native document pipeline.
-- [ ] Run focused Node/browser checks and visually inspect forward/backward wires and comments at narrow/normal sizes.
+- [x] Write and observe failing tests for selection/right-click/C creation, title/notes, resize/fit/move/delete-only, read-only/scoped edits and interior click-through.
+- [x] Add frame layer behind wires and nodes, measured geometry, frame selection and header/resize gestures using captured containment.
+- [x] Add context/keyboard commands and dedicated details editing through existing native document pipeline.
+- [x] Run focused Node/browser checks and visually inspect forward/backward wires and comments at narrow/normal sizes.
 
 ### Task 4: Integration, independent review and main delivery
 
-- [ ] Coordinate cleanup integration order and apply the latest cleanup baseline safely.
-- [ ] Run full Node/type/build/assets/browser/smoke checks appropriate to the final baseline.
-- [ ] Independently review the combined change, fix actionable findings and reverify affected behavior.
+- [x] Coordinate cleanup integration order and apply the latest cleanup baseline safely.
+- [x] Run full Node/type/build/assets/browser/smoke checks appropriate to the final baseline.
+- [x] Independently review the combined change, fix actionable findings and reverify affected behavior.
 - [ ] Commit only owned changes, fetch and integrate remote updates normally, push main without force, verify remote SHA and report completion.

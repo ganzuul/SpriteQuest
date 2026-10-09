@@ -1,13 +1,14 @@
-import { safeWorkflowData, validateGraphStructure } from './contracts.js?v=0.20.0';
-import { cloneWorkflowDocument } from './document.js?v=0.20.0';
-import { operationFor } from './catalog.js?v=0.20.0';
-import { graphDocumentSignature, graphSemanticSignature } from './ports.js?v=0.20.0';
-import { parseWorkflow } from './packages.js?v=0.20.0';
-import { inspectExpandedGraph } from './graph-validation.js?v=0.20.0';
-import { definitionRefKey, nodeBindingOverrideKey } from './definition-data.js?v=0.20.0';
-import { definitionChain, ownsDefinitionPath, pathStartsWith } from './composition-edit.js?v=0.20.0';
-import { prepareLocalDefinitionEdit } from './definition-library.js?v=0.20.0';
-import { prepareImportedDefinitionPins } from './definition-insertion.js?v=0.20.0';
+import { safeWorkflowData, validateGraphStructure } from './contracts.js?v=0.22.0';
+import { cloneWorkflowDocument } from './document.js?v=0.22.0';
+import { operationFor } from './catalog.js?v=0.22.0';
+import { graphDocumentSignature, graphSemanticSignature } from './ports.js?v=0.22.0';
+import { parseWorkflow } from './packages.js?v=0.22.0';
+import { inspectExpandedGraph } from './graph-validation.js?v=0.22.0';
+import { definitionRefKey, nodeBindingOverrideKey } from './definition-data.js?v=0.22.0';
+import { definitionChain, ownsDefinitionPath, pathStartsWith } from './composition-edit.js?v=0.22.0';
+import { prepareLocalDefinitionEdit } from './definition-library.js?v=0.22.0';
+import { prepareImportedDefinitionPins } from './definition-insertion.js?v=0.22.0';
+import { isCommentFrame } from '../canvas/comment-frames.js?v=0.22.0';
 
 const fail = (code, message) => ({ ok: false, error: { code, message } });
 
@@ -174,17 +175,23 @@ export function prepareWorkflowInsertion(destination, imported, options = {}) {
             translate(group);
             if (group.frame) translate(group.frame);
             group.id = identityMap.groups[group.id];
-            if (group.entry !== undefined) group.entry = identityMap.nodes[group.entry];
-            if (group.exit !== undefined) group.exit = identityMap.nodes[group.exit];
             if (group.members !== undefined) group.members = group.members.map(id => identityMap.nodes[id]);
             candidate.groups[group.id] = group;
         }
         for (const portal of Object.values(source.data.portals ?? {})) {
             portal.id = identityMap.portals[portal.id]; portal.source.nodeId = identityMap.nodes[portal.source.nodeId]; candidate.portals[portal.id] = portal;
         }
+        const commentOnlyInsertion = !!containingDefinition && added.nodes.length > 0 && added.nodes.every(id => isCommentFrame(candidate.nodes[id]))
+            && ['wires', 'groups', 'portals', 'definitions', 'roles'].every(kind => !Object.keys(source.data[kind] ?? {}).length && !added[kind].length);
         // An empty fragment must not create optional containers.
         if (Object.values(added).every(ids => ids.length === 0)) candidate = structuredClone(destination);
-        else if (containingDefinition) {
+        else if (commentOnlyInsertion) {
+            // Admitted annotations carry no execution identity. Preserve the exact
+            // owned snapshot and ancestor pins while retaining allocated layout/data.
+            const nodes = candidate.nodes;
+            candidate = target.data;
+            candidate.definitions[definitionRefKey(containingDefinition)].body.nodes = nodes;
+        } else if (containingDefinition) {
             const { definitions, ...body } = candidate;
             const edited = prepareLocalDefinitionEdit({ ...target.data, definitions }, { instancePath: viewPath, expectedRef: { id: containingDefinition.id, version: containingDefinition.version, semanticHash: containingDefinition.semanticHash }, draft: { ...structuredClone(containingDefinition), body } });
             if (!edited.ok) return edited;
@@ -193,6 +200,7 @@ export function prepareWorkflowInsertion(destination, imported, options = {}) {
         }
         const validation = validateGraphStructure(candidate);
         if (!validation.ok) return validation;
+        if (commentOnlyInsertion && graphSemanticSignature(candidate) !== baseSignature) return fail('SEMANTIC_COMMENT_INSERTION', 'Comment-only insertion must preserve execution identity.');
         const diagnostics = reviewDiagnostics(candidate, added, viewPath, importedBindingOverrides, changedRefs);
         return diagnostics.ok ? { ok: true, data: { candidate, diagnostics: diagnostics.data, added, identityMap, viewPath: [...viewPath], baseSignature, baseDocumentSignature } } : diagnostics;
     } catch {

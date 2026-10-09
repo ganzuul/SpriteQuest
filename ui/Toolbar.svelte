@@ -3,8 +3,8 @@
     import type { WorkbenchView, WorkbenchActions } from './types';
     let { state, actions, local }: { state: WorkbenchView; actions: WorkbenchActions; local: (command: string) => void } = $props();
     const workflow = $derived(state.rootWorkflow ?? state.workflow);
-    let header: HTMLElement, graphSelect: HTMLSelectElement, arm: HTMLInputElement, sideBtn: HTMLButtonElement, inspBtn: HTMLButtonElement;
-    export function getParts() { return { header, graphSelect, arm, sideBtn, inspBtn }; }
+    let header: HTMLElement, graphSelect: HTMLSelectElement, arm: HTMLInputElement, inspBtn: HTMLButtonElement;
+    export function getParts() { return { header, graphSelect, arm, inspBtn }; }
     export function focusGraphSelect() { graphSelect.focus(); }
 </script>
 <header class="pc-header" data-pc-ui="svelte" bind:this={header}>
@@ -14,17 +14,16 @@
         <button type="button" class="pc-btn menu_button pc-close" title="Close" aria-label="Close canvas" onclick={() => actions.command('close')}>×</button>
     </div>
     <div class="pc-workflow-bar">
-        <select class="pc-select pc-graph-select text_pole" aria-label="Canvas" value={state.graphId} bind:this={graphSelect} onchange={(event) => actions.pickGraph(event.currentTarget.value)}>{#each state.graphs as graph (graph.id)}<option value={graph.id}>{graph.name}</option>{/each}</select>
+        <select class="pc-select pc-graph-select text_pole" aria-label="Workflow" value={state.graphId} bind:this={graphSelect} onchange={(event) => actions.pickGraph(event.currentTarget.value)}>{#each state.graphs as graph (graph.id)}<option value={graph.id}>{graph.name}</option>{/each}</select>
         <div class="pc-header-actions pc-history">
             <button type="button" class={`pc-btn menu_button pc-undo${state.history.undo ? '' : ' pc-disabled'}`} disabled={!state.history.undo} title={state.history.undoTitle} aria-label="Undo" onclick={() => actions.command('undo')}>↶</button>
             <button type="button" class={`pc-btn menu_button pc-redo${state.history.redo ? '' : ' pc-disabled'}`} disabled={!state.history.redo} title={state.history.redoTitle} aria-label="Redo" onclick={() => actions.command('redo')}>↷</button>
             <span class={`pc-history-note${state.history.showNote ? ' pc-show' : ''}`}>{state.history.note}</span>
         </div>
-        <button type="button" class="pc-btn menu_button pc-root-run" disabled={!workflow?.native || (!workflow?.busy && !!workflow?.issues.length)} title={workflow?.native ? workflow.issues.join('\n') || 'Run the root workflow' : 'Install a native workflow example to run'} onclick={() => actions.command(workflow?.busy ? 'stop-workflow' : 'run-workflow')}>{workflow?.busy ? '■ Stop' : '▶ Run'}</button>
-        <span class="pc-root-workflow-status" role="status">{workflow?.native ? `${workflow.phase} · ${workflow.assigned ? 'Assigned' : 'Unassigned'} · ≤ ${workflow.callBound} requests` : 'Legacy prompt'} · Autosave</span>
+        <button type="button" class="pc-btn menu_button pc-root-run" disabled={!workflow || (!workflow.busy && !!workflow.issues.length)} title={workflow?.issues.join('\n') || 'Run the root workflow'} onclick={() => actions.command(workflow?.busy ? 'stop-workflow' : 'run-workflow')}>{workflow?.busy ? '■ Stop' : '▶ Run'}</button>
+        <span class="pc-root-workflow-status" role="status">{workflow ? `${workflow.phase} · ${workflow.assigned ? 'Assigned' : 'Unassigned'} · ≤ ${workflow.callBound} requests` : 'Workflow unavailable'} · Autosave</span>
         <button type="button" class="pc-btn menu_button" title="Workflow setup" onclick={() => local('workflow-setup')}>Setup</button>
         <div class="pc-header-actions pc-surface-actions">
-            <button type="button" class={`pc-btn menu_button pc-pane-toggle${state.sideOpen ? ' pc-on' : ''}`} title="Show or hide the Library" aria-label="Toggle library" aria-pressed={state.sideOpen} bind:this={sideBtn} onclick={() => actions.command('sidebar')}>Library</button>
             <button type="button" class={`pc-btn menu_button pc-pane-toggle${state.inspectorOpen ? ' pc-on' : ''}`} title="Show or hide the inspector" aria-label="Toggle inspector" aria-pressed={state.inspectorOpen} bind:this={inspBtn} onclick={() => actions.command('inspector')}>Details</button>
         </div>
         <label class="pc-arm"><input class="pc-arm-input" type="checkbox" checked={state.armed} bind:this={arm} onchange={(event) => actions.arm(event.currentTarget.checked)} /><span>Arm</span></label>

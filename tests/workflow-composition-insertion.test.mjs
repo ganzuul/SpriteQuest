@@ -6,9 +6,9 @@ import { makeLocalCopy } from '../src/workflow/definition-library.js';
 import { exportWorkflow, parseWorkflow } from '../src/workflow/packages.js';
 import { graphSemanticSignature, graphDocumentSignature } from '../src/workflow/ports.js';
 import { installMock } from './mock.js';
-import { captureGraphEditContext } from '../src/workflow/transactions.js?v=0.20.0';
-import * as S from '../src/state.js?v=0.20.0';
-import * as H from '../src/history.js?v=0.20.0';
+import { captureGraphEditContext } from '../src/workflow/transactions.js?v=0.22.0';
+import * as S from '../src/state.js?v=0.22.0';
+import * as H from '../src/history.js?v=0.22.0';
 
 const finalize = draft => { const value = computeDefinitionIdentity(draft); assert.equal(value.ok, true); return { ...structuredClone(value.data.materializedDefinition), semanticHash: value.data.semanticHash }; };
 const ref = definition => ({ id: definition.id, version: definition.version, semanticHash: definition.semanticHash });
@@ -23,7 +23,7 @@ const outerDraft = structuredClone(leaf); outerDraft.id = 'outer'; outerDraft.bo
 const outer = finalize(outerDraft);
 function graph(id, profileId, model) {
     return { id, schema: 3, runtime: 2, mode: 'native-pre', roles: { Analysis: { profileId, model } }, nodes: {
-        source: { id: 'source', type: 'workflow', operation: 'scene-context' }, placed: instance('placed', outer), direct: { id: 'direct', type: 'workflow', operation: 'smart-compactor', method: 'compress' },
+        source: { id: 'source', type: 'workflow', operation: 'scene-context' }, placed: { ...instance('placed', outer), inGroup: 'boxed' }, direct: { id: 'direct', type: 'workflow', operation: 'smart-compactor', method: 'compress' },
     }, wires: {
         input: { id: 'input', route: 'portal', portalId: 'context', to: 'placed', toPort: 'input' }, direct: { id: 'direct', route: 'wire', from: 'source', fromPort: 'out', to: 'direct', toPort: 'in' },
     }, groups: { boxed: { id: 'boxed', members: ['placed'], x: 0, y: 0 } }, portals: { context: { id: 'context', label: 'Context', kind: 'context', source: { nodeId: 'source', portId: 'out' } }, result: { id: 'result', label: 'Result', kind: 'context', source: { nodeId: 'placed', portId: 'output' } } }, definitions: { [definitionRefKey(leaf)]: structuredClone(leaf), [definitionRefKey(outer)]: structuredClone(outer) } };

@@ -127,7 +127,10 @@ function presentationPatch(value) {
     }
     if (patch.groupPresentation !== undefined) {
         if (!record(patch.groupPresentation)) return null;
-        for (const [id, group] of Object.entries(patch.groupPresentation)) if (!textId(id) || !record(group) || !ownKeys(group, ['collapsed']) || typeof group.collapsed !== 'boolean') return null;
+        for (const [id, group] of Object.entries(patch.groupPresentation)) {
+            if (!textId(id) || !record(group) || !Object.keys(group).length || !ownKeys(group, ['collapsed', 'x', 'y', 'frame']) || (group.collapsed !== undefined && typeof group.collapsed !== 'boolean') || (group.x !== undefined && !Number.isFinite(group.x)) || (group.y !== undefined && !Number.isFinite(group.y))) return null;
+            if (group.frame !== undefined && (!record(group.frame) || !ownKeys(group.frame, ['x', 'y', 'w', 'h']) || ![group.frame.x, group.frame.y, group.frame.w, group.frame.h].every(Number.isFinite) || group.frame.w <= 0 || group.frame.h <= 0)) return null;
+        }
     }
     if (patch.portalPresentation !== undefined) {
         if (!record(patch.portalPresentation)) return null;
@@ -143,7 +146,7 @@ function creationOptions(value) {
     try {
         if (!record(value) || ![Object.prototype, null].includes(Object.getPrototypeOf(value))) return null;
         const descriptors = Object.getOwnPropertyDescriptors(value), keys = Reflect.ownKeys(descriptors);
-        if (keys.some(key => !['workflowId', 'navigation', 'persisted', 'legacyView'].includes(key))) return null;
+        if (keys.some(key => !['workflowId', 'navigation', 'persisted', 'initialCamera'].includes(key))) return null;
         const result = {};
         for (const key of keys) {
             if (!descriptors[key].enumerable || !('value' in descriptors[key])) return null;
@@ -153,7 +156,7 @@ function creationOptions(value) {
     } catch { return null; }
 }
 
-function legacyCamera(value) {
+function initialCameraValue(value) {
     const camera = { x: 0, y: 0, zoom: 1 };
     try {
         if (!record(value) || ![Object.prototype, null].includes(Object.getPrototypeOf(value))) return camera;
@@ -162,7 +165,7 @@ function legacyCamera(value) {
             const number = descriptors[key]?.value;
             if (Number.isFinite(number) && (key !== 'zoom' || number > 0)) camera[key] = key === 'zoom' ? Math.max(0.25, Math.min(2.5, number)) : number;
         }
-    } catch { /* Corrupt compatibility data uses the finite defaults. */ }
+    } catch { /* Invalid current camera data uses finite defaults. */ }
     return camera;
 }
 
@@ -217,7 +220,7 @@ export function createViewState(options) {
     const workflowId = copy.workflowId, rootIdentity = { kind: 'root', workflowId }, rootKey = identityKey(rootIdentity);
     let navigation = preparedNavigation(workflowId, copy.navigation ?? []);
     if (!navigation) return null;
-    let views = new Map([[rootKey, { identity: rootIdentity, open: true, ...emptyPresentation(), camera: legacyCamera(copy.legacyView) }]]);
+    let views = new Map([[rootKey, { identity: rootIdentity, open: true, ...emptyPresentation(), camera: initialCameraValue(copy.initialCamera) }]]);
     let activeKey = rootKey, epoch = 0;
     if (copy.persisted !== undefined) {
         const restored = restoreViews(copy.persisted, workflowId, navigation, rootKey);

@@ -73,6 +73,81 @@ test('explicit mixed selection dragging commits frames and chosen nodes without 
     } finally { await env.canvas.destroy(); }
 });
 
+test('explicit comment selection carries collapsed group geometry in one layout batch from each drag surface', async () => {
+    for (const startSurface of ['comment', 'node', 'group']) {
+        const edits = [], presentations = [], dragBlocks = [], capture = {};
+        const env = fixture({ captureCommentEdit: () => capture, onCommentLayout: (...args) => { edits.push(args); return { ok: true }; },
+            onPresentationChange: (...args) => presentations.push(args), onDragBlock: blocked => dragBlocks.push(blocked) });
+        try {
+            const frame = addComment(env);
+            const outside = { ...env.a, id: 'outside', x: 650 };
+            env.graph.nodes.outside = outside; env.graph.nativeCards.outside = structuredClone(env.graph.nativeCards.a);
+            const group = { id: 'fold', title: 'Fold', collapsed: true, x: 50, y: 50, frame: { x: 20, y: 10, w: 600, h: 200 } };
+            env.graph.groups.fold = group; env.a.inGroup = env.b.inGroup = 'fold'; env.canvas.render();
+            env.canvas.setMulti(['a', 'b', 'frame', 'outside']);
+            const element = env.host.querySelector(startSurface === 'comment' ? '.pc-comment-header' : startSurface === 'group' ? '.pc-node-group' : '.pc-node[data-id="outside"]');
+            const x = startSurface === 'comment' ? frame.x + 5 : startSurface === 'group' ? 60 : 660;
+            const y = startSurface === 'comment' ? frame.y + 10 : 60;
+            mouse(element, 'mousedown', x, y); mouse(window, 'mousemove', x + 40, y + 30);
+            assert.deepEqual({ x: group.x, y: group.y, frame: group.frame }, { x: 90, y: 80, frame: { x: 60, y: 40, w: 600, h: 200 } }, startSurface);
+            mouse(window, 'mouseup', x + 40, y + 30);
+            assert.equal(edits.length, 1, startSurface); assert.equal(edits[0][0], capture);
+            assert.deepEqual(edits[0][1].map(position => position.id), ['a', 'b', 'frame', 'outside']);
+            assert.deepEqual(edits[0][2], [{ id: 'fold', x: 90, y: 80, frame: { x: 60, y: 40, w: 600, h: 200 } }]);
+            assert.deepEqual(presentations, []); assert.equal(dragBlocks.includes(true), false);
+        } finally { await env.canvas.destroy(); }
+    }
+});
+
+test('cancelled and rejected mixed comment drags restore absent group anchors and exact saved frames', async () => {
+    for (const finish of ['cancel', 'reject']) {
+        const env = fixture({ captureCommentEdit: () => ({}), onCommentLayout: () => ({ ok: false }) });
+        try {
+            const frame = addComment(env);
+            env.graph.groups.fold = { id: 'fold', title: 'Fold', collapsed: true, frame: { x: 20, y: 10, w: 600, h: 200 } };
+            env.a.inGroup = env.b.inGroup = 'fold'; env.canvas.render(); env.canvas.setMulti(['a', 'b', 'frame']);
+            const before = structuredClone(env.graph), x = frame.x + 5, y = frame.y + 10;
+            mouse(env.host.querySelector('.pc-comment-header'), 'mousedown', x, y); mouse(window, 'mousemove', x + 40, y + 30);
+            assert.equal(Object.hasOwn(env.graph.groups.fold, 'x'), true);
+            if (finish === 'cancel') env.canvas.cancelGesture('escape'); else mouse(window, 'mouseup', x + 40, y + 30);
+            assert.deepEqual(env.graph, before, finish);
+        } finally { await env.canvas.destroy(); }
+    }
+});
+
+test('mixed comment drags focus before capture and use the drawing replaced by title blur', async () => {
+    for (const startSurface of ['node', 'group', 'shift-node']) {
+        let env, replacement, capturedDraw;
+        env = fixture({ captureCommentEdit: () => { capturedDraw = env?.canvas.graph; return {}; }, onCommentLayout: () => ({ ok: true }) });
+        try {
+            const frame = addComment(env), outside = { ...env.a, id: 'outside', x: 650 };
+            env.graph.nodes.outside = outside; env.graph.nativeCards.outside = structuredClone(env.graph.nativeCards.a);
+            env.graph.groups.fold = { id: 'fold', title: 'Fold', collapsed: true, x: 50, y: 50 };
+            env.a.inGroup = env.b.inGroup = 'fold'; env.canvas.render();
+            const selected = startSurface === 'shift-node' ? ['a', 'b', 'frame'] : ['a', 'b', 'frame', 'outside'];
+            env.canvas.setMulti(selected);
+            const before = structuredClone(env.graph);
+            const title = env.host.querySelector('.pc-comment-title-input'); title.focus(); env.canvas.setMulti(selected);
+            title.addEventListener('blur', () => {
+                replacement = structuredClone(env.graph);
+                for (const node of Object.values(replacement.nodes)) node.x += 100;
+                replacement.groups.fold.x += 100;
+                env.canvas.setGraph(replacement); env.canvas.setMulti(selected);
+            }, { once: true });
+            const element = env.host.querySelector(startSurface === 'group' ? '.pc-node-group' : '.pc-node[data-id="outside"]');
+            const x = startSurface === 'group' ? 60 : 660;
+            mouse(element, 'mousedown', x, 60, { shiftKey: startSurface === 'shift-node' }); mouse(window, 'mousemove', x + 40, 90);
+            assert.equal(document.activeElement, env.host, startSurface);
+            assert.ok(replacement); assert.equal(capturedDraw, replacement);
+            assert.deepEqual(env.graph, before);
+            assert.equal(replacement.nodes.frame.x, frame.x + 140); assert.equal(replacement.nodes.outside.x, 790);
+            assert.equal(replacement.groups.fold.x, 190);
+            env.canvas.cancelGesture('escape');
+            assert.equal(replacement.nodes.frame.x, frame.x + 100); assert.equal(replacement.groups.fold.x, 150);
+        } finally { await env.canvas.destroy(); }
+    }
+});
+
 test('loss of edit authority during a comment gesture restores all preview positions', async () => {
     let editable = true;
     const edits = [];

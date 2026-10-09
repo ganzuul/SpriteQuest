@@ -1,30 +1,18 @@
-# Native workflows
+# LATTICE model connections and host integration
 
-For the Svelte workspace, zero-call examples, graph tabs, subgraphs, connection gestures and recorded previews, start with [the Lattice workspace guide](lattice-workspace.md). This guide covers the model-backed native operations, connection routes and compatibility safeguards.
+For editor operation, graph tabs, subgraphs, node controls, and recorded previews, use the [operator's manual](operators-manual.md). The [node reference](node-reference.md) lists all operations and their contracts. This guide covers model-backed workflows, connection routes, phase assignment, and reply review safeguards.
 
-## Updating from ComfyTavern
-
-Lattice is the new name for this extension. The repository is now `MentallyQuill/Lattice`; GitHub redirects the former repository address. Update the existing extension in **Manage Extensions** and reload rather than installing another enabled copy. Existing settings, chat assignments, saved canvases, and library material remain in the same storage.
-
-New workflow exports use `lattice-workflow`. Lattice still imports `comfytavern-workflow` packages and legacy canvas JSON. Newly shared themes and clipboard material use Lattice identifiers, while previously shared Silly Canvas themes and clips remain importable. New Lattice exports require Lattice to import them.
-
-For integrations, the browser API is `window.lattice` and the generation hook is `latticeGenerationInterceptor`. The previous browser API and hook names remain aliases. The original Silly Canvas attribution and licenses are retained.
-
-Lattice can add guidance before SillyTavern writes its normal reply, or prepare a revision for you to review afterward. SillyTavern still builds the main prompt and generates the reply. The existing canvas engine remains available as **Legacy · Replace prompt**.
-
-Native workflows are included on `main`. Install from the repository's default branch using the steps below.
+Install from the repository's default branch using the steps below.
 
 ## Start with an example
 
-Keep **one enabled copy**. If your current installation points to `Dulgadurbit/SillyCanvas`, disable that extension before installing this fork. The fork preserves saved-data compatibility, so two enabled copies would share the same data and generation hooks. Existing installations from `MentallyQuill/Lattice` should use the update or branch-switch flow below.
-
-1. Open SillyTavern's **Extensions → Install extension**. Enter repository URL `https://github.com/MentallyQuill/Lattice`, leave **Branch or tag name (optional)** blank to install `main`, click **Install** (or **Install just for me**), then reload. Open the canvas beside Send or with `/canvas`.
+1. Open SillyTavern's **Extensions → Install extension**. Enter repository URL `https://github.com/MentallyQuill/Lattice`, leave **Branch or tag name (optional)** blank to install the default branch, click **Install** (or **Install just for me**), then reload. Open LATTICE beside Send or with `/lattice`.
 2. Open **Workflows → Workflow examples…** and choose **Install Scene guidance** or **Install Reviewed AI De-slop**. Each install creates its own editable graph and opens setup. Installing, importing, and editing never arm generation or make a model call.
 3. Choose a SillyTavern Connection Manager profile for each role: **Analysis** for scene guidance, **Prose** for repair. An optional role model override uses that model with the chosen profile. Inspect a model operation to override its connection/model independently.
-4. Use **Assign pre phase and enable native mode** for guidance, or **Assign post phase and enable native mode** for reviewed repair. Arming is a separate action. A missing/deleted profile or unsupported route blocks the run with a useful issue.
+4. Use **Assign pre phase** for guidance, or **Assign post phase** for reviewed repair. Arming is a separate action. A missing/deleted profile or unsupported route blocks the run with a useful issue.
 5. Use **Run** to inspect the workflow's result. To use guidance on normal sends, arm the extension and send as usual. For repair, wait for a completed assistant reply before running, then compare the candidate with the original.
 
-For an existing installation from this same repository on `main`, update it in **Manage Extensions**, then reload. If it is on another branch, use **Manage Extensions → Switch branch**, select `origin/main` (or the local `main` entry), click **Switch**, then reload. Install URLs use the repository address above without a `/tree/` suffix.
+For an existing installation, update it in **Manage Extensions** and reload. If you need to change branches, select the desired branch in **Manage Extensions → Switch branch**, click **Switch**, then reload. Install URLs use the repository address above without a `/tree/` suffix.
 
 **Run can spend model tokens.** A manual guidance run computes guidance without publishing it. A later Send runs the enabled pre workflow again, with up to two more auxiliary requests; the manual result is not cached for Send.
 
@@ -53,7 +41,7 @@ Add exact **protected literal pins** to preserve every source message containing
 
 Response Plan proposes direction, actor intentions, constraints, and possible next beats. Its defaults are a 768-token completion cap and a 768-token guidance-artifact budget. Proposals are optional guidance, not established events. Adjust the operation's instructions to preserve the choices you want the user to make.
 
-On an armed native send, owned guidance is installed before native budgeting and cleared after the generation, failure, stop, or chat switch. A preparation failure clears guidance and leaves SillyTavern's ordinary generation available, with a visible failure report. Native mode does not replace the main prompt. Quiet/background, dry-run, and impersonation generations are skipped.
+On an enabled send, owned guidance is installed before native budgeting and cleared after the generation, failure, stop, or chat switch. A preparation failure clears guidance and leaves SillyTavern's ordinary generation available, with a visible failure report. Workflows do not replace the main prompt. Quiet/background, dry-run, and impersonation generations are skipped.
 
 ## Review a reply repair
 
@@ -69,9 +57,9 @@ Apply reports local in-memory success separately from persistence. The host's sa
 
 ## Share JSON
 
-The complete portable examples include [native-guidance.json](../workflows/native-guidance.json), [reviewed-de-slop.json](../workflows/reviewed-de-slop.json), and the zero-call examples in [the workspace guide](lattice-workspace.md). Use **File → Import canvas** to open a workflow, or **Import into graph…** to review an addition to the current graph. Export uses a versioned `lattice-workflow` package; composed workflows include their pinned subgraph definitions. Individual subgraphs export as their own JSON packages. Exports omit bound profile IDs and credentials, so imported model roles need local setup before running.
+The complete portable examples include [native-guidance.json](../workflows/native-guidance.json), [reviewed-de-slop.json](../workflows/reviewed-de-slop.json), and the zero-call examples in [the workspace guide](lattice-workspace.md). Use **File → Open workflow…** to open a workflow, or **Import into graph…** to review an addition to the current graph. Export uses a versioned `lattice-workflow` package; composed workflows include their pinned subgraph definitions. Individual subgraphs export as their own JSON packages. Exports omit bound profile IDs and credentials, so imported model roles need local setup before running.
 
-Do not paste API keys into workflow JSON, instructions, or model overrides. Unsupported package versions, dependencies, graph cycles, incompatible artifacts, and dangling wires are rejected before settings change. Existing `.canvas.json` packages and raw schema-1 canvases remain supported in legacy mode.
+Do not paste API keys into workflow JSON, instructions, or model overrides. Unsupported package versions, dependencies, graph cycles, incompatible artifacts, and dangling wires are rejected before settings change.
 
 ## Costs, limits, and troubleshooting
 
@@ -89,13 +77,3 @@ Token counts identify their method: host tokenizer or character estimate. Artifa
 | Main reply proceeded after pre failure | This is the native fallback. Inspect the visible preparation report and fix the binding/context before the next send. |
 | Changes missing after reload | Local Apply is separate from durable saving; inspect SillyTavern's save/network status. |
 | Old assets after an update | Hard reload SillyTavern with Ctrl+Shift+R so all versioned modules load together. |
-
-To return to existing prompt-replacement behavior, choose **Legacy · Replace prompt**. Native phase assignment and legacy canvas selection are separate. The original eleven legacy node types and saved schema-1 graphs retain their behavior.
-
-## Developer live harness
-
-`node tools/live-workflow-test.mjs` is disabled by default and makes no requests. Unit guard tests run with `node tests/live-workflow-harness.test.mjs` without credentials or network.
-
-The live harness requires explicit readiness approval and synthetic material only. It uses production runtime/request modules in a fresh browser against a plain HTTP loopback SillyTavern host. It never calls native Send or Apply, reads private chat/character/lore, installs an extension, activates a profile, or fetches credential values. Its backend gate admits only the exact messages/model/cap owned by an active reservation and aborts unrelated generation traffic.
-
-The historical native-workflow acceptance configured eight attempted requests total, including three consumed by its earlier canary phase. Its approved models were NanoGPT `z-ai/glm-5.2` and `z-ai/glm-5.2:thinking`, with at most 4,096 completion tokens each and no hidden retries. The default fixture reserves at most three attempts: plain compaction, thinking planning, and plain repair. A new live session needs an explicitly authorized current allowance and ledger; the historical consumed count does not describe this workspace release. Stop after quota/auth/provider failure. Report canary evidence separately from production workflow fixtures.

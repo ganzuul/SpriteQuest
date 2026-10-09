@@ -110,6 +110,61 @@ test('layout prepares ordinary-node movement and frame movement or resize as one
     assert.equal(noop.ok, true); assert.equal(noop.data.changed, false);
 });
 
+test('layout moves a comment and collapsed group in one detached presentation batch', () => {
+    const source = root(); source.nodes.frame = frame();
+    source.groups.group = { id: 'group', title: 'Folded stage', members: ['source'], collapsed: true, color: '#506070', x: 20, y: 80, frame: { x: 10, y: 70, w: 260, h: 140 } };
+    source.nodes.source.inGroup = 'group';
+    const before = structuredClone(source);
+    const positions = [{ id: 'frame', x: 40, y: 50 }, { id: 'source', x: 60, y: 130 }];
+    const groupPositions = [{ id: 'group', x: 60, y: 130, frame: { x: 50, y: 120, w: 260, h: 140 } }];
+    const prepared = comments.prepareCommentEdit(source, { kind: 'layout', viewPath: [], positions, groupPositions });
+    assert.equal(prepared.ok, true, JSON.stringify(prepared));
+    assert.deepEqual(prepared.data.candidate.groups.group, { ...source.groups.group, ...groupPositions[0] });
+    assert.deepEqual(prepared.data.candidate.nodes.source, { ...source.nodes.source, x: 60, y: 130 });
+    assert.deepEqual(prepared.data.candidate.nodes.frame, { ...source.nodes.frame, x: 40, y: 50 });
+    assert.equal(graphSemanticSignature(prepared.data.candidate), graphSemanticSignature(source));
+    assert.deepEqual(source, before);
+    groupPositions[0].frame.x = 999;
+    assert.equal(prepared.data.candidate.groups.group.frame.x, 50);
+    const noFrame = comments.prepareCommentEdit(source, { kind: 'layout', viewPath: [], positions: [], groupPositions: [{ id: 'group', x: 90, y: 100 }] });
+    assert.equal(noFrame.ok, true, JSON.stringify(noFrame));
+    assert.deepEqual(noFrame.data.candidate.groups.group.frame, source.groups.group.frame);
+    const noop = comments.prepareCommentEdit(noFrame.data.candidate, { kind: 'layout', viewPath: [], positions: [], groupPositions: [{ id: 'group', x: 90, y: 100 }] });
+    assert.equal(noop.ok, true); assert.equal(noop.data.changed, false);
+});
+
+test('owned nested comment-group layout preserves exact containing and ancestor definition identity', () => {
+    const { source, leaf, outer, path } = nested(), key = definitionRefKey(leaf), expectedRef = refFor(leaf);
+    source.definitions[key].body.groups = { group: { id: 'group', members: ['work'], collapsed: true, x: 300, y: 80 } };
+    source.definitions[key].body.nodes.work.inGroup = 'group';
+    const before = structuredClone(source);
+    const prepared = comments.prepareCommentEdit(source, { kind: 'layout', viewPath: path, expectedRef, positions: [{ id: 'frame', x: 20, y: 30 }, { id: 'work', x: 320, y: 110 }], groupPositions: [{ id: 'group', x: 320, y: 110, frame: { x: 290, y: 100, w: 260, h: 140 } }] });
+    assert.equal(prepared.ok, true, JSON.stringify(prepared));
+    assert.deepEqual(prepared.data.candidate.definitions[definitionRefKey(outer)], outer);
+    assert.deepEqual(refFor(prepared.data.candidate.definitions[key]), expectedRef);
+    assert.deepEqual(prepared.data.candidate.definitions[key].body.groups.group, { ...source.definitions[key].body.groups.group, x: 320, y: 110, frame: { x: 290, y: 100, w: 260, h: 140 } });
+    assert.equal(computeDefinitionIdentity(prepared.data.candidate.definitions[key]).data.semanticHash, leaf.semanticHash);
+    assert.equal(graphSemanticSignature(prepared.data.candidate), graphSemanticSignature(source));
+    assert.deepEqual(source, before);
+    assert.equal(comments.prepareCommentEdit(source, { kind: 'layout', viewPath: path, expectedRef: { ...expectedRef, version: 2 }, positions: [], groupPositions: [] }).error.code, 'STALE_DEFINITION');
+    delete source.localDefinitionOwners;
+    assert.equal(comments.prepareCommentEdit(source, { kind: 'layout', viewPath: path, expectedRef, positions: [], groupPositions: [] }).error.code, 'READ_ONLY_DEFINITION');
+});
+
+test('malformed group layouts reject atomically without reading unsafe accessors or altering fold metadata', () => {
+    const source = root(); source.nodes.frame = frame();
+    source.groups.group = { id: 'group', title: 'Keep', members: ['source'], collapsed: true, x: 20, y: 80 };
+    const before = structuredClone(source), row = { id: 'group', x: 60, y: 130 };
+    const input = { kind: 'layout', viewPath: [], positions: [{ id: 'frame', x: 40, y: 50 }] };
+    for (const groupPositions of [null, {}, [{ ...row, id: 'missing' }], [row, row], [{ ...row, id: '__proto__' }], [{ id: 'group', y: 10 }], [{ ...row, x: Infinity }], [{ ...row, collapsed: false }], [{ ...row, members: [] }], [{ ...row, frame: { x: 0, y: 0, w: 0, h: 1 } }], [{ ...row, frame: { x: 0, y: 0, w: 10, h: 20, collapsed: true } }], [{ ...row, frame: { x: 0, y: 0, w: 10 } }], Array(1001).fill(row)]) {
+        assert.equal(comments.prepareCommentEdit(source, { ...input, groupPositions }).ok, false, JSON.stringify(groupPositions));
+        assert.deepEqual(source, before);
+    }
+    let reads = 0;
+    assert.equal(comments.prepareCommentEdit(source, { ...input, groupPositions: [{ ...row, get frame() { reads++; throw Error('Do not read'); } }] }).ok, false);
+    assert.equal(reads, 0); assert.deepEqual(source, before);
+});
+
 test('owned nested edits replace only the saved target snapshot while preserving all exact pins and hashes', () => {
     const { source, leaf, outer, path } = nested();
     const before = structuredClone(source), expectedRef = refFor(leaf);
@@ -263,4 +318,22 @@ test('malformed command kinds return a failure result without property-key coerc
         assert.doesNotThrow(() => { result = comments.prepareCommentEdit(root(), { kind, viewPath: [], frame: frame() }); });
         assert.equal(result.ok, false);
     }
+});
+
+test('owned nested frame batch deletion preserves exact ancestor pins and live runtime identity in one commit', () => {
+    const {source,leaf,outer,path}=nested(),key=definitionRefKey(leaf),expectedRef=refFor(leaf);
+    source.definitions[key].body.nodes.second={...frame(),id:'second',x:600};
+    const recording=source.recording={id:'active',status:'completed'},activation=source.activation={sessionId:'active'},opaqueHandle=source.opaqueHandle={authorityId:'active'};
+    const before=structuredClone(source),context={sessionId:'batch',viewPath:path,readOnly:false},capture=captureGraphEditContext(source,()=>context);
+    const prepared=comments.prepareCommentEdit(source,{kind:'delete-batch',nodeIds:['frame','second'],viewPath:path,expectedRef});
+    assert.equal(prepared.ok,true,JSON.stringify(prepared));assert.equal(prepared.data.candidate.definitions[key].body.nodes.frame,undefined);assert.equal(prepared.data.candidate.definitions[key].body.nodes.second,undefined);
+    assert.deepEqual(prepared.data.candidate.definitions[definitionRefKey(outer)],outer);assert.deepEqual(refFor(prepared.data.candidate.definitions[key]),expectedRef);assert.deepEqual(prepared.data.candidate.definitions[key].body.wires,leaf.body.wires);assert.equal(graphSemanticSignature(prepared.data.candidate),graphSemanticSignature(source));assert.deepEqual(source,before);
+    const committed=commitPreparedGraph(source,{...prepared.data,context:capture.data});assert.equal(committed.ok,true,JSON.stringify(committed));assert.equal(committed.data.semanticChanged,false);assert.equal(source.recording,recording);assert.equal(source.activation,activation);assert.equal(source.opaqueHandle,opaqueHandle);
+});
+
+test('frame batch deletion rejects malformed, mixed, stale and shared requests atomically', () => {
+    const {source,leaf,path}=nested(),command={kind:'delete-batch',nodeIds:['frame'],viewPath:path,expectedRef:refFor(leaf)},before=structuredClone(source);
+    for(const nodeIds of [[],null,{},['frame','frame'],['frame','work'],['frame','missing'],['__proto__'],Array(1001).fill('frame')]){assert.equal(comments.prepareCommentEdit(source,{...command,nodeIds}).ok,false);assert.deepEqual(source,before);}
+    assert.equal(comments.prepareCommentEdit(source,{...command,expectedRef:{...command.expectedRef,version:2}}).error.code,'STALE_DEFINITION');
+    delete source.localDefinitionOwners;assert.equal(comments.prepareCommentEdit(source,command).error.code,'READ_ONLY_DEFINITION');
 });

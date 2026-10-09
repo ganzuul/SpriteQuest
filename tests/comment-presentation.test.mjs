@@ -133,3 +133,82 @@ test('derived patches apply to the existing view store and round-trip without ch
     const loaded = createViewState({ workflowId: 'root', navigation, persisted: store.serialize().data });
     assert.deepEqual(loaded.project().active.nodePresentation, before.nodePresentation);
 });
+
+test('mixed capture retains detached selected group coordinate and frame presence with exact view identity', () => {
+    const source = { ...view({ node: { x: 50, y: 80, alias: 'Keep alias' } }), groupPresentation: { both: { collapsed: true, x: 10, y: 20, frame: { x: 1, y: 2, w: 260, h: 140 } }, yOnly: { y: 30 }, frameOnly: { frame: { x: 3, y: 4, w: 300, h: 200 } }, unrelated: { collapsed: false, x: 900 } } };
+    const before = structuredClone(source);
+    const effect = presentation.captureCommentPresentation(source, ['node'], ['both', 'yOnly', 'frameOnly', 'absent', 'both']);
+    assert.deepEqual(effect, { viewKey: source.key, identity: identity(), coordinates: { node: { x: 50, y: 80 } }, groupCoordinates: { both: { x: 10, y: 20, frame: { x: 1, y: 2, w: 260, h: 140 } }, yOnly: { y: 30 }, frameOnly: { frame: { x: 3, y: 4, w: 300, h: 200 } }, absent: {} } });
+    assert.deepEqual(source, before);
+    source.groupPresentation.both.frame.x = 900;
+    assert.equal(effect.groupCoordinates.both.frame.x, 1);
+    assert.deepEqual(presentation.applyCommentPresentation(source.nodePresentation, effect, 'redo'), { node: { alias: 'Keep alias' } });
+});
+
+test('group redo clears affected geometry and preserves current collapse state and unrelated groups', () => {
+    assert.equal(typeof presentation.applyCommentGroupPresentation, 'function');
+    const effect = presentation.captureCommentPresentation({ ...view(), groupPresentation: { group: { x: 50, y: 80, frame: { x: 40, y: 60, w: 260, h: 140 } } } }, [], ['group', 'empty']);
+    const current = { group: { collapsed: false, x: 90, y: 100, frame: { x: 80, y: 90, w: 280, h: 160 } }, empty: { x: 20 }, unrelated: { collapsed: true, x: 700, frame: { x: 700, y: 900, w: 300, h: 200 } } };
+    const before = structuredClone(current), beforeEffect = structuredClone(effect);
+    const next = presentation.applyCommentGroupPresentation(current, effect, 'redo');
+    assert.deepEqual(next, { group: { collapsed: false }, unrelated: before.unrelated });
+    assert.notEqual(next.unrelated.frame, current.unrelated.frame);
+    assert.deepEqual(current, before); assert.deepEqual(effect, beforeEffect);
+    assert.deepEqual(presentation.applyCommentGroupPresentation(current, presentation.captureCommentPresentation(view(), []), 'redo'), current);
+});
+
+test('group undo restores exact mixed geometry presence while preserving later collapse changes', () => {
+    const effect = presentation.captureCommentPresentation({ ...view(), groupPresentation: { both: { x: 0, y: -80, frame: { x: -5, y: -90, w: 260, h: 140 } }, xOnly: { x: 10 }, frameOnly: { frame: { x: 5, y: 6, w: 200, h: 120 } } } }, [], ['both', 'xOnly', 'frameOnly', 'neither']);
+    const current = { both: { collapsed: false }, xOnly: { x: 700, y: 900, frame: { x: 700, y: 900, w: 300, h: 200 }, collapsed: true }, frameOnly: { x: 5, y: 6 }, neither: { x: 300, y: 400, collapsed: true }, unrelated: { x: 9 } };
+    const before = structuredClone(current);
+    const restored = presentation.applyCommentGroupPresentation(current, effect, 'undo');
+    assert.deepEqual(restored, { both: { collapsed: false, x: 0, y: -80, frame: { x: -5, y: -90, w: 260, h: 140 } }, xOnly: { collapsed: true, x: 10 }, frameOnly: { frame: { x: 5, y: 6, w: 200, h: 120 } }, neither: { collapsed: true }, unrelated: { x: 9 } });
+    assert.deepEqual(current, before);
+});
+
+test('mixed node and group patches round-trip through the existing native view store', () => {
+    const navigation = [{ identity: identity(), label: 'Child', readOnly: false }], store = createViewState({ workflowId: 'root', navigation });
+    assert.equal(store.openInstance(['child']).ok, true);
+    assert.equal(store.updateView({ nodePresentation: { node: { x: 60, y: 90, alias: 'Keep' } }, groupPresentation: { group: { collapsed: true, x: 120, y: 130, frame: { x: 100, y: 110, w: 300, h: 200 } }, unrelated: { collapsed: false } } }).ok, true);
+    const before = store.project().active, effect = presentation.captureCommentPresentation(before, ['node'], ['group']);
+    const patch = direction => ({ nodePresentation: presentation.applyCommentPresentation(store.project().active.nodePresentation, effect, direction), groupPresentation: presentation.applyCommentGroupPresentation(store.project().active.groupPresentation, effect, direction) });
+    assert.equal(store.updateView(patch('redo'), effect.viewKey).ok, true);
+    assert.deepEqual(store.project().active.groupPresentation, { group: { collapsed: true }, unrelated: { collapsed: false } });
+    assert.equal(store.updateView(patch('undo'), effect.viewKey).ok, true);
+    const loaded = createViewState({ workflowId: 'root', navigation, persisted: store.serialize().data });
+    assert.deepEqual(loaded.project().active.groupPresentation, before.groupPresentation);
+    assert.deepEqual(loaded.project().active.nodePresentation, before.nodePresentation);
+});
+
+test('group helpers reject unknown fields invalid rectangles unsafe IDs and accessors without reads', () => {
+    const source = { ...view(), groupPresentation: { group: { x: 10, frame: { x: 0, y: 0, w: 20, h: 30 } } } }, effect = presentation.captureCommentPresentation(source, [], ['group']);
+    for (const ids of [null, ['constructor'], ['__proto__'], [42], Array(2), Array(1001).fill('group')]) assert.equal(presentation.captureCommentPresentation(source, [], ids), null);
+    for (const group of [{}, { x: Infinity }, { collapsed: 'yes' }, { alias: 'No' }, { frame: { x: 0, y: 0, w: 0, h: 10 } }, { frame: { x: 0, y: 0, w: 20 } }, { frame: { x: 0, y: 0, w: 20, h: 30, title: 'No' } }]) {
+        assert.equal(presentation.captureCommentPresentation({ ...view(), groupPresentation: { group } }, [], ['group']), null);
+        assert.equal(presentation.applyCommentGroupPresentation({ group }, effect, 'undo'), null);
+    }
+    for (const groupCoordinates of [{ group: { collapsed: true } }, { group: { x: '10' } }, { group: { frame: { x: 0, y: 0, w: 0, h: 30 } } }, JSON.parse('{"__proto__":{"x":50}}')]) {
+        const invalid = { ...effect, groupCoordinates };
+        assert.equal(presentation.applyCommentGroupPresentation({}, invalid, 'undo'), null);
+        assert.equal(presentation.applyCommentPresentation({}, invalid, 'undo'), null);
+    }
+    assert.equal(presentation.applyCommentGroupPresentation({}, { ...effect, viewKey: 'wrong' }, 'undo'), null);
+    let reads = 0;
+    const hostile = { get frame() { reads++; throw Error('Do not read'); } };
+    assert.equal(presentation.captureCommentPresentation({ ...view(), groupPresentation: { group: hostile } }, [], ['group']), null);
+    assert.equal(presentation.applyCommentGroupPresentation({ group: hostile }, effect, 'undo'), null);
+    assert.equal(presentation.applyCommentGroupPresentation({}, { ...effect, groupCoordinates: { group: hostile } }, 'undo'), null);
+    assert.equal(reads, 0);
+});
+
+test('group effects obey row and combined byte limits without mutating the current table', () => {
+    const current = Object.fromEntries(Array.from({ length: 1000 }, (_, i) => ['current' + i, { collapsed: true }]));
+    const source = { ...view(), groupPresentation: { restored: { x: 30 } } }, effect = presentation.captureCommentPresentation(source, [], ['restored']), before = structuredClone(current);
+    assert.equal(presentation.applyCommentGroupPresentation(current, effect, 'undo'), null);
+    assert.deepEqual(current, before);
+    assert.equal(presentation.captureCommentPresentation({ ...view(), groupPresentation: current }, [], Object.keys(current).concat('extra')), null);
+    const longIdentity = { kind: 'root', workflowId: 'workflow' + 'a'.repeat(4000) };
+    const largeView = { identity: longIdentity, key: viewIdentityKey(longIdentity), nodePresentation: {} };
+    const ids = Array.from({ length: 1000 }, (_, i) => 'group' + i + 'b'.repeat(250));
+    assert.equal(presentation.captureCommentPresentation(largeView, [], ids), null);
+});

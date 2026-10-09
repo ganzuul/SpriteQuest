@@ -6,7 +6,7 @@ import { portsForNode } from '../src/workflow/catalog.js';
 import { computeDefinitionIdentity, definitionRefKey } from '../src/workflow/definitions.js';
 import { makeLocalCopy } from '../src/workflow/definition-library.js';
 import { captureGraphEditContext, commitPreparedGraph } from '../src/workflow/transactions.js';
-import * as history from '../src/history.js?v=0.20.0';
+import * as history from '../src/history.js?v=0.22.0';
 import { graphPoint as toGraph } from '../src/canvas/camera.js';
 import { createGeometryCache } from '../src/canvas/geometry.js';
 const api = await import('../src/workflow/connection-edits.js').catch(() => ({}));
@@ -62,7 +62,7 @@ test('connect resolves actual named pins in both drag directions and preserves t
         const edit = accepted(prepare(graph, { kind: 'connect', origin, target }), graph);
         assert.equal(edit.changed, true);
         assert.equal(edit.addedEdgeIds.length, 1);
-        assert.deepEqual(edit.candidate.wires[edit.addedEdgeIds[0]], wire(edit.addedEdgeIds[0], 'first', 'second', { order: 0 }));
+        assert.deepEqual(edit.candidate.wires[edit.addedEdgeIds[0]], wire(edit.addedEdgeIds[0], 'first', 'second'));
         assert.deepEqual(edit.viewPath, []);
     }
     assert.deepEqual(graph, before);

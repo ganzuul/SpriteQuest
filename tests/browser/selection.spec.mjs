@@ -4,8 +4,8 @@ test('native body dragging uses eight screen pixels and preserves group membersh
     await page.evaluate(async () => {
         const { starterGraph } = await import('/src/workflow/starters.js?v=' + window.canvasHarness.version);
         const h = window.canvasHarness, graph = starterGraph('native-guidance');
-        graph.groups.blanket = { id: 'blanket', title: 'Blanket', enabled: true, collapsed: false, frame: { x: 60, y: 90, w: 300, h: 300 } };
-        h.canvas.setGraph(graph); await h.view({ x: 220, y: 0, zoom: .8 });
+        graph.groups.blanket = { id: 'blanket', title: 'Blanket', collapsed: false, frame: { x: 60, y: 90, w: 300, h: 300 } };
+        await h.activate(graph); await h.view({ x: 220, y: 0, zoom: .8 });
     });
     const title = page.locator('.pc-node[data-id="scene-context"] .pc-node-title');
     const bounds = await title.boundingBox(), x = bounds.x + bounds.width / 2, y = bounds.y + bounds.height / 2;
@@ -68,21 +68,21 @@ test('real drag rectangles replace, add, and remove selection in graph coordinat
 test('Ctrl+A selects blocks, Escape clears selection, and shortcuts leave text controls alone', async ({ page }) => {
     const ids = await setup(page);
     await page.keyboard.press('Control+a');
-    expect((await page.evaluate(() => [...window.canvasHarness.canvas.multi])).length).toBe(ids.length + 1);
+    expect((await page.evaluate(() => [...window.canvasHarness.canvas.multi])).length).toBe(ids.length);
     await page.keyboard.press('Escape');
     expect(await page.evaluate(() => window.canvasHarness.canvas.multi.size)).toBe(0);
     await expect(page.locator('.pc-root')).toBeVisible();
     const card = page.locator(`.pc-node[data-id="${ids[0]}"]`); await card.click();
-    const text = page.locator('.pc-inspector textarea').first(); await text.focus();
+    const text = page.getByLabel('Sections',{exact:true}); await text.focus();
     await page.keyboard.press('Control+a'); await page.keyboard.press('Backspace');
     expect(await page.evaluate(id => !!window.canvasHarness.graph.nodes[id], ids[0])).toBe(true);
 });
 test('drag direction and a non-default camera do not change rectangle hit testing', async ({ page }) => {
     const ids = await setup(page);
     await page.evaluate(id => {
-        const { graph, canvas } = window.canvasHarness;
+        const { graph, canvas, UI } = window.canvasHarness;
         graph.nodes[id].x = -80; graph.nodes[id].y = -60;
-        canvas.render(); Object.assign(graph.view, { x: 320, y: 140, zoom: 0.8 }); canvas.applyTransform();
+        UI.refreshIfOpen(); Object.assign(canvas.view, { x: 320, y: 140, zoom: 0.8 }); canvas.applyTransform();
     }, ids[0]);
     for (const [a, b] of [[[-100, -80], [200, 150]], [[200, -80], [-100, 150]], [[-100, 150], [200, -80]], [[200, 150], [-100, -80]]]) {
         expect(await marquee(page, a, b)).toEqual([ids[0]]);

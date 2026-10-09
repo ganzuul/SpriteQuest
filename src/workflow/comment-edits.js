@@ -1,9 +1,9 @@
-import { cloneDefinitionData, definitionRefKey } from './definitions.js?v=0.20.0';
-import { cloneWorkflowDocument } from './document.js?v=0.20.0';
-import { graphSemanticSignature } from './ports.js?v=0.20.0';
-import { prepareGraphCandidate } from './prepared-graph-edit.js?v=0.20.0';
-import { safeId, definitionChain, ownsDefinitionPath } from './composition-edit.js?v=0.20.0';
-import { isCommentFrame } from '../canvas/comment-frames.js?v=0.20.0';
+import { cloneDefinitionData, definitionRefKey } from './definitions.js?v=0.22.0';
+import { cloneWorkflowDocument } from './document.js?v=0.22.0';
+import { graphSemanticSignature } from './ports.js?v=0.22.0';
+import { prepareGraphCandidate } from './prepared-graph-edit.js?v=0.22.0';
+import { safeId, definitionChain, ownsDefinitionPath } from './composition-edit.js?v=0.22.0';
+import { isCommentFrame } from '../canvas/comment-frames.js?v=0.22.0';
 
 const fail = (code, message) => ({ ok: false, error: { code, message } });
 const record = value => value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -12,7 +12,8 @@ const reference = definition => ({ id: definition.id, version: definition.versio
 const exactRef = (expected, actual) => only(expected, ['id', 'version', 'semanticHash']) && definitionRefKey(expected) === definitionRefKey(actual);
 const frameFields = ['id', 'type', 'commentFrame', 'moveContents', 'title', 'content', 'color', 'x', 'y', 'w', 'h'];
 const patchFields = ['title', 'content', 'color', 'moveContents', 'x', 'y', 'w', 'h'];
-const commandFields = { create: ['frame'], update: ['nodeId', 'patch'], delete: ['nodeId'], layout: ['positions'] };
+const commandFields = { create: ['frame'], update: ['nodeId', 'patch'], delete: ['nodeId'], 'delete-batch': ['nodeIds'], layout: ['positions', 'groupPositions'] };
+const validRectangle = frame => only(frame, ['x', 'y', 'w', 'h']) && ['x', 'y', 'w', 'h'].every(key => Number.isFinite(frame[key])) && frame.w > 0 && frame.h > 0;
 const validPatch = patch => only(patch, patchFields) && Object.entries(patch).every(([key, value]) =>
     ['title', 'content', 'color'].includes(key) ? typeof value === 'string'
         : key === 'moveContents' ? typeof value === 'boolean'
@@ -26,7 +27,9 @@ const validPatch = patch => only(patch, patchFields) && Object.entries(patch).ev
  * - create: {frame}, a fresh authored note/commentFrame and finite rectangle;
  * - update: {nodeId, patch}, authored text/color/toggle/rectangle fields only;
  * - delete: {nodeId}, removes only the frame;
- * - layout: {positions:[{id,x,y,w?,h?}]}, x/y for existing nodes, w/h for frames.
+ * - delete-batch: {nodeIds}, removes a bounded unique selection of frames;
+ * - layout: {positions:[{id,x,y,w?,h?}], groupPositions?:[{id,x,y,frame?}]},
+ *   x/y for existing nodes/groups, w/h for comment frames and group rectangles.
  * Return the standard prepareGraphCandidate result plus viewPath/expectedRef.
  * The caller captures/commits qualified edit context; this seam performs no I/O.
  */
@@ -52,6 +55,10 @@ export function prepareCommentEdit(root, input) {
             || !validPatch(Object.fromEntries(Object.entries(frame).filter(([key]) => patchFields.includes(key))))
             || !['x', 'y', 'w', 'h'].every(key => Object.hasOwn(frame, key)) || Object.hasOwn(scope.nodes, frame.id)) return fail('INVALID_COMMENT', 'Expected a fresh authored comment frame with a finite rectangle.');
         scope.nodes[frame.id] = structuredClone(frame);
+    } else if (command.kind === 'delete-batch') {
+        if (!Array.isArray(command.nodeIds) || !command.nodeIds.length || command.nodeIds.length > 1000 || new Set(command.nodeIds).size !== command.nodeIds.length
+            || !command.nodeIds.every(id => safeId(id) && Object.hasOwn(scope.nodes, id) && isCommentFrame(scope.nodes[id]))) return fail('INVALID_COMMENT', 'Expected a bounded unique selection of existing comment frames.');
+        for (const id of command.nodeIds) delete scope.nodes[id];
     } else if (command.kind === 'layout') {
         if (!Array.isArray(command.positions) || command.positions.length > 1000) return fail('INVALID_LAYOUT', 'Expected a bounded node layout batch.');
         const seen = new Set();
@@ -62,6 +69,15 @@ export function prepareCommentEdit(root, input) {
             for (const key of ['w', 'h']) if (Object.hasOwn(position, key) && (!isCommentFrame(node) || !Number.isFinite(position[key]) || position[key] <= 0)) return fail('INVALID_LAYOUT', 'Only comment frames accept positive authored dimensions.');
             seen.add(position.id);
             Object.assign(node, Object.fromEntries(Object.entries(position).filter(([key]) => key !== 'id')));
+        }
+        const groupPositions = Object.hasOwn(command, 'groupPositions') ? command.groupPositions : [];
+        if (!Array.isArray(groupPositions) || groupPositions.length > 1000) return fail('INVALID_LAYOUT', 'Expected a bounded group layout batch.');
+        const seenGroups = new Set();
+        for (const position of groupPositions) {
+            if (!only(position, ['id', 'x', 'y', 'frame']) || !safeId(position.id) || !Object.hasOwn(scope.groups ?? {}, position.id) || seenGroups.has(position.id)
+                || !Number.isFinite(position.x) || !Number.isFinite(position.y) || Object.hasOwn(position, 'frame') && !validRectangle(position.frame)) return fail('INVALID_LAYOUT', 'Expected unique existing groups and finite positions or positive rectangles.');
+            seenGroups.add(position.id);
+            Object.assign(scope.groups[position.id], Object.fromEntries(Object.entries(position).filter(([key]) => key !== 'id')));
         }
     } else {
         const node = safeId(command.nodeId) && Object.hasOwn(scope.nodes, command.nodeId) && scope.nodes[command.nodeId];

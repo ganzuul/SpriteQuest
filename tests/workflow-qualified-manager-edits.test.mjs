@@ -16,7 +16,7 @@ const leaf = () => finalize({ id: 'leaf', version: 1, name: 'Leaf', interface: [
     { id: 'tokens', label: 'Tokens', target: { instancePath: [], nodeId: 'work', controlId: 'targetTokens' } },
     { id: 'recent', label: 'Recent', target: { instancePath: [], nodeId: 'work', controlId: 'keepRecent' } },
     { id: 'purpose', label: 'Purpose', target: { instancePath: [], nodeId: 'work', controlId: 'purpose' } },
-], body: { schema: 3, runtime: 2, mode: 'native-pre', nodes: { entry: { id: 'entry', type: 'subgraph-input', interfacePortId: 'input' }, work: { id: 'work', type: 'workflow', operation: 'smart-compactor' }, exit: { id: 'exit', type: 'subgraph-output', interfacePortId: 'output' } }, wires: { a: wire('a', 'entry', 'out', 'work', 'in', { order: 4, kind: 'append' }), b: wire('b', 'work', 'out', 'exit', 'in') } } });
+], body: { schema: 3, runtime: 2, mode: 'native-pre', nodes: { entry: { id: 'entry', type: 'subgraph-input', interfacePortId: 'input' }, work: { id: 'work', type: 'workflow', operation: 'smart-compactor' }, exit: { id: 'exit', type: 'subgraph-output', interfacePortId: 'output' } }, wires: { a: wire('a', 'entry', 'out', 'work', 'in'), b: wire('b', 'work', 'out', 'exit', 'in') } } });
 const outer = child => {
     const nodes = { work: instance('work', child) }, wires = {};
     for (const p of child.interface) { nodes[p.boundaryNodeId] = { id: p.boundaryNodeId, type: `subgraph-${p.direction}`, interfacePortId: p.id }; const id = `boundary-${p.id}`; wires[id] = p.direction === 'input' ? wire(id, p.boundaryNodeId, 'out', 'work', p.id) : wire(id, 'work', p.id, p.boundaryNodeId, 'in'); }
@@ -102,7 +102,7 @@ test('qualified portal conversion preserves the same consumer wire and restores 
     const graph = owned(), path = ['one', 'work'];
     const converted = composition.prepareQualifiedPortalEdit(graph, command(graph, path, { kind: 'convert-wire', edgeId: 'a', publisher: { kind: 'create', label: 'Input shared' } }));
     const next = accepted(graph, converted), scope = at(next, path).scope, portalId = scope.wires.a.portalId;
-    assert.deepEqual(scope.wires.a, { id: 'a', route: 'portal', portalId, to: 'work', toPort: 'in', order: 4, kind: 'append' });
+    assert.deepEqual(scope.wires.a, { id: 'a', route: 'portal', portalId, to: 'work', toPort: 'in' });
     assert.deepEqual(scope.portals[portalId].source, { nodeId: 'entry', portId: 'out' });
     assert.deepEqual(converted.data.addedEdgeIds, []); assert.deepEqual(converted.data.removedEdgeIds, []);
     assert.deepEqual(next.nodes.two, graph.nodes.two);

@@ -3,7 +3,7 @@ import test from 'node:test';
 import { installMock } from './mock.js';
 installMock();
 const surface=await import('../src/ui/workflow-surface.js');
-const { prepareWorkflowPlanner }=await import('../src/workflow/resolve.js?v=0.20.0');
+const { prepareWorkflowPlanner }=await import('../src/workflow/resolve.js?v=0.22.0');
 const { starterGraph }=await import('../src/workflow/starters.js');
 const { cloneWorkflowDocument }=await import('../src/workflow/document.js');
 const { runWorkflow }=await import('../src/workflow/runtime.js');
@@ -20,7 +20,7 @@ test('root preparation owns binding work and every selection/view projection use
     assert.equal(bindings,2);assert.equal(freshness,0);
     for(const nodeId of ['scene-context','smart-compactor','response-plan']) {
         const selectedTarget={workflowId:root.id,instancePath:[],nodeId,portId:'out'},view=surface.projectPreparedWorkflow(prepared,{selectedTarget,selectedAddress:selectedTarget,viewPath:[]});
-        assert.equal(view.native,true);assert.equal(view.targetSummary.issues.length,0);assert.equal(view.selectedId,nodeId);assert.equal(view.nodes.some(node=>node.id===nodeId),true);assert.ok(!JSON.stringify(view).includes('private endpoint'));
+        assert.equal(view.targetSummary.issues.length,0);assert.equal(view.selectedId,nodeId);assert.equal(view.nodes.some(node=>node.id===nodeId),true);assert.ok(!JSON.stringify(view).includes('private endpoint'));
     }
     assert.equal(bindings,2);assert.equal(freshness,0);assert.equal(Object.isFrozen(root),false);
 });
@@ -69,17 +69,16 @@ test('bounded artifact previews and zero-call starter metadata come from the act
     const view=surface.projectPreparedWorkflow(prepared,{result,recording:result.recording,selectedTarget:target});assert.equal(bindings,0);assert.equal(view.callBound,0);assert.equal(view.starters.length,4);assert.equal(view.result.applyAvailable,false);assert.ok(view.result.sections[0].text.includes('quiet conversation'));assert.ok(!('calls' in view.result));assert.equal(view.rows.length,5);
     assert.equal(surface.projectPreparedWorkflow(prepared,{selectedTarget:target,status:'Selection only'}).rows,view.rows,'unchanged recording/view uses the prepared row lookup');
 });
-test('original schema2 full rendering and cached target recordings retain separate compatible result shapes',async()=>{
+test('original current full rendering and cached target recordings retain separate compatible result shapes',async()=>{
     const root=starterGraph('native-guidance');root.roles.Analysis={profileId:'p',model:'chosen'};let preparations=0,effects=0;
     const target={workflowId:root.id,instancePath:[],nodeId:'scene-context',portId:'out'},result=await runWorkflow(root,{target,snapshot:()=>({kind:'context',messages:[{id:'source',role:'user',text:'Original source',source:'chat'}]}),countTokens:async()=>({tokens:1,method:'fixture'}),resolveBinding:()=>{effects++;throw new Error('target has no model');},request:()=>{effects++;throw new Error('target has no model');}});
-    assert.equal(result.ok,true);assert.equal(result.schema,2);assert.equal(result.mode,'target');assert.equal(effects,0);
+    assert.equal(result.ok,true);assert.equal(result.schema,3);assert.equal(result.mode,'target');assert.equal(effects,0);
     const prepared=surface.prepareWorkflowProjection(root,{profiles:[{id:'p',name:'Profile'}],result,resolveBinding:()=>{preparations++;return {ok:true,data:{profileId:'p',model:'chosen',authorization:'private'}};}});
     assert.equal(preparations,2,'full and target preparation resolve each original model node once');
     const view=surface.projectPreparedWorkflow(prepared,{result,selectedTarget:target,selectedAddress:target});assert.equal(view.callBound,0);assert.equal(view.targetSummary.issues.length,0);assert.equal(view.result.kind,'bounded');assert.equal(view.result.applyAvailable,false);assert.ok(view.result.sections[0].text.includes('Original source'));assert.ok(!('calls'in view.result));
-    for(let count=0;count<10;count++)surface.projectPreparedWorkflow(prepared,{selectedTarget:{...target,nodeId:count%2?'response-plan':'scene-context'},status:'select'});assert.equal(preparations,2);assert.equal(root.schema,2);assert.equal(root.runtime,1);assert.equal(Object.isFrozen(root),false);
-    const full=surface.projectPreparedWorkflow(prepared,{result:{ok:true,mode:'root',artifact:{kind:'guidance',text:'Computed preview'},calls:[],reports:[],callBound:2,actualCalls:1}});assert.equal(full.result.kind,'legacy');assert.equal(full.result.guidance,'Computed preview');assert.equal(full.result.actualCalls,1);
+    for(let count=0;count<10;count++)surface.projectPreparedWorkflow(prepared,{selectedTarget:{...target,nodeId:count%2?'response-plan':'scene-context'},status:'select'});assert.equal(preparations,2);assert.equal(root.schema,3);assert.equal(root.runtime,2);assert.equal(Object.isFrozen(root),false);
 });
-test('retained schema2 recording gives way to newer root and target progress with stable cached rows',async()=>{
+test('retained current recording gives way to newer root and target progress with stable cached rows',async()=>{
     const root=starterGraph('native-guidance'),prior=await runWorkflow(root,{snapshot:()=>({kind:'context',messages:[{id:'source',role:'user',text:'Scene',source:'chat'}]}),countTokens:async()=>({tokens:1,method:'fixture'}),resolveBinding:()=>({ok:true,data:{profileId:'p',model:'fixture'}}),request:async()=>({ok:true,data:{text:'Prior guidance',finish:'stop'}})});
     assert.equal(prior.ok,true);const recording=prior.recording,prepared=surface.prepareWorkflowProjection(root,{result:prior,resolveBinding:()=>({ok:true,data:{profileId:'p',model:'fixture'}})});
     for(const mode of ['root','target']) {
@@ -92,11 +91,11 @@ test('retained schema2 recording gives way to newer root and target progress wit
 test('malformed supported phase values produce safe diagnostics without binding effects or caller freezing',()=>{
     for(const mode of [42,false,{},[],null,()=>{}]) {
         const root={id:'malformed',schema:3,runtime:2,mode,nodes:{},wires:{},definitions:{},portals:{}};let effects=0;
-        const view=surface.projectWorkflow(root,{resolveBinding:()=>{effects++;throw new Error('binding');},candidateStatus:()=>{effects++;throw new Error('freshness');}});
-        assert.equal(view.native,true);assert.ok(view.issues.length>0);assert.equal(effects,0);assert.equal(Object.isFrozen(root),false);if(mode&&['object','function'].includes(typeof mode))assert.equal(Object.isFrozen(mode),false);
+        const view=surface.projectPreparedWorkflow(surface.prepareWorkflowProjection(root,{resolveBinding:()=>{effects++;throw new Error('binding');},candidateStatus:()=>{effects++;throw new Error('freshness');}}));
+        assert.ok(view.issues.length>0);assert.equal(effects,0);assert.equal(Object.isFrozen(root),false);if(mode&&['object','function'].includes(typeof mode))assert.equal(Object.isFrozen(mode),false);
     }
     let reads=0;const root={id:'getter',schema:3,runtime:2,nodes:{},wires:{},definitions:{},portals:{}};Object.defineProperty(root,'mode',{get(){reads++;throw new Error('mode getter');},enumerable:true});
-    assert.ok(surface.projectWorkflow(root).issues.length>0);assert.equal(reads,0);assert.equal(Object.isFrozen(root),false);
+    assert.ok(surface.projectPreparedWorkflow(surface.prepareWorkflowProjection(root)).issues.length>0);assert.equal(reads,0);assert.equal(Object.isFrozen(root),false);
 });
 test('recorded wrapper aliases survive definition revisions and unknown stale mappings stay unavailable',async()=>{
     const root=twoOutputWorkflow(),ports={countTokens:async()=>({tokens:1,method:'fixture'})};

@@ -3,15 +3,27 @@ import { test } from 'node:test';
 import { installMock } from './mock.js';
 import { starterGraph } from '../src/workflow/starters.js';
 import { prepareWorkflowInsertion } from '../src/workflow/insertion.js';
-import { captureGraphEditContext } from '../src/workflow/transactions.js?v=0.20.0';
-import * as H from '../src/history.js?v=0.20.0';
-import * as S from '../src/state.js?v=0.20.0';
+import { captureGraphEditContext } from '../src/workflow/transactions.js?v=0.22.0';
+import * as H from '../src/history.js?v=0.22.0';
+import * as S from '../src/state.js?v=0.22.0';
 import { cloneWorkflowDocument } from '../src/workflow/document.js';
 import { prepareCreateFromSelection, prepareGraphCandidate } from '../src/workflow/composition.js';
 import { prepareLocalDefinitionEdit } from '../src/workflow/definition-library.js';
 import { definitionRefKey } from '../src/workflow/definitions.js';
 
 let serial = 0;
+
+test('named endpoint rewires record immediately as a structural history step', async () => {
+    const root = starterGraph('structured-guidance'); root.id = `named-history-${++serial}`;
+    H.track(root);
+    root.wires['wire-3'].toPort = 'other-data';
+    H.noteChange(root);
+    await new Promise(resolve => setTimeout(resolve, 20));
+    assert.notEqual(H.peek(root).undo, 'your last edit', 'named endpoints are structural, not a typing draft');
+    assert.equal(H.undo(root), 'change a wire');
+    assert.equal(root.wires['wire-3'].toPort, 'data');
+});
+
 function fixture() {
     const host = installMock({ settings: { enabled: false, nativeBindings: { preGraphId: null, postGraphId: null }, graphs: {} } });
     let saves = 0; host.saveSettingsDebounced = () => saves++;

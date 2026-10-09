@@ -98,9 +98,7 @@
         "from": "reply-snapshot",
         "fromPort": "out",
         "to": "text-rules",
-        "toPort": "in",
-        "order": 0,
-        "kind": "merge"
+        "toPort": "in"
       },
       "wire-2": {
         "id": "wire-2",
@@ -108,9 +106,7 @@
         "from": "text-rules",
         "fromPort": "out",
         "to": "validate-patches",
-        "toPort": "in",
-        "order": 0,
-        "kind": "merge"
+        "toPort": "in"
       },
       "wire-3": {
         "id": "wire-3",
@@ -118,9 +114,7 @@
         "from": "validate-patches",
         "fromPort": "out",
         "to": "review-gate",
-        "toPort": "in",
-        "order": 0,
-        "kind": "merge"
+        "toPort": "in"
       },
       "wire-4": {
         "id": "wire-4",
@@ -128,9 +122,7 @@
         "from": "review-gate",
         "fromPort": "out",
         "to": "apply-reply",
-        "toPort": "in",
-        "order": 0,
-        "kind": "merge"
+        "toPort": "in"
       }
     },
     "groups": {},

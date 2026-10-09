@@ -80,7 +80,7 @@ async function newCasePage({ width = 1024, dpr = 1, workerDelay = false }) {
         const url = new URL(response.url()); localResponses.add(url.pathname);
         if (response.status() >= 400) issues.push('HTTP ' + response.status() + ': ' + response.url());
     });
-    await page.goto(base + '/tests/browser/harness.html');
+    await page.goto(base + '/tests/browser/harness.html?hostCss=1');
     await page.waitForFunction(() => !!window.canvasHarness);
     return { context, page, issues, localResponses, workerRequests, width, dpr };
 }
@@ -118,13 +118,26 @@ async function activate(env, fixture = 'structured') {
         return { id: graph.id, mode: graph.mode, nodeIds: Object.keys(graph.nodes), definitionRefs: Object.keys(graph.definitions),
             wrapperId: fixtureName === 'cleanup' ? 'text-rules' : null };
     }, fixture);
-    await page.getByRole('combobox', { name: 'Canvas', exact: true }).selectOption(fixtureInfo.id);
+    await page.getByRole('combobox', { name: 'Workflow', exact: true }).selectOption(fixtureInfo.id);
     await page.evaluate(async () => { await window.canvasHarness.settle(); window.canvasHarness.canvas.fit(); await window.canvasHarness.settle(); await document.fonts.ready; });
     await page.locator('.pc-root.pc-native-workspace[data-pc-workbench="svelte"]').waitFor({ state: 'visible' });
     assert(env.localResponses.has('/dist/lattice-ui.js'), 'Actual production UI bundle was not loaded.');
     assert(await page.locator('.pc-node-native').count() === fixtureInfo.nodeIds.length, 'Production Canvas did not render all real root nodes.');
     env.fixture = fixtureInfo;
     return fixtureInfo;
+}
+
+async function captureFresh(env) {
+    env.fixture = await env.page.evaluate(async () => {
+        const h = window.canvasHarness, settings = h.S.settings(), graph = h.graph;
+        const { validateWorkflow } = await import('/src/workflow/contracts.js?v=' + h.version);
+        const checked = validateWorkflow(graph);
+        if (!h.freshSettingsAbsent || graph.name !== 'Structured guidance' || graph.schema !== 3 || graph.runtime !== 2 || !checked.ok || checked.data.callBound !== 0 || settings.enabled || settings.nativeBindings.preGraphId !== null || settings.nativeBindings.postGraphId !== null || Object.hasOwn(settings, 'workflowMode') || h.providerCalls() !== 0) throw Error('Actual fresh launch did not use the disabled unassigned zero-request current default.');
+        if (document.querySelector('.pc-node-output,.pc-port-key,.pc-port-stage,.pc-tok') || ['sillyCanvas','promptCanvas','comfyTavernGenerationInterceptor'].some(key => Object.hasOwn(window,key))) throw Error('A retired surface or global survived fresh startup.');
+        await h.settle(); await document.fonts.ready;
+        return { id: graph.id, mode: graph.mode, nodeIds: Object.keys(graph.nodes), definitionRefs: Object.keys(graph.definitions), fresh: true, hostCss: h.hostCss, providerCalls: h.providerCalls() };
+    });
+    await env.page.locator('.pc-root.pc-native-workspace[data-pc-workbench="svelte"]').waitFor({state:'visible'});
 }
 
 async function inspectCompact(env) {
@@ -232,14 +245,17 @@ async function runDetails(env, expectedStatus) {
 try {
     await startServer();
     browser = await chromium.launch({ headless: true }); // Uses the installed local browser; never downloads one.
-    for (const width of [1024, 736, 360, 320]) await caseRun('native-' + width + '-dpr1', { width }, async (env, record) => {
-        await activate(env); await inspectCompact(env);
+    for (const width of [1024, 736, 360, 320]) await caseRun('fresh-' + width + '-dpr1', { width }, async (env, record) => {
+        await captureFresh(env);
         record.images.push(await image(env, record.name));
         if (width === 1024) record.images.push(await image(env, 'tab-join-1024-dpr1', { joinCrop: true }));
     });
-    for (const dpr of [1.25, 2, 4]) await caseRun('native-1024-dpr' + dpr, { dpr }, async (env, record) => {
-        await activate(env); await inspectCompact(env);
+    for (const dpr of [1.25, 2, 4]) await caseRun('fresh-1024-dpr' + dpr, { dpr }, async (env, record) => {
+        await captureFresh(env);
         record.images.push(await image(env, record.name), await image(env, 'tab-join-1024-dpr' + dpr, { joinCrop: true }));
+    });
+    for (const width of [1024, 736, 360, 320]) await caseRun('compact-' + width, {width}, async (env, record) => {
+        await activate(env); await inspectCompact(env); record.images.push(await image(env, record.name));
     });
     await caseRun('derive-purpose-flyout', {}, async (env, record) => {
         await activate(env, 'cleanup');
@@ -294,14 +310,14 @@ try {
         record.failureMetrics = await metrics(env);
         const failedNode = record.failureMetrics.nodes.find(node => node.id === 'json-decode');
         const blockedNodes = record.failureMetrics.nodes.filter(node => node.classes.includes('pc-trace-blocked'));
-        assert(failedNode?.classes.includes('pc-selected') && failedNode.border === 'rgb(224, 143, 143)', 'Actual selected failed card must retain the error-red border.');
+        assert(failedNode?.classes.includes('pc-selected') && failedNode.border === 'rgb(229, 118, 118)', 'Actual selected failed card must retain the current error-red border.');
         const failedGrayscale = Number(failedNode.headingFilter.match(/grayscale\(([\d.]+)%?\)/)?.[1] ?? 0);
         assert(Number(failedNode.headingOpacity) > 0 && Number(failedNode.headingOpacity) < 1 && failedGrayscale > 0, 'Actual failed heading must remain visibly dimmed and grayscale.');
         assert(blockedNodes.length > 0 && blockedNodes.every(node => Number(node.opacity) > 0 && Number(node.opacity) < 1), 'Actual blocked cards must remain visibly dimmed.');
         record.images.push(await image(env, record.name));
     });
     evidence.status = evidence.cases.some(record => record.status !== 'passed') ? 'failed' : 'passed';
-    assert(evidence.cases.length === 11, 'A required capture case was omitted.');
+    assert(evidence.cases.length === 15, 'A required capture case was omitted.');
     assert(evidence.status === 'passed', 'Required capture cases failed; inspect metrics.json and saved error images.');
 } catch (error) {
     evidence.status = 'failed'; evidence.error = error.stack ?? String(error); process.exitCode = 1;

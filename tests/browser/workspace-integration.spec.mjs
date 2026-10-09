@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 async function activate(page,fixture='nestedWorkflow') {
  await page.goto('/tests/browser/harness.html');await page.waitForFunction(()=>!!window.canvasHarness);
  const id=await page.evaluate(async fixture=>{const h=window.canvasHarness;const { [fixture==='portalWorkflow'?'siblingWorkflow':fixture]: create }=await import('/tests/fixtures/workflow-prepared-fixture.mjs');const root=create();if(fixture==='portalWorkflow'){const {computeDefinitionIdentity,definitionRefKey}=await import('/src/workflow/definitions.js?v='+h.version);const draft=structuredClone(Object.values(root.definitions)[0]);delete draft.semanticHash;draft.body.portals={publisher:{id:'publisher',label:'Saved publisher',kind:'guidance',source:{nodeId:'work',portId:'out'}}};draft.body.wires.b={id:'b',route:'portal',portalId:'publisher',to:'exit',toPort:'in'};const checked=computeDefinitionIdentity(draft);const definition={...checked.data.materializedDefinition,semanticHash:checked.data.semanticHash},ref={id:definition.id,version:definition.version,semanticHash:definition.semanticHash};root.definitions={[definitionRefKey(ref)]:definition};root.nodes['first/path'].definition=ref;root.nodes.second.definition=ref;}root.name='Actual workspace integration';h.S.settings().graphs[root.id]=root;h.UI.refreshIfOpen();window.workspaceRootId=root.id;return root.id;},fixture);
- await page.getByRole('combobox',{name:'Canvas',exact:true}).selectOption(id);await page.evaluate(()=>window.canvasHarness.settle());expect(await page.evaluate(()=>window.canvasHarness.canvas.graph.id)).toBe(id);return id;
+ await page.getByRole('combobox',{name:'Workflow',exact:true}).selectOption(id);await page.evaluate(()=>window.canvasHarness.settle());expect(await page.evaluate(()=>window.canvasHarness.canvas.graph.id)).toBe(id);return id;
 }
 test('real activated child tabs retain root identity, camera and readonly alias without document/history edits',async({page})=>{
  const id=await activate(page);await page.evaluate(()=>{const context=window.canvasHarness.context;context.extensionSettings.connectionManager ??={profiles:[]};const manager=context.extensionSettings.connectionManager,profiles=manager.profiles;window.workspaceBindingReads=0;Object.defineProperty(manager,'profiles',{configurable:true,get(){window.workspaceBindingReads++;return profiles;}});});const before=await page.evaluate(id=>JSON.stringify(window.canvasHarness.S.getGraph(id)),id);
@@ -51,7 +51,7 @@ test('a genuine deferred root run survives child open close reopen and cached vi
   const graph=starterGraph('literal-cleanup'),parsed=parseSubgraph(await(await fetch('/workflows/subgraphs/literal-cleanup.json')).text());if(!parsed.ok)throw new Error(parsed.error.message);const definition=parsed.data.definition,old=graph.nodes['text-rules'];graph.definitions={...parsed.data.definitions,[definitionRefKey(definition)]:definition};graph.nodes[old.id]={id:old.id,type:'subgraph',definition:{id:definition.id,version:definition.version,semanticHash:definition.semanticHash},parameterOverrides:{},roleOverrides:{},nodeBindingOverrides:{},x:old.x,y:old.y};graph.wires['wire-1'].toPort='draft';graph.wires['wire-2'].fromPort='patches';
   Object.assign(h.context,{chatId:'workspace-deferred',characterId:1,groupId:null});h.context.chat.splice(0,h.context.chat.length,{mes:'Continue.',is_user:true},{mes:'It was very very quiet.',is_user:false,swipe_id:0,swipes:['It was very very quiet.'],swipe_info:[{extra:{},gen_started:1,gen_finished:2}],extra:{},gen_started:1,gen_finished:2});h.S.settings().graphs[graph.id]=graph;h.UI.refreshIfOpen();await(await import('/src/run.js?v='+v)).initializeNativeWorkflowController();return graph.id;
  });
- await page.getByRole('combobox',{name:'Canvas',exact:true}).selectOption(id);await page.evaluate(()=>window.canvasHarness.settle());const before=await page.evaluate(id=>JSON.stringify(window.canvasHarness.S.getGraph(id)),id);
+ await page.getByRole('combobox',{name:'Workflow',exact:true}).selectOption(id);await page.evaluate(()=>window.canvasHarness.settle());const before=await page.evaluate(id=>JSON.stringify(window.canvasHarness.S.getGraph(id)),id);
  await page.locator('.pc-node-native[data-id="text-rules"] .pc-native-heading').dblclick();await page.getByRole('button',{name:/^Close Literal cleanup/}).click();
  await page.locator('.pc-root-run').click();await expect.poll(async()=>workerRequested?true:await page.evaluate(async()=>{const h=window.canvasHarness,r=(await import('/src/run.js?v='+h.version)).getNativeWorkflowController().lastResult();return r?.error??false;})).toBe(true);
  await page.evaluate(async()=>{
@@ -67,11 +67,11 @@ test('a genuine deferred root run survives child open close reopen and cached vi
 
 test('native canvas keeps a flat default and quiet meter while camera tools stay accessible in Graph menu',async({page})=>{
  await page.setViewportSize({width:320,height:900});const id=await activate(page,'siblingWorkflow'),before=await page.evaluate(id=>JSON.stringify(window.canvasHarness.S.getGraph(id)),id);
- await expect(page.locator('.pc-status')).toBeHidden();await expect(page.getByRole('toolbar',{name:'Canvas tools'})).toHaveCount(0);await expect(page.locator('.pc-gesture-hint')).toHaveCount(0);expect(await page.locator('.pc-canvas-host').evaluate(element=>getComputedStyle(element).backgroundImage)).toBe('none');
+ await expect(page.locator('.pc-status')).toHaveCount(0);await expect(page.getByRole('toolbar',{name:'Canvas tools'})).toHaveCount(0);await expect(page.locator('.pc-gesture-hint')).toHaveCount(0);expect(await page.locator('.pc-canvas-host').evaluate(element=>getComputedStyle(element).backgroundImage)).toBe('none');
  const graph=await page.locator('.pc-canvas-area').boundingBox(),meter=await page.locator('.pc-run-meter').boundingBox();expect(meter.x).toBeGreaterThanOrEqual(graph.x);expect(meter.y+meter.height).toBeLessThanOrEqual(graph.y+graph.height);await expect(page.getByRole('checkbox',{name:'Arm',exact:true})).toBeVisible();
  const camera=async label=>{await page.getByRole('button',{name:'Graph',exact:true}).click();await page.getByRole('menuitem',{name:label,exact:true}).click();};await camera('Pan tool');expect(await page.evaluate(()=>window.canvasHarness.canvas.mode)).toBe('pan');await camera('Select tool');expect(await page.evaluate(()=>window.canvasHarness.canvas.mode)).toBe('select');const zoom=await page.evaluate(()=>window.canvasHarness.canvas.view.zoom);await camera('Zoom in');expect(await page.evaluate(()=>window.canvasHarness.canvas.view.zoom)).toBeGreaterThan(zoom);await camera('Zoom out');expect(await page.evaluate(()=>window.canvasHarness.canvas.view.zoom)).toBeCloseTo(zoom,5);await camera('Fit to view');expect(await page.evaluate(id=>JSON.stringify(window.canvasHarness.S.getGraph(id)),id)).toBe(before);
  await page.evaluate(async()=>{const h=window.canvasHarness,theme=await import('/src/theme.js?v='+h.version);theme.setStyle('grid','lines');theme.applyTheme();h.UI.refreshIfOpen();});expect(await page.locator('.pc-canvas-host').evaluate(element=>getComputedStyle(element).backgroundImage)).toContain('linear-gradient');
- const legacyId=await page.evaluate(()=>Object.values(window.canvasHarness.S.settings().graphs).find(graph=>graph.mode!=='native-pre'&&graph.mode!=='native-post').id);await page.getByRole('combobox',{name:'Canvas',exact:true}).selectOption(legacyId);await expect(page.locator('.pc-status')).toBeVisible();await expect(page.getByRole('toolbar',{name:'Canvas tools'})).toBeVisible();
+ expect(await page.evaluate(()=>Object.values(window.canvasHarness.S.settings().graphs).every(graph=>graph.schema===3&&graph.runtime===2))).toBe(true);
 });
 
 
@@ -102,8 +102,11 @@ test('actual root selection survives view roundtrips with matching paint and one
     await child.click(); await root.click();
     expect(await page.evaluate(() => window.canvasHarness.canvas.selection)).toEqual({ kind: 'node', id: 'one' });
     await expect(page.locator('.pc-node-native[data-id="one"]')).toHaveClass(/pc-selected/);
+    const deletionPrompts = [];
+    page.on('dialog', async dialog => { deletionPrompts.push({ type: dialog.type(), message: dialog.message() }); await dialog.accept(); });
     await page.locator('.pc-canvas-host').focus(); await page.keyboard.press('Delete');
     await expect.poll(() => page.evaluate(id => !!window.canvasHarness.S.getGraph(id).nodes.one, id)).toBe(false);
+    expect(deletionPrompts).toEqual([{ type: 'confirm', message: 'Delete one?' }]);
     await page.getByRole('button', { name: 'Undo', exact: true }).click();
     expect(await page.evaluate(id => !!window.canvasHarness.S.getGraph(id).nodes.one, id)).toBe(true);
     await expect(page.getByRole('button', { name: 'Undo', exact: true })).toBeDisabled();
@@ -144,8 +147,11 @@ test('owned child Edit and Cut use its saved scope and reject blocked or stale c
     await graphTab(page, { name: /Plan/ }).click();
     await page.evaluate(() => Object.defineProperty(navigator.clipboard, 'writeText', { configurable: true, value: window.workspaceWriteText }));
     await page.locator('.pc-node-native[data-id="work"] .pc-native-heading').click();
+    const deletionPrompts = [];
+    page.on('dialog', async dialog => { deletionPrompts.push({ type: dialog.type(), message: dialog.message() }); await dialog.accept(); });
     await editCommand(page, 'Cut');
     await expect(page.locator('.pc-node-native[data-id="work"]')).toHaveCount(0);
+    expect(deletionPrompts).toEqual([{ type: 'confirm', message: 'Delete work?' }]);
     await page.getByRole('button', { name: 'Undo', exact: true }).click();
     const restored = await page.evaluate(id => { const root = structuredClone(window.canvasHarness.S.getGraph(id)); delete root.updatedAt; return root; }, id), authored = JSON.parse(before); delete authored.updatedAt; expect(restored).toEqual(authored);
 });
@@ -160,7 +166,7 @@ test('actual nested library Copy and Paste carries its exact closure into an unr
         h.S.settings().subgraphLibrary = { definitions: source.definitions }; h.S.settings().graphs[root.id] = root; h.UI.refreshIfOpen();
         return { id: root.id, key: JSON.stringify([definition.id, definition.version, definition.semanticHash]) };
     });
-    await page.getByRole('combobox', { name: 'Canvas', exact: true }).selectOption(state.id);
+    await page.getByRole('combobox', { name: 'Workflow', exact: true }).selectOption(state.id);
     await page.locator('.pc-details-heading').getByRole('button', { name: 'Subgraphs', exact: true }).click();
     await page.getByLabel('Library revision', { exact: true }).selectOption(state.key);
     await page.locator('[data-subgraph-open-library]').click(); await page.getByRole('button', { name: 'Close', exact: true }).click();
@@ -171,7 +177,7 @@ test('actual nested library Copy and Paste carries its exact closure into an unr
     await expect(editItem(page, 'Cut')).toBeDisabled();
     await expect(editItem(page, 'Delete selection')).toBeDisabled();
     await editItem(page, 'Copy').click();
-    await expect.poll(() => page.evaluate(async () => { try { return Object.keys(JSON.parse(await navigator.clipboard.readText()).nativeGraph.definitions).length; } catch { return 0; } })).toBe(1);
+    await expect.poll(() => page.evaluate(async () => { try { return Object.keys(JSON.parse(await navigator.clipboard.readText()).graph.definitions).length; } catch { return 0; } })).toBe(1);
     const clipText = await page.evaluate(() => navigator.clipboard.readText());
     expect(await page.evaluate(id => Object.keys(window.canvasHarness.S.getGraph(id).definitions).length, state.id)).toBe(0);
     await graphTab(page, { name: 'Graph 1', exact: true }).click();

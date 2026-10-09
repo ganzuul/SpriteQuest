@@ -1,95 +1,61 @@
-# The Lattice workspace
+# LATTICE quick start
 
-Lattice adds optional planning before a SillyTavern reply and reviewed editing afterward. SillyTavern continues to build its normal prompt, including its lorebooks and extensions. Start with an example, inspect its nodes, and change one stage at a time.
+[Documentation](README.md) · [Operator's manual](operators-manual.md) · [Node reference](node-reference.md)
 
-## Start with an example
+Begin with two working examples that use no model calls. One assembles a structured writing brief; the other proposes an exact editorial change and lets you review it.
 
-1. Open **Workflows → Workflow examples…**. **Structured guidance** works without a model connection or an existing reply. **Literal cleanup** demonstrates a small replacement in the latest completed text-only assistant reply, also without a model connection.
-2. For an example with model roles, open workflow setup and choose its connection profiles. Click a model-backed node to override its profile or model in the details panel. Deterministic nodes do not need a model connection.
-3. Run the workflow explicitly and inspect its outputs in the preview pane. Opening, importing, editing, and selecting nodes do not make model calls.
-4. Enable and assign a workflow only when you want it used during generation. For a reply revision after a full **Run**, choose **Apply Reply · Host result** in **Preview output**, inspect the original and proposed reply in the available artifact tabs, then choose **Apply reviewed candidate** or **Reject candidate**.
+## Open the workspace
 
-Literal cleanup's default rule changes `very very` to `very`. It proposes no change when the source reply lacks that literal. To try another rule, edit Rules and click **Save Rules** before running. JSON and multi-line editors keep drafts until their **Save …** button validates and commits the value; workspace autosave does not commit an unfinished editor draft.
+Install from `https://github.com/MentallyQuill/Lattice` in SillyTavern's **Extensions → Install extension**, leaving the branch field blank. Reload, then open LATTICE beside Send or type `/lattice`.
 
-Each model-backed stage uses its own auxiliary instructions through the selected connection. Its output does not replace SillyTavern's system prompt. The request bound shows the maximum auxiliary calls for the chosen run; your normal SillyTavern reply is separate.
+Fresh launch opens **Structured guidance**, with workflows disabled and no phase assigned. Use **Workflows → Workflow examples…** to install another copy or a different example. Opening, installing, or importing makes no provider request.
 
-| Example | Phase | Maximum auxiliary calls | What to try |
-| --- | --- | --- | --- |
-| [Literal cleanup](../workflows/literal-cleanup.json) | Post | 0 | Change the literal rule, inspect its proposed patches, then review and Apply. |
-| [Structured guidance](../workflows/structured-guidance.json) | Pre | 0 | Edit the JSON source and inspect the selected fields and composed guidance. |
-| [Scene guidance](../workflows/native-guidance.json) | Pre | 2 | Use a planning connection to compact context and suggest scene direction. |
-| [Reviewed AI De-slop](../workflows/reviewed-de-slop.json) | Post | 1 | Find configured patterns and review a model's bounded repair. |
+The default **Ember** theme follows SillyTavern's panel, text, control and quote colors, with a neutral canvas and translucent node fills. Use **Tools → Theme and colours** to choose another theme or customize it.
 
-Manual pre-processing runs preview their guidance. Once a pre-processing workflow is assigned and enabled, the normal SillyTavern Send path installs its optional guidance for that generation. A target run remains an inspection action.
+## Build and inspect a brief
 
-## Find and connect nodes
+The example is:
 
-The floating shelf follows the usual order of building a workflow:
+```text
+Compose (JSON source) → JSON Decode → Select Fields → Compose (Guidance) → Guidance
+```
 
-| Family | Use it for |
-| --- | --- |
-| Input | Bring scene context, a reply, or other material into the graph. |
-| Shaping | Select, compact, combine, and plan that material. |
-| Surface | Inspect and improve the resulting writing. |
-| Transpose | Adaptations between forms; unavailable until supported nodes exist. |
-| Derive | Extract facts, structured values, findings, or patches. |
-| Output | Produce guidance or a reviewed reply result. |
-| Subgraphs | Reuse a saved graph as one node. |
+1. Click **Run**. Select each node to see its recorded result in Preview.
+2. Select the first **Compose**. In **Sections**, change the JSON's `direction` and `constraint` strings. Keep the JSON valid, then click **Save Sections**.
+3. Run again. Select the second **Compose** and inspect the Guidance artifact.
+4. Experiment with another field, such as `tone`: add it to the source JSON, add a mapping in Select Fields, and add `Tone: {{data:/tone}}` to the final template.
 
-Right-click empty canvas to search for a node at that location. You can also drag from a pin: drop onto another compatible pin, or drop into empty canvas to search and create a connected node. **Context sensitive** filters the choices for that pin. If a node has several matching pins, choose the one you intend to use.
+![Structured guidance after a run, with Compose settings and the composed brief visible](images/workspace-overview.png)
 
-Input pins are on the left and output pins on the right. Their colors and labels identify the material they carry. An output can feed several nodes; each input accepts one connection. A rejected connection keeps the existing graph intact and explains the problem.
+*The captured example adds tone and uses synthetic harbor-scene material. The supplied starter begins with direction and constraint.*
 
-Click a node to edit its settings in the right details panel. Commit JSON and multi-line edits with the field's **Save …** button and resolve any validation error before Run. Its graph label can be an alias; the details panel retains the canonical node type. Compact view keeps the icon and real pins while reducing the card's size.
+This example needs no connection profile or existing reply. A manual run previews the brief. To use it with normal sends, open Setup, assign the pre phase and enable workflows. Send executes the configured pre workflow and installs its optional guidance for that generation.
 
-## Move around the graph
+## Propose an exact reply edit
 
-Drag a node by its body. Drag with the middle mouse button to pan, and use the wheel to zoom around the pointer. The shelf floats over the graph; the canvas beneath and below it remains usable.
+Install **Literal cleanup** and wait for a completed text-only assistant reply. Its rule changes `very very` to `very`; a reply without that phrase proposes no change.
 
-Grab the handle between preview and graph to resize the panes. Collapse the preview when you need more graph space, then reopen it to continue inspecting the same output.
+1. Select **Text Rules**. Inspect Draft input, replace mode, and the Rules JSON.
+2. If needed, change the literal pattern/replacement to text in your latest reply, then click **Save Rules**.
+3. Click **Run**.
+4. Select **Apply Reply · Host result** in Preview output.
+5. Read `original`, revised `text`, and changes in its candidate artifact. Choose **Apply reviewed candidate** or **Reject candidate**.
 
-Double-click a subgraph node to open its contents in a graph tab. **Graph 1** remains the main workflow. Each instance keeps its own camera, selection, and presentation, even when several instances use the same saved definition. Closing a tab hides the view; reopening it restores that view. Switching tabs does not stop a running root workflow.
+![Literal cleanup showing connected edit, validation, review, and application stages](images/text-rules-graph.png)
 
-## Reuse workflows and subgraphs
+*Text Rules proposes Patches. The downstream stages validate and expose a reviewed root result; they do not automatically edit the reply.*
 
-**Open workflow** opens a separate workflow. **Import into graph** adds a workflow or fragment to the existing graph after showing a review. Imported nodes receive fresh identities and keep their internal connections and relative layout. Review the phase, terminal changes, model roles, and request bound before accepting.
+Apply rechecks the source and creates a new swipe preserving the original. Editing the source or switching chat/swipe may invalidate the candidate. See [reply review and persistence limits](native-workflows.md#review-a-reply-repair).
 
-Import requires matching graph modes and phases. Legacy prompt-replacement graphs retain their single Output rule: a fragment with a second Output must be opened separately or exported without that extra terminal.
+## Explore the toolset
 
-A subgraph exposes named inputs, outputs, and selected settings. Save reusable definitions in the **Subgraphs** shelf and export them as individual JSON files. Installed instances keep their pinned definition snapshots, so deleting a shelf entry does not break existing workflows.
+| Example | Phase | Maximum auxiliary calls |
+| --- | --- | ---: |
+| [Structured guidance](../workflows/structured-guidance.json) | Pre | 0 |
+| [Literal cleanup](../workflows/literal-cleanup.json) | Post | 0 |
+| [Scene guidance](../workflows/native-guidance.json) | Pre | 2 |
+| [Reviewed AI De-slop](../workflows/reviewed-de-slop.json) | Post | 1 |
 
-The [Literal cleanup subgraph](../workflows/subgraphs/literal-cleanup.json) takes a frozen Draft and returns Patches. Its Rules setting is exposed on the instance. Keep **Validate Patches → Review Gate → Apply Reply** in the main graph after that output; the reusable body proposes changes and the main workflow owns review and application.
+For model-backed examples, bind **Analysis** or **Prose** in Setup. Details allows per-operation profile/model overrides. Manual runs can spend tokens, and Send does not reuse a manual guidance result.
 
-Library revisions and instance updates are explicit. Inspect an update's interface and binding changes before accepting it. Use **Make local copy** to edit a private body without changing other instances. Nested local copies preserve their containing graph through private ancestor revisions. **Unpack** exposes one level of nodes while preserving effective settings, bindings, and parent connections.
-
-Portals replace long visible connections with named references to existing outputs. Manage their source and consumers, rename them, or restore a visible wire. They preserve the same dependency; crossing a subgraph boundary still requires an exposed input or output.
-
-## Inspect a run
-
-A bright ring identifies the active node. Failed nodes have a red ring and a dimmed interior; blocked descendants and unrelated nodes have distinct states. The bottom-left meter opens run details, including the expanded stages inside subgraphs. Navigation never steals the current selection or moves the camera automatically.
-
-Preview the recorded inputs and outputs of a selected node, or pin an output while inspecting another part of the graph. Artifact tabs show the sections recorded for that output. After a full root Run, select **Apply Reply · Host result** in **Preview output** to inspect its candidate artifact and access the fresh reviewed Apply action. Reviewed AI repair records separate **original** and **candidate** text tabs; Literal cleanup's structured **candidate** artifact contains `original` and `text` fields. Text Rules, validation, review-gate and subgraph outputs remain diagnostic. **Run to here** explicitly runs the selected output and its upstream dependencies. It does not publish guidance or enable applying an intermediate reply.
-
-Changing semantic controls or connections makes the previous run stale and cancels active work. Camera, selection, aliases, compact view, and tab changes preserve the run. A stale result stays available for inspection but cannot supply a fresh Apply action.
-
-Large recordings show explicit truncated or omitted entries. Diagnostic retention follows a stable graph order and may leave space unused after its cutoff. The full reviewed reply candidate remains separate from preview text; applying it never uses a truncated preview.
-
-## Native connection shortcuts
-
-These controls apply to named-pin native workflows. Legacy wire modes retain their original behavior.
-
-| Gesture | Action |
-| --- | --- |
-| Click a wire | Select it. |
-| Shift/Ctrl-click wires | Extend the wire selection. |
-| Delete/Backspace | Delete selected connections when focus is outside an editor. |
-| Alt-click a wire | Disconnect that wire. |
-| Alt-click a pin | Disconnect its attached bindings. |
-| Ctrl-drag a connected input | Move its binding to another compatible input. |
-| Ctrl-drag an output | Move its consumers to another compatible output. |
-| Double-click a direct wire | Insert a compact, typed Reroute. |
-| Right-click a pin | Break individual/all bindings or navigate to a connected source. |
-| F2 on a selected node | Rename its alias. |
-| Escape | Cancel an unfinished drag or chooser. |
-
-Text fields and search retain their normal keyboard editing. Invalid or cancelled moves preserve the original connections. Stop cancels the active run; a late provider response cannot revive it.
+Next, read the [operator's manual](operators-manual.md) to discover nodes, connect pins, open subgraph tabs, customize instances, and inspect recorded outputs. Use the [node reference](node-reference.md) to design a process beyond the starter examples.

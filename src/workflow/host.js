@@ -1,6 +1,7 @@
-import { runWorkflowForHost, freezeArtifact, workflowSignature } from './runtime.js?v=0.20.0';
-import { resolveBinding, requestModel, bindingStatus, bindingSummary } from './connections.js?v=0.20.0';
-import { addressKey, safeError } from './record-data.js?v=0.20.0';
+import { runWorkflowForHost, freezeArtifact, workflowSignature } from './runtime.js?v=0.22.0';
+import { resolveBinding, requestModel, bindingStatus, bindingSummary } from './connections.js?v=0.22.0';
+import { addressKey, safeError } from './record-data.js?v=0.22.0';
+import { cloneWorkflowDocument } from './document.js?v=0.22.0';
 
 // Internal review seam: observations contain no authority or retained payload values.
 const retentionInspectors=new WeakMap();
@@ -252,7 +253,11 @@ export function createNativeWorkflowController(ports) {
         return value;
     }
     async function runTarget(graph,target,{messageIndex,onEvent}={}) {
-        const run=start(graph,false,null,target),phase=typeof graph?.mode==='string'?graph.mode.slice(7):undefined;
+        // Admit before replacing run authority or consulting the host. Runtime owns
+        // the bounded malformed result, including getter-free version metadata.
+        const admitted=cloneWorkflowDocument(graph);
+        if(!admitted.ok)return notify(await runWorkflowForHost(graph,{target}));
+        const run=start(graph,false,null,target),phase=admitted.data.mode.slice(7);
         const value=await execute(run,{phase,messageIndex,onEvent});
         if(active===run){active=null;return notify(value);}
         return value;
@@ -326,7 +331,7 @@ export function createNativeWorkflowController(ports) {
             if(!stillApplied())throw new Error('Reply changed before save');
             saveAttempted=true;const saved=await c.saveChat();
             if(saved===false || saved?.ok===false || !stillApplied())throw new Error('Save failed or source changed');
-            entry.applied=freezeArtifact(entry.run.graph.schema===3?{...entry.run.publicResult,ok:true,appliedLocally:true,saveAttempted:true,persistence:'unverified',swipeId}:{ok:true,appliedLocally:true,saveAttempted:true,persistence:'unverified',swipeId,artifact:candidate,reports:[{code:'PERSISTENCE_UNVERIFIED',message:'Applied locally and requested a save. The host does not acknowledge durable persistence; other memory extensions may retain the original.'}],calls:[],trace:[]});
+            entry.applied=freezeArtifact({...entry.run.publicResult,ok:true,appliedLocally:true,saveAttempted:true,persistence:'unverified',swipeId});
             for(const [id,sibling]of candidates)if(sibling!==entry&&sibling.source.token===entry.source.token)candidates.delete(id);
             return notify(entry.applied);
         } catch {

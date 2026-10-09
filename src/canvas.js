@@ -1,14 +1,48 @@
-import { isWorkflowGraph, safeWorkflowData } from './workflow/contracts.js?v=0.20.0';
-import { graphPoint, zoomAt, wheelFactor } from './canvas/camera.js?v=0.20.0';
-import { createFrameScheduler } from './canvas/frame.js?v=0.20.0';
-import { selectionMode, rectangle, intersects, combineSelection } from './canvas/selection.js?v=0.20.0';
-import { createGeometryCache, indexIncidentWires } from './canvas/geometry.js?v=0.20.0';
-import { nodeCard, preparedCardFor } from './canvas/presentation.js?v=0.20.0';
-import { buildConnectionRoute } from './canvas/connection-route.js?v=0.20.0';
-import { isCommentFrame, containedCommentNodes } from './canvas/comment-frames.js?v=0.20.0';
-import { mountCanvas } from '../dist/lattice-ui.js?v=0.20.0';
+import { isWorkflowGraph } from './workflow/contracts.js?v=0.22.0';
+import { graphPoint, zoomAt, wheelFactor } from './canvas/camera.js?v=0.22.0';
+import { createFrameScheduler } from './canvas/frame.js?v=0.22.0';
+import { selectionMode, rectangle, intersects, combineSelection } from './canvas/selection.js?v=0.22.0';
+import { createGeometryCache, indexIncidentWires } from './canvas/geometry.js?v=0.22.0';
+import { nodeCard, preparedCardFor } from './canvas/presentation.js?v=0.22.0';
+import { buildConnectionRoute } from './canvas/connection-route.js?v=0.22.0';
+import { isCommentFrame, containedCommentNodes } from './canvas/comment-frames.js?v=0.22.0';
+import { mountCanvas } from '../dist/lattice-ui.js?v=0.22.0';
 const groupMembers = (graph, id) => Object.values(graph?.nodes ?? {}).filter(node => node.inGroup === id);
 const groupOf = (graph, node) => node && graph?.groups?.[node.inGroup];
+
+// Prepared cards expand catalog metadata beyond the authoring budget. Keep this
+// draw-only traversal bounded independently; authoring admission stays unchanged.
+function safePreparedGraph(graph) {
+    // Retained authored text and prepared Note bodies may each consume the full
+    // authoring allowance. Reserve another 8 KiB per admitted card for catalog,
+    // named-pin and attachment metadata, while still bounding the entire DTO.
+    const characterLimit = 2 * 2000000 + 1000 * 8192;
+    let entries = 0, characters = 0;
+    const active = new Set();
+    const visit = (item, depth) => {
+        if (++entries > 200000 || depth > 40) return false;
+        if (typeof item === 'string') { characters += item.length; return characters <= characterLimit; }
+        if (item === null || typeof item === 'boolean') return true;
+        if (typeof item === 'number') return Number.isFinite(item);
+        if (typeof item !== 'object' || active.has(item)) return false;
+        if (![Object.prototype, Array.prototype, null].includes(Object.getPrototypeOf(item))) return false;
+        const properties = Object.getOwnPropertyDescriptors(item);
+        active.add(item);
+        for (const key of Reflect.ownKeys(properties)) {
+            if (typeof key !== 'string' || ['__proto__', 'prototype', 'constructor'].includes(key)
+                || /^(api[_-]?key|api[_-]?token|access[_-]?token|token|password|secret|credentials?|authorization|headers?|provider|endpoint|base[_-]?url)$/i.test(key)
+                || !('value' in properties[key]) || !visit(properties[key].value, depth + 1)) return false;
+        }
+        active.delete(item);
+        return true;
+    };
+    try {
+        const cards = Object.getOwnPropertyDescriptor(graph, 'nativeCards');
+        if (cards && (!('value' in cards) || !cards.value || typeof cards.value !== 'object'
+            || Array.isArray(cards.value) || Object.keys(Object.getOwnPropertyDescriptors(cards.value)).length > 1000)) return false;
+        return visit(graph, 0);
+    } catch { return false; }
+}
 /** Prepared named-pin rendering, cached geometry, camera and native interaction bridge. */
 export class Canvas {
 
@@ -77,7 +111,7 @@ export class Canvas {
 
     setGraph(graph) {
         if (!graph) return;
-        if (!isWorkflowGraph(graph) || !safeWorkflowData(graph)) throw new Error('Expected a prepared current workflow graph.');
+        if (!isWorkflowGraph(graph) || !safePreparedGraph(graph)) throw new Error('Expected a prepared current workflow graph.');
         for (const node of Object.values(graph.nodes)) preparedCardFor(graph, node, this.hooks);
         this.cancelGesture();
         if (this.nativeSelectionKey) this.wireSelections.set(this.nativeSelectionKey, [...this.wireMulti]);
@@ -199,7 +233,7 @@ export class Canvas {
         this.#measureCards('.pc-node[data-id]');
         this.layer.setGroups(Object.values(groups).map(g => this.#groupCard(g)));
         this.#measureCards('.pc-node-group');
-        this.geometry.retain(this.nodeElements.keys());
+        this.geometry.retain([...Object.keys(this.graph.nodes), ...Object.keys(groups).map(id => `group:${id}`)]);
         this.#paintMulti();
     }
 
@@ -307,6 +341,18 @@ export class Canvas {
         return ids;
     }
 
+    #dragGroups(ids, extraGroup) {
+        const selected = new Set(ids);
+        return Object.values(this.graph.groups ?? {}).filter(group => {
+            const members = groupMembers(this.graph, group.id);
+            return group.collapsed && (group.id === extraGroup || members.length && members.every(node => selected.has(node.id)));
+        }).map(group => {
+            const frame = this.#nativeGroupFrame(group);
+            return { id: group.id, x: group.x ?? frame.x, y: group.y ?? frame.y,
+                original: Object.fromEntries(['x', 'y', 'frame'].filter(key => Object.hasOwn(group, key)).map(key => [key, structuredClone(group[key])])) };
+        });
+    }
+
     setMode(mode) {
         this.mode = mode === 'pan' ? 'pan' : 'select';
         this.host.classList.toggle('pc-pan-mode', this.mode === 'pan');
@@ -385,6 +431,10 @@ export class Canvas {
                 if (d.sizeBefore[axis] === undefined) delete node[axis]; else node[axis] = d.sizeBefore[axis];
             }
         }
+        for (const saved of d.groups ?? []) {
+            const group = this.graph.groups?.[saved.id]; if (!group) continue;
+            for (const key of ['x', 'y', 'frame']) delete group[key]; Object.assign(group, saved.original);
+        }
     }
 
     #focusCommentGesture(event) {
@@ -406,7 +456,7 @@ export class Canvas {
             nodes = [frame, ...(frame.moveContents !== false ? containedCommentNodes(this.graph, frame, node => ({ x: node.x, y: node.y, w: this.widthOf(node), h: this.heightOf(node) })).filter(node => !this.#folded(node)) : [])];
             this.setMulti([]); this.select({ kind: 'node', id: frame.id });
         }
-        this.drag = { comment: true, capture, several: nodes.map(node => [node.id, node.x, node.y]), sx: start.x, sy: start.y, moved: false };
+        this.drag = { comment: true, capture, several: nodes.map(node => [node.id, node.x, node.y]), groups: this.#dragGroups(nodes.map(node => node.id)), sx: start.x, sy: start.y, moved: false };
     }
 
     #updateMarquee(e) {
@@ -682,15 +732,35 @@ export class Canvas {
             }
             if (groupEl && !port) {
                 const gid = groupEl.dataset.group ?? groupEl.closest('[data-group]')?.dataset.group;
+                if ([...this.#pickedIds()].some(id => isCommentFrame(this.graph.nodes[id]))) this.#focusCommentGesture(e);
                 if (!this.graph.groups?.[gid]) return;
                 e.preventDefault(); e.stopPropagation();
                 const action = e.target.closest('[data-action]')?.dataset.action;
                 if (action === 'collapse' || action === 'open') { this.setCollapsed(gid, action === 'collapse'); return; }
-                this.multi.clear(); this.select({ kind: 'group', id: gid }); return;
+                const group = this.graph.groups[gid], members = groupMembers(this.graph, gid).map(node => node.id);
+                if (!group.collapsed) { this.multi.clear(); this.select({ kind: 'group', id: gid }); return; }
+                let selected = this.#pickedIds();
+                if (e.shiftKey || e.ctrlKey || e.metaKey || e.altKey) {
+                    const remove = e.altKey || (e.ctrlKey || e.metaKey) && !e.shiftKey && members.every(id => selected.has(id));
+                    for (const id of members) if (remove) selected.delete(id); else selected.add(id);
+                    this.setMulti([...selected]); if (!e.shiftKey || remove) return;
+                } else if (!members.length || !members.every(id => selected.has(id))) {
+                    this.multi.clear(); this.select({ kind: 'group', id: gid }); selected = new Set(members);
+                }
+                const start = this.toGraph(e.clientX, e.clientY), ids = [...selected];
+                const comment = ids.some(id => isCommentFrame(this.graph.nodes[id]));
+                if (comment && !this.#canEdit()) return;
+                const capture = comment ? this.hooks.captureCommentEdit?.() : null;
+                if (comment && !capture) return;
+                this.drag = { comment, capture, several: ids.map(id => [id, this.graph.nodes[id]?.x ?? 0, this.graph.nodes[id]?.y ?? 0]),
+                    groups: this.#dragGroups(ids, gid), clickedGroup: e.shiftKey ? null : gid, sx: start.x, sy: start.y, moved: false };
+                return;
             }
             if (nodeEl && e.button === 0) {
                 const id = nodeEl.dataset.id;
+                if ([...this.#pickedIds()].some(id => isCommentFrame(this.graph.nodes[id]))) this.#focusCommentGesture(e);
                 const node = this.graph.nodes[id];
+                if (!node) return;
                 if (e.shiftKey || e.ctrlKey || e.metaKey || e.altKey) {
                     const ids = this.#pickedIds();
                     if (e.altKey || ((e.ctrlKey || e.metaKey) && !e.shiftKey && ids.has(id))) ids.delete(id);
@@ -705,7 +775,7 @@ export class Canvas {
                     const capture = comment ? this.hooks.captureCommentEdit?.() : null;
                     if (comment && !capture) return;
                     const start = this.toGraph(e.clientX, e.clientY);
-                    this.drag = { comment, capture, several: [...this.multi].map(m => [m, this.graph.nodes[m]?.x ?? 0, this.graph.nodes[m]?.y ?? 0]), clicked: e.shiftKey ? null : id, sx: start.x, sy: start.y, moved: false };
+                    this.drag = { comment, capture, several: [...this.multi].map(m => [m, this.graph.nodes[m]?.x ?? 0, this.graph.nodes[m]?.y ?? 0]), groups: this.#dragGroups(this.multi), clicked: e.shiftKey ? null : id, sx: start.x, sy: start.y, moved: false };
                     return;
                 }
                 if (this.multi.size && !e.shiftKey) this.setMulti([]);
@@ -771,6 +841,11 @@ export class Canvas {
                     if (!n) continue;
                     n.x = x + dx; n.y = y + dy;
                 }
+                for (const saved of d.groups ?? []) {
+                    const group = this.graph.groups?.[saved.id]; if (!group) continue;
+                    group.x = saved.x + dx; group.y = saved.y + dy;
+                    if (saved.original.frame) group.frame = { ...saved.original.frame, x: saved.original.frame.x + dx, y: saved.original.frame.y + dy };
+                }
                 this.host.classList.add('pc-interacting');
                 this.frames.schedule(4);
                 return;
@@ -810,10 +885,13 @@ export class Canvas {
                     if (d.comment) {
                         const draw = this.graph;
                         const positions = ids.map(id => draw.nodes[id]).filter(Boolean).map(node => ({ id: node.id, x: node.x, y: node.y, ...(isCommentFrame(node) ? { w: this.widthOf(node), h: this.heightOf(node) } : {}) }));
-                        const result = this.#canEdit() && this.hooks.onCommentLayout?.(d.capture, positions);
+                        const groups = (d.groups ?? []).map(saved => draw.groups?.[saved.id]).filter(Boolean)
+                            .map(group => ({ id: group.id, x: group.x, y: group.y, ...(group.frame ? { frame: structuredClone(group.frame) } : {}) }));
+                        const result = this.#canEdit() && this.hooks.onCommentLayout?.(d.capture, positions, groups);
                         if ((!result || result.ok === false) && this.graph === draw) this.#restoreDrag(d);
-                    } else this.hooks.onPresentationChange?.(ids);
+                    } else this.hooks.onPresentationChange?.(ids, (d.groups ?? []).map(group => group.id));
                 }
+                else if (d.clickedGroup) { this.multi.clear(); this.select({ kind: 'group', id: d.clickedGroup }); }
                 else if (d.clicked) this.setMulti([d.clicked]);
                 this.render();
             }

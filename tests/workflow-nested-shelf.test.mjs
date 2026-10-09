@@ -4,7 +4,7 @@ import { installMock } from './mock.js';
 import { computeDefinitionIdentity, definitionRefKey } from '../src/workflow/definitions.js';
 import { createRevision, installDefinition } from '../src/workflow/definition-library.js';
 import * as packages from '../src/workflow/packages.js';
-import * as library from '../src/library.js?v=0.20.0';
+import * as library from '../src/library.js?v=0.22.0';
 
 const finalize = draft => {
     const identity = computeDefinitionIdentity(draft);
@@ -46,15 +46,15 @@ test('nested shelf persistence writes once on acceptance and nothing on failure'
     assert.equal(library.loadSubgraphLibrary().ok, true);
     const privateChild = leaf('private-child'), draft = structuredClone(oldParent);
     draft.body.nodes.nested.definition = ref(privateChild);
-    const storedBefore = structuredClone(host.extensionSettings['prompt-canvas'].subgraphLibrary);
+    const storedBefore = structuredClone(host.extensionSettings.lattice.subgraphLibrary);
     assert.equal(library.reviseSubgraphDefinition(draft).ok, false);
     assert.equal(saves, 0);
-    assert.deepEqual(host.extensionSettings['prompt-canvas'].subgraphLibrary, storedBefore);
+    assert.deepEqual(host.extensionSettings.lattice.subgraphLibrary, storedBefore);
     const result = library.reviseSubgraphDefinition(draft, { [definitionRefKey(privateChild)]: privateChild });
     assert.equal(result.ok, true, JSON.stringify(result));
     assert.equal(saves, 1);
     assert.deepEqual(library.getSubgraphLibrary().data.definitions[definitionRefKey(oldParent)], oldParent);
-    assert.equal(host.extensionSettings['prompt-canvas'].subgraphLibrary.definitions[definitionRefKey(result.data.ref)].body.nodes.nested.definition.id, privateChild.id);
+    assert.equal(host.extensionSettings.lattice.subgraphLibrary.definitions[definitionRefKey(result.data.ref)].body.nodes.nested.definition.id, privateChild.id);
 });
 
 test('revision numbering includes an exact nested historical pin sharing the top identity', () => {
@@ -89,7 +89,9 @@ test('unrelated shelf content cannot inflate a selected standalone package beyon
     assert.equal(typeof packages.selectSubgraphClosure, 'function');
     const top = leaf('selected', 'x'.repeat(700000)), unrelated = leaf('unrelated', 'y'.repeat(900000));
     const snapshots = { [definitionRefKey(top)]: top, [definitionRefKey(unrelated)]: unrelated };
-    assert.throws(() => packages.exportSubgraph(top, snapshots), /2,000,000 UTF-8/);
+    const direct = packages.exportSubgraph(top, snapshots);
+    assert.deepEqual(direct.definitions, {}, 'export omits both the top duplicate and unrelated shelf entries');
+    assert.equal(packages.parseSubgraph(JSON.stringify(direct)).ok, true);
     const selected = packages.selectSubgraphClosure(top, snapshots);
     assert.equal(selected.ok, true, JSON.stringify(selected));
     assert.deepEqual(selected.data.definitions, {});

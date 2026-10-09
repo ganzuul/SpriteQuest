@@ -1,6 +1,6 @@
-import { safeWorkflowData, validateGraphStructure } from './contracts.js?v=0.20.0';
-import { OPERATIONS } from './catalog.js?v=0.20.0';
-import { cloneDefinitionData, computeDefinitionIdentity, definitionRefKey, inspectDefinitionMetadata, validateDefinition } from './definitions.js?v=0.20.0';
+import { safeWorkflowData, validateGraphStructure } from './contracts.js?v=0.22.0';
+import { OPERATIONS } from './catalog.js?v=0.22.0';
+import { cloneDefinitionData, computeDefinitionIdentity, definitionRefKey, inspectDefinitionMetadata, validateDefinition } from './definitions.js?v=0.22.0';
 const limit = 2000000;
 const fail = (code, message) => ({ ok: false, error: { code, message } });
 const pick = (value, keys) => Object.fromEntries(keys.filter(key => Object.hasOwn(value, key)).map(key => [key, value[key]]));
@@ -30,7 +30,7 @@ function portableNativeDocument(graph) {
             node.nodeBindingOverrides = portableBindings(node.nodeBindingOverrides);
         }
     }
-    copy.wires = Object.fromEntries(Object.entries(graph.wires).map(([id, wire]) => [id, pick(wire, ['id', 'route', 'from', 'fromPort', 'to', 'toPort', 'order', 'kind', 'portalId'])]));
+    copy.wires = Object.fromEntries(Object.entries(graph.wires).map(([id, wire]) => [id, pick(wire, ['id', 'route', 'from', 'fromPort', 'to', 'toPort', 'portalId'])]));
     if (graph.roles) copy.roles = portableBindings(graph.roles);
     if (graph.portals) copy.portals = Object.fromEntries(Object.entries(graph.portals).map(([id, portal]) => {
         if (Object.keys(portal.source).some(key => !['nodeId', 'portId'].includes(key))) throw new Error('Portal sources must be local endpoints.');
@@ -38,8 +38,7 @@ function portableNativeDocument(graph) {
     }));
     if (graph.definitions) copy.definitions = Object.fromEntries(Object.entries(graph.definitions).map(([key, definition]) => [key, portableDefinition(definition)]));
     if (graph.groups) copy.groups = Object.fromEntries(Object.entries(graph.groups).map(([id, group]) => {
-        const portable = pick(group, ['id', 'title', 'name', 'description', 'x', 'y', 'w', 'h', 'width', 'height', 'color', 'collapsed', 'enabled', 'entry', 'exit', 'members']);
-        if (group.component) portable.component = pick(group.component, ['id', 'version']);
+        const portable = pick(group, ['id', 'title', 'name', 'description', 'x', 'y', 'w', 'h', 'width', 'height', 'color', 'collapsed', 'members']);
         if (group.frame) portable.frame = pick(group.frame, ['x', 'y', 'w', 'h']);
         return [id, portable];
     }));
