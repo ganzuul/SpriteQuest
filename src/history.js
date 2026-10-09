@@ -6,8 +6,8 @@
  * whole-canvas snapshots (a canvas is small: blocks and wires, not the chat)
  * and makes one undo step per action:
  *
- *   - adding, deleting, wiring, switching on or off: one step each, and
- *     several changes made by one click (seeding from SillyTavern) are one step
+ *   - adding, deleting, wiring, switching nodes on or off: one step each
+ *   - changes accepted together form one document step
  *   - moving a block: one step, recorded when you let go
  *   - typing: one step per pause, not one per letter
  *
@@ -30,8 +30,8 @@ const snapshot = (g) => JSON.stringify(Object.fromEntries(GRAPH_DOCUMENT_FIELDS.
 /** The shape of a canvas: which blocks and wires exist, where, and on or off. */
 function signature(g) {
     const nodes = Object.values(g.nodes ?? {}).map(n => `${n.id}:${Math.round(n.x)}:${Math.round(n.y)}:${n.enabled !== false}:${n.inGroup ?? ''}`).sort();
-    const wires = Object.values(g.wires ?? {}).map(w => `${w.id}:${w.kind}:${w.port ?? ''}`).sort();
-    const groups = Object.values(g.groups ?? {}).map(x => `${x.id}:${x.collapsed ? 1 : 0}:${x.enabled !== false}:${Math.round(x.x ?? 0)}:${Math.round(x.y ?? 0)}:${x.frame ? [x.frame.x, x.frame.y, x.frame.w, x.frame.h].map(Math.round).join('/') : ''}`).sort();
+    const wires = Object.values(g.wires ?? {}).map(w => JSON.stringify([w.id, w.route, w.from, w.fromPort, w.to, w.toPort, w.portalId])).sort();
+    const groups = Object.values(g.groups ?? {}).map(x => `${x.id}:${x.collapsed ? 1 : 0}:${Math.round(x.x ?? 0)}:${Math.round(x.y ?? 0)}:${x.frame ? [x.frame.x, x.frame.y, x.frame.w, x.frame.h].map(Math.round).join('/') : ''}`).sort();
     return `${nodes.join(',')}|${wires.join(',')}|${groups.join(',')}`;
 }
 
@@ -198,7 +198,6 @@ export function describe(a, b) {
     for (const id of Object.keys(bg)) {
         const x = ag[id], y = bg[id];
         if (!x) continue;
-        if ((x.enabled !== false) !== (y.enabled !== false)) return `switch ${y.enabled === false ? 'off' : 'on'} ${gname(y)}`;
         if (!!x.collapsed !== !!y.collapsed) return `${y.collapsed ? 'fold' : 'open'} ${gname(y)}`;
     }
     const joined = Object.keys(bn).filter(id => an[id] && (an[id].inGroup ?? '') !== (bn[id].inGroup ?? ''));

@@ -10,13 +10,15 @@
 
 **Spec:** `docs/superpowers/specs/2026-10-09-lattice-native-only-design.md`.
 
+**Implementation status (2026-10-09):** Tasks A–D and Task E's source, documentation, version, test, capture, smoke and performance gates are complete. The checklist below is the original work plan. Final review and normal publication are tracked in [the completion report](../handoffs/2026-10-09-lattice-native-only-completion.md) and ROOT's exact-SHA release message.
+
 ## Global constraints
 
 - Respect explicit no-legacy/no-backwards-compatibility authorization; no automatic conversion or old namespace reads.
 - Current documents schema3/runtime2; phase values native-pre/native-post. Current workflow envelopes schema2/minRuntime2; current subgraph envelopes schema1/minRuntime2. Package cap2,000,000 UTF-8 bytes.
 - Settings namespace lattice/schema1, first launch Structured guidance, disabled and unassigned. No implicit model/Send/Apply calls.
 - Preserve private authority/freshness/cancellation, source snapshots, completion evidence, fixed connections, request caps and diagnostic limits.
-- Exact approved prototype remains the visual reference. Keep custom themes explicit and preserve stable camera geometry/identity.
+- Exact approved prototype remains the layout reference; the subsequently approved Ember handoff supplies the default colors. Keep custom themes explicit and preserve stable camera geometry/identity.
 - Use existing isolated C worktree; F checkout/unrelated files stay intact. ROOT alone commits and pushes normally using network-enabled GitHub CLI checks. No live provider calls needed.
 
 ## Review focus
@@ -59,7 +61,7 @@
 
 - [ ] Add RED current component checks: single renderer/shell, no legacy mode/rows/components, no old schema2 selector, consistent frame/tab geometry and actual Setup examples.
 - [ ] Rewrite mixed controller into current activation/captured transactions/managers/history/import/clipboard/menu/context/keyboard/field-draft actions; remove compiler/library/ST seeding/legacy inspector and preview code rather than hiding it.
-- [ ] Render approved shell unconditionally and remove its native-only style gates/fallback tabs; use default Lattice palette and explicit custom-theme settings, unchanged qualified node details/preview/meter.
+- [ ] Render approved shell unconditionally and remove its native-only style gates/fallback tabs; use the approved default Ember palette and explicit custom-theme settings, unchanged qualified node details/preview/meter.
 - [ ] Keep root execution across view changes, independent cameras/tabs, read-only library/instances, pending native gestures and current reviewed terminal targeting.
 - [ ] Run focused component/projection/session tests, type checks after shared interfaces settle; report/freeze exact owned files.
 
@@ -71,7 +73,7 @@
 
 - [ ] Add RED first-init tests with old namespace present: independent current starter, no reads of old data, disabled/unassigned/zero effects, current settings validation and graph CRUD/history.
 - [ ] Rewrite state, current facade and entry integration; delete final-prompt replacement/event handlers, old alias globals/commands, old settings/result/thought/state integrations. Keep actual public busy/swipe/token helpers and freshness subscriptions.
-- [ ] Remove obsolete support files, old theme aliases/roles and dependencies after all owners switch imports. Preserve current Lattice default palette, quote accent and explicit theme editor choices.
+- [ ] Remove obsolete support files, old theme aliases/roles and dependencies after all owners switch imports. Preserve the approved Ember default palette, host quote accent and explicit theme editor choices.
 - [ ] Port native runtime/host/freshness/Apply suites to current result/recording APIs without losing safeguards. Remove strictly retired tests; update shared mocks/helpers.
 - [ ] Rewrite actual browser harness reset/graph loading and smoke/install/capture/benchmark/live-harness summaries for current graphs. Retain opt-in/request reservations; do not run live calls.
 - [ ] Add actual fresh-default browser coverage under host CSS, including no old controls/pins, default palette/join/recess, shelf/details/preview; preserve meaningful native gestures/history/root/child/library/drafts/Run/Apply/cancellation/performance checks.

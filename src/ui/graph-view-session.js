@@ -1,4 +1,4 @@
-import { createViewState, viewIdentityKey } from './view-state.js?v=0.20.0';
+import { createViewState, viewIdentityKey } from './view-state.js?v=0.21.0';
 
 const fail = (code, message) => ({ ok: false, error: { code, message } });
 const freeze = value => {
@@ -56,15 +56,15 @@ function prepareCache(workflowId, navigation, preparedViews) {
 }
 
 /** Consume prepared plain editor DTOs only. Root execution and preparation stay with the caller. */
-export function createGraphViewSession({ root, activationId, navigation = [], preparedViews, persisted, legacyView } = {}) {
+export function createGraphViewSession({ root, activationId, navigation = [], preparedViews, persisted, initialCamera } = {}) {
     if (!root || typeof root !== 'object' || typeof root.id !== 'string' || !root.id) return fail('VIEW_ROOT', 'Expected the active workflow root.');
     if (typeof activationId !== 'string' || !activationId) return fail('VIEW_ACTIVATION', 'Expected a root activation identity.');
     const workflowId = root.id;
-    let views = createViewState({ workflowId, navigation, legacyView });
+    let views = createViewState({ workflowId, navigation, initialCamera });
     if (!views) return fail('VIEW_NAVIGATION', 'Expected complete prepared graph navigation.');
     let warnings = Object.freeze([]);
     if (persisted !== undefined) {
-        const restored = createViewState({ workflowId, navigation, persisted, legacyView });
+        const restored = createViewState({ workflowId, navigation, persisted, initialCamera });
         if (restored) views = restored;
         else warnings = freeze([{ code: 'VIEW_PERSISTENCE', message: 'Saved graph view presentation was invalid. The root workflow is available with fresh view presentation.' }]);
     }

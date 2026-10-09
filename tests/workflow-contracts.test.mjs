@@ -6,7 +6,7 @@ function fixturePreGraph() {
         compact: { id: 'compact', type: 'workflow', operation: 'smart-compactor', enabled: true, x: 0, y: 100, targetTokens: 1200, keepRecent: 2, method: 'select', pins: [] },
         plan: { id: 'plan', type: 'workflow', operation: 'response-plan', enabled: true, modelRole: 'Analysis', x: 0, y: 200, maxTokens: 768 },
         output: { id: 'output', type: 'workflow', operation: 'guidance', enabled: true, x: 0, y: 300, budgetTokens: 768 },
-    }, wires: { a: { id: 'a', route: 'wire', from: 'source', fromPort: 'out', to: 'compact', toPort: 'in', order: 0 }, b: { id: 'b', route: 'wire', from: 'compact', fromPort: 'out', to: 'plan', toPort: 'in', order: 0 }, c: { id: 'c', route: 'wire', from: 'plan', fromPort: 'out', to: 'output', toPort: 'in', order: 0 } }, groups: {} };
+    }, wires: { a: { id: 'a', route: 'wire', from: 'source', fromPort: 'out', to: 'compact', toPort: 'in' }, b: { id: 'b', route: 'wire', from: 'compact', fromPort: 'out', to: 'plan', toPort: 'in' }, c: { id: 'c', route: 'wire', from: 'plan', fromPort: 'out', to: 'output', toPort: 'in' } }, groups: {} };
 }
 const graph = fixturePreGraph();
 graph.nodes.plan.y = -500;
@@ -31,7 +31,7 @@ const future = fixturePreGraph();
 future.runtime = 3;
 assert.equal(validateWorkflow(future).error?.code, 'UNSUPPORTED_VERSION');
 const ambiguous = fixturePreGraph();
-ambiguous.wires.extra = { id: 'extra', route: 'wire', from: 'source', fromPort: 'out', to: 'plan', toPort: 'in', order: 1 };
+ambiguous.wires.extra = { id: 'extra', route: 'wire', from: 'source', fromPort: 'out', to: 'plan', toPort: 'in' };
 assert.equal(validateWorkflow(ambiguous).error?.code, 'AMBIGUOUS_INPUT');
 const disabled = fixturePreGraph();
 disabled.nodes.compact.enabled = false;
@@ -66,7 +66,7 @@ portable.template = { id: 'scene-guidance', version: 1 };
 portable.roles.Analysis = { profileId: 'local-profile', model: 'preferred-model' };
 portable.nodes.plan.profileId = 'override-profile';
 portable.nodes.plan.model = 'node-model';
-portable.groups.compound = { id: 'compound', title: 'Formation', entry: 'compact', exit: 'plan', members: ['compact', 'plan'], collapsed: true };
+portable.groups.compound = { id: 'compound', title: 'Formation', members: ['compact', 'plan'], collapsed: true };
 portable.nodes.compact.inGroup = 'compound'; portable.nodes.plan.inGroup = 'compound';
 const envelope = exportWorkflow(portable);
 assert.deepEqual([envelope.kind, envelope.schema, envelope.minRuntime], ['lattice-workflow', 2, 2]);
@@ -87,7 +87,7 @@ assert.deepEqual(validateWorkflow(reachable).data.requiredRoles, ['Analysis'], '
 const inheritedOperation = fixturePreGraph();
 inheritedOperation.nodes.plan.operation = '__proto__';
 assert.equal(validateWorkflow(inheritedOperation).error?.code, 'UNKNOWN_OPERATION');
-for (const extra of [{ order: -1 }, { order: 0.5 }, { order: null }, { kind: 'save' }, { loop: { max: 3 } }]) {
+for (const extra of [{ from: 42 }, { fromPort: null }, { toPort: [] }, { loop: { max: 3 } }, { port: 'out' }]) {
     const badWire = fixturePreGraph(); Object.assign(badWire.wires.a, extra);
     assert.equal(validateWorkflow(badWire).error?.code, 'INVALID_WIRE');
 }
@@ -99,13 +99,13 @@ annotated.nodes.note = { id: 'note', type: 'note', content: 'An editor annotatio
 assert.equal(validateWorkflow(annotated).ok, true);
 assert.deepEqual(validateWorkflow(annotated).data.primitives.filter(unit => unit.included).map(unit => unit.node).map(n => n.id), ['source', 'compact', 'plan', 'output']);
 const brokenFormation = fixturePreGraph();
-brokenFormation.groups.formation = { id: 'formation', component: { id: 'ai-de-slop', version: 1 }, entry: 'missing', exit: 'plan', members: ['compact', 'plan'] };
+brokenFormation.groups.formation = { id: 'formation', members: ['missing', 'plan'] };
 assert.equal(validateWorkflow(brokenFormation).error?.code, 'INVALID_GROUP');
 const futureFormation = fixturePreGraph();
-futureFormation.groups.formation = { id: 'formation', component: { id: 'future-component', version: 1 }, entry: 'compact', exit: 'plan', members: ['compact', 'plan'] };
-assert.equal(validateWorkflow(futureFormation).error?.code, 'UNSUPPORTED_COMPONENT');
+futureFormation.groups.formation = { id: 'formation', members: ['compact', 'compact'] };
+assert.equal(validateWorkflow(futureFormation).error?.code, 'INVALID_GROUP');
 const offGroup = fixturePreGraph();
-offGroup.groups.off = { id: 'off', enabled: false }; offGroup.nodes.compact.inGroup = 'off';
+offGroup.groups.off = { id: 'off', collapsed: true }; offGroup.nodes.compact.inGroup = 'off';
 assert.equal(validateWorkflow(offGroup).ok, true, 'visual group state does not disable executable nodes');
 const scanOnly = { id: 'post', schema: 3, runtime: 2, mode: 'native-post', roles: { Prose: { profileId: null, model: null } }, nodes: {
     source: { id: 'source', type: 'workflow', operation: 'reply-snapshot' },
@@ -114,7 +114,7 @@ const scanOnly = { id: 'post', schema: 3, runtime: 2, mode: 'native-post', roles
     validate: { id: 'validate', type: 'workflow', operation: 'validate-patches' },
     review: { id: 'review', type: 'workflow', operation: 'review-gate' },
     apply: { id: 'apply', type: 'workflow', operation: 'apply-reply' },
-}, wires: { a: { id: 'a', route: 'wire', from: 'source', fromPort: 'out', to: 'scan', toPort: 'in', order: 0 }, b: { id: 'b', route: 'wire', from: 'scan', fromPort: 'out', to: 'repair', toPort: 'in', order: 0 }, c: { id: 'c', route: 'wire', from: 'repair', fromPort: 'out', to: 'validate', toPort: 'in', order: 0 }, d: { id: 'd', route: 'wire', from: 'validate', fromPort: 'out', to: 'review', toPort: 'in', order: 0 }, e: { id: 'e', route: 'wire', from: 'review', fromPort: 'out', to: 'apply', toPort: 'in', order: 0 } } };
+}, wires: { a: { id: 'a', route: 'wire', from: 'source', fromPort: 'out', to: 'scan', toPort: 'in' }, b: { id: 'b', route: 'wire', from: 'scan', fromPort: 'out', to: 'repair', toPort: 'in' }, c: { id: 'c', route: 'wire', from: 'repair', fromPort: 'out', to: 'validate', toPort: 'in' }, d: { id: 'd', route: 'wire', from: 'validate', fromPort: 'out', to: 'review', toPort: 'in' }, e: { id: 'e', route: 'wire', from: 'review', fromPort: 'out', to: 'apply', toPort: 'in' } } };
 assert.equal(validateWorkflow(scanOnly).data.callBound, 0);
 assert.deepEqual(validateWorkflow(scanOnly).data.requiredRoles, []);
 scanOnly.nodes.repair.mode = 'repair';
@@ -134,40 +134,27 @@ assert.equal(parseWorkflow(JSON.stringify({ ...envelope, graph: objectWireFrom }
 const objectWireTo = fixturePreGraph();
 objectWireTo.wires.a.to = { toString: null, valueOf: null };
 assert.equal(parseWorkflow(JSON.stringify({ ...envelope, graph: objectWireTo })).error?.code, 'INVALID_WIRE');
-const objectGroupEntry = fixturePreGraph();
-objectGroupEntry.groups.ordinary = { id: 'ordinary', entry: { toString: null, valueOf: null } };
-assert.equal(parseWorkflow(JSON.stringify({ ...envelope, graph: objectGroupEntry })).error?.code, 'INVALID_GROUP');
-const objectGroupExit = fixturePreGraph();
-objectGroupExit.groups.ordinary = { id: 'ordinary', exit: { toString: null, valueOf: null } };
-assert.equal(parseWorkflow(JSON.stringify({ ...envelope, graph: objectGroupExit })).error?.code, 'INVALID_GROUP');
+const objectGroupIdentity = fixturePreGraph();
+objectGroupIdentity.groups.ordinary = { id: { toString: null, valueOf: null } };
+assert.equal(parseWorkflow(JSON.stringify({ ...envelope, graph: objectGroupIdentity })).error?.code, 'INVALID_GROUP');
 const objectGroupMember = fixturePreGraph();
 objectGroupMember.groups.ordinary = { id: 'ordinary', members: [{ toString: null, valueOf: null }] };
 assert.equal(parseWorkflow(JSON.stringify({ ...envelope, graph: objectGroupMember })).error?.code, 'INVALID_GROUP');
 const objectNodeGroup = fixturePreGraph();
 objectNodeGroup.nodes.compact.inGroup = { toString: null, valueOf: null };
 assert.equal(parseWorkflow(JSON.stringify({ ...envelope, graph: objectNodeGroup })).error?.code, 'INVALID_SETTINGS');
-function fixtureComponentGraph() {
+function fixtureVisualGroupGraph() {
     const graph = structuredClone(scanOnly);
-    graph.groups = { formation: { id: 'formation', component: { id: 'ai-de-slop', version: 1 }, entry: 'scan', exit: 'validate', members: ['scan', 'repair', 'validate'] } };
+    graph.groups = { formation: { id: 'formation', members: ['scan', 'repair', 'validate'] } };
     for (const id of ['scan', 'repair', 'validate']) graph.nodes[id].inGroup = 'formation';
     return graph;
 }
-for (const field of ['entry', 'exit', 'members']) {
-    const incompleteComponent = fixtureComponentGraph();
-    delete incompleteComponent.groups.formation[field];
-    assert.equal(parseWorkflow(JSON.stringify({ ...envelope, graph: incompleteComponent })).error?.code, 'INVALID_GROUP', `canonical component requires ${field}`);
-}
-for (const port of ['entry', 'exit']) {
-    const outsidePort = fixtureComponentGraph();
-    outsidePort.groups.formation[port] = 'source';
-    assert.equal(parseWorkflow(JSON.stringify({ ...envelope, graph: outsidePort })).error?.code, 'INVALID_GROUP', `${port} must be a formation member`);
-}
-const detachedMember = fixtureComponentGraph();
+const detachedMember = fixtureVisualGroupGraph();
 delete detachedMember.nodes.repair.inGroup;
 assert.equal(parseWorkflow(JSON.stringify({ ...envelope, graph: detachedMember })).error?.code, 'INVALID_GROUP', 'declared members must appear in the canvas group');
-const undeclaredMember = fixtureComponentGraph();
+const undeclaredMember = fixtureVisualGroupGraph();
 undeclaredMember.nodes.source.inGroup = 'formation';
-assert.equal(parseWorkflow(JSON.stringify({ ...envelope, graph: undeclaredMember })).error?.code, 'INVALID_GROUP', 'canvas group members must all be declared in the component');
+assert.equal(parseWorkflow(JSON.stringify({ ...envelope, graph: undeclaredMember })).error?.code, 'INVALID_GROUP', 'canvas members must agree with the declared visual group');
 const objectOperation = fixturePreGraph();
 objectOperation.nodes.plan.operation = { toString: null, valueOf: null };
 assert.equal(parseWorkflow(JSON.stringify({ ...envelope, graph: objectOperation })).error?.code, 'UNKNOWN_OPERATION');
@@ -175,13 +162,13 @@ const objectGraphName = fixturePreGraph();
 objectGraphName.name = { toString: null, valueOf: null };
 assert.equal(parseWorkflow(JSON.stringify({ ...envelope, graph: objectGraphName })).error?.code, 'INVALID_SETTINGS');
 const inheritedReference = fixturePreGraph();
-inheritedReference.groups.ordinary = { id: 'ordinary', entry: 'toString', members: ['toString'] };
+inheritedReference.groups.ordinary = { id: 'ordinary', members: ['toString'] };
 assert.equal(parseWorkflow(JSON.stringify({ ...envelope, graph: inheritedReference })).error?.code, 'INVALID_GROUP', 'references must point to saved own nodes');
 const inheritedGroup = fixturePreGraph();
 inheritedGroup.nodes.compact.inGroup = 'toString';
 assert.equal(parseWorkflow(JSON.stringify({ ...envelope, graph: inheritedGroup })).error?.code, 'INVALID_SETTINGS');
 const ordinaryGroup = fixturePreGraph();
 ordinaryGroup.groups.ordinary = { id: 'ordinary', title: 'Plain group' };
-assert.equal(parseWorkflow(JSON.stringify({ ...envelope, graph: ordinaryGroup })).ok, true, 'ordinary groups keep optional formation metadata');
-assert.equal(parseWorkflow(JSON.stringify({ ...envelope, graph: fixtureComponentGraph() })).ok, true, 'complete canvas-aligned components still import');
+assert.equal(parseWorkflow(JSON.stringify({ ...envelope, graph: ordinaryGroup })).ok, true, 'ordinary groups keep optional visual membership');
+assert.equal(parseWorkflow(JSON.stringify({ ...envelope, graph: fixtureVisualGroupGraph() })).ok, true, 'complete canvas-aligned visual groups still import');
 console.log('workflow-contracts: ok');

@@ -1,177 +1,68 @@
 import assert from 'node:assert/strict';
+import test from 'node:test';
 import { installMock } from './mock.js';
-installMock({ settings: { graphs: {} } });
-const starters = await import('../src/workflow/starters.js').catch(() => ({}));
-assert.equal(typeof starters.installStarter, 'function', 'users can install a native starter');
-const S = await import('../src/state.js?v=0.20.0');
-const before = structuredClone(S.settings());
-const pre = starters.installStarter('native-guidance', S.settings());
-const second = starters.installStarter('native-guidance', S.settings());
-assert.notEqual(pre.id, second.id);
-assert.equal(pre.roles.Analysis.profileId, null);
-assert.deepEqual([S.settings().enabled,S.settings().workflowMode,S.settings().nativeBindings], [before.enabled,before.workflowMode,before.nativeBindings]);
-assert.equal(pre.nodes[Object.keys(pre.nodes)[0]] === second.nodes[Object.keys(second.nodes)[0]], false);
-const { validateWorkflow } = await import('../src/workflow/contracts.js');
-assert.equal(validateWorkflow(pre).data.callBound, 2);
-console.log('workflow-ui: independent unarmed starter installation passed');
-const post = starters.installStarter('reviewed-de-slop', S.settings());
-const formation = Object.values(post.groups)[0];
-assert.deepEqual(formation.component, { id: 'ai-de-slop', version: 1 });
-assert.deepEqual(formation.members, Object.values(post.nodes).filter(n => n.inGroup === formation.id).map(n => n.id));
-assert.equal(validateWorkflow(post).data.callBound, 1);
-const surface = await import('../src/ui/workflow-surface.js').catch(() => ({}));
-assert.equal(typeof surface.projectWorkflow, 'function', 'native setup projects missing bindings and operation controls');
-assert.equal(typeof surface.parseWorkflowRules, 'function', 'rule editing parses structured preferences before changing the graph');
-const { scanDraft } = await import('../src/workflow/repair.js');
-const imported = starters.starterGraph('reviewed-de-slop');
-const scanNode = imported.nodes['pattern-scan'];
-scanNode.rules = [{ phrase: 'delve', note: 'word choice', details: { weight: 2 } }, 'weave'];
-scanNode.caseSensitive = true; scanNode.exemptions = ['delve safely']; scanNode.protectedLiterals = ['weave'];
-const ruleText = () => surface.projectWorkflow(imported).nodes.find(n => n.operation === 'pattern-scan').controls.find(c => c.key === 'rules').value;
-const appended = surface.parseWorkflowRules(ruleText() + '\ntapestry');
-assert.equal(appended.ok, true);
-scanNode.rules = appended.data;
-assert.deepEqual(scanNode.rules, [{ phrase: 'delve', note: 'word choice', details: { weight: 2 } }, 'weave', 'tapestry']);
-const sourceText = 'Delve, delve, delve safely, weave, tapestry.';
-const scanned = () => scanDraft({ kind: 'draft', text: sourceText, source: { originalText: sourceText } }, scanNode);
-assert.deepEqual(scanned().artifact.findings.map(f => [f.text, f.protected]), [['delve', false], ['weave', true], ['tapestry', false]]);
-scanNode.rules = surface.parseWorkflowRules(ruleText().replace('"phrase":"delve"', '"phrase":"Delve"')).data;
-assert.deepEqual(scanned().artifact.findings.map(f => f.text), ['Delve', 'weave', 'tapestry']);
-assert.deepEqual(scanned().artifact.rules[0], { phrase: 'Delve', note: 'word choice', details: { weight: 2 } });
-assert.equal(scanned().artifact.caseSensitive, true);
-assert.deepEqual(scanned().artifact.exemptions, ['delve safely']);
-for (const invalid of ['{"phrase":', '{"phrase":42}', '{}', '["delve"]', '""', JSON.stringify({ phrase: 'x'.repeat(2049) }), Array(129).fill('delve').join('\n'), '{"phrase":"delve","constructor":{}}']) {
-    assert.equal(surface.parseWorkflowRules(invalid).ok, false, 'invalid or unsupported rule text is rejected: ' + invalid.slice(0, 45));
-}
-scanNode.rules = ['{literal}', '"quoted"', '[literal]', 'first\nsecond', 'plain phrase'];
-assert.deepEqual(surface.parseWorkflowRules(ruleText()).data, scanNode.rules, 'JSON-looking and multiline literal strings round trip without changing meaning');
-assert.deepEqual(surface.parseWorkflowRules('delve\n\ntapestry').data, ['delve', 'tapestry']);
-const view = surface.projectWorkflow(pre, { profiles: [{ id: 'analysis', name: 'Analysis connection' }], settings: S.settings() });
-assert.equal(view.issues.some(issue => issue.includes('Analysis')), true);
-assert.equal(view.callBound, 2);
-assert.deepEqual(view.families.map(family => family.name), ['Input','Shaping','Surface','Transpose','Derive','Output']);
-assert.equal(view.families.find(family => family.name === 'Transpose').operations.length, 0);
-assert.equal(view.nodes.find(node => node.operation === 'smart-compactor').controls.some(control => control.key === 'targetTokens'), true);
-// Native intent must never project a legacy workbench merely because execution is unsupported.
-for (const schema of [3, 99]) {
-    let nativeBindings = 0, freshnessChecks = 0;
-    const futureGraph = { ...pre, schema, runtime: 2 };
-    const futureView = surface.projectWorkflow(futureGraph, {
-        profiles: [{ id: 'analysis', name: 'Analysis connection' }],
-        resolveBinding: () => { nativeBindings++; return { ok: true, data: {} }; },
-        candidateStatus: () => { freshnessChecks++; return { ok: true }; },
-        result: { ok: true, artifact: { kind: 'candidate', original: 'Old', text: 'Old candidate' } },
-    });
-    assert.equal(futureView.native, true);
-    assert.equal(futureView.callBound, 0);
-    assert.match(futureView.issues.join(' '), schema === 3 ? /Invalid named wire metadata/ : /schema 2.*runtime 1/i);
-    assert.equal(futureView.families.find(f => f.name === 'Input').operations.find(op => op.id === 'reply-snapshot').compatible, false);
-    assert.equal(futureView.families.find(f => f.name === 'Input').operations.find(op => op.id === 'scene-context').compatible, true);
-    assert.equal(futureView.result.applyAvailable, false);
-    assert.equal(nativeBindings, 0);
-    assert.equal(freshnessChecks, 0);
-}
-assert.equal(surface.projectWorkflow({ ...pre, schema: 99, mode: null }).native, true);
-assert.equal(typeof surface.createWorkflowSession, 'function', 'late workflow results are guarded by graph and UI epoch');
-let activeGraph = pre, epoch = 1, release;
-const updates = [];
-const runtime = { runPre: () => new Promise(resolve => { release = resolve; }), cancel: reason => updates.push(reason) };
-const session = surface.createWorkflowSession({ runtime: () => runtime, current: () => activeGraph, epoch: () => epoch, active: () => true, changed: state => updates.push(state) });
-const pending = session.run();
-activeGraph = second; epoch++;
-release({ ok: true, artifact: { kind: 'guidance', text: 'late' } });
-await pending;
-assert.equal(session.result(), null);
-const { createGraphAnalysis } = await import('../src/ui/graph-analysis.js');
-let scans = 0;
-const analysis = createGraphAnalysis({ counts: () => { scans++; return new Map(); }, levels: () => { scans++; return []; }, group: () => new Set() });
-analysis.prepare(pre);
-assert.equal(scans, 0, 'native canvas analysis never invokes legacy analysis');
-const editable = starters.installStarter('reviewed-de-slop', S.settings());
-const group = Object.values(editable.groups)[0];
-S.removeNode(editable, group.entry);
-assert.equal(group.component, undefined, 'removing a declared formation port dissolves the marker and keeps ordinary editable members');
-assert.deepEqual(group.members, Object.values(editable.nodes).filter(node => node.inGroup === group.id).map(node => node.id));
-const { nodeCard } = await import('../src/canvas/presentation.js');
-const nativeOutput = Object.values(pre.nodes).find(node => node.operation === 'guidance');
-const outputCard = nodeCard(nativeOutput, { graph: pre, multi: new Set(), reaching: new Set(), hooks: {}, preview: () => '', labels: {}, icons: {} });
-assert.equal(outputCard.className.includes('pc-stranded'), false, 'native host outputs do not show legacy stranded warnings');
-assert.equal(outputCard.ports.some(port => port.dir === 'out'), false, 'terminal native outputs have no outgoing port');
-assert.equal(outputCard.label, 'Guidance');
-activeGraph = pre; epoch++;
-let ready, appliedCandidate;
-const immutableRuntime = { runPre: () => new Promise(resolve => { ready = resolve; }), cancel() {}, apply: candidate => { appliedCandidate = candidate; return Promise.resolve({ ok: true }); } };
-const review = surface.createWorkflowSession({ runtime: () => immutableRuntime, current: () => activeGraph, epoch: () => epoch, active: () => true, changed() {} });
-const reviewedRun = review.run();
-ready({ ok: true, artifact: { kind: 'candidate', original: 'Before', text: 'After', source: { originalText: 'Before' } } });
-await reviewedRun;
-await review.apply();
-
-assert.equal(Object.isFrozen(appliedCandidate), true, 'Apply receives the captured frozen candidate');
-
-const editedRun = review.run();
-pre.nodes[Object.keys(pre.nodes)[0]].recentMessages = 3;
-ready({ ok: true, artifact: { kind: 'guidance', text: 'obsolete settings' } });
-await editedRun;
-assert.equal(review.result(), null, 'editing the graph invalidates a pending run even before a UI refresh');
-const scanOnly = starters.installStarter('reviewed-de-slop', S.settings());
-Object.values(scanOnly.nodes).find(node => node.operation === 'repair').mode = 'scan';
-let resolutions = 0;
-const scanView = surface.projectWorkflow(scanOnly, { resolveBinding: () => { resolutions++; return { ok: false, error: { message: 'Missing connection' } }; } });
-assert.equal(resolutions, 0, 'scan-only workflow never resolves a model connection');
-assert.equal(scanView.issues.length, 0);
-assert.equal(scanView.callBound, 0);
-assert.equal(scanView.groups[0].callBound, 0, 'formation bound follows scan-only members');
-assert.equal(surface.projectWorkflow(post).groups[0].callBound, 1);
-const guidanceView = surface.projectWorkflow(pre, { result: { ok: true, artifact: { kind: 'guidance', text: 'Keep agency.' }, actualCalls: 1, callBound: 2, calls: [{ tokenCount: { method: 'host tokenizer' } }] } });
-assert.equal(guidanceView.result.guidance, 'Keep agency.', 'manual pre test exposes its computed guidance without publishing');
-assert.equal(guidanceView.result.actualCalls, 1);
-assert.equal(guidanceView.result.callBound, 2);
-let staleCandidate = false;
-const staleRuntime = { ...immutableRuntime, candidateStatus: () => staleCandidate ? { ok: false, error: { code: 'STALE_SOURCE', message: 'Source changed. Run again.' } } : { ok: true } };
-let staleState;
-const staleReview = surface.createWorkflowSession({ runtime: () => staleRuntime, current: () => activeGraph, epoch: () => epoch, active: () => true, changed: state => { staleState = state; } });
-const staleRun = staleReview.run(); ready({ ok: true, artifact: { kind: 'candidate', original: 'old', text: 'new', source: {} } }); await staleRun;
-staleCandidate = true;
-assert.equal(typeof staleReview.refreshFreshness, 'function', 'source update refresh disables an obsolete review');
-staleReview.refreshFreshness();
-assert.equal(staleState.applyIssue, 'Source changed. Run again.');
-scanOnly.nodes.unused = { id: 'unused', type: 'workflow', operation: 'repair', mode: 'repair', modelRole: 'Prose', profileId: null, model: null };
-assert.equal(surface.projectWorkflow(scanOnly).issues.length, 0, 'unreachable auxiliary operations do not block a zero-call workflow');
-const utility = starters.starterGraph('native-guidance'); utility.nodes['smart-compactor'].modelRole = 'Utility';
-assert.equal(surface.projectWorkflow(utility).roles.some(role => role.name === 'Utility' && role.profileId === ''), true, 'a chosen per-node Utility role has an explicit setup binding');
-
-// Missing result adoption, weak graph matching, or busy-result overwrites break these guards.
-{
-    const { workflowSignature } = await import('../src/workflow/runtime.js');
-    const graph = starters.starterGraph('native-guidance');
-    let selected = graph, open = true, latest, complete, state;
-    const controller = { lastAutomaticResult: () => latest, cancel() {}, runPre: () => new Promise(resolve => { complete = resolve; }) };
-    const view = surface.createWorkflowSession({ runtime: () => controller, current: () => selected, epoch: () => 1, active: () => open, changed: value => { state = value; } });
-    const record = runId => ({ origin: { graph, graphId: graph.id, signature: workflowSignature(graph), phase: 'pre', kind: 'send', runId }, result: { ok: true, artifact: { kind: 'guidance', text: 'Actual Send ' + runId }, calls: [], reports: [], actualCalls: 0, callBound: 2 } });
-    assert.equal(typeof view.receiveAutomatic, 'function');
-    latest = record(1); view.receiveAutomatic(latest);
-    assert.equal(view.result().artifact.text, 'Actual Send 1');
-    assert.match(state.status, /Automatic Send.*pre/);
-    assert.equal(Object.isFrozen(view.result()), true);
-    view.cancel(); selected = { ...graph }; view.receiveAutomatic(latest);
-    assert.equal(view.result(), null, 'same ID on a different graph object is not the original run');
-    selected = graph; open = false; view.receiveAutomatic(latest);
-    assert.equal(view.result(), null, 'closed views ignore result callbacks');
-    open = true; view.receiveAutomatic(latest);
-    assert.equal(view.result().artifact.text, 'Actual Send 1', 'reopening the original graph can inspect its completed Send');
-    view.cancel(); graph.nodes['response-plan'].instructions = 'changed'; view.receiveAutomatic(latest);
-    assert.equal(view.result(), null, 'a changed executable signature cannot display the old result');
-    latest = record(2); view.receiveAutomatic(latest);
-    const manual = view.run(); latest = record(3); view.receiveAutomatic(latest);
-    assert.equal(view.result(), null, 'an automatic notification cannot replace an active manual session');
-    complete({ ok: true, artifact: { kind: 'guidance', text: 'Manual test' } }); await manual;
-    view.receiveAutomatic(latest);
-    assert.equal(view.result().artifact.text, 'Manual test', 'replaying the ignored notification cannot replace the manual result');
-    view.cancel(); view.receiveAutomatic(latest);
-    assert.equal(view.result()?.artifact.text, 'Actual Send 3', 'leaving the manual session allows the original graph to inspect its latest Send on reopening');
-    latest = record(4); view.receiveAutomatic(latest);
-    assert.equal(view.result().artifact.text, 'Actual Send 4', 'a later fresh Send replaces a completed manual pre test');
-    selected = post; view.cancel(); view.receiveAutomatic(latest);
-    assert.equal(view.result(), null, 'pre evidence never belongs to a post review');
-}
+installMock();
+const S = await import('../src/state.js?v=0.21.0');
+const { starterGraph, installStarter } = await import('../src/workflow/starters.js?v=0.21.0');
+const { prepareWorkflowProjection, projectPreparedWorkflow, parseWorkflowRules } = await import('../src/ui/workflow-surface.js?v=0.21.0');
+const { prepareWorkspaceViews } = await import('../src/ui/workspace-preparation.js?v=0.21.0');
+const project = (root, options) => projectPreparedWorkflow(prepareWorkflowProjection(root, options));
+test('installing any actual example leaves generation unarmed and phases unassigned', () => {
+    const before = structuredClone(S.settings().nativeBindings);
+    for (const id of ['native-guidance','reviewed-de-slop','literal-cleanup','structured-guidance']) {
+        const graph = installStarter(id, S.settings()); assert.equal(graph.schema,3); assert.equal(graph.runtime,2);
+        assert.equal(S.settings().enabled,false); assert.deepEqual(S.settings().nativeBindings,before);
+    }
+});
+test('actual zero-call examples and operation controls project without connection or model effects', () => {
+    let bindings=0;
+    for (const id of ['literal-cleanup','structured-guidance']) {
+        const view=project(starterGraph(id),{resolveBinding(){bindings++;throw new Error('No model needed');}});
+        assert.equal(view.callBound,0); assert.equal(view.issues.length,0); assert.equal(view.starters.length,4);
+        assert.equal(view.nodes.some(node=>node.controls.length>0),true);
+    }
+    assert.equal(bindings,0);
+});
+test('current malformed and retired documents produce diagnostics before binding or review effects', () => {
+    for (const schema of [1,2,99]) {
+        let effects=0; const graph={...starterGraph('native-guidance'),schema};
+        const view=project(graph,{resolveBinding(){effects++;},candidateStatus(){effects++;}});
+        assert.ok(view.issues.length); assert.equal(view.nodes.length,0); assert.equal(effects,0);
+    }
+    let reads=0;const graph=starterGraph('structured-guidance');Object.defineProperty(graph.nodes,'secret',{enumerable:true,get(){reads++;throw new Error('getter');}});
+    assert.ok(project(graph).issues.length);assert.equal(reads,0);
+});
+test('Notes receive prepared organization cards with no executable pins', () => {
+    const root=starterGraph('structured-guidance');root.nodes.note={id:'note',type:'note',content:'雪 · author note',x:10,y:20};
+    const result=prepareWorkspaceViews(root);assert.equal(result.ok,true,JSON.stringify(result));
+    const card=result.data.preparedViews[0].drawBase.nativeCards.note;
+    assert.equal(card.canonicalTitle,'Note');assert.equal(card.family,'Organization');assert.equal(card.body,'雪 · author note');assert.deepEqual(card.ports,[]);assert.equal(card.hostResult,false);
+});
+test('rules parse literal Unicode phrases and reject malformed metadata visibly', () => {
+    const parsed=parseWorkflowRules('delve\n雪');assert.equal(parsed.ok,true,JSON.stringify(parsed));assert.deepEqual(parsed.data,['delve','雪']);
+    assert.equal(parseWorkflowRules('{"phrase":').ok,false);
+});
+test('valid groups without declared members prepare from actual node membership', async () => {
+    const root = starterGraph('structured-guidance'); root.groups.visual = { id: 'visual', title: 'Visual', collapsed: false }; root.nodes['compose-json'].inGroup = 'visual';
+    const { exportWorkflow, parseWorkflow } = await import('../src/workflow/packages.js');
+    for (const graph of [root, parseWorkflow(JSON.stringify(exportWorkflow(root))).data]) {
+        const prepared = prepareWorkspaceViews(graph); assert.equal(prepared.ok, true, JSON.stringify(prepared));
+        const view = projectPreparedWorkflow(prepared.data.workflow); assert.deepEqual(view.groups[0].members, ['compose-json']); assert.equal(view.groups[0].callBound, 0);
+    }
+    const { siblingWorkflow } = await import('./fixtures/workflow-prepared-fixture.mjs');
+    const nested = structuredClone(siblingWorkflow()), definition = Object.values(nested.definitions)[0];
+    definition.body.groups ??= {}; definition.body.groups.visual = { id: 'visual', title: 'Child visual', collapsed: false }; definition.body.nodes.work.inGroup = 'visual';
+    const prepared = prepareWorkspaceViews(nested); assert.equal(prepared.ok,true,JSON.stringify(prepared));
+    const child = projectPreparedWorkflow(prepared.data.workflow,{viewPath:['first/path']});assert.deepEqual(child.groups[0].members,['work']);
+});
+test('plain malformed portable presentation cannot run object coercion during preparation', async () => {
+    const root=starterGraph('structured-guidance');root.nodes['compose-json'].alias={toString:false};root.nodes['compose-json'].title={toString:false};root.nodes['compose-json'].compact={toString:false};
+    const {exportWorkflow,parseWorkflow}=await import('../src/workflow/packages.js');
+    let envelope;try{envelope=exportWorkflow(root);}catch(error){assert.match(error.message,/alias|title|compact|presentation|setting/i);return;}
+    const parsed=parseWorkflow(JSON.stringify(envelope));if(!parsed.ok){assert.ok(parsed.error.message);return;}
+    let prepared;assert.doesNotThrow(()=>{prepared=prepareWorkspaceViews(parsed.data);});
+    if(!prepared.ok){assert.ok(prepared.error.message);return;}
+    const view=projectPreparedWorkflow(prepared.data.workflow),node=view.nodes.find(node=>node.id==='compose-json');
+    assert.equal(node.alias,'');assert.equal(node.compact,false);assert.equal(node.title,'Compose');
+    const draw=prepared.data.preparedViews[0].drawBase;assert.equal(draw.nodes['compose-json'].presentation.alias,'');assert.equal(draw.nodes['compose-json'].presentation.compact,false);
+});

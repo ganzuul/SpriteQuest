@@ -1,5 +1,7 @@
 # Svelte UI migration — 0.18.0
 
+This is a historical release record. Its retired modules, formats, and test counts describe 0.18.0. For the current runtime and verification commands, see [Development](development.md); for the current interface, see the [Operator's manual](operators-manual.md).
+
 Lattice now uses keyed Svelte cards, groups, SVG wires and a Svelte workbench. Camera motion no longer redraws wires or asks every endpoint for its height. The controller batches visual work into animation frames, caches unscaled card dimensions and prepares duplication/Generate-wave analysis once per graph revision. ComfyUI-style selection is built into the same gesture controller.
 
 The agreed [design](superpowers/specs/2026-10-07-svelte-ui-migration-design.md) and [implementation plan](superpowers/plans/2026-10-07-svelte-ui-migration.md) define the acceptance contract. PomegranateUI informed the headless bindings, keyed presentation and host-adapter architecture; its source was not copied. The bundled Svelte MIT notice is in [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md).

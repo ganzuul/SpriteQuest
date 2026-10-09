@@ -1,11 +1,17 @@
-import { ARTIFACT_KINDS, operationFor, describeOperation, portsForNode } from './catalog.js?v=0.20.0';
-import { cloneDefinitionData, computeDefinitionIdentity, definitionRefKey, inspectDefinitionMetadata, describeExposedParameter, nodeBindingOverrideKey, artifactAddressKey } from './definition-data.js?v=0.20.0';
-import { samePath, safeId } from './composition-edit.js?v=0.20.0';
+import { ARTIFACT_KINDS, operationFor, describeOperation, portsForNode } from './catalog.js?v=0.21.0';
+import { cloneDefinitionData, computeDefinitionIdentity, definitionRefKey, inspectDefinitionMetadata, describeExposedParameter, nodeBindingOverrideKey, artifactAddressKey } from './definition-data.js?v=0.21.0';
+import { samePath, safeId } from './composition-edit.js?v=0.21.0';
 
 const record = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 const idText = value => typeof value === 'string' && value.length > 0;
 const fail = (code, message, nodeId) => ({ ok: false, error: { code, message, ...(nodeId ? { nodeId } : {}) } });
 const bindingValid = value => record(value) && ['profileId', 'model'].every(key => value[key] === undefined || value[key] === null || typeof value[key] === 'string');
+const optionalFields = (value, keys, accepts) => keys.every(key => value[key] === undefined || accepts(value[key]));
+const layoutValid = value => optionalFields(value, ['x', 'y', 'w', 'h', 'width', 'height'], Number.isFinite);
+const presentationValid = value => record(value)
+    && optionalFields(value, ['title', 'alias'], item => typeof item === 'string')
+    && optionalFields(value, ['compact', 'collapsed'], item => typeof item === 'boolean')
+    && layoutValid(value);
 export const nodeAddressKey = ({ workflowId, instancePath, nodeId }) => JSON.stringify([workflowId, instancePath, nodeId]);
 
 /** Bounded plain authoring data shared by current readers and safe exports. */
@@ -48,15 +54,14 @@ function inspectScope(graph, { definition, snapshots = {} } = {}) {
     const nodes = Object.values(graph.nodes), wires = Object.values(graph.wires);
     if (nodes.length > 1000 || wires.length > 2000) return fail('MALFORMED_WORKFLOW', 'The graph exceeds traversal limits.');
     for (const [id, group] of Object.entries(graph.groups ?? {})) {
-        if (!record(group) || group.id !== id || group.enabled !== undefined && typeof group.enabled !== 'boolean') return fail('INVALID_GROUP', 'Invalid group metadata.');
-        if (group.component !== undefined && (!record(group.component) || group.component.id !== 'ai-de-slop' || group.component.version !== 1)) return fail('UNSUPPORTED_COMPONENT', 'Unknown component identity.');
-        if (group.component && (!idText(group.entry) || !idText(group.exit) || !Array.isArray(group.members))) return fail('INVALID_GROUP', 'Components require entry, exit and membership.');
-        for (const key of ['entry', 'exit']) if (group[key] !== undefined && (!idText(group[key]) || !Object.hasOwn(graph.nodes, group[key]))) return fail('INVALID_GROUP', 'Group references a missing node.');
+        if (!record(group) || group.id !== id) return fail('INVALID_GROUP', 'Invalid group metadata.');
+        if (!optionalFields(group, ['title', 'name', 'description'], value => typeof value === 'string') || !optionalFields(group, ['collapsed'], value => typeof value === 'boolean') || !layoutValid(group) || group.frame !== undefined && (!record(group.frame) || !layoutValid(group.frame))) return fail('INVALID_GROUP', 'Invalid group presentation or layout.');
         if (group.members !== undefined && (!Array.isArray(group.members) || group.members.some(member => !idText(member) || !Object.hasOwn(graph.nodes, member)) || new Set(group.members).size !== group.members.length)) return fail('INVALID_GROUP', 'Invalid group membership.');
-        if (group.component && (!group.members.includes(group.entry) || !group.members.includes(group.exit) || group.members.some(member => graph.nodes[member]?.inGroup !== id) || nodes.some(node => node?.inGroup === id && !group.members.includes(node.id)))) return fail('INVALID_GROUP', 'Component membership must agree with node membership.');
+        if (group.members && (group.members.some(member => graph.nodes[member]?.inGroup !== id) || nodes.some(node => node?.inGroup === id && !group.members.includes(node.id)))) return fail('INVALID_GROUP', 'Declared membership must agree with node membership.');
     }
     for (const [id, node] of Object.entries(graph.nodes)) {
         if (!record(node) || !idText(id) || node.id !== id) return fail('MALFORMED_WORKFLOW', 'Invalid node identity.');
+        if (!presentationValid(node) || node.presentation !== undefined && !presentationValid(node.presentation)) return fail('INVALID_SETTINGS', 'Invalid node presentation or layout.', id);
         if (node.enabled !== undefined && typeof node.enabled !== 'boolean' || node.inGroup !== undefined && (!idText(node.inGroup) || !Object.hasOwn(graph.groups ?? {}, node.inGroup))) return fail('INVALID_SETTINGS', 'Invalid enabled/group setting.', id);
         if (node.type === 'note') continue;
         if (node.type === 'subgraph-input' || node.type === 'subgraph-output') {
@@ -90,7 +95,7 @@ function inspectScope(graph, { definition, snapshots = {} } = {}) {
     const resolved = [], incoming = new Set();
     for (const [id, wire] of Object.entries(graph.wires)) {
         if (!record(wire) || wire.id !== id || !idText(id)) return fail('MALFORMED_WORKFLOW', 'Invalid wire identity.');
-        if (!idText(wire.to) || !idText(wire.toPort) || wire.loop || wire.port || wire.order !== undefined && (!Number.isSafeInteger(wire.order) || wire.order < 0) || wire.kind !== undefined && !['append', 'prepend', 'merge'].includes(wire.kind)) return fail('INVALID_WIRE', 'Invalid named wire metadata.');
+        if (!idText(wire.to) || !idText(wire.toPort) || wire.loop || wire.port) return fail('INVALID_WIRE', 'Invalid named wire metadata.');
         let from = wire.from, fromPort = wire.fromPort;
         if (wire.route === 'portal') {
             if (!idText(wire.portalId) || !Object.hasOwn(graph.portals ?? {}, wire.portalId)) return fail('MISSING_PORTAL', 'A consumer requires a local portal publisher.');

@@ -46,8 +46,7 @@ export interface PreviewSection {
 }
 export interface PreviewChoice { key: string; label: string; kind: string; target: DetailTarget; }
 export interface DetailHandleReviewSelector { handleId: string; runId: string; terminal: { kind: 'terminal'; address: DetailNodeAddress }; }
-export interface DetailSchema2ReviewSelector { kind: 'schema2-candidate'; reviewId: string; terminal: { kind: 'terminal'; address: DetailNodeAddress }; }
-export type DetailReviewSelector = DetailHandleReviewSelector | DetailSchema2ReviewSelector;
+export type DetailReviewSelector = DetailHandleReviewSelector;
 export interface OutputPreviewView {
     sourceKey: string; title: string; status: 'not-run' | 'current' | 'stale' | 'removed'; statusDetail?: string;
     choices: PreviewChoice[]; selectedKey: string | null; pinned: boolean; followSelection: boolean;

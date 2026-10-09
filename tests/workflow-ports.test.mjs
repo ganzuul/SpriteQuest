@@ -76,6 +76,7 @@ assert.equal(replacement.ok, true);
 assert.equal(replacement.data.changed, true);
 assert.deepEqual(replacement.data.removedEdgeIds, ['a']);
 assert.equal(replacement.data.addedEdgeIds.length, 1);
+assert.deepEqual(replacement.data.candidate.wires[replacement.data.addedEdgeIds[0]], { id: replacement.data.addedEdgeIds[0], route: 'wire', from: 'other', fromPort: 'out', to: 'compact', toPort: 'in' });
 assert.equal(Object.values(replacement.data.candidate.wires).find(w => w.to === 'compact').from, 'other');
 assert.deepEqual(normalized.data, beforeConnection);
 assert.equal(connect(replacement.data.candidate, 'compact', 'other', true).error.code, 'CYCLE');

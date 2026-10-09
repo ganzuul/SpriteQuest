@@ -1,2 +1,2 @@
-import { runTextRuleSegments } from './text-rules-engine.js?v=0.20.0';
+import { runTextRuleSegments } from './text-rules-engine.js?v=0.21.0';
 self.addEventListener('message', event => self.postMessage(runTextRuleSegments(event.data)));

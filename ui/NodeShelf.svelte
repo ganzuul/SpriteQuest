@@ -3,7 +3,7 @@
     import { FAMILY_PALETTE, PALETTE_GROUPS, paletteForOperation } from '../src/ui/node-palette.js';
     import type { WorkflowView } from './types';
     type ShelfChoice = { id: string; label: string; family: string; phase: string; shortcode?: string; purpose?: string; searchAliases?: readonly string[]; disabledReason?: string };
-    let { view, add, choices, choose, manageSubgraphs, readOnly = false }: { view?: WorkflowView; add: (id: string, legacy: boolean) => void; choices?: readonly ShelfChoice[]; choose?: (id: string) => void; manageSubgraphs?: () => void; readOnly?: boolean } = $props();
+    let { view, add, choices, choose, manageSubgraphs, readOnly = false }: { view?: WorkflowView; add: (id: string) => void; choices?: readonly ShelfChoice[]; choose?: (id: string) => void; manageSubgraphs?: () => void; readOnly?: boolean } = $props();
     let shelf: HTMLElement;
     let familyPanel = $state<HTMLDivElement>(null!), leafPanel = $state<HTMLDivElement>(null!);
     let family = $state(''), group = $state(''), search = $state(false), query = $state('');
@@ -11,20 +11,19 @@
     let anchor: HTMLButtonElement | null = null;
     let opening = 0;
     const names = FAMILY_PALETTE.map(item => item.name);
-    type Entry = { id: string; title: string; legacy: boolean; compatible: boolean; phase: string; family: string; group: string; shortcode: string; icon: string; purpose?: string; searchAliases?: readonly string[]; disabledReason?: string; catalog?: boolean };
+    type Entry = { id: string; title: string; compatible: boolean; phase: string; family: string; group: string; shortcode: string; icon: string; purpose?: string; searchAliases?: readonly string[]; disabledReason?: string; catalog?: boolean };
     function entries(name = family): Entry[] {
-        if (choices !== undefined && view?.native) return choices.filter(entry => entry.family === name).map(entry => {
+        if (choices !== undefined) return choices.filter(entry => entry.family === name).map(entry => {
             const metadata = paletteForOperation(entry.id.startsWith('operation:') ? entry.id.split(':')[1] : '');
-            return { ...entry, title: entry.label, legacy: false, compatible: !entry.disabledReason && !!choose, catalog: true, group: name === 'Subgraphs' ? 'Library' : metadata.group, shortcode: entry.shortcode ?? metadata.shortcode, icon: name === 'Subgraphs' ? PALETTE_GROUPS.Library.icon : metadata.icon };
+            return { ...entry, title: entry.label, compatible: !entry.disabledReason && !!choose, catalog: true, group: name === 'Subgraphs' ? 'Library' : metadata.group, shortcode: entry.shortcode ?? metadata.shortcode, icon: name === 'Subgraphs' ? PALETTE_GROUPS.Library.icon : metadata.icon };
         });
         const data = view?.families.find(entry => entry.name === name);
         if (!data) return [];
-        if (!view?.native) return data.legacy.map(entry => ({ ...entry, ...paletteForOperation(entry.id), legacy: true, compatible: true, phase: 'legacy', family: name }));
-        return data.operations.filter(entry => name !== 'Surface' || !['pattern-scan', 'validate-patches'].includes(entry.id)).map(entry => ({ ...entry, ...paletteForOperation(entry.id), legacy: false, family: name }));
+        return data.operations.filter(entry => name !== 'Surface' || !['pattern-scan', 'validate-patches'].includes(entry.id)).map(entry => ({ ...entry, ...paletteForOperation(entry.id), family: name }));
     }
     const groups = () => [...new Set([...entries().map(entry => entry.group), ...(family === 'Subgraphs' && manageSubgraphs ? ['Library'] : [])])];
     function close(restore = false) { opening++; family = ''; group = ''; search = false; if (restore) anchor?.focus({ preventScroll: true }); }
-    $effect(() => { const scope = view?.graphId, native = view?.native, catalog = choices; void scope; void native; void catalog; return () => close(); });
+    $effect(() => { const scope = view?.graphId, catalog = choices; void scope; void catalog; return () => close(); });
     function bounds() {
         const area = shelf.closest('.pc-canvas-area') as HTMLElement, rect = area.getBoundingClientRect();
         return { left: rect.left + area.clientLeft, top: rect.top + area.clientTop, right: rect.right - area.clientLeft, width: area.clientWidth, height: area.clientHeight };
@@ -61,7 +60,7 @@
     function select(entry: Entry) {
         const current = entries(entry.family).find(item => item.id === entry.id);
         if (!current?.compatible || readOnly) return;
-        close(true); if (current.catalog) choose?.(current.id); else add(current.id, current.legacy);
+        close(true); if (current.catalog) choose?.(current.id); else add(current.id);
     }
     async function restoreGroup() {
         const previous = group, currentFamily = family, request = ++opening; group = ''; await tick();

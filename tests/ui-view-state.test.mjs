@@ -17,6 +17,17 @@ const store = options => api.createViewState({ workflowId, navigation: navigatio
 const active = view => view.project().active;
 const accepted = result => { assert.equal(result.ok, true, JSON.stringify(result)); return result.data; };
 
+test('qualified group positions persist locally without changing current navigation authority', () => {
+    const view = store(), before = active(view).key;
+    const position = { collapsed: true, x: 13.5, y: -9, frame: { x: 13.5, y: -9, w: 260, h: 140 } };
+    accepted(view.updateView({ groupPresentation: { group: position } }));
+    assert.equal(active(view).key, before);
+    const restored = store({ persisted: accepted(view.serialize()) });
+    assert.deepEqual(active(restored).groupPresentation.group, position);
+    assert.equal(view.updateView({ groupPresentation: { group: { x: Infinity } } }).ok, false);
+    assert.equal(view.updateView({ groupPresentation: { group: { frame: { x: 0, y: 0, w: -1, h: 2 } } } }).ok, false);
+});
+
 // Joining path IDs or using definition IDs would merge unrelated editor state.
 test('deduplicates exact structural paths while separating repeated instances and library pins', () => {
     assert.equal(typeof api.createViewState, 'function');
@@ -126,7 +137,7 @@ test('bounded persistence restores closed independent views and trusts only curr
     assert.equal(new TextEncoder().encode(JSON.stringify(persisted)).length <= 262144, true);
     const serialized = JSON.stringify(persisted);
     for (const forbidden of ['readOnly', 'breadcrumbs', 'label', 'recording', 'authority', 'snapshot']) assert.equal(serialized.includes('"' + forbidden + '"'), false);
-    const reloaded = store({ persisted, legacyView: { x: 100, y: 100, zoom: 0.5 } });
+    const reloaded = store({ persisted, initialCamera: { x: 100, y: 100, zoom: 0.5 } });
     assert.deepEqual(active(reloaded).identity.instancePath, ['repeat']);
     assert.equal(active(reloaded).selection.primary.id, 'wire/one');
     assert.equal(active(reloaded).readOnly, true);
@@ -140,13 +151,13 @@ test('bounded persistence restores closed independent views and trusts only curr
 });
 
 // Old saved graph.view values must not produce nonfinite transforms or change the shipped zoom range.
-test('legacy root camera fallback normalizes finite pan and clamps zoom without affecting new child views', () => {
-    for (const [legacyView, want] of [
+test('current initial root camera normalizes finite pan and clamps zoom without affecting new child views', () => {
+    for (const [initialCamera, want] of [
         [{ x: 30, y: -50, zoom: 100 }, { x: 30, y: -50, zoom: 2.5 }],
         [{ x: 30, y: -50, zoom: 0.1 }, { x: 30, y: -50, zoom: 0.25 }],
         [{ x: Infinity, y: NaN, zoom: 'bad' }, { x: 0, y: 0, zoom: 1 }],
-    ]) assert.deepEqual(active(store({ legacyView })).camera, want);
-    const view = store({ legacyView: { x: 30, y: -50, zoom: 2 } });
+    ]) assert.deepEqual(active(store({ initialCamera })).camera, want);
+    const view = store({ initialCamera: { x: 30, y: -50, zoom: 2 } });
     accepted(view.openInstance(['a']));
     assert.deepEqual(active(view).camera, { x: 0, y: 0, zoom: 1 });
 });

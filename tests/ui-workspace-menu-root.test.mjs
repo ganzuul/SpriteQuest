@@ -91,12 +91,7 @@ test('an actual busy root session governs Stop while the selected projection is 
         assert.equal(f.item('Stop workflow').disabled, true); assert.equal(f.item('Run workflow').disabled, false);
     } finally { release({ ok: false, error: { message: 'Run cancelled.' } }); await running; await f.close(); }
 });
-test('the compatibility fallback uses the genuine supplied workflow and retains non-native disabling', async () => {
-    const root = guidance(), prepared = prepare(root), view = projectPreparedWorkflow(prepared.token), calls = [];
-    const f = await fixture(state(view), command => calls.push(command));
-    try {
-        await f.open(); assert.equal(f.item('Run workflow').disabled, false); await click(f.item('Run workflow')); assert.deepEqual(calls, ['run-workflow']);
-        const legacy = projectPreparedWorkflow(prepareWorkflowProjection({ id: 'legacy-menu', nodes: {}, wires: {}, groups: {} })); assert.equal(legacy.native, false);
-        await f.update(state(legacy)); await f.open(); assert.equal(f.item('Run workflow').disabled, true); assert.equal(f.item('Stop workflow').disabled, true);
-    } finally { await f.close(); }
+test('a missing current workflow keeps root Run disabled', async () => {
+    const f = await fixture({ history: {undo:false,redo:false}, selectionCount:0, selectionActions:{} });
+    try { await f.open(); assert.equal(f.item('Run workflow').disabled, true); assert.equal(f.item('Stop workflow').disabled, true); } finally { await f.close(); }
 });

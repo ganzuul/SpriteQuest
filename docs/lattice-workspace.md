@@ -6,9 +6,11 @@ Begin with two working examples that use no model calls. One assembles a structu
 
 ## Open the workspace
 
-Install from `https://github.com/MentallyQuill/Lattice` in SillyTavern's **Extensions → Install extension**, leaving the branch field blank. Reload, then open LATTICE beside Send or type `/canvas`.
+Install from `https://github.com/MentallyQuill/Lattice` in SillyTavern's **Extensions → Install extension**, leaving the branch field blank. Reload, then open LATTICE beside Send or type `/lattice`.
 
-In **Workflows → Workflow examples…**, install **Structured guidance**. Installing or importing a workflow does not arm the extension or make a model call.
+Fresh launch opens **Structured guidance**, with workflows disabled and no phase assigned. Use **Workflows → Workflow examples…** to install another copy or a different example. Opening, installing, or importing makes no provider request.
+
+The default **Ember** theme follows SillyTavern's panel, text, control and quote colors, with a neutral canvas and translucent node fills. Use **Tools → Theme and colours** to choose another theme or customize it.
 
 ## Build and inspect a brief
 
@@ -27,7 +29,7 @@ Compose (JSON source) → JSON Decode → Select Fields → Compose (Guidance) �
 
 *The captured example adds tone and uses synthetic harbor-scene material. The supplied starter begins with direction and constraint.*
 
-This example needs no connection profile or existing reply. A manual run previews the brief. To use it with normal sends, open Setup, assign the pre phase, enable native mode, and arm the extension. Send executes the configured pre workflow and installs its optional guidance for that generation.
+This example needs no connection profile or existing reply. A manual run previews the brief. To use it with normal sends, open Setup, assign the pre phase and enable workflows. Send executes the configured pre workflow and installs its optional guidance for that generation.
 
 ## Propose an exact reply edit
 

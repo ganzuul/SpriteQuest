@@ -1,4 +1,4 @@
-import { operationDefaults } from './catalog.js?v=0.20.0';
+import { operationDefaults } from './catalog.js?v=0.21.0';
 export const STARTERS = [
     { id: 'native-guidance', version: 1, title: 'Scene guidance', purpose: 'Shape scene direction while SillyTavern writes the reply.', phase: 'pre', roles: ['Analysis'], callBound: 2, operations: ['scene-context', 'smart-compactor', 'response-plan', 'guidance'] },
     { id: 'reviewed-de-slop', version: 1, title: 'Reviewed AI De-slop', purpose: 'Find literal patterns and review a bounded repair before applying.', phase: 'post', roles: ['Prose'], callBound: 1, operations: ['reply-snapshot', 'pattern-scan', 'repair', 'validate-patches', 'review-gate', 'apply-reply'] },
@@ -17,7 +17,7 @@ function workspaceStarter(starter) {
     for (const [i, operation] of starter.operations.entries()) {
         const nodeId = ids[i];
         graph.nodes[nodeId] = { ...operationDefaults(operation), id: nodeId, type: 'workflow', operationVersion: 1, enabled: true, x: 100 + i * (starter.roles.length ? 310 : 230), y: 140, w: 260 };
-        if (i) graph.wires['wire-' + i] = { id: 'wire-' + i, route: 'wire', from: ids[i - 1], fromPort: 'out', to: nodeId, toPort: nodeId === 'compose-guidance' ? 'data' : 'in', order: 0, kind: 'merge' };
+        if (i) graph.wires['wire-' + i] = { id: 'wire-' + i, route: 'wire', from: ids[i - 1], fromPort: 'out', to: nodeId, toPort: nodeId === 'compose-guidance' ? 'data' : 'in' };
     }
     if (starter.id === 'literal-cleanup') {
         graph.nodes['text-rules'].inputKind = 'draft';
@@ -27,7 +27,7 @@ function workspaceStarter(starter) {
         graph.nodes['response-plan'].instructions = 'Suggest scene direction and actor intentions. Preserve user agency; proposals are not established events.';
     } else if (starter.id === 'reviewed-de-slop') {
         const members = ['pattern-scan', 'repair', 'validate-patches'];
-        graph.groups['ai-de-slop'] = { id: 'ai-de-slop', title: 'AI De-slop', collapsed: true, enabled: true, x: 410, y: 140, w: 260, component: { id: 'ai-de-slop', version: 1 }, entry: members[0], exit: members[2], members };
+        graph.groups['ai-de-slop'] = { id: 'ai-de-slop', title: 'AI De-slop', collapsed: true, x: 410, y: 140, w: 260, members };
         for (const member of members) graph.nodes[member].inGroup = 'ai-de-slop';
         graph.nodes['pattern-scan'].rules = ['a testament to', 'delve', 'tapestry'];
     } else {
@@ -43,7 +43,7 @@ export function installStarter(id, settings) {
     const ids = Object.fromEntries(Object.keys(graph.nodes).map(nodeId => [nodeId, nodeId + '-' + suffix]));
     graph.nodes = Object.fromEntries(Object.values(graph.nodes).map(node => { node.id = ids[node.id]; if (node.inGroup) node.inGroup += '-' + suffix; return [node.id, node]; }));
     graph.wires = Object.fromEntries(Object.values(graph.wires).map(wire => { wire.id += '-' + suffix; wire.from = ids[wire.from]; wire.to = ids[wire.to]; return [wire.id, wire]; }));
-    graph.groups = Object.fromEntries(Object.values(graph.groups).map(group => { group.id += '-' + suffix; group.entry = ids[group.entry]; group.exit = ids[group.exit]; group.members = group.members.map(member => ids[member]); return [group.id, group]; }));
+    graph.groups = Object.fromEntries(Object.values(graph.groups).map(group => { group.id += '-' + suffix; group.members = group.members.map(member => ids[member]); return [group.id, group]; }));
     graph.id += '-' + suffix; graph.createdAt = graph.updatedAt = Date.now();
     settings.graphs ??= {}; settings.graphs[graph.id] = graph;
     return graph;

@@ -4,7 +4,7 @@
 
 LATTICE is a workspace for designing writing processes as connected, inspectable systems. A workflow can prepare context, assemble structured direction, transform text, propose edits, and expose a reviewed result. Subgraphs let you turn a useful sequence into a reusable tool.
 
-This manual follows the shipped 0.20.0 interface. Screenshots use synthetic writing material on the local demonstration host. Completed demonstrations are deterministic and make zero model calls. Model planning screenshots show configuration before a model connection is bound.
+This manual follows the 0.21.0 interface. Screenshots use synthetic writing material on the local demonstration host. Completed demonstrations are deterministic and make zero model calls. Model planning screenshots show configuration before a model connection is bound.
 
 ## Contents
 
@@ -30,7 +30,7 @@ This manual follows the shipped 0.20.0 interface. Screenshots use synthetic writ
 | Area | Use it for |
 | --- | --- |
 | Menu bar | File operations, editing, graph navigation, node discovery, setup, and tools |
-| Workflow bar | Choose the root workflow, undo/redo, Run/Stop, Setup, Library, Details, and Arm |
+| Workflow bar | Choose the root workflow, undo/redo, Run/Stop, Setup, Details, and Arm |
 | Preview above the graph | Inspect a recorded output and its artifact tabs; pin it or follow selection |
 | Graph tabs | Switch between the root **Graph 1** and opened subgraph bodies |
 | Graph editor | Arrange nodes and connect typed input/output pins |
@@ -44,13 +44,13 @@ The workflow bar reports phase, assignment, request bound, and autosave. Selecti
 
 ## Start from a working example
 
-1. Open LATTICE beside Send or type `/canvas`.
+1. Open LATTICE beside Send or type `/lattice`.
 2. Open **Setup**, or **Workflows → Workflow examples…**.
 3. Install **Structured guidance** for a model-free graph without needing an existing reply.
 4. Close setup and click **Run**.
 5. Select nodes in turn to inspect the source Text, decoded Data, selected fields, and composed Guidance.
 
-![Workflow setup showing phase assignment, model-role setup, and four installable examples](images/workflow-setup.png)
+![Workflow setup showing phase assignment and four installable examples](images/workflow-setup.png)
 
 *Installing an example creates an editable workflow. Role binding, phase assignment, and arming are separate actions.*
 
@@ -176,7 +176,7 @@ Changing an operation setting or a connection cancels active work and makes prev
 4. Read the original, candidate, findings, and changes in the available artifact tabs.
 5. Choose **Apply reviewed candidate** or **Reject candidate**.
 
-![Completed Literal cleanup graph with the root candidate and explicit Apply and Reject controls](images/review-candidate.png)
+![Completed Literal cleanup preview with the root candidate and explicit Apply and Reject controls](images/review-candidate.png)
 
 *The candidate artifact contains both `original` and revised `text`. Selecting this root terminal exposes the review actions.*
 
@@ -243,13 +243,13 @@ Autosave persists committed workspace edits. It does not accept unsaved JSON dra
 | Action | Result |
 | --- | --- |
 | Workflow selector / Open workflow | Switch to a saved root workflow |
-| File → Import canvas | Open a workflow JSON as a separate graph |
+| File → Import workflow | Open a workflow JSON as a separate graph |
 | File → Import into graph… | Review an additive insertion into the current graph |
-| File → Export canvas | Export a portable workflow package with pinned definitions |
+| File → Export workflow | Export a portable workflow package with pinned definitions |
 | Subgraph manager → Import/Export .json | Share an individual reusable definition |
-| Library | Access personal saved blocks and material |
+| Node → Subgraphs | Manage reusable definitions and insert their pinned instances |
 
-An additive import requires compatible mode and phase, assigns fresh node identities, and preserves internal connections and relative layout. Review role requirements, terminal changes, and request bounds before accepting the insertion. Import itself does not run or arm the workflow.
+An additive import requires matching phases, assigns fresh node identities, and preserves internal connections and relative layout. Review role requirements, terminal changes, and request bounds before accepting the insertion. Import itself does not run or arm the workflow.
 
 Exports omit bound profile IDs and credentials. Recipients configure local model connections before running. Composed workflows carry their pinned definitions. Unsupported versions, dangling connections, incompatible artifacts, or cycles produce validation issues.
 

@@ -13,13 +13,13 @@
     const item = (label: string, command: string, shortcut = '', disabled = false): Item => ({ label, command, shortcut, disabled });
     function items(name: string): Item[] {
         switch (name) {
-            case 'File': return [item('New canvas', 'new'), item('Open workflow…', 'open-workflow'), item('Import canvas', 'import'), item('Import into graph…', 'import-into-graph'), item('Export canvas', 'export'), item('Close workspace', 'close')];
+            case 'File': return [item('New workflow', 'new'), item('Open workflow…', 'open-workflow'), item('Import workflow', 'import'), item('Import into graph…', 'import-into-graph'), item('Export workflow', 'export'), item('Close workspace', 'close')];
             case 'Edit': return [item('Undo', 'undo', 'Ctrl Z', !view.history.undo), item('Redo', 'redo', 'Ctrl Shift Z', !view.history.redo), item('Copy', 'copy', 'Ctrl C', !view.selectionActions?.copy), item('Cut', 'cut', 'Ctrl X', !view.selectionActions?.cut), item('Paste', 'paste', 'Ctrl V'), item('Delete selection', 'delete-selection', 'Del', !view.selectionActions?.delete)];
-            case 'Graph': return [...(view.workflow?.native ? [item('Select tool', 'select-tool'), item('Pan tool', 'pan-tool'), item('Zoom in', 'zoom-in'), item('Zoom out', 'zoom-out')] : []), item('Fit to view', 'fit'), item('Fit selection', 'fit-selection', '', !view.selectionCount), item('Duplicate canvas', 'duplicate'), item('Rename canvas', 'rename'), item('Seed from SillyTavern’s current prompt order', 'seed', '', !!view.nativeGraph), item('Delete canvas', 'delete')];
-            case 'Node': return [item('Add node…', 'add-node'), item('Inspect selection', 'reveal-inspector'), item('Library', 'sidebar')];
-            case 'Preview': return [item('Compile prompt', 'preview'), item('Show preview', 'show-preview'), item('Collapse preview', 'collapse-preview')];
-            case 'Workflows': return [item('Workflow setup…', 'workflow-setup'), item('Workflow examples…', 'workflow-setup'), item('Run workflow', 'run-workflow', '', !rootWorkflow?.native || !!rootWorkflow?.busy || !!rootWorkflow?.issues.length), item('Stop workflow', 'stop-workflow', '', !rootWorkflow?.busy), item('Library', 'sidebar')];
-            case 'Tools': return [item('Theme and colours', 'theme'), item('Toggle inspector', 'inspector'), item('Toggle Library', 'sidebar')];
+            case 'Graph': return [item('Select tool', 'select-tool'), item('Pan tool', 'pan-tool'), item('Zoom in', 'zoom-in'), item('Zoom out', 'zoom-out'), item('Fit to view', 'fit'), item('Fit selection', 'fit-selection', '', !view.selectionCount), item('Duplicate workflow', 'duplicate'), item('Rename workflow', 'rename'), item('Delete workflow', 'delete')];
+            case 'Node': return [item('Add node…', 'add-node'), item('Inspect selection', 'reveal-inspector'), item('Subgraphs', 'subgraphs')];
+            case 'Preview': return [item('Show preview', 'show-preview'), item('Collapse preview', 'collapse-preview')];
+            case 'Workflows': return [item('Workflow setup…', 'workflow-setup'), item('Workflow examples…', 'workflow-setup'), item('Run workflow', 'run-workflow', '', !rootWorkflow || !!rootWorkflow?.busy || !!rootWorkflow?.issues.length), item('Stop workflow', 'stop-workflow', '', !rootWorkflow?.busy), item('Subgraphs', 'subgraphs')];
+            case 'Tools': return [item('Theme and colours', 'theme'), item('Toggle inspector', 'inspector'), item('Manage subgraphs', 'subgraphs')];
             default: return [item('Workspace guide', 'help')];
         }
     }
@@ -36,7 +36,6 @@
         if (['open-workflow', 'workflow-setup', 'show-preview', 'collapse-preview', 'add-node', 'help'].includes(value)) local(value);
         else if (value === 'select-tool' || value === 'pan-tool') actions.mode(value === 'select-tool' ? 'select' : 'pan');
         else if (value === 'zoom-in' || value === 'zoom-out') actions.zoom(value === 'zoom-in' ? 1.15 : 1 / 1.15);
-        else if (value === 'preview') { local('show-preview'); actions.preview(); }
         else actions.command(value);
     }
     function keys(event: KeyboardEvent) {

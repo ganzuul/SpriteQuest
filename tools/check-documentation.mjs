@@ -5,7 +5,7 @@ import { OPERATIONS } from '../src/workflow/catalog.js';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const documents = ['README.md', 'docs/README.md', 'docs/operators-manual.md', 'docs/node-reference.md', 'docs/lattice-workspace.md', 'docs/native-workflows.md', 'docs/development.md'];
-const texts = new Map(await Promise.all(documents.map(async path => [path, await readFile(join(root, path), 'utf8')])));
+const texts = new Map(await Promise.all(documents.map(async path => [path, (await readFile(join(root, path), 'utf8')).replace(/\r\n?/g, '\n')])));
 const failures = [], images = new Set();
 let links = 0;
 const slug = text => text.toLowerCase().replace(/[^\p{L}\p{N}_\- ]/gu, '').replace(/ /g, '-');
@@ -27,7 +27,7 @@ for (const [path, text] of texts) {
         try { await access(target); } catch { failures.push(path + ': missing ' + href); continue; }
         links++;
         if (fragment && extname(target) === '.md') {
-            if (!anchors(await readFile(target, 'utf8')).has(fragment)) failures.push(path + ': missing anchor ' + href);
+            if (!anchors((await readFile(target, 'utf8')).replace(/\r\n?/g, '\n')).has(fragment)) failures.push(path + ': missing anchor ' + href);
         }
         if (match[0].startsWith('!')) {
             if (!target.startsWith(join(root, 'docs', 'images'))) failures.push(path + ': screenshot outside current image set');

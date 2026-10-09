@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { test } from 'node:test';
 import { exportWorkflow, parseWorkflow, exportSubgraph, parseSubgraph } from '../src/workflow/packages.js';
 import * as contracts from '../src/workflow/contracts.js';
 import { parseWorkflowInsertionFile, prepareWorkflowInsertion } from '../src/workflow/insertion.js';
@@ -62,3 +63,60 @@ for (const oversized of [{ ...envelope, graph: { ...envelope.graph, description:
     assert.equal((oversized.kind === 'lattice-subgraph' ? parseSubgraph : parseWorkflow)(json).error.code, 'MALFORMED_WORKFLOW');
 }
 console.log('workflow-current-admission: ok');
+
+test('current admission rejects malformed node text, presentation and layout before package or insertion use', () => {
+    const currentPackage = exportWorkflow(unfinished);
+    const cases = [
+        ['alias', { toString: false }], ['title', { toString: false }], ['alias', 7], ['title', null],
+        ['compact', 'true'], ['collapsed', 1],
+        ...['x', 'y', 'w', 'h', 'width', 'height'].map(key => [key, '12']),
+        ['x', null], ['y', {}], ['w', []], ['h', false], ['x', NaN], ['y', Infinity],
+        ['presentation', null], ['presentation', []], ['presentation', 'card'],
+        ['presentation', { alias: { toString: false } }], ['presentation', { title: false }],
+        ['presentation', { compact: 'false' }], ['presentation', { collapsed: {} }],
+        ...['x', 'y', 'w', 'h', 'width', 'height'].map(key => ['presentation', { [key]: null }]),
+    ];
+    for (const [key, value] of cases) {
+        const malformed = structuredClone(unfinished); malformed.nodes.source[key] = value;
+        const original = structuredClone(malformed), label = key + ': ' + JSON.stringify(value);
+        assert.equal(contracts.validateGraphStructure(malformed).ok, false, label + ' rejects at current authoring admission');
+        assert.throws(() => exportWorkflow(malformed), undefined, label + ' cannot be exported');
+        const json = JSON.stringify({ ...currentPackage, graph: malformed });
+        assert.equal(parseWorkflow(json).ok, false, label + ' cannot be imported from a current package');
+        assert.equal(parseWorkflowInsertionFile(json).ok, false, label + ' cannot reach an insertion review');
+        assert.equal(prepareWorkflowInsertion(unfinished, malformed).ok, false, label + ' cannot prepare an edit');
+        assert.equal(cloneWorkflowDocument(malformed).ok, false, label + ' cannot cross the document boundary');
+        assert.deepEqual(malformed, original, 'failed validation never rewrites the caller');
+    }
+});
+
+test('known group render fields and pinned definition node presentation use the same strict admission', () => {
+    const grouped = structuredClone(unfinished); grouped.groups = { group: { id: 'group', members: [], x: 0, y: -10, w: 0, collapsed: false } };
+    const groupPackage = exportWorkflow(grouped);
+    for (const invalid of [{ title: {} }, { name: [] }, { description: false }, { collapsed: 'false' }, { x: '0' }, { y: null }, { w: {} }, { height: false }, { frame: [] }, { frame: { x: '0', y: 0, w: 10, h: 10 } }, { frame: { x: 0, y: 0, w: 10, h: null } }]) {
+        const malformed = structuredClone(grouped); Object.assign(malformed.groups.group, invalid);
+        assert.equal(contracts.validateGraphStructure(malformed).ok, false, 'known group fields reject incorrect types');
+        assert.equal(parseWorkflow(JSON.stringify({ ...groupPackage, graph: malformed })).ok, false);
+        assert.throws(() => exportWorkflow(malformed));
+    }
+    const nodeId = Object.values(definition.body.nodes).find(node => node.type === 'workflow').id;
+    for (const invalid of [{ alias: { toString: false } }, { title: [] }, { compact: 'false' }, { presentation: { alias: { toString: false } } }, { presentation: { x: '0' } }]) {
+        const malformed = structuredClone(definition); Object.assign(malformed.body.nodes[nodeId], invalid);
+        assert.throws(() => exportSubgraph(malformed, graph.definitions), undefined, 'pinned bodies cannot bypass node presentation admission');
+        assert.equal(parseSubgraph(JSON.stringify({ ...subgraph, definition: malformed })).ok, false);
+        const withSnapshot = structuredClone(graph); Object.assign(withSnapshot.definitions[Object.keys(graph.definitions)[0]].body.nodes[nodeId], invalid);
+        assert.equal(contracts.validateGraphStructure(withSnapshot).ok, false, 'bundled snapshots are checked before expansion');
+    }
+});
+
+test('optional typed presentation accepts finite zero and negative positions while extra group and wire metadata stays uninterpreted', () => {
+    const current = structuredClone(graph), node = Object.values(current.nodes)[0];
+    Object.assign(node, { title: '', alias: 'Typed alias', compact: false, collapsed: true, x: 0, y: -25, w: 0, h: 20, width: 100, height: 30, presentation: { alias: '', title: 'Card title', compact: true, collapsed: false, x: -12, y: 0, w: 100, h: 0, extra: { retained: true } } });
+    current.groups ??= {}; current.groups.presentation = { id: 'presentation', members: [], title: '', name: 'Visual frame', description: '', collapsed: false, x: -10, y: 0, w: 0, height: 20, frame: { x: 0, y: -10, w: 0, h: 30 }, enabled: { uninterpreted: true }, extra: { toString: false } };
+    const wire = Object.values(current.wires)[0]; Object.assign(wire, { kind: { uninterpreted: true }, order: ['uninterpreted'], extra: { toString: false } });
+    const original = structuredClone(current);
+    assert.equal(contracts.validateGraphStructure(current).ok, true);
+    assert.equal(parseWorkflow(JSON.stringify(exportWorkflow(current))).ok, true);
+    assert.deepEqual(current, original, 'admission does not sanitize or reinterpret unrelated metadata');
+    assert.equal(contracts.validateGraphStructure(unfinished).ok, true, 'unfinished documents may omit presentation and layout entirely');
+});

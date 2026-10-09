@@ -31,12 +31,12 @@
 {/if}
 
 <style>
-    .pc-run-meter { display: flex; align-items: center; gap: 8px; max-width: 100%; min-height: 25px; padding: 4px 8px; border: 1px solid #ffffff08; border-radius: 2px; background: #1d1e1ee8; color: #b4babd; font: inherit; font-size: 10px; cursor: pointer; box-shadow: inset 0 1px #ffffff06, 0 1px 2px #0005; }
-    .pc-run-meter:hover { color: #e8ebec; background: #252626; }
+    .pc-run-meter { display: flex; align-items: center; gap: 8px; max-width: 100%; min-height: 25px; padding: 4px 8px; border: 1px solid var(--pc-border); border-radius: 2px; background: var(--pc-control); color: var(--pc-text); font: inherit; font-size: 10px; cursor: pointer; box-shadow: inset 0 1px #ffffff06, 0 1px 2px #0005; }
+    .pc-run-meter:hover { color: var(--pc-text); background: color-mix(in srgb, var(--pc-text) 7%, var(--pc-control)); }
     .pc-run-meter:focus-visible { outline: 2px solid var(--SmartThemeQuoteColor, #e18a24); outline-offset: 2px; }
     .pc-run-meter:disabled { cursor: default; }
     .pc-run-meter-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .pc-run-meter-elapsed { font-variant-numeric: tabular-nums; white-space: nowrap; color: #8e989d; }
+    .pc-run-meter-elapsed { font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--pc-muted); }
     .pc-run-meter-pixels { display: grid; grid-template-rows: repeat(3, 4px); grid-auto-columns: 4px; grid-auto-flow: column; gap: 2px; flex: none; }
     .pc-run-pixel { width: 4px; height: 4px; border-radius: 1px; background: #576069; }
     .pc-run-pixel[data-status="completed"] { background: #8aad96; }

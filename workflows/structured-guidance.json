@@ -119,9 +119,7 @@
         "from": "compose-json",
         "fromPort": "out",
         "to": "json-decode",
-        "toPort": "in",
-        "order": 0,
-        "kind": "merge"
+        "toPort": "in"
       },
       "wire-2": {
         "id": "wire-2",
@@ -129,9 +127,7 @@
         "from": "json-decode",
         "fromPort": "out",
         "to": "select-fields",
-        "toPort": "in",
-        "order": 0,
-        "kind": "merge"
+        "toPort": "in"
       },
       "wire-3": {
         "id": "wire-3",
@@ -139,9 +135,7 @@
         "from": "select-fields",
         "fromPort": "out",
         "to": "compose-guidance",
-        "toPort": "data",
-        "order": 0,
-        "kind": "merge"
+        "toPort": "data"
       },
       "wire-4": {
         "id": "wire-4",
@@ -149,9 +143,7 @@
         "from": "compose-guidance",
         "fromPort": "out",
         "to": "guidance",
-        "toPort": "in",
-        "order": 0,
-        "kind": "merge"
+        "toPort": "in"
       }
     },
     "groups": {},

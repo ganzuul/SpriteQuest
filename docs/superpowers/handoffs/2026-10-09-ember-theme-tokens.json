@@ -1,0 +1,30 @@
+{
+  "status": "user-approved",
+  "approvedOn": "2026-10-09",
+  "settings": {
+    "codename": "Ember",
+    "name": "Dark Lite",
+    "tokens": {
+      "SmartThemeBodyColor": "rgba(220, 220, 210, 1)",
+      "SmartThemeEmColor": "rgba(145, 145, 145, 1)",
+      "SmartThemeQuoteColor": "rgba(225, 138, 36, 1)",
+      "SmartThemeBlurTintColor": "rgba(23, 23, 23, 1)",
+      "SmartThemeChatTintColor": "rgba(23, 23, 23, 1)",
+      "SmartThemeUserMesBlurTintColor": "rgba(30, 30, 30, 0.9)",
+      "SmartThemeBotMesBlurTintColor": "rgba(30, 30, 30, 0.9)",
+      "SmartThemeBorderColor": "rgba(0, 0, 0, 0.5)",
+      "SmartThemeShadowColor": "rgba(0, 0, 0, 1)"
+    },
+    "canvasOverride": "#0f0f0f",
+    "nodeOverride": "rgba(40, 40, 40, 0.75)",
+    "nodeBorder": "none",
+    "nodeRadius": "6px",
+    "nodeDepth": "0 1px 2px #00000050",
+    "nodeAndShelfLabelBrightening": "32% theme text",
+    "portBrightening": "14% theme text"
+  },
+  "references": {
+    "nodes": "docs/images/themes/ember-nodes.png",
+    "workspace": "docs/images/themes/ember-workspace.png"
+  }
+}

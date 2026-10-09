@@ -21,14 +21,15 @@ const prop = (k) => root.style.getPropertyValue(`--pc-${k}`);
 const box = document.getElementById('drawer');
 E.renderThemeEditor(box);
 const names = [...box.querySelectorAll('.pc-th-preset .pc-th-name')].map(n => n.textContent);
-for (const want of ['SillyTavern', 'Midnight', 'Blueprint', 'Parchment', 'Neon', 'Terminal', 'Petal']) assert.ok(names.includes(want), want);
-assert.equal(box.querySelectorAll('.pc-th-preset')[0].querySelectorAll('.pc-th-swatch').length, 7, 'swatches preview each theme');
+for (const want of ['Ember', 'Lattice', 'SillyTavern', 'Midnight', 'Blueprint', 'Parchment', 'Neon', 'Terminal', 'Petal']) assert.ok(names.includes(want), want);
+assert.ok(box.querySelector('.pc-th-preset.pc-on').textContent.includes('Ember'), 'Fresh settings select the approved Ember preset');
+assert.equal(box.querySelectorAll('.pc-th-preset')[0].querySelectorAll('.pc-th-swatch').length, T.ROLES.filter(role => role.group === 'meaning').length, 'swatches preview current selection and feedback colors');
 
 // choose Blueprint
 [...box.querySelectorAll('.pc-th-preset')].find(b => b.textContent.includes('Blueprint')).click();
 assert.equal(T.currentTheme().preset, 'blueprint');
 assert.equal(prop('panel'), T.PRESETS['blueprint'].colors.panel);
-assert.equal(prop('generate'), T.PRESETS['blueprint'].colors.generate);
+assert.equal(prop('warn'), T.PRESETS['blueprint'].colors.warn);
 assert.ok([...box.querySelectorAll('.pc-th-preset.pc-on')].length === 1);
 
 // the look is on the page: Blueprint is sharp, mono, a grid, right-angled wires
@@ -52,21 +53,21 @@ assert.equal(prop('on-accent'), '#ffffff');
 
 // customise: pick a colour, see it live, get a look-alike warning, reset it
 box.querySelector('.pc-th-custom').open = true;
-const row = [...box.querySelectorAll('.pc-th-row')].find(r => r.textContent.includes('Append'));
+const row = [...box.querySelectorAll('.pc-th-row')].find(r => r.textContent.includes('Warnings'));
 const input = row.querySelector('input[type=color]');
 input.value = T.PRESETS['petal'].colors.flow;               // same as Flow
 input.dispatchEvent(new dom.window.Event('input'));
 input.dispatchEvent(new dom.window.Event('change'));
-assert.equal(T.currentTheme().custom.append, T.PRESETS['petal'].colors.flow);
+assert.equal(T.currentTheme().custom.warn, T.PRESETS['petal'].colors.flow);
 assert.ok(box.querySelector('.pc-th-custom').open, 'stays open while editing');
 assert.match(box.querySelector('.pc-th-warnings').textContent, /very close/);
 assert.match(box.querySelector('.pc-th-custom summary').textContent, /1 changed/);
-[...box.querySelectorAll('.pc-th-row')].find(r => r.textContent.includes('Append')).querySelector('.pc-th-reset').click();
-assert.equal(T.currentTheme().custom.append, undefined);
+[...box.querySelectorAll('.pc-th-row')].find(r => r.textContent.includes('Warnings')).querySelector('.pc-th-reset').click();
+assert.equal(T.currentTheme().custom.warn, undefined);
 assert.equal(box.querySelector('.pc-th-warnings'), null);
 
 // export / import through the editor
-T.setColor('decider', '#123456');
+T.setColor('error', '#123456');
 E.renderThemeEditor(box);
 box.querySelector('.pc-th-share').open = true;
 [...box.querySelectorAll('.pc-th-btn')].find(b => b.textContent === 'Copy my theme').click();
@@ -78,7 +79,7 @@ E.renderThemeEditor(box);
 box.querySelector('.pc-th-text').value = shared;
 [...box.querySelectorAll('.pc-th-btn')].find(b => b.textContent === 'Use pasted theme').click();
 assert.equal(T.currentTheme().preset, 'petal');
-assert.equal(T.currentTheme().custom.decider, '#123456');
+assert.equal(T.currentTheme().custom.error, '#123456');
 assert.match(box.querySelector('.pc-th-msg').textContent, /Now using/);
 
 // the workspace Tools menu opens the same editor

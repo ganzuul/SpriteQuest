@@ -83,7 +83,7 @@ test('private editor continuations include activation and view epoch while libra
 
 // Corrupt presentation cannot prevent a valid root from running, and recovery must be visible.
 test('corrupt persistence recovers visibly while current navigation and activation errors remain explicit', () => {
-    const session = create({ persisted: { version: 99 }, legacyView: { x: 44, y: 22, zoom: 0.8 } });
+    const session = create({ persisted: { version: 99 }, initialCamera: { x: 44, y: 22, zoom: 0.8 } });
     assert.equal(session.readRoot(), root);
     assert.deepEqual(session.readEditor().view.camera, { x: 44, y: 22, zoom: 0.8 });
     assert.deepEqual(session.project().warnings.map(warning => warning.code), ['VIEW_PERSISTENCE']);

@@ -1,18 +1,27 @@
 import { test, expect } from '@playwright/test';
-test('the real workbench opens with an Output card and no browser errors', async ({ page }) => {
-    const errors = [];
-    page.on('pageerror', error => errors.push(error.message));
-    await page.goto('/tests/browser/harness.html');
-    await page.waitForFunction(() => !!window.canvasHarness);
-    await expect(page.locator('.pc-root.pc-open')).toBeVisible();
+test('a settings-free launch opens the current disabled unassigned zero-request workflow', async ({ page }) => {
+    const errors = [], requests = [];
+    page.on('pageerror', error => errors.push(error.message)); page.on('request', request => requests.push(request.url()));
+    await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
+    await expect(page.locator('.pc-root.pc-open.pc-native-workspace')).toBeVisible();
     await expect(page.getByRole('dialog', { name: 'Lattice', exact: true })).toBeVisible();
     await expect(page.locator('.pc-brand')).toHaveText('LATTICE');
-    expect(await page.evaluate(() => window.lattice === window.sillyCanvas && window.lattice === window.promptCanvas && typeof window.lattice.open === 'function')).toBe(true);
-    expect(await page.evaluate(() => window.latticeGenerationInterceptor === window.comfyTavernGenerationInterceptor && typeof window.latticeGenerationInterceptor === 'function')).toBe(true);
-    await expect(page.locator('.pc-node-output')).toBeVisible();
-    const bounds = await page.locator('.pc-canvas-host').boundingBox();
-    expect(bounds.width).toBeGreaterThan(400);
-    expect(bounds.height).toBeGreaterThan(400);
+    const launch = await page.evaluate(async () => {
+        const h = window.canvasHarness, settings = h.S.settings();
+        const { validateWorkflow } = await import('/src/workflow/contracts.js?v=' + h.version);
+        const checked = validateWorkflow(h.graph);
+        return { fresh: h.freshSettingsAbsent, name: h.graph.name, schema: h.graph.schema, runtime: h.graph.runtime, enabled: settings.enabled,
+            bindings: settings.nativeBindings, bound: checked.data?.callBound, calls: h.providerCalls(), currentGlobal: typeof window.lattice.open === 'function',
+            oldGlobals: ['sillyCanvas','promptCanvas','comfyTavernGenerationInterceptor'].some(key => Object.hasOwn(window,key)),
+            mode: Object.hasOwn(settings,'workflowMode'), prepared: h.canvas.graph !== h.graph && !!h.canvas.graph.nativeCards };
+    });
+    expect(launch).toMatchObject({fresh:true,name:'Structured guidance',schema:3,runtime:2,enabled:false,bound:0,calls:0,currentGlobal:true,oldGlobals:false,mode:false,prepared:true});
+    expect(launch.bindings).toEqual({preGraphId:null,postGraphId:null});
+    await expect(page.locator('.pc-node-native')).toHaveCount(5);
+    await expect(page.locator('.pc-node-output,.pc-port-key,.pc-port-stage,.pc-tok')).toHaveCount(0);
+    await expect(page.getByLabel('Workflow mode',{exact:true})).toHaveCount(0);
+    await page.locator('.pc-root-run').click(); await expect(page.locator('.pc-run-meter-label')).toHaveText('Completed');
+    expect(await page.evaluate(()=>window.canvasHarness.providerCalls())).toBe(0);
+    expect(requests.filter(url=>new URL(url).pathname.startsWith('/api/'))).toEqual([]);
     expect(errors).toEqual([]);
-    expect(await page.evaluate(() => window.sillyCanvas.open === window.canvasHarness.UI.open && !!document.getElementById('pc-sendbar') && !!document.getElementById('pc-menu-launch'))).toBe(true);
 });

@@ -1,6 +1,6 @@
 import { chromium } from '@playwright/test';
 import { createServer } from 'node:http';
-import { readFile, cp, mkdir, mkdtemp, access } from 'node:fs/promises';
+import { readFile, cp, mkdir, mkdtemp, access, readdir } from 'node:fs/promises';
 import { join, resolve, extname, sep } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
@@ -9,11 +9,31 @@ const install = await mkdtemp(join(tmpdir(), 'lattice-install-'));
 for (const name of ['manifest.json', 'index.js', 'style.css', 'LICENSE', 'THIRD_PARTY_NOTICES.md', 'src', 'dist', 'assets']) await cp(join(root, name), join(install, name), { recursive: true });
 // Only the host mock accompanies the install; no developer UI source or dependencies.
 await mkdir(join(install, 'tests', 'browser'), { recursive: true });
-for (const name of ['tests/mock.js', 'tests/browser/harness.js', 'tests/browser/harness.html']) await cp(join(root, name), join(install, name));
+for (const name of ['tests/mock.js', 'tests/browser/harness.js', 'tests/browser/harness.html', 'tests/browser/native-fixture.mjs']) await cp(join(root, name), join(install, name));
 let hasDependencies = true;
 try { await access(join(install, 'node_modules')); } catch { hasDependencies = false; }
 if (hasDependencies) throw new Error('The installation smoke must run without node_modules');
-const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json' };
+const retired = new Set(['compile.js','memory.js','jev.js','thoughts.js','statevals.js','state-window.js','lore.js','expr.js','select.js','clip.js','model-combo.js','migration.js','legacy-insertion.js','domain-surfaces.js','graph-analysis.js']);
+// Browser runtime specifiers have explicit file extensions; extensionless JSDoc
+// import('./types') annotations do not add an installed module dependency.
+const runtimeImports = /(?:from\s*|import\s*\(?\s*|new\s+URL\s*\(\s*)['"]([^'"]+\.(?:m?js|json)(?:[?#][^'"]*)?)['"]/g;
+async function auditDirectory(path) {
+    for (const entry of await readdir(path, { withFileTypes: true })) {
+        const full = join(path, entry.name);
+        if (entry.isDirectory()) await auditDirectory(full);
+        else if (/\.m?js$/.test(entry.name)) {
+            if (retired.has(entry.name)) throw Error('Retired installed module: ' + full);
+            const code = await readFile(full, 'utf8');
+            for (const match of code.matchAll(runtimeImports)) {
+                const specifier = match[1].split(/[?#]/)[0];
+                if (retired.has(specifier.split('/').at(-1))) throw Error('Retired installed dependency: ' + match[1]);
+                if (specifier.startsWith('.')) await access(resolve(full, '..', specifier));
+            }
+        }
+    }
+}
+await auditDirectory(join(install, 'src')); await auditDirectory(join(install, 'dist'));
+const types = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json' };
 // Host-owned public exports are separate from the copied extension distribution.
 // The synthetic host is idle and only synchronizes its own mock chat messages.
 const publicHostModule = `
@@ -53,20 +73,21 @@ try {
     page.on('request', request => requests.push(request.url()));
     await page.goto(`http://127.0.0.1:${server.address().port}/tests/browser/harness.html`); await page.waitForFunction(() => !!window.canvasHarness);
     const result = await page.evaluate(async () => {
-        const { UI, S, canvas, settle } = window.canvasHarness, graph = canvas.graph, root = document.querySelector('.pc-root');
+        const h = window.canvasHarness, { UI, S, canvas, settle } = h, graph = h.graph, root = document.querySelector('.pc-root');
         const helpers = await import('/script.js'), context = globalThis.SillyTavern.getContext();
         const index = context.chat.length;
         const message = { mes: 'Synthetic original', swipe_id: 0, swipes: ['Synthetic original', 'Synthetic revision'], swipe_info: [{ send_date: 1, extra: {} }, { send_date: 2, extra: { revised: true } }], extra: { preserved: true } };
         context.chat.push(message);
         const publicHelpers = !helpers.isGenerating() && helpers.syncMesToSwipe(index) && message.swipe_info[0].extra.preserved === true && message.swipe_info[0].send_date === 1 && helpers.syncSwipeToMes(index, 1) && message.mes === 'Synthetic revision' && message.extra.revised === true && !helpers.syncMesToSwipe(index + 1) && !helpers.syncSwipeToMes(index, 9);
         context.chat.pop();
-        const node = S.addNode(graph, 'prompt', 40, 40); canvas.render(); canvas.select({ kind: 'node', id: node.id });
+        const node = Object.values(graph.nodes).find(node => node.operation === 'compose' && node.sections?.length); canvas.select({ kind: 'node', id: node.id });
         UI.close(); window.lattice.open(); await settle();
         return { publicHelpers, mounted: root === document.querySelector('.pc-root'), sharedGraph: graph === window.canvasHarness.graph,
             launchers: !!document.getElementById('pc-sendbar') && !!document.getElementById('pc-menu-launch'), workbench: root.dataset.pcWorkbench,
-            output: !!root.querySelector('.pc-node-output'), node: !!root.querySelector(`[data-id="${node.id}"]`) };
+            fresh: h.freshSettingsAbsent && graph.name === 'Structured guidance' && graph.schema === 3 && graph.runtime === 2 && !S.settings().enabled && S.settings().nativeBindings.preGraphId === null && S.settings().nativeBindings.postGraphId === null,
+            providerCalls: h.providerCalls(), retiredPins: !!root.querySelector('.pc-node-output,.pc-port-key,.pc-port-stage,.pc-tok'), node: !!root.querySelector(`[data-id="${node.id}"]`) };
     });
-    if (errors.length || missing.length || !result.publicHelpers || !result.mounted || !result.sharedGraph || !result.launchers || !result.output || !result.node || result.workbench !== 'svelte') throw Error(JSON.stringify({ result, errors, missing }));
+    if (errors.length || missing.length || !result.publicHelpers || !result.mounted || !result.sharedGraph || !result.launchers || !result.fresh || result.providerCalls || result.retiredPins || !result.node || result.workbench !== 'svelte') throw Error(JSON.stringify({ result, errors, missing }));
     if (requests.some(url => new URL(url).hostname !== '127.0.0.1')) throw Error('Production smoke made an external request');
     const apiRequests = requests.filter(url => new URL(url).pathname.startsWith('/api/')).length;
     if (apiRequests) throw Error('Production smoke made an unexpected host API/model request');

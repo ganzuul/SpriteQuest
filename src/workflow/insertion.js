@@ -1,13 +1,13 @@
-import { safeWorkflowData, validateGraphStructure } from './contracts.js?v=0.20.0';
-import { cloneWorkflowDocument } from './document.js?v=0.20.0';
-import { operationFor } from './catalog.js?v=0.20.0';
-import { graphDocumentSignature, graphSemanticSignature } from './ports.js?v=0.20.0';
-import { parseWorkflow } from './packages.js?v=0.20.0';
-import { inspectExpandedGraph } from './graph-validation.js?v=0.20.0';
-import { definitionRefKey, nodeBindingOverrideKey } from './definition-data.js?v=0.20.0';
-import { definitionChain, ownsDefinitionPath, pathStartsWith } from './composition-edit.js?v=0.20.0';
-import { prepareLocalDefinitionEdit } from './definition-library.js?v=0.20.0';
-import { prepareImportedDefinitionPins } from './definition-insertion.js?v=0.20.0';
+import { safeWorkflowData, validateGraphStructure } from './contracts.js?v=0.21.0';
+import { cloneWorkflowDocument } from './document.js?v=0.21.0';
+import { operationFor } from './catalog.js?v=0.21.0';
+import { graphDocumentSignature, graphSemanticSignature } from './ports.js?v=0.21.0';
+import { parseWorkflow } from './packages.js?v=0.21.0';
+import { inspectExpandedGraph } from './graph-validation.js?v=0.21.0';
+import { definitionRefKey, nodeBindingOverrideKey } from './definition-data.js?v=0.21.0';
+import { definitionChain, ownsDefinitionPath, pathStartsWith } from './composition-edit.js?v=0.21.0';
+import { prepareLocalDefinitionEdit } from './definition-library.js?v=0.21.0';
+import { prepareImportedDefinitionPins } from './definition-insertion.js?v=0.21.0';
 
 const fail = (code, message) => ({ ok: false, error: { code, message } });
 
@@ -174,8 +174,6 @@ export function prepareWorkflowInsertion(destination, imported, options = {}) {
             translate(group);
             if (group.frame) translate(group.frame);
             group.id = identityMap.groups[group.id];
-            if (group.entry !== undefined) group.entry = identityMap.nodes[group.entry];
-            if (group.exit !== undefined) group.exit = identityMap.nodes[group.exit];
             if (group.members !== undefined) group.members = group.members.map(id => identityMap.nodes[id]);
             candidate.groups[group.id] = group;
         }

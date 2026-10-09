@@ -6,10 +6,10 @@ Install from the repository's default branch using the steps below.
 
 ## Start with an example
 
-1. Open SillyTavern's **Extensions → Install extension**. Enter repository URL `https://github.com/MentallyQuill/Lattice`, leave **Branch or tag name (optional)** blank to install the default branch, click **Install** (or **Install just for me**), then reload. Open LATTICE beside Send or with `/canvas`.
+1. Open SillyTavern's **Extensions → Install extension**. Enter repository URL `https://github.com/MentallyQuill/Lattice`, leave **Branch or tag name (optional)** blank to install the default branch, click **Install** (or **Install just for me**), then reload. Open LATTICE beside Send or with `/lattice`.
 2. Open **Workflows → Workflow examples…** and choose **Install Scene guidance** or **Install Reviewed AI De-slop**. Each install creates its own editable graph and opens setup. Installing, importing, and editing never arm generation or make a model call.
 3. Choose a SillyTavern Connection Manager profile for each role: **Analysis** for scene guidance, **Prose** for repair. An optional role model override uses that model with the chosen profile. Inspect a model operation to override its connection/model independently.
-4. Use **Assign pre phase and enable native mode** for guidance, or **Assign post phase and enable native mode** for reviewed repair. Arming is a separate action. A missing/deleted profile or unsupported route blocks the run with a useful issue.
+4. Use **Assign pre phase** for guidance, or **Assign post phase** for reviewed repair. Arming is a separate action. A missing/deleted profile or unsupported route blocks the run with a useful issue.
 5. Use **Run** to inspect the workflow's result. To use guidance on normal sends, arm the extension and send as usual. For repair, wait for a completed assistant reply before running, then compare the candidate with the original.
 
 For an existing installation, update it in **Manage Extensions** and reload. If you need to change branches, select the desired branch in **Manage Extensions → Switch branch**, click **Switch**, then reload. Install URLs use the repository address above without a `/tree/` suffix.
@@ -41,7 +41,7 @@ Add exact **protected literal pins** to preserve every source message containing
 
 Response Plan proposes direction, actor intentions, constraints, and possible next beats. Its defaults are a 768-token completion cap and a 768-token guidance-artifact budget. Proposals are optional guidance, not established events. Adjust the operation's instructions to preserve the choices you want the user to make.
 
-On an armed native send, owned guidance is installed before native budgeting and cleared after the generation, failure, stop, or chat switch. A preparation failure clears guidance and leaves SillyTavern's ordinary generation available, with a visible failure report. Native mode does not replace the main prompt. Quiet/background, dry-run, and impersonation generations are skipped.
+On an enabled send, owned guidance is installed before native budgeting and cleared after the generation, failure, stop, or chat switch. A preparation failure clears guidance and leaves SillyTavern's ordinary generation available, with a visible failure report. Workflows do not replace the main prompt. Quiet/background, dry-run, and impersonation generations are skipped.
 
 ## Review a reply repair
 
@@ -57,7 +57,7 @@ Apply reports local in-memory success separately from persistence. The host's sa
 
 ## Share JSON
 
-The complete portable examples include [native-guidance.json](../workflows/native-guidance.json), [reviewed-de-slop.json](../workflows/reviewed-de-slop.json), and the zero-call examples in [the workspace guide](lattice-workspace.md). Use **File → Import canvas** to open a workflow, or **Import into graph…** to review an addition to the current graph. Export uses a versioned `lattice-workflow` package; composed workflows include their pinned subgraph definitions. Individual subgraphs export as their own JSON packages. Exports omit bound profile IDs and credentials, so imported model roles need local setup before running.
+The complete portable examples include [native-guidance.json](../workflows/native-guidance.json), [reviewed-de-slop.json](../workflows/reviewed-de-slop.json), and the zero-call examples in [the workspace guide](lattice-workspace.md). Use **File → Open workflow…** to open a workflow, or **Import into graph…** to review an addition to the current graph. Export uses a versioned `lattice-workflow` package; composed workflows include their pinned subgraph definitions. Individual subgraphs export as their own JSON packages. Exports omit bound profile IDs and credentials, so imported model roles need local setup before running.
 
 Do not paste API keys into workflow JSON, instructions, or model overrides. Unsupported package versions, dependencies, graph cycles, incompatible artifacts, and dangling wires are rejected before settings change.
 

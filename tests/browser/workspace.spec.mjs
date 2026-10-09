@@ -70,10 +70,10 @@ for (const selected of [true, false]) test(`divider Escape rolls back with ${sel
 for (const action of ['Copy', 'Cut', 'Delete selection']) test(`Edit menu supports group ${action}`, async ({ page }) => {
     await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
     const ids = await page.evaluate(() => window.canvasHarness.reset());
-    const groupId = await page.evaluate(ids => {
+    const groupId = await page.evaluate(async ids => {
         const h = window.canvasHarness; h.S.settings().ui.confirmDelete = false;
         const group = h.S.groupNodes(h.graph, ids.slice(0, 2), 'Menu group');
-        h.canvas.render(); h.canvas.select({ kind: 'group', id: group.id });
+        h.UI.refreshIfOpen(); await h.settle(); h.canvas.select({ kind: 'group', id: group.id });
         Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: text => { window.groupClipboard = text; return Promise.resolve(); } } });
         return group.id;
     }, ids);
@@ -89,7 +89,7 @@ for (const action of ['Copy', 'Cut', 'Delete selection']) test(`Edit menu suppor
     }
 });
 
-test('Edit menu allows wire deletion and protects output nodes from copy, cut and delete', async ({ page }) => {
+test('Edit menu allows named wire deletion and current node edits', async ({ page }) => {
     await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
     await page.evaluate(() => window.canvasHarness.reset());
     const wire = await page.evaluate(() => { const h = window.canvasHarness, id = Object.keys(h.graph.wires)[0]; h.canvas.select({ kind: 'wire', id }); return id; });
@@ -98,12 +98,12 @@ test('Edit menu allows wire deletion and protects output nodes from copy, cut an
     await expect(page.getByRole('menuitem', { name: /^Cut/ })).toBeDisabled();
     const deletion = page.getByRole('menuitem', { name: /^Delete selection/ }); await expect(deletion).toBeEnabled(); await deletion.click();
     expect(await page.evaluate(id => !!window.canvasHarness.graph.wires[id], wire)).toBe(false);
-    await page.evaluate(() => { const h = window.canvasHarness; h.canvas.select({ kind: 'node', id: h.S.outputNode(h.graph).id }); });
+    await page.evaluate(() => { const h = window.canvasHarness; h.canvas.select({ kind: 'node', id: Object.keys(h.graph.nodes)[0] }); });
     await page.getByRole('button', { name: 'Edit', exact: true }).click();
-    for (const name of [/^Copy/, /^Cut/, /^Delete selection/]) await expect(page.getByRole('menuitem', { name })).toBeDisabled();
+    for (const name of [/^Copy/, /^Cut/, /^Delete selection/]) await expect(page.getByRole('menuitem', { name })).toBeEnabled();
 });
 
-test('Inspect selection reveals Details and the Graph 1 tab has quote-orange keyboard focus', async ({ page }) => {
+test('Inspect selection reveals Details and the root tab has quote-orange keyboard focus', async ({ page }) => {
     await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
     const ids = await page.evaluate(() => window.canvasHarness.reset());
     await page.evaluate(id => window.canvasHarness.canvas.select({ kind: 'node', id }), ids[0]);
@@ -115,7 +115,7 @@ test('Inspect selection reveals Details and the Graph 1 tab has quote-orange key
     await page.getByRole('menuitem', { name: 'Inspect selection', exact: true }).click();
     await expect(page.locator('.pc-inspector')).toBeVisible();
     await page.getByRole('separator', { name: 'Resize preview' }).focus(); await page.keyboard.press('Tab');
-    const tab = page.getByRole('button', { name: 'Graph 1', exact: true });
+    const tab = page.locator('.pc-graph-tab[aria-selected="true"]');
     await expect(tab).toBeFocused(); await expect(tab).toHaveCSS('outline-color', 'rgb(225, 138, 36)');
 });
 
@@ -141,13 +141,13 @@ test('flat workspace menus support keyboard navigation, Escape and outside dismi
     expect(labels).toEqual(['File', 'Edit', 'Graph', 'Node', 'Preview', 'Workflows', 'Tools', 'Help']);
     const file = page.getByRole('button', { name: 'File', exact: true });
     await file.focus(); await page.keyboard.press('ArrowDown');
-    await expect(page.getByRole('menuitem', { name: 'New canvas', exact: true })).toBeFocused();
+    await expect(page.getByRole('menuitem', { name: 'New workflow', exact: true })).toBeFocused();
     await page.keyboard.press('ArrowRight');
     await expect(page.getByRole('menu', { name: 'Edit', exact: true })).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(page.getByRole('button', { name: 'Edit', exact: true })).toBeFocused();
     await expect(page.getByRole('dialog', { name: 'Lattice', exact: true })).toBeVisible();
-    await file.click(); await page.locator('.pc-preview-pane-head strong').click();
+    await file.click(); await page.locator('.pc-brand').click();
     await expect(page.getByRole('menu', { name: 'File', exact: true })).toHaveCount(0);
     await page.getByRole('button', { name: 'Setup', exact: true }).click();
     await expect(page.getByRole('dialog', { name: 'Workflow setup', exact: true })).toBeVisible();
@@ -166,11 +166,11 @@ test('shelf stays outside the camera and cascades align with their opening rows'
     const input = page.locator('[data-family="Input"]'); await input.focus(); await page.keyboard.press('ArrowRight');
     const row = await input.boundingBox(), family = await page.locator('.pc-family-menu').boundingBox();
     expect(family.y).toBeCloseTo(row.y, 0); expect(family.x).toBeGreaterThanOrEqual(row.x + row.width);
-    const category = page.getByRole('menu', { name: 'Input categories', exact: true }).getByRole('menuitem', { name: 'BLOCKS', exact: true }); await category.focus(); await page.keyboard.press('ArrowRight');
+    const category = page.getByRole('menu', { name: 'Input categories', exact: true }).getByRole('menuitem', { name: 'SOURCES', exact: true }); await category.focus(); await page.keyboard.press('ArrowRight');
     const opening = await category.boundingBox(), leaf = await page.locator('.pc-leaf-menu').boundingBox();
     expect(leaf.y).toBeCloseTo(opening.y, 0); expect(leaf.x).toBeGreaterThanOrEqual(family.x + family.width);
     const count = await page.evaluate(() => Object.keys(window.canvasHarness.graph.nodes).length);
-    await page.getByRole('menu', { name: 'Input nodes', exact: true }).getByRole('menuitem', { name: 'Prompt', exact: true }).click();
+    await page.getByRole('menu', { name: 'Input nodes', exact: true }).getByRole('menuitem', { name: /^Scene Context(?:\s|$)/ }).click();
     expect(await page.evaluate(() => Object.keys(window.canvasHarness.graph.nodes).length)).toBe(count + 1);
 });
 
@@ -190,7 +190,7 @@ for (const width of [1024, 736, 360, 320]) test(`workspace fits ${width}px and l
     await expect(page.locator('.pc-brand span')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Help', exact: true })).toBeInViewport();
     await page.locator('[data-family="Input"]').focus(); await page.keyboard.press('ArrowRight');
-    const category = page.getByRole('menu', { name: 'Input categories', exact: true }).getByRole('menuitem', { name: 'BLOCKS', exact: true });
+    const category = page.getByRole('menu', { name: 'Input categories', exact: true }).getByRole('menuitem', { name: 'SOURCES', exact: true });
     await category.focus(); await page.keyboard.press('ArrowRight');
     const menu = await page.locator('.pc-leaf-menu').boundingBox(), graph = await page.locator('.pc-canvas-area').boundingBox();
     expect(menu.x).toBeGreaterThanOrEqual(graph.x); expect(menu.x + menu.width).toBeLessThanOrEqual(graph.x + graph.width + 1);
@@ -218,7 +218,7 @@ test('root Run and Stop remain active while the preview divider resizes', async 
     expect(await page.evaluate(() => window.shellRequests)).toBe(1);
     for (const selected of [true, false]) for (const interruption of ['Escape', 'pointercancel', 'lost capture', 'blur', 'unmount']) {
         const selection = await page.evaluate(selected => {
-            const h = window.canvasHarness, id = Object.values(h.graph.nodes).find(node => node.type !== h.S.NODE_TYPES.OUTPUT).id;
+            const h = window.canvasHarness, id = Object.keys(h.graph.nodes)[0];
             h.canvas.select(selected ? { kind: 'node', id } : null);
             window.dividerHandle = document.querySelector('.pc-pane-divider');
             window.dividerHandle.addEventListener('pointerdown', event => { window.dividerPointer = event.pointerId; });
@@ -248,11 +248,16 @@ test('root Run and Stop remain active while the preview divider resizes', async 
 test('preview divider redistributes panes without changing the graph camera, selection or cards', async ({ page }) => {
     await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
     const ids = await page.evaluate(() => window.canvasHarness.reset());
-    await page.evaluate(() => window.canvasHarness.UI.runPreview());
     await page.evaluate(async id => {
         const { canvas, view } = window.canvasHarness;
         canvas.select({ kind: 'node', id }); await view({ x: 170, y: 100, zoom: .8 });
-        window.workspaceProbe = { card: document.querySelector(`.pc-node[data-id="${id}"]`), camera: { ...canvas.view }, selection: canvas.selection.id, preview: document.querySelector('.pc-preview'), previewText: document.querySelector('.pc-preview').textContent };
+    }, ids[0]);
+    await page.locator('.pc-output-preview [data-run-here]').click();
+    await expect(page.locator('.pc-run-meter-label')).toHaveText('Completed');
+    await expect(page.locator('.pc-output-preview [role="tabpanel"] pre')).toContainText('Synthetic rendering fixture.');
+    await page.evaluate(id => {
+        const { canvas } = window.canvasHarness;
+        window.workspaceProbe = { card: document.querySelector(`.pc-node[data-id="${id}"]`), camera: { ...canvas.view }, selection: canvas.selection.id, preview: document.querySelector('.pc-output-preview'), previewText: document.querySelector('.pc-output-preview').textContent };
     }, ids[0]);
     const graph = page.locator('.pc-canvas-host'), preview = page.locator('.pc-preview-pane');
     const divider = page.getByRole('separator', { name: 'Resize preview' });
@@ -268,7 +273,7 @@ test('preview divider redistributes panes without changing the graph camera, sel
     await previewMenu(page, 'Show preview');
     const preserved = await page.evaluate(id => {
         const { canvas } = window.canvasHarness, probe = window.workspaceProbe;
-        return { card: probe.card === document.querySelector(`.pc-node[data-id="${id}"]`), camera: { ...canvas.view }, selection: canvas.selection.id, preview: probe.preview === document.querySelector('.pc-preview') && probe.previewText === document.querySelector('.pc-preview').textContent };
+        return { card: probe.card === document.querySelector(`.pc-node[data-id="${id}"]`), camera: { ...canvas.view }, selection: canvas.selection.id, preview: probe.preview === document.querySelector('.pc-output-preview') && probe.previewText === document.querySelector('.pc-output-preview').textContent };
     }, ids[0]);
     expect(preserved.card).toBe(true);
     expect(preserved.preview).toBe(true);

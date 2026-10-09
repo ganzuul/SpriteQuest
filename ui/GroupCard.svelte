@@ -1,8 +1,8 @@
 <script lang="ts">
     import type { GroupCardData, CanvasActions } from './types';
     let { group, actions }: { group: GroupCardData; actions: CanvasActions } = $props();
-    function down(event: MouseEvent, action: string) { event.stopPropagation(); event.preventDefault(); actions.group(group.id, action); }
-    function keyboardClick(event: MouseEvent, action: string) { event.stopPropagation(); if (event.detail === 0) actions.group(group.id, action); }
+    function down(event: MouseEvent, action: 'open' | 'collapse') { event.stopPropagation(); event.preventDefault(); actions.group(group.id, action); }
+    function keyboardClick(event: MouseEvent, action: 'open' | 'collapse') { event.stopPropagation(); if (event.detail === 0) actions.group(group.id, action); }
 </script>
 <div class={group.className} data-group={group.id} role="group" aria-label={`Group: ${group.title}`} style:left={`${group.x}px`} style:top={`${group.y}px`} style:width={`${group.w}px`} style:height={group.collapsed ? undefined : `${group.h}px`}>
     <div class={group.collapsed ? 'pc-node-head' : 'pc-group-frame-head'}>

@@ -49,3 +49,9 @@ const metadata = {
 const palette = Object.freeze(Object.fromEntries(Object.entries(metadata).map(([id, [group, shortcode, icon]]) => [id, Object.freeze({ group, shortcode, icon })])));
 const unknown = Object.freeze({ group: 'Blocks', shortcode: '', icon: cube });
 export const paletteForOperation = operation => Object.hasOwn(palette, operation) ? palette[operation] : unknown;
+/** Current authored fields and local view overrides become typed display values. */
+export function readNodePresentation(node = {}, overlay = {}) {
+    const alias = overlay?.alias ?? node?.presentation?.alias ?? node?.alias;
+    const compact = overlay?.compact ?? node?.presentation?.compact ?? node?.compact;
+    return { alias: typeof alias === 'string' ? alias.slice(0, 80) : '', compact: compact === true };
+}

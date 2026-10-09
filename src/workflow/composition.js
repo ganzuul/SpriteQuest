@@ -1,13 +1,13 @@
-import { safeWorkflowData } from './contracts.js?v=0.20.0';
-import { cloneWorkflowDocument } from './document.js?v=0.20.0';
-import { portsForNode } from './catalog.js?v=0.20.0';
-import { cloneDefinitionData } from './definitions.js?v=0.20.0';
-import { prepareQualifiedScopeEdit } from './definition-library.js?v=0.20.0';
-import { safeId } from './composition-edit.js?v=0.20.0';
-import { prepareGraphCandidate } from './prepared-graph-edit.js?v=0.20.0';
-export { prepareGraphCandidate } from './prepared-graph-edit.js?v=0.20.0';
-export { prepareCreateFromSelection, prepareUnpack } from './composition-transform.js?v=0.20.0';
-export { prepareCompositionViews } from './composition-views.js?v=0.20.0';
+import { safeWorkflowData } from './contracts.js?v=0.21.0';
+import { cloneWorkflowDocument } from './document.js?v=0.21.0';
+import { portsForNode } from './catalog.js?v=0.21.0';
+import { cloneDefinitionData } from './definitions.js?v=0.21.0';
+import { prepareQualifiedScopeEdit } from './definition-library.js?v=0.21.0';
+import { safeId } from './composition-edit.js?v=0.21.0';
+import { prepareGraphCandidate } from './prepared-graph-edit.js?v=0.21.0';
+export { prepareGraphCandidate } from './prepared-graph-edit.js?v=0.21.0';
+export { prepareCreateFromSelection, prepareUnpack } from './composition-transform.js?v=0.21.0';
+export { prepareCompositionViews } from './composition-views.js?v=0.21.0';
 
 const fail = (code, message) => ({ ok: false, error: { code, message } });
 const record = value => value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -26,8 +26,7 @@ function sourcePort(graph, source) {
 }
 function restoreWire(candidate, wire) {
     const source = candidate.portals[wire.portalId].source;
-    candidate.wires[wire.id] = { id: wire.id, route: 'wire', from: source.nodeId, fromPort: source.portId, to: wire.to, toPort: wire.toPort,
-        ...(wire.order === undefined ? {} : { order: wire.order }), ...(wire.kind === undefined ? {} : { kind: wire.kind }) };
+    candidate.wires[wire.id] = { id: wire.id, route: 'wire', from: source.nodeId, fromPort: source.portId, to: wire.to, toPort: wire.toPort };
 }
 
 function applyPortal(context, command) {
@@ -84,7 +83,7 @@ function applyPortal(context, command) {
     if (command.publisher.kind === 'create') { const created = applyPortal(context, { kind: 'create', source, label: command.publisher.label, ...(command.publisher.id === undefined ? {} : { id: command.publisher.id }) }); if (!created.ok) return created; portalId = created.data.createdPortalId; }
     const portal = publisher(candidate, portalId);
     if (!portal || portal.kind !== port.kind || portal.source.nodeId !== source.nodeId || portal.source.portId !== source.portId) return fail('INVALID_PORTAL', 'The selected publisher must match this exact wire output.');
-    candidate.wires[wire.id] = { id: wire.id, route: 'portal', portalId, to: wire.to, toPort: wire.toPort, ...(wire.order === undefined ? {} : { order: wire.order }), ...(wire.kind === undefined ? {} : { kind: wire.kind }) };
+    candidate.wires[wire.id] = { id: wire.id, route: 'portal', portalId, to: wire.to, toPort: wire.toPort };
     return result([], [], { convertedEdgeId: wire.id, portalId });
 }
 

@@ -2,7 +2,7 @@
 
 [Documentation](README.md) · [Operator's manual](operators-manual.md) · [Model setup](native-workflows.md)
 
-This reference covers the **16 shipped operations** in LATTICE 0.20.0 and the structural nodes used by subgraphs. A starter is a complete workflow built from operations; a subgraph is a reusable process with its own interface. Neither is an extra model engine.
+This reference covers the **16 shipped operations** in LATTICE 0.21.0 and the structural nodes used by subgraphs. A starter is a complete workflow built from operations; a subgraph is a reusable process with its own interface. Neither is an extra model engine.
 
 ## Read the graph's types
 
@@ -227,7 +227,7 @@ Expose a Guidance artifact as the workflow's host result and enforce its token b
 
 **Controls:** `budgetTokens` (default 768).
 
-**Connect:** Response Plan or Compose with Guidance output → Guidance. A manual Run records a preview. On an assigned, enabled, armed pre workflow, Send installs the bounded guidance for that generation and clears it afterward.
+**Connect:** Response Plan or Compose with Guidance output → Guidance. A manual Run records a preview. On an assigned, enabled pre workflow, Send installs the bounded guidance for that generation and clears it afterward.
 
 ### Review Gate
 

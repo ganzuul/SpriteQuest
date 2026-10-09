@@ -34,7 +34,7 @@
     }
     function copySelector(value: DetailReviewSelector): DetailReviewSelector {
         const terminal = { kind: 'terminal' as const, address: { ...value.terminal.address, instancePath: [...value.terminal.address.instancePath] } };
-        return 'kind' in value ? { kind: 'schema2-candidate', reviewId: value.reviewId, terminal } : { handleId: value.handleId, runId: value.runId, terminal };
+        return { handleId: value.handleId, runId: value.runId, terminal };
     }
 </script>
 
@@ -115,5 +115,17 @@
     footer { flex: 0 0 auto; display: flex; flex-wrap: wrap; align-items: center; gap: 2px 10px; padding: 4px 10px; color: var(--pc-muted, #a1a59b); background: var(--pc-raised, #353632); }
     footer button { color: var(--pc-text, #deded9); }
     .pc-preview-status[data-status='stale'] { color: #c6ad75; } .pc-preview-status[data-status='removed'] { color: #e08f8f; }
-    @media (max-width: 480px) { h3 { flex-basis: 100%; } .pc-preview-choice { flex: 1 1 100%; } .pc-preview-sections { padding: 10px 12px; } }
+    @media (max-width: 480px) {
+        header { gap: 3px; padding: 5px 8px; }
+        h3 { flex-basis: 100%; font-size: 13px; }
+        .pc-preview-choice { flex: 1 1 100%; }
+        .pc-preview-tools { flex-wrap: nowrap; width: 100%; }
+        .pc-preview-tools button { flex: 1 1 auto; min-width: 0; padding: 3px 4px; font-size: 11px; }
+        .pc-preview-tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; }
+        .pc-preview-tabs button { flex: 0 0 auto; }
+        .pc-preview-sections { min-height: 55px; padding: 8px 12px; }
+        header, footer { flex-shrink: 1; min-height: 0; overflow-y: auto; }
+        footer { padding: 3px 8px; gap: 0 7px; }
+        footer button { padding: 3px 4px; font-size: 11px; }
+    }
 </style>

@@ -90,7 +90,7 @@ async function activateNestedWorkspace(page, arrange = false) {
         }
         h.S.settings().graphs[root.id] = root; h.UI.refreshIfOpen(); return root.id;
     }, arrange);
-    await page.getByRole('combobox', { name: 'Canvas', exact: true }).selectOption(id);
+    await page.getByRole('combobox', { name: 'Workflow', exact: true }).selectOption(id);
     await page.evaluate(() => window.canvasHarness.settle());
     return id;
 }

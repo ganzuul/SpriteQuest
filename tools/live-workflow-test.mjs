@@ -199,17 +199,26 @@ export async function runSyntheticFixtures({version,profileId},dependencies) {
                 try {result=await connections.requestModel(input,host);} catch {result={ok:false,error:{code:'REQUEST_FAILED',message:'Production adapter failed.'}};}
                 await finish(result);return result;
             }});
-            const summarize=(label,result)=>({label,ok:result.ok,error:result.error?.code ?? null,callBound:result.callBound,actualCalls:result.actualCalls,reports:result.reports,calls:result.calls.map(call=>({nodeId:call.nodeId,model:call.binding.model,maxTokens:call.maxTokens,elapsedMs:call.elapsedMs,tokenCount:call.tokenCount,finish:call.result?.finish ?? call.error?.finish ?? null,usage:safeUsage(call.result?.usage ?? call.error?.usage),error:call.error?.code ?? null,output:call.result?.text ?? null})),constraints:label.startsWith('plain compactor') ? {
-                pinPreserved:result.artifact?.context?.messages?.some(message=>message.id==='recent' && message.text===contextArtifact.messages[1].text) ?? false,
-                compactionWithinBudget:result.reports.some(report=>report.code==='COMPACTION' && report.tokens<=700),
-                guidanceWithinBudget:result.reports.some(report=>report.code==='GUIDANCE_BUDGET' && report.tokens<=report.budget),
-                guidancePublished:false,
-            } : {
-                originalPreserved:result.artifact?.original===text,
-                unselectedTextPreserved:result.artifact?.text?.startsWith(text.slice(0,text.indexOf('a testament to')))===true && result.artifact?.text?.endsWith(text.slice(text.indexOf('a testament to')+'a testament to'.length))===true,
-                reviewRequired:result.artifact?.reviewRequired===true,
-                applyInvoked:false,
-            },artifact:result.artifact ? {kind:result.artifact.kind,text:result.artifact.text ?? null,messages:result.artifact.kind==='context' ? result.artifact.messages : undefined,changes:result.artifact.changes} : null});
+            const summarize=(label,result)=>{
+                const record=result.recording, units=record?.units ?? [], ids=record?.identities;
+                const id=unit=>ids.strings[ids.addresses[unit.address][2]];
+                const outputs=nodeId=>units.filter(unit=>id(unit)===nodeId).flatMap(unit=>unit.ports.filter(port=>port.direction==='output').map(port=>record.artifacts[port.artifact])).filter(Boolean);
+                const value=entry=>entry?.format==='structured' ? entry.value : null;
+                const compact=outputs('smart-compactor').map(value).find(Boolean);
+                const terminal=record?.artifacts[record?.terminals[0]?.artifact], artifact=value(terminal);
+                const reports=units.flatMap(unit=>unit.reports ?? []);
+                return {label,ok:result.ok,error:result.error?.code ?? null,callBound:result.callBound,actualCalls:result.actualCalls,
+                    recording:{status:record?.status ?? 'invalid',rows:units.map(unit=>({nodeId:id(unit),status:unit.status,attempts:unit.attempts,binding:unit.binding ? {model:unit.binding.model,role:unit.binding.role} : null,request:unit.request ? {maxTokens:unit.request.maxTokens,finish:unit.request.finish,usage:safeUsage(unit.request.usage)} : null})),
+                        terminal:terminal ? {kind:terminal.kind,format:terminal.format,text:typeof artifact?.text==='string' ? artifact.text.slice(0,65536) : null} : null},
+                    review:{required:artifact?.reviewRequired===true,handle:null},
+                    constraints:label.startsWith('plain compactor') ? {
+                        pinPreserved:compact?.messages?.some(message=>message.id==='recent' && message.text===contextArtifact.messages[1].text) ?? false,
+                        compactionWithinBudget:reports.some(report=>report.code==='COMPACTION' && report.tokens<=700),
+                        guidanceWithinBudget:reports.some(report=>report.code==='GUIDANCE_BUDGET' && report.tokens<=pre.nodes.guidance.budgetTokens),guidancePublished:false,
+                    } : {originalPreserved:artifact?.original===text,
+                        unselectedTextPreserved:artifact?.text?.startsWith(text.slice(0,text.indexOf('a testament to')))===true && artifact?.text?.endsWith(text.slice(text.indexOf('a testament to')+'a testament to'.length))===true,
+                        reviewRequired:artifact?.reviewRequired===true,applyInvoked:false}};
+            };
             const first=await runtime.runWorkflow(pre,ports(contextArtifact));
             const results=[summarize('plain compactor + thinking planner',first)];
             await progress(results[0]);
@@ -287,12 +296,13 @@ function sanitizeFixture(value) {
     if (!['plain compactor + thinking planner','plain repair; candidate only, no Apply'].includes(value?.label)) throw Error('Unknown fixture progress.');
     const texts=value=>typeof value==='string' ? value.slice(0,100000) : null;
     const constraints=['pinPreserved','compactionWithinBudget','guidanceWithinBudget','guidancePublished','originalPreserved','unselectedTextPreserved','reviewRequired','applyInvoked'];
-    const reportKeys=['code','tokens','method','budget','retainedMessageIds','removedMessageIds','summarizedMessageIds','inputOmittedMessageIds','originalRetained','messageIds'];
-    const reports=(value.reports ?? []).map(report=>Object.fromEntries(reportKeys.filter(key=>Object.hasOwn(report,key)).map(key=>[key,structuredClone(report[key])])));
-    return {label:value.label,ok:value.ok===true,error:safeCode(value.error),callBound:value.callBound,actualCalls:value.actualCalls,reports,
+    const recording=value.recording, terminal=recording?.terminal;
+    return {label:value.label,ok:value.ok===true,error:safeCode(value.error),callBound:integer(value.callBound,0,3) ? value.callBound : null,actualCalls:integer(value.actualCalls,0,3) ? value.actualCalls : null,
         constraints:Object.fromEntries(constraints.filter(key=>typeof value.constraints?.[key]==='boolean').map(key=>[key,value.constraints[key]])),
-        calls:(value.calls ?? []).map(call=>({nodeId:['smart-compactor','response-plan','repair'].includes(call.nodeId) ? call.nodeId : null,model:APPROVED_MODELS.includes(call.model) ? call.model : null,maxTokens:integer(call.maxTokens,1,4096) ? call.maxTokens : null,elapsedMs:Number.isFinite(call.elapsedMs) ? call.elapsedMs : null,tokenCount:call.tokenCount && {tokens:Number.isFinite(call.tokenCount.tokens) ? call.tokenCount.tokens : null,method:['host-tokenizer','character-estimate'].includes(call.tokenCount.method) ? call.tokenCount.method : null},finish:safeFinish(call.finish),usage:safeUsage(call.usage),error:safeCode(call.error),output:texts(call.output)})),
-        artifact:value.artifact ? {kind:['context','guidance','candidate','draft'].includes(value.artifact.kind) ? value.artifact.kind : null,text:texts(value.artifact.text)} : null,
+        recording:{status:['completed','failed','cancelled','invalid','stale'].includes(recording?.status) ? recording.status : null,
+            rows:(recording?.rows ?? []).slice(0,16).map(row=>({nodeId:['scene-context','smart-compactor','response-plan','guidance','reply-snapshot','pattern-scan','repair','validate-patches','review-gate','apply-reply'].includes(row.nodeId) ? row.nodeId : null,status:['waiting','not-run','running','completed','failed','blocked','cancelled'].includes(row.status) ? row.status : null,attempts:integer(row.attempts,0,3) ? row.attempts : null,binding:row.binding ? {model:APPROVED_MODELS.includes(row.binding.model) ? row.binding.model : null,role:['Analysis','Prose'].includes(row.binding.role) ? row.binding.role : null} : null,request:row.request ? {maxTokens:integer(row.request.maxTokens,1,4096) ? row.request.maxTokens : null,finish:safeFinish(row.request.finish),usage:safeUsage(row.request.usage)} : null})),
+            terminal:terminal ? {kind:['context','guidance','candidate','draft'].includes(terminal.kind) ? terminal.kind : null,format:['structured','json-prefix-text','omitted'].includes(terminal.format) ? terminal.format : null,text:texts(terminal.text)} : null},
+        review:{required:value.review?.required===true,handle:null},
     };
 }
 

@@ -1,13 +1,13 @@
-import { operationFor } from './catalog.js?v=0.20.0';
-import { cloneWorkflowDocument } from './document.js?v=0.20.0';
-import { resolveWorkflow } from './resolve.js?v=0.20.0';
-import { compactContext, formatContext } from './compactor.js?v=0.20.0';
-import { scanDraft, repairDraft, validatePatches } from './repair.js?v=0.20.0';
-import { graphSemanticSignature } from './ports.js?v=0.20.0';
-import { executePrimitive, PRIMITIVE_OPERATIONS } from './operations/nodes.js?v=0.20.0';
-import { executeContextJoin } from './operations/context-join.js?v=0.20.0';
-import { admitRunPlan, createRunRecorder } from './recording.js?v=0.20.0';
-import { addressKey, freeze, own, parseRunPlan, safeBinding, safeError, safeUsage, boundedText } from './record-data.js?v=0.20.0';
+import { operationFor } from './catalog.js?v=0.21.0';
+import { cloneWorkflowDocument } from './document.js?v=0.21.0';
+import { resolveWorkflow } from './resolve.js?v=0.21.0';
+import { compactContext, formatContext } from './compactor.js?v=0.21.0';
+import { scanDraft, repairDraft, validatePatches } from './repair.js?v=0.21.0';
+import { graphSemanticSignature } from './ports.js?v=0.21.0';
+import { executePrimitive, PRIMITIVE_OPERATIONS } from './operations/nodes.js?v=0.21.0';
+import { executeContextJoin } from './operations/context-join.js?v=0.21.0';
+import { admitRunPlan, createRunRecorder } from './recording.js?v=0.21.0';
+import { addressKey, freeze, own, parseRunPlan, safeBinding, safeError, safeUsage, boundedText } from './record-data.js?v=0.21.0';
 
 /** Execution identity shared by the host and UI. Canvas presentation never invalidates work. */
 export const workflowSignature = graphSemanticSignature;

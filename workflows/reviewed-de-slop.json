@@ -119,9 +119,7 @@
         "from": "reply-snapshot",
         "fromPort": "out",
         "to": "pattern-scan",
-        "toPort": "in",
-        "order": 0,
-        "kind": "merge"
+        "toPort": "in"
       },
       "wire-2": {
         "id": "wire-2",
@@ -129,9 +127,7 @@
         "from": "pattern-scan",
         "fromPort": "out",
         "to": "repair",
-        "toPort": "in",
-        "order": 0,
-        "kind": "merge"
+        "toPort": "in"
       },
       "wire-3": {
         "id": "wire-3",
@@ -139,9 +135,7 @@
         "from": "repair",
         "fromPort": "out",
         "to": "validate-patches",
-        "toPort": "in",
-        "order": 0,
-        "kind": "merge"
+        "toPort": "in"
       },
       "wire-4": {
         "id": "wire-4",
@@ -149,9 +143,7 @@
         "from": "validate-patches",
         "fromPort": "out",
         "to": "review-gate",
-        "toPort": "in",
-        "order": 0,
-        "kind": "merge"
+        "toPort": "in"
       },
       "wire-5": {
         "id": "wire-5",
@@ -159,9 +151,7 @@
         "from": "review-gate",
         "fromPort": "out",
         "to": "apply-reply",
-        "toPort": "in",
-        "order": 0,
-        "kind": "merge"
+        "toPort": "in"
       }
     },
     "groups": {
@@ -172,18 +162,11 @@
         "y": 140,
         "w": 260,
         "collapsed": true,
-        "enabled": true,
-        "entry": "pattern-scan",
-        "exit": "validate-patches",
         "members": [
           "pattern-scan",
           "repair",
           "validate-patches"
-        ],
-        "component": {
-          "id": "ai-de-slop",
-          "version": 1
-        }
+        ]
       }
     },
     "roles": {

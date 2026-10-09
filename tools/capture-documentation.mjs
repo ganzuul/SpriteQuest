@@ -100,7 +100,7 @@ try {
                     ['recent', 'recent-context', 'out', 'context-join', 'context-2'],
                     ['plan', 'context-join', 'out', 'response-plan', 'in'],
                     ['publish', 'response-plan', 'out', 'guidance', 'in'],
-                ].map(([id, from, fromPort, to, toPort]) => [id, { id, route: 'wire', from, fromPort, to, toPort, order: 0, kind: 'merge' }]));
+                ].map(([id, from, fromPort, to, toPort]) => [id, { id, route: 'wire', from, fromPort, to, toPort }]));
             }
             const checked = validateGraphStructure(graph);
             if (!checked.ok) throw new Error(JSON.stringify(checked.error));
@@ -109,9 +109,8 @@ try {
             if (!['native-guidance', 'branching'].includes(kind)) await (await import('/src/run.js?v=' + v)).initializeNativeWorkflowController();
             return graph.id;
         }, kind);
-        await page.getByRole('combobox', { name: 'Canvas', exact: true }).selectOption(id);
+        await page.getByRole('combobox', { name: 'Workflow', exact: true }).selectOption(id);
         await page.evaluate(async () => { await window.canvasHarness.settle(); window.canvasHarness.canvas.fit(); await window.canvasHarness.settle(); await document.fonts.ready; });
-        if (await page.getByRole('button', { name: 'Toggle library' }).getAttribute('aria-pressed') === 'true') await page.getByRole('button', { name: 'Toggle library' }).click();
         if (await page.getByRole('button', { name: 'Toggle inspector' }).getAttribute('aria-pressed') !== 'true') await page.getByRole('button', { name: 'Toggle inspector' }).click();
         await page.evaluate(() => window.canvasHarness.settle());
         await fit();
@@ -270,6 +269,7 @@ try {
     await activate('branching');
     await select('context-join');
     await shot('context-assembly');
+    if (evidence.screenshots.length !== 20 || evidence.runs.some(run => run.calls !== 0)) throw new Error('Required twenty sanitized screenshots or zero-request demonstrations were omitted.');
     if (evidence.errors.length || evidence.blockedRequests.length) throw new Error(JSON.stringify(evidence));
     evidence.status = 'passed';
     console.log(JSON.stringify({ captured: evidence.screenshots.length, errors: evidence.errors, blockedRequests: evidence.blockedRequests }));

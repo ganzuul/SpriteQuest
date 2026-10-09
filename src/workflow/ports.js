@@ -1,7 +1,7 @@
-import { safeWorkflowData, validateGraphStructure } from './contracts.js?v=0.20.0';
-import { cloneWorkflowDocument } from './document.js?v=0.20.0';
-import { operationFor, describeOperation, semanticControlsForNode } from './catalog.js?v=0.20.0';
-export { portsForNode } from './catalog.js?v=0.20.0';
+import { safeWorkflowData, validateGraphStructure } from './contracts.js?v=0.21.0';
+import { cloneWorkflowDocument } from './document.js?v=0.21.0';
+import { operationFor, describeOperation, semanticControlsForNode } from './catalog.js?v=0.21.0';
+export { portsForNode } from './catalog.js?v=0.21.0';
 
 const fail = (code, message) => ({ ok: false, error: { code, message } });
 const endpoint = value => value && typeof value === 'object' && !Array.isArray(value) && typeof value.nodeId === 'string' && typeof value.portId === 'string';
@@ -70,7 +70,7 @@ export function prepareConnection(graph, command) {
     let next = 1;
     while (Object.hasOwn(graph.wires, `edge-${next}`)) next++;
     const id = `edge-${next}`;
-    candidate.wires[id] = { id, route: 'wire', from: from.nodeId, fromPort: from.portId, to: to.nodeId, toPort: to.portId, order: 0 };
+    candidate.wires[id] = { id, route: 'wire', from: from.nodeId, fromPort: from.portId, to: to.nodeId, toPort: to.portId };
     const validation = validateGraphStructure(candidate);
     return validation.ok ? prepared(graph, candidate, [id], removed) : validation;
 }

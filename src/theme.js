@@ -1,6 +1,6 @@
 /** Lattice workspace themes and explicit user overrides. */
 
-import { settings, save, safe } from './state.js?v=0.20.0';
+import { settings, save, safe } from './state.js?v=0.21.0';
 
 /** The roles, in the order the editor lists them. */
 export const ROLES = [
@@ -45,8 +45,13 @@ const WEIGHTS = { thin: [1, 1.6], normal: [1, 2.5], bold: [2, 3.5] };
  * theme; the others set everything, and each has a look of its own.
  */
 export const PRESETS = {
+    ember: {
+        name: 'Ember', note: 'The approved neutral canvas and soft translucent cards, with SillyTavern surfaces, text and orange accent.',
+        style: { ...DEFAULT_STYLE },
+        colors: { panel: '#171717', block: 'rgba(40, 40, 40, 0.75)', canvas: '#0f0f0f', border: 'rgba(0, 0, 0, 0.5)', text: '#dcdcd2', muted: '#919191', flow: '#e18a24', warn: '#e3c341', error: '#e57676' },
+    },
     lattice: {
-        name: 'Lattice', note: 'The approved charcoal workspace, with SillyTavern quote color as its accent.',
+        name: 'Lattice', note: 'Charcoal surfaces with SillyTavern quote color as their accent.',
         style: { ...DEFAULT_STYLE },
         colors: { panel: '#202220', block: '#191b19', canvas: '#292a28', border: '#41433e', text: '#e7e8e4', muted: '#aaa99e', flow: '#ffb554', warn: '#e3c341', error: '#e57676' },
     },
@@ -124,7 +129,8 @@ export const PRESETS = {
 
 
 
-export const DEFAULT_PRESET = 'lattice';
+export const DEFAULT_PRESET = 'ember';
+const EMBER_HOST_ROLES = { panel: 'SmartThemeBlurTintColor', text: 'SmartThemeBodyColor', muted: 'SmartThemeEmColor', border: 'SmartThemeBorderColor', flow: 'SmartThemeQuoteColor' };
 
 /* ------------------------------------------------------------------ */
 /* colour maths                                                        */
@@ -207,9 +213,14 @@ function store() {
 export function currentTheme() {
     const t = store();
     const p = PRESETS[t.preset];
+    const colors = { ...p.colors, ...t.colors };
+    if (t.preset === 'ember') for (const [role, token] of Object.entries(EMBER_HOST_ROLES)) if (!Object.hasOwn(t.colors, role)) {
+        const inherited = safe(() => getComputedStyle(document.documentElement).getPropertyValue('--' + token).trim());
+        if (parseColor(inherited)) colors[role] = inherited;
+    }
     return {
         preset: t.preset,
-        colors: { ...p.colors, ...t.colors },
+        colors,
         custom: { ...t.colors },
         style: { ...DEFAULT_STYLE, ...p.style, ...t.style },
         customStyle: { ...t.style },
@@ -269,9 +280,10 @@ function measuredSurfaces(colors) {
 export function applyTheme() {
     const doc = globalThis.document;
     if (!doc?.documentElement) return;
-    const { colors, style, preset } = currentTheme();
+    const { colors, style, preset, custom } = currentTheme();
     const root = doc.documentElement.style;
     const data = doc.documentElement.dataset;
+    data.pcPreset = preset;
 
     // The look: data attributes for style.css, and a few sizes as variables.
     for (const part of Object.keys(STYLE_OPTIONS)) data[`pc${part[0].toUpperCase()}${part.slice(1)}`] = style[part];
@@ -290,9 +302,16 @@ export function applyTheme() {
     for (const r of ROLES) root.removeProperty(`--pc-${r.key}`);
     root.removeProperty('--pc-panel-solid');
     root.removeProperty('--pc-on-accent');
+    for (const key of ['field', 'control', 'accent']) root.removeProperty('--pc-' + key);
 
     for (const r of ROLES) if (colors[r.key]) root.setProperty(`--pc-${r.key}`, colors[r.key]);
     if (colors.panel) root.setProperty('--pc-panel-solid', colors.panel);
+    if (preset === 'ember') {
+        for (const [role, token] of Object.entries(EMBER_HOST_ROLES)) if (!Object.hasOwn(custom, role)) root.setProperty('--pc-' + role, `var(--${token}, ${PRESETS.ember.colors[role]})`);
+        if (!Object.hasOwn(custom, 'panel')) root.setProperty('--pc-panel-solid', `var(--SmartThemeBlurTintColor, ${PRESETS.ember.colors.panel})`);
+        root.setProperty('--pc-field', 'var(--SmartThemeUserMesBlurTintColor, rgba(30, 30, 30, 0.9))');
+        root.setProperty('--pc-control', 'var(--SmartThemeBotMesBlurTintColor, rgba(30, 30, 30, 0.9))');
+    }
 
     const { panel, block } = measuredSurfaces(colors);
     const light = luminance(panel) > 0.4;
@@ -303,6 +322,7 @@ export function applyTheme() {
     doc.documentElement.dataset.pcLight = light ? '1' : '0';
 
     for (const key of MEANING) {
+        if (preset === 'ember' && key === 'flow' && !Object.hasOwn(custom, key)) continue;
         const c = parseColor(colors[key]);
         if (!c) continue;
         // Worst case of the two backgrounds these colours sit on.
@@ -314,6 +334,7 @@ export function applyTheme() {
         const quote = safe(() => getComputedStyle(doc.documentElement).getPropertyValue('--SmartThemeQuoteColor').trim());
         if (quote && parseColor(quote)) root.setProperty('--pc-flow', quote);
     }
+    root.setProperty('--pc-accent', root.getPropertyValue('--pc-flow') || 'var(--SmartThemeQuoteColor, #e18a24)');
     // Notify the workspace after explicit theme changes.
     safe(() => doc.dispatchEvent(new CustomEvent('pc-theme')));
 }

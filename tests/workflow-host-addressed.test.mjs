@@ -32,6 +32,15 @@ test('explicit terminal targets retain diagnostics and never publish Guidance or
     assert.equal(typeof f.controller.runTarget,'function');const result=await f.controller.runTarget(graph,target);
     assert.equal(result.ok,true,JSON.stringify(result.error));assert.equal(result.mode,'target');assert.deepEqual(result.reviewHandles,[]);assert.equal(result.recording.terminals.length,1);assert.deepEqual(f.c.extensionPrompts,{});
 });
+test('malformed target metadata settles as a bounded failure without reading accessors or invoking host work',async()=>{
+    let reads=0,contexts=0,bindings=0,tokens=0,requests=0;
+    const graph=starterGraph('native-guidance');Object.defineProperty(graph,'mode',{enumerable:true,get(){reads++;throw new Error('getter ran');}});
+    const controller=createNativeWorkflowController({context:()=>{contexts++;return {extensionPrompts:{}};},resolveBinding:()=>{bindings++;},countTokens:()=>{tokens++;},request:()=>{requests++;}});
+    const result=await controller.runTarget(graph,{kind:'terminal',address:{workflowId:'native-guidance',instancePath:[],nodeId:'guidance'}});
+    assert.equal(result.ok,false);assert.equal(result.error.code,'MALFORMED_WORKFLOW');assert.equal(result.mode,'target');
+    assert.deepEqual({reads,contexts,bindings,tokens,requests},{reads:0,contexts:0,bindings:0,tokens:0,requests:0});
+    assert.ok(!('artifact' in result)&&!('reports' in result)&&!('calls' in result)&&!('trace' in result));
+});
 test('safe plan publication precedes source identity and final freshness settles inside the recording',async()=>{
     const graph=graph3('reviewed-de-slop');let f;
     f=fixture(graph,{request:async()=>{f.profile.model='changed';return {ok:true,data:{text:'{"patches":[{"index":0,"replacement":"explore"}]}',finish:'stop'}};}});

@@ -172,7 +172,7 @@ test('allocation rejects unsafe identities and bounds collision retries atomical
     assert.deepEqual(destination, before);
 });
 
-test('explicit placement is exact, preserves relative layout and remaps component membership', () => {
+test('explicit placement is exact, preserves relative layout and remaps visual group membership', () => {
     const destination = starterGraph('reviewed-de-slop'), imported = starterGraph('reviewed-de-slop');
     imported.groups['ai-de-slop'].frame = { x: 400, y: 130, w: 900, h: 400 };
     const result = prepareWorkflowInsertion(destination, imported, { at: { x: -12.5, y: 33.25 } });
@@ -183,9 +183,7 @@ test('explicit placement is exact, preserves relative layout and remaps componen
     assert.equal(first.y, 33.25);
     const group = candidate.groups[identityMap.groups['ai-de-slop']];
     assert.deepEqual(group.members, imported.groups['ai-de-slop'].members.map(id => identityMap.nodes[id]));
-    assert.equal(group.entry, identityMap.nodes['pattern-scan']);
-    assert.equal(group.exit, identityMap.nodes['validate-patches']);
-    assert.deepEqual(group.component, { id: 'ai-de-slop', version: 1 });
+    for (const key of ['entry', 'exit', 'component', 'enabled']) assert.equal(Object.hasOwn(group, key), false);
     assert.deepEqual(group.frame, { x: 287.5, y: 23.25, w: 900, h: 400 });
     for (const node of Object.values(imported.nodes)) {
         const copy = candidate.nodes[identityMap.nodes[node.id]];

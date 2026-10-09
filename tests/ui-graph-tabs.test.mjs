@@ -38,8 +38,7 @@ test('tabs retain the root default and provide roving focus, sibling close contr
     try {
         const GraphTabs = await component('GraphTabs', directory);
         mounted = mount(GraphTabs, { target: host }); flushSync();
-        assert.equal(host.querySelector('button.pc-graph-tab').textContent, 'Graph 1');
-        assert.equal(host.querySelector('button.pc-graph-tab').getAttribute('aria-current'), 'page');
+        assert.equal(host.querySelector('button.pc-graph-tab'), null);
         await unmount(mounted); mounted = null;
         const selected = child('first', 'First child'), second = child('second', 'Second child'), closed = child('closed', 'Closed child');
         const calls = [];

@@ -42,8 +42,6 @@ export interface NativeNode extends Binding {
 }
 export interface DirectWire {
     id: string; route: 'wire'; from: string; fromPort: string; to: string; toPort: string;
-    order?: number;
-    kind?: 'append' | 'prepend' | 'merge';
 }
 export interface PortalWire { id: string; route: 'portal'; portalId: string; to: string; toPort: string; }
 export interface Portal { id: string; label: string; source: Endpoint; kind: ArtifactKind; }

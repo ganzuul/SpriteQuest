@@ -2,29 +2,32 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFile } from 'node:fs/promises';
 import { fixture, mouse, dom } from './canvas-fixture.mjs';
-import { starterGraph } from '../src/workflow/starters.js?v=0.20.0';
-import { cloneWorkflowDocument } from '../src/workflow/document.js?v=0.20.0';
-import { computeDefinitionIdentity, definitionRefKey } from '../src/workflow/definitions.js?v=0.20.0';
-import { workflowSignature } from '../src/workflow/runtime.js?v=0.20.0';
-import { createNativeWorkflowController } from '../src/workflow/host.js?v=0.20.0';
-import { createWorkflowSession, prepareWorkflowProjection, projectPreparedWorkflow } from '../src/ui/workflow-surface.js?v=0.20.0';
-import { createGraphViewSession } from '../src/ui/graph-view-session.js?v=0.20.0';
-import { prepareWorkspaceViews, prepareLibraryViews, projectEditorDraw, projectWorkspacePanels } from '../src/ui/workspace-preparation.js?v=0.20.0';
-import * as H from '../src/history.js?v=0.20.0';
+import { starterGraph } from '../src/workflow/starters.js?v=0.21.0';
+import { cloneWorkflowDocument } from '../src/workflow/document.js?v=0.21.0';
+import { computeDefinitionIdentity, definitionRefKey } from '../src/workflow/definitions.js?v=0.21.0';
+import { workflowSignature } from '../src/workflow/runtime.js?v=0.21.0';
+import { createNativeWorkflowController } from '../src/workflow/host.js?v=0.21.0';
+import { createWorkflowSession, prepareWorkflowProjection, projectPreparedWorkflow } from '../src/ui/workflow-surface.js?v=0.21.0';
+import { createGraphViewSession } from '../src/ui/graph-view-session.js?v=0.21.0';
+import { prepareWorkspaceViews, prepareLibraryViews, projectEditorDraw, projectWorkspacePanels } from '../src/ui/workspace-preparation.js?v=0.21.0';
+import * as H from '../src/history.js?v=0.21.0';
+import { readNodePresentation } from '../src/ui/node-palette.js?v=0.21.0';
 
 const groupId = 'ai-de-slop';
 const controllerText = await readFile(new URL('../src/ui/controller.js', import.meta.url), 'utf8');
 function controllerFunction(name, env) {
+    env.activeEditRoot ??= () => env.current;
+    env.readNodePresentation ??= readNodePresentation;
     const start = controllerText.indexOf('function ' + name + '('); if (start < 0) return null;
     const next = controllerText.indexOf('\nfunction ', start + 1);
     return Function('env', 'with(env){' + controllerText.slice(start, next < 0 ? undefined : next) + ';return ' + name + ';}')(env);
 }
 function groupedDefinition() {
-    const checked = computeDefinitionIdentity({ id: 'local-group', version: 1, name: 'Local group', parameters: [], interface: [{ id: 'text', label: 'Text', kind: 'text', direction: 'output', required: false, cardinality: 'one', boundaryNodeId: 'exit' }], body: { schema: 3, runtime: 2, mode: 'native-post', nodes: { compose: { id: 'compose', type: 'workflow', operation: 'compose', outputKind: 'text', inGroup: groupId, sections: [{ name: 'value', text: 'Local body' }], x: 40, y: 40 }, exit: { id: 'exit', type: 'subgraph-output', interfacePortId: 'text', x: 280, y: 40 } }, wires: { edge: { id: 'edge', route: 'wire', from: 'compose', fromPort: 'out', to: 'exit', toPort: 'in' } }, groups: { [groupId]: { id: groupId, title: 'Same local ID', collapsed: true, enabled: true, members: ['compose'], x: 40, y: 40, w: 160 } } } });
+    const checked = computeDefinitionIdentity({ id: 'local-group', version: 1, name: 'Local group', parameters: [], interface: [{ id: 'text', label: 'Text', kind: 'text', direction: 'output', required: false, cardinality: 'one', boundaryNodeId: 'exit' }], body: { schema: 3, runtime: 2, mode: 'native-post', nodes: { compose: { id: 'compose', type: 'workflow', operation: 'compose', outputKind: 'text', inGroup: groupId, sections: [{ name: 'value', text: 'Local body' }], x: 40, y: 40 }, exit: { id: 'exit', type: 'subgraph-output', interfacePortId: 'text', x: 280, y: 40 } }, wires: { edge: { id: 'edge', route: 'wire', from: 'compose', fromPort: 'out', to: 'exit', toPort: 'in' } }, groups: { [groupId]: { id: groupId, title: 'Same local ID', collapsed: true, members: ['compose'], x: 40, y: 40, w: 160 } } } });
     assert.equal(checked.ok, true, JSON.stringify(checked));
     return { ...checked.data.materializedDefinition, semanticHash: checked.data.semanticHash };
 }
-function prepared(schema = 2) {
+function prepared(schema = 3) {
     const source = starterGraph('reviewed-de-slop'); source.nodes.repair.mode = 'scan'; const root = schema === 3 ? cloneWorkflowDocument(source).data : source;
     const definition = groupedDefinition(), ref = { id: definition.id, version: definition.version, semanticHash: definition.semanticHash };
     if (schema === 3) { root.definitions[definitionRefKey(definition)] = definition; root.nodes.inspection = { id: 'inspection', type: 'subgraph', definition: ref, parameterOverrides: {}, roleOverrides: {}, nodeBindingOverrides: {} }; }
@@ -35,7 +38,7 @@ function prepared(schema = 2) {
     const views = createGraphViewSession({ root, activationId: 'group-presentation-' + schema, ...result.data }).data; assert.ok(views);
     return { root, definition, ref, views, preparation: result.data, bindings: () => bindings };
 }
-async function controllerFixture(schema = 2) {
+async function controllerFixture(schema = 3) {
     const f = prepared(schema), counters = { persist: 0, projection: 0, changes: 0 }, env = { current: f.root, graphViews: f.views, editorDraw: null, nativeGroupPresenter: null, rootRunEpoch: 7, workspaceRevision: 1, workspacePrepared: { ...f.preparation, catalogs: new Map() }, nativeWireBridge: null, nativeCatalog: null, editorCaptures: new WeakMap(), selected: null, selectedKind: null, selectedPreview: null, restoringEditor: false, canvasTraceRows: null, root: document.createElement('div'), projectEditorDraw, isOpen: () => true, cancelImportReview() {}, replaceNativeBridge() {}, syncPaneToggles() {}, updateWorkflowProjection() { counters.projection++; }, paintHistory() {}, workbench: { update() {} }, persistGraphViews() { counters.persist++; } };
     for (const name of ['captureEditor', 'editorCurrent', 'prepareGroupPresentation', 'replaceNativeBridge']) { const fn = controllerFunction(name, env); if (fn) env[name] = fn; }
     assert.equal(typeof env.prepareGroupPresentation, 'function', 'the actual controller needs a qualified local group presentation adapter');
@@ -65,10 +68,10 @@ test('native ordinary Group Open DOM action and doubleclick reach presentation c
     } finally { await real.canvas.destroy(); real.host.remove(); }
 });
 
-test('actual schema2 group Open exposes saved members and real pins and persists only local folding across reload', async () => {
+test('actual current group Open exposes saved members and real pins and persists only local folding across reload', async () => {
     const f = await controllerFixture(), before = structuredClone(f.root), signature = workflowSignature(f.root); H.track(f.root); const history = structuredClone(H.peek(f.root)), epoch = f.views.readEditContext().sessionId;
     try {
-        assert.equal(f.root.schema, 2); assert.equal(f.root.runtime, 1); assert.equal(f.root.groups[groupId].collapsed, true); assert.equal(f.real.host.querySelector('[data-id="pattern-scan"]'), null);
+        assert.equal(f.root.schema, 3); assert.equal(f.root.runtime, 2); assert.equal(f.root.groups[groupId].collapsed, true); assert.equal(f.real.host.querySelector('[data-id="pattern-scan"]'), null);
         const button = open(f.real.host); assert.ok(button); mouse(button, 'mousedown', 450, 150); mouse(button, 'mouseup', 450, 150);
         assert.equal(f.env.editorDraw.groups[groupId].collapsed, false); assert.ok(fold(f.real.host));
         const member = f.real.host.querySelector('.pc-node[data-id="pattern-scan"]'); assert.ok(member, 'ordinary DOM Open makes the real member reachable'); assert.ok(member.querySelector('.pc-port[data-dir="in"][data-port="in"]')); assert.ok(member.querySelector('.pc-port[data-dir="out"][data-port="out"]'));
@@ -99,9 +102,9 @@ test('same-ID ordinary groups stay local to actual root child and readonly libra
     } finally { await f.close(); }
 });
 
-test('optional group presentation restores old version1 views and rejects malformed unbounded patches atomically', () => {
-    const f = prepared(), legacy = f.views.serialize().data; assert.ok(legacy.views.every(view => !Object.hasOwn(view, 'groupPresentation')));
-    const restored = createGraphViewSession({ root: f.root, activationId: 'legacy-restore', ...f.preparation, persisted: legacy }).data; assert.ok(restored); const context = restored.captureEditorContext();
+test('optional group presentation restores current version1 views and rejects malformed unbounded patches atomically', () => {
+    const f = prepared(), saved = f.views.serialize().data; assert.ok(saved.views.every(view => !Object.hasOwn(view, 'groupPresentation')));
+    const restored = createGraphViewSession({ root: f.root, activationId: 'current-restore', ...f.preparation, persisted: saved }).data; assert.ok(restored); const context = restored.captureEditorContext();
     assert.equal(restored.updateView({ groupPresentation: { [groupId]: { collapsed: false } } }).ok, true, 'new local presentation must be admitted by the actual store'); assert.equal(restored.isEditorContextCurrent(context), true);
     assert.equal(restored.updateView({ portalPresentation: { alias: { identity: { kind: 'root', workflowId: f.root.id }, source: { nodeId: 'reply-snapshot', portId: 'out' }, label: 'Local label' } } }).ok, true);
     const good = structuredClone(restored.serialize().data); assert.equal(createGraphViewSession({ root: f.root, activationId: 'both-fields', ...f.preparation, persisted: good }).ok, true);
@@ -119,18 +122,18 @@ test('ordinary native folding does not cancel or replace an actual root run whil
     const session = createWorkflowSession({ runtime: () => runtime, rootCurrent: () => f.root, runEpoch: () => f.env.rootRunEpoch, active: () => true, changed(value) { state = value; } });
     try {
         const pending = session.run(); assert.equal(state.busy, true); open(f.real.host).click(); fold(f.real.host).click(); assert.equal(state.busy, true); assert.equal(session.result(), null); assert.deepEqual(counters, { host: 0, cancel: 0, requests: 0 }); assert.equal(f.env.rootRunEpoch, 7); assert.deepEqual(f.root, before);
-        release(); await pending; assert.equal(state.busy, false); assert.equal(session.result().ok, true, JSON.stringify(session.result().error)); assert.equal(session.result().artifact.kind, 'candidate'); assert.equal(counters.cancel, 0); assert.equal(counters.requests, 0); assert.deepEqual(f.root, before);
+        release(); await pending; assert.equal(state.busy, false); assert.equal(session.result().ok, true, JSON.stringify(session.result().error)); assert.equal(session.result().recording.status, 'completed'); assert.equal(session.result().reviewHandles.length, 1); assert.equal(counters.cancel, 0); assert.equal(counters.requests, 0); assert.deepEqual(f.root, before);
     } finally { release(); await f.close(); }
 });
-test('folding preserves genuine schema2 review selector and schema3 private handle ownership through the actual session and preview adapter', async () => {
-    for (const schema of [2, 3]) {
+test('folding preserves current private handle ownership through the actual session and preview adapter', async () => {
+    for (const schema of [3]) {
         const f = await controllerFixture(schema), before = structuredClone(f.root), counters = { checks: 0, apply: 0, cancel: 0, requests: 0 };
         const message = { mes: 'We delve.', is_user: false, swipe_id: 0, swipes: ['We delve.'], swipe_info: [{ extra: {}, gen_started: 1, gen_finished: 2 }], extra: {}, gen_started: 1, gen_finished: 2 };
         const context = { chatId: 'fold-review-' + schema, characterId: 1, groupId: null, chat: [{ mes: 'Hello', is_user: true }, message], extensionPrompts: {}, saveChat: async () => {}, updateMessageBlock: async () => {}, swipe: { refresh: async () => {} } };
         const host = createNativeWorkflowController({ context: () => context, getGraph: () => f.root, isEnabled: () => true, isBusy: () => false, resolveBinding: () => { throw new Error('Scan-only review does not bind'); }, request: async () => { counters.requests++; throw new Error('Scan-only review does not request'); }, syncMesToSwipe: index => { const item = context.chat[index]; item.swipes[item.swipe_id] = item.mes; return true; }, syncSwipeToMes: (index, id) => { const item = context.chat[index]; item.swipe_id = id; item.mes = item.swipes[id]; Object.assign(item, structuredClone(item.swipe_info[id])); return true; } });
         const runtime = { ...host, candidateStatus(candidate) { counters.checks++; return host.candidateStatus(candidate); }, apply(candidate) { counters.apply++; return host.apply(candidate); }, cancel(reason) { counters.cancel++; host.cancel(reason); } };
-        Object.assign(f.env, { workflowState: { result: null, reviewHandles: [], busy: false, availability: 'current', applyIssue: '' }, schema2ReviewOwner: null, pinnedPreview: null, uiEpoch: 1, workflowLibrary: null, workflowInspector: null, workflowProjection: null, workflowProjectionGraph: null, projectPreparedWorkflow, projectWorkspacePanels, settings: () => ({}), isWorkflowGraph: root => root?.mode?.startsWith('native-'), executableNative: root => root.schema === 2 && root.runtime === 1 || root.schema === 3 && root.runtime === 2, workbench: { update(value) { f.env.panels = value; } } });
-        for (const name of ['samePreviewTerminal', 'currentRootPreviewTerminal', 'schema2ReviewSelector', 'currentSchema2Review', 'currentPreviewHandle', 'applyPreviewReview', 'rejectPreviewReview', 'workflowView', 'updateWorkflowProjection']) f.env[name] = controllerFunction(name, f.env);
+        Object.assign(f.env, { workflowState: { result: null, reviewHandles: [], busy: false, availability: 'current', applyIssue: '' }, workspaceIssue: '', pinnedPreview: null, uiEpoch: 1, workflowLibrary: null, workflowInspector: null, workflowProjection: null, workflowProjectionGraph: null, projectPreparedWorkflow, projectWorkspacePanels, settings: () => ({}), isWorkflowGraph: root => root?.mode?.startsWith('native-'), executableNative: root => root.schema === 2 && root.runtime === 1 || root.schema === 3 && root.runtime === 2, workbench: { update(value) { f.env.panels = value; } } });
+        for (const name of ['samePreviewTerminal', 'currentRootPreviewTerminal', 'currentPreviewHandle', 'applyPreviewReview', 'rejectPreviewReview', 'workflowView', 'updateWorkflowProjection']) f.env[name] = controllerFunction(name, f.env);
         f.env.workflowSession = createWorkflowSession({ runtime: () => runtime, rootCurrent: () => f.root, runEpoch: () => f.env.rootRunEpoch, active: () => true, changed(value) {
             const changed = value.result !== f.env.workflowState.result || value.reviewHandles !== f.env.workflowState.reviewHandles; f.env.workflowState = value;
             if (changed) f.env.workspacePrepared.workflow = prepareWorkflowProjection(f.root, { ...(f.preparation.planner ? { planner: f.preparation.planner } : {}), result: value.result, candidateStatus: candidate => runtime.candidateStatus(candidate) });
@@ -144,7 +147,7 @@ test('folding preserves genuine schema2 review selector and schema3 private hand
             assert.equal(f.env.editorDraw.groups[groupId].collapsed, false); assert.deepEqual(f.env.panels.outputPreview.review.selector, review); assert.equal(f.env.panels.outputPreview.review.canApply, true); assert.equal(f.views.isEditorContextCurrent(context), true); assert.equal(f.views.readEditContext().sessionId, viewEpoch);
             fold(f.real.host).click();
             assert.equal(f.env.editorDraw.groups[groupId].collapsed, true); assert.deepEqual(f.env.panels.outputPreview.review.selector, review); assert.equal(f.env.workflowSession.result(), result); assert.equal(f.env.workflowState.recording, recording); assert.equal(f.env.workflowState.availability, 'current'); assert.equal(f.env.rootRunEpoch, rootEpoch); assert.deepEqual(counters, calls); assert.deepEqual(f.root, before);
-            assert.equal(schema === 2 ? f.env.currentSchema2Review(review) : f.env.currentPreviewHandle(review), true, 'the same genuine private ownership stays eligible');
+            assert.equal(f.env.currentPreviewHandle(review), true, 'the same genuine private ownership stays eligible');
             await f.env.applyPreviewReview(review); assert.equal(counters.apply, 1); assert.equal(message.swipes.length, 2); assert.ok(message.extra.latticeRevision); assert.equal(counters.cancel, 0); assert.equal(counters.requests, 0); assert.deepEqual(f.root, before);
         } finally { await f.close(); }
     }

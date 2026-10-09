@@ -12,7 +12,7 @@ async function openNativeWorkspace(page, starter = 'structured-guidance') {
         h.S.save(); h.UI.refreshIfOpen();
         return graph.id;
     }, starter);
-    await page.getByRole('combobox', { name: 'Canvas', exact: true }).selectOption(graphId);
+    await page.getByRole('combobox', { name: 'Workflow', exact: true }).selectOption(graphId);
     await page.evaluate(() => window.canvasHarness.settle());
 }
 
@@ -27,10 +27,10 @@ for (const width of [1024, 736, 360, 320]) test(`approved Lattice native surface
         const read = selector => {
             const element = document.querySelector(selector), css = getComputedStyle(element), box = element.getBoundingClientRect();
             return { x: box.x, y: box.y, width: box.width, height: box.height, background: css.backgroundColor,
-                radius: css.borderTopRightRadius, shadow: css.boxShadow, border: css.borderTopColor };
+                radius: css.borderTopRightRadius, shadow: css.boxShadow, border: css.borderTopColor, borderWidth: css.borderTopWidth };
         };
         return { graph: read('.pc-canvas-area'), preview: read('.pc-preview-pane'), details: read('.pc-inspector'),
-            node: read('.pc-node-native'), brand: document.querySelector('.pc-brand').textContent.trim(),
+            node: read('.pc-node-native'), panel: read('.pc-root'), canvas: read('.pc-canvas-host'), brand: document.querySelector('.pc-brand').textContent.trim(),
             font: document.fonts.check('600 20px "Bricolage Grotesque"'),
             accent: getComputedStyle(document.querySelector('.pc-graph-tab[aria-selected="true"]')).color,
             overflow: document.documentElement.scrollWidth > innerWidth };
@@ -41,8 +41,13 @@ for (const width of [1024, 736, 360, 320]) test(`approved Lattice native surface
     expect(actual.graph.radius).toBe('4px');
     expect(actual.graph.shadow).toContain('inset');
     expect(actual.graph.border).toBe(actual.accent);
-    expect(actual.preview.background).toBe('rgb(32, 33, 32)');
-    expect(actual.node.background).toBe('rgb(29, 30, 29)');
+    expect(actual.preview.background).toBe(actual.panel.background);
+    expect(actual.canvas.background).toBe('rgb(15, 15, 15)');
+    expect(actual.node.background).toBe('rgba(40, 40, 40, 0.75)');
+    expect(actual.node.radius).toBe('6px');
+    expect(actual.node.borderWidth).toBe('0px');
+    expect(actual.node.shadow).toContain('0px 1px 2px 0px');
+    expect(actual.node.shadow).not.toContain('inset');
     expect(actual.graph.height).toBeGreaterThan(140);
     if (width > 760) {
         expect(actual.details.x).toBeGreaterThanOrEqual(actual.graph.x + actual.graph.width);
@@ -67,9 +72,11 @@ for (const width of [320, 360]) test(`Fit keeps the narrow graph reachable below
     }));
     for (const card of cards) expect(card.top).toBeGreaterThanOrEqual(shelf.y + shelf.height + 8);
     await page.locator('.pc-node-native[data-id="select-fields"]').dblclick();
-    const scroll = await page.evaluate(() => ({ body: document.querySelector('.pc-body').scrollTop,
-        left: window.canvasHarness.canvas.host.scrollLeft, top: window.canvasHarness.canvas.host.scrollTop }));
-    expect(scroll).toEqual({ body: 0, left: 0, top: 0 });
+    await expect(page.locator('.pc-inspector')).toBeVisible();
+    const access = await page.locator('.pc-inspector').evaluate(panel => { const rect = panel.getBoundingClientRect(); return { top: rect.top, bottom: rect.bottom, viewport: innerHeight, pixel: 1/devicePixelRatio, scroll: document.querySelector('.pc-body').scrollTop }; });
+    expect(access.top).toBeGreaterThanOrEqual(0); expect(access.bottom).toBeLessThanOrEqual(access.viewport+access.pixel); expect(access.scroll).toBeGreaterThanOrEqual(0);
+    const scroll = await page.evaluate(() => { document.querySelector('.pc-body').scrollTop = 0; return { left: window.canvasHarness.canvas.host.scrollLeft, top: window.canvasHarness.canvas.host.scrollTop }; });
+    expect(scroll).toEqual({ left: 0, top: 0 });
     const preview = await page.locator('.pc-preview-pane').boundingBox();
     const header = await page.locator('.pc-header').boundingBox();
     expect(preview.y).toBeGreaterThanOrEqual(header.y + header.height);
@@ -122,8 +129,8 @@ test('a selected failed native node keeps its red ring and dimmed interior', asy
         opacity: Number(getComputedStyle(node.querySelector('.pc-native-heading')).opacity),
         filter: getComputedStyle(node.querySelector('.pc-native-heading')).filter,
     }));
-    expect(paint.border).toBe('rgb(224, 143, 143)');
-    expect(paint.ring).toContain('rgb(224, 143, 143)');
+    expect(paint.border).toBe('rgb(229, 118, 118)');
+    expect(paint.ring).toContain('rgb(229, 118, 118)');
     expect(paint.opacity).toBeLessThan(1);
     expect(paint.filter).toContain('grayscale');
     const after = await failed.boundingBox();

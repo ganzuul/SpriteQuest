@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import * as S from '../src/state.js?v=0.20.0';
+import * as S from '../src/state.js?v=0.21.0';
 
 function host(extensionSettings = {}) {
     let effects = 0;
@@ -44,4 +44,44 @@ test('current CRUD does not assign execution and imports reject retired packages
     assert.equal(rejected.ok, false); assert.deepEqual(settings, before);
     S.deleteGraph(created.id); assert.equal(S.getGraph(created.id), null);
     assert.equal(settings.enabled, false); assert.deepEqual(settings.nativeBindings, { preGraphId: null, postGraphId: null });
+});
+
+test('saved graph accessors reject without executing them or replacing settings', () => {
+    let reads = 0;
+    const graph = { schema: 3, runtime: 2, mode: 'native-pre', nodes: {}, wires: {} };
+    Object.defineProperty(graph, 'id', { enumerable: true, get() { reads++; return 'unsafe'; } });
+    const stored = { schema: 1, enabled: false, activeGraphId: 'unsafe', graphs: { unsafe: graph }, nativeBindings: { preGraphId: null, postGraphId: null }, subgraphLibrary: { definitions: {} }, ui: {} };
+    const h = host({ lattice: stored });
+    assert.throws(() => S.settings(), /workflow|document|plain|schema/i);
+    assert.equal(reads, 0);
+    assert.equal(h.context.extensionSettings.lattice, stored);
+    assert.equal(h.effects(), 0);
+});
+
+test('several individually bounded current workflows reload independently', async () => {
+    host(); const stored = S.settings(), graph = S.createGraph('Large current workflow');
+    for (let i = 0; i < 8; i++) graph.nodes['compose-' + i] = { id: 'compose-' + i, type: 'workflow', operation: 'compose', operationVersion: 1, outputKind: 'text', sections: [{ name: 'Text', text: 'x'.repeat(95000) }] };
+    const { validateGraphStructure } = await import('../src/workflow/contracts.js?v=0.21.0');
+    assert.equal(validateGraphStructure(graph).ok, true);
+    const copies = [graph, S.duplicateGraph(graph.id), S.duplicateGraph(graph.id)];
+    const saved = structuredClone(stored), h = host({ lattice: saved });
+    const reloaded = await import('../src/state.js?reload=valid-many-documents');
+    assert.equal(reloaded.settings(), saved);
+    for (const copy of copies) assert.equal(reloaded.getGraph(copy.id).nodes['compose-7'].sections[0].text.length, 95000);
+    assert.equal(h.effects(), 0);
+});
+
+test('saved graph table and nested metadata accessors reject without reads or effects', () => {
+    for (const target of ['graphs', 'ui', 'nativeBindings']) {
+        host();
+        const stored = structuredClone(S.settings());
+        let reads = 0;
+        const key = target === 'graphs' ? stored.activeGraphId : target === 'ui' ? 'theme' : 'preGraphId';
+        Object.defineProperty(stored[target], key, { enumerable: true, configurable: true, get() { reads++; return 'unsafe'; } });
+        const h = host({ lattice: stored });
+        assert.throws(() => S.settings(), /workflow|document|plain|schema|settings/i);
+        assert.equal(reads, 0, target);
+        assert.equal(h.context.extensionSettings.lattice, stored);
+        assert.equal(h.effects(), 0);
+    }
 });
