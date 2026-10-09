@@ -1,11 +1,119 @@
-import { cloneDefinitionData, computeDefinitionIdentity, definitionRefKey, validateDefinition } from './definitions.js?v=0.19.1';
+import { cloneDefinitionData, computeDefinitionIdentity, definitionRefKey, describeExposedParameter, nodeBindingOverrideKey, validateDefinition } from './definitions.js?v=0.19.1';
 import { safeWorkflowData, validateGraphStructure } from './contracts.js?v=0.19.1';
+import { normalizeNativeGraph } from './migration.js?v=0.19.1';
+import { ARTIFACT_KINDS, describeOperation, operationFor } from './catalog.js?v=0.19.1';
+import { applyDeclaredNodeControlChange, graphDocumentSignature } from './ports.js?v=0.19.1';
+import { selectSubgraphClosure } from './packages.js?v=0.19.1';
 import { prepareGraphCandidate } from './prepared-graph-edit.js?v=0.19.1';
-import { compositionIds, definitionChain, ownershipEntries, ownsDefinitionPath, samePath, prunePrivateSnapshots } from './composition-edit.js?v=0.19.1';
+import { compositionIds, definitionChain, ownershipEntries, ownsDefinitionPath, samePath, safeId, prunePrivateSnapshots } from './composition-edit.js?v=0.19.1';
 
 const fail = (code, message) => ({ ok: false, error: { code, message } });
 const record = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 const reference = definition => ({ id: definition.id, version: definition.version, semanticHash: definition.semanticHash });
+const only = (value, fields) => record(value) && Object.keys(value).every(key => fields.includes(key));
+const exactRef = (value, actual) => only(value, ['id', 'version', 'semanticHash']) && definitionRefKey(value) === definitionRefKey(actual);
+
+/** Internal trusted synchronous domain seam, never a callback received from DTO/plugin input. */
+export function prepareQualifiedScopeEdit(root, input, mutateSavedScope) {
+    const admitted = cloneDefinitionData(input); if (!admitted.ok) return admitted;
+    const command = admitted.data;
+    if (!record(command) || !Array.isArray(command.viewPath) || command.viewPath.length > 8 || !command.viewPath.every(safeId)) return fail('INVALID_INSTANCE', 'Expected an explicit bounded containing graph path.');
+    const copied = cloneDefinitionData(root); if (!copied.ok) return copied;
+    const original = copied.data;
+    const normalized = normalizeNativeGraph(original); if (!normalized.ok) return normalized;
+    if (original.schema !== 3 || original.runtime !== 2) return fail('UNSUPPORTED_VERSION', 'Qualified edits require schema 3 and runtime 2.');
+    const path = [...command.viewPath], chain = path.length ? definitionChain(original, path) : [];
+    if (!chain) return fail('INVALID_INSTANCE', 'The containing graph path does not exist.');
+    const definition = chain.at(-1)?.definition;
+    if (path.length ? !exactRef(command.expectedRef, reference(definition)) : command.expectedRef !== undefined) return fail('STALE_DEFINITION', 'Supply the current exact containing definition pin.');
+    if (path.length && !ownsDefinitionPath(original, path)) return fail('READ_ONLY_DEFINITION', 'Make a local copy of the containing graph before editing.');
+    const candidate = normalized.data, draft = definition ? structuredClone(definition) : null;
+    const context = { original, candidate, path, definition, draft, scope: draft?.body ?? candidate, ids: compositionIds(candidate),
+        metadata: () => ({ ...(draft?.body ?? candidate), definitions: candidate.definitions, ...(draft ? { interface: draft.interface } : {}) }) };
+    const applied = mutateSavedScope(context, command); if (!applied.ok) return applied;
+    let finished = candidate, details = applied.data ?? {};
+    if (draft) {
+        const identity = computeDefinitionIdentity(draft); if (!identity.ok) return identity;
+        const materialized = { ...structuredClone(identity.data.materializedDefinition), semanticHash: identity.data.semanticHash };
+        if (graphDocumentSignature(materialized) !== graphDocumentSignature(definition)) {
+            // Incoming snapshots belong to a real full root; final preconditions remain actualOriginal.
+            const revised = prepareLocalDefinitionEdit({ ...original, definitions: candidate.definitions }, { instancePath: path, expectedRef: reference(definition), draft: materialized });
+            if (!revised.ok) return revised;
+            finished = revised.data.candidate;
+            details = { ...details, changedRefs: revised.data.changedRefs };
+        }
+    }
+    const prepared = prepareGraphCandidate(original, finished, details.addedEdgeIds ?? [], details.removedEdgeIds ?? []);
+    return prepared.ok ? { ok: true, data: { ...prepared.data, ...details, viewPath: path, ...(definition ? { expectedRef: reference(definition) } : {}) } } : prepared;
+}
+
+const nodeFields = {
+    controls: ['controls', 'removeEdgeIds'], enabled: ['value'], 'model-role': ['mode', 'value'], binding: ['field', 'mode', 'value'],
+    'parameter-override': ['expectedInstanceRef', 'parameterId', 'mode', 'value'], 'binding-override': ['expectedInstanceRef', 'target', 'field', 'mode', 'value'],
+};
+/** Prepare saved primitive fields or wrapper overrides in one actual qualified root candidate. */
+export function prepareNativeNodeEdit(root, input) {
+    const admitted = cloneDefinitionData(input); if (!admitted.ok) return admitted;
+    const command = admitted.data;
+    if (!record(command) || typeof command.kind !== 'string' || !Object.hasOwn(nodeFields, command.kind) || !only(command, ['kind', 'viewPath', 'expectedRef', 'nodeId', ...nodeFields[command.kind]]) || !safeId(command.nodeId)) return fail('INVALID_COMMAND', 'Expected a known qualified node command.');
+    if (command.kind === 'controls' && (!record(command.controls) || command.removeEdgeIds !== undefined && (!Array.isArray(command.removeEdgeIds) || !command.removeEdgeIds.every(safeId)))) return fail('INVALID_COMMAND', 'Expected controls and explicit incident wire IDs.');
+    if (command.kind === 'enabled' && typeof command.value !== 'boolean') return fail('INVALID_COMMAND', 'Enabled requires a boolean.');
+    const binding = command.kind === 'binding' || command.kind === 'binding-override';
+    if (binding && !['profileId', 'model'].includes(command.field)) return fail('INVALID_COMMAND', 'Expected a model or profile field.');
+    if (['binding', 'binding-override', 'model-role', 'parameter-override'].includes(command.kind)) {
+        const resetting = ['binding-override', 'parameter-override'].includes(command.kind) ? 'reset' : 'remove';
+        if (!['set', resetting].includes(command.mode) || command.mode === 'set' && !Object.hasOwn(command, 'value') || command.mode === resetting && Object.hasOwn(command, 'value') || command.kind !== 'parameter-override' && command.mode === 'set' && command.value !== null && typeof command.value !== 'string') return fail('INVALID_COMMAND', 'Expected an explicit saved set or removal command.');
+    }
+    if (command.kind === 'parameter-override' && !safeId(command.parameterId)) return fail('INVALID_COMMAND', 'Expected a stable parameter ID.');
+    if (command.kind === 'binding-override') {
+        const target = command.target;
+        if (target?.kind === 'role' ? !only(target, ['kind', 'role']) || !safeId(target.role) : target?.kind !== 'node' || !only(target, ['kind', 'instancePath', 'nodeId']) || !Array.isArray(target.instancePath) || target.instancePath.length > 8 || !target.instancePath.every(safeId) || !safeId(target.nodeId)) return fail('INVALID_COMMAND', 'Expected an actual role or structural primitive target.');
+    }
+    return prepareQualifiedScopeEdit(root, command, applyNativeNodeEdit);
+}
+
+function applyNativeNodeEdit(context, command) {
+    const node = Object.hasOwn(context.scope.nodes, command.nodeId) && context.scope.nodes[command.nodeId];
+    if (['parameter-override', 'binding-override'].includes(command.kind)) {
+        if (node?.type !== 'subgraph') return fail('INVALID_INSTANCE', 'Expected an actual local wrapper.');
+        if (!exactRef(command.expectedInstanceRef, node.definition)) return fail('STALE_DEFINITION', 'The selected wrapper pin changed.');
+        const definition = context.candidate.definitions[definitionRefKey(node.definition)];
+        if (command.kind === 'parameter-override') {
+            if (!definition.parameters.some(parameter => parameter.id === command.parameterId)) return fail('INVALID_OVERRIDE', 'Expected an actual current exposed parameter.');
+            node.parameterOverrides ??= {};
+            if (command.mode === 'reset') delete node.parameterOverrides[command.parameterId];
+            else node.parameterOverrides[command.parameterId] = structuredClone(command.value);
+        } else {
+            if (command.target.kind === 'role' ? !definitionHasRole(definition, context.candidate.definitions, command.target.role) : !relativePrimitive(definition, context.candidate.definitions, command.target)) return fail('INVALID_OVERRIDE', 'Expected an actual current role or primitive target.');
+            const role = command.target.kind === 'role', field = role ? 'roleOverrides' : 'nodeBindingOverrides';
+            const key = role ? command.target.role : nodeBindingOverrideKey(command.target.instancePath, command.target.nodeId);
+            node[field] ??= {};
+            if (command.mode === 'reset') { if (Object.hasOwn(node[field], key)) { delete node[field][key][command.field]; if (!Object.keys(node[field][key]).length) delete node[field][key]; } }
+            else { node[field][key] ??= {}; node[field][key][command.field] = command.value; }
+        }
+    } else {
+        const described = describeOperation(context.metadata(), node); if (!described.ok) return described;
+        if (command.kind === 'controls') return applyDeclaredNodeControlChange(context, command);
+        if (command.kind === 'enabled') node.enabled = command.value;
+        else { const field = command.kind === 'model-role' ? 'modelRole' : command.field; if (command.mode === 'remove') delete node[field]; else node[field] = command.value; }
+    }
+    return { ok: true, data: {} };
+}
+
+function relativePrimitive(definition, snapshots, target) {
+    let scope = definition.body;
+    for (const id of target.instancePath) { const wrapper = Object.hasOwn(scope.nodes, id) && scope.nodes[id]; if (wrapper?.type !== 'subgraph') return null; const child = snapshots[definitionRefKey(wrapper.definition)]; if (!child) return null; scope = child.body; }
+    const node = Object.hasOwn(scope.nodes, target.nodeId) && scope.nodes[target.nodeId];
+    return operationFor(node, { phase: scope.mode.slice(7) }) ? node : null;
+}
+function definitionHasRole(definition, snapshots, role) {
+    const pending = [definition], visited = new Set();
+    while (pending.length) { const item = pending.pop(), key = definitionRefKey(item); if (visited.has(key)) continue; visited.add(key);
+        if (Object.hasOwn(item.body.roles ?? {}, role)) return true;
+        for (const node of Object.values(item.body.nodes)) { if ((node.modelRole ?? operationFor(node, { phase: item.body.mode.slice(7) })?.modelRole) === role) return true; if (node.type === 'subgraph') pending.push(snapshots[definitionRefKey(node.definition)]); }
+    }
+    return false;
+}
 
 function mergeSnapshots(existing, incoming) {
     if (!record(existing) || !record(incoming)) return fail('DEFINITION_REF', 'Expected snapshot tables.');
@@ -89,7 +197,14 @@ export function makeLocalCopy(graph, command) {
 export function prepareInstanceUpdate(graph, command) {
     const editable = editableInstance(graph, command); if (!editable.ok) return editable;
     for (const key of ['portMap', 'parameterMap', 'roleMap', 'nodeBindingMap']) if (!record(command[key] ?? {})) return fail('INVALID_OVERRIDE', 'Update mappings must be records.');
-    const candidate = editable.data, node = candidate.nodes[command.instanceId];
+    const candidate = editable.data;
+    const applied = applyInstanceUpdate({ candidate, scope: candidate }, command); if (!applied.ok) return applied;
+    if (candidate.localDefinitionOwners !== undefined) reconcileOwners(candidate);
+    return prepareGraphCandidate(graph, candidate);
+}
+
+function applyInstanceUpdate(context, command) {
+    const { candidate, scope } = context, node = scope.nodes[command.instanceId], fromRef = structuredClone(node.definition);
     const installed = installDefinition({ definitions: candidate.definitions ?? {} }, command.definition, command.snapshots ?? {});
     if (!installed.ok) return installed;
     candidate.definitions = structuredClone(installed.data.library.definitions);
@@ -111,16 +226,101 @@ export function prepareInstanceUpdate(graph, command) {
         if (!values) return fail('INVALID_OVERRIDE', 'Override mappings must be unambiguous stable IDs.');
         node[field] = values;
     }
-    for (const wire of Object.values(candidate.wires)) {
+    for (const wire of Object.values(scope.wires)) {
         if (wire.to === node.id) wire.toPort = map(command.portMap, wire.toPort);
         if (wire.route === 'wire' && wire.from === node.id) wire.fromPort = map(command.portMap, wire.fromPort);
     }
-    for (const portal of Object.values(candidate.portals ?? {})) if (portal.source.nodeId === node.id) portal.source.portId = map(command.portMap, portal.source.portId);
-    if (candidate.localDefinitionOwners !== undefined) {
-        const owners = ownershipEntries(candidate).filter(entry => definitionChain(candidate, entry.instancePath)?.at(-1).definition.id === entry.definitionId);
-        candidate.localDefinitionOwners = owners.filter(entry => entry.instancePath.every((_, index) => owners.some(parent => samePath(parent.instancePath, entry.instancePath.slice(0, index + 1)))));
+    for (const portal of Object.values(scope.portals ?? {})) if (portal.source.nodeId === node.id) portal.source.portId = map(command.portMap, portal.source.portId);
+    return { ok: true, data: { fromRef, toRef: reference(installed.data.library.definitions[definitionRefKey(installed.data.ref)]) } };
+}
+
+function reconcileOwners(candidate, entries = ownershipEntries(candidate)) {
+    if (candidate.localDefinitionOwners === undefined && !entries.length) return;
+    const owners = entries.filter(entry => definitionChain(candidate, entry.instancePath)?.at(-1).definition.id === entry.definitionId);
+    candidate.localDefinitionOwners = owners.filter(entry => entry.instancePath.every((_, index) => owners.some(parent => samePath(parent.instancePath, entry.instancePath.slice(0, index + 1)))));
+}
+
+const mapFields = ['portMap', 'parameterMap', 'roleMap', 'nodeBindingMap'];
+/** Explicit Update of a wrapper in its real editable containing parent, never its pinned body. */
+export function prepareQualifiedInstanceUpdate(root, input) {
+    const admitted = cloneDefinitionData(input); if (!admitted.ok) return admitted;
+    const command = admitted.data;
+    if (!only(command, ['viewPath', 'expectedRef', 'instanceId', 'expectedInstanceRef', 'definition', 'snapshots', ...mapFields]) || !safeId(command.instanceId) || !record(command.definition) || !record(command.snapshots)) return fail('INVALID_COMMAND', 'Expected an explicit qualified instance Update.');
+    if (mapFields.some(field => !record(command[field]) || Object.entries(command[field]).some(([id, to]) => !safeId(id) || to !== null && !safeId(to)))) return fail('INVALID_OVERRIDE', 'Supply all four explicit stable mapping records.');
+    return prepareQualifiedScopeEdit(root, command, applyQualifiedInstanceUpdate);
+}
+
+function bindingTarget(key) {
+    let tuple; try { tuple = JSON.parse(key); } catch { return null; }
+    return Array.isArray(tuple) && tuple.length === 2 && Array.isArray(tuple[0]) && tuple[0].length <= 8 && tuple[0].every(safeId) && safeId(tuple[1]) && key === nodeBindingOverrideKey(tuple[0], tuple[1]) ? { instancePath: tuple[0], nodeId: tuple[1] } : null;
+}
+function applyQualifiedInstanceUpdate(context, command) {
+    const node = Object.hasOwn(context.scope.nodes, command.instanceId) && context.scope.nodes[command.instanceId];
+    if (node?.type !== 'subgraph') return fail('INVALID_INSTANCE', 'Expected an actual local wrapper.');
+    if (!exactRef(command.expectedInstanceRef, node.definition)) return fail('STALE_DEFINITION', 'The captured wrapper pin changed.');
+    const closure = selectSubgraphClosure(command.definition, command.snapshots); if (!closure.ok) return closure;
+    const previous = context.candidate.definitions[definitionRefKey(node.definition)], next = closure.data.definition;
+    for (const [field, mapping] of mapFields.map(field => [field, command[field]])) for (const [from, to] of Object.entries(mapping)) {
+        const exists = (definition, table, id) => field === 'portMap' ? definition.interface.some(port => port.id === id) : field === 'parameterMap' ? definition.parameters.some(parameter => parameter.id === id) : field === 'roleMap' ? definitionHasRole(definition, table, id) : !!bindingTarget(id) && !!relativePrimitive(definition, table, bindingTarget(id));
+        if (!exists(previous, context.candidate.definitions, from) || to !== null && !exists(next, closure.data.definitions, to)) return fail('INVALID_OVERRIDE', 'Mapping must identify actual old and new metadata.');
+        if (field === 'portMap' && to !== null) { const oldPort = previous.interface.find(port => port.id === from), newPort = next.interface.find(port => port.id === to); if (oldPort.direction !== newPort.direction || oldPort.kind !== newPort.kind) return fail('INVALID_OVERRIDE', 'Port mappings require matching direction and artifact kind.'); }
     }
-    return prepareGraphCandidate(graph, candidate);
+    const applied = applyInstanceUpdate(context, { ...command, definition: closure.data.definition, snapshots: closure.data.definitions });
+    if (applied.ok && !context.path.length) {
+        reconcileOwners(context.candidate);
+        prunePrivateSnapshots(context.candidate, new Set(ownershipEntries(context.original).map(entry => entry.definitionId)));
+    }
+    return applied;
+}
+
+const interfaceFields = { add: ['label', 'direction', 'artifactKind', 'required'], update: ['id', 'label', 'artifactKind', 'required'], remove: ['id'] };
+const parameterFields = { add: ['label', 'target'], update: ['id', 'label'], remove: ['id'] };
+/** Typed owning-body metadata edits; matching boundaries and full-root refs change atomically. */
+export function prepareOwnedDefinitionMetadataEdit(root, input) {
+    const admitted = cloneDefinitionData(input); if (!admitted.ok) return admitted;
+    const command = admitted.data, fields = command?.kind === 'interface' ? interfaceFields : command?.kind === 'parameter' ? parameterFields : null, edit = command?.edit;
+    if (!fields || !only(command, ['instancePath', 'expectedRef', 'kind', 'edit']) || !Array.isArray(command.instancePath) || !command.instancePath.length || !record(edit) || typeof edit.kind !== 'string' || !Object.hasOwn(fields, edit.kind) || !only(edit, ['kind', ...fields[edit.kind]]) || edit.kind !== 'add' && !safeId(edit.id) || edit.kind !== 'remove' && typeof edit.label !== 'string') return fail('INVALID_COMMAND', 'Expected a typed owned interface or parameter edit.');
+    if (command.kind === 'interface' && edit.kind !== 'remove' && (!ARTIFACT_KINDS.includes(edit.artifactKind) || typeof edit.required !== 'boolean' || edit.kind === 'add' && !['input', 'output'].includes(edit.direction))) return fail('INVALID_COMMAND', 'Expected typed artifact kind and boundary direction.');
+    if (command.kind === 'parameter' && edit.kind === 'add' && (!only(edit.target, ['instancePath', 'nodeId', 'controlId']) || !Array.isArray(edit.target.instancePath) || edit.target.instancePath.length > 8 || !edit.target.instancePath.every(safeId) || !safeId(edit.target.nodeId) || !safeId(edit.target.controlId))) return fail('INVALID_COMMAND', 'Expected an actual relative control target.');
+    return prepareQualifiedScopeEdit(root, { ...command, viewPath: command.instancePath }, applyDefinitionMetadataEdit);
+}
+
+function applyDefinitionMetadataEdit(context, command) {
+    const draft = context.draft, edit = command.edit;
+    if (command.kind === 'interface') {
+        if (edit.kind === 'add') {
+            let id; do { id = context.ids.next('interface-port'); } while (draft.interface.some(port => port.id === id));
+            const boundaryNodeId = context.ids.next('boundary');
+            draft.interface.push({ id, label: edit.label, direction: edit.direction, kind: edit.artifactKind, required: edit.required, cardinality: 'one', boundaryNodeId });
+            draft.body.nodes[boundaryNodeId] = { id: boundaryNodeId, type: `subgraph-${edit.direction}`, interfacePortId: id };
+            return { ok: true, data: { addedInterfaceId: id, addedBoundaryNodeId: boundaryNodeId } };
+        }
+        const port = draft.interface.find(port => port.id === edit.id);
+        if (!port) return fail('DEFINITION_INTERFACE', 'Expected an actual interface port.');
+        if (edit.kind === 'remove') { draft.interface = draft.interface.filter(port => port.id !== edit.id); delete draft.body.nodes[port.boundaryNodeId]; }
+        else { port.label = edit.label; port.kind = edit.artifactKind; port.required = edit.required; }
+    } else {
+        if (edit.kind === 'add') {
+            const node = relativePrimitive(context.definition, context.candidate.definitions, edit.target);
+            if (!node) return fail('DEFINITION_PARAMETER', 'Expected an actual relative primitive control.');
+            const descriptor = describeExposedParameter(node, edit.target.controlId); if (!descriptor.ok) return descriptor;
+            let id; do { id = context.ids.next('parameter'); } while (draft.parameters.some(parameter => parameter.id === id));
+            draft.parameters.push({ id, label: edit.label, target: structuredClone(edit.target) });
+            return { ok: true, data: { addedParameterId: id } };
+        }
+        const parameter = draft.parameters.find(parameter => parameter.id === edit.id);
+        if (!parameter) return fail('DEFINITION_PARAMETER', 'Expected an actual exposed parameter.');
+        if (edit.kind === 'remove') {
+            const chain = definitionChain(context.original, context.path);
+            if (Object.hasOwn(chain.at(-1).node.parameterOverrides ?? {}, parameter.id)) return fail('PARAMETER_IN_USE', 'Reset the surviving wrapper override before removing this parameter.');
+            for (let depth = 0; depth < chain.length - 1; depth++) {
+                const relative = [...context.path.slice(depth + 1), ...parameter.target.instancePath];
+                if (chain[depth].definition.parameters.some(parent => samePath(parent.target.instancePath, relative) && parent.target.nodeId === parameter.target.nodeId && parent.target.controlId === parameter.target.controlId)) return fail('PARAMETER_IN_USE', 'Remove the surviving enclosing exposure before removing this parameter.');
+            }
+            draft.parameters = draft.parameters.filter(parameter => parameter.id !== edit.id);
+        } else parameter.label = edit.label;
+    }
+    return { ok: true, data: {} };
 }
 
 /** Local body editing creates immutable revisions through an explicitly owned qualified path. */
@@ -165,7 +365,7 @@ function reviseQualified(original, candidate, path, chain, leafDraft, copying, i
     }
     candidate.nodes[path[0]].definition = reference(draft);
     candidate.nodes[path[0]].localCopy = { definitionId: draft.id };
-    candidate.localDefinitionOwners = owners.filter(entry => definitionChain(candidate, entry.instancePath)?.at(-1).definition.id === entry.definitionId);
+    reconcileOwners(candidate, owners);
     prunePrivateSnapshots(candidate, new Set([...ownershipEntries(original), ...owners].map(entry => entry.definitionId)));
     const prepared = prepareGraphCandidate(original, candidate);
     return prepared.ok ? { ok: true, data: { ...prepared.data, changedRefs, instancePath: [...path], copying } } : prepared;

@@ -102,8 +102,19 @@ export function prepareNodeControlChange(graph, command) {
     const normalized = normalizeNativeGraph(graph);
     if (!normalized.ok) return normalized;
     if (graph.schema !== 3 || graph.runtime !== 2) return fail('UNSUPPORTED_VERSION', 'Named control editing requires schema 3 and runtime 2.');
-    const candidate = normalized.data, node = Object.hasOwn(candidate.nodes, command.nodeId) && candidate.nodes[command.nodeId];
-    const described = describeOperation(candidate, node);
+    const candidate = normalized.data;
+    const applied = applyDeclaredNodeControlChange({ scope: candidate, metadata: () => candidate }, command);
+    if (!applied.ok) return applied;
+    const validation = validateGraphStructure(candidate);
+    if (!validation.ok) return validation;
+    return { ok: true, data: { candidate, changed: graphDocumentSignature(graph) !== graphDocumentSignature(candidate), addedEdgeIds: [], removedEdgeIds: applied.data.removedEdgeIds,
+        baseSignature: graphSemanticSignature(graph), baseDocumentSignature: graphDocumentSignature(graph) } };
+}
+
+/** Internal mutation of a detached checked scope; callers own admission and full-root finish. */
+export function applyDeclaredNodeControlChange(context, command) {
+    const candidate = context.scope, node = Object.hasOwn(candidate.nodes, command.nodeId) && candidate.nodes[command.nodeId];
+    const described = describeOperation(context.metadata(), node);
     if (!described.ok) return described;
     if (Object.keys(command.controls).some(key => !described.data.descriptor.controls.includes(key))) return fail('INVALID_SETTINGS', 'Only declared operation controls may change.');
     const removed = [...new Set(command.removeEdgeIds ?? [])];
@@ -114,8 +125,5 @@ export function prepareNodeControlChange(graph, command) {
         delete candidate.wires[id];
     }
     Object.assign(node, structuredClone(command.controls));
-    const validation = validateGraphStructure(candidate);
-    if (!validation.ok) return validation;
-    return { ok: true, data: { candidate, changed: graphDocumentSignature(graph) !== graphDocumentSignature(candidate), addedEdgeIds: [], removedEdgeIds: removed,
-        baseSignature: graphSemanticSignature(graph), baseDocumentSignature: graphDocumentSignature(graph) } };
+    return { ok: true, data: { removedEdgeIds: removed } };
 }
