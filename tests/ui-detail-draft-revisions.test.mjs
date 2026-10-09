@@ -1,0 +1,142 @@
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import { readFile, mkdtemp, writeFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join, resolve, relative, isAbsolute } from 'node:path';
+import { pathToFileURL } from 'node:url';
+import { compile } from 'svelte/compiler';
+import { JSDOM } from 'jsdom';
+import { prepareNodeControlChange } from '../src/workflow/ports.js';
+
+const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true });
+globalThis.window = dom.window; globalThis.document = dom.window.document;
+for (const key of ['Node', 'Element', 'Text', 'Comment', 'Document', 'HTMLElement', 'HTMLButtonElement', 'HTMLInputElement', 'HTMLSelectElement', 'MutationObserver']) Object.defineProperty(globalThis, key, { configurable: true, value: dom.window[key] });
+const clientURL = new URL('../node_modules/svelte/src/index-client.js', import.meta.url).href;
+const { mount, unmount, flushSync, tick } = await import(clientURL);
+
+async function compiled(name, directory, source) {
+    const output = compile(source, { filename: name + '.svelte', generate: 'client', css: 'injected' });
+    assert.deepEqual(output.warnings.filter(warning => warning.code.startsWith('a11y')), []);
+    const code = output.js.code.replace(/(['"])(svelte(?:\/[^'"]*)?)\1/g, (_, quote, specifier) => JSON.stringify(specifier === 'svelte' ? clientURL : import.meta.resolve(specifier)));
+    const path = join(directory, name + '.mjs'); await writeFile(path, code);
+    return { path, component: (await import(pathToFileURL(path).href)).default };
+}
+async function fixture(view, actions) {
+    const directory = await mkdtemp(join(tmpdir(), 'lattice-detail-drafts-'));
+    const host = document.createElement('div'); document.body.append(host);
+    let mounted;
+    const cleanup = async () => {
+        if (mounted) await unmount(mounted); host.remove();
+        const target = resolve(directory), rel = relative(resolve(tmpdir()), target);
+        assert.ok(rel && !rel.startsWith('..') && !isAbsolute(rel)); await rm(target, { recursive: true, force: true });
+    };
+    try {
+        const source = await readFile(new URL('../ui/NodeDetails.svelte', import.meta.url), 'utf8');
+        const leaf = await compiled('NodeDetails', directory, source);
+        const harness = await compiled('DetailDraftHarness', directory, `<script>import Leaf from ${JSON.stringify(pathToFileURL(leaf.path).href)}; let { initial, actions } = $props(); let view = $state.raw(initial); export function update(next) { view = next; }</script><Leaf {view} {actions} />`);
+        mounted = mount(harness.component, { target: host, props: { initial: view, actions } }); flushSync();
+        return { host, update(next) { mounted.update(next); flushSync(); }, close: cleanup };
+    } catch (error) { await cleanup(); throw error; }
+}
+const address = { workflowId: 'root', instancePath: [], nodeId: 'scan' };
+const savedRules = [{ phrase: 'delve', note: 'Keep this preference', details: { category: 'wording' } }, 'weave'];
+const initialGraph = () => ({ id: 'root', schema: 3, runtime: 2, mode: 'native-post', roles: {}, definitions: {}, portals: {}, wires: {}, groups: {}, nodes: { scan: { id: 'scan', type: 'workflow', operation: 'pattern-scan', operationVersion: 1, enabled: true, rules: structuredClone(savedRules), caseSensitive: true, exemptions: ['delve safely'], protectedLiterals: ['weave'], model: 'portable-model', presentation: { alias: 'Saved wording' } } } });
+const node = (graph = initialGraph(), extra = {}) => ({ selectionKey: 'selected-scan', revision: 'revision1', address, title: 'Pattern Scan', canonicalTitle: 'Pattern Scan', iconPath: 'M3 5h18', family: 'Surface', phase: 'post', alias: 'Saved wording', compact: false, enabled: true, readOnly: false, canPresent: true, model: null, ports: [], controls: [
+    { key: 'rules', label: 'rules', editor: 'json', representation: 'json-value', value: graph.nodes.scan.rules, effective: JSON.stringify(graph.nodes.scan.rules), source: 'Saved setting', help: 'String and structured rules retain their metadata.' },
+    { key: 'caseSensitive', label: 'case Sensitive', editor: 'boolean', value: graph.nodes.scan.caseSensitive },
+    { key: 'exemptions', label: 'exemptions', editor: 'lines', value: graph.nodes.scan.exemptions },
+], ...extra });
+const editor = f => f.host.querySelector('[aria-label="rules"]');
+const save = f => f.host.querySelector('[data-save-control="rules"]');
+const input = (element, value) => { element.value = value; element.dispatchEvent(new dom.window.Event('input', { bubbles: true })); flushSync(); };
+const settle = async () => { await tick(); flushSync(); };
+async function savedFixture() {
+    let graph = initialGraph(), revision = 1, f;
+    const edits = [];
+    f = await fixture(node(graph), { editControl(captured, key, value) {
+        assert.deepEqual(captured, { selectionKey: 'selected-scan', revision: 'revision' + revision, address });
+        edits.push({ key, value: structuredClone(value) });
+        const prepared = prepareNodeControlChange(graph, { nodeId: captured.address.nodeId, controls: { [key]: value } });
+        if (!prepared.ok) return prepared;
+        graph = prepared.data.candidate; revision++;
+        f.update(node(graph, { revision: 'revision' + revision }));
+        return { ok: true };
+    } });
+    return { ...f, graph: () => graph, edits };
+}
+function toggleCase(f) {
+    const checkbox = f.host.querySelector('[aria-label="case Sensitive"]');
+    checkbox.checked = false; checkbox.dispatchEvent(new dom.window.Event('change', { bubbles: true })); flushSync();
+}
+
+test('an invalid JSON draft and error survive an unrelated saved checkbox revision for the selected node', async () => {
+    const f = await savedFixture();
+    try {
+        const textarea = editor(f);
+        input(textarea, '{"phrase":'); save(f).click(); flushSync();
+        assert.equal(textarea.getAttribute('aria-invalid'), 'true'); assert.match(f.host.querySelector('[role="alert"]').textContent, /valid JSON/);
+        assert.deepEqual(f.edits, [], 'invalid JSON never dispatches a saved-field edit');
+        toggleCase(f); await settle();
+        assert.equal(editor(f), textarea, 'the mounted editor remains connected');
+        assert.equal(editor(f).value, '{"phrase":', 'unrelated saved revision must retain invalid unsaved text');
+        assert.equal(editor(f).getAttribute('aria-invalid'), 'true'); assert.match(f.host.querySelector('[role="alert"]').textContent, /valid JSON/);
+        assert.equal(f.graph().nodes.scan.caseSensitive, false); assert.deepEqual(f.graph().nodes.scan.rules, savedRules);
+        assert.equal(f.graph().nodes.scan.model, 'portable-model'); assert.deepEqual(f.graph().nodes.scan.presentation, { alias: 'Saved wording' });
+        assert.deepEqual(f.edits, [{ key: 'caseSensitive', value: false }]);
+    } finally { await f.close(); }
+});
+
+test('valid JSON and line drafts survive other saves and require their own explicit Save', async () => {
+    const f = await savedFixture();
+    try {
+        const nextRules = [{ phrase: 'Delve', note: 'Keep this preference', details: { category: 'wording' } }, 'tapestry'];
+        const raw = JSON.stringify(nextRules, null, 4);
+        input(editor(f), raw); input(f.host.querySelector('[aria-label="exemptions"]'), 'new exemption\nsecond exemption');
+        assert.deepEqual(f.edits, [], 'typing does not autosave');
+        toggleCase(f); await settle();
+        assert.equal(editor(f).value, raw); assert.equal(f.host.querySelector('[aria-label="exemptions"]').value, 'new exemption\nsecond exemption');
+        assert.deepEqual(f.graph().nodes.scan.rules, savedRules); assert.deepEqual(f.graph().nodes.scan.exemptions, ['delve safely']);
+        save(f).click(); await settle();
+        assert.deepEqual(f.graph().nodes.scan.rules, nextRules); assert.equal(f.host.querySelector('[aria-label="exemptions"]').value, 'new exemption\nsecond exemption');
+        assert.deepEqual(f.graph().nodes.scan.exemptions, ['delve safely']);
+        f.host.querySelector('[data-save-control="exemptions"]').click(); await settle();
+        assert.deepEqual(f.graph().nodes.scan.exemptions, ['new exemption', 'second exemption']);
+        assert.deepEqual(f.edits.map(edit => edit.key), ['caseSensitive', 'rules', 'exemptions']);
+        assert.match(f.host.textContent, /Saved setting/); assert.match(f.host.textContent, /String and structured rules retain their metadata/);
+        assert.deepEqual(f.graph().nodes.scan.protectedLiterals, ['weave']);
+    } finally { await f.close(); }
+});
+
+for (const oldResult of [{ ok: true }, { ok: false, error: { code: 'OLD_REVISION', message: 'Obsolete validation failure' } }]) {
+    test(`revision invalidates pending ${oldResult.ok ? 'success' : 'error'} without deleting retained text or releasing a newer Save`, async () => {
+        const pending = [], captures = [];
+        const f = await fixture(node(), { editControl(captured) { captures.push(captured); return new Promise(resolve => pending.push(resolve)); } });
+        try {
+            input(editor(f), '["first"]'); save(f).click(); flushSync(); assert.equal(save(f).disabled, true);
+            f.update(node(undefined, { revision: 'revision2' }));
+            assert.equal(editor(f).value, '["first"]'); assert.equal(save(f).disabled, false, 'obsolete pending write no longer locks the retained draft');
+            assert.equal(pending.length, 1, 'a revision does not retry or autosave');
+            input(editor(f), '["second"]'); save(f).click(); flushSync(); assert.equal(save(f).disabled, true);
+            assert.deepEqual(captures.map(capture => capture.revision), ['revision1', 'revision2']);
+            pending[0](oldResult); await settle();
+            assert.equal(editor(f).value, '["second"]'); assert.equal(save(f).disabled, true); assert.doesNotMatch(f.host.textContent, /Obsolete validation failure/);
+            pending[1]({ ok: false, error: { code: 'CURRENT', message: 'Current validation failure' } }); await settle();
+            assert.equal(editor(f).value, '["second"]'); assert.equal(save(f).disabled, false); assert.match(f.host.querySelector('[role="alert"]').textContent, /Current validation failure/);
+        } finally { await f.close(); }
+    });
+}
+
+for (const change of [{ selectionKey: 'another-selection' }, { address: { ...address, instancePath: ['other-instance'] } }, { address: { kind: 'library', definitionRef: { id: 'definition', version: 1, semanticHash: 'pinned' }, nodeId: 'scan' } }]) {
+    test(`selection identity clears drafts and rejects callbacks after ${'selectionKey' in change ? 'selection' : 'kind' in change.address ? 'library address' : 'qualified address'} changes`, async () => {
+        const pending = [];
+        const f = await fixture(node(), { editControl() { return new Promise(resolve => pending.push(resolve)); } });
+        try {
+            input(editor(f), '["private draft"]'); save(f).click(); flushSync();
+            const graph = initialGraph(); graph.nodes.scan.rules = ['other saved value'];
+            f.update(node(graph, change));
+            assert.equal(editor(f).value, '[\n  "other saved value"\n]'); assert.equal(save(f).disabled, false);
+            pending[0]({ ok: false, error: { code: 'OTHER_NODE', message: 'Wrong node validation' } }); await settle();
+            assert.equal(editor(f).value, '[\n  "other saved value"\n]'); assert.doesNotMatch(f.host.textContent, /Wrong node validation/);
+        } finally { await f.close(); }
+    });
+}

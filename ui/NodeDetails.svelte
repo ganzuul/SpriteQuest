@@ -1,20 +1,28 @@
 <script lang="ts">
-    import { onDestroy } from 'svelte';
+    import { onDestroy, untrack } from 'svelte';
     import type { DetailBindingMode, DetailControl, DetailEditResponse, DetailSelection, NodeDetailsActions, NodeDetailsView } from './detail-types';
     let { view, actions = {}, idPrefix = 'pc-node-details' }: { view: NodeDetailsView | null; actions?: NodeDetailsActions; idPrefix?: string } = $props();
     let drafts = $state<Record<string, { text: string; error: string; pending: boolean }>>({});
     let errors = $state<Record<string, string>>({});
-    let identity = '';
+    let identity = '', revision = '';
     let sequence = 0;
     const requests = new Map<string, number>();
+    const selectionIdentity = (node: DetailSelection) => JSON.stringify([node.selectionKey, 'kind' in node.address
+        ? [node.address.kind, node.address.definitionRef.id, node.address.definitionRef.version, node.address.definitionRef.semanticHash, node.address.nodeId]
+        : [node.address.workflowId, node.address.instancePath, node.address.nodeId]]);
     let alive = true;
     onDestroy(() => { alive = false; requests.clear(); });
     $effect(() => {
-        const next = view ? JSON.stringify([view.selectionKey, view.revision]) : '';
-        if (next !== identity) { identity = next; drafts = {}; errors = {}; requests.clear(); sequence++; }
+        const next = view ? selectionIdentity(view) : '', nextRevision = view?.revision ?? '';
+        const changedSelection = next !== identity;
+        if (changedSelection || nextRevision !== revision) {
+            identity = next; revision = nextRevision; requests.clear(); sequence++; errors = {};
+            // A revision expires writes, while unsaved text still belongs to this node.
+            drafts = changedSelection ? {} : untrack(() => Object.fromEntries(Object.entries(drafts).map(([key, value]) => [key, { ...value, pending: false }])));
+        }
     });
-    const selection = (node: NodeDetailsView): DetailSelection => ({ selectionKey: node.selectionKey, revision: node.revision, address: { ...node.address, instancePath: [...node.address.instancePath] } });
-    const current = (captured: DetailSelection) => alive && view?.selectionKey === captured.selectionKey && view?.revision === captured.revision;
+    const selection = (node: NodeDetailsView): DetailSelection => ({ selectionKey: node.selectionKey, revision: node.revision, address: 'kind' in node.address ? { ...node.address, definitionRef: { ...node.address.definitionRef } } : { ...node.address, instancePath: [...node.address.instancePath] } });
+    const current = (captured: DetailSelection) => alive && !!view && view.selectionKey === captured.selectionKey && view.revision === captured.revision && selectionIdentity(view) === selectionIdentity(captured);
     function textFor(control: DetailControl) {
         if (control.editor === 'json') return control.representation === 'json-text' ? String(control.value ?? '') : JSON.stringify(control.value, null, 2);
         return control.editor === 'lines' && Array.isArray(control.value) ? control.value.join('\n') : String(control.value ?? '');
@@ -130,7 +138,7 @@
     header svg { width: 22px; height: 22px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
     header div { min-width: 0; } h3 { font-size: 14px; margin: 0 0 3px; overflow-wrap: anywhere; }
     small { display: block; color: #9aa4aa; font-size: 10px; line-height: 1.5; overflow-wrap: anywhere; }
-    .pc-detail-meta { color: #aeb5ba; font-size: 10px; } .pc-detail-group { min-width: 0; margin: 12px 0; padding: 10px; border: 1px solid #ffffff0c; border-radius: 4px; background: #1c1d1e66; box-shadow: inset 0 1px #0004; }
+    .pc-detail-meta { color: #aeb5ba; font-size: 10px; } .pc-detail-group { min-width: 0; margin: 12px 0; padding: 10px 0; border: 0; border-top: 1px solid #ffffff0c; border-radius: 0; background: transparent; box-shadow: none; }
     legend { padding: 0 5px; color: #bbc2c6; font-size: 11px; } label { display: block; margin: 8px 0; color: #bec6ca; font-size: 11px; }
     input:not([type='checkbox']), select, textarea { display: block; width: 100%; box-sizing: border-box; margin-top: 4px; min-height: 28px; padding: 5px 7px; border: 1px solid #ffffff12; border-radius: 2px; background: #14151680; color: #e1e5e7; font: inherit; }
     textarea { min-height: 70px; resize: vertical; line-height: 1.5; } input[type='checkbox'] { accent-color: var(--SmartThemeQuoteColor, #e18a24); }
