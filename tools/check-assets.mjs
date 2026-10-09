@@ -14,6 +14,8 @@ for (const file of files) for (const match of readFileSync(file, 'utf8').matchAl
     assert.ok(existsSync(resolve(dirname(file), match[1])), `missing installed asset: ${match[1]}`);
 }
 const bundle = readFileSync(join(root, 'dist/lattice-ui.js'), 'utf8');
+assert.ok(existsSync(join(root, 'dist/lattice.css')), 'compiled Svelte styles accompany the extension');
+assert.ok(readFileSync(join(root, 'style.css'), 'utf8').includes(`@import url('./dist/lattice.css?v=${version}');`), 'installed stylesheet loads the matching compiled Svelte styles');
 assert.ok(bundle.includes('mountCanvas'), 'canvas mount is exported');
 assert.ok(bundle.includes('mountWorkbench'), 'workbench mount is exported');
 const parsed = ts.createSourceFile('lattice-ui.js', bundle, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);

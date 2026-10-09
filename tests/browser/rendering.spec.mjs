@@ -30,8 +30,8 @@ test('native wires meet real left input and right output pins at nonidentity zoo
     expect(geometry.zoom).toBe(.73);
     const { input, output, start, end } = geometry;
     // All tolerances are screen pixels, including the SVG points transformed by its actual matrix.
-    expect.soft(Math.abs(input.x - input.left), 'native input sits on the left card edge').toBeLessThanOrEqual(1);
-    expect.soft(Math.abs(output.x - output.right), 'native output sits on the right card edge').toBeLessThanOrEqual(1);
+    expect.soft(Math.abs(input.x - input.left - 12 * geometry.zoom), 'native input sits inside the left edge, matching the approved proposal').toBeLessThanOrEqual(1);
+    expect.soft(Math.abs(output.right - output.x - 12 * geometry.zoom), 'native output sits inside the right edge, matching the approved proposal').toBeLessThanOrEqual(1);
     expect.soft(input.y, 'input pin is inside the vertical card extent').toBeGreaterThan(input.top + 2);
     expect.soft(output.y, 'output pin is inside the vertical card extent').toBeLessThan(output.bottom - 2);
     expect.soft(Math.hypot(start.x - output.x, start.y - output.y), 'wire starts at the actual output pin center').toBeLessThanOrEqual(1);

@@ -25,7 +25,7 @@ UI.open();
 await tick(30);
 
 // 1. the name
-assert.match(document.querySelector('.pc-brand').textContent, /Lattice/);
+assert.match(document.querySelector('.pc-brand').textContent, /LATTICE/);
 assert.ok(!document.body.textContent.includes('Prompt Canvas'));
 
 // 2. the Generate face says where its instruction comes from

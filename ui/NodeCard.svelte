@@ -12,11 +12,12 @@
         <div class="pc-native-pins">
             {#each card.ports as port (port.id)}
                 <div class={`pc-native-row pc-native-row-${port.dir}`} style:grid-row={port.row}>
-                    <span class="pc-native-pin-label">{port.label}<small>{port.kind}</small></span>
+                    <span class="pc-native-pin-label">{port.label}</span>
                     <div class={port.className} data-node={card.id} data-dir={port.dir} data-port={port.port} data-side={port.side} data-kind={port.kind} title={port.title} role="img" aria-label={port.title} onmouseenter={() => actions.hoverPin({ nodeId: card.id, dir: port.dir, port: port.port! })} onmouseleave={() => actions.hoverPin(null)}></div>
                 </div>
             {/each}
         </div>
+        {#if card.compact}<span class="pc-native-alias" title={card.titleHint}>{card.title}</span>{/if}
         {#if card.hostResult}<button type="button" class="pc-node-action pc-host-result" aria-label="Preview host result" onmousedown={stop} onclick={(event) => { stop(event); actions.hostResult(card.id); }}><i class="fa-solid fa-eye" aria-hidden="true"></i> Host result</button>{/if}
     {:else}
     <div class="pc-node-head">

@@ -31,6 +31,10 @@ for (const f of files) {
     const after = before.replace(/(from\s+['"])(\.{1,2}\/[^'"?]+\.js)(\?v=[^'"]*)?(['"])/g, `$1$2?v=${v}$4`);
     if (after !== before) fs.writeFileSync(p, after);
 }
+const stylesheet = path.join(root, 'style.css');
+const cssBefore = fs.readFileSync(stylesheet, 'utf8');
+const cssAfter = cssBefore.replace(/(\.\/dist\/lattice\.css\?v=)[^'"\s)]+/g, (_, prefix) => prefix + v);
+if (cssAfter !== cssBefore) fs.writeFileSync(stylesheet, cssAfter);
 for (const file of ['package.json', 'package-lock.json']) {
     const p = path.join(root, file);
     if (!fs.existsSync(p)) continue;
