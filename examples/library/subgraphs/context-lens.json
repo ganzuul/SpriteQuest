@@ -1,0 +1,143 @@
+{
+  "kind": "lattice-subgraph",
+  "schema": 1,
+  "minRuntime": 2,
+  "definition": {
+    "id": "lattice.library.context-lens",
+    "version": 1,
+    "semanticHash": "sha256:30b34b2dc5e283859c2ff39989471da078ffeb228b1e36ee127984291fe673ec",
+    "name": "Context Lens",
+    "interface": [
+      {
+        "id": "context",
+        "label": "Context",
+        "direction": "input",
+        "kind": "context",
+        "required": true,
+        "cardinality": "one",
+        "boundaryNodeId": "entry"
+      },
+      {
+        "id": "selected-context",
+        "label": "Context Lens result",
+        "direction": "output",
+        "kind": "context",
+        "required": false,
+        "cardinality": "one",
+        "boundaryNodeId": "exit"
+      }
+    ],
+    "parameters": [
+      {
+        "id": "targetTokens",
+        "label": "Target tokens",
+        "target": {
+          "instancePath": [],
+          "nodeId": "compact",
+          "controlId": "targetTokens"
+        }
+      },
+      {
+        "id": "keepRecent",
+        "label": "Keep recent messages",
+        "target": {
+          "instancePath": [],
+          "nodeId": "compact",
+          "controlId": "keepRecent"
+        }
+      },
+      {
+        "id": "pins",
+        "label": "Protected literal pins",
+        "target": {
+          "instancePath": [],
+          "nodeId": "compact",
+          "controlId": "pins"
+        }
+      },
+      {
+        "id": "method",
+        "label": "Selection or compression",
+        "target": {
+          "instancePath": [],
+          "nodeId": "compact",
+          "controlId": "method"
+        }
+      },
+      {
+        "id": "purpose",
+        "label": "Selection purpose",
+        "target": {
+          "instancePath": [],
+          "nodeId": "compact",
+          "controlId": "purpose"
+        }
+      },
+      {
+        "id": "maxTokens",
+        "label": "Compression completion limit",
+        "target": {
+          "instancePath": [],
+          "nodeId": "compact",
+          "controlId": "maxTokens"
+        }
+      }
+    ],
+    "body": {
+      "schema": 3,
+      "runtime": 2,
+      "mode": "native-pre",
+      "nodes": {
+        "entry": {
+          "id": "entry",
+          "type": "subgraph-input",
+          "interfacePortId": "context"
+        },
+        "compact": {
+          "id": "compact",
+          "type": "workflow",
+          "operation": "smart-compactor",
+          "operationVersion": 1,
+          "modelRole": "Analysis",
+          "targetTokens": 1200,
+          "purpose": "",
+          "method": "select",
+          "keepRecent": 2,
+          "pins": [],
+          "maxTokens": 1024
+        },
+        "exit": {
+          "id": "exit",
+          "type": "subgraph-output",
+          "interfacePortId": "selected-context"
+        }
+      },
+      "wires": {
+        "select": {
+          "id": "select",
+          "route": "wire",
+          "from": "entry",
+          "fromPort": "out",
+          "to": "compact",
+          "toPort": "in"
+        },
+        "result": {
+          "id": "result",
+          "route": "wire",
+          "from": "compact",
+          "fromPort": "out",
+          "to": "exit",
+          "toPort": "in"
+        }
+      },
+      "groups": {},
+      "roles": {
+        "Analysis": {
+          "model": null
+        }
+      },
+      "portals": {}
+    }
+  },
+  "definitions": {}
+}

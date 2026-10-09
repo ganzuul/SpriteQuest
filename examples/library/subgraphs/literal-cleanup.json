@@ -1,0 +1,201 @@
+{
+  "kind": "lattice-subgraph",
+  "schema": 1,
+  "minRuntime": 2,
+  "definition": {
+    "id": "lattice.library.literal-cleanup",
+    "version": 1,
+    "semanticHash": "sha256:a24a0f6e16208483bd3e93d74f2afced941793e83748a98322a0ba5a44ba9eb3",
+    "name": "Literal Cleanup",
+    "interface": [
+      {
+        "id": "draft",
+        "label": "Draft",
+        "direction": "input",
+        "kind": "draft",
+        "required": true,
+        "cardinality": "one",
+        "boundaryNodeId": "entry"
+      },
+      {
+        "id": "candidate",
+        "label": "Literal Cleanup result",
+        "direction": "output",
+        "kind": "candidate",
+        "required": false,
+        "cardinality": "one",
+        "boundaryNodeId": "exit"
+      }
+    ],
+    "parameters": [
+      {
+        "id": "rules",
+        "label": "Literal phrases",
+        "target": {
+          "instancePath": [],
+          "nodeId": "scan",
+          "controlId": "rules"
+        }
+      },
+      {
+        "id": "scope",
+        "label": "Narration, dialogue or whole",
+        "target": {
+          "instancePath": [],
+          "nodeId": "scan",
+          "controlId": "scope"
+        }
+      },
+      {
+        "id": "caseSensitive",
+        "label": "Case sensitive",
+        "target": {
+          "instancePath": [],
+          "nodeId": "scan",
+          "controlId": "caseSensitive"
+        }
+      },
+      {
+        "id": "exemptions",
+        "label": "Literal exemptions",
+        "target": {
+          "instancePath": [],
+          "nodeId": "scan",
+          "controlId": "exemptions"
+        }
+      },
+      {
+        "id": "pins",
+        "label": "Protected literal pins",
+        "target": {
+          "instancePath": [],
+          "nodeId": "scan",
+          "controlId": "protectedLiterals"
+        }
+      },
+      {
+        "id": "instructions",
+        "label": "Repair instructions",
+        "target": {
+          "instancePath": [],
+          "nodeId": "repair",
+          "controlId": "instructions"
+        }
+      },
+      {
+        "id": "strength",
+        "label": "Repair strength",
+        "target": {
+          "instancePath": [],
+          "nodeId": "repair",
+          "controlId": "strength"
+        }
+      },
+      {
+        "id": "maxTokens",
+        "label": "Repair completion limit",
+        "target": {
+          "instancePath": [],
+          "nodeId": "repair",
+          "controlId": "maxTokens"
+        }
+      }
+    ],
+    "body": {
+      "schema": 3,
+      "runtime": 2,
+      "mode": "native-post",
+      "nodes": {
+        "entry": {
+          "id": "entry",
+          "type": "subgraph-input",
+          "interfacePortId": "draft"
+        },
+        "scan": {
+          "id": "scan",
+          "type": "workflow",
+          "operation": "pattern-scan",
+          "operationVersion": 1,
+          "modelRole": null,
+          "mode": "literal",
+          "scope": "narration",
+          "caseSensitive": false,
+          "rules": [
+            "the words hung in the air",
+            "the tension was palpable",
+            "something unreadable"
+          ],
+          "exemptions": [],
+          "protectedLiterals": []
+        },
+        "repair": {
+          "id": "repair",
+          "type": "workflow",
+          "operation": "repair",
+          "operationVersion": 1,
+          "modelRole": "Prose",
+          "mode": "repair",
+          "strength": "light",
+          "instructions": "Replace only selected literal phrase spans with plain context-appropriate wording. Preserve meaning, dialogue and protected wording.",
+          "maxTokens": 2048,
+          "protectedLiterals": []
+        },
+        "validate": {
+          "id": "validate",
+          "type": "workflow",
+          "operation": "validate-patches",
+          "operationVersion": 1,
+          "modelRole": null,
+          "protectedLiterals": []
+        },
+        "exit": {
+          "id": "exit",
+          "type": "subgraph-output",
+          "interfacePortId": "candidate"
+        }
+      },
+      "wires": {
+        "scan": {
+          "id": "scan",
+          "route": "wire",
+          "from": "entry",
+          "fromPort": "out",
+          "to": "scan",
+          "toPort": "in"
+        },
+        "repair": {
+          "id": "repair",
+          "route": "wire",
+          "from": "scan",
+          "fromPort": "out",
+          "to": "repair",
+          "toPort": "in"
+        },
+        "validate": {
+          "id": "validate",
+          "route": "wire",
+          "from": "repair",
+          "fromPort": "out",
+          "to": "validate",
+          "toPort": "in"
+        },
+        "result": {
+          "id": "result",
+          "route": "wire",
+          "from": "validate",
+          "fromPort": "out",
+          "to": "exit",
+          "toPort": "in"
+        }
+      },
+      "groups": {},
+      "roles": {
+        "Prose": {
+          "model": null
+        }
+      },
+      "portals": {}
+    }
+  },
+  "definitions": {}
+}

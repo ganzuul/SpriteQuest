@@ -1,0 +1,183 @@
+{
+  "kind": "lattice-workflow",
+  "schema": 2,
+  "minRuntime": 2,
+  "graph": {
+    "id": "lattice.library.workflow.formatting-cleanup",
+    "name": "Formatting Cleanup",
+    "schema": 3,
+    "runtime": 2,
+    "mode": "native-post",
+    "nodes": {
+      "source": {
+        "id": "source",
+        "type": "workflow",
+        "operation": "reply-snapshot",
+        "operationVersion": 1
+      },
+      "library": {
+        "id": "library",
+        "type": "subgraph",
+        "definition": {
+          "id": "lattice.library.formatting-cleanup",
+          "version": 1,
+          "semanticHash": "sha256:6ca605033d2e54e32c0930891fd9cc842572db891173a755921eac2d790dccf5"
+        },
+        "parameterOverrides": {},
+        "roleOverrides": {},
+        "nodeBindingOverrides": {}
+      },
+      "review": {
+        "id": "review",
+        "type": "workflow",
+        "operation": "review-gate",
+        "operationVersion": 1
+      },
+      "output": {
+        "id": "output",
+        "type": "workflow",
+        "operation": "apply-reply",
+        "operationVersion": 1
+      }
+    },
+    "wires": {
+      "source": {
+        "id": "source",
+        "route": "wire",
+        "from": "source",
+        "fromPort": "out",
+        "to": "library",
+        "toPort": "draft"
+      },
+      "output": {
+        "id": "output",
+        "route": "wire",
+        "from": "library",
+        "fromPort": "candidate",
+        "to": "review",
+        "toPort": "in"
+      },
+      "review": {
+        "id": "review",
+        "route": "wire",
+        "from": "review",
+        "fromPort": "out",
+        "to": "output",
+        "toPort": "in"
+      }
+    },
+    "groups": {},
+    "roles": {},
+    "portals": {},
+    "definitions": {
+      "[\"lattice.library.formatting-cleanup\",1,\"sha256:6ca605033d2e54e32c0930891fd9cc842572db891173a755921eac2d790dccf5\"]": {
+        "id": "lattice.library.formatting-cleanup",
+        "version": 1,
+        "semanticHash": "sha256:6ca605033d2e54e32c0930891fd9cc842572db891173a755921eac2d790dccf5",
+        "name": "Formatting Cleanup",
+        "interface": [
+          {
+            "id": "draft",
+            "label": "Draft",
+            "direction": "input",
+            "kind": "draft",
+            "required": true,
+            "cardinality": "one",
+            "boundaryNodeId": "entry"
+          },
+          {
+            "id": "candidate",
+            "label": "Formatting Cleanup result",
+            "direction": "output",
+            "kind": "candidate",
+            "required": false,
+            "cardinality": "one",
+            "boundaryNodeId": "exit"
+          }
+        ],
+        "parameters": [
+          {
+            "id": "rules",
+            "label": "Formatting rules",
+            "target": {
+              "instancePath": [],
+              "nodeId": "rules",
+              "controlId": "rules"
+            }
+          }
+        ],
+        "body": {
+          "schema": 3,
+          "runtime": 2,
+          "mode": "native-post",
+          "nodes": {
+            "entry": {
+              "id": "entry",
+              "type": "subgraph-input",
+              "interfacePortId": "draft"
+            },
+            "rules": {
+              "id": "rules",
+              "type": "workflow",
+              "operation": "text-rules",
+              "operationVersion": 1,
+              "modelRole": null,
+              "inputKind": "draft",
+              "mode": "replace",
+              "rules": [
+                {
+                  "kind": "literal",
+                  "pattern": "\r\n",
+                  "replacement": "\n"
+                }
+              ],
+              "separator": "\n"
+            },
+            "validate": {
+              "id": "validate",
+              "type": "workflow",
+              "operation": "validate-patches",
+              "operationVersion": 1,
+              "modelRole": null,
+              "protectedLiterals": []
+            },
+            "exit": {
+              "id": "exit",
+              "type": "subgraph-output",
+              "interfacePortId": "candidate"
+            }
+          },
+          "wires": {
+            "rules": {
+              "id": "rules",
+              "route": "wire",
+              "from": "entry",
+              "fromPort": "out",
+              "to": "rules",
+              "toPort": "in"
+            },
+            "validate": {
+              "id": "validate",
+              "route": "wire",
+              "from": "rules",
+              "fromPort": "out",
+              "to": "validate",
+              "toPort": "in"
+            },
+            "result": {
+              "id": "result",
+              "route": "wire",
+              "from": "validate",
+              "fromPort": "out",
+              "to": "exit",
+              "toPort": "in"
+            }
+          },
+          "groups": {},
+          "roles": {},
+          "portals": {}
+        }
+      }
+    }
+  }
+}

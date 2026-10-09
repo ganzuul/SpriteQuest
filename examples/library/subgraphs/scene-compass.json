@@ -1,0 +1,327 @@
+{
+  "kind": "lattice-subgraph",
+  "schema": 1,
+  "minRuntime": 2,
+  "definition": {
+    "id": "lattice.library.scene-compass",
+    "version": 1,
+    "semanticHash": "sha256:3c81f3c8650c59bdbe6bd2af86e8d3ddf6541631c1ac46f9eb548df33779eabb",
+    "name": "Scene Compass",
+    "interface": [
+      {
+        "id": "context",
+        "label": "Context",
+        "direction": "input",
+        "kind": "context",
+        "required": true,
+        "cardinality": "one",
+        "boundaryNodeId": "entry"
+      },
+      {
+        "id": "guidance",
+        "label": "Scene Compass result",
+        "direction": "output",
+        "kind": "guidance",
+        "required": false,
+        "cardinality": "one",
+        "boundaryNodeId": "exit"
+      }
+    ],
+    "parameters": [
+      {
+        "id": "targetTokens",
+        "label": "Context target tokens",
+        "target": {
+          "instancePath": [
+            "lens"
+          ],
+          "nodeId": "compact",
+          "controlId": "targetTokens"
+        }
+      },
+      {
+        "id": "keepRecent",
+        "label": "Keep recent messages",
+        "target": {
+          "instancePath": [
+            "lens"
+          ],
+          "nodeId": "compact",
+          "controlId": "keepRecent"
+        }
+      },
+      {
+        "id": "pins",
+        "label": "Protected context pins",
+        "target": {
+          "instancePath": [
+            "lens"
+          ],
+          "nodeId": "compact",
+          "controlId": "pins"
+        }
+      },
+      {
+        "id": "method",
+        "label": "Context selection or compression",
+        "target": {
+          "instancePath": [
+            "lens"
+          ],
+          "nodeId": "compact",
+          "controlId": "method"
+        }
+      },
+      {
+        "id": "purpose",
+        "label": "Context purpose",
+        "target": {
+          "instancePath": [
+            "lens"
+          ],
+          "nodeId": "compact",
+          "controlId": "purpose"
+        }
+      },
+      {
+        "id": "compressionMaxTokens",
+        "label": "Compression completion limit",
+        "target": {
+          "instancePath": [
+            "lens"
+          ],
+          "nodeId": "compact",
+          "controlId": "maxTokens"
+        }
+      },
+      {
+        "id": "instructions",
+        "label": "Planning instructions",
+        "target": {
+          "instancePath": [],
+          "nodeId": "plan",
+          "controlId": "instructions"
+        }
+      },
+      {
+        "id": "maxTokens",
+        "label": "Planning completion limit",
+        "target": {
+          "instancePath": [],
+          "nodeId": "plan",
+          "controlId": "maxTokens"
+        }
+      }
+    ],
+    "body": {
+      "schema": 3,
+      "runtime": 2,
+      "mode": "native-pre",
+      "nodes": {
+        "entry": {
+          "id": "entry",
+          "type": "subgraph-input",
+          "interfacePortId": "context"
+        },
+        "lens": {
+          "id": "lens",
+          "type": "subgraph",
+          "definition": {
+            "id": "lattice.library.context-lens",
+            "version": 1,
+            "semanticHash": "sha256:30b34b2dc5e283859c2ff39989471da078ffeb228b1e36ee127984291fe673ec"
+          },
+          "parameterOverrides": {},
+          "roleOverrides": {},
+          "nodeBindingOverrides": {}
+        },
+        "plan": {
+          "id": "plan",
+          "type": "workflow",
+          "operation": "response-plan",
+          "operationVersion": 1,
+          "modelRole": "Analysis",
+          "instructions": "Suggest optional scene direction, actor intentions, constraints and possible next beats. Preserve user agency; do not establish events or decide the user’s actions.",
+          "maxTokens": 768
+        },
+        "exit": {
+          "id": "exit",
+          "type": "subgraph-output",
+          "interfacePortId": "guidance"
+        }
+      },
+      "wires": {
+        "select": {
+          "id": "select",
+          "route": "wire",
+          "from": "entry",
+          "fromPort": "out",
+          "to": "lens",
+          "toPort": "context"
+        },
+        "plan": {
+          "id": "plan",
+          "route": "wire",
+          "from": "lens",
+          "fromPort": "selected-context",
+          "to": "plan",
+          "toPort": "in"
+        },
+        "result": {
+          "id": "result",
+          "route": "wire",
+          "from": "plan",
+          "fromPort": "out",
+          "to": "exit",
+          "toPort": "in"
+        }
+      },
+      "groups": {},
+      "roles": {
+        "Analysis": {
+          "model": null
+        }
+      },
+      "portals": {}
+    }
+  },
+  "definitions": {
+    "[\"lattice.library.context-lens\",1,\"sha256:30b34b2dc5e283859c2ff39989471da078ffeb228b1e36ee127984291fe673ec\"]": {
+      "id": "lattice.library.context-lens",
+      "version": 1,
+      "semanticHash": "sha256:30b34b2dc5e283859c2ff39989471da078ffeb228b1e36ee127984291fe673ec",
+      "name": "Context Lens",
+      "interface": [
+        {
+          "id": "context",
+          "label": "Context",
+          "direction": "input",
+          "kind": "context",
+          "required": true,
+          "cardinality": "one",
+          "boundaryNodeId": "entry"
+        },
+        {
+          "id": "selected-context",
+          "label": "Context Lens result",
+          "direction": "output",
+          "kind": "context",
+          "required": false,
+          "cardinality": "one",
+          "boundaryNodeId": "exit"
+        }
+      ],
+      "parameters": [
+        {
+          "id": "targetTokens",
+          "label": "Target tokens",
+          "target": {
+            "instancePath": [],
+            "nodeId": "compact",
+            "controlId": "targetTokens"
+          }
+        },
+        {
+          "id": "keepRecent",
+          "label": "Keep recent messages",
+          "target": {
+            "instancePath": [],
+            "nodeId": "compact",
+            "controlId": "keepRecent"
+          }
+        },
+        {
+          "id": "pins",
+          "label": "Protected literal pins",
+          "target": {
+            "instancePath": [],
+            "nodeId": "compact",
+            "controlId": "pins"
+          }
+        },
+        {
+          "id": "method",
+          "label": "Selection or compression",
+          "target": {
+            "instancePath": [],
+            "nodeId": "compact",
+            "controlId": "method"
+          }
+        },
+        {
+          "id": "purpose",
+          "label": "Selection purpose",
+          "target": {
+            "instancePath": [],
+            "nodeId": "compact",
+            "controlId": "purpose"
+          }
+        },
+        {
+          "id": "maxTokens",
+          "label": "Compression completion limit",
+          "target": {
+            "instancePath": [],
+            "nodeId": "compact",
+            "controlId": "maxTokens"
+          }
+        }
+      ],
+      "body": {
+        "schema": 3,
+        "runtime": 2,
+        "mode": "native-pre",
+        "nodes": {
+          "entry": {
+            "id": "entry",
+            "type": "subgraph-input",
+            "interfacePortId": "context"
+          },
+          "compact": {
+            "id": "compact",
+            "type": "workflow",
+            "operation": "smart-compactor",
+            "operationVersion": 1,
+            "modelRole": "Analysis",
+            "targetTokens": 1200,
+            "purpose": "",
+            "method": "select",
+            "keepRecent": 2,
+            "pins": [],
+            "maxTokens": 1024
+          },
+          "exit": {
+            "id": "exit",
+            "type": "subgraph-output",
+            "interfacePortId": "selected-context"
+          }
+        },
+        "wires": {
+          "select": {
+            "id": "select",
+            "route": "wire",
+            "from": "entry",
+            "fromPort": "out",
+            "to": "compact",
+            "toPort": "in"
+          },
+          "result": {
+            "id": "result",
+            "route": "wire",
+            "from": "compact",
+            "fromPort": "out",
+            "to": "exit",
+            "toPort": "in"
+          }
+        },
+        "groups": {},
+        "roles": {
+          "Analysis": {
+            "model": null
+          }
+        },
+        "portals": {}
+      }
+    }
+  }
+}
