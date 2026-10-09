@@ -8,7 +8,7 @@ const fail = (code, message, nodeId) => ({ ok: false, error: { code, message, ..
 const bindingValid = value => record(value) && ['profileId', 'model'].every(key => value[key] === undefined || value[key] === null || typeof value[key] === 'string');
 export const nodeAddressKey = ({ workflowId, instancePath, nodeId }) => JSON.stringify([workflowId, instancePath, nodeId]);
 
-/** Existing schema-2 guard, kept byte-for-byte in behavior for all readers. */
+/** Bounded plain authoring data shared by current readers and safe exports. */
 export function safeWorkflowData(value) {
     let entries = 0, characters = 0;
     const seen = new Set();
@@ -362,7 +362,7 @@ function expandChecked(root, snapshots, rootDefinition) {
         for (const node of Object.values(graph.nodes)) {
             if (node.type === 'note') continue;
             const at = address(path, node.id), operation = operationFor(node, { phase: graph.mode.slice(7) });
-            const enabled = ancestorEnabled && node.enabled !== false && graph.groups?.[node.inGroup]?.enabled !== false;
+            const enabled = ancestorEnabled && node.enabled !== false;
             const ports = portsForNode({ ...graph, definitions: snapshots, interface: definition?.interface }, node);
             for (const port of ports) {
                 const pinAddress = { ...at, portId: port.id };

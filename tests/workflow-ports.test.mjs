@@ -2,28 +2,28 @@ import assert from 'node:assert/strict';
 import * as contracts from '../src/workflow/contracts.js';
 import * as catalog from '../src/workflow/catalog.js';
 
-const fixture = () => ({ id: 'root', schema: 2, runtime: 1, mode: 'native-pre', nodes: {
+const fixture = () => ({ id: 'root', schema: 3, runtime: 2, mode: 'native-pre', nodes: {
     source: { id: 'source', type: 'workflow', operation: 'scene-context' },
     compact: { id: 'compact', type: 'workflow', operation: 'smart-compactor' },
     other: { id: 'other', type: 'workflow', operation: 'smart-compactor', enabled: false },
-}, wires: { a: { id: 'a', from: 'source', to: 'compact', order: 0 }, b: { id: 'b', from: 'source', to: 'other', order: 1 } }, groups: {} });
+}, wires: { a: { id: 'a', route: 'wire', from: 'source', fromPort: 'out', to: 'compact', toPort: 'in', order: 0 }, b: { id: 'b', route: 'wire', from: 'source', fromPort: 'out', to: 'other', toPort: 'in', order: 1 } }, groups: {} });
 
 // Structural authoring validation must allow absent terminals and disabled unfinished branches.
 assert.equal(typeof contracts.validateGraphStructure, 'function');
 assert.equal(contracts.validateGraphStructure(fixture()).ok, true);
 assert.equal(contracts.validateWorkflow(fixture()).error.code, 'MISSING_TERMINAL');
-assert.equal(typeof contracts.isNativeWorkflow, 'function');
-for (const schema of [2, 3, 99]) assert.equal(contracts.isNativeWorkflow({ schema }), true);
-assert.equal(contracts.isNativeWorkflow({ schema: 1 }), false);
+assert.equal(typeof contracts.isWorkflowGraph, 'function');
+assert.equal(contracts.isWorkflowGraph(fixture()), true);
+for (const schema of [1, 2, 99]) assert.equal(contracts.isWorkflowGraph({ ...fixture(), schema }), false);
 let getterCalls = 0;
-assert.equal(contracts.isNativeWorkflow({ get schema() { getterCalls++; return 3; } }), true, 'unsafe routing fails closed before legacy work');
+assert.equal(contracts.isWorkflowGraph({ get schema() { getterCalls++; return 3; } }), false);
 assert.equal(getterCalls, 0);
 assert.equal(typeof catalog.portsForNode, 'function');
 assert.deepEqual(catalog.portsForNode(fixture(), fixture().nodes.source).map(p => [p.id, p.direction, p.kind]), [['out', 'output', 'context']]);
 assert.deepEqual(catalog.portsForNode(fixture(), { type: 'workflow', operation: 'guidance' }).map(p => p.id), ['in']);
-const { normalizeNativeGraph } = await import('../src/workflow/migration.js');
+const { cloneWorkflowDocument } = await import('../src/workflow/document.js');
 const original = fixture(), before = structuredClone(original);
-const normalized = normalizeNativeGraph(original);
+const normalized = cloneWorkflowDocument(original);
 assert.equal(normalized.ok, true);
 assert.deepEqual(original, before);
 assert.equal(normalized.data.schema, 3);
@@ -32,10 +32,10 @@ assert.equal(normalized.data.wires.a.fromPort, 'out');
 assert.equal(normalized.data.wires.a.toPort, 'in');
 assert.equal(normalized.data.wires.a.route, 'wire');
 assert.deepEqual(Object.keys(normalized.data.wires), ['a', 'b']);
-assert.equal(normalizeNativeGraph({ ...original, schema: 1 }).ok, false);
-assert.equal(normalizeNativeGraph({ ...original, runtime: 9 }).error.code, 'UNSUPPORTED_VERSION');
+assert.equal(cloneWorkflowDocument({ ...original, schema: 1 }).ok, false);
+assert.equal(cloneWorkflowDocument({ ...original, runtime: 9 }).error.code, 'UNSUPPORTED_VERSION');
 assert.equal(contracts.validateGraphStructure(normalized.data).ok, true);
-assert.deepEqual(normalizeNativeGraph(normalized.data).data, normalized.data);
+assert.deepEqual(cloneWorkflowDocument(normalized.data).data, normalized.data);
 const wrongPort = structuredClone(normalized.data);
 wrongPort.wires.a.fromPort = 'in';
 assert.equal(contracts.validateGraphStructure(wrongPort).error.code, 'INVALID_PORT');
@@ -121,12 +121,12 @@ malformedIdentity.wires.a.id = 'different';
 assert.equal(contracts.validateGraphStructure(malformedIdentity).error.code, 'MALFORMED_WORKFLOW');
 const legacy = { schema: 1, nodes: { d: { id: 'd', type: 'decider' }, s: { id: 's', type: 'state' } }, wires: { legacy: { id: 'legacy', from: 'd', to: 's', kind: 'save', port: 'flag' } } };
 const legacyBefore = structuredClone(legacy);
-assert.equal(normalizeNativeGraph(legacy).error.code, 'UNSUPPORTED_VERSION');
+assert.equal(cloneWorkflowDocument(legacy).error.code, 'UNSUPPORTED_VERSION');
 assert.equal(connect(legacy, 'd', 's').ok, false);
-assert.deepEqual(legacy, legacyBefore, 'legacy keyed endpoints and wire modes are never reinterpreted');
+assert.deepEqual(legacy, legacyBefore, 'retired keyed endpoints and wire modes are never reinterpreted');
 const { workflowSignature } = await import('../src/workflow/runtime.js');
 assert.equal(typeof ports.graphSemanticSignature, 'function');
-assert.equal(ports.graphSemanticSignature(original), workflowSignature(original), 'schema2 signature parity is exact');
+assert.equal(ports.graphSemanticSignature(original), workflowSignature(original), 'current semantic signature is shared by runtime');
 assert.equal(ports.graphSemanticSignature(moved), ports.graphSemanticSignature(normalized.data), 'layout/aliases/camera do not change execution identity');
 assert.notEqual(ports.graphSemanticSignature(wrongPort), ports.graphSemanticSignature(normalized.data), 'named endpoint changes invalidate execution');
 const rerouteSignatureGraph = structuredClone(normalized.data);
@@ -143,6 +143,12 @@ parity.nodes.compact.method = 'compress';
 parity.nodes.note = { id: 'note', type: 'note', content: 'Presentation', inGroup: 'g' };
 parity.nodes.validation = { id: 'validation', type: 'workflow', operation: 'validate-patches', protectedLiterals: ['protected'] };
 assert.equal(ports.graphSemanticSignature(parity), workflowSignature(parity));
+const regrouped = structuredClone(parity);
+regrouped.groups.g.enabled = true; regrouped.groups.g.members = ['compact'];
+delete regrouped.nodes.source.inGroup; regrouped.nodes.note.content = 'Changed presentation';
+regrouped.wires.a.order = 99; regrouped.wires.a.kind = 'prepend';
+assert.equal(ports.graphSemanticSignature(regrouped), ports.graphSemanticSignature(parity), 'groups, annotations and saved wire presentation metadata do not change execution');
+assert.notEqual(ports.graphDocumentSignature(regrouped), ports.graphDocumentSignature(parity), 'presentation authoring edits remain in document freshness and history');
 const bounded = { ...normalized.data, wires: {}, nodes: Object.fromEntries(Array.from({ length: 1000 }, (_, i) => [`n${i}`, { id: `n${i}`, type: 'note' }])) };
 assert.equal(contracts.validateGraphStructure(bounded).ok, true);
 bounded.nodes.excess = { id: 'excess', type: 'note' };

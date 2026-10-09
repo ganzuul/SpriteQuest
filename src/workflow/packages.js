@@ -1,4 +1,4 @@
-import { safeWorkflowData, validateWorkflow, validateGraphStructure } from './contracts.js?v=0.20.0';
+import { safeWorkflowData, validateGraphStructure } from './contracts.js?v=0.20.0';
 import { OPERATIONS } from './catalog.js?v=0.20.0';
 import { cloneDefinitionData, computeDefinitionIdentity, definitionRefKey, inspectDefinitionMetadata, validateDefinition } from './definitions.js?v=0.20.0';
 const limit = 2000000;
@@ -11,7 +11,7 @@ function portableDefinition(definition) {
     copy.parameters = definition.parameters.map(parameter => ({ ...pick(parameter, ['id', 'label']), target: pick(parameter.target, ['instancePath', 'nodeId', 'controlId']) }));
     copy.body = portableNativeDocument(definition.body);
     const materialized = computeDefinitionIdentity(copy);
-    return materialized.ok ? structuredClone(materialized.data.materializedDefinition) : copy;
+    return materialized.ok ? structuredClone({ ...materialized.data.materializedDefinition, semanticHash: materialized.data.semanticHash }) : copy;
 }
 function portableNativeDocument(graph) {
     const copy = pick(graph, ['id', 'name', 'description', 'schema', 'runtime', 'mode', 'nodes', 'wires', 'groups', 'roles', 'portals', 'definitions', 'template', 'view', 'createdAt', 'updatedAt']);
@@ -48,35 +48,32 @@ function portableNativeDocument(graph) {
     return copy;
 }
 function portableGraph(graph) {
-    const copy = structuredClone(graph.schema === 3 ? portableNativeDocument(graph) : graph);
-    for (const binding of Object.values(copy.roles ?? {})) if ('profileId' in binding) binding.profileId = null;
-    for (const node of Object.values(copy.nodes)) if ('profileId' in node) node.profileId = null;
-    return copy;
+    return structuredClone(portableNativeDocument(graph));
 }
 /** The caller serializes this envelope for download. No host state is consulted. */
 export function exportWorkflow(graph) {
     if (!safeWorkflowData(graph)) throw new Error('Expected a bounded plain workflow graph.');
+    const structure = validateGraphStructure(graph);
+    if (!structure.ok) throw new Error(structure.error.message);
     const portable = portableGraph(graph);
-    const validation = graph?.schema === 3 ? validateGraphStructure(portable) : validateWorkflow(graph);
+    const validation = validateGraphStructure(portable);
     if (!validation.ok) throw new Error(validation.error.message);
-    const version = graph.schema === 3 ? 2 : 1;
-    const envelope = { kind: 'lattice-workflow', schema: version, minRuntime: version, graph: portable };
-    if (version === 2 && new TextEncoder().encode(JSON.stringify(envelope)).byteLength > limit) throw new Error('Workflow JSON must be at most 2,000,000 UTF-8 bytes.');
+    const envelope = { kind: 'lattice-workflow', schema: 2, minRuntime: 2, graph: portable };
+    if (new TextEncoder().encode(JSON.stringify(envelope)).byteLength > limit) throw new Error('Workflow JSON must be at most 2,000,000 UTF-8 bytes.');
     return envelope;
 }
 /** Parsing and preflight are pure; settings change only after caller acceptance. */
 export function parseWorkflow(json) {
-    if (typeof json !== 'string' || json.length > 2000000) return { ok: false, error: { code: 'MALFORMED_WORKFLOW', message: 'Workflow JSON must be at most 2 MB.' } };
+    if (typeof json !== 'string' || json.length > limit || new TextEncoder().encode(json).byteLength > limit) return fail('MALFORMED_WORKFLOW', 'Workflow JSON must be at most 2,000,000 UTF-8 bytes.');
     let envelope;
     try { envelope = JSON.parse(json); } catch { return { ok: false, error: { code: 'INVALID_JSON', message: 'That is not valid workflow JSON.' } }; }
     if (!safeWorkflowData(envelope)) return { ok: false, error: { code: 'MALFORMED_WORKFLOW', message: 'Invalid workflow package data.' } };
-    if (!['lattice-workflow', 'comfytavern-workflow'].includes(envelope?.kind) || !((envelope.schema === 1 && envelope.minRuntime === 1) || (envelope.schema === 2 && envelope.minRuntime === 2))) return { ok: false, error: { code: 'UNSUPPORTED_PACKAGE', message: 'This package requires a supported Lattice workflow version and runtime.' } };
-    if (envelope.schema === 2 && new TextEncoder().encode(json).byteLength > limit) return fail('MALFORMED_WORKFLOW', 'Workflow JSON must be at most 2,000,000 UTF-8 bytes.');
-    const expected = envelope.schema === 1 ? [2, 1] : [3, 2];
-    if (envelope.graph?.schema !== expected[0] || envelope.graph?.runtime !== expected[1]) return fail('UNSUPPORTED_VERSION', 'The graph version does not match its package version.');
+    if (envelope?.kind !== 'lattice-workflow' || envelope.schema !== 2 || envelope.minRuntime !== 2) return fail('UNSUPPORTED_PACKAGE', 'Expected a Lattice workflow package with schema 2 and minRuntime 2.');
+    const structure = validateGraphStructure(envelope.graph);
+    if (!structure.ok) return structure;
     let portable;
     try { portable = portableGraph(envelope.graph); } catch { return fail('MALFORMED_WORKFLOW', 'Malformed workflow package containers.'); }
-    const validation = envelope.schema === 1 ? validateWorkflow(envelope.graph) : validateGraphStructure(portable);
+    const validation = validateGraphStructure(portable);
     if (!validation.ok) return validation;
     return { ok: true, data: portable };
 }
@@ -117,7 +114,9 @@ export function selectSubgraphClosure(definition, snapshots = {}) {
 /** Portable standalone snapshots use one flat, local table for the complete pinned closure. */
 export function exportSubgraph(definition, snapshots = {}) {
     if (!safeWorkflowData(definition) || !safeWorkflowData(snapshots)) throw new Error('Expected bounded plain subgraph data.');
-    const portable = portableDefinition(definition), definitions = Object.fromEntries(Object.entries(snapshots).map(([key, item]) => [key, portableDefinition(item)]));
+    const closure = selectSubgraphClosure(definition, snapshots);
+    if (!closure.ok) throw new Error(closure.error.message);
+    const portable = portableDefinition(closure.data.definition), definitions = Object.fromEntries(Object.entries(closure.data.definitions).map(([key, item]) => [key, portableDefinition(item)]));
     const validation = validateDefinition(portable, definitions);
     if (!validation.ok) throw new Error(validation.error.message);
     const envelope = { kind: 'lattice-subgraph', schema: 1, minRuntime: 2, definition: portable, definitions };
@@ -131,7 +130,9 @@ export function parseSubgraph(json) {
     if (!safeWorkflowData(envelope)) return fail('DEFINITION_DATA', 'Invalid plain subgraph package data.');
     if (envelope?.kind !== 'lattice-subgraph' || envelope.schema !== 1 || envelope.minRuntime !== 2) return fail('UNSUPPORTED_PACKAGE', 'Unsupported subgraph package/runtime pair.');
     try {
-        const definition = portableDefinition(envelope.definition), definitions = Object.fromEntries(Object.entries(envelope.definitions ?? {}).map(([key, item]) => [key, portableDefinition(item)]));
+        const closure = selectSubgraphClosure(envelope.definition, envelope.definitions ?? {});
+        if (!closure.ok) return closure;
+        const definition = portableDefinition(closure.data.definition), definitions = Object.fromEntries(Object.entries(closure.data.definitions).map(([key, item]) => [key, portableDefinition(item)]));
         const validation = validateDefinition(definition, definitions);
         return validation.ok ? { ok: true, data: { definition: validation.data.definition, definitions } } : validation;
     } catch { return fail('DEFINITION_DATA', 'Malformed subgraph package containers.'); }

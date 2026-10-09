@@ -1,51 +1,42 @@
 {
   "kind": "lattice-workflow",
-  "schema": 1,
-  "minRuntime": 1,
+  "schema": 2,
+  "minRuntime": 2,
   "graph": {
     "id": "reviewed-de-slop",
     "name": "Reviewed AI De-slop",
-    "schema": 2,
-    "runtime": 1,
+    "schema": 3,
+    "runtime": 2,
     "mode": "native-post",
-    "template": {
-      "id": "reviewed-de-slop",
-      "version": 1
-    },
-    "roles": {
-      "Prose": {
-        "profileId": null,
-        "model": null
-      }
-    },
     "nodes": {
       "reply-snapshot": {
         "id": "reply-snapshot",
         "type": "workflow",
+        "operation": "reply-snapshot",
         "operationVersion": 1,
+        "title": "Reply Snapshot",
         "enabled": true,
         "x": 100,
         "y": 140,
         "w": 260,
-        "operation": "reply-snapshot",
-        "title": "Reply Snapshot",
-        "modelRole": null,
         "profileId": null,
-        "model": null
+        "model": null,
+        "modelRole": null
       },
       "pattern-scan": {
         "id": "pattern-scan",
         "type": "workflow",
+        "operation": "pattern-scan",
         "operationVersion": 1,
+        "title": "Pattern Scan",
         "enabled": true,
         "x": 410,
         "y": 140,
         "w": 260,
-        "operation": "pattern-scan",
-        "title": "Pattern Scan",
-        "modelRole": null,
+        "inGroup": "ai-de-slop",
         "profileId": null,
         "model": null,
+        "modelRole": null,
         "mode": "literal",
         "scope": "whole",
         "caseSensitive": false,
@@ -55,106 +46,120 @@
           "tapestry"
         ],
         "exemptions": [],
-        "protectedLiterals": [],
-        "inGroup": "ai-de-slop"
+        "protectedLiterals": []
       },
       "repair": {
         "id": "repair",
         "type": "workflow",
+        "operation": "repair",
         "operationVersion": 1,
+        "title": "Repair",
         "enabled": true,
         "x": 720,
         "y": 140,
         "w": 260,
-        "operation": "repair",
-        "title": "Repair",
-        "modelRole": "Prose",
+        "inGroup": "ai-de-slop",
         "profileId": null,
         "model": null,
+        "modelRole": "Prose",
         "mode": "repair",
         "strength": "light",
         "instructions": "",
         "maxTokens": 2048,
-        "protectedLiterals": [],
-        "inGroup": "ai-de-slop"
+        "protectedLiterals": []
       },
       "validate-patches": {
         "id": "validate-patches",
         "type": "workflow",
+        "operation": "validate-patches",
         "operationVersion": 1,
+        "title": "Validate Patches",
         "enabled": true,
         "x": 1030,
         "y": 140,
         "w": 260,
-        "operation": "validate-patches",
-        "title": "Validate Patches",
-        "modelRole": null,
+        "inGroup": "ai-de-slop",
         "profileId": null,
         "model": null,
-        "inGroup": "ai-de-slop"
+        "modelRole": null
       },
       "review-gate": {
         "id": "review-gate",
         "type": "workflow",
+        "operation": "review-gate",
         "operationVersion": 1,
+        "title": "Review Gate",
         "enabled": true,
         "x": 1340,
         "y": 140,
         "w": 260,
-        "operation": "review-gate",
-        "title": "Review Gate",
-        "modelRole": null,
         "profileId": null,
-        "model": null
+        "model": null,
+        "modelRole": null
       },
       "apply-reply": {
         "id": "apply-reply",
         "type": "workflow",
+        "operation": "apply-reply",
         "operationVersion": 1,
+        "title": "Apply Reply",
         "enabled": true,
         "x": 1650,
         "y": 140,
         "w": 260,
-        "operation": "apply-reply",
-        "title": "Apply Reply",
-        "modelRole": null,
         "profileId": null,
-        "model": null
+        "model": null,
+        "modelRole": null
       }
     },
     "wires": {
       "wire-1": {
         "id": "wire-1",
+        "route": "wire",
         "from": "reply-snapshot",
+        "fromPort": "out",
         "to": "pattern-scan",
+        "toPort": "in",
         "order": 0,
         "kind": "merge"
       },
       "wire-2": {
         "id": "wire-2",
+        "route": "wire",
         "from": "pattern-scan",
+        "fromPort": "out",
         "to": "repair",
+        "toPort": "in",
         "order": 0,
         "kind": "merge"
       },
       "wire-3": {
         "id": "wire-3",
+        "route": "wire",
         "from": "repair",
+        "fromPort": "out",
         "to": "validate-patches",
+        "toPort": "in",
         "order": 0,
         "kind": "merge"
       },
       "wire-4": {
         "id": "wire-4",
+        "route": "wire",
         "from": "validate-patches",
+        "fromPort": "out",
         "to": "review-gate",
+        "toPort": "in",
         "order": 0,
         "kind": "merge"
       },
       "wire-5": {
         "id": "wire-5",
+        "route": "wire",
         "from": "review-gate",
+        "fromPort": "out",
         "to": "apply-reply",
+        "toPort": "in",
         "order": 0,
         "kind": "merge"
       }
@@ -163,23 +168,35 @@
       "ai-de-slop": {
         "id": "ai-de-slop",
         "title": "AI De-slop",
-        "collapsed": true,
-        "enabled": true,
         "x": 410,
         "y": 140,
         "w": 260,
-        "component": {
-          "id": "ai-de-slop",
-          "version": 1
-        },
+        "collapsed": true,
+        "enabled": true,
         "entry": "pattern-scan",
         "exit": "validate-patches",
         "members": [
           "pattern-scan",
           "repair",
           "validate-patches"
-        ]
+        ],
+        "component": {
+          "id": "ai-de-slop",
+          "version": 1
+        }
       }
+    },
+    "roles": {
+      "Prose": {
+        "model": null,
+        "profileId": null
+      }
+    },
+    "portals": {},
+    "definitions": {},
+    "template": {
+      "id": "reviewed-de-slop",
+      "version": 1
     },
     "view": {
       "x": 0,

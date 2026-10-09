@@ -1,6 +1,5 @@
-import { validateWorkflow } from './contracts.js?v=0.20.0';
-import { operationFor, portsForNode } from './catalog.js?v=0.20.0';
-import { normalizeNativeGraph } from './migration.js?v=0.20.0';
+import { operationFor } from './catalog.js?v=0.20.0';
+import { cloneWorkflowDocument } from './document.js?v=0.20.0';
 import { resolveWorkflow } from './resolve.js?v=0.20.0';
 import { compactContext, formatContext } from './compactor.js?v=0.20.0';
 import { scanDraft, repairDraft, validatePatches } from './repair.js?v=0.20.0';
@@ -21,18 +20,8 @@ const artifactKey = address => JSON.stringify([address.workflowId,address.instan
 const versionMetadata = value => typeof value==='number' && Number.isFinite(value) ? value : undefined;
 const observe = (observer,...args) => { try { const pending=observer?.(...args); if(pending && typeof pending.then==='function')Promise.resolve(pending).catch(()=>{}); } catch {/* Observers never own execution. */} };
 
-/** Historical schema-2 ordering feeds the same addressed loop as resolved schema 3. */
-function legacyPlan(graph,validation) {
-    const workflowId=graph.id || 'workflow',phase=graph.mode.slice(7),included=new Set(validation.orderedNodes.map(node=>node.id));
-    const ordered=[...validation.orderedNodes.map(node=>graph.nodes[node.id]),...Object.values(graph.nodes).filter(node=>node.type!=='note'&&!included.has(node.id))];
-    const at=nodeId=>({workflowId,instancePath:[],nodeId});
-    const edges=Object.values(graph.wires).map(wire=>({from:{...at(wire.from),portId:'out'},to:{...at(wire.to),portId:'in'}}));
-    const primitives=ordered.map(node=>{const op=operationFor(node),pins=portsForNode(graph,node),bound=op.requestBound;return {address:at(node.id),node,enabled:node.enabled!==false,terminal:op.terminal,included:included.has(node.id),inputPorts:pins.filter(port=>port.direction==='input'),outputPorts:pins.filter(port=>port.direction==='output'),requestBound:typeof bound==='function'?bound(node):bound,dependencies:edges.filter(edge=>edge.to.nodeId===node.id).map(edge=>at(edge.from.nodeId))};});
-    return {workflowId,phase,mode:'root',primitives,edges,hierarchy:primitives.map(unit=>({address:unit.address,kind:'primitive',included:unit.included})),terminals:primitives.filter(unit=>unit.terminal&&unit.included).map(unit=>({kind:'terminal',address:unit.address})),callBound:validation.callBound,units:primitives.map(unit=>({address:unit.address,operation:unit.node.operation,label:unit.node.alias??unit.node.title??unit.node.operation,included:unit.included,dependencies:unit.dependencies,requestBound:unit.requestBound,inputPorts:unit.inputPorts.map(port=>port.id),outputPorts:unit.outputPorts.map(port=>port.id)}))};
-}
 function planWorkflow(graph,ports) {
-    if(own(graph,'schema')===2 && ports.target===undefined) {const validation=validateWorkflow(graph,{phase:ports.phase});if(!validation.ok)return validation;const clone=structuredClone(graph);return {ok:true,data:legacyPlan(clone,validation.data),graph:clone};}
-    const normalized=normalizeNativeGraph(graph);if(!normalized.ok)return normalized;
+    const normalized=cloneWorkflowDocument(graph);if(!normalized.ok)return normalized;
     if(ports.phase && normalized.data.mode!=='native-'+ports.phase)return failure('WRONG_PHASE','The workflow operation does not support this phase.');
     const resolved=resolveWorkflow(normalized.data,ports.target===undefined?{}:{target:ports.target});return resolved.ok?{...resolved,graph:normalized.data}:resolved;
 }
@@ -65,14 +54,14 @@ async function executeNode(node,inputs,op,local) {
     }
 }
 
-/** Public execution returns bounded diagnostics for schema 3 and all targeted runs. */
+/** Public execution returns addressed bounded recordings. */
 export async function runWorkflow(graph,ports={}) { return executeWorkflow(graph,ports); }
 /** Host-only lifecycle transport; deliberately absent from the public facade. */
 export async function runWorkflowForHost(graph,ports={},hooks={}) { return executeWorkflow(graph,ports,hooks); }
 
 async function executeWorkflow(original,ports,hooks={}) {
-    const schema=versionMetadata(own(original,'schema')),runtime=versionMetadata(own(original,'runtime')),legacy=schema===2 && ports.target===undefined,mode=ports.target===undefined?'root':'target';
-    const calls=[],reports=[],outputs=[],artifacts=new Map(),bindings=new Map(),nodeCalls=new Map(),terminals=[];
+    const schema=versionMetadata(own(original,'schema')),runtime=versionMetadata(own(original,'runtime')),mode=ports.target===undefined?'root':'target';
+    const artifacts=new Map(),bindings=new Map(),nodeCalls=new Map(),terminals=[];
     let runId,recorder,plan,safePlan,current,callBound=0,actualCalls=0,seq=0,lastElapsed=0,cancelling=false,closed=false,removeAbort=()=>{};
     let now,monotonic,started;
     const safeFailure=result=>{const error=safeError(result?.error)??{code:'WORKFLOW_FAILED',message:'Workflow preparation failed; inspect the source, connection and tokenizer.'};if(current && safePlan?.units.some(unit=>unit.included&&addressKey(unit.address)===addressKey(current.address)))Object.assign(error,{nodeId:current.address.nodeId,address:current.address});return {ok:false,error};};
@@ -86,11 +75,11 @@ async function executeWorkflow(original,ports,hooks={}) {
     const cancel=()=>{if(!cancelling&&!closed&&safePlan){emit('run-cancelling',{reason:{code:'ABORTED',message:'Workflow was stopped.'}});cancelling=true;}};
     const stopped=()=>ports.signal?.aborted||cancelling;
     const finish=raw=>{
-        const result=raw.ok?raw:(legacy?raw:safeFailure(raw));
+        const result=raw.ok?raw:safeFailure(raw);
         if(recorder && !closed){if(stopped())cancel();emit('run-settled',{status:stopped()?'cancelled':result.ok?'completed':!safePlan?'invalid':/^STALE|BINDING_CHANGED/.test(result.error?.code)?'stale':'failed',...(!result.ok?{error:safeError(result.error),...(current&&safePlan?{failedAddress:current.address}:{})}:{})});closed=true;}
         const recording=recorder?.finish();
         const identity=typeof runId==='string'?{runId}:{};
-        return freezeArtifact(legacy?{...result,reports:[...reports,...(result.reports??[])],calls,trace:calls,outputs,callBound,actualCalls,...identity,mode,...(recording?{recording}:{})}:{...(schema!==undefined?{schema}:{}),...(runtime!==undefined?{runtime}:{}),...identity,mode,ok:result.ok,callBound,actualCalls,...(recording?{recording}:{}),...(!result.ok?{error:result.error}:{}),...(result.preview?{preview:true}:{})});
+        return freezeArtifact({...(schema!==undefined?{schema}:{}),...(runtime!==undefined?{runtime}:{}),...identity,mode,ok:result.ok,callBound,actualCalls,...(recording?{recording}:{}),...(!result.ok?{error:result.error}:{}),...(result.preview?{preview:true}:{})});
     };
     try {
         runId=ports.runId===undefined?(globalThis.crypto?.randomUUID?.()??'run-'+Date.now()+'-'+Math.random()):ports.runId;
@@ -115,7 +104,7 @@ async function executeWorkflow(original,ports,hooks={}) {
         if(ports.dryRun||ports.preview)return finish({ok:true,preview:true});
         const preparation=await hooks.prepare?.(plan,{cancel,originalGraphSnapshot});if(preparation?.ok===false)return finish(preparation);
         const nodes=plan.primitives.filter(unit=>unit.included);
-        const bindingGraph=legacy?prepared.graph:{...prepared.graph,roles:{}};
+        const bindingGraph={...prepared.graph,roles:{}};
         for(const unit of nodes) {
             if(!unit.requestBound)continue;current=unit;if(stopped())return finish(failure('ABORTED','Workflow was stopped.',unit.address.nodeId));
             emit('node-phase',{address:unit.address,phase:'binding'});
@@ -138,31 +127,28 @@ async function executeWorkflow(original,ports,hooks={}) {
                 if(stopped())return failure('ABORTED','Workflow was stopped.',node.id);
                 if(!Number.isFinite(tokenCount?.tokens)||tokenCount.tokens<0)return failure('TOKEN_COUNT_FAILED','The tokenizer returned an invalid count.',node.id);
                 const attempt=(nodeCalls.get(key)??0)+1;nodeCalls.set(key,attempt);actualCalls++;
-                const record=legacy?{nodeId:node.id,iteration:attempt,binding:{profileId:binding?.profileId,model:binding?.model,endpoint:binding?.endpoint,endpointOrigin:binding?.endpointOrigin,preset:binding?.preset},messages:structuredClone(options.messages),maxTokens:options.maxTokens,tokenCount,elapsedMs:0}:null;if(record)calls.push(record);
                 emit('request-start',{address:unit.address,attempt,maxTokens:options.maxTokens,inputTokens:tokenCount.tokens});const requestStarted=lastElapsed;
                 let response;try{response=await ports.request({...options,binding,signal:ports.signal});}catch{response=failure(stopped()?'ABORTED':'REQUEST_FAILED','Auxiliary request failed; no retry was made.',node.id);}
                 if(!response||typeof response.ok!=='boolean'||(response.ok&&typeof response.data?.text!=='string')||(!response.ok&&!response.error))response=failure('INVALID_RESPONSE','Auxiliary request returned an invalid result.',node.id);
-                if(record){record.elapsedMs=Math.max(0,monotonic()-started-requestStarted);if(response.ok)record.result=structuredClone(response.data);else record.error=structuredClone(response.error);}
                 if(stopped())response=failure('ABORTED','Ignore the stopped request result.',node.id);
                 else if(response.ok&&cutoff(response.data.finish))response={ok:false,error:{code:'TRUNCATED_OUTPUT',message:'Auxiliary output reached its completion limit.',usage:response.data.usage,finish:response.data.finish}};
                 else if(response.ok&&!complete(response.data.finish))response={ok:false,error:{code:'COMPLETION_UNVERIFIED',message:'Auxiliary output has no verified completion evidence.',usage:response.data.usage,finish:response.data.finish??null}};
-                if(record&&!response.ok)record.error=structuredClone(response.error);
                 const metadata=response.ok?response.data:response.error;
                 emit('request-settled',{address:unit.address,attempt,status:stopped()?'cancelled':response.ok?'completed':'failed',durationMs:Math.max(0,monotonic()-started-requestStarted),...(metadata?.finish!==undefined?{finish:boundedText(metadata.finish,128)??null}:{}),...(safeUsage(metadata?.usage)!==undefined?{usage:safeUsage(metadata.usage)}:{}),...(!response.ok?{error:safeError(response.error)}:{})});return response;
             };
             const result=await executeNode(node,inputs,op,{...ports,phase:plan.phase,binding,request});
             if(stopped())return finish(failure('ABORTED','Workflow was stopped.',node.id));
             if(!result?.ok){emit('node-settled',{address:unit.address,status:'failed',error:safeError(result?.error)});return finish(result??failure('WORKFLOW_FAILED','The operation returned no result.',node.id));}
-            const artifact=freezeArtifact(result.artifact);if(legacy)reports.push(...(result.reports??[]));
+            const artifact=freezeArtifact(result.artifact);
             const metadata={source:artifact?.source,binding:safeBinding(ports.bindingSummary?.(binding)??{role:node.modelRole,profileId:binding?.profileId,model:binding?.model}),reports:result.reports};
             for(const port of unit.outputPorts){artifacts.set(artifactKey({...unit.address,portId:port.id}),artifact);recorder.capture({address:unit.address,direction:'output',portId:port.id,artifact,...metadata});}
-            if(unit.terminal){const terminal={kind:'terminal',address:unit.address};terminals.push({terminal,artifact});recorder.capture({address:unit.address,direction:'terminal',artifact,...metadata});if(legacy)outputs.push({nodeId:node.id,artifact});}
+            if(unit.terminal){const terminal={kind:'terminal',address:unit.address};terminals.push({terminal,artifact});recorder.capture({address:unit.address,direction:'terminal',artifact,...metadata});}
             emit('node-settled',{address:unit.address,status:'completed'});
         }
         current=null;
         const settlement=await hooks.settle?.({mode,terminals:mode==='root'?terminals:[],bindings:plan.primitives.filter(unit=>bindings.has(addressKey(unit.address))).map(unit=>({address:unit.address,binding:bindings.get(addressKey(unit.address))}))});
         if(stopped())return finish(failure('ABORTED','Workflow was stopped.'));if(settlement?.ok===false)return finish(settlement);
-        return finish(success(legacy?outputs.at(-1)?.artifact:undefined));
+        return finish({ok:true});
     } catch {return finish(failure(stopped()?'ABORTED':'WORKFLOW_FAILED','Workflow preparation failed; inspect the source, connection and tokenizer.',current?.node.id));}
     finally {removeAbort();artifacts.clear();bindings.clear();nodeCalls.clear();terminals.length=0;plan=null;safePlan=null;recorder=null;current=null;}
 }

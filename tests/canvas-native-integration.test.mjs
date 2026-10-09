@@ -65,10 +65,10 @@ const selectedCables = env => [...env.host.querySelectorAll('.pc-wire.pc-selecte
 test('cached wrapper presentation uses actual named ports and never previews or binds', () => {
     const wrapper = { id: 'wrapper', type: 'subgraph', x: 10, y: 20, presentation: { alias: 'Local alias', compact: true } };
     const ports = [{ id: 'out:result', port: 'result', dir: 'out', side: 'right', row: 1, kind: 'data', label: 'Result', className: 'pc-port pc-port-out', title: 'Result: data' }];
-    const card = nodeCard(wrapper, { graph: { nodes: { wrapper }, groups: {}, nativeCards: { wrapper: { canonicalTitle: 'Checked wrapper', family: 'Subgraphs', body: 'cached body', iconPath: 'M1 2', ports, hostResult: false } } },
+    const card = nodeCard(wrapper, { graph: { schema: 3, runtime: 2, mode: 'native-pre', wires: {}, nodes: { wrapper }, groups: {}, nativeCards: { wrapper: { canonicalTitle: 'Checked wrapper', family: 'Subgraphs', body: 'cached body', iconPath: 'M1 2', ports, hostResult: false } } },
         selection: null, multi: new Set(), hooks: { nativeBinding() { throw new Error('unexpected binding'); } },
         preview() { throw new Error('unexpected preview'); }, labels: {}, icons: {} });
-    assert.equal(card.native, true); assert.equal(card.title, 'Local alias'); assert.equal(card.titleHint, 'Checked wrapper');
+    assert.match(card.className, /pc-node-native/); assert.equal(card.title, 'Local alias'); assert.equal(card.titleHint, 'Checked wrapper');
     assert.deepEqual(card.ports, ports); assert.match(card.className, /pc-family-subgraphs/);
 });
 
@@ -188,7 +188,8 @@ test('readonly native raw controls do not change graph documents', async () => {
     pointer(env.pin('source', 'out'), 'pointerdown', 180, 54);
     assert.equal(env.commands.length, 0); assert.equal(env.bridge.hasContentGesture(), false);
     env.draw.groups.g = { id: 'g', frame: { x: 0, y: 0, w: 20, h: 20 } };
-    env.canvas.toggleGroup('g'); env.canvas.setCollapsed('g', true); env.canvas.setWireKind('missing', 'append');
+    env.canvas.setCollapsed('g', true);
+    assert.equal(env.canvas.toggleGroup, undefined); assert.equal(env.canvas.setWireKind, undefined);
     assert.deepEqual(env.draw.nodes, before.nodes); assert.equal(env.draw.groups.g.collapsed, undefined);
     assert.equal(await env.canvas.deleteSelection(), false);
     await env.canvas.destroy();
@@ -253,18 +254,6 @@ test('native wire cancellation restores the selection at initiation instead of a
     pointer(env.pin('source', 'out'), 'pointerdown', 180, 54);
     env.canvas.cancelGesture('escape');
     assert.deepEqual(env.canvas.selection, { kind: 'node', id: 'first' });
-    await env.canvas.destroy();
-});
-
-test('legacy raw deletion rechecks permission after its confirmation and readonly multi node gestures never begin', async () => {
-    let editable = true, answer;
-    const env = fixture({ canEdit: () => editable, confirmDelete: () => new Promise(resolve => { answer = resolve; }) });
-    env.canvas.select({ kind: 'node', id: env.a.id });
-    const deletion = env.canvas.deleteSelection(); editable = false; answer(true);
-    assert.equal(await deletion, false); assert.ok(env.graph.nodes[env.a.id]);
-    env.canvas.setMulti([env.a.id, env.b.id]);
-    mouse(env.host.querySelector(`[data-id="${env.a.id}"]`), 'mousedown', 60, 60);
-    assert.equal(env.canvas.drag, null, 'a readonly raw node drag cannot start even with a multi selection');
     await env.canvas.destroy();
 });
 

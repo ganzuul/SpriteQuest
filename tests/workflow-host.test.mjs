@@ -6,7 +6,7 @@ const pre = starterGraph('native-guidance'), post=starterGraph('reviewed-de-slop
 
 for (const schema of [3, 99]) for (const entry of ['runPre', 'beforeGenerate', 'runPost']) {
  test(`${entry} rejects ${schema===3?'malformed schema3 wires':'schema '+schema} before any host source or snapshot reads`, async () => {
-  const graph = { ...structuredClone(entry === 'runPost' ? post : pre), schema, runtime: 2 };
+  const graph = { ...structuredClone(entry === 'runPost' ? post : pre), schema, runtime: 2 }; delete graph.wires['wire-1'].fromPort;
   let requests=0;
   const f=fixture(async()=>{requests++;return {ok:true,data:{text:'Unexpected request',finish:'stop'}};},graph);
   const chat=f.c.chat;
@@ -25,16 +25,16 @@ for (const schema of [3, 99]) for (const entry of ['runPre', 'beforeGenerate', '
   assert.deepEqual(reads,{chat:0,message:0,character:0,identity:0});
   assert.equal(requests,0);
   assert.equal(f.c.extensionPrompts['lattice:guidance:old'].value,'');
-  assert.equal(f.c.extensionPrompts['comfytavern:guidance:old'].value,'');
+  assert.equal(f.c.extensionPrompts['comfytavern:guidance:old'].value,'stale historic guidance');
   assert.equal(f.c.extensionPrompts.other.value,'keep');
  });
 }
-test('upgrade cleanup clears both guidance namespaces and preserves other extensions', () => {
+test('cancellation clears only Lattice guidance and preserves other extensions', () => {
  const f=fixture();
  f.c.extensionPrompts['comfytavern:guidance:old']={value:'obsolete guidance'};
  f.c.extensionPrompts['lattice:guidance:new']={value:'current guidance'};
  f.controller.cancel('upgrade');
- assert.equal(f.c.extensionPrompts['comfytavern:guidance:old'].value,'');
+ assert.equal(f.c.extensionPrompts['comfytavern:guidance:old'].value,'obsolete guidance');
  assert.equal(f.c.extensionPrompts['lattice:guidance:new'].value,'');
  assert.equal(f.c.extensionPrompts.other.value,'keep');
 });
@@ -50,19 +50,19 @@ test('automatic Send retains request evidence with original graph identity separ
  assert.equal(record.origin.phase,'pre');
  assert.equal(record.origin.kind,'send');
  assert.equal(typeof record.origin.signature,'string');
- assert.equal(Number.isInteger(record.origin.runId),true);
+ assert.equal(typeof record.origin.runId,'string');
  assert.equal(record.result.actualCalls,1);
  assert.equal(record.result.callBound,2);
- assert.equal(record.result.calls[0].result.usage.completion_tokens,17);
+ assert.equal(record.result.recording.units.find(unit=>unit.request).request.usage.completion_tokens,17);
  assert.equal(Object.isFrozen(graph),false,'publishing origin must not freeze the editable original graph');
  await f.controller.runPre(graph);
- assert.equal(f.controller.lastAutomaticResult(),record,'manual test must not overwrite the automatic Send record');
+ assert.equal(f.controller.lastAutomaticResult().origin,record.origin,'manual run preserves automatic Send provenance'); assert.equal(f.controller.lastAutomaticResult().superseded,true); assert.equal(f.controller.lastAutomaticResult().result.recording,undefined,'superseded run does not duplicate diagnostic payloads');
  f.c.setExtensionPrompt=()=>{throw new Error('Setter rejected');};
  const failed=await f.controller.beforeGenerate(f.c.chat,8192,()=>{},'normal');
  assert.equal(failed.error.code,'GUIDANCE_UNAVAILABLE');
  assert.equal(failed.actualCalls,1,'a publication failure still exposes the incurred request');
- assert.equal(failed.calls[0].result.usage.completion_tokens,17);
- assert.ok(f.controller.lastAutomaticResult().origin.runId>record.origin.runId);
+ assert.equal(failed.recording.units.find(unit=>unit.request).request.usage.completion_tokens,17);
+ assert.notEqual(f.controller.lastAutomaticResult().origin.runId,record.origin.runId);
 });
 function fixture(request,assignedGraph=pre) {
  const listeners={}; const original={mes:'We delve.',is_user:false,swipe_id:0,swipes:['We delve.'],swipe_info:[{extra:{old:'keep'},send_date:1,gen_started:1,gen_finished:2}],extra:{old:'keep'},send_date:1,gen_started:1,gen_finished:2};
@@ -89,16 +89,16 @@ function fixture(request,assignedGraph=pre) {
 }
 {
  const f=fixture(); const result=await f.controller.runPost(post); assert.equal(result.ok,true); assert.equal(f.original.mes,'We delve.');
- const candidate=structuredClone(result.artifact); const applied=await f.controller.apply(candidate);
+ const candidate=structuredClone(result.reviewHandles[0]); const applied=await f.controller.apply(candidate);
  assert.equal(applied.ok,true); assert.equal(applied.appliedLocally,true); assert.equal(applied.persistence,'unverified'); assert.equal(f.original.mes,'We explore.');
  assert.equal(f.original.swipes[0],'We delve.'); assert.equal(f.original.swipe_info[0].extra.old,'keep');assert.equal(f.original.extra.old,undefined);assert.ok(f.original.extra.latticeRevision);
  await f.controller.apply(candidate); assert.equal(f.original.swipes.length,2);assert.equal(f.c.saved,1);
 }
 for(const mutate of [f=>f.original.mes+=' external',f=>f.c.chat.push({is_user:true,mes:'new'}),f=>f.c.chat.reverse(),f=>f.c.chat.pop(),f=>f.c.chatId='two',f=>f.original.swipe_id=1,f=>f.setBusy(true),f=>f.controller.cancel('graph changed')]) {
- const f=fixture();const r=await f.controller.runPost(post);mutate(f); const before=JSON.stringify(f.c.chat);assert.equal((await f.controller.apply(structuredClone(r.artifact))).ok,false);assert.equal(JSON.stringify(f.c.chat),before);
+ const f=fixture();const r=await f.controller.runPost(post);mutate(f); const before=JSON.stringify(f.c.chat);assert.equal((await f.controller.apply(structuredClone(r.reviewHandles[0]))).ok,false);assert.equal(JSON.stringify(f.c.chat),before);
 }
 {
- const f=fixture();const r=await f.controller.runPost(post); const before=structuredClone(f.original);f.c.saveChat=async()=>{throw new Error('save failed');};assert.equal((await f.controller.apply(r.artifact)).ok,false);assert.deepEqual(f.original,before);
+ const f=fixture();const r=await f.controller.runPost(post); const before=structuredClone(f.original);f.c.saveChat=async()=>{throw new Error('save failed');};assert.equal((await f.controller.apply(r.reviewHandles[0])).ok,false);assert.deepEqual(f.original,before);
 }
 {
  const f=fixture(); let lore=0; f.c.getWorldInfoPrompt=()=>{lore++;}; f.c.characters=[{description:'Visible character'}];
@@ -109,8 +109,8 @@ console.log('workflow host tests passed');
 // Read-only review availability shares the application source guard.
 {
  const f=fixture();const r=await f.controller.runPost(post);
- assert.equal(f.controller.candidateStatus(structuredClone(r.artifact)).ok,true);
- f.original.mes+=' changed';assert.equal(f.controller.candidateStatus(r.artifact).ok,false);
+ assert.equal(f.controller.candidateStatus(structuredClone(r.reviewHandles[0])).ok,true);
+ f.original.mes+=' changed';assert.equal(f.controller.candidateStatus(r.reviewHandles[0]).ok,false);
 }
 // Failure is an explicit native fallback; canceled/aborted sends are not.
 {
@@ -145,7 +145,7 @@ console.log('workflow host tests passed');
 // Changing only the stored selected swipe is still a stale source.
 {
  const f=fixture();const r=await f.controller.runPost(post);f.original.swipes[0]='externally rewritten';
- assert.equal(f.controller.candidateStatus(r.artifact).ok,false);
+ assert.equal(f.controller.candidateStatus(r.reviewHandles[0]).ok,false);
 }
 // An already aborted native signal blocks the owning send before any auxiliary request.
 {
@@ -174,20 +174,20 @@ for(const patch of [{role:'tool'},{role:'system'},{extra:{type:'narrator'}},{mes
 {
  const f=fixture();const r=await f.controller.runPost(post);const before=structuredClone(f.original);
  f.c.eventSource.on('MESSAGE_UPDATED',()=>{f.original.mes='listener edit';});
- assert.equal((await f.controller.apply(r.artifact)).ok,false);assert.deepEqual(f.original,before);assert.equal(f.c.saved,undefined);
+ assert.equal((await f.controller.apply(r.reviewHandles[0])).ok,false);assert.deepEqual(f.original,before);assert.equal(f.c.saved,undefined);
 }
 for(const remove of [f=>delete f.c.saveChat,f=>delete f.c.updateMessageBlock,f=>delete f.c.swipe.refresh]) {
- const f=fixture();const r=await f.controller.runPost(post);remove(f);const before=structuredClone(f.original);assert.equal((await f.controller.apply(r.artifact)).error.code,'APPLY_UNAVAILABLE');assert.deepEqual(f.original,before);
+ const f=fixture();const r=await f.controller.runPost(post);remove(f);const before=structuredClone(f.original);assert.equal((await f.controller.apply(r.reviewHandles[0])).error.code,'APPLY_UNAVAILABLE');assert.deepEqual(f.original,before);
 }
 // Concurrent accepts are serialized, and external cancellation during a save rolls back locally.
 {
  const f=fixture();const r=await f.controller.runPost(post);let release,started;const ready=new Promise(r=>started=r);const before=structuredClone(f.original);
- f.c.saveChat=async()=>{started();await new Promise(r=>release=r);};const pending=f.controller.apply(r.artifact);await ready;
- assert.equal((await f.controller.apply(r.artifact)).error.code,'BUSY');f.controller.cancel('chat changed');release();assert.equal((await pending).ok,false);assert.deepEqual(f.original,before);
+ f.c.saveChat=async()=>{started();await new Promise(r=>release=r);};const pending=f.controller.apply(r.reviewHandles[0]);await ready;
+ assert.equal((await f.controller.apply(r.reviewHandles[0])).error.code,'BUSY');f.controller.cancel('chat changed');release();assert.equal((await pending).ok,false);assert.deepEqual(f.original,before);
 }
 // Selecting/assigning a native workflow never arms the production interceptor.
 {
- const {installMock}=await import('./mock.js');const c=installMock({settings:{enabled:false,workflowMode:'native',graphs:{[pre.id]:pre},nativeBindings:{preGraphId:pre.id}}});let requests=0;
+ const {installMock}=await import('./mock.js');const c=installMock({settings:{enabled:false,graphs:{[pre.id]:pre},nativeBindings:{preGraphId:pre.id}}});let requests=0;
  c.ConnectionManagerRequestService={getProfile:()=>{requests++;throw new Error('Disarmed workflow must not resolve requests');}};
  const {getNativeWorkflowController}=await import('../src/run.js');const controller=getNativeWorkflowController();
  const r=await controller.beforeGenerate(c.chat,8192,()=>{},'normal');assert.equal(r.skipped,true);assert.equal(requests,0);
@@ -213,8 +213,8 @@ for(const remove of [f=>delete f.c.saveChat,f=>delete f.c.updateMessageBlock,f=>
  graph.view={x:800,y:-300,zoom:0.4};graph.name='Renamed';graph.updatedAt=99;
  graph.nodes.repair.x+=400;graph.nodes.repair.y=-999;graph.nodes.repair.w=600;graph.nodes.repair.title='New label';graph.nodes.repair.collapsed=true;
  graph.groups['ai-de-slop'].collapsed=false;graph.groups['ai-de-slop'].x=333;
- assert.equal(f.controller.candidateStatus(r.artifact).ok,true);
- graph.nodes.repair.instructions='A different instruction';assert.equal(f.controller.candidateStatus(r.artifact).ok,false);
+ assert.equal(f.controller.candidateStatus(r.reviewHandles[0]).ok,true);
+ graph.nodes.repair.instructions='A different instruction';assert.equal(f.controller.candidateStatus(r.reviewHandles[0]).ok,false);
 }
 // A delayed provider response remains current after pan/zoom/layout changes.
 {
@@ -224,13 +224,13 @@ for(const remove of [f=>delete f.c.saveChat,f=>delete f.c.updateMessageBlock,f=>
  release({ok:true,data:{text:'{"patches":[{"index":0,"replacement":"explore"}]}',finish:'stop'}});
  assert.equal((await pending).ok,true);
 }
-for(const change of [g=>g.nodes.repair.maxTokens++,g=>g.roles.Prose.model='different',g=>g.wires['wire-1'].order++,g=>g.groups['ai-de-slop'].enabled=false]) {
- const f=fixture(),g=structuredClone(post),r=await f.controller.runPost(g);change(g);assert.equal(f.controller.candidateStatus(r.artifact).ok,false);
+for(const change of [g=>g.nodes.repair.maxTokens++,g=>g.roles.Prose.model='different',g=>g.wires['wire-1'].fromPort='missing']) {
+ const f=fixture(),g=structuredClone(post),r=await f.controller.runPost(g);change(g);assert.equal(f.controller.candidateStatus(r.reviewHandles[0]).ok,false);
 }
 // Invalid explicit settings cannot masquerade as omitted defaults in the semantic identity.
 {
  const f=fixture(),graph=structuredClone(post),r=await f.controller.runPost(graph);
- graph.nodes.repair.instructions=null;assert.equal(f.controller.candidateStatus(r.artifact).ok,false);
+ graph.nodes.repair.instructions=null;assert.equal(f.controller.candidateStatus(r.reviewHandles[0]).ok,false);
 }
 
 // The native interceptor also keeps cosmetic edits, but rejects an equivalent replacement graph object.
@@ -357,7 +357,7 @@ for(const stage of ['MESSAGE_SWIPED','MESSAGE_UPDATED','render','refresh','save'
   else if(stage==='refresh')f.c.swipe.refresh=mutate;
   else if(stage==='save')f.c.saveChat=async()=>{f.c.saved=(f.c.saved??0)+1;mutate();};
   else f.c.eventSource.on(stage,mutate);
-  const applied=await f.controller.apply(r.artifact);
+  const applied=await f.controller.apply(r.reviewHandles[0]);
   assert.equal(applied.ok,false,`${stage} changed ${name}`);
   assert.equal(applied.error.code,'APPLY_FAILED');assert.equal(applied.appliedLocally,false);
   assert.deepEqual(f.original,before,'rollback restores the entire original local message');
@@ -374,7 +374,7 @@ await test('Apply preserves host synchronization of original metadata and harmle
   f.original.extra.extensionDisplay='harmless';
   Object.assign(f.original.swipe_info[f.original.swipe_id],{extra:structuredClone(f.original.extra)});
  });
- const applied=await f.controller.apply(r.artifact);
+ const applied=await f.controller.apply(r.reviewHandles[0]);
  assert.equal(applied.ok,true);
  assert.deepEqual(f.original.swipe_info[0].extra,{old:'keep',current:'preserve'});
  assert.equal(f.original.swipe_info[0].gen_finished,2);
@@ -391,7 +391,7 @@ await test('Apply rollback after a chat switch does not render into the replacem
   f.original.swipes[f.original.swipe_id]='listener corruption';
   f.c.chat=replacement;f.c.chatId='two';
  });
- assert.equal((await f.controller.apply(r.artifact)).ok,false);
+ assert.equal((await f.controller.apply(r.reviewHandles[0])).ok,false);
  assert.deepEqual(f.original,before);assert.equal(f.c.chat,replacement);
  assert.equal(rendered,0);assert.equal(refreshed,0);assert.equal(f.c.saved,undefined);
 });

@@ -7,7 +7,7 @@ const retentionInspectors=new WeakMap();
 export const inspectWorkflowRetentionForReview=controller=>retentionInspectors.get(controller)?.();
 
 const PREFIX = 'lattice:guidance:';
-const fail = (code,message) => ({ok:false,error:{code,message},reports:[],calls:[],trace:[]});
+const fail = (code,message) => ({ok:false,error:{code,message}});
 const identity = c => ({chatId:c.getCurrentChatId?.() ?? c.chatId ?? null,characterId:c.characterId ?? null,groupId:c.groupId ?? null});
 const same = (a,b) => JSON.stringify(a) === JSON.stringify(b);
 const sourceText = chat => JSON.stringify((chat ?? []).map(m=>[m?.mes,m?.swipe_id,m?.is_user,m?.is_system]));
@@ -90,19 +90,17 @@ export function createNativeWorkflowController(ports) {
     };
     const notify=(value,run=null)=>{
         const previous=result;
-        if(!value.recording && previous?.recording && (previous.schema===3 || previous.mode==='target')) {
+        if(!value.recording && previous?.recording) {
             // A failed attempt has no run identity. Preserve the old diagnostic separately.
             result=freezeArtifact({...previous,reviewHandles:[],superseded:true});
-            const diagnostic={...value,error:safeError(value.error)};
-            for(const field of ['artifact','outputs','reports','calls','trace'])delete diagnostic[field];
-            const failure=freezeArtifact(diagnostic);
+            const failure=freezeArtifact({...value,error:safeError(value.error)});
             observe(ports.onResult,failure,null);
             return failure;
         }
         result=freezeArtifact(value);
-        const origin=run?.native && run.graph ? Object.freeze({graph:run.originalGraph,graphId:run.graph.id,graphName:run.graph.name,signature:run.signature,phase:'pre',kind:'send',runId:run.graph.schema===2?run.epoch:run.runId}) : null;
+        const origin=run?.native && run.graph ? Object.freeze({graph:run.originalGraph,graphId:run.graph.id,graphName:run.graph.name,signature:run.signature,phase:'pre',kind:'send',runId:run.runId}) : null;
         if(origin)automaticResult=Object.freeze({result,origin});
-        else if(result.recording && automaticResult?.result.schema===3 && automaticResult.result.recording!==result.recording) {
+        else if(result.recording && automaticResult?.result.recording && automaticResult.result.recording!==result.recording) {
             const prior=automaticResult.result;
             automaticResult=Object.freeze({origin:automaticResult.origin,superseded:true,result:Object.freeze({schema:prior.schema,runtime:prior.runtime,runId:prior.runId,mode:prior.mode,ok:prior.ok,callBound:prior.callBound,actualCalls:prior.actualCalls})});
         }
@@ -111,8 +109,7 @@ export function createNativeWorkflowController(ports) {
     };
     const clear=()=>{
         const c=context();
-        // Clear guidance left by the previous brand during an in-place upgrade.
-        for(const key of Object.keys(c.extensionPrompts ?? {})) if(key.startsWith(PREFIX) || key.startsWith('comfytavern:guidance:')) keys.add(key);
+        for(const key of Object.keys(c.extensionPrompts ?? {})) if(key.startsWith(PREFIX)) keys.add(key);
         for(const key of keys) { try{c.setExtensionPrompt?.(key,'',1,0,false,0);if(c.extensionPrompts?.[key])c.extensionPrompts[key].value='';}catch{if(c.extensionPrompts)delete c.extensionPrompts[key];} }
     };
     const cancel=(reason='Workflow canceled')=>{
@@ -198,7 +195,7 @@ export function createNativeWorkflowController(ports) {
             const handle={handleId:token(),runId:run.runId,terminal:output.terminal};
             const entry={...source,candidate:freezeArtifact(structuredClone(output.artifact)),terminal:output.terminal,handle,applied:null};
             sources.set(entry.source.token,source);candidates.set(handle.handleId,entry);
-            if(run.graph.schema===3)run.reviewHandles.push(handle);
+            run.reviewHandles.push(handle);
         }
         return {ok:true};
     }
@@ -222,8 +219,7 @@ export function createNativeWorkflowController(ports) {
         finally {delete run.cancel;run.bindingContexts.clear();}
         if(!value.ok||run.mode==='target') {run.pendingSources.clear();run.sceneSources.length=0;run.bindingChecks=[];for(const [id,entry]of candidates)if(entry.run===run)candidates.delete(id);for(const [id,entry]of sources)if(entry.run===run)sources.delete(id);if(run.native)clear();}
         else run.pendingSources.clear();
-        const bounded=value.schema===3||run.mode==='target';
-        const publicValue=freezeArtifact({...value,...(bounded?{reviewHandles:value.ok?run.reviewHandles:[]}:{})});
+        const publicValue=freezeArtifact({...value,reviewHandles:value.ok?run.reviewHandles:[]});
         run.publicResult=publicValue;
         return publicValue;
     }
@@ -246,7 +242,7 @@ export function createNativeWorkflowController(ports) {
         if(!value.ok) {
             active=null;
             if(value.error.code==='ABORTED'){run.abortPrimary?.(true);run.abortPrimary=null;return notify(value,run);}
-            return notify(run.graph?.schema===3?{...value,fallback:'native'}:{...value,fallback:'native',reports:[...(value.reports??[]),{code:'NATIVE_FALLBACK',message:'Preparation failed; SillyTavern will generate without Lattice guidance.'}]},run);
+            return notify({...value,fallback:'native'},run);
         }
         return notify({...value,published:run.published===true},run);
     }
@@ -270,7 +266,6 @@ export function createNativeWorkflowController(ports) {
             const entry=candidates.get(selector.handleId);
             return entry && selector.runId===entry.handle.runId && same(selector.terminal,entry.terminal)?entry:null;
         }
-        for(const entry of candidates.values())if(entry.run.graph.schema===2&&same(selector,entry.candidate))return entry;
         return null;
     }
     function candidateStatus(selector) {

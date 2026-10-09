@@ -145,7 +145,7 @@ export function computeDefinitionIdentity(value) {
         for (const [id, node] of Object.entries(draft.body.nodes)) {
             if (!record(node) || node.id !== id) return fail('DEFINITION_BODY', 'Invalid body node identity.');
             if (node.type === 'note') continue;
-            const common = { id: node.id, type: node.type, enabled: node.enabled !== false, ...pick(node, ['inGroup']) };
+            const common = { id: node.id, type: node.type, enabled: node.enabled !== false };
             if (node.type === 'workflow') {
                 const operation = operationFor(node, { phase: draft.body.mode.slice(7) });
                 if (!operation) return fail('UNKNOWN_OPERATION', 'Cannot hash an unknown operation.');
@@ -177,9 +177,8 @@ export function computeDefinitionIdentity(value) {
             parameters: draft.parameters.map(parameter => ({ id: parameter.id, target: pick(parameter.target, ['instancePath', 'nodeId', 'controlId']) })),
             body: {
                 schema: draft.body.schema, runtime: draft.body.runtime, mode: draft.body.mode, nodes,
-                wires: mapRecords(draft.body.wires, wire => pick(wire, ['id', 'route', 'from', 'fromPort', 'to', 'toPort', 'order', 'kind', 'portalId'])),
+                wires: mapRecords(draft.body.wires, wire => pick(wire, ['id', 'route', 'from', 'fromPort', 'to', 'toPort', 'portalId'])),
                 portals: mapRecords(draft.body.portals, portal => ({ id: portal.id, kind: portal.kind, source: pick(portal.source, ['nodeId', 'portId']) })),
-                groups: mapRecords(draft.body.groups, group => ({ ...pick(group, ['id', 'entry', 'exit', 'members']), ...(group.component === undefined ? {} : { component: pick(group.component, ['id', 'version']) }), enabled: group.enabled !== false })),
                 roles: mapRecords(draft.body.roles, portableBinding),
             },
         };

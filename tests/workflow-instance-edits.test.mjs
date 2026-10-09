@@ -276,14 +276,15 @@ test('an explicit null snapshot table is rejected instead of becoming an empty c
     assert.equal(calls, 0); assert.deepEqual(graph, before);
 });
 
-test('native2 invalid insertion remains unpromoted while accepted insertion promotes only its candidate', () => {
+test('retired early-native insertion rejects before ID allocation and preserves its source', () => {
     const graph = root(); graph.schema = 2; graph.runtime = 1; delete graph.definitions; delete graph.portals;
     for (const edge of Object.values(graph.wires)) { delete edge.route; delete edge.fromPort; delete edge.toPort; }
     const before = structuredClone(graph); let calls = 0;
     assert.equal(prepare(graph, command(source(), { connection: { origin: pin('source'), portId: 'missing' } }), { idFactory() { calls++; return 'unused'; } }).ok, false);
     assert.equal(calls, 0); assert.deepEqual(graph, before);
-    const edit = accepted(prepare(graph, command()), graph);
-    assert.equal(edit.candidate.schema, 3); assert.equal(edit.candidate.runtime, 2); assert.deepEqual(graph, before);
+    const result = prepare(graph, command(), { idFactory() { calls++; return 'unused'; } });
+    assert.equal(result.error.code, 'UNSUPPORTED_VERSION');
+    assert.equal(calls, 0); assert.deepEqual(graph, before);
 });
 
 test('factory cannot retarget captured source or original dual preconditions during final rebuilding', () => {

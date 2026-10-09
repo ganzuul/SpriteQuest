@@ -7,24 +7,6 @@ import { captureGraphEditContext, commitPreparedGraph } from '../src/workflow/tr
 import * as H from '../src/history.js?v=0.20.0';
 
 let nextRoot = 0;
-test('legacy insertion commits through the legacy contract and reverses as one step', () => {
-    const root = { id: `legacy-transaction-${++nextRoot}`, name: 'Legacy', schema: 1, nodes: { out: { id: 'out', type: 'output', x: 400, y: 400 } }, wires: {}, groups: {}, view: { x: 10, y: 20, zoom: 1 } };
-    const fragment = { nodes: { prompt: { id: 'prompt', type: 'prompt', x: 0, y: 0, content: 'Saved text', role: 'system' } }, wires: {} };
-    const context = captureGraphEditContext(root, () => ({ sessionId: 'legacy', viewPath: [], readOnly: false }));
-    assert.equal(context.ok, true);
-    H.track(root);
-    const before = structuredClone(root);
-    const prepared = prepareWorkflowInsertion(root, fragment);
-    assert.equal(prepared.ok, true);
-    const result = commitPreparedGraph(root, { ...prepared.data, context: context.data });
-    assert.equal(result.ok, true);
-    assert.equal(result.data.semanticChanged, true);
-    assert.equal(root.nodes.out.type, 'output');
-    assert.equal(Object.keys(root.nodes).length, 2);
-    assert.ok(H.undo(root)); assert.deepEqual(root, before); assert.equal(H.undo(root), null);
-    assert.ok(H.redo(root)); assert.equal(Object.keys(root.nodes).length, 2); assert.equal(H.redo(root), null);
-});
-
 test('document changes during async file reading cannot be accepted by preparing afterward', () => {
     const root = starterGraph('native-guidance'); root.id = `capture-before-read-${++nextRoot}`;
     const context = captureGraphEditContext(root, () => ({ sessionId: 'read', viewPath: [], readOnly: false })).data;
@@ -32,16 +14,6 @@ test('document changes during async file reading cannot be accepted by preparing
     const prepared = prepareWorkflowInsertion(root, starterGraph('native-guidance')).data;
     const before = structuredClone(root), history = H.peek(root);
     assert.equal(commitPreparedGraph(root, { ...prepared, context }).error?.code, 'STALE_DOCUMENT');
-    assert.deepEqual(root, before); assert.deepEqual(H.peek(root), history);
-});
-
-test('legacy candidate cannot bypass the one Output invariant at commit', () => {
-    const root = { id: `legacy-boundary-${++nextRoot}`, name: 'Legacy', schema: 1, nodes: { out: { id: 'out', type: 'output', x: 400, y: 400 } }, wires: {}, groups: {} };
-    const context = captureGraphEditContext(root, () => ({ sessionId: 'legacy-boundary', viewPath: [], readOnly: false })).data;
-    const prepared = prepareWorkflowInsertion(root, { nodes: { p: { id: 'p', type: 'prompt', x: 0, y: 0 } }, wires: {} }).data;
-    prepared.candidate.nodes.another = { id: 'another', type: 'output', x: 0, y: 0 };
-    const before = structuredClone(root), history = H.peek(root);
-    assert.equal(commitPreparedGraph(root, { ...prepared, context }).error?.code, 'DUPLICATE_OUTPUT');
     assert.deepEqual(root, before); assert.deepEqual(H.peek(root), history);
 });
 
@@ -73,7 +45,7 @@ test('accepted insertion preserves view and selection and creates exactly one re
     assert.ok(H.undo(root));
     assert.deepEqual(root.nodes, original.nodes);
     assert.deepEqual(root.roles, original.roles);
-    assert.equal(root.schema, 2);
+    assert.equal(root.schema, 3);
     assert.equal(root.view, view);
     assert.equal(H.undo(root), null);
     assert.ok(H.redo(root));

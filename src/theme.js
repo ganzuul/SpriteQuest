@@ -1,16 +1,4 @@
-/**
- * Lattice: themes.
- *
- * A theme is a set of colours for named roles. Surfaces (panel, blocks, text)
- * and meanings (flow, append, Generate, Decider...) are separate roles, and
- * each meaning keeps one colour everywhere it appears, so changing "Generate"
- * changes Generate blocks, ties and the answers in the chat together.
- *
- * A theme only sets CSS variables on the page. style.css reads them.
- *
- * Your own colours are stored as changes on top of a preset, so a preset can
- * always be got back, and a shared theme is a short piece of JSON.
- */
+/** Lattice workspace themes and explicit user overrides. */
 
 import { settings, save, safe } from './state.js?v=0.20.0';
 
@@ -21,12 +9,8 @@ export const ROLES = [
     { key: 'canvas', label: 'Canvas background', group: 'surface' },
     { key: 'border', label: 'Borders', group: 'surface' },
     { key: 'text', label: 'Text', group: 'surface' },
-    { key: 'muted', label: 'Quiet text and fallback paths', group: 'surface' },
-    { key: 'flow', label: 'Flow, Output and selection', group: 'meaning' },
-    { key: 'append', label: 'Append, and blocks that went in', group: 'meaning' },
-    { key: 'prepend', label: 'Prepend', group: 'meaning' },
-    { key: 'generate', label: 'Generate blocks, ties and answers', group: 'meaning' },
-    { key: 'decider', label: 'Decider blocks and keys', group: 'meaning' },
+    { key: 'muted', label: 'Quiet text', group: 'surface' },
+    { key: 'flow', label: 'Selection accent', group: 'meaning' },
     { key: 'warn', label: 'Warnings and skipped blocks', group: 'meaning' },
     { key: 'error', label: 'Errors and switched-off blocks', group: 'meaning' },
 ];
@@ -45,7 +29,7 @@ export const STYLE_OPTIONS = {
     header: { label: 'Block headers', options: [['tint', 'Quiet'], ['strip', 'Coloured by type']] },
     depth: { label: 'Depth', options: [['flat', 'Flat'], ['soft', 'Soft shadow'], ['deep', 'Deep shadow'], ['glow', 'Glow']] },
 };
-const DEFAULT_STYLE = { shape: 'rounded', font: 'theme', grid: 'dots', wires: 'curved', weight: 'normal', header: 'tint', depth: 'soft' };
+const DEFAULT_STYLE = { shape: 'rounded', font: 'sans', grid: 'none', wires: 'curved', weight: 'normal', header: 'tint', depth: 'soft' };
 
 const FONTS = {
     sans: `system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif`,
@@ -53,7 +37,7 @@ const FONTS = {
     serif: `'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif`,
     mono: `'Cascadia Mono', 'JetBrains Mono', Consolas, 'Courier New', ui-monospace, monospace`,
 };
-const RADII = { sharp: [2, 1, 3], rounded: [8, 5, 10], soft: [16, 10, 999] };
+const RADII = { sharp: [2, 1, 3], rounded: [4, 3, 4], soft: [16, 10, 999] };
 const WEIGHTS = { thin: [1, 1.6], normal: [1, 2.5], bold: [2, 3.5] };
 
 /**
@@ -61,14 +45,19 @@ const WEIGHTS = { thin: [1, 1.6], normal: [1, 2.5], bold: [2, 3.5] };
  * theme; the others set everything, and each has a look of its own.
  */
 export const PRESETS = {
+    lattice: {
+        name: 'Lattice', note: 'The approved charcoal workspace, with SillyTavern quote color as its accent.',
+        style: { ...DEFAULT_STYLE },
+        colors: { panel: '#202220', block: '#191b19', canvas: '#292a28', border: '#41433e', text: '#e7e8e4', muted: '#aaa99e', flow: '#ffb554', warn: '#e3c341', error: '#e57676' },
+    },
     sillytavern: {
         name: 'SillyTavern',
         note: 'Follows your SillyTavern theme for backgrounds, text and font.',
         style: { ...DEFAULT_STYLE },
         colors: {
             muted: '#9aa0a6',
-            flow: '#7ab7ff', append: '#7fd18c', prepend: '#5fd4c8', generate: '#d48fe0',
-            decider: '#ff8c42', warn: '#f0c36a', error: '#e08f8f',
+            flow: '#7ab7ff',
+            warn: '#f0c36a', error: '#e08f8f',
         },
     },
     midnight: {
@@ -77,8 +66,8 @@ export const PRESETS = {
         style: { shape: 'rounded', font: 'sans', grid: 'dots', wires: 'curved', weight: 'normal', header: 'tint', depth: 'deep' },
         colors: {
             panel: '#0d1015', block: '#171c24', canvas: '#0a0d11', border: '#2a313c', text: '#dfe4ea', muted: '#8b949e',
-            flow: '#58a6ff', append: '#3fb950', prepend: '#39c5cf', generate: '#bc8cff',
-            decider: '#f0883e', warn: '#e3c341', error: '#f85149',
+            flow: '#58a6ff',
+            warn: '#e3c341', error: '#f85149',
         },
     },
     blueprint: {
@@ -87,8 +76,8 @@ export const PRESETS = {
         style: { shape: 'sharp', font: 'mono', grid: 'lines', wires: 'angled', weight: 'normal', header: 'tint', depth: 'flat' },
         colors: {
             panel: '#11263d', block: '#142d48', canvas: '#1c3b5b', border: '#5a7da2', text: '#e9eff6', muted: '#9fb3c9',
-            flow: '#f3f6fa', append: '#9fdcb0', prepend: '#7fcfdc', generate: '#e2a8dc',
-            decider: '#f2a25e', warn: '#e6e089', error: '#f0928f',
+            flow: '#f3f6fa',
+            warn: '#e6e089', error: '#f0928f',
         },
     },
     parchment: {
@@ -97,8 +86,8 @@ export const PRESETS = {
         style: { shape: 'rounded', font: 'serif', grid: 'paper', wires: 'curved', weight: 'normal', header: 'strip', depth: 'soft' },
         colors: {
             panel: '#efe3c8', block: '#fbf5e4', canvas: '#f3e8cf', border: '#b99c6f', text: '#3a2918', muted: '#7d6547',
-            flow: '#2f5d8a', append: '#4d7a2e', prepend: '#2c7a70', generate: '#7a3b8a',
-            decider: '#a4521c', warn: '#8a6a00', error: '#a8322a',
+            flow: '#2f5d8a',
+            warn: '#8a6a00', error: '#a8322a',
         },
     },
     neon: {
@@ -107,8 +96,8 @@ export const PRESETS = {
         style: { shape: 'soft', font: 'sans', grid: 'lines', wires: 'curved', weight: 'bold', header: 'strip', depth: 'glow' },
         colors: {
             panel: '#0a0612', block: '#140c24', canvas: '#07040d', border: '#3d2670', text: '#f4ecff', muted: '#a592cc',
-            flow: '#00e5ff', append: '#39ff88', prepend: '#b9ff3d', generate: '#ff4dff',
-            decider: '#ffae00', warn: '#fff04d', error: '#ff3d6e',
+            flow: '#00e5ff',
+            warn: '#fff04d', error: '#ff3d6e',
         },
     },
     terminal: {
@@ -117,8 +106,8 @@ export const PRESETS = {
         style: { shape: 'sharp', font: 'mono', grid: 'scan', wires: 'angled', weight: 'normal', header: 'tint', depth: 'flat' },
         colors: {
             panel: '#040804', block: '#091109', canvas: '#030603', border: '#1f6a2c', text: '#8dff9c', muted: '#4fa35c',
-            flow: '#3dff6b', append: '#d4ff3d', prepend: '#3dffe0', generate: '#ff7ae5',
-            decider: '#ffb000', warn: '#fff23d', error: '#ff4d4d',
+            flow: '#3dff6b',
+            warn: '#fff23d', error: '#ff4d4d',
         },
     },
     petal: {
@@ -127,16 +116,15 @@ export const PRESETS = {
         style: { shape: 'soft', font: 'round', grid: 'dots', wires: 'curved', weight: 'normal', header: 'strip', depth: 'soft' },
         colors: {
             panel: '#fff4f8', block: '#ffffff', canvas: '#ffeaf2', border: '#efb9cc', text: '#3d2230', muted: '#8e6477',
-            flow: '#2563eb', append: '#15803d', prepend: '#0e7490', generate: '#a21caf',
-            decider: '#c2410c', warn: '#a16207', error: '#be123c',
+            flow: '#2563eb',
+            warn: '#a16207', error: '#be123c',
         },
     },
 };
 
-/** Themes that were renamed, so a saved choice still finds its successor. */
-const RENAMED = { 'dark-night': 'midnight', 'blue-moon': 'blueprint', 'purple-prose': 'neon', 'pink-blink': 'petal', 'brown-gown': 'parchment' };
 
-export const DEFAULT_PRESET = 'sillytavern';
+
+export const DEFAULT_PRESET = 'lattice';
 
 /* ------------------------------------------------------------------ */
 /* colour maths                                                        */
@@ -211,7 +199,6 @@ function store() {
     ui.theme ??= { preset: DEFAULT_PRESET, colors: {}, style: {} };
     ui.theme.colors ??= {};
     ui.theme.style ??= {};
-    if (RENAMED[ui.theme.preset]) ui.theme.preset = RENAMED[ui.theme.preset];
     if (!PRESETS[ui.theme.preset]) ui.theme.preset = DEFAULT_PRESET;
     return ui.theme;
 }
@@ -231,7 +218,6 @@ export function currentTheme() {
 
 export function setPreset(key, { keepCustom = false } = {}) {
     const t = store();
-    key = RENAMED[key] ?? key;
     t.preset = PRESETS[key] ? key : DEFAULT_PRESET;
     if (!keepCustom) { t.colors = {}; t.style = {}; }
     save();
@@ -324,7 +310,11 @@ export function applyTheme() {
         const fitted = fitContrast(c, bg, 3);
         if (fitted !== c) root.setProperty(`--pc-${key}`, toHex(fitted));
     }
-    // The canvas draws wires and its background from the look, so tell it.
+    if (preset === 'lattice' && !currentTheme().custom.flow) {
+        const quote = safe(() => getComputedStyle(doc.documentElement).getPropertyValue('--SmartThemeQuoteColor').trim());
+        if (quote && parseColor(quote)) root.setProperty('--pc-flow', quote);
+    }
+    // Notify the workspace after explicit theme changes.
     safe(() => doc.dispatchEvent(new CustomEvent('pc-theme')));
 }
 
@@ -368,7 +358,7 @@ export function exportTheme(name = null) {
 export function importTheme(text) {
     let o;
     try { o = JSON.parse(String(text ?? '').trim()); } catch { return { ok: false, reason: 'That is not a Lattice theme. Paste the whole text you were given.' }; }
-    if (!o || (o.latticeTheme !== 1 && o.sillyCanvasTheme !== 1) || typeof o.colors !== 'object') return { ok: false, reason: 'That is not a Lattice theme.' };
+    if (!o || o.latticeTheme !== 1 || typeof o.colors !== 'object') return { ok: false, reason: 'That is not a Lattice theme.' };
     const colors = {};
     for (const r of ROLES) {
         const v = o.colors[r.key];
@@ -380,7 +370,7 @@ export function importTheme(text) {
         if (def.options.some(x => x[0] === v)) style[part] = v;
     }
     const t = store();
-    const base = RENAMED[o.base] ?? o.base;
+    const base = o.base;
     t.preset = PRESETS[base] ? base : DEFAULT_PRESET;
     t.colors = colors;
     t.style = style;

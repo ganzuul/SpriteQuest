@@ -36,18 +36,19 @@ function fixture(graph) {
     return { controller, context, message, requests: () => requests };
 }
 
-test('new examples are independent, portable and unarmed; old schema2 packages remain exact', async () => {
+test('all examples are current, independent, portable and unarmed', async () => {
     for (const id of ['native-guidance', 'reviewed-de-slop', 'literal-cleanup', 'structured-guidance']) {
         const graph = starterGraph(id);
         const portable = JSON.parse(await readFile(new URL('../workflows/' + id + '.json', import.meta.url), 'utf8'));
         assert.deepEqual(exportWorkflow(graph), portable);
         assert.equal(parseWorkflow(JSON.stringify(portable)).ok, true);
-        assert.equal(resolveWorkflow(graph.schema === 3 ? graph : parseWorkflow(JSON.stringify(portable)).data).ok, graph.schema === 3);
-        const settings = { graphs: {}, enabled: false, workflowMode: 'legacy', nativeBindings: {} };
+        assert.equal(graph.schema, 3); assert.equal(graph.runtime, 2);
+        assert.equal(resolveWorkflow(graph).ok, true);
+        const settings = { graphs: {}, enabled: false, nativeBindings: { preGraphId: null, postGraphId: null } };
         const first = installStarter(id, settings), second = installStarter(id, settings);
         assert.notEqual(first.id, second.id);
-        assert.deepEqual([settings.enabled, settings.workflowMode, settings.nativeBindings], [false, 'legacy', {}]);
-        assert.equal(STARTERS.find(item => item.id === id).callBound, graph.schema === 3 ? 0 : id === 'native-guidance' ? 2 : 1);
+        assert.deepEqual([settings.enabled, settings.nativeBindings], [false, { preGraphId: null, postGraphId: null }]);
+        assert.equal(STARTERS.find(item => item.id === id).callBound, id === 'native-guidance' ? 2 : id === 'reviewed-de-slop' ? 1 : 0);
         if (graph.schema === 3) {
             assert.equal(resolveWorkflow(first).ok, true);
             assert.equal(resolveWorkflow(second).ok, true);

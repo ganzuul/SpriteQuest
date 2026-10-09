@@ -11,7 +11,7 @@ for (const key of ['Node', 'Element', 'Text', 'Comment', 'Document', 'HTMLMediaE
 const clientURL = new URL('../node_modules/svelte/src/index-client.js', import.meta.url).href;
 const { mount, unmount, flushSync, tick } = await import(clientURL);
 const { starterGraph } = await import(`../src/workflow/starters.js?v=${version}`);
-const { normalizeNativeGraph } = await import(`../src/workflow/migration.js?v=${version}`);
+const { cloneWorkflowDocument } = await import(`../src/workflow/document.js?v=${version}`);
 const { createGraphViewSession } = await import(`../src/ui/graph-view-session.js?v=${version}`);
 const { projectPreparedWorkflow } = await import(`../src/ui/workflow-surface.js?v=${version}`);
 const { prepareWorkspaceViews, projectEditorDraw, projectWorkspacePanels } = await import(`../src/ui/workspace-preparation.js?v=${version}`);
@@ -33,8 +33,8 @@ const keyboard = (target, type, key, code = key) => {
     const event = new dom.window.KeyboardEvent(type, { bubbles: true, cancelable: true, key, code });
     target.dispatchEvent(event); return event;
 };
-async function cameraFixture(native = true) {
-    const root = normalizeNativeGraph(starterGraph('native-guidance')).data;
+async function cameraFixture() {
+    const root = cloneWorkflowDocument(starterGraph('native-guidance')).data;
     root.id = 'camera-focus-' + ++sequence;
     const counts = { bindings: 0, preparation: 0, changes: 0, edits: 0 };
     const prepared = prepareWorkspaceViews(root, { resolveBinding: () => { counts.bindings++; return { ok: true, data: { profileId: 'cached', model: 'cached-model' } }; } });
@@ -46,20 +46,20 @@ async function cameraFixture(native = true) {
     assert.ok(view.controls.some(control => control.key === 'instructions'));
     const real = fixture({ nativeCard: node => drawing.nativeCards[node.id], nativeScope: () => ({ workflowId: root.id, instancePath: [], readOnly: false }), canEdit: () => true,
         prepareRender: () => { counts.preparation++; }, onChange: () => { counts.changes++; } });
-    if (native) real.canvas.setGraph(drawing);
+    real.canvas.setGraph(drawing);
     const workspace = document.createElement('div'); workspace.className = 'pc-root pc-open'; document.body.append(workspace); workspace.append(real.host);
     const detailHost = document.createElement('div'); workspace.append(detailHost);
     const edited = () => { counts.edits++; return { ok: true }; };
     const mounted = mount(Details, { target: detailHost, props: { view, actions: { present: edited, editField: edited, editControl: edited, editBinding: edited } } }); flushSync();
     const editor = detailHost.querySelector('textarea[aria-label="instructions"]'); assert.ok(editor && !editor.disabled);
     const saved = JSON.stringify(root), content = JSON.stringify({ nodes: real.canvas.graph.nodes, wires: real.canvas.graph.wires, groups: real.canvas.graph.groups, updatedAt: real.canvas.graph.updatedAt });
-    const baseline = { ...counts }, node = real.host.querySelector(native ? '.pc-node-native' : '.pc-node'); assert.ok(node);
+    const baseline = { ...counts }, node = real.host.querySelector('.pc-node-native'); assert.ok(node);
     return { ...real, workspace, detailHost, editor, node, counts,
         assertPreserved() {
             assert.equal(document.activeElement, editor, 'the exact mounted NodeDetails editor must retain focus');
             assert.equal(editor.isConnected, true);
             assert.equal(detailHost.querySelector('textarea[aria-label="instructions"]'), editor);
-            assert.equal(real.host.querySelector(native ? '.pc-node-native' : '.pc-node'), node, 'camera motion must retain the keyed card');
+            assert.equal(real.host.querySelector('.pc-node-native'), node, 'camera motion must retain the keyed card');
             assert.equal(JSON.stringify(root), saved);
             assert.equal(JSON.stringify({ nodes: real.canvas.graph.nodes, wires: real.canvas.graph.wires, groups: real.canvas.graph.groups, updatedAt: real.canvas.graph.updatedAt }), content);
             assert.deepEqual(counts, baseline, 'camera focus does not prepare, bind, edit or touch documents');
@@ -114,13 +114,4 @@ test('native fresh-page and unrelated-workspace pan acquire Canvas focus and Esc
         assert.equal(document.activeElement, f.host, 'an editor in another actual workspace cannot take Canvas keyboard ownership');
         await finishPan(f, 1);
     } finally { await f.close(); other.remove(); }
-});
-test('legacy pan retains its existing Canvas focus acquisition with a local editor focused', async () => {
-    const f = await cameraFixture(false);
-    try {
-        f.editor.focus(); assert.equal(document.activeElement, f.editor);
-        mouse(f.host, 'mousedown', 200, 100, { button: 1 });
-        assert.equal(document.activeElement, f.host); assert.ok(f.canvas.pan);
-        await finishPan(f, 1);
-    } finally { await f.close(); }
 });

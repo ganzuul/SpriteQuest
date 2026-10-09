@@ -72,8 +72,8 @@ test('only the matching cancelled settlement event can close progress after the 
     finish(response(runRecord(root,'closed','cancelled'),false));await pending;assert.equal(state.recording.runId,'closed');assert.equal(state.reviewHandles.length,0);
 });
 test('schema3 Apply forwards the explicit frozen root handle and retains its recording after application',async()=>{
-    const { normalizeNativeGraph }=await import('../src/workflow/migration.js');
-    const root=normalizeNativeGraph(starterGraph('reviewed-de-slop')).data;root.nodes.repair.mode='scan';root.nodes.other={id:'other',type:'workflow',operation:'apply-reply'};root.wires.other={id:'other',route:'wire',from:'review-gate',fromPort:'out',to:'other',toPort:'in'};
+    const { cloneWorkflowDocument }=await import('../src/workflow/document.js');
+    const root=cloneWorkflowDocument(starterGraph('reviewed-de-slop')).data;root.nodes.repair.mode='scan';root.nodes.other={id:'other',type:'workflow',operation:'apply-reply'};root.wires.other={id:'other',route:'wire',from:'review-gate',fromPort:'out',to:'other',toPort:'in'};
     const recording=runRecord(root,'apply'),plan=resolveWorkflow(root).data,handles=plan.terminals.map((terminal,index)=>freeze({handleId:'handle-'+index,runId:'apply',terminal}));let applied,checks=0,state;
     const runtime={cancel(){},runPost:async()=>({...response(recording),reviewHandles:handles}),candidateStatus:()=>{checks++;return {ok:true};},apply:async selector=>{applied=selector;return {ok:true};}};
     const session=createWorkflowSession({runtime:()=>runtime,current:()=>root,epoch:()=>1,active:()=>true,changed:value=>state=value});await session.run();

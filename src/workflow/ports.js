@@ -1,5 +1,5 @@
 import { safeWorkflowData, validateGraphStructure } from './contracts.js?v=0.20.0';
-import { normalizeNativeGraph } from './migration.js?v=0.20.0';
+import { cloneWorkflowDocument } from './document.js?v=0.20.0';
 import { operationFor, describeOperation, semanticControlsForNode } from './catalog.js?v=0.20.0';
 export { portsForNode } from './catalog.js?v=0.20.0';
 
@@ -7,36 +7,34 @@ const fail = (code, message) => ({ ok: false, error: { code, message } });
 const endpoint = value => value && typeof value === 'object' && !Array.isArray(value) && typeof value.nodeId === 'string' && typeof value.portId === 'string';
 const canonical = value => Array.isArray(value) ? value.map(canonical) : value && typeof value === 'object' ? Object.fromEntries(Object.keys(value).sort().map(key => [key, canonical(value[key])])) : value;
 
-/** Pure execution identity. Schema-2 serialization matches the established runtime signature. */
+/** Pure current execution identity excludes presentation and includes effective bindings. */
 export function graphSemanticSignature(graph) {
     if (!graph) return 'null';
     const binding = value => value && typeof value === 'object' && !Array.isArray(value) ? { profileId: value.profileId ?? null, model: value.model ?? null } : value;
-    const inheritedBinding = value => graph.schema === 3 && value && typeof value === 'object' && !Array.isArray(value)
+    const inheritedBinding = value => value && typeof value === 'object' && !Array.isArray(value)
         ? Object.fromEntries(['profileId', 'model'].filter(key => Object.hasOwn(value, key)).map(key => [key, value[key]])) : binding(value);
-    const nodes = Object.entries(graph.nodes ?? {}).filter(([, node]) => node.type !== 'note' || node.inGroup !== undefined).map(([key, node]) => {
+    const nodes = Object.entries(graph.nodes ?? {}).filter(([, node]) => node.type !== 'note').map(([key, node]) => {
         const operation = operationFor(node, { phase: graph.mode?.slice(7) });
         const controls = semanticControlsForNode(node, operation);
         if (node.operation === 'validate-patches') controls.protectedLiterals = node.protectedLiterals === undefined ? [] : node.protectedLiterals;
-        return { key, id: node.id, type: node.type, operation: node.operation, operationVersion: node.operationVersion === undefined ? 1 : node.operationVersion, enabled: node.enabled !== false, modelRole: node.modelRole ?? operation?.modelRole ?? null, ...binding(node), inGroup: node.inGroup, controls,
-            ...(graph.schema === 3 && node.operation === 'reroute' ? { artifactKind: node.artifactKind, phase: node.phase } : {}),
-            ...(graph.schema === 3 && node.type === 'subgraph' ? { definition: node.definition, parameterOverrides: node.parameterOverrides ?? {}, roleOverrides: Object.fromEntries(Object.entries(node.roleOverrides ?? {}).map(([key, value]) => [key, inheritedBinding(value)])), nodeBindingOverrides: Object.fromEntries(Object.entries(node.nodeBindingOverrides ?? {}).map(([key, value]) => [key, inheritedBinding(value)])) } : {}),
-            ...(graph.schema === 3 && ['subgraph-input', 'subgraph-output'].includes(node.type) ? { interfacePortId: node.interfacePortId } : {}),
+        return { key, id: node.id, type: node.type, operation: node.operation, operationVersion: node.operationVersion === undefined ? 1 : node.operationVersion, enabled: node.enabled !== false, modelRole: node.modelRole ?? operation?.modelRole ?? null, ...binding(node), controls,
+            ...(node.operation === 'reroute' ? { artifactKind: node.artifactKind, phase: node.phase } : {}),
+            ...(node.type === 'subgraph' ? { definition: node.definition, parameterOverrides: node.parameterOverrides ?? {}, roleOverrides: Object.fromEntries(Object.entries(node.roleOverrides ?? {}).map(([key, value]) => [key, inheritedBinding(value)])), nodeBindingOverrides: Object.fromEntries(Object.entries(node.nodeBindingOverrides ?? {}).map(([key, value]) => [key, inheritedBinding(value)])) } : {}),
+            ...(['subgraph-input', 'subgraph-output'].includes(node.type) ? { interfacePortId: node.interfacePortId } : {}),
         };
     });
-    const wires = Object.entries(graph.wires ?? {}).map(([key, wire]) => ({ key, id: wire.id, from: wire.from, to: wire.to, order: wire.order, kind: wire.kind, port: wire.port, loop: wire.loop,
-        ...(graph.schema === 3 ? { route: wire.route, fromPort: wire.fromPort, toPort: wire.toPort, portalId: wire.portalId } : {}),
+    const wires = Object.entries(graph.wires ?? {}).map(([key, wire]) => ({ key, id: wire.id, route: wire.route, from: wire.from, fromPort: wire.fromPort, to: wire.to, toPort: wire.toPort, portalId: wire.portalId,
     }));
-    const groups = Object.entries(graph.groups ?? {}).map(([key, group]) => ({ key, id: group.id, enabled: group.enabled !== false, component: group.component === undefined ? undefined : group.component && { id: group.component.id, version: group.component.version }, entry: group.entry, exit: group.exit, members: group.members }));
     const roles = Object.fromEntries(Object.entries(graph.roles ?? {}).map(([role, value]) => [role, inheritedBinding(value)]));
-    const composition = graph.schema === 3 ? {
+    const composition = {
         portals: Object.fromEntries(Object.entries(graph.portals ?? {}).map(([key, portal]) => [key, { id: portal.id, source: portal.source, kind: portal.kind }])),
         definitions: Object.fromEntries(Object.entries(graph.definitions ?? {}).map(([key, definition]) => [key, {
             id: definition.id, version: definition.version, semanticHash: definition.semanticHash,
             interface: definition.interface?.map(({ label, ...port }) => port), parameters: definition.parameters?.map(({ label, ...parameter }) => parameter),
             body: JSON.parse(graphSemanticSignature(definition.body)),
         }])),
-    } : {};
-    return JSON.stringify(canonical({ schema: graph.schema, runtime: graph.runtime, mode: graph.mode, nodes, wires, groups, roles, ...composition }));
+    };
+    return JSON.stringify(canonical({ schema: graph.schema, runtime: graph.runtime, mode: graph.mode, nodes, wires, roles, ...composition }));
 }
 
 /** Document precondition includes aliases/layout, but excludes root camera/selection and save bookkeeping. */
@@ -59,7 +57,7 @@ function prepared(original, candidate, addedEdgeIds, removedEdgeIds) {
  */
 export function prepareConnection(graph, command) {
     if (!safeWorkflowData(command) || !endpoint(command?.from) || !endpoint(command?.to) || (command.replace !== undefined && typeof command.replace !== 'boolean')) return fail('INVALID_ENDPOINT', 'Expected named output and input endpoints.');
-    const normalized = normalizeNativeGraph(graph);
+    const normalized = cloneWorkflowDocument(graph);
     if (!normalized.ok) return normalized;
     const candidate = normalized.data;
     const { from, to, replace = false } = command;
@@ -82,7 +80,7 @@ export function prepareConnection(graph, command) {
  */
 export function prepareDisconnection(graph, edgeIds) {
     if (!safeWorkflowData(edgeIds) || !Array.isArray(edgeIds) || edgeIds.some(id => typeof id !== 'string')) return fail('INVALID_WIRE', 'Expected wire IDs.');
-    const normalized = normalizeNativeGraph(graph);
+    const normalized = cloneWorkflowDocument(graph);
     if (!normalized.ok) return normalized;
     const candidate = normalized.data;
     const removed = [...new Set(edgeIds)].filter(id => Object.hasOwn(candidate.wires, id));
@@ -99,7 +97,7 @@ export function prepareDisconnection(graph, edgeIds) {
  */
 export function prepareNodeControlChange(graph, command) {
     if (!safeWorkflowData(command) || !command || typeof command !== 'object' || Array.isArray(command) || typeof command.nodeId !== 'string' || !command.controls || typeof command.controls !== 'object' || Array.isArray(command.controls) || Object.keys(command).some(key => !['nodeId', 'controls', 'removeEdgeIds'].includes(key)) || command.removeEdgeIds !== undefined && (!Array.isArray(command.removeEdgeIds) || command.removeEdgeIds.some(id => typeof id !== 'string'))) return fail('INVALID_SETTINGS', 'Expected declared control changes and explicit incident wire IDs.');
-    const normalized = normalizeNativeGraph(graph);
+    const normalized = cloneWorkflowDocument(graph);
     if (!normalized.ok) return normalized;
     if (graph.schema !== 3 || graph.runtime !== 2) return fail('UNSUPPORTED_VERSION', 'Named control editing requires schema 3 and runtime 2.');
     const candidate = normalized.data;

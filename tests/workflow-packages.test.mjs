@@ -14,7 +14,7 @@ assert.deepEqual(parseWorkflow(JSON.stringify(exported)).data, exported.graph);
 for (const pair of [[1, 2], [2, 1], [3, 2], [2, 3]]) {
     assert.equal(parseWorkflow(JSON.stringify({ ...exported, schema: pair[0], minRuntime: pair[1] })).error.code, 'UNSUPPORTED_PACKAGE');
 }
-assert.equal(parseWorkflow(JSON.stringify({ ...exported, schema: 1, minRuntime: 1 })).error.code, 'UNSUPPORTED_VERSION');
+assert.equal(parseWorkflow(JSON.stringify({ ...exported, schema: 1, minRuntime: 1 })).error.code, 'UNSUPPORTED_PACKAGE');
 const oversize = { ...exported, graph: { ...exported.graph, description: '界'.repeat(700000) } };
 assert.ok(JSON.stringify(oversize).length < 2000000);
 assert.equal(parseWorkflow(JSON.stringify(oversize)).error.code, 'MALFORMED_WORKFLOW');
@@ -24,10 +24,13 @@ const old = { ...graph, schema: 2, runtime: 1, description: '界'.repeat(700000)
     plan: { id: 'plan', type: 'workflow', operation: 'response-plan' },
     output: { id: 'output', type: 'workflow', operation: 'guidance' },
 }, wires: { a: { id: 'a', from: 'source', to: 'plan', order: 0 }, b: { id: 'b', from: 'plan', to: 'output', order: 0 } } };
-const oldEnvelope = exportWorkflow(old);
-assert.equal(parseWorkflow(JSON.stringify(oldEnvelope)).ok, true, 'old envelope retains character-based multibyte compatibility');
-assert.equal(parseWorkflow(JSON.stringify({ ...oldEnvelope, kind: 'comfytavern-workflow' })).ok, true);
-assert.equal(parseWorkflow(JSON.stringify({ ...oldEnvelope, schema: 2, minRuntime: 2, graph: { ...oldEnvelope.graph, description: '' } })).error.code, 'UNSUPPORTED_VERSION');
+assert.throws(() => exportWorkflow(old), /schema 3 and runtime 2/);
+const oldEnvelope = { kind: 'lattice-workflow', schema: 1, minRuntime: 1, graph: old };
+assert.equal(parseWorkflow(JSON.stringify(oldEnvelope)).error.code, 'MALFORMED_WORKFLOW', 'the byte bound applies before retired-package admission');
+for (const kind of ['lattice-workflow', 'comfytavern-workflow']) {
+    assert.equal(parseWorkflow(JSON.stringify({ ...oldEnvelope, kind, graph: { ...old, description: '' } })).error.code, 'UNSUPPORTED_PACKAGE');
+}
+assert.equal(parseWorkflow(JSON.stringify({ ...exported, graph: { ...graph, schema: 2, runtime: 1 } })).error.code, 'UNSUPPORTED_VERSION');
 const privateGraph = { ...graph, recording: { text: 'private output' }, chat: [{ text: 'private chat' }], nodes: { source: { ...graph.nodes.source, candidate: { text: 'private candidate' } } } };
 const portable = exportWorkflow(privateGraph);
 assert.equal(portable.graph.recording, undefined);

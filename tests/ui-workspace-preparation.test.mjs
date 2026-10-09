@@ -1,13 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { starterGraph } from '../src/workflow/starters.js?v=0.20.0';
-import { normalizeNativeGraph } from '../src/workflow/migration.js?v=0.20.0';
+import { cloneWorkflowDocument } from '../src/workflow/document.js?v=0.20.0';
 import { createGraphViewSession } from '../src/ui/graph-view-session.js?v=0.20.0';
 import { createWorkflowSession, projectPreparedWorkflow } from '../src/ui/workflow-surface.js?v=0.20.0';
 const api = await import('../src/ui/workspace-preparation.js?v=0.20.0').catch(() => ({}));
 test('prepared editor drawing is detached and overlays never change the activated root', async () => {
     assert.equal(typeof api.prepareWorkspaceViews, 'function');
-    const root = normalizeNativeGraph(starterGraph('native-guidance')).data; root.id = 'workspace-root';
+    const root = cloneWorkflowDocument(starterGraph('native-guidance')).data; root.id = 'workspace-root';
     let bindings = 0;
     const prepared = api.prepareWorkspaceViews(root, { resolveBinding: () => { bindings++; return { ok: true, data: { profileId: 'cached', model: 'cached-model' } }; } });
     assert.equal(prepared.ok, true, JSON.stringify(prepared));
@@ -42,7 +42,7 @@ test('library inspection uses a real definition inventory and exposes no runtime
 });
 
 test('not-run meter uses cached checked root rows before events without a second planner or host read',()=>{
- const root=normalizeNativeGraph(starterGraph('structured-guidance')).data;root.id='idle-root';let bindings=0;const prepared=api.prepareWorkspaceViews(root,{resolveBinding:()=>{bindings++;return {ok:true,data:{}};}});assert.equal(prepared.ok,true);const count=bindings;
+ const root=cloneWorkflowDocument(starterGraph('structured-guidance')).data;root.id='idle-root';let bindings=0;const prepared=api.prepareWorkspaceViews(root,{resolveBinding:()=>{bindings++;return {ok:true,data:{}};}});assert.equal(prepared.ok,true);const count=bindings;
  assert.ok(prepared.data.idleRunRows.length>0);assert.ok(prepared.data.idleRunRows.every(row=>row.status==='not-run'));assert.equal(prepared.data.idleRunRows.reduce((sum,row)=>sum+row.executableCount,0),Object.values(root.nodes).length);assert.equal(bindings,count);
 });
 

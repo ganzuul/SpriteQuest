@@ -10,11 +10,11 @@ const { run, callCount, sendWorkflowState } = await import('../src/run.js');
 const { runWorkflow, workflowSignature } = await import('../src/workflow/runtime.js');
 const { graphSemanticSignature } = await import('../src/workflow/ports.js');
 const { starterGraph } = await import('../src/workflow/starters.js');
-const { normalizeNativeGraph } = await import('../src/workflow/migration.js');
+const { cloneWorkflowDocument } = await import('../src/workflow/document.js');
 const { exportWorkflow } = await import('../src/workflow/packages.js');
-const { isNativeWorkflow } = await import('../src/workflow/contracts.js');
+const { isWorkflowGraph } = await import('../src/workflow/contracts.js');
 
-const native = normalizeNativeGraph(starterGraph('native-guidance')).data;
+const native = cloneWorkflowDocument(starterGraph('native-guidance')).data;
 for (const schema of [3, 99]) {
     const graph = { ...structuredClone(native), schema };
     const before = structuredClone(graph);
@@ -143,7 +143,7 @@ for (const graph of unsafeRoots) {
     assert.equal((await run(graph, { dryRun: true })).plan.ok, false);
     assert.equal(loreScans, 0, 'non-record execution must never scan lore');
     assert.equal(snapshots, 0, 'non-record execution must never gather character context');
-    assert.equal(isNativeWorkflow(graph), true, 'unsafe roots must fail closed');
+    assert.equal(isWorkflowGraph(graph), true, 'unsafe roots must fail closed');
     assert.equal(callCount(graph), 0);
     assert.equal(state.migrateGraph(graph), graph);
     assert.equal(state.connect(graph, 'missing', 'also-missing').ok, false);
@@ -162,7 +162,7 @@ for (const graph of [arrayAccessor, functionRoot]) assert.equal(Object.hasOwn(gr
 assert.equal(routingGetterReads, 0, 'unsafe shapes never invoke routing getters');
 for (const graph of [null, undefined]) {
     loreScans = 0; snapshots = 0;
-    assert.equal(isNativeWorkflow(graph), false, 'absent bindings remain non-native UI sentinels');
+    assert.equal(isWorkflowGraph(graph), false, 'absent bindings remain non-native UI sentinels');
     assert.equal((await compile(graph, { dryRun: true })).ok, false);
     const result = await run(graph, { dryRun: true });
     assert.equal(result.plan.ok, false);
@@ -184,8 +184,8 @@ for (const graph of [null, undefined]) {
 }
 const legacyPlan = await compile(legacy, { dryRun: true });
 for (const prototype of [Object.prototype, null]) {
-    assert.equal(isNativeWorkflow(Object.assign(Object.create(prototype), structuredClone(legacy))), false);
-    assert.equal(isNativeWorkflow(Object.assign(Object.create(prototype), structuredClone(native))), true);
+    assert.equal(isWorkflowGraph(Object.assign(Object.create(prototype), structuredClone(legacy))), false);
+    assert.equal(isWorkflowGraph(Object.assign(Object.create(prototype), structuredClone(native))), true);
     for (const schema of [1, undefined]) {
         const graph = Object.assign(Object.create(prototype), structuredClone(legacy));
         if (schema === undefined) delete graph.schema;

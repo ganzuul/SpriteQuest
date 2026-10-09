@@ -4,7 +4,7 @@ import { runWorkflow } from '../src/workflow/runtime.js';
 import { computeDefinitionIdentity, definitionRefKey } from '../src/workflow/definitions.js';
 import { expandRecordAddress } from '../src/workflow/record-data.js';
 import { starterGraph } from '../src/workflow/starters.js';
-import { normalizeNativeGraph } from '../src/workflow/migration.js';
+import { cloneWorkflowDocument } from '../src/workflow/document.js';
 import { Worker } from 'node:worker_threads';
 import { validateWorkflow } from '../src/workflow/contracts.js';
 
@@ -48,7 +48,7 @@ test('one addressed executor shares the source and root signal while preserving 
     assert.ok(!JSON.stringify(result.recording).includes('privateEndpoint'));assert.ok(!JSON.stringify(events).includes('messages'));
 });
 test('stage observers cannot mutate execution controls or affect safe event delivery',async()=>{
-    const graph=normalizeNativeGraph(starterGraph('native-guidance')).data,events=[],requests=[];
+    const graph=cloneWorkflowDocument(starterGraph('native-guidance')).data,events=[],requests=[];
     const result=await runWorkflow(graph,{countTokens,snapshot:()=>context,resolveBinding:()=>({ok:true,data:{profileId:'fixed',model:'fixture'}}),
         onStage:node=>{if(node.operation==='response-plan'){node.maxTokens=65536;node.instructions='Injected';}throw new Error('observer');},
         onEvent:event=>{events.push(event);return Promise.reject(new Error('async observer'));},
@@ -68,7 +68,7 @@ test('invalid run identity is a safe preparation failure without retaining calle
 });
 test('invalid version metadata never invokes accessors or retains and freezes caller values',async()=>{
     for(const field of ['schema','runtime'])for(const kind of ['object','function','accessor']) {
-        const graph=normalizeNativeGraph(starterGraph('native-guidance')).data,value=kind==='function'?function privateVersion(){}:{private:'not diagnostic'};
+        const graph=cloneWorkflowDocument(starterGraph('native-guidance')).data,value=kind==='function'?function privateVersion(){}:{private:'not diagnostic'};
         let reads=0,effects=0;
         if(kind==='accessor')Object.defineProperty(graph,field,{enumerable:true,get(){reads++;return value;}});else graph[field]=value;
         const descriptors=Object.getOwnPropertyDescriptors(graph),effect=()=>{effects++;throw new Error('Rejected graph cannot touch host');};
@@ -76,7 +76,7 @@ test('invalid version metadata never invokes accessors or retains and freezes ca
         assert.equal(result.ok,false);assert.ok(!Object.hasOwn(result,field));assert.equal(reads,0);assert.equal(effects,0);
         assert.equal(Object.isFrozen(value),false);assert.equal(Object.isFrozen(graph),false);assert.deepEqual(Object.getOwnPropertyDescriptors(graph),descriptors);assert.ok(!JSON.stringify(result).includes('not diagnostic'));
     }
-    const graph=normalizeNativeGraph(starterGraph('native-guidance')).data;graph.schema=99;
+    const graph=cloneWorkflowDocument(starterGraph('native-guidance')).data;graph.schema=99;
     const result=await runWorkflow(graph);assert.equal(result.error.code,'UNSUPPORTED_VERSION');assert.equal(result.schema,99);assert.equal(result.runtime,2);
 });
 test('public native request bounds include resolved schema3 and host transport stays private',async()=>{
@@ -96,10 +96,10 @@ test('target closure excludes unrelated completeness and bindings but whole-grap
     graph.wires.cycleA=direct('cycleA','cycle-a','out','cycle-b','in');graph.wires.cycleB=direct('cycleB','cycle-b','out','cycle-a','in');
     const cyclic=await runWorkflow(graph,{...ports,target});assert.equal(cyclic.error.code,'CYCLE');assert.equal(cyclic.recording.status,'invalid');assert.deepEqual([snapshots,bindings,requests],[1,1,1]);
 });
-test('schema2 target normalization is private and retains the original version in bounded results',async()=>{
+test('current source target is detached and contains only bounded addressed diagnostics',async()=>{
     const graph=starterGraph('native-guidance'),before=structuredClone(graph);let bindings=0;
     const result=await runWorkflow(graph,{target:{workflowId:graph.id,instancePath:[],nodeId:'scene-context',portId:'out'},snapshot:()=>context,resolveBinding:()=>{bindings++;}});
-    assert.equal(result.ok,true);assert.equal(result.schema,2);assert.equal(result.runtime,1);assert.equal(result.mode,'target');assert.equal(result.callBound,0);assert.equal(bindings,0);assert.deepEqual(graph,before);assert.ok(!('artifact' in result)&&!('calls' in result));
+    assert.equal(result.ok,true);assert.equal(result.schema,3);assert.equal(result.runtime,2);assert.equal(result.mode,'target');assert.equal(result.callBound,0);assert.equal(bindings,0);assert.deepEqual(graph,before);assert.ok(!('artifact' in result)&&!('calls' in result));
 });
 test('cancellation after tokenization reserves no attempt and late provider output cannot reopen work',async()=>{
     for(const stopDuring of ['tokens','request']) {
@@ -124,15 +124,15 @@ test('Context Join records actual ordered input pins in the same zero-request pl
     assert.equal(result.ok,true,JSON.stringify(result.error));assert.equal(snapshots,1);assert.equal(effects,0);assert.equal(result.actualCalls,0);assert.ok(result.recording.artifacts.some(entry=>entry.value?.source?.operation==='context-join'));assert.equal(result.recording.units.filter(unit=>unit.status==='completed').length,2);
 });
 test('metadata admission failure and previews precede all source, binding, tokenizer and request effects',async()=>{
-    const graph=normalizeNativeGraph(starterGraph('native-guidance')).data;let effects=0;const effect=()=>{effects++;throw new Error('Effect before admission');};
+    const graph=cloneWorkflowDocument(starterGraph('native-guidance')).data;let effects=0;const effect=()=>{effects++;throw new Error('Effect before admission');};
     const preview=await runWorkflow(graph,{preview:true,snapshot:effect,resolveBinding:effect,countTokens:effect,request:effect});
     assert.equal(preview.ok,true);assert.equal(preview.preview,true);assert.ok(preview.recording.units.every(unit=>unit.status==='not-run'));assert.equal(effects,0);
     graph.id='😀'.repeat(990000);
     const result=await runWorkflow(graph,{runId:'r'.repeat(350000),snapshot:effect,resolveBinding:effect,countTokens:effect,request:effect});
     assert.equal(result.error.code,'RUN_METADATA_LIMIT');assert.equal(result.recording.plan,null);assert.equal(result.recording.status,'invalid');assert.equal(effects,0);
 });
-test('the public complete execution gate resolves schema3 while preserving schema2 validation ordering',()=>{
+test('the public complete execution gate resolves only current named-pin documents',()=>{
     const expanded=validateWorkflow(siblings(),{phase:'pre'});assert.equal(expanded.ok,true,JSON.stringify(expanded.error));assert.equal(expanded.data.callBound,2);assert.equal(expanded.data.primitives.filter(unit=>unit.included).length,5);
-    const legacy=validateWorkflow(starterGraph('native-guidance'),{phase:'pre'});assert.equal(legacy.ok,true);assert.deepEqual(legacy.data.orderedNodes.map(node=>node.id),['scene-context','smart-compactor','response-plan','guidance']);
+    const legacy=validateWorkflow(starterGraph('native-guidance'),{phase:'pre'});assert.equal(legacy.ok,true);assert.deepEqual(legacy.data.primitives.map(unit=>unit.address.nodeId),['scene-context','smart-compactor','response-plan','guidance']);
     assert.equal(validateWorkflow(siblings(),{phase:'post'}).error.code,'WRONG_PHASE');
 });

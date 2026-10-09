@@ -1,8 +1,7 @@
-// Minimal stand-in for SillyTavern.getContext(), enough to import the
-// compiler under node. Pass prompts to expose them as oai_settings.prompts.
+// Public SillyTavern context fixture for current Lattice workflows.
 export function installMock({ prompts = [], chat = [], settings = {} } = {}) {
     const c = {
-        extensionSettings: { 'prompt-canvas': settings },
+        extensionSettings: { lattice: { schema: 1, enabled: false, graphs: {}, activeGraphId: null, nativeBindings: { preGraphId: null, postGraphId: null }, subgraphLibrary: { definitions: {} }, ui: {}, ...settings, nativeBindings: { preGraphId: null, postGraphId: null, ...settings.nativeBindings } } },
         chatMetadata: {},
         chatCompletionSettings: { prompts, prompt_order: [] },
         chat,

@@ -3,10 +3,10 @@ import test from 'node:test';
 import * as planning from '../src/workflow/resolve.js?v=0.20.0';
 import { prepareCompositionViews } from '../src/workflow/composition-views.js';
 import { starterGraph } from '../src/workflow/starters.js';
-import { normalizeNativeGraph } from '../src/workflow/migration.js';
+import { cloneWorkflowDocument } from '../src/workflow/document.js';
 import { siblingWorkflow,nestedWorkflow } from './fixtures/workflow-prepared-fixture.mjs';
 
-const graph3=()=>normalizeNativeGraph(starterGraph('native-guidance')).data;
+const graph3=()=>cloneWorkflowDocument(starterGraph('native-guidance')).data;
 const target=(graph,nodeId,portId='out')=>({workflowId:graph.id,instancePath:[],nodeId,portId});
 test('prepared summaries share one checked inventory and preserve the full resolver closure',()=>{
     assert.equal(typeof planning.prepareWorkflowPlanner,'function');

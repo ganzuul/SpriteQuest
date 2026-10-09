@@ -3,7 +3,7 @@ import test from 'node:test';
 import { readFile } from 'node:fs/promises';
 import { fixture, mouse, dom } from './canvas-fixture.mjs';
 import { starterGraph } from '../src/workflow/starters.js?v=0.20.0';
-import { normalizeNativeGraph } from '../src/workflow/migration.js?v=0.20.0';
+import { cloneWorkflowDocument } from '../src/workflow/document.js?v=0.20.0';
 import { computeDefinitionIdentity, definitionRefKey } from '../src/workflow/definitions.js?v=0.20.0';
 import { workflowSignature } from '../src/workflow/runtime.js?v=0.20.0';
 import { createNativeWorkflowController } from '../src/workflow/host.js?v=0.20.0';
@@ -25,7 +25,7 @@ function groupedDefinition() {
     return { ...checked.data.materializedDefinition, semanticHash: checked.data.semanticHash };
 }
 function prepared(schema = 2) {
-    const source = starterGraph('reviewed-de-slop'); source.nodes.repair.mode = 'scan'; const root = schema === 3 ? normalizeNativeGraph(source).data : source;
+    const source = starterGraph('reviewed-de-slop'); source.nodes.repair.mode = 'scan'; const root = schema === 3 ? cloneWorkflowDocument(source).data : source;
     const definition = groupedDefinition(), ref = { id: definition.id, version: definition.version, semanticHash: definition.semanticHash };
     if (schema === 3) { root.definitions[definitionRefKey(definition)] = definition; root.nodes.inspection = { id: 'inspection', type: 'subgraph', definition: ref, parameterOverrides: {}, roleOverrides: {}, nodeBindingOverrides: {} }; }
     let bindings = 0;
@@ -129,7 +129,7 @@ test('folding preserves genuine schema2 review selector and schema3 private hand
         const context = { chatId: 'fold-review-' + schema, characterId: 1, groupId: null, chat: [{ mes: 'Hello', is_user: true }, message], extensionPrompts: {}, saveChat: async () => {}, updateMessageBlock: async () => {}, swipe: { refresh: async () => {} } };
         const host = createNativeWorkflowController({ context: () => context, getGraph: () => f.root, isEnabled: () => true, isBusy: () => false, resolveBinding: () => { throw new Error('Scan-only review does not bind'); }, request: async () => { counters.requests++; throw new Error('Scan-only review does not request'); }, syncMesToSwipe: index => { const item = context.chat[index]; item.swipes[item.swipe_id] = item.mes; return true; }, syncSwipeToMes: (index, id) => { const item = context.chat[index]; item.swipe_id = id; item.mes = item.swipes[id]; Object.assign(item, structuredClone(item.swipe_info[id])); return true; } });
         const runtime = { ...host, candidateStatus(candidate) { counters.checks++; return host.candidateStatus(candidate); }, apply(candidate) { counters.apply++; return host.apply(candidate); }, cancel(reason) { counters.cancel++; host.cancel(reason); } };
-        Object.assign(f.env, { workflowState: { result: null, reviewHandles: [], busy: false, availability: 'current', applyIssue: '' }, schema2ReviewOwner: null, pinnedPreview: null, uiEpoch: 1, workflowLibrary: null, workflowInspector: null, workflowProjection: null, workflowProjectionGraph: null, projectPreparedWorkflow, projectWorkspacePanels, settings: () => ({}), isNativeWorkflow: root => root?.mode?.startsWith('native-'), executableNative: root => root.schema === 2 && root.runtime === 1 || root.schema === 3 && root.runtime === 2, workbench: { update(value) { f.env.panels = value; } } });
+        Object.assign(f.env, { workflowState: { result: null, reviewHandles: [], busy: false, availability: 'current', applyIssue: '' }, schema2ReviewOwner: null, pinnedPreview: null, uiEpoch: 1, workflowLibrary: null, workflowInspector: null, workflowProjection: null, workflowProjectionGraph: null, projectPreparedWorkflow, projectWorkspacePanels, settings: () => ({}), isWorkflowGraph: root => root?.mode?.startsWith('native-'), executableNative: root => root.schema === 2 && root.runtime === 1 || root.schema === 3 && root.runtime === 2, workbench: { update(value) { f.env.panels = value; } } });
         for (const name of ['samePreviewTerminal', 'currentRootPreviewTerminal', 'schema2ReviewSelector', 'currentSchema2Review', 'currentPreviewHandle', 'applyPreviewReview', 'rejectPreviewReview', 'workflowView', 'updateWorkflowProjection']) f.env[name] = controllerFunction(name, f.env);
         f.env.workflowSession = createWorkflowSession({ runtime: () => runtime, rootCurrent: () => f.root, runEpoch: () => f.env.rootRunEpoch, active: () => true, changed(value) {
             const changed = value.result !== f.env.workflowState.result || value.reviewHandles !== f.env.workflowState.reviewHandles; f.env.workflowState = value;

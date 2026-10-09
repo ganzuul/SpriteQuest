@@ -40,14 +40,9 @@ export interface NativeNode extends Binding {
     phase?: WorkflowPhase;
     [key: string]: unknown;
 }
-export interface LegacyNativeWire {
-    id: string; from: string; to: string; order: number;
-    kind?: 'append' | 'prepend' | 'merge';
-}
 export interface DirectWire {
     id: string; route: 'wire'; from: string; fromPort: string; to: string; toPort: string;
     order?: number;
-    /** Preserved schema-2 metadata; route and named endpoints define native flow. */
     kind?: 'append' | 'prepend' | 'merge';
 }
 export interface PortalWire { id: string; route: 'portal'; portalId: string; to: string; toPort: string; }
@@ -89,7 +84,6 @@ interface NativeDocument {
     roles?: Record<string, Binding>;
     [key: string]: unknown;
 }
-export interface NativeGraph2 extends NativeDocument { schema: 2; runtime: 1; wires: Record<string, LegacyNativeWire>; }
 export interface NativeGraph3 extends NativeDocument {
     schema: 3; runtime: 2; wires: Record<string, DirectWire | PortalWire>;
     portals?: Record<string, Portal>;
@@ -126,7 +120,7 @@ export interface ResolvedPlan extends RunPlan {
 }
 export interface StructureDiagnostics { nodeCount: number; wireCount: number; }
 export interface PreparedGraphEdit {
-    candidate: NativeGraph2 | NativeGraph3;
+    candidate: NativeGraph3;
     changed: boolean;
     addedEdgeIds: string[];
     removedEdgeIds: string[];
@@ -228,19 +222,10 @@ export interface Recording {
 }
 export interface TerminalReviewHandle { handleId: string; runId: string; terminal: TerminalTarget; }
 interface BoundedRunData { runId: string; ok: boolean; callBound: number; actualCalls: number; recording: Recording; error?: WorkflowError; preview?: true; }
-export type BoundedWorkflowRunResult = BoundedRunData & (
-    | { schema: 3; runtime: 2; mode: 'root' | 'target' }
-    | { schema: 2; runtime: 1; mode: 'target' }
-);
-/** Historical full schema-2 caller fields remain intact, including trace === calls. */
-export interface LegacyWorkflowRunResult {
-    schema?: 2; runtime?: 1; mode: 'root'; runId?: string; ok: boolean; artifact?: unknown; error?: WorkflowError;
-    reports: Record<string, unknown>[]; calls: Record<string, unknown>[]; trace: Record<string, unknown>[];
-    outputs: { nodeId: string; artifact: unknown }[]; callBound: number; actualCalls: number; recording?: Recording; preview?: true;
-}
+export type BoundedWorkflowRunResult = BoundedRunData & { schema: 3; runtime: 2; mode: 'root' | 'target' };
 /** A failed factory can return no recording; consumers preserve their prior bounded record. */
 export interface WorkflowPreparationFailure { schema?: number; runtime?: number; mode: 'root' | 'target'; runId?: string; ok: false; callBound: number; actualCalls: number; error: WorkflowError; recording?: never; }
-export type WorkflowRunResult = LegacyWorkflowRunResult | BoundedWorkflowRunResult | WorkflowPreparationFailure;
+export type WorkflowRunResult = BoundedWorkflowRunResult | WorkflowPreparationFailure;
 export type HostWorkflowRunResult = WorkflowRunResult & { reviewHandles?: TerminalReviewHandle[]; published?: boolean; fallback?: 'native'; };
 export interface WorkflowRunOptions {
     target?: WorkflowTarget; onEvent?: (event: RunEvent) => unknown; runId?: string;

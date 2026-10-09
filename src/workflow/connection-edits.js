@@ -1,5 +1,5 @@
 import { cloneDefinitionData, definitionRefKey } from './definitions.js?v=0.20.0';
-import { normalizeNativeGraph } from './migration.js?v=0.20.0';
+import { cloneWorkflowDocument } from './document.js?v=0.20.0';
 import { ARTIFACT_KINDS, OPERATIONS, describeOperation, operationDefaults, portsForNode } from './catalog.js?v=0.20.0';
 import { prepareGraphCandidate } from './prepared-graph-edit.js?v=0.20.0';
 import { prepareLocalDefinitionEdit } from './definition-library.js?v=0.20.0';
@@ -239,7 +239,7 @@ export function prepareNativeConnectionEdit(root, input, options = {}) {
         if (!record(command) || typeof command.kind !== 'string' || !Object.hasOwn(fields, command.kind) || !keys(command, ['kind', 'viewPath', 'expectedRef', ...fields[command.kind]]) || command.replace !== undefined && typeof command.replace !== 'boolean') return fail('INVALID_COMMAND', 'Use a supported native connection command.');
         const path = command.viewPath === undefined ? [] : command.viewPath;
         if (!Array.isArray(path) || path.length > 8 || path.some(id => !safeId(id))) return fail('INVALID_COMMAND', 'Use a bounded path of stable instance IDs.');
-        const normalized = normalizeNativeGraph(root);
+        const normalized = cloneWorkflowDocument(root);
         if (!normalized.ok) return normalized;
         // Keep entry preconditions even if a caller-provided ID factory changes its source.
         const original = structuredClone(root), candidate = normalized.data;

@@ -1,22 +1,20 @@
 import assert from 'node:assert/strict';
-import { installMock } from './mock.js';
-installMock({ settings: { graphs: {} } });
 const { validateWorkflow } = await import('../src/workflow/contracts.js');
 function fixturePreGraph() {
-    return { id: 'pre', name: 'Pre', schema: 2, runtime: 1, mode: 'native-pre', roles: { Analysis: { profileId: null, model: null } }, nodes: {
+    return { id: 'pre', name: 'Pre', schema: 3, runtime: 2, mode: 'native-pre', roles: { Analysis: { profileId: null, model: null } }, nodes: {
         source: { id: 'source', type: 'workflow', operation: 'scene-context', enabled: true, x: 0, y: 0 },
         compact: { id: 'compact', type: 'workflow', operation: 'smart-compactor', enabled: true, x: 0, y: 100, targetTokens: 1200, keepRecent: 2, method: 'select', pins: [] },
         plan: { id: 'plan', type: 'workflow', operation: 'response-plan', enabled: true, modelRole: 'Analysis', x: 0, y: 200, maxTokens: 768 },
         output: { id: 'output', type: 'workflow', operation: 'guidance', enabled: true, x: 0, y: 300, budgetTokens: 768 },
-    }, wires: { a: { id: 'a', from: 'source', to: 'compact', order: 0 }, b: { id: 'b', from: 'compact', to: 'plan', order: 0 }, c: { id: 'c', from: 'plan', to: 'output', order: 0 } }, groups: {} };
+    }, wires: { a: { id: 'a', route: 'wire', from: 'source', fromPort: 'out', to: 'compact', toPort: 'in', order: 0 }, b: { id: 'b', route: 'wire', from: 'compact', fromPort: 'out', to: 'plan', toPort: 'in', order: 0 }, c: { id: 'c', route: 'wire', from: 'plan', fromPort: 'out', to: 'output', toPort: 'in', order: 0 } }, groups: {} };
 }
 const graph = fixturePreGraph();
 graph.nodes.plan.y = -500;
-assert.deepEqual(validateWorkflow(graph).data.orderedNodes.map(n => n.id), ['source', 'compact', 'plan', 'output']);
+assert.deepEqual(validateWorkflow(graph).data.primitives.filter(unit => unit.included).map(unit => unit.node).map(n => n.id), ['source', 'compact', 'plan', 'output']);
 
 // A wire cycle must fail before execution, even when positions suggest an order.
 const cycle = fixturePreGraph();
-cycle.wires.back = { id: 'back', from: 'plan', to: 'compact', order: 1 };
+cycle.wires.a.from = 'compact';
 assert.equal(validateWorkflow(cycle).error?.code, 'CYCLE');
 const dangling = fixturePreGraph();
 dangling.wires.a.from = 'missing';
@@ -30,10 +28,10 @@ const unknown = fixturePreGraph();
 unknown.nodes.plan.operation = 'future-plan';
 assert.equal(validateWorkflow(unknown).error?.code, 'UNKNOWN_OPERATION');
 const future = fixturePreGraph();
-future.runtime = 2;
+future.runtime = 3;
 assert.equal(validateWorkflow(future).error?.code, 'UNSUPPORTED_VERSION');
 const ambiguous = fixturePreGraph();
-ambiguous.wires.extra = { id: 'extra', from: 'source', to: 'plan', order: 1 };
+ambiguous.wires.extra = { id: 'extra', route: 'wire', from: 'source', fromPort: 'out', to: 'plan', toPort: 'in', order: 1 };
 assert.equal(validateWorkflow(ambiguous).error?.code, 'AMBIGUOUS_INPUT');
 const disabled = fixturePreGraph();
 disabled.nodes.compact.enabled = false;
@@ -47,7 +45,7 @@ assert.equal(validateWorkflow(noTerminal).error?.code, 'MISSING_TERMINAL');
 const reachable = fixturePreGraph();
 reachable.nodes.compact.method = 'compress';
 reachable.nodes.unused = { id: 'unused', type: 'workflow', operation: 'response-plan', maxTokens: 768 };
-assert.deepEqual({ ids: validateWorkflow(reachable).data.orderedNodes.map(n => n.id), bound: validateWorkflow(reachable).data.callBound }, { ids: ['source', 'compact', 'plan', 'output'], bound: 2 });
+assert.deepEqual({ ids: validateWorkflow(reachable).data.primitives.filter(unit => unit.included).map(unit => unit.node).map(n => n.id), bound: validateWorkflow(reachable).data.callBound }, { ids: ['source', 'compact', 'plan', 'output'], bound: 2 });
 // Malformed external objects fail safely rather than throwing or trusting prototypes.
 const malformed = [null, [], { ...fixturePreGraph(), nodes: null }, Object.assign(Object.create({ injected: true }), fixturePreGraph()), { ...fixturePreGraph(), name: 'x'.repeat(2000001) }];
 for (const item of malformed) assert.equal(validateWorkflow(item).error?.code, 'MALFORMED_WORKFLOW');
@@ -71,39 +69,20 @@ portable.nodes.plan.model = 'node-model';
 portable.groups.compound = { id: 'compound', title: 'Formation', entry: 'compact', exit: 'plan', members: ['compact', 'plan'], collapsed: true };
 portable.nodes.compact.inGroup = 'compound'; portable.nodes.plan.inGroup = 'compound';
 const envelope = exportWorkflow(portable);
-assert.deepEqual([envelope.kind, envelope.schema, envelope.minRuntime], ['lattice-workflow', 1, 1]);
+assert.deepEqual([envelope.kind, envelope.schema, envelope.minRuntime], ['lattice-workflow', 2, 2]);
 const roundtrip = parseWorkflow(JSON.stringify(envelope));
 assert.equal(roundtrip.ok, true);
 const expectedPortable = structuredClone(portable);
 expectedPortable.roles.Analysis.profileId = null; expectedPortable.nodes.plan.profileId = null;
 assert.deepEqual(roundtrip.data, expectedPortable);
 const legacyEnvelope = { ...envelope, kind: 'comfytavern-workflow' };
-assert.deepEqual(parseWorkflow(JSON.stringify(legacyEnvelope)).data, expectedPortable, 'existing ComfyTavern workflows remain importable');
-assert.equal(parseWorkflow(JSON.stringify({ ...legacyEnvelope, minRuntime: 2 })).error?.code, 'UNSUPPORTED_PACKAGE');
+assert.equal(parseWorkflow(JSON.stringify(legacyEnvelope)).error.code, 'UNSUPPORTED_PACKAGE');
+assert.equal(parseWorkflow(JSON.stringify({ ...legacyEnvelope, minRuntime: 3 })).error?.code, 'UNSUPPORTED_PACKAGE');
 assert.equal(parseWorkflow(JSON.stringify({ ...envelope, kind: 'unrelated-workflow' })).error?.code, 'UNSUPPORTED_PACKAGE');
 assert.equal(portable.nodes.plan.profileId, 'override-profile', 'export never mutates the saved instance');
-const futurePackage = { ...envelope, schema: 2 };
+const futurePackage = { ...envelope, schema: 3 };
 assert.equal(parseWorkflow(JSON.stringify(futurePackage)).error?.code, 'UNSUPPORTED_PACKAGE');
-assert.equal(parseWorkflow(JSON.stringify({ ...envelope, minRuntime: 2 })).error?.code, 'UNSUPPORTED_PACKAGE');
-const S = await import('../src/state.js?v=0.20.0');
-assert.equal(S.defaultNode('workflow', 10, 20).operation, 'scene-context');
-assert.equal(S.defaultNode('workflow', 10, 20).recentMessages, 12);
-assert.equal(S.defaultNode('workflow', 10, 20).includeCharacter, true);
-assert.equal(S.settings().workflowMode, 'legacy');
-assert.deepEqual(S.settings().nativeBindings, { preGraphId: null, postGraphId: null });
-const imported = S.importGraph(JSON.stringify(envelope));
-assert.equal(imported.ok, true);
-assert.equal(Object.values(imported.graph.nodes).some(n => n.type === 'output'), false, 'native import never inserts legacy Output');
-assert.equal(imported.graph.roles.Analysis.profileId, null);
-assert.equal(JSON.parse(S.exportGraph(imported.graph.id)).kind, 'lattice-workflow');
-assert.equal(S.importGraph(JSON.stringify(legacyEnvelope)).ok, true, 'legacy packages also import through the state layer');
-const editGraph = fixturePreGraph();
-editGraph.nodes.loose = { id: 'loose', type: 'workflow', operation: 'response-plan' };
-assert.equal(S.connect(editGraph, 'output', 'loose').ok, false, 'native host outputs have no outgoing artifact');
-
-const connectGraph = fixturePreGraph();
-delete connectGraph.wires.a;
-assert.equal(S.connect(connectGraph, 'source', 'compact').wire?.order, 0, 'native edit wires have explicit order');
+assert.equal(parseWorkflow(JSON.stringify({ ...envelope, minRuntime: 3 })).error?.code, 'UNSUPPORTED_PACKAGE');
 assert.deepEqual(validateWorkflow(reachable).data.requiredRoles, ['Analysis'], 'setup derives unique reachable call roles from descriptors');
 const inheritedOperation = fixturePreGraph();
 inheritedOperation.nodes.plan.operation = '__proto__';
@@ -118,38 +97,24 @@ assert.equal(parseWorkflow(JSON.stringify(secretPackage)).error?.code, 'MALFORME
 const annotated = fixturePreGraph();
 annotated.nodes.note = { id: 'note', type: 'note', content: 'An editor annotation', x: 100, y: 100 };
 assert.equal(validateWorkflow(annotated).ok, true);
-assert.deepEqual(validateWorkflow(annotated).data.orderedNodes.map(n => n.id), ['source', 'compact', 'plan', 'output']);
+assert.deepEqual(validateWorkflow(annotated).data.primitives.filter(unit => unit.included).map(unit => unit.node).map(n => n.id), ['source', 'compact', 'plan', 'output']);
 const brokenFormation = fixturePreGraph();
 brokenFormation.groups.formation = { id: 'formation', component: { id: 'ai-de-slop', version: 1 }, entry: 'missing', exit: 'plan', members: ['compact', 'plan'] };
 assert.equal(validateWorkflow(brokenFormation).error?.code, 'INVALID_GROUP');
 const futureFormation = fixturePreGraph();
 futureFormation.groups.formation = { id: 'formation', component: { id: 'future-component', version: 1 }, entry: 'compact', exit: 'plan', members: ['compact', 'plan'] };
 assert.equal(validateWorkflow(futureFormation).error?.code, 'UNSUPPORTED_COMPONENT');
-const unmigratedNative = fixturePreGraph();
-S.migrateGraph(unmigratedNative);
-assert.equal(unmigratedNative.migrated, undefined, 'legacy migration never rewrites native graphs');
-// Compatibility and pure parsing remain side-effect free.
-const settingsBeforeReject = structuredClone(S.settings());
-assert.equal(S.importGraph(JSON.stringify(futurePackage)).ok, false);
-assert.deepEqual(S.settings(), settingsBeforeReject);
-const rawNative = fixturePreGraph(); delete rawNative.mode;
-assert.equal(S.importGraph(JSON.stringify(rawNative)).ok, false);
-assert.deepEqual(S.settings(), settingsBeforeReject);
-const legacyResult = S.importGraph(JSON.stringify({ kind: 'prompt-canvas-graph', schema: 1, graph: { schema: 1, name: 'Legacy', nodes: { p: { id: 'p', type: 'prompt', content: 'still legacy' } }, wires: {} } }));
-assert.equal(legacyResult.ok, true);
-assert.ok(S.outputNode(legacyResult.graph));
-assert.equal(JSON.parse(S.exportGraph(legacyResult.graph.id)).kind, 'prompt-canvas-graph');
 const offGroup = fixturePreGraph();
 offGroup.groups.off = { id: 'off', enabled: false }; offGroup.nodes.compact.inGroup = 'off';
-assert.equal(validateWorkflow(offGroup).error?.code, 'DISABLED_OPERATION');
-const scanOnly = { id: 'post', schema: 2, runtime: 1, mode: 'native-post', roles: { Prose: { profileId: null, model: null } }, nodes: {
+assert.equal(validateWorkflow(offGroup).ok, true, 'visual group state does not disable executable nodes');
+const scanOnly = { id: 'post', schema: 3, runtime: 2, mode: 'native-post', roles: { Prose: { profileId: null, model: null } }, nodes: {
     source: { id: 'source', type: 'workflow', operation: 'reply-snapshot' },
     scan: { id: 'scan', type: 'workflow', operation: 'pattern-scan' },
     repair: { id: 'repair', type: 'workflow', operation: 'repair', mode: 'scan' },
     validate: { id: 'validate', type: 'workflow', operation: 'validate-patches' },
     review: { id: 'review', type: 'workflow', operation: 'review-gate' },
     apply: { id: 'apply', type: 'workflow', operation: 'apply-reply' },
-}, wires: { a: { id: 'a', from: 'source', to: 'scan', order: 0 }, b: { id: 'b', from: 'scan', to: 'repair', order: 0 }, c: { id: 'c', from: 'repair', to: 'validate', order: 0 }, d: { id: 'd', from: 'validate', to: 'review', order: 0 }, e: { id: 'e', from: 'review', to: 'apply', order: 0 } } };
+}, wires: { a: { id: 'a', route: 'wire', from: 'source', fromPort: 'out', to: 'scan', toPort: 'in', order: 0 }, b: { id: 'b', route: 'wire', from: 'scan', fromPort: 'out', to: 'repair', toPort: 'in', order: 0 }, c: { id: 'c', route: 'wire', from: 'repair', fromPort: 'out', to: 'validate', toPort: 'in', order: 0 }, d: { id: 'd', route: 'wire', from: 'validate', fromPort: 'out', to: 'review', toPort: 'in', order: 0 }, e: { id: 'e', route: 'wire', from: 'review', fromPort: 'out', to: 'apply', toPort: 'in', order: 0 } } };
 assert.equal(validateWorkflow(scanOnly).data.callBound, 0);
 assert.deepEqual(validateWorkflow(scanOnly).data.requiredRoles, []);
 scanOnly.nodes.repair.mode = 'repair';
@@ -180,7 +145,7 @@ objectGroupMember.groups.ordinary = { id: 'ordinary', members: [{ toString: null
 assert.equal(parseWorkflow(JSON.stringify({ ...envelope, graph: objectGroupMember })).error?.code, 'INVALID_GROUP');
 const objectNodeGroup = fixturePreGraph();
 objectNodeGroup.nodes.compact.inGroup = { toString: null, valueOf: null };
-assert.equal(parseWorkflow(JSON.stringify({ ...envelope, graph: objectNodeGroup })).error?.code, 'INVALID_GROUP');
+assert.equal(parseWorkflow(JSON.stringify({ ...envelope, graph: objectNodeGroup })).error?.code, 'INVALID_SETTINGS');
 function fixtureComponentGraph() {
     const graph = structuredClone(scanOnly);
     graph.groups = { formation: { id: 'formation', component: { id: 'ai-de-slop', version: 1 }, entry: 'scan', exit: 'validate', members: ['scan', 'repair', 'validate'] } };
@@ -208,20 +173,15 @@ objectOperation.nodes.plan.operation = { toString: null, valueOf: null };
 assert.equal(parseWorkflow(JSON.stringify({ ...envelope, graph: objectOperation })).error?.code, 'UNKNOWN_OPERATION');
 const objectGraphName = fixturePreGraph();
 objectGraphName.name = { toString: null, valueOf: null };
-assert.equal(S.importGraph(JSON.stringify({ ...envelope, graph: objectGraphName })).error?.code, 'INVALID_SETTINGS');
+assert.equal(parseWorkflow(JSON.stringify({ ...envelope, graph: objectGraphName })).error?.code, 'INVALID_SETTINGS');
 const inheritedReference = fixturePreGraph();
 inheritedReference.groups.ordinary = { id: 'ordinary', entry: 'toString', members: ['toString'] };
 assert.equal(parseWorkflow(JSON.stringify({ ...envelope, graph: inheritedReference })).error?.code, 'INVALID_GROUP', 'references must point to saved own nodes');
 const inheritedGroup = fixturePreGraph();
 inheritedGroup.nodes.compact.inGroup = 'toString';
-assert.equal(parseWorkflow(JSON.stringify({ ...envelope, graph: inheritedGroup })).error?.code, 'INVALID_GROUP');
+assert.equal(parseWorkflow(JSON.stringify({ ...envelope, graph: inheritedGroup })).error?.code, 'INVALID_SETTINGS');
 const ordinaryGroup = fixturePreGraph();
 ordinaryGroup.groups.ordinary = { id: 'ordinary', title: 'Plain group' };
 assert.equal(parseWorkflow(JSON.stringify({ ...envelope, graph: ordinaryGroup })).ok, true, 'ordinary groups keep optional formation metadata');
 assert.equal(parseWorkflow(JSON.stringify({ ...envelope, graph: fixtureComponentGraph() })).ok, true, 'complete canvas-aligned components still import');
-const settingsBeforeMalformedReferences = structuredClone(S.settings());
-for (const invalid of [objectWireFrom, objectWireTo, objectGroupEntry, objectGroupExit, objectGroupMember, objectNodeGroup]) {
-    assert.equal(S.importGraph(JSON.stringify({ ...envelope, graph: invalid })).ok, false);
-}
-assert.deepEqual(S.settings(), settingsBeforeMalformedReferences, 'malformed references never mutate settings');
 console.log('workflow-contracts: ok');

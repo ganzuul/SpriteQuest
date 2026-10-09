@@ -1,5 +1,5 @@
 import { safeWorkflowData } from './contracts.js?v=0.20.0';
-import { normalizeNativeGraph } from './migration.js?v=0.20.0';
+import { cloneWorkflowDocument } from './document.js?v=0.20.0';
 import { portsForNode } from './catalog.js?v=0.20.0';
 import { cloneDefinitionData } from './definitions.js?v=0.20.0';
 import { prepareQualifiedScopeEdit } from './definition-library.js?v=0.20.0';
@@ -16,7 +16,7 @@ const allocate = (table, prefix) => { let next = 1; while (Object.hasOwn(table, 
 
 function input(graph, command) {
     if (!safeWorkflowData(command) || !record(command)) return fail('INVALID_PORTAL', 'Expected a plain portal command.');
-    return normalizeNativeGraph(graph);
+    return cloneWorkflowDocument(graph);
 }
 function publisher(candidate, portalId) {
     return typeof portalId === 'string' && Object.hasOwn(candidate.portals, portalId) ? candidate.portals[portalId] : null;

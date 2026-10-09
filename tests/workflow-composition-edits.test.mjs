@@ -218,8 +218,8 @@ for (const field of ['model', 'profileId']) {
 }
 const fallbackDraft = structuredClone(leaf), fallbackHash = finalize(fallbackDraft).semanticHash; fallbackDraft.body.nodes.work.model = null;
 assert.equal(finalize(fallbackDraft).semanticHash, fallbackHash, 'saved primitive absent/null both retain role fallback');
-const legacySignatureGraph = { schema: 2, runtime: 1, mode: 'native-pre', nodes: {}, wires: {}, roles: { Analysis: {} } };
-assert.equal(graphSemanticSignature(legacySignatureGraph), '{"groups":[],"mode":"native-pre","nodes":[],"roles":{"Analysis":{"model":null,"profileId":null}},"runtime":1,"schema":2,"wires":[]}');
+const emptyCurrentGraph = { schema: 3, runtime: 2, mode: 'native-pre', nodes: {}, wires: {}, roles: { Analysis: {} } };
+assert.equal(graphSemanticSignature(emptyCurrentGraph), graphSemanticSignature({ ...emptyCurrentGraph, groups: {}, portals: {}, definitions: {} }), 'optional current containers do not change execution identity');
 
 // Review P2: an explicit update can leave a private pin without stale ownership permissions.
 const updatedToLibrary = library.prepareInstanceUpdate(copied.data.candidate, { instanceId: 'one', definition: outer });

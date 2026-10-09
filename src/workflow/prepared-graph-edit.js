@@ -8,6 +8,8 @@ export function prepareGraphCandidate(original, candidate, addedEdgeIds = [], re
     const validation = validateGraphStructure(candidate);
     if (!validation.ok) return validation;
     const baseDocumentSignature = graphDocumentSignature(original);
-    const changed = graphDocumentSignature(candidate) !== baseDocumentSignature;
+    // Cloning supplies optional current containers; their absence is not an edit.
+    const document = graph => ({ ...graph, ...Object.fromEntries(['groups', 'roles', 'portals', 'definitions'].map(key => [key, graph[key] ?? {}])) });
+    const changed = graphDocumentSignature(document(candidate)) !== graphDocumentSignature(document(original));
     return { ok: true, data: { candidate: structuredClone(changed ? candidate : original), changed, addedEdgeIds, removedEdgeIds, baseDocumentSignature, baseSignature: graphSemanticSignature(original) } };
 }

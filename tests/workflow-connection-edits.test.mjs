@@ -81,9 +81,8 @@ test('occupied input is replaced only explicitly and only after complete candida
     assert.deepEqual(graph, before);
 });
 
-test('same schema-2 connection and missing disconnection are exact no-ops without ID callbacks', () => {
-    const graph = fixture(); graph.schema = 2; graph.runtime = 1; delete graph.portals; delete graph.definitions;
-    for (const value of Object.values(graph.wires)) { delete value.route; delete value.fromPort; delete value.toPort; }
+test('same current connection and missing disconnection are exact no-ops without ID callbacks', () => {
+    const graph = fixture();
     let calls = 0;
     for (const command of [
         { kind: 'connect', origin: endpoint('source'), target: endpoint('first', 'in'), replace: true },
@@ -100,14 +99,13 @@ test('same schema-2 connection and missing disconnection are exact no-ops withou
     assert.equal(calls, 0);
 });
 
-test('accepted schema-2 edit promotes the candidate while preserving original legacy metadata', () => {
-    const graph = fixture(); graph.schema = 2; graph.runtime = 1; delete graph.portals; delete graph.definitions;
-    for (const value of Object.values(graph.wires)) { delete value.route; delete value.fromPort; delete value.toPort; }
+test('retired schemas reject without invoking the ID factory or changing the source', () => {
+    const graph = fixture(); graph.schema = 2; graph.runtime = 1;
+    let calls = 0;
     const before = structuredClone(graph);
-    const edit = accepted(prepare(graph, { kind: 'connect', origin: endpoint('first'), target: endpoint('second', 'in') }), graph);
-    assert.equal(edit.candidate.schema, 3); assert.equal(edit.candidate.runtime, 2);
-    assert.deepEqual(edit.candidate.wires.incoming, wire('incoming', 'source', 'first', { order: 7, kind: 'append' }));
-    assert.deepEqual(graph, before);
+    const result = api.prepareNativeConnectionEdit(graph, { kind: 'connect', origin: endpoint('first'), target: endpoint('second', 'in') }, { idFactory() { calls++; return 'unused'; } });
+    assert.equal(result.error.code, 'UNSUPPORTED_VERSION');
+    assert.equal(calls, 0); assert.deepEqual(graph, before);
 });
 
 test('Ctrl input move preserves portal route, wire identity and metadata with atomic replacement', () => {

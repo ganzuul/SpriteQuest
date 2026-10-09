@@ -13,10 +13,10 @@ context.getCharacterCardFields = () => { snapshots++; return {}; };
 context.getTokenCountAsync = async () => { tokens++; return 1; };
 const state = await import('../src/state.js');
 const { starterGraph } = await import('../src/workflow/starters.js');
-const { normalizeNativeGraph } = await import('../src/workflow/migration.js');
+const { cloneWorkflowDocument } = await import('../src/workflow/document.js');
 const UI = await import('../src/ui.js');
 for (const schema of [3, 99]) {
-    const graph = normalizeNativeGraph(starterGraph('native-guidance')).data;
+    const graph = cloneWorkflowDocument(starterGraph('native-guidance')).data;
     graph.schema = schema;
     if (schema === 99) graph.nodes.legacy = { id: 'legacy', type: 'generate', title: 'Unsupported old block', x: 0, y: 0 };
     const before = structuredClone(graph);

@@ -6,14 +6,14 @@ import { prepareWorkflowInsertion } from '../src/workflow/insertion.js';
 import { captureGraphEditContext } from '../src/workflow/transactions.js?v=0.20.0';
 import * as H from '../src/history.js?v=0.20.0';
 import * as S from '../src/state.js?v=0.20.0';
-import { normalizeNativeGraph } from '../src/workflow/migration.js';
+import { cloneWorkflowDocument } from '../src/workflow/document.js';
 import { prepareCreateFromSelection, prepareGraphCandidate } from '../src/workflow/composition.js';
 import { prepareLocalDefinitionEdit } from '../src/workflow/definition-library.js';
 import { definitionRefKey } from '../src/workflow/definitions.js';
 
 let serial = 0;
 function fixture() {
-    const host = installMock({ settings: { enabled: false, workflowMode: 'legacy', nativeBindings: { preGraphId: null, postGraphId: null }, graphs: {} } });
+    const host = installMock({ settings: { enabled: false, nativeBindings: { preGraphId: null, postGraphId: null }, graphs: {} } });
     let saves = 0; host.saveSettingsDebounced = () => saves++;
     const root = starterGraph('native-guidance'); root.id = `state-transaction-${++serial}`;
     root.recording = { id: 'diagnostic' }; root.authority = { apply: 'current-only' };
@@ -41,9 +41,9 @@ test('state accepted document commit and semantic undo/redo persist, cancel and 
         assert.equal(S.stepGraphHistory(root, 'redo', hooks).data.changed, false);
         assert.equal(saves(), 3); assert.equal(calls.length, 6);
         assert.deepEqual(root.recording, { id: 'diagnostic' });
-        assert.deepEqual(host.extensionSettings['prompt-canvas'].nativeBindings, { preGraphId: null, postGraphId: null });
-        assert.equal(host.extensionSettings['prompt-canvas'].enabled, false);
-        assert.equal(host.extensionSettings['prompt-canvas'].workflowMode, 'legacy');
+        assert.deepEqual(host.extensionSettings.lattice.nativeBindings, { preGraphId: null, postGraphId: null });
+        assert.equal(host.extensionSettings.lattice.enabled, false);
+        assert.equal(Object.hasOwn(host.extensionSettings.lattice, 'workflowMode'), false);
     } finally { unsubscribe(); }
 });
 
@@ -80,7 +80,7 @@ test('immutable bookkeeping cannot throw after the complete editable document wa
 
 test('ownership-only root documents round-trip field presence without invalidating runtime authority', () => {
     const host = installMock({ settings: { graphs: {} } }); let saves = 0, cancelled = 0; host.saveSettingsDebounced = () => saves++;
-    const converted = prepareCreateFromSelection(normalizeNativeGraph(starterGraph('native-guidance')).data, { nodeIds: ['smart-compactor'], definitionId: 'history-owned', name: 'History owned' }).data;
+    const converted = prepareCreateFromSelection(cloneWorkflowDocument(starterGraph('native-guidance')).data, { nodeIds: ['smart-compactor'], definitionId: 'history-owned', name: 'History owned' }).data;
     const root = converted.candidate; root.id = `ownership-${++serial}`;
     delete root.localDefinitionOwners; delete root.nodes[converted.instanceId].localCopy;
     const authority = root.authority = { activeRun: 'current' }, recording = root.recording = { id: 'current-recording' };

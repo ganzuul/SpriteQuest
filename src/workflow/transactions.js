@@ -1,19 +1,17 @@
 import { commitGraphDocument, GRAPH_DOCUMENT_FIELDS } from '../history.js?v=0.20.0';
 import { graphDocumentSignature, graphSemanticSignature } from './ports.js?v=0.20.0';
-import { safeWorkflowData, validateGraphStructure, isNativeWorkflow } from './contracts.js?v=0.20.0';
+import { safeWorkflowData, validateGraphStructure } from './contracts.js?v=0.20.0';
 import { definitionChain, ownsDefinitionPath } from './composition-edit.js?v=0.20.0';
-import { legacyInsertionSignature, validateLegacyInsertionGraph } from './legacy-insertion.js?v=0.20.0';
 
 const contexts = new WeakMap();
 const fail = (code, message) => ({ ok: false, error: { code, message } });
 const validContext = value => safeWorkflowData(value) && value && typeof value.sessionId === 'string' && value.sessionId.length > 0 && typeof value.readOnly === 'boolean' && Array.isArray(value.viewPath) && value.viewPath.every(id => typeof id === 'string' && id.length > 0);
-// Legacy ordering/layout and saved controls remain conservatively semantic.
-export const graphEditSignature = graph => isNativeWorkflow(graph) ? graphSemanticSignature(graph) : legacyInsertionSignature(graph);
-const validateEditableGraph = graph => isNativeWorkflow(graph) ? validateGraphStructure(graph) : validateLegacyInsertionGraph(graph);
+export const graphEditSignature = graphSemanticSignature;
+const validateEditableGraph = validateGraphStructure;
 
 /**
  * @typedef {{sessionId:string, viewPath:string[], readOnly:boolean}} GraphEditContext
- * @typedef {{candidate:import('./types').NativeGraph2|import('./types').NativeGraph3, baseSignature:string, baseDocumentSignature:string, viewPath?:string[], context:object}} ContextualPreparedEdit
+ * @typedef {{candidate:import('./types').NativeGraph3, baseSignature:string, baseDocumentSignature:string, viewPath?:string[], context:object}} ContextualPreparedEdit
  * @typedef {{changed:boolean, semanticChanged:boolean, rootId:string}} CommitSummary
  */
 
@@ -69,9 +67,9 @@ export function commitPreparedGraph(root, prepared) {
         if (context.captured.viewPath.length && prepared.viewPath === undefined) return fail('STALE_CONTEXT', 'A child edit must explicitly identify its captured graph view.');
         if (prepared.viewPath !== undefined && (!safeWorkflowData(prepared.viewPath) || JSON.stringify(prepared.viewPath) !== JSON.stringify(context.captured.viewPath))) return fail('STALE_CONTEXT', 'The prepared edit targets a different graph view.');
         if (prepared.baseSignature !== context.baseSignature || prepared.baseDocumentSignature !== context.baseDocumentSignature || context.baseSignature !== graphEditSignature(root) || context.baseDocumentSignature !== graphDocumentSignature(root)) return fail('STALE_DOCUMENT', 'The graph changed after import began. Prepare the edit again.');
-        if (isNativeWorkflow(root) !== isNativeWorkflow(prepared.candidate) || root.mode !== prepared.candidate?.mode) return fail('MODE_MISMATCH', 'Import requires the same graph mode and phase. Open this workflow separately.');
         const validation = validateEditableGraph(prepared.candidate);
         if (!validation.ok) return validation;
+        if (root.mode !== prepared.candidate.mode) return fail('MODE_MISMATCH', 'Import requires the same phase. Open this workflow separately.');
         const protectedFields = graph => Object.fromEntries(Object.entries(graph).filter(([key]) => !GRAPH_DOCUMENT_FIELDS.includes(key) && !['view', 'selection'].includes(key)));
         if (graphDocumentSignature(protectedFields(root)) !== graphDocumentSignature(protectedFields(prepared.candidate))) return fail('UNSUPPORTED_EDIT', 'A prepared edit cannot replace root identity, runtime authority, or other noneditable metadata.');
         const semanticChanged = graphEditSignature(root) !== graphEditSignature(prepared.candidate);

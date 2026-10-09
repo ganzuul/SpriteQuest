@@ -1,14 +1,14 @@
 import assert from 'node:assert/strict';
 import { installMock } from './mock.js';
 import { starterGraph } from '../src/workflow/starters.js';
-import { normalizeNativeGraph } from '../src/workflow/migration.js';
+import { cloneWorkflowDocument } from '../src/workflow/document.js';
 import { prepareCreateFromSelection } from '../src/workflow/composition.js';
 import { definitionRefKey } from '../src/workflow/definitions.js';
 import { resolveWorkflow } from '../src/workflow/resolve.js';
 import * as S from '../src/state.js?v=0.20.0';
 import * as L from '../src/library.js?v=0.20.0';
 
-const root = prepareCreateFromSelection(normalizeNativeGraph(starterGraph('native-guidance')).data, { nodeIds: ['smart-compactor'], definitionId: 'stored-definition', name: 'Stored definition' }).data.candidate;
+const root = prepareCreateFromSelection(cloneWorkflowDocument(starterGraph('native-guidance')).data, { nodeIds: ['smart-compactor'], definitionId: 'stored-definition', name: 'Stored definition' }).data.candidate;
 const snapshot = Object.values(root.definitions)[0];
 const host = installMock({ settings: { graphs: { [root.id]: root }, library: { folders: [{ id: 'prompts', name: 'Prompts' }], prompts: [{ id: 'legacy', content: 'Keep' }] } } });
 let saves = 0, touches = 0;
@@ -26,16 +26,16 @@ const draft = structuredClone(snapshot); draft.body.nodes['smart-compactor'].tar
 const revised = L.reviseSubgraphDefinition(draft); assert.equal(revised.ok, true); assert.equal(revised.data.ref.version, 2); assert.equal(saves, 2);
 assert.equal(L.removeSubgraphDefinition({ id: snapshot.id, version: snapshot.version, semanticHash: snapshot.semanticHash }).ok, true); assert.equal(saves, 3);
 assert.deepEqual(root, before); assert.equal(touches, 0); assert.equal(resolveWorkflow(root).ok, true);
-assert.equal(host.extensionSettings['prompt-canvas'].library.prompts[0].content, 'Keep');
-const stored = host.extensionSettings['prompt-canvas'].subgraphLibrary;
+assert.equal(host.extensionSettings.lattice.library.prompts[0].content, 'Keep');
+const stored = host.extensionSettings.lattice.subgraphLibrary;
 stored.definitions[definitionRefKey(revised.data.ref)].body.nodes['smart-compactor'].targetTokens = -1;
 assert.equal(L.getSubgraphLibrary().ok, true, 'ordinary projections return the last validated cache without revalidation');
 const invalid = L.loadSubgraphLibrary(); assert.equal(invalid.ok, false); assert.equal(L.getSubgraphLibrary(), invalid);
 assert.equal(L.installSubgraphDefinition(snapshot).ok, false); assert.equal(saves, 3);
 assert.equal(resolveWorkflow(root).ok, true, 'a corrupt shelf cannot disable a valid placed snapshot');
 assert.deepEqual(root, before); assert.equal(touches, 0); unlisten();
-host.extensionSettings['prompt-canvas'].subgraphLibrary = { definitions: null };
+host.extensionSettings.lattice.subgraphLibrary = { definitions: null };
 assert.equal(L.loadSubgraphLibrary().ok, false, 'a null table is corrupt, not an empty shelf');
-Object.defineProperty(host.extensionSettings['prompt-canvas'], 'subgraphLibrary', { value: { definitions: {} }, writable: false, configurable: true });
+Object.defineProperty(host.extensionSettings.lattice, 'subgraphLibrary', { value: { definitions: {} }, writable: false, configurable: true });
 assert.equal(L.installSubgraphDefinition(snapshot).error.code, 'LIBRARY_READ_ONLY'); assert.equal(saves, 3);
 console.log('workflow-library-state: validated independent shelf persistence and cached projections passed');

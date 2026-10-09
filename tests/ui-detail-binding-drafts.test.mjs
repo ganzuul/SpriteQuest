@@ -7,7 +7,7 @@ import { pathToFileURL } from 'node:url';
 import { compile } from 'svelte/compiler';
 import { JSDOM } from 'jsdom';
 import { starterGraph } from '../src/workflow/starters.js?v=0.20.0';
-import { normalizeNativeGraph } from '../src/workflow/migration.js?v=0.20.0';
+import { cloneWorkflowDocument } from '../src/workflow/document.js?v=0.20.0';
 import { prepareNativeNodeEdit } from '../src/workflow/definition-library.js?v=0.20.0';
 import { prepareGraphCandidate } from '../src/workflow/prepared-graph-edit.js?v=0.20.0';
 import { captureGraphEditContext, commitPreparedGraph } from '../src/workflow/transactions.js?v=0.20.0';
@@ -55,11 +55,11 @@ const mode = (f, field) => f.host.querySelector(`[aria-label="${field === 'profi
 const controller = await readFile(new URL('../src/ui/controller.js', import.meta.url), 'utf8');
 const start = controller.indexOf('function prepareNode('), end = controller.indexOf('\nfunction ', start + 1);
 assert.ok(start >= 0 && end > start);
-const prepareNode = Function('prepareNativeNodeEdit', 'normalizeNativeGraph', 'prepareGraphCandidate', controller.slice(start, end) + ';return prepareNode;')(prepareNativeNodeEdit, normalizeNativeGraph, prepareGraphCandidate);
+const prepareNode = Function('prepareNativeNodeEdit', 'cloneWorkflowDocument', 'prepareGraphCandidate', controller.slice(start, end) + ';return prepareNode;')(prepareNativeNodeEdit, cloneWorkflowDocument, prepareGraphCandidate);
 const nodeId = 'response-plan';
 function initialGraph(schema = 3, values = {}) {
     const original = starterGraph('native-guidance');
-    const root = schema === 2 ? original : normalizeNativeGraph(original).data;
+    const root = schema === 2 ? original : cloneWorkflowDocument(original).data;
     root.roles.Analysis = { profileId: 'role-profile', model: 'role-model' };
     Object.assign(root.nodes[nodeId], { profileId: null, model: null }, values);
     return root;

@@ -13,7 +13,7 @@ for (const key of ['Node', 'Element', 'Text', 'Comment', 'Document', 'HTMLElemen
 installMock({ settings: { graphs: {} } });
 const version = JSON.parse(await readFile(new URL('../manifest.json', import.meta.url), 'utf8')).version;
 const { starterGraph } = await import(`../src/workflow/starters.js?v=${version}`);
-const { normalizeNativeGraph } = await import(`../src/workflow/migration.js?v=${version}`);
+const { cloneWorkflowDocument } = await import(`../src/workflow/document.js?v=${version}`);
 const { prepareWorkspaceViews } = await import(`../src/ui/workspace-preparation.js?v=${version}`);
 const { prepareWorkflowProjection, projectPreparedWorkflow, createWorkflowSession } = await import(`../src/ui/workflow-surface.js?v=${version}`);
 const clientURL = new URL('../node_modules/svelte/src/index-client.js', import.meta.url).href;
@@ -35,7 +35,7 @@ const harness = await compiled('WorkspaceMenuHarness', `<script>import Menus fro
 const settle = async () => { flushSync(); await tick(); flushSync(); };
 const click = async element => { assert.ok(element); element.click(); await settle(); };
 let sequence = 0;
-const guidance = () => { const root = normalizeNativeGraph(starterGraph('native-guidance')).data; root.id = 'menu-root-' + ++sequence; return root; };
+const guidance = () => { const root = cloneWorkflowDocument(starterGraph('native-guidance')).data; root.id = 'menu-root-' + ++sequence; return root; };
 function prepare(root, validBindings = true) {
     let bindings = 0;
     const result = prepareWorkspaceViews(root, { resolveBinding: () => { bindings++; return validBindings ? { ok: true, data: { profileId: 'cached', model: 'cached-model' } } : { ok: false, error: { message: 'The current root needs its model connection.' } }; } });

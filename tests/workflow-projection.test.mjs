@@ -5,14 +5,14 @@ installMock();
 const surface=await import('../src/ui/workflow-surface.js');
 const { prepareWorkflowPlanner }=await import('../src/workflow/resolve.js?v=0.20.0');
 const { starterGraph }=await import('../src/workflow/starters.js');
-const { normalizeNativeGraph }=await import('../src/workflow/migration.js');
+const { cloneWorkflowDocument }=await import('../src/workflow/document.js');
 const { runWorkflow }=await import('../src/workflow/runtime.js');
 const { siblingWorkflow,twoOutputWorkflow }=await import('./fixtures/workflow-prepared-fixture.mjs');
 const { resolveWorkflow }=await import('../src/workflow/resolve.js');
 const { parseRunPlan,freeze }=await import('../src/workflow/record-data.js');
 const { createRunRecorder,formatRecordedArtifact }=await import('../src/workflow/recording.js');
 const { createRunState,reduceRunState }=await import('../src/workflow/run-state.js');
-const graph3=kind=>normalizeNativeGraph(starterGraph(kind)).data;
+const graph3=kind=>cloneWorkflowDocument(starterGraph(kind)).data;
 test('root preparation owns binding work and every selection/view projection uses cached lookups',()=>{
     assert.equal(typeof surface.prepareWorkflowProjection,'function');assert.equal(typeof surface.projectPreparedWorkflow,'function');
     const root=graph3('native-guidance');let bindings=0,freshness=0;
@@ -83,7 +83,7 @@ test('retained schema2 recording gives way to newer root and target progress wit
     const root=starterGraph('native-guidance'),prior=await runWorkflow(root,{snapshot:()=>({kind:'context',messages:[{id:'source',role:'user',text:'Scene',source:'chat'}]}),countTokens:async()=>({tokens:1,method:'fixture'}),resolveBinding:()=>({ok:true,data:{profileId:'p',model:'fixture'}}),request:async()=>({ok:true,data:{text:'Prior guidance',finish:'stop'}})});
     assert.equal(prior.ok,true);const recording=prior.recording,prepared=surface.prepareWorkflowProjection(root,{result:prior,resolveBinding:()=>({ok:true,data:{profileId:'p',model:'fixture'}})});
     for(const mode of ['root','target']) {
-        const target={workflowId:root.id,instancePath:[],nodeId:'scene-context',portId:'out'},plan=parseRunPlan(resolveWorkflow(normalizeNativeGraph(root).data,mode==='target'?{target}:{}).data),runId='current-'+mode;
+        const target={workflowId:root.id,instancePath:[],nodeId:'scene-context',portId:'out'},plan=parseRunPlan(resolveWorkflow(cloneWorkflowDocument(root).data,mode==='target'?{target}:{}).data),runId='current-'+mode;
         let state=reduceRunState(createRunState(runId),{runId,seq:1,at:1,elapsedMs:0,type:'plan',plan});state=reduceRunState(state,{runId,seq:2,at:2,elapsedMs:1,type:'node-phase',address:plan.units[0].address,phase:'executing'});
         const view=surface.projectPreparedWorkflow(prepared,{recording,runState:state,availability:'superseded',selectedTarget:mode==='target'?target:undefined});
         assert.equal(view.rows[0].status,'running');assert.equal(view.rows[0].address.workflowId,root.id);assert.equal(surface.projectPreparedWorkflow(prepared,{recording,runState:state,status:'Selection'}).rows,view.rows);assert.equal(view.recording,recording);assert.equal(Object.isFrozen(root),false);

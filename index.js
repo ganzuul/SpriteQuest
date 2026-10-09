@@ -1,639 +1,117 @@
-/**
- * Lattice — entry point.
- *
- * Wires the extension into SillyTavern and, when armed, hands the compiled
- * prompt to the generation pipeline.
- *
- * Two interception points, both officially mutable:
- *
- *   CHAT_COMPLETION_PROMPT_READY   chat completion. eventData.chat is the
- *                                  final message array. We replace it.
- *   GENERATE_AFTER_COMBINE_PROMPTS text completion. eventData.prompt is the
- *                                  final string. We flatten and replace it.
- *
- * The safety rule everywhere below: if anything at all goes wrong, leave the
- * original prompt untouched and say so. A prompt extension that throws mid
- * generation is worse than one that does nothing.
- */
-
-import { settings, save, resolveGraph, ctx, safe } from './src/state.js?v=0.20.0';
-import { run, callCount, getNativeWorkflowController, initializeNativeWorkflowController, workflowSignature, sendWorkflowState } from './src/run.js?v=0.20.0';
+/** Lattice launcher and host integration. The workflow never replaces SillyTavern's prompt. */
+import { MODULE, settings, save, ctx, safe } from './src/state.js?v=0.20.0';
+import { getNativeWorkflowController, initializeNativeWorkflowController, workflowSignature, sendWorkflowState } from './src/run.js?v=0.20.0';
 import * as UI from './src/ui.js?v=0.20.0';
-import { jevSettings, jevYesNo } from './src/jev.js?v=0.20.0';
 import { applyTheme } from './src/theme.js?v=0.20.0';
-import { isNativeWorkflow } from './src/workflow/contracts.js?v=0.20.0';
 import { renderThemeEditor } from './src/theme-editor.js?v=0.20.0';
-import { renderThoughts, attachThoughts, repaintAll, livePanel, answersMode } from './src/thoughts.js?v=0.20.0';
 
-const MODULE = 'prompt-canvas';
-// SillyTavern awaits the global named by manifest.generate_interceptor.
-// Retain the former hook name for integrations while new manifests use Lattice.
-globalThis.latticeGenerationInterceptor = globalThis.comfyTavernGenerationInterceptor = async (chat, contextSize, abort, type) => {
+globalThis.latticeGenerationInterceptor = async (chat, contextSize, abort, type) => {
     await initializeNativeWorkflowController();
     return getNativeWorkflowController().beforeGenerate(chat, contextSize, abort, type);
 };
-let lastRun = null;
-/**
- * A real send in progress. Only a real send blocks another: SillyTavern fires
- * dry runs (token counting) at odd moments, often right after you edit
- * something, and one still running used to make the next real send slip
- * through untouched, so the canvas seemed not to activate.
- */
-let busy = false;
-let pendingThoughts = null;
-/** Aborts the Generate blocks of the run in progress, when you press Stop. */
-let currentAbort = null;
-/** What kind of send SillyTavern is making now: 'normal', 'swipe', 'regenerate', 'quiet'… */
-let genType = null;
-
-/* ------------------------------------------------------------------ */
-/* generation hooks                                                    */
-/* ------------------------------------------------------------------ */
-
-function armed() {
-    return !!safe(() => settings().enabled);
+const armed = () => settings().enabled === true;
+function updateState() {
+    save(); document.dispatchEvent(new CustomEvent('pc-state'));
+    UI.refreshIfOpen(); paintSendbar();
 }
-
-/**
- * Build the prompt for one send.
- *
- * Returns null when Lattice should keep its hands off, in which case
- * SillyTavern's own prompt goes out untouched.
- */
-function legacyArmed() {
-    if (!armed() || safe(() => settings().workflowMode) !== 'legacy') return false;
-    const graph = safe(() => resolveGraph().graph);
-    return !!graph && (graph.schema === undefined || graph.schema === 1) && !String(graph.mode ?? '').startsWith('native-') && !Object.values(graph.nodes ?? {}).some(node => node.type === 'workflow');
-}
-async function build(dryRun) {
-    if (!legacyArmed()) return null;
-    const { graph } = resolveGraph();
-    if (!graph) return null;
-
-    // Our own sub-calls go through ChatCompletionService, which emits no
-    // events, so this guard is belt and braces rather than load-bearing.
-    if (busy) {
-        if (dryRun) return null;       // a token count during a real send: not worth a second build
-        console.warn(`[${MODULE}] already building a prompt; letting this one through untouched`);
-        return null;
-    }
-
-    // Background calls from other extensions or /gen ("quiet" sends) are not
-    // your chat's reply: they keep their own prompt.
-    const type = dryRun ? null : genType;
-    if (type === 'quiet') return null;
-    const swipe = type === 'swipe';
-    const keep = swipe && safe(() => settings().swipeMode) === 'reuse' ? previousAnswers() : null;
-
-    if (!dryRun) busy = true;
-    try {
-        const calls = dryRun ? 0 : Math.max(0, callCount(graph) - Object.keys(keep?.answers ?? {}).length);
-        if (calls) console.log(`[${MODULE}] "${graph.name}": ${calls} model call${calls === 1 ? '' : 's'} before the send`);
-
-        if (calls) progress.start(graph.name, calls);
-        if (!dryRun) { livePanel.clear(); pendingThoughts = null; }
-        const abort = dryRun ? null : new AbortController();
-        currentAbort = abort;
-        const { plan, thoughts, failures, cutoffs, aborted, rescued, throttled, saveProblems, reused } = await run(graph, {
-            dryRun,
-            swipe,
-            reuse: keep?.answers ?? null,
-            signal: abort?.signal ?? null,
-            onStage: (node) => { progress.running(node.title); safe(() => livePanel.running(node)); },
-            onResult: (entry) => safe(() => livePanel.result(entry)),
-        }).finally(() => { progress.done(); if (currentAbort === abort) currentAbort = null; });
-
-        if (aborted) {
-            console.log(`[${MODULE}] stopped before the send`);
-            return null;
-        }
-
-        if (!plan.ok) {
-            // An empty chat is a normal state, not a fault worth shouting about.
-            if (plan.quiet) console.log(`[${MODULE}] ${plan.reason}`);
-            else warn(`Lattice did not replace the prompt: ${plan.reason}`);
-            return null;
-        }
-
-        // A dry run that finishes while a real send is running must not
-        // replace the record of what was actually sent.
-        if (dryRun && busy) return plan;
-        lastRun = {
-            at: Date.now(),
-            graph: graph.name,
-            dryRun,
-            chatLength: safe(() => ctx().chat?.length) ?? 0,
-            stages: plan.stages.map(st => ({ name: st.name, messages: st.messages.length, final: st.final })),
-            warnings: plan.warnings,
-            trace: plan.trace,
-            messages: plan.messages,
-            thoughts,
-        };
-
-        // A swipe that kept the earlier answers shows them again under the new reply.
-        const kept = (reused ?? []).length ? (keep?.thoughts ?? []).filter(t => reused.includes(t.id)).map(t => ({ ...t, show: true, kept: true })) : [];
-        const shown = [...kept, ...thoughts.filter(t => t.show)];
-        if (!dryRun && shown.some(t => String(t.text || '').trim() || t.failed)) {
-            pendingThoughts = shown;
-        }
-
-        if (throttled) {
-            warn(`${rescued.length === 1 ? `"${rescued[0]}" was` : `${rescued.length} Generate blocks were`} refused when sent at the same time as another block, but worked on ${rescued.length === 1 ? 'its' : 'their'} own. Your provider seems to limit simultaneous requests, so from now on independent blocks go out one at a time. Blocks you tied together still go at once \u2014 untie them if they keep failing. You can switch this back in the extension settings.`);
-            safe(() => paintThrottle());
-        }
-
-        for (const p of saveProblems ?? []) warn(p);
-        for (const f of failures ?? []) {
-            warn(`"${f.title}" failed and added nothing to this prompt. ${f.error}`);
-        }
-        // A reply cut off by its token limit is half an answer going into
-        // the prompt: say so where you will see it, not only in the console.
-        if (!dryRun) for (const c of cutoffs ?? []) warn(c);
-
-        for (const w of [...new Set(plan.warnings)]) console.warn(`[${MODULE}] ${w}`);
-        return plan;
-    } finally {
-        if (!dryRun) busy = false;
-    }
-}
-
-/**
- * The Generate answers kept on the reply being swiped, by block, for a swipe
- * that reuses them. Only answers that came back (not failures, not Decider
- * choices) are reused.
- */
-function previousAnswers() {
-    const chat = safe(() => ctx().chat) ?? [];
-    const last = chat[chat.length - 1];
-    if (!last || last.is_user) return null;
-    const list = (last.extra?.promptCanvas?.thoughts ?? []).filter(t => t?.id && !t.failed && !t.decision && typeof t.text === 'string');
-    if (!list.length) return null;
-    const answers = {};
-    for (const t of list) answers[t.id] = t.text;
-    return { answers, thoughts: list };
-}
-
-async function onChatCompletionPromptReady(eventData) {
-    if (!legacyArmed()) return;
-    if (!eventData || !Array.isArray(eventData.chat)) return;
-    try {
-        const plan = await build(!!eventData.dryRun);
-        if (!plan) return;
-        eventData.chat.length = 0;
-        eventData.chat.push(...plan.messages);
-        console.log(`[${MODULE}] sent ${plan.messages.length} messages`);
-    } catch (err) {
-        console.error(`[${MODULE}] compile failed, leaving the prompt alone`, err);
-        warn('Lattice hit an error and left SillyTavern\u2019s prompt untouched. See the console.');
-    }
-}
-
-async function onTextCompletionPromptReady(eventData) {
-    if (!legacyArmed()) return;
-    if (!eventData || typeof eventData.prompt !== 'string') return;
-    // SillyTavern fires this event for chat completion too, just before
-    // CHAT_COMPLETION_PROMPT_READY, and then throws the string away. Building
-    // here as well ran every Generate block twice per send — billed twice, and
-    // the first run's answers vanished from the chat when the second began.
-    if (safe(() => ctx().mainApi) === 'openai') return;
-    try {
-        const plan = await build(!!eventData.dryRun);
-        if (!plan) return;
-        // Text completion has no roles, so blocks are flattened in order.
-        eventData.prompt = plan.messages.map(m => m.content).join('\n\n');
-    } catch (err) {
-        console.error(`[${MODULE}] compile failed, leaving the prompt alone`, err);
-    }
-}
-
-/**
- * Hand the Generate blocks' answers to the message they produced, so they can
- * be folded away under the reply instead of living only in a console log.
- */
-function onMessageReceived(messageId) {
-    safe(() => livePanel.clear());
-    if (!pendingThoughts) return;
-    const thoughts = pendingThoughts;
-    pendingThoughts = null;
-    safe(() => attachThoughts(messageId, thoughts));
-}
-
-/**
- * Stop pressed. Cancel any Generate blocks still running so they stop being
- * billed, and keep whatever answers already came back on screen.
- */
-function onGenerationStopped() {
-    if (currentAbort && !currentAbort.signal.aborted) {
-        currentAbort.abort(new Error('Stopped'));
-        console.log(`[${MODULE}] Generate blocks cancelled`);
-    }
-    pendingThoughts = null;
-    safe(() => livePanel.dropPending());
-}
-
-/**
- * One small pill in the corner while the Generate blocks run, instead of a
- * stack of toasts counting to a number that means nothing. It says what is
- * being asked right now and gets out of the way when the run is over.
- */
-const progress = (() => {
-    let box = null;
-    let list = null;
-    let running = new Set();
-    let finished = 0;
-    let total = 0;
-
-    const ensure = () => {
-        if (box) return box;
-        box = document.createElement('div');
-        box.className = 'pc-progress';
-        box.innerHTML = '<div class="pc-progress-head"></div><div class="pc-progress-list"></div>';
-        list = box.querySelector('.pc-progress-list');
-        document.body.append(box);
-        return box;
-    };
-
-    const paint = () => {
-        if (!box) return;
-        box.querySelector('.pc-progress-head').textContent =
-            `Lattice \u00b7 ${Math.min(finished + running.size, total)} of ${total}`;
-        list.innerHTML = '';
-        for (const title of running) {
-            const row = document.createElement('div');
-            row.className = 'pc-progress-row';
-            row.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${title}`;
-            list.append(row);
-        }
-    };
-
-    return {
-        start(graphName, count) {
-            total = count;
-            finished = 0;
-            running = new Set();
-            ensure().classList.add('pc-progress-on');
-            paint();
-        },
-        running(title) {
-            if (!box) return;
-            running.add(title);
-            paint();
-            // A block is only ever "running" until the next paint; the set is
-            // trimmed as later blocks report in, which keeps this honest
-            // without threading completion callbacks through the executor.
-            setTimeout(() => { if (running.has(title)) { running.delete(title); finished++; paint(); } }, 60000);
-        },
-        done() {
-            if (!box) return;
-            running.clear();
-            box.classList.remove('pc-progress-on');
-            setTimeout(() => { box?.remove(); box = null; list = null; }, 400);
-        },
-    };
-})();
-
-function warn(message) {
-    console.warn(`[${MODULE}] ${message}`);
-    safe(() => globalThis.toastr?.warning(message, 'Lattice'));
-}
-
-/* ------------------------------------------------------------------ */
-/* chrome                                                              */
-/* ------------------------------------------------------------------ */
-
 function addLauncher() {
-    // Extensions menu entry
     const menu = document.getElementById('extensionsMenu');
     if (menu && !document.getElementById('pc-menu-launch')) {
         const item = document.createElement('div');
-        item.id = 'pc-menu-launch';
-        item.className = 'list-group-item flex-container flexGap5 interactable';
-        item.tabIndex = 0;
+        item.id = 'pc-menu-launch'; item.className = 'list-group-item flex-container flexGap5 interactable'; item.tabIndex = 0;
         item.innerHTML = '<i class="fa-solid fa-diagram-project"></i><span>Lattice</span>';
         item.addEventListener('click', () => UI.open());
+        item.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); UI.open(); } });
         menu.append(item);
     }
-
-    // Settings panel
-    const host = document.getElementById('extensions_settings2')
-        ?? document.getElementById('extensions_settings');
-    if (host && !document.getElementById('pc-settings')) {
-        const block = document.createElement('div');
-        block.id = 'pc-settings';
-        block.className = 'pc-settings-block';
-        block.innerHTML = `
-            <div class="inline-drawer">
-                <div class="inline-drawer-toggle inline-drawer-header">
-                    <b>Lattice</b>
-                    <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
-                </div>
-                <div class="inline-drawer-content">
-                    <label class="checkbox_label" for="pc-enabled">
-                        <input id="pc-enabled" type="checkbox">
-                        <span id="pc-arm-label">${sendWorkflowState().armLabel}</span>
-                    </label>
-                    <div class="pc-settings-hint">
-                        While this is off SillyTavern behaves exactly as it always has.
-                    </div>
-                    <div id="pc-throttled" class="pc-settings-hint pc-throttled" hidden>
-                        <i class="fa-solid fa-triangle-exclamation"></i>
-                        Generate blocks are being sent one at a time, because your provider
-                        refused several at once.
-                        <a id="pc-unthrottle" href="javascript:void(0)">Try sending them together again</a>
-                    </div>
-                    <label class="checkbox_label" for="pc-sendbar-opt">
-                        <input id="pc-sendbar-opt" type="checkbox">
-                        <span>Show a Lattice button next to Send</span>
-                    </label>
-                    <div class="pc-settings-hint">
-                        Tinted while the canvas is armed. Click to open, right-click to arm or disarm.
-                    </div>
-                    <label class="checkbox_label" for="pc-live-tokens">
-                        <input id="pc-live-tokens" type="checkbox">
-                        <span>Count tokens on every block as I edit</span>
-                    </label>
-                    <div class="pc-settings-hint">
-                        A quiet preview a moment after each change (nothing is sent). Switch it off on a very large chat if the canvas feels slow.
-                    </div>
-                    <label for="pc-answers-mode" class="pc-settings-hint">Generate answers in the chat</label>
-                    <select id="pc-answers-mode" class="text_pole">
-                        <option value="folded">Folded: a line under the reply, click to read</option>
-                        <option value="open">Opened as they arrive</option>
-                        <option value="hidden">Hidden (still kept with the message)</option>
-                    </select>
-                    <label for="pc-swipe-mode" class="pc-settings-hint">When you swipe a reply</label>
-                    <select id="pc-swipe-mode" class="text_pole">
-                        <option value="rerun">Run the whole canvas again (new Generate answers)</option>
-                        <option value="reuse">Keep the Generate answers, write only a new reply</option>
-                    </select>
-                    <div class="pc-settings-hint">
-                        Keeping them is faster and cheaper; running again gives the planning passes a fresh go too.
-                    </div>
-                    <label class="checkbox_label" for="pc-confirm-del">
-                        <input id="pc-confirm-del" type="checkbox">
-                        <span>Ask before deleting blocks and groups on the canvas</span>
-                    </label>
-                    <div class="pc-settings-hint">
-                        Off: they go at once, and Ctrl+Z brings them back.
-                    </div>
-                    <div class="pc-settings-sub"><b>Jev (TypeSafe decision model)</b></div>
-                    <div class="pc-settings-hint">
-                        Deciders can ask <a href="https://docs.typesafe.ai" target="_blank" rel="noopener">Jev</a> instead of a chat model:
-                        yes/no rules and AI sorting in about a tenth of a second, answered with a probability.
-                        Choose it under <i>Answered by</i> on an AI rule or an AI-sorting Decider.
-                    </div>
-                    <label for="pc-jev-key" class="pc-settings-hint">TypeSafe API key</label>
-                    <input id="pc-jev-key" class="text_pole" type="password" autocomplete="off" placeholder="paste your key">
-                    <div class="pc-settings-hint">
-                        Kept in SillyTavern's settings file, like other extension settings.
-                        TypeSafe's API cannot be called straight from a web page, so Lattice goes through
-                        SillyTavern's CORS proxy: set <code>enableCorsProxy: true</code> in <code>config.yaml</code> and restart SillyTavern.
-                    </div>
-                    <div id="pc-jev-test" class="menu_button menu_button_icon">
-                        <i class="fa-solid fa-vial"></i><span>Test Jev</span>
-                    </div>
-                    <div id="pc-jev-result" class="pc-settings-hint"></div>
-                    <div class="pc-settings-sub"><b>Theme</b></div>
-                    <div id="pc-theme-editor"></div>
-                    <div id="pc-open-btn" class="menu_button menu_button_icon">
-                        <i class="fa-solid fa-diagram-project"></i><span>Open canvas</span>
-                    </div>
-                </div>
-            </div>`;
-        host.append(block);
-
-        const cb = block.querySelector('#pc-enabled');
-        cb.checked = armed();
-        cb.addEventListener('change', () => {
-            settings().enabled = cb.checked;
-            save();
-            UI.refreshIfOpen();
-            paintSendbar();
-        });
-        const sbo = block.querySelector('#pc-sendbar-opt');
-        sbo.checked = sendbarEnabled();
-        sbo.addEventListener('change', () => {
-            settings().ui ??= {};
-            settings().ui.sendbarButton = sbo.checked;
-            save();
-            addSendbarButton();
-        });
-        const cdel = block.querySelector('#pc-confirm-del');
-        cdel.checked = !!safe(() => settings().ui?.confirmDelete);
-        cdel.addEventListener('change', () => {
-            settings().ui ??= {};
-            settings().ui.confirmDelete = cdel.checked;
-            save();
-        });
-        const amode = block.querySelector('#pc-answers-mode');
-        amode.value = answersMode();
-        amode.addEventListener('change', () => {
-            settings().ui ??= {};
-            settings().ui.answersInChat = amode.value;
-            save();
-            safe(() => repaintAll());
-        });
-        const smode = block.querySelector('#pc-swipe-mode');
-        smode.value = safe(() => settings().swipeMode) === 'reuse' ? 'reuse' : 'rerun';
-        smode.addEventListener('change', () => { settings().swipeMode = smode.value; save(); });
-        const ltok = block.querySelector('#pc-live-tokens');
-        ltok.checked = safe(() => settings().ui?.liveTokens) !== false;
-        ltok.addEventListener('change', () => {
-            settings().ui ??= {};
-            settings().ui.liveTokens = ltok.checked;
-            save();
-            safe(() => UI.scheduleTokenCount(0));
-        });
-        paintThrottle();
-        block.querySelector('#pc-unthrottle').addEventListener('click', () => {
-            settings().concurrency = 2;
-            save();
-            paintThrottle();
-            safe(() => globalThis.toastr?.info('Independent Generate blocks will go out together again.', 'Lattice'));
-        });
-
-        const jkey = block.querySelector('#pc-jev-key');
-        jkey.value = safe(() => jevSettings().key) ?? '';
-        jkey.addEventListener('input', () => { jevSettings().key = jkey.value.trim(); delete jevSettings().route; save(); });
-        block.querySelector('#pc-jev-test').addEventListener('click', async () => {
-            const out = block.querySelector('#pc-jev-result');
-            out.textContent = 'Asking Jev\u2026';
-            try {
-                const r = await jevYesNo('The knight draws his sword and charges at the dragon.', 'Is there a fight in this text?');
-                out.textContent = `Works. Asked "Is there a fight?" about a knight charging a dragon: ${Math.round(r.p * 100)}% yes, in ${r.ms} ms.`;
-            } catch (err) {
-                out.textContent = `Did not work: ${err?.message ?? err}`;
-            }
-        });
-        block.querySelector('#pc-open-btn').addEventListener('click', () => UI.open());
-        safe(() => renderThemeEditor(block.querySelector('#pc-theme-editor')));
-    }
+    const host = document.getElementById('extensions_settings2') ?? document.getElementById('extensions_settings');
+    if (!host || document.getElementById('pc-settings')) return;
+    const block = document.createElement('div'); block.id = 'pc-settings'; block.className = 'pc-settings-block';
+    block.innerHTML = '<div class="inline-drawer"><div class="inline-drawer-toggle inline-drawer-header"><b>Lattice</b><div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div></div><div class="inline-drawer-content"><label class="checkbox_label" for="pc-enabled"><input id="pc-enabled" type="checkbox"><span id="pc-arm-label"></span></label><div class="pc-settings-hint">Assign optional pre-generation guidance in Setup. Reply repairs run manually and require review. SillyTavern builds its normal prompt.</div><label class="checkbox_label" for="pc-sendbar-opt"><input id="pc-sendbar-opt" type="checkbox"><span>Show Lattice next to Send</span></label><div id="pc-theme-editor"></div><button id="pc-open-btn" class="menu_button">Open Lattice</button></div></div>';
+    host.append(block);
+    const enabled = block.querySelector('#pc-enabled'); enabled.checked = armed();
+    enabled.addEventListener('change', () => { settings().enabled = enabled.checked; updateState(); });
+    const show = block.querySelector('#pc-sendbar-opt'); show.checked = settings().ui.sendbarButton !== false;
+    show.addEventListener('change', () => { settings().ui.sendbarButton = show.checked; updateState(); addSendbarButton(); });
+    block.querySelector('#pc-open-btn').addEventListener('click', () => UI.open());
+    renderThemeEditor(block.querySelector('#pc-theme-editor')); paintSendbar();
 }
-
-/**
- * A button on the chat bar, next to Send. It carries state as well as opening
- * the panel: tinted while the canvas is armed, plain while it is not, and the
- * tooltip names the canvas that would actually run. Right-click arms or
- * disarms it without opening anything.
- */
-function sendbarEnabled() {
-    return safe(() => settings().ui?.sendbarButton) !== false;
-}
-
 function addSendbarButton() {
-    const bar = document.getElementById('rightSendForm');
     const existing = document.getElementById('pc-sendbar');
-    if (!sendbarEnabled()) { existing?.remove(); return true; }
-    if (!bar) return false;
+    if (settings().ui.sendbarButton === false) { existing?.remove(); return true; }
+    const bar = document.getElementById('rightSendForm'); if (!bar) return false;
     if (existing) { paintSendbar(); return true; }
-
-    const b = document.createElement('div');
-    b.id = 'pc-sendbar';
-    b.className = 'fa-solid fa-diagram-project interactable';
-    b.tabIndex = 0;
-    b.setAttribute('role', 'button');
-    b.addEventListener('click', () => UI.open());
-    b.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); UI.open(); } });
-    b.addEventListener('contextmenu', (e) => {
-        e.preventDefault();
-        settings().enabled = !armed();
-        save();
-        UI.refreshIfOpen();
-        paintSendbar();
-        const state = sendWorkflowState();
-        safe(() => globalThis.toastr?.info(armed() ? `Armed. ${state.armedText}` : state.offText, 'Lattice'));
+    const button = document.createElement('div');
+    button.id = 'pc-sendbar'; button.className = 'fa-solid fa-diagram-project interactable'; button.tabIndex = 0; button.setAttribute('role', 'button');
+    button.addEventListener('click', () => UI.open());
+    button.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); UI.open(); } });
+    button.addEventListener('contextmenu', event => {
+        event.preventDefault(); settings().enabled = !armed(); updateState();
+        const status = sendWorkflowState(); safe(() => globalThis.toastr?.info(armed() ? status.armedText : status.offText, 'Lattice'));
     });
-    b.addEventListener('mouseenter', paintSendbar);
-
+    button.addEventListener('mouseenter', paintSendbar);
     const send = document.getElementById('send_but');
-    if (send && send.parentElement === bar) bar.insertBefore(b, send);
-    else bar.append(b);
-    paintSendbar();
-    return true;
+    if (send?.parentElement === bar) bar.insertBefore(button, send); else bar.append(button);
+    paintSendbar(); return true;
 }
-
 function paintSendbar() {
-    const state = sendWorkflowState();
-    const label = document.getElementById('pc-arm-label');
-    if (label) label.textContent = state.armLabel;
-    const b = document.getElementById('pc-sendbar');
-    if (!b) return;
-    const on = armed();
-    b.classList.toggle('pc-sendbar-on', on && state.automatic);
-    b.classList.toggle('pc-sendbar-nograph', on && !state.automatic);
-    b.title = on ? `Lattice is armed. ${state.armedText}\nClick to open. Right-click to switch off.` : `${state.offText}\nClick to open. Right-click to arm.`;
+    const status = sendWorkflowState(), enabled = armed();
+    const label = document.getElementById('pc-arm-label'); if (label) label.textContent = status.armLabel;
+    const checkbox = document.getElementById('pc-enabled'); if (checkbox) checkbox.checked = enabled;
+    const button = document.getElementById('pc-sendbar'); if (!button) return;
+    button.classList.toggle('pc-sendbar-on', enabled && status.automatic);
+    button.classList.toggle('pc-sendbar-nograph', enabled && !status.automatic);
+    button.title = (enabled ? status.armedText : status.offText) + '\nClick to open. Right-click to enable or disable.';
 }
-
-function paintThrottle() {
-    const box = document.getElementById('pc-throttled');
-    if (box) box.hidden = !(Number(safe(() => settings().concurrency)) === 1);
-}
-
-/**
- * SillyTavern builds the wand menu from a template after extensions load, so
- * the menu may not exist yet. Retry briefly rather than losing the entry.
- */
 function mountLauncher() {
-    let tries = 0;
-    const tick = () => {
-        addLauncher();
-        const bar = addSendbarButton();
-        const done = bar && document.getElementById('pc-menu-launch') && document.getElementById('pc-settings');
-        if (!done && tries++ < 40) setTimeout(tick, 250);
-    };
-    tick();
+    let attempts = 0;
+    const mount = () => {
+        addLauncher(); const bar = addSendbarButton();
+        if ((!bar || !document.getElementById('pc-menu-launch') || !document.getElementById('pc-settings')) && attempts++ < 40) setTimeout(mount, 250);
+    }; mount();
 }
-
 function addSlashCommand() {
-    const c = ctx();
+    const context = ctx();
     try {
-        const { SlashCommandParser, SlashCommand, SlashCommandNamedArgument, ARGUMENT_TYPE } = c;
+        const { SlashCommandParser, SlashCommand } = context;
         SlashCommandParser.addCommandObject(SlashCommand.fromProps({
-            name: 'canvas',
-            helpString: 'Open Lattice, or arm/disarm it: <code>/canvas arm</code>, <code>/canvas off</code>.',
+            name: 'lattice',
+            helpString: 'Open Lattice, or enable workflows with <code>/lattice on</code> and <code>/lattice off</code>.',
             unnamedArgumentList: [],
             callback: (_args, value) => {
-                const v = String(value ?? '').trim().toLowerCase();
-                if (v === 'arm' || v === 'on') { settings().enabled = true; save(); UI.refreshIfOpen(); paintSendbar(); return 'armed'; }
-                if (v === 'off' || v === 'disarm') { settings().enabled = false; save(); UI.refreshIfOpen(); paintSendbar(); return 'off'; }
-                UI.toggle();
-                return '';
+                const action = String(value ?? '').trim().toLowerCase();
+                if (['on', 'arm', 'off', 'disarm'].includes(action)) { settings().enabled = ['on', 'arm'].includes(action); updateState(); return settings().enabled ? 'enabled' : 'off'; }
+                UI.toggle(); return '';
             },
         }));
-    } catch (err) {
-        console.warn(`[${MODULE}] slash command not registered`, err);
+    } catch (error) { console.warn('[Lattice] slash command unavailable', error); }
+}
+function boot() {
+    try {
+        const context = ctx(); settings(); void initializeNativeWorkflowController();
+        globalThis.addEventListener?.('unload', () => getNativeWorkflowController().dispose(), { once: true });
+        const snapshot = () => {
+            const value = settings(), ids = [value.activeGraphId, value.nativeBindings.preGraphId, value.nativeBindings.postGraphId], graphs = ids.map(id => value.graphs[id]);
+            return { graphs, signature: JSON.stringify([value.enabled, ids, graphs.map(graph => graph ? workflowSignature(graph) : null)]) };
+        };
+        let previous = snapshot();
+        document.addEventListener('pc-state', () => {
+            const next = snapshot();
+            if (next.signature !== previous.signature || next.graphs.some((graph, index) => graph !== previous.graphs[index])) getNativeWorkflowController().cancel('Workflow settings changed');
+            previous = next; paintSendbar();
+        });
+        applyTheme();
+        for (const name of ['CHAT_CHANGED', 'MESSAGE_RECEIVED', 'MESSAGE_SENT', 'MESSAGE_DELETED', 'MESSAGE_SWIPED', 'MESSAGE_EDITED']) {
+            const event = context.eventTypes?.[name];
+            if (event) context.eventSource.on(event, () => { UI.refreshIfOpen(); paintSendbar(); });
+        }
+        mountLauncher(); addSlashCommand();
+        globalThis.lattice = { open: UI.open, close: UI.close, toggle: UI.toggle };
+        console.log('[' + MODULE + '] ready');
+    } catch (error) {
+        console.error('[Lattice] failed to start', error);
+        safe(() => globalThis.toastr?.error(error.message, 'Lattice could not open'));
     }
 }
-
-export function getLastRun() {
-    return lastRun;
-}
-
-/* ------------------------------------------------------------------ */
-/* boot                                                                */
-/* ------------------------------------------------------------------ */
-
-(function boot() {
-    const start = () => {
-        try {
-            const c = ctx();
-            settings();
-            void initializeNativeWorkflowController();
-            globalThis.addEventListener?.('unload', () => getNativeWorkflowController().dispose(), { once: true });
-            const nativeSettingsSnapshot = () => {
-                const s = settings();
-                const ids = [s.activeGraphId, s.nativeBindings?.preGraphId, s.nativeBindings?.postGraphId];
-                const graphs = ids.map(id => s.graphs[id]);
-                return { graphs, signature: JSON.stringify([s.enabled, s.workflowMode, ids, graphs.map(graph => isNativeWorkflow(graph) ? workflowSignature(graph) : null)]) };
-            };
-            let watchedNativeSettings = nativeSettingsSnapshot();
-            document.addEventListener('pc-state', () => {
-                const next = nativeSettingsSnapshot();
-                if (next.signature !== watchedNativeSettings.signature || next.graphs.some((graph, index) => graph !== watchedNativeSettings.graphs[index])) {
-                    getNativeWorkflowController().cancel('Workflow settings changed');
-                }
-                watchedNativeSettings = next;
-            });
-            safe(() => applyTheme());
-
-            if (c.eventTypes.GENERATION_STARTED) {
-                c.eventSource.on(c.eventTypes.GENERATION_STARTED, (type, _opts, dryRun) => { if (!dryRun) genType = type || 'normal'; });
-            }
-            c.eventSource.on(c.eventTypes.CHAT_COMPLETION_PROMPT_READY, onChatCompletionPromptReady);
-            c.eventSource.on(c.eventTypes.GENERATE_AFTER_COMBINE_PROMPTS, onTextCompletionPromptReady);
-            c.eventSource.on(c.eventTypes.MESSAGE_RECEIVED, onMessageReceived);
-            c.eventSource.on(c.eventTypes.GENERATION_STOPPED, onGenerationStopped);
-            c.eventSource.on(c.eventTypes.CHARACTER_MESSAGE_RENDERED, (id) => safe(() => renderThoughts(id)));
-            // Deleting or swiping a message renumbers the chat: redraw every
-            // folded answer block so none is left under the wrong message,
-            // and drop the live panel of a send that no longer has a reply.
-            for (const ev of ['MESSAGE_DELETED', 'MESSAGE_SWIPED', 'MESSAGE_EDITED']) {
-                const type = c.eventTypes[ev];
-                if (!type) continue;
-                c.eventSource.on(type, () => {
-                    if (ev === 'MESSAGE_DELETED') { safe(() => livePanel.clear()); pendingThoughts = null; }
-                    setTimeout(() => safe(() => repaintAll()), 0);
-                    safe(() => { if (UI.isOpen()) UI.scheduleTokenCount(); });
-                });
-            }
-            // The chat grew: History blocks and the rest are counted again.
-            for (const ev of ['MESSAGE_RECEIVED', 'MESSAGE_SENT']) {
-                const type = c.eventTypes[ev];
-                if (type) c.eventSource.on(type, () => safe(() => { if (UI.isOpen()) UI.scheduleTokenCount(1000); }));
-            }
-            c.eventSource.on(c.eventTypes.CHAT_CHANGED, () => { safe(() => livePanel.clear()); UI.refreshIfOpen(); safe(() => repaintAll()); paintSendbar(); });
-            document.addEventListener('pc-state', () => { paintSendbar(); const cb = document.getElementById('pc-enabled'); if (cb) cb.checked = armed(); });
-
-            mountLauncher();
-            addSlashCommand();
-
-            globalThis.lattice = globalThis.sillyCanvas = globalThis.promptCanvas = { open: UI.open, close: UI.close, toggle: UI.toggle, getLastRun };
-            console.log(`[${MODULE}] ready`);
-        } catch (err) {
-            console.error(`[${MODULE}] failed to start`, err);
-        }
-    };
-
-    if (globalThis.SillyTavern?.getContext) start();
-    else document.addEventListener('DOMContentLoaded', start, { once: true });
-})();
+if (globalThis.SillyTavern?.getContext) boot();
+else document.addEventListener('DOMContentLoaded', boot, { once: true });

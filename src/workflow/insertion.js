@@ -1,8 +1,7 @@
-import { isNativeWorkflow, safeWorkflowData, validateGraphStructure } from './contracts.js?v=0.20.0';
-import { normalizeNativeGraph } from './migration.js?v=0.20.0';
+import { safeWorkflowData, validateGraphStructure } from './contracts.js?v=0.20.0';
+import { cloneWorkflowDocument } from './document.js?v=0.20.0';
 import { operationFor } from './catalog.js?v=0.20.0';
 import { graphDocumentSignature, graphSemanticSignature } from './ports.js?v=0.20.0';
-import { normalizeLegacyInsertionGraph, validateLegacyInsertionGraph, legacyInsertionSignature, legacyInsertionDiagnostics } from './legacy-insertion.js?v=0.20.0';
 import { parseWorkflow } from './packages.js?v=0.20.0';
 import { inspectExpandedGraph } from './graph-validation.js?v=0.20.0';
 import { definitionRefKey, nodeBindingOverrideKey } from './definition-data.js?v=0.20.0';
@@ -12,35 +11,20 @@ import { prepareImportedDefinitionPins } from './definition-insertion.js?v=0.20.
 
 const fail = (code, message) => ({ ok: false, error: { code, message } });
 
-/** Parse a saved file for additive review; never install it or synthesize legacy Output.
- * Native package/version errors remain native errors, without legacy fallback.
- * @param {string} json
- * @returns {import('./types').Result<import('./types').NativeGraph2|import('./types').NativeGraph3|import('./legacy-insertion').LegacyInsertionGraph>}
- */
+/** Parse the current portable workflow for additive review without mutation. */
 export function parseWorkflowInsertionFile(json) {
-    if (typeof json !== 'string' || json.length > 2000000) return fail('MALFORMED_WORKFLOW', 'Workflow JSON must be at most 2 MB.');
-    let parsed;
-    try { parsed = JSON.parse(json); } catch { return fail('INVALID_JSON', 'That is not valid workflow JSON.'); }
-    if (!safeWorkflowData(parsed) || !parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return fail('MALFORMED_WORKFLOW', 'Expected a bounded plain workflow file.');
-    if (['lattice-workflow', 'comfytavern-workflow', 'lattice-subgraph'].includes(parsed.kind)) return parseWorkflow(json);
-    if (parsed.kind !== undefined && (parsed.kind !== 'prompt-canvas-graph' || parsed.schema !== 1)) return fail('UNSUPPORTED_PACKAGE', 'Open a supported workflow or legacy canvas file.');
-    const graph = parsed.graph ?? parsed;
-    if (isNativeWorkflow(graph)) {
-        const validation = validateGraphStructure(graph);
-        return validation.ok ? { ok: true, data: structuredClone(graph) } : validation;
-    }
-    return normalizeLegacyInsertionGraph(graph, { compatibility: true });
+    return parseWorkflow(json);
 }
 
 /**
  * @typedef {'nodes'|'wires'|'groups'|'portals'|'definitions'|'roles'} IdentityKind
  * @typedef {{at?: {x:number, y:number}, allocateId?: (kind:IdentityKind, sourceId:string) => string, viewPath?: string[]}} InsertionOptions
- * @typedef {{phase:string, bindingReviewRequired:boolean, requiredRoles:string[], unresolvedBindings:Array<{nodeId:string, address?:import('./types').NodeAddress, role:string|null, missing:string[]}>, terminals:Array<{nodeId:string, address?:import('./types').NodeAddress, operation:string}>, callBound:number, importedCallBound:number, importedBindingOverrides?:Array<{address:import('./types').NodeAddress,binding:import('./types').Binding}>, changedRefs?:Array<{sourceKey:string,before:import('./types').DefinitionRef,after:import('./types').DefinitionRef}>, inheritedBindings?:string[], boundKind?:string, recipientOutputPreserved?:string|null}} InsertionDiagnostics
- * @typedef {{candidate:import('./types').NativeGraph2|import('./types').NativeGraph3|import('./legacy-insertion').LegacyInsertionGraph, diagnostics:InsertionDiagnostics, added:Record<IdentityKind,string[]>, identityMap:Record<IdentityKind,Record<string,string>>, viewPath:string[], baseSignature:string, baseDocumentSignature:string}} PreparedInsertion
+ * @typedef {{phase:string, bindingReviewRequired:boolean, requiredRoles:string[], unresolvedBindings:Array<{nodeId:string, address?:import('./types').NodeAddress, role:string|null, missing:string[]}>, terminals:Array<{nodeId:string, address?:import('./types').NodeAddress, operation:string}>, callBound:number, importedCallBound:number, importedBindingOverrides?:Array<{address:import('./types').NodeAddress,binding:import('./types').Binding}>, changedRefs?:Array<{sourceKey:string,before:import('./types').DefinitionRef,after:import('./types').DefinitionRef}>}} InsertionDiagnostics
+ * @typedef {{candidate:import('./types').NativeGraph3, diagnostics:InsertionDiagnostics, added:Record<IdentityKind,string[]>, identityMap:Record<IdentityKind,Record<string,string>>, viewPath:string[], baseSignature:string, baseDocumentSignature:string}} PreparedInsertion
  */
 
 function reviewDiagnostics(candidate, added, viewPath, importedBindingOverrides, changedRefs) {
-    const normalized = normalizeNativeGraph(candidate); if (!normalized.ok) return normalized;
+    const normalized = cloneWorkflowDocument(candidate); if (!normalized.ok) return normalized;
     const expanded = inspectExpandedGraph(normalized.data); if (!expanded.ok) return expanded;
     const units = expanded.data.primitives, bound = unit => unit.enabled ? unit.requestBound : 0;
     const imported = units.filter(unit => pathStartsWith(unit.address.instancePath, viewPath) && added.nodes.includes(unit.address.instancePath.length > viewPath.length ? unit.address.instancePath[viewPath.length] : unit.address.nodeId));
@@ -65,7 +49,7 @@ function reviewDiagnostics(candidate, added, viewPath, importedBindingOverrides,
  * `at` anchors the imported nodes' top-left exactly; default placement clears saved bounds.
  * The injected allocator must be pure. It receives the identity kind and original ID.
  * Unresolved bindings describe missing saved metadata, never local profile availability.
- * Legacy baseSignature is conservative editable-document identity, not native execution identity.
+ * Base signatures retain execution and full editable-document preconditions.
  * Private qualified views prepare a complete root revision; child transaction capability is separate.
  * @param {unknown} destination
  * @param {unknown} imported
@@ -79,25 +63,21 @@ export function prepareWorkflowInsertion(destination, imported, options = {}) {
         if (Object.values(descriptors).some(property => !('value' in property))) return fail('INVALID_OPTIONS', 'Insertion options must be plain data.');
         const { allocateId, at, viewPath = [] } = options;
         if ((allocateId !== undefined && typeof allocateId !== 'function') || (at !== undefined && (!safeWorkflowData(at) || !at || !Number.isFinite(at.x) || !Number.isFinite(at.y))) || !safeWorkflowData(viewPath) || !Array.isArray(viewPath) || viewPath.some(id => typeof id !== 'string' || !id)) return fail('INVALID_OPTIONS', 'Provide finite placement coordinates, a path of instance IDs, and an ID allocator.');
-        const native = isNativeWorkflow(destination);
-        if (viewPath.length && (!native || !safeWorkflowData(destination) || !ownsDefinitionPath(destination, viewPath))) return fail('READ_ONLY_VIEW', 'Make an explicit local copy of the containing view before insertion.');
-        if (native !== isNativeWorkflow(imported)) return fail('MODE_MISMATCH', 'Open this workflow separately: its graph mode or phase differs.');
-        const normalize = native ? normalizeNativeGraph : normalizeLegacyInsertionGraph;
-        const target = normalize(destination), source = native ? normalize(imported) : normalize(imported, { compatibility: true });
+        const target = cloneWorkflowDocument(destination), source = cloneWorkflowDocument(imported);
         if (!target.ok) return target;
         if (!source.ok) return source;
-        if (!native && [...Object.values(target.data.nodes), ...Object.values(source.data.nodes)].filter(node => node.type === 'output').length > 1) return fail('DUPLICATE_OUTPUT', 'A legacy graph has one Output. Open separately, or import a fragment without Output.');
-        if (native && target.data.mode !== source.data.mode) return fail('MODE_MISMATCH', 'Open this workflow separately: its graph mode or phase differs.');
+        if (viewPath.length && !ownsDefinitionPath(target.data, viewPath)) return fail('READ_ONLY_VIEW', 'Make an explicit local copy of the containing view before insertion.');
+        if (target.data.mode !== source.data.mode) return fail('MODE_MISMATCH', 'Open this workflow separately: its phase differs.');
         const containingDefinition = viewPath.length ? definitionChain(target.data, viewPath).at(-1).definition : null;
         for (const graph of [containingDefinition?.body ?? target.data, source.data]) {
             const items = [...Object.values(graph.nodes), ...Object.values(graph.groups ?? {})];
             const boxes = [...items, ...items.filter(item => item.frame !== undefined).map(item => item.frame)];
             if (boxes.some(box => !box || typeof box !== 'object' || Array.isArray(box) || ['x', 'y', 'w', 'h', 'width', 'height'].some(key => box[key] !== undefined && !Number.isFinite(box[key])))) return fail('INVALID_LAYOUT', 'Layout coordinates and dimensions must be finite numbers.');
         }
-        const baseSignature = native ? graphSemanticSignature(destination) : legacyInsertionSignature(destination);
+        const baseSignature = graphSemanticSignature(destination);
         const baseDocumentSignature = graphDocumentSignature(destination);
         let candidate = containingDefinition ? { ...structuredClone(containingDefinition.body), definitions: target.data.definitions } : target.data;
-        const sourceExpansion = native ? inspectExpandedGraph(source.data) : null;
+        const sourceExpansion = inspectExpandedGraph(source.data);
         if (sourceExpansion && !sourceExpansion.ok) return sourceExpansion;
         const importedBindingOverrides = [], changedRefs = [];
         const nodes = Object.values(source.data.nodes);
@@ -110,7 +90,7 @@ export function prepareWorkflowInsertion(destination, imported, options = {}) {
         const translate = item => { item.x = (item.x ?? 0) + offset.x; item.y = (item.y ?? 0) + offset.y; };
         const identityMap = { nodes: {}, wires: {}, groups: {}, portals: {}, definitions: {}, roles: {} };
         const added = { nodes: [], wires: [], groups: [], portals: [], definitions: [], roles: [] };
-        if (native) {
+        {
             const merged = prepareImportedDefinitionPins(target.data, source.data.definitions, []);
             if (!merged.ok) return merged;
             candidate.definitions = merged.data.definitions;
@@ -133,7 +113,7 @@ export function prepareWorkflowInsertion(destination, imported, options = {}) {
             } while (occupied.has(fresh));
             occupied.add(fresh); return { ok: true, data: fresh };
         };
-        for (const kind of native ? ['nodes', 'wires', 'groups', 'portals'] : ['nodes', 'wires', 'groups']) {
+        for (const kind of ['nodes', 'wires', 'groups', 'portals']) {
             candidate[kind] ??= {};
             for (const id of Object.keys(source.data[kind] ?? {})) {
                 const allocated = allocate(kind, id); if (!allocated.ok) return allocated;
@@ -142,7 +122,7 @@ export function prepareWorkflowInsertion(destination, imported, options = {}) {
                 added[kind].push(fresh);
             }
         }
-        if (native) {
+        {
             const wrappers = Object.values(source.data.nodes).filter(node => node.type === 'subgraph');
             // Keep the established node/edge/group/portal callback order before definition copies.
             const importedPins = prepareImportedDefinitionPins(target.data, source.data.definitions, wrappers.map(node => node.definition), key => allocate('definitions', key));
@@ -153,9 +133,9 @@ export function prepareWorkflowInsertion(destination, imported, options = {}) {
             changedRefs.push(...importedPins.data.changedRefs);
             wrappers.forEach((node, index) => { node.definition = importedPins.data.refs[index]; });
         }
-        if (native) candidate.roles ??= {};
-        const roles = new Set(native ? Object.keys(source.data.roles ?? {}) : []);
-        for (const node of native ? Object.values(source.data.nodes) : []) {
+        candidate.roles ??= {};
+        const roles = new Set(Object.keys(source.data.roles ?? {}));
+        for (const node of Object.values(source.data.nodes)) {
             const role = node.modelRole ?? operationFor(node)?.modelRole;
             if (role) roles.add(role);
         }
@@ -167,7 +147,7 @@ export function prepareWorkflowInsertion(destination, imported, options = {}) {
             candidate.roles[fresh] = { profileId: source.data.roles?.[role]?.profileId ?? null, model: source.data.roles?.[role]?.model ?? null };
         }
         for (const node of Object.values(source.data.nodes)) {
-            if (native && node.type === 'subgraph') {
+            if (node.type === 'subgraph') {
                 delete node.localCopy;
                 node.nodeBindingOverrides ??= {};
                 for (const unit of sourceExpansion.data.primitives.filter(unit => unit.address.instancePath[0] === node.id && (operationFor(unit.node)?.modelRole || unit.node.modelRole))) {
@@ -176,11 +156,8 @@ export function prepareWorkflowInsertion(destination, imported, options = {}) {
                     importedBindingOverrides.push({ address: { workflowId: destination.id ?? 'workflow', instancePath: [...viewPath, identityMap.nodes[node.id], ...relativePath], nodeId: unit.address.nodeId }, binding: structuredClone(binding) });
                 }
             }
-            const role = native ? node.modelRole ?? operationFor(node)?.modelRole : null;
+            const role = node.modelRole ?? operationFor(node)?.modelRole;
             if (role) node.modelRole = identityMap.roles[role];
-            if (!native && node.type === 'decider') for (const key of node.keys ?? []) for (const condition of key.conditions ?? []) {
-                if (condition?.input) condition.input = identityMap.wires[condition.input];
-            }
             translate(node);
             node.id = identityMap.nodes[node.id];
             if (node.inGroup !== undefined) node.inGroup = identityMap.groups[node.inGroup];
@@ -188,7 +165,7 @@ export function prepareWorkflowInsertion(destination, imported, options = {}) {
         }
         for (const wire of Object.values(source.data.wires)) {
             wire.id = identityMap.wires[wire.id];
-            if (native && wire.route === 'portal') wire.portalId = identityMap.portals[wire.portalId];
+            if (wire.route === 'portal') wire.portalId = identityMap.portals[wire.portalId];
             else wire.from = identityMap.nodes[wire.from];
             wire.to = identityMap.nodes[wire.to];
             candidate.wires[wire.id] = wire;
@@ -205,7 +182,7 @@ export function prepareWorkflowInsertion(destination, imported, options = {}) {
         for (const portal of Object.values(source.data.portals ?? {})) {
             portal.id = identityMap.portals[portal.id]; portal.source.nodeId = identityMap.nodes[portal.source.nodeId]; candidate.portals[portal.id] = portal;
         }
-        // An empty fragment must not create optional containers or upgrade a schema.
+        // An empty fragment must not create optional containers.
         if (Object.values(added).every(ids => ids.length === 0)) candidate = structuredClone(destination);
         else if (containingDefinition) {
             const { definitions, ...body } = candidate;
@@ -214,9 +191,9 @@ export function prepareWorkflowInsertion(destination, imported, options = {}) {
             candidate = edited.data.candidate;
             added.definitions = Object.keys(candidate.definitions).filter(key => !Object.hasOwn(destination.definitions ?? {}, key));
         }
-        const validation = native ? validateGraphStructure(candidate) : validateLegacyInsertionGraph(candidate);
+        const validation = validateGraphStructure(candidate);
         if (!validation.ok) return validation;
-        const diagnostics = native ? reviewDiagnostics(candidate, added, viewPath, importedBindingOverrides, changedRefs) : { ok: true, data: legacyInsertionDiagnostics(candidate, added, destination) };
+        const diagnostics = reviewDiagnostics(candidate, added, viewPath, importedBindingOverrides, changedRefs);
         return diagnostics.ok ? { ok: true, data: { candidate, diagnostics: diagnostics.data, added, identityMap, viewPath: [...viewPath], baseSignature, baseDocumentSignature } } : diagnostics;
     } catch {
         return fail('INSERTION_FAILED', 'Could not prepare this workflow insertion.');

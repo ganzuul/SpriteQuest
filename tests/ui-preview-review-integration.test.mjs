@@ -7,7 +7,7 @@ import { pathToFileURL } from 'node:url';
 import { compile } from 'svelte/compiler';
 import { JSDOM } from 'jsdom';
 import { starterGraph } from '../src/workflow/starters.js?v=0.20.0';
-import { normalizeNativeGraph } from '../src/workflow/migration.js?v=0.20.0';
+import { cloneWorkflowDocument } from '../src/workflow/document.js?v=0.20.0';
 import { computeDefinitionIdentity, definitionRefKey } from '../src/workflow/definitions.js?v=0.20.0';
 import { createNativeWorkflowController } from '../src/workflow/host.js?v=0.20.0';
 import { createWorkflowSession, prepareWorkflowProjection, projectPreparedWorkflow } from '../src/ui/workflow-surface.js?v=0.20.0';
@@ -57,7 +57,7 @@ function childDefinition() {
 }
 function adapter(schema = 2, suppliedRoot = null) {
     const saved = starterGraph('reviewed-de-slop'); saved.nodes.repair.mode = 'scan';
-    const root = suppliedRoot ?? (schema === 3 ? normalizeNativeGraph(saved).data : saved), definition = childDefinition();
+    const root = suppliedRoot ?? (schema === 3 ? cloneWorkflowDocument(saved).data : saved), definition = childDefinition();
     if (schema === 3 && root.mode === 'native-post') {
         root.definitions[definitionRefKey(definition)] = definition;
         root.nodes.inspection = { id: 'inspection', type: 'subgraph', definition: { id: definition.id, version: definition.version, semanticHash: definition.semanticHash }, parameterOverrides: {}, roleOverrides: {}, nodeBindingOverrides: {} };
@@ -71,7 +71,7 @@ function adapter(schema = 2, suppliedRoot = null) {
     const library = prepareLibraryViews(root.id, { [definitionRefKey(definition)]: definition }); assert.equal(library.ok, true, JSON.stringify(library));
     prepared.data.navigation.push(...library.data.navigation); prepared.data.preparedViews.push(...library.data.preparedViews);
     const graphViews = createGraphViewSession({ root, activationId: 'preview-review-' + schema, ...prepared.data }).data; assert.ok(graphViews);
-    const env = { current: root, graphViews, workspacePrepared: prepared.data, rootRunEpoch: 1, workspaceRevision: 1, uiEpoch: 1, editorCaptures: new WeakMap(), schema2ReviewOwner: null, selectedPreview: null, pinnedPreview: null, selectedKind: 'node', selected: root.nodes['apply-reply'], workflowProjection: null, workflowProjectionGraph: null, workflowState: { result: null, reviewHandles: [], busy: false, availability: 'current', applyIssue: '' }, workflowLibrary: null, workflowInspector: null, canvas: null, canvasTraceRows: null, editorDraw: null, isOpen: () => true, isNativeWorkflow: graph => graph?.mode?.startsWith('native-'), executableNative: graph => graph.schema === 2 && graph.runtime === 1 || graph.schema === 3 && graph.runtime === 2, settings: () => ({}), projectPreparedWorkflow, projectWorkspacePanels, workbench: { update(value) { env.panels = value; } } };
+    const env = { current: root, graphViews, workspacePrepared: prepared.data, rootRunEpoch: 1, workspaceRevision: 1, uiEpoch: 1, editorCaptures: new WeakMap(), schema2ReviewOwner: null, selectedPreview: null, pinnedPreview: null, selectedKind: 'node', selected: root.nodes['apply-reply'], workflowProjection: null, workflowProjectionGraph: null, workflowState: { result: null, reviewHandles: [], busy: false, availability: 'current', applyIssue: '' }, workflowLibrary: null, workflowInspector: null, canvas: null, canvasTraceRows: null, editorDraw: null, isOpen: () => true, isWorkflowGraph: graph => graph?.mode?.startsWith('native-'), executableNative: graph => graph.schema === 2 && graph.runtime === 1 || graph.schema === 3 && graph.runtime === 2, settings: () => ({}), projectPreparedWorkflow, projectWorkspacePanels, workbench: { update(value) { env.panels = value; } } };
     for (const name of ['captureEditor', 'editorCurrent', 'samePreviewTerminal', 'currentRootPreviewTerminal', 'schema2ReviewSelector', 'currentSchema2Review', 'currentPreviewHandle', 'applyPreviewReview', 'rejectPreviewReview', 'workflowView', 'updateWorkflowProjection']) { const fn = controllerFunction(name, env); if (fn) env[name] = fn; }
     env.workflowSession = createWorkflowSession({ runtime: () => runtime, rootCurrent: () => env.current, runEpoch: () => env.rootRunEpoch, active: () => env.isOpen(), changed(state) { const authorityChanged = state.result !== env.workflowState.result || state.reviewHandles !== env.workflowState.reviewHandles; env.workflowState = state; if (authorityChanged) env.workspacePrepared.workflow = prepareWorkflowProjection(env.current, { ...(prepared.data.planner ? { planner: prepared.data.planner } : {}), result: state.result, candidateStatus: candidate => runtime.candidateStatus(candidate) }); env.updateWorkflowProjection(); } });
     const actions = controllerActions(env);

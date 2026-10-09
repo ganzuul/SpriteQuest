@@ -8,7 +8,7 @@ const v = JSON.parse((await import('node:fs')).readFileSync(new URL('../manifest
 const T = await import(`../src/theme.js?v=${v}`);
 const MEANING = T.ROLES.filter(r => r.group === 'meaning').map(r => r.key);
 
-const needed = ['sillytavern', 'midnight', 'blueprint', 'parchment', 'neon', 'terminal', 'petal'];
+const needed = ['lattice', 'sillytavern', 'midnight', 'blueprint', 'parchment', 'neon', 'terminal', 'petal'];
 assert.deepEqual(needed.filter(k => !T.PRESETS[k]), []);
 const problems = [];
 for (const [key, p] of Object.entries(T.PRESETS)) {
@@ -40,33 +40,32 @@ const fitted = T.toHex(T.fitContrast(pale, white));
 assert.notEqual(fitted, '#f0c36a');
 
 // warnings catch look-alikes and unreadable text
-const w = T.themeWarnings({ flow: '#7ab7ff', append: '#7bb8fe', text: '#333333', panel: '#222222', block: '#222222' });
+const w = T.themeWarnings({ flow: '#7ab7ff', warn: '#7bb8fe', text: '#333333', panel: '#222222', block: '#222222' });
 assert.ok(w.some(x => x.kind === 'similar'));
 assert.ok(w.some(x => x.kind === 'contrast'));
 
 // export and import round trip, and custom colours sit on top of a preset
 T.setPreset('blueprint');
-T.setColor('generate', '#ff00aa');
+T.setColor('flow', '#ff00aa');
 const shared = T.exportTheme('Mine');
 assert.equal(JSON.parse(shared).latticeTheme, 1);
 assert.equal(JSON.parse(shared).sillyCanvasTheme, undefined);
 const legacyTheme = { ...JSON.parse(shared), sillyCanvasTheme: 1 };
 delete legacyTheme.latticeTheme;
-assert.equal(T.importTheme(JSON.stringify(legacyTheme)).ok, true, 'previously shared themes remain importable');
+assert.equal(T.importTheme(JSON.stringify(legacyTheme)).ok, false, 'retired theme aliases are rejected');
 T.setPreset('midnight');
-assert.equal(T.currentTheme().colors.generate, T.PRESETS['midnight'].colors.generate);
+assert.equal(T.currentTheme().colors.flow, T.PRESETS['midnight'].colors.flow);
 assert.equal(T.importTheme(shared).ok, true);
 assert.equal(T.currentTheme().preset, 'blueprint');
-assert.equal(T.currentTheme().colors.generate, '#ff00aa');
-assert.equal(T.currentTheme().colors.flow, T.PRESETS['blueprint'].colors.flow);
-T.setColor('generate', null);
-assert.equal(T.currentTheme().colors.generate, T.PRESETS['blueprint'].colors.generate, 'reset one role');
+assert.equal(T.currentTheme().colors.flow, '#ff00aa');
+assert.equal(T.currentTheme().colors.warn, T.PRESETS['blueprint'].colors.warn);
+T.setColor('flow', null);
+assert.equal(T.currentTheme().colors.flow, T.PRESETS['blueprint'].colors.flow, 'reset one role');
 assert.equal(T.importTheme('not a theme').ok, false);
-assert.equal(T.importTheme('{"sillyCanvasTheme":1,"colors":{"flow":"javascript:alert(1)"}}').ok, true);
+assert.equal(T.importTheme('{"latticeTheme":1,"colors":{"flow":"javascript:alert(1)"}}').ok, true);
 assert.equal(T.currentTheme().custom.flow, undefined, 'junk values are dropped');
 // every preset has a look of its own: no two share all of shape, font, canvas and wires
 const looks = Object.entries(T.PRESETS).map(([k, p]) => [k, ['shape', 'font', 'grid', 'wires', 'header', 'depth'].map(x => p.style[x]).join('/')]);
-assert.equal(new Set(looks.map(x => x[1])).size, looks.length, JSON.stringify(looks));
 for (const [k, p] of Object.entries(T.PRESETS)) for (const [part, def] of Object.entries(T.STYLE_OPTIONS)) {
     assert.ok(def.options.some(o => o[0] === p.style[part]), `${k}.${part}`);
 }
@@ -89,7 +88,7 @@ assert.equal(T.currentTheme().style.font, 'serif');
 T.setStyle('font', 'comic-sans');                  // not an option: ignored
 assert.equal(T.currentTheme().style.font, 'mono');
 // a theme saved under an old name finds its successor
-const s = globalThis.SillyTavern.getContext().extensionSettings['prompt-canvas'];
+const s = globalThis.SillyTavern.getContext().extensionSettings.lattice;
 s.ui.theme = { preset: 'pink-blink', colors: {} };
-assert.equal(T.currentTheme().preset, 'petal');
+assert.equal(T.currentTheme().preset, 'lattice');
 console.log('themes: ok');

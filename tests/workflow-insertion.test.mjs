@@ -4,335 +4,27 @@ import { prepareWorkflowInsertion, parseWorkflowInsertionFile } from '../src/wor
 import { exportWorkflow } from '../src/workflow/packages.js';
 import { starterGraph } from '../src/workflow/starters.js';
 import { graphDocumentSignature, graphSemanticSignature } from '../src/workflow/ports.js';
-import { checkKey, deciderInputList } from '../src/compile.js';
-
-test('file preview parses real native and legacy envelopes purely without creating an Output', () => {
-    const native = starterGraph('native-guidance'), legacy = legacyFragment();
+test('file preview accepts only the current portable workflow and remains host-free', () => {
+    const graph = starterGraph('native-guidance'), envelope = exportWorkflow(graph);
     const previous = Object.getOwnPropertyDescriptor(globalThis, 'SillyTavern');
     Object.defineProperty(globalThis, 'SillyTavern', { configurable: true, get() { throw new Error('Preview must never read host state'); } });
     try {
-        const saved = JSON.stringify(exportWorkflow(native));
-        const parsed = parseWorkflowInsertionFile(saved);
-        assert.equal(parsed.ok, true); assert.equal(parsed.data.schema, 2);
-        assert.deepEqual(Object.keys(parsed.data.nodes), Object.keys(native.nodes));
-        for (const file of [JSON.stringify({ kind: 'prompt-canvas-graph', schema: 1, graph: legacy }), JSON.stringify(legacy)]) {
-            const result = parseWorkflowInsertionFile(file);
-            assert.equal(result.ok, true); assert.deepEqual(result.data, legacy);
-            assert.equal(Object.values(result.data.nodes).some(node => node.type === 'output'), false);
-        }
+        const parsed = parseWorkflowInsertionFile(JSON.stringify(envelope));
+        assert.equal(parsed.ok, true); assert.equal(parsed.data.schema, 3);
+        assert.deepEqual(parsed.data, envelope.graph);
+        for (const file of [graph, { ...envelope, kind: 'comfytavern-workflow' }, { ...envelope, schema: 1, minRuntime: 1 }, { ...envelope, graph: { ...graph, schema: 2, runtime: 1 } }, { kind: 'prompt-canvas-graph', schema: 1, graph: { nodes: {}, wires: {} } }, { kind: 'lattice-subgraph', schema: 1, minRuntime: 2 }]) assert.equal(parseWorkflowInsertionFile(JSON.stringify(file)).ok, false);
+        assert.equal(parseWorkflowInsertionFile('{').error.code, 'INVALID_JSON');
     } finally {
         if (previous) Object.defineProperty(globalThis, 'SillyTavern', previous); else delete globalThis.SillyTavern;
     }
 });
 
-test('native versions and package mismatch never fall through to legacy file parsing', () => {
-    const native = starterGraph('native-guidance');
-    for (const file of [
-        { kind: 'lattice-workflow', schema: 8, minRuntime: 8, graph: native },
-        { kind: 'lattice-workflow', schema: 1, minRuntime: 1, graph: { ...native, schema: 99 } },
-        { ...native, schema: 99 },
-        { kind: 'prompt-canvas-graph', schema: 1, graph: { ...native, runtime: 99 } },
-        { kind: 'lattice-subgraph', schema: 1, minRuntime: 2, graph: legacyFragment() },
-    ]) assert.equal(parseWorkflowInsertionFile(JSON.stringify(file)).ok, false);
-    assert.equal(parseWorkflowInsertionFile('{').error.code, 'INVALID_JSON');
-    assert.equal(parseWorkflowInsertionFile(JSON.stringify({ kind: 'prompt-canvas-graph', schema: 2, graph: legacyFragment() })).error.code, 'UNSUPPORTED_PACKAGE');
-});
-
-test('empty imports preserve absent containers and schema without incidental normalization edits', () => {
-    const legacy = { id: 'empty-legacy', schema: 1, nodes: { out: { id: 'out', type: 'output' } }, wires: {} };
-    const native = starterGraph('native-guidance');
-    for (const [destination, imported] of [[legacy, { schema: 1, nodes: {}, wires: {} }], [native, { schema: 2, runtime: 1, mode: 'native-pre', nodes: {}, wires: {} }]]) {
-        const result = prepareWorkflowInsertion(destination, imported);
-        assert.equal(result.ok, true); assert.deepEqual(result.data.candidate, destination);
-        assert.equal(Object.values(result.data.added).every(ids => !ids.length), true);
-    }
-});
-
-function legacyFragment() {
-    const node = (id, type, extra = {}) => ({ id, type, x: 10, y: 20, w: 260, enabled: true, ...extra });
-    return { schema: 1, nodes: {
-        prompt: node('prompt', 'prompt', { content: 'Keep {{user}} agency', role: 'system', inGroup: 'group' }),
-        generate: node('generate', 'generate', { x: 310, repeat: 2, role: 'user', model: 'saved-model', inGroup: 'group' }),
-        peer: node('peer', 'generate', { y: 400 }),
-        decider: node('decider', 'decider', { mode: 'first', keys: [{ id: 'yes', conditions: [{ mode: 'search', scope: 'incoming', terms: 'yes' }] }], fallback: { id: 'no' } }),
-        state: node('state', 'state', { values: [{ id: 'energy', start: 10, stageDots: true, rules: [{ id: 'rule', when: 'turn', op: 'sub', amount: '1' }], stages: [{ id: 'low', from: 0, to: 4, text: 'Tired' }] }] }),
-        memory: node('memory', 'memory', { content: 'Initial memory' }),
-    }, wires: {
-        forward: { id: 'forward', from: 'prompt', to: 'generate', kind: 'prepend', order: 1 },
-        result: { id: 'result', from: 'decider', to: 'prompt', kind: 'merge', port: 'yes', mode: 'result', result: 'matched' },
-        stage: { id: 'stage', from: 'state', to: 'prompt', kind: 'merge', port: 'energy:low', mode: 'activate' },
-        loop: { id: 'loop', from: 'generate', to: 'prompt', kind: 'merge', loop: { max: 3, stopWhenSame: true } },
-        save: { id: 'save', from: 'generate', to: 'memory', kind: 'save' },
-        together: { id: 'together', from: 'generate', to: 'peer', kind: 'together' },
-    }, groups: { group: { id: 'group', title: 'Legacy group', x: 0, y: 0, members: ['prompt', 'generate'] } } };
-}
-
-function selectedInputFragment() {
-    return { schema: 1, nodes: {
-        chosen: { id: 'chosen', type: 'prompt', x: 0, y: 0, content: 'yes chosen text', libraryId: 'saved-library' },
-        other: { id: 'other', type: 'prompt', x: 0, y: 300, content: 'no' },
-        decider: { id: 'decider', type: 'decider', x: 300, y: 0, mode: 'all', profileId: 'saved-profile', keys: [
-            { id: 'yes', match: 'all', conditions: [
-                { id: 'search-rule', mode: 'search', scope: 'incoming', terms: 'yes', input: 'chosen-wire' },
-                { id: 'length-rule', mode: 'length', unit: 'chars', op: 'eq', value: 2, input: 'all' },
-            ] },
-            { id: 'aggregate', match: 'all', conditions: [
-                { mode: 'search', scope: 'incoming', terms: 'yes' },
-                { mode: 'search', scope: 'incoming', terms: 'no', input: '' },
-            ] },
-            { id: 'question', conditions: [{ id: 'ai-rule', mode: 'ai', question: 'Is this yes?', input: 'chosen-wire' }] },
-        ], fallback: { id: 'fallback' } },
-    }, wires: {
-        'chosen-wire': { id: 'chosen-wire', from: 'chosen', to: 'decider', kind: 'merge', order: 0 },
-        all: { id: 'all', from: 'other', to: 'decider', kind: 'merge', order: 1 },
-    } };
-}
-
-test('legacy selected-input rules remap both incoming wires on repeated import with checkKey parity', () => {
-    const imported = selectedInputFragment(), original = structuredClone(imported);
-    let destination = selectedInputFragment();
-    const sourceInputs = { 'chosen-wire': imported.nodes.chosen.content, all: imported.nodes.other.content };
-    const incoming = Object.values(sourceInputs).join('\n');
-    const sourceKeys = imported.nodes.decider.keys;
-    assert.equal(checkKey(sourceKeys[0], {}, incoming, { inputs: sourceInputs }).pass, true);
-    assert.equal(checkKey(sourceKeys[1], {}, incoming, { inputs: sourceInputs }).pass, true);
-    assert.equal(checkKey(sourceKeys[2], {}, incoming, { inputs: sourceInputs }).incoming, sourceInputs['chosen-wire']);
-
-    const priorWireIds = new Set(Object.keys(destination.wires));
-    for (let insertion = 0; insertion < 2; insertion++) {
-        const before = structuredClone(destination);
-        const result = prepareWorkflowInsertion(destination, imported);
-        assert.equal(result.ok, true);
-        const { candidate, identityMap } = result.data;
-        const copy = candidate.nodes[identityMap.nodes.decider];
-        assert.deepEqual(copy.keys, sourceKeys.map(key => ({ ...key, conditions: key.conditions.map(condition => ({
-            ...condition, ...(condition.input ? { input: identityMap.wires[condition.input] } : {}),
-        })) })));
-        const inputs = Object.fromEntries(Object.entries(sourceInputs).map(([id, text]) => [identityMap.wires[id], text]));
-        for (let key = 0; key < 2; key++) {
-            assert.deepEqual(checkKey(copy.keys[key], {}, incoming, { inputs }), checkKey(sourceKeys[key], {}, incoming, { inputs: sourceInputs }));
-        }
-        const ai = checkKey(copy.keys[2], {}, incoming, { inputs });
-        assert.equal(ai.incoming, sourceInputs['chosen-wire']);
-        assert.equal(ai.needs, copy.keys[2].conditions[0]);
-        assert.equal(copy.mode, 'all');
-        assert.deepEqual(copy.fallback, original.nodes.decider.fallback);
-        assert.equal(copy.profileId, 'saved-profile');
-        assert.equal(candidate.nodes[identityMap.nodes.chosen].libraryId, 'saved-library');
-        for (const [id, wire] of Object.entries(imported.wires)) {
-            assert.equal(priorWireIds.has(identityMap.wires[id]), false);
-            priorWireIds.add(identityMap.wires[id]);
-            assert.equal(candidate.wires[identityMap.wires[id]].to, copy.id);
-            assert.equal(candidate.wires[identityMap.wires[id]].from, identityMap.nodes[wire.from]);
-        }
-        for (const kind of ['nodes', 'wires']) for (const [id, item] of Object.entries(before[kind])) assert.deepEqual(candidate[kind][id], item);
-        assert.deepEqual(destination, before);
-        assert.deepEqual(imported, original);
-        destination = candidate;
-    }
-});
-
-test('legacy missing or unreadable selected-input references reject before allocation instead of binding recipient wires', () => {
-    const destination = selectedInputFragment(), before = structuredClone(destination);
-    const changes = [
-        graph => { delete graph.wires['chosen-wire']; },
-        graph => { delete graph.wires.all; },
-        graph => { graph.wires['chosen-wire'].to = 'other'; },
-        graph => { graph.wires['chosen-wire'].mode = 'activate'; },
-        graph => {
-            graph.nodes.chosen.type = 'generate';
-            graph.wires['chosen-wire'].loop = { max: 3, stopWhenSame: true };
-            assert.deepEqual(deciderInputList(graph, graph.nodes.decider).map(input => input.wireId), ['all']);
-        },
-        graph => { graph.nodes.decider.keys[0].conditions[0].input = 12; },
-    ];
-    let allocations = 0;
-    for (const change of changes) {
-        const imported = selectedInputFragment();
-        change(imported);
-        const original = structuredClone(imported);
-        const result = prepareWorkflowInsertion(destination, imported, { allocateId: () => `allocated-${++allocations}` });
-        assert.equal(result.error?.code, 'INVALID_DECIDER_INPUT');
-        assert.match(result.error.message, /incoming wire/);
-        assert.match(result.error.message, /all inputs/);
-        assert.match(result.error.message, /Open separately/);
-        const parsed = parseWorkflowInsertionFile(JSON.stringify({ kind: 'prompt-canvas-graph', schema: 1, graph: imported }));
-        assert.equal(parsed.error?.code, 'INVALID_DECIDER_INPUT');
-        assert.deepEqual(imported, original);
-        assert.deepEqual(destination, before);
-    }
-    assert.equal(allocations, 0);
-});
-
-test('legacy review preconditions include text, aliases and local port rules but exclude camera bookkeeping', () => {
-    const destination = legacyFragment(), result = prepareWorkflowInsertion(destination, legacyFragment());
-    assert.equal(result.ok, true);
-    const signature = result.data.baseSignature;
-    destination.view = { x: 400, y: 0, zoom: 2 };
-    destination.selection = ['prompt'];
-    destination.updatedAt = 99;
-    assert.equal(graphDocumentSignature(destination), signature);
-    for (const change of [
-        graph => { graph.nodes.prompt.content = 'Changed body'; },
-        graph => { graph.nodes.prompt.title = 'Changed alias'; },
-        graph => { graph.nodes.decider.keys[0].conditions[0].terms = 'Changed rule'; },
-        graph => { graph.nodes.state.values[0].rules[0].amount = '2'; },
-    ]) {
-        const changed = structuredClone(destination);
-        change(changed);
-        assert.notEqual(graphDocumentSignature(changed), signature);
-    }
-    let allocations = 0;
-    const collided = prepareWorkflowInsertion(destination, legacyFragment(), { allocateId: () => { allocations++; return 'prompt'; } });
-    assert.equal(collided.error?.code, 'IDENTITY_COLLISION');
-    assert.equal(allocations, 100);
-    const oversized = legacyFragment();
-    for (let i = 0; i < 990; i++) oversized.nodes[`note-${i}`] = { id: `note-${i}`, type: 'note', x: 0, y: 0 };
-    assert.equal(prepareWorkflowInsertion(oversized, legacyFragment()).error?.code, 'GRAPH_LIMIT');
-});
-
-test('legacy diagnostics expose conservative request bounds and save effects without resolving host bindings', () => {
-    const destination = legacyFragment(), imported = legacyFragment();
-    const originalHost = Object.getOwnPropertyDescriptor(globalThis, 'SillyTavern');
-    let hostReads = 0;
-    Object.defineProperty(globalThis, 'SillyTavern', { configurable: true, get() { hostReads++; throw new Error('host must not be read'); } });
-    try {
-        const result = prepareWorkflowInsertion(destination, imported);
-        assert.equal(result.ok, true);
-        const { diagnostics, identityMap } = result.data;
-        assert.equal(diagnostics.callBound, 42);
-        assert.equal(diagnostics.importedCallBound, 12);
-        assert.equal(diagnostics.boundKind, 'conservative');
-        assert.equal(diagnostics.bindingReviewRequired, true);
-        assert.deepEqual(diagnostics.requiredRoles, []);
-        assert.deepEqual(diagnostics.terminals, [{ nodeId: identityMap.nodes.memory, operation: 'save-memory' }]);
-        assert.deepEqual(diagnostics.inheritedBindings, [identityMap.nodes.generate, identityMap.nodes.peer]);
-        assert.equal(hostReads, 0);
-    } finally {
-        if (originalHost) Object.defineProperty(globalThis, 'SillyTavern', originalHost);
-        else delete globalThis.SillyTavern;
-    }
-});
-
-test('historical legacy imports normalize only shipped obsolete fields and preserve recipient data', () => {
-    const destination = legacyFragment(), imported = legacyFragment();
-    delete destination.schema;
-    delete imported.schema;
-    delete destination.nodes.prompt.inGroup;
-    destination.nodes.prompt.group = 'group';
-    destination.wires.forward.kind = 'sequence';
-    delete imported.nodes.prompt.inGroup;
-    imported.nodes.prompt.group = 'group';
-    imported.nodes.lore = { id: 'lore', type: 'lorebook', group: 'lore-filter', x: 10, y: 20 };
-    imported.wires.forward.kind = 'sequence';
-    const original = structuredClone(destination);
-    const result = prepareWorkflowInsertion(destination, imported);
-    assert.equal(result.ok, true);
-    const { candidate, identityMap } = result.data;
-    assert.equal(Object.hasOwn(candidate, 'schema'), false);
-    assert.equal(candidate.nodes[identityMap.nodes.prompt].inGroup, identityMap.groups.group);
-    assert.equal(Object.hasOwn(candidate.nodes[identityMap.nodes.prompt], 'group'), false);
-    assert.equal(candidate.nodes[identityMap.nodes.lore].group, 'lore-filter');
-    assert.equal(candidate.wires[identityMap.wires.forward].kind, 'merge');
-    assert.deepEqual(candidate.nodes.prompt, original.nodes.prompt);
-    assert.deepEqual(candidate.wires.forward, original.wires.forward);
-    assert.deepEqual(destination, original);
-});
-
-test('legacy unsafe identities, missing keyed references and unsupported wire semantics reject before allocation', () => {
-    const destination = legacyFragment(), before = structuredClone(destination);
-    const changes = [
-        graph => { graph.wires.result.port = 'missing-key'; },
-        graph => { graph.wires.stage.port = 'energy:missing-stage'; },
-        graph => { graph.nodes.state.values[0].stageDots = false; },
-        graph => { graph.nodes.decider.keys.push({ id: 'yes' }); },
-        graph => { graph.nodes.prompt.inGroup = 'missing-group'; },
-        graph => { graph.groups.group.entry = 'missing-node'; },
-        graph => { graph.groups.group.members.push('prompt'); },
-        graph => { graph.wires.loop.from = 'state'; },
-        graph => { graph.wires.loop.loop.max = -1; },
-        graph => { delete graph.wires.loop.loop; },
-        graph => { graph.wires.save.to = 'prompt'; },
-        graph => { graph.wires.together.from = 'prompt'; },
-        graph => { graph.wires.forward.mode = 'future-mode'; },
-        graph => { graph.wires.forward.kind = 'future-kind'; },
-        graph => { graph.nodes.prompt.type = 'workflow'; },
-        graph => { graph.nodes.prompt.id = 'other'; },
-        graph => { graph.portals = { p: { id: 'p' } }; },
-    ];
-    let allocated = 0;
-    for (const change of changes) {
-        const graph = legacyFragment();
-        change(graph);
-        assert.equal(prepareWorkflowInsertion(destination, graph, { allocateId: () => `id-${++allocated}` }).ok, false);
-    }
-    assert.equal(allocated, 0);
-    assert.deepEqual(destination, before);
-    let getters = 0;
-    const unsafe = legacyFragment();
-    Object.defineProperty(unsafe.nodes.prompt, 'content', { get() { getters++; return 'unsafe'; } });
-    assert.equal(prepareWorkflowInsertion(destination, unsafe).ok, false);
-    assert.equal(getters, 0);
-    assert.equal(prepareWorkflowInsertion(destination, starterGraph('native-guidance')).error?.code, 'MODE_MISMATCH');
-    assert.equal(prepareWorkflowInsertion(starterGraph('native-guidance'), destination).error?.code, 'MODE_MISMATCH');
-});
-
-test('legacy duplicate Output rejects atomically with Open separately guidance and never synthesizes terminals', () => {
-    const destination = legacyFragment(), imported = legacyFragment();
-    destination.nodes.output = { id: 'output', type: 'output', x: 0, y: 900 };
-    imported.nodes.output = { id: 'output', type: 'output', x: 0, y: 900 };
-    const before = structuredClone(destination);
-    let allocations = 0;
-    const result = prepareWorkflowInsertion(destination, imported, { allocateId: () => `allocated-${++allocations}` });
-    assert.equal(result.error?.code, 'DUPLICATE_OUTPUT');
-    assert.match(result.error.message, /Open separately/);
-    assert.match(result.error.message, /fragment without Output/);
-    assert.equal(allocations, 0);
-    assert.deepEqual(destination, before);
-    const withoutOutput = prepareWorkflowInsertion(legacyFragment(), legacyFragment());
-    assert.equal(withoutOutput.ok, true);
-    assert.equal(Object.values(withoutOutput.data.candidate.nodes).some(node => node.type === 'output'), false);
-    const firstOutput = prepareWorkflowInsertion(legacyFragment(), imported);
-    assert.equal(firstOutput.ok, true);
-    assert.equal(Object.values(firstOutput.data.candidate.nodes).filter(node => node.type === 'output').length, 1);
-});
-
-test('legacy fragments insert into populated legacy graphs preserving keyed ports, wire modes and recipient Output', () => {
-    const destination = legacyFragment();
-    destination.id = 'legacy-root';
-    destination.mode = 'legacy';
-    destination.roles = { saved: 'recipient metadata' };
-    destination.nodes.output = { id: 'output', type: 'output', x: 0, y: 900 };
-    const imported = legacyFragment(), before = structuredClone(destination), original = structuredClone(imported);
-    const result = prepareWorkflowInsertion(destination, imported, { at: { x: 1000, y: 300 } });
-    assert.equal(result.ok, true);
-    const { candidate, identityMap, diagnostics, baseSignature, baseDocumentSignature } = result.data;
-    assert.equal(candidate.schema, 1);
-    assert.equal(candidate.mode, 'legacy');
-    assert.equal(candidate.runtime, undefined);
-    assert.deepEqual(candidate.roles, destination.roles);
-    assert.deepEqual(candidate.nodes.output, destination.nodes.output);
-    assert.equal(Object.values(candidate.nodes).filter(node => node.type === 'output').length, 1);
-    assert.equal(candidate.nodes[identityMap.nodes.prompt].x, 1000);
-    assert.equal(candidate.nodes[identityMap.nodes.generate].x, 1300);
-    assert.equal(candidate.nodes[identityMap.nodes.prompt].role, 'system');
-    assert.equal(candidate.nodes[identityMap.nodes.generate].role, 'user');
-    assert.deepEqual(candidate.nodes[identityMap.nodes.decider].keys, imported.nodes.decider.keys);
-    assert.deepEqual(candidate.nodes[identityMap.nodes.state].values, imported.nodes.state.values);
-    for (const wire of Object.values(imported.wires)) {
-        assert.deepEqual(candidate.wires[identityMap.wires[wire.id]], { ...wire, id: identityMap.wires[wire.id], from: identityMap.nodes[wire.from], to: identityMap.nodes[wire.to] });
-    }
-    assert.equal(candidate.nodes[identityMap.nodes.prompt].inGroup, identityMap.groups.group);
-    assert.deepEqual(candidate.groups[identityMap.groups.group].members, ['prompt', 'generate'].map(id => identityMap.nodes[id]));
-    assert.equal(diagnostics.phase, 'legacy');
-    assert.equal(diagnostics.recipientOutputPreserved, 'output');
-    assert.equal(baseSignature, graphDocumentSignature(destination));
-    assert.equal(baseDocumentSignature, graphDocumentSignature(destination));
-    assert.deepEqual(destination, before);
-    assert.deepEqual(imported, original);
-    const repeated = prepareWorkflowInsertion(candidate, imported);
-    assert.equal(repeated.ok, true);
-    assert.notEqual(repeated.data.identityMap.nodes.prompt, identityMap.nodes.prompt);
+test('empty current imports preserve absent optional containers without incidental edits', () => {
+    const graph = starterGraph('native-guidance');
+    delete graph.roles; delete graph.groups; delete graph.portals; delete graph.definitions;
+    const result = prepareWorkflowInsertion(graph, { schema: 3, runtime: 2, mode: 'native-pre', nodes: {}, wires: {} });
+    assert.equal(result.ok, true); assert.deepEqual(result.data.candidate, graph);
+    assert.equal(Object.values(result.data.added).every(ids => !ids.length), true);
 });
 
 test('insertion prepares a detached additive candidate with fresh internal identities', () => {
@@ -363,7 +55,7 @@ test('insertion prepares a detached additive candidate with fresh internal ident
     assert.deepEqual(imported, source);
 });
 
-test('candidate limits, malformed layout and schema2 composition cannot bypass atomic validation', () => {
+test('candidate limits, malformed layout and malformed composition cannot bypass atomic validation', () => {
     const destination = starterGraph('native-guidance'), imported = starterGraph('native-guidance');
     let allocations = 0;
     for (const change of [graph => { graph.portals = { p: { id: 'p' } }; }, graph => { graph.definitions = { d: { id: 'd' } }; }, graph => { graph.nodes['scene-context'].x = '100'; }]) {
@@ -448,10 +140,10 @@ test('unsafe inputs, modes, malformed composition and unowned views reject befor
     }
     assert.equal(prepareWorkflowInsertion(destination, imported, { viewPath: ['instance'], allocateId }).error?.code, 'READ_ONLY_VIEW');
     assert.equal(prepareWorkflowInsertion(destination, starterGraph('reviewed-de-slop'), { allocateId }).error?.code, 'MODE_MISMATCH');
-    assert.equal(prepareWorkflowInsertion(destination, { schema: 1, nodes: {}, wires: {} }, { allocateId }).error?.code, 'MODE_MISMATCH');
+    assert.equal(prepareWorkflowInsertion(destination, { schema: 1, nodes: {}, wires: {} }, { allocateId }).error?.code, 'UNSUPPORTED_VERSION');
     const future = { ...imported, schema: 4, runtime: 3 };
     assert.equal(prepareWorkflowInsertion(destination, future, { allocateId }).error?.code, 'UNSUPPORTED_VERSION');
-    for (const composition of [{ portals: { p: { id: 'p', source: { nodeId: 'scene-context', portId: 'out' }, kind: 'context', label: 'Context' } } }, { definitions: { d: { id: 'd', version: 1 } } }]) {
+    for (const composition of [{ portals: { p: { id: 'p', source: { nodeId: 'scene-context', portId: 'missing' }, kind: 'context', label: 'Context' } } }, { definitions: { d: { id: 'd', version: 1 } } }]) {
         assert.equal(prepareWorkflowInsertion(destination, { ...imported, schema: 3, runtime: 2, ...composition }, { allocateId }).ok, false);
     }
     const getterGraph = { ...imported, get mode() { getterReads++; return 'native-pre'; } };
