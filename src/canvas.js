@@ -137,6 +137,10 @@ export class Canvas {
         this.marquee = null;
         this.drag = null;
         this.linking = null;
+        this.nativeWireView = null;
+        this.wireMulti = new Set();
+        this.wireSelections = new Map();
+        this.nativeCaptures = new Set();
         this.trace = null;          // last compile trace, keyed by node id
         this.tokens = null;         // live token counts, keyed by node id
         this.tokensKey = '';
@@ -157,7 +161,11 @@ export class Canvas {
             hostResult: id => this.hooks.onHostResult?.(this.graph?.nodes[id]),
             hoverPin: pin => { this.hoverPin = pin; this.#applyFocus(); },
             hover: id => this.setHover(id),
-            toggle: id => { const node = this.graph?.nodes[id]; if (!node) return; node.enabled = node.enabled === false; touchGraph(this.graph); this.render(); this.hooks.onChange?.(); },
+            toggle: id => {
+                const node = this.graph?.nodes[id]; if (!node || !this.#canEdit()) return;
+                if (isNativeWorkflow(this.graph)) { this.hooks.onNativeToggle?.(id); return; }
+                node.enabled = node.enabled === false; touchGraph(this.graph); this.render(); this.hooks.onChange?.();
+            },
             help: id => this.hooks.onHelp?.(this.graph?.nodes[id]),
             model: (id, anchor) => this.hooks.onModelClick?.(this.graph?.nodes[id], anchor),
             group: (id, action) => { if (action === 'toggle') this.toggleGroup(id); else this.setCollapsed(id, action === 'collapse'); },
@@ -205,10 +213,17 @@ export class Canvas {
     setGraph(graph) {
         if (!graph) return;
         this.cancelGesture();
+        if (this.nativeSelectionKey) this.wireSelections.set(this.nativeSelectionKey, [...this.wireMulti]);
         if (graph !== this.graph) { this.trace = null; this.tokens = null; this.tokensKey = ''; this.hoverPin = null; this.geometry.clear(); }
         this.graph = graph;
         this.selection = null;
         this.multi.clear();
+        const scope = this.hooks.nativeScope?.();
+        if (scope?.workflowId && this.nativeSelectionRoot !== scope.workflowId) this.wireSelections.clear();
+        this.nativeSelectionRoot = scope?.workflowId ?? this.nativeSelectionRoot;
+        this.nativeSelectionKey = scope?.workflowId && Array.isArray(scope.instancePath) ? JSON.stringify([scope.workflowId, scope.instancePath]) : null;
+        this.wireMulti = new Set((this.wireSelections.get(this.nativeSelectionKey) ?? []).filter(id => graph.wires[id]));
+        this.nativeWireView = null;
         this.render();
     }
 
@@ -388,7 +403,7 @@ export class Canvas {
     #drawNodes() {
         this.reaching = this.#reaching();
         const groups = this.graph.groups ?? {};
-        for (const [gid, g] of Object.entries(groups)) if ((g.collapsed || !g.frame) && !Object.values(this.graph.nodes).some(n => n.inGroup === gid)) delete groups[gid];
+        if (!isNativeWorkflow(this.graph)) for (const [gid, g] of Object.entries(groups)) if ((g.collapsed || !g.frame) && !Object.values(this.graph.nodes).some(n => n.inGroup === gid)) delete groups[gid];
         const context = { graph: this.graph, selection: this.selection, multi: this.multi, trace: this.trace, tokens: this.tokens, reaching: this.reaching, hooks: this.hooks, preview: node => this.#preview(node), ruleLabel, labels: TYPE_LABEL, icons: TYPE_ICON };
         const cards = Object.values(this.graph.nodes).filter(n => !this.#folded(n)).sort((a, b) => (a.y - b.y) || (a.x - b.x)).map(node => nodeCard(node, context));
         this.layer.setNodes(cards);
@@ -443,7 +458,7 @@ export class Canvas {
     /** A folded group, drawn as one block. */
     #groupCard(g) {
         const members = groupMembers(this.graph, g.id).sort((a, b) => (a.y - b.y) || (a.x - b.x));
-        if (!g.collapsed) this.#groupFrame(g);
+        if (!g.collapsed && !isNativeWorkflow(this.graph)) this.#groupFrame(g);
         const frame = g.frame ?? { x: g.x, y: g.y, w: g.w || 260, h: 140 };
         const selected = this.selection?.kind === 'group' && this.selection.id === g.id;
         const multi = members.length && members.every(n => this.multi.has(n.id));
@@ -454,7 +469,7 @@ export class Canvas {
             id: g.id, collapsed: !!g.collapsed, x: g.collapsed ? g.x : frame.x, y: g.collapsed ? g.y : frame.y, w: g.collapsed ? g.w || 260 : frame.w, h: frame.h,
             className: g.collapsed ? 'pc-node pc-node-group' + (selected ? ' pc-selected' : '') + (multi ? ' pc-multi' : '') + (g.enabled === false ? ' pc-off pc-group-is-off' : '') : 'pc-group-frame' + (selected ? ' pc-selected' : '') + (g.enabled === false ? ' pc-group-is-off' : '') + (members.length ? '' : ' pc-group-empty'),
             title: g.title || 'Group', enabled: g.enabled !== false,
-            body: (g.component ? 'Surface · maximum ' + members.reduce((sum, node) => { const bound = operationFor(node)?.requestBound || 0; return sum + (typeof bound === 'function' ? bound(node) : bound); }, 0) + ' auxiliary requests · ' : '') + members.length + ' blocks: ' + members.map(n => n.title || 'Untitled').join(' · '),
+            body: (g.component && !this.graph.nativeCards ? 'Surface · maximum ' + members.reduce((sum, node) => { const bound = operationFor(node)?.requestBound || 0; return sum + (typeof bound === 'function' ? bound(node) : bound); }, 0) + ' auxiliary requests · ' : '') + members.length + ' blocks: ' + members.map(n => n.title || 'Untitled').join(' · '),
             io: (ins.length ? 'in: ' + ins.join(', ') : 'nothing wired in') + '  →  ' + (outs.length ? 'out: ' + outs.join(', ') : 'goes nowhere'),
             count: members.length ? members.length + ' block' + (members.length === 1 ? '' : 's') : 'empty — drag blocks onto it',
             token: groupTokens && g.enabled !== false ? { className: 'pc-tok', text: groupTokens >= 1000 ? (groupTokens / 1000).toFixed(1) + 'k tok' : groupTokens + ' tok', title: 'The blocks in this group add ' + groupTokens.toLocaleString() + ' tokens of their own text.' } : null,
@@ -465,7 +480,8 @@ export class Canvas {
         return this.geometry.get(node?.id);
     }
 
-    widthOf(node) { return operationFor(node) ? this.geometry.width(node.id) : node?.w || 260; }
+    #nativeCard(node) { return node && (this.graph?.nativeCards?.[node.id] ?? this.hooks.nativeCard?.(node)); }
+    widthOf(node) { return this.#nativeCard(node) || (!this.graph?.nativeCards && operationFor(node)) ? this.geometry.width(node.id) : node?.w || 260; }
 
     /**
      * An open group: a blanket on the canvas. Whatever rests on it is in the
@@ -497,6 +513,7 @@ export class Canvas {
 
 
     toggleGroup(gid) {
+        if (!this.#canEdit() || isNativeWorkflow(this.graph)) return;
         const g = this.graph.groups?.[gid];
         if (!g) return;
         setGroupEnabled(this.graph, gid, g.enabled === false);
@@ -510,7 +527,7 @@ export class Canvas {
      * group joins it.
      */
     settle(ids) {
-        if (!this.graph) return false;
+        if (!this.graph || !this.#canEdit() || isNativeWorkflow(this.graph)) return false;
         return settleOnBlankets(this.graph, ids, (n) => this.heightOf(n), (n) => this.widthOf(n));
     }
 
@@ -540,14 +557,20 @@ export class Canvas {
 
     /** Pick several blocks (Shift-click, or a Shift-drag box). */
     setMulti(ids) {
+        const hadWireSelection = this.wireMulti.size > 0;
+        this.wireMulti.clear();
         const next = new Set(ids.filter(id => this.graph?.nodes[id]));
         if (next.size === this.multi.size && [...next].every(id => this.multi.has(id))
-            && (!this.selection || (next.size === 1 && this.selection.kind === 'node' && next.has(this.selection.id)))) return;
+            && (!this.selection || (next.size === 1 && this.selection.kind === 'node' && next.has(this.selection.id)))) {
+            if (hadWireSelection) this.#drawWires();
+            return;
+        }
         this.multi = next;
         this.selection = next.size === 1 ? { kind: 'node', id: [...next][0] } : null;
         for (const el of this.nodeLayer.querySelectorAll('.pc-node[data-id]')) el.classList.toggle('pc-selected', this.selection?.id === el.dataset.id);
         for (const el of this.nodeLayer.querySelectorAll('.pc-node-group, .pc-group-frame')) el.classList.remove('pc-selected');
         this.#paintMulti();
+        this.#drawWires();
         this.#applyFocus();
         this.hooks.onSelect?.(this.selection ? this.graph.nodes[this.selection.id] : null, this.selection?.kind ?? null);
         this.hooks.onMulti?.([...this.multi]);
@@ -596,9 +619,11 @@ export class Canvas {
     }
 
     /** Restore a gesture without persisting a half-completed graph edit. */
-    cancelGesture() {
+    cancelGesture(reason = 'cancel') {
         this.operationEpoch++;
-        const active = !!(this.drag || this.marquee || this.pan || this.linking);
+        const bridge = this.#nativeBridge();
+        const active = !!(this.drag || this.marquee || this.pan || this.linking || bridge?.hasContentGesture());
+        if (bridge) { const result = bridge.cancel(reason); this.updateNativeWire(result.view, result.requests); }
         const wheeling = !!this.wheelRect;
         this.frames.cancel(); clearTimeout(this.wheelTimer);
         this.gestureRect = null; this.wheelRect = null;
@@ -619,20 +644,26 @@ export class Canvas {
         if (this.pan?.start && this.graph) Object.assign(this.view, this.pan.start);
         this.marquee?.box.remove();
         this.drag = null; this.marquee = null; this.pan = null; this.linking = null;
+        this.nativeMouseSuppressed = false;
         this.spaceDown = false;
         this.host.classList.remove('pc-panning', 'pc-interacting', 'pc-tying', 'pc-space-pan');
         this.hooks.onNodeOverFolder?.(null); this.hooks.onDragBlock?.(false);
         if (active && this.graph) {
             const start = this.gestureStart;
             this.multi = new Set(start?.multi ?? this.multi);
+            this.wireMulti = new Set([...(start?.wireMulti ?? this.wireMulti)].filter(id => this.graph.wires[id]));
             this.selection = start?.selection ?? null;
+            if (this.selection?.kind === 'wire' && !this.graph.wires[this.selection.id]) {
+                const surviving = [...this.wireMulti].at(-1);
+                this.selection = surviving ? { kind: 'wire', id: surviving } : null;
+            }
             this.render();
             const sel = this.selection;
             const picked = sel?.kind === 'node' ? this.graph.nodes[sel.id] : sel?.kind === 'group' ? this.graph.groups?.[sel.id] : sel?.kind === 'wire' ? this.graph.wires[sel.id] : null;
             this.hooks.onSelect?.(picked, sel?.kind ?? null); this.hooks.onMulti?.([...this.multi]);
         }
         else if (wheeling && this.graph) this.applyTransform();
-        if (wheeling && this.graph) touchGraph(this.graph);
+        if (wheeling && this.graph && !isNativeWorkflow(this.graph)) touchGraph(this.graph);
         return active;
     }
 
@@ -658,6 +689,7 @@ export class Canvas {
 
     /** Fold or unfold a group. A folded group sits where its top-left block was. */
     setCollapsed(gid, collapsed) {
+        if (!this.#canEdit() || isNativeWorkflow(this.graph)) return;
         const g = this.graph.groups?.[gid];
         if (!g) return;
         if (collapsed) {
@@ -869,7 +901,7 @@ export class Canvas {
         }
         const w = node.w || 260;
         const h = this.geometry.get(nodeId);
-        if (operationFor(node)) return this.endpoint(nodeId, dir, portId || dir) ?? { x: node.x + (dir === 'out' ? this.widthOf(node) : 0), y: node.y + h / 2 };
+        if (this.#nativeCard(node) || (!this.graph.nativeCards && operationFor(node))) return this.endpoint(nodeId, dir, portId || dir) ?? { x: node.x + (dir === 'out' ? this.widthOf(node) : 0), y: node.y + h / 2 };
         if (dir === 'out' && hasPorts(node)) {
             const keys = outPorts(node);
             const i = Math.max(0, keys.findIndex(k => k.id === portId));
@@ -954,6 +986,7 @@ export class Canvas {
         const visible = new Set(), bounds = { w: 4000, h: 4000 };
         for (const n of Object.values(this.graph.nodes)) { bounds.w = Math.max(bounds.w, n.x + 800); bounds.h = Math.max(bounds.h, n.y + 800); }
         for (const wire of Object.values(this.graph.wires)) {
+            if (this.#nativeEditor() && (!wire.from || !wire.fromPort || !wire.to || !wire.toPort || !this.endpoint(wire.from, 'out', wire.fromPort) || !this.endpoint(wire.to, 'in', wire.toPort))) continue;
             const fa = this.#folded(this.graph.nodes[wire.from]), fb = this.#folded(this.graph.nodes[wire.to]);
             if (fa && fa === fb) continue;
             visible.add(wire.id); if (affected && !affected.has(wire.id)) continue;
@@ -967,7 +1000,7 @@ export class Canvas {
             const untaken = isKey && chosen !== undefined && chosen !== null && !took(chosen, wire.port);
             const off = [wire.from, wire.to].some(id => this.graph.nodes[id]?.enabled === false || inOffGroup(this.graph, this.graph.nodes[id]));
             const mode = !tie && (wire.mode === 'activate' || wire.mode === 'result') ? wire.mode : null;
-            let className = 'pc-wire pc-wire-' + wire.kind + (mode ? ' pc-wire-mode-' + mode : '') + (wire.loop ? ' pc-wire-loop' : '') + (isKey ? ' pc-wire-key' : '') + (untaken ? ' pc-wire-untaken' : '') + (off ? ' pc-wire-off' : '') + (this.selection?.kind === 'wire' && this.selection.id === wire.id ? ' pc-selected' : '');
+            let className = 'pc-wire pc-wire-' + wire.kind + (mode ? ' pc-wire-mode-' + mode : '') + (wire.loop ? ' pc-wire-loop' : '') + (isKey ? ' pc-wire-key' : '') + (untaken ? ' pc-wire-untaken' : '') + (off ? ' pc-wire-off' : '') + (this.selection?.kind === 'wire' && this.selection.id === wire.id || this.wireMulti.has(wire.id) ? ' pc-selected' : '');
             const side = back ? this.#loopSide(from, to, wire) : null;
             const key = isKey ? (outPorts(src).find(k => k.id === wire.port)?.name ?? 'key') : null;
             let text = tie ? TOGETHER_LABEL : wire.loop ? '↺ ' + (key ? key + ' · ' : '') + (wire.loop.max ?? 3) + '× max' : wire.kind === WIRE_KINDS.SAVE ? '⤓ save' + (key ? ' ' + key : '') + ({ append: ' (add)', keep: ' (add, keep last)' }[this.graph.nodes[wire.to]?.saveMode] ?? '') : mode === 'activate' ? '⚡ activate' : mode === 'result' ? '→ ' + (src?.type === NODE_TYPES.LOREBOOK ? 'entry names' : wire.result === 'matched' ? 'matched words' : 'result') : key ?? (WIRE_LABEL[wire.kind] ?? wire.kind);
@@ -979,7 +1012,15 @@ export class Canvas {
             this.wireViews.set(wire.id, { id: wire.id, kind: from.kind, d, className, arrow: !!back, label: { x: side ? side.x + 10 : (from.x + to.x) / 2, y: side ? side.y + 4 : (from.y + to.y) / 2, text, className: labelClass, anchor: back ? 'start' : undefined, id: wire.loop ? wire.id : undefined, title: wire.loop ? 'Loop: runs this section again, at most this many times. Click to change.' : undefined } });
         }
         if (!affected) for (const id of this.wireViews.keys()) if (!visible.has(id)) this.wireViews.delete(id);
-        const ghost = this.linking?.ghost ? { d: this.linking.dir === 'tie' ? this.#tiePath(this.linking.from, this.linking.ghost) : this.#path(this.linking.from, this.linking.ghost), className: 'pc-wire pc-wire-ghost' + (this.linking.dir === 'tie' ? ' pc-wire-ghost-tie' : '') } : null;
+        const native = this.nativeWireView?.gesture;
+        const origin = native?.origin && this.endpoint(native.origin.nodeId, native.origin.dir, native.origin.portId);
+        const target = native?.target && this.endpoint(native.target.nodeId, native.target.dir, native.target.portId);
+        const loose = native?.ghost && { ...native.ghost, side: native.origin?.dir === 'in' ? 'right' : 'left' };
+        const nativeGhost = native && native.kind !== 'idle' && origin && loose ? {
+            d: native.origin.dir === 'out' ? this.#path(origin, target ?? loose) : this.#path(target ?? loose, origin),
+            className: 'pc-wire pc-wire-ghost pc-wire-native' + (native.feedback?.compatible === false ? ' pc-wire-invalid' : ''),
+        } : null;
+        const ghost = nativeGhost ?? (this.linking?.ghost ? { d: this.linking.dir === 'tie' ? this.#tiePath(this.linking.from, this.linking.ghost) : this.#path(this.linking.from, this.linking.ghost), className: 'pc-wire pc-wire-ghost' + (this.linking.dir === 'tie' ? ' pc-wire-ghost-tie' : '') } : null);
         this.layer.setWires([...this.wireViews.values()], bounds, ghost);
     }
 
@@ -991,12 +1032,72 @@ export class Canvas {
         const groups = [...gids].map(id => this.graph.groups?.[id]).filter(Boolean).map(g => ({ id: g.id, x: g.collapsed ? g.x : g.frame?.x ?? g.x, y: g.collapsed ? g.y : g.frame?.y ?? g.y, w: g.collapsed ? g.w || 260 : g.frame?.w, h: g.frame?.h }));
         this.layer.setPositions(nodes, groups);
         this.#drawWires(new Set(ids));
-        if (!d.group) this.#hoverBlanket(ids);
+        if (!d.group && !isNativeWorkflow(this.graph)) this.#hoverBlanket(ids);
         this.#applyFocus();
     }
 
     #crossedDragThreshold(e) {
         return this.drag?.moved || Math.hypot(e.clientX - (this.gestureStart?.cx ?? e.clientX), e.clientY - (this.gestureStart?.cy ?? e.clientY)) >= (isNativeWorkflow(this.graph) ? 8 : 4);
+    }
+
+    #nativeEditor() { return !!this.graph && isNativeWorkflow(this.graph) && (!!this.graph.nativeCards || this.graph.schema === 3); }
+    #nativeBridge() { return this.#nativeEditor() ? this.hooks.nativeBridge?.() : null; }
+    #canEdit() { return this.hooks.canEdit ? this.hooks.canEdit() === true : this.hooks.nativeScope?.()?.readOnly !== true; }
+
+    hasContentGesture() { return !!(this.drag || this.linking || this.#nativeBridge()?.hasContentGesture()); }
+
+    /** The bridge owns native gesture state; Canvas owns only DOM capture and drawing. */
+    updateNativeWire(view, requests = []) {
+        this.nativeWireView = view;
+        for (const request of requests ?? []) {
+            if (request.type === 'capture-pointer' && !this.nativeCaptures.has(request.pointerId)) {
+                this.nativeCaptures.add(request.pointerId);
+                try { this.host.setPointerCapture(request.pointerId); } catch { /* no active synthetic pointer */ }
+            } else if (request.type === 'release-pointer' && this.nativeCaptures.delete(request.pointerId)) {
+                try { this.host.releasePointerCapture(request.pointerId); } catch { /* capture may already have ended */ }
+            } else if (request.type === 'consume') {
+                this.nativeEvent?.preventDefault(); this.nativeEvent?.stopPropagation();
+            }
+        }
+        this.frames.schedule(2);
+    }
+
+    #dispatchNative(event, domEvent) {
+        const bridge = this.#nativeBridge(); if (!bridge) return;
+        this.nativeEvent = domEvent;
+        try { const result = bridge.dispatch(event); this.updateNativeWire(result.view, result.requests); }
+        finally { this.nativeEvent = null; }
+    }
+
+    #nativePin(element) {
+        const pin = element?.closest?.('.pc-port[data-node][data-dir][data-port]');
+        if (!pin || !this.host.contains(pin)) return null;
+        const { node: nodeId, dir, port: portId } = pin.dataset;
+        const metadata = this.#nativeCard(this.graph.nodes[nodeId]);
+        const port = metadata?.ports.find(port => port.port === portId && port.dir === dir);
+        const center = this.endpoint(nodeId, dir, portId), scope = this.hooks.nativeScope?.();
+        if (!port || !center || !scope?.workflowId || !Array.isArray(scope.instancePath)) return null;
+        return { nodeId, portId, dir, kind: port.kind, center: { x: center.x, y: center.y },
+            address: { workflowId: scope.workflowId, instancePath: [...scope.instancePath], nodeId, portId } };
+    }
+
+    #nativeAttachments(pin) { return this.hooks.nativeAttachments?.(pin) ?? { originalBindings: [], jumps: [] }; }
+
+    #nativeHit(e) {
+        const element = document.elementFromPoint(e.clientX, e.clientY);
+        if (!element || !this.host.contains(element)) return { kind: 'outside' };
+        const pin = this.#nativePin(element); if (pin) return { kind: 'pin', pin };
+        if (element.closest('.pc-node, .pc-group-frame')) return { kind: 'body' };
+        if (element.closest('button, input, textarea, select, summary, a, [contenteditable="true"], .pc-wire-hit')) return { kind: 'surface' };
+        return { kind: 'empty' };
+    }
+
+    #openNativeSearch(e) {
+        if (!this.#canEdit()) return;
+        const bridge = this.#nativeBridge(); if (!bridge) return;
+        this.gestureStart = { selection: this.selection && { ...this.selection }, multi: [...this.multi], wireMulti: [...this.wireMulti] };
+        const result = bridge.openUnconnectedSearch({ graphPoint: this.toGraph(e.clientX, e.clientY), screenAnchor: { x: e.clientX, y: e.clientY } });
+        this.updateNativeWire(result.view, result.requests);
     }
 
     #bind() {
@@ -1007,6 +1108,10 @@ export class Canvas {
         on(document, 'keydown', (e) => {
             const root = host.closest('.pc-root');
             if (root && !root.classList.contains('pc-open')) return;
+            if (e.key === 'Escape' && !typing(e) && (host.contains(e.target) || host.contains(document.activeElement))) {
+                if (this.cancelGesture('escape')) e.preventDefault();
+                return;
+            }
             if ((e.code === 'Space' || e.key === ' ') && !typing(e) && !e.target?.closest?.('button, a, summary')) {
                 e.preventDefault(); this.spaceDown = true; host.classList.add('pc-space-pan');
             }
@@ -1014,13 +1119,50 @@ export class Canvas {
         on(document, 'keyup', (e) => {
             if (e.code === 'Space' || e.key === ' ') { this.spaceDown = false; host.classList.remove('pc-space-pan'); }
         });
-        on(window, 'blur', () => this.cancelGesture());
+        on(window, 'blur', () => this.cancelGesture('blur'));
         on(window, 'resize', () => this.cancelGesture());
-        on(host, 'pointercancel', () => this.cancelGesture());
-        on(host, 'lostpointercapture', e => { if (e.buttons) this.cancelGesture(); });
+        on(host, 'pointercancel', () => this.cancelGesture('pointercancel'));
+        on(host, 'lostpointercapture', e => {
+            if (this.#nativeEditor()) {
+                if (this.drag || this.marquee || this.pan) { this.cancelGesture(); return; }
+                this.nativeCaptures.delete(e.pointerId);
+                this.#dispatchNative({ type: 'capture-lost', pointerId: e.pointerId, buttons: e.buttons }, e);
+                return;
+            }
+            if (e.buttons) this.cancelGesture();
+        });
         on(host, 'pointerdown', (e) => {
-            if (e.pointerType !== 'mouse' || ![0, 1].includes(e.button) || e.target.closest('button, input, textarea, select, summary, a, [contenteditable="true"]')) return;
-            try { host.setPointerCapture(e.pointerId); } catch { /* synthetic events have no active pointer */ }
+            if (this.#nativeEditor() && e.button === 0 && !inEditor(e) && !e.target.closest('.pc-node-action')) {
+                const pinElement = e.target.closest('.pc-port'), pin = this.#nativePin(e.target);
+                const wire = e.target.closest('.pc-wire-hit');
+                if (pinElement || e.altKey && wire) {
+                    e.preventDefault(); e.stopPropagation(); this.nativeMouseSuppressed = true;
+                    host.focus({ preventScroll: true });
+                    if (!this.#canEdit()) return;
+                    this.gestureStart = { selection: this.selection && { ...this.selection }, multi: [...this.multi], wireMulti: [...this.wireMulti] };
+                    this.gestureRect = host.getBoundingClientRect();
+                    const attachment = pin ? this.#nativeAttachments(pin) : null;
+                    if (e.altKey && (pin || wire)) this.#dispatchNative({ type: 'activate-target', target: pin ? { kind: 'pin', pin } : { kind: 'wire', id: wire.dataset.id },
+                        timestamp: e.timeStamp, alt: true, ...(pin ? { originalBindings: attachment.originalBindings } : {}) }, e);
+                    else if (pin) this.#dispatchNative({ type: 'begin-pin', pin, pointerId: e.pointerId, graphPoint: this.toGraph(e.clientX, e.clientY),
+                        originalBindings: attachment.originalBindings, ctrl: e.ctrlKey }, e);
+                    return;
+                }
+            }
+            // Body drags and pans already use window mouse handlers. Generic
+            // capture would retarget their click/double-click to the host.
+        });
+        on(window, 'pointermove', e => {
+            if (this.nativeWireView?.gesture?.kind !== 'drag' || this.nativeWireView.gesture.released) return;
+            this.#dispatchNative({ type: 'pointer-move', pointerId: e.pointerId, graphPoint: this.toGraph(e.clientX, e.clientY), hit: this.#nativeHit(e) }, e);
+        });
+        on(window, 'pointerup', e => {
+            if (this.nativeWireView?.gesture?.kind === 'drag' && !this.nativeWireView.gesture.released) {
+                this.#dispatchNative({ type: 'release', pointerId: e.pointerId, graphPoint: this.toGraph(e.clientX, e.clientY),
+                    screenAnchor: { x: e.clientX, y: e.clientY }, hit: this.#nativeHit(e) }, e);
+            }
+            this.nativeMouseSuppressed = false;
+            if (!this.drag && !this.pan && !this.marquee) this.gestureRect = null;
         });
 
         // Where the pointer is on the canvas, so a paste lands under it.
@@ -1028,7 +1170,7 @@ export class Canvas {
         on(host, 'mouseleave', () => { this.pointer = null; });
 
         on(host, 'wheel', (e) => {
-            if (!this.graph || this.drag || this.linking || this.marquee || this.pan) return;
+            if (!this.graph || this.drag || this.linking || this.marquee || this.pan || this.#nativeBridge()?.hasContentGesture()) return;
             e.preventDefault();
             const rect = this.wheelRect ??= host.getBoundingClientRect();
             const factor = wheelFactor(e.deltaY, e.deltaMode, rect.height);
@@ -1039,25 +1181,27 @@ export class Canvas {
             this.wheelTimer = setTimeout(() => {
                 this.frames.flush(); host.classList.remove('pc-interacting');
                 this.wheelRect = null;
-                if (this.graph) touchGraph(this.graph);
+                if (this.graph && !isNativeWorkflow(this.graph)) touchGraph(this.graph);
             }, 160);
         }, { passive: false });
 
         on(host, 'mousedown', (e) => {
             if (!this.graph) return;
+            if (this.nativeMouseSuppressed || this.#nativeEditor() && e.target.closest('.pc-port')) { e.preventDefault(); return; }
             if (e.target.closest('.pc-node-action')) return;
             if (inEditor(e)) return;
             this.gestureRect = host.getBoundingClientRect();
             if (e.button === 1 || (e.button === 0 && (this.spaceDown || this.mode === 'pan'))) {
                 e.preventDefault();
-                this.gestureStart = { selection: this.selection && { ...this.selection }, multi: [...this.multi] };
+                host.focus({ preventScroll: true });
+                this.gestureStart = { selection: this.selection && { ...this.selection }, multi: [...this.multi], wireMulti: [...this.wireMulti] };
                 const v = this.view;
                 this.pan = { x: e.clientX - v.x, y: e.clientY - v.y, start: { ...v } };
                 host.classList.add('pc-panning');
                 return;
             }
             if (e.button !== 0) return;
-            this.gestureStart = { selection: this.selection && { ...this.selection }, multi: [...this.multi], cx: e.clientX, cy: e.clientY };
+            this.gestureStart = { selection: this.selection && { ...this.selection }, multi: [...this.multi], wireMulti: [...this.wireMulti], cx: e.clientX, cy: e.clientY };
             const port = e.target.closest('.pc-port');
             const nodeEl = e.target.closest('.pc-node[data-id]');
             const groupEl = e.target.closest('.pc-node-group, .pc-group-frame-head, .pc-group-resize');
@@ -1065,6 +1209,7 @@ export class Canvas {
 
             const gport = e.target.closest('.pc-gport');
             if (gport && e.button === 0) {
+                if (!this.#canEdit() || isNativeWorkflow(this.graph)) return;
                 e.preventDefault();
                 e.stopPropagation();
                 const gid = gport.dataset.group;
@@ -1090,6 +1235,7 @@ export class Canvas {
                 if (action === 'collapse') { this.setCollapsed(gid, true); return; }
                 if (action === 'open') { this.setCollapsed(gid, false); return; }
                 if (action === 'toggle') { this.toggleGroup(gid); return; }
+                if (!this.#canEdit() || isNativeWorkflow(this.graph)) { this.select({ kind: 'group', id: gid }); return; }
                 const members = groupMembers(this.graph, gid).map(n => n.id);
                 if (g.collapsed && (e.shiftKey || e.ctrlKey || e.metaKey || e.altKey)) {
                     const ids = this.#pickedIds();
@@ -1119,6 +1265,7 @@ export class Canvas {
             }
 
             if (port) {
+                if (!this.#canEdit()) return;
                 e.preventDefault();
                 e.stopPropagation();
                 const dir = port.dataset.dir;
@@ -1144,6 +1291,7 @@ export class Canvas {
             if (nodeEl && e.button === 0) {
                 const id = nodeEl.dataset.id;
                 const node = this.graph.nodes[id];
+                if (!isNativeWorkflow(this.graph) && !this.#canEdit()) { this.select({ kind: 'node', id }); return; }
                 if (e.shiftKey || e.ctrlKey || e.metaKey || e.altKey) {
                     const ids = this.#pickedIds();
                     if (e.altKey || ((e.ctrlKey || e.metaKey) && !e.shiftKey && ids.has(id))) ids.delete(id);
@@ -1154,11 +1302,12 @@ export class Canvas {
                 if (this.multi.size > 1 && this.multi.has(id)) {
                     // Drag them all together.
                     const start = this.toGraph(e.clientX, e.clientY);
-                    this.drag = { several: [...this.multi].map(m => [m, this.graph.nodes[m]?.x ?? 0, this.graph.nodes[m]?.y ?? 0]), groups: this.#selectedGroupStarts(), clicked: e.shiftKey ? null : id, sx: start.x, sy: start.y, moved: false };
+                    this.drag = { several: [...this.multi].map(m => [m, this.graph.nodes[m]?.x ?? 0, this.graph.nodes[m]?.y ?? 0]), groups: isNativeWorkflow(this.graph) ? [] : this.#selectedGroupStarts(), clicked: e.shiftKey ? null : id, sx: start.x, sy: start.y, moved: false };
                     return;
                 }
                 if (this.multi.size && !e.shiftKey) this.setMulti([]);
                 this.select({ kind: 'node', id });
+                this.wireMulti.clear();
                 if (e.target.closest('.pc-toggle')) return;
                 const start = this.toGraph(e.clientX, e.clientY);
                 this.drag = {
@@ -1176,7 +1325,13 @@ export class Canvas {
             if (wireHit) {
                 // A loop's label says "click to change": show its settings.
                 const sel = { kind: 'wire', id: wireHit.dataset.id };
-                if (wireHit.classList.contains('pc-wire-label-loop')) this.#reveal(sel); else this.select(sel);
+                if (this.#nativeEditor()) {
+                    const modified = e.shiftKey || e.ctrlKey || e.metaKey;
+                    if (!modified) this.wireMulti.clear();
+                    if (modified && this.wireMulti.has(sel.id)) this.wireMulti.delete(sel.id); else this.wireMulti.add(sel.id);
+                    this.multi.clear(); const primary = [...this.wireMulti].at(-1);
+                    this.select(primary ? { kind: 'wire', id: primary } : null);
+                } else if (wireHit.classList.contains('pc-wire-label-loop')) this.#reveal(sel); else this.select(sel);
                 return;
             }
 
@@ -1195,6 +1350,7 @@ export class Canvas {
         });
 
         on(window, 'mousemove', (e) => {
+            if (this.drag && !isNativeWorkflow(this.graph) && !this.#canEdit()) { this.cancelGesture(); return; }
             if (this.linking) {
                 this.linking.ghost = this.toGraph(e.clientX, e.clientY);
                 this.#drawWires(new Set());
@@ -1253,7 +1409,7 @@ export class Canvas {
                 }
                 this.host.classList.add('pc-interacting');
                 this.frames.schedule(4);
-                if (!d.group) this.#hoverBlanket(d.several.map(([id]) => id));
+                if (!d.group && !isNativeWorkflow(this.graph)) this.#hoverBlanket(d.several.map(([id]) => id));
                 return;
             }
             if (this.drag) {
@@ -1267,11 +1423,12 @@ export class Canvas {
                 this.drag.moved = true;
                 this.host.classList.add('pc-interacting');
                 this.frames.schedule(4);
-                this.#hoverBlanket([node.id]);
+                if (!isNativeWorkflow(this.graph)) this.#hoverBlanket([node.id]);
 
                 // Dragging a block out over the library means "save it there":
                 // into the folder under the pointer, or the first folder when
                 // it is dropped anywhere else on the library.
+                if (isNativeWorkflow(this.graph)) return;
                 const under = document.elementFromPoint(e.clientX, e.clientY);
                 const folder = under?.closest?.('.pc-folder[data-folder]:not([data-folder=""])')
                     ?? under?.closest?.('.pc-sidebar') ?? null;
@@ -1290,6 +1447,7 @@ export class Canvas {
         });
 
         on(window, 'mouseup', (e) => {
+            if (this.drag && !isNativeWorkflow(this.graph) && !this.#canEdit()) { this.cancelGesture(); return; }
             this.frames.flush();
             this.gestureRect = null;
             this.host.classList.remove('pc-interacting');
@@ -1337,8 +1495,8 @@ export class Canvas {
                     // blocks put down join the blanket they land on.
                     if (g && !g.collapsed) gatherBlanket(this.graph, g.id, (n) => this.heightOf(n), (n) => this.widthOf(n));
                     else if (d.several && !isNativeWorkflow(this.graph)) this.settle(d.several.map(([id]) => id));
-                    touchGraph(this.graph);
-                    if (isNativeWorkflow(this.graph) && !d.group) this.hooks.onPresentationChange?.(); else this.hooks.onChange?.();
+                    if (isNativeWorkflow(this.graph) && !d.group) this.hooks.onPresentationChange?.(d.several.map(([id]) => id));
+                    else { touchGraph(this.graph); this.hooks.onChange?.(); }
                 }
                 else if (d.clicked) this.setMulti([d.clicked]);
                 else if (d.clickedGroup) { this.setMulti([]); this.select({ kind: 'group', id: d.clickedGroup }); }
@@ -1360,8 +1518,8 @@ export class Canvas {
                     }
                 } else if (drop.moved) {
                     if (!isNativeWorkflow(this.graph)) this.settle([drop.id]);
-                    touchGraph(this.graph);
-                    if (isNativeWorkflow(this.graph)) this.hooks.onPresentationChange?.(); else this.hooks.onChange?.();
+                    if (isNativeWorkflow(this.graph)) this.hooks.onPresentationChange?.([drop.id]);
+                    else { touchGraph(this.graph); this.hooks.onChange?.(); }
                 }
                 this.#hoverBlanket([]);
                 this.render();
@@ -1370,7 +1528,7 @@ export class Canvas {
                 this.frames.flush();
                 this.pan = null;
                 this.host.classList.remove('pc-panning');
-                touchGraph(this.graph);
+                if (!isNativeWorkflow(this.graph)) touchGraph(this.graph);
             }
         });
 
@@ -1385,16 +1543,37 @@ export class Canvas {
             }
             const nodeEl = e.target.closest('.pc-node[data-id]');
             if (nodeEl) {
+                if (e.target.closest('.pc-port')) return;
                 this.hooks.onOpen?.(this.graph.nodes[nodeEl.dataset.id]);
                 return;
             }
             const wireHit = e.target.closest('.pc-wire-hit');
-            if (wireHit) { this.cycleWire(wireHit.dataset.id); return; }
+            if (wireHit) {
+                if (this.#nativeEditor()) {
+                    e.preventDefault(); e.stopPropagation();
+                    if (this.#canEdit()) this.#dispatchNative({ type: 'wire-double-click', wireId: wireHit.dataset.id,
+                        direct: !!this.graph.wires[wireHit.dataset.id]?.from, graphPoint: this.toGraph(e.clientX, e.clientY), timestamp: e.timeStamp,
+                        alt: e.altKey, ctrl: e.ctrlKey, shift: e.shiftKey, meta: e.metaKey }, e);
+                } else this.cycleWire(wireHit.dataset.id);
+                return;
+            }
+            if (this.#nativeEditor()) { this.#openNativeSearch(e); return; }
+            if (!this.#canEdit()) return;
             this.hooks.onCreateAt?.(this.toGraph(e.clientX, e.clientY));
         });
 
         on(host, 'contextmenu', (e) => {
             e.preventDefault();
+            if (this.#nativeEditor()) {
+                const pin = this.#nativePin(e.target), bridge = this.#nativeBridge();
+                if (pin && bridge) {
+                    this.gestureStart = { selection: this.selection && { ...this.selection }, multi: [...this.multi], wireMulti: [...this.wireMulti] };
+                    const result = bridge.openPinMenu({ pin, screenAnchor: { x: e.clientX, y: e.clientY },
+                        readOnly: !this.#canEdit(), ...this.#nativeAttachments(pin) });
+                    this.updateNativeWire(result.view, result.requests); return;
+                }
+                if (!e.target.closest('.pc-node, .pc-group-frame, .pc-wire-hit')) { this.#openNativeSearch(e); return; }
+            }
             const nodeEl = e.target.closest('.pc-node[data-id]');
             const groupEl = e.target.closest('.pc-node-group, .pc-group-frame-head');
             const gid = groupEl ? (groupEl.dataset.group ?? groupEl.closest('[data-group]')?.dataset.group) : null;
@@ -1412,6 +1591,7 @@ export class Canvas {
         on(host, 'dragover', (e) => { e.preventDefault(); });
         on(host, 'drop', (e) => {
             e.preventDefault();
+            if (!this.#canEdit()) return;
             const raw = e.dataTransfer?.getData('application/x-prompt-canvas');
             if (!raw) return;
             try {
@@ -1431,7 +1611,8 @@ export class Canvas {
      */
     async #finishLink(link, targetId, e) {
         const graph = this.graph, epoch = this.operationEpoch;
-        const current = () => this.graph === graph && this.operationEpoch === epoch;
+        const current = () => this.graph === graph && this.operationEpoch === epoch && this.#canEdit() && !this.#nativeEditor();
+        if (!current()) return;
         const tie = link.dir === 'tie';
         const outward = tie || link.dir === 'out';
         // The two ends, each a block id or "group:<id>".
@@ -1458,6 +1639,7 @@ export class Canvas {
         }
         // Schema-2 primitive edges have implicit in/out endpoints; their port option
         // is reserved for legacy keyed outputs. Schema-3 editing uses the prepared graph-edit API.
+        if (!current()) return;
         const res = connect(this.graph, from, to, tie ? WIRE_KINDS.TOGETHER : WIRE_KINDS.MERGE, { port: this.graph.schema === 2 ? null : port });
         if (!res.ok) this.hooks.onToast?.(res.reason);
         else {
@@ -1474,6 +1656,10 @@ export class Canvas {
     }
 
     select(sel) {
+        if (this.#nativeEditor()) {
+            if (sel?.kind === 'wire') this.wireMulti.add(sel.id);
+            else this.wireMulti.clear();
+        }
         this.selection = sel;
         this.render();
         const pick = !sel ? null
@@ -1484,6 +1670,7 @@ export class Canvas {
     }
 
     cycleWire(wireId) {
+        if (!this.#canEdit() || this.#nativeEditor()) return;
         const wire = this.graph.wires[wireId];
         if (!wire) return;
         if (wire.kind === WIRE_KINDS.TOGETHER) {
@@ -1499,6 +1686,7 @@ export class Canvas {
     }
 
     setWireKind(wireId, kind) {
+        if (!this.#canEdit() || this.#nativeEditor()) return;
         const wire = this.graph.wires[wireId];
         if (!wire) return;
         wire.kind = kind;
@@ -1514,11 +1702,21 @@ export class Canvas {
      */
     async deleteSelection() {
         const graph = this.graph, epoch = this.operationEpoch;
-        if (!graph) return false;
+        if (!graph || !this.#canEdit()) return false;
         const ask = async (what) => {
             const approved = this.hooks.confirmDelete ? await this.hooks.confirmDelete(what) : true;
-            return approved && this.graph === graph && this.operationEpoch === epoch;
+            return approved && this.graph === graph && this.operationEpoch === epoch && this.#canEdit();
         };
+        if (this.#nativeEditor()) {
+            if (this.wireMulti.size || this.selection?.kind === 'wire') {
+                const ids = this.wireMulti.size ? [...this.wireMulti] : [this.selection.id];
+                const bridge = this.#nativeBridge(); if (!bridge) return false;
+                const result = bridge.disconnectWires(ids); this.updateNativeWire(result.view, result.requests); return true;
+            }
+            const sel = this.multi.size > 1 ? { kind: 'nodes', ids: [...this.multi] } : this.selection && { ...this.selection };
+            if (!sel || !this.hooks.onNativeDelete) return false;
+            return this.hooks.onNativeDelete(sel);
+        }
         if (this.multi.size > 1) {
             const ids = [...this.multi].filter(id => this.graph.nodes[id] && this.graph.nodes[id].type !== NODE_TYPES.OUTPUT);
             if (!ids.length || !await ask(`these ${ids.length} blocks`)) return false;

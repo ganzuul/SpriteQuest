@@ -42,8 +42,9 @@ export function tokenChip(node, tokens, trace) {
 /** Plain presentation data; Svelte consumes this without importing domain state. */
 export function nodeCard(node, { graph, selection, multi, trace, tokens, reaching, hooks, preview, ruleLabel, labels, icons }) {
     const groupOff = inOffGroup(graph, node), tr = trace?.get(node.id);
-    const operation = operationFor(node);
-    const stranded = !operation && node.type !== NODE_TYPES.NOTE && node.type !== NODE_TYPES.OUTPUT && reaching && !reaching.has(node.id);
+    const prepared = hooks.nativeCard?.(node) ?? graph.nativeCards?.[node.id];
+    const operation = prepared || graph.nativeCards || hooks.nativeCard ? null : operationFor(node);
+    const stranded = !prepared && !operation && node.type !== NODE_TYPES.NOTE && node.type !== NODE_TYPES.OUTPUT && reaching && !reaching.has(node.id);
     const card = {
         id: node.id, type: node.type, x: node.x, y: node.y, w: node.w || 260,
         className: `pc-node pc-node-${node.type}${node.enabled === false || groupOff ? ' pc-off' : ''}${groupOff ? ' pc-group-off' : ''}${stranded ? ' pc-stranded' : ''}${selection?.kind === 'node' && selection.id === node.id ? ' pc-selected' : ''}${multi.has(node.id) ? ' pc-multi' : ''}${tr ? ` pc-trace-${tr.status}` : ''}`,
@@ -51,8 +52,21 @@ export function nodeCard(node, { graph, selection, multi, trace, tokens, reachin
         title: node.title || 'Untitled', titleHint: node.title || '', label: labels[node.type] ?? node.type, icon: icons[node.type] ?? 'fa-square',
         token: tokenChip(node, tokens, trace), offHint: groupOff && node.enabled !== false ? 'Its group is switched off, so this block sends nothing and nothing passes through it.' : node.enabled === false ? 'This block is switched off. Its own text is not sent; anything wired through it still passes.' : undefined,
         enabled: node.enabled !== false, toggle: node.type !== NODE_TYPES.OUTPUT, help: node.type === NODE_TYPES.DECIDER,
-        body: preview(node), rows: [], rowClass: 'pc-dec-keys', mode: undefined, model: null, notices: [], ports: [],
+        body: prepared ? prepared.body : preview(node), rows: [], rowClass: 'pc-dec-keys', mode: undefined, model: null, notices: [], ports: [],
     };
+    if (prepared) {
+        card.native = true;
+        card.compact = node.presentation?.compact === true;
+        card.title = String(node.presentation?.alias || node.title || prepared.canonicalTitle).slice(0, 80);
+        card.titleHint = prepared.canonicalTitle;
+        card.label = prepared.canonicalTitle;
+        card.iconPath = prepared.iconPath;
+        card.className += ` pc-node-native pc-family-${String(prepared.family).toLowerCase()}` + (card.compact ? ' pc-node-compact' : '');
+        card.ports = prepared.ports;
+        card.hostResult = !!prepared.hostResult;
+        card.offHint = node.enabled === false || groupOff ? 'Disabled operations block native preflight. They cannot be bypassed.' : undefined;
+        return card;
+    }
     if (operation) {
         card.native = true;
         card.compact = node.presentation?.compact === true;
