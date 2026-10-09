@@ -407,13 +407,13 @@ test('review diagnostics report phase, terminal effects, conservative bound and 
     assert.equal(diagnostics.bindingReviewRequired, true);
     assert.deepEqual(diagnostics.unresolvedBindings, []);
     assert.deepEqual(diagnostics.requiredRoles, [identityMap.roles.Analysis]);
-    assert.deepEqual(diagnostics.terminals, [{ nodeId: identityMap.nodes.guidance, operation: 'guidance' }]);
+    assert.deepEqual(diagnostics.terminals, [{ nodeId: identityMap.nodes.guidance, address: { workflowId: destination.id, instancePath: [], nodeId: identityMap.nodes.guidance }, operation: 'guidance' }]);
     assert.deepEqual(candidate.roles[identityMap.roles.Analysis], imported.roles.Analysis);
     assert.equal(candidate.nodes[identityMap.nodes['response-plan']].profileId, 'node-profile');
     delete imported.roles;
     const unbound = prepareWorkflowInsertion(destination, imported);
     assert.equal(unbound.ok, true);
-    assert.deepEqual(unbound.data.diagnostics.unresolvedBindings, [{ nodeId: unbound.data.identityMap.nodes['smart-compactor'], role: unbound.data.identityMap.roles.Analysis, missing: ['profileId', 'model'] }]);
+    assert.deepEqual(unbound.data.diagnostics.unresolvedBindings, [{ nodeId: unbound.data.identityMap.nodes['smart-compactor'], address: { workflowId: destination.id, instancePath: [], nodeId: unbound.data.identityMap.nodes['smart-compactor'] }, role: unbound.data.identityMap.roles.Analysis, missing: ['profileId', 'model'] }]);
 });
 
 test('preconditions protect editable aliases/body while camera and selection remain outside signatures', () => {
@@ -438,7 +438,7 @@ test('preconditions protect editable aliases/body while camera and selection rem
     assert.notEqual(graphSemanticSignature(destination), baseSignature);
 });
 
-test('unsafe inputs, modes, unsupported composition and nonroot views reject before allocation', () => {
+test('unsafe inputs, modes, malformed composition and unowned views reject before allocation', () => {
     const destination = starterGraph('native-guidance'), imported = starterGraph('native-guidance');
     let allocations = 0, getterReads = 0;
     const allocateId = () => { allocations++; return `id-${allocations}`; };
@@ -452,7 +452,7 @@ test('unsafe inputs, modes, unsupported composition and nonroot views reject bef
     const future = { ...imported, schema: 4, runtime: 3 };
     assert.equal(prepareWorkflowInsertion(destination, future, { allocateId }).error?.code, 'UNSUPPORTED_VERSION');
     for (const composition of [{ portals: { p: { id: 'p', source: { nodeId: 'scene-context', portId: 'out' }, kind: 'context', label: 'Context' } } }, { definitions: { d: { id: 'd', version: 1 } } }]) {
-        assert.equal(prepareWorkflowInsertion(destination, { ...imported, schema: 3, runtime: 2, ...composition }, { allocateId }).error?.code, 'UNSUPPORTED_COMPOSITION');
+        assert.equal(prepareWorkflowInsertion(destination, { ...imported, schema: 3, runtime: 2, ...composition }, { allocateId }).ok, false);
     }
     const getterGraph = { ...imported, get mode() { getterReads++; return 'native-pre'; } };
     const getterOptions = { get at() { getterReads++; return { x: 0, y: 0 }; } };

@@ -10,6 +10,7 @@
  *   activeGraphId  the graph used when nothing more specific is bound.
  *   graphs         { [id]: Graph }   named, shareable canvas configurations.
  *   library        { folders: [...], prompts: [...] }
+ *   subgraphLibrary { definitions: SnapshotTable } independently validated reusable shelf
  *
  * Bindings live outside this object on purpose:
  *   - a chat pins a graph through chat_metadata, so it travels with the chat
@@ -178,6 +179,7 @@ export function settings() {
     s.graphs ??= {};
     s.activeGraphId ??= null;
     s.library ??= { folders: [], prompts: [] };
+    if (!Object.hasOwn(s, 'subgraphLibrary')) s.subgraphLibrary = { definitions: {} };
     s.showTrace ??= true;
     s.previewOnSend ??= false;
     s.parallel ??= true;

@@ -24,7 +24,7 @@ const listeners = new Set();
 
 // Keep root execution authority, recordings and per-view state outside undo data.
 // Instance parameters/model overrides and pinned bodies live inside nodes/definitions.
-export const GRAPH_DOCUMENT_FIELDS = Object.freeze(['name', 'description', 'nodes', 'wires', 'groups', 'schema', 'runtime', 'mode', 'roles', 'portals', 'definitions']);
+export const GRAPH_DOCUMENT_FIELDS = Object.freeze(['name', 'description', 'nodes', 'wires', 'groups', 'schema', 'runtime', 'mode', 'roles', 'portals', 'definitions', 'localDefinitionOwners']);
 const snapshot = (g) => JSON.stringify(Object.fromEntries(GRAPH_DOCUMENT_FIELDS.filter(key => Object.hasOwn(g, key)).map(key => [key, g[key]])));
 
 /** The shape of a canvas: which blocks and wires exist, where, and on or off. */

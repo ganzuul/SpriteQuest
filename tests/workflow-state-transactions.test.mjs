@@ -6,6 +6,10 @@ import { prepareWorkflowInsertion } from '../src/workflow/insertion.js';
 import { captureGraphEditContext } from '../src/workflow/transactions.js?v=0.19.1';
 import * as H from '../src/history.js?v=0.19.1';
 import * as S from '../src/state.js?v=0.19.1';
+import { normalizeNativeGraph } from '../src/workflow/migration.js';
+import { prepareCreateFromSelection, prepareGraphCandidate } from '../src/workflow/composition.js';
+import { prepareLocalDefinitionEdit } from '../src/workflow/definition-library.js';
+import { definitionRefKey } from '../src/workflow/definitions.js';
 
 let serial = 0;
 function fixture() {
@@ -72,4 +76,30 @@ test('immutable bookkeeping cannot throw after the complete editable document wa
     Object.defineProperty(root, 'updatedAt', { value: 123, enumerable: true, configurable: false, writable: false });
     assert.equal(S.commitGraphEdit(root, prepared, hooks).ok, true);
     assert.equal(root.updatedAt, 123); assert.equal(saves(), 1); assert.equal(calls.length, 2);
+});
+
+test('ownership-only root documents round-trip field presence without invalidating runtime authority', () => {
+    const host = installMock({ settings: { graphs: {} } }); let saves = 0, cancelled = 0; host.saveSettingsDebounced = () => saves++;
+    const converted = prepareCreateFromSelection(normalizeNativeGraph(starterGraph('native-guidance')).data, { nodeIds: ['smart-compactor'], definitionId: 'history-owned', name: 'History owned' }).data;
+    const root = converted.candidate; root.id = `ownership-${++serial}`;
+    delete root.localDefinitionOwners; delete root.nodes[converted.instanceId].localCopy;
+    const authority = root.authority = { activeRun: 'current' }, recording = root.recording = { id: 'current-recording' };
+    H.track(root);
+    const next = structuredClone(root); next.localDefinitionOwners = [{ instancePath: [converted.instanceId], definitionId: 'history-owned' }];
+    const context = () => ({ sessionId: 'ownership', viewPath: [], readOnly: false });
+    const prepared = { ...prepareGraphCandidate(root, next).data, context: captureGraphEditContext(root, context).data };
+    const hooks = { onSemanticChange: () => cancelled++ };
+    const committed = S.commitGraphEdit(root, prepared, hooks);
+    assert.equal(committed.ok, true, JSON.stringify(committed)); assert.equal(committed.data.semanticChanged, false);
+    assert.deepEqual(root.localDefinitionOwners, next.localDefinitionOwners); assert.equal(saves, 1); assert.equal(cancelled, 0);
+    assert.equal(S.stepGraphHistory(root, 'undo', hooks).data.semanticChanged, false); assert.equal(Object.hasOwn(root, 'localDefinitionOwners'), false);
+    assert.equal(S.stepGraphHistory(root, 'redo', hooks).data.semanticChanged, false); assert.deepEqual(root.localDefinitionOwners, next.localDefinitionOwners);
+    assert.equal(S.stepGraphHistory(root, 'redo', hooks).data.changed, false); assert.equal(saves, 3); assert.equal(cancelled, 0);
+    assert.equal(root.authority, authority); assert.equal(root.recording, recording);
+    const ref = root.nodes[converted.instanceId].definition, draft = structuredClone(root.definitions[definitionRefKey(ref)]); draft.body.nodes['smart-compactor'].targetTokens = 432;
+    const revision = { ...prepareLocalDefinitionEdit(root, { instanceId: converted.instanceId, expectedRef: ref, draft }).data, context: captureGraphEditContext(root, context).data };
+    assert.equal(S.commitGraphEdit(root, revision, hooks).data.semanticChanged, true); assert.equal(cancelled, 1); assert.equal(saves, 4);
+    assert.equal(S.stepGraphHistory(root, 'undo', hooks).data.semanticChanged, true); assert.equal(cancelled, 2);
+    assert.deepEqual(root.nodes[converted.instanceId].definition, ref); assert.deepEqual(root.localDefinitionOwners, next.localDefinitionOwners);
+    assert.equal(root.authority, authority); assert.equal(root.recording, recording);
 });
