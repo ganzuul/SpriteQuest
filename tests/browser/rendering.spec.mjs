@@ -46,7 +46,7 @@ test('mixed native cards stay intrinsic and usable beneath the shelf at narrow w
         await page.setViewportSize({ width, height: 1000 });
         await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
         await page.evaluate(async () => {
-            const { starterGraph } = await import('/src/workflow/starters.js?v=0.19.1');
+            const { starterGraph } = await import('/src/workflow/starters.js?v=' + window.canvasHarness.version);
             const h = window.canvasHarness, graph = starterGraph('native-guidance');
             document.querySelector('.pc-root').classList.add('pc-hide-sidebar', 'pc-hide-inspector');
             const source = graph.nodes['scene-context'], compact = graph.nodes['smart-compactor'], plan = graph.nodes['response-plan'], terminal = graph.nodes.guidance;
@@ -71,7 +71,7 @@ test('mixed native cards stay intrinsic and usable beneath the shelf at narrow w
 test('native intrinsic geometry grows group frames and stays cached during camera frames', async ({ page }) => {
     await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
     await page.evaluate(async () => {
-        const { starterGraph } = await import('/src/workflow/starters.js?v=0.19.1');
+        const { starterGraph } = await import('/src/workflow/starters.js?v=' + window.canvasHarness.version);
         const h = window.canvasHarness, graph = starterGraph('native-guidance');
         graph.nodes['smart-compactor'].inGroup = 'group';
         graph.groups.group = { id: 'group', title: 'Group', enabled: true, collapsed: false };
@@ -104,7 +104,7 @@ test('native intrinsic geometry grows group frames and stays cached during camer
 test('native pin hover highlights only attached wires and body drops cancel linking', async ({ page }) => {
     await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
     await page.evaluate(async () => {
-        const { starterGraph } = await import('/src/workflow/starters.js?v=0.19.1');
+        const { starterGraph } = await import('/src/workflow/starters.js?v=' + window.canvasHarness.version);
         window.canvasHarness.canvas.setGraph(starterGraph('native-guidance'));
         await window.canvasHarness.view({ x: 220, y: 0, zoom: .7 });
     });
@@ -133,7 +133,7 @@ test('native compact aliases preserve identity, real pins and the execution sign
     await page.getByRole('button', { name: 'Inspect Smart Compactor', exact: true }).click();
     const id = await page.evaluate(async () => {
         const h = window.canvasHarness, node = Object.values(h.graph.nodes).find(n => n.operation === 'smart-compactor');
-        const { graphSemanticSignature } = await import('/src/workflow/ports.js?v=0.19.1');
+        const { graphSemanticSignature } = await import('/src/workflow/ports.js?v=' + window.canvasHarness.version);
         window.compactProbe = { card: h.canvas.nodeLayer.querySelector(`[data-id="${node.id}"]`), signature: graphSemanticSignature(h.graph), signatureOf: graphSemanticSignature, title: node.title };
         window.compactProbe.port = window.compactProbe.card.querySelector('.pc-port-in');
         window.compactProbe.prepares = 0;

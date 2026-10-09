@@ -1517,6 +1517,31 @@
 .pc-root button.pc-btn:focus-visible { outline-color: var(--pc-accent); }
 :root .pc-root .pc-node { border-radius: 4px; box-shadow: inset 0 1px 0 #ffffff09, inset 0 -1px 0 #0004; }
 :root .pc-root .pc-node.pc-selected { border-color: var(--pc-accent); box-shadow: inset 0 1px 0 #ffffff09, inset 0 -1px 0 #0004, 0 0 0 2px var(--pc-accent); }
+/* Execution state keeps priority over selection without changing card geometry. */
+:root .pc-root .pc-node-native.pc-trace-running {
+    border-color: var(--pc-flow);
+    box-shadow: inset 0 1px 0 #ffffff09, inset 0 -1px 0 #0004, 0 0 0 2px var(--pc-flow), 0 0 9px color-mix(in srgb, var(--pc-flow) 28%, transparent);
+}
+:root .pc-root .pc-node-native.pc-trace-failed {
+    border-color: var(--pc-error);
+    box-shadow: inset 0 1px 0 #ffffff09, inset 0 -1px 0 #0004, 0 0 0 2px var(--pc-error);
+}
+.pc-node-native.pc-trace-failed > :is(.pc-native-heading, .pc-native-pins, .pc-native-alias, .pc-host-result) {
+    opacity: .55;
+    filter: grayscale(1);
+}
+:root .pc-root .pc-node-native.pc-trace-blocked {
+    border-color: var(--pc-muted);
+    border-style: dashed;
+    opacity: .55;
+    box-shadow: inset 0 1px 0 #ffffff09, inset 0 -1px 0 #0004;
+}
+:root .pc-root .pc-node-native.pc-trace-cancelled {
+    border-color: var(--pc-warn);
+    border-style: dashed;
+    opacity: .7;
+    box-shadow: inset 0 1px 0 #ffffff09, inset 0 -1px 0 #0004;
+}
 .pc-workspace-menu-panel { position: fixed; z-index: 20; width: max-content; max-width: calc(100vw - 8px); min-width: 210px; padding: 5px; border: 1px solid var(--pc-border); border-radius: 4px; background: var(--pc-panel-solid); box-shadow: inset 0 1px 0 #ffffff0c, 0 8px 20px #0005; }
 .pc-workspace-menu-panel button { display: flex; align-items: center; gap: 14px; justify-content: space-between; width: 100%; min-height: 32px; text-align: left; white-space: normal; }
 .pc-workspace-menu-panel small { white-space: nowrap; color: var(--pc-muted); }

@@ -24,9 +24,11 @@ window.lattice.open();
 const settle = () => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 await settle();
 window.canvasHarness = {
-    context, S, UI, H, toasts,
+    context, S, UI, H, toasts, version,
     get canvas() { return canvas; },
-    get graph() { return canvas.graph; },
+    // Native drawing tables are detached; fixture edits must reach the saved
+    // root. Standalone Canvas-only fixtures retain their direct graph fallback.
+    get graph() { return S.getGraph(canvas.graph?.id) ?? canvas.graph; },
     get selection() { return [...canvas.multi]; },
     async reset(count = 3, columns = 3) {
         const g = canvas.graph;

@@ -68,8 +68,8 @@ test('repeated native insertion preserves schema2 recipient IDs and roles while 
         const h = window.canvasHarness;
         h.graph.roles.Analysis = { profileId: 'recipient', model: 'recipient-model' };
         h.S.touchGraph(h.graph); h.H.flush(h.graph);
-        const { starterGraph } = await import('/src/workflow/starters.js?v=0.19.1');
-        const { exportWorkflow } = await import('/src/workflow/packages.js?v=0.19.1');
+        const { starterGraph } = await import('/src/workflow/starters.js?v=' + window.canvasHarness.version);
+        const { exportWorkflow } = await import('/src/workflow/packages.js?v=' + window.canvasHarness.version);
         return exportWorkflow(starterGraph('native-guidance'));
     });
     const before = await snapshot(page), ids = Object.keys(before.graph.nodes);
@@ -134,8 +134,8 @@ for (const change of ['alias', 'body', 'read-only', 'session', 'path', 'root']) 
 test('mismatch and malformed native files reject; empty legacy insertion is a no-op', async ({ page }) => {
     await load(page); const before = await snapshot(page);
     const native = await page.evaluate(async () => {
-        const { starterGraph } = await import('/src/workflow/starters.js?v=0.19.1');
-        const { exportWorkflow } = await import('/src/workflow/packages.js?v=0.19.1');
+        const { starterGraph } = await import('/src/workflow/starters.js?v=' + window.canvasHarness.version);
+        const { exportWorkflow } = await import('/src/workflow/packages.js?v=' + window.canvasHarness.version);
         return exportWorkflow(starterGraph('native-guidance'));
     });
     for (const file of [native, { ...native, schema: 99, minRuntime: 99 }]) {
@@ -194,7 +194,7 @@ for (const gesture of ['drag', 'link']) test(`an unfinished ${gesture} cannot su
     await page.evaluate(async () => { const h = window.canvasHarness; await h.reset(); h.H.flush(h.graph); });
     await chooseImport(page, fragment);
     await page.evaluate(async () => {
-        const controller = (await import('/src/run.js?v=0.19.1')).getNativeWorkflowController();
+        const controller = (await import('/src/run.js?v=' + window.canvasHarness.version)).getNativeWorkflowController();
         window.importGestureCancellations = 0;
         if (controller) { const cancel = controller.cancel; controller.cancel = (...args) => { window.importGestureCancellations++; return cancel(...args); }; }
     });

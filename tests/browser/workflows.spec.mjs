@@ -16,7 +16,7 @@ test('editing imported structured scan rules preserves findings and metadata and
     await editor.fill(initial + '\ntapestry');
     const read = () => page.evaluate(async () => {
         const node = Object.values(window.canvasHarness.graph.nodes).find(node => node.operation === 'pattern-scan');
-        const { scanDraft } = await import('/src/workflow/repair.js');
+        const { scanDraft } = await import('/src/workflow/repair.js?v=' + window.canvasHarness.version);
         const text = 'Delve, delve, delve safely, weave, tapestry.';
         return { node, scan: scanDraft({ kind: 'draft', text, source: { originalText: text } }, node) };
     });
@@ -194,7 +194,7 @@ async function reviewFixture(page) {
         c.setExtensionPrompt = (key, value, position, depth, scan, role) => { c.extensionPrompts[key] = { value, position, depth, scan, role }; };
         c.updateMessageBlock = () => {}; c.swipe = { refresh() {} };
         c.saveChat = async () => { window.workflowSaveAttempts = (window.workflowSaveAttempts || 0) + 1; };
-        await (await import('/src/run.js?v=0.19.1')).initializeNativeWorkflowController();
+        await (await import('/src/run.js?v=' + window.canvasHarness.version)).initializeNativeWorkflowController();
     });
     await page.getByRole('button', { name: 'Install Reviewed AI De-slop' }).click();
     await page.getByLabel('Prose connection', { exact: true }).selectOption('prose');
@@ -292,7 +292,7 @@ test('automatic Send evidence stays with its original graph through post review,
     await reviewFixture(page);
     const preId = await page.evaluate(async () => {
         const h = window.canvasHarness, s = h.S.settings();
-        const pre = (await import('/src/workflow/starters.js?v=0.19.1')).installStarter('native-guidance', s);
+        const pre = (await import('/src/workflow/starters.js?v=' + window.canvasHarness.version)).installStarter('native-guidance', s);
         pre.roles.Analysis.profileId = 'prose';
         s.nativeBindings.preGraphId = pre.id; s.workflowMode = 'native'; s.enabled = true;
         h.S.save(); h.UI.refreshIfOpen(); return pre.id;
@@ -341,7 +341,7 @@ test('native graphs reject legacy prompt seeding before confirmation while legac
     await page.evaluate(() => window.canvasHarness.settle());
     expect(await page.evaluate(() => window.seedConfirmations || 0)).toBe(0);
     expect(await page.evaluate(() => JSON.stringify(window.canvasHarness.graph) === window.beforeNativeSeed)).toBe(true);
-    expect(await page.evaluate(async () => (await import('/src/workflow/contracts.js?v=0.19.1')).validateWorkflow(window.canvasHarness.graph).ok)).toBe(true);
+    expect(await page.evaluate(async () => (await import('/src/workflow/contracts.js?v=' + window.canvasHarness.version)).validateWorkflow(window.canvasHarness.graph).ok)).toBe(true);
     const legacy = await page.evaluate(() => window.canvasHarness.S.allGraphs().find(graph => graph.schema !== 2).id);
     await page.locator('.pc-graph-select').selectOption(legacy);
     await page.getByRole('button', { name: 'Graph', exact: true }).click();
@@ -431,7 +431,7 @@ test('native camera pan and zoom preserve the focused editor without domain work
     await page.getByLabel('instructions', { exact: true }).focus();
     const measured = await page.evaluate(async () => {
         const { context: c, canvas, settle } = window.canvasHarness;
-        const controller = (await import('/src/run.js?v=0.19.1')).getNativeWorkflowController();
+        const controller = (await import('/src/run.js?v=' + window.canvasHarness.version)).getNativeWorkflowController();
         const editor = document.activeElement, node = canvas.nodeLayer.querySelector('.pc-node'), requests = window.workflowRequests.length;
         let analysis = 0, bindings = 0, freshness = 0, tokens = 0, lore = 0;
         const prepare = canvas.hooks.prepareRender, getProfile = c.ConnectionManagerRequestService.getProfile, candidateStatus = controller.candidateStatus, count = c.getTokenCountAsync;
@@ -450,12 +450,12 @@ test('native camera pan and zoom preserve the focused editor without domain work
         return { analysis, bindings, freshness, tokens, lore, requests: window.workflowRequests.length - requests, sameEditor: editor === document.activeElement && document.contains(editor), sameNode: node === canvas.nodeLayer.querySelector('.pc-node') };
     });
     expect(measured).toEqual({ analysis: 0, bindings: 0, freshness: 0, tokens: 0, lore: 0, requests: 0, sameEditor: true, sameNode: true });
-    expect(await page.evaluate(async () => { const controller = (await import('/src/run.js?v=0.19.1')).getNativeWorkflowController(); return controller.candidateStatus(controller.lastResult().artifact).ok; })).toBe(true);
+    expect(await page.evaluate(async () => { const controller = (await import('/src/run.js?v=' + window.canvasHarness.version)).getNativeWorkflowController(); return controller.candidateStatus(controller.lastResult().artifact).ok; })).toBe(true);
     const title = await page.locator('.pc-node-title').filter({ hasText: /^Reply Snapshot$/ }).boundingBox();
     await page.mouse.move(title.x + 20, title.y + 8); await page.mouse.down();
     await page.mouse.move(title.x + 60, title.y + 28, { steps: 4 }); await page.mouse.up();
     await expect(page.getByRole('button', { name: 'Apply reviewed candidate', exact: true })).toBeEnabled();
-    expect(await page.evaluate(async () => { const controller = (await import('/src/run.js?v=0.19.1')).getNativeWorkflowController(); return controller.candidateStatus(controller.lastResult().artifact).ok; })).toBe(true);
+    expect(await page.evaluate(async () => { const controller = (await import('/src/run.js?v=' + window.canvasHarness.version)).getNativeWorkflowController(); return controller.candidateStatus(controller.lastResult().artifact).ok; })).toBe(true);
     await page.getByRole('button', { name: 'Inspect Repair', exact: true }).click();
     await page.getByLabel('instructions', { exact: true }).fill('A semantic operation edit.');
     await expect(page.getByRole('button', { name: 'Apply reviewed candidate', exact: true })).toHaveCount(0);
@@ -468,23 +468,23 @@ test('native presentation undo preserves reviewed authority while semantic undo 
     const apply = page.getByRole('button', { name: 'Apply reviewed candidate', exact: true });
     await expect(apply).toBeEnabled();
     await page.evaluate(async () => {
-        const h = window.canvasHarness, runtime = (await import('/src/run.js?v=0.19.1')).getNativeWorkflowController();
+        const h = window.canvasHarness, runtime = (await import('/src/run.js?v=' + window.canvasHarness.version)).getNativeWorkflowController();
         window.historyReviewedCandidate = runtime.lastResult().artifact;
         const node = Object.values(h.graph.nodes).find(n => n.operation === 'repair');
         node.presentation = { alias: 'Presentation alias', compact: true }; node.x += 25;
         h.S.touchGraph(h.graph); h.H.flush(h.graph); h.UI.refreshIfOpen();
     });
     await page.keyboard.press('Control+z'); await expect(apply).toBeEnabled();
-    expect(await page.evaluate(async () => (await import('/src/run.js?v=0.19.1')).getNativeWorkflowController().candidateStatus(window.historyReviewedCandidate).ok)).toBe(true);
+    expect(await page.evaluate(async () => (await import('/src/run.js?v=' + window.canvasHarness.version)).getNativeWorkflowController().candidateStatus(window.historyReviewedCandidate).ok)).toBe(true);
     await page.keyboard.press('Control+Shift+z'); await expect(apply).toBeEnabled();
-    expect(await page.evaluate(async () => (await import('/src/run.js?v=0.19.1')).getNativeWorkflowController().candidateStatus(window.historyReviewedCandidate).ok)).toBe(true);
+    expect(await page.evaluate(async () => (await import('/src/run.js?v=' + window.canvasHarness.version)).getNativeWorkflowController().candidateStatus(window.historyReviewedCandidate).ok)).toBe(true);
     await page.evaluate(() => {
         const h = window.canvasHarness, node = Object.values(h.graph.nodes).find(n => n.operation === 'repair');
         node.instructions = 'Semantic history edit'; h.S.touchGraph(h.graph); h.H.flush(h.graph); h.UI.refreshIfOpen();
     });
     await expect(apply).toHaveCount(0);
     await page.keyboard.press('Control+z'); await expect(apply).toHaveCount(0);
-    expect(await page.evaluate(async () => (await import('/src/run.js?v=0.19.1')).getNativeWorkflowController().candidateStatus(window.historyReviewedCandidate).ok)).toBe(false);
+    expect(await page.evaluate(async () => (await import('/src/run.js?v=' + window.canvasHarness.version)).getNativeWorkflowController().candidateStatus(window.historyReviewedCandidate).ok)).toBe(false);
     await page.keyboard.press('Control+Shift+z'); await expect(apply).toHaveCount(0);
     expect(await page.evaluate(() => window.workflowRequests.length)).toBe(1);
     expect(await page.evaluate(() => window.workflowSaveAttempts || 0)).toBe(0);
@@ -546,7 +546,7 @@ test('narrow workflow inspection and review remain opaque during selection feedb
     await reviewFixture(page);
     await page.setViewportSize({ width: 760, height: 1000 });
     for (const theme of ['midnight', 'parchment']) {
-        await page.evaluate(async theme => (await import('/src/theme.js?v=0.19.1')).setPreset(theme), theme);
+        await page.evaluate(async theme => (await import('/src/theme.js?v=' + window.canvasHarness.version)).setPreset(theme), theme);
         await page.getByRole('button', { name: 'Inspect Pattern Scan', exact: true }).click();
         const opacity = await page.locator('.pc-inspector').evaluate(inspector => {
             const animations = inspector.getAnimations();
@@ -577,7 +577,7 @@ test('narrow toolbar exposes readable labeled pane and theme controls', async ({
     await reviewFixture(page);
     await page.setViewportSize({ width: 760, height: 1000 });
     for (const theme of ['midnight', 'parchment']) {
-        await page.evaluate(async theme => (await import('/src/theme.js?v=0.19.1')).setPreset(theme), theme);
+        await page.evaluate(async theme => (await import('/src/theme.js?v=' + window.canvasHarness.version)).setPreset(theme), theme);
         await expect(page.getByRole('button', { name: 'Toggle library', exact: true }).getByText('Library', { exact: true })).toBeVisible();
         await expect(page.getByRole('button', { name: 'Toggle inspector', exact: true }).getByText('Details', { exact: true })).toBeVisible();
         await page.getByRole('button', { name: 'Tools', exact: true }).click();
