@@ -61,5 +61,5 @@
 
 - [x] Run full Node suite, types, build/assets, strict new declarations and focused browser tests; resolve introduced failures.
 - [x] Generate scoped diff and obtain independent whole-branch review; fix material findings and verify.
-- [ ] Commit source and self-contained UI artifacts needed to test this branch, without release bump.
-- [ ] Write handoff with exact base/head, included features, test results and integration steps. Preserve branch/worktree for later integration.
+- [x] Commit source and self-contained UI artifacts needed to test this branch, without release bump.
+- [x] Write handoff with exact base/head, included features, test results and integration steps. Preserve branch/worktree for later integration.
