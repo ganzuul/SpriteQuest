@@ -1423,7 +1423,7 @@
 .pc-node-model-pick:hover { text-decoration: underline; }
 
 /* Native cards use their content and real named pin rows as the layout contract. */
-:root .pc-root .pc-node-native { box-sizing: border-box; width: max-content; min-width: 0; max-width: 300px; border-width: 1px; background-color: color-mix(in srgb, var(--pc-block) 92%, transparent); }
+:root .pc-root .pc-node-native { box-sizing: border-box; width: max-content; min-width: 0; max-width: 300px; border-width: 1px; }
 .pc-node-native * { box-sizing: border-box; }
 .pc-native-heading { display: flex; align-items: center; gap: 4px; padding: 8px 8px 3px; }
 .pc-native-icon { flex: none; width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
