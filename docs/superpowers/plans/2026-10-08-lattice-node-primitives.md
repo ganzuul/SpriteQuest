@@ -65,7 +65,7 @@ Own new `src/workflow/operations/nodes.js`, matching declarations if useful, and
 - [x] Build plain metadata and Result-based describePrimitive/executePrimitive interfaces specified in the design's integration section.
 - [x] Incrementally test correct dynamic mode ports/phases, stable section IDs, named input override, missing/stale inputs and native artifact envelopes.
 - [x] Prove zero requests/no host calls, Guidance envelope compatibility and Draft patches passing existing validation.
-- [ ] Review and deliver exact commits, report and commands to Architecture.
+- [x] Review and deliver exact commits, report and commands to Architecture.
 
 ### Task 5: Shared integration owned by Architecture
 
@@ -76,3 +76,5 @@ Own new `src/workflow/operations/nodes.js`, matching declarations if useful, and
 ## Execution record
 
 User approval authorizes building and integrating. Routine implementation choices are made autonomously. Independent file ownership permits Tasks 1-3 to run concurrently under the developer's delegation instruction; commits remain serialized. Architecture explicitly accepted core integration ownership. Task 4 provides its requested focused adapter/metadata; Task 5 remains serialized there.
+
+Architecture acknowledged intake of reviewed implementation commit `08a8bcc25a01a9e18f67e0ae423e05023e9e6940` and the durable handoff report. It will consume the commits at its Task 5a integration gate after core composition validation clears review, preserve this worktree, run final integrated checks, and own the main push. Tasks 1-4 are complete; shared integration remains in progress in Architecture.
