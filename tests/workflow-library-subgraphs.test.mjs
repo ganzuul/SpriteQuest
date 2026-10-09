@@ -4,7 +4,6 @@ import { parseSubgraph, exportSubgraph, parseWorkflow, exportWorkflow } from '..
 import { computeDefinitionIdentity, definitionRefKey, validateDefinition } from '../src/workflow/definitions.js';
 import { resolveWorkflow } from '../src/workflow/resolve.js';
 import { runWorkflow } from '../src/workflow/runtime.js';
-import { Worker } from 'node:worker_threads';
 import { operationFor } from '../src/workflow/catalog.js';
 // Git core.autocrlf changes storage newlines, not package JSON content.
 const canonicalFile = url => readFileSync(url, 'utf8').replace(/\r\n/g, '\n');
@@ -54,99 +53,36 @@ assert.match(requests[0].messages[0].content, /Preserve user agency/);
 assert.equal(JSON.stringify(sceneRoot.data.graph), sceneBefore);
 console.log('workflow-library-subgraphs: Scene Compass passed');
 
-const literal = createLibrarySubgraph('literal-cleanup');
-assert.equal(literal.ok, true, 'Literal Cleanup package exists');
-assert.deepEqual(literal.data.definition.body.nodes.scan.rules, ['the words hung in the air', 'the tension was palpable', 'something unreadable']);
-assert.equal(literal.data.definition.body.nodes.scan.scope, 'narration');
-assert.deepEqual(literal.data.definition.parameters.map(parameter => parameter.id), ['rules', 'scope', 'caseSensitive', 'exemptions', 'pins', 'instructions', 'strength', 'maxTokens']);
-const literalRoot = library.createLibraryWorkflow('literal-cleanup');
-assert.equal(literalRoot.ok, true);
-assert.equal(resolveWorkflow(literalRoot.data.graph).data.callBound, 1);
-const runLiteral = async (text, overrides = {}) => {
-    const graph = structuredClone(literalRoot.data.graph);
-    graph.nodes.library.parameterOverrides = overrides;
-    let requests = 0;
-    const stages = [];
-    const source = { originalText: text, token: 'original-source-token' };
-    const result = await runWorkflow(graph, {
-        snapshot: () => ({ kind: 'draft', text, source }),
-        countTokens: async text => ({ tokens: Math.ceil(text.length / 4), method: 'fixed-test' }),
-        resolveBinding: node => { assert.equal(node.modelRole, 'Prose'); return { ok: true, data: { model: 'fixed-test-model' } }; },
-        request: async () => { requests++; return { ok: true, data: { text: '{"patches":[{"index":0,"replacement":"unease"}]}', finish: 'stop' } }; },
-        onEvent: event => stages.push(event),
-    });
-    return { result, requests, stages, source };
-};
-const literalMatched = await runLiteral('Before, the tension was palpable. "the tension was palpable"');
-assert.equal(literalMatched.result.ok, true);
-assert.equal(literalMatched.result.actualCalls, 1);
-assert.equal(literalMatched.requests, 1);
-const terminalValue = result => result.recording.artifacts[result.recording.terminals[0].artifact].value;
-assert.equal(terminalValue(literalMatched.result).text, 'Before, unease. "the tension was palpable"');
-assert.equal(literalMatched.source.originalText, 'Before, the tension was palpable. "the tension was palpable"');
-assert.ok(!JSON.stringify(literalMatched.result.recording).includes(literalMatched.source.token), 'recording excludes source authority');
-assert.equal(terminalValue(literalMatched.result).reviewRequired, true);
-const unmatched = await runLiteral('Mara waits quietly.');
-assert.equal(unmatched.result.ok, true);
-assert.equal(unmatched.result.actualCalls, 0);
-assert.equal(unmatched.requests, 0);
-const protectedLiteral = await runLiteral('the tension was palpable', { pins: ['the tension was palpable'] });
-assert.equal(protectedLiteral.result.ok, true);
-assert.equal(protectedLiteral.requests, 0);
-console.log('workflow-library-subgraphs: Literal Cleanup passed');
-
-const formatting = createLibrarySubgraph('formatting-cleanup');
-assert.equal(formatting.ok, true, 'Formatting Cleanup package exists');
-assert.deepEqual(formatting.data.definition.parameters.map(parameter => parameter.id), ['rules']);
-assert.deepEqual(formatting.data.definition.body.nodes.rules.rules, [{ kind: 'literal', pattern: '\r\n', replacement: '\n' }]);
-const formattingRoot = library.createLibraryWorkflow('formatting-cleanup');
-assert.equal(formattingRoot.ok, true);
-assert.equal(resolveWorkflow(formattingRoot.data.graph).data.callBound, 0);
-const runFormatting = async (text, extra = {}) => {
-    let effects = 0;
-    const workers = [], handlers = new Map(), terminations = [];
-    const draft = { kind: 'draft', text, source: { originalText: text, token: 'frozen-format-source' }, ...extra };
+// Known cleanup recipes must fail before exposing any executable graph or definition.
+for (const id of ['literal-cleanup', 'formatting-cleanup']) {
+    for (const factory of [createLibrarySubgraph, library.createLibraryWorkflow]) {
+        const result = factory(id);
+        assert.equal(result.ok, false, `${id} requires permission-preserving registration`);
+        assert.equal(result.error.code, 'LIBRARY_PERMISSION_PREREQUISITE');
+        assert.match(result.error.message, /permission/i);
+        assert.ok(!Object.hasOwn(result, 'data'), 'deferred recipes expose no executable package');
+    }
+}
+let deferredEffects = 0;
+for (const [id, draft] of [
+    ['literal-cleanup', { kind: 'draft', text: 'the tension was palpable', source: { originalText: 'the tension was palpable' }, spans: [] }],
+    ['literal-cleanup', { kind: 'draft', text: 'the tension was palpable', source: { originalText: 'the tension was palpable' }, protectedLiterals: ['the tension was palpable'] }],
+    ['literal-cleanup', { kind: 'draft', text: 'the tension was palpable', source: { originalText: 'the tension was palpable' }, scope: 'dialogue', spans: [] }],
+    ['formatting-cleanup', { kind: 'draft', text: 'one\r\ntwo', source: { originalText: 'one\r\ntwo' } }],
+]) {
     const before = structuredClone(draft);
-    const effect = () => { effects++; throw new Error('No model/host action expected'); };
-    const result = await runWorkflow(formattingRoot.data.graph, {
-        snapshot: () => draft, request: effect, resolveBinding: effect, countTokens: effect,
-        apply: effect, arm: effect, install: effect,
-        createWorker() {
-            const worker = new Worker(new URL('./fixtures/text-rules-node-worker.mjs', import.meta.url));
-            workers.push(worker);
-            return {
-                addEventListener(type, fn) { const handler = type === 'message' ? data => { if (!data.fixtureStarted) fn({ data }); } : error => fn({ error }); handlers.set(fn, handler); worker.on(type, handler); },
-                removeEventListener(type, fn) { worker.off(type, handlers.get(fn)); handlers.delete(fn); },
-                postMessage(data) { worker.postMessage(data); },
-                terminate() { const pending = worker.terminate(); terminations.push(pending); return pending; },
-            };
-        },
-    });
-    await Promise.all(terminations);
-    assert.equal(effects, 0);
-    assert.equal(handlers.size, 0);
-    assert.ok(workers.every(worker => worker.threadId === -1));
+    const requested = library.createLibraryWorkflow(id);
+    const effect = () => { deferredEffects++; throw new Error('Deferred cleanup cannot perform effects'); };
+    if (requested.ok) await runWorkflow(requested.data.graph, { snapshot: () => { deferredEffects++; return draft; }, resolveBinding: effect, countTokens: effect, request: effect, createWorker: effect });
+    assert.equal(requested.ok, false);
     assert.deepEqual(draft, before);
-    return result;
-};
-const formatted = await runFormatting('one\r\ntwo\rthree');
-assert.equal(formatted.ok, true, JSON.stringify(formatted.error));
-assert.equal(formatted.actualCalls, 0);
-assert.equal(terminalValue(formatted).text, 'one\ntwo\rthree');
-assert.ok(!JSON.stringify(formatted.recording).includes('frozen-format-source'), 'recording excludes source authority');
-assert.equal(terminalValue(formatted).reviewRequired, true);
-const narrowed = await runFormatting('a\r\nb\r\nc', { scope: 'whole', spans: [{ index: 0, start: 0, end: 4, text: 'a\r\nb' }] });
-assert.equal(narrowed.ok, true);
-assert.equal(terminalValue(narrowed).text, 'a\nb\r\nc');
-const noPermission = await runFormatting('a\r\nb', { spans: [] });
-assert.equal(noPermission.ok, true);
-assert.equal(terminalValue(noPermission).text, 'a\r\nb');
-const pinnedFormatting = await runFormatting('a\r\nb', { protectedLiterals: ['a\r\nb'] });
-assert.equal(pinnedFormatting.ok, false);
-assert.equal(pinnedFormatting.error.code, 'PROTECTED_LITERAL_REMOVED');
-console.log('workflow-library-subgraphs: Formatting Cleanup passed');
-
-for (const id of ['context-lens', 'scene-compass', 'literal-cleanup', 'formatting-cleanup']) {
+}
+assert.equal(deferredEffects, 0, 'deferred cleanup reaches no snapshot, binding, model or Worker port');
+for (const id of ['literal-cleanup', 'formatting-cleanup']) for (const kind of ['subgraphs', 'workflows']) {
+    assert.equal(existsSync(new URL(`../examples/library/${kind}/${id}.json`, import.meta.url)), false, `${id} executable ${kind} file is absent`);
+}
+console.log('workflow-library-subgraphs: cleanup permission deferral passed');
+for (const id of ['context-lens', 'scene-compass']) {
     const { definition, json } = createLibrarySubgraph(id).data;
     const imported = parseSubgraph(json);
     assert.equal(imported.ok, true);
@@ -178,8 +114,6 @@ for (const id of ['context-lens', 'scene-compass', 'literal-cleanup', 'formattin
     const semanticChange = structuredClone(definition);
     if (id === 'context-lens') semanticChange.body.nodes.compact.targetTokens++;
     if (id === 'scene-compass') semanticChange.body.nodes.plan.instructions += ' Changed.';
-    if (id === 'literal-cleanup') semanticChange.body.nodes.scan.scope = 'whole';
-    if (id === 'formatting-cleanup') semanticChange.body.nodes.rules.rules[0].replacement = ' ';
     assert.notEqual(computeDefinitionIdentity(semanticChange).data.semanticHash, definition.semanticHash);
     const example = new URL(`../examples/library/subgraphs/${id}.json`, import.meta.url);
     assert.ok(existsSync(example), `${id} canonical subgraph file exists`);

@@ -34,11 +34,11 @@
 
 **Interfaces:** Produce prepareReferenceDraft(draft,{scope,protectedLiterals}), createReferencePatches(prepared,replacements,metadata), alignReferenceCandidate(prepared,candidate,metadata). Consumers receive deep-frozen authenticated preparation with draft/windows/protectedLiterals.
 
-- [ ] One explicit whole raw-Draft test RED→GREEN; assert original unchanged, source retained and real validatePatches accepts returned patches.
-- [ ] Incrementally test missing-authorized scope, scoped-without-spans rejection, existing [] no edit, original span/index retention, narration/dialogue and ambiguous quotes, protected-range subtraction, surrogate boundaries and exact limits.
-- [ ] Test no-change, unique prefix/internal/suffix anchors, missing/out-of-scope changes, repeated-anchor ambiguity, multi-window parent reconstruction and blank/protected/output-limit rejection.
-- [ ] Test getters/inherited source, sparse/cyclic data and forged/cloned preparations; no accessor calls/no authority on failure.
-- [ ] Run focused test/self-review/report; controller commits exact files and obtains scoped spec/quality review.
+- [x] One explicit whole raw-Draft test RED→GREEN; assert original unchanged, source retained and real validatePatches accepts returned patches.
+- [x] Incrementally test missing-authorized scope, scoped-without-spans rejection, existing [] no edit, original span/index retention, narration/dialogue and ambiguous quotes, protected-range subtraction, surrogate boundaries and exact limits.
+- [x] Test no-change, unique prefix/internal/suffix anchors, missing/out-of-scope changes, repeated-anchor ambiguity, multi-window parent reconstruction and blank/protected/output-limit rejection.
+- [x] Test getters/inherited source, sparse/cyclic data and forged/cloned preparations; no accessor calls/no authority on failure.
+- [x] Run focused test/self-review/report; controller commits exact files and obtains scoped spec/quality review.
 
 ### Task 2: Deterministic Terminology Map
 
@@ -87,15 +87,15 @@
 
 ### Task 6: Portable existing-operation library
 
-**Files:** Create `src/workflow/library/subgraphs.js`, `.d.ts`, `tests/workflow-library-subgraphs.test.mjs`, `examples/library/subgraphs/{context-lens,scene-compass,literal-cleanup,formatting-cleanup}.json`, three corresponding roots (excluding context-lens) in `examples/library/workflows`, and `docs/lattice-reference-library.md`.
+**Files:** Create `src/workflow/library/subgraphs.js`, `.d.ts`, `tests/workflow-library-subgraphs.test.mjs`, `examples/library/subgraphs/{context-lens,scene-compass}.json`, `examples/library/workflows/scene-compass.json`, and `docs/lattice-reference-library.md`. Remove the four executable cleanup JSON files from the initial implementation.
 
 **Interfaces:** Consume existing definition/package/runtime APIs, not new Transpose engines. Produce createLibrarySubgraph(id)→Result<{definition,json}> and createLibraryWorkflow(id)→Result<{graph,json}>.
 
 **Review correction:** Deliver Context Lens and Scene Compass subgraphs plus the Scene Compass root. Literal Cleanup and Formatting Cleanup return visible permission-prerequisite errors and remain documented recipes; remove their executable JSON files. The base cannot safely guard existing Pattern Scan's permission replacement or Text Rules' implicit construction without changing core. The superseding spec ruling preserves the global permission constraint.
 
 - [ ] Context Lens standalone parse/round-trip/verified-hash test RED→GREEN; roots remain outside body.
-- [ ] Incrementally add Scene Compass, Literal Cleanup and Formatting Cleanup with stable typed boundaries/exposed controls/unresolved roles and canonical generated files.
-- [ ] Execute three complete roots through current runtime using fixed request/snapshot ports; default bounds1/1/0 for scene-compass/literal-cleanup/formatting-cleanup, no-match cleanup0, no installation/arming/Apply side effect. Context Lens remains a0-call utility subgraph inside Scene Compass; requesting it as a complete root fails visibly.
+- [ ] Add Scene Compass with stable typed boundaries/exposed controls/unresolved roles and canonical generated files; defer both cleanup factory IDs with visible prerequisite errors and documented recipes/defaults.
+- [ ] Execute Scene Compass through current runtime using fixed request/snapshot ports; default bound1, no installation/arming/Apply side effect. Context Lens remains a0-call utility subgraph inside Scene Compass; requesting it as a complete root fails visibly. Verify no deferred cleanup executable files remain.
 - [ ] Test package import/export and semantic identities, source/terminal exclusions, local profile stripping and pinned definitions. Document setup, mode distinctions and later Transpose registration.
 - [ ] Run focused tests/self-review/report; controller commits owned files and obtains scoped review.
 

@@ -45,26 +45,7 @@ function sceneCompass(lens) {
         parameter('instructions', 'Planning instructions', 'plan'), parameter('maxTokens', 'Planning completion limit', 'plan'),
     ], unresolved('Analysis'));
 }
-function literalCleanup() {
-    return definition('literal-cleanup', 'Literal Cleanup', 'post', 'draft', 'draft', 'candidate', 'candidate', {
-        scan: primitive('scan', 'pattern-scan', { scope: 'narration', rules: ['the words hung in the air', 'the tension was palpable', 'something unreadable'] }),
-        repair: primitive('repair', 'repair', { mode: 'repair', instructions: 'Replace only selected literal phrase spans with plain context-appropriate wording. Preserve meaning, dialogue and protected wording.' }),
-        validate: primitive('validate', 'validate-patches'),
-    }, { scan: wire('scan', 'entry', 'scan'), repair: wire('repair', 'scan', 'repair'), validate: wire('validate', 'repair', 'validate'), result: wire('result', 'validate', 'exit') }, [
-        parameter('rules', 'Literal phrases', 'scan'), parameter('scope', 'Narration, dialogue or whole', 'scan'),
-        parameter('caseSensitive', 'Case sensitive', 'scan'), parameter('exemptions', 'Literal exemptions', 'scan'),
-        parameter('pins', 'Protected literal pins', 'scan', 'protectedLiterals'), parameter('instructions', 'Repair instructions', 'repair'),
-        parameter('strength', 'Repair strength', 'repair'), parameter('maxTokens', 'Repair completion limit', 'repair'),
-    ], unresolved('Prose'));
-}
-function formattingCleanup() {
-    return definition('formatting-cleanup', 'Formatting Cleanup', 'post', 'draft', 'draft', 'candidate', 'candidate', {
-        rules: primitive('rules', 'text-rules', { inputKind: 'draft', mode: 'replace', rules: [{ kind: 'literal', pattern: '\r\n', replacement: '\n' }] }),
-        validate: primitive('validate', 'validate-patches'),
-    }, { rules: wire('rules', 'entry', 'rules'), validate: wire('validate', 'rules', 'validate'), result: wire('result', 'validate', 'exit') }, [
-        parameter('rules', 'Formatting rules', 'rules'),
-    ]);
-}
+const permissionPrerequisite = () => fail('LIBRARY_PERMISSION_PREREQUISITE', 'This cleanup recipe is deferred until a registered operation preserves upstream permissions and requires explicit construction of missing permissions.');
 function packageDefinition(draft, snapshots = {}) {
     const identity = computeDefinitionIdentity(draft);
     if (!identity.ok) return identity;
@@ -81,8 +62,7 @@ function packageDefinition(draft, snapshots = {}) {
 /** Construct a detached portable package. This never installs a definition or resolves a model. */
 export function createLibrarySubgraph(id) {
     if (id === 'context-lens') return packageDefinition(contextLens());
-    if (id === 'literal-cleanup') return packageDefinition(literalCleanup());
-    if (id === 'formatting-cleanup') return packageDefinition(formattingCleanup());
+    if (id === 'literal-cleanup' || id === 'formatting-cleanup') return permissionPrerequisite();
     if (id === 'scene-compass') {
         const lens = createLibrarySubgraph('context-lens');
         if (!lens.ok) return lens;
@@ -91,23 +71,21 @@ export function createLibrarySubgraph(id) {
     return fail('UNKNOWN_LIBRARY_SUBGRAPH', 'Unknown library subgraph ID.');
 }
 
-/** Complete authoring root with explicit source and terminal; no arming or Apply authority. */
+/** Complete Scene Compass authoring root; cleanup recipes fail before package construction. */
 export function createLibraryWorkflow(id) {
     if (id === 'context-lens') return fail('LIBRARY_UTILITY_ONLY', 'Context Lens outputs Context and is a utility subgraph, not a complete Guidance workflow.');
-    if (!['scene-compass', 'literal-cleanup', 'formatting-cleanup'].includes(id)) return fail('UNKNOWN_LIBRARY_WORKFLOW', 'Unknown complete library workflow ID.');
+    if (id === 'literal-cleanup' || id === 'formatting-cleanup') return permissionPrerequisite();
+    if (id !== 'scene-compass') return fail('UNKNOWN_LIBRARY_WORKFLOW', 'Unknown complete library workflow ID.');
     const created = createLibrarySubgraph(id);
     if (!created.ok) return created;
     const parsed = parseSubgraph(created.data.json);
     if (!parsed.ok) return parsed;
     const { definition: pinned, definitions } = parsed.data;
-    const pre = pinned.body.mode === 'native-pre';
     const graph = {
         id: `lattice.library.workflow.${id}`, name: pinned.name, schema: 3, runtime: 2, mode: pinned.body.mode,
-        nodes: { source: primitive('source', pre ? 'scene-context' : 'reply-snapshot'), library: instance('library', pinned),
-            ...(pre ? {} : { review: primitive('review', 'review-gate') }), output: primitive('output', pre ? 'guidance' : 'apply-reply') },
+        nodes: { source: primitive('source', 'scene-context'), library: instance('library', pinned), output: primitive('output', 'guidance') },
         wires: { source: wire('source', 'source', 'library', 'out', pinned.interface[0].id),
-            output: wire('output', 'library', pre ? 'output' : 'review', pinned.interface[1].id),
-            ...(pre ? {} : { review: wire('review', 'review', 'output') }) },
+            output: wire('output', 'library', 'output', pinned.interface[1].id) },
         definitions: { ...definitions, [definitionRefKey(pinned)]: pinned }, roles: pinned.body.roles, groups: {}, portals: {},
     };
     const resolved = resolveWorkflow(graph);
