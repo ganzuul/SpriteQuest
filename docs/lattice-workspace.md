@@ -54,7 +54,7 @@ Double-click a subgraph node to open its contents in a graph tab. **Graph 1** re
 
 **Open workflow** opens a separate workflow. **Import into graph** adds a workflow or fragment to the existing graph after showing a review. Imported nodes receive fresh identities and keep their internal connections and relative layout. Review the phase, terminal changes, model roles, and request bound before accepting.
 
-Import requires matching graph modes and phases. Legacy prompt-replacement graphs retain their single Output rule: a fragment with a second Output must be opened separately or exported without that extra terminal.
+Import requires matching graph modes and phases. If a workflow fragment contains multiple terminal nodes, review the import summary and keep only the outputs needed in the destination graph.
 
 A subgraph exposes named inputs, outputs, and selected settings. Save reusable definitions in the **Subgraphs** shelf and export them as individual JSON files. Installed instances keep their pinned definition snapshots, so deleting a shelf entry does not break existing workflows.
 
@@ -76,7 +76,7 @@ Large recordings show explicit truncated or omitted entries. Diagnostic retentio
 
 ## Native connection shortcuts
 
-These controls apply to named-pin native workflows. Legacy wire modes retain their original behavior.
+These controls apply to named-pin workflow connections.
 
 | Gesture | Action |
 | --- | --- |
