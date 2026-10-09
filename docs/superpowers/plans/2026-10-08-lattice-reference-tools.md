@@ -60,7 +60,7 @@
 - [ ] One Style Transfer raw-prose request test RED→GREEN with real patch validation; exactly one injected service call.
 - [ ] Incrementally cover four style modes, format prompts, Text/Data references, requiredContent missing preflight, explicit Context and Draft context, max limits and no-window/no-change behavior.
 - [ ] Assert prompt excludes full source token/profile metadata, treats references as material, preserves immutable anchors and never returns Candidate/host effects.
-- [ ] Cover request/tokenizer failures, malformed responses, truncated/unverified finish, abort before and during both awaits, changed caller data during await and exact whitespace/fence rejection through mapping.
+- [ ] Cover request/tokenizer failures, malformed responses, truncated/unverified finish, abort before and during both awaits, changed caller data during await and exact whitespace preservation. Never strip fences; test wrapper rejection with immutable prefix/suffix anchors, with authorized text remaining review-dependent.
 - [ ] Run focused tests/self-review/report; controller commits owned files and obtains scoped review.
 
 ### Task 4: Transpose metadata and named-input adapter
@@ -87,13 +87,13 @@
 
 ### Task 6: Portable existing-operation library
 
-**Files:** Create `src/workflow/library/subgraphs.js`, `.d.ts`, `tests/workflow-library-subgraphs.test.mjs`, `examples/library/subgraphs/{context-lens,scene-compass,literal-cleanup,formatting-cleanup}.json`, corresponding four files in `examples/library/workflows`, and `docs/lattice-reference-library.md`.
+**Files:** Create `src/workflow/library/subgraphs.js`, `.d.ts`, `tests/workflow-library-subgraphs.test.mjs`, `examples/library/subgraphs/{context-lens,scene-compass,literal-cleanup,formatting-cleanup}.json`, three corresponding roots (excluding context-lens) in `examples/library/workflows`, and `docs/lattice-reference-library.md`.
 
 **Interfaces:** Consume existing definition/package/runtime APIs, not new Transpose engines. Produce createLibrarySubgraph(id)→Result<{definition,json}> and createLibraryWorkflow(id)→Result<{graph,json}>.
 
 - [ ] Context Lens standalone parse/round-trip/verified-hash test RED→GREEN; roots remain outside body.
 - [ ] Incrementally add Scene Compass, Literal Cleanup and Formatting Cleanup with stable typed boundaries/exposed controls/unresolved roles and canonical generated files.
-- [ ] Execute all four complete roots through current runtime using fixed request/snapshot ports; default bounds0/1/1/0, no-match cleanup0, no installation/arming/Apply side effect.
+- [ ] Execute three complete roots through current runtime using fixed request/snapshot ports; default bounds1/1/0 for scene-compass/literal-cleanup/formatting-cleanup, no-match cleanup0, no installation/arming/Apply side effect. Context Lens remains a0-call utility subgraph inside Scene Compass; requesting it as a complete root fails visibly.
 - [ ] Test package import/export and semantic identities, source/terminal exclusions, local profile stripping and pinned definitions. Document setup, mode distinctions and later Transpose registration.
 - [ ] Run focused tests/self-review/report; controller commits owned files and obtains scoped review.
 
