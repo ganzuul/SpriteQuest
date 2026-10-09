@@ -1,5 +1,6 @@
 import { ARTIFACT_KINDS, FAMILIES, OPERATIONS, describeOperation, operationDefaults } from '../workflow/catalog.js?v=0.19.1';
 import { cloneDefinitionData, definitionRefKey } from '../workflow/definitions.js?v=0.19.1';
+import { selectSubgraphClosure } from '../workflow/packages.js?v=0.19.1';
 
 const registries = new WeakMap();
 const fail = message => ({ ok: false, error: { code: 'INVALID_SEARCH_CATALOG', message } });
@@ -37,6 +38,7 @@ const searchMetadata = cloneDefinitionData({
     'review-gate': { purpose: 'Approve a candidate before delivery.', shortcode: 'rg', searchAliases: ['review-gate', 'approval'] },
     'apply-reply': { purpose: 'Replace the accepted host response.', shortcode: 'ar', searchAliases: ['apply-reply', 'delivery'] },
     'context-join': { purpose: 'Merge structured contexts through named slots.', shortcode: 'cj', searchAliases: ['context-join', 'combine context'] },
+    reroute: { purpose: 'Route one typed artifact through a compact junction.', shortcode: 'rt', searchAliases: ['typed routing'] },
     compose: { purpose: 'Format text from data and named sections.', shortcode: 'co', searchAliases: ['text assembly'] },
     'text-rules': { purpose: 'Replace or extract literal text matches.', shortcode: 'tr', searchAliases: ['text-rules', 'text replacement'] },
     'json-decode': { purpose: 'Decode JSON text or check structured values.', shortcode: 'jd', searchAliases: ['json-decode', 'JSON parser'] },
@@ -52,7 +54,8 @@ const queryText = choice => [choice.label, choice.family, choice.purpose, choice
 
 /** Explicit content preparation only. Scope/choices are presentation metadata;
  * the captured adapter and full-root producer still authorize every edit.
- * checkedLibraryEntries are already checked local shelf projections, not definitions to resolve.
+ * checkedLibraryEntries are disabled metadata projections. checkedLibraryClosures
+ * are admitted exact snapshots, validated here once and retained only in the private registry.
  */
 export function prepareNativeSearchCatalog(scope, options = {}) {
     const admitted = cloneDefinitionData({ scope, options });
@@ -62,21 +65,24 @@ export function prepareNativeSearchCatalog(scope, options = {}) {
         || input.schema !== 3 || input.runtime !== 2 || !['native-pre', 'native-post'].includes(input.mode)
         || !text(input.workflowId) || !Array.isArray(input.viewPath) || input.viewPath.length > 8 || !input.viewPath.every(text)
         || typeof input.inDefinition !== 'boolean' || input.inDefinition !== (input.viewPath.length > 0)
-        || !exact(settings, ['checkedLibraryEntries']) || settings.checkedLibraryEntries !== undefined && !Array.isArray(settings.checkedLibraryEntries)) return fail('Expected the checked schema-3 scope and local shelf metadata.');
+        || !exact(settings, ['checkedLibraryEntries', 'checkedLibraryClosures'])
+        || ['checkedLibraryEntries', 'checkedLibraryClosures'].some(key => settings[key] !== undefined && !Array.isArray(settings[key]))) return fail('Expected the checked schema-3 scope and local shelf metadata.');
     const phase = input.mode.slice(7), choices = [], commands = new Map();
-    const addOperation = (operation, variant, label, controls) => {
-        if (operation === 'reroute' || input.inDefinition && rootOnly.has(operation)) return;
-        const description = describeOperation(input, { type: 'workflow', ...operationDefaults(operation), ...controls });
+    const addOperation = (operation, variant, label, controls, artifactKind) => {
+        if (operation === 'reroute' && !artifactKind || input.inDefinition && rootOnly.has(operation)) return;
+        const description = describeOperation(input, { type: 'workflow', ...operationDefaults(operation), ...controls,
+            ...(artifactKind ? { artifactKind, phase } : {}) });
         if (!description.ok || description.data.descriptor.phase !== phase) return;
         const id = 'operation:' + operation + (variant ? ':' + variant : '');
         const baseSearch = searchMetadata[operation] ?? { purpose: '', shortcode: '', searchAliases: [operation] }, variantSearch = variantSearchMetadata[operation + ':' + variant];
         const metadata = variantSearch ? { ...variantSearch, searchAliases: [...baseSearch.searchAliases, ...variantSearch.searchAliases] } : baseSearch;
         choices.push({ id, label: label ?? description.data.descriptor.title, family: description.data.descriptor.family, phase, ...metadata,
             ports: description.data.ports.map(portProjection) });
-        commands.set(id, freeze({ operation, ...(controls ? { controls: structuredClone(controls) } : {}) }));
+        commands.set(id, freeze({ operation, ...(controls ? { controls: structuredClone(controls) } : {}), ...(artifactKind ? { artifactKind } : {}) }));
     };
     for (const operation of Object.keys(OPERATIONS)) addOperation(operation);
     for (const [operation, variant, label, controls] of presets) addOperation(operation, variant, label, controls);
+    for (const kind of ARTIFACT_KINDS) addOperation('reroute', kind, 'Reroute · ' + kind[0].toUpperCase() + kind.slice(1), undefined, kind);
     const shelfIds = new Set();
     for (const entry of settings.checkedLibraryEntries ?? []) {
         const ref = entry?.definitionRef;
@@ -97,7 +103,21 @@ export function prepareNativeSearchCatalog(scope, options = {}) {
         if (entry.phase !== phase) continue;
         choices.push({ id, label: entry.name, family: 'Subgraphs', phase, definitionRef: { ...ref }, ports: entry.ports.map(portProjection),
             purpose: entry.purpose ?? 'Reusable saved definition with named interface ports.', shortcode: entry.shortcode ?? 'sg', searchAliases: entry.searchAliases ?? [],
-            disabledReason: 'Atomic subgraph creation is not available yet.' });
+            disabledReason: 'Checked definition content is required for atomic insertion.' });
+    }
+    for (const entry of settings.checkedLibraryClosures ?? []) {
+        if (!exact(entry, ['definition', 'snapshots']) || entry.definition === undefined) return fail('Expected an exact definition and its optional pinned snapshot table.');
+        const selected = selectSubgraphClosure(entry.definition, entry.snapshots === undefined ? {} : entry.snapshots);
+        if (!selected.ok) return selected;
+        const { definition, definitions } = selected.data;
+        const ref = { id: definition.id, version: definition.version, semanticHash: definition.semanticHash };
+        const id = 'definition:' + definitionRefKey(ref);
+        if (shelfIds.has(id)) return fail('A shelf revision must be unique.');
+        shelfIds.add(id);
+        if (definition.body.mode.slice(7) !== phase) continue;
+        choices.push({ id, label: definition.name, family: 'Subgraphs', phase, definitionRef: ref, ports: definition.interface.map(portProjection),
+            purpose: 'Reusable saved definition with named interface ports.', shortcode: 'sg', searchAliases: [] });
+        commands.set(id, freeze({ kind: 'create-instance', definition, snapshots: definitions }));
     }
     const data = freeze({ scope: input, families: [...FAMILIES, 'Subgraphs'], choices });
     registries.set(data, commands);
@@ -106,7 +126,7 @@ export function prepareNativeSearchCatalog(scope, options = {}) {
 
 export const isNativeSearchCatalog = catalog => registries.has(catalog);
 
-/** Returns an immutable checked primitive preset; unknown/disabled/foreign choices fail closed. */
+/** Returns an immutable checked creation packet; unknown/disabled/foreign choices fail closed. */
 export function resolveNativeSearchChoice(catalog, id) {
     return registries.get(catalog)?.get(id) ?? null;
 }
