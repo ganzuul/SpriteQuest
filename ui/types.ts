@@ -3,6 +3,8 @@ import type { NodeDetailsView, NodeDetailsActions, OutputPreviewView, OutputPrev
 import type { RunMeterView } from './run-meter-types';
 import type { PortalManagerView, PortalManagerActions, SubgraphManagerView, SubgraphManagerActions } from './manager-types';
 import type { NodeSearchView, NodeSearchActions, PinMenuView, PinMenuActions, SearchChoice } from './native-wire-types';
+import type { DetailSelection, DetailEditResponse } from './detail-types';
+import type { CommentFrameData, CommentPatch, CommentCommand } from './comment-types';
 export interface TokenChip { text: string; title: string; className: string }
 export interface CardRow { id: string; name: string; text: string; chosen: boolean; fallback?: boolean }
 export interface Notice { className: string; icon: string; text: string; title?: string }
@@ -45,6 +47,7 @@ export interface WorkbenchView {
     workflow?: WorkflowView; rootWorkflow?: WorkflowView;
     nativeDefaultTheme?: boolean; nativeFlatCanvas?: boolean; nativeDiagnostic?: string; readOnly?: boolean; graphViews?: GraphViews;
     nodeDetails?: NodeDetailsView | null; outputPreview?: OutputPreviewView | null; runDetails?: RunDetailsView | null; runMeter?: RunMeterView | null;
+    commentDetails?: { comment: CommentFrameData; selection: DetailSelection } | null;
     portalManager?: PortalManagerView | null; subgraphManager?: SubgraphManagerView | null;
     nativeSearch?: NodeSearchView | null; nativePinMenu?: PinMenuView | null; nativeChoices?: readonly SearchChoice[];
     importReview?: ImportReviewView | null;
@@ -53,6 +56,7 @@ export interface WorkbenchView {
 export interface WorkbenchActions {
     logoUrl?: string;
     graphViewActions?: GraphViewActions; nodeDetails?: NodeDetailsActions; outputPreview?: OutputPreviewActions; runDetails?: RunDetailsActions;
+    commentDetails?: { patch: (selection: DetailSelection, patch: CommentPatch) => DetailEditResponse; command: (selection: DetailSelection, command: CommentCommand) => DetailEditResponse };
     portalManager?: PortalManagerActions; subgraphManager?: SubgraphManagerActions; managePortals?: () => void; manageSubgraphs?: () => void;
     chooseNative?: (id: string) => void; nativeSearch?: NodeSearchActions; nativePinMenu?: PinMenuActions; openRunDetails?: () => void;
     pickGraph: (id: string) => void; arm: (enabled: boolean) => void; command: (name: string) => void;

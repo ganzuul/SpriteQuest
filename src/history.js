@@ -17,10 +17,11 @@
 const LIMIT = 50;
 const TYPING_PAUSE = 700;
 
-/** @type {Map<string, {undo: Array, redo: Array, last: string, sig: string}>} */
+/** @type {Map<string, {undo: Array, redo: Array, last: string, sig: string, revision: number}>} */
 const stacks = new Map();
 const pending = new Map();      // graph id -> timer
 const listeners = new Set();
+const presentationReceipts = new WeakMap();
 
 // Keep root execution authority, recordings and per-view state outside undo data.
 // Instance parameters/model overrides and pinned bodies live inside nodes/definitions.
@@ -38,13 +39,13 @@ function signature(g) {
 function stack(g) {
     let s = stacks.get(g.id);
     if (!s) {
-        s = { undo: [], redo: [], last: snapshot(g), sig: signature(g) };
+        s = { undo: [], redo: [], last: snapshot(g), sig: signature(g), revision: 0 };
         stacks.set(g.id, s);
     }
     return s;
 }
 
-const notify = (g) => { for (const fn of listeners) { try { fn(g); } catch { /* ignore */ } } };
+const notify = (g, event) => { for (const fn of listeners) { try { fn(g, event); } catch { /* ignore */ } } };
 
 /** Start keeping history for a canvas, from how it is right now. */
 export function track(g) {
@@ -84,6 +85,7 @@ function commit(g) {
     s.redo = [];
     s.last = now;
     s.sig = signature(g);
+    s.revision++;
     notify(g);
 }
 
@@ -111,11 +113,11 @@ export function commitGraphDocument(g, candidate) {
         if (Object.hasOwn(document, key) ? (descriptor ? !('value' in descriptor) || !descriptor.writable : !Object.isExtensible(g)) : descriptor && !descriptor.configurable) throw new TypeError('The editable graph document is read-only.');
     }
     // Plan both the pending prior step and this batch before any mutation.
-    const previous = stacks.get(g.id) ?? { undo: [], redo: [], last: current };
+    const previous = stacks.get(g.id) ?? { undo: [], redo: [], last: current, revision: 0 };
     const undo = [...previous.undo];
     if (previous.last !== current) undo.push({ state: previous.last, label: describe(JSON.parse(previous.last), JSON.parse(current)) });
     undo.push({ state: current, label: describe(JSON.parse(current), document) });
-    const next = { undo: undo.slice(-LIMIT), redo: [], last: state, sig: nextSignature };
+    const next = { undo: undo.slice(-LIMIT), redo: [], last: state, sig: nextSignature, revision: previous.revision + 1 };
     clearTimeout(pending.get(g.id));
     pending.delete(g.id);
     for (const key of GRAPH_DOCUMENT_FIELDS) {
@@ -127,6 +129,28 @@ export function commitGraphDocument(g, candidate) {
     return true;
 }
 
+/** Capture the history position immediately before an authored presentation edit. */
+export function capturePresentationStep(g) {
+    if (!g?.id) return null;
+    const receipt = Object.freeze({});
+    presentationReceipts.set(receipt, { graph: g, revision: stack(g).revision, beforeState: snapshot(g) });
+    return receipt;
+}
+
+/** Associate a session-only view effect with the exact completed document step. */
+export function attachPresentationEffect(g, { receipt, effect, beforeState, afterState } = {}) {
+    if (!g?.id || !effect || typeof effect !== 'object' || !Object.isFrozen(effect)
+        || Reflect.ownKeys(effect).length || ![Object.prototype, null].includes(Object.getPrototypeOf(effect))) return false;
+    const captured = receipt && presentationReceipts.get(receipt);
+    const s = stacks.get(g.id), step = s?.undo.at(-1);
+    if (!captured || captured.graph !== g || captured.beforeState !== beforeState || s?.revision !== captured.revision + 1) return false;
+    if (!step || step.effect || pending.has(g.id) || typeof beforeState !== 'string' || typeof afterState !== 'string'
+        || beforeState === afterState || step.state !== beforeState || s.last !== afterState || snapshot(g) !== afterState) return false;
+    step.effect = effect;
+    presentationReceipts.delete(receipt);
+    return true;
+}
+
 /** Undo one step. Returns what was undone, or null if there was nothing. */
 export function undo(g) {
     if (!g?.id) return null;
@@ -134,9 +158,10 @@ export function undo(g) {
     const s = stack(g);
     const step = s.undo.pop();
     if (!step) return null;
-    s.redo.push({ state: s.last, label: step.label });
+    s.revision++;
+    s.redo.push({ state: s.last, label: step.label, ...(step.effect ? { effect: step.effect } : {}) });
     restore(g, step.state);
-    notify(g);
+    notify(g, step.effect ? { direction: 'undo', effect: step.effect } : undefined);
     return step.label;
 }
 
@@ -147,9 +172,10 @@ export function redo(g) {
     const s = stack(g);
     const step = s.redo.pop();
     if (!step) return null;
-    s.undo.push({ state: s.last, label: step.label });
+    s.revision++;
+    s.undo.push({ state: s.last, label: step.label, ...(step.effect ? { effect: step.effect } : {}) });
     restore(g, step.state);
-    notify(g);
+    notify(g, step.effect ? { direction: 'redo', effect: step.effect } : undefined);
     return step.label;
 }
 

@@ -29,7 +29,7 @@
         box-sizing: border-box;
         pointer-events: none;
         border: 1px solid color-mix(in srgb, var(--frame-color) 58%, var(--pc-border, #777));
-        border-radius: 7px;
+        border-radius: var(--pc-r, 4px);
         background: color-mix(in srgb, var(--frame-color) 9%, transparent);
         color: var(--pc-text, #e8e8e8);
         font-family: var(--pc-font, inherit);
@@ -44,7 +44,7 @@
         box-sizing: border-box;
         padding: 0 10px 0 7px;
         border-bottom: 1px solid color-mix(in srgb, var(--frame-color) 35%, transparent);
-        border-radius: 6px 6px 0 0;
+        border-radius: var(--pc-r, 4px) var(--pc-r, 4px) 0 0;
         background: color-mix(in srgb, var(--frame-color) 18%, var(--pc-panel, #18181d));
         cursor: grab;
     }
