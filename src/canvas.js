@@ -296,11 +296,18 @@ export class Canvas {
         const maxX = Math.max(...boxes.map(b => b.x + b.w)) + pad;
         const maxY = Math.max(...boxes.map(b => b.y + b.h)) + pad;
         const rect = this.host.getBoundingClientRect();
-        const zoom = Math.max(0.25, Math.min(1.2, Math.min(rect.width / (maxX - minX), rect.height / (maxY - minY))));
+        // The narrow shelf floats across the canvas. Fit frames below it, while
+        // ordinary pan/zoom and node placement retain the entire canvas area.
+        const shelf = isNativeWorkflow(this.graph) ? this.host.parentElement?.querySelector('.pc-node-shelf') : null;
+        const shelfRect = shelf?.getBoundingClientRect();
+        const topInset = shelfRect && shelfRect.width > rect.width / 2
+            ? Math.min(Math.max(0, rect.height - 80), Math.max(0, shelfRect.bottom - rect.top + 16)) : 0;
+        const height = rect.height - topInset;
+        const zoom = Math.max(0.25, Math.min(1.2, Math.min(rect.width / (maxX - minX), height / (maxY - minY))));
         const v = this.view;
         v.zoom = zoom;
         v.x = -minX * zoom + (rect.width - (maxX - minX) * zoom) / 2;
-        v.y = -minY * zoom + (rect.height - (maxY - minY) * zoom) / 2;
+        v.y = topInset - minY * zoom + (height - (maxY - minY) * zoom) / 2;
         this.applyTransform();
     }
 

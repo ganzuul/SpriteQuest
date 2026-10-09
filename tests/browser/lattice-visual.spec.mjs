@@ -54,6 +54,33 @@ for (const width of [1024, 736, 360, 320]) test(`approved Lattice native surface
     expect((await preview.boundingBox()).y).toBeLessThan((await graph.boundingBox()).y);
 });
 
+for (const width of [320, 360]) test(`Fit keeps the narrow graph reachable below its floating shelf at ${width}px`, async ({ page }, testInfo) => {
+    await page.setViewportSize({ width, height: 900 });
+    await openNativeWorkspace(page);
+    const before = await page.evaluate(() => JSON.stringify(window.canvasHarness.graph));
+    await page.getByRole('button', { name: 'Graph', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Fit to view', exact: true }).click();
+    await page.evaluate(() => window.canvasHarness.settle());
+    const shelf = await page.locator('.pc-node-shelf').boundingBox();
+    const cards = await page.locator('.pc-node-native').evaluateAll(elements => elements.map(element => {
+        const r = element.getBoundingClientRect(); return { top: r.top, bottom: r.bottom };
+    }));
+    for (const card of cards) expect(card.top).toBeGreaterThanOrEqual(shelf.y + shelf.height + 8);
+    await page.locator('.pc-node-native[data-id="select-fields"]').dblclick();
+    const scroll = await page.evaluate(() => ({ body: document.querySelector('.pc-body').scrollTop,
+        left: window.canvasHarness.canvas.host.scrollLeft, top: window.canvasHarness.canvas.host.scrollTop }));
+    expect(scroll).toEqual({ body: 0, left: 0, top: 0 });
+    const preview = await page.locator('.pc-preview-pane').boundingBox();
+    const header = await page.locator('.pc-header').boundingBox();
+    expect(preview.y).toBeGreaterThanOrEqual(header.y + header.height);
+    expect(await page.evaluate(() => JSON.stringify(window.canvasHarness.graph))).toBe(before);
+    // Framing is only a camera choice: the full-width canvas still permits content beneath the shelf.
+    const size = await page.evaluate(() => ({ canvas: window.canvasHarness.canvas.host.clientWidth,
+        graph: document.querySelector('.pc-canvas-area').clientWidth }));
+    expect(size.canvas).toBe(size.graph);
+    await page.screenshot({ path: testInfo.outputPath(`narrow-fit-${width}.png`) });
+});
+
 test('approved floating shelf retains aligned purpose drawers and quiet shortcodes', async ({ page }) => {
     await page.setViewportSize({ width: 1024, height: 900 });
     await openNativeWorkspace(page, 'literal-cleanup');
