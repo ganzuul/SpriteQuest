@@ -4,9 +4,10 @@ async function setup(page, readOnly = false) {
     await page.goto('/tests/browser/harness.html');
     await page.waitForFunction(() => !!window.canvasHarness);
     await page.evaluate(async ({ readOnly }) => {
+        const version = window.canvasHarness.version;
         const [{ createNativeWireBridge }, { prepareNativeSearchCatalog }, { prepareNativeConnectionEdit }, tx] = await Promise.all([
-            import('/src/ui/native-wire-bridge.js?v=0.19.1'),
-            import('/src/ui/native-search-catalog.js?v=0.19.1'), import('/src/workflow/connection-edits.js?v=0.19.1'), import('/src/workflow/transactions.js?v=0.19.1'),
+            import('/src/ui/native-wire-bridge.js?v=' + version),
+            import('/src/ui/native-search-catalog.js?v=' + version), import('/src/workflow/connection-edits.js?v=' + version), import('/src/workflow/transactions.js?v=' + version),
         ]);
         const root = { id: 'native-canvas-browser', schema: 3, runtime: 2, mode: 'native-pre', nodes: {
             source: { id: 'source', type: 'workflow', operation: 'scene-context', x: 30, y: 30 },

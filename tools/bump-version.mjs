@@ -21,14 +21,22 @@ m.version = v;
 m.js = `index.js?v=${v}`;
 fs.writeFileSync(mf, JSON.stringify(m, null, 4) + '\n');
 
-function sources(dir) {
-    return fs.readdirSync(path.join(root, dir), { withFileTypes: true }).flatMap(entry => entry.isDirectory() ? sources(`${dir}/${entry.name}`) : entry.name.endsWith('.js') ? [`${dir}/${entry.name}`] : []);
+function sources(dir, extensions = ['.js']) {
+    return fs.readdirSync(path.join(root, dir), { withFileTypes: true }).flatMap(entry => entry.isDirectory() ? sources(`${dir}/${entry.name}`, extensions) : extensions.some(extension => entry.name.endsWith(extension)) ? [`${dir}/${entry.name}`] : []);
 }
 const files = ['index.js', ...sources('src')];
 for (const f of files) {
     const p = path.join(root, f);
     const before = fs.readFileSync(p, 'utf8');
     const after = before.replace(/(from\s+['"])(\.{1,2}\/[^'"?]+\.js)(\?v=[^'"]*)?(['"])/g, `$1$2?v=${v}$4`);
+    if (after !== before) fs.writeFileSync(p, after);
+}
+// Retain each test's intentional module shape, but migrate existing cache URLs
+// so tests and the installed source do not load separate domain singletons.
+if (fs.existsSync(path.join(root, 'tests'))) for (const f of sources('tests', ['.js', '.mjs'])) {
+    const p = path.join(root, f);
+    const before = fs.readFileSync(p, 'utf8');
+    const after = before.replace(/((?:from\s+|import\s*\()\s*['"])(\.{1,2}\/[^'"?]+\.js)\?v=[^'"]*(['"])/g, `$1$2?v=${v}$3`);
     if (after !== before) fs.writeFileSync(p, after);
 }
 const stylesheet = path.join(root, 'style.css');
