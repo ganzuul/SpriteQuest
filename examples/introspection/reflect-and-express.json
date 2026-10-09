@@ -1,0 +1,11 @@
+{
+  "format":"lattice-introspection-example","version":1,"integrationRequired":true,"phase":"pre",
+  "description":"Read character state and episodes, reflect on supplied scene, then emit behavioral Guidance for a generation node. Native registration is required for canvas import.",
+  "nodes":[
+    {"id":"state","type":"workflow","operation":"memory","operationVersion":1,"mode":"read","view":"state","inputs":{}},
+    {"id":"episodes","type":"workflow","operation":"memory","operationVersion":1,"mode":"recall","query":"trust apology","limit":8,"inputs":{}},
+    {"id":"context","type":"workflow","operation":"context","operationVersion":1,"mode":"assemble","inputCount":2,"inputs":{"in1":{"input":"scene"},"in2":{"input":"character"}}},
+    {"id":"reflection","type":"workflow","operation":"reflect","operationVersion":1,"mode":"character","inputs":{"context":{"node":"context"},"state":{"node":"state"},"episodes":{"node":"episodes"}}},
+    {"id":"guidance","type":"workflow","operation":"express","operationVersion":1,"mode":"behavior","inputs":{"assessment":{"node":"reflection"},"state":{"node":"state"},"episodes":{"node":"episodes"},"context":{"node":"context"}}}
+  ],"outputs":{"guidance":{"node":"guidance"},"reflection":{"node":"reflection"}}
+}

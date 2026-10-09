@@ -21,9 +21,9 @@ Create src/workflow/introspection/contracts.js and .d.ts; tests/introspection-co
 
 Interfaces: createActorState(scope,store?,initial?) -> Result<Data>; parseRecord(artifact,expectedType?) -> Result<Record>; makeRecord(recordType,base,payload,sourceRefs?) -> Result<Data>; validateEvidence(refs,allowed) -> Result; applyStateProposal(state,proposal) -> Result<Data>. Records use {schemaVersion:1,recordType,scope:{chatId,actorId},store:{id,version},sourceRefs:[{id,revision}],payload}. Actor collections are traits/beliefs/goals/relationships/conflicts/conditions/episodes; items {id,text,classification,sourceRefs}. Reflection payload is {brief,appraisals,conflicts,recalls,sceneChanges,behaviorHints,attentionHints,recalledEpisodeIds}. Proposal payload {changes,values,curves,tracks}; defaults empty. Changes are {op:'upsert',collection,item} or {op:'remove',collection,id}; traits protected. Events payload {events:[{id,revision,text,settled:true}]}; episodes payload {episodes:[Item]}. Commit intent payload {proposal:Record,idempotencyKey:string}. State values finite numbers; curves {phase,value,elapsed}; tracks {eventIds:string[],count:number}; all maps <=32 keys. Pure reducer validates identity/version and requires item refs in state/proposal allowed refs, never mutates inputs.
 
-- [ ] Write/run a failing contract test.
-- [ ] Implement validators/reducer and cover malformed fields, evidence, bounded values, identities and immutability.
-- [ ] Run contract suite and commit exact owned paths.
+- [x] Write/run a failing contract test.
+- [x] Implement validators/reducer and cover malformed fields, evidence, bounded values, identities and immutability.
+- [x] Run contract suite and commit exact owned paths.
 
 ## Task 2: bounded analysis (worker A after Task 1)
 
@@ -35,7 +35,7 @@ Own memory.js/.d.ts and tests/introspection-memory.test.mjs. createMemoryService
 
 ## Task 4: deterministic context/state (worker C after Task 1)
 
-Own context-state.js/.d.ts and tests/introspection-context-state.test.mjs. shapeContext(namedInputs,settings,ports) delegates Context Join for assemble; Smart Compactor for focus; perspective retains only messages with explicit visibleTo including actorId and reports omitted IDs. Default assemble requires2..16 slots; focus select/compress budget controls mirror existing compactor; perspective fails visibly if no explicit visibility is available. advanceState(state,settings,events?) returns Data actor-state for value read, otherwise proposal. Values updates finite within configured min/max; Curve advances phase sequence onset/peak/plateau/decline/aftermath/baseline with per-phase positive durations and value approaches baseline by decay0..1; Track counts distinct settled event IDs under configured trackId and refuses overflow. Tests all modes, provenance, unknown actor and deterministic duplicate-event behavior. No storage/core changes.
+Own context-state.js/.d.ts and tests/introspection-context-state.test.mjs. shapeContext(namedInputs,settings,ports) delegates Context Join for assemble; Smart Compactor for focus; perspective retains only messages with explicit visibleTo including actorId and reports omitted IDs. Default assemble requires2..16 slots; focus select/compress budget controls mirror existing compactor; perspective fails visibly if no explicit visibility is available. advanceState(state,settings,events?) returns Data actor-state for value read, otherwise proposal. Values updates finite within configured min/max; Curve advances phase sequence onset/peak/plateau/decline/aftermath/baseline with per-phase positive durations and value approaches baseline by decay0..1 (steps and durations bounded1..64); Track counts distinct settled event IDs under configured trackId and refuses overflow. Tests all modes, provenance, unknown actor and deterministic duplicate-event behavior. No storage/core changes.
 
 ## Task 5: node adapter/examples/integration (controller after Tasks 2–4)
 
@@ -43,6 +43,6 @@ Own nodes.js/.d.ts, library.js/.d.ts, tests/introspection-nodes.test.mjs, tests/
 
 Export INTROSPECTION_OPERATIONS (six descriptors), describeIntrospection(node,{phase}), executeIntrospection(node,namedInputs,ports). Validate settings/known ports/kinds before reading providers or spending requests. Named ports/mode controls expose all18 modes; sources/Memory Commit rootOnly; Commit is terminal and produces intent for trusted settlement, never invokes write in execution. Include roles/requestBound/output kinds in descriptors. Memory read view supplies state/events/episodes; State optional state input falls back to read provider. runIntrospectionExample manifest schema lattice-introspection-example/version1 runs typed topological named bindings, guarded bounded requests and settles intents only at successful root end. Examples show all modes via adapter, with primary reflect/express and separate internalize/commit cross-turn. Round-trip manifests JSON and test exact adapter modes/call bounds, no provider work on invalid/preview/target, cancellation and explicit save. Native core mounting remains a documented later integration step.
 
-- [ ] Run fresh package suites, project suite, types, build, assets and declaration checks.
-- [ ] Obtain independent whole-branch review and fix material findings with covering tests.
-- [ ] Commit clean package delivery; retain worktree and review evidence for integration.
+- [x] Run fresh package suites, project suite, types, build, assets and declaration checks.
+- [x] Obtain independent whole-branch review and fix material findings with covering tests.
+- [x] Commit clean package delivery; retain worktree and review evidence for integration.

@@ -12,7 +12,7 @@ Use existing Context/Data/Guidance/Text shapes, schema-3 descriptor conventions,
 
 ## Record boundary
 
-Data records carry schemaVersion 1, recordType, scope {chatId,actorId}, store {id,version}, sourceRefs [{id,revision}], and payload. Limits: existing JSON limits (262144 UTF-8 bytes, depth 32, 10000 values); strings <=4096, source references <=64, collections <=64, changes <=32. IDs are nonblank strings <=128. Versions are nonnegative safe integers. Arrays are dense plain data; accessors, inherited fields and dangerous keys are rejected by the existing JSON boundary before cloning.
+Data records carry schemaVersion 1, recordType, scope {chatId,actorId}, store {id,version}, sourceRefs [{id,revision}], and payload. Limits: existing JSON limits (262144 UTF-8 bytes, depth 32, 10000 values); strings <=4096, source references <=64, collections <=64, changes <=32. IDs are nonblank strings <=128. Versions are nonnegative safe integers. Arrays are dense plain data; the existing JSON boundary rejects accessors and inherited fields without evaluating them, and the package rejects dangerous keys on its owned clone.
 
 Actor state payload has traits, beliefs, goals, relationships, conflicts, conditions, episodes (item arrays), and values, curves, tracks (maps). Items have id, text, classification (observation/interpretation/possibility), and sourceRefs. Traits are not writable by Internalize. Each evidence ref must identify supplied scene/event material. Reflect may interpret but must not present player private state as known.
 

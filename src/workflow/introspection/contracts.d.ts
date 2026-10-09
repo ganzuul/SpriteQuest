@@ -20,6 +20,7 @@ export const COLLECTIONS:readonly string[];
 export function fail(code:string,message:string):Failure;
 export function freeze<T>(value:T):T;
 export function ownData(value:unknown):Result<unknown>;
+export function inspectCapabilities(value:unknown):Result<Record<string,unknown>>;
 export function validateEvidence(refs:unknown,allowed:unknown):Result<void>;
 export function parseRecord<P=unknown>(artifact:unknown,expectedType?:RecordType):Result<IntrospectionRecord<P>>;
 export function makeRecord<P=unknown>(recordType:RecordType,base:{scope:Scope;store:Store;sourceRefs?:SourceRef[]},payload:P,sourceRefs?:SourceRef[]):Result<Data<P>>;

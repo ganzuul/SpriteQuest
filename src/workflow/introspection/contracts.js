@@ -41,6 +41,39 @@ export function ownData(value) {
     try { rejectKeys(cloned.data.value); return good(cloned.data.value); }
     catch (error) { return fail('INVALID_INTROSPECTION_RECORD', error.message); }
 }
+/** Inspect injected capabilities without evaluating accessors or cloning host functions. */
+export function inspectCapabilities(value, depth = 0) {
+    try {
+        check(depth <= 4, 'Nested capabilities exceed their limit.');
+        check(object(value) && [Object.prototype, null].includes(Object.getPrototypeOf(value)), 'Capabilities must be a plain own-data object.');
+        const output = {}, properties = Object.getOwnPropertyDescriptors(value);
+        check(Reflect.ownKeys(properties).length <= 64, 'Too many injected capabilities.');
+        for (const key of Reflect.ownKeys(properties)) {
+            const property = properties[key];
+            check(typeof key === 'string' && !['__proto__','prototype','constructor'].includes(key) && property.enumerable && Object.hasOwn(property,'value'), 'Capabilities cannot contain accessors or inherited fields.');
+            Object.defineProperty(output,key,{value:property.value,enumerable:true,writable:true,configurable:true});
+        }
+        if (output.signal !== undefined) {
+            Object.getOwnPropertyDescriptor(AbortSignal.prototype,'aborted').get.call(output.signal);
+            let prototype=output.signal;
+            while (prototype && prototype !== AbortSignal.prototype) {
+                check(!Object.hasOwn(prototype,'aborted'), 'Cancellation state cannot be shadowed.');
+                prototype=Object.getPrototypeOf(prototype);
+            }
+        }
+        for (const key of ['root','preview','dryRun']) if (output[key] !== undefined) check(typeof output[key] === 'boolean', 'Lifecycle flags must be booleans.');
+        for (const key of ['request','countTokens']) if (output[key] !== undefined) check(typeof output[key] === 'function', 'Injected request/token ports must be functions.');
+        if (output.phase !== undefined) check(['pre','post'].includes(output.phase), 'Invalid execution phase.');
+        if (output.memory !== undefined) {
+            const memory = inspectCapabilities(output.memory,depth+1); check(memory.ok, 'Memory methods must be own data properties.');
+            for (const key of ['read','recall','commit']) if (memory.data[key] !== undefined) check(typeof memory.data[key] === 'function', 'Memory ports must be functions.');
+            output.memory = memory.data;
+        }
+        if (output.bindings !== undefined) { const bindings=ownData(output.bindings);check(bindings.ok,'Bindings must be plain data.');output.bindings=bindings.data; }
+        if (output.binding !== undefined) { const binding=ownData(output.binding);check(binding.ok,'Binding must be plain data.');output.binding=binding.data; }
+        return good(output);
+    } catch { return fail('INVALID_PORTS','Expected own injected capabilities and a valid AbortSignal.'); }
+}
 function membership(requested, allowed) {
     const keys = new Set(allowed.map(refKey));
     check(requested.every(ref => keys.has(refKey(ref))), 'Source evidence is missing or has changed revision.');

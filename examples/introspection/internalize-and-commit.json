@@ -1,0 +1,10 @@
+{
+  "format":"lattice-introspection-example","version":1,"integrationRequired":true,"phase":"post",
+  "description":"Use settled apology evidence to ease immediate anger while preserving guarded trust. Native registration is required for canvas import.",
+  "nodes":[
+    {"id":"prior","type":"workflow","operation":"memory","operationVersion":1,"mode":"read","view":"state","inputs":{}},
+    {"id":"events","type":"workflow","operation":"memory","operationVersion":1,"mode":"read","view":"events","inputs":{}},
+    {"id":"update","type":"workflow","operation":"internalize","operationVersion":1,"mode":"recovery","instructions":"An apology may ease immediate anger without repairing guarded trust. Preserve enduring traits. Propose only supported changes.","inputs":{"state":{"node":"prior"},"events":{"node":"events"}}},
+    {"id":"commit","type":"workflow","operation":"memory","operationVersion":1,"mode":"commit","idempotencyKey":"apology-1","inputs":{"proposal":{"node":"update"}}}
+  ],"outputs":{"proposal":{"node":"update"},"intent":{"node":"commit"}}
+}

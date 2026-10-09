@@ -52,3 +52,11 @@ test('record boundaries reject oversized collections and unsafe versions', () =>
     assert.equal(api.createActorState(scope, { id: 's', version: -1 }).ok, false);
     assert.equal(api.createActorState(scope, { id: 's', version: 0 }, { beliefs: Array.from({ length: 65 }, (_, n) => ({ id: String(n), text: 'x', classification: 'interpretation', sourceRefs: [] })) }).ok, false);
 });
+test('capabilities reject shadowed cancellation and binding getters without evaluating them',()=>{
+    let reads=0;
+    const signal=new AbortController().signal;
+    Object.defineProperty(signal,'aborted',{get(){reads++;return false;}});
+    assert.equal(api.inspectCapabilities({signal}).ok,false);
+    assert.equal(api.inspectCapabilities({binding:{get model(){reads++;return 'test';}}}).ok,false);
+    assert.equal(reads,0);
+});
