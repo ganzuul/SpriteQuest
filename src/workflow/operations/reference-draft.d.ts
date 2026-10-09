@@ -59,7 +59,7 @@ export interface ReferencePatchResult {
  * <=128 unique protected literals, each nonblank and <=2048 UTF-16 units.
  */
 export function prepareReferenceDraft(draft: unknown, settings?: ReferenceDraftSettings): ReferenceDraftResult<PreparedReferenceDraft>;
-/** Rebuild original parents from one dense replacement per effective window. */
+/** Rebuild original parents from one dense string per window; empty/whitespace windows are allowed, changed parents must pass the native nonblank patch gate. */
 export function createReferencePatches(prepared: PreparedReferenceDraft, replacements: readonly string[], metadata?: ReferenceCompletionMetadata): ReferenceDraftResult<ReferencePatchResult>;
 /** Exact immutable-anchor alignment; ambiguity fails. Candidate text <=100000 UTF-16 units. */
 export function alignReferenceCandidate(prepared: PreparedReferenceDraft, candidate: string, metadata?: ReferenceCompletionMetadata): ReferenceDraftResult<ReferencePatchResult>;

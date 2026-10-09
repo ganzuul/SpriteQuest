@@ -233,3 +233,40 @@ test('object style modes return a failure Result without property-key coercion o
     assert.equal(result.ok, false); assert.equal(result.error.code, 'INVALID_SETTINGS');
     assert.equal(tokenizations, 0); assert.equal(requests, 0);
 });
+
+for (const [name, candidate] of [['reduced newline', 'Title\nBody'], ['empty gap', 'TitleBody']]) {
+    test(`Format Transfer returns validated Patches for ${name} between pins after exactly one request`, async () => {
+        let requests = 0;
+        const source = draft('Title\n\nBody');
+        const before = structuredClone(source);
+        const result = await transfer.transferDraft(source, { kind: 'text', text: candidate }, { kind: 'format', scope: 'whole', protectedLiterals: ['Title', 'Body'] }, ports({ request: async () => {
+            requests++;
+            return { ok: true, data: { text: candidate, finish: 'stop', usage: { totalTokens: 20 } } };
+        } }));
+        assert.equal(requests, 1);
+        const { artifact, report } = must(result);
+        assert.equal(artifact.kind, 'patches');
+        assert.deepEqual(artifact.patches.map(patch => [patch.index, patch.replacement]), [[0, candidate]]);
+        assert.deepEqual(artifact.protectedLiterals, ['Title', 'Body']);
+        const validated = validatePatches(artifact);
+        assert.equal(validated.ok, true);
+        assert.equal(validated.artifact.text, candidate);
+        assert.equal(report.at(-1).requestCount, 1);
+        assert.equal(artifact.finish, 'stop');
+        assert.equal(artifact.usage.totalTokens, 20);
+        assert.deepEqual(source, before);
+    });
+}
+
+test('Format Transfer rejects a blank changed parent even when immutable surrounding prose remains nonblank', async () => {
+    const source = { ...draft('prefix old suffix'), spans: [{ index: 0, start: 7, end: 10, text: 'old' }] };
+    let requests = 0;
+    const result = await transfer.transferDraft(source, { kind: 'text', text: 'example' }, { kind: 'format', scope: 'whole' }, ports({ request: async () => {
+        requests++;
+        return { ok: true, data: { text: 'prefix \n suffix', finish: 'stop' } };
+    } }));
+    assert.equal(requests, 1);
+    assert.equal(result.ok, false);
+    assert.equal(result.error.code, 'INVALID_PATCHES');
+    assert.equal(result.data, undefined);
+});

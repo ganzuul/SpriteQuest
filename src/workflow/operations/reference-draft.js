@@ -128,7 +128,7 @@ export function createReferencePatches(prepared, replacements, metadata = {}) {
     if (!authenticated.has(prepared)) return failure('INVALID_PREPARATION', 'Use an authenticated reference Draft preparation.');
     try { replacements = cloneData(replacements); }
     catch { return failure('INVALID_PATCHES', 'Replacements require a dense own-data array.'); }
-    if (!Array.isArray(replacements) || replacements.length !== prepared.windows.length || replacements.some((text, index) => typeof text !== 'string' || (text !== prepared.windows[index].text && !text.trim()))) return failure('INVALID_PATCHES', 'Supply one nonblank replacement per editable window.');
+    if (!Array.isArray(replacements) || replacements.length !== prepared.windows.length || replacements.some(text => typeof text !== 'string')) return failure('INVALID_PATCHES', 'Supply one string replacement per editable window.');
     try { metadata = cloneData(metadata); }
     catch { return failure('INVALID_METADATA', 'Completion metadata requires bounded own plain data.'); }
     if (!metadata || Array.isArray(metadata) || typeof metadata !== 'object' || Object.keys(metadata).some(key => !['usage', 'finish'].includes(key))) return failure('INVALID_METADATA', 'Supply only usage and completion metadata.');

@@ -171,3 +171,43 @@ test('scope never constructs or widens existing permissions implicitly', () => {
     assert.deepEqual(prepared.windows, [{ index: 0, spanIndex: 0, start: 2, end: 4, text: 'bc' }]);
     assert.equal(validatePatches(must(helper.createReferencePatches(prepared, ['BC'])).artifact).artifact.text, 'a BC d');
 });
+
+for (const [name, replacement, candidate] of [['reduced newline', '\n', 'Title\nBody'], ['empty gap', '', 'TitleBody']]) {
+    test(`window replacements permit ${name} between protected literals in a nonblank parent`, () => {
+        const prepared = must(helper.prepareReferenceDraft(rawDraft('Title\n\nBody'), { scope: 'whole', protectedLiterals: ['Title', 'Body'] }));
+        assert.deepEqual(prepared.windows.map(window => window.text), ['\n\n']);
+        const { artifact } = must(helper.createReferencePatches(prepared, [replacement]));
+        assert.equal(artifact.kind, 'patches');
+        assert.deepEqual(artifact.patches.map(patch => [patch.index, patch.replacement]), [[0, candidate]]);
+        assert.deepEqual(artifact.protectedLiterals, ['Title', 'Body']);
+        const validated = validatePatches(artifact);
+        assert.equal(validated.ok, true);
+        assert.equal(validated.artifact.text, candidate);
+        assert.equal(artifact.draft.text, 'Title\n\nBody');
+        assert.equal(artifact.draft.source.token, 'source-token');
+    });
+
+    test(`candidate alignment permits ${name} between protected literals in a nonblank parent`, () => {
+        const prepared = must(helper.prepareReferenceDraft(rawDraft('Title\n\nBody'), { scope: 'whole', protectedLiterals: ['Title', 'Body'] }));
+        const { artifact } = must(helper.alignReferenceCandidate(prepared, candidate));
+        assert.deepEqual(artifact.patches.map(patch => [patch.index, patch.replacement]), [[0, candidate]]);
+        const validated = validatePatches(artifact);
+        assert.equal(validated.ok, true);
+        assert.equal(validated.artifact.text, candidate);
+        assert.deepEqual(prepared.draft.spans.map(span => [span.start, span.end, span.text]), [[0, 11, 'Title\n\nBody']]);
+    });
+}
+
+test('blank changed parents still fail the native patch gate through reconstruction and alignment', () => {
+    const prepared = must(helper.prepareReferenceDraft(rawDraft('old'), { scope: 'whole' }));
+    for (const replacement of ['', '\n', '   ']) {
+        const native = validatePatches({ kind: 'patches', draft: prepared.draft, patches: [{ index: 0, replacement }] });
+        assert.equal(native.ok, false);
+        assert.equal(native.error.code, 'INVALID_PATCHES');
+        for (const result of [helper.createReferencePatches(prepared, [replacement]), helper.alignReferenceCandidate(prepared, replacement)]) {
+            assert.equal(result.ok, false);
+            assert.equal(result.error.code, native.error.code);
+            assert.equal(result.data, undefined);
+        }
+    }
+});
