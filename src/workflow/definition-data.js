@@ -1,4 +1,4 @@
-import { ARTIFACT_KINDS, operationFor } from './catalog.js?v=0.19.1';
+import { ARTIFACT_KINDS, operationFor, semanticControlsForNode } from './catalog.js?v=0.19.1';
 
 const fail = (code, message) => ({ ok: false, error: { code, message } });
 const record = value => value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -104,10 +104,17 @@ export function describeExposedControl(value, controlId) {
     const current = node[controlId] === undefined ? descriptor.default : node[controlId];
     const valid = descriptor.type === 'integer' ? Number.isSafeInteger(current) && current >= descriptor.min && current <= descriptor.max
         : descriptor.type === 'enum' ? descriptor.values.includes(current)
-        : descriptor.type === 'array' ? Array.isArray(current) && current.every(item => typeof item === 'string' || descriptor.items === 'string-or-record' && record(item))
+        : descriptor.type === 'array' ? Array.isArray(current) && current.every(item => typeof item === 'string' || ['string-or-record', 'record', 'context-slot'].includes(descriptor.items) && record(item))
         : typeof current === descriptor.type;
     if (!valid) return fail('DEFINITION_PARAMETER', 'Saved control default does not match its catalog descriptor.');
     return cloneDefinitionData({ ...descriptor, default: current });
+}
+
+/** Parameter eligibility is separate from control materialization and identity hashing. */
+export function describeExposedParameter(value, controlId) {
+    const result = describeExposedControl(value, controlId);
+    if (!result.ok) return result;
+    return result.data.exposable === false ? fail('DEFINITION_PARAMETER', 'Context Join input slots define pin layout. Edit inputs inside the graph body instead of exposing them as a parameter.') : result;
 }
 
 const canonical = value => Array.isArray(value) ? value.map(canonical) : record(value) ? Object.fromEntries(Object.keys(value).sort().map(key => [key, canonical(value[key])])) : value;
@@ -140,7 +147,7 @@ export function computeDefinitionIdentity(value) {
             if (node.type === 'note') continue;
             const common = { id: node.id, type: node.type, enabled: node.enabled !== false, ...pick(node, ['inGroup']) };
             if (node.type === 'workflow') {
-                const operation = operationFor(node);
+                const operation = operationFor(node, { phase: draft.body.mode.slice(7) });
                 if (!operation) return fail('UNKNOWN_OPERATION', 'Cannot hash an unknown operation.');
                 const controls = {};
                 for (const controlId of operation.controls) {
@@ -156,6 +163,7 @@ export function computeDefinitionIdentity(value) {
                 }
                 node.operationVersion ??= 1;
                 node.modelRole ??= operation.modelRole;
+                Object.assign(controls, semanticControlsForNode(node, operation));
                 nodes[id] = { ...common, operation: node.operation, operationVersion: node.operationVersion, modelRole: node.modelRole, binding: portableBinding(node, true), controls,
                     ...(node.operation === 'reroute' ? pick(node, ['artifactKind', 'phase']) : {}) };
             } else if (node.type === 'subgraph') {

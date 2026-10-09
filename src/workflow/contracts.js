@@ -63,7 +63,7 @@ function validatePrimitiveGraph(graph, { phase, structureOnly = false, named = f
     for (const node of nodes) {
         if (!bindingValid(node) || (node.modelRole !== undefined && node.modelRole !== null && typeof node.modelRole !== 'string')) return fail('INVALID_SETTINGS', 'Invalid node model binding.', node.id);
         const operation = operationFor(node);
-        if (!operation || (!named && node.operation === 'reroute') || (node.operationVersion !== undefined && node.operationVersion !== 1)) return fail('UNKNOWN_OPERATION', 'Unknown workflow operation or version.', node.id);
+        if (!operation || operation.minimumSchema > graph.schema || (!named && node.operation === 'reroute') || (node.operationVersion !== undefined && node.operationVersion !== 1)) return fail('UNKNOWN_OPERATION', 'Unknown workflow operation or version.', node.id);
         for (const [key, fallback] of Object.entries(operation.defaults)) {
             const value = node[key] === undefined ? fallback : node[key];
             const control = operation.controlDescriptors[key];

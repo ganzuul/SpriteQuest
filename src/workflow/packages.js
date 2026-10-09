@@ -1,5 +1,5 @@
 import { safeWorkflowData, validateWorkflow, validateGraphStructure } from './contracts.js?v=0.19.1';
-import { operationFor } from './catalog.js?v=0.19.1';
+import { OPERATIONS } from './catalog.js?v=0.19.1';
 import { computeDefinitionIdentity, validateDefinition } from './definitions.js?v=0.19.1';
 const limit = 2000000;
 const fail = (code, message) => ({ ok: false, error: { code, message } });
@@ -20,7 +20,7 @@ function portableNativeDocument(graph) {
         'profileId', 'model', 'modelRole', 'artifactKind', 'phase', 'alias', ...(node.type === 'note' ? ['content'] : []),
         ...(node.type === 'subgraph' ? ['definition', 'parameterOverrides', 'roleOverrides', 'nodeBindingOverrides'] : []),
         ...(['subgraph-input', 'subgraph-output'].includes(node.type) ? ['interfacePortId'] : []),
-        ...(operationFor(node)?.controls ?? []), ...(node.operation === 'validate-patches' ? ['protectedLiterals'] : []),
+        ...(Object.hasOwn(OPERATIONS, node.operation) ? OPERATIONS[node.operation].controls : []), ...(node.operation === 'validate-patches' ? ['protectedLiterals'] : []),
     ])]));
     for (const node of Object.values(copy.nodes)) {
         if (Object.hasOwn(node, 'profileId')) node.profileId = null;

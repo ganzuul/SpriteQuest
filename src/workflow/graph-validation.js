@@ -1,5 +1,5 @@
-import { ARTIFACT_KINDS, operationFor, portsForNode } from './catalog.js?v=0.19.1';
-import { cloneDefinitionData, computeDefinitionIdentity, definitionRefKey, inspectDefinitionMetadata, describeExposedControl, nodeBindingOverrideKey, artifactAddressKey } from './definition-data.js?v=0.19.1';
+import { ARTIFACT_KINDS, operationFor, describeOperation, portsForNode } from './catalog.js?v=0.19.1';
+import { cloneDefinitionData, computeDefinitionIdentity, definitionRefKey, inspectDefinitionMetadata, describeExposedParameter, nodeBindingOverrideKey, artifactAddressKey } from './definition-data.js?v=0.19.1';
 import { samePath, safeId } from './composition-edit.js?v=0.19.1';
 
 const record = value => value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -33,7 +33,7 @@ export function safeWorkflowData(value) {
 function controlValid(value, descriptor) {
     return descriptor.type === 'integer' ? Number.isSafeInteger(value) && value >= descriptor.min && value <= descriptor.max
         : descriptor.type === 'enum' ? descriptor.values.includes(value)
-        : descriptor.type === 'array' ? Array.isArray(value) && value.every(item => typeof item === 'string' || descriptor.items === 'string-or-record' && record(item))
+        : descriptor.type === 'array' ? Array.isArray(value) && value.every(item => typeof item === 'string' || ['string-or-record', 'record', 'context-slot'].includes(descriptor.items) && record(item))
         : typeof value === descriptor.type;
 }
 
@@ -70,8 +70,10 @@ function inspectScope(graph, { definition, snapshots = {} } = {}) {
             if (checked.data.body.mode !== graph.mode) return fail('WRONG_PHASE', 'The instance phase differs from its container.', id);
             continue;
         }
-        const operation = operationFor(node);
-        if (!operation || node.operationVersion !== undefined && node.operationVersion !== 1) return fail('UNKNOWN_OPERATION', 'Unknown operation or version.', id);
+        const described = describeOperation(graph, node);
+        if (!described.ok) return { ...described, error: { ...described.error, nodeId: id } };
+        const operation = described.data.descriptor;
+        if (node.operationVersion !== undefined && node.operationVersion !== 1) return fail('UNKNOWN_OPERATION', 'Unknown operation or version.', id);
         if (operation.phase !== graph.mode.slice(7)) return fail('WRONG_PHASE', 'An operation does not support the containing phase.', id);
         if (definition && ['scene-context', 'reply-snapshot', 'guidance', 'apply-reply'].includes(operation.id)) return fail('ROOT_ONLY_OPERATION', 'Root-only operations cannot appear in reusable definitions.', id);
         if (!bindingValid(node) || node.modelRole !== undefined && node.modelRole !== null && typeof node.modelRole !== 'string') return fail('INVALID_SETTINGS', 'Invalid model binding.', id);
@@ -149,7 +151,7 @@ function inspectInstance(node, snapshots) {
         if (!parameter) return fail('INVALID_OVERRIDE', 'Unknown exposed parameter.', node.id);
         const target = targetNode(definition, parameter.target, snapshots);
         if (!target.ok) return target;
-        const descriptor = describeExposedControl(target.data, parameter.target.controlId);
+        const descriptor = describeExposedParameter(target.data, parameter.target.controlId);
         if (!descriptor.ok || !controlValid(value, descriptor.data)) return fail('INVALID_OVERRIDE', 'Parameter override does not match its catalog type/range.', node.id);
     }
     const roles = new Set(), visited = new Set(), queue = [definition];
@@ -216,7 +218,7 @@ function inspectSnapshots(value) {
         for (const parameter of snapshot.parameters) {
             const target = targetNode(snapshot, parameter.target, snapshots);
             if (!target.ok) return target;
-            const control = describeExposedControl(target.data, parameter.target.controlId);
+            const control = describeExposedParameter(target.data, parameter.target.controlId);
             if (!control.ok) return control;
         }
         const identity = computeDefinitionIdentity(snapshot);
@@ -254,7 +256,7 @@ export function validateDefinition(definition, snapshots = {}) {
     const parameterDescriptors = {};
     for (const parameter of snapshot.parameters) {
         const unit = ownExpansion.primitives.find(unit => unit.address.nodeId === parameter.target.nodeId && JSON.stringify(unit.address.instancePath) === JSON.stringify(parameter.target.instancePath));
-        const descriptor = describeExposedControl(unit.node, parameter.target.controlId);
+        const descriptor = describeExposedParameter(unit.node, parameter.target.controlId);
         if (!descriptor.ok) return descriptor;
         parameterDescriptors[parameter.id] = descriptor.data;
     }
@@ -321,9 +323,10 @@ function expandChecked(root, snapshots, rootDefinition) {
             graph.roles ??= {};
             for (const [role, binding] of Object.entries(localContext.node.roleOverrides ?? {})) graph.roles[role] = { ...(Object.hasOwn(graph.roles, role) ? graph.roles[role] : {}), ...binding };
         }
-        for (const node of Object.values(graph.nodes ?? {})) if (operationFor(node)) {
-            const operation = operationFor(node);
-            for (const [id, descriptor] of Object.entries(operation.controlDescriptors)) node[id] ??= structuredClone(descriptor.default);
+        for (const node of Object.values(graph.nodes ?? {})) if (operationFor(node, { phase: graph.mode.slice(7) })) {
+            const operation = operationFor(node, { phase: graph.mode.slice(7) });
+            for (const [id, descriptor] of Object.entries(operation.controlDescriptors)) if (node[id] === undefined) node[id] = structuredClone(descriptor.default);
+            node.operationVersion ??= 1;
             node.modelRole ??= operation.modelRole;
             const explicitBinding = {};
             for (const context of [...contexts].reverse()) {
@@ -346,7 +349,7 @@ function expandChecked(root, snapshots, rootDefinition) {
         const parent = path.length ? address(path.slice(0, -1), path.at(-1)) : undefined;
         for (const node of Object.values(graph.nodes)) {
             if (node.type === 'note') continue;
-            const at = address(path, node.id), operation = operationFor(node);
+            const at = address(path, node.id), operation = operationFor(node, { phase: graph.mode.slice(7) });
             const enabled = ancestorEnabled && node.enabled !== false && graph.groups?.[node.inGroup]?.enabled !== false;
             const ports = portsForNode({ ...graph, definitions: snapshots, interface: definition?.interface }, node);
             for (const port of ports) {

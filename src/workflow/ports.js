@@ -1,6 +1,6 @@
 import { safeWorkflowData, validateGraphStructure } from './contracts.js?v=0.19.1';
 import { normalizeNativeGraph } from './migration.js?v=0.19.1';
-import { operationFor } from './catalog.js?v=0.19.1';
+import { operationFor, describeOperation, semanticControlsForNode } from './catalog.js?v=0.19.1';
 export { portsForNode } from './catalog.js?v=0.19.1';
 
 const fail = (code, message) => ({ ok: false, error: { code, message } });
@@ -14,8 +14,8 @@ export function graphSemanticSignature(graph) {
     const inheritedBinding = value => graph.schema === 3 && value && typeof value === 'object' && !Array.isArray(value)
         ? Object.fromEntries(['profileId', 'model'].filter(key => Object.hasOwn(value, key)).map(key => [key, value[key]])) : binding(value);
     const nodes = Object.entries(graph.nodes ?? {}).filter(([, node]) => node.type !== 'note' || node.inGroup !== undefined).map(([key, node]) => {
-        const operation = operationFor(node);
-        const controls = Object.fromEntries((operation?.controls ?? []).map(control => [control, node[control] === undefined ? operation.defaults[control] : node[control]]));
+        const operation = operationFor(node, { phase: graph.mode?.slice(7) });
+        const controls = semanticControlsForNode(node, operation);
         if (node.operation === 'validate-patches') controls.protectedLiterals = node.protectedLiterals === undefined ? [] : node.protectedLiterals;
         return { key, id: node.id, type: node.type, operation: node.operation, operationVersion: node.operationVersion === undefined ? 1 : node.operationVersion, enabled: node.enabled !== false, modelRole: node.modelRole ?? operation?.modelRole ?? null, ...binding(node), inGroup: node.inGroup, controls,
             ...(graph.schema === 3 && node.operation === 'reroute' ? { artifactKind: node.artifactKind, phase: node.phase } : {}),
@@ -89,4 +89,33 @@ export function prepareDisconnection(graph, edgeIds) {
     for (const id of removed) delete candidate.wires[id];
     const validation = validateGraphStructure(candidate);
     return validation.ok ? prepared(graph, candidate, [], removed) : validation;
+}
+
+/** Prepare declared control changes and explicit incident disconnections as one complete candidate.
+ * Pin changes never discard wires or portal publishers implicitly.
+ * @param {import('./types').NativeGraph3} graph
+ * @param {import('./types').NodeControlChangeCommand} command
+ * @returns {import('./types').Result<import('./types').PreparedGraphEdit>}
+ */
+export function prepareNodeControlChange(graph, command) {
+    if (!safeWorkflowData(command) || !command || typeof command !== 'object' || Array.isArray(command) || typeof command.nodeId !== 'string' || !command.controls || typeof command.controls !== 'object' || Array.isArray(command.controls) || Object.keys(command).some(key => !['nodeId', 'controls', 'removeEdgeIds'].includes(key)) || command.removeEdgeIds !== undefined && (!Array.isArray(command.removeEdgeIds) || command.removeEdgeIds.some(id => typeof id !== 'string'))) return fail('INVALID_SETTINGS', 'Expected declared control changes and explicit incident wire IDs.');
+    const normalized = normalizeNativeGraph(graph);
+    if (!normalized.ok) return normalized;
+    if (graph.schema !== 3 || graph.runtime !== 2) return fail('UNSUPPORTED_VERSION', 'Named control editing requires schema 3 and runtime 2.');
+    const candidate = normalized.data, node = Object.hasOwn(candidate.nodes, command.nodeId) && candidate.nodes[command.nodeId];
+    const described = describeOperation(candidate, node);
+    if (!described.ok) return described;
+    if (Object.keys(command.controls).some(key => !described.data.descriptor.controls.includes(key))) return fail('INVALID_SETTINGS', 'Only declared operation controls may change.');
+    const removed = [...new Set(command.removeEdgeIds ?? [])];
+    for (const id of removed) {
+        const edge = Object.hasOwn(candidate.wires, id) && candidate.wires[id];
+        const publisher = edge?.route === 'portal' ? candidate.portals?.[edge.portalId]?.source.nodeId : edge?.from;
+        if (!edge || edge.to !== node.id && publisher !== node.id) return fail('INVALID_WIRE', 'Explicit removal must identify an existing incident wire.');
+        delete candidate.wires[id];
+    }
+    Object.assign(node, structuredClone(command.controls));
+    const validation = validateGraphStructure(candidate);
+    if (!validation.ok) return validation;
+    return { ok: true, data: { candidate, changed: graphDocumentSignature(graph) !== graphDocumentSignature(candidate), addedEdgeIds: [], removedEdgeIds: removed,
+        baseSignature: graphSemanticSignature(graph), baseDocumentSignature: graphDocumentSignature(graph) } };
 }

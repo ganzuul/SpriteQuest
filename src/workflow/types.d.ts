@@ -1,7 +1,7 @@
 /** Plain boundary DTOs: never carry host adapters, authenticated bindings or authority. */
 export type Result<T> = { ok: true; data: T } | { ok: false; error: WorkflowError };
 export interface WorkflowError { code: string; message: string; nodeId?: string; address?: NodeAddress; }
-export type ArtifactKind = 'context' | 'draft' | 'patches' | 'candidate' | 'guidance';
+export type ArtifactKind = 'context' | 'draft' | 'patches' | 'candidate' | 'guidance' | 'text' | 'data';
 export type WorkflowPhase = 'pre' | 'post';
 export interface Endpoint { nodeId: string; portId: string; }
 export interface NodeAddress { workflowId: string; instancePath: string[]; nodeId: string; }
@@ -15,12 +15,19 @@ export interface PortDescriptor {
     /** Inputs accept one binding; outputs may fan out to many consumers. */
     cardinality: 'one';
 }
-export type ControlDescriptor =
+export type ControlDescriptor = ({ label?: string; editor?: 'text' | 'json'; exposable?: boolean } & (
     | { type: 'integer'; min: number; max: number; default: number }
     | { type: 'enum'; values: string[]; default: string }
     | { type: 'string'; default: string }
     | { type: 'boolean'; default: boolean }
-    | { type: 'array'; items: 'string' | 'string-or-record'; default: unknown[] };
+    | { type: 'array'; items: 'string' | 'string-or-record' | 'record' | 'context-slot'; min?: number; max?: number; default: unknown[] }));
+export interface OperationDescriptor {
+    id: string; title: string; family: string; phase: WorkflowPhase | 'both' | null;
+    minimumSchema?: 3; input: ArtifactKind | null; output: ArtifactKind | null;
+    controls: string[]; controlDescriptors: Record<string, ControlDescriptor>; defaults: Record<string, unknown>;
+    requestBound: number | ((node: NativeNode) => number); modelRole: string | null; terminal: boolean; dynamicPorts?: boolean;
+}
+export interface OperationDescription { descriptor: OperationDescriptor; ports: PortDescriptor[]; }
 export interface Binding { profileId?: string | null; model?: string | null; }
 export interface NativeNode extends Binding {
     id: string;
@@ -152,3 +159,9 @@ export interface CompositionView {
     ports: { address: ArtifactAddress; direction: 'input' | 'output'; kind: ArtifactKind }[];
 }
 export interface CompositionViews { workflowId: string; views: CompositionView[]; }
+
+export interface NodeControlChangeCommand { nodeId: string; controls: Record<string, unknown>; removeEdgeIds?: string[]; }
+/** Authoritative values use the operation engines' bounded runtime contracts. */
+export interface TextArtifact { kind: 'text'; text: string; }
+export interface DataArtifact { kind: 'data'; value: import('./operations/json-data').JsonValue; }
+export type ContextArtifact = import('./operations/context-data').RuntimeContext;
