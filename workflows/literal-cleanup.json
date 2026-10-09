@@ -1,0 +1,145 @@
+{
+  "kind": "lattice-workflow",
+  "schema": 2,
+  "minRuntime": 2,
+  "graph": {
+    "id": "literal-cleanup",
+    "name": "Literal cleanup",
+    "schema": 3,
+    "runtime": 2,
+    "mode": "native-post",
+    "nodes": {
+      "reply-snapshot": {
+        "id": "reply-snapshot",
+        "type": "workflow",
+        "operation": "reply-snapshot",
+        "operationVersion": 1,
+        "title": "Reply Snapshot",
+        "enabled": true,
+        "x": 100,
+        "y": 140,
+        "profileId": null,
+        "model": null,
+        "modelRole": null
+      },
+      "text-rules": {
+        "id": "text-rules",
+        "type": "workflow",
+        "operation": "text-rules",
+        "operationVersion": 1,
+        "title": "Text Rules",
+        "enabled": true,
+        "x": 330,
+        "y": 140,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "inputKind": "draft",
+        "mode": "replace",
+        "rules": [
+          {
+            "kind": "literal",
+            "pattern": "very very",
+            "replacement": "very",
+            "flags": ""
+          }
+        ],
+        "separator": "\n"
+      },
+      "validate-patches": {
+        "id": "validate-patches",
+        "type": "workflow",
+        "operation": "validate-patches",
+        "operationVersion": 1,
+        "title": "Validate Patches",
+        "enabled": true,
+        "x": 560,
+        "y": 140,
+        "profileId": null,
+        "model": null,
+        "modelRole": null
+      },
+      "review-gate": {
+        "id": "review-gate",
+        "type": "workflow",
+        "operation": "review-gate",
+        "operationVersion": 1,
+        "title": "Review Gate",
+        "enabled": true,
+        "x": 790,
+        "y": 140,
+        "profileId": null,
+        "model": null,
+        "modelRole": null
+      },
+      "apply-reply": {
+        "id": "apply-reply",
+        "type": "workflow",
+        "operation": "apply-reply",
+        "operationVersion": 1,
+        "title": "Apply Reply",
+        "enabled": true,
+        "x": 1020,
+        "y": 140,
+        "profileId": null,
+        "model": null,
+        "modelRole": null
+      }
+    },
+    "wires": {
+      "wire-1": {
+        "id": "wire-1",
+        "route": "wire",
+        "from": "reply-snapshot",
+        "fromPort": "out",
+        "to": "text-rules",
+        "toPort": "in",
+        "order": 0,
+        "kind": "merge"
+      },
+      "wire-2": {
+        "id": "wire-2",
+        "route": "wire",
+        "from": "text-rules",
+        "fromPort": "out",
+        "to": "validate-patches",
+        "toPort": "in",
+        "order": 0,
+        "kind": "merge"
+      },
+      "wire-3": {
+        "id": "wire-3",
+        "route": "wire",
+        "from": "validate-patches",
+        "fromPort": "out",
+        "to": "review-gate",
+        "toPort": "in",
+        "order": 0,
+        "kind": "merge"
+      },
+      "wire-4": {
+        "id": "wire-4",
+        "route": "wire",
+        "from": "review-gate",
+        "fromPort": "out",
+        "to": "apply-reply",
+        "toPort": "in",
+        "order": 0,
+        "kind": "merge"
+      }
+    },
+    "groups": {},
+    "roles": {},
+    "portals": {},
+    "definitions": {},
+    "template": {
+      "id": "literal-cleanup",
+      "version": 1
+    },
+    "view": {
+      "x": 0,
+      "y": 0,
+      "zoom": 1
+    }
+  }
+}

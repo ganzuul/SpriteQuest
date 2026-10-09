@@ -1,0 +1,166 @@
+{
+  "kind": "lattice-workflow",
+  "schema": 2,
+  "minRuntime": 2,
+  "graph": {
+    "id": "structured-guidance",
+    "name": "Structured guidance",
+    "schema": 3,
+    "runtime": 2,
+    "mode": "native-pre",
+    "nodes": {
+      "compose-json": {
+        "id": "compose-json",
+        "type": "workflow",
+        "operation": "compose",
+        "operationVersion": 1,
+        "title": "Compose",
+        "enabled": true,
+        "x": 100,
+        "y": 140,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "join",
+        "outputKind": "text",
+        "template": "",
+        "sections": [
+          {
+            "name": "Scene",
+            "text": "{\n  \"direction\": \"A quiet conversation.\",\n  \"constraint\": \"Let the user choose their next action.\"\n}"
+          }
+        ],
+        "separator": "\n\n"
+      },
+      "json-decode": {
+        "id": "json-decode",
+        "type": "workflow",
+        "operation": "json-decode",
+        "operationVersion": 1,
+        "title": "JSON Decode",
+        "enabled": true,
+        "x": 330,
+        "y": 140,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "parse",
+        "schema": ""
+      },
+      "select-fields": {
+        "id": "select-fields",
+        "type": "workflow",
+        "operation": "select-fields",
+        "operationVersion": 1,
+        "title": "Select Fields",
+        "enabled": true,
+        "x": 560,
+        "y": 140,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "fields": [
+          {
+            "name": "direction",
+            "path": [
+              "direction"
+            ]
+          },
+          {
+            "name": "constraint",
+            "path": [
+              "constraint"
+            ]
+          }
+        ]
+      },
+      "compose-guidance": {
+        "id": "compose-guidance",
+        "type": "workflow",
+        "operation": "compose",
+        "operationVersion": 1,
+        "title": "Compose",
+        "enabled": true,
+        "x": 790,
+        "y": 140,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "template",
+        "outputKind": "guidance",
+        "template": "Direction: {{data:/direction}}\nConstraint: {{data:/constraint}}",
+        "sections": [],
+        "separator": "\n\n"
+      },
+      "guidance": {
+        "id": "guidance",
+        "type": "workflow",
+        "operation": "guidance",
+        "operationVersion": 1,
+        "title": "Guidance",
+        "enabled": true,
+        "x": 1020,
+        "y": 140,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "budgetTokens": 768
+      }
+    },
+    "wires": {
+      "wire-1": {
+        "id": "wire-1",
+        "route": "wire",
+        "from": "compose-json",
+        "fromPort": "out",
+        "to": "json-decode",
+        "toPort": "in",
+        "order": 0,
+        "kind": "merge"
+      },
+      "wire-2": {
+        "id": "wire-2",
+        "route": "wire",
+        "from": "json-decode",
+        "fromPort": "out",
+        "to": "select-fields",
+        "toPort": "in",
+        "order": 0,
+        "kind": "merge"
+      },
+      "wire-3": {
+        "id": "wire-3",
+        "route": "wire",
+        "from": "select-fields",
+        "fromPort": "out",
+        "to": "compose-guidance",
+        "toPort": "data",
+        "order": 0,
+        "kind": "merge"
+      },
+      "wire-4": {
+        "id": "wire-4",
+        "route": "wire",
+        "from": "compose-guidance",
+        "fromPort": "out",
+        "to": "guidance",
+        "toPort": "in",
+        "order": 0,
+        "kind": "merge"
+      }
+    },
+    "groups": {},
+    "roles": {},
+    "portals": {},
+    "definitions": {},
+    "template": {
+      "id": "structured-guidance",
+      "version": 1
+    },
+    "view": {
+      "x": 0,
+      "y": 0,
+      "zoom": 1
+    }
+  }
+}

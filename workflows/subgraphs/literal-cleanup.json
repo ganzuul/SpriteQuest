@@ -1,0 +1,110 @@
+{
+  "kind": "lattice-subgraph",
+  "schema": 1,
+  "minRuntime": 2,
+  "definition": {
+    "id": "lattice-example-literal-cleanup",
+    "version": 1,
+    "semanticHash": "sha256:f76e95dd8d54a63a2100f8d4463a2fd2eaaa77d058340c5baca646cd46c1d5b0",
+    "name": "Literal cleanup",
+    "description": "Propose patches from editable literal rules. Connect the output through Validate Patches, Review Gate and Apply Reply in the main graph.",
+    "interface": [
+      {
+        "id": "draft",
+        "label": "Draft",
+        "direction": "input",
+        "kind": "draft",
+        "required": true,
+        "cardinality": "one",
+        "boundaryNodeId": "entry"
+      },
+      {
+        "id": "patches",
+        "label": "Patches",
+        "direction": "output",
+        "kind": "patches",
+        "required": false,
+        "cardinality": "one",
+        "boundaryNodeId": "exit"
+      }
+    ],
+    "parameters": [
+      {
+        "id": "rules",
+        "label": "Rules",
+        "target": {
+          "instancePath": [],
+          "nodeId": "rules",
+          "controlId": "rules"
+        }
+      }
+    ],
+    "body": {
+      "schema": 3,
+      "runtime": 2,
+      "mode": "native-post",
+      "nodes": {
+        "entry": {
+          "id": "entry",
+          "type": "subgraph-input",
+          "x": 100,
+          "y": 140,
+          "interfacePortId": "draft"
+        },
+        "rules": {
+          "id": "rules",
+          "type": "workflow",
+          "operation": "text-rules",
+          "operationVersion": 1,
+          "title": "Text Rules",
+          "enabled": true,
+          "x": 330,
+          "y": 140,
+          "profileId": null,
+          "model": null,
+          "modelRole": null,
+          "inputKind": "draft",
+          "mode": "replace",
+          "rules": [
+            {
+              "kind": "literal",
+              "pattern": "very very",
+              "replacement": "very",
+              "flags": ""
+            }
+          ],
+          "separator": "\n"
+        },
+        "exit": {
+          "id": "exit",
+          "type": "subgraph-output",
+          "x": 560,
+          "y": 140,
+          "interfacePortId": "patches"
+        }
+      },
+      "wires": {
+        "incoming": {
+          "id": "incoming",
+          "route": "wire",
+          "from": "entry",
+          "fromPort": "out",
+          "to": "rules",
+          "toPort": "in"
+        },
+        "outgoing": {
+          "id": "outgoing",
+          "route": "wire",
+          "from": "rules",
+          "fromPort": "out",
+          "to": "exit",
+          "toPort": "in"
+        }
+      },
+      "groups": {},
+      "roles": {},
+      "portals": {}
+    }
+  },
+  "definitions": {}
+}
