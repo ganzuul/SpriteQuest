@@ -1,11 +1,13 @@
 import { PRIMITIVE_OPERATIONS, describePrimitive } from './operations/nodes.js?v=0.22.1';
 import { describeContextJoin } from './operations/context-join.js?v=0.22.1';
+import { TRANSPOSE_OPERATIONS, describeTranspose } from './operations/transpose-nodes.js?v=0.22.1';
+import { CLEANUP_MODES, validateCleanupSettings } from './operations/prose-cleanup.js?v=0.22.1';
 
 /** Native operation metadata. Artifact flow, rather than canvas placement, defines execution. */
 export const FAMILIES = ['Input', 'Shaping', 'Surface', 'Transpose', 'Derive', 'Output'];
 export const ARTIFACT_KINDS = ['context', 'draft', 'patches', 'candidate', 'guidance', 'text', 'data'];
 function controlDescriptor(operation, key, value) {
-    const values = key === 'method' ? ['select', 'compress'] : key === 'scope' ? ['whole', 'narration', 'dialogue'] : key === 'mode' ? (operation === 'repair' ? ['repair', 'scan'] : ['literal']) : null;
+    const values = key === 'method' ? ['select', 'compress'] : key === 'scope' ? operation === 'repair' ? ['authorized', 'whole', 'narration', 'dialogue'] : ['whole', 'narration', 'dialogue'] : key === 'mode' ? (operation === 'repair' ? ['repair', 'scan', ...CLEANUP_MODES] : ['literal']) : null;
     if (values) return { type: 'enum', values, default: value };
     if (typeof value === 'number') return { type: 'integer', min: key === 'keepRecent' ? 0 : 1, max: key === 'keepRecent' ? 1000 : 65536, default: value };
     if (Array.isArray(value)) return { type: 'array', items: key === 'rules' ? 'string-or-record' : 'string', default: value };
@@ -18,7 +20,7 @@ export const OPERATIONS = {
     'smart-compactor': descriptor('smart-compactor', 'Smart Compactor', 'Shaping', 'pre', 'context', 'context', { targetTokens: 1200, purpose: '', method: 'select', keepRecent: 2, pins: [], maxTokens: 1024 }, { modelRole: 'Analysis', requestBound: node => node.method === 'compress' ? 1 : 0 }),
     'response-plan': descriptor('response-plan', 'Response Plan', 'Shaping', 'pre', 'context', 'guidance', { instructions: '', maxTokens: 768 }, { modelRole: 'Analysis', requestBound: 1 }),
     'pattern-scan': descriptor('pattern-scan', 'Pattern Scan', 'Derive', 'post', 'draft', 'draft', { mode: 'literal', scope: 'whole', caseSensitive: false, rules: [], exemptions: [], protectedLiterals: [] }),
-    repair: descriptor('repair', 'Repair', 'Surface', 'post', 'draft', 'patches', { mode: 'repair', strength: 'light', instructions: '', maxTokens: 2048, protectedLiterals: [] }, { modelRole: 'Prose', requestBound: node => node.mode === 'scan' ? 0 : 1 }),
+    repair: descriptor('repair', 'Repair', 'Surface', 'post', 'draft', 'patches', { mode: 'repair', scope: 'narration', categories: [], caseSensitive: false, strength: 'light', instructions: '', maxTokens: 2048, protectedLiterals: [] }, { modelRole: 'Prose', requestBound: node => ['scan', 'inspect'].includes(node.mode) ? 0 : 1 }),
     'validate-patches': descriptor('validate-patches', 'Validate Patches', 'Derive', 'post', 'patches', 'candidate'),
     guidance: descriptor('guidance', 'Guidance', 'Output', 'pre', 'guidance', null, { budgetTokens: 768 }, { terminal: true }),
     'review-gate': descriptor('review-gate', 'Review Gate', 'Output', 'post', 'candidate', 'candidate'),
@@ -27,17 +29,58 @@ export const OPERATIONS = {
 };
 const primitiveDescriptor = source => ({ ...source, minimumSchema: 3,
     controlDescriptors: Object.fromEntries(source.controlDescriptors.map(control => [control.key, {
-        ...(control.type === 'enum' ? { type: 'enum', values: control.options } : control.type === 'text' || typeof source.defaults[control.key] === 'string' ? { type: 'string' } : { type: 'array', items: 'record' }),
-        default: structuredClone(source.defaults[control.key]), label: control.label, editor: control.type === 'json' ? 'json' : 'text',
-        ...(Array.isArray(source.defaults[control.key]) ? { max: control.key === 'fields' ? 128 : 64 } : {}),
+        ...(control.type === 'enum' ? { type: 'enum', values: control.options } : control.type === 'text' || typeof source.defaults[control.key] === 'string' ? { type: 'string' } : { type: 'array', items: control.key === 'protectedLiterals' ? 'string' : 'record' }),
+        default: structuredClone(source.defaults[control.key]), label: control.label, editor: control.type === 'json' && control.key !== 'protectedLiterals' ? 'json' : 'text',
+        ...(Array.isArray(source.defaults[control.key]) ? { max: ['fields', 'protectedLiterals'].includes(control.key) ? 128 : 64 } : {}),
     }])),
 });
 Object.assign(OPERATIONS, Object.fromEntries(Object.entries(PRIMITIVE_OPERATIONS).map(([id, source]) => [id, primitiveDescriptor(source)])));
+const transposeDescriptor = source => ({ ...source, minimumSchema: 3,
+    controlDescriptors: Object.fromEntries(source.controlDescriptors.map(control => [control.key, {
+        ...(control.type === 'enum' ? control.options.every(value => typeof value === 'boolean') ? { type: 'boolean' } : { type: 'enum', values: control.options }
+            : control.type === 'integer' ? { type: 'integer', min: control.minimum, max: control.maximum }
+            : control.type === 'array' ? { type: 'array', items: 'string', max: control.maxItems }
+            : { type: 'string' }),
+        default: structuredClone(source.defaults[control.key]), label: control.label,
+    }])),
+});
+Object.assign(OPERATIONS, Object.fromEntries(Object.entries(TRANSPOSE_OPERATIONS).map(([id, source]) => [id, transposeDescriptor(source)])));
+OPERATIONS.repair.controlDescriptors.categories.label = 'Policy categories (empty selects all)';
+for (const [key, label] of Object.entries({ mode: 'Mode', scope: 'Scope', caseSensitive: 'Case sensitive', strength: 'Strength', instructions: 'Instructions', maxTokens: 'Output tokens', protectedLiterals: 'Protected literals' })) OPERATIONS.repair.controlDescriptors[key].label = label;
 const contextJoinDescriptor = source => ({ ...source, controlDescriptors: { inputs: { ...source.controlDescriptors.inputs, label: 'Inputs', editor: 'json', exposable: false } } });
 OPERATIONS['context-join'] = contextJoinDescriptor(describeContextJoin({ type: 'workflow', operation: 'context-join', operationVersion: 1, inputs: [{ id: 'context-1', label: 'Context 1' }, { id: 'context-2', label: 'Context 2' }] }).data.descriptor);
-const newOperation = id => Object.hasOwn(PRIMITIVE_OPERATIONS, id) || id === 'context-join';
+const newOperation = id => Object.hasOwn(PRIMITIVE_OPERATIONS, id) || Object.hasOwn(TRANSPOSE_OPERATIONS, id) || id === 'context-join' || id === 'repair';
 const failure = (code, message) => ({ ok: false, error: { code, message } });
 function dynamicDescription(node, phase) {
+    if (node.operation === 'repair') {
+        if (phase !== 'post') return failure('INVALID_PHASE', 'Repair requires the post phase.');
+        try {
+            const descriptor = { ...OPERATIONS.repair, minimumSchema: 3 };
+            const settings = Object.fromEntries(descriptor.controls.map(key => {
+                const property = Object.getOwnPropertyDescriptor(node, key);
+                if (property && (!property.enumerable || !Object.hasOwn(property, 'value'))) throw new Error('own settings');
+                return [key, property ? property.value : structuredClone(descriptor.defaults[key])];
+            }));
+            if (!['repair', 'scan', ...CLEANUP_MODES].includes(settings.mode)) return failure('INVALID_SETTINGS', 'Select a supported Repair mode.');
+            if (CLEANUP_MODES.includes(settings.mode)) {
+                const checked = validateCleanupSettings(settings);
+                if (!checked.ok) return checked;
+            } else {
+                descriptor.controls = descriptor.controls.filter(key => !['scope', 'categories', 'caseSensitive'].includes(key));
+                descriptor.controlDescriptors = Object.fromEntries(descriptor.controls.map(key => [key, descriptor.controlDescriptors[key]]));
+            }
+            return { ok: true, data: { descriptor, ports: [
+                { id: 'in', label: 'Draft', kind: 'draft', direction: 'input', required: true, cardinality: 'one' },
+                ...(CLEANUP_MODES.includes(settings.mode) ? [{ id: 'context', label: 'Context', kind: 'context', direction: 'input', required: false, cardinality: 'one' }] : []),
+                { id: 'out', label: 'Patches', kind: 'patches', direction: 'output', required: false, cardinality: 'one' },
+            ] } };
+        } catch { return failure('INVALID_SETTINGS', 'Repair controls require own data properties.'); }
+    }
+    if (Object.hasOwn(TRANSPOSE_OPERATIONS, node.operation)) {
+        if (phase !== 'post') return failure('INVALID_PHASE', 'Transpose operations require the post phase.');
+        const result = describeTranspose(node);
+        return result.ok ? { ok: true, data: { ...result.data, descriptor: transposeDescriptor(result.data.descriptor) } } : result;
+    }
     if (node.operation === 'context-join') {
         const result = describeContextJoin({ type: 'workflow', operation: 'context-join', operationVersion: node.operationVersion ?? 1, inputs: node.inputs === undefined ? structuredClone(OPERATIONS['context-join'].defaults.inputs) : node.inputs }, { phase });
         return result.ok ? { ok: true, data: { ...result.data, descriptor: contextJoinDescriptor(result.data.descriptor) } } : result;
@@ -50,7 +93,7 @@ export function operationFor(node, { phase } = {}) {
     const op = node?.type === 'workflow' && typeof node.operation === 'string' && Object.hasOwn(OPERATIONS, node.operation) ? OPERATIONS[node.operation] : null;
     if (!op) return null;
     if (newOperation(op.id)) {
-        const effectivePhase = phase ?? node.phase ?? (op.id === 'text-rules' && node.inputKind === 'draft' ? 'post' : 'pre');
+        const effectivePhase = phase ?? node.phase ?? (op.phase === 'post' || op.id === 'text-rules' && node.inputKind === 'draft' ? 'post' : 'pre');
         const described = dynamicDescription(node, effectivePhase);
         return described.ok ? described.data.descriptor : null;
     }
@@ -95,6 +138,7 @@ export function describeOperation(graph, node) {
 export function semanticControlsForNode(node, operation = operationFor(node)) {
     const controls = Object.fromEntries((operation?.controls ?? []).map(key => [key, node[key] === undefined ? operation.defaults[key] : node[key]]));
     if (node.operation === 'context-join' && Array.isArray(controls.inputs)) controls.inputs = controls.inputs.map(slot => ({ id: slot.id }));
+    if (node.operation === 'repair' && CLEANUP_MODES.includes(controls.mode)) controls.policyVersion = 1;
     return controls;
 }
 /** Stable primitive pins; sources and terminals never fabricate unused endpoints.

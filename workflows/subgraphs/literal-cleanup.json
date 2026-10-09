@@ -5,7 +5,7 @@
   "definition": {
     "id": "lattice-example-literal-cleanup",
     "version": 1,
-    "semanticHash": "sha256:ea32e034b5e4ad0378f95cee16946d44e8ecf55377bb2033e1ce476dd16e8c95",
+    "semanticHash": "sha256:40ba2a3e3a2f36f4ae99e7c5e65d52967dce4dc499de3caf1c9536c786bd6646",
     "name": "Literal cleanup",
     "description": "Propose patches from editable literal rules. Connect the output through Validate Patches, Review Gate and Apply Reply in the main graph.",
     "interface": [
@@ -73,7 +73,9 @@
               "flags": ""
             }
           ],
-          "separator": "\n"
+          "separator": "\n",
+          "scope": "whole",
+          "protectedLiterals": []
         },
         "exit": {
           "id": "exit",

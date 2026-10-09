@@ -10,6 +10,12 @@ export interface TextRulesSettings {
     rules?: TextRule[];
     separator?: string;
 }
+export interface DraftTextRulesSettings extends TextRulesSettings {
+    /** Defaults to authorized; raw Draft permissions require explicit whole/narration/dialogue. */
+    scope?: 'authorized' | 'whole' | 'narration' | 'dialogue';
+    /** Unioned with upstream pins; protected portions never enter Worker windows. */
+    protectedLiterals?: string[];
+}
 export interface TextRuleFinding {
     ruleIndex: number;
     segmentIndex: number;
@@ -56,15 +62,16 @@ export interface DraftRulePatches {
     kind: 'patches';
     draft: FrozenRuleDraft;
     patches: { index: number; replacement: string }[];
-    protectedLiterals: string[];
+    protectedLiterals: readonly string[];
 }
 /** Text input/output <=100000 UTF-16 units; <=64 rules, <=4096 findings. No caller-thread regex fallback. */
 export function applyTextRules(text: unknown, settings?: TextRulesSettings, execution?: TextRulesExecution): Promise<TextRuleResult<{ text: string; report: TextRuleFinding[] }>>;
 /**
  * Replace-only Draft -> validated Patches; source/spans are deeply frozen snapshots.
- * Raw whole-text input may derive one original span; scoped unannotated input fails.
+ * Raw input requires explicit whole/narration/dialogue scope; existing scopes only narrow.
+ * The Worker transforms prepared windows; patches reconstruct original parent indices.
  * Draft snapshot compatibility budget: 500000 UTF-16 units including metadata keys,
  * depth 40, 20000 values; original Text <=100000 and <=256 spans.
  * Result still requires downstream Validate Patches -> Review Gate -> Apply Reply.
  */
-export function createDraftRulePatches(draft: unknown, settings?: TextRulesSettings, execution?: TextRulesExecution): Promise<TextRuleResult<{ artifact: DraftRulePatches; report: TextRuleFinding[] }>>;
+export function createDraftRulePatches(draft: unknown, settings?: DraftTextRulesSettings, execution?: TextRulesExecution): Promise<TextRuleResult<{ artifact: DraftRulePatches; report: TextRuleFinding[] }>>;

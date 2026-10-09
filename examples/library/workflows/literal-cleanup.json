@@ -1,0 +1,283 @@
+{
+  "kind": "lattice-workflow",
+  "schema": 2,
+  "minRuntime": 2,
+  "graph": {
+    "id": "lattice.library.workflow.literal-cleanup",
+    "name": "Literal Cleanup",
+    "schema": 3,
+    "runtime": 2,
+    "mode": "native-post",
+    "nodes": {
+      "source": {
+        "id": "source",
+        "type": "workflow",
+        "operation": "reply-snapshot",
+        "operationVersion": 1
+      },
+      "library": {
+        "id": "library",
+        "type": "subgraph",
+        "definition": {
+          "id": "lattice.library.literal-cleanup",
+          "version": 1,
+          "semanticHash": "sha256:3b20d09b4bf8ae7d5eca6a47de761dccd4acdcbfd2668c91f0f07f13c1920011"
+        },
+        "parameterOverrides": {},
+        "roleOverrides": {},
+        "nodeBindingOverrides": {}
+      },
+      "review": {
+        "id": "review",
+        "type": "workflow",
+        "operation": "review-gate",
+        "operationVersion": 1
+      },
+      "apply": {
+        "id": "apply",
+        "type": "workflow",
+        "operation": "apply-reply",
+        "operationVersion": 1
+      }
+    },
+    "wires": {
+      "source": {
+        "id": "source",
+        "route": "wire",
+        "from": "source",
+        "fromPort": "out",
+        "to": "library",
+        "toPort": "draft"
+      },
+      "review": {
+        "id": "review",
+        "route": "wire",
+        "from": "library",
+        "fromPort": "candidate",
+        "to": "review",
+        "toPort": "in"
+      },
+      "apply": {
+        "id": "apply",
+        "route": "wire",
+        "from": "review",
+        "fromPort": "out",
+        "to": "apply",
+        "toPort": "in"
+      }
+    },
+    "groups": {},
+    "roles": {
+      "Prose": {
+        "model": null
+      }
+    },
+    "portals": {},
+    "definitions": {
+      "[\"lattice.library.literal-cleanup\",1,\"sha256:3b20d09b4bf8ae7d5eca6a47de761dccd4acdcbfd2668c91f0f07f13c1920011\"]": {
+        "id": "lattice.library.literal-cleanup",
+        "version": 1,
+        "semanticHash": "sha256:3b20d09b4bf8ae7d5eca6a47de761dccd4acdcbfd2668c91f0f07f13c1920011",
+        "name": "Literal Cleanup",
+        "interface": [
+          {
+            "id": "draft",
+            "label": "Draft",
+            "direction": "input",
+            "kind": "draft",
+            "required": true,
+            "cardinality": "one",
+            "boundaryNodeId": "entry"
+          },
+          {
+            "id": "candidate",
+            "label": "Literal Cleanup result",
+            "direction": "output",
+            "kind": "candidate",
+            "required": false,
+            "cardinality": "one",
+            "boundaryNodeId": "exit"
+          }
+        ],
+        "parameters": [
+          {
+            "id": "scope",
+            "label": "Literal scope",
+            "target": {
+              "instancePath": [],
+              "nodeId": "scan",
+              "controlId": "scope"
+            }
+          },
+          {
+            "id": "caseSensitive",
+            "label": "Case-sensitive matching",
+            "target": {
+              "instancePath": [],
+              "nodeId": "scan",
+              "controlId": "caseSensitive"
+            }
+          },
+          {
+            "id": "rules",
+            "label": "Literal preferences",
+            "target": {
+              "instancePath": [],
+              "nodeId": "scan",
+              "controlId": "rules"
+            }
+          },
+          {
+            "id": "exemptions",
+            "label": "Exemptions",
+            "target": {
+              "instancePath": [],
+              "nodeId": "scan",
+              "controlId": "exemptions"
+            }
+          },
+          {
+            "id": "protectedLiterals",
+            "label": "Protected wording",
+            "target": {
+              "instancePath": [],
+              "nodeId": "scan",
+              "controlId": "protectedLiterals"
+            }
+          },
+          {
+            "id": "mode",
+            "label": "Repair or inspect",
+            "target": {
+              "instancePath": [],
+              "nodeId": "repair",
+              "controlId": "mode"
+            }
+          },
+          {
+            "id": "strength",
+            "label": "Repair strength",
+            "target": {
+              "instancePath": [],
+              "nodeId": "repair",
+              "controlId": "strength"
+            }
+          },
+          {
+            "id": "instructions",
+            "label": "Repair instructions",
+            "target": {
+              "instancePath": [],
+              "nodeId": "repair",
+              "controlId": "instructions"
+            }
+          },
+          {
+            "id": "maxTokens",
+            "label": "Repair completion limit",
+            "target": {
+              "instancePath": [],
+              "nodeId": "repair",
+              "controlId": "maxTokens"
+            }
+          }
+        ],
+        "body": {
+          "schema": 3,
+          "runtime": 2,
+          "mode": "native-post",
+          "nodes": {
+            "entry": {
+              "id": "entry",
+              "type": "subgraph-input",
+              "interfacePortId": "draft"
+            },
+            "scan": {
+              "id": "scan",
+              "type": "workflow",
+              "operation": "pattern-scan",
+              "operationVersion": 1,
+              "modelRole": null,
+              "mode": "literal",
+              "scope": "narration",
+              "caseSensitive": false,
+              "rules": [
+                "the words hung in the air",
+                "the tension was palpable",
+                "something unreadable"
+              ],
+              "exemptions": [],
+              "protectedLiterals": []
+            },
+            "repair": {
+              "id": "repair",
+              "type": "workflow",
+              "operation": "repair",
+              "operationVersion": 1,
+              "modelRole": "Prose",
+              "mode": "repair",
+              "strength": "light",
+              "instructions": "",
+              "maxTokens": 2048,
+              "protectedLiterals": []
+            },
+            "validate": {
+              "id": "validate",
+              "type": "workflow",
+              "operation": "validate-patches",
+              "operationVersion": 1,
+              "modelRole": null,
+              "protectedLiterals": []
+            },
+            "exit": {
+              "id": "exit",
+              "type": "subgraph-output",
+              "interfacePortId": "candidate"
+            }
+          },
+          "wires": {
+            "scan": {
+              "id": "scan",
+              "route": "wire",
+              "from": "entry",
+              "fromPort": "out",
+              "to": "scan",
+              "toPort": "in"
+            },
+            "repair": {
+              "id": "repair",
+              "route": "wire",
+              "from": "scan",
+              "fromPort": "out",
+              "to": "repair",
+              "toPort": "in"
+            },
+            "validate": {
+              "id": "validate",
+              "route": "wire",
+              "from": "repair",
+              "fromPort": "out",
+              "to": "validate",
+              "toPort": "in"
+            },
+            "result": {
+              "id": "result",
+              "route": "wire",
+              "from": "validate",
+              "fromPort": "out",
+              "to": "exit",
+              "toPort": "in"
+            }
+          },
+          "groups": {},
+          "roles": {
+            "Prose": {
+              "model": null
+            }
+          },
+          "portals": {}
+        }
+      }
+    }
+  }
+}

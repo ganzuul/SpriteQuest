@@ -9,10 +9,17 @@ const record = value => value && typeof value === 'object' && !Array.isArray(val
 const exact = (value, keys) => record(value) && Object.keys(value).every(key => keys.includes(key));
 const rootOnly = new Set(['scene-context', 'reply-snapshot', 'guidance', 'apply-reply']);
 const presets = [
-    ['text-rules', 'draft', 'Text Rules · Draft', { inputKind: 'draft', mode: 'replace' }],
+    ['text-rules', 'draft', 'Text Rules · Draft', { inputKind: 'draft', mode: 'replace', scope: 'whole' }],
     ['json-decode', 'check', 'JSON Decode · Check', { mode: 'check' }],
     ['compose', 'input', 'Compose · Input', { sections: [{ name: 'Input', text: '' }] }],
     ['compose', 'guidance', 'Compose · Guidance', { outputKind: 'guidance' }],
+    ['style-transfer', 'character-voice', 'Style Transfer · Character Voice', { mode: 'character-voice', scope: 'dialogue' }],
+    ['style-transfer', 'rhythm', 'Style Transfer · Rhythm', { mode: 'rhythm', scope: 'narration' }],
+    ['style-transfer', 'register', 'Style Transfer · Register', { mode: 'register', scope: 'narration' }],
+    ['format-transfer', 'data', 'Format Transfer · Data Template', { referenceKind: 'data' }],
+    ['repair', 'inspect', 'Repair · Slop Inspect', { mode: 'inspect', scope: 'narration' }],
+    ['repair', 'contextual', 'Repair · Contextual Cleanup', { mode: 'contextual', scope: 'narration' }],
+    ['repair', 'strict', 'Repair · Strict Avoidance', { mode: 'strict', scope: 'narration' }],
 ];
 const freeze = value => {
     if (value && typeof value === 'object' && !Object.isFrozen(value)) {
@@ -43,6 +50,9 @@ const searchMetadata = cloneDefinitionData({
     'text-rules': { purpose: 'Replace or extract literal text matches.', shortcode: 'tr', searchAliases: ['text-rules', 'text replacement'] },
     'json-decode': { purpose: 'Decode JSON text or check structured values.', shortcode: 'jd', searchAliases: ['json-decode', 'JSON parser'] },
     'select-fields': { purpose: 'Project selected paths from structured data.', shortcode: 'sf', searchAliases: ['select-fields', 'field projection'] },
+    'style-transfer': { purpose: 'Apply reference voice, rhythm or diction to permitted draft text.', shortcode: 'st', searchAliases: ['style-transfer', 'character voice', 'recast'] },
+    'format-transfer': { purpose: 'Reorganize permitted draft text using an example or template.', shortcode: 'ft', searchAliases: ['format-transfer', 'screenplay', 'recap template'] },
+    'terminology-map': { purpose: 'Apply a canonical glossary without a model call.', shortcode: 'tm', searchAliases: ['terminology-map', 'glossary', 'spelling', 'titles'] },
 }).data;
 const variantSearchMetadata = cloneDefinitionData({
     'text-rules:draft': { purpose: 'Produce guarded patches from literal draft rules.', shortcode: 'trd', searchAliases: ['draft replacement'] },

@@ -39,7 +39,7 @@ interface NodeEnvelope {
 }
 export type PrimitiveNode =
     | (NodeEnvelope & { operation: 'compose'; mode?: 'join' | 'template'; outputKind?: 'text' | 'guidance'; template?: string; sections?: ComposeSection[]; separator?: string })
-    | (NodeEnvelope & { operation: 'text-rules'; inputKind?: 'text' | 'draft'; mode?: 'replace' | 'extract'; rules?: TextRule[]; separator?: string })
+    | (NodeEnvelope & { operation: 'text-rules'; inputKind?: 'text' | 'draft'; mode?: 'replace' | 'extract'; rules?: TextRule[]; separator?: string; scope?: 'authorized' | 'whole' | 'narration' | 'dialogue'; protectedLiterals?: string[] })
     | (NodeEnvelope & { operation: 'json-decode'; mode?: 'parse' | 'check'; /** Raw JSON text; empty means no schema. */ schema?: string })
     | (NodeEnvelope & { operation: 'select-fields'; fields?: FieldSelection[] });
 export interface PrimitiveExecution {

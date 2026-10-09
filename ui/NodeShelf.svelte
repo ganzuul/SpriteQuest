@@ -85,7 +85,7 @@
 <svelte:window onpointerdown={(event) => { if (!(event.target as HTMLElement).closest('.pc-node-shelf, .pc-shelf-menu')) close(); }} onresize={() => close()} />
 <nav class={`pc-node-shelf${compact && family ? ' pc-shelf-replaced' : ''}`} aria-label="Node families" bind:this={shelf}>
     {#each FAMILY_PALETTE as item}
-        <button type="button" data-family={item.name} class="pc-family-row" style:--pc-family={item.color} disabled={(!entries(item.name).length && !(item.name === 'Subgraphs' && manageSubgraphs)) || item.name === 'Transpose'} title={item.name === 'Transpose' ? 'No supported Transpose operations yet.' : 'Browse ' + item.name + ' nodes'} aria-haspopup="menu" aria-expanded={family === item.name} onclick={(event) => open(item.name, event.currentTarget)} onpointerenter={(event) => { if (event.pointerType !== 'touch' && !event.currentTarget.disabled) open(item.name, event.currentTarget, false); }} onkeydown={keys}>
+        <button type="button" data-family={item.name} class="pc-family-row" style:--pc-family={item.color} disabled={!entries(item.name).length && !(item.name === 'Subgraphs' && manageSubgraphs)} title={'Browse ' + item.name + ' nodes'} aria-haspopup="menu" aria-expanded={family === item.name} onclick={(event) => open(item.name, event.currentTarget)} onpointerenter={(event) => { if (event.pointerType !== 'touch' && !event.currentTarget.disabled) open(item.name, event.currentTarget, false); }} onkeydown={keys}>
             <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d={item.icon} /></svg><span>{item.name}</span>
         </button>
     {/each}

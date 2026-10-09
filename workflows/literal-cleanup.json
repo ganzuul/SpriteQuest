@@ -46,7 +46,9 @@
             "flags": ""
           }
         ],
-        "separator": "\n"
+        "separator": "\n",
+        "scope": "whole",
+        "protectedLiterals": []
       },
       "validate-patches": {
         "id": "validate-patches",

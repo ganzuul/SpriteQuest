@@ -30,7 +30,7 @@ test('default and declared variants describe real pins in the containing phase w
         }
         assert.equal(choice(value, 'operation:reroute'), undefined);
         assert.ok(value.families.includes('Transpose'));
-        assert.equal(value.choices.some(item => item.family === 'Transpose'), false);
+        assert.equal(value.choices.some(item => item.family === 'Transpose'), mode === 'native-post');
     }
 });
 

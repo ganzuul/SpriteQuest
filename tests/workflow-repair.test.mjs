@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
 import { scanDraft, repairDraft, validatePatches } from '../src/workflow/repair.js';
 const draft = text => ({ kind: 'draft', text, source: { chatId: 'synthetic', messageIndex: 4, swipeId: 0, originalText: text } });
-const scanned = (text = 'Before. "A shiver ran down her spine." After.', node = { rules: ['A shiver ran down her spine.'] }) => scanDraft(draft(text), node).artifact;
+const scanned = (text = 'Before. "A shiver ran down her spine." After.', node = { rules: ['A shiver ran down her spine.'] }) => scanDraft(draft(text), { scope: 'whole', ...node }).artifact;
 // Losing literal matches or changing source bytes must fail this fixture.
 {
     const input = draft('😀 A shiver ran down her spine.');
-    const result = scanDraft(input, { rules: ['a shiver ran down her spine.'] });
+    const result = scanDraft(input, { scope: 'whole', rules: ['a shiver ran down her spine.'] });
     assert.equal(result.ok, true);
     assert.equal(result.artifact.text, input.text);
     assert.deepEqual(result.artifact.spans, [{ index: 0, start: 3, end: 31, text: 'A shiver ran down her spine.' }]);
@@ -26,26 +26,26 @@ const scanned = (text = 'Before. "A shiver ran down her spine." After.', node = 
 }
 // Exempted literal occurrences must never grant editable spans.
 {
-    const result = scanDraft(draft('cold heart and cold.'), { rules: ['cold'], exemptions: ['cold heart'] });
+    const result = scanDraft(draft('cold heart and cold.'), { scope: 'whole', rules: ['cold'], exemptions: ['cold heart'] });
     assert.deepEqual(result.artifact.spans.map(s => [s.start, s.end]), [[15, 19]]);
 }
 // Protected wording remains inspectable but never receives edit permission.
 {
-    const result = scanDraft(draft('cold heart and cold.'), { rules: ['cold'], protectedLiterals: ['cold heart'] });
+    const result = scanDraft(draft('cold heart and cold.'), { scope: 'whole', rules: ['cold'], protectedLiterals: ['cold heart'] });
     assert.deepEqual(result.artifact.spans.map(s => [s.start, s.end]), [[15, 19]]);
     assert.equal(result.artifact.findings[0].protected, true);
 }
 // Overlapping or adjacent phrase hits grant one sorted, stable edit region.
 {
-    const result = scanDraft(draft('abcdef zz abc'), { rules: ['def', 'abc', 'bcd'] });
+    const result = scanDraft(draft('abcdef zz abc'), { scope: 'whole', rules: ['def', 'abc', 'bcd'] });
     assert.deepEqual(result.artifact.spans, [{ index: 0, start: 0, end: 6, text: 'abcdef' }, { index: 1, start: 10, end: 13, text: 'abc' }]);
     assert.equal(result.artifact.findings.length, 4);
 }
 // Case-insensitive matching must retain original offsets and treat regex punctuation literally.
 {
-    const result = scanDraft(draft('İ [cold] COLD'), { rules: ['[cold]'], exemptions: ['x.*'] });
+    const result = scanDraft(draft('İ [cold] COLD'), { scope: 'whole', rules: ['[cold]'], exemptions: ['x.*'] });
     assert.deepEqual(result.artifact.spans.map(s => [s.start, s.end]), [[2, 8]]);
-    assert.deepEqual(scanDraft(draft('COLD cold'), { rules: ['cold'], caseSensitive: true }).artifact.spans.map(s => [s.start, s.end]), [[5, 9]]);
+    assert.deepEqual(scanDraft(draft('COLD cold'), { scope: 'whole', rules: ['cold'], caseSensitive: true }).artifact.spans.map(s => [s.start, s.end]), [[5, 9]]);
 }
 // One bounded repair uses supplied span indices and splices only those original ranges.
 {
@@ -175,7 +175,9 @@ for (const finish of ['length', 'max_tokens', 'max_output_tokens']) assert.equal
     assert.equal(scanDraft(draft(text), { rules: ['x'] }).error?.code, 'INPUT_LIMIT');
     const input = scanned(); input.text = text; input.source.originalText = text;
     assert.equal((await repairDraft(input)).error?.code, 'INPUT_LIMIT');
-    const many = scanned('x '.repeat(257), { rules: ['x'] });
+    const many = draft('x '.repeat(257));
+    many.spans = Array.from({ length: 257 }, (_, index) => ({ index, start: index * 2, end: index * 2 + 1, text: 'x' }));
+    assert.equal(scanDraft(many, { scope: 'whole', rules: ['x'] }).error?.code, 'SPAN_LIMIT');
     assert.equal((await repairDraft(many)).error?.code, 'SPAN_LIMIT');
 }
 // Malformed external scan/repair artifacts return explicit failures before reading or sending.
@@ -243,7 +245,7 @@ for (const node of [{ mode: 'rewrite' }, { maxTokens: 0 }, { instructions: 17 },
 for (const patches of ['{"patches":[{"index":0,"replacement":"X","start":0}]}', '{"patches":[],"text":"whole rewrite"}', 'null', '{"patches":{}}']) assert.equal(validatePatches(patchArtifact(patches)).error?.code, 'INVALID_PATCHES');
 // Excessive finding/prompt/output material stops explicitly rather than being truncated.
 {
-    assert.equal(scanDraft(draft('x '.repeat(4097)), { rules: ['x'] }).error?.code, 'SCAN_LIMIT');
+    assert.equal(scanDraft(draft('x '.repeat(4097)), { scope: 'whole', rules: ['x'] }).error?.code, 'SCAN_LIMIT');
     const input = scanned(); input.rules = ['x'.repeat(500001)];
     assert.equal((await repairDraft(input)).error?.code, 'INPUT_LIMIT');
     assert.equal(validatePatches(patchArtifact('x'.repeat(100001))).error?.code, 'OUTPUT_LIMIT');
@@ -308,7 +310,7 @@ for (const scope of ['bogus', '', null, 7, {}]) {
 }
 // Upstream inspection findings survive new scans, including unmatched-quote reports.
 for (const [text, node, newFinding] of [
-    ['cold heart and cold.', { rules: ['cold'], exemptions: ['cold heart'] }, { rule: 'cold', start: 15, end: 19, text: 'cold', protected: false }],
+    ['cold heart and cold.', { scope: 'whole', rules: ['cold'], exemptions: ['cold heart'] }, { rule: 'cold', start: 15, end: 19, text: 'cold', protected: false }],
     ['cold "cold', { rules: ['cold'], scope: 'narration' }, { code: 'UNMATCHED_QUOTES', offsets: [5] }],
 ]) {
     const upstream = { code: 'UPSTREAM_FINDING', message: 'Keep this' };

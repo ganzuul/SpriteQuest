@@ -1,14 +1,24 @@
 import { operationDefaults } from './catalog.js?v=0.22.1';
+import { createLibraryWorkflow } from './library/subgraphs.js?v=0.22.1';
 export const STARTERS = [
     { id: 'native-guidance', version: 1, title: 'Scene guidance', purpose: 'Shape scene direction while SillyTavern writes the reply.', phase: 'pre', roles: ['Analysis'], callBound: 2, operations: ['scene-context', 'smart-compactor', 'response-plan', 'guidance'] },
     { id: 'reviewed-de-slop', version: 1, title: 'Reviewed AI De-slop', purpose: 'Find literal patterns and review a bounded repair before applying.', phase: 'post', roles: ['Prose'], callBound: 1, operations: ['reply-snapshot', 'pattern-scan', 'repair', 'validate-patches', 'review-gate', 'apply-reply'] },
     { id: 'literal-cleanup', version: 1, title: 'Literal cleanup', purpose: 'Try a small literal replacement without a model call, then review before applying.', phase: 'post', roles: [], callBound: 0, operations: ['reply-snapshot', 'text-rules', 'validate-patches', 'review-gate', 'apply-reply'] },
     { id: 'structured-guidance', version: 1, title: 'Structured guidance', purpose: 'Read JSON, select fields and compose optional guidance without a model call.', phase: 'pre', roles: [], callBound: 0, operations: ['compose', 'json-decode', 'select-fields', 'compose', 'guidance'] },
+    { id: 'scene-compass', libraryRecipe: 'scene-compass', version: 1, title: 'Scene Compass', purpose: 'Select context and suggest scene direction while preserving user agency.', phase: 'pre', roles: ['Analysis'], callBound: 1, operations: [] },
+    { id: 'library-literal-cleanup', libraryRecipe: 'literal-cleanup', version: 1, title: 'Literal phrase cleanup', purpose: 'Find configured phrases and propose a focused repair for review.', phase: 'post', roles: ['Prose'], callBound: 1, operations: [] },
+    { id: 'formatting-cleanup', libraryRecipe: 'formatting-cleanup', version: 1, title: 'Formatting cleanup', purpose: 'Normalize line endings within explicitly permitted draft text.', phase: 'post', roles: [], callBound: 0, operations: [] },
+    { id: 'prose-cleanup', libraryRecipe: 'prose-cleanup', version: 1, title: 'Prose cleanup', purpose: 'Inspect or revise prose using the complete category-based policy.', phase: 'post', roles: ['Prose'], callBound: 1, operations: [] },
 ];
 /** Canonical versioned definitions also generate the literal portable packages. */
 export function starterGraph(id) {
     const starter = STARTERS.find(item => item.id === id);
     if (!starter) throw new Error('Unknown workflow starter.');
+    if (starter.libraryRecipe) {
+        const result = createLibraryWorkflow(starter.libraryRecipe);
+        if (!result.ok) throw new Error(result.error.code + ': ' + result.error.message);
+        return { ...result.data.graph, id: starter.id, name: starter.title, template: { id: starter.id, version: starter.version } };
+    }
     return workspaceStarter(starter);
 }
 function workspaceStarter(starter) {
@@ -21,6 +31,7 @@ function workspaceStarter(starter) {
     }
     if (starter.id === 'literal-cleanup') {
         graph.nodes['text-rules'].inputKind = 'draft';
+        graph.nodes['text-rules'].scope = 'whole';
         graph.nodes['text-rules'].rules = [{ kind: 'literal', pattern: 'very very', replacement: 'very', flags: '' }];
     } else if (starter.id === 'native-guidance') {
         graph.nodes['smart-compactor'].method = 'compress';

@@ -7,6 +7,7 @@ Build writing processes from typed operations, inspect their intermediate result
 | [Quick start](lattice-workspace.md) | Run and change your first workflows without a model connection |
 | [Operator's manual](operators-manual.md) | Learn the editor, shelf, Details, Preview, execution, tabs, and subgraphs through screenshots |
 | [Node reference](node-reference.md) | Find every available node's artifacts, controls, model requirements, and connection examples |
+| [Reference tools and workflow library](lattice-reference-library.md) | Use Transpose, cleanup modes and reusable context/cleanup recipes |
 | [Connections and workflow comments](connection-comments.md) | Follow connections and label, annotate, move, and resize workflow sections |
 | [Model connections and host integration](native-workflows.md) | Bind profiles, assign phases, publish guidance, review replies, and troubleshoot |
 | [Development guide](development.md) | Build the extension and reproduce documentation screenshots |

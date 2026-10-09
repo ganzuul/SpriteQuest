@@ -1,0 +1,282 @@
+import assert from 'node:assert/strict';
+import { existsSync, readFileSync } from 'node:fs';
+import { Worker } from 'node:worker_threads';
+import { parseSubgraph, exportSubgraph, parseWorkflow, exportWorkflow } from '../src/workflow/packages.js';
+import { computeDefinitionIdentity, definitionRefKey, validateDefinition } from '../src/workflow/definitions.js';
+import { resolveWorkflow } from '../src/workflow/resolve.js';
+import { runWorkflow, runWorkflowForHost } from '../src/workflow/runtime.js';
+import { operationFor } from '../src/workflow/catalog.js';
+// Git core.autocrlf changes storage newlines, not package JSON content.
+const canonicalFile = url => readFileSync(url, 'utf8').replace(/\r\n/g, '\n');
+
+assert.ok(existsSync(new URL('../src/workflow/library/subgraphs.js', import.meta.url)), 'portable library factory exists');
+const { createLibrarySubgraph } = await import('../src/workflow/library/subgraphs.js');
+const lens = createLibrarySubgraph('context-lens');
+assert.equal(lens.ok, true);
+const parsed = parseSubgraph(lens.data.json);
+assert.equal(parsed.ok, true);
+assert.deepEqual(parsed.data.definition, lens.data.definition);
+assert.equal(validateDefinition(parsed.data.definition, parsed.data.definitions).ok, true);
+assert.equal(computeDefinitionIdentity(parsed.data.definition).data.semanticHash, parsed.data.definition.semanticHash);
+assert.equal(JSON.stringify(exportSubgraph(parsed.data.definition, parsed.data.definitions), null, 2) + '\n', lens.data.json);
+assert.deepEqual(lens.data.definition.interface.map(port => [port.id, port.kind]), [['context', 'context'], ['selected-context', 'context']]);
+assert.equal(lens.data.definition.body.nodes.compact.method, 'select');
+assert.deepEqual(lens.data.definition.parameters.map(parameter => parameter.id), ['targetTokens', 'keepRecent', 'pins', 'method', 'purpose', 'maxTokens']);
+assert.ok(Object.values(lens.data.definition.body.nodes).every(node => !['scene-context', 'guidance'].includes(node.operation)));
+console.log('workflow-library-subgraphs: Context Lens passed');
+
+const library = await import('../src/workflow/library/subgraphs.js');
+const scene = createLibrarySubgraph('scene-compass');
+assert.equal(scene.ok, true, 'Scene Compass package exists');
+const scenePackage = parseSubgraph(scene.data.json).data;
+assert.deepEqual(Object.keys(scenePackage.definitions), [definitionRefKey(lens.data.definition)]);
+assert.deepEqual(scenePackage.definition.body.nodes.lens.definition, { id: lens.data.definition.id, version: 1, semanticHash: lens.data.definition.semanticHash });
+assert.equal(scenePackage.definition.body.definitions, undefined, 'closure remains flat outside bodies');
+assert.equal(computeDefinitionIdentity(scenePackage.definition).data.semanticHash, scenePackage.definition.semanticHash);
+assert.ok(scenePackage.definition.parameters.some(parameter => parameter.target.instancePath[0] === 'lens'));
+assert.match(scenePackage.definition.body.nodes.plan.instructions, /user agency/i);
+const sceneRoot = library.createLibraryWorkflow('scene-compass');
+assert.equal(sceneRoot.ok, true);
+assert.equal(resolveWorkflow(sceneRoot.data.graph).data.callBound, 1);
+assert.equal(library.createLibraryWorkflow('context-lens').error.code, 'LIBRARY_UTILITY_ONLY');
+const sceneBefore = JSON.stringify(sceneRoot.data.graph);
+const requests = [];
+const sceneRun = await runWorkflow(sceneRoot.data.graph, {
+    snapshot: () => ({ kind: 'context', messages: [{ id: 'user-1', role: 'user', text: 'Mara waits by the door.' }] }),
+    countTokens: async text => ({ tokens: Math.ceil(text.length / 4), method: 'fixed-test' }),
+    resolveBinding: node => { assert.equal(node.modelRole, 'Analysis'); return { ok: true, data: { model: 'fixed-test-model' } }; },
+    request: async request => { requests.push(request); return { ok: true, data: { text: 'Mara could choose to leave.', finish: 'stop' } }; },
+});
+assert.equal(sceneRun.ok, true);
+assert.equal(sceneRun.actualCalls, 1);
+assert.equal(requests.length, 1);
+assert.match(requests[0].messages[0].content, /Preserve user agency/);
+assert.equal(JSON.stringify(sceneRoot.data.graph), sceneBefore);
+console.log('workflow-library-subgraphs: Scene Compass passed');
+
+const cleanupIds = ['literal-cleanup', 'formatting-cleanup', 'prose-cleanup'];
+for (const id of cleanupIds) {
+    const recipe = createLibrarySubgraph(id);
+    assert.equal(recipe.ok, true, `${id} now has permission-preserving registered operations`);
+    const root = library.createLibraryWorkflow(id);
+    assert.equal(root.ok, true, JSON.stringify(root.error));
+    assert.deepEqual(Object.values(root.data.graph.nodes).map(node => node.operation ?? node.type), ['reply-snapshot', 'subgraph', 'review-gate', 'apply-reply']);
+    assert.equal(resolveWorkflow(root.data.graph).data.callBound, id === 'formatting-cleanup' ? 0 : 1);
+}
+const literalDefinition = createLibrarySubgraph('literal-cleanup').data.definition;
+assert.equal(literalDefinition.body.nodes.scan.scope, 'narration');
+assert.deepEqual(literalDefinition.body.nodes.scan.rules, ['the words hung in the air', 'the tension was palpable', 'something unreadable']);
+assert.equal(literalDefinition.body.nodes.repair.mode, 'repair');
+const formattingDefinition = createLibrarySubgraph('formatting-cleanup').data.definition;
+assert.equal(formattingDefinition.body.nodes.rules.scope, 'whole');
+assert.deepEqual(formattingDefinition.body.nodes.rules.rules, [{ kind: 'literal', pattern: '\r\n', replacement: '\n', flags: '' }]);
+const proseDefinition = createLibrarySubgraph('prose-cleanup').data.definition;
+assert.equal(proseDefinition.body.nodes.repair.mode, 'contextual');
+assert.equal(proseDefinition.body.nodes.repair.scope, 'narration');
+assert.deepEqual(proseDefinition.body.nodes.repair.categories, []);
+const optionalContext = proseDefinition.interface.find(port => port.id === 'context');
+assert.equal(optionalContext?.required, false);
+assert.equal(optionalContext?.kind, 'context');
+assert.equal(proseDefinition.body.nodes[optionalContext.boundaryNodeId].type, 'subgraph-input');
+console.log('workflow-library-subgraphs: cleanup definitions and roots passed');
+for (const id of ['context-lens', 'scene-compass', ...cleanupIds]) {
+    const { definition, json } = createLibrarySubgraph(id).data;
+    const imported = parseSubgraph(json);
+    assert.equal(imported.ok, true);
+    assert.equal(definition.id, `lattice.library.${id}`);
+    assert.equal(definition.version, 1);
+    assert.equal(definition.semanticHash, computeDefinitionIdentity(definition).data.semanticHash);
+    assert.equal(JSON.stringify(exportSubgraph(imported.data.definition, imported.data.definitions), null, 2) + '\n', json);
+    for (const snapshot of [definition, ...Object.values(imported.data.definitions)]) {
+        assert.equal(snapshot.body.definitions, undefined);
+        for (const node of Object.values(snapshot.body.nodes)) {
+            if (node.type !== 'workflow') continue;
+            const op = operationFor(node, { phase: snapshot.body.mode.slice(7) });
+            assert.ok(op, 'every package operation is registered');
+            assert.ok(!op.terminal && op.input, 'sources and terminals stay outside definition bodies');
+            assert.equal(node.profileId, undefined);
+            assert.equal(node.model, undefined);
+        }
+        assert.ok(Object.values(snapshot.body.roles).every(binding => binding.model === null && binding.profileId === undefined));
+    }
+    const local = structuredClone(definition);
+    local.name = 'Local display name';
+    for (const node of Object.values(local.body.nodes)) if (node.type === 'workflow') node.profileId = 'private-local-profile';
+    for (const binding of Object.values(local.body.roles)) binding.profileId = 'private-role-profile';
+    assert.equal(computeDefinitionIdentity(local).data.semanticHash, definition.semanticHash);
+    const stripped = exportSubgraph(local, imported.data.definitions);
+    assert.ok(!JSON.stringify(stripped).includes('private-local-profile'));
+    assert.ok(!JSON.stringify(stripped).includes('private-role-profile'));
+    assert.equal(parseSubgraph(JSON.stringify(stripped)).ok, true);
+    const semanticChange = structuredClone(definition);
+    if (id === 'context-lens') semanticChange.body.nodes.compact.targetTokens++;
+    if (id === 'scene-compass') semanticChange.body.nodes.plan.instructions += ' Changed.';
+    if (id === 'literal-cleanup' || id === 'prose-cleanup') semanticChange.body.nodes.repair.instructions += ' Changed.';
+    if (id === 'formatting-cleanup') semanticChange.body.nodes.rules.rules[0].replacement += ' Changed.';
+    assert.notEqual(computeDefinitionIdentity(semanticChange).data.semanticHash, definition.semanticHash);
+    const example = new URL(`../examples/library/subgraphs/${id}.json`, import.meta.url);
+    assert.ok(existsSync(example), `${id} canonical subgraph file exists`);
+    assert.equal(canonicalFile(example), json, `${id} example is generated from its canonical factory`);
+    if (id !== 'context-lens') {
+        const root = library.createLibraryWorkflow(id).data;
+        const importedRoot = parseWorkflow(root.json);
+        assert.equal(importedRoot.ok, true);
+        assert.deepEqual(importedRoot.data, root.graph);
+        assert.equal(JSON.stringify(exportWorkflow(importedRoot.data), null, 2) + '\n', root.json);
+        assert.equal(canonicalFile(new URL(`../examples/library/workflows/${id}.json`, import.meta.url)), root.json);
+        assert.ok(Object.hasOwn(root.graph.definitions, definitionRefKey(root.graph.nodes.library.definition)));
+    }
+}
+assert.equal(existsSync(new URL('../examples/library/workflows/context-lens.json', import.meta.url)), false);
+for (const invalid of ['missing', '', null, 7, {}, 'constructor', '__proto__']) {
+    assert.equal(createLibrarySubgraph(invalid).error.code, 'UNKNOWN_LIBRARY_SUBGRAPH');
+    assert.equal(library.createLibraryWorkflow(invalid).error.code, 'UNKNOWN_LIBRARY_WORKFLOW');
+}
+const tamperedScene = JSON.parse(scene.data.json);
+tamperedScene.definitions[definitionRefKey(lens.data.definition)].body.nodes.compact.targetTokens++;
+assert.equal(parseSubgraph(JSON.stringify(tamperedScene)).error.code, 'DEFINITION_HASH');
+const missingScene = JSON.parse(scene.data.json);
+missingScene.definitions = {};
+assert.equal(parseSubgraph(JSON.stringify(missingScene)).error.code, 'MISSING_DEFINITION');
+assert.equal(createLibrarySubgraph('context-lens').data.json, lens.data.json, 'factories remain deterministic and detached');
+console.log('workflow-library-subgraphs: canonical files and portability passed');
+
+for (const method of ['select', 'compress']) {
+    const graph = structuredClone(sceneRoot.data.graph);
+    graph.nodes.library.parameterOverrides = { method, targetTokens: 100, keepRecent: 1 };
+    const target = { workflowId: graph.id, instancePath: ['library', 'lens'], nodeId: 'compact', portId: 'out' };
+    assert.equal(resolveWorkflow(graph, { target }).data.callBound, method === 'compress' ? 1 : 0);
+    assert.equal(resolveWorkflow(graph).data.callBound, method === 'compress' ? 2 : 1);
+    const result = await runWorkflow(graph, {
+        target,
+        snapshot: () => ({ kind: 'context', messages: [{ id: 'history', role: 'user', text: 'Older fact. '.repeat(100) }, { id: 'recent', role: 'user', text: 'Current scene.' }] }),
+        countTokens: async text => ({ tokens: Math.ceil(text.length / 4), method: 'fixed-test' }),
+        resolveBinding: () => ({ ok: true, data: { model: 'fixed-test-model' } }),
+        request: async () => ({ ok: true, data: { text: 'Earlier facts summarized.', finish: 'stop' } }),
+    });
+    assert.equal(result.ok, true, JSON.stringify(result.error));
+    assert.equal(result.actualCalls, method === 'compress' ? 1 : 0);
+    assert.equal(result.recording.terminals.length, 0, 'utility target carries no terminal authority');
+    assert.ok(result.recording.artifacts.some(entry => entry.value?.kind === 'context' && entry.value?.messages?.some(message => message.id === 'recent')));
+}
+let unboundEffects = 0;
+const unbound = await runWorkflow(sceneRoot.data.graph, { snapshot: () => { unboundEffects++; }, request: () => { unboundEffects++; } });
+assert.equal(unbound.error.code, 'BINDING_MISSING');
+assert.equal(unbound.actualCalls, 0);
+assert.equal(unboundEffects, 0);
+console.log('workflow-library-subgraphs: utility modes and unresolved roles passed');
+
+const sourceDraft = text => ({ kind: 'draft', text, source: { chatId: 'library-fixture', messageIndex: 3, swipeId: 0, originalText: text, token: { identity: 'original' } } });
+const testBinding = node => { assert.equal(node.modelRole, 'Prose'); return { ok: true, data: { model: 'fixed-prose' } }; };
+const testCount = async text => ({ tokens: Math.ceil(text.length / 4), method: 'fixed-test' });
+const literalPhrase = 'something unreadable', protectedPhrase = 'the tension was palpable';
+
+// Literal default narration never authorizes the quoted occurrence and issues at most one request.
+{
+    const graph = library.createLibraryWorkflow('literal-cleanup').data.graph;
+    const input = sourceDraft(`${literalPhrase} "${literalPhrase}"`);
+    const original = structuredClone(input);
+    let requests = 0, terminal;
+    const result = await runWorkflowForHost(graph, {
+        snapshot: () => input, resolveBinding: testBinding, countTokens: testCount,
+        request: async request => {
+            requests++;
+            const data = JSON.parse(request.messages[1].content);
+            assert.deepEqual(data.spans, [{ index: 0, start: 0, end: literalPhrase.length, text: literalPhrase }]);
+            return { ok: true, data: { text: '{"patches":[{"index":0,"replacement":"plain"}]}', finish: 'stop' } };
+        },
+    }, { settle({ terminals }) { assert.equal(terminals.length, 1); terminal = terminals[0].artifact; return { ok: true }; } });
+    assert.equal(result.ok, true, JSON.stringify(result.error));
+    assert.equal(requests, 1);
+    assert.equal(result.actualCalls, 1);
+    assert.equal(terminal.text, `plain "${literalPhrase}"`);
+    assert.equal(terminal.original, input.text);
+    assert.deepEqual(structuredClone(terminal.source), input.source);
+    assert.equal(terminal.reviewRequired, true);
+    assert.deepEqual(input, original);
+}
+for (const input of [
+    { ...sourceDraft(literalPhrase), spans: [] },
+    { ...sourceDraft(literalPhrase), protectedLiterals: [literalPhrase] },
+    { ...sourceDraft(`${literalPhrase} "${literalPhrase}"`), scope: 'dialogue', spans: [{ index: 0, start: literalPhrase.length + 2, end: literalPhrase.length * 2 + 2, text: literalPhrase }] },
+    { ...sourceDraft(`${literalPhrase} ${protectedPhrase}`), spans: [{ index: 0, start: literalPhrase.length + 1, end: literalPhrase.length + 1 + protectedPhrase.length, text: protectedPhrase }], exemptions: [literalPhrase], protectedLiterals: [protectedPhrase] },
+]) {
+    let requests = 0, terminal;
+    const before = structuredClone(input);
+    const result = await runWorkflowForHost(library.createLibraryWorkflow('literal-cleanup').data.graph, {
+        snapshot: () => input, resolveBinding: testBinding,
+        request() { requests++; throw Error('No editable literal permission'); },
+        countTokens() { throw Error('No editable literal permission'); },
+    }, { settle({ terminals }) { terminal = terminals[0].artifact; return { ok: true }; } });
+    assert.equal(result.ok, true, JSON.stringify(result.error));
+    assert.equal(requests, 0);
+    assert.equal(result.actualCalls, 0);
+    assert.equal(terminal.text, input.text);
+    assert.deepEqual(terminal.changes, []);
+    assert.deepEqual(input, before);
+}
+console.log('workflow-library-subgraphs: literal permissions and one-call bound passed');
+
+function ruleWorkerHarness() {
+    const resources = [];
+    return {
+        createWorker() {
+            const worker = new Worker(new URL('./fixtures/text-rules-node-worker.mjs', import.meta.url)), handlers = new Map();
+            const resource = { worker, termination: null }; resources.push(resource);
+            return {
+                addEventListener(type, listener) {
+                    const handler = type === 'message' ? data => { if (!data?.fixtureStarted) listener({ data }); } : error => listener({ error });
+                    handlers.set(listener, handler); worker.on(type, handler);
+                },
+                removeEventListener(type, listener) { worker.off(type, handlers.get(listener)); handlers.delete(listener); },
+                postMessage(message) { worker.postMessage(message); },
+                terminate() { resource.termination = worker.terminate(); return resource.termination; },
+            };
+        },
+        async cleaned() { for (const resource of resources) { assert.ok(resource.termination); await resource.termination; assert.equal(resource.worker.threadId, -1); } },
+    };
+}
+for (const [input, expected] of [
+    [sourceDraft('one\r\ntwo'), 'one\ntwo'],
+    [{ ...sourceDraft('one\r\ntwo'), spans: [] }, 'one\r\ntwo'],
+    [{ ...sourceDraft('one\r\ntwo'), protectedLiterals: ['one\r\ntwo'] }, 'one\r\ntwo'],
+    [{ ...sourceDraft('one\r\n"two\r\nthree"'), scope: 'narration', spans: [{ index: 0, start: 0, end: 5, text: 'one\r\n' }] }, 'one\n"two\r\nthree"'],
+]) {
+    const harness = ruleWorkerHarness(), before = structuredClone(input);
+    let terminal, effects = 0;
+    const forbidden = () => { effects++; throw Error('Formatting must use no model services'); };
+    const result = await runWorkflowForHost(library.createLibraryWorkflow('formatting-cleanup').data.graph, {
+        snapshot: () => input, createWorker: harness.createWorker, resolveBinding: forbidden, countTokens: forbidden, request: forbidden,
+    }, { settle({ terminals }) { terminal = terminals[0].artifact; return { ok: true }; } });
+    assert.equal(result.ok, true, JSON.stringify(result.error));
+    assert.equal(result.actualCalls, 0);
+    assert.equal(effects, 0);
+    assert.equal(terminal.text, expected);
+    assert.deepEqual(structuredClone(terminal.source), input.source);
+    assert.equal(terminal.reviewRequired, true);
+    assert.deepEqual(input, before);
+    await harness.cleaned();
+}
+console.log('workflow-library-subgraphs: formatting permissions and zero-call bound passed');
+
+for (const mode of ['inspect', 'contextual', 'strict']) {
+    const graph = library.createLibraryWorkflow('prose-cleanup').data.graph;
+    graph.nodes.library.parameterOverrides = { mode };
+    assert.equal(resolveWorkflow(graph).data.callBound, mode === 'inspect' ? 0 : 1);
+    const input = sourceDraft('The tension was palpable. "adequate."'), before = structuredClone(input);
+    let requests = 0, bindings = 0, terminal;
+    const result = await runWorkflowForHost(graph, {
+        snapshot: () => input, countTokens: testCount,
+        resolveBinding(node) { bindings++; return testBinding(node); },
+        request: async request => { requests++; assert.match(request.messages[0].content, /prose/i); return { ok: true, data: { text: 'The room fell quiet. "adequate."', finish: 'stop' } }; },
+    }, { settle({ terminals }) { terminal = terminals[0].artifact; return { ok: true }; } });
+    assert.equal(result.ok, true, JSON.stringify(result.error));
+    assert.equal(requests, mode === 'inspect' ? 0 : 1);
+    assert.equal(bindings, mode === 'inspect' ? 0 : 1);
+    assert.equal(result.actualCalls, requests);
+    assert.equal(terminal.text, mode === 'inspect' ? input.text : 'The room fell quiet. "adequate."');
+    assert.equal(terminal.reviewRequired, true);
+    assert.deepEqual(structuredClone(terminal.source), input.source);
+    assert.deepEqual(input, before);
+}
+console.log('workflow-library-subgraphs: prose cleanup zero/one-call modes passed');

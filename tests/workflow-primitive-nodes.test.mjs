@@ -38,7 +38,7 @@ test('static registration describes zero-request primitives and explicit editabl
         assert.ok(descriptor.controlDescriptors.every(control => ['enum', 'text', 'json'].includes(control.type)));
     }
     assert.deepEqual(api.PRIMITIVE_OPERATIONS.compose.defaults, { mode: 'join', outputKind: 'text', template: '', sections: [], separator: '\n\n' });
-    assert.deepEqual(api.PRIMITIVE_OPERATIONS['text-rules'].defaults, { inputKind: 'text', mode: 'replace', rules: [], separator: '\n' });
+    assert.deepEqual(api.PRIMITIVE_OPERATIONS['text-rules'].defaults, { inputKind: 'text', mode: 'replace', rules: [], separator: '\n', scope: 'authorized', protectedLiterals: [] });
     assert.deepEqual(api.PRIMITIVE_OPERATIONS['json-decode'].defaults, { mode: 'parse', schema: '' });
     assert.deepEqual(api.PRIMITIVE_OPERATIONS['select-fields'].defaults, { fields: [] });
 });
@@ -48,7 +48,7 @@ test('Draft source requires own originalText and rejects inherited provenance be
     Object.defineProperty(Object.prototype, 'originalText', { configurable: true, get() { reads++; return 'cold'; } });
     try {
         const draft = { kind: 'draft', text: 'cold', source: {} };
-        const node = { operation: 'text-rules', inputKind: 'draft', rules: [{ kind: 'literal', pattern: 'cold', replacement: 'warm' }] };
+        const node = { operation: 'text-rules', inputKind: 'draft', scope: 'whole', rules: [{ kind: 'literal', pattern: 'cold', replacement: 'warm' }] };
         assert.equal(api.describePrimitive(node).ok, true);
         const result = await api.executePrimitive(node, { in: draft }, { createWorker() { workers++; throw Error('must not create Worker'); } });
         assert.equal(result.error?.code, 'INVALID_DRAFT');
@@ -64,13 +64,13 @@ test('raw Draft rules ignore inherited scope, finish and usage metadata', async 
     for (const key of Object.keys(reads)) Object.defineProperty(Object.prototype, key, { configurable: true, get() { reads[key]++; throw Error('inherited ' + key); } });
     try {
         const draft = { kind: 'draft', text: 'cold', source: { originalText: 'cold' } };
-        const node = { operation: 'text-rules', inputKind: 'draft', rules: [{ kind: 'literal', pattern: 'cold', replacement: 'warm' }] };
+        const node = { operation: 'text-rules', inputKind: 'draft', scope: 'whole', rules: [{ kind: 'literal', pattern: 'cold', replacement: 'warm' }] };
         assert.equal(api.describePrimitive(node).ok, true);
         const result = await api.executePrimitive(node, { in: draft }, { createWorker: harness.createWorker, timeoutMs: 2000 });
         assert.equal(result.ok, true);
         assert.equal(result.artifact.kind, 'patches');
-        assert.equal(result.artifact.draft.scope, 'whole');
-        assert.deepEqual(result.artifact.patches, [{ index: 0, replacement: 'warm' }]);
+        assert.equal(Object.hasOwn(result.artifact.draft, 'scope'), false);
+        assert.deepEqual(structuredClone(result.artifact.patches), [{ index: 0, replacement: 'warm' }]);
         assert.equal(Object.hasOwn(draft, 'scope'), false);
         assert.equal(Object.hasOwn(result.artifact, 'finish'), false);
         assert.equal(Object.hasOwn(result.artifact, 'usage'), false);
@@ -196,9 +196,12 @@ test('helper failures preserve error details and never publish partial artifacts
     assert.deepEqual(missing.error.path, ['missing']);
     const harness = workerHarness();
     const draft = { kind: 'draft', text: 'Keep cold', source: { originalText: 'Keep cold' }, protectedLiterals: ['Keep'] };
-    const blocked = await api.executePrimitive({ operation: 'text-rules', inputKind: 'draft', rules: [{ kind: 'literal', pattern: 'Keep', replacement: 'Drop' }] }, { in: draft }, { createWorker: harness.createWorker, timeoutMs: 2000 });
-    assert.equal(blocked.error?.code, 'PROTECTED_LITERAL_REMOVED');
-    assert.equal(Object.hasOwn(blocked, 'artifact'), false);
+    const blocked = await api.executePrimitive({ operation: 'text-rules', inputKind: 'draft', scope: 'whole', rules: [{ kind: 'literal', pattern: 'Keep', replacement: 'Drop' }] }, { in: draft }, { createWorker: harness.createWorker, timeoutMs: 2000 });
+    assert.equal(blocked.ok, true);
+    assert.deepEqual(blocked.artifact.patches, [], 'pins prevent the transform before the final gate');
+    const { validatePatches } = await import('../src/workflow/repair.js');
+    const forged = validatePatches({ kind: 'patches', draft: { ...draft, spans: [{ index: 0, start: 0, end: 9, text: 'Keep cold' }] }, patches: [{ index: 0, replacement: 'Drop cold' }] });
+    assert.equal(forged.error?.code, 'PROTECTED_LITERAL_REMOVED');
     const zero = await api.executePrimitive({ operation: 'text-rules', rules: [{ kind: 'regex', pattern: '(?=x)', replacement: 'a' }] }, { in: { kind: 'text', text: 'x' } }, { phase: 'pre', createWorker: harness.createWorker, timeoutMs: 2000 });
     assert.equal(zero.error?.code, 'INVALID_RULES');
     assert.equal(Object.hasOwn(zero, 'artifact'), false);
@@ -258,7 +261,7 @@ test('Draft rules preserve authorized original spans and return patches accepted
     const result = await api.executePrimitive({ operation: 'text-rules', inputKind: 'draft', rules: [{ kind: 'literal', pattern: 'cold', replacement: 'hot' }] }, { in: draft }, { createWorker: harness.createWorker, timeoutMs: 2000 });
     assert.equal(result.ok, true, JSON.stringify(result));
     assert.equal(result.artifact.kind, 'patches');
-    assert.deepEqual(result.artifact.patches, [{ index: 0, replacement: 'hot' }, { index: 1, replacement: 'hot' }]);
+    assert.deepEqual(structuredClone(result.artifact.patches), [{ index: 0, replacement: 'hot' }, { index: 1, replacement: 'hot' }]);
     // Own data/permissions are preserved; engine snapshots use null-prototype records.
     assert.deepEqual(structuredClone(result.artifact.draft), original);
     assert.deepEqual(draft, original);
