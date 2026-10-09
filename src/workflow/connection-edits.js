@@ -1,0 +1,235 @@
+import { cloneDefinitionData, definitionRefKey } from './definitions.js?v=0.19.1';
+import { normalizeNativeGraph } from './migration.js?v=0.19.1';
+import { OPERATIONS, describeOperation, operationDefaults, portsForNode } from './catalog.js?v=0.19.1';
+import { prepareGraphCandidate } from './prepared-graph-edit.js?v=0.19.1';
+import { prepareLocalDefinitionEdit } from './definition-library.js?v=0.19.1';
+import { compositionIds, definitionChain, ownsDefinitionPath, safeId } from './composition-edit.js?v=0.19.1';
+
+const fail = (code, message) => ({ ok: false, error: { code, message } });
+const record = value => value !== null && typeof value === 'object' && !Array.isArray(value);
+const keys = (value, allowed) => record(value) && Object.keys(value).every(key => allowed.includes(key));
+const endpoint = value => keys(value, ['nodeId', 'portId']) && safeId(value.nodeId) && safeId(value.portId);
+const same = (left, right) => left.nodeId === right.nodeId && left.portId === right.portId;
+const point = value => keys(value, ['x', 'y']) && Number.isFinite(value.x) && Number.isFinite(value.y);
+const fields = {
+    connect: ['origin', 'target', 'replace'],
+    'move-input': ['origin', 'target', 'replace'],
+    'move-output': ['origin', 'target', 'replace'],
+    disconnect: ['edgeIds', 'publisherIds', 'publisherPolicy'],
+    'disconnect-pin': ['pin', 'publisherPolicy'],
+    reroute: ['edgeId', 'graphPoint'],
+    create: ['operation', 'controls', 'graphPoint', 'connection'],
+};
+
+function optionsFactory(options) {
+    if (!record(options) || ![Object.prototype, null].includes(Object.getPrototypeOf(options))) return fail('INVALID_OPTIONS', 'Use a plain options object.');
+    const descriptors = Object.getOwnPropertyDescriptors(options);
+    if (Reflect.ownKeys(options).some(key => key !== 'idFactory') || Object.values(descriptors).some(item => !item.enumerable || !Object.hasOwn(item, 'value'))) return fail('INVALID_OPTIONS', 'Only an own idFactory option is supported.');
+    const factory = descriptors.idFactory?.value;
+    return factory === undefined || typeof factory === 'function' ? { ok: true, data: factory } : fail('INVALID_OPTIONS', 'idFactory must be a function.');
+}
+
+function actualPin(context, value, direction) {
+    if (!endpoint(value) || !Object.hasOwn(context.scope.nodes, value.nodeId)) return fail('INVALID_PORT', 'Choose an existing named pin.');
+    const pin = portsForNode(context.metadata(), context.scope.nodes[value.nodeId]).find(pin => pin.id === value.portId && (!direction || pin.direction === direction));
+    return pin ? { ok: true, data: pin } : fail('INVALID_PORT', 'Choose an actual pin with the required direction.');
+}
+
+function removeEdges(context, edges) {
+    for (const edge of edges) {
+        delete context.scope.wires[edge.id];
+        context.removedEdgeIds.push(edge.id);
+        context.changed = true;
+    }
+}
+
+function connect(context, origin, target, replace) {
+    const left = actualPin(context, origin), right = actualPin(context, target);
+    if (!left.ok) return left;
+    if (!right.ok) return right;
+    if (left.data.direction === right.data.direction) return fail('INVALID_PORT', 'A connection needs one output and one input.');
+    const from = left.data.direction === 'output' ? origin : target, to = left.data.direction === 'input' ? origin : target;
+    const incoming = Object.values(context.scope.wires).filter(edge => edge.to === to.nodeId && edge.toPort === to.portId);
+    if (incoming.some(edge => edge.route === 'wire' && edge.from === from.nodeId && edge.fromPort === from.portId)) return { ok: true };
+    if (incoming.length && !replace) return fail('AMBIGUOUS_INPUT', 'Replace the occupied input explicitly.');
+    removeEdges(context, incoming);
+    const id = context.allocate('edge');
+    context.scope.wires[id] = { id, route: 'wire', from: from.nodeId, fromPort: from.portId, to: to.nodeId, toPort: to.portId, order: 0 };
+    context.addedEdgeIds.push(id);
+    context.changed = true;
+    return { ok: true };
+}
+
+function move(context, command) {
+    const direction = command.kind === 'move-input' ? 'input' : 'output';
+    const origin = actualPin(context, command.origin, direction), target = actualPin(context, command.target, direction);
+    if (!origin.ok) return origin;
+    if (!target.ok) return target;
+    if (origin.data.kind !== target.data.kind) return fail('ARTIFACT_KIND', 'Move bindings between matching artifact pins.');
+    if (same(command.origin, command.target)) return { ok: true };
+    if (direction === 'input') {
+        const bindings = Object.values(context.scope.wires).filter(edge => edge.to === command.origin.nodeId && edge.toPort === command.origin.portId);
+        if (!bindings.length) return { ok: true };
+        const occupied = Object.values(context.scope.wires).filter(edge => edge.to === command.target.nodeId && edge.toPort === command.target.portId);
+        if (occupied.length && !command.replace) return fail('AMBIGUOUS_INPUT', 'Replace the occupied input explicitly.');
+        removeEdges(context, occupied);
+        for (const edge of bindings) Object.assign(edge, { to: command.target.nodeId, toPort: command.target.portId });
+        context.changed = true;
+    } else {
+        for (const edge of Object.values(context.scope.wires)) if (edge.route === 'wire' && edge.from === command.origin.nodeId && edge.fromPort === command.origin.portId) {
+            Object.assign(edge, { from: command.target.nodeId, fromPort: command.target.portId }); context.changed = true;
+        }
+        for (const publisher of Object.values(context.scope.portals)) if (same(publisher.source, command.origin)) {
+            publisher.source = { ...command.target }; context.changed = true;
+        }
+    }
+    return { ok: true };
+}
+
+function disconnectPublishers(context, ids, policy) {
+    for (const id of new Set(ids)) {
+        if (!Object.hasOwn(context.scope.portals, id)) continue;
+        const publisher = context.scope.portals[id], consumers = Object.values(context.scope.wires).filter(edge => edge.route === 'portal' && edge.portalId === id);
+        if (consumers.length && policy === undefined) return fail('PORTAL_IN_USE', 'Choose whether to restore or disconnect publisher consumers.');
+        if (policy === 'restore') {
+            for (const edge of consumers) {
+                const { portalId, ...metadata } = edge;
+                context.scope.wires[edge.id] = { ...metadata, route: 'wire', from: publisher.source.nodeId, fromPort: publisher.source.portId };
+            }
+        } else removeEdges(context, consumers);
+        delete context.scope.portals[id]; context.removedPortalIds.push(id); context.changed = true;
+    }
+    return { ok: true };
+}
+
+function disconnect(context, command) {
+    if (command.kind === 'disconnect-pin') {
+        const pin = actualPin(context, command.pin);
+        if (!pin.ok) return pin;
+        const policy = command.publisherPolicy === undefined ? 'retain' : command.publisherPolicy;
+        if (!['retain', 'disconnect'].includes(policy)) return fail('INVALID_COMMAND', 'Pin disconnection supports retain or disconnect publishers.');
+        const publishers = pin.data.direction === 'output' ? Object.values(context.scope.portals).filter(item => same(item.source, command.pin)).map(item => item.id) : [];
+        const attached = new Set(publishers);
+        const edges = Object.values(context.scope.wires).filter(edge => pin.data.direction === 'input'
+            ? edge.to === command.pin.nodeId && edge.toPort === command.pin.portId
+            : edge.route === 'wire' ? edge.from === command.pin.nodeId && edge.fromPort === command.pin.portId : attached.has(edge.portalId));
+        removeEdges(context, edges);
+        return policy === 'disconnect' ? disconnectPublishers(context, publishers, policy) : { ok: true };
+    }
+    const edgeIds = command.edgeIds === undefined ? [] : command.edgeIds, publisherIds = command.publisherIds === undefined ? [] : command.publisherIds;
+    if (!Array.isArray(edgeIds) || !Array.isArray(publisherIds) || [...edgeIds, ...publisherIds].some(id => !safeId(id)) || command.publisherPolicy !== undefined && !['restore', 'disconnect'].includes(command.publisherPolicy)) return fail('INVALID_COMMAND', 'Provide safe IDs and an explicit supported publisher policy.');
+    removeEdges(context, [...new Set(edgeIds)].filter(id => Object.hasOwn(context.scope.wires, id)).map(id => context.scope.wires[id]));
+    return disconnectPublishers(context, publisherIds, command.publisherPolicy);
+}
+
+function reroute(context, command) {
+    if (!point(command.graphPoint)) return fail('INVALID_COMMAND', 'Capture a finite graph point before opening a menu.');
+    if (!safeId(command.edgeId)) return fail('INVALID_WIRE', 'Choose a stable direct-wire ID.');
+    const edge = Object.hasOwn(context.scope.wires, command.edgeId) && context.scope.wires[command.edgeId];
+    if (!edge || edge.route !== 'wire') return fail('INVALID_WIRE', 'Reroute an existing visible direct wire.');
+    const source = actualPin(context, { nodeId: edge.from, portId: edge.fromPort }, 'output');
+    if (!source.ok) return source;
+    const id = context.allocate('node'), edgeId = context.allocate('edge');
+    context.scope.nodes[id] = { id, type: 'workflow', ...operationDefaults('reroute'), artifactKind: source.data.kind, phase: context.scope.mode.slice(7), compact: true, x: command.graphPoint.x, y: command.graphPoint.y };
+    context.scope.wires[edgeId] = { ...edge, id: edgeId, from: id, fromPort: 'out' };
+    Object.assign(edge, { to: id, toPort: 'in' });
+    context.addedNodeIds.push(id); context.addedEdgeIds.push(edgeId); context.changed = true;
+    return { ok: true };
+}
+
+function create(context, command) {
+    if (!point(command.graphPoint)) return fail('INVALID_COMMAND', 'Capture a finite graph point before opening search.');
+    if (typeof command.operation !== 'string' || !Object.hasOwn(OPERATIONS, command.operation)) return fail('UNKNOWN_OPERATION', 'Choose a declared operation.');
+    const controls = command.controls === undefined ? {} : command.controls;
+    if (!keys(controls, OPERATIONS[command.operation].controls)) return fail('INVALID_SETTINGS', 'Presets may contain only declared operation controls.');
+    if (command.connection !== undefined && (!keys(command.connection, ['origin', 'portId', 'replace']) || !endpoint(command.connection.origin) || !safeId(command.connection.portId) || command.connection.replace !== undefined && typeof command.connection.replace !== 'boolean')) return fail('INVALID_COMMAND', 'Choose an existing origin and an explicit new-node port.');
+    const id = context.allocate('node');
+    const node = { id, type: 'workflow', ...operationDefaults(command.operation), ...structuredClone(controls), x: command.graphPoint.x, y: command.graphPoint.y };
+    if (OPERATIONS[command.operation].minimumSchema === 3) node.phase = context.scope.mode.slice(7);
+    const described = describeOperation(context.metadata(), node);
+    if (!described.ok) return described;
+    context.scope.nodes[id] = node; context.addedNodeIds.push(id); context.changed = true;
+    return command.connection ? connect(context, command.connection.origin, { nodeId: id, portId: command.connection.portId }, command.connection.replace) : { ok: true };
+}
+
+/** Pure native document producer. Context/cancellation/history remain caller-owned.
+ * Endpoints are local to viewPath; actual directions and kinds come from the catalog.
+ * Commands (all may carry viewPath and an exact expectedRef for a private body):
+ * - connect: origin, target, replace? (either drag direction)
+ * - move-input / move-output: origin, target, replace?
+ * - disconnect: edgeIds?, publisherIds?, publisherPolicy?: restore | disconnect
+ * - disconnect-pin: pin, publisherPolicy?: retain (default) | disconnect
+ * - reroute: edgeId, graphPoint (direct wires only)
+ * - create: operation, controls?, graphPoint, connection?: {origin, portId, replace?}
+ * Only declared controls are presets; creation requires an explicit matching port.
+ * IDs share the root/body/table namespace. idFactory(node | edge) runs at most
+ * once per new record, after a provisional complete root validates; no retries.
+ * Returned added/removed IDs are local to viewPath; the candidate and both
+ * preconditions always describe the whole root. This API grants no commit token.
+ * @returns {import('./types').Result<import('./types').PreparedGraphEdit>}
+ */
+export function prepareNativeConnectionEdit(root, input, options = {}) {
+    try {
+        const admitted = cloneDefinitionData(input);
+        if (!admitted.ok) return fail('INVALID_COMMAND', 'Use bounded own plain command data.');
+        const command = admitted.data, factory = optionsFactory(options);
+        if (!factory.ok) return factory;
+        if (!record(command) || typeof command.kind !== 'string' || !Object.hasOwn(fields, command.kind) || !keys(command, ['kind', 'viewPath', 'expectedRef', ...fields[command.kind]]) || command.replace !== undefined && typeof command.replace !== 'boolean') return fail('INVALID_COMMAND', 'Use a supported native connection command.');
+        const path = command.viewPath === undefined ? [] : command.viewPath;
+        if (!Array.isArray(path) || path.length > 8 || path.some(id => !safeId(id))) return fail('INVALID_COMMAND', 'Use a bounded path of stable instance IDs.');
+        const normalized = normalizeNativeGraph(root);
+        if (!normalized.ok) return normalized;
+        // Keep entry preconditions even if a caller-provided ID factory changes its source.
+        const original = structuredClone(root), candidate = normalized.data;
+        const chain = path.length ? definitionChain(candidate, path) : null;
+        if (path.length && (!chain || !ownsDefinitionPath(candidate, path))) return fail('READ_ONLY_VIEW', 'Make a local copy of the complete containing path before editing.');
+        const definition = chain?.at(-1).definition, ref = chain?.at(-1).node.definition;
+        if (command.expectedRef !== undefined && (!path.length || !keys(command.expectedRef, ['id', 'version', 'semanticHash']) || definitionRefKey(command.expectedRef) !== definitionRefKey(ref))) return fail('STALE_DEFINITION', 'The exact containing definition changed.');
+        const draft = definition ? structuredClone(definition) : null, scope = draft?.body ?? candidate;
+        scope.portals ??= {};
+        const ids = compositionIds(candidate), allocations = [];
+        const context = {
+            scope, changed: false, addedEdgeIds: [], removedEdgeIds: [], addedNodeIds: [], removedPortalIds: [],
+            metadata: () => ({ ...scope, definitions: candidate.definitions, ...(definition ? { interface: definition.interface } : {}) }),
+            allocate(kind) { const id = ids.next(kind); allocations.push({ kind, id }); return id; },
+        };
+        let result;
+        if (command.kind === 'connect') result = connect(context, command.origin, command.target, command.replace);
+        else if (command.kind === 'move-input' || command.kind === 'move-output') result = move(context, command);
+        else if (command.kind === 'reroute') result = reroute(context, command);
+        else if (command.kind === 'create') result = create(context, command);
+        else result = disconnect(context, command);
+        if (!result.ok) return result;
+        const finish = () => {
+            const prepared = !context.changed ? prepareGraphCandidate(original, original)
+                : draft ? prepareLocalDefinitionEdit(original, { instancePath: path, expectedRef: ref, draft })
+                    : prepareGraphCandidate(original, candidate, context.addedEdgeIds, context.removedEdgeIds);
+            return prepared.ok ? { ok: true, data: { ...prepared.data, viewPath: [...path], ...(ref ? { expectedRef: structuredClone(ref) } : {}), addedEdgeIds: [...context.addedEdgeIds], removedEdgeIds: [...context.removedEdgeIds], addedNodeIds: [...context.addedNodeIds], removedPortalIds: [...context.removedPortalIds] } } : prepared;
+        };
+        const provisional = finish();
+        if (!provisional.ok || !provisional.data.changed || !factory.data || !allocations.length) return provisional;
+        const replacements = new Map();
+        for (const { kind, id } of allocations) {
+            const next = factory.data(kind);
+            if (!safeId(next) || next !== id && !ids.claim(next)) return fail('IDENTITY_COLLISION', 'idFactory must return a fresh safe ID for each new record.');
+            replacements.set(id, next);
+        }
+        const nodeReplacements = new Map(context.addedNodeIds.map(id => [id, replacements.get(id)]));
+        for (const [id, next] of nodeReplacements) {
+            const node = scope.nodes[id]; delete scope.nodes[id]; node.id = next; scope.nodes[next] = node;
+        }
+        for (const edge of Object.values(scope.wires)) {
+            if (nodeReplacements.has(edge.from)) edge.from = nodeReplacements.get(edge.from);
+            if (nodeReplacements.has(edge.to)) edge.to = nodeReplacements.get(edge.to);
+        }
+        for (const id of context.addedEdgeIds) {
+            const edge = scope.wires[id], next = replacements.get(id);
+            delete scope.wires[id]; edge.id = next; scope.wires[next] = edge;
+        }
+        context.addedEdgeIds = context.addedEdgeIds.map(id => replacements.get(id));
+        context.addedNodeIds = context.addedNodeIds.map(id => replacements.get(id));
+        return finish();
+    } catch {
+        return fail('INVALID_COMMAND', 'The connection edit could not be prepared.');
+    }
+}
