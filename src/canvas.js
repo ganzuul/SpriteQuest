@@ -696,7 +696,11 @@ export class Canvas {
 
     /** Fold or unfold a group. A folded group sits where its top-left block was. */
     setCollapsed(gid, collapsed) {
-        if (!this.#canEdit() || isNativeWorkflow(this.graph)) return;
+        if (isNativeWorkflow(this.graph)) {
+            if (typeof gid !== 'string' || !Object.hasOwn(this.graph.groups ?? {}, gid) || typeof collapsed !== 'boolean') return false;
+            return this.hooks.onNativeGroupPresentation?.(gid, collapsed) === true;
+        }
+        if (!this.#canEdit()) return;
         const g = this.graph.groups?.[gid];
         if (!g) return;
         if (collapsed) {

@@ -68,7 +68,7 @@ let pendingImport = null;
 let graphViews = null, workspacePrepared = null, editorDraw = null, rootRunEpoch = 0, workspaceRevision = 0;
 let documentTransition = false, libraryRevision = 0, fitNewActivation = false, restoringEditor = false, canvasTraceRows = null;
 let viewSaveTimer = null, pinnedPreview = null, selectedPreview = null, nativeWireBridge = null, nativeCatalog = null;
-let schema2ReviewOwner = null;
+let schema2ReviewOwner = null, nativeGroupPresenter = null;
 const editorCaptures = new WeakMap();
 // Task7 can supply qualified view context/root identity and reconcile cached tabs.
 // This adapter is editor data/callbacks; it never creates another workflow runner.
@@ -273,6 +273,19 @@ function updateWorkflowProjection() {
     const panels = graphViews ? projectWorkspacePanels(graphViews.readEditor(), view, workflowState, revision, selectedPreview, pinnedPreview, rootWorkflow, workspacePrepared.idleRunRows, workspacePrepared.previewChoices, schema2ReviewSelector(pinnedPreview || selectedPreview)) : {};
     if (canvas && graphViews && editorDraw && canvasTraceRows!==view.rows) { canvasTraceRows=view.rows;const traces = []; const visit = rows => { for (const row of rows ?? []) { traces.push({ id: row.address.nodeId, status: row.status }); } }; if(graphViews.readEditor().view.identity.kind!=='library')visit(view.rows); canvas.setTrace(traces); }
     workbench?.update({ workflow: view, rootWorkflow, ...panels, nativeDiagnostic: isNativeWorkflow(current) && !executableNative(current) ? 'This workflow execution version is unsupported. Use schema 2/runtime 1 or schema 3/runtime 2.' : '', nativeFlatCanvas: isNativeWorkflow(current) && (!settings().ui?.theme?.preset || settings().ui.theme.preset === 'sillytavern') && !Object.keys(settings().ui?.theme?.colors ?? {}).length && !settings().ui?.theme?.style?.grid, nativeDefaultTheme: isNativeWorkflow(current) && (!settings().ui?.theme?.preset || settings().ui.theme.preset === 'sillytavern') && !Object.keys(settings().ui?.theme?.colors ?? {}).length });
+}
+function prepareGroupPresentation() {
+    const captured = captureEditor(true); if (!captured.ok) return null;
+    return (id, collapsed) => {
+        if (!editorCurrent(captured.data) || typeof id !== 'string' || typeof collapsed !== 'boolean') return false;
+        const editor = graphViews.readEditor();
+        if (!Object.hasOwn(editor.prepared.savedGraph.groups ?? {}, id) || !Object.hasOwn(editorDraw?.groups ?? {}, id)) return false;
+        if (editorDraw.groups[id].collapsed === collapsed) return true;
+        const groupPresentation = { ...editor.view.groupPresentation, [id]: { collapsed } };
+        const updated = graphViews.updateView({ groupPresentation }); if (!updated.ok) return false;
+        editorDraw.groups[id].collapsed = collapsed;
+        canvas.render(); updateWorkflowProjection(); persistGraphViews(); return true;
+    };
 }
 function presentNode(id, key, value) {
     if (!graphViews || !editorDraw?.nodes[id] || !['alias', 'compact'].includes(key)) return;
@@ -579,6 +592,7 @@ function build() {
         canEdit: () => !readGraphEditContext().readOnly,
         onNativeToggle: id => commitNativeNode({ kind: 'enabled', nodeId: id, value: editorDraw.nodes[id].enabled === false }),
         onNativeDelete: selection => deleteNativeSelection(selection),
+        onNativeGroupPresentation: (id, collapsed) => nativeGroupPresenter?.(id, collapsed),
         onPresentationChange: ids => { if (!graphViews) return; const presentation = { ...graphViews.readEditor().view.nodePresentation }; for (const id of ids) { const node = editorDraw.nodes[id]; if (node) presentation[id] = { ...presentation[id], x: node.x, y: node.y }; } graphViews.updateView({ nodePresentation: presentation }); persistGraphViews(); },
         nativeBinding: node => { const projected = workflowProjectionGraph === current && workflowProjection?.nodes.find(item => item.id === node.id); return projected ? { display: projected.effective } : null; },
         effectiveModel,
@@ -4285,6 +4299,7 @@ function jumpNativeNode(capture, target) {
     canvas.select({ kind: 'node', id: target.nodeId }); canvas.fitSelection(); return true;
 }
 function replaceNativeBridge() {
+    nativeGroupPresenter = prepareGroupPresentation();
     nativeWireBridge?.cancel('view-change'); nativeWireBridge = null; nativeCatalog = null;
     const editor = graphViews?.readEditor(); if (!editor || editor.view.identity.kind === 'library') { workbench?.update({nativeChoices:[],nativeSearch:null,nativePinMenu:null}); return; }
     nativeCatalog = workspacePrepared.catalogs.get(editor.view.key);

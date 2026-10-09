@@ -43,6 +43,7 @@ export function projectEditorDraw(editor) {
         if (presentation.x !== undefined) node.x = presentation.x;
         if (presentation.y !== undefined) node.y = presentation.y;
     }
+    for (const [id, presentation] of Object.entries(view.groupPresentation ?? {})) if (Object.hasOwn(graph.groups, id)) graph.groups[id].collapsed = presentation.collapsed;
     return graph;
 }
 

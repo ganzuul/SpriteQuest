@@ -111,7 +111,7 @@ const itemValid = item => item === null || (record(item) && ownKeys(item, ['kind
 
 function presentationPatch(value) {
     const patch = plain(value);
-    if (!record(patch) || !ownKeys(patch, ['camera', 'selection', 'inspector', 'nodePresentation', 'portalPresentation'])) return null;
+    if (!record(patch) || !ownKeys(patch, ['camera', 'selection', 'inspector', 'nodePresentation', 'portalPresentation', 'groupPresentation'])) return null;
     if (patch.camera !== undefined) {
         const camera = patch.camera;
         if (!record(camera) || !ownKeys(camera, ['x', 'y', 'zoom']) || ![camera.x, camera.y, camera.zoom].every(Number.isFinite) || camera.zoom <= 0) return null;
@@ -124,6 +124,10 @@ function presentationPatch(value) {
         for (const [id, node] of Object.entries(patch.nodePresentation)) {
             if (!textId(id) || !record(node) || !ownKeys(node, ['alias', 'compact', 'x', 'y']) || (node.alias !== undefined && (typeof node.alias !== 'string' || node.alias.length > 80)) || (node.compact !== undefined && typeof node.compact !== 'boolean') || (node.x !== undefined && !Number.isFinite(node.x)) || (node.y !== undefined && !Number.isFinite(node.y))) return null;
         }
+    }
+    if (patch.groupPresentation !== undefined) {
+        if (!record(patch.groupPresentation)) return null;
+        for (const [id, group] of Object.entries(patch.groupPresentation)) if (!textId(id) || !record(group) || !ownKeys(group, ['collapsed']) || typeof group.collapsed !== 'boolean') return null;
     }
     if (patch.portalPresentation !== undefined) {
         if (!record(patch.portalPresentation)) return null;
@@ -177,9 +181,9 @@ function restoreViews(value, workflowId, navigation, rootKey) {
     if (!record(saved) || !ownKeys(saved, ['version', 'workflowId', 'activeKey', 'views']) || saved.version !== 1 || saved.workflowId !== workflowId || typeof saved.activeKey !== 'string' || !Array.isArray(saved.views) || !saved.views.length || saved.views.length > MAX_VIEWS) return null;
     const all = new Map();
     for (const entry of saved.views) {
-        if (!record(entry) || ![6,7].includes(Object.keys(entry).length) || !ownKeys(entry, ['identity', 'open', 'camera', 'selection', 'inspector', 'nodePresentation', 'portalPresentation']) || typeof entry.open !== 'boolean') return null;
+        if (!record(entry) || ![6,7,8].includes(Object.keys(entry).length) || !ownKeys(entry, ['identity', 'open', 'camera', 'selection', 'inspector', 'nodePresentation', 'portalPresentation', 'groupPresentation']) || typeof entry.open !== 'boolean') return null;
         const identity = identityFrom(entry.identity);
-        const presentation = presentationPatch({ camera: entry.camera, selection: entry.selection, inspector: entry.inspector, nodePresentation: entry.nodePresentation, ...(entry.portalPresentation !== undefined ? {portalPresentation:entry.portalPresentation} : {}) });
+        const presentation = presentationPatch({ camera: entry.camera, selection: entry.selection, inspector: entry.inspector, nodePresentation: entry.nodePresentation, ...(entry.portalPresentation !== undefined ? {portalPresentation:entry.portalPresentation} : {}), ...(entry.groupPresentation !== undefined ? {groupPresentation:entry.groupPresentation} : {}) });
         if (!identity || identity.workflowId !== workflowId || !presentation || Object.values(presentation.portalPresentation ?? {}).some(alias => identityKey(alias.identity) !== identityKey(identity))) return null;
         const key = identityKey(identity);
         if (all.has(key)) return null;
@@ -197,7 +201,7 @@ const VIEW_FIELDS = ['identity', 'open', 'camera', 'selection', 'inspector', 'no
 const ENTRY_OVERHEAD = bytes(Object.fromEntries(VIEW_FIELDS.map(key => [key, null]))) - VIEW_FIELDS.length * 4;
 function encodedEntry(view, previous, cached) {
     const fields = {};
-    const keys = view.portalPresentation === undefined ? VIEW_FIELDS : [...VIEW_FIELDS,'portalPresentation'];
+    const keys = [...VIEW_FIELDS, ...['portalPresentation', 'groupPresentation'].filter(key => view[key] !== undefined)];
     let total = keys.length === VIEW_FIELDS.length ? ENTRY_OVERHEAD : bytes(Object.fromEntries(keys.map(key => [key,null]))) - keys.length * 4;
     for (const key of keys) {
         fields[key] = cached && Object.hasOwn(cached.fields,key) && previous[key] === view[key] ? cached.fields[key] : bytes(view[key]);
