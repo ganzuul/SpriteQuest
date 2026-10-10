@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { starterGraph } from '../src/workflow/starters.js?v=0.27.0';
+import { fixtureGraph as starterGraph } from './helpers/workflow-fixtures.mjs';
 import { cloneWorkflowDocument } from '../src/workflow/document.js?v=0.27.0';
 import { createGraphViewSession } from '../src/ui/graph-view-session.js?v=0.27.0';
 import { createWorkflowSession, projectPreparedWorkflow } from '../src/ui/workflow-surface.js?v=0.27.0';
-import { makeClip, makeDefinitionClip, readClip } from '../src/workflow/clipboard.js?v=0.27.0';
+import { makeClip, makeDefinitionClip, readClip, prepareClipPaste } from '../src/workflow/clipboard.js?v=0.27.0';
 import { isCommentFrame } from '../src/canvas/comment-frames.js?v=0.27.0';
 import { prepareSubgraphNodeDeletion } from '../src/workflow/subgraph-authoring.js?v=0.27.0';
 const api = await import('../src/ui/workspace-preparation.js?v=0.27.0');
@@ -100,17 +100,18 @@ test('prepared editor drawing is detached and overlays never change the activate
     assert.deepEqual(root, before); assert.equal(bindings, count);
     const view = projectPreparedWorkflow(prepared.data.workflow, { selectedId: 'response-plan' }); assert.equal(view.nodes.find(n => n.id === 'response-plan').effective, 'cached · cached-model'); assert.equal(bindings, count);
     let settle, cancelled = 0, state;
-    const runtime = { runPre: async actual => { assert.equal(actual, root); return new Promise(resolve => { settle = resolve; }); }, cancel: () => { cancelled++; } };
+    const target = { workflowId: root.id, instancePath: [], nodeId: 'response-plan', portId: 'out' };
+    const runtime = { runTarget: async (actual, target) => { assert.equal(actual, root); assert.equal(target.nodeId, 'response-plan'); assert.equal(target.workflowId, root.id); return new Promise(resolve => { settle = resolve; }); }, cancel: () => { cancelled++; } };
     const execution = createWorkflowSession({ runtime: () => runtime, rootCurrent: () => root, runEpoch: () => 7, active: () => true, changed: next => { state = next; } });
-    const running = execution.run();
+    const running = execution.run({ target });
     views.updateView({ camera: { x: 1, y: 2, zoom: 0.7 } }); views.focusView(views.project().graphViews.active.key);
     const { resolveWorkflow } = await import('../src/workflow/resolve.js');
     const { parseRunPlan } = await import('../src/workflow/record-data.js');
     const { createRunRecorder } = await import('../src/workflow/recording.js');
     const recorder = createRunRecorder({ runId: 'view-independent' });
-    recorder.accept({ runId: 'view-independent', seq: 1, at: 1, elapsedMs: 0, type: 'plan', plan: parseRunPlan(resolveWorkflow(root).data) });
+    recorder.accept({ runId: 'view-independent', seq: 1, at: 1, elapsedMs: 0, type: 'plan', plan: parseRunPlan(resolveWorkflow(root, { target }).data) });
     recorder.accept({ runId: 'view-independent', seq: 2, at: 2, elapsedMs: 1, type: 'run-settled', status: 'completed' });
-    settle({ ok: true, schema: 3, runtime: 2, mode: 'root', runId: 'view-independent', actualCalls: 0, recording: recorder.finish(), reviewHandles: [] }); await running;
+    settle({ ok: true, schema: 3, runtime: 2, mode: 'target', runId: 'view-independent', actualCalls: 0, recording: recorder.finish(), reviewHandles: [] }); await running;
     assert.equal(state.result.ok, true); assert.equal(state.busy, false); assert.equal(cancelled, 0); assert.equal(bindings, count);
 });
 
@@ -158,7 +159,7 @@ test('Edit availability uses the actual child saved scope and readonly library p
 });
 
 test('nested library Copy bundles only its real reachable pin closure and actual insertion accepts it',async()=>{
- const {nestedWorkflow}=await import('./fixtures/workflow-prepared-fixture.mjs');const source=nestedWorkflow(),root=starterGraph('structured-guidance'),content=api.prepareWorkspaceViews(root),library=api.prepareLibraryViews(root.id,source.definitions);const session=createGraphViewSession({root,activationId:'library-copy',navigation:[...content.data.navigation,...library.data.navigation],preparedViews:[...content.data.preparedViews,...library.data.preparedViews]}).data;session.openLibrary(library.data.preparedViews.find(view=>view.definitionRef.id==='prepared-outer').definitionRef);const {definitionRefKey}=await import('../src/workflow/definition-data.js?v=0.27.0'),{prepareWorkflowInsertion}=await import('../src/workflow/insertion.js?v=0.27.0');const env={current:root,graphViews:session,editorDraw:api.projectEditorDraw(session.readEditor()),workspacePrepared:{libraryDefinitions:source.definitions},makeClip,makeDefinitionClip,readClip,definitionRefKey};const copied=controllerFunction('clipForPick',env)({nodeIds:['work']});assert.equal(copied.ok,true,JSON.stringify(copied));const fragment=copied.data.graph;assert.equal(Object.keys(fragment.definitions).length,1);assert.ok(fragment.definitions[definitionRefKey(fragment.nodes.work.definition)]);assert.equal(fragment.nodes.work.localCopy,undefined);assert.deepEqual(root.definitions,{});const inserted=prepareWorkflowInsertion(root,fragment);assert.equal(inserted.ok,true,JSON.stringify(inserted));const conflict=structuredClone(root);conflict.definitions[definitionRefKey(fragment.nodes.work.definition)]={...fragment.definitions[definitionRefKey(fragment.nodes.work.definition)],body:{...fragment.definitions[definitionRefKey(fragment.nodes.work.definition)].body,nodes:{...fragment.definitions[definitionRefKey(fragment.nodes.work.definition)].body.nodes,work:{...fragment.definitions[definitionRefKey(fragment.nodes.work.definition)].body.nodes.work,instructions:'Conflicting canonical settings'}}}};assert.equal(prepareWorkflowInsertion(conflict,fragment).ok,false);
+ const {nestedWorkflow}=await import('./fixtures/workflow-prepared-fixture.mjs');const source=nestedWorkflow(),root=starterGraph('structured-guidance'),content=api.prepareWorkspaceViews(root),library=api.prepareLibraryViews(root.id,source.definitions);const session=createGraphViewSession({root,activationId:'library-copy',navigation:[...content.data.navigation,...library.data.navigation],preparedViews:[...content.data.preparedViews,...library.data.preparedViews]}).data;session.openLibrary(library.data.preparedViews.find(view=>view.definitionRef.id==='prepared-outer').definitionRef);const {definitionRefKey}=await import('../src/workflow/definition-data.js?v=0.27.0');const env={current:root,graphViews:session,editorDraw:api.projectEditorDraw(session.readEditor()),workspacePrepared:{libraryDefinitions:source.definitions},makeClip,makeDefinitionClip,readClip,definitionRefKey};const copied=controllerFunction('clipForPick',env)({nodeIds:['work']});assert.equal(copied.ok,true,JSON.stringify(copied));const fragment=copied.data.graph;assert.equal(Object.keys(fragment.definitions).length,1);assert.ok(fragment.definitions[definitionRefKey(fragment.nodes.work.definition)]);assert.equal(fragment.nodes.work.localCopy,undefined);assert.deepEqual(root.definitions,{});const inserted=prepareClipPaste(root,copied.data);assert.equal(inserted.ok,true,JSON.stringify(inserted));const conflict=structuredClone(root);conflict.definitions[definitionRefKey(fragment.nodes.work.definition)]={...fragment.definitions[definitionRefKey(fragment.nodes.work.definition)],body:{...fragment.definitions[definitionRefKey(fragment.nodes.work.definition)].body,nodes:{...fragment.definitions[definitionRefKey(fragment.nodes.work.definition)].body.nodes,work:{...fragment.definitions[definitionRefKey(fragment.nodes.work.definition)].body.nodes.work,instructions:'Conflicting canonical settings'}}}};assert.equal(prepareClipPaste(conflict,copied.data).ok,false);
 });
 
 test('native Cut waits for a successful write and rejects failure or a stale qualified continuation',async()=>{
@@ -344,18 +345,18 @@ test('actual pin jump uses a current navigation token and an existing prepared o
 });
 
 
-test('native plaintext paste uses valid Compose sections and one real root transaction in both phases', async () => {
+test('native plaintext paste uses valid text Compose sections and one unified root transaction', async () => {
     const { captureGraphEditContext, commitPreparedGraph } = await import('../src/workflow/transactions.js?v=0.27.0');
     const { prepareNativeConnectionEdit } = await import('../src/workflow/connection-edits.js?v=0.27.0');
     const { composeText } = await import('../src/workflow/operations/compose.js?v=0.27.0');
     const { siblingWorkflow } = await import('./fixtures/workflow-prepared-fixture.mjs');
     const H = await import('../src/history.js?v=0.27.0');
     const text = '  User 🌿\nSecond line: 界\n  ', point = { x: 13.125, y: -7.5 };
-    for (const phase of ['pre', 'post']) {
-        const root = { id: 'plaintext-root-' + phase, schema: 3, runtime: 2, mode: 'native-' + phase, nodes: {}, wires: {}, groups: {}, portals: {}, definitions: {} };
+    {
+        const root = { id: 'plaintext-root', schema: 3, runtime: 2, mode: 'native-unified', nodes: {}, wires: {}, groups: {}, portals: {}, definitions: {} };
         const prepared = api.prepareWorkspaceViews(root), library = api.prepareLibraryViews(root.id, siblingWorkflow().definitions);
         assert.equal(prepared.ok, true, JSON.stringify(prepared)); assert.equal(library.ok, true, JSON.stringify(library));
-        const created = createGraphViewSession({ root, activationId: 'plaintext-' + phase, navigation: [...prepared.data.navigation, ...library.data.navigation], preparedViews: [...prepared.data.preparedViews, ...library.data.preparedViews] });
+        const created = createGraphViewSession({ root, activationId: 'plaintext-unified', navigation: [...prepared.data.navigation, ...library.data.navigation], preparedViews: [...prepared.data.preparedViews, ...library.data.preparedViews] });
         assert.equal(created.ok, true, JSON.stringify(created)); const session = created.data, errors = [];
         let preparations = 0, commits = 0;
         const env = { current: root, graphViews: session, canvas: { pointer: null, select(){}, setMulti(){} }, readClip, workspaceRevision: 0, editorCaptures: new WeakMap(), isOpen: () => true, readGraphEditContext: () => session.readEditContext(), captureGraphEditContext, graphDocumentHooks: {}, toast: message => errors.push(message), defaultNodeSpot: () => point,
@@ -368,8 +369,10 @@ test('native plaintext paste uses valid Compose sections and one real root trans
         assert.equal(paste(text, point), true, JSON.stringify(errors));
         assert.equal(preparations, 1); assert.equal(commits, 1);
         const added = Object.values(root.nodes); assert.equal(added.length, 1);
-        assert.equal(added[0].operation, 'compose'); assert.equal(added[0].phase, phase);
-        assert.equal(added[0].outputKind, phase === 'pre' ? 'guidance' : 'text');
+        assert.equal(added[0].operation, 'compose');
+        const { phaseForNode } = await import('../src/workflow/catalog.js?v=0.27.0');
+        assert.equal(phaseForNode(root, added[0]), 'pre');
+        assert.equal(added[0].outputKind, 'text');
         assert.deepEqual(added[0].sections, [{ name: 'pasted_text', text }]);
         assert.deepEqual({ x: added[0].x, y: added[0].y }, point);
         const composed = composeText({ sections: added[0].sections, separator: added[0].separator });

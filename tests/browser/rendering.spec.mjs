@@ -4,7 +4,7 @@ async function activateNative(page, variant = 'standard') {
     await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
     const id = await page.evaluate(async variant => {
         const h = window.canvasHarness, version = h.version;
-        const { starterGraph } = await import('/src/workflow/starters.js?v=' + version);
+        const { fixtureGraph: starterGraph } = await import('/tests/helpers/workflow-fixtures.mjs');
         const graph = starterGraph('native-guidance'); graph.id = 'rendering-native-' + variant; graph.name = 'Native rendering ' + variant;
         if (variant === 'group') {
             const member = graph.nodes['smart-compactor']; member.inGroup = 'group';
@@ -114,11 +114,11 @@ test('native pin hover highlights only attached wires and body drops cancel link
     const output = await page.locator('.pc-node-native[data-id="scene-context"] .pc-port-out[data-port="out"]').boundingBox(), body = await card.locator('.pc-native-heading').boundingBox();
     await page.mouse.move(output.x + output.width / 2, output.y + output.height / 2); await page.mouse.down();
     await page.mouse.move(body.x + body.width / 2, body.y + body.height / 2); await page.mouse.up();
-    expect(await page.evaluate(() => Object.keys(window.canvasHarness.graph.wires).length)).toBe(2); await expect(page.locator('.pc-wire-ghost')).toHaveCount(0);
+    expect(await page.evaluate(() => Object.keys(window.canvasHarness.graph.wires).length)).toBe(5); await expect(page.locator('.pc-wire-ghost')).toHaveCount(0);
     const input = await pin.boundingBox();
     await page.mouse.move(output.x + output.width / 2, output.y + output.height / 2); await page.mouse.down();
     await page.mouse.move(input.x + input.width / 2, input.y + input.height / 2); await page.mouse.up();
-    expect(await page.evaluate(() => Object.keys(window.canvasHarness.graph.wires).length)).toBe(3);
+    expect(await page.evaluate(() => Object.keys(window.canvasHarness.graph.wires).length)).toBe(6);
 });
 test('native compact aliases preserve identity, real pins and the execution signature', async ({ page }) => {
     await activateNative(page);
@@ -144,7 +144,7 @@ test('native compact aliases preserve identity, real pins and the execution sign
     await card.locator('.pc-native-alias').click(); await page.keyboard.press('F2'); await expect(alias).toBeFocused();
     expect(await page.evaluate(() => window.compactProbe.draw === window.canvasHarness.canvas.graph)).toBe(true);
     await expect(page.locator('.pc-node-native[data-id="scene-context"] .pc-port-in')).toHaveCount(0);
-    await expect(page.locator('.pc-node-native[data-id="guidance"] .pc-port-out')).toHaveCount(0);
+    await expect(page.locator('.pc-node-native[data-id="guidance"] .pc-port-out[data-kind="guidance"]')).toHaveCount(1);
     await expect(page.getByRole('button', { name: 'Preview host result', exact: true })).toBeVisible();
 });
 test('multi-drag keeps card and wire elements and reads no card heights', async ({ page }) => {

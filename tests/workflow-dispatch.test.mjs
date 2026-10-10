@@ -4,7 +4,7 @@ import * as state from '../src/state.js?v=0.27.0';
 import { callCount, sendWorkflowState } from '../src/run.js?v=0.27.0';
 import { runWorkflow, workflowSignature } from '../src/workflow/runtime.js?v=0.27.0';
 import { graphSemanticSignature } from '../src/workflow/ports.js?v=0.27.0';
-import { starterGraph } from '../src/workflow/starters.js?v=0.27.0';
+import { fixtureGraph as starterGraph } from './helpers/workflow-fixtures.mjs';
 import { exportWorkflow } from '../src/workflow/packages.js?v=0.27.0';
 import { isWorkflowGraph } from '../src/workflow/contracts.js?v=0.27.0';
 
@@ -21,11 +21,12 @@ assert.notEqual(workflowSignature(changed), workflowSignature(current));
 
 let bindings = 0, calls = 0;
 const unbound = await runWorkflow(current, {
+    target: { workflowId: current.id, instancePath: [], nodeId: 'smart-compactor', portId: 'out' },
     resolveBinding() { bindings++; return { ok: false, error: { code: 'FIXTURE_UNBOUND', message: 'No connection is assigned.' } }; },
-    async request() { calls++; }, snapshot() { snapshots++; },
+    async request() { calls++; }, snapshot() { snapshots++; return { kind: 'context', messages: [] }; },
 });
 assert.equal(unbound.error.code, 'FIXTURE_UNBOUND');
-assert.equal(bindings, 1); assert.equal(calls, 0); assert.equal(snapshots, 0);
+assert.equal(bindings, 1); assert.equal(calls, 0); assert.equal(snapshots, 1);
 
 // Current public boundaries reject unsafe metadata before inspecting host context.
 const unsafe = [null, undefined, 'graph', 0, true, 1n, Symbol('graph')];
@@ -53,13 +54,13 @@ for (const graph of unsafe) {
     });
     assert.equal(result.ok, false);
     state.settings().graphs.unsafe = graph;
-    state.settings().nativeBindings.preGraphId = 'unsafe';
+    state.settings().nativeBindings.workflowGraphId = 'unsafe';
     assert.equal(sendWorkflowState().automatic, false);
 }
 assert.equal(getterReads, 0); assert.equal(bindings, 1); assert.equal(calls, 0);
-assert.equal(loreScans, 0); assert.equal(snapshots, 0);
+assert.equal(loreScans, 0); assert.equal(snapshots, 1);
 delete state.settings().graphs.unsafe;
-state.settings().nativeBindings.preGraphId = null;
+state.settings().nativeBindings.workflowGraphId = null;
 
 const imported = state.importGraph(JSON.stringify(exportWorkflow(current)));
 assert.equal(imported.ok, true); assert.equal(imported.graph.schema, 3);
@@ -70,10 +71,10 @@ for (const data of [current, { graph: current }, { kind: 'comfytavern-workflow',
     assert.equal(state.importGraph(JSON.stringify(data)).ok, false);
 }
 assert.deepEqual(state.settings(), before);
-state.settings().nativeBindings.preGraphId = imported.graph.id;
+state.settings().nativeBindings.workflowGraphId = imported.graph.id;
 assert.equal(sendWorkflowState().automatic, true);
 assert.match(sendWorkflowState().armedText, /maximum 2 auxiliary requests/i);
-assert.match(sendWorkflowState().armedText, /SillyTavern builds its normal prompt/i);
+assert.match(sendWorkflowState().armedText, /SillyTavern.*normal prompt|assigned unified workflow/i);
 assert.equal(typeof state.connect, 'undefined');
 assert.equal(typeof state.migrateGraph, 'undefined');
 console.log('workflow-dispatch: current admission and zero effects verified');

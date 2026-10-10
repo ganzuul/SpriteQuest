@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { prepareWorkflowInsertion, parseWorkflowInsertionFile } from '../src/workflow/insertion.js';
 import { exportWorkflow } from '../src/workflow/packages.js';
-import { starterGraph } from '../src/workflow/starters.js';
+import { fixtureGraph as starterGraph } from './helpers/workflow-fixtures.mjs';
 import { graphDocumentSignature, graphSemanticSignature } from '../src/workflow/ports.js';
 import { computeDefinitionIdentity, definitionRefKey } from '../src/workflow/definitions.js';
 import { makeClip, prepareClipPaste } from '../src/workflow/clipboard.js';
@@ -21,7 +21,7 @@ function nestedCommentDestination() {
     const outer = finalize({ id: 'owned-outer', version: 4, name: 'Outer', interface: [], parameters: [], body: {
         schema: 3, runtime: 2, mode: 'native-pre', nodes: { inner: { id: 'inner', type: 'subgraph', definition: definitionRef(leaf), x: 40, y: 60 } }, wires: {},
     } });
-    const destination = { id: 'nested-comment-insertion', schema: 3, runtime: 2, mode: 'native-pre', nodes: {
+    const destination = { id: 'nested-comment-insertion', schema: 3, runtime: 2, mode: 'native-unified', nodes: {
         outer: { id: 'outer', type: 'subgraph', definition: definitionRef(outer), x: 10, y: 30 },
     }, wires: {}, definitions: { [definitionRefKey(leaf)]: leaf, [definitionRefKey(outer)]: outer },
     localDefinitionOwners: [{ instancePath: ['outer'], definitionId: outer.id }, { instancePath: ['outer', 'inner'], definitionId: leaf.id }] };
@@ -104,7 +104,7 @@ test('file preview accepts only the current portable workflow and remains host-f
 test('empty current imports preserve absent optional containers without incidental edits', () => {
     const graph = starterGraph('native-guidance');
     delete graph.roles; delete graph.groups; delete graph.portals; delete graph.definitions;
-    const result = prepareWorkflowInsertion(graph, { schema: 3, runtime: 2, mode: 'native-pre', nodes: {}, wires: {} });
+    const result = prepareWorkflowInsertion(graph, { schema: 3, runtime: 2, mode: 'native-unified', nodes: {}, wires: {} });
     assert.equal(result.ok, true); assert.deepEqual(result.data.candidate, graph);
     assert.equal(Object.values(result.data.added).every(ids => !ids.length), true);
 });
@@ -119,16 +119,16 @@ test('insertion prepares a detached additive candidate with fresh internal ident
     const { candidate, added, identityMap } = result.data;
     assert.equal(candidate.schema, 3);
     assert.equal(candidate.runtime, 2);
-    assert.equal(Object.keys(candidate.nodes).length, 8);
-    assert.equal(added.nodes.length, 4);
-    assert.equal(added.wires.length, 3);
+    assert.equal(Object.keys(candidate.nodes).length, Object.keys(destination.nodes).length + Object.keys(imported.nodes).length);
+    assert.equal(added.nodes.length, Object.keys(imported.nodes).length);
+    assert.equal(added.wires.length, Object.keys(imported.wires).length);
     for (const wire of Object.values(imported.wires)) {
         const copy = candidate.wires[identityMap.wires[wire.id]];
         assert.equal(copy.from, identityMap.nodes[wire.from]);
         assert.equal(copy.to, identityMap.nodes[wire.to]);
         assert.equal(copy.route, 'wire');
-        assert.equal(copy.fromPort, 'out');
-        assert.equal(copy.toPort, 'in');
+        assert.equal(copy.fromPort, wire.fromPort);
+        assert.equal(copy.toPort, wire.toPort);
     }
     assert.deepEqual(destination, before);
     assert.deepEqual(imported, source);
@@ -153,7 +153,7 @@ test('candidate limits, malformed layout and malformed composition cannot bypass
     const unfinished = starterGraph('native-guidance');
     delete unfinished.wires['wire-1'];
     delete unfinished.nodes.guidance;
-    delete unfinished.wires['wire-3'];
+    delete unfinished.wires['wire-3']; delete unfinished.wires['native-guidance'];
     assert.equal(prepareWorkflowInsertion(starterGraph('native-guidance'), unfinished).ok, true);
 });
 
@@ -175,13 +175,13 @@ test('review diagnostics report phase, terminal effects, conservative bound and 
     const result = prepareWorkflowInsertion(destination, imported);
     assert.equal(result.ok, true);
     const { diagnostics, candidate, identityMap } = result.data;
-    assert.equal(diagnostics.phase, 'pre');
+    assert.equal(diagnostics.phase, 'unified');
     assert.equal(diagnostics.callBound, 4);
     assert.equal(diagnostics.importedCallBound, 2);
     assert.equal(diagnostics.bindingReviewRequired, true);
     assert.deepEqual(diagnostics.unresolvedBindings, []);
     assert.deepEqual(diagnostics.requiredRoles, [identityMap.roles.Analysis]);
-    assert.deepEqual(diagnostics.terminals, [{ nodeId: identityMap.nodes.guidance, address: { workflowId: destination.id, instancePath: [], nodeId: identityMap.nodes.guidance }, operation: 'guidance' }]);
+    assert.deepEqual(diagnostics.terminals, [{ nodeId: identityMap.nodes['review-publish'], address: { workflowId: destination.id, instancePath: [], nodeId: identityMap.nodes['review-publish'] }, operation: 'review-publish' }]);
     assert.deepEqual(candidate.roles[identityMap.roles.Analysis], imported.roles.Analysis);
     assert.equal(candidate.nodes[identityMap.nodes['response-plan']].profileId, 'node-profile');
     delete imported.roles;
@@ -222,7 +222,7 @@ test('unsafe inputs, modes, malformed composition and unowned views reject befor
         assert.equal(result.error?.code, 'INVALID_OPTIONS');
     }
     assert.equal(prepareWorkflowInsertion(destination, imported, { viewPath: ['instance'], allocateId }).error?.code, 'READ_ONLY_VIEW');
-    assert.equal(prepareWorkflowInsertion(destination, starterGraph('reviewed-de-slop'), { allocateId }).error?.code, 'MODE_MISMATCH');
+    assert.equal(prepareWorkflowInsertion(destination, { ...imported, mode: 'native-post', nodes: {}, wires: {} }, { allocateId }).error?.code, 'MODE_MISMATCH');
     assert.equal(prepareWorkflowInsertion(destination, { schema: 1, nodes: {}, wires: {} }, { allocateId }).error?.code, 'UNSUPPORTED_VERSION');
     const future = { ...imported, schema: 4, runtime: 3 };
     assert.equal(prepareWorkflowInsertion(destination, future, { allocateId }).error?.code, 'UNSUPPORTED_VERSION');
@@ -251,7 +251,7 @@ test('allocation rejects unsafe identities and bounds collision retries atomical
     let sequence = 0;
     const result = prepareWorkflowInsertion(destination, imported, { allocateId: () => sequence++ < 2 ? 'scene-context' : `custom-${sequence}` });
     assert.equal(result.ok, true);
-    assert.equal(new Set([...result.data.added.nodes, ...result.data.added.wires]).size, 7);
+    assert.equal(new Set([...result.data.added.nodes, ...result.data.added.wires]).size, Object.keys(imported.nodes).length + Object.keys(imported.wires).length);
     assert.deepEqual(destination, before);
 });
 

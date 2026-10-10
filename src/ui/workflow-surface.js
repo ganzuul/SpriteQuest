@@ -8,35 +8,11 @@ import { addressKey, nodeAddress, targetAddress, own, plain, safeBinding, safeEr
 import { workflowSignature } from '../workflow/runtime.js?v=0.27.0';
 import { FAMILIES, OPERATIONS, operationFor, phaseForNode } from '../workflow/catalog.js?v=0.27.0';
 import { safeWorkflowData } from '../workflow/contracts.js?v=0.27.0';
-import { fastConnectionChoices, fastFallbackAllowed, fastFallbackNode, workflowBindingKey } from './provider-settings.js?v=0.27.0';
+import { fastConnectionChoices, fastFallbackAllowed, fastFallbackNode } from './provider-settings.js?v=0.27.0';
 import { readNodePresentation } from './node-palette.js?v=0.27.0';
 import { prepareNodeProfileOptions } from './node-profile-preparation.js?v=0.27.0';
 const descriptions = { Input: 'Bring material into a workflow.', Shaping: 'Change the plan or amount of material.', Surface: 'Refine expression.', Transpose: 'Apply a reference’s qualities.', Derive: 'Extract findings from a source.', Introspection: 'Reflect on experience, context and actor state.', Output: 'Inspect or commit an artifact.' };
-const choices = { method: ['select', 'compress'], scope: ['whole', 'narration', 'dialogue'], strength: ['light', 'medium', 'strong'] };
-const labels = { targetTokens: 'Target artifact tokens', keepRecent: 'Recent messages kept verbatim', maxTokens: 'Maximum response tokens', budgetTokens: 'Guidance artifact budget', includeCharacter: 'Include character fields', recentMessages: 'Recent messages', profileId: 'Node connection override', model: 'Node model override', modelRole: 'Model role', protectedLiterals: 'Protected literal wording' };
 export const QUOTE_SCOPE_HELP = 'Dialogue is text inside paired ASCII double quotes (") or paired curly double quotes (“…”). Narration is text outside those paired quotes, excluding the quote delimiters. Apostrophes and single quotes are ordinary text.';
-const requestBound = node => { const bound = operationFor(node)?.requestBound || 0; return typeof bound === 'function' ? bound(node) : bound; };
-// Plain phrases stay approachable; JSON objects retain portable rule metadata.
-// Quote JSON-looking or multiline literal strings so their representation is unambiguous.
-const formatRule = rule => typeof rule === 'string' && !/^[\s]*[\[{"]|[\r\n]/.test(rule) ? rule : JSON.stringify(rule);
-export function parseWorkflowRules(text) {
-    const rules = [];
-    for (const [index, line] of text.split('\n').entries()) {
-        if (!line.trim()) continue;
-        let rule = line;
-        if (/^\s*[\[{"]/.test(line)) {
-            try { rule = JSON.parse(line); }
-            catch { return { ok: false, error: `Line ${index + 1}: use valid JSON for an object or quoted phrase. Changes not saved.` }; }
-        }
-        const phrase = rule && typeof rule === 'object' && !Array.isArray(rule) ? rule.phrase : rule;
-        if (typeof phrase !== 'string' || !phrase.trim() || phrase.length > 2048 || !safeWorkflowData(rule)) {
-            return { ok: false, error: `Line ${index + 1}: use a nonblank phrase or an object with a string "phrase", at most 2,048 characters. Changes not saved.` };
-        }
-        rules.push(rule);
-    }
-    if (rules.length > 128 || !safeWorkflowData(rules)) return { ok: false, error: 'Use at most 128 rules with bounded portable metadata. Changes not saved.' };
-    return { ok: true, data: rules };
-}
 // Content/host preparation owns expensive work. Selection projects cached plain data.
 const projections = new WeakMap();
 const historicalPreviews = new WeakMap();
@@ -44,11 +20,6 @@ const noRows = freeze([]);
 const pathKey = path => JSON.stringify(path);
 const targetKey = target => target?.kind === 'terminal' ? 'terminal:' + addressKey(target.address) : addressKey(target) + ':' + target.portId;
 const ownedPreviewTarget = raw => { const target = targetAddress(raw); return target ? freeze(target) : null; };
-function safeMemoryCommit(raw) {
-    if (!plain(raw)) return null;
-    const applied = own(raw, 'applied'), acknowledged = own(raw, 'acknowledged'), version = own(raw, 'version');
-    return typeof applied === 'boolean' && typeof acknowledged === 'boolean' && Number.isSafeInteger(version) && version >= 0 ? freeze({ applied, acknowledged, version }) : null;
-}
 /** Consequence review exposes receipt status, never staged data or private capabilities. */
 function safeSettlement(raw) {
     if (!plain(raw) || !['settled','partial','save-unverified'].includes(own(raw,'status')) || own(raw,'published') !== true) return null;
@@ -93,16 +64,6 @@ function historicalPreviewTarget(recording, target) {
     const canonical = historicalPreviews.get(recording)?.aliases?.get(targetKey(target));
     return canonical && recordedPrimitiveTarget(recording, canonical) ? { target: ownedPreviewTarget(canonical), unavailable: false } : { target: null, unavailable: true };
 }
-function nodeControls(node, op) {
-    return Object.entries(op.defaults).map(([key, fallback]) => {
-        const value = node[key] ?? fallback, descriptor = op.controlDescriptors?.[key];
-        return { key, label: descriptor?.label || labels[key] || key.replace(/([A-Z])/g, ' $1'),
-            value: descriptor?.editor === 'json' || descriptor?.type === 'object' ? JSON.stringify(value, null, 2) : Array.isArray(value) ? value.map(item => key === 'rules' ? formatRule(item) : typeof item === 'string' ? item : JSON.stringify(item)).join('\n') : value,
-            kind: descriptor?.editor === 'json' || descriptor?.type === 'object' ? 'readonly-json' : key === 'rules' ? 'rules' : Array.isArray(fallback) ? 'lines' : typeof fallback,
-            ...(['integer', 'number'].includes(descriptor?.type) ? { min: descriptor.min, max: descriptor.max, step: descriptor.step ?? (descriptor.type === 'integer' ? 1 : 'any') } : {}),
-            options: descriptor?.values || (key === 'mode' ? node.operation === 'repair' ? ['repair', 'scan'] : ['literal'] : choices[key] || null) };
-    });
-}
 function safeHandle(raw) {
     const terminal = targetAddress(own(raw, 'terminal')), handleId = own(raw, 'handleId'), runId = own(raw, 'runId');
     return terminal?.kind === 'terminal' && !terminal.address.instancePath.length && typeof handleId === 'string' && handleId && typeof runId === 'string' && runId ? freeze({ handleId, runId, terminal }) : null;
@@ -110,10 +71,10 @@ function safeHandle(raw) {
 function baseWorkflowView(graph, profiles, settings, fastConnections = [], activeModel = null) {
     const phase = typeof graph.mode === 'string' ? graph.mode.slice(7) : '';
     return { graphId: graph.id || '', name: graph.name || '', phase,
-        assigned: graph.id === settings.nativeBindings?.[workflowBindingKey(graph.mode)] && (graph.mode === 'native-unified' || !settings.nativeBindings?.workflowGraphId),
+        assigned: graph.id === settings.nativeBindings?.workflowGraphId,
         fastConnections: fastConnectionChoices({ ok: true, data: { connections: fastConnections } }),
         profiles: prepareNodeProfileOptions(profiles, activeModel).map(({ value, label, ...metadata }) => ({ id: value, name: label, ...metadata })),
-        families: FAMILIES.map(name => ({ name, description: descriptions[name], operations: Object.values(OPERATIONS).filter(op => op.family === name || name === 'Surface' && ['pattern-scan', 'validate-patches'].includes(op.id)).map(op => ({ id: op.id, title: op.title, phase: op.phase === 'both' ? phase : op.phase || phase, compatible: (phase === 'unified' || !op.phase || op.phase === 'both' || op.phase === phase) && (!op.minimumSchema || graph.schema >= op.minimumSchema) })) })),
+        families: FAMILIES.map(name => ({ name, description: descriptions[name], operations: Object.values(OPERATIONS).filter(op => op.family === name || name === 'Surface' && ['pattern-scan', 'validate-patches'].includes(op.id)).map(op => ({ id: op.id, title: op.title, phase: op.phase === 'both' ? phase : op.phase || phase, compatible: !op.minimumSchema || graph.schema >= op.minimumSchema })) })),
         quoteHelp: QUOTE_SCOPE_HELP };
 }
 /** Root preparation boundary. The returned token is branded and contains no public authority. */
@@ -180,7 +141,7 @@ export function prepareWorkflowProjection(root, { planner, profiles = [], fastCo
                 profileId: node.profileId || '', model: node.model || '', resolvedModel: binding?.model || '', requestBound: unit?.requestBound ?? 0, enabled: node.enabled !== false,
                 issue: boundIssues.get(addressKey(address)) || undefined,
                 effective: unit?.requestBound ? (binding?.fallbackActive ? 'Decision fallback · ' : '') + [binding?.profileId, binding?.model].filter(Boolean).join(' · ') || boundIssues.get(addressKey(address)) || 'Model connection' : 'No model call',
-                controls: nodeControls(node, metadata), ports: view.ports.filter(pin => pin.address.nodeId === node.id) }];
+                ports: view.ports.filter(pin => pin.address.nodeId === node.id) }];
         });
         const groups = Object.values(view.savedGraph.groups ?? {}).map(group => {
             const members = Object.values(view.savedGraph.nodes).filter(node => node.inGroup === group.id).map(node => node.id);
@@ -190,7 +151,7 @@ export function prepareWorkflowProjection(root, { planner, profiles = [], fastCo
         views.set(pathKey(view.instancePath), freeze({ instancePath: view.instancePath, editable: view.editable, nodes, groups, targets: targets.filter(target => pathKey((target.kind === 'terminal' ? target.address : target).instancePath) === pathKey(view.instancePath)) }));
     }
     const handles = new Map();
-    const applyTerminals = new Set(inventory.primitives.filter(unit => unit.terminal && ['apply-reply', 'review-publish'].includes(unit.node.operation)).map(unit => addressKey(unit.address)));
+    const applyTerminals = new Set(inventory.primitives.filter(unit => unit.terminal && unit.node.operation === 'review-publish').map(unit => addressKey(unit.address)));
     for (const raw of result?.reviewHandles || []) {
         const handle = safeHandle(raw);
         if (!handle || handle.runId !== result.runId || handle.terminal.address.workflowId !== graph.id || result.mode !== 'root' || !result.ok || !applyTerminals.has(addressKey(handle.terminal.address))) continue;
@@ -238,10 +199,10 @@ export function projectPreparedWorkflow(prepared, { viewPath = [], selectedId = 
     const selector = safeHandle(selectedReviewHandle), cached = selector ? owner.handles.get(selector.handleId) : null;
     const validHandle = cached && selector.runId === cached.handle.runId && targetKey(selector.terminal) === targetKey(cached.handle.terminal) && target?.kind === 'terminal' && targetKey(target) === targetKey(cached.handle.terminal)
         && result?.mode === 'root' && result?.ok && result.runId === selector.runId && recording?.runId === selector.runId && availability === 'current' && !view.instancePath.length;
-    const preview = historicalPreviewTarget(recording, pinned || target), displayedTarget = preview.target, memoryCommit = safeMemoryCommit(own(result, 'memoryCommit'));
+    const preview = historicalPreviewTarget(recording, pinned || target), displayedTarget = preview.target;
     const resultView = result || recording ? { kind: 'bounded', ok: result?.ok === true, error: result?.error?.message || '', actualCalls: result?.actualCalls || 0, callBound: result?.callBound ?? recording?.plan?.callBound ?? summary.callBound,
         runId: recording?.runId || result?.runId || '', sections: preview.unavailable ? [{ kind: 'diagnostic', ...formatRecordedArtifact({ format: 'omitted', reason: 'historical wrapper mapping unavailable' }) }] : boundedSections(recording, displayedTarget), previewTarget: displayedTarget, applyAvailable: !!validHandle,
-        selectedReviewHandle: validHandle ? cached.handle : null, persistOnly: !!(validHandle && cached.persistOnly), ...(safeSettlement(result?.settlement) ? {settlement:safeSettlement(result.settlement)} : {}), applyIssue: validHandle ? cached.issue || applyIssue : applyIssue, tokenMethods: [...new Set((recording?.units || []).map(unit => unit.request?.tokenCount?.method).filter(Boolean))], ...(memoryCommit ? { memoryCommit } : {}) } : null;
+        selectedReviewHandle: validHandle ? cached.handle : null, persistOnly: !!(validHandle && cached.persistOnly), ...(safeSettlement(result?.settlement) ? {settlement:safeSettlement(result.settlement)} : {}), applyIssue: validHandle ? cached.issue || applyIssue : applyIssue, tokenMethods: [...new Set((recording?.units || []).map(unit => unit.request?.tokenCount?.method).filter(Boolean))] } : null;
     const rowSource = progressSource(recording, runState);
     return { ...owner.base, nodes: view.nodes, groups: view.groups, selectedId: address && address.workflowId === owner.base.graphId && pathKey(address.instancePath) === path ? address.nodeId : selectedId,
         instancePath: view.instancePath, editable: view.editable, targets: view.targets, targetSummary: summary, callBound: summary.callBound, issues: summary.issues,
@@ -251,7 +212,6 @@ function boundedResult(raw, handles) {
     const result = { schema: raw.schema, runtime: raw.runtime, mode: raw.mode, runId: raw.runId, ok: raw.ok === true, callBound: raw.callBound, actualCalls: raw.actualCalls, recording: raw.recording, reviewHandles: handles };
     const error = safeError(raw.error); if (error) result.error = error;
     const settlement = safeSettlement(own(raw,'settlement')); if (settlement) result.settlement = settlement;
-    const memoryCommit = safeMemoryCommit(own(raw, 'memoryCommit')); if (memoryCommit) result.memoryCommit = memoryCommit;
     for (const key of ['preview', 'published', 'fallback']) if (raw[key] !== undefined) result[key] = raw[key];
     return freeze(result);
 }
@@ -302,14 +262,14 @@ export function createWorkflowSession({ runtime, current, epoch, rootCurrent = c
         result: () => result,
         receiveAutomatic(record) {
             const graph = rootCurrent(), origin = record?.origin;
-            if (!active() || !record?.result || !origin || origin.kind !== 'send' || !['pre', 'unified'].includes(origin.phase) || graph?.mode !== 'native-' + origin.phase || origin.graph !== graph || origin.graphId !== graph.id || origin.signature !== workflowSignature(graph) || ignoredAutomatic.has(record) || displayedAutomatic === record) return;
+            if (!active() || !record?.result || !origin || origin.kind !== 'send' || origin.phase !== 'unified' || graph?.mode !== 'native-unified' || origin.graph !== graph || origin.graphId !== graph.id || origin.signature !== workflowSignature(graph) || ignoredAutomatic.has(record) || displayedAutomatic === record) return;
             if (busy) { ignoredAutomatic.add(record); return; }
             // A payload-free superseded Send cannot replace the one retained diagnostic.
             const received = record.result.recording;
             if (!received || record.result.mode !== 'root' || typeof origin.runId !== 'string' || !origin.runId || origin.runId !== record.result.runId || origin.runId !== received.runId || received.plan?.mode !== 'root' || received.plan?.phase !== origin.phase || received.identities?.strings?.[received.plan?.workflowId] !== graph.id) return;
             if (availability !== 'current' && recording?.runId === record.result.recording.runId) return;
             generation++; invocation = null; displayedAutomatic = record; adopt(record.result, false, origin.signature); applyIssue = '';
-            status = `Automatic Send · ${origin.phase === 'unified' ? 'unified workflow' : 'pre phase'} · "${origin.graphName || graph.name}". ${result?.ok ? 'Review the result.' : record.result.error?.message || 'Run failed.'}`; publish();
+            status = `Automatic Send · unified workflow · "${origin.graphName || graph.name}". ${result?.ok ? 'Review the result.' : record.result.error?.message || 'Run failed.'}`; publish();
         },
         refreshFreshness(selector) {
             const handle = safeHandle(selector);
@@ -318,7 +278,7 @@ export function createWorkflowSession({ runtime, current, epoch, rootCurrent = c
             applyIssue = freshness?.ok === false ? freshness.error.message : ''; publish();
         },
         async run(options = {}) {
-            if (options.target === undefined && rootCurrent()?.mode === 'native-unified') {
+            if (options.target === undefined) {
                 preparationError = { code: 'NATIVE_SEND_REQUIRED', message: 'Assign and enable this unified workflow, then Send in SillyTavern. Generate Reply continues that native generation. Use Run to here to test supported nodes.' };
                 status = preparationError.message; publish();
                 return { schema: 3, runtime: 2, mode: 'root', ok: false, actualCalls: 0, error: preparationError };
@@ -332,7 +292,7 @@ export function createWorkflowSession({ runtime, current, epoch, rootCurrent = c
             try {
                 if (!controller) throw new Error('Native workflow runtime is unavailable.');
                 const onEvent = event => observe(transaction, event);
-                const response = await (options.target !== undefined ? controller.runTarget(transaction.graph, options.target, { ...options, onEvent }) : transaction.graph.mode === 'native-pre' ? controller.runPre(transaction.graph, { ...options, onEvent }) : controller.runPost(transaction.graph, undefined, { ...options, onEvent }));
+                const response = await controller.runTarget(transaction.graph, options.target, { ...options, onEvent });
                 const cancelledDiagnostic = transaction.cancelled && rootOwned(transaction) && transaction.runId && response?.ok === false && response.error?.code === 'ABORTED' && response.recording?.status === 'cancelled' && response.recording.runId === transaction.runId;
                 if (!cancelledDiagnostic && !settledValid(transaction)) return;
                 adopt(response, cancelledDiagnostic, transaction.revision); busy = false; publish(); return response;

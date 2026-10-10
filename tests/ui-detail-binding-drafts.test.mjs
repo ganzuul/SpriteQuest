@@ -6,7 +6,7 @@ import { join, resolve, relative, isAbsolute } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { compiled } from './helpers/svelte-compile.mjs';
 import { JSDOM } from 'jsdom';
-import { starterGraph } from '../src/workflow/starters.js?v=0.27.0';
+import { fixtureGraph as starterGraph } from './helpers/workflow-fixtures.mjs';
 import { cloneWorkflowDocument } from '../src/workflow/document.js?v=0.27.0';
 import { prepareNativeNodeEdit } from '../src/workflow/definition-library.js?v=0.27.0';
 import { prepareGraphCandidate } from '../src/workflow/prepared-graph-edit.js?v=0.27.0';

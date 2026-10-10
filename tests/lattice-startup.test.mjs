@@ -17,7 +17,7 @@ test('fresh Lattice opens a current zero-call starter without reading old settin
     assert.equal(root.lattice, settings);
     assert.equal(settings.schema, 1);
     assert.equal(settings.enabled, false);
-    assert.deepEqual(settings.nativeBindings, { workflowGraphId: null, preGraphId: null, postGraphId: null });
+    assert.deepEqual(settings.nativeBindings, { workflowGraphId: null });
     assert.equal(Object.hasOwn(settings, 'workflowMode'), false);
     assert.equal(graph.schema, 3); assert.equal(graph.runtime, 2);
     assert.equal(graph.template.id, 'unified-basic'); assert.equal(graph.mode, 'native-unified'); assert.deepEqual(Object.values(graph.nodes).map(n=>n.operation), ['on-send','generate-reply','review-publish']);
@@ -43,7 +43,7 @@ test('current CRUD does not assign execution and imports reject retired packages
     const rejected = S.importGraph(JSON.stringify({ kind: 'prompt-canvas-graph', schema: 1, graph: { nodes: {}, wires: {} } }));
     assert.equal(rejected.ok, false); assert.deepEqual(settings, before);
     S.deleteGraph(created.id); assert.equal(S.getGraph(created.id), null);
-    assert.equal(settings.enabled, false); assert.deepEqual(settings.nativeBindings, { workflowGraphId: null, preGraphId: null, postGraphId: null });
+    assert.equal(settings.enabled, false); assert.deepEqual(settings.nativeBindings, { workflowGraphId: null });
 });
 
 test('saved graph accessors reject without executing them or replacing settings', () => {
@@ -76,7 +76,7 @@ test('saved graph table and nested metadata accessors reject without reads or ef
         host();
         const stored = structuredClone(S.settings());
         let reads = 0;
-        const key = target === 'graphs' ? stored.activeGraphId : target === 'ui' ? 'theme' : 'preGraphId';
+        const key = target === 'graphs' ? stored.activeGraphId : target === 'ui' ? 'theme' : 'workflowGraphId';
         Object.defineProperty(stored[target], key, { enumerable: true, configurable: true, get() { reads++; return 'unsafe'; } });
         const h = host({ lattice: stored });
         assert.throws(() => S.settings(), /workflow|document|plain|schema|settings/i);

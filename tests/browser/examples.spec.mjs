@@ -99,7 +99,7 @@ test('each example tile activates an independently editable native primary workf
             return { savedId: h.S.settings().activeGraphId, currentId: h.graph.id, mode: h.graph.mode };
         });
         expect(active.savedId).toBe(active.currentId);
-        expect(active.mode).toMatch(/^native-(pre|post|unified)$/);
+        expect(active.mode).toBe('native-unified');
         await expect(page.getByRole('combobox', { name: 'Workflow', exact: true })).toHaveValue(active.savedId);
         await page.evaluate(async()=>{const h=window.canvasHarness,id=document.querySelector('.pc-canvas-host .pc-node-native').dataset.id,node=h.graph.nodes[id];await h.view({x:280-node.x,y:80-node.y,zoom:1});});
         await page.locator('.pc-canvas-host .pc-node-native .pc-native-heading').first().click({timeout:5000});
@@ -115,7 +115,7 @@ test('each example tile activates an independently editable native primary workf
     expect(after.providerCalls).toBe(0);
 });
 
-test('reopening a tile preserves the edited first copy and advanced subgraphs open for inspection', async ({ page }, testInfo) => {
+test('reopening a tile preserves the independently edited first copy', async ({ page }, testInfo) => {
     await load(page);
     let dialog = await openExamples(page);
     await dialog.getByRole('button', { name: 'Follow a reply from Send to Review', exact: true }).click();
@@ -159,22 +159,23 @@ test('reopening a tile preserves the edited first copy and advanced subgraphs op
     expect(await page.evaluate(() => window.canvasHarness.providerCalls())).toBe(0);
 });
 
-test('an archived malformed companion leaves saved workflows unchanged and allows repair', async ({page}) => {
+test('prior unified IDs remain independently installable while malformed packages and retired IDs preserve saved workflows', async ({page}) => {
     await load(page);
     const result = await page.evaluate(async () => {
         const h = window.canvasHarness;
-        const {WORKFLOW_EXAMPLE_DATA} = await import('/src/workflow/example-data.js?v=' + h.version);
-        const {installWorkflowExample} = await import('/src/workflow/examples.js?v=' + h.version);
-        const entry = WORKFLOW_EXAMPLE_DATA.find(entry => entry.number === 20);
-        const before = structuredClone(h.S.settings()), nodes = entry.packages[1].graph.nodes;
-        entry.packages[1].graph.nodes = {};
+        const {UNIFIED_WORKFLOW_EXAMPLE_DATA} = await import('/src/workflow/unified-example-data.js?v=' + h.version);
+        const {installWorkflowExample, listWorkflowExamples} = await import('/src/workflow/examples.js?v=' + h.version);
+        const entry = UNIFIED_WORKFLOW_EXAMPLE_DATA[0];
+        const before = structuredClone(h.S.settings()), nodes = entry.packages[0].graph.nodes;
+        entry.packages[0].graph.nodes = {};
         const failed = installWorkflowExample(entry.id, h.S.settings());
+        const retired = ['scene-brief-basics', 'continuity-and-voice'].map(id => installWorkflowExample(id, h.S.settings()));
         const unchanged = JSON.stringify(h.S.settings()) === JSON.stringify(before);
-        entry.packages[1].graph.nodes = nodes;
+        entry.packages[0].graph.nodes = nodes;
         const repaired = installWorkflowExample(entry.id, h.S.settings());
-        return {failed: failed.ok, unchanged, repaired: repaired.ok, companions: repaired.data?.companions.length, calls: h.providerCalls()};
+        return {failed: failed.ok, unchanged, retiredRejected:retired.every(result => !result.ok && result.error.code === 'UNKNOWN_EXAMPLE'), repaired: repaired.ok, mode:repaired.data?.graph.mode, independent:repaired.data?.graph.id !== entry.packages[0].graph.id, visible:listWorkflowExamples().some(example => example.id === entry.id), bindingsUnchanged:JSON.stringify(h.S.settings().nativeBindings) === JSON.stringify(before.nativeBindings), companions:repaired.data?.companions.length, calls:h.providerCalls()};
     });
-    expect(result).toEqual({failed:false, unchanged:true, repaired:true, companions:1, calls:0});
+    expect(result).toEqual({failed:false, unchanged:true, retiredRejected:true, repaired:true, mode:'native-unified', independent:true, visible:false, bindingsUnchanged:true, companions:0, calls:0});
 });
 
 test('one malformed primary stays as a disabled diagnostic tile while other examples still open', async ({ page }) => {

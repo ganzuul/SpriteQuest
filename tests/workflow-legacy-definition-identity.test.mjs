@@ -40,8 +40,11 @@ test('029a930 Transpose and Reroute snapshots retain their exact canonical hashe
     assert.deepEqual(g, before);
 });
 
-test('029a930 nested workflow and bundled subgraph packages load and round-trip without repinning', () => {
-    const parsed = must(parseWorkflow(JSON.stringify(baseline.workflowPackage)));
+test('029a930 pins round-trip inside a unified root and bundled subgraphs without repinning', () => {
+    assert.equal(parseWorkflow(JSON.stringify(baseline.workflowPackage)).error.code, 'WRONG_PHASE');
+    const unifiedPackage = structuredClone(baseline.workflowPackage);
+    unifiedPackage.graph.mode = 'native-unified';
+    const parsed = must(parseWorkflow(JSON.stringify(unifiedPackage)));
     assertLegacyPins(parsed);
     const roundTrip = must(parseWorkflow(JSON.stringify(exportWorkflow(parsed))));
     assertLegacyPins(roundTrip);
@@ -98,7 +101,8 @@ test('Reroute artifact kind is hashed once and changing it still invalidates pin
 });
 test('genuine saved nested Terminology and Reroute execute with zero model calls and retain source-bound patches', async () => {
     const g = legacyGraph();
-    const node = (id, operation, controls = {}) => ({ id, type: 'workflow', operation, ...controls });
+    g.mode = 'native-unified';
+    const node = (id, operation, controls = {}) => ({ id, type: 'workflow', operation, phase: 'post', ...controls });
     const wire = (id, from, fromPort, to, toPort) => ({ id, route: 'wire', from, fromPort, to, toPort });
     g.nodes.source = node('source', 'reply-snapshot');
     g.nodes.glossaryText = node('glossaryText', 'compose', { sections: [{ name: 'Glossary', text: '{"entries":[{"from":"Captain","to":"Commander"}]}' }] });

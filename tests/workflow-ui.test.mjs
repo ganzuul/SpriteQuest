@@ -1,25 +1,26 @@
+import { fixtureGraph as starterGraph } from './helpers/workflow-fixtures.mjs';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { installMock } from './mock.js';
 installMock();
 const S = await import('../src/state.js?v=0.27.0');
-const { starterGraph, installStarter } = await import('../src/workflow/starters.js?v=0.27.0');
-const { prepareWorkflowProjection, projectPreparedWorkflow, parseWorkflowRules } = await import('../src/ui/workflow-surface.js?v=0.27.0');
+const { installStarter } = await import('../src/workflow/starters.js?v=0.27.0');
+const { prepareWorkflowProjection, projectPreparedWorkflow } = await import('../src/ui/workflow-surface.js?v=0.27.0');
 const { prepareWorkspaceViews } = await import('../src/ui/workspace-preparation.js?v=0.27.0');
 const project = (root, options) => projectPreparedWorkflow(prepareWorkflowProjection(root, options));
 test('installing any actual example leaves generation unarmed and phases unassigned', () => {
     const before = structuredClone(S.settings().nativeBindings);
-    for (const id of ['native-guidance','reviewed-de-slop','literal-cleanup','structured-guidance']) {
+    for (const id of ['unified-basic']) {
         const graph = installStarter(id, S.settings()); assert.equal(graph.schema,3); assert.equal(graph.runtime,2);
         assert.equal(S.settings().enabled,false); assert.deepEqual(S.settings().nativeBindings,before);
     }
 });
-test('actual zero-call examples and operation controls project without connection or model effects', () => {
+test('authored zero-call operation layouts project without connection or model effects', () => {
     let bindings=0;
     for (const id of ['literal-cleanup','structured-guidance']) {
         const view=project(starterGraph(id),{resolveBinding(){bindings++;throw new Error('No model needed');}});
         assert.equal(view.callBound,0); assert.equal(view.issues.length,0);
-        assert.equal(view.nodes.some(node=>node.controls.length>0),true);
+        assert.equal(view.nodes.some(node=>node.operation==='compose'||node.operation==='text-rules'),true);
     }
     assert.equal(bindings,0);
 });
@@ -37,10 +38,6 @@ test('Notes receive prepared organization cards with no executable pins', () => 
     const result=prepareWorkspaceViews(root);assert.equal(result.ok,true,JSON.stringify(result));
     const card=result.data.preparedViews[0].drawBase.nativeCards.note;
     assert.equal(card.canonicalTitle,'Note');assert.equal(card.family,'Organization');assert.equal(card.body,'雪 · author note');assert.deepEqual(card.ports,[]);assert.equal(card.hostResult,false);
-});
-test('rules parse literal Unicode phrases and reject malformed metadata visibly', () => {
-    const parsed=parseWorkflowRules('delve\n雪');assert.equal(parsed.ok,true,JSON.stringify(parsed));assert.deepEqual(parsed.data,['delve','雪']);
-    assert.equal(parseWorkflowRules('{"phrase":').ok,false);
 });
 test('valid groups without declared members prepare from actual node membership', async () => {
     const root = starterGraph('structured-guidance'); root.groups.visual = { id: 'visual', title: 'Visual', collapsed: false }; root.nodes['compose-json'].inGroup = 'visual';

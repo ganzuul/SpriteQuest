@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { starterGraph } from '../src/workflow/starters.js?v=0.27.0';
+import { fixtureGraph as starterGraph } from './helpers/workflow-fixtures.mjs';
 import { siblingWorkflow } from './fixtures/workflow-prepared-fixture.mjs';
 import { computeDefinitionIdentity, definitionRefKey } from '../src/workflow/definitions.js?v=0.27.0';
 import { prepareWorkspaceViews, prepareLibraryViews } from '../src/ui/workspace-preparation.js?v=0.27.0';
@@ -11,7 +11,7 @@ test('current saved root draws normalized named wires without changing its docum
 
 test('an empty root shelf still exposes disabled subgraph interface nodes', async () => {
  const { prepareNativeSearchCatalog } = await import('../src/ui/native-search-catalog.js?v=0.27.0');
- const result = prepareNativeSearchCatalog({schema:3,runtime:2,mode:'native-pre',workflowId:'empty-shelf',viewPath:[],inDefinition:false});
+ const result = prepareNativeSearchCatalog({schema:3,runtime:2,mode:'native-unified',workflowId:'empty-shelf',viewPath:[],inDefinition:false});
  assert.equal(result.ok,true);
  const boundaries=result.data.choices.filter(choice=>choice.id.startsWith('boundary:'));
  assert.deepEqual(boundaries.map(choice=>choice.label),['Input','Output']);

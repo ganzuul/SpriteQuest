@@ -50,10 +50,10 @@ test('configured creation holds stale captures and rejects changed pin shapes be
  const fresh=session.open(capture,{operation:'parse-effect-library',connection:{origin:{nodeId:'text',portId:'out'},portId:'in'}},{phase:'pre',targets:[],helpers:[],originKind:'text',originDirection:'out'});current=true;const changed=session.apply(fresh.view.key,'{"libraryId":"wand-effects","revision":"1","itemId":"wand","format":"data"}','pre');assert.equal(changed.ok,false);assert.equal(changed.error.code,'CONFIGURATION_PORT_CHANGED');session.cancel(fresh.view.key);await fresh.result;
 });
 
-test('configured creation defaults to the effective selected response stage and locks legacy stages',()=>{
+test('configured creation defaults to the effective selected response stage and locks stage-specific helper contracts',()=>{
  assert.equal(typeof config.configuredCreationStage,'function');
  assert.deepEqual(config.configuredCreationStage('read-file','native-unified','post'),{phase:'post',phaseLocked:false});
- assert.deepEqual(config.configuredCreationStage('read-file','native-post','pre'),{phase:'post',phaseLocked:true});
+ assert.deepEqual(config.configuredCreationStage('read-file','native-post','pre',true),{phase:'post',phaseLocked:true});
  assert.deepEqual(config.configuredCreationStage('on-send','native-unified','post'),{phase:'pre',phaseLocked:true});
 });
 
@@ -115,6 +115,6 @@ test('cancelled configuration cannot prepare or clear a replacement at any autho
 });
 
 test('Outcome Commit is discoverable only in the response stage and requires an actual authorized JSON target',()=>{
- const unified=prepareNativeSearchCatalog(scope).data,choice=unified.choices.find(item=>item.id==='operation:commit-outcomes');assert.ok(choice);assert.equal(choice.requiresConfiguration,true);assert.equal(choice.phase,'post');assert.equal(prepareNativeSearchCatalog({...scope,mode:'native-pre'}).data.choices.some(item=>item.id==='operation:commit-outcomes'),false);
+ const unified=prepareNativeSearchCatalog(scope).data,choice=unified.choices.find(item=>item.id==='operation:commit-outcomes');assert.ok(choice);assert.equal(choice.requiresConfiguration,true);assert.equal(choice.phase,'post');assert.equal(prepareNativeSearchCatalog({...scope,mode:'native-pre'}).ok,false);
  const options={phase:'post',targets:[{targetId:'outcomes.json',format:'json'},{targetId:'notes.txt',format:'text'}],helpers:[]};assert.equal(config.validateConfiguredNodeControls('commit-outcomes','{"targetId":"outcomes.json"}',options).ok,true);assert.equal(config.validateConfiguredNodeControls('commit-outcomes','{"targetId":"notes.txt"}',options).ok,false);assert.equal(config.validateConfiguredNodeControls('commit-outcomes','{"targetId":"missing.json"}',options).ok,false);
 });

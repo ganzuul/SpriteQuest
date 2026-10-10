@@ -1,9 +1,7 @@
 import { cloneJsonValue } from '../workflow/operations/json-data.js?v=0.27.0';
 const fail = (code, message) => ({ ok: false, error: { code, message } });
 const fallbackCodes = ['REQUEST_FAILED', 'SERVICE_UNAVAILABLE', 'RATE_LIMITED', 'PROVIDER_OVERLOADED', 'AUTH_MISSING', 'HTTP_ERROR', 'INVALID_FAST_RESPONSE'];
-const workflowKeys = { 'native-unified': 'workflowGraphId', 'native-pre': 'preGraphId', 'native-post': 'postGraphId' };
-export const workflowBindingKey = mode => Object.hasOwn(workflowKeys, mode) ? workflowKeys[mode] : null;
-export const workflowCreationPhase = (phase = 'unified') => ['unified', 'pre', 'post'].includes(phase) ? phase : null;
+export const workflowBindingKey = mode => mode === 'native-unified' ? 'workflowGraphId' : null;
 /** Selectors retain no routes, credentials or request authority. */
 export function fastConnectionChoices(snapshot) {
     const checked = cloneJsonValue(snapshot);

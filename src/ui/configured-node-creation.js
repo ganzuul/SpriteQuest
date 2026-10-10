@@ -24,10 +24,10 @@ const factories={
 /** Discovery only: accurate declared pins, with no manufactured executable settings or identities. */
 export function deferredNodeDescription(operation,controls={}){const factory=factories[operation],base=OPERATIONS[operation];return factory&&base?{descriptor:base,ports:factory({...base.defaults,...controls})}:null;}
 export const nodeNeedsConfiguration=operation=>Object.hasOwn(factories,operation);
-/** Explicit configuration starts from the current effective stage; fixed operations and legacy containers lock it. */
-export function configuredCreationStage(operation,mode,effectivePhase){
- const declared=OPERATIONS[operation]?.phase,legacy=mode==='native-pre'||mode==='native-post';
- return {phase:legacy?mode.slice(7):['pre','post'].includes(declared)?declared:effectivePhase==='post'?'post':'pre',phaseLocked:legacy||['pre','post'].includes(declared)};
+/** Explicit configuration starts from the current effective stage; fixed operations and stage-specific helper containers lock it. */
+export function configuredCreationStage(operation,mode,effectivePhase,inDefinition=false){
+ const declared=OPERATIONS[operation]?.phase,containerStage=inDefinition&&['native-pre','native-post'].includes(mode)?mode.slice(7):null;
+ return {phase:containerStage??(['pre','post'].includes(declared)?declared:effectivePhase==='post'?'post':'pre'),phaseLocked:!!containerStage||['pre','post'].includes(declared)};
 }
 export function iterationHelperChoices(root){
  const choices=[];for(const [key,definition] of Object.entries(root?.definitions??{})){const checked=inspectDefinitionGraph(definition,root.definitions);if(!checked.ok)continue;const ports=checked.data.interface;if(!ports.some(port=>port.id==='item'&&port.direction==='input'&&port.kind==='data'&&port.required===true)||!ports.some(port=>port.id==='result'&&port.direction==='output'&&port.kind==='data')||ports.some(port=>port.kind!=='data'||!['item','result','projectedState','nextState'].includes(port.id)||['item','projectedState'].includes(port.id)!==(port.direction==='input')))continue;choices.push({key,label:definition.name,ref:checked.data.ref,stateful:ports.some(port=>port.id==='projectedState'&&port.direction==='input')&&ports.some(port=>port.id==='nextState'&&port.direction==='output')});}return freeze(choices);

@@ -24,8 +24,8 @@ export interface ImportReviewView {
 }
 export interface SubgraphSaveView { key: string; name: string; targetId: string | null; entries: { id: string; name: string }[]; error?: string }
 export interface SubgraphSaveActions { close(): void; save(key: string, name: string, targetId: string | null): unknown }
-export interface NewWorkflowPromptView { name: string; phase?: 'unified' | 'pre' | 'post' }
-export interface NewWorkflowPromptActions { choose(choice: 'save' | 'discard' | 'cancel', phase?: 'unified' | 'pre' | 'post'): void }
+export interface NewWorkflowPromptView { name: string }
+export interface NewWorkflowPromptActions { choose(choice: 'save' | 'discard' | 'cancel'): void }
 export interface WorkflowExamplePin extends Port { x: number; y: number }
 export interface WorkflowExampleNode { id: string; x: number; y: number; w: number; h: number; title: string; className: string; iconPath: string; body: string | null; ports: WorkflowExamplePin[] }
 export interface WorkflowExampleWire { id: string; d: string; kind: string; from: { nodeId: string; portId: string }; to: { nodeId: string; portId: string } }
@@ -39,6 +39,7 @@ export interface RecallArmsView {
 }
 export interface RecallArmsActions {refresh():void;arm(nodeId:string):DetailEditResponse;disarm(nodeId:string):DetailEditResponse;}
 export interface WorkbenchView {
+    hasArchivedWorkflows?: boolean;
     graphs: { id: string; name: string }[]; graphId: string; armed: boolean; inspectorOpen: boolean; detailsWidth?: number;
     history: HistoryView; camera: { x: number; y: number; zoom: number; mode: string }; selectionCount: number;
     workflow?: WorkflowView; rootWorkflow?: WorkflowView;
@@ -65,7 +66,7 @@ export interface WorkbenchActions {
     chooseNative?: (id: string, at?: { x: number; y: number }) => void; nativeSearch?: NodeSearchActions; nativePinMenu?: PinMenuActions; openRunDetails?: () => void;
     pickGraph: (id: string) => void; arm: (enabled: boolean) => void; command: (name: string) => void;
     mode: (mode: string) => void; zoom: (factor: number) => void; fitSelection: () => void;
-    resizeStart?: () => void; resizeDetails?: (width: number) => void; addNode?: (id: string, at?: { x: number; y: number }) => void;
+    resizeStart?: () => void; resizeDetails?: (width: number) => void;
     acceptImport?: () => void; cancelImport?: () => void; prepareImportAgain?: () => void;
     newWorkflowPrompt?: NewWorkflowPromptActions;
     fastConnections?: FastConnectionsActions;
@@ -76,12 +77,11 @@ export interface WorkbenchActions {
 }
 
 
-export interface WorkflowControl { key: string; label: string; value: string | number | boolean; kind: string; options: string[] | null }
-export interface WorkflowNodeView { id: string; title: string; canonicalTitle: string; alias: string; compact: boolean; operation: string; family: string; phase: string; input: string; output: string; terminal: boolean; modelRole: string | null; profileId: string; model: string; effective: string; enabled: boolean; controls: WorkflowControl[] }
+export interface WorkflowNodeView { id: string; title: string; canonicalTitle: string; alias: string; compact: boolean; operation: string; family: string; phase: string; input: string; output: string; terminal: boolean; modelRole: string | null; profileId: string; model: string; effective: string; enabled: boolean }
 export interface WorkflowAddress { workflowId: string; instancePath: string[]; nodeId: string }
 export type WorkflowTarget = (WorkflowAddress & { portId: string }) | { kind: 'terminal'; address: WorkflowAddress };
 export interface WorkflowReviewSelector { handleId: string; runId: string; terminal: { kind: 'terminal'; address: WorkflowAddress } }
-export interface WorkflowBoundedResultView { kind: 'bounded'; ok: boolean; error: string; actualCalls: number; callBound: number; runId?: string; sections: { kind: string; format: string; text: string; truncated: boolean }[]; previewTarget?: WorkflowTarget | null; tokenMethods: string[]; applyAvailable: boolean; selectedReviewHandle?: WorkflowReviewSelector | null; applyIssue: string; memoryCommit?: Readonly<{ applied: boolean; acknowledged: boolean; version: number }> }
+export interface WorkflowBoundedResultView { kind: 'bounded'; ok: boolean; error: string; actualCalls: number; callBound: number; runId?: string; sections: { kind: string; format: string; text: string; truncated: boolean }[]; previewTarget?: WorkflowTarget | null; tokenMethods: string[]; applyAvailable: boolean; selectedReviewHandle?: WorkflowReviewSelector | null; applyIssue: string }
 export interface WorkflowView {
     graphId: string; name: string; phase: string; assigned: boolean; selectedId: string | null;
     profiles: { id: string; name: string }[];

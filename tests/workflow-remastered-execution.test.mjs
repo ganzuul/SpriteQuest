@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {installWorkflowExample} from '../src/workflow/examples.js';
 import {unifiedRecipeHost} from './helpers/unified-recipe-host.mjs';
-import {seedMemory,upsert,sourceRefs,reflection,completedMessage,readMemory} from './helpers/workflow-example-fixtures.mjs';
+import {seedMemory,upsert,sourceRefs,reflection,completedMessage,readMemory} from './helpers/consumed-memory-fixtures.mjs';
 const installed = number => {
  const result = installWorkflowExample(`lesson-${String(number).padStart(2,'0')}`,{graphs:{}});
  assert.equal(result.ok,true,JSON.stringify(result.error));

@@ -41,7 +41,7 @@ function controllerKeydown(env) {
 }
 const frame = () => ({ id:'frame',type:'note',commentFrame:true,moveContents:true,title:'Comment',content:'Notes',color:'#637d89',x:80,y:0,w:220,h:160 });
 let sequence = 0;
-function fixture(root = { id:'comment-controller-' + ++sequence,schema:3,runtime:2,mode:'native-pre',nodes:{ source:{id:'source',type:'workflow',operation:'scene-context',x:0,y:0},outside:{id:'outside',type:'workflow',operation:'scene-context',x:600,y:100},frame:frame() },wires:{},groups:{},portals:{},roles:{},definitions:{} }) {
+function fixture(root = { id:'comment-controller-' + ++sequence,schema:3,runtime:2,mode:'native-unified',nodes:{ source:{id:'source',type:'workflow',operation:'scene-context',x:0,y:0},outside:{id:'outside',type:'workflow',operation:'scene-context',x:600,y:100},frame:frame() },wires:{},groups:{},portals:{},roles:{},definitions:{} }) {
     const prepared = prepareWorkspaceViews(root); assert.equal(prepared.ok,true,JSON.stringify(prepared));
     const library = prepareLibraryViews(root.id,root.definitions); assert.equal(library.ok,true,JSON.stringify(library));
     const session = createGraphViewSession({root,activationId:'comment-'+sequence,navigation:[...prepared.data.navigation,...library.data.navigation],preparedViews:[...prepared.data.preparedViews,...library.data.preparedViews]}).data;
@@ -106,7 +106,7 @@ test('history applies exact presentation to a closed retained view without navig
 });
 
 test('mixed coordinate presence survives undo and repeated authored transitions keep separate view captures', () => {
-    const graph={id:'comment-mixed-'+ ++sequence,schema:3,runtime:2,mode:'native-pre',nodes:{source:{id:'source',type:'workflow',operation:'scene-context',x:0,y:80},outside:{id:'outside',type:'workflow',operation:'scene-context',x:600,y:100},frame:{...frame(),y:30}},wires:{},groups:{},portals:{},roles:{},definitions:{}};
+    const graph={id:'comment-mixed-'+ ++sequence,schema:3,runtime:2,mode:'native-unified',nodes:{source:{id:'source',type:'workflow',operation:'scene-context',x:0,y:80},outside:{id:'outside',type:'workflow',operation:'scene-context',x:600,y:100},frame:{...frame(),y:30}},wires:{},groups:{},portals:{},roles:{},definitions:{}};
     const f=fixture(graph);try {f.session.updateView({nodePresentation:{source:{x:100}}});f.env.activateEditorDraw();assert.equal(f.env.commentLayout(f.env.captureCommentEdit(),move(f.env)).ok,true);assert.ok(H.undo(graph));f.refresh();f.env.activateEditorDraw();assert.deepEqual(f.session.readEditor().view.nodePresentation.source,{x:100});assert.equal(f.env.editorDraw.nodes.source.y,80);
         f.session.updateView({nodePresentation:{source:{x:100,y:80}}});f.env.activateEditorDraw();const target=[{id:'frame',x:100,y:40,w:220,h:160},{id:'source',x:120,y:90}];assert.equal(f.env.commentLayout(f.env.captureCommentEdit(),target).ok,true);assert.ok(H.undo(graph));f.refresh();f.env.activateEditorDraw();assert.deepEqual(f.session.readEditor().view.nodePresentation.source,{x:100,y:80});assert.equal(f.env.editorDraw.nodes.source.x,100);
     }finally{f.unlisten();}
@@ -177,7 +177,7 @@ test('a real retained-view byte limit still activates a safe current Canvas whil
 function groupedCommentFixture(owned=false) {
     let graph,scope,id;
     if(owned){const copied=makeLocalCopy(siblingWorkflow(),{instancePath:['first/path'],id:'private-group-'+ ++sequence});assert.equal(copied.ok,true);graph=copied.data.candidate;graph.id='comment-group-child-'+sequence;scope=graph.definitions[definitionRefKey(graph.nodes['first/path'].definition)].body;id='work';scope.nodes.frame={...frame(),moveContents:false};scope.nodes.work.x=0;scope.nodes.work.y=0;}
-    else{graph={id:'comment-group-root-'+ ++sequence,schema:3,runtime:2,mode:'native-pre',nodes:{source:{id:'source',type:'workflow',operation:'scene-context',x:0,y:0},frame:{...frame(),moveContents:false}},wires:{},groups:{},portals:{},roles:{},definitions:{}};scope=graph;id='source';}
+    else{graph={id:'comment-group-root-'+ ++sequence,schema:3,runtime:2,mode:'native-unified',nodes:{source:{id:'source',type:'workflow',operation:'scene-context',x:0,y:0},frame:{...frame(),moveContents:false}},wires:{},groups:{},portals:{},roles:{},definitions:{}};scope=graph;id='source';}
     scope.nodes[id].inGroup='fold';scope.groups={fold:{id:'fold',title:'Fold',members:[id],collapsed:true,x:10,y:20,frame:{x:-24,y:-48,w:208,h:132}}};
     const f=fixture(graph);if(owned)assert.equal(f.session.openInstance(['first/path']).ok,true);
     f.session.updateView({nodePresentation:{[id]:{x:100,y:50,alias:'Moved node'}},groupPresentation:{fold:{x:200,y:300,frame:{x:176,y:252,w:208,h:132},collapsed:true},unrelated:{x:800,y:900,collapsed:false}}});f.env.activateEditorDraw();f.canvas.multi=new Set(['frame',id]);

@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFile } from 'node:fs/promises';
 import { fixture, mouse, dom } from './canvas-fixture.mjs';
-import { starterGraph } from '../src/workflow/starters.js?v=0.27.0';
+import {fixtureGraph as starterGraph,withNativeBoundary} from './helpers/workflow-fixtures.mjs';
+import {nativeFixture} from './helpers/native-workflow-fixture.mjs';
 import { cloneWorkflowDocument } from '../src/workflow/document.js?v=0.27.0';
 import { computeDefinitionIdentity, definitionRefKey } from '../src/workflow/definitions.js?v=0.27.0';
 import { workflowSignature } from '../src/workflow/runtime.js?v=0.27.0';
@@ -36,8 +37,8 @@ function groupedDefinition() {
     assert.equal(checked.ok, true, JSON.stringify(checked));
     return { ...checked.data.materializedDefinition, semanticHash: checked.data.semanticHash };
 }
-function prepared(schema = 3) {
-    const source = starterGraph('reviewed-de-slop'); source.nodes.repair.mode = 'scan'; const root = schema === 3 ? cloneWorkflowDocument(source).data : source;
+function prepared(schema = 3,native=false) {
+    const source = starterGraph('reviewed-de-slop'); source.nodes.repair.mode = 'scan';if(native){for(const [id,value]of Object.entries(source.nodes))if(value.operation==='apply-reply'){delete source.nodes[id];for(const [edge,wire]of Object.entries(source.wires))if(wire.to===id||wire.from===id)delete source.wires[edge];}withNativeBoundary(source);}const root = schema === 3 ? cloneWorkflowDocument(source).data : source;
     const definition = groupedDefinition(), ref = { id: definition.id, version: definition.version, semanticHash: definition.semanticHash };
     if (schema === 3) { root.definitions[definitionRefKey(definition)] = definition; root.nodes.inspection = { id: 'inspection', type: 'subgraph', definition: ref, parameterOverrides: {}, roleOverrides: {}, nodeBindingOverrides: {} }; }
     let bindings = 0;
@@ -47,8 +48,8 @@ function prepared(schema = 3) {
     const views = createGraphViewSession({ root, activationId: 'group-presentation-' + schema, ...result.data }).data; assert.ok(views);
     return { root, definition, ref, views, preparation: result.data, bindings: () => bindings };
 }
-async function controllerFixture(schema = 3) {
-    const f = prepared(schema), counters = { persist: 0, projection: 0, changes: 0 }, env = { current: f.root, graphViews: f.views, editorDraw: null, nativeGroupPresenter: null, rootRunEpoch: 7, workspaceRevision: 1, workspacePrepared: { ...f.preparation, catalogs: new Map() }, nativeWireBridge: null, nativeCatalog: null, editorCaptures: new WeakMap(), selected: null, selectedKind: null, selectedPreview: null, restoringEditor: false, canvasTraceRows: null, root: document.createElement('div'), projectEditorDraw, projectNodeProfiles, isOpen: () => true, cancelImportReview() {}, replaceNativeBridge() {}, syncPaneToggles() {}, updateWorkflowProjection() { counters.projection++; }, paintHistory() {}, workbench: { update() {} }, persistGraphViews() { counters.persist++; } };
+async function controllerFixture(schema = 3,native=false) {
+    const f = prepared(schema,native), counters = { persist: 0, projection: 0, changes: 0 }, env = { current: f.root, graphViews: f.views, editorDraw: null, nativeGroupPresenter: null, rootRunEpoch: 7, workspaceRevision: 1, workspacePrepared: { ...f.preparation, catalogs: new Map() }, nativeWireBridge: null, nativeCatalog: null, editorCaptures: new WeakMap(), selected: null, selectedKind: null, selectedPreview: null, restoringEditor: false, canvasTraceRows: null, root: document.createElement('div'), projectEditorDraw, projectNodeProfiles, isOpen: () => true, cancelImportReview() {}, replaceNativeBridge() {}, syncPaneToggles() {}, updateWorkflowProjection() { counters.projection++; }, paintHistory() {}, workbench: { update() {} }, persistGraphViews() { counters.persist++; } };
     for (const name of ['captureEditor', 'editorCurrent', 'prepareGroupPresentation', 'replaceNativeBridge']) { const fn = controllerFunction(name, env); if (fn) env[name] = fn; }
     assert.equal(typeof env.prepareGroupPresentation, 'function', 'the actual controller needs a qualified local group presentation adapter');
     const real = fixture({ nativeCard: node => env.editorDraw?.nativeCards[node.id], nativeScope: () => f.views.readEditor().view.identity.kind === 'library' ? { readOnly: true } : { workflowId: f.root.id, instancePath: f.views.readEditor().view.identity.instancePath ?? [], readOnly: f.views.readEditor().readOnly }, canEdit: () => !f.views.readEditor().readOnly, onNativeGroupPresentation: (id, collapsed) => env.nativeGroupPresenter?.(id, collapsed), onChange: () => { counters.changes++; } }); env.canvas = real.canvas;
@@ -121,25 +122,26 @@ test('optional group presentation restores current version1 views and rejects ma
     const bad = structuredClone(good); bad.views[0].groupPresentation[groupId].collapsed = 'false'; const recovered = createGraphViewSession({ root: f.root, activationId: 'malformed', ...f.preparation, persisted: bad }).data; assert.equal(recovered.project().warnings.length, 1); assert.equal(recovered.readEditor().view.identity.kind, 'root'); assert.equal(recovered.readEditor().view.groupPresentation, undefined); assert.equal(recovered.readRoot(), f.root);
 });
 
-test('ordinary native folding does not cancel or replace an actual root run while it remains pending', async () => {
+test('ordinary native folding does not cancel or replace a bounded target while it remains pending', async () => {
     const f = await controllerFixture(), before = structuredClone(f.root), counters = { host: 0, cancel: 0, requests: 0 }; let release, state;
     const message = { mes: 'We delve.', is_user: false, swipe_id: 0, swipes: ['We delve.'], swipe_info: [{ extra: {}, gen_started: 1, gen_finished: 2 }], extra: {}, gen_started: 1, gen_finished: 2 };
     const context = { chatId: 'fold-run', characterId: 1, groupId: null, chat: [{ mes: 'Hello', is_user: true }, message], extensionPrompts: {} };
     const host = createNativeWorkflowController({ context: () => { counters.host++; return context; }, getGraph: () => f.root, isEnabled: () => true, isBusy: () => false, resolveBinding: () => { throw new Error('Scan-only root does not bind'); }, request: async () => { counters.requests++; throw new Error('Scan-only root does not request'); } });
     const gate = new Promise(resolve => { release = resolve; });
-    const runtime = { runPost: async (root, index, options) => { await gate; return host.runPost(root, index, options); }, cancel(reason) { counters.cancel++; host.cancel(reason); } };
+    const runtime = { runTarget: async (root,target,options) => { await gate;return host.runTarget(root,target,options); }, cancel(reason) { counters.cancel++; host.cancel(reason); } };
     const session = createWorkflowSession({ runtime: () => runtime, rootCurrent: () => f.root, runEpoch: () => f.env.rootRunEpoch, active: () => true, changed(value) { state = value; } });
     try {
-        const pending = session.run(); assert.equal(state.busy, true); open(f.real.host).click(); fold(f.real.host).click(); assert.equal(state.busy, true); assert.equal(session.result(), null); assert.deepEqual(counters, { host: 0, cancel: 0, requests: 0 }); assert.equal(f.env.rootRunEpoch, 7); assert.deepEqual(f.root, before);
-        release(); await pending; assert.equal(state.busy, false); assert.equal(session.result().ok, true, JSON.stringify(session.result().error)); assert.equal(session.result().recording.status, 'completed'); assert.equal(session.result().reviewHandles.length, 1); assert.equal(counters.cancel, 0); assert.equal(counters.requests, 0); assert.deepEqual(f.root, before);
+        const pending = session.run({target:{kind:'terminal',address:{workflowId:f.root.id,instancePath:[],nodeId:'apply-reply'}}}); assert.equal(state.busy, true); open(f.real.host).click(); fold(f.real.host).click(); assert.equal(state.busy, true); assert.equal(session.result(), null); assert.deepEqual(counters, { host: 0, cancel: 0, requests: 0 }); assert.equal(f.env.rootRunEpoch, 7); assert.deepEqual(f.root, before);
+        release(); await pending; assert.equal(state.busy, false); assert.equal(session.result().ok, true, JSON.stringify(session.result().error)); assert.equal(session.result().recording.status, 'completed'); assert.equal(session.result().reviewHandles.length, 0); assert.equal(counters.cancel, 0); assert.equal(counters.requests, 0); assert.deepEqual(f.root, before);
     } finally { release(); await f.close(); }
 });
 test('folding preserves current private handle ownership through the actual session and preview adapter', async () => {
     for (const schema of [3]) {
-        const f = await controllerFixture(schema), before = structuredClone(f.root), counters = { checks: 0, apply: 0, cancel: 0, requests: 0 };
+        const f = await controllerFixture(schema,true), before = structuredClone(f.root), counters = { checks: 0, apply: 0, cancel: 0, requests: 0 };
         const message = { mes: 'We delve.', is_user: false, swipe_id: 0, swipes: ['We delve.'], swipe_info: [{ extra: {}, gen_started: 1, gen_finished: 2 }], extra: {}, gen_started: 1, gen_finished: 2 };
         const context = { chatId: 'fold-review-' + schema, characterId: 1, groupId: null, chat: [{ mes: 'Hello', is_user: true }, message], extensionPrompts: {}, saveChat: async () => {}, updateMessageBlock: async () => {}, swipe: { refresh: async () => {} } };
-        const host = createNativeWorkflowController({ context: () => context, getGraph: () => f.root, isEnabled: () => true, isBusy: () => false, resolveBinding: () => { throw new Error('Scan-only review does not bind'); }, request: async () => { counters.requests++; throw new Error('Scan-only review does not request'); }, syncMesToSwipe: index => { const item = context.chat[index]; item.swipes[item.swipe_id] = item.mes; return true; }, syncSwipeToMes: (index, id) => { const item = context.chat[index]; item.swipe_id = id; item.mes = item.swipes[id]; Object.assign(item, structuredClone(item.swipe_info[id])); return true; } });
+        context.characters=[{avatar:'other.png'},{avatar:'mara.png',data:{name:'Mara'}}];
+        const native=nativeFixture(f.root,{context,request:async()=>{counters.requests++;throw Error('Scan-only review does not request');}}),host=native.controller;
         const runtime = { ...host, candidateStatus(candidate) { counters.checks++; return host.candidateStatus(candidate); }, apply(candidate) { counters.apply++; return host.apply(candidate); }, cancel(reason) { counters.cancel++; host.cancel(reason); } };
         Object.assign(f.env, { workflowState: { result: null, reviewHandles: [], busy: false, availability: 'current', applyIssue: '' }, workspaceIssue: '', pinnedPreview: null, uiEpoch: 1, workflowLibrary: null, workflowInspector: null, workflowRuntime: { getNativeWorkflowController: () => runtime }, workflowProjection: null, workflowProjectionGraph: null, projectPreparedWorkflow, projectWorkspacePanels, settings: () => ({}), isWorkflowGraph: root => root?.mode?.startsWith('native-'), executableNative: root => root.schema === 2 && root.runtime === 1 || root.schema === 3 && root.runtime === 2, workbench: { update(value) { f.env.panels = value; } } });
         for (const name of ['recallSetupView', 'samePreviewTerminal', 'currentRootPreviewTerminal', 'currentPreviewHandle', 'applyPreviewReview', 'rejectPreviewReview', 'workflowView', 'updateWorkflowProjection']) f.env[name] = controllerFunction(name, f.env);
@@ -149,7 +151,7 @@ test('folding preserves current private handle ownership through the actual sess
             f.env.updateWorkflowProjection();
         } });
         try {
-            await f.env.workflowSession.run(); assert.equal(f.env.workflowSession.result().ok, true, JSON.stringify(f.env.workflowSession.result().error));
+            await native.generate(f.root);f.env.workflowSession.receiveAutomatic(host.lastAutomaticResult());assert.equal(f.env.workflowSession.result().ok, true, JSON.stringify(f.env.workflowSession.result().error));
             const result = f.env.workflowSession.result(), recording = f.env.workflowState.recording, review = structuredClone(f.env.panels.outputPreview.review.selector), rootEpoch = f.env.rootRunEpoch, context = f.views.captureEditorContext(), viewEpoch = f.views.readEditContext().sessionId, calls = { ...counters };
             assert.equal(f.env.panels.outputPreview.review.canApply, true);
             open(f.real.host).click();

@@ -28,7 +28,7 @@ export function loadSubgraphLibrary() {
         const library = copied.data;
         if (!record(library) || Object.keys(library).some(key => !['definitions', 'entries'].includes(key)) || !record(library.definitions) || library.entries !== undefined && !record(library.entries)) result = libraryFailure('DEFINITION_DATA', 'Expected saved definitions and optional shelf entries.');
         else {
-            const checked = validateGraphStructure({ schema: 3, runtime: 2, mode: 'native-pre', nodes: {}, wires: {}, definitions: library.definitions });
+            const checked = validateGraphStructure({ schema: 3, runtime: 2, mode: 'native-unified', nodes: {}, wires: {}, definitions: library.definitions });
             result = checked.ok ? Object.freeze({ ok: true, data: library }) : libraryFailure(checked.error.code, checked.error.message);
             if (result.ok && library.entries !== undefined && Object.entries(library.entries).some(([id, ref]) => !safeId(id) || !record(ref)
                 || Object.keys(ref).length !== 3 || Object.keys(ref).some(key => !['id', 'version', 'semanticHash'].includes(key)) || ref.id !== id

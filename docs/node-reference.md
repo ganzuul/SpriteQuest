@@ -16,7 +16,7 @@ This reference covers the registered reusable operations, their implemented mode
 | Patches | Proposed replacements tied to a frozen Draft |
 | Candidate | Validated revised text together with the original and review information |
 
-A **Unified** graph contains Preparation and Response stages around one owned Generate Reply boundary. Configure both-stage nodes in the intended stage and wire their dependencies explicitly. Legacy **Before reply (Pre)** graphs still prepare guidance before normal Send; legacy **After reply (Post)** graphs remain manual completed-reply tools. A stage does not turn ordinary Text into a reply Draft. Reply sources and host outputs enforce their own phase and context requirements. An input accepts one connection and an output can feed multiple consumers. There is no implicit conversion between Text, Data, Context, and Draft.
+A **Unified** graph contains Preparation and Response stages around one owned Generate Reply boundary. Configure both-stage nodes in the intended stage and wire their dependencies explicitly. Executable roots are unified. Pre/Post labels on retained shared tools describe their Preparation/Response stage contracts. A stage does not turn ordinary Text into a reply Draft. Reply sources and host outputs enforce their own phase and context requirements. An input accepts one connection and an output can feed multiple consumers. There is no implicit conversion between Text, Data, Context, and Draft.
 
 Model calls below are maximum auxiliary calls **per execution of that operation**. A subgraph's total depends on its expanded body and how many instances run. Deterministic operations require no model profile. Stage/type validation and model bindings may block a full workflow before execution. A skipped path is distinct from an unresolved path; native sources, publication and other root-only operations retain their authority requirements.
 
@@ -285,7 +285,7 @@ Use one **Analysis** request to appraise supplied evidence. **Character** consid
 
 **Controls:** Mode, Output tokens (`maxTokens`, default 2,048), Instructions. Recall cannot invent an episode ID absent from the supplied records.
 
-**Connect:** Scene Context → Context Focus → Reflect Character → Express Behavior. Memory Read State can feed Reflect's `state` pin. The [Reflect and express starter](../examples/introspection/native/reflect-and-express.json) ends in Guidance.
+**Connect:** Scene Context → Context Focus → Reflect Character → Express Behavior. Memory Read State can feed Reflect's `state` pin. Inspect reflection and expression with Run to here; private native guidance requires an authorized Character Direction or Recall producer.
 
 ### Internalize
 
@@ -295,7 +295,7 @@ Use one **Analysis** request to propose actor updates from settled events. **Exp
 
 **Controls:** Mode, Output tokens (`maxTokens`, default 2,048), Instructions. Changed items require exact references to supplied settled events.
 
-**Connect:** Memory Read State + Memory Read Events → Internalize Experience → Memory Commit in a Post root graph. Inspect the proposal with Run to here; a full root Run with Commit may write it.
+**Connect:** Memory Read State + Memory Read Events → Internalize Experience → Memory Commit in the Response stage. Inspect the proposal with Run to here; settlement waits for the exact accepted Review / Publish result.
 
 ### Express
 
@@ -325,7 +325,7 @@ Use one **Analysis** request to propose actor updates from settled events. **Exp
 
 **Controls:** Read: View (`state`/`events`/`episodes`). Recall: Query, Results. Commit: Commit key (`idempotencyKey`). The default `lattice-memory-commit` lets the native host derive a key from the graph, terminal and exact proposal. A custom key must identify one intended transaction; reusing it for changed content fails.
 
-**Connect:** Memory Read State + Memory Read Events → State Track or Internalize → Memory Commit. One Memory Commit may appear in a Post root graph. In legacy post mode it settles after a successful full root Run; unified memory effects wait for the exact reviewed root acceptance. Settlement occurs after all selected branches succeed and checks fresh source revisions, actor/chat selection, cancellation and the store version before one compare-and-swap write. Public runner calls, previews, Run to here, dry-runs and failed runs never write. See [memory settlement and save status](native-workflows.md#actor-memory-and-state).
+**Connect:** Memory Read State + Memory Read Events → State Track or Internalize → Memory Commit. One Memory Commit may appear in the root Response stage. Its effects wait for the exact reviewed root acceptance. Settlement occurs after all selected branches succeed and checks fresh source revisions, actor/chat selection, cancellation and the store version before one compare-and-swap write. Public runner calls, previews, Run to here, dry-runs and failed runs never write. See [memory settlement and save status](native-workflows.md#actor-memory-and-state).
 
 ### State
 
@@ -341,7 +341,7 @@ Deterministically read or propose state with zero model calls. **Value** returns
 
 **Controls:** Value: Values JSON object, Minimum, Maximum. For example `{"trust":0.35}`; arrays are invalid and fractional numeric bounds are supported. Curve: Curve ID, Steps (1–64), Decay (0–1, fractions allowed), Baseline (finite number), Phase durations JSON object, with positive integer durations (1–64) for `onset`, `peak`, `plateau`, `decline`, `aftermath`. Track: Track ID. Save object edits in Details before running.
 
-**Connect:** Memory Read State + Memory Read Events → State Track → Memory Commit. The [Consequence clock starter](../examples/introspection/native/consequence-clock.json) makes zero model requests. State proposals never persist on their own.
+**Connect:** Memory Read State + Memory Read Events → State Track → Memory Commit. Deterministic State Track makes zero model requests. State proposals never persist on their own.
 
 ## Derive
 
@@ -400,7 +400,7 @@ Expose a Guidance artifact as the workflow's host result and enforce its token b
 
 **Controls:** `budgetTokens` (default 768).
 
-**Connect:** Response Plan or Compose with Guidance output → Guidance. A manual Run records a preview. On an assigned, enabled pre workflow, Send installs the bounded guidance for that generation and clears it afterward.
+**Connect:** Response Plan or Compose with Guidance output → Guidance. Run to here records a diagnostic preview. Wire bounded guidance into Generate Reply for its owned generation; the host clears it afterward.
 
 ### Review Gate
 
@@ -412,11 +412,11 @@ Pass a Candidate onward with an explicit review requirement. This is a stage of 
 
 ### Apply Reply
 
-Expose the final Candidate as a root Host result. Running the node prepares the review action; it does not automatically write the reply.
+Expose a source-bound Candidate diagnostic in the root recording. The shared operation remains available for inspecting patch pipelines and makes no requests.
 
-**Controls:** no operation settings. After a full root Run, select **Apply Reply · Host result** in Preview and inspect the original/candidate before **Apply reviewed candidate** or **Reject candidate**.
+**Controls:** no operation settings. Run to here inspects the candidate's original, revised text and changes. This operation does not authorize publication. An owned final Draft must end in Review / Publish for explicit Apply or Reject.
 
-**Connect:** Review Gate → Apply Reply. Apply checks source freshness and retains the original swipe. A target Run to here and intermediate node output cannot authorize application. See [reply review and persistence limits](native-workflows.md#review-a-reply-repair).
+**Connect:** Review Gate → Apply Reply for candidate diagnostics. See [reply review](native-workflows.md#review-a-reply-repair).
 
 ## Subgraph nodes
 
@@ -428,7 +428,7 @@ Expose the final Candidate as a root Host result. Running the node prepares the 
 
 Boundary nodes belong to the subgraph interface. Click one to edit its name, type, and required setting in Details. Add or delete boundaries like ordinary nodes; deleting a boundary also removes its attached parent and body connections. Pinned definitions open read-only. Right-click a wrapper and choose **Make editable copy** for private body edits. Use **Add to Subgraphs** to explicitly save a new shelf entry or update an existing one; placed copies keep their saved contents.
 
-The supplied [Literal cleanup subgraph](../workflows/subgraphs/literal-cleanup.json) exposes Draft → Patches and a Rules parameter. Keep native sources and final application/review authority in the parent. Legacy Draft→Patches tools retain Validate Patches, Review Gate, and Apply Reply; a unified final Draft can end in Review / Publish. See [the manual's subgraph walkthrough](operators-manual.md#reuse-a-process-with-subgraphs).
+The supplied [Literal cleanup subgraph](../workflows/subgraphs/literal-cleanup.json) exposes Draft → Patches and a Rules parameter. Keep native sources and final application/review authority in the parent. Draft→Patches tools retain validation and candidate diagnostics; publication requires an owned Draft ending in Review / Publish. See [the manual's subgraph walkthrough](operators-manual.md#reuse-a-process-with-subgraphs).
 
 ## Unified lifecycle
 
@@ -616,7 +616,7 @@ Paths are arrays of keys for structured values. The separate Write collection pa
 
 ### Outcome Commit
 
-**Response terminal; root only; zero calls.** Required resolved outcomes Data, configured authorized JSON **Target ID**, staging receipt output. Joins the accepted root effect bundle. Preview/failed/rejected runs do not save it; accepted replay is idempotent. See the unified broken-wand example for actual player-use extraction, fixed/wild paths, one native generation and outcome persistence.
+**Response terminal; root only; zero calls.** Required resolved outcomes Data, configured authorized JSON **Target ID**, staging receipt output. Joins the accepted root effect bundle. Preview/failed/rejected runs do not save it; accepted replay is idempotent. See lesson 27, **The broken wand: stable randomness with a wild branch**, in the [thirty-lesson guide](examples.md) for actual player-use extraction, fixed/wild paths, one native generation and outcome persistence.
 
 ## Story time
 

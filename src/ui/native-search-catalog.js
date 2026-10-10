@@ -96,7 +96,7 @@ export function prepareNativeSearchCatalog(scope, options = {}) {
     if (!admitted.ok) return admitted;
     const input = admitted.data.scope, settings = admitted.data.options;
     if (!exact(input, ['schema', 'runtime', 'mode', 'workflowId', 'viewPath', 'inDefinition'])
-        || input.schema !== 3 || input.runtime !== 2 || !['native-pre', 'native-post', 'native-unified'].includes(input.mode)
+        || input.schema !== 3 || input.runtime !== 2 || !(input.mode === 'native-unified' || input.inDefinition && ['native-pre', 'native-post'].includes(input.mode))
         || !text(input.workflowId) || !Array.isArray(input.viewPath) || input.viewPath.length > 8 || !input.viewPath.every(text)
         || typeof input.inDefinition !== 'boolean' || input.inDefinition !== (input.viewPath.length > 0)
         || !exact(settings, ['checkedLibraryEntries', 'checkedLibraryClosures'])

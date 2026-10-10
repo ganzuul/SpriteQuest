@@ -1,7 +1,7 @@
 // Public SillyTavern context fixture for current Lattice workflows.
 export function installMock({ prompts = [], chat = [], settings = {} } = {}) {
     const c = {
-        extensionSettings: { lattice: { schema: 1, enabled: false, graphs: {}, activeGraphId: null, nativeBindings: { preGraphId: null, postGraphId: null }, subgraphLibrary: { definitions: {} }, ui: {}, ...settings, nativeBindings: { preGraphId: null, postGraphId: null, ...settings.nativeBindings } } },
+        extensionSettings: { lattice: { schema: 1, enabled: false, graphs: {}, activeGraphId: null, nativeBindings: { workflowGraphId: null }, subgraphLibrary: { definitions: {} }, ui: {}, ...settings, nativeBindings: { workflowGraphId: null, ...settings.nativeBindings } } },
         chatMetadata: {},
         chatCompletionSettings: { prompts, prompt_order: [] },
         chat,

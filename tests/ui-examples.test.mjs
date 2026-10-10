@@ -22,7 +22,7 @@ async function catalogController(env) {
 }
 
 test('a catalog failure leaves the workspace available and a later retry restores its tiles', async () => {
-    const updates = [], notices = [], tiles = [{ id: 'scene-brief-basics', title: 'Make a scene brief' }];
+    const updates = [], notices = [], tiles = [{ id: 'unified-guidance-prose-notes', title: 'Guide, revise and annotate a scene' }];
     let fail = true;
     const env = {
         projectWorkflowExamples() { if (fail) throw new Error('Broken catalog'); return tiles; },
@@ -38,12 +38,12 @@ test('a catalog failure leaves the workspace available and a later retry restore
     assert.deepEqual(updates.at(-1), { examples: tiles, examplesIssue: '' });
 });
 
-test('opening an example persists its real editable root without changing existing workflows or phase assignments', async () => {
+test('opening an example persists its real editable root without changing existing workflows or workflow assignment', async () => {
     const original = S.createGraph('Original example test workflow');
     const stored = S.settings();
     stored.activeGraphId = original.id;
     stored.enabled = true;
-    stored.nativeBindings = { preGraphId: original.id, postGraphId: null };
+    stored.nativeBindings = { workflowGraphId: original.id };
     const before = structuredClone({ original, bindings: stored.nativeBindings });
     const notices = [], frames = [];
     let saves = 0, fitted = 0;
@@ -64,6 +64,8 @@ test('opening an example persists its real editable root without changing existi
     assert.equal(open('lesson-01'), true);
     assert.notEqual(env.current.id, original.id);
     assert.equal(env.current.name, '1. Follow a reply from Send to Review');
+    assert.equal(env.current.mode, 'native-unified');
+    assert.ok(Object.values(env.current.nodes).some(node => node.operation === 'review-publish'));
     assert.equal(stored.activeGraphId, env.current.id);
     assert.equal(S.resolveGraph().graph, env.current);
     assert.equal(Object.values(env.current.nodes).filter(n => n.type === 'workflow').length, 3);
@@ -90,7 +92,7 @@ test('opening an example does not fit a child tab entered before layout settles'
         graphViews: { readEditor: () => ({ view: { identity: { kind: viewKind } } }) },
         canvas: { fit() { assert.fail('The pending fit belongs only to the newly opened root'); } },
     };
-    assert.equal((await openController(env))('continuity-and-voice'), true);
+    assert.equal((await openController(env))('unified-continuity-warnings'), true);
     viewKind = 'instance';
     while (frames.length) frames.shift()();
 });

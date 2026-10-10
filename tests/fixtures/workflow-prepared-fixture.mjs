@@ -12,7 +12,7 @@ export function siblingWorkflow() {
     const definition = { ...identity.data.materializedDefinition, semanticHash: identity.data.semanticHash };
     const ref = { id: definition.id, version: definition.version, semanticHash: definition.semanticHash };
     const instance = id => ({ id, type: 'subgraph', definition: ref, parameterOverrides: {}, roleOverrides: {}, nodeBindingOverrides: {} });
-    return { id: 'prepared-root', schema: 3, runtime: 2, mode: 'native-pre', nodes: {
+    return { id: 'prepared-root', schema: 3, runtime: 2, mode: 'native-unified', nodes: {
         source: { id: 'source', type: 'workflow', operation: 'scene-context' }, 'first/path': instance('first/path'), second: instance('second'),
         one: { id: 'one', type: 'workflow', operation: 'guidance' }, two: { id: 'two', type: 'workflow', operation: 'guidance' },
     }, wires: { a: direct('a', 'source', 'out', 'first/path', 'scene'), b: direct('b', 'first/path', 'proposal', 'one', 'in'), c: direct('c', 'source', 'out', 'second', 'scene'), d: direct('d', 'second', 'proposal', 'two', 'in') }, definitions: { [definitionRefKey(definition)]: definition }, portals: {} };
@@ -37,5 +37,5 @@ export function twoOutputWorkflow(swapped=false) {
     },wires:{a:direct('a','alpha','out',swapped?'second':'first','in'),b:direct('b','beta','out',swapped?'first':'second','in')}}};
     const identity=computeDefinitionIdentity(draft);if(!identity.ok)throw new Error(identity.error.message);
     const definition={...identity.data.materializedDefinition,semanticHash:identity.data.semanticHash};
-    return {id:'two-output-root',schema:3,runtime:2,mode:'native-pre',nodes:{wrapper:{id:'wrapper',type:'subgraph',definition:{id:definition.id,version:definition.version,semanticHash:definition.semanticHash},parameterOverrides:{},roleOverrides:{},nodeBindingOverrides:{}},one:{id:'one',type:'workflow',operation:'guidance'},two:{id:'two',type:'workflow',operation:'guidance'}},wires:{a:direct('a','wrapper','first','one','in'),b:direct('b','wrapper','second','two','in')},definitions:{[definitionRefKey(definition)]:definition},portals:{}};
+    return {id:'two-output-root',schema:3,runtime:2,mode:'native-unified',nodes:{wrapper:{id:'wrapper',type:'subgraph',definition:{id:definition.id,version:definition.version,semanticHash:definition.semanticHash},parameterOverrides:{},roleOverrides:{},nodeBindingOverrides:{}},one:{id:'one',type:'workflow',operation:'guidance'},two:{id:'two',type:'workflow',operation:'guidance'}},wires:{a:direct('a','wrapper','first','one','in'),b:direct('b','wrapper','second','two','in')},definitions:{[definitionRefKey(definition)]:definition},portals:{}};
 }

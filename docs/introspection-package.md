@@ -15,29 +15,15 @@ Reflect, Internalize and State produce candidate records. Express Behavior/Atten
 
 ## Native workflow examples
 
-The **Workflow examples…** picker includes three Introspection starters. Each install creates an independent editable graph, leaves model connections unresolved, and neither assigns a phase nor arms the extension.
+The picker contains current unified recipes for accepted progression, actor-private moments and Recall. Each opens as an independent editable root without assignment, arming or requests. Configure ordinary model connections and helper roles before Send. The [unified guide](unified-workflows.md) explains the owned generation and review path.
 
-| Native workflow | Phase and flow | Maximum auxiliary requests |
-| --- | --- | --- |
-| [Reflect and express](../examples/introspection/native/reflect-and-express.json) | Pre: Scene Context → Context Focus (`select`) → Reflect Character → Express Behavior → Guidance; Memory Read State feeds Reflect's optional `state` pin | 1 Analysis |
-| [Internalize and commit](../examples/introspection/native/internalize-and-commit.json) | Post: Memory Read State + Memory Read Events → Internalize Experience → Memory Commit | 1 Analysis |
-| [Consequence clock](../examples/introspection/native/consequence-clock.json) | Post: Memory Read State + Memory Read Events → State Track → Memory Commit | 0 |
+Reflect and Internalize create evidence-backed proposals; Express renders diagnostics without writing. Generate Reply accepts private guidance only from its selected actor's authorized live Character Direction or Recall producer. General private Express output is not a substitute for that grant.
 
-Choose a local **Analysis** connection before running the first two. Consequence clock needs no model profile. Run to here inspects a selected output's dependencies without publishing guidance or writing memory. A manual Pre Run computes guidance; assigning Pre and arming causes Send to run the graph again and publish the bounded result. The normal SillyTavern reply is an additional request.
+Memory Read, Recall and Commit remain root-only. Commit stages its exact proposal for the accepted Review / Publish result. Target execution, previews, cancellation, failed branches and public runner calls never settle it. Native memory uses the active chat and host-selected actor, excludes unsupported or unfinished sources, and rechecks evidence and versions before writing.
 
-**A successful full Post root Run with Memory Commit writes actor memory.** Commit has a required `proposal` Data input, no output pin, and a recorded Host result. Only one Commit is allowed in a Post root graph, and it settles after every branch succeeds. A failed/cancelled run, preview, target Run, dry-run, or public `runWorkflow` call cannot settle it. Memory Read/Recall/Commit cannot appear inside reusable subgraphs. State can appear in a subgraph with an explicit `state` input.
+The original manifest executor and example manifests have been retired. Current canvas roots are unified workflow packages. Five pinned stage-specific utility subgraphs remain reusable; their body contracts are independent of root admission.
 
-Native memory is scoped to the active chat and the host-selected character, using the `native-chat` store. Group chats require an active actor; a workflow record or model response cannot select storage authority. Event reads capture only bounded settled public message text and its selected swipe/revision. Private reasoning and unsupported tool, system, intermediate, media or unfinished content are excluded. Edits, swipes, deletion, actor/chat switches, changed settings, cancellation and stale store versions can prevent settlement. Historical evidence is reported as invalidated rather than rewritten as new story history.
-
-The host rechecks source evidence and prior version immediately before a compare-and-swap write, preserves unrelated metadata namespaces, and records idempotency receipts. The default Commit key `lattice-memory-commit` is expanded by the native host from the graph, terminal and exact proposal. Custom keys must identify one intended transaction: identical replay is idempotent, changed content with the same key fails. Distinct-event tracks do not count the same event twice.
-
-Local application and durable persistence have separate status. SillyTavern's public metadata save wrapper returns no positive durability acknowledgment. A local update with that result returns `memoryCommit: { applied: true, acknowledged: false, version: ... }`, and Preview says **Memory updated; save unconfirmed**. A returned save error can likewise leave an unknown outcome after local application. Replaying that transaction remains blocked for the current controller. A new controller after reloading the host can confirm a receipt from persisted metadata; replacing the local metadata object alone does not confirm a save. A distinct next-turn proposal may advance the intact local state and version, with its save still marked unconfirmed. Missing receipts or rolled-back state block further writes. An adapter that positively acknowledges the save reports `acknowledged: true`.
-
-## Two example formats
-
-Files under [examples/introspection/native](../examples/introspection/native/) are `lattice-workflow` packages with a schema-3/runtime-2 graph. Open them with **File → Open workflow…** or add them through **Import into graph…**. Exports omit local profile IDs and credentials; imported model roles need local bindings.
-
-The three files directly under [examples/introspection](../examples/introspection/) remain `lattice-introspection-example` version-1 manifests for the package harness below. Their `integrationRequired: true` flag declares that the harness needs injected services and root authority; those manifests use arrays of nodes with `inputs` bindings and are not native canvas packages. The native equivalents are available now. Synthetic fixtures exercise both formats without provider/API calls.
+Local application and saving remain distinct. An unknown save acknowledgment holds affected writes until fresh persisted metadata confirms the receipt. See [memory settlement and save status](native-workflows.md#actor-memory-and-state).
 
 ## Calling the package
 
@@ -50,15 +36,9 @@ const result = await executeIntrospection(node,{assessment:reflection},{root:tru
 
 Descriptions return named ports, mode-specific controls, output kind, role and request bound. Reflect consumes `context` plus optional `state`/`episodes`. Internalize requires `state` and `events`. Express consumes `assessment` plus optional supporting records. Context Assemble has `in1` through its configured `inputCount` (2–16); Perspective/Focus take `context`. State takes optional `state`, falling back to scoped Memory Read; Track also requires `events`. Memory Commit consumes `proposal`. Package engine outputs use `out`, including commit-intent Data; the native adapter exposes Commit as a terminal without a routable output pin.
 
-Inject `request({messages,maxTokens,signal})`, returning `{ok:true,data:{text,finish}}`, with a verified finish such as `stop`. The package makes at most one request per inference node and does not resolve profiles/providers or retry. The example harness passes `modelRole` to the injected request adapter. Focus additionally needs `countTokens(text) -> {tokens,method}` and a resolved `binding` for compression. Never use model output as a host storage authority.
+Inject `request({messages,maxTokens,signal})`, returning `{ok:true,data:{text,finish}}`, with a verified finish such as `stop`. The package makes at most one request per inference node and does not resolve profiles/providers or retry. Focus additionally needs `countTokens(text) -> {tokens,method}` and a resolved `binding` for compression. Never use model output as a host storage authority.
 
-`runIntrospectionExample(manifest,inputs,ports)` in `library.js` validates the complete typed topological graph before provider work. Supply `root:true`, a scoped memory service, request adapter, and any external Context artifacts named by the manifest. Preview, dry-run and target execution perform no work. A single commit terminal must be last; it settles only after every node and output succeeds. The harness exercises package behavior and does not replace the native workflow runner.
 
-Package-harness manifests:
-
-- `examples/introspection/reflect-and-express.json`: Memory + Context -> Reflect -> Express -> Guidance for a subsequent generation node.
-- `examples/introspection/internalize-and-commit.json`: settled events + prior state -> Internalize Recovery -> explicit commit.
-- `examples/introspection/consequence-clock.json`: distinct settled event IDs -> State Track -> explicit commit.
 
 ## Data and provenance
 

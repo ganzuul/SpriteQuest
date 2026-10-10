@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { ARTIFACT_KINDS, describeOperation, operationDefaults, portsForNode } from '../src/workflow/catalog.js';
+import { ARTIFACT_KINDS, describeOperation, operationDefaults, portsForNode, phaseForNode } from '../src/workflow/catalog.js';
 import { computeDefinitionIdentity, definitionRefKey, validateDefinition } from '../src/workflow/definitions.js';
 import { prepareNativeConnectionEdit } from '../src/workflow/connection-edits.js';
 import { createNativeWireBridge } from '../src/ui/native-wire-bridge.js';
 import { captureGraphEditContext, commitPreparedGraph } from '../src/workflow/transactions.js';
 import * as history from '../src/history.js?v=0.27.0';
 const api = await import('../src/ui/native-search-catalog.js?v=0.27.0').catch(() => ({}));
-const scope = (mode = 'native-pre', extra = {}) => ({ schema: 3, runtime: 2, mode, workflowId: 'root', viewPath: [], inDefinition: false, ...extra });
+const scope = (mode = 'native-unified', extra = {}) => ({ schema: 3, runtime: 2, mode, workflowId: 'root', viewPath: [], inDefinition: false, ...extra });
 function catalog(input = scope(), options) {
     assert.equal(typeof api.prepareNativeSearchCatalog, 'function');
     const result = api.prepareNativeSearchCatalog(input, options);
@@ -31,12 +31,12 @@ test('Subgraphs Input and Output are disabled outside definitions and create che
 });
 
 test('canonical discovery lists each operation once and keeps modes out of node labels', () => {
-    for (const mode of ['native-pre', 'native-post']) {
+    for (const mode of ['native-unified']) {
         const value = catalog(scope(mode));
         const operations = value.choices.filter(item => item.id.startsWith('operation:'));
         const ids = operations.map(item => item.id.split(':')[1]);
         assert.equal(new Set(ids).size, ids.length);
-        assert.equal(operations.some(item => item.id.split(':').length > 2 || item.label.includes(' · ')), false);
+        assert.equal(operations.some(item => item.id.split(':').length > 2 || item.label.includes(' · ') && item.id !== 'operation:generate-reply'), false);
         assert.equal(operations.filter(item => item.family === 'Introspection').length, 6);
         assert.equal(choice(value, 'operation:reroute').label, 'Reroute');
         assert.deepEqual(choice(value, 'operation:reroute').ports.map(port => port.kind), ['text', 'text']);
@@ -63,7 +63,7 @@ test('canonical aliases find the single node while pin matching selects a checke
 });
 
 test('canonical Text Transpose choices exist in either phase and reply-edit modes stay explicit', () => {
-    for (const mode of ['native-pre', 'native-post']) {
+    for (const mode of ['native-unified']) {
         const value = catalog(scope(mode));
         for (const operation of ['style-transfer', 'format-transfer', 'terminology-map']) {
             const item = choice(value, 'operation:' + operation); assert.ok(item, operation + ' in ' + mode);
@@ -72,22 +72,22 @@ test('canonical Text Transpose choices exist in either phase and reply-edit mode
             assert.equal(item.ports.find(port => port.portId === 'out').kind, 'text');
         }
     }
-    const value = catalog(scope('native-post'));
+    const value = catalog(scope('native-unified'));
     for (const item of api.filterNativeSearchChoices(value, { query: 'Memory', origin: { dir: 'out', kind: 'data' } })) {
         assert.notEqual(api.resolveNativeSearchChoice(value, item.id).controls?.mode, 'commit', 'pin matching must not silently select a write mode');
     }
 });
 
 test('legacy Transpose preset packets retain Draft semantics while new pin discovery prefers Text', () => {
-    const post = catalog(scope('native-post'));
+    const post = catalog(scope('native-unified'));
     for (const id of ['style-transfer:character-voice', 'style-transfer:rhythm', 'style-transfer:register', 'format-transfer:data']) {
         const packet = api.resolveNativeSearchChoice(post, 'operation:' + id);
         assert.equal(packet.controls.inputKind ?? 'draft', 'draft');
-        const described = describeOperation(scope('native-post'), { type: 'workflow', ...operationDefaults(packet.operation), ...packet.controls });
+        const described = describeOperation(scope('native-unified'), { type: 'workflow', ...operationDefaults(packet.operation), ...packet.controls });
         assert.equal(described.ok, true);
         assert.deepEqual(described.data.ports.filter(port => ['in', 'out'].includes(port.id)).map(port => port.kind), ['draft', 'patches']);
     }
-    for (const mode of ['native-pre', 'native-post']) {
+    for (const mode of ['native-unified']) {
         const value = catalog(scope(mode)), item = api.filterNativeSearchChoices(value, { query: 'Format Transfer', origin: { dir: 'out', kind: 'data' } })[0];
         assert.ok(item); const packet = api.resolveNativeSearchChoice(value, item.id);
         assert.equal(packet.controls.inputKind, 'text'); assert.equal(packet.controls.referenceKind, 'data');
@@ -95,15 +95,15 @@ test('legacy Transpose preset packets retain Draft semantics while new pin disco
 });
 
 test('default and declared variants describe real pins in the containing phase without allocated identities', () => {
-    for (const mode of ['native-pre', 'native-post']) {
+    for (const mode of ['native-unified']) {
         const value = catalog(scope(mode));
         for (const item of value.choices.filter(item => !item.disabledReason)) {
             const command = api.resolveNativeSearchChoice(value, item.id);
             const described = describeOperation(scope(mode), { type: 'workflow', ...operationDefaults(command.operation), ...command.controls, ...(item.requiresConfiguration ? configuredSamples[command.operation] : {}),
-                ...(command.operation === 'reroute' ? { artifactKind: command.artifactKind, phase: mode.slice(7) } : {}) });
+                ...(command.operation === 'reroute' ? { artifactKind: command.artifactKind, phase: 'pre' } : {}) });
             assert.equal(described.ok, true, item.id + ' ' + JSON.stringify(described.error));
             if(item.requiresConfiguration) { assert.equal(command.requiresConfiguration,true); assert.equal(describeOperation(scope(mode),{type:'workflow',...operationDefaults(command.operation),...command.controls}).ok,false,'incomplete defaults must remain rejected'); }
-            assert.equal(item.phase, mode.slice(7));
+            assert.equal(item.phase, described.data.descriptor.phase);
             assert.deepEqual(item.ports, described.data.ports.map(port => ({ portId: port.id, dir: port.direction === 'input' ? 'in' : 'out', kind: port.kind, label: port.label, required: port.required })));
             for (const port of item.ports) for (const key of ['nodeId', 'center', 'address']) assert.equal(Object.hasOwn(port, key), false);
         }
@@ -150,21 +150,21 @@ function savedClosure() {
     return { definition, snapshots: { [definitionRefKey(child)]: child } };
 }
 let catalogRootSequence = 0;
-const graph = (mode = 'native-pre') => ({ id: 'catalog-root-' + ++catalogRootSequence, schema: 3, runtime: 2, mode, nodes: {}, wires: {}, definitions: {}, portals: {}, groups: {} });
+const graph = (mode = 'native-unified') => ({ id: 'catalog-root-' + ++catalogRootSequence, schema: 3, runtime: 2, mode, nodes: {}, wires: {}, definitions: {}, portals: {}, groups: {} });
 const catalogScope = root => scope(root.mode, { workflowId: root.id });
 
 test('one canonical reroute retains typed pin-aware creation for every actual kind', () => {
-    for (const mode of ['native-pre', 'native-post']) {
+    for (const mode of ['native-unified']) {
         const root = graph(mode), value = catalog(catalogScope(root));
         assert.equal(value.choices.filter(item => item.id.startsWith('operation:reroute')).length, 1);
         for (const kind of ARTIFACT_KINDS) {
             const item = api.filterNativeSearchChoices(value, { query: 'Reroute', origin: { dir: 'out', kind } })[0], id = item.id;
-            assert.ok(item, id); assert.equal(item.phase, mode.slice(7));
+            assert.ok(item, id); assert.equal(item.phase, 'pre');
             assert.deepEqual(item.ports.map(port => [port.portId, port.dir, port.kind]), [['in', 'in', kind], ['out', 'out', kind]]);
             const result = prepareNativeConnectionEdit(root, { kind: 'create', ...api.resolveNativeSearchChoice(value, id), graphPoint: { x: -4.125, y: 91.75 } });
             assert.equal(result.ok, true, JSON.stringify(result));
             const node = result.data.candidate.nodes[result.data.addedNodeIds[0]];
-            assert.deepEqual([node.operation, node.artifactKind, node.phase, node.compact, node.x, node.y], ['reroute', kind, mode.slice(7), true, -4.125, 91.75]);
+            assert.deepEqual([node.operation, node.artifactKind, phaseForNode(result.data.candidate,node), node.compact, node.x, node.y], ['reroute', kind, 'pre', true, -4.125, 91.75]);
             assert.deepEqual(portsForNode(result.data.candidate, node).map(port => [port.id, port.kind]), [['in', kind], ['out', kind]]);
             assert.deepEqual(api.filterNativeSearchChoices(value, { query: 'Reroute', origin: { dir: 'out', kind } }).map(item => item.id), [id]);
         }
@@ -248,7 +248,7 @@ test('an enabled real 257-port Unicode definition preserves every named choice a
     assert.equal(result.ok, true, JSON.stringify(result)); assert.equal(portsForNode(result.data.candidate, result.data.candidate.nodes[result.data.addedNodeIds[0]]).length, 257);
 });
 
-function bridgeFixture(saved = savedClosure(), mode = 'native-pre') {
+function bridgeFixture(saved = savedClosure(), mode = 'native-unified') {
     const root = graph(mode), commands = [], contexts = new WeakMap(), counts = { prepare: 0, commit: 0, opaqueReads: 0 };
     root.nodes.source = { id: 'source', type: 'workflow', operation: 'scene-context' };
     root.nodes.target = { id: 'target', type: 'workflow', operation: 'smart-compactor' };
@@ -311,7 +311,7 @@ test('typed reroute packets also pass the existing bridge in both connection dir
         assert.deepEqual(env.commands[0], { kind: 'create', operation: 'reroute', artifactKind: 'context', graphPoint: { x: -103.125, y: 71.75 },
             connection: { origin: { nodeId: reverse ? 'target' : 'source', portId: reverse ? 'in' : 'out' }, portId: reverse ? 'out' : 'in', replace: true } });
         const node = Object.values(env.root.nodes).find(node => !beforeIds.has(node.id));
-        assert.deepEqual([node.operation, node.artifactKind, node.phase, node.compact], ['reroute', 'context', 'pre', true]);
+        assert.deepEqual([node.operation, node.artifactKind, phaseForNode(env.root,node), node.compact], ['reroute', 'context', 'pre', true]);
         assert.equal(env.bridge.hasContentGesture(), false); assert.equal(env.counts.opaqueReads, 0);
     }
 });
@@ -335,7 +335,7 @@ test('context-off library selection creates unconnected and obsolete catalog act
 });
 
 test('Draft Text Rules, JSON check, Compose Input and Context Join expose actual variant ports', () => {
-    const pre = catalog(), post = catalog(scope('native-post'));
+    const pre = catalog(scope('native-pre',{inDefinition:true,viewPath:['helper']})), post = catalog(scope('native-post',{inDefinition:true,viewPath:['helper']}));
     assert.equal(choice(pre, 'operation:text-rules:draft'), undefined);
     assert.deepEqual(api.filterNativeSearchChoices(post, { query: 'Text Rules', origin: { dir: 'out', kind: 'draft' } })[0].ports.map(p => [p.dir, p.kind]), [['in', 'draft'], ['out', 'patches']]);
     assert.equal(api.filterNativeSearchChoices(pre, { query: 'JSON Decode', origin: { dir: 'out', kind: 'data' } })[0].ports[0].kind, 'data');

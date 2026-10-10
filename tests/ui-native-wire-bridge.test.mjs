@@ -8,7 +8,7 @@ import { graphPoint } from '../src/canvas/camera.js';
 import * as history from '../src/history.js?v=0.27.0';
 const api = await import('../src/ui/native-wire-bridge.js').catch(() => ({}));
 let rootSequence = 0;
-const fixture = () => ({ id: 'bridge-root-' + ++rootSequence, schema: 3, runtime: 2, mode: 'native-pre', nodes: {
+const fixture = () => ({ id: 'bridge-root-' + ++rootSequence, schema: 3, runtime: 2, mode: 'native-unified', nodes: {
     source: { id: 'source', type: 'workflow', operation: 'scene-context' }, alternate: { id: 'alternate', type: 'workflow', operation: 'scene-context' },
     first: { id: 'first', type: 'workflow', operation: 'smart-compactor' }, second: { id: 'second', type: 'workflow', operation: 'smart-compactor' },
 }, wires: {}, portals: {}, definitions: {}, groups: {} });
@@ -296,7 +296,7 @@ test('private final preparation ownership clears on changed/no-op/rejected/error
             const result = originalPrepare(capture, command);
             if (outcome === 'throws') throw new Error('Preparation failed');
             return new Promise((resolve, reject) => { finish = () => outcome === 'promise-error' ? reject(new Error('Preparation failed'))
-                : resolve(outcome === 'rejected' ? prepareNativeConnectionEdit(env.root, { kind: 'create', operation: 'text-rules', controls: { inputKind: 'draft' }, graphPoint: { x: 1, y: 2 } }) : result); });
+                : resolve(outcome === 'rejected' ? prepareNativeConnectionEdit(env.root, { kind: 'create', operation: 'text-rules', controls: { inputKind: 'invalid' }, graphPoint: { x: 1, y: 2 } }) : result); });
         };
         if (outcome === 'commit-error') env.adapter.commit = () => { env.counts.commit++; throw new Error('Commit failed'); };
         if (outcome === 'noop') env.bridge.disconnectWires(['missing']);

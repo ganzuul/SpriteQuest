@@ -45,7 +45,7 @@ function selectClosure(index, target) {
             starts = [unit];
         }
     } else {
-        if (!terminals.length) return fail('MISSING_TERMINAL', 'Add Guidance, Apply Reply or Memory Commit to finish the workflow.');
+        if (!terminals.length) return fail('MISSING_TERMINAL', plan.phase === 'unified' ? 'Add Review / Publish to finish the workflow.' : 'Add a stage output to finish this helper.');
         starts = terminals.map(terminal => byKey.get(nodeAddressKey(terminal.address)));
     }
     const included = new Set();

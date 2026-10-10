@@ -38,7 +38,7 @@ assert.equal(contracts.isWorkflowGraph(nestedAccessor), true, 'classification do
 assert.equal(contracts.validateGraphStructure(nestedAccessor).ok, false);
 assert.equal(reads, 0);
 const { cloneWorkflowDocument } = await import('../src/workflow/document.js');
-const unfinished = { id: 'unfinished', schema: 3, runtime: 2, mode: 'native-pre', nodes: { source: { id: 'source', type: 'workflow', operation: 'scene-context' } }, wires: {} };
+const unfinished = { id: 'unfinished', schema: 3, runtime: 2, mode: 'native-unified', nodes: { source: { id: 'source', type: 'workflow', operation: 'scene-context' } }, wires: {} };
 const cloned = cloneWorkflowDocument(unfinished);
 assert.equal(cloned.ok, true);
 assert.deepEqual([cloned.data.groups, cloned.data.roles, cloned.data.portals, cloned.data.definitions], [{}, {}, {}, {}]);

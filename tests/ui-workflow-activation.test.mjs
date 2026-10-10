@@ -4,7 +4,6 @@ import { readFile } from 'node:fs/promises';
 import { installMock } from './mock.js';
 import { starterGraph } from '../src/workflow/starters.js?v=0.27.0';
 import { prepareWorkflowProjection, projectPreparedWorkflow } from '../src/ui/workflow-surface.js?v=0.27.0';
-import { workflowBindingKey, workflowCreationPhase } from '../src/ui/provider-settings.js?v=0.27.0';
 installMock();
 const S = await import('../src/state.js?v=0.27.0');
 const source = await readFile(new URL('../src/ui/controller.js', import.meta.url), 'utf8');
@@ -15,7 +14,7 @@ function actual(name, env) {
 }
 function fixture() {
     const original = S.createGraph('Z current'); S.settings().activeGraphId = original.id;
-    const env = { ...S, workflowCreationPhase, current: original, uiEpoch: 1, canvas: null, pendingNewWorkflow: null, hasUnsavedWorkflowChanges: () => false, isOpen: () => true, inputBox: async () => 'A new', confirmBox: async () => true, renderAll() {}, toast() {}, setCanvasGraph() { assert.equal(S.settings().activeGraphId, env.current.id); } };
+    const env = { ...S, current: original, uiEpoch: 1, canvas: null, pendingNewWorkflow: null, hasUnsavedWorkflowChanges: () => false, isOpen: () => true, inputBox: async () => 'A new', confirmBox: async () => true, renderAll() {}, toast() {}, setCanvasGraph() { assert.equal(S.settings().activeGraphId, env.current.id); } };
     env.stillEditing = actual('stillEditing', env);
     return env;
 }
@@ -33,7 +32,7 @@ test('captured New continuation cannot switch roots after the active view change
     const env = fixture(), count = S.allGraphs().length; let finish;
     env.hasUnsavedWorkflowChanges = () => true;
     env.requestNewWorkflowChoice = () => new Promise(resolve => { finish=resolve; }); const pending = actual('onNewGraph',env)();
-    env.uiEpoch++; finish({ choice: 'discard', phase: 'unified' }); await pending; assert.equal(S.allGraphs().length,count);
+    env.uiEpoch++; finish({ choice: 'discard' }); await pending; assert.equal(S.allGraphs().length,count);
 });
 test('Import persists the actual newly opened root after the captured file read', async () => {
     const env = fixture(), text = S.exportGraph(env.current.id); let change;
@@ -42,9 +41,9 @@ test('Import persists the actual newly opened root after the captured file read'
     assert.equal(S.resolveGraph().graph,env.current);
 });
 
-test('phase assignment immediately refreshes the cached current workflow status', () => {
-    const graph = starterGraph('native-guidance'), config = { nativeBindings: { preGraphId: null, postGraphId: null } };
-    const env = { workflowBindingKey, current: graph, workspacePrepared: { workflow: prepareWorkflowProjection(graph, { settings: config }) },
+test('unified assignment immediately refreshes the cached current workflow status', () => {
+    const graph = starterGraph('unified-basic'), config = { nativeBindings: { workflowGraphId: null } };
+    const env = { current: graph, workspacePrepared: { workflow: prepareWorkflowProjection(graph, { settings: config }) },
         settings: () => config, save() {}, workflowSession: { cancel() {} }, presentNode() {}, prepareWorkflowProjection,
         workspaceInputs: () => ({ settings: config }), updateWorkflowProjection() {}, renderStatus() {},
     };
@@ -52,7 +51,7 @@ test('phase assignment immediately refreshes the cached current workflow status'
     const start = source.indexOf('const workflowActions = {'), end = source.indexOf('\nfunction defaultNodeSpot', start);
     const actions = Function('env', 'with(env){' + source.slice(start, end) + ';return workflowActions;}')(env);
     assert.equal(projectPreparedWorkflow(env.workspacePrepared.workflow).assigned, false);
-    actions.assign('pre');
-    assert.equal(config.nativeBindings.preGraphId, graph.id);
+    actions.assign();
+    assert.equal(config.nativeBindings.workflowGraphId, graph.id);
     assert.equal(projectPreparedWorkflow(env.workspacePrepared.workflow).assigned, true);
 });

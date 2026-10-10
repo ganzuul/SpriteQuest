@@ -69,8 +69,8 @@ export function prepareWorkflowInsertion(destination, imported, options = {}) {
         if (!target.ok) return target;
         if (!source.ok) return source;
         if (viewPath.length && !ownsDefinitionPath(target.data, viewPath)) return fail('READ_ONLY_VIEW', 'Make an explicit local copy of the containing view before insertion.');
-        if (target.data.mode !== source.data.mode) return fail('MODE_MISMATCH', 'Open this workflow separately: its phase differs.');
         const containingDefinition = viewPath.length ? definitionChain(target.data, viewPath).at(-1).definition : null;
+        if ((containingDefinition?.body.mode ?? target.data.mode) !== source.data.mode) return fail('MODE_MISMATCH', 'Paste a fragment compatible with the containing stage.');
         for (const graph of [containingDefinition?.body ?? target.data, source.data]) {
             const items = [...Object.values(graph.nodes), ...Object.values(graph.groups ?? {})];
             const boxes = [...items, ...items.filter(item => item.frame !== undefined).map(item => item.frame)];

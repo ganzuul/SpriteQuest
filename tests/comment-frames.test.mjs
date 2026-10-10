@@ -9,7 +9,7 @@ import { makeClip, readClip, prepareClipPaste } from '../src/workflow/clipboard.
 import { commitGraphDocument, undo, redo } from '../src/history.js';
 import * as comments from '../src/canvas/comment-frames.js';
 
-const graph = (nodes = {}) => ({ id: 'comments', schema: 3, runtime: 2, mode: 'native-pre', nodes, wires: {}, groups: {}, roles: {}, portals: {}, definitions: {} });
+const graph = (nodes = {}) => ({ id: 'comments', schema: 3, runtime: 2, mode: 'native-unified', nodes, wires: {}, groups: {}, roles: {}, portals: {}, definitions: {} });
 const measured = node => node.measured ?? { x: node.x, y: node.y, w: node.w, h: node.h };
 
 test('creation surrounds selected measured bounds without inserting or executing a group', () => {
@@ -95,15 +95,16 @@ test('frames stay nonexecuting and edits leave graph and definition semantic ide
     source.wires.edge = { id: 'edge', route: 'wire', from: 'source', fromPort: 'out', to: 'plan', toPort: 'in' };
     source.wires.final = { id: 'final', route: 'wire', from: 'plan', fromPort: 'out', to: 'output', toPort: 'in' };
     const signature = graphSemanticSignature(source);
-    const plan = resolveWorkflow(source);
+    const target = { workflowId: source.id, instancePath: [], nodeId: 'output', portId: 'out' };
+    const plan = resolveWorkflow(source, { target });
     assert.equal(plan.ok, true, JSON.stringify(plan));
     source.nodes.frame = comments.createCommentFrame(source, [], measured, { id: 'frame' });
     assert.equal(validateGraphStructure(source).ok, true);
     assert.equal(graphSemanticSignature(source), signature);
-    assert.deepEqual(resolveWorkflow(source).data.units, plan.data.units);
+    assert.deepEqual(resolveWorkflow(source, { target }).data.units, plan.data.units);
     Object.assign(source.nodes.frame, { title: 'Edited', content: 'Multiline\nnotes', moveContents: false, color: '#807c69', x: -80, y: 400, w: 900, h: 600 });
     assert.equal(graphSemanticSignature(source), signature);
-    assert.deepEqual(resolveWorkflow(source).data.units, plan.data.units);
+    assert.deepEqual(resolveWorkflow(source, { target }).data.units, plan.data.units);
     const definition = { id: 'annotated', version: 1, name: 'Annotated', interface: [{ id: 'result', label: 'Result', direction: 'output', kind: 'text', required: false, cardinality: 'one', boundaryNodeId: 'exit' }], parameters: [], body: graph({
         compose: { id: 'compose', type: 'workflow', operation: 'compose', outputKind: 'text', sections: [{ name: 'text', text: 'Value' }] },
         exit: { id: 'exit', type: 'subgraph-output', interfacePortId: 'result' },
