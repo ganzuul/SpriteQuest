@@ -18,7 +18,7 @@ async function launch(page) {
     await page.evaluate(()=>window.canvasHarness.reset(2,2));
 }
 async function fileCommand(page,name) {
-    await page.getByRole('button',{name:'File',exact:true}).click();
+    await page.getByRole('menuitem', { name: 'File',exact:true}).click();
     await page.getByRole('menuitem',{name}).click();
 }
 async function saveAs(page) {
@@ -42,10 +42,10 @@ test('native Save As adopts a file; Save writes it; camera and close preserve th
     await page.evaluate(async()=>{const h=window.canvasHarness,root=h.graph;await h.view({x:80,y:60,zoom:.8});h.UI.close();h.UI.open();await h.settle();window.sameDocument=root===h.graph;});
     expect(await page.evaluate(()=>window.sameDocument)).toBe(true);
     await expect(page.locator('.pc-document-status')).not.toContainText('Modified');
-    await page.getByRole('button',{name:'File',exact:true}).click();
+    await page.getByRole('menuitem', { name: 'File',exact:true}).click();
     await page.screenshot({path:'.tmp/document-native-wide.png'});
     await page.setViewportSize({width:760,height:650});
-    await page.getByRole('button',{name:'File',exact:true}).click();
+    await page.getByRole('menuitem', { name: 'File',exact:true}).click();
     await page.getByRole('menuitem',{name:'Open Recent',exact:true}).click();
     await expect(page.getByRole('menuitem',{name:'Canvas.workflow.json',exact:true})).toBeVisible();
     await page.screenshot({path:'.tmp/document-native-narrow.png'});
@@ -61,14 +61,14 @@ test('Open and Recent reread disk, guard edits, reset history and clear only the
     await expect(prompt).toHaveCount(0);
     expect(await page.evaluate(()=>window.canvasHarness.graph.description)).not.toBe('Keep this draft');
     await page.evaluate(()=>{const value=JSON.parse(documentDisk.text);value.graph.description='Changed on disk';documentDisk.text=JSON.stringify(value);documentDisk.version++;});
-    await page.getByRole('button',{name:'File',exact:true}).click();await page.getByRole('menuitem',{name:'Open Recent',exact:true}).click();
+    await page.getByRole('menuitem', { name: 'File',exact:true}).click();await page.getByRole('menuitem',{name:'Open Recent',exact:true}).click();
     await page.getByRole('menuitem',{name:'Canvas.workflow.json',exact:true}).click();
     await expect.poll(()=>page.evaluate(()=>window.canvasHarness.graph.description)).toBe('Changed on disk');
     await expect(page.getByRole('button',{name:'Undo',exact:true})).toBeDisabled();
     const disk=await page.evaluate(()=>documentDisk.text);
-    await page.getByRole('button',{name:'File',exact:true}).click();await page.getByRole('menuitem',{name:'Open Recent',exact:true}).click();await page.getByRole('menuitem',{name:'Clear Recent',exact:true}).click();
+    await page.getByRole('menuitem', { name: 'File',exact:true}).click();await page.getByRole('menuitem',{name:'Open Recent',exact:true}).click();await page.getByRole('menuitem',{name:'Clear Recent',exact:true}).click();
     expect(await page.evaluate(()=>documentDisk.text)).toBe(disk);
-    await page.getByRole('button',{name:'File',exact:true}).click();await expect(page.getByRole('menuitem',{name:'Open Recent',exact:true})).toBeDisabled();
+    await page.getByRole('menuitem', { name: 'File',exact:true}).click();await expect(page.getByRole('menuitem',{name:'Open Recent',exact:true})).toBeDisabled();
 });
 
 test('an external file edit blocks Save and preserves the active draft',async({page})=>{
@@ -90,7 +90,7 @@ test('retired editable roots cannot replace a dirty unified document through Ope
             const count=await page.evaluate(()=>window.canvasHarness.toasts.length);
             if(command==='open') await fileCommand(page,/^Open workflow/);
             else{
-                await page.getByRole('button',{name:'File',exact:true}).click();
+                await page.getByRole('menuitem', { name: 'File',exact:true}).click();
                 await page.getByRole('menuitem',{name:'Open Recent',exact:true}).click();
                 await page.getByRole('menuitem',{name:'Canvas.workflow.json',exact:true}).click();
             }

@@ -2,112 +2,142 @@
     import { tick } from 'svelte';
     import type {DetailEditResponse} from './detail-types';
     import type { WorkbenchView, WorkbenchActions } from './types';
-    let { state: view, actions, local }: { state: WorkbenchView; actions: WorkbenchActions; local: (command: string) => void } = $props();
-    const rootWorkflow = $derived(view.rootWorkflow ?? view.workflow);
-    let active = $state('');
-    let nav: HTMLElement;
-    let panel = $state<HTMLDivElement>(null!);
-    let submenu = $state('');
-    let subPanel = $state<HTMLDivElement>(null!);
-    let recallMenuActions:Record<string,()=>DetailEditResponse>={};
-    let subAnchor: HTMLButtonElement | null = null;
-    let subLeft = $state(0), subTop = $state(0);
-    let anchor: HTMLButtonElement | null = null;
-    let left = $state(0), top = $state(0);
-    const names = ['File', 'Edit', 'Graph', 'Node', 'Preview', 'Tools', 'Help'];
-    const modifier = /Mac|iPhone|iPad|iPod/.test(window.navigator.platform) ? 'Cmd' : 'Ctrl';
-    const shortcut = (keys: string) => `${modifier} ${keys}`;
-    type Item = { label: string; command: string; shortcut?: string; disabled?: boolean; submenu?: string; title?: string };
-    const item = (label: string, command: string, shortcut = '', disabled = false): Item => ({ label, command, shortcut, disabled });
-    function items(name: string): Item[] {
-        switch (name) {
-            case 'File': return [item('New workflow', 'new', shortcut('N'), view.document?.busy), item('Open workflow…', 'open-workflow', shortcut('O'), view.document?.busy), { ...item('Open Recent', '', '', !view.document?.native || !view.document.recents.length || view.document.busy), submenu: 'Open Recent' }, item('Open examples…', 'examples', '', view.document?.busy), { ...item('Recover previous workflows', '', '', !view.document?.recovery.length || view.document.busy), submenu: 'Recover previous workflows' }, ...(view.document?.native ? [item('Save workflow', 'save', shortcut('S'), view.document.busy), item('Save As…', 'save-as', shortcut('Shift S'), view.document.busy)] : [item('Download JSON…', 'download-document', shortcut('S'), view.document?.busy)]), item('Import into graph…', 'import-into-graph'), item('Export workflow JSON…', 'export'), ...(view.hasArchivedWorkflows ? [item('Export archived workflows', 'export-archived-workflows')] : []), item('Close workspace', 'close')];
-            case 'Edit': return [item('Undo', 'undo', shortcut('Z'), !view.history.undo), item('Redo', 'redo', shortcut('Shift Z'), !view.history.redo), item('Copy', 'copy', shortcut('C'), !view.selectionActions?.copy), item('Cut', 'cut', shortcut('X'), !view.selectionActions?.cut), item('Paste', 'paste', shortcut('V')), item('Delete selection', 'delete-selection', 'Del', !view.selectionActions?.delete)];
-            case 'Graph': return [item('Select tool', 'select-tool'), item('Pan tool', 'pan-tool'), item('Zoom in', 'zoom-in'), item('Zoom out', 'zoom-out'), item('Fit to view', 'fit'), item('Fit selection', 'fit-selection', '', !view.selectionCount), item('Manage portals…', 'manage-portals'), item('Rename graph', 'rename'), item('Stop workflow', 'stop-workflow', '', !rootWorkflow?.busy)];
-            case 'Node': return [item('Add node…', 'add-node'), item('Inspect selection', 'reveal-inspector'),{...item('Memory recall',''),submenu:'Memory recall'}];
-            case 'Preview': return [item('Show preview', 'show-preview'), item('Collapse preview', 'collapse-preview')];
-            case 'Tools': return [item('Workflow Data…', 'story-documents'), item('Theme and colours', 'theme'), item('Toggle inspector', 'inspector')];
-            default: return [item('Workspace guide', 'help')];
+    import { workspaceMenus, localMenuCommands, type WorkspaceMenuItem, type WorkspaceMenuPanels } from './workspace-menu-model';
+    import { menuIconPaths } from '../src/ui/menu-icons.js';
+    let { state: view, actions, local, panels }: { state: WorkbenchView; actions: WorkbenchActions; local: (command: string) => void; panels?: WorkspaceMenuPanels } = $props();
+    const menus = $derived(workspaceMenus(view, panels));
+    let active = $state(''), rootFocus = $state(0);
+    let nav: HTMLDivElement, panel = $state<HTMLDivElement | null>(null), childPanel = $state<HTMLDivElement | null>(null);
+    let anchor: HTMLButtonElement | null = null, childAnchor: HTMLButtonElement | null = null;
+    let child = $state.raw<WorkspaceMenuItem | null>(null);
+    let left = $state(0), top = $state(0), childLeft = $state(0), childTop = $state(0);
+    let session = 0, openedView = '', search = '', searchedAt = 0;
+    let recallMenuActions: Record<string, () => DetailEditResponse> = {};
+    const viewKey = $derived(`${view.menuContextKey ?? ''}:${view.graphId}:${view.graphViews?.active.key ?? ''}:${view.graphViews?.viewEpoch ?? ''}`);
+    $effect(() => { if (active && openedView !== viewKey) close(); });
+    const buttons = (element: HTMLElement | null) => element ? [...element.querySelectorAll<HTMLButtonElement>('button:not(:disabled)')] : [];
+    function close(restore = false) {
+        session++; active = ''; child = null; search = '';
+        if (restore && anchor?.isConnected) anchor.focus({ preventScroll: true });
+    }
+    function position(element: HTMLElement, rect: DOMRect, submenu = false) {
+        const bounds = element.getBoundingClientRect(), width = window.innerWidth, height = window.innerHeight;
+        let x = submenu ? rect.right - 1 : rect.left; let y = submenu ? rect.top : rect.bottom+2;
+        if (submenu && x + bounds.width > width - 4) {
+            x = rect.left - bounds.width + 1;
+            if (x < 4) { x=rect.left; y=rect.bottom+bounds.height<=height-4?rect.bottom:rect.top-bounds.height; }
+        }
+        return {x:Math.max(4,Math.min(x,width-bounds.width-4)), y:Math.max(4,Math.min(y,height-bounds.height-4))};
+    }
+    async function open(name: string, button: HTMLButtonElement, focus: 'first' | 'last' | false = 'first', toggle = false) {
+        if (active === name && toggle) { close(true); return; }
+        active = name; child = null; anchor = button; rootFocus = menus.findIndex(menu=>menu.name===name);
+        openedView = viewKey; search = ''; const current = ++session;
+        await tick(); if (current !== session || !panel) return;
+        const point = position(panel,button.getBoundingClientRect()); left=point.x;top=point.y;
+        if (focus) (focus === 'last' ? buttons(panel).at(-1) : buttons(panel)[0])?.focus();
+    }
+    async function openChild(entry: WorkspaceMenuItem, button: HTMLButtonElement, focus = false) {
+        if (entry.disabled || !entry.children || !active) return;
+        if (entry.command === 'memory-recall-menu') actions.recall?.refresh();
+        child = entry; childAnchor = button; search = ''; const current = session;
+        await tick(); if (current !== session || !childPanel || child !== entry) return;
+        if (entry.command === 'memory-recall-menu') {
+            const selected = actions.recall?.capture(view.recall?.commands.selected.relevantNodeIds ?? []), all = actions.recall?.capture(view.recall?.commands.all.relevantNodeIds ?? [], 'all');
+            const unavailable = (): DetailEditResponse => ({ok:false,error:{code:'RECALL_UNAVAILABLE',message:'Memory recall is unavailable.'}});
+            recallMenuActions = {'recall-queue-selected':()=>selected?.queue() ?? unavailable(),'recall-cancel-selected':()=>selected?.cancel() ?? unavailable(),'recall-queue-all':()=>all?.queue() ?? unavailable(),'recall-cancel-all':()=>all?.cancel() ?? unavailable()};
+        }
+        const point = position(childPanel,button.getBoundingClientRect(),true);childLeft=point.x;childTop=point.y;
+        if (focus) buttons(childPanel)[0]?.focus();
+    }
+    function choose(entry: WorkspaceMenuItem, button: HTMLButtonElement) {
+        if (entry.disabled || openedView !== viewKey) return;
+        if (entry.children) { openChild(entry,button,true); return; }
+        const command = entry.command; close(true);
+        const recallAction = recallMenuActions[command];
+        if (recallAction) { Promise.resolve(recallAction()).then(result=>{if(!result.ok){actions.recall?.reportIssue(result.error.message);actions.recall?.refresh();}}); }
+        else if (localMenuCommands.has(command)) local(command);
+        else if (command === 'enable-workflow') actions.setEnabled(!view.enabled);
+        else if (command === 'select-tool' || command === 'pan-tool') actions.mode(command === 'select-tool' ? 'select' : 'pan');
+        else if (command === 'zoom-in' || command === 'zoom-out') actions.zoom(command === 'zoom-in' ? 1.15 : 1/1.15);
+        else if (command === 'fit-selection') actions.fitSelection();
+        else actions.command(command);
+    }
+    function rootButton(index: number) { return nav.querySelector<HTMLButtonElement>(`[data-menu="${menus[index].name}"]`)!; }
+    function keys(event: KeyboardEvent) {
+        if (!active && (event.ctrlKey || event.metaKey)) return;
+        event.stopPropagation();
+        const target = event.target as HTMLButtonElement, rootItem = target.hasAttribute('data-menu');
+        if (event.key === 'Tab') { if(active)close(true); return; }
+        if (event.key === 'Escape') { if (active) { event.preventDefault(); close(true); } return; }
+        const currentPanel = target.closest<HTMLDivElement>('[role="menu"]') ?? panel;
+        const nested = currentPanel === childPanel && !!child;
+        const enabled = buttons(currentPanel), index = enabled.indexOf(target);
+        if (['ArrowLeft','ArrowRight'].includes(event.key)) {
+            event.preventDefault();
+            if (nested) { if (event.key === 'ArrowLeft') { child=null; childAnchor?.focus(); } return; }
+            if (!rootItem && event.key === 'ArrowRight') {
+                const entry = menus.find(menu=>menu.name===active)?.groups.flat().find(entry=>entry.command===target.dataset.command);
+                if (entry?.children) { openChild(entry,target,true); return; }
+            }
+            const next = (rootFocus+(event.key==='ArrowRight'?1:menus.length-1))%menus.length; rootFocus=next;
+            if (active) open(menus[next].name,rootButton(next)); else rootButton(next).focus();
+            return;
+        }
+        if (['ArrowDown','ArrowUp','Home','End'].includes(event.key)) {
+            event.preventDefault();
+            if (rootItem) {
+                if (event.key==='Home'||event.key==='End') { rootFocus=event.key==='Home'?0:menus.length-1;rootButton(rootFocus).focus(); }
+                else open(target.dataset.menu!,target,event.key==='ArrowUp'?'last':'first');
+            } else {
+                if (!nested) child=null;
+                const next=event.key==='Home'?0:event.key==='End'?enabled.length-1:(index+(event.key==='ArrowUp'?enabled.length-1:1))%enabled.length;
+                enabled[next]?.focus();
+            }
+            return;
+        }
+        if (event.key==='Enter'||event.key===' ') { event.preventDefault();target.click();return; }
+        if (event.key.length===1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
+            event.preventDefault(); const now=Date.now();search=(now-searchedAt>700?'':search)+event.key.toLowerCase();searchedAt=now;
+            const query=search.split('').every(char=>char===search[0])?search[0]:search;
+            if (rootItem && !active) {
+                const offset=menus.findIndex((_,i)=>menus[(rootFocus+i+1)%menus.length].name.toLowerCase().startsWith(query));
+                if(offset>=0){rootFocus=(rootFocus+offset+1)%menus.length;rootButton(rootFocus).focus();}
+            } else {
+                const ordered=[...enabled.slice(index+1),...enabled.slice(0,index+1)];
+                ordered.find(button=>button.getAttribute('aria-label')?.toLowerCase().startsWith(query))?.focus();
+            }
         }
     }
-    function subItems(): Item[] {
-        if(submenu==='Memory recall'){const selected=view.recall?.commands.selected,all=view.recall?.commands.all;return [
-            {...item('Queue recall for selected nodes','recall-queue-selected','',!selected?.queueNodeIds.length),title:selected?.queueReason},
-            {...item('Cancel recall for selected nodes','recall-cancel-selected','',!selected?.cancelNodeIds.length),title:selected?.cancelReason},
-            {...item('Queue recall for all eligible nodes','recall-queue-all','',!all?.queueNodeIds.length),title:all?.queueReason},
-            {...item('Cancel all queued recall','recall-cancel-all','',!all?.cancelNodeIds.length),title:all?.cancelReason},
-            item('Memory recall overview…','memory-recall')];}
-
-        if (submenu === 'Recover previous workflows') return (view.document?.recovery ?? []).map(file => ({ ...item(file.name, 'recover-workflow:' + file.id), title: file.issue, shortcut: file.issue }));
-        return [...(view.document?.recents ?? []).map(file => item(file.name, 'open-recent:' + file.id)), { ...item('Clear Recent', 'clear-recent'), title: 'Clear the recent-file list. Files stay on disk.' }];
-    }
-    function closeSubmenu(restore = false) { submenu = ''; if (restore) subAnchor?.focus({ preventScroll: true }); }
-    function close(restore = false) { active = ''; closeSubmenu(); if (restore) anchor?.focus({ preventScroll: true }); }
-    async function open(name: string, button: HTMLButtonElement, focus = false) {
-        if (active === name && !focus) { close(); return; }
-        closeSubmenu(); active = name; anchor = button; await tick();
-        if (active !== name || anchor !== button) return;
-        const rect = button.getBoundingClientRect(), bounds = panel.getBoundingClientRect();
-        left = Math.max(4, Math.min(rect.left, window.innerWidth - bounds.width - 4)); top = rect.bottom + 2;
-        if (focus) panel.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus();
-    }
-    async function openSubmenu(name: string, button: HTMLButtonElement, focus = false) {
-        if(name==='Memory recall')actions.recall?.refresh();
-        submenu = name; subAnchor = button; await tick();
-        if(name==='Memory recall'){const selected=actions.recall?.capture(view.recall?.commands.selected.relevantNodeIds??[]),all=actions.recall?.capture(view.recall?.commands.all.relevantNodeIds??[],'all');recallMenuActions={'recall-queue-selected':()=>selected?.queue()??{ok:false,error:{code:'RECALL_UNAVAILABLE',message:'Memory recall is unavailable.'}},'recall-cancel-selected':()=>selected?.cancel()??{ok:false,error:{code:'RECALL_UNAVAILABLE',message:'Memory recall is unavailable.'}},'recall-queue-all':()=>all?.queue()??{ok:false,error:{code:'RECALL_UNAVAILABLE',message:'Memory recall is unavailable.'}},'recall-cancel-all':()=>all?.cancel()??{ok:false,error:{code:'RECALL_UNAVAILABLE',message:'Memory recall is unavailable.'}}};}
-
-        if (submenu !== name || subAnchor !== button) return;
-        const rect = button.getBoundingClientRect(), bounds = subPanel.getBoundingClientRect();
-        const side = rect.right + bounds.width + 6 <= window.innerWidth ? rect.right + 2 : rect.left - bounds.width - 2;
-        subLeft = Math.max(4, Math.min(side, window.innerWidth - bounds.width - 4));
-        subTop = Math.max(4, Math.min(rect.top, window.innerHeight - bounds.height - 4));
-        if (focus) subPanel.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus();
-    }
-    function choose(entry: Item, button: HTMLButtonElement) {
-        if (entry.submenu) openSubmenu(entry.submenu, button, true);
-        else command(entry.command);
-    }
-    function command(value: string) {
-        const recallAction=recallMenuActions[value];
-        close(true);
-        if(recallAction){const result=recallAction();Promise.resolve(result).then(result=>{if(!result.ok){actions.recall?.reportIssue(result.error.message);actions.recall?.refresh();}});return;}
-        if (['examples', 'show-preview', 'collapse-preview', 'add-node', 'help', 'story-documents', 'memory-recall'].includes(value)) local(value);
-        else if (value === 'select-tool' || value === 'pan-tool') actions.mode(value === 'select-tool' ? 'select' : 'pan');
-        else if (value === 'zoom-in' || value === 'zoom-out') actions.zoom(value === 'zoom-in' ? 1.15 : 1 / 1.15);
-        else actions.command(value);
-    }
-    function keys(event: KeyboardEvent) {
-        if(active)event.stopPropagation();
-        const target = event.target as HTMLElement;
-        const inSubmenu = !!submenu && subPanel?.contains(target);
-        if (event.key === 'Escape' && active) { event.preventDefault(); event.stopPropagation(); if (submenu) closeSubmenu(true); else close(true); return; }
-        if (event.key === 'ArrowLeft' && inSubmenu) { event.preventDefault(); event.stopPropagation(); closeSubmenu(true); return; }
-        if (event.key === 'ArrowRight' && target.dataset.submenu) { event.preventDefault(); event.stopPropagation(); openSubmenu(target.dataset.submenu, target as HTMLButtonElement, true); return; }
-        if (['ArrowLeft', 'ArrowRight'].includes(event.key)) {
-            event.preventDefault(); event.stopPropagation(); if (inSubmenu) return;
-            const name = active || target.dataset.menu || names[0];
-            const next = names[(names.indexOf(name) + (event.key === 'ArrowRight' ? 1 : names.length - 1)) % names.length];
-            const button = nav.querySelector<HTMLButtonElement>(`[data-menu="${next}"]`)!;
-            if (active) open(next, button, true); else button.focus();
-        } else if (event.key === 'ArrowDown' || event.key === 'ArrowUp' || event.key === 'Home' || event.key === 'End') {
-            event.preventDefault(); event.stopPropagation();
-            if (!active) { open(target.dataset.menu || names[0], target as HTMLButtonElement, true); return; }
-            const buttons = [...(inSubmenu ? subPanel : panel).querySelectorAll<HTMLButtonElement>(':scope > button:not(:disabled)')], index = buttons.indexOf(target as HTMLButtonElement);
-            buttons[event.key === 'Home' ? 0 : event.key === 'End' ? buttons.length - 1 : (index + (event.key === 'ArrowUp' ? buttons.length - 1 : 1)) % buttons.length]?.focus();
-        } else if (event.key === 'Tab') close();
-    }
+    function isolate(event: Event) { if (active && nav?.contains(event.target as Node)) event.stopPropagation(); }
 </script>
-<svelte:window onpointerdown={(event) => { if (active && !nav.contains(event.target as Node) && !panel?.contains(event.target as Node)) close(); }} onresize={() => close()} />
-<nav class="pc-workspace-menus" aria-label="Workspace menus" bind:this={nav} onfocusout={(event) => { if (active && event.relatedTarget && !nav.contains(event.relatedTarget as Node)) close(); }}>
-    {#each names as name}<button type="button" data-menu={name} class="pc-flat-menu" aria-haspopup="menu" aria-expanded={active === name} onclick={(event) => open(name, event.currentTarget)} onkeydown={keys}>{name}</button>{/each}
+<svelte:window onpointerdown={(event) => { if (active && !nav.contains(event.target as Node)) close(); }} onresize={() => close()} onkeyupcapture={isolate} />
+<div class="pc-workspace-menus" role="menubar" tabindex="-1" aria-label="Workspace menus" bind:this={nav} onkeydown={keys} onkeyup={isolate} onpaste={isolate} onpointerdown={isolate}>
+    {#each menus as menu, index}
+        <button type="button" role="menuitem" data-menu={menu.name} class="pc-flat-menu" tabindex={rootFocus===index?0:-1} aria-haspopup="menu" aria-expanded={active===menu.name} aria-controls={active===menu.name?'pc-workspace-menu':undefined} onfocus={() => rootFocus=index} onclick={(event)=>open(menu.name,event.currentTarget,'first',true)} onpointerenter={(event)=>{if(active && active!==menu.name)open(menu.name,event.currentTarget);}}>{menu.name}</button>
+    {/each}
     {#if active}
-        <div class="pc-workspace-menu-panel" role="menu" tabindex="-1" aria-label={active} bind:this={panel} style:left={`${left}px`} style:top={`${top}px`} onkeydown={keys}>
-            {#each items(active) as entry}<button type="button" role="menuitem" aria-label={entry.label} disabled={entry.disabled} data-submenu={entry.submenu} aria-haspopup={entry.submenu ? 'menu' : undefined} aria-expanded={entry.submenu ? submenu === entry.submenu : undefined} title={entry.title} onclick={(event) => choose(entry, event.currentTarget)} onpointerenter={(event) => { if (event.pointerType === 'mouse') { if (entry.submenu && !entry.disabled) openSubmenu(entry.submenu, event.currentTarget); else closeSubmenu(); } }}><span>{entry.label}</span><small>{entry.submenu ? '›' : entry.shortcut}</small></button>{/each}
-            {#if submenu}
-                <div class="pc-workspace-menu-panel pc-workspace-submenu" role="menu" tabindex="-1" aria-label={submenu} bind:this={subPanel} style:left={`${subLeft}px`} style:top={`${subTop}px`}>
-                    {#each subItems() as entry}<button type="button" role="menuitem" aria-label={entry.label} disabled={entry.disabled} title={entry.title} onclick={() => command(entry.command)}><span>{entry.label}</span><small>{entry.shortcut}</small></button>{/each}
-                </div>
-            {/if}
+        <div id="pc-workspace-menu" class="pc-workspace-menu-panel" role="menu" tabindex="-1" aria-label={active} bind:this={panel} style:left={`${left}px`} style:top={`${top}px`}>
+            {#each menus.find(menu=>menu.name===active)?.groups ?? [] as group, index}
+                {#if index}<div class="pc-workspace-menu-separator" role="separator"></div>{/if}
+                {@render rows(group,false)}
+            {/each}
         </div>
+        {#if child?.children}
+            <div id="pc-workspace-submenu" class="pc-workspace-menu-panel pc-workspace-submenu" role="menu" tabindex="-1" aria-label={`${child.label} options`} bind:this={childPanel} style:left={`${childLeft}px`} style:top={`${childTop}px`}>
+                {@render rows(child.children,true)}
+            </div>
+        {/if}
     {/if}
-</nav>
+</div>
+{#snippet rows(entries: WorkspaceMenuItem[], nested: boolean)}
+    {#each entries as entry}
+        <button type="button" class="pc-workspace-menu-item" role={entry.kind==='radio'?'menuitemradio':entry.kind==='check'?'menuitemcheckbox':'menuitem'} title={entry.title} aria-label={entry.label} aria-disabled={!!entry.disabled} aria-checked={entry.kind?!!entry.checked:undefined} aria-haspopup={entry.children?'menu':undefined} aria-expanded={entry.children?child===entry:undefined} aria-controls={entry.children && child===entry?'pc-workspace-submenu':undefined} data-command={entry.command} data-tone={entry.tone} tabindex="-1" disabled={entry.disabled} onclick={(event)=>choose(entry,event.currentTarget)} onpointerenter={(event)=>{if(!nested){if(entry.children)openChild(entry,event.currentTarget);else child=null;}}}>
+            <span class="pc-workspace-menu-icon" aria-hidden="true">{#if entry.icon && menuIconPaths[entry.icon as keyof typeof menuIconPaths]}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d={menuIconPaths[entry.icon as keyof typeof menuIconPaths]} /></svg>{/if}</span>
+            <span class="pc-workspace-menu-state" aria-hidden="true">{entry.checked?(entry.kind==='radio'?'●':'✓'):''}</span>
+            <span class="pc-workspace-menu-label">{entry.label}</span>
+            <kbd aria-hidden="true">{entry.shortcut ?? ''}</kbd>
+            <span class="pc-workspace-menu-caret" aria-hidden="true">{entry.children?'›':''}</span>
+        </button>
+    {/each}
+{/snippet}

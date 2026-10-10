@@ -25,8 +25,8 @@ async function fixture(page) {
 }
 
 async function themePicker(page, name = 'Ash') {
-    await page.getByRole('button', { name: 'Tools', exact: true }).click();
-    await page.getByRole('menuitem', { name: 'Theme and colours', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'View', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Theme and colours…', exact: true }).click();
     const picker = page.locator('.pc-theme-pop');
     await picker.locator('.pc-th-preset').filter({ has: page.locator('.pc-th-name', { hasText: new RegExp('^' + name + '$') }) }).click();
     return picker;

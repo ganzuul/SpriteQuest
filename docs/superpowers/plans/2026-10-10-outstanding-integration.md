@@ -20,7 +20,7 @@
 
 ## Review Focus
 
-- Unsaved active documents opened through File or Examples must remain detached until explicitly assigned; Recall and menu changes must honor that lifecycle.
+- File and Examples open independent current documents; Send uses the enabled open document. Recall and menus must retain its exact ownership token.
 - Automatic data creation must target the current editable workflow scope, including empty documents and nested views, without restoring retired roots.
 - Fast/profile retirement must preserve model defaults, scoped bindings and actionable Details controls while the new menus remain reachable.
 - Typed pins and direct routing must retain compatible creation, drag cancellation, selection and scoped subgraph behavior.
@@ -32,10 +32,10 @@
 
 **Interfaces:** Produces immutable source heads, file hashes, archives and a complete Git recovery bundle.
 
-- [x] Inventory all ten registered checkouts and local branch ancestry; identify the protected shelf checkout.
-- [x] Preserve nine integration-source/primary trees, including useful ignored evidence but excluding dependencies, in TAR archives with file and archive SHA-256 records.
+- [x] Inventory all ten registered checkouts and local branch ancestry; include the subsequently completed shelf checkout.
+- [x] Preserve the primary and all nine integration-source trees, including useful ignored evidence but excluding dependencies, in TAR archives with file and archive SHA-256 records.
 - [x] Create and verify `all-refs.bundle`; read-only auditing covers all unmerged branch intents.
-- [ ] Record the fresh Main baseline Node result. Browser tests must use an isolated port to avoid the active shelf harness.
+- [x] Record the fresh unchanged Main baseline: 240/240 Node test files passed. Combined browser tests use an isolated port.
 
 ## Task 2: Document lifecycle, Recall and Escape
 
@@ -43,10 +43,10 @@
 
 **Interfaces:** Consumes Main and `codex/canvas-memory-recall` (`fc281fe`); produces the current active-document lifecycle and shared Recall queue.
 
-- [ ] Recheck primary/source state, preserve colliding Main-local untracked files, and create `codex/integrate-outstanding-2026-10-10` without changing Main's ref.
-- [ ] Merge Recall's already-reconciled 0.27 history. Account for workflow-files deltas by comparison to imported `df2e3a3`; avoid replaying duplicate document work or stale launcher/naming changes.
-- [ ] Port `tests/canvas-controller-escape.test.mjs` from workflow-files with current imports. Verify its active pan/connection cases fail before the missing `event.defaultPrevented` guard, add the guard, and verify all three cases pass.
-- [ ] Run document, workflow file/current-send, Recall queue/session and Escape tests, plus types.
+- [x] Recheck primary/source state, preserve colliding Main-local untracked files, and create `codex/integrate-outstanding-2026-10-10` without changing Main's ref.
+- [x] Merge Recall's already-reconciled 0.27 history. Account for workflow-files deltas by comparison to imported `df2e3a3`; avoid replaying duplicate document work or stale launcher/naming changes.
+- [x] Port `tests/canvas-controller-escape.test.mjs` from workflow-files with current imports. Verify its active pan/connection cases fail before the missing `event.defaultPrevented` guard, add the guard, and verify all three cases pass.
+- [x] Run document, workflow file/current-send, Recall queue/session and Escape tests, plus types.
 
 ## Task 3: Reconcile profile, data, menu and connection work
 
@@ -54,10 +54,11 @@
 
 **Interfaces:** Consumes Task 2 and audited source heads; produces the combined candidate, preserving each approved behavior and current Main architecture.
 
-- [ ] Merge profile cleanup `2486c44`; retain current curriculum/retirement work while adding themed selectors, appropriate default recovery and advanced Details cleanup.
-- [ ] Merge automatic workflow data `2033351`; reconcile captured/current document scope and preserved profile cleanup.
+- [x] Merge profile cleanup `2486c44`; retain current curriculum/retirement work while adding themed selectors, appropriate default recovery and advanced Details cleanup.
+- [x] Merge automatic workflow data `2033351`; reconcile captured/current document scope and preserved profile cleanup.
 - [ ] Merge consolidated menus `4933a7e`; keep the six-menu design, panel controls, diagnostics and activity updates with document lifecycle and Fast retirement.
 - [ ] Merge typed-pin routing `58f8a03`; retain typed shape/color semantics and direct wire lead behavior alongside the shared Recall projection.
+- [ ] Merge completed compact shelf snapshot `50d28c1`; reconcile scale, shared opacity, bold labels and unique operation icons with current catalog/context lifecycle.
 - [ ] For each conflict, review all participating versions and original requirements; record the decision. Rebuild generated assets from the final source rather than selecting a branch's old bundle.
 - [ ] Run meaningful focused tests for each merge and cross-feature browser flows. Update obsolete test expectations only where approved behavior changed.
 
@@ -70,7 +71,7 @@
 - [ ] Run full Node tests, `npm run check:types`, `npm run build`, `npm run check:assets`, and full browser suite on an isolated port with a fresh server.
 - [ ] Run `npm run smoke:install`, current documentation capture/check, and relevant visual/interaction captures. Check provider requests remain absent in synthetic checks.
 - [ ] Obtain independent source/semantic and UI/cross-feature reviews; fix material findings and rerun affected checks.
-- [ ] Verify every included source tip is reachable or explicitly accounted for, Main-local original files are preserved, and protected shelf content was not introduced.
+- [ ] Verify every included source tip is reachable or explicitly accounted for and Main-local original files are preserved.
 - [ ] Commit the verified candidate and record exact commands/results, conflict decisions and recovery locations.
 
 ## Task 5: Promote Main and close integrated checkouts
@@ -86,4 +87,4 @@
 
 ## Plan review
 
-The requested result and exclusions are captured above. Native execution with parallel read-only audits/reviews is recommended because the source merges share controllers, runtime state and UI surfaces and must be reconciled in sequence.
+The user approved native sequential integration with parallel audits/reviews, then extended scope to include the completed shelf checkout. The source merges share controllers, runtime state and UI surfaces and are reconciled in sequence.

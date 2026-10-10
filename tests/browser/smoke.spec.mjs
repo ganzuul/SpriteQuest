@@ -1,4 +1,3 @@
-import { rootCommand, expectRootBusy } from './workflow-commands.mjs';
 import { test, expect } from '@playwright/test';
 test('a settings-free launch opens the current disabled zero-request workflow', async ({ page }) => {
     const errors = [], requests = [];

@@ -1,4 +1,3 @@
-import { rootCommand, expectRootBusy } from './workflow-commands.mjs';
 import { test, expect } from '@playwright/test';
 
 async function openNestedWorkspace(page) {
@@ -139,12 +138,12 @@ test('subgraph rename undo restores an existing parent node alias', async ({ pag
     expect(await page.evaluate(() => window.renameStoredViews.views.find(view => view.identity.kind === 'root').nodePresentation['first/path'].alias)).toBe('Renamed alias subgraph');
 });
 
-test('Graph menu inline rename cancels with Escape, ignores blank names, and supports root undo and redo', async ({ page }) => {
+test('File menu inline rename cancels with Escape, ignores blank names, and supports root undo and redo', async ({ page }) => {
     await openNestedWorkspace(page);
     const tabs = page.locator('.pc-graph-tabs [role="tab"]');
     const rename = page.locator('.pc-graph-tabs').getByRole('textbox', { name: 'Graph name', exact: true });
     for (const [draft, key] of [['Canceled workflow', 'Escape'], ['   ', 'Enter']]) {
-        await page.getByRole('button', { name: 'Graph', exact: true }).click();
+        await page.getByRole('menuitem', { name: 'Graph', exact: true }).click();
         await page.getByRole('menuitem', { name: 'Rename graph', exact: true }).click();
         await expect(rename).toBeFocused();
         await rename.fill(draft);
@@ -153,7 +152,7 @@ test('Graph menu inline rename cancels with Escape, ignores blank names, and sup
         await expect(tabs.first()).toHaveText('Workspace interactions');
         expect(await page.evaluate(() => window.canvasHarness.S.activeWorkflow().name)).toBe('Workspace interactions');
     }
-    await page.getByRole('button', { name: 'Graph', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Graph', exact: true }).click();
     await page.getByRole('menuitem', { name: 'Rename graph', exact: true }).click();
     await rename.fill('Menu renamed workflow');
     await rename.press('Enter');

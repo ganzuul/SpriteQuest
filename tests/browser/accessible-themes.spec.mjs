@@ -1,11 +1,10 @@
-import { rootCommand, expectRootBusy } from './workflow-commands.mjs';
 import { test, expect } from '@playwright/test';
 import { openEmber, measureEmber, assertEmber, colorChannels } from './ember-fixture.mjs';
 
 test('the actual theme picker offers the eight approved themes and shows readable accessible pin cues', async ({ page }, testInfo) => {
     await openEmber(page);
-    await page.getByRole('button', { name: 'Tools', exact: true }).click();
-    await page.getByRole('menuitem', { name: 'Theme and colours', exact: true }).click();
+    await page.getByRole('menubar', { name: 'Workspace menus' }).getByRole('menuitem', { name: 'View', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Theme and colours…', exact: true }).click();
     const picker = page.locator('.pc-theme-pop');
     await expect(picker).toBeVisible();
     expect(await picker.locator('.pc-th-name').allTextContents()).toEqual(['Ember', 'Lattice', 'Ash', 'Graphite', 'Slate', 'Obsidian', 'Harbor', 'Signal']);
@@ -27,7 +26,7 @@ test('example thumbnails follow accessible palettes and shapes, then restore Emb
         await route.fulfill({response,body:source+"\nUNIFIED_WORKFLOW_EXAMPLE_DATA[0].packages[0].graph.nodes['theme-comment']={id:'theme-comment',type:'note',commentFrame:true,moveContents:false,title:'Authored theme comment',content:'Preserve this color.',color:'#637d89',x:0,y:0,w:500,h:300};"});
     });
     await openEmber(page);
-    await page.getByRole('button', { name: 'File', exact: true }).click();
+    await page.getByRole('menubar', { name: 'Workspace menus' }).getByRole('menuitem', { name: 'File', exact: true }).click();
     await page.getByRole('menuitem', { name: 'Open examples…', exact: true }).click();
     const examples = page.getByRole('dialog', { name: 'Examples', exact: true });
     await expect(examples).toBeVisible();

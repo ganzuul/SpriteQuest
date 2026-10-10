@@ -1,0 +1,52 @@
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import { workspaceMenus } from '../ui/workspace-menu-model.ts';
+const base = {history:{undo:false,redo:false}, camera:{mode:'select'}, selectionActions:{copy:false,cut:false,delete:false}, menuCapabilities:{}, outputPreview:null};
+const items = (state, name, panels) => workspaceMenus(state,panels).find(menu=>menu.name===name).groups.flat();
+const item = (state,name,command,panels) => items(state,name,panels).find(entry=>entry.command===command);
+test('six menu groups expose current actions and no unified or legacy generation entries',()=>{
+ const workflow={phase:'unified',assigned:false,busy:false,issues:[],nodes:[],result:null};
+ assert.deepEqual(workspaceMenus({...base,workflow}).map(menu=>menu.name),['File','Edit','View','Graph','Workflow','Help']);
+ const commands=items({...base,workflow},'Workflow').map(entry=>entry.command);
+ assert.ok(!commands.includes('run-workflow'));assert.ok(!commands.includes('new-pre'));assert.ok(!commands.includes('new-post'));
+ assert.equal(item({...base,workflow},'Workflow','assign-workflow-phase'),undefined);
+ assert.equal(item({...base,workflow,enabled:true},'Workflow','enable-workflow').checked,true);
+});
+test('exact selection capabilities govern graph rows and panel state governs accessible checks',()=>{
+ const state={...base,readOnly:true,menuCapabilities:{inspect:true,rename:false,duplicate:false,group:false,ungroup:true,createSubgraph:false,saveSubgraph:true,comment:false,compact:true,compactChecked:true,fitSelection:true,hasSelection:true},inspectorOpen:true};
+ assert.equal(item(state,'Graph','details-selection').disabled,false);assert.equal(item(state,'Graph','rename-selection').disabled,true);
+ assert.equal(item(state,'Graph','ungroup-selection').disabled,false);assert.equal(item(state,'Graph','compact-selection').checked,true);
+ assert.equal(item(state,'Edit','duplicate-selection').disabled,true);assert.equal(item(state,'Edit','paste').disabled,true);
+ assert.equal(item(state,'View','toggle-preview',{previewOpen:false,shelfOpen:true}).checked,false);
+ assert.equal(item(state,'View','toggle-shelf',{previewOpen:false,shelfOpen:true}).checked,true);
+ assert.equal(item(state,'Graph','select-tool').kind,'radio');assert.equal(item(state,'Graph','select-tool').checked,true);
+});
+test('owned current root alone governs Stop and assignment regardless of selected projection',()=>{
+ const root={phase:'unified',assigned:true,busy:false,ownedBusy:true,issues:[],nodes:[],result:null};
+ const selected={...root,assigned:false,ownedBusy:false};
+ assert.equal(item({...base,workflow:selected,rootWorkflow:root,menuCapabilities:{stop:true}},'Workflow','stop-workflow').disabled,false);
+ assert.equal(item({...base,workflow:root,rootWorkflow:{...root,ownedBusy:false},menuCapabilities:{stop:false}},'Workflow','stop-workflow').disabled,true);
+ assert.equal(item({...base,workflow:selected,rootWorkflow:root},'Workflow','clear-workflow-assignment'),undefined);
+ assert.equal(item({...base,workflow:selected,rootWorkflow:root},'Workflow','assign-workflow-phase'),undefined);
+});
+test('diagnostic output eligibility and tracking come from current request-bound output preview',()=>{
+ const outputPreview={selectedKey:'choice',pinned:true,followSelection:false,busy:false,runHere:{enabled:false}};
+ const state={...base,outputPreview};
+ assert.equal(item(state,'Workflow','run-preview').disabled,true);assert.equal(item({...state,outputPreview:{...outputPreview,runHere:{enabled:true}}},'Workflow','run-preview').disabled,false);
+ assert.equal(item(state,'View','pin-preview').checked,true);assert.equal(item(state,'View','follow-preview').checked,false);
+ assert.equal(item({...base,workflow:{busy:true,result:{}}},'Workflow','run-preview').disabled,true);
+});
+
+test('Review host result remains available for the actual saved root terminal from a child',()=>{
+ const child={phase:'unified',assigned:false,nodes:[{operation:'compose',terminal:false}]};
+ const root={phase:'unified',assigned:false,nodes:[{operation:'apply-reply',terminal:true}]};
+ assert.equal(item({...base,workflow:child,rootWorkflow:root},'Workflow','review-host-result').disabled,false);
+ assert.equal(item({...base,workflow:child,rootWorkflow:{...root,nodes:[]}},'Workflow','review-host-result').disabled,true);
+});
+test('owned root activity disables diagnostics even when the selected preview is idle',()=>{
+ const outputPreview={selectedKey:'choice',busy:false,runHere:{enabled:true}};
+ const rootWorkflow={phase:'unified',ownedBusy:true,nodes:[]};
+ assert.equal(item({...base,rootWorkflow,outputPreview},'Workflow','run-preview').disabled,true);
+ assert.equal(item({...base,rootWorkflow:{...rootWorkflow,ownedBusy:false},outputPreview},'Workflow','run-preview').disabled,false);
+
+});

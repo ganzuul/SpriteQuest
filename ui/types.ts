@@ -38,6 +38,7 @@ export interface WorkflowExampleComment { id: string; x: number; y: number; w: n
 export interface WorkflowExampleThumbnail { bounds: { x: number; y: number; w: number; h: number }; nodes: WorkflowExampleNode[]; wires: WorkflowExampleWire[]; comments: WorkflowExampleComment[]; groups: { id: string; title: string; x: number; y: number; w: number; h: number }[] }
 export interface WorkflowExampleTile { id: string; number: number; title: string; goal: string; lesson?: WorkflowExampleLesson; thumbnail: WorkflowExampleThumbnail | null; issue: string }
 export interface WorkbenchView {
+    menuContextKey?: string;
     hasArchivedWorkflows?: boolean;
     graphId: string; enabled: boolean; inspectorOpen: boolean; detailsWidth?: number;
     document?: WorkflowDocumentView;
@@ -55,6 +56,7 @@ export interface WorkbenchView {
     examples?: readonly WorkflowExampleTile[];
     examplesIssue?: string;
     selectionActions?: { copy: boolean; cut: boolean; delete: boolean };
+    menuCapabilities?: { inspect: boolean; rename: boolean; duplicate: boolean; group: boolean; ungroup: boolean; createSubgraph: boolean; saveSubgraph: boolean; comment: boolean; compact: boolean; compactChecked: boolean; fitSelection: boolean; hasSelection: boolean; stop: boolean };
 }
 export interface WorkbenchActions {
     logoUrl?: string;
@@ -85,7 +87,7 @@ export interface WorkflowView {
     profiles: { id: string; name: string }[];
     families: { name: string; description: string; operations: { id: string; title: string; phase: string; compatible: boolean }[] }[];
     nodes: WorkflowNodeView[]; groups: { id: string; title: string; members: string[]; collapsed: boolean; callBound: number }[];
-    callBound: number; issues: string[]; busy: boolean; status: string; quoteHelp: string;
+    callBound: number; issues: string[]; busy: boolean; ownedBusy?: boolean; status: string; quoteHelp: string;
     availability?: 'current' | 'stale' | 'superseded' | 'cancelled'; preparationError?: { code: string; message: string } | null;
     result: WorkflowBoundedResultView | null;
 }

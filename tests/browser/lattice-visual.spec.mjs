@@ -1,4 +1,3 @@
-import { rootCommand, expectRootBusy } from './workflow-commands.mjs';
 import { test, expect } from '@playwright/test';
 
 async function openNativeWorkspace(page, starter = 'structured-guidance') {
@@ -63,8 +62,8 @@ for (const width of [320, 360]) test(`Fit keeps the narrow graph reachable below
     await page.setViewportSize({ width, height: 900 });
     await openNativeWorkspace(page);
     const before = await page.evaluate(() => JSON.stringify(window.canvasHarness.graph));
-    await page.getByRole('button', { name: 'Graph', exact: true }).click();
-    await page.getByRole('menuitem', { name: 'Fit to view', exact: true }).click();
+    await page.getByRole('menubar', { name: 'Workspace menus' }).getByRole('menuitem', { name: 'View', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Fit graph', exact: true }).click();
     await page.evaluate(() => window.canvasHarness.settle());
     const shelf = await page.locator('.pc-node-shelf').boundingBox();
     const cards = await page.locator('.pc-node-native').evaluateAll(elements => elements.map(element => {

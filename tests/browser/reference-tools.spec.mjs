@@ -1,4 +1,3 @@
-import { rootCommand, expectRootBusy } from './workflow-commands.mjs';
 import { test, expect } from '@playwright/test';
 import { chooseControl, controlValue } from './details-helpers.mjs';
 

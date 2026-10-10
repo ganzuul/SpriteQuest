@@ -4,7 +4,7 @@ import { chooseControl, chooseNodeProfile, openDetailGroup } from './details-hel
 const preview = page => page.locator('.pc-output-preview');
 const details = page => page.getByRole('region', { name: 'Node details', exact: true });
 async function openExamples(page) {
-    await page.getByRole('button', { name: 'File', exact: true }).click();
+    await page.getByRole('menubar', { name: 'Workspace menus' }).getByRole('menuitem', { name: 'File', exact: true }).click();
     await page.getByRole('menuitem', { name: 'Open examples…', exact: true }).click();
     const dialog = page.getByRole('dialog', { name: 'Examples', exact: true });
     await expect(dialog).toBeVisible(); return dialog;
@@ -72,10 +72,11 @@ async function selectTerminal(page, operation, pin = true) {
         return target.kind === 'terminal' && target.address.nodeId === id && target.address.instancePath.length === 0;
     })?.value, id);
     expect(key, 'the actual root terminal must be an available Preview choice').toBeTruthy();
-    const unpin = leaf.getByRole('button', { name: 'Unpin preview', exact: true });
-    if (await unpin.isVisible()) await unpin.click();
+    const pinControl = leaf.getByRole('button', { name: 'Pin preview', exact: true });
+    if (await pinControl.getAttribute('aria-pressed') === 'true') await pinControl.click();
     await select.selectOption(key);
-    if (pin) await leaf.getByRole('button', { name: 'Pin preview', exact: true }).click();
+    if (pin) await pinControl.click();
+    await expect(pinControl).toHaveAttribute('aria-pressed', String(pin));
 }
 async function nativeSend(page) {
     await page.evaluate(async () => {
@@ -613,9 +614,9 @@ test('accepted semantic additive import cancels a root request and history canno
     await page.waitForFunction(() => !!window.importPendingRequest);
     const before = await page.evaluate(async () => { const h = window.canvasHarness, { graphSemanticSignature } = await import('/src/workflow/ports.js?v=' + h.version); return { nodes: Object.keys(h.graph.nodes).length, chat: structuredClone(h.context.chat), signature: graphSemanticSignature(h.graph) }; });
     const imported = await page.evaluate(async () => { const h = window.canvasHarness, { exportWorkflow } = await import('/src/workflow/packages.js?v=' + h.version), { operationDefaults } = await import('/src/workflow/catalog.js?v=' + h.version), graph = h.S.blankGraph('Imported snapshot'); graph.nodes.snapshot = { ...operationDefaults('reply-snapshot'), id: 'snapshot', type: 'workflow', operationVersion: 1, x: 0, y: 0 }; return exportWorkflow(graph); });
-    await page.getByRole('button', { name: 'File', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'File', exact: true }).click();
     const chooser = page.waitForEvent('filechooser');
-    await page.getByRole('menuitem', { name: 'Import into graph…', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Import into current graph…', exact: true }).click();
     await (await chooser).setFiles({ name: 'post-fragment.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(imported)) });
     const review = page.getByRole('dialog', { name: 'Import into graph' });
     await expect(review).toBeVisible();
@@ -690,8 +691,8 @@ test('narrow toolbar exposes readable labeled pane and theme controls', async ({
         await page.evaluate(async theme => (await import('/src/theme.js?v=' + window.canvasHarness.version)).setPreset(theme), theme);
         await expect(page.locator('.pc-details-heading').getByRole('button', { name: 'Subgraphs', exact: true })).toHaveCount(0);
         await expect(page.getByRole('button', { name: 'Toggle inspector', exact: true }).getByText('Details', { exact: true })).toBeVisible();
-        await page.getByRole('button', { name: 'Tools', exact: true }).click();
-        await expect(page.getByRole('menuitem', { name: 'Theme and colours', exact: true })).toBeVisible();
+        await page.getByRole('menubar', { name: 'Workspace menus' }).getByRole('menuitem', { name: 'View', exact: true }).click();
+        await expect(page.getByRole('menuitem', { name: 'Theme and colours…', exact: true })).toBeVisible();
         await page.keyboard.press('Escape');
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     }

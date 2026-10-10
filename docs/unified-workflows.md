@@ -12,8 +12,8 @@ The normal SillyTavern connection writes the main reply. Other model nodes have 
 2. Open LATTICE beside the chat's Send button, or enter `/lattice`. A fresh workspace starts with **Unified story workflow** and Lattice disabled. Existing installations restore their unified recovery draft; previous unified documents are available through **File → Recover previous workflows**. Retired pre/post roots move to the cold archive described below.
 3. Choose **File → Open examples…**. Open a unified example whose goal fits your story. Each opening makes an independent editable copy the active document; it makes no model request and does not change **Enable Lattice**. The example's description contains its setup and inspection instructions.
 4. Adapt its literal instructions, actor/item identities, schemas and document targets. Example names and actors are authored demonstration material. A loaded character's canonical ID is normally `character:<avatar filename>`; a display name alone is not a live actor identity.
-5. Choose every ordinary text-model node’s connection in its grey profile bar or **Details → Connection profile**. Use **Active SillyTavern model** to follow the current host connection/model, or choose a saved Connection Manager profile for a fixed connection. Leave **Model mode → Use profile model** unless that particular node needs an explicit model identifier. Configure any **For Each → Helper model bindings** as well; assigning the extraction node's profile does not assign its confirmation helper.
-6. Automatic Story Clock, Read File and Outcome Commit defaults need no setup. If the example names custom targets, authorize them in **Tools → Workflow Data…** first. Resolve the graph's validation and binding issues before sending.
+5. Choose every ordinary text-model node’s connection in its grey profile bar. Use **Active SillyTavern model** to follow the current host connection/model, or choose a saved Connection Manager profile for a fixed connection. Leave **Details → Advanced model settings → Model mode → Use profile model** unless that particular node needs an explicit model identifier. Configure any **For Each → Helper model bindings** as well; assigning the extraction node's profile does not assign its confirmation helper.
+6. Automatic Story Clock, Read File and Outcome Commit defaults need no setup. If the example names custom targets, authorize them in **Workflow → Configure → Workflow Data…** first. Resolve the graph's validation and binding issues before sending.
 7. Select **Enable Lattice** while the configured document is open. Send uses this active root document; switching between its root and subgraph tabs does not change that choice.
 8. Return to SillyTavern and **Send** your next player message normally. The workflow runs the necessary preparation, resumes from the completed native Draft, and records its response-stage results. A generated swipe can run the same open workflow when its configured sources and target policies permit it.
 9. Open Preview and select the desired **Review / Publish · Host result**. Compare the original, proposed body, appended sections, model trace and staged consequences. Choose **Apply reviewed candidate** or **Reject candidate**.
@@ -122,7 +122,7 @@ Native generation currently has one selected actor. Actor Context allows separat
 
 New **Story Clock**, **Read File** and **Outcome Commit** nodes need no prior Workflow Data setup. They select **Chat clock**, empty plain-text **Chat notes** and an empty JSON **Chat outcomes** list respectively. A unified run makes only its referenced presets available in the active user/chat. Adjust initial values or content in the node’s Details, and open **Advanced** for its source, Format and Visibility. Clock and outcomes sources keep their required JSON format. Existing saved content is retained when settings change.
 
-**Tools → Workflow Data…** manages custom logical targets for the actual user and chat, including named recipe targets. A target such as `souls.json` is a scoped workflow data document identifier, not an arbitrary operating-system file path. Canonical document content lives in LATTICE's chat metadata store.
+**Workflow → Configure → Workflow Data…** manages custom logical targets for the actual user and chat, including named recipe targets. A target such as `souls.json` is a scoped workflow data document identifier, not an arbitrary operating-system file path. Canonical document content lives in LATTICE's chat metadata store.
 
 For a custom target, create an authorization with a unique target ID, display name, format, visibility and initial template. Formats are **JSON**, **JSON Lines**, **CSV**, **Plain text** and **Markdown**. CSV needs declared columns. Actor-private authorization also needs its canonical actor ID. Hidden documents cannot be exposed to public model/notes branches by changing a graph label.
 
@@ -167,7 +167,7 @@ Story time is an authored clock measured in integer minutes. It is separate from
 
 Nodes choosing the same clock source share its saved timeline. Use **+** beside the Clock source in Advanced to create a named, independent clock; separate clocks do not synchronize automatically. **Story Clock** reads the accepted scoped clock document when the workflow runs.
 
-For an explicit custom clock target, **Tools → Workflow Data… → Story clock template** in the JSON editor remains available. It creates a valid starting schema whose internal `clockId` must match that target. This custom-target example uses minute 0 for midnight on Day 1, a 1,440-minute day and an explicit calendar identity:
+For an explicit custom clock target, **Workflow → Configure → Workflow Data… → Story clock template** in the JSON editor remains available. It creates a valid starting schema whose internal `clockId` must match that target. This custom-target example uses minute 0 for midnight on Day 1, a 1,440-minute day and an explicit calendar identity:
 
 ```json
 {
@@ -212,7 +212,7 @@ For a file memory set, create an actor-private JSON target, Read File it in the 
 
 Queue recall from the right-click menu on a matching Recall or Recall Shortcut node, from a selection of those nodes, or from the Memory recall section in Details. A green recall-with-clock badge shows an available manual request; amber shows a reservation or a result awaiting acceptance. Click a badge to inspect its policy. Queue and Cancel do not run a model or change the workflow file.
 
-**Node → Memory recall** offers commands for the selected nodes and all eligible nodes, plus **Memory recall overview…**. The overview groups matching nodes into one row per memory set. Several selected cards can represent one request. Repeating Queue preserves its remaining uses and pending generation; Cancel removes that shared manual request and its pending claims. Automatic triggers keep their own conditions.
+**Workflow → Memory recall** offers commands for the selected nodes and all eligible nodes, plus **Memory recall overview…**. The overview groups matching nodes into one row per memory set. Several selected cards can represent one request. Repeating Queue preserves its remaining uses and pending generation; Cancel removes that shared manual request and its pending claims. Automatic triggers keep their own conditions.
 
 | Setting | Meaning |
 | --- | --- |
@@ -235,7 +235,7 @@ Native Recall serves the selected native actor. Other present actors can have in
 
 Saved native-pre and native-post roots are retired. Migration preserves their original graphs, bindings and active selection in a cold archive. Existing unified documents remain available as recovery drafts. If the previous active document is retired, Lattice opens a unified document or starter with integration disabled. Archived roots cannot execute, open as current documents, or import into current workflows.
 
-**File → Export archived workflows…** downloads the recovery archive as JSON. This recovery action makes no model requests and does not convert the contents. Preserve that download while rebuilding a needed process in a new unified workflow or updated example:
+**File → Export archived workflows** downloads the recovery archive as JSON. This recovery action makes no model requests and does not convert the contents. Preserve that download while rebuilding a needed process in a new unified workflow or updated example:
 
 1. Place preparation Context/Text/Guidance logic upstream of Generate Reply and set explicit stages.
 2. Wire bounded Guidance into Generate Reply's guidance pin.

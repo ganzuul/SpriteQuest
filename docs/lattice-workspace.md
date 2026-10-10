@@ -12,7 +12,9 @@ Fresh launch opens **Unified story workflow**, with Lattice disabled. Existing i
 
 Use **File → Save workflow** or **Save As…** to save the editable document to disk. Browsers without direct file access offer **Download JSON…** instead. A recovery draft retains committed work across reloads; it does not save the file on disk. **Open Recent** reopens previously accessed files in supported browsers. See [save, import, and share](operators-manual.md#save-import-and-share) for modified-document prompts and recovery.
 
-The default **Ember** theme follows SillyTavern's panel, text, control and quote colors. **Tools → Theme and colours** offers Ember, Lattice, Ash, Graphite, Slate, Obsidian, Harbor and Signal. Harbor and Signal also identify connection types with labeled pins, distinct shapes and wire patterns.
+The menu bar contains **File**, **Edit**, **View**, **Graph**, **Workflow** and **Help**. Use **Graph → Add node…** to search for nodes and subgraphs, and **View → Fit graph** or **Fit selection** to recover your position.
+
+The default **Ember** theme follows SillyTavern's panel, text, control and quote colors. **View → Theme and colours…** offers Ember, Lattice, Ash, Graphite, Slate, Obsidian, Harbor and Signal. Harbor and Signal also identify connection types with labeled pins, distinct shapes and wire patterns.
 
 ## Run your first unified workflow
 
@@ -22,7 +24,7 @@ The starter is **On Send → Generate Reply · SillyTavern → Review / Publish*
 2. Keep the starter open, then select **Enable Lattice**.
 3. Send a player message normally. The starter waits for that generation's completed Draft and records its review result.
 4. Select **Review / Publish · Host result** in Preview. Compare the original and candidate. **Apply reviewed candidate** preserves the original as a swipe and publishes the chosen result; **Reject candidate** leaves it alone.
-5. Open a recipe to add preparation, prose editing or notes. Configure ordinary model nodes and For Each helper roles in Details before sending. Automatic Story Clock, Read File and Outcome Commit defaults need no setup. Authorize custom document targets in **Tools → Workflow Data…**.
+5. Open a recipe to add preparation, prose editing or notes. Choose ordinary model connections on their node bars and configure For Each helper roles in Details before sending. Automatic Story Clock, Read File and Outcome Commit defaults need no setup. Authorize custom document targets in **Workflow → Configure → Workflow Data…**.
 
 Full execution starts with the native generation owned by Send. Stop cancels active work. **Run to here** previews a selected output's supported dependencies without accepting effects or publishing guidance.
 
@@ -32,7 +34,7 @@ Add **Story Clock** to use **Chat clock**, starting on Day 1 at 00:00 with a 24-
 
 Select the node to customize it in Details. **Starting values** controls the clock’s starting day, time and hours per day; the other nodes offer initial content or outcomes. Open **Advanced** to choose a shared source, create a separate one with **+**, and adjust **Format** or **Visibility**. Visibility has Public, Hidden and Actor private buttons; the private option also needs its actor ID. Clock and outcomes data keep their required JSON format, while notes offer the supported document formats. Use **Save settings** to apply your changes.
 
-Nodes selecting the same clock share its saved timeline. Separate clocks advance independently; they do not synchronize automatically. Initial values only seed data that has not been saved yet, so editing them preserves existing saved time, notes and outcomes. **Tools → Workflow Data…** remains available for custom target management.
+Nodes selecting the same clock share its saved timeline. Separate clocks advance independently; they do not synchronize automatically. Initial values only seed data that has not been saved yet, so editing them preserves existing saved time, notes and outcomes. **Workflow → Configure → Workflow Data…** remains available for custom target management.
 
 ## Build and inspect a brief
 
@@ -54,6 +56,6 @@ See [reply review](native-workflows.md#review-a-reply-repair) and the [unified g
 
 ## Recover an older setup
 
-Retired pre/post roots are preserved in a cold archive. **File → Export archived workflows…** downloads their original graphs, bindings and active selection for recovery. They cannot execute or import as current roots. Rebuild useful logic in a new unified graph with explicit Preparation/Response stages and Review / Publish. There is no automatic conversion or model request during recovery.
+Retired pre/post roots are preserved in a cold archive. **File → Export archived workflows** downloads their original graphs, bindings and active selection for recovery. They cannot execute or import as current roots. Rebuild useful logic in a new unified graph with explicit Preparation/Response stages and Review / Publish. There is no automatic conversion or model request during recovery.
 
 Read the [operator's manual](operators-manual.md) to connect pins, open subgraph tabs, customize instances and inspect recorded outputs.

@@ -1,7 +1,7 @@
 import {test,expect} from '@playwright/test';
 async function load(page){await page.addInitScript(()=>{window.showOpenFilePicker=undefined;window.showSaveFilePicker=undefined;});await page.goto('/tests/browser/harness.html');await page.waitForFunction(()=>!!window.canvasHarness);}
 async function selectFile(page,value,command='Import into graph…'){
-    await page.getByRole('button',{name:'File',exact:true}).click();const chooser=page.waitForEvent('filechooser');
+    await page.getByRole('menuitem', { name: 'File',exact:true}).click();const chooser=page.waitForEvent('filechooser');
     await page.getByRole('menuitem',{name:command,exact:true}).click();await(await chooser).setFiles({name:'workflow.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(value))});
 }
 async function fragment(page){return page.evaluate(async()=>{const h=window.canvasHarness,{exportWorkflow}=await import('/src/workflow/packages.js?v='+h.version),g=h.S.blankGraph('Imported text');g.nodes.text={id:'text',type:'workflow',operation:'compose',operationVersion:1,x:10,y:20,sections:[{name:'Text',text:'Imported fixture'}]};return exportWorkflow(g);});}

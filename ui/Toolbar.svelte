@@ -1,7 +1,8 @@
 <script lang="ts">
     import WorkspaceMenus from './WorkspaceMenus.svelte';
+    import type { WorkspaceMenuPanels } from './workspace-menu-model';
     import type { WorkbenchView, WorkbenchActions } from './types';
-    let { state, actions, local }: { state: WorkbenchView; actions: WorkbenchActions; local: (command: string) => void } = $props();
+    let { state, actions, local, panels }: { state: WorkbenchView; actions: WorkbenchActions; local: (command: string) => void; panels?: WorkspaceMenuPanels } = $props();
     const workflow = $derived(state.rootWorkflow ?? state.workflow);
     const documentState = $derived(state.document?.dirty ? 'Modified' : state.document?.busy ? '' : state.document?.status ? '' : state.document ? 'Saved' : 'Unsaved');
     let header: HTMLElement, enabledControl: HTMLInputElement, inspBtn: HTMLButtonElement;
@@ -10,7 +11,7 @@
 <header class="pc-header" data-pc-ui="svelte" bind:this={header}>
     <div class="pc-menubar">
         <div class="pc-brand"><img src={actions.logoUrl} width="30" height="30" alt="" /><span>LATTICE</span></div>
-        <WorkspaceMenus {state} {actions} {local} />
+        <WorkspaceMenus {state} {actions} {local} {panels} />
         <button type="button" class="pc-btn menu_button pc-close" title="Close" aria-label="Close canvas" onclick={() => actions.command('close')}>×</button>
     </div>
     <div class="pc-workflow-bar">
@@ -20,7 +21,7 @@
             <button type="button" class={`pc-btn menu_button pc-redo${state.history.redo ? '' : ' pc-disabled'}`} disabled={!state.history.redo} title={state.history.redoTitle} aria-label="Redo" onclick={() => actions.command('redo')}>↷</button>
             <span class={`pc-history-note${state.history.showNote ? ' pc-show' : ''}`}>{state.history.note}</span>
         </div>
-        {#if workflow?.busy}<button type="button" class="pc-btn menu_button pc-root-stop" title="Stop the workflow" onclick={() => actions.command('stop-workflow')}>■ Stop</button>{/if}
+        {#if workflow?.ownedBusy || workflow?.busy}<button type="button" class="pc-btn menu_button pc-root-stop" title="Stop the workflow" onclick={() => actions.command('stop-workflow')}>■ Stop</button>{/if}
         <span class="pc-root-workflow-status" role="status" aria-label="Workflow status">{workflow ? `${workflow.phase} · ≤ ${workflow.callBound} requests${workflow.status ? ' · ' + workflow.status : ''}` : 'Workflow unavailable'}</span>
         <div class="pc-header-actions pc-surface-actions">
             <button type="button" class={`pc-btn menu_button pc-pane-toggle${state.inspectorOpen ? ' pc-on' : ''}`} title="Show or hide the inspector" aria-label="Toggle inspector" aria-pressed={state.inspectorOpen} bind:this={inspBtn} onclick={() => actions.command('inspector')}>Details</button>

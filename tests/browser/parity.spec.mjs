@@ -17,9 +17,9 @@ test('current multi-pin cards keep their named pins and keyed identity across vi
 test('copy and paste current selected fragments retain their internal named wire in one undo step',async({page})=>{
     await load(page);const ids=await page.evaluate(()=>window.canvasHarness.reset(3,3));
     await page.evaluate(ids=>{const h=window.canvasHarness;h.canvas.setMulti(ids.slice(0,2));h.H.flush(h.graph);Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async text=>{window.fragmentText=text;},readText:async()=>window.fragmentText}});},ids);
-    await page.getByRole('button',{name:'Edit',exact:true}).click();await page.getByRole('menuitem',{name:/^Copy/}).click();await page.waitForFunction(()=>!!window.fragmentText);
+    await page.getByRole('menubar', { name: 'Workspace menus' }).getByRole('menuitem', { name: 'Edit', exact: true }).click();await page.getByRole('menuitem',{name:/^Copy/}).click();await page.waitForFunction(()=>!!window.fragmentText);
     const before=await page.evaluate(()=>Object.keys(window.canvasHarness.graph.nodes).length);
-    await page.getByRole('button',{name:'Edit',exact:true}).click();await page.getByRole('menuitem',{name:/^Paste/}).click();
+    await page.getByRole('menubar', { name: 'Workspace menus' }).getByRole('menuitem', { name: 'Edit', exact: true }).click();await page.getByRole('menuitem',{name:/^Paste/}).click();
     await expect.poll(()=>page.evaluate(()=>Object.keys(window.canvasHarness.graph.nodes).length)).toBe(before+2);
     const added=await page.evaluate(ids=>{const g=window.canvasHarness.graph,newIds=Object.keys(g.nodes).filter(id=>!ids.includes(id));return Object.values(g.wires).filter(w=>newIds.includes(w.from)&&newIds.includes(w.to)).map(w=>[w.fromPort,w.toPort]);},ids);
     expect(added).toEqual([['out','section.Text']]);await page.keyboard.press('Control+z');expect(await page.evaluate(()=>Object.keys(window.canvasHarness.graph.nodes).length)).toBe(before);

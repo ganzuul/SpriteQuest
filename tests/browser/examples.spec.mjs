@@ -20,7 +20,7 @@ async function finishExampleChoice(page) {
 
 test('File examples follows native Open and Recent commands and opens the compact complete example picker', async ({ page }, testInfo) => {
     await load(page);
-    await page.getByRole('button', { name: 'File', exact: true }).click();
+    await page.getByRole('menubar', { name: 'Workspace menus' }).getByRole('menuitem', { name: 'File', exact: true }).click();
     const items = await page.getByRole('menu', { name: 'File', exact: true }).getByRole('menuitem').allTextContents();
     expect(items[items.findIndex(item => item.includes('Open Recent')) + 1]).toContain('Open examples…');
     await page.getByRole('menuitem', { name: 'Open examples…', exact: true }).click();
@@ -59,11 +59,11 @@ test('the File menu retains picker scroll, trap Tab, close on Escape and restore
     expect(scrollTop).toBeGreaterThan(0);
     await close.press('Escape');
     await expect(dialog).toBeHidden();
-    await expect(page.getByRole('button', { name: 'File', exact: true })).toBeFocused();
+    await expect(page.getByRole('menuitem', { name: 'File', exact: true })).toBeFocused();
     dialog = await openExamples(page);
     expect(await dialog.locator('.pc-examples-grid').evaluate(element => element.scrollTop)).toBe(scrollTop);
     await dialog.getByRole('button', { name: 'Close panel', exact: true }).click();
-    await expect(page.getByRole('button', { name: 'File', exact: true })).toBeFocused();
+    await expect(page.getByRole('menuitem', { name: 'File', exact: true })).toBeFocused();
 });
 
 test('narrow picker has two columns and its last long-name tile opens by keyboard', async ({ page }, testInfo) => {
@@ -159,8 +159,8 @@ test('reopening a tile guards the edited document and subgraphs remain inspectab
     await page.evaluate(async () => { await window.canvasHarness.view({ x: 280, y: 60, zoom: 0.7 }); });
     await page.locator('.pc-canvas-host .pc-node-subgraph-input .pc-native-heading').first().click();
     await expect(page.getByRole('textbox', { name: 'Node name', exact: true })).toBeEnabled();
-    await page.getByRole('button', { name: 'Graph', exact: true }).click();
-    await page.getByRole('menuitem', { name: 'Fit to view', exact: true }).click();
+    await page.getByRole('menubar', { name: 'Workspace menus' }).getByRole('menuitem', { name: 'View', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Fit graph', exact: true }).click();
     await page.getByRole('dialog', { name: 'Lattice', exact: true }).screenshot({ path: testInfo.outputPath('example-30-opened-subgraph.png') });
     dialog = await openExamples(page);
     await dialog.getByRole('button', { name: 'Follow a reply from Send to Review', exact: true }).click();

@@ -9,7 +9,7 @@ async function finishExampleChoice(page, picker) {
 async function launch(page) {
     await page.goto('/tests/browser/harness.html');
     await page.waitForFunction(() => !!window.canvasHarness);
-    await page.getByRole('button', {name: 'File', exact: true}).click();
+    await page.getByRole('menuitem', { name: 'File', exact: true}).click();
     await page.getByRole('menuitem', {name: 'Open examples…', exact: true}).click();
     return page.getByRole('dialog', {name: 'Examples', exact: true});
 }
@@ -54,7 +54,7 @@ test('search supports empty results and an unavailable lesson retains readable i
         Object.values(REMASTERED_WORKFLOW_EXAMPLE_DATA[0].packages[0].graph.nodes).find(node => node.type === 'workflow').operation = 'unknown-lesson-operation';
         window.canvasHarness.UI.close(); window.canvasHarness.UI.open(); await window.canvasHarness.settle();
     });
-    await page.getByRole('button', {name: 'File', exact: true}).click();
+    await page.getByRole('menuitem', { name: 'File', exact: true}).click();
     await page.getByRole('menuitem', {name: 'Open examples…', exact: true}).click();
     const dialog = page.getByRole('dialog', {name: 'Examples', exact: true});
     await dialog.getByLabel('Search lessons').fill('no matching curriculum concept');
@@ -85,7 +85,7 @@ test('closing lesson details restores keyboard focus and suppresses background g
         h.canvas.select({kind:'node', id:ids[0]});
         return {graph:JSON.stringify(h.graph), selection:h.canvas.selection, history:h.H.peek(h.graph)};
     });
-    await page.getByRole('button', {name:'File', exact:true}).click();
+    await page.getByRole('menuitem', { name: 'File', exact:true}).click();
     await page.getByRole('menuitem', {name:'Open examples…', exact:true}).click();
     const dialog = page.getByRole('dialog', {name:'Examples', exact:true});
     const trigger = dialog.getByRole('button', {name:'Details for Follow a reply from Send to Review', exact:true});

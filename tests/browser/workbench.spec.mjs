@@ -27,7 +27,7 @@ test('camera menus retain the focused Details editor and unsaved JSON draft',asy
     await expect(editor).toHaveValue('{unfinished');
     expect(await page.evaluate(()=>document.activeElement===window.editorProbe&&document.contains(window.editorProbe))).toBe(true);
     expect(await page.evaluate(()=>JSON.stringify(window.canvasHarness.graph))).toBe(before);
-    await page.getByRole('button',{name:'Graph',exact:true}).click(); await page.getByRole('menuitem',{name:'Pan tool',exact:true}).click();
+    await page.getByRole('menubar', { name: 'Workspace menus' }).getByRole('menuitem', { name: 'Graph', exact: true }).click(); await page.getByRole('menuitemradio',{name:'Pan tool',exact:true}).click();
     expect(await page.evaluate(()=>window.canvasHarness.canvas.mode)).toBe('pan');
     expect(await page.evaluate(()=>document.contains(window.editorProbe))).toBe(true);
 });

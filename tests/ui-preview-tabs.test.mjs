@@ -129,7 +129,7 @@ test('preview chrome keeps the actual output choice and bounded actions around a
         assert.equal(Number.parseFloat(dom.window.getComputedStyle(body).minHeight), 0);
         assert.equal(dom.window.getComputedStyle(panel(f.host).querySelector('article')).borderTopWidth, '0px');
         assert.equal(dom.window.getComputedStyle(panel(f.host).querySelector('pre')).fontFamily, 'system-ui');
-        const collapseButton = [...header.querySelectorAll('button')].find(button => button.textContent === 'Collapse preview');
+        const collapseButton = header.querySelector('[aria-label="Collapse preview"]');
         assert.ok(collapseButton); collapseButton.click(); assert.equal(collapsed, 1);
     } finally { await f.close(); }
 });

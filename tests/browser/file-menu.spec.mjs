@@ -6,7 +6,7 @@ async function load(page) {
     await page.evaluate(() => window.canvasHarness.activate(window.canvasHarness.graph));
 }
 async function menu(page, action) {
-    await page.getByRole('button', { name: 'File', exact: true }).click();
+    await page.getByRole('menubar', { name: 'Workspace menus' }).getByRole('menuitem', { name: 'File', exact: true }).click();
     await page.getByRole('menuitem', { name: action, exact: true }).click({ timeout: 2500 });
 }
 const prompt = page => page.getByRole('dialog', { name: 'Save workflow changes?', exact: true });
@@ -72,8 +72,8 @@ test('New opens a detached unified starter and preserves Enable Lattice', async 
 });
 
 test('closing and reopening cancels an inline rename draft while retaining the current document', async ({ page }) => {
-    await load(page); await page.getByRole('button', { name: 'Graph', exact: true }).click();
-    await page.getByRole('menuitem', { name: 'Rename graph', exact: true }).click();
+    await load(page); await page.getByRole('menuitem', { name: 'File', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Rename workflow…', exact: true }).click();
     const rename = page.locator('.pc-graph-tabs').getByRole('textbox', { name: 'Graph name', exact: true }); await rename.fill('Discarded rename draft');
     await page.evaluate(async () => { const h = window.canvasHarness, graph = h.graph; h.UI.close(); graph.name = 'Changed while closed'; h.S.touchGraph(graph); h.UI.open(); await h.settle(); });
     await expect(rename).toHaveCount(0); await expect(page.locator('.pc-graph-tabs [role="tab"]').first()).toHaveText('Changed while closed');
@@ -164,7 +164,7 @@ test('File Close retains the same current document, workspace and camera', async
 
 test('File exports archived workflows only when a portable archive is present', async ({ page }) => {
     await load(page);
-    await page.getByRole('button', { name: 'File', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'File', exact: true }).click();
     await expect(page.getByRole('menuitem', { name: 'Export archived workflows', exact: true })).toHaveCount(0);
     await page.keyboard.press('Escape');
     const before = await snapshot(page);

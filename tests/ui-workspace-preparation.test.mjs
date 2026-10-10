@@ -7,6 +7,9 @@ import { createWorkflowSession, projectPreparedWorkflow } from '../src/ui/workfl
 import { makeClip, makeDefinitionClip, readClip, prepareClipPaste } from '../src/workflow/clipboard.js?v=0.27.0';
 import { isCommentFrame } from '../src/canvas/comment-frames.js?v=0.27.0';
 import { prepareSubgraphNodeDeletion } from '../src/workflow/subgraph-authoring.js?v=0.27.0';
+import { operationFor } from '../src/workflow/catalog.js?v=0.27.0';
+import { readNodePresentation } from '../src/ui/node-palette.js?v=0.27.0';
+import { definitionRefKey } from '../src/workflow/definition-data.js?v=0.27.0';
 const api = await import('../src/ui/workspace-preparation.js?v=0.27.0');
 
 test('copied explicit null blockers project as blocked and choosing inheritance restores the parent role', async () => {
@@ -151,7 +154,7 @@ test('actual controller roundtrip preserves primary node wire and supported ephe
 });
 
 test('Edit availability uses the actual child saved scope and readonly library permission',async()=>{
- const {siblingWorkflow}=await import('./fixtures/workflow-prepared-fixture.mjs');const root=siblingWorkflow(),saved=structuredClone(Object.values(root.definitions)[0].body);let readOnly=false,last;const canvas={selection:{kind:'node',id:'work'},multi:new Set()},env={current:root,canvas,currentPick:()=>({nodeIds:['work']}),groupMembers:(graph,id)=>Object.values(graph.nodes).filter(node=>node.inGroup===id),graphViews:{readEditor:()=>({prepared:{savedGraph:saved},readOnly,view:{identity:{kind:'instance'}}})},editorDraw:saved,workbench:{update(value){last=value;}}};const update=controllerFunction('updateSelectionCount',env);update();assert.deepEqual(last.selectionActions,{copy:true,cut:true,delete:true});
+ const {siblingWorkflow}=await import('./fixtures/workflow-prepared-fixture.mjs');const root=siblingWorkflow(),saved=structuredClone(Object.values(root.definitions)[0].body);let readOnly=false,last;const canvas={selection:{kind:'node',id:'work'},multi:new Set()},env={current:root,canvas,currentPick:()=>({nodeIds:['work']}),groupMembers:(graph,id)=>Object.values(graph.nodes).filter(node=>node.inGroup===id),graphViews:{readEditor:()=>({prepared:{savedGraph:saved},readOnly,view:{identity:{kind:'instance'},nodePresentation:{}}})},editorDraw:saved,workspacePrepared:null,workflowRuntime:{getNativeWorkflowController:()=>null},operationFor,readNodePresentation,definitionRefKey,workbench:{update(value){last=value;}}};env.canCreateSubgraph=controllerFunction('canCreateSubgraph',env);env.selectionMenuCapabilities=controllerFunction('selectionMenuCapabilities',env);const update=controllerFunction('updateSelectionCount',env);update();assert.deepEqual(last.selectionActions,{copy:true,cut:true,delete:true});
  root.nodes.entry={id:'entry',type:'workflow',operation:'scene-context'};canvas.selection={kind:'node',id:'entry'};env.currentPick=()=>({nodeIds:['entry']});update();assert.deepEqual(last.selectionActions,{copy:false,cut:false,delete:true},'The actual child boundary can be deleted without copying it as an ordinary node');
  root.nodes.rootOnly={id:'rootOnly',type:'workflow',operation:'scene-context'};canvas.selection={kind:'node',id:'rootOnly'};env.currentPick=()=>({nodeIds:['rootOnly']});update();assert.deepEqual(last.selectionActions,{copy:false,cut:false,delete:false},'A root-only node is absent from the actual child scope');
  canvas.selection={kind:'wire',id:'a'};env.currentPick=()=>null;update();assert.equal(last.selectionActions.delete,true);saved.groups={child:{id:'child'}};canvas.selection={kind:'group',id:'child'};update();assert.equal(last.selectionActions.delete,true);

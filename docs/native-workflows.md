@@ -6,15 +6,15 @@ Install from the repository's default branch using the steps below.
 
 ## Start with a unified example
 
-Open a unified example, choose each ordinary model node’s connection in its grey profile bar or Details and configure For Each helper roles in Details, authorize any workflow data documents, then select **Enable Lattice** while that document is open. Start its native generation with ordinary SillyTavern **Send**. It resumes from the completed native Draft and exposes **Review / Publish · Host result** in Preview. Apply preserves the original and adds the chosen new swipe before settling its staged effects. Manual Run to here inspects supported nodes without accepting writes. The [unified guide](unified-workflows.md#apply-an-example-to-story-2) walks through Story-2 on default-user.
+Open a unified example, choose each ordinary model node’s connection in its grey profile bar and configure For Each helper roles in Details. Automatic Workflow Data presets need no setup; authorize custom targets through **Workflow → Configure → Workflow Data…**. Select **Enable Lattice** while that document is open. Start its native generation with ordinary SillyTavern **Send**. It resumes from the completed native Draft and exposes **Review / Publish · Host result** in Preview. Apply preserves the original and adds the chosen new swipe before settling its staged effects. Manual Run to here inspects supported nodes without accepting writes. The [unified guide](unified-workflows.md#apply-an-example-to-story-2) walks through Story-2 on default-user.
 
-A fresh workspace starts with **Unified story workflow**. Opening a graph makes it the active document without changing **Enable Lattice**. Each auxiliary model has an independent connection; Generate Reply uses SillyTavern’s ordinary main connection. Fast Decision requires its configured typed connection in **Tools → Fast connections…**, with explicit threshold and fallback policy.
+A fresh workspace starts with **Unified story workflow**. Opening a graph makes it the active document without changing **Enable Lattice**. Each auxiliary model has an independent connection; Generate Reply uses SillyTavern’s ordinary main connection. Decision uses the same ordinary connection controls as other model nodes.
 
 ## Configure model connections
 
 Install from `https://github.com/MentallyQuill/Lattice` using SillyTavern's Extensions menu, then reload. Update existing installations through Manage Extensions and reload after updating.
 
-Choose an ordinary model node's connection in its grey profile bar or **Details → Connection profile**. **Active SillyTavern model** follows the host's current connection; a saved profile fixes that node's route and sampler preset. The profile's model is the default. Use **Model mode → Override** only when the operation needs a different identifier. For Each helper roles have separate bindings in Details.
+Choose an ordinary model node's connection in its grey profile bar. **Active SillyTavern model** follows the host's current connection; a saved profile fixes that node's route and sampler preset. The profile's model is the default. Use **Details → Advanced model settings → Model mode → Override** only when the operation needs a different identifier. For Each helper roles have separate bindings in Details.
 
 Requests use the operation's own instructions and supplied context. LATTICE does not activate a profile globally or copy the native main prompt into every auxiliary request. Credentials remain in SillyTavern's secret store. Run to here can spend tokens when its dependencies contain model operations; a later Send executes its own preparation rather than reusing a diagnostic result.
 
@@ -66,7 +66,7 @@ Current [remastered examples](../examples/remastered/) are portable schema-3/run
 
 Five stage-specific [library subgraphs](../examples/library/subgraphs/) remain reusable processing definitions. Their pre/post body contracts do not make a standalone executable root. Unsupported roots, package versions, dependencies, cycles and incompatible wires fail before settings change.
 
-Retired roots live in a cold recovery archive containing their original graphs, bindings and active selection. **File → Export archived workflows…** downloads it as JSON; it cannot execute or import as a current workflow. Rebuild needed logic in a new unified graph. Recovery performs no conversion or model requests.
+Retired roots live in a cold recovery archive containing their original graphs, bindings and active selection. **File → Export archived workflows** downloads it as JSON; it cannot execute or import as a current workflow. Rebuild needed logic in a new unified graph. Recovery performs no conversion or model requests.
 
 ## Costs, limits, and troubleshooting
 

@@ -368,7 +368,7 @@
 .pc-root .pc-brand span { display: inline; }
 .pc-root .pc-menubar .pc-close, :root[data-pc-own="1"] .pc-root .pc-menubar .pc-close { background: transparent; color: var(--pc-text); border-color: var(--pc-border); box-shadow: none; }
 .pc-brand img { width: 30px; height: 30px; flex: 0 0 30px; }
-.pc-workspace-menus { display: flex; flex-wrap: wrap; gap: 1px; min-width: 0; }
+.pc-workspace-menus { display: flex; flex-wrap: wrap; gap: 4px; min-width: 0; }
 .pc-workflow-bar { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; padding: 6px 12px; }
 .pc-document-heading { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; min-width: 0; max-width: min(420px, 100%); }
 .pc-document-name { min-width: 0; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -404,12 +404,20 @@
     opacity: .7;
     box-shadow: inset 0 1px 0 #ffffff09, inset 0 -1px 0 #0004;
 }
-.pc-workspace-menu-panel { position: fixed; z-index: 20; width: max-content; max-width: calc(100vw - 8px); min-width: min(210px, calc(100vw - 8px)); max-height: calc(100dvh - 16px); overflow: auto; box-sizing: border-box; padding: 5px; border: 1px solid var(--pc-border); border-radius: 4px; background: var(--pc-panel-solid); box-shadow: inset 0 1px 0 #ffffff0c, 0 8px 20px #0005; }
-.pc-workspace-submenu { z-index: 21; }
-.pc-workspace-menu-panel button { display: flex; align-items: center; gap: 14px; justify-content: space-between; width: 100%; min-height: 32px; text-align: left; white-space: normal; }
-.pc-workspace-menu-panel button span { min-width: 0; overflow-wrap: anywhere; }
-.pc-workspace-menu-panel small { white-space: nowrap; color: var(--pc-muted); }
-.pc-workspace-submenu small { max-width: 180px; white-space: normal; }
+.pc-workspace-menu-panel { position: fixed; z-index: 40; box-sizing: border-box; width: max-content; max-width: calc(100vw - 8px); min-width: min(290px, calc(100vw - 8px)); max-height: calc(100dvh - 8px); overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; padding: 5px; border: 1px solid var(--pc-border); border-radius: 4px; background: var(--pc-panel-solid); box-shadow: inset 0 1px 0 #ffffff0c, 0 8px 20px #0005; }
+.pc-root .pc-flat-menu { min-width: 68px; min-height: 34px; }
+.pc-workspace-menu-panel button { display: grid; grid-template-columns: 18px 14px minmax(0, 1fr) 84px 12px; align-items: center; column-gap: 5px; box-sizing: border-box; width: 100%; min-height: 34px; text-align: left; white-space: normal; }
+.pc-workspace-menu-icon, .pc-workspace-menu-state, .pc-workspace-menu-caret { display: inline-flex; align-items: center; justify-content: center; width: 100%; color: var(--pc-muted); }
+.pc-workspace-menu-icon svg { display: block; width: 18px; height: 18px; }
+.pc-workspace-menu-state { font-size: 11px; color: var(--pc-accent); }
+.pc-workspace-menu-caret { font-size: 20px; }
+.pc-workspace-menu-label { min-width: 0; overflow-wrap: anywhere; }
+.pc-workspace-menu-panel kbd { text-align: right; white-space: nowrap; color: var(--pc-muted); font: inherit; font-size: 11px; }
+.pc-workspace-menu-panel [data-tone="danger"] { color: var(--pc-error); }
+.pc-workspace-menu-separator { height: 1px; margin: 5px 4px; background: var(--pc-border); }
+.pc-workspace-submenu { z-index: 41; }
+@media (pointer: coarse) { .pc-root .pc-workspace-menus .pc-flat-menu, .pc-root .pc-workspace-menu-panel button { min-height: 44px; } }
+@media (max-width: 760px) { .pc-root .pc-flat-menu { min-width: 64px; } .pc-workspace-menu-panel button { grid-template-columns: 18px 14px minmax(0, 1fr) 72px 12px; column-gap: 4px; } }
 .pc-root .pc-flat-menu, .pc-root .pc-workspace-menu-panel button { margin: 0; border: 0; border-radius: 2px; padding: 4px 7px; background: transparent; box-shadow: none; color: inherit; font: inherit; line-height: 1.3; cursor: pointer; }
 .pc-root .pc-flat-menu:hover, .pc-root .pc-flat-menu[aria-expanded="true"], .pc-root .pc-workspace-menu-panel button:hover:enabled { background: color-mix(in srgb, var(--pc-text) 9%, transparent); }
 .pc-root .pc-flat-menu:focus-visible, .pc-root .pc-workspace-menu-panel button:focus-visible, .pc-root .pc-shelf-menu button:focus-visible, .pc-root .pc-family-row:focus-visible { outline: 2px solid var(--pc-accent); outline-offset: -2px; }

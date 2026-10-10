@@ -553,7 +553,7 @@ Choose an existing pinned Data item/result helper in **Configure node**. **Detai
 
 ### Read File
 
-**Both stages; root only; zero calls.** Reads an authorized logical workflow data target in the active user/chat, producing serialized `text`, parsed `document` Data and exact live `reference` Data. Controls: Authorized target, optional Schema/CSV columns, Actor scope (`selected`/`presence`) and Present actor identity. Presence scope adds required exact live presence Data for the configured actor. Selected scope uses the native actor and no authored actor ID. It is distinct from File Input's portable imported snapshot. Authorize targets in **Tools → Workflow Data…**; no arbitrary OS paths are exposed.
+**Both stages; root only; zero calls.** Reads an authorized logical workflow data target in the active user/chat, producing serialized `text`, parsed `document` Data and exact live `reference` Data. Controls: Authorized target, optional Schema/CSV columns, Actor scope (`selected`/`presence`) and Present actor identity. Presence scope adds required exact live presence Data for the configured actor. Selected scope uses the native actor and no authored actor ID. It is distinct from File Input's portable imported snapshot. Authorize targets in **Workflow → Configure → Workflow Data…**; no arbitrary OS paths are exposed.
 
 ### Format
 
@@ -643,6 +643,6 @@ Records must descend unchanged from the actual authorized File/Memory read. Impo
 
 **Both stages; root only; zero calls.** Controls: Actor ID, matching Memory set ID, Target, Repetition, Consume on and physical-key modifiers. Target labels are Reply, Generated swipe, and Reply and generated swipe. Repetition labels are Next matching generation, Once for each generation type, and Until cancelled. Consumption labels are Successful completion and Accepted result.
 
-Its output describes a recall policy. Preview does not queue it. Use the node's context menu or Memory recall controls in Details to Queue recall or Cancel recall. Matching Recall and Shortcut cards show shared green queued or amber pending status. **Node → Memory recall** provides selection/global actions and a grouped overview.
+Its output describes a recall policy. Preview does not queue it. Use the node's context menu or Memory recall controls in Details to Queue recall or Cancel recall. Matching Recall and Shortcut cards show shared green queued or amber pending status. **Workflow → Memory recall** provides selection/global actions and a grouped overview.
 
 Shortcuts skip typing, composition and repeats, reject duplicate physical keys, and expire when their scope or document changes. Queues are ephemeral and excluded from saved workflow data. See [Recall setup and policies](unified-workflows.md#queue-memories-manually-or-recall-them-automatically).

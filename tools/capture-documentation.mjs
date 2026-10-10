@@ -239,7 +239,7 @@ try {
     await shot('node-shelf');
     await page.mouse.move(1400, 20);
     await page.locator('.pc-header').click({ position: { x: 1100, y: 15 } });
-    await page.getByRole('button', { name: 'Node', exact: true }).click();
+    await page.getByRole('menubar', { name: 'Workspace menus' }).getByRole('menuitem', { name: 'Graph', exact: true }).click();
     await page.getByRole('menuitem', { name: 'Add node…', exact: true }).click();
     await shot('node-search');
     await page.keyboard.press('Escape');

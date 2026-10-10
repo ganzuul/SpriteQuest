@@ -13,7 +13,7 @@ async function fixture(name,props,source){const directory=await mkdtemp(join(tmp
  const close=async()=>{if(mounted)await unmount(mounted);host.remove();const path=resolve(directory),rel=relative(resolve(tmpdir()),path);assert.ok(rel&&!rel.startsWith('..')&&!isAbsolute(rel));await rm(path,{recursive:true,force:true});};
  try{const leaf=await compiled(name,directory,source);mounted=mount(leaf.component,{target:host,props});flushSync();await tick();return{host,close,mounted};}catch(error){await close();throw error;}}
 const input=(host,label,value,event='input')=>{const element=host.querySelector('[aria-label="'+label+'"]');assert.ok(element,label);element.value=value;element.dispatchEvent(new dom.window.Event(event,{bubbles:true}));flushSync();return element;};
-const button=(host,label)=>[...host.querySelectorAll('button')].find(element=>element.textContent.trim()===label);
+const button=(host,label)=>[...host.querySelectorAll('button')].find(element=>element.getAttribute('aria-label')===label||element.textContent.trim()===label);
 
 
 
@@ -27,7 +27,7 @@ test('unsaved workflow prompt applies the shared replacement choice',async()=>{
 test('actual Graph menu omits root diagnostics and Tools opens Story documents',async()=>{
  const commands=[],local=[];const state={graphId:'unified',enabled:false,inspectorOpen:true,history:{undo:false,redo:false},selectionCount:0,rootWorkflow:{phase:'unified',busy:false,issues:[]}};
  const f=await fixture('WorkspaceMenus',{state,actions:{command:name=>commands.push(name)},local:name=>local.push(name)});
- try{assert.equal(button(f.host,'Workflows'),undefined);button(f.host,'Graph').click();await tick();flushSync();assert.equal(button(f.host,'Run workflow'),undefined);assert.deepEqual(commands,[]);button(f.host,'Tools').click();await tick();flushSync();assert.equal(button(f.host,'Fast connections…'),undefined);const setup=button(f.host,'Workflow Data…');assert.ok(setup);setup.click();flushSync();assert.deepEqual(local,['story-documents']);}finally{await f.close();}
+ try{assert.equal(button(f.host,'Workflows'),undefined);button(f.host,'Graph').click();await tick();flushSync();assert.equal(button(f.host,'Run workflow'),undefined);assert.deepEqual(commands,[]);button(f.host,'Workflow').click();await tick();flushSync();button(f.host,'Configure').click();await tick();flushSync();assert.equal(button(f.host,'Fast connections…'),undefined);const setup=button(f.host,'Workflow Data…');assert.ok(setup);setup.click();flushSync();assert.deepEqual(local,['story-documents']);}finally{await f.close();}
 });
 
 

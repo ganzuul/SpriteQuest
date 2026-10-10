@@ -30,7 +30,8 @@ async function compiled(name, source) {
     const path = join(directory, name + '.mjs'); await writeFile(path, code);
     return { path, component: (await import(pathToFileURL(path).href)).default };
 }
-const leaf = await compiled('WorkspaceMenus', await readFile(new URL('../ui/WorkspaceMenus.svelte', import.meta.url), 'utf8'));
+const {compiled:compileComponent} = await import('./helpers/svelte-compile.mjs');
+const leaf = await compileComponent('WorkspaceMenus', directory);
 const harness = await compiled('WorkspaceMenuHarness', `<script>import Menus from ${JSON.stringify(pathToFileURL(leaf.path).href)}; let { initial, actions } = $props(); let state = $state.raw(initial); export function update(next) { state = next; }</script><Menus {state} {actions} local={() => {}} />`);
 const settle = async () => { flushSync(); await tick(); flushSync(); };
 const click = async element => { assert.ok(element); element.click(); await settle(); };
@@ -42,31 +43,31 @@ function prepare(root, validBindings = true) {
     assert.equal(result.ok, true, JSON.stringify(result));
     return { token: result.data.workflow, bindingCount: () => bindings };
 }
-const state = (workflow, rootWorkflow) => ({ workflow, ...(rootWorkflow === undefined ? {} : { rootWorkflow }), nativeGraph: workflow.native, history: { undo: false, redo: false }, selectionCount: 0, selectionActions: { copy: false, cut: false, delete: false } });
+const state = (workflow, rootWorkflow) => ({ workflow, ...(rootWorkflow === undefined ? {} : { rootWorkflow }), menuCapabilities:{stop:!!(rootWorkflow ?? workflow).busy}, nativeGraph: workflow.native, history: { undo: false, redo: false }, selectionCount: 0, selectionActions: { copy: false, cut: false, delete: false } });
 async function fixture(initial, command = () => {}) {
     const host = document.createElement('div'); document.body.append(host);
     const mounted = mount(harness.component, { target: host, props: { initial, actions: { command } } }); await settle();
     const menu = () => host.querySelector('[role="menu"]');
-    const item = label => [...menu().querySelectorAll('[role="menuitem"]')].find(element => element.textContent.trim() === label);
-    return { host, item, async open(name = 'Graph') { if (!menu()) await click(host.querySelector('[data-menu="' + name + '"]')); }, async update(next) { mounted.update(next); await settle(); }, async close() { await unmount(mounted); host.remove(); } };
+    const item = label => [...menu().querySelectorAll('[role="menuitem"]')].find(element => element.getAttribute('aria-label') === label);
+    return { host, item, async open(name = 'Workflow') { if (!menu()) await click(host.querySelector('[data-menu="' + name + '"]')); }, async update(next) { mounted.update(next); await settle(); }, async close() { await unmount(mounted); host.remove(); } };
 }
 test('a removed pinned output leaves root controls independent of selection diagnostics', async () => {
     const root=guidance();root.nodes.scratch={id:'scratch',type:'workflow',operation:'compose',outputKind:'text',sections:[]};
     const first=prepare(root),pinned=projectPreparedWorkflow(first.token).targets.find(target=>target.nodeId==='scratch');
     delete root.nodes.scratch;const current=prepare(root),rootView=projectPreparedWorkflow(current.token),selected=projectPreparedWorkflow(current.token,{selectedTarget:pinned,pinnedPreview:pinned});
     assert.ok(selected.issues.length);const count=current.bindingCount(),f=await fixture(state(selected,rootView));
-    try{await f.open('Graph');assert.equal(f.item('Stop workflow').disabled,true);assert.equal(f.item('Run workflow'),undefined);assert.equal(f.item('Assign unified workflow'),undefined);assert.equal(current.bindingCount(),count);}finally{await f.close();}
+    try{await f.open('Workflow');assert.equal(f.item('Stop workflow').disabled,true);assert.equal(f.item('Run workflow'),undefined);assert.equal(f.item('Assign unified workflow'),undefined);assert.equal(current.bindingCount(),count);}finally{await f.close();}
 });
 test('a busy target session governs Graph Stop while the selected projection is idle', async () => {
     const root=guidance(),prepared=prepare(root),idle=projectPreparedWorkflow(prepared.token);let release,sessionState,cancelled=0,runs=0;
     const session=createWorkflowSession({rootCurrent:()=>root,runEpoch:()=>1,active:()=>true,changed:next=>sessionState=next,runtime:()=>({runTarget:async actual=>{assert.equal(actual,root);runs++;return new Promise(resolve=>release=resolve);},cancel:()=>cancelled++})});
     const running=session.run({target:{workflowId:root.id,instancePath:[],nodeId:'on-send',portId:'activation'}});assert.equal(sessionState.busy,true);
     const calls=[],f=await fixture(state(idle,projectPreparedWorkflow(prepared.token,sessionState)),command=>{calls.push(command);if(command==='stop-workflow')session.cancel();});
-    try{await f.open('Graph');assert.equal(f.item('Stop workflow').disabled,false);assert.equal(f.item('Run workflow'),undefined);await click(f.item('Stop workflow'));assert.deepEqual(calls,['stop-workflow']);assert.equal(cancelled,1);assert.equal(runs,1);await f.update(state(idle,projectPreparedWorkflow(prepared.token,sessionState)));await f.open('Graph');assert.equal(f.item('Stop workflow').disabled,true);}finally{release({ok:false,error:{message:'Run cancelled.'}});await running;await f.close();}
+    try{await f.open('Workflow');assert.equal(f.item('Stop workflow').disabled,false);assert.equal(f.item('Run workflow'),undefined);await click(f.item('Stop workflow'));assert.deepEqual(calls,['stop-workflow']);assert.equal(cancelled,1);assert.equal(runs,1);await f.update(state(idle,projectPreparedWorkflow(prepared.token,sessionState)));await f.open('Workflow');assert.equal(f.item('Stop workflow').disabled,true);}finally{release({ok:false,error:{message:'Run cancelled.'}});await running;await f.close();}
 });
 test('unavailable roots expose no collection or assignment commands', async () => {
     const f=await fixture({history:{undo:false,redo:false},selectionCount:0,selectionActions:{}});
-    try{await f.open('Graph');assert.equal(f.item('Stop workflow').disabled,true);assert.equal(f.item('Run workflow'),undefined);assert.equal(f.item('Assign unified workflow'),undefined);assert.equal(f.host.querySelector('[data-menu="Workflows"]'),null);}finally{await f.close();}
+    try{await f.open('Workflow');assert.equal(f.item('Stop workflow').disabled,true);assert.equal(f.item('Run workflow'),undefined);assert.equal(f.item('Assign unified workflow'),undefined);assert.equal(f.host.querySelector('[data-menu="Workflows"]'),null);}finally{await f.close();}
 });
 test('File offers archived workflow export only when recoverable originals exist', async () => {
     const root=guidance(),view=state(projectPreparedWorkflow(prepare(root).token)),calls=[],f=await fixture(view,command=>calls.push(command));

@@ -1,11 +1,11 @@
-import { rootCommand, expectRootBusy } from './workflow-commands.mjs';
 import { test, expect } from '@playwright/test';
 import { chooseNodeProfile } from './details-helpers.mjs';
 
 async function previewMenu(page, command) {
-    await page.getByRole('button', { name: 'Preview', exact: true }).focus();
+    await page.getByRole('menubar', { name: 'Workspace menus' }).getByRole('menuitem', { name: 'View', exact: true }).focus();
     await page.keyboard.press('ArrowDown');
-    const item = page.getByRole('menu', { name: 'Preview', exact: true }).getByRole('menuitem', { name: command, exact: true });
+    const item = page.getByRole('menu', { name: 'View', exact: true }).getByRole('menuitemcheckbox', { name: 'Show preview', exact: true });
+    await expect(item).toHaveAttribute('aria-checked', command === 'Collapse preview' ? 'true' : 'false');
     await expect(item).toBeVisible(); await item.focus(); await page.keyboard.press('Enter');
 }
 
@@ -79,7 +79,7 @@ for (const action of ['Copy', 'Cut', 'Delete selection']) test(`Edit menu suppor
         Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: text => { window.groupClipboard = text; return Promise.resolve(); } } });
         return group.id;
     }, ids);
-    await page.getByRole('button', { name: 'Edit', exact: true }).click();
+    await page.getByRole('menubar', { name: 'Workspace menus' }).getByRole('menuitem', { name: 'Edit', exact: true }).click();
     const command = page.getByRole('menuitem', { name: new RegExp('^' + action + '(?:$| )') });
     await expect(command).toBeEnabled(); await command.click();
     if (action === 'Copy') {
@@ -95,13 +95,13 @@ test('Edit menu allows named wire deletion and current node edits', async ({ pag
     await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
     await page.evaluate(() => window.canvasHarness.reset());
     const wire = await page.evaluate(() => { const h = window.canvasHarness, id = Object.keys(h.graph.wires)[0]; h.canvas.select({ kind: 'wire', id }); return id; });
-    await page.getByRole('button', { name: 'Edit', exact: true }).click();
+    await page.getByRole('menubar', { name: 'Workspace menus' }).getByRole('menuitem', { name: 'Edit', exact: true }).click();
     await expect(page.getByRole('menuitem', { name: /^Copy/ })).toBeDisabled();
     await expect(page.getByRole('menuitem', { name: /^Cut/ })).toBeDisabled();
     const deletion = page.getByRole('menuitem', { name: /^Delete selection/ }); await expect(deletion).toBeEnabled(); await deletion.click();
     expect(await page.evaluate(id => !!window.canvasHarness.graph.wires[id], wire)).toBe(false);
     await page.evaluate(() => { const h = window.canvasHarness; h.canvas.select({ kind: 'node', id: Object.keys(h.graph.nodes)[0] }); });
-    await page.getByRole('button', { name: 'Edit', exact: true }).click();
+    await page.getByRole('menubar', { name: 'Workspace menus' }).getByRole('menuitem', { name: 'Edit', exact: true }).click();
     for (const name of [/^Copy/, /^Cut/, /^Delete selection/]) await expect(page.getByRole('menuitem', { name })).toBeEnabled();
 });
 
@@ -109,12 +109,12 @@ test('Inspect selection reveals Details and the root tab has quote-orange keyboa
     await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
     const ids = await page.evaluate(() => window.canvasHarness.reset());
     await page.evaluate(id => window.canvasHarness.canvas.select({ kind: 'node', id }), ids[0]);
-    await page.getByRole('button', { name: 'Node', exact: true }).click();
-    await page.getByRole('menuitem', { name: 'Inspect selection', exact: true }).click();
+    await page.getByRole('menubar', { name: 'Workspace menus' }).getByRole('menuitem', { name: 'Graph', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Details for selection', exact: true }).click();
     await expect(page.locator('.pc-inspector')).toBeVisible();
     await page.getByRole('button', { name: 'Toggle inspector', exact: true }).click();
-    await page.getByRole('button', { name: 'Node', exact: true }).click();
-    await page.getByRole('menuitem', { name: 'Inspect selection', exact: true }).click();
+    await page.getByRole('menubar', { name: 'Workspace menus' }).getByRole('menuitem', { name: 'Graph', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Details for selection', exact: true }).click();
     await expect(page.locator('.pc-inspector')).toBeVisible();
     await page.getByRole('separator', { name: 'Resize preview' }).focus(); await page.keyboard.press('Tab');
     const tab = page.locator('.pc-graph-tab[aria-selected="true"]');
@@ -128,7 +128,7 @@ for (const panel of ['Examples', 'Help']) test(`${panel} dialog suppresses backg
         const h = window.canvasHarness; h.canvas.select({ kind: 'node', id });
         return { nodes: Object.keys(h.graph.nodes), selection: h.canvas.selection, multi: [...h.canvas.multi], history: h.H.peek(h.graph) };
     }, ids[0]);
-    await page.getByRole('button', { name: panel === 'Examples' ? 'File' : 'Help', exact: true }).click();
+    await page.getByRole('menubar', { name: 'Workspace menus' }).getByRole('menuitem', { name: panel === 'Examples' ? 'File' : 'Help', exact: true }).click();
     await page.getByRole('menuitem', { name: panel === 'Examples' ? 'Open examples…' : 'Workspace guide', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Close panel', exact: true })).toBeFocused();
     for (const key of ['Control+a', 'Control+z', 'Delete', 'Control+x', 'Control+g', 'Control+d']) await page.keyboard.press(key);
@@ -137,17 +137,17 @@ for (const panel of ['Examples', 'Help']) test(`${panel} dialog suppresses backg
     await page.keyboard.press('Escape'); await expect(page.locator('.pc-root')).toHaveClass(/pc-open/);
 });
 
-test('flat workspace menus support keyboard navigation, Escape and outside dismissal', async ({ page }) => {
+test('consolidated workspace menus support keyboard navigation, Escape and outside dismissal', async ({ page }) => {
     await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
     const labels = await page.locator('.pc-flat-menu').allTextContents();
-    expect(labels).toEqual(['File', 'Edit', 'Graph', 'Node', 'Preview', 'Tools', 'Help']);
-    const file = page.getByRole('button', { name: 'File', exact: true });
+    expect(labels).toEqual(['File', 'Edit', 'View', 'Graph', 'Workflow', 'Help']);
+    const file = page.getByRole('menuitem', { name: 'File', exact: true });
     await file.focus(); await page.keyboard.press('ArrowDown');
     await expect(page.getByRole('menuitem', { name: 'New workflow', exact: true })).toBeFocused();
     await page.keyboard.press('ArrowRight');
     await expect(page.getByRole('menu', { name: 'Edit', exact: true })).toBeVisible();
     await page.keyboard.press('Escape');
-    await expect(page.getByRole('button', { name: 'Edit', exact: true })).toBeFocused();
+    await expect(page.getByRole('menubar', { name: 'Workspace menus' }).getByRole('menuitem', { name: 'Edit', exact: true })).toBeFocused();
     await expect(page.getByRole('dialog', { name: 'Lattice', exact: true })).toBeVisible();
     await file.click(); await page.locator('.pc-brand').click();
     await expect(page.getByRole('menu', { name: 'File', exact: true })).toHaveCount(0);
@@ -191,7 +191,7 @@ for (const width of [1024, 736, 360, 320]) test(`workspace fits ${width}px and l
     expect(requests.some(url => url.includes('/assets/bricolage-grotesque.ttf'))).toBe(true);
     expect(requests.every(url => new URL(url).hostname === '127.0.0.1')).toBe(true);
     await expect(page.locator('.pc-brand span')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Help', exact: true })).toBeInViewport();
+    await expect(page.getByRole('menubar', { name: 'Workspace menus' }).getByRole('menuitem', { name: 'Help', exact: true })).toBeInViewport();
     await page.locator('[data-family="Input"]').focus(); await page.keyboard.press('ArrowRight');
     const menu = await page.locator('.pc-family-menu').boundingBox(), graph = await page.locator('.pc-canvas-area').boundingBox();
     expect(menu.x).toBeGreaterThanOrEqual(graph.x); expect(menu.x + menu.width).toBeLessThanOrEqual(graph.x + graph.width + 1);

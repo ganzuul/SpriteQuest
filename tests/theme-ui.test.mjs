@@ -4,7 +4,8 @@
 import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
 const dom = new JSDOM(`<body><div id="chat"></div><div id="drawer"></div></body>`, { pretendToBeVisual: true });
-Object.assign(globalThis, { window: dom.window, document: dom.window.document, CSS: { escape: s => s }, CustomEvent: dom.window.CustomEvent, HTMLElement: dom.window.HTMLElement, Event: dom.window.Event, MouseEvent: dom.window.MouseEvent });
+Object.assign(globalThis, { window: dom.window, document: dom.window.document, CSS: { escape: s => s }, CustomEvent: dom.window.CustomEvent, Element: dom.window.Element, HTMLElement: dom.window.HTMLElement, Event: dom.window.Event, MouseEvent: dom.window.MouseEvent });
+for (const key of ['Node','Text','Comment','Document','HTMLMediaElement','HTMLButtonElement','HTMLInputElement','HTMLSelectElement','MutationObserver']) Object.defineProperty(globalThis,key,{configurable:true,value:dom.window[key]});
 globalThis.requestAnimationFrame = f => setTimeout(f, 0);
 globalThis.getComputedStyle = dom.window.getComputedStyle;
 globalThis.toastr = { info() {}, warning() {}, success() {}, error() {} };
@@ -94,10 +95,10 @@ assert.equal(T.currentTheme().preset, 'lattice');
 assert.equal(T.currentTheme().custom.error, '#123456');
 assert.match(box.querySelector('.pc-th-msg').textContent, /Now using/);
 
-// the workspace Tools menu opens the same editor
+// the workspace View menu opens the same editor
 UI.open();
 await new Promise(r => setTimeout(r, 30));
-document.querySelector('[data-menu="Tools"]').click();
+document.querySelector('[data-menu="View"]').click();
 await new Promise(r => setTimeout(r, 10));
 [...document.querySelectorAll('.pc-workspace-menu-panel button')].find(button => button.textContent.includes('Theme and colours')).click();
 const pop = document.querySelector('.pc-theme-pop');
