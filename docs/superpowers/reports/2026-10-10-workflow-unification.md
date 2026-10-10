@@ -49,4 +49,4 @@ Story time advances from explicit or validated authored evidence, not wall-clock
 
 Implementation ran in the managed codex/workflow-unification worktree. Primary design changes were preserved in 993d988, then merged into it. The clean details-panel worktree at 1343e3c was already incorporated into main. Searchable node profile changes from 1a8b1d1 are integrated with unified/private/typed/helper semantics after conflict resolution and combined validation. Both original design files retain their original bytes.
 
-At this verification checkpoint, the complete tree is ready for the authorized main fast-forward and push. Completion requires a successful push and GitHub verification of the exact main SHA; the goal remains active until that evidence is recorded.
+The authorized main fast-forward and push completed successfully. GitHub CLI verified implementation commit [ceb3de8](https://github.com/MentallyQuill/Lattice/commit/ceb3de8a96654c8d602c6550059b74ada47c258a) exactly on main. Both other worktree branches are ancestors of main and all checkouts are clean. The subsequent documentation checkpoint records that verified result without changing the tested source.

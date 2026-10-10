@@ -24,3 +24,5 @@ These detailed design documents consolidate the unified-workflow discussion, inc
 | --- | --- |
 | [Workflow Unification Summary](design/workflow-unification-summary.md) | One workflow across preparation, native ST generation, reply processing, publication, file updates, recall, story time, and reusable progression; runtime, host integration, UI, and open decisions |
 | [Expanded Nodes](design/expanded-nodes.md) | Detailed node concepts and contracts, triggers, Decision/Fast Decision, character/item recipes, file updates, hotkey recall, clocks/intervals, general state structures for XP and relationship pacing, and ten additional story flows |
+
+Implemented requirements and validation are recorded in the [requirement evidence](design/workflow-unification-requirements.md) and [release report](superpowers/reports/2026-10-10-workflow-unification.md).

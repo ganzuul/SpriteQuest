@@ -1,6 +1,6 @@
 # Workflow unification implementation progress
 
-Goal created: 2026-10-10. Status: implementation validated; final main merge and remote verification pending.
+Goal created: 2026-10-10. Status: complete; implementation and all repository changes are merged to main, pushed and verified on GitHub.
 
 The checklist below reflects the current release. Later checkpoint narratives preserve the chronological implementation history; their remaining-work descriptions refer to those earlier commits. The final validation checkpoint at the end supersedes them.
 
@@ -43,7 +43,7 @@ XP and relationship intensity are recipes built from general structures. Prefer 
 - [ ] Complete UI controls, shelf entries/modes, previews, run stages, storage/provider setup, visible arming and settlement indicators, accessibility and browser validation.
 - [ ] Complete unified examples and documentation for all discussed flows; clarify shipped behavior and supported storage/host integration rather than leaving proposal-only features.
 - [ ] Required automated checks, installation/live host validation, task and whole-branch reviews, built assets/version consistency.
-- [ ] Reconcile main and other worktree changes, resolve conflicts, verify the complete integrated tree, merge to main, push origin/main, and verify the remote commit.
+- [x] Reconcile main and other worktree changes, resolve conflicts, verify the complete integrated tree, merge to main, push origin/main, and verify the remote commit.
 
 ## Initial architectural findings
 
@@ -136,4 +136,8 @@ Final independent reviews closed private-transport callback races with a separat
 
 Installed SillyTavern default-user validation passed both Received-first and Ended-first orders through 72 production modules. One run prepares guidance, resumes a synthetic native reply, revises and appends notes, reviews before writes, preserves the original swipe, and appends the accepted journal once; repeated Apply adds no effects. Actual native helpers and event emitter are exercised. Provider generation and save acknowledgements are synthetic, so paid provider behavior and durable real-host persistence are not claimed. Story-2 was untouched.
 
-The original two design documents remain byte-for-byte equal to the primary checkout. Detailed capability boundaries and validation are recorded in [the release report](../superpowers/reports/2026-10-10-workflow-unification.md). The authorized main merge, push and exact GitHub SHA verification are the only remaining goal actions.
+The original two design documents remain byte-for-byte equal to the primary checkout. Detailed capability boundaries and validation are recorded in [the release report](../superpowers/reports/2026-10-10-workflow-unification.md). The authorized main merge, push and exact GitHub SHA verification are complete.
+
+## Verified main integration
+
+The integrated implementation commit ceb3de8a96654c8d602c6550059b74ada47c258a was fast-forwarded into the primary main checkout and pushed to origin/main. GitHub CLI returned that exact SHA after the push. The primary and managed worktree were clean and shared tree b1cd9f9e9d4a81f2d02e1b9d4d760398c28056b9. Both the profile-picker and details-panel branches are ancestors of main; their worktrees are clean. No repository changes were discarded. This final documentation checkpoint records the verified integration without altering the tested implementation.
