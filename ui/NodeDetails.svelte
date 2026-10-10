@@ -339,10 +339,6 @@
             {#if !view.boundary && (view.alias || view.title || view.canonicalTitle) !== view.canonicalTitle}<small data-canonical-title>Canonical type: {view.canonicalTitle}</small>{/if}
             <small>{view.boundary ? 'Subgraph ' + view.boundary.direction : view.family + ' · ' + view.phase + ' phase'}</small>
         </div>
-        {#if actions.duplicate || actions.remove}<details class="pc-detail-commands"><summary aria-label="Node commands" title="Node commands">⋯</summary><div class="pc-detail-command-list">
-            {#if !view.boundary && actions.duplicate}<button type="button" disabled={view.readOnly} onclick={() => { if (view && !view.readOnly) actions.duplicate?.(selection(view)); }}>Duplicate</button>{/if}
-            {#if actions.remove}<button type="button" class="pc-detail-danger" disabled={view.readOnly} onclick={() => { if (view && !view.readOnly) actions.remove?.(selection(view)); }}>Delete</button>{/if}
-        </div></details>{/if}
     </header>
     {#if view.phaseEditable}<label>Workflow stage<select aria-label="Workflow stage" value={view.phase} disabled={view.readOnly || !actions.editPhase} onchange={event => { const phase = event.currentTarget.value as 'pre' | 'post'; void perform('phase', false, captured => actions.editPhase!(captured, phase)); }}><option value="pre">Preparation · before Generate Reply</option><option value="post">Response · after Generate Reply</option></select></label>{#if errors.phase}<p role="alert" class="pc-detail-error">{errors.phase}</p>{/if}{/if}
     {#if view.operation === 'fast-decision'}<p><button type="button" onclick={() => actions.openFastConnections?.()} disabled={!actions.openFastConnections}>Configure Fast connections…</button></p>{/if}
@@ -443,10 +439,7 @@
     input[type='checkbox'] { accent-color: var(--pc-accent); }
     .pc-detail-check { display: flex; align-items: center; gap: 6px; } button { min-height: 27px; padding: 4px 8px; border: 1px solid var(--pc-border); border-radius: 2px; background: var(--pc-control); color: var(--pc-text); font: inherit; font-size: 11px; cursor: pointer; }
     button:hover:not(:disabled) { background: color-mix(in srgb, var(--pc-text) 10%, var(--pc-control)); } :is(button, input, select):focus-visible { outline: 2px solid var(--pc-accent); outline-offset: 1px; }
-    :disabled { opacity: .55; cursor: default; } .pc-detail-error { color: var(--pc-error); font-size: 11px; overflow-wrap: anywhere; } .pc-detail-danger { color: var(--pc-error); }
+    :disabled { opacity: .55; cursor: default; } .pc-detail-error { color: var(--pc-error); font-size: 11px; overflow-wrap: anywhere; }
     .pc-detail-port { display: flex; justify-content: space-between; gap: 8px; margin: 8px 0; font-size: 11px; } summary { cursor: pointer; font-size: 11px; color: var(--pc-muted); overflow-wrap: anywhere; }
     .pc-detail-actions { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; } .pc-detail-empty { color: var(--pc-muted); }
-    .pc-detail-commands { position: relative; flex: none; padding-top: 2px; } .pc-detail-commands summary { padding: 2px 5px; list-style: none; font-size: 18px; line-height: 20px; } .pc-detail-commands summary::-webkit-details-marker { display: none; }
-    .pc-detail-command-list { position: absolute; top: 28px; right: 0; z-index: 2; display: grid; gap: 3px; min-width: 90px; padding: 4px; border: 1px solid var(--pc-border); background: var(--pc-panel-solid); }
-    .pc-detail-command-list button { text-align: left; background: transparent; border: 0; }
 </style>

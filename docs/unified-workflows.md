@@ -10,11 +10,11 @@ The normal SillyTavern connection writes the main reply. Other model nodes have 
 
 1. In SillyTavern, select **default-user**, open **Story-2**, and select the character who will produce the native reply. User, chat and character selection determine the workflow's live sources and private stores.
 2. Open LATTICE beside the chat's Send button, or enter `/lattice`. A fresh workspace starts with **Unified story workflow**, disabled and unassigned. Existing installations retain their saved selection.
-3. Choose **File → Open examples…** or **Workflows → Workflow examples…**. Open a unified example whose goal fits your story. Each opening creates an independent editable copy; it does not send a request, assign the workflow or enable LATTICE. The example's description contains its setup and inspection instructions.
+3. Choose **File → Examples…**. Open a unified example whose goal fits your story. Each opening creates an independent editable copy; it does not send a request, assign the workflow or enable LATTICE. The example's description contains its setup and inspection instructions.
 4. Adapt its literal instructions, actor/item identities, schemas and document targets. Example names and actors are authored demonstration material. A loaded character's canonical ID is normally `character:<avatar filename>`; a display name alone is not a live actor identity.
 5. Choose every ordinary text-model node’s connection in its grey profile bar or **Details → Connection profile**. Use **Active SillyTavern model** to follow the current host connection/model, or choose a saved Connection Manager profile for a fixed connection. Leave **Model mode → Use profile model** unless that particular node needs an explicit model identifier. Configure any **For Each → Helper model bindings** as well; assigning the extraction node's profile does not assign its confirmation helper.
-6. If the example reads or writes documents, authorize its named targets in **Tools → Workflow Data…** first. If it uses Fast Decision, configure **Tools → Fast connections…** and select that connection in the node. Resolve the graph's validation and binding issues before sending.
-7. Choose **Workflows → Assign unified workflow**, then enable **Arm**. Assignment chooses the host workflow; Arm enables integration. Merely selecting a graph in the editor does not assign it.
+6. If the example reads or writes documents, authorize its named targets in **Workflow → Configure → Workflow Data…** first. If it uses Fast Decision, configure **Workflow → Configure → Fast connections…** and select that connection in the node. Resolve the graph's validation and binding issues before sending.
+7. Choose **Workflow → Assign workflow**, then enable **Arm**. Assignment chooses the host workflow; Arm enables integration. Merely selecting a graph in the editor does not assign it.
 8. Return to SillyTavern and **Send** your next player message normally. The workflow runs the necessary preparation, resumes from the completed native Draft, and records its response-stage results. A generated swipe can run the same assigned workflow when its configured sources and target policies permit it.
 9. Open Preview and select the desired **Review / Publish · Host result**. Compare the original, proposed body, appended sections, model trace and staged consequences. Choose **Apply reviewed candidate** or **Reject candidate**.
 
@@ -80,7 +80,7 @@ Portable exports omit local saved-profile identifiers and credentials, including
 
 **Fast Decision** uses a configured typed Jev, Laya or compatible SystemOne connection. It does not turn an arbitrary chat model into a typed provider or install a local server automatically.
 
-1. Open **Tools → Fast connections…** and create a named connection ID.
+1. Open **Workflow → Configure → Fast connections…** and create a named connection ID.
 2. For **Jev API**, enter the typed model and session API key. The endpoint is fixed to `https://api.typesafe.ai/v1/systemone`.
 3. For **Laya** or **Compatible typed API**, enter the complete `/v1/systemone` endpoint, using HTTPS or HTTP on localhost. Start and configure that service separately. A session key is optional for an unauthenticated local service.
 4. Save, select the Fast Decision node, and choose its **Fast connection**. Session keys are not exported or saved in workflow JSON; re-enter them after restarting SillyTavern.
@@ -126,7 +126,7 @@ Native generation currently has one selected actor. Actor Context allows separat
 
 ## Authorize Workflow Data and preserve its structure
 
-**Tools → Workflow Data…** manages logical targets for the actual user and chat. A target such as `souls.json` is a scoped workflow data document identifier, not an arbitrary operating-system file path. Canonical document content lives in LATTICE's chat metadata store.
+**Workflow → Configure → Workflow Data…** manages logical targets for the actual user and chat. A target such as `souls.json` is a scoped workflow data document identifier, not an arbitrary operating-system file path. Canonical document content lives in LATTICE's chat metadata store.
 
 Create an authorization with a unique target ID, display name, format, visibility and initial template. Formats are **JSON**, **JSON Lines**, **CSV**, **Plain text** and **Markdown**. CSV needs declared columns. Actor-private authorization also needs its canonical actor ID. Hidden documents cannot be exposed to public model/notes branches by changing a graph label.
 
@@ -210,7 +210,7 @@ A **Recall** node reads checked stored records through an authorized Read File o
 
 For a file memory set, create an actor-private JSON target, Read File it in the correct actor scope, and route the record list to Recall's `records` pin. Set the same actor and `memorySetId` on Recall and **Hotkey Arm**. Wire Recall's Guidance causally into Generate Reply for a pre-generation reminder. Verify the actor's live presence independently. For keyword activation, connect the current Player Event Source to Recall's source pin; for event activation, supply genuine confirmed occurrences. A reply-stage trigger can affect response processing or a later generation, not the native prompt that already ran.
 
-Open **Tools → Recall arms…** after assigning the unified workflow and enabling LATTICE. It shows the live user/chat/actor, each configured memory set, its shortcut, remaining reply/swipe eligibility and pending generations. Use **Arm** and **Disarm** here, or the configured shortcut. An armed badge opens the same panel. Running Hotkey Arm in Preview does not arm it.
+Open **Workflow → Configure → Recall arms…** after assigning the unified workflow and enabling LATTICE. It shows the live user/chat/actor, each configured memory set, its shortcut, remaining reply/swipe eligibility and pending generations. Use **Arm** and **Disarm** here, or the configured shortcut. An armed badge opens the same panel. Running Hotkey Arm in Preview does not arm it.
 
 Hotkeys use physical key codes, such as Control+Shift+R. They require Control, Alt or Meta for letter/digit keys, or a function key. They do not fire while typing in inputs, textareas, selects or editable text, during composition or key repeat. Duplicate active shortcuts require different combinations.
 
@@ -229,7 +229,7 @@ Native Recall currently serves the selected native actor. Multiple present actor
 
 ## Move an existing pre/post setup
 
-Saved **native-pre** and **native-post** workflows remain available. **Workflows → New legacy pre workflow / New legacy post workflow** creates explicit tools, and the assigned legacy phase keeps its existing behavior. Selecting a legacy assignment replaces the unified host assignment; separate assignments are not a way to stack a second host generation pipeline on top of the unified workflow.
+Saved **native-pre** and **native-post** workflows remain available in the workflow selector, and the assigned legacy phase keeps its existing behavior. **File → New workflow** creates a unified workflow. Selecting a legacy assignment replaces the unified host assignment; separate assignments are not a way to stack a second host generation pipeline on top of the unified workflow.
 
 There is no automatic legacy converter. Create a new unified workflow or open an updated example, then reuse suitable operations or pinned subgraphs explicitly:
 

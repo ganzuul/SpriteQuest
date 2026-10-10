@@ -13,7 +13,7 @@ async function fixture(name,props,source){const directory=await mkdtemp(join(tmp
  const close=async()=>{if(mounted)await unmount(mounted);host.remove();const path=resolve(directory),rel=relative(resolve(tmpdir()),path);assert.ok(rel&&!rel.startsWith('..')&&!isAbsolute(rel));await rm(path,{recursive:true,force:true});};
  try{const leaf=await compiled(name,directory,source);mounted=mount(leaf.component,{target:host,props});flushSync();await tick();return{host,close,mounted};}catch(error){await close();throw error;}}
 const input=(host,label,value,event='input')=>{const element=host.querySelector('[aria-label="'+label+'"]');assert.ok(element,label);element.value=value;element.dispatchEvent(new dom.window.Event(event,{bubbles:true}));flushSync();return element;};
-const button=(host,label)=>[...host.querySelectorAll('button')].find(element=>element.textContent.trim()===label);
+const button=(host,label)=>[...host.querySelectorAll('button')].find(element=>element.getAttribute('aria-label')===label||element.textContent.trim()===label);
 const view={userId:'default-user',connections:[],issue:''};
 
 test('real Fast setup keeps session password separate and clears it before awaiting Save',async()=>{
@@ -38,10 +38,10 @@ test('unsaved workflow prompt defaults to unified and can explicitly choose a le
  try{const select=f.host.querySelector('[aria-label="New workflow type"]');assert.ok(select);assert.equal(select.value,'unified');input(f.host,'New workflow type','post','change');button(f.host,'Discard').click();flushSync();assert.deepEqual(chosen,{choice:'discard',phase:'post'});}finally{await f.close();}
 });
 
-test('actual Workflows menu offers unified assignment and Tools opens Fast connections',async()=>{
+test('actual Workflow menu offers unified assignment and Configure opens Fast connections',async()=>{
  const commands=[],local=[];const state={graphs:[],graphId:'unified',armed:false,inspectorOpen:true,history:{undo:false,redo:false},selectionCount:0,rootWorkflow:{phase:'unified',assigned:false,busy:false,issues:[]}};
  const f=await fixture('WorkspaceMenus',{state,actions:{command:name=>commands.push(name)},local:name=>local.push(name)});
- try{button(f.host,'Workflows').click();await tick();flushSync();const assign=button(f.host,'Assign unified workflow');assert.ok(assign);assign.click();flushSync();assert.deepEqual(commands,['assign-workflow-phase']);button(f.host,'Tools').click();await tick();flushSync();const setup=button(f.host,'Fast connections…');assert.ok(setup);setup.click();flushSync();assert.deepEqual(local,['fast-connections']);}finally{await f.close();}
+ try{button(f.host,'Workflow').click();await tick();flushSync();const assign=button(f.host,'Assign workflow');assert.ok(assign);assign.click();flushSync();assert.deepEqual(commands,['assign-workflow-phase']);button(f.host,'Workflow').click();await tick();flushSync();button(f.host,'Configure').click();await tick();flushSync();const setup=button(f.host,'Fast connections…');assert.ok(setup);setup.click();flushSync();assert.deepEqual(local,['fast-connections']);}finally{await f.close();}
 });
 
 
@@ -64,7 +64,7 @@ test('Fast setup discards an awaited completion after the active user changes',a
 test('actual Workbench opens Fast setup and destroys its password on Escape or controller close',async()=>{
  let refreshed=0,escaped=0;const f=await fixture('Workbench',{actions:{fastConnections:{refresh(){refreshed++;},save(){return{ok:true};}}}});
  const listener=()=>escaped++;document.addEventListener('keydown',listener);
- try{f.mounted.update({fastConnections:view});flushSync();button(f.host,'Tools').click();await tick();flushSync();button(f.host,'Fast connections…').click();await tick();flushSync();assert.equal(refreshed,1);assert.ok(f.host.querySelector('[role="dialog"][aria-label="Fast connections"]'));
+ try{f.mounted.update({fastConnections:view});flushSync();button(f.host,'Workflow').click();await tick();flushSync();button(f.host,'Configure').click();await tick();flushSync();button(f.host,'Fast connections…').click();await tick();flushSync();assert.equal(refreshed,1);assert.ok(f.host.querySelector('[role="dialog"][aria-label="Fast connections"]'));
  const password=input(f.host,'Session API key','SECRET');password.dispatchEvent(new dom.window.KeyboardEvent('keydown',{key:'Escape',bubbles:true}));flushSync();await tick();assert.equal(escaped,0);assert.equal(f.host.querySelector('[aria-label="Session API key"]'),null);
  f.mounted.update({fastConnectionsActive:true});flushSync();await tick();assert.equal(f.host.querySelector('[aria-label="Session API key"]').value,'');input(f.host,'Session API key','SECRET');f.mounted.update({fastConnectionsActive:false});flushSync();await tick();assert.equal(f.host.querySelector('[aria-label="Session API key"]'),null);
  }finally{document.removeEventListener('keydown',listener);await f.close();}

@@ -3,8 +3,8 @@ import { openEmber, measureEmber, assertEmber, colorChannels } from './ember-fix
 
 test('the actual theme picker offers the eight approved themes and shows readable accessible pin cues', async ({ page }, testInfo) => {
     await openEmber(page);
-    await page.getByRole('button', { name: 'Tools', exact: true }).click();
-    await page.getByRole('menuitem', { name: 'Theme and colours', exact: true }).click();
+    await page.getByRole('menubar', { name: 'Workspace menus' }).getByRole('menuitem', { name: 'View', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Theme and colours…', exact: true }).click();
     const picker = page.locator('.pc-theme-pop');
     await expect(picker).toBeVisible();
     expect(await picker.locator('.pc-th-name').allTextContents()).toEqual(['Ember', 'Lattice', 'Ash', 'Graphite', 'Slate', 'Obsidian', 'Harbor', 'Signal']);
@@ -22,8 +22,8 @@ test('the actual theme picker offers the eight approved themes and shows readabl
 
 test('example thumbnails follow accessible palettes and shapes, then restore Ember without editing authored comment colors', async ({ page }, testInfo) => {
     await openEmber(page);
-    await page.getByRole('button', { name: 'File', exact: true }).click();
-    await page.getByRole('menuitem', { name: 'Open examples…', exact: true }).click();
+    await page.getByRole('menubar', { name: 'Workspace menus' }).getByRole('menuitem', { name: 'File', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Examples…', exact: true }).click();
     const examples = page.getByRole('dialog', { name: 'Examples', exact: true });
     await expect(examples).toBeVisible();
     const authoredColors = await examples.locator('.pc-example-comment rect').evaluateAll(elements => elements.map(e => e.style.stroke));

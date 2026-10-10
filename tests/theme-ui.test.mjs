@@ -94,10 +94,10 @@ assert.equal(T.currentTheme().preset, 'lattice');
 assert.equal(T.currentTheme().custom.error, '#123456');
 assert.match(box.querySelector('.pc-th-msg').textContent, /Now using/);
 
-// the workspace Tools menu opens the same editor
+// the workspace View menu opens the same editor
 UI.open();
 await new Promise(r => setTimeout(r, 30));
-document.querySelector('[data-menu="Tools"]').click();
+document.querySelector('[data-menu="View"]').click();
 await new Promise(r => setTimeout(r, 10));
 [...document.querySelectorAll('.pc-workspace-menu-panel button')].find(button => button.textContent.includes('Theme and colours')).click();
 const pop = document.querySelector('.pc-theme-pop');

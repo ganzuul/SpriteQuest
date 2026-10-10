@@ -187,6 +187,10 @@ export function createNativeWorkflowController(ports) {
     function releaseRun(run) {if(!run||run.resourcesReleased)return;run.resourcesReleased=true;run.modelScopes?.clear();run.modelAddresses=new WeakMap();recall.releaseRun(run);run.memorySession?.release();run.memorySession=null;run.storySession?.release();run.storySession=null;run.draftEvidence?.release();run.draftEvidence=null;run.draftSources?.clear();delete run.nativeContext;for(const session of run.fileSessions?.values()??[])session.release();run.fileSessions?.clear();run.fileSession?.release();run.fileSession=null;run.actorContext?.release();run.actorContext=null;for(const session of run.actorMemorySessions?.values()??[])session.release();run.actorMemorySessions?.clear();run.stagedFiles.length=0;run.memoryIntents.clear();run.memoryTerminals.clear();}
     let epoch=0, active=null, result=null, automaticResult=null, applying=false, internalEvents=0, unsubscribe=null;
     let generationSequence=0, generation={dryRun:false,type:'normal'};
+    const activityListeners=new Set();
+    const activity=()=>active ? Object.freeze({busy:true,graph:active.originalGraph,graphId:Object.getOwnPropertyDescriptor(active.originalGraph ?? {},'id')?.value,runId:active.runId,native:active.native}) : null;
+    const publishActivity=()=>{const value=activity();for(const listener of activityListeners)observe(listener,value);};
+    const subscribeActivity=listener=>{if(typeof listener!=='function')return ()=>{};activityListeners.add(listener);observe(listener,activity());return ()=>activityListeners.delete(listener);};
     const keys=new Set(), sources=new Map(), candidates=new Map(), stopped=new WeakMap();
     const memoryAdapter=createNativeMemoryAdapter({context,selectActor:ports.selectIntrospectionActor,isSettled:(message,index,c)=>!stoppedRevision(message) && !incompleteStream(c,index)});
     const recall=createNativeRecallController({getActive:()=>{const graph=ports.getGraph?.('unified');if(ports.isEnabled?.()===false||!graph)return null;const c=context(),actor=nativeMemoryScope(c,ports.selectIntrospectionActor);return actor.ok?{graph,signature:workflowSignature(graph),scope:{userId:ports.userId?.(),chatId:identity(c).chatId,workflowId:graph.id,actorId:actor.data.actorId}}:null;},...(typeof ports.registerRecallHotkey==='function'?{registerHotkey:ports.registerRecallHotkey}:{})});
@@ -205,6 +209,7 @@ export function createNativeWorkflowController(ports) {
         return (stopped.get(m) ?? []).some(record=>record.revision.swipeId===revision.swipeId && (record.failedStarted!==null?record.failedStarted===revision.started:same(record.revision,revision)));
     };
     const notify=(value,run=null)=>{
+        publishActivity();
         const previous=result;
         if(!value.recording && previous?.recording) {
             // A failed attempt has no run identity. Preserve the old diagnostic separately.
@@ -239,7 +244,7 @@ export function createNativeWorkflowController(ports) {
         for(const entry of candidates.values())entry.settlement?.reject();releaseRun(active);
         epoch++; sources.clear(); candidates.clear(); clear();
         if(active) {active.controller.abort(reason); const abort=active.abortPrimary;active.abortPrimary=null;try{abort?.(true);}catch{/* Native abort callback is best effort. */}}
-        active=null;
+        active=null;publishActivity();
     };
     const bindingChecks=(run,entries)=>entries.map(({address,binding,capability})=>({address,binding,...(capability==='typed-decision'?{capability}:{}),...run.bindingContexts.get(binding)}));
     const bindingFresh=(run)=>{
@@ -276,7 +281,7 @@ export function createNativeWorkflowController(ports) {
     const start=(graph,native=false,abortPrimary=null,target)=>{
         cancel('Superseded by a new workflow');
         const run={epoch,runId:token(),controller:new AbortController(),originalGraph:graph,native,abortPrimary,pending:true,target,mode:target===undefined?'root':'target',pendingSources:new Map(),sceneSources:[],promptSources:new Map(),bindingContexts:new Map(),modelAddresses:new WeakMap(),modelScopes:new Map(),bindingChecks:[],reviewHandles:[],memoryTerminals:new Map(),memoryIntents:new Map(),memorySession:null,memoryCommit:null,invalidMemoryEvidence:false,fileSession:null,fileSessions:new Map(),fileReferences:new WeakMap(),actorContext:null,actorMemorySessions:new Map(),stagedFiles:[],retainResources:false,resourcesReleased:false};
-        active=run;return run;
+        active=run;publishActivity();return run;
     };
     function prepareRun(run,plan,controls,options) {
         run.cancel=controls.cancel;
@@ -767,7 +772,7 @@ export function createNativeWorkflowController(ports) {
         const run=start(graph,true,abort),value=await execute(run,{phase:'pre',chat});
         if(active!==run)return value;
         if(/^STALE/.test(value.error?.code??'')){cancel('Source changed during preparation');return value;}
-        if(value.error?.code==='INTERNAL_TOOL_CONTINUATION'){active=null;return {ok:true,skipped:true,reason:'internal-tool-continuation'};}
+        if(value.error?.code==='INTERNAL_TOOL_CONTINUATION'){active=null;publishActivity();return {ok:true,skipped:true,reason:'internal-tool-continuation'};}
         if(!value.ok) {
             active=null;
             if(value.error.code==='ABORTED'){run.abortPrimary?.(true);run.abortPrimary=null;return notify(value,run);}
@@ -931,7 +936,7 @@ export function createNativeWorkflowController(ports) {
         unsubscribe=()=>{cancel('Controller disposed');for(const [event,fn]of subscriptions)(c.eventSource.removeListener ?? c.eventSource.off)?.call(c.eventSource,event,fn);unsubscribe=null;recall.dispose();};
         return unsubscribe;
     }
-    const controller={beforeGenerate,runPre,runPost,runTarget,apply,reject,syncRecall:recall.sync,statusRecall:recall.status,armRecall:recall.arm,disarmRecall:recall.disarm,settlementStatus,retryPersistence,candidateStatus,cancel,lastResult:()=>result,lastAutomaticResult:()=>automaticResult,subscribe,dispose:()=>{if(unsubscribe)unsubscribe();else recall.dispose();}};
+    const controller={beforeGenerate,runPre,runPost,runTarget,apply,reject,syncRecall:recall.sync,statusRecall:recall.status,armRecall:recall.arm,disarmRecall:recall.disarm,settlementStatus,retryPersistence,candidateStatus,cancel,activity,subscribeActivity,lastResult:()=>result,lastAutomaticResult:()=>automaticResult,subscribe,dispose:()=>{if(unsubscribe)unsubscribe();else recall.dispose();activityListeners.clear();}};
     retentionInspectors.set(controller,()=>{
         const runs=new Set([active,...[...sources.values(),...candidates.values()].map(entry=>entry.run)].filter(Boolean));
         const recordings=new Set([result?.recording,automaticResult?.result.recording,...[...runs].map(run=>run.publicResult?.recording),...[...candidates.values()].map(entry=>entry.applied?.recording)].filter(Boolean));

@@ -21,7 +21,12 @@ test('a settings-free launch opens the current disabled unassigned zero-request 
     await expect(page.locator('.pc-node-output,.pc-port-key,.pc-port-stage,.pc-tok')).toHaveCount(0);
     await expect(page.getByLabel('Workflow mode',{exact:true})).toHaveCount(0);
     const before=await page.evaluate(()=>JSON.stringify(window.canvasHarness.graph));
-    await page.locator('.pc-root-run').click(); await expect(page.locator('.pc-root')).toContainText('Assign and enable this unified workflow, then Send in SillyTavern.');
+    await expect(page.locator('.pc-root-run')).toHaveCount(0);
+    await expect(page.locator('.pc-send-guidance')).toHaveText('Generate with Send');
+    await expect(page.locator('.pc-send-guidance')).toHaveAttribute('title', /Send in SillyTavern/);
+    await page.getByRole('menubar', { name: 'Workspace menus' }).getByRole('menuitem', { name: 'Workflow', exact: true }).click();
+    await expect(page.getByRole('menu', { name: 'Workflow', exact: true }).getByRole('menuitem', { name: 'Run workflow', exact: true })).toHaveCount(0);
+    await page.keyboard.press('Escape');
     await expect(page.locator('.pc-run-meter-label')).toHaveText('Not run');
     expect(await page.evaluate(()=>JSON.stringify(window.canvasHarness.graph))).toBe(before);
     expect(await page.evaluate(()=>window.canvasHarness.providerCalls())).toBe(0);

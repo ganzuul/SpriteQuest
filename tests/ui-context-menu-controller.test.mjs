@@ -23,9 +23,10 @@ function fixture(graph = siblingWorkflow(), path = ['second']) {
     const env = { current: graph, graphViews: session, workspacePrepared: prepared.data, editorDraw: projectEditorDraw(session.readEditor()),
         workspaceRevision: 0, workflowState: { busy: false }, pinnedPreview: null, selectedPreview: null,
         editorCaptures: new WeakMap(), isOpen: () => true, activeEditRoot: () => graph, projectPreparedWorkflow,
+        workflowRuntime: { getNativeWorkflowController: () => ({ activity: () => null }) },
         updateWorkflowProjection() {}, workbench: { revealPreview() {} }, applyPreviewReview() {}, rejectPreviewReview() {},
     };
-    for (const name of ['captureEditor', 'editorCurrent']) env[name] = actual(name, env);
+    for (const name of ['captureEditor', 'editorCurrent', 'runPreviewHere']) env[name] = actual(name, env);
     const start = source.indexOf('const outputPreviewActions = {'), end = source.indexOf('\n};', start) + 3;
     env.outputPreviewActions = Function('env', 'with(env){' + source.slice(start, end) + ';return outputPreviewActions;}')(env);
     env.canvasPreviewMenuItems = actual('canvasPreviewMenuItems', env);

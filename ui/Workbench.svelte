@@ -22,6 +22,9 @@
     import NodeShelf from './NodeShelf.svelte';
     import ExamplesBrowser from './ExamplesBrowser.svelte';
     import ImportReview from './ImportReview.svelte';
+    import WorkspaceReport from './WorkspaceReport.svelte';
+    import manifest from '../manifest.json';
+    import type { DetailTarget } from './detail-types';
     import type { WorkbenchView, WorkbenchActions } from './types';
     let { actions }: { actions: WorkbenchActions } = $props();
     let view = $state.raw<WorkbenchView>({ graphs: [], graphId: '', armed: false, inspectorOpen: true, history: { undo: false, redo: false, undoTitle: 'Nothing to undo', redoTitle: 'Nothing to redo', note: '', showNote: false }, camera: { x: 0, y: 0, zoom: 1, mode: 'select' }, selectionCount: 0 });
@@ -40,26 +43,45 @@
         if (input && !input.disabled) { input.focus({ preventScroll: true }); input.select(); }
     }
     const storageKey = 'lattice.workspace.preview';
-    function savedPane() { try { const data = JSON.parse(localStorage.getItem(storageKey) || 'null'); return { height: Number.isFinite(data?.height) ? Math.max(90, Math.min(600, data.height)) : 240, collapsed: data?.collapsed === true }; } catch { return { height: 240, collapsed: false }; } }
+    function savedPane() { try { const data = JSON.parse(localStorage.getItem(storageKey) || 'null'); return { height: Number.isFinite(data?.height) ? Math.max(90, Math.min(600, data.height)) : 240, collapsed: data?.collapsed === true, shelfOpen: data?.shelfOpen !== false }; } catch { return { height: 240, collapsed: false, shelfOpen: true }; } }
     const initial = savedPane();
     let previewHeight = $state(initial.height), collapsed = $state(initial.collapsed), maxHeight = $state(500);
+    let shelfOpen = $state(initial.shelfOpen);
     let detailsDraft = $state<number | null>(null), detailsMax = $state(520);
     let detailsWidth = $derived(Math.max(220, Math.min(detailsMax, detailsDraft ?? view.detailsWidth ?? 258)));
     function commitDetails(width: number) { detailsDraft = null; view = { ...view, detailsWidth: width }; actions.resizeDetails?.(width); }
     let overlay = $state('');
+    const overlayTitle = $derived(({examples:'Examples', 'run-details':'Run details', 'fast-connections':'Fast connections', 'story-documents':'Workflow Data', 'recall-arms':'Recall arms', 'validate-workflow':'Workflow validation', 'node-reference':'Node reference', shortcuts:'Keyboard shortcuts', about:'About Lattice'} as Record<string,string>)[overlay] ?? 'Workspace guide');
+    const rootWorkflow = $derived(view.rootWorkflow ?? view.workflow);
+    const referenceUrl = $derived(actions.logoUrl ? new URL('../docs/node-reference.md', actions.logoUrl).href : '');
+    const guideUrl = $derived(actions.logoUrl ? new URL('../README.md', actions.logoUrl).href : '');
     let dialog = $state<HTMLDivElement>(null!);
     let overlayAnchor: HTMLElement | null = null;
     let overlayEpoch = 0;
     let examplesScroll = $state(0);
     let shelf: { openSearch(): void };
-    function persist() { try { localStorage.setItem(storageKey, JSON.stringify({ height: previewHeight, collapsed })); } catch { /* Private storage may be disabled. */ } }
+    function persist() { try { localStorage.setItem(storageKey, JSON.stringify({ height: previewHeight, collapsed, shelfOpen })); } catch { /* Private storage may be disabled. */ } }
     function resizeStart() { actions.resizeStart?.(); }
     function collapse(value: boolean) { resizeStart(); collapsed = value; persist(); }
     export function revealPreview() { collapse(false); }
+    function previewCommand(command: string) {
+        const preview = view.outputPreview;
+        if (!preview) return;
+        if (command === 'follow-preview' || (command === 'pin-preview' && preview.pinned)) { actions.outputPreview?.follow?.(); return; }
+        const choice = preview.choices.find(item => item.key === preview.selectedKey);
+        if (!choice || preview.status === 'removed') return;
+        const target: DetailTarget = structuredClone(choice.target);
+        if (command === 'pin-preview') actions.outputPreview?.pin?.(preview.sourceKey, target);
+        else if (command === 'run-preview' && preview.runHere?.enabled && !preview.busy && !rootWorkflow?.ownedBusy) { collapse(false); actions.outputPreview?.runHere?.(preview.sourceKey, target); }
+    }
     async function local(command: string) {
         if (command === 'show-preview') collapse(false);
         else if (command === 'collapse-preview') collapse(true);
-        else if (command === 'add-node') shelf.openSearch();
+        else if (command === 'toggle-preview') collapse(!collapsed);
+        else if (command === 'toggle-shelf') { resizeStart(); shelfOpen = !shelfOpen; persist(); }
+        else if (command === 'reset-layout') { resizeStart(); previewHeight = 240; collapsed = false; shelfOpen = true; commitDetails(258); if (!view.inspectorOpen) actions.command('inspector'); persist(); }
+        else if (command === 'add-node') { shelfOpen = true; persist(); await tick(); shelf.openSearch(); }
+        else if (['follow-preview','pin-preview','run-preview'].includes(command)) previewCommand(command);
         else { overlayAnchor = document.activeElement as HTMLElement; if (command === 'examples') actions.refreshExamples?.(); if (command === 'fast-connections') actions.fastConnections?.refresh?.(); if (command === 'story-documents') actions.storyDocuments?.refresh?.(); if (command === 'recall-arms') actions.recallArms?.refresh?.(); const epoch = ++overlayEpoch; overlay = command; await tick(); if (epoch === overlayEpoch && overlay === command) dialog?.querySelector<HTMLButtonElement>('button')?.focus(); }
     }
     function closeOverlay() { overlayEpoch++; overlay = ''; overlayAnchor?.focus({ preventScroll: true }); }
@@ -87,7 +109,7 @@
         event.stopPropagation();
         if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); closeOverlay(); }
         if (event.key === 'Tab') {
-            const elements = [...dialog.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex="0"]')];
+            const elements = [...dialog.querySelectorAll<HTMLElement>('a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex="0"]')];
             const first = elements[0], last = elements.at(-1);
             if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
             if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
@@ -102,13 +124,13 @@
     });
 </script>
 <div class="pc-root pc-native-workspace" class:pc-native-flat={view.nativeFlatCanvas} role="dialog" aria-modal="true" aria-label="Lattice" data-pc-workbench="svelte" style:--pc-details-width={`${detailsWidth}px`} bind:this={root}>
-    <Toolbar state={view} {actions} {local} bind:this={toolbar} />
+    <Toolbar state={view} {actions} {local} panels={{previewOpen: !collapsed, shelfOpen}} bind:this={toolbar} />
     {#if view.recallArms?.nodes.some(node=>node.armed)}<button type="button" class="pc-recall-badge" onclick={()=>local('recall-arms')}>Recall armed · {view.recallArms.nodes.filter(node=>node.armed).length}</button>{/if}
     <!-- svelte-ignore a11y_no_noninteractive_tabindex (Keyboard users need to scroll the stacked canvas and Details panels.) -->
     <div class="pc-body" role="region" aria-label="Workspace panels" tabindex="0" bind:this={body}>
         <div class="pc-stage" bind:this={stage}>
             <section class="pc-preview-pane" class:pc-preview-collapsed={collapsed} aria-label="Output preview" style:--pc-preview-height={`${Math.min(previewHeight, maxHeight)}px`}>
-                <header class="pc-preview-pane-head"><strong>Preview</strong><button type="button" class="pc-btn menu_button" aria-expanded={!collapsed} onclick={() => collapse(!collapsed)}>{collapsed ? 'Expand preview' : 'Collapse preview'}</button></header>
+                <header class="pc-preview-pane-head"><strong>Preview</strong><button type="button" class="pc-btn menu_button" aria-label={collapsed ? 'Expand preview' : 'Collapse preview'} title={collapsed ? 'Expand preview' : 'Collapse preview'} aria-expanded={!collapsed} onclick={() => collapse(!collapsed)}>{collapsed ? '▾' : '▴'}</button></header>
                 <div class="pc-preview-content" hidden={collapsed}>
                     <OutputPreview view={view.outputPreview ?? null} actions={actions.outputPreview} collapse={() => collapse(true)} />
                 </div>
@@ -120,12 +142,12 @@
                 <div class="pc-workspace-run"><RunMeter view={view.runMeter ?? null} open={() => { overlay = 'run-details'; }} /></div>
                 <div class="pc-canvas-host" aria-label="Node canvas" bind:this={canvasHost}></div>
                 {#if view.nativeDiagnostic}<p class="pc-native-diagnostic" role="alert">{view.nativeDiagnostic}</p>{/if}
-                <NodeShelf view={view.workflow} choices={view.nativeChoices} choose={actions.chooseNative} shelfSubgraph={actions.shelfSubgraph} readOnly={view.readOnly} add={(id, at) => actions.addNode?.(id, at)} bind:this={shelf} />
+                <div hidden={!shelfOpen}><NodeShelf view={view.workflow} choices={view.nativeChoices} choose={actions.chooseNative} shelfSubgraph={actions.shelfSubgraph} readOnly={view.readOnly} add={(id, at) => actions.addNode?.(id, at)} bind:this={shelf} /></div>
             </div>
         </div>
         {#if view.inspectorOpen}{#key view.graphViews?.active.key ?? view.graphId}<DetailsDivider width={detailsWidth} max={detailsMax} start={resizeStart} preview={(width) => detailsDraft = width} change={commitDetails} />{/key}{/if}
         <div class="pc-inspector pc-workspace-details" hidden={!view.inspectorOpen} bind:this={inspector}>
-            <header class="pc-details-heading"><strong>Details</strong><button type="button" onclick={() => actions.managePortals?.()}>Portals</button></header>
+            <header class="pc-details-heading"><strong>Details</strong><button type="button" aria-label="Close Details" title="Close Details" onclick={() => actions.command('inspector')}>×</button></header>
             {#if view.commentDetails}
                 {@const details = view.commentDetails}
                 <CommentDetails comment={details.comment} onPatch={patch => actions.commentDetails?.patch(details.selection, patch)} onCommand={command => actions.commentDetails?.command(details.selection, command)} />
@@ -135,9 +157,9 @@
     </div>
     {#if overlay}
         <div class="pc-workspace-overlay">
-            <div class="pc-workspace-dialog" class:pc-examples-dialog={overlay === 'examples'} role="dialog" tabindex="-1" aria-modal="true" aria-label={overlay === 'examples' ? 'Examples' : overlay === 'run-details' ? 'Run details' : overlay === 'fast-connections' ? 'Fast connections' : overlay === 'story-documents' ? 'Workflow Data' : overlay === 'recall-arms' ? 'Recall arms' : 'Workspace guide'} bind:this={dialog} onkeydown={overlayKeys} onpaste={(event) => event.stopPropagation()}>
-                <header><h2>{overlay === 'examples' ? 'Examples' : overlay === 'run-details' ? 'Run details' : overlay === 'fast-connections' ? 'Fast connections' : overlay === 'story-documents' ? 'Workflow Data' : overlay === 'recall-arms' ? 'Recall arms' : 'Workspace guide'}</h2><button type="button" class="pc-btn menu_button" aria-label="Close panel" onclick={closeOverlay}>×</button></header>
-                {#if overlay === 'examples'}<ExamplesBrowser examples={view.examples} issue={view.examplesIssue} retry={actions.refreshExamples} scrollTop={examplesScroll} scroll={top => examplesScroll = top} open={openExample} />{:else if overlay === 'fast-connections'}<FastConnections view={view.fastConnections ?? { userId: '', connections: [], issue: 'Fast connection settings are unavailable.' }} actions={actions.fastConnections} close={closeOverlay} />{:else if overlay === 'recall-arms'}<RecallArms view={view.recallArms ?? {scope:null,nodes:[],issue:'Recall state is unavailable.'}} actions={actions.recallArms} close={closeOverlay} />{:else if overlay === 'story-documents'}<StoryDocuments view={view.storyDocuments ?? { key: '', revision: '', scope: { userId: '', chatId: '' }, documents: [], issue: 'Workflow Data setup is unavailable.' }} actions={actions.storyDocuments} close={closeOverlay} />{:else if overlay === 'run-details'}<RunDetails view={view.runDetails ?? null} actions={actions.runDetails} />{:else}<p>Browse node families on the floating shelf. Middle mouse pans the graph; the wheel zooms around the pointer. Use the divider or its arrow keys to resize Preview.</p><p>Open examples and assign a unified workflow from Workflows. Its preparation stage feeds Generate Reply, and its response stage reshapes the captured Draft before Review and Publish. Legacy pre and post workflows remain selectable. Select model nodes to choose a text connection profile in Details. Fast Decision uses a configured typed connection from Tools › Fast connections and an optional separately selected Decision fallback. Arm enables the assigned host workflow. Unified generation starts with Send in SillyTavern; Run to here tests supported nodes. Run tests legacy workflows explicitly.</p><p>File › Open workflow chooses a JSON file and opens a separate workflow. Save workflow keeps committed edits and connections in SillyTavern. Export workflow JSON downloads a portable sharing copy without local connections. Import into graph reviews a same-phase fragment before one undoable insertion.</p><p>Select nodes and right-click Create Subgraph to open their connected body in a new tab. Double-click a subgraph to open it. Add Input and Output nodes from the Subgraphs shelf inside an editable subgraph, then name and configure their ports in Details.</p><p>Right-click a subgraph block and choose Add to Subgraphs to save it for reuse. Right-click a saved shelf entry to delete it. Saving updates the shelf only when you choose to save; existing placed copies stay unchanged. Portals connect pins through named references. Preview artifact tabs show results for the selected node; Run to here checks the request bound before running. Apply reviews the fresh result against the full root workflow.</p>{/if}
+            <div class="pc-workspace-dialog" class:pc-examples-dialog={overlay === 'examples'} role="dialog" tabindex="-1" aria-modal="true" aria-label={overlayTitle} bind:this={dialog} onkeydown={overlayKeys} onpaste={(event) => event.stopPropagation()}>
+                <header><h2>{overlayTitle}</h2><button type="button" class="pc-btn menu_button" aria-label="Close panel" onclick={closeOverlay}>×</button></header>
+                {#if overlay === 'examples'}<ExamplesBrowser examples={view.examples} issue={view.examplesIssue} retry={actions.refreshExamples} scrollTop={examplesScroll} scroll={top => examplesScroll = top} open={openExample} />{:else if overlay === 'fast-connections'}<FastConnections view={view.fastConnections ?? { userId: '', connections: [], issue: 'Fast connection settings are unavailable.' }} actions={actions.fastConnections} close={closeOverlay} />{:else if overlay === 'recall-arms'}<RecallArms view={view.recallArms ?? {scope:null,nodes:[],issue:'Recall state is unavailable.'}} actions={actions.recallArms} close={closeOverlay} />{:else if overlay === 'story-documents'}<StoryDocuments view={view.storyDocuments ?? { key: '', revision: '', scope: { userId: '', chatId: '' }, documents: [], issue: 'Workflow Data setup is unavailable.' }} actions={actions.storyDocuments} close={closeOverlay} />{:else if overlay === 'run-details'}<RunDetails view={view.runDetails ?? null} actions={actions.runDetails} />{:else}<WorkspaceReport panel={overlay} workflow={rootWorkflow} version={manifest.version} {referenceUrl} {guideUrl} />{/if}
             </div>
         </div>
     {/if}

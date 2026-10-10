@@ -6,6 +6,7 @@ import { join, resolve, relative, isAbsolute } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { compile } from 'svelte/compiler';
 import { JSDOM } from 'jsdom';
+import { compiled } from './helpers/svelte-compile.mjs';
 
 const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true, url: 'https://lattice.test' });
 globalThis.window = dom.window; globalThis.document = dom.window.document;
@@ -69,22 +70,10 @@ test('Details separator keyboard keeps the canvas space clamp and ignores unrela
 
 test('Workbench clamps Details to leave a useful canvas and cancels a draft when changing graph views', async () => {
     const directory = await mkdtemp(join(tmpdir(), 'lattice-details-resize-')), host = document.createElement('div'); document.body.append(host);
-    const files = new Map(); let instance; const committed = [];
-    async function component(name) {
-        if (files.has(name)) return files.get(name);
-        const sourceURL = new URL('../ui/' + name + '.svelte', import.meta.url), source = await readFile(sourceURL, 'utf8');
-        const output = compile(source, { filename: name + '.svelte', generate: 'client', css: 'injected' });
-        assert.deepEqual(output.warnings.filter(warning => warning.code.startsWith('a11y')), [], name + ' accessibility');
-        const file = join(directory, name + '.mjs'); files.set(name, file);
-        for (const match of output.js.code.matchAll(/from ['"]\.\/([^'"]+)\.svelte['"]/g)) await component(match[1]);
-        const code = output.js.code.replace(/(['"])(svelte(?:\/[^'"]*)?)\1/g, (_, quote, specifier) => JSON.stringify(specifier === 'svelte' ? client : import.meta.resolve(specifier)))
-            .replace(/(['"])(\.\/([^'"]+)\.svelte)\1/g, (_, quote, specifier, child) => JSON.stringify(pathToFileURL(files.get(child)).href))
-            .replace(/(['"])(\.\.\/src\/[^'"]+)\1/g, (_, quote, specifier) => JSON.stringify(new URL(specifier, sourceURL).href));
-        await writeFile(file, code); return file;
-    }
+    let instance; const committed = [];
     try {
-        const file = await component('Workbench');
-        instance = mount((await import(pathToFileURL(file).href)).default, { target: host, props: { actions: { pickGraph() {}, arm() {}, command() {}, mode() {}, zoom() {}, fitSelection() {}, resizeDetails: width => committed.push(width) } } }); flushSync(); await tick();
+        const leaf = await compiled('Workbench', directory);
+        instance = mount(leaf.component, { target: host, props: { actions: { pickGraph() {}, arm() {}, command() {}, mode() {}, zoom() {}, fitSelection() {}, resizeDetails: width => committed.push(width) } } }); flushSync(); await tick();
         const body = host.querySelector('.pc-body'), root = instance.getParts().root;
         Object.defineProperty(body, 'clientWidth', { configurable: true, value: 690 });
         instance.update({ graphId: 'first', detailsWidth: 480 }); window.dispatchEvent(new dom.window.Event('resize')); flushSync(); await tick();

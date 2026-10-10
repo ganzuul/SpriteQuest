@@ -14,6 +14,7 @@ import { createWorkflowSession, prepareWorkflowProjection, projectPreparedWorkfl
 import { createGraphViewSession } from '../src/ui/graph-view-session.js?v=0.26.0';
 import { prepareWorkspaceViews, prepareLibraryViews, projectWorkspacePanels } from '../src/ui/workspace-preparation.js?v=0.26.0';
 import { readNodePresentation } from '../src/ui/node-palette.js?v=0.26.0';
+import { compiled as compileComponent } from './helpers/svelte-compile.mjs';
 
 const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true });
 globalThis.window = dom.window; globalThis.document = dom.window.document;
@@ -74,8 +75,8 @@ function adapter(schema = 3, suppliedRoot = null) {
     const library = prepareLibraryViews(root.id, { [definitionRefKey(definition)]: definition }); assert.equal(library.ok, true, JSON.stringify(library));
     prepared.data.navigation.push(...library.data.navigation); prepared.data.preparedViews.push(...library.data.preparedViews);
     const graphViews = createGraphViewSession({ root, activationId: 'preview-review-' + schema, ...prepared.data }).data; assert.ok(graphViews);
-    const env = { workflowRuntime: { getNativeWorkflowController: () => runtime }, current: root, graphViews, workspacePrepared: prepared.data, rootRunEpoch: 1, workspaceRevision: 1, uiEpoch: 1, editorCaptures: new WeakMap(), workspaceIssue: '', selectedPreview: null, pinnedPreview: null, selectedKind: 'node', selected: root.nodes['apply-reply'], workflowProjection: null, workflowProjectionGraph: null, workflowState: { result: null, reviewHandles: [], busy: false, availability: 'current', applyIssue: '' }, canvas: null, canvasTraceRows: null, editorDraw: null, isOpen: () => true, settings: () => ({}), projectPreparedWorkflow, projectWorkspacePanels, workbench: { update(value) { env.panels = value; } } };
-    for (const name of ['recallSetupView', 'captureEditor', 'editorCurrent', 'samePreviewTerminal', 'currentRootPreviewTerminal', 'currentPreviewHandle', 'applyPreviewReview', 'rejectPreviewReview', 'workflowView', 'updateWorkflowProjection']) { const fn = controllerFunction(name, env); if (fn) env[name] = fn; }
+    const env = { workflowRuntime: { getNativeWorkflowController: () => runtime }, current: root, graphViews, workspacePrepared: prepared.data, rootRunEpoch: 1, workspaceRevision: 1, uiEpoch: 1, editorCaptures: new WeakMap(), workspaceIssue: '', selectedPreview: null, pinnedPreview: null, selectedKind: 'node', selected: root.nodes['apply-reply'], workflowProjection: null, workflowProjectionGraph: null, workflowState: { result: null, reviewHandles: [], busy: false, availability: 'current', applyIssue: '' }, canvas: { selection: null, multi: new Set() }, canvasTraceRows: null, editorDraw: null, isOpen: () => true, settings: () => ({}), projectPreparedWorkflow, projectWorkspacePanels, workbench: { update(value) { env.panels = value; } } };
+    for (const name of ['recallSetupView', 'captureEditor', 'editorCurrent', 'samePreviewTerminal', 'currentRootPreviewTerminal', 'currentPreviewHandle', 'applyPreviewReview', 'rejectPreviewReview', 'workflowView', 'selectionMenuCapabilities', 'updateWorkflowProjection', 'runPreviewHere']) { const fn = controllerFunction(name, env); if (fn) env[name] = fn; }
     env.workflowSession = createWorkflowSession({ runtime: () => runtime, rootCurrent: () => env.current, runEpoch: () => env.rootRunEpoch, active: () => env.isOpen(), changed(state) { const authorityChanged = state.result !== env.workflowState.result || state.reviewHandles !== env.workflowState.reviewHandles; env.workflowState = state; if (authorityChanged) env.workspacePrepared.workflow = prepareWorkflowProjection(env.current, { ...(prepared.data.planner ? { planner: prepared.data.planner } : {}), result: state.result, candidateStatus: candidate => runtime.candidateStatus(candidate) }); env.updateWorkflowProjection(); } });
     const actions = controllerActions(env);
     return { root, env, actions, graphViews, runtime, counters, context, message, definition, run: () => env.workflowSession.run(), refresh: () => env.updateWorkflowProjection(), terminal: { kind: 'terminal', address: { workflowId: root.id, instancePath: [], nodeId: 'apply-reply' } } };
@@ -114,7 +115,7 @@ async function workbenchFixture(actions) {
         compiled.set(sourceURL.href, pathToFileURL(target).href);
         let code = filename.endsWith('.svelte') ? compile(source, { filename, generate: 'client', css: 'injected' }).js.code : source;
         for (const match of [...code.matchAll(/\bfrom\s+(['"])(\.{1,2}\/[^'"]+)\1/g)]) {
-            const url = new URL(match[2], sourceURL), destination = url.pathname.endsWith('.svelte') ? await module(url) : url.href;
+            const url = new URL(match[2], sourceURL), destination = url.pathname.endsWith('.svelte') ? pathToFileURL((await compileComponent(url.pathname.split('/').at(-1).replace('.svelte',''), directory, undefined, url)).path).href : url.href;
             code = code.replace(match[0], 'from ' + JSON.stringify(destination));
         }
         code = code.replace(/(['"])(svelte(?:\/[^'"]*)?)\1/g, (_, quote, specifier) => JSON.stringify(specifier === 'svelte' ? clientURL : import.meta.resolve(specifier)));
@@ -131,7 +132,7 @@ test('the actual workspace opens examples without host work', async () => {
     try {
         mounted.bridge.update(f.env.panels); const before = structuredClone(f.root), counters = { ...f.counters };
         [...mounted.host.querySelectorAll('button')].find(button => button.textContent === 'File').click(); await (await import(clientURL)).tick(); flushSync();
-        [...mounted.host.querySelectorAll('[role="menuitem"]')].find(button => button.textContent === 'Open examples…').click(); await (await import(clientURL)).tick(); flushSync();
+        mounted.host.querySelector('[role="menuitem"][aria-label="Examples…"]').click(); await (await import(clientURL)).tick(); flushSync();
         const dialog = mounted.host.querySelector('[role="dialog"][aria-label="Examples"]'); assert.ok(dialog, 'Examples opens the actual current picker');
         assert.equal(mounted.host.querySelectorAll('.pc-output-preview').length, 1); assert.deepEqual(f.root, before); assert.deepEqual(f.counters, counters); assert.equal(f.counters.requests, 0);
     } finally { await mounted.close(); }

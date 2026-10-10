@@ -6,18 +6,18 @@ async function load(page) {
     await page.goto('/tests/browser/harness.html');
     await page.waitForFunction(() => !!window.canvasHarness);
 }
-async function openExamples(page, menu = 'File') {
-    await page.getByRole('button', { name: menu, exact: true }).click();
-    await page.getByRole('menuitem', { name: menu === 'File' ? 'Open examples…' : 'Workflow examples…', exact: true }).click({ timeout: 2500 });
+async function openExamples(page) {
+    await page.getByRole('menubar', { name: 'Workspace menus' }).getByRole('menuitem', { name: 'File', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Examples…', exact: true }).click();
     return page.getByRole('dialog', { name: 'Examples', exact: true });
 }
 
 test('File examples is directly below Open workflow and opens the compact complete example picker', async ({ page }, testInfo) => {
     await load(page);
-    await page.getByRole('button', { name: 'File', exact: true }).click();
+    await page.getByRole('menubar', { name: 'Workspace menus' }).getByRole('menuitem', { name: 'File', exact: true }).click();
     const items = await page.getByRole('menu', { name: 'File', exact: true }).getByRole('menuitem').allTextContents();
-    expect(items[items.findIndex(item => item.includes('Open workflow…')) + 1]).toContain('Open examples…');
-    await page.getByRole('menuitem', { name: 'Open examples…', exact: true }).click();
+    expect(items[items.findIndex(item => item.includes('Open workflow…')) + 1]).toContain('Examples…');
+    await page.getByRole('menuitem', { name: 'Examples…', exact: true }).click();
     const dialog = page.getByRole('dialog', { name: 'Examples', exact: true });
     await expect(dialog).toBeVisible();
     await expect(dialog.locator('.pc-example-tile')).toHaveCount(exampleCount);
@@ -36,7 +36,7 @@ test('File examples is directly below Open workflow and opens the compact comple
     expect(await page.evaluate(() => window.canvasHarness.providerCalls())).toBe(0);
 });
 
-test('both menus retain picker scroll, trap Tab, close on Escape and restore trigger focus', async ({ page }) => {
+test('File retains picker scroll, traps Tab, closes on Escape and restores trigger focus', async ({ page }) => {
     await load(page);
     let dialog = await openExamples(page);
     const close = dialog.getByRole('button', { name: 'Close panel', exact: true });
@@ -53,11 +53,14 @@ test('both menus retain picker scroll, trap Tab, close on Escape and restore tri
     expect(scrollTop).toBeGreaterThan(0);
     await close.press('Escape');
     await expect(dialog).toBeHidden();
-    await expect(page.getByRole('button', { name: 'File', exact: true })).toBeFocused();
-    dialog = await openExamples(page, 'Workflows');
+    await expect(page.getByRole('menubar', { name: 'Workspace menus' }).getByRole('menuitem', { name: 'File', exact: true })).toBeFocused();
+    await page.getByRole('menubar', { name: 'Workspace menus' }).getByRole('menuitem', { name: 'Workflow', exact: true }).click();
+    await expect(page.getByRole('menu', { name: 'Workflow', exact: true }).getByRole('menuitem', { name: 'Examples…', exact: true })).toHaveCount(0);
+    await page.keyboard.press('Escape');
+    dialog = await openExamples(page);
     expect(await dialog.locator('.pc-examples-grid').evaluate(element => element.scrollTop)).toBe(scrollTop);
     await dialog.getByRole('button', { name: 'Close panel', exact: true }).click();
-    await expect(page.getByRole('button', { name: 'Workflows', exact: true })).toBeFocused();
+    await expect(page.getByRole('menubar', { name: 'Workspace menus' }).getByRole('menuitem', { name: 'File', exact: true })).toBeFocused();
 });
 
 test('narrow picker has two columns and its last long-name tile opens by keyboard', async ({ page }, testInfo) => {
@@ -149,8 +152,8 @@ test('reopening a tile preserves the edited first copy and advanced subgraphs op
     await page.evaluate(async () => { await window.canvasHarness.view({ x: 280, y: 60, zoom: 0.7 }); });
     await page.locator('.pc-canvas-host .pc-node-subgraph-input .pc-native-heading').first().click();
     await expect(page.getByRole('textbox', { name: 'Node name', exact: true })).toBeEnabled();
-    await page.getByRole('button', { name: 'Graph', exact: true }).click();
-    await page.getByRole('menuitem', { name: 'Fit to view', exact: true }).click();
+    await page.getByRole('menubar', { name: 'Workspace menus' }).getByRole('menuitem', { name: 'View', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Fit graph', exact: true }).click();
     await page.getByRole('dialog', { name: 'Lattice', exact: true }).screenshot({ path: testInfo.outputPath('example-30-opened-subgraph.png') });
     dialog = await openExamples(page);
     await dialog.getByRole('button', { name: 'Make a scene brief', exact: true }).click();

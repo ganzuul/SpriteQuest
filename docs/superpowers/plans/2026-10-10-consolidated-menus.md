@@ -1,0 +1,66 @@
+# Consolidated Menus Implementation Plan
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development or superpowers:executing-plans. Steps use checkbox syntax for tracking.
+
+**Goal:** Integrate the approved six-menu design and intentional workspace cleanup.
+
+**Architecture:** Keep menu rendering in Svelte, share the existing icon registry, and expose controller capabilities and dispatch without bypassing existing edits. Workbench owns local pane state and help/report overlays. Independent ownership permits renderer and controller work in parallel; root integrates pane cleanup and verifies the assembled product.
+
+**Tech Stack:** Svelte 5, TypeScript, existing JavaScript graph controllers, Node tests and Playwright.
+
+**Spec:** docs/superpowers/specs/2026-10-10-consolidated-menus.md
+
+## Global Constraints
+
+- Six names exactly: File, Edit, View, Graph, Workflow, Help.
+- Preserve assets/lattice-logo.svg, typed graph edits, request-bound preview checks and fresh Apply/Reject authority.
+- Initial closed state; click enables hover; command/outside/Escape/Tab/resize resets it.
+- Do not introduce dependencies, paid calls, generic unified Run or unrelated legacy migration.
+- No worker commits; root commits the reviewed assembled result.
+
+## Review Focus
+
+- Menu shortcut events cannot mutate a selected graph behind the popup.
+- Switching menu or active view cannot apply a delayed action to another view.
+- Read-only/boundary/group/wire selections retain accurate capabilities.
+- Native Send Stop must refer to the owned current root, rather than another host run.
+- Wrapped navigation and submenus remain within narrow viewport edges.
+
+## Task 1: Controller capabilities and commands
+
+**Files:** src/ui/controller.js, ui/types.ts, src/workflow/host.js only if activity projection needs it, and new tests/browser/menu-commands.spec.mjs or targeted tests/ui-workspace-commands.test.mjs.
+
+**Interfaces:** Add optional `WorkbenchView.menuCapabilities` object with boolean keys inspect, rename, duplicate, group, ungroup, createSubgraph, saveSubgraph, comment, compact, compactChecked, fitSelection, hasSelection, stop. Add optional `WorkflowView.ownedBusy`. Dispatch command strings: select-all, clear-selection, duplicate-selection, group-selection, ungroup-selection, comment-selection, add-comment, create-subgraph, save-subgraph, compact-selection, rename-selection, details-selection, center-selection, manage-portals, clear-workflow-assignment, review-host-result, arm-workflow. Existing root commands retain their names. View/local commands are handled by Workbench in Task 3.
+
+- [x] Write and run one failing behavioral capability/command test at a time.
+- [x] Implement minimal dispatch through existing graph mutation helpers and editor capture/gates.
+- [x] Expose current owned activity without broad cancellation of unrelated host runs; use existing status notifications, adding a small read-only runtime activity getter if necessary.
+- [x] Verify root assignment, mutation undo, boundary/read-only guards, grouping, comments and current host-result targeting in real harness tests. Report red/green evidence.
+
+## Task 2: Menu model and renderer
+
+**Files:** ui/WorkspaceMenus.svelte, new ui/workspace-menu-model.ts, new src/ui/menu-icons.js shared with src/ui/context-menu.js, style.css menu selectors only, tests/ui-workspace-menu-root.test.mjs, new tests/browser/consolidated-menus.spec.mjs.
+
+**Interfaces:** `WorkspaceMenus` additionally consumes optional `panels: { previewOpen: boolean; shelfOpen: boolean }`. Export that type as `WorkspaceMenuPanels` from workspace-menu-model.ts. Consume Task 1 flags. Dispatch Workbench local strings: toggle-preview, toggle-shelf, reset-layout, follow-preview, pin-preview, run-preview, run-details, validate-workflow, help, node-reference, shortcuts, about, examples, add-node, fast-connections, story-documents, recall-arms. Theme/inspector and controller commands use actions.command; arm uses actions.arm. Use view.outputPreview for tracking/output eligibility. Actual select/pan and zoom use existing direct actions.
+
+- [x] Write one failing browser test for opening, hover switching and dismissal; implement that loop first.
+- [x] Add graph keyboard-isolation regression before fixing propagation.
+- [x] Implement grouped six-menu descriptors, shared icons, checks/radios, real submenu behavior, viewport clipping and correct focus/typeahead. Use proper menu button/menubar semantics and update tests to actual roles.
+- [x] Add capability/state tests and update root tests for the approved workflow menu semantics (no generic unified Run/legacy creation).
+- [x] Verify targeted unit/browser tests; report results and any integration assumptions.
+
+## Task 3: Workspace cleanup and integration
+
+**Files:** ui/Workbench.svelte, ui/Toolbar.svelte, ui/OutputPreview.svelte, ui/NodeDetails.svelte, relevant existing browser tests/tools/docs, dist generated by build. Root owns this task.
+
+- [x] Test shelf persistence/reset and local preview targeting before changes.
+- [x] Pass panels through Toolbar into WorkspaceMenus. Add local toggles/reset and preview dispatch through existing source/target-aware actions; validation and Help overlays display actual data, version from manifest, and documentation destinations.
+- [x] Remove redundant settings overflow and Portals button, simplify Preview tracking/collapse, and make the unified workflow bar show Send guidance with visible Stop for owned activity. Preserve quick Undo/Details and result review controls.
+- [x] Adapt existing test menu navigation/labels for intentional relocation; preserve assertions of actual behavior.
+- [x] Run full checks and visual captures. Request independent whole-branch review, repair actionable findings, then commit on codex/consolidated-menus and leave the worktree available.
+
+## Verification outcome
+
+The final assembled implementation passes 246/246 unit-test files and 280/280 browser tests. Type checking reports zero errors and zero warnings; the production build and asset checks pass with 498 versioned local imports. Desktop and narrow/high-DPR captures confirm the original logo, wider targets, aligned menu groups and reachable submenus.
+
+Independent review prompted repairs for diagnostic runs during host activity, Help-link focus trapping and short-popup keyboard scrolling. The full browser run exposed a closed-menu shortcut regression; a failing undo/redo/paste test now passes after restricting event isolation to open popups. All actionable review findings are resolved. The approved six-menu layout replaces stale eight-menu expectations while retaining their geometry and behavior assertions.

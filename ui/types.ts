@@ -54,6 +54,7 @@ export interface WorkbenchView {
     examples?: readonly WorkflowExampleTile[];
     examplesIssue?: string;
     selectionActions?: { copy: boolean; cut: boolean; delete: boolean };
+    menuCapabilities?: { inspect: boolean; rename: boolean; duplicate: boolean; group: boolean; ungroup: boolean; createSubgraph: boolean; saveSubgraph: boolean; comment: boolean; compact: boolean; compactChecked: boolean; fitSelection: boolean; hasSelection: boolean; stop: boolean };
 }
 export interface WorkbenchActions {
     logoUrl?: string;
@@ -87,7 +88,7 @@ export interface WorkflowView {
     fastConnections?: { value: string; label: string }[];
     families: { name: string; description: string; operations: { id: string; title: string; phase: string; compatible: boolean }[] }[];
     nodes: WorkflowNodeView[]; groups: { id: string; title: string; members: string[]; collapsed: boolean; callBound: number }[];
-    callBound: number; issues: string[]; busy: boolean; status: string; quoteHelp: string;
+    callBound: number; issues: string[]; busy: boolean; ownedBusy?: boolean; status: string; quoteHelp: string;
     availability?: 'current' | 'stale' | 'superseded' | 'cancelled'; preparationError?: { code: string; message: string } | null;
     result: WorkflowBoundedResultView | null;
 }

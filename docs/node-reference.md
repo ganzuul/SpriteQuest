@@ -488,7 +488,7 @@ These four nodes belong to a native-unified **root** workflow. They cannot be hi
 
 ### Fast Decision
 
-**Both stages; one typed request, at most two when explicit fallback is enabled.** Uses the same State and Questions contract, plus **Fast connection**, **Allow Decision fallback**, supported **Fallback on errors** and a separate **Fallback text connection**. Configure Jev/Laya/compatible endpoints in **Tools → Fast connections…**. Typed noul answers expose a probability in `answers.<id>.noul`; choice/score answers expose checked alternatives, distributions and confidence. No implicit probability-to-boolean threshold is applied. Fallback returns ordinary Decision answers, not invented typed probabilities. See [setup and gates](unified-workflows.md#decision-fast-decision-and-confidence).
+**Both stages; one typed request, at most two when explicit fallback is enabled.** Uses the same State and Questions contract, plus **Fast connection**, **Allow Decision fallback**, supported **Fallback on errors** and a separate **Fallback text connection**. Configure Jev/Laya/compatible endpoints in **Workflow → Configure → Fast connections…**. Typed noul answers expose a probability in `answers.<id>.noul`; choice/score answers expose checked alternatives, distributions and confidence. No implicit probability-to-boolean threshold is applied. Fallback returns ordinary Decision answers, not invented typed probabilities. See [setup and gates](unified-workflows.md#decision-fast-decision-and-confidence).
 
 ### Confidence Gate
 
@@ -558,7 +558,7 @@ Choose an existing pinned Data item/result helper in **Configure node**. **Detai
 
 ### Read File
 
-**Both stages; root only; zero calls.** Reads an authorized logical workflow data target in the active user/chat, producing serialized `text`, parsed `document` Data and exact live `reference` Data. Controls: Authorized target, optional Schema/CSV columns, Actor scope (`selected`/`presence`) and Present actor identity. Presence scope adds required exact live presence Data for the configured actor. Selected scope uses the native actor and no authored actor ID. It is distinct from File Input's portable imported snapshot. Authorize targets in **Tools → Workflow Data…**; no arbitrary OS paths are exposed.
+**Both stages; root only; zero calls.** Reads an authorized logical workflow data target in the active user/chat, producing serialized `text`, parsed `document` Data and exact live `reference` Data. Controls: Authorized target, optional Schema/CSV columns, Actor scope (`selected`/`presence`) and Present actor identity. Presence scope adds required exact live presence Data for the configured actor. Selected scope uses the native actor and no authored actor ID. It is distinct from File Input's portable imported snapshot. Authorize targets in **Workflow → Configure → Workflow Data…**; no arbitrary OS paths are exposed.
 
 ### Format
 
@@ -646,6 +646,6 @@ Records must descend unchanged from the actual authorized File/Memory read. Impo
 
 ### Hotkey Arm
 
-**Both stages; root only; zero calls.** Controls: Actor ID, matching Memory set ID, Target, Uses (`next-match`/`one-per-type`/`until-disarmed`), Consume on (`success`/`accepted`) and physical-key modifier object. Its output is a descriptive arm proposal. Merely running the node does not arm it. **Tools → Recall arms…** shows live scope, shortcut, eligibility and pending claims, with manual Arm/Disarm and a visible armed badge.
+**Both stages; root only; zero calls.** Controls: Actor ID, matching Memory set ID, Target, Uses (`next-match`/`one-per-type`/`until-disarmed`), Consume on (`success`/`accepted`) and physical-key modifier object. Its output is a descriptive arm proposal. Merely running the node does not arm it. **Workflow → Configure → Recall arms…** shows live scope, shortcut, eligibility and pending claims, with manual Arm/Disarm and a visible armed badge.
 
 Shortcuts skip typing/composition/repeat, reject duplicates and are revoked for obsolete scopes/settings. Arms are ephemeral and are not exported. Accepted-policy uses survive Stop/failure/rejection; success-policy use is consumed by a complete successful workflow even if its candidate is later rejected. See [Recall setup and policies](unified-workflows.md#arm-memories-manually-or-recall-them-automatically).

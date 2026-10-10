@@ -60,6 +60,7 @@ let documentTransition = false, libraryRevision = 0, restoringEditor = false, ca
 let viewSaveTimer = null, pinnedPreview = null, selectedPreview = null, nativeWireBridge = null, nativeCatalog = null, positionEdit = null;
 let nativeGroupPresenter = null, detachedClip = null, workspaceIssue = '';
 let pendingSubgraphSave = null;
+let workflowActivityUnsubscribe = null;
 let pendingNewWorkflow = null;
 let storyDocumentSetup = null, pendingConfiguredNode = null;
 const nodeDocumentCaptures = new Map(), nodeCreationScopes = new WeakMap();
@@ -379,13 +380,16 @@ function workflowView() {
     return view;
 }
 function updateWorkflowProjection() {
-    const view = workflowView();
+    const activity = workflowRuntime.getNativeWorkflowController?.()?.activity?.();
+    const ownedBusy = !!workflowState.busy || !!activity?.busy && activity.graph === current;
+    const view = { ...workflowView(), ownedBusy };
     const revision = graphViews ? graphViews.readEditContext().sessionId + ':' + workspaceRevision : String(uiEpoch);
-    const rootWorkflow = projectPreparedWorkflow(workspacePrepared?.workflow,workflowState);
+    const rootWorkflow = { ...projectPreparedWorkflow(workspacePrepared?.workflow,workflowState), ownedBusy };
     if (canvas && graphViews) canvas.setNodeProfiles?.(projectNodeProfiles(graphViews.readEditor(), view, revision));
     const panels = graphViews ? projectWorkspacePanels(graphViews.readEditor(), view, workflowState, revision, selectedPreview, pinnedPreview, rootWorkflow, workspacePrepared.idleRunRows, workspacePrepared.previewChoices) : {};
+    if (panels.outputPreview) panels.outputPreview = { ...panels.outputPreview, busy: panels.outputPreview.busy || !!activity?.busy };
     if (canvas && graphViews && editorDraw && canvasTraceRows!==view.rows) { canvasTraceRows=view.rows;const traces = []; const visit = rows => { for (const row of rows ?? []) { traces.push({ id: row.address.nodeId, status: row.status }); } }; if(graphViews.readEditor().view.identity.kind!=='library')visit(view.rows); canvas.setTrace(traces); }
-    workbench?.update({ workflow: view, rootWorkflow, recallArms: recallSetupView(), ...panels, nativeDiagnostic: workspaceIssue, nativeFlatCanvas: !settings().ui?.theme?.style?.grid });
+    workbench?.update({ workflow: view, rootWorkflow, menuCapabilities: selectionMenuCapabilities(), recallArms: recallSetupView(), ...panels, nativeDiagnostic: workspaceIssue, nativeFlatCanvas: !settings().ui?.theme?.style?.grid });
 }
 function prepareGroupPresentation() {
     const captured = captureEditor(true); if (!captured.ok) return null;
@@ -447,8 +451,11 @@ export function open() {
     build(); root.classList.add('pc-open'); document.addEventListener('pc-native-result', receiveAutomaticWorkflow);
     safe(() => applyTheme()); current = resolveGraph().graph ?? allGraphs()[0] ?? createGraph('Workflow');
     setCanvasGraph(); renderAll();
+    workflowActivityUnsubscribe?.();
+    workflowActivityUnsubscribe = workflowRuntime.getNativeWorkflowController?.()?.subscribeActivity?.(() => { if (isOpen() && graphViews && !documentTransition) updateWorkflowProjection(); }) ?? null;
 }
 export function close() {
+    workflowActivityUnsubscribe?.(); workflowActivityUnsubscribe = null;
     cancelConfiguredNode();
     chooseNewWorkflow('cancel');
     cancelImportReview(); document.removeEventListener('pc-native-result', receiveAutomaticWorkflow);
@@ -499,11 +506,12 @@ function build() {
         openExample: onOpenExample,
         refreshExamples: refreshExampleCatalog,
         pickGraph(id) { const picked = getGraph(id); if (!picked) return renderGraphSelect(); current = picked; settings().activeGraphId = picked.id; save(); setCanvasGraph(); renderAll(); },
-        arm(enabled) { settings().enabled = enabled; save(); renderStatus(); },
+        arm: armWorkflow,
         command(name) {
+            const menuCommand = menuCommandAction(name); if (menuCommand) return menuCommand();
             const commands = { new: () => onNewGraph('unified'), 'new-pre': () => onNewGraph('pre'), 'new-post': () => onNewGraph('post'), duplicate: onDuplicateGraph, rename: onRenameGraph, delete: onDeleteGraph, save: onSaveGraph, import: onImportGraph, 'open-workflow': onImportGraph, 'import-into-graph': onImportIntoGraph, export: onExportGraph, undo: doUndo, redo: doRedo,
                 fit: () => canvas.fit(), 'fit-selection': () => canvas.fitSelection(), copy: () => copySelection(), cut: () => copySelection(true), paste: pasteFromClipboard,
-                'delete-selection': () => canvas.deleteSelection(), 'run-workflow': workflowActions.run, 'stop-workflow': () => workflowSession.cancel('Stopped by user'), 'assign-workflow-phase': () => workflowActions.assign(current?.mode?.slice(7)),
+                'delete-selection': () => canvas.deleteSelection(), 'run-workflow': workflowActions.run, 'stop-workflow': stopOwnedWorkflow, 'assign-workflow-phase': () => workflowActions.assign(current?.mode?.slice(7)),
                 theme: toggleThemePopover, inspector: togglePane, 'reveal-inspector': () => { if (root.classList.contains('pc-details-hidden')) togglePane(); }, close };
             return commands[name]?.();
         },
@@ -685,12 +693,90 @@ function resizeDetails(width) {
 }
 function syncPaneToggles() { workbench.update({ inspectorOpen: !root.classList.contains('pc-details-hidden'), detailsWidth: graphViews?.readEditor().view.inspector.width ?? 258 }); }
 function revealNarrowDetails() { if (window.innerWidth < 860 && !root.classList.contains('pc-details-hidden')) workbench.parts.inspector.scrollIntoView?.({ block: 'nearest' }); }
+function armWorkflow(enabled = !settings().enabled) {
+    settings().enabled = enabled; save(); renderStatus();
+}
+function clearWorkflowAssignment() {
+    const key = workflowBindingKey(current?.mode), bindings = settings().nativeBindings;
+    if (!key || bindings?.[key] !== current?.id) return;
+    const activity = workflowRuntime.getNativeWorkflowController?.()?.activity?.();
+    if (activity?.graph === current) workflowSession.cancel('Workflow assignment cleared');
+    bindings[key] = null; save(); refreshWorkflowPreparation(); updateWorkflowProjection(); renderStatus();
+}
+function stopOwnedWorkflow() {
+    const activity = workflowRuntime.getNativeWorkflowController?.()?.activity?.();
+    if (!isOpen() || !activity?.busy || activity.graph !== current) return;
+    return workflowSession.cancel('Stopped by user');
+}
+function reviewHostResult() {
+    if (!isOpen() || !graphViews) return;
+    const choices = workspacePrepared?.previewChoices.filter(choice => choice.target.kind === 'terminal' && choice.target.address.workflowId === current.id && !choice.target.address.instancePath.length) ?? [];
+    const choice = choices.find(item => samePreviewTerminal(item.target, selectedPreview)) ?? choices[0];
+    const rootView = graphViews.project().graphViews.tabs.find(tab => tab.identity.kind === 'root');
+    if (!choice || !rootView) return;
+    navigateGraphView('focusView', rootView.key);
+    if (graphViews.readEditor().view.identity.kind !== 'root') return;
+    showSettings({ kind: 'node', id: choice.target.address.nodeId });
+    outputPreviewActions.follow();
+    outputPreviewActions.select(graphViews.readEditContext().sessionId + ':' + workspaceRevision, choice.key, choice.target);
+    workbench.revealPreview();
+}
+function menuCommandAction(name) {
+    const allowed = (flag, action) => () => selectionMenuCapabilities()[flag] ? action() : undefined;
+    const commands = {
+        'stop-workflow': allowed('stop', () => stopOwnedWorkflow()),
+        'select-all': () => canvas.selectAll(),
+        'clear-selection': () => { canvas.setMulti([]); canvas.select(null); },
+        'details-selection': allowed('inspect', () => showSettings({ ...canvas.selection })),
+        'rename-selection': allowed('rename', () => { const node = editorDraw.nodes[canvas.selection.id]; return ['subgraph-input', 'subgraph-output'].includes(node.type) ? focusBoundaryLabel(node.id) : focusAlias(node); }),
+        'save-subgraph': allowed('saveSubgraph', () => openSubgraphSave(canvas.selection.id)),
+        'center-selection': allowed('hasSelection', () => canvas.centerSelection()),
+        'manage-portals': () => openPortalManager(),
+        'clear-workflow-assignment': () => clearWorkflowAssignment(),
+        'arm-workflow': () => armWorkflow(),
+        'review-host-result': () => reviewHostResult(),
+        'duplicate-selection': allowed('duplicate', () => duplicateSelected()),
+        'group-selection': allowed('group', () => groupSelection()),
+        'ungroup-selection': allowed('ungroup', () => ungroupSelection()),
+        'comment-selection': allowed('comment', () => addComment(null, commentSelectionIds())),
+        'add-comment': () => addComment(null, []),
+        'create-subgraph': allowed('createSubgraph', () => createSubgraph(commentSelectionIds())),
+        'compact-selection': allowed('compact', () => { const node = editorDraw.nodes[canvas.selection.id]; return presentNode(node.id, 'compact', !selectionMenuCapabilities().compactChecked); }),
+    };
+    return commands[name];
+}
+function selectionMenuCapabilities() {
+    const editor = graphViews?.readEditor(), selection = canvas?.selection;
+    const node = selection?.kind === 'node' ? editorDraw?.nodes[selection.id] : null;
+    const group = selection?.kind === 'group' ? editorDraw?.groups?.[selection.id] : null;
+    const ids = canvas?.multi.size > 1 ? [...canvas.multi] : group ? groupMembers(editorDraw, group.id).map(member => member.id) : node ? [node.id] : [];
+    const nodes = ids.map(id => editorDraw?.nodes[id]), editable = !!editor && !editor.readOnly;
+    const boundary = node && ['subgraph-input', 'subgraph-output'].includes(node.type);
+    const copyable = ids.length > 0 && nodes.every(item => item && !['subgraph-input', 'subgraph-output'].includes(item.type));
+    const ordinary = nodes.filter(item => item && !isCommentFrame(item));
+    const activity = workflowRuntime.getNativeWorkflowController?.()?.activity?.();
+    return {
+        inspect: !!node && canvas.multi.size < 2,
+        rename: !!node && canvas.multi.size < 2 && (boundary ? editable : !isCommentFrame(node) && !!editorDraw.nativeCards?.[node.id]),
+        duplicate: editable && copyable,
+        group: editable && canvas.multi.size > 1 && ordinary.length > 1 && ordinary.every(item => !['subgraph-input', 'subgraph-output'].includes(item.type)),
+        ungroup: editable && !!group,
+        createSubgraph: editable && ids.length > 0 && !nodes.some(isCommentFrame) && canCreateSubgraph(ids),
+        saveSubgraph: !!node && canvas.multi.size < 2 && node.type === 'subgraph' && !!workspacePrepared?.libraryDefinitions?.[definitionRefKey(node.definition)],
+        comment: editable && ordinary.length > 0 && !nodes.some(item => ['subgraph-input', 'subgraph-output'].includes(item?.type)),
+        compact: !!node && canvas.multi.size < 2 && !boundary && !isCommentFrame(node) && !!editorDraw.nativeCards?.[node.id],
+        compactChecked: !!node && readNodePresentation(node, editor?.view.nodePresentation[node.id]).compact === true,
+        fitSelection: ids.length > 0,
+        hasSelection: !!selection || !!canvas?.multi.size || !!canvas?.wireMulti?.size,
+        stop: !!activity?.busy && activity.graph === current,
+    };
+}
 function updateSelectionCount() {
     const editor = graphViews?.readEditor(), graph = editor?.prepared.savedGraph, pick = currentPick(), selection = canvas?.selection;
     const copyable = id => graph?.nodes[id] && !['subgraph-input', 'subgraph-output'].includes(graph.nodes[id].type);
     const picked = pick?.nodeIds ?? pick?.groupIds?.flatMap(id => groupMembers(graph, id).map(node => node.id)) ?? [];
     const copy = picked.length > 0 && picked.every(copyable), canDelete = selection?.kind === 'wire' ? !!graph?.wires[selection.id] : selection?.kind === 'group' ? !!graph?.groups?.[selection.id] : picked.length > 0 && picked.every(id => !!graph?.nodes[id]);
-    workbench.update({ selectionCount: canvas?.multi.size || (selection?.kind === 'node' ? 1 : 0), selectionActions: { copy, cut: copy && !editor?.readOnly, delete: canDelete && !editor?.readOnly } });
+    workbench.update({ menuCapabilities: selectionMenuCapabilities(), selectionCount: canvas?.multi.size || (selection?.kind === 'node' ? 1 : 0), selectionActions: { copy, cut: copy && !editor?.readOnly, delete: canDelete && !editor?.readOnly } });
 }
 function showSettings(selection) { if (root.classList.contains('pc-details-hidden')) togglePane(); canvas.select(selection); const inspector = workbench.parts.inspector; inspector.scrollTop = 0; inspector.classList.add('pc-flash'); requestAnimationFrame(revealNarrowDetails); setTimeout(() => inspector.classList.remove('pc-flash'), 400); }
 function touch() { touchGraph(current); refreshWorkspaceDocument(); }
@@ -1041,9 +1127,11 @@ function onImportGraph() {
     input.click();
 }
 
-function duplicateSelected(node) {
-    const token = captureEditor(); if (!token.ok) return token; const fragment = clipForPick({ nodeIds: [node.id] }); if (!fragment.ok) return fragment;
-    return commitCaptured(token.data, prepareClipPaste(current, fragment.data, { at: { x: node.x + 28, y: node.y + 28 }, viewPath: scopeCommand(token.data).viewPath }));
+function duplicateSelected(node = null) {
+    const token = captureEditor(); if (!token.ok) return token;
+    const fragment = clipForPick(node ? { nodeIds: [node.id] } : currentPick()); if (!fragment.ok) return fragment;
+    const nodes = Object.values(fragment.data.graph.nodes), origin = node ?? { x: Math.min(...nodes.map(item => item.x ?? 0)), y: Math.min(...nodes.map(item => item.y ?? 0)) };
+    return commitCaptured(token.data, prepareClipPaste(current, fragment.data, { at: { x: origin.x + 28, y: origin.y + 28 }, viewPath: scopeCommand(token.data).viewPath }));
 }
 function groupSelection(ids = [...canvas.multi], existingToken = null) {
     const captured = existingToken ? { ok: editorCurrent(existingToken), data: existingToken } : captureEditor();
@@ -1556,11 +1644,16 @@ const nodeDetailsActions = {
     remove(selection) { const captured = detailCapture(selection); if (captured.ok) deleteNativeSelection({kind:'node',id:selection.address.nodeId}, captured.data); },
     editInterface: editSubgraphInterface,
 };
+function runPreviewHere(key,target) {
+    if (key !== graphViews?.readEditContext().sessionId + ':' + workspaceRevision || graphViews.readEditor().view.identity.kind === 'library') return;
+    if (workflowState.busy || workflowRuntime.getNativeWorkflowController?.()?.activity?.()?.busy) return;
+    return workflowSession.run({target});
+}
 const outputPreviewActions = {
     select(key,choice,target) { if (key !== graphViews?.readEditContext().sessionId + ':' + workspaceRevision) return; selectedPreview = target; updateWorkflowProjection(); },
     pin(key,target) { if (key !== graphViews?.readEditContext().sessionId + ':' + workspaceRevision) return; pinnedPreview = target; updateWorkflowProjection(); },
     follow() { pinnedPreview = null; updateWorkflowProjection(); },
-    runHere(key,target) { if (key !== graphViews?.readEditContext().sessionId + ':' + workspaceRevision || graphViews.readEditor().view.identity.kind === 'library') return; workflowSession.run({target}); },
+    runHere: runPreviewHere,
     apply: applyPreviewReview, reject: rejectPreviewReview,
 };
 const runDetailsActions = { jump(runId,address) { if (runId !== (workflowState.runState?.runId || workflowState.recording?.runId) || address.workflowId !== current.id) return; if (address.instancePath.length) navigateGraphView('openInstance',address.instancePath); else navigateGraphView('focusView',graphViews.project().graphViews.tabs[0].key); canvas.select({kind:'node',id:address.nodeId}); canvas.fitSelection(); } };

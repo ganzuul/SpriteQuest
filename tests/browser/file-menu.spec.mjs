@@ -5,7 +5,7 @@ async function load(page) {
     await page.waitForFunction(() => !!window.canvasHarness);
 }
 async function menu(page, action) {
-    await page.getByRole('button', { name: 'File', exact: true }).click();
+    await page.getByRole('menubar', { name: 'Workspace menus' }).getByRole('menuitem', { name: 'File', exact: true }).click();
     await page.getByRole('menuitem', { name: action, exact: true }).click({ timeout: 2500 });
 }
 async function snapshot(page) {
@@ -56,8 +56,8 @@ test('File Save persists the full workflow, local bindings and current camera', 
         await h.view({ x: 321, y: 87, zoom: 0.8 });
         return { document: structuredClone(h.graph), camera: { ...h.canvas.view }, saves: window.fileMenuSaves.length };
     });
-    await page.getByRole('button', { name: 'File', exact: true }).click();
-    const save = page.getByRole('menuitem', { name: 'Save workflow', exact: true });
+    await page.getByRole('menubar', { name: 'Workspace menus' }).getByRole('menuitem', { name: 'File', exact: true }).click();
+    const save = page.getByRole('menuitem', { name: 'Save to workspace', exact: true });
     await expect(save).toBeVisible({ timeout: 2000 });
     await save.click();
     await expect.poll(() => page.evaluate(() => window.fileMenuSaves.length)).toBeGreaterThan(expected.saves);
@@ -77,7 +77,7 @@ test('File Export JSON downloads a portable copy that Open can reopen without ch
     const before = await snapshot(page);
     const [download] = await Promise.all([
         page.waitForEvent('download', { timeout: 2500 }),
-        menu(page, 'Export workflow JSON…'),
+        menu(page, 'Export portable workflow…'),
     ]);
     expect(download.suggestedFilename()).toMatch(/\.workflow\.json$/);
     const chunks = [];
@@ -86,7 +86,7 @@ test('File Export JSON downloads a portable copy that Open can reopen without ch
     expect(file).toMatchObject({ kind: 'lattice-workflow', schema: 2, minRuntime: 2 });
     expect(file.graph.roles[role]).toEqual({ profileId: null, model: 'local-model' });
     expect(await snapshot(page)).toEqual(before);
-    await page.getByRole('button', { name: 'File', exact: true }).click();
+    await page.getByRole('menubar', { name: 'Workspace menus' }).getByRole('menuitem', { name: 'File', exact: true }).click();
     await expect(page.getByRole('menuitem', { name: 'Import workflow', exact: true })).toHaveCount(0);
     await page.keyboard.press('Escape');
     await choose(page, 'Open workflow…', file);
@@ -115,8 +115,8 @@ test('File New immediately opens a unified starter and retains existing workflow
 
 test('closing and reopening the same workflow cancels its inline rename draft', async ({ page }) => {
     await load(page);
-    await page.getByRole('button', { name: 'Graph', exact: true }).click();
-    await page.getByRole('menuitem', { name: 'Rename workflow', exact: true }).click();
+    await page.getByRole('menubar', { name: 'Workspace menus' }).getByRole('menuitem', { name: 'File', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Rename workflow…', exact: true }).click();
     const rename = page.locator('.pc-graph-tabs').getByRole('textbox', { name: 'Graph name', exact: true });
     await rename.fill('Discarded rename draft');
     await page.evaluate(async () => {
@@ -284,7 +284,7 @@ test('the New save prompt wraps backward from dialog focus into its buttons', as
 test('cancelling either File picker leaves all workflows and assignments unchanged', async ({ page }) => {
     await load(page);
     const before = await snapshot(page);
-    for (const action of ['Open workflow…', 'Import into graph…']) {
+    for (const action of ['Open workflow…', 'Import into current graph…']) {
         const [chooser] = await Promise.all([page.waitForEvent('filechooser'), menu(page, action)]);
         await chooser.setFiles([]);
         await chooser.element().evaluate(input => input.dispatchEvent(new Event('cancel', { bubbles: true })));
@@ -299,7 +299,7 @@ test('invalid and unreadable File selections report errors without changing work
     page.on('pageerror', error => pageErrors.push(error.message));
     await load(page);
     const before = await snapshot(page), file = await workflowFile(page);
-    for (const action of ['Open workflow…', 'Import into graph…']) {
+    for (const action of ['Open workflow…', 'Import into current graph…']) {
         for (const value of ['{invalid', { kind: 'lattice-workflow', schema: 99, minRuntime: 2 }]) {
             const count = await page.evaluate(() => window.canvasHarness.toasts.length);
             await choose(page, action, value);
@@ -309,7 +309,7 @@ test('invalid and unreadable File selections report errors without changing work
         }
     }
     await page.evaluate(() => { File.prototype.text = async () => { throw new Error('Simulated file read failure'); }; });
-    for (const action of ['Open workflow…', 'Import into graph…']) {
+    for (const action of ['Open workflow…', 'Import into current graph…']) {
         const count = await page.evaluate(() => window.canvasHarness.toasts.length);
         await choose(page, action, file);
         await expect.poll(() => page.evaluate(() => window.canvasHarness.toasts.length)).toBeGreaterThan(count);

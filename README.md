@@ -19,7 +19,7 @@ It runs inside SillyTavern. A unified workflow prepares guidance, uses it for th
 - **Actor memory and state:** reflect on supplied evidence, express optional behavior guidance, internalize settled events, and track deterministic consequences.
 - **Reusable writing tools:** wrap a sequence in a subgraph with named inputs and outputs, then use it in other workflows.
 
-These are combinations of the shipped tools. **File → Open examples…** offers unified story flows alongside the original roleplay lessons. Examples include prose-and-notes chains, item effects, story-time triggers, generic progression and scoped actor memory. Each opens as an editable copy with its own setup instructions. The workflow JSON examples below also explore individual capabilities.
+These are combinations of the shipped tools. **File → Examples…** offers unified story flows alongside the original roleplay lessons. Examples include prose-and-notes chains, item effects, story-time triggers, generic progression and scoped actor memory. Each opens as an editable copy with its own setup instructions. The workflow JSON examples below also explore individual capabilities.
 
 ## Key features
 
@@ -84,16 +84,16 @@ Select processing nodes, right-click, and choose **Create Subgraph**. The editor
 1. In SillyTavern, open **Extensions → Install extension**.
 2. Enter `https://github.com/MentallyQuill/Lattice`, leaving the branch field blank to install `main`.
 3. Install, then reload SillyTavern. Open LATTICE from its logo on the left of the chat bar or with `/lattice`. Fresh launch selects **Unified story workflow**, with workflows disabled and unassigned. Existing saved selections remain.
-4. Choose **Workflows → Assign unified workflow**, enable **Arm**, and Send a player message in SillyTavern. The starter makes no auxiliary calls and exposes its completed native Draft for review.
+4. Choose **Workflow → Assign workflow**, enable **Arm**, and Send a player message in SillyTavern. The starter makes no auxiliary calls and exposes its completed native Draft for review.
 5. Select **Review / Publish · Host result** in Preview, inspect it, and Apply or Reject. For a richer pipeline, open a unified example and configure its model nodes, For Each helper roles and required workflow data documents before the next Send.
 
 For updates, use **Manage Extensions**, then reload. Installation, import, and editing do not make model calls.
 
 The [unified workflow guide](docs/unified-workflows.md) walks through applying an example to **Story-2 on default-user**, chaining different models, using Fast Decision, recording private moments, arming Recall and managing accepted effects. A full unified native generation starts with ordinary Send; supported **Run to here** paths inspect without acceptance.
 
-Unified examples open as independent editable workflows. They do not run, assign or arm themselves. Set each auxiliary model’s local Connection profile in Details; configure For Each’s **Helper model bindings** separately. **Tools → Workflow Data…** authorizes logical JSON/text targets, and **Tools → Fast connections…** configures typed Jev/Laya endpoints. Local connection IDs and credentials are excluded from portable exports.
+Unified examples open as independent editable workflows. They do not run, assign or arm themselves. Set each auxiliary model’s local Connection profile in Details; configure For Each’s **Helper model bindings** separately. **Workflow → Configure → Workflow Data…** authorizes logical JSON/text targets, and **Workflow → Configure → Fast connections…** configures typed Jev/Laya endpoints. Local connection IDs and credentials are excluded from portable exports.
 
-Legacy **Before reply (Pre)** workflows still prepare bounded guidance, while **After reply (Post)** workflows remain manual tools for a completed reply. The Workflows menu labels these as legacy. Existing saved graphs are retained; migration is explicit reuse in a new unified copy, with no automatic converter.
+Legacy **Before reply (Pre)** workflows still prepare bounded guidance, while **After reply (Post)** workflows remain manual tools for a completed reply. The Workflow menu labels their assignment as legacy. Existing saved graphs are retained; migration is explicit reuse in a new unified copy, with no automatic converter.
 
 Open the following technical examples as JSON with **File → Open workflow…**:
 

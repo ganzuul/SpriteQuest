@@ -8,9 +8,9 @@ Start with one unified graph around ordinary SillyTavern generation. Then explor
 
 Install from `https://github.com/MentallyQuill/Lattice` in SillyTavern's **Extensions → Install extension**, leaving the branch field blank. Reload, then open the LATTICE logo on the left of the chat bar or type `/lattice`.
 
-Fresh launch opens **Unified story workflow**, with workflows disabled and unassigned. Existing saved selections are retained. Use **File → Open examples…** to install another copy or a different example. Opening, installing, or importing makes no provider request.
+Fresh launch opens **Unified story workflow**, with workflows disabled and unassigned. Existing saved selections are retained. Use **File → Examples…** to install another copy or a different example. Opening, installing, or importing makes no provider request.
 
-The default **Ember** theme follows SillyTavern's panel, text, control and quote colors, with a neutral canvas and translucent node fills. **Tools → Theme and colours** offers eight themes: Ember, Lattice, Ash, Graphite, Slate, Obsidian, Harbor and Signal. Choose one or customize its colors and look.
+The default **Ember** theme follows SillyTavern's panel, text, control and quote colors, with a neutral canvas and translucent node fills. **View → Theme and colours** offers eight themes: Ember, Lattice, Ash, Graphite, Slate, Obsidian, Harbor and Signal. Choose one or customize its colors and look.
 
 **Harbor** uses blue and amber, while **Signal** uses high contrast grayscale. Both identify connection types with labels, distinct pin shapes and wire patterns. Their visible picker legend explains the cues; example thumbnails use the same shapes and patterns.
 
@@ -19,10 +19,10 @@ The default **Ember** theme follows SillyTavern's panel, text, control and quote
 The starter is **On Send → Generate Reply · SillyTavern → Review / Publish**. It makes no auxiliary model requests; the normal native reply still uses your SillyTavern connection.
 
 1. Open the story and select its native character in SillyTavern. For the Story-2 example, use default-user and the Story-2 chat.
-2. Choose **Workflows → Assign unified workflow**, then enable **Arm**.
+2. Choose **Workflow → Assign workflow**, then enable **Arm**.
 3. Send a player message in SillyTavern normally. The starter waits for that generation’s completed Draft and records its review result.
 4. Select **Review / Publish · Host result** in Preview. Inspect the original and candidate; Apply preserves the original as a swipe and publishes the chosen result, while Reject leaves it alone. The unchanged starter is useful for learning the review path.
-5. Open a unified example from **File → Open examples…** to add preparation, prose editing or notes. Configure every model node and For Each helper role in Details before sending. Authorize document targets in **Tools → Workflow Data…** when the example needs them.
+5. Open a unified example from **File → Examples…** to add preparation, prose editing or notes. Configure every model node and For Each helper role in Details before sending. Authorize document targets in **Workflow → Configure → Workflow Data…** when the example needs them.
 
 A full unified Run requires the native generation owned by Send. **Run to here** previews supported dependencies without accepting effects. See the [practical unified guide](unified-workflows.md) for one-graph model chains, Fast Decision, Recall, clocks and file writes.
 
@@ -43,7 +43,7 @@ Compose (JSON source) → JSON Decode → Select Fields → Compose (Guidance) �
 
 *The captured example adds tone and uses synthetic harbor-scene material. The supplied starter begins with direction and constraint.*
 
-This example needs no connection profile or existing reply. A manual run previews the brief. To use it with normal sends, choose **Workflows → Assign legacy pre phase** and enable workflows. Send executes the configured pre workflow and installs its optional guidance for that generation.
+This example needs no connection profile or existing reply. A manual run previews the brief. To use it with normal sends, choose **Workflow → Assign legacy pre phase** and enable workflows. Send executes the configured pre workflow and installs its optional guidance for that generation.
 
 ## Propose an exact legacy reply edit
 

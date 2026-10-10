@@ -17,7 +17,7 @@ test('real activated child tabs retain root identity, camera and readonly alias 
  const id=await activate(page);await page.evaluate(()=>{const context=window.canvasHarness.context;context.extensionSettings.connectionManager ??={profiles:[]};const manager=context.extensionSettings.connectionManager,profiles=manager.profiles;window.workspaceBindingReads=0;Object.defineProperty(manager,'profiles',{configurable:true,get(){window.workspaceBindingReads++;return profiles;}});});const before=await page.evaluate(id=>JSON.stringify(window.canvasHarness.S.getGraph(id)),id);
  await page.locator('.pc-node-native[data-id="first/path"] .pc-native-heading').dblclick();await expect(page.locator('.pc-graph-tabs [role="tab"][aria-selected="true"]')).toContainText('Outer');await expect(page.locator('.pc-graph-location')).toContainText('Outer');
  await page.locator('.pc-node-native[data-id="work"]').click();await expect(page.getByLabel('Node name',{exact:true})).toBeEnabled();await page.getByLabel('Node name',{exact:true}).fill('Local wrapper alias');await page.getByLabel('Node name',{exact:true}).press('Tab');
- await page.getByRole('button',{name:'Graph',exact:true}).click();await page.getByRole('menuitem',{name:'Zoom in',exact:true}).click();await settleCamera(page);const childCamera=await page.evaluate(()=>({...window.canvasHarness.canvas.view}));
+ await page.getByRole('menubar', { name: 'Workspace menus' }).getByRole('menuitem', { name: 'View', exact: true }).click();await page.getByRole('menuitem',{name:'Zoom in',exact:true}).click();await settleCamera(page);const childCamera=await page.evaluate(()=>({...window.canvasHarness.canvas.view}));
  await graphTab(page,{name:'Actual workspace integration',exact:true}).click();await graphTab(page,{name:/Outer/}).click();expect(await page.evaluate(()=>({...window.canvasHarness.canvas.view}))).toEqual(childCamera);
  expect(await page.evaluate(id=>JSON.stringify(window.canvasHarness.S.getGraph(id)),id)).toBe(before);await expect(page.getByRole('button',{name:'Undo',exact:true})).toBeDisabled();await expect(page.getByLabel('Node name',{exact:true})).toHaveValue('Local wrapper alias');expect(await page.evaluate(()=>window.workspaceBindingReads)).toBe(0);
 });
@@ -37,7 +37,7 @@ test('actual library inspection opens the exact nested pin and cannot gain runti
 
 test('readonly portal manager writes a scoped local label and retains the authored root document',async({page})=>{
  const id=await activate(page,'portalWorkflow'),before=await page.evaluate(id=>JSON.stringify(window.canvasHarness.S.getGraph(id)),id);
- await page.locator('.pc-node-native[data-id="first/path"] .pc-native-heading').dblclick();await page.locator('.pc-details-heading').getByRole('button',{name:'Portals',exact:true}).click();
+ await page.locator('.pc-node-native[data-id="first/path"] .pc-native-heading').dblclick();await expect(page.locator('.pc-details-heading').getByRole('button',{name:'Portals',exact:true})).toHaveCount(0);await page.getByRole('menubar', { name: 'Workspace menus' }).getByRole('menuitem', { name: 'Graph', exact: true }).click();await page.getByRole('menu',{name:'Graph',exact:true}).getByRole('menuitem',{name:'Manage portals…',exact:true}).click();
  await expect(page.getByLabel('Portal name',{exact:true})).toHaveValue('Saved publisher');await expect(page.locator('[data-portal-create]')).toBeDisabled();await page.getByLabel('Portal name',{exact:true}).fill('Local label');await page.locator('[data-portal-rename]').click();await expect(page.getByLabel('Portal name',{exact:true})).toHaveValue('Local label');await page.getByRole('button',{name:'Close',exact:true}).click();
  expect(await page.evaluate(id=>JSON.stringify(window.canvasHarness.S.getGraph(id)),id)).toBe(before);await expect(page.getByRole('button',{name:'Undo',exact:true})).toBeDisabled();
  const persisted=await page.evaluate(id=>window.canvasHarness.S.settings().workspaceViews[id],id);const child=persisted.views.find(view=>view.identity.kind==='instance');expect(child.portalPresentation.publisher.label).toBe('Local label');expect(child.portalPresentation.publisher.source).toEqual({nodeId:'work',portId:'out'});
@@ -71,18 +71,18 @@ test('a genuine deferred root run survives child open close reopen and cached vi
   const h=window.canvasHarness,c=h.context,runtime=(await import('/src/run.js?v='+h.version)).getNativeWorkflowController();const counts=window.workspaceRunViewCounts={bindings:0,snapshotSource:0,tokens:0,lore:0,freshness:0,cancel:0};const manager=c.extensionSettings.connectionManager??={profiles:[]},profiles=manager.profiles,chat=c.chat;Object.defineProperty(manager,'profiles',{configurable:true,get(){counts.bindings++;return profiles;}});Object.defineProperty(c,'chat',{configurable:true,get(){counts.snapshotSource++;return chat;}});for(const [key,count]of [['getTokenCountAsync','tokens'],['getWorldInfoPrompt','lore']]){const original=c[key];c[key]=function(...args){counts[count]++;return original.apply(this,args);};}for(const [key,count]of [['candidateStatus','freshness'],['cancel','cancel']]){const original=runtime[key];runtime[key]=function(...args){counts[count]++;return original.apply(this,args);};}window.workspaceRunRuntime=runtime;
  });
  try {
-  await page.getByRole('button',{name:'Graph view actions',exact:true}).click();await page.getByRole('menuitem',{name:/^Reopen Literal cleanup/}).click();await page.getByRole('button',{name:'Graph',exact:true}).click();await page.getByRole('menuitem',{name:'Zoom in',exact:true}).click();await page.clock.runFor(200);await page.locator('.pc-node-native[data-id="rules"] .pc-native-heading').click();await page.getByRole('button',{name:/^Close Literal cleanup/}).click();await page.getByRole('button',{name:'Graph view actions',exact:true}).click();await page.getByRole('menuitem',{name:/^Reopen Literal cleanup/}).click();
+  await page.getByRole('button',{name:'Graph view actions',exact:true}).click();await page.getByRole('menuitem',{name:/^Reopen Literal cleanup/}).click();await page.getByRole('menubar', { name: 'Workspace menus' }).getByRole('menuitem', { name: 'View', exact: true }).click();await page.getByRole('menuitem',{name:'Zoom in',exact:true}).click();await page.clock.runFor(200);await page.locator('.pc-node-native[data-id="rules"] .pc-native-heading').click();await page.getByRole('button',{name:/^Close Literal cleanup/}).click();await page.getByRole('button',{name:'Graph view actions',exact:true}).click();await page.getByRole('menuitem',{name:/^Reopen Literal cleanup/}).click();
   expect(await page.evaluate(()=>window.workspaceRunViewCounts)).toEqual({bindings:0,snapshotSource:0,tokens:0,lore:0,freshness:0,cancel:0});await expect(page.locator('.pc-root-run')).toContainText('Stop');
  } finally {releaseWorker();await page.clock.resume();}
  await expect(page.locator('.pc-run-meter-label')).toHaveText('Completed');await expect(page.locator('.pc-graph-tabs [role="tab"][aria-selected="true"]')).toContainText('Literal cleanup');const result=await page.evaluate(()=>{const result=window.workspaceRunRuntime.lastResult();return {ok:result.ok,mode:result.mode,calls:result.actualCalls};});expect(result).toEqual({ok:true,mode:'root',calls:0});expect(await page.evaluate(id=>JSON.stringify(window.canvasHarness.S.getGraph(id)),id)).toBe(before);
 });
 
 
-test('native canvas keeps a flat default and quiet meter while camera tools stay accessible in Graph menu',async({page})=>{
+test('native canvas keeps a flat default and quiet meter while tools stay in Graph and camera commands stay in View',async({page})=>{
  await page.setViewportSize({width:320,height:900});const id=await activate(page,'siblingWorkflow'),before=await page.evaluate(id=>JSON.stringify(window.canvasHarness.S.getGraph(id)),id);
  await expect(page.locator('.pc-status')).toHaveCount(0);await expect(page.getByRole('toolbar',{name:'Canvas tools'})).toHaveCount(0);await expect(page.locator('.pc-gesture-hint')).toHaveCount(0);expect(await page.locator('.pc-canvas-host').evaluate(element=>getComputedStyle(element).backgroundImage)).toBe('none');
  const graph=await page.locator('.pc-canvas-area').boundingBox(),meter=await page.locator('.pc-run-meter').boundingBox();expect(meter.x).toBeGreaterThanOrEqual(graph.x);expect(meter.y+meter.height).toBeLessThanOrEqual(graph.y+graph.height);await expect(page.getByRole('checkbox',{name:'Arm',exact:true})).toBeVisible();
- const camera=async label=>{await page.getByRole('button',{name:'Graph',exact:true}).click();await page.getByRole('menuitem',{name:label,exact:true}).click();await settleCamera(page);};await camera('Pan tool');expect(await page.evaluate(()=>window.canvasHarness.canvas.mode)).toBe('pan');await camera('Select tool');expect(await page.evaluate(()=>window.canvasHarness.canvas.mode)).toBe('select');const zoom=await page.evaluate(()=>window.canvasHarness.canvas.view.zoom);await camera('Zoom in');expect(await page.evaluate(()=>window.canvasHarness.canvas.view.zoom)).toBeGreaterThan(zoom);await camera('Zoom out');expect(await page.evaluate(()=>window.canvasHarness.canvas.view.zoom)).toBeCloseTo(zoom,5);await camera('Fit to view');expect(await page.evaluate(id=>JSON.stringify(window.canvasHarness.S.getGraph(id)),id)).toBe(before);
+ const camera=async label=>{const tool=label==='Pan tool'||label==='Select tool',category=tool?'Graph':'View';await page.getByRole('menubar', { name: 'Workspace menus' }).getByRole('menuitem', { name: category, exact: true }).click();await page.getByRole('menu',{name:category,exact:true}).getByRole(tool?'menuitemradio':'menuitem',{name:label,exact:true}).click();await settleCamera(page);};await camera('Pan tool');expect(await page.evaluate(()=>window.canvasHarness.canvas.mode)).toBe('pan');await camera('Select tool');expect(await page.evaluate(()=>window.canvasHarness.canvas.mode)).toBe('select');const zoom=await page.evaluate(()=>window.canvasHarness.canvas.view.zoom);await camera('Zoom in');expect(await page.evaluate(()=>window.canvasHarness.canvas.view.zoom)).toBeGreaterThan(zoom);await camera('Zoom out');expect(await page.evaluate(()=>window.canvasHarness.canvas.view.zoom)).toBeCloseTo(zoom,5);await camera('Fit graph');expect(await page.evaluate(id=>JSON.stringify(window.canvasHarness.S.getGraph(id)),id)).toBe(before);
  await page.evaluate(async()=>{const h=window.canvasHarness,theme=await import('/src/theme.js?v='+h.version);theme.setStyle('grid','lines');theme.applyTheme();h.UI.refreshIfOpen();});expect(await page.locator('.pc-canvas-host').evaluate(element=>getComputedStyle(element).backgroundImage)).toContain('linear-gradient');
  expect(await page.evaluate(()=>Object.values(window.canvasHarness.S.settings().graphs).every(graph=>graph.schema===3&&graph.runtime===2))).toBe(true);
 });
@@ -91,11 +91,10 @@ test('native canvas keeps a flat default and quiet meter while camera tools stay
 function graphTab(page, options) { return page.locator('.pc-graph-tabs').getByRole('tab', options); }
 async function settleCamera(page) { await expect.poll(() => page.evaluate(() => window.canvasHarness.canvas.host.classList.contains('pc-interacting'))).toBe(false); }
 function editItem(page, name) {
-    const labels = { Copy: 'Copy Ctrl C', Cut: 'Cut Ctrl X', Paste: 'Paste Ctrl V', 'Delete selection': 'Delete selection Del' };
-    return page.getByRole('menuitem', { name: labels[name] ?? name, exact: true });
+    return page.getByRole('menu', { name: 'Edit', exact: true }).getByRole('menuitem', { name, exact: true });
 }
 async function editCommand(page, name) {
-    await page.getByRole('button', { name: 'Edit', exact: true }).click();
+    await page.getByRole('menubar', { name: 'Workspace menus' }).getByRole('menuitem', { name: 'Edit', exact: true }).click();
     await editItem(page, name).click();
 }
 async function ownedChild(page) {
@@ -141,7 +140,7 @@ test('owned child Edit and Cut use its saved scope and reject blocked or stale c
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     const id = await ownedChild(page);
     await page.locator('.pc-node-native[data-id="work"] .pc-native-heading').click();
-    await page.getByRole('button', { name: 'Edit', exact: true }).click();
+    await page.getByRole('menubar', { name: 'Workspace menus' }).getByRole('menuitem', { name: 'Edit', exact: true }).click();
     for (const name of ['Copy', 'Cut', 'Delete selection']) await expect(editItem(page, name)).toBeEnabled();
     await page.keyboard.press('Escape');
     const before = await page.evaluate(id => JSON.stringify(window.canvasHarness.S.getGraph(id)), id);
@@ -181,7 +180,7 @@ test('actual nested library Copy and Paste carries its exact closure into an unr
     await openShelfDefinition(page, state.key);
     const library = graphTab(page, { name: /Outer/ });
     await page.locator('.pc-node-native[data-id="work"] .pc-native-heading').click();
-    await page.getByRole('button', { name: 'Edit', exact: true }).click();
+    await page.getByRole('menubar', { name: 'Workspace menus' }).getByRole('menuitem', { name: 'Edit', exact: true }).click();
     await expect(editItem(page, 'Copy')).toBeEnabled();
     await expect(editItem(page, 'Cut')).toBeDisabled();
     await expect(editItem(page, 'Delete selection')).toBeDisabled();

@@ -80,7 +80,7 @@ test('changing a boundary capability expires its pending acknowledgment and repl
     } finally { await f.close(); }
 });
 
-test('boundary details edit the interface port and delete through the ordinary node action', async () => {
+test('boundary details edit the interface port and the Edit menu supplies ordinary deletion', async () => {
     const edits = [], ordinary = [];
     const f = await fixture('NodeDetails', boundary(), {
         editInterface: (captured, edit) => { edits.push([captured, edit]); return success(); },
@@ -98,8 +98,13 @@ test('boundary details edit the interface port and delete through the ordinary n
         assert.equal(f.host.querySelector('[data-add-boundary], [data-remove-boundary]'), null);
         assert.equal(f.host.querySelector('[aria-label="Enabled"]'), null, 'boundaries are interface declarations rather than enabled operations');
         assert.equal([...f.host.querySelectorAll('button')].some(button => button.textContent === 'Duplicate'), false);
-        [...f.host.querySelectorAll('button')].find(button => button.textContent === 'Delete').click(); await tick(); flushSync();
-        assert.equal(edits.length, 1); assert.deepEqual(ordinary, ['remove']);
+        assert.equal(f.host.querySelector('[aria-label="Node commands"]'), null);
+        const menus = await fixture('WorkspaceMenus', { history: {}, selectionActions: { delete: true } }, { command: command => ordinary.push(command) }, 'state');
+        try {
+            menus.host.querySelector('[data-menu="Edit"]').click(); await tick(); flushSync();
+            menus.host.querySelector('[role="menuitem"][aria-label="Delete selection"]').click(); await tick(); flushSync();
+            assert.equal(edits.length, 1); assert.deepEqual(ordinary, ['delete-selection']);
+        } finally { await menus.close(); }
     } finally { await f.close(); }
 });
 
@@ -114,8 +119,12 @@ test('read-only boundary controls reject raw events and interface failures prese
         for (const control of f.host.querySelectorAll('[data-boundary-controls] input, [data-boundary-controls] select, [data-boundary-controls] button')) assert.equal(control.disabled, true);
         input(label, 'Forbidden'); change(f.host.querySelector('[aria-label="Subgraph port type"]'), 'text');
         f.host.querySelector('[data-save-boundary]').dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
-        const deleteButton = [...f.host.querySelectorAll('button')].find(button => button.textContent === 'Delete'); assert.equal(deleteButton.disabled, true);
-        deleteButton.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
+        const menus = await fixture('WorkspaceMenus', { history: {}, readOnly: true, selectionActions: { delete: false } }, { command: command => removed.push(command) }, 'state');
+        try {
+            menus.host.querySelector('[data-menu="Edit"]').click(); await tick(); flushSync();
+            const deleteButton = menus.host.querySelector('[role="menuitem"][aria-label="Delete selection"]'); assert.equal(deleteButton.disabled, true);
+            deleteButton.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
+        } finally { await menus.close(); }
         assert.deepEqual(edits, []); assert.deepEqual(removed, []);
         f.update(boundary()); input(f.host.querySelector('[aria-label="Node name"]'), 'First draft');
         f.host.querySelector('[data-save-boundary]').click(); flushSync();
@@ -402,7 +411,8 @@ test('recording preview preserves actual output addresses, artifact kinds and re
         f.update(preview({ choices, selectedKey: 'data', review: null, pinned: true, followSelection: false, status: 'removed', statusDetail: 'Pinned source was removed. Recording preserved.' }));
         assert.match(f.host.textContent, /Source removed/); assert.match(f.host.textContent, /Recording preserved/); assert.equal(f.host.querySelector('[data-run-here]').disabled, true);
         f.host.querySelector('[data-run-here]').click(); assert.equal(calls.length, 1);
-        [...f.host.querySelectorAll('button')].find(button => button.textContent === 'Unpin preview').click(); assert.deepEqual(calls[1], ['follow']);
+        const pin = f.host.querySelector('[aria-label="Pin preview"]'); assert.equal(pin.getAttribute('aria-pressed'), 'true');
+        pin.click(); assert.deepEqual(calls[1], ['follow']);
     } finally { await f.close(); }
 });
 

@@ -14,6 +14,9 @@ import * as H from '../src/history.js?v=0.26.0';
 import { readNodePresentation } from '../src/ui/node-palette.js?v=0.26.0';
 import { viewIdentityKey } from '../src/ui/view-state.js?v=0.26.0';
 import { createConfiguredNodeSession } from '../src/ui/configured-node-creation.js?v=0.26.0';
+import { isCommentFrame } from '../src/canvas/comment-frames.js?v=0.26.0';
+import { operationFor } from '../src/workflow/catalog.js?v=0.26.0';
+import { groupMembers } from '../src/state.js?v=0.26.0';
 
 const groupId = 'ai-de-slop';
 const controllerText = await readFile(new URL('../src/ui/controller.js', import.meta.url), 'utf8');
@@ -25,6 +28,9 @@ function controllerFunction(name, env) {
     env.viewIdentityKey ??= viewIdentityKey;
     env.pendingCommentPresentation ??= new WeakMap();
     env.pendingSubgraphPresentation ??= new WeakMap();
+    env.isCommentFrame ??= isCommentFrame;
+    env.operationFor ??= operationFor;
+    env.groupMembers ??= groupMembers;
     if (name !== 'applyPendingCommentPresentation') env.applyPendingCommentPresentation ??= controllerFunction('applyPendingCommentPresentation', env);
     if (name === 'activateEditorDraw') env.applyPendingSubgraphPresentation ??= controllerFunction('applyPendingSubgraphPresentation', env);
     const start = controllerText.indexOf('function ' + name + '('); if (start < 0) return null;
@@ -142,7 +148,7 @@ test('folding preserves current private handle ownership through the actual sess
         const host = createNativeWorkflowController({ context: () => context, getGraph: () => f.root, isEnabled: () => true, isBusy: () => false, resolveBinding: () => { throw new Error('Scan-only review does not bind'); }, request: async () => { counters.requests++; throw new Error('Scan-only review does not request'); }, syncMesToSwipe: index => { const item = context.chat[index]; item.swipes[item.swipe_id] = item.mes; return true; }, syncSwipeToMes: (index, id) => { const item = context.chat[index]; item.swipe_id = id; item.mes = item.swipes[id]; Object.assign(item, structuredClone(item.swipe_info[id])); return true; } });
         const runtime = { ...host, candidateStatus(candidate) { counters.checks++; return host.candidateStatus(candidate); }, apply(candidate) { counters.apply++; return host.apply(candidate); }, cancel(reason) { counters.cancel++; host.cancel(reason); } };
         Object.assign(f.env, { workflowState: { result: null, reviewHandles: [], busy: false, availability: 'current', applyIssue: '' }, workspaceIssue: '', pinnedPreview: null, uiEpoch: 1, workflowLibrary: null, workflowInspector: null, workflowRuntime: { getNativeWorkflowController: () => runtime }, workflowProjection: null, workflowProjectionGraph: null, projectPreparedWorkflow, projectWorkspacePanels, settings: () => ({}), isWorkflowGraph: root => root?.mode?.startsWith('native-'), executableNative: root => root.schema === 2 && root.runtime === 1 || root.schema === 3 && root.runtime === 2, workbench: { update(value) { f.env.panels = value; } } });
-        for (const name of ['recallSetupView', 'samePreviewTerminal', 'currentRootPreviewTerminal', 'currentPreviewHandle', 'applyPreviewReview', 'rejectPreviewReview', 'workflowView', 'updateWorkflowProjection']) f.env[name] = controllerFunction(name, f.env);
+        for (const name of ['recallSetupView', 'samePreviewTerminal', 'currentRootPreviewTerminal', 'currentPreviewHandle', 'applyPreviewReview', 'rejectPreviewReview', 'workflowView', 'canCreateSubgraph', 'selectionMenuCapabilities', 'updateWorkflowProjection']) f.env[name] = controllerFunction(name, f.env);
         f.env.workflowSession = createWorkflowSession({ runtime: () => runtime, rootCurrent: () => f.root, runEpoch: () => f.env.rootRunEpoch, active: () => true, changed(value) {
             const changed = value.result !== f.env.workflowState.result || value.reviewHandles !== f.env.workflowState.reviewHandles; f.env.workflowState = value;
             if (changed) f.env.workspacePrepared.workflow = prepareWorkflowProjection(f.root, { ...(f.preparation.planner ? { planner: f.preparation.planner } : {}), result: value.result, candidateStatus: candidate => runtime.candidateStatus(candidate) });
