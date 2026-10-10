@@ -1,0 +1,2489 @@
+{
+  "date": "2026-10-10",
+  "source": "F:\\git\\SillyCanvas\\.tmp\\editor-latency-baseline",
+  "head": "c9e7b76bb284b5905f040a8c0ca2bfb39025c956",
+  "status": " M ../../src/ui/controller.js\n M ../../tests/browser/file-menu.spec.mjs\n?? ../../docs/research/2026-10-10-editor-latency-audit.md\n?? ../../docs/research/artifacts/editor-latency/\n?? ../../work/\n",
+  "bundleSha256": "c20244a6e3dc9b8a0c282e98eeaba61734e7e990332431780e3f48d6edafde45",
+  "browser": "151.0.7922.34",
+  "gpu": [
+    {
+      "vendorId": 65535,
+      "deviceId": 65535,
+      "subSysId": 0,
+      "revision": 0,
+      "vendorString": "Google Inc. (Google)",
+      "deviceString": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver-5.0.0)",
+      "driverVendor": "SwANGLE",
+      "driverVersion": "5.0.0"
+    }
+  ],
+  "viewport": {
+    "width": 1440,
+    "height": 1000
+  },
+  "sizes": [
+    2
+  ],
+  "repeats": 2,
+  "rates": [
+    1
+  ],
+  "modes": [
+    "local-json",
+    "local-expand",
+    "detail-enum",
+    "detail-toggle",
+    "detail-save",
+    "selection",
+    "shelf-create",
+    "search-create",
+    "connect-hover",
+    "connect-release"
+  ],
+  "scope": "Full mounted production controller and Svelte UI. Synthetic disabled host; no providers. One warmup, uninstrumented repeat timings, one instrumented operation-count sample; synthetic DOM events/controller bridge commands. settledMs ends at second rAF after action (a paint opportunity estimate, not INP). Motion 45 frames, six input events/frame, two instrumented samples. CPU rate 4 is a stress condition, not a hardware prediction.",
+  "errors": [],
+  "blocked": [],
+  "providerCalls": 0,
+  "rows": [
+    {
+      "size": 2,
+      "rate": 1,
+      "mode": "local-json",
+      "repeats": 2,
+      "syncMedianMs": 0.09999990463256836,
+      "syncP95Ms": 0.09999990463256836,
+      "settledMedianMs": 18.5,
+      "settledP95Ms": 35.5,
+      "samples": [
+        {
+          "repeat": 0,
+          "detailed": false,
+          "syncMs": 0.09999990463256836,
+          "settledMs": 35.5,
+          "stats": {
+            "jsonCalls": 0,
+            "jsonMs": 0,
+            "cloneCalls": 0,
+            "cloneMs": 0,
+            "saveCalls": 0,
+            "renderCalls": 0,
+            "setGraphCalls": 0,
+            "cardHeightReads": 0,
+            "pinRectReads": 0,
+            "methods": {}
+          },
+          "retained": {
+            "nodes": true,
+            "wires": true,
+            "control": true
+          },
+          "nodes": 2,
+          "wires": 0,
+          "elements": 52,
+          "taskMs": 2.2599999999999287,
+          "scriptMs": 0.343000000000003,
+          "layoutMs": 0.2539999999999973,
+          "styleMs": 0.16400000000000095
+        },
+        {
+          "repeat": 1,
+          "detailed": false,
+          "syncMs": 0.09999990463256836,
+          "settledMs": 18.5,
+          "stats": {
+            "jsonCalls": 0,
+            "jsonMs": 0,
+            "cloneCalls": 0,
+            "cloneMs": 0,
+            "saveCalls": 0,
+            "renderCalls": 0,
+            "setGraphCalls": 0,
+            "cardHeightReads": 0,
+            "pinRectReads": 0,
+            "methods": {}
+          },
+          "retained": {
+            "nodes": true,
+            "wires": true,
+            "control": true
+          },
+          "nodes": 2,
+          "wires": 0,
+          "elements": 52,
+          "taskMs": 2.1999999999999797,
+          "scriptMs": 0.3259999999999999,
+          "layoutMs": 0.2940000000000026,
+          "styleMs": 0.10399999999999993
+        },
+        {
+          "repeat": 2,
+          "detailed": true,
+          "syncMs": 0.19999992847442627,
+          "settledMs": 22.5,
+          "stats": {
+            "jsonCalls": 0,
+            "jsonMs": 0,
+            "cloneCalls": 0,
+            "cloneMs": 0,
+            "saveCalls": 0,
+            "renderCalls": 0,
+            "setGraphCalls": 0,
+            "cardHeightReads": 0,
+            "pinRectReads": 0,
+            "methods": {}
+          },
+          "retained": {
+            "nodes": true,
+            "wires": true,
+            "control": true
+          },
+          "nodes": 2,
+          "wires": 0,
+          "elements": 52,
+          "taskMs": 2.6720000000000077,
+          "scriptMs": 0.37400000000000627,
+          "layoutMs": 0.26500000000000135,
+          "styleMs": 0.16700000000000048
+        }
+      ]
+    },
+    {
+      "size": 2,
+      "rate": 1,
+      "mode": "local-expand",
+      "repeats": 2,
+      "syncMedianMs": 0,
+      "syncP95Ms": 0.10000002384185791,
+      "settledMedianMs": 18.200000047683716,
+      "settledP95Ms": 19,
+      "samples": [
+        {
+          "repeat": 0,
+          "detailed": false,
+          "syncMs": 0.10000002384185791,
+          "settledMs": 19,
+          "stats": {
+            "jsonCalls": 0,
+            "jsonMs": 0,
+            "cloneCalls": 0,
+            "cloneMs": 0,
+            "saveCalls": 0,
+            "renderCalls": 0,
+            "setGraphCalls": 0,
+            "cardHeightReads": 0,
+            "pinRectReads": 0,
+            "methods": {}
+          },
+          "retained": {
+            "nodes": true,
+            "wires": true,
+            "control": true
+          },
+          "nodes": 2,
+          "wires": 0,
+          "elements": 52,
+          "taskMs": 1.727000000000034,
+          "scriptMs": 0.03400000000000625,
+          "layoutMs": 0.19600000000000173,
+          "styleMs": 0.18400000000000014
+        },
+        {
+          "repeat": 1,
+          "detailed": false,
+          "syncMs": 0,
+          "settledMs": 18.200000047683716,
+          "stats": {
+            "jsonCalls": 0,
+            "jsonMs": 0,
+            "cloneCalls": 0,
+            "cloneMs": 0,
+            "saveCalls": 0,
+            "renderCalls": 0,
+            "setGraphCalls": 0,
+            "cardHeightReads": 0,
+            "pinRectReads": 0,
+            "methods": {}
+          },
+          "retained": {
+            "nodes": true,
+            "wires": true,
+            "control": true
+          },
+          "nodes": 2,
+          "wires": 0,
+          "elements": 52,
+          "taskMs": 1.8580000000001373,
+          "scriptMs": 0.03200000000000425,
+          "layoutMs": 0.20200000000000773,
+          "styleMs": 0.1789999999999986
+        },
+        {
+          "repeat": 2,
+          "detailed": true,
+          "syncMs": 0.09999990463256836,
+          "settledMs": 19.299999952316284,
+          "stats": {
+            "jsonCalls": 0,
+            "jsonMs": 0,
+            "cloneCalls": 0,
+            "cloneMs": 0,
+            "saveCalls": 0,
+            "renderCalls": 0,
+            "setGraphCalls": 0,
+            "cardHeightReads": 0,
+            "pinRectReads": 0,
+            "methods": {}
+          },
+          "retained": {
+            "nodes": true,
+            "wires": true,
+            "control": true
+          },
+          "nodes": 2,
+          "wires": 0,
+          "elements": 52,
+          "taskMs": 2.0639999999998437,
+          "scriptMs": 0.04200000000000037,
+          "layoutMs": 0.20599999999999785,
+          "styleMs": 0.19299999999999873
+        }
+      ]
+    },
+    {
+      "size": 2,
+      "rate": 1,
+      "mode": "detail-enum",
+      "repeats": 2,
+      "syncMedianMs": 20.200000047683716,
+      "syncP95Ms": 21.100000023841858,
+      "settledMedianMs": 31.399999976158142,
+      "settledP95Ms": 32.799999952316284,
+      "samples": [
+        {
+          "repeat": 0,
+          "detailed": false,
+          "syncMs": 21.100000023841858,
+          "settledMs": 31.399999976158142,
+          "stats": {
+            "jsonCalls": 0,
+            "jsonMs": 0,
+            "cloneCalls": 0,
+            "cloneMs": 0,
+            "saveCalls": 1,
+            "renderCalls": 0,
+            "setGraphCalls": 0,
+            "cardHeightReads": 0,
+            "pinRectReads": 0,
+            "methods": {}
+          },
+          "retained": {
+            "nodes": true,
+            "wires": true,
+            "control": true
+          },
+          "nodes": 2,
+          "wires": 0,
+          "elements": 52,
+          "taskMs": 28.803000000000132,
+          "scriptMs": 19.18099999999999,
+          "layoutMs": 2.612000000000003,
+          "styleMs": 0.8009999999999996
+        },
+        {
+          "repeat": 1,
+          "detailed": false,
+          "syncMs": 20.200000047683716,
+          "settledMs": 32.799999952316284,
+          "stats": {
+            "jsonCalls": 0,
+            "jsonMs": 0,
+            "cloneCalls": 0,
+            "cloneMs": 0,
+            "saveCalls": 1,
+            "renderCalls": 0,
+            "setGraphCalls": 0,
+            "cardHeightReads": 0,
+            "pinRectReads": 0,
+            "methods": {}
+          },
+          "retained": {
+            "nodes": true,
+            "wires": true,
+            "control": true
+          },
+          "nodes": 2,
+          "wires": 0,
+          "elements": 52,
+          "taskMs": 23.51800000000015,
+          "scriptMs": 18.213999999999995,
+          "layoutMs": 2.726000000000006,
+          "styleMs": 0.7820000000000015
+        },
+        {
+          "repeat": 2,
+          "detailed": true,
+          "syncMs": 25.200000047683716,
+          "settledMs": 35.10000002384186,
+          "stats": {
+            "jsonCalls": 2110,
+            "jsonMs": 2.1999999284744263,
+            "cloneCalls": 2506,
+            "cloneMs": 4.900000333786011,
+            "saveCalls": 1,
+            "renderCalls": 2,
+            "setGraphCalls": 1,
+            "cardHeightReads": 0,
+            "pinRectReads": 18,
+            "methods": {
+              "canvas.updateNativeWire": {
+                "calls": 5,
+                "ms": 0.10000002384185791
+              },
+              "layer.setWires": {
+                "calls": 4,
+                "ms": 0.19999992847442627
+              },
+              "layer.setNodeProfiles": {
+                "calls": 5,
+                "ms": 0
+              },
+              "layer.setComments": {
+                "calls": 2,
+                "ms": 0
+              },
+              "layer.setNodes": {
+                "calls": 2,
+                "ms": 0
+              },
+              "layer.setGroups": {
+                "calls": 2,
+                "ms": 0
+              },
+              "canvas.render": {
+                "calls": 2,
+                "ms": 3.9000000953674316
+              },
+              "canvas.setGraph": {
+                "calls": 1,
+                "ms": 3
+              },
+              "canvas.setNodeProfiles": {
+                "calls": 1,
+                "ms": 0.10000002384185791
+              },
+              "layer.setRecallStatus": {
+                "calls": 1,
+                "ms": 0
+              },
+              "canvas.setTrace": {
+                "calls": 1,
+                "ms": 1.7000000476837158
+              }
+            }
+          },
+          "retained": {
+            "nodes": true,
+            "wires": true,
+            "control": true
+          },
+          "nodes": 2,
+          "wires": 0,
+          "elements": 52,
+          "taskMs": 28.652000000000122,
+          "scriptMs": 23.341,
+          "layoutMs": 2.6639999999999997,
+          "styleMs": 0.8079999999999997
+        }
+      ]
+    },
+    {
+      "size": 2,
+      "rate": 1,
+      "mode": "detail-toggle",
+      "repeats": 2,
+      "syncMedianMs": 20.300000071525574,
+      "syncP95Ms": 22,
+      "settledMedianMs": 34.39999997615814,
+      "settledP95Ms": 35.40000009536743,
+      "samples": [
+        {
+          "repeat": 0,
+          "detailed": false,
+          "syncMs": 22,
+          "settledMs": 35.40000009536743,
+          "stats": {
+            "jsonCalls": 0,
+            "jsonMs": 0,
+            "cloneCalls": 0,
+            "cloneMs": 0,
+            "saveCalls": 1,
+            "renderCalls": 0,
+            "setGraphCalls": 0,
+            "cardHeightReads": 0,
+            "pinRectReads": 0,
+            "methods": {}
+          },
+          "retained": {
+            "nodes": true,
+            "wires": true,
+            "control": true
+          },
+          "nodes": 2,
+          "wires": 0,
+          "elements": 52,
+          "taskMs": 24.89000000000008,
+          "scriptMs": 19.737000000000005,
+          "layoutMs": 2.948000000000006,
+          "styleMs": 0.8210000000000023
+        },
+        {
+          "repeat": 1,
+          "detailed": false,
+          "syncMs": 20.300000071525574,
+          "settledMs": 34.39999997615814,
+          "stats": {
+            "jsonCalls": 0,
+            "jsonMs": 0,
+            "cloneCalls": 0,
+            "cloneMs": 0,
+            "saveCalls": 1,
+            "renderCalls": 0,
+            "setGraphCalls": 0,
+            "cardHeightReads": 0,
+            "pinRectReads": 0,
+            "methods": {}
+          },
+          "retained": {
+            "nodes": true,
+            "wires": true,
+            "control": true
+          },
+          "nodes": 2,
+          "wires": 0,
+          "elements": 53,
+          "taskMs": 23.23300000000006,
+          "scriptMs": 18.151,
+          "layoutMs": 2.783999999999995,
+          "styleMs": 0.8319999999999994
+        },
+        {
+          "repeat": 2,
+          "detailed": true,
+          "syncMs": 23.5,
+          "settledMs": 33.299999952316284,
+          "stats": {
+            "jsonCalls": 2110,
+            "jsonMs": 1.100000023841858,
+            "cloneCalls": 2495,
+            "cloneMs": 5.099999904632568,
+            "saveCalls": 1,
+            "renderCalls": 2,
+            "setGraphCalls": 1,
+            "cardHeightReads": 0,
+            "pinRectReads": 18,
+            "methods": {
+              "canvas.updateNativeWire": {
+                "calls": 5,
+                "ms": 0.09999990463256836
+              },
+              "layer.setWires": {
+                "calls": 4,
+                "ms": 0.10000002384185791
+              },
+              "layer.setNodeProfiles": {
+                "calls": 5,
+                "ms": 0
+              },
+              "layer.setComments": {
+                "calls": 2,
+                "ms": 0
+              },
+              "layer.setNodes": {
+                "calls": 2,
+                "ms": 0.20000004768371582
+              },
+              "layer.setGroups": {
+                "calls": 2,
+                "ms": 0
+              },
+              "canvas.render": {
+                "calls": 2,
+                "ms": 4
+              },
+              "canvas.setGraph": {
+                "calls": 1,
+                "ms": 3.100000023841858
+              },
+              "canvas.setNodeProfiles": {
+                "calls": 1,
+                "ms": 0.09999990463256836
+              },
+              "layer.setRecallStatus": {
+                "calls": 1,
+                "ms": 0
+              },
+              "canvas.setTrace": {
+                "calls": 1,
+                "ms": 1.600000023841858
+              }
+            }
+          },
+          "retained": {
+            "nodes": true,
+            "wires": true,
+            "control": true
+          },
+          "nodes": 2,
+          "wires": 0,
+          "elements": 52,
+          "taskMs": 26.66600000000008,
+          "scriptMs": 21.407999999999983,
+          "layoutMs": 2.7650000000000037,
+          "styleMs": 0.8169999999999983
+        }
+      ]
+    },
+    {
+      "size": 2,
+      "rate": 1,
+      "mode": "detail-save",
+      "repeats": 2,
+      "syncMedianMs": 19.800000071525574,
+      "syncP95Ms": 26.199999928474426,
+      "settledMedianMs": 28,
+      "settledP95Ms": 31.5,
+      "samples": [
+        {
+          "repeat": 0,
+          "detailed": false,
+          "syncMs": 19.800000071525574,
+          "settledMs": 28,
+          "stats": {
+            "jsonCalls": 0,
+            "jsonMs": 0,
+            "cloneCalls": 0,
+            "cloneMs": 0,
+            "saveCalls": 1,
+            "renderCalls": 0,
+            "setGraphCalls": 0,
+            "cardHeightReads": 0,
+            "pinRectReads": 0,
+            "methods": {}
+          },
+          "retained": {
+            "nodes": true,
+            "wires": true,
+            "control": true
+          },
+          "nodes": 2,
+          "wires": 0,
+          "elements": 52,
+          "taskMs": 22.27900000000016,
+          "scriptMs": 17.915000000000013,
+          "layoutMs": 2.62900000000002,
+          "styleMs": 0.5509999999999959
+        },
+        {
+          "repeat": 1,
+          "detailed": false,
+          "syncMs": 26.199999928474426,
+          "settledMs": 31.5,
+          "stats": {
+            "jsonCalls": 0,
+            "jsonMs": 0,
+            "cloneCalls": 0,
+            "cloneMs": 0,
+            "saveCalls": 1,
+            "renderCalls": 0,
+            "setGraphCalls": 0,
+            "cardHeightReads": 0,
+            "pinRectReads": 0,
+            "methods": {}
+          },
+          "retained": {
+            "nodes": true,
+            "wires": true,
+            "control": true
+          },
+          "nodes": 2,
+          "wires": 0,
+          "elements": 52,
+          "taskMs": 30.305999999999944,
+          "scriptMs": 22.963999999999984,
+          "layoutMs": 4.403999999999991,
+          "styleMs": 1.023000000000003
+        },
+        {
+          "repeat": 2,
+          "detailed": true,
+          "syncMs": 23,
+          "settledMs": 35.800000071525574,
+          "stats": {
+            "jsonCalls": 2113,
+            "jsonMs": 1.600000023841858,
+            "cloneCalls": 2506,
+            "cloneMs": 5.499999642372131,
+            "saveCalls": 1,
+            "renderCalls": 2,
+            "setGraphCalls": 1,
+            "cardHeightReads": 0,
+            "pinRectReads": 18,
+            "methods": {
+              "canvas.updateNativeWire": {
+                "calls": 5,
+                "ms": 0.10000002384185791
+              },
+              "layer.setWires": {
+                "calls": 4,
+                "ms": 0
+              },
+              "layer.setNodeProfiles": {
+                "calls": 5,
+                "ms": 0
+              },
+              "layer.setComments": {
+                "calls": 2,
+                "ms": 0
+              },
+              "layer.setNodes": {
+                "calls": 2,
+                "ms": 0
+              },
+              "layer.setGroups": {
+                "calls": 2,
+                "ms": 0
+              },
+              "canvas.render": {
+                "calls": 2,
+                "ms": 3.799999952316284
+              },
+              "canvas.setGraph": {
+                "calls": 1,
+                "ms": 3
+              },
+              "canvas.setNodeProfiles": {
+                "calls": 1,
+                "ms": 0
+              },
+              "layer.setRecallStatus": {
+                "calls": 1,
+                "ms": 0
+              },
+              "canvas.setTrace": {
+                "calls": 1,
+                "ms": 1.600000023841858
+              }
+            }
+          },
+          "retained": {
+            "nodes": true,
+            "wires": true,
+            "control": true
+          },
+          "nodes": 2,
+          "wires": 0,
+          "elements": 52,
+          "taskMs": 27.38599999999991,
+          "scriptMs": 21.119,
+          "layoutMs": 2.7979999999999947,
+          "styleMs": 0.6169999999999995
+        }
+      ]
+    },
+    {
+      "size": 2,
+      "rate": 1,
+      "mode": "selection",
+      "repeats": 2,
+      "syncMedianMs": 2,
+      "syncP95Ms": 2,
+      "settledMedianMs": 19.399999976158142,
+      "settledP95Ms": 32.39999997615814,
+      "samples": [
+        {
+          "repeat": 0,
+          "detailed": false,
+          "syncMs": 2,
+          "settledMs": 19.399999976158142,
+          "stats": {
+            "jsonCalls": 0,
+            "jsonMs": 0,
+            "cloneCalls": 0,
+            "cloneMs": 0,
+            "saveCalls": 0,
+            "renderCalls": 0,
+            "setGraphCalls": 0,
+            "cardHeightReads": 0,
+            "pinRectReads": 0,
+            "methods": {}
+          },
+          "retained": {
+            "nodes": true,
+            "wires": true,
+            "control": true
+          },
+          "nodes": 2,
+          "wires": 0,
+          "elements": 52,
+          "taskMs": 3.594000000000097,
+          "scriptMs": 0.062000000000006494,
+          "layoutMs": 0.18400000000001748,
+          "styleMs": 0.1969999999999958
+        },
+        {
+          "repeat": 1,
+          "detailed": false,
+          "syncMs": 2,
+          "settledMs": 32.39999997615814,
+          "stats": {
+            "jsonCalls": 0,
+            "jsonMs": 0,
+            "cloneCalls": 0,
+            "cloneMs": 0,
+            "saveCalls": 0,
+            "renderCalls": 0,
+            "setGraphCalls": 0,
+            "cardHeightReads": 0,
+            "pinRectReads": 0,
+            "methods": {}
+          },
+          "retained": {
+            "nodes": true,
+            "wires": true,
+            "control": true
+          },
+          "nodes": 2,
+          "wires": 0,
+          "elements": 52,
+          "taskMs": 3.5449999999999093,
+          "scriptMs": 0.018999999999991246,
+          "layoutMs": 0.18999999999999573,
+          "styleMs": 0.18699999999999967
+        },
+        {
+          "repeat": 2,
+          "detailed": true,
+          "syncMs": 1.899999976158142,
+          "settledMs": 21.399999976158142,
+          "stats": {
+            "jsonCalls": 51,
+            "jsonMs": 0,
+            "cloneCalls": 72,
+            "cloneMs": 0.20000004768371582,
+            "saveCalls": 0,
+            "renderCalls": 0,
+            "setGraphCalls": 0,
+            "cardHeightReads": 0,
+            "pinRectReads": 0,
+            "methods": {
+              "layer.setNodeProfiles": {
+                "calls": 1,
+                "ms": 0
+              },
+              "canvas.setNodeProfiles": {
+                "calls": 1,
+                "ms": 0.19999992847442627
+              },
+              "layer.setRecallStatus": {
+                "calls": 1,
+                "ms": 0
+              }
+            }
+          },
+          "retained": {
+            "nodes": true,
+            "wires": true,
+            "control": true
+          },
+          "nodes": 2,
+          "wires": 0,
+          "elements": 52,
+          "taskMs": 3.6200000000001786,
+          "scriptMs": 0.00999999999995449,
+          "layoutMs": 0.18599999999999173,
+          "styleMs": 0.1820000000000016
+        }
+      ]
+    },
+    {
+      "size": 2,
+      "rate": 1,
+      "mode": "shelf-create",
+      "repeats": 2,
+      "syncMedianMs": 8.100000023841858,
+      "syncP95Ms": 9.200000047683716,
+      "settledMedianMs": 40.5,
+      "settledP95Ms": 44.299999952316284,
+      "samples": [
+        {
+          "repeat": 0,
+          "detailed": false,
+          "syncMs": 8.100000023841858,
+          "settledMs": 44.299999952316284,
+          "stats": {
+            "jsonCalls": 0,
+            "jsonMs": 0,
+            "cloneCalls": 0,
+            "cloneMs": 0,
+            "saveCalls": 1,
+            "renderCalls": 0,
+            "setGraphCalls": 0,
+            "cardHeightReads": 0,
+            "pinRectReads": 0,
+            "methods": {}
+          },
+          "retained": {
+            "nodes": true,
+            "wires": true,
+            "control": true
+          },
+          "nodes": 3,
+          "wires": 0,
+          "elements": 64,
+          "taskMs": 32.704999999999984,
+          "scriptMs": 7.796999999999999,
+          "layoutMs": 4.059000000000007,
+          "styleMs": 1.1420000000000041
+        },
+        {
+          "repeat": 1,
+          "detailed": false,
+          "syncMs": 9.200000047683716,
+          "settledMs": 40.5,
+          "stats": {
+            "jsonCalls": 0,
+            "jsonMs": 0,
+            "cloneCalls": 0,
+            "cloneMs": 0,
+            "saveCalls": 1,
+            "renderCalls": 0,
+            "setGraphCalls": 0,
+            "cardHeightReads": 0,
+            "pinRectReads": 0,
+            "methods": {}
+          },
+          "retained": {
+            "nodes": true,
+            "wires": true,
+            "control": true
+          },
+          "nodes": 3,
+          "wires": 0,
+          "elements": 64,
+          "taskMs": 33.008999999999844,
+          "scriptMs": 8.805000000000007,
+          "layoutMs": 3.8489999999999913,
+          "styleMs": 1.365000000000005
+        },
+        {
+          "repeat": 2,
+          "detailed": true,
+          "syncMs": 8.899999976158142,
+          "settledMs": 46.39999997615814,
+          "stats": {
+            "jsonCalls": 2451,
+            "jsonMs": 1.4000000953674316,
+            "cloneCalls": 3386,
+            "cloneMs": 6.199999809265137,
+            "saveCalls": 1,
+            "renderCalls": 2,
+            "setGraphCalls": 1,
+            "cardHeightReads": 0,
+            "pinRectReads": 21,
+            "methods": {
+              "canvas.updateNativeWire": {
+                "calls": 7,
+                "ms": 0
+              },
+              "layer.setWires": {
+                "calls": 5,
+                "ms": 0
+              },
+              "layer.setNodeProfiles": {
+                "calls": 5,
+                "ms": 0
+              },
+              "layer.setComments": {
+                "calls": 2,
+                "ms": 0
+              },
+              "layer.setNodes": {
+                "calls": 2,
+                "ms": 0.2999999523162842
+              },
+              "layer.setGroups": {
+                "calls": 2,
+                "ms": 0
+              },
+              "canvas.render": {
+                "calls": 2,
+                "ms": 4.399999976158142
+              },
+              "canvas.setGraph": {
+                "calls": 1,
+                "ms": 3.5
+              },
+              "canvas.setNodeProfiles": {
+                "calls": 1,
+                "ms": 0.09999990463256836
+              },
+              "layer.setRecallStatus": {
+                "calls": 1,
+                "ms": 0
+              },
+              "canvas.setTrace": {
+                "calls": 1,
+                "ms": 1.7999999523162842
+              }
+            }
+          },
+          "retained": {
+            "nodes": true,
+            "wires": true,
+            "control": true
+          },
+          "nodes": 3,
+          "wires": 0,
+          "elements": 64,
+          "taskMs": 33.04699999999983,
+          "scriptMs": 8.670999999999985,
+          "layoutMs": 3.4700000000000006,
+          "styleMs": 1.0819999999999996
+        }
+      ]
+    },
+    {
+      "size": 2,
+      "rate": 1,
+      "mode": "search-create",
+      "repeats": 2,
+      "syncMedianMs": 2.600000023841858,
+      "syncP95Ms": 2.600000023841858,
+      "settledMedianMs": 29.600000023841858,
+      "settledP95Ms": 38.300000071525574,
+      "samples": [
+        {
+          "repeat": 0,
+          "detailed": false,
+          "syncMs": 2.600000023841858,
+          "settledMs": 29.600000023841858,
+          "stats": {
+            "jsonCalls": 0,
+            "jsonMs": 0,
+            "cloneCalls": 0,
+            "cloneMs": 0,
+            "saveCalls": 1,
+            "renderCalls": 0,
+            "setGraphCalls": 0,
+            "cardHeightReads": 0,
+            "pinRectReads": 0,
+            "methods": {}
+          },
+          "retained": {
+            "nodes": true,
+            "wires": true,
+            "control": false
+          },
+          "nodes": 3,
+          "wires": 0,
+          "elements": 64,
+          "taskMs": 26.167999999999747,
+          "scriptMs": 0.31999999999998696,
+          "layoutMs": 3.942000000000001,
+          "styleMs": 0.9509999999999935
+        },
+        {
+          "repeat": 1,
+          "detailed": false,
+          "syncMs": 2.600000023841858,
+          "settledMs": 38.300000071525574,
+          "stats": {
+            "jsonCalls": 0,
+            "jsonMs": 0,
+            "cloneCalls": 0,
+            "cloneMs": 0,
+            "saveCalls": 1,
+            "renderCalls": 0,
+            "setGraphCalls": 0,
+            "cardHeightReads": 0,
+            "pinRectReads": 0,
+            "methods": {}
+          },
+          "retained": {
+            "nodes": true,
+            "wires": true,
+            "control": false
+          },
+          "nodes": 3,
+          "wires": 0,
+          "elements": 64,
+          "taskMs": 44.08900000000004,
+          "scriptMs": 0.36400000000003097,
+          "layoutMs": 4.759000000000013,
+          "styleMs": 1.0349999999999944
+        },
+        {
+          "repeat": 2,
+          "detailed": true,
+          "syncMs": 3.200000047683716,
+          "settledMs": 30.40000009536743,
+          "stats": {
+            "jsonCalls": 2192,
+            "jsonMs": 2.3000000715255737,
+            "cloneCalls": 2282,
+            "cloneMs": 3.9999996423721313,
+            "saveCalls": 1,
+            "renderCalls": 3,
+            "setGraphCalls": 1,
+            "cardHeightReads": 0,
+            "pinRectReads": 27,
+            "methods": {
+              "canvas.updateNativeWire": {
+                "calls": 6,
+                "ms": 0
+              },
+              "layer.setNodeProfiles": {
+                "calls": 8,
+                "ms": 0
+              },
+              "layer.setComments": {
+                "calls": 3,
+                "ms": 0
+              },
+              "layer.setNodes": {
+                "calls": 3,
+                "ms": 0.49999988079071045
+              },
+              "layer.setGroups": {
+                "calls": 3,
+                "ms": 0
+              },
+              "layer.setWires": {
+                "calls": 4,
+                "ms": 0
+              },
+              "canvas.render": {
+                "calls": 3,
+                "ms": 6.6000001430511475
+              },
+              "canvas.setNodeProfiles": {
+                "calls": 2,
+                "ms": 0.10000002384185791
+              },
+              "layer.setRecallStatus": {
+                "calls": 2,
+                "ms": 0.09999990463256836
+              },
+              "canvas.setGraph": {
+                "calls": 1,
+                "ms": 3.399999976158142
+              },
+              "canvas.setTrace": {
+                "calls": 1,
+                "ms": 1.9000000953674316
+              }
+            }
+          },
+          "retained": {
+            "nodes": true,
+            "wires": true,
+            "control": false
+          },
+          "nodes": 3,
+          "wires": 0,
+          "elements": 64,
+          "taskMs": 30.975999999999893,
+          "scriptMs": 0.41000000000002146,
+          "layoutMs": 3.984999999999961,
+          "styleMs": 0.9720000000000006
+        }
+      ]
+    },
+    {
+      "size": 2,
+      "rate": 1,
+      "mode": "connect-hover",
+      "repeats": 2,
+      "syncMedianMs": 2.600000023841858,
+      "syncP95Ms": 2.600000023841858,
+      "settledMedianMs": 20.299999952316284,
+      "settledP95Ms": 31.199999928474426,
+      "samples": [
+        {
+          "repeat": 0,
+          "detailed": false,
+          "syncMs": 2.600000023841858,
+          "settledMs": 31.199999928474426,
+          "stats": {
+            "jsonCalls": 0,
+            "jsonMs": 0,
+            "cloneCalls": 0,
+            "cloneMs": 0,
+            "saveCalls": 0,
+            "renderCalls": 0,
+            "setGraphCalls": 0,
+            "cardHeightReads": 0,
+            "pinRectReads": 0,
+            "methods": {}
+          },
+          "retained": {
+            "nodes": true,
+            "wires": true,
+            "control": true
+          },
+          "nodes": 2,
+          "wires": 0,
+          "elements": 53,
+          "taskMs": 5.09499999999985,
+          "scriptMs": 0.23800000000001598,
+          "layoutMs": 0.10599999999999499,
+          "styleMs": 0.11999999999999511
+        },
+        {
+          "repeat": 1,
+          "detailed": false,
+          "syncMs": 2.600000023841858,
+          "settledMs": 20.299999952316284,
+          "stats": {
+            "jsonCalls": 0,
+            "jsonMs": 0,
+            "cloneCalls": 0,
+            "cloneMs": 0,
+            "saveCalls": 0,
+            "renderCalls": 0,
+            "setGraphCalls": 0,
+            "cardHeightReads": 0,
+            "pinRectReads": 0,
+            "methods": {}
+          },
+          "retained": {
+            "nodes": true,
+            "wires": true,
+            "control": true
+          },
+          "nodes": 2,
+          "wires": 0,
+          "elements": 53,
+          "taskMs": 4.901000000000266,
+          "scriptMs": 0.19099999999999673,
+          "layoutMs": 0.10099999999996223,
+          "styleMs": 0.11899999999999411
+        },
+        {
+          "repeat": 2,
+          "detailed": true,
+          "syncMs": 3.3000000715255737,
+          "settledMs": 28.300000071525574,
+          "stats": {
+            "jsonCalls": 168,
+            "jsonMs": 0.49999988079071045,
+            "cloneCalls": 559,
+            "cloneMs": 1.1000001430511475,
+            "saveCalls": 0,
+            "renderCalls": 0,
+            "setGraphCalls": 0,
+            "cardHeightReads": 0,
+            "pinRectReads": 0,
+            "methods": {
+              "canvas.updateNativeWire": {
+                "calls": 2,
+                "ms": 0
+              },
+              "layer.setWires": {
+                "calls": 1,
+                "ms": 0
+              }
+            }
+          },
+          "retained": {
+            "nodes": true,
+            "wires": true,
+            "control": true
+          },
+          "nodes": 2,
+          "wires": 0,
+          "elements": 53,
+          "taskMs": 5.877000000000354,
+          "scriptMs": 0.20799999999998597,
+          "layoutMs": 0.10500000000002174,
+          "styleMs": 0.11899999999999411
+        }
+      ]
+    },
+    {
+      "size": 2,
+      "rate": 1,
+      "mode": "connect-release",
+      "repeats": 2,
+      "syncMedianMs": 2.6999999284744263,
+      "syncP95Ms": 2.6999999284744263,
+      "settledMedianMs": 26.299999952316284,
+      "settledP95Ms": 33.60000002384186,
+      "samples": [
+        {
+          "repeat": 0,
+          "detailed": false,
+          "syncMs": 2.6999999284744263,
+          "settledMs": 33.60000002384186,
+          "stats": {
+            "jsonCalls": 0,
+            "jsonMs": 0,
+            "cloneCalls": 0,
+            "cloneMs": 0,
+            "saveCalls": 1,
+            "renderCalls": 0,
+            "setGraphCalls": 0,
+            "cardHeightReads": 0,
+            "pinRectReads": 0,
+            "methods": {}
+          },
+          "retained": {
+            "nodes": true,
+            "wires": false,
+            "control": false
+          },
+          "nodes": 2,
+          "wires": 1,
+          "elements": 56,
+          "taskMs": 26.151000000000035,
+          "scriptMs": 0.2689999999999637,
+          "layoutMs": 3.566999999999987,
+          "styleMs": 0.7489999999999997
+        },
+        {
+          "repeat": 1,
+          "detailed": false,
+          "syncMs": 2.6999999284744263,
+          "settledMs": 26.299999952316284,
+          "stats": {
+            "jsonCalls": 0,
+            "jsonMs": 0,
+            "cloneCalls": 0,
+            "cloneMs": 0,
+            "saveCalls": 1,
+            "renderCalls": 0,
+            "setGraphCalls": 0,
+            "cardHeightReads": 0,
+            "pinRectReads": 0,
+            "methods": {}
+          },
+          "retained": {
+            "nodes": true,
+            "wires": false,
+            "control": false
+          },
+          "nodes": 2,
+          "wires": 1,
+          "elements": 56,
+          "taskMs": 26.164000000000076,
+          "scriptMs": 0.26399999999993096,
+          "layoutMs": 3.6539999999999906,
+          "styleMs": 0.8080000000000032
+        },
+        {
+          "repeat": 2,
+          "detailed": true,
+          "syncMs": 3.0999999046325684,
+          "settledMs": 37.199999928474426,
+          "stats": {
+            "jsonCalls": 2230,
+            "jsonMs": 2.499999761581421,
+            "cloneCalls": 2563,
+            "cloneMs": 5.100000023841858,
+            "saveCalls": 1,
+            "renderCalls": 3,
+            "setGraphCalls": 1,
+            "cardHeightReads": 0,
+            "pinRectReads": 24,
+            "methods": {
+              "canvas.updateNativeWire": {
+                "calls": 6,
+                "ms": 0
+              },
+              "layer.setNodeProfiles": {
+                "calls": 8,
+                "ms": 0.10000002384185791
+              },
+              "layer.setComments": {
+                "calls": 3,
+                "ms": 0
+              },
+              "layer.setNodes": {
+                "calls": 3,
+                "ms": 0
+              },
+              "layer.setGroups": {
+                "calls": 3,
+                "ms": 0.10000002384185791
+              },
+              "layer.setWires": {
+                "calls": 4,
+                "ms": 0
+              },
+              "canvas.render": {
+                "calls": 3,
+                "ms": 5.800000071525574
+              },
+              "canvas.setNodeProfiles": {
+                "calls": 2,
+                "ms": 0.30000007152557373
+              },
+              "layer.setRecallStatus": {
+                "calls": 2,
+                "ms": 0.09999990463256836
+              },
+              "canvas.setGraph": {
+                "calls": 1,
+                "ms": 2.700000047683716
+              },
+              "canvas.setTrace": {
+                "calls": 1,
+                "ms": 1.600000023841858
+              }
+            }
+          },
+          "retained": {
+            "nodes": true,
+            "wires": false,
+            "control": false
+          },
+          "nodes": 2,
+          "wires": 1,
+          "elements": 56,
+          "taskMs": 28.734000000000037,
+          "scriptMs": 0.280000000000058,
+          "layoutMs": 3.6820000000000186,
+          "styleMs": 0.788999999999998
+        }
+      ]
+    },
+    {
+      "size": 2,
+      "rate": 1,
+      "mode": "drag",
+      "repeat": 0,
+      "frameMedianMs": 16.69999999999709,
+      "frameP95Ms": 16.799999999999272,
+      "framesOver25Ms": 0,
+      "handlerP95Ms": 0.20000004768371582,
+      "downMs": 2.5,
+      "releaseSyncMs": 31,
+      "releaseSettledMs": 33.5,
+      "intervals": [
+        16.575999999999112,
+        16.600000000000364,
+        16.799999999999272,
+        16.600000000000364,
+        16.700000000000728,
+        16.69999999999891,
+        16.600000000000364,
+        16.700000000000728,
+        16.69999999999891,
+        16.600000000000364,
+        16.69999999999891,
+        16.600000000002183,
+        16.700000000000728,
+        16.69999999999709,
+        16.600000000002183,
+        16.799999999999272,
+        16.599999999998545,
+        16.700000000000728,
+        16.600000000002183,
+        16.69999999999709,
+        16.700000000000728,
+        16.600000000002183,
+        16.69999999999709,
+        16.700000000000728,
+        16.600000000002183,
+        16.69999999999709,
+        16.700000000000728,
+        16.600000000002183,
+        16.599999999998545,
+        16.700000000000728,
+        16.700000000000728,
+        16.599999999998545,
+        16.799999999999272,
+        16.600000000002183,
+        16.69999999999709,
+        16.700000000000728,
+        16.600000000002183,
+        16.69999999999709,
+        16.700000000000728,
+        16.600000000002183,
+        16.69999999999709,
+        16.700000000000728,
+        16.600000000002183,
+        16.69999999999709
+      ],
+      "handlers": [
+        0.8999999761581421,
+        0.10000002384185791,
+        0.10000002384185791,
+        0,
+        0,
+        0.10000002384185791,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0.10000002384185791,
+        0.09999990463256836,
+        0,
+        0.10000002384185791,
+        0.10000002384185791,
+        0.20000004768371582,
+        0,
+        0.09999990463256836,
+        0,
+        0.10000002384185791,
+        0,
+        0.10000002384185791,
+        0.09999990463256836,
+        0,
+        0.10000002384185791,
+        0,
+        0.09999990463256836,
+        0.10000002384185791,
+        0.10000002384185791,
+        0.10000002384185791,
+        0,
+        0,
+        0.09999990463256836,
+        0,
+        0,
+        0.10000002384185791,
+        0.09999990463256836,
+        0.20000004768371582,
+        0.09999990463256836,
+        0
+      ],
+      "stats": {
+        "jsonCalls": 2958,
+        "jsonMs": 2.799999952316284,
+        "cloneCalls": 3082,
+        "cloneMs": 5.3999998569488525,
+        "saveCalls": 2,
+        "renderCalls": 4,
+        "setGraphCalls": 2,
+        "cardHeightReads": 0,
+        "pinRectReads": 30,
+        "methods": {
+          "layer.setNodeProfiles": {
+            "calls": 56,
+            "ms": 1.0000001192092896
+          },
+          "canvas.setNodeProfiles": {
+            "calls": 3,
+            "ms": 0.10000002384185791
+          },
+          "layer.setRecallStatus": {
+            "calls": 3,
+            "ms": 0.19999992847442627
+          },
+          "layer.setPositions": {
+            "calls": 45,
+            "ms": 4.000000476837158
+          },
+          "layer.setGroups": {
+            "calls": 49,
+            "ms": 0.30000007152557373
+          },
+          "layer.setWires": {
+            "calls": 53,
+            "ms": 0.10000002384185791
+          },
+          "canvas.updateNativeWire": {
+            "calls": 10,
+            "ms": 0
+          },
+          "layer.setComments": {
+            "calls": 4,
+            "ms": 0.10000002384185791
+          },
+          "layer.setNodes": {
+            "calls": 4,
+            "ms": 0.39999985694885254
+          },
+          "canvas.render": {
+            "calls": 4,
+            "ms": 7.400000095367432
+          },
+          "canvas.setGraph": {
+            "calls": 2,
+            "ms": 5.399999976158142
+          },
+          "canvas.setTrace": {
+            "calls": 2,
+            "ms": 3.4000000953674316
+          }
+        }
+      },
+      "retained": {
+        "nodes": true,
+        "wires": true,
+        "control": true
+      },
+      "providerCalls": 0
+    },
+    {
+      "size": 2,
+      "rate": 1,
+      "mode": "drag",
+      "repeat": 1,
+      "frameMedianMs": 16.700000000000728,
+      "frameP95Ms": 16.700000000000728,
+      "framesOver25Ms": 0,
+      "handlerP95Ms": 0.10000002384185791,
+      "downMs": 1.7999999523162842,
+      "releaseSyncMs": 31.700000047683716,
+      "releaseSettledMs": 49.5,
+      "intervals": [
+        16.600000000002183,
+        16.599999999998545,
+        16.799999999999272,
+        16.600000000002183,
+        16.700000000000728,
+        16.69999999999709,
+        16.600000000002183,
+        16.700000000000728,
+        16.599999999998545,
+        16.700000000000728,
+        16.700000000000728,
+        16.599999999998545,
+        16.700000000000728,
+        16.599999999998545,
+        16.799999999999272,
+        16.600000000002183,
+        16.700000000000728,
+        16.599999999998545,
+        16.700000000000728,
+        16.700000000000728,
+        16.599999999998545,
+        16.700000000000728,
+        16.700000000000728,
+        16.599999999998545,
+        16.700000000000728,
+        16.700000000000728,
+        16.599999999998545,
+        16.700000000000728,
+        16.700000000000728,
+        16.69999999999709,
+        16.600000000002183,
+        16.700000000000728,
+        16.599999999998545,
+        16.700000000000728,
+        16.700000000000728,
+        16.599999999998545,
+        16.599999999998545,
+        16.700000000000728,
+        16.700000000000728,
+        16.700000000000728,
+        16.599999999998545,
+        16.700000000000728,
+        16.700000000000728,
+        16.599999999998545
+      ],
+      "handlers": [
+        0.8999999761581421,
+        0.20000004768371582,
+        0.09999990463256836,
+        0,
+        0,
+        0,
+        0.09999990463256836,
+        0.09999990463256836,
+        0.09999990463256836,
+        0.09999990463256836,
+        0,
+        0.09999990463256836,
+        0.10000002384185791,
+        0,
+        0.09999990463256836,
+        0,
+        0.10000002384185791,
+        0,
+        0.10000002384185791,
+        0,
+        0,
+        0,
+        0.10000002384185791,
+        0.10000002384185791,
+        0,
+        0.10000002384185791,
+        0,
+        0,
+        0.09999990463256836,
+        0,
+        0,
+        0,
+        0.10000002384185791,
+        0.10000002384185791,
+        0,
+        0.10000002384185791,
+        0.10000002384185791,
+        0.10000002384185791,
+        0.10000002384185791,
+        0.10000002384185791,
+        0.09999990463256836,
+        0.10000002384185791,
+        0.10000002384185791,
+        0.10000002384185791,
+        0
+      ],
+      "stats": {
+        "jsonCalls": 2958,
+        "jsonMs": 2.299999713897705,
+        "cloneCalls": 3082,
+        "cloneMs": 6.399999976158142,
+        "saveCalls": 2,
+        "renderCalls": 4,
+        "setGraphCalls": 2,
+        "cardHeightReads": 0,
+        "pinRectReads": 30,
+        "methods": {
+          "layer.setNodeProfiles": {
+            "calls": 56,
+            "ms": 0.3999999761581421
+          },
+          "canvas.setNodeProfiles": {
+            "calls": 3,
+            "ms": 0.19999992847442627
+          },
+          "layer.setRecallStatus": {
+            "calls": 3,
+            "ms": 0.19999992847442627
+          },
+          "layer.setPositions": {
+            "calls": 45,
+            "ms": 4.299999833106995
+          },
+          "layer.setGroups": {
+            "calls": 49,
+            "ms": 0
+          },
+          "layer.setWires": {
+            "calls": 53,
+            "ms": 0.3999999761581421
+          },
+          "canvas.updateNativeWire": {
+            "calls": 10,
+            "ms": 0
+          },
+          "layer.setComments": {
+            "calls": 4,
+            "ms": 0.10000002384185791
+          },
+          "layer.setNodes": {
+            "calls": 4,
+            "ms": 0.20000004768371582
+          },
+          "canvas.render": {
+            "calls": 4,
+            "ms": 7.399999976158142
+          },
+          "canvas.setGraph": {
+            "calls": 2,
+            "ms": 5.899999976158142
+          },
+          "canvas.setTrace": {
+            "calls": 2,
+            "ms": 3.200000047683716
+          }
+        }
+      },
+      "retained": {
+        "nodes": true,
+        "wires": true,
+        "control": true
+      },
+      "providerCalls": 0
+    },
+    {
+      "size": 2,
+      "rate": 1,
+      "mode": "pan",
+      "repeat": 0,
+      "frameMedianMs": 16.700000000000728,
+      "frameP95Ms": 16.700000000000728,
+      "framesOver25Ms": 0,
+      "handlerP95Ms": 0.10000002384185791,
+      "downMs": 0.5,
+      "releaseSyncMs": 2.299999952316284,
+      "releaseSettledMs": 33.299999952316284,
+      "intervals": [
+        16.675999999999476,
+        16.599999999998545,
+        16.700000000000728,
+        16.700000000000728,
+        16.599999999998545,
+        16.700000000000728,
+        16.700000000000728,
+        16.599999999998545,
+        16.700000000000728,
+        16.700000000000728,
+        16.700000000000728,
+        16.5,
+        16.69999999999709,
+        16.700000000000728,
+        16.700000000000728,
+        16.599999999998545,
+        16.80000000000291,
+        16.599999999998545,
+        16.700000000000728,
+        16.700000000000728,
+        16.599999999998545,
+        16.599999999998545,
+        16.700000000000728,
+        16.700000000000728,
+        16.700000000000728,
+        16.599999999998545,
+        16.700000000000728,
+        16.599999999998545,
+        16.700000000000728,
+        16.700000000000728,
+        16.599999999998545,
+        16.700000000000728,
+        16.700000000000728,
+        16.599999999998545,
+        16.700000000000728,
+        16.600000000002183,
+        16.69999999999709,
+        16.700000000000728,
+        16.600000000002183,
+        16.69999999999709,
+        16.700000000000728,
+        16.600000000002183,
+        16.69999999999709,
+        16.700000000000728
+      ],
+      "handlers": [
+        0,
+        0.09999990463256836,
+        0.10000002384185791,
+        0,
+        0,
+        0,
+        0.10000002384185791,
+        0.10000002384185791,
+        0.09999990463256836,
+        0.10000002384185791,
+        0,
+        0,
+        0.10000002384185791,
+        0,
+        0,
+        0.10000002384185791,
+        0,
+        0,
+        0,
+        0.09999990463256836,
+        0,
+        0,
+        0.10000002384185791,
+        0.10000002384185791,
+        0.10000002384185791,
+        0,
+        0.10000002384185791,
+        0.20000004768371582,
+        0.09999990463256836,
+        0,
+        0,
+        0,
+        0.10000002384185791,
+        0,
+        0.10000002384185791,
+        0.10000002384185791,
+        0.09999990463256836,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0.10000002384185791,
+        0,
+        0.10000002384185791
+      ],
+      "stats": {
+        "jsonCalls": 340,
+        "jsonMs": 1.6999999284744263,
+        "cloneCalls": 316,
+        "cloneMs": 0.2999999523162842,
+        "saveCalls": 1,
+        "renderCalls": 0,
+        "setGraphCalls": 0,
+        "cardHeightReads": 0,
+        "pinRectReads": 0,
+        "methods": {
+          "layer.setNodeProfiles": {
+            "calls": 45,
+            "ms": 0.7999998331069946
+          }
+        }
+      },
+      "retained": {
+        "nodes": true,
+        "wires": true,
+        "control": true
+      },
+      "providerCalls": 0
+    },
+    {
+      "size": 2,
+      "rate": 1,
+      "mode": "pan",
+      "repeat": 1,
+      "frameMedianMs": 16.69999999999709,
+      "frameP95Ms": 16.799999999999272,
+      "framesOver25Ms": 0,
+      "handlerP95Ms": 0.10000002384185791,
+      "downMs": 0.09999990463256836,
+      "releaseSyncMs": 2.3000000715255737,
+      "releaseSettledMs": 32.60000002384186,
+      "intervals": [
+        16.599999999998545,
+        16.600000000002183,
+        16.69999999999709,
+        16.600000000002183,
+        16.799999999999272,
+        16.599999999998545,
+        16.700000000000728,
+        16.700000000000728,
+        16.599999999998545,
+        16.700000000000728,
+        16.700000000000728,
+        16.599999999998545,
+        16.700000000000728,
+        16.700000000000728,
+        16.599999999998545,
+        16.700000000000728,
+        16.700000000000728,
+        16.599999999998545,
+        16.700000000000728,
+        16.700000000000728,
+        16.599999999998545,
+        16.700000000000728,
+        16.600000000002183,
+        16.69999999999709,
+        16.600000000002183,
+        16.799999999999272,
+        16.599999999998545,
+        16.700000000000728,
+        16.600000000002183,
+        16.69999999999709,
+        16.600000000002183,
+        16.700000000000728,
+        16.69999999999709,
+        16.600000000002183,
+        16.700000000000728,
+        16.69999999999709,
+        16.700000000000728,
+        16.600000000002183,
+        16.599999999998545,
+        16.700000000000728,
+        16.700000000000728,
+        16.599999999998545,
+        16.799999999999272,
+        16.600000000002183
+      ],
+      "handlers": [
+        0.10000002384185791,
+        0.09999990463256836,
+        0,
+        0,
+        0,
+        0,
+        0.10000002384185791,
+        0,
+        0.10000002384185791,
+        0.10000002384185791,
+        0.10000002384185791,
+        0.10000002384185791,
+        0,
+        0,
+        0.10000002384185791,
+        0,
+        0.10000002384185791,
+        0,
+        0,
+        0.10000002384185791,
+        0.09999990463256836,
+        0.10000002384185791,
+        0,
+        0.10000002384185791,
+        0,
+        0.10000002384185791,
+        0.10000002384185791,
+        0,
+        0.10000002384185791,
+        0.10000002384185791,
+        0.10000002384185791,
+        0,
+        0,
+        0.10000002384185791,
+        0,
+        0.10000002384185791,
+        0,
+        0.10000002384185791,
+        0.10000002384185791,
+        0,
+        0.10000002384185791,
+        0,
+        0,
+        0.10000002384185791,
+        0
+      ],
+      "stats": {
+        "jsonCalls": 340,
+        "jsonMs": 4.199999213218689,
+        "cloneCalls": 316,
+        "cloneMs": 0.5,
+        "saveCalls": 1,
+        "renderCalls": 0,
+        "setGraphCalls": 0,
+        "cardHeightReads": 0,
+        "pinRectReads": 0,
+        "methods": {
+          "layer.setNodeProfiles": {
+            "calls": 45,
+            "ms": 0.30000007152557373
+          }
+        }
+      },
+      "retained": {
+        "nodes": true,
+        "wires": true,
+        "control": true
+      },
+      "providerCalls": 0
+    },
+    {
+      "size": 2,
+      "rate": 1,
+      "mode": "zoom",
+      "repeat": 0,
+      "frameMedianMs": 16.69999999999709,
+      "frameP95Ms": 16.700000000000728,
+      "framesOver25Ms": 0,
+      "handlerP95Ms": 0.20000004768371582,
+      "downMs": 0,
+      "releaseSyncMs": null,
+      "releaseSettledMs": null,
+      "intervals": [
+        16.641999999999825,
+        16.69999999999709,
+        16.700000000000728,
+        16.600000000002183,
+        16.599999999998545,
+        16.700000000000728,
+        16.700000000000728,
+        16.69999999999709,
+        16.700000000000728,
+        16.600000000002183,
+        16.69999999999709,
+        16.600000000002183,
+        16.700000000000728,
+        16.69999999999709,
+        16.600000000002183,
+        16.700000000000728,
+        16.599999999998545,
+        16.700000000000728,
+        16.700000000000728,
+        16.69999999999709,
+        16.700000000000728,
+        16.600000000002183,
+        16.69999999999709,
+        16.600000000002183,
+        16.599999999998545,
+        16.799999999999272,
+        16.700000000000728,
+        16.600000000002183,
+        16.69999999999709,
+        16.600000000002183,
+        16.700000000000728,
+        16.69999999999709,
+        16.600000000002183,
+        16.700000000000728,
+        16.599999999998545,
+        16.700000000000728,
+        16.700000000000728,
+        16.69999999999709,
+        16.600000000002183,
+        16.700000000000728,
+        16.599999999998545,
+        16.799999999999272,
+        16.600000000002183,
+        16.69999999999709
+      ],
+      "handlers": [
+        0.5,
+        0.09999990463256836,
+        0.10000002384185791,
+        0,
+        0.20000004768371582,
+        0.10000002384185791,
+        0.10000002384185791,
+        0.10000002384185791,
+        0.10000002384185791,
+        0.10000002384185791,
+        0.09999990463256836,
+        0.09999990463256836,
+        0,
+        0,
+        0.10000002384185791,
+        0.19999992847442627,
+        0.09999990463256836,
+        0,
+        0.19999992847442627,
+        0.20000004768371582,
+        0.09999990463256836,
+        0.20000004768371582,
+        0.09999990463256836,
+        0.10000002384185791,
+        0.09999990463256836,
+        0.20000004768371582,
+        0.09999990463256836,
+        0.20000004768371582,
+        0.20000004768371582,
+        0.20000004768371582,
+        0.10000002384185791,
+        0.09999990463256836,
+        0,
+        0.10000002384185791,
+        0.10000002384185791,
+        0.09999990463256836,
+        0.09999990463256836,
+        0.20000004768371582,
+        0.10000002384185791,
+        0.10000002384185791,
+        0,
+        0.10000002384185791,
+        0.10000002384185791,
+        0.20000004768371582,
+        0.10000002384185791
+      ],
+      "stats": {
+        "jsonCalls": 270,
+        "jsonMs": 2.4000003337860107,
+        "cloneCalls": 0,
+        "cloneMs": 0,
+        "saveCalls": 0,
+        "renderCalls": 0,
+        "setGraphCalls": 0,
+        "cardHeightReads": 0,
+        "pinRectReads": 0,
+        "methods": {
+          "layer.setNodeProfiles": {
+            "calls": 45,
+            "ms": 0.7999999523162842
+          }
+        }
+      },
+      "retained": {
+        "nodes": true,
+        "wires": true,
+        "control": true
+      },
+      "providerCalls": 0
+    },
+    {
+      "size": 2,
+      "rate": 1,
+      "mode": "zoom",
+      "repeat": 1,
+      "frameMedianMs": 16.700000000000728,
+      "frameP95Ms": 16.700000000000728,
+      "framesOver25Ms": 0,
+      "handlerP95Ms": 0.20000004768371582,
+      "downMs": 0,
+      "releaseSyncMs": null,
+      "releaseSettledMs": null,
+      "intervals": [
+        16.600000000002183,
+        16.599999999998545,
+        16.700000000000728,
+        16.700000000000728,
+        16.700000000000728,
+        16.599999999998545,
+        16.700000000000728,
+        16.599999999998545,
+        16.700000000000728,
+        16.700000000000728,
+        16.599999999998545,
+        16.700000000000728,
+        16.700000000000728,
+        16.599999999998545,
+        16.700000000000728,
+        16.700000000000728,
+        16.700000000000728,
+        16.599999999998545,
+        16.700000000000728,
+        16.599999999998545,
+        16.700000000000728,
+        16.700000000000728,
+        16.599999999998545,
+        16.700000000000728,
+        16.700000000000728,
+        16.700000000000728,
+        16.599999999998545,
+        16.700000000000728,
+        16.700000000000728,
+        16.599999999998545,
+        16.700000000000728,
+        16.599999999998545,
+        16.799999999999272,
+        16.600000000002183,
+        16.599999999998545,
+        16.700000000000728,
+        16.700000000000728,
+        16.700000000000728,
+        16.599999999998545,
+        16.700000000000728,
+        16.599999999998545,
+        16.700000000000728,
+        16.700000000000728,
+        16.599999999998545
+      ],
+      "handlers": [
+        0.09999990463256836,
+        0.19999992847442627,
+        0.20000004768371582,
+        0.19999992847442627,
+        0.10000002384185791,
+        0.19999992847442627,
+        0.20000004768371582,
+        0.10000002384185791,
+        0.10000002384185791,
+        0.10000002384185791,
+        0.10000002384185791,
+        0.10000002384185791,
+        0.10000002384185791,
+        0.10000002384185791,
+        0.10000002384185791,
+        0.10000002384185791,
+        0.10000002384185791,
+        0.19999992847442627,
+        0.10000002384185791,
+        0,
+        0.09999990463256836,
+        0.09999990463256836,
+        0,
+        0,
+        0.19999992847442627,
+        0.10000002384185791,
+        0.10000002384185791,
+        0.10000002384185791,
+        0.10000002384185791,
+        0,
+        0.19999992847442627,
+        0.19999992847442627,
+        0.10000002384185791,
+        0.20000004768371582,
+        0.10000002384185791,
+        0,
+        0,
+        0.20000004768371582,
+        0.20000004768371582,
+        0.10000002384185791,
+        0.10000002384185791,
+        0.10000002384185791,
+        0.10000002384185791,
+        0.10000002384185791,
+        0.10000002384185791
+      ],
+      "stats": {
+        "jsonCalls": 270,
+        "jsonMs": 3.0999996662139893,
+        "cloneCalls": 0,
+        "cloneMs": 0,
+        "saveCalls": 0,
+        "renderCalls": 0,
+        "setGraphCalls": 0,
+        "cardHeightReads": 0,
+        "pinRectReads": 0,
+        "methods": {
+          "layer.setNodeProfiles": {
+            "calls": 45,
+            "ms": 0.6000001430511475
+          }
+        }
+      },
+      "retained": {
+        "nodes": true,
+        "wires": true,
+        "control": true
+      },
+      "providerCalls": 0
+    },
+    {
+      "size": 2,
+      "rate": 1,
+      "mode": "wire-preview",
+      "repeat": 0,
+      "frameMedianMs": 16.700000000000728,
+      "frameP95Ms": 16.700000000000728,
+      "framesOver25Ms": 0,
+      "handlerP95Ms": 3.5999999046325684,
+      "downMs": 2.200000047683716,
+      "releaseSyncMs": 0.3999999761581421,
+      "releaseSettledMs": 30.899999976158142,
+      "intervals": [
+        16.599999999998545,
+        16.700000000000728,
+        16.700000000000728,
+        16.599999999998545,
+        16.600000000002183,
+        16.69999999999709,
+        16.700000000000728,
+        16.700000000000728,
+        16.700000000000728,
+        16.599999999998545,
+        16.700000000000728,
+        16.599999999998545,
+        16.700000000000728,
+        16.700000000000728,
+        16.700000000000728,
+        16.599999999998545,
+        16.700000000000728,
+        16.700000000000728,
+        16.599999999998545,
+        16.700000000000728,
+        16.700000000000728,
+        16.599999999998545,
+        16.700000000000728,
+        16.599999999998545,
+        16.700000000000728,
+        16.700000000000728,
+        16.700000000000728,
+        16.599999999998545,
+        16.700000000000728,
+        16.599999999998545,
+        16.700000000000728,
+        16.600000000002183,
+        16.799999999999272,
+        16.599999999998545,
+        16.700000000000728,
+        16.599999999998545,
+        16.700000000000728,
+        16.600000000002183,
+        16.69999999999709,
+        16.700000000000728,
+        16.600000000002183,
+        16.69999999999709,
+        16.700000000000728,
+        16.600000000002183
+      ],
+      "handlers": [
+        4.300000071525574,
+        3.399999976158142,
+        3.5,
+        3.299999952316284,
+        2.799999952316284,
+        3.100000023841858,
+        3.5,
+        3.299999952316284,
+        3.100000023841858,
+        3.299999952316284,
+        3.399999976158142,
+        3.299999952316284,
+        3.299999952316284,
+        4.699999928474426,
+        3,
+        3.1999999284744263,
+        3.100000023841858,
+        3.1999999284744263,
+        3.5,
+        3.200000047683716,
+        3.0999999046325684,
+        3.5999999046325684,
+        3.100000023841858,
+        2.899999976158142,
+        3.100000023841858,
+        2.899999976158142,
+        2.799999952316284,
+        2.899999976158142,
+        2.799999952316284,
+        2.899999976158142,
+        3.1999999284744263,
+        2.899999976158142,
+        3.1999999284744263,
+        2.899999976158142,
+        2.6999999284744263,
+        2.6999999284744263,
+        2.799999952316284,
+        3.0999999046325684,
+        2.700000047683716,
+        2.799999952316284,
+        2.799999952316284,
+        2.899999976158142,
+        2.9000000953674316,
+        2.799999952316284,
+        3
+      ],
+      "stats": {
+        "jsonCalls": 10127,
+        "jsonMs": 17.399999976158142,
+        "cloneCalls": 179,
+        "cloneMs": 0.2999999523162842,
+        "saveCalls": 0,
+        "renderCalls": 0,
+        "setGraphCalls": 0,
+        "cardHeightReads": 0,
+        "pinRectReads": 0,
+        "methods": {
+          "canvas.updateNativeWire": {
+            "calls": 272,
+            "ms": 0.19999980926513672
+          },
+          "layer.setWires": {
+            "calls": 46,
+            "ms": 2.600000500679016
+          }
+        }
+      },
+      "retained": {
+        "nodes": true,
+        "wires": true,
+        "control": true
+      },
+      "providerCalls": 0
+    },
+    {
+      "size": 2,
+      "rate": 1,
+      "mode": "wire-preview",
+      "repeat": 1,
+      "frameMedianMs": 16.69999999999709,
+      "frameP95Ms": 16.700000000000728,
+      "framesOver25Ms": 0,
+      "handlerP95Ms": 3.6999999284744263,
+      "downMs": 1.8000000715255737,
+      "releaseSyncMs": 0.5,
+      "releaseSettledMs": 30.899999976158142,
+      "intervals": [
+        16.675999999999476,
+        16.599999999998545,
+        16.700000000000728,
+        16.599999999998545,
+        16.700000000000728,
+        16.700000000000728,
+        16.599999999998545,
+        16.700000000000728,
+        16.600000000002183,
+        16.69999999999709,
+        16.700000000000728,
+        16.700000000000728,
+        16.599999999998545,
+        16.700000000000728,
+        16.700000000000728,
+        16.599999999998545,
+        16.600000000002183,
+        16.700000000000728,
+        16.69999999999709,
+        16.600000000002183,
+        16.700000000000728,
+        16.69999999999709,
+        16.600000000002183,
+        16.799999999999272,
+        16.5,
+        16.799999999999272,
+        16.600000000002183,
+        16.69999999999709,
+        16.600000000002183,
+        16.700000000000728,
+        16.69999999999709,
+        16.600000000002183,
+        16.700000000000728,
+        16.69999999999709,
+        16.700000000000728,
+        16.700000000000728,
+        16.599999999998545,
+        16.700000000000728,
+        16.600000000002183,
+        16.69999999999709,
+        16.600000000002183,
+        16.700000000000728,
+        16.69999999999709,
+        16.700000000000728
+      ],
+      "handlers": [
+        3.3000000715255737,
+        3.399999976158142,
+        3.600000023841858,
+        3.200000047683716,
+        3.399999976158142,
+        3.200000047683716,
+        3.299999952316284,
+        3.5,
+        3.600000023841858,
+        3.5,
+        3.3000000715255737,
+        3.200000047683716,
+        4,
+        3.700000047683716,
+        3.6999999284744263,
+        3.5,
+        3.600000023841858,
+        3.3000000715255737,
+        3.3000000715255737,
+        3.299999952316284,
+        3.5,
+        3.299999952316284,
+        3.100000023841858,
+        3.299999952316284,
+        3.299999952316284,
+        3,
+        3.299999952316284,
+        3.200000047683716,
+        3.1999999284744263,
+        3.5,
+        3.100000023841858,
+        3.3000000715255737,
+        3.100000023841858,
+        3.3000000715255737,
+        3.200000047683716,
+        3.600000023841858,
+        3.299999952316284,
+        3.5,
+        3.3000000715255737,
+        3.299999952316284,
+        3.399999976158142,
+        3,
+        3.1999999284744263,
+        3.299999952316284,
+        3.100000023841858
+      ],
+      "stats": {
+        "jsonCalls": 10127,
+        "jsonMs": 30.200000166893005,
+        "cloneCalls": 179,
+        "cloneMs": 0.5,
+        "saveCalls": 0,
+        "renderCalls": 0,
+        "setGraphCalls": 0,
+        "cardHeightReads": 0,
+        "pinRectReads": 0,
+        "methods": {
+          "canvas.updateNativeWire": {
+            "calls": 272,
+            "ms": 0.6000001430511475
+          },
+          "layer.setWires": {
+            "calls": 46,
+            "ms": 2.7000001668930054
+          }
+        }
+      },
+      "retained": {
+        "nodes": true,
+        "wires": true,
+        "control": true
+      },
+      "providerCalls": 0
+    }
+  ]
+}

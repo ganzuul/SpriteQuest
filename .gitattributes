@@ -1,0 +1,2 @@
+# Preserve audit artifact bytes for recorded SHA-256 hashes.
+docs/research/artifacts/editor-latency/* text=auto eol=lf

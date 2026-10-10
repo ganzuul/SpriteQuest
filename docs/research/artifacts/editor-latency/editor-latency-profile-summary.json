@@ -1,0 +1,458 @@
+{
+  "sampleCount": 1903,
+  "profileDurationMs": 3497.626,
+  "sampledIntervalMs": 3497.28,
+  "categories": [
+    {
+      "name": "render",
+      "ms": 1551,
+      "percent": 44.35
+    },
+    {
+      "name": "transaction",
+      "ms": 791.66,
+      "percent": 22.64
+    },
+    {
+      "name": "preparation",
+      "ms": 520.2,
+      "percent": 14.87
+    },
+    {
+      "name": "persistence",
+      "ms": 483.19,
+      "percent": 13.82
+    },
+    {
+      "name": "other",
+      "ms": 151.23,
+      "percent": 4.32
+    }
+  ],
+  "phaseOwners": [
+    {
+      "name": "render | alignCardPins @ /src/canvas/pin-alignment.js:31",
+      "ms": 1258.07,
+      "percent": 35.97
+    },
+    {
+      "name": "persistence | serializeWorkflowDocument @ /src/workflow/document-file.js:124",
+      "ms": 460.1,
+      "percent": 13.16
+    },
+    {
+      "name": "transaction | prepareGraphCandidate @ /src/workflow/prepared-graph-edit.js:5",
+      "ms": 303.78,
+      "percent": 8.69
+    },
+    {
+      "name": "preparation | prepareWorkflowProjection @ /src/ui/workflow-surface.js:78",
+      "ms": 298.47,
+      "percent": 8.53
+    },
+    {
+      "name": "render | #measureCard @ /src/canvas.js:362",
+      "ms": 167.37,
+      "percent": 4.79
+    },
+    {
+      "name": "transaction | commitPreparedGraph @ /src/workflow/transactions.js:55",
+      "ms": 163.52,
+      "percent": 4.68
+    },
+    {
+      "name": "transaction | prepareQualifiedScopeEdit @ /src/workflow/definition-library.js:18",
+      "ms": 155.53,
+      "percent": 4.45
+    },
+    {
+      "name": "transaction | captureGraphEditContext @ /src/workflow/transactions.js:27",
+      "ms": 149.25,
+      "percent": 4.27
+    },
+    {
+      "name": "preparation | prepareWorkflowPlanner @ /src/workflow/resolve.js:116",
+      "ms": 148.49,
+      "percent": 4.25
+    },
+    {
+      "name": "other | (program) @ (runtime):0",
+      "ms": 130.31,
+      "percent": 3.73
+    },
+    {
+      "name": "preparation | prepareEditorDrawBase @ /src/ui/workspace-preparation.js:186",
+      "ms": 27.11,
+      "percent": 0.78
+    },
+    {
+      "name": "render | preparedCardFor @ /src/canvas/presentation.js:4",
+      "ms": 25.57,
+      "percent": 0.73
+    },
+    {
+      "name": "other | (garbage collector) @ (runtime):0",
+      "ms": 18.84,
+      "percent": 0.54
+    },
+    {
+      "name": "render | checkedPreparedCard @ /src/canvas/presentation.js:9",
+      "ms": 14.11,
+      "percent": 0.4
+    },
+    {
+      "name": "preparation | cloneDTO @ /src/ui/graph-view-session.js:16",
+      "ms": 14.04,
+      "percent": 0.4
+    },
+    {
+      "name": "render | #applyFocus @ /src/canvas.js:305",
+      "ms": 14.01,
+      "percent": 0.4
+    },
+    {
+      "name": "persistence | pick @ /src/workflow/document-file.js:20",
+      "ms": 13.08,
+      "percent": 0.37
+    },
+    {
+      "name": "render | visit @ /src/canvas.js:24",
+      "ms": 12.25,
+      "percent": 0.35
+    },
+    {
+      "name": "render | routeLabel @ /src/canvas/connection-route.js:16",
+      "ms": 10.81,
+      "percent": 0.31
+    },
+    {
+      "name": "transaction | syncNativeRevision @ /src/ui/controller.js:392",
+      "ms": 9.53,
+      "percent": 0.27
+    },
+    {
+      "name": "transaction | onSemanticChange @ /src/ui/controller.js:81",
+      "ms": 8.55,
+      "percent": 0.24
+    },
+    {
+      "name": "preparation | (anonymous) @ /src/ui/workspace-preparation.js:92",
+      "ms": 8.53,
+      "percent": 0.24
+    },
+    {
+      "name": "render | measure @ /src/canvas/geometry.js:9",
+      "ms": 7.54,
+      "percent": 0.22
+    },
+    {
+      "name": "preparation | addOperation @ /src/ui/native-search-catalog.js:105",
+      "ms": 7.51,
+      "percent": 0.21
+    },
+    {
+      "name": "render | (anonymous) @ /src/canvas.js:367",
+      "ms": 7.05,
+      "percent": 0.2
+    },
+    {
+      "name": "preparation | projectEditorDraw @ /src/ui/workspace-preparation.js:71",
+      "ms": 6.05,
+      "percent": 0.17
+    },
+    {
+      "name": "preparation | prepareWorkspaceViews @ /src/ui/workspace-preparation.js:28",
+      "ms": 6.01,
+      "percent": 0.17
+    },
+    {
+      "name": "render | #measureCards @ /src/canvas.js:355",
+      "ms": 5.02,
+      "percent": 0.14
+    },
+    {
+      "name": "persistence | workflowDocumentSnapshot @ /src/workflow/document-file.js:116",
+      "ms": 4,
+      "percent": 0.11
+    },
+    {
+      "name": "render | #_ @ /dist/lattice-ui.js:721",
+      "ms": 4,
+      "percent": 0.11
+    },
+    {
+      "name": "other | window.audit.arm @ (runtime):6",
+      "ms": 2.07,
+      "percent": 0.06
+    },
+    {
+      "name": "render | $t @ /dist/lattice-ui.js:975",
+      "ms": 2.01,
+      "percent": 0.06
+    },
+    {
+      "name": "persistence | (anonymous) @ /src/workflow/document-file.js:24",
+      "ms": 2.01,
+      "percent": 0.06
+    },
+    {
+      "name": "render | applyTransform @ /src/canvas.js:177",
+      "ms": 2.01,
+      "percent": 0.06
+    },
+    {
+      "name": "render | (anonymous) @ /dist/lattice-ui.js:4254",
+      "ms": 2.01,
+      "percent": 0.06
+    },
+    {
+      "name": "render | (anonymous) @ /dist/lattice-ui.js:2444",
+      "ms": 2,
+      "percent": 0.06
+    },
+    {
+      "name": "render | #drawNodeProfiles @ /src/canvas.js:165",
+      "ms": 2,
+      "percent": 0.06
+    },
+    {
+      "name": "render | #paintSelection @ /src/canvas.js:435",
+      "ms": 2,
+      "percent": 0.06
+    },
+    {
+      "name": "render | lr @ /dist/lattice-ui.js:1403",
+      "ms": 2,
+      "percent": 0.06
+    },
+    {
+      "name": "preparation | prepareCache @ /src/ui/graph-view-session.js:37",
+      "ms": 2,
+      "percent": 0.06
+    },
+    {
+      "name": "render | Q @ /dist/lattice-ui.js:2239",
+      "ms": 2,
+      "percent": 0.06
+    },
+    {
+      "name": "render | (anonymous) @ /dist/lattice-ui.js:7827",
+      "ms": 2,
+      "percent": 0.06
+    },
+    {
+      "name": "persistence | canonical @ /src/workflow/document-file.js:108",
+      "ms": 2,
+      "percent": 0.06
+    },
+    {
+      "name": "persistence | persistRecovery @ /src/state.js:253",
+      "ms": 2,
+      "percent": 0.06
+    },
+    {
+      "name": "preparation | (anonymous) @ /src/ui/workspace-preparation.js:31",
+      "ms": 2,
+      "percent": 0.06
+    },
+    {
+      "name": "render | update @ /src/canvas/geometry.js:16",
+      "ms": 2,
+      "percent": 0.06
+    },
+    {
+      "name": "transaction | snapshot @ /src/history.js:29",
+      "ms": 1.51,
+      "percent": 0.04
+    },
+    {
+      "name": "render | Sa @ /dist/lattice-ui.js:2944",
+      "ms": 1.5,
+      "percent": 0.04
+    },
+    {
+      "name": "render | presentNodeCard @ /src/canvas/presentation.js:55",
+      "ms": 1.49,
+      "percent": 0.04
+    },
+    {
+      "name": "render | (anonymous) @ /dist/lattice-ui.js:2858",
+      "ms": 1.17,
+      "percent": 0.03
+    },
+    {
+      "name": "render | pointText @ /src/canvas/connection-route.js:4",
+      "ms": 1.02,
+      "percent": 0.03
+    }
+  ],
+  "topExclusiveLeaves": [
+    {
+      "name": "render | getBoundingClientRect @ (runtime):0",
+      "ms": 1361.47,
+      "percent": 38.93
+    },
+    {
+      "name": "transaction | JSON.stringify @ (runtime):11",
+      "ms": 197.67,
+      "percent": 5.65
+    },
+    {
+      "name": "transaction | window.structuredClone @ (runtime):12",
+      "ms": 175.33,
+      "percent": 5.01
+    },
+    {
+      "name": "preparation | JSON.stringify @ (runtime):11",
+      "ms": 166.85,
+      "percent": 4.77
+    },
+    {
+      "name": "other | (program) @ (runtime):0",
+      "ms": 130.31,
+      "percent": 3.73
+    },
+    {
+      "name": "transaction | structuredClone @ (runtime):0",
+      "ms": 128.78,
+      "percent": 3.68
+    },
+    {
+      "name": "persistence | structuredClone @ (runtime):0",
+      "ms": 105.96,
+      "percent": 3.03
+    },
+    {
+      "name": "persistence | JSON.stringify @ (runtime):11",
+      "ms": 103.69,
+      "percent": 2.96
+    },
+    {
+      "name": "preparation | window.structuredClone @ (runtime):12",
+      "ms": 82.65,
+      "percent": 2.36
+    },
+    {
+      "name": "persistence | window.structuredClone @ (runtime):12",
+      "ms": 82.58,
+      "percent": 2.36
+    },
+    {
+      "name": "transaction | now @ (runtime):0",
+      "ms": 81.33,
+      "percent": 2.33
+    },
+    {
+      "name": "preparation | structuredClone @ (runtime):0",
+      "ms": 68.48,
+      "percent": 1.96
+    },
+    {
+      "name": "persistence | now @ (runtime):0",
+      "ms": 64.14,
+      "percent": 1.83
+    },
+    {
+      "name": "preparation | now @ (runtime):0",
+      "ms": 48.9,
+      "percent": 1.4
+    },
+    {
+      "name": "render | alignCardPins @ /src/canvas/pin-alignment.js:31",
+      "ms": 36.26,
+      "percent": 1.04
+    },
+    {
+      "name": "transaction | validateSettings @ /src/workflow/operations/nodes.js:59",
+      "ms": 28.7,
+      "percent": 0.82
+    },
+    {
+      "name": "transaction | readComposeSettings @ /src/workflow/operations/compose.js:5",
+      "ms": 26.84,
+      "percent": 0.77
+    },
+    {
+      "name": "render | plainDescriptors @ /src/workflow/contracts.js:6",
+      "ms": 25.57,
+      "percent": 0.73
+    },
+    {
+      "name": "transaction | dynamicDescription @ /src/workflow/catalog.js:100",
+      "ms": 23.06,
+      "percent": 0.66
+    },
+    {
+      "name": "persistence | visit @ /src/workflow/graph-validation.js:22",
+      "ms": 22.52,
+      "percent": 0.64
+    },
+    {
+      "name": "preparation | selectClosure @ /src/workflow/resolve.js:26",
+      "ms": 21.63,
+      "percent": 0.62
+    },
+    {
+      "name": "other | (garbage collector) @ (runtime):0",
+      "ms": 18.84,
+      "percent": 0.54
+    },
+    {
+      "name": "persistence | readComposeSettings @ /src/workflow/operations/compose.js:5",
+      "ms": 18.01,
+      "percent": 0.52
+    },
+    {
+      "name": "transaction | resolvePrimitive @ /src/workflow/operations/nodes.js:97",
+      "ms": 17.56,
+      "percent": 0.5
+    },
+    {
+      "name": "preparation | resolvePrimitive @ /src/workflow/operations/nodes.js:97",
+      "ms": 17.02,
+      "percent": 0.49
+    },
+    {
+      "name": "transaction | inspectScope @ /src/workflow/graph-validation.js:50",
+      "ms": 15.03,
+      "percent": 0.43
+    },
+    {
+      "name": "preparation | validateSettings @ /src/workflow/operations/nodes.js:59",
+      "ms": 14.36,
+      "percent": 0.41
+    },
+    {
+      "name": "render | checkedPreparedCard @ /src/canvas/presentation.js:9",
+      "ms": 14.11,
+      "percent": 0.4
+    },
+    {
+      "name": "preparation | cloneDTO @ /src/ui/graph-view-session.js:16",
+      "ms": 14.04,
+      "percent": 0.4
+    },
+    {
+      "name": "render | remove @ (runtime):0",
+      "ms": 13.62,
+      "percent": 0.39
+    }
+  ],
+  "otherLeaves": [
+    {
+      "name": "(program) @ (runtime):0",
+      "ms": 130.31,
+      "percent": 3.73
+    },
+    {
+      "name": "(garbage collector) @ (runtime):0",
+      "ms": 18.84,
+      "percent": 0.54
+    },
+    {
+      "name": "window.audit.arm @ (runtime):6",
+      "ms": 2.07,
+      "percent": 0.06
+    }
+  ]
+}
