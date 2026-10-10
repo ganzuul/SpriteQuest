@@ -11,6 +11,9 @@ export interface ChatDocumentCatalog {
     definition(targetId:string):Result<SavedStoryDocumentDefinition>;
     define(value:StoryDocumentDefinition|unknown):Result<DocumentCatalogSnapshot>;
     remove(targetId:string):Result<DocumentCatalogSnapshot>;
+    /** Exact catalog-local captured authority; copied or foreign leases grant no mutation authority. */
+    defineCaptured(lease:DocumentCatalogLease,value:StoryDocumentDefinition|unknown):Result<DocumentCatalogSnapshot>;
+    removeCaptured(lease:DocumentCatalogLease,targetId:string):Result<DocumentCatalogSnapshot>;
     capture():Result<DocumentCatalogLease>;
     save():Promise<Result<{appliedLocally:true;saveAttempted:true;acknowledged:boolean}>>;
     revision():string;

@@ -8,7 +8,7 @@ const identity = value => typeof value === 'string' && value.trim().length > 0 &
 const ids = value => Array.isArray(value) && value.every(id => typeof id === 'string' && id.length > 0 && id.length <= 4096);
 
 export function enumerateScheduledOccurrences(rawClock, destination, rawSchedules, rawOptions = {}) {
-    const admitted = readClock(rawClock);
+    const admitted = validateStoryClock(rawClock);
     if (!admitted.ok) return admitted;
     const clock = admitted.data;
     if (!integer(destination) || destination < clock.absoluteMinute) return fail('INVALID_DESTINATION', 'Destination must be a forward safe-integer minute.');
@@ -50,7 +50,7 @@ export function enumerateScheduledOccurrences(rawClock, destination, rawSchedule
 }
 
 export function advanceStoryClock(rawClock, rawProposal) {
-    const admitted = readClock(rawClock);
+    const admitted = validateStoryClock(rawClock);
     if (!admitted.ok) return admitted;
     const clock = admitted.data;
     const checked = cloneJsonValue(rawProposal);
@@ -101,7 +101,7 @@ function occurrence(clock, schedule, dueMinute) {
     };
 }
 
-function readClock(raw) {
+export function validateStoryClock(raw) {
     const checked = cloneJsonValue(raw);
     if (!checked.ok || !checked.data.value || typeof checked.data.value !== 'object' || Array.isArray(checked.data.value)) return fail('INVALID_CLOCK', 'Clock must contain bounded own plain data.');
     const clock = checked.data.value;

@@ -13,3 +13,16 @@ test('installed facade passes one runtime request object to the real typed trans
         const result=await facade.getNativeWorkflowController().runTarget(graph,{workflowId:graph.id,instancePath:[],nodeId:'decision',portId:'out'});assert.equal(result.ok,true,JSON.stringify(result.error));assert.equal(result.actualCalls,1);assert.equal(calls,1);
     }finally{globalThis.fetch=previousFetch;delete globalThis.latticeFacadeUser;hooks.deregister();}
 });
+
+test('installed facade shares scoped catalog authorization with its trusted native controller',async()=>{
+    const c=installMock();Object.assign(c,{chatId:'story',characterId:0,chat:[{mes:'A soul is captured.',is_user:true}],chatMetadata:{},characters:[{name:'Mara',avatar:'mara.png',chat:'Story-2'}]});globalThis.latticeFacadeUser='default-user';
+    try {
+        const facade=await import('../src/run.js?v=0.26.0'),catalog=facade.getStoryDocumentCatalog();
+        assert.equal(catalog,facade.getStoryDocumentCatalog());assert.equal(facade.storyDocumentState().ok,true);
+        assert.equal(catalog.define({targetId:'souls',name:'Sword souls',format:'json',content:'[]',visibility:{kind:'hidden'}}).ok,true);
+        const graph={id:'file-facade',schema:3,runtime:2,mode:'native-unified',nodes:{read:{id:'read',type:'workflow',operation:'read-file',targetId:'souls'}},wires:{},portals:{},definitions:{}};
+        const result=await facade.getNativeWorkflowController().runTarget(graph,{workflowId:graph.id,instancePath:[],nodeId:'read',portId:'document'});
+        assert.equal(result.ok,true,JSON.stringify(result.error));assert.equal(result.actualCalls,0);
+        const lease=catalog.capture();assert.equal(lease.ok,true);globalThis.latticeFacadeUser='someone-else';assert.equal(lease.data.isCurrent(),false);assert.equal(facade.storyDocumentState().data.documents.length,0);
+    } finally {delete globalThis.latticeFacadeUser;}
+});

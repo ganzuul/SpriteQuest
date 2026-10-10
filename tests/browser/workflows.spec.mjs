@@ -30,10 +30,10 @@ async function bindNode(page, operation, profile) {
 }
 async function assignPhase(page, phase) {
     await page.getByRole('button', { name: 'Workflows', exact: true }).click();
-    await page.getByRole('menuitem', { name: 'Assign ' + phase + ' phase', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Assign legacy ' + phase + ' phase', exact: true }).click();
     await expect(page.locator('.pc-root-workflow-status')).toContainText(phase + ' · Assigned');
     await page.getByRole('button', { name: 'Workflows', exact: true }).click();
-    await expect(page.getByRole('menuitem', { name: 'Assigned to ' + phase + ' phase', exact: true })).toBeDisabled();
+    await expect(page.getByRole('menuitem', { name: 'Assigned to legacy ' + phase + ' phase', exact: true })).toBeDisabled();
     await page.keyboard.press('Escape');
 }
 async function expectBound(page, bound) {

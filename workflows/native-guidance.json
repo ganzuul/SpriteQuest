@@ -23,7 +23,8 @@
         "model": null,
         "modelRole": null,
         "recentMessages": 12,
-        "includeCharacter": true
+        "includeCharacter": true,
+        "visibilityMode": "actor"
       },
       "smart-compactor": {
         "id": "smart-compactor",

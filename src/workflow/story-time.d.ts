@@ -122,3 +122,6 @@ export function enumerateScheduledOccurrences(clock: unknown, destination: unkno
 /** Explicit policy required. Interruption includes every simultaneous next event. */
 export function resolveTimeAdvance(clock: unknown, proposal: unknown, schedules: unknown, options: TimeAdvanceOptions): Result<ResolvedTimeAdvance>;
 
+
+/** Validate and detach an explicitly supplied bounded story clock without advancing it. */
+export function validateStoryClock(raw:unknown):Result<StoryClock>;

@@ -1,3 +1,5 @@
+import {UNIFIED_WORKFLOW_EXAMPLE_DATA} from '../../src/workflow/unified-example-data.js';
+const exampleCount=30+UNIFIED_WORKFLOW_EXAMPLE_DATA.length;
 import { test, expect } from '@playwright/test';
 
 async function load(page) {
@@ -18,7 +20,7 @@ test('File examples is directly below Open workflow and opens the compact thirty
     await page.getByRole('menuitem', { name: 'Open examples…', exact: true }).click();
     const dialog = page.getByRole('dialog', { name: 'Examples', exact: true });
     await expect(dialog).toBeVisible();
-    await expect(dialog.locator('.pc-example-tile')).toHaveCount(30);
+    await expect(dialog.locator('.pc-example-tile')).toHaveCount(exampleCount);
     await expect(dialog.locator('.pc-example-tile').first()).toHaveAccessibleName('Make a scene brief');
     await expect(dialog.locator('.pc-example-tile').last()).toHaveAccessibleName('Combine memory with a voice pass');
     const box = await dialog.boundingBox();
@@ -27,7 +29,7 @@ test('File examples is directly below Open workflow and opens the compact thirty
     expect(box.height).toBeGreaterThanOrEqual(420);
     expect(box.height).toBeLessThanOrEqual(440);
     const previews = dialog.locator('.pc-example-preview');
-    await expect(previews).toHaveCount(30);
+    await expect(previews).toHaveCount(exampleCount);
     expect(await previews.first().evaluate(element => element.getBoundingClientRect().height)).toBe(72);
     expect(await dialog.locator('.pc-examples-grid').evaluate(element => getComputedStyle(element).gridTemplateColumns.split(' ').length)).toBe(3);
     await dialog.screenshot({ path: testInfo.outputPath('examples-picker-desktop.png') });
@@ -197,7 +199,7 @@ test('one malformed primary stays as a disabled diagnostic tile while other exam
         return h.S.settings().activeGraphId;
     });
     const dialog = await openExamples(page);
-    await expect(dialog.locator('.pc-example-tile')).toHaveCount(30);
+    await expect(dialog.locator('.pc-example-tile')).toHaveCount(exampleCount);
     const invalid = dialog.getByRole('button', { name: 'Make a scene brief', exact: true });
     await expect(invalid).toBeDisabled();
     await expect(invalid).toContainText('Unavailable');
@@ -229,7 +231,7 @@ test('catalog-wide loading failure preserves the workspace and Retry restores th
     });
     await dialog.getByRole('button', { name: 'Retry', exact: true }).click();
     await expect(dialog.getByRole('alert')).toHaveCount(0);
-    await expect(dialog.locator('.pc-example-tile:not(:disabled)')).toHaveCount(30);
+    await expect(dialog.locator('.pc-example-tile:not(:disabled)')).toHaveCount(exampleCount);
     await dialog.getByRole('button', { name: 'Make a scene brief', exact: true }).click();
     await expect(dialog).toBeHidden();
     expect(await page.evaluate(() => window.canvasHarness.providerCalls())).toBe(0);

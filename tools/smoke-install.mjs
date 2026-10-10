@@ -63,6 +63,7 @@ const publicHostModule = `
 const server = createServer(async (request, response) => {
     try {
         const pathname = new URL(request.url, 'http://localhost').pathname;
+        if (pathname === '/scripts/user.js') { response.writeHead(200, { 'Content-Type': 'text/javascript' }).end("export function getCurrentUserHandle(){return 'default-user';}"); return; }
         if (pathname === '/script.js') { response.writeHead(200, { 'Content-Type': 'text/javascript' }).end(publicHostModule); return; }
         const path = resolve(install, '.' + pathname);
         if (!path.startsWith(install + sep)) { response.writeHead(403).end(); return; }
@@ -86,11 +87,11 @@ try {
         context.chat.push(message);
         const publicHelpers = !helpers.isGenerating() && helpers.syncMesToSwipe(index) && message.swipe_info[0].extra.preserved === true && message.swipe_info[0].send_date === 1 && helpers.syncSwipeToMes(index, 1) && message.mes === 'Synthetic revision' && message.extra.revised === true && !helpers.syncMesToSwipe(index + 1) && !helpers.syncSwipeToMes(index, 9);
         context.chat.pop();
-        const node = Object.values(graph.nodes).find(node => node.operation === 'compose' && node.sections?.length); canvas.select({ kind: 'node', id: node.id });
+        const node = Object.values(graph.nodes).find(node => node.operation === 'generate-reply'); canvas.select({ kind: 'node', id: node.id });
         UI.close(); window.lattice.open(); await settle();
         return { publicHelpers, mounted: root === document.querySelector('.pc-root'), sharedGraph: graph === window.canvasHarness.graph,
             launchers: document.getElementById('pc-sendbar')?.parentElement?.id === 'leftSendForm' && !!document.getElementById('pc-sendbar')?.querySelector('img[src$="/assets/lattice-logo.svg"]') && !!document.getElementById('pc-menu-launch'), workbench: root.dataset.pcWorkbench,
-            fresh: h.freshSettingsAbsent && graph.name === 'Structured guidance' && graph.schema === 3 && graph.runtime === 2 && !S.settings().enabled && S.settings().nativeBindings.preGraphId === null && S.settings().nativeBindings.postGraphId === null,
+            fresh: h.freshSettingsAbsent && graph.template.id === 'unified-basic' && graph.mode === 'native-unified' && graph.schema === 3 && graph.runtime === 2 && !S.settings().enabled && S.settings().nativeBindings.workflowGraphId === null && S.settings().nativeBindings.preGraphId === null && S.settings().nativeBindings.postGraphId === null,
             providerCalls: h.providerCalls(), retiredPins: !!root.querySelector('.pc-node-output,.pc-port-key,.pc-port-stage,.pc-tok'), node: !!root.querySelector(`[data-id="${node.id}"]`) };
     });
     if (errors.length || missing.length || !result.publicHelpers || !result.mounted || !result.sharedGraph || !result.launchers || !result.fresh || result.providerCalls || result.retiredPins || !result.node || result.workbench !== 'svelte') throw Error(JSON.stringify({ result, errors, missing }));

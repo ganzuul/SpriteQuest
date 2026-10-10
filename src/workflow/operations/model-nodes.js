@@ -1,3 +1,4 @@
+import { artifactVisibility } from '../artifact-privacy.js?v=0.26.0';
 import { parseRuntimeContext } from './context-data.js?v=0.26.0';
 import { cloneJsonValue } from './json-data.js?v=0.26.0';
 import { safeUsage } from '../record-data.js?v=0.26.0';
@@ -98,26 +99,7 @@ function inputsFor(input, ports) {
     } catch { return fail('INVALID_INPUT', 'Inputs require own plain artifact data.'); }
 }
 /** Carry explicit disclosure restrictions through generated artifacts; no node can declassify. */
-function materialVisibility(inputs) {
-    const scopes = [];
-    const visit = value => {
-        if (!value || typeof value !== 'object') return;
-        if (Object.hasOwn(value, 'visibility')) {
-            const mark = value.visibility;
-            if (mark === 'public' || mark?.kind === 'public') { /* Explicit public label never erases nested restrictions. */ }
-            else if (mark && typeof mark === 'object' && mark.kind === 'actor-private' && typeof mark.actorId === 'string' && mark.actorId.trim()) scopes.push(mark);
-            else if (mark === 'actor-private' && typeof value.actorId === 'string') scopes.push({ kind: 'actor-private', actorId: value.actorId });
-            else scopes.push({ kind: 'hidden' });
-        }
-        if (Object.hasOwn(value, 'visibleTo')) scopes.push({ kind: 'hidden' });
-        if (['actor-state', 'reflection', 'state-proposal', 'episodes', 'commit-intent'].includes(value.recordType)) scopes.push(typeof value.scope?.actorId === 'string' ? { kind: 'actor-private', actorId: value.scope.actorId } : { kind: 'hidden' });
-        Object.values(value).forEach(visit);
-    };
-    Object.values(inputs).forEach(visit);
-    if (!scopes.length) return { kind: 'public' };
-    const first = scopes[0];
-    return scopes.every(scope => JSON.stringify(scope) === JSON.stringify(first)) ? first : { kind: 'hidden' };
-}
+const materialVisibility = artifactVisibility;
 const tokenCounters = raw => Object.fromEntries(Object.entries(safeUsage(raw) ?? {}).filter(([, count]) => Number.isSafeInteger(count)));
 function publicRequestFailure(raw) {
     const checked = cloneJsonValue(raw);

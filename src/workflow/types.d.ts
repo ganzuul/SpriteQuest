@@ -32,7 +32,7 @@ export interface OperationDescriptor {
     requestCapability?: 'text-completion' | 'typed-decision'; fallbackModelRole?: string;
     requestBound: number | ((node: NativeNode) => number); modelRole: string | null; terminal: boolean; dynamicPorts?: boolean;
     rootOnly?: boolean; requiresStateInDefinition?: boolean; modes?: string[];
-    acceptsSkippedInputs?: boolean; hostOperation?: boolean;
+    acceptsSkippedInputs?: boolean; hostOperation?: boolean; nativeBoundary?: boolean;
 }
 export interface OperationDescription { descriptor: OperationDescriptor; ports: PortDescriptor[]; }
 export interface Binding { profileId?: string | null; model?: string | null; }
@@ -182,7 +182,11 @@ export interface OperationExecutionContext {
     request: import('./operations/control-nodes').IterationRequest;
 }
 /** Trusted root transport only; public execution never obtains this capability. */
-export type HostOperationExecutor = (node: NativeNode, inputs: Record<string, WorkflowArtifact>, local: OperationExecutionContext) => Promise<OperationResult> | OperationResult;
+export interface HostOperationExecutionContext extends OperationExecutionContext {
+    /** Detached current request references; exact binding identities remain private host authority. */
+    getRequestBindings(): ReadonlyArray<Readonly<{ address: NodeAddress; binding: Binding | import('./fast-connections').FastBinding; capability: 'text-completion' | 'typed-decision'; role: string; iteration?: IterationProvenance }>>;
+}
+export type HostOperationExecutor = (node: NativeNode, inputs: Record<string, WorkflowArtifact>, local: HostOperationExecutionContext) => Promise<OperationResult> | OperationResult;
 
 /** Frozen diagnostic data; authenticated connection objects never enter these DTOs. */
 export type RunStatus = 'empty' | 'waiting' | 'queued' | 'running' | 'cancelling' | 'completed' | 'skipped' | 'unresolved' | 'failed' | 'blocked' | 'not-run' | 'cancelled' | 'invalid' | 'stale';

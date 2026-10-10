@@ -1,3 +1,4 @@
+import { prepareIterationBindings } from './iteration-bindings.js?v=0.26.0';
 import { inspectDefinitionGraph } from '../workflow/graph-validation.js?v=0.26.0';
 import { projectRunRows } from '../workflow/run-state.js?v=0.26.0';
 import { definitionRefKey, nodeBindingOverrideKey } from '../workflow/definition-data.js?v=0.26.0';
@@ -34,9 +35,15 @@ export function prepareWorkspaceViews(root, options = {}) {
         const drawBase = prepareEditorDrawBase(view, root.definitions, nodeId => primitivePhases.get(addressKey({ workflowId: root.id, instancePath: view.instancePath, nodeId })));
         // Saved primitive null means inheritance; only an explicit enclosing
         // instance null map blocks it. Cache that source distinction with the view.
-        drawBase.bindingBlocks = {}; drawBase.instanceBindingSources = {}; drawBase.profileDefaultModels = {}; drawBase.instanceBindingValues = {};
+        drawBase.iterationBindings = {}; drawBase.bindingBlocks = {}; drawBase.instanceBindingSources = {}; drawBase.profileDefaultModels = {}; drawBase.instanceBindingValues = {};
         const chain = view.instancePath.length ? definitionChain(root, view.instancePath) : [];
+        let helperRoles=structuredClone(root.roles??{});
+        for(const owner of chain){
+            for(const [role,binding]of Object.entries(owner.definition.body.roles??{}))helperRoles[role]={...(helperRoles[role]??{}),...binding};
+            for(const [role,binding]of Object.entries(owner.node.roleOverrides??{}))helperRoles[role]={...(helperRoles[role]??{}),...binding};
+        }
         for (const node of Object.values(view.savedGraph.nodes)) {
+            if(node.operation==='for-each')drawBase.iterationBindings[node.id]=prepareIterationBindings(node,root.definitions??{},options.profiles??[],helperRoles);
             const binding = {};
             for (let depth = chain.length - 1; depth >= 0; depth--) Object.assign(binding, chain[depth].node.nodeBindingOverrides?.[nodeBindingOverrideKey(view.instancePath.slice(depth + 1), node.id)] ?? {});
             const fields = Object.fromEntries(Object.entries(binding).filter(([, value]) => value === null).map(([field]) => [field, true]));
@@ -91,7 +98,7 @@ export function projectWorkspacePanels(editor, workflow, state, revision, select
     const presentation = readNodePresentation(saved, editor?.view.nodePresentation[selectedId]);
     const fileInput = saved?.operation === 'file-input' ? { fileName: typeof saved.fileName === 'string' ? saved.fileName : '', loaded: saved.loaded === true } : null;
     const controls = metadata ? Object.entries(metadata.controlDescriptors).filter(([key, descriptor]) => {
-        if (descriptor.hidden || fileInput && ['fileName', 'content', 'loaded'].includes(key)) return false;
+        if (key === 'roleOverrides' && saved.operation === 'for-each' || descriptor.hidden || fileInput && ['fileName', 'content', 'loaded'].includes(key)) return false;
         const effectiveNode = editor.prepared.effectiveNodes[selectedId];
         if (!visibleDetailControl(saved, metadata.defaults, key) && !visibleDetailControl(effectiveNode, metadata.defaults, key)) return false;
         if (saved.operation === 'fast-decision' && ['fallbackProfileId', 'fallbackAllowedCodes'].includes(key)) return true;
@@ -127,6 +134,7 @@ export function projectWorkspacePanels(editor, workflow, state, revision, select
     const commentDetails = isCommentFrame(saved) ? { selection, comment: { id: saved.id, x: saved.x, y: saved.y, w: saved.w, h: saved.h, title: saved.title ?? 'Comment', content: saved.content ?? '', color: saved.color ?? '#637d89', moveContents: saved.moveContents !== false, selected: true, readOnly: editor.readOnly || library } } : null;
     const nodeDetails = saved && metadata && !commentDetails ? { ...selection, title: boundary?.label ?? (presentation.alias || (typeof saved.title === 'string' ? saved.title : metadata.canonicalTitle)), canonicalTitle: metadata.canonicalTitle, operation: saved.operation, iconPath: metadata.iconPath, family: metadata.family, familyColor: metadata.familyColor, phase: effective?.phase ?? phaseForNode(graph,saved) ?? metadata.phase ?? graph.mode.slice(7), phaseEditable: graph.mode === 'native-unified' && OPERATIONS[saved.operation]?.phase === 'both', alias: presentation.alias, compact: presentation.compact, enabled: saved.enabled !== false, readOnly: editor.readOnly || library, canPresent: true, controls, ...(fileInput ? { fileInput } : {}), ...(boundary ? { boundary } : {}),
         model: metadata.requestCapability !== 'typed-decision' && metadata.modelRole && (effective?.effective !== 'No model call' || saved.model || saved.profileId || Object.keys(editor?.prepared.drawBase.bindingBlocks?.[selectedId] ?? {}).length) ? { role: saved.modelRole ?? metadata.modelRole, roleEditable: true, editable: !library, profileDefaultModel: editor.prepared.drawBase.profileDefaultModels?.[selectedId] ?? !!saved.profileId, profile: field('profileId', workflow.profiles.map(profile => ({ value: profile.id, label: profile.name }))), model: field('model'), effective: effective?.effective || (library ? [editor.prepared.effectiveNodes[selectedId]?.profileId ?? graph.roles?.[saved.modelRole ?? metadata.modelRole]?.profileId,editor.prepared.effectiveNodes[selectedId]?.model ?? graph.roles?.[saved.modelRole ?? metadata.modelRole]?.model].filter(Boolean).join(' · ') : ''), source: editor.prepared.drawBase.instanceBindingSources?.[selectedId] ? 'Containing instance override' : saved.profileId || saved.model ? 'Node override' : 'Inherited from ' + (saved.modelRole ?? metadata.modelRole), ...(effective?.issue ? {issue: effective.issue} : {}) } : null,
+        helperBindings: saved.operation === 'for-each' ? { ...editor.prepared.drawBase.iterationBindings?.[selectedId], editable: !(editor.readOnly || library) } : null,
         modifiers: modifierView(saved, metadata, !(editor.readOnly || library)),
         ports: metadata.ports.map(port => ({ id: port.port, label: port.label, direction: port.dir === 'in' ? 'input' : 'output', kind: port.kind })), issues: [] } : null;
     const choices = library ? [] : previewChoices ?? previewChoicesFor(editor.prepared, workflow.targets);
@@ -143,7 +151,7 @@ export function projectWorkspacePanels(editor, workflow, state, revision, select
         }
     }
     const selector = editor?.view.identity.kind === 'root' ? result?.selectedReviewHandle ?? null : null;
-    const outputPreview = { sourceKey: revision, title: 'Output preview', statusDetail: [!library && memoryStatus(result?.memoryCommit), state.status].filter(Boolean).join(' · '), status: !library && target && !selectedKey ? 'removed' : !result ? 'not-run' : state.availability === 'current' ? 'current' : 'stale', choices, selectedKey, pinned: !!pinnedPreview, followSelection: !pinnedPreview, sections: library || target && !selectedKey ? [] : sections, issues: library ? ['Library inspection is read-only and has no runtime output.'] : workflow.issues, busy: state.busy, runHere: library || !selectedKey ? null : { enabled: !state.busy && !workflow.targetSummary?.issues?.length, callBound: workflow.targetSummary?.callBound ?? workflow.callBound, issue: workflow.targetSummary?.issues?.join(' ') }, review: selector ? { selector, canApply: result.applyAvailable, fresh: !result.applyIssue && state.availability === 'current', selectedRootTerminal: editor?.view.identity.kind === 'root' && target?.kind === 'terminal' && !target.address.instancePath.length, mode: 'root', issue: result.applyIssue } : null };
+    const outputPreview = { sourceKey: revision, title: 'Output preview', statusDetail: [!library && memoryStatus(result?.memoryCommit), state.status].filter(Boolean).join(' · '), status: !library && target && !selectedKey ? 'removed' : !result ? 'not-run' : state.availability === 'current' ? 'current' : 'stale', choices, selectedKey, pinned: !!pinnedPreview, followSelection: !pinnedPreview, sections: library || target && !selectedKey ? [] : sections, issues: library ? ['Library inspection is read-only and has no runtime output.'] : workflow.issues, busy: state.busy, settlement: library ? null : result?.settlement ?? null, runHere: library || !selectedKey ? null : { enabled: !state.busy && !workflow.targetSummary?.issues?.length, callBound: workflow.targetSummary?.callBound ?? workflow.callBound, issue: workflow.targetSummary?.issues?.join(' ') }, review: selector ? { selector, canApply: result.applyAvailable, persistOnly: result.persistOnly, fresh: !result.applyIssue && state.availability === 'current', selectedRootTerminal: editor?.view.identity.kind === 'root' && target?.kind === 'terminal' && !target.address.instancePath.length, mode: 'root', issue: result.applyIssue } : null };
     const rowSource = state.runState || state.recording, rows = rootWorkflow.rows?.length ? rootWorkflow.rows : idleRunRows, flat = [];
     const visit = (items, depth) => { for (const row of items) { flat.push({ key: JSON.stringify(row.address), address: row.address, title: readNodePresentation(row.node).alias || (typeof row.node?.title === 'string' ? row.node.title : '') || row.node?.operation || row.address.nodeId, kind: row.kind, depth, status: row.status, subphase: row.subphase, durationMs: row.durationMs ?? null, attempts: row.attempts ?? 0, callBound: row.requestBound ?? 0, usage: row.request?.usage ?? null, issue: row.error?.message }); visit(row.children ?? [],depth+1); } }; visit(rows,0);
     const executableCount = rows.reduce((sum,row) => sum+row.executableCount,0), completedCount = rows.reduce((sum,row) => sum+row.completedCount,0), status = state.busy ? rowSource?.status || 'running' : rowSource?.status || (result ? result.ok ? 'completed' : 'failed' : 'not-run');
@@ -234,7 +242,9 @@ export function prepareLibraryViews(workflowId, snapshots) {
         const ports=[...expansion.pins.values()].filter(pin=>!pin.address.instancePath.length).map(({address,...port})=>({...port,nodeId:address.nodeId,portId:address.portId}));
         const view={savedGraph:actual.body,effectiveNodes:scope.graph.nodes,interface:actual.interface};
         navigation.push({identity,label:actual.name,readOnly:true});
-        preparedViews.push({identity,definitionRef:ref,readOnly:true,...view,ports,drawBase:prepareEditorDrawBase(view,snapshots)});
+        const drawBase=prepareEditorDrawBase(view,snapshots);drawBase.iterationBindings={};
+        for(const node of Object.values(actual.body.nodes))if(node.operation==='for-each')drawBase.iterationBindings[node.id]=prepareIterationBindings(node,snapshots,[],scope.graph.roles??{});
+        preparedViews.push({identity,definitionRef:ref,readOnly:true,...view,ports,drawBase});
     }
     return {ok:true,data:{navigation,preparedViews,definitionInfo}};
 }

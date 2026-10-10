@@ -25,10 +25,16 @@ export interface RandomPorts {
 }
 export interface RandomExecution extends Omit<RandomPorts, 'rerollId' | 'rerollPolicy'> {
     phase?: WorkflowPhase;
+    root?:boolean;
+    selectNativeRandomOutcomes?: import('../native-story-state').NativeStoryState['selectNativeRandomOutcomes'];
+    reuseNativeOutcome?: import('../native-story-state').NativeStoryState['reuseNativeOutcome'];
+    retainNativeOutcome?: import('../native-story-state').NativeStoryState['retainNativeOutcome'];
+    stageNativeOutcomes?: import('../native-story-state').NativeStoryState['stageOutcomes'];
     request?: (request: EventModelRequest) => Promise<WorkflowResult<{ text: string; finish?: string; usage?: import('../types').ReportedUsage }>>;
 }
-export type RandomOperationId = 'parse-effect-library' | 'random-pick' | 'saved-outcome' | 'effect-author' | 'stage-outcome';
+export type RandomOperationId = 'parse-effect-library' | 'random-pick' | 'saved-outcome' | 'effect-author' | 'stage-outcome' | 'commit-outcomes';
 export function parseEffectLibrary(raw: unknown, settings?: EffectLibrarySettings): Result<{ library: EffectLibrary; eligible: EffectEntry[]; totalWeight: number }>;
+export function validateRandomOutcome(raw:unknown):Promise<Result<{outcome:RandomOutcome}>>;
 export function selectRandomOutcomes(events: unknown, library: unknown, saved?: unknown, ports?: RandomPorts): Promise<Result<{ outcomes: RandomOutcome[]; draws: number; actualCalls: 0 }>>;
 export const RANDOM_OPERATIONS: Record<RandomOperationId, OperationDescriptor>;
 export function describeRandom(node: NativeNode | Record<string,unknown>, options?: { phase?: WorkflowPhase }): WorkflowResult<OperationDescription>;

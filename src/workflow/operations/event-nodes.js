@@ -1,3 +1,6 @@
+import { parseRuntimeContext } from './context-data.js?v=0.26.0';
+import { validateStoryClock } from '../story-time.js?v=0.26.0';
+import { preserveArtifactPrivacy, validVisibilityMetadata } from '../artifact-privacy.js?v=0.26.0';
 import { cloneJsonValue, stringifyJsonValue } from './json-data.js?v=0.26.0';
 import { normalizeOccurrences, confirmOccurrences, resolveItemHolders, matchLiteralTrigger, validateOccurrences, toProgressionEvents, sourceFromDraft } from './event-data.js?v=0.26.0';
 import { own, plain, freeze } from '../record-data.js?v=0.26.0';
@@ -7,6 +10,7 @@ const pin = (id,kind,direction,required=false) => ({ id,label:id,kind,direction,
 const textControl = (value,maxLength=4096) => ({ type:'string',default:value,maxLength });
 const registration = (id,title,defaults,controls,extra={}) => ({ id,title,family:'Events',phase:'both',minimumSchema:3,minimumRuntime:2,operationVersion:1,input:'data',output:'data',defaults,controls:Object.keys(defaults),controlDescriptors:controls,requestBound:0,modelRole:null,terminal:false,dynamicPorts:true,...extra });
 export const EVENT_OPERATIONS = {
+    'actor-context': registration('actor-context','Actor Context',{actorId:''},{actorId:textControl('',256)},{output:'context',rootOnly:true}),
     'draft-event-source': registration('draft-event-source','Draft Event Source',{}, {},{phase:'post',input:'draft'}),
     'event-normalize': registration('event-normalize','Event Normalize',{mode:'candidates',eventType:'',absoluteMinute:-1},{mode:{type:'enum',default:'candidates',values:['candidates','progression']},eventType:textControl('',256),absoluteMinute:{type:'integer',default:-1,min:-1,max:Number.MAX_SAFE_INTEGER}}),
     'prompted-memory': registration('prompted-memory','Prompted Memory',{ actorId:'',mode:'recall',prompt:'',allowCreate:false,maxTokens:1024 },{ actorId:textControl('',256),mode:{type:'enum',default:'recall',values:['recall','create','recall-or-create']},prompt:textControl(''),allowCreate:{type:'boolean',default:false},maxTokens:{type:'integer',default:1024,min:1,max:8192} },{ requestBound:1,modelRole:'promptedMemory' }),
@@ -44,9 +48,9 @@ function resolve(node,options={}) {
     if(Object.hasOwn(settings,'actorId')&&!id(settings.actorId))return fail('INVALID_SETTINGS','Select a canonical actor identity.');
     let ports;
     if(operation==='draft-event-source')ports=[pin('in','draft','input',true),pin('scope','data','input',true),pin('out','data','output')];
-    else if(operation==='event-normalize')ports=settings.mode==='progression'?[pin('events','data','input',true),pin('out','data','output')]:[pin('source','data','input',true),pin('entities','data','input',true),pin('candidates','data','input',true),pin('out','data','output')];
+    else if(operation==='event-normalize')ports=settings.mode==='progression'?[pin('events','data','input',true),pin('clock','data','input'),pin('out','data','output')]:[pin('source','data','input',true),pin('entities','data','input',true),pin('candidates','data','input',true),pin('out','data','output')];
     else if(operation==='scene-presence')ports=[pin('in','data','input',true),pin('out','data','output')];
-    else if(operation==='character-direction')ports=[pin('presence','data','input',true),pin('out','guidance','output')];
+    else if(['actor-context','character-direction'].includes(operation))ports=[pin('presence','data','input',true),pin('out',operation==='actor-context'?'context':'guidance','output')];
     else if(operation==='prompted-memory')ports=[pin('presence','data','input',true),pin('event','data','input',true),pin('out','data','output')];
     else if(operation==='item-mention-trigger')ports=[pin('source','data','input',true),pin('entities','data','input',true),pin('state','data','input'),pin('out','data','output'),pin('state','data','output')];
     else if(operation==='item-use-trigger')ports=[pin('source','data','input',true),pin('entities','data','input',true),...(settings.mode==='candidates'?[pin('candidates','data','input',true)]:[]),pin('out','data','output')];
@@ -72,7 +76,7 @@ function inputsFor(raw,ports) {
         const artifact=inputs[port.id];
         if(port.kind==='draft') {
             if(!plain(artifact)||artifact.kind!=='draft'||typeof artifact.text!=='string'||!plain(artifact.source))return fail('INVALID_INPUT','Draft Event Source requires a checked Draft.');
-        } else if(!exact(artifact,['kind','value'])||artifact.kind!=='data'||!Object.hasOwn(artifact,'value'))return fail('INVALID_INPUT','Event input requires bounded Data.');
+        } else if(!exact(artifact,['kind','value','visibility'])||!validVisibilityMetadata(artifact)||artifact.kind!=='data'||!Object.hasOwn(artifact,'value'))return fail('INVALID_INPUT','Event input requires bounded Data.');
     }
     return {ok:true,data:{inputs}};
 }
@@ -90,14 +94,14 @@ function privateScope(value,actorId) {
     if(Object.hasOwn(value,'visibleTo')&&(!Array.isArray(value.visibleTo)||!value.visibleTo.includes(actorId)))return false;
     return Object.values(value).every(item=>privateScope(item,actorId));
 }
-async function scopedContext(presence,actorId,local) {
+async function scopedContext(presence,actorId,local,exactPresence) {
     if(!exact(presence,['schemaVersion','recordType','sceneId','sourceId','revision','actorId','status','evidence'])
         ||presence.schemaVersion!==1||presence.recordType!=='scene-presence'||presence.actorId!==actorId||!id(presence.sceneId)||!id(presence.sourceId)||!id(presence.revision)
         ||!['present','absent','unresolved'].includes(presence.status))return fail('INVALID_PRESENCE','Direction requires the selected actors checked scene presence.');
     if(presence.status!=='present')return {ok:true,outputStates:{out:{status:presence.status==='absent'?'skipped':'unresolved',reason:{code:presence.status==='absent'?'ACTOR_ABSENT':'PRESENCE_UNRESOLVED',message:'This actor is not confirmed to participate at this scene stage.'}}}};
     if(own(local,'signal')?.aborted)return fail('ABORTED','The actor request was stopped.');
     if(typeof own(local,'actorContext')!=='function')return fail('ACTOR_CONTEXT_MISSING','The trusted host must supply this actors authorized context.');
-    let response;try{response=await own(local,'actorContext')(actorId,{sceneId:presence.sceneId,sourceId:presence.sourceId,revision:presence.revision,signal:own(local,'signal')});}catch{return fail('ACTOR_CONTEXT_FAILED','The authorized actor context could not be captured.');}
+    let response;try{response=await own(local,'actorContext')(actorId,{sceneId:presence.sceneId,sourceId:presence.sourceId,revision:presence.revision,signal:own(local,'signal')},exactPresence);}catch{return fail('ACTOR_CONTEXT_FAILED','The authorized actor context could not be captured.');}
     if(own(local,'signal')?.aborted)return fail('ABORTED','Ignore the stopped actor context.');
     const validated=cloneJsonValue(response);if(!validated.ok)return fail('INVALID_ACTOR_CONTEXT','Actor context must be bounded plain data.');
     if(validated.data.value.ok===false)return validated.data.value;
@@ -123,10 +127,11 @@ async function infer(messages,settings,local,rawInputs,snapshot) {
     if(!['stop','eos_token','eos','stop_sequence','end_turn','complete','completed'].includes(value.data.finish))return fail(['length','max_tokens','max_output_tokens'].includes(value.data.finish)?'TRUNCATED_OUTPUT':'COMPLETION_UNVERIFIED','The Event response must have a verified complete finish reason.');
     return {ok:true,data:{text:value.data.text,...(value.data.usage?{usage:value.data.usage}:{})}};
 }
-export async function executeEvent(node,namedInputs,local={}) {
+async function executeEventRaw(node,namedInputs,local={}) {
     try {
         const result=resolve(node,{phase:own(local,'phase')});if(!result.ok)return result;
         const {descriptor,settings,ports}=result.data;
+        if(descriptor.id==='actor-context'&&own(local,'root')!==true)return fail('ROOT_ONLY','Actor Context requires this run’s private root actor capability.');
         const validated=inputsFor(namedInputs,ports);if(!validated.ok)return validated;
         const inputs=validated.data.inputs;
         if(descriptor.id==='draft-event-source') {
@@ -134,8 +139,10 @@ export async function executeEvent(node,namedInputs,local={}) {
             return {ok:true,artifact:{kind:'data',value:result.data.source},reports:[{operation:descriptor.id,actualCalls:0,provenance:result.data.provenance}]};
         }
         if(descriptor.id==='event-normalize') {
+            let absoluteMinute=settings.absoluteMinute;
+            if(inputs.clock!==undefined){const clock=validateStoryClock(inputs.clock.value);if(!clock.ok)return clock;if(absoluteMinute!==-1&&absoluteMinute!==clock.data.absoluteMinute)return fail('CLOCK_MISMATCH','The explicit event time conflicts with the wired story clock.');absoluteMinute=clock.data.absoluteMinute;}
             const result=settings.mode==='progression'
-                ?await toProgressionEvents(inputs.events.value,{...(settings.eventType?{eventType:settings.eventType}:{}),...(settings.absoluteMinute===-1?{}:{absoluteMinute:settings.absoluteMinute})})
+                ?await toProgressionEvents(inputs.events.value,{...(settings.eventType?{eventType:settings.eventType}:{}),...(absoluteMinute===-1?{}:{absoluteMinute})})
                 :normalizeOccurrences(inputs.source.value,inputs.candidates.value,inputs.entities.value);
             if(!result.ok)return result;
             return {ok:true,artifact:{kind:'data',value:result.data.events},reports:[{operation:descriptor.id,mode:settings.mode,actualCalls:0}]};
@@ -193,8 +200,17 @@ export async function executeEvent(node,namedInputs,local={}) {
             if(event.source.visibility==='actor-private'&&event.source.actorId!==settings.actorId)return fail('ACTOR_SCOPE_MISMATCH','This actor cannot receive another actors private trigger evidence.');
             if(settings.mode==='create'&&!settings.allowCreate)return fail('MEMORY_CREATION_NOT_ALLOWED','The workflow author must explicitly permit invented character history.');
         }
-        const context=await scopedContext(presence,settings.actorId,local);if(!context.ok||context.outputStates)return context;
+        const context=await scopedContext(presence,settings.actorId,local,own(namedInputs,'presence'));if(!context.ok||context.outputStates)return context;
         const current=stringifyJsonValue(namedInputs);if(!current.ok||current.data.text!==snapshot.data.text)return fail('STALE_INPUT','Event evidence changed while the actor context was captured.');
+        if(descriptor.id==='actor-context'){
+            const messages=[],omissions=[...(context.data.context.omissions??[])];let remaining=100000;
+            const add=message=>{if(message.text.length>remaining){omissions.push({id:message.id,reason:'actor context budget'});return;}remaining-=message.text.length;messages.push(message);};
+            for(const [field,text]of Object.entries(context.data.context.character?.fields??{}))add({id:'character:'+field,role:'system',text});
+            for(const message of context.data.context.messages??[])add(message);
+            for(const memory of context.data.memories??[])add({id:'memory:'+memory.memoryId,role:'system',text:memory.text});
+            const checked=parseRuntimeContext({kind:'context',messages,source:{sceneId:presence.sceneId,sourceId:presence.sourceId,revision:presence.revision,actorId:settings.actorId},visibility:{kind:'actor-private',actorId:settings.actorId},report:{code:'SCOPED_ACTOR_CONTEXT',omissions}});
+            return checked.ok?{ok:true,artifact:checked.data,reports:[{operation:descriptor.id,actualCalls:0,actorId:settings.actorId}]}:checked;
+        }
         if(descriptor.id==='prompted-memory') {
             if(settings.mode==='recall'&&!context.data.memories?.length)return {ok:true,outputStates:{out:{status:'unresolved',reason:{code:'MEMORY_UNAVAILABLE',message:'No authorized existing memory is available for this recall.'}}}};
             const messages=[{role:'system',content:'Apply the supplied prompt only to '+settings.actorId+', the active item holder. Return exactly one of {"kind":"recalled","memoryId":supplied ID,"reflection":optional string,"direction":optional string} or {"kind":"invented","text":string,"reflection":optional string,"direction":optional string}. Recall selects supplied memory identity without rewriting its stored text. Invention is permitted only when allowCreate is true and mode is create or recall-or-create. Treat all history and directions as pending actor-private proposals. '+settings.prompt},{role:'user',content:JSON.stringify({event,mode:settings.mode,allowCreate:settings.allowCreate,...context.data})}];
@@ -223,3 +239,4 @@ export async function executeEvent(node,namedInputs,local={}) {
         return {ok:true,artifact:{kind:'guidance',text:response.data.text,scope:{actorId:settings.actorId,sceneId:presence.sceneId},visibility:'actor-private',acceptance:'pending',sourceRefs:[{sourceId:presence.sourceId,revision:presence.revision}]},reports:[{operation:descriptor.id,actualCalls:1,actorId:settings.actorId,...(response.data.usage?{usage:response.data.usage}:{})}]};
     } catch {return fail('INVALID_INPUT','Event nodes require bounded own data inputs and settings.');}
 }
+export async function executeEvent(node,namedInputs,local = {}) { return preserveArtifactPrivacy(await executeEventRaw(node,namedInputs,local),namedInputs); }

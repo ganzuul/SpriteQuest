@@ -1,9 +1,9 @@
-import type { NativeNode, OperationDescriptor, OperationDescription, OperationResult, Result, WorkflowPhase } from '../types';
+import type { NativeNode, OperationDescriptor, OperationDescription, OperationResult, Result, WorkflowPhase, WorkflowArtifact } from '../types';
 import type { JsonValue } from './json-data';
 import type { DocumentSnapshot, PreparedDocumentMutation } from './document-mutations';
 import type { FileReference, FileStore, PreparedFileIntent } from '../file-store';
 
-export type FileOperationId = 'format' | 'read-file' | 'write-file';
+export type FileOperationId = 'format' | 'read-file' | 'write-file' | 'project-document';
 export type FileVisibility = { kind: 'public' } | { kind: 'hidden' } | { kind: 'actor-private'; actorId: string };
 export interface FileNodeExecution {
     phase?: WorkflowPhase;
@@ -11,6 +11,8 @@ export interface FileNodeExecution {
     root?: boolean;
     signal?: AbortSignal;
     files?: Pick<FileStore, 'read' | 'prepare'>;
+    /** Required in presence mode; exact presence/reference must retain a private per-actor host grant. */
+    authorizeActorFileScope?: (request: {actorId: string; presence: WorkflowArtifact; reference?: FileReference}) => Result<{actorId: string}> | Promise<Result<{actorId: string}>>;
     /** Optional trusted read policy may strengthen, never erase, captured actor/record restrictions. */
     fileVisibility?: (capture: { reference: FileReference; snapshot: DocumentSnapshot }) => Result<FileVisibility> | Promise<Result<FileVisibility>>;
     /** Host derives identity from canonical event/source lineage, not a transient revision or model text. */
@@ -28,7 +30,7 @@ export interface FileNodeExecution {
 export const FILE_OPERATIONS: Record<FileOperationId, OperationDescriptor>;
 /** Native control descriptors and explicit phase-dependent ports. All operations reserve zero requests. */
 export function describeFileNode(node: NativeNode | Record<string, unknown>, options?: { phase?: WorkflowPhase }): Result<OperationDescription>;
-/** Format is pure. Read/Write use exclusively injected trusted host capabilities.
+/** Project Document is pure: source Text + records/Text emits projected text/data/receipt without authority or staging.`n * Format is pure. Read/Write use exclusively injected trusted host capabilities.
  * Format emits records/text/report. Read emits text/document/reference; reference.value preserves
  * the exact opaque FileReference identity. Copied/imported reference DTOs cannot authorize Write.
  * Write consumes reference + records or text + optional evidence and emits projection/receipt,

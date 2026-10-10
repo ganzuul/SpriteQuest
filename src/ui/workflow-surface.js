@@ -48,6 +48,21 @@ function safeMemoryCommit(raw) {
     const applied = own(raw, 'applied'), acknowledged = own(raw, 'acknowledged'), version = own(raw, 'version');
     return typeof applied === 'boolean' && typeof acknowledged === 'boolean' && Number.isSafeInteger(version) && version >= 0 ? freeze({ applied, acknowledged, version }) : null;
 }
+/** Consequence review exposes receipt status, never staged data or private capabilities. */
+function safeSettlement(raw) {
+    if (!plain(raw) || !['settled','partial','save-unverified'].includes(own(raw,'status')) || own(raw,'published') !== true) return null;
+    const source = own(raw,'receipts');
+    if (!Array.isArray(source) || source.length > 256) return null;
+    const receipts = [];
+    for (const item of source) {
+        if (!plain(item)) return null;
+        const intentId = own(item,'intentId'), targetId = own(item,'targetId'), status = own(item,'status');
+        if (typeof intentId !== 'string' || !intentId || intentId.length > 512 || typeof targetId !== 'string' || !targetId || targetId.length > 512 || !['ready','confirmed','unchanged','failed','unknown','save-unverified'].includes(status)) return null;
+        const error = safeError(own(item,'error'));
+        receipts.push(freeze({intentId,targetId,status,...(error ? {error} : {})}));
+    }
+    return freeze({status:own(raw,'status'),published:true,receipts});
+}
 const summaryView = result => result.ok ? { callBound: result.data.callBound, issues: [], requiredBindingAddresses: result.data.requiredBindingAddresses } : { callBound: 0, issues: [result.error.message], requiredBindingAddresses: [] };
 const emptyView = message => ({ graphId: '', name: '', phase: '', assigned: false, profiles: [], families: [], nodes: [], groups: [], selectedId: null, callBound: 0, issues: [message], busy: false, status: '', result: null, quoteHelp: QUOTE_SCOPE_HELP, rows: [], targets: [] });
 // Keep a fixed digest, never the semantic signature's saved controls/body text.
@@ -179,7 +194,7 @@ export function prepareWorkflowProjection(root, { planner, profiles = [], fastCo
         const handle = safeHandle(raw);
         if (!handle || handle.runId !== result.runId || handle.terminal.address.workflowId !== graph.id || result.mode !== 'root' || !result.ok || !applyTerminals.has(addressKey(handle.terminal.address))) continue;
         const freshness = candidateStatus?.(handle);
-        handles.set(handle.handleId, freeze({ handle, issue: freshness?.ok === false ? freshness.error.message : '' }));
+        handles.set(handle.handleId, freeze({ handle, issue: freshness?.ok === false ? freshness.error.message : '', persistOnly: freshness?.ok === true && freshness.persistOnly === true }));
     }
     projections.set(token, { base: freeze(baseWorkflowView(graph, profiles, settings, fastConnections)), rootSummary, summaries, views, handles, previewTargets, result, rows: new WeakMap() }); return token;
 }
@@ -225,7 +240,7 @@ export function projectPreparedWorkflow(prepared, { viewPath = [], selectedId = 
     const preview = historicalPreviewTarget(recording, pinned || target), displayedTarget = preview.target, memoryCommit = safeMemoryCommit(own(result, 'memoryCommit'));
     const resultView = result || recording ? { kind: 'bounded', ok: result?.ok === true, error: result?.error?.message || '', actualCalls: result?.actualCalls || 0, callBound: result?.callBound ?? recording?.plan?.callBound ?? summary.callBound,
         runId: recording?.runId || result?.runId || '', sections: preview.unavailable ? [{ kind: 'diagnostic', ...formatRecordedArtifact({ format: 'omitted', reason: 'historical wrapper mapping unavailable' }) }] : boundedSections(recording, displayedTarget), previewTarget: displayedTarget, applyAvailable: !!validHandle,
-        selectedReviewHandle: validHandle ? cached.handle : null, applyIssue: validHandle ? cached.issue || applyIssue : applyIssue, tokenMethods: [...new Set((recording?.units || []).map(unit => unit.request?.tokenCount?.method).filter(Boolean))], ...(memoryCommit ? { memoryCommit } : {}) } : null;
+        selectedReviewHandle: validHandle ? cached.handle : null, persistOnly: !!(validHandle && cached.persistOnly), ...(safeSettlement(result?.settlement) ? {settlement:safeSettlement(result.settlement)} : {}), applyIssue: validHandle ? cached.issue || applyIssue : applyIssue, tokenMethods: [...new Set((recording?.units || []).map(unit => unit.request?.tokenCount?.method).filter(Boolean))], ...(memoryCommit ? { memoryCommit } : {}) } : null;
     const rowSource = progressSource(recording, runState);
     return { ...owner.base, nodes: view.nodes, groups: view.groups, selectedId: address && address.workflowId === owner.base.graphId && pathKey(address.instancePath) === path ? address.nodeId : selectedId,
         instancePath: view.instancePath, editable: view.editable, targets: view.targets, targetSummary: summary, callBound: summary.callBound, issues: summary.issues,
@@ -234,6 +249,7 @@ export function projectPreparedWorkflow(prepared, { viewPath = [], selectedId = 
 function boundedResult(raw, handles) {
     const result = { schema: raw.schema, runtime: raw.runtime, mode: raw.mode, runId: raw.runId, ok: raw.ok === true, callBound: raw.callBound, actualCalls: raw.actualCalls, recording: raw.recording, reviewHandles: handles };
     const error = safeError(raw.error); if (error) result.error = error;
+    const settlement = safeSettlement(own(raw,'settlement')); if (settlement) result.settlement = settlement;
     const memoryCommit = safeMemoryCommit(own(raw, 'memoryCommit')); if (memoryCommit) result.memoryCommit = memoryCommit;
     for (const key of ['preview', 'published', 'fallback']) if (raw[key] !== undefined) result[key] = raw[key];
     return freeze(result);
@@ -338,10 +354,19 @@ export function createWorkflowSession({ runtime, current, epoch, rootCurrent = c
             if (freshness?.ok === false) { applyIssue = freshness.error.message; status = applyIssue; publish(); return; }
             const transaction = capture(); busy = true; publish();
             try {
-                const response = await runtime().apply(candidate);
+                const controller = runtime();
+                const response = freshness?.persistOnly === true ? await controller.retryPersistence(candidate) : await controller.apply(candidate);
                 if (!settledValid(transaction)) return;
-                status = response.ok ? 'Candidate applied in memory. Save durability is unconfirmed.' : response.error?.message || 'Apply failed.';
-                if (response.ok) { clearAuthority(); availability = recording ? 'stale' : 'current'; if (!recording) result = null; }
+                if (response.ok) {
+                    const settlement = safeSettlement(own(response,'settlement'));
+                    if (settlement) result = boundedResult({...result,settlement}, reviewHandles);
+                    status = settlement?.status === 'partial' ? 'Reply accepted. Some consequences failed; retry persistence for those targets.'
+                        : settlement?.status === 'save-unverified' ? 'Reply accepted. Some consequence saves are unconfirmed; reconcile those targets before writing again.'
+                        : settlement?.status === 'settled' ? 'Reply accepted. All staged consequences saved. Reply save durability remains unconfirmed.'
+                        : 'Candidate applied in memory. Save durability is unconfirmed.';
+                    if (settlement?.status === 'partial') { availability = 'current'; applyIssue = ''; }
+                    else { clearAuthority(); availability = recording ? 'stale' : 'current'; if (!recording) result = null; }
+                } else { status = response.error?.message || 'Apply failed.'; }
             } catch (error) { if (valid(transaction)) status = error?.message || 'Apply failed.'; }
             finally { if (valid(transaction)) { busy = false; invocation = null; publish(); } }
         },
@@ -359,9 +384,12 @@ export function createWorkflowSession({ runtime, current, epoch, rootCurrent = c
             availability = recording ? 'stale' : 'current'; busy = false; status = ''; applyIssue = ''; publish();
         },
         reject() {
-            runtime()?.cancel('Candidate rejected'); generation++; invocation = null; clearAuthority();
+            const controller = runtime(), published = result?.settlement?.published === true;
+            if (typeof controller?.reject === 'function') for (const handle of reviewHandles) controller.reject(handle);
+            else controller?.cancel('Candidate rejected');
+            generation++; invocation = null; clearAuthority();
             if (!recording) result = null;
-            availability = recording ? 'stale' : 'current'; busy = false; applyIssue = ''; status = 'Candidate rejected. Original reply preserved.'; publish();
+            availability = recording ? 'stale' : 'current'; busy = false; applyIssue = ''; status = published ? 'Persistence review closed. The accepted reply remains.' : 'Candidate rejected. Original reply preserved.'; publish();
         },
     };
 }

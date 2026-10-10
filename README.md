@@ -4,7 +4,7 @@
 
 LATTICE turns a writing process into a system you can build, inspect, and reuse. Connect context sources, model operations, text transformations, structured data, and review steps in a node graph. Package a useful process as a subgraph, edit its body in a graph tab, and compose it into a larger workflow.
 
-It runs inside SillyTavern. Your workflows can prepare guidance for a conversation or propose edits to a completed reply, while SillyTavern handles the main generation. Those integration points give your writing systems a place to run; the editor gives you the tools to design them.
+It runs inside SillyTavern. A unified workflow prepares guidance, uses it for the ordinary SillyTavern generation, then processes the completed reply in the same graph. Auxiliary models can revise prose, extract scene records or enrich notes. Review the final result before Apply creates a new swipe and accepts its staged consequences. Legacy pre/post tools remain available.
 
 ![LATTICE workspace with a structured writing brief flowing through JSON Decode, Select Fields, Compose, and Guidance](docs/images/workspace-overview.png)
 
@@ -19,7 +19,7 @@ It runs inside SillyTavern. Your workflows can prepare guidance for a conversati
 - **Actor memory and state:** reflect on supplied evidence, express optional behavior guidance, internalize settled events, and track deterministic consequences.
 - **Reusable writing tools:** wrap a sequence in a subgraph with named inputs and outputs, then use it in other workflows.
 
-These are combinations of the shipped tools. **File → Open examples…** offers thirty roleplay lessons, from a literal scene brief to reusable context and reaction subgraphs. The workflow JSON examples below also explore individual capabilities.
+These are combinations of the shipped tools. **File → Open examples…** offers unified story flows alongside the original roleplay lessons. Examples include prose-and-notes chains, item effects, story-time triggers, generic progression and scoped actor memory. Each opens as an editable copy with its own setup instructions. The workflow JSON examples below also explore individual capabilities.
 
 ## Key features
 
@@ -30,7 +30,11 @@ These are combinations of the shipped tools. **File → Open examples…** offer
 | **Graph tabs** | Open subgraph bodies without losing your place in the parent workflow. Each instance retains its own view. |
 | **Node shelf and contextual search** | Open a family to choose an operation directly, search operations and subgraphs, or discover compatible nodes while connecting a pin. |
 | **Node details** | Edit operation controls, aliases, compact cards, and model bindings; inspect effective values and validation issues. |
-| **Per-operation model connections** | Choose each model node's connection profile in Details, use its profile model, or add an optional model override without switching SillyTavern's active connection globally. |
+| **Per-operation model connections** | Choose each model node’s connection profile and model in Details without switching SillyTavern’s main connection; For Each exposes its pinned helper’s role selectors too. |
+| **One native workflow** | Connect preparation to Generate Reply, process its owned Draft, and review the result in one graph. |
+| **Typed decisions and branches** | Use Decision or configured Jev/Laya Fast Decision with explicit confidence gates, skipped paths and unresolved policies. |
+| **Story documents and accepted effects** | Read authorized logical targets, project append/keyed updates, and settle file/clock/outcome consequences with the chosen reviewed result. |
+| **Scoped character context and Recall** | Process present actors separately and arm selected-actor memories through visible controls or shortcuts. |
 | **Recorded previews** | Inspect inputs and outputs, follow selection, pin an artifact, or run only a selected output's dependencies. |
 | **Execution visibility** | See node states, expanded subgraph stages, request bounds, actual calls, and failures. |
 | **Portals and reroutes** | Keep a large graph readable while preserving its dependencies. |
@@ -45,46 +49,27 @@ These are combinations of the shipped tools. **File → Open examples…** offer
 
 ## Available nodes
 
-This development branch contains **28 operations**, plus subgraph instances and their input/output boundaries. **0** means no auxiliary model call; counts are per operation execution, separate from the normal SillyTavern reply.
+The [node reference](docs/node-reference.md) lists the actual reusable operations, ports and controls. **0** calls means no auxiliary model request; the ordinary SillyTavern reply is separate.
 
-| Family | Node | Purpose | Model calls |
-| --- | --- | --- | ---: |
-| Input | **Text** | Supply literal notes, instructions or reference passages | 0 |
-| Input | **File Input** | Read an imported UTF-8 text snapshot saved with the workflow | 0 |
-| Input | **Prompt Source** | Read a configured system template or selected host prompt block | 0 |
-| Input | **Scene Context** | Read bounded recent conversation and selected character fields | 0 |
-| Input | **Reply Snapshot** | Freeze the latest completed text reply for review | 0 |
-| Shaping | **Smart Compactor** | Select or summarize context while protecting chosen material | 0–1 |
-| Shaping | **Context Join** | Combine ordered Context inputs and check duplicate identities | 0 |
-| Shaping | **Response Plan** | Propose optional direction and constraints from context | 1 |
-| Shaping | **Compose** | Join named sections or fill a template from structured fields | 0 |
-| Shaping | **Reroute** | Route a typed connection through a compact graph point | 0 |
-| Surface | **Text Rules** | Replace or extract text with literal/regex rules; propose Draft patches | 0 |
-| Surface | **Repair** | Generate bounded patches for scanned spans | 0–1 |
-| Transpose | **Style Transfer** | Apply reference voice, rhythm, diction or register to Text or permitted Draft text | 0–1 |
-| Transpose | **Format Transfer** | Apply an example or template without inventing missing content | 0–1 |
-| Transpose | **Terminology Map** | Apply a canonical glossary with simultaneous literal replacements | 0 |
-| Introspection | **Reflect** | Appraise supplied character, recall or scene evidence | 1 Analysis |
-| Introspection | **Internalize** | Propose actor state updates from settled events | 1 Analysis |
-| Introspection | **Express** | Render behavior/attention guidance or fictional inner voice | 0–1 |
-| Introspection | **Context** | Assemble, filter perspective or focus Context | 0–1 |
-| Introspection | **Memory** | Read/recall scoped records or explicitly commit a state proposal | 0 |
-| Introspection | **State** | Propose numeric values, curve recovery or distinct-event tracks | 0 |
-| Derive | **Pattern Scan** | Identify configured literal patterns in a reply | 0 |
-| Derive | **JSON Decode** | Parse JSON text or check Data against a supported schema | 0 |
-| Derive | **Select Fields** | Extract and rename structured fields by path | 0 |
-| Derive | **Validate Patches** | Validate proposed changes and construct a candidate | 0 |
-| Output | **Guidance** | Produce bounded guidance for the host generation | 0 |
-| Output | **Review Gate** | Mark a candidate for explicit review | 0 |
-| Output | **Apply Reply** | Expose the final reviewed reply result | 0 |
+| Tools | Examples |
+| --- | --- |
+| **Native lifecycle** | On Send, Player Event Source, Generate Reply · SillyTavern, Review / Publish |
+| **Context and model work** | Scene Context, Actor Context, Model Call, Response Plan, Revise Draft, Extract, Enrich |
+| **Assembly and editing** | Compose, Text Rules, Transpose, Draft Text, Render Notes, Append/Combine |
+| **Decisions and control** | Decision, Fast Decision, Confidence Gate, Condition, Branch, Join, Collect, pinned For Each |
+| **Canonical events and item rules** | Event Normalize, Confirm Events, Scene Presence, Current Holder, Character Direction, Prompted Memory |
+| **Randomness** | Effect Library, Random Pick, Effect Author, Stage Outcome, Outcome Commit |
+| **Documents and collections** | Read File, Format, Project Document, Write to File; lookup/filter/count/sum/threshold/project/flatten |
+| **Time and progression** | Story Clock, Advance Time, Time Trigger, Clock Commit; generic State progression and time-decay |
+| **Memory** | Reflect, Internalize, Express, scoped Memory, Recall and Hotkey Arm |
 
 Repair also offers Inspect, Contextual Cleanup and Strict Avoidance modes using the complete category-based policy. Nodes have phase and artifact requirements; the [node reference](docs/node-reference.md) explains their ports and controls. The [reference library guide](docs/lattice-reference-library.md) covers reusable Context Lens, Scene Compass and cleanup workflows.
 
-The shelf and contextual search offer one entry per operation. Choose variants in **Details**: Reflect's Character/Recall/Scene modes, JSON Decode's Parse/Check modes, Reroute's Artifact kind, and the other operation controls. All six Introspection nodes expose their eighteen modes this way. The Subgraphs shelf shows the latest explicitly saved entry for each reusable item; placed copies retain their exact saved contents.
+The shelf and contextual search offer one entry per operation. Choose variants in **Details**: Reflect's Character/Recall/Scene modes, JSON Decode's Parse/Check modes, Reroute's Artifact kind, and the other operation controls. Introspection modes and generic State progression/time-decay use these controls. The Subgraphs shelf shows the latest explicitly saved entry for each reusable item; placed copies retain their exact saved contents.
 
 New Transpose nodes accept and return **Text** in either graph phase. Choose **Input type → Draft** in an After reply graph to produce source-bound Patches for validation and review. Existing saved nodes without an Input type setting retain their Draft behavior. See the [reference library guide](docs/lattice-reference-library.md) for reference inputs and independent mode/scope controls.
 
-Memory is root-only; Commit is a Post terminal and writes only after a successful full root Run. Run to here records a preview without writing. Memory uses the active chat and character, including a required selected actor in group chats. See the [Introspection guide](docs/introspection-package.md) for evidence, controls and persistence limits.
+Memory is root-only; Commit is a Post/response terminal. Legacy post tools may settle it on a successful full root Run; unified effects wait for the chosen accepted root result. Run to here records a preview without writing. Memory uses the active chat and character, including a required selected actor in group chats. See the [Introspection guide](docs/introspection-package.md) for evidence, controls and persistence limits.
 
 ## Reuse a process, inspect its internals
 
@@ -98,15 +83,17 @@ Select processing nodes, right-click, and choose **Create Subgraph**. The editor
 
 1. In SillyTavern, open **Extensions → Install extension**.
 2. Enter `https://github.com/MentallyQuill/Lattice`, leaving the branch field blank to install `main`.
-3. Install, then reload SillyTavern. Open LATTICE from its logo on the left of the chat bar or with `/lattice`. Fresh launch selects **Structured guidance**, with workflows disabled and no phase assigned.
-4. Try the selected zero-call graph, or open **File → Open examples…** and choose **Build a brief from JSON** (lesson 3).
-5. Choose each model node's connection profile in Details, click **Run**, and inspect the recorded results. Assign a phase from Workflows and arm only when you want integration with normal sends.
+3. Install, then reload SillyTavern. Open LATTICE from its logo on the left of the chat bar or with `/lattice`. Fresh launch selects **Unified story workflow**, with workflows disabled and unassigned. Existing saved selections remain.
+4. Choose **Workflows → Assign unified workflow**, enable **Arm**, and Send a player message in SillyTavern. The starter makes no auxiliary calls and exposes its completed native Draft for review.
+5. Select **Review / Publish · Host result** in Preview, inspect it, and Apply or Reject. For a richer pipeline, open a unified example and configure its model nodes, For Each helper roles and required Story Documents before the next Send.
 
 For updates, use **Manage Extensions**, then reload. Installation, import, and editing do not make model calls.
 
-**Before reply (Pre)** prepares material for a reply that has not been written yet. Assign and arm a Guidance workflow to add its bounded direction before a normal Send; a manual Run lets you inspect it first. **After reply (Post)** supports work on a completed reply: run a repair graph manually, inspect its candidate, then apply it explicitly. Ordinary Text tools, including Transpose, work in either phase; host reply sources and application nodes impose the reply-specific limits.
+The [unified workflow guide](docs/unified-workflows.md) walks through applying an example to **Story-2 on default-user**, chaining different models, using Fast Decision, recording private moments, arming Recall and managing accepted effects. A full unified native generation starts with ordinary Send; supported **Run to here** paths inspect without acceptance.
 
-The thirty roleplay examples open immediately as independent, editable current workflows. Each opening creates a fresh copy; recipes with separate Pre/Post companions validate and install all members together, with the companions available in the Workflow selector. Opening makes no provider request and does not run, assign a phase, or arm the copies. Select each model-calling node and choose its own local connection profile in Details before model-backed runs. Its profile model is the default; a model override is optional. Assign the selected workflow's phase from **Workflows**. **Workflows → Workflow examples…** opens the same picker. The bundled lessons contain 37 phase packages and six embedded subgraph definitions.
+Unified examples open as independent editable workflows. They do not run, assign or arm themselves. Set each auxiliary model’s local Connection profile in Details; configure For Each’s **Helper model bindings** separately. **Tools → Story documents…** authorizes logical JSON/text targets, and **Tools → Fast connections…** configures typed Jev/Laya endpoints. Local connection IDs and credentials are excluded from portable exports.
+
+Legacy **Before reply (Pre)** workflows still prepare bounded guidance, while **After reply (Post)** workflows remain manual tools for a completed reply. The Workflows menu labels these as legacy. Existing saved graphs are retained; migration is explicit reuse in a new unified copy, with no automatic converter.
 
 Open the following technical examples as JSON with **File → Open workflow…**:
 
@@ -124,9 +111,9 @@ Open the following technical examples as JSON with **File → Open workflow…**
 | [Internalize and commit](examples/introspection/native/internalize-and-commit.json) | Settled events → experience proposal → root memory commit | 1 Analysis |
 | [Consequence clock](examples/introspection/native/consequence-clock.json) | Distinct settled events → deterministic track → root memory commit | 0 |
 
-Start with Structured guidance without a connection profile, or Literal cleanup with a completed text reply. A manual model-backed run can spend tokens; an armed Send runs guidance again. Reply application requires a fresh, fully reviewed root result.
+The technical legacy examples above remain useful for bounded manual inspection. Structured guidance needs no connection profile; Literal cleanup needs a completed text reply. A manual model-backed run can spend tokens; an armed Send runs guidance again. Reply application requires a fresh, fully reviewed root result.
 
-The two Post Introspection starters write actor memory on a successful full Run. The host checks current evidence and store version before writing and records idempotency receipts. SillyTavern's public metadata save wrapper returns no durability acknowledgment: Preview reports **Memory updated; save unconfirmed** when the local update succeeds but the save is unconfirmed. Confirm refreshed metadata before another commit.
+The two legacy Post Introspection starters write actor memory on a successful full Run. The host checks current evidence and store version before writing and records idempotency receipts. SillyTavern's public metadata save wrapper returns no durability acknowledgment: Preview reports **Memory updated; save unconfirmed** when the local update succeeds but the save is unconfirmed. Confirm refreshed metadata before another commit.
 
 ![LATTICE showing a completed cleanup workflow and its original and revised text in the candidate artifact](docs/images/review-candidate.png)
 
@@ -138,11 +125,12 @@ The two Post Introspection starters write actor memory on a successful full Run.
 - [Node reference](docs/node-reference.md) — every available operation, its artifacts, controls, and connection examples.
 - [Connections and comments](docs/connection-comments.md) — smooth connections, workflow annotations, and comment editing shortcuts.
 - [Quick start](docs/lattice-workspace.md) — your first two workflows without model calls.
-- [Model connections and host integration](docs/native-workflows.md) — phase setup, token budgets, reply review, supported routes, and troubleshooting.
-- [Introspection](docs/introspection-package.md) — native starters, all eighteen modes, scoped memory and package APIs.
+- [Unified workflows](docs/unified-workflows.md) — story setup, one-graph Send/Apply, decisions, actor context, documents, Recall, clocks and migration.
+- [Model connections and host integration](docs/native-workflows.md) — local profiles, token budgets, legacy tools, reply review, supported routes, and troubleshooting.
+- [Introspection](docs/introspection-package.md) — native starters, original Introspection modes, scoped memory and package APIs.
 - [Development guide](docs/development.md) — build tools and reproducible documentation captures.
 
-Screenshots show the shipped UI on a local demonstration host with synthetic writing material. The demonstrated completed workflows make no provider requests.
+Screenshots illustrate the editor and existing example tools on a local demonstration host with synthetic writing material; captions identify their demonstrated workflows. The demonstrated completed workflows make no provider requests.
 
 ## License
 

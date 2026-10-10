@@ -1,17 +1,19 @@
+import {UNIFIED_WORKFLOW_EXAMPLE_DATA} from '../src/workflow/unified-example-data.js?v=0.26.0';
+const exampleCount=30+UNIFIED_WORKFLOW_EXAMPLE_DATA.length;
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-test('example thumbnails project all thirty actual primary workflows in lesson order', async () => {
+test('example thumbnails project all legacy and unified primary workflows in lesson order', async () => {
     const api = await import('../src/ui/example-catalog.js?v=0.26.0').catch(error => {
         if (error.code !== 'ERR_MODULE_NOT_FOUND') throw error;
         return {};
     });
     assert.equal(typeof api.projectWorkflowExamples, 'function', 'The native package thumbnail projection is available');
     const tiles = api.projectWorkflowExamples();
-    assert.equal(tiles.length, 30);
-    assert.deepEqual(tiles.map(tile => tile.number), Array.from({ length: 30 }, (_, index) => index + 1));
+    assert.equal(tiles.length, exampleCount);
+    assert.deepEqual(tiles.map(tile => tile.number), Array.from({ length: exampleCount }, (_, index) => index + 1));
     assert.equal(tiles[0].title, 'Make a scene brief');
-    assert.equal(tiles.at(-1).title, 'Combine memory with a voice pass');
+    assert.equal(tiles[29].title, 'Combine memory with a voice pass');
     for (const tile of tiles) {
         assert.ok(tile.thumbnail.nodes.length, tile.title);
         assert.ok(tile.thumbnail.wires.length, tile.title);
@@ -63,7 +65,7 @@ test('stable example revisions reuse immutable thumbnail projections', async () 
     assert.throws(() => { first[0].thumbnail.nodes[0].title = 'Changed'; }, TypeError);
 });
 
-test('a malformed primary retains its diagnostic tile while the other twenty-nine previews stay usable', async () => {
+test('a malformed primary retains its diagnostic tile while the other previews stay usable', async () => {
     const { WORKFLOW_EXAMPLE_DATA } = await import('../src/workflow/example-data.js?v=0.26.0');
     const { projectWorkflowExamples } = await import('../src/ui/example-catalog.js?v=0.26.0');
     const entry = WORKFLOW_EXAMPLE_DATA[0], node = Object.values(entry.packages[0].graph.nodes).find(node => node.type === 'workflow');
@@ -72,8 +74,8 @@ test('a malformed primary retains its diagnostic tile while the other twenty-nin
         node.operation = 'missing-example-operation';
         let tiles;
         assert.doesNotThrow(() => { tiles = projectWorkflowExamples(); }, 'A malformed example must not abort the workspace catalog');
-        assert.equal(tiles.length, 30);
-        assert.deepEqual(tiles.map(tile => tile.number), Array.from({ length: 30 }, (_, index) => index + 1));
+        assert.equal(tiles.length, exampleCount);
+        assert.deepEqual(tiles.map(tile => tile.number), Array.from({ length: exampleCount }, (_, index) => index + 1));
         assert.equal(tiles[0].title, 'Make a scene brief');
         assert.equal(tiles[0].thumbnail, null);
         assert.match(tiles[0].issue, /operation|unsupported|unknown/i);

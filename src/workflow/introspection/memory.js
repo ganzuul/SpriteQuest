@@ -187,7 +187,7 @@ export function createMemoryService(options) {
         return null;
     }
 
-    async function settle(intent, flags) {
+    async function settle(intent, flags, preflightOnly=false) {
         const before = cancellation(flags); if (before) return before;
         const key = intent.payload.idempotencyKey, fingerprint = canonical(intent);
         const first = await load(); if (!first.ok) return first;
@@ -217,6 +217,7 @@ export function createMemoryService(options) {
         if (!next.ok) return next;
         const lastStop = cancellation(flags); if (lastStop) return lastStop;
         const receipt = freeze({ key, fingerprint, version: next.data.value.store.version });
+        if(preflightOnly)return good({applied:false,acknowledged:false,version:intent.store.version,preflight:true});
         // CAS is called once. The adapter owns the final atomic version/scope check.
         const saved = await invoke(config.compareAndSwap, { expectedVersion: intent.store.version, state: next.data, receipt }, { signal: flags.signal, sourceRefs: intent.sourceRefs });
         if (!saved.ok) {
@@ -247,7 +248,15 @@ export function createMemoryService(options) {
         return pending;
     }
 
-    return Object.freeze({ read, recall, commit });
+    async function preflight(data, options={}) {
+        if(!configured.ok)return configured;
+        const flags=controls(options);if(!flags.ok)return flags;
+        const checked=scopedRecord(data,'commit-intent',config);if(!checked.ok)return checked;
+        if(checked.data.payload.proposal.payload.changes.some(change=>change.op==='upsert'&&change.item.classification==='observation'&&change.item.sourceRefs.length===0))return fail('INVALID_INTROSPECTION_EVIDENCE','Committed factual observations require explicit settled-event provenance.');
+        const result=await settle(checked.data,flags.data,true);
+        return result.ok?good({status:result.data.preflight?'ready':'unchanged',version:result.data.version}):result;
+    }
+    return Object.freeze({ read, recall, commit, preflight });
 }
 
 function casInput(input, config, current) {

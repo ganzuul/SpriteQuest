@@ -1,13 +1,15 @@
 import type { NativeNode, OperationDescription, OperationDescriptor, OperationResult, Result, WorkflowPhase } from '../types';
 import type { StoryClock } from '../story-time';
 
-export type TimeOperationId = 'story-clock' | 'advance-time' | 'time-trigger';
+export type TimeOperationId = 'story-clock' | 'advance-time' | 'time-trigger' | 'commit-clock';
 export type TimeOperationDescriptor = OperationDescriptor & { operationVersion: 1; minimumRuntime: 2 };
 export type TimeVisibility = { kind: 'public' } | { kind: 'hidden' } | { kind: 'actor-private'; actorId: string };
 export interface TimeNodeExecution {
     phase?: WorkflowPhase;
     /** Required true for Story Clock. Pure projections may execute in pinned helpers. */
     root?: boolean;
+    retainTimeProjection?: (projection:import('../native-story-state').NativeTimeProjection)=>Result<void>|Promise<Result<void>>;
+    stageStoryClock?: (report:unknown,occurrences?:unknown)=>Result<Record<string,unknown>>|Promise<Result<Record<string,unknown>>>;
     signal?: AbortSignal;
     /** Trusted captured user/chat-scoped accepted clock, schemaVersion 1 and positive revision.
      * The host supplies initialization and scope/currentness policy. No ambient default is used.
@@ -24,6 +26,8 @@ export function describeTimeNode(node: NativeNode | Record<string, unknown>, opt
  * Time Trigger inputs: previous + destination full clocks, optional consumed ledger.
  * Outputs: occurrences + report; daily, fixed-anchor interval and one-time delay controls.
  * Input/clock/schedule visibility is strengthened across every derived artifact and due record.
- * No model calls, writes, revision increments or automatic occurrence-ledger settlement occur.
+ * Clock Commit: Post/root/host terminal, projection plus optional checked occurrences; descriptive receipt only.
+ * Acceptance owns persistence and revision increments.
+ * Pure projections make no model calls, writes, revision increments or automatic ledger settlement.
  */
 export function executeTimeNode(node: NativeNode | Record<string, unknown>, inputs: Record<string, unknown>, execution?: TimeNodeExecution): Promise<OperationResult>;

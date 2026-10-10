@@ -1,0 +1,1013 @@
+{
+  "kind": "lattice-workflow",
+  "schema": 2,
+  "minRuntime": 2,
+  "graph": {
+    "id": "unified-example-general-experience",
+    "name": "Experience from confirmed scene events",
+    "description": "Use generic State Progression, an authored reward table, canonical event identity and schema-aware file replacement to track experience.\n\nSetup: Create public JSON player-progression as {values:[{key:\"experience\",value:80}],ledger:[]}. Author reward rules and canonical IDs for your campaign. Bind Prose for evidence extraction and decision for each actual completion. A new event identity can earn a reward; retry cannot. The example uses generic State/Collection/Format/Write nodes, with no XP-specific operation.\n\nInspect: On Send owns this generation. Generate Reply uses the ordinary SillyTavern connection. Auxiliary roles remain unassigned in this portable example. Review the final narrative and proposed consequences; Apply publishes a new swipe and settles staged writes. Preview and bounded runs never settle.\n\nGenerated suggestions are proposals. Quoted observations preserve source identity; notes never establish canonical events. Private records cannot be appended to public notes.",
+    "schema": 3,
+    "runtime": 2,
+    "mode": "native-unified",
+    "nodes": {
+      "send": {
+        "id": "send",
+        "type": "workflow",
+        "operation": "on-send",
+        "operationVersion": 1,
+        "title": "On Send",
+        "enabled": true,
+        "x": 80,
+        "y": 120,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null
+      },
+      "generate": {
+        "id": "generate",
+        "type": "workflow",
+        "operation": "generate-reply",
+        "operationVersion": 1,
+        "title": "Generate Reply · SillyTavern",
+        "enabled": true,
+        "x": 820,
+        "y": 120,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "budgetTokens": 768
+      },
+      "review": {
+        "id": "review",
+        "type": "workflow",
+        "operation": "review-publish",
+        "operationVersion": 1,
+        "title": "Review / Publish",
+        "enabled": true,
+        "x": 2670,
+        "y": 120,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null
+      },
+      "source-scope-text": {
+        "id": "source-scope-text",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 80,
+        "y": 1080,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "text": "{\"sourceId\":\"native-scene-body\",\"revision\":\"initial\",\"sceneId\":\"current-scene\",\"visibility\":\"public\"}"
+      },
+      "source-scope": {
+        "id": "source-scope",
+        "type": "workflow",
+        "operation": "json-decode",
+        "operationVersion": 1,
+        "title": "JSON Decode",
+        "enabled": true,
+        "x": 450,
+        "y": 1080,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "parse",
+        "schema": ""
+      },
+      "event-source": {
+        "id": "event-source",
+        "type": "workflow",
+        "operation": "draft-event-source",
+        "operationVersion": 1,
+        "title": "Draft Event Source",
+        "enabled": true,
+        "x": 1190,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null
+      },
+      "entities-text": {
+        "id": "entities-text",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 80,
+        "y": 840,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "text": "{\"actorIds\":[\"mara\"],\"itemIds\":[]}"
+      },
+      "entities": {
+        "id": "entities",
+        "type": "workflow",
+        "operation": "json-decode",
+        "operationVersion": 1,
+        "title": "JSON Decode",
+        "enabled": true,
+        "x": 450,
+        "y": 840,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "parse",
+        "schema": ""
+      },
+      "event-request": {
+        "id": "event-request",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 1190,
+        "y": 840,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "text": "Return a raw JSON array of scene-action candidates for explicitly completed objectives. Every object has eventType:\"scene-action\",actorId:\"mara\",position:{start,end},semantics:\"actual\". Use exact UTF-16 quoted offsets from supplied source; return [] when no completion."
+      },
+      "candidates": {
+        "id": "candidates",
+        "type": "workflow",
+        "operation": "model-call",
+        "operationVersion": 1,
+        "title": "Model Call",
+        "enabled": true,
+        "x": 1560,
+        "y": 840,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": "Prose",
+        "instructions": "",
+        "outputKind": "data",
+        "schema": "",
+        "maxTokens": 2048
+      },
+      "normalize": {
+        "id": "normalize",
+        "type": "workflow",
+        "operation": "event-normalize",
+        "operationVersion": 1,
+        "title": "Event Normalize",
+        "enabled": true,
+        "x": 1930,
+        "y": 840,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "candidates",
+        "eventType": "",
+        "absoluteMinute": -1
+      },
+      "confirm-each": {
+        "id": "confirm-each",
+        "type": "workflow",
+        "operation": "for-each",
+        "operationVersion": 1,
+        "title": "For Each",
+        "enabled": true,
+        "x": 1560,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "helper": {
+          "id": "general-experience-confirm",
+          "version": 1,
+          "semanticHash": "sha256:410014daedd464bad75d83732fb3c08b4fa4c18dde8c27f2b81facc805d97f36"
+        },
+        "limit": 4,
+        "requestBoundPerIteration": 1,
+        "mode": "map",
+        "roleOverrides": {}
+      },
+      "confirmed": {
+        "id": "confirmed",
+        "type": "workflow",
+        "operation": "collection",
+        "operationVersion": 1,
+        "title": "Collection",
+        "enabled": true,
+        "x": 1930,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "flatten",
+        "collectionPath": [],
+        "fieldPath": [],
+        "value": "",
+        "operator": "equals",
+        "missingPolicy": "hold",
+        "thresholds": "[]",
+        "mergePolicy": "keep-all",
+        "identityPath": [
+          "id"
+        ]
+      },
+      "reward-events": {
+        "id": "reward-events",
+        "type": "workflow",
+        "operation": "event-normalize",
+        "operationVersion": 1,
+        "title": "Event Normalize",
+        "enabled": true,
+        "x": 2300,
+        "y": 840,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "progression",
+        "eventType": "objective-completed",
+        "absoluteMinute": -1
+      },
+      "progression-file": {
+        "id": "progression-file",
+        "type": "workflow",
+        "operation": "read-file",
+        "operationVersion": 1,
+        "title": "Read File",
+        "enabled": true,
+        "x": 80,
+        "y": 1560,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "targetId": "player-progression",
+        "schema": "",
+        "columns": [],
+        "actorScope": "selected",
+        "actorId": ""
+      },
+      "progression": {
+        "id": "progression",
+        "type": "workflow",
+        "operation": "json-decode",
+        "operationVersion": 1,
+        "title": "JSON Decode",
+        "enabled": true,
+        "x": 450,
+        "y": 1560,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "parse",
+        "schema": ""
+      },
+      "rewards-text": {
+        "id": "rewards-text",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 820,
+        "y": 1560,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "text": "{\"ruleSetId\":\"campaign-rewards\",\"revision\":1,\"rules\":[{\"ruleId\":\"objective\",\"eventType\":\"objective-completed\",\"targetKey\":\"experience\",\"identityFields\":[\"occurrenceId\"],\"mode\":\"add\",\"amount\":100,\"min\":0,\"max\":100000}]}"
+      },
+      "rewards": {
+        "id": "rewards",
+        "type": "workflow",
+        "operation": "json-decode",
+        "operationVersion": 1,
+        "title": "JSON Decode",
+        "enabled": true,
+        "x": 1190,
+        "y": 1560,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "parse",
+        "schema": ""
+      },
+      "reward": {
+        "id": "reward",
+        "type": "workflow",
+        "operation": "state",
+        "operationVersion": 1,
+        "title": "State",
+        "enabled": true,
+        "x": 2670,
+        "y": 840,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "progression"
+      },
+      "serialize": {
+        "id": "serialize",
+        "type": "workflow",
+        "operation": "format",
+        "operationVersion": 1,
+        "title": "Format",
+        "enabled": true,
+        "x": 3040,
+        "y": 840,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "inputMode": "records",
+        "format": "json",
+        "jsonShape": "single",
+        "mapping": "preserve",
+        "fields": [],
+        "schema": "",
+        "columns": [],
+        "separator": "\n",
+        "trailingSeparator": false
+      },
+      "write": {
+        "id": "write",
+        "type": "workflow",
+        "operation": "write-file",
+        "operationVersion": 1,
+        "title": "Write to File",
+        "enabled": true,
+        "x": 3410,
+        "y": 840,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "replace",
+        "collectionPath": "",
+        "missingPath": "error",
+        "key": "id",
+        "fieldPolicy": "merge",
+        "fields": [],
+        "schema": "",
+        "columns": [],
+        "separator": "\n",
+        "emptyPolicy": "omit",
+        "trailingSeparator": false,
+        "actorScope": "selected",
+        "actorId": ""
+      },
+      "reward-receipts": {
+        "id": "reward-receipts",
+        "type": "workflow",
+        "operation": "collection",
+        "operationVersion": 1,
+        "title": "Collection",
+        "enabled": true,
+        "x": 3040,
+        "y": 1320,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "project",
+        "collectionPath": [
+          "receipts"
+        ],
+        "fieldPath": [],
+        "value": "",
+        "operator": "equals",
+        "missingPolicy": "hold",
+        "thresholds": "[]",
+        "mergePolicy": "keep-all",
+        "identityPath": [
+          "id"
+        ]
+      },
+      "milestones": {
+        "id": "milestones",
+        "type": "workflow",
+        "operation": "for-each",
+        "operationVersion": 1,
+        "title": "For Each",
+        "enabled": true,
+        "x": 3410,
+        "y": 1320,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "helper": {
+          "id": "experience-crossings",
+          "version": 1,
+          "semanticHash": "sha256:667617f419d1cd9b6ea329f4e3a3403628caf11687ebc23f9bd3a56f40231caa"
+        },
+        "limit": 4,
+        "requestBoundPerIteration": 0,
+        "mode": "map",
+        "roleOverrides": {}
+      },
+      "progress-notes": {
+        "id": "progress-notes",
+        "type": "workflow",
+        "operation": "compose",
+        "operationVersion": 1,
+        "title": "Compose",
+        "enabled": true,
+        "x": 3780,
+        "y": 1320,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "template",
+        "outputKind": "text",
+        "template": "Proposed experience milestones (settle with Apply): {{data:}}",
+        "sections": [],
+        "separator": "\n\n"
+      },
+      "progress-append": {
+        "id": "progress-append",
+        "type": "workflow",
+        "operation": "append",
+        "operationVersion": 1,
+        "title": "Append",
+        "enabled": true,
+        "x": 4150,
+        "y": 120,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "sectionId": "experience-milestones",
+        "separator": "\n\n"
+      }
+    },
+    "wires": {
+      "wire-1": {
+        "id": "wire-1",
+        "route": "wire",
+        "from": "send",
+        "fromPort": "activation",
+        "to": "generate",
+        "toPort": "activation"
+      },
+      "wire-2": {
+        "id": "wire-2",
+        "route": "wire",
+        "from": "source-scope-text",
+        "fromPort": "out",
+        "to": "source-scope",
+        "toPort": "in"
+      },
+      "wire-3": {
+        "id": "wire-3",
+        "route": "wire",
+        "from": "generate",
+        "fromPort": "draft",
+        "to": "event-source",
+        "toPort": "in"
+      },
+      "wire-4": {
+        "id": "wire-4",
+        "route": "wire",
+        "from": "source-scope",
+        "fromPort": "out",
+        "to": "event-source",
+        "toPort": "scope"
+      },
+      "wire-5": {
+        "id": "wire-5",
+        "route": "wire",
+        "from": "entities-text",
+        "fromPort": "out",
+        "to": "entities",
+        "toPort": "in"
+      },
+      "wire-6": {
+        "id": "wire-6",
+        "route": "wire",
+        "from": "event-request",
+        "fromPort": "out",
+        "to": "candidates",
+        "toPort": "prompt"
+      },
+      "wire-7": {
+        "id": "wire-7",
+        "route": "wire",
+        "from": "event-source",
+        "fromPort": "out",
+        "to": "candidates",
+        "toPort": "data"
+      },
+      "wire-8": {
+        "id": "wire-8",
+        "route": "wire",
+        "from": "event-source",
+        "fromPort": "out",
+        "to": "normalize",
+        "toPort": "source"
+      },
+      "wire-9": {
+        "id": "wire-9",
+        "route": "wire",
+        "from": "entities",
+        "fromPort": "out",
+        "to": "normalize",
+        "toPort": "entities"
+      },
+      "wire-10": {
+        "id": "wire-10",
+        "route": "wire",
+        "from": "candidates",
+        "fromPort": "out",
+        "to": "normalize",
+        "toPort": "candidates"
+      },
+      "wire-11": {
+        "id": "wire-11",
+        "route": "wire",
+        "from": "normalize",
+        "fromPort": "out",
+        "to": "confirm-each",
+        "toPort": "in"
+      },
+      "wire-12": {
+        "id": "wire-12",
+        "route": "wire",
+        "from": "confirm-each",
+        "fromPort": "out",
+        "to": "confirmed",
+        "toPort": "in"
+      },
+      "wire-13": {
+        "id": "wire-13",
+        "route": "wire",
+        "from": "confirmed",
+        "fromPort": "out",
+        "to": "reward-events",
+        "toPort": "events"
+      },
+      "wire-14": {
+        "id": "wire-14",
+        "route": "wire",
+        "from": "progression-file",
+        "fromPort": "text",
+        "to": "progression",
+        "toPort": "in"
+      },
+      "wire-15": {
+        "id": "wire-15",
+        "route": "wire",
+        "from": "rewards-text",
+        "fromPort": "out",
+        "to": "rewards",
+        "toPort": "in"
+      },
+      "wire-16": {
+        "id": "wire-16",
+        "route": "wire",
+        "from": "progression",
+        "fromPort": "out",
+        "to": "reward",
+        "toPort": "state"
+      },
+      "wire-17": {
+        "id": "wire-17",
+        "route": "wire",
+        "from": "rewards",
+        "fromPort": "out",
+        "to": "reward",
+        "toPort": "rules"
+      },
+      "wire-18": {
+        "id": "wire-18",
+        "route": "wire",
+        "from": "reward-events",
+        "fromPort": "out",
+        "to": "reward",
+        "toPort": "events"
+      },
+      "wire-19": {
+        "id": "wire-19",
+        "route": "wire",
+        "from": "reward",
+        "fromPort": "out",
+        "to": "serialize",
+        "toPort": "in"
+      },
+      "wire-20": {
+        "id": "wire-20",
+        "route": "wire",
+        "from": "progression-file",
+        "fromPort": "reference",
+        "to": "write",
+        "toPort": "reference"
+      },
+      "wire-21": {
+        "id": "wire-21",
+        "route": "wire",
+        "from": "serialize",
+        "fromPort": "text",
+        "to": "write",
+        "toPort": "text"
+      },
+      "wire-22": {
+        "id": "wire-22",
+        "route": "wire",
+        "from": "confirmed",
+        "fromPort": "out",
+        "to": "write",
+        "toPort": "evidence"
+      },
+      "wire-23": {
+        "id": "wire-23",
+        "route": "wire",
+        "from": "reward",
+        "fromPort": "receipt",
+        "to": "reward-receipts",
+        "toPort": "in"
+      },
+      "wire-24": {
+        "id": "wire-24",
+        "route": "wire",
+        "from": "reward-receipts",
+        "fromPort": "out",
+        "to": "milestones",
+        "toPort": "in"
+      },
+      "wire-25": {
+        "id": "wire-25",
+        "route": "wire",
+        "from": "milestones",
+        "fromPort": "out",
+        "to": "progress-notes",
+        "toPort": "data"
+      },
+      "wire-26": {
+        "id": "wire-26",
+        "route": "wire",
+        "from": "generate",
+        "fromPort": "draft",
+        "to": "progress-append",
+        "toPort": "draft"
+      },
+      "wire-27": {
+        "id": "wire-27",
+        "route": "wire",
+        "from": "progress-notes",
+        "fromPort": "out",
+        "to": "progress-append",
+        "toPort": "section"
+      },
+      "wire-28": {
+        "id": "wire-28",
+        "route": "wire",
+        "from": "progress-append",
+        "fromPort": "out",
+        "to": "review",
+        "toPort": "draft"
+      }
+    },
+    "groups": {},
+    "roles": {
+      "Prose": {
+        "model": null,
+        "profileId": null
+      }
+    },
+    "portals": {},
+    "definitions": {
+      "[\"general-experience-confirm\",1,\"sha256:410014daedd464bad75d83732fb3c08b4fa4c18dde8c27f2b81facc805d97f36\"]": {
+        "id": "general-experience-confirm",
+        "version": 1,
+        "semanticHash": "sha256:410014daedd464bad75d83732fb3c08b4fa4c18dde8c27f2b81facc805d97f36",
+        "name": "Confirm each occurrence",
+        "description": "Pinned bounded pure helper. Inspect each selected child request; errors and unresolved decisions hold the parent.",
+        "interface": [
+          {
+            "id": "item",
+            "label": "Item",
+            "direction": "input",
+            "kind": "data",
+            "required": true,
+            "cardinality": "one",
+            "boundaryNodeId": "item"
+          },
+          {
+            "id": "result",
+            "label": "Result",
+            "direction": "output",
+            "kind": "data",
+            "required": false,
+            "cardinality": "one",
+            "boundaryNodeId": "result"
+          }
+        ],
+        "parameters": [],
+        "body": {
+          "schema": 3,
+          "runtime": 2,
+          "mode": "native-unified",
+          "nodes": {
+            "item": {
+              "id": "item",
+              "type": "subgraph-input",
+              "interfacePortId": "item"
+            },
+            "result": {
+              "id": "result",
+              "type": "subgraph-output",
+              "interfacePortId": "result"
+            },
+            "records": {
+              "id": "records",
+              "type": "workflow",
+              "operation": "format",
+              "operationVersion": 1,
+              "title": "Format",
+              "enabled": true,
+              "x": 400,
+              "y": 120,
+              "w": 270,
+              "h": 170,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "inputMode": "records",
+              "format": "json",
+              "mapping": "preserve",
+              "fields": [],
+              "schema": "",
+              "columns": [],
+              "separator": "\n",
+              "trailingSeparator": false
+            },
+            "check": {
+              "id": "check",
+              "type": "workflow",
+              "operation": "decision",
+              "operationVersion": 1,
+              "title": "Decision",
+              "enabled": true,
+              "x": 400,
+              "y": 120,
+              "w": 270,
+              "h": 170,
+              "profileId": null,
+              "model": null,
+              "modelRole": "decision",
+              "inputKind": "data",
+              "questions": {
+                "actual": {
+                  "type": "noul",
+                  "instructions": "Does the quoted scene action prove an objective was completed, rather than mentioned, planned or claimed?"
+                }
+              },
+              "maxTokens": 2048
+            },
+            "acceptance": {
+              "id": "acceptance",
+              "type": "workflow",
+              "operation": "select-fields",
+              "operationVersion": 1,
+              "title": "Select Fields",
+              "enabled": true,
+              "x": 400,
+              "y": 120,
+              "w": 270,
+              "h": 170,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "fields": [
+                {
+                  "name": "accepted",
+                  "path": [
+                    "answers",
+                    "actual",
+                    "accepted"
+                  ]
+                }
+              ]
+            },
+            "confirm": {
+              "id": "confirm",
+              "type": "workflow",
+              "operation": "confirm-events",
+              "operationVersion": 1,
+              "title": "Confirm Events",
+              "enabled": true,
+              "x": 400,
+              "y": 120,
+              "w": 270,
+              "h": 170,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "mode": "single-gate"
+            }
+          },
+          "wires": {
+            "w1": {
+              "id": "w1",
+              "route": "wire",
+              "from": "item",
+              "fromPort": "out",
+              "to": "records",
+              "toPort": "in"
+            },
+            "w2": {
+              "id": "w2",
+              "route": "wire",
+              "from": "item",
+              "fromPort": "out",
+              "to": "check",
+              "toPort": "in"
+            },
+            "w3": {
+              "id": "w3",
+              "route": "wire",
+              "from": "check",
+              "fromPort": "out",
+              "to": "acceptance",
+              "toPort": "in"
+            },
+            "w4": {
+              "id": "w4",
+              "route": "wire",
+              "from": "records",
+              "fromPort": "records",
+              "to": "confirm",
+              "toPort": "events"
+            },
+            "w5": {
+              "id": "w5",
+              "route": "wire",
+              "from": "acceptance",
+              "fromPort": "out",
+              "to": "confirm",
+              "toPort": "decisions"
+            },
+            "w6": {
+              "id": "w6",
+              "route": "wire",
+              "from": "confirm",
+              "fromPort": "out",
+              "to": "result",
+              "toPort": "in"
+            }
+          },
+          "roles": {
+            "decision": {
+              "model": null,
+              "profileId": null
+            }
+          }
+        }
+      },
+      "[\"experience-crossings\",1,\"sha256:667617f419d1cd9b6ea329f4e3a3403628caf11687ebc23f9bd3a56f40231caa\"]": {
+        "id": "experience-crossings",
+        "version": 1,
+        "semanticHash": "sha256:667617f419d1cd9b6ea329f4e3a3403628caf11687ebc23f9bd3a56f40231caa",
+        "name": "Every crossed milestone",
+        "description": "Pinned bounded pure helper. Inspect each selected child request; errors and unresolved decisions hold the parent.",
+        "interface": [
+          {
+            "id": "item",
+            "label": "Item",
+            "direction": "input",
+            "kind": "data",
+            "required": true,
+            "cardinality": "one",
+            "boundaryNodeId": "item"
+          },
+          {
+            "id": "result",
+            "label": "Result",
+            "direction": "output",
+            "kind": "data",
+            "required": false,
+            "cardinality": "one",
+            "boundaryNodeId": "result"
+          }
+        ],
+        "parameters": [],
+        "body": {
+          "schema": 3,
+          "runtime": 2,
+          "mode": "native-unified",
+          "nodes": {
+            "item": {
+              "id": "item",
+              "type": "subgraph-input",
+              "interfacePortId": "item"
+            },
+            "result": {
+              "id": "result",
+              "type": "subgraph-output",
+              "interfacePortId": "result"
+            },
+            "crossings": {
+              "id": "crossings",
+              "type": "workflow",
+              "operation": "collection",
+              "operationVersion": 1,
+              "title": "Collection",
+              "enabled": true,
+              "x": 400,
+              "y": 120,
+              "w": 270,
+              "h": 170,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "mode": "threshold",
+              "collectionPath": [],
+              "fieldPath": [],
+              "value": "",
+              "operator": "equals",
+              "missingPolicy": "hold",
+              "thresholds": "[100,300,600,1000]",
+              "mergePolicy": "keep-all",
+              "identityPath": [
+                "id"
+              ]
+            }
+          },
+          "wires": {
+            "w1": {
+              "id": "w1",
+              "route": "wire",
+              "from": "item",
+              "fromPort": "out",
+              "to": "crossings",
+              "toPort": "in"
+            },
+            "w2": {
+              "id": "w2",
+              "route": "wire",
+              "from": "crossings",
+              "fromPort": "out",
+              "to": "result",
+              "toPort": "in"
+            }
+          },
+          "roles": {}
+        }
+      }
+    },
+    "template": {
+      "id": "unified-general-experience",
+      "version": 1
+    },
+    "view": {
+      "x": 0,
+      "y": 0,
+      "zoom": 0.7
+    }
+  }
+}

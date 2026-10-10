@@ -1,0 +1,243 @@
+{
+  "kind": "lattice-workflow",
+  "schema": 2,
+  "minRuntime": 2,
+  "graph": {
+    "id": "unified-example-combat-tactics",
+    "name": "Combat with a tactical recap",
+    "description": "Present readable action and a quoted recap of positions, injuries and visible hazards.\n\nSetup: Bind the Prose role to a local auxiliary model. Assign this copy as the Unified workflow, arm Lattice, then send normally in SillyTavern.\n\nInspect: On Send owns this generation. Generate Reply uses the ordinary SillyTavern connection. Auxiliary roles remain unassigned in this portable example. Review the final narrative and proposed consequences; Apply publishes a new swipe and settles staged writes. Preview and bounded runs never settle.\n\nGenerated suggestions are proposals. Quoted observations preserve source identity; notes never establish canonical events. Private records cannot be appended to public notes.",
+    "schema": 3,
+    "runtime": 2,
+    "mode": "native-unified",
+    "nodes": {
+      "send": {
+        "id": "send",
+        "type": "workflow",
+        "operation": "on-send",
+        "operationVersion": 1,
+        "title": "On Send",
+        "enabled": true,
+        "x": 80,
+        "y": 120,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null
+      },
+      "generate": {
+        "id": "generate",
+        "type": "workflow",
+        "operation": "generate-reply",
+        "operationVersion": 1,
+        "title": "Generate Reply · SillyTavern",
+        "enabled": true,
+        "x": 820,
+        "y": 120,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "budgetTokens": 768
+      },
+      "review": {
+        "id": "review",
+        "type": "workflow",
+        "operation": "review-publish",
+        "operationVersion": 1,
+        "title": "Review / Publish",
+        "enabled": true,
+        "x": 2670,
+        "y": 120,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null
+      },
+      "direction": {
+        "id": "direction",
+        "type": "workflow",
+        "operation": "compose",
+        "operationVersion": 1,
+        "title": "Compose",
+        "enabled": true,
+        "x": 450,
+        "y": 360,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "join",
+        "outputKind": "guidance",
+        "template": "",
+        "sections": [
+          {
+            "name": "Direction",
+            "text": "Track physical positions and costs. Resolve only actions the player actually attempts; do not choose their next action."
+          }
+        ],
+        "separator": "\n\n"
+      },
+      "polish": {
+        "id": "polish",
+        "type": "workflow",
+        "operation": "revise-draft",
+        "operationVersion": 1,
+        "title": "Revise Draft",
+        "enabled": true,
+        "x": 1190,
+        "y": 120,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": "Prose",
+        "instructions": "Clarify combat movement and causal order while preserving every stated result.",
+        "scope": "narration",
+        "protectedLiterals": [],
+        "maxTokens": 2048
+      },
+      "records": {
+        "id": "records",
+        "type": "workflow",
+        "operation": "extract",
+        "operationVersion": 1,
+        "title": "Extract",
+        "enabled": true,
+        "x": 1560,
+        "y": 360,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": "Prose",
+        "inputKind": "draft",
+        "mode": "model",
+        "instructions": "Extract visible positions, injuries and hazards. Report uncertain outcomes as interpretations.",
+        "schema": "",
+        "patterns": [],
+        "maxTokens": 2048
+      },
+      "notes": {
+        "id": "notes",
+        "type": "workflow",
+        "operation": "render-notes",
+        "operationVersion": 1,
+        "title": "Tactical situation",
+        "enabled": true,
+        "x": 2300,
+        "y": 360,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "format": "html"
+      },
+      "append": {
+        "id": "append",
+        "type": "workflow",
+        "operation": "append",
+        "operationVersion": 1,
+        "title": "Append",
+        "enabled": true,
+        "x": 2300,
+        "y": 120,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "sectionId": "combat-tactics",
+        "separator": "\n\n"
+      }
+    },
+    "wires": {
+      "wire-1": {
+        "id": "wire-1",
+        "route": "wire",
+        "from": "send",
+        "fromPort": "activation",
+        "to": "generate",
+        "toPort": "activation"
+      },
+      "wire-2": {
+        "id": "wire-2",
+        "route": "wire",
+        "from": "direction",
+        "fromPort": "out",
+        "to": "generate",
+        "toPort": "guidance"
+      },
+      "wire-3": {
+        "id": "wire-3",
+        "route": "wire",
+        "from": "generate",
+        "fromPort": "draft",
+        "to": "polish",
+        "toPort": "draft"
+      },
+      "wire-4": {
+        "id": "wire-4",
+        "route": "wire",
+        "from": "polish",
+        "fromPort": "out",
+        "to": "records",
+        "toPort": "source"
+      },
+      "wire-5": {
+        "id": "wire-5",
+        "route": "wire",
+        "from": "records",
+        "fromPort": "out",
+        "to": "notes",
+        "toPort": "data"
+      },
+      "wire-6": {
+        "id": "wire-6",
+        "route": "wire",
+        "from": "polish",
+        "fromPort": "out",
+        "to": "append",
+        "toPort": "draft"
+      },
+      "wire-7": {
+        "id": "wire-7",
+        "route": "wire",
+        "from": "notes",
+        "fromPort": "out",
+        "to": "append",
+        "toPort": "section"
+      },
+      "wire-8": {
+        "id": "wire-8",
+        "route": "wire",
+        "from": "append",
+        "fromPort": "out",
+        "to": "review",
+        "toPort": "draft"
+      }
+    },
+    "groups": {},
+    "roles": {
+      "Prose": {
+        "model": null,
+        "profileId": null
+      }
+    },
+    "portals": {},
+    "definitions": {},
+    "template": {
+      "id": "unified-combat-tactics",
+      "version": 1
+    },
+    "view": {
+      "x": 0,
+      "y": 0,
+      "zoom": 0.7
+    }
+  }
+}

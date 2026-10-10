@@ -478,3 +478,26 @@ test('admitted long Unicode endpoint and factory identities are preserved withou
     const edit = accepted(prepare(graph, { kind: 'connect', origin: endpoint(originalId), target: endpoint('second', 'in') }, { idFactory() { return newId; } }), graph);
     assert.deepEqual(edit.addedEdgeIds, [newId]); assert.equal(edit.candidate.wires[newId].from, originalId);
 });
+
+test('unified configured creation uses a real stage and leaves neutral nodes dependency-derived',()=>{
+ const graph={id:'unified-create',schema:3,runtime:2,mode:'native-unified',nodes:{},wires:{},portals:{},definitions:{}};
+ for(const [operation,controls,phase] of [['text',{},undefined],['decision',{},'post'],['read-file',{targetId:'souls'},'pre'],['story-clock',{clockId:'time'},'pre'],['time-trigger',{scheduleId:'curse'},'post']]) {
+  const edit=accepted(prepare(graph,{kind:'create',operation,controls,...(phase?{phase}:{}),graphPoint:{x:10,y:20}}),graph),added=edit.candidate.nodes[edit.addedNodeIds[0]];
+  assert.equal(added.phase,phase);assert.notEqual(added.phase,'unified');assert.ok(portsForNode(edit.candidate,added).length);
+ }
+ assert.equal(prepare(graph,{kind:'create',operation:'read-file',graphPoint:{x:0,y:0}}).ok,false,'configuration cannot be replaced by a fake target');
+ assert.equal(prepare(graph,{kind:'create',operation:'on-send',phase:'post',graphPoint:{x:0,y:0}}).ok,false,'fixed preparation node cannot become a response node');
+});
+test('inserting a reroute in a unified Post wire preserves dependency-derived stage',()=>{
+ const graph={id:'unified-route',schema:3,runtime:2,mode:'native-unified',nodes:{source:{id:'source',type:'workflow',operation:'text',text:'post',phase:'post'},compose:{id:'compose',type:'workflow',operation:'compose',sections:[{name:'body',text:''}]}},wires:{edge:{id:'edge',route:'wire',from:'source',fromPort:'out',to:'compose',toPort:'section.body'}},portals:{},definitions:{}};
+ const edit=accepted(prepare(graph,{kind:'reroute',edgeId:'edge',graphPoint:{x:0,y:0}}),graph),added=edit.candidate.nodes[edit.addedNodeIds[0]];assert.equal(added.phase,undefined);assert.notEqual(added.phase,'unified');
+});
+
+test('unified workflows accept pinned legacy stage definitions while legacy containers retain their stage',()=>{
+ const raw={id:'stage-helper',version:1,name:'Preparation helper',interface:[{id:'item',label:'Item',direction:'input',kind:'data',required:true,cardinality:'one',boundaryNodeId:'entry'},{id:'result',label:'Result',direction:'output',kind:'data',required:false,cardinality:'one',boundaryNodeId:'exit'}],parameters:[],body:{schema:3,runtime:2,mode:'native-pre',nodes:{entry:{id:'entry',type:'subgraph-input',interfacePortId:'item'},exit:{id:'exit',type:'subgraph-output',interfacePortId:'result'}},wires:{pass:{id:'pass',route:'wire',from:'entry',fromPort:'out',to:'exit',toPort:'in'}}}};
+ const checked=computeDefinitionIdentity(raw);assert.equal(checked.ok,true);const definition={...checked.data.materializedDefinition,semanticHash:checked.data.semanticHash};
+ for(const mode of ['native-unified','native-pre','native-post']) {
+  const graph={id:'container',schema:3,runtime:2,mode,nodes:{},wires:{},portals:{},definitions:{}},result=prepare(graph,{kind:'create-instance',definition,graphPoint:{x:0,y:0}});
+  assert.equal(result.ok,mode!=='native-post',JSON.stringify(result.error));if(result.ok)assert.equal(validateGraphStructure(result.data.candidate).ok,true);
+ }
+});

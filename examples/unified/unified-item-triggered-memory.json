@@ -1,0 +1,1511 @@
+{
+  "kind": "lattice-workflow",
+  "schema": 2,
+  "minRuntime": 2,
+  "graph": {
+    "id": "unified-example-item-triggered-memory",
+    "name": "An item recalls a memory for its actual holder",
+    "description": "Watch a real item mention, resolve its current holder, apply the supplied prompt to that actor’s authorized memory, and stage only that actor’s private proposal.\n\nSetup: Load Mara and Elias and replace both canonical avatar IDs everywhere. Create actor-private JSON mara-item-memories for character:mara.png and elias-item-memories for character:elias.png, each initially []. Edit initial-holders: this campaign currently gives moonstone-pendant to Elias; ownership is authored accepted state, not inferred from who mentions it. Edit aliases and mention.actorId for the actual speaking/viewpoint actor. This once-per-source example expects at most one matching mention; ambiguous lookup holds. Bind Prose and promptedMemory. Existing native memories are read per actor. The default recall-or-create explicitly permits a pending invented memory if none fits; choose recall with allowCreate false to require existing history. No native memory is silently overwritten. Apply adds the private proposal uniquely by canonical eventId; absence/no mention skips the memory call and file branch.\n\nInspect: On Send owns this generation. Generate Reply uses the ordinary SillyTavern connection. Auxiliary roles remain unassigned in this portable example. Review the final narrative and proposed consequences; Apply publishes a new swipe and settles staged writes. Preview and bounded runs never settle.\n\nGenerated suggestions are proposals. Quoted observations preserve source identity; notes never establish canonical events. Private records cannot be appended to public notes.",
+    "schema": 3,
+    "runtime": 2,
+    "mode": "native-unified",
+    "nodes": {
+      "send": {
+        "id": "send",
+        "type": "workflow",
+        "operation": "on-send",
+        "operationVersion": 1,
+        "title": "On Send",
+        "enabled": true,
+        "x": 80,
+        "y": 120,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null
+      },
+      "generate": {
+        "id": "generate",
+        "type": "workflow",
+        "operation": "generate-reply",
+        "operationVersion": 1,
+        "title": "Generate Reply · SillyTavern",
+        "enabled": true,
+        "x": 820,
+        "y": 120,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "budgetTokens": 768
+      },
+      "review": {
+        "id": "review",
+        "type": "workflow",
+        "operation": "review-publish",
+        "operationVersion": 1,
+        "title": "Review / Publish",
+        "enabled": true,
+        "x": 2670,
+        "y": 120,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null
+      },
+      "source-scope-text": {
+        "id": "source-scope-text",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 80,
+        "y": 1080,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "text": "{\"sourceId\":\"native-scene-body\",\"revision\":\"initial\",\"sceneId\":\"current-scene\",\"visibility\":\"public\"}"
+      },
+      "source-scope": {
+        "id": "source-scope",
+        "type": "workflow",
+        "operation": "json-decode",
+        "operationVersion": 1,
+        "title": "JSON Decode",
+        "enabled": true,
+        "x": 450,
+        "y": 1080,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "parse",
+        "schema": ""
+      },
+      "event-source": {
+        "id": "event-source",
+        "type": "workflow",
+        "operation": "draft-event-source",
+        "operationVersion": 1,
+        "title": "Draft Event Source",
+        "enabled": true,
+        "x": 1190,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null
+      },
+      "entities-text": {
+        "id": "entities-text",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 80,
+        "y": 840,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "text": "{\"actorIds\":[\"character:mara.png\",\"character:elias.png\"],\"itemIds\":[\"moonstone-pendant\"]}"
+      },
+      "entities": {
+        "id": "entities",
+        "type": "workflow",
+        "operation": "json-decode",
+        "operationVersion": 1,
+        "title": "JSON Decode",
+        "enabled": true,
+        "x": 450,
+        "y": 840,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "parse",
+        "schema": ""
+      },
+      "initial-holders-text": {
+        "id": "initial-holders-text",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 80,
+        "y": 1560,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "text": "{\"moonstone-pendant\":\"character:elias.png\"}"
+      },
+      "initial-holders": {
+        "id": "initial-holders",
+        "type": "workflow",
+        "operation": "json-decode",
+        "operationVersion": 1,
+        "title": "JSON Decode",
+        "enabled": true,
+        "x": 450,
+        "y": 1560,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "parse",
+        "schema": ""
+      },
+      "mention": {
+        "id": "mention",
+        "type": "workflow",
+        "operation": "item-mention-trigger",
+        "operationVersion": 1,
+        "title": "Item Mention Trigger",
+        "enabled": true,
+        "x": 1560,
+        "y": 1320,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "actorId": "character:mara.png",
+        "itemId": "moonstone-pendant",
+        "aliases": [
+          "moonstone pendant"
+        ],
+        "watch": "draft",
+        "activation": "once-per-source",
+        "caseSensitive": false
+      },
+      "holder": {
+        "id": "holder",
+        "type": "workflow",
+        "operation": "current-holder",
+        "operationVersion": 1,
+        "title": "Current Holder",
+        "enabled": true,
+        "x": 1930,
+        "y": 1320,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null
+      },
+      "mara-events": {
+        "id": "mara-events",
+        "type": "workflow",
+        "operation": "collection",
+        "operationVersion": 1,
+        "title": "Collection",
+        "enabled": true,
+        "x": 2300,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "filter",
+        "collectionPath": [],
+        "fieldPath": [
+          "holderId"
+        ],
+        "value": "character:mara.png",
+        "operator": "equals",
+        "missingPolicy": "hold",
+        "thresholds": "[]",
+        "mergePolicy": "keep-all",
+        "identityPath": [
+          "id"
+        ]
+      },
+      "mara-event-count": {
+        "id": "mara-event-count",
+        "type": "workflow",
+        "operation": "collection",
+        "operationVersion": 1,
+        "title": "Collection",
+        "enabled": true,
+        "x": 2670,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "count",
+        "collectionPath": [],
+        "fieldPath": [],
+        "value": "",
+        "operator": "equals",
+        "missingPolicy": "hold",
+        "thresholds": "[]",
+        "mergePolicy": "keep-all",
+        "identityPath": [
+          "id"
+        ]
+      },
+      "mara-has-event": {
+        "id": "mara-has-event",
+        "type": "workflow",
+        "operation": "condition",
+        "operationVersion": 1,
+        "title": "Condition",
+        "enabled": true,
+        "x": 3040,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "path": [],
+        "operator": "greater-than",
+        "value": 0
+      },
+      "mara-event-branch": {
+        "id": "mara-event-branch",
+        "type": "workflow",
+        "operation": "branch",
+        "operationVersion": 1,
+        "title": "Branch",
+        "enabled": true,
+        "x": 3410,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "artifactKind": "data"
+      },
+      "mara-pick": {
+        "id": "mara-pick",
+        "type": "workflow",
+        "operation": "collection",
+        "operationVersion": 1,
+        "title": "Collection",
+        "enabled": true,
+        "x": 3780,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "lookup",
+        "collectionPath": [],
+        "fieldPath": [
+          "holderId"
+        ],
+        "value": "character:mara.png",
+        "operator": "equals",
+        "missingPolicy": "hold",
+        "thresholds": "[]",
+        "mergePolicy": "keep-all",
+        "identityPath": [
+          "id"
+        ]
+      },
+      "mara-event": {
+        "id": "mara-event",
+        "type": "workflow",
+        "operation": "select-fields",
+        "operationVersion": 1,
+        "title": "Select Fields",
+        "enabled": true,
+        "x": 4150,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "fields": [
+          {
+            "name": "schemaVersion",
+            "path": [
+              "value",
+              "schemaVersion"
+            ]
+          },
+          {
+            "name": "recordType",
+            "path": [
+              "value",
+              "recordType"
+            ]
+          },
+          {
+            "name": "eventId",
+            "path": [
+              "value",
+              "eventId"
+            ]
+          },
+          {
+            "name": "eventType",
+            "path": [
+              "value",
+              "eventType"
+            ]
+          },
+          {
+            "name": "sceneId",
+            "path": [
+              "value",
+              "sceneId"
+            ]
+          },
+          {
+            "name": "source",
+            "path": [
+              "value",
+              "source"
+            ]
+          },
+          {
+            "name": "actorId",
+            "path": [
+              "value",
+              "actorId"
+            ]
+          },
+          {
+            "name": "objectId",
+            "path": [
+              "value",
+              "objectId"
+            ],
+            "required": false
+          },
+          {
+            "name": "itemId",
+            "path": [
+              "value",
+              "itemId"
+            ]
+          },
+          {
+            "name": "position",
+            "path": [
+              "value",
+              "position"
+            ]
+          },
+          {
+            "name": "evidence",
+            "path": [
+              "value",
+              "evidence"
+            ]
+          },
+          {
+            "name": "semantics",
+            "path": [
+              "value",
+              "semantics"
+            ]
+          },
+          {
+            "name": "status",
+            "path": [
+              "value",
+              "status"
+            ]
+          },
+          {
+            "name": "acceptance",
+            "path": [
+              "value",
+              "acceptance"
+            ]
+          },
+          {
+            "name": "confirmation",
+            "path": [
+              "value",
+              "confirmation"
+            ]
+          },
+          {
+            "name": "holderId",
+            "path": [
+              "value",
+              "holderId"
+            ]
+          }
+        ]
+      },
+      "mara-cast-prompt": {
+        "id": "mara-cast-prompt",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 3410,
+        "y": 1080,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "text": "SCOPED CAST: Return exactly {sceneId,sourceId,revision,actors:[{actorId,status,evidence}]}. Copy identity from data. Check character:mara.png and character:elias.png only. Use status present, absent or unresolved. Present needs an exact quote from actual chat/native narrative showing participation. A remembered, named, hypothetical or offscreen character is not present. Never use character-card text as scene evidence."
+      },
+      "mara-cast": {
+        "id": "mara-cast",
+        "type": "workflow",
+        "operation": "model-call",
+        "operationVersion": 1,
+        "title": "Model Call",
+        "enabled": true,
+        "x": 3780,
+        "y": 1080,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": "Prose",
+        "instructions": "",
+        "outputKind": "data",
+        "schema": "",
+        "maxTokens": 2048
+      },
+      "mara-cast-prompt-gate": {
+        "id": "mara-cast-prompt-gate",
+        "type": "workflow",
+        "operation": "branch",
+        "operationVersion": 1,
+        "title": "Branch",
+        "enabled": true,
+        "x": 3410,
+        "y": 1320,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "artifactKind": "text"
+      },
+      "mara-presence": {
+        "id": "mara-presence",
+        "type": "workflow",
+        "operation": "scene-presence",
+        "operationVersion": 1,
+        "title": "Scene Presence",
+        "enabled": true,
+        "x": 4150,
+        "y": 1080,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "actorId": "character:mara.png"
+      },
+      "mara-is-present": {
+        "id": "mara-is-present",
+        "type": "workflow",
+        "operation": "condition",
+        "operationVersion": 1,
+        "title": "Condition",
+        "enabled": true,
+        "x": 4150,
+        "y": 1080,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "path": [
+          "status"
+        ],
+        "operator": "equals",
+        "value": "present"
+      },
+      "mara-present-route": {
+        "id": "mara-present-route",
+        "type": "workflow",
+        "operation": "branch",
+        "operationVersion": 1,
+        "title": "Branch",
+        "enabled": true,
+        "x": 4150,
+        "y": 1320,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "artifactKind": "data"
+      },
+      "mara-memory": {
+        "id": "mara-memory",
+        "type": "workflow",
+        "operation": "prompted-memory",
+        "operationVersion": 1,
+        "title": "Prompted Memory",
+        "enabled": true,
+        "x": 4520,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": "promptedMemory",
+        "actorId": "character:mara.png",
+        "mode": "recall-or-create",
+        "prompt": "The moonstone pendant has been mentioned while you hold it. Select one of your supplied existing memories related to its cold light or a past promise. If no suitable authorized memory exists, propose one restrained invented recollection explicitly as pending history. Reflect only for the actual holder; do not reveal another character’s thoughts.",
+        "allowCreate": true,
+        "maxTokens": 1024
+      },
+      "mara-file": {
+        "id": "mara-file",
+        "type": "workflow",
+        "operation": "read-file",
+        "operationVersion": 1,
+        "title": "Read File",
+        "enabled": true,
+        "x": 4520,
+        "y": 840,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "targetId": "mara-item-memories",
+        "schema": "",
+        "columns": [],
+        "actorScope": "presence",
+        "actorId": "character:mara.png"
+      },
+      "mara-save": {
+        "id": "mara-save",
+        "type": "workflow",
+        "operation": "write-file",
+        "operationVersion": 1,
+        "title": "Write to File",
+        "enabled": true,
+        "x": 4890,
+        "y": 600,
+        "w": 270,
+        "h": 170,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "add-unique",
+        "collectionPath": "",
+        "missingPath": "error",
+        "key": "eventId",
+        "fieldPolicy": "merge",
+        "fields": [],
+        "schema": "",
+        "columns": [],
+        "separator": "\n",
+        "emptyPolicy": "omit",
+        "trailingSeparator": false,
+        "actorScope": "presence",
+        "actorId": "character:mara.png"
+      },
+      "elias-events": {
+        "id": "elias-events",
+        "type": "workflow",
+        "operation": "collection",
+        "operationVersion": 1,
+        "title": "Collection",
+        "enabled": true,
+        "x": 2300,
+        "y": 1560,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "filter",
+        "collectionPath": [],
+        "fieldPath": [
+          "holderId"
+        ],
+        "value": "character:elias.png",
+        "operator": "equals",
+        "missingPolicy": "hold",
+        "thresholds": "[]",
+        "mergePolicy": "keep-all",
+        "identityPath": [
+          "id"
+        ]
+      },
+      "elias-event-count": {
+        "id": "elias-event-count",
+        "type": "workflow",
+        "operation": "collection",
+        "operationVersion": 1,
+        "title": "Collection",
+        "enabled": true,
+        "x": 2670,
+        "y": 1560,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "count",
+        "collectionPath": [],
+        "fieldPath": [],
+        "value": "",
+        "operator": "equals",
+        "missingPolicy": "hold",
+        "thresholds": "[]",
+        "mergePolicy": "keep-all",
+        "identityPath": [
+          "id"
+        ]
+      },
+      "elias-has-event": {
+        "id": "elias-has-event",
+        "type": "workflow",
+        "operation": "condition",
+        "operationVersion": 1,
+        "title": "Condition",
+        "enabled": true,
+        "x": 3040,
+        "y": 1560,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "path": [],
+        "operator": "greater-than",
+        "value": 0
+      },
+      "elias-event-branch": {
+        "id": "elias-event-branch",
+        "type": "workflow",
+        "operation": "branch",
+        "operationVersion": 1,
+        "title": "Branch",
+        "enabled": true,
+        "x": 3410,
+        "y": 1560,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "artifactKind": "data"
+      },
+      "elias-pick": {
+        "id": "elias-pick",
+        "type": "workflow",
+        "operation": "collection",
+        "operationVersion": 1,
+        "title": "Collection",
+        "enabled": true,
+        "x": 3780,
+        "y": 1560,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "lookup",
+        "collectionPath": [],
+        "fieldPath": [
+          "holderId"
+        ],
+        "value": "character:elias.png",
+        "operator": "equals",
+        "missingPolicy": "hold",
+        "thresholds": "[]",
+        "mergePolicy": "keep-all",
+        "identityPath": [
+          "id"
+        ]
+      },
+      "elias-event": {
+        "id": "elias-event",
+        "type": "workflow",
+        "operation": "select-fields",
+        "operationVersion": 1,
+        "title": "Select Fields",
+        "enabled": true,
+        "x": 4150,
+        "y": 1560,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "fields": [
+          {
+            "name": "schemaVersion",
+            "path": [
+              "value",
+              "schemaVersion"
+            ]
+          },
+          {
+            "name": "recordType",
+            "path": [
+              "value",
+              "recordType"
+            ]
+          },
+          {
+            "name": "eventId",
+            "path": [
+              "value",
+              "eventId"
+            ]
+          },
+          {
+            "name": "eventType",
+            "path": [
+              "value",
+              "eventType"
+            ]
+          },
+          {
+            "name": "sceneId",
+            "path": [
+              "value",
+              "sceneId"
+            ]
+          },
+          {
+            "name": "source",
+            "path": [
+              "value",
+              "source"
+            ]
+          },
+          {
+            "name": "actorId",
+            "path": [
+              "value",
+              "actorId"
+            ]
+          },
+          {
+            "name": "objectId",
+            "path": [
+              "value",
+              "objectId"
+            ],
+            "required": false
+          },
+          {
+            "name": "itemId",
+            "path": [
+              "value",
+              "itemId"
+            ]
+          },
+          {
+            "name": "position",
+            "path": [
+              "value",
+              "position"
+            ]
+          },
+          {
+            "name": "evidence",
+            "path": [
+              "value",
+              "evidence"
+            ]
+          },
+          {
+            "name": "semantics",
+            "path": [
+              "value",
+              "semantics"
+            ]
+          },
+          {
+            "name": "status",
+            "path": [
+              "value",
+              "status"
+            ]
+          },
+          {
+            "name": "acceptance",
+            "path": [
+              "value",
+              "acceptance"
+            ]
+          },
+          {
+            "name": "confirmation",
+            "path": [
+              "value",
+              "confirmation"
+            ]
+          },
+          {
+            "name": "holderId",
+            "path": [
+              "value",
+              "holderId"
+            ]
+          }
+        ]
+      },
+      "elias-cast-prompt": {
+        "id": "elias-cast-prompt",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 3410,
+        "y": 2040,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "text": "SCOPED CAST: Return exactly {sceneId,sourceId,revision,actors:[{actorId,status,evidence}]}. Copy identity from data. Check character:mara.png and character:elias.png only. Use status present, absent or unresolved. Present needs an exact quote from actual chat/native narrative showing participation. A remembered, named, hypothetical or offscreen character is not present. Never use character-card text as scene evidence."
+      },
+      "elias-cast": {
+        "id": "elias-cast",
+        "type": "workflow",
+        "operation": "model-call",
+        "operationVersion": 1,
+        "title": "Model Call",
+        "enabled": true,
+        "x": 3780,
+        "y": 2040,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": "Prose",
+        "instructions": "",
+        "outputKind": "data",
+        "schema": "",
+        "maxTokens": 2048
+      },
+      "elias-cast-prompt-gate": {
+        "id": "elias-cast-prompt-gate",
+        "type": "workflow",
+        "operation": "branch",
+        "operationVersion": 1,
+        "title": "Branch",
+        "enabled": true,
+        "x": 3410,
+        "y": 2280,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "artifactKind": "text"
+      },
+      "elias-presence": {
+        "id": "elias-presence",
+        "type": "workflow",
+        "operation": "scene-presence",
+        "operationVersion": 1,
+        "title": "Scene Presence",
+        "enabled": true,
+        "x": 4150,
+        "y": 2040,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "actorId": "character:elias.png"
+      },
+      "elias-is-present": {
+        "id": "elias-is-present",
+        "type": "workflow",
+        "operation": "condition",
+        "operationVersion": 1,
+        "title": "Condition",
+        "enabled": true,
+        "x": 4150,
+        "y": 2040,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "path": [
+          "status"
+        ],
+        "operator": "equals",
+        "value": "present"
+      },
+      "elias-present-route": {
+        "id": "elias-present-route",
+        "type": "workflow",
+        "operation": "branch",
+        "operationVersion": 1,
+        "title": "Branch",
+        "enabled": true,
+        "x": 4150,
+        "y": 2280,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "artifactKind": "data"
+      },
+      "elias-memory": {
+        "id": "elias-memory",
+        "type": "workflow",
+        "operation": "prompted-memory",
+        "operationVersion": 1,
+        "title": "Prompted Memory",
+        "enabled": true,
+        "x": 4520,
+        "y": 1560,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": "promptedMemory",
+        "actorId": "character:elias.png",
+        "mode": "recall-or-create",
+        "prompt": "The moonstone pendant has been mentioned while you hold it. Select one of your supplied existing memories related to its cold light or a past promise. If no suitable authorized memory exists, propose one restrained invented recollection explicitly as pending history. Reflect only for the actual holder; do not reveal another character’s thoughts.",
+        "allowCreate": true,
+        "maxTokens": 1024
+      },
+      "elias-file": {
+        "id": "elias-file",
+        "type": "workflow",
+        "operation": "read-file",
+        "operationVersion": 1,
+        "title": "Read File",
+        "enabled": true,
+        "x": 4520,
+        "y": 1800,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "targetId": "elias-item-memories",
+        "schema": "",
+        "columns": [],
+        "actorScope": "presence",
+        "actorId": "character:elias.png"
+      },
+      "elias-save": {
+        "id": "elias-save",
+        "type": "workflow",
+        "operation": "write-file",
+        "operationVersion": 1,
+        "title": "Write to File",
+        "enabled": true,
+        "x": 4890,
+        "y": 1560,
+        "w": 270,
+        "h": 170,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "add-unique",
+        "collectionPath": "",
+        "missingPath": "error",
+        "key": "eventId",
+        "fieldPolicy": "merge",
+        "fields": [],
+        "schema": "",
+        "columns": [],
+        "separator": "\n",
+        "emptyPolicy": "omit",
+        "trailingSeparator": false,
+        "actorScope": "presence",
+        "actorId": "character:elias.png"
+      }
+    },
+    "wires": {
+      "wire-1": {
+        "id": "wire-1",
+        "route": "wire",
+        "from": "send",
+        "fromPort": "activation",
+        "to": "generate",
+        "toPort": "activation"
+      },
+      "wire-2": {
+        "id": "wire-2",
+        "route": "wire",
+        "from": "source-scope-text",
+        "fromPort": "out",
+        "to": "source-scope",
+        "toPort": "in"
+      },
+      "wire-3": {
+        "id": "wire-3",
+        "route": "wire",
+        "from": "generate",
+        "fromPort": "draft",
+        "to": "event-source",
+        "toPort": "in"
+      },
+      "wire-4": {
+        "id": "wire-4",
+        "route": "wire",
+        "from": "source-scope",
+        "fromPort": "out",
+        "to": "event-source",
+        "toPort": "scope"
+      },
+      "wire-5": {
+        "id": "wire-5",
+        "route": "wire",
+        "from": "entities-text",
+        "fromPort": "out",
+        "to": "entities",
+        "toPort": "in"
+      },
+      "wire-6": {
+        "id": "wire-6",
+        "route": "wire",
+        "from": "initial-holders-text",
+        "fromPort": "out",
+        "to": "initial-holders",
+        "toPort": "in"
+      },
+      "wire-7": {
+        "id": "wire-7",
+        "route": "wire",
+        "from": "event-source",
+        "fromPort": "out",
+        "to": "mention",
+        "toPort": "source"
+      },
+      "wire-8": {
+        "id": "wire-8",
+        "route": "wire",
+        "from": "entities",
+        "fromPort": "out",
+        "to": "mention",
+        "toPort": "entities"
+      },
+      "wire-9": {
+        "id": "wire-9",
+        "route": "wire",
+        "from": "mention",
+        "fromPort": "out",
+        "to": "holder",
+        "toPort": "events"
+      },
+      "wire-10": {
+        "id": "wire-10",
+        "route": "wire",
+        "from": "initial-holders",
+        "fromPort": "out",
+        "to": "holder",
+        "toPort": "holders"
+      },
+      "wire-11": {
+        "id": "wire-11",
+        "route": "wire",
+        "from": "holder",
+        "fromPort": "events",
+        "to": "mara-events",
+        "toPort": "in"
+      },
+      "wire-12": {
+        "id": "wire-12",
+        "route": "wire",
+        "from": "mara-events",
+        "fromPort": "out",
+        "to": "mara-event-count",
+        "toPort": "in"
+      },
+      "wire-13": {
+        "id": "wire-13",
+        "route": "wire",
+        "from": "mara-event-count",
+        "fromPort": "out",
+        "to": "mara-has-event",
+        "toPort": "in"
+      },
+      "wire-14": {
+        "id": "wire-14",
+        "route": "wire",
+        "from": "mara-events",
+        "fromPort": "out",
+        "to": "mara-event-branch",
+        "toPort": "in"
+      },
+      "wire-15": {
+        "id": "wire-15",
+        "route": "wire",
+        "from": "mara-has-event",
+        "fromPort": "out",
+        "to": "mara-event-branch",
+        "toPort": "condition"
+      },
+      "wire-16": {
+        "id": "wire-16",
+        "route": "wire",
+        "from": "mara-event-branch",
+        "fromPort": "yes",
+        "to": "mara-pick",
+        "toPort": "in"
+      },
+      "wire-17": {
+        "id": "wire-17",
+        "route": "wire",
+        "from": "mara-pick",
+        "fromPort": "out",
+        "to": "mara-event",
+        "toPort": "in"
+      },
+      "wire-18": {
+        "id": "wire-18",
+        "route": "wire",
+        "from": "mara-cast-prompt",
+        "fromPort": "out",
+        "to": "mara-cast-prompt-gate",
+        "toPort": "in"
+      },
+      "wire-19": {
+        "id": "wire-19",
+        "route": "wire",
+        "from": "mara-has-event",
+        "fromPort": "out",
+        "to": "mara-cast-prompt-gate",
+        "toPort": "condition"
+      },
+      "wire-20": {
+        "id": "wire-20",
+        "route": "wire",
+        "from": "mara-cast-prompt-gate",
+        "fromPort": "yes",
+        "to": "mara-cast",
+        "toPort": "prompt"
+      },
+      "wire-21": {
+        "id": "wire-21",
+        "route": "wire",
+        "from": "event-source",
+        "fromPort": "out",
+        "to": "mara-cast",
+        "toPort": "data"
+      },
+      "wire-22": {
+        "id": "wire-22",
+        "route": "wire",
+        "from": "mara-cast",
+        "fromPort": "out",
+        "to": "mara-presence",
+        "toPort": "in"
+      },
+      "wire-23": {
+        "id": "wire-23",
+        "route": "wire",
+        "from": "mara-presence",
+        "fromPort": "out",
+        "to": "mara-is-present",
+        "toPort": "in"
+      },
+      "wire-24": {
+        "id": "wire-24",
+        "route": "wire",
+        "from": "mara-presence",
+        "fromPort": "out",
+        "to": "mara-present-route",
+        "toPort": "in"
+      },
+      "wire-25": {
+        "id": "wire-25",
+        "route": "wire",
+        "from": "mara-is-present",
+        "fromPort": "out",
+        "to": "mara-present-route",
+        "toPort": "condition"
+      },
+      "wire-26": {
+        "id": "wire-26",
+        "route": "wire",
+        "from": "mara-event",
+        "fromPort": "out",
+        "to": "mara-memory",
+        "toPort": "event"
+      },
+      "wire-27": {
+        "id": "wire-27",
+        "route": "wire",
+        "from": "mara-present-route",
+        "fromPort": "yes",
+        "to": "mara-memory",
+        "toPort": "presence"
+      },
+      "wire-28": {
+        "id": "wire-28",
+        "route": "wire",
+        "from": "mara-present-route",
+        "fromPort": "yes",
+        "to": "mara-file",
+        "toPort": "presence"
+      },
+      "wire-29": {
+        "id": "wire-29",
+        "route": "wire",
+        "from": "mara-file",
+        "fromPort": "reference",
+        "to": "mara-save",
+        "toPort": "reference"
+      },
+      "wire-30": {
+        "id": "wire-30",
+        "route": "wire",
+        "from": "mara-memory",
+        "fromPort": "out",
+        "to": "mara-save",
+        "toPort": "records"
+      },
+      "wire-31": {
+        "id": "wire-31",
+        "route": "wire",
+        "from": "mara-present-route",
+        "fromPort": "yes",
+        "to": "mara-save",
+        "toPort": "presence"
+      },
+      "wire-32": {
+        "id": "wire-32",
+        "route": "wire",
+        "from": "mara-event",
+        "fromPort": "out",
+        "to": "mara-save",
+        "toPort": "evidence"
+      },
+      "wire-33": {
+        "id": "wire-33",
+        "route": "wire",
+        "from": "holder",
+        "fromPort": "events",
+        "to": "elias-events",
+        "toPort": "in"
+      },
+      "wire-34": {
+        "id": "wire-34",
+        "route": "wire",
+        "from": "elias-events",
+        "fromPort": "out",
+        "to": "elias-event-count",
+        "toPort": "in"
+      },
+      "wire-35": {
+        "id": "wire-35",
+        "route": "wire",
+        "from": "elias-event-count",
+        "fromPort": "out",
+        "to": "elias-has-event",
+        "toPort": "in"
+      },
+      "wire-36": {
+        "id": "wire-36",
+        "route": "wire",
+        "from": "elias-events",
+        "fromPort": "out",
+        "to": "elias-event-branch",
+        "toPort": "in"
+      },
+      "wire-37": {
+        "id": "wire-37",
+        "route": "wire",
+        "from": "elias-has-event",
+        "fromPort": "out",
+        "to": "elias-event-branch",
+        "toPort": "condition"
+      },
+      "wire-38": {
+        "id": "wire-38",
+        "route": "wire",
+        "from": "elias-event-branch",
+        "fromPort": "yes",
+        "to": "elias-pick",
+        "toPort": "in"
+      },
+      "wire-39": {
+        "id": "wire-39",
+        "route": "wire",
+        "from": "elias-pick",
+        "fromPort": "out",
+        "to": "elias-event",
+        "toPort": "in"
+      },
+      "wire-40": {
+        "id": "wire-40",
+        "route": "wire",
+        "from": "elias-cast-prompt",
+        "fromPort": "out",
+        "to": "elias-cast-prompt-gate",
+        "toPort": "in"
+      },
+      "wire-41": {
+        "id": "wire-41",
+        "route": "wire",
+        "from": "elias-has-event",
+        "fromPort": "out",
+        "to": "elias-cast-prompt-gate",
+        "toPort": "condition"
+      },
+      "wire-42": {
+        "id": "wire-42",
+        "route": "wire",
+        "from": "elias-cast-prompt-gate",
+        "fromPort": "yes",
+        "to": "elias-cast",
+        "toPort": "prompt"
+      },
+      "wire-43": {
+        "id": "wire-43",
+        "route": "wire",
+        "from": "event-source",
+        "fromPort": "out",
+        "to": "elias-cast",
+        "toPort": "data"
+      },
+      "wire-44": {
+        "id": "wire-44",
+        "route": "wire",
+        "from": "elias-cast",
+        "fromPort": "out",
+        "to": "elias-presence",
+        "toPort": "in"
+      },
+      "wire-45": {
+        "id": "wire-45",
+        "route": "wire",
+        "from": "elias-presence",
+        "fromPort": "out",
+        "to": "elias-is-present",
+        "toPort": "in"
+      },
+      "wire-46": {
+        "id": "wire-46",
+        "route": "wire",
+        "from": "elias-presence",
+        "fromPort": "out",
+        "to": "elias-present-route",
+        "toPort": "in"
+      },
+      "wire-47": {
+        "id": "wire-47",
+        "route": "wire",
+        "from": "elias-is-present",
+        "fromPort": "out",
+        "to": "elias-present-route",
+        "toPort": "condition"
+      },
+      "wire-48": {
+        "id": "wire-48",
+        "route": "wire",
+        "from": "elias-event",
+        "fromPort": "out",
+        "to": "elias-memory",
+        "toPort": "event"
+      },
+      "wire-49": {
+        "id": "wire-49",
+        "route": "wire",
+        "from": "elias-present-route",
+        "fromPort": "yes",
+        "to": "elias-memory",
+        "toPort": "presence"
+      },
+      "wire-50": {
+        "id": "wire-50",
+        "route": "wire",
+        "from": "elias-present-route",
+        "fromPort": "yes",
+        "to": "elias-file",
+        "toPort": "presence"
+      },
+      "wire-51": {
+        "id": "wire-51",
+        "route": "wire",
+        "from": "elias-file",
+        "fromPort": "reference",
+        "to": "elias-save",
+        "toPort": "reference"
+      },
+      "wire-52": {
+        "id": "wire-52",
+        "route": "wire",
+        "from": "elias-memory",
+        "fromPort": "out",
+        "to": "elias-save",
+        "toPort": "records"
+      },
+      "wire-53": {
+        "id": "wire-53",
+        "route": "wire",
+        "from": "elias-present-route",
+        "fromPort": "yes",
+        "to": "elias-save",
+        "toPort": "presence"
+      },
+      "wire-54": {
+        "id": "wire-54",
+        "route": "wire",
+        "from": "elias-event",
+        "fromPort": "out",
+        "to": "elias-save",
+        "toPort": "evidence"
+      },
+      "wire-55": {
+        "id": "wire-55",
+        "route": "wire",
+        "from": "generate",
+        "fromPort": "draft",
+        "to": "review",
+        "toPort": "draft"
+      }
+    },
+    "groups": {},
+    "roles": {
+      "Prose": {
+        "model": null,
+        "profileId": null
+      },
+      "promptedMemory": {
+        "model": null,
+        "profileId": null
+      }
+    },
+    "portals": {},
+    "definitions": {},
+    "template": {
+      "id": "unified-item-triggered-memory",
+      "version": 1
+    },
+    "view": {
+      "x": 0,
+      "y": 0,
+      "zoom": 0.7
+    }
+  }
+}

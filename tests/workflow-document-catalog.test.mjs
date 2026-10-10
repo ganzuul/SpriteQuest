@@ -27,3 +27,17 @@ test('prepared definition and removal cannot rebase to a user, chat or catalog c
   if(change==='catalog')assert.equal(c.chatMetadata.latticeDocumentCatalog['user-a'].documents['external.txt'].content,'Other write');
  }
 });
+
+test('exact captured catalog leases authorize define/remove before the first refresh and cannot rebase scopes',()=>{
+ for(const action of ['define','remove'])for(const change of ['user','chat','catalog']){
+  let user='user-a',armed=false,calls=0;const context={chatId:'story-a',chat:[],chatMetadata:{}},document={targetId:'private.txt',name:'A private',format:'text',content:'PRIVATE A',visibility:{kind:'actor-private',actorId:'actor-a'}};
+  const catalog=api.createChatDocumentCatalog({getContext:()=>{if(armed&&++calls===1){if(change==='user')user='user-b';if(change==='chat')context.chatId='story-b';if(change==='catalog'){const current=context.chatMetadata.latticeDocumentCatalog['user-a'].documents['private.txt'];context.chatMetadata.latticeDocumentCatalog['user-a'].documents['private.txt']={...current,name:'Concurrent edit',revision:'external'};}}return context;},getUserId:()=>user});
+  assert.equal(catalog.define(document).ok,true);const lease=catalog.capture().data,before=structuredClone(context.chatMetadata);assert.equal(typeof catalog.defineCaptured,'function');assert.equal(typeof catalog.removeCaptured,'function');armed=true;calls=0;
+  const result=action==='define'?catalog.defineCaptured(lease,{...document,name:'UI update'}):catalog.removeCaptured(lease,document.targetId);assert.equal(result.ok,false);assert.equal(result.error.code,'STALE_DOCUMENT_SCOPE');assert.equal(context.chatMetadata.latticeDocumentCatalog['user-b'],undefined);assert.equal(context.chatMetadata.latticeDocumentCatalog['user-a'].documents['private.txt'].content,'PRIVATE A');if(change!=='catalog')assert.deepEqual(context.chatMetadata,before);else assert.equal(context.chatMetadata.latticeDocumentCatalog['user-a'].documents['private.txt'].name,'Concurrent edit');
+ }
+});
+
+test('captured catalog authority is private exact identity and successful mutations revoke old leases',()=>{
+ const f=fixture(),catalog=f.create(),other=fixture().create(),definition={targetId:'private.txt',name:'Private',format:'text',content:'PRIVATE',visibility:{kind:'hidden'}},lease=catalog.capture().data;
+ assert.equal(typeof catalog.defineCaptured,'function');for(const fake of [{}, {...lease},other.capture().data,null])assert.equal(catalog.defineCaptured(fake,definition).error.code,'DOCUMENT_LEASE_UNAUTHORIZED');assert.equal(catalog.defineCaptured(lease,definition).ok,true);assert.equal(catalog.defineCaptured(lease,definition).error.code,'STALE_DOCUMENT_SCOPE');const next=catalog.capture().data;assert.equal(catalog.removeCaptured(next,'private.txt').ok,true);assert.equal(catalog.removeCaptured(next,'private.txt').error.code,'STALE_DOCUMENT_SCOPE');
+});

@@ -32,11 +32,15 @@ export interface DetailModelBinding {
     role: string; roleEditable: boolean; profile: DetailBindingField; model: DetailBindingField;
     effective: string; source: string; issue?: string; profileDefaultModel?: boolean; editable?: boolean;
 }
+export interface DetailHelperBindings {
+    helperKey:string; editable:boolean; issue?:string;
+    roles:{role:string;label:string;profile:DetailBindingField;model:DetailBindingField;effective:string;source:string;caveat?:string}[];
+}
 export interface NodeDetailsView extends DetailSelection {
     title: string; canonicalTitle: string; iconPath: string; family: string; phase: string;
     operation?: string; familyColor?: string; phaseEditable?: boolean;
     alias: string; compact: boolean; enabled: boolean; readOnly: boolean; canPresent: boolean;
-    controls: DetailControl[]; model: DetailModelBinding | null;
+    controls: DetailControl[]; model: DetailModelBinding | null; helperBindings?: DetailHelperBindings | null;
     modifiers?: { items: DetailModifier[]; options: DetailModifierOption[]; editable: boolean; outputPortId: string } | null;
     fileInput?: { fileName: string; loaded: boolean };
     boundary?: { id: string; label: string; direction: 'input' | 'output'; kind: string; required: boolean; kinds: string[] };
@@ -51,6 +55,7 @@ export interface NodeDetailsActions {
     editControl?: (selection: DetailSelection, key: string, value: unknown) => DetailEditResponse;
     editModifiers?: (selection: DetailSelection, items: DetailModifier[]) => DetailEditResponse;
     editField?: (selection: DetailSelection, key: 'enabled' | 'modelRole', value: boolean | string) => DetailEditResponse;
+    editHelperBinding?: (selection:DetailSelection,role:string,field:'profileId'|'model',mode:DetailBindingMode,value:string|null)=>DetailEditResponse;
     editBinding?: (selection: DetailSelection, field: 'profileId' | 'model', mode: DetailBindingMode, value: string | null) => DetailEditResponse;
     editInterface?: (selection: DetailSelection, edit: ManagerInterfaceEdit) => DetailEditResponse;
     duplicate?: (selection: DetailSelection) => void; remove?: (selection: DetailSelection) => void;
@@ -63,11 +68,12 @@ export interface PreviewChoice { key: string; label: string; kind: string; targe
 export interface DetailHandleReviewSelector { handleId: string; runId: string; terminal: { kind: 'terminal'; address: DetailNodeAddress }; }
 export type DetailReviewSelector = DetailHandleReviewSelector;
 export interface OutputPreviewView {
+    settlement?: { status: 'settled' | 'partial' | 'save-unverified'; published: true; receipts: {intentId:string;targetId:string;status:string;error?:{code:string;message:string}}[] } | null;
     sourceKey: string; title: string; status: 'not-run' | 'current' | 'stale' | 'removed'; statusDetail?: string;
     choices: PreviewChoice[]; selectedKey: string | null; pinned: boolean; followSelection: boolean;
     sections: PreviewSection[]; issues: string[]; busy: boolean;
     runHere: { enabled: boolean; callBound: number; issue?: string } | null;
-    review: { selector: DetailReviewSelector; canApply: boolean; fresh: boolean; selectedRootTerminal: boolean; mode: 'root' | 'target'; issue?: string } | null;
+    review: { selector: DetailReviewSelector; canApply: boolean; persistOnly?: boolean; fresh: boolean; selectedRootTerminal: boolean; mode: 'root' | 'target'; issue?: string } | null;
 }
 export interface OutputPreviewActions {
     select?: (sourceKey: string, choiceKey: string, target: DetailTarget) => void;

@@ -326,7 +326,7 @@ export function inspectExpandedGraph(graph) {
 function expandChecked(root, snapshots, rootDefinition) {
     const workflowId = typeof root.id === 'string' ? root.id : 'root';
     const primitives = [], hierarchy = [], instances = [], scopes = [], boundaryMappings = [], edges = [], virtual = new Set(), blocked = new Set();
-    const pins = new Map(), incoming = new Map(), outputSources = new Map();
+    const pins = new Map(), incoming = new Map(), outputSources = new Map(), stageCapabilities = new Map();
     let nodeCount = 0, wireCount = 0;
     const address = (path, nodeId, portId) => ({ workflowId, instancePath: [...path], nodeId, ...(portId === undefined ? {} : { portId }) });
     const addPin = (at, port, isVirtual) => { const key = artifactAddressKey(at); pins.set(key, { address: at, ...port }); if (isVirtual) virtual.add(key); };
@@ -388,6 +388,12 @@ function expandChecked(root, snapshots, rootDefinition) {
             if (operation) {
                 const requestBound = typeof operation.requestBound === 'function' ? operation.requestBound(node) : operation.requestBound;
                 const unit = { address: at, node, phase: operation.phase, enabled, requestBound, inputPorts: ports.filter(port => port.direction === 'input'), outputPorts: ports.filter(port => port.direction === 'output'), terminal: operation.terminal };
+                // A pinned legacy phase remains an explicit stage contract. Only an
+                // undeclared, compatible unified operation can inherit a later stage.
+                if (root.mode === 'native-unified') stageCapabilities.set(nodeAddressKey(at), {
+                    nativeBoundary: operation.nativeBoundary === true,
+                    inferPost: graph.mode === 'native-unified' && node.phase === undefined && phaseForNode({ ...graph, mode: 'native-post' }, node) === 'post' && !!operationFor(node, { phase: 'post', mode: 'native-unified' }),
+                });
                 primitives.push(unit); hierarchy.push({ address: at, kind: 'primitive', ...(parent ? { parent } : {}) });
             } else if (node.type === 'subgraph') {
                 instances.push({ instancePath: [...path, node.id], definition: node.definition });
@@ -446,5 +452,12 @@ function expandChecked(root, snapshots, rootDefinition) {
         visiting.delete(key); complete.add(key); ordered.push(unit); return true;
     };
     if (primitives.some(unit => !order(unit))) return fail('CYCLE', 'Expanded primitive dependencies contain a cycle.');
+    if (root.mode === 'native-unified') for (const unit of ordered) {
+        const key = nodeAddressKey(unit.address);
+        const receivesPost = edges.some(edge => nodeAddressKey(edge.to) === key && (byKey.get(nodeAddressKey(edge.from)).phase === 'post' || stageCapabilities.get(nodeAddressKey(edge.from))?.nativeBoundary));
+        if (!receivesPost || unit.phase === 'post') continue;
+        if (!stageCapabilities.get(key)?.inferPost) return fail('INVALID_STAGE_DEPENDENCY', 'Preparation cannot consume native reply or Post-stage output. Move a compatible node to Post or remove the reverse dependency.', unit.node.id);
+        unit.phase = 'post';
+    }
     return { ok: true, data: { workflowId, phase: root.mode.slice(7), primitives: ordered, edges, hierarchy, instances, scopes, boundaryMappings, pins: [...pins.values()], nodeCount, wireCount } };
 }

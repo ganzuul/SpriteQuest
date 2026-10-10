@@ -1,3 +1,4 @@
+import { preserveArtifactPrivacy, validVisibilityMetadata } from '../artifact-privacy.js?v=0.26.0';
 import { cloneJsonValue } from './json-data.js?v=0.26.0';
 import { validateDecisionQuestions, runDecision, runFastDecision } from '../decision.js?v=0.26.0';
 const fail=(code,message)=>({ok:false,error:{code,message}});
@@ -40,7 +41,7 @@ function resolve(node,options){
 export function describeDecision(node,options={}){
     const checked=resolve(node,options);if(!checked.ok)return checked;const {descriptor,ports}=checked.data;return {ok:true,data:{descriptor,ports}};
 }
-export async function executeDecision(node,inputs,local={}){
+async function executeDecisionRaw(node,inputs,local={}){
     try{
         const checked=resolve(node,{phase:local.phase??own(node,'phase')});if(!checked.ok)return checked;
         const {settings}=checked.data;
@@ -58,3 +59,5 @@ export async function executeDecision(node,inputs,local={}){
         return {ok:true,artifact:{kind:'data',value:output.data.value},reports:[{operation:node.operation,actualCalls:result.data.actualCalls,source:result.data.source,...(result.data.fallback?{fallback:result.data.fallback}:{})}]};
     }catch{return fail('INVALID_INPUT','Decision state requires bounded own data.');}
 }
+
+export async function executeDecision(node,inputs,local = {}) { return preserveArtifactPrivacy(await executeDecisionRaw(node,inputs,local),inputs); }

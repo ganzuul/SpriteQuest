@@ -1,0 +1,692 @@
+{
+  "kind": "lattice-workflow",
+  "schema": 2,
+  "minRuntime": 2,
+  "graph": {
+    "id": "unified-example-ensemble-perspectives",
+    "name": "An ensemble with bounded public perspectives",
+    "description": "Resolve the present cast from the native scene, author two separate observable perspectives, reconcile their shared timeline and attach an intercut perspective panel.\n\nSetup: Bind Prose and decision. The two voices use only the public native body and authored public character instructions. They receive no hidden letter, private memories or another actor card. Replace the canonical actor IDs with actual loaded actors. For private reflection, use the paired Actor Context recipe and separate files; private output cannot be put in public notes.\n\nInspect: On Send owns this generation. Generate Reply uses the ordinary SillyTavern connection. Auxiliary roles remain unassigned in this portable example. Review the final narrative and proposed consequences; Apply publishes a new swipe and settles staged writes. Preview and bounded runs never settle.\n\nGenerated suggestions are proposals. Quoted observations preserve source identity; notes never establish canonical events. Private records cannot be appended to public notes.",
+    "schema": 3,
+    "runtime": 2,
+    "mode": "native-unified",
+    "nodes": {
+      "send": {
+        "id": "send",
+        "type": "workflow",
+        "operation": "on-send",
+        "operationVersion": 1,
+        "title": "On Send",
+        "enabled": true,
+        "x": 80,
+        "y": 120,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null
+      },
+      "generate": {
+        "id": "generate",
+        "type": "workflow",
+        "operation": "generate-reply",
+        "operationVersion": 1,
+        "title": "Generate Reply · SillyTavern",
+        "enabled": true,
+        "x": 820,
+        "y": 120,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "budgetTokens": 768
+      },
+      "review": {
+        "id": "review",
+        "type": "workflow",
+        "operation": "review-publish",
+        "operationVersion": 1,
+        "title": "Review / Publish",
+        "enabled": true,
+        "x": 2670,
+        "y": 120,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null
+      },
+      "source-scope-text": {
+        "id": "source-scope-text",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 80,
+        "y": 1080,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "text": "{\"sourceId\":\"native-scene-body\",\"revision\":\"initial\",\"sceneId\":\"current-scene\",\"visibility\":\"public\"}"
+      },
+      "source-scope": {
+        "id": "source-scope",
+        "type": "workflow",
+        "operation": "json-decode",
+        "operationVersion": 1,
+        "title": "JSON Decode",
+        "enabled": true,
+        "x": 450,
+        "y": 1080,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "parse",
+        "schema": ""
+      },
+      "event-source": {
+        "id": "event-source",
+        "type": "workflow",
+        "operation": "draft-event-source",
+        "operationVersion": 1,
+        "title": "Draft Event Source",
+        "enabled": true,
+        "x": 1190,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null
+      },
+      "cast-prompt": {
+        "id": "cast-prompt",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 1190,
+        "y": 1080,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "text": "Return {sceneId,sourceId,revision,actors:[{actorId,status,evidence}]}. Preserve the supplied source identity. Resolve actual present/absent/unresolved participation for character:mara.png and character:elias.png, with exact source quotes; names merely remembered are not presence."
+      },
+      "cast": {
+        "id": "cast",
+        "type": "workflow",
+        "operation": "model-call",
+        "operationVersion": 1,
+        "title": "Model Call",
+        "enabled": true,
+        "x": 1560,
+        "y": 1080,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": "Prose",
+        "instructions": "",
+        "outputKind": "data",
+        "schema": "",
+        "maxTokens": 2048
+      },
+      "mara-presence": {
+        "id": "mara-presence",
+        "type": "workflow",
+        "operation": "scene-presence",
+        "operationVersion": 1,
+        "title": "Scene Presence",
+        "enabled": true,
+        "x": 1930,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "actorId": "character:mara.png"
+      },
+      "mara-present": {
+        "id": "mara-present",
+        "type": "workflow",
+        "operation": "condition",
+        "operationVersion": 1,
+        "title": "Condition",
+        "enabled": true,
+        "x": 2300,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "path": [
+          "status"
+        ],
+        "operator": "equals",
+        "value": "present"
+      },
+      "mara-source": {
+        "id": "mara-source",
+        "type": "workflow",
+        "operation": "branch",
+        "operationVersion": 1,
+        "title": "Branch",
+        "enabled": true,
+        "x": 2670,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "artifactKind": "data"
+      },
+      "mara-perspective-prompt": {
+        "id": "mara-perspective-prompt",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 1190,
+        "y": 1080,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "text": "Mara notices quiet sensory details. Return {actorId:\"character:mara.png\",text:string}. Propose an observable contribution from this actor only. Preserve exact shared events, positions and dialogue. Never invent private thoughts, secrets or player actions."
+      },
+      "mara-perspective": {
+        "id": "mara-perspective",
+        "type": "workflow",
+        "operation": "model-call",
+        "operationVersion": 1,
+        "title": "Model Call",
+        "enabled": true,
+        "x": 1560,
+        "y": 1080,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": "Prose",
+        "instructions": "",
+        "outputKind": "data",
+        "schema": "",
+        "maxTokens": 2048
+      },
+      "elias-presence": {
+        "id": "elias-presence",
+        "type": "workflow",
+        "operation": "scene-presence",
+        "operationVersion": 1,
+        "title": "Scene Presence",
+        "enabled": true,
+        "x": 1930,
+        "y": 840,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "actorId": "character:elias.png"
+      },
+      "elias-present": {
+        "id": "elias-present",
+        "type": "workflow",
+        "operation": "condition",
+        "operationVersion": 1,
+        "title": "Condition",
+        "enabled": true,
+        "x": 2300,
+        "y": 840,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "path": [
+          "status"
+        ],
+        "operator": "equals",
+        "value": "present"
+      },
+      "elias-source": {
+        "id": "elias-source",
+        "type": "workflow",
+        "operation": "branch",
+        "operationVersion": 1,
+        "title": "Branch",
+        "enabled": true,
+        "x": 2670,
+        "y": 840,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "artifactKind": "data"
+      },
+      "elias-perspective-prompt": {
+        "id": "elias-perspective-prompt",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 1190,
+        "y": 1080,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "text": "Elias notices practical obstacles. Return {actorId:\"character:elias.png\",text:string}. Propose an observable contribution from this actor only. Preserve exact shared events, positions and dialogue. Never invent private thoughts, secrets or player actions."
+      },
+      "elias-perspective": {
+        "id": "elias-perspective",
+        "type": "workflow",
+        "operation": "model-call",
+        "operationVersion": 1,
+        "title": "Model Call",
+        "enabled": true,
+        "x": 1560,
+        "y": 1080,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": "Prose",
+        "instructions": "",
+        "outputKind": "data",
+        "schema": "",
+        "maxTokens": 2048
+      },
+      "perspectives": {
+        "id": "perspectives",
+        "type": "workflow",
+        "operation": "collect",
+        "operationVersion": 1,
+        "title": "Collect",
+        "enabled": true,
+        "x": 3040,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "artifactKind": "data",
+        "inputs": [
+          {
+            "id": "mara",
+            "label": "Mara perspective",
+            "required": false
+          },
+          {
+            "id": "elias",
+            "label": "Elias perspective",
+            "required": false
+          }
+        ]
+      },
+      "shared-check": {
+        "id": "shared-check",
+        "type": "workflow",
+        "operation": "decision",
+        "operationVersion": 1,
+        "title": "Decision",
+        "enabled": true,
+        "x": 3410,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": "decision",
+        "inputKind": "data",
+        "questions": {
+          "compatible": {
+            "type": "noul",
+            "instructions": "Are these observable contributions compatible with one timeline, with no hidden facts, changed outcomes or player choices? Reject contradictory positions or private interpretations."
+          }
+        },
+        "maxTokens": 2048
+      },
+      "compatible": {
+        "id": "compatible",
+        "type": "workflow",
+        "operation": "condition",
+        "operationVersion": 1,
+        "title": "Condition",
+        "enabled": true,
+        "x": 3780,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "path": [
+          "answers",
+          "compatible",
+          "accepted"
+        ],
+        "operator": "equals",
+        "value": true
+      },
+      "checked": {
+        "id": "checked",
+        "type": "workflow",
+        "operation": "branch",
+        "operationVersion": 1,
+        "title": "Branch",
+        "enabled": true,
+        "x": 4150,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "artifactKind": "data"
+      },
+      "flow-notes": {
+        "id": "flow-notes",
+        "type": "workflow",
+        "operation": "compose",
+        "operationVersion": 1,
+        "title": "Compose",
+        "enabled": true,
+        "x": 4520,
+        "y": 360,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "template",
+        "outputKind": "text",
+        "template": "Proposed observable perspectives (proposed until Apply): {{data:}}",
+        "sections": [],
+        "separator": "\n\n"
+      },
+      "flow-append": {
+        "id": "flow-append",
+        "type": "workflow",
+        "operation": "append",
+        "operationVersion": 1,
+        "title": "Append",
+        "enabled": true,
+        "x": 4890,
+        "y": 120,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "sectionId": "ensemble-perspectives",
+        "separator": "\n\n"
+      }
+    },
+    "wires": {
+      "wire-1": {
+        "id": "wire-1",
+        "route": "wire",
+        "from": "send",
+        "fromPort": "activation",
+        "to": "generate",
+        "toPort": "activation"
+      },
+      "wire-2": {
+        "id": "wire-2",
+        "route": "wire",
+        "from": "source-scope-text",
+        "fromPort": "out",
+        "to": "source-scope",
+        "toPort": "in"
+      },
+      "wire-3": {
+        "id": "wire-3",
+        "route": "wire",
+        "from": "generate",
+        "fromPort": "draft",
+        "to": "event-source",
+        "toPort": "in"
+      },
+      "wire-4": {
+        "id": "wire-4",
+        "route": "wire",
+        "from": "source-scope",
+        "fromPort": "out",
+        "to": "event-source",
+        "toPort": "scope"
+      },
+      "wire-5": {
+        "id": "wire-5",
+        "route": "wire",
+        "from": "cast-prompt",
+        "fromPort": "out",
+        "to": "cast",
+        "toPort": "prompt"
+      },
+      "wire-6": {
+        "id": "wire-6",
+        "route": "wire",
+        "from": "event-source",
+        "fromPort": "out",
+        "to": "cast",
+        "toPort": "data"
+      },
+      "wire-7": {
+        "id": "wire-7",
+        "route": "wire",
+        "from": "cast",
+        "fromPort": "out",
+        "to": "mara-presence",
+        "toPort": "in"
+      },
+      "wire-8": {
+        "id": "wire-8",
+        "route": "wire",
+        "from": "mara-presence",
+        "fromPort": "out",
+        "to": "mara-present",
+        "toPort": "in"
+      },
+      "wire-9": {
+        "id": "wire-9",
+        "route": "wire",
+        "from": "event-source",
+        "fromPort": "out",
+        "to": "mara-source",
+        "toPort": "in"
+      },
+      "wire-10": {
+        "id": "wire-10",
+        "route": "wire",
+        "from": "mara-present",
+        "fromPort": "out",
+        "to": "mara-source",
+        "toPort": "condition"
+      },
+      "wire-11": {
+        "id": "wire-11",
+        "route": "wire",
+        "from": "mara-perspective-prompt",
+        "fromPort": "out",
+        "to": "mara-perspective",
+        "toPort": "prompt"
+      },
+      "wire-12": {
+        "id": "wire-12",
+        "route": "wire",
+        "from": "mara-source",
+        "fromPort": "yes",
+        "to": "mara-perspective",
+        "toPort": "data"
+      },
+      "wire-13": {
+        "id": "wire-13",
+        "route": "wire",
+        "from": "cast",
+        "fromPort": "out",
+        "to": "elias-presence",
+        "toPort": "in"
+      },
+      "wire-14": {
+        "id": "wire-14",
+        "route": "wire",
+        "from": "elias-presence",
+        "fromPort": "out",
+        "to": "elias-present",
+        "toPort": "in"
+      },
+      "wire-15": {
+        "id": "wire-15",
+        "route": "wire",
+        "from": "event-source",
+        "fromPort": "out",
+        "to": "elias-source",
+        "toPort": "in"
+      },
+      "wire-16": {
+        "id": "wire-16",
+        "route": "wire",
+        "from": "elias-present",
+        "fromPort": "out",
+        "to": "elias-source",
+        "toPort": "condition"
+      },
+      "wire-17": {
+        "id": "wire-17",
+        "route": "wire",
+        "from": "elias-perspective-prompt",
+        "fromPort": "out",
+        "to": "elias-perspective",
+        "toPort": "prompt"
+      },
+      "wire-18": {
+        "id": "wire-18",
+        "route": "wire",
+        "from": "elias-source",
+        "fromPort": "yes",
+        "to": "elias-perspective",
+        "toPort": "data"
+      },
+      "wire-19": {
+        "id": "wire-19",
+        "route": "wire",
+        "from": "mara-perspective",
+        "fromPort": "out",
+        "to": "perspectives",
+        "toPort": "mara"
+      },
+      "wire-20": {
+        "id": "wire-20",
+        "route": "wire",
+        "from": "elias-perspective",
+        "fromPort": "out",
+        "to": "perspectives",
+        "toPort": "elias"
+      },
+      "wire-21": {
+        "id": "wire-21",
+        "route": "wire",
+        "from": "perspectives",
+        "fromPort": "out",
+        "to": "shared-check",
+        "toPort": "in"
+      },
+      "wire-22": {
+        "id": "wire-22",
+        "route": "wire",
+        "from": "shared-check",
+        "fromPort": "out",
+        "to": "compatible",
+        "toPort": "in"
+      },
+      "wire-23": {
+        "id": "wire-23",
+        "route": "wire",
+        "from": "perspectives",
+        "fromPort": "out",
+        "to": "checked",
+        "toPort": "in"
+      },
+      "wire-24": {
+        "id": "wire-24",
+        "route": "wire",
+        "from": "compatible",
+        "fromPort": "out",
+        "to": "checked",
+        "toPort": "condition"
+      },
+      "wire-25": {
+        "id": "wire-25",
+        "route": "wire",
+        "from": "checked",
+        "fromPort": "yes",
+        "to": "flow-notes",
+        "toPort": "data"
+      },
+      "wire-26": {
+        "id": "wire-26",
+        "route": "wire",
+        "from": "generate",
+        "fromPort": "draft",
+        "to": "flow-append",
+        "toPort": "draft"
+      },
+      "wire-27": {
+        "id": "wire-27",
+        "route": "wire",
+        "from": "flow-notes",
+        "fromPort": "out",
+        "to": "flow-append",
+        "toPort": "section"
+      },
+      "wire-28": {
+        "id": "wire-28",
+        "route": "wire",
+        "from": "flow-append",
+        "fromPort": "out",
+        "to": "review",
+        "toPort": "draft"
+      }
+    },
+    "groups": {},
+    "roles": {
+      "Prose": {
+        "model": null,
+        "profileId": null
+      },
+      "decision": {
+        "model": null,
+        "profileId": null
+      }
+    },
+    "portals": {},
+    "definitions": {},
+    "template": {
+      "id": "unified-ensemble-perspectives",
+      "version": 1
+    },
+    "view": {
+      "x": 0,
+      "y": 0,
+      "zoom": 0.7
+    }
+  }
+}

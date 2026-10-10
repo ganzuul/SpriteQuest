@@ -1,3 +1,4 @@
+import {workflowCreationPhase} from '../src/ui/provider-settings.js';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readFile } from 'node:fs/promises';
@@ -282,7 +283,7 @@ async function newEnvironment() {
     const changes = [];
     host.saveSettingsDebounced = () => changes.push('save');
     const env = {
-        ...S, current: original, uiEpoch: 1, canvas: null, pendingNewWorkflow: null,
+        ...S, workflowCreationPhase, current: original, uiEpoch: 1, canvas: null, pendingNewWorkflow: null,
         workbench: { update() {} },
         setCanvasGraph: () => changes.push('canvas'), renderAll: () => changes.push('render'),
     };
@@ -305,11 +306,11 @@ test('New Cancel preserves unsaved workflow edits without creating or saving a g
     assert.deepEqual(fixture.changes, []);
 });
 
-test('New activates an untitled blank workflow without requesting a name', async () => {
+test('New activates an untitled unified workflow without requesting a name', async () => {
     const fixture = await newEnvironment();
     await fixture.create();
     assert.equal(fixture.env.current.name, 'Untitled workflow');
-    assert.deepEqual(fixture.env.current.nodes, {});
+    assert.equal(fixture.env.current.mode, 'native-unified'); assert.deepEqual(Object.values(fixture.env.current.nodes).map(n=>n.operation), ['on-send','generate-reply','review-publish']);
     assert.notEqual(fixture.env.current, fixture.original);
     assert.equal(S.resolveGraph().graph, fixture.env.current);
     assert.equal(S.allGraphs().length, 2);

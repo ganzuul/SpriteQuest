@@ -1,0 +1,33 @@
+import assert from 'node:assert/strict';
+import {test} from 'node:test';
+import {mkdtemp,rm} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import {join,resolve,relative,isAbsolute} from 'node:path';
+import {JSDOM} from 'jsdom';
+import {compiled} from './helpers/svelte-compile.mjs';
+const dom=new JSDOM('<!doctype html><body></body>',{pretendToBeVisual:true});globalThis.window=dom.window;globalThis.document=dom.window.document;
+for(const key of ['Node','Element','Text','Comment','Document','HTMLElement','HTMLMediaElement','HTMLButtonElement','HTMLInputElement','HTMLSelectElement','MutationObserver'])Object.defineProperty(globalThis,key,{configurable:true,value:dom.window[key]});
+const {mount,unmount,flushSync,tick}=await import(new URL('../node_modules/svelte/src/index-client.js',import.meta.url).href);
+async function fixture(name,props){const directory=await mkdtemp(join(tmpdir(),'lattice-storage-ui-')),host=document.createElement('div');document.body.append(host);let mounted;const close=async()=>{if(mounted)await unmount(mounted);host.remove();const rel=relative(resolve(tmpdir()),resolve(directory));assert.ok(rel&&!rel.startsWith('..')&&!isAbsolute(rel));await rm(directory,{recursive:true,force:true});};try{let leaf;try{leaf=await compiled(name,directory);}catch(error){assert.fail(name+' component must compile: '+error.message);}mounted=mount(leaf.component,{target:host,props});flushSync();await tick();return {host,mounted,close};}catch(error){await close();throw error;}}
+const input=(host,label,value,event='input')=>{const element=host.querySelector('[aria-label="'+label+'"]');assert.ok(element,label);element.value=value;element.dispatchEvent(new dom.window.Event(event,{bubbles:true}));flushSync();return element;};const button=(host,label)=>[...host.querySelectorAll('button')].find(element=>element.textContent.trim()===label);
+const view={key:'scope-key',revision:'r1',scope:{userId:'default-user',chatId:'story'},documents:[{targetId:'mara.json',name:'Mara memories',format:'json',revision:'doc1',visibility:{kind:'actor-private',actorId:'mara'}}],issue:''};
+
+test('real Story documents panel explicitly loads a template and saves actor-private structured authorization',async()=>{
+ let loaded,saved;const f=await fixture('StoryDocuments',{view,close(){},actions:{load(key,targetId){loaded={key,targetId};return {ok:true,data:{definition:{...view.documents[0],content:'[]'}}};},save(key,definition){saved={key,definition};return {ok:true,data:{acknowledged:false,message:'SillyTavern save is unconfirmed.'}};}}});
+ try{assert.equal(f.host.querySelector('[aria-label="Initial template"]').value,'');input(f.host,'Story document','mara.json','change');button(f.host,'Load initial template').click();await tick();flushSync();assert.deepEqual(loaded,{key:'scope-key',targetId:'mara.json'});assert.equal(f.host.querySelector('[aria-label="Initial template"]').value,'[]');assert.equal(f.host.querySelector('[aria-label="Actor ID"]').value,'mara');input(f.host,'Document name','Mara archive');button(f.host,'Save authorization').click();await tick();flushSync();assert.equal(saved.definition.visibility.actorId,'mara');assert.equal(saved.definition.targetId,'mara.json');assert.match(f.host.textContent,/unconfirmed/);assert.match(f.host.textContent,/canonical.*content/i);}finally{await f.close();}
+});
+
+test('real configuration dialog selects authorized target, passes explicit stage and isolates Escape',async()=>{
+ let applied,cancelled,escaped=0;const f=await fixture('ConfigureNode',{view:{key:'edit',title:'Read File',operation:'read-file',controls:'{"targetId":""}',phase:'post',phaseLocked:false,targets:[{targetId:'souls.json',name:'Souls',format:'json'}],helpers:[]},actions:{apply(key,controls,phase){applied={key,controls:JSON.parse(controls),phase};return {ok:false,error:{code:'STALE_CONTEXT',message:'The graph changed.'}};},cancel(key){cancelled=key;}}});const listener=()=>escaped++;document.addEventListener('keydown',listener);
+ try{input(f.host,'Authorized story document','souls.json','change');button(f.host,'Create node').click();await tick();flushSync();assert.deepEqual(applied,{key:'edit',controls:{targetId:'souls.json'},phase:'post'});assert.match(f.host.textContent,/graph changed/);f.host.querySelector('[aria-label="Node controls JSON"]').dispatchEvent(new dom.window.KeyboardEvent('keydown',{key:'Escape',bubbles:true}));assert.equal(cancelled,'edit');assert.equal(escaped,0);}finally{document.removeEventListener('keydown',listener);await f.close();}
+});
+
+test('Workbench exposes Story documents setup through Tools and traps panel Escape',async()=>{
+ let refreshed=0,escaped=0;const f=await fixture('Workbench',{actions:{storyDocuments:{refresh(){refreshed++;}}}});const listener=()=>escaped++;document.addEventListener('keydown',listener);
+ try{f.mounted.update({storyDocuments:view});flushSync();button(f.host,'Tools').click();await tick();flushSync();button(f.host,'Story documents…').click();await tick();flushSync();assert.equal(refreshed,1);assert.ok(f.host.querySelector('[role="dialog"][aria-label="Story documents"]'));f.host.querySelector('[aria-label="Document name"]').dispatchEvent(new dom.window.KeyboardEvent('keydown',{key:'Escape',bubbles:true}));flushSync();await tick();assert.equal(escaped,0);assert.equal(f.host.querySelector('[aria-label="Initial template"]'),null);}finally{document.removeEventListener('keydown',listener);await f.close();}
+});
+
+test('Outcome Commit dialog offers actual JSON ledger targets and keeps its response stage locked',async()=>{
+ let applied;const f=await fixture('ConfigureNode',{view:{key:'outcome-edit',title:'Outcome Commit',operation:'commit-outcomes',controls:'{"targetId":""}',phase:'post',phaseLocked:true,targets:[{targetId:'outcomes.json',name:'Outcomes',format:'json'},{targetId:'notes.txt',name:'Notes',format:'text'}],helpers:[]},actions:{apply(key,controls,phase){applied={key,controls:JSON.parse(controls),phase};return {ok:true};},cancel(){}}});
+ try{const selected=f.host.querySelector('[aria-label="Authorized story document"]');assert.ok(selected);assert.deepEqual([...selected.options].map(option=>option.value),['','outcomes.json']);assert.equal(f.host.querySelector('[aria-label="Node stage"]').disabled,true);input(f.host,'Authorized story document','outcomes.json','change');button(f.host,'Create node').click();await tick();flushSync();assert.deepEqual(applied,{key:'outcome-edit',controls:{targetId:'outcomes.json'},phase:'post'});}finally{await f.close();}
+});

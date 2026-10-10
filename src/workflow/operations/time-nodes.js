@@ -25,6 +25,7 @@ const registration = (id, title, controlDescriptors, extra = {}) => ({
     requestBound: 0, modelRole: null, terminal: false, dynamicPorts: true, ...extra,
 });
 export const TIME_OPERATIONS = {
+    'commit-clock': registration('commit-clock','Clock Commit',{}, {family:'Output',phase:'post',rootOnly:true,hostOperation:true,terminal:true}),
     'story-clock': registration('story-clock', 'Story Clock', {
         clockId: stringControl('Accepted clock identity'), calendarId: stringControl('Expected calendar (optional)'),
     }, { input: null, rootOnly: true, hostOperation: true }),
@@ -53,8 +54,9 @@ function resolve(node, options = {}) {
     const base = Object.hasOwn(TIME_OPERATIONS, operation) && TIME_OPERATIONS[operation];
     if (!base) return fail('UNKNOWN_OPERATION', 'Unknown Time operation.');
     if (own(node, 'operationVersion', 1) !== 1) return fail('INVALID_SETTINGS', 'Time operation version must be 1.');
-    const phase = own(options, 'phase') ?? own(node, 'phase') ?? 'pre';
+    const phase = own(options, 'phase') ?? own(node, 'phase') ?? (base.phase === 'post' ? 'post' : 'pre');
     if (!['pre', 'post'].includes(phase) || own(node, 'phase') !== undefined && own(node, 'phase') !== phase) return fail('INVALID_PHASE', 'Time operation must match its effective phase.');
+    if (base.phase === 'post' && phase !== 'post') return fail('INVALID_PHASE','Clock Commit is a Post operation.');
     const settings = {};
     for (const key of base.controls) {
         const checked = cloneJsonValue(own(node, key, base.defaults[key]));
@@ -70,7 +72,7 @@ function resolve(node, options = {}) {
     if (operation === 'story-clock' && (!id(settings.clockId) || settings.calendarId !== '' && !id(settings.calendarId))) return fail('INVALID_SETTINGS', 'Select an explicit clock and optional calendar identity.');
     if (operation === 'time-trigger' && (!id(settings.scheduleId) || settings.clockId !== '' && !id(settings.clockId) || settings.calendarId !== '' && !id(settings.calendarId) || !plain(settings.metadata) || Object.keys(settings.metadata).length > 128 || Object.keys(settings.metadata).some(key => ['scheduleId', 'revision', 'kind', 'clockId', 'calendarId', 'minuteOfDay', 'anchorMinute', 'intervalMinutes', 'dueMinute', 'order'].includes(key)))) return fail('INVALID_SETTINGS', 'Time Trigger requires an identity and noncontradictory bounded schedule metadata.');
     if (settings.consumedIds && settings.consumedIds.some(value => typeof value !== 'string' || !value.length || value.length > 4096)) return fail('INVALID_SETTINGS', 'Consumed occurrence IDs require bounded nonempty strings.');
-    const ports = operation === 'story-clock' ? [pin('out', 'Accepted Story Clock', 'output')] : operation === 'time-trigger' ? [
+    const ports = operation === 'commit-clock' ? [pin('projection','Advance Time report','input',true),pin('occurrences','Additional checked due events','input'),pin('receipt','Staged clock receipt','output')] : operation === 'story-clock' ? [pin('out', 'Accepted Story Clock', 'output')] : operation === 'time-trigger' ? [
         pin('previous', 'Previous Story Clock', 'input', true), pin('destination', 'Projected Story Clock', 'input', true), pin('consumed', 'Settled occurrence IDs (optional)', 'input'),
         pin('occurrences', 'Ordered due events', 'output'), pin('report', 'Time trigger report', 'output'),
     ] : [
@@ -202,9 +204,29 @@ export async function executeTimeNode(node, inputs, local = {}) {
         if (!admitted.ok) return admitted;
         const signal = capturedSignal(local);
         if (isStopped(signal)) return fail('ABORTED', 'Time projection was stopped.');
-        if (descriptor.id === 'advance-time') return projectAdvance(settings, admitted.data);
-        if (descriptor.id === 'time-trigger') return projectTrigger(settings, admitted.data);
+        if (['advance-time','time-trigger'].includes(descriptor.id)) {
+            const result = descriptor.id === 'advance-time' ? projectAdvance(settings, admitted.data) : projectTrigger(settings, admitted.data);
+            const retain = own(local,'retainTimeProjection');
+            if (result.ok && retain !== undefined) {
+                if (typeof retain !== 'function') return fail('TIME_PROJECTION_FAILED','Time retention requires a trusted host capability.');
+                let retained; try { retained = await retain({operation:descriptor.id,inputs,settings,outputs:result.outputs}); } catch { return fail('TIME_PROJECTION_FAILED','The trusted time projection could not be retained.'); }
+                if (isStopped(signal)) return fail('ABORTED','The time projection was stopped.');
+                if (retained?.ok !== true) return fail('TIME_PROJECTION_FAILED','The captured clock changed while retaining its projection.');
+            }
+            return result;
+        }
         if (own(local, 'root') !== true) return fail('ROOT_ONLY', 'Accepted clock capture is reserved for a root workflow.');
+        if (descriptor.id === 'commit-clock') {
+            const stage = own(local,'stageStoryClock');
+            if (typeof stage !== 'function') return fail('HOST_OPERATION_REQUIRED','Clock Commit requires a trusted accepted-state host.');
+            let staged; try { staged = await stage(inputs.projection.value,inputs.occurrences?.value); } catch { return fail('CLOCK_COMMIT_FAILED','The clock projection could not be staged.'); }
+            if (isStopped(signal)) return fail('ABORTED','Clock staging was stopped.');
+            if (staged?.ok !== true) return fail('CLOCK_COMMIT_FAILED','The captured time projection could not be staged; verify its clock and accepted ledger.');
+            const checked = cloneJsonValue(staged.data);
+            if (!checked.ok) return fail('CLOCK_COMMIT_FAILED','Clock staging requires a bounded descriptive receipt.');
+            const receipt=dataArtifact(checked.data.value,visibilityFor(admitted.data));
+            return freeze({ok:true,artifact:receipt,outputs:{receipt},reports:[{operation:descriptor.id,actualCalls:0,status:'staged'}]});
+        }
         const fingerprint = captureFingerprint(node, resolved.data, admitted.data);
         if (!fingerprint.ok) return fail('INVALID_INPUT', 'The clock source identity must be bounded own data.');
         const read = own(local, 'readStoryClock');

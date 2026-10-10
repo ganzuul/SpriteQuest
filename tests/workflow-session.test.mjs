@@ -91,3 +91,27 @@ test('same schema3 Send replay stays unavailable after Stop or invalidation whil
     session.invalidate('Semantic invalidation');session.receiveAutomatic({...fresh,result:{...fresh.result}});assert.equal(state.availability,'stale');assert.equal(state.recording,fresh.result.recording);
     const next=automatic('next');session.receiveAutomatic(next);assert.equal(state.availability,'current');assert.equal(state.recording,next.result.recording);
 });
+
+function settlementSession(initial, retry) {
+    const root=starterGraph('reviewed-de-slop'),recording=runRecord(root,'settlement'),terminal=resolveWorkflow(root).data.terminals[0],handle=freeze({handleId:'retained',runId:'settlement',terminal});
+    let state,calls=0,retries=0,rejected=[];
+    const runtime={runPost:async()=>({...response(recording),reviewHandles:[handle]}),candidateStatus:()=>({ok:true,...(calls?{persistOnly:true,status:'partial'}:{})}),cancel(){},apply:async()=>{calls++;return {ok:true,appliedLocally:true,settlement:initial};},retryPersistence:async()=>{retries++;return {ok:true,appliedLocally:true,settlement:retry};},reject:selector=>{rejected.push(selector);return {ok:true};}};
+    const session=createWorkflowSession({runtime:()=>runtime,current:()=>root,epoch:()=>1,active:()=>true,changed:value=>state=value});
+    return {session,handle,state:()=>state,calls:()=>calls,retries:()=>retries,rejected};
+}
+const settledReceipt=(status)=>({status,published:true,publication:{appliedLocally:true},receipts:[{intentId:'event',targetId:'file:souls',status:status==='partial'?'failed':status==='save-unverified'?'save-unverified':'confirmed',...(status==='partial'?{error:{code:'WRITE_FAILED',message:'Retry this target.'}}:{})}]});
+test('partial accepted consequence review retains its handle and retries only persistence',async()=>{
+    const f=settlementSession(settledReceipt('partial'),settledReceipt('settled'));await f.session.run();await f.session.apply(f.handle);
+    assert.equal(f.state().availability,'current');assert.equal(f.state().reviewHandles.length,1);assert.equal(f.state().result.settlement.status,'partial');assert.match(f.state().status,/failed.*retry/i);
+    await f.session.apply(f.handle);assert.equal(f.calls(),1);assert.equal(f.retries(),1);assert.equal(f.state().reviewHandles.length,0);assert.equal(f.state().result.settlement.status,'settled');assert.match(f.state().status,/consequences.*saved/i);
+});
+test('unverified accepted consequence saves are shown and do not expose retry authority',async()=>{
+    const f=settlementSession({...settledReceipt('save-unverified'),publication:{appliedLocally:true,secret:'private material'},receipts:[{intentId:'event',targetId:'file:souls',status:'unknown',proposed:{secret:'private material'},handle:{secret:'capability'}}]});await f.session.run();await f.session.apply(f.handle);
+    assert.equal(f.state().reviewHandles.length,0);assert.equal(f.state().result.settlement.status,'save-unverified');assert.equal(f.state().result.settlement.receipts[0].status,'unknown');assert.match(f.state().status,/unconfirmed.*reconcil/i);assert.equal(JSON.stringify(f.state().result).includes('private material'),false);assert.equal(JSON.stringify(f.state().result).includes('capability'),false);
+});
+test('reject explicitly releases retained host consequence handles before clearing the review',async()=>{
+    const f=settlementSession(settledReceipt('partial'));await f.session.run();f.session.reject();assert.deepEqual(f.rejected,[f.handle]);assert.equal(f.state().reviewHandles.length,0);assert.match(f.state().status,/Original reply preserved/);
+});
+test('reject after partial publication accurately preserves the already accepted reply',async()=>{
+    const f=settlementSession(settledReceipt('partial'));await f.session.run();await f.session.apply(f.handle);f.session.reject();assert.deepEqual(f.rejected,[f.handle]);assert.match(f.state().status,/accepted reply remains/i);assert.equal(f.state().status.includes('Original reply preserved'),false);
+});

@@ -1,0 +1,526 @@
+{
+  "kind": "lattice-workflow",
+  "schema": 2,
+  "minRuntime": 2,
+  "graph": {
+    "id": "unified-example-alternate-takes",
+    "name": "Two event-preserving alternate takes",
+    "description": "Generate one native scene, create two narration-only tone revisions, check event equivalence independently and offer separate review candidates.\n\nSetup: Bind Prose for both narration revisions and decision for equivalence checks. Select either Review terminal in Preview, inspect that candidate, then Apply only that take. A failed equivalence check holds its candidate. No memory/file consequence is attached to an unselected revision. Native dialogue and facts remain protected by the scoped Draft rewrite.\n\nInspect: On Send owns this generation. Generate Reply uses the ordinary SillyTavern connection. Auxiliary roles remain unassigned in this portable example. Review the final narrative and proposed consequences; Apply publishes a new swipe and settles staged writes. Preview and bounded runs never settle.\n\nGenerated suggestions are proposals. Quoted observations preserve source identity; notes never establish canonical events. Private records cannot be appended to public notes.",
+    "schema": 3,
+    "runtime": 2,
+    "mode": "native-unified",
+    "nodes": {
+      "send": {
+        "id": "send",
+        "type": "workflow",
+        "operation": "on-send",
+        "operationVersion": 1,
+        "title": "On Send",
+        "enabled": true,
+        "x": 80,
+        "y": 120,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null
+      },
+      "generate": {
+        "id": "generate",
+        "type": "workflow",
+        "operation": "generate-reply",
+        "operationVersion": 1,
+        "title": "Generate Reply · SillyTavern",
+        "enabled": true,
+        "x": 820,
+        "y": 120,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "budgetTokens": 768
+      },
+      "review": {
+        "id": "review",
+        "type": "workflow",
+        "operation": "review-publish",
+        "operationVersion": 1,
+        "title": "Review / Publish",
+        "enabled": true,
+        "x": 2670,
+        "y": 120,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null
+      },
+      "spare": {
+        "id": "spare",
+        "type": "workflow",
+        "operation": "revise-draft",
+        "operationVersion": 1,
+        "title": "Revise Draft",
+        "enabled": true,
+        "x": 1560,
+        "y": 360,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": "Prose",
+        "instructions": "Spare, direct sentences. Preserve all facts, events, dialogue and agency.",
+        "scope": "narration",
+        "protectedLiterals": [],
+        "maxTokens": 2048
+      },
+      "spare-text": {
+        "id": "spare-text",
+        "type": "workflow",
+        "operation": "draft-text",
+        "operationVersion": 1,
+        "title": "Draft Text",
+        "enabled": true,
+        "x": 1930,
+        "y": 360,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "view": "body"
+      },
+      "spare-records": {
+        "id": "spare-records",
+        "type": "workflow",
+        "operation": "compose",
+        "operationVersion": 1,
+        "title": "Compose",
+        "enabled": true,
+        "x": 2300,
+        "y": 360,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "template",
+        "outputKind": "text",
+        "template": "Compare original and revised event equivalence. Revised prose: {{section:revision}} Original prose: {{section:original}}",
+        "sections": [
+          {
+            "name": "revision",
+            "text": ""
+          },
+          {
+            "name": "original",
+            "text": ""
+          }
+        ],
+        "separator": "\n\n"
+      },
+      "spare-check": {
+        "id": "spare-check",
+        "type": "workflow",
+        "operation": "decision",
+        "operationVersion": 1,
+        "title": "Decision",
+        "enabled": true,
+        "x": 2670,
+        "y": 360,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": "decision",
+        "inputKind": "text",
+        "questions": {
+          "same": {
+            "type": "noul",
+            "instructions": "Does the revision preserve every event, outcome, ownership, factual claim, quoted dialogue and player choice? Missing or ambiguous equivalence must be rejected."
+          }
+        },
+        "maxTokens": 2048
+      },
+      "spare-gate": {
+        "id": "spare-gate",
+        "type": "workflow",
+        "operation": "condition",
+        "operationVersion": 1,
+        "title": "Condition",
+        "enabled": true,
+        "x": 3040,
+        "y": 360,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "path": [
+          "answers",
+          "same",
+          "accepted"
+        ],
+        "operator": "equals",
+        "value": true
+      },
+      "spare-branch": {
+        "id": "spare-branch",
+        "type": "workflow",
+        "operation": "branch",
+        "operationVersion": 1,
+        "title": "Branch",
+        "enabled": true,
+        "x": 3410,
+        "y": 360,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "artifactKind": "draft"
+      },
+      "lyrical": {
+        "id": "lyrical",
+        "type": "workflow",
+        "operation": "revise-draft",
+        "operationVersion": 1,
+        "title": "Revise Draft",
+        "enabled": true,
+        "x": 1560,
+        "y": 840,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": "Prose",
+        "instructions": "Lyrical sensory narration. Preserve all facts, events, dialogue and agency.",
+        "scope": "narration",
+        "protectedLiterals": [],
+        "maxTokens": 2048
+      },
+      "lyrical-text": {
+        "id": "lyrical-text",
+        "type": "workflow",
+        "operation": "draft-text",
+        "operationVersion": 1,
+        "title": "Draft Text",
+        "enabled": true,
+        "x": 1930,
+        "y": 840,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "view": "body"
+      },
+      "lyrical-records": {
+        "id": "lyrical-records",
+        "type": "workflow",
+        "operation": "compose",
+        "operationVersion": 1,
+        "title": "Compose",
+        "enabled": true,
+        "x": 2300,
+        "y": 840,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "template",
+        "outputKind": "text",
+        "template": "Compare original and revised event equivalence. Revised prose: {{section:revision}} Original prose: {{section:original}}",
+        "sections": [
+          {
+            "name": "revision",
+            "text": ""
+          },
+          {
+            "name": "original",
+            "text": ""
+          }
+        ],
+        "separator": "\n\n"
+      },
+      "lyrical-check": {
+        "id": "lyrical-check",
+        "type": "workflow",
+        "operation": "decision",
+        "operationVersion": 1,
+        "title": "Decision",
+        "enabled": true,
+        "x": 2670,
+        "y": 840,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": "decision",
+        "inputKind": "text",
+        "questions": {
+          "same": {
+            "type": "noul",
+            "instructions": "Does the revision preserve every event, outcome, ownership, factual claim, quoted dialogue and player choice? Missing or ambiguous equivalence must be rejected."
+          }
+        },
+        "maxTokens": 2048
+      },
+      "lyrical-gate": {
+        "id": "lyrical-gate",
+        "type": "workflow",
+        "operation": "condition",
+        "operationVersion": 1,
+        "title": "Condition",
+        "enabled": true,
+        "x": 3040,
+        "y": 840,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "path": [
+          "answers",
+          "same",
+          "accepted"
+        ],
+        "operator": "equals",
+        "value": true
+      },
+      "lyrical-branch": {
+        "id": "lyrical-branch",
+        "type": "workflow",
+        "operation": "branch",
+        "operationVersion": 1,
+        "title": "Branch",
+        "enabled": true,
+        "x": 3410,
+        "y": 840,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "artifactKind": "draft"
+      },
+      "lyrical-review": {
+        "id": "lyrical-review",
+        "type": "workflow",
+        "operation": "review-publish",
+        "operationVersion": 1,
+        "title": "Review / Publish",
+        "enabled": true,
+        "x": 3780,
+        "y": 840,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null
+      },
+      "original": {
+        "id": "original",
+        "type": "workflow",
+        "operation": "draft-text",
+        "operationVersion": 1,
+        "title": "Draft Text",
+        "enabled": true,
+        "x": 1190,
+        "y": 1320,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "view": "body"
+      }
+    },
+    "wires": {
+      "wire-1": {
+        "id": "wire-1",
+        "route": "wire",
+        "from": "send",
+        "fromPort": "activation",
+        "to": "generate",
+        "toPort": "activation"
+      },
+      "wire-2": {
+        "id": "wire-2",
+        "route": "wire",
+        "from": "generate",
+        "fromPort": "draft",
+        "to": "spare",
+        "toPort": "draft"
+      },
+      "wire-3": {
+        "id": "wire-3",
+        "route": "wire",
+        "from": "spare",
+        "fromPort": "out",
+        "to": "spare-text",
+        "toPort": "draft"
+      },
+      "wire-4": {
+        "id": "wire-4",
+        "route": "wire",
+        "from": "spare-text",
+        "fromPort": "out",
+        "to": "spare-records",
+        "toPort": "section.revision"
+      },
+      "wire-5": {
+        "id": "wire-5",
+        "route": "wire",
+        "from": "spare-records",
+        "fromPort": "out",
+        "to": "spare-check",
+        "toPort": "in"
+      },
+      "wire-6": {
+        "id": "wire-6",
+        "route": "wire",
+        "from": "spare-check",
+        "fromPort": "out",
+        "to": "spare-gate",
+        "toPort": "in"
+      },
+      "wire-7": {
+        "id": "wire-7",
+        "route": "wire",
+        "from": "spare",
+        "fromPort": "out",
+        "to": "spare-branch",
+        "toPort": "in"
+      },
+      "wire-8": {
+        "id": "wire-8",
+        "route": "wire",
+        "from": "spare-gate",
+        "fromPort": "out",
+        "to": "spare-branch",
+        "toPort": "condition"
+      },
+      "wire-10": {
+        "id": "wire-10",
+        "route": "wire",
+        "from": "generate",
+        "fromPort": "draft",
+        "to": "lyrical",
+        "toPort": "draft"
+      },
+      "wire-11": {
+        "id": "wire-11",
+        "route": "wire",
+        "from": "lyrical",
+        "fromPort": "out",
+        "to": "lyrical-text",
+        "toPort": "draft"
+      },
+      "wire-12": {
+        "id": "wire-12",
+        "route": "wire",
+        "from": "lyrical-text",
+        "fromPort": "out",
+        "to": "lyrical-records",
+        "toPort": "section.revision"
+      },
+      "wire-13": {
+        "id": "wire-13",
+        "route": "wire",
+        "from": "lyrical-records",
+        "fromPort": "out",
+        "to": "lyrical-check",
+        "toPort": "in"
+      },
+      "wire-14": {
+        "id": "wire-14",
+        "route": "wire",
+        "from": "lyrical-check",
+        "fromPort": "out",
+        "to": "lyrical-gate",
+        "toPort": "in"
+      },
+      "wire-15": {
+        "id": "wire-15",
+        "route": "wire",
+        "from": "lyrical",
+        "fromPort": "out",
+        "to": "lyrical-branch",
+        "toPort": "in"
+      },
+      "wire-16": {
+        "id": "wire-16",
+        "route": "wire",
+        "from": "lyrical-gate",
+        "fromPort": "out",
+        "to": "lyrical-branch",
+        "toPort": "condition"
+      },
+      "wire-17": {
+        "id": "wire-17",
+        "route": "wire",
+        "from": "lyrical-branch",
+        "fromPort": "yes",
+        "to": "lyrical-review",
+        "toPort": "draft"
+      },
+      "wire-18": {
+        "id": "wire-18",
+        "route": "wire",
+        "from": "generate",
+        "fromPort": "draft",
+        "to": "original",
+        "toPort": "draft"
+      },
+      "wire-19": {
+        "id": "wire-19",
+        "route": "wire",
+        "from": "original",
+        "fromPort": "out",
+        "to": "spare-records",
+        "toPort": "section.original"
+      },
+      "wire-20": {
+        "id": "wire-20",
+        "route": "wire",
+        "from": "original",
+        "fromPort": "out",
+        "to": "lyrical-records",
+        "toPort": "section.original"
+      },
+      "wire-21": {
+        "id": "wire-21",
+        "route": "wire",
+        "from": "spare-branch",
+        "fromPort": "yes",
+        "to": "review",
+        "toPort": "draft"
+      }
+    },
+    "groups": {},
+    "roles": {
+      "Prose": {
+        "model": null,
+        "profileId": null
+      },
+      "decision": {
+        "model": null,
+        "profileId": null
+      }
+    },
+    "portals": {},
+    "definitions": {},
+    "template": {
+      "id": "unified-alternate-takes",
+      "version": 1
+    },
+    "view": {
+      "x": 0,
+      "y": 0,
+      "zoom": 0.7
+    }
+  }
+}

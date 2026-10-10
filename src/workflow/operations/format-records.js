@@ -13,7 +13,8 @@ export function formatRecords(value, settings) {
     if (!options.ok || !object(options.data.value)) return invalid();
     const config = Object.assign(Object.create(null),options.data.value);
     if (!['json','jsonl','csv','text','markdown'].includes(config.format)) return invalid();
-    const allowed=['format','fields','schema',...(config.format === 'csv'?['columns']:['text','markdown'].includes(config.format)?['separator','trailingSeparator']:[])];
+    if(Object.hasOwn(config,'jsonShape')&&(config.format!=='json'||!['records','single'].includes(config.jsonShape)))return invalid();
+    const allowed=['format','fields','schema',...(config.format==='json'?['jsonShape']:[]),...(config.format === 'csv'?['columns']:['text','markdown'].includes(config.format)?['separator','trailingSeparator']:[])];
     if (Object.keys(config).some(key => !allowed.includes(key))) return invalid();
     const checked = cloneJsonValue(value);
     if (!checked.ok) return checked;
@@ -47,7 +48,14 @@ export function formatRecords(value, settings) {
         if (jsonTexts.some(raw => !decodeJson(raw).ok)) return fail('FORMAT_LIMIT','Serialized JSON exceeds the supported raw JSON reader limits.');
         return {ok:true,data:{records,text,serialization,report:[]}};
     };
-    if (config.format === 'json') return result(encoded.data.text,{format:'json'});
+    if (config.format === 'json') {
+        if(config.jsonShape==='single') {
+            if(records.length!==1)return fail('FORMAT_CARDINALITY','Single-object JSON requires exactly one validated record.');
+            const single=stringifyJsonValue(records[0]);if(!single.ok)return single;
+            return result(single.data.text,{format:'json',jsonShape:'single'});
+        }
+        return result(encoded.data.text,{format:'json'});
+    }
     if (config.format === 'jsonl') return result(records.map(record => stringifyJsonValue(record).data.text+'\n').join(''),{format:'jsonl'});
     if (config.format === 'csv') {
         const lines = [config.columns.map(escapeCsv).join(',')];

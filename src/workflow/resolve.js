@@ -1,5 +1,6 @@
 import { inspectExpandedGraph, nodeAddressKey, safeWorkflowData } from './graph-validation.js?v=0.26.0';
 import { artifactAddressKey } from './definition-data.js?v=0.26.0';
+import { operationFor } from './catalog.js?v=0.26.0';
 import { freeze } from './record-data.js?v=0.26.0';
 
 const fail = (code, message, address) => ({ ok: false, error: { code, message, ...(address ? { nodeId: address.nodeId, address } : {}) } });
@@ -57,7 +58,39 @@ function selectClosure(index, target) {
         for (const port of unit.inputPorts) if (port.required && !index.incoming.has(artifactAddressKey({ ...unit.address, portId: port.id }))) return fail('MISSING_INPUT', 'Connect the required input artifact.', unit.address);
     }
     const selected = plan.primitives.filter(unit => included.has(nodeAddressKey(unit.address)));
-    return { ok: true, data: { included, containsIncluded, resolvedTarget,
+    let ordered = plan.primitives, effectiveDependencies = dependencies;
+    if (plan.phase === 'unified' && target === undefined) {
+        const boundaries = selected.filter(unit => operationFor(unit.node, { phase: unit.phase, mode: 'native-unified' })?.nativeBoundary);
+        if (boundaries.length > 1) return fail('MULTIPLE_NATIVE_GENERATIONS', 'A selected unified root supports one native generation boundary.');
+        if (boundaries.length) {
+            const boundary = boundaries[0], boundaryKey = nodeAddressKey(boundary.address);
+            if (boundary.address.instancePath.length || selected.filter(unit => unit.node.operation === 'on-send').length !== 1) return fail('NATIVE_ACTIVATION_REQUIRED', 'A native root boundary requires one selected root On Send activation.');
+            // These links order stages and appear in safe plans; they never supply
+            // an artifact, connect a port or expand a manual target's authority.
+            effectiveDependencies = new Map([...dependencies].map(([key, values]) => [key, [...values]]));
+            const depend = (unit, upstream) => {
+                const list = effectiveDependencies.get(nodeAddressKey(unit.address));
+                if (!list.some(at => nodeAddressKey(at) === nodeAddressKey(upstream.address))) list.push(upstream.address);
+            };
+            for (const unit of selected) {
+                if (unit === boundary) continue;
+                if (unit.phase === 'pre') depend(boundary, unit);
+                else depend(unit, boundary);
+            }
+            ordered = [];
+            const complete = new Set(), visiting = new Set();
+            const order = unit => {
+                const key = nodeAddressKey(unit.address);
+                if (visiting.has(key)) return false;
+                if (complete.has(key)) return true;
+                visiting.add(key);
+                for (const upstream of effectiveDependencies.get(key)) if (!order(byKey.get(nodeAddressKey(upstream)))) return false;
+                visiting.delete(key); complete.add(key); ordered.push(unit); return true;
+            };
+            if (plan.primitives.some(unit => !order(unit))) return fail('CYCLE', 'Native preparation and Post-stage dependencies contain a cycle.');
+        }
+    }
+    return { ok: true, data: { included, containsIncluded, resolvedTarget, ordered, dependencies: effectiveDependencies,
         callBound: selected.reduce((sum, unit) => sum + unit.requestBound, 0),
         requiredBindingAddresses: selected.filter(unit => unit.requestBound > 0).map(unit => unit.address) } };
 }
@@ -66,8 +99,8 @@ export function resolveWorkflow(root, options = {}) {
     if (!validOptions(options)) return fail('INVALID_TARGET', 'Expected plain planning options.');
     const expanded = inspectExpandedGraph(root); if (!expanded.ok) return expanded;
     const index = indexExpansion(expanded.data), selection = selectClosure(index, options.target); if (!selection.ok) return selection;
-    const { plan, terminals, dependencies } = index, { included, containsIncluded, resolvedTarget, callBound } = selection.data, target = options.target;
-    const primitives = plan.primitives.map(unit => ({ ...unit, included: included.has(nodeAddressKey(unit.address)), dependencies: dependencies.get(nodeAddressKey(unit.address)) }));
+    const { plan, terminals } = index, { included, containsIncluded, resolvedTarget, callBound, ordered, dependencies } = selection.data, target = options.target;
+    const primitives = ordered.map(unit => ({ ...unit, included: included.has(nodeAddressKey(unit.address)), dependencies: dependencies.get(nodeAddressKey(unit.address)) }));
     const hierarchy = plan.hierarchy.map(entry => ({ ...entry, included: entry.kind === 'primitive' ? included.has(nodeAddressKey(entry.address)) : containsIncluded(entry.address) }));
     return { ok: true, data: {
         workflowId: plan.workflowId, phase: plan.phase, mode: target === undefined ? 'root' : 'target', primitives, edges: plan.edges, hierarchy, boundaryMappings: plan.boundaryMappings,

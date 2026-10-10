@@ -1,0 +1,721 @@
+{
+  "kind": "lattice-workflow",
+  "schema": 2,
+  "minRuntime": 2,
+  "graph": {
+    "id": "unified-example-solvable-puzzle",
+    "name": "An authored puzzle with a hidden answer",
+    "description": "Validate one finite authored code puzzle, give graded hints from the player action, compare an explicit answer locally and generate the next scene without sending the solution to a model.\n\nSetup: The puzzle is a three-digit ascending even code: 246. The solver and numeric constraints are authored and inspected in Details. Edit them together. The answer stays only in the local Condition setting; no wire sends it to ST or an auxiliary model. A model extracts the attempted answer/hint request from actual player text; the numeric correctness check is deterministic, and hints reveal only the authored tier.\n\nInspect: On Send owns this generation. Generate Reply uses the ordinary SillyTavern connection. Auxiliary roles remain unassigned in this portable example. Review the final narrative and proposed consequences; Apply publishes a new swipe and settles staged writes. Preview and bounded runs never settle.\n\nGenerated suggestions are proposals. Quoted observations preserve source identity; notes never establish canonical events. Private records cannot be appended to public notes.",
+    "schema": 3,
+    "runtime": 2,
+    "mode": "native-unified",
+    "nodes": {
+      "send": {
+        "id": "send",
+        "type": "workflow",
+        "operation": "on-send",
+        "operationVersion": 1,
+        "title": "On Send",
+        "enabled": true,
+        "x": 80,
+        "y": 120,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null
+      },
+      "generate": {
+        "id": "generate",
+        "type": "workflow",
+        "operation": "generate-reply",
+        "operationVersion": 1,
+        "title": "Generate Reply · SillyTavern",
+        "enabled": true,
+        "x": 820,
+        "y": 120,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "budgetTokens": 768
+      },
+      "review": {
+        "id": "review",
+        "type": "workflow",
+        "operation": "review-publish",
+        "operationVersion": 1,
+        "title": "Review / Publish",
+        "enabled": true,
+        "x": 2670,
+        "y": 120,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null
+      },
+      "puzzle-text": {
+        "id": "puzzle-text",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 80,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "text": "{\"id\":\"even-lock\",\"digits\":3,\"presentation\":\"A three-digit lock asks for the first three positive even digits in ascending order.\"}"
+      },
+      "puzzle": {
+        "id": "puzzle",
+        "type": "workflow",
+        "operation": "json-decode",
+        "operationVersion": 1,
+        "title": "JSON Decode",
+        "enabled": true,
+        "x": 450,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "parse",
+        "schema": ""
+      },
+      "source": {
+        "id": "source",
+        "type": "workflow",
+        "operation": "player-event-source",
+        "operationVersion": 1,
+        "title": "Player Event Source",
+        "enabled": true,
+        "x": 80,
+        "y": 840,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null
+      },
+      "attempt-prompt": {
+        "id": "attempt-prompt",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 1190,
+        "y": 1080,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "text": "Return exactly {answer:string|null,hintTier:0|1|2}. Extract a deliberately submitted three-digit answer; quoted guesses or hypothetical codes are not submissions. Missing answer is null. Never solve the puzzle."
+      },
+      "attempt": {
+        "id": "attempt",
+        "type": "workflow",
+        "operation": "model-call",
+        "operationVersion": 1,
+        "title": "Model Call",
+        "enabled": true,
+        "x": 1560,
+        "y": 1080,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": "Prose",
+        "instructions": "",
+        "outputKind": "data",
+        "schema": "",
+        "maxTokens": 2048
+      },
+      "answer-check": {
+        "id": "answer-check",
+        "type": "workflow",
+        "operation": "condition",
+        "operationVersion": 1,
+        "title": "Condition",
+        "enabled": true,
+        "x": 1930,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "path": [
+          "answer"
+        ],
+        "operator": "equals",
+        "value": "246"
+      },
+      "hint-one": {
+        "id": "hint-one",
+        "type": "workflow",
+        "operation": "condition",
+        "operationVersion": 1,
+        "title": "Condition",
+        "enabled": true,
+        "x": 1930,
+        "y": 840,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "path": [
+          "hintTier"
+        ],
+        "operator": "equals",
+        "value": 1
+      },
+      "hint-two": {
+        "id": "hint-two",
+        "type": "workflow",
+        "operation": "condition",
+        "operationVersion": 1,
+        "title": "Condition",
+        "enabled": true,
+        "x": 1930,
+        "y": 1080,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "path": [
+          "hintTier"
+        ],
+        "operator": "equals",
+        "value": 2
+      },
+      "local-solutions-text": {
+        "id": "local-solutions-text",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 80,
+        "y": 1560,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "text": "[{\"code\":\"246\",\"ascending\":true},{\"code\":\"264\",\"ascending\":false},{\"code\":\"426\",\"ascending\":false},{\"code\":\"462\",\"ascending\":false},{\"code\":\"624\",\"ascending\":false},{\"code\":\"642\",\"ascending\":false}]"
+      },
+      "local-solutions": {
+        "id": "local-solutions",
+        "type": "workflow",
+        "operation": "json-decode",
+        "operationVersion": 1,
+        "title": "JSON Decode",
+        "enabled": true,
+        "x": 450,
+        "y": 1560,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "parse",
+        "schema": ""
+      },
+      "solvable": {
+        "id": "solvable",
+        "type": "workflow",
+        "operation": "collection",
+        "operationVersion": 1,
+        "title": "Collection",
+        "enabled": true,
+        "x": 820,
+        "y": 1560,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "filter",
+        "collectionPath": [],
+        "fieldPath": [
+          "ascending"
+        ],
+        "value": "",
+        "operator": "equals",
+        "missingPolicy": "hold",
+        "thresholds": "[]",
+        "mergePolicy": "keep-all",
+        "identityPath": [
+          "id"
+        ]
+      },
+      "true-text": {
+        "id": "true-text",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 80,
+        "y": 1800,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "text": "true"
+      },
+      "true": {
+        "id": "true",
+        "type": "workflow",
+        "operation": "json-decode",
+        "operationVersion": 1,
+        "title": "JSON Decode",
+        "enabled": true,
+        "x": 450,
+        "y": 1800,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "parse",
+        "schema": ""
+      },
+      "solutions-count": {
+        "id": "solutions-count",
+        "type": "workflow",
+        "operation": "collection",
+        "operationVersion": 1,
+        "title": "Collection",
+        "enabled": true,
+        "x": 1190,
+        "y": 1560,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "count",
+        "collectionPath": [],
+        "fieldPath": [],
+        "value": "",
+        "operator": "equals",
+        "missingPolicy": "hold",
+        "thresholds": "[]",
+        "mergePolicy": "keep-all",
+        "identityPath": [
+          "id"
+        ]
+      },
+      "one-solution": {
+        "id": "one-solution",
+        "type": "workflow",
+        "operation": "condition",
+        "operationVersion": 1,
+        "title": "Condition",
+        "enabled": true,
+        "x": 1560,
+        "y": 1560,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "path": [],
+        "operator": "equals",
+        "value": 1
+      },
+      "one-hint": {
+        "id": "one-hint",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 1560,
+        "y": 1800,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "text": "Every digit is even."
+      },
+      "one-hint-branch": {
+        "id": "one-hint-branch",
+        "type": "workflow",
+        "operation": "branch",
+        "operationVersion": 1,
+        "title": "Branch",
+        "enabled": true,
+        "x": 2300,
+        "y": 1800,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "artifactKind": "text"
+      },
+      "two-hint": {
+        "id": "two-hint",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 1560,
+        "y": 2040,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "text": "Start at the smallest positive even digit."
+      },
+      "two-hint-branch": {
+        "id": "two-hint-branch",
+        "type": "workflow",
+        "operation": "branch",
+        "operationVersion": 1,
+        "title": "Branch",
+        "enabled": true,
+        "x": 2300,
+        "y": 2040,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "artifactKind": "text"
+      },
+      "requested-hint": {
+        "id": "requested-hint",
+        "type": "workflow",
+        "operation": "join",
+        "operationVersion": 1,
+        "title": "Join",
+        "enabled": true,
+        "x": 2670,
+        "y": 1800,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "artifactKind": "text",
+        "inputs": [
+          {
+            "id": "first",
+            "label": "First hint",
+            "required": false
+          },
+          {
+            "id": "second",
+            "label": "Second hint",
+            "required": false
+          }
+        ],
+        "selection": "last"
+      },
+      "state": {
+        "id": "state",
+        "type": "workflow",
+        "operation": "collect",
+        "operationVersion": 1,
+        "title": "Collect",
+        "enabled": true,
+        "x": 2300,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "artifactKind": "data",
+        "inputs": [
+          {
+            "id": "puzzle",
+            "label": "Public puzzle",
+            "required": true
+          },
+          {
+            "id": "correct",
+            "label": "Answer accepted",
+            "required": true
+          },
+          {
+            "id": "solvable",
+            "label": "Exactly one local solution",
+            "required": true
+          }
+        ]
+      },
+      "puzzle-guidance": {
+        "id": "puzzle-guidance",
+        "type": "workflow",
+        "operation": "compose",
+        "operationVersion": 1,
+        "title": "Compose",
+        "enabled": true,
+        "x": 2670,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "template",
+        "outputKind": "guidance",
+        "template": "Present the public puzzle without an answer. Only open the lock when both local correctness and single-solution results are accepted. Give only this requested hint, if present: {{section:hint}}. Never offer a solution or substitute a model guess for the local check. {{data:}}",
+        "sections": [
+          {
+            "name": "hint",
+            "text": ""
+          }
+        ],
+        "separator": "\n\n"
+      }
+    },
+    "wires": {
+      "wire-1": {
+        "id": "wire-1",
+        "route": "wire",
+        "from": "send",
+        "fromPort": "activation",
+        "to": "generate",
+        "toPort": "activation"
+      },
+      "wire-2": {
+        "id": "wire-2",
+        "route": "wire",
+        "from": "puzzle-text",
+        "fromPort": "out",
+        "to": "puzzle",
+        "toPort": "in"
+      },
+      "wire-3": {
+        "id": "wire-3",
+        "route": "wire",
+        "from": "attempt-prompt",
+        "fromPort": "out",
+        "to": "attempt",
+        "toPort": "prompt"
+      },
+      "wire-4": {
+        "id": "wire-4",
+        "route": "wire",
+        "from": "source",
+        "fromPort": "out",
+        "to": "attempt",
+        "toPort": "data"
+      },
+      "wire-5": {
+        "id": "wire-5",
+        "route": "wire",
+        "from": "attempt",
+        "fromPort": "out",
+        "to": "answer-check",
+        "toPort": "in"
+      },
+      "wire-6": {
+        "id": "wire-6",
+        "route": "wire",
+        "from": "attempt",
+        "fromPort": "out",
+        "to": "hint-one",
+        "toPort": "in"
+      },
+      "wire-7": {
+        "id": "wire-7",
+        "route": "wire",
+        "from": "attempt",
+        "fromPort": "out",
+        "to": "hint-two",
+        "toPort": "in"
+      },
+      "wire-8": {
+        "id": "wire-8",
+        "route": "wire",
+        "from": "local-solutions-text",
+        "fromPort": "out",
+        "to": "local-solutions",
+        "toPort": "in"
+      },
+      "wire-9": {
+        "id": "wire-9",
+        "route": "wire",
+        "from": "true-text",
+        "fromPort": "out",
+        "to": "true",
+        "toPort": "in"
+      },
+      "wire-10": {
+        "id": "wire-10",
+        "route": "wire",
+        "from": "local-solutions",
+        "fromPort": "out",
+        "to": "solvable",
+        "toPort": "in"
+      },
+      "wire-11": {
+        "id": "wire-11",
+        "route": "wire",
+        "from": "true",
+        "fromPort": "out",
+        "to": "solvable",
+        "toPort": "match"
+      },
+      "wire-12": {
+        "id": "wire-12",
+        "route": "wire",
+        "from": "solvable",
+        "fromPort": "out",
+        "to": "solutions-count",
+        "toPort": "in"
+      },
+      "wire-13": {
+        "id": "wire-13",
+        "route": "wire",
+        "from": "solutions-count",
+        "fromPort": "out",
+        "to": "one-solution",
+        "toPort": "in"
+      },
+      "wire-14": {
+        "id": "wire-14",
+        "route": "wire",
+        "from": "one-hint",
+        "fromPort": "out",
+        "to": "one-hint-branch",
+        "toPort": "in"
+      },
+      "wire-15": {
+        "id": "wire-15",
+        "route": "wire",
+        "from": "hint-one",
+        "fromPort": "out",
+        "to": "one-hint-branch",
+        "toPort": "condition"
+      },
+      "wire-16": {
+        "id": "wire-16",
+        "route": "wire",
+        "from": "two-hint",
+        "fromPort": "out",
+        "to": "two-hint-branch",
+        "toPort": "in"
+      },
+      "wire-17": {
+        "id": "wire-17",
+        "route": "wire",
+        "from": "hint-two",
+        "fromPort": "out",
+        "to": "two-hint-branch",
+        "toPort": "condition"
+      },
+      "wire-18": {
+        "id": "wire-18",
+        "route": "wire",
+        "from": "one-hint-branch",
+        "fromPort": "yes",
+        "to": "requested-hint",
+        "toPort": "first"
+      },
+      "wire-19": {
+        "id": "wire-19",
+        "route": "wire",
+        "from": "two-hint-branch",
+        "fromPort": "yes",
+        "to": "requested-hint",
+        "toPort": "second"
+      },
+      "wire-20": {
+        "id": "wire-20",
+        "route": "wire",
+        "from": "puzzle",
+        "fromPort": "out",
+        "to": "state",
+        "toPort": "puzzle"
+      },
+      "wire-21": {
+        "id": "wire-21",
+        "route": "wire",
+        "from": "answer-check",
+        "fromPort": "out",
+        "to": "state",
+        "toPort": "correct"
+      },
+      "wire-22": {
+        "id": "wire-22",
+        "route": "wire",
+        "from": "one-solution",
+        "fromPort": "out",
+        "to": "state",
+        "toPort": "solvable"
+      },
+      "wire-23": {
+        "id": "wire-23",
+        "route": "wire",
+        "from": "state",
+        "fromPort": "out",
+        "to": "puzzle-guidance",
+        "toPort": "data"
+      },
+      "wire-24": {
+        "id": "wire-24",
+        "route": "wire",
+        "from": "requested-hint",
+        "fromPort": "out",
+        "to": "puzzle-guidance",
+        "toPort": "section.hint"
+      },
+      "wire-25": {
+        "id": "wire-25",
+        "route": "wire",
+        "from": "puzzle-guidance",
+        "fromPort": "out",
+        "to": "generate",
+        "toPort": "guidance"
+      },
+      "wire-26": {
+        "id": "wire-26",
+        "route": "wire",
+        "from": "generate",
+        "fromPort": "draft",
+        "to": "review",
+        "toPort": "draft"
+      }
+    },
+    "groups": {},
+    "roles": {
+      "Prose": {
+        "model": null,
+        "profileId": null
+      }
+    },
+    "portals": {},
+    "definitions": {},
+    "template": {
+      "id": "unified-solvable-puzzle",
+      "version": 1
+    },
+    "view": {
+      "x": 0,
+      "y": 0,
+      "zoom": 0.7
+    }
+  }
+}

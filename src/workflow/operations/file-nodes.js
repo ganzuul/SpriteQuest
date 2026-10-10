@@ -1,3 +1,4 @@
+import { artifactVisibility } from '../artifact-privacy.js?v=0.26.0';
 import { cloneJsonValue } from './json-data.js?v=0.26.0';
 import { decodeJson } from './json-decode.js?v=0.26.0';
 import { formatRecords } from './format-records.js?v=0.26.0';
@@ -25,12 +26,14 @@ const textControl=(value,label,maxLength=2048)=>control('string',value,label,{ma
 const schemaControl=textControl('','Schema',100000);
 schemaControl.editor='json';
 const controls={
-    format:{inputMode:enumControl('records','Input',['records','json-text']),format:enumControl('json','Serialization',formats),mapping:enumControl('preserve','Fields',['preserve','select']),fields:control('array',[],'Field mapping',{items:'record',max:128,editor:'json'}),schema:schemaControl,columns:control('array',[],'CSV columns',{items:'string',max:128}),separator:textControl('\n','Separator'),trailingSeparator:control('boolean',false,'Trailing separator')},
+    format:{inputMode:enumControl('records','Input',['records','json-text']),format:enumControl('json','Serialization',formats),jsonShape:enumControl('records','JSON shape',['records','single']),mapping:enumControl('preserve','Fields',['preserve','select']),fields:control('array',[],'Field mapping',{items:'record',max:128,editor:'json'}),schema:schemaControl,columns:control('array',[],'CSV columns',{items:'string',max:128}),separator:textControl('\n','Separator'),trailingSeparator:control('boolean',false,'Trailing separator')},
     'read-file':{targetId:textControl('','Authorized target',256),schema:schemaControl,columns:control('array',[],'CSV columns',{items:'string',max:128})},
     'write-file':{mode:enumControl('append','Mutation',['append','add','add-unique','upsert','update-fields','replace']),collectionPath:textControl('','Collection JSON Pointer'),missingPath:enumControl('error','Missing collection',['error','create']),key:textControl('id','Identity field',256),fieldPolicy:enumControl('merge','Upsert policy',['merge','replace']),fields:control('array',[],'Updated fields',{items:'string',max:128}),schema:schemaControl,columns:control('array',[],'CSV columns',{items:'string',max:128}),separator:textControl('\n','Separator'),emptyPolicy:enumControl('omit','Separator for empty destination',['omit','include']),trailingSeparator:control('boolean',false,'Trailing separator')},
 };
-const registration=(id,title,phase,input,output,hostOperation=false)=>({id,title,family:id==='read-file'?'Input':id==='write-file'?'Output':'Shaping',phase,operationVersion:1,minimumSchema:3,minimumRuntime:2,input,output,defaults:Object.fromEntries(Object.entries(controls[id]).map(([key,value])=>[key,structuredClone(value.default)])),controls:Object.keys(controls[id]),controlDescriptors:controls[id],requestBound:0,modelRole:null,terminal:false,dynamicPorts:true,...(hostOperation?{rootOnly:true,hostOperation:true}:{})});
-export const FILE_OPERATIONS={format:registration('format','Format','both','data','data'),'read-file':registration('read-file','Read File','both',null,'text',true),'write-file':registration('write-file','Write to File','post','data','data',true)};
+controls['project-document']={...structuredClone(controls['write-file']),format:enumControl('json','Document format',formats)};controls['project-document'].mode.default='add';
+for(const operation of ['read-file','write-file'])Object.assign(controls[operation],{actorScope:enumControl('selected','Actor scope',['selected','presence']),actorId:textControl('','Present actor identity',256)});
+const registration=(id,title,phase,input,output,hostOperation=false)=>({id,title,family:id==='read-file'?'Input':id==='write-file'?'Output':'Shaping',phase,operationVersion:1,minimumSchema:3,minimumRuntime:2,input,output,defaults:Object.fromEntries(Object.entries(controls[id]).map(([key,value])=>[key,structuredClone(value.default)])),controls:Object.keys(controls[id]),controlDescriptors:controls[id],requestBound:0,modelRole:null,terminal:id==='write-file',dynamicPorts:true,...(hostOperation?{rootOnly:true,hostOperation:true}:{})});
+export const FILE_OPERATIONS={format:registration('format','Format','both','data','data'),'read-file':registration('read-file','Read File','both',null,'text',true),'write-file':registration('write-file','Write to File','post','data','data',true),'project-document':registration('project-document','Project Document','both','text','data')};
 function resolve(rawNode,rawOptions={}){
     try{
         const node=own(rawNode),options=own(rawOptions);
@@ -53,12 +56,16 @@ function resolve(rawNode,rawOptions={}){
             const checked=decodeJson(null,{mode:'check',schema});
             if(!checked.ok&&checked.error.code!=='SCHEMA_MISMATCH')return checked;
         }
+        if(node.operation==='format'&&settings.jsonShape==='single'&&settings.format!=='json')return fail('INVALID_SETTINGS','Single-object shape applies only to JSON serialization.');
+        if(['read-file','write-file'].includes(node.operation)&&(settings.actorScope==='presence'?!id(settings.actorId):settings.actorId!==''))return fail('INVALID_SETTINGS','Presence scope requires a configured actor; selected scope uses the native selection.');
         if(node.operation==='read-file'&&!id(settings.targetId))return fail('INVALID_SETTINGS','Select an authorized target identity.');
-        if(node.operation==='write-file'&&(['add-unique','upsert','update-fields'].includes(settings.mode)&&!id(settings.key)||settings.mode==='update-fields'&&(!settings.fields.length||settings.fields.some(field=>!id(field))||new Set(settings.fields).size!==settings.fields.length)))return fail('INVALID_SETTINGS','Keyed updates require an identity field and selected unique fields.');
+        if(['write-file','project-document'].includes(node.operation)&&(['add-unique','upsert','update-fields'].includes(settings.mode)&&!id(settings.key)||settings.mode==='update-fields'&&(!settings.fields.length||settings.fields.some(field=>!id(field))||new Set(settings.fields).size!==settings.fields.length)))return fail('INVALID_SETTINGS','Keyed updates require an identity field and selected unique fields.');
         let ports;
         if(node.operation==='format')ports=[port('in','Records / raw JSON',settings.inputMode==='records'?'data':'text','input',true),port('records','Validated records','data','output'),port('text','Serialized text','text','output'),port('report','Format report','data','output')];
         else if(node.operation==='read-file')ports=[port('text','Contents','text','output'),port('document','Parsed document','data','output'),port('reference','Live file reference','data','output')];
+        else if(node.operation==='project-document')ports=[port('source','Original document','text','input',true),port(['append','replace'].includes(settings.mode)?'text':'records',['append','replace'].includes(settings.mode)?'Text':'Records',['append','replace'].includes(settings.mode)?'text':'data','input',true),port('text','Projected document text','text','output'),port('data','Projected document data','data','output'),port('receipt','Projection receipt','data','output')];
         else ports=[port('reference','Live file reference','data','input',true),port(['append','replace'].includes(settings.mode)?'text':'records',['append','replace'].includes(settings.mode)?'Text':'Records',['append','replace'].includes(settings.mode)?'text':'data','input',true),port('evidence','Canonical source evidence','data','input'),port('projection','Projected document','data','output'),port('receipt','Staging receipt','data','output')];
+        if(settings.actorScope==='presence')ports.unshift(port('presence','Confirmed live actor presence','data','input',true));
         return {ok:true,data:{node:freeze({id:id(node.id)?node.id:'file-operation',type:'workflow',operation:node.operation,operationVersion:1,phase,...settings}),settings:freeze(settings),schema,ports,descriptor:{...base,phase}}};
     }catch{return fail('INVALID_SETTINGS','File settings must be own plain data properties.');}
 }
@@ -87,22 +94,7 @@ function inputArtifacts(raw,ports){
         return {ok:true,data:out};
     }catch{return fail('INVALID_INPUT','File inputs require own plain artifact data.');}
 }
-function visibilityOf(value){
-    const restrictions=[];
-    const visit=item=>{
-        if(!item||typeof item!=='object')return;
-        if(Object.hasOwn(item,'visibility')){
-            const mark=item.visibility;
-            if(mark!=='public'&&mark?.kind!=='public')restrictions.push(mark?.kind==='actor-private'&&id(mark.actorId)?{kind:'actor-private',actorId:mark.actorId}:mark==='actor-private'&&id(item.actorId)?{kind:'actor-private',actorId:item.actorId}:{kind:'hidden'});
-        }
-        if(Object.hasOwn(item,'visibleTo'))restrictions.push({kind:'hidden'});
-        if(['actor-state','reflection','state-proposal','episodes','commit-intent'].includes(item.recordType))restrictions.push(id(item.scope?.actorId)?{kind:'actor-private',actorId:item.scope.actorId}:{kind:'hidden'});
-        Object.values(item).forEach(visit);
-    };
-    visit(value);
-    if(!restrictions.length)return {kind:'public'};
-    const first=restrictions[0];return restrictions.every(mark=>mark.kind===first.kind&&mark.actorId===first.actorId)?first:{kind:'hidden'};
-}
+const visibilityOf = artifactVisibility;
 function output(outputs,reports){
     const checked={};
     for(const [key,value] of Object.entries(outputs)){
@@ -139,6 +131,11 @@ const capabilityErrorMessages=Object.freeze({
     INVALID_FILE_BACKEND_RESULT:'The selected storage backend returned an invalid result.',
     PRIVATE_DESTINATION:'Restricted records require a permitted destination preserving actor scope.',
     FILE_SCOPE_UNAVAILABLE:'The selected target scope could not be authorized.',
+    ACTOR_PRESENCE_UNVERIFIED:'Use this actor’s exact confirmed live scene presence.',
+    ACTOR_GRANT_REQUIRED:'The captured actor authority is unavailable.',
+    STALE_ACTOR_SCOPE:'The captured actor source, user or chat changed.',
+    ACTOR_NOT_LOADED:'Select an actual loaded canonical actor.',
+    ACTOR_FILE_SCOPE_MISMATCH:'The live file capture must belong to the configured present actor.',
     EFFECTS_REJECTED:'The retained workflow effects were rejected.',
     STALE_EFFECT_SCOPE:'The captured workflow scope changed before staging.',
     EFFECTS_ALREADY_PUBLISHED:'This workflow has already published its accepted effects.',
@@ -169,6 +166,7 @@ function parseSnapshot(snapshot,settings,schema){
     if(['text','markdown'].includes(snapshot.format)&&schema!==undefined)return fail('UNSUPPORTED_SCHEMA','Plain document text has no implicit structured fields.');
     return prepareDocumentMutation(snapshot,{operation:'replace',content:snapshot.content,...(schema===undefined?{}:{schema}),...(snapshot.format==='csv'?{columns:settings.columns}:{})});
 }
+function mutationSettings(settings,inputs,schema,format){return settings.mode==='append'?{operation:'append-text',text:inputs.text.text,separator:settings.separator,emptyPolicy:settings.emptyPolicy,trailingSeparator:settings.trailingSeparator}:settings.mode==='replace'?{operation:'replace',content:inputs.text.text,...(schema===undefined?{}:{schema}),...(format==='csv'?{columns:settings.columns}:{})}:{operation:settings.mode,records:Array.isArray(inputs.records.value)?inputs.records.value:[inputs.records.value],collectionPath:settings.collectionPath,missingPath:settings.missingPath,...(schema===undefined?{}:{schema}),...(format==='csv'?{columns:settings.columns}:{}),...(['add-unique','upsert','update-fields'].includes(settings.mode)?{key:settings.key}:{}),...(settings.mode==='upsert'?{fieldPolicy:settings.fieldPolicy}:{}),...(settings.mode==='update-fields'?{fields:settings.fields}:{})};}
 /** Pure formatting and trusted root-only storage staging; this module never commits or writes. */
 export async function executeFileNode(node,namedInputs,execution={}){
     let local,files;
@@ -178,14 +176,41 @@ export async function executeFileNode(node,namedInputs,execution={}){
     if(cancelled())return fail('ABORTED','File operation cancelled.');
     const resolved=resolve(node,local);if(!resolved.ok)return resolved;
     const {node:capturedNode,settings,schema,ports}=resolved.data,operation=capturedNode.operation;
-    if(operation!=='format'&&local.root!==true)return fail('ROOT_ONLY','Storage capabilities are reserved for a root workflow.');
+    if(!['format','project-document'].includes(operation)&&local.root!==true)return fail('ROOT_ONLY','Storage capabilities are reserved for a root workflow.');
     const checked=inputArtifacts(namedInputs,ports);if(!checked.ok)return checked;
     const inputs=checked.data; let visibility=visibilityOf(inputs);
+    let exactPresence,presenceStamp;
+    if(settings.actorScope==='presence'){
+        exactPresence=own(namedInputs).presence;presenceStamp=JSON.stringify(inputs.presence);
+        const value=inputs.presence.value,mark=visibilityOf(inputs.presence);
+        if(!value||value.schemaVersion!==1||value.recordType!=='scene-presence'||value.status!=='present'||value.actorId!==settings.actorId||!['sceneId','sourceId','revision'].every(key=>id(value[key]))||mark.kind==='hidden'||mark.kind==='actor-private'&&mark.actorId!==settings.actorId)return fail('ACTOR_FILE_SCOPE_MISMATCH','Use the configured actor’s exact confirmed source presence.');
+    }
+    async function actorScope(reference){
+        if(settings.actorScope!=='presence')return {ok:true};
+        if(cancelled())return fail('ABORTED','Actor file operation cancelled.');
+        if(typeof local.authorizeActorFileScope!=='function')return fail('FILE_SCOPE_UNAVAILABLE','Present-actor files require trusted live actor authority.');
+        const unchanged=()=>{const current=cloneJsonValue(exactPresence);return current.ok&&JSON.stringify(current.data.value)===presenceStamp;};
+        if(!unchanged()||id(reference?.scope?.actorId)&&reference.scope.actorId!==settings.actorId)return fail('ACTOR_FILE_SCOPE_MISMATCH','Actor file inputs changed or the reference belongs to another actor.');
+        let allowed;try{allowed=response(await local.authorizeActorFileScope(Object.freeze({actorId:settings.actorId,presence:exactPresence,...(reference?{reference}:{})})));}catch{return fail('FILE_SCOPE_UNAVAILABLE','The present actor’s file authority could not be checked.');}
+        if(cancelled())return fail('ABORTED','Actor file operation cancelled during scope validation.');
+        if(!unchanged())return fail('ACTOR_FILE_SCOPE_MISMATCH','The exact actor presence changed during scope validation.');
+        if(!allowed.ok)return allowed;const captured=cloneJsonValue(allowed.data);
+        return captured.ok&&captured.data.value?.actorId===settings.actorId&&Object.keys(captured.data.value).length===1?{ok:true}:fail('ACTOR_FILE_SCOPE_MISMATCH','File authority must match the captured configured actor.');
+    }
+    const initialScope=await actorScope(inputs.reference?.value);if(!initialScope.ok)return initialScope;
+    if(operation==='project-document'){
+        const snapshot={targetId:'pure-projection',revision:0,format:settings.format,content:inputs.source.text};
+        const mutation=mutationSettings(settings,inputs,schema,snapshot.format);
+        const projection=prepareDocumentMutation(snapshot,mutation);if(!projection.ok)return projection;
+        visibility=visibilityOf({inputs,projection:projection.data});
+        const projected=projection.data.projectedDocument;
+        return output({text:{kind:'text',text:projected.content,visibility},data:{kind:'data',value:Object.hasOwn(projected,'value')?projected.value:{format:projected.format,content:projected.content},visibility},receipt:{kind:'data',value:{status:'proposed',...projection.data.receipt},visibility}},[{code:'DOCUMENT_PROJECTED',actualCalls:0,operation:projection.data.operation}]);
+    }
     if(operation==='format'){
         const source=settings.inputMode==='json-text'?decodeJson(inputs.in.text):{ok:true,data:{value:inputs.in.value}};
         if(!source.ok)return source;
         visibility=visibilityOf({inputs,decoded:source.data.value});
-        const formatted=formatRecords(source.data.value,{format:settings.format,...(settings.mapping==='select'?{fields:settings.fields}:{}),...(schema===undefined?{}:{schema}),...(settings.format==='csv'?{columns:settings.columns}:['text','markdown'].includes(settings.format)?{separator:settings.separator,trailingSeparator:settings.trailingSeparator}:{})});
+        const formatted=formatRecords(source.data.value,{format:settings.format,...(settings.format==='json'&&settings.jsonShape==='single'?{jsonShape:'single'}:{}),...(settings.mapping==='select'?{fields:settings.fields}:{}),...(schema===undefined?{}:{schema}),...(settings.format==='csv'?{columns:settings.columns}:['text','markdown'].includes(settings.format)?{separator:settings.separator,trailingSeparator:settings.trailingSeparator}:{})});
         if(!formatted.ok)return formatted;
         visibility=visibilityOf({inputs,decoded:source.data.value,records:formatted.data.records});
         return output({records:{kind:'data',value:formatted.data.records,visibility},text:{kind:'text',text:formatted.data.text,visibility},report:{kind:'data',value:{serialization:formatted.data.serialization,findings:formatted.data.report,count:formatted.data.records.length},visibility}},[{code:'FORMATTED_RECORDS',actualCalls:0,count:formatted.data.records.length}]);
@@ -195,6 +220,7 @@ export async function executeFileNode(node,namedInputs,execution={}){
         let loaded;try{loaded=response(await files.read(settings.targetId));}catch{return fail(cancelled()?'ABORTED':'FILE_READ_FAILED','The authorized file could not be read.');}
         if(cancelled())return fail('ABORTED','Ignore the cancelled file read.');
         if(!loaded.ok)return loaded;
+        const loadedScope=await actorScope();if(!loadedScope.ok)return loadedScope;
         let snapshot,fileRef;
         try{
             const content=own(loaded.data),checkedSnapshot=cloneJsonValue(content.snapshot),ref=cloneJsonValue(content.fileRef);
@@ -202,6 +228,7 @@ export async function executeFileNode(node,namedInputs,execution={}){
             snapshot=checkedSnapshot.data.value;fileRef=content.fileRef;
             if(!snapshot||typeof snapshot!=='object'||!ref.data.value.scope||typeof ref.data.value.scope!=='object'||!id(ref.data.value.scope.userId)||!id(ref.data.value.scope.chatId)||Object.keys(ref.data.value.scope).some(key=>!['userId','chatId','actorId'].includes(key))||Object.hasOwn(ref.data.value.scope,'actorId')&&!id(ref.data.value.scope.actorId)||!Object.isFrozen(fileRef)||Object.keys(ref.data.value).length!==5||snapshot.targetId!==settings.targetId||ref.data.value.kind!=='file-reference'||ref.data.value.backend!=='host-store'||ref.data.value.targetId!==snapshot.targetId||ref.data.value.revision!==snapshot.revision)return fail('INVALID_FILE_RESPONSE','The reference must match the exact target and observed revision.');
         }catch{return fail('INVALID_FILE_RESPONSE','Read File requires an own document/reference result.');}
+        const checkedScope=await actorScope(fileRef);if(!checkedScope.ok)return checkedScope;
         const parsed=parseSnapshot(snapshot,settings,schema);if(!parsed.ok)return parsed;
         const value=parsed.data.projectedDocument?.value;
         let fileVisibility=visibilityOf({value,...(id(fileRef.scope?.actorId)?{visibility:{kind:'actor-private',actorId:fileRef.scope.actorId}}:{})});
@@ -213,15 +240,19 @@ export async function executeFileNode(node,namedInputs,execution={}){
             if(!mark.ok||!validVisibility(mark.data.value)||!permits(fileVisibility,mark.data.value))return fail('PRIVATE_DESTINATION','A file policy cannot declassify captured actor or record privacy.');
             fileVisibility=mark.data.value;
         }
+        const finalScope=await actorScope(fileRef);if(!finalScope.ok)return finalScope;
+        if(settings.actorScope==='presence'&&fileVisibility.kind==='actor-private'&&fileVisibility.actorId!==settings.actorId)return fail('ACTOR_FILE_SCOPE_MISMATCH','The private document belongs to a different actor.');
+        fileVisibility=visibilityOf({visibility:fileVisibility,inputs});
         const produced=output({text:{kind:'text',text:snapshot.content,visibility:fileVisibility},document:{kind:'data',value:{targetId:snapshot.targetId,revision:snapshot.revision,format:snapshot.format,...(value===undefined?{}:{value})},visibility:fileVisibility},reference:{kind:'data',value:fileRef,visibility:fileVisibility}},[{code:'FILE_READ',actualCalls:0,targetId:snapshot.targetId,revision:snapshot.revision}]);
-        if(produced.ok)references.set(fileRef,{snapshot:freeze(snapshot),visibility:freeze(fileVisibility)});
+        if(produced.ok)references.set(fileRef,{snapshot:freeze(snapshot),visibility:freeze(fileVisibility),actorId:settings.actorScope==='presence'?settings.actorId:fileRef.scope.actorId??(fileVisibility.kind==='actor-private'?fileVisibility.actorId:undefined)});
         return produced;
     }
     if(typeof files?.prepare!=='function'||typeof local.createIntentId!=='function'||typeof local.stageFileIntent!=='function'||typeof local.authorizeFileWrite!=='function')return fail('INVALID_PORTS','Write to File requires trusted preparation, stable identity, scope authorization and staging capabilities.');
     const captured=references.get(inputs.reference.value),snapshot=captured.snapshot;
+    if(settings.actorScope==='presence'&&captured.actorId!==undefined&&captured.actorId!==settings.actorId)return fail('ACTOR_FILE_SCOPE_MISMATCH','Write requires the same present actor that captured the live file reference.');
     const evidence=inputs.evidence===undefined?[]:Array.isArray(inputs.evidence.value)?inputs.evidence.value:[inputs.evidence.value];
     if(evidence.length>128)return fail('EVIDENCE_LIMIT','At most 128 canonical evidence records can accompany one write.');
-    const mutation=settings.mode==='append'?{operation:'append-text',text:inputs.text.text,separator:settings.separator,emptyPolicy:settings.emptyPolicy,trailingSeparator:settings.trailingSeparator}:settings.mode==='replace'?{operation:'replace',content:inputs.text.text,...(schema===undefined?{}:{schema}),...(snapshot.format==='csv'?{columns:settings.columns}:{})}:{operation:settings.mode,records:Array.isArray(inputs.records.value)?inputs.records.value:[inputs.records.value],collectionPath:settings.collectionPath,missingPath:settings.missingPath,...(schema===undefined?{}:{schema}),...(snapshot.format==='csv'?{columns:settings.columns}:{}),...(['add-unique','upsert','update-fields'].includes(settings.mode)?{key:settings.key}:{}),...(settings.mode==='upsert'?{fieldPolicy:settings.fieldPolicy}:{}),...(settings.mode==='update-fields'?{fields:settings.fields}:{})};
+    const mutation=mutationSettings(settings,inputs,schema,snapshot.format);
     const projection=prepareDocumentMutation(snapshot,mutation);if(!projection.ok)return projection;
     visibility=visibilityOf({inputs,projection:projection.data});
     let authorized,intent,prepared;
@@ -229,21 +260,24 @@ export async function executeFileNode(node,namedInputs,execution={}){
         authorized=response(await local.authorizeFileWrite(freeze({reference:inputs.reference.value,visibility,evidence:freeze(evidence),projection:freeze(projection.data)})));
         if(cancelled())return fail('ABORTED','File staging cancelled during scope validation.');
         if(!authorized.ok)return authorized;
+        const authorizedScope=await actorScope(inputs.reference.value);if(!authorizedScope.ok)return authorizedScope;
         const policy=cloneJsonValue(authorized.data),destination=policy.ok?policy.data.value.destinationVisibility:null;
         if(!validVisibility(destination)||!permits(visibility,destination)||!permits(captured.visibility,destination))return fail('PRIVATE_DESTINATION','Restricted records require a permitted destination preserving actor scope.');
         intent=response(await local.createIntentId(capturedNode,freeze(evidence)));
         if(cancelled())return fail('ABORTED','File staging cancelled during identity capture.');
         if(!intent.ok)return intent;
+        const identityScope=await actorScope(inputs.reference.value);if(!identityScope.ok)return identityScope;
         if(!id(intent.data))return fail('INVALID_FILE_INTENT','The host must derive a bounded stable canonical intent identity.');
         prepared=response(await files.prepare(inputs.reference.value,freeze(mutation),freeze({intentId:intent.data,evidence})));
         if(cancelled())return fail('ABORTED','File staging cancelled during preparation.');
         if(!prepared.ok)return prepared;
+        const preparedScope=await actorScope(inputs.reference.value);if(!preparedScope.ok)return preparedScope;
         const proposed=own(prepared.data),plan=cloneJsonValue(proposed.plan);
         if(!plan.ok||proposed.status!=='staged'||plan.data.value.targetId!==snapshot.targetId||plan.data.value.expectedRevision!==snapshot.revision||JSON.stringify(plan.data.value)!==JSON.stringify(projection.data)||typeof proposed.handle!=='object'||proposed.handle===null)return fail('INVALID_FILE_RESPONSE','Prepared intent must preserve the exact checked document projection.');
         const produced=output({projection:{kind:'data',value:plan.data.value.projectedDocument,visibility:destination},receipt:{kind:'data',value:{intentId:intent.data,targetId:snapshot.targetId,expectedRevision:snapshot.revision,status:'staged',...plan.data.value.receipt},visibility:destination}},[{code:'FILE_INTENT_STAGED',actualCalls:0,targetId:snapshot.targetId,operation:plan.data.value.operation}]);
-        if(!produced.ok)return produced;
+        if(!produced.ok)return produced;produced.artifact=produced.outputs.receipt;
         const staged=response(await local.stageFileIntent(prepared.data,freeze(evidence)),true);
         if(cancelled())return fail('ABORTED','File staging cancelled; retained intents must be rejected by host cancellation.');
-        return staged.ok?produced:staged;
+        if(!staged.ok)return staged;const stagedScope=await actorScope(inputs.reference.value);return stagedScope.ok?produced:stagedScope;
     }catch{return fail(cancelled()?'ABORTED':'FILE_STAGE_FAILED','The trusted file intent could not be prepared or staged.');}
 }

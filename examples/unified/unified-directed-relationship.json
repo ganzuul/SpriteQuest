@@ -1,0 +1,900 @@
+{
+  "kind": "lattice-workflow",
+  "schema": 2,
+  "minRuntime": 2,
+  "graph": {
+    "id": "unified-example-directed-relationship",
+    "name": "Slow-burn directed relationship pacing",
+    "description": "Confirm a new considerate interaction, stamp accepted story time, apply small authored directed deltas with scene/day caps, cooldown and diminishing returns, and persist the private projection after Apply.\n\nSetup: Create actor-private JSON mara-relationship for actor character:mara.png as {values:[{key:\"mara-to-elias-attraction\",value:18,subjectId:\"character:mara.png\",objectId:\"character:elias.png\"},{key:\"mara-to-elias-desire\",value:6,subjectId:\"character:mara.png\",objectId:\"character:elias.png\"}],ledger:[]}. Create public JSON story-clock with the actual accepted timeline. Select Mara as the native active character. Set Entities to the real canonical IDs. Bind Prose and decision. Attraction/desire are portrayal state; neither grants consent or compels an action. This recipe updates Mara's directed feelings only; build a separately scoped leg for Elias.\n\nInspect: On Send owns this generation. Generate Reply uses the ordinary SillyTavern connection. Auxiliary roles remain unassigned in this portable example. Review the final narrative and proposed consequences; Apply publishes a new swipe and settles staged writes. Preview and bounded runs never settle.\n\nGenerated suggestions are proposals. Quoted observations preserve source identity; notes never establish canonical events. Private records cannot be appended to public notes.",
+    "schema": 3,
+    "runtime": 2,
+    "mode": "native-unified",
+    "nodes": {
+      "send": {
+        "id": "send",
+        "type": "workflow",
+        "operation": "on-send",
+        "operationVersion": 1,
+        "title": "On Send",
+        "enabled": true,
+        "x": 80,
+        "y": 120,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null
+      },
+      "generate": {
+        "id": "generate",
+        "type": "workflow",
+        "operation": "generate-reply",
+        "operationVersion": 1,
+        "title": "Generate Reply · SillyTavern",
+        "enabled": true,
+        "x": 820,
+        "y": 120,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "budgetTokens": 768
+      },
+      "review": {
+        "id": "review",
+        "type": "workflow",
+        "operation": "review-publish",
+        "operationVersion": 1,
+        "title": "Review / Publish",
+        "enabled": true,
+        "x": 2670,
+        "y": 120,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null
+      },
+      "source-scope-text": {
+        "id": "source-scope-text",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 80,
+        "y": 1080,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "text": "{\"sourceId\":\"native-scene-body\",\"revision\":\"initial\",\"sceneId\":\"current-scene\",\"visibility\":\"public\"}"
+      },
+      "source-scope": {
+        "id": "source-scope",
+        "type": "workflow",
+        "operation": "json-decode",
+        "operationVersion": 1,
+        "title": "JSON Decode",
+        "enabled": true,
+        "x": 450,
+        "y": 1080,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "parse",
+        "schema": ""
+      },
+      "event-source": {
+        "id": "event-source",
+        "type": "workflow",
+        "operation": "draft-event-source",
+        "operationVersion": 1,
+        "title": "Draft Event Source",
+        "enabled": true,
+        "x": 1190,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null
+      },
+      "entities-text": {
+        "id": "entities-text",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 80,
+        "y": 840,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "text": "{\"actorIds\":[\"character:mara.png\",\"character:elias.png\"],\"itemIds\":[]}"
+      },
+      "entities": {
+        "id": "entities",
+        "type": "workflow",
+        "operation": "json-decode",
+        "operationVersion": 1,
+        "title": "JSON Decode",
+        "enabled": true,
+        "x": 450,
+        "y": 840,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "parse",
+        "schema": ""
+      },
+      "action-request": {
+        "id": "action-request",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 1190,
+        "y": 1080,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "text": "Select a new considerate interaction actually experienced by character:mara.png involving character:elias.png. Use actorId character:mara.png as the viewpoint participant and objectId character:elias.png as the partner. No reread memory, repeated scene or printed score is a new event. Return a raw JSON array of candidates with eventType:\"scene-action\", actorId, objectId only when an identified other actor participates, itemId only when relevant, position:{start,end}, semantics:\"actual\". Use only supplied canonical IDs and exact UTF-16 spans in source.text. Return [] for no actual occurrence."
+      },
+      "action-candidates": {
+        "id": "action-candidates",
+        "type": "workflow",
+        "operation": "model-call",
+        "operationVersion": 1,
+        "title": "Model Call",
+        "enabled": true,
+        "x": 1560,
+        "y": 1080,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": "Prose",
+        "instructions": "",
+        "outputKind": "data",
+        "schema": "",
+        "maxTokens": 2048
+      },
+      "normalize": {
+        "id": "normalize",
+        "type": "workflow",
+        "operation": "event-normalize",
+        "operationVersion": 1,
+        "title": "Event Normalize",
+        "enabled": true,
+        "x": 1930,
+        "y": 1080,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "candidates",
+        "eventType": "",
+        "absoluteMinute": -1
+      },
+      "confirm-each": {
+        "id": "confirm-each",
+        "type": "workflow",
+        "operation": "for-each",
+        "operationVersion": 1,
+        "title": "For Each",
+        "enabled": true,
+        "x": 1560,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "helper": {
+          "id": "directed-relationship-confirm",
+          "version": 1,
+          "semanticHash": "sha256:4b3eb5145bde958d84815b79e095e05f473d65dc386ed5baa5551e8d65064d85"
+        },
+        "limit": 4,
+        "requestBoundPerIteration": 1,
+        "mode": "map",
+        "roleOverrides": {}
+      },
+      "confirmed": {
+        "id": "confirmed",
+        "type": "workflow",
+        "operation": "collection",
+        "operationVersion": 1,
+        "title": "Collection",
+        "enabled": true,
+        "x": 1930,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "flatten",
+        "collectionPath": [],
+        "fieldPath": [],
+        "value": "",
+        "operator": "equals",
+        "missingPolicy": "hold",
+        "thresholds": "[]",
+        "mergePolicy": "keep-all",
+        "identityPath": [
+          "id"
+        ]
+      },
+      "relationship-file": {
+        "id": "relationship-file",
+        "type": "workflow",
+        "operation": "read-file",
+        "operationVersion": 1,
+        "title": "Read File",
+        "enabled": true,
+        "x": 80,
+        "y": 1560,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "targetId": "mara-relationship",
+        "schema": "",
+        "columns": [],
+        "actorScope": "selected",
+        "actorId": ""
+      },
+      "relationship": {
+        "id": "relationship",
+        "type": "workflow",
+        "operation": "json-decode",
+        "operationVersion": 1,
+        "title": "JSON Decode",
+        "enabled": true,
+        "x": 450,
+        "y": 1560,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "parse",
+        "schema": ""
+      },
+      "clock": {
+        "id": "clock",
+        "type": "workflow",
+        "operation": "story-clock",
+        "operationVersion": 1,
+        "title": "Story Clock",
+        "enabled": true,
+        "x": 80,
+        "y": 1800,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "clockId": "story-clock",
+        "calendarId": "campaign-days"
+      },
+      "relationship-events": {
+        "id": "relationship-events",
+        "type": "workflow",
+        "operation": "event-normalize",
+        "operationVersion": 1,
+        "title": "Event Normalize",
+        "enabled": true,
+        "x": 2300,
+        "y": 1080,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "progression",
+        "eventType": "considerate-action",
+        "absoluteMinute": -1
+      },
+      "pacing-text": {
+        "id": "pacing-text",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 820,
+        "y": 1560,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "text": "{\"ruleSetId\":\"directed-pacing\",\"revision\":1,\"dayLengthMinutes\":1440,\"rules\":[{\"ruleId\":\"warmth\",\"eventType\":\"considerate-action\",\"subjectId\":\"character:mara.png\",\"objectId\":\"character:elias.png\",\"targetKey\":\"mara-to-elias-attraction\",\"identityFields\":[\"occurrenceId\"],\"mode\":\"add\",\"amount\":2,\"min\":0,\"max\":100,\"budgetGroup\":\"consideration\",\"positiveSceneCap\":4,\"positiveDayCap\":8,\"cooldownMinutes\":120,\"diminishingFactors\":[1,0.5,0.25,0],\"zeroDeltaPolicy\":\"consume\"}]}"
+      },
+      "pacing": {
+        "id": "pacing",
+        "type": "workflow",
+        "operation": "json-decode",
+        "operationVersion": 1,
+        "title": "JSON Decode",
+        "enabled": true,
+        "x": 1190,
+        "y": 1560,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "parse",
+        "schema": ""
+      },
+      "pace": {
+        "id": "pace",
+        "type": "workflow",
+        "operation": "state",
+        "operationVersion": 1,
+        "title": "State",
+        "enabled": true,
+        "x": 2670,
+        "y": 1080,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "progression"
+      },
+      "desire-recovery-text": {
+        "id": "desire-recovery-text",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 1190,
+        "y": 1800,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "text": "[{\"decayId\":\"temporary-desire\",\"revision\":1,\"targetKey\":\"mara-to-elias-desire\",\"subjectId\":\"character:mara.png\",\"objectId\":\"character:elias.png\",\"baseline\":0,\"unitsPerMinute\":0.005,\"min\":0,\"max\":100,\"initialMinute\":0}]"
+      },
+      "desire-recovery": {
+        "id": "desire-recovery",
+        "type": "workflow",
+        "operation": "json-decode",
+        "operationVersion": 1,
+        "title": "JSON Decode",
+        "enabled": true,
+        "x": 1560,
+        "y": 1800,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "parse",
+        "schema": ""
+      },
+      "recovery": {
+        "id": "recovery",
+        "type": "workflow",
+        "operation": "state",
+        "operationVersion": 1,
+        "title": "State",
+        "enabled": true,
+        "x": 3040,
+        "y": 1080,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "time-decay"
+      },
+      "serialize": {
+        "id": "serialize",
+        "type": "workflow",
+        "operation": "format",
+        "operationVersion": 1,
+        "title": "Format",
+        "enabled": true,
+        "x": 3410,
+        "y": 1080,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "inputMode": "records",
+        "format": "json",
+        "jsonShape": "single",
+        "mapping": "preserve",
+        "fields": [],
+        "schema": "",
+        "columns": [],
+        "separator": "\n",
+        "trailingSeparator": false
+      },
+      "write": {
+        "id": "write",
+        "type": "workflow",
+        "operation": "write-file",
+        "operationVersion": 1,
+        "title": "Write to File",
+        "enabled": true,
+        "x": 3780,
+        "y": 1080,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "replace",
+        "collectionPath": "",
+        "missingPath": "error",
+        "key": "id",
+        "fieldPolicy": "merge",
+        "fields": [],
+        "schema": "",
+        "columns": [],
+        "separator": "\n",
+        "emptyPolicy": "omit",
+        "trailingSeparator": false,
+        "actorScope": "selected",
+        "actorId": ""
+      }
+    },
+    "wires": {
+      "wire-1": {
+        "id": "wire-1",
+        "route": "wire",
+        "from": "send",
+        "fromPort": "activation",
+        "to": "generate",
+        "toPort": "activation"
+      },
+      "wire-2": {
+        "id": "wire-2",
+        "route": "wire",
+        "from": "source-scope-text",
+        "fromPort": "out",
+        "to": "source-scope",
+        "toPort": "in"
+      },
+      "wire-3": {
+        "id": "wire-3",
+        "route": "wire",
+        "from": "generate",
+        "fromPort": "draft",
+        "to": "event-source",
+        "toPort": "in"
+      },
+      "wire-4": {
+        "id": "wire-4",
+        "route": "wire",
+        "from": "source-scope",
+        "fromPort": "out",
+        "to": "event-source",
+        "toPort": "scope"
+      },
+      "wire-5": {
+        "id": "wire-5",
+        "route": "wire",
+        "from": "entities-text",
+        "fromPort": "out",
+        "to": "entities",
+        "toPort": "in"
+      },
+      "wire-6": {
+        "id": "wire-6",
+        "route": "wire",
+        "from": "action-request",
+        "fromPort": "out",
+        "to": "action-candidates",
+        "toPort": "prompt"
+      },
+      "wire-7": {
+        "id": "wire-7",
+        "route": "wire",
+        "from": "event-source",
+        "fromPort": "out",
+        "to": "action-candidates",
+        "toPort": "data"
+      },
+      "wire-8": {
+        "id": "wire-8",
+        "route": "wire",
+        "from": "event-source",
+        "fromPort": "out",
+        "to": "normalize",
+        "toPort": "source"
+      },
+      "wire-9": {
+        "id": "wire-9",
+        "route": "wire",
+        "from": "entities",
+        "fromPort": "out",
+        "to": "normalize",
+        "toPort": "entities"
+      },
+      "wire-10": {
+        "id": "wire-10",
+        "route": "wire",
+        "from": "action-candidates",
+        "fromPort": "out",
+        "to": "normalize",
+        "toPort": "candidates"
+      },
+      "wire-11": {
+        "id": "wire-11",
+        "route": "wire",
+        "from": "normalize",
+        "fromPort": "out",
+        "to": "confirm-each",
+        "toPort": "in"
+      },
+      "wire-12": {
+        "id": "wire-12",
+        "route": "wire",
+        "from": "confirm-each",
+        "fromPort": "out",
+        "to": "confirmed",
+        "toPort": "in"
+      },
+      "wire-13": {
+        "id": "wire-13",
+        "route": "wire",
+        "from": "relationship-file",
+        "fromPort": "text",
+        "to": "relationship",
+        "toPort": "in"
+      },
+      "wire-14": {
+        "id": "wire-14",
+        "route": "wire",
+        "from": "confirmed",
+        "fromPort": "out",
+        "to": "relationship-events",
+        "toPort": "events"
+      },
+      "wire-15": {
+        "id": "wire-15",
+        "route": "wire",
+        "from": "clock",
+        "fromPort": "out",
+        "to": "relationship-events",
+        "toPort": "clock"
+      },
+      "wire-16": {
+        "id": "wire-16",
+        "route": "wire",
+        "from": "pacing-text",
+        "fromPort": "out",
+        "to": "pacing",
+        "toPort": "in"
+      },
+      "wire-17": {
+        "id": "wire-17",
+        "route": "wire",
+        "from": "relationship",
+        "fromPort": "out",
+        "to": "pace",
+        "toPort": "state"
+      },
+      "wire-18": {
+        "id": "wire-18",
+        "route": "wire",
+        "from": "pacing",
+        "fromPort": "out",
+        "to": "pace",
+        "toPort": "rules"
+      },
+      "wire-19": {
+        "id": "wire-19",
+        "route": "wire",
+        "from": "relationship-events",
+        "fromPort": "out",
+        "to": "pace",
+        "toPort": "events"
+      },
+      "wire-20": {
+        "id": "wire-20",
+        "route": "wire",
+        "from": "desire-recovery-text",
+        "fromPort": "out",
+        "to": "desire-recovery",
+        "toPort": "in"
+      },
+      "wire-21": {
+        "id": "wire-21",
+        "route": "wire",
+        "from": "pace",
+        "fromPort": "out",
+        "to": "recovery",
+        "toPort": "state"
+      },
+      "wire-22": {
+        "id": "wire-22",
+        "route": "wire",
+        "from": "desire-recovery",
+        "fromPort": "out",
+        "to": "recovery",
+        "toPort": "rules"
+      },
+      "wire-23": {
+        "id": "wire-23",
+        "route": "wire",
+        "from": "clock",
+        "fromPort": "out",
+        "to": "recovery",
+        "toPort": "clock"
+      },
+      "wire-24": {
+        "id": "wire-24",
+        "route": "wire",
+        "from": "recovery",
+        "fromPort": "out",
+        "to": "serialize",
+        "toPort": "in"
+      },
+      "wire-25": {
+        "id": "wire-25",
+        "route": "wire",
+        "from": "relationship-file",
+        "fromPort": "reference",
+        "to": "write",
+        "toPort": "reference"
+      },
+      "wire-26": {
+        "id": "wire-26",
+        "route": "wire",
+        "from": "serialize",
+        "fromPort": "text",
+        "to": "write",
+        "toPort": "text"
+      },
+      "wire-27": {
+        "id": "wire-27",
+        "route": "wire",
+        "from": "confirmed",
+        "fromPort": "out",
+        "to": "write",
+        "toPort": "evidence"
+      },
+      "wire-28": {
+        "id": "wire-28",
+        "route": "wire",
+        "from": "generate",
+        "fromPort": "draft",
+        "to": "review",
+        "toPort": "draft"
+      }
+    },
+    "groups": {},
+    "roles": {
+      "Prose": {
+        "model": null,
+        "profileId": null
+      }
+    },
+    "portals": {},
+    "definitions": {
+      "[\"directed-relationship-confirm\",1,\"sha256:4b3eb5145bde958d84815b79e095e05f473d65dc386ed5baa5551e8d65064d85\"]": {
+        "id": "directed-relationship-confirm",
+        "version": 1,
+        "semanticHash": "sha256:4b3eb5145bde958d84815b79e095e05f473d65dc386ed5baa5551e8d65064d85",
+        "name": "Confirm each occurrence",
+        "description": "Pinned bounded pure helper. Inspect each selected child request; errors and unresolved decisions hold the parent.",
+        "interface": [
+          {
+            "id": "item",
+            "label": "Item",
+            "direction": "input",
+            "kind": "data",
+            "required": true,
+            "cardinality": "one",
+            "boundaryNodeId": "item"
+          },
+          {
+            "id": "result",
+            "label": "Result",
+            "direction": "output",
+            "kind": "data",
+            "required": false,
+            "cardinality": "one",
+            "boundaryNodeId": "result"
+          }
+        ],
+        "parameters": [],
+        "body": {
+          "schema": 3,
+          "runtime": 2,
+          "mode": "native-unified",
+          "nodes": {
+            "item": {
+              "id": "item",
+              "type": "subgraph-input",
+              "interfacePortId": "item"
+            },
+            "result": {
+              "id": "result",
+              "type": "subgraph-output",
+              "interfacePortId": "result"
+            },
+            "records": {
+              "id": "records",
+              "type": "workflow",
+              "operation": "format",
+              "operationVersion": 1,
+              "title": "Format",
+              "enabled": true,
+              "x": 400,
+              "y": 120,
+              "w": 270,
+              "h": 170,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "inputMode": "records",
+              "format": "json",
+              "mapping": "preserve",
+              "fields": [],
+              "schema": "",
+              "columns": [],
+              "separator": "\n",
+              "trailingSeparator": false
+            },
+            "check": {
+              "id": "check",
+              "type": "workflow",
+              "operation": "decision",
+              "operationVersion": 1,
+              "title": "Decision",
+              "enabled": true,
+              "x": 400,
+              "y": 120,
+              "w": 270,
+              "h": 170,
+              "profileId": null,
+              "model": null,
+              "modelRole": "decision",
+              "inputKind": "data",
+              "questions": {
+                "actual": {
+                  "type": "noul",
+                  "instructions": "Select a new considerate interaction actually experienced by character:mara.png involving character:elias.png. Use actorId character:mara.png as the viewpoint participant and objectId character:elias.png as the partner. No reread memory, repeated scene or printed score is a new event. Does this exact quoted event actually occur, with the stated actors and item, rather than being mentioned, claimed, planned, remembered or threatened?"
+                }
+              },
+              "maxTokens": 2048
+            },
+            "acceptance": {
+              "id": "acceptance",
+              "type": "workflow",
+              "operation": "select-fields",
+              "operationVersion": 1,
+              "title": "Select Fields",
+              "enabled": true,
+              "x": 400,
+              "y": 120,
+              "w": 270,
+              "h": 170,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "fields": [
+                {
+                  "name": "accepted",
+                  "path": [
+                    "answers",
+                    "actual",
+                    "accepted"
+                  ]
+                }
+              ]
+            },
+            "confirm": {
+              "id": "confirm",
+              "type": "workflow",
+              "operation": "confirm-events",
+              "operationVersion": 1,
+              "title": "Confirm Events",
+              "enabled": true,
+              "x": 400,
+              "y": 120,
+              "w": 270,
+              "h": 170,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "mode": "single-gate"
+            }
+          },
+          "wires": {
+            "w1": {
+              "id": "w1",
+              "route": "wire",
+              "from": "item",
+              "fromPort": "out",
+              "to": "records",
+              "toPort": "in"
+            },
+            "w2": {
+              "id": "w2",
+              "route": "wire",
+              "from": "item",
+              "fromPort": "out",
+              "to": "check",
+              "toPort": "in"
+            },
+            "w3": {
+              "id": "w3",
+              "route": "wire",
+              "from": "check",
+              "fromPort": "out",
+              "to": "acceptance",
+              "toPort": "in"
+            },
+            "w4": {
+              "id": "w4",
+              "route": "wire",
+              "from": "records",
+              "fromPort": "records",
+              "to": "confirm",
+              "toPort": "events"
+            },
+            "w5": {
+              "id": "w5",
+              "route": "wire",
+              "from": "acceptance",
+              "fromPort": "out",
+              "to": "confirm",
+              "toPort": "decisions"
+            },
+            "w6": {
+              "id": "w6",
+              "route": "wire",
+              "from": "confirm",
+              "fromPort": "out",
+              "to": "result",
+              "toPort": "in"
+            }
+          },
+          "roles": {
+            "decision": {
+              "model": null,
+              "profileId": null
+            }
+          }
+        }
+      }
+    },
+    "template": {
+      "id": "unified-directed-relationship",
+      "version": 1
+    },
+    "view": {
+      "x": 0,
+      "y": 0,
+      "zoom": 0.7
+    }
+  }
+}

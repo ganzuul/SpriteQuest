@@ -1,6 +1,7 @@
+import { preserveArtifactPrivacy, validVisibilityMetadata, artifactVisibility } from '../artifact-privacy.js?v=0.26.0';
 import { cloneJsonValue, stringifyJsonValue } from './json-data.js?v=0.26.0';
 import { validateOccurrences } from './event-data.js?v=0.26.0';
-import { own, plain, freeze } from '../record-data.js?v=0.26.0';
+import { own, plain, freeze, safeUsage } from '../record-data.js?v=0.26.0';
 
 const fail=(code,message)=>({ok:false,error:{code,message}});
 const exact=(value,keys)=>plain(value)&&Object.keys(value).every(key=>keys.includes(key));
@@ -63,7 +64,7 @@ export function parseEffectLibrary(raw,rawSettings={}) {
 function outcomeIdentity(event,library,rerollId) {
     return 'outcome:'+JSON.stringify([event.eventId,library.libraryId,library.revision,rerollId??null]);
 }
-async function validateOutcome(raw) {
+export async function validateRandomOutcome(raw) {
     const cloned=cloneJsonValue(raw);if(!cloned.ok)return cloned;
     const value=cloned.data.value;
     if(!exact(value,['schemaVersion','recordType','outcomeId','event','library','libraryFingerprint','selection','draw','effect','status','acceptance','rerollId','author','novelty'])
@@ -104,7 +105,7 @@ export async function selectRandomOutcomes(rawEvents,rawLibrary,rawSaved=[],port
         const savedResult=cloneJsonValue(rawSaved);if(!savedResult.ok||!Array.isArray(savedResult.data.value)||savedResult.data.value.length>256)return fail('INVALID_SAVED_OUTCOME','Saved outcomes must be a bounded collection.');
         const snapshot=stringifyJsonValue({events:rawEvents,library:rawLibrary,saved:rawSaved});if(!snapshot.ok)return snapshot;
         const saved=[];
-        for(const raw of savedResult.data.value){const validated=await validateOutcome(raw);if(!validated.ok)return validated;saved.push(validated.data.outcome);}
+        for(const raw of savedResult.data.value){const validated=await validateRandomOutcome(raw);if(!validated.ok)return validated;saved.push(validated.data.outcome);}
         if(new Set(saved.map(value=>value.outcomeId)).size!==saved.length)return fail('INVALID_SAVED_OUTCOME','Saved outcome identities must be unique.');
         const selections=events.map(event=>{
             const matching=saved.filter(value=>value.event.eventId===event.eventId&&(value.rerollId??null)===(rerollId??null));
@@ -152,7 +153,8 @@ const string=(value,maxLength=256)=>({type:'string',default:value,maxLength});
 const register=(id,title,defaults,controls,extra={})=>({id,title,family:'Randomness',phase:'both',minimumSchema:3,minimumRuntime:2,operationVersion:1,input:'data',output:'data',defaults,controls:Object.keys(defaults),controlDescriptors:controls,requestBound:0,modelRole:null,terminal:false,dynamicPorts:true,...extra});
 export const RANDOM_OPERATIONS = {
     'parse-effect-library':register('parse-effect-library','Effect Library',{format:'json',libraryId:'',revision:'',itemId:'',mechanicalPolicy:'narrative-only'},{format:{type:'enum',default:'json',values:['data','json','text']},libraryId:string(''),revision:string(''),itemId:string(''),mechanicalPolicy:{type:'enum',default:'narrative-only',values:['narrative-only','require-mechanics']}}),
-    'random-pick':register('random-pick','Random Pick',{rerollPolicy:'reuse',rerollId:''},{rerollPolicy:{type:'enum',default:'reuse',values:['reuse','explicit']},rerollId:string('')}),
+    'random-pick':register('random-pick','Random Pick',{rerollPolicy:'reuse',rerollId:'',ledgerId:''},{rerollPolicy:{type:'enum',default:'reuse',values:['reuse','explicit']},rerollId:string(''),ledgerId:string('')}),
+    'commit-outcomes':register('commit-outcomes','Outcome Commit',{targetId:''},{targetId:string('')},{family:'Output',phase:'post',rootOnly:true,hostOperation:true,terminal:true}),
     'saved-outcome':register('saved-outcome','Saved Outcome',{},{}),
     'effect-author':register('effect-author','Effect Author',{instructions:'',maxTokens:2048},{instructions:string('',4096),maxTokens:{type:'integer',default:2048,min:1,max:8192}},{requestBound:1,modelRole:'effectAuthor'}),
     'stage-outcome':register('stage-outcome','Stage Outcome',{},{}),
@@ -166,8 +168,9 @@ function resolve(node,options={}) {
     if(!plain(node)||!plain(options))return fail('INVALID_SETTINGS','Use plain Random node settings.');
     const operation=own(node,'operation'),base=Object.hasOwn(RANDOM_OPERATIONS,operation)&&RANDOM_OPERATIONS[operation];
     if(!base||own(node,'operationVersion')!==undefined&&own(node,'operationVersion')!==1)return fail('UNKNOWN_OPERATION','Unknown Random operation.');
-    const phase=own(options,'phase')??own(node,'phase')??'pre';
+    const phase=own(options,'phase')??own(node,'phase')??(base.phase==='post'?'post':'pre');
     if(!['pre','post'].includes(phase)||own(node,'phase')!==undefined&&own(node,'phase')!==phase)return fail('INVALID_PHASE','Random node phase must match its effective phase.');
+    if(base.phase==='post'&&phase!=='post')return fail('INVALID_PHASE','Outcome Commit is a Post operation.');
     const settings={};
     for(const key of base.controls) {
         const property=Object.getOwnPropertyDescriptor(node,key);if(property&&(!property.enumerable||!Object.hasOwn(property,'value')))return fail('INVALID_SETTINGS','Controls require own data properties.');
@@ -178,7 +181,8 @@ function resolve(node,options={}) {
             ||control.type==='integer'&&(!Number.isSafeInteger(settings[key])||settings[key]<control.min||settings[key]>control.max))return fail('INVALID_SETTINGS','Use supported bounded Random controls.');
     }
     let ports;
-    if(operation==='parse-effect-library') {
+    if(operation==='commit-outcomes') {if(!id(settings.targetId))return fail('INVALID_SETTINGS','Choose an authorized outcome ledger target.');ports=[pin('outcomes','data','input',true),pin('receipt','data','output')];}
+    else if(operation==='parse-effect-library') {
         if(!id(settings.libraryId)||!id(settings.revision)||!id(settings.itemId))return fail('INVALID_SETTINGS','Supply explicit library, revision and item identities.');
         ports=[pin('in',settings.format==='data'?'data':'text','input',true),pin('out','data','output')];
     } else if(operation==='random-pick')ports=[pin('events','data','input',true),pin('library','data','input',true),pin('saved','data','input'),pin('out','data','output')];
@@ -197,13 +201,13 @@ function checkedInputs(raw,ports) {
     for(const port of allowed) {
         if(!Object.hasOwn(inputs,port.id)){if(port.required)return fail('MISSING_INPUT','Required input is missing: '+port.id);continue;}
         const artifact=inputs[port.id];
-        if(!exact(artifact,port.kind==='text'?['kind','text']:['kind','value'])||artifact.kind!==port.kind
+        if(!exact(artifact,port.kind==='text'?['kind','text','visibility']:['kind','value','visibility'])||!validVisibilityMetadata(artifact)||artifact.kind!==port.kind
             ||port.kind==='text'&&(typeof artifact.text!=='string'||artifact.text.length>100000)
             ||port.kind==='data'&&!Object.hasOwn(artifact,'value'))return fail('INVALID_INPUT','The Random input must match its declared artifact kind.');
     }
     return {ok:true,data:{inputs}};
 }
-export async function executeRandom(node,namedInputs,local={}) {
+async function executeRandomRaw(node,namedInputs,local={}) {
     try {
         const described=resolve(node,{phase:own(local,'phase')});if(!described.ok)return described;
         const {descriptor,ports,settings}=described.data;
@@ -215,20 +219,33 @@ export async function executeRandom(node,namedInputs,local={}) {
             return {ok:true,artifact:{kind:'data',value:result.data.library},reports:[{operation:descriptor.id,actualCalls:0}]};
         }
         if(descriptor.id==='random-pick') {
-            const result=await selectRandomOutcomes(inputs.events.value,inputs.library.value,inputs.saved?.value??[],{random:own(local,'random'),signal:own(local,'signal'),...(settings.rerollPolicy==='explicit'?{rerollId:settings.rerollId,rerollPolicy:'explicit'}:{})});if(!result.ok)return result;
-            return {ok:true,artifact:{kind:'data',value:result.data.outcomes},reports:[{operation:descriptor.id,actualCalls:0,draws:result.data.draws}]};
+            const nativeSelect=own(local,'selectNativeRandomOutcomes');
+            if(nativeSelect!==undefined&&typeof nativeSelect!=='function')return fail('RANDOM_FAILED','Native selection requires a trusted host capability.');
+            const result=nativeSelect?await nativeSelect({events:inputs.events.value,library:inputs.library.value,saved:inputs.saved?.value??[],ledgerId:settings.ledgerId,visibility:artifactVisibility(namedInputs),...(settings.rerollPolicy==='explicit'?{rerollId:settings.rerollId}:{})}):await selectRandomOutcomes(inputs.events.value,inputs.library.value,inputs.saved?.value??[],{random:own(local,'random'),signal:own(local,'signal'),...(settings.rerollPolicy==='explicit'?{rerollId:settings.rerollId,rerollPolicy:'explicit'}:{})});if(!result.ok)return result;
+            const latest=stringifyJsonValue(namedInputs);if(own(local,'signal')?.aborted)return fail('ABORTED','Random selection was stopped.');if(!latest.ok||latest.data.text!==snapshot.data.text)return fail('STALE_INPUT','Random selection evidence changed during capture.');
+            return {ok:true,artifact:{kind:'data',value:result.data.outcomes,...(result.data.visibility?{visibility:result.data.visibility}:{})},reports:[{operation:descriptor.id,actualCalls:0,draws:result.data.draws}]};
+        }
+        if(descriptor.id==='commit-outcomes') {
+            if(own(local,'root')!==true)return fail('ROOT_ONLY','Outcome Commit requires a root workflow.');
+            const stage=own(local,'stageNativeOutcomes');if(typeof stage!=='function')return fail('HOST_OPERATION_REQUIRED','Outcome Commit requires a trusted accepted-state host.');
+            const staged=await stage(settings.targetId,namedInputs.outcomes.value);if(own(local,'signal')?.aborted)return fail('ABORTED','Outcome staging was stopped.');
+            if(staged?.ok!==true)return fail('OUTCOME_COMMIT_FAILED','The resolved native outcomes could not be staged; verify their event sources and authorized ledger.');
+            const bounded=cloneJsonValue(staged.data);if(!bounded.ok)return fail('OUTCOME_COMMIT_FAILED','Outcome staging requires a bounded descriptive receipt.');
+            const receipt={kind:'data',value:bounded.data.value};return {ok:true,artifact:receipt,outputs:{receipt},reports:[{operation:descriptor.id,actualCalls:0,status:'staged'}]};
         }
         if(descriptor.id==='saved-outcome') {
             const eventResult=validateOccurrences([inputs.event.value],{status:'confirmed'});if(!eventResult.ok)return eventResult;
             if(!Array.isArray(inputs.saved.value)||inputs.saved.value.length>256)return fail('INVALID_SAVED_OUTCOME','Saved Outcome requires a bounded outcome collection.');
             const matches=[];
-            for(const raw of inputs.saved.value){const result=await validateOutcome(raw);if(!result.ok)return result;if(result.data.outcome.event.eventId===inputs.event.value.eventId)matches.push(result.data.outcome);}
+            for(const raw of inputs.saved.value){const result=await validateRandomOutcome(raw);if(!result.ok)return result;if(result.data.outcome.event.eventId===inputs.event.value.eventId)matches.push(result.data.outcome);}
             if(matches.length>1)return fail('OUTCOME_CONFLICT','Select an explicit reroll identity before resolving multiple outcomes.');
             if(matches.length&&canonical(matches[0].event)!==canonical(eventResult.data.events[0]))return fail('OUTCOME_CONFLICT','The saved outcome attribution does not match this occurrence.');
             return {ok:true,artifact:{kind:'data',value:{found:matches.length===1,outcome:matches[0]??null}},reports:[{operation:descriptor.id,actualCalls:0}]};
         }
-        const validated=await validateOutcome(inputs.in.value);if(!validated.ok)return validated;
-        const outcome=validated.data.outcome;
+        const validated=await validateRandomOutcome(inputs.in.value);if(!validated.ok)return validated;
+        let outcome=validated.data.outcome;
+        const reuse=own(local,'reuseNativeOutcome');
+        if(descriptor.id==='effect-author'&&reuse!==undefined){if(typeof reuse!=='function')return fail('OUTCOME_REUSE_FAILED','Outcome reuse requires a trusted host capability.');const reused=reuse(outcome);if(!reused?.ok)return fail('OUTCOME_REUSE_FAILED','The retained draw source changed.');if(reused.data){const retained=await validateRandomOutcome(reused.data);if(!retained.ok)return retained;outcome=retained.data.outcome;}}
         const current=stringifyJsonValue(namedInputs);if(!current.ok||current.data.text!==snapshot.data.text)return fail('STALE_INPUT','Outcome material changed during validation.');
         if(descriptor.id==='stage-outcome') {
             if(outcome.status==='resolved')return {ok:true,artifact:{kind:'data',value:outcome},reports:[{operation:descriptor.id,actualCalls:0}]};
@@ -244,13 +261,20 @@ export async function executeRandom(node,namedInputs,local={}) {
         if(own(local,'signal')?.aborted)return fail('ABORTED','Ignore the stopped effect-author response.');
         const latest=stringifyJsonValue(namedInputs);if(!latest.ok||latest.data.text!==snapshot.data.text)return fail('STALE_INPUT','The cast or saved draw changed during effect authoring.');
         const parsedResponse=cloneJsonValue(response);if(!parsedResponse.ok)return fail('INVALID_RESPONSE','The effect author returned malformed plain data.');
-        const value=parsedResponse.data.value;if(value.ok===false)return value;
+        const value=parsedResponse.data.value;if(value.ok===false){const errors={HTTP_ERROR:'The effect author service failed; retain the existing draw for retry.',TRUNCATED_OUTPUT:'The effect author reached its completion limit; retain the existing draw for retry.',COMPLETION_UNVERIFIED:'The effect author response did not expose verified completion.',ABORTED:'Effect authoring was stopped.',REQUEST_FAILED:'The effect author failed; retain the existing draw for retry.'};const code=Object.hasOwn(errors,value.error?.code)?value.error.code:'REQUEST_FAILED';return fail(code,errors[code]);}
         if(value.ok!==true||!plain(value.data)||typeof value.data.text!=='string'||value.data.text.length>100000)return fail('INVALID_RESPONSE','The effect author requires bounded completed JSON text.');
         if(!['stop','eos_token','eos','stop_sequence','end_turn','complete','completed'].includes(value.data.finish))return fail(['length','max_tokens','max_output_tokens'].includes(value.data.finish)?'TRUNCATED_OUTPUT':'COMPLETION_UNVERIFIED','The effect author must complete before its proposal can be used.');
         let effect;try{effect=JSON.parse(value.data.text);}catch{return fail('INVALID_EFFECT_RESPONSE','The effect author must return plain JSON.');}
         const effectResult=cloneJsonValue(effect);if(!effectResult.ok||!validInvention(effectResult.data.value,outcome.library))return fail('INVALID_EFFECT_RESPONSE','The invented effect must satisfy the authored structure and exact novelty checks.');
         const authored={...outcome,effect:effectResult.data.value,status:'proposed',author:{operation:'effect-author',instructionsFingerprint:await hash(settings.instructions)}};
         const bounded=cloneJsonValue(authored);if(!bounded.ok)return fail('OUTCOME_LIMIT','The authored outcome exceeds portable bounds; retain the saved draw.');
-        return {ok:true,artifact:{kind:'data',value:bounded.data.value},reports:[{operation:descriptor.id,actualCalls:1,...(value.data.usage?{usage:value.data.usage}:{})}]};
+        return {ok:true,artifact:{kind:'data',value:bounded.data.value},reports:[{operation:descriptor.id,actualCalls:1,...(safeUsage(value.data.usage)?{usage:Object.fromEntries(Object.entries(safeUsage(value.data.usage)).filter(([,count])=>Number.isSafeInteger(count)))}:{})}]};
     } catch {return fail('INVALID_RANDOM_INPUT','Random operations require bounded own data and trusted capabilities.');}
+}
+export async function executeRandom(node,namedInputs,local = {}) {
+    const result=preserveArtifactPrivacy(await executeRandomRaw(node,namedInputs,local),namedInputs);
+    if(result.ok&&result.artifact&&['effect-author','stage-outcome'].includes(node.operation)){
+        try {const retain=own(local,'retainNativeOutcome');if(retain!==undefined){if(typeof retain!=='function')return fail('OUTCOME_RETENTION_FAILED','Outcome retention requires a trusted host capability.');const retained=await retain({parent:namedInputs.in.value,result:result.artifact.value});if(!retained?.ok)return fail('OUTCOME_RETENTION_FAILED','The retained draw source changed during authoring.');}}catch{return fail('OUTCOME_RETENTION_FAILED','The native outcome could not be retained.');}
+    }
+    return result;
 }

@@ -21,91 +21,91 @@ function m(e, t) {
 	for (let r of e) if (n.push(r), n.length === t) break;
 	return n;
 }
-var h = 1024, g = 2048, _ = 4096, v = 8192, y = 16384, b = 32768, x = 1 << 25, S = 65536, C = 1 << 19, w = 1 << 20, T = 1 << 25, E = 65536, D = 1 << 21, O = 1 << 22, ee = 1 << 23, k = Symbol("$state"), te = Symbol("legacy props"), ne = Symbol(""), re = Symbol("attributes"), ie = Symbol("class"), ae = Symbol("style"), oe = Symbol("text"), se = Symbol("form reset"), ce = new class extends Error {
+var h = 1024, g = 2048, _ = 4096, v = 8192, y = 16384, b = 32768, x = 1 << 25, S = 65536, C = 1 << 19, w = 1 << 20, T = 1 << 25, E = 65536, D = 1 << 21, O = 1 << 22, k = 1 << 23, A = Symbol("$state"), ee = Symbol("legacy props"), te = Symbol(""), ne = Symbol("attributes"), j = Symbol("class"), re = Symbol("style"), ie = Symbol("text"), ae = Symbol("form reset"), oe = new class extends Error {
 	name = "StaleReactionError";
 	message = "The reaction that called `getAbortSignal()` was re-run or destroyed";
-}(), le = !!globalThis.document?.contentType && /* @__PURE__ */ globalThis.document.contentType.includes("xml");
-function ue(e) {
+}(), se = !!globalThis.document?.contentType && /* @__PURE__ */ globalThis.document.contentType.includes("xml");
+function ce(e) {
 	throw Error("https://svelte.dev/e/lifecycle_outside_component");
 }
 //#endregion
 //#region node_modules/svelte/src/internal/client/errors.js
-function de() {
+function le() {
 	throw Error("https://svelte.dev/e/async_derived_orphan");
 }
-function fe(e, t, n) {
+function ue(e, t, n) {
 	throw Error("https://svelte.dev/e/each_key_duplicate");
 }
-function pe(e) {
+function de(e) {
 	throw Error("https://svelte.dev/e/effect_in_teardown");
 }
-function me() {
+function fe() {
 	throw Error("https://svelte.dev/e/effect_in_unowned_derived");
 }
-function he(e) {
+function pe(e) {
 	throw Error("https://svelte.dev/e/effect_orphan");
 }
-function ge() {
+function me() {
 	throw Error("https://svelte.dev/e/effect_update_depth_exceeded");
 }
-function _e(e) {
+function he(e) {
 	throw Error("https://svelte.dev/e/props_invalid_value");
 }
-function ve() {
+function ge() {
 	throw Error("https://svelte.dev/e/state_descriptors_fixed");
 }
-function ye() {
+function _e() {
 	throw Error("https://svelte.dev/e/state_prototype_fixed");
 }
-function be() {
+function ve() {
 	throw Error("https://svelte.dev/e/state_unsafe_mutation");
 }
-function xe() {
+function ye() {
 	throw Error("https://svelte.dev/e/svelte_boundary_reset_onerror");
 }
 //#endregion
 //#region node_modules/svelte/src/constants.js
-var Se = {}, Ce = Symbol("uninitialized"), we = "http://www.w3.org/1999/xhtml";
-function Te() {
+var be = {}, xe = Symbol("uninitialized"), Se = "http://www.w3.org/1999/xhtml";
+function Ce() {
 	console.warn("https://svelte.dev/e/derived_inert");
 }
-function Ee(e) {
+function we(e) {
 	console.warn("https://svelte.dev/e/hydration_mismatch");
 }
-function De() {
+function Te() {
 	console.warn("https://svelte.dev/e/select_multiple_invalid_value");
 }
-function Oe() {
+function Ee() {
 	console.warn("https://svelte.dev/e/svelte_boundary_reset_noop");
 }
 //#endregion
 //#region node_modules/svelte/src/internal/client/dom/hydration.js
-var A = !1;
-function ke(e) {
-	A = e;
+var M = !1;
+function De(e) {
+	M = e;
 }
-var j;
-function Ae(e) {
-	if (e === null) throw Ee(), Se;
-	return j = e;
+var N;
+function Oe(e) {
+	if (e === null) throw we(), be;
+	return N = e;
 }
-function je() {
-	return Ae(/* @__PURE__ */ dn(j));
+function ke() {
+	return Oe(/* @__PURE__ */ ln(N));
 }
-function M(e) {
-	if (A) {
-		if (/* @__PURE__ */ dn(j) !== null) throw Ee(), Se;
-		j = e;
+function P(e) {
+	if (M) {
+		if (/* @__PURE__ */ ln(N) !== null) throw we(), be;
+		N = e;
 	}
 }
-function Me(e = 1) {
-	if (A) {
-		for (var t = e, n = j; t--;) n = /* @__PURE__ */ dn(n);
-		j = n;
+function Ae(e = 1) {
+	if (M) {
+		for (var t = e, n = N; t--;) n = /* @__PURE__ */ ln(n);
+		N = n;
 	}
 }
-function Ne(e = !0) {
-	for (var t = 0, n = j;;) {
+function je(e = !0) {
+	for (var t = 0, n = N;;) {
 		if (n.nodeType === 8) {
 			var r = n.data;
 			if (r === "]") {
@@ -113,32 +113,32 @@ function Ne(e = !0) {
 				--t;
 			} else (r === "[" || r === "[!" || r[0] === "[" && !isNaN(Number(r.slice(1)))) && (t += 1);
 		}
-		var i = /* @__PURE__ */ dn(n);
+		var i = /* @__PURE__ */ ln(n);
 		e && n.remove(), n = i;
 	}
 }
-function Pe(e) {
-	if (!e || e.nodeType !== 8) throw Ee(), Se;
+function Me(e) {
+	if (!e || e.nodeType !== 8) throw we(), be;
 	return e.data;
 }
 //#endregion
 //#region node_modules/svelte/src/internal/client/reactivity/equality.js
-function Fe(e) {
+function Ne(e) {
 	return e === this.v;
 }
-function Ie(e, t) {
+function Pe(e, t) {
 	return e == e ? e !== t || typeof e == "object" && !!e || typeof e == "function" : t == t;
 }
-function Le(e) {
-	return !Ie(e, this.v);
+function Fe(e) {
+	return !Pe(e, this.v);
 }
 //#endregion
 //#region node_modules/svelte/src/internal/shared/clone.js
-var Re = [];
-function ze(e, t = !1, n = !1) {
-	return Be(e, /* @__PURE__ */ new Map(), "", Re, null, n);
+var Ie = [];
+function Le(e, t = !1, n = !1) {
+	return Re(e, /* @__PURE__ */ new Map(), "", Ie, null, n);
 }
-function Be(t, n, r, i, a = null, o = !1) {
+function Re(t, n, r, i, a = null, o = !1) {
 	if (typeof t == "object" && t) {
 		var c = n.get(t);
 		if (c !== void 0) return c;
@@ -149,17 +149,17 @@ function Be(t, n, r, i, a = null, o = !1) {
 			n.set(t, u), a !== null && n.set(a, u);
 			for (var d = 0; d < t.length; d += 1) {
 				var f = t[d];
-				d in t && (u[d] = Be(f, n, r, i, null, o));
+				d in t && (u[d] = Re(f, n, r, i, null, o));
 			}
 			return u;
 		}
 		if (l(t) === s) {
 			u = {}, n.set(t, u), a !== null && n.set(a, u);
-			for (var p of Object.keys(t)) u[p] = Be(t[p], n, r, i, null, o);
+			for (var p of Object.keys(t)) u[p] = Re(t[p], n, r, i, null, o);
 			return u;
 		}
 		if (t instanceof Date) return structuredClone(t);
-		if (typeof t.toJSON == "function" && !o) return Be(t.toJSON(), n, r, i, t);
+		if (typeof t.toJSON == "function" && !o) return Re(t.toJSON(), n, r, i, t);
 	}
 	if (t instanceof EventTarget) return t;
 	try {
@@ -170,59 +170,59 @@ function Be(t, n, r, i, a = null, o = !1) {
 }
 //#endregion
 //#region node_modules/svelte/src/internal/client/context.js
-var Ve = null;
-function He(e) {
-	Ve = e;
+var ze = null;
+function Be(e) {
+	ze = e;
 }
-function Ue(e, t = !1, n) {
-	Ve = {
-		p: Ve,
+function Ve(e, t = !1, n) {
+	ze = {
+		p: ze,
 		i: !1,
 		c: null,
 		e: null,
 		s: e,
 		x: null,
-		r: H,
+		r: U,
 		l: null
 	};
 }
-function We(e) {
-	var t = Ve, n = t.e;
+function He(e) {
+	var t = ze, n = t.e;
 	if (n !== null) {
 		t.e = null;
-		for (var r of n) Sn(r);
+		for (var r of n) bn(r);
 	}
-	return e !== void 0 && (t.x = e), t.i = !0, Ve = t.p, e ?? {};
+	return e !== void 0 && (t.x = e), t.i = !0, ze = t.p, e ?? {};
 }
-function Ge() {
+function Ue() {
 	return !0;
 }
 //#endregion
 //#region node_modules/svelte/src/internal/client/dom/task.js
-var Ke = [];
-function qe() {
-	var e = Ke;
-	Ke = [], f(e);
+var We = [];
+function Ge() {
+	var e = We;
+	We = [], f(e);
 }
-function Je(e) {
-	if (Ke.length === 0 && !jt) {
-		var t = Ke;
+function Ke(e) {
+	if (We.length === 0 && !kt) {
+		var t = We;
 		queueMicrotask(() => {
-			t === Ke && qe();
+			t === We && Ge();
 		});
 	}
-	Ke.push(e);
+	We.push(e);
 }
-function Ye() {
-	for (; Ke.length > 0;) qe();
+function qe() {
+	for (; We.length > 0;) Ge();
 }
-function Xe(e) {
-	var t = H;
-	if (t === null) return V.f |= ee, e;
+function Je(e) {
+	var t = U;
+	if (t === null) return Hn.f |= k, e;
 	if (!(t.f & 32768) && !(t.f & 4)) throw e;
-	Ze(e, t);
+	Ye(e, t);
 }
-function Ze(e, t) {
+function Ye(e, t) {
 	if (!(t !== null && t.f & 16384)) {
 		for (; t !== null;) {
 			if (t.f & 128) {
@@ -241,87 +241,87 @@ function Ze(e, t) {
 }
 //#endregion
 //#region node_modules/svelte/src/internal/client/reactivity/status.js
-var Qe = ~(g | _ | h);
-function $e(e, t) {
-	e.f = e.f & Qe | t;
+var Xe = ~(g | _ | h);
+function Ze(e, t) {
+	e.f = e.f & Xe | t;
 }
-function et(e) {
-	e.f & 512 || e.deps === null ? $e(e, h) : $e(e, _);
+function Qe(e) {
+	e.f & 512 || e.deps === null ? Ze(e, h) : Ze(e, _);
 }
 //#endregion
 //#region node_modules/svelte/src/internal/client/reactivity/utils.js
-function tt(e) {
-	if (e !== null) for (let t of e) t.f & 2 && t.f & 65536 && (t.f ^= E, tt(t.deps));
+function $e(e) {
+	if (e !== null) for (let t of e) t.f & 2 && t.f & 65536 && (t.f ^= E, $e(t.deps));
 }
-function nt(e, t, n) {
-	e.f & 2048 ? t.add(e) : e.f & 4096 && n.add(e), tt(e.deps), $e(e, h);
+function et(e, t, n) {
+	e.f & 2048 ? t.add(e) : e.f & 4096 && n.add(e), $e(e.deps), Ze(e, h);
 }
 //#endregion
 //#region node_modules/svelte/src/internal/client/reactivity/store.js
-var rt = !1;
-function it(e) {
-	var t = rt;
+var tt = !1;
+function nt(e) {
+	var t = tt;
 	try {
-		return rt = !1, [e(), rt];
+		return tt = !1, [e(), tt];
 	} finally {
-		rt = t;
+		tt = t;
 	}
 }
 //#endregion
 //#region node_modules/svelte/src/internal/client/dom/elements/misc.js
-function at(e) {
-	A && /* @__PURE__ */ un(e) !== null && fn(e);
+function rt(e) {
+	M && /* @__PURE__ */ cn(e) !== null && un(e);
 }
-var ot = !1;
-function st() {
-	ot || (ot = !0, document.addEventListener("reset", (e) => {
+var it = !1;
+function at() {
+	it || (it = !0, document.addEventListener("reset", (e) => {
 		Promise.resolve().then(() => {
-			if (!e.defaultPrevented) for (let t of e.target.elements) t[se]?.();
+			if (!e.defaultPrevented) for (let t of e.target.elements) t[ae]?.();
 		});
 	}, { capture: !0 }));
 }
 //#endregion
 //#region node_modules/svelte/src/internal/client/dom/elements/bindings/shared.js
-function ct(e) {
-	var t = V, n = H;
-	Gn(null), Kn(null);
+function ot(e) {
+	var t = Hn, n = U;
+	Wn(null), Gn(null);
 	try {
 		return e();
 	} finally {
-		Gn(t), Kn(n);
+		Wn(t), Gn(n);
 	}
 }
-function lt(e, t, n, r = n) {
-	e.addEventListener(t, () => ct(n));
-	let i = e[se];
-	e[se] = i ? () => {
+function st(e, t, n, r = n) {
+	e.addEventListener(t, () => ot(n));
+	let i = e[ae];
+	e[ae] = i ? () => {
 		i(), r(!0);
-	} : () => r(!0), st();
+	} : () => r(!0), at();
 }
 //#endregion
 //#region node_modules/svelte/src/reactivity/create-subscriber.js
-function ut(e) {
-	let t = 0, n = Jt(0), r;
+function ct(e) {
+	let t = 0, n = Kt(0), r;
 	return () => {
-		yn() && (U(n), En(() => (t === 0 && (r = pr(() => e(() => Qt(n)))), t += 1, () => {
-			Je(() => {
-				--t, t === 0 && (r?.(), r = void 0, Qt(n));
+		_n() && (W(n), wn(() => (t === 0 && (r = fr(() => e(() => Xt(n)))), t += 1, () => {
+			Ke(() => {
+				--t, t === 0 && (r?.(), r = void 0, Xt(n));
 			});
 		})));
 	};
 }
 //#endregion
 //#region node_modules/svelte/src/internal/client/dom/blocks/boundary.js
-var dt = S | C;
-function ft(e, t, n, r) {
-	new pt(e, t, n, r);
+var lt = S | C;
+function ut(e, t, n, r) {
+	new dt(e, t, n, r);
 }
-var pt = class {
+var dt = class {
 	parent;
 	is_pending = !1;
 	transform_error;
 	#e;
-	#t = A ? j : null;
+	#t = M ? N : null;
 	#n;
 	#r;
 	#i;
@@ -335,42 +335,42 @@ var pt = class {
 	#f = /* @__PURE__ */ new Set();
 	#p = /* @__PURE__ */ new Set();
 	#m = null;
-	#h = ut(() => (this.#m = Jt(this.#l), () => {
+	#h = ct(() => (this.#m = Kt(this.#l), () => {
 		this.#m = null;
 	}));
 	constructor(e, t, n, r) {
 		this.#e = e, this.#n = t, this.#r = (e) => {
-			var t = H;
+			var t = U;
 			t.b = this, t.f |= 128, n(e);
-		}, this.parent = H.b, this.transform_error = r ?? this.parent?.transform_error ?? ((e) => e), this.#i = Dn(() => {
-			if (A) {
+		}, this.parent = U.b, this.transform_error = r ?? this.parent?.transform_error ?? ((e) => e), this.#i = Tn(() => {
+			if (M) {
 				let e = this.#t;
-				je();
+				ke();
 				let t = e.data === "[!";
 				if (e.data.startsWith("[?")) {
 					let t = JSON.parse(e.data.slice(2));
 					this.#_(t);
 				} else t ? this.#y() : this.#g();
 			} else this.#b();
-		}, dt), A && (this.#e = j);
+		}, lt), M && (this.#e = N);
 	}
 	#g() {
 		try {
-			this.#a = On(() => this.#r(this.#e));
+			this.#a = En(() => this.#r(this.#e));
 		} catch (e) {
 			this.error(e);
 		}
 	}
 	#_(e) {
 		let t = this.#n.failed, { reset: n, invoke_onerror: r } = this.#v(e);
-		Je(r), t && (this.#s = On(() => {
+		Ke(r), t && (this.#s = En(() => {
 			t(this.#e, () => e, () => n);
 		}));
 	}
 	#v(e) {
 		var t = !1, n = !1;
 		let r = () => {
-			t ? Oe() : (t = !0, n && xe(), this.#s !== null && Fn(this.#s, () => {
+			t ? Ee() : (t = !0, n && ye(), this.#s !== null && Nn(this.#s, () => {
 				this.#s = null;
 			}), this.#S(() => {
 				this.#b();
@@ -382,30 +382,30 @@ var pt = class {
 				try {
 					n = !0, this.#n.onerror?.(e, r), n = !1;
 				} catch (e) {
-					Ze(e, this.#i && this.#i.parent);
+					Ye(e, this.#i && this.#i.parent);
 				}
 			}
 		};
 	}
 	#y() {
 		let e = this.#n.pending;
-		e && (this.is_pending = !0, this.#o = On(() => e(this.#e)), Je(() => {
-			var e = this.#c = document.createDocumentFragment(), t = ln();
-			e.append(t), this.#a = this.#S(() => On(() => this.#r(t))), this.#u === 0 && (this.#e.before(e), this.#c = null, Fn(this.#o, () => {
+		e && (this.is_pending = !0, this.#o = En(() => e(this.#e)), Ke(() => {
+			var e = this.#c = document.createDocumentFragment(), t = sn();
+			e.append(t), this.#a = this.#S(() => En(() => this.#r(t))), this.#u === 0 && (this.#e.before(e), this.#c = null, Nn(this.#o, () => {
 				this.#o = null;
-			}), this.#x(P));
+			}), this.#x(I));
 		}));
 	}
 	#b() {
 		try {
-			if (this.is_pending = this.has_pending_snippet(), this.#u = 0, this.#l = 0, this.#a = On(() => {
+			if (this.is_pending = this.has_pending_snippet(), this.#u = 0, this.#l = 0, this.#a = En(() => {
 				this.#r(this.#e);
 			}), this.#u > 0) {
 				var e = this.#c = document.createDocumentFragment();
-				zn(this.#a, e);
+				Ln(this.#a, e);
 				let t = this.#n.pending;
-				this.#o = On(() => t(this.#e));
-			} else this.#x(P);
+				this.#o = En(() => t(this.#e));
+			} else this.#x(I);
 		} catch (e) {
 			this.error(e);
 		}
@@ -414,7 +414,7 @@ var pt = class {
 		this.is_pending = !1, e.transfer_effects(this.#f, this.#p);
 	}
 	defer_effect(e) {
-		nt(e, this.#f, this.#p);
+		et(e, this.#f, this.#p);
 	}
 	is_rendered() {
 		return !this.is_pending && (!this.parent || this.parent.is_rendered());
@@ -423,157 +423,157 @@ var pt = class {
 		return !!this.#n.pending;
 	}
 	#S(e) {
-		var t = H, n = V, r = Ve;
-		Kn(this.#i), Gn(this.#i), He(this.#i.ctx);
+		var t = U, n = Hn, r = ze;
+		Gn(this.#i), Wn(this.#i), Be(this.#i.ctx);
 		try {
-			return Lt.ensure(), e();
+			return Ft.ensure(), e();
 		} catch (e) {
-			return Xe(e), null;
+			return Je(e), null;
 		} finally {
-			Kn(t), Gn(n), He(r);
+			Gn(t), Wn(n), Be(r);
 		}
 	}
 	#C(e, t) {
-		this.has_pending_snippet() ? (this.#u += e, this.#u === 0 && (this.#x(t), this.#o && Fn(this.#o, () => {
+		this.has_pending_snippet() ? (this.#u += e, this.#u === 0 && (this.#x(t), this.#o && Nn(this.#o, () => {
 			this.#o = null;
 		}), this.#c &&= (this.#e.before(this.#c), null))) : this.parent && this.parent.#C(e, t);
 	}
 	update_pending_count(e, t) {
-		this.#C(e, t), this.#l += e, !(!this.#m || this.#d) && (this.#d = !0, Je(() => {
-			this.#d = !1, this.#m && Xt(this.#m, this.#l);
+		this.#C(e, t), this.#l += e, !(!this.#m || this.#d) && (this.#d = !0, Ke(() => {
+			this.#d = !1, this.#m && Jt(this.#m, this.#l);
 		}));
 	}
 	get_effect_pending() {
-		return this.#h(), U(this.#m);
+		return this.#h(), W(this.#m);
 	}
 	error(e) {
 		if (!this.#n.onerror && !this.#n.failed) throw e;
-		P?.is_fork ? (this.#a && P.skip_effect(this.#a), this.#o && P.skip_effect(this.#o), this.#s && P.skip_effect(this.#s), P.oncommit(() => {
+		I?.is_fork ? (this.#a && I.skip_effect(this.#a), this.#o && I.skip_effect(this.#o), this.#s && I.skip_effect(this.#s), I.oncommit(() => {
 			this.#w(e);
 		})) : this.#w(e);
 	}
 	#w(e) {
-		this.#a &&= (Mn(this.#a), null), this.#o &&= (Mn(this.#o), null), this.#s &&= (Mn(this.#s), null), A && (Ae(this.#t), Me(), Ae(Ne()));
+		this.#a &&= (An(this.#a), null), this.#o &&= (An(this.#o), null), this.#s &&= (An(this.#s), null), M && (Oe(this.#t), Ae(), Oe(je()));
 		let t = this.#n.failed, n = (e) => {
 			let { reset: n, invoke_onerror: r } = this.#v(e);
 			r(), t && (this.#s = this.#S(() => {
 				try {
-					return On(() => {
-						var r = H;
+					return En(() => {
+						var r = U;
 						r.b = this, r.f |= 128, t(this.#e, () => e, () => n);
 					});
 				} catch (e) {
-					return Ze(e, this.#i.parent), null;
+					return Ye(e, this.#i.parent), null;
 				}
 			}));
 		};
-		Je(() => {
+		Ke(() => {
 			var t;
 			try {
 				t = this.transform_error(e);
 			} catch (e) {
-				Ze(e, this.#i && this.#i.parent);
+				Ye(e, this.#i && this.#i.parent);
 				return;
 			}
-			typeof t == "object" && t && typeof t.then == "function" ? t.then(n, (e) => Ze(e, this.#i && this.#i.parent)) : n(t);
+			typeof t == "object" && t && typeof t.then == "function" ? t.then(n, (e) => Ye(e, this.#i && this.#i.parent)) : n(t);
 		});
 	}
 };
 //#endregion
 //#region node_modules/svelte/src/internal/client/reactivity/async.js
-function mt(e, t, n, r) {
-	let i = Ge() ? vt : xt;
+function ft(e, t, n, r) {
+	let i = Ue() ? gt : yt;
 	var a = e.filter((e) => !e.settled), o = t.map(i);
 	if (n.length === 0 && a.length === 0) {
 		r(o);
 		return;
 	}
-	var s = H, c = ht(), l = a.length === 1 ? a[0].promise : a.length > 1 ? Promise.all(a.map((e) => e.promise)) : null;
+	var s = U, c = pt(), l = a.length === 1 ? a[0].promise : a.length > 1 ? Promise.all(a.map((e) => e.promise)) : null;
 	function u(e) {
 		if (!(s.f & 16384)) {
 			c();
 			try {
 				r([...o, ...e]);
 			} catch (e) {
-				Ze(e, s);
+				Ye(e, s);
 			}
-			gt();
+			mt();
 		}
 	}
-	var d = _t();
+	var d = ht();
 	if (n.length === 0) {
 		l.then(() => u([])).finally(d);
 		return;
 	}
 	function f() {
-		Promise.all(n.map((e) => /* @__PURE__ */ bt(e))).then(u).catch((e) => Ze(e, s)).finally(d);
+		Promise.all(n.map((e) => /* @__PURE__ */ vt(e))).then(u).catch((e) => Ye(e, s)).finally(d);
 	}
 	l ? l.then(() => {
-		c(), f(), gt();
+		c(), f(), mt();
 	}) : f();
 }
-function ht() {
-	var e = H, t = V, n = Ve, r = P;
+function pt() {
+	var e = U, t = Hn, n = ze, r = I;
 	return function(i = !0) {
-		Kn(e), Gn(t), He(n), i && !(e.f & 16384) && (r?.activate(), r?.apply());
+		Gn(e), Wn(t), Be(n), i && !(e.f & 16384) && (r?.activate(), r?.apply());
 	};
 }
-function gt(e = !0) {
-	Kn(null), Gn(null), He(null), e && P?.deactivate();
+function mt(e = !0) {
+	Gn(null), Wn(null), Be(null), e && I?.deactivate();
 }
-function _t() {
-	var e = H, t = e.b, n = P, r = !!t?.is_rendered();
+function ht() {
+	var e = U, t = e.b, n = I, r = !!t?.is_rendered();
 	return t?.update_pending_count(1, n), n.increment(r, e), () => {
 		t?.update_pending_count(-1, n), n.decrement(r, e);
 	};
 }
 /*#__NO_SIDE_EFFECTS__*/
-function vt(e) {
+function gt(e) {
 	var t = 2 | g;
-	return H !== null && (H.f |= C), {
-		ctx: Ve,
+	return U !== null && (U.f |= C), {
+		ctx: ze,
 		deps: null,
 		effects: null,
-		equals: Fe,
+		equals: Ne,
 		f: t,
 		fn: e,
 		reactions: null,
 		rv: 0,
-		v: Ce,
+		v: xe,
 		wv: 0,
-		parent: H,
+		parent: U,
 		ac: null
 	};
 }
-var yt = Symbol("obsolete");
+var _t = Symbol("obsolete");
 /*#__NO_SIDE_EFFECTS__*/
-function bt(e, t, n) {
-	let r = H;
-	r === null && de();
-	var i = void 0, a = Jt(Ce), o = !V, s = /* @__PURE__ */ new Set();
-	return Tn(() => {
-		var t = H, n = p();
+function vt(e, t, n) {
+	let r = U;
+	r === null && le();
+	var i = void 0, a = Kt(xe), o = !Hn, s = /* @__PURE__ */ new Set();
+	return Cn(() => {
+		var t = U, n = p();
 		i = n.promise;
 		try {
 			Promise.resolve(e()).then(n.resolve, (e) => {
-				e !== ce && n.reject(e);
-			}).finally(gt);
+				e !== oe && n.reject(e);
+			}).finally(mt);
 		} catch (e) {
-			n.reject(e), gt();
+			n.reject(e), mt();
 		}
-		var c = P;
+		var c = I;
 		if (o) {
-			if (t.f & 32768) var l = _t();
-			if (r.b?.is_rendered()) c.async_deriveds.get(t)?.reject(yt);
-			else for (let e of s.values()) e.reject(yt);
+			if (t.f & 32768) var l = ht();
+			if (r.b?.is_rendered()) c.async_deriveds.get(t)?.reject(_t);
+			else for (let e of s.values()) e.reject(_t);
 			s.add(n), c.async_deriveds.set(t, n);
 		}
 		let u = (e, t = void 0) => {
-			l?.(), s.delete(n), t !== yt && (c.activate(), t ? (a.f |= ee, Xt(a, t)) : (a.f & 8388608 && (a.f ^= ee), Xt(a, e)), c.deactivate());
+			l?.(), s.delete(n), t !== _t && (c.activate(), t ? (a.f |= k, Jt(a, t)) : (a.f & 8388608 && (a.f ^= k), Jt(a, e)), c.deactivate());
 		};
 		n.promise.then(u, (e) => u(null, e || "unknown"));
-	}), bn(() => {
-		for (let e of s) e.reject(yt);
+	}), vn(() => {
+		for (let e of s) e.reject(_t);
 	}), new Promise((e) => {
 		function t(n) {
 			function r() {
@@ -585,49 +585,49 @@ function bt(e, t, n) {
 	});
 }
 /*#__NO_SIDE_EFFECTS__*/
-function N(e) {
-	let t = /* @__PURE__ */ vt(e);
-	return Jn(t), t;
+function F(e) {
+	let t = /* @__PURE__ */ gt(e);
+	return qn(t), t;
 }
 /*#__NO_SIDE_EFFECTS__*/
-function xt(e) {
-	let t = /* @__PURE__ */ vt(e);
-	return t.equals = Le, t;
+function yt(e) {
+	let t = /* @__PURE__ */ gt(e);
+	return t.equals = Fe, t;
 }
-function St(e) {
+function bt(e) {
 	var t = e.effects;
 	if (t !== null) {
 		e.effects = null;
-		for (var n = 0; n < t.length; n += 1) Mn(t[n]);
+		for (var n = 0; n < t.length; n += 1) An(t[n]);
 	}
 }
-function Ct(e) {
-	var t, n = H, r = e.parent;
-	if (!Hn && r !== null && e.v !== Ce && r.f & 24576) return Te(), e.v;
-	Kn(r);
+function xt(e) {
+	var t, n = U, r = e.parent;
+	if (!Bn && r !== null && e.v !== xe && r.f & 24576) return Ce(), e.v;
+	Gn(r);
 	try {
-		e.f &= ~E, St(e), t = or(e);
+		e.f &= ~E, bt(e), t = ar(e);
 	} finally {
-		Kn(n);
+		Gn(n);
 	}
 	return t;
 }
+function St(e) {
+	var t = xt(e);
+	!e.equals(t) && (e.wv = nr(), (!I?.is_fork || e.deps === null) && (I === null ? e.v = t : (I.capture(e, t, !0), Et?.capture(e, t, !0)), e.deps === null)) ? Ze(e, h) : Bn || (Dt === null ? Qe(e) : (_n() || I?.is_fork) && Dt.set(e, t));
+}
+function Ct(e) {
+	if (e.effects !== null) for (let t of e.effects) (t.teardown || t.ac) && (t.teardown?.(), t.ac !== null && ot(() => {
+		t.ac.abort(oe), t.ac = null;
+	}), t.fn !== null && (t.teardown = d), sr(t, 0), On(t));
+}
 function wt(e) {
-	var t = Ct(e);
-	!e.equals(t) && (e.wv = rr(), (!P?.is_fork || e.deps === null) && (P === null ? e.v = t : (P.capture(e, t, !0), Ot?.capture(e, t, !0)), e.deps === null)) ? $e(e, h) : Hn || (kt === null ? et(e) : (yn() || P?.is_fork) && kt.set(e, t));
-}
-function Tt(e) {
-	if (e.effects !== null) for (let t of e.effects) (t.teardown || t.ac) && (t.teardown?.(), t.ac !== null && ct(() => {
-		t.ac.abort(ce), t.ac = null;
-	}), t.fn !== null && (t.teardown = d), cr(t, 0), An(t));
-}
-function Et(e) {
-	if (e.effects !== null) for (let t of e.effects) t.teardown && t.fn !== null && lr(t);
+	if (e.effects !== null) for (let t of e.effects) t.teardown && t.fn !== null && cr(t);
 }
 //#endregion
 //#region node_modules/svelte/src/internal/client/reactivity/batch.js
-var Dt = null, P = null, Ot = null, kt = null, At = null, jt = !1, Mt = !1, Nt = null, Pt = null, Ft = 0, It = 1, Lt = class e {
-	id = It++;
+var Tt = null, I = null, Et = null, Dt = null, Ot = null, kt = !1, At = !1, jt = null, Mt = null, Nt = 0, Pt = 1, Ft = class e {
+	id = Pt++;
 	#e = !1;
 	linked = !0;
 	#t = null;
@@ -649,7 +649,7 @@ var Dt = null, P = null, Ot = null, kt = null, At = null, jt = !1, Mt = !1, Nt =
 	is_fork = !1;
 	#m = !1;
 	constructor() {
-		Dt === null ? Dt = this : (Dt.#n = this, this.#t = Dt), Dt = this;
+		Tt === null ? Tt = this : (Tt.#n = this, this.#t = Tt), Tt = this;
 	}
 	#h() {
 		if (this.is_fork) return !0;
@@ -675,31 +675,31 @@ var Dt = null, P = null, Ot = null, kt = null, At = null, jt = !1, Mt = !1, Nt =
 		var n = this.#f.get(e);
 		if (n) {
 			this.#f.delete(e);
-			for (var r of n.d) $e(r, g), t(r);
-			for (r of n.m) $e(r, _), t(r);
+			for (var r of n.d) Ze(r, g), t(r);
+			for (r of n.m) Ze(r, _), t(r);
 		}
 		this.#p.add(e);
 	}
 	#g() {
-		this.#e = !0, Ft++ > 1e3 && (this.#x(), zt());
-		for (let e of this.#u) this.#d.delete(e), $e(e, g), this.schedule(e);
-		for (let e of this.#d) $e(e, _), this.schedule(e);
+		this.#e = !0, Nt++ > 1e3 && (this.#x(), Lt());
+		for (let e of this.#u) this.#d.delete(e), Ze(e, g), this.schedule(e);
+		for (let e of this.#d) Ze(e, _), this.schedule(e);
 		let t = this.#c;
 		this.#c = [], this.apply();
-		var n = Nt = [], r = [], i = Pt = [];
+		var n = jt = [], r = [], i = Mt = [];
 		for (let e of t) try {
 			this.#_(e, n, r);
 		} catch (t) {
-			throw Wt(e), this.#h() || this.discard(), t;
+			throw Ht(e), this.#h() || this.discard(), t;
 		}
-		if (P = null, i.length > 0) {
+		if (I = null, i.length > 0) {
 			var a = e.ensure();
 			for (let e of i) a.schedule(e);
 		}
-		if (Nt = null, Pt = null, this.#h()) {
+		if (jt = null, Mt = null, this.#h()) {
 			this.#b(r), this.#b(n);
-			for (let [e, t] of this.#f) Ut(e, t);
-			i.length > 0 && P.#g();
+			for (let [e, t] of this.#f) Vt(e, t);
+			i.length > 0 && I.#g();
 			return;
 		}
 		let o = this.#v();
@@ -707,15 +707,15 @@ var Dt = null, P = null, Ot = null, kt = null, At = null, jt = !1, Mt = !1, Nt =
 		else {
 			this.#u.clear(), this.#d.clear();
 			for (let e of this.#r) e(this);
-			this.#r.clear(), Ot = this, Vt(r), Vt(n), Ot = null, this.#s?.resolve();
-			var s = P;
+			this.#r.clear(), Et = this, zt(r), zt(n), Et = null, this.#s?.resolve();
+			var s = I;
 			if (this.#a === 0 && (this.#c.length === 0 || s !== null) && this.#x(), this.#c.length > 0) {
 				if (s !== null) {
 					let e = s;
 					e.#c.push(...this.#c.filter((t) => !e.#c.includes(t)));
 				} else s = this;
 			}
-			s !== null && (Kt.clear(), s.#g());
+			s !== null && (Wt.clear(), s.#g());
 		}
 	}
 	#_(e, t, n) {
@@ -723,7 +723,7 @@ var Dt = null, P = null, Ot = null, kt = null, At = null, jt = !1, Mt = !1, Nt =
 		for (var r = e.first; r !== null;) {
 			var i = r.f, a = !!(i & 96);
 			if (!(a && i & 1024 || i & 8192 || this.#f.has(r)) && r.fn !== null) {
-				a ? r.f ^= h : i & 4 ? t.push(r) : ir(r) && (i & 16 && this.#d.add(r), lr(r));
+				a ? r.f ^= h : i & 4 ? t.push(r) : rr(r) && (i & 16 && this.#d.add(r), cr(r));
 				var o = r.first;
 				if (o !== null) {
 					r = o;
@@ -763,36 +763,36 @@ var Dt = null, P = null, Ot = null, kt = null, At = null, jt = !1, Mt = !1, Nt =
 				if (r & 2) t(e);
 				else {
 					var i = e;
-					r & 4194320 && !this.async_deriveds.has(i) && (this.#d.delete(i), $e(i, g), this.schedule(i));
+					r & 4194320 && !this.async_deriveds.has(i) && (this.#d.delete(i), Ze(i, g), this.schedule(i));
 				}
 			}
 		};
 		for (let e of this.current.keys()) t(e);
-		this.oncommit(() => e.discard()), e.#x(), P = this, this.#g();
+		this.oncommit(() => e.discard()), e.#x(), I = this, this.#g();
 	}
 	#b(e) {
-		for (var t = 0; t < e.length; t += 1) nt(e[t], this.#u, this.#d);
+		for (var t = 0; t < e.length; t += 1) et(e[t], this.#u, this.#d);
 	}
 	capture(e, t, n = !1) {
-		e.v !== Ce && !this.previous.has(e) && this.previous.set(e, e.v), e.f & 8388608 || (this.current.set(e, [t, n]), kt?.set(e, t)), this.is_fork || (e.v = t);
+		e.v !== xe && !this.previous.has(e) && this.previous.set(e, e.v), e.f & 8388608 || (this.current.set(e, [t, n]), Dt?.set(e, t)), this.is_fork || (e.v = t);
 	}
 	activate() {
-		P = this;
+		I = this;
 	}
 	deactivate() {
-		P = null, kt = null;
+		I = null, Dt = null;
 	}
 	flush() {
 		try {
-			Mt = !0, P = this, this.#g();
+			At = !0, I = this, this.#g();
 		} finally {
-			Ft = 0, At = null, Nt = null, Pt = null, Mt = !1, P = null, kt = null, Kt.clear();
+			Nt = 0, Ot = null, jt = null, Mt = null, At = !1, I = null, Dt = null, Wt.clear();
 		}
 	}
 	discard() {
 		for (let e of this.#i) e(this);
 		this.#i.clear();
-		for (let e of this.async_deriveds.values()) e.reject(yt);
+		for (let e of this.async_deriveds.values()) e.reject(_t);
 		this.#x(), this.#s?.resolve();
 	}
 	register_created_effect(e) {
@@ -809,7 +809,7 @@ var Dt = null, P = null, Ot = null, kt = null, At = null, jt = !1, Mt = !1, Nt =
 			let e = this.#o.get(t) ?? 0;
 			e === 1 ? this.#o.delete(t) : this.#o.set(t, e - 1);
 		}
-		this.#m || (this.#m = !0, Je(() => {
+		this.#m || (this.#m = !0, Ke(() => {
 			this.#m = !1, this.linked && this.flush();
 		}));
 	}
@@ -828,24 +828,24 @@ var Dt = null, P = null, Ot = null, kt = null, At = null, jt = !1, Mt = !1, Nt =
 		return (this.#s ??= p()).promise;
 	}
 	static ensure() {
-		if (P === null) {
-			let t = P = new e();
-			!Mt && !jt && Je(() => {
+		if (I === null) {
+			let t = I = new e();
+			!At && !kt && Ke(() => {
 				t.#e || t.flush();
 			});
 		}
-		return P;
+		return I;
 	}
 	apply() {
-		kt = null;
+		Dt = null;
 	}
 	schedule(e) {
-		if (At = e, e.b?.is_pending && e.f & 16777228 && !(e.f & 32768)) e.b.defer_effect(e);
+		if (Ot = e, e.b?.is_pending && e.f & 16777228 && !(e.f & 32768)) e.b.defer_effect(e);
 		else {
 			for (var t = e; t.parent !== null;) {
 				t = t.parent;
 				var n = t.f;
-				if (Nt !== null && t === H && (V === null || !(V.f & 2))) return;
+				if (jt !== null && t === U && (Hn === null || !(Hn.f & 2))) return;
 				if (n & 96) {
 					if (!(n & 1024)) return;
 					t.f ^= h;
@@ -857,174 +857,174 @@ var Dt = null, P = null, Ot = null, kt = null, At = null, jt = !1, Mt = !1, Nt =
 	#x() {
 		if (this.linked) {
 			var e = this.#t, t = this.#n;
-			e === null || (e.#n = t), t === null ? Dt = e : t.#t = e, this.linked = !1;
+			e === null || (e.#n = t), t === null ? Tt = e : t.#t = e, this.linked = !1;
 		}
 	}
 };
-function Rt(e) {
-	var t = jt;
-	jt = !0;
+function It(e) {
+	var t = kt;
+	kt = !0;
 	try {
 		var n;
-		for (e && (P !== null && !P.is_fork && P.flush(), n = e());;) {
-			if (Ye(), P === null) return n;
-			P.flush();
+		for (e && (I !== null && !I.is_fork && I.flush(), n = e());;) {
+			if (qe(), I === null) return n;
+			I.flush();
 		}
 	} finally {
-		jt = t;
+		kt = t;
 	}
 }
-function zt() {
+function Lt() {
 	try {
-		ge();
+		me();
 	} catch (e) {
-		Ze(e, At);
+		Ye(e, Ot);
 	}
 }
-var Bt = null;
-function Vt(e) {
+var Rt = null;
+function zt(e) {
 	var t = e.length;
 	if (t !== 0) {
 		for (var n = 0; n < t;) {
 			var r = e[n++];
-			if (!(r.f & 24576) && ir(r) && (Bt = /* @__PURE__ */ new Set(), lr(r), r.deps === null && r.first === null && r.nodes === null && r.teardown === null && r.ac === null && Pn(r), Bt?.size > 0)) {
-				Kt.clear();
-				for (let e of Bt) {
+			if (!(r.f & 24576) && rr(r) && (Rt = /* @__PURE__ */ new Set(), cr(r), r.deps === null && r.first === null && r.nodes === null && r.teardown === null && r.ac === null && Mn(r), Rt?.size > 0)) {
+				Wt.clear();
+				for (let e of Rt) {
 					if (e.f & 24576) continue;
 					let t = [e], n = e.parent;
-					for (; n !== null;) Bt.has(n) && (Bt.delete(n), t.push(n)), n = n.parent;
+					for (; n !== null;) Rt.has(n) && (Rt.delete(n), t.push(n)), n = n.parent;
 					for (let e = t.length - 1; e >= 0; e--) {
 						let n = t[e];
-						n.f & 24576 || lr(n);
+						n.f & 24576 || cr(n);
 					}
 				}
-				Bt.clear();
+				Rt.clear();
 			}
 		}
-		Bt = null;
+		Rt = null;
+	}
+}
+function Bt(e) {
+	I.schedule(e);
+}
+function Vt(e, t) {
+	if (!(e.f & 32 && e.f & 1024)) {
+		e.f & 2048 ? t.d.push(e) : e.f & 4096 && t.m.push(e), Ze(e, h);
+		for (var n = e.first; n !== null;) Vt(n, t), n = n.next;
 	}
 }
 function Ht(e) {
-	P.schedule(e);
-}
-function Ut(e, t) {
-	if (!(e.f & 32 && e.f & 1024)) {
-		e.f & 2048 ? t.d.push(e) : e.f & 4096 && t.m.push(e), $e(e, h);
-		for (var n = e.first; n !== null;) Ut(n, t), n = n.next;
-	}
-}
-function Wt(e) {
-	$e(e, h);
-	for (var t = e.first; t !== null;) Wt(t), t = t.next;
+	Ze(e, h);
+	for (var t = e.first; t !== null;) Ht(t), t = t.next;
 }
 //#endregion
 //#region node_modules/svelte/src/internal/client/reactivity/sources.js
-var Gt = /* @__PURE__ */ new Set(), Kt = /* @__PURE__ */ new Map(), qt = !1;
-function Jt(e, t) {
+var Ut = /* @__PURE__ */ new Set(), Wt = /* @__PURE__ */ new Map(), Gt = !1;
+function Kt(e, t) {
 	return {
 		f: 0,
 		v: e,
 		reactions: null,
-		equals: Fe,
+		equals: Ne,
 		rv: 0,
 		wv: 0
 	};
 }
 /*#__NO_SIDE_EFFECTS__*/
-function F(e, t) {
-	let n = Jt(e, t);
-	return Jn(n), n;
+function L(e, t) {
+	let n = Kt(e, t);
+	return qn(n), n;
 }
 /*#__NO_SIDE_EFFECTS__*/
-function Yt(e, t = !1, n = !0) {
-	let r = Jt(e);
-	return t || (r.equals = Le), r;
+function qt(e, t = !1, n = !0) {
+	let r = Kt(e);
+	return t || (r.equals = Fe), r;
 }
-function I(e, t, n = !1) {
-	return V !== null && (!Wn || V.f & 131072) && Ge() && V.f & 4325394 && (qn === null || !qn.has(e)) && be(), Xt(e, n ? en(t) : t, Pt);
+function R(e, t, n = !1) {
+	return Hn !== null && (!Un || Hn.f & 131072) && Ue() && Hn.f & 4325394 && (Kn === null || !Kn.has(e)) && ve(), Jt(e, n ? Qt(t) : t, Mt);
 }
-function Xt(e, t, n = null) {
+function Jt(e, t, n = null) {
 	if (!e.equals(t)) {
-		Hn ? Kt.set(e, t) : Kt.has(e) || Kt.set(e, e.v);
-		var r = Lt.ensure();
+		Bn ? Wt.set(e, t) : Wt.has(e) || Wt.set(e, e.v);
+		var r = Ft.ensure();
 		if (r.capture(e, t), e.f & 2) {
 			let t = e;
-			e.f & 2048 && Ct(t), kt === null && et(t);
+			e.f & 2048 && xt(t), Dt === null && Qe(t);
 		}
-		e.wv = rr(), $t(e, g, n), Ge() && H !== null && H.f & 1024 && !(H.f & 96) && (Zn === null ? Qn([e]) : Zn.push(e)), !r.is_fork && Gt.size > 0 && !qt && Zt();
+		e.wv = nr(), Zt(e, g, n), Ue() && U !== null && U.f & 1024 && !(U.f & 96) && (Xn === null ? Zn([e]) : Xn.push(e)), !r.is_fork && Ut.size > 0 && !Gt && Yt();
 	}
 	return t;
 }
-function Zt() {
-	qt = !1;
-	for (let e of Gt) {
-		e.f & 1024 && $e(e, _);
+function Yt() {
+	Gt = !1;
+	for (let e of Ut) {
+		e.f & 1024 && Ze(e, _);
 		let t;
 		try {
-			t = ir(e);
+			t = rr(e);
 		} catch {
 			t = !0;
 		}
-		t && lr(e);
+		t && cr(e);
 	}
-	Gt.clear();
+	Ut.clear();
 }
-function Qt(e) {
-	I(e, e.v + 1);
+function Xt(e) {
+	R(e, e.v + 1);
 }
-function $t(e, t, n) {
+function Zt(e, t, n) {
 	var r = e.reactions;
-	if (r !== null) for (var i = Ge(), a = r.length, o = 0; o < a; o++) {
+	if (r !== null) for (var i = Ue(), a = r.length, o = 0; o < a; o++) {
 		var s = r[o], c = s.f;
-		if (i || s !== H) {
+		if (i || s !== U) {
 			var l = (c & g) === 0;
-			if (l && $e(s, t), c & 131072) Gt.add(s);
+			if (l && Ze(s, t), c & 131072) Ut.add(s);
 			else if (c & 2) {
 				var u = s;
-				kt?.delete(u), c & 65536 || (c & 512 && (H === null || !(H.f & 2097152)) && (s.f |= E), $t(u, _, n));
+				Dt?.delete(u), c & 65536 || (c & 512 && (U === null || !(U.f & 2097152)) && (s.f |= E), Zt(u, _, n));
 			} else if (l) {
 				var d = s;
-				c & 16 && Bt !== null && Bt.add(d), n === null ? Ht(d) : n.push(d);
+				c & 16 && Rt !== null && Rt.add(d), n === null ? Bt(d) : n.push(d);
 			}
 		}
 	}
 }
-function en(t) {
-	if (typeof t != "object" || !t || k in t) return t;
+function Qt(t) {
+	if (typeof t != "object" || !t || A in t) return t;
 	let n = l(t);
 	if (n !== s && n !== c) return t;
-	var r = /* @__PURE__ */ new Map(), i = e(t), o = /* @__PURE__ */ F(0), u = null, d = tr, f = (e) => {
-		if (tr === d) return e();
-		var t = V, n = tr;
-		Gn(null), nr(d);
+	var r = /* @__PURE__ */ new Map(), i = e(t), o = /* @__PURE__ */ L(0), u = null, d = er, f = (e) => {
+		if (er === d) return e();
+		var t = Hn, n = er;
+		Wn(null), tr(d);
 		var r = e();
-		return Gn(t), nr(n), r;
+		return Wn(t), tr(n), r;
 	};
-	return i && r.set("length", /* @__PURE__ */ F(t.length, u)), new Proxy(t, {
+	return i && r.set("length", /* @__PURE__ */ L(t.length, u)), new Proxy(t, {
 		defineProperty(e, t, n) {
-			(!("value" in n) || n.configurable === !1 || n.enumerable === !1 || n.writable === !1) && ve();
+			(!("value" in n) || n.configurable === !1 || n.enumerable === !1 || n.writable === !1) && ge();
 			var i = r.get(t);
 			return i === void 0 ? f(() => {
-				var e = /* @__PURE__ */ F(n.value, u);
+				var e = /* @__PURE__ */ L(n.value, u);
 				return r.set(t, e), e;
-			}) : I(i, n.value, !0), !0;
+			}) : R(i, n.value, !0), !0;
 		},
 		deleteProperty(e, t) {
 			var n = r.get(t);
 			if (n === void 0) {
 				if (t in e) {
-					let e = f(() => /* @__PURE__ */ F(Ce, u));
-					r.set(t, e), Qt(o);
+					let e = f(() => /* @__PURE__ */ L(xe, u));
+					r.set(t, e), Xt(o);
 				}
-			} else I(n, Ce), Qt(o);
+			} else R(n, xe), Xt(o);
 			return !0;
 		},
 		get(e, n, i) {
-			if (n === k) return t;
+			if (n === A) return t;
 			var o = r.get(n), s = n in e;
-			if (o === void 0 && (!s || a(e, n)?.writable) && (o = f(() => /* @__PURE__ */ F(en(s ? e[n] : Ce), u)), r.set(n, o)), o !== void 0) {
-				var c = U(o);
-				return c === Ce ? void 0 : c;
+			if (o === void 0 && (!s || a(e, n)?.writable) && (o = f(() => /* @__PURE__ */ L(Qt(s ? e[n] : xe), u)), r.set(n, o)), o !== void 0) {
+				var c = W(o);
+				return c === xe ? void 0 : c;
 			}
 			return Reflect.get(e, n, i);
 		},
@@ -1032,10 +1032,10 @@ function en(t) {
 			var n = Reflect.getOwnPropertyDescriptor(e, t);
 			if (n && "value" in n) {
 				var i = r.get(t);
-				i && (n.value = U(i));
+				i && (n.value = W(i));
 			} else if (n === void 0) {
 				var a = r.get(t), o = a?.v;
-				if (a !== void 0 && o !== Ce) return {
+				if (a !== void 0 && o !== xe) return {
 					enumerable: !0,
 					configurable: !0,
 					value: o,
@@ -1045,139 +1045,139 @@ function en(t) {
 			return n;
 		},
 		has(e, t) {
-			if (t === k) return !0;
-			var n = r.get(t), i = n !== void 0 && n.v !== Ce || Reflect.has(e, t);
-			return (n !== void 0 || H !== null && (!i || a(e, t)?.writable)) && (n === void 0 && (n = f(() => /* @__PURE__ */ F(i ? en(e[t]) : Ce, u)), r.set(t, n)), U(n) === Ce) ? !1 : i;
+			if (t === A) return !0;
+			var n = r.get(t), i = n !== void 0 && n.v !== xe || Reflect.has(e, t);
+			return (n !== void 0 || U !== null && (!i || a(e, t)?.writable)) && (n === void 0 && (n = f(() => /* @__PURE__ */ L(i ? Qt(e[t]) : xe, u)), r.set(t, n)), W(n) === xe) ? !1 : i;
 		},
 		set(e, t, n, s) {
 			var c = r.get(t), l = t in e;
 			if (i && t === "length") for (var d = n; d < c.v; d += 1) {
 				var p = r.get(d + "");
-				p === void 0 ? d in e && (p = f(() => /* @__PURE__ */ F(Ce, u)), r.set(d + "", p)) : I(p, Ce);
+				p === void 0 ? d in e && (p = f(() => /* @__PURE__ */ L(xe, u)), r.set(d + "", p)) : R(p, xe);
 			}
-			if (c === void 0) (!l || a(e, t)?.writable) && (c = f(() => /* @__PURE__ */ F(void 0, u)), I(c, en(n)), r.set(t, c));
+			if (c === void 0) (!l || a(e, t)?.writable) && (c = f(() => /* @__PURE__ */ L(void 0, u)), R(c, Qt(n)), r.set(t, c));
 			else {
-				l = c.v !== Ce;
-				var m = f(() => en(n));
-				I(c, m);
+				l = c.v !== xe;
+				var m = f(() => Qt(n));
+				R(c, m);
 			}
 			var h = Reflect.getOwnPropertyDescriptor(e, t);
 			if (h?.set && h.set.call(s, n), !l) {
 				if (i && typeof t == "string") {
 					var g = r.get("length"), _ = Number(t);
-					Number.isInteger(_) && _ >= g.v && I(g, _ + 1);
+					Number.isInteger(_) && _ >= g.v && R(g, _ + 1);
 				}
-				Qt(o);
+				Xt(o);
 			}
 			return !0;
 		},
 		ownKeys(e) {
-			U(o);
+			W(o);
 			var t = Reflect.ownKeys(e).filter((e) => {
 				var t = r.get(e);
-				return t === void 0 || t.v !== Ce;
+				return t === void 0 || t.v !== xe;
 			});
-			for (var [n, i] of r) i.v !== Ce && !(n in e) && t.push(n);
+			for (var [n, i] of r) i.v !== xe && !(n in e) && t.push(n);
 			return t;
 		},
 		setPrototypeOf() {
-			ye();
+			_e();
 		}
 	});
 }
-function tn(e) {
+function $t(e) {
 	try {
-		if (typeof e == "object" && e && k in e) return e[k];
+		if (typeof e == "object" && e && A in e) return e[A];
 	} catch {}
 	return e;
 }
-function nn(e, t) {
-	return Object.is(tn(e), tn(t));
+function en(e, t) {
+	return Object.is($t(e), $t(t));
 }
-var rn, an, on, sn;
-function cn() {
-	if (rn === void 0) {
-		rn = window, an = /Firefox/.test(navigator.userAgent);
+var tn, nn, rn, an;
+function on() {
+	if (tn === void 0) {
+		tn = window, nn = /Firefox/.test(navigator.userAgent);
 		var e = Element.prototype, t = Node.prototype, n = Text.prototype;
-		on = a(t, "firstChild").get, sn = a(t, "nextSibling").get, u(e) && (e[ie] = void 0, e[re] = null, e[ae] = void 0, e.__e = void 0), u(n) && (n[oe] = void 0);
+		rn = a(t, "firstChild").get, an = a(t, "nextSibling").get, u(e) && (e[j] = void 0, e[ne] = null, e[re] = void 0, e.__e = void 0), u(n) && (n[ie] = void 0);
 	}
 }
-function ln(e = "") {
+function sn(e = "") {
 	return document.createTextNode(e);
 }
 /*@__NO_SIDE_EFFECTS__*/
-function un(e) {
-	return on.call(e);
+function cn(e) {
+	return rn.call(e);
 }
 /*@__NO_SIDE_EFFECTS__*/
-function dn(e) {
-	return sn.call(e);
+function ln(e) {
+	return an.call(e);
 }
-function L(e, t) {
-	if (!A) return /* @__PURE__ */ un(e);
-	var n = /* @__PURE__ */ un(j);
-	if (n === null) n = j.appendChild(ln());
+function z(e, t) {
+	if (!M) return /* @__PURE__ */ cn(e);
+	var n = /* @__PURE__ */ cn(N);
+	if (n === null) n = N.appendChild(sn());
 	else if (t && n.nodeType !== 3) {
-		var r = ln();
-		return n?.before(r), Ae(r), r;
+		var r = sn();
+		return n?.before(r), Oe(r), r;
 	}
-	return t && hn(n), Ae(n), n;
+	return t && pn(n), Oe(n), n;
 }
-function R(e, t = !1) {
-	if (!A) {
-		var n = /* @__PURE__ */ un(e);
-		return n instanceof Comment && n.data === "" ? /* @__PURE__ */ dn(n) : n;
+function B(e, t = !1) {
+	if (!M) {
+		var n = /* @__PURE__ */ cn(e);
+		return n instanceof Comment && n.data === "" ? /* @__PURE__ */ ln(n) : n;
 	}
 	if (t) {
-		if (j?.nodeType !== 3) {
-			var r = ln();
-			return j?.before(r), Ae(r), r;
+		if (N?.nodeType !== 3) {
+			var r = sn();
+			return N?.before(r), Oe(r), r;
 		}
-		hn(j);
+		pn(N);
 	}
-	return j;
+	return N;
 }
-function z(e, t = 1, n = !1) {
-	let r = A ? j : e;
-	for (var i; t--;) i = r, r = /* @__PURE__ */ dn(r);
-	if (!A) return r;
+function V(e, t = 1, n = !1) {
+	let r = M ? N : e;
+	for (var i; t--;) i = r, r = /* @__PURE__ */ ln(r);
+	if (!M) return r;
 	if (n) {
 		if (r?.nodeType !== 3) {
-			var a = ln();
-			return r === null ? i?.after(a) : r.before(a), Ae(a), a;
+			var a = sn();
+			return r === null ? i?.after(a) : r.before(a), Oe(a), a;
 		}
-		hn(r);
+		pn(r);
 	}
-	return Ae(r), r;
+	return Oe(r), r;
 }
-function fn(e) {
+function un(e) {
 	e.textContent = "";
 }
-function pn() {
+function dn() {
 	return !1;
 }
-function mn(e, t, n) {
+function fn(e, t, n) {
 	return t == null || t === "http://www.w3.org/1999/xhtml" ? n ? document.createElement(e, { is: n }) : document.createElement(e) : n ? document.createElementNS(t, e, { is: n }) : document.createElementNS(t, e);
 }
-function hn(e) {
+function pn(e) {
 	if (e.nodeValue.length < 65536) return;
 	let t = e.nextSibling;
 	for (; t !== null && t.nodeType === 3;) t.remove(), e.nodeValue += t.nodeValue, t = e.nextSibling;
 }
 //#endregion
 //#region node_modules/svelte/src/internal/client/reactivity/effects.js
-function gn(e) {
-	H === null && (V === null && he(e), me()), Hn && pe(e);
+function mn(e) {
+	U === null && (Hn === null && pe(e), fe()), Bn && de(e);
 }
-function _n(e, t) {
+function hn(e, t) {
 	var n = t.last;
 	n === null ? t.last = t.first = e : (n.next = e, e.prev = n, t.last = e);
 }
-function vn(e, t) {
-	var n = H;
+function gn(e, t) {
+	var n = U;
 	n !== null && n.f & 8192 && (e |= v);
 	var r = {
-		ctx: Ve,
+		ctx: ze,
 		deps: null,
 		nodes: null,
 		f: e | g | 512,
@@ -1192,132 +1192,132 @@ function vn(e, t) {
 		wv: 0,
 		ac: null
 	};
-	P?.register_created_effect(r);
+	I?.register_created_effect(r);
 	var i = r;
-	if (e & 4) Nt === null ? Lt.ensure().schedule(r) : Nt.push(r);
+	if (e & 4) jt === null ? Ft.ensure().schedule(r) : jt.push(r);
 	else if (t !== null) {
 		try {
-			lr(r);
+			cr(r);
 		} catch (e) {
-			throw Mn(r), e;
+			throw An(r), e;
 		}
 		i.deps === null && i.teardown === null && i.nodes === null && i.first === i.last && !(i.f & 524288) && (i = i.first, e & 16 && e & 65536 && i !== null && (i.f |= S));
 	}
-	if (i !== null && (i.parent = n, n !== null && _n(i, n), V !== null && V.f & 2 && !(e & 64))) {
-		var a = V;
+	if (i !== null && (i.parent = n, n !== null && hn(i, n), Hn !== null && Hn.f & 2 && !(e & 64))) {
+		var a = Hn;
 		(a.effects ??= []).push(i);
 	}
 	return r;
 }
-function yn() {
-	return V !== null && !Wn;
+function _n() {
+	return Hn !== null && !Un;
+}
+function vn(e) {
+	let t = gn(8, null);
+	return Ze(t, h), t.teardown = e, t;
+}
+function yn(e) {
+	mn("$effect");
+	var t = U.f;
+	if (!Hn && t & 32 && ze !== null && !ze.i) {
+		var n = ze;
+		(n.e ??= []).push(e);
+	} else return bn(e);
 }
 function bn(e) {
-	let t = vn(8, null);
-	return $e(t, h), t.teardown = e, t;
+	return gn(4 | w, e);
 }
 function xn(e) {
-	gn("$effect");
-	var t = H.f;
-	if (!V && t & 32 && Ve !== null && !Ve.i) {
-		var n = Ve;
-		(n.e ??= []).push(e);
-	} else return Sn(e);
-}
-function Sn(e) {
-	return vn(4 | w, e);
-}
-function Cn(e) {
-	Lt.ensure();
-	let t = vn(64 | C, e);
+	Ft.ensure();
+	let t = gn(64 | C, e);
 	return (e = {}) => new Promise((n) => {
-		e.outro ? Fn(t, () => {
-			Mn(t), n(void 0);
-		}) : (Mn(t), n(void 0));
+		e.outro ? Nn(t, () => {
+			An(t), n(void 0);
+		}) : (An(t), n(void 0));
 	});
 }
-function wn(e) {
-	return vn(4, e);
+function Sn(e) {
+	return gn(4, e);
 }
-function Tn(e) {
-	return vn(O | C, e);
+function Cn(e) {
+	return gn(O | C, e);
 }
-function En(e, t = 0) {
-	return vn(8 | t, e);
+function wn(e, t = 0) {
+	return gn(8 | t, e);
 }
-function B(e, t = [], n = [], r = []) {
-	mt(r, t, n, (t) => {
-		vn(8, () => {
-			e(...t.map(U));
+function H(e, t = [], n = [], r = []) {
+	ft(r, t, n, (t) => {
+		gn(8, () => {
+			e(...t.map(W));
 		});
 	});
 }
-function Dn(e, t = 0) {
-	return vn(16 | t, e);
+function Tn(e, t = 0) {
+	return gn(16 | t, e);
 }
-function On(e) {
-	return vn(32 | C, e);
+function En(e) {
+	return gn(32 | C, e);
 }
-function kn(e) {
+function Dn(e) {
 	var t = e.teardown;
 	if (t !== null) {
-		let e = Hn, n = V;
-		Un(!0), Gn(null);
+		let e = Bn, n = Hn;
+		Vn(!0), Wn(null);
 		try {
 			t.call(null);
 		} finally {
-			Un(e), Gn(n);
+			Vn(e), Wn(n);
 		}
 	}
 }
-function An(e, t = !1) {
+function On(e, t = !1) {
 	var n = e.first;
 	for (e.first = e.last = null; n !== null;) {
 		let e = n.ac;
-		e !== null && ct(() => {
-			e.abort(ce);
+		e !== null && ot(() => {
+			e.abort(oe);
 		});
 		var r = n.next;
-		n.f & 64 ? n.parent = null : Mn(n, t), n = r;
+		n.f & 64 ? n.parent = null : An(n, t), n = r;
 	}
 }
-function jn(e) {
+function kn(e) {
 	for (var t = e.first; t !== null;) {
 		var n = t.next;
-		t.f & 32 || Mn(t), t = n;
+		t.f & 32 || An(t), t = n;
 	}
 }
-function Mn(e, t = !0) {
+function An(e, t = !0) {
 	var n = !1;
-	(t || e.f & 262144) && e.nodes !== null && e.nodes.end !== null && (Nn(e.nodes.start, e.nodes.end), n = !0), e.f |= x, An(e, t && !n), cr(e, 0);
+	(t || e.f & 262144) && e.nodes !== null && e.nodes.end !== null && (jn(e.nodes.start, e.nodes.end), n = !0), e.f |= x, On(e, t && !n), sr(e, 0);
 	var r = e.nodes && e.nodes.t;
 	if (r !== null) for (let e of r) e.stop();
-	kn(e), e.f ^= x, e.f |= y;
+	Dn(e), e.f ^= x, e.f |= y;
 	var i = e.parent;
-	i !== null && i.first !== null && Pn(e), e.next = e.prev = e.teardown = e.ctx = e.deps = e.fn = e.nodes = e.ac = e.b = null;
+	i !== null && i.first !== null && Mn(e), e.next = e.prev = e.teardown = e.ctx = e.deps = e.fn = e.nodes = e.ac = e.b = null;
 }
-function Nn(e, t) {
+function jn(e, t) {
 	for (; e !== null;) {
-		var n = e === t ? null : /* @__PURE__ */ dn(e);
+		var n = e === t ? null : /* @__PURE__ */ ln(e);
 		e.remove(), e = n;
 	}
 }
-function Pn(e) {
+function Mn(e) {
 	var t = e.parent, n = e.prev, r = e.next;
 	n !== null && (n.next = r), r !== null && (r.prev = n), t !== null && (t.first === e && (t.first = r), t.last === e && (t.last = n));
 }
-function Fn(e, t, n = !0) {
+function Nn(e, t, n = !0) {
 	var r = [];
-	In(e, r, !0);
+	Pn(e, r, !0);
 	var i = () => {
-		n && Mn(e), t && t();
+		n && An(e), t && t();
 	}, a = r.length;
 	if (a > 0) {
 		var o = () => --a || i();
 		for (var s of r) s.out(o);
 	} else i();
 }
-function In(e, t, n) {
+function Pn(e, t, n) {
 	if (!(e.f & 8192)) {
 		e.f ^= v;
 		var r = e.nodes && e.nodes.t;
@@ -1326,110 +1326,110 @@ function In(e, t, n) {
 			var a = i.next;
 			if (!(i.f & 64)) {
 				var o = !!(i.f & 65536) || !!(i.f & 32) && !!(e.f & 16);
-				In(i, t, o ? n : !1);
+				Pn(i, t, o ? n : !1);
 			}
 			i = a;
 		}
 	}
 }
-function Ln(e) {
-	Rn(e, !0);
+function Fn(e) {
+	In(e, !0);
 }
-function Rn(e, t) {
+function In(e, t) {
 	if (e.f & 8192) {
-		e.f ^= v, e.f & 1024 || ($e(e, g), Lt.ensure().schedule(e));
+		e.f ^= v, e.f & 1024 || (Ze(e, g), Ft.ensure().schedule(e));
 		for (var n = e.first; n !== null;) {
 			var r = n.next, i = !!(n.f & 65536) || !!(n.f & 32);
-			Rn(n, i ? t : !1), n = r;
+			In(n, i ? t : !1), n = r;
 		}
 		var a = e.nodes && e.nodes.t;
 		if (a !== null) for (let e of a) (e.is_global || t) && e.in();
 	}
 }
-function zn(e, t) {
+function Ln(e, t) {
 	if (e.nodes) for (var n = e.nodes.start, r = e.nodes.end; n !== null;) {
-		var i = n === r ? null : /* @__PURE__ */ dn(n);
+		var i = n === r ? null : /* @__PURE__ */ ln(n);
 		t.append(n), n = i;
 	}
 }
 //#endregion
 //#region node_modules/svelte/src/internal/client/legacy.js
-var Bn = null, Vn = !1, Hn = !1;
-function Un(e) {
+var Rn = null, zn = !1, Bn = !1;
+function Vn(e) {
+	Bn = e;
+}
+var Hn = null, Un = !1;
+function Wn(e) {
 	Hn = e;
 }
-var V = null, Wn = !1;
+var U = null;
 function Gn(e) {
-	V = e;
+	U = e;
 }
-var H = null;
-function Kn(e) {
-	H = e;
+var Kn = null;
+function qn(e) {
+	Hn !== null && (Kn ??= /* @__PURE__ */ new Set()).add(e);
 }
-var qn = null;
-function Jn(e) {
-	V !== null && (qn ??= /* @__PURE__ */ new Set()).add(e);
+var Jn = null, Yn = 0, Xn = null;
+function Zn(e) {
+	Xn = e;
 }
-var Yn = null, Xn = 0, Zn = null;
-function Qn(e) {
-	Zn = e;
+var Qn = 1, $n = 0, er = $n;
+function tr(e) {
+	er = e;
 }
-var $n = 1, er = 0, tr = er;
-function nr(e) {
-	tr = e;
+function nr() {
+	return ++Qn;
 }
-function rr() {
-	return ++$n;
-}
-function ir(e) {
+function rr(e) {
 	var t = e.f;
 	if (t & 2048) return !0;
 	if (t & 2 && (e.f &= ~E), t & 4096) {
 		for (var n = e.deps, r = n.length, i = 0; i < r; i++) {
 			var a = n[i];
-			if (ir(a) && wt(a), a.wv > e.wv) return !0;
+			if (rr(a) && St(a), a.wv > e.wv) return !0;
 		}
-		t & 512 && kt === null && $e(e, h);
+		t & 512 && Dt === null && Ze(e, h);
 	}
 	return !1;
 }
-function ar(e, t, n = !0) {
+function ir(e, t, n = !0) {
 	var r = e.reactions;
-	if (r !== null && !(qn !== null && qn.has(e))) for (var i = 0; i < r.length; i++) {
+	if (r !== null && !(Kn !== null && Kn.has(e))) for (var i = 0; i < r.length; i++) {
 		var a = r[i];
-		a.f & 2 ? ar(a, t, !1) : t === a && (n ? $e(a, g) : a.f & 1024 && $e(a, _), Ht(a));
+		a.f & 2 ? ir(a, t, !1) : t === a && (n ? Ze(a, g) : a.f & 1024 && Ze(a, _), Bt(a));
 	}
 }
-function or(e) {
-	var t = Yn, n = Xn, r = Zn, i = V, a = qn, o = Ve, s = Wn, c = tr, l = e.f;
-	Yn = null, Xn = 0, Zn = null, V = l & 96 ? null : e, qn = null, He(e.ctx), Wn = !1, tr = ++er, e.ac !== null && (ct(() => {
-		e.ac.abort(ce);
+function ar(e) {
+	var t = Jn, n = Yn, r = Xn, i = Hn, a = Kn, o = ze, s = Un, c = er, l = e.f;
+	Jn = null, Yn = 0, Xn = null, Hn = l & 96 ? null : e, Kn = null, Be(e.ctx), Un = !1, er = ++$n, e.ac !== null && (ot(() => {
+		e.ac.abort(oe);
 	}), e.ac = null);
 	try {
 		e.f |= D;
 		var u = e.fn, d = u();
 		e.f |= b;
-		var f = e.deps, p = P?.is_fork;
-		if (Yn !== null) {
+		var f = e.deps, p = I?.is_fork;
+		if (Jn !== null) {
 			var m;
-			if (p || cr(e, Xn), f !== null && Xn > 0) for (f.length = Xn + Yn.length, m = 0; m < Yn.length; m++) f[Xn + m] = Yn[m];
-			else e.deps = f = Yn;
-			if (yn() && e.f & 512) for (m = Xn; m < f.length; m++) (f[m].reactions ??= []).push(e);
-		} else !p && f !== null && Xn < f.length && (cr(e, Xn), f.length = Xn);
-		if (Ge() && Zn !== null && !Wn && f !== null && !(e.f & 6146)) for (m = 0; m < Zn.length; m++) ar(Zn[m], e);
+			if (p || sr(e, Yn), f !== null && Yn > 0) for (f.length = Yn + Jn.length, m = 0; m < Jn.length; m++) f[Yn + m] = Jn[m];
+			else e.deps = f = Jn;
+			if (_n() && e.f & 512) for (m = Yn; m < f.length; m++) (f[m].reactions ??= []).push(e);
+		} else !p && f !== null && Yn < f.length && (sr(e, Yn), f.length = Yn);
+		if (Ue() && Xn !== null && !Un && f !== null && !(e.f & 6146)) for (m = 0; m < Xn.length; m++) ir(Xn[m], e);
 		if (i !== null && i !== e) {
-			if (er++, i.deps !== null) for (let e = 0; e < n; e += 1) i.deps[e].rv = er;
-			if (t !== null) for (let e of t) e.rv = er;
-			Zn !== null && (r === null ? r = Zn : r.push(...Zn));
+			if ($n++, i.deps !== null) for (let e = 0; e < n; e += 1) i.deps[e].rv = $n;
+			if (t !== null) for (let e of t) e.rv = $n;
+			Xn !== null && (r === null ? r = Xn : r.push(...Xn));
 		}
-		return e.f & 8388608 && (e.f ^= ee), d;
+		return e.f & 8388608 && (e.f ^= k), d;
 	} catch (e) {
-		return Xe(e);
+		return Je(e);
 	} finally {
-		e.f ^= D, Yn = t, Xn = n, Zn = r, V = i, qn = a, He(o), Wn = s, tr = c;
+		e.f ^= D, Jn = t, Yn = n, Xn = r, Hn = i, Kn = a, Be(o), Un = s, er = c;
 	}
 }
-function sr(e, r) {
+function or(e, r) {
 	let i = r.reactions;
 	if (i !== null) {
 		var a = t.call(i, e);
@@ -1438,120 +1438,120 @@ function sr(e, r) {
 			o === 0 ? i = r.reactions = null : (i[a] = i[o], i.pop());
 		}
 	}
-	if (i === null && r.f & 2 && (Yn === null || !n.call(Yn, r))) {
+	if (i === null && r.f & 2 && (Jn === null || !n.call(Jn, r))) {
 		var s = r;
-		s.f & 512 && (s.f ^= 512, s.f &= ~E), s.v !== Ce && et(s), s.ac !== null && ct(() => {
-			s.ac.abort(ce), s.ac = null, $e(s, g);
-		}), Tt(s), cr(s, 0);
+		s.f & 512 && (s.f ^= 512, s.f &= ~E), s.v !== xe && Qe(s), s.ac !== null && ot(() => {
+			s.ac.abort(oe), s.ac = null, Ze(s, g);
+		}), Ct(s), sr(s, 0);
 	}
 }
-function cr(e, t) {
+function sr(e, t) {
 	var n = e.deps;
-	if (n !== null) for (var r = t; r < n.length; r++) sr(e, n[r]);
+	if (n !== null) for (var r = t; r < n.length; r++) or(e, n[r]);
 }
-function lr(e) {
+function cr(e) {
 	var t = e.f;
 	if (!(t & 16384)) {
-		$e(e, h);
-		var n = H, r = Vn;
-		H = e, Vn = !(t & 96);
+		Ze(e, h);
+		var n = U, r = zn;
+		U = e, zn = !(t & 96);
 		try {
-			t & 16777232 ? jn(e) : An(e), kn(e);
-			var i = or(e);
-			e.teardown = typeof i == "function" ? i : null, e.wv = $n;
+			t & 16777232 ? kn(e) : On(e), Dn(e);
+			var i = ar(e);
+			e.teardown = typeof i == "function" ? i : null, e.wv = Qn;
 		} finally {
-			Vn = r, H = n;
+			zn = r, U = n;
 		}
 	}
 }
-async function ur() {
-	await Promise.resolve(), Rt();
+async function lr() {
+	await Promise.resolve(), It();
 }
-function U(e) {
+function W(e) {
 	var t = !!(e.f & 2);
-	if (Bn?.add(e), V !== null && !Wn && !(H !== null && H.f & 16384) && (qn === null || !qn.has(e))) {
-		var r = V.deps;
-		if (V.f & 2097152) e.rv < er && (e.rv = er, Yn === null && r !== null && r[Xn] === e ? Xn++ : Yn === null ? Yn = [e] : Yn.push(e));
+	if (Rn?.add(e), Hn !== null && !Un && !(U !== null && U.f & 16384) && (Kn === null || !Kn.has(e))) {
+		var r = Hn.deps;
+		if (Hn.f & 2097152) e.rv < $n && (e.rv = $n, Jn === null && r !== null && r[Yn] === e ? Yn++ : Jn === null ? Jn = [e] : Jn.push(e));
 		else {
-			V.deps ??= [], n.call(V.deps, e) || V.deps.push(e);
+			Hn.deps ??= [], n.call(Hn.deps, e) || Hn.deps.push(e);
 			var i = e.reactions;
-			i === null ? e.reactions = [V] : n.call(i, V) || i.push(V);
+			i === null ? e.reactions = [Hn] : n.call(i, Hn) || i.push(Hn);
 		}
 	}
-	if (Hn && Kt.has(e)) return Kt.get(e);
+	if (Bn && Wt.has(e)) return Wt.get(e);
 	if (t) {
 		var a = e;
-		if (Hn) {
+		if (Bn) {
 			var o = a.v;
-			return (!(a.f & 1024) && a.reactions !== null || fr(a)) && (o = Ct(a)), Kt.set(a, o), o;
+			return (!(a.f & 1024) && a.reactions !== null || dr(a)) && (o = xt(a)), Wt.set(a, o), o;
 		}
-		var s = !(a.f & 512) && !Wn && V !== null && (Vn || !!(V.f & 512)), c = (a.f & b) === 0;
-		ir(a) && (s && (a.f |= 512), wt(a)), s && !c && (Et(a), dr(a));
+		var s = !(a.f & 512) && !Un && Hn !== null && (zn || !!(Hn.f & 512)), c = (a.f & b) === 0;
+		rr(a) && (s && (a.f |= 512), St(a)), s && !c && (wt(a), ur(a));
 	}
-	if (kt?.has(e)) return kt.get(e);
+	if (Dt?.has(e)) return Dt.get(e);
 	if (e.f & 8388608) throw e.v;
 	return e.v;
 }
-function dr(e) {
-	if (e.f |= 512, e.deps !== null) for (let t of e.deps) (t.reactions ??= []).push(e), t.f & 2 && !(t.f & 512) && (Et(t), dr(t));
+function ur(e) {
+	if (e.f |= 512, e.deps !== null) for (let t of e.deps) (t.reactions ??= []).push(e), t.f & 2 && !(t.f & 512) && (wt(t), ur(t));
 }
-function fr(e) {
-	if (e.v === Ce) return !0;
+function dr(e) {
+	if (e.v === xe) return !0;
 	if (e.deps === null) return !1;
-	for (let t of e.deps) if (Kt.has(t) || t.f & 2 && fr(t)) return !0;
+	for (let t of e.deps) if (Wt.has(t) || t.f & 2 && dr(t)) return !0;
 	return !1;
 }
-function pr(e) {
-	var t = Wn;
+function fr(e) {
+	var t = Un;
 	try {
-		return Wn = !0, e();
+		return Un = !0, e();
 	} finally {
-		Wn = t;
+		Un = t;
 	}
 }
 [.../* @__PURE__ */ "allowfullscreen.async.autofocus.autoplay.checked.controls.default.disabled.formnovalidate.indeterminate.inert.ismap.loop.multiple.muted.nomodule.novalidate.open.playsinline.readonly.required.reversed.seamless.selected.webkitdirectory.defer.disablepictureinpicture.disableremoteplayback".split(".")];
-var mr = ["touchstart", "touchmove"];
-function hr(e) {
-	return mr.includes(e);
+var pr = ["touchstart", "touchmove"];
+function mr(e) {
+	return pr.includes(e);
 }
 //#endregion
 //#region node_modules/svelte/src/internal/client/dom/elements/events.js
-var gr = Symbol("events"), _r = /* @__PURE__ */ new Set(), vr = /* @__PURE__ */ new Set();
-function yr(e, t, n, r = {}) {
+var hr = Symbol("events"), gr = /* @__PURE__ */ new Set(), _r = /* @__PURE__ */ new Set();
+function vr(e, t, n, r = {}) {
 	function i(e) {
-		if (r.capture || Cr.call(t, e), !e.cancelBubble) return ct(() => n?.call(this, e));
+		if (r.capture || Sr.call(t, e), !e.cancelBubble) return ot(() => n?.call(this, e));
 	}
-	return e.startsWith("pointer") || e.startsWith("touch") || e === "wheel" ? Je(() => {
+	return e.startsWith("pointer") || e.startsWith("touch") || e === "wheel" ? Ke(() => {
 		t.addEventListener(e, i, r);
 	}) : t.addEventListener(e, i, r), i;
 }
-function W(e, t, n, r, i) {
+function G(e, t, n, r, i) {
 	var a = {
 		capture: r,
 		passive: i
-	}, o = yr(e, t, n, a);
-	(t === document.body || t === window || t === document || t instanceof HTMLMediaElement) && bn(() => {
+	}, o = vr(e, t, n, a);
+	(t === document.body || t === window || t === document || t instanceof HTMLMediaElement) && vn(() => {
 		t.removeEventListener(e, o, a);
 	});
 }
-function G(e, t, n) {
-	(t[gr] ??= {})[e] = n;
+function K(e, t, n) {
+	(t[hr] ??= {})[e] = n;
 }
-function br(e) {
-	for (var t = 0; t < e.length; t++) _r.add(e[t]);
-	for (var n of vr) n(e);
+function yr(e) {
+	for (var t = 0; t < e.length; t++) gr.add(e[t]);
+	for (var n of _r) n(e);
 }
-var xr = null, Sr = !1;
-function Cr(e) {
+var br = null, xr = !1;
+function Sr(e) {
 	var t = this, n = t.ownerDocument, r = e.type, a = e.composedPath?.() || [], o = a[0] || e.target;
-	xr = e, Sr || (Sr = !0, setTimeout(() => {
-		Sr = !1, xr = null;
+	br = e, xr || (xr = !0, setTimeout(() => {
+		xr = !1, br = null;
 	}));
-	var s = 0, c = xr === e && e[gr];
+	var s = 0, c = br === e && e[hr];
 	if (c) {
 		var l = a.indexOf(c);
 		if (l !== -1 && (t === document || t === window)) {
-			e[gr] = t;
+			e[hr] = t;
 			return;
 		}
 		var u = a.indexOf(t);
@@ -1565,12 +1565,12 @@ function Cr(e) {
 				return o || n;
 			}
 		});
-		var d = V, f = H;
-		Gn(null), Kn(null);
+		var d = Hn, f = U;
+		Wn(null), Gn(null);
 		try {
 			for (var p, m = []; o !== null && o !== t;) {
 				try {
-					var h = o[gr]?.[r];
+					var h = o[hr]?.[r];
 					h != null && (!o.disabled || e.target === o) && h.call(o, e);
 				} catch (e) {
 					p ? m.push(e) : p = e;
@@ -1585,24 +1585,24 @@ function Cr(e) {
 				throw p;
 			}
 		} finally {
-			e[gr] = t, delete e.currentTarget, Gn(d), Kn(f);
+			e[hr] = t, delete e.currentTarget, Wn(d), Gn(f);
 		}
 	}
 }
 //#endregion
 //#region node_modules/svelte/src/internal/client/dom/reconciler.js
-var wr = globalThis?.window?.trustedTypes && /* @__PURE__ */ globalThis.window.trustedTypes.createPolicy("svelte-trusted-html", { createHTML: (e) => e });
-function Tr(e) {
-	return wr?.createHTML(e) ?? e;
+var Cr = globalThis?.window?.trustedTypes && /* @__PURE__ */ globalThis.window.trustedTypes.createPolicy("svelte-trusted-html", { createHTML: (e) => e });
+function wr(e) {
+	return Cr?.createHTML(e) ?? e;
 }
-function Er(e) {
-	var t = mn("template");
-	return t.innerHTML = Tr(e.replaceAll("<!>", "<!---->")), t.content;
+function Tr(e) {
+	var t = fn("template");
+	return t.innerHTML = wr(e.replaceAll("<!>", "<!---->")), t.content;
 }
 //#endregion
 //#region node_modules/svelte/src/internal/client/dom/template.js
-function Dr(e, t) {
-	var n = H;
+function Er(e, t) {
+	var n = U;
 	n.nodes === null && (n.nodes = {
 		start: e,
 		end: t,
@@ -1611,118 +1611,118 @@ function Dr(e, t) {
 	});
 }
 /*#__NO_SIDE_EFFECTS__*/
-function K(e, t) {
+function q(e, t) {
 	var n = !!(t & 1), r = !!(t & 2), i, a = !e.startsWith("<!>");
 	return () => {
-		if (A) return Dr(j, null), j;
-		i === void 0 && (i = Er(a ? e : "<!>" + e), n || (i = /* @__PURE__ */ un(i)));
-		var t = r || an ? document.importNode(i, !0) : i.cloneNode(!0);
+		if (M) return Er(N, null), N;
+		i === void 0 && (i = Tr(a ? e : "<!>" + e), n || (i = /* @__PURE__ */ cn(i)));
+		var t = r || nn ? document.importNode(i, !0) : i.cloneNode(!0);
 		if (n) {
-			var o = /* @__PURE__ */ un(t), s = t.lastChild;
-			Dr(o, s);
-		} else Dr(t, t);
+			var o = /* @__PURE__ */ cn(t), s = t.lastChild;
+			Er(o, s);
+		} else Er(t, t);
 		return t;
 	};
 }
 /*#__NO_SIDE_EFFECTS__*/
-function Or(e, t, n = "svg") {
+function Dr(e, t, n = "svg") {
 	var r = !e.startsWith("<!>"), i = !!(t & 1), a = `<${n}>${r ? e : "<!>" + e}</${n}>`, o;
 	return () => {
-		if (A) return Dr(j, null), j;
+		if (M) return Er(N, null), N;
 		if (!o) {
-			var e = /* @__PURE__ */ un(Er(a));
-			if (i) for (o = document.createDocumentFragment(); /* @__PURE__ */ un(e);) o.appendChild(/* @__PURE__ */ un(e));
-			else o = /* @__PURE__ */ un(e);
+			var e = /* @__PURE__ */ cn(Tr(a));
+			if (i) for (o = document.createDocumentFragment(); /* @__PURE__ */ cn(e);) o.appendChild(/* @__PURE__ */ cn(e));
+			else o = /* @__PURE__ */ cn(e);
 		}
 		var t = o.cloneNode(!0);
 		if (i) {
-			var n = /* @__PURE__ */ un(t), r = t.lastChild;
-			Dr(n, r);
-		} else Dr(t, t);
+			var n = /* @__PURE__ */ cn(t), r = t.lastChild;
+			Er(n, r);
+		} else Er(t, t);
 		return t;
 	};
 }
 /*#__NO_SIDE_EFFECTS__*/
-function kr(e, t) {
-	return /* @__PURE__ */ Or(e, t, "svg");
+function Or(e, t) {
+	return /* @__PURE__ */ Dr(e, t, "svg");
 }
-function Ar(e = "") {
-	if (!A) {
-		var t = ln(e + "");
-		return Dr(t, t), t;
+function kr(e = "") {
+	if (!M) {
+		var t = sn(e + "");
+		return Er(t, t), t;
 	}
-	var n = j;
-	return n.nodeType === 3 ? hn(n) : (n.before(n = ln()), Ae(n)), Dr(n, n), n;
+	var n = N;
+	return n.nodeType === 3 ? pn(n) : (n.before(n = sn()), Oe(n)), Er(n, n), n;
 }
-function jr() {
-	if (A) return Dr(j, null), j;
-	var e = document.createDocumentFragment(), t = document.createComment(""), n = ln();
-	return e.append(t, n), Dr(t, n), e;
+function Ar() {
+	if (M) return Er(N, null), N;
+	var e = document.createDocumentFragment(), t = document.createComment(""), n = sn();
+	return e.append(t, n), Er(t, n), e;
 }
-function q(e, t) {
-	if (A) {
-		var n = H;
-		(!(n.f & 32768) || n.nodes.end === null) && (n.nodes.end = j), je();
+function J(e, t) {
+	if (M) {
+		var n = U;
+		(!(n.f & 32768) || n.nodes.end === null) && (n.nodes.end = N), ke();
 	} else e !== null && e.before(t);
 }
-function Mr() {
-	if (A && j && j.nodeType === 8 && j.textContent?.startsWith("$")) {
-		let e = j.textContent.substring(1);
-		return je(), e;
+function jr() {
+	if (M && N && N.nodeType === 8 && N.textContent?.startsWith("$")) {
+		let e = N.textContent.substring(1);
+		return ke(), e;
 	}
 	return (window.__svelte ??= {}).uid ??= 1, `c${window.__svelte.uid++}`;
 }
-function J(e, t) {
+function Y(e, t) {
 	var n = t == null ? "" : typeof t == "object" ? `${t}` : t;
-	n !== (e[oe] ??= e.nodeValue) && (e[oe] = n, e.nodeValue = `${n}`);
+	n !== (e[ie] ??= e.nodeValue) && (e[ie] = n, e.nodeValue = `${n}`);
 }
-function Nr(e, t) {
-	return Fr(e, t);
+function Mr(e, t) {
+	return Pr(e, t);
 }
-var Pr = /* @__PURE__ */ new Map();
-function Fr(e, { target: t, anchor: n, props: i = {}, events: a, context: o, intro: s = !0, transformError: c }) {
-	cn();
-	var l = void 0, u = Cn(() => {
-		var s = n ?? t.appendChild(ln());
-		ft(s, { pending: () => {} }, (t) => {
-			Ue({});
-			var n = Ve;
-			if (o && (n.c = o), a && (i.$$events = a), A && Dr(t, null), l = e(t, i) || {}, A && (H.nodes.end = j, j === null || j.nodeType !== 8 || j.data !== "]")) throw Ee(), Se;
-			We();
+var Nr = /* @__PURE__ */ new Map();
+function Pr(e, { target: t, anchor: n, props: i = {}, events: a, context: o, intro: s = !0, transformError: c }) {
+	on();
+	var l = void 0, u = xn(() => {
+		var s = n ?? t.appendChild(sn());
+		ut(s, { pending: () => {} }, (t) => {
+			Ve({});
+			var n = ze;
+			if (o && (n.c = o), a && (i.$$events = a), M && Er(t, null), l = e(t, i) || {}, M && (U.nodes.end = N, N === null || N.nodeType !== 8 || N.data !== "]")) throw we(), be;
+			He();
 		}, c);
 		var u = /* @__PURE__ */ new Set(), d = (e) => {
 			for (var n = 0; n < e.length; n++) {
 				var r = e[n];
 				if (!u.has(r)) {
 					u.add(r);
-					var i = hr(r);
+					var i = mr(r);
 					for (let e of [t, document]) {
-						var a = Pr.get(e);
-						a === void 0 && (a = /* @__PURE__ */ new Map(), Pr.set(e, a));
+						var a = Nr.get(e);
+						a === void 0 && (a = /* @__PURE__ */ new Map(), Nr.set(e, a));
 						var o = a.get(r);
-						o === void 0 ? (e.addEventListener(r, Cr, { passive: i }), a.set(r, 1)) : a.set(r, o + 1);
+						o === void 0 ? (e.addEventListener(r, Sr, { passive: i }), a.set(r, 1)) : a.set(r, o + 1);
 					}
 				}
 			}
 		};
-		return d(r(_r)), vr.add(d), () => {
+		return d(r(gr)), _r.add(d), () => {
 			for (var e of u) for (let n of [t, document]) {
-				var r = Pr.get(n), i = r.get(e);
-				--i == 0 ? (n.removeEventListener(e, Cr), r.delete(e), r.size === 0 && Pr.delete(n)) : r.set(e, i);
+				var r = Nr.get(n), i = r.get(e);
+				--i == 0 ? (n.removeEventListener(e, Sr), r.delete(e), r.size === 0 && Nr.delete(n)) : r.set(e, i);
 			}
-			vr.delete(d), s !== n && s.parentNode?.removeChild(s);
+			_r.delete(d), s !== n && s.parentNode?.removeChild(s);
 		};
 	});
-	return Ir.set(l, u), l;
+	return Fr.set(l, u), l;
 }
-var Ir = /* @__PURE__ */ new WeakMap();
-function Lr(e, t) {
-	let n = Ir.get(e);
-	return n ? (Ir.delete(e), n(t)) : Promise.resolve();
+var Fr = /* @__PURE__ */ new WeakMap();
+function Ir(e, t) {
+	let n = Fr.get(e);
+	return n ? (Fr.delete(e), n(t)) : Promise.resolve();
 }
 //#endregion
 //#region node_modules/svelte/src/internal/client/dom/blocks/branches.js
-var Rr = class {
+var Lr = class {
 	anchor;
 	#e = /* @__PURE__ */ new Map();
 	#t = /* @__PURE__ */ new Map();
@@ -1735,73 +1735,73 @@ var Rr = class {
 	#a = (e) => {
 		if (this.#e.has(e)) {
 			var t = this.#e.get(e), n = this.#t.get(t);
-			if (n) Ln(n), this.#r.delete(t);
+			if (n) Fn(n), this.#r.delete(t);
 			else {
 				var r = this.#n.get(t);
-				r && (Ln(r.effect), this.#t.set(t, r.effect), this.#n.delete(t), r.fragment.lastChild.remove(), this.anchor.before(r.fragment), n = r.effect);
+				r && (Fn(r.effect), this.#t.set(t, r.effect), this.#n.delete(t), r.fragment.lastChild.remove(), this.anchor.before(r.fragment), n = r.effect);
 			}
 			for (let [t, n] of this.#e) {
 				if (this.#e.delete(t), t === e) break;
 				let r = this.#n.get(n);
-				r && (Mn(r.effect), this.#n.delete(n));
+				r && (An(r.effect), this.#n.delete(n));
 			}
 			for (let [e, r] of this.#t) {
 				if (e === t || this.#r.has(e)) continue;
 				let i = () => {
 					if (Array.from(this.#e.values()).includes(e)) {
 						var t = document.createDocumentFragment();
-						zn(r, t), t.append(ln()), this.#n.set(e, {
+						Ln(r, t), t.append(sn()), this.#n.set(e, {
 							effect: r,
 							fragment: t
 						});
-					} else Mn(r);
+					} else An(r);
 					this.#r.delete(e), this.#t.delete(e);
 				};
-				this.#i || !n ? (this.#r.add(e), Fn(r, i, !1)) : i();
+				this.#i || !n ? (this.#r.add(e), Nn(r, i, !1)) : i();
 			}
 		}
 	};
 	#o = (e) => {
 		this.#e.delete(e);
 		let t = Array.from(this.#e.values());
-		for (let [e, n] of this.#n) t.includes(e) || (Mn(n.effect), this.#n.delete(e));
+		for (let [e, n] of this.#n) t.includes(e) || (An(n.effect), this.#n.delete(e));
 	};
 	ensure(e, t) {
-		var n = P, r = pn();
+		var n = I, r = dn();
 		if (t && !this.#t.has(e) && !this.#n.has(e)) {
 			if (r) {
-				var i = document.createDocumentFragment(), a = ln();
+				var i = document.createDocumentFragment(), a = sn();
 				i.append(a), this.#n.set(e, {
-					effect: On(() => t(a)),
+					effect: En(() => t(a)),
 					fragment: i
 				});
-			} else this.#t.set(e, On(() => t(this.anchor)));
+			} else this.#t.set(e, En(() => t(this.anchor)));
 		}
 		if (this.#e.set(n, e), r) {
 			for (let [t, r] of this.#t) t === e ? n.unskip_effect(r) : n.skip_effect(r);
 			for (let [t, r] of this.#n) t === e ? n.unskip_effect(r.effect) : n.skip_effect(r.effect);
 			n.oncommit(this.#a), n.ondiscard(this.#o);
-		} else A && (this.anchor = j), this.#a(n);
+		} else M && (this.anchor = N), this.#a(n);
 	}
 };
 //#endregion
 //#region node_modules/svelte/src/internal/client/dom/blocks/if.js
-function Y(e, t, n = !1) {
+function X(e, t, n = !1) {
 	var r;
-	A && (r = j, je());
-	var i = new Rr(e), a = n ? S : 0;
+	M && (r = N, ke());
+	var i = new Lr(e), a = n ? S : 0;
 	function o(e, t) {
-		if (A) {
-			var n = Pe(r);
+		if (M) {
+			var n = Me(r);
 			if (e !== parseInt(n.substring(1))) {
-				var a = Ne();
-				Ae(a), i.anchor = a, ke(!1), i.ensure(e, t), ke(!0);
+				var a = je();
+				Oe(a), i.anchor = a, De(!1), i.ensure(e, t), De(!0);
 				return;
 			}
 		}
 		i.ensure(e, t);
 	}
-	Dn(() => {
+	Tn(() => {
 		var e = !1;
 		t((t, n = 0) => {
 			e = !0, o(n, t);
@@ -1810,28 +1810,28 @@ function Y(e, t, n = !1) {
 }
 //#endregion
 //#region node_modules/svelte/src/internal/client/dom/blocks/key.js
-var zr = Symbol("NaN");
-function Br(e, t, n) {
-	A && je();
-	var r = new Rr(e), i = !Ge();
-	Dn(() => {
+var Rr = Symbol("NaN");
+function zr(e, t, n) {
+	M && ke();
+	var r = new Lr(e), i = !Ue();
+	Tn(() => {
 		var e = t();
-		e !== e && (e = zr), i && typeof e == "object" && e && (e = {}), r.ensure(e, n);
+		e !== e && (e = Rr), i && typeof e == "object" && e && (e = {}), r.ensure(e, n);
 	});
 }
 //#endregion
 //#region node_modules/svelte/src/internal/client/dom/blocks/each.js
-function Vr(e, t) {
+function Br(e, t) {
 	return t;
 }
-function Hr(e, t, n) {
+function Vr(e, t, n) {
 	for (var i = [], a = t.length, o, s = t.length, c = 0; c < a; c++) {
 		let n = t[c];
-		Fn(n, () => {
+		Nn(n, () => {
 			if (o) {
 				if (o.pending.delete(n), o.done.add(n), o.pending.size === 0) {
 					var t = e.outrogroups;
-					Ur(e, r(o.done)), t.delete(o), t.size === 0 && (e.outrogroups = null);
+					Hr(e, r(o.done)), t.delete(o), t.size === 0 && (e.outrogroups = null);
 				}
 			} else --s;
 		}, !1);
@@ -1840,15 +1840,15 @@ function Hr(e, t, n) {
 		var l = i.length === 0 && n !== null && e.pending.size === 0;
 		if (l) {
 			var u = n, d = u.parentNode;
-			fn(d), d.append(u), e.items.clear();
+			un(d), d.append(u), e.items.clear();
 		}
-		Ur(e, t, !l);
+		Hr(e, t, !l);
 	} else o = {
 		pending: new Set(t),
 		done: /* @__PURE__ */ new Set()
 	}, (e.outrogroups ??= /* @__PURE__ */ new Set()).add(o);
 }
-function Ur(e, t, n = !0) {
+function Hr(e, t, n = !0) {
 	var r;
 	if (e.pending.size > 0) {
 		r = /* @__PURE__ */ new Set();
@@ -1856,23 +1856,23 @@ function Ur(e, t, n = !0) {
 	}
 	for (var i = 0; i < t.length; i++) {
 		var a = t[i];
-		r?.has(a) ? (a.f |= T, zn(a, document.createDocumentFragment())) : Mn(t[i], n);
+		r?.has(a) ? (a.f |= T, Ln(a, document.createDocumentFragment())) : An(t[i], n);
 	}
 }
-var Wr;
-function X(t, n, i, a, o, s = null) {
+var Ur;
+function Z(t, n, i, a, o, s = null) {
 	var c = t, l = /* @__PURE__ */ new Map();
 	if (n & 4) {
 		var u = t;
-		c = A ? Ae(/* @__PURE__ */ un(u)) : u.appendChild(ln());
+		c = M ? Oe(/* @__PURE__ */ cn(u)) : u.appendChild(sn());
 	}
-	A && je();
-	var d = null, f = /* @__PURE__ */ xt(() => {
+	M && ke();
+	var d = null, f = /* @__PURE__ */ yt(() => {
 		var t = i();
 		return e(t) ? t : t == null ? [] : r(t);
 	}), p, m = /* @__PURE__ */ new Map(), h = !0;
 	function g(e) {
-		v.effect.f & 16384 || (v.pending.delete(e), v.fallback = d, Kr(v, p, c, n, a), d !== null && (p.length === 0 ? d.f & 33554432 ? (d.f ^= T, Jr(d, null, c)) : Ln(d) : Fn(d, () => {
+		v.effect.f & 16384 || (v.pending.delete(e), v.fallback = d, Gr(v, p, c, n, a), d !== null && (p.length === 0 ? d.f & 33554432 ? (d.f ^= T, qr(d, null, c)) : Fn(d) : Nn(d, () => {
 			d = null;
 		})));
 	}
@@ -1880,23 +1880,23 @@ function X(t, n, i, a, o, s = null) {
 		v.pending.delete(e);
 	}
 	var v = {
-		effect: Dn(() => {
-			p = U(f);
+		effect: Tn(() => {
+			p = W(f);
 			var e = p.length;
 			let t = !1;
-			A && Pe(c) === "[!" != (e === 0) && (c = Ne(), Ae(c), ke(!1), t = !0);
-			for (var r = /* @__PURE__ */ new Set(), u = P, v = pn(), y = 0; y < e; y += 1) {
-				A && j.nodeType === 8 && j.data === "]" && (c = j, t = !0, ke(!1));
+			M && Me(c) === "[!" != (e === 0) && (c = je(), Oe(c), De(!1), t = !0);
+			for (var r = /* @__PURE__ */ new Set(), u = I, v = dn(), y = 0; y < e; y += 1) {
+				M && N.nodeType === 8 && N.data === "]" && (c = N, t = !0, De(!1));
 				var b = p[y], x = a(b, y), S = h ? null : l.get(x);
-				S ? (S.v && Xt(S.v, b), S.i && Xt(S.i, y), v && u.unskip_effect(S.e)) : (S = qr(l, h ? c : Wr ??= ln(), b, x, y, o, n, i), h || (S.e.f |= T), l.set(x, S)), r.add(x);
+				S ? (S.v && Jt(S.v, b), S.i && Jt(S.i, y), v && u.unskip_effect(S.e)) : (S = Kr(l, h ? c : Ur ??= sn(), b, x, y, o, n, i), h || (S.e.f |= T), l.set(x, S)), r.add(x);
 			}
-			if (e === 0 && s && !d && (h ? d = On(() => s(c)) : (d = On(() => s(Wr ??= ln())), d.f |= T)), e > r.size && fe("", "", ""), A && e > 0 && Ae(Ne()), !h) {
+			if (e === 0 && s && !d && (h ? d = En(() => s(c)) : (d = En(() => s(Ur ??= sn())), d.f |= T)), e > r.size && ue("", "", ""), M && e > 0 && Oe(je()), !h) {
 				if (m.set(u, r), v) {
 					for (let [e, t] of l) r.has(e) || u.skip_effect(t.e);
 					u.oncommit(g), u.ondiscard(_);
 				} else g(u);
 			}
-			t && ke(!0), U(f);
+			t && De(!0), W(f);
 		}),
 		flags: n,
 		items: l,
@@ -1904,22 +1904,22 @@ function X(t, n, i, a, o, s = null) {
 		outrogroups: null,
 		fallback: d
 	};
-	h = !1, A && (c = j);
+	h = !1, M && (c = N);
 }
-function Gr(e) {
+function Wr(e) {
 	for (; e !== null && !(e.f & 32);) e = e.next;
 	return e;
 }
-function Kr(e, t, n, i, a) {
-	var o = !!(i & 8), s = t.length, c = e.items, l = Gr(e.effect.first), u, d = null, f, p = [], m = [], h, g, _, v;
+function Gr(e, t, n, i, a) {
+	var o = !!(i & 8), s = t.length, c = e.items, l = Wr(e.effect.first), u, d = null, f, p = [], m = [], h, g, _, v;
 	if (o) for (v = 0; v < s; v += 1) h = t[v], g = a(h, v), _ = c.get(g).e, _.f & 33554432 || (_.nodes?.a?.measure(), (f ??= /* @__PURE__ */ new Set()).add(_));
 	for (v = 0; v < s; v += 1) {
 		if (h = t[v], g = a(h, v), _ = c.get(g).e, e.outrogroups !== null) for (let t of e.outrogroups) t.pending.delete(_), t.done.delete(_);
-		if (_.f & 8192 && (Ln(_), o && (_.nodes?.a?.unfix(), (f ??= /* @__PURE__ */ new Set()).delete(_))), _.f & 33554432) {
-			if (_.f ^= T, _ === l) Jr(_, null, n);
+		if (_.f & 8192 && (Fn(_), o && (_.nodes?.a?.unfix(), (f ??= /* @__PURE__ */ new Set()).delete(_))), _.f & 33554432) {
+			if (_.f ^= T, _ === l) qr(_, null, n);
 			else {
 				var y = d ? d.next : l;
-				_ === e.effect.last && (e.effect.last = _.prev), _.prev && (_.prev.next = _.next), _.next && (_.next.prev = _.prev), Yr(e, d, _), Yr(e, _, y), Jr(_, y, n), d = _, p = [], m = [], l = Gr(d.next);
+				_ === e.effect.last && (e.effect.last = _.prev), _.prev && (_.prev.next = _.next), _.next && (_.next.prev = _.prev), Jr(e, d, _), Jr(e, _, y), qr(_, y, n), d = _, p = [], m = [], l = Wr(d.next);
 				continue;
 			}
 		}
@@ -1929,25 +1929,25 @@ function Kr(e, t, n, i, a) {
 					var b = m[0], x;
 					d = b.prev;
 					var S = p[0], C = p[p.length - 1];
-					for (x = 0; x < p.length; x += 1) Jr(p[x], b, n);
+					for (x = 0; x < p.length; x += 1) qr(p[x], b, n);
 					for (x = 0; x < m.length; x += 1) u.delete(m[x]);
-					Yr(e, S.prev, C.next), Yr(e, d, S), Yr(e, C, b), l = b, d = C, --v, p = [], m = [];
-				} else u.delete(_), Jr(_, l, n), Yr(e, _.prev, _.next), Yr(e, _, d === null ? e.effect.first : d.next), Yr(e, d, _), d = _;
+					Jr(e, S.prev, C.next), Jr(e, d, S), Jr(e, C, b), l = b, d = C, --v, p = [], m = [];
+				} else u.delete(_), qr(_, l, n), Jr(e, _.prev, _.next), Jr(e, _, d === null ? e.effect.first : d.next), Jr(e, d, _), d = _;
 				continue;
 			}
-			for (p = [], m = []; l !== null && l !== _;) (u ??= /* @__PURE__ */ new Set()).add(l), m.push(l), l = Gr(l.next);
+			for (p = [], m = []; l !== null && l !== _;) (u ??= /* @__PURE__ */ new Set()).add(l), m.push(l), l = Wr(l.next);
 			if (l === null) continue;
 		}
-		_.f & 33554432 || p.push(_), d = _, l = Gr(_.next);
+		_.f & 33554432 || p.push(_), d = _, l = Wr(_.next);
 	}
 	if (e.outrogroups !== null) {
-		for (let t of e.outrogroups) t.pending.size === 0 && (Ur(e, r(t.done)), e.outrogroups?.delete(t));
+		for (let t of e.outrogroups) t.pending.size === 0 && (Hr(e, r(t.done)), e.outrogroups?.delete(t));
 		e.outrogroups.size === 0 && (e.outrogroups = null);
 	}
 	if (l !== null || u !== void 0) {
 		var w = [];
 		if (u !== void 0) for (_ of u) _.f & 8192 || w.push(_);
-		for (; l !== null;) !(l.f & 8192) && l !== e.fallback && w.push(l), l = Gr(l.next);
+		for (; l !== null;) !(l.f & 8192) && l !== e.fallback && w.push(l), l = Wr(l.next);
 		var E = w.length;
 		if (E > 0) {
 			var D = i & 4 && s === 0 ? n : null;
@@ -1955,68 +1955,68 @@ function Kr(e, t, n, i, a) {
 				for (v = 0; v < E; v += 1) w[v].nodes?.a?.measure();
 				for (v = 0; v < E; v += 1) w[v].nodes?.a?.fix();
 			}
-			Hr(e, w, D);
+			Vr(e, w, D);
 		}
 	}
-	o && Je(() => {
+	o && Ke(() => {
 		if (f !== void 0) for (_ of f) _.nodes?.a?.apply();
 	});
 }
-function qr(e, t, n, r, i, a, o, s) {
-	var c = o & 1 ? o & 16 ? Jt(n) : /* @__PURE__ */ Yt(n, !1, !1) : null, l = o & 2 ? Jt(i) : null;
+function Kr(e, t, n, r, i, a, o, s) {
+	var c = o & 1 ? o & 16 ? Kt(n) : /* @__PURE__ */ qt(n, !1, !1) : null, l = o & 2 ? Kt(i) : null;
 	return {
 		v: c,
 		i: l,
-		e: On(() => (a(t, c ?? n, l ?? i, s), () => {
+		e: En(() => (a(t, c ?? n, l ?? i, s), () => {
 			e.delete(r);
 		}))
 	};
 }
-function Jr(e, t, n) {
+function qr(e, t, n) {
 	if (e.nodes) for (var r = e.nodes.start, i = e.nodes.end, a = t && !(t.f & 33554432) ? t.nodes.start : n; r !== null;) {
-		var o = /* @__PURE__ */ dn(r);
+		var o = /* @__PURE__ */ ln(r);
 		if (a.before(r), r === i) return;
 		r = o;
 	}
 }
-function Yr(e, t, n) {
+function Jr(e, t, n) {
 	t === null ? e.effect.first = n : t.next = n, n === null ? e.effect.last = t : n.prev = t;
 }
 //#endregion
 //#region node_modules/clsx/dist/clsx.mjs
-function Xr(e) {
+function Yr(e) {
 	var t, n, r = "";
 	if (typeof e == "string" || typeof e == "number") r += e;
 	else if (typeof e == "object") {
 		if (Array.isArray(e)) {
 			var i = e.length;
-			for (t = 0; t < i; t++) e[t] && (n = Xr(e[t])) && (r && (r += " "), r += n);
+			for (t = 0; t < i; t++) e[t] && (n = Yr(e[t])) && (r && (r += " "), r += n);
 		} else for (n in e) e[n] && (r && (r += " "), r += n);
 	}
 	return r;
 }
-function Zr() {
-	for (var e, t, n = 0, r = "", i = arguments.length; n < i; n++) (e = arguments[n]) && (t = Xr(e)) && (r && (r += " "), r += t);
+function Xr() {
+	for (var e, t, n = 0, r = "", i = arguments.length; n < i; n++) (e = arguments[n]) && (t = Yr(e)) && (r && (r += " "), r += t);
 	return r;
 }
 //#endregion
 //#region node_modules/svelte/src/internal/shared/attributes.js
-function Qr(e) {
-	return typeof e == "object" ? Zr(e) : e ?? "";
+function Zr(e) {
+	return typeof e == "object" ? Xr(e) : e ?? "";
 }
-var $r = [..." 	\n\r\f\xA0\v﻿"];
-function ei(e, t, n) {
+var Qr = [..." 	\n\r\f\xA0\v﻿"];
+function $r(e, t, n) {
 	var r = e == null ? "" : "" + e;
 	if (t && (r = r ? r + " " + t : t), n) {
 		for (var i of Object.keys(n)) if (n[i]) r = r ? r + " " + i : i;
 		else if (r.length) for (var a = i.length, o = 0; (o = r.indexOf(i, o)) >= 0;) {
 			var s = o + a;
-			(o === 0 || $r.includes(r[o - 1])) && (s === r.length || $r.includes(r[s])) ? r = (o === 0 ? "" : r.substring(0, o)) + r.substring(s + 1) : o = s;
+			(o === 0 || Qr.includes(r[o - 1])) && (s === r.length || Qr.includes(r[s])) ? r = (o === 0 ? "" : r.substring(0, o)) + r.substring(s + 1) : o = s;
 		}
 	}
 	return r === "" ? null : r;
 }
-function ti(e, t = !1) {
+function ei(e, t = !1) {
 	var n = t ? " !important;" : ";", r = "";
 	for (var i of Object.keys(e)) {
 		var a = e[i];
@@ -2024,16 +2024,16 @@ function ti(e, t = !1) {
 	}
 	return r;
 }
-function ni(e) {
+function ti(e) {
 	return e[0] !== "-" || e[1] !== "-" ? e.toLowerCase() : e;
 }
-function ri(e, t) {
+function ni(e, t) {
 	if (t) {
 		var n = "", r, i;
 		if (Array.isArray(t) ? (r = t[0], i = t[1]) : r = t, e) {
 			e = String(e).replaceAll(/\/\*.*?\*\//g, "").trim();
 			var a = !1, o = 0, s = !1, c = [];
-			r && c.push(...Object.keys(r).map(ni)), i && c.push(...Object.keys(i).map(ni));
+			r && c.push(...Object.keys(r).map(ti)), i && c.push(...Object.keys(i).map(ti));
 			var l = 0, u = -1;
 			let t = e.length;
 			for (var d = 0; d < t; d++) {
@@ -2042,7 +2042,7 @@ function ri(e, t) {
 					if (f === ":" && u === -1) u = d;
 					else if (f === ";" || d === t - 1) {
 						if (u !== -1) {
-							var p = ni(e.substring(l, u).trim());
+							var p = ti(e.substring(l, u).trim());
 							if (!c.includes(p)) {
 								f !== ";" && d++;
 								var m = e.substring(l, d).trim();
@@ -2054,17 +2054,17 @@ function ri(e, t) {
 				}
 			}
 		}
-		return r && (n += ti(r)), i && (n += ti(i, !0)), n = n.trim(), n === "" ? null : n;
+		return r && (n += ei(r)), i && (n += ei(i, !0)), n = n.trim(), n === "" ? null : n;
 	}
 	return e == null ? null : String(e);
 }
 //#endregion
 //#region node_modules/svelte/src/internal/client/dom/elements/class.js
-function ii(e, t, n, r, i, a) {
-	var o = e[ie];
-	if (A || o !== n || o === void 0) {
-		var s = ei(n, r, a);
-		(!A || s !== e.getAttribute("class")) && (s == null ? e.removeAttribute("class") : t ? e.className = s : e.setAttribute("class", s)), e[ie] = n;
+function ri(e, t, n, r, i, a) {
+	var o = e[j];
+	if (M || o !== n || o === void 0) {
+		var s = $r(n, r, a);
+		(!M || s !== e.getAttribute("class")) && (s == null ? e.removeAttribute("class") : t ? e.className = s : e.setAttribute("class", s)), e[j] = n;
 	} else if (a && i !== a) for (var c in a) {
 		var l = !!a[c];
 		(i == null || l !== !!i[c]) && e.classList.toggle(c, l);
@@ -2073,117 +2073,117 @@ function ii(e, t, n, r, i, a) {
 }
 //#endregion
 //#region node_modules/svelte/src/internal/client/dom/elements/style.js
-function ai(e, t = {}, n, r) {
+function ii(e, t = {}, n, r) {
 	for (var i in n) {
 		var a = n[i];
 		t[i] !== a && (n[i] == null ? e.style.removeProperty(i) : e.style.setProperty(i, a, r));
 	}
 }
-function oi(e, t, n, r) {
-	var i = e[ae];
-	if (A || i !== t) {
-		var a = ri(t, r);
-		(!A || a !== e.getAttribute("style")) && (a == null ? e.removeAttribute("style") : e.style.cssText = a), e[ae] = t;
-	} else r && (Array.isArray(r) ? (ai(e, n?.[0], r[0]), ai(e, n?.[1], r[1], "important")) : ai(e, n, r));
+function ai(e, t, n, r) {
+	var i = e[re];
+	if (M || i !== t) {
+		var a = ni(t, r);
+		(!M || a !== e.getAttribute("style")) && (a == null ? e.removeAttribute("style") : e.style.cssText = a), e[re] = t;
+	} else r && (Array.isArray(r) ? (ii(e, n?.[0], r[0]), ii(e, n?.[1], r[1], "important")) : ii(e, n, r));
 	return r;
 }
 //#endregion
 //#region node_modules/svelte/src/internal/client/dom/elements/bindings/select.js
-function si(t, n, r = !1) {
+function oi(t, n, r = !1) {
 	if (t.multiple) {
 		if (n == null) return;
-		if (!e(n)) return De();
-		for (var i of t.options) i.selected = n.includes(ui(i));
+		if (!e(n)) return Te();
+		for (var i of t.options) i.selected = n.includes(li(i));
 	} else {
-		for (i of t.options) if (nn(ui(i), n)) {
+		for (i of t.options) if (en(li(i), n)) {
 			i.selected = !0;
 			return;
 		}
 		(!r || n !== void 0) && (t.selectedIndex = -1);
 	}
 }
-function ci(e) {
+function si(e) {
 	var t = new MutationObserver(() => {
-		"__value" in e && si(e, e.__value);
+		"__value" in e && oi(e, e.__value);
 	});
 	t.observe(e, {
 		childList: !0,
 		subtree: !0,
 		attributes: !0,
 		attributeFilter: ["value"]
-	}), bn(() => {
+	}), vn(() => {
 		t.disconnect();
 	});
 }
-function li(e, t, n = t) {
+function ci(e, t, n = t) {
 	var r = /* @__PURE__ */ new WeakSet(), i = !0;
-	lt(e, "change", (t) => {
+	st(e, "change", (t) => {
 		var i = t ? "[selected]" : ":checked", a;
-		if (e.multiple) a = [].map.call(e.querySelectorAll(i), ui);
+		if (e.multiple) a = [].map.call(e.querySelectorAll(i), li);
 		else {
 			var o = e.querySelector(i) ?? e.querySelector("option:not([disabled])");
-			a = o && ui(o);
+			a = o && li(o);
 		}
-		n(a), e.__value = a, P !== null && r.add(P);
-	}), wn(() => {
+		n(a), e.__value = a, I !== null && r.add(I);
+	}), Sn(() => {
 		var a = t();
 		if (e === document.activeElement) {
-			var o = P;
+			var o = I;
 			if (r.has(o)) return;
 		}
-		if (si(e, a, i), i && a === void 0) {
+		if (oi(e, a, i), i && a === void 0) {
 			var s = e.querySelector(":checked");
-			s !== null && (a = ui(s), n(a));
+			s !== null && (a = li(s), n(a));
 		}
 		e.__value = a, i = !1;
-	}), ci(e);
+	}), si(e);
 }
-function ui(e) {
+function li(e) {
 	return "__value" in e ? e.__value : e.value;
 }
 //#endregion
 //#region node_modules/svelte/src/internal/client/dom/elements/attributes.js
-var di = Symbol("is custom element"), fi = Symbol("is html"), pi = le ? "link" : "LINK", mi = le ? "progress" : "PROGRESS";
-function Z(e) {
-	if (A) {
+var ui = Symbol("is custom element"), di = Symbol("is html"), fi = se ? "link" : "LINK", pi = se ? "progress" : "PROGRESS";
+function Q(e) {
+	if (M) {
 		var t = !1, n = () => {
 			if (!t) {
 				if (t = !0, e.hasAttribute("value")) {
 					var n = e.value;
-					Q(e, "value", null), e.value = n;
+					$(e, "value", null), e.value = n;
 				}
 				if (e.hasAttribute("checked")) {
 					var r = e.checked;
-					Q(e, "checked", null), e.checked = r;
+					$(e, "checked", null), e.checked = r;
 				}
 			}
 		};
-		e[se] = n, Je(n), st();
+		e[ae] = n, Ke(n), at();
 	}
 }
-function hi(e, t) {
-	var n = _i(e);
-	n.value !== (n.value = t ?? void 0) && (e.value !== t || t === 0 && e.nodeName === mi) && (e.value = t ?? "");
+function mi(e, t) {
+	var n = gi(e);
+	n.value !== (n.value = t ?? void 0) && (e.value !== t || t === 0 && e.nodeName === pi) && (e.value = t ?? "");
 }
-function gi(e, t) {
-	var n = _i(e);
+function hi(e, t) {
+	var n = gi(e);
 	n.checked !== (n.checked = t ?? void 0) && (e.checked = t);
 }
-function Q(e, t, n, r) {
-	var i = _i(e);
-	A && (i[t] = e.getAttribute(t), t === "src" || t === "srcset" || t === "href" && e.nodeName === pi) || i[t] !== (i[t] = n) && (t === "loading" && (e[ne] = n), n == null ? e.removeAttribute(t) : typeof n != "string" && yi(e).includes(t) ? e[t] = n : e.setAttribute(t, n));
+function $(e, t, n, r) {
+	var i = gi(e);
+	M && (i[t] = e.getAttribute(t), t === "src" || t === "srcset" || t === "href" && e.nodeName === fi) || i[t] !== (i[t] = n) && (t === "loading" && (e[te] = n), n == null ? e.removeAttribute(t) : typeof n != "string" && vi(e).includes(t) ? e[t] = n : e.setAttribute(t, n));
 }
-function _i(e) {
-	return e[re] ??= {
-		[di]: e.nodeName.includes("-"),
-		[fi]: e.namespaceURI === we
+function gi(e) {
+	return e[ne] ??= {
+		[ui]: e.nodeName.includes("-"),
+		[di]: e.namespaceURI === Se
 	};
 }
-var vi = /* @__PURE__ */ new Map();
-function yi(e) {
-	var t = e.getAttribute("is") || e.nodeName, n = vi.get(t);
+var _i = /* @__PURE__ */ new Map();
+function vi(e) {
+	var t = e.getAttribute("is") || e.nodeName, n = _i.get(t);
 	if (n) return n;
-	vi.set(t, n = []);
+	_i.set(t, n = []);
 	for (var r, i = e, a = Element.prototype; a !== i;) {
 		for (var s in r = o(i), r) r[s].set && s !== "innerHTML" && s !== "textContent" && s !== "innerText" && n.push(s);
 		i = l(i);
@@ -2192,51 +2192,51 @@ function yi(e) {
 }
 //#endregion
 //#region node_modules/svelte/src/internal/client/dom/elements/bindings/input.js
-function bi(e, t, n = t) {
+function yi(e, t, n = t) {
 	var r = /* @__PURE__ */ new WeakSet();
-	lt(e, "input", async (i) => {
+	st(e, "input", async (i) => {
 		var a = i ? e.defaultValue : e.value;
-		if (a = xi(e) ? Si(a) : a, n(a), P !== null && r.add(P), await ur(), a !== (a = t())) {
+		if (a = bi(e) ? xi(a) : a, n(a), I !== null && r.add(I), await lr(), a !== (a = t())) {
 			var o = e.selectionStart, s = e.selectionEnd, c = e.value.length;
 			if (e.value = a ?? "", s !== null) {
 				var l = e.value.length;
 				o === s && s === c && l > c ? (e.selectionStart = l, e.selectionEnd = l) : (e.selectionStart = o, e.selectionEnd = Math.min(s, l));
 			}
 		}
-	}), (A && e.defaultValue !== e.value || pr(t) == null && e.value) && (n(xi(e) ? Si(e.value) : e.value), P !== null && r.add(P)), En(() => {
+	}), (M && e.defaultValue !== e.value || fr(t) == null && e.value) && (n(bi(e) ? xi(e.value) : e.value), I !== null && r.add(I)), wn(() => {
 		var n = t();
 		if (e === document.activeElement) {
-			var i = P;
+			var i = I;
 			if (r.has(i)) return;
 		}
-		xi(e) && n === Si(e.value) || (e.type !== "date" || n || e.value) && n !== e.value && (e.value = n ?? "");
+		bi(e) && n === xi(e.value) || (e.type !== "date" || n || e.value) && n !== e.value && (e.value = n ?? "");
 	});
 }
-function xi(e) {
+function bi(e) {
 	var t = e.type;
 	return t === "number" || t === "range";
 }
-function Si(e) {
+function xi(e) {
 	return e === "" ? null : +e;
 }
 //#endregion
 //#region node_modules/svelte/src/internal/client/dom/elements/bindings/this.js
-function Ci(e, t) {
-	return e === t || e?.[k] === t;
+function Si(e, t) {
+	return e === t || e?.[A] === t;
 }
-function $(e = {}, t, n, r) {
-	var i = Ve.r, a = H;
-	return wn(() => {
+function Ci(e = {}, t, n, r) {
+	var i = ze.r, a = U;
+	return Sn(() => {
 		var o, s;
-		return En(() => {
-			o = s, s = r?.() || [], pr(() => {
-				Ci(n(...s), e) || (t(e, ...s), o && Ci(n(...o), e) && t(null, ...o));
+		return wn(() => {
+			o = s, s = r?.() || [], fr(() => {
+				Si(n(...s), e) || (t(e, ...s), o && Si(n(...o), e) && t(null, ...o));
 			});
 		}), () => {
 			let r = a;
 			for (; r !== i && r.parent !== null && r.parent.f & 33554432;) r = r.parent;
 			let o = () => {
-				s && Ci(n(...s), e) && t(null, ...s);
+				s && Si(n(...s), e) && t(null, ...s);
 			}, c = r.teardown;
 			r.teardown = () => {
 				o(), c?.();
@@ -2247,14 +2247,14 @@ function $(e = {}, t, n, r) {
 //#endregion
 //#region node_modules/svelte/src/internal/client/reactivity/props.js
 function wi(e, t, n, r) {
-	var i = !0, o = !!(n & 8), s = !!(n & 16), c = r, l = !0, u = void 0, d = () => s && i ? (u ??= /* @__PURE__ */ vt(r), U(u)) : (l && (l = !1, c = s ? pr(r) : r), c);
+	var i = !0, o = !!(n & 8), s = !!(n & 16), c = r, l = !0, u = void 0, d = () => s && i ? (u ??= /* @__PURE__ */ gt(r), W(u)) : (l && (l = !1, c = s ? fr(r) : r), c);
 	let f;
 	if (o) {
-		var p = k in e || te in e;
+		var p = A in e || ee in e;
 		f = a(e, t)?.set ?? (p && t in e ? (n) => e[t] = n : void 0);
 	}
 	var m, h = !1;
-	o ? [m, h] = it(() => e[t]) : m = e[t], m === void 0 && r !== void 0 && (m = d(), f && (i && _e(t), f(m)));
+	o ? [m, h] = nt(() => e[t]) : m = e[t], m === void 0 && r !== void 0 && (m = d(), f && (i && he(t), f(m)));
 	var g = i ? () => {
 		var n = e[t];
 		return n === void 0 ? d() : (l = !0, n);
@@ -2269,102 +2269,102 @@ function wi(e, t, n, r) {
 			return arguments.length > 0 ? ((!i || !t || _ || h) && f(t ? g() : e), e) : g();
 		});
 	}
-	var v = !1, y = (n & 1 ? vt : xt)(() => (v = !1, g()));
-	o && U(y);
-	var b = H;
+	var v = !1, y = (n & 1 ? gt : yt)(() => (v = !1, g()));
+	o && W(y);
+	var b = U;
 	return (function(e, t) {
 		if (arguments.length > 0) {
-			let n = t ? U(y) : i && o ? en(e) : e;
-			return I(y, n), v = !0, c !== void 0 && (c = n), e;
+			let n = t ? W(y) : i && o ? Qt(e) : e;
+			return R(y, n), v = !0, c !== void 0 && (c = n), e;
 		}
-		return Hn && v || b.f & 16384 ? y.v : U(y);
+		return Bn && v || b.f & 16384 ? y.v : W(y);
 	});
 }
 function Ti(e) {
-	Ve === null && ue("onMount"), xn(() => {
-		let t = pr(e);
+	ze === null && ce("onMount"), yn(() => {
+		let t = fr(e);
 		if (typeof t == "function") return t;
 	});
 }
 function Ei(e) {
-	Ve === null && ue("onDestroy"), Ti(() => () => pr(e));
+	ze === null && ce("onDestroy"), Ti(() => () => fr(e));
 }
 //#endregion
 //#region node_modules/svelte/src/internal/disclose-version.js
 typeof window < "u" && ((window.__svelte ??= {}).v ??= /* @__PURE__ */ new Set()).add("5");
 //#endregion
 //#region ui/NodeCard.svelte
-var Di = /* @__PURE__ */ K("<span class=\"pc-modifier-badge svelte-1jilz27\"> </span>"), Oi = /* @__PURE__ */ K("<div><span class=\"pc-native-pin-label\"> </span> <div role=\"img\"></div></div>"), ki = /* @__PURE__ */ K("<div class=\"pc-node-body\"> </div>"), Ai = /* @__PURE__ */ K("<span class=\"pc-native-alias\"> </span>"), ji = /* @__PURE__ */ K("<button type=\"button\" class=\"pc-node-action pc-host-result\" aria-label=\"Preview host result\"><i class=\"fa-solid fa-eye\" aria-hidden=\"true\"></i> Host result</button>"), Mi = /* @__PURE__ */ K("<div role=\"group\" tabindex=\"0\"><div class=\"pc-native-heading\"><svg class=\"pc-native-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path></path></svg><span class=\"pc-node-title\"> </span><!></div> <div class=\"pc-native-pins\"></div> <!> <!> <!></div>");
+var Di = /* @__PURE__ */ q("<span class=\"pc-modifier-badge svelte-1jilz27\"> </span>"), Oi = /* @__PURE__ */ q("<div><span class=\"pc-native-pin-label\"> </span> <div role=\"img\"></div></div>"), ki = /* @__PURE__ */ q("<div class=\"pc-node-body\"> </div>"), Ai = /* @__PURE__ */ q("<span class=\"pc-native-alias\"> </span>"), ji = /* @__PURE__ */ q("<button type=\"button\" class=\"pc-node-action pc-host-result\" aria-label=\"Preview host result\"><i class=\"fa-solid fa-eye\" aria-hidden=\"true\"></i> Host result</button>"), Mi = /* @__PURE__ */ q("<div role=\"group\" tabindex=\"0\"><div class=\"pc-native-heading\"><svg class=\"pc-native-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path></path></svg><span class=\"pc-node-title\"> </span><!></div> <div class=\"pc-native-pins\"></div> <!> <!> <!></div>");
 function Ni(e, t) {
-	Ue(t, !0);
+	Ve(t, !0);
 	let n = (e) => e.stopPropagation();
 	var r = Mi();
 	let i;
-	var a = L(r), o = L(a), s = L(o);
-	M(o);
-	var c = z(o), l = L(c, !0);
-	M(c);
-	var u = z(c), d = (e) => {
-		var n = Di(), r = L(n);
-		M(n), B(() => {
-			Q(n, "title", t.card.modifierSummary.text), Q(n, "aria-label", t.card.modifierSummary.text), J(r, `+${t.card.modifierSummary.count ?? ""}`);
-		}), q(e, n);
+	var a = z(r), o = z(a), s = z(o);
+	P(o);
+	var c = V(o), l = z(c, !0);
+	P(c);
+	var u = V(c), d = (e) => {
+		var n = Di(), r = z(n);
+		P(n), H(() => {
+			$(n, "title", t.card.modifierSummary.text), $(n, "aria-label", t.card.modifierSummary.text), Y(r, `+${t.card.modifierSummary.count ?? ""}`);
+		}), J(e, n);
 	};
-	Y(u, (e) => {
+	X(u, (e) => {
 		t.card.modifierSummary && e(d);
-	}), M(a);
-	var f = z(a, 2);
-	X(f, 21, () => t.card.ports, (e) => e.id, (e, n) => {
+	}), P(a);
+	var f = V(a, 2);
+	Z(f, 21, () => t.card.ports, (e) => e.id, (e, n) => {
 		var r = Oi();
 		let i;
-		var a = L(r), o = L(a, !0);
-		M(a);
-		var s = z(a, 2);
-		M(r), B(() => {
-			ii(r, 1, `pc-native-row pc-native-row-${U(n).dir}`, "svelte-1jilz27"), i = oi(r, "", i, { "grid-row": U(n).row }), J(o, U(n).label), ii(s, 1, Qr(U(n).className), "svelte-1jilz27"), Q(s, "data-node", t.card.id), Q(s, "data-dir", U(n).dir), Q(s, "data-port", U(n).port), Q(s, "data-side", U(n).side), Q(s, "data-kind", U(n).kind), Q(s, "title", U(n).title), Q(s, "aria-label", U(n).title);
-		}), W("mouseenter", s, () => t.actions.hoverPin({
+		var a = z(r), o = z(a, !0);
+		P(a);
+		var s = V(a, 2);
+		P(r), H(() => {
+			ri(r, 1, `pc-native-row pc-native-row-${W(n).dir}`, "svelte-1jilz27"), i = ai(r, "", i, { "grid-row": W(n).row }), Y(o, W(n).label), ri(s, 1, Zr(W(n).className), "svelte-1jilz27"), $(s, "data-node", t.card.id), $(s, "data-dir", W(n).dir), $(s, "data-port", W(n).port), $(s, "data-side", W(n).side), $(s, "data-kind", W(n).kind), $(s, "title", W(n).title), $(s, "aria-label", W(n).title);
+		}), G("mouseenter", s, () => t.actions.hoverPin({
 			nodeId: t.card.id,
-			dir: U(n).dir,
-			port: U(n).port
-		})), W("mouseleave", s, () => t.actions.hoverPin(null)), q(e, r);
-	}), M(f);
-	var p = z(f, 2), m = (e) => {
-		var n = ki(), r = L(n, !0);
-		M(n), B(() => J(r, t.card.body)), q(e, n);
+			dir: W(n).dir,
+			port: W(n).port
+		})), G("mouseleave", s, () => t.actions.hoverPin(null)), J(e, r);
+	}), P(f);
+	var p = V(f, 2), m = (e) => {
+		var n = ki(), r = z(n, !0);
+		P(n), H(() => Y(r, t.card.body)), J(e, n);
 	};
-	Y(p, (e) => {
+	X(p, (e) => {
 		t.card.type === "note" && e(m);
 	});
-	var h = z(p, 2), g = (e) => {
-		var n = Ai(), r = L(n, !0);
-		M(n), B(() => {
-			Q(n, "title", t.card.titleHint), J(r, t.card.title);
-		}), q(e, n);
+	var h = V(p, 2), g = (e) => {
+		var n = Ai(), r = z(n, !0);
+		P(n), H(() => {
+			$(n, "title", t.card.titleHint), Y(r, t.card.title);
+		}), J(e, n);
 	};
-	Y(h, (e) => {
+	X(h, (e) => {
 		t.card.compact && e(g);
 	});
-	var _ = z(h, 2), v = (e) => {
+	var _ = V(h, 2), v = (e) => {
 		var r = ji();
-		G("mousedown", r, n), G("click", r, (e) => {
+		K("mousedown", r, n), K("click", r, (e) => {
 			n(e), t.actions.hostResult(t.card.id);
-		}), q(e, r);
+		}), J(e, r);
 	};
-	Y(_, (e) => {
+	X(_, (e) => {
 		t.card.hostResult && e(v);
-	}), M(r), B(() => {
-		ii(r, 1, Qr(t.card.className), "svelte-1jilz27"), Q(r, "data-id", t.card.id), Q(r, "title", t.card.offHint), Q(r, "aria-label", `${t.card.label}: ${t.card.title}`), i = oi(r, "", i, {
+	}), P(r), H(() => {
+		ri(r, 1, Zr(t.card.className), "svelte-1jilz27"), $(r, "data-id", t.card.id), $(r, "title", t.card.offHint), $(r, "aria-label", `${t.card.label}: ${t.card.title}`), i = ai(r, "", i, {
 			left: `${t.card.x}px`,
 			top: `${t.card.y}px`
-		}), Q(s, "d", t.card.iconPath), Q(c, "title", t.card.titleHint), J(l, t.card.title);
-	}), q(e, r), We();
+		}), $(s, "d", t.card.iconPath), $(c, "title", t.card.titleHint), Y(l, t.card.title);
+	}), J(e, r), He();
 }
-br(["mousedown", "click"]);
+yr(["mousedown", "click"]);
 //#endregion
 //#region ui/GroupCard.svelte
-var Pi = /* @__PURE__ */ K("<div class=\"pc-node-body\"> </div>"), Fi = /* @__PURE__ */ K("<div role=\"group\"><div><i class=\"fa-solid fa-object-group\" aria-hidden=\"true\"></i> <span> </span> <span class=\"pc-group-frame-count\"> </span> <button type=\"button\"></button></div> <!></div>");
+var Pi = /* @__PURE__ */ q("<div class=\"pc-node-body\"> </div>"), Fi = /* @__PURE__ */ q("<div role=\"group\"><div><i class=\"fa-solid fa-object-group\" aria-hidden=\"true\"></i> <span> </span> <span class=\"pc-group-frame-count\"> </span> <button type=\"button\"></button></div> <!></div>");
 function Ii(e, t) {
-	Ue(t, !0);
+	Ve(t, !0);
 	function n(e, n) {
 		e.stopPropagation(), e.preventDefault(), t.actions.group(t.group.id, n);
 	}
@@ -2373,108 +2373,108 @@ function Ii(e, t) {
 	}
 	var i = Fi();
 	let a;
-	var o = L(i), s = z(L(o), 2), c = L(s, !0);
-	M(s);
-	var l = z(s, 2), u = L(l, !0);
-	M(l);
-	var d = z(l, 2);
-	M(o);
-	var f = z(o, 2), p = (e) => {
-		var n = Pi(), r = L(n, !0);
-		M(n), B(() => J(r, t.group.body)), q(e, n);
+	var o = z(i), s = V(z(o), 2), c = z(s, !0);
+	P(s);
+	var l = V(s, 2), u = z(l, !0);
+	P(l);
+	var d = V(l, 2);
+	P(o);
+	var f = V(o, 2), p = (e) => {
+		var n = Pi(), r = z(n, !0);
+		P(n), H(() => Y(r, t.group.body)), J(e, n);
 	};
-	Y(f, (e) => {
+	X(f, (e) => {
 		t.group.collapsed && e(p);
-	}), M(i), B(() => {
-		ii(i, 1, Qr(t.group.className)), Q(i, "data-group", t.group.id), Q(i, "aria-label", `Group: ${t.group.title}`), a = oi(i, "", a, {
+	}), P(i), H(() => {
+		ri(i, 1, Zr(t.group.className)), $(i, "data-group", t.group.id), $(i, "aria-label", `Group: ${t.group.title}`), a = ai(i, "", a, {
 			left: `${t.group.x}px`,
 			top: `${t.group.y}px`,
 			width: `${t.group.w}px`,
 			height: t.group.collapsed ? void 0 : `${t.group.h}px`
-		}), ii(o, 1, Qr(t.group.collapsed ? "pc-node-head" : "pc-group-frame-head")), ii(s, 1, Qr(t.group.collapsed ? "pc-node-title" : "pc-group-frame-title")), J(c, t.group.title), J(u, t.group.count), ii(d, 1, `pc-node-action fa-solid pc-group-btn ${t.group.collapsed ? "fa-up-right-and-down-left-from-center" : "fa-down-left-and-up-right-to-center"}`), Q(d, "data-action", t.group.collapsed ? "open" : "collapse"), Q(d, "title", t.group.collapsed ? "Open group" : "Fold group"), Q(d, "aria-label", t.group.collapsed ? "Open group" : "Fold group");
-	}), G("mousedown", d, (e) => n(e, t.group.collapsed ? "open" : "collapse")), G("click", d, (e) => r(e, t.group.collapsed ? "open" : "collapse")), q(e, i), We();
+		}), ri(o, 1, Zr(t.group.collapsed ? "pc-node-head" : "pc-group-frame-head")), ri(s, 1, Zr(t.group.collapsed ? "pc-node-title" : "pc-group-frame-title")), Y(c, t.group.title), Y(u, t.group.count), ri(d, 1, `pc-node-action fa-solid pc-group-btn ${t.group.collapsed ? "fa-up-right-and-down-left-from-center" : "fa-down-left-and-up-right-to-center"}`), $(d, "data-action", t.group.collapsed ? "open" : "collapse"), $(d, "title", t.group.collapsed ? "Open group" : "Fold group"), $(d, "aria-label", t.group.collapsed ? "Open group" : "Fold group");
+	}), K("mousedown", d, (e) => n(e, t.group.collapsed ? "open" : "collapse")), K("click", d, (e) => r(e, t.group.collapsed ? "open" : "collapse")), J(e, i), He();
 }
-br(["mousedown", "click"]);
+yr(["mousedown", "click"]);
 //#endregion
 //#region ui/WireLayer.svelte
-var Li = /* @__PURE__ */ kr("<path class=\"pc-wire-hit\"></path><path><title> </title></path><text text-anchor=\"middle\"> </text>", 1), Ri = /* @__PURE__ */ kr("<path></path>"), zi = /* @__PURE__ */ kr("<!><!>", 1);
+var Li = /* @__PURE__ */ Or("<path class=\"pc-wire-hit\"></path><path><title> </title></path><text text-anchor=\"middle\"> </text>", 1), Ri = /* @__PURE__ */ Or("<path></path>"), zi = /* @__PURE__ */ Or("<!><!>", 1);
 function Bi(e, t) {
-	Ue(t, !0);
-	var n = zi(), r = R(n);
-	X(r, 17, () => t.wires, (e) => e.id, (e, t) => {
-		var n = Li(), r = R(n), i = z(r), a = L(i), o = L(a);
-		M(a), M(i);
-		var s = z(i), c = L(s, !0);
-		M(s), B(() => {
-			Q(r, "d", U(t).d), Q(r, "data-id", U(t).id), Q(i, "d", U(t).d), ii(i, 0, Qr(U(t).className)), Q(i, "data-id", U(t).id), Q(i, "data-kind", U(t).kind), J(o, `${U(t).kind ?? ""} artifact`), Q(s, "x", U(t).label.x), Q(s, "y", U(t).label.y), ii(s, 0, Qr(U(t).label.className)), J(c, U(t).label.text);
-		}), q(e, n);
+	Ve(t, !0);
+	var n = zi(), r = B(n);
+	Z(r, 17, () => t.wires, (e) => e.id, (e, t) => {
+		var n = Li(), r = B(n), i = V(r), a = z(i), o = z(a);
+		P(a), P(i);
+		var s = V(i), c = z(s, !0);
+		P(s), H(() => {
+			$(r, "d", W(t).d), $(r, "data-id", W(t).id), $(i, "d", W(t).d), ri(i, 0, Zr(W(t).className)), $(i, "data-id", W(t).id), $(i, "data-kind", W(t).kind), Y(o, `${W(t).kind ?? ""} artifact`), $(s, "x", W(t).label.x), $(s, "y", W(t).label.y), ri(s, 0, Zr(W(t).label.className)), Y(c, W(t).label.text);
+		}), J(e, n);
 	});
-	var i = z(r), a = (e) => {
+	var i = V(r), a = (e) => {
 		var n = Ri();
-		B(() => {
-			Q(n, "d", t.ghost.d), ii(n, 0, Qr(t.ghost.className));
-		}), q(e, n);
+		H(() => {
+			$(n, "d", t.ghost.d), ri(n, 0, Zr(t.ghost.className));
+		}), J(e, n);
 	};
-	Y(i, (e) => {
+	X(i, (e) => {
 		t.ghost && e(a);
-	}), q(e, n), We();
+	}), J(e, n), He();
 }
 //#endregion
 //#region ui/CommentFrame.svelte
-var Vi = /* @__PURE__ */ K("<span class=\"pc-comment-title svelte-118xm2r\"> </span>"), Hi = /* @__PURE__ */ K("<input class=\"pc-comment-title-input svelte-118xm2r\" aria-label=\"Comment title\"/>"), Ui = /* @__PURE__ */ K("<button type=\"button\" class=\"pc-comment-resize svelte-118xm2r\" title=\"Drag to resize comment\"></button>"), Wi = /* @__PURE__ */ K("<div role=\"group\"><header class=\"pc-comment-header svelte-118xm2r\"><button type=\"button\" class=\"pc-comment-select svelte-118xm2r\" title=\"Drag header to move comment\">⋮⋮</button> <!></header> <div class=\"pc-comment-notes svelte-118xm2r\"> </div> <!></div>");
+var Vi = /* @__PURE__ */ q("<span class=\"pc-comment-title svelte-118xm2r\"> </span>"), Hi = /* @__PURE__ */ q("<input class=\"pc-comment-title-input svelte-118xm2r\" aria-label=\"Comment title\"/>"), Ui = /* @__PURE__ */ q("<button type=\"button\" class=\"pc-comment-resize svelte-118xm2r\" title=\"Drag to resize comment\"></button>"), Wi = /* @__PURE__ */ q("<div role=\"group\"><header class=\"pc-comment-header svelte-118xm2r\"><button type=\"button\" class=\"pc-comment-select svelte-118xm2r\" title=\"Drag header to move comment\">⋮⋮</button> <!></header> <div class=\"pc-comment-notes svelte-118xm2r\"> </div> <!></div>");
 function Gi(e, t) {
-	Ue(t, !0);
+	Ve(t, !0);
 	let n = (e) => e.stopPropagation();
 	var r = Wi();
 	let i, a;
-	var o = L(r), s = L(o), c = z(s, 2), l = (e) => {
-		var n = Vi(), r = L(n, !0);
-		M(n), B(() => J(r, t.comment.title)), q(e, n);
+	var o = z(r), s = z(o), c = V(s, 2), l = (e) => {
+		var n = Vi(), r = z(n, !0);
+		P(n), H(() => Y(r, t.comment.title)), J(e, n);
 	}, u = (e) => {
 		var r = Hi();
-		Z(r), B(() => hi(r, t.comment.title)), W("focus", r, () => t.actions.select(t.comment.id)), W("pointerdown", r, n, !0), W("mousedown", r, n, !0), W("click", r, n, !0), W("keydown", r, n, !0), G("change", r, (e) => {
+		Q(r), H(() => mi(r, t.comment.title)), G("focus", r, () => t.actions.select(t.comment.id)), G("pointerdown", r, n, !0), G("mousedown", r, n, !0), G("click", r, n, !0), G("keydown", r, n, !0), K("change", r, (e) => {
 			t.comment.readOnly || t.actions.update(t.comment.id, { title: e.currentTarget.value });
-		}), q(e, r);
+		}), J(e, r);
 	};
-	Y(c, (e) => {
+	X(c, (e) => {
 		t.comment.readOnly ? e(l) : e(u, -1);
-	}), M(o);
-	var d = z(o, 2), f = L(d, !0);
-	M(d);
-	var p = z(d, 2), m = (e) => {
+	}), P(o);
+	var d = V(o, 2), f = z(d, !0);
+	P(d);
+	var p = V(d, 2), m = (e) => {
 		var n = Ui();
-		B(() => Q(n, "aria-label", `Resize comment: ${t.comment.title}`)), G("click", n, (e) => {
+		H(() => $(n, "aria-label", `Resize comment: ${t.comment.title}`)), K("click", n, (e) => {
 			e.detail === 0 && t.actions.select(t.comment.id);
-		}), q(e, n);
+		}), J(e, n);
 	};
-	Y(p, (e) => {
+	X(p, (e) => {
 		t.comment.readOnly || e(m);
-	}), M(r), B(() => {
-		i = ii(r, 1, "pc-comment-frame svelte-118xm2r", null, i, {
+	}), P(r), H(() => {
+		i = ri(r, 1, "pc-comment-frame svelte-118xm2r", null, i, {
 			"pc-comment-selected": t.comment.selected,
 			"pc-comment-readonly": t.comment.readOnly
-		}), Q(r, "data-id", t.comment.id), Q(r, "aria-label", `Comment: ${t.comment.title}`), a = oi(r, "", a, {
+		}), $(r, "data-id", t.comment.id), $(r, "aria-label", `Comment: ${t.comment.title}`), a = ai(r, "", a, {
 			left: `${t.comment.x}px`,
 			top: `${t.comment.y}px`,
 			width: `${t.comment.w}px`,
 			height: `${t.comment.h}px`,
 			"--frame-color": t.comment.color
-		}), Q(s, "aria-label", `Select comment: ${t.comment.title}`), J(f, t.comment.content);
-	}), G("click", s, (e) => {
+		}), $(s, "aria-label", `Select comment: ${t.comment.title}`), Y(f, t.comment.content);
+	}), K("click", s, (e) => {
 		e.detail === 0 && t.actions.select(t.comment.id);
-	}), q(e, r), We();
+	}), J(e, r), He();
 }
-br(["click", "change"]);
+yr(["click", "change"]);
 //#endregion
 //#region ui/CanvasLayer.svelte
-var Ki = /* @__PURE__ */ K("<div class=\"pc-viewport\" data-pc-renderer=\"svelte\"><div class=\"pc-comment-layer svelte-o7b704\"></div> <svg class=\"pc-wires\" aria-label=\"Canvas connections\"><!></svg> <div class=\"pc-nodes\"><!> <!> <!></div></div>");
+var Ki = /* @__PURE__ */ q("<div class=\"pc-viewport\" data-pc-renderer=\"svelte\"><div class=\"pc-comment-layer svelte-o7b704\"></div> <svg class=\"pc-wires\" aria-label=\"Canvas connections\"><!></svg> <div class=\"pc-nodes\"><!> <!> <!></div></div>");
 function qi(e, t) {
-	Ue(t, !0);
-	let n = /* @__PURE__ */ F([]), r = /* @__PURE__ */ F([]), i = /* @__PURE__ */ F([]), a = /* @__PURE__ */ F([]), o = /* @__PURE__ */ F({
+	Ve(t, !0);
+	let n = /* @__PURE__ */ L([]), r = /* @__PURE__ */ L([]), i = /* @__PURE__ */ L([]), a = /* @__PURE__ */ L([]), o = /* @__PURE__ */ L({
 		select() {},
 		update() {},
 		command() {}
-	}), s = /* @__PURE__ */ F(null), c = /* @__PURE__ */ F({
+	}), s = /* @__PURE__ */ L(null), c = /* @__PURE__ */ L({
 		w: 4e3,
 		h: 4e3
 	}), l, u, d, f;
@@ -2487,26 +2487,26 @@ function qi(e, t) {
 		};
 	}
 	function m(e, t) {
-		I(a, e), I(o, t);
+		R(a, e), R(o, t);
 	}
 	function h(e) {
-		I(n, e);
+		R(n, e);
 	}
 	function g(e) {
-		I(r, e);
+		R(r, e);
 	}
 	function _(e, t, n) {
-		I(i, e), I(c, t), I(s, n);
+		R(i, e), R(c, t), R(s, n);
 	}
 	function v(e, t) {
 		let i = new Map(e.map((e) => [e.id, e])), o = new Map(t.map((e) => [e.id, e]));
-		I(n, U(n).map((e) => i.has(e.id) ? {
+		R(n, W(n).map((e) => i.has(e.id) ? {
 			...e,
 			...i.get(e.id)
-		} : e)), I(a, U(a).map((e) => i.has(e.id) ? {
+		} : e)), R(a, W(a).map((e) => i.has(e.id) ? {
 			...e,
 			...i.get(e.id)
-		} : e)), I(r, U(r).map((e) => o.has(e.id) ? {
+		} : e)), R(r, W(r).map((e) => o.has(e.id) ? {
 			...e,
 			...o.get(e.id)
 		} : e));
@@ -2518,66 +2518,66 @@ function qi(e, t) {
 		setGroups: g,
 		setWires: _,
 		setPositions: v
-	}, b = Ki(), x = L(b);
-	X(x, 21, () => U(a), (e) => e.id, (e, t) => {
+	}, b = Ki(), x = z(b);
+	Z(x, 21, () => W(a), (e) => e.id, (e, t) => {
 		Gi(e, {
 			get comment() {
-				return U(t);
+				return W(t);
 			},
 			get actions() {
-				return U(o);
+				return W(o);
 			}
 		});
-	}), M(x), $(x, (e) => f = e, () => f);
-	var S = z(x, 2);
-	Bi(L(S), {
+	}), P(x), Ci(x, (e) => f = e, () => f);
+	var S = V(x, 2);
+	Bi(z(S), {
 		get wires() {
-			return U(i);
+			return W(i);
 		},
 		get ghost() {
-			return U(s);
+			return W(s);
 		}
-	}), M(S), $(S, (e) => u = e, () => u);
-	var C = z(S, 2), w = L(C);
-	X(w, 17, () => U(r).filter((e) => !e.collapsed), (e) => e.id, (e, n) => {
+	}), P(S), Ci(S, (e) => u = e, () => u);
+	var C = V(S, 2), w = z(C);
+	Z(w, 17, () => W(r).filter((e) => !e.collapsed), (e) => e.id, (e, n) => {
 		Ii(e, {
 			get group() {
-				return U(n);
+				return W(n);
 			},
 			get actions() {
 				return t.actions;
 			}
 		});
 	});
-	var T = z(w, 2);
-	return X(T, 17, () => U(n), (e) => e.id, (e, n) => {
+	var T = V(w, 2);
+	return Z(T, 17, () => W(n), (e) => e.id, (e, n) => {
 		Ni(e, {
 			get card() {
-				return U(n);
+				return W(n);
 			},
 			get actions() {
 				return t.actions;
 			}
 		});
-	}), X(z(T, 2), 17, () => U(r).filter((e) => e.collapsed), (e) => e.id, (e, n) => {
+	}), Z(V(T, 2), 17, () => W(r).filter((e) => e.collapsed), (e) => e.id, (e, n) => {
 		Ii(e, {
 			get group() {
-				return U(n);
+				return W(n);
 			},
 			get actions() {
 				return t.actions;
 			}
 		});
-	}), M(C), $(C, (e) => d = e, () => d), M(b), $(b, (e) => l = e, () => l), B(() => {
-		Q(S, "width", U(c).w), Q(S, "height", U(c).h), Q(S, "viewBox", `0 0 ${U(c).w} ${U(c).h}`);
-	}), q(e, b), We(y);
+	}), P(C), Ci(C, (e) => d = e, () => d), P(b), Ci(b, (e) => l = e, () => l), H(() => {
+		$(S, "width", W(c).w), $(S, "height", W(c).h), $(S, "viewBox", `0 0 ${W(c).w} ${W(c).h}`);
+	}), J(e, b), He(y);
 }
 //#endregion
 //#region ui/WorkspaceMenus.svelte
-var Ji = /* @__PURE__ */ K("<button type=\"button\" class=\"pc-flat-menu\" aria-haspopup=\"menu\"> </button>"), Yi = /* @__PURE__ */ K("<button type=\"button\" role=\"menuitem\"><span> </span><small> </small></button>"), Xi = /* @__PURE__ */ K("<div class=\"pc-workspace-menu-panel\" role=\"menu\" tabindex=\"-1\"></div>"), Zi = /* @__PURE__ */ K("<nav class=\"pc-workspace-menus\" aria-label=\"Workspace menus\"><!> <!></nav>");
+var Ji = /* @__PURE__ */ q("<button type=\"button\" class=\"pc-flat-menu\" aria-haspopup=\"menu\"> </button>"), Yi = /* @__PURE__ */ q("<button type=\"button\" role=\"menuitem\"><span> </span><small> </small></button>"), Xi = /* @__PURE__ */ q("<div class=\"pc-workspace-menu-panel\" role=\"menu\" tabindex=\"-1\"></div>"), Zi = /* @__PURE__ */ q("<nav class=\"pc-workspace-menus\" aria-label=\"Workspace menus\"><!> <!></nav>");
 function Qi(e, t) {
-	Ue(t, !0);
-	let n = /* @__PURE__ */ N(() => t.state.rootWorkflow ?? t.state.workflow), r = /* @__PURE__ */ F(""), i, a = /* @__PURE__ */ F(null), o = null, s = /* @__PURE__ */ F(0), c = /* @__PURE__ */ F(0), l = [
+	Ve(t, !0);
+	let n = /* @__PURE__ */ F(() => t.state.rootWorkflow ?? t.state.workflow), r = /* @__PURE__ */ L(""), i, a = /* @__PURE__ */ L(null), o = null, s = /* @__PURE__ */ L(0), c = /* @__PURE__ */ L(0), l = [
 		"File",
 		"Edit",
 		"Graph",
@@ -2626,25 +2626,37 @@ function Qi(e, t) {
 			case "Preview": return [u("Show preview", "show-preview"), u("Collapse preview", "collapse-preview")];
 			case "Workflows": return [
 				u("Workflow examples…", "examples"),
-				...U(n) && ["pre", "post"].includes(U(n).phase) ? [u(U(n).assigned ? "Assigned to " + U(n).phase + " phase" : "Assign " + U(n).phase + " phase", "assign-workflow-phase", "", U(n).assigned || U(n).busy)] : [],
-				u("Run workflow", "run-workflow", "", !U(n) || !!U(n)?.busy || !!U(n)?.issues.length),
-				u("Stop workflow", "stop-workflow", "", !U(n)?.busy)
+				u("New legacy pre workflow", "new-pre"),
+				u("New legacy post workflow", "new-post"),
+				...W(n) && [
+					"unified",
+					"pre",
+					"post"
+				].includes(W(n).phase) ? [u(W(n).phase === "unified" ? W(n).assigned ? "Unified workflow assigned" : "Assign unified workflow" : W(n).assigned ? "Assigned to legacy " + W(n).phase + " phase" : "Assign legacy " + W(n).phase + " phase", "assign-workflow-phase", "", W(n).assigned || W(n).busy)] : [],
+				u("Run workflow", "run-workflow", "", !W(n) || !!W(n)?.busy || !!W(n)?.issues.length),
+				u("Stop workflow", "stop-workflow", "", !W(n)?.busy)
 			];
-			case "Tools": return [u("Theme and colours", "theme"), u("Toggle inspector", "inspector")];
+			case "Tools": return [
+				u("Recall arms…", "recall-arms"),
+				u("Story documents…", "story-documents"),
+				u("Fast connections…", "fast-connections"),
+				u("Theme and colours", "theme"),
+				u("Toggle inspector", "inspector")
+			];
 			default: return [u("Workspace guide", "help")];
 		}
 	}
 	function f(e = !1) {
-		I(r, ""), e && o?.focus({ preventScroll: !0 });
+		R(r, ""), e && o?.focus({ preventScroll: !0 });
 	}
 	async function p(e, t, n = !1) {
-		if (U(r) === e && !n) {
+		if (W(r) === e && !n) {
 			f();
 			return;
 		}
-		I(r, e, !0), o = t, await ur();
-		let i = t.getBoundingClientRect(), l = U(a).getBoundingClientRect();
-		I(s, Math.max(4, Math.min(i.left, window.innerWidth - l.width - 4)), !0), I(c, i.bottom + 2), n && U(a).querySelector("button:not(:disabled)")?.focus();
+		R(r, e, !0), o = t, await lr();
+		let i = t.getBoundingClientRect(), l = W(a).getBoundingClientRect();
+		R(s, Math.max(4, Math.min(i.left, window.innerWidth - l.width - 4)), !0), R(c, i.bottom + 2), n && W(a).querySelector("button:not(:disabled)")?.focus();
 	}
 	function m(e) {
 		f(!0), [
@@ -2652,64 +2664,67 @@ function Qi(e, t) {
 			"show-preview",
 			"collapse-preview",
 			"add-node",
-			"help"
+			"help",
+			"fast-connections",
+			"story-documents",
+			"recall-arms"
 		].includes(e) ? t.local(e) : e === "select-tool" || e === "pan-tool" ? t.actions.mode(e === "select-tool" ? "select" : "pan") : e === "zoom-in" || e === "zoom-out" ? t.actions.zoom(e === "zoom-in" ? 1.15 : 1 / 1.15) : t.actions.command(e);
 	}
 	function h(e) {
 		let t = e.target;
-		if (e.key === "Escape" && U(r)) e.preventDefault(), e.stopPropagation(), f(!0);
+		if (e.key === "Escape" && W(r)) e.preventDefault(), e.stopPropagation(), f(!0);
 		else if (["ArrowLeft", "ArrowRight"].includes(e.key)) {
 			e.preventDefault();
-			let n = U(r) || t.textContent || l[0], a = l[(l.indexOf(n) + (e.key === "ArrowRight" ? 1 : l.length - 1)) % l.length], o = i.querySelector(`[data-menu="${a}"]`);
-			U(r) ? p(a, o, !0) : o.focus();
+			let n = W(r) || t.textContent || l[0], a = l[(l.indexOf(n) + (e.key === "ArrowRight" ? 1 : l.length - 1)) % l.length], o = i.querySelector(`[data-menu="${a}"]`);
+			W(r) ? p(a, o, !0) : o.focus();
 		} else if (e.key === "ArrowDown" || e.key === "ArrowUp" || e.key === "Home" || e.key === "End") {
-			if (e.preventDefault(), !U(r)) {
+			if (e.preventDefault(), !W(r)) {
 				p(t.dataset.menu || l[0], t, !0);
 				return;
 			}
-			let n = [...U(a).querySelectorAll("button:not(:disabled)")], i = n.indexOf(t);
+			let n = [...W(a).querySelectorAll("button:not(:disabled)")], i = n.indexOf(t);
 			n[e.key === "Home" ? 0 : e.key === "End" ? n.length - 1 : (i + (e.key === "ArrowUp" ? n.length - 1 : 1)) % n.length]?.focus();
 		} else e.key === "Tab" && f();
 	}
 	var g = Zi();
-	W("pointerdown", rn, (e) => {
-		U(r) && !i.contains(e.target) && !U(a)?.contains(e.target) && f();
-	}), W("resize", rn, () => f());
-	var _ = L(g);
-	X(_, 17, () => l, Vr, (e, t) => {
-		var n = Ji(), i = L(n, !0);
-		M(n), B(() => {
-			Q(n, "data-menu", U(t)), Q(n, "aria-expanded", U(r) === U(t)), J(i, U(t));
-		}), G("click", n, (e) => p(U(t), e.currentTarget)), G("keydown", n, h), q(e, n);
+	G("pointerdown", tn, (e) => {
+		W(r) && !i.contains(e.target) && !W(a)?.contains(e.target) && f();
+	}), G("resize", tn, () => f());
+	var _ = z(g);
+	Z(_, 17, () => l, Br, (e, t) => {
+		var n = Ji(), i = z(n, !0);
+		P(n), H(() => {
+			$(n, "data-menu", W(t)), $(n, "aria-expanded", W(r) === W(t)), Y(i, W(t));
+		}), K("click", n, (e) => p(W(t), e.currentTarget)), K("keydown", n, h), J(e, n);
 	});
-	var v = z(_, 2), y = (e) => {
+	var v = V(_, 2), y = (e) => {
 		var t = Xi();
 		let n;
-		X(t, 21, () => d(U(r)), Vr, (e, t) => {
-			var n = Yi(), r = L(n), i = L(r, !0);
-			M(r);
-			var a = z(r), o = L(a, !0);
-			M(a), M(n), B(() => {
-				n.disabled = U(t).disabled, J(i, U(t).label), J(o, U(t).shortcut);
-			}), G("click", n, () => m(U(t).command)), q(e, n);
-		}), M(t), $(t, (e) => I(a, e), () => U(a)), B(() => {
-			Q(t, "aria-label", U(r)), n = oi(t, "", n, {
-				left: `${U(s)}px`,
-				top: `${U(c)}px`
+		Z(t, 21, () => d(W(r)), Br, (e, t) => {
+			var n = Yi(), r = z(n), i = z(r, !0);
+			P(r);
+			var a = V(r), o = z(a, !0);
+			P(a), P(n), H(() => {
+				n.disabled = W(t).disabled, Y(i, W(t).label), Y(o, W(t).shortcut);
+			}), K("click", n, () => m(W(t).command)), J(e, n);
+		}), P(t), Ci(t, (e) => R(a, e), () => W(a)), H(() => {
+			$(t, "aria-label", W(r)), n = ai(t, "", n, {
+				left: `${W(s)}px`,
+				top: `${W(c)}px`
 			});
-		}), G("keydown", t, h), q(e, t);
+		}), K("keydown", t, h), J(e, t);
 	};
-	Y(v, (e) => {
-		U(r) && e(y);
-	}), M(g), $(g, (e) => i = e, () => i), q(e, g), We();
+	X(v, (e) => {
+		W(r) && e(y);
+	}), P(g), Ci(g, (e) => i = e, () => i), J(e, g), He();
 }
-br(["click", "keydown"]);
+yr(["click", "keydown"]);
 //#endregion
 //#region ui/Toolbar.svelte
-var $i = /* @__PURE__ */ K("<option> </option>"), ea = /* @__PURE__ */ K("<header class=\"pc-header\" data-pc-ui=\"svelte\"><div class=\"pc-menubar\"><div class=\"pc-brand\"><img width=\"30\" height=\"30\" alt=\"\"/><span>LATTICE</span></div> <!> <button type=\"button\" class=\"pc-btn menu_button pc-close\" title=\"Close\" aria-label=\"Close canvas\">×</button></div> <div class=\"pc-workflow-bar\"><select class=\"pc-select pc-graph-select text_pole\" aria-label=\"Workflow\"></select> <div class=\"pc-header-actions pc-history\"><button type=\"button\" aria-label=\"Undo\">↶</button> <button type=\"button\" aria-label=\"Redo\">↷</button> <span> </span></div> <button type=\"button\" class=\"pc-btn menu_button pc-root-run\"> </button> <span class=\"pc-root-workflow-status\" role=\"status\"> </span> <div class=\"pc-header-actions pc-surface-actions\"><button type=\"button\" title=\"Show or hide the inspector\" aria-label=\"Toggle inspector\">Details</button></div> <label class=\"pc-arm\"><input class=\"pc-arm-input\" type=\"checkbox\"/><span>Arm</span></label></div></header>");
+var $i = /* @__PURE__ */ q("<option> </option>"), ea = /* @__PURE__ */ q("<header class=\"pc-header\" data-pc-ui=\"svelte\"><div class=\"pc-menubar\"><div class=\"pc-brand\"><img width=\"30\" height=\"30\" alt=\"\"/><span>LATTICE</span></div> <!> <button type=\"button\" class=\"pc-btn menu_button pc-close\" title=\"Close\" aria-label=\"Close canvas\">×</button></div> <div class=\"pc-workflow-bar\"><select class=\"pc-select pc-graph-select text_pole\" aria-label=\"Workflow\"></select> <div class=\"pc-header-actions pc-history\"><button type=\"button\" aria-label=\"Undo\">↶</button> <button type=\"button\" aria-label=\"Redo\">↷</button> <span> </span></div> <button type=\"button\" class=\"pc-btn menu_button pc-root-run\"> </button> <span class=\"pc-root-workflow-status\" role=\"status\"> </span> <div class=\"pc-header-actions pc-surface-actions\"><button type=\"button\" title=\"Show or hide the inspector\" aria-label=\"Toggle inspector\">Details</button></div> <label class=\"pc-arm\"><input class=\"pc-arm-input\" type=\"checkbox\"/><span>Arm</span></label></div></header>");
 function ta(e, t) {
-	Ue(t, !0);
-	let n = /* @__PURE__ */ N(() => t.state.rootWorkflow ?? t.state.workflow), r, i, a, o;
+	Ve(t, !0);
+	let n = /* @__PURE__ */ F(() => t.state.rootWorkflow ?? t.state.workflow), r, i, a, o;
 	function s() {
 		return {
 			header: r,
@@ -2724,9 +2739,9 @@ function ta(e, t) {
 	var l = {
 		getParts: s,
 		focusGraphSelect: c
-	}, u = ea(), d = L(u), f = L(d), p = L(f);
-	Me(), M(f);
-	var m = z(f, 2);
+	}, u = ea(), d = z(u), f = z(d), p = z(f);
+	Ae(), P(f);
+	var m = V(f, 2);
 	Qi(m, {
 		get state() {
 			return t.state;
@@ -2738,38 +2753,38 @@ function ta(e, t) {
 			return t.local;
 		}
 	});
-	var h = z(m, 2);
-	M(d);
-	var g = z(d, 2), _ = L(g);
-	X(_, 21, () => t.state.graphs, (e) => e.id, (e, t) => {
-		var n = $i(), r = L(n, !0);
-		M(n);
+	var h = V(m, 2);
+	P(d);
+	var g = V(d, 2), _ = z(g);
+	Z(_, 21, () => t.state.graphs, (e) => e.id, (e, t) => {
+		var n = $i(), r = z(n, !0);
+		P(n);
 		var i = {};
-		B(() => {
-			J(r, U(t).name), i !== (i = U(t).id) && (n.value = (n.__value = U(t).id) ?? "");
-		}), q(e, n);
-	}), M(_), $(_, (e) => i = e, () => i);
+		H(() => {
+			Y(r, W(t).name), i !== (i = W(t).id) && (n.value = (n.__value = W(t).id) ?? "");
+		}), J(e, n);
+	}), P(_), Ci(_, (e) => i = e, () => i);
 	var v;
-	ci(_);
-	var y = z(_, 2), b = L(y), x = z(b, 2), S = z(x, 2), C = L(S, !0);
-	M(S), M(y);
-	var w = z(y, 2), T = L(w, !0);
-	M(w);
-	var E = z(w, 2), D = L(E);
-	M(E);
-	var O = z(E, 2), ee = L(O);
-	$(ee, (e) => o = e, () => o), M(O);
-	var k = z(O, 2), te = L(k);
-	return Z(te), $(te, (e) => a = e, () => a), Me(), M(k), M(g), M(u), $(u, (e) => r = e, () => r), B((e) => {
-		Q(p, "src", t.actions.logoUrl), v !== (v = t.state.graphId) && (_.value = (_.__value = t.state.graphId) ?? "", si(_, t.state.graphId)), ii(b, 1, `pc-btn menu_button pc-undo${t.state.history.undo ? "" : " pc-disabled"}`), b.disabled = !t.state.history.undo, Q(b, "title", t.state.history.undoTitle), ii(x, 1, `pc-btn menu_button pc-redo${t.state.history.redo ? "" : " pc-disabled"}`), x.disabled = !t.state.history.redo, Q(x, "title", t.state.history.redoTitle), ii(S, 1, `pc-history-note${t.state.history.showNote ? " pc-show" : ""}`), J(C, t.state.history.note), w.disabled = !U(n) || !U(n).busy && !!U(n).issues.length, Q(w, "title", e), J(T, U(n)?.busy ? "■ Stop" : "▶ Run"), J(D, `${U(n) ? `${U(n).phase} · ${U(n).assigned ? "Assigned" : "Unassigned"} · ≤ ${U(n).callBound} requests` : "Workflow unavailable"} · Autosave in SillyTavern`), ii(ee, 1, `pc-btn menu_button pc-pane-toggle${t.state.inspectorOpen ? " pc-on" : ""}`), Q(ee, "aria-pressed", t.state.inspectorOpen), gi(te, t.state.armed);
-	}, [() => U(n)?.issues.join("\n") || "Run the root workflow"]), G("click", h, () => t.actions.command("close")), G("change", _, (e) => t.actions.pickGraph(e.currentTarget.value)), G("click", b, () => t.actions.command("undo")), G("click", x, () => t.actions.command("redo")), G("click", w, () => t.actions.command(U(n)?.busy ? "stop-workflow" : "run-workflow")), G("click", ee, () => t.actions.command("inspector")), G("change", te, (e) => t.actions.arm(e.currentTarget.checked)), q(e, u), We(l);
+	si(_);
+	var y = V(_, 2), b = z(y), x = V(b, 2), S = V(x, 2), C = z(S, !0);
+	P(S), P(y);
+	var w = V(y, 2), T = z(w, !0);
+	P(w);
+	var E = V(w, 2), D = z(E);
+	P(E);
+	var O = V(E, 2), k = z(O);
+	Ci(k, (e) => o = e, () => o), P(O);
+	var A = V(O, 2), ee = z(A);
+	return Q(ee), Ci(ee, (e) => a = e, () => a), Ae(), P(A), P(g), P(u), Ci(u, (e) => r = e, () => r), H((e) => {
+		$(p, "src", t.actions.logoUrl), v !== (v = t.state.graphId) && (_.value = (_.__value = t.state.graphId) ?? "", oi(_, t.state.graphId)), ri(b, 1, `pc-btn menu_button pc-undo${t.state.history.undo ? "" : " pc-disabled"}`), b.disabled = !t.state.history.undo, $(b, "title", t.state.history.undoTitle), ri(x, 1, `pc-btn menu_button pc-redo${t.state.history.redo ? "" : " pc-disabled"}`), x.disabled = !t.state.history.redo, $(x, "title", t.state.history.redoTitle), ri(S, 1, `pc-history-note${t.state.history.showNote ? " pc-show" : ""}`), Y(C, t.state.history.note), w.disabled = !W(n) || !W(n).busy && !!W(n).issues.length, $(w, "title", e), Y(T, W(n)?.busy ? "■ Stop" : "▶ Run"), Y(D, `${W(n) ? `${W(n).phase} · ${W(n).assigned ? "Assigned" : "Unassigned"} · ≤ ${W(n).callBound} requests` : "Workflow unavailable"} · Autosave in SillyTavern`), ri(k, 1, `pc-btn menu_button pc-pane-toggle${t.state.inspectorOpen ? " pc-on" : ""}`), $(k, "aria-pressed", t.state.inspectorOpen), hi(ee, t.state.armed);
+	}, [() => W(n)?.issues.join("\n") || "Run the root workflow"]), K("click", h, () => t.actions.command("close")), K("change", _, (e) => t.actions.pickGraph(e.currentTarget.value)), K("click", b, () => t.actions.command("undo")), K("click", x, () => t.actions.command("redo")), K("click", w, () => t.actions.command(W(n)?.busy ? "stop-workflow" : "run-workflow")), K("click", k, () => t.actions.command("inspector")), K("change", ee, (e) => t.actions.arm(e.currentTarget.checked)), J(e, u), He(l);
 }
-br(["click", "change"]);
+yr(["click", "change"]);
 //#endregion
 //#region ui/PaneDivider.svelte
-var na = /* @__PURE__ */ K("<div class=\"pc-pane-divider\" role=\"separator\" aria-label=\"Resize preview\" aria-orientation=\"horizontal\" tabindex=\"0\"></div>");
+var na = /* @__PURE__ */ q("<div class=\"pc-pane-divider\" role=\"separator\" aria-label=\"Resize preview\" aria-orientation=\"horizontal\" tabindex=\"0\"></div>");
 function ra(e, t) {
-	Ue(t, !0);
+	Ve(t, !0);
 	let n = wi(t, "min", 3, 90), r = wi(t, "max", 3, 500), i, a = null, o = (e) => Math.max(n(), Math.min(r(), e));
 	function s(e) {
 		e.button === 0 && (u(), e.preventDefault(), t.start(), a = {
@@ -2795,11 +2810,11 @@ function ra(e, t) {
 	}
 	Ei(u);
 	var f = na();
-	W("blur", rn, u), $(f, (e) => i = e, () => i), B((e, t) => {
-		Q(f, "aria-valuemin", n()), Q(f, "aria-valuemax", e), Q(f, "aria-valuenow", t);
-	}, [() => Math.round(r()), () => Math.round(t.height)]), G("pointerdown", f, s), G("pointermove", f, c), G("pointerup", f, (e) => l(!1, e.pointerId)), W("pointercancel", f, (e) => l(!0, e.pointerId)), W("lostpointercapture", f, (e) => l(!0, e.pointerId)), G("keydown", f, d), q(e, f), We();
+	G("blur", tn, u), Ci(f, (e) => i = e, () => i), H((e, t) => {
+		$(f, "aria-valuemin", n()), $(f, "aria-valuemax", e), $(f, "aria-valuenow", t);
+	}, [() => Math.round(r()), () => Math.round(t.height)]), K("pointerdown", f, s), K("pointermove", f, c), K("pointerup", f, (e) => l(!1, e.pointerId)), G("pointercancel", f, (e) => l(!0, e.pointerId)), G("lostpointercapture", f, (e) => l(!0, e.pointerId)), K("keydown", f, d), J(e, f), He();
 }
-br([
+yr([
 	"pointerdown",
 	"pointermove",
 	"pointerup",
@@ -2807,9 +2822,9 @@ br([
 ]);
 //#endregion
 //#region ui/DetailsDivider.svelte
-var ia = /* @__PURE__ */ K("<div class=\"pc-details-divider svelte-1iyzcro\" role=\"separator\" aria-label=\"Resize Details\" aria-orientation=\"vertical\" tabindex=\"0\"></div>");
+var ia = /* @__PURE__ */ q("<div class=\"pc-details-divider svelte-1iyzcro\" role=\"separator\" aria-label=\"Resize Details\" aria-orientation=\"vertical\" tabindex=\"0\"></div>");
 function aa(e, t) {
-	Ue(t, !0);
+	Ve(t, !0);
 	let n = wi(t, "min", 3, 220), r = wi(t, "max", 3, 520), i, a = null, o = (e) => Math.max(n(), Math.min(r(), e));
 	function s(e = !1, n = a?.id) {
 		if (!a || a.id !== n) return;
@@ -2840,11 +2855,11 @@ function aa(e, t) {
 	}
 	Ei(c);
 	var f = ia();
-	W("blur", rn, c), $(f, (e) => i = e, () => i), B((e, t) => {
-		Q(f, "aria-valuemin", n()), Q(f, "aria-valuemax", e), Q(f, "aria-valuenow", t);
-	}, [() => Math.round(r()), () => Math.round(t.width)]), G("pointerdown", f, l), G("pointermove", f, u), G("pointerup", f, (e) => s(!1, e.pointerId)), W("pointercancel", f, (e) => s(!0, e.pointerId)), W("lostpointercapture", f, (e) => s(!0, e.pointerId)), G("keydown", f, d), q(e, f), We();
+	G("blur", tn, c), Ci(f, (e) => i = e, () => i), H((e, t) => {
+		$(f, "aria-valuemin", n()), $(f, "aria-valuemax", e), $(f, "aria-valuenow", t);
+	}, [() => Math.round(r()), () => Math.round(t.width)]), K("pointerdown", f, l), K("pointermove", f, u), K("pointerup", f, (e) => s(!1, e.pointerId)), G("pointercancel", f, (e) => s(!0, e.pointerId)), G("lostpointercapture", f, (e) => s(!0, e.pointerId)), K("keydown", f, d), J(e, f), He();
 }
-br([
+yr([
 	"pointerdown",
 	"pointermove",
 	"pointerup",
@@ -2852,23 +2867,23 @@ br([
 ]);
 //#endregion
 //#region ui/GraphTabs.svelte
-var oa = /* @__PURE__ */ K("<span class=\"pc-graph-tab-lock svelte-7ptwed\" aria-label=\"Read only\">◇</span>"), sa = /* @__PURE__ */ K("<input type=\"text\" title=\"Enter to save, Escape to cancel\"/>"), ca = /* @__PURE__ */ K("<button type=\"button\" class=\"pc-graph-tab-close svelte-7ptwed\">×</button>"), la = /* @__PURE__ */ K("<div><button type=\"button\" role=\"tab\" aria-haspopup=\"menu\"><span class=\"svelte-7ptwed\"> </span><!></button> <!> <!></div>"), ua = /* @__PURE__ */ K("<button type=\"button\" role=\"menuitem\" class=\"svelte-7ptwed\"> </button>"), da = /* @__PURE__ */ K("<button type=\"button\" role=\"menuitem\" class=\"svelte-7ptwed\">Save workflow</button> <button type=\"button\" role=\"menuitem\" class=\"svelte-7ptwed\"> </button> <button type=\"button\" role=\"menuitem\" class=\"svelte-7ptwed\"> </button> <button type=\"button\" role=\"menuitem\" class=\"svelte-7ptwed\">Close tab</button> <button type=\"button\" role=\"menuitem\" class=\"svelte-7ptwed\">Close other tabs</button> <!>", 1), fa = /* @__PURE__ */ K("<!> <button type=\"button\" role=\"menuitem\" class=\"svelte-7ptwed\">Close active view</button> <button type=\"button\" role=\"menuitem\" class=\"svelte-7ptwed\">Close other views</button> <!>", 1), pa = /* @__PURE__ */ K("<div role=\"menu\" tabindex=\"-1\"><!></div>"), ma = /* @__PURE__ */ K("<nav aria-label=\"Open graph views\"><div class=\"pc-graph-tab-list svelte-7ptwed\" role=\"tablist\" aria-label=\"Graph views\"></div> <button type=\"button\" class=\"pc-graph-view-overflow svelte-7ptwed\" aria-label=\"Graph view actions\" title=\"Focus, close or reopen graph views\" aria-haspopup=\"menu\">⋯</button> <!></nav>");
+var oa = /* @__PURE__ */ q("<span class=\"pc-graph-tab-lock svelte-7ptwed\" aria-label=\"Read only\">◇</span>"), sa = /* @__PURE__ */ q("<input type=\"text\" title=\"Enter to save, Escape to cancel\"/>"), ca = /* @__PURE__ */ q("<button type=\"button\" class=\"pc-graph-tab-close svelte-7ptwed\">×</button>"), la = /* @__PURE__ */ q("<div><button type=\"button\" role=\"tab\" aria-haspopup=\"menu\"><span class=\"svelte-7ptwed\"> </span><!></button> <!> <!></div>"), ua = /* @__PURE__ */ q("<button type=\"button\" role=\"menuitem\" class=\"svelte-7ptwed\"> </button>"), da = /* @__PURE__ */ q("<button type=\"button\" role=\"menuitem\" class=\"svelte-7ptwed\">Save workflow</button> <button type=\"button\" role=\"menuitem\" class=\"svelte-7ptwed\"> </button> <button type=\"button\" role=\"menuitem\" class=\"svelte-7ptwed\"> </button> <button type=\"button\" role=\"menuitem\" class=\"svelte-7ptwed\">Close tab</button> <button type=\"button\" role=\"menuitem\" class=\"svelte-7ptwed\">Close other tabs</button> <!>", 1), fa = /* @__PURE__ */ q("<!> <button type=\"button\" role=\"menuitem\" class=\"svelte-7ptwed\">Close active view</button> <button type=\"button\" role=\"menuitem\" class=\"svelte-7ptwed\">Close other views</button> <!>", 1), pa = /* @__PURE__ */ q("<div role=\"menu\" tabindex=\"-1\"><!></div>"), ma = /* @__PURE__ */ q("<nav aria-label=\"Open graph views\"><div class=\"pc-graph-tab-list svelte-7ptwed\" role=\"tablist\" aria-label=\"Graph views\"></div> <button type=\"button\" class=\"pc-graph-view-overflow svelte-7ptwed\" aria-label=\"Graph view actions\" title=\"Focus, close or reopen graph views\" aria-haspopup=\"menu\">⋯</button> <!></nav>");
 function ha(e, t) {
-	Ue(t, !0);
-	let n = wi(t, "actions", 19, () => ({})), r = wi(t, "idPrefix", 3, "pc-graph-view"), i = /* @__PURE__ */ F(null), a = /* @__PURE__ */ F(null), o = /* @__PURE__ */ F(null), s = /* @__PURE__ */ F(!1), c = /* @__PURE__ */ F(""), l = /* @__PURE__ */ F(""), u = /* @__PURE__ */ F(0), d = /* @__PURE__ */ F(0), f = "", p = /* @__PURE__ */ F(""), m = /* @__PURE__ */ F(""), h = /* @__PURE__ */ F(null), g = "", _ = null, v = 0, y = /* @__PURE__ */ N(() => t.views?.tabs.find((e) => e.key === U(l))), b = {};
-	xn(() => {
+	Ve(t, !0);
+	let n = wi(t, "actions", 19, () => ({})), r = wi(t, "idPrefix", 3, "pc-graph-view"), i = /* @__PURE__ */ L(null), a = /* @__PURE__ */ L(null), o = /* @__PURE__ */ L(null), s = /* @__PURE__ */ L(!1), c = /* @__PURE__ */ L(""), l = /* @__PURE__ */ L(""), u = /* @__PURE__ */ L(0), d = /* @__PURE__ */ L(0), f = "", p = /* @__PURE__ */ L(""), m = /* @__PURE__ */ L(""), h = /* @__PURE__ */ L(null), g = "", _ = null, v = 0, y = /* @__PURE__ */ F(() => t.views?.tabs.find((e) => e.key === W(l))), b = {};
+	yn(() => {
 		let e = t.views?.active.key ?? "";
-		f === e ? t.views && !t.views.tabs.some((e) => e.key === U(c)) && I(c, e, !0) : (I(c, e, !0), O(), I(p, "")), U(l) && !U(y) && O(), U(p) && (t.views?.workflowId !== g || !t.views.tabs.some((e) => e.key === U(p))) && I(p, ""), f = e;
+		f === e ? t.views && !t.views.tabs.some((e) => e.key === W(c)) && R(c, e, !0) : (R(c, e, !0), O(), R(p, "")), W(l) && !W(y) && O(), W(p) && (t.views?.workflowId !== g || !t.views.tabs.some((e) => e.key === W(p))) && R(p, ""), f = e;
 	});
 	async function x(e) {
 		let r = t.views?.tabs.find((t) => t.key === e);
 		if (!r || r.identity.kind === "library" || !n().renameView || n().canRenameView?.(e) === !1) return;
 		let i = ++v;
-		_ = null, O(), g = t.views.workflowId, I(m, r.label, !0), I(p, e, !0), await ur(), U(p) === e && v === i && (_ = U(h), U(h)?.focus({ preventScroll: !0 }), U(h)?.select());
+		_ = null, O(), g = t.views.workflowId, R(m, r.label, !0), R(p, e, !0), await lr(), W(p) === e && v === i && (_ = W(h), W(h)?.focus({ preventScroll: !0 }), W(h)?.select());
 	}
 	async function S(e, r, i = !0) {
-		let a = U(p), o = t.views?.tabs.find((e) => e.key === a), s = U(m).trim();
-		a && e === _ && (I(p, ""), _ = null, r && o && s && s !== o.label && t.views?.workflowId === g && o.identity.kind !== "library" && n().canRenameView?.(a) !== !1 && n().renameView?.(a, s), i && (await ur(), b[a]?.focus({ preventScroll: !0 })));
+		let a = W(p), o = t.views?.tabs.find((e) => e.key === a), s = W(m).trim();
+		a && e === _ && (R(p, ""), _ = null, r && o && s && s !== o.label && t.views?.workflowId === g && o.identity.kind !== "library" && n().canRenameView?.(a) !== !1 && n().renameView?.(a, s), i && (await lr(), b[a]?.focus({ preventScroll: !0 })));
 	}
 	function C(e) {
 		e.stopPropagation(), !e.isComposing && (e.key === "Enter" || e.key === "Escape") && (e.preventDefault(), S(e.currentTarget, e.key === "Enter"));
@@ -2878,13 +2893,13 @@ function ha(e, t) {
 		return n.kind === "instance" ? `${t} (${n.instancePath.map((e) => JSON.stringify(e)).join(" → ")})` : n.kind === "library" ? `${t} · Library v${n.definitionRef.version} (${n.definitionRef.id})` : t;
 	}
 	function T(e) {
-		I(c, e, !0), n().focusView?.(e), b[e]?.focus({ preventScroll: !0 });
+		R(c, e, !0), n().focusView?.(e), b[e]?.focus({ preventScroll: !0 });
 	}
 	function E(e, n) {
 		if (t.views && (e.key === "ContextMenu" || e.key === "F10" && e.shiftKey)) {
 			e.preventDefault(), e.stopPropagation();
 			let r = t.views.tabs[n], i = b[r.key]?.getBoundingClientRect();
-			k(r, i?.left ?? 8, i?.bottom ?? 8);
+			A(r, i?.left ?? 8, i?.bottom ?? 8);
 			return;
 		}
 		if (!t.views || ![
@@ -2903,27 +2918,27 @@ function ha(e, t) {
 	}
 	async function D(e) {
 		if (e.identity.kind === "root") return;
-		n().closeView?.(e.key), await ur();
+		n().closeView?.(e.key), await lr();
 		let r = t.views?.active.key;
-		r && t.views?.tabs.some((e) => e.key === r) && (I(c, r, !0), b[r]?.focus({ preventScroll: !0 }));
+		r && t.views?.tabs.some((e) => e.key === r) && (R(c, r, !0), b[r]?.focus({ preventScroll: !0 }));
 	}
 	function O(e = !1) {
-		let t = U(l) ? b[U(l)] : U(o);
-		I(s, !1), I(l, ""), e && t?.focus({ preventScroll: !0 });
+		let t = W(l) ? b[W(l)] : W(o);
+		R(s, !1), R(l, ""), e && t?.focus({ preventScroll: !0 });
 	}
-	function ee(e, t) {
-		e.preventDefault(), e.stopPropagation(), k(t, e.clientX, e.clientY);
+	function k(e, t) {
+		e.preventDefault(), e.stopPropagation(), A(t, e.clientX, e.clientY);
 	}
-	async function k(e, t, n) {
-		if (I(l, e.key, !0), I(u, t, !0), I(d, n, !0), I(s, !0), await ur(), !U(s) || U(l) !== e.key) return;
-		let r = U(a)?.getBoundingClientRect();
-		I(u, Math.min(Math.max(8, t), Math.max(8, window.innerWidth - (r?.width ?? 0) - 8)), !0), I(d, Math.min(Math.max(8, n), Math.max(8, window.innerHeight - (r?.height ?? 0) - 8)), !0), U(a)?.querySelector("button:not(:disabled)")?.focus({ preventScroll: !0 });
+	async function A(e, t, n) {
+		if (R(l, e.key, !0), R(u, t, !0), R(d, n, !0), R(s, !0), await lr(), !W(s) || W(l) !== e.key) return;
+		let r = W(a)?.getBoundingClientRect();
+		R(u, Math.min(Math.max(8, t), Math.max(8, window.innerWidth - (r?.width ?? 0) - 8)), !0), R(d, Math.min(Math.max(8, n), Math.max(8, window.innerHeight - (r?.height ?? 0) - 8)), !0), W(a)?.querySelector("button:not(:disabled)")?.focus({ preventScroll: !0 });
 	}
-	async function te() {
-		let e = !!U(l);
-		I(l, ""), I(s, e || !U(s), !0), U(s) && (await ur(), U(s) && U(a)?.querySelector("button:not(:disabled)")?.focus());
+	async function ee() {
+		let e = !!W(l);
+		R(l, ""), R(s, e || !W(s), !0), W(s) && (await lr(), W(s) && W(a)?.querySelector("button:not(:disabled)")?.focus());
 	}
-	function ne(e) {
+	function te(e) {
 		if (e.stopPropagation(), e.key === "Escape") {
 			e.preventDefault(), O(!0);
 			return;
@@ -2939,120 +2954,120 @@ function ha(e, t) {
 			"End"
 		].includes(e.key)) return;
 		e.preventDefault();
-		let t = [...U(a).querySelectorAll("button:not(:disabled)")], n = t.indexOf(e.target);
+		let t = [...W(a).querySelectorAll("button:not(:disabled)")], n = t.indexOf(e.target);
 		t[e.key === "Home" ? 0 : e.key === "End" ? t.length - 1 : (n + (e.key === "ArrowUp" ? t.length - 1 : 1)) % t.length]?.focus();
 	}
-	function re(e) {
+	function ne(e) {
 		O(!0), e();
 	}
-	function ie(e) {
-		let t = U(y);
+	function j(e) {
+		let t = W(y);
 		t && (O(!0), e(t));
 	}
-	var ae = { startRename: x }, oe = jr();
-	W("pointerdown", rn, (e) => {
-		U(s) && !U(a)?.contains(e.target) && e.target !== U(o) && O();
-	}), W("resize", rn, () => O());
-	var se = R(oe), ce = (e) => {
+	var re = { startRename: x }, ie = Ar();
+	G("pointerdown", tn, (e) => {
+		W(s) && !W(a)?.contains(e.target) && e.target !== W(o) && O();
+	}), G("resize", tn, () => O());
+	var ae = B(ie), oe = (e) => {
 		var f = ma();
 		let g;
-		var _ = L(f);
-		X(_, 23, () => t.views.tabs, (e) => e.key, (e, n, i) => {
+		var _ = z(f);
+		Z(_, 23, () => t.views.tabs, (e) => e.key, (e, n, i) => {
 			var a = la();
 			let o;
-			var u = L(a);
+			var u = z(a);
 			let d;
-			var f = L(u), g = L(f, !0);
-			M(f);
-			var _ = z(f), v = (e) => {
-				q(e, oa());
+			var f = z(u), g = z(f, !0);
+			P(f);
+			var _ = V(f), v = (e) => {
+				J(e, oa());
 			};
-			Y(_, (e) => {
-				U(n).readOnly && e(v);
-			}), M(u), $(u, (e, t) => b[t.key] = e, (e) => b?.[e.key], () => [U(n)]);
-			var y = z(u, 2), x = (e) => {
+			X(_, (e) => {
+				W(n).readOnly && e(v);
+			}), P(u), Ci(u, (e, t) => b[t.key] = e, (e) => b?.[e.key], () => [W(n)]);
+			var y = V(u, 2), x = (e) => {
 				var t = sa();
-				Z(t);
+				Q(t);
 				let r;
-				$(t, (e) => I(h, e), () => U(h)), B(() => {
-					r = ii(t, 1, "pc-graph-tab-rename svelte-7ptwed", null, r, { "pc-graph-tab-closeable": U(n).identity.kind !== "root" }), Q(t, "aria-label", U(n).identity.kind === "root" ? "Graph name" : "Subgraph name"), Q(t, "maxlength", U(n).identity.kind === "instance" ? 80 : void 0);
-				}), G("keydown", t, C), W("blur", t, (e) => S(e.currentTarget, !0, !1)), bi(t, () => U(m), (e) => I(m, e)), q(e, t);
+				Ci(t, (e) => R(h, e), () => W(h)), H(() => {
+					r = ri(t, 1, "pc-graph-tab-rename svelte-7ptwed", null, r, { "pc-graph-tab-closeable": W(n).identity.kind !== "root" }), $(t, "aria-label", W(n).identity.kind === "root" ? "Graph name" : "Subgraph name"), $(t, "maxlength", W(n).identity.kind === "instance" ? 80 : void 0);
+				}), K("keydown", t, C), G("blur", t, (e) => S(e.currentTarget, !0, !1)), yi(t, () => W(m), (e) => R(m, e)), J(e, t);
 			};
-			Y(y, (e) => {
-				U(p) === U(n).key && e(x);
+			X(y, (e) => {
+				W(p) === W(n).key && e(x);
 			});
-			var O = z(y, 2), k = (e) => {
+			var O = V(y, 2), A = (e) => {
 				var r = ca();
-				B((e, i) => {
-					Q(r, "aria-label", e), Q(r, "title", i), Q(r, "tabindex", U(n).key === (U(c) || t.views.active.key) ? 0 : -1);
-				}, [() => `Close ${U(n).label} · ${w(U(n))}`, () => `Close ${w(U(n))}`]), G("click", r, () => D(U(n))), G("contextmenu", r, (e) => ee(e, U(n))), G("keydown", r, (e) => E(e, U(i))), q(e, r);
+				H((e, i) => {
+					$(r, "aria-label", e), $(r, "title", i), $(r, "tabindex", W(n).key === (W(c) || t.views.active.key) ? 0 : -1);
+				}, [() => `Close ${W(n).label} · ${w(W(n))}`, () => `Close ${w(W(n))}`]), K("click", r, () => D(W(n))), K("contextmenu", r, (e) => k(e, W(n))), K("keydown", r, (e) => E(e, W(i))), J(e, r);
 			};
-			Y(O, (e) => {
-				U(n).identity.kind !== "root" && e(k);
-			}), M(a), B((e) => {
-				o = ii(a, 1, "pc-graph-tab-item svelte-7ptwed", null, o, {
-					"pc-graph-tab-active": U(n).key === t.views.active.key,
-					"pc-graph-tab-editing": U(p) === U(n).key
-				}), d = ii(u, 1, "pc-graph-tab svelte-7ptwed", null, d, { "pc-graph-tab-closeable": U(n).identity.kind !== "root" }), Q(u, "id", `${r()}-${U(i)}`), Q(u, "aria-controls", t.panelId), Q(u, "aria-selected", U(n).key === t.views.active.key), Q(u, "aria-expanded", U(s) && U(l) === U(n).key), Q(u, "tabindex", U(p) !== U(n).key && U(n).key === (U(c) || t.views.active.key) ? 0 : -1), Q(u, "title", e), J(g, U(n).label);
-			}, [() => w(U(n))]), G("click", u, () => T(U(n).key)), G("pointerdown", u, (e) => {
+			X(O, (e) => {
+				W(n).identity.kind !== "root" && e(A);
+			}), P(a), H((e) => {
+				o = ri(a, 1, "pc-graph-tab-item svelte-7ptwed", null, o, {
+					"pc-graph-tab-active": W(n).key === t.views.active.key,
+					"pc-graph-tab-editing": W(p) === W(n).key
+				}), d = ri(u, 1, "pc-graph-tab svelte-7ptwed", null, d, { "pc-graph-tab-closeable": W(n).identity.kind !== "root" }), $(u, "id", `${r()}-${W(i)}`), $(u, "aria-controls", t.panelId), $(u, "aria-selected", W(n).key === t.views.active.key), $(u, "aria-expanded", W(s) && W(l) === W(n).key), $(u, "tabindex", W(p) !== W(n).key && W(n).key === (W(c) || t.views.active.key) ? 0 : -1), $(u, "title", e), Y(g, W(n).label);
+			}, [() => w(W(n))]), K("click", u, () => T(W(n).key)), K("pointerdown", u, (e) => {
 				e.button === 2 && e.preventDefault();
-			}), G("contextmenu", u, (e) => ee(e, U(n))), G("keydown", u, (e) => E(e, U(i))), q(e, a);
-		}), M(_);
-		var v = z(_, 2);
-		$(v, (e) => I(o, e), () => U(o));
-		var O = z(v, 2), k = (e) => {
+			}), K("contextmenu", u, (e) => k(e, W(n))), K("keydown", u, (e) => E(e, W(i))), J(e, a);
+		}), P(_);
+		var v = V(_, 2);
+		Ci(v, (e) => R(o, e), () => W(o));
+		var O = V(v, 2), A = (e) => {
 			var r = pa();
 			let i;
-			var o = L(r), s = (e) => {
-				let r = /* @__PURE__ */ N(() => U(y)), i = /* @__PURE__ */ N(() => n().canRenameView?.(U(r).key) === !1);
-				var a = da(), o = R(a), s = z(o, 2), c = L(s, !0);
-				M(s);
-				var l = z(s, 2), u = L(l, !0);
-				M(l);
-				var d = z(l, 2), f = z(d, 2);
-				X(z(f, 2), 17, () => t.views.closedViews, (e) => e.key, (e, t) => {
-					var r = ua(), i = L(r);
-					M(r), B((e, a) => {
-						r.disabled = !n().reopenView, Q(r, "title", e), J(i, `Reopen ${U(t).label ?? ""} · ${a ?? ""}`);
-					}, [() => w(U(t)), () => w(U(t))]), G("click", r, () => re(() => n().reopenView?.(U(t).key))), q(e, r);
-				}), B((e) => {
-					o.disabled = !n().saveView, s.disabled = !n().exportView, J(c, U(r).identity.kind === "root" ? "Export workflow JSON" : "Export subgraph JSON"), l.disabled = U(r).identity.kind === "library" || U(i) || !n().renameView, Q(l, "title", U(r).identity.kind === "library" ? "Library inspection is read only." : U(i) ? "Make a local copy of the containing graph to rename this subgraph." : void 0), J(u, U(r).identity.kind === "root" ? "Rename graph" : "Rename subgraph"), d.disabled = U(r).identity.kind === "root" || !n().closeView, f.disabled = e;
-				}, [() => t.views.tabs.every((e) => e.identity.kind === "root" || e.key === U(r).key) || !n().closeOtherViews]), G("click", o, () => ie((e) => n().saveView?.(e.key))), G("click", s, () => ie((e) => n().exportView?.(e.key))), G("click", l, () => ie((e) => x(e.key))), G("click", d, () => ie((e) => D(e))), G("click", f, () => ie((e) => n().closeOtherViews?.(e.key))), q(e, a);
+			var o = z(r), s = (e) => {
+				let r = /* @__PURE__ */ F(() => W(y)), i = /* @__PURE__ */ F(() => n().canRenameView?.(W(r).key) === !1);
+				var a = da(), o = B(a), s = V(o, 2), c = z(s, !0);
+				P(s);
+				var l = V(s, 2), u = z(l, !0);
+				P(l);
+				var d = V(l, 2), f = V(d, 2);
+				Z(V(f, 2), 17, () => t.views.closedViews, (e) => e.key, (e, t) => {
+					var r = ua(), i = z(r);
+					P(r), H((e, a) => {
+						r.disabled = !n().reopenView, $(r, "title", e), Y(i, `Reopen ${W(t).label ?? ""} · ${a ?? ""}`);
+					}, [() => w(W(t)), () => w(W(t))]), K("click", r, () => ne(() => n().reopenView?.(W(t).key))), J(e, r);
+				}), H((e) => {
+					o.disabled = !n().saveView, s.disabled = !n().exportView, Y(c, W(r).identity.kind === "root" ? "Export workflow JSON" : "Export subgraph JSON"), l.disabled = W(r).identity.kind === "library" || W(i) || !n().renameView, $(l, "title", W(r).identity.kind === "library" ? "Library inspection is read only." : W(i) ? "Make a local copy of the containing graph to rename this subgraph." : void 0), Y(u, W(r).identity.kind === "root" ? "Rename graph" : "Rename subgraph"), d.disabled = W(r).identity.kind === "root" || !n().closeView, f.disabled = e;
+				}, [() => t.views.tabs.every((e) => e.identity.kind === "root" || e.key === W(r).key) || !n().closeOtherViews]), K("click", o, () => j((e) => n().saveView?.(e.key))), K("click", s, () => j((e) => n().exportView?.(e.key))), K("click", l, () => j((e) => x(e.key))), K("click", d, () => j((e) => D(e))), K("click", f, () => j((e) => n().closeOtherViews?.(e.key))), J(e, a);
 			}, c = (e) => {
-				var r = fa(), i = R(r);
-				X(i, 17, () => t.views.tabs, (e) => e.key, (e, t) => {
-					var n = ua(), r = L(n);
-					M(n), B((e, t) => {
-						Q(n, "title", e), J(r, `Focus ${t ?? ""}`);
-					}, [() => w(U(t)), () => w(U(t))]), G("click", n, () => re(() => T(U(t).key))), q(e, n);
+				var r = fa(), i = B(r);
+				Z(i, 17, () => t.views.tabs, (e) => e.key, (e, t) => {
+					var n = ua(), r = z(n);
+					P(n), H((e, t) => {
+						$(n, "title", e), Y(r, `Focus ${t ?? ""}`);
+					}, [() => w(W(t)), () => w(W(t))]), K("click", n, () => ne(() => T(W(t).key))), J(e, n);
 				});
-				var a = z(i, 2), o = z(a, 2);
-				X(z(o, 2), 17, () => t.views.closedViews, (e) => e.key, (e, t) => {
-					var r = ua(), i = L(r);
-					M(r), B((e, n) => {
-						Q(r, "title", e), J(i, `Reopen ${U(t).label ?? ""} · ${n ?? ""}`);
-					}, [() => w(U(t)), () => w(U(t))]), G("click", r, () => re(() => n().reopenView?.(U(t).key))), q(e, r);
-				}), B((e) => {
+				var a = V(i, 2), o = V(a, 2);
+				Z(V(o, 2), 17, () => t.views.closedViews, (e) => e.key, (e, t) => {
+					var r = ua(), i = z(r);
+					P(r), H((e, n) => {
+						$(r, "title", e), Y(i, `Reopen ${W(t).label ?? ""} · ${n ?? ""}`);
+					}, [() => w(W(t)), () => w(W(t))]), K("click", r, () => ne(() => n().reopenView?.(W(t).key))), J(e, r);
+				}), H((e) => {
 					a.disabled = t.views.active.identity.kind === "root" || !n().closeView, o.disabled = e;
-				}, [() => t.views.tabs.every((e) => e.identity.kind === "root" || e.key === t.views.active.key) || !n().closeOtherViews]), G("click", a, () => re(() => D(t.views.active))), G("click", o, () => re(() => n().closeOtherViews?.(t.views.active.key))), q(e, r);
+				}, [() => t.views.tabs.every((e) => e.identity.kind === "root" || e.key === t.views.active.key) || !n().closeOtherViews]), K("click", a, () => ne(() => D(t.views.active))), K("click", o, () => ne(() => n().closeOtherViews?.(t.views.active.key))), J(e, r);
 			};
-			Y(o, (e) => {
-				U(y) ? e(s) : e(c, -1);
-			}), M(r), $(r, (e) => I(a, e), () => U(a)), B(() => {
-				i = ii(r, 1, "pc-graph-view-menu svelte-7ptwed", null, i, { "pc-graph-tab-menu": !!U(l) }), oi(r, U(l) ? `left: ${U(u)}px; top: ${U(d)}px;` : void 0), Q(r, "aria-label", U(y) ? `Actions for ${U(y).label}` : "Graph view actions");
-			}), G("keydown", r, ne), q(e, r);
+			X(o, (e) => {
+				W(y) ? e(s) : e(c, -1);
+			}), P(r), Ci(r, (e) => R(a, e), () => W(a)), H(() => {
+				i = ri(r, 1, "pc-graph-view-menu svelte-7ptwed", null, i, { "pc-graph-tab-menu": !!W(l) }), ai(r, W(l) ? `left: ${W(u)}px; top: ${W(d)}px;` : void 0), $(r, "aria-label", W(y) ? `Actions for ${W(y).label}` : "Graph view actions");
+			}), K("keydown", r, te), J(e, r);
 		};
-		Y(O, (e) => {
-			U(s) && e(k);
-		}), M(f), $(f, (e) => I(i, e), () => U(i)), B(() => {
-			g = ii(f, 1, "pc-graph-tabs pc-graph-tabs-multi svelte-7ptwed", null, g, { "pc-graph-tabs-menu-open": U(s) }), Q(v, "aria-expanded", U(s) && !U(l));
-		}), G("click", v, te), q(e, f);
+		X(O, (e) => {
+			W(s) && e(A);
+		}), P(f), Ci(f, (e) => R(i, e), () => W(i)), H(() => {
+			g = ri(f, 1, "pc-graph-tabs pc-graph-tabs-multi svelte-7ptwed", null, g, { "pc-graph-tabs-menu-open": W(s) }), $(v, "aria-expanded", W(s) && !W(l));
+		}), K("click", v, ee), J(e, f);
 	};
-	return Y(se, (e) => {
-		t.views && e(ce);
-	}), q(e, oe), We(ae);
+	return X(ae, (e) => {
+		t.views && e(oe);
+	}), J(e, ie), He(re);
 }
-br([
+yr([
 	"click",
 	"pointerdown",
 	"contextmenu",
@@ -3060,58 +3075,58 @@ br([
 ]);
 //#endregion
 //#region ui/GraphBreadcrumbs.svelte
-var ga = /* @__PURE__ */ K("<span aria-current=\"page\" class=\"svelte-18ovafz\"> </span>"), _a = /* @__PURE__ */ K("<button type=\"button\" class=\"svelte-18ovafz\"> </button>"), va = /* @__PURE__ */ K("<li class=\"svelte-18ovafz\"><!></li>"), ya = /* @__PURE__ */ K("<div class=\"pc-graph-location svelte-18ovafz\"><nav aria-label=\"Graph location\" class=\"svelte-18ovafz\"><ol class=\"svelte-18ovafz\"></ol></nav> <span class=\"pc-graph-scope svelte-18ovafz\"> <!><!></span></div>");
+var ga = /* @__PURE__ */ q("<span aria-current=\"page\" class=\"svelte-18ovafz\"> </span>"), _a = /* @__PURE__ */ q("<button type=\"button\" class=\"svelte-18ovafz\"> </button>"), va = /* @__PURE__ */ q("<li class=\"svelte-18ovafz\"><!></li>"), ya = /* @__PURE__ */ q("<div class=\"pc-graph-location svelte-18ovafz\"><nav aria-label=\"Graph location\" class=\"svelte-18ovafz\"><ol class=\"svelte-18ovafz\"></ol></nav> <span class=\"pc-graph-scope svelte-18ovafz\"> <!><!></span></div>");
 function ba(e, t) {
-	Ue(t, !0);
-	let n = wi(t, "actions", 19, () => ({})), r = /* @__PURE__ */ N(() => t.view?.identity.kind === "library" ? t.view.identity.definitionRef : t.definitionRef ?? t.view?.definitionRef);
+	Ve(t, !0);
+	let n = wi(t, "actions", 19, () => ({})), r = /* @__PURE__ */ F(() => t.view?.identity.kind === "library" ? t.view.identity.definitionRef : t.definitionRef ?? t.view?.definitionRef);
 	function i(e) {
 		return e.identity.kind === "instance" ? !!n().openInstance : !!n().focusView;
 	}
 	function a(e) {
 		e.identity.kind === "instance" ? n().openInstance?.(e.identity.instancePath) : n().focusView?.(e.key);
 	}
-	var o = jr(), s = R(o), c = (e) => {
-		var n = ya(), o = L(n), s = L(o);
-		X(s, 23, () => t.view.breadcrumbs, (e) => e.key, (e, n, r) => {
-			var o = va(), s = L(o), c = (e) => {
-				var t = ga(), r = L(t, !0);
-				M(t), B(() => J(r, U(n).label)), q(e, t);
+	var o = Ar(), s = B(o), c = (e) => {
+		var n = ya(), o = z(n), s = z(o);
+		Z(s, 23, () => t.view.breadcrumbs, (e) => e.key, (e, n, r) => {
+			var o = va(), s = z(o), c = (e) => {
+				var t = ga(), r = z(t, !0);
+				P(t), H(() => Y(r, W(n).label)), J(e, t);
 			}, l = (e) => {
-				var t = _a(), r = L(t, !0);
-				M(t), B((e) => {
-					t.disabled = e, J(r, U(n).label);
-				}, [() => !i(U(n))]), G("click", t, () => a(U(n))), q(e, t);
+				var t = _a(), r = z(t, !0);
+				P(t), H((e) => {
+					t.disabled = e, Y(r, W(n).label);
+				}, [() => !i(W(n))]), K("click", t, () => a(W(n))), J(e, t);
 			};
-			Y(s, (e) => {
-				U(r) === t.view.breadcrumbs.length - 1 ? e(c) : e(l, -1);
-			}), M(o), q(e, o);
-		}), M(s), M(o);
-		var c = z(o, 2), l = L(c, !0), u = z(l), d = (e) => {
-			var t = Ar();
-			B(() => J(t, `· v${U(r).version ?? ""}`)), q(e, t);
+			X(s, (e) => {
+				W(r) === t.view.breadcrumbs.length - 1 ? e(c) : e(l, -1);
+			}), P(o), J(e, o);
+		}), P(s), P(o);
+		var c = V(o, 2), l = z(c, !0), u = V(l), d = (e) => {
+			var t = kr();
+			H(() => Y(t, `· v${W(r).version ?? ""}`)), J(e, t);
 		};
-		Y(u, (e) => {
-			U(r) && e(d);
+		X(u, (e) => {
+			W(r) && e(d);
 		});
-		var f = z(u), p = (e) => {
-			q(e, Ar("· Read only"));
+		var f = V(u), p = (e) => {
+			J(e, kr("· Read only"));
 		};
-		Y(f, (e) => {
+		X(f, (e) => {
 			(t.view.readOnly || t.view.identity.kind === "library") && e(p);
-		}), M(c), M(n), B(() => {
-			Q(c, "title", U(r) ? `${U(r).id} · v${U(r).version} · ${U(r).semanticHash}` : void 0), J(l, t.view.identity.kind === "library" ? "Library inspection" : "Instance graph");
-		}), q(e, n);
+		}), P(c), P(n), H(() => {
+			$(c, "title", W(r) ? `${W(r).id} · v${W(r).version} · ${W(r).semanticHash}` : void 0), Y(l, t.view.identity.kind === "library" ? "Library inspection" : "Instance graph");
+		}), J(e, n);
 	};
-	Y(s, (e) => {
+	X(s, (e) => {
 		t.view && t.view.identity.kind !== "root" && e(c);
-	}), q(e, o), We();
+	}), J(e, o), He();
 }
-br(["click"]);
+yr(["click"]);
 //#endregion
 //#region ui/StructuredControl.svelte
-var xa = /* @__PURE__ */ K("<small class=\"svelte-taw2zx\">Rows are available when this JSON has a supported shape.</small>"), Sa = /* @__PURE__ */ K("<label class=\"svelte-taw2zx\"> </label><textarea class=\"pc-structured-raw svelte-taw2zx\" spellcheck=\"false\"></textarea> <!>", 1), Ca = /* @__PURE__ */ K("<option class=\"svelte-taw2zx\"> </option>"), wa = /* @__PURE__ */ K("<label class=\"svelte-taw2zx\">Phase</label><select class=\"svelte-taw2zx\"></select> <label class=\"svelte-taw2zx\">Steps</label><input type=\"number\" min=\"1\" max=\"64\" step=\"1\" class=\"svelte-taw2zx\"/>", 1), Ta = /* @__PURE__ */ K("<label class=\"svelte-taw2zx\">Name</label><input maxlength=\"128\" class=\"svelte-taw2zx\"/> <label class=\"svelte-taw2zx\">Value</label><input type=\"number\" step=\"any\" class=\"svelte-taw2zx\"/>", 1), Ea = /* @__PURE__ */ K("<label class=\"svelte-taw2zx\">Default (JSON)</label><textarea class=\"svelte-taw2zx\"></textarea>", 1), Da = /* @__PURE__ */ K("<label class=\"svelte-taw2zx\">Name</label><input class=\"svelte-taw2zx\"/> <label class=\"svelte-taw2zx\">Path (JSON array)</label><input class=\"svelte-taw2zx\"/> <label class=\"pc-structured-check svelte-taw2zx\"><input type=\"checkbox\" class=\"svelte-taw2zx\"/> Required</label> <label class=\"pc-structured-check svelte-taw2zx\"><input type=\"checkbox\" class=\"svelte-taw2zx\"/> Use default when missing</label><small class=\"svelte-taw2zx\">Defaults apply when Required is off.</small> <!>", 1), Oa = /* @__PURE__ */ K("<label class=\"svelte-taw2zx\">ID</label><input maxlength=\"128\" class=\"svelte-taw2zx\"/> <label class=\"svelte-taw2zx\">Label</label><input maxlength=\"80\" class=\"svelte-taw2zx\"/>", 1), ka = /* @__PURE__ */ K("<label class=\"svelte-taw2zx\">Name</label><input class=\"svelte-taw2zx\"/> <label class=\"svelte-taw2zx\">Text</label><textarea class=\"svelte-taw2zx\"></textarea>", 1), Aa = /* @__PURE__ */ K("<label class=\"svelte-taw2zx\">Kind</label><select class=\"svelte-taw2zx\"><option class=\"svelte-taw2zx\">Literal</option><option class=\"svelte-taw2zx\">Regular expression</option></select> <label class=\"svelte-taw2zx\">Pattern</label><input class=\"svelte-taw2zx\"/> <label class=\"svelte-taw2zx\">Replacement</label><textarea class=\"svelte-taw2zx\"></textarea> <label class=\"svelte-taw2zx\">Flags</label><input class=\"svelte-taw2zx\"/>", 1), ja = /* @__PURE__ */ K("<button type=\"button\" class=\"svelte-taw2zx\">Move up</button><button type=\"button\" class=\"svelte-taw2zx\">Move down</button>", 1), Ma = /* @__PURE__ */ K("<fieldset class=\"pc-structured-row svelte-taw2zx\"><legend class=\"svelte-taw2zx\"> </legend> <!> <div class=\"pc-structured-actions svelte-taw2zx\"><!><button type=\"button\" class=\"svelte-taw2zx\">Remove</button></div></fieldset>"), Na = /* @__PURE__ */ K("<div class=\"pc-structured-rows svelte-taw2zx\"></div> <button type=\"button\" class=\"svelte-taw2zx\"> </button>", 1), Pa = /* @__PURE__ */ K("<div class=\"pc-structured-control svelte-taw2zx\"><div class=\"pc-structured-mode svelte-taw2zx\"><button type=\"button\" class=\"svelte-taw2zx\"> </button></div> <!></div>");
+var xa = /* @__PURE__ */ q("<small class=\"svelte-taw2zx\">Rows are available when this JSON has a supported shape.</small>"), Sa = /* @__PURE__ */ q("<label class=\"svelte-taw2zx\"> </label><textarea class=\"pc-structured-raw svelte-taw2zx\" spellcheck=\"false\"></textarea> <!>", 1), Ca = /* @__PURE__ */ q("<option class=\"svelte-taw2zx\"> </option>"), wa = /* @__PURE__ */ q("<label class=\"svelte-taw2zx\">Phase</label><select class=\"svelte-taw2zx\"></select> <label class=\"svelte-taw2zx\">Steps</label><input type=\"number\" min=\"1\" max=\"64\" step=\"1\" class=\"svelte-taw2zx\"/>", 1), Ta = /* @__PURE__ */ q("<label class=\"svelte-taw2zx\">Name</label><input maxlength=\"128\" class=\"svelte-taw2zx\"/> <label class=\"svelte-taw2zx\">Value</label><input type=\"number\" step=\"any\" class=\"svelte-taw2zx\"/>", 1), Ea = /* @__PURE__ */ q("<label class=\"svelte-taw2zx\">Default (JSON)</label><textarea class=\"svelte-taw2zx\"></textarea>", 1), Da = /* @__PURE__ */ q("<label class=\"svelte-taw2zx\">Name</label><input class=\"svelte-taw2zx\"/> <label class=\"svelte-taw2zx\">Path (JSON array)</label><input class=\"svelte-taw2zx\"/> <label class=\"pc-structured-check svelte-taw2zx\"><input type=\"checkbox\" class=\"svelte-taw2zx\"/> Required</label> <label class=\"pc-structured-check svelte-taw2zx\"><input type=\"checkbox\" class=\"svelte-taw2zx\"/> Use default when missing</label><small class=\"svelte-taw2zx\">Defaults apply when Required is off.</small> <!>", 1), Oa = /* @__PURE__ */ q("<label class=\"svelte-taw2zx\">ID</label><input maxlength=\"128\" class=\"svelte-taw2zx\"/> <label class=\"svelte-taw2zx\">Label</label><input maxlength=\"80\" class=\"svelte-taw2zx\"/>", 1), ka = /* @__PURE__ */ q("<label class=\"svelte-taw2zx\">Name</label><input class=\"svelte-taw2zx\"/> <label class=\"svelte-taw2zx\">Text</label><textarea class=\"svelte-taw2zx\"></textarea>", 1), Aa = /* @__PURE__ */ q("<label class=\"svelte-taw2zx\">Kind</label><select class=\"svelte-taw2zx\"><option class=\"svelte-taw2zx\">Literal</option><option class=\"svelte-taw2zx\">Regular expression</option></select> <label class=\"svelte-taw2zx\">Pattern</label><input class=\"svelte-taw2zx\"/> <label class=\"svelte-taw2zx\">Replacement</label><textarea class=\"svelte-taw2zx\"></textarea> <label class=\"svelte-taw2zx\">Flags</label><input class=\"svelte-taw2zx\"/>", 1), ja = /* @__PURE__ */ q("<button type=\"button\" class=\"svelte-taw2zx\">Move up</button><button type=\"button\" class=\"svelte-taw2zx\">Move down</button>", 1), Ma = /* @__PURE__ */ q("<fieldset class=\"pc-structured-row svelte-taw2zx\"><legend class=\"svelte-taw2zx\"> </legend> <!> <div class=\"pc-structured-actions svelte-taw2zx\"><!><button type=\"button\" class=\"svelte-taw2zx\">Remove</button></div></fieldset>"), Na = /* @__PURE__ */ q("<div class=\"pc-structured-rows svelte-taw2zx\"></div> <button type=\"button\" class=\"svelte-taw2zx\"> </button>", 1), Pa = /* @__PURE__ */ q("<div class=\"pc-structured-control svelte-taw2zx\"><div class=\"pc-structured-mode svelte-taw2zx\"><button type=\"button\" class=\"svelte-taw2zx\"> </button></div> <!></div>");
 function Fa(e, t) {
-	Ue(t, !0);
+	Ve(t, !0);
 	let n = wi(t, "disabled", 3, !1), r = wi(t, "error", 3, ""), i = [
 		"onset",
 		"peak",
@@ -3128,7 +3143,7 @@ function Fa(e, t) {
 	function s(e) {
 		return typeof e == "object" && !!e && !Array.isArray(e);
 	}
-	let c = /* @__PURE__ */ N(() => t.control.structured === "fields" ? "field" : t.control.structured === "sections" ? "section" : t.control.structured === "slots" ? "slot" : t.control.structured === "numeric-map" ? "value" : t.control.structured === "durations" ? "duration" : "rule"), l = /* @__PURE__ */ N(() => t.control.structured === "fields" ? 128 : t.control.structured === "slots" ? 16 : t.control.structured === "numeric-map" ? 32 : t.control.structured === "durations" ? 5 : 64), u = /* @__PURE__ */ N(() => t.control.structured === "slots" ? 2 : 0);
+	let c = /* @__PURE__ */ F(() => t.control.structured === "fields" ? "field" : t.control.structured === "sections" ? "section" : t.control.structured === "slots" ? "slot" : t.control.structured === "numeric-map" ? "value" : t.control.structured === "durations" ? "duration" : "rule"), l = /* @__PURE__ */ F(() => t.control.structured === "fields" ? 128 : t.control.structured === "slots" ? 16 : t.control.structured === "numeric-map" ? 32 : t.control.structured === "durations" ? 5 : 64), u = /* @__PURE__ */ F(() => t.control.structured === "slots" ? 2 : 0);
 	function d() {
 		try {
 			let e = JSON.parse(t.text);
@@ -3138,7 +3153,7 @@ function Fa(e, t) {
 			})) : null : t.control.structured === "numeric-map" ? s(e) && Object.keys(e).length <= 32 && Object.values(e).every((e) => typeof e == "number" && Number.isFinite(e)) ? Object.entries(e).map(([e, t]) => ({
 				name: e,
 				number: t
-			})) : null : !Array.isArray(e) || e.length > U(l) ? null : t.control.structured === "fields" ? e.every((e) => s(e) && Object.keys(e).every((e) => [
+			})) : null : !Array.isArray(e) || e.length > W(l) ? null : t.control.structured === "fields" ? e.every((e) => s(e) && Object.keys(e).every((e) => [
 				"name",
 				"path",
 				"required",
@@ -3153,9 +3168,9 @@ function Fa(e, t) {
 			return null;
 		}
 	}
-	let f = /* @__PURE__ */ N(d), p = /* @__PURE__ */ F(!1), m = /* @__PURE__ */ N(() => U(p) || !U(f));
+	let f = /* @__PURE__ */ F(d), p = /* @__PURE__ */ L(!1), m = /* @__PURE__ */ F(() => W(p) || !W(f));
 	function h(e) {
-		n() || (I(p, !0), t.ontext(e));
+		n() || (R(p, !0), t.ontext(e));
 	}
 	function g(e) {
 		n() || t.ontext(JSON.stringify(e, null, 2));
@@ -3164,29 +3179,29 @@ function Fa(e, t) {
 		g(["numeric-map", "durations"].includes(t.control.structured ?? "") ? Object.fromEntries(e.map((e) => [String(e.name), e.number])) : e);
 	}
 	function v(e, t, r) {
-		!n() && U(f) && _(U(f).map((n, i) => i === e ? {
+		!n() && W(f) && _(W(f).map((n, i) => i === e ? {
 			...n,
 			[t]: r
 		} : n));
 	}
 	function y() {
-		if (n() || !U(f) || U(f).length >= U(l)) return;
+		if (n() || !W(f) || W(f).length >= W(l)) return;
 		let e = 1;
-		for (; U(f).some((t) => t.name === U(c) + e || t.id === "context-" + e);) e++;
-		_([...U(f), t.control.structured === "fields" ? {
-			name: U(c) + e,
+		for (; W(f).some((t) => t.name === W(c) + e || t.id === "context-" + e);) e++;
+		_([...W(f), t.control.structured === "fields" ? {
+			name: W(c) + e,
 			path: []
 		} : t.control.structured === "sections" ? {
-			name: U(c) + e,
+			name: W(c) + e,
 			text: ""
 		} : t.control.structured === "slots" ? {
 			id: "context-" + e,
 			label: "Context " + e
 		} : t.control.structured === "numeric-map" ? {
-			name: U(c) + e,
+			name: W(c) + e,
 			number: 0
 		} : t.control.structured === "durations" ? {
-			name: i.find((e) => !U(f).some((t) => t.name === e)),
+			name: i.find((e) => !W(f).some((t) => t.name === e)),
 			number: 1
 		} : {
 			kind: "literal",
@@ -3196,191 +3211,191 @@ function Fa(e, t) {
 	}
 	function b(e, r) {
 		let i = r.valueAsNumber;
-		!n() && U(f) && (!Number.isFinite(i) || t.control.structured === "durations" && (!Number.isSafeInteger(i) || i < 1 || i > 64) ? r.value = String(U(f)[e].number) : v(e, "number", i));
+		!n() && W(f) && (!Number.isFinite(i) || t.control.structured === "durations" && (!Number.isSafeInteger(i) || i < 1 || i > 64) ? r.value = String(W(f)[e].number) : v(e, "number", i));
 	}
 	function x(e, t) {
-		!n() && U(f) && (!t.value.trim() || t.value.length > 128 || U(f).some((n, r) => r !== e && n.name === t.value) ? t.value = String(U(f)[e].name) : v(e, "name", t.value));
+		!n() && W(f) && (!t.value.trim() || t.value.length > 128 || W(f).some((n, r) => r !== e && n.name === t.value) ? t.value = String(W(f)[e].name) : v(e, "name", t.value));
 	}
 	function S(e, r, i) {
-		if (!n() && U(f)) try {
+		if (!n() && W(f)) try {
 			let t = JSON.parse(i);
 			if (!o(t)) throw Error("Nonfinite JSON");
 			v(e, r, t);
 		} catch {
 			let n = 0, a = "__structured_json_0__";
 			for (; t.text.includes(a);) a = "__structured_json_" + ++n + "__";
-			let o = U(f).map((t, n) => n === e ? {
+			let o = W(f).map((t, n) => n === e ? {
 				...t,
 				[r]: a
 			} : t);
-			I(p, !0), t.ontext(JSON.stringify(o, null, 2).replace(JSON.stringify(a), () => i));
+			R(p, !0), t.ontext(JSON.stringify(o, null, 2).replace(JSON.stringify(a), () => i));
 		}
 	}
 	function C(e, t) {
-		!n() && U(f) && _(U(f).map((n, r) => {
+		!n() && W(f) && _(W(f).map((n, r) => {
 			if (r !== e) return n;
 			let i = { ...n };
 			return t ? i.default = null : delete i.default, i;
 		}));
 	}
 	function w(e) {
-		!n() && U(f) && U(f).length > U(u) && _(U(f).filter((t, n) => n !== e));
+		!n() && W(f) && W(f).length > W(u) && _(W(f).filter((t, n) => n !== e));
 	}
 	function T(e, t) {
-		if (n() || !U(f) || e + t < 0 || e + t >= U(f).length) return;
-		let r = [...U(f)];
+		if (n() || !W(f) || e + t < 0 || e + t >= W(f).length) return;
+		let r = [...W(f)];
 		[r[e], r[e + t]] = [r[e + t], r[e]], _(r);
 	}
-	var E = Pa(), D = L(E), O = L(D), ee = L(O, !0);
-	M(O), M(D);
-	var k = z(D, 2), te = (e) => {
-		var i = Sa(), a = R(i), o = L(a);
-		M(a);
-		var s = z(a);
-		at(s);
-		var c = z(s, 2), l = (e) => {
-			q(e, xa());
+	var E = Pa(), D = z(E), O = z(D), k = z(O, !0);
+	P(O), P(D);
+	var A = V(D, 2), ee = (e) => {
+		var i = Sa(), a = B(i), o = z(a);
+		P(a);
+		var s = V(a);
+		rt(s);
+		var c = V(s, 2), l = (e) => {
+			J(e, xa());
 		};
-		Y(c, (e) => {
-			U(f) || e(l);
-		}), B(() => {
-			Q(a, "for", t.idPrefix + "-raw"), J(o, `${t.control.label ?? ""} (JSON)`), Q(s, "id", t.idPrefix + "-raw"), Q(s, "aria-label", t.control.label), Q(s, "aria-invalid", !!r()), Q(s, "aria-describedby", r() ? t.idPrefix + "-error" : void 0), hi(s, t.text), s.disabled = n();
-		}), G("input", s, (e) => h(e.currentTarget.value)), q(e, i);
-	}, ne = (e) => {
-		var r = Na(), a = R(r);
-		X(a, 21, () => U(f), Vr, (e, r, a) => {
-			var o = Ma(), s = L(o), l = L(s);
-			M(s);
-			var d = z(s, 2), p = (e) => {
-				var o = wa(), s = R(o), c = z(s);
-				Q(c, "aria-label", "Duration " + (a + 1) + " phase"), X(c, 21, () => i, Vr, (e, t) => {
-					var n = Ca(), r = L(n, !0);
-					M(n);
+		X(c, (e) => {
+			W(f) || e(l);
+		}), H(() => {
+			$(a, "for", t.idPrefix + "-raw"), Y(o, `${t.control.label ?? ""} (JSON)`), $(s, "id", t.idPrefix + "-raw"), $(s, "aria-label", t.control.label), $(s, "aria-invalid", !!r()), $(s, "aria-describedby", r() ? t.idPrefix + "-error" : void 0), mi(s, t.text), s.disabled = n();
+		}), K("input", s, (e) => h(e.currentTarget.value)), J(e, i);
+	}, te = (e) => {
+		var r = Na(), a = B(r);
+		Z(a, 21, () => W(f), Br, (e, r, a) => {
+			var o = Ma(), s = z(o), l = z(s);
+			P(s);
+			var d = V(s, 2), p = (e) => {
+				var o = wa(), s = B(o), c = V(s);
+				$(c, "aria-label", "Duration " + (a + 1) + " phase"), Z(c, 21, () => i, Br, (e, t) => {
+					var n = Ca(), r = z(n, !0);
+					P(n);
 					var i = {};
-					B((e, a) => {
-						n.disabled = e, J(r, a), i !== (i = U(t)) && (n.value = (n.__value = U(t)) ?? "");
-					}, [() => U(f).some((e, n) => n !== a && e.name === U(t)), () => U(t)[0].toUpperCase() + U(t).slice(1)]), q(e, n);
-				}), M(c);
+					H((e, a) => {
+						n.disabled = e, Y(r, a), i !== (i = W(t)) && (n.value = (n.__value = W(t)) ?? "");
+					}, [() => W(f).some((e, n) => n !== a && e.name === W(t)), () => W(t)[0].toUpperCase() + W(t).slice(1)]), J(e, n);
+				}), P(c);
 				var l;
-				ci(c);
-				var u = z(c, 2), d = z(u);
-				Z(d), Q(d, "aria-label", "Duration " + (a + 1) + " steps"), B((e, r) => {
-					Q(s, "for", t.idPrefix + "-phase-" + a), Q(c, "id", t.idPrefix + "-phase-" + a), c.disabled = n(), l !== (l = e) && (c.value = (c.__value = e) ?? "", si(c, e)), Q(u, "for", t.idPrefix + "-steps-" + a), Q(d, "id", t.idPrefix + "-steps-" + a), hi(d, r), d.disabled = n();
-				}, [() => String(U(r).name), () => Number(U(r).number)]), G("change", c, (e) => x(a, e.currentTarget)), G("change", d, (e) => b(a, e.currentTarget)), q(e, o);
+				si(c);
+				var u = V(c, 2), d = V(u);
+				Q(d), $(d, "aria-label", "Duration " + (a + 1) + " steps"), H((e, r) => {
+					$(s, "for", t.idPrefix + "-phase-" + a), $(c, "id", t.idPrefix + "-phase-" + a), c.disabled = n(), l !== (l = e) && (c.value = (c.__value = e) ?? "", oi(c, e)), $(u, "for", t.idPrefix + "-steps-" + a), $(d, "id", t.idPrefix + "-steps-" + a), mi(d, r), d.disabled = n();
+				}, [() => String(W(r).name), () => Number(W(r).number)]), K("change", c, (e) => x(a, e.currentTarget)), K("change", d, (e) => b(a, e.currentTarget)), J(e, o);
 			}, m = (e) => {
-				var i = Ta(), o = R(i), s = z(o);
-				Z(s), Q(s, "aria-label", "Value " + (a + 1) + " name");
-				var c = z(s, 2), l = z(c);
-				Z(l), Q(l, "aria-label", "Value " + (a + 1) + " number"), B((e, r) => {
-					Q(o, "for", t.idPrefix + "-name-" + a), Q(s, "id", t.idPrefix + "-name-" + a), hi(s, e), s.disabled = n(), Q(c, "for", t.idPrefix + "-number-" + a), Q(l, "id", t.idPrefix + "-number-" + a), hi(l, r), Q(l, "min", t.control.min), Q(l, "max", t.control.max), l.disabled = n();
-				}, [() => String(U(r).name), () => Number(U(r).number)]), G("change", s, (e) => x(a, e.currentTarget)), G("change", l, (e) => b(a, e.currentTarget)), q(e, i);
+				var i = Ta(), o = B(i), s = V(o);
+				Q(s), $(s, "aria-label", "Value " + (a + 1) + " name");
+				var c = V(s, 2), l = V(c);
+				Q(l), $(l, "aria-label", "Value " + (a + 1) + " number"), H((e, r) => {
+					$(o, "for", t.idPrefix + "-name-" + a), $(s, "id", t.idPrefix + "-name-" + a), mi(s, e), s.disabled = n(), $(c, "for", t.idPrefix + "-number-" + a), $(l, "id", t.idPrefix + "-number-" + a), mi(l, r), $(l, "min", t.control.min), $(l, "max", t.control.max), l.disabled = n();
+				}, [() => String(W(r).name), () => Number(W(r).number)]), K("change", s, (e) => x(a, e.currentTarget)), K("change", l, (e) => b(a, e.currentTarget)), J(e, i);
 			}, h = (e) => {
-				var i = Da(), o = R(i), s = z(o);
-				Z(s), Q(s, "aria-label", "Field " + (a + 1) + " name");
-				var c = z(s, 2), l = z(c);
-				Z(l), Q(l, "aria-label", "Field " + (a + 1) + " path (JSON array)");
-				var u = z(l, 2), d = L(u);
-				Z(d), Q(d, "aria-label", "Field " + (a + 1) + " required"), Me(), M(u);
-				var f = z(u, 2), p = L(f);
-				Z(p), Q(p, "aria-label", "Field " + (a + 1) + " use default"), Me(), M(f);
-				var m = z(f, 3), h = (e) => {
-					var i = Ea(), o = R(i), s = z(o);
-					at(s), Q(s, "aria-label", "Field " + (a + 1) + " default (JSON)"), B((e) => {
-						Q(o, "for", t.idPrefix + "-default-" + a), Q(s, "id", t.idPrefix + "-default-" + a), hi(s, e), s.disabled = n();
-					}, [() => JSON.stringify(U(r).default, null, 2)]), G("change", s, (e) => S(a, "default", e.currentTarget.value)), q(e, i);
-				}, g = /* @__PURE__ */ N(() => Object.hasOwn(U(r), "default"));
-				Y(m, (e) => {
-					U(g) && e(h);
-				}), B((e, i, u) => {
-					Q(o, "for", t.idPrefix + "-name-" + a), Q(s, "id", t.idPrefix + "-name-" + a), hi(s, e), s.disabled = n(), Q(c, "for", t.idPrefix + "-path-" + a), Q(l, "id", t.idPrefix + "-path-" + a), hi(l, i), l.disabled = n(), gi(d, U(r).required !== !1), d.disabled = n(), gi(p, u), p.disabled = n();
+				var i = Da(), o = B(i), s = V(o);
+				Q(s), $(s, "aria-label", "Field " + (a + 1) + " name");
+				var c = V(s, 2), l = V(c);
+				Q(l), $(l, "aria-label", "Field " + (a + 1) + " path (JSON array)");
+				var u = V(l, 2), d = z(u);
+				Q(d), $(d, "aria-label", "Field " + (a + 1) + " required"), Ae(), P(u);
+				var f = V(u, 2), p = z(f);
+				Q(p), $(p, "aria-label", "Field " + (a + 1) + " use default"), Ae(), P(f);
+				var m = V(f, 3), h = (e) => {
+					var i = Ea(), o = B(i), s = V(o);
+					rt(s), $(s, "aria-label", "Field " + (a + 1) + " default (JSON)"), H((e) => {
+						$(o, "for", t.idPrefix + "-default-" + a), $(s, "id", t.idPrefix + "-default-" + a), mi(s, e), s.disabled = n();
+					}, [() => JSON.stringify(W(r).default, null, 2)]), K("change", s, (e) => S(a, "default", e.currentTarget.value)), J(e, i);
+				}, g = /* @__PURE__ */ F(() => Object.hasOwn(W(r), "default"));
+				X(m, (e) => {
+					W(g) && e(h);
+				}), H((e, i, u) => {
+					$(o, "for", t.idPrefix + "-name-" + a), $(s, "id", t.idPrefix + "-name-" + a), mi(s, e), s.disabled = n(), $(c, "for", t.idPrefix + "-path-" + a), $(l, "id", t.idPrefix + "-path-" + a), mi(l, i), l.disabled = n(), hi(d, W(r).required !== !1), d.disabled = n(), hi(p, u), p.disabled = n();
 				}, [
-					() => String(U(r).name),
-					() => JSON.stringify(U(r).path),
-					() => Object.hasOwn(U(r), "default")
-				]), G("input", s, (e) => v(a, "name", e.currentTarget.value)), G("change", l, (e) => S(a, "path", e.currentTarget.value)), G("change", d, (e) => v(a, "required", e.currentTarget.checked)), G("change", p, (e) => C(a, e.currentTarget.checked)), q(e, i);
+					() => String(W(r).name),
+					() => JSON.stringify(W(r).path),
+					() => Object.hasOwn(W(r), "default")
+				]), K("input", s, (e) => v(a, "name", e.currentTarget.value)), K("change", l, (e) => S(a, "path", e.currentTarget.value)), K("change", d, (e) => v(a, "required", e.currentTarget.checked)), K("change", p, (e) => C(a, e.currentTarget.checked)), J(e, i);
 			}, g = (e) => {
-				var i = Oa(), o = R(i), s = z(o);
-				Z(s), Q(s, "aria-label", "Slot " + (a + 1) + " ID");
-				var c = z(s, 2), l = z(c);
-				Z(l), Q(l, "aria-label", "Slot " + (a + 1) + " label"), B((e, r) => {
-					Q(o, "for", t.idPrefix + "-slot-id-" + a), Q(s, "id", t.idPrefix + "-slot-id-" + a), hi(s, e), s.disabled = n(), Q(c, "for", t.idPrefix + "-slot-label-" + a), Q(l, "id", t.idPrefix + "-slot-label-" + a), hi(l, r), l.disabled = n();
-				}, [() => String(U(r).id), () => String(U(r).label)]), G("input", s, (e) => v(a, "id", e.currentTarget.value)), G("input", l, (e) => v(a, "label", e.currentTarget.value)), q(e, i);
+				var i = Oa(), o = B(i), s = V(o);
+				Q(s), $(s, "aria-label", "Slot " + (a + 1) + " ID");
+				var c = V(s, 2), l = V(c);
+				Q(l), $(l, "aria-label", "Slot " + (a + 1) + " label"), H((e, r) => {
+					$(o, "for", t.idPrefix + "-slot-id-" + a), $(s, "id", t.idPrefix + "-slot-id-" + a), mi(s, e), s.disabled = n(), $(c, "for", t.idPrefix + "-slot-label-" + a), $(l, "id", t.idPrefix + "-slot-label-" + a), mi(l, r), l.disabled = n();
+				}, [() => String(W(r).id), () => String(W(r).label)]), K("input", s, (e) => v(a, "id", e.currentTarget.value)), K("input", l, (e) => v(a, "label", e.currentTarget.value)), J(e, i);
 			}, _ = (e) => {
-				var i = ka(), o = R(i), s = z(o);
-				Z(s), Q(s, "aria-label", "Section " + (a + 1) + " name");
-				var c = z(s, 2), l = z(c);
-				at(l), Q(l, "aria-label", "Section " + (a + 1) + " text"), B((e, r) => {
-					Q(o, "for", t.idPrefix + "-name-" + a), Q(s, "id", t.idPrefix + "-name-" + a), hi(s, e), s.disabled = n(), Q(c, "for", t.idPrefix + "-text-" + a), Q(l, "id", t.idPrefix + "-text-" + a), hi(l, r), l.disabled = n();
-				}, [() => String(U(r).name), () => String(U(r).text)]), G("input", s, (e) => v(a, "name", e.currentTarget.value)), G("input", l, (e) => v(a, "text", e.currentTarget.value)), q(e, i);
+				var i = ka(), o = B(i), s = V(o);
+				Q(s), $(s, "aria-label", "Section " + (a + 1) + " name");
+				var c = V(s, 2), l = V(c);
+				rt(l), $(l, "aria-label", "Section " + (a + 1) + " text"), H((e, r) => {
+					$(o, "for", t.idPrefix + "-name-" + a), $(s, "id", t.idPrefix + "-name-" + a), mi(s, e), s.disabled = n(), $(c, "for", t.idPrefix + "-text-" + a), $(l, "id", t.idPrefix + "-text-" + a), mi(l, r), l.disabled = n();
+				}, [() => String(W(r).name), () => String(W(r).text)]), K("input", s, (e) => v(a, "name", e.currentTarget.value)), K("input", l, (e) => v(a, "text", e.currentTarget.value)), J(e, i);
 			}, y = (e) => {
-				var i = Aa(), o = R(i), s = z(o);
-				Q(s, "aria-label", "Rule " + (a + 1) + " kind");
-				var c = L(s);
+				var i = Aa(), o = B(i), s = V(o);
+				$(s, "aria-label", "Rule " + (a + 1) + " kind");
+				var c = z(s);
 				c.value = c.__value = "literal";
-				var l = z(c);
-				l.value = l.__value = "regex", M(s);
+				var l = V(c);
+				l.value = l.__value = "regex", P(s);
 				var u;
-				ci(s);
-				var d = z(s, 2), f = z(d);
-				Z(f), Q(f, "aria-label", "Rule " + (a + 1) + " pattern");
-				var p = z(f, 2), m = z(p);
-				at(m), Q(m, "aria-label", "Rule " + (a + 1) + " replacement");
-				var h = z(m, 2), g = z(h);
-				Z(g), Q(g, "aria-label", "Rule " + (a + 1) + " flags"), B((e, r, i, c) => {
-					Q(o, "for", t.idPrefix + "-kind-" + a), Q(s, "id", t.idPrefix + "-kind-" + a), s.disabled = n(), u !== (u = e) && (s.value = (s.__value = e) ?? "", si(s, e)), Q(d, "for", t.idPrefix + "-pattern-" + a), Q(f, "id", t.idPrefix + "-pattern-" + a), hi(f, r), f.disabled = n(), Q(p, "for", t.idPrefix + "-replacement-" + a), Q(m, "id", t.idPrefix + "-replacement-" + a), hi(m, i), m.disabled = n(), Q(h, "for", t.idPrefix + "-flags-" + a), Q(g, "id", t.idPrefix + "-flags-" + a), hi(g, c), g.disabled = n();
+				si(s);
+				var d = V(s, 2), f = V(d);
+				Q(f), $(f, "aria-label", "Rule " + (a + 1) + " pattern");
+				var p = V(f, 2), m = V(p);
+				rt(m), $(m, "aria-label", "Rule " + (a + 1) + " replacement");
+				var h = V(m, 2), g = V(h);
+				Q(g), $(g, "aria-label", "Rule " + (a + 1) + " flags"), H((e, r, i, c) => {
+					$(o, "for", t.idPrefix + "-kind-" + a), $(s, "id", t.idPrefix + "-kind-" + a), s.disabled = n(), u !== (u = e) && (s.value = (s.__value = e) ?? "", oi(s, e)), $(d, "for", t.idPrefix + "-pattern-" + a), $(f, "id", t.idPrefix + "-pattern-" + a), mi(f, r), f.disabled = n(), $(p, "for", t.idPrefix + "-replacement-" + a), $(m, "id", t.idPrefix + "-replacement-" + a), mi(m, i), m.disabled = n(), $(h, "for", t.idPrefix + "-flags-" + a), $(g, "id", t.idPrefix + "-flags-" + a), mi(g, c), g.disabled = n();
 				}, [
-					() => String(U(r).kind),
-					() => String(U(r).pattern),
-					() => String(U(r).replacement ?? ""),
-					() => String(U(r).flags ?? "")
-				]), G("change", s, (e) => v(a, "kind", e.currentTarget.value)), G("input", f, (e) => v(a, "pattern", e.currentTarget.value)), G("input", m, (e) => v(a, "replacement", e.currentTarget.value)), G("input", g, (e) => v(a, "flags", e.currentTarget.value)), q(e, i);
+					() => String(W(r).kind),
+					() => String(W(r).pattern),
+					() => String(W(r).replacement ?? ""),
+					() => String(W(r).flags ?? "")
+				]), K("change", s, (e) => v(a, "kind", e.currentTarget.value)), K("input", f, (e) => v(a, "pattern", e.currentTarget.value)), K("input", m, (e) => v(a, "replacement", e.currentTarget.value)), K("input", g, (e) => v(a, "flags", e.currentTarget.value)), J(e, i);
 			};
-			Y(d, (e) => {
+			X(d, (e) => {
 				t.control.structured === "durations" ? e(p) : t.control.structured === "numeric-map" ? e(m, 1) : t.control.structured === "fields" ? e(h, 2) : t.control.structured === "slots" ? e(g, 3) : t.control.structured === "sections" ? e(_, 4) : e(y, -1);
 			});
-			var E = z(d, 2), D = L(E), O = (e) => {
-				var t = ja(), r = R(t), i = z(r);
-				B(() => {
-					Q(r, "aria-label", "Move " + U(c) + " " + (a + 1) + " up"), r.disabled = n() || a === 0, Q(i, "aria-label", "Move " + U(c) + " " + (a + 1) + " down"), i.disabled = n() || a === U(f).length - 1;
-				}), G("click", r, () => T(a, -1)), G("click", i, () => T(a, 1)), q(e, t);
-			}, ee = /* @__PURE__ */ N(() => !["numeric-map", "durations"].includes(t.control.structured ?? ""));
-			Y(D, (e) => {
-				U(ee) && e(O);
+			var E = V(d, 2), D = z(E), O = (e) => {
+				var t = ja(), r = B(t), i = V(r);
+				H(() => {
+					$(r, "aria-label", "Move " + W(c) + " " + (a + 1) + " up"), r.disabled = n() || a === 0, $(i, "aria-label", "Move " + W(c) + " " + (a + 1) + " down"), i.disabled = n() || a === W(f).length - 1;
+				}), K("click", r, () => T(a, -1)), K("click", i, () => T(a, 1)), J(e, t);
+			}, k = /* @__PURE__ */ F(() => !["numeric-map", "durations"].includes(t.control.structured ?? ""));
+			X(D, (e) => {
+				W(k) && e(O);
 			});
-			var k = z(D);
-			M(E), M(o), B((e) => {
-				J(l, `${e ?? ""} ${a + 1}`), Q(k, "aria-label", "Remove " + U(c) + " " + (a + 1)), k.disabled = n() || U(f).length <= U(u);
-			}, [() => U(c)[0].toUpperCase() + U(c).slice(1)]), G("click", k, () => w(a)), q(e, o);
-		}), M(a);
-		var o = z(a, 2), s = L(o);
-		M(o), B(() => {
-			Q(o, "aria-label", "Add " + U(c)), o.disabled = n() || U(f).length >= U(l), J(s, `Add ${U(c) ?? ""}`);
-		}), G("click", o, y), q(e, r);
+			var A = V(D);
+			P(E), P(o), H((e) => {
+				Y(l, `${e ?? ""} ${a + 1}`), $(A, "aria-label", "Remove " + W(c) + " " + (a + 1)), A.disabled = n() || W(f).length <= W(u);
+			}, [() => W(c)[0].toUpperCase() + W(c).slice(1)]), K("click", A, () => w(a)), J(e, o);
+		}), P(a);
+		var o = V(a, 2), s = z(o);
+		P(o), H(() => {
+			$(o, "aria-label", "Add " + W(c)), o.disabled = n() || W(f).length >= W(l), Y(s, `Add ${W(c) ?? ""}`);
+		}), K("click", o, y), J(e, r);
 	};
-	Y(k, (e) => {
-		U(m) ? e(te) : U(f) && e(ne, 1);
-	}), M(E), B(() => {
-		Q(E, "data-structured-control", t.control.structured), Q(O, "aria-label", "Edit " + t.control.label + (U(m) ? " as rows" : " as JSON")), O.disabled = n() || U(m) && !U(f), J(ee, U(m) ? "Use rows" : "Edit JSON");
-	}), G("click", O, () => {
-		!n() && U(f) && I(p, !U(m));
-	}), q(e, E), We();
+	X(A, (e) => {
+		W(m) ? e(ee) : W(f) && e(te, 1);
+	}), P(E), H(() => {
+		$(E, "data-structured-control", t.control.structured), $(O, "aria-label", "Edit " + t.control.label + (W(m) ? " as rows" : " as JSON")), O.disabled = n() || W(m) && !W(f), Y(k, W(m) ? "Use rows" : "Edit JSON");
+	}), K("click", O, () => {
+		!n() && W(f) && R(p, !W(m));
+	}), J(e, E), He();
 }
-br([
+yr([
 	"click",
 	"input",
 	"change"
 ]);
 //#endregion
 //#region ui/DetailControl.svelte
-var Ia = /* @__PURE__ */ K("<span class=\"pc-control-label svelte-16a137\"> </span> <!>", 1), La = /* @__PURE__ */ K("<label class=\"pc-detail-check svelte-16a137\"><input type=\"checkbox\" class=\"svelte-16a137\"/> </label>"), Ra = /* @__PURE__ */ K("<label class=\"svelte-16a137\"><input type=\"radio\" class=\"svelte-16a137\"/><span class=\"svelte-16a137\"> </span></label>"), za = /* @__PURE__ */ K("<span class=\"pc-control-label svelte-16a137\"> </span> <div class=\"pc-control-segments svelte-16a137\" role=\"radiogroup\"></div>", 1), Ba = /* @__PURE__ */ K("<option class=\"svelte-16a137\"> </option>"), Va = /* @__PURE__ */ K("<select class=\"svelte-16a137\"></select>"), Ha = /* @__PURE__ */ K("<input type=\"number\" class=\"svelte-16a137\"/>"), Ua = /* @__PURE__ */ K("<textarea class=\"svelte-16a137\"></textarea>"), Wa = /* @__PURE__ */ K("<input type=\"text\" class=\"svelte-16a137\"/>"), Ga = /* @__PURE__ */ K("<label class=\"svelte-16a137\"> </label> <!>", 1), Ka = /* @__PURE__ */ K("<button type=\"button\" class=\"svelte-16a137\"> </button>"), qa = /* @__PURE__ */ K("<small class=\"svelte-16a137\"> </small>"), Ja = /* @__PURE__ */ K("<p class=\"pc-detail-error svelte-16a137\" role=\"alert\"> </p>"), Ya = /* @__PURE__ */ K("<div><!> <!> <!> <!> <!></div>");
+var Ia = /* @__PURE__ */ q("<span class=\"pc-control-label svelte-16a137\"> </span> <!>", 1), La = /* @__PURE__ */ q("<label class=\"pc-detail-check svelte-16a137\"><input type=\"checkbox\" class=\"svelte-16a137\"/> </label>"), Ra = /* @__PURE__ */ q("<label class=\"svelte-16a137\"><input type=\"radio\" class=\"svelte-16a137\"/><span class=\"svelte-16a137\"> </span></label>"), za = /* @__PURE__ */ q("<span class=\"pc-control-label svelte-16a137\"> </span> <div class=\"pc-control-segments svelte-16a137\" role=\"radiogroup\"></div>", 1), Ba = /* @__PURE__ */ q("<option class=\"svelte-16a137\"> </option>"), Va = /* @__PURE__ */ q("<select class=\"svelte-16a137\"></select>"), Ha = /* @__PURE__ */ q("<input type=\"number\" class=\"svelte-16a137\"/>"), Ua = /* @__PURE__ */ q("<textarea class=\"svelte-16a137\"></textarea>"), Wa = /* @__PURE__ */ q("<input type=\"text\" class=\"svelte-16a137\"/>"), Ga = /* @__PURE__ */ q("<label class=\"svelte-16a137\"> </label> <!>", 1), Ka = /* @__PURE__ */ q("<button type=\"button\" class=\"svelte-16a137\"> </button>"), qa = /* @__PURE__ */ q("<small class=\"svelte-16a137\"> </small>"), Ja = /* @__PURE__ */ q("<p class=\"pc-detail-error svelte-16a137\" role=\"alert\"> </p>"), Ya = /* @__PURE__ */ q("<div><!> <!> <!> <!> <!></div>");
 function Xa(e, t) {
-	Ue(t, !0);
+	Ve(t, !0);
 	let n = wi(t, "error", 3, ""), r = wi(t, "disabled", 3, !1), i = wi(t, "pending", 3, !1), a = () => t.control.editor === "enum" && (t.control.options?.length ?? 0) > 1 && (t.control.options?.length ?? 0) <= 3 && t.control.options.every((e) => e.label.length <= 10), o = () => t.control.effective !== void 0 && t.control.effective !== t.text && t.control.source !== "Saved setting" ? t.control.source : "";
 	var s = Ya();
 	let c;
-	var l = L(s), u = (e) => {
-		var i = Ia(), a = R(i), o = L(a, !0);
-		M(a), Fa(z(a, 2), {
+	var l = z(s), u = (e) => {
+		var i = Ia(), a = B(i), o = z(a, !0);
+		P(a), Fa(V(a, 2), {
 			get control() {
 				return t.control;
 			},
@@ -3399,331 +3414,335 @@ function Xa(e, t) {
 			get error() {
 				return n();
 			}
-		}), B(() => J(o, t.control.label)), q(e, i);
+		}), H(() => Y(o, t.control.label)), J(e, i);
 	}, d = (e) => {
-		var n = La(), i = L(n);
-		Z(i);
-		var a = z(i, 1, !0);
-		M(n), B((e) => {
-			Q(i, "aria-label", t.control.label), gi(i, e), i.disabled = r(), J(a, t.control.label);
-		}, [() => !!t.control.value]), G("change", i, (e) => {
+		var n = La(), i = z(n);
+		Q(i);
+		var a = V(i, 1, !0);
+		P(n), H((e) => {
+			$(i, "aria-label", t.control.label), hi(i, e), i.disabled = r(), Y(a, t.control.label);
+		}, [() => !!t.control.value]), K("change", i, (e) => {
 			r() || t.onvalue(e.currentTarget.checked);
-		}), q(e, n);
+		}), J(e, n);
 	}, f = (e) => {
-		var n = za(), i = R(n), a = L(i, !0);
-		M(i);
-		var o = z(i, 2);
-		X(o, 21, () => t.control.options ?? [], (e) => e.value, (e, n) => {
-			var i = Ra(), a = L(i);
-			Z(a);
-			var o = z(a), s = L(o, !0);
-			M(o), M(i), B((e) => {
-				Q(a, "name", t.idPrefix + "-choice"), Q(a, "aria-label", U(n).label), hi(a, U(n).value), gi(a, e), a.disabled = r(), J(s, U(n).label);
-			}, [() => String(t.control.value) === U(n).value]), G("change", a, (e) => {
-				!r() && e.currentTarget.checked && t.onvalue(U(n).value);
-			}), q(e, i);
-		}), M(o), B(() => {
-			J(a, t.control.label), Q(o, "aria-label", t.control.label);
-		}), q(e, n);
-	}, p = /* @__PURE__ */ N(() => a()), m = (e) => {
-		var i = Ga(), a = R(i), o = L(a, !0);
-		M(a);
-		var s = z(a, 2), c = (e) => {
+		var n = za(), i = B(n), a = z(i, !0);
+		P(i);
+		var o = V(i, 2);
+		Z(o, 21, () => t.control.options ?? [], (e) => e.value, (e, n) => {
+			var i = Ra(), a = z(i);
+			Q(a);
+			var o = V(a), s = z(o, !0);
+			P(o), P(i), H((e) => {
+				$(a, "name", t.idPrefix + "-choice"), $(a, "aria-label", W(n).label), mi(a, W(n).value), hi(a, e), a.disabled = r(), Y(s, W(n).label);
+			}, [() => String(t.control.value) === W(n).value]), K("change", a, (e) => {
+				!r() && e.currentTarget.checked && t.onvalue(W(n).value);
+			}), J(e, i);
+		}), P(o), H(() => {
+			Y(a, t.control.label), $(o, "aria-label", t.control.label);
+		}), J(e, n);
+	}, p = /* @__PURE__ */ F(() => a()), m = (e) => {
+		var i = Ga(), a = B(i), o = z(a, !0);
+		P(a);
+		var s = V(a, 2), c = (e) => {
 			var n = Va();
-			X(n, 21, () => t.control.options ?? [], (e) => e.value, (e, t) => {
-				var n = Ba(), r = L(n, !0);
-				M(n);
+			Z(n, 21, () => t.control.options ?? [], (e) => e.value, (e, t) => {
+				var n = Ba(), r = z(n, !0);
+				P(n);
 				var i = {};
-				B(() => {
-					J(r, U(t).label), i !== (i = U(t).value) && (n.value = (n.__value = U(t).value) ?? "");
-				}), q(e, n);
-			}), M(n);
+				H(() => {
+					Y(r, W(t).label), i !== (i = W(t).value) && (n.value = (n.__value = W(t).value) ?? "");
+				}), J(e, n);
+			}), P(n);
 			var i;
-			ci(n), B((e) => {
-				Q(n, "id", t.idPrefix + "-editor"), Q(n, "aria-label", t.control.label), n.disabled = r(), i !== (i = e) && (n.value = (n.__value = e) ?? "", si(n, e));
-			}, [() => String(t.control.value)]), G("change", n, (e) => {
+			si(n), H((e) => {
+				$(n, "id", t.idPrefix + "-editor"), $(n, "aria-label", t.control.label), n.disabled = r(), i !== (i = e) && (n.value = (n.__value = e) ?? "", oi(n, e));
+			}, [() => String(t.control.value)]), K("change", n, (e) => {
 				r() || t.onvalue(e.currentTarget.value);
-			}), q(e, n);
+			}), J(e, n);
 		}, l = (e) => {
 			var i = Ha();
-			Z(i), B((e) => {
-				Q(i, "id", t.idPrefix + "-editor"), Q(i, "aria-label", t.control.label), Q(i, "min", t.control.min), Q(i, "max", t.control.max), Q(i, "step", t.control.step ?? 1), Q(i, "aria-invalid", !!n()), Q(i, "aria-describedby", n() ? t.idPrefix + "-error" : void 0), hi(i, e), i.disabled = r();
-			}, [() => Number(t.control.value)]), G("change", i, (e) => {
+			Q(i), H((e) => {
+				$(i, "id", t.idPrefix + "-editor"), $(i, "aria-label", t.control.label), $(i, "min", t.control.min), $(i, "max", t.control.max), $(i, "step", t.control.step ?? 1), $(i, "aria-invalid", !!n()), $(i, "aria-describedby", n() ? t.idPrefix + "-error" : void 0), mi(i, e), i.disabled = r();
+			}, [() => Number(t.control.value)]), K("change", i, (e) => {
 				r() || t.onnumber(e.currentTarget);
-			}), q(e, i);
+			}), J(e, i);
 		}, u = (e) => {
 			var i = Ua();
-			at(i), B(() => {
-				Q(i, "id", t.idPrefix + "-editor"), Q(i, "aria-label", t.control.label), Q(i, "aria-invalid", !!n()), Q(i, "aria-describedby", n() ? t.idPrefix + "-error" : void 0), hi(i, t.text), i.disabled = r();
-			}), G("input", i, (e) => {
+			rt(i), H(() => {
+				$(i, "id", t.idPrefix + "-editor"), $(i, "aria-label", t.control.label), $(i, "aria-invalid", !!n()), $(i, "aria-describedby", n() ? t.idPrefix + "-error" : void 0), mi(i, t.text), i.disabled = r();
+			}), K("input", i, (e) => {
 				r() || t.ontext(e.currentTarget.value);
-			}), q(e, i);
+			}), J(e, i);
 		}, d = (e) => {
 			var n = Wa();
-			Z(n), B(() => {
-				Q(n, "id", t.idPrefix + "-editor"), Q(n, "aria-label", t.control.label), hi(n, t.text), n.disabled = r();
-			}), G("change", n, (e) => {
+			Q(n), H(() => {
+				$(n, "id", t.idPrefix + "-editor"), $(n, "aria-label", t.control.label), mi(n, t.text), n.disabled = r();
+			}), K("change", n, (e) => {
 				r() || t.onvalue(e.currentTarget.value);
-			}), q(e, n);
-		}, f = /* @__PURE__ */ N(() => t.control.singleLine && t.control.editor === "text" && !t.text.includes("\n") && !t.text.includes("\r")), p = (e) => {
+			}), J(e, n);
+		}, f = /* @__PURE__ */ F(() => t.control.singleLine && t.control.editor === "text" && !t.text.includes("\n") && !t.text.includes("\r")), p = (e) => {
 			var n = Ua();
-			at(n), B(() => {
-				Q(n, "id", t.idPrefix + "-editor"), Q(n, "aria-label", t.control.label), hi(n, t.text), n.disabled = r();
-			}), G("change", n, (e) => {
+			rt(n), H(() => {
+				$(n, "id", t.idPrefix + "-editor"), $(n, "aria-label", t.control.label), mi(n, t.text), n.disabled = r();
+			}), K("change", n, (e) => {
 				r() || t.onvalue(e.currentTarget.value);
-			}), q(e, n);
+			}), J(e, n);
 		};
-		Y(s, (e) => {
-			t.control.editor === "enum" ? e(c) : t.control.editor === "number" ? e(l, 1) : t.control.editor === "json" || t.control.editor === "lines" ? e(u, 2) : U(f) ? e(d, 3) : e(p, -1);
-		}), B(() => {
-			Q(a, "for", t.idPrefix + "-editor"), J(o, t.control.label);
-		}), q(e, i);
+		X(s, (e) => {
+			t.control.editor === "enum" ? e(c) : t.control.editor === "number" ? e(l, 1) : t.control.editor === "json" || t.control.editor === "lines" ? e(u, 2) : W(f) ? e(d, 3) : e(p, -1);
+		}), H(() => {
+			$(a, "for", t.idPrefix + "-editor"), Y(o, t.control.label);
+		}), J(e, i);
 	};
-	Y(l, (e) => {
-		t.control.structured && t.control.editor === "json" ? e(u) : t.control.editor === "boolean" ? e(d, 1) : U(p) ? e(f, 2) : e(m, -1);
+	X(l, (e) => {
+		t.control.structured && t.control.editor === "json" ? e(u) : t.control.editor === "boolean" ? e(d, 1) : W(p) ? e(f, 2) : e(m, -1);
 	});
-	var h = z(l, 2), g = (e) => {
-		var n = Ka(), a = L(n, !0);
-		M(n), B(() => {
-			Q(n, "data-save-control", t.control.key), n.disabled = r() || i(), J(a, i() ? "Validating…" : "Save " + t.control.label);
-		}), G("click", n, () => {
+	var h = V(l, 2), g = (e) => {
+		var n = Ka(), a = z(n, !0);
+		P(n), H(() => {
+			$(n, "data-save-control", t.control.key), n.disabled = r() || i(), Y(a, i() ? "Validating…" : "Save " + t.control.label);
+		}), K("click", n, () => {
 			!r() && !i() && t.onsave();
-		}), q(e, n);
+		}), J(e, n);
 	};
-	Y(h, (e) => {
+	X(h, (e) => {
 		(t.control.editor === "json" || t.control.editor === "lines") && e(g);
 	});
-	var _ = z(h, 2), v = (e) => {
-		var n = qa(), r = L(n, !0);
-		M(n), B(() => J(r, t.control.help)), q(e, n);
+	var _ = V(h, 2), v = (e) => {
+		var n = qa(), r = z(n, !0);
+		P(n), H(() => Y(r, t.control.help)), J(e, n);
 	};
-	Y(_, (e) => {
+	X(_, (e) => {
 		t.control.help && e(v);
 	});
-	var y = z(_, 2), b = (e) => {
-		var n = qa(), r = L(n, !0);
-		M(n), B(() => J(r, t.control.exposureNote)), q(e, n);
+	var y = V(_, 2), b = (e) => {
+		var n = qa(), r = z(n, !0);
+		P(n), H(() => Y(r, t.control.exposureNote)), J(e, n);
 	}, x = (e) => {
-		var n = qa(), r = L(n);
-		M(n), B((e) => J(r, `${e ?? ""} · Effective: ${t.control.effective ?? ""}`), [() => o()]), q(e, n);
-	}, S = /* @__PURE__ */ N(() => o());
-	Y(y, (e) => {
-		t.control.exposureNote ? e(b) : U(S) && e(x, 1);
+		var n = qa(), r = z(n);
+		P(n), H((e) => Y(r, `${e ?? ""} · Effective: ${t.control.effective ?? ""}`), [() => o()]), J(e, n);
+	}, S = /* @__PURE__ */ F(() => o());
+	X(y, (e) => {
+		t.control.exposureNote ? e(b) : W(S) && e(x, 1);
 	});
-	var C = z(y, 2), w = (e) => {
-		var r = Ja(), i = L(r, !0);
-		M(r), B(() => {
-			Q(r, "id", t.idPrefix + "-error"), J(i, n());
-		}), q(e, r);
+	var C = V(y, 2), w = (e) => {
+		var r = Ja(), i = z(r, !0);
+		P(r), H(() => {
+			$(r, "id", t.idPrefix + "-error"), Y(i, n());
+		}), J(e, r);
 	};
-	Y(C, (e) => {
+	X(C, (e) => {
 		n() && e(w);
-	}), M(s), B(() => c = ii(s, 1, "pc-detail-control svelte-16a137", null, c, { "pc-control-number": t.control.editor === "number" })), q(e, s), We();
+	}), P(s), H(() => c = ri(s, 1, "pc-detail-control svelte-16a137", null, c, { "pc-control-number": t.control.editor === "number" })), J(e, s), He();
 }
-br([
+yr([
 	"change",
 	"input",
 	"click"
 ]);
 //#endregion
 //#region ui/ModifierStack.svelte
-var Za = /* @__PURE__ */ K("<label class=\"svelte-1ibq9q\"><input type=\"checkbox\" class=\"svelte-1ibq9q\"/> </label>"), Qa = /* @__PURE__ */ K("<option class=\"svelte-1ibq9q\"> </option>"), $a = /* @__PURE__ */ K("<label class=\"pc-modifier-check svelte-1ibq9q\"><input type=\"checkbox\" class=\"svelte-1ibq9q\"/> </label>"), eo = /* @__PURE__ */ K("<select class=\"svelte-1ibq9q\"></select>"), to = /* @__PURE__ */ K("<input type=\"number\" class=\"svelte-1ibq9q\"/>"), no = /* @__PURE__ */ K("<textarea class=\"svelte-1ibq9q\"></textarea>"), ro = /* @__PURE__ */ K("<label class=\"svelte-1ibq9q\"> </label> <!>", 1), io = /* @__PURE__ */ K("<small class=\"svelte-1ibq9q\"> </small>"), ao = /* @__PURE__ */ K("<!> <!>", 1), oo = /* @__PURE__ */ K("<details class=\"svelte-1ibq9q\"><summary class=\"svelte-1ibq9q\"> <!></summary> <!> <button type=\"button\" class=\"svelte-1ibq9q\"> </button></details>"), so = /* @__PURE__ */ K("<p class=\"pc-modifier-error svelte-1ibq9q\" role=\"alert\"> </p>"), co = /* @__PURE__ */ K("<div class=\"pc-modifier-entry svelte-1ibq9q\"><div class=\"pc-modifier-heading svelte-1ibq9q\"><label class=\"svelte-1ibq9q\"><input type=\"checkbox\" class=\"svelte-1ibq9q\"/><span class=\"svelte-1ibq9q\"> <small class=\"svelte-1ibq9q\"> </small></span></label> <div class=\"pc-modifier-order svelte-1ibq9q\"><button type=\"button\" title=\"Move up\" class=\"svelte-1ibq9q\">↑</button> <button type=\"button\" title=\"Move down\" class=\"svelte-1ibq9q\">↓</button> <button type=\"button\" title=\"Remove\" class=\"svelte-1ibq9q\">×</button></div></div> <!> <!></div>"), lo = /* @__PURE__ */ K("<div class=\"pc-modifier-stack svelte-1ibq9q\"><small class=\"svelte-1ibq9q\"> </small> <!></div>"), uo = /* @__PURE__ */ K("<small role=\"status\" class=\"svelte-1ibq9q\">Validating modifiers…</small>"), fo = /* @__PURE__ */ K("<section class=\"pc-modifiers svelte-1ibq9q\" data-modifier-controls=\"\" aria-label=\"Text modifiers\"><div class=\"pc-modifier-quick svelte-1ibq9q\"><!> <select aria-label=\"Add text modifier\" class=\"svelte-1ibq9q\"><option class=\"svelte-1ibq9q\">Add modifier…</option><!></select></div> <!> <!> <!></section>");
+var Za = /* @__PURE__ */ q("<label class=\"svelte-1ibq9q\"><input type=\"checkbox\" class=\"svelte-1ibq9q\"/> </label>"), Qa = /* @__PURE__ */ q("<option class=\"svelte-1ibq9q\"> </option>"), $a = /* @__PURE__ */ q("<label class=\"pc-modifier-check svelte-1ibq9q\"><input type=\"checkbox\" class=\"svelte-1ibq9q\"/> </label>"), eo = /* @__PURE__ */ q("<select class=\"svelte-1ibq9q\"></select>"), to = /* @__PURE__ */ q("<input type=\"number\" class=\"svelte-1ibq9q\"/>"), no = /* @__PURE__ */ q("<textarea class=\"svelte-1ibq9q\"></textarea>"), ro = /* @__PURE__ */ q("<label class=\"svelte-1ibq9q\"> </label> <!>", 1), io = /* @__PURE__ */ q("<small class=\"svelte-1ibq9q\"> </small>"), ao = /* @__PURE__ */ q("<!> <!>", 1), oo = /* @__PURE__ */ q("<details class=\"svelte-1ibq9q\"><summary class=\"svelte-1ibq9q\"> <!></summary> <!> <button type=\"button\" class=\"svelte-1ibq9q\"> </button></details>"), so = /* @__PURE__ */ q("<p class=\"pc-modifier-error svelte-1ibq9q\" role=\"alert\"> </p>"), co = /* @__PURE__ */ q("<div class=\"pc-modifier-entry svelte-1ibq9q\"><div class=\"pc-modifier-heading svelte-1ibq9q\"><label class=\"svelte-1ibq9q\"><input type=\"checkbox\" class=\"svelte-1ibq9q\"/><span class=\"svelte-1ibq9q\"> <small class=\"svelte-1ibq9q\"> </small></span></label> <div class=\"pc-modifier-order svelte-1ibq9q\"><button type=\"button\" title=\"Move up\" class=\"svelte-1ibq9q\">↑</button> <button type=\"button\" title=\"Move down\" class=\"svelte-1ibq9q\">↓</button> <button type=\"button\" title=\"Remove\" class=\"svelte-1ibq9q\">×</button></div></div> <!> <!></div>"), lo = /* @__PURE__ */ q("<div class=\"pc-modifier-stack svelte-1ibq9q\"><small class=\"svelte-1ibq9q\"> </small> <!></div>"), uo = /* @__PURE__ */ q("<small role=\"status\" class=\"svelte-1ibq9q\">Validating modifiers…</small>"), fo = /* @__PURE__ */ q("<section class=\"pc-modifiers svelte-1ibq9q\" data-modifier-controls=\"\" aria-label=\"Text modifiers\"><div class=\"pc-modifier-quick svelte-1ibq9q\"><!> <select aria-label=\"Add text modifier\" class=\"svelte-1ibq9q\"><option class=\"svelte-1ibq9q\">Add modifier…</option><!></select></div> <!> <!> <!></section>");
 function po(e, t) {
-	Ue(t, !0);
+	Ve(t, !0);
 	let n = (e) => t.options.find((t) => t.type === e.type), r = (e) => n(e)?.label ?? e.type, i = (e) => t.drafts[e.id]?.settings ?? e.settings, a = (e) => t.disabled || t.busy || !t.options.some((t) => t.type === e) || t.items.length >= 16 && !t.items.some((t) => t.type === e);
-	var o = fo(), s = L(o), c = L(s);
-	X(c, 16, () => ["trim", "wrap"], Vr, (e, n) => {
-		var r = Za(), i = L(r);
-		Z(i);
-		var o = z(i, 1, !0);
-		M(r), B((e, t) => {
-			Q(i, "aria-label", (n === "trim" ? "Trim" : "Wrap") + " output"), gi(i, e), i.disabled = t, J(o, n === "trim" ? "Trim" : "Wrap");
-		}, [() => t.items.some((e) => e.type === n && e.enabled), () => a(n)]), G("change", i, (e) => {
+	var o = fo(), s = z(o), c = z(s);
+	Z(c, 16, () => ["trim", "wrap"], Br, (e, n) => {
+		var r = Za(), i = z(r);
+		Q(i);
+		var o = V(i, 1, !0);
+		P(r), H((e, t) => {
+			$(i, "aria-label", (n === "trim" ? "Trim" : "Wrap") + " output"), hi(i, e), i.disabled = t, Y(o, n === "trim" ? "Trim" : "Wrap");
+		}, [() => t.items.some((e) => e.type === n && e.enabled), () => a(n)]), K("change", i, (e) => {
 			a(n) || t.onquick(n, e.currentTarget.checked);
-		}), q(e, r);
+		}), J(e, r);
 	});
-	var l = z(c, 2), u = L(l);
-	u.value = u.__value = "", X(z(u), 17, () => t.options.filter((e) => !["trim", "wrap"].includes(e.type)), (e) => e.type, (e, t) => {
-		var n = Qa(), r = L(n, !0);
-		M(n);
+	var l = V(c, 2), u = z(l);
+	u.value = u.__value = "", Z(V(u), 17, () => t.options.filter((e) => !["trim", "wrap"].includes(e.type)), (e) => e.type, (e, t) => {
+		var n = Qa(), r = z(n, !0);
+		P(n);
 		var i = {};
-		B(() => {
-			J(r, U(t).label), i !== (i = U(t).type) && (n.value = (n.__value = U(t).type) ?? "");
-		}), q(e, n);
-	}), M(l), l.value = l.__value = "", M(s);
-	var d = z(s, 2), f = (e) => {
-		var a = lo(), o = L(a), s = L(o);
-		M(o), X(z(o, 2), 19, () => t.items, (e) => e.id, (e, a, o) => {
-			let s = /* @__PURE__ */ N(() => n(U(a))), c = /* @__PURE__ */ N(() => r(U(a))), l = /* @__PURE__ */ N(() => t.drafts[U(a).id]);
-			var u = co(), d = L(u), f = L(d), p = L(f);
-			Z(p);
-			var m = z(p), h = L(m), g = z(h), _ = L(g, !0);
-			M(g), M(m), M(f);
-			var v = z(f, 2), y = L(v), b = z(y, 2), x = z(b, 2);
-			M(v), M(d);
-			var S = z(d, 2), C = (e) => {
-				var n = oo(), r = L(n), o = L(r), u = z(o), d = (e) => {
-					q(e, Ar("· Unsaved"));
+		H(() => {
+			Y(r, W(t).label), i !== (i = W(t).type) && (n.value = (n.__value = W(t).type) ?? "");
+		}), J(e, n);
+	}), P(l), l.value = l.__value = "", P(s);
+	var d = V(s, 2), f = (e) => {
+		var a = lo(), o = z(a), s = z(o);
+		P(o), Z(V(o, 2), 19, () => t.items, (e) => e.id, (e, a, o) => {
+			let s = /* @__PURE__ */ F(() => n(W(a))), c = /* @__PURE__ */ F(() => r(W(a))), l = /* @__PURE__ */ F(() => t.drafts[W(a).id]);
+			var u = co(), d = z(u), f = z(d), p = z(f);
+			Q(p);
+			var m = V(p), h = z(m), g = V(h), _ = z(g, !0);
+			P(g), P(m), P(f);
+			var v = V(f, 2), y = z(v), b = V(y, 2), x = V(b, 2);
+			P(v), P(d);
+			var S = V(d, 2), C = (e) => {
+				var n = oo(), r = z(n), o = z(r), u = V(o), d = (e) => {
+					J(e, kr("· Unsaved"));
 				};
-				Y(u, (e) => {
-					U(l)?.dirty && e(d);
-				}), M(r);
-				var f = z(r, 2);
-				X(f, 17, () => U(s).fields, (e) => e.key, (e, n) => {
-					let r = /* @__PURE__ */ N(() => t.idPrefix + "-modifier-" + U(a).id + "-" + U(n).key);
-					var o = ao(), s = R(o), l = (e) => {
-						var o = $a(), s = L(o);
-						Z(s);
-						var l = z(s, 1, !0);
-						M(o), B((e) => {
-							Q(s, "id", U(r)), Q(s, "aria-label", U(c) + " " + U(n).label), gi(s, e), s.disabled = t.disabled, J(l, U(n).label);
-						}, [() => !!i(U(a))[U(n).key]]), G("change", s, (e) => {
-							t.disabled || t.ondraft(U(a).id, U(n).key, e.currentTarget.checked);
-						}), q(e, o);
+				X(u, (e) => {
+					W(l)?.dirty && e(d);
+				}), P(r);
+				var f = V(r, 2);
+				Z(f, 17, () => W(s).fields, (e) => e.key, (e, n) => {
+					let r = /* @__PURE__ */ F(() => t.idPrefix + "-modifier-" + W(a).id + "-" + W(n).key);
+					var o = ao(), s = B(o), l = (e) => {
+						var o = $a(), s = z(o);
+						Q(s);
+						var l = V(s, 1, !0);
+						P(o), H((e) => {
+							$(s, "id", W(r)), $(s, "aria-label", W(c) + " " + W(n).label), hi(s, e), s.disabled = t.disabled, Y(l, W(n).label);
+						}, [() => !!i(W(a))[W(n).key]]), K("change", s, (e) => {
+							t.disabled || t.ondraft(W(a).id, W(n).key, e.currentTarget.checked);
+						}), J(e, o);
 					}, u = (e) => {
-						var o = ro(), s = R(o), l = L(s, !0);
-						M(s);
-						var u = z(s, 2), d = (e) => {
+						var o = ro(), s = B(o), l = z(s, !0);
+						P(s);
+						var u = V(s, 2), d = (e) => {
 							var o = eo();
-							X(o, 21, () => U(n).options ?? [], (e) => e.value, (e, t) => {
-								var n = Qa(), r = L(n, !0);
-								M(n);
+							Z(o, 21, () => W(n).options ?? [], (e) => e.value, (e, t) => {
+								var n = Qa(), r = z(n, !0);
+								P(n);
 								var i = {};
-								B(() => {
-									J(r, U(t).label), i !== (i = U(t).value) && (n.value = (n.__value = U(t).value) ?? "");
-								}), q(e, n);
-							}), M(o);
+								H(() => {
+									Y(r, W(t).label), i !== (i = W(t).value) && (n.value = (n.__value = W(t).value) ?? "");
+								}), J(e, n);
+							}), P(o);
 							var s;
-							ci(o), B((e) => {
-								Q(o, "id", U(r)), Q(o, "aria-label", U(c) + " " + U(n).label), o.disabled = t.disabled, s !== (s = e) && (o.value = (o.__value = e) ?? "", si(o, e));
-							}, [() => String(i(U(a))[U(n).key] ?? "")]), G("change", o, (e) => {
-								t.disabled || t.ondraft(U(a).id, U(n).key, e.currentTarget.value);
-							}), q(e, o);
+							si(o), H((e) => {
+								$(o, "id", W(r)), $(o, "aria-label", W(c) + " " + W(n).label), o.disabled = t.disabled, s !== (s = e) && (o.value = (o.__value = e) ?? "", oi(o, e));
+							}, [() => String(i(W(a))[W(n).key] ?? "")]), K("change", o, (e) => {
+								t.disabled || t.ondraft(W(a).id, W(n).key, e.currentTarget.value);
+							}), J(e, o);
 						}, f = (e) => {
 							var o = to();
-							Z(o), B((e) => {
-								Q(o, "id", U(r)), Q(o, "aria-label", U(c) + " " + U(n).label), Q(o, "min", U(n).min), Q(o, "max", U(n).max), Q(o, "step", U(n).step ?? 1), hi(o, e), o.disabled = t.disabled;
-							}, [() => String(i(U(a))[U(n).key] ?? "")]), G("input", o, (e) => {
-								t.disabled || t.ondraft(U(a).id, U(n).key, e.currentTarget.value ? Number(e.currentTarget.value) : null);
-							}), q(e, o);
+							Q(o), H((e) => {
+								$(o, "id", W(r)), $(o, "aria-label", W(c) + " " + W(n).label), $(o, "min", W(n).min), $(o, "max", W(n).max), $(o, "step", W(n).step ?? 1), mi(o, e), o.disabled = t.disabled;
+							}, [() => String(i(W(a))[W(n).key] ?? "")]), K("input", o, (e) => {
+								t.disabled || t.ondraft(W(a).id, W(n).key, e.currentTarget.value ? Number(e.currentTarget.value) : null);
+							}), J(e, o);
 						}, p = (e) => {
 							var o = no();
-							at(o), B((e) => {
-								Q(o, "id", U(r)), Q(o, "aria-label", U(c) + " " + U(n).label), hi(o, e), o.disabled = t.disabled;
-							}, [() => String(i(U(a))[U(n).key] ?? "")]), G("input", o, (e) => {
-								t.disabled || t.ondraft(U(a).id, U(n).key, e.currentTarget.value);
-							}), q(e, o);
+							rt(o), H((e) => {
+								$(o, "id", W(r)), $(o, "aria-label", W(c) + " " + W(n).label), mi(o, e), o.disabled = t.disabled;
+							}, [() => String(i(W(a))[W(n).key] ?? "")]), K("input", o, (e) => {
+								t.disabled || t.ondraft(W(a).id, W(n).key, e.currentTarget.value);
+							}), J(e, o);
 						};
-						Y(u, (e) => {
-							U(n).editor === "enum" ? e(d) : U(n).editor === "number" ? e(f, 1) : e(p, -1);
-						}), B(() => {
-							Q(s, "for", U(r)), J(l, U(n).label);
-						}), q(e, o);
+						X(u, (e) => {
+							W(n).editor === "enum" ? e(d) : W(n).editor === "number" ? e(f, 1) : e(p, -1);
+						}), H(() => {
+							$(s, "for", W(r)), Y(l, W(n).label);
+						}), J(e, o);
 					};
-					Y(s, (e) => {
-						U(n).editor === "boolean" ? e(l) : e(u, -1);
+					X(s, (e) => {
+						W(n).editor === "boolean" ? e(l) : e(u, -1);
 					});
-					var d = z(s, 2), f = (e) => {
-						var t = io(), r = L(t, !0);
-						M(t), B(() => J(r, U(n).help)), q(e, t);
+					var d = V(s, 2), f = (e) => {
+						var t = io(), r = z(t, !0);
+						P(t), H(() => Y(r, W(n).help)), J(e, t);
 					};
-					Y(d, (e) => {
-						U(n).help && e(f);
-					}), q(e, o);
+					X(d, (e) => {
+						W(n).help && e(f);
+					}), J(e, o);
 				});
-				var p = z(f, 2), m = L(p, !0);
-				M(p), M(n), B(() => {
-					n.open = !!U(l)?.dirty || !!U(l)?.error, J(o, `${U(c) ?? ""} settings`), Q(p, "aria-label", "Save " + U(c) + " settings"), p.disabled = t.disabled || !!U(l)?.pending || !U(l)?.dirty, J(m, U(l)?.pending ? "Validating…" : "Save settings");
-				}), G("click", p, () => {
-					!t.disabled && !U(l)?.pending && U(l)?.dirty && t.onsave(U(a).id);
-				}), q(e, n);
+				var p = V(f, 2), m = z(p, !0);
+				P(p), P(n), H(() => {
+					n.open = !!W(l)?.dirty || !!W(l)?.error, Y(o, `${W(c) ?? ""} settings`), $(p, "aria-label", "Save " + W(c) + " settings"), p.disabled = t.disabled || !!W(l)?.pending || !W(l)?.dirty, Y(m, W(l)?.pending ? "Validating…" : "Save settings");
+				}), K("click", p, () => {
+					!t.disabled && !W(l)?.pending && W(l)?.dirty && t.onsave(W(a).id);
+				}), J(e, n);
 			};
-			Y(S, (e) => {
-				U(s)?.fields.length && e(C);
+			X(S, (e) => {
+				W(s)?.fields.length && e(C);
 			});
-			var w = z(S, 2), T = (e) => {
-				var t = so(), n = L(t, !0);
-				M(t), B(() => J(n, U(l).error)), q(e, t);
+			var w = V(S, 2), T = (e) => {
+				var t = so(), n = z(t, !0);
+				P(t), H(() => Y(n, W(l).error)), J(e, t);
 			};
-			Y(w, (e) => {
-				U(l)?.error && e(T);
-			}), M(u), B(() => {
-				Q(u, "data-modifier-id", U(a).id), Q(u, "data-modifier-state", U(a).enabled ? "active" : "disabled"), Q(p, "aria-label", "Enable " + U(c) + " modifier"), gi(p, U(a).enabled), p.disabled = t.disabled || t.busy, J(h, `${U(o) + 1}. ${U(c) ?? ""}`), J(_, U(a).enabled ? "Active" : "Disabled"), Q(y, "aria-label", "Move " + U(c) + " up"), y.disabled = t.disabled || t.busy || U(o) === 0, Q(b, "aria-label", "Move " + U(c) + " down"), b.disabled = t.disabled || t.busy || U(o) === t.items.length - 1, Q(x, "aria-label", "Remove " + U(c) + " modifier"), x.disabled = t.disabled || t.busy;
-			}), G("change", p, (e) => {
-				!t.disabled && !t.busy && t.onenable(U(a).id, e.currentTarget.checked);
-			}), G("click", y, () => {
-				!t.disabled && !t.busy && U(o) > 0 && t.onmove(U(a).id, -1);
-			}), G("click", b, () => {
-				!t.disabled && !t.busy && U(o) < t.items.length - 1 && t.onmove(U(a).id, 1);
-			}), G("click", x, () => {
-				!t.disabled && !t.busy && t.onremove(U(a).id);
-			}), q(e, u);
-		}), M(a), B((e) => J(s, `${e ?? ""} active · ${t.items.length ?? ""} total · Applied in order`), [() => t.items.filter((e) => e.enabled).length]), q(e, a);
+			X(w, (e) => {
+				W(l)?.error && e(T);
+			}), P(u), H(() => {
+				$(u, "data-modifier-id", W(a).id), $(u, "data-modifier-state", W(a).enabled ? "active" : "disabled"), $(p, "aria-label", "Enable " + W(c) + " modifier"), hi(p, W(a).enabled), p.disabled = t.disabled || t.busy, Y(h, `${W(o) + 1}. ${W(c) ?? ""}`), Y(_, W(a).enabled ? "Active" : "Disabled"), $(y, "aria-label", "Move " + W(c) + " up"), y.disabled = t.disabled || t.busy || W(o) === 0, $(b, "aria-label", "Move " + W(c) + " down"), b.disabled = t.disabled || t.busy || W(o) === t.items.length - 1, $(x, "aria-label", "Remove " + W(c) + " modifier"), x.disabled = t.disabled || t.busy;
+			}), K("change", p, (e) => {
+				!t.disabled && !t.busy && t.onenable(W(a).id, e.currentTarget.checked);
+			}), K("click", y, () => {
+				!t.disabled && !t.busy && W(o) > 0 && t.onmove(W(a).id, -1);
+			}), K("click", b, () => {
+				!t.disabled && !t.busy && W(o) < t.items.length - 1 && t.onmove(W(a).id, 1);
+			}), K("click", x, () => {
+				!t.disabled && !t.busy && t.onremove(W(a).id);
+			}), J(e, u);
+		}), P(a), H((e) => Y(s, `${e ?? ""} active · ${t.items.length ?? ""} total · Applied in order`), [() => t.items.filter((e) => e.enabled).length]), J(e, a);
 	};
-	Y(d, (e) => {
+	X(d, (e) => {
 		t.items.length && e(f);
 	});
-	var p = z(d, 2), m = (e) => {
-		q(e, uo());
+	var p = V(d, 2), m = (e) => {
+		J(e, uo());
 	};
-	Y(p, (e) => {
+	X(p, (e) => {
 		t.busy && e(m);
 	});
-	var h = z(p, 2), g = (e) => {
-		var n = so(), r = L(n, !0);
-		M(n), B(() => J(r, t.error)), q(e, n);
+	var h = V(p, 2), g = (e) => {
+		var n = so(), r = z(n, !0);
+		P(n), H(() => Y(r, t.error)), J(e, n);
 	};
-	Y(h, (e) => {
+	X(h, (e) => {
 		t.error && e(g);
-	}), M(o), B(() => l.disabled = t.disabled || t.busy || t.items.length >= 16), G("change", l, (e) => {
+	}), P(o), H(() => l.disabled = t.disabled || t.busy || t.items.length >= 16), K("change", l, (e) => {
 		let n = e.currentTarget.value;
 		e.currentTarget.value = "", !t.disabled && !t.busy && t.items.length < 16 && n && t.onadd(n);
-	}), q(e, o), We();
+	}), J(e, o), He();
 }
-br([
+yr([
 	"change",
 	"click",
 	"input"
 ]);
 //#endregion
 //#region ui/NodeDetails.svelte
-var mo = /* @__PURE__ */ K("<small data-canonical-title=\"\" class=\"svelte-59ntjv\"> </small>"), ho = /* @__PURE__ */ K("<button type=\"button\" class=\"svelte-59ntjv\">Duplicate</button>"), go = /* @__PURE__ */ K("<button type=\"button\" class=\"pc-detail-danger svelte-59ntjv\">Delete</button>"), _o = /* @__PURE__ */ K("<details class=\"pc-detail-commands svelte-59ntjv\"><summary aria-label=\"Node commands\" title=\"Node commands\" class=\"svelte-59ntjv\">⋯</summary><div class=\"pc-detail-command-list svelte-59ntjv\"><!> <!></div></details>"), vo = /* @__PURE__ */ K("<span class=\"svelte-59ntjv\">Read-only body</span>"), yo = /* @__PURE__ */ K("<span class=\"pc-detail-blocked svelte-59ntjv\">Blocks run · Disabled</span>"), bo = /* @__PURE__ */ K("<p class=\"pc-detail-state svelte-59ntjv\"><!><!></p>"), xo = /* @__PURE__ */ K("<p class=\"pc-detail-error svelte-59ntjv\" role=\"alert\"> </p>"), So = /* @__PURE__ */ K("<option class=\"svelte-59ntjv\"> </option>"), Co = /* @__PURE__ */ K("<fieldset class=\"pc-detail-group svelte-59ntjv\" data-boundary-controls=\"\"><legend class=\"svelte-59ntjv\"> </legend> <label class=\"svelte-59ntjv\">Type<select aria-label=\"Subgraph port type\" class=\"svelte-59ntjv\"></select></label> <label class=\"pc-detail-check svelte-59ntjv\"><input aria-label=\"Required subgraph port\" type=\"checkbox\" class=\"svelte-59ntjv\"/> Required</label> <div class=\"pc-detail-actions svelte-59ntjv\"><button type=\"button\" data-save-boundary=\"\" class=\"svelte-59ntjv\"> </button></div> <small class=\"svelte-59ntjv\">Labels appear on the subgraph block. Disconnect incompatible connections before changing the type. Deleting this node removes its port and attached connections.</small> <!></fieldset>"), wo = /* @__PURE__ */ K("<p role=\"status\" class=\"svelte-59ntjv\">Loading file…</p>"), To = /* @__PURE__ */ K("<div data-file-input-controls=\"\" class=\"svelte-59ntjv\"><label class=\"svelte-59ntjv\"> <input type=\"file\" accept=\".txt,.md,.json,text/plain,text/markdown,application/json\" class=\"svelte-59ntjv\"/></label> <p class=\"svelte-59ntjv\"> </p> <small class=\"svelte-59ntjv\">The file's UTF-8 text is embedded in this workflow. Runs use the saved snapshot; replace the file to refresh it.</small> <small class=\"svelte-59ntjv\">Choose a .txt, .md or .json file up to 400,000 bytes and 100,000 UTF-16 code units.</small> <!> <!></div>"), Eo = /* @__PURE__ */ K("<details class=\"pc-detail-group svelte-59ntjv\"><summary class=\"svelte-59ntjv\"> </summary> <!></details>"), Do = /* @__PURE__ */ K("<fieldset class=\"pc-detail-group pc-detail-main svelte-59ntjv\" data-operation-controls=\"\"><!> <!></fieldset> <!>", 1), Oo = /* @__PURE__ */ K("<label class=\"svelte-59ntjv\">Model identifier<input aria-label=\"Model identifier\" class=\"svelte-59ntjv\"/></label>"), ko = /* @__PURE__ */ K("<small class=\"svelte-59ntjv\"> </small>"), Ao = /* @__PURE__ */ K("<details class=\"pc-detail-group svelte-59ntjv\" data-model-controls=\"\" open=\"\"><summary class=\"svelte-59ntjv\"> </summary> <label class=\"svelte-59ntjv\">Connection profile<select aria-label=\"Connection profile\" class=\"svelte-59ntjv\"><option class=\"svelte-59ntjv\">Choose a connection</option><!><!></select></label> <label class=\"svelte-59ntjv\">Model mode<select aria-label=\"Model mode\" class=\"svelte-59ntjv\"></select></label> <!> <details data-binding-advanced=\"\" class=\"svelte-59ntjv\"><summary class=\"svelte-59ntjv\">Advanced connection settings</summary> <label class=\"svelte-59ntjv\">Connection mode<select aria-label=\"Connection mode\" class=\"svelte-59ntjv\"></select></label> <label class=\"svelte-59ntjv\">Model role<input aria-label=\"Model role\" class=\"svelte-59ntjv\"/></label></details> <!><!> <!> <!></details>"), jo = /* @__PURE__ */ K("<p class=\"pc-detail-port svelte-59ntjv\"> <small class=\"svelte-59ntjv\"> </small></p>"), Mo = /* @__PURE__ */ K("<details class=\"pc-detail-group svelte-59ntjv\"><summary class=\"svelte-59ntjv\">Inputs and outputs</summary><!></details>"), No = /* @__PURE__ */ K("<p role=\"status\" class=\"svelte-59ntjv\"> </p>"), Po = /* @__PURE__ */ K("<header class=\"svelte-59ntjv\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\" class=\"svelte-59ntjv\"><path class=\"svelte-59ntjv\"></path></svg> <div class=\"pc-detail-identity svelte-59ntjv\"><input class=\"pc-detail-name svelte-59ntjv\" aria-label=\"Node name\"/> <!> <small class=\"svelte-59ntjv\"> </small></div> <!></header> <!> <!> <!> <!> <!> <!> <!> <!> <!>", 1), Fo = /* @__PURE__ */ K("<p class=\"pc-detail-empty svelte-59ntjv\">Select a node to inspect its settings.</p>"), Io = /* @__PURE__ */ K("<section class=\"pc-node-details svelte-59ntjv\" aria-label=\"Node details\"><!></section>");
-function Lo(e, t) {
-	Ue(t, !0);
+var mo = /* @__PURE__ */ q("<small data-canonical-title=\"\" class=\"svelte-59ntjv\"> </small>"), ho = /* @__PURE__ */ q("<button type=\"button\" class=\"svelte-59ntjv\">Duplicate</button>"), go = /* @__PURE__ */ q("<button type=\"button\" class=\"pc-detail-danger svelte-59ntjv\">Delete</button>"), _o = /* @__PURE__ */ q("<details class=\"pc-detail-commands svelte-59ntjv\"><summary aria-label=\"Node commands\" title=\"Node commands\" class=\"svelte-59ntjv\">⋯</summary><div class=\"pc-detail-command-list svelte-59ntjv\"><!> <!></div></details>"), vo = /* @__PURE__ */ q("<p role=\"alert\" class=\"pc-detail-error svelte-59ntjv\"> </p>"), yo = /* @__PURE__ */ q("<label class=\"svelte-59ntjv\">Workflow stage<select aria-label=\"Workflow stage\" class=\"svelte-59ntjv\"><option class=\"svelte-59ntjv\">Preparation · before Generate Reply</option><option class=\"svelte-59ntjv\">Response · after Generate Reply</option></select></label><!>", 1), bo = /* @__PURE__ */ q("<p class=\"svelte-59ntjv\"><button type=\"button\" class=\"svelte-59ntjv\">Configure Fast connections…</button></p>"), xo = /* @__PURE__ */ q("<span class=\"svelte-59ntjv\">Read-only body</span>"), So = /* @__PURE__ */ q("<span class=\"pc-detail-blocked svelte-59ntjv\">Blocks run · Disabled</span>"), Co = /* @__PURE__ */ q("<p class=\"pc-detail-state svelte-59ntjv\"><!><!></p>"), wo = /* @__PURE__ */ q("<p class=\"pc-detail-error svelte-59ntjv\" role=\"alert\"> </p>"), To = /* @__PURE__ */ q("<option class=\"svelte-59ntjv\"> </option>"), Eo = /* @__PURE__ */ q("<fieldset class=\"pc-detail-group svelte-59ntjv\" data-boundary-controls=\"\"><legend class=\"svelte-59ntjv\"> </legend> <label class=\"svelte-59ntjv\">Type<select aria-label=\"Subgraph port type\" class=\"svelte-59ntjv\"></select></label> <label class=\"pc-detail-check svelte-59ntjv\"><input aria-label=\"Required subgraph port\" type=\"checkbox\" class=\"svelte-59ntjv\"/> Required</label> <div class=\"pc-detail-actions svelte-59ntjv\"><button type=\"button\" data-save-boundary=\"\" class=\"svelte-59ntjv\"> </button></div> <small class=\"svelte-59ntjv\">Labels appear on the subgraph block. Disconnect incompatible connections before changing the type. Deleting this node removes its port and attached connections.</small> <!></fieldset>"), Do = /* @__PURE__ */ q("<p role=\"status\" class=\"svelte-59ntjv\">Loading file…</p>"), Oo = /* @__PURE__ */ q("<div data-file-input-controls=\"\" class=\"svelte-59ntjv\"><label class=\"svelte-59ntjv\"> <input type=\"file\" accept=\".txt,.md,.json,text/plain,text/markdown,application/json\" class=\"svelte-59ntjv\"/></label> <p class=\"svelte-59ntjv\"> </p> <small class=\"svelte-59ntjv\">The file's UTF-8 text is embedded in this workflow. Runs use the saved snapshot; replace the file to refresh it.</small> <small class=\"svelte-59ntjv\">Choose a .txt, .md or .json file up to 400,000 bytes and 100,000 UTF-16 code units.</small> <!> <!></div>"), ko = /* @__PURE__ */ q("<details class=\"pc-detail-group svelte-59ntjv\"><summary class=\"svelte-59ntjv\"> </summary> <!></details>"), Ao = /* @__PURE__ */ q("<fieldset class=\"pc-detail-group pc-detail-main svelte-59ntjv\" data-operation-controls=\"\"><!> <!></fieldset> <!>", 1), jo = /* @__PURE__ */ q("<label class=\"svelte-59ntjv\">Model identifier<input class=\"svelte-59ntjv\"/></label>"), Mo = /* @__PURE__ */ q("<small class=\"svelte-59ntjv\"> </small>"), No = /* @__PURE__ */ q("<fieldset class=\"svelte-59ntjv\"><legend class=\"svelte-59ntjv\"> </legend> <label class=\"svelte-59ntjv\">Connection profile<select class=\"svelte-59ntjv\"><option class=\"svelte-59ntjv\">Use helper connection</option><!><!></select></label> <label class=\"svelte-59ntjv\">Model mode<select class=\"svelte-59ntjv\"></select></label> <!> <small class=\"svelte-59ntjv\"> </small><small class=\"svelte-59ntjv\"> </small><!> <!></fieldset>"), Po = /* @__PURE__ */ q("<small class=\"svelte-59ntjv\">This helper has no text model calls to configure.</small>"), Fo = /* @__PURE__ */ q("<details class=\"pc-detail-group svelte-59ntjv\" data-helper-model-controls=\"\" open=\"\"><summary class=\"svelte-59ntjv\">Helper model bindings</summary> <small class=\"svelte-59ntjv\">Choose a connection for each text model role in the pinned helper. These selections belong to this For Each node.</small> <!> <!></details>"), Io = /* @__PURE__ */ q("<label class=\"svelte-59ntjv\">Model identifier<input aria-label=\"Model identifier\" class=\"svelte-59ntjv\"/></label>"), Lo = /* @__PURE__ */ q("<details class=\"pc-detail-group svelte-59ntjv\" data-model-controls=\"\" open=\"\"><summary class=\"svelte-59ntjv\"> </summary> <label class=\"svelte-59ntjv\">Connection profile<select aria-label=\"Connection profile\" class=\"svelte-59ntjv\"><option class=\"svelte-59ntjv\">Choose a connection</option><!><!></select></label> <label class=\"svelte-59ntjv\">Model mode<select aria-label=\"Model mode\" class=\"svelte-59ntjv\"></select></label> <!> <details data-binding-advanced=\"\" class=\"svelte-59ntjv\"><summary class=\"svelte-59ntjv\">Advanced connection settings</summary> <label class=\"svelte-59ntjv\">Connection mode<select aria-label=\"Connection mode\" class=\"svelte-59ntjv\"></select></label> <label class=\"svelte-59ntjv\">Model role<input aria-label=\"Model role\" class=\"svelte-59ntjv\"/></label></details> <!><!> <!> <!></details>"), Ro = /* @__PURE__ */ q("<p class=\"pc-detail-port svelte-59ntjv\"> <small class=\"svelte-59ntjv\"> </small></p>"), zo = /* @__PURE__ */ q("<details class=\"pc-detail-group svelte-59ntjv\"><summary class=\"svelte-59ntjv\">Inputs and outputs</summary><!></details>"), Bo = /* @__PURE__ */ q("<p role=\"status\" class=\"svelte-59ntjv\"> </p>"), Vo = /* @__PURE__ */ q("<header class=\"svelte-59ntjv\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\" class=\"svelte-59ntjv\"><path class=\"svelte-59ntjv\"></path></svg> <div class=\"pc-detail-identity svelte-59ntjv\"><input class=\"pc-detail-name svelte-59ntjv\" aria-label=\"Node name\"/> <!> <small class=\"svelte-59ntjv\"> </small></div> <!></header> <!> <!> <!> <!> <!> <!> <!> <!> <!> <!> <!> <!>", 1), Ho = /* @__PURE__ */ q("<p class=\"pc-detail-empty svelte-59ntjv\">Select a node to inspect its settings.</p>"), Uo = /* @__PURE__ */ q("<section class=\"pc-node-details svelte-59ntjv\" aria-label=\"Node details\"><!></section>");
+function Wo(e, t) {
+	Ve(t, !0);
 	let n = (e, n = d) => {
 		{
-			let s = /* @__PURE__ */ N(() => U(a)[n().key]?.text ?? ee(n())), c = /* @__PURE__ */ N(() => U(a)[n().key]?.error || U(o)[n().key] || ""), l = /* @__PURE__ */ N(() => !!t.view?.readOnly || !r().editControl), u = /* @__PURE__ */ N(() => !!U(a)[n().key]?.pending), d = /* @__PURE__ */ N(() => i() + "-" + n().key);
+			let s = /* @__PURE__ */ F(() => W(a)[n().key]?.text ?? k(n())), c = /* @__PURE__ */ F(() => W(a)[n().key]?.error || W(o)[n().key] || ""), l = /* @__PURE__ */ F(() => !!t.view?.readOnly || !r().editControl), u = /* @__PURE__ */ F(() => !!W(a)[n().key]?.pending), d = /* @__PURE__ */ F(() => i() + "-" + n().key);
 			Xa(e, {
 				get control() {
 					return n();
 				},
 				get text() {
-					return U(s);
+					return W(s);
 				},
 				get error() {
-					return U(c);
+					return W(c);
 				},
 				get disabled() {
-					return U(l);
+					return W(l);
 				},
 				get pending() {
-					return U(u);
+					return W(u);
 				},
 				get idPrefix() {
-					return U(d);
+					return W(d);
 				},
-				ontext: (e) => ie(n(), e),
-				onvalue: (e) => oe(n(), e),
-				onnumber: (e) => se(n(), e),
-				onsave: () => ae(n())
+				ontext: (e) => j(n(), e),
+				onvalue: (e) => ie(n(), e),
+				onnumber: (e) => ae(n(), e),
+				onsave: () => re(n())
 			});
 		}
-	}, r = wi(t, "actions", 19, () => ({})), i = wi(t, "idPrefix", 3, "pc-node-details"), a = /* @__PURE__ */ F(en({})), o = /* @__PURE__ */ F(en({})), s = "", c = "", l = "", u = 0, f = 0, p = 0, h = /* @__PURE__ */ new Map(), g = /* @__PURE__ */ F(!1), _ = 0, v = 0, y = 0, b = /* @__PURE__ */ new Map(), x = /* @__PURE__ */ new Map(), S = /* @__PURE__ */ new Map(), C = (e) => Object.fromEntries(Object.entries(e).map(([e, t]) => [e, {
+	}, r = wi(t, "actions", 19, () => ({})), i = wi(t, "idPrefix", 3, "pc-node-details"), a = /* @__PURE__ */ L(Qt({})), o = /* @__PURE__ */ L(Qt({})), s = "", c = "", l = "", u = 0, f = 0, p = 0, h = /* @__PURE__ */ new Map(), g = /* @__PURE__ */ L(!1), _ = 0, v = 0, y = 0, b = /* @__PURE__ */ new Map(), x = /* @__PURE__ */ new Map(), S = /* @__PURE__ */ new Map(), C = (e) => Object.fromEntries(Object.entries(e).map(([e, t]) => [e, {
 		...t,
 		pending: !1
 	}]));
 	function w(e, t) {
 		return t ? Object.fromEntries(Object.entries(C(e)).flatMap(([e, n]) => {
+			if (e.startsWith("[\"helper-binding\",")) {
+				let r = JSON.parse(e);
+				return t.helperBindings?.roles.find((e) => e.role === r[1]) && r[2] === "model" && t.helperBindings?.editable && n.helperKey === t.helperBindings.helperKey ? [[e, n]] : [];
+			}
 			if (e === "model" || e === "profileId") return (e === "model" ? t.model?.model : t.model?.profile)?.allowedModes.some((e) => e.value === "override") ? [[e, n]] : [];
 			if (e === "boundary") return t.boundary && n.boundaryId === t.boundary.id && n.boundaryDirection === t.boundary.direction ? [[e, {
 				...n,
@@ -3750,7 +3769,7 @@ function Lo(e, t) {
 	]]), E = !0;
 	Ei(() => {
 		E = !1, h.clear(), S.clear(), x.clear(), b.clear();
-	}), xn(() => {
+	}), yn(() => {
 		let e = t.view ? T(t.view) : "", n = t.view?.revision ?? "", r = JSON.stringify([
 			t.view?.controls.map((e) => [
 				e.key,
@@ -3760,6 +3779,11 @@ function Lo(e, t) {
 			t.view?.model?.profile.allowedModes,
 			t.view?.model?.model.allowedModes,
 			t.view?.model?.editable,
+			t.view?.helperBindings && [
+				t.view.helperBindings.helperKey,
+				t.view.helperBindings.editable,
+				t.view.helperBindings.roles.map((e) => [e.role, e.model.allowedModes])
+			],
 			t.view?.boundary && [
 				t.view.boundary.id,
 				t.view.boundary.direction,
@@ -3773,7 +3797,7 @@ function Lo(e, t) {
 				t.view.readOnly
 			]
 		]), i = e !== s;
-		(i || n !== c || r !== l) && ((i || r !== l) && (f++, y++), i && (p++, s && S.set(s, pr(() => C(U(a))))), s = e, c = n, l = r, h.clear(), u++, I(o, {}, !0), I(g, !1), v++, I(a, w(i ? S.get(e) ?? {} : pr(() => U(a)), t.view), !0));
+		(i || n !== c || r !== l) && ((i || r !== l) && (f++, y++), i && (p++, s && S.set(s, fr(() => C(W(a))))), s = e, c = n, l = r, h.clear(), u++, R(o, {}, !0), R(g, !1), v++, R(a, w(i ? S.get(e) ?? {} : fr(() => W(a)), t.view), !0));
 	});
 	let D = (e) => ({
 		selectionKey: e.selectionKey,
@@ -3786,10 +3810,19 @@ function Lo(e, t) {
 			instancePath: [...e.address.instancePath]
 		}
 	}), O = (e) => E && !!t.view && t.view.selectionKey === e.selectionKey && t.view.revision === e.revision && T(t.view) === T(e);
-	function ee(e) {
+	function k(e) {
 		return e.editor === "json" ? e.representation === "json-text" ? String(e.value ?? "") : JSON.stringify(e.value, null, 2) : e.editor === "lines" && Array.isArray(e.value) ? e.value.join("\n") : String(e.value ?? "");
 	}
-	function k(e, t) {
+	function A(e, t) {
+		if (t.startsWith("[\"helper-binding\",")) {
+			let n = JSON.parse(t);
+			return e.helperBindings?.editable && e.helperBindings.roles.some((e) => e.role === n[1]) ? JSON.stringify([
+				"helper-binding",
+				e.helperBindings.helperKey,
+				n[1],
+				n[2]
+			]) : null;
+		}
 		if (t === "model" || t === "profileId") return (t === "model" ? e.model?.model : e.model?.profile)?.allowedModes.some((e) => e.value === "override") ? JSON.stringify([
 			"binding",
 			t,
@@ -3803,21 +3836,21 @@ function Lo(e, t) {
 			n.structured
 		]) : null;
 	}
-	function te(e) {
+	function ee(e) {
 		let t = (x.get(e) ?? 0) + 1;
 		return x.set(e, t), t;
 	}
-	async function ne(e, n, r) {
+	async function te(e, n, r) {
 		let i = t.view;
-		if (!i || (n ? !i.canPresent : e === "profileId" || e === "model" ? !ue(i) : i.readOnly)) return;
-		let s = D(i), c = ++u, l = p, d = k(i, e), f = U(a)[e] && d ? te(e) : null;
-		h.set(e, c), I(o, {
-			...U(o),
+		if (!i || (n ? !i.canPresent : e === "profileId" || e === "model" ? !ge(i) : i.readOnly)) return;
+		let s = D(i), c = ++u, l = p, d = A(i, e), f = W(a)[e] && d ? ee(e) : null;
+		h.set(e, c), R(o, {
+			...W(o),
 			[e]: ""
-		}, !0), U(a)[e] && I(a, {
-			...U(a),
+		}, !0), W(a)[e] && R(a, {
+			...W(a),
 			[e]: {
-				...U(a)[e],
+				...W(a)[e],
 				pending: !0,
 				error: ""
 			}
@@ -3829,42 +3862,42 @@ function Lo(e, t) {
 		} catch {
 			m = "The edit could not be accepted. Please try again.";
 		}
-		if (g && f !== null && U(a)[e] && E && t.view && p === l && T(t.view) === T(s) && x.get(e) === f && k(t.view, e) === d) {
-			let t = { ...U(a) };
-			delete t[e], I(a, t, !0);
+		if (g && f !== null && W(a)[e] && E && t.view && p === l && T(t.view) === T(s) && x.get(e) === f && A(t.view, e) === d) {
+			let t = { ...W(a) };
+			delete t[e], R(a, t, !0);
 		}
-		if (O(s) && h.get(e) === c && (h.delete(e), I(o, {
-			...U(o),
+		if (O(s) && h.get(e) === c && (h.delete(e), R(o, {
+			...W(o),
 			[e]: m
-		}, !0), U(a)[e])) {
-			if (m) I(a, {
-				...U(a),
+		}, !0), W(a)[e])) {
+			if (m) R(a, {
+				...W(a),
 				[e]: {
-					...U(a)[e],
+					...W(a)[e],
 					error: m,
 					pending: !1
 				}
 			}, !0);
 			else {
-				let t = { ...U(a) };
-				delete t[e], I(a, t, !0);
+				let t = { ...W(a) };
+				delete t[e], R(a, t, !0);
 			}
 		}
 	}
-	function re(e) {
+	function ne(e) {
 		let n = e.files?.[0];
-		e.value = "", n && t.view?.fileInput && !t.view.readOnly && r().loadFile && !U(a).fileInput?.pending && (I(a, {
-			...U(a),
+		e.value = "", n && t.view?.fileInput && !t.view.readOnly && r().loadFile && !W(a).fileInput?.pending && (R(a, {
+			...W(a),
 			fileInput: {
 				text: "",
 				error: "",
 				pending: !1
 			}
-		}, !0), ne("fileInput", !1, (e) => r().loadFile(e, n)));
+		}, !0), te("fileInput", !1, (e) => r().loadFile(e, n)));
 	}
-	function ie(e, n) {
-		t.view && !t.view.readOnly && (te(e.key), h.delete(e.key), I(a, {
-			...U(a),
+	function j(e, n) {
+		t.view && !t.view.readOnly && (ee(e.key), h.delete(e.key), R(a, {
+			...W(a),
 			[e.key]: {
 				text: n,
 				error: "",
@@ -3872,22 +3905,22 @@ function Lo(e, t) {
 				editor: e.editor,
 				representation: e.representation
 			}
-		}, !0), I(o, {
-			...U(o),
+		}, !0), R(o, {
+			...W(o),
 			[e.key]: ""
 		}, !0));
 	}
-	function ae(e) {
+	function re(e) {
 		if (!t.view || t.view.readOnly || !r().editControl) return;
-		let n = U(a)[e.key]?.text ?? ee(e), i = n;
+		let n = W(a)[e.key]?.text ?? k(e), i = n;
 		if (e.editor === "json") try {
 			if (!(e.representation === "json-text" && e.allowEmpty && n.trim() === "")) {
 				let t = JSON.parse(n);
 				e.representation !== "json-text" && (i = t);
 			}
 		} catch {
-			I(a, {
-				...U(a),
+			R(a, {
+				...W(a),
 				[e.key]: {
 					text: n,
 					error: "Enter valid JSON before saving.",
@@ -3899,108 +3932,156 @@ function Lo(e, t) {
 			return;
 		}
 		else e.editor === "lines" && (i = n.split("\n").filter((e) => e.trim()));
-		ne(e.key, !1, (t) => r().editControl(t, e.key, i));
+		te(e.key, !1, (t) => r().editControl(t, e.key, i));
 	}
-	function oe(e, t) {
-		r().editControl && ne(e.key, !1, (n) => r().editControl(n, e.key, t));
+	function ie(e, t) {
+		r().editControl && te(e.key, !1, (n) => r().editControl(n, e.key, t));
 	}
-	function se(e, n) {
+	function ae(e, n) {
 		if (!t.view || t.view.readOnly || !r().editControl) return;
 		let i = Number(n.value);
-		!n.value.trim() || !Number.isFinite(i) ? I(o, {
-			...U(o),
+		!n.value.trim() || !Number.isFinite(i) ? R(o, {
+			...W(o),
 			[e.key]: "Enter a finite number before saving."
-		}, !0) : n.validity.valid ? oe(e, i) : I(o, {
-			...U(o),
+		}, !0) : n.validity.valid ? ie(e, i) : R(o, {
+			...W(o),
 			[e.key]: "Enter a number within the allowed range and step."
 		}, !0);
 	}
-	function ce(e, t, n) {
-		le(e)?.allowedModes.some((e) => e.value === t) && r().editBinding && ne(e, !1, (i) => r().editBinding(i, e, t, n));
+	let oe = (e, t) => JSON.stringify([
+		"helper-binding",
+		e,
+		t
+	]), se = (e) => t.view?.helperBindings?.roles.find((t) => t.role === e), ce = () => !!t.view?.helperBindings?.editable && !t.view.readOnly && !!r().editHelperBinding, le = (e) => W(a)[oe(e, "model")] ? "override" : se(e)?.model.mode;
+	function ue(e, t, n, i) {
+		ce() && se(e) && te(oe(e, t), !1, (a) => r().editHelperBinding(a, e, t, n, i));
 	}
-	let le = (e) => e === "profileId" ? t.view?.model?.profile : t.view?.model?.model, ue = (e = t.view) => !!e?.model && (e.model.editable ?? !e.readOnly) && !!r().editBinding, de = (e) => U(a)[e] ? "override" : le(e)?.mode, fe = (e) => U(a)[e]?.text ?? le(e)?.value ?? "", pe = () => {
+	function de(e, n) {
+		if (!ce() || !se(e)) return;
+		let r = oe(e, "model");
+		ee(r), h.delete(r), R(a, {
+			...W(a),
+			[r]: {
+				text: n,
+				error: "",
+				pending: !1,
+				helperKey: t.view?.helperBindings?.helperKey
+			}
+		}, !0), R(o, {
+			...W(o),
+			[r]: ""
+		}, !0);
+	}
+	function fe(e, t) {
+		let n = se(e);
+		if (!ce() || !n?.model.allowedModes.some((e) => e.value === t)) return;
+		let r = oe(e, "model");
+		if (t === "override") {
+			de(e, W(a)[r]?.text ?? n.model.value ?? "");
+			return;
+		}
+		h.delete(r);
+		let i = { ...W(a) };
+		delete i[r], R(a, i, !0), R(o, {
+			...W(o),
+			[r]: ""
+		}, !0), t !== n.model.mode && ue(e, "model", t, null);
+	}
+	function pe(e, t) {
+		if (!ce() || le(e) !== "override") return;
+		de(e, t);
+		let n = oe(e, "model");
+		!t.trim() || t.length > 256 ? R(o, {
+			...W(o),
+			[n]: "Enter a model identifier of 1–256 characters."
+		}, !0) : ue(e, "model", "override", t);
+	}
+	function me(e, t, n) {
+		he(e)?.allowedModes.some((e) => e.value === t) && r().editBinding && te(e, !1, (i) => r().editBinding(i, e, t, n));
+	}
+	let he = (e) => e === "profileId" ? t.view?.model?.profile : t.view?.model?.model, ge = (e = t.view) => !!e?.model && (e.model.editable ?? !e.readOnly) && !!r().editBinding, _e = (e) => W(a)[e] ? "override" : he(e)?.mode, ve = (e) => W(a)[e]?.text ?? he(e)?.value ?? "", ye = () => {
 		let e = t.view?.model?.profile;
-		return U(a).profileId?.text ?? (e && Object.hasOwn(e, "effectiveValue") ? e.effectiveValue ?? "" : e?.value ?? "");
-	}, me = () => t.view?.model?.profile.mode === "override" || !!t.view?.model?.profileDefaultModel;
-	function he(e, t) {
-		ue() && le(e)?.allowedModes.some((e) => e.value === "override") && (te(e), h.delete(e), I(a, {
-			...U(a),
+		return W(a).profileId?.text ?? (e && Object.hasOwn(e, "effectiveValue") ? e.effectiveValue ?? "" : e?.value ?? "");
+	}, be = () => t.view?.model?.profile.mode === "override" || !!t.view?.model?.profileDefaultModel;
+	function xe(e, t) {
+		ge() && he(e)?.allowedModes.some((e) => e.value === "override") && (ee(e), h.delete(e), R(a, {
+			...W(a),
 			[e]: {
 				text: t,
 				error: "",
 				pending: !1
 			}
-		}, !0), I(o, {
-			...U(o),
+		}, !0), R(o, {
+			...W(o),
 			[e]: ""
 		}, !0));
 	}
-	function ge(e, t) {
-		let n = le(e);
-		if (!ue() || !n?.allowedModes.some((e) => e.value === t)) return;
+	function Se(e, t) {
+		let n = he(e);
+		if (!ge() || !n?.allowedModes.some((e) => e.value === t)) return;
 		if (t === "override") {
-			he(e, fe(e));
+			xe(e, ve(e));
 			return;
 		}
 		h.delete(e);
-		let r = { ...U(a) };
-		delete r[e], I(a, r, !0), I(o, {
-			...U(o),
+		let r = { ...W(a) };
+		delete r[e], R(a, r, !0), R(o, {
+			...W(o),
 			[e]: ""
-		}, !0), t !== n.mode && ce(e, t, null);
+		}, !0), t !== n.mode && me(e, t, null);
 	}
-	function _e(e, n) {
-		if (ue() && (e !== "model" || de(e) === "override") && le(e)?.allowedModes.some((e) => e.value === "override")) {
-			if (he(e, n), !n.trim()) {
+	function Ce(e, n) {
+		if (ge() && (e !== "model" || _e(e) === "override") && he(e)?.allowedModes.some((e) => e.value === "override")) {
+			if (xe(e, n), !n.trim()) {
 				let r = t.view?.readOnly ? "block" : "inherit";
-				if (e === "model" && me() && le(e)?.allowedModes.some((e) => e.value === r)) {
-					ge(e, r);
+				if (e === "model" && be() && he(e)?.allowedModes.some((e) => e.value === r)) {
+					Se(e, r);
 					return;
 				}
-				I(a, {
-					...U(a),
+				R(a, {
+					...W(a),
 					[e]: {
 						text: n,
 						error: e === "profileId" ? "Choose a connection before saving an override." : "Enter a model identifier before saving an override.",
 						pending: !1
 					}
 				}, !0);
-			} else ce(e, "override", n);
+			} else me(e, "override", n);
 		}
 	}
-	let ve = () => !!t.view?.modifiers?.editable && !t.view.readOnly && !!r().editModifiers, ye = () => JSON.parse(JSON.stringify(t.view?.modifiers?.items ?? []));
-	function be(e) {
-		let t = U(a)["modifier:" + e.id];
+	let we = () => !!t.view?.modifiers?.editable && !t.view.readOnly && !!r().editModifiers, Te = () => JSON.parse(JSON.stringify(t.view?.modifiers?.items ?? []));
+	function Ee(e) {
+		let t = W(a)["modifier:" + e.id];
 		if (t) try {
 			return JSON.parse(t.text);
 		} catch {}
 		return e.settings;
 	}
-	let xe = () => Object.fromEntries((t.view?.modifiers?.items ?? []).map((e) => {
-		let t = U(a)["modifier:" + e.id];
+	let M = () => Object.fromEntries((t.view?.modifiers?.items ?? []).map((e) => {
+		let t = W(a)["modifier:" + e.id];
 		return [e.id, {
-			settings: be(e),
-			error: t?.error || U(o)["modifier:" + e.id] || "",
+			settings: Ee(e),
+			error: t?.error || W(o)["modifier:" + e.id] || "",
 			pending: !!t?.pending,
 			dirty: !!t
 		}];
 	}));
-	function Se(e) {
-		if (!ve() || U(g) || e.length > 16 || !r().editModifiers) return;
+	function De(e) {
+		if (!we() || W(g) || e.length > 16 || !r().editModifiers) return;
 		let t = ++v;
-		I(g, !0), ne("modifiers", !1, (t) => r().editModifiers(t, e)).finally(() => {
-			t === v && I(g, !1);
+		R(g, !0), te("modifiers", !1, (t) => r().editModifiers(t, e)).finally(() => {
+			t === v && R(g, !1);
 		});
 	}
-	function Ce(e) {
-		if (!ve() || !t.view?.modifiers || t.view.modifiers.items.length >= 16) return;
+	function N(e) {
+		if (!we() || !t.view?.modifiers || t.view.modifiers.items.length >= 16) return;
 		let n = t.view.modifiers.options.find((t) => t.type === e);
 		if (!n) return;
-		let r = ye(), i;
+		let r = Te(), i;
 		do
 			i = `mod-${e.replace(/[^A-Za-z0-9_-]/g, "").slice(0, 28)}-${Date.now().toString(36)}-${(++_).toString(36)}`;
 		while (r.some((e) => e.id === i));
-		Se([...r, {
+		De([...r, {
 			id: i,
 			type: e,
 			version: 1,
@@ -4008,41 +4089,41 @@ function Lo(e, t) {
 			settings: JSON.parse(JSON.stringify(n.defaultSettings))
 		}]);
 	}
-	function we(e, n) {
-		if (!ve() || !t.view?.modifiers || !t.view.modifiers.options.some((t) => t.type === e)) return;
-		let r = ye();
-		r.some((t) => t.type === e) ? Se(r.map((t) => t.type === e ? {
+	function Oe(e, n) {
+		if (!we() || !t.view?.modifiers || !t.view.modifiers.options.some((t) => t.type === e)) return;
+		let r = Te();
+		r.some((t) => t.type === e) ? De(r.map((t) => t.type === e ? {
 			...t,
 			enabled: n
-		} : t)) : n && Ce(e);
+		} : t)) : n && N(e);
 	}
-	function Te(e, n) {
-		ve() && t.view?.modifiers?.items.some((t) => t.id === e) && Se(ye().map((t) => t.id === e ? {
+	function ke(e, n) {
+		we() && t.view?.modifiers?.items.some((t) => t.id === e) && De(Te().map((t) => t.id === e ? {
 			...t,
 			enabled: n
 		} : t));
 	}
-	function Ee(e) {
-		ve() && t.view?.modifiers?.items.some((t) => t.id === e) && Se(ye().filter((t) => t.id !== e));
+	function je(e) {
+		we() && t.view?.modifiers?.items.some((t) => t.id === e) && De(Te().filter((t) => t.id !== e));
 	}
-	function De(e, t) {
-		if (!ve()) return;
-		let n = ye(), r = n.findIndex((t) => t.id === e), i = r + t;
-		r < 0 || i < 0 || i >= n.length || ([n[r], n[i]] = [n[i], n[r]], Se(n));
+	function Me(e, t) {
+		if (!we()) return;
+		let n = Te(), r = n.findIndex((t) => t.id === e), i = r + t;
+		r < 0 || i < 0 || i >= n.length || ([n[r], n[i]] = [n[i], n[r]], De(n));
 	}
-	function Oe(e, n, r) {
-		if (!ve()) return;
+	function Ne(e, n, r) {
+		if (!we()) return;
 		let i = t.view?.modifiers?.items.find((t) => t.id === e), s = t.view?.modifiers?.options.find((e) => e.type === i?.type);
 		if (!i || !s?.fields.some((e) => e.key === n)) return;
 		let c = "modifier:" + e;
-		b.set(c, (b.get(c) ?? 0) + 1), h.delete(c), I(o, {
-			...U(o),
+		b.set(c, (b.get(c) ?? 0) + 1), h.delete(c), R(o, {
+			...W(o),
 			[c]: ""
-		}, !0), I(a, {
-			...U(a),
+		}, !0), R(a, {
+			...W(a),
 			[c]: {
 				text: JSON.stringify({
-					...be(i),
+					...Ee(i),
 					[n]: r
 				}),
 				error: "",
@@ -4051,54 +4132,54 @@ function Lo(e, t) {
 			}
 		}, !0);
 	}
-	function A(e) {
-		if (!ve() || !r().editModifiers) return;
+	function Pe(e) {
+		if (!we() || !r().editModifiers) return;
 		let n = t.view?.modifiers?.items.find((t) => t.id === e), i = "modifier:" + e;
-		if (!n || !U(a)[i] || U(a)[i].pending) return;
+		if (!n || !W(a)[i] || W(a)[i].pending) return;
 		let o = (b.get(i) ?? 0) + 1, s = y, c = n.type;
 		b.set(i, o);
-		let l = be(n), u = ye().map((t) => t.id === e ? {
+		let l = Ee(n), u = Te().map((t) => t.id === e ? {
 			...t,
 			settings: l
 		} : t);
-		ne(i, !1, async (n) => {
+		te(i, !1, async (n) => {
 			let l = await r().editModifiers(n, u);
 			if (l.ok && E && t.view && T(t.view) === T(n) && y === s && b.get(i) === o && t.view.modifiers?.items.some((t) => t.id === e && t.type === c)) {
-				let e = { ...U(a) };
-				delete e[i], I(a, e, !0);
+				let e = { ...W(a) };
+				delete e[i], R(a, e, !0);
 			}
 			return l;
 		});
 	}
-	let ke = () => {
+	let Fe = () => {
 		let e = /* @__PURE__ */ new Map();
 		for (let n of t.view?.controls ?? []) {
 			let t = n.group && n.group !== "Main" ? n.group : n.advanced ? "Advanced" : "Main";
 			e.set(t, [...e.get(t) ?? [], n]);
 		}
 		return [...e].sort(([e], [t]) => e === "Main" ? -1 : +(t === "Main"));
-	}, j = (e) => e.some((e) => !!(U(a)[e.key]?.error || U(o)[e.key])), Ae = () => t.view?.model ? `Model connection · ${t.view.model.issue ? "Binding needs attention" : t.view.model.effective || "Choose a connection"}` : "";
-	function je(e) {
-		t.view && !t.view.boundary && r().present && ne("alias", !0, (n) => r().present(n, "alias", e === t.view?.canonicalTitle ? "" : e));
+	}, Ie = (e) => e.some((e) => !!(W(a)[e.key]?.error || W(o)[e.key])), Le = () => t.view?.model ? `Model connection · ${t.view.model.issue ? "Binding needs attention" : t.view.model.effective || "Choose a connection"}` : "";
+	function Re(e) {
+		t.view && !t.view.boundary && r().present && te("alias", !0, (n) => r().present(n, "alias", e === t.view?.canonicalTitle ? "" : e));
 	}
-	function Ne() {
+	function ze() {
 		return {
-			label: U(a).boundary?.text ?? t.view?.boundary?.label ?? "",
-			artifactKind: U(a).boundary?.artifactKind ?? t.view?.boundary?.kind ?? "",
-			required: U(a).boundary?.required ?? t.view?.boundary?.required ?? !1
+			label: W(a).boundary?.text ?? t.view?.boundary?.label ?? "",
+			artifactKind: W(a).boundary?.artifactKind ?? t.view?.boundary?.kind ?? "",
+			required: W(a).boundary?.required ?? t.view?.boundary?.required ?? !1
 		};
 	}
-	function Pe(e, n) {
+	function Be(e, n) {
 		if (!t.view?.boundary || t.view.readOnly || !r().editInterface || e === "artifactKind" && !t.view.boundary.kinds.includes(String(n))) return;
 		let i = {
-			...Ne(),
+			...ze(),
 			[e]: n
 		};
-		f++, h.delete("boundary"), I(o, {
-			...U(o),
+		f++, h.delete("boundary"), R(o, {
+			...W(o),
 			boundary: ""
-		}, !0), I(a, {
-			...U(a),
+		}, !0), R(a, {
+			...W(a),
 			boundary: {
 				text: String(i.label),
 				artifactKind: String(i.artifactKind),
@@ -4110,13 +4191,13 @@ function Lo(e, t) {
 			}
 		}, !0);
 	}
-	function Fe() {
-		if (!t.view?.boundary || t.view.readOnly || !r().editInterface || U(a).boundary?.pending) return;
-		let e = t.view.boundary.id, n = Ne();
+	function Ue() {
+		if (!t.view?.boundary || t.view.readOnly || !r().editInterface || W(a).boundary?.pending) return;
+		let e = t.view.boundary.id, n = ze();
 		if (!n.label.trim() || !t.view.boundary.kinds.includes(n.artifactKind)) return;
 		let i = ++f;
-		I(a, {
-			...U(a),
+		R(a, {
+			...W(a),
 			boundary: {
 				text: n.label,
 				artifactKind: n.artifactKind,
@@ -4126,294 +4207,409 @@ function Lo(e, t) {
 				boundaryId: e,
 				boundaryDirection: t.view.boundary.direction
 			}
-		}, !0), ne("boundary", !1, async (o) => {
+		}, !0), te("boundary", !1, async (o) => {
 			let s = await r().editInterface(o, {
 				kind: "update",
 				id: e,
 				...n
 			});
 			if (s.ok && E && t.view?.boundary?.id === e && T(t.view) === T(o) && f === i) {
-				let e = { ...U(a) };
-				delete e.boundary, I(a, e, !0);
+				let e = { ...W(a) };
+				delete e.boundary, R(a, e, !0);
 			}
 			return s;
 		});
 	}
-	var Ie = Io(), Le = L(Ie), Re = (e) => {
-		var s = Po(), c = R(s);
+	var We = Uo(), Ge = z(We), Ke = (e) => {
+		var s = Vo(), c = B(s);
 		let l;
-		var u = L(c), d = L(u);
-		M(u);
-		var f = z(u, 2), p = L(f);
-		Z(p);
-		var h = z(p, 2), _ = (e) => {
-			var n = mo(), r = L(n);
-			M(n), B(() => J(r, `Canonical type: ${t.view.canonicalTitle ?? ""}`)), q(e, n);
+		var u = z(c), d = z(u);
+		P(u);
+		var f = V(u, 2), p = z(f);
+		Q(p);
+		var h = V(p, 2), _ = (e) => {
+			var n = mo(), r = z(n);
+			P(n), H(() => Y(r, `Canonical type: ${t.view.canonicalTitle ?? ""}`)), J(e, n);
 		};
-		Y(h, (e) => {
+		X(h, (e) => {
 			!t.view.boundary && (t.view.alias || t.view.title || t.view.canonicalTitle) !== t.view.canonicalTitle && e(_);
 		});
-		var v = z(h, 2), y = L(v, !0);
-		M(v), M(f);
-		var b = z(f, 2), x = (e) => {
-			var n = _o(), i = z(L(n)), a = L(i), o = (e) => {
+		var v = V(h, 2), y = z(v, !0);
+		P(v), P(f);
+		var b = V(f, 2), x = (e) => {
+			var n = _o(), i = V(z(n)), a = z(i), o = (e) => {
 				var n = ho();
-				B(() => n.disabled = t.view.readOnly), G("click", n, () => {
+				H(() => n.disabled = t.view.readOnly), K("click", n, () => {
 					t.view && !t.view.readOnly && r().duplicate?.(D(t.view));
-				}), q(e, n);
+				}), J(e, n);
 			};
-			Y(a, (e) => {
+			X(a, (e) => {
 				!t.view.boundary && r().duplicate && e(o);
 			});
-			var s = z(a, 2), c = (e) => {
+			var s = V(a, 2), c = (e) => {
 				var n = go();
-				B(() => n.disabled = t.view.readOnly), G("click", n, () => {
+				H(() => n.disabled = t.view.readOnly), K("click", n, () => {
 					t.view && !t.view.readOnly && r().remove?.(D(t.view));
-				}), q(e, n);
+				}), J(e, n);
 			};
-			Y(s, (e) => {
+			X(s, (e) => {
 				r().remove && e(c);
-			}), M(i), M(n), q(e, n);
+			}), P(i), P(n), J(e, n);
 		};
-		Y(b, (e) => {
+		X(b, (e) => {
 			(r().duplicate || r().remove) && e(x);
-		}), M(c);
-		var S = z(c, 2), C = (e) => {
-			var n = bo(), r = L(n), i = (e) => {
-				q(e, vo());
+		}), P(c);
+		var S = V(c, 2), C = (e) => {
+			var n = yo(), i = B(n), a = V(z(i)), s = z(a);
+			s.value = s.__value = "pre";
+			var c = V(s);
+			c.value = c.__value = "post", P(a);
+			var l;
+			si(a), P(i);
+			var u = V(i), d = (e) => {
+				var t = vo(), n = z(t, !0);
+				P(t), H(() => Y(n, W(o).phase)), J(e, t);
 			};
-			Y(r, (e) => {
+			X(u, (e) => {
+				W(o).phase && e(d);
+			}), H(() => {
+				a.disabled = t.view.readOnly || !r().editPhase, l !== (l = t.view.phase) && (a.value = (a.__value = t.view.phase) ?? "", oi(a, t.view.phase));
+			}), K("change", a, (e) => {
+				let t = e.currentTarget.value;
+				te("phase", !1, (e) => r().editPhase(e, t));
+			}), J(e, n);
+		};
+		X(S, (e) => {
+			t.view.phaseEditable && e(C);
+		});
+		var w = V(S, 2), T = (e) => {
+			var t = bo(), n = z(t);
+			P(t), H(() => n.disabled = !r().openFastConnections), K("click", n, () => r().openFastConnections?.()), J(e, t);
+		};
+		X(w, (e) => {
+			t.view.operation === "fast-decision" && e(T);
+		});
+		var E = V(w, 2), O = (e) => {
+			var n = Co(), r = z(n), i = (e) => {
+				J(e, xo());
+			};
+			X(r, (e) => {
 				t.view.readOnly && e(i);
 			});
-			var a = z(r), o = (e) => {
-				q(e, yo());
+			var a = V(r), o = (e) => {
+				J(e, So());
 			};
-			Y(a, (e) => {
+			X(a, (e) => {
 				t.view.enabled || e(o);
-			}), M(n), q(e, n);
+			}), P(n), J(e, n);
 		};
-		Y(S, (e) => {
-			(t.view.readOnly || !t.view.enabled) && e(C);
+		X(E, (e) => {
+			(t.view.readOnly || !t.view.enabled) && e(O);
 		});
-		var w = z(S, 2), T = (e) => {
-			var t = xo(), n = L(t, !0);
-			M(t), B(() => J(n, U(o).alias)), q(e, t);
+		var k = V(E, 2), A = (e) => {
+			var t = wo(), n = z(t, !0);
+			P(t), H(() => Y(n, W(o).alias)), J(e, t);
 		};
-		Y(w, (e) => {
-			U(o).alias && e(T);
+		X(k, (e) => {
+			W(o).alias && e(A);
 		});
-		var E = z(w, 2), O = (e) => {
-			var n = Co(), i = L(n), s = L(i);
-			M(i);
-			var c = z(i, 2), l = z(L(c));
-			X(l, 21, () => t.view.boundary.kinds, Vr, (e, t) => {
-				var n = So(), r = L(n, !0);
-				M(n);
+		var ee = V(k, 2), j = (e) => {
+			var n = Eo(), i = z(n), s = z(i);
+			P(i);
+			var c = V(i, 2), l = V(z(c));
+			Z(l, 21, () => t.view.boundary.kinds, Br, (e, t) => {
+				var n = To(), r = z(n, !0);
+				P(n);
 				var i = {};
-				B(() => {
-					J(r, U(t)), i !== (i = U(t)) && (n.value = (n.__value = U(t)) ?? "");
-				}), q(e, n);
-			}), M(l);
+				H(() => {
+					Y(r, W(t)), i !== (i = W(t)) && (n.value = (n.__value = W(t)) ?? "");
+				}), J(e, n);
+			}), P(l);
 			var u;
-			ci(l), M(c);
-			var d = z(c, 2), f = L(d);
-			Z(f), Me(), M(d);
-			var p = z(d, 2), m = L(p), h = L(m, !0);
-			M(m), M(p);
-			var g = z(p, 4), _ = (e) => {
-				var t = xo(), n = L(t, !0);
-				M(t), B(() => J(n, U(a).boundary?.error || U(o).boundary)), q(e, t);
+			si(l), P(c);
+			var d = V(c, 2), f = z(d);
+			Q(f), Ae(), P(d);
+			var p = V(d, 2), m = z(p), h = z(m, !0);
+			P(m), P(p);
+			var g = V(p, 4), _ = (e) => {
+				var t = wo(), n = z(t, !0);
+				P(t), H(() => Y(n, W(a).boundary?.error || W(o).boundary)), J(e, t);
 			};
-			Y(g, (e) => {
-				(U(a).boundary?.error || U(o).boundary) && e(_);
-			}), M(n), B((e, n, i) => {
-				J(s, `Subgraph ${t.view.boundary.direction ?? ""}`), l.disabled = t.view.readOnly || !r().editInterface, u !== (u = e) && (l.value = (l.__value = e) ?? "", si(l, e)), gi(f, n), f.disabled = t.view.readOnly || !r().editInterface, m.disabled = i, J(h, U(a).boundary?.pending ? "Validating…" : "Save port");
+			X(g, (e) => {
+				(W(a).boundary?.error || W(o).boundary) && e(_);
+			}), P(n), H((e, n, i) => {
+				Y(s, `Subgraph ${t.view.boundary.direction ?? ""}`), l.disabled = t.view.readOnly || !r().editInterface, u !== (u = e) && (l.value = (l.__value = e) ?? "", oi(l, e)), hi(f, n), f.disabled = t.view.readOnly || !r().editInterface, m.disabled = i, Y(h, W(a).boundary?.pending ? "Validating…" : "Save port");
 			}, [
-				() => Ne().artifactKind,
-				() => Ne().required,
-				() => t.view.readOnly || !r().editInterface || !Ne().label.trim() || !!U(a).boundary?.pending
-			]), G("change", l, (e) => Pe("artifactKind", e.currentTarget.value)), G("change", f, (e) => Pe("required", e.currentTarget.checked)), G("click", m, () => Fe()), q(e, n);
+				() => ze().artifactKind,
+				() => ze().required,
+				() => t.view.readOnly || !r().editInterface || !ze().label.trim() || !!W(a).boundary?.pending
+			]), K("change", l, (e) => Be("artifactKind", e.currentTarget.value)), K("change", f, (e) => Be("required", e.currentTarget.checked)), K("click", m, () => Ue()), J(e, n);
 		};
-		Y(E, (e) => {
-			t.view.boundary && e(O);
+		X(ee, (e) => {
+			t.view.boundary && e(j);
 		});
-		var ee = z(E, 2), k = (e) => {
-			var s = Do(), c = R(s), l = L(c), u = (e) => {
-				var n = To(), s = L(n), c = L(s, !0), l = z(c);
-				M(s);
-				var u = z(s, 2), d = L(u, !0);
-				M(u);
-				var f = z(u, 6), p = (e) => {
-					q(e, wo());
+		var re = V(ee, 2), ie = (e) => {
+			var s = Ao(), c = B(s), l = z(c), u = (e) => {
+				var n = Oo(), s = z(n), c = z(s, !0), l = V(c);
+				P(s);
+				var u = V(s, 2), d = z(u, !0);
+				P(u);
+				var f = V(u, 6), p = (e) => {
+					J(e, Do());
 				};
-				Y(f, (e) => {
-					U(a).fileInput?.pending && e(p);
+				X(f, (e) => {
+					W(a).fileInput?.pending && e(p);
 				});
-				var m = z(f, 2), h = (e) => {
-					var t = xo(), n = L(t, !0);
-					M(t), B(() => {
-						Q(t, "id", i() + "-error-fileInput"), J(n, U(o).fileInput);
-					}), q(e, t);
+				var m = V(f, 2), h = (e) => {
+					var t = wo(), n = z(t, !0);
+					P(t), H(() => {
+						$(t, "id", i() + "-error-fileInput"), Y(n, W(o).fileInput);
+					}), J(e, t);
 				};
-				Y(m, (e) => {
-					U(o).fileInput && e(h);
-				}), M(n), B(() => {
-					J(c, t.view.fileInput.loaded ? "Replace file" : "Choose file"), Q(l, "aria-label", t.view.fileInput.loaded ? "Replace file" : "Choose file"), l.disabled = t.view.readOnly || !r().loadFile || !!U(a).fileInput?.pending, Q(l, "aria-invalid", !!U(o).fileInput), Q(l, "aria-describedby", U(o).fileInput ? i() + "-error-fileInput" : void 0), J(d, t.view.fileInput.loaded ? "Loaded file: " + t.view.fileInput.fileName : "No file loaded.");
-				}), G("change", l, (e) => re(e.currentTarget)), q(e, n);
+				X(m, (e) => {
+					W(o).fileInput && e(h);
+				}), P(n), H(() => {
+					Y(c, t.view.fileInput.loaded ? "Replace file" : "Choose file"), $(l, "aria-label", t.view.fileInput.loaded ? "Replace file" : "Choose file"), l.disabled = t.view.readOnly || !r().loadFile || !!W(a).fileInput?.pending, $(l, "aria-invalid", !!W(o).fileInput), $(l, "aria-describedby", W(o).fileInput ? i() + "-error-fileInput" : void 0), Y(d, t.view.fileInput.loaded ? "Loaded file: " + t.view.fileInput.fileName : "No file loaded.");
+				}), K("change", l, (e) => ne(e.currentTarget)), J(e, n);
 			};
-			Y(l, (e) => {
+			X(l, (e) => {
 				t.view.fileInput && e(u);
-			}), X(z(l, 2), 17, () => ke().filter(([e]) => e === "Main"), ([e, t]) => e, (e, t) => {
-				var r = /* @__PURE__ */ N(() => m(U(t), 2));
-				let i = () => U(r)[1];
-				var a = jr();
-				X(R(a), 17, i, (e) => e.key, (e, t) => {
-					n(e, () => U(t));
-				}), q(e, a);
-			}), M(c), X(z(c, 2), 17, () => ke().filter(([e]) => e !== "Main"), ([e, t]) => e, (e, t) => {
-				var r = /* @__PURE__ */ N(() => m(U(t), 2));
-				let i = () => U(r)[0], a = () => U(r)[1];
-				var o = Eo(), s = L(o), c = L(s, !0);
-				M(s), X(z(s, 2), 17, a, (e) => e.key, (e, t) => {
-					n(e, () => U(t));
-				}), M(o), B((e) => {
-					Q(o, "data-control-group", i()), o.open = e, J(c, i());
-				}, [() => j(a())]), q(e, o);
-			}), q(e, s);
+			}), Z(V(l, 2), 17, () => Fe().filter(([e]) => e === "Main"), ([e, t]) => e, (e, t) => {
+				var r = /* @__PURE__ */ F(() => m(W(t), 2));
+				let i = () => W(r)[1];
+				var a = Ar();
+				Z(B(a), 17, i, (e) => e.key, (e, t) => {
+					n(e, () => W(t));
+				}), J(e, a);
+			}), P(c), Z(V(c, 2), 17, () => Fe().filter(([e]) => e !== "Main"), ([e, t]) => e, (e, t) => {
+				var r = /* @__PURE__ */ F(() => m(W(t), 2));
+				let i = () => W(r)[0], a = () => W(r)[1];
+				var o = ko(), s = z(o), c = z(s, !0);
+				P(s), Z(V(s, 2), 17, a, (e) => e.key, (e, t) => {
+					n(e, () => W(t));
+				}), P(o), H((e) => {
+					$(o, "data-control-group", i()), o.open = e, Y(c, i());
+				}, [() => Ie(a())]), J(e, o);
+			}), J(e, s);
 		};
-		Y(ee, (e) => {
-			t.view.boundary || e(k);
+		X(re, (e) => {
+			t.view.boundary || e(ie);
 		});
-		var te = z(ee, 2), ie = (e) => {
-			var n = Ao(), i = L(n), s = L(i, !0);
-			M(i);
-			var c = z(i, 2), l = z(L(c)), u = L(l);
+		var ae = V(re, 2), se = (e) => {
+			var n = Fo(), r = V(z(n), 4);
+			Z(r, 17, () => t.view.helperBindings.roles, (e) => e.role, (e, t) => {
+				var n = No(), r = z(n), i = z(r, !0);
+				P(r);
+				var s = V(r, 2), c = V(z(s)), l = z(c);
+				l.value = l.__value = "";
+				var u = V(l), d = (e) => {
+					var n = To(), r = z(n);
+					P(n);
+					var i = {};
+					H(() => {
+						Y(r, `Unavailable connection · ${W(t).profile.value ?? ""}`), i !== (i = W(t).profile.value) && (n.value = (n.__value = W(t).profile.value) ?? "");
+					}), J(e, n);
+				}, f = /* @__PURE__ */ F(() => W(t).profile.value && !(W(t).profile.options ?? []).some((e) => e.value === W(t).profile.value));
+				X(u, (e) => {
+					W(f) && e(d);
+				}), Z(V(u), 17, () => W(t).profile.options ?? [], (e) => e.value, (e, t) => {
+					var n = To(), r = z(n, !0);
+					P(n);
+					var i = {};
+					H(() => {
+						Y(r, W(t).label), i !== (i = W(t).value) && (n.value = (n.__value = W(t).value) ?? "");
+					}), J(e, n);
+				}), P(c);
+				var p;
+				si(c), P(s);
+				var m = V(s, 2), h = V(z(m));
+				Z(h, 21, () => W(t).model.allowedModes, (e) => e.value, (e, t) => {
+					var n = To(), r = z(n, !0);
+					P(n);
+					var i = {};
+					H(() => {
+						Y(r, W(t).label), i !== (i = W(t).value) && (n.value = (n.__value = W(t).value) ?? "");
+					}), J(e, n);
+				}), P(h);
+				var g;
+				si(h), P(m);
+				var _ = V(m, 2), v = (e) => {
+					var n = jo(), r = V(z(n));
+					Q(r), P(n), H((e, n) => {
+						$(r, "aria-label", W(t).role + " model identifier"), mi(r, e), r.disabled = n;
+					}, [() => W(a)[oe(W(t).role, "model")]?.text ?? W(t).model.value ?? "", () => !ce()]), K("input", r, (e) => de(W(t).role, e.currentTarget.value)), K("change", r, (e) => pe(W(t).role, e.currentTarget.value)), J(e, n);
+				}, y = /* @__PURE__ */ F(() => le(W(t).role) === "override");
+				X(_, (e) => {
+					W(y) && e(v);
+				});
+				var b = V(_, 2), x = z(b);
+				P(b);
+				var S = V(b), C = z(S, !0);
+				P(S);
+				var w = V(S), T = (e) => {
+					var n = Mo(), r = z(n, !0);
+					P(n), H(() => Y(r, W(t).caveat)), J(e, n);
+				};
+				X(w, (e) => {
+					W(t).caveat && e(T);
+				});
+				var E = V(w, 2), D = (e) => {
+					var n = wo(), r = z(n, !0);
+					P(n), H((e) => Y(r, e), [() => W(o)[oe(W(t).role, "profileId")] || W(o)[oe(W(t).role, "model")]]), J(e, n);
+				}, O = /* @__PURE__ */ F(() => W(o)[oe(W(t).role, "profileId")] || W(o)[oe(W(t).role, "model")]);
+				X(E, (e) => {
+					W(O) && e(D);
+				}), P(n), H((e, n, r) => {
+					Y(i, W(t).label), $(c, "aria-label", W(t).role + " connection profile"), c.disabled = e, p !== (p = W(t).profile.value ?? "") && (c.value = (c.__value = W(t).profile.value ?? "") ?? "", oi(c, W(t).profile.value ?? "")), $(h, "aria-label", W(t).role + " model mode"), h.disabled = n, g !== (g = r) && (h.value = (h.__value = r) ?? "", oi(h, r)), Y(x, `Effective connection: ${W(t).effective ?? ""}`), Y(C, W(t).source);
+				}, [
+					() => !ce(),
+					() => !ce(),
+					() => le(W(t).role)
+				]), K("change", c, (e) => ue(W(t).role, "profileId", e.currentTarget.value ? "override" : "inherit", e.currentTarget.value || null)), K("change", h, (e) => fe(W(t).role, e.currentTarget.value)), J(e, n);
+			});
+			var i = V(r, 2), s = (e) => {
+				var n = wo(), r = z(n, !0);
+				P(n), H(() => Y(r, t.view.helperBindings.issue)), J(e, n);
+			}, c = (e) => {
+				J(e, Po());
+			};
+			X(i, (e) => {
+				t.view.helperBindings.issue ? e(s) : t.view.helperBindings.roles.length || e(c, 1);
+			}), P(n), J(e, n);
+		};
+		X(ae, (e) => {
+			t.view.helperBindings && e(se);
+		});
+		var me = V(ae, 2), he = (e) => {
+			var n = Lo(), i = z(n), s = z(i, !0);
+			P(i);
+			var c = V(i, 2), l = V(z(c)), u = z(l);
 			u.value = u.__value = "";
-			var d = z(u), f = (e) => {
-				var t = So(), n = L(t);
-				M(t);
+			var d = V(u), f = (e) => {
+				var t = To(), n = z(t);
+				P(t);
 				var r = {};
-				B((e, i) => {
-					J(n, `Unavailable connection · ${e ?? ""}`), r !== (r = i) && (t.value = (t.__value = i) ?? "");
-				}, [() => pe(), () => pe()]), q(e, t);
-			}, p = /* @__PURE__ */ N(() => pe() && !(t.view.model.profile.options ?? []).some((e) => e.value === pe()));
-			Y(d, (e) => {
-				U(p) && e(f);
-			}), X(z(d), 17, () => t.view.model.profile.options ?? [], (e) => e.value, (e, t) => {
-				var n = So(), r = L(n, !0);
-				M(n);
+				H((e, i) => {
+					Y(n, `Unavailable connection · ${e ?? ""}`), r !== (r = i) && (t.value = (t.__value = i) ?? "");
+				}, [() => ye(), () => ye()]), J(e, t);
+			}, p = /* @__PURE__ */ F(() => ye() && !(t.view.model.profile.options ?? []).some((e) => e.value === ye()));
+			X(d, (e) => {
+				W(p) && e(f);
+			}), Z(V(d), 17, () => t.view.model.profile.options ?? [], (e) => e.value, (e, t) => {
+				var n = To(), r = z(n, !0);
+				P(n);
 				var i = {};
-				B(() => {
-					J(r, U(t).label), i !== (i = U(t).value) && (n.value = (n.__value = U(t).value) ?? "");
-				}), q(e, n);
-			}), M(l);
+				H(() => {
+					Y(r, W(t).label), i !== (i = W(t).value) && (n.value = (n.__value = W(t).value) ?? "");
+				}), J(e, n);
+			}), P(l);
 			var m;
-			ci(l), M(c);
-			var h = z(c, 2), g = z(L(h));
-			X(g, 21, () => t.view.model.model.allowedModes, (e) => e.value, (e, n) => {
-				var r = So(), i = L(r, !0);
-				M(r);
+			si(l), P(c);
+			var h = V(c, 2), g = V(z(h));
+			Z(g, 21, () => t.view.model.model.allowedModes, (e) => e.value, (e, n) => {
+				var r = To(), i = z(r, !0);
+				P(r);
 				var a = {};
-				B((e) => {
-					J(i, e), a !== (a = U(n).value) && (r.value = (r.__value = U(n).value) ?? "");
-				}, [() => U(n).value === "inherit" && !t.view.readOnly ? me() || !t.view.model.model.effectiveValue ? "Use profile model" : "Existing role model" : U(n).label]), q(e, r);
-			}), M(g);
+				H((e) => {
+					Y(i, e), a !== (a = W(n).value) && (r.value = (r.__value = W(n).value) ?? "");
+				}, [() => W(n).value === "inherit" && !t.view.readOnly ? be() || !t.view.model.model.effectiveValue ? "Use profile model" : "Existing role model" : W(n).label]), J(e, r);
+			}), P(g);
 			var _;
-			ci(g), M(h);
-			var v = z(h, 2), y = (e) => {
-				var t = Oo(), n = z(L(t));
-				Z(n), M(t), B((e, t) => {
-					hi(n, e), n.disabled = t;
-				}, [() => fe("model"), () => !ue()]), G("input", n, (e) => he("model", e.currentTarget.value)), G("change", n, (e) => _e("model", e.currentTarget.value)), q(e, t);
-			}, b = /* @__PURE__ */ N(() => de("model") === "override");
-			Y(v, (e) => {
-				U(b) && e(y);
+			si(g), P(h);
+			var v = V(h, 2), y = (e) => {
+				var t = Io(), n = V(z(t));
+				Q(n), P(t), H((e, t) => {
+					mi(n, e), n.disabled = t;
+				}, [() => ve("model"), () => !ge()]), K("input", n, (e) => xe("model", e.currentTarget.value)), K("change", n, (e) => Ce("model", e.currentTarget.value)), J(e, t);
+			}, b = /* @__PURE__ */ F(() => _e("model") === "override");
+			X(v, (e) => {
+				W(b) && e(y);
 			});
-			var x = z(v, 2), S = z(L(x), 2), C = z(L(S));
-			X(C, 21, () => t.view.model.profile.allowedModes, (e) => e.value, (e, t) => {
-				var n = So(), r = L(n, !0);
-				M(n);
+			var x = V(v, 2), S = V(z(x), 2), C = V(z(S));
+			Z(C, 21, () => t.view.model.profile.allowedModes, (e) => e.value, (e, t) => {
+				var n = To(), r = z(n, !0);
+				P(n);
 				var i = {};
-				B(() => {
-					J(r, U(t).label), i !== (i = U(t).value) && (n.value = (n.__value = U(t).value) ?? "");
-				}), q(e, n);
-			}), M(C);
+				H(() => {
+					Y(r, W(t).label), i !== (i = W(t).value) && (n.value = (n.__value = W(t).value) ?? "");
+				}), J(e, n);
+			}), P(C);
 			var w;
-			ci(C), M(S);
-			var T = z(S, 2), E = z(L(T));
-			Z(E), M(T), M(x);
-			var D = z(x, 2), O = (e) => {
-				var n = ko(), r = L(n);
-				M(n), B(() => J(r, `Effective connection: ${t.view.model.effective ?? ""}`)), q(e, n);
-			}, ee = /* @__PURE__ */ N(() => !t.view.model.issue || t.view.model.effective.trim() !== t.view.model.issue.trim());
-			Y(D, (e) => {
-				U(ee) && e(O);
+			si(C), P(S);
+			var T = V(S, 2), E = V(z(T));
+			Q(E), P(T), P(x);
+			var D = V(x, 2), O = (e) => {
+				var n = Mo(), r = z(n);
+				P(n), H(() => Y(r, `Effective connection: ${t.view.model.effective ?? ""}`)), J(e, n);
+			}, k = /* @__PURE__ */ F(() => !t.view.model.issue || t.view.model.effective.trim() !== t.view.model.issue.trim());
+			X(D, (e) => {
+				W(k) && e(O);
 			});
-			var k = z(D), te = (e) => {
-				var n = ko(), r = L(n, !0);
-				M(n), B(() => J(r, t.view.model.source)), q(e, n);
+			var A = V(D), ee = (e) => {
+				var n = Mo(), r = z(n, !0);
+				P(n), H(() => Y(r, t.view.model.source)), J(e, n);
 			};
-			Y(k, (e) => {
-				t.view.model.source && e(te);
+			X(A, (e) => {
+				t.view.model.source && e(ee);
 			});
-			var re = z(k, 2), ie = (e) => {
-				var n = xo(), r = L(n, !0);
-				M(n), B(() => J(r, t.view.model.issue)), q(e, n);
+			var ne = V(A, 2), j = (e) => {
+				var n = wo(), r = z(n, !0);
+				P(n), H(() => Y(r, t.view.model.issue)), J(e, n);
 			};
-			Y(re, (e) => {
-				t.view.model.issue && e(ie);
+			X(ne, (e) => {
+				t.view.model.issue && e(j);
 			});
-			var ae = z(re, 2), oe = (e) => {
-				var t = xo(), n = L(t, !0);
-				M(t), B(() => J(n, U(o).modelRole || U(a).profileId?.error || U(o).profileId || U(a).model?.error || U(o).model)), q(e, t);
+			var re = V(ne, 2), ie = (e) => {
+				var t = wo(), n = z(t, !0);
+				P(t), H(() => Y(n, W(o).modelRole || W(a).profileId?.error || W(o).profileId || W(a).model?.error || W(o).model)), J(e, t);
 			};
-			Y(ae, (e) => {
-				(U(o).modelRole || U(a).profileId?.error || U(o).profileId || U(a).model?.error || U(o).model) && e(oe);
-			}), M(n), B((e, n, i, a, o, c, u) => {
-				J(s, e), l.disabled = n, m !== (m = i) && (l.value = (l.__value = i) ?? "", si(l, i)), g.disabled = a, _ !== (_ = o) && (g.value = (g.__value = o) ?? "", si(g, o)), C.disabled = c, w !== (w = u) && (C.value = (C.__value = u) ?? "", si(C, u)), hi(E, t.view.model.role), E.disabled = t.view.readOnly || !t.view.model.roleEditable || !r().editField;
+			X(re, (e) => {
+				(W(o).modelRole || W(a).profileId?.error || W(o).profileId || W(a).model?.error || W(o).model) && e(ie);
+			}), P(n), H((e, n, i, a, o, c, u) => {
+				Y(s, e), l.disabled = n, m !== (m = i) && (l.value = (l.__value = i) ?? "", oi(l, i)), g.disabled = a, _ !== (_ = o) && (g.value = (g.__value = o) ?? "", oi(g, o)), C.disabled = c, w !== (w = u) && (C.value = (C.__value = u) ?? "", oi(C, u)), mi(E, t.view.model.role), E.disabled = t.view.readOnly || !t.view.model.roleEditable || !r().editField;
 			}, [
-				() => Ae(),
-				() => !ue() || !t.view.model.profile.allowedModes.some((e) => e.value === "override"),
-				() => pe(),
-				() => !ue(),
-				() => de("model"),
-				() => !ue(),
-				() => de("profileId")
-			]), G("change", l, (e) => _e("profileId", e.currentTarget.value)), G("change", g, (e) => ge("model", e.currentTarget.value)), G("change", C, (e) => ge("profileId", e.currentTarget.value)), G("change", E, (e) => {
+				() => Le(),
+				() => !ge() || !t.view.model.profile.allowedModes.some((e) => e.value === "override"),
+				() => ye(),
+				() => !ge(),
+				() => _e("model"),
+				() => !ge(),
+				() => _e("profileId")
+			]), K("change", l, (e) => Ce("profileId", e.currentTarget.value)), K("change", g, (e) => Se("model", e.currentTarget.value)), K("change", C, (e) => Se("profileId", e.currentTarget.value)), K("change", E, (e) => {
 				let n = e.currentTarget.value;
-				t.view?.model?.roleEditable && r().editField && ne("modelRole", !1, (e) => r().editField(e, "modelRole", n));
-			}), q(e, n);
+				t.view?.model?.roleEditable && r().editField && te("modelRole", !1, (e) => r().editField(e, "modelRole", n));
+			}), J(e, n);
 		};
-		Y(te, (e) => {
-			t.view.model && e(ie);
+		X(me, (e) => {
+			t.view.model && e(he);
 		});
-		var ae = z(te, 2), oe = (e) => {
-			var n = Mo();
-			X(z(L(n)), 17, () => t.view.ports, (e) => e.direction + ":" + e.id, (e, t) => {
-				var n = jo(), r = L(n), i = z(r), a = L(i, !0);
-				M(i), M(n), B(() => {
-					J(r, `${U(t).direction === "input" ? "In" : "Out"} · ${U(t).label ?? ""}`), J(a, U(t).kind);
-				}), q(e, n);
-			}), M(n), q(e, n);
+		var Te = V(me, 2), Ee = (e) => {
+			var n = zo();
+			Z(V(z(n)), 17, () => t.view.ports, (e) => e.direction + ":" + e.id, (e, t) => {
+				var n = Ro(), r = z(n), i = V(r), a = z(i, !0);
+				P(i), P(n), H(() => {
+					Y(r, `${W(t).direction === "input" ? "In" : "Out"} · ${W(t).label ?? ""}`), Y(a, W(t).kind);
+				}), J(e, n);
+			}), P(n), J(e, n);
 		};
-		Y(ae, (e) => {
-			t.view.ports.length && e(oe);
+		X(Te, (e) => {
+			t.view.ports.length && e(Ee);
 		});
-		var se = z(ae, 2), ce = (e) => {
-			var n = No(), r = L(n, !0);
-			M(n), B(() => J(r, t.view.status)), q(e, n);
+		var De = V(Te, 2), Ve = (e) => {
+			var n = Bo(), r = z(n, !0);
+			P(n), H(() => Y(r, t.view.status)), J(e, n);
 		};
-		Y(se, (e) => {
-			t.view.status && e(ce);
+		X(De, (e) => {
+			t.view.status && e(Ve);
 		});
-		var le = z(se, 2);
-		X(le, 17, () => t.view.issues ?? [], Vr, (e, t) => {
-			var n = xo(), r = L(n, !0);
-			M(n), B(() => J(r, U(t))), q(e, n);
+		var He = V(De, 2);
+		Z(He, 17, () => t.view.issues ?? [], Br, (e, t) => {
+			var n = wo(), r = z(n, !0);
+			P(n), H(() => Y(r, W(t))), J(e, n);
 		});
-		var ye = z(le, 2), be = (e) => {
+		var We = V(He, 2), Ge = (e) => {
 			{
-				let n = /* @__PURE__ */ N(() => !ve()), r = /* @__PURE__ */ N(xe), a = /* @__PURE__ */ N(() => U(o).modifiers || "");
+				let n = /* @__PURE__ */ F(() => !we()), r = /* @__PURE__ */ F(M), a = /* @__PURE__ */ F(() => W(o).modifiers || "");
 				po(e, {
 					get items() {
 						return t.view.modifiers.items;
@@ -4422,97 +4618,97 @@ function Lo(e, t) {
 						return t.view.modifiers.options;
 					},
 					get disabled() {
-						return U(n);
+						return W(n);
 					},
 					get busy() {
-						return U(g);
+						return W(g);
 					},
 					get drafts() {
-						return U(r);
+						return W(r);
 					},
 					get error() {
-						return U(a);
+						return W(a);
 					},
 					get idPrefix() {
 						return i();
 					},
-					onquick: we,
-					onadd: Ce,
-					onenable: Te,
-					onremove: Ee,
-					onmove: De,
-					ondraft: Oe,
-					onsave: A
+					onquick: Oe,
+					onadd: N,
+					onenable: ke,
+					onremove: je,
+					onmove: Me,
+					ondraft: Ne,
+					onsave: Pe
 				});
 			}
 		};
-		Y(ye, (e) => {
-			t.view.modifiers && e(be);
-		}), B((e) => {
-			l = oi(c, "", l, { "--pc-detail-family": t.view.familyColor ?? "var(--pc-accent)" }), Q(d, "d", t.view.iconPath), Q(p, "id", i() + "-name"), Q(p, "maxlength", t.view.boundary ? void 0 : 80), hi(p, e), p.disabled = t.view.boundary ? t.view.readOnly || !r().editInterface : !t.view.canPresent || !r().present, J(y, t.view.boundary ? "Subgraph " + t.view.boundary.direction : t.view.family + " · " + t.view.phase + " phase");
-		}, [() => t.view.boundary ? Ne().label : t.view.alias || t.view.title || t.view.canonicalTitle]), G("input", p, (e) => {
-			t.view?.boundary && Pe("label", e.currentTarget.value);
-		}), G("change", p, (e) => {
-			t.view?.boundary || je(e.currentTarget.value);
-		}), q(e, s);
-	}, ze = (e) => {
-		q(e, Fo());
+		X(We, (e) => {
+			t.view.modifiers && e(Ge);
+		}), H((e) => {
+			l = ai(c, "", l, { "--pc-detail-family": t.view.familyColor ?? "var(--pc-accent)" }), $(d, "d", t.view.iconPath), $(p, "id", i() + "-name"), $(p, "maxlength", t.view.boundary ? void 0 : 80), mi(p, e), p.disabled = t.view.boundary ? t.view.readOnly || !r().editInterface : !t.view.canPresent || !r().present, Y(y, t.view.boundary ? "Subgraph " + t.view.boundary.direction : t.view.family + " · " + t.view.phase + " phase");
+		}, [() => t.view.boundary ? ze().label : t.view.alias || t.view.title || t.view.canonicalTitle]), K("input", p, (e) => {
+			t.view?.boundary && Be("label", e.currentTarget.value);
+		}), K("change", p, (e) => {
+			t.view?.boundary || Re(e.currentTarget.value);
+		}), J(e, s);
+	}, qe = (e) => {
+		J(e, Ho());
 	};
-	Y(Le, (e) => {
-		t.view ? e(Re) : e(ze, -1);
-	}), M(Ie), q(e, Ie), We();
+	X(Ge, (e) => {
+		t.view ? e(Ke) : e(qe, -1);
+	}), P(We), J(e, We), He();
 }
-br([
+yr([
 	"input",
 	"change",
 	"click"
 ]);
 //#endregion
 //#region ui/CommentDetails.svelte
-var Ro = /* @__PURE__ */ K("<p class=\"pc-detail-meta svelte-17djc3u\">Read-only comment</p>"), zo = /* @__PURE__ */ K("<section class=\"pc-comment-details svelte-17djc3u\" aria-label=\"Comment details\"><h3 class=\"svelte-17djc3u\">Comment</h3> <!> <fieldset class=\"pc-detail-group svelte-17djc3u\"><legend class=\"svelte-17djc3u\">Comment</legend> <label class=\"svelte-17djc3u\">Title<input aria-label=\"Comment title\" class=\"svelte-17djc3u\"/></label> <label class=\"svelte-17djc3u\">Notes<textarea aria-label=\"Comment notes\" rows=\"5\" class=\"svelte-17djc3u\"></textarea></label> <label class=\"pc-comment-color-label svelte-17djc3u\">Color<input aria-label=\"Comment color\" type=\"color\" class=\"svelte-17djc3u\"/></label> <label class=\"pc-detail-check svelte-17djc3u\"><input aria-label=\"Move contents\" type=\"checkbox\" class=\"svelte-17djc3u\"/> Move contents</label> <small class=\"svelte-17djc3u\">Moves fully contained nodes when you drag the comment header.</small></fieldset> <div class=\"pc-comment-commands svelte-17djc3u\"><button type=\"button\" class=\"pc-btn svelte-17djc3u\">Fit to contents</button> <button type=\"button\" class=\"pc-btn pc-danger svelte-17djc3u\">Delete comment</button></div> <small class=\"svelte-17djc3u\">Deleting this comment keeps its contents.</small></section>");
-function Bo(e, t) {
-	Ue(t, !0);
-	let n = wi(t, "readOnly", 3, !1), r = /* @__PURE__ */ N(() => n() || t.comment.readOnly), i = (e) => e.stopPropagation();
+var Go = /* @__PURE__ */ q("<p class=\"pc-detail-meta svelte-17djc3u\">Read-only comment</p>"), Ko = /* @__PURE__ */ q("<section class=\"pc-comment-details svelte-17djc3u\" aria-label=\"Comment details\"><h3 class=\"svelte-17djc3u\">Comment</h3> <!> <fieldset class=\"pc-detail-group svelte-17djc3u\"><legend class=\"svelte-17djc3u\">Comment</legend> <label class=\"svelte-17djc3u\">Title<input aria-label=\"Comment title\" class=\"svelte-17djc3u\"/></label> <label class=\"svelte-17djc3u\">Notes<textarea aria-label=\"Comment notes\" rows=\"5\" class=\"svelte-17djc3u\"></textarea></label> <label class=\"pc-comment-color-label svelte-17djc3u\">Color<input aria-label=\"Comment color\" type=\"color\" class=\"svelte-17djc3u\"/></label> <label class=\"pc-detail-check svelte-17djc3u\"><input aria-label=\"Move contents\" type=\"checkbox\" class=\"svelte-17djc3u\"/> Move contents</label> <small class=\"svelte-17djc3u\">Moves fully contained nodes when you drag the comment header.</small></fieldset> <div class=\"pc-comment-commands svelte-17djc3u\"><button type=\"button\" class=\"pc-btn svelte-17djc3u\">Fit to contents</button> <button type=\"button\" class=\"pc-btn pc-danger svelte-17djc3u\">Delete comment</button></div> <small class=\"svelte-17djc3u\">Deleting this comment keeps its contents.</small></section>");
+function qo(e, t) {
+	Ve(t, !0);
+	let n = wi(t, "readOnly", 3, !1), r = /* @__PURE__ */ F(() => n() || t.comment.readOnly), i = (e) => e.stopPropagation();
 	function a(e) {
-		U(r) || t.onPatch(e);
+		W(r) || t.onPatch(e);
 	}
 	function o(e) {
-		U(r) || t.onCommand(e);
+		W(r) || t.onCommand(e);
 	}
-	var s = zo(), c = z(L(s), 2), l = (e) => {
-		q(e, Ro());
+	var s = Ko(), c = V(z(s), 2), l = (e) => {
+		J(e, Go());
 	};
-	Y(c, (e) => {
-		U(r) && e(l);
+	X(c, (e) => {
+		W(r) && e(l);
 	});
-	var u = z(c, 2), d = z(L(u), 2), f = z(L(d));
-	Z(f), M(d);
-	var p = z(d, 2), m = z(L(p));
-	at(m), M(p);
-	var h = z(p, 2), g = z(L(h));
-	Z(g), M(h);
-	var _ = z(h, 2), v = L(_);
-	Z(v), Me(), M(_), Me(2), M(u);
-	var y = z(u, 2), b = L(y), x = z(b, 2);
-	M(y), Me(2), M(s), B(() => {
-		u.disabled = U(r), hi(f, t.comment.title), f.disabled = U(r), hi(m, t.comment.content), m.disabled = U(r), hi(g, t.comment.color), g.disabled = U(r), gi(v, t.comment.moveContents), v.disabled = U(r), b.disabled = U(r), x.disabled = U(r);
-	}), W("keydown", f, i, !0), G("change", f, (e) => a({ title: e.currentTarget.value })), W("keydown", m, i, !0), G("change", m, (e) => a({ content: e.currentTarget.value })), G("change", g, (e) => a({ color: e.currentTarget.value })), G("change", v, (e) => a({ moveContents: e.currentTarget.checked })), G("click", b, () => o("fit")), G("click", x, () => o("delete")), q(e, s), We();
+	var u = V(c, 2), d = V(z(u), 2), f = V(z(d));
+	Q(f), P(d);
+	var p = V(d, 2), m = V(z(p));
+	rt(m), P(p);
+	var h = V(p, 2), g = V(z(h));
+	Q(g), P(h);
+	var _ = V(h, 2), v = z(_);
+	Q(v), Ae(), P(_), Ae(2), P(u);
+	var y = V(u, 2), b = z(y), x = V(b, 2);
+	P(y), Ae(2), P(s), H(() => {
+		u.disabled = W(r), mi(f, t.comment.title), f.disabled = W(r), mi(m, t.comment.content), m.disabled = W(r), mi(g, t.comment.color), g.disabled = W(r), hi(v, t.comment.moveContents), v.disabled = W(r), b.disabled = W(r), x.disabled = W(r);
+	}), G("keydown", f, i, !0), K("change", f, (e) => a({ title: e.currentTarget.value })), G("keydown", m, i, !0), K("change", m, (e) => a({ content: e.currentTarget.value })), K("change", g, (e) => a({ color: e.currentTarget.value })), K("change", v, (e) => a({ moveContents: e.currentTarget.checked })), K("click", b, () => o("fit")), K("click", x, () => o("delete")), J(e, s), He();
 }
-br(["change", "click"]);
+yr(["change", "click"]);
 //#endregion
 //#region ui/OutputPreview.svelte
-var Vo = /* @__PURE__ */ K("<option class=\"svelte-ee2ehy\"> </option>"), Ho = /* @__PURE__ */ K("<label class=\"pc-preview-choice svelte-ee2ehy\"><span class=\"pc-preview-sr-only svelte-ee2ehy\">Preview output</span><select aria-label=\"Preview output\" class=\"svelte-ee2ehy\"><option disabled=\"\" class=\"svelte-ee2ehy\">Choose an output</option><!></select></label>"), Uo = /* @__PURE__ */ K("<button type=\"button\" class=\"svelte-ee2ehy\">Collapse preview</button>"), Wo = /* @__PURE__ */ K("<button type=\"button\" role=\"tab\" class=\"svelte-ee2ehy\"> </button>"), Go = /* @__PURE__ */ K("<div class=\"pc-preview-tabs svelte-ee2ehy\" role=\"tablist\" aria-label=\"Recorded artifacts\"></div>"), Ko = /* @__PURE__ */ K("<p class=\"pc-preview-note svelte-ee2ehy\"> </p>"), qo = /* @__PURE__ */ K("<pre class=\"svelte-ee2ehy\"> </pre>"), Jo = /* @__PURE__ */ K("<small class=\"pc-preview-note svelte-ee2ehy\"> </small>"), Yo = /* @__PURE__ */ K("<div role=\"tabpanel\" tabindex=\"0\" class=\"svelte-ee2ehy\"><article class=\"svelte-ee2ehy\"><div class=\"pc-preview-section-heading svelte-ee2ehy\"><span class=\"svelte-ee2ehy\"> </span><small class=\"svelte-ee2ehy\"> </small></div> <!> <!></article></div>"), Xo = /* @__PURE__ */ K("<p class=\"pc-preview-empty svelte-ee2ehy\"> </p>"), Zo = /* @__PURE__ */ K("<p class=\"pc-preview-error svelte-ee2ehy\"> </p>"), Qo = /* @__PURE__ */ K("<small class=\"pc-preview-note svelte-ee2ehy\">Apply rechecks the source and connection. Recorded preview text may be truncated.</small>"), $o = /* @__PURE__ */ K("<button type=\"button\" data-run-here=\"\" title=\"Runs the selected output's dependencies. Results are diagnostic previews.\" class=\"svelte-ee2ehy\"> </button>"), es = /* @__PURE__ */ K("<button type=\"button\" data-preview-apply=\"\" class=\"svelte-ee2ehy\">Apply reviewed candidate</button><button type=\"button\" class=\"svelte-ee2ehy\">Reject candidate</button>", 1), ts = /* @__PURE__ */ K("<header class=\"svelte-ee2ehy\"><h3 class=\"svelte-ee2ehy\"> </h3> <!> <div class=\"pc-preview-tools svelte-ee2ehy\"><button type=\"button\" class=\"svelte-ee2ehy\">Follow selection</button><button type=\"button\" class=\"svelte-ee2ehy\"> </button><!></div></header> <!> <div class=\"pc-preview-sections svelte-ee2ehy\"><!> <!> <!> <!> <!> <!> <!></div> <footer class=\"svelte-ee2ehy\"><span class=\"pc-preview-status svelte-ee2ehy\"> </span> <span class=\"svelte-ee2ehy\"> </span> <!> <!></footer>", 1), ns = /* @__PURE__ */ K("<p class=\"pc-preview-empty svelte-ee2ehy\">Select a node output to inspect its recorded result.</p>"), rs = /* @__PURE__ */ K("<section class=\"pc-output-preview svelte-ee2ehy\" aria-label=\"Output preview\"><!></section>");
-function is(e, t) {
-	let n = Mr();
-	Ue(t, !0);
-	let r = wi(t, "actions", 19, () => ({})), i = /* @__PURE__ */ N(() => JSON.stringify([t.view?.sourceKey, t.view?.selectedKey])), a = /* @__PURE__ */ F(en({
+var Jo = /* @__PURE__ */ q("<option class=\"svelte-ee2ehy\"> </option>"), Yo = /* @__PURE__ */ q("<label class=\"pc-preview-choice svelte-ee2ehy\"><span class=\"pc-preview-sr-only svelte-ee2ehy\">Preview output</span><select aria-label=\"Preview output\" class=\"svelte-ee2ehy\"><option disabled=\"\" class=\"svelte-ee2ehy\">Choose an output</option><!></select></label>"), Xo = /* @__PURE__ */ q("<button type=\"button\" class=\"svelte-ee2ehy\">Collapse preview</button>"), Zo = /* @__PURE__ */ q("<button type=\"button\" role=\"tab\" class=\"svelte-ee2ehy\"> </button>"), Qo = /* @__PURE__ */ q("<div class=\"pc-preview-tabs svelte-ee2ehy\" role=\"tablist\" aria-label=\"Recorded artifacts\"></div>"), $o = /* @__PURE__ */ q("<p class=\"pc-preview-note svelte-ee2ehy\"> </p>"), es = /* @__PURE__ */ q("<pre class=\"svelte-ee2ehy\"> </pre>"), ts = /* @__PURE__ */ q("<small class=\"pc-preview-note svelte-ee2ehy\"> </small>"), ns = /* @__PURE__ */ q("<div role=\"tabpanel\" tabindex=\"0\" class=\"svelte-ee2ehy\"><article class=\"svelte-ee2ehy\"><div class=\"pc-preview-section-heading svelte-ee2ehy\"><span class=\"svelte-ee2ehy\"> </span><small class=\"svelte-ee2ehy\"> </small></div> <!> <!></article></div>"), rs = /* @__PURE__ */ q("<p class=\"pc-preview-empty svelte-ee2ehy\"> </p>"), is = /* @__PURE__ */ q("<section aria-label=\"Accepted consequences\" class=\"pc-preview-settlement svelte-ee2ehy\"><strong class=\"svelte-ee2ehy\"> </strong> <!></section>"), as = /* @__PURE__ */ q("<p class=\"pc-preview-error svelte-ee2ehy\"> </p>"), os = /* @__PURE__ */ q("<button type=\"button\" data-run-here=\"\" title=\"Runs the selected output's dependencies. Results are diagnostic previews.\" class=\"svelte-ee2ehy\"> </button>"), ss = /* @__PURE__ */ q("<button type=\"button\" data-preview-apply=\"\" class=\"svelte-ee2ehy\"> </button><button type=\"button\" class=\"svelte-ee2ehy\"> </button>", 1), cs = /* @__PURE__ */ q("<header class=\"svelte-ee2ehy\"><h3 class=\"svelte-ee2ehy\"> </h3> <!> <div class=\"pc-preview-tools svelte-ee2ehy\"><button type=\"button\" class=\"svelte-ee2ehy\">Follow selection</button><button type=\"button\" class=\"svelte-ee2ehy\"> </button><!></div></header> <!> <div class=\"pc-preview-sections svelte-ee2ehy\"><!> <!> <!> <!> <!> <!> <!> <!></div> <footer class=\"svelte-ee2ehy\"><span class=\"pc-preview-status svelte-ee2ehy\"> </span> <span class=\"svelte-ee2ehy\"> </span> <!> <!></footer>", 1), ls = /* @__PURE__ */ q("<p class=\"pc-preview-empty svelte-ee2ehy\">Select a node output to inspect its recorded result.</p>"), us = /* @__PURE__ */ q("<section class=\"pc-output-preview svelte-ee2ehy\" aria-label=\"Output preview\"><!></section>");
+function ds(e, t) {
+	let n = jr();
+	Ve(t, !0);
+	let r = wi(t, "actions", 19, () => ({})), i = /* @__PURE__ */ F(() => JSON.stringify([t.view?.sourceKey, t.view?.selectedKey])), a = /* @__PURE__ */ L(Qt({
 		scope: "",
 		id: null
-	})), o = /* @__PURE__ */ N(() => (U(a).scope === U(i) ? t.view?.sections.find((e) => e.id === U(a).id) : null) ?? t.view?.sections[0] ?? null);
-	xn(() => {
-		let e = U(a).scope === U(i) && t.view?.sections.some((e) => e.id === U(a).id) ? U(a).id : t.view?.sections[0]?.id ?? null;
-		(U(a).scope !== U(i) || U(a).id !== e) && I(a, {
-			scope: U(i),
+	})), o = /* @__PURE__ */ F(() => (W(a).scope === W(i) ? t.view?.sections.find((e) => e.id === W(a).id) : null) ?? t.view?.sections[0] ?? null);
+	yn(() => {
+		let e = W(a).scope === W(i) && t.view?.sections.some((e) => e.id === W(a).id) ? W(a).id : t.view?.sections[0]?.id ?? null;
+		(W(a).scope !== W(i) || W(a).id !== e) && R(a, {
+			scope: W(i),
 			id: e
 		}, !0);
 	});
@@ -4528,12 +4724,12 @@ function is(e, t) {
 		].includes(e.key)) return;
 		e.preventDefault();
 		let o = e.key === "Home" ? 0 : e.key === "End" ? r.length - 1 : (n + (e.key === "ArrowRight" ? 1 : -1) + r.length) % r.length;
-		I(a, {
-			scope: U(i),
+		R(a, {
+			scope: W(i),
 			id: r[o].id
 		}, !0), e.currentTarget.parentElement?.querySelectorAll("[role=\"tab\"]")[o]?.focus();
 	}
-	let l = /* @__PURE__ */ N(() => t.view?.choices.find((e) => e.key === t.view?.selectedKey) ?? null), u = (e) => ({
+	let l = /* @__PURE__ */ F(() => t.view?.choices.find((e) => e.key === t.view?.selectedKey) ?? null), u = (e) => ({
 		"not-run": "Not run",
 		current: "Current",
 		stale: "Stale",
@@ -4558,7 +4754,7 @@ function is(e, t) {
 	} : {
 		...e,
 		instancePath: [...e.instancePath]
-	}, p = /* @__PURE__ */ N(() => !!(t.view && U(l) && t.view.status !== "removed" && !t.view.busy && t.view.runHere?.enabled && r().runHere)), m = /* @__PURE__ */ N(() => !!(t.view && U(l) && t.view.review?.mode === "root" && t.view.review.selectedRootTerminal && "kind" in U(l).target && U(l).target.address.instancePath.length === 0 && d(U(l).target) === d(t.view.review.selector.terminal))), h = /* @__PURE__ */ N(() => !!(t.view && t.view.status === "current" && !t.view.busy && U(m) && t.view.review?.fresh && t.view.review.canApply && r().apply)), g = /* @__PURE__ */ N(() => !!(t.view && !t.view.busy && U(m) && r().reject));
+	}, p = /* @__PURE__ */ F(() => !!(t.view && W(l) && t.view.status !== "removed" && !t.view.busy && t.view.runHere?.enabled && r().runHere)), m = /* @__PURE__ */ F(() => !!(t.view && W(l) && t.view.review?.mode === "root" && t.view.review.selectedRootTerminal && "kind" in W(l).target && W(l).target.address.instancePath.length === 0 && d(W(l).target) === d(t.view.review.selector.terminal))), h = /* @__PURE__ */ F(() => !!(t.view && t.view.status === "current" && !t.view.busy && W(m) && t.view.review?.fresh && t.view.review.canApply && r().apply)), g = /* @__PURE__ */ F(() => !!(t.view && !t.view.busy && W(m) && r().reject));
 	function _(e) {
 		let n = t.view?.choices.find((t) => t.key === e);
 		t.view && n && r().select?.(t.view.sourceKey, n.key, f(n.target));
@@ -4577,277 +4773,290 @@ function is(e, t) {
 			terminal: t
 		};
 	}
-	var y = rs(), b = L(y), x = (e) => {
-		var d = ts(), m = R(d), y = L(m), b = L(y, !0);
-		M(y);
-		var x = z(y, 2), S = (e) => {
-			var n = Ho(), i = z(L(n)), a = L(i);
-			a.value = a.__value = "", X(z(a), 17, () => t.view.choices, (e) => e.key, (e, t) => {
-				var n = Vo(), r = L(n);
-				M(n);
+	var y = us(), b = z(y), x = (e) => {
+		var d = cs(), m = B(d), y = z(m), b = z(y, !0);
+		P(y);
+		var x = V(y, 2), S = (e) => {
+			var n = Yo(), i = V(z(n)), a = z(i);
+			a.value = a.__value = "", Z(V(a), 17, () => t.view.choices, (e) => e.key, (e, t) => {
+				var n = Jo(), r = z(n);
+				P(n);
 				var i = {};
-				B(() => {
-					J(r, `${U(t).label ?? ""} · ${U(t).kind ?? ""}`), i !== (i = U(t).key) && (n.value = (n.__value = U(t).key) ?? "");
-				}), q(e, n);
-			}), M(i);
+				H(() => {
+					Y(r, `${W(t).label ?? ""} · ${W(t).kind ?? ""}`), i !== (i = W(t).key) && (n.value = (n.__value = W(t).key) ?? "");
+				}), J(e, n);
+			}), P(i);
 			var o;
-			ci(i), M(n), B(() => {
-				i.disabled = !r().select, o !== (o = t.view.selectedKey ?? "") && (i.value = (i.__value = t.view.selectedKey ?? "") ?? "", si(i, t.view.selectedKey ?? ""));
-			}), G("change", i, (e) => _(e.currentTarget.value)), q(e, n);
+			si(i), P(n), H(() => {
+				i.disabled = !r().select, o !== (o = t.view.selectedKey ?? "") && (i.value = (i.__value = t.view.selectedKey ?? "") ?? "", oi(i, t.view.selectedKey ?? ""));
+			}), K("change", i, (e) => _(e.currentTarget.value)), J(e, n);
 		};
-		Y(x, (e) => {
+		X(x, (e) => {
 			t.view.choices.length && e(S);
 		});
-		var C = z(x, 2), w = L(C), T = z(w), E = L(T, !0);
-		M(T);
-		var D = z(T), O = (e) => {
-			var n = Uo();
-			G("click", n, function(...e) {
+		var C = V(x, 2), w = z(C), T = V(w), E = z(T, !0);
+		P(T);
+		var D = V(T), O = (e) => {
+			var n = Xo();
+			K("click", n, function(...e) {
 				t.collapse?.apply(this, e);
-			}), q(e, n);
+			}), J(e, n);
 		};
-		Y(D, (e) => {
+		X(D, (e) => {
 			t.collapse && e(O);
-		}), M(C), M(m);
-		var ee = z(m, 2), k = (e) => {
-			var r = Go();
-			X(r, 23, () => t.view.sections, (e) => e.id, (e, t, r) => {
-				var l = Wo(), u = L(l, !0);
-				M(l), B((e) => {
-					Q(l, "id", e), Q(l, "aria-selected", U(o)?.id === U(t).id), Q(l, "aria-controls", n + "-panel"), Q(l, "tabindex", U(o)?.id === U(t).id ? 0 : -1), J(u, U(t).label);
-				}, [() => s(U(t).id)]), G("click", l, () => {
-					I(a, {
-						scope: U(i),
-						id: U(t).id
+		}), P(C), P(m);
+		var k = V(m, 2), A = (e) => {
+			var r = Qo();
+			Z(r, 23, () => t.view.sections, (e) => e.id, (e, t, r) => {
+				var l = Zo(), u = z(l, !0);
+				P(l), H((e) => {
+					$(l, "id", e), $(l, "aria-selected", W(o)?.id === W(t).id), $(l, "aria-controls", n + "-panel"), $(l, "tabindex", W(o)?.id === W(t).id ? 0 : -1), Y(u, W(t).label);
+				}, [() => s(W(t).id)]), K("click", l, () => {
+					R(a, {
+						scope: W(i),
+						id: W(t).id
 					}, !0);
-				}), W("keydown", l, (e) => c(e, U(r)), !0), q(e, l);
-			}), M(r), q(e, r);
+				}), G("keydown", l, (e) => c(e, W(r)), !0), J(e, l);
+			}), P(r), J(e, r);
 		};
-		Y(ee, (e) => {
-			t.view.sections.length && e(k);
+		X(k, (e) => {
+			t.view.sections.length && e(A);
 		});
-		var te = z(ee, 2), ne = L(te), re = (e) => {
-			let t = /* @__PURE__ */ N(() => U(o));
-			var r = Yo(), i = L(r), a = L(i), c = L(a), l = L(c, !0);
-			M(c);
-			var u = z(c), d = L(u, !0);
-			M(u), M(a);
-			var f = z(a, 2), p = (e) => {
-				var n = Ko(), r = L(n, !0);
-				M(n), B(() => J(r, U(t).text)), q(e, n);
+		var ee = V(k, 2), te = z(ee), ne = (e) => {
+			let t = /* @__PURE__ */ F(() => W(o));
+			var r = ns(), i = z(r), a = z(i), c = z(a), l = z(c, !0);
+			P(c);
+			var u = V(c), d = z(u, !0);
+			P(u), P(a);
+			var f = V(a, 2), p = (e) => {
+				var n = $o(), r = z(n, !0);
+				P(n), H(() => Y(r, W(t).text)), J(e, n);
 			}, m = (e) => {
-				var n = qo(), r = L(n, !0);
-				M(n), B(() => J(r, U(t).text)), q(e, n);
+				var n = es(), r = z(n, !0);
+				P(n), H(() => Y(r, W(t).text)), J(e, n);
 			};
-			Y(f, (e) => {
-				U(t).format === "omitted" ? e(p) : e(m, -1);
+			X(f, (e) => {
+				W(t).format === "omitted" ? e(p) : e(m, -1);
 			});
-			var h = z(f, 2), g = (e) => {
-				var n = Jo(), r = L(n);
-				M(n), B(() => J(r, `Truncated diagnostic${U(t).format === "json-prefix-text" ? " · JSON prefix shown as text" : ""}`)), q(e, n);
+			var h = V(f, 2), g = (e) => {
+				var n = ts(), r = z(n);
+				P(n), H(() => Y(r, `Truncated diagnostic${W(t).format === "json-prefix-text" ? " · JSON prefix shown as text" : ""}`)), J(e, n);
 			};
-			Y(h, (e) => {
-				U(t).truncated && e(g);
-			}), M(i), M(r), B((e) => {
-				Q(r, "id", n + "-panel"), Q(r, "aria-labelledby", e), Q(i, "data-artifact-kind", U(t).kind), J(l, U(t).label), J(d, U(t).kind);
-			}, [() => s(U(t).id)]), W("keydown", r, (e) => e.stopPropagation(), !0), W("paste", r, (e) => e.stopPropagation(), !0), q(e, r);
-		}, ie = (e) => {
-			var n = Xo(), r = L(n, !0);
-			M(n), B(() => J(r, t.view.status === "not-run" ? "Run this workflow or use Run to here to inspect an output." : "No recorded artifact is available for this output.")), q(e, n);
+			X(h, (e) => {
+				W(t).truncated && e(g);
+			}), P(i), P(r), H((e) => {
+				$(r, "id", n + "-panel"), $(r, "aria-labelledby", e), $(i, "data-artifact-kind", W(t).kind), Y(l, W(t).label), Y(d, W(t).kind);
+			}, [() => s(W(t).id)]), G("keydown", r, (e) => e.stopPropagation(), !0), G("paste", r, (e) => e.stopPropagation(), !0), J(e, r);
+		}, j = (e) => {
+			var n = rs(), r = z(n, !0);
+			P(n), H(() => Y(r, t.view.status === "not-run" ? "Run this workflow or use Run to here to inspect an output." : "No recorded artifact is available for this output.")), J(e, n);
 		};
-		Y(ne, (e) => {
-			U(o) ? e(re) : e(ie, -1);
+		X(te, (e) => {
+			W(o) ? e(ne) : e(j, -1);
 		});
-		var ae = z(ne, 2), oe = (e) => {
-			var n = Ko(), r = L(n, !0);
-			M(n), B(() => J(r, t.view.statusDetail)), q(e, n);
+		var re = V(te, 2), ie = (e) => {
+			var n = is(), r = z(n), i = z(r);
+			P(r), Z(V(r, 2), 17, () => t.view.settlement.receipts, (e) => e.intentId + ":" + e.targetId, (e, t) => {
+				var n = $o(), r = z(n);
+				P(n), H(() => Y(r, `${W(t).targetId ?? ""} · ${W(t).status ?? ""}${W(t).error ? " · " + W(t).error.message : ""}`)), J(e, n);
+			}), P(n), H(() => Y(i, `Accepted consequences · ${t.view.settlement.status === "settled" ? "Saved" : t.view.settlement.status === "partial" ? "Some targets failed" : "Save confirmation needed"}`)), J(e, n);
 		};
-		Y(ae, (e) => {
+		X(re, (e) => {
+			t.view.settlement && e(ie);
+		});
+		var ae = V(re, 2), oe = (e) => {
+			var n = $o(), r = z(n, !0);
+			P(n), H(() => Y(r, t.view.statusDetail)), J(e, n);
+		};
+		X(ae, (e) => {
 			t.view.statusDetail && e(oe);
 		});
-		var se = z(ae, 2);
-		X(se, 17, () => t.view.sections.filter((e) => e.id !== U(o)?.id && (e.format === "omitted" || e.truncated)), (e) => e.id, (e, t) => {
-			var n = Ko(), r = L(n);
-			M(n), B(() => J(r, `${U(t).label ?? ""}: ${(U(t).format === "omitted" ? U(t).text : "Truncated diagnostic" + (U(t).format === "json-prefix-text" ? " · JSON prefix shown as text" : "")) ?? ""}`)), q(e, n);
+		var se = V(ae, 2);
+		Z(se, 17, () => t.view.sections.filter((e) => e.id !== W(o)?.id && (e.format === "omitted" || e.truncated)), (e) => e.id, (e, t) => {
+			var n = $o(), r = z(n);
+			P(n), H(() => Y(r, `${W(t).label ?? ""}: ${(W(t).format === "omitted" ? W(t).text : "Truncated diagnostic" + (W(t).format === "json-prefix-text" ? " · JSON prefix shown as text" : "")) ?? ""}`)), J(e, n);
 		});
-		var ce = z(se, 2), le = (e) => {
-			var n = Ko(), r = L(n, !0);
-			M(n), B(() => J(r, t.view.runHere.issue)), q(e, n);
+		var ce = V(se, 2), le = (e) => {
+			var n = $o(), r = z(n, !0);
+			P(n), H(() => Y(r, t.view.runHere.issue)), J(e, n);
 		};
-		Y(ce, (e) => {
+		X(ce, (e) => {
 			t.view.runHere?.issue && e(le);
 		});
-		var ue = z(ce, 2);
-		X(ue, 17, () => t.view.issues, Vr, (e, t) => {
-			var n = Zo(), r = L(n, !0);
-			M(n), B(() => J(r, U(t))), q(e, n);
+		var ue = V(ce, 2);
+		Z(ue, 17, () => t.view.issues, Br, (e, t) => {
+			var n = as(), r = z(n, !0);
+			P(n), H(() => Y(r, W(t))), J(e, n);
 		});
-		var de = z(ue, 2), fe = (e) => {
-			var n = Zo(), r = L(n, !0);
-			M(n), B(() => J(r, t.view.review.issue)), q(e, n);
+		var de = V(ue, 2), fe = (e) => {
+			var n = as(), r = z(n, !0);
+			P(n), H(() => Y(r, t.view.review.issue)), J(e, n);
 		};
-		Y(de, (e) => {
+		X(de, (e) => {
 			t.view.review?.issue && e(fe);
 		});
-		var pe = z(de, 2), me = (e) => {
-			q(e, Qo());
+		var pe = V(de, 2), me = (e) => {
+			var n = ts(), r = z(n, !0);
+			P(n), H(() => Y(r, t.view.review.persistOnly ? "Retry keeps the accepted reply and retries failed targets. No model request is made." : "Apply rechecks the source, connection and final evidence. Recorded preview text may be truncated.")), J(e, n);
 		};
-		Y(pe, (e) => {
+		X(pe, (e) => {
 			t.view.review && e(me);
-		}), M(te);
-		var he = z(te, 2), ge = L(he), _e = L(ge, !0);
-		M(ge);
-		var ve = z(ge, 2), ye = L(ve, !0);
-		M(ve);
-		var be = z(ve, 2), xe = (e) => {
-			var n = $o(), i = L(n);
-			M(n), B(() => {
-				n.disabled = !U(p), J(i, `Run to here · maximum ${t.view.runHere.callBound ?? ""} ${t.view.runHere.callBound === 1 ? "request" : "requests"}`);
-			}), G("click", n, () => {
-				t.view && U(l) && U(p) && r().runHere?.(t.view.sourceKey, f(U(l).target));
-			}), q(e, n);
+		}), P(ee);
+		var he = V(ee, 2), ge = z(he), _e = z(ge, !0);
+		P(ge);
+		var ve = V(ge, 2), ye = z(ve, !0);
+		P(ve);
+		var be = V(ve, 2), xe = (e) => {
+			var n = os(), i = z(n);
+			P(n), H(() => {
+				n.disabled = !W(p), Y(i, `Run to here · maximum ${t.view.runHere.callBound ?? ""} ${t.view.runHere.callBound === 1 ? "request" : "requests"}`);
+			}), K("click", n, () => {
+				t.view && W(l) && W(p) && r().runHere?.(t.view.sourceKey, f(W(l).target));
+			}), J(e, n);
 		};
-		Y(be, (e) => {
+		X(be, (e) => {
 			t.view.runHere && e(xe);
 		});
-		var Se = z(be, 2), Ce = (e) => {
-			var n = es(), i = R(n), a = z(i);
-			B(() => {
-				i.disabled = !U(h), a.disabled = !U(g);
-			}), G("click", i, () => {
-				t.view?.review && U(h) && r().apply?.(v(t.view.review.selector));
-			}), G("click", a, () => {
-				t.view?.review && U(g) && r().reject?.(v(t.view.review.selector));
-			}), q(e, n);
+		var Se = V(be, 2), Ce = (e) => {
+			var n = ss(), i = B(n), a = z(i, !0);
+			P(i);
+			var o = V(i), s = z(o, !0);
+			P(o), H(() => {
+				i.disabled = !W(h), Y(a, t.view.review.persistOnly ? "Retry failed persistence" : "Apply reviewed candidate"), o.disabled = !W(g), Y(s, t.view.review.persistOnly ? "Close persistence review" : "Reject candidate");
+			}), K("click", i, () => {
+				t.view?.review && W(h) && r().apply?.(v(t.view.review.selector));
+			}), K("click", o, () => {
+				t.view?.review && W(g) && r().reject?.(v(t.view.review.selector));
+			}), J(e, n);
 		};
-		Y(Se, (e) => {
+		X(Se, (e) => {
 			t.view.review && e(Ce);
-		}), M(he), B((e) => {
-			J(b, U(l)?.label ?? t.view.title), Q(w, "aria-pressed", t.view.followSelection), w.disabled = !r().follow, Q(T, "aria-pressed", t.view.pinned), T.disabled = t.view.pinned ? !r().follow : !U(l) || !r().pin, J(E, t.view.pinned ? "Unpin preview" : "Pin preview"), Q(ge, "data-status", t.view.status), J(_e, e), J(ye, t.view.pinned ? "Pinned preview" : t.view.followSelection ? "Following selection" : "Selection not followed");
-		}, [() => u(t.view.status)]), G("click", w, () => r().follow?.()), G("click", T, () => {
-			t.view?.pinned ? r().follow?.() : t.view && U(l) && r().pin?.(t.view.sourceKey, f(U(l).target));
-		}), q(e, d);
+		}), P(he), H((e) => {
+			Y(b, W(l)?.label ?? t.view.title), $(w, "aria-pressed", t.view.followSelection), w.disabled = !r().follow, $(T, "aria-pressed", t.view.pinned), T.disabled = t.view.pinned ? !r().follow : !W(l) || !r().pin, Y(E, t.view.pinned ? "Unpin preview" : "Pin preview"), $(ge, "data-status", t.view.status), Y(_e, e), Y(ye, t.view.pinned ? "Pinned preview" : t.view.followSelection ? "Following selection" : "Selection not followed");
+		}, [() => u(t.view.status)]), K("click", w, () => r().follow?.()), K("click", T, () => {
+			t.view?.pinned ? r().follow?.() : t.view && W(l) && r().pin?.(t.view.sourceKey, f(W(l).target));
+		}), J(e, d);
 	}, S = (e) => {
-		q(e, ns());
+		J(e, ls());
 	};
-	Y(b, (e) => {
+	X(b, (e) => {
 		t.view ? e(x) : e(S, -1);
-	}), M(y), q(e, y), We();
+	}), P(y), J(e, y), He();
 }
-br(["change", "click"]);
+yr(["change", "click"]);
 //#endregion
 //#region ui/RunDetails.svelte
-var as = /* @__PURE__ */ K("<p class=\"pc-run-memory svelte-f9s2fm\" role=\"status\"> </p>"), os = /* @__PURE__ */ K("<p class=\"pc-run-error svelte-f9s2fm\"> </p>"), ss = /* @__PURE__ */ K("<p class=\"pc-run-empty svelte-f9s2fm\">No execution plan has been recorded.</p>"), cs = /* @__PURE__ */ K("<span aria-hidden=\"true\" class=\"svelte-f9s2fm\">▱</span>"), ls = /* @__PURE__ */ K("<small class=\"svelte-f9s2fm\"> </small>"), us = /* @__PURE__ */ K("<details class=\"svelte-f9s2fm\"><summary class=\"svelte-f9s2fm\">Reported usage</summary><div class=\"pc-run-usage svelte-f9s2fm\"><small class=\"svelte-f9s2fm\"> </small><small class=\"svelte-f9s2fm\"> </small><small class=\"svelte-f9s2fm\"> </small><small class=\"svelte-f9s2fm\"> </small></div></details>"), ds = /* @__PURE__ */ K("<li class=\"svelte-f9s2fm\"><div class=\"pc-run-row-heading svelte-f9s2fm\"><button type=\"button\" class=\"svelte-f9s2fm\"><!> </button><span class=\"pc-run-status svelte-f9s2fm\"> </span></div> <!> <div class=\"pc-run-row-meta svelte-f9s2fm\"><small class=\"svelte-f9s2fm\"> </small><small class=\"svelte-f9s2fm\"> </small></div> <!> <!></li>"), fs = /* @__PURE__ */ K("<header class=\"svelte-f9s2fm\"><h3 class=\"svelte-f9s2fm\">Run details</h3><span class=\"pc-run-status svelte-f9s2fm\"> </span></header> <div class=\"pc-run-summary svelte-f9s2fm\"><p class=\"svelte-f9s2fm\"> </p><p class=\"svelte-f9s2fm\"> </p><p class=\"svelte-f9s2fm\"> </p></div> <!> <!> <!> <ol class=\"pc-run-rows svelte-f9s2fm\"></ol>", 1), ps = /* @__PURE__ */ K("<p class=\"pc-run-empty svelte-f9s2fm\">Run a workflow to inspect its processing stages.</p>"), ms = /* @__PURE__ */ K("<section class=\"pc-run-details svelte-f9s2fm\" aria-label=\"Run details\"><!></section>");
-function hs(e, t) {
-	Ue(t, !0);
+var fs = /* @__PURE__ */ q("<p class=\"pc-run-memory svelte-f9s2fm\" role=\"status\"> </p>"), ps = /* @__PURE__ */ q("<p class=\"pc-run-error svelte-f9s2fm\"> </p>"), ms = /* @__PURE__ */ q("<p class=\"pc-run-empty svelte-f9s2fm\">No execution plan has been recorded.</p>"), hs = /* @__PURE__ */ q("<span aria-hidden=\"true\" class=\"svelte-f9s2fm\">▱</span>"), gs = /* @__PURE__ */ q("<small class=\"svelte-f9s2fm\"> </small>"), _s = /* @__PURE__ */ q("<details class=\"svelte-f9s2fm\"><summary class=\"svelte-f9s2fm\">Reported usage</summary><div class=\"pc-run-usage svelte-f9s2fm\"><small class=\"svelte-f9s2fm\"> </small><small class=\"svelte-f9s2fm\"> </small><small class=\"svelte-f9s2fm\"> </small><small class=\"svelte-f9s2fm\"> </small></div></details>"), vs = /* @__PURE__ */ q("<li class=\"svelte-f9s2fm\"><div class=\"pc-run-row-heading svelte-f9s2fm\"><button type=\"button\" class=\"svelte-f9s2fm\"><!> </button><span class=\"pc-run-status svelte-f9s2fm\"> </span></div> <!> <div class=\"pc-run-row-meta svelte-f9s2fm\"><small class=\"svelte-f9s2fm\"> </small><small class=\"svelte-f9s2fm\"> </small></div> <!> <!></li>"), ys = /* @__PURE__ */ q("<header class=\"svelte-f9s2fm\"><h3 class=\"svelte-f9s2fm\">Run details</h3><span class=\"pc-run-status svelte-f9s2fm\"> </span></header> <div class=\"pc-run-summary svelte-f9s2fm\"><p class=\"svelte-f9s2fm\"> </p><p class=\"svelte-f9s2fm\"> </p><p class=\"svelte-f9s2fm\"> </p></div> <!> <!> <!> <ol class=\"pc-run-rows svelte-f9s2fm\"></ol>", 1), bs = /* @__PURE__ */ q("<p class=\"pc-run-empty svelte-f9s2fm\">Run a workflow to inspect its processing stages.</p>"), xs = /* @__PURE__ */ q("<section class=\"pc-run-details svelte-f9s2fm\" aria-label=\"Run details\"><!></section>");
+function Ss(e, t) {
+	Ve(t, !0);
 	let n = wi(t, "actions", 19, () => ({})), r = (e) => e === "not-run" ? "Not run" : e === "empty" ? "Ready" : e.charAt(0).toUpperCase() + e.slice(1), i = (e) => e !== null && Number.isFinite(e) && e >= 0 ? (e / 1e3).toFixed(2) + "s" : "Unknown", a = (e) => e != null && Number.isFinite(e) && e >= 0 ? String(e) : "Unknown";
-	var o = ms(), s = L(o), c = (e) => {
-		var o = fs(), s = R(o), c = z(L(s)), l = L(c, !0);
-		M(c), M(s);
-		var u = z(s, 2), d = L(u), f = L(d);
-		M(d);
-		var p = z(d), m = L(p);
-		M(p);
-		var h = z(p), g = L(h);
-		M(h), M(u);
-		var _ = z(u, 2), v = (e) => {
-			var n = as(), r = L(n, !0);
-			M(n), B(() => J(r, t.view.memoryStatus)), q(e, n);
+	var o = xs(), s = z(o), c = (e) => {
+		var o = ys(), s = B(o), c = V(z(s)), l = z(c, !0);
+		P(c), P(s);
+		var u = V(s, 2), d = z(u), f = z(d);
+		P(d);
+		var p = V(d), m = z(p);
+		P(p);
+		var h = V(p), g = z(h);
+		P(h), P(u);
+		var _ = V(u, 2), v = (e) => {
+			var n = fs(), r = z(n, !0);
+			P(n), H(() => Y(r, t.view.memoryStatus)), J(e, n);
 		};
-		Y(_, (e) => {
+		X(_, (e) => {
 			t.view.memoryStatus && e(v);
 		});
-		var y = z(_, 2), b = (e) => {
-			var n = os(), r = L(n, !0);
-			M(n), B(() => J(r, t.view.issue)), q(e, n);
+		var y = V(_, 2), b = (e) => {
+			var n = ps(), r = z(n, !0);
+			P(n), H(() => Y(r, t.view.issue)), J(e, n);
 		};
-		Y(y, (e) => {
+		X(y, (e) => {
 			t.view.issue && e(b);
 		});
-		var x = z(y, 2), S = (e) => {
-			q(e, ss());
+		var x = V(y, 2), S = (e) => {
+			J(e, ms());
 		};
-		Y(x, (e) => {
+		X(x, (e) => {
 			t.view.rows.length || e(S);
 		});
-		var C = z(x, 2);
-		X(C, 21, () => t.view.rows, (e) => e.key, (e, o) => {
-			var s = ds();
+		var C = V(x, 2);
+		Z(C, 21, () => t.view.rows, (e) => e.key, (e, o) => {
+			var s = vs();
 			let c;
-			var l = L(s), u = L(l), d = L(u), f = (e) => {
-				q(e, cs());
+			var l = z(s), u = z(l), d = z(u), f = (e) => {
+				J(e, hs());
 			};
-			Y(d, (e) => {
-				U(o).kind === "instance" && e(f);
+			X(d, (e) => {
+				W(o).kind === "instance" && e(f);
 			});
-			var p = z(d, 1, !0);
-			M(u);
-			var m = z(u), h = L(m, !0);
-			M(m), M(l);
-			var g = z(l, 2), _ = (e) => {
-				var t = ls(), n = L(t, !0);
-				M(t), B((e) => J(n, e), [() => r(U(o).subphase)]), q(e, t);
+			var p = V(d, 1, !0);
+			P(u);
+			var m = V(u), h = z(m, !0);
+			P(m), P(l);
+			var g = V(l, 2), _ = (e) => {
+				var t = gs(), n = z(t, !0);
+				P(t), H((e) => Y(n, e), [() => r(W(o).subphase)]), J(e, t);
 			};
-			Y(g, (e) => {
-				U(o).subphase && e(_);
+			X(g, (e) => {
+				W(o).subphase && e(_);
 			});
-			var v = z(g, 2), y = L(v), b = L(y);
-			M(y);
-			var x = z(y), S = L(x);
-			M(x), M(v);
-			var C = z(v, 2), w = (e) => {
-				var t = os(), n = L(t, !0);
-				M(t), B(() => J(n, U(o).issue)), q(e, t);
+			var v = V(g, 2), y = z(v), b = z(y);
+			P(y);
+			var x = V(y), S = z(x);
+			P(x), P(v);
+			var C = V(v, 2), w = (e) => {
+				var t = ps(), n = z(t, !0);
+				P(t), H(() => Y(n, W(o).issue)), J(e, t);
 			};
-			Y(C, (e) => {
-				U(o).issue && e(w);
+			X(C, (e) => {
+				W(o).issue && e(w);
 			});
-			var T = z(C, 2), E = (e) => {
-				var t = us(), n = z(L(t)), r = L(n), i = L(r);
-				M(r);
-				var s = z(r), c = L(s);
-				M(s);
-				var l = z(s), u = L(l);
-				M(l);
-				var d = z(l), f = L(d);
-				M(d), M(n), M(t), B((e, t, n) => {
-					J(i, `Input tokens: ${e ?? ""}`), J(c, `Output tokens: ${t ?? ""}`), J(u, `Total tokens: ${n ?? ""}`), J(f, `Cost: ${U(o).usage?.cost ?? "Unknown" ?? ""}`);
+			var T = V(C, 2), E = (e) => {
+				var t = _s(), n = V(z(t)), r = z(n), i = z(r);
+				P(r);
+				var s = V(r), c = z(s);
+				P(s);
+				var l = V(s), u = z(l);
+				P(l);
+				var d = V(l), f = z(d);
+				P(d), P(n), P(t), H((e, t, n) => {
+					Y(i, `Input tokens: ${e ?? ""}`), Y(c, `Output tokens: ${t ?? ""}`), Y(u, `Total tokens: ${n ?? ""}`), Y(f, `Cost: ${W(o).usage?.cost ?? "Unknown" ?? ""}`);
 				}, [
-					() => a(U(o).usage?.inputTokens),
-					() => a(U(o).usage?.outputTokens),
-					() => a(U(o).usage?.totalTokens)
-				]), q(e, t);
+					() => a(W(o).usage?.inputTokens),
+					() => a(W(o).usage?.outputTokens),
+					() => a(W(o).usage?.totalTokens)
+				]), J(e, t);
 			};
-			Y(T, (e) => {
-				U(o).kind === "primitive" && e(E);
-			}), M(s), B((e, t, r) => {
-				Q(s, "data-run-row", U(o).key), Q(s, "data-depth", U(o).depth), Q(s, "data-status", U(o).status), c = oi(s, "", c, e), Q(u, "aria-label", "Open " + U(o).title + " in graph"), u.disabled = !n().jump, J(p, U(o).title), Q(m, "data-status", U(o).status), J(h, t), J(b, `Duration: ${r ?? ""}`), J(S, `${U(o).attempts ?? ""} of ${U(o).callBound ?? ""} requests`);
+			X(T, (e) => {
+				W(o).kind === "primitive" && e(E);
+			}), P(s), H((e, t, r) => {
+				$(s, "data-run-row", W(o).key), $(s, "data-depth", W(o).depth), $(s, "data-status", W(o).status), c = ai(s, "", c, e), $(u, "aria-label", "Open " + W(o).title + " in graph"), u.disabled = !n().jump, Y(p, W(o).title), $(m, "data-status", W(o).status), Y(h, t), Y(b, `Duration: ${r ?? ""}`), Y(S, `${W(o).attempts ?? ""} of ${W(o).callBound ?? ""} requests`);
 			}, [
-				() => ({ "margin-left": `${Math.max(0, Math.min(8, U(o).depth)) * 12}px` }),
-				() => r(U(o).status),
-				() => i(U(o).durationMs)
-			]), G("click", u, () => {
+				() => ({ "margin-left": `${Math.max(0, Math.min(8, W(o).depth)) * 12}px` }),
+				() => r(W(o).status),
+				() => i(W(o).durationMs)
+			]), K("click", u, () => {
 				t.view && n().jump?.(t.view.runId, {
-					...U(o).address,
-					instancePath: [...U(o).address.instancePath]
+					...W(o).address,
+					instancePath: [...W(o).address.instancePath]
 				});
-			}), q(e, s);
-		}), M(C), B((e, n) => {
-			Q(c, "data-status", t.view.status), J(l, e), J(f, `${t.view.completedCount ?? ""} of ${t.view.executableCount ?? ""} stages complete`), J(m, `${t.view.actualCalls ?? ""} of ${t.view.callBound ?? ""} requests`), J(g, `Elapsed: ${n ?? ""}`);
-		}, [() => r(t.view.status), () => i(t.view.elapsedMs)]), q(e, o);
+			}), J(e, s);
+		}), P(C), H((e, n) => {
+			$(c, "data-status", t.view.status), Y(l, e), Y(f, `${t.view.completedCount ?? ""} of ${t.view.executableCount ?? ""} stages complete`), Y(m, `${t.view.actualCalls ?? ""} of ${t.view.callBound ?? ""} requests`), Y(g, `Elapsed: ${n ?? ""}`);
+		}, [() => r(t.view.status), () => i(t.view.elapsedMs)]), J(e, o);
 	}, l = (e) => {
-		q(e, ps());
+		J(e, bs());
 	};
-	Y(s, (e) => {
+	X(s, (e) => {
 		t.view ? e(c) : e(l, -1);
-	}), M(o), q(e, o), We();
+	}), P(o), J(e, o), He();
 }
-br(["click"]);
+yr(["click"]);
 //#endregion
 //#region ui/RunMeter.svelte
-var gs = /* @__PURE__ */ K("<span class=\"pc-run-meter-elapsed svelte-1tkcp3\" data-run-elapsed=\"\"> </span>"), _s = /* @__PURE__ */ K("<span class=\"pc-run-pixel svelte-1tkcp3\" data-run-pixel=\"\"></span>"), vs = /* @__PURE__ */ K("<button class=\"pc-run-meter svelte-1tkcp3\"><span class=\"pc-run-meter-label svelte-1tkcp3\"> </span> <!> <span class=\"pc-run-meter-pixels svelte-1tkcp3\" aria-hidden=\"true\"></span></button>");
-function ys(e, t) {
-	Ue(t, !0);
+var Cs = /* @__PURE__ */ q("<span class=\"pc-run-meter-elapsed svelte-1tkcp3\" data-run-elapsed=\"\"> </span>"), ws = /* @__PURE__ */ q("<span class=\"pc-run-pixel svelte-1tkcp3\" data-run-pixel=\"\"></span>"), Ts = /* @__PURE__ */ q("<button class=\"pc-run-meter svelte-1tkcp3\"><span class=\"pc-run-meter-label svelte-1tkcp3\"> </span> <!> <span class=\"pc-run-meter-pixels svelte-1tkcp3\" aria-hidden=\"true\"></span></button>");
+function Es(e, t) {
+	Ve(t, !0);
 	let n = (e) => e === "empty" ? "Ready" : e === "not-run" ? "Not run" : e.charAt(0).toUpperCase() + e.slice(1), r = [
 		"cancelling",
 		"running",
@@ -4859,7 +5068,7 @@ function ys(e, t) {
 		"queued",
 		"waiting",
 		"not-run"
-	], i = /* @__PURE__ */ N(() => {
+	], i = /* @__PURE__ */ F(() => {
 		if (!t.view) return [];
 		let e = t.view.rows.slice(0, t.view.rows.length > 36 ? 35 : 36).map((e) => ({
 			key: "row:" + e.id,
@@ -4875,38 +5084,38 @@ function ys(e, t) {
 			});
 		}
 		return e;
-	}), a = /* @__PURE__ */ N(() => t.view ? "Open run details. " + n(t.view.status) + ". " + t.view.completedCount + " of " + t.view.executableCount + " stages complete. " + t.view.actualCalls + " of " + t.view.callBound + " requests." : "Open run details");
-	var o = jr(), s = R(o), c = (e) => {
-		var r = vs(), o = L(r), s = L(o, !0);
-		M(o);
-		var c = z(o, 2), l = (e) => {
-			var n = gs(), r = L(n);
-			M(n), B((e) => J(r, `${e ?? ""}s`), [() => (t.view.elapsedMs / 1e3).toFixed(1)]), q(e, n);
-		}, u = /* @__PURE__ */ N(() => t.view.elapsedMs !== null && Number.isFinite(t.view.elapsedMs) && t.view.elapsedMs >= 0);
-		Y(c, (e) => {
-			U(u) && e(l);
+	}), a = /* @__PURE__ */ F(() => t.view ? "Open run details. " + n(t.view.status) + ". " + t.view.completedCount + " of " + t.view.executableCount + " stages complete. " + t.view.actualCalls + " of " + t.view.callBound + " requests." : "Open run details");
+	var o = Ar(), s = B(o), c = (e) => {
+		var r = Ts(), o = z(r), s = z(o, !0);
+		P(o);
+		var c = V(o, 2), l = (e) => {
+			var n = Cs(), r = z(n);
+			P(n), H((e) => Y(r, `${e ?? ""}s`), [() => (t.view.elapsedMs / 1e3).toFixed(1)]), J(e, n);
+		}, u = /* @__PURE__ */ F(() => t.view.elapsedMs !== null && Number.isFinite(t.view.elapsedMs) && t.view.elapsedMs >= 0);
+		X(c, (e) => {
+			W(u) && e(l);
 		});
-		var d = z(c, 2);
-		X(d, 21, () => U(i), (e) => e.key, (e, t) => {
-			var n = _s();
-			B(() => {
-				Q(n, "data-status", U(t).status), Q(n, "title", U(t).title);
-			}), q(e, n);
-		}), M(d), M(r), B((e) => {
-			Q(r, "aria-label", U(a)), Q(r, "title", U(a)), r.disabled = !t.open, J(s, e);
-		}, [() => n(t.view.status)]), G("click", r, () => t.open?.()), q(e, r);
+		var d = V(c, 2);
+		Z(d, 21, () => W(i), (e) => e.key, (e, t) => {
+			var n = ws();
+			H(() => {
+				$(n, "data-status", W(t).status), $(n, "title", W(t).title);
+			}), J(e, n);
+		}), P(d), P(r), H((e) => {
+			$(r, "aria-label", W(a)), $(r, "title", W(a)), r.disabled = !t.open, Y(s, e);
+		}, [() => n(t.view.status)]), K("click", r, () => t.open?.()), J(e, r);
 	};
-	Y(s, (e) => {
+	X(s, (e) => {
 		t.view && e(c);
-	}), q(e, o), We();
+	}), J(e, o), He();
 }
-br(["click"]);
+yr(["click"]);
 //#endregion
 //#region ui/PortalManager.svelte
-var bs = /* @__PURE__ */ K("<button type=\"button\" class=\"svelte-mnv790\">Close</button>"), xs = /* @__PURE__ */ K("<option class=\"svelte-mnv790\"> </option>"), Ss = /* @__PURE__ */ K("<label class=\"svelte-mnv790\">Portal name<input aria-label=\"Portal name\" class=\"svelte-mnv790\"/></label> <p class=\"pc-note svelte-mnv790\"> </p> <div class=\"pc-actions svelte-mnv790\"><button type=\"button\" data-portal-rename=\"\" class=\"svelte-mnv790\">Rename</button></div>", 1), Cs = /* @__PURE__ */ K("<p class=\"pc-note svelte-mnv790\">Select a portal or create one from an output.</p>"), ws = /* @__PURE__ */ K("<button type=\"button\" data-portal-jump-source=\"\" class=\"svelte-mnv790\">Jump to source</button>"), Ts = /* @__PURE__ */ K("<label class=\"pc-check svelte-mnv790\"><input type=\"checkbox\" aria-label=\"Replace existing connection\" class=\"svelte-mnv790\"/>Replace existing connection</label>"), Es = /* @__PURE__ */ K("<button type=\"button\" data-portal-jump-consumer=\"\" class=\"svelte-mnv790\">Jump</button>"), Ds = /* @__PURE__ */ K("<div class=\"pc-consumer svelte-mnv790\"><span class=\"svelte-mnv790\"> </span><div class=\"pc-actions svelte-mnv790\"><button type=\"button\" data-portal-restore=\"\" class=\"svelte-mnv790\">Restore wire</button> <!></div></div>"), Os = /* @__PURE__ */ K("<p class=\"pc-note svelte-mnv790\">No consumers.</p>"), ks = /* @__PURE__ */ K("<label class=\"svelte-mnv790\">Existing consumers<select aria-label=\"Existing consumers\" class=\"svelte-mnv790\"><option class=\"svelte-mnv790\">Choose before deleting…</option><option class=\"svelte-mnv790\">Restore visible wires</option><option class=\"svelte-mnv790\">Disconnect consumers</option></select></label>"), As = /* @__PURE__ */ K("<details open=\"\" class=\"svelte-mnv790\"><summary class=\"svelte-mnv790\">Consumers</summary> <label class=\"svelte-mnv790\">Compatible receiver<select aria-label=\"Compatible receiver\" class=\"svelte-mnv790\"><option class=\"svelte-mnv790\">Select input…</option><!></select></label> <!> <div class=\"pc-actions svelte-mnv790\"><button type=\"button\" data-portal-connect=\"\" class=\"svelte-mnv790\">Connect receiver</button></div> <!> <!> <!> <div class=\"pc-actions svelte-mnv790\"><button type=\"button\" data-portal-delete=\"\" class=\"svelte-mnv790\">Delete portal</button></div></details>"), js = /* @__PURE__ */ K("<details open=\"\" class=\"svelte-mnv790\"><summary class=\"svelte-mnv790\">Convert to portal</summary><p class=\"pc-note svelte-mnv790\"> </p><div class=\"pc-actions svelte-mnv790\"><button type=\"button\" data-portal-convert=\"\" class=\"svelte-mnv790\"> </button></div></details>"), Ms = /* @__PURE__ */ K("<p class=\"pc-error svelte-mnv790\"> </p>"), Ns = /* @__PURE__ */ K("<p class=\"pc-error svelte-mnv790\" role=\"alert\"> </p>"), Ps = /* @__PURE__ */ K("<p class=\"pc-note svelte-mnv790\" role=\"status\">Preparing change…</p>"), Fs = /* @__PURE__ */ K("<p class=\"pc-note svelte-mnv790\"> </p> <label class=\"svelte-mnv790\">Portal<select aria-label=\"Selected portal\" class=\"svelte-mnv790\"><option class=\"svelte-mnv790\">Select portal…</option><!></select></label> <!> <details open=\"\" class=\"svelte-mnv790\"><summary class=\"svelte-mnv790\">Source</summary> <label class=\"svelte-mnv790\">Output<select aria-label=\"Portal source\" class=\"svelte-mnv790\"><option class=\"svelte-mnv790\">Select output…</option><!></select></label> <label class=\"svelte-mnv790\">New portal name<input aria-label=\"New portal name\" class=\"svelte-mnv790\"/></label> <div class=\"pc-actions svelte-mnv790\"><button type=\"button\" data-portal-create=\"\" class=\"svelte-mnv790\">Create portal</button> <button type=\"button\" data-portal-retarget=\"\" class=\"svelte-mnv790\">Retarget</button> <!></div></details> <!> <!> <!> <!> <!>", 1), Is = /* @__PURE__ */ K("<p class=\"pc-note svelte-mnv790\">Open a graph to manage its portals.</p>"), Ls = /* @__PURE__ */ K("<section class=\"pc-manager svelte-mnv790\" aria-label=\"Manage portals\"><header class=\"svelte-mnv790\"><h2 class=\"svelte-mnv790\">Manage portals</h2><!></header> <!></section>");
-function Rs(e, t) {
-	Ue(t, !0);
-	let n = wi(t, "actions", 19, () => ({})), r = /* @__PURE__ */ F(""), i = /* @__PURE__ */ F(""), a = /* @__PURE__ */ F(""), o = /* @__PURE__ */ F(""), s = /* @__PURE__ */ F(""), c = /* @__PURE__ */ F(!1), l = /* @__PURE__ */ F(""), u = /* @__PURE__ */ F(""), d = "", f = 0, p = !0, m = (e) => JSON.stringify(e.kind === "graph" ? [
+var Ds = /* @__PURE__ */ q("<button type=\"button\" class=\"svelte-mnv790\">Close</button>"), Os = /* @__PURE__ */ q("<option class=\"svelte-mnv790\"> </option>"), ks = /* @__PURE__ */ q("<label class=\"svelte-mnv790\">Portal name<input aria-label=\"Portal name\" class=\"svelte-mnv790\"/></label> <p class=\"pc-note svelte-mnv790\"> </p> <div class=\"pc-actions svelte-mnv790\"><button type=\"button\" data-portal-rename=\"\" class=\"svelte-mnv790\">Rename</button></div>", 1), As = /* @__PURE__ */ q("<p class=\"pc-note svelte-mnv790\">Select a portal or create one from an output.</p>"), js = /* @__PURE__ */ q("<button type=\"button\" data-portal-jump-source=\"\" class=\"svelte-mnv790\">Jump to source</button>"), Ms = /* @__PURE__ */ q("<label class=\"pc-check svelte-mnv790\"><input type=\"checkbox\" aria-label=\"Replace existing connection\" class=\"svelte-mnv790\"/>Replace existing connection</label>"), Ns = /* @__PURE__ */ q("<button type=\"button\" data-portal-jump-consumer=\"\" class=\"svelte-mnv790\">Jump</button>"), Ps = /* @__PURE__ */ q("<div class=\"pc-consumer svelte-mnv790\"><span class=\"svelte-mnv790\"> </span><div class=\"pc-actions svelte-mnv790\"><button type=\"button\" data-portal-restore=\"\" class=\"svelte-mnv790\">Restore wire</button> <!></div></div>"), Fs = /* @__PURE__ */ q("<p class=\"pc-note svelte-mnv790\">No consumers.</p>"), Is = /* @__PURE__ */ q("<label class=\"svelte-mnv790\">Existing consumers<select aria-label=\"Existing consumers\" class=\"svelte-mnv790\"><option class=\"svelte-mnv790\">Choose before deleting…</option><option class=\"svelte-mnv790\">Restore visible wires</option><option class=\"svelte-mnv790\">Disconnect consumers</option></select></label>"), Ls = /* @__PURE__ */ q("<details open=\"\" class=\"svelte-mnv790\"><summary class=\"svelte-mnv790\">Consumers</summary> <label class=\"svelte-mnv790\">Compatible receiver<select aria-label=\"Compatible receiver\" class=\"svelte-mnv790\"><option class=\"svelte-mnv790\">Select input…</option><!></select></label> <!> <div class=\"pc-actions svelte-mnv790\"><button type=\"button\" data-portal-connect=\"\" class=\"svelte-mnv790\">Connect receiver</button></div> <!> <!> <!> <div class=\"pc-actions svelte-mnv790\"><button type=\"button\" data-portal-delete=\"\" class=\"svelte-mnv790\">Delete portal</button></div></details>"), Rs = /* @__PURE__ */ q("<details open=\"\" class=\"svelte-mnv790\"><summary class=\"svelte-mnv790\">Convert to portal</summary><p class=\"pc-note svelte-mnv790\"> </p><div class=\"pc-actions svelte-mnv790\"><button type=\"button\" data-portal-convert=\"\" class=\"svelte-mnv790\"> </button></div></details>"), zs = /* @__PURE__ */ q("<p class=\"pc-error svelte-mnv790\"> </p>"), Bs = /* @__PURE__ */ q("<p class=\"pc-error svelte-mnv790\" role=\"alert\"> </p>"), Vs = /* @__PURE__ */ q("<p class=\"pc-note svelte-mnv790\" role=\"status\">Preparing change…</p>"), Hs = /* @__PURE__ */ q("<p class=\"pc-note svelte-mnv790\"> </p> <label class=\"svelte-mnv790\">Portal<select aria-label=\"Selected portal\" class=\"svelte-mnv790\"><option class=\"svelte-mnv790\">Select portal…</option><!></select></label> <!> <details open=\"\" class=\"svelte-mnv790\"><summary class=\"svelte-mnv790\">Source</summary> <label class=\"svelte-mnv790\">Output<select aria-label=\"Portal source\" class=\"svelte-mnv790\"><option class=\"svelte-mnv790\">Select output…</option><!></select></label> <label class=\"svelte-mnv790\">New portal name<input aria-label=\"New portal name\" class=\"svelte-mnv790\"/></label> <div class=\"pc-actions svelte-mnv790\"><button type=\"button\" data-portal-create=\"\" class=\"svelte-mnv790\">Create portal</button> <button type=\"button\" data-portal-retarget=\"\" class=\"svelte-mnv790\">Retarget</button> <!></div></details> <!> <!> <!> <!> <!>", 1), Us = /* @__PURE__ */ q("<p class=\"pc-note svelte-mnv790\">Open a graph to manage its portals.</p>"), Ws = /* @__PURE__ */ q("<section class=\"pc-manager svelte-mnv790\" aria-label=\"Manage portals\"><header class=\"svelte-mnv790\"><h2 class=\"svelte-mnv790\">Manage portals</h2><!></header> <!></section>");
+function Gs(e, t) {
+	Ve(t, !0);
+	let n = wi(t, "actions", 19, () => ({})), r = /* @__PURE__ */ L(""), i = /* @__PURE__ */ L(""), a = /* @__PURE__ */ L(""), o = /* @__PURE__ */ L(""), s = /* @__PURE__ */ L(""), c = /* @__PURE__ */ L(!1), l = /* @__PURE__ */ L(""), u = /* @__PURE__ */ L(""), d = "", f = 0, p = !0, m = (e) => JSON.stringify(e.kind === "graph" ? [
 		"graph",
 		e.workflowId,
 		e.instancePath,
@@ -4920,8 +5129,8 @@ function Rs(e, t) {
 		e.definitionRef.id,
 		e.definitionRef.version,
 		e.definitionRef.semanticHash
-	]), h = /* @__PURE__ */ N(() => t.view?.publishers.find((e) => e.id === t.view.selectedPortalId)), g = /* @__PURE__ */ N(() => !!t.view && !!U(h) && t.view.capabilities.rename && (t.view.renameMode === "presentation" ? t.view.canPresent : t.view.scope.kind === "graph" && !t.view.readOnly) && !!n().rename), _ = /* @__PURE__ */ N(() => t.view?.sources.find((e) => e.key === U(a) && e.direction === "output")), v = /* @__PURE__ */ N(() => t.view?.receivers.find((e) => e.key === U(o) && e.direction === "input" && e.kind === U(h)?.kind)), y = /* @__PURE__ */ N(() => !!U(h) && !!U(v) && (!U(v).occupied || U(c)) && C("connect") && !!n().connect), b = /* @__PURE__ */ N(() => !!U(h) && C("remove") && !!n().deletePublisher && (!t.view?.consumers.length || U(s) === "restore" || U(s) === "disconnect"));
-	xn(() => {
+	]), h = /* @__PURE__ */ F(() => t.view?.publishers.find((e) => e.id === t.view.selectedPortalId)), g = /* @__PURE__ */ F(() => !!t.view && !!W(h) && t.view.capabilities.rename && (t.view.renameMode === "presentation" ? t.view.canPresent : t.view.scope.kind === "graph" && !t.view.readOnly) && !!n().rename), _ = /* @__PURE__ */ F(() => t.view?.sources.find((e) => e.key === W(a) && e.direction === "output")), v = /* @__PURE__ */ F(() => t.view?.receivers.find((e) => e.key === W(o) && e.direction === "input" && e.kind === W(h)?.kind)), y = /* @__PURE__ */ F(() => !!W(h) && !!W(v) && (!W(v).occupied || W(c)) && C("connect") && !!n().connect), b = /* @__PURE__ */ F(() => !!W(h) && C("remove") && !!n().deletePublisher && (!t.view?.consumers.length || W(s) === "restore" || W(s) === "disconnect"));
+	yn(() => {
 		let e = t.view ? JSON.stringify([
 			t.view.managerKey,
 			t.view.revision,
@@ -4929,14 +5138,14 @@ function Rs(e, t) {
 			t.view.selectedPortalId,
 			t.view.renameMode
 		]) : "";
-		d !== e && (d = e, I(r, U(h)?.label ?? "", !0), I(i, ""), I(a, t.view?.sources.find((e) => e.nodeId === U(h)?.source.nodeId && e.portId === U(h)?.source.portId)?.key ?? "", !0), I(o, ""), I(s, ""), I(c, !1), I(l, ""), I(u, ""), f++);
+		d !== e && (d = e, R(r, W(h)?.label ?? "", !0), R(i, ""), R(a, t.view?.sources.find((e) => e.nodeId === W(h)?.source.nodeId && e.portId === W(h)?.source.portId)?.key ?? "", !0), R(o, ""), R(s, ""), R(c, !1), R(l, ""), R(u, ""), f++);
 	}), Ei(() => {
 		p = !1, f++;
 	});
 	let x = (e) => ({
 		managerKey: e.managerKey,
 		revision: e.revision,
-		scope: ze(e.scope)
+		scope: Le(e.scope)
 	}), S = (e) => ({
 		nodeId: e.nodeId,
 		portId: e.portId
@@ -4945,243 +5154,243 @@ function Rs(e, t) {
 		return !!t.view && !t.view.readOnly && t.view.scope.kind === "graph" && t.view.capabilities[e];
 	}
 	function w() {
-		I(l, ""), I(u, ""), f++;
+		R(l, ""), R(u, ""), f++;
 	}
 	async function T(e, n, r) {
-		if (!t.view || !n || U(u)) return;
+		if (!t.view || !n || W(u)) return;
 		let i = x(t.view), a = ++f, o = t.view.selectedPortalId;
-		I(u, e, !0), I(l, "");
+		R(u, e, !0), R(l, "");
 		try {
 			let e = await r(i);
-			p && a === f && t.view?.managerKey === i.managerKey && t.view.revision === i.revision && m(t.view.scope) === m(i.scope) && t.view.selectedPortalId === o && (I(u, ""), I(l, e.ok ? "" : e.error.code + ": " + e.error.message, !0));
+			p && a === f && t.view?.managerKey === i.managerKey && t.view.revision === i.revision && m(t.view.scope) === m(i.scope) && t.view.selectedPortalId === o && (R(u, ""), R(l, e.ok ? "" : e.error.code + ": " + e.error.message, !0));
 		} catch (e) {
-			p && a === f && t.view?.managerKey === i.managerKey && t.view.revision === i.revision && m(t.view.scope) === m(i.scope) && t.view.selectedPortalId === o && (I(u, ""), I(l, e instanceof Error ? e.message : "The portal change could not be accepted.", !0));
+			p && a === f && t.view?.managerKey === i.managerKey && t.view.revision === i.revision && m(t.view.scope) === m(i.scope) && t.view.selectedPortalId === o && (R(u, ""), R(l, e instanceof Error ? e.message : "The portal change could not be accepted.", !0));
 		}
 	}
-	var E = Ls(), D = L(E), O = z(L(D)), ee = (e) => {
-		var t = bs();
-		G("click", t, () => n().close?.()), q(e, t);
+	var E = Ws(), D = z(E), O = V(z(D)), k = (e) => {
+		var t = Ds();
+		K("click", t, () => n().close?.()), J(e, t);
 	};
-	Y(O, (e) => {
-		n().close && e(ee);
-	}), M(D);
-	var k = z(D, 2), te = (e) => {
-		var d = Fs(), f = R(d), p = L(f);
-		M(f);
-		var m = z(f, 2), E = z(L(m)), D = L(E);
-		D.value = D.__value = "", X(z(D), 17, () => t.view.publishers, (e) => e.id, (e, t) => {
-			var n = xs(), r = L(n);
-			M(n);
+	X(O, (e) => {
+		n().close && e(k);
+	}), P(D);
+	var A = V(D, 2), ee = (e) => {
+		var d = Hs(), f = B(d), p = z(f);
+		P(f);
+		var m = V(f, 2), E = V(z(m)), D = z(E);
+		D.value = D.__value = "", Z(V(D), 17, () => t.view.publishers, (e) => e.id, (e, t) => {
+			var n = Os(), r = z(n);
+			P(n);
 			var i = {};
-			B(() => {
-				J(r, `${U(t).label ?? ""} · ${U(t).kind ?? ""}`), i !== (i = U(t).id) && (n.value = (n.__value = U(t).id) ?? "");
-			}), q(e, n);
-		}), M(E);
+			H(() => {
+				Y(r, `${W(t).label ?? ""} · ${W(t).kind ?? ""}`), i !== (i = W(t).id) && (n.value = (n.__value = W(t).id) ?? "");
+			}), J(e, n);
+		}), P(E);
 		var O;
-		ci(E), M(m);
-		var ee = z(m, 2), k = (e) => {
-			var i = Ss(), a = R(i), o = z(L(a));
-			Z(o), M(a);
-			var s = z(a, 2), c = L(s);
-			M(s);
-			var l = z(s, 2), d = L(l);
-			M(l), B(() => {
-				hi(o, U(r)), o.disabled = !U(g), J(c, `${t.view.renameMode === "presentation" ? "Local workspace label · not exported" : "Authored portal label"} · ${U(h).kind ?? ""}`), d.disabled = !U(g) || !!U(u);
-			}), G("input", o, (e) => {
-				I(r, e.currentTarget.value, !0), w();
-			}), G("click", d, () => {
-				let e = U(h)?.id, i = t.view?.renameMode, a = U(r);
-				e && i && n().rename && T("rename", U(g), (t) => n().rename(t, e, a, i));
-			}), q(e, i);
-		}, te = (e) => {
-			q(e, Cs());
+		si(E), P(m);
+		var k = V(m, 2), A = (e) => {
+			var i = ks(), a = B(i), o = V(z(a));
+			Q(o), P(a);
+			var s = V(a, 2), c = z(s);
+			P(s);
+			var l = V(s, 2), d = z(l);
+			P(l), H(() => {
+				mi(o, W(r)), o.disabled = !W(g), Y(c, `${t.view.renameMode === "presentation" ? "Local workspace label · not exported" : "Authored portal label"} · ${W(h).kind ?? ""}`), d.disabled = !W(g) || !!W(u);
+			}), K("input", o, (e) => {
+				R(r, e.currentTarget.value, !0), w();
+			}), K("click", d, () => {
+				let e = W(h)?.id, i = t.view?.renameMode, a = W(r);
+				e && i && n().rename && T("rename", W(g), (t) => n().rename(t, e, a, i));
+			}), J(e, i);
+		}, ee = (e) => {
+			J(e, As());
 		};
-		Y(ee, (e) => {
-			U(h) ? e(k) : e(te, -1);
+		X(k, (e) => {
+			W(h) ? e(A) : e(ee, -1);
 		});
-		var ne = z(ee, 2), re = z(L(ne), 2), ie = z(L(re)), ae = L(ie);
-		ae.value = ae.__value = "", X(z(ae), 17, () => t.view.sources, (e) => e.key, (e, t) => {
-			var n = xs(), r = L(n);
-			M(n);
+		var te = V(k, 2), ne = V(z(te), 2), j = V(z(ne)), re = z(j);
+		re.value = re.__value = "", Z(V(re), 17, () => t.view.sources, (e) => e.key, (e, t) => {
+			var n = Os(), r = z(n);
+			P(n);
 			var i = {};
-			B(() => {
-				J(r, `${U(t).label ?? ""} · ${U(t).kind ?? ""}`), i !== (i = U(t).key) && (n.value = (n.__value = U(t).key) ?? "");
-			}), q(e, n);
-		}), M(ie);
-		var oe;
-		ci(ie), M(re);
-		var se = z(re, 2), ce = z(L(se));
-		Z(ce), M(se);
-		var le = z(se, 2), ue = L(le), de = z(ue, 2), fe = z(de, 2), pe = (e) => {
-			var r = ws();
-			G("click", r, () => {
-				t.view && U(h) && n().jumpSource?.(x(t.view), S(U(h).source));
-			}), q(e, r);
+			H(() => {
+				Y(r, `${W(t).label ?? ""} · ${W(t).kind ?? ""}`), i !== (i = W(t).key) && (n.value = (n.__value = W(t).key) ?? "");
+			}), J(e, n);
+		}), P(j);
+		var ie;
+		si(j), P(ne);
+		var ae = V(ne, 2), oe = V(z(ae));
+		Q(oe), P(ae);
+		var se = V(ae, 2), ce = z(se), le = V(ce, 2), ue = V(le, 2), de = (e) => {
+			var r = js();
+			K("click", r, () => {
+				t.view && W(h) && n().jumpSource?.(x(t.view), S(W(h).source));
+			}), J(e, r);
 		};
-		Y(fe, (e) => {
-			U(h) && n().jumpSource && e(pe);
-		}), M(le), M(ne);
-		var me = z(ne, 2), he = (e) => {
-			var r = As(), i = z(L(r), 2), a = z(L(i)), l = L(a);
-			l.value = l.__value = "", X(z(l), 17, () => t.view.receivers, (e) => e.key, (e, t) => {
-				var n = xs(), r = L(n);
-				M(n);
+		X(ue, (e) => {
+			W(h) && n().jumpSource && e(de);
+		}), P(se), P(te);
+		var fe = V(te, 2), pe = (e) => {
+			var r = Ls(), i = V(z(r), 2), a = V(z(i)), l = z(a);
+			l.value = l.__value = "", Z(V(l), 17, () => t.view.receivers, (e) => e.key, (e, t) => {
+				var n = Os(), r = z(n);
+				P(n);
 				var i = {};
-				B(() => {
-					J(r, `${U(t).label ?? ""}${U(t).occupied ? " · Connected" : ""}`), i !== (i = U(t).key) && (n.value = (n.__value = U(t).key) ?? "");
-				}), q(e, n);
-			}), M(a);
+				H(() => {
+					Y(r, `${W(t).label ?? ""}${W(t).occupied ? " · Connected" : ""}`), i !== (i = W(t).key) && (n.value = (n.__value = W(t).key) ?? "");
+				}), J(e, n);
+			}), P(a);
 			var d;
-			ci(a), M(i);
-			var f = z(i, 2), p = (e) => {
-				var t = Ts(), n = L(t);
-				Z(n), Me(), M(t), B((e) => {
-					gi(n, U(c)), n.disabled = e;
-				}, [() => !C("connect")]), G("change", n, (e) => {
-					I(c, e.currentTarget.checked, !0), w();
-				}), q(e, t);
+			si(a), P(i);
+			var f = V(i, 2), p = (e) => {
+				var t = Ms(), n = z(t);
+				Q(n), Ae(), P(t), H((e) => {
+					hi(n, W(c)), n.disabled = e;
+				}, [() => !C("connect")]), K("change", n, (e) => {
+					R(c, e.currentTarget.checked, !0), w();
+				}), J(e, t);
 			};
-			Y(f, (e) => {
-				U(v)?.occupied && e(p);
+			X(f, (e) => {
+				W(v)?.occupied && e(p);
 			});
-			var m = z(f, 2), g = L(m);
-			M(m);
-			var _ = z(m, 2);
-			X(_, 17, () => t.view.consumers, (e) => e.edgeId, (e, r) => {
-				var i = Ds(), a = L(i), o = L(a, !0);
-				M(a);
-				var s = z(a), c = L(s), l = z(c, 2), d = (e) => {
-					var i = Es();
-					G("click", i, () => {
-						let e = t.view?.consumers.find((e) => e.edgeId === U(r).edgeId);
+			var m = V(f, 2), g = z(m);
+			P(m);
+			var _ = V(m, 2);
+			Z(_, 17, () => t.view.consumers, (e) => e.edgeId, (e, r) => {
+				var i = Ps(), a = z(i), o = z(a, !0);
+				P(a);
+				var s = V(a), c = z(s), l = V(c, 2), d = (e) => {
+					var i = Ns();
+					K("click", i, () => {
+						let e = t.view?.consumers.find((e) => e.edgeId === W(r).edgeId);
 						t.view && e && n().jumpConsumer?.(x(t.view), e.edgeId, S(e.to));
-					}), q(e, i);
+					}), J(e, i);
 				};
-				Y(l, (e) => {
+				X(l, (e) => {
 					n().jumpConsumer && e(d);
-				}), M(s), M(i), B((e) => {
-					J(o, U(r).label), c.disabled = e;
-				}, [() => !C("restore") || !n().restoreWire || !!U(u)]), G("click", c, () => {
-					let e = t.view?.consumers.find((e) => e.edgeId === U(r).edgeId);
+				}), P(s), P(i), H((e) => {
+					Y(o, W(r).label), c.disabled = e;
+				}, [() => !C("restore") || !n().restoreWire || !!W(u)]), K("click", c, () => {
+					let e = t.view?.consumers.find((e) => e.edgeId === W(r).edgeId);
 					e && n().restoreWire && T("restore", C("restore"), (t) => n().restoreWire(t, e.edgeId));
-				}), q(e, i);
+				}), J(e, i);
 			});
-			var E = z(_, 2), D = (e) => {
-				q(e, Os());
+			var E = V(_, 2), D = (e) => {
+				J(e, Fs());
 			};
-			Y(E, (e) => {
+			X(E, (e) => {
 				t.view.consumers.length || e(D);
 			});
-			var O = z(E, 2), ee = (e) => {
-				var t = ks(), n = z(L(t)), r = L(n);
+			var O = V(E, 2), k = (e) => {
+				var t = Is(), n = V(z(t)), r = z(n);
 				r.value = r.__value = "";
-				var i = z(r);
+				var i = V(r);
 				i.value = i.__value = "restore";
-				var a = z(i);
-				a.value = a.__value = "disconnect", M(n);
+				var a = V(i);
+				a.value = a.__value = "disconnect", P(n);
 				var o;
-				ci(n), M(t), B((e) => {
-					n.disabled = e, o !== (o = U(s)) && (n.value = (n.__value = U(s)) ?? "", si(n, U(s)));
-				}, [() => !C("remove")]), G("change", n, (e) => {
-					I(s, e.currentTarget.value, !0), w();
-				}), q(e, t);
+				si(n), P(t), H((e) => {
+					n.disabled = e, o !== (o = W(s)) && (n.value = (n.__value = W(s)) ?? "", oi(n, W(s)));
+				}, [() => !C("remove")]), K("change", n, (e) => {
+					R(s, e.currentTarget.value, !0), w();
+				}), J(e, t);
 			};
-			Y(O, (e) => {
-				t.view.consumers.length && e(ee);
+			X(O, (e) => {
+				t.view.consumers.length && e(k);
 			});
-			var k = z(O, 2), te = L(k);
-			M(k), M(r), B((e) => {
-				a.disabled = e, d !== (d = U(o)) && (a.value = (a.__value = U(o)) ?? "", si(a, U(o))), g.disabled = !U(y) || !!U(u), te.disabled = !U(b) || !!U(u);
-			}, [() => !C("connect") || !n().connect]), G("change", a, (e) => {
-				I(o, e.currentTarget.value, !0), I(c, !1), w();
-			}), G("click", g, () => {
-				let e = U(v), t = U(h)?.id, r = U(c);
-				e && t && n().connect && T("connect", U(y), (i) => n().connect(i, t, S(e), r));
-			}), G("click", te, () => {
-				let e = U(h)?.id, r = t.view?.consumers.length ? U(s) : "restore";
-				e && (r === "restore" || r === "disconnect") && n().deletePublisher && T("remove", U(b), (t) => n().deletePublisher(t, e, r));
-			}), q(e, r);
+			var A = V(O, 2), ee = z(A);
+			P(A), P(r), H((e) => {
+				a.disabled = e, d !== (d = W(o)) && (a.value = (a.__value = W(o)) ?? "", oi(a, W(o))), g.disabled = !W(y) || !!W(u), ee.disabled = !W(b) || !!W(u);
+			}, [() => !C("connect") || !n().connect]), K("change", a, (e) => {
+				R(o, e.currentTarget.value, !0), R(c, !1), w();
+			}), K("click", g, () => {
+				let e = W(v), t = W(h)?.id, r = W(c);
+				e && t && n().connect && T("connect", W(y), (i) => n().connect(i, t, S(e), r));
+			}), K("click", ee, () => {
+				let e = W(h)?.id, r = t.view?.consumers.length ? W(s) : "restore";
+				e && (r === "restore" || r === "disconnect") && n().deletePublisher && T("remove", W(b), (t) => n().deletePublisher(t, e, r));
+			}), J(e, r);
 		};
-		Y(me, (e) => {
-			U(h) && e(he);
+		X(fe, (e) => {
+			W(h) && e(pe);
 		});
-		var ge = z(me, 2), _e = (e) => {
-			var r = js(), i = z(L(r)), a = L(i, !0);
-			M(i);
-			var o = z(i), s = L(o), c = L(s);
-			M(s), M(o), M(r), B((e) => {
-				J(a, t.view.conversion.label), s.disabled = e, J(c, `Convert ${t.view.conversion.kind === "wire" ? "wire" : "output"}`);
-			}, [() => !C("convert") || !!U(u) || (t.view.conversion.kind === "wire" ? !n().convertWire : !n().convertOutput)]), G("click", s, () => {
+		var me = V(fe, 2), he = (e) => {
+			var r = Rs(), i = V(z(r)), a = z(i, !0);
+			P(i);
+			var o = V(i), s = z(o), c = z(s);
+			P(s), P(o), P(r), H((e) => {
+				Y(a, t.view.conversion.label), s.disabled = e, Y(c, `Convert ${t.view.conversion.kind === "wire" ? "wire" : "output"}`);
+			}, [() => !C("convert") || !!W(u) || (t.view.conversion.kind === "wire" ? !n().convertWire : !n().convertOutput)]), K("click", s, () => {
 				let e = t.view?.conversion;
 				e?.kind === "wire" && n().convertWire ? T("convert", C("convert"), (t) => n().convertWire(t, e.edgeId)) : e?.kind === "output" && n().convertOutput && T("convert", C("convert"), (t) => n().convertOutput(t, S(e.endpoint)));
-			}), q(e, r);
+			}), J(e, r);
 		};
-		Y(ge, (e) => {
-			t.view.conversion && e(_e);
+		X(me, (e) => {
+			t.view.conversion && e(he);
 		});
-		var ve = z(ge, 2), ye = (e) => {
-			var n = Ms(), r = L(n, !0);
-			M(n), B(() => J(r, t.view.issue)), q(e, n);
+		var ge = V(me, 2), _e = (e) => {
+			var n = zs(), r = z(n, !0);
+			P(n), H(() => Y(r, t.view.issue)), J(e, n);
 		};
-		Y(ve, (e) => {
-			t.view.issue && e(ye);
+		X(ge, (e) => {
+			t.view.issue && e(_e);
 		});
-		var be = z(ve, 2), xe = (e) => {
-			var t = Ns(), n = L(t, !0);
-			M(t), B(() => J(n, U(l))), q(e, t);
+		var ve = V(ge, 2), ye = (e) => {
+			var t = Bs(), n = z(t, !0);
+			P(t), H(() => Y(n, W(l))), J(e, t);
 		};
-		Y(be, (e) => {
-			U(l) && e(xe);
+		X(ve, (e) => {
+			W(l) && e(ye);
 		});
-		var Se = z(be, 2), Ce = (e) => {
-			q(e, Ps());
+		var be = V(ve, 2), xe = (e) => {
+			J(e, Vs());
 		};
-		Y(Se, (e) => {
-			U(u) && e(Ce);
-		}), B((e, r, o, s) => {
-			J(p, `${t.view.scopeLabel ?? ""}${t.view.readOnly ? " · Read-only graph" : ""}`), E.disabled = !n().selectPortal, O !== (O = t.view.selectedPortalId ?? "") && (E.value = (E.__value = t.view.selectedPortalId ?? "") ?? "", si(E, t.view.selectedPortalId ?? "")), ie.disabled = e, oe !== (oe = U(a)) && (ie.value = (ie.__value = U(a)) ?? "", si(ie, U(a))), hi(ce, U(i)), ce.disabled = r, ue.disabled = o, de.disabled = s;
+		X(be, (e) => {
+			W(u) && e(xe);
+		}), H((e, r, o, s) => {
+			Y(p, `${t.view.scopeLabel ?? ""}${t.view.readOnly ? " · Read-only graph" : ""}`), E.disabled = !n().selectPortal, O !== (O = t.view.selectedPortalId ?? "") && (E.value = (E.__value = t.view.selectedPortalId ?? "") ?? "", oi(E, t.view.selectedPortalId ?? "")), j.disabled = e, ie !== (ie = W(a)) && (j.value = (j.__value = W(a)) ?? "", oi(j, W(a))), mi(oe, W(i)), oe.disabled = r, ce.disabled = o, le.disabled = s;
 		}, [
 			() => !C("create") && !C("retarget"),
 			() => !C("create") || !n().create,
-			() => !C("create") || !n().create || !U(_) || !U(i).trim() || !!U(u),
-			() => !C("retarget") || !n().retarget || !U(_) || !U(h) || !!U(u)
-		]), G("change", E, (e) => {
+			() => !C("create") || !n().create || !W(_) || !W(i).trim() || !!W(u),
+			() => !C("retarget") || !n().retarget || !W(_) || !W(h) || !!W(u)
+		]), K("change", E, (e) => {
 			let r = e.currentTarget.value;
 			e.currentTarget.selectedIndex >= 0 && t.view && n().selectPortal && (!r || t.view.publishers.some((e) => e.id === r)) && n().selectPortal(x(t.view), r || null);
-		}), G("change", ie, (e) => {
-			I(a, e.currentTarget.value, !0), w();
-		}), G("input", ce, (e) => {
-			I(i, e.currentTarget.value, !0), w();
-		}), G("click", ue, () => {
-			let e = U(_), t = U(i);
+		}), K("change", j, (e) => {
+			R(a, e.currentTarget.value, !0), w();
+		}), K("input", oe, (e) => {
+			R(i, e.currentTarget.value, !0), w();
+		}), K("click", ce, () => {
+			let e = W(_), t = W(i);
 			e && t.trim() && n().create && T("create", C("create"), (r) => n().create(r, t, S(e)));
-		}), G("click", de, () => {
-			let e = U(_), t = U(h)?.id;
+		}), K("click", le, () => {
+			let e = W(_), t = W(h)?.id;
 			e && t && n().retarget && T("retarget", C("retarget"), (r) => n().retarget(r, t, S(e)));
-		}), q(e, d);
-	}, ne = (e) => {
-		q(e, Is());
+		}), J(e, d);
+	}, te = (e) => {
+		J(e, Us());
 	};
-	Y(k, (e) => {
-		t.view ? e(te) : e(ne, -1);
-	}), M(E), q(e, E), We();
+	X(A, (e) => {
+		t.view ? e(ee) : e(te, -1);
+	}), P(E), J(e, E), He();
 }
-br([
+yr([
 	"click",
 	"change",
 	"input"
 ]);
 //#endregion
 //#region ui/SubgraphSave.svelte
-var zs = /* @__PURE__ */ K("<option class=\"svelte-1n658sg\"> </option>"), Bs = /* @__PURE__ */ K("<p class=\"pc-save-error svelte-1n658sg\" role=\"alert\"> </p>"), Vs = /* @__PURE__ */ K("<div class=\"pc-workspace-overlay svelte-1n658sg\"><div class=\"pc-workspace-dialog pc-subgraph-save svelte-1n658sg\" role=\"dialog\" aria-modal=\"true\" aria-label=\"Save subgraph\" tabindex=\"-1\"><header class=\"svelte-1n658sg\"><h2 class=\"svelte-1n658sg\">Save subgraph</h2><button type=\"button\" aria-label=\"Close save subgraph\" class=\"svelte-1n658sg\">×</button></header> <form class=\"svelte-1n658sg\"><label class=\"svelte-1n658sg\">Name<input aria-label=\"Subgraph name\" maxlength=\"80\" class=\"svelte-1n658sg\"/></label> <label class=\"svelte-1n658sg\">Save as<select aria-label=\"Save as\" class=\"svelte-1n658sg\"><option class=\"svelte-1n658sg\">Save new subgraph</option><!></select></label> <p class=\"svelte-1n658sg\">Edits stay local until you save. Existing placed copies stay unchanged.</p> <!> <footer class=\"svelte-1n658sg\"><button type=\"button\" class=\"svelte-1n658sg\">Cancel</button><button type=\"submit\" data-save-subgraph=\"\" class=\"svelte-1n658sg\"> </button></footer></form></div></div>");
-function Hs(e, t) {
-	Ue(t, !0);
-	let n, r = /* @__PURE__ */ F(""), i = /* @__PURE__ */ F(""), a = /* @__PURE__ */ F(!1), o = /* @__PURE__ */ F(""), s = "", c = 0;
-	xn(() => {
+var Ks = /* @__PURE__ */ q("<option class=\"svelte-1n658sg\"> </option>"), qs = /* @__PURE__ */ q("<p class=\"pc-save-error svelte-1n658sg\" role=\"alert\"> </p>"), Js = /* @__PURE__ */ q("<div class=\"pc-workspace-overlay svelte-1n658sg\"><div class=\"pc-workspace-dialog pc-subgraph-save svelte-1n658sg\" role=\"dialog\" aria-modal=\"true\" aria-label=\"Save subgraph\" tabindex=\"-1\"><header class=\"svelte-1n658sg\"><h2 class=\"svelte-1n658sg\">Save subgraph</h2><button type=\"button\" aria-label=\"Close save subgraph\" class=\"svelte-1n658sg\">×</button></header> <form class=\"svelte-1n658sg\"><label class=\"svelte-1n658sg\">Name<input aria-label=\"Subgraph name\" maxlength=\"80\" class=\"svelte-1n658sg\"/></label> <label class=\"svelte-1n658sg\">Save as<select aria-label=\"Save as\" class=\"svelte-1n658sg\"><option class=\"svelte-1n658sg\">Save new subgraph</option><!></select></label> <p class=\"svelte-1n658sg\">Edits stay local until you save. Existing placed copies stay unchanged.</p> <!> <footer class=\"svelte-1n658sg\"><button type=\"button\" class=\"svelte-1n658sg\">Cancel</button><button type=\"submit\" data-save-subgraph=\"\" class=\"svelte-1n658sg\"> </button></footer></form></div></div>");
+function Ys(e, t) {
+	Ve(t, !0);
+	let n, r = /* @__PURE__ */ L(""), i = /* @__PURE__ */ L(""), a = /* @__PURE__ */ L(!1), o = /* @__PURE__ */ L(""), s = "", c = 0;
+	yn(() => {
 		if (t.view.key === s) return;
-		s = t.view.key, c++, I(r, t.view.name, !0), I(i, t.view.targetId ?? "", !0), I(a, !1), I(o, "");
+		s = t.view.key, c++, R(r, t.view.name, !0), R(i, t.view.targetId ?? "", !0), R(a, !1), R(o, "");
 		let e = s;
-		ur().then(() => {
+		lr().then(() => {
 			if (t.view.key === e) {
 				let e = n?.querySelector("input");
 				e?.focus({ preventScroll: !0 }), e?.select();
@@ -5192,15 +5401,15 @@ function Hs(e, t) {
 		return () => e?.focus({ preventScroll: !0 });
 	});
 	async function l(e) {
-		if (e.preventDefault(), !t.actions || !U(r).trim() || U(a) || U(i) && !t.view.entries.some((e) => e.id === U(i))) return;
+		if (e.preventDefault(), !t.actions || !W(r).trim() || W(a) || W(i) && !t.view.entries.some((e) => e.id === W(i))) return;
 		let n = t.view.key, s = ++c;
-		I(a, !0), I(o, "");
+		R(a, !0), R(o, "");
 		try {
-			await t.actions.save(n, U(r), U(i) || null);
+			await t.actions.save(n, W(r), W(i) || null);
 		} catch {
-			t.view.key === n && s === c && I(o, "The subgraph could not be saved. Please try again.");
+			t.view.key === n && s === c && R(o, "The subgraph could not be saved. Please try again.");
 		} finally {
-			t.view.key === n && s === c && I(a, !1);
+			t.view.key === n && s === c && R(a, !1);
 		}
 	}
 	function u(e) {
@@ -5209,67 +5418,745 @@ function Hs(e, t) {
 			e.shiftKey && document.activeElement === r && (e.preventDefault(), i?.focus()), !e.shiftKey && document.activeElement === i && (e.preventDefault(), r?.focus());
 		}
 	}
-	var d = Vs(), f = L(d), p = L(f), m = z(L(p));
-	M(p);
-	var h = z(p, 2), g = L(h), _ = z(L(g));
-	Z(_), M(g);
-	var v = z(g, 2), y = z(L(v)), b = L(y);
-	b.value = b.__value = "", X(z(b), 17, () => t.view.entries, (e) => e.id, (e, t) => {
-		var n = zs(), r = L(n);
-		M(n);
+	var d = Js(), f = z(d), p = z(f), m = V(z(p));
+	P(p);
+	var h = V(p, 2), g = z(h), _ = V(z(g));
+	Q(_), P(g);
+	var v = V(g, 2), y = V(z(v)), b = z(y);
+	b.value = b.__value = "", Z(V(b), 17, () => t.view.entries, (e) => e.id, (e, t) => {
+		var n = Ks(), r = z(n);
+		P(n);
 		var i = {};
-		B(() => {
-			J(r, `Update ${U(t).name ?? ""}`), i !== (i = U(t).id) && (n.value = (n.__value = U(t).id) ?? "");
-		}), q(e, n);
-	}), M(y), M(v);
-	var x = z(v, 4), S = (e) => {
-		var n = Bs(), r = L(n, !0);
-		M(n), B(() => J(r, t.view.error || U(o))), q(e, n);
+		H(() => {
+			Y(r, `Update ${W(t).name ?? ""}`), i !== (i = W(t).id) && (n.value = (n.__value = W(t).id) ?? "");
+		}), J(e, n);
+	}), P(y), P(v);
+	var x = V(v, 4), S = (e) => {
+		var n = qs(), r = z(n, !0);
+		P(n), H(() => Y(r, t.view.error || W(o))), J(e, n);
 	};
-	Y(x, (e) => {
-		(t.view.error || U(o)) && e(S);
+	X(x, (e) => {
+		(t.view.error || W(o)) && e(S);
 	});
-	var C = z(x, 2), w = L(C), T = z(w), E = L(T, !0);
-	M(T), M(C), M(h), M(f), $(f, (e) => n = e, () => n), M(d), B((e) => {
-		T.disabled = e, J(E, U(a) ? "Saving…" : "Save");
-	}, [() => !t.actions || !U(r).trim() || U(a)]), W("keydown", f, u, !0), W("paste", f, (e) => e.stopPropagation()), G("click", m, () => t.actions?.close()), W("submit", h, l), bi(_, () => U(r), (e) => I(r, e)), li(y, () => U(i), (e) => I(i, e)), G("click", w, () => t.actions?.close()), q(e, d), We();
+	var C = V(x, 2), w = z(C), T = V(w), E = z(T, !0);
+	P(T), P(C), P(h), P(f), Ci(f, (e) => n = e, () => n), P(d), H((e) => {
+		T.disabled = e, Y(E, W(a) ? "Saving…" : "Save");
+	}, [() => !t.actions || !W(r).trim() || W(a)]), G("keydown", f, u, !0), G("paste", f, (e) => e.stopPropagation()), K("click", m, () => t.actions?.close()), G("submit", h, l), yi(_, () => W(r), (e) => R(r, e)), ci(y, () => W(i), (e) => R(i, e)), K("click", w, () => t.actions?.close()), J(e, d), He();
 }
-br(["click"]);
+yr(["click"]);
 //#endregion
-//#region ui/NewWorkflowPrompt.svelte
-var Us = /* @__PURE__ */ K("<div class=\"pc-workspace-overlay\"><div class=\"pc-workspace-dialog pc-new-workflow-prompt svelte-121ekho\" role=\"dialog\" aria-modal=\"true\" aria-label=\"Save workflow changes?\" tabindex=\"-1\"><h2 class=\"svelte-121ekho\">Save workflow changes?</h2> <p class=\"svelte-121ekho\"><strong class=\"svelte-121ekho\"> </strong> has unsaved changes.</p> <p class=\"svelte-121ekho\">Save downloads workflow JSON before opening a new blank canvas. Your existing workflow stays in the workspace.</p> <footer class=\"svelte-121ekho\"><button type=\"button\" class=\"svelte-121ekho\">Save</button><button type=\"button\" class=\"svelte-121ekho\">Discard</button><button type=\"button\" class=\"svelte-121ekho\">Cancel</button></footer></div></div>");
-function Ws(e, t) {
-	Ue(t, !0);
-	let n, r;
-	Ti(() => {
-		let e = document.activeElement;
-		return r.focus({ preventScroll: !0 }), () => e?.focus({ preventScroll: !0 });
+//#region ui/FastConnections.svelte
+var Xs = /* @__PURE__ */ q("<option class=\"svelte-1n96rai\"> </option>"), Zs = /* @__PURE__ */ q("<p class=\"pc-fast-key-status svelte-1n96rai\"> </p>"), Qs = /* @__PURE__ */ q("<p role=\"alert\" class=\"svelte-1n96rai\"> </p>"), $s = /* @__PURE__ */ q("<p role=\"status\" class=\"svelte-1n96rai\"> </p>"), ec = /* @__PURE__ */ q("<section class=\"pc-fast-connections svelte-1n96rai\" aria-label=\"Fast connection setup\"><p class=\"svelte-1n96rai\">Configure a typed Jev, Laya or compatible model for Fast Decision. Node settings keep only the connection ID.</p> <label class=\"svelte-1n96rai\">Configured Fast connection<select aria-label=\"Configured Fast connection\" class=\"svelte-1n96rai\"><option class=\"svelte-1n96rai\">New connection</option><!></select></label> <div class=\"pc-fast-fields svelte-1n96rai\"><label class=\"svelte-1n96rai\">Connection ID<input aria-label=\"Connection ID\" maxlength=\"128\" class=\"svelte-1n96rai\"/></label> <label class=\"svelte-1n96rai\">Connection name<input aria-label=\"Connection name\" maxlength=\"256\" class=\"svelte-1n96rai\"/></label> <label class=\"svelte-1n96rai\">Provider<select aria-label=\"Provider\" class=\"svelte-1n96rai\"><option class=\"svelte-1n96rai\">Jev API</option><option class=\"svelte-1n96rai\">Laya</option><option class=\"svelte-1n96rai\">Compatible typed API</option></select></label> <label class=\"svelte-1n96rai\">Typed model<input aria-label=\"Typed model\" maxlength=\"256\" class=\"svelte-1n96rai\"/></label></div> <label class=\"svelte-1n96rai\">Typed endpoint<input aria-label=\"Typed endpoint\" type=\"url\" maxlength=\"2048\" class=\"svelte-1n96rai\"/></label> <small class=\"svelte-1n96rai\"> </small> <label class=\"svelte-1n96rai\">Session API key<input aria-label=\"Session API key\" type=\"password\" autocomplete=\"new-password\" spellcheck=\"false\" maxlength=\"8192\" class=\"svelte-1n96rai\"/></label> <small class=\"svelte-1n96rai\">Keys are session-only. Re-enter them after restarting SillyTavern. Leave this field empty to keep an existing session key.</small> <!> <!> <!> <footer class=\"svelte-1n96rai\"><button type=\"button\" class=\"svelte-1n96rai\"> </button><button type=\"button\" class=\"svelte-1n96rai\">Clear session key</button><button type=\"button\" class=\"svelte-1n96rai\">Remove connection</button><button type=\"button\" class=\"svelte-1n96rai\">Close</button></footer></section>");
+function tc(e, t) {
+	Ve(t, !0);
+	let n = wi(t, "actions", 19, () => ({})), r = /* @__PURE__ */ L(""), i = /* @__PURE__ */ L(""), a = /* @__PURE__ */ L(""), o = /* @__PURE__ */ L("jev"), s = /* @__PURE__ */ L(""), c = /* @__PURE__ */ L(""), l = /* @__PURE__ */ L(""), u = /* @__PURE__ */ L(!1), d = /* @__PURE__ */ L(""), f = /* @__PURE__ */ L(""), p = /* @__PURE__ */ L(Qt(fr(() => t.view.userId))), m = 0, h = /* @__PURE__ */ F(() => t.view.connections.find((e) => e.id === W(r)));
+	function g() {
+		m++, R(p, t.view.userId, !0), v(""), R(f, "The active user changed. Choose a connection for this user.");
+	}
+	yn(() => {
+		W(p) !== t.view.userId && g();
 	});
-	function i(e) {
-		if (e.stopPropagation(), e.key === "Escape" && (e.preventDefault(), t.actions?.choose("cancel")), e.key === "Tab") {
-			let t = [...n.querySelectorAll("button:not(:disabled)")], r = t.indexOf(document.activeElement);
-			e.shiftKey && r <= 0 && (e.preventDefault(), t.at(-1)?.focus()), !e.shiftKey && (r < 0 || r === t.length - 1) && (e.preventDefault(), t[0]?.focus());
+	function _() {
+		if (W(p) !== t.view.userId) return g(), null;
+		let e = m, n = W(p);
+		return {
+			userId: n,
+			current: () => m === e && W(p) === n && t.view.userId === n
+		};
+	}
+	function v(e) {
+		R(r, e, !0), R(l, ""), R(d, ""), R(f, "");
+		let n = t.view.connections.find((t) => t.id === e);
+		R(i, n?.id ?? "", !0), R(a, n?.label ?? "", !0), R(o, n?.provider ?? "jev", !0), R(s, n?.model ?? "", !0), R(c, n?.endpoint ?? "", !0);
+	}
+	function y(e) {
+		e?.ok ? R(d, e.data?.message ?? "Connection settings updated.", !0) : R(f, e?.error.message ?? "Fast connection settings are unavailable.", !0);
+	}
+	async function b() {
+		if (W(u) || !n().save) return;
+		let e = _();
+		if (!e) return;
+		let t = W(l);
+		R(l, ""), R(u, !0), R(d, ""), R(f, "");
+		let p = {
+			id: W(i),
+			label: W(a) || W(i),
+			provider: W(o),
+			model: W(s),
+			...W(o) === "jev" ? {} : { endpoint: W(c) }
+		};
+		try {
+			let i = await n().save(p, t, e.userId);
+			e.current() && (y(i), i.ok && R(r, p.id, !0));
+		} catch {
+			e.current() && R(f, "Fast connection settings could not be updated.");
+		} finally {
+			R(u, !1);
 		}
 	}
-	var a = Us(), o = L(a), s = z(L(o), 2), c = L(s), l = L(c, !0);
-	M(c), Me(), M(s);
-	var u = z(s, 4), d = L(u), f = z(d), p = z(f);
-	$(p, (e) => r = e, () => r), M(u), M(o), $(o, (e) => n = e, () => n), M(a), B(() => J(l, t.view.name)), W("keydown", o, i, !0), W("paste", o, (e) => e.stopPropagation(), !0), G("click", d, () => t.actions?.choose("save")), G("click", f, () => t.actions?.choose("discard")), G("click", p, () => t.actions?.choose("cancel")), q(e, a), We();
+	async function x() {
+		if (!W(r) || W(u) || !n().remove) return;
+		let e = _();
+		if (e) {
+			R(l, ""), R(u, !0), R(f, ""), R(d, "");
+			try {
+				let t = await n().remove(W(r), e.userId);
+				e.current() && (t.ok && v(""), y(t));
+			} catch {
+				e.current() && R(f, "The connection could not be removed.");
+			} finally {
+				R(u, !1);
+			}
+		}
+	}
+	async function S() {
+		if (!W(r) || W(u) || !n().clearCredential) return;
+		let e = _();
+		if (e) {
+			R(l, ""), R(u, !0), R(f, ""), R(d, "");
+			try {
+				let t = await n().clearCredential(W(r), e.userId);
+				e.current() && y(t);
+			} catch {
+				e.current() && R(f, "The session key could not be cleared.");
+			} finally {
+				R(u, !1);
+			}
+		}
+	}
+	var C = ec(), w = V(z(C), 2), T = V(z(w)), E = z(T);
+	E.value = E.__value = "", Z(V(E), 17, () => t.view.connections, (e) => e.id, (e, t) => {
+		var n = Xs(), r = z(n);
+		P(n);
+		var i = {};
+		H(() => {
+			Y(r, `${W(t).label ?? ""} · ${W(t).provider ?? ""} · ${W(t).model ?? ""}`), i !== (i = W(t).id) && (n.value = (n.__value = W(t).id) ?? "");
+		}), J(e, n);
+	}), P(T);
+	var D;
+	si(T), P(w);
+	var O = V(w, 2), k = z(O), A = V(z(k));
+	Q(A), P(k);
+	var ee = V(k, 2), te = V(z(ee));
+	Q(te), P(ee);
+	var ne = V(ee, 2), j = V(z(ne)), re = z(j);
+	re.value = re.__value = "jev";
+	var ie = V(re);
+	ie.value = ie.__value = "laya";
+	var ae = V(ie);
+	ae.value = ae.__value = "compatible", P(j);
+	var oe;
+	si(j), P(ne);
+	var se = V(ne, 2), ce = V(z(se));
+	Q(ce), P(se), P(O);
+	var le = V(O, 2), ue = V(z(le));
+	Q(ue), P(le);
+	var de = V(le, 2), fe = z(de, !0);
+	P(de);
+	var pe = V(de, 2), me = V(z(pe));
+	Q(me), P(pe);
+	var he = V(pe, 4), ge = (e) => {
+		var t = Zs(), n = z(t);
+		P(t), H(() => Y(n, `Session key: ${W(h).credentialReady ? "ready" : "not entered"}`)), J(e, t);
+	};
+	X(he, (e) => {
+		W(h) && e(ge);
+	});
+	var _e = V(he, 2), ve = (e) => {
+		var n = Qs(), r = z(n, !0);
+		P(n), H(() => Y(r, W(f) || t.view.issue)), J(e, n);
+	};
+	X(_e, (e) => {
+		(t.view.issue || W(f)) && e(ve);
+	});
+	var ye = V(_e, 2), be = (e) => {
+		var t = $s(), n = z(t, !0);
+		P(t), H(() => Y(n, W(d))), J(e, t);
+	};
+	X(ye, (e) => {
+		W(d) && e(be);
+	});
+	var xe = V(ye, 2), Se = z(xe), Ce = z(Se, !0);
+	P(Se);
+	var we = V(Se), Te = V(we), Ee = V(Te);
+	P(xe), P(C), H(() => {
+		T.disabled = W(u), D !== (D = W(r)) && (T.value = (T.__value = W(r)) ?? "", oi(T, W(r))), mi(A, W(i)), A.disabled = W(u) || !!W(r), mi(te, W(a)), te.disabled = W(u), j.disabled = W(u), oe !== (oe = W(o)) && (j.value = (j.__value = W(o)) ?? "", oi(j, W(o))), mi(ce, W(s)), ce.disabled = W(u), mi(ue, W(o) === "jev" ? "https://api.typesafe.ai/v1/systemone" : W(c)), ue.readOnly = W(o) === "jev", ue.disabled = W(u), Y(fe, W(o) === "jev" ? "Jev uses its fixed SystemOne endpoint and requires a session API key." : "Enter the complete /v1/systemone route using HTTPS or HTTP on localhost. A session key is optional for an unauthenticated local service."), mi(me, W(l)), me.disabled = W(u), Se.disabled = W(u) || !n().save || !!t.view.issue, Y(Ce, W(u) ? "Applying…" : "Save connection"), we.disabled = W(u) || !W(h)?.credentialReady || !n().clearCredential, Te.disabled = W(u) || !W(r) || !n().remove;
+	}), K("change", T, (e) => v(e.currentTarget.value)), K("input", A, (e) => R(i, e.currentTarget.value, !0)), K("input", te, (e) => R(a, e.currentTarget.value, !0)), K("change", j, (e) => {
+		R(o, e.currentTarget.value, !0);
+	}), K("input", ce, (e) => R(s, e.currentTarget.value, !0)), K("input", ue, (e) => R(c, e.currentTarget.value, !0)), K("input", me, (e) => R(l, e.currentTarget.value, !0)), K("click", Se, b), K("click", we, S), K("click", Te, x), K("click", Ee, () => {
+		R(l, ""), t.close();
+	}), J(e, C), He();
 }
-br(["click"]);
+yr([
+	"change",
+	"input",
+	"click"
+]);
+//#endregion
+//#region src/workflow/operations/json-data.js?v=0.26.0
+function nc(e) {
+	if (typeof e != "object" || !e) return JSON.stringify(e);
+	if (Array.isArray(e)) {
+		let t = "[";
+		for (let n = 0; n < e.length; n++) t += `${n ? "," : ""}${nc(e[n])}`;
+		return `${t}]`;
+	}
+	let t = "{", n = Object.keys(e);
+	for (let r = 0; r < n.length; r++) {
+		let i = n[r];
+		t += `${r ? "," : ""}${JSON.stringify(i)}:${nc(e[i])}`;
+	}
+	return `${t}}`;
+}
+function rc(e) {
+	let t = /* @__PURE__ */ new Set(), n = 0, r = (e, i = 0) => {
+		if (i > 32 || ++n > 1e4) throw Error("JSON structure exceeds limits.");
+		if (e === null || typeof e == "string" || typeof e == "boolean" || typeof e == "number" && Number.isFinite(e)) return e;
+		if (typeof e != "object" || !e) throw Error("Unsupported JSON value.");
+		let a = Array.isArray(e), o = Object.getPrototypeOf(e);
+		if (a ? o !== Array.prototype : o !== Object.prototype && o !== null) throw Error("JSON objects must be plain.");
+		if (t.has(e)) throw Error("JSON values cannot contain cycles.");
+		t.add(e);
+		let s = a ? [] : {}, c = Reflect.ownKeys(e);
+		if (a && c.length !== e.length + 1) throw Error("JSON arrays must be dense.");
+		for (let t of c) {
+			if (a && t === "length") continue;
+			let n = Object.getOwnPropertyDescriptor(e, t);
+			if (typeof t != "string" || !n || !Object.hasOwn(n, "value") || !n.enumerable) throw Error("JSON requires enumerable own data properties.");
+			if (a && (!/^(0|[1-9]\d*)$/.test(t) || Number(t) >= e.length)) throw Error("JSON arrays cannot contain named properties.");
+			Object.defineProperty(s, t, {
+				value: r(n.value, i + 1),
+				enumerable: !0,
+				configurable: !0,
+				writable: !0
+			});
+		}
+		return t.delete(e), s;
+	};
+	try {
+		let t = r(e);
+		if (new TextEncoder().encode(nc(t)).byteLength > 262144) throw Error("JSON byte limit exceeded.");
+		return {
+			ok: !0,
+			data: { value: t }
+		};
+	} catch {
+		return {
+			ok: !1,
+			error: {
+				code: "INVALID_JSON_VALUE",
+				message: "Input must contain only plain JSON data."
+			}
+		};
+	}
+}
+//#endregion
+//#region src/workflow/story-time.js?v=0.26.0
+var ic = (e, t) => ({
+	ok: !1,
+	error: {
+		code: e,
+		message: t
+	}
+}), ac = (e) => Number.isSafeInteger(e) && e >= 0, oc = (e, t) => Object.hasOwn(e, t) ? e[t] : void 0, sc = (e) => typeof e == "object" && !!e && !Array.isArray(e), cc = (e) => typeof e == "string" && e.trim().length > 0 && e.length <= 256, lc = (e) => Array.isArray(e) && e.every((e) => typeof e == "string" && e.length > 0 && e.length <= 4096);
+function uc(e, t) {
+	let n = dc(e);
+	if (!n.ok) return n;
+	let r = n.data, i = rc(t);
+	if (!i.ok || !i.data.value || Array.isArray(i.data.value) || typeof i.data.value != "object") return ic("INVALID_PROPOSAL", "Use a plain duration or destination proposal.");
+	let a = i.data.value, o = oc(a, "kind");
+	if (o !== "duration" && o !== "destination") return ic("UNRESOLVED_TIME", "An explicit duration or destination is required.");
+	if (o === "duration" ? !ac(oc(a, "minutes")) || Object.hasOwn(a, "absoluteMinute") : !ac(oc(a, "absoluteMinute")) || Object.hasOwn(a, "minutes")) return ic("INVALID_PROPOSAL", "Use one nonnegative safe-integer minute value.");
+	let s = [
+		"kind",
+		"evidence",
+		o === "duration" ? "minutes" : "absoluteMinute"
+	];
+	if (Object.keys(a).some((e) => !s.includes(e))) return ic("INVALID_PROPOSAL", "Proposal contains ambiguous or unsupported timing fields.");
+	let c = o === "destination" ? a.absoluteMinute : r.absoluteMinute + a.minutes;
+	if (!ac(c) || c < r.absoluteMinute) return ic("INVALID_DESTINATION", "Destination must be a forward safe-integer minute.");
+	let l = pc(Object.hasOwn(a, "evidence") ? a.evidence : { kind: "explicit" });
+	if (!l.ok) return l;
+	let u = l.data, d = u.kind, f = structuredClone(r), p = structuredClone(u);
+	return o === "duration" && r.timeEvidence?.kind === "estimate" && (p = d === "estimate" ? {
+		...p,
+		lineage: [.../* @__PURE__ */ new Set([...r.timeEvidence.lineage ?? [r.timeEvidence.origin], ...u.lineage ?? [u.origin]])]
+	} : structuredClone(r.timeEvidence), p.lineage?.length > 64) ? ic("EVIDENCE_LIMIT", "Estimate provenance exceeds 64 sources; hold the entire time projection.") : fc({
+		previousClock: f,
+		clock: {
+			...structuredClone(r),
+			absoluteMinute: c,
+			timeEvidence: p
+		},
+		requestedAbsoluteMinute: c,
+		elapsedMinutes: c - r.absoluteMinute,
+		evidence: u,
+		actualCalls: 0
+	});
+}
+function dc(e) {
+	let t = rc(e);
+	if (!t.ok || !t.data.value || typeof t.data.value != "object" || Array.isArray(t.data.value)) return ic("INVALID_CLOCK", "Clock must contain bounded own plain data.");
+	let n = t.data.value;
+	if (!cc(oc(n, "clockId")) || !cc(oc(n, "calendarId")) || !ac(oc(n, "absoluteMinute")) || !ac(oc(n, "dayLengthMinutes")) || n.dayLengthMinutes === 0) return ic("INVALID_CLOCK", "Clock requires identities and safe-integer minute/calendar values.");
+	if (Object.hasOwn(n, "schemaVersion") && n.schemaVersion !== 1) return ic("INVALID_CLOCK", "Clock schema version must be 1.");
+	if (Object.hasOwn(n, "revision") && (!ac(n.revision) || n.revision < 1)) return ic("INVALID_CLOCK", "Clock revision must be a positive safe integer.");
+	if (Object.hasOwn(n, "timeEvidence") && !pc(n.timeEvidence).ok) return ic("INVALID_CLOCK", "Clock time evidence must retain accepted provenance.");
+	if (Object.hasOwn(n, "settledTimeEventIds") && !lc(n.settledTimeEventIds)) return ic("INVALID_CLOCK", "Settled occurrence IDs must be a bounded string array.");
+	for (let [e, t] of [
+		["unit", "minute"],
+		["originMinute", 0],
+		["originDay", 1]
+	]) if (Object.hasOwn(n, e) && n[e] !== t) return ic("INVALID_CALENDAR", "This calendar uses minute units with minute zero at Day 1.");
+	return {
+		ok: !0,
+		data: n
+	};
+}
+function fc(e) {
+	let t = rc(e);
+	return t.ok ? {
+		ok: !0,
+		data: t.data.value
+	} : ic("OUTPUT_LIMIT", "Projection exceeds the bounded plain-data DTO budget.");
+}
+function pc(e) {
+	if (!sc(e)) return ic("INVALID_EVIDENCE", "Evidence must be a plain record.");
+	let t = oc(e, "kind");
+	if (![
+		"explicit",
+		"authored-rule",
+		"validated-extraction",
+		"estimate",
+		"vague"
+	].includes(t)) return ic("INVALID_EVIDENCE", "Use a supported time evidence kind.");
+	let n = t === "estimate" ? [
+		"kind",
+		"origin",
+		"acceptancePolicy",
+		"lineage"
+	] : ["kind", "origin"];
+	if (Object.keys(e).some((e) => !n.includes(e))) return ic("INVALID_EVIDENCE", "Evidence contains unsupported or contradictory fields.");
+	let r = typeof oc(e, "origin") == "string" && e.origin.trim().length > 0;
+	if (Object.hasOwn(e, "origin") && !r) return ic("INVALID_EVIDENCE", "Evidence origin must be nonempty text.");
+	if (t === "estimate" && Object.hasOwn(e, "acceptancePolicy") && !["accept", "unresolved"].includes(e.acceptancePolicy)) return ic("INVALID_EVIDENCE", "Estimate acceptance policy must be accept or unresolved.");
+	if (Object.hasOwn(e, "lineage")) {
+		let t = e.lineage;
+		if (!Array.isArray(t) || t.length === 0 || !t.every((e) => typeof e == "string" && e.trim().length > 0) || new Set(t).size !== t.length || !t.includes(e.origin)) return ic("INVALID_EVIDENCE", "Estimate lineage must contain distinct nonempty text origins including the current origin.");
+		if (t.length > 64) return ic("EVIDENCE_LIMIT", "Estimate provenance exceeds 64 sources; hold the entire time projection.");
+	}
+	return t === "vague" || t === "estimate" && (!r || oc(e, "acceptancePolicy") !== "accept") ? ic("UNRESOLVED_TIME", "Estimated or vague time needs an explicit accepted authored rule.") : ["authored-rule", "validated-extraction"].includes(t) && !r ? ic("INVALID_EVIDENCE", "Rule and extraction evidence must identify their origin.") : {
+		ok: !0,
+		data: e
+	};
+}
+new TextEncoder();
+//#endregion
+//#region src/ui/story-document-setup.js
+var mc = (e, t) => ({
+	ok: !1,
+	error: {
+		code: e,
+		message: t
+	}
+});
+function hc(e, t, n = 0) {
+	let r = {
+		schemaVersion: 1,
+		clockId: e,
+		calendarId: t,
+		dayLengthMinutes: 1440,
+		absoluteMinute: n,
+		revision: 1,
+		unit: "minute",
+		originMinute: 0,
+		originDay: 1,
+		timeEvidence: { kind: "explicit" }
+	};
+	return uc(r, {
+		kind: "duration",
+		minutes: 0
+	}).ok ? {
+		ok: !0,
+		data: { text: JSON.stringify(r, null, 2) }
+	} : mc("INVALID_CLOCK_TEMPLATE", "Choose explicit clock/calendar IDs and a nonnegative whole story minute.");
+}
+//#endregion
+//#region ui/StoryDocuments.svelte
+var gc = /* @__PURE__ */ q("<p role=\"alert\" class=\"svelte-1t33cem\"> </p>"), _c = /* @__PURE__ */ q("<option class=\"svelte-1t33cem\"> </option>"), vc = /* @__PURE__ */ q("<label class=\"svelte-1t33cem\">Actor ID<input aria-label=\"Actor ID\" maxlength=\"128\" class=\"svelte-1t33cem\"/></label>"), yc = /* @__PURE__ */ q("<label class=\"svelte-1t33cem\">CSV columns, comma separated<input aria-label=\"CSV columns\" class=\"svelte-1t33cem\"/></label>"), bc = /* @__PURE__ */ q("<details class=\"svelte-1t33cem\"><summary class=\"svelte-1t33cem\">Story clock template</summary><label class=\"svelte-1t33cem\">Calendar ID<input aria-label=\"Calendar ID\" class=\"svelte-1t33cem\"/></label><label class=\"svelte-1t33cem\">Starting story minute<input aria-label=\"Starting story minute\" type=\"number\" min=\"0\" step=\"1\" class=\"svelte-1t33cem\"/></label><button type=\"button\" class=\"svelte-1t33cem\">Use story clock template</button><p class=\"svelte-1t33cem\">Midnight on the first day is minute 0. The clock advances through graph events, using explicit story time.</p></details>"), xc = /* @__PURE__ */ q("<p role=\"status\" class=\"svelte-1t33cem\"> </p>"), Sc = /* @__PURE__ */ q("<div class=\"pc-story-documents svelte-1t33cem\"><p class=\"svelte-1t33cem\"> </p> <p class=\"svelte-1t33cem\">Authorize logical story documents here. Updating an authorization or its initial template leaves existing canonical document content intact. Read File and Write File use these target IDs.</p> <!> <label class=\"svelte-1t33cem\">Story document<select aria-label=\"Story document\" class=\"svelte-1t33cem\"><option class=\"svelte-1t33cem\">New document authorization</option><!></select></label> <div class=\"pc-document-actions svelte-1t33cem\"><button type=\"button\" class=\"svelte-1t33cem\">Load initial template</button><button type=\"button\" class=\"svelte-1t33cem\">Remove authorization</button><button type=\"button\" class=\"svelte-1t33cem\">Refresh scope</button></div> <form class=\"svelte-1t33cem\"><label class=\"svelte-1t33cem\">Logical target ID<input aria-label=\"Logical target ID\" maxlength=\"128\" placeholder=\"souls.json\" class=\"svelte-1t33cem\"/></label> <label class=\"svelte-1t33cem\">Document name<input aria-label=\"Document name\" maxlength=\"256\" class=\"svelte-1t33cem\"/></label> <label class=\"svelte-1t33cem\">Format<select aria-label=\"Document format\" class=\"svelte-1t33cem\"><option class=\"svelte-1t33cem\">JSON</option><option class=\"svelte-1t33cem\">JSON Lines</option><option class=\"svelte-1t33cem\">CSV</option><option class=\"svelte-1t33cem\">Plain text</option><option class=\"svelte-1t33cem\">Markdown</option></select></label> <label class=\"svelte-1t33cem\">Visibility<select aria-label=\"Document visibility\" class=\"svelte-1t33cem\"><option class=\"svelte-1t33cem\">Public</option><option class=\"svelte-1t33cem\">Hidden</option><option class=\"svelte-1t33cem\">Actor private</option></select></label> <!> <!> <!> <label class=\"svelte-1t33cem\">Initial template<textarea aria-label=\"Initial template\" rows=\"7\" maxlength=\"100000\" class=\"svelte-1t33cem\"></textarea></label> <p class=\"svelte-1t33cem\">JSON templates preserve your chosen object or list structure. CSV uses the named columns. Existing authorizations require explicit template loading before editing.</p> <!><!> <footer class=\"svelte-1t33cem\"><button type=\"button\" class=\"svelte-1t33cem\">Close</button><button type=\"submit\" class=\"svelte-1t33cem\"> </button></footer></form></div>");
+function Cc(e, t) {
+	Ve(t, !0);
+	let n = /* @__PURE__ */ L(""), r = /* @__PURE__ */ L(""), i = /* @__PURE__ */ L(""), a = /* @__PURE__ */ L("json"), o = /* @__PURE__ */ L(""), s = /* @__PURE__ */ L("public"), c = /* @__PURE__ */ L(""), l = /* @__PURE__ */ L(""), u = /* @__PURE__ */ L(!1), d = /* @__PURE__ */ L(""), f = /* @__PURE__ */ L(""), p = /* @__PURE__ */ L(!1), m = /* @__PURE__ */ L("story-calendar"), h = /* @__PURE__ */ L(0), g = "", _ = 0;
+	function v() {
+		R(r, ""), R(i, ""), R(a, "json"), R(o, ""), R(s, "public"), R(c, ""), R(l, ""), R(p, !1), R(d, ""), R(f, "");
+	}
+	yn(() => {
+		t.view.key !== g && (g = t.view.key, _++, R(u, !1), R(n, ""), v());
+	});
+	function y() {
+		_++, R(u, !1), v();
+		let e = t.view.documents.find((e) => e.targetId === W(n));
+		e && (R(r, e.targetId, !0), R(i, e.name, !0), R(a, e.format, !0), R(s, e.visibility.kind, !0), R(c, e.visibility.kind === "actor-private" ? e.visibility.actorId : "", !0), R(l, e.columns?.join(", ") ?? "", !0));
+	}
+	function b() {
+		let e = hc(W(r), W(m), W(h));
+		e.ok ? (R(o, e.data.text, !0), R(d, "")) : R(d, e.error.message, !0);
+	}
+	async function x(e) {
+		if (!t.actions || W(u) || !t.view.key) return;
+		let m = t.view.key, h = ++_;
+		R(u, !0), R(d, ""), R(f, "");
+		try {
+			let u;
+			if (e === "load") u = await t.actions.load(m, W(n));
+			else if (e === "remove") u = await t.actions.remove(m, W(n));
+			else {
+				let e = {
+					targetId: W(r),
+					name: W(i),
+					format: W(a),
+					content: W(o),
+					visibility: W(s) === "actor-private" ? {
+						kind: W(s),
+						actorId: W(c)
+					} : { kind: W(s) }
+				};
+				W(a) === "csv" && (e.columns = W(l).split(",").map((e) => e.trim()).filter(Boolean)), u = await t.actions.save(m, e);
+			}
+			if (m !== t.view.key || h !== _) return;
+			if (!u?.ok) {
+				R(d, u?.error?.message ?? "Story document setup could not be applied.", !0);
+				return;
+			}
+			if (e === "load") {
+				let e = u.data?.definition;
+				if (!e) {
+					R(d, "The initial template could not be loaded.");
+					return;
+				}
+				R(r, e.targetId, !0), R(i, e.name, !0), R(a, e.format, !0), R(o, e.content, !0), R(s, e.visibility.kind, !0), R(c, e.visibility.actorId ?? "", !0), R(l, e.columns?.join(", ") ?? "", !0), R(p, !0);
+			} else R(f, u.data?.message ?? "Authorization updated locally.", !0), R(p, !1);
+		} catch {
+			m === t.view.key && h === _ && R(d, "Story document setup could not be applied.");
+		} finally {
+			m === t.view.key && h === _ && R(u, !1);
+		}
+	}
+	var S = Sc(), C = z(S), w = z(C);
+	P(C);
+	var T = V(C, 4), E = (e) => {
+		var n = gc(), r = z(n, !0);
+		P(n), H(() => Y(r, t.view.issue)), J(e, n);
+	};
+	X(T, (e) => {
+		t.view.issue && e(E);
+	});
+	var D = V(T, 2), O = V(z(D)), k = z(O);
+	k.value = k.__value = "", Z(V(k), 17, () => t.view.documents, (e) => e.targetId, (e, t) => {
+		var n = _c(), r = z(n);
+		P(n);
+		var i = {};
+		H(() => {
+			Y(r, `${W(t).name ?? ""} (${W(t).targetId ?? ""}, ${W(t).format ?? ""}, ${W(t).visibility.kind ?? ""})`), i !== (i = W(t).targetId) && (n.value = (n.__value = W(t).targetId) ?? "");
+		}), J(e, n);
+	}), P(O), P(D);
+	var A = V(D, 2), ee = z(A), te = V(ee), ne = V(te);
+	P(A);
+	var j = V(A, 2), re = z(j), ie = V(z(re));
+	Q(ie), P(re);
+	var ae = V(re, 2), oe = V(z(ae));
+	Q(oe), P(ae);
+	var se = V(ae, 2), ce = V(z(se)), le = z(ce);
+	le.value = le.__value = "json";
+	var ue = V(le);
+	ue.value = ue.__value = "jsonl";
+	var de = V(ue);
+	de.value = de.__value = "csv";
+	var fe = V(de);
+	fe.value = fe.__value = "text";
+	var pe = V(fe);
+	pe.value = pe.__value = "markdown", P(ce), P(se);
+	var me = V(se, 2), he = V(z(me)), ge = z(he);
+	ge.value = ge.__value = "public";
+	var _e = V(ge);
+	_e.value = _e.__value = "hidden";
+	var ve = V(_e);
+	ve.value = ve.__value = "actor-private", P(he), P(me);
+	var ye = V(me, 2), be = (e) => {
+		var t = vc(), n = V(z(t));
+		Q(n), P(t), H(() => n.disabled = W(u)), yi(n, () => W(c), (e) => R(c, e)), J(e, t);
+	};
+	X(ye, (e) => {
+		W(s) === "actor-private" && e(be);
+	});
+	var xe = V(ye, 2), Se = (e) => {
+		var t = yc(), n = V(z(t));
+		Q(n), P(t), H(() => n.disabled = W(u)), yi(n, () => W(l), (e) => R(l, e)), J(e, t);
+	};
+	X(xe, (e) => {
+		W(a) === "csv" && e(Se);
+	});
+	var Ce = V(xe, 2), we = (e) => {
+		var t = bc(), i = V(z(t)), a = V(z(i));
+		Q(a), P(i);
+		var o = V(i), s = V(z(o));
+		Q(s), P(o);
+		var c = V(o);
+		Ae(), P(t), H((e) => {
+			a.disabled = W(u), s.disabled = W(u), c.disabled = e;
+		}, [() => !W(r).trim() || W(u) || !!W(n) && !W(p)]), yi(a, () => W(m), (e) => R(m, e)), yi(s, () => W(h), (e) => R(h, e)), K("click", c, b), J(e, t);
+	};
+	X(Ce, (e) => {
+		W(a) === "json" && e(we);
+	});
+	var Te = V(Ce, 2), Ee = V(z(Te));
+	rt(Ee), P(Te);
+	var M = V(Te, 4), De = (e) => {
+		var t = gc(), n = z(t, !0);
+		P(t), H(() => Y(n, W(d))), J(e, t);
+	};
+	X(M, (e) => {
+		W(d) && e(De);
+	});
+	var N = V(M), Oe = (e) => {
+		var n = xc(), r = z(n, !0);
+		P(n), H(() => Y(r, W(f) || t.view.notice)), J(e, n);
+	};
+	X(N, (e) => {
+		(W(f) || t.view.notice) && e(Oe);
+	});
+	var ke = V(N, 2), je = z(ke), Me = V(je), Ne = z(Me, !0);
+	P(Me), P(ke), P(j), P(S), H((e) => {
+		Y(w, `Active user: ${(t.view.scope.userId || "Unavailable") ?? ""} · Chat: ${(t.view.scope.chatId || "Unavailable") ?? ""}`), O.disabled = W(u), ee.disabled = !W(n) || W(u), te.disabled = !W(n) || W(u), ne.disabled = W(u), ie.disabled = !!W(n) || W(u), oe.disabled = W(u), ce.disabled = !!W(n) || W(u), he.disabled = W(u), Ee.disabled = W(u) || !!W(n) && !W(p), $(Ee, "placeholder", W(a) === "json" ? "[]" : ""), Me.disabled = e, Y(Ne, W(u) ? "Saving…" : "Save authorization");
+	}, [() => !t.actions || !t.view.key || !W(r).trim() || !W(i).trim() || W(u) || !!W(n) && !W(p) || W(s) === "actor-private" && !W(c).trim()]), K("change", O, y), ci(O, () => W(n), (e) => R(n, e)), K("click", ee, () => x("load")), K("click", te, () => x("remove")), K("click", ne, () => t.actions?.refresh()), G("submit", j, (e) => {
+		e.preventDefault(), x("save");
+	}), yi(ie, () => W(r), (e) => R(r, e)), yi(oe, () => W(i), (e) => R(i, e)), ci(ce, () => W(a), (e) => R(a, e)), ci(he, () => W(s), (e) => R(s, e)), yi(Ee, () => W(o), (e) => R(o, e)), K("click", je, function(...e) {
+		t.close?.apply(this, e);
+	}), J(e, S), He();
+}
+yr(["change", "click"]);
+//#endregion
+//#region ui/RecallArms.svelte
+var wc = /* @__PURE__ */ q("<p class=\"svelte-34wc6n\"> </p>"), Tc = /* @__PURE__ */ q("<p role=\"alert\" class=\"svelte-34wc6n\"> </p>"), Ec = /* @__PURE__ */ q("<p class=\"svelte-34wc6n\">Add a Hotkey Arm node to the assigned unified workflow for the active character, then enable Lattice. Configure the actor, memory set, target and use policy in Details.</p>"), Dc = /* @__PURE__ */ q("<fieldset class=\"svelte-34wc6n\"><legend> </legend> <p class=\"svelte-34wc6n\"> </p> <p class=\"svelte-34wc6n\"> </p> <button type=\"button\"> </button></fieldset>"), Oc = /* @__PURE__ */ q("<header class=\"svelte-34wc6n\"><h2>Recall arms</h2><button type=\"button\">Close</button></header> <p class=\"svelte-34wc6n\">Arm a memory set for the next reply, generated swipe, or both. Automatic Recall triggers use the workflow’s own conditions.</p> <!> <!> <!> <!> <p class=\"svelte-34wc6n\"><button type=\"button\">Refresh recall state</button></p> <small class=\"svelte-34wc6n\">Shortcuts use physical keys and do not fire while typing in inputs. Duplicate active shortcuts require a different key. Editing the graph or switching scope revokes old shortcuts.</small>", 1);
+function kc(e, t) {
+	Ve(t, !0);
+	let n = /* @__PURE__ */ L(""), r = /* @__PURE__ */ L(""), i = (e) => [
+		e.ctrl ? "Ctrl" : "",
+		e.alt ? "Alt" : "",
+		e.shift ? "Shift" : "",
+		e.meta ? "Meta" : "",
+		e.code.replace(/^Key|^Digit/u, "")
+	].filter(Boolean).join("+");
+	async function a(e, i) {
+		if (!W(n)) {
+			R(n, e, !0), R(r, "");
+			try {
+				let n = await (i ? t.actions?.disarm(e) : t.actions?.arm(e));
+				n?.ok !== !0 && R(r, n?.error.message ?? "Recall controls are unavailable.", !0);
+			} catch {
+				R(r, "Recall controls are unavailable.");
+			} finally {
+				R(n, "");
+			}
+		}
+	}
+	var o = Oc(), s = B(o), c = V(z(s));
+	P(s);
+	var l = V(s, 4), u = (e) => {
+		var n = wc(), r = z(n);
+		P(n), H(() => Y(r, `User ${t.view.scope.userId ?? ""} · Chat ${t.view.scope.chatId ?? ""} · Actor ${t.view.scope.actorId ?? ""}`)), J(e, n);
+	};
+	X(l, (e) => {
+		t.view.scope && e(u);
+	});
+	var d = V(l, 2), f = (e) => {
+		var n = Tc(), i = z(n, !0);
+		P(n), H(() => Y(i, W(r) || t.view.issue)), J(e, n);
+	};
+	X(d, (e) => {
+		(t.view.issue || W(r)) && e(f);
+	});
+	var p = V(d, 2), m = (e) => {
+		J(e, Ec());
+	};
+	X(p, (e) => {
+		t.view.nodes.length || e(m);
+	});
+	var h = V(p, 2);
+	Z(h, 17, () => t.view.nodes, (e) => e.nodeId, (e, r) => {
+		var o = Dc(), s = z(o), c = z(s);
+		P(s);
+		var l = V(s, 2), u = z(l);
+		P(l);
+		var d = V(l, 2), f = z(d);
+		P(d);
+		var p = V(d, 2), m = z(p, !0);
+		P(p), P(o), H((e) => {
+			Y(c, `${W(r).memorySetId ?? ""} · ${W(r).armed ? "Armed" : "Disarmed"}`), Y(u, `${e ?? ""} · ${W(r).target ?? ""} · ${W(r).uses ?? ""} · consume on ${W(r).consumeOn ?? ""}`), Y(f, `Remaining: ${W(r).remaining.reply ? "reply " : ""}${W(r).remaining.swipe ? "swipe" : ""}${!W(r).remaining.reply && !W(r).remaining.swipe ? "none" : ""}. Pending generations: ${W(r).pendingCount ?? ""}.`), $(p, "aria-label", (W(r).armed ? "Disarm " : "Arm ") + W(r).memorySetId), p.disabled = !!W(n) || !t.actions, Y(m, W(n) === W(r).nodeId ? "Updating…" : W(r).armed ? "Disarm" : "Arm");
+		}, [() => i(W(r).hotkey)]), K("click", p, () => a(W(r).nodeId, W(r).armed)), J(e, o);
+	});
+	var g = V(h, 2), _ = z(g);
+	P(g), Ae(2), H(() => _.disabled = !!W(n) || !t.actions), K("click", c, function(...e) {
+		t.close?.apply(this, e);
+	}), K("click", _, () => t.actions?.refresh()), J(e, o), He();
+}
+yr(["click"]);
+//#endregion
+//#region ui/ConfigureNode.svelte
+var Ac = /* @__PURE__ */ q("<option class=\"svelte-1srbsqt\"> </option>"), jc = /* @__PURE__ */ q("<p class=\"svelte-1srbsqt\">Authorize a document in Tools › Story documents, then reopen node creation.</p>"), Mc = /* @__PURE__ */ q("<label class=\"svelte-1srbsqt\">Authorized story document<select aria-label=\"Authorized story document\" class=\"svelte-1srbsqt\"><option class=\"svelte-1srbsqt\">Choose an authorized target</option><!></select></label><!>", 1), Nc = /* @__PURE__ */ q("<label class=\"svelte-1srbsqt\">Pinned Data helper<select aria-label=\"Pinned Data helper\" class=\"svelte-1srbsqt\"><option class=\"svelte-1srbsqt\">Choose an existing item/result helper</option><!></select></label><p class=\"svelte-1srbsqt\">Helpers use exact pinned versions with Data item and result ports. Set iteration mode and requestBoundPerIteration in the controls below.</p>", 1), Pc = /* @__PURE__ */ q("<p role=\"alert\" class=\"svelte-1srbsqt\"> </p>"), Fc = /* @__PURE__ */ q("<div class=\"pc-workspace-overlay svelte-1srbsqt\"><div class=\"pc-workspace-dialog pc-configure-node svelte-1srbsqt\" role=\"dialog\" aria-modal=\"true\" aria-label=\"Configure node\" tabindex=\"-1\"><header class=\"svelte-1srbsqt\"><h2 class=\"svelte-1srbsqt\"> </h2><button type=\"button\" aria-label=\"Close node configuration\" class=\"svelte-1srbsqt\">×</button></header> <p class=\"svelte-1srbsqt\">Complete the required settings before creating the node. Cancel leaves the graph unchanged.</p> <form class=\"svelte-1srbsqt\"><label class=\"svelte-1srbsqt\">Stage<select aria-label=\"Node stage\" class=\"svelte-1srbsqt\"><option class=\"svelte-1srbsqt\">Preparation</option><option class=\"svelte-1srbsqt\">Response</option></select></label> <!> <!> <label class=\"svelte-1srbsqt\">Declared node controls<textarea aria-label=\"Node controls JSON\" rows=\"14\" maxlength=\"200000\" class=\"svelte-1srbsqt\"></textarea></label> <!> <footer class=\"svelte-1srbsqt\"><button type=\"button\" class=\"svelte-1srbsqt\">Cancel</button><button type=\"submit\" class=\"svelte-1srbsqt\"> </button></footer></form></div></div>");
+function Ic(e, t) {
+	Ve(t, !0);
+	let n, r = /* @__PURE__ */ L(""), i = /* @__PURE__ */ L("pre"), a = /* @__PURE__ */ L(""), o = /* @__PURE__ */ L(""), s = /* @__PURE__ */ L(!1), c = /* @__PURE__ */ L(""), l = "", u = 0, d = /* @__PURE__ */ F(() => t.view.operation === "read-file" || t.view.operation === "story-clock" || t.view.operation === "commit-outcomes");
+	yn(() => {
+		if (t.view.key === l) return;
+		l = t.view.key, u++, R(r, t.view.controls, !0), R(i, t.view.phase, !0), R(s, !1), R(c, "");
+		try {
+			let e = JSON.parse(W(r));
+			R(a, e.targetId ?? e.clockId ?? "", !0), R(o, t.view.helpers.find((t) => JSON.stringify(t.ref) === JSON.stringify(e.helper))?.key ?? "", !0);
+		} catch {
+			R(a, ""), R(o, "");
+		}
+		let e = l;
+		lr().then(() => {
+			t.view.key === e && n?.querySelector("select,textarea,input")?.focus({ preventScroll: !0 });
+		});
+	}), Ti(() => {
+		let e = document.activeElement;
+		return () => e?.focus({ preventScroll: !0 });
+	});
+	function f(e, t) {
+		try {
+			let n = JSON.parse(W(r));
+			if (!n || Array.isArray(n) || typeof n != "object") throw Error();
+			n[e] = t, R(r, JSON.stringify(n, null, 2), !0), R(c, "");
+		} catch {
+			R(c, "Use a JSON object before selecting a configured value.");
+		}
+	}
+	async function p(e) {
+		if (e.preventDefault(), !t.actions || W(s)) return;
+		let n = t.view.key, a = ++u;
+		R(s, !0), R(c, "");
+		try {
+			let e = await t.actions.apply(n, W(r), W(i));
+			n === t.view.key && a === u && !e?.ok && R(c, e?.error?.message ?? "The node could not be prepared.", !0);
+		} catch {
+			n === t.view.key && a === u && R(c, "The node could not be prepared.");
+		} finally {
+			n === t.view.key && a === u && R(s, !1);
+		}
+	}
+	function m(e) {
+		if (e.stopPropagation(), e.key === "Escape" && (e.preventDefault(), t.actions?.cancel(t.view.key)), e.key === "Tab") {
+			let t = [...n.querySelectorAll("button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled)")], r = t[0], i = t.at(-1);
+			e.shiftKey && document.activeElement === r && (e.preventDefault(), i?.focus()), !e.shiftKey && document.activeElement === i && (e.preventDefault(), r?.focus());
+		}
+	}
+	var h = Fc(), g = z(h), _ = z(g), v = z(_), y = z(v);
+	P(v);
+	var b = V(v);
+	P(_);
+	var x = V(_, 4), S = z(x), C = V(z(S)), w = z(C);
+	w.value = w.__value = "pre";
+	var T = V(w);
+	T.value = T.__value = "post", P(C), P(S);
+	var E = V(S, 2), D = (e) => {
+		var n = Mc(), r = B(n), i = V(z(r)), o = z(i);
+		o.value = o.__value = "", Z(V(o), 17, () => t.view.targets.filter((e) => !["story-clock", "commit-outcomes"].includes(t.view.operation) || e.format === "json"), (e) => e.targetId, (e, t) => {
+			var n = Ac(), r = z(n);
+			P(n);
+			var i = {};
+			H(() => {
+				Y(r, `${W(t).name ?? ""} (${W(t).targetId ?? ""})`), i !== (i = W(t).targetId) && (n.value = (n.__value = W(t).targetId) ?? "");
+			}), J(e, n);
+		}), P(i), P(r);
+		var c = V(r), l = (e) => {
+			J(e, jc());
+		};
+		X(c, (e) => {
+			t.view.targets.length || e(l);
+		}), H(() => i.disabled = W(s)), K("change", i, () => f(t.view.operation === "story-clock" ? "clockId" : "targetId", W(a))), ci(i, () => W(a), (e) => R(a, e)), J(e, n);
+	};
+	X(E, (e) => {
+		W(d) && e(D);
+	});
+	var O = V(E, 2), k = (e) => {
+		var n = Nc(), r = B(n), i = V(z(r)), a = z(i);
+		a.value = a.__value = "", Z(V(a), 17, () => t.view.helpers, (e) => e.key, (e, t) => {
+			var n = Ac(), r = z(n);
+			P(n);
+			var i = {};
+			H(() => {
+				Y(r, `${W(t).label ?? ""}${W(t).stateful ? " (projected state)" : ""}`), i !== (i = W(t).key) && (n.value = (n.__value = W(t).key) ?? "");
+			}), J(e, n);
+		}), P(i), P(r), Ae(), H(() => i.disabled = W(s)), K("change", i, () => {
+			let e = t.view.helpers.find((e) => e.key === W(o));
+			e && f("helper", e.ref);
+		}), ci(i, () => W(o), (e) => R(o, e)), J(e, n);
+	};
+	X(O, (e) => {
+		t.view.operation === "for-each" && e(k);
+	});
+	var A = V(O, 2), ee = V(z(A));
+	rt(ee), P(A);
+	var te = V(A, 2), ne = (e) => {
+		var t = Pc(), n = z(t, !0);
+		P(t), H(() => Y(n, W(c))), J(e, t);
+	};
+	X(te, (e) => {
+		W(c) && e(ne);
+	});
+	var j = V(te, 2), re = z(j), ie = V(re), ae = z(ie, !0);
+	P(ie), P(j), P(x), P(g), Ci(g, (e) => n = e, () => n), P(h), H(() => {
+		Y(y, `Configure ${t.view.title ?? ""}`), C.disabled = t.view.phaseLocked || W(s), ee.disabled = W(s), ie.disabled = !t.actions || W(s), Y(ae, W(s) ? "Preparing…" : "Create node");
+	}), G("keydown", g, m, !0), G("paste", g, (e) => e.stopPropagation()), K("click", b, () => t.actions?.cancel(t.view.key)), G("submit", x, p), ci(C, () => W(i), (e) => R(i, e)), yi(ee, () => W(r), (e) => R(r, e)), K("click", re, () => t.actions?.cancel(t.view.key)), J(e, h), He();
+}
+yr(["click", "change"]);
+//#endregion
+//#region ui/NewWorkflowPrompt.svelte
+var Lc = /* @__PURE__ */ q("<div class=\"pc-workspace-overlay\"><div class=\"pc-workspace-dialog pc-new-workflow-prompt svelte-121ekho\" role=\"dialog\" aria-modal=\"true\" aria-label=\"Save workflow changes?\" tabindex=\"-1\"><h2 class=\"svelte-121ekho\">Save workflow changes?</h2> <p class=\"svelte-121ekho\"><strong class=\"svelte-121ekho\"> </strong> has unsaved changes.</p> <p class=\"svelte-121ekho\">Save downloads workflow JSON before opening a new workflow. Your existing workflow stays in the workspace.</p> <label class=\"svelte-121ekho\">New workflow type<select aria-label=\"New workflow type\" class=\"svelte-121ekho\"><option>Unified workflow</option><option>Legacy pre workflow</option><option>Legacy post workflow</option></select></label> <footer class=\"svelte-121ekho\"><button type=\"button\" class=\"svelte-121ekho\">Save</button><button type=\"button\" class=\"svelte-121ekho\">Discard</button><button type=\"button\" class=\"svelte-121ekho\">Cancel</button></footer></div></div>");
+function Rc(e, t) {
+	Ve(t, !0);
+	let n = /* @__PURE__ */ L(Qt(fr(() => t.view.phase ?? "unified"))), r, i;
+	Ti(() => {
+		let e = document.activeElement;
+		return i.focus({ preventScroll: !0 }), () => e?.focus({ preventScroll: !0 });
+	});
+	function a(e) {
+		if (e.stopPropagation(), e.key === "Escape" && (e.preventDefault(), t.actions?.choose("cancel", W(n))), e.key === "Tab") {
+			let t = [...r.querySelectorAll("button:not(:disabled), select:not(:disabled)")], n = t.indexOf(document.activeElement);
+			e.shiftKey && n <= 0 && (e.preventDefault(), t.at(-1)?.focus()), !e.shiftKey && (n < 0 || n === t.length - 1) && (e.preventDefault(), t[0]?.focus());
+		}
+	}
+	var o = Lc(), s = z(o), c = V(z(s), 2), l = z(c), u = z(l, !0);
+	P(l), Ae(), P(c);
+	var d = V(c, 4), f = V(z(d)), p = z(f);
+	p.value = p.__value = "unified";
+	var m = V(p);
+	m.value = m.__value = "pre";
+	var h = V(m);
+	h.value = h.__value = "post", P(f);
+	var g;
+	si(f), P(d);
+	var _ = V(d, 2), v = z(_), y = V(v), b = V(y);
+	Ci(b, (e) => i = e, () => i), P(_), P(s), Ci(s, (e) => r = e, () => r), P(o), H(() => {
+		Y(u, t.view.name), g !== (g = W(n)) && (f.value = (f.__value = W(n)) ?? "", oi(f, W(n)));
+	}), G("keydown", s, a, !0), G("paste", s, (e) => e.stopPropagation(), !0), K("change", f, (e) => R(n, e.currentTarget.value, !0)), K("click", v, () => t.actions?.choose("save", W(n))), K("click", y, () => t.actions?.choose("discard", W(n))), K("click", b, () => t.actions?.choose("cancel", W(n))), J(e, o), He();
+}
+yr(["change", "click"]);
 //#endregion
 //#region ui/NodeSearch.svelte
-var Gs = /* @__PURE__ */ K("<label class=\"pc-context-check svelte-golf61\"><input type=\"checkbox\" class=\"svelte-golf61\"/>Context sensitive</label>"), Ks = /* @__PURE__ */ K("<span class=\"pc-search-context svelte-golf61\"> </span>"), qs = /* @__PURE__ */ K("<label class=\"pc-search-field svelte-golf61\"><input type=\"search\" aria-label=\"Search nodes and subgraphs\" placeholder=\"Search…\" autocomplete=\"off\" role=\"combobox\" aria-expanded=\"true\" class=\"svelte-golf61\"/></label> <!> <!>", 1), Js = /* @__PURE__ */ K("<p class=\"pc-search-context svelte-golf61\">Choose the named port to connect.</p>"), Ys = /* @__PURE__ */ K("<button type=\"button\" class=\"pc-search-result svelte-golf61\" role=\"option\"><span class=\"svelte-golf61\"> </span> <span class=\"pc-family svelte-golf61\"> </span></button>"), Xs = /* @__PURE__ */ K("<p class=\"pc-empty svelte-golf61\">No nodes match.</p>"), Zs = /* @__PURE__ */ K("<p class=\"pc-feedback svelte-golf61\" role=\"status\"> </p>"), Qs = /* @__PURE__ */ K("<div class=\"pc-node-search svelte-golf61\" role=\"dialog\" aria-modal=\"false\" tabindex=\"-1\"><!> <div class=\"pc-search-results svelte-golf61\" role=\"listbox\"></div> <!></div>");
-function $s(e, t) {
-	let n = Mr();
-	Ue(t, !0);
-	let r = wi(t, "view", 3, null), i = wi(t, "actions", 19, () => ({})), a = /* @__PURE__ */ F(void 0), o = /* @__PURE__ */ F(void 0), s = /* @__PURE__ */ F(""), c = /* @__PURE__ */ F(0), l = /* @__PURE__ */ F(8), u = /* @__PURE__ */ F(8), d, f, p = (e) => [
+var zc = /* @__PURE__ */ q("<label class=\"pc-context-check svelte-golf61\"><input type=\"checkbox\" class=\"svelte-golf61\"/>Context sensitive</label>"), Bc = /* @__PURE__ */ q("<span class=\"pc-search-context svelte-golf61\"> </span>"), Vc = /* @__PURE__ */ q("<label class=\"pc-search-field svelte-golf61\"><input type=\"search\" aria-label=\"Search nodes and subgraphs\" placeholder=\"Search…\" autocomplete=\"off\" role=\"combobox\" aria-expanded=\"true\" class=\"svelte-golf61\"/></label> <!> <!>", 1), Hc = /* @__PURE__ */ q("<p class=\"pc-search-context svelte-golf61\">Choose the named port to connect.</p>"), Uc = /* @__PURE__ */ q("<button type=\"button\" class=\"pc-search-result svelte-golf61\" role=\"option\"><span class=\"svelte-golf61\"> </span> <span class=\"pc-family svelte-golf61\"> </span></button>"), Wc = /* @__PURE__ */ q("<p class=\"pc-empty svelte-golf61\">No nodes match.</p>"), Gc = /* @__PURE__ */ q("<p class=\"pc-feedback svelte-golf61\" role=\"status\"> </p>"), Kc = /* @__PURE__ */ q("<div class=\"pc-node-search svelte-golf61\" role=\"dialog\" aria-modal=\"false\" tabindex=\"-1\"><!> <div class=\"pc-search-results svelte-golf61\" role=\"listbox\"></div> <!></div>");
+function qc(e, t) {
+	let n = jr();
+	Ve(t, !0);
+	let r = wi(t, "view", 3, null), i = wi(t, "actions", 19, () => ({})), a = /* @__PURE__ */ L(void 0), o = /* @__PURE__ */ L(void 0), s = /* @__PURE__ */ L(""), c = /* @__PURE__ */ L(0), l = /* @__PURE__ */ L(8), u = /* @__PURE__ */ L(8), d, f, p = (e) => [
 		e.label,
 		e.family,
 		e.purpose ?? "",
 		e.shortcode ?? "",
 		...e.searchAliases ?? []
-	].join(" ").toLocaleLowerCase(), m = /* @__PURE__ */ N(() => (r()?.choices ?? []).filter((e) => p(e).includes(U(s).toLocaleLowerCase().trim()))), h = /* @__PURE__ */ N(() => r()?.mode === "ports" ? r().ports : U(m)), g = (e) => "id" in e ? e.id : e.portId, _ = (e) => !!r()?.readOnly || "disabledReason" in e && !!e.disabledReason, v = /* @__PURE__ */ N(() => U(h).filter((e) => !_(e))), y = /* @__PURE__ */ N(() => U(v)[Math.min(U(c), Math.max(0, U(v).length - 1))]), b = (e) => ({
+	].join(" ").toLocaleLowerCase(), m = /* @__PURE__ */ F(() => (r()?.choices ?? []).filter((e) => p(e).includes(W(s).toLocaleLowerCase().trim()))), h = /* @__PURE__ */ F(() => r()?.mode === "ports" ? r().ports : W(m)), g = (e) => "id" in e ? e.id : e.portId, _ = (e) => !!r()?.readOnly || "disabledReason" in e && !!e.disabledReason, v = /* @__PURE__ */ F(() => W(h).filter((e) => !_(e))), y = /* @__PURE__ */ F(() => W(v)[Math.min(W(c), Math.max(0, W(v).length - 1))]), b = (e) => ({
 		Input: "#96ad52",
 		Shaping: "#589aab",
 		Surface: "#92c9ad",
@@ -5279,16 +6166,16 @@ function $s(e, t) {
 		Subgraphs: "#a3aa99"
 	})[e] ?? "#a1a59b";
 	function x() {
-		if (!r() || !U(a)) return;
-		let e = U(a).getBoundingClientRect(), t = document.documentElement.clientWidth || window.innerWidth, n = document.documentElement.clientHeight || window.innerHeight;
-		I(l, Math.max(8, Math.min(r().screenAnchor.x, t - e.width - 8)), !0), I(u, Math.max(8, Math.min(r().screenAnchor.y, n - e.height - 8)), !0);
+		if (!r() || !W(a)) return;
+		let e = W(a).getBoundingClientRect(), t = document.documentElement.clientWidth || window.innerWidth, n = document.documentElement.clientHeight || window.innerHeight;
+		R(l, Math.max(8, Math.min(r().screenAnchor.x, t - e.width - 8)), !0), R(u, Math.max(8, Math.min(r().screenAnchor.y, n - e.height - 8)), !0);
 	}
-	xn(() => {
+	yn(() => {
 		let e = r()?.key, t = r()?.mode, n = r()?.screenAnchor;
 		if (e === void 0 || !n) return;
 		let i = d !== e || f !== t;
-		d !== e && I(s, ""), i && I(c, 0), d = e, f = t, ur().then(() => {
-			r()?.key === e && r().mode === t && (x(), i && (t === "nodes" ? U(o)?.focus() : (U(a)?.querySelector("[data-port]:not(:disabled)") ?? U(a))?.focus()));
+		d !== e && R(s, ""), i && R(c, 0), d = e, f = t, lr().then(() => {
+			r()?.key === e && r().mode === t && (x(), i && (t === "nodes" ? W(o)?.focus() : (W(a)?.querySelector("[data-port]:not(:disabled)") ?? W(a))?.focus()));
 		});
 	});
 	function S(e) {
@@ -5304,88 +6191,88 @@ function $s(e, t) {
 			"ArrowUp",
 			"Home",
 			"End"
-		].includes(e.key) ? (e.preventDefault(), I(c, e.key === "Home" ? 0 : e.key === "End" ? Math.max(0, U(v).length - 1) : U(v).length ? (U(c) + (e.key === "ArrowDown" ? 1 : -1) + U(v).length) % U(v).length : 0, !0)) : e.key === "Enter" && (e.preventDefault(), S(U(y)));
+		].includes(e.key) ? (e.preventDefault(), R(c, e.key === "Home" ? 0 : e.key === "End" ? Math.max(0, W(v).length - 1) : W(v).length ? (W(c) + (e.key === "ArrowDown" ? 1 : -1) + W(v).length) % W(v).length : 0, !0)) : e.key === "Enter" && (e.preventDefault(), S(W(y)));
 	}
-	xn(() => {
+	yn(() => {
 		if (!r()) return;
 		let e = (e) => {
-			U(a) && !U(a).contains(e.target) && i().dismiss?.();
+			W(a) && !W(a).contains(e.target) && i().dismiss?.();
 		};
 		return window.addEventListener("pointerdown", e, !0), () => window.removeEventListener("pointerdown", e, !0);
 	});
-	var T = jr();
-	W("resize", rn, x);
-	var E = R(T), D = (e) => {
-		var t = Qs();
+	var T = Ar();
+	G("resize", tn, x);
+	var E = B(T), D = (e) => {
+		var t = Kc();
 		let i;
-		var d = L(t), f = (e) => {
-			var t = qs(), i = R(t), a = L(i);
-			Z(a), $(a, (e) => I(o, e), () => U(o)), M(i);
-			var l = z(i, 2), u = (e) => {
-				var t = Gs(), n = L(t);
-				Z(n), Me(), M(t), B(() => {
-					gi(n, r().contextSensitive), n.disabled = r().readOnly;
-				}), G("change", n, C), q(e, t);
+		var d = z(t), f = (e) => {
+			var t = Vc(), i = B(t), a = z(i);
+			Q(a), Ci(a, (e) => R(o, e), () => W(o)), P(i);
+			var l = V(i, 2), u = (e) => {
+				var t = zc(), n = z(t);
+				Q(n), Ae(), P(t), H(() => {
+					hi(n, r().contextSensitive), n.disabled = r().readOnly;
+				}), K("change", n, C), J(e, t);
 			};
-			Y(l, (e) => {
+			X(l, (e) => {
 				r().origin && e(u);
 			});
-			var d = z(l, 2), f = (e) => {
-				var t = Ks(), n = L(t, !0);
-				M(t), B(() => J(n, (r().origin.dir === "out" ? "Accepts " : "Produces ") + r().origin.kind)), q(e, t);
+			var d = V(l, 2), f = (e) => {
+				var t = Bc(), n = z(t, !0);
+				P(t), H(() => Y(n, (r().origin.dir === "out" ? "Accepts " : "Produces ") + r().origin.kind)), J(e, t);
 			};
-			Y(d, (e) => {
+			X(d, (e) => {
 				r().origin && e(f);
-			}), B((e) => {
-				Q(a, "aria-controls", n + "-results"), Q(a, "aria-activedescendant", e);
-			}, [() => U(y) ? n + "-item-" + U(h).indexOf(U(y)) : void 0]), G("input", a, () => I(c, 0)), bi(a, () => U(s), (e) => I(s, e)), q(e, t);
+			}), H((e) => {
+				$(a, "aria-controls", n + "-results"), $(a, "aria-activedescendant", e);
+			}, [() => W(y) ? n + "-item-" + W(h).indexOf(W(y)) : void 0]), K("input", a, () => R(c, 0)), yi(a, () => W(s), (e) => R(s, e)), J(e, t);
 		}, p = (e) => {
-			q(e, Js());
+			J(e, Hc());
 		};
-		Y(d, (e) => {
+		X(d, (e) => {
 			r().mode === "nodes" ? e(f) : e(p, -1);
 		});
-		var m = z(d, 2);
-		X(m, 21, () => U(h), (e) => g(e), (e, t) => {
-			var r = Ys(), i = L(r), a = L(i, !0);
-			M(i);
-			var o = z(i, 1, !0);
+		var m = V(d, 2);
+		Z(m, 21, () => W(h), (e) => g(e), (e, t) => {
+			var r = Uc(), i = z(r), a = z(i, !0);
+			P(i);
+			var o = V(i, 1, !0);
 			o.nodeValue = " ";
-			var s = z(o);
+			var s = V(o);
 			let l;
-			var u = L(s, !0);
-			M(s), M(r), B((e, n, i, o) => {
-				Q(r, "aria-selected", U(y) === U(t)), Q(r, "id", e), Q(r, "data-choice", "id" in U(t) ? U(t).id : void 0), Q(r, "data-port", "portId" in U(t) ? U(t).portId : void 0), r.disabled = n, Q(r, "title", "disabledReason" in U(t) ? U(t).disabledReason : void 0), J(a, i), l = oi(s, "", l, o), J(u, "family" in U(t) ? U(t).family : U(t).kind);
+			var u = z(s, !0);
+			P(s), P(r), H((e, n, i, o) => {
+				$(r, "aria-selected", W(y) === W(t)), $(r, "id", e), $(r, "data-choice", "id" in W(t) ? W(t).id : void 0), $(r, "data-port", "portId" in W(t) ? W(t).portId : void 0), r.disabled = n, $(r, "title", "disabledReason" in W(t) ? W(t).disabledReason : void 0), Y(a, i), l = ai(s, "", l, o), Y(u, "family" in W(t) ? W(t).family : W(t).kind);
 			}, [
-				() => n + "-item-" + U(h).indexOf(U(t)),
-				() => _(U(t)),
-				() => U(t).label || g(U(t)),
-				() => ({ color: "family" in U(t) ? b(U(t).family) : void 0 })
-			]), G("click", r, () => S(U(t))), W("focus", r, () => {
-				let e = U(v).indexOf(U(t));
-				e >= 0 && I(c, e, !0);
-			}), q(e, r);
+				() => n + "-item-" + W(h).indexOf(W(t)),
+				() => _(W(t)),
+				() => W(t).label || g(W(t)),
+				() => ({ color: "family" in W(t) ? b(W(t).family) : void 0 })
+			]), K("click", r, () => S(W(t))), G("focus", r, () => {
+				let e = W(v).indexOf(W(t));
+				e >= 0 && R(c, e, !0);
+			}), J(e, r);
 		}, (e) => {
-			q(e, Xs());
-		}), M(m);
-		var x = z(m, 2), T = (e) => {
-			var t = Zs(), n = L(t, !0);
-			M(t), B(() => J(n, r().feedback)), q(e, t);
+			J(e, Wc());
+		}), P(m);
+		var x = V(m, 2), T = (e) => {
+			var t = Gc(), n = z(t, !0);
+			P(t), H(() => Y(n, r().feedback)), J(e, t);
 		};
-		Y(x, (e) => {
+		X(x, (e) => {
 			r().feedback && e(T);
-		}), M(t), $(t, (e) => I(a, e), () => U(a)), B(() => {
-			Q(t, "aria-label", r().mode === "ports" ? "Choose connection port" : "Add node"), i = oi(t, "", i, {
-				left: `${U(l) ?? ""}px`,
-				top: `${U(u) ?? ""}px`
-			}), Q(m, "id", n + "-results"), Q(m, "aria-label", r().mode === "ports" ? "Compatible ports" : "Nodes and subgraphs");
-		}), G("keydown", t, w), q(e, t);
+		}), P(t), Ci(t, (e) => R(a, e), () => W(a)), H(() => {
+			$(t, "aria-label", r().mode === "ports" ? "Choose connection port" : "Add node"), i = ai(t, "", i, {
+				left: `${W(l) ?? ""}px`,
+				top: `${W(u) ?? ""}px`
+			}), $(m, "id", n + "-results"), $(m, "aria-label", r().mode === "ports" ? "Compatible ports" : "Nodes and subgraphs");
+		}), K("keydown", t, w), J(e, t);
 	};
-	Y(E, (e) => {
+	X(E, (e) => {
 		r() && e(D);
-	}), q(e, T), We();
+	}), J(e, T), He();
 }
-br([
+yr([
 	"keydown",
 	"input",
 	"change",
@@ -5393,21 +6280,21 @@ br([
 ]);
 //#endregion
 //#region ui/PinMenu.svelte
-var ec = /* @__PURE__ */ K("<button type=\"button\" class=\"pc-pin-action svelte-i73q0t\"> </button>"), tc = /* @__PURE__ */ K("<p class=\"pc-empty svelte-i73q0t\">No attached links.</p>"), nc = /* @__PURE__ */ K("<div class=\"pc-pin-menu svelte-i73q0t\" role=\"dialog\" aria-label=\"Pin actions\" aria-modal=\"false\" tabindex=\"-1\"><div class=\"pc-menu-head svelte-i73q0t\"><h2 class=\"svelte-i73q0t\"> </h2><button type=\"button\" aria-label=\"Close pin actions\" class=\"svelte-i73q0t\">Close</button></div> <p class=\"pc-kind svelte-i73q0t\"> </p> <!></div>");
-function rc(e, t) {
-	Ue(t, !0);
-	let n = wi(t, "view", 3, null), r = wi(t, "actions", 19, () => ({})), i = /* @__PURE__ */ F(void 0), a = /* @__PURE__ */ F(8), o = /* @__PURE__ */ F(8), s, c = (e) => !!e.disabled || !!n()?.readOnly && e.capability !== "navigation";
+var Jc = /* @__PURE__ */ q("<button type=\"button\" class=\"pc-pin-action svelte-i73q0t\"> </button>"), Yc = /* @__PURE__ */ q("<p class=\"pc-empty svelte-i73q0t\">No attached links.</p>"), Xc = /* @__PURE__ */ q("<div class=\"pc-pin-menu svelte-i73q0t\" role=\"dialog\" aria-label=\"Pin actions\" aria-modal=\"false\" tabindex=\"-1\"><div class=\"pc-menu-head svelte-i73q0t\"><h2 class=\"svelte-i73q0t\"> </h2><button type=\"button\" aria-label=\"Close pin actions\" class=\"svelte-i73q0t\">Close</button></div> <p class=\"pc-kind svelte-i73q0t\"> </p> <!></div>");
+function Zc(e, t) {
+	Ve(t, !0);
+	let n = wi(t, "view", 3, null), r = wi(t, "actions", 19, () => ({})), i = /* @__PURE__ */ L(void 0), a = /* @__PURE__ */ L(8), o = /* @__PURE__ */ L(8), s, c = (e) => !!e.disabled || !!n()?.readOnly && e.capability !== "navigation";
 	function l() {
-		if (!n() || !U(i)) return;
-		let e = U(i).getBoundingClientRect(), t = document.documentElement.clientWidth || window.innerWidth, r = document.documentElement.clientHeight || window.innerHeight;
-		I(a, Math.max(8, Math.min(n().screenAnchor.x, t - e.width - 8)), !0), I(o, Math.max(8, Math.min(n().screenAnchor.y, r - e.height - 8)), !0);
+		if (!n() || !W(i)) return;
+		let e = W(i).getBoundingClientRect(), t = document.documentElement.clientWidth || window.innerWidth, r = document.documentElement.clientHeight || window.innerHeight;
+		R(a, Math.max(8, Math.min(n().screenAnchor.x, t - e.width - 8)), !0), R(o, Math.max(8, Math.min(n().screenAnchor.y, r - e.height - 8)), !0);
 	}
-	xn(() => {
+	yn(() => {
 		let e = n()?.key, t = n()?.screenAnchor;
 		if (e === void 0 || !t) return;
 		let r = s !== e;
-		s = e, ur().then(() => {
-			n()?.key === e && (l(), r && (U(i)?.querySelector("[data-entry]:not(:disabled)") ?? U(i))?.focus());
+		s = e, lr().then(() => {
+			n()?.key === e && (l(), r && (W(i)?.querySelector("[data-entry]:not(:disabled)") ?? W(i))?.focus());
 		});
 	});
 	function u(e) {
@@ -5418,7 +6305,7 @@ function rc(e, t) {
 			e.preventDefault(), r().dismiss?.();
 			return;
 		}
-		let t = [...U(i)?.querySelectorAll("[data-entry]:not(:disabled)") ?? []], a = t.indexOf(document.activeElement);
+		let t = [...W(i)?.querySelectorAll("[data-entry]:not(:disabled)") ?? []], a = t.indexOf(document.activeElement);
 		if ([
 			"ArrowDown",
 			"ArrowUp",
@@ -5430,42 +6317,42 @@ function rc(e, t) {
 			t && (e.preventDefault(), u(t));
 		}
 	}
-	var f = jr();
-	W("resize", rn, l);
-	var p = R(f), m = (e) => {
-		var t = nc();
+	var f = Ar();
+	G("resize", tn, l);
+	var p = B(f), m = (e) => {
+		var t = Xc();
 		let s;
-		var l = L(t), f = L(l), p = L(f, !0);
-		M(f);
-		var m = z(f);
-		M(l);
-		var h = z(l, 2), g = L(h);
-		M(h), X(z(h, 2), 17, () => n().entries, (e) => e.id, (e, t) => {
-			var n = ec(), r = L(n, !0);
-			M(n), B((e) => {
-				Q(n, "data-entry", U(t).id), n.disabled = e, Q(n, "title", U(t).reason), J(r, U(t).label);
-			}, [() => c(U(t))]), G("click", n, () => u(U(t))), q(e, n);
+		var l = z(t), f = z(l), p = z(f, !0);
+		P(f);
+		var m = V(f);
+		P(l);
+		var h = V(l, 2), g = z(h);
+		P(h), Z(V(h, 2), 17, () => n().entries, (e) => e.id, (e, t) => {
+			var n = Jc(), r = z(n, !0);
+			P(n), H((e) => {
+				$(n, "data-entry", W(t).id), n.disabled = e, $(n, "title", W(t).reason), Y(r, W(t).label);
+			}, [() => c(W(t))]), K("click", n, () => u(W(t))), J(e, n);
 		}, (e) => {
-			q(e, tc());
-		}), M(t), $(t, (e) => I(i, e), () => U(i)), B(() => {
-			s = oi(t, "", s, {
-				left: `${U(a) ?? ""}px`,
-				top: `${U(o) ?? ""}px`
-			}), J(p, n().title), J(g, `${n().kind ?? ""}${n().readOnly ? " · Read only" : ""}`);
-		}), G("keydown", t, d), G("click", m, () => r().dismiss?.()), q(e, t);
+			J(e, Yc());
+		}), P(t), Ci(t, (e) => R(i, e), () => W(i)), H(() => {
+			s = ai(t, "", s, {
+				left: `${W(a) ?? ""}px`,
+				top: `${W(o) ?? ""}px`
+			}), Y(p, n().title), Y(g, `${n().kind ?? ""}${n().readOnly ? " · Read only" : ""}`);
+		}), K("keydown", t, d), K("click", m, () => r().dismiss?.()), J(e, t);
 	};
-	Y(p, (e) => {
+	X(p, (e) => {
 		n() && e(m);
-	}), q(e, f), We();
+	}), J(e, f), He();
 }
-br(["keydown", "click"]);
+yr(["keydown", "click"]);
 //#endregion
 //#region src/ui/node-palette.js
-var ic = "M3 7 12 2l9 5v10l-9 5-9-5ZM3 7l9 5 9-5M12 12v10", ac = "M3 6l4-2 4 2v5l-4 2-4-2ZM3 6l4 2 4-2M7 8v5M13 6l4-2 4 2v5l-4 2-4-2ZM13 6l4 2 4-2M17 8v5M8 15l4-2 4 2v5l-4 2-4-2ZM8 15l4 2 4-2M12 17v5", oc = Object.freeze([
+var Qc = "M3 7 12 2l9 5v10l-9 5-9-5ZM3 7l9 5 9-5M12 12v10", $c = "M3 6l4-2 4 2v5l-4 2-4-2ZM3 6l4 2 4-2M7 8v5M13 6l4-2 4 2v5l-4 2-4-2ZM13 6l4 2 4-2M17 8v5M8 15l4-2 4 2v5l-4 2-4-2ZM8 15l4 2 4-2M12 17v5", el = Object.freeze([
 	{
 		name: "Input",
 		color: "#96ad52",
-		icon: ic
+		icon: Qc
 	},
 	{
 		name: "Shaping",
@@ -5495,14 +6382,14 @@ var ic = "M3 7 12 2l9 5v10l-9 5-9-5ZM3 7l9 5 9-5M12 12v10", ac = "M3 6l4-2 4 2v5
 	{
 		name: "Output",
 		color: "#c96d82",
-		icon: ic
+		icon: Qc
 	},
 	{
 		name: "Subgraphs",
 		color: "#a3aa99",
-		icon: ac
+		icon: $c
 	}
-].map((e) => Object.freeze(e))), sc = {
+].map((e) => Object.freeze(e))), tl = {
 	Sources: "M14 2H5v20h14V7Zm0 0v5h5M2 13h10m-3-3 3 3-3 3",
 	Context: "M3 5h18M6 12h12M9 19h6",
 	Planning: "M4 5h8a4 4 0 0 1 0 8H8a4 4 0 0 0 0 8h12m-3-3 3 3-3 3",
@@ -5515,18 +6402,18 @@ var ic = "M3 7 12 2l9 5v10l-9 5-9-5ZM3 7l9 5 9-5M12 12v10", ac = "M3 6l4-2 4 2v5
 	Guidance: "M5 2h10l4 4v16H5ZM15 2v4h4M8 11h8m-8 5h6",
 	Review: "m2 12 4 4 8-9m-3 8 3 3 8-10",
 	Delivery: "m2 11 20-9-8 20-4-8Zm8 3L22 2",
-	Library: ac,
+	Library: $c,
 	Routing: "M3 12h18m-7-7 7 7-7 7",
-	Blocks: ic,
+	Blocks: Qc,
 	Reflect: "M21 12s-4-7-9-7-9 7-9 7 4 7 9 7 9-7 9-7ZM15 12a3 3 0 1 0-6 0 3 3 0 0 0 6 0",
 	Internalize: "M4 4h16v16H4M8 8l4 4 4-4M12 12v5",
 	Express: "M4 4h16v12H9l-5 4ZM8 8h8M8 12h5",
 	Memory: "M5 3h14v18H5ZM8 7h8M8 11h8M8 15h5",
 	State: "M3 12h4l3-7 4 14 3-7h4"
-}, cc = Object.freeze(Object.fromEntries(Object.entries(sc).map(([e, t]) => [e, Object.freeze({
+}, nl = Object.freeze(Object.fromEntries(Object.entries(tl).map(([e, t]) => [e, Object.freeze({
 	name: e,
 	icon: t
-})]))), lc = {
+})]))), rl = {
 	"subgraph-input": [
 		"Input",
 		"si",
@@ -5575,12 +6462,12 @@ var ic = "M3 7 12 2l9 5v10l-9 5-9-5ZM3 7l9 5 9-5M12 12v10", ac = "M3 6l4-2 4 2v5
 	"response-plan": [
 		"Planning",
 		"rp",
-		sc.Planning
+		tl.Planning
 	],
 	compose: [
 		"Assembly",
 		"co",
-		sc.Assembly
+		tl.Assembly
 	],
 	repair: [
 		"Revision",
@@ -5615,17 +6502,17 @@ var ic = "M3 7 12 2l9 5v10l-9 5-9-5ZM3 7l9 5 9-5M12 12v10", ac = "M3 6l4-2 4 2v5
 	"validate-patches": [
 		"Validation",
 		"vp",
-		sc.Validation
+		tl.Validation
 	],
 	"json-decode": [
 		"Parsing",
 		"jd",
-		sc.Parsing
+		tl.Parsing
 	],
 	"select-fields": [
 		"Extraction",
 		"sf",
-		sc.Extraction
+		tl.Extraction
 	],
 	guidance: [
 		"Guidance",
@@ -5640,62 +6527,62 @@ var ic = "M3 7 12 2l9 5v10l-9 5-9-5ZM3 7l9 5 9-5M12 12v10", ac = "M3 6l4-2 4 2v5
 	"apply-reply": [
 		"Delivery",
 		"ar",
-		sc.Delivery
+		tl.Delivery
 	],
 	reroute: [
 		"Routing",
 		"rt",
-		sc.Routing
+		tl.Routing
 	],
 	reflect: [
 		"Reflect",
 		"rf",
-		sc.Reflect
+		tl.Reflect
 	],
 	internalize: [
 		"Internalize",
 		"in",
-		sc.Internalize
+		tl.Internalize
 	],
 	express: [
 		"Express",
 		"ex",
-		sc.Express
+		tl.Express
 	],
 	context: [
 		"Context",
 		"cx",
-		sc.Context
+		tl.Context
 	],
 	memory: [
 		"Memory",
 		"mm",
-		sc.Memory
+		tl.Memory
 	],
 	state: [
 		"State",
 		"sv",
-		sc.State
+		tl.State
 	]
-}, uc = Object.freeze(Object.fromEntries(Object.entries(lc).map(([e, [t, n, r]]) => [e, Object.freeze({
+}, il = Object.freeze(Object.fromEntries(Object.entries(rl).map(([e, [t, n, r]]) => [e, Object.freeze({
 	group: t,
 	shortcode: n,
 	icon: r
-})]))), dc = Object.freeze({
+})]))), al = Object.freeze({
 	group: "Blocks",
 	shortcode: "",
-	icon: ic
-}), fc = (e) => Object.hasOwn(uc, e) ? uc[e] : dc, pc = /* @__PURE__ */ K("<button type=\"button\" class=\"pc-family-row\" aria-haspopup=\"menu\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path></path></svg><span> </span></button>"), mc = /* @__PURE__ */ K("<button type=\"button\" role=\"menuitem\">‹ Families</button>"), hc = /* @__PURE__ */ K("<input class=\"text_pole\" aria-label=\"Search nodes\" placeholder=\"Search nodes…\"/>"), gc = /* @__PURE__ */ K("<div class=\"pc-shelf-group svelte-hk6fzp\" role=\"presentation\"> </div>"), _c = /* @__PURE__ */ K("<!> <button type=\"button\" role=\"menuitem\" class=\"svelte-hk6fzp\"><svg class=\"pc-leaf-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path></path></svg><span class=\"pc-catalog-name\"> </span><small> </small></button>", 1), vc = /* @__PURE__ */ K("<div role=\"menu\" tabindex=\"-1\"><!> <!> <!></div>"), yc = /* @__PURE__ */ K("<div class=\"pc-shelf-menu pc-shelf-subgraph-menu svelte-hk6fzp\" role=\"menu\" tabindex=\"-1\"><button type=\"button\" role=\"menuitem\" data-shelf-subgraph-action=\"open\">Open saved definition</button> <button type=\"button\" role=\"menuitem\" data-shelf-subgraph-action=\"delete\">Delete</button></div>"), bc = /* @__PURE__ */ K("<div class=\"pc-shelf-drag-preview svelte-hk6fzp\" aria-hidden=\"true\"> </div>"), xc = /* @__PURE__ */ K("<nav aria-label=\"Node families\"></nav> <!> <!> <!>", 1);
-function Sc(e, t) {
-	Ue(t, !0);
-	let n = wi(t, "readOnly", 3, !1), r, i = /* @__PURE__ */ F(null), a = /* @__PURE__ */ F(""), o = /* @__PURE__ */ F(!1), s = /* @__PURE__ */ F(""), c = /* @__PURE__ */ F(!1), l = /* @__PURE__ */ F(0), u = /* @__PURE__ */ F(0), d = null, f = 0, p = /* @__PURE__ */ F(null), m = /* @__PURE__ */ F(null), h = null, g = oc.map((e) => e.name), _ = (e) => oc.find((t) => t.name === e)?.color, v = null, y = null, b = null, x = /* @__PURE__ */ F(null);
+	icon: Qc
+}), ol = (e) => Object.hasOwn(il, e) ? il[e] : al, sl = /* @__PURE__ */ q("<button type=\"button\" class=\"pc-family-row\" aria-haspopup=\"menu\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path></path></svg><span> </span></button>"), cl = /* @__PURE__ */ q("<button type=\"button\" role=\"menuitem\">‹ Families</button>"), ll = /* @__PURE__ */ q("<input class=\"text_pole\" aria-label=\"Search nodes\" placeholder=\"Search nodes…\"/>"), ul = /* @__PURE__ */ q("<div class=\"pc-shelf-group svelte-hk6fzp\" role=\"presentation\"> </div>"), dl = /* @__PURE__ */ q("<!> <button type=\"button\" role=\"menuitem\" class=\"svelte-hk6fzp\"><svg class=\"pc-leaf-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path></path></svg><span class=\"pc-catalog-name\"> </span><small> </small></button>", 1), fl = /* @__PURE__ */ q("<div role=\"menu\" tabindex=\"-1\"><!> <!> <!></div>"), pl = /* @__PURE__ */ q("<div class=\"pc-shelf-menu pc-shelf-subgraph-menu svelte-hk6fzp\" role=\"menu\" tabindex=\"-1\"><button type=\"button\" role=\"menuitem\" data-shelf-subgraph-action=\"open\">Open saved definition</button> <button type=\"button\" role=\"menuitem\" data-shelf-subgraph-action=\"delete\">Delete</button></div>"), ml = /* @__PURE__ */ q("<div class=\"pc-shelf-drag-preview svelte-hk6fzp\" aria-hidden=\"true\"> </div>"), hl = /* @__PURE__ */ q("<nav aria-label=\"Node families\"></nav> <!> <!> <!>", 1);
+function gl(e, t) {
+	Ve(t, !0);
+	let n = wi(t, "readOnly", 3, !1), r, i = /* @__PURE__ */ L(null), a = /* @__PURE__ */ L(""), o = /* @__PURE__ */ L(!1), s = /* @__PURE__ */ L(""), c = /* @__PURE__ */ L(!1), l = /* @__PURE__ */ L(0), u = /* @__PURE__ */ L(0), d = null, f = 0, p = /* @__PURE__ */ L(null), m = /* @__PURE__ */ L(null), h = null, g = el.map((e) => e.name), _ = (e) => el.find((t) => t.name === e)?.color, v = null, y = null, b = null, x = /* @__PURE__ */ L(null);
 	function S() {
 		y !== null && clearTimeout(y), y = null;
 		let e = v;
-		v = null, I(x, null), document.body.classList.remove("pc-shelf-dragging"), e?.button.hasPointerCapture?.(e.pointerId) && e.button.releasePointerCapture(e.pointerId);
+		v = null, R(x, null), document.body.classList.remove("pc-shelf-dragging"), e?.button.hasPointerCapture?.(e.pointerId) && e.button.releasePointerCapture(e.pointerId);
 	}
 	function C() {
-		v && (y !== null && clearTimeout(y), y = null, b = v.button, document.body.classList.add("pc-shelf-dragging"), I(x, {
+		v && (y !== null && clearTimeout(y), y = null, b = v.button, document.body.classList.add("pc-shelf-dragging"), R(x, {
 			title: v.entry.title,
 			family: v.entry.family,
 			...v.point
@@ -5722,23 +6609,23 @@ function Sc(e, t) {
 		v && e.pointerId === v.pointerId && (v.point = {
 			x: e.clientX,
 			y: e.clientY
-		}, !U(x) && Math.hypot(e.clientX - v.start.x, e.clientY - v.start.y) >= 5 && C(), U(x) && (e.preventDefault(), I(x, {
-			...U(x),
+		}, !W(x) && Math.hypot(e.clientX - v.start.x, e.clientY - v.start.y) >= 5 && C(), W(x) && (e.preventDefault(), R(x, {
+			...W(x),
 			...v.point
 		}, !0)));
 	}
 	function E(e) {
 		if (!v || e.pointerId !== v.pointerId) return;
-		let t = v.entry, n = !!U(x), i = n ? document.elementFromPoint(e.clientX, e.clientY) : null, a = r.closest(".pc-canvas-area")?.querySelector(".pc-canvas-host");
-		S(), n && (e.preventDefault(), e.stopPropagation(), i && a?.contains(i) && oe(t, {
+		let t = v.entry, n = !!W(x), i = n ? document.elementFromPoint(e.clientX, e.clientY) : null, a = r.closest(".pc-canvas-area")?.querySelector(".pc-canvas-host");
+		S(), n && (e.preventDefault(), e.stopPropagation(), i && a?.contains(i) && ie(t, {
 			x: e.clientX,
 			y: e.clientY
 		}));
 	}
 	function D(e, t) {
-		e.currentTarget === b && e.detail !== 0 ? b = null : oe(t);
+		e.currentTarget === b && e.detail !== 0 ? b = null : ie(t);
 	}
-	function O(e = U(a)) {
+	function O(e = W(a)) {
 		if (t.choices !== void 0) {
 			let n = /* @__PURE__ */ new Map();
 			for (let r of t.choices.filter((t) => t.family === e)) {
@@ -5755,7 +6642,7 @@ function Sc(e, t) {
 				});
 			}
 			return [...n.values()].map(({ choice: n, aliases: r }) => {
-				let i = n.id.startsWith("operation:") ? n.id.split(":")[1] : "", a = fc(i), o = i ? n.label.split(" · ")[0] : n.label, s = n.id.startsWith("boundary:");
+				let i = n.id.startsWith("operation:") ? n.id.split(":")[1] : "", a = ol(i), o = i ? n.label.split(" · ")[0] : n.label, s = n.id.startsWith("boundary:");
 				return {
 					...n,
 					title: o,
@@ -5763,7 +6650,7 @@ function Sc(e, t) {
 					catalog: !0,
 					shortcode: i ? a.shortcode || n.shortcode || "" : n.shortcode ?? a.shortcode,
 					group: e === "Subgraphs" ? s ? "Interface" : "Library" : void 0,
-					icon: e === "Subgraphs" ? s ? cc.Routing.icon : cc.Library.icon : a.icon,
+					icon: e === "Subgraphs" ? s ? nl.Routing.icon : nl.Library.icon : a.icon,
 					searchAliases: r
 				};
 			});
@@ -5771,18 +6658,18 @@ function Sc(e, t) {
 		let n = t.view?.families.find((t) => t.name === e);
 		return n ? n.operations.filter((t) => e !== "Surface" || !["pattern-scan", "validate-patches"].includes(t.id)).map((t) => ({
 			...t,
-			...fc(t.id),
+			...ol(t.id),
 			family: e
 		})) : [];
 	}
-	function ee(e = !1) {
-		I(p, null), e && h?.focus({ preventScroll: !0 });
-	}
 	function k(e = !1) {
-		S(), f++, I(a, ""), I(o, !1), ee(), e && d?.focus({ preventScroll: !0 });
+		R(p, null), e && h?.focus({ preventScroll: !0 });
 	}
-	xn(() => (t.view?.graphId, t.choices, n(), () => k()));
-	function te() {
+	function A(e = !1) {
+		S(), f++, R(a, ""), R(o, !1), k(), e && d?.focus({ preventScroll: !0 });
+	}
+	yn(() => (t.view?.graphId, t.choices, n(), () => A()));
+	function ee() {
 		let e = r.closest(".pc-canvas-area"), t = e.getBoundingClientRect();
 		return {
 			left: t.left + e.clientLeft,
@@ -5792,95 +6679,95 @@ function Sc(e, t) {
 			height: e.clientHeight
 		};
 	}
-	function ne(e, t, n, r) {
-		let i = te(), a = i.right - e.right - 6, o = e.left - i.left - 6, s = a >= t || o >= t, c = a >= t ? e.right - i.left + 3 : o >= t ? e.left - i.left - t - 3 : 13;
+	function te(e, t, n, r) {
+		let i = ee(), a = i.right - e.right - 6, o = e.left - i.left - 6, s = a >= t || o >= t, c = a >= t ? e.right - i.left + 3 : o >= t ? e.left - i.left - t - 3 : 13;
 		return {
 			x: Math.max(4, Math.min(c, i.width - t - 4)),
 			y: Math.max(4, Math.min(e.top - i.top, i.height - n - 4)),
 			compact: !s || i.width < t + r + 26
 		};
 	}
-	function re(e, t, n) {
+	function ne(e, t, n) {
 		let r = t.querySelector("button")?.getBoundingClientRect();
 		return r ? e.top + (e.height - r.height) / 2 - (r.top - n.top) : e.top;
 	}
-	async function ie(e, t, n = !0) {
+	async function j(e, t, n = !0) {
 		if (v) return;
-		if (ee(), U(a) === e) {
-			n && U(i)?.querySelector("button:not(:disabled)")?.focus({ preventScroll: !0 });
+		if (k(), W(a) === e) {
+			n && W(i)?.querySelector("button:not(:disabled)")?.focus({ preventScroll: !0 });
 			return;
 		}
 		let r = ++f;
-		if (I(a, e, !0), I(o, !1), d = t, await ur(), r !== f || U(a) !== e || !U(i)?.isConnected) return;
-		let s = t.getBoundingClientRect(), p = U(i).getBoundingClientRect(), m = ne({
-			top: re(s, U(i), p),
+		if (R(a, e, !0), R(o, !1), d = t, await lr(), r !== f || W(a) !== e || !W(i)?.isConnected) return;
+		let s = t.getBoundingClientRect(), p = W(i).getBoundingClientRect(), m = te({
+			top: ne(s, W(i), p),
 			left: s.left,
 			right: s.right
 		}, p.width, p.height, 128);
-		I(l, m.x, !0), I(u, m.y, !0), I(c, m.compact, !0), n && U(i).querySelector("button:not(:disabled)")?.focus({ preventScroll: !0 });
+		R(l, m.x, !0), R(u, m.y, !0), R(c, m.compact, !0), n && W(i).querySelector("button:not(:disabled)")?.focus({ preventScroll: !0 });
 	}
-	async function ae() {
+	async function re() {
 		let e = ++f;
-		if (I(a, ""), I(o, !0), I(s, ""), await ur(), e !== f || !U(o) || !U(i)?.isConnected) return;
-		let t = te();
-		I(l, Math.min(136, Math.max(4, t.width - 254)), !0), I(u, 13), U(i).querySelector("input")?.focus();
+		if (R(a, ""), R(o, !0), R(s, ""), await lr(), e !== f || !W(o) || !W(i)?.isConnected) return;
+		let t = ee();
+		R(l, Math.min(136, Math.max(4, t.width - 254)), !0), R(u, 13), W(i).querySelector("input")?.focus();
 	}
-	function oe(e, r) {
+	function ie(e, r) {
 		let i = O(e.family).find((t) => t.id === e.id);
-		i?.compatible && !n() && (k(!0), r ? i.catalog ? t.choose?.(i.id, r) : t.add(i.id, r) : i.catalog ? t.choose?.(i.id) : t.add(i.id));
+		i?.compatible && !n() && (A(!0), r ? i.catalog ? t.choose?.(i.id, r) : t.add(i.id, r) : i.catalog ? t.choose?.(i.id) : t.add(i.id));
 	}
-	async function se(e, n) {
+	async function ae(e, n) {
 		let r = O("Subgraphs").find((t) => t.id === e.dataset.shelfChoice);
 		if (!r?.definitionRef || !t.shelfSubgraph) return;
-		let i = te(), a = e.getBoundingClientRect();
-		if (h = e, I(p, {
+		let i = ee(), a = e.getBoundingClientRect();
+		if (h = e, R(p, {
 			id: r.id,
 			title: r.title,
 			x: (n?.x ?? a.right) - i.left,
 			y: (n?.y ?? a.top) - i.top
-		}, !0), await ur(), !U(p) || U(p).id !== r.id || !U(m)?.isConnected) return;
-		let o = U(m).getBoundingClientRect();
-		I(p, {
-			...U(p),
-			x: Math.max(4, Math.min(U(p).x, i.width - o.width - 4)),
-			y: Math.max(4, Math.min(U(p).y, i.height - o.height - 4))
-		}, !0), U(m).querySelector("button")?.focus({ preventScroll: !0 });
+		}, !0), await lr(), !W(p) || W(p).id !== r.id || !W(m)?.isConnected) return;
+		let o = W(m).getBoundingClientRect();
+		R(p, {
+			...W(p),
+			x: Math.max(4, Math.min(W(p).x, i.width - o.width - 4)),
+			y: Math.max(4, Math.min(W(p).y, i.height - o.height - 4))
+		}, !0), W(m).querySelector("button")?.focus({ preventScroll: !0 });
 	}
-	function ce(e) {
+	function oe(e) {
 		let n = e.target.closest("[data-shelf-choice]");
-		n && O("Subgraphs").some((e) => e.id === n.dataset.shelfChoice && e.definitionRef) && t.shelfSubgraph && (e.preventDefault(), e.stopPropagation(), se(n, {
+		n && O("Subgraphs").some((e) => e.id === n.dataset.shelfChoice && e.definitionRef) && t.shelfSubgraph && (e.preventDefault(), e.stopPropagation(), ae(n, {
 			x: e.clientX,
 			y: e.clientY
 		}));
 	}
-	function le(e) {
-		let n = O("Subgraphs").find((e) => e.id === U(p)?.id);
-		k(!0), n?.definitionRef && t.shelfSubgraph?.(n.id, e);
+	function se(e) {
+		let n = O("Subgraphs").find((e) => e.id === W(p)?.id);
+		A(!0), n?.definitionRef && t.shelfSubgraph?.(n.id, e);
 	}
-	function ue(e) {
+	function ce(e) {
 		if ((e.key === "ContextMenu" || e.key === "F10" && e.shiftKey) && e.target.dataset.shelfChoice) {
-			e.preventDefault(), e.stopPropagation(), se(e.target);
+			e.preventDefault(), e.stopPropagation(), ae(e.target);
 			return;
 		}
-		if (U(p) && e.key === "Escape") {
-			e.preventDefault(), e.stopPropagation(), ee(!0);
+		if (W(p) && e.key === "Escape") {
+			e.preventDefault(), e.stopPropagation(), k(!0);
 			return;
 		}
 		if (e.key === "Escape") {
-			e.preventDefault(), e.stopPropagation(), k(!0);
+			e.preventDefault(), e.stopPropagation(), A(!0);
 			return;
 		}
 		let t = e.target;
 		if (e.key === "ArrowRight" && t.dataset.family && !t.disabled) {
-			e.preventDefault(), e.stopPropagation(), ie(t.dataset.family, t);
+			e.preventDefault(), e.stopPropagation(), j(t.dataset.family, t);
 			return;
 		}
-		if (e.key === "ArrowLeft" && U(a)) {
-			e.preventDefault(), e.stopPropagation(), k(!0);
+		if (e.key === "ArrowLeft" && W(a)) {
+			e.preventDefault(), e.stopPropagation(), A(!0);
 			return;
 		}
 		if (e.key === "Tab") {
-			k();
+			A();
 			return;
 		}
 		if (![
@@ -5893,112 +6780,112 @@ function Sc(e, t) {
 		let n = [...(e.target.closest("[role=\"menu\"]") || r).querySelectorAll("button:not(:disabled)")], i = n.indexOf(e.target);
 		n[e.key === "Home" ? 0 : e.key === "End" ? n.length - 1 : (i + (e.key === "ArrowUp" ? n.length - 1 : 1)) % n.length]?.focus();
 	}
-	var de = { openSearch: ae }, fe = xc();
-	W("pointerdown", rn, (e) => {
-		e.target.closest(".pc-node-shelf, .pc-shelf-menu") || k();
-	}), W("pointermove", rn, T), W("pointerup", rn, E), W("pointercancel", rn, () => S()), W("blur", rn, () => k()), W("resize", rn, () => k()), W("keydown", rn, (e) => {
-		v && e.key === "Escape" && (e.preventDefault(), e.stopPropagation(), k(!0));
+	var le = { openSearch: re }, ue = hl();
+	G("pointerdown", tn, (e) => {
+		e.target.closest(".pc-node-shelf, .pc-shelf-menu") || A();
+	}), G("pointermove", tn, T), G("pointerup", tn, E), G("pointercancel", tn, () => S()), G("blur", tn, () => A()), G("resize", tn, () => A()), G("keydown", tn, (e) => {
+		v && e.key === "Escape" && (e.preventDefault(), e.stopPropagation(), A(!0));
 	});
-	var pe = R(fe);
-	X(pe, 21, () => oc, Vr, (e, t) => {
-		var n = pc();
+	var de = B(ue);
+	Z(de, 21, () => el, Br, (e, t) => {
+		var n = sl();
 		let r;
-		var i = L(n), o = L(i);
-		M(i);
-		var s = z(i), c = L(s, !0);
-		M(s), M(n), B((e) => {
-			Q(n, "data-family", U(t).name), n.disabled = e, Q(n, "title", "Browse " + U(t).name + " nodes"), Q(n, "aria-expanded", U(a) === U(t).name), r = oi(n, "", r, { "--pc-family": U(t).color }), Q(o, "d", U(t).icon), J(c, U(t).name);
-		}, [() => !O(U(t).name).length]), G("click", n, (e) => ie(U(t).name, e.currentTarget)), W("pointerenter", n, (e) => {
-			e.pointerType !== "touch" && !e.currentTarget.disabled && ie(U(t).name, e.currentTarget, !1);
-		}), G("keydown", n, ue), q(e, n);
-	}), M(pe), $(pe, (e) => r = e, () => r);
-	var me = z(pe, 2), he = (e) => {
-		let r = /* @__PURE__ */ N(() => U(o) ? g.flatMap((e) => O(e)).filter((e) => [
+		var i = z(n), o = z(i);
+		P(i);
+		var s = V(i), c = z(s, !0);
+		P(s), P(n), H((e) => {
+			$(n, "data-family", W(t).name), n.disabled = e, $(n, "title", "Browse " + W(t).name + " nodes"), $(n, "aria-expanded", W(a) === W(t).name), r = ai(n, "", r, { "--pc-family": W(t).color }), $(o, "d", W(t).icon), Y(c, W(t).name);
+		}, [() => !O(W(t).name).length]), K("click", n, (e) => j(W(t).name, e.currentTarget)), G("pointerenter", n, (e) => {
+			e.pointerType !== "touch" && !e.currentTarget.disabled && j(W(t).name, e.currentTarget, !1);
+		}), K("keydown", n, ce), J(e, n);
+	}), P(de), Ci(de, (e) => r = e, () => r);
+	var fe = V(de, 2), pe = (e) => {
+		let r = /* @__PURE__ */ F(() => W(o) ? g.flatMap((e) => O(e)).filter((e) => [
 			e.title,
 			e.id,
 			e.family,
 			e.purpose,
 			e.shortcode,
 			...e.searchAliases ?? []
-		].join(" ").toLowerCase().includes(U(s).toLowerCase())) : O());
-		var d = vc();
+		].join(" ").toLowerCase().includes(W(s).toLowerCase())) : O());
+		var d = fl();
 		let f;
-		var p = L(d), m = (e) => {
-			var t = mc();
-			G("click", t, () => k(!0)), q(e, t);
+		var p = z(d), m = (e) => {
+			var t = cl();
+			K("click", t, () => A(!0)), J(e, t);
 		};
-		Y(p, (e) => {
-			U(c) && U(a) && e(m);
+		X(p, (e) => {
+			W(c) && W(a) && e(m);
 		});
-		var h = z(p, 2), v = (e) => {
-			var t = hc();
-			Z(t), bi(t, () => U(s), (e) => I(s, e)), q(e, t);
+		var h = V(p, 2), v = (e) => {
+			var t = ll();
+			Q(t), yi(t, () => W(s), (e) => R(s, e)), J(e, t);
 		};
-		Y(h, (e) => {
-			U(o) && e(v);
-		}), X(z(h, 2), 19, () => U(r), (e) => e.family + e.id, (e, i, a) => {
-			let s = /* @__PURE__ */ N(() => !U(i).compatible || n()), c = /* @__PURE__ */ N(() => !!U(i).definitionRef && !!t.shelfSubgraph);
-			var l = _c(), u = R(l), d = (e) => {
-				var t = gc(), n = L(t, !0);
-				M(t), B(() => {
-					Q(t, "data-shelf-group", U(i).group), J(n, U(i).group);
-				}), q(e, t);
+		X(h, (e) => {
+			W(o) && e(v);
+		}), Z(V(h, 2), 19, () => W(r), (e) => e.family + e.id, (e, i, a) => {
+			let s = /* @__PURE__ */ F(() => !W(i).compatible || n()), c = /* @__PURE__ */ F(() => !!W(i).definitionRef && !!t.shelfSubgraph);
+			var l = dl(), u = B(l), d = (e) => {
+				var t = ul(), n = z(t, !0);
+				P(t), H(() => {
+					$(t, "data-shelf-group", W(i).group), Y(n, W(i).group);
+				}), J(e, t);
 			};
-			Y(u, (e) => {
-				!U(o) && U(i).group && U(r)[U(a) - 1]?.group !== U(i).group && e(d);
+			X(u, (e) => {
+				!W(o) && W(i).group && W(r)[W(a) - 1]?.group !== W(i).group && e(d);
 			});
-			var f = z(u, 2);
+			var f = V(u, 2);
 			let p;
-			var m = L(f), h = L(m);
-			M(m);
-			var g = z(m), v = L(g, !0);
-			M(g);
-			var y = z(g), b = L(y, !0);
-			M(y), M(f), B((e) => {
-				Q(f, "data-shelf-choice", U(i).id), Q(f, "data-insertion-disabled", U(s)), f.disabled = U(s) && !U(c), Q(f, "aria-disabled", U(s) && !U(c)), Q(f, "aria-haspopup", U(c) ? "menu" : void 0), Q(f, "title", n() ? U(c) ? "This graph is read-only. Right-click for subgraph actions." : "This graph is read-only." : U(i).disabledReason || (U(i).compatible ? U(i).purpose || "Add " + U(i).title : "Requires the " + U(i).phase + " phase")), p = oi(f, "", p, e), Q(h, "d", U(i).icon), J(v, U(i).title), J(b, U(i).shortcode);
-			}, [() => ({ "--pc-family": _(U(i).family) })]), G("pointerdown", f, (e) => w(e, U(i))), W("lostpointercapture", f, () => S()), G("click", f, (e) => D(e, U(i))), q(e, l);
-		}), M(d), $(d, (e) => I(i, e), () => U(i)), B((e) => {
-			ii(d, 1, `pc-shelf-menu ${U(o) ? "pc-leaf-menu" : "pc-family-menu"}`, "svelte-hk6fzp"), Q(d, "aria-label", U(o) ? "Search nodes" : U(a) + " nodes"), f = oi(d, "", f, e);
+			var m = z(f), h = z(m);
+			P(m);
+			var g = V(m), v = z(g, !0);
+			P(g);
+			var y = V(g), b = z(y, !0);
+			P(y), P(f), H((e) => {
+				$(f, "data-shelf-choice", W(i).id), $(f, "data-insertion-disabled", W(s)), f.disabled = W(s) && !W(c), $(f, "aria-disabled", W(s) && !W(c)), $(f, "aria-haspopup", W(c) ? "menu" : void 0), $(f, "title", n() ? W(c) ? "This graph is read-only. Right-click for subgraph actions." : "This graph is read-only." : W(i).disabledReason || (W(i).compatible ? W(i).purpose || "Add " + W(i).title : "Requires the " + W(i).phase + " phase")), p = ai(f, "", p, e), $(h, "d", W(i).icon), Y(v, W(i).title), Y(b, W(i).shortcode);
+			}, [() => ({ "--pc-family": _(W(i).family) })]), K("pointerdown", f, (e) => w(e, W(i))), G("lostpointercapture", f, () => S()), K("click", f, (e) => D(e, W(i))), J(e, l);
+		}), P(d), Ci(d, (e) => R(i, e), () => W(i)), H((e) => {
+			ri(d, 1, `pc-shelf-menu ${W(o) ? "pc-leaf-menu" : "pc-family-menu"}`, "svelte-hk6fzp"), $(d, "aria-label", W(o) ? "Search nodes" : W(a) + " nodes"), f = ai(d, "", f, e);
 		}, [() => ({
-			left: `${U(l)}px`,
-			top: `${U(u)}px`,
-			"--pc-family": _(U(a))
-		})]), G("keydown", d, ue), G("contextmenu", d, ce), q(e, d);
+			left: `${W(l)}px`,
+			top: `${W(u)}px`,
+			"--pc-family": _(W(a))
+		})]), K("keydown", d, ce), K("contextmenu", d, oe), J(e, d);
 	};
-	Y(me, (e) => {
-		(U(a) || U(o)) && e(he);
+	X(fe, (e) => {
+		(W(a) || W(o)) && e(pe);
 	});
-	var ge = z(me, 2), _e = (e) => {
-		var t = yc();
+	var me = V(fe, 2), he = (e) => {
+		var t = pl();
 		let n;
-		var r = L(t), i = z(r, 2);
-		M(t), $(t, (e) => I(m, e), () => U(m)), B(() => {
-			Q(t, "aria-label", U(p).title + " actions"), n = oi(t, "", n, {
-				left: `${U(p).x}px`,
-				top: `${U(p).y}px`
+		var r = z(t), i = V(r, 2);
+		P(t), Ci(t, (e) => R(m, e), () => W(m)), H(() => {
+			$(t, "aria-label", W(p).title + " actions"), n = ai(t, "", n, {
+				left: `${W(p).x}px`,
+				top: `${W(p).y}px`
 			});
-		}), G("keydown", t, ue), G("click", r, () => le("open")), G("click", i, () => le("delete")), q(e, t);
+		}), K("keydown", t, ce), K("click", r, () => se("open")), K("click", i, () => se("delete")), J(e, t);
 	};
-	Y(ge, (e) => {
-		U(p) && e(_e);
+	X(me, (e) => {
+		W(p) && e(he);
 	});
-	var ve = z(ge, 2), ye = (e) => {
-		var t = bc();
+	var ge = V(me, 2), _e = (e) => {
+		var t = ml();
 		let n;
-		var r = L(t, !0);
-		M(t), B((e) => {
-			n = oi(t, "", n, e), J(r, U(x).title);
+		var r = z(t, !0);
+		P(t), H((e) => {
+			n = ai(t, "", n, e), Y(r, W(x).title);
 		}, [() => ({
-			"--pc-family": _(U(x).family),
-			left: `${U(x).x + 12}px`,
-			top: `${U(x).y + 12}px`
-		})]), q(e, t);
+			"--pc-family": _(W(x).family),
+			left: `${W(x).x + 12}px`,
+			top: `${W(x).y + 12}px`
+		})]), J(e, t);
 	};
-	return Y(ve, (e) => {
-		U(x) && e(ye);
-	}), B(() => ii(pe, 1, `pc-node-shelf${U(c) && U(a) ? " pc-shelf-replaced" : ""}`, "svelte-hk6fzp")), q(e, fe), We(de);
+	return X(ge, (e) => {
+		W(x) && e(_e);
+	}), H(() => ri(de, 1, `pc-node-shelf${W(c) && W(a) ? " pc-shelf-replaced" : ""}`, "svelte-hk6fzp")), J(e, ue), He(le);
 }
-br([
+yr([
 	"click",
 	"keydown",
 	"contextmenu",
@@ -6006,9 +6893,9 @@ br([
 ]);
 //#endregion
 //#region ui/ExamplesBrowser.svelte
-var Cc = /* @__PURE__ */ K("<button type=\"button\" class=\"pc-btn menu_button svelte-18p7ib8\">Retry</button>"), wc = /* @__PURE__ */ K("<div class=\"pc-examples-issue svelte-18p7ib8\" role=\"alert\"><span class=\"svelte-18p7ib8\"> </span><!></div>"), Tc = /* @__PURE__ */ kr("<g class=\"pc-example-comment svelte-18p7ib8\"><rect rx=\"4\" class=\"svelte-18p7ib8\"></rect><text class=\"svelte-18p7ib8\"> </text></g>"), Ec = /* @__PURE__ */ kr("<path class=\"pc-wire pc-wire-native svelte-18p7ib8\"></path>"), Dc = /* @__PURE__ */ kr("<circle class=\"pc-example-pin-dot svelte-18p7ib8\" r=\"4\"></circle><path class=\"pc-example-pin-cue svelte-18p7ib8\"></path><text class=\"pc-example-pin-label svelte-18p7ib8\"> </text>", 1), Oc = /* @__PURE__ */ kr("<g><rect class=\"pc-example-card svelte-18p7ib8\" rx=\"4\"></rect><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\"><path class=\"pc-example-icon svelte-18p7ib8\"></path></svg><text class=\"pc-example-node-title svelte-18p7ib8\" lengthAdjust=\"spacingAndGlyphs\"> </text><!></g>"), kc = /* @__PURE__ */ kr("<svg class=\"pc-example-preview svelte-18p7ib8\" preserveAspectRatio=\"xMidYMid meet\" aria-hidden=\"true\" focusable=\"false\"><!><!><!></svg>"), Ac = /* @__PURE__ */ K("<span class=\"pc-example-unavailable-preview svelte-18p7ib8\"><strong class=\"svelte-18p7ib8\">Unavailable</strong><span class=\"svelte-18p7ib8\"> </span></span>"), jc = /* @__PURE__ */ K("<button type=\"button\"><!> <span class=\"pc-example-title svelte-18p7ib8\"> </span></button>"), Mc = /* @__PURE__ */ K("<!> <div class=\"pc-examples-grid svelte-18p7ib8\"></div>", 1);
-function Nc(e, t) {
-	Ue(t, !0);
+var _l = /* @__PURE__ */ q("<button type=\"button\" class=\"pc-btn menu_button svelte-18p7ib8\">Retry</button>"), vl = /* @__PURE__ */ q("<div class=\"pc-examples-issue svelte-18p7ib8\" role=\"alert\"><span class=\"svelte-18p7ib8\"> </span><!></div>"), yl = /* @__PURE__ */ Or("<g class=\"pc-example-comment svelte-18p7ib8\"><rect rx=\"4\" class=\"svelte-18p7ib8\"></rect><text class=\"svelte-18p7ib8\"> </text></g>"), bl = /* @__PURE__ */ Or("<path class=\"pc-wire pc-wire-native svelte-18p7ib8\"></path>"), xl = /* @__PURE__ */ Or("<circle class=\"pc-example-pin-dot svelte-18p7ib8\" r=\"4\"></circle><path class=\"pc-example-pin-cue svelte-18p7ib8\"></path><text class=\"pc-example-pin-label svelte-18p7ib8\"> </text>", 1), Sl = /* @__PURE__ */ Or("<g><rect class=\"pc-example-card svelte-18p7ib8\" rx=\"4\"></rect><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\"><path class=\"pc-example-icon svelte-18p7ib8\"></path></svg><text class=\"pc-example-node-title svelte-18p7ib8\" lengthAdjust=\"spacingAndGlyphs\"> </text><!></g>"), Cl = /* @__PURE__ */ Or("<svg class=\"pc-example-preview svelte-18p7ib8\" preserveAspectRatio=\"xMidYMid meet\" aria-hidden=\"true\" focusable=\"false\"><!><!><!></svg>"), wl = /* @__PURE__ */ q("<span class=\"pc-example-unavailable-preview svelte-18p7ib8\"><strong class=\"svelte-18p7ib8\">Unavailable</strong><span class=\"svelte-18p7ib8\"> </span></span>"), Tl = /* @__PURE__ */ q("<button type=\"button\"><!> <span class=\"pc-example-title svelte-18p7ib8\"> </span></button>"), El = /* @__PURE__ */ q("<!> <div class=\"pc-examples-grid svelte-18p7ib8\"></div>", 1);
+function Dl(e, t) {
+	Ve(t, !0);
 	let n = {
 		context: "M -4,0 a 4,4 0 1,0 8,0 a 4,4 0 1,0 -8,0",
 		text: "M -3.4,0 a 3.4,3.4 0 1,0 6.8,0 a 3.4,3.4 0 1,0 -6.8,0",
@@ -6018,89 +6905,89 @@ function Nc(e, t) {
 		findings: "M 0,-5 L 4.33,3 L -4.33,3 Z",
 		patches: "M -2.5,-4.33 L 2.5,-4.33 L 5,0 L 2.5,4.33 L -2.5,4.33 L -5,0 Z",
 		candidate: "M -1.5,-5 H 1.5 V -1.5 H 5 V 1.5 H 1.5 V 5 H -1.5 V 1.5 H -5 V -1.5 H -1.5 Z"
-	}, r = wi(t, "examples", 19, () => []), i = wi(t, "issue", 3, ""), a = wi(t, "scrollTop", 3, 0), o, s = /* @__PURE__ */ F("");
+	}, r = wi(t, "examples", 19, () => []), i = wi(t, "issue", 3, ""), a = wi(t, "scrollTop", 3, 0), o, s = /* @__PURE__ */ L("");
 	Ti(() => {
 		o.scrollTop = a();
 	});
 	async function c(e) {
-		if (!U(s)) {
-			I(s, e, !0);
+		if (!W(s)) {
+			R(s, e, !0);
 			try {
 				await t.open(e);
 			} finally {
-				I(s, "");
+				R(s, "");
 			}
 		}
 	}
-	var l = Mc(), u = R(l), d = (e) => {
-		var n = wc(), r = L(n), a = L(r, !0);
-		M(r);
-		var o = z(r), s = (e) => {
-			var n = Cc();
-			G("click", n, () => t.retry?.()), q(e, n);
+	var l = El(), u = B(l), d = (e) => {
+		var n = vl(), r = z(n), a = z(r, !0);
+		P(r);
+		var o = V(r), s = (e) => {
+			var n = _l();
+			K("click", n, () => t.retry?.()), J(e, n);
 		};
-		Y(o, (e) => {
+		X(o, (e) => {
 			t.retry && e(s);
-		}), M(n), B(() => J(a, i())), q(e, n);
+		}), P(n), H(() => Y(a, i())), J(e, n);
 	};
-	Y(u, (e) => {
+	X(u, (e) => {
 		i() && e(d);
 	});
-	var f = z(u, 2);
-	X(f, 21, r, (e) => e.id, (e, t) => {
-		let r = /* @__PURE__ */ N(() => U(t).thumbnail);
-		var i = jc();
+	var f = V(u, 2);
+	Z(f, 21, r, (e) => e.id, (e, t) => {
+		let r = /* @__PURE__ */ F(() => W(t).thumbnail);
+		var i = Tl();
 		let a;
-		var o = L(i), l = (e) => {
-			var t = kc(), i = L(t);
-			X(i, 17, () => U(r).comments, (e) => e.id, (e, t) => {
-				var n = Tc(), r = L(n);
+		var o = z(i), l = (e) => {
+			var t = Cl(), i = z(t);
+			Z(i, 17, () => W(r).comments, (e) => e.id, (e, t) => {
+				var n = yl(), r = z(n);
 				let i;
-				var a = z(r), o = L(a, !0);
-				M(a), M(n), B(() => {
-					Q(n, "data-id", U(t).id), Q(r, "x", U(t).x), Q(r, "y", U(t).y), Q(r, "width", U(t).w), Q(r, "height", U(t).h), i = oi(r, "", i, { stroke: U(t).color }), Q(a, "x", U(t).x + 12), Q(a, "y", U(t).y + 24), J(o, U(t).title);
-				}), q(e, n);
+				var a = V(r), o = z(a, !0);
+				P(a), P(n), H(() => {
+					$(n, "data-id", W(t).id), $(r, "x", W(t).x), $(r, "y", W(t).y), $(r, "width", W(t).w), $(r, "height", W(t).h), i = ai(r, "", i, { stroke: W(t).color }), $(a, "x", W(t).x + 12), $(a, "y", W(t).y + 24), Y(o, W(t).title);
+				}), J(e, n);
 			});
-			var a = z(i);
-			X(a, 17, () => U(r).wires, (e) => e.id, (e, t) => {
-				var n = Ec();
-				B(() => {
-					Q(n, "data-kind", U(t).kind), Q(n, "data-id", U(t).id), Q(n, "d", U(t).d);
-				}), q(e, n);
-			}), X(z(a), 17, () => U(r).nodes, (e) => e.id, (e, t) => {
-				var r = Oc(), i = L(r), a = z(i), o = L(a);
-				M(a);
-				var s = z(a), c = L(s, !0);
-				M(s), X(z(s), 17, () => U(t).ports, (e) => e.id, (e, t) => {
-					var r = Dc(), i = R(r), a = z(i), o = z(a), s = L(o, !0);
-					M(o), B(() => {
-						Q(i, "data-kind", U(t).kind), Q(i, "cx", U(t).x), Q(i, "cy", U(t).y), Q(a, "data-kind", U(t).kind), Q(a, "transform", `translate(${U(t).x} ${U(t).y})`), Q(a, "d", n[U(t).kind] ?? n.context), Q(o, "x", U(t).x + (U(t).dir === "in" ? 9 : -9)), Q(o, "y", U(t).y + 4), Q(o, "text-anchor", U(t).dir === "in" ? "start" : "end"), J(s, U(t).label);
-					}), q(e, r);
-				}), M(r), B(() => {
-					ii(r, 0, Qr(U(t).className), "svelte-18p7ib8"), Q(r, "data-id", U(t).id), Q(i, "x", U(t).x), Q(i, "y", U(t).y), Q(i, "width", U(t).w), Q(i, "height", U(t).h), Q(a, "x", U(t).x + 8), Q(a, "y", U(t).y + 7), Q(o, "d", U(t).iconPath), Q(s, "x", U(t).x + 28), Q(s, "y", U(t).y + 20), Q(s, "textLength", U(t).title.length * 6 > U(t).w - 36 ? U(t).w - 36 : void 0), J(c, U(t).title);
-				}), q(e, r);
-			}), M(t), B(() => Q(t, "viewBox", `${U(r).bounds.x} ${U(r).bounds.y} ${U(r).bounds.w} ${U(r).bounds.h}`)), q(e, t);
+			var a = V(i);
+			Z(a, 17, () => W(r).wires, (e) => e.id, (e, t) => {
+				var n = bl();
+				H(() => {
+					$(n, "data-kind", W(t).kind), $(n, "data-id", W(t).id), $(n, "d", W(t).d);
+				}), J(e, n);
+			}), Z(V(a), 17, () => W(r).nodes, (e) => e.id, (e, t) => {
+				var r = Sl(), i = z(r), a = V(i), o = z(a);
+				P(a);
+				var s = V(a), c = z(s, !0);
+				P(s), Z(V(s), 17, () => W(t).ports, (e) => e.id, (e, t) => {
+					var r = xl(), i = B(r), a = V(i), o = V(a), s = z(o, !0);
+					P(o), H(() => {
+						$(i, "data-kind", W(t).kind), $(i, "cx", W(t).x), $(i, "cy", W(t).y), $(a, "data-kind", W(t).kind), $(a, "transform", `translate(${W(t).x} ${W(t).y})`), $(a, "d", n[W(t).kind] ?? n.context), $(o, "x", W(t).x + (W(t).dir === "in" ? 9 : -9)), $(o, "y", W(t).y + 4), $(o, "text-anchor", W(t).dir === "in" ? "start" : "end"), Y(s, W(t).label);
+					}), J(e, r);
+				}), P(r), H(() => {
+					ri(r, 0, Zr(W(t).className), "svelte-18p7ib8"), $(r, "data-id", W(t).id), $(i, "x", W(t).x), $(i, "y", W(t).y), $(i, "width", W(t).w), $(i, "height", W(t).h), $(a, "x", W(t).x + 8), $(a, "y", W(t).y + 7), $(o, "d", W(t).iconPath), $(s, "x", W(t).x + 28), $(s, "y", W(t).y + 20), $(s, "textLength", W(t).title.length * 6 > W(t).w - 36 ? W(t).w - 36 : void 0), Y(c, W(t).title);
+				}), J(e, r);
+			}), P(t), H(() => $(t, "viewBox", `${W(r).bounds.x} ${W(r).bounds.y} ${W(r).bounds.w} ${W(r).bounds.h}`)), J(e, t);
 		}, u = (e) => {
-			var n = Ac(), r = z(L(n)), i = L(r, !0);
-			M(r), M(n), B(() => {
-				Q(r, "id", `pc-example-issue-${U(t).number}`), J(i, U(t).issue);
-			}), q(e, n);
+			var n = wl(), r = V(z(n)), i = z(r, !0);
+			P(r), P(n), H(() => {
+				$(r, "id", `pc-example-issue-${W(t).number}`), Y(i, W(t).issue);
+			}), J(e, n);
 		};
-		Y(o, (e) => {
-			U(r) ? e(l) : e(u, -1);
+		X(o, (e) => {
+			W(r) ? e(l) : e(u, -1);
 		});
-		var d = z(o, 2), f = L(d, !0);
-		M(d), M(i), B(() => {
-			a = ii(i, 1, "pc-example-tile svelte-18p7ib8", null, a, { "pc-example-unavailable": !U(r) }), Q(i, "aria-label", U(t).title), Q(i, "aria-describedby", U(t).issue ? `pc-example-issue-${U(t).number}` : void 0), Q(i, "title", U(t).issue || U(t).goal), i.disabled = !!U(s) || !U(r), J(f, U(t).title);
-		}), G("click", i, () => c(U(t).id)), q(e, i);
-	}), M(f), $(f, (e) => o = e, () => o), B(() => Q(f, "aria-busy", !!U(s))), W("scroll", f, () => t.scroll(o.scrollTop)), q(e, l), We();
+		var d = V(o, 2), f = z(d, !0);
+		P(d), P(i), H(() => {
+			a = ri(i, 1, "pc-example-tile svelte-18p7ib8", null, a, { "pc-example-unavailable": !W(r) }), $(i, "aria-label", W(t).title), $(i, "aria-describedby", W(t).issue ? `pc-example-issue-${W(t).number}` : void 0), $(i, "title", W(t).issue || W(t).goal), i.disabled = !!W(s) || !W(r), Y(f, W(t).title);
+		}), K("click", i, () => c(W(t).id)), J(e, i);
+	}), P(f), Ci(f, (e) => o = e, () => o), H(() => $(f, "aria-busy", !!W(s))), G("scroll", f, () => t.scroll(o.scrollTop)), J(e, l), He();
 }
-br(["click"]);
+yr(["click"]);
 //#endregion
 //#region ui/ImportReview.svelte
-var Pc = /* @__PURE__ */ K("<p> </p>"), Fc = /* @__PURE__ */ K("<li> </li>"), Ic = /* @__PURE__ */ K("<h3>Saved bindings to review</h3><ul></ul>", 1), Lc = /* @__PURE__ */ K("<p>Saved model metadata is present. Review local connections before running.</p>"), Rc = /* @__PURE__ */ K("<h3>Imported terminal effects</h3><ul></ul>", 1), zc = /* @__PURE__ */ K("<p>No imported terminal effects.</p>"), Bc = /* @__PURE__ */ K("<p role=\"alert\"> </p>"), Vc = /* @__PURE__ */ K("<button type=\"button\" class=\"pc-btn menu_button\">Prepare again</button>"), Hc = /* @__PURE__ */ K("<div class=\"pc-workspace-overlay pc-import-overlay\"><div class=\"pc-workspace-dialog pc-import-review\" role=\"dialog\" aria-modal=\"true\" aria-label=\"Import into graph\" tabindex=\"-1\"><header><h2>Import into graph</h2><button type=\"button\" class=\"pc-btn menu_button\" aria-label=\"Cancel import\">×</button></header> <p><strong> </strong> <small> </small></p> <dl><dt>Phase</dt><dd> </dd><dt>Additions</dt><dd> </dd><dt>Conservative request bound</dt><dd> </dd></dl> <p class=\"pc-import-explanation\">This authoring bound includes unfinished branches. Bindings and reachable execution are checked when you explicitly run the workflow.</p> <!> <!> <!> <p>Insertion keeps internal wiring and relative layout. It does not connect matching names, arm or assign the graph, run requests, publish Guidance, or Apply a reply.</p> <!> <footer><button type=\"button\" class=\"pc-btn menu_button\">Cancel</button><!><button type=\"button\" class=\"pc-btn menu_button pc-import-accept\">Insert into graph</button></footer></div></div>");
-function Uc(e, t) {
-	Ue(t, !0);
+var Ol = /* @__PURE__ */ q("<p> </p>"), kl = /* @__PURE__ */ q("<li> </li>"), Al = /* @__PURE__ */ q("<h3>Saved bindings to review</h3><ul></ul>", 1), jl = /* @__PURE__ */ q("<p>Saved model metadata is present. Review local connections before running.</p>"), Ml = /* @__PURE__ */ q("<h3>Imported terminal effects</h3><ul></ul>", 1), Nl = /* @__PURE__ */ q("<p>No imported terminal effects.</p>"), Pl = /* @__PURE__ */ q("<p role=\"alert\"> </p>"), Fl = /* @__PURE__ */ q("<button type=\"button\" class=\"pc-btn menu_button\">Prepare again</button>"), Il = /* @__PURE__ */ q("<div class=\"pc-workspace-overlay pc-import-overlay\"><div class=\"pc-workspace-dialog pc-import-review\" role=\"dialog\" aria-modal=\"true\" aria-label=\"Import into graph\" tabindex=\"-1\"><header><h2>Import into graph</h2><button type=\"button\" class=\"pc-btn menu_button\" aria-label=\"Cancel import\">×</button></header> <p><strong> </strong> <small> </small></p> <dl><dt>Phase</dt><dd> </dd><dt>Additions</dt><dd> </dd><dt>Conservative request bound</dt><dd> </dd></dl> <p class=\"pc-import-explanation\">This authoring bound includes unfinished branches. Bindings and reachable execution are checked when you explicitly run the workflow.</p> <!> <!> <!> <p>Insertion keeps internal wiring and relative layout. It does not connect matching names, arm or assign the graph, run requests, publish Guidance, or Apply a reply.</p> <!> <footer><button type=\"button\" class=\"pc-btn menu_button\">Cancel</button><!><button type=\"button\" class=\"pc-btn menu_button pc-import-accept\">Insert into graph</button></footer></div></div>");
+function Ll(e, t) {
+	Ve(t, !0);
 	let n;
 	Ti(() => {
 		let e = document.activeElement;
@@ -6112,75 +6999,75 @@ function Uc(e, t) {
 			e.shiftKey && document.activeElement === r && (e.preventDefault(), i?.focus()), !e.shiftKey && document.activeElement === i && (e.preventDefault(), r?.focus());
 		}
 	}
-	var i = Hc(), a = L(i), o = L(a), s = z(L(o));
-	M(o);
-	var c = z(o, 2), l = L(c), u = L(l, !0);
-	M(l);
-	var d = z(l, 2), f = L(d, !0);
-	M(d), M(c);
-	var p = z(c, 2), m = z(L(p)), h = L(m, !0);
-	M(m);
-	var g = z(m, 2), _ = L(g);
-	M(g);
-	var v = z(g, 2), y = L(v);
-	M(v), M(p);
-	var b = z(p, 4), x = (e) => {
-		var n = Pc(), r = L(n);
-		M(n), B((e) => J(r, `Imported model roles: ${e ?? ""}.`), [() => t.view.requiredRoles.join(", ")]), q(e, n);
+	var i = Il(), a = z(i), o = z(a), s = V(z(o));
+	P(o);
+	var c = V(o, 2), l = z(c), u = z(l, !0);
+	P(l);
+	var d = V(l, 2), f = z(d, !0);
+	P(d), P(c);
+	var p = V(c, 2), m = V(z(p)), h = z(m, !0);
+	P(m);
+	var g = V(m, 2), _ = z(g);
+	P(g);
+	var v = V(g, 2), y = z(v);
+	P(v), P(p);
+	var b = V(p, 4), x = (e) => {
+		var n = Ol(), r = z(n);
+		P(n), H((e) => Y(r, `Imported model roles: ${e ?? ""}.`), [() => t.view.requiredRoles.join(", ")]), J(e, n);
 	};
-	Y(b, (e) => {
+	X(b, (e) => {
 		t.view.requiredRoles.length && e(x);
 	});
-	var S = z(b, 2), C = (e) => {
-		var n = Ic(), r = z(R(n));
-		X(r, 21, () => t.view.unresolvedBindings, Vr, (e, t) => {
-			var n = Fc(), r = L(n);
-			M(n), B((e) => J(r, `${U(t).title ?? ""} · ${U(t).role ?? ""}: missing ${e ?? ""}`), [() => U(t).missing.join(" and ")]), q(e, n);
-		}), M(r), q(e, n);
+	var S = V(b, 2), C = (e) => {
+		var n = Al(), r = V(B(n));
+		Z(r, 21, () => t.view.unresolvedBindings, Br, (e, t) => {
+			var n = kl(), r = z(n);
+			P(n), H((e) => Y(r, `${W(t).title ?? ""} · ${W(t).role ?? ""}: missing ${e ?? ""}`), [() => W(t).missing.join(" and ")]), J(e, n);
+		}), P(r), J(e, n);
 	}, w = (e) => {
-		q(e, Lc());
+		J(e, jl());
 	};
-	Y(S, (e) => {
+	X(S, (e) => {
 		t.view.unresolvedBindings.length ? e(C) : t.view.bindingReviewRequired && e(w, 1);
 	});
-	var T = z(S, 2), E = (e) => {
-		var n = Rc(), r = z(R(n));
-		X(r, 21, () => t.view.terminals, Vr, (e, t) => {
-			var n = Fc(), r = L(n);
-			M(n), B(() => J(r, `${U(t).title ?? ""} · ${U(t).operation ?? ""}`)), q(e, n);
-		}), M(r), q(e, n);
+	var T = V(S, 2), E = (e) => {
+		var n = Ml(), r = V(B(n));
+		Z(r, 21, () => t.view.terminals, Br, (e, t) => {
+			var n = kl(), r = z(n);
+			P(n), H(() => Y(r, `${W(t).title ?? ""} · ${W(t).operation ?? ""}`)), J(e, n);
+		}), P(r), J(e, n);
 	}, D = (e) => {
-		q(e, zc());
+		J(e, Nl());
 	};
-	Y(T, (e) => {
+	X(T, (e) => {
 		t.view.terminals.length ? e(E) : e(D, -1);
 	});
-	var O = z(T, 4), ee = (e) => {
-		var n = Bc(), r = L(n, !0);
-		M(n), B(() => J(r, t.view.error)), q(e, n);
+	var O = V(T, 4), k = (e) => {
+		var n = Pl(), r = z(n, !0);
+		P(n), H(() => Y(r, t.view.error)), J(e, n);
 	};
-	Y(O, (e) => {
-		t.view.error && e(ee);
+	X(O, (e) => {
+		t.view.error && e(k);
 	});
-	var k = z(O, 2), te = L(k), ne = z(te), re = (e) => {
-		var n = Vc();
-		G("click", n, () => t.actions.prepareImportAgain?.()), q(e, n);
+	var A = V(O, 2), ee = z(A), te = V(ee), ne = (e) => {
+		var n = Fl();
+		K("click", n, () => t.actions.prepareImportAgain?.()), J(e, n);
 	};
-	Y(ne, (e) => {
-		t.view.error && e(re);
+	X(te, (e) => {
+		t.view.error && e(ne);
 	});
-	var ie = z(ne);
-	M(k), M(a), $(a, (e) => n = e, () => n), M(i), B(() => {
-		J(u, t.view.name), J(f, t.view.fileName), J(h, t.view.phase), J(_, `${t.view.nodeCount ?? ""} blocks · ${t.view.wireCount ?? ""} wires · ${t.view.groupCount ?? ""} groups`), J(y, `${t.view.callBound ?? ""} total · ${t.view.importedCallBound ?? ""} imported`), ie.disabled = !!t.view.error;
-	}), G("keydown", a, r), W("paste", a, (e) => e.stopPropagation()), G("click", s, () => t.actions.cancelImport?.()), G("click", te, () => t.actions.cancelImport?.()), G("click", ie, () => t.actions.acceptImport?.()), q(e, i), We();
+	var j = V(te);
+	P(A), P(a), Ci(a, (e) => n = e, () => n), P(i), H(() => {
+		Y(u, t.view.name), Y(f, t.view.fileName), Y(h, t.view.phase), Y(_, `${t.view.nodeCount ?? ""} blocks · ${t.view.wireCount ?? ""} wires · ${t.view.groupCount ?? ""} groups`), Y(y, `${t.view.callBound ?? ""} total · ${t.view.importedCallBound ?? ""} imported`), j.disabled = !!t.view.error;
+	}), K("keydown", a, r), G("paste", a, (e) => e.stopPropagation()), K("click", s, () => t.actions.cancelImport?.()), K("click", ee, () => t.actions.cancelImport?.()), K("click", j, () => t.actions.acceptImport?.()), J(e, i), He();
 }
-br(["keydown", "click"]);
+yr(["keydown", "click"]);
 //#endregion
 //#region ui/Workbench.svelte
-var Wc = /* @__PURE__ */ K("<p class=\"pc-native-diagnostic svelte-1dr9aew\" role=\"alert\"> </p>"), Gc = /* @__PURE__ */ K("<p>Browse node families on the floating shelf. Middle mouse pans the graph; the wheel zooms around the pointer. Use the divider or its arrow keys to resize Preview.</p><p>Open examples and assign the selected workflow's phase from Workflows. Select each model-calling node to choose its connection profile and optional model override in Details. Arm enables the selected host workflow; Run tests it explicitly.</p><p>File › Open workflow chooses a JSON file and opens a separate workflow. Save workflow keeps committed edits and connections in SillyTavern. Export workflow JSON downloads a portable sharing copy without local connections. Import into graph reviews a same-phase fragment before one undoable insertion.</p><p>Select nodes and right-click Create Subgraph to open their connected body in a new tab. Double-click a subgraph to open it. Add Input and Output nodes from the Subgraphs shelf inside an editable subgraph, then name and configure their ports in Details.</p><p>Right-click a subgraph block and choose Add to Subgraphs to save it for reuse. Right-click a saved shelf entry to delete it. Saving updates the shelf only when you choose to save; existing placed copies stay unchanged. Portals connect pins through named references. Preview artifact tabs show results for the selected node; Run to here checks the request bound before running. Apply reviews the fresh result against the full root workflow.</p>", 1), Kc = /* @__PURE__ */ K("<div class=\"pc-workspace-overlay\"><div role=\"dialog\" tabindex=\"-1\" aria-modal=\"true\"><header class=\"svelte-1dr9aew\"><h2 class=\"svelte-1dr9aew\"> </h2><button type=\"button\" class=\"pc-btn menu_button\" aria-label=\"Close panel\">×</button></header> <!></div></div>"), qc = /* @__PURE__ */ K("<div class=\"pc-workspace-overlay\"><div class=\"pc-manager-dialog svelte-1dr9aew\" role=\"dialog\" tabindex=\"-1\" aria-modal=\"true\" aria-label=\"Manage portals\"><!></div></div>"), Jc = /* @__PURE__ */ K("<div role=\"dialog\" aria-modal=\"true\" aria-label=\"Lattice\" data-pc-workbench=\"svelte\"><!> <div class=\"pc-body\" role=\"region\" aria-label=\"Workspace panels\" tabindex=\"0\"><div class=\"pc-stage\"><section aria-label=\"Output preview\"><header class=\"pc-preview-pane-head\"><strong>Preview</strong><button type=\"button\" class=\"pc-btn menu_button\"> </button></header> <div class=\"pc-preview-content\"><!></div></section> <!> <!> <!> <div class=\"pc-canvas-area\" id=\"pc-workspace-graph\" role=\"tabpanel\"><div class=\"pc-workspace-run svelte-1dr9aew\"><!></div> <div class=\"pc-canvas-host\" aria-label=\"Node canvas\"></div> <!> <!></div></div> <!> <div class=\"pc-inspector pc-workspace-details svelte-1dr9aew\"><header class=\"pc-details-heading svelte-1dr9aew\"><strong class=\"svelte-1dr9aew\">Details</strong><button type=\"button\" class=\"svelte-1dr9aew\">Portals</button></header> <!> <div class=\"pc-node-details-holder svelte-1dr9aew\"><!></div></div></div> <!> <!> <!> <!> <!> <!> <!></div>");
-function Yc(e, t) {
-	Ue(t, !0);
-	let n = wi(t, "actions", 7), r = /* @__PURE__ */ F({
+var Rl = /* @__PURE__ */ q("<button type=\"button\" class=\"pc-recall-badge\"> </button>"), zl = /* @__PURE__ */ q("<p class=\"pc-native-diagnostic svelte-1dr9aew\" role=\"alert\"> </p>"), Bl = /* @__PURE__ */ q("<p>Browse node families on the floating shelf. Middle mouse pans the graph; the wheel zooms around the pointer. Use the divider or its arrow keys to resize Preview.</p><p>Open examples and assign a unified workflow from Workflows. Its preparation stage feeds Generate Reply, and its response stage reshapes the captured Draft before Review and Publish. Legacy pre and post workflows remain selectable. Select model nodes to choose a text connection profile in Details. Fast Decision uses a configured typed connection from Tools › Fast connections and an optional separately selected Decision fallback. Arm enables the assigned host workflow. Unified generation starts with Send in SillyTavern; Run to here tests supported nodes. Run tests legacy workflows explicitly.</p><p>File › Open workflow chooses a JSON file and opens a separate workflow. Save workflow keeps committed edits and connections in SillyTavern. Export workflow JSON downloads a portable sharing copy without local connections. Import into graph reviews a same-phase fragment before one undoable insertion.</p><p>Select nodes and right-click Create Subgraph to open their connected body in a new tab. Double-click a subgraph to open it. Add Input and Output nodes from the Subgraphs shelf inside an editable subgraph, then name and configure their ports in Details.</p><p>Right-click a subgraph block and choose Add to Subgraphs to save it for reuse. Right-click a saved shelf entry to delete it. Saving updates the shelf only when you choose to save; existing placed copies stay unchanged. Portals connect pins through named references. Preview artifact tabs show results for the selected node; Run to here checks the request bound before running. Apply reviews the fresh result against the full root workflow.</p>", 1), Vl = /* @__PURE__ */ q("<div class=\"pc-workspace-overlay\"><div role=\"dialog\" tabindex=\"-1\" aria-modal=\"true\"><header class=\"svelte-1dr9aew\"><h2 class=\"svelte-1dr9aew\"> </h2><button type=\"button\" class=\"pc-btn menu_button\" aria-label=\"Close panel\">×</button></header> <!></div></div>"), Hl = /* @__PURE__ */ q("<div class=\"pc-workspace-overlay\"><div class=\"pc-manager-dialog svelte-1dr9aew\" role=\"dialog\" tabindex=\"-1\" aria-modal=\"true\" aria-label=\"Manage portals\"><!></div></div>"), Ul = /* @__PURE__ */ q("<div role=\"dialog\" aria-modal=\"true\" aria-label=\"Lattice\" data-pc-workbench=\"svelte\"><!> <!> <div class=\"pc-body\" role=\"region\" aria-label=\"Workspace panels\" tabindex=\"0\"><div class=\"pc-stage\"><section aria-label=\"Output preview\"><header class=\"pc-preview-pane-head\"><strong>Preview</strong><button type=\"button\" class=\"pc-btn menu_button\"> </button></header> <div class=\"pc-preview-content\"><!></div></section> <!> <!> <!> <div class=\"pc-canvas-area\" id=\"pc-workspace-graph\" role=\"tabpanel\"><div class=\"pc-workspace-run svelte-1dr9aew\"><!></div> <div class=\"pc-canvas-host\" aria-label=\"Node canvas\"></div> <!> <!></div></div> <!> <div class=\"pc-inspector pc-workspace-details svelte-1dr9aew\"><header class=\"pc-details-heading svelte-1dr9aew\"><strong class=\"svelte-1dr9aew\">Details</strong><button type=\"button\" class=\"svelte-1dr9aew\">Portals</button></header> <!> <div class=\"pc-node-details-holder svelte-1dr9aew\"><!></div></div></div> <!> <!> <!> <!> <!> <!> <!> <!></div>");
+function Wl(e, t) {
+	Ve(t, !0);
+	let n = wi(t, "actions", 7), r = /* @__PURE__ */ L({
 		graphs: [],
 		graphId: "",
 		armed: !1,
@@ -6218,16 +7105,16 @@ function Yc(e, t) {
 		});
 	}
 	function p(e) {
-		I(r, {
-			...U(r),
+		R(r, {
+			...W(r),
 			...e
-		});
+		}), e.fastConnectionsActive === !0 ? ie("fast-connections") : e.fastConnectionsActive === !1 && W(E) === "fast-connections" && ae();
 	}
 	function m(e) {
 		return u?.startRename(e);
 	}
 	async function h(e, t) {
-		if (await ur(), !t()) return;
+		if (await lr(), !t()) return;
 		let n = [...o.querySelectorAll(".pc-comment-frame[data-id]")].find((t) => t.dataset.id === e)?.querySelector(".pc-comment-title-input");
 		n && !n.disabled && (n.focus({ preventScroll: !0 }), n.select());
 	}
@@ -6246,173 +7133,187 @@ function Yc(e, t) {
 			};
 		}
 	}
-	let v = _(), y = /* @__PURE__ */ F(en(v.height)), b = /* @__PURE__ */ F(en(v.collapsed)), x = /* @__PURE__ */ F(500), S = /* @__PURE__ */ F(null), C = /* @__PURE__ */ F(520), w = /* @__PURE__ */ N(() => Math.max(220, Math.min(U(C), U(S) ?? U(r).detailsWidth ?? 258)));
+	let v = _(), y = /* @__PURE__ */ L(Qt(v.height)), b = /* @__PURE__ */ L(Qt(v.collapsed)), x = /* @__PURE__ */ L(500), S = /* @__PURE__ */ L(null), C = /* @__PURE__ */ L(520), w = /* @__PURE__ */ F(() => Math.max(220, Math.min(W(C), W(S) ?? W(r).detailsWidth ?? 258)));
 	function T(e) {
-		I(S, null), I(r, {
-			...U(r),
+		R(S, null), R(r, {
+			...W(r),
 			detailsWidth: e
 		}), n().resizeDetails?.(e);
 	}
-	let E = /* @__PURE__ */ F(""), D = /* @__PURE__ */ F(null), O = null, ee = 0, k = /* @__PURE__ */ F(0), te;
-	function ne() {
+	let E = /* @__PURE__ */ L(""), D = /* @__PURE__ */ L(null), O = null, k = 0, A = /* @__PURE__ */ L(0), ee;
+	function te() {
 		try {
 			localStorage.setItem(g, JSON.stringify({
-				height: U(y),
-				collapsed: U(b)
+				height: W(y),
+				collapsed: W(b)
 			}));
 		} catch {}
 	}
-	function re() {
+	function ne() {
 		n().resizeStart?.();
 	}
-	function ie(e) {
-		re(), I(b, e, !0), ne();
+	function j(e) {
+		ne(), R(b, e, !0), te();
+	}
+	function re() {
+		j(!1);
+	}
+	async function ie(e) {
+		if (e === "show-preview") j(!1);
+		else if (e === "collapse-preview") j(!0);
+		else if (e === "add-node") ee.openSearch();
+		else {
+			O = document.activeElement, e === "examples" && n().refreshExamples?.(), e === "fast-connections" && n().fastConnections?.refresh?.(), e === "story-documents" && n().storyDocuments?.refresh?.(), e === "recall-arms" && n().recallArms?.refresh?.();
+			let t = ++k;
+			R(E, e, !0), await lr(), t === k && W(E) === e && W(D)?.querySelector("button")?.focus();
+		}
 	}
 	function ae() {
-		ie(!1);
+		k++, R(E, ""), O?.focus({ preventScroll: !0 });
 	}
 	async function oe(e) {
-		e === "show-preview" ? ie(!1) : e === "collapse-preview" ? ie(!0) : e === "add-node" ? te.openSearch() : (O = document.activeElement, e === "examples" && n().refreshExamples?.(), ee++, I(E, e, !0), await ur(), U(D).querySelector("button")?.focus());
-	}
-	function se() {
-		ee++, I(E, ""), O?.focus({ preventScroll: !0 });
-	}
-	async function ce(e) {
-		let t = ee;
+		let t = k;
 		try {
 			let r = await n().openExample?.(e);
-			return r === !0 && t === ee && U(E) === "examples" && se(), r === !0;
+			return r === !0 && t === k && W(E) === "examples" && ae(), r === !0;
 		} catch {
 			return !1;
 		}
 	}
-	function le(e) {
+	function se(e) {
 		if (e.stopPropagation(), e.key === "Escape") e.preventDefault(), n().portalManager?.close?.();
 		else if (e.key === "Tab") {
 			let t = [...e.currentTarget.querySelectorAll("button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), summary, [tabindex=\"0\"]")], n = t[0], r = t.at(-1);
 			e.shiftKey && document.activeElement === n && (e.preventDefault(), r?.focus()), !e.shiftKey && document.activeElement === r && (e.preventDefault(), n?.focus());
 		}
 	}
-	function ue(e) {
-		if (e.stopPropagation(), e.key === "Escape" && (e.preventDefault(), e.stopPropagation(), se()), e.key === "Tab") {
-			let t = [...U(D).querySelectorAll("button:not(:disabled), input, select, textarea, [tabindex=\"0\"]")], n = t[0], r = t.at(-1);
+	function ce(e) {
+		if (e.stopPropagation(), e.key === "Escape" && (e.preventDefault(), e.stopPropagation(), ae()), e.key === "Tab") {
+			let t = [...W(D).querySelectorAll("button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex=\"0\"]")], n = t[0], r = t.at(-1);
 			e.shiftKey && document.activeElement === n && (e.preventDefault(), r?.focus()), !e.shiftKey && document.activeElement === r && (e.preventDefault(), n?.focus());
 		}
 	}
 	Ti(() => {
 		let e = () => {
-			I(x, Math.max(90, s.clientHeight - 190), !0), I(C, Math.max(220, Math.min(520, (a.clientWidth || i.clientWidth || window.innerWidth) - 368)), !0);
+			R(x, Math.max(90, s.clientHeight - 190), !0), R(C, Math.max(220, Math.min(520, (a.clientWidth || i.clientWidth || window.innerWidth) - 368)), !0);
 		}, t = globalThis.ResizeObserver;
 		if (!t) return e(), window.addEventListener("resize", e), () => window.removeEventListener("resize", e);
 		let n = new t(e);
 		return n.observe(s), n.observe(a), e(), () => n.disconnect();
 	});
-	var de = {
+	var le = {
 		getParts: d,
 		updateActions: f,
 		update: p,
 		renameGraphView: m,
 		focusCommentTitle: h,
-		revealPreview: ae
-	}, fe = Jc();
-	let pe, me;
-	var he = L(fe);
-	$(ta(he, {
+		revealPreview: re
+	}, ue = Ul();
+	let de, fe;
+	var pe = z(ue);
+	Ci(ta(pe, {
 		get state() {
-			return U(r);
+			return W(r);
 		},
 		get actions() {
 			return n();
 		},
-		local: oe
+		local: ie
 	}), (e) => l = e, () => l);
-	var ge = z(he, 2), _e = L(ge), ve = L(_e);
-	let ye, be;
-	var xe = L(ve), Se = z(L(xe)), Ce = L(Se, !0);
-	M(Se), M(xe);
-	var we = z(xe, 2), Te = L(we);
+	var me = V(pe, 2), he = (e) => {
+		var t = Rl(), n = z(t);
+		P(t), H((e) => Y(n, `Recall armed · ${e ?? ""}`), [() => W(r).recallArms.nodes.filter((e) => e.armed).length]), K("click", t, () => ie("recall-arms")), J(e, t);
+	}, ge = /* @__PURE__ */ F(() => W(r).recallArms?.nodes.some((e) => e.armed));
+	X(me, (e) => {
+		W(ge) && e(he);
+	});
+	var _e = V(me, 2), ve = z(_e), ye = z(ve);
+	let be, xe;
+	var Se = z(ye), Ce = V(z(Se)), we = z(Ce, !0);
+	P(Ce), P(Se);
+	var Te = V(Se, 2), Ee = z(Te);
 	{
-		let e = /* @__PURE__ */ N(() => U(r).outputPreview ?? null);
-		is(Te, {
+		let e = /* @__PURE__ */ F(() => W(r).outputPreview ?? null);
+		ds(Ee, {
 			get view() {
-				return U(e);
+				return W(e);
 			},
 			get actions() {
 				return n().outputPreview;
 			},
-			collapse: () => ie(!0)
+			collapse: () => j(!0)
 		});
 	}
-	M(we), M(ve);
-	var Ee = z(ve, 2), De = (e) => {
+	P(Te), P(ye);
+	var M = V(ye, 2), De = (e) => {
 		{
-			let t = /* @__PURE__ */ N(() => Math.min(U(y), U(x)));
+			let t = /* @__PURE__ */ F(() => Math.min(W(y), W(x)));
 			ra(e, {
 				get height() {
-					return U(t);
+					return W(t);
 				},
 				get max() {
-					return U(x);
+					return W(x);
 				},
-				start: re,
+				start: ne,
 				change: (e) => {
-					I(y, e, !0), ne();
+					R(y, e, !0), te();
 				}
 			});
 		}
 	};
-	Y(Ee, (e) => {
-		U(b) || e(De);
+	X(M, (e) => {
+		W(b) || e(De);
 	});
-	var Oe = z(Ee, 2);
-	$(ha(Oe, {
+	var N = V(M, 2);
+	Ci(ha(N, {
 		get views() {
-			return U(r).graphViews;
+			return W(r).graphViews;
 		},
 		get actions() {
 			return n().graphViewActions;
 		},
 		panelId: "pc-workspace-graph"
 	}), (e) => u = e, () => u);
-	var A = z(Oe, 2);
+	var Oe = V(N, 2);
 	{
-		let e = /* @__PURE__ */ N(() => U(r).graphViews?.active);
-		ba(A, {
+		let e = /* @__PURE__ */ F(() => W(r).graphViews?.active);
+		ba(Oe, {
 			get view() {
-				return U(e);
+				return W(e);
 			},
 			get actions() {
 				return n().graphViewActions;
 			}
 		});
 	}
-	var ke = z(A, 2), j = L(ke), Ae = L(j);
+	var ke = V(Oe, 2), je = z(ke), Me = z(je);
 	{
-		let e = /* @__PURE__ */ N(() => U(r).runMeter ?? null);
-		ys(Ae, {
+		let e = /* @__PURE__ */ F(() => W(r).runMeter ?? null);
+		Es(Me, {
 			get view() {
-				return U(e);
+				return W(e);
 			},
 			open: () => {
-				I(E, "run-details");
+				R(E, "run-details");
 			}
 		});
 	}
-	M(j);
-	var je = z(j, 2);
-	$(je, (e) => o = e, () => o);
-	var Ne = z(je, 2), Pe = (e) => {
-		var t = Wc(), n = L(t, !0);
-		M(t), B(() => J(n, U(r).nativeDiagnostic)), q(e, t);
+	P(je);
+	var Ne = V(je, 2);
+	Ci(Ne, (e) => o = e, () => o);
+	var Pe = V(Ne, 2), Fe = (e) => {
+		var t = zl(), n = z(t, !0);
+		P(t), H(() => Y(n, W(r).nativeDiagnostic)), J(e, t);
 	};
-	Y(Ne, (e) => {
-		U(r).nativeDiagnostic && e(Pe);
-	}), $(Sc(z(Ne, 2), {
+	X(Pe, (e) => {
+		W(r).nativeDiagnostic && e(Fe);
+	}), Ci(gl(V(Pe, 2), {
 		get view() {
-			return U(r).workflow;
+			return W(r).workflow;
 		},
 		get choices() {
-			return U(r).nativeChoices;
+			return W(r).nativeChoices;
 		},
 		get choose() {
 			return n().chooseNative;
@@ -6421,189 +7322,258 @@ function Yc(e, t) {
 			return n().shelfSubgraph;
 		},
 		get readOnly() {
-			return U(r).readOnly;
+			return W(r).readOnly;
 		},
 		add: (e, t) => n().addNode?.(e, t)
-	}), (e) => te = e, () => te), M(ke), M(_e), $(_e, (e) => s = e, () => s);
-	var Fe = z(_e, 2), Ie = (e) => {
-		var t = jr();
-		Br(R(t), () => U(r).graphViews?.active.key ?? U(r).graphId, (e) => {
+	}), (e) => ee = e, () => ee), P(ke), P(ve), Ci(ve, (e) => s = e, () => s);
+	var Ie = V(ve, 2), Le = (e) => {
+		var t = Ar();
+		zr(B(t), () => W(r).graphViews?.active.key ?? W(r).graphId, (e) => {
 			aa(e, {
 				get width() {
-					return U(w);
+					return W(w);
 				},
 				get max() {
-					return U(C);
+					return W(C);
 				},
-				start: re,
-				preview: (e) => I(S, e, !0),
+				start: ne,
+				preview: (e) => R(S, e, !0),
 				change: T
 			});
-		}), q(e, t);
+		}), J(e, t);
 	};
-	Y(Fe, (e) => {
-		U(r).inspectorOpen && e(Ie);
+	X(Ie, (e) => {
+		W(r).inspectorOpen && e(Le);
 	});
-	var Le = z(Fe, 2), Re = L(Le), ze = z(L(Re));
-	M(Re);
-	var Be = z(Re, 2), Ve = (e) => {
-		let t = /* @__PURE__ */ N(() => U(r).commentDetails);
-		Bo(e, {
+	var Re = V(Ie, 2), ze = z(Re), Be = V(z(ze));
+	P(ze);
+	var Ue = V(ze, 2), We = (e) => {
+		let t = /* @__PURE__ */ F(() => W(r).commentDetails);
+		qo(e, {
 			get comment() {
-				return U(t).comment;
+				return W(t).comment;
 			},
-			onPatch: (e) => n().commentDetails?.patch(U(t).selection, e),
-			onCommand: (e) => n().commentDetails?.command(U(t).selection, e)
+			onPatch: (e) => n().commentDetails?.patch(W(t).selection, e),
+			onCommand: (e) => n().commentDetails?.command(W(t).selection, e)
 		});
 	};
-	Y(Be, (e) => {
-		U(r).commentDetails && e(Ve);
+	X(Ue, (e) => {
+		W(r).commentDetails && e(We);
 	});
-	var He = z(Be, 2), Ge = L(He);
+	var Ge = V(Ue, 2), Ke = z(Ge);
 	{
-		let e = /* @__PURE__ */ N(() => U(r).commentDetails ? null : U(r).nodeDetails ?? null);
-		Lo(Ge, {
+		let e = /* @__PURE__ */ F(() => W(r).commentDetails ? null : W(r).nodeDetails ?? null);
+		Wo(Ke, {
 			get view() {
-				return U(e);
+				return W(e);
 			},
 			get actions() {
 				return n().nodeDetails;
 			}
 		});
 	}
-	M(He), M(Le), $(Le, (e) => c = e, () => c), M(ge), $(ge, (e) => a = e, () => a);
-	var Ke = z(ge, 2), qe = (e) => {
-		var t = Kc(), i = L(t);
+	P(Ge), P(Re), Ci(Re, (e) => c = e, () => c), P(_e), Ci(_e, (e) => a = e, () => a);
+	var qe = V(_e, 2), Je = (e) => {
+		var t = Vl(), i = z(t);
 		let a;
-		var o = L(i), s = L(o), c = L(s, !0);
-		M(s);
-		var l = z(s);
-		M(o);
-		var u = z(o, 2), d = (e) => {
-			Nc(e, {
+		var o = z(i), s = z(o), c = z(s, !0);
+		P(s);
+		var l = V(s);
+		P(o);
+		var u = V(o, 2), d = (e) => {
+			Dl(e, {
 				get examples() {
-					return U(r).examples;
+					return W(r).examples;
 				},
 				get issue() {
-					return U(r).examplesIssue;
+					return W(r).examplesIssue;
 				},
 				get retry() {
 					return n().refreshExamples;
 				},
 				get scrollTop() {
-					return U(k);
+					return W(A);
 				},
-				scroll: (e) => I(k, e, !0),
-				open: ce
+				scroll: (e) => R(A, e, !0),
+				open: oe
 			});
 		}, f = (e) => {
 			{
-				let t = /* @__PURE__ */ N(() => U(r).runDetails ?? null);
-				hs(e, {
+				let t = /* @__PURE__ */ F(() => W(r).fastConnections ?? {
+					userId: "",
+					connections: [],
+					issue: "Fast connection settings are unavailable."
+				});
+				tc(e, {
 					get view() {
-						return U(t);
+						return W(t);
+					},
+					get actions() {
+						return n().fastConnections;
+					},
+					close: ae
+				});
+			}
+		}, p = (e) => {
+			{
+				let t = /* @__PURE__ */ F(() => W(r).recallArms ?? {
+					scope: null,
+					nodes: [],
+					issue: "Recall state is unavailable."
+				});
+				kc(e, {
+					get view() {
+						return W(t);
+					},
+					get actions() {
+						return n().recallArms;
+					},
+					close: ae
+				});
+			}
+		}, m = (e) => {
+			{
+				let t = /* @__PURE__ */ F(() => W(r).storyDocuments ?? {
+					key: "",
+					revision: "",
+					scope: {
+						userId: "",
+						chatId: ""
+					},
+					documents: [],
+					issue: "Story document setup is unavailable."
+				});
+				Cc(e, {
+					get view() {
+						return W(t);
+					},
+					get actions() {
+						return n().storyDocuments;
+					},
+					close: ae
+				});
+			}
+		}, h = (e) => {
+			{
+				let t = /* @__PURE__ */ F(() => W(r).runDetails ?? null);
+				Ss(e, {
+					get view() {
+						return W(t);
 					},
 					get actions() {
 						return n().runDetails;
 					}
 				});
 			}
-		}, p = (e) => {
-			var t = Gc();
-			Me(4), q(e, t);
+		}, g = (e) => {
+			var t = Bl();
+			Ae(4), J(e, t);
 		};
-		Y(u, (e) => {
-			U(E) === "examples" ? e(d) : U(E) === "run-details" ? e(f, 1) : e(p, -1);
-		}), M(i), $(i, (e) => I(D, e), () => U(D)), M(t), B(() => {
-			a = ii(i, 1, "pc-workspace-dialog svelte-1dr9aew", null, a, { "pc-examples-dialog": U(E) === "examples" }), Q(i, "aria-label", U(E) === "examples" ? "Examples" : U(E) === "run-details" ? "Run details" : "Workspace guide"), J(c, U(E) === "examples" ? "Examples" : U(E) === "run-details" ? "Run details" : "Workspace guide");
-		}), G("keydown", i, ue), W("paste", i, (e) => e.stopPropagation()), G("click", l, se), q(e, t);
+		X(u, (e) => {
+			W(E) === "examples" ? e(d) : W(E) === "fast-connections" ? e(f, 1) : W(E) === "recall-arms" ? e(p, 2) : W(E) === "story-documents" ? e(m, 3) : W(E) === "run-details" ? e(h, 4) : e(g, -1);
+		}), P(i), Ci(i, (e) => R(D, e), () => W(D)), P(t), H(() => {
+			a = ri(i, 1, "pc-workspace-dialog svelte-1dr9aew", null, a, { "pc-examples-dialog": W(E) === "examples" }), $(i, "aria-label", W(E) === "examples" ? "Examples" : W(E) === "run-details" ? "Run details" : W(E) === "fast-connections" ? "Fast connections" : W(E) === "story-documents" ? "Story documents" : W(E) === "recall-arms" ? "Recall arms" : "Workspace guide"), Y(c, W(E) === "examples" ? "Examples" : W(E) === "run-details" ? "Run details" : W(E) === "fast-connections" ? "Fast connections" : W(E) === "story-documents" ? "Story documents" : W(E) === "recall-arms" ? "Recall arms" : "Workspace guide");
+		}), K("keydown", i, ce), G("paste", i, (e) => e.stopPropagation()), K("click", l, ae), J(e, t);
 	};
-	Y(Ke, (e) => {
-		U(E) && e(qe);
+	X(qe, (e) => {
+		W(E) && e(Je);
 	});
-	var Je = z(Ke, 2);
-	$s(Je, {
+	var Ye = V(qe, 2);
+	qc(Ye, {
 		get view() {
-			return U(r).nativeSearch;
+			return W(r).nativeSearch;
 		},
 		get actions() {
 			return n().nativeSearch;
 		}
 	});
-	var Ye = z(Je, 2);
-	rc(Ye, {
+	var Xe = V(Ye, 2);
+	Zc(Xe, {
 		get view() {
-			return U(r).nativePinMenu;
+			return W(r).nativePinMenu;
 		},
 		get actions() {
 			return n().nativePinMenu;
 		}
 	});
-	var Xe = z(Ye, 2), Ze = (e) => {
-		var t = qc(), i = L(t);
-		Rs(L(i), {
+	var Ze = V(Xe, 2), Qe = (e) => {
+		var t = Hl(), i = z(t);
+		Gs(z(i), {
 			get view() {
-				return U(r).portalManager;
+				return W(r).portalManager;
 			},
 			get actions() {
 				return n().portalManager;
 			}
-		}), M(i), M(t), G("keydown", i, le), W("paste", i, (e) => e.stopPropagation()), q(e, t);
+		}), P(i), P(t), K("keydown", i, se), G("paste", i, (e) => e.stopPropagation()), J(e, t);
 	};
-	Y(Xe, (e) => {
-		U(r).portalManager && e(Ze);
+	X(Ze, (e) => {
+		W(r).portalManager && e(Qe);
 	});
-	var Qe = z(Xe, 2), $e = (e) => {
-		Hs(e, {
+	var $e = V(Ze, 2), et = (e) => {
+		Ic(e, {
 			get view() {
-				return U(r).subgraphSave;
+				return W(r).configureNode;
+			},
+			get actions() {
+				return n().configureNode;
+			}
+		});
+	};
+	X($e, (e) => {
+		W(r).configureNode && e(et);
+	});
+	var tt = V($e, 2), nt = (e) => {
+		Ys(e, {
+			get view() {
+				return W(r).subgraphSave;
 			},
 			get actions() {
 				return n().subgraphSave;
 			}
 		});
 	};
-	Y(Qe, (e) => {
-		U(r).subgraphSave && e($e);
+	X(tt, (e) => {
+		W(r).subgraphSave && e(nt);
 	});
-	var et = z(Qe, 2), tt = (e) => {
-		Uc(e, {
+	var rt = V(tt, 2), it = (e) => {
+		Ll(e, {
 			get view() {
-				return U(r).importReview;
+				return W(r).importReview;
 			},
 			get actions() {
 				return n();
 			}
 		});
 	};
-	Y(et, (e) => {
-		U(r).importReview && e(tt);
+	X(rt, (e) => {
+		W(r).importReview && e(it);
 	});
-	var nt = z(et, 2), rt = (e) => {
-		Ws(e, {
+	var at = V(rt, 2), ot = (e) => {
+		Rc(e, {
 			get view() {
-				return U(r).newWorkflowPrompt;
+				return W(r).newWorkflowPrompt;
 			},
 			get actions() {
 				return n().newWorkflowPrompt;
 			}
 		});
 	};
-	return Y(nt, (e) => {
-		U(r).newWorkflowPrompt && e(rt);
-	}), M(fe), $(fe, (e) => i = e, () => i), B((e) => {
-		pe = ii(fe, 1, "pc-root pc-native-workspace svelte-1dr9aew", null, pe, { "pc-native-flat": U(r).nativeFlatCanvas }), me = oi(fe, "", me, { "--pc-details-width": `${U(w)}px` }), ye = ii(ve, 1, "pc-preview-pane", null, ye, { "pc-preview-collapsed": U(b) }), be = oi(ve, "", be, e), Q(Se, "aria-expanded", !U(b)), J(Ce, U(b) ? "Expand preview" : "Collapse preview"), Q(we, "hidden", U(b)), Q(Le, "hidden", !U(r).inspectorOpen), Q(He, "hidden", !!U(r).commentDetails);
-	}, [() => ({ "--pc-preview-height": `${Math.min(U(y), U(x))}px` })]), G("click", Se, () => ie(!U(b))), G("click", ze, () => n().managePortals?.()), q(e, fe), We(de);
+	return X(at, (e) => {
+		W(r).newWorkflowPrompt && e(ot);
+	}), P(ue), Ci(ue, (e) => i = e, () => i), H((e) => {
+		de = ri(ue, 1, "pc-root pc-native-workspace svelte-1dr9aew", null, de, { "pc-native-flat": W(r).nativeFlatCanvas }), fe = ai(ue, "", fe, { "--pc-details-width": `${W(w)}px` }), be = ri(ye, 1, "pc-preview-pane", null, be, { "pc-preview-collapsed": W(b) }), xe = ai(ye, "", xe, e), $(Ce, "aria-expanded", !W(b)), Y(we, W(b) ? "Expand preview" : "Collapse preview"), $(Te, "hidden", W(b)), $(Re, "hidden", !W(r).inspectorOpen), $(Ge, "hidden", !!W(r).commentDetails);
+	}, [() => ({ "--pc-preview-height": `${Math.min(W(y), W(x))}px` })]), K("click", Ce, () => j(!W(b))), K("click", Be, () => n().managePortals?.()), J(e, ue), He(le);
 }
-br(["click", "keydown"]);
+yr(["click", "keydown"]);
 //#endregion
 //#region ui/entry.js
-function Xc(e, t) {
+function Gl(e, t) {
 	let n = document.createElement("div");
 	n.style.cssText = "position:absolute;left:0;top:0;visibility:hidden;pointer-events:none", n.setAttribute("aria-hidden", "true"), n.inert = !0, e.append(n);
 	let r;
 	try {
-		r = Nr(Ni, {
+		r = Mr(Ni, {
 			target: n,
 			props: {
 				card: t,
@@ -6612,45 +7582,45 @@ function Xc(e, t) {
 					hostResult() {}
 				}
 			}
-		}), Rt();
+		}), It();
 		let { width: e, height: i } = n.querySelector(".pc-node").getBoundingClientRect();
 		return {
 			width: e,
 			height: i
 		};
 	} finally {
-		r && Lr(r), n.remove();
+		r && Ir(r), n.remove();
 	}
 }
-function Zc(e, t) {
-	let n = Nr(qi, {
+function Kl(e, t) {
+	let n = Mr(qi, {
 		target: e,
 		props: { actions: t }
 	});
-	return Rt(), {
+	return It(), {
 		...n.getLayers(),
-		setComments: (e, t) => Rt(() => n.setComments(e, t)),
-		setNodes: (e) => Rt(() => n.setNodes(e)),
-		setGroups: (e) => Rt(() => n.setGroups(e)),
-		setWires: (e, t, r) => Rt(() => n.setWires(e, t, r)),
-		setPositions: (e, t) => Rt(() => n.setPositions(e, t)),
-		destroy: () => Lr(n)
+		setComments: (e, t) => It(() => n.setComments(e, t)),
+		setNodes: (e) => It(() => n.setNodes(e)),
+		setGroups: (e) => It(() => n.setGroups(e)),
+		setWires: (e, t, r) => It(() => n.setWires(e, t, r)),
+		setPositions: (e, t) => It(() => n.setPositions(e, t)),
+		destroy: () => Ir(n)
 	};
 }
-function Qc(e, t) {
-	let n = Nr(Yc, {
+function ql(e, t) {
+	let n = Mr(Wl, {
 		target: e,
 		props: { actions: t }
 	});
-	return Rt(), {
+	return It(), {
 		...n.getParts(),
-		update: (e) => Rt(() => n.update(e)),
-		updateActions: (e) => Rt(() => n.updateActions(e)),
-		revealPreview: () => Rt(() => n.revealPreview()),
+		update: (e) => It(() => n.update(e)),
+		updateActions: (e) => It(() => n.updateActions(e)),
+		revealPreview: () => It(() => n.revealPreview()),
 		renameGraphView: (e) => n.renameGraphView(e),
 		focusCommentTitle: (e, t) => n.focusCommentTitle(e, t),
-		destroy: () => Lr(n)
+		destroy: () => Ir(n)
 	};
 }
 //#endregion
-export { Xc as measureNodeCard, Zc as mountCanvas, Qc as mountWorkbench };
+export { Gl as measureNodeCard, Kl as mountCanvas, ql as mountWorkbench };

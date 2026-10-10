@@ -1,3 +1,6 @@
+import { prepareIterationBindingOverride } from './iteration-bindings.js?v=0.26.0';
+import { createStoryDocumentSetup } from './story-document-setup.js?v=0.26.0';
+import { createConfiguredNodeSession, configuredCreationStage, nodeNeedsConfiguration, iterationHelperChoices } from './configured-node-creation.js?v=0.26.0';
 import { checkFastSettingsScope, fastSettingsPersistence, saveFastConnection, workflowBindingKey, workflowCreationPhase } from './provider-settings.js?v=0.26.0';
 import { resolveBinding } from '../workflow/connections.js?v=0.26.0';
 import * as workflowRuntime from '../run.js?v=0.26.0';
@@ -56,6 +59,8 @@ let viewSaveTimer = null, pinnedPreview = null, selectedPreview = null, nativeWi
 let nativeGroupPresenter = null, detachedClip = null, workspaceIssue = '';
 let pendingSubgraphSave = null;
 let pendingNewWorkflow = null;
+let storyDocumentSetup = null, pendingConfiguredNode = null;
+const nodeDocumentCaptures = new Map(), nodeCreationScopes = new WeakMap();
 // Autosave retains documents; explicit saves and exports advance this checkpoint.
 const savedWorkflowDocuments = new WeakMap();
 const workflowSaveRequests = new WeakMap();
@@ -125,6 +130,27 @@ const workflowSession = createWorkflowSession({ runtime: () => workflowRuntime.g
     if (isOpen() && !documentTransition) { if (authorityChanged) refreshWorkflowPreparation(); updateWorkflowProjection(); }
 } });
 const receiveAutomaticWorkflow = () => workflowSession.receiveAutomatic(workflowRuntime.getNativeWorkflowController?.()?.lastAutomaticResult?.());
+function storySetup() {
+    const catalog = workflowRuntime.getStoryDocumentCatalog?.();
+    if (!catalog) return null;
+    return storyDocumentSetup ??= createStoryDocumentSetup(catalog);
+}
+function refreshStoryDocuments(notice = '') {
+    const snapshot = storySetup()?.snapshot();
+    workbench?.update({ storyDocuments: snapshot?.ok ? { ...snapshot.data, notice } : { key: '', revision: '', scope: { userId: '', chatId: '' }, documents: [], issue: 'Story documents require an active user and chat.' } });
+}
+function storyDocumentsChanged(result) {
+    if (!result.ok) return result;
+    workflowSession.cancel('Story document authorization changed');
+    refreshWorkflowPreparation(); updateWorkflowProjection(); refreshStoryDocuments(result.data.message);
+    return result;
+}
+const storyDocumentsActions = {
+    refresh: () => refreshStoryDocuments(),
+    load(key, targetId) { return storySetup()?.load(key, targetId) ?? { ok: false, error: { code: 'DOCUMENT_SETUP_UNAVAILABLE', message: 'Story document setup is unavailable.' } }; },
+    async save(key, definition) { const setup = storySetup(); return setup ? storyDocumentsChanged(await setup.save(key, definition)) : { ok: false, error: { code: 'DOCUMENT_SETUP_UNAVAILABLE', message: 'Story document setup is unavailable.' } }; },
+    async remove(key, targetId) { const setup = storySetup(); return setup ? storyDocumentsChanged(await setup.remove(key, targetId)) : { ok: false, error: { code: 'DOCUMENT_SETUP_UNAVAILABLE', message: 'Story document setup is unavailable.' } }; },
+};
 function fastSetupView() {
     try {
         const snapshot = workflowRuntime.fastConnectionState?.();
@@ -160,6 +186,11 @@ const fastConnectionsActions = {
         } catch { return { ok: false, error: { code: 'FAST_SETTINGS_FAILED', message: 'The session key could not be cleared.' } }; }
     },
 };
+function recallSetupView(){
+    try{const response=workflowRuntime.getNativeWorkflowController?.()?.syncRecall?.();return response?.ok===true?response.data:{scope:null,nodes:[],issue:response?.error?.message??'Recall state is unavailable.'};}catch{return {scope:null,nodes:[],issue:'Recall state is unavailable.'};}
+}
+function refreshRecallArms(){const view=recallSetupView();workbench?.update({recallArms:view});return view;}
+const recallArmsActions={refresh:refreshRecallArms,arm(nodeId){const result=workflowRuntime.getNativeWorkflowController?.()?.armRecall?.(nodeId);refreshRecallArms();return result??{ok:false,error:{code:'RECALL_UNAVAILABLE',message:'Recall is unavailable.'}};},disarm(nodeId){const result=workflowRuntime.getNativeWorkflowController?.()?.disarmRecall?.(nodeId);refreshRecallArms();return result??{ok:false,error:{code:'RECALL_UNAVAILABLE',message:'Recall is unavailable.'}};}};
 function workspaceInputs() { const snapshot = fastSetupView(); return { settings: settings(), profiles: profiles(), fastConnections: snapshot.connections, result: workflowState.result, resolveBinding: (node, graph) => resolveBinding(node, graph, ctx()), resolveFastBinding: node => workflowRuntime.fastConnectionPreview?.(node) ?? { ok: false, error: { code: 'SERVICE_UNAVAILABLE', message: 'Fast Decision is unavailable for the active user.' } }, candidateStatus: candidate => workflowRuntime.getNativeWorkflowController?.()?.candidateStatus?.(candidate) }; }
 function refreshWorkflowPreparation() {
     if (!current || !workspacePrepared) return;
@@ -204,6 +235,7 @@ function prepareWorkspaceDocument() {
 }
 function activateEditorDraw() {
     if (!graphViews || !canvas) return;
+    cancelConfiguredNode();
     selectedPreview = null;
     canvas.cancelGesture(); cancelImportReview();
     // A rejected coordinate restoration retains its diagnostic and pending
@@ -339,7 +371,7 @@ function updateWorkflowProjection() {
     const rootWorkflow = projectPreparedWorkflow(workspacePrepared?.workflow,workflowState);
     const panels = graphViews ? projectWorkspacePanels(graphViews.readEditor(), view, workflowState, revision, selectedPreview, pinnedPreview, rootWorkflow, workspacePrepared.idleRunRows, workspacePrepared.previewChoices) : {};
     if (canvas && graphViews && editorDraw && canvasTraceRows!==view.rows) { canvasTraceRows=view.rows;const traces = []; const visit = rows => { for (const row of rows ?? []) { traces.push({ id: row.address.nodeId, status: row.status }); } }; if(graphViews.readEditor().view.identity.kind!=='library')visit(view.rows); canvas.setTrace(traces); }
-    workbench?.update({ workflow: view, rootWorkflow, ...panels, nativeDiagnostic: workspaceIssue, nativeFlatCanvas: !settings().ui?.theme?.style?.grid });
+    workbench?.update({ workflow: view, rootWorkflow, recallArms: recallSetupView(), ...panels, nativeDiagnostic: workspaceIssue, nativeFlatCanvas: !settings().ui?.theme?.style?.grid });
 }
 function prepareGroupPresentation() {
     const captured = captureEditor(true); if (!captured.ok) return null;
@@ -382,7 +414,7 @@ const workflowActions = {
     assign(phase) { const key = workflowBindingKey(current?.mode); if (!key || current?.mode !== 'native-' + phase) return; workflowSession.cancel('Workflow assignment changed'); settings().nativeBindings ??= {}; settings().nativeBindings[key] = current.id; if (phase !== 'unified') settings().nativeBindings.workflowGraphId = null; save(); refreshWorkflowPreparation(); updateWorkflowProjection(); renderStatus(); },
     run: () => graphViews ? workflowSession.run() : toast('The current workflow is unavailable.', 'error'),
     apply: selector => applyPreviewReview(selector), reject: () => workflowSession.reject(),
-    addNode(operation, at = null) { const token = captureEditor(); if (!token.ok) return token; return commitCaptured(token.data, prepareShelfNodeCreation(token.data, { kind: 'create', operation }, at)); },
+    async addNode(operation, at = null) { const token = captureEditor(); if (!token.ok) return token; const prepared = await requestNodeCreation(token.data, { kind: 'create', operation }, at, true); return prepared?.error?.code === 'NODE_CONFIGURATION_CANCELLED' ? prepared : commitNodeCreation(token.data, prepared); },
 };
 function defaultNodeSpot() {
     const rect = canvas.host.getBoundingClientRect(), zoom = canvas.view.zoom || 1;
@@ -403,6 +435,7 @@ export function open() {
     setCanvasGraph(); renderAll();
 }
 export function close() {
+    cancelConfiguredNode();
     chooseNewWorkflow('cancel');
     cancelImportReview(); document.removeEventListener('pc-native-result', receiveAutomaticWorkflow);
     documentTransition = true; workflowSession.cancel('Workflow view closed'); documentTransition = false;
@@ -412,6 +445,7 @@ export function close() {
 }
 export function toggle() { isOpen() ? close() : open(); }
 function setCanvasGraph() {
+    cancelConfiguredNode();
     chooseNewWorkflow('cancel');
     if (current && !savedWorkflowDocuments.has(current)) savedWorkflowDocuments.set(current, workflowDocumentSnapshot(current));
     canvas?.cancelGesture(); persistGraphViews(true); const initializeCamera = !settings().workspaceViews?.[current.id] && (!current.view || current.view.x === 0 && current.view.y === 0 && current.view.zoom === 1);
@@ -465,15 +499,18 @@ function build() {
         chooseNative: chooseNativeNode, managePortals: () => openPortalManager(), shelfSubgraph: shelfSubgraphAction,
         subgraphSave: { close() { pendingSubgraphSave = null; workbench.update({ subgraphSave: null }); }, save: saveSubgraphToShelf },
         newWorkflowPrompt: { choose: chooseNewWorkflow }, fastConnections: fastConnectionsActions,
+        recallArms: recallArmsActions, storyDocuments: storyDocumentsActions, configureNode: configureNodeActions,
         acceptImport: acceptImportReview, cancelImport: cancelImportReview, prepareImportAgain,
     });
     root = workbench.root; hookHistory();
     const nativeContext = ctx();
     for (const name of ['CHAT_CHANGED', 'MESSAGE_EDITED', 'MESSAGE_UPDATED', 'MESSAGE_DELETED', 'MESSAGE_SWIPED', 'MESSAGE_SENT', 'GENERATION_STARTED', 'GENERATION_ENDED', 'GENERATION_STOPPED']) {
-        if (nativeContext.eventTypes?.[name]) nativeContext.eventSource?.on?.(nativeContext.eventTypes[name], () => { if (isOpen()) workflowSession.refreshFreshness(); });
+        if (nativeContext.eventTypes?.[name]) nativeContext.eventSource?.on?.(nativeContext.eventTypes[name], () => { if (isOpen()) { workflowSession.refreshFreshness(); if (name === 'CHAT_CHANGED') { cancelConfiguredNode(); refreshStoryDocuments(); } } });
     }
     const panes = safe(() => JSON.parse(globalThis.localStorage?.getItem('lattice.workspace.panes') || '{}')) || {};
     root.classList.toggle('pc-details-hidden', typeof panes.inspector === 'boolean' ? !panes.inspector : window.innerWidth < 860); syncPaneToggles();
+    document.addEventListener('pc-recall-state', () => { if(isOpen())refreshRecallArms(); });
+    document.addEventListener('pc-state', () => { if(isOpen())refreshRecallArms(); });
     document.addEventListener('pc-theme', () => { if (canvas && isOpen()) { updateWorkflowProjection(); canvas.render(); } });
     canvas = new Canvas(workbench.parts.canvasHost, {
         onSelect(item, kind) {
@@ -1438,11 +1475,22 @@ function editInstanceBinding(selection, field, mode, value) {
     if (!prepared.ok) return prepared;
     return commitGraphEdit(current, { ...prepared.data, context: context.data, viewPath: [] }, graphDocumentHooks);
 }
+function editIterationHelperBinding(selection, role, field, mode, value) {
+    const captured=detailCapture(selection);if(!captured.ok)return captured;
+    return commitCaptured(captured.data,prepareScopeMutation(captured.data,context=>{
+        const node=context.scope.nodes[selection.address.nodeId];
+        if(!node)return {ok:false,error:{code:'STALE_CONTEXT',message:'The selected iteration node changed.'}};
+        const checked=prepareIterationBindingOverride(node,context.candidate.definitions??{},{role,field,mode,value});if(!checked.ok)return checked;
+        if(Object.keys(checked.data.roleOverrides).length)node.roleOverrides=checked.data.roleOverrides;else delete node.roleOverrides;
+        return {ok:true,data:{}};
+    }));
+}
 const commentDetailsActions = {
     patch(selection, patch) { const captured = detailCapture(selection); return captured.ok ? commentPatch(captured.data, selection.address.nodeId, patch) : captured; },
     command(selection, command) { const captured = detailCapture(selection); return captured.ok ? commentCommand(captured.data, selection.address.nodeId, command) : captured; },
 };
 const nodeDetailsActions = {
+    editHelperBinding(selection,role,field,mode,value) { return editIterationHelperBinding(selection,role,field,mode,value); },
     openFastConnections() { workbench?.update({ fastConnectionsActive: true }); },
     editPhase(selection, phase) {
         const captured = detailCapture(selection); if (!captured.ok) return captured;
@@ -1508,8 +1556,48 @@ function replaceNativeBridge() {
     }
     nativeCatalog = workspacePrepared.catalogs.get(editor.view.key);
     if (!nativeCatalog) return;
-    nativeWireBridge = createNativeWireBridge({catalog:nativeCatalog,adapter:{capture:()=>captureEditor(),captureNavigation:()=>captureEditor(true),isCurrent:editorCurrent,prepare:(capture,command)=>prepareNativeCreation(capture,command),commit:(capture,prepared)=>{const result=commitCaptured(capture,{ok:true,data:prepared});if(result.ok&&prepared.addedBoundaryNodeId)focusBoundaryLabel(prepared.addedBoundaryNodeId);return result;},jump:jumpNativeNode},onUpdate:(view,requests)=>{canvas?.updateNativeWire?.(view,requests);workbench?.update({nativeSearch:view.search,nativePinMenu:view.menu});const actions=nativeWireBridge?.actions();workbench?.updateActions?.({nativeSearch:actions?.search ?? {},nativePinMenu:actions?.menu ?? {}});}});
+    nativeWireBridge = createNativeWireBridge({catalog:nativeCatalog,adapter:{capture:()=>captureEditor(),captureNavigation:()=>captureEditor(true),isCurrent:editorCurrent,prepare:(capture,command)=>requestNodeCreation(capture,command),commit:(capture,prepared)=>{const result=commitNodeCreation(capture,{ok:true,data:prepared});if(result.ok&&prepared.addedBoundaryNodeId)focusBoundaryLabel(prepared.addedBoundaryNodeId);return result;},jump:jumpNativeNode},onUpdate:(view,requests)=>{canvas?.updateNativeWire?.(view,requests);workbench?.update({nativeSearch:view.search,nativePinMenu:view.menu});const actions=nativeWireBridge?.actions();workbench?.updateActions?.({nativeSearch:actions?.search ?? {},nativePinMenu:actions?.menu ?? {}});}});
     workbench.update({nativeChoices:nativeCatalog.choices});
+}
+const configuredNodeSession = createConfiguredNodeSession({
+    isCurrent: editorCurrent,
+    isOptionsCurrent: options => !options.documentScopeKey || nodeDocumentCaptures.get(options.documentScopeKey)?.isCurrent() === true,
+    prepare: (capture, command, options) => { const prepared = options.shelf ? prepareShelfNodeCreation(capture, command, options.at) : prepareNativeCreation(capture, command); if (prepared.ok && options.documentScopeKey) nodeCreationScopes.set(prepared.data, nodeDocumentCaptures.get(options.documentScopeKey)); return prepared; },
+});
+const configureNodeActions = {
+    apply: (key, text, phase) => configuredNodeSession.apply(key, text, phase),
+    cancel: key => cancelConfiguredNode(key),
+};
+function cancelConfiguredNode(key = pendingConfiguredNode?.key) {
+    if (!pendingConfiguredNode || pendingConfiguredNode.key !== key) return;
+    configuredNodeSession.cancel(key); pendingConfiguredNode = null; workbench?.update({ configureNode: null });
+}
+function commitNodeCreation(capture, prepared) {
+    const documentLease = prepared?.ok && nodeCreationScopes.get(prepared.data);
+    if (documentLease && !documentLease.isCurrent()) return { ok: false, error: { code: 'STALE_DOCUMENT_SETUP', message: 'Story document authorization changed before node creation. Reopen configuration.' } };
+    return commitCaptured(capture, prepared);
+}
+function requestNodeCreation(capture, command, at = null, shelf = false) {
+    if (command.kind !== 'create' || !nodeNeedsConfiguration(command.operation)) {
+        const { requiresConfiguration, ...plain } = command;
+        return shelf ? prepareShelfNodeCreation(capture, plain, at) : prepareNativeCreation(capture, plain);
+    }
+    if (!editorCurrent(capture)) return { ok: false, error: { code: 'STALE_CONTEXT', message: 'The graph view changed.' } };
+    if (shelf && at) { command = { ...command, graphPoint: canvas.toGraph(at.x, at.y) }; shelf = false; at = null; }
+    const editor = graphViews.readEditor(), origin = command.connection?.origin;
+    const originCard = origin ? editorDraw?.nativeCards[origin.nodeId] : null;
+    const originPort = originCard?.ports.find(port => port.port === origin.portId);
+    const stage = configuredCreationStage(command.operation, editor.prepared.savedGraph.mode, originCard?.phase ?? editorDraw?.nativeCards[selected?.id]?.phase);
+    let targets = [], documentScopeKey;
+    if (['read-file', 'story-clock', 'commit-outcomes'].includes(command.operation)) {
+        const captured = workflowRuntime.getStoryDocumentCatalog?.()?.capture();
+        if (!captured?.ok) return { ok: false, error: { code: 'DOCUMENT_SETUP_UNAVAILABLE', message: 'Open an active chat and authorize a target in Tools › Story documents before creating this node.' } };
+        documentScopeKey = globalThis.crypto.randomUUID(); nodeDocumentCaptures.set(documentScopeKey, captured.data);
+        targets = captured.data.documents.map(({ content, ...summary }) => summary);
+    }
+    const opened = configuredNodeSession.open(capture, command, { ...stage, targets, helpers: iterationHelperChoices(current), shelf, at, ...(documentScopeKey ? { documentScopeKey } : {}), ...(originPort ? { originKind: originPort.kind, originDirection: originPort.dir } : {}) });
+    pendingConfiguredNode = opened.view; workbench?.update({ configureNode: opened.view });
+    return opened.result.finally(() => { if (documentScopeKey) nodeDocumentCaptures.delete(documentScopeKey); if (pendingConfiguredNode?.key === opened.view.key) { pendingConfiguredNode = null; workbench?.update({ configureNode: null }); } });
 }
 function prepareNativeCreation(capture, command) {
     if (command.kind !== 'create-boundary') return prepareNativeConnectionEdit(current, { ...command, ...scopeCommand(capture) });
@@ -1537,11 +1625,12 @@ function prepareShelfNodeCreation(capture, command, at = null) {
     // Reprepare private definitions so their content pins include the final coordinates.
     return prepareNativeCreation(capture, { ...command, graphPoint: origin });
 }
-function chooseNativeNode(id, at = null) {
+async function chooseNativeNode(id, at = null) {
     if (!nativeCatalog) return;
     const choice = resolveNativeSearchChoice(nativeCatalog, id), captured = captureEditor(); if (!choice || !captured.ok) return;
-    const prepared = prepareShelfNodeCreation(captured.data, { kind: 'create', ...choice }, at);
-    const result = commitCaptured(captured.data, prepared);
+    const prepared = await requestNodeCreation(captured.data, { kind: 'create', ...choice }, at, true);
+    if (prepared?.error?.code === 'NODE_CONFIGURATION_CANCELLED') return;
+    const result = commitNodeCreation(captured.data, prepared);
     if (result.ok && prepared.data.addedBoundaryNodeId) focusBoundaryLabel(prepared.data.addedBoundaryNodeId);
 }
 function deleteNativeSelection(selection, existingToken = null) {

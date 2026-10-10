@@ -1,0 +1,1052 @@
+{
+  "kind": "lattice-workflow",
+  "schema": 2,
+  "minRuntime": 2,
+  "graph": {
+    "id": "unified-example-campaign-callback",
+    "name": "Campaign threads return at the right moment",
+    "description": "Read accepted threads, match relevance to the new player turn, check public continuity, prepare callback guidance and distinguish offered, advanced and fulfilled updates.\n\nSetup: Create public JSON campaign-threads as [{id:\"harbor-debt\",status:\"offered\",text:\"Mara promised to repay the harbor keeper\",tags:[\"harbor\"]}]. Bind Prose and decision. The model proposes existing thread IDs only; Collection merges reject conflicting same-ID content. Fulfillment requires a new quoted completion, not merely mentioning the promise. Private obligations require a separately scoped actor leg.\n\nInspect: On Send owns this generation. Generate Reply uses the ordinary SillyTavern connection. Auxiliary roles remain unassigned in this portable example. Review the final narrative and proposed consequences; Apply publishes a new swipe and settles staged writes. Preview and bounded runs never settle.\n\nGenerated suggestions are proposals. Quoted observations preserve source identity; notes never establish canonical events. Private records cannot be appended to public notes.",
+    "schema": 3,
+    "runtime": 2,
+    "mode": "native-unified",
+    "nodes": {
+      "send": {
+        "id": "send",
+        "type": "workflow",
+        "operation": "on-send",
+        "operationVersion": 1,
+        "title": "On Send",
+        "enabled": true,
+        "x": 80,
+        "y": 120,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null
+      },
+      "generate": {
+        "id": "generate",
+        "type": "workflow",
+        "operation": "generate-reply",
+        "operationVersion": 1,
+        "title": "Generate Reply · SillyTavern",
+        "enabled": true,
+        "x": 820,
+        "y": 120,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "budgetTokens": 768
+      },
+      "review": {
+        "id": "review",
+        "type": "workflow",
+        "operation": "review-publish",
+        "operationVersion": 1,
+        "title": "Review / Publish",
+        "enabled": true,
+        "x": 2670,
+        "y": 120,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null
+      },
+      "threads-file": {
+        "id": "threads-file",
+        "type": "workflow",
+        "operation": "read-file",
+        "operationVersion": 1,
+        "title": "Read File",
+        "enabled": true,
+        "x": 80,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "targetId": "campaign-threads",
+        "schema": "",
+        "columns": [],
+        "actorScope": "selected",
+        "actorId": ""
+      },
+      "threads": {
+        "id": "threads",
+        "type": "workflow",
+        "operation": "json-decode",
+        "operationVersion": 1,
+        "title": "JSON Decode",
+        "enabled": true,
+        "x": 450,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "parse",
+        "schema": ""
+      },
+      "source": {
+        "id": "source",
+        "type": "workflow",
+        "operation": "player-event-source",
+        "operationVersion": 1,
+        "title": "Player Event Source",
+        "enabled": true,
+        "x": 80,
+        "y": 840,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null
+      },
+      "callback-input": {
+        "id": "callback-input",
+        "type": "workflow",
+        "operation": "collect",
+        "operationVersion": 1,
+        "title": "Collect",
+        "enabled": true,
+        "x": 820,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "artifactKind": "data",
+        "inputs": [
+          {
+            "id": "threads",
+            "label": "Accepted threads",
+            "required": true
+          },
+          {
+            "id": "turn",
+            "label": "Player turn",
+            "required": true
+          }
+        ]
+      },
+      "match-prompt": {
+        "id": "match-prompt",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 1190,
+        "y": 1080,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "text": "Return exactly {relevant:boolean}. Is the existing harbor-debt thread relevant to the actual player turn? Do not invent, advance or fulfill a promise."
+      },
+      "match": {
+        "id": "match",
+        "type": "workflow",
+        "operation": "model-call",
+        "operationVersion": 1,
+        "title": "Model Call",
+        "enabled": true,
+        "x": 1560,
+        "y": 1080,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": "Prose",
+        "instructions": "",
+        "outputKind": "data",
+        "schema": "",
+        "maxTokens": 2048
+      },
+      "callback-check": {
+        "id": "callback-check",
+        "type": "workflow",
+        "operation": "decision",
+        "operationVersion": 1,
+        "title": "Decision",
+        "enabled": true,
+        "x": 1930,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": "decision",
+        "inputKind": "data",
+        "questions": {
+          "relevant": {
+            "type": "noul",
+            "instructions": "Are all selected callbacks relevant, supported by accepted public history and known to the current viewpoint? A mention must not fulfill an obligation."
+          }
+        },
+        "maxTokens": 2048
+      },
+      "relevant": {
+        "id": "relevant",
+        "type": "workflow",
+        "operation": "condition",
+        "operationVersion": 1,
+        "title": "Condition",
+        "enabled": true,
+        "x": 1930,
+        "y": 840,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "path": [
+          "relevant"
+        ],
+        "operator": "equals",
+        "value": true
+      },
+      "relevant-branch": {
+        "id": "relevant-branch",
+        "type": "workflow",
+        "operation": "branch",
+        "operationVersion": 1,
+        "title": "Branch",
+        "enabled": true,
+        "x": 2300,
+        "y": 840,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "artifactKind": "data"
+      },
+      "closed-thread": {
+        "id": "closed-thread",
+        "type": "workflow",
+        "operation": "collection",
+        "operationVersion": 1,
+        "title": "Collection",
+        "enabled": true,
+        "x": 2300,
+        "y": 1080,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "filter",
+        "collectionPath": [],
+        "fieldPath": [
+          "id"
+        ],
+        "value": "harbor-debt",
+        "operator": "equals",
+        "missingPolicy": "hold",
+        "thresholds": "[]",
+        "mergePolicy": "keep-all",
+        "identityPath": [
+          "id"
+        ]
+      },
+      "callback-gate": {
+        "id": "callback-gate",
+        "type": "workflow",
+        "operation": "condition",
+        "operationVersion": 1,
+        "title": "Condition",
+        "enabled": true,
+        "x": 2300,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "path": [
+          "answers",
+          "relevant",
+          "accepted"
+        ],
+        "operator": "equals",
+        "value": true
+      },
+      "callback-branch": {
+        "id": "callback-branch",
+        "type": "workflow",
+        "operation": "branch",
+        "operationVersion": 1,
+        "title": "Branch",
+        "enabled": true,
+        "x": 2670,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "artifactKind": "data"
+      },
+      "callback-guidance": {
+        "id": "callback-guidance",
+        "type": "workflow",
+        "operation": "compose",
+        "operationVersion": 1,
+        "title": "Compose",
+        "enabled": true,
+        "x": 3040,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "template",
+        "outputKind": "guidance",
+        "template": "Offer a relevant callback from these existing public threads. Preserve the existing status; do not declare completion: {{data:}}",
+        "sections": [],
+        "separator": "\n\n"
+      },
+      "source-scope-text": {
+        "id": "source-scope-text",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 80,
+        "y": 1080,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "text": "{\"sourceId\":\"native-scene-body\",\"revision\":\"initial\",\"sceneId\":\"current-scene\",\"visibility\":\"public\"}"
+      },
+      "source-scope": {
+        "id": "source-scope",
+        "type": "workflow",
+        "operation": "json-decode",
+        "operationVersion": 1,
+        "title": "JSON Decode",
+        "enabled": true,
+        "x": 450,
+        "y": 1080,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "parse",
+        "schema": ""
+      },
+      "event-source": {
+        "id": "event-source",
+        "type": "workflow",
+        "operation": "draft-event-source",
+        "operationVersion": 1,
+        "title": "Draft Event Source",
+        "enabled": true,
+        "x": 1190,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null
+      },
+      "entities-text": {
+        "id": "entities-text",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 80,
+        "y": 840,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "text": "{\"actorIds\":[\"mara\"],\"itemIds\":[]}"
+      },
+      "entities": {
+        "id": "entities",
+        "type": "workflow",
+        "operation": "json-decode",
+        "operationVersion": 1,
+        "title": "JSON Decode",
+        "enabled": true,
+        "x": 450,
+        "y": 840,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "parse",
+        "schema": ""
+      },
+      "action-request": {
+        "id": "action-request",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 1190,
+        "y": 1080,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "text": "Identify an actual fulfilled harbor-debt promise, with its explicit completion quoted. A reference, renewed offer or progress is not fulfillment. Return a raw JSON array of candidates with eventType:\"scene-action\", actorId, objectId only when an identified other actor participates, itemId only when relevant, position:{start,end}, semantics:\"actual\". Use only supplied canonical IDs and exact UTF-16 spans in source.text. Return [] for no actual occurrence."
+      },
+      "action-candidates": {
+        "id": "action-candidates",
+        "type": "workflow",
+        "operation": "model-call",
+        "operationVersion": 1,
+        "title": "Model Call",
+        "enabled": true,
+        "x": 1560,
+        "y": 1080,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": "Prose",
+        "instructions": "",
+        "outputKind": "data",
+        "schema": "",
+        "maxTokens": 2048
+      },
+      "normalize": {
+        "id": "normalize",
+        "type": "workflow",
+        "operation": "event-normalize",
+        "operationVersion": 1,
+        "title": "Event Normalize",
+        "enabled": true,
+        "x": 1930,
+        "y": 1080,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "candidates",
+        "eventType": "",
+        "absoluteMinute": -1
+      },
+      "confirm-each": {
+        "id": "confirm-each",
+        "type": "workflow",
+        "operation": "for-each",
+        "operationVersion": 1,
+        "title": "For Each",
+        "enabled": true,
+        "x": 1560,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "helper": {
+          "id": "campaign-callback-confirm",
+          "version": 1,
+          "semanticHash": "sha256:3feb7ce015694ea0c49b0ed910e64eac19d3bfc89339e2d6ebbbb1761818f165"
+        },
+        "limit": 4,
+        "requestBoundPerIteration": 1,
+        "mode": "map",
+        "roleOverrides": {}
+      },
+      "confirmed": {
+        "id": "confirmed",
+        "type": "workflow",
+        "operation": "collection",
+        "operationVersion": 1,
+        "title": "Collection",
+        "enabled": true,
+        "x": 1930,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "flatten",
+        "collectionPath": [],
+        "fieldPath": [],
+        "value": "",
+        "operator": "equals",
+        "missingPolicy": "hold",
+        "thresholds": "[]",
+        "mergePolicy": "keep-all",
+        "identityPath": [
+          "id"
+        ]
+      },
+      "fulfilled": {
+        "id": "fulfilled",
+        "type": "workflow",
+        "operation": "format",
+        "operationVersion": 1,
+        "title": "Format",
+        "enabled": true,
+        "x": 3040,
+        "y": 1320,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "inputMode": "records",
+        "format": "json",
+        "jsonShape": "records",
+        "mapping": "select",
+        "fields": [
+          {
+            "name": "id",
+            "path": [
+              "threadId"
+            ],
+            "required": false,
+            "default": "harbor-debt"
+          },
+          {
+            "name": "status",
+            "path": [
+              "threadStatus"
+            ],
+            "required": false,
+            "default": "fulfilled"
+          },
+          {
+            "name": "completionEvidence",
+            "path": [
+              "evidence"
+            ]
+          }
+        ],
+        "schema": "",
+        "columns": [],
+        "separator": "\n",
+        "trailingSeparator": false
+      },
+      "thread-update": {
+        "id": "thread-update",
+        "type": "workflow",
+        "operation": "write-file",
+        "operationVersion": 1,
+        "title": "Write to File",
+        "enabled": true,
+        "x": 3410,
+        "y": 1320,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "update-fields",
+        "collectionPath": "",
+        "missingPath": "error",
+        "key": "id",
+        "fieldPolicy": "merge",
+        "fields": [
+          "status",
+          "completionEvidence"
+        ],
+        "schema": "",
+        "columns": [],
+        "separator": "\n",
+        "emptyPolicy": "omit",
+        "trailingSeparator": false,
+        "actorScope": "selected",
+        "actorId": ""
+      }
+    },
+    "wires": {
+      "wire-1": {
+        "id": "wire-1",
+        "route": "wire",
+        "from": "send",
+        "fromPort": "activation",
+        "to": "generate",
+        "toPort": "activation"
+      },
+      "wire-2": {
+        "id": "wire-2",
+        "route": "wire",
+        "from": "threads-file",
+        "fromPort": "text",
+        "to": "threads",
+        "toPort": "in"
+      },
+      "wire-3": {
+        "id": "wire-3",
+        "route": "wire",
+        "from": "threads",
+        "fromPort": "out",
+        "to": "callback-input",
+        "toPort": "threads"
+      },
+      "wire-4": {
+        "id": "wire-4",
+        "route": "wire",
+        "from": "source",
+        "fromPort": "out",
+        "to": "callback-input",
+        "toPort": "turn"
+      },
+      "wire-5": {
+        "id": "wire-5",
+        "route": "wire",
+        "from": "match-prompt",
+        "fromPort": "out",
+        "to": "match",
+        "toPort": "prompt"
+      },
+      "wire-6": {
+        "id": "wire-6",
+        "route": "wire",
+        "from": "callback-input",
+        "fromPort": "out",
+        "to": "match",
+        "toPort": "data"
+      },
+      "wire-7": {
+        "id": "wire-7",
+        "route": "wire",
+        "from": "callback-input",
+        "fromPort": "out",
+        "to": "callback-check",
+        "toPort": "in"
+      },
+      "wire-8": {
+        "id": "wire-8",
+        "route": "wire",
+        "from": "match",
+        "fromPort": "out",
+        "to": "relevant",
+        "toPort": "in"
+      },
+      "wire-9": {
+        "id": "wire-9",
+        "route": "wire",
+        "from": "threads",
+        "fromPort": "out",
+        "to": "relevant-branch",
+        "toPort": "in"
+      },
+      "wire-10": {
+        "id": "wire-10",
+        "route": "wire",
+        "from": "relevant",
+        "fromPort": "out",
+        "to": "relevant-branch",
+        "toPort": "condition"
+      },
+      "wire-11": {
+        "id": "wire-11",
+        "route": "wire",
+        "from": "relevant-branch",
+        "fromPort": "yes",
+        "to": "closed-thread",
+        "toPort": "in"
+      },
+      "wire-12": {
+        "id": "wire-12",
+        "route": "wire",
+        "from": "callback-check",
+        "fromPort": "out",
+        "to": "callback-gate",
+        "toPort": "in"
+      },
+      "wire-13": {
+        "id": "wire-13",
+        "route": "wire",
+        "from": "closed-thread",
+        "fromPort": "out",
+        "to": "callback-branch",
+        "toPort": "in"
+      },
+      "wire-14": {
+        "id": "wire-14",
+        "route": "wire",
+        "from": "callback-gate",
+        "fromPort": "out",
+        "to": "callback-branch",
+        "toPort": "condition"
+      },
+      "wire-15": {
+        "id": "wire-15",
+        "route": "wire",
+        "from": "callback-branch",
+        "fromPort": "yes",
+        "to": "callback-guidance",
+        "toPort": "data"
+      },
+      "wire-16": {
+        "id": "wire-16",
+        "route": "wire",
+        "from": "callback-guidance",
+        "fromPort": "out",
+        "to": "generate",
+        "toPort": "guidance"
+      },
+      "wire-17": {
+        "id": "wire-17",
+        "route": "wire",
+        "from": "source-scope-text",
+        "fromPort": "out",
+        "to": "source-scope",
+        "toPort": "in"
+      },
+      "wire-18": {
+        "id": "wire-18",
+        "route": "wire",
+        "from": "generate",
+        "fromPort": "draft",
+        "to": "event-source",
+        "toPort": "in"
+      },
+      "wire-19": {
+        "id": "wire-19",
+        "route": "wire",
+        "from": "source-scope",
+        "fromPort": "out",
+        "to": "event-source",
+        "toPort": "scope"
+      },
+      "wire-20": {
+        "id": "wire-20",
+        "route": "wire",
+        "from": "entities-text",
+        "fromPort": "out",
+        "to": "entities",
+        "toPort": "in"
+      },
+      "wire-21": {
+        "id": "wire-21",
+        "route": "wire",
+        "from": "action-request",
+        "fromPort": "out",
+        "to": "action-candidates",
+        "toPort": "prompt"
+      },
+      "wire-22": {
+        "id": "wire-22",
+        "route": "wire",
+        "from": "event-source",
+        "fromPort": "out",
+        "to": "action-candidates",
+        "toPort": "data"
+      },
+      "wire-23": {
+        "id": "wire-23",
+        "route": "wire",
+        "from": "event-source",
+        "fromPort": "out",
+        "to": "normalize",
+        "toPort": "source"
+      },
+      "wire-24": {
+        "id": "wire-24",
+        "route": "wire",
+        "from": "entities",
+        "fromPort": "out",
+        "to": "normalize",
+        "toPort": "entities"
+      },
+      "wire-25": {
+        "id": "wire-25",
+        "route": "wire",
+        "from": "action-candidates",
+        "fromPort": "out",
+        "to": "normalize",
+        "toPort": "candidates"
+      },
+      "wire-26": {
+        "id": "wire-26",
+        "route": "wire",
+        "from": "normalize",
+        "fromPort": "out",
+        "to": "confirm-each",
+        "toPort": "in"
+      },
+      "wire-27": {
+        "id": "wire-27",
+        "route": "wire",
+        "from": "confirm-each",
+        "fromPort": "out",
+        "to": "confirmed",
+        "toPort": "in"
+      },
+      "wire-28": {
+        "id": "wire-28",
+        "route": "wire",
+        "from": "confirmed",
+        "fromPort": "out",
+        "to": "fulfilled",
+        "toPort": "in"
+      },
+      "wire-29": {
+        "id": "wire-29",
+        "route": "wire",
+        "from": "threads-file",
+        "fromPort": "reference",
+        "to": "thread-update",
+        "toPort": "reference"
+      },
+      "wire-30": {
+        "id": "wire-30",
+        "route": "wire",
+        "from": "fulfilled",
+        "fromPort": "records",
+        "to": "thread-update",
+        "toPort": "records"
+      },
+      "wire-31": {
+        "id": "wire-31",
+        "route": "wire",
+        "from": "confirmed",
+        "fromPort": "out",
+        "to": "thread-update",
+        "toPort": "evidence"
+      },
+      "wire-32": {
+        "id": "wire-32",
+        "route": "wire",
+        "from": "generate",
+        "fromPort": "draft",
+        "to": "review",
+        "toPort": "draft"
+      }
+    },
+    "groups": {},
+    "roles": {
+      "Prose": {
+        "model": null,
+        "profileId": null
+      },
+      "decision": {
+        "model": null,
+        "profileId": null
+      }
+    },
+    "portals": {},
+    "definitions": {
+      "[\"campaign-callback-confirm\",1,\"sha256:3feb7ce015694ea0c49b0ed910e64eac19d3bfc89339e2d6ebbbb1761818f165\"]": {
+        "id": "campaign-callback-confirm",
+        "version": 1,
+        "semanticHash": "sha256:3feb7ce015694ea0c49b0ed910e64eac19d3bfc89339e2d6ebbbb1761818f165",
+        "name": "Confirm each occurrence",
+        "description": "Pinned bounded pure helper. Inspect each selected child request; errors and unresolved decisions hold the parent.",
+        "interface": [
+          {
+            "id": "item",
+            "label": "Item",
+            "direction": "input",
+            "kind": "data",
+            "required": true,
+            "cardinality": "one",
+            "boundaryNodeId": "item"
+          },
+          {
+            "id": "result",
+            "label": "Result",
+            "direction": "output",
+            "kind": "data",
+            "required": false,
+            "cardinality": "one",
+            "boundaryNodeId": "result"
+          }
+        ],
+        "parameters": [],
+        "body": {
+          "schema": 3,
+          "runtime": 2,
+          "mode": "native-unified",
+          "nodes": {
+            "item": {
+              "id": "item",
+              "type": "subgraph-input",
+              "interfacePortId": "item"
+            },
+            "result": {
+              "id": "result",
+              "type": "subgraph-output",
+              "interfacePortId": "result"
+            },
+            "records": {
+              "id": "records",
+              "type": "workflow",
+              "operation": "format",
+              "operationVersion": 1,
+              "title": "Format",
+              "enabled": true,
+              "x": 400,
+              "y": 120,
+              "w": 270,
+              "h": 170,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "inputMode": "records",
+              "format": "json",
+              "mapping": "preserve",
+              "fields": [],
+              "schema": "",
+              "columns": [],
+              "separator": "\n",
+              "trailingSeparator": false
+            },
+            "check": {
+              "id": "check",
+              "type": "workflow",
+              "operation": "decision",
+              "operationVersion": 1,
+              "title": "Decision",
+              "enabled": true,
+              "x": 400,
+              "y": 120,
+              "w": 270,
+              "h": 170,
+              "profileId": null,
+              "model": null,
+              "modelRole": "decision",
+              "inputKind": "data",
+              "questions": {
+                "actual": {
+                  "type": "noul",
+                  "instructions": "Identify an actual fulfilled harbor-debt promise, with its explicit completion quoted. A reference, renewed offer or progress is not fulfillment. Does this exact quoted event actually occur, with the stated actors and item, rather than being mentioned, claimed, planned, remembered or threatened?"
+                }
+              },
+              "maxTokens": 2048
+            },
+            "acceptance": {
+              "id": "acceptance",
+              "type": "workflow",
+              "operation": "select-fields",
+              "operationVersion": 1,
+              "title": "Select Fields",
+              "enabled": true,
+              "x": 400,
+              "y": 120,
+              "w": 270,
+              "h": 170,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "fields": [
+                {
+                  "name": "accepted",
+                  "path": [
+                    "answers",
+                    "actual",
+                    "accepted"
+                  ]
+                }
+              ]
+            },
+            "confirm": {
+              "id": "confirm",
+              "type": "workflow",
+              "operation": "confirm-events",
+              "operationVersion": 1,
+              "title": "Confirm Events",
+              "enabled": true,
+              "x": 400,
+              "y": 120,
+              "w": 270,
+              "h": 170,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "mode": "single-gate"
+            }
+          },
+          "wires": {
+            "w1": {
+              "id": "w1",
+              "route": "wire",
+              "from": "item",
+              "fromPort": "out",
+              "to": "records",
+              "toPort": "in"
+            },
+            "w2": {
+              "id": "w2",
+              "route": "wire",
+              "from": "item",
+              "fromPort": "out",
+              "to": "check",
+              "toPort": "in"
+            },
+            "w3": {
+              "id": "w3",
+              "route": "wire",
+              "from": "check",
+              "fromPort": "out",
+              "to": "acceptance",
+              "toPort": "in"
+            },
+            "w4": {
+              "id": "w4",
+              "route": "wire",
+              "from": "records",
+              "fromPort": "records",
+              "to": "confirm",
+              "toPort": "events"
+            },
+            "w5": {
+              "id": "w5",
+              "route": "wire",
+              "from": "acceptance",
+              "fromPort": "out",
+              "to": "confirm",
+              "toPort": "decisions"
+            },
+            "w6": {
+              "id": "w6",
+              "route": "wire",
+              "from": "confirm",
+              "fromPort": "out",
+              "to": "result",
+              "toPort": "in"
+            }
+          },
+          "roles": {
+            "decision": {
+              "model": null,
+              "profileId": null
+            }
+          }
+        }
+      }
+    },
+    "template": {
+      "id": "unified-campaign-callback",
+      "version": 1
+    },
+    "view": {
+      "x": 0,
+      "y": 0,
+      "zoom": 0.7
+    }
+  }
+}

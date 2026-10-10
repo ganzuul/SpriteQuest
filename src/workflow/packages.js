@@ -5,15 +5,70 @@ const limit = 2000000;
 const fail = (code, message) => ({ ok: false, error: { code, message } });
 const pick = (value, keys) => Object.fromEntries(keys.filter(key => Object.hasOwn(value, key)).map(key => [key, value[key]]));
 const portableBindings = bindings => Object.fromEntries(Object.entries(bindings ?? {}).map(([id, binding]) => [id, { ...pick(binding, ['model']), ...(Object.hasOwn(binding, 'profileId') ? { profileId: null } : {}) }]));
-function portableDefinition(definition) {
-    const copy = pick(definition, ['id', 'version', 'semanticHash', 'name', 'description']);
-    copy.interface = definition.interface.map(port => pick(port, ['id', 'label', 'direction', 'kind', 'required', 'cardinality', 'boundaryNodeId']));
-    copy.parameters = definition.parameters.map(parameter => ({ ...pick(parameter, ['id', 'label']), target: pick(parameter.target, ['instancePath', 'nodeId', 'controlId']) }));
-    copy.body = portableNativeDocument(definition.body);
-    const materialized = computeDefinitionIdentity(copy);
-    return materialized.ok ? structuredClone({ ...materialized.data.materializedDefinition, semanticHash: materialized.data.semanticHash }) : copy;
+// Parameter values are authored JSON unless the exact exposed control is a binding.
+// Resolve against the original flat table before any portable hashes are changed.
+function exposedParameterNode(definition, parameter, snapshots) {
+    if (!Array.isArray(parameter?.target?.instancePath)) return null;
+    let graph = definition.body;
+    for (const id of parameter.target.instancePath) {
+        const instance = graph?.nodes?.[id];
+        if (instance?.type !== 'subgraph') return null;
+        if (!instance.definition || typeof instance.definition !== 'object') return null;
+        const child = snapshots[definitionRefKey(instance.definition)];
+        if (!child) return null;
+        graph = child.body;
+    }
+    return graph?.nodes?.[parameter.target.nodeId] ?? null;
 }
-function portableNativeDocument(graph) {
+function instanceParameterTargets(node, snapshots) {
+    if (!node.definition || typeof node.definition !== 'object' || Array.isArray(node.definition)) return [];
+    const definition = snapshots[definitionRefKey(node.definition)];
+    return Object.entries(node.parameterOverrides ?? {}).map(([id, value]) => {
+        const parameter = Array.isArray(definition?.parameters) ? definition.parameters.find(parameter => parameter?.id === id) : null;
+        return { id, value, controlId: parameter?.target?.controlId, target: parameter ? exposedParameterNode(definition, parameter, snapshots) : null };
+    });
+}
+function definitionReferences(node, snapshots) {
+    if (!node || typeof node !== 'object' || Array.isArray(node)) return [];
+    const refs = node.type === 'subgraph' ? [node.definition] : node.type === 'workflow' && node.operation === 'for-each' ? [node.helper] : [];
+    if (node.type === 'subgraph') for (const parameter of instanceParameterTargets(node, snapshots)) {
+        if (parameter.target?.operation === 'for-each' && parameter.controlId === 'helper') refs.push(parameter.value);
+    }
+    return refs;
+}
+function portableProjection(snapshots) {
+    const projected = new Map(), active = new Set();
+    const context = {
+        reference(reference) {
+            const key = definitionRefKey(reference), original = snapshots[key];
+            return pick(original ? context.definition(original) : reference, ['id', 'version', 'semanticHash']);
+        },
+        parameters(node) {
+            return Object.fromEntries(instanceParameterTargets(node, snapshots).map(parameter => [parameter.id,
+                parameter.target?.operation === 'for-each' && parameter.controlId === 'roleOverrides' ? portableBindings(parameter.value)
+                    : parameter.target?.operation === 'for-each' && parameter.controlId === 'helper' ? context.reference(parameter.value) : parameter.value,
+            ]));
+        },
+        definition(definition) {
+            const key = definitionRefKey(definition);
+            if (projected.has(key)) return projected.get(key);
+            if (active.has(key)) throw new Error('Recursive portable definition references are not supported.');
+            active.add(key);
+            const copy = pick(definition, ['id', 'version', 'semanticHash', 'name', 'description']);
+            copy.interface = definition.interface.map(port => pick(port, ['id', 'label', 'direction', 'kind', 'required', 'cardinality', 'boundaryNodeId']));
+            copy.parameters = definition.parameters.map(parameter => ({ ...pick(parameter, ['id', 'label']), target: pick(parameter.target, ['instancePath', 'nodeId', 'controlId']) }));
+            copy.body = portableNativeDocument(definition.body, context);
+            const materialized = computeDefinitionIdentity(copy);
+            if (!materialized.ok) throw new Error(materialized.error.message);
+            const portable = structuredClone({ ...materialized.data.materializedDefinition, semanticHash: materialized.data.semanticHash });
+            projected.set(key, portable);
+            active.delete(key);
+            return portable;
+        },
+    };
+    return context;
+}
+function portableNativeDocument(graph, context) {
     const copy = pick(graph, ['id', 'name', 'description', 'schema', 'runtime', 'mode', 'nodes', 'wires', 'groups', 'roles', 'portals', 'definitions', 'template', 'view', 'createdAt', 'updatedAt']);
     copy.nodes = Object.fromEntries(Object.entries(graph.nodes).map(([id, node]) => [id, pick(node, [
         'id', 'type', 'operation', 'operationVersion', 'modifiers', 'title', 'enabled', 'x', 'y', 'w', 'h', 'width', 'height', 'collapsed', 'compact', 'inGroup', 'color',
@@ -22,10 +77,15 @@ function portableNativeDocument(graph) {
         ...(['subgraph-input', 'subgraph-output'].includes(node.type) ? ['interfacePortId'] : []),
         ...((OPERATIONS[node.operation]?.family === 'Introspection' ? operationFor(node, { phase: phaseForNode(graph, node), mode: graph.mode }) : OPERATIONS[node.operation])?.controls ?? []), ...(node.operation === 'validate-patches' ? ['protectedLiterals'] : []),
     ])]));
-    for (const node of Object.values(copy.nodes)) {
+    for (const [id, node] of Object.entries(copy.nodes)) {
         if (Object.hasOwn(node, 'profileId')) node.profileId = null;
+        if (node.type === 'workflow' && node.operation === 'for-each') {
+            if (Object.hasOwn(node, 'roleOverrides')) node.roleOverrides = portableBindings(node.roleOverrides);
+            if (Object.hasOwn(node, 'helper')) node.helper = context.reference(node.helper);
+        }
         if (node.type === 'subgraph') {
-            node.definition = pick(node.definition, ['id', 'version', 'semanticHash']);
+            if (Object.hasOwn(node, 'parameterOverrides')) node.parameterOverrides = context.parameters(graph.nodes[id]);
+            node.definition = context.reference(node.definition);
             node.roleOverrides = portableBindings(node.roleOverrides);
             node.nodeBindingOverrides = portableBindings(node.nodeBindingOverrides);
         }
@@ -36,7 +96,10 @@ function portableNativeDocument(graph) {
         if (Object.keys(portal.source).some(key => !['nodeId', 'portId'].includes(key))) throw new Error('Portal sources must be local endpoints.');
         return [id, { ...pick(portal, ['id', 'label', 'kind']), source: pick(portal.source, ['nodeId', 'portId']) }];
     }));
-    if (graph.definitions) copy.definitions = Object.fromEntries(Object.entries(graph.definitions).map(([key, definition]) => [key, portableDefinition(definition)]));
+    if (graph.definitions) copy.definitions = Object.fromEntries(Object.values(graph.definitions).map(definition => {
+        const portable = context.definition(definition);
+        return [definitionRefKey(portable), portable];
+    }));
     if (graph.groups) copy.groups = Object.fromEntries(Object.entries(graph.groups).map(([id, group]) => {
         const portable = pick(group, ['id', 'title', 'name', 'description', 'x', 'y', 'w', 'h', 'width', 'height', 'color', 'collapsed', 'members']);
         if (group.frame) portable.frame = pick(group.frame, ['x', 'y', 'w', 'h']);
@@ -47,7 +110,7 @@ function portableNativeDocument(graph) {
     return copy;
 }
 function portableGraph(graph) {
-    return structuredClone(portableNativeDocument(graph));
+    return structuredClone(portableNativeDocument(graph, portableProjection(graph.definitions ?? {})));
 }
 /** The caller serializes this envelope for download. No host state is consulted. */
 export function exportWorkflow(graph) {
@@ -96,9 +159,9 @@ export function selectSubgraphClosure(definition, snapshots = {}) {
         const key = definitionRefKey(item);
         if (visited.has(key)) continue;
         visited.add(key);
-        for (const node of Object.values(item.body.nodes)) if (node?.type === 'subgraph') {
-            if (!node.definition || typeof node.definition !== 'object' || Array.isArray(node.definition)) return fail('DEFINITION_REF', 'An instance requires an exact pinned reference.');
-            const childKey = definitionRefKey(node.definition);
+        for (const node of Object.values(item.body.nodes)) for (const reference of definitionReferences(node, table.data)) {
+            if (!reference || typeof reference !== 'object' || Array.isArray(reference)) return fail('DEFINITION_REF', 'An instance or helper requires an exact pinned reference.');
+            const childKey = definitionRefKey(reference);
             if (!Object.hasOwn(table.data, childKey)) return fail('MISSING_DEFINITION', 'The exact pinned snapshot is not bundled.');
             selected[childKey] = table.data[childKey];
             pending.push(table.data[childKey]);
@@ -115,7 +178,11 @@ export function exportSubgraph(definition, snapshots = {}) {
     if (!safeWorkflowData(definition) || !safeWorkflowData(snapshots)) throw new Error('Expected bounded plain subgraph data.');
     const closure = selectSubgraphClosure(definition, snapshots);
     if (!closure.ok) throw new Error(closure.error.message);
-    const portable = portableDefinition(closure.data.definition), definitions = Object.fromEntries(Object.entries(closure.data.definitions).map(([key, item]) => [key, portableDefinition(item)]));
+    const context = portableProjection({ ...closure.data.definitions, [definitionRefKey(closure.data.definition)]: closure.data.definition });
+    const portable = context.definition(closure.data.definition), definitions = Object.fromEntries(Object.values(closure.data.definitions).map(item => {
+        const definition = context.definition(item);
+        return [definitionRefKey(definition), definition];
+    }));
     const validation = validateDefinition(portable, definitions);
     if (!validation.ok) throw new Error(validation.error.message);
     const envelope = { kind: 'lattice-subgraph', schema: 1, minRuntime: 2, definition: portable, definitions };
@@ -131,7 +198,11 @@ export function parseSubgraph(json) {
     try {
         const closure = selectSubgraphClosure(envelope.definition, envelope.definitions ?? {});
         if (!closure.ok) return closure;
-        const definition = portableDefinition(closure.data.definition), definitions = Object.fromEntries(Object.entries(closure.data.definitions).map(([key, item]) => [key, portableDefinition(item)]));
+        const context = portableProjection({ ...closure.data.definitions, [definitionRefKey(closure.data.definition)]: closure.data.definition });
+        const definition = context.definition(closure.data.definition), definitions = Object.fromEntries(Object.values(closure.data.definitions).map(item => {
+            const portable = context.definition(item);
+            return [definitionRefKey(portable), portable];
+        }));
         const validation = validateDefinition(definition, definitions);
         return validation.ok ? { ok: true, data: { definition: validation.data.definition, definitions } } : validation;
     } catch { return fail('DEFINITION_DATA', 'Malformed subgraph package containers.'); }

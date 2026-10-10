@@ -24,6 +24,8 @@ export interface MemoryService {
     read(settings:{view:'state'|'events'|'episodes'}):Promise<OperationResult<Data<ActorState|{events:SettledEvent[]}|{episodes:Item[]}>>>;
     recall(settings:{query:string;limit?:number}):Promise<OperationResult<Data<{episodes:Item[]}>>>;
     commit(intent:Data<CommitIntent>|unknown,controls?:CommitControls):Promise<Result<CommitResult>>;
+    /** Read-only validation of the same scope, version, sources and proposal used by commit. */
+    preflight(intent:Data<CommitIntent>|unknown,controls?:CommitControls):Promise<Result<{status:'ready'|'unchanged';version:number}>>;
 }
 /** Invalid options yield Result failures on use; construction has no host effects. */
 export function createMemoryService(options:MemoryBackend):MemoryService;

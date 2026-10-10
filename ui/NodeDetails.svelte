@@ -4,7 +4,7 @@
     import ModifierStack from './ModifierStack.svelte';
     import type { DetailBindingMode, DetailControl, DetailEditResponse, DetailModifier, DetailSelection, NodeDetailsActions, NodeDetailsView } from './detail-types';
     let { view, actions = {}, idPrefix = 'pc-node-details' }: { view: NodeDetailsView | null; actions?: NodeDetailsActions; idPrefix?: string } = $props();
-    type LocalDraft = { text: string; error: string; pending: boolean; editor?: DetailControl['editor']; representation?: 'json-text' | 'json-value'; artifactKind?: string; required?: boolean; boundaryId?: string; boundaryDirection?: 'input' | 'output'; modifierType?: string };
+    type LocalDraft = { text: string; error: string; pending: boolean; editor?: DetailControl['editor']; representation?: 'json-text' | 'json-value'; artifactKind?: string; required?: boolean; boundaryId?: string; boundaryDirection?: 'input' | 'output'; modifierType?: string; helperKey?:string };
     let drafts = $state<Record<string, LocalDraft>>({});
     let errors = $state<Record<string, string>>({});
     let identity = '', revision = '', support = '';
@@ -20,6 +20,10 @@
     function supportedDrafts(values: typeof drafts, node: NodeDetailsView | null) {
         if (!node) return {};
         return Object.fromEntries(Object.entries(settledDrafts(values)).flatMap(([key, value]) => {
+            if (key.startsWith('["helper-binding",')) {
+                const tuple=JSON.parse(key),row=node.helperBindings?.roles.find(row=>row.role===tuple[1]);
+                return row && tuple[2]==='model' && node.helperBindings?.editable && value.helperKey===node.helperBindings.helperKey ? [[key,value]] : [];
+            }
             if (key === 'model' || key === 'profileId') {
                 const binding = key === 'model' ? node.model?.model : node.model?.profile;
                 return binding?.allowedModes.some(option => option.value === 'override') ? [[key, value]] : [];
@@ -40,7 +44,7 @@
     onDestroy(() => { alive = false; requests.clear(); draftCache.clear(); draftGenerations.clear(); modifierGenerations.clear(); });
     $effect(() => {
         const next = view ? selectionIdentity(view) : '', nextRevision = view?.revision ?? '';
-        const nextSupport = JSON.stringify([view?.controls.map(control => [control.key, control.editor, control.representation]), view?.model?.profile.allowedModes, view?.model?.model.allowedModes, view?.model?.editable, view?.boundary && [view.boundary.id, view.boundary.direction, view.boundary.kinds], !!view?.fileInput, view?.modifiers && [view.modifiers.items.map(item => [item.id, item.type]).sort(([a], [b]) => a.localeCompare(b)), view.modifiers.options.map(option => [option.type, option.fields.map(field => [field.key, field.editor])]), view.modifiers.editable, view.readOnly]]);
+        const nextSupport = JSON.stringify([view?.controls.map(control => [control.key, control.editor, control.representation]), view?.model?.profile.allowedModes, view?.model?.model.allowedModes, view?.model?.editable, view?.helperBindings && [view.helperBindings.helperKey,view.helperBindings.editable,view.helperBindings.roles.map(row=>[row.role,row.model.allowedModes])], view?.boundary && [view.boundary.id, view.boundary.direction, view.boundary.kinds], !!view?.fileInput, view?.modifiers && [view.modifiers.items.map(item => [item.id, item.type]).sort(([a], [b]) => a.localeCompare(b)), view.modifiers.options.map(option => [option.type, option.fields.map(field => [field.key, field.editor])]), view.modifiers.editable, view.readOnly]]);
         const changedSelection = next !== identity;
         if (changedSelection || nextRevision !== revision || nextSupport !== support) {
             if (changedSelection || nextSupport !== support) { boundaryDraftSequence++; modifierEpoch++; }
@@ -60,6 +64,7 @@
         return control.editor === 'lines' && Array.isArray(control.value) ? control.value.join('\n') : String(control.value ?? '');
     }
     function draftContract(node: NodeDetailsView, key: string) {
+        if(key.startsWith('["helper-binding",')){const tuple=JSON.parse(key);return node.helperBindings?.editable && node.helperBindings.roles.some(row=>row.role===tuple[1]) ? JSON.stringify(['helper-binding',node.helperBindings.helperKey,tuple[1],tuple[2]]) : null;}
         if (key === 'model' || key === 'profileId') {
             const binding = key === 'model' ? node.model?.model : node.model?.profile;
             return binding?.allowedModes.some(option => option.value === 'override') ? JSON.stringify(['binding', key, node.model?.editable ?? !node.readOnly]) : null;
@@ -137,6 +142,32 @@
             errors = { ...errors, [control.key]: 'Enter a number within the allowed range and step.' }; return;
         }
         editControl(control, value);
+    }
+    const helperBindingKey=(role:string,field:'profileId'|'model')=>JSON.stringify(['helper-binding',role,field]);
+    const helperRow=(role:string)=>view?.helperBindings?.roles.find(row=>row.role===role);
+    const canEditHelperBindings=()=>!!view?.helperBindings?.editable&&!view.readOnly&&!!actions.editHelperBinding;
+    const helperModelMode=(role:string)=>drafts[helperBindingKey(role,'model')]?'override':helperRow(role)?.model.mode;
+    function editHelperBinding(role:string,field:'profileId'|'model',mode:DetailBindingMode,value:string|null){
+        if(!canEditHelperBindings()||!helperRow(role))return;
+        void perform(helperBindingKey(role,field),false,captured=>actions.editHelperBinding!(captured,role,field,mode,value));
+    }
+    function draftHelperModel(role:string,text:string){
+        if(!canEditHelperBindings()||!helperRow(role))return;
+        const key=helperBindingKey(role,'model');nextDraftGeneration(key);requests.delete(key);
+        drafts={...drafts,[key]:{text,error:'',pending:false,helperKey:view?.helperBindings?.helperKey}};errors={...errors,[key]:''};
+    }
+    function chooseHelperModelMode(role:string,mode:DetailBindingMode){
+        const row=helperRow(role);if(!canEditHelperBindings()||!row?.model.allowedModes.some(option=>option.value===mode))return;
+        const key=helperBindingKey(role,'model');
+        if(mode==='override'){draftHelperModel(role,drafts[key]?.text??row.model.value??'');return;}
+        requests.delete(key);const next={...drafts};delete next[key];drafts=next;errors={...errors,[key]:''};
+        if(mode!==row.model.mode)editHelperBinding(role,'model',mode,null);
+    }
+    function saveHelperModel(role:string,text:string){
+        if(!canEditHelperBindings()||helperModelMode(role)!=='override')return;
+        draftHelperModel(role,text);const key=helperBindingKey(role,'model');
+        if(!text.trim()||text.length>256){errors={...errors,[key]:'Enter a model identifier of 1–256 characters.'};return;}
+        editHelperBinding(role,'model','override',text);
     }
     function editBinding(field: 'profileId' | 'model', mode: string, value: string | null) {
         const binding = bindingFor(field);
@@ -347,6 +378,25 @@
                 {#each controls as control (control.key)}{@render controlEditor(control)}{/each}
             </details>
         {/each}
+    {/if}
+    {#if view.helperBindings}
+        <details class="pc-detail-group" data-helper-model-controls open><summary>Helper model bindings</summary>
+            <small>Choose a connection for each text model role in the pinned helper. These selections belong to this For Each node.</small>
+            {#each view.helperBindings.roles as row (row.role)}
+                <fieldset><legend>{row.label}</legend>
+                    <label>Connection profile<select aria-label={row.role+' connection profile'} value={row.profile.value??''} disabled={!canEditHelperBindings()} onchange={event=>editHelperBinding(row.role,'profileId',event.currentTarget.value?'override':'inherit',event.currentTarget.value||null)}>
+                        <option value="">Use helper connection</option>
+                        {#if row.profile.value && !(row.profile.options??[]).some(option=>option.value===row.profile.value)}<option value={row.profile.value}>Unavailable connection · {row.profile.value}</option>{/if}
+                        {#each row.profile.options??[] as option (option.value)}<option value={option.value}>{option.label}</option>{/each}
+                    </select></label>
+                    <label>Model mode<select aria-label={row.role+' model mode'} value={helperModelMode(row.role)} disabled={!canEditHelperBindings()} onchange={event=>chooseHelperModelMode(row.role,event.currentTarget.value as DetailBindingMode)}>{#each row.model.allowedModes as option (option.value)}<option value={option.value}>{option.label}</option>{/each}</select></label>
+                    {#if helperModelMode(row.role)==='override'}<label>Model identifier<input aria-label={row.role+' model identifier'} value={drafts[helperBindingKey(row.role,'model')]?.text??row.model.value??''} disabled={!canEditHelperBindings()} oninput={event=>draftHelperModel(row.role,event.currentTarget.value)} onchange={event=>saveHelperModel(row.role,event.currentTarget.value)} /></label>{/if}
+                    <small>Effective connection: {row.effective}</small><small>{row.source}</small>{#if row.caveat}<small>{row.caveat}</small>{/if}
+                    {#if errors[helperBindingKey(row.role,'profileId')] || errors[helperBindingKey(row.role,'model')]}<p class="pc-detail-error" role="alert">{errors[helperBindingKey(row.role,'profileId')] || errors[helperBindingKey(row.role,'model')]}</p>{/if}
+                </fieldset>
+            {/each}
+            {#if view.helperBindings.issue}<p class="pc-detail-error" role="alert">{view.helperBindings.issue}</p>{:else if !view.helperBindings.roles.length}<small>This helper has no text model calls to configure.</small>{/if}
+        </details>
     {/if}
     {#if view.model}
         <details class="pc-detail-group" data-model-controls open><summary>{modelSummary()}</summary>

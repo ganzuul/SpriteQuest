@@ -1,3 +1,4 @@
+import { preserveArtifactPrivacy, validVisibilityMetadata } from '../artifact-privacy.js?v=0.26.0';
 import { cloneJsonValue, readJsonPath } from './json-data.js?v=0.26.0';
 import { resolveThresholds } from '../progression.js?v=0.26.0';
 import { own, plain, freeze } from '../record-data.js?v=0.26.0';
@@ -6,7 +7,7 @@ const fail=(code,message)=>({ok:false,error:{code,message}});
 const canonical=value=>Array.isArray(value)?'['+value.map(canonical).join(',')+']':plain(value)?'{'+Object.keys(value).sort().map(key=>JSON.stringify(key)+':'+canonical(value[key])).join(',')+'}':JSON.stringify(value);
 const exact=(value,keys)=>plain(value)&&Object.keys(value).every(key=>keys.includes(key));
 const path=value=>Array.isArray(value)&&value.length<=32&&value.every(key=>typeof key==='string'&&key.length<=256);
-const modes=['lookup','filter','count','sum','threshold','merge','rule-lookup'];
+const modes=['lookup','filter','count','sum','threshold','merge','rule-lookup','project','flatten'];
 const defaults={mode:'count',collectionPath:[],fieldPath:[],value:'',operator:'equals',missingPolicy:'hold',thresholds:'[]',mergePolicy:'keep-all',identityPath:['id']};
 const controls={
     mode:{type:'enum',values:modes,default:'count'},
@@ -69,7 +70,23 @@ export function reduceCollection(rawValue,rawSettings={},rawExtras={}) {
         const result=resolveThresholds(value.before,value.after,settings.parsedThresholds);if(!result.ok)return result;output=result.data;
     } else {
         const collection=collectionAt(value,settings);if(!collection.ok)return collection;
-        if(settings.mode==='count')output=collection.data.length;
+        if(settings.mode==='project') {
+            output=[];
+            for(const record of collection.data) {
+                const selected=readJsonPath(record,settings.fieldPath);if(!selected.ok)return selected;
+                if(!selected.data.found) {
+                    if(settings.missingPolicy==='hold')return fail('UNRESOLVED_COLLECTION','A projection field is missing.');
+                    if(settings.missingPolicy==='include')output.push(null);
+                } else output.push(selected.data.value);
+            }
+        } else if(settings.mode==='flatten') {
+            output=[];
+            for(const records of collection.data) {
+                if(!Array.isArray(records))return fail('INVALID_COLLECTION','Flatten requires explicit array entries.');
+                if(output.length+records.length>1024)return fail('COLLECTION_LIMIT','Flattened collections contain at most 1024 entries.');
+                output.push(...records);
+            }
+        } else if(settings.mode==='count')output=collection.data.length;
         else if(settings.mode==='sum') {
             let total=0;
             for(const record of collection.data) {
@@ -142,17 +159,18 @@ function resolve(node,options={}) {
 export function describeCollection(node,options={}) {
     const result=resolve(node,options);if(!result.ok)return result;return {ok:true,data:{descriptor:result.data.descriptor,ports:result.data.ports}};
 }
-export function executeCollection(node,namedInputs,local={}) {
+function executeCollectionRaw(node,namedInputs,local={}) {
     try {
         const described=resolve(node,{phase:own(local,'phase')});if(!described.ok)return described;
         const checked=cloneJsonValue(namedInputs);if(!checked.ok)return checked;const inputs=checked.data.value,allowed=described.data.ports.filter(port=>port.direction==='input');
         if(!plain(inputs)||Object.keys(inputs).some(key=>!allowed.some(port=>port.id===key)))return fail('UNSUPPORTED_INPUT','Use declared Collection inputs.');
         for(const port of allowed) {
             if(!Object.hasOwn(inputs,port.id)){if(port.required)return fail('MISSING_INPUT','Required input is missing: '+port.id);continue;}
-            if(!exact(inputs[port.id],['kind','value'])||inputs[port.id].kind!=='data'||!Object.hasOwn(inputs[port.id],'value'))return fail('INVALID_INPUT','Collection inputs require bounded Data artifacts.');
+            if(!exact(inputs[port.id],['kind','value','visibility','status','acceptance','scope','sourceRefs'])||!validVisibilityMetadata(inputs[port.id])||inputs[port.id].kind!=='data'||!Object.hasOwn(inputs[port.id],'value'))return fail('INVALID_INPUT','Collection inputs require bounded Data artifacts.');
         }
         const result=reduceCollection(inputs.in.value,described.data.settings,{...(inputs.other?{other:inputs.other.value}:{}),...(inputs.match?{match:inputs.match.value}:{})});
         if(!result.ok)return result.error.code==='UNRESOLVED_COLLECTION'?{ok:true,outputStates:{out:{status:'unresolved',reason:result.error}}}:result;
         return {ok:true,artifact:{kind:'data',value:result.data.value},reports:[{operation:'collection',mode:described.data.settings.mode,actualCalls:0}]};
     }catch{return fail('INVALID_INPUT','Collection reducers require bounded own plain data.');}
 }
+export function executeCollection(node,namedInputs,local = {}) { return preserveArtifactPrivacy(executeCollectionRaw(node,namedInputs,local),namedInputs); }

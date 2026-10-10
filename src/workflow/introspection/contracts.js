@@ -1,3 +1,4 @@
+import { validVisibilityMetadata } from '../artifact-privacy.js?v=0.26.0';
 import { cloneJsonValue } from '../operations/json-data.js?v=0.26.0';
 
 export const COLLECTIONS = Object.freeze(['traits', 'beliefs', 'goals', 'relationships', 'conflicts', 'conditions', 'episodes']);
@@ -152,7 +153,7 @@ function record(value, expectedType) {
 }
 export function parseRecord(artifact, expectedType) {
     const input = ownData(artifact); if (!input.ok) return input;
-    try { exact(input.data, ['kind', 'value']); check(input.data.kind === 'data', 'Expected a Data artifact.'); return good(freeze(record(input.data.value, expectedType))); }
+    try { exact(input.data, ['kind', 'value', 'visibility'], ['kind', 'value']); check(validVisibilityMetadata(input.data), 'Invalid artifact disclosure scope.'); check(input.data.kind === 'data', 'Expected a Data artifact.'); return good(freeze(record(input.data.value, expectedType))); }
     catch (error) { return fail('INVALID_INTROSPECTION_RECORD', error.message); }
 }
 export function makeRecord(recordType, base, payload, sourceRefs) {

@@ -20,7 +20,7 @@ const fields = {
     disconnect: ['edgeIds', 'publisherIds', 'publisherPolicy'],
     'disconnect-pin': ['pin', 'publisherPolicy'],
     reroute: ['edgeId', 'graphPoint'],
-    create: ['operation', 'controls', 'artifactKind', 'graphPoint', 'connection'],
+    create: ['operation', 'controls', 'artifactKind', 'phase', 'graphPoint', 'connection'],
     'create-instance': ['definition', 'snapshots', 'graphPoint', 'connection'],
 };
 
@@ -133,7 +133,7 @@ function reroute(context, command) {
     const source = actualPin(context, { nodeId: edge.from, portId: edge.fromPort }, 'output');
     if (!source.ok) return source;
     const id = context.allocate('node'), edgeId = context.allocate('edge');
-    context.scope.nodes[id] = { id, type: 'workflow', ...operationDefaults('reroute'), artifactKind: source.data.kind, phase: context.scope.mode.slice(7), compact: true, x: command.graphPoint.x, y: command.graphPoint.y };
+    context.scope.nodes[id] = { id, type: 'workflow', ...operationDefaults('reroute'), artifactKind: source.data.kind, ...(context.scope.mode==='native-unified'?{}:{phase:context.scope.mode.slice(7)}), compact: true, x: command.graphPoint.x, y: command.graphPoint.y };
     context.scope.wires[edgeId] = { ...edge, id: edgeId, from: id, fromPort: 'out' };
     Object.assign(edge, { to: id, toPort: 'in' });
     context.addedNodeIds.push(id); context.addedEdgeIds.push(edgeId); context.changed = true;
@@ -147,10 +147,12 @@ function create(context, command) {
     if (!keys(controls, OPERATIONS[command.operation].controls) || command.operation === 'reroute' && Object.hasOwn(controls, 'artifactKind')) return fail('INVALID_SETTINGS', 'Presets may contain only declared operation controls; Reroute creation requires its top-level artifact kind.');
     if (command.operation === 'reroute' ? !ARTIFACT_KINDS.includes(command.artifactKind) : command.artifactKind !== undefined) return fail('INVALID_SETTINGS', 'Only typed reroute creation accepts an actual artifact kind.');
     if (command.connection !== undefined && (!keys(command.connection, ['origin', 'portId', 'replace']) || !endpoint(command.connection.origin) || !safeId(command.connection.portId) || command.connection.replace !== undefined && typeof command.connection.replace !== 'boolean')) return fail('INVALID_COMMAND', 'Choose an existing origin and an explicit new-node port.');
+    if(command.phase!==undefined&&(!['pre','post'].includes(command.phase)||context.scope.mode!=='native-unified'&&command.phase!==context.scope.mode.slice(7)))return fail('WRONG_PHASE','Choose a supported stage in the current workflow.');
     const id = context.allocate('node');
     const node = { id, type: 'workflow', ...operationDefaults(command.operation), ...structuredClone(controls), x: command.graphPoint.x, y: command.graphPoint.y };
-    if (command.operation === 'reroute') Object.assign(node, { artifactKind: command.artifactKind, phase: context.scope.mode.slice(7), compact: true });
-    if (OPERATIONS[command.operation].minimumSchema === 3) node.phase = context.scope.mode.slice(7);
+    if (command.operation === 'reroute') Object.assign(node, { artifactKind: command.artifactKind, compact: true });
+    if(command.phase!==undefined)node.phase=command.phase;
+    else if(OPERATIONS[command.operation].minimumSchema===3&&context.scope.mode!=='native-unified'||command.operation==='reroute'&&context.scope.mode!=='native-unified')node.phase=context.scope.mode.slice(7);
     const described = describeOperation(context.metadata(), node);
     if (!described.ok) return described;
     context.scope.nodes[id] = node; context.addedNodeIds.push(id); context.changed = true;
@@ -165,7 +167,8 @@ function createInstance(original, normalized, command, path, ref, factory) {
     if (!selected.ok) return selected;
     const saved = selected.data.definition, source = { ...selected.data.definitions, [definitionRefKey(saved)]: saved };
     const containing = path.length ? definitionChain(normalized, path).at(-1).definition : null;
-    if (saved.body.mode !== (containing?.body ?? normalized).mode) return fail('WRONG_PHASE', 'Insert a definition in its actual containing phase.');
+    const targetMode=(containing?.body??normalized).mode;
+    if(saved.body.mode!==targetMode&&!(targetMode==='native-unified'&&['native-pre','native-post'].includes(saved.body.mode)))return fail('WRONG_PHASE','Insert a definition in a compatible containing workflow.');
     const build = finalIds => {
         const candidate = structuredClone(normalized), draft = containing ? structuredClone(containing) : null, scope = draft?.body ?? candidate;
         scope.portals ??= {};

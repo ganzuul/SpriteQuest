@@ -1,3 +1,4 @@
+import { preserveArtifactPrivacy, validVisibilityMetadata } from '../artifact-privacy.js?v=0.26.0';
 import { composeText } from './compose.js?v=0.26.0';
 import { selectFields } from './select-fields.js?v=0.26.0';
 import { cloneJsonValue } from './json-data.js?v=0.26.0';
@@ -158,7 +159,7 @@ function adapterExecution(execution) {
 }
 
 /** Execute a deterministic primitive and wrap its successful value in a native artifact. */
-export async function executePrimitive(node, namedInputs, execution = {}) {
+async function executePrimitiveRaw(node, namedInputs, execution = {}) {
     try {
         const checkedExecution = adapterExecution(execution);
         if (!checkedExecution.ok) return checkedExecution;
@@ -196,3 +197,5 @@ export async function executePrimitive(node, namedInputs, execution = {}) {
         return { ok: true, artifact: { kind: descriptor.output, text: composed.data.text }, reports: composed.data.report };
     } catch { return failure('INVALID_INPUTS', 'Use named inputs with own data properties.'); }
 }
+
+export async function executePrimitive(node,namedInputs,execution = {}) { return preserveArtifactPrivacy(await executePrimitiveRaw(node,namedInputs,execution),namedInputs); }

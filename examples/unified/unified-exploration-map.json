@@ -1,0 +1,485 @@
+{
+  "kind": "lattice-workflow",
+  "schema": 2,
+  "minRuntime": 2,
+  "graph": {
+    "id": "unified-example-exploration-map",
+    "name": "Exploration cards with accepted map evidence",
+    "description": "Read known public locations, guide exploration, extract newly observed routes, check spatial continuity, separate suspected connections and merge accepted discovery records.\n\nSetup: Create public JSON known-map as []. Bind Prose and decision. Stable location/edge IDs make conflicting discoveries hold instead of silently overwriting prior geometry. Exact source quotes support discoveries. Classification observation denotes an observed route; interpretation denotes a suspected route. Unvisited rooms, hidden routes and model hypotheses stay out of confirmed connections. This example renders location cards; it does not promise a graphical map engine.\n\nInspect: On Send owns this generation. Generate Reply uses the ordinary SillyTavern connection. Auxiliary roles remain unassigned in this portable example. Review the final narrative and proposed consequences; Apply publishes a new swipe and settles staged writes. Preview and bounded runs never settle.\n\nGenerated suggestions are proposals. Quoted observations preserve source identity; notes never establish canonical events. Private records cannot be appended to public notes.",
+    "schema": 3,
+    "runtime": 2,
+    "mode": "native-unified",
+    "nodes": {
+      "send": {
+        "id": "send",
+        "type": "workflow",
+        "operation": "on-send",
+        "operationVersion": 1,
+        "title": "On Send",
+        "enabled": true,
+        "x": 80,
+        "y": 120,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null
+      },
+      "generate": {
+        "id": "generate",
+        "type": "workflow",
+        "operation": "generate-reply",
+        "operationVersion": 1,
+        "title": "Generate Reply · SillyTavern",
+        "enabled": true,
+        "x": 820,
+        "y": 120,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "budgetTokens": 768
+      },
+      "review": {
+        "id": "review",
+        "type": "workflow",
+        "operation": "review-publish",
+        "operationVersion": 1,
+        "title": "Review / Publish",
+        "enabled": true,
+        "x": 2670,
+        "y": 120,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null
+      },
+      "map-file": {
+        "id": "map-file",
+        "type": "workflow",
+        "operation": "read-file",
+        "operationVersion": 1,
+        "title": "Read File",
+        "enabled": true,
+        "x": 80,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "targetId": "known-map",
+        "schema": "",
+        "columns": [],
+        "actorScope": "selected",
+        "actorId": ""
+      },
+      "map": {
+        "id": "map",
+        "type": "workflow",
+        "operation": "json-decode",
+        "operationVersion": 1,
+        "title": "JSON Decode",
+        "enabled": true,
+        "x": 450,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "parse",
+        "schema": ""
+      },
+      "explore-guidance": {
+        "id": "explore-guidance",
+        "type": "workflow",
+        "operation": "compose",
+        "operationVersion": 1,
+        "title": "Compose",
+        "enabled": true,
+        "x": 820,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "template",
+        "outputKind": "guidance",
+        "template": "Explore from the current location using this known public map. Preserve established connections; reveal only what the player can encounter: {{data:}}",
+        "sections": [],
+        "separator": "\n\n"
+      },
+      "discoveries": {
+        "id": "discoveries",
+        "type": "workflow",
+        "operation": "extract",
+        "operationVersion": 1,
+        "title": "Extract",
+        "enabled": true,
+        "x": 1560,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": "Prose",
+        "inputKind": "draft",
+        "mode": "model",
+        "instructions": "Extract new observed landmarks/exits and explicitly suspected routes. Use stable location or directed edge IDs and exact source quotes. Classify actually traversed/observed connections as observation and suspected tunnels as interpretation. Never disclose an unvisited secret room.",
+        "schema": "",
+        "patterns": [],
+        "maxTokens": 2048
+      },
+      "spatial-input": {
+        "id": "spatial-input",
+        "type": "workflow",
+        "operation": "collect",
+        "operationVersion": 1,
+        "title": "Collect",
+        "enabled": true,
+        "x": 1930,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "artifactKind": "data",
+        "inputs": [
+          {
+            "id": "known",
+            "label": "Known map",
+            "required": true
+          },
+          {
+            "id": "new",
+            "label": "New route evidence",
+            "required": true
+          }
+        ]
+      },
+      "spatial-check": {
+        "id": "spatial-check",
+        "type": "workflow",
+        "operation": "decision",
+        "operationVersion": 1,
+        "title": "Decision",
+        "enabled": true,
+        "x": 2300,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": "decision",
+        "inputKind": "data",
+        "questions": {
+          "consistent": {
+            "type": "noul",
+            "instructions": "Do the new landmarks and edges preserve known geometry, direction, location identities and distinctions between observed and suspected routes? Reject impossible connections and unsupported secret routes."
+          }
+        },
+        "maxTokens": 2048
+      },
+      "spatial-gate": {
+        "id": "spatial-gate",
+        "type": "workflow",
+        "operation": "condition",
+        "operationVersion": 1,
+        "title": "Condition",
+        "enabled": true,
+        "x": 2670,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "path": [
+          "answers",
+          "consistent",
+          "accepted"
+        ],
+        "operator": "equals",
+        "value": true
+      },
+      "checked": {
+        "id": "checked",
+        "type": "workflow",
+        "operation": "branch",
+        "operationVersion": 1,
+        "title": "Branch",
+        "enabled": true,
+        "x": 3040,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "artifactKind": "data"
+      },
+      "cards": {
+        "id": "cards",
+        "type": "workflow",
+        "operation": "render-notes",
+        "operationVersion": 1,
+        "title": "Locations and routes · observed or suspected",
+        "enabled": true,
+        "x": 3410,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "format": "html"
+      },
+      "append": {
+        "id": "append",
+        "type": "workflow",
+        "operation": "append",
+        "operationVersion": 1,
+        "title": "Append",
+        "enabled": true,
+        "x": 3780,
+        "y": 120,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "sectionId": "map-cards",
+        "separator": "\n\n"
+      },
+      "records": {
+        "id": "records",
+        "type": "workflow",
+        "operation": "collection",
+        "operationVersion": 1,
+        "title": "Collection",
+        "enabled": true,
+        "x": 3410,
+        "y": 1320,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "project",
+        "collectionPath": [
+          "records"
+        ],
+        "fieldPath": [],
+        "value": "",
+        "operator": "equals",
+        "missingPolicy": "hold",
+        "thresholds": "[]",
+        "mergePolicy": "keep-all",
+        "identityPath": [
+          "id"
+        ]
+      },
+      "save-map": {
+        "id": "save-map",
+        "type": "workflow",
+        "operation": "write-file",
+        "operationVersion": 1,
+        "title": "Write to File",
+        "enabled": true,
+        "x": 3780,
+        "y": 1320,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "add-unique",
+        "collectionPath": "",
+        "missingPath": "error",
+        "key": "id",
+        "fieldPolicy": "merge",
+        "fields": [],
+        "schema": "",
+        "columns": [],
+        "separator": "\n",
+        "emptyPolicy": "omit",
+        "trailingSeparator": false,
+        "actorScope": "selected",
+        "actorId": ""
+      }
+    },
+    "wires": {
+      "wire-1": {
+        "id": "wire-1",
+        "route": "wire",
+        "from": "send",
+        "fromPort": "activation",
+        "to": "generate",
+        "toPort": "activation"
+      },
+      "wire-2": {
+        "id": "wire-2",
+        "route": "wire",
+        "from": "map-file",
+        "fromPort": "text",
+        "to": "map",
+        "toPort": "in"
+      },
+      "wire-3": {
+        "id": "wire-3",
+        "route": "wire",
+        "from": "map",
+        "fromPort": "out",
+        "to": "explore-guidance",
+        "toPort": "data"
+      },
+      "wire-4": {
+        "id": "wire-4",
+        "route": "wire",
+        "from": "explore-guidance",
+        "fromPort": "out",
+        "to": "generate",
+        "toPort": "guidance"
+      },
+      "wire-5": {
+        "id": "wire-5",
+        "route": "wire",
+        "from": "generate",
+        "fromPort": "draft",
+        "to": "discoveries",
+        "toPort": "source"
+      },
+      "wire-6": {
+        "id": "wire-6",
+        "route": "wire",
+        "from": "map",
+        "fromPort": "out",
+        "to": "spatial-input",
+        "toPort": "known"
+      },
+      "wire-7": {
+        "id": "wire-7",
+        "route": "wire",
+        "from": "discoveries",
+        "fromPort": "out",
+        "to": "spatial-input",
+        "toPort": "new"
+      },
+      "wire-8": {
+        "id": "wire-8",
+        "route": "wire",
+        "from": "spatial-input",
+        "fromPort": "out",
+        "to": "spatial-check",
+        "toPort": "in"
+      },
+      "wire-9": {
+        "id": "wire-9",
+        "route": "wire",
+        "from": "spatial-check",
+        "fromPort": "out",
+        "to": "spatial-gate",
+        "toPort": "in"
+      },
+      "wire-10": {
+        "id": "wire-10",
+        "route": "wire",
+        "from": "discoveries",
+        "fromPort": "out",
+        "to": "checked",
+        "toPort": "in"
+      },
+      "wire-11": {
+        "id": "wire-11",
+        "route": "wire",
+        "from": "spatial-gate",
+        "fromPort": "out",
+        "to": "checked",
+        "toPort": "condition"
+      },
+      "wire-12": {
+        "id": "wire-12",
+        "route": "wire",
+        "from": "checked",
+        "fromPort": "yes",
+        "to": "cards",
+        "toPort": "data"
+      },
+      "wire-13": {
+        "id": "wire-13",
+        "route": "wire",
+        "from": "generate",
+        "fromPort": "draft",
+        "to": "append",
+        "toPort": "draft"
+      },
+      "wire-14": {
+        "id": "wire-14",
+        "route": "wire",
+        "from": "cards",
+        "fromPort": "out",
+        "to": "append",
+        "toPort": "section"
+      },
+      "wire-15": {
+        "id": "wire-15",
+        "route": "wire",
+        "from": "checked",
+        "fromPort": "yes",
+        "to": "records",
+        "toPort": "in"
+      },
+      "wire-16": {
+        "id": "wire-16",
+        "route": "wire",
+        "from": "map-file",
+        "fromPort": "reference",
+        "to": "save-map",
+        "toPort": "reference"
+      },
+      "wire-17": {
+        "id": "wire-17",
+        "route": "wire",
+        "from": "records",
+        "fromPort": "out",
+        "to": "save-map",
+        "toPort": "records"
+      },
+      "wire-18": {
+        "id": "wire-18",
+        "route": "wire",
+        "from": "append",
+        "fromPort": "out",
+        "to": "review",
+        "toPort": "draft"
+      }
+    },
+    "groups": {},
+    "roles": {
+      "Prose": {
+        "model": null,
+        "profileId": null
+      },
+      "decision": {
+        "model": null,
+        "profileId": null
+      }
+    },
+    "portals": {},
+    "definitions": {},
+    "template": {
+      "id": "unified-exploration-map",
+      "version": 1
+    },
+    "view": {
+      "x": 0,
+      "y": 0,
+      "zoom": 0.7
+    }
+  }
+}

@@ -1,6 +1,6 @@
 import type { NativeNode, OperationDescription, OperationDescriptor, OperationResult, WorkflowPhase, Result as WorkflowResult } from '../types';
 import type { JsonValue, Result } from './json-data';
-export type CollectionMode = 'lookup' | 'filter' | 'count' | 'sum' | 'threshold' | 'merge' | 'rule-lookup';
+export type CollectionMode = 'lookup' | 'filter' | 'count' | 'sum' | 'threshold' | 'merge' | 'rule-lookup' | 'project' | 'flatten';
 export interface CollectionSettings {
     mode?: CollectionMode; collectionPath?: string[]; fieldPath?: string[]; value?: string;
     operator?: 'equals' | 'not-equals' | 'at-least' | 'at-most' | 'contains' | 'exists';

@@ -1,0 +1,1150 @@
+{
+  "kind": "lattice-workflow",
+  "schema": 2,
+  "minRuntime": 2,
+  "graph": {
+    "id": "unified-example-dice-stakes",
+    "name": "Real dice with frozen stakes",
+    "description": "Confirm an actual player roll, freeze authored stakes, draw a uniform d20, calculate the bonus and difficulty comparison, guide native narration and append a roll receipt.\n\nSetup: Create public JSON dice-outcomes as []. The example watches an actual physical bronze-d20 roll stated in the player message, with canonical actor mara. Set authored stakes, bonus and difficulty before Send. It does not randomly choose whether an unattempted action happens. Configure eventExtract plus the Decision helper. The accepted ledger retains the same player-roll identity across retries/swipes; deliberately rerolling requires a new action.\n\nInspect: On Send owns this generation. Generate Reply uses the ordinary SillyTavern connection. Auxiliary roles remain unassigned in this portable example. Review the final narrative and proposed consequences; Apply publishes a new swipe and settles staged writes. Preview and bounded runs never settle.\n\nGenerated suggestions are proposals. Quoted observations preserve source identity; notes never establish canonical events. Private records cannot be appended to public notes.",
+    "schema": 3,
+    "runtime": 2,
+    "mode": "native-unified",
+    "nodes": {
+      "send": {
+        "id": "send",
+        "type": "workflow",
+        "operation": "on-send",
+        "operationVersion": 1,
+        "title": "On Send",
+        "enabled": true,
+        "x": 80,
+        "y": 120,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null
+      },
+      "generate": {
+        "id": "generate",
+        "type": "workflow",
+        "operation": "generate-reply",
+        "operationVersion": 1,
+        "title": "Generate Reply · SillyTavern",
+        "enabled": true,
+        "x": 820,
+        "y": 120,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "budgetTokens": 768
+      },
+      "review": {
+        "id": "review",
+        "type": "workflow",
+        "operation": "review-publish",
+        "operationVersion": 1,
+        "title": "Review / Publish",
+        "enabled": true,
+        "x": 2670,
+        "y": 120,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null
+      },
+      "source": {
+        "id": "source",
+        "type": "workflow",
+        "operation": "player-event-source",
+        "operationVersion": 1,
+        "title": "Player Event Source",
+        "enabled": true,
+        "x": 80,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null
+      },
+      "entities-text": {
+        "id": "entities-text",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 80,
+        "y": 840,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "text": "{\"actorIds\":[\"mara\"],\"itemIds\":[\"bronze-d20\"]}"
+      },
+      "entities": {
+        "id": "entities",
+        "type": "workflow",
+        "operation": "json-decode",
+        "operationVersion": 1,
+        "title": "JSON Decode",
+        "enabled": true,
+        "x": 450,
+        "y": 840,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "parse",
+        "schema": ""
+      },
+      "holders-text": {
+        "id": "holders-text",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 80,
+        "y": 1080,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "text": "{\"bronze-d20\":\"mara\"}"
+      },
+      "holders": {
+        "id": "holders",
+        "type": "workflow",
+        "operation": "json-decode",
+        "operationVersion": 1,
+        "title": "JSON Decode",
+        "enabled": true,
+        "x": 450,
+        "y": 1080,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "parse",
+        "schema": ""
+      },
+      "stakes-text": {
+        "id": "stakes-text",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 80,
+        "y": 1320,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "text": "{\"check\":\"lockpicking\",\"success\":\"The lock opens quietly.\",\"failure\":\"The lock remains shut and the guard hears the attempt.\",\"difficulty\":14,\"bonus\":3}"
+      },
+      "stakes": {
+        "id": "stakes",
+        "type": "workflow",
+        "operation": "json-decode",
+        "operationVersion": 1,
+        "title": "JSON Decode",
+        "enabled": true,
+        "x": 450,
+        "y": 1320,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "parse",
+        "schema": ""
+      },
+      "faces-text": {
+        "id": "faces-text",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 80,
+        "y": 1560,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "text": "{\"libraryId\":\"bronze-d20\",\"revision\":1,\"itemId\":\"bronze-d20\",\"effects\":[{\"id\":\"face-1\",\"kind\":\"fixed\",\"weight\":1,\"description\":\"1\"},{\"id\":\"face-2\",\"kind\":\"fixed\",\"weight\":1,\"description\":\"2\"},{\"id\":\"face-3\",\"kind\":\"fixed\",\"weight\":1,\"description\":\"3\"},{\"id\":\"face-4\",\"kind\":\"fixed\",\"weight\":1,\"description\":\"4\"},{\"id\":\"face-5\",\"kind\":\"fixed\",\"weight\":1,\"description\":\"5\"},{\"id\":\"face-6\",\"kind\":\"fixed\",\"weight\":1,\"description\":\"6\"},{\"id\":\"face-7\",\"kind\":\"fixed\",\"weight\":1,\"description\":\"7\"},{\"id\":\"face-8\",\"kind\":\"fixed\",\"weight\":1,\"description\":\"8\"},{\"id\":\"face-9\",\"kind\":\"fixed\",\"weight\":1,\"description\":\"9\"},{\"id\":\"face-10\",\"kind\":\"fixed\",\"weight\":1,\"description\":\"10\"},{\"id\":\"face-11\",\"kind\":\"fixed\",\"weight\":1,\"description\":\"11\"},{\"id\":\"face-12\",\"kind\":\"fixed\",\"weight\":1,\"description\":\"12\"},{\"id\":\"face-13\",\"kind\":\"fixed\",\"weight\":1,\"description\":\"13\"},{\"id\":\"face-14\",\"kind\":\"fixed\",\"weight\":1,\"description\":\"14\"},{\"id\":\"face-15\",\"kind\":\"fixed\",\"weight\":1,\"description\":\"15\"},{\"id\":\"face-16\",\"kind\":\"fixed\",\"weight\":1,\"description\":\"16\"},{\"id\":\"face-17\",\"kind\":\"fixed\",\"weight\":1,\"description\":\"17\"},{\"id\":\"face-18\",\"kind\":\"fixed\",\"weight\":1,\"description\":\"18\"},{\"id\":\"face-19\",\"kind\":\"fixed\",\"weight\":1,\"description\":\"19\"},{\"id\":\"face-20\",\"kind\":\"fixed\",\"weight\":1,\"description\":\"20\"}]}"
+      },
+      "faces": {
+        "id": "faces",
+        "type": "workflow",
+        "operation": "json-decode",
+        "operationVersion": 1,
+        "title": "JSON Decode",
+        "enabled": true,
+        "x": 450,
+        "y": 1560,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "parse",
+        "schema": ""
+      },
+      "roll-use": {
+        "id": "roll-use",
+        "type": "workflow",
+        "operation": "item-use-trigger",
+        "operationVersion": 1,
+        "title": "Item Use Trigger",
+        "enabled": true,
+        "x": 820,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "itemId": "bronze-d20",
+        "mode": "extract",
+        "watch": "player-message",
+        "instructions": "Only an actual physical bronze-d20 roll for the stated lockpicking check qualifies. Never infer a roll from a plan.",
+        "maxTokens": 2048
+      },
+      "confirm-each": {
+        "id": "confirm-each",
+        "type": "workflow",
+        "operation": "for-each",
+        "operationVersion": 1,
+        "title": "For Each",
+        "enabled": true,
+        "x": 1560,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "helper": {
+          "id": "dice-stakes-confirm",
+          "version": 1,
+          "semanticHash": "sha256:0ae8b47cb0b673f8ed87fd75335c9f34c016e3e825677e412e0b9f6fc6294ed0"
+        },
+        "limit": 4,
+        "requestBoundPerIteration": 1,
+        "mode": "map",
+        "roleOverrides": {}
+      },
+      "confirmed": {
+        "id": "confirmed",
+        "type": "workflow",
+        "operation": "collection",
+        "operationVersion": 1,
+        "title": "Collection",
+        "enabled": true,
+        "x": 1930,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "flatten",
+        "collectionPath": [],
+        "fieldPath": [],
+        "value": "",
+        "operator": "equals",
+        "missingPolicy": "hold",
+        "thresholds": "[]",
+        "mergePolicy": "keep-all",
+        "identityPath": [
+          "id"
+        ]
+      },
+      "holder": {
+        "id": "holder",
+        "type": "workflow",
+        "operation": "current-holder",
+        "operationVersion": 1,
+        "title": "Current Holder",
+        "enabled": true,
+        "x": 2300,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null
+      },
+      "roll": {
+        "id": "roll",
+        "type": "workflow",
+        "operation": "random-pick",
+        "operationVersion": 1,
+        "title": "Random Pick",
+        "enabled": true,
+        "x": 2670,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "rerollPolicy": "reuse",
+        "rerollId": "",
+        "ledgerId": "dice-outcomes"
+      },
+      "face": {
+        "id": "face",
+        "type": "workflow",
+        "operation": "select-fields",
+        "operationVersion": 1,
+        "title": "Select Fields",
+        "enabled": true,
+        "x": 3040,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "fields": [
+          {
+            "name": "face",
+            "path": [
+              "0",
+              "selection",
+              "id"
+            ]
+          }
+        ]
+      },
+      "face-scores-text": {
+        "id": "face-scores-text",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 2670,
+        "y": 1320,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "text": "[{\"key\":{\"face\":\"face-1\"},\"score\":1},{\"key\":{\"face\":\"face-2\"},\"score\":2},{\"key\":{\"face\":\"face-3\"},\"score\":3},{\"key\":{\"face\":\"face-4\"},\"score\":4},{\"key\":{\"face\":\"face-5\"},\"score\":5},{\"key\":{\"face\":\"face-6\"},\"score\":6},{\"key\":{\"face\":\"face-7\"},\"score\":7},{\"key\":{\"face\":\"face-8\"},\"score\":8},{\"key\":{\"face\":\"face-9\"},\"score\":9},{\"key\":{\"face\":\"face-10\"},\"score\":10},{\"key\":{\"face\":\"face-11\"},\"score\":11},{\"key\":{\"face\":\"face-12\"},\"score\":12},{\"key\":{\"face\":\"face-13\"},\"score\":13},{\"key\":{\"face\":\"face-14\"},\"score\":14},{\"key\":{\"face\":\"face-15\"},\"score\":15},{\"key\":{\"face\":\"face-16\"},\"score\":16},{\"key\":{\"face\":\"face-17\"},\"score\":17},{\"key\":{\"face\":\"face-18\"},\"score\":18},{\"key\":{\"face\":\"face-19\"},\"score\":19},{\"key\":{\"face\":\"face-20\"},\"score\":20}]"
+      },
+      "face-scores": {
+        "id": "face-scores",
+        "type": "workflow",
+        "operation": "json-decode",
+        "operationVersion": 1,
+        "title": "JSON Decode",
+        "enabled": true,
+        "x": 3040,
+        "y": 1320,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "parse",
+        "schema": ""
+      },
+      "score": {
+        "id": "score",
+        "type": "workflow",
+        "operation": "collection",
+        "operationVersion": 1,
+        "title": "Collection",
+        "enabled": true,
+        "x": 3410,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "lookup",
+        "collectionPath": [],
+        "fieldPath": [
+          "key"
+        ],
+        "value": "",
+        "operator": "equals",
+        "missingPolicy": "hold",
+        "thresholds": "[]",
+        "mergePolicy": "keep-all",
+        "identityPath": [
+          "id"
+        ]
+      },
+      "score-record": {
+        "id": "score-record",
+        "type": "workflow",
+        "operation": "format",
+        "operationVersion": 1,
+        "title": "Format",
+        "enabled": true,
+        "x": 3780,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "inputMode": "records",
+        "format": "json",
+        "jsonShape": "records",
+        "mapping": "preserve",
+        "fields": [],
+        "schema": "",
+        "columns": [],
+        "separator": "\n",
+        "trailingSeparator": false
+      },
+      "number": {
+        "id": "number",
+        "type": "workflow",
+        "operation": "collection",
+        "operationVersion": 1,
+        "title": "Collection",
+        "enabled": true,
+        "x": 4150,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "sum",
+        "collectionPath": [],
+        "fieldPath": [
+          "value",
+          "score"
+        ],
+        "value": "",
+        "operator": "equals",
+        "missingPolicy": "hold",
+        "thresholds": "[]",
+        "mergePolicy": "keep-all",
+        "identityPath": [
+          "id"
+        ]
+      },
+      "bonus-text": {
+        "id": "bonus-text",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 3040,
+        "y": 1320,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "text": "3"
+      },
+      "bonus": {
+        "id": "bonus",
+        "type": "workflow",
+        "operation": "json-decode",
+        "operationVersion": 1,
+        "title": "JSON Decode",
+        "enabled": true,
+        "x": 3410,
+        "y": 1320,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "parse",
+        "schema": ""
+      },
+      "terms": {
+        "id": "terms",
+        "type": "workflow",
+        "operation": "collect",
+        "operationVersion": 1,
+        "title": "Collect",
+        "enabled": true,
+        "x": 4520,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "artifactKind": "data",
+        "inputs": [
+          {
+            "id": "roll",
+            "label": "Roll",
+            "required": true
+          },
+          {
+            "id": "bonus",
+            "label": "Bonus",
+            "required": true
+          }
+        ]
+      },
+      "total": {
+        "id": "total",
+        "type": "workflow",
+        "operation": "collection",
+        "operationVersion": 1,
+        "title": "Collection",
+        "enabled": true,
+        "x": 4890,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "sum",
+        "collectionPath": [],
+        "fieldPath": [],
+        "value": "",
+        "operator": "equals",
+        "missingPolicy": "hold",
+        "thresholds": "[]",
+        "mergePolicy": "keep-all",
+        "identityPath": [
+          "id"
+        ]
+      },
+      "success": {
+        "id": "success",
+        "type": "workflow",
+        "operation": "condition",
+        "operationVersion": 1,
+        "title": "Condition",
+        "enabled": true,
+        "x": 5260,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "path": [],
+        "operator": "at-least",
+        "value": 14
+      },
+      "receipt": {
+        "id": "receipt",
+        "type": "workflow",
+        "operation": "collect",
+        "operationVersion": 1,
+        "title": "Collect",
+        "enabled": true,
+        "x": 5630,
+        "y": 600,
+        "w": 270,
+        "h": 170,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "artifactKind": "data",
+        "inputs": [
+          {
+            "id": "stakes",
+            "label": "Frozen stakes",
+            "required": true
+          },
+          {
+            "id": "roll",
+            "label": "Retained die",
+            "required": true
+          },
+          {
+            "id": "total",
+            "label": "Total",
+            "required": true
+          },
+          {
+            "id": "success",
+            "label": "Success",
+            "required": true
+          }
+        ]
+      },
+      "roll-guidance": {
+        "id": "roll-guidance",
+        "type": "workflow",
+        "operation": "compose",
+        "operationVersion": 1,
+        "title": "Compose",
+        "enabled": true,
+        "x": 6000,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "template",
+        "outputKind": "guidance",
+        "template": "Narrate only this attempted check using the frozen stakes, saved die and deterministic result: {{data:}}. Preserve player agency and do not change the difficulty after seeing the roll.",
+        "sections": [],
+        "separator": "\n\n"
+      },
+      "save-roll": {
+        "id": "save-roll",
+        "type": "workflow",
+        "operation": "commit-outcomes",
+        "operationVersion": 1,
+        "title": "Outcome Commit",
+        "enabled": true,
+        "x": 6370,
+        "y": 840,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "targetId": "dice-outcomes"
+      },
+      "flow-notes": {
+        "id": "flow-notes",
+        "type": "workflow",
+        "operation": "compose",
+        "operationVersion": 1,
+        "title": "Compose",
+        "enabled": true,
+        "x": 4520,
+        "y": 360,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "template",
+        "outputKind": "text",
+        "template": "Roll receipt (proposed until Apply): {{data:}}",
+        "sections": [],
+        "separator": "\n\n"
+      },
+      "flow-append": {
+        "id": "flow-append",
+        "type": "workflow",
+        "operation": "append",
+        "operationVersion": 1,
+        "title": "Append",
+        "enabled": true,
+        "x": 4890,
+        "y": 120,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "sectionId": "dice-stakes",
+        "separator": "\n\n"
+      }
+    },
+    "wires": {
+      "wire-1": {
+        "id": "wire-1",
+        "route": "wire",
+        "from": "send",
+        "fromPort": "activation",
+        "to": "generate",
+        "toPort": "activation"
+      },
+      "wire-2": {
+        "id": "wire-2",
+        "route": "wire",
+        "from": "entities-text",
+        "fromPort": "out",
+        "to": "entities",
+        "toPort": "in"
+      },
+      "wire-3": {
+        "id": "wire-3",
+        "route": "wire",
+        "from": "holders-text",
+        "fromPort": "out",
+        "to": "holders",
+        "toPort": "in"
+      },
+      "wire-4": {
+        "id": "wire-4",
+        "route": "wire",
+        "from": "stakes-text",
+        "fromPort": "out",
+        "to": "stakes",
+        "toPort": "in"
+      },
+      "wire-5": {
+        "id": "wire-5",
+        "route": "wire",
+        "from": "faces-text",
+        "fromPort": "out",
+        "to": "faces",
+        "toPort": "in"
+      },
+      "wire-6": {
+        "id": "wire-6",
+        "route": "wire",
+        "from": "source",
+        "fromPort": "out",
+        "to": "roll-use",
+        "toPort": "source"
+      },
+      "wire-7": {
+        "id": "wire-7",
+        "route": "wire",
+        "from": "entities",
+        "fromPort": "out",
+        "to": "roll-use",
+        "toPort": "entities"
+      },
+      "wire-8": {
+        "id": "wire-8",
+        "route": "wire",
+        "from": "roll-use",
+        "fromPort": "out",
+        "to": "confirm-each",
+        "toPort": "in"
+      },
+      "wire-9": {
+        "id": "wire-9",
+        "route": "wire",
+        "from": "confirm-each",
+        "fromPort": "out",
+        "to": "confirmed",
+        "toPort": "in"
+      },
+      "wire-10": {
+        "id": "wire-10",
+        "route": "wire",
+        "from": "confirmed",
+        "fromPort": "out",
+        "to": "holder",
+        "toPort": "events"
+      },
+      "wire-11": {
+        "id": "wire-11",
+        "route": "wire",
+        "from": "holders",
+        "fromPort": "out",
+        "to": "holder",
+        "toPort": "holders"
+      },
+      "wire-12": {
+        "id": "wire-12",
+        "route": "wire",
+        "from": "holder",
+        "fromPort": "events",
+        "to": "roll",
+        "toPort": "events"
+      },
+      "wire-13": {
+        "id": "wire-13",
+        "route": "wire",
+        "from": "faces",
+        "fromPort": "out",
+        "to": "roll",
+        "toPort": "library"
+      },
+      "wire-14": {
+        "id": "wire-14",
+        "route": "wire",
+        "from": "roll",
+        "fromPort": "out",
+        "to": "face",
+        "toPort": "in"
+      },
+      "wire-15": {
+        "id": "wire-15",
+        "route": "wire",
+        "from": "face-scores-text",
+        "fromPort": "out",
+        "to": "face-scores",
+        "toPort": "in"
+      },
+      "wire-16": {
+        "id": "wire-16",
+        "route": "wire",
+        "from": "face-scores",
+        "fromPort": "out",
+        "to": "score",
+        "toPort": "in"
+      },
+      "wire-17": {
+        "id": "wire-17",
+        "route": "wire",
+        "from": "face",
+        "fromPort": "out",
+        "to": "score",
+        "toPort": "match"
+      },
+      "wire-18": {
+        "id": "wire-18",
+        "route": "wire",
+        "from": "score",
+        "fromPort": "out",
+        "to": "score-record",
+        "toPort": "in"
+      },
+      "wire-19": {
+        "id": "wire-19",
+        "route": "wire",
+        "from": "score-record",
+        "fromPort": "records",
+        "to": "number",
+        "toPort": "in"
+      },
+      "wire-20": {
+        "id": "wire-20",
+        "route": "wire",
+        "from": "bonus-text",
+        "fromPort": "out",
+        "to": "bonus",
+        "toPort": "in"
+      },
+      "wire-21": {
+        "id": "wire-21",
+        "route": "wire",
+        "from": "number",
+        "fromPort": "out",
+        "to": "terms",
+        "toPort": "roll"
+      },
+      "wire-22": {
+        "id": "wire-22",
+        "route": "wire",
+        "from": "bonus",
+        "fromPort": "out",
+        "to": "terms",
+        "toPort": "bonus"
+      },
+      "wire-23": {
+        "id": "wire-23",
+        "route": "wire",
+        "from": "terms",
+        "fromPort": "out",
+        "to": "total",
+        "toPort": "in"
+      },
+      "wire-24": {
+        "id": "wire-24",
+        "route": "wire",
+        "from": "total",
+        "fromPort": "out",
+        "to": "success",
+        "toPort": "in"
+      },
+      "wire-25": {
+        "id": "wire-25",
+        "route": "wire",
+        "from": "stakes",
+        "fromPort": "out",
+        "to": "receipt",
+        "toPort": "stakes"
+      },
+      "wire-26": {
+        "id": "wire-26",
+        "route": "wire",
+        "from": "roll",
+        "fromPort": "out",
+        "to": "receipt",
+        "toPort": "roll"
+      },
+      "wire-27": {
+        "id": "wire-27",
+        "route": "wire",
+        "from": "total",
+        "fromPort": "out",
+        "to": "receipt",
+        "toPort": "total"
+      },
+      "wire-28": {
+        "id": "wire-28",
+        "route": "wire",
+        "from": "success",
+        "fromPort": "out",
+        "to": "receipt",
+        "toPort": "success"
+      },
+      "wire-29": {
+        "id": "wire-29",
+        "route": "wire",
+        "from": "receipt",
+        "fromPort": "out",
+        "to": "roll-guidance",
+        "toPort": "data"
+      },
+      "wire-30": {
+        "id": "wire-30",
+        "route": "wire",
+        "from": "roll-guidance",
+        "fromPort": "out",
+        "to": "generate",
+        "toPort": "guidance"
+      },
+      "wire-31": {
+        "id": "wire-31",
+        "route": "wire",
+        "from": "roll",
+        "fromPort": "out",
+        "to": "save-roll",
+        "toPort": "outcomes"
+      },
+      "wire-32": {
+        "id": "wire-32",
+        "route": "wire",
+        "from": "receipt",
+        "fromPort": "out",
+        "to": "flow-notes",
+        "toPort": "data"
+      },
+      "wire-33": {
+        "id": "wire-33",
+        "route": "wire",
+        "from": "generate",
+        "fromPort": "draft",
+        "to": "flow-append",
+        "toPort": "draft"
+      },
+      "wire-34": {
+        "id": "wire-34",
+        "route": "wire",
+        "from": "flow-notes",
+        "fromPort": "out",
+        "to": "flow-append",
+        "toPort": "section"
+      },
+      "wire-35": {
+        "id": "wire-35",
+        "route": "wire",
+        "from": "flow-append",
+        "fromPort": "out",
+        "to": "review",
+        "toPort": "draft"
+      }
+    },
+    "groups": {},
+    "roles": {},
+    "portals": {},
+    "definitions": {
+      "[\"dice-stakes-confirm\",1,\"sha256:0ae8b47cb0b673f8ed87fd75335c9f34c016e3e825677e412e0b9f6fc6294ed0\"]": {
+        "id": "dice-stakes-confirm",
+        "version": 1,
+        "semanticHash": "sha256:0ae8b47cb0b673f8ed87fd75335c9f34c016e3e825677e412e0b9f6fc6294ed0",
+        "name": "Confirm each occurrence",
+        "description": "Pinned bounded pure helper. Inspect each selected child request; errors and unresolved decisions hold the parent.",
+        "interface": [
+          {
+            "id": "item",
+            "label": "Item",
+            "direction": "input",
+            "kind": "data",
+            "required": true,
+            "cardinality": "one",
+            "boundaryNodeId": "item"
+          },
+          {
+            "id": "result",
+            "label": "Result",
+            "direction": "output",
+            "kind": "data",
+            "required": false,
+            "cardinality": "one",
+            "boundaryNodeId": "result"
+          }
+        ],
+        "parameters": [],
+        "body": {
+          "schema": 3,
+          "runtime": 2,
+          "mode": "native-unified",
+          "nodes": {
+            "item": {
+              "id": "item",
+              "type": "subgraph-input",
+              "interfacePortId": "item"
+            },
+            "result": {
+              "id": "result",
+              "type": "subgraph-output",
+              "interfacePortId": "result"
+            },
+            "records": {
+              "id": "records",
+              "type": "workflow",
+              "operation": "format",
+              "operationVersion": 1,
+              "title": "Format",
+              "enabled": true,
+              "x": 400,
+              "y": 120,
+              "w": 270,
+              "h": 170,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "inputMode": "records",
+              "format": "json",
+              "mapping": "preserve",
+              "fields": [],
+              "schema": "",
+              "columns": [],
+              "separator": "\n",
+              "trailingSeparator": false
+            },
+            "check": {
+              "id": "check",
+              "type": "workflow",
+              "operation": "decision",
+              "operationVersion": 1,
+              "title": "Decision",
+              "enabled": true,
+              "x": 400,
+              "y": 120,
+              "w": 270,
+              "h": 170,
+              "profileId": null,
+              "model": null,
+              "modelRole": "decision",
+              "inputKind": "data",
+              "questions": {
+                "actual": {
+                  "type": "noul",
+                  "instructions": "Does the quote establish this actual die roll with the stated actor and check?"
+                }
+              },
+              "maxTokens": 2048
+            },
+            "acceptance": {
+              "id": "acceptance",
+              "type": "workflow",
+              "operation": "select-fields",
+              "operationVersion": 1,
+              "title": "Select Fields",
+              "enabled": true,
+              "x": 400,
+              "y": 120,
+              "w": 270,
+              "h": 170,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "fields": [
+                {
+                  "name": "accepted",
+                  "path": [
+                    "answers",
+                    "actual",
+                    "accepted"
+                  ]
+                }
+              ]
+            },
+            "confirm": {
+              "id": "confirm",
+              "type": "workflow",
+              "operation": "confirm-events",
+              "operationVersion": 1,
+              "title": "Confirm Events",
+              "enabled": true,
+              "x": 400,
+              "y": 120,
+              "w": 270,
+              "h": 170,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "mode": "single-gate"
+            }
+          },
+          "wires": {
+            "w1": {
+              "id": "w1",
+              "route": "wire",
+              "from": "item",
+              "fromPort": "out",
+              "to": "records",
+              "toPort": "in"
+            },
+            "w2": {
+              "id": "w2",
+              "route": "wire",
+              "from": "item",
+              "fromPort": "out",
+              "to": "check",
+              "toPort": "in"
+            },
+            "w3": {
+              "id": "w3",
+              "route": "wire",
+              "from": "check",
+              "fromPort": "out",
+              "to": "acceptance",
+              "toPort": "in"
+            },
+            "w4": {
+              "id": "w4",
+              "route": "wire",
+              "from": "records",
+              "fromPort": "records",
+              "to": "confirm",
+              "toPort": "events"
+            },
+            "w5": {
+              "id": "w5",
+              "route": "wire",
+              "from": "acceptance",
+              "fromPort": "out",
+              "to": "confirm",
+              "toPort": "decisions"
+            },
+            "w6": {
+              "id": "w6",
+              "route": "wire",
+              "from": "confirm",
+              "fromPort": "out",
+              "to": "result",
+              "toPort": "in"
+            }
+          },
+          "roles": {
+            "decision": {
+              "model": null,
+              "profileId": null
+            }
+          }
+        }
+      }
+    },
+    "template": {
+      "id": "unified-dice-stakes",
+      "version": 1
+    },
+    "view": {
+      "x": 0,
+      "y": 0,
+      "zoom": 0.7
+    }
+  }
+}

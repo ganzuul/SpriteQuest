@@ -99,9 +99,10 @@ test('default and declared variants describe real pins in the containing phase w
         const value = catalog(scope(mode));
         for (const item of value.choices.filter(item => !item.disabledReason)) {
             const command = api.resolveNativeSearchChoice(value, item.id);
-            const described = describeOperation(scope(mode), { type: 'workflow', ...operationDefaults(command.operation), ...command.controls,
+            const described = describeOperation(scope(mode), { type: 'workflow', ...operationDefaults(command.operation), ...command.controls, ...(item.requiresConfiguration ? configuredSamples[command.operation] : {}),
                 ...(command.operation === 'reroute' ? { artifactKind: command.artifactKind, phase: mode.slice(7) } : {}) });
-            assert.equal(described.ok, true);
+            assert.equal(described.ok, true, item.id + ' ' + JSON.stringify(described.error));
+            if(item.requiresConfiguration) { assert.equal(command.requiresConfiguration,true); assert.equal(describeOperation(scope(mode),{type:'workflow',...operationDefaults(command.operation),...command.controls}).ok,false,'incomplete defaults must remain rejected'); }
             assert.equal(item.phase, mode.slice(7));
             assert.deepEqual(item.ports, described.data.ports.map(port => ({ portId: port.id, dir: port.direction === 'input' ? 'in' : 'out', kind: port.kind, label: port.label, required: port.required })));
             for (const port of item.ports) for (const key of ['nodeId', 'center', 'address']) assert.equal(Object.hasOwn(port, key), false);
@@ -112,6 +113,15 @@ test('default and declared variants describe real pins in the containing phase w
     }
 });
 
+const configuredSamples = {
+ 'commit-outcomes':{targetId:'outcomes.json'},
+ recall:{actorId:'mara',memorySetId:'memories'},'hotkey-arm':{actorId:'mara',memorySetId:'memories'},
+ 'read-file': {targetId:'souls.json'}, 'story-clock': {clockId:'time'}, 'time-trigger': {scheduleId:'curse'},
+ 'for-each': {helper:{id:'pinned-helper',version:1,semanticHash:'sha256:'+'a'.repeat(64)}},
+ 'actor-context': {actorId:'mara'}, 'prompted-memory': {actorId:'mara'}, 'item-mention-trigger': {actorId:'mara',itemId:'wand',aliases:['broken wand']},
+ 'item-use-trigger': {itemId:'wand'}, 'scene-presence': {actorId:'mara'}, 'character-direction': {actorId:'mara'},
+ 'parse-effect-library': {libraryId:'wand-effects',revision:'1',itemId:'wand'},
+};
 const ref = value => ({ id: value.id, version: value.version, semanticHash: value.semanticHash });
 const finalize = draft => {
     const identity = computeDefinitionIdentity(draft); assert.equal(identity.ok, true, JSON.stringify(identity));
@@ -439,7 +449,7 @@ test('one unified shelf exposes preparation and reply processing with their actu
     assert.equal(choice(unified,'operation:guidance').ports.find(port=>port.dir==='out').kind,'guidance');
     assert.equal(choice(unified,'operation:decision').label,'Decision');assert.equal(choice(unified,'operation:fast-decision').label,'Fast Decision');
     for(const item of unified.choices.filter(item=>item.id.startsWith('operation:'))){
-        const command=api.resolveNativeSearchChoice(unified,item.id);const described=describeOperation(scope('native-unified'),{type:'workflow',...operationDefaults(command.operation),...command.controls,...(command.artifactKind?{artifactKind:command.artifactKind,phase:'pre'}:{})});
+        const command=api.resolveNativeSearchChoice(unified,item.id);const described=describeOperation(scope('native-unified'),{type:'workflow',...operationDefaults(command.operation),...command.controls,...(item.requiresConfiguration?configuredSamples[command.operation]:{}),...(command.artifactKind?{artifactKind:command.artifactKind,phase:'pre'}:{})});
         assert.equal(described.ok,true,item.id+' '+JSON.stringify(described.error));assert.deepEqual(item.ports,described.data.ports.map(({id,label,kind,direction,required})=>({portId:id,label,kind,dir:direction==='input'?'in':'out',required})));
     }
 });

@@ -11,12 +11,14 @@ export interface RecordMappingSettings {
     schema?: JsonSchema;
 }
 export type FormatRecordsSettings = RecordMappingSettings & (
-    | { format: 'json' | 'jsonl' }
+    | { format: 'json'; jsonShape?: 'records' | 'single' }
+    | { format: 'jsonl' }
     | { format: 'csv'; columns: string[] }
     | { format: 'text' | 'markdown'; separator: string; trailingSeparator: boolean }
 );
 export type RecordSerialization =
-    | { format: 'json' | 'jsonl' }
+    | { format: 'json'; jsonShape?: 'records' | 'single' }
+    | { format: 'jsonl' }
     | { format: 'csv'; columns: string[] }
     | { format: 'text' | 'markdown'; separator: string; trailingSeparator: boolean };
 export interface FormattedRecords {
@@ -27,7 +29,7 @@ export interface FormattedRecords {
     report: SchemaFinding[];
 }
 /** Accept one structured object or an array of them. Never extract fields from prose.
- * JSON emits an array; JSONL emits one record per LF-terminated line.
+ * JSON emits an array by default; explicit single shape requires exactly one record and emits that object; JSONL emits one record per LF-terminated line.
  * CSV emits an exact scalar-column schema with a header, CRLF rows and standard quote escaping.
  * Text/Markdown accept only {text:string} records and explicit separator controls.
  * JSON serializations must pass the existing raw reader and bounded plain text admission.

@@ -17,10 +17,10 @@ test('fresh Lattice opens a current zero-call starter without reading old settin
     assert.equal(root.lattice, settings);
     assert.equal(settings.schema, 1);
     assert.equal(settings.enabled, false);
-    assert.deepEqual(settings.nativeBindings, { preGraphId: null, postGraphId: null });
+    assert.deepEqual(settings.nativeBindings, { workflowGraphId: null, preGraphId: null, postGraphId: null });
     assert.equal(Object.hasOwn(settings, 'workflowMode'), false);
     assert.equal(graph.schema, 3); assert.equal(graph.runtime, 2);
-    assert.equal(graph.template.id, 'structured-guidance');
+    assert.equal(graph.template.id, 'unified-basic'); assert.equal(graph.mode, 'native-unified'); assert.deepEqual(Object.values(graph.nodes).map(n=>n.operation), ['on-send','generate-reply','review-publish']);
     assert.equal(Object.values(graph.nodes).some(node => ['smart-compactor', 'response-plan', 'repair'].includes(node.operation)), false);
     assert.equal(h.effects(), 0);
     assert.equal(S.settings(), settings); assert.equal(S.getGraph(graph.id), graph);
@@ -28,7 +28,7 @@ test('fresh Lattice opens a current zero-call starter without reading old settin
 
 test('saved retired or malformed Lattice documents fail without replacing data', () => {
     for (const graph of [{ id: 'old', schema: 1, nodes: {}, wires: {} }, { id: 'early', schema: 2, runtime: 1, mode: 'native-pre', nodes: {}, wires: {} }]) {
-        const stored = { schema: 1, enabled: false, activeGraphId: graph.id, graphs: { [graph.id]: graph }, nativeBindings: { preGraphId: null, postGraphId: null }, subgraphLibrary: { definitions: {} }, ui: {} };
+        const stored = { schema: 1, enabled: false, activeGraphId: graph.id, graphs: { [graph.id]: graph }, nativeBindings: { workflowGraphId: null, preGraphId: null, postGraphId: null }, subgraphLibrary: { definitions: {} }, ui: {} };
         const before = structuredClone(stored), h = host({ lattice: stored });
         assert.throws(() => S.settings(), /workflow|document|schema|runtime/i);
         assert.deepEqual(stored, before); assert.equal(h.effects(), 0);
@@ -43,14 +43,14 @@ test('current CRUD does not assign execution and imports reject retired packages
     const rejected = S.importGraph(JSON.stringify({ kind: 'prompt-canvas-graph', schema: 1, graph: { nodes: {}, wires: {} } }));
     assert.equal(rejected.ok, false); assert.deepEqual(settings, before);
     S.deleteGraph(created.id); assert.equal(S.getGraph(created.id), null);
-    assert.equal(settings.enabled, false); assert.deepEqual(settings.nativeBindings, { preGraphId: null, postGraphId: null });
+    assert.equal(settings.enabled, false); assert.deepEqual(settings.nativeBindings, { workflowGraphId: null, preGraphId: null, postGraphId: null });
 });
 
 test('saved graph accessors reject without executing them or replacing settings', () => {
     let reads = 0;
     const graph = { schema: 3, runtime: 2, mode: 'native-pre', nodes: {}, wires: {} };
     Object.defineProperty(graph, 'id', { enumerable: true, get() { reads++; return 'unsafe'; } });
-    const stored = { schema: 1, enabled: false, activeGraphId: 'unsafe', graphs: { unsafe: graph }, nativeBindings: { preGraphId: null, postGraphId: null }, subgraphLibrary: { definitions: {} }, ui: {} };
+    const stored = { schema: 1, enabled: false, activeGraphId: 'unsafe', graphs: { unsafe: graph }, nativeBindings: { workflowGraphId: null, preGraphId: null, postGraphId: null }, subgraphLibrary: { definitions: {} }, ui: {} };
     const h = host({ lattice: stored });
     assert.throws(() => S.settings(), /workflow|document|plain|schema/i);
     assert.equal(reads, 0);

@@ -96,15 +96,15 @@ test('a missing current workflow keeps root Run disabled', async () => {
     try { await f.open(); assert.equal(f.item('Run workflow').disabled, true); assert.equal(f.item('Stop workflow').disabled, true); } finally { await f.close(); }
 });
 
-test('phase assignment remains available in Workflows without a setup panel', async () => {
+test('legacy phase assignment remains available in Workflows without a setup panel', async () => {
     const root = guidance(), prepared = prepare(root), calls = [];
     const f = await fixture(state(projectPreparedWorkflow(prepared.token)), command => calls.push(command));
     try {
         await f.open();
-        await click(f.item('Assign pre phase'));
+        await click(f.item('Assign legacy pre phase'));
         assert.deepEqual(calls, ['assign-workflow-phase']);
         await f.update(state({ ...projectPreparedWorkflow(prepared.token), phase: 'post', assigned: true }));
         await f.open();
-        assert.equal(f.item('Assigned to post phase').disabled, true);
+        assert.equal(f.item('Assigned to legacy post phase').disabled, true);
     } finally { await f.close(); }
 });

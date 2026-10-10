@@ -1,3 +1,4 @@
+import { artifactVisibility, preserveArtifactPrivacy, validVisibilityMetadata } from '../artifact-privacy.js?v=0.26.0';
 import { cloneJsonValue, readJsonPath } from './json-data.js?v=0.26.0';
 import { own, plain, freeze } from '../record-data.js?v=0.26.0';
 
@@ -14,9 +15,15 @@ export const CONTROL_OPERATIONS = {
     join: { ...register('join', 'Join', { artifactKind: 'data', inputs: slots, selection: 'last' }, { artifactKind: control('enum', 'data', { values: kinds }), inputs: control('array', slots, { items: 'record', max: 16 }), selection: control('enum', 'last', { values: ['first','last'] }) }), acceptsSkippedInputs: true },
     collect: { ...register('collect', 'Collect', { artifactKind: 'data', inputs: slots }, { artifactKind: control('enum', 'data', { values: kinds }), inputs: control('array', slots, { items: 'record', max: 16 }) }), acceptsSkippedInputs: true },
     'confidence-gate': register('confidence-gate', 'Confidence Gate', { metricPath: [], acceptMin: 0.8, rejectMax: 0.2, direction: 'higher' }, { metricPath: control('array', [], { items: 'string' }), acceptMin: control('number', 0.8, { min: -Number.MAX_VALUE, max: Number.MAX_VALUE }), rejectMax: control('number', 0.2, { min: -Number.MAX_VALUE, max: Number.MAX_VALUE }), direction: control('enum', 'higher', { values: ['higher','lower'] }) }),
-    'for-each': register('for-each', 'For Each', { helper: { id: '', version: 1, semanticHash: '' }, limit: 32, requestBoundPerIteration: 0, mode: 'map' }, { helper: control('object', { id: '', version: 1, semanticHash: '' }), limit: control('integer', 32, { min: 1, max: 128 }), requestBoundPerIteration: control('integer', 0, { min: 0, max: 16 }), mode: control('enum', 'map', { values: ['map','projected-state'] }) }),
+    'for-each': register('for-each', 'For Each', { helper: { id: '', version: 1, semanticHash: '' }, limit: 32, requestBoundPerIteration: 0, mode: 'map', roleOverrides: {} }, { helper: control('object', { id: '', version: 1, semanticHash: '' }), limit: control('integer', 32, { min: 1, max: 128 }), requestBoundPerIteration: control('integer', 0, { min: 0, max: 16 }), mode: control('enum', 'map', { values: ['map','projected-state'] }), roleOverrides: control('object', {}) }),
 };
 
+/** Local selectors use the same sparse profile/model binding shape as subgraph overrides. */
+export function validIterationRoleOverrides(value) {
+    const checked=cloneJsonValue(value);if(!checked.ok)return false;value=checked.data.value;
+    if(!plain(value)||Object.keys(value).length>64)return false;
+    return Object.entries(value).every(([role,binding])=>typeof role==='string'&&role.trim().length>0&&role.length<=128&&!['__proto__','prototype','constructor'].includes(role)&&plain(binding)&&Object.keys(binding).length<=2&&Object.entries(binding).every(([key,selector])=>['profileId','model'].includes(key)&&(selector===null||typeof selector==='string'&&selector.trim().length>0&&selector.length<=256)));
+}
 function resolve(node, options) {
     if (!plain(node) || !plain(options)) return fail('INVALID_SETTINGS', 'Control settings must be plain data.');
     const operation = own(node, 'operation'), base = Object.hasOwn(CONTROL_OPERATIONS, operation) && CONTROL_OPERATIONS[operation];
@@ -36,6 +43,7 @@ function resolve(node, options) {
     if (operation === 'for-each') {
         const helper=settings.helper;
         if(!plain(helper)||Object.keys(helper).length!==3||typeof helper.id!=='string'||!helper.id.trim()||helper.id.length>128||!Number.isSafeInteger(helper.version)||helper.version<1||!/^sha256:[0-9a-f]{64}$/.test(helper.semanticHash)||!Number.isSafeInteger(settings.limit)||settings.limit<1||settings.limit>128||!Number.isSafeInteger(settings.requestBoundPerIteration)||settings.requestBoundPerIteration<0||settings.requestBoundPerIteration>16||!['map','projected-state'].includes(settings.mode))return fail('INVALID_SETTINGS','For Each requires a pinned helper, 1–128 iterations and 0–16 requests per iteration.');
+        if(!validIterationRoleOverrides(settings.roleOverrides))return fail('INVALID_SETTINGS','For Each role overrides require up to 64 named roles with only bounded profile/model selectors.');
         descriptor={...descriptor,requestBound:settings.limit*settings.requestBoundPerIteration};
         ports=[pin('in','data','input',true),pin('state','data','input',settings.mode==='projected-state'),pin('out','data','output'),pin('state','data','output')];
     } else if (operation === 'confidence-gate') {
@@ -63,7 +71,7 @@ export function describeControl(node, options = {}) {
     try { const result = resolve(node, options); if (!result.ok) return result; const { descriptor, ports } = result.data; return { ok: true, data: { descriptor, ports } }; }
     catch { return fail('INVALID_SETTINGS', 'Control settings could not be inspected.'); }
 }
-export async function executeControl(node, inputs, local = {}) {
+async function executeControlRaw(node, inputs, local = {}) {
     try {
         const checked = resolve(node, { phase: local.phase ?? own(node, 'phase') ?? 'pre' }); if (!checked.ok) return checked;
         const { settings } = checked.data;
@@ -124,7 +132,7 @@ async function executeForEach(settings,inputs,local) {
     if(settings.mode==='projected-state'&&projectedState===undefined)return fail('MISSING_INPUT','Projected-state iteration requires its explicit initial state.');
     if(local.signal?.aborted)return fail('ABORTED','Iteration was stopped.');
     if(collection.data.value.length&&typeof local.iterateHelper!=='function')return fail('ITERATION_HELPER_MISSING','Bind the pinned iteration helper before execution.');
-    const results=[];
+    const results=[], disclosure=[{visibility:artifactVisibility(inputs)}];
     for(let index=0;index<collection.data.value.length;index++) {
         if(local.signal?.aborted)return fail('ABORTED','Iteration was stopped.');
         let calls=0,requestFailure,pendingRequest,active=true;
@@ -141,16 +149,20 @@ async function executeForEach(settings,inputs,local) {
             let response;try{response=await local.request({...options,iteration:{index,helper:settings.helper,...(own(options,'childAddress')===undefined?{}:{childAddress:own(options,'childAddress')})}});}catch{return requestFailure=fail('REQUEST_FAILED','The iteration request failed.');}if(!response?.ok)requestFailure=response??fail('INVALID_RESPONSE','Iteration request returned no result.');return response;
         };
         let result;
-        try {result=await local.iterateHelper(freeze({helper:structuredClone(settings.helper),item:collection.data.value[index],index,...(projectedState===undefined?{}:{projectedState}),phase:local.phase??'pre',rootMode:local.rootMode??'native-pre',...(local.address?{address:local.address}:{})}),{request,...(local.signal?{signal:local.signal}:{})});}
+        try {result=await local.iterateHelper(freeze({helper:structuredClone(settings.helper),item:collection.data.value[index],index,visibility:artifactVisibility(disclosure),...(projectedState===undefined?{}:{projectedState}),phase:local.phase??'pre',rootMode:local.rootMode??'native-pre',...(local.address?{address:local.address}:{})}),{request,...(local.signal?{signal:local.signal}:{})});}
         catch {active=false;if(pendingRequest)await pendingRequest;return fail(local.signal?.aborted?'ABORTED':'ITERATION_HELPER_FAILED','The iteration helper failed; no partial result was published.');}
         active=false;if(pendingRequest)await pendingRequest;
         if(local.signal?.aborted)return fail('ABORTED','Ignore the stopped iteration result.');
-        if(requestFailure)return requestFailure;
+        if(requestFailure&&!(result?.ok===true&&typeof local.isRecoveredIterationResult==='function'&&local.isRecoveredIterationResult(result)===true))return requestFailure;
         if(result?.ok!==true)return result?.ok===false?result:fail('INVALID_ITERATION_RESULT','The iteration helper returned an invalid Result.');
-        if(own(result.artifact,'kind')!=='data')return fail('INVALID_ITERATION_RESULT','Iteration helpers must return Data results.');
-        const value=cloneJsonValue(own(result.artifact,'value'));if(!value.ok)return value;results.push(value.data.value);
-        if(settings.mode==='projected-state'){const checked=cloneJsonValue(own(result,'projectedState'));if(!checked.ok)return fail('INVALID_PROJECTION','Each stateful iteration must return checked next projected state.');projectedState=checked.data.value;}
+        const artifact=own(result,'artifact');
+        if(!plain(artifact)||own(artifact,'kind')!=='data'||!validVisibilityMetadata(artifact))return fail('INVALID_ITERATION_RESULT','Iteration helpers must return Data results with valid disclosure metadata.');
+        disclosure.push({visibility:artifactVisibility(artifact)});
+        const value=cloneJsonValue(own(artifact,'value'));if(!value.ok)return value;results.push(value.data.value);
+        if(settings.mode==='projected-state'){const stateVisibility=own(result,'projectedStateVisibility');if(stateVisibility!==undefined){if(!validVisibilityMetadata({visibility:stateVisibility}))return fail('INVALID_ITERATION_RESULT','Projected state must carry valid disclosure metadata.');disclosure.push({visibility:stateVisibility});}disclosure.push({visibility:artifactVisibility(own(result,'projectedState'))});const checked=cloneJsonValue(own(result,'projectedState'));if(!checked.ok)return fail('INVALID_PROJECTION','Each stateful iteration must return checked next projected state.');projectedState=checked.data.value;}
     }
     const checkedResults=cloneJsonValue(results);if(!checkedResults.ok)return checkedResults;
-    return {ok:true,outputs:{out:{kind:'data',value:checkedResults.data.value},...(projectedState===undefined?{}:{state:{kind:'data',value:projectedState}})},...(projectedState===undefined?{outputStates:{state:{status:'skipped',reason:{code:'NO_PROJECTED_STATE',message:'Map mode supplied no state.'}}}}:{})};
+    return preserveArtifactPrivacy({ok:true,outputs:{out:{kind:'data',value:checkedResults.data.value},...(projectedState===undefined?{}:{state:{kind:'data',value:projectedState}})},...(projectedState===undefined?{outputStates:{state:{status:'skipped',reason:{code:'NO_PROJECTED_STATE',message:'Map mode supplied no state.'}}}}:{})},disclosure);
 }
+
+export async function executeControl(node,inputs,local = {}) { return preserveArtifactPrivacy(await executeControlRaw(node,inputs,local),inputs); }

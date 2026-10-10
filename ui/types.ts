@@ -1,3 +1,4 @@
+import type { StoryDocumentsView, StoryDocumentsActions, ConfigureNodeView, ConfigureNodeActions } from './storage-setup-types';
 import type { FastConnectionsView, FastConnectionsActions } from './fast-connections-types';
 import type { GraphViews, GraphViewActions } from './view-types';
 import type { NodeDetailsView, NodeDetailsActions, OutputPreviewView, OutputPreviewActions, RunDetailsView, RunDetailsActions } from './detail-types';
@@ -30,6 +31,12 @@ export interface WorkflowExampleWire { id: string; d: string; kind: string; from
 export interface WorkflowExampleComment { id: string; x: number; y: number; w: number; h: number; title: string; content: string; color: string }
 export interface WorkflowExampleThumbnail { bounds: { x: number; y: number; w: number; h: number }; nodes: WorkflowExampleNode[]; wires: WorkflowExampleWire[]; comments: WorkflowExampleComment[] }
 export interface WorkflowExampleTile { id: string; number: number; title: string; goal: string; thumbnail: WorkflowExampleThumbnail | null; issue: string }
+export interface RecallArmsView {
+    scope: {userId:string;chatId:string;workflowId:string;actorId:string} | null;
+    nodes: {nodeId:string;actorId:string;memorySetId:string;hotkey:{code:string;ctrl:boolean;alt:boolean;shift:boolean;meta:boolean};target:string;uses:string;consumeOn:string;armed:boolean;remaining:{reply:boolean;swipe:boolean};pendingCount:number}[];
+    issue?:string;
+}
+export interface RecallArmsActions {refresh():void;arm(nodeId:string):DetailEditResponse;disarm(nodeId:string):DetailEditResponse;}
 export interface WorkbenchView {
     graphs: { id: string; name: string }[]; graphId: string; armed: boolean; inspectorOpen: boolean; detailsWidth?: number;
     history: HistoryView; camera: { x: number; y: number; zoom: number; mode: string }; selectionCount: number;
@@ -42,6 +49,8 @@ export interface WorkbenchView {
     importReview?: ImportReviewView | null;
     newWorkflowPrompt?: NewWorkflowPromptView | null;
     fastConnections?: FastConnectionsView; fastConnectionsActive?: boolean;
+    recallArms?: RecallArmsView;
+    storyDocuments?: StoryDocumentsView; configureNode?: ConfigureNodeView | null;
     examples?: readonly WorkflowExampleTile[];
     examplesIssue?: string;
     selectionActions?: { copy: boolean; cut: boolean; delete: boolean };
@@ -59,6 +68,8 @@ export interface WorkbenchActions {
     acceptImport?: () => void; cancelImport?: () => void; prepareImportAgain?: () => void;
     newWorkflowPrompt?: NewWorkflowPromptActions;
     fastConnections?: FastConnectionsActions;
+    recallArms?: RecallArmsActions;
+    storyDocuments?: StoryDocumentsActions; configureNode?: ConfigureNodeActions;
     openExample?: (id: string) => boolean | Promise<boolean>;
     refreshExamples?: () => boolean | void;
 }

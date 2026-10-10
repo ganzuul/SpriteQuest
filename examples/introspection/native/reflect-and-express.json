@@ -24,7 +24,8 @@
         "model": null,
         "modelRole": null,
         "recentMessages": 12,
-        "includeCharacter": true
+        "includeCharacter": true,
+        "visibilityMode": "actor"
       },
       "focus": {
         "id": "focus",

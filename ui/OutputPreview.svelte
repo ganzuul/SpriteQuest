@@ -68,6 +68,14 @@
         {:else}
             <p class="pc-preview-empty">{view.status === 'not-run' ? 'Run this workflow or use Run to here to inspect an output.' : 'No recorded artifact is available for this output.'}</p>
         {/if}
+        {#if view.settlement}
+            <section aria-label="Accepted consequences" class="pc-preview-settlement">
+                <strong>Accepted consequences · {view.settlement.status === 'settled' ? 'Saved' : view.settlement.status === 'partial' ? 'Some targets failed' : 'Save confirmation needed'}</strong>
+                {#each view.settlement.receipts as receipt (receipt.intentId + ':' + receipt.targetId)}
+                    <p class="pc-preview-note">{receipt.targetId} · {receipt.status}{receipt.error ? ' · ' + receipt.error.message : ''}</p>
+                {/each}
+            </section>
+        {/if}
         {#if view.statusDetail}<p class="pc-preview-note">{view.statusDetail}</p>{/if}
         {#each view.sections.filter(section => section.id !== activeSection?.id && (section.format === 'omitted' || section.truncated)) as section (section.id)}
             <p class="pc-preview-note">{section.label}: {section.format === 'omitted' ? section.text : 'Truncated diagnostic' + (section.format === 'json-prefix-text' ? ' · JSON prefix shown as text' : '')}</p>
@@ -75,13 +83,13 @@
         {#if view.runHere?.issue}<p class="pc-preview-note">{view.runHere.issue}</p>{/if}
         {#each view.issues as issue}<p class="pc-preview-error">{issue}</p>{/each}
         {#if view.review?.issue}<p class="pc-preview-error">{view.review.issue}</p>{/if}
-        {#if view.review}<small class="pc-preview-note">Apply rechecks the source and connection. Recorded preview text may be truncated.</small>{/if}
+        {#if view.review}<small class="pc-preview-note">{view.review.persistOnly ? 'Retry keeps the accepted reply and retries failed targets. No model request is made.' : 'Apply rechecks the source, connection and final evidence. Recorded preview text may be truncated.'}</small>{/if}
     </div>
     <footer>
         <span class="pc-preview-status" data-status={view.status}>{statusLabel(view.status)}</span>
         <span>{view.pinned ? 'Pinned preview' : view.followSelection ? 'Following selection' : 'Selection not followed'}</span>
         {#if view.runHere}<button type="button" data-run-here title="Runs the selected output's dependencies. Results are diagnostic previews." disabled={!canRun} onclick={() => { if (view && selected && canRun) actions.runHere?.(view.sourceKey, copyTarget(selected.target)); }}>Run to here · maximum {view.runHere.callBound} {view.runHere.callBound === 1 ? 'request' : 'requests'}</button>{/if}
-        {#if view.review}<button type="button" data-preview-apply disabled={!canApply} onclick={() => { if (view?.review && canApply) actions.apply?.(copySelector(view.review.selector)); }}>Apply reviewed candidate</button><button type="button" disabled={!canReject} onclick={() => { if (view?.review && canReject) actions.reject?.(copySelector(view.review.selector)); }}>Reject candidate</button>{/if}
+        {#if view.review}<button type="button" data-preview-apply disabled={!canApply} onclick={() => { if (view?.review && canApply) actions.apply?.(copySelector(view.review.selector)); }}>{view.review.persistOnly ? 'Retry failed persistence' : 'Apply reviewed candidate'}</button><button type="button" disabled={!canReject} onclick={() => { if (view?.review && canReject) actions.reject?.(copySelector(view.review.selector)); }}>{view.review.persistOnly ? 'Close persistence review' : 'Reject candidate'}</button>{/if}
     </footer>
 {:else}
     <p class="pc-preview-empty">Select a node output to inspect its recorded result.</p>

@@ -1,3 +1,10 @@
+import { RECALL_OPERATIONS, describeRecallNode } from './operations/recall-nodes.js?v=0.26.0';
+import { LIFECYCLE_OPERATIONS, describeLifecycleNode } from './operations/lifecycle-nodes.js?v=0.26.0';
+import { FILE_OPERATIONS, describeFileNode } from './operations/file-nodes.js?v=0.26.0';
+import { TIME_OPERATIONS, describeTimeNode } from './operations/time-nodes.js?v=0.26.0';
+import { EVENT_OPERATIONS, describeEvent } from './operations/event-nodes.js?v=0.26.0';
+import { RANDOM_OPERATIONS, describeRandom } from './operations/random-outcomes.js?v=0.26.0';
+import { COLLECTION_OPERATIONS, describeCollection } from './operations/collection-nodes.js?v=0.26.0';
 import { PRIMITIVE_OPERATIONS, describePrimitive } from './operations/nodes.js?v=0.26.0';
 import { describeContextJoin } from './operations/context-join.js?v=0.26.0';
 import { TRANSPOSE_OPERATIONS, describeTranspose } from './operations/transpose-nodes.js?v=0.26.0';
@@ -9,9 +16,10 @@ import { DECISION_OPERATIONS, describeDecision } from './operations/decision-nod
 import { MODEL_OPERATIONS, describeModelNode } from './operations/model-nodes.js?v=0.26.0';
 
 /** Native operation metadata. Artifact flow, rather than canvas placement, defines execution. */
-export const FAMILIES = ['Input', 'Shaping', 'Surface', 'Transpose', 'Introspection', 'Derive', 'Output'];
+export const FAMILIES = ['Input', 'Shaping', 'Surface', 'Transpose', 'Introspection', 'Derive', 'Events', 'Collections', 'Randomness', 'Recall', 'Output'];
 export const ARTIFACT_KINDS = ['context', 'draft', 'patches', 'candidate', 'guidance', 'text', 'data'];
 function controlDescriptor(operation, key, value) {
+    if (operation === 'scene-context' && key === 'visibilityMode') return { type: 'enum', values: ['actor', 'public'], default: value, label: 'Context visibility' };
     if (operation === 'reroute' && key === 'artifactKind') return { type: 'enum', values: ARTIFACT_KINDS, default: value, label: 'Artifact kind' };
     const values = key === 'method' ? ['select', 'compress'] : key === 'scope' ? operation === 'repair' ? ['authorized', 'whole', 'narration', 'dialogue'] : ['whole', 'narration', 'dialogue'] : key === 'mode' ? (operation === 'repair' ? ['repair', 'scan', ...CLEANUP_MODES] : ['literal']) : null;
     if (values) return { type: 'enum', values, default: value };
@@ -21,7 +29,7 @@ function controlDescriptor(operation, key, value) {
 }
 const descriptor = (id, title, family, phase, input, output, defaults = {}, extra = {}) => ({ id, title, family, phase, input, output, controls: Object.keys(defaults), controlDescriptors: Object.fromEntries(Object.entries(defaults).map(([key, value]) => [key, controlDescriptor(id, key, value)])), defaults, requestBound: 0, modelRole: null, terminal: false, ...extra });
 export const OPERATIONS = {
-    'scene-context': descriptor('scene-context', 'Scene Context', 'Input', 'pre', null, 'context', { recentMessages: 12, includeCharacter: true }),
+    'scene-context': descriptor('scene-context', 'Scene Context', 'Input', 'pre', null, 'context', { recentMessages: 12, includeCharacter: true, visibilityMode: 'actor' }),
     'reply-snapshot': descriptor('reply-snapshot', 'Reply Snapshot', 'Input', 'post', null, 'draft'),
     'smart-compactor': descriptor('smart-compactor', 'Smart Compactor', 'Shaping', 'pre', 'context', 'context', { targetTokens: 1200, purpose: '', method: 'select', keepRecent: 2, pins: [], maxTokens: 1024 }, { modelRole: 'Analysis', requestBound: node => node.method === 'compress' ? 1 : 0 }),
     'response-plan': descriptor('response-plan', 'Response Plan', 'Shaping', 'pre', 'context', 'guidance', { instructions: '', maxTokens: 768 }, { modelRole: 'Analysis', requestBound: 1 }),
@@ -55,12 +63,12 @@ Object.assign(OPERATIONS, INTROSPECTION_NATIVE_OPERATIONS);
 Object.assign(OPERATIONS, INPUT_OPERATIONS);
 Object.assign(OPERATIONS, CONTROL_OPERATIONS);
 Object.assign(OPERATIONS, DECISION_OPERATIONS);
-Object.assign(OPERATIONS, MODEL_OPERATIONS);
+Object.assign(OPERATIONS, MODEL_OPERATIONS, LIFECYCLE_OPERATIONS, FILE_OPERATIONS, TIME_OPERATIONS, EVENT_OPERATIONS, RANDOM_OPERATIONS, COLLECTION_OPERATIONS, RECALL_OPERATIONS);
 OPERATIONS.repair.controlDescriptors.categories.label = 'Policy categories (empty selects all)';
 for (const [key, label] of Object.entries({ mode: 'Mode', scope: 'Scope', caseSensitive: 'Case sensitive', strength: 'Strength', instructions: 'Instructions', maxTokens: 'Output tokens', protectedLiterals: 'Protected literals' })) OPERATIONS.repair.controlDescriptors[key].label = label;
 const contextJoinDescriptor = source => ({ ...source, controlDescriptors: { inputs: { ...source.controlDescriptors.inputs, label: 'Inputs', editor: 'json', exposable: false } } });
 OPERATIONS['context-join'] = contextJoinDescriptor(describeContextJoin({ type: 'workflow', operation: 'context-join', operationVersion: 1, inputs: [{ id: 'context-1', label: 'Context 1' }, { id: 'context-2', label: 'Context 2' }] }).data.descriptor);
-const newOperation = id => Object.hasOwn(MODEL_OPERATIONS, id) || Object.hasOwn(DECISION_OPERATIONS, id) || Object.hasOwn(CONTROL_OPERATIONS, id) || Object.hasOwn(INPUT_OPERATIONS, id) || Object.hasOwn(PRIMITIVE_OPERATIONS, id) || Object.hasOwn(TRANSPOSE_OPERATIONS, id) || Object.hasOwn(INTROSPECTION_NATIVE_OPERATIONS, id) || id === 'context-join' || id === 'repair';
+const newOperation = id => Object.hasOwn(RECALL_OPERATIONS, id) || Object.hasOwn(LIFECYCLE_OPERATIONS, id) || Object.hasOwn(FILE_OPERATIONS, id) || Object.hasOwn(TIME_OPERATIONS, id) || Object.hasOwn(EVENT_OPERATIONS, id) || Object.hasOwn(RANDOM_OPERATIONS, id) || Object.hasOwn(COLLECTION_OPERATIONS, id) || Object.hasOwn(MODEL_OPERATIONS, id) || Object.hasOwn(DECISION_OPERATIONS, id) || Object.hasOwn(CONTROL_OPERATIONS, id) || Object.hasOwn(INPUT_OPERATIONS, id) || Object.hasOwn(PRIMITIVE_OPERATIONS, id) || Object.hasOwn(TRANSPOSE_OPERATIONS, id) || Object.hasOwn(INTROSPECTION_NATIVE_OPERATIONS, id) || id === 'context-join' || id === 'repair';
 const failure = (code, message) => ({ ok: false, error: { code, message } });
 function ownMetadata(value, key) {
     if (!value || typeof value !== 'object' || Array.isArray(value) || ![Object.prototype, null].includes(Object.getPrototypeOf(value))) throw new Error('plain metadata');
@@ -79,6 +87,7 @@ export function phaseForNode(graph, node) {
         const declared = ownMetadata(node, 'phase');
         if (declared !== undefined && !['pre', 'post'].includes(declared)) return null;
         const op = OPERATIONS[id];
+        if (id === 'scene-context' && !['actor','public'].includes(ownMetadata(node,'visibilityMode') === undefined ? 'actor' : ownMetadata(node,'visibilityMode'))) return null;
         const fixed = Object.hasOwn(TRANSPOSE_OPERATIONS, id) && ownMetadata(node, 'inputKind') === 'text' ? undefined
             : id === 'extract' && ownMetadata(node, 'inputKind') !== 'text' || id === 'memory' && ownMetadata(node, 'mode') === 'commit' || id === 'text-rules' && ownMetadata(node, 'inputKind') === 'draft' ? 'post'
             : id === 'compose' && ownMetadata(node, 'outputKind') === 'guidance' ? 'pre'
@@ -88,6 +97,13 @@ export function phaseForNode(graph, node) {
     } catch { return null; }
 }
 function dynamicDescription(node, phase) {
+    if (Object.hasOwn(RECALL_OPERATIONS, node.operation)) return describeRecallNode(node, { phase });
+    if (Object.hasOwn(LIFECYCLE_OPERATIONS, node.operation)) return describeLifecycleNode(node, { phase });
+    if (Object.hasOwn(FILE_OPERATIONS, node.operation)) return describeFileNode(node, { phase });
+    if (Object.hasOwn(TIME_OPERATIONS, node.operation)) return describeTimeNode(node, { phase });
+    if (Object.hasOwn(EVENT_OPERATIONS, node.operation)) return describeEvent(node, { phase });
+    if (Object.hasOwn(RANDOM_OPERATIONS, node.operation)) return describeRandom(node, { phase });
+    if (Object.hasOwn(COLLECTION_OPERATIONS, node.operation)) return describeCollection(node, { phase });
     if (Object.hasOwn(MODEL_OPERATIONS, node.operation)) return describeModelNode(node, { phase });
     if (Object.hasOwn(DECISION_OPERATIONS, node.operation)) return describeDecision(node, { phase });
     if (Object.hasOwn(CONTROL_OPERATIONS, node.operation)) return describeControl(node, { phase });
@@ -134,6 +150,8 @@ export function operationFor(node, { phase, mode } = {}) {
         const id = ownMetadata(node, 'operation');
         const op = ownMetadata(node, 'type') === 'workflow' && typeof id === 'string' && Object.hasOwn(OPERATIONS, id) ? OPERATIONS[id] : null;
         if (!op) return null;
+        if (id === 'scene-context' && !['actor','public'].includes(ownMetadata(node,'visibilityMode') === undefined ? 'actor' : ownMetadata(node,'visibilityMode'))) return null;
+        if (Object.hasOwn(LIFECYCLE_OPERATIONS, id) && mode !== undefined && mode !== 'native-unified') return null;
         const declared = ownMetadata(node, 'phase');
         if (declared !== undefined && !['pre', 'post'].includes(declared)) return null;
         if (newOperation(op.id)) {
@@ -147,8 +165,8 @@ export function operationFor(node, { phase, mode } = {}) {
             return op.id === 'guidance' && mode === 'native-unified' ? { ...op, output: 'guidance', terminal: false } : op;
         }
         const artifactKind = ownMetadata(node, 'artifactKind');
-        return ARTIFACT_KINDS.includes(artifactKind) && ['pre', 'post'].includes(declared)
-            ? { ...op, phase: declared, input: artifactKind, output: artifactKind } : null;
+        return ARTIFACT_KINDS.includes(artifactKind) && (['pre','post'].includes(declared)||declared===undefined&&mode==='native-unified')
+            ? { ...op, phase: declared??phase??'pre', input: artifactKind, output: artifactKind } : null;
     } catch { return null; }
 }
 /** One checked producer for effective descriptor, settings validation and actual named pins.
@@ -165,8 +183,10 @@ export function describeOperation(graph, node) {
         };
         const id = own(node, 'operation');
         if (own(node, 'type') !== 'workflow' || typeof id !== 'string' || !Object.hasOwn(OPERATIONS, id)) return failure('UNKNOWN_OPERATION', 'Unknown workflow operation.');
+        if (id === 'scene-context' && !['actor','public'].includes(own(node,'visibilityMode') === undefined ? 'actor' : own(node,'visibilityMode'))) return failure('INVALID_SETTINGS','Scene Context visibility must be actor or public.');
         const version = own(node, 'operationVersion');
         if (version !== undefined && version !== 1) return failure('UNKNOWN_OPERATION', 'Unknown workflow operation version.');
+        if (Object.hasOwn(LIFECYCLE_OPERATIONS, id) && own(graph, 'mode') !== 'native-unified') return failure('WRONG_PHASE', 'Lifecycle nodes require a unified workflow.');
         if (newOperation(id)) {
             if (own(graph, 'schema') !== 3 || own(graph, 'runtime') !== 2) return failure('UNSUPPORTED_VERSION', 'This operation requires schema 3 and runtime 2.');
             const phase = phaseForNode(graph, node);
@@ -190,7 +210,15 @@ export function describeOperation(graph, node) {
 export function semanticControlsForNode(node, operation = operationFor(node)) {
     const controls = Object.fromEntries((operation?.controls ?? []).map(key => [key, node[key] === undefined ? operation.defaults[key] : node[key]]));
     // Additive editor controls must preserve existing version-1 semantic pins.
+    if (node.operation === 'for-each') {
+        if (!Object.keys(controls.roleOverrides ?? {}).length) delete controls.roleOverrides;
+        else controls.roleOverrides = Object.fromEntries(Object.entries(controls.roleOverrides).map(([role,binding]) => [role,Object.hasOwn(binding,'model') ? {model:binding.model} : {}]));
+    }
+    if (node.operation === 'scene-context' && controls.visibilityMode === 'actor') delete controls.visibilityMode;
     if (Object.hasOwn(TRANSPOSE_OPERATIONS, node.operation) && controls.inputKind === 'draft') delete controls.inputKind;
+    if (['read-file','write-file'].includes(node.operation) && controls.actorScope === 'selected') delete controls.actorScope;
+    if (['read-file','write-file'].includes(node.operation) && controls.actorId === '') delete controls.actorId;
+    if (node.operation === 'format' && controls.jsonShape === 'records') delete controls.jsonShape; // Additive default preserves earlier version-1 pins.
     if (node.operation === 'reroute') delete controls.artifactKind; // Already projected as typed node metadata.
     if (node.operation === 'context-join' && Array.isArray(controls.inputs)) controls.inputs = controls.inputs.map(slot => ({ id: slot.id }));
     if (node.operation === 'repair' && CLEANUP_MODES.includes(controls.mode)) controls.policyVersion = 1;

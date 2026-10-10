@@ -285,3 +285,49 @@ test('unknown, oversized and accessor-backed capability diagnostics never echo p
     }
     assert.equal(getterReads,0);
 });
+
+test('Write to File is a consequence root whose review artifact is the descriptive staging receipt',async()=>{assert.equal(describeFileNode(node('write-file'),{phase:'post'}).data.descriptor.terminal,true);const f=fixture(),read=must(await executeFileNode(node('read-file',{targetId:'sword'}),{},f.local));const result=must(await executeFileNode(node('write-file',{mode:'add',collectionPath:'/souls'}),{reference:read.outputs.reference,records:data([{id:'soul-1'}])},f.local));assert.equal(result.artifact,result.outputs.receipt);assert.equal(result.artifact.kind,'data');assert.equal(result.artifact.value.status,'staged');assert.equal(f.writes(),0);assert.equal(JSON.stringify(result.artifact).includes('"handle"'),false);});
+
+const actorPresence=actorId=>({kind:'data',value:{schemaVersion:1,recordType:'scene-presence',actorId,status:'present',sceneId:'scene',sourceId:'owned-scene',revision:'r1'}});
+test('actor presence mode requires a configured actor and exact required presence pin without changing selected ports',()=>{
+    for(const operation of ['read-file','write-file']){
+        const settings=operation==='read-file'?{targetId:'sword'}:{};
+        assert.equal(describeFileNode(node(operation,{...settings,actorScope:'presence'}),{phase:'post'}).ok,false);
+        const described=must(describeFileNode(node(operation,{...settings,actorScope:'presence',actorId:'character:mara.png'}),{phase:'post'}));
+        assert.equal(described.data.ports.find(pin=>pin.id==='presence').required,true);
+        assert.equal(describeFileNode(node(operation,{...settings,actorId:'character:mara.png'}),{phase:'post'}).ok,false);
+        assert.equal(must(describeFileNode(node(operation,settings),{phase:'post'})).data.ports.some(pin=>pin.id==='presence'),false);
+    }
+    assert.equal(FILE_OPERATIONS['project-document'].controls.includes('actorScope'),false);
+});
+test('presence-scoped Read passes exact authority, preserves actor labels, and Write checks the same captured actor',async()=>{
+    const actorId='character:mara.png',presence=actorPresence(actorId),calls=[];
+    const f=fixture('[]','json',{scope:{...scope,actorId},destinationVisibility:{kind:'actor-private',actorId},local:{authorizeActorFileScope:request=>{calls.push(request);assert.equal(request.presence,presence);return {ok:true,data:{actorId}};}}});
+    const read=must(await executeFileNode(node('read-file',{targetId:'sword',actorScope:'presence',actorId}),{presence},f.local));
+    assert.equal(read.outputs.text.visibility.actorId,actorId);
+    const write=must(await executeFileNode(node('write-file',{mode:'add',actorScope:'presence',actorId}),{presence,reference:read.outputs.reference,records:data([{id:'memory-1'}])},f.local));
+    assert.equal(write.outputs.projection.visibility.actorId,actorId);assert.equal(f.staged().length,1);assert.equal(f.writes(),0);
+    const other='character:elias.png',cross=await executeFileNode(node('write-file',{mode:'add',actorScope:'presence',actorId:other}),{presence:actorPresence(other),reference:read.outputs.reference,records:data([])},{...f.local,authorizeActorFileScope:()=>({ok:true,data:{actorId:other}})});
+    assert.equal(cross.error.code,'ACTOR_FILE_SCOPE_MISMATCH');assert.equal(f.staged().length,1);assert.ok(calls.length>=4);
+});
+test('presence file authority fails closed before file access, projects errors, and catches awaited mutation and cancellation',async()=>{
+    const actorId='character:mara.png',settings=node('read-file',{targetId:'sword',actorScope:'presence',actorId});
+    let reads=0;const files={read:async()=>{reads++;throw Error('must not read');}};
+    for(const authorizeActorFileScope of [undefined,()=>({ok:false,error:{code:'secret-token',message:'password',details:'password'}}),()=>({ok:true,data:{actorId:'other'}})]){
+        const result=await executeFileNode(settings,{presence:actorPresence(actorId)},{root:true,phase:'post',files,authorizeActorFileScope});assert.equal(result.ok,false);assert.equal(JSON.stringify(result).includes('password'),false);assert.equal(JSON.stringify(result).includes('secret-token'),false);
+    }
+    const presence=actorPresence(actorId);
+    const changed=await executeFileNode(settings,{presence},{root:true,phase:'post',files,authorizeActorFileScope:async()=>{presence.value.revision='changed';return {ok:true,data:{actorId}};}});
+    assert.equal(changed.error.code,'ACTOR_FILE_SCOPE_MISMATCH');assert.equal(Object.isFrozen(presence),false);
+    const controller=new AbortController();const canceled=await executeFileNode(settings,{presence:actorPresence(actorId)},{root:true,phase:'post',files,signal:controller.signal,authorizeActorFileScope:async()=>{controller.abort();return {ok:true,data:{actorId}};}});
+    assert.equal(canceled.error.code,'ABORTED');assert.equal(reads,0);
+});
+
+test('additive selected actor defaults preserve earlier version-one file definition controls and bodies',async()=>{
+ const {computeDefinitionIdentity}=await import('../src/workflow/definitions.js');
+ for(const operation of ['read-file','write-file']){
+  const n=node(operation,operation==='read-file'?{targetId:'sword'}:{}),body={schema:3,runtime:2,mode:'native-post',nodes:{[n.id]:n},wires:{},roles:{},portals:{}},definition={id:operation+'-helper',name:operation,version:1,interface:[],parameters:[],body};
+  const original=must(computeDefinitionIdentity(definition)).data,explicit=must(computeDefinitionIdentity({...definition,body:{...body,nodes:{[n.id]:{...n,actorScope:'selected',actorId:''}}}})).data;
+  assert.equal(original.semanticHash,explicit.semanticHash);assert.equal(Object.hasOwn(original.materializedDefinition.body.nodes[n.id],'actorScope'),false);assert.equal(Object.hasOwn(original.materializedDefinition.body.nodes[n.id],'actorId'),false);assert.equal(Object.hasOwn(JSON.parse(original.canonicalContent).body.nodes[n.id].controls,'actorScope'),false);
+ }
+});

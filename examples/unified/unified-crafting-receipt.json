@@ -1,0 +1,1249 @@
+{
+  "kind": "lattice-workflow",
+  "schema": 2,
+  "minRuntime": 2,
+  "graph": {
+    "id": "unified-example-crafting-receipt",
+    "name": "Crafting with exact costs and a specialist card",
+    "description": "Check ingredient counts before generation, confirm a completed crafting event, debit authored costs once using general State, and attach a quoted specialist card.\n\nSetup: Create public JSON crafting-state as {values:[{key:\"herbs\",value:3},{key:\"vials\",value:2},{key:\"potions\",value:0}],ledger:[]}. This finite recipe consumes two herbs and one vial and produces one potion. Edit costs together with the inventory precheck. Bind Prose and the confirmation helper decision. Actual completion in the final narrative is required; a suggestion or failed attempt consumes nothing. The reward ledger protects repeated Apply. New narrative revisions need an authored stable objective identity if they represent the same canonical craft.\n\nInspect: On Send owns this generation. Generate Reply uses the ordinary SillyTavern connection. Auxiliary roles remain unassigned in this portable example. Review the final narrative and proposed consequences; Apply publishes a new swipe and settles staged writes. Preview and bounded runs never settle.\n\nGenerated suggestions are proposals. Quoted observations preserve source identity; notes never establish canonical events. Private records cannot be appended to public notes.",
+    "schema": 3,
+    "runtime": 2,
+    "mode": "native-unified",
+    "nodes": {
+      "send": {
+        "id": "send",
+        "type": "workflow",
+        "operation": "on-send",
+        "operationVersion": 1,
+        "title": "On Send",
+        "enabled": true,
+        "x": 80,
+        "y": 120,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null
+      },
+      "generate": {
+        "id": "generate",
+        "type": "workflow",
+        "operation": "generate-reply",
+        "operationVersion": 1,
+        "title": "Generate Reply · SillyTavern",
+        "enabled": true,
+        "x": 820,
+        "y": 120,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "budgetTokens": 768
+      },
+      "review": {
+        "id": "review",
+        "type": "workflow",
+        "operation": "review-publish",
+        "operationVersion": 1,
+        "title": "Review / Publish",
+        "enabled": true,
+        "x": 2670,
+        "y": 120,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null
+      },
+      "inventory-file": {
+        "id": "inventory-file",
+        "type": "workflow",
+        "operation": "read-file",
+        "operationVersion": 1,
+        "title": "Read File",
+        "enabled": true,
+        "x": 80,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "targetId": "crafting-state",
+        "schema": "",
+        "columns": [],
+        "actorScope": "selected",
+        "actorId": ""
+      },
+      "inventory": {
+        "id": "inventory",
+        "type": "workflow",
+        "operation": "json-decode",
+        "operationVersion": 1,
+        "title": "JSON Decode",
+        "enabled": true,
+        "x": 450,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "parse",
+        "schema": ""
+      },
+      "herbs": {
+        "id": "herbs",
+        "type": "workflow",
+        "operation": "collection",
+        "operationVersion": 1,
+        "title": "Collection",
+        "enabled": true,
+        "x": 820,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "filter",
+        "collectionPath": [
+          "values"
+        ],
+        "fieldPath": [
+          "key"
+        ],
+        "value": "herbs",
+        "operator": "equals",
+        "missingPolicy": "hold",
+        "thresholds": "[]",
+        "mergePolicy": "keep-all",
+        "identityPath": [
+          "id"
+        ]
+      },
+      "herb-count": {
+        "id": "herb-count",
+        "type": "workflow",
+        "operation": "collection",
+        "operationVersion": 1,
+        "title": "Collection",
+        "enabled": true,
+        "x": 1190,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "sum",
+        "collectionPath": [],
+        "fieldPath": [
+          "value"
+        ],
+        "value": "",
+        "operator": "equals",
+        "missingPolicy": "hold",
+        "thresholds": "[]",
+        "mergePolicy": "keep-all",
+        "identityPath": [
+          "id"
+        ]
+      },
+      "enough-herbs": {
+        "id": "enough-herbs",
+        "type": "workflow",
+        "operation": "condition",
+        "operationVersion": 1,
+        "title": "Condition",
+        "enabled": true,
+        "x": 1560,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "path": [],
+        "operator": "at-least",
+        "value": 2
+      },
+      "vials": {
+        "id": "vials",
+        "type": "workflow",
+        "operation": "collection",
+        "operationVersion": 1,
+        "title": "Collection",
+        "enabled": true,
+        "x": 820,
+        "y": 840,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "filter",
+        "collectionPath": [
+          "values"
+        ],
+        "fieldPath": [
+          "key"
+        ],
+        "value": "vials",
+        "operator": "equals",
+        "missingPolicy": "hold",
+        "thresholds": "[]",
+        "mergePolicy": "keep-all",
+        "identityPath": [
+          "id"
+        ]
+      },
+      "vial-count": {
+        "id": "vial-count",
+        "type": "workflow",
+        "operation": "collection",
+        "operationVersion": 1,
+        "title": "Collection",
+        "enabled": true,
+        "x": 1190,
+        "y": 840,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "sum",
+        "collectionPath": [],
+        "fieldPath": [
+          "value"
+        ],
+        "value": "",
+        "operator": "equals",
+        "missingPolicy": "hold",
+        "thresholds": "[]",
+        "mergePolicy": "keep-all",
+        "identityPath": [
+          "id"
+        ]
+      },
+      "enough-vials": {
+        "id": "enough-vials",
+        "type": "workflow",
+        "operation": "condition",
+        "operationVersion": 1,
+        "title": "Condition",
+        "enabled": true,
+        "x": 1560,
+        "y": 840,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "path": [],
+        "operator": "at-least",
+        "value": 1
+      },
+      "inventory-check": {
+        "id": "inventory-check",
+        "type": "workflow",
+        "operation": "collect",
+        "operationVersion": 1,
+        "title": "Collect",
+        "enabled": true,
+        "x": 1930,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "artifactKind": "data",
+        "inputs": [
+          {
+            "id": "herbs",
+            "label": "Two herbs available",
+            "required": true
+          },
+          {
+            "id": "vials",
+            "label": "One vial available",
+            "required": true
+          }
+        ]
+      },
+      "craft-guidance": {
+        "id": "craft-guidance",
+        "type": "workflow",
+        "operation": "compose",
+        "operationVersion": 1,
+        "title": "Compose",
+        "enabled": true,
+        "x": 2300,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "template",
+        "outputKind": "guidance",
+        "template": "The attempted potion recipe requires two herbs and one vial. Check BOTH accepted values in {{data:}}. If either is false, do not complete crafting or consume anything. If both are true, narrate only the attempted craft and preserve player choices.",
+        "sections": [],
+        "separator": "\n\n"
+      },
+      "source-scope-text": {
+        "id": "source-scope-text",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 80,
+        "y": 1080,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "text": "{\"sourceId\":\"native-scene-body\",\"revision\":\"initial\",\"sceneId\":\"current-scene\",\"visibility\":\"public\"}"
+      },
+      "source-scope": {
+        "id": "source-scope",
+        "type": "workflow",
+        "operation": "json-decode",
+        "operationVersion": 1,
+        "title": "JSON Decode",
+        "enabled": true,
+        "x": 450,
+        "y": 1080,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "parse",
+        "schema": ""
+      },
+      "event-source": {
+        "id": "event-source",
+        "type": "workflow",
+        "operation": "draft-event-source",
+        "operationVersion": 1,
+        "title": "Draft Event Source",
+        "enabled": true,
+        "x": 1190,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null
+      },
+      "entities-text": {
+        "id": "entities-text",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 80,
+        "y": 840,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "text": "{\"actorIds\":[\"mara\"],\"itemIds\":[]}"
+      },
+      "entities": {
+        "id": "entities",
+        "type": "workflow",
+        "operation": "json-decode",
+        "operationVersion": 1,
+        "title": "JSON Decode",
+        "enabled": true,
+        "x": 450,
+        "y": 840,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "parse",
+        "schema": ""
+      },
+      "action-request": {
+        "id": "action-request",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 1190,
+        "y": 1080,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "text": "Only an explicitly successfully completed two-herb, one-vial potion craft by mara qualifies. Failed, planned or insufficient-material attempts do not. Return a raw JSON array of candidates with eventType:\"scene-action\", actorId, objectId only when an identified other actor participates, itemId only when relevant, position:{start,end}, semantics:\"actual\". Use only supplied canonical IDs and exact UTF-16 spans in source.text. Return [] for no actual occurrence."
+      },
+      "action-candidates": {
+        "id": "action-candidates",
+        "type": "workflow",
+        "operation": "model-call",
+        "operationVersion": 1,
+        "title": "Model Call",
+        "enabled": true,
+        "x": 1560,
+        "y": 1080,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": "Prose",
+        "instructions": "",
+        "outputKind": "data",
+        "schema": "",
+        "maxTokens": 2048
+      },
+      "normalize": {
+        "id": "normalize",
+        "type": "workflow",
+        "operation": "event-normalize",
+        "operationVersion": 1,
+        "title": "Event Normalize",
+        "enabled": true,
+        "x": 1930,
+        "y": 1080,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "candidates",
+        "eventType": "",
+        "absoluteMinute": -1
+      },
+      "confirm-each": {
+        "id": "confirm-each",
+        "type": "workflow",
+        "operation": "for-each",
+        "operationVersion": 1,
+        "title": "For Each",
+        "enabled": true,
+        "x": 1560,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "helper": {
+          "id": "crafting-receipt-confirm",
+          "version": 1,
+          "semanticHash": "sha256:375653d28b5cc76bcb233d82bdb607576249495c2c5f6612ada7afb2ec8ff935"
+        },
+        "limit": 4,
+        "requestBoundPerIteration": 1,
+        "mode": "map",
+        "roleOverrides": {}
+      },
+      "confirmed": {
+        "id": "confirmed",
+        "type": "workflow",
+        "operation": "collection",
+        "operationVersion": 1,
+        "title": "Collection",
+        "enabled": true,
+        "x": 1930,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "flatten",
+        "collectionPath": [],
+        "fieldPath": [],
+        "value": "",
+        "operator": "equals",
+        "missingPolicy": "hold",
+        "thresholds": "[]",
+        "mergePolicy": "keep-all",
+        "identityPath": [
+          "id"
+        ]
+      },
+      "craft-event": {
+        "id": "craft-event",
+        "type": "workflow",
+        "operation": "event-normalize",
+        "operationVersion": 1,
+        "title": "Event Normalize",
+        "enabled": true,
+        "x": 2670,
+        "y": 1320,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "progression",
+        "eventType": "potion-crafted",
+        "absoluteMinute": -1
+      },
+      "herb-events": {
+        "id": "herb-events",
+        "type": "workflow",
+        "operation": "branch",
+        "operationVersion": 1,
+        "title": "Branch",
+        "enabled": true,
+        "x": 2300,
+        "y": 1320,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "artifactKind": "data"
+      },
+      "vial-events": {
+        "id": "vial-events",
+        "type": "workflow",
+        "operation": "branch",
+        "operationVersion": 1,
+        "title": "Branch",
+        "enabled": true,
+        "x": 2300,
+        "y": 1560,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "artifactKind": "data"
+      },
+      "costs-text": {
+        "id": "costs-text",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 80,
+        "y": 1800,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "text": "{\"ruleSetId\":\"potion-recipe\",\"revision\":1,\"rules\":[{\"ruleId\":\"consume-herbs\",\"eventType\":\"potion-crafted\",\"targetKey\":\"herbs\",\"identityFields\":[\"occurrenceId\"],\"mode\":\"add\",\"amount\":-2,\"min\":0,\"max\":999},{\"ruleId\":\"consume-vial\",\"eventType\":\"potion-crafted\",\"targetKey\":\"vials\",\"identityFields\":[\"occurrenceId\"],\"mode\":\"add\",\"amount\":-1,\"min\":0,\"max\":999},{\"ruleId\":\"produce-potion\",\"eventType\":\"potion-crafted\",\"targetKey\":\"potions\",\"identityFields\":[\"occurrenceId\"],\"mode\":\"add\",\"amount\":1,\"min\":0,\"max\":999}]}"
+      },
+      "costs": {
+        "id": "costs",
+        "type": "workflow",
+        "operation": "json-decode",
+        "operationVersion": 1,
+        "title": "JSON Decode",
+        "enabled": true,
+        "x": 450,
+        "y": 1800,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "parse",
+        "schema": ""
+      },
+      "project-inventory": {
+        "id": "project-inventory",
+        "type": "workflow",
+        "operation": "state",
+        "operationVersion": 1,
+        "title": "State",
+        "enabled": true,
+        "x": 3040,
+        "y": 1320,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "progression"
+      },
+      "serialized": {
+        "id": "serialized",
+        "type": "workflow",
+        "operation": "format",
+        "operationVersion": 1,
+        "title": "Format",
+        "enabled": true,
+        "x": 3410,
+        "y": 1320,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "inputMode": "records",
+        "format": "json",
+        "jsonShape": "single",
+        "mapping": "preserve",
+        "fields": [],
+        "schema": "",
+        "columns": [],
+        "separator": "\n",
+        "trailingSeparator": false
+      },
+      "save": {
+        "id": "save",
+        "type": "workflow",
+        "operation": "write-file",
+        "operationVersion": 1,
+        "title": "Write to File",
+        "enabled": true,
+        "x": 3780,
+        "y": 1320,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "replace",
+        "collectionPath": "",
+        "missingPath": "error",
+        "key": "id",
+        "fieldPolicy": "merge",
+        "fields": [],
+        "schema": "",
+        "columns": [],
+        "separator": "\n",
+        "emptyPolicy": "omit",
+        "trailingSeparator": false,
+        "actorScope": "selected",
+        "actorId": ""
+      },
+      "properties": {
+        "id": "properties",
+        "type": "workflow",
+        "operation": "extract",
+        "operationVersion": 1,
+        "title": "Extract",
+        "enabled": true,
+        "x": 3040,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": "Prose",
+        "inputKind": "draft",
+        "mode": "model",
+        "instructions": "Extract observed properties of the completed potion with exact quotes. Do not invent hidden mechanics or a free future experiment.",
+        "schema": "",
+        "patterns": [],
+        "maxTokens": 2048
+      },
+      "specialist": {
+        "id": "specialist",
+        "type": "workflow",
+        "operation": "enrich",
+        "operationVersion": 1,
+        "title": "Enrich",
+        "enabled": true,
+        "x": 3410,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": "Prose",
+        "instructions": "Suggest one sensory description and one future trial for each existing property. Clearly label those additions as proposals. They do not consume another ingredient.",
+        "maxTokens": 2048
+      },
+      "card": {
+        "id": "card",
+        "type": "workflow",
+        "operation": "render-notes",
+        "operationVersion": 1,
+        "title": "Potion properties and proposed trial",
+        "enabled": true,
+        "x": 3780,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "format": "html"
+      },
+      "append": {
+        "id": "append",
+        "type": "workflow",
+        "operation": "append",
+        "operationVersion": 1,
+        "title": "Append",
+        "enabled": true,
+        "x": 4150,
+        "y": 120,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "sectionId": "craft-card",
+        "separator": "\n\n"
+      }
+    },
+    "wires": {
+      "wire-1": {
+        "id": "wire-1",
+        "route": "wire",
+        "from": "send",
+        "fromPort": "activation",
+        "to": "generate",
+        "toPort": "activation"
+      },
+      "wire-2": {
+        "id": "wire-2",
+        "route": "wire",
+        "from": "inventory-file",
+        "fromPort": "text",
+        "to": "inventory",
+        "toPort": "in"
+      },
+      "wire-3": {
+        "id": "wire-3",
+        "route": "wire",
+        "from": "inventory",
+        "fromPort": "out",
+        "to": "herbs",
+        "toPort": "in"
+      },
+      "wire-4": {
+        "id": "wire-4",
+        "route": "wire",
+        "from": "herbs",
+        "fromPort": "out",
+        "to": "herb-count",
+        "toPort": "in"
+      },
+      "wire-5": {
+        "id": "wire-5",
+        "route": "wire",
+        "from": "herb-count",
+        "fromPort": "out",
+        "to": "enough-herbs",
+        "toPort": "in"
+      },
+      "wire-6": {
+        "id": "wire-6",
+        "route": "wire",
+        "from": "inventory",
+        "fromPort": "out",
+        "to": "vials",
+        "toPort": "in"
+      },
+      "wire-7": {
+        "id": "wire-7",
+        "route": "wire",
+        "from": "vials",
+        "fromPort": "out",
+        "to": "vial-count",
+        "toPort": "in"
+      },
+      "wire-8": {
+        "id": "wire-8",
+        "route": "wire",
+        "from": "vial-count",
+        "fromPort": "out",
+        "to": "enough-vials",
+        "toPort": "in"
+      },
+      "wire-9": {
+        "id": "wire-9",
+        "route": "wire",
+        "from": "enough-herbs",
+        "fromPort": "out",
+        "to": "inventory-check",
+        "toPort": "herbs"
+      },
+      "wire-10": {
+        "id": "wire-10",
+        "route": "wire",
+        "from": "enough-vials",
+        "fromPort": "out",
+        "to": "inventory-check",
+        "toPort": "vials"
+      },
+      "wire-11": {
+        "id": "wire-11",
+        "route": "wire",
+        "from": "inventory-check",
+        "fromPort": "out",
+        "to": "craft-guidance",
+        "toPort": "data"
+      },
+      "wire-12": {
+        "id": "wire-12",
+        "route": "wire",
+        "from": "craft-guidance",
+        "fromPort": "out",
+        "to": "generate",
+        "toPort": "guidance"
+      },
+      "wire-13": {
+        "id": "wire-13",
+        "route": "wire",
+        "from": "source-scope-text",
+        "fromPort": "out",
+        "to": "source-scope",
+        "toPort": "in"
+      },
+      "wire-14": {
+        "id": "wire-14",
+        "route": "wire",
+        "from": "generate",
+        "fromPort": "draft",
+        "to": "event-source",
+        "toPort": "in"
+      },
+      "wire-15": {
+        "id": "wire-15",
+        "route": "wire",
+        "from": "source-scope",
+        "fromPort": "out",
+        "to": "event-source",
+        "toPort": "scope"
+      },
+      "wire-16": {
+        "id": "wire-16",
+        "route": "wire",
+        "from": "entities-text",
+        "fromPort": "out",
+        "to": "entities",
+        "toPort": "in"
+      },
+      "wire-17": {
+        "id": "wire-17",
+        "route": "wire",
+        "from": "action-request",
+        "fromPort": "out",
+        "to": "action-candidates",
+        "toPort": "prompt"
+      },
+      "wire-18": {
+        "id": "wire-18",
+        "route": "wire",
+        "from": "event-source",
+        "fromPort": "out",
+        "to": "action-candidates",
+        "toPort": "data"
+      },
+      "wire-19": {
+        "id": "wire-19",
+        "route": "wire",
+        "from": "event-source",
+        "fromPort": "out",
+        "to": "normalize",
+        "toPort": "source"
+      },
+      "wire-20": {
+        "id": "wire-20",
+        "route": "wire",
+        "from": "entities",
+        "fromPort": "out",
+        "to": "normalize",
+        "toPort": "entities"
+      },
+      "wire-21": {
+        "id": "wire-21",
+        "route": "wire",
+        "from": "action-candidates",
+        "fromPort": "out",
+        "to": "normalize",
+        "toPort": "candidates"
+      },
+      "wire-22": {
+        "id": "wire-22",
+        "route": "wire",
+        "from": "normalize",
+        "fromPort": "out",
+        "to": "confirm-each",
+        "toPort": "in"
+      },
+      "wire-23": {
+        "id": "wire-23",
+        "route": "wire",
+        "from": "confirm-each",
+        "fromPort": "out",
+        "to": "confirmed",
+        "toPort": "in"
+      },
+      "wire-24": {
+        "id": "wire-24",
+        "route": "wire",
+        "from": "confirmed",
+        "fromPort": "out",
+        "to": "herb-events",
+        "toPort": "in"
+      },
+      "wire-25": {
+        "id": "wire-25",
+        "route": "wire",
+        "from": "enough-herbs",
+        "fromPort": "out",
+        "to": "herb-events",
+        "toPort": "condition"
+      },
+      "wire-26": {
+        "id": "wire-26",
+        "route": "wire",
+        "from": "herb-events",
+        "fromPort": "yes",
+        "to": "vial-events",
+        "toPort": "in"
+      },
+      "wire-27": {
+        "id": "wire-27",
+        "route": "wire",
+        "from": "enough-vials",
+        "fromPort": "out",
+        "to": "vial-events",
+        "toPort": "condition"
+      },
+      "wire-28": {
+        "id": "wire-28",
+        "route": "wire",
+        "from": "vial-events",
+        "fromPort": "yes",
+        "to": "craft-event",
+        "toPort": "events"
+      },
+      "wire-29": {
+        "id": "wire-29",
+        "route": "wire",
+        "from": "costs-text",
+        "fromPort": "out",
+        "to": "costs",
+        "toPort": "in"
+      },
+      "wire-30": {
+        "id": "wire-30",
+        "route": "wire",
+        "from": "inventory",
+        "fromPort": "out",
+        "to": "project-inventory",
+        "toPort": "state"
+      },
+      "wire-31": {
+        "id": "wire-31",
+        "route": "wire",
+        "from": "craft-event",
+        "fromPort": "out",
+        "to": "project-inventory",
+        "toPort": "events"
+      },
+      "wire-32": {
+        "id": "wire-32",
+        "route": "wire",
+        "from": "costs",
+        "fromPort": "out",
+        "to": "project-inventory",
+        "toPort": "rules"
+      },
+      "wire-33": {
+        "id": "wire-33",
+        "route": "wire",
+        "from": "project-inventory",
+        "fromPort": "out",
+        "to": "serialized",
+        "toPort": "in"
+      },
+      "wire-34": {
+        "id": "wire-34",
+        "route": "wire",
+        "from": "inventory-file",
+        "fromPort": "reference",
+        "to": "save",
+        "toPort": "reference"
+      },
+      "wire-35": {
+        "id": "wire-35",
+        "route": "wire",
+        "from": "serialized",
+        "fromPort": "text",
+        "to": "save",
+        "toPort": "text"
+      },
+      "wire-36": {
+        "id": "wire-36",
+        "route": "wire",
+        "from": "confirmed",
+        "fromPort": "out",
+        "to": "save",
+        "toPort": "evidence"
+      },
+      "wire-37": {
+        "id": "wire-37",
+        "route": "wire",
+        "from": "generate",
+        "fromPort": "draft",
+        "to": "properties",
+        "toPort": "source"
+      },
+      "wire-38": {
+        "id": "wire-38",
+        "route": "wire",
+        "from": "properties",
+        "fromPort": "out",
+        "to": "specialist",
+        "toPort": "data"
+      },
+      "wire-39": {
+        "id": "wire-39",
+        "route": "wire",
+        "from": "specialist",
+        "fromPort": "out",
+        "to": "card",
+        "toPort": "data"
+      },
+      "wire-40": {
+        "id": "wire-40",
+        "route": "wire",
+        "from": "generate",
+        "fromPort": "draft",
+        "to": "append",
+        "toPort": "draft"
+      },
+      "wire-41": {
+        "id": "wire-41",
+        "route": "wire",
+        "from": "card",
+        "fromPort": "out",
+        "to": "append",
+        "toPort": "section"
+      },
+      "wire-42": {
+        "id": "wire-42",
+        "route": "wire",
+        "from": "append",
+        "fromPort": "out",
+        "to": "review",
+        "toPort": "draft"
+      }
+    },
+    "groups": {},
+    "roles": {
+      "Prose": {
+        "model": null,
+        "profileId": null
+      }
+    },
+    "portals": {},
+    "definitions": {
+      "[\"crafting-receipt-confirm\",1,\"sha256:375653d28b5cc76bcb233d82bdb607576249495c2c5f6612ada7afb2ec8ff935\"]": {
+        "id": "crafting-receipt-confirm",
+        "version": 1,
+        "semanticHash": "sha256:375653d28b5cc76bcb233d82bdb607576249495c2c5f6612ada7afb2ec8ff935",
+        "name": "Confirm each occurrence",
+        "description": "Pinned bounded pure helper. Inspect each selected child request; errors and unresolved decisions hold the parent.",
+        "interface": [
+          {
+            "id": "item",
+            "label": "Item",
+            "direction": "input",
+            "kind": "data",
+            "required": true,
+            "cardinality": "one",
+            "boundaryNodeId": "item"
+          },
+          {
+            "id": "result",
+            "label": "Result",
+            "direction": "output",
+            "kind": "data",
+            "required": false,
+            "cardinality": "one",
+            "boundaryNodeId": "result"
+          }
+        ],
+        "parameters": [],
+        "body": {
+          "schema": 3,
+          "runtime": 2,
+          "mode": "native-unified",
+          "nodes": {
+            "item": {
+              "id": "item",
+              "type": "subgraph-input",
+              "interfacePortId": "item"
+            },
+            "result": {
+              "id": "result",
+              "type": "subgraph-output",
+              "interfacePortId": "result"
+            },
+            "records": {
+              "id": "records",
+              "type": "workflow",
+              "operation": "format",
+              "operationVersion": 1,
+              "title": "Format",
+              "enabled": true,
+              "x": 400,
+              "y": 120,
+              "w": 270,
+              "h": 170,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "inputMode": "records",
+              "format": "json",
+              "mapping": "preserve",
+              "fields": [],
+              "schema": "",
+              "columns": [],
+              "separator": "\n",
+              "trailingSeparator": false
+            },
+            "check": {
+              "id": "check",
+              "type": "workflow",
+              "operation": "decision",
+              "operationVersion": 1,
+              "title": "Decision",
+              "enabled": true,
+              "x": 400,
+              "y": 120,
+              "w": 270,
+              "h": 170,
+              "profileId": null,
+              "model": null,
+              "modelRole": "decision",
+              "inputKind": "data",
+              "questions": {
+                "actual": {
+                  "type": "noul",
+                  "instructions": "Only an explicitly successfully completed two-herb, one-vial potion craft by mara qualifies. Failed, planned or insufficient-material attempts do not. Does this exact quoted event actually occur, with the stated actors and item, rather than being mentioned, claimed, planned, remembered or threatened?"
+                }
+              },
+              "maxTokens": 2048
+            },
+            "acceptance": {
+              "id": "acceptance",
+              "type": "workflow",
+              "operation": "select-fields",
+              "operationVersion": 1,
+              "title": "Select Fields",
+              "enabled": true,
+              "x": 400,
+              "y": 120,
+              "w": 270,
+              "h": 170,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "fields": [
+                {
+                  "name": "accepted",
+                  "path": [
+                    "answers",
+                    "actual",
+                    "accepted"
+                  ]
+                }
+              ]
+            },
+            "confirm": {
+              "id": "confirm",
+              "type": "workflow",
+              "operation": "confirm-events",
+              "operationVersion": 1,
+              "title": "Confirm Events",
+              "enabled": true,
+              "x": 400,
+              "y": 120,
+              "w": 270,
+              "h": 170,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "mode": "single-gate"
+            }
+          },
+          "wires": {
+            "w1": {
+              "id": "w1",
+              "route": "wire",
+              "from": "item",
+              "fromPort": "out",
+              "to": "records",
+              "toPort": "in"
+            },
+            "w2": {
+              "id": "w2",
+              "route": "wire",
+              "from": "item",
+              "fromPort": "out",
+              "to": "check",
+              "toPort": "in"
+            },
+            "w3": {
+              "id": "w3",
+              "route": "wire",
+              "from": "check",
+              "fromPort": "out",
+              "to": "acceptance",
+              "toPort": "in"
+            },
+            "w4": {
+              "id": "w4",
+              "route": "wire",
+              "from": "records",
+              "fromPort": "records",
+              "to": "confirm",
+              "toPort": "events"
+            },
+            "w5": {
+              "id": "w5",
+              "route": "wire",
+              "from": "acceptance",
+              "fromPort": "out",
+              "to": "confirm",
+              "toPort": "decisions"
+            },
+            "w6": {
+              "id": "w6",
+              "route": "wire",
+              "from": "confirm",
+              "fromPort": "out",
+              "to": "result",
+              "toPort": "in"
+            }
+          },
+          "roles": {
+            "decision": {
+              "model": null,
+              "profileId": null
+            }
+          }
+        }
+      }
+    },
+    "template": {
+      "id": "unified-crafting-receipt",
+      "version": 1
+    },
+    "view": {
+      "x": 0,
+      "y": 0,
+      "zoom": 0.7
+    }
+  }
+}

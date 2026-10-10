@@ -1,0 +1,1774 @@
+{
+  "kind": "lattice-workflow",
+  "schema": 2,
+  "minRuntime": 2,
+  "graph": {
+    "id": "unified-example-paired-kiss-memories",
+    "name": "A kiss leaves two separate private memories",
+    "description": "Normalize exact kiss evidence, make a Fast Decision with an explicit probability gate, and give each present character a separate private reflection model and unique accepted memory file.\n\nSetup: Load both actors and replace character:mara.png / character:elias.png everywhere with their real canonical avatar IDs. Create actor-private JSON mara-moments for Mara and elias-moments for Elias, each initially []. Bind Prose for candidate/cast/reflection models. Choose a real configured typed Fast connection on kiss-decision: the portable graph deliberately leaves fastConnectionId blank and never includes an endpoint or credential. Inspect/edit kiss-gate acceptMin 0.90 and rejectMax 0.10. These are authored policy thresholds, not a guarantee that provider probabilities are calibrated. A single quoted actual kiss is confirmed; plans, recalled kisses and uncertainty cannot write. Each reflection uses that actor’s exact Context and prior private file. Stable record/event ID and sourceRefs come from canonical evidence rather than the reflection model. Private memories never enter public notes. Apply adds each file uniquely by id; review both private receipts separately.\n\nInspect: On Send owns this generation. Generate Reply uses the ordinary SillyTavern connection. Auxiliary roles remain unassigned in this portable example. Review the final narrative and proposed consequences; Apply publishes a new swipe and settles staged writes. Preview and bounded runs never settle.\n\nGenerated suggestions are proposals. Quoted observations preserve source identity; notes never establish canonical events. Private records cannot be appended to public notes.",
+    "schema": 3,
+    "runtime": 2,
+    "mode": "native-unified",
+    "nodes": {
+      "send": {
+        "id": "send",
+        "type": "workflow",
+        "operation": "on-send",
+        "operationVersion": 1,
+        "title": "On Send",
+        "enabled": true,
+        "x": 80,
+        "y": 120,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null
+      },
+      "generate": {
+        "id": "generate",
+        "type": "workflow",
+        "operation": "generate-reply",
+        "operationVersion": 1,
+        "title": "Generate Reply · SillyTavern",
+        "enabled": true,
+        "x": 820,
+        "y": 120,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "budgetTokens": 768
+      },
+      "review": {
+        "id": "review",
+        "type": "workflow",
+        "operation": "review-publish",
+        "operationVersion": 1,
+        "title": "Review / Publish",
+        "enabled": true,
+        "x": 2670,
+        "y": 120,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null
+      },
+      "source-scope-text": {
+        "id": "source-scope-text",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 80,
+        "y": 1080,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "text": "{\"sourceId\":\"native-scene-body\",\"revision\":\"initial\",\"sceneId\":\"current-scene\",\"visibility\":\"public\"}"
+      },
+      "source-scope": {
+        "id": "source-scope",
+        "type": "workflow",
+        "operation": "json-decode",
+        "operationVersion": 1,
+        "title": "JSON Decode",
+        "enabled": true,
+        "x": 450,
+        "y": 1080,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "parse",
+        "schema": ""
+      },
+      "event-source": {
+        "id": "event-source",
+        "type": "workflow",
+        "operation": "draft-event-source",
+        "operationVersion": 1,
+        "title": "Draft Event Source",
+        "enabled": true,
+        "x": 1190,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null
+      },
+      "entities-text": {
+        "id": "entities-text",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 80,
+        "y": 840,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "text": "{\"actorIds\":[\"character:mara.png\",\"character:elias.png\"],\"itemIds\":[]}"
+      },
+      "entities": {
+        "id": "entities",
+        "type": "workflow",
+        "operation": "json-decode",
+        "operationVersion": 1,
+        "title": "JSON Decode",
+        "enabled": true,
+        "x": 450,
+        "y": 840,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "parse",
+        "schema": ""
+      },
+      "kiss-prompt": {
+        "id": "kiss-prompt",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 1190,
+        "y": 1080,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "text": "SCOPED KISS: Return a raw JSON array containing at most one actual kiss between character:mara.png and character:elias.png in data.text. Candidate shape {eventType:\"scene-action\",actorId:\"character:mara.png\",objectId:\"character:elias.png\",position:{start,end},semantics:\"actual\"}. Use the exact UTF-16 span that states the kiss. Mention, memory, desire, threat, plan or ambiguous implication must return []. Do not label anything confirmed."
+      },
+      "kiss-candidates": {
+        "id": "kiss-candidates",
+        "type": "workflow",
+        "operation": "model-call",
+        "operationVersion": 1,
+        "title": "Model Call",
+        "enabled": true,
+        "x": 1560,
+        "y": 1080,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": "Prose",
+        "instructions": "",
+        "outputKind": "data",
+        "schema": "",
+        "maxTokens": 2048
+      },
+      "kiss-events": {
+        "id": "kiss-events",
+        "type": "workflow",
+        "operation": "event-normalize",
+        "operationVersion": 1,
+        "title": "Event Normalize",
+        "enabled": true,
+        "x": 1930,
+        "y": 1080,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "candidates",
+        "eventType": "",
+        "absoluteMinute": -1
+      },
+      "kiss-count": {
+        "id": "kiss-count",
+        "type": "workflow",
+        "operation": "collection",
+        "operationVersion": 1,
+        "title": "Collection",
+        "enabled": true,
+        "x": 1930,
+        "y": 1560,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "count",
+        "collectionPath": [],
+        "fieldPath": [],
+        "value": "",
+        "operator": "equals",
+        "missingPolicy": "hold",
+        "thresholds": "[]",
+        "mergePolicy": "keep-all",
+        "identityPath": [
+          "id"
+        ]
+      },
+      "kiss-nonempty": {
+        "id": "kiss-nonempty",
+        "type": "workflow",
+        "operation": "condition",
+        "operationVersion": 1,
+        "title": "Condition",
+        "enabled": true,
+        "x": 2300,
+        "y": 1560,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "path": [],
+        "operator": "greater-than",
+        "value": 0
+      },
+      "kiss-candidate-route": {
+        "id": "kiss-candidate-route",
+        "type": "workflow",
+        "operation": "branch",
+        "operationVersion": 1,
+        "title": "Branch",
+        "enabled": true,
+        "x": 2300,
+        "y": 1320,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "artifactKind": "data"
+      },
+      "kiss-decision": {
+        "id": "kiss-decision",
+        "type": "workflow",
+        "operation": "fast-decision",
+        "operationVersion": 1,
+        "title": "Fast Decision",
+        "enabled": true,
+        "x": 2300,
+        "y": 1080,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": "fastDecision",
+        "inputKind": "data",
+        "questions": {
+          "kiss": {
+            "type": "noul",
+            "instructions": "Does this single exact canonical candidate quote establish a kiss that actually occurs now between character:mara.png and character:elias.png? Reject plans, memories, mentions, offscreen claims and ambiguous intimacy. Return probability only; this node does not establish consent or authorize escalation."
+          }
+        },
+        "maxTokens": 2048,
+        "fastConnectionId": "",
+        "fallbackEnabled": false,
+        "fallbackAllowedCodes": [],
+        "fallbackProfileId": ""
+      },
+      "kiss-gate": {
+        "id": "kiss-gate",
+        "type": "workflow",
+        "operation": "confidence-gate",
+        "operationVersion": 1,
+        "title": "Confidence Gate",
+        "enabled": true,
+        "x": 2670,
+        "y": 1080,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "metricPath": [
+          "answers",
+          "kiss",
+          "noul"
+        ],
+        "acceptMin": 0.9,
+        "rejectMax": 0.1,
+        "direction": "higher"
+      },
+      "confirmed-kiss": {
+        "id": "confirmed-kiss",
+        "type": "workflow",
+        "operation": "confirm-events",
+        "operationVersion": 1,
+        "title": "Confirm Events",
+        "enabled": true,
+        "x": 3040,
+        "y": 1080,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "single-gate"
+      },
+      "kiss-accepted": {
+        "id": "kiss-accepted",
+        "type": "workflow",
+        "operation": "condition",
+        "operationVersion": 1,
+        "title": "Condition",
+        "enabled": true,
+        "x": 3040,
+        "y": 840,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "path": [
+          "accepted"
+        ],
+        "operator": "equals",
+        "value": true
+      },
+      "cast-prompt": {
+        "id": "cast-prompt",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 3410,
+        "y": 360,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "text": "SCOPED CAST: Return exactly {sceneId,sourceId,revision,actors:[{actorId,status,evidence}]}. Copy identity from data. Check character:mara.png and character:elias.png only. Use status present, absent or unresolved. Present needs an exact quote from actual chat/native narrative showing participation. A remembered, named, hypothetical or offscreen character is not present. Never use character-card text as scene evidence."
+      },
+      "cast": {
+        "id": "cast",
+        "type": "workflow",
+        "operation": "model-call",
+        "operationVersion": 1,
+        "title": "Model Call",
+        "enabled": true,
+        "x": 3780,
+        "y": 360,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": "Prose",
+        "instructions": "",
+        "outputKind": "data",
+        "schema": "",
+        "maxTokens": 2048
+      },
+      "cast-prompt-gate": {
+        "id": "cast-prompt-gate",
+        "type": "workflow",
+        "operation": "branch",
+        "operationVersion": 1,
+        "title": "Branch",
+        "enabled": true,
+        "x": 3410,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "artifactKind": "text"
+      },
+      "mara-presence": {
+        "id": "mara-presence",
+        "type": "workflow",
+        "operation": "scene-presence",
+        "operationVersion": 1,
+        "title": "Scene Presence",
+        "enabled": true,
+        "x": 4150,
+        "y": 360,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "actorId": "character:mara.png"
+      },
+      "elias-presence": {
+        "id": "elias-presence",
+        "type": "workflow",
+        "operation": "scene-presence",
+        "operationVersion": 1,
+        "title": "Scene Presence",
+        "enabled": true,
+        "x": 4150,
+        "y": 600,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "actorId": "character:elias.png"
+      },
+      "source-ref": {
+        "id": "source-ref",
+        "type": "workflow",
+        "operation": "select-fields",
+        "operationVersion": 1,
+        "title": "Select Fields",
+        "enabled": true,
+        "x": 3410,
+        "y": 1320,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "fields": [
+          {
+            "name": "id",
+            "path": [
+              "0",
+              "source",
+              "sourceId"
+            ]
+          },
+          {
+            "name": "revision",
+            "path": [
+              "0",
+              "source",
+              "revision"
+            ]
+          }
+        ]
+      },
+      "source-ref-list": {
+        "id": "source-ref-list",
+        "type": "workflow",
+        "operation": "format",
+        "operationVersion": 1,
+        "title": "Format",
+        "enabled": true,
+        "x": 3780,
+        "y": 1320,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "inputMode": "records",
+        "format": "json",
+        "jsonShape": "records",
+        "mapping": "preserve",
+        "fields": [],
+        "schema": "",
+        "columns": [],
+        "separator": "\n",
+        "trailingSeparator": false
+      },
+      "source-refs": {
+        "id": "source-refs",
+        "type": "workflow",
+        "operation": "json-decode",
+        "operationVersion": 1,
+        "title": "JSON Decode",
+        "enabled": true,
+        "x": 4150,
+        "y": 1320,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "parse",
+        "schema": ""
+      },
+      "mara-is-present": {
+        "id": "mara-is-present",
+        "type": "workflow",
+        "operation": "condition",
+        "operationVersion": 1,
+        "title": "Condition",
+        "enabled": true,
+        "x": 1930,
+        "y": 1800,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "path": [
+          "status"
+        ],
+        "operator": "equals",
+        "value": "present"
+      },
+      "mara-present-route": {
+        "id": "mara-present-route",
+        "type": "workflow",
+        "operation": "branch",
+        "operationVersion": 1,
+        "title": "Branch",
+        "enabled": true,
+        "x": 1930,
+        "y": 2040,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "artifactKind": "data"
+      },
+      "mara-both-present": {
+        "id": "mara-both-present",
+        "type": "workflow",
+        "operation": "branch",
+        "operationVersion": 1,
+        "title": "Branch",
+        "enabled": true,
+        "x": 1930,
+        "y": 2280,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "artifactKind": "data"
+      },
+      "mara-context": {
+        "id": "mara-context",
+        "type": "workflow",
+        "operation": "actor-context",
+        "operationVersion": 1,
+        "title": "Actor Context",
+        "enabled": true,
+        "x": 2300,
+        "y": 1800,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "actorId": "character:mara.png"
+      },
+      "mara-file": {
+        "id": "mara-file",
+        "type": "workflow",
+        "operation": "read-file",
+        "operationVersion": 1,
+        "title": "Read File",
+        "enabled": true,
+        "x": 2300,
+        "y": 2040,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "targetId": "mara-moments",
+        "schema": "",
+        "columns": [],
+        "actorScope": "presence",
+        "actorId": "character:mara.png"
+      },
+      "mara-prompt": {
+        "id": "mara-prompt",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 2670,
+        "y": 2280,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "text": "SCOPED REFLECTION: Return exactly {reflection:string}. Reflect privately for character:mara.png on the supplied confirmed kiss, your own authorized character context and your own prior memories. Include the moment and restrained introspective feelings. Do not read or invent the partner’s private feelings, claim consent from a score, alter events, or invent an additional kiss."
+      },
+      "mara-reflection-input": {
+        "id": "mara-reflection-input",
+        "type": "workflow",
+        "operation": "collect",
+        "operationVersion": 1,
+        "title": "Collect",
+        "enabled": true,
+        "x": 2670,
+        "y": 1800,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "artifactKind": "data",
+        "inputs": [
+          {
+            "id": "event",
+            "label": "Canonical kiss",
+            "required": true
+          },
+          {
+            "id": "prior",
+            "label": "Own accepted memories",
+            "required": true
+          }
+        ]
+      },
+      "mara-prompt-live": {
+        "id": "mara-prompt-live",
+        "type": "workflow",
+        "operation": "branch",
+        "operationVersion": 1,
+        "title": "Branch",
+        "enabled": true,
+        "x": 2670,
+        "y": 2520,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "artifactKind": "text"
+      },
+      "mara-prompt-both": {
+        "id": "mara-prompt-both",
+        "type": "workflow",
+        "operation": "branch",
+        "operationVersion": 1,
+        "title": "Branch",
+        "enabled": true,
+        "x": 3040,
+        "y": 2520,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "artifactKind": "text"
+      },
+      "mara-reflect": {
+        "id": "mara-reflect",
+        "type": "workflow",
+        "operation": "model-call",
+        "operationVersion": 1,
+        "title": "Model Call",
+        "enabled": true,
+        "x": 3040,
+        "y": 1800,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": "Prose",
+        "instructions": "",
+        "outputKind": "data",
+        "schema": "",
+        "maxTokens": 2048
+      },
+      "mara-record-input": {
+        "id": "mara-record-input",
+        "type": "workflow",
+        "operation": "collect",
+        "operationVersion": 1,
+        "title": "Collect",
+        "enabled": true,
+        "x": 3410,
+        "y": 1800,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "artifactKind": "data",
+        "inputs": [
+          {
+            "id": "reflection",
+            "label": "Own pending reflection",
+            "required": true
+          },
+          {
+            "id": "events",
+            "label": "Exact canonical evidence",
+            "required": true
+          },
+          {
+            "id": "refs",
+            "label": "Canonical source IDs",
+            "required": true
+          }
+        ]
+      },
+      "mara-record": {
+        "id": "mara-record",
+        "type": "workflow",
+        "operation": "select-fields",
+        "operationVersion": 1,
+        "title": "Select Fields",
+        "enabled": true,
+        "x": 3780,
+        "y": 1800,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "fields": [
+          {
+            "name": "id",
+            "path": [
+              "1",
+              "0",
+              "eventId"
+            ]
+          },
+          {
+            "name": "eventId",
+            "path": [
+              "1",
+              "0",
+              "eventId"
+            ]
+          },
+          {
+            "name": "actorId",
+            "path": [
+              "missing"
+            ],
+            "required": false,
+            "default": "character:mara.png"
+          },
+          {
+            "name": "partnerIds",
+            "path": [
+              "missing"
+            ],
+            "required": false,
+            "default": [
+              "character:elias.png"
+            ]
+          },
+          {
+            "name": "tags",
+            "path": [
+              "missing"
+            ],
+            "required": false,
+            "default": [
+              "kiss"
+            ]
+          },
+          {
+            "name": "text",
+            "path": [
+              "0",
+              "reflection"
+            ]
+          },
+          {
+            "name": "sourceRefs",
+            "path": [
+              "2"
+            ]
+          }
+        ]
+      },
+      "mara-save": {
+        "id": "mara-save",
+        "type": "workflow",
+        "operation": "write-file",
+        "operationVersion": 1,
+        "title": "Write to File",
+        "enabled": true,
+        "x": 4150,
+        "y": 1800,
+        "w": 270,
+        "h": 170,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "add-unique",
+        "collectionPath": "",
+        "missingPath": "error",
+        "key": "id",
+        "fieldPolicy": "merge",
+        "fields": [],
+        "schema": "",
+        "columns": [],
+        "separator": "\n",
+        "emptyPolicy": "omit",
+        "trailingSeparator": false,
+        "actorScope": "presence",
+        "actorId": "character:mara.png"
+      },
+      "elias-is-present": {
+        "id": "elias-is-present",
+        "type": "workflow",
+        "operation": "condition",
+        "operationVersion": 1,
+        "title": "Condition",
+        "enabled": true,
+        "x": 1930,
+        "y": 2520,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "path": [
+          "status"
+        ],
+        "operator": "equals",
+        "value": "present"
+      },
+      "elias-present-route": {
+        "id": "elias-present-route",
+        "type": "workflow",
+        "operation": "branch",
+        "operationVersion": 1,
+        "title": "Branch",
+        "enabled": true,
+        "x": 1930,
+        "y": 2760,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "artifactKind": "data"
+      },
+      "elias-both-present": {
+        "id": "elias-both-present",
+        "type": "workflow",
+        "operation": "branch",
+        "operationVersion": 1,
+        "title": "Branch",
+        "enabled": true,
+        "x": 1930,
+        "y": 3000,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "artifactKind": "data"
+      },
+      "elias-context": {
+        "id": "elias-context",
+        "type": "workflow",
+        "operation": "actor-context",
+        "operationVersion": 1,
+        "title": "Actor Context",
+        "enabled": true,
+        "x": 2300,
+        "y": 2520,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "actorId": "character:elias.png"
+      },
+      "elias-file": {
+        "id": "elias-file",
+        "type": "workflow",
+        "operation": "read-file",
+        "operationVersion": 1,
+        "title": "Read File",
+        "enabled": true,
+        "x": 2300,
+        "y": 2760,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "targetId": "elias-moments",
+        "schema": "",
+        "columns": [],
+        "actorScope": "presence",
+        "actorId": "character:elias.png"
+      },
+      "elias-prompt": {
+        "id": "elias-prompt",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 2670,
+        "y": 3000,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "text": "SCOPED REFLECTION: Return exactly {reflection:string}. Reflect privately for character:elias.png on the supplied confirmed kiss, your own authorized character context and your own prior memories. Include the moment and restrained introspective feelings. Do not read or invent the partner’s private feelings, claim consent from a score, alter events, or invent an additional kiss."
+      },
+      "elias-reflection-input": {
+        "id": "elias-reflection-input",
+        "type": "workflow",
+        "operation": "collect",
+        "operationVersion": 1,
+        "title": "Collect",
+        "enabled": true,
+        "x": 2670,
+        "y": 2520,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "artifactKind": "data",
+        "inputs": [
+          {
+            "id": "event",
+            "label": "Canonical kiss",
+            "required": true
+          },
+          {
+            "id": "prior",
+            "label": "Own accepted memories",
+            "required": true
+          }
+        ]
+      },
+      "elias-prompt-live": {
+        "id": "elias-prompt-live",
+        "type": "workflow",
+        "operation": "branch",
+        "operationVersion": 1,
+        "title": "Branch",
+        "enabled": true,
+        "x": 2670,
+        "y": 3240,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "artifactKind": "text"
+      },
+      "elias-prompt-both": {
+        "id": "elias-prompt-both",
+        "type": "workflow",
+        "operation": "branch",
+        "operationVersion": 1,
+        "title": "Branch",
+        "enabled": true,
+        "x": 3040,
+        "y": 3240,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "artifactKind": "text"
+      },
+      "elias-reflect": {
+        "id": "elias-reflect",
+        "type": "workflow",
+        "operation": "model-call",
+        "operationVersion": 1,
+        "title": "Model Call",
+        "enabled": true,
+        "x": 3040,
+        "y": 2520,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": "Prose",
+        "instructions": "",
+        "outputKind": "data",
+        "schema": "",
+        "maxTokens": 2048
+      },
+      "elias-record-input": {
+        "id": "elias-record-input",
+        "type": "workflow",
+        "operation": "collect",
+        "operationVersion": 1,
+        "title": "Collect",
+        "enabled": true,
+        "x": 3410,
+        "y": 2520,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "artifactKind": "data",
+        "inputs": [
+          {
+            "id": "reflection",
+            "label": "Own pending reflection",
+            "required": true
+          },
+          {
+            "id": "events",
+            "label": "Exact canonical evidence",
+            "required": true
+          },
+          {
+            "id": "refs",
+            "label": "Canonical source IDs",
+            "required": true
+          }
+        ]
+      },
+      "elias-record": {
+        "id": "elias-record",
+        "type": "workflow",
+        "operation": "select-fields",
+        "operationVersion": 1,
+        "title": "Select Fields",
+        "enabled": true,
+        "x": 3780,
+        "y": 2520,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "fields": [
+          {
+            "name": "id",
+            "path": [
+              "1",
+              "0",
+              "eventId"
+            ]
+          },
+          {
+            "name": "eventId",
+            "path": [
+              "1",
+              "0",
+              "eventId"
+            ]
+          },
+          {
+            "name": "actorId",
+            "path": [
+              "missing"
+            ],
+            "required": false,
+            "default": "character:elias.png"
+          },
+          {
+            "name": "partnerIds",
+            "path": [
+              "missing"
+            ],
+            "required": false,
+            "default": [
+              "character:mara.png"
+            ]
+          },
+          {
+            "name": "tags",
+            "path": [
+              "missing"
+            ],
+            "required": false,
+            "default": [
+              "kiss"
+            ]
+          },
+          {
+            "name": "text",
+            "path": [
+              "0",
+              "reflection"
+            ]
+          },
+          {
+            "name": "sourceRefs",
+            "path": [
+              "2"
+            ]
+          }
+        ]
+      },
+      "elias-save": {
+        "id": "elias-save",
+        "type": "workflow",
+        "operation": "write-file",
+        "operationVersion": 1,
+        "title": "Write to File",
+        "enabled": true,
+        "x": 4150,
+        "y": 2520,
+        "w": 270,
+        "h": 170,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "add-unique",
+        "collectionPath": "",
+        "missingPath": "error",
+        "key": "id",
+        "fieldPolicy": "merge",
+        "fields": [],
+        "schema": "",
+        "columns": [],
+        "separator": "\n",
+        "emptyPolicy": "omit",
+        "trailingSeparator": false,
+        "actorScope": "presence",
+        "actorId": "character:elias.png"
+      }
+    },
+    "wires": {
+      "wire-1": {
+        "id": "wire-1",
+        "route": "wire",
+        "from": "send",
+        "fromPort": "activation",
+        "to": "generate",
+        "toPort": "activation"
+      },
+      "wire-2": {
+        "id": "wire-2",
+        "route": "wire",
+        "from": "source-scope-text",
+        "fromPort": "out",
+        "to": "source-scope",
+        "toPort": "in"
+      },
+      "wire-3": {
+        "id": "wire-3",
+        "route": "wire",
+        "from": "generate",
+        "fromPort": "draft",
+        "to": "event-source",
+        "toPort": "in"
+      },
+      "wire-4": {
+        "id": "wire-4",
+        "route": "wire",
+        "from": "source-scope",
+        "fromPort": "out",
+        "to": "event-source",
+        "toPort": "scope"
+      },
+      "wire-5": {
+        "id": "wire-5",
+        "route": "wire",
+        "from": "entities-text",
+        "fromPort": "out",
+        "to": "entities",
+        "toPort": "in"
+      },
+      "wire-6": {
+        "id": "wire-6",
+        "route": "wire",
+        "from": "kiss-prompt",
+        "fromPort": "out",
+        "to": "kiss-candidates",
+        "toPort": "prompt"
+      },
+      "wire-7": {
+        "id": "wire-7",
+        "route": "wire",
+        "from": "event-source",
+        "fromPort": "out",
+        "to": "kiss-candidates",
+        "toPort": "data"
+      },
+      "wire-8": {
+        "id": "wire-8",
+        "route": "wire",
+        "from": "event-source",
+        "fromPort": "out",
+        "to": "kiss-events",
+        "toPort": "source"
+      },
+      "wire-9": {
+        "id": "wire-9",
+        "route": "wire",
+        "from": "entities",
+        "fromPort": "out",
+        "to": "kiss-events",
+        "toPort": "entities"
+      },
+      "wire-10": {
+        "id": "wire-10",
+        "route": "wire",
+        "from": "kiss-candidates",
+        "fromPort": "out",
+        "to": "kiss-events",
+        "toPort": "candidates"
+      },
+      "wire-11": {
+        "id": "wire-11",
+        "route": "wire",
+        "from": "kiss-events",
+        "fromPort": "out",
+        "to": "kiss-count",
+        "toPort": "in"
+      },
+      "wire-12": {
+        "id": "wire-12",
+        "route": "wire",
+        "from": "kiss-count",
+        "fromPort": "out",
+        "to": "kiss-nonempty",
+        "toPort": "in"
+      },
+      "wire-13": {
+        "id": "wire-13",
+        "route": "wire",
+        "from": "kiss-events",
+        "fromPort": "out",
+        "to": "kiss-candidate-route",
+        "toPort": "in"
+      },
+      "wire-14": {
+        "id": "wire-14",
+        "route": "wire",
+        "from": "kiss-nonempty",
+        "fromPort": "out",
+        "to": "kiss-candidate-route",
+        "toPort": "condition"
+      },
+      "wire-15": {
+        "id": "wire-15",
+        "route": "wire",
+        "from": "kiss-candidate-route",
+        "fromPort": "yes",
+        "to": "kiss-decision",
+        "toPort": "in"
+      },
+      "wire-16": {
+        "id": "wire-16",
+        "route": "wire",
+        "from": "kiss-decision",
+        "fromPort": "out",
+        "to": "kiss-gate",
+        "toPort": "in"
+      },
+      "wire-17": {
+        "id": "wire-17",
+        "route": "wire",
+        "from": "kiss-candidate-route",
+        "fromPort": "yes",
+        "to": "confirmed-kiss",
+        "toPort": "events"
+      },
+      "wire-18": {
+        "id": "wire-18",
+        "route": "wire",
+        "from": "kiss-gate",
+        "fromPort": "accepted",
+        "to": "confirmed-kiss",
+        "toPort": "decisions"
+      },
+      "wire-19": {
+        "id": "wire-19",
+        "route": "wire",
+        "from": "kiss-gate",
+        "fromPort": "accepted",
+        "to": "kiss-accepted",
+        "toPort": "in"
+      },
+      "wire-20": {
+        "id": "wire-20",
+        "route": "wire",
+        "from": "cast-prompt",
+        "fromPort": "out",
+        "to": "cast-prompt-gate",
+        "toPort": "in"
+      },
+      "wire-21": {
+        "id": "wire-21",
+        "route": "wire",
+        "from": "kiss-accepted",
+        "fromPort": "out",
+        "to": "cast-prompt-gate",
+        "toPort": "condition"
+      },
+      "wire-22": {
+        "id": "wire-22",
+        "route": "wire",
+        "from": "cast-prompt-gate",
+        "fromPort": "yes",
+        "to": "cast",
+        "toPort": "prompt"
+      },
+      "wire-23": {
+        "id": "wire-23",
+        "route": "wire",
+        "from": "event-source",
+        "fromPort": "out",
+        "to": "cast",
+        "toPort": "data"
+      },
+      "wire-24": {
+        "id": "wire-24",
+        "route": "wire",
+        "from": "cast",
+        "fromPort": "out",
+        "to": "mara-presence",
+        "toPort": "in"
+      },
+      "wire-25": {
+        "id": "wire-25",
+        "route": "wire",
+        "from": "cast",
+        "fromPort": "out",
+        "to": "elias-presence",
+        "toPort": "in"
+      },
+      "wire-26": {
+        "id": "wire-26",
+        "route": "wire",
+        "from": "confirmed-kiss",
+        "fromPort": "out",
+        "to": "source-ref",
+        "toPort": "in"
+      },
+      "wire-27": {
+        "id": "wire-27",
+        "route": "wire",
+        "from": "source-ref",
+        "fromPort": "out",
+        "to": "source-ref-list",
+        "toPort": "in"
+      },
+      "wire-28": {
+        "id": "wire-28",
+        "route": "wire",
+        "from": "source-ref-list",
+        "fromPort": "text",
+        "to": "source-refs",
+        "toPort": "in"
+      },
+      "wire-29": {
+        "id": "wire-29",
+        "route": "wire",
+        "from": "mara-presence",
+        "fromPort": "out",
+        "to": "mara-is-present",
+        "toPort": "in"
+      },
+      "wire-30": {
+        "id": "wire-30",
+        "route": "wire",
+        "from": "mara-presence",
+        "fromPort": "out",
+        "to": "mara-present-route",
+        "toPort": "in"
+      },
+      "wire-31": {
+        "id": "wire-31",
+        "route": "wire",
+        "from": "mara-is-present",
+        "fromPort": "out",
+        "to": "mara-present-route",
+        "toPort": "condition"
+      },
+      "wire-32": {
+        "id": "wire-32",
+        "route": "wire",
+        "from": "mara-present-route",
+        "fromPort": "yes",
+        "to": "mara-both-present",
+        "toPort": "in"
+      },
+      "wire-33": {
+        "id": "wire-33",
+        "route": "wire",
+        "from": "elias-is-present",
+        "fromPort": "out",
+        "to": "mara-both-present",
+        "toPort": "condition"
+      },
+      "wire-34": {
+        "id": "wire-34",
+        "route": "wire",
+        "from": "mara-both-present",
+        "fromPort": "yes",
+        "to": "mara-context",
+        "toPort": "presence"
+      },
+      "wire-35": {
+        "id": "wire-35",
+        "route": "wire",
+        "from": "mara-both-present",
+        "fromPort": "yes",
+        "to": "mara-file",
+        "toPort": "presence"
+      },
+      "wire-36": {
+        "id": "wire-36",
+        "route": "wire",
+        "from": "confirmed-kiss",
+        "fromPort": "out",
+        "to": "mara-reflection-input",
+        "toPort": "event"
+      },
+      "wire-37": {
+        "id": "wire-37",
+        "route": "wire",
+        "from": "mara-file",
+        "fromPort": "document",
+        "to": "mara-reflection-input",
+        "toPort": "prior"
+      },
+      "wire-38": {
+        "id": "wire-38",
+        "route": "wire",
+        "from": "mara-prompt",
+        "fromPort": "out",
+        "to": "mara-prompt-live",
+        "toPort": "in"
+      },
+      "wire-39": {
+        "id": "wire-39",
+        "route": "wire",
+        "from": "mara-is-present",
+        "fromPort": "out",
+        "to": "mara-prompt-live",
+        "toPort": "condition"
+      },
+      "wire-40": {
+        "id": "wire-40",
+        "route": "wire",
+        "from": "mara-prompt-live",
+        "fromPort": "yes",
+        "to": "mara-prompt-both",
+        "toPort": "in"
+      },
+      "wire-41": {
+        "id": "wire-41",
+        "route": "wire",
+        "from": "elias-is-present",
+        "fromPort": "out",
+        "to": "mara-prompt-both",
+        "toPort": "condition"
+      },
+      "wire-42": {
+        "id": "wire-42",
+        "route": "wire",
+        "from": "mara-prompt-both",
+        "fromPort": "yes",
+        "to": "mara-reflect",
+        "toPort": "prompt"
+      },
+      "wire-43": {
+        "id": "wire-43",
+        "route": "wire",
+        "from": "mara-reflection-input",
+        "fromPort": "out",
+        "to": "mara-reflect",
+        "toPort": "data"
+      },
+      "wire-44": {
+        "id": "wire-44",
+        "route": "wire",
+        "from": "mara-context",
+        "fromPort": "out",
+        "to": "mara-reflect",
+        "toPort": "context"
+      },
+      "wire-45": {
+        "id": "wire-45",
+        "route": "wire",
+        "from": "mara-reflect",
+        "fromPort": "out",
+        "to": "mara-record-input",
+        "toPort": "reflection"
+      },
+      "wire-46": {
+        "id": "wire-46",
+        "route": "wire",
+        "from": "confirmed-kiss",
+        "fromPort": "out",
+        "to": "mara-record-input",
+        "toPort": "events"
+      },
+      "wire-47": {
+        "id": "wire-47",
+        "route": "wire",
+        "from": "source-refs",
+        "fromPort": "out",
+        "to": "mara-record-input",
+        "toPort": "refs"
+      },
+      "wire-48": {
+        "id": "wire-48",
+        "route": "wire",
+        "from": "mara-record-input",
+        "fromPort": "out",
+        "to": "mara-record",
+        "toPort": "in"
+      },
+      "wire-49": {
+        "id": "wire-49",
+        "route": "wire",
+        "from": "mara-file",
+        "fromPort": "reference",
+        "to": "mara-save",
+        "toPort": "reference"
+      },
+      "wire-50": {
+        "id": "wire-50",
+        "route": "wire",
+        "from": "mara-record",
+        "fromPort": "out",
+        "to": "mara-save",
+        "toPort": "records"
+      },
+      "wire-51": {
+        "id": "wire-51",
+        "route": "wire",
+        "from": "mara-both-present",
+        "fromPort": "yes",
+        "to": "mara-save",
+        "toPort": "presence"
+      },
+      "wire-52": {
+        "id": "wire-52",
+        "route": "wire",
+        "from": "confirmed-kiss",
+        "fromPort": "out",
+        "to": "mara-save",
+        "toPort": "evidence"
+      },
+      "wire-53": {
+        "id": "wire-53",
+        "route": "wire",
+        "from": "elias-presence",
+        "fromPort": "out",
+        "to": "elias-is-present",
+        "toPort": "in"
+      },
+      "wire-54": {
+        "id": "wire-54",
+        "route": "wire",
+        "from": "elias-presence",
+        "fromPort": "out",
+        "to": "elias-present-route",
+        "toPort": "in"
+      },
+      "wire-55": {
+        "id": "wire-55",
+        "route": "wire",
+        "from": "elias-is-present",
+        "fromPort": "out",
+        "to": "elias-present-route",
+        "toPort": "condition"
+      },
+      "wire-56": {
+        "id": "wire-56",
+        "route": "wire",
+        "from": "elias-present-route",
+        "fromPort": "yes",
+        "to": "elias-both-present",
+        "toPort": "in"
+      },
+      "wire-57": {
+        "id": "wire-57",
+        "route": "wire",
+        "from": "mara-is-present",
+        "fromPort": "out",
+        "to": "elias-both-present",
+        "toPort": "condition"
+      },
+      "wire-58": {
+        "id": "wire-58",
+        "route": "wire",
+        "from": "elias-both-present",
+        "fromPort": "yes",
+        "to": "elias-context",
+        "toPort": "presence"
+      },
+      "wire-59": {
+        "id": "wire-59",
+        "route": "wire",
+        "from": "elias-both-present",
+        "fromPort": "yes",
+        "to": "elias-file",
+        "toPort": "presence"
+      },
+      "wire-60": {
+        "id": "wire-60",
+        "route": "wire",
+        "from": "confirmed-kiss",
+        "fromPort": "out",
+        "to": "elias-reflection-input",
+        "toPort": "event"
+      },
+      "wire-61": {
+        "id": "wire-61",
+        "route": "wire",
+        "from": "elias-file",
+        "fromPort": "document",
+        "to": "elias-reflection-input",
+        "toPort": "prior"
+      },
+      "wire-62": {
+        "id": "wire-62",
+        "route": "wire",
+        "from": "elias-prompt",
+        "fromPort": "out",
+        "to": "elias-prompt-live",
+        "toPort": "in"
+      },
+      "wire-63": {
+        "id": "wire-63",
+        "route": "wire",
+        "from": "elias-is-present",
+        "fromPort": "out",
+        "to": "elias-prompt-live",
+        "toPort": "condition"
+      },
+      "wire-64": {
+        "id": "wire-64",
+        "route": "wire",
+        "from": "elias-prompt-live",
+        "fromPort": "yes",
+        "to": "elias-prompt-both",
+        "toPort": "in"
+      },
+      "wire-65": {
+        "id": "wire-65",
+        "route": "wire",
+        "from": "mara-is-present",
+        "fromPort": "out",
+        "to": "elias-prompt-both",
+        "toPort": "condition"
+      },
+      "wire-66": {
+        "id": "wire-66",
+        "route": "wire",
+        "from": "elias-prompt-both",
+        "fromPort": "yes",
+        "to": "elias-reflect",
+        "toPort": "prompt"
+      },
+      "wire-67": {
+        "id": "wire-67",
+        "route": "wire",
+        "from": "elias-reflection-input",
+        "fromPort": "out",
+        "to": "elias-reflect",
+        "toPort": "data"
+      },
+      "wire-68": {
+        "id": "wire-68",
+        "route": "wire",
+        "from": "elias-context",
+        "fromPort": "out",
+        "to": "elias-reflect",
+        "toPort": "context"
+      },
+      "wire-69": {
+        "id": "wire-69",
+        "route": "wire",
+        "from": "elias-reflect",
+        "fromPort": "out",
+        "to": "elias-record-input",
+        "toPort": "reflection"
+      },
+      "wire-70": {
+        "id": "wire-70",
+        "route": "wire",
+        "from": "confirmed-kiss",
+        "fromPort": "out",
+        "to": "elias-record-input",
+        "toPort": "events"
+      },
+      "wire-71": {
+        "id": "wire-71",
+        "route": "wire",
+        "from": "source-refs",
+        "fromPort": "out",
+        "to": "elias-record-input",
+        "toPort": "refs"
+      },
+      "wire-72": {
+        "id": "wire-72",
+        "route": "wire",
+        "from": "elias-record-input",
+        "fromPort": "out",
+        "to": "elias-record",
+        "toPort": "in"
+      },
+      "wire-73": {
+        "id": "wire-73",
+        "route": "wire",
+        "from": "elias-file",
+        "fromPort": "reference",
+        "to": "elias-save",
+        "toPort": "reference"
+      },
+      "wire-74": {
+        "id": "wire-74",
+        "route": "wire",
+        "from": "elias-record",
+        "fromPort": "out",
+        "to": "elias-save",
+        "toPort": "records"
+      },
+      "wire-75": {
+        "id": "wire-75",
+        "route": "wire",
+        "from": "elias-both-present",
+        "fromPort": "yes",
+        "to": "elias-save",
+        "toPort": "presence"
+      },
+      "wire-76": {
+        "id": "wire-76",
+        "route": "wire",
+        "from": "confirmed-kiss",
+        "fromPort": "out",
+        "to": "elias-save",
+        "toPort": "evidence"
+      },
+      "wire-77": {
+        "id": "wire-77",
+        "route": "wire",
+        "from": "generate",
+        "fromPort": "draft",
+        "to": "review",
+        "toPort": "draft"
+      }
+    },
+    "groups": {},
+    "roles": {
+      "Prose": {
+        "model": null,
+        "profileId": null
+      },
+      "fastDecision": {
+        "model": null,
+        "profileId": null
+      }
+    },
+    "portals": {},
+    "definitions": {},
+    "template": {
+      "id": "unified-paired-kiss-memories",
+      "version": 1
+    },
+    "view": {
+      "x": 0,
+      "y": 0,
+      "zoom": 0.7
+    }
+  }
+}
