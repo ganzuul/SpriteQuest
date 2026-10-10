@@ -1,5 +1,5 @@
 /*! Svelte runtime: Copyright (c) 2016-2025 Svelte Contributors. MIT license; see THIRD_PARTY_NOTICES.md. */
-//#region node_modules/svelte/src/internal/shared/utils.js
+//#region ../../node_modules/svelte/src/internal/shared/utils.js
 var e = Array.isArray, t = Array.prototype.indexOf, n = Array.prototype.includes, r = Array.from, i = Object.defineProperty, a = Object.getOwnPropertyDescriptor, o = Object.getOwnPropertyDescriptors, s = Object.prototype, c = Array.prototype, l = Object.getPrototypeOf, u = Object.isExtensible, d = () => {};
 function f(e) {
 	for (var t = 0; t < e.length; t++) e[t]();
@@ -29,7 +29,7 @@ function se(e) {
 	throw Error("https://svelte.dev/e/lifecycle_outside_component");
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/errors.js
+//#region ../../node_modules/svelte/src/internal/client/errors.js
 function ce() {
 	throw Error("https://svelte.dev/e/async_derived_orphan");
 }
@@ -64,7 +64,7 @@ function ve() {
 	throw Error("https://svelte.dev/e/svelte_boundary_reset_onerror");
 }
 //#endregion
-//#region node_modules/svelte/src/constants.js
+//#region ../../node_modules/svelte/src/constants.js
 var ye = {}, be = Symbol("uninitialized"), xe = "http://www.w3.org/1999/xhtml", Se = "http://www.w3.org/2000/svg", Ce = "http://www.w3.org/1998/Math/MathML";
 function we() {
 	console.warn("https://svelte.dev/e/derived_inert");
@@ -79,7 +79,7 @@ function De() {
 	console.warn("https://svelte.dev/e/svelte_boundary_reset_noop");
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/dom/hydration.js
+//#region ../../node_modules/svelte/src/internal/client/dom/hydration.js
 var N = !1;
 function Oe(e) {
 	N = e;
@@ -122,7 +122,7 @@ function Ne(e) {
 	return e.data;
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/reactivity/equality.js
+//#region ../../node_modules/svelte/src/internal/client/reactivity/equality.js
 function Pe(e) {
 	return e === this.v;
 }
@@ -133,7 +133,7 @@ function Ie(e) {
 	return !Fe(e, this.v);
 }
 //#endregion
-//#region node_modules/svelte/src/internal/shared/clone.js
+//#region ../../node_modules/svelte/src/internal/shared/clone.js
 var Le = [];
 function Re(e, t = !1, n = !1) {
 	return ze(e, /* @__PURE__ */ new Map(), "", Le, null, n);
@@ -169,7 +169,7 @@ function ze(t, n, r, i, a = null, o = !1) {
 	}
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/context.js
+//#region ../../node_modules/svelte/src/internal/client/context.js
 var Be = null;
 function Ve(e) {
 	Be = e;
@@ -198,7 +198,7 @@ function We() {
 	return !0;
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/dom/task.js
+//#region ../../node_modules/svelte/src/internal/client/dom/task.js
 var Ge = [];
 function Ke() {
 	var e = Ge;
@@ -240,7 +240,7 @@ function Xe(e, t) {
 	}
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/reactivity/status.js
+//#region ../../node_modules/svelte/src/internal/client/reactivity/status.js
 var Ze = ~(g | _ | h);
 function Qe(e, t) {
 	e.f = e.f & Ze | t;
@@ -249,7 +249,7 @@ function $e(e) {
 	e.f & 512 || e.deps === null ? Qe(e, h) : Qe(e, _);
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/reactivity/utils.js
+//#region ../../node_modules/svelte/src/internal/client/reactivity/utils.js
 function et(e) {
 	if (e !== null) for (let t of e) t.f & 2 && t.f & 65536 && (t.f ^= E, et(t.deps));
 }
@@ -257,7 +257,7 @@ function tt(e, t, n) {
 	e.f & 2048 ? t.add(e) : e.f & 4096 && n.add(e), et(e.deps), Qe(e, h);
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/reactivity/store.js
+//#region ../../node_modules/svelte/src/internal/client/reactivity/store.js
 var nt = !1;
 function rt(e) {
 	var t = nt;
@@ -268,7 +268,7 @@ function rt(e) {
 	}
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/dom/elements/misc.js
+//#region ../../node_modules/svelte/src/internal/client/dom/elements/misc.js
 function it(e) {
 	N && /* @__PURE__ */ dn(e) !== null && pn(e);
 }
@@ -281,7 +281,7 @@ function ot() {
 	}, { capture: !0 }));
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/dom/elements/bindings/shared.js
+//#region ../../node_modules/svelte/src/internal/client/dom/elements/bindings/shared.js
 function st(e) {
 	var t = Gn, n = Jn;
 	qn(null), Yn(null);
@@ -299,7 +299,7 @@ function ct(e, t, n, r = n) {
 	} : () => r(!0), ot();
 }
 //#endregion
-//#region node_modules/svelte/src/reactivity/create-subscriber.js
+//#region ../../node_modules/svelte/src/reactivity/create-subscriber.js
 function lt(e) {
 	let t = 0, n = Jt(0), r;
 	return () => {
@@ -311,7 +311,7 @@ function lt(e) {
 	};
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/dom/blocks/boundary.js
+//#region ../../node_modules/svelte/src/internal/client/dom/blocks/boundary.js
 var ut = S | C;
 function dt(e, t, n, r) {
 	new ft(e, t, n, r);
@@ -480,7 +480,7 @@ var ft = class {
 	}
 };
 //#endregion
-//#region node_modules/svelte/src/internal/client/reactivity/async.js
+//#region ../../node_modules/svelte/src/internal/client/reactivity/async.js
 function pt(e, t, n, r) {
 	let i = We() ? _t : bt;
 	var a = e.filter((e) => !e.settled), o = t.map(i);
@@ -625,7 +625,7 @@ function Tt(e) {
 	if (e.effects !== null) for (let t of e.effects) t.teardown && t.fn !== null && fr(t);
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/reactivity/batch.js
+//#region ../../node_modules/svelte/src/internal/client/reactivity/batch.js
 var Et = null, Dt = null, Ot = null, kt = null, At = null, jt = !1, Mt = !1, Nt = null, Pt = null, Ft = 0, It = 1, Lt = class e {
 	id = It++;
 	#e = !1;
@@ -918,7 +918,7 @@ function Wt(e) {
 	for (var t = e.first; t !== null;) Wt(t), t = t.next;
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/reactivity/sources.js
+//#region ../../node_modules/svelte/src/internal/client/reactivity/sources.js
 var Gt = /* @__PURE__ */ new Set(), Kt = /* @__PURE__ */ new Map(), qt = !1;
 function Jt(e, t) {
 	return {
@@ -1165,7 +1165,7 @@ function gn(e) {
 	for (; t !== null && t.nodeType === 3;) t.remove(), e.nodeValue += t.nodeValue, t = e.nextSibling;
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/reactivity/effects.js
+//#region ../../node_modules/svelte/src/internal/client/reactivity/effects.js
 function _n(e) {
 	Jn === null && (Gn === null && fe(e), de()), Un && ue(e);
 }
@@ -1353,7 +1353,7 @@ function Bn(e, t) {
 	}
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/legacy.js
+//#region ../../node_modules/svelte/src/internal/client/legacy.js
 var Vn = null, Hn = !1, Un = !1;
 function Wn(e) {
 	Un = e;
@@ -1542,7 +1542,7 @@ function br(e) {
 	return yr.includes(e);
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/dom/elements/events.js
+//#region ../../node_modules/svelte/src/internal/client/dom/elements/events.js
 var xr = Symbol("events"), Sr = /* @__PURE__ */ new Set(), Cr = /* @__PURE__ */ new Set();
 function wr(e, t, n, r = {}) {
 	function i(e) {
@@ -1617,7 +1617,7 @@ function Or(e) {
 	}
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/dom/reconciler.js
+//#region ../../node_modules/svelte/src/internal/client/dom/reconciler.js
 var kr = globalThis?.window?.trustedTypes && /* @__PURE__ */ globalThis.window.trustedTypes.createPolicy("svelte-trusted-html", { createHTML: (e) => e });
 function Ar(e) {
 	return kr?.createHTML(e) ?? e;
@@ -1627,7 +1627,7 @@ function jr(e) {
 	return t.innerHTML = Ar(e.replaceAll("<!>", "<!---->")), t.content;
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/dom/template.js
+//#region ../../node_modules/svelte/src/internal/client/dom/template.js
 function Mr(e, t) {
 	var n = Jn;
 	n.nodes === null && (n.nodes = {
@@ -1748,7 +1748,7 @@ function Hr(e, t) {
 	return n ? (Vr.delete(e), n(t)) : Promise.resolve();
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/dom/blocks/branches.js
+//#region ../../node_modules/svelte/src/internal/client/dom/blocks/branches.js
 var Ur = class {
 	anchor;
 	#e = /* @__PURE__ */ new Map();
@@ -1812,7 +1812,7 @@ var Ur = class {
 	}
 };
 //#endregion
-//#region node_modules/svelte/src/internal/client/dom/blocks/if.js
+//#region ../../node_modules/svelte/src/internal/client/dom/blocks/if.js
 function Y(e, t, n = !1) {
 	var r;
 	N && (r = P, Ae());
@@ -1836,7 +1836,7 @@ function Y(e, t, n = !1) {
 	}, a);
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/dom/blocks/key.js
+//#region ../../node_modules/svelte/src/internal/client/dom/blocks/key.js
 var Wr = Symbol("NaN");
 function Gr(e, t, n) {
 	N && Ae();
@@ -1847,7 +1847,7 @@ function Gr(e, t, n) {
 	});
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/dom/blocks/each.js
+//#region ../../node_modules/svelte/src/internal/client/dom/blocks/each.js
 function Kr(e, t) {
 	return t;
 }
@@ -2035,7 +2035,7 @@ function ti(e, t, n = !1, r = !1, i = !1, a = !1) {
 	});
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/dom/elements/actions.js
+//#region ../../node_modules/svelte/src/internal/client/dom/elements/actions.js
 function ni(e, t, n) {
 	Tn(() => {
 		var r = gr(() => t(e, n?.()) || {});
@@ -2050,7 +2050,7 @@ function ni(e, t, n) {
 	});
 }
 //#endregion
-//#region node_modules/clsx/dist/clsx.mjs
+//#region ../../node_modules/clsx/dist/clsx.mjs
 function ri(e) {
 	var t, n, r = "";
 	if (typeof e == "string" || typeof e == "number") r += e;
@@ -2067,7 +2067,7 @@ function ii() {
 	return r;
 }
 //#endregion
-//#region node_modules/svelte/src/internal/shared/attributes.js
+//#region ../../node_modules/svelte/src/internal/shared/attributes.js
 function ai(e) {
 	return typeof e == "object" ? ii(e) : e ?? "";
 }
@@ -2126,7 +2126,7 @@ function ui(e, t) {
 	return e == null ? null : String(e);
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/dom/elements/class.js
+//#region ../../node_modules/svelte/src/internal/client/dom/elements/class.js
 function di(e, t, n, r, i, a) {
 	var o = e[te];
 	if (N || o !== n || o === void 0) {
@@ -2139,7 +2139,7 @@ function di(e, t, n, r, i, a) {
 	return a;
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/dom/elements/style.js
+//#region ../../node_modules/svelte/src/internal/client/dom/elements/style.js
 function fi(e, t = {}, n, r) {
 	for (var i in n) {
 		var a = n[i];
@@ -2155,7 +2155,7 @@ function pi(e, t, n, r) {
 	return r;
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/dom/elements/bindings/select.js
+//#region ../../node_modules/svelte/src/internal/client/dom/elements/bindings/select.js
 function mi(t, n, r = !1) {
 	if (t.multiple) {
 		if (n == null) return;
@@ -2209,7 +2209,7 @@ function _i(e) {
 	return "__value" in e ? e.__value : e.value;
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/dom/elements/attributes.js
+//#region ../../node_modules/svelte/src/internal/client/dom/elements/attributes.js
 var vi = Symbol("is custom element"), yi = Symbol("is html"), bi = oe ? "link" : "LINK", xi = oe ? "progress" : "PROGRESS";
 function Z(e) {
 	if (N) {
@@ -2258,7 +2258,7 @@ function Ei(e) {
 	return n;
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/dom/elements/bindings/input.js
+//#region ../../node_modules/svelte/src/internal/client/dom/elements/bindings/input.js
 function Di(e, t, n = t) {
 	var r = /* @__PURE__ */ new WeakSet();
 	ct(e, "input", async (i) => {
@@ -2287,7 +2287,7 @@ function ki(e) {
 	return e === "" ? null : +e;
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/dom/elements/bindings/this.js
+//#region ../../node_modules/svelte/src/internal/client/dom/elements/bindings/this.js
 function Ai(e, t) {
 	return e === t || e?.[A] === t;
 }
@@ -2312,7 +2312,7 @@ function ji(e = {}, t, n, r) {
 	}), e;
 }
 //#endregion
-//#region node_modules/svelte/src/internal/client/reactivity/props.js
+//#region ../../node_modules/svelte/src/internal/client/reactivity/props.js
 function Mi(e, t, n, r) {
 	var i = !0, o = !!(n & 8), s = !!(n & 16), c = r, l = !0, u = void 0, d = () => s && i ? (u ??= /* @__PURE__ */ _t(r), U(u)) : (l && (l = !1, c = s ? gr(r) : r), c);
 	let f;
@@ -2357,7 +2357,7 @@ function Pi(e) {
 	Be === null && se("onDestroy"), Ni(() => () => gr(e));
 }
 //#endregion
-//#region node_modules/svelte/src/internal/disclose-version.js
+//#region ../../node_modules/svelte/src/internal/disclose-version.js
 typeof window < "u" && ((window.__svelte ??= {}).v ??= /* @__PURE__ */ new Set()).add("5");
 //#endregion
 //#region src/ui/artifact-glyph.js
@@ -3006,8 +3006,8 @@ function Sa(e, t = {
 				[xa("Follow selection", "follow-preview", i?.followSelection ?? !0, !i, "radio"), xa("Pin current output", "pin-preview", !!i?.pinned, !i?.selectedKey || i?.status === "removed", "radio")],
 				[
 					$("Fit graph", "fit", "fit"),
-					$("Fit selection", "fit-selection", "fit", !n.fitSelection, "."),
-					$("Center selection", "center-selection", "fit", !n.hasSelection, "F"),
+					$("Fit selection", "fit-selection", "fit", !n.fitSelection, "F"),
+					$("Center selection", "center-selection", "fit", !n.hasSelection),
 					$("Zoom in", "zoom-in", "add"),
 					$("Zoom out", "zoom-out", "minus")
 				],
@@ -8383,7 +8383,7 @@ function Yu(e, t) {
 Tr(["keydown", "click"]);
 //#endregion
 //#region ui/WorkspaceReport.svelte
-var Xu = /* @__PURE__ */ K("<li class=\"svelte-1xdk4mm\"> </li>"), Zu = /* @__PURE__ */ K("<ul></ul>"), Qu = /* @__PURE__ */ K("<p role=\"status\" class=\"svelte-1xdk4mm\">No validation issues found.</p>"), $u = /* @__PURE__ */ K("<p class=\"svelte-1xdk4mm\">Root workflow: <strong> </strong> </p> <!> <p class=\"svelte-1xdk4mm\">Validation checks the current workflow without running it. Diagnostic previews and Apply recheck their inputs when used.</p>", 1), ed = /* @__PURE__ */ K("<p class=\"svelte-1xdk4mm\">Workflow validation is unavailable.</p>"), td = /* @__PURE__ */ K("<p class=\"svelte-1xdk4mm\"><strong> </strong></p> <p class=\"svelte-1xdk4mm\">Named-pin workflows, optional scene guidance and reviewed reply repairs for SillyTavern.</p> <p class=\"svelte-1xdk4mm\"><a target=\"_blank\" rel=\"noreferrer\" class=\"svelte-1xdk4mm\">Project guide</a></p>", 1), nd = /* @__PURE__ */ K("<p class=\"svelte-1xdk4mm\">Browse the node shelf by family. Select a node to read its controls, connections and help in Details.</p> <p class=\"svelte-1xdk4mm\"><a target=\"_blank\" rel=\"noreferrer\" class=\"svelte-1xdk4mm\">Open the complete node reference</a></p>", 1), rd = /* @__PURE__ */ K("<table class=\"svelte-1xdk4mm\"><thead><tr><th class=\"svelte-1xdk4mm\">Action</th><th class=\"svelte-1xdk4mm\">Shortcut</th></tr></thead><tbody><tr><td class=\"svelte-1xdk4mm\">Undo / Redo</td><td class=\"svelte-1xdk4mm\">Ctrl Z / Ctrl Shift Z</td></tr><tr><td class=\"svelte-1xdk4mm\">Cut / Copy / Paste</td><td class=\"svelte-1xdk4mm\">Ctrl X / Ctrl C / Ctrl V</td></tr><tr><td class=\"svelte-1xdk4mm\">Duplicate / Delete selection</td><td class=\"svelte-1xdk4mm\">Ctrl D / Delete</td></tr><tr><td class=\"svelte-1xdk4mm\">Select all</td><td class=\"svelte-1xdk4mm\">Ctrl A</td></tr><tr><td class=\"svelte-1xdk4mm\">Group / Ungroup</td><td class=\"svelte-1xdk4mm\">Ctrl G / Ctrl Shift G</td></tr><tr><td class=\"svelte-1xdk4mm\">Comment selection / Add comment</td><td class=\"svelte-1xdk4mm\">C</td></tr><tr><td class=\"svelte-1xdk4mm\">Center / Fit selection</td><td class=\"svelte-1xdk4mm\">F / .</td></tr><tr><td class=\"svelte-1xdk4mm\">Rename selection</td><td class=\"svelte-1xdk4mm\">F2</td></tr><tr><td class=\"svelte-1xdk4mm\">Pan / Zoom</td><td class=\"svelte-1xdk4mm\">Middle mouse / Wheel</td></tr><tr><td class=\"svelte-1xdk4mm\">Dismiss a menu or panel</td><td class=\"svelte-1xdk4mm\">Escape</td></tr></tbody></table> <p class=\"svelte-1xdk4mm\">In menus, use arrows to move, Home/End to jump, type a label to find it, and Enter/Space to choose it. Tab dismisses the menu.</p>", 1), id = /* @__PURE__ */ K("<p class=\"svelte-1xdk4mm\">Browse node families on the floating shelf. Middle mouse pans the graph; the wheel zooms around the pointer. Use the dividers or their arrow keys to resize Preview and Details. View controls panel visibility and restores the default layout.</p> <p class=\"svelte-1xdk4mm\">File opens workflow documents, saves the current file, imports a fragment into the current graph, and exports a portable copy without local connections. Graph tabs open child views of the current document.</p> <p class=\"svelte-1xdk4mm\">Enable Lattice while the unified document is open, then Send in SillyTavern. Choose model connections on the node bar and advanced overrides in Details. Workflow › Configure opens Workflow Data, and Memory recall offers queue actions and an overview.</p> <p class=\"svelte-1xdk4mm\">Graph groups nodes, creates and saves subgraphs, adds comments and manages portals. Right-click actions remain available beside the relevant node or pin.</p> <p class=\"svelte-1xdk4mm\">Preview follows selection until you pin an output. Workflow › Run to current output tests its dependencies within the displayed request bound. Apply and Reject stay beside the exact result they review.</p> <p class=\"svelte-1xdk4mm\"><a target=\"_blank\" rel=\"noreferrer\" class=\"svelte-1xdk4mm\">Open the project guide</a> · <a target=\"_blank\" rel=\"noreferrer\" class=\"svelte-1xdk4mm\">Node reference</a></p>", 1);
+var Xu = /* @__PURE__ */ K("<li class=\"svelte-1xdk4mm\"> </li>"), Zu = /* @__PURE__ */ K("<ul></ul>"), Qu = /* @__PURE__ */ K("<p role=\"status\" class=\"svelte-1xdk4mm\">No validation issues found.</p>"), $u = /* @__PURE__ */ K("<p class=\"svelte-1xdk4mm\">Root workflow: <strong> </strong> </p> <!> <p class=\"svelte-1xdk4mm\">Validation checks the current workflow without running it. Diagnostic previews and Apply recheck their inputs when used.</p>", 1), ed = /* @__PURE__ */ K("<p class=\"svelte-1xdk4mm\">Workflow validation is unavailable.</p>"), td = /* @__PURE__ */ K("<p class=\"svelte-1xdk4mm\"><strong> </strong></p> <p class=\"svelte-1xdk4mm\">Named-pin workflows, optional scene guidance and reviewed reply repairs for SillyTavern.</p> <p class=\"svelte-1xdk4mm\"><a target=\"_blank\" rel=\"noreferrer\" class=\"svelte-1xdk4mm\">Project guide</a></p>", 1), nd = /* @__PURE__ */ K("<p class=\"svelte-1xdk4mm\">Browse the node shelf by family. Select a node to read its controls, connections and help in Details.</p> <p class=\"svelte-1xdk4mm\"><a target=\"_blank\" rel=\"noreferrer\" class=\"svelte-1xdk4mm\">Open the complete node reference</a></p>", 1), rd = /* @__PURE__ */ K("<table class=\"svelte-1xdk4mm\"><thead><tr><th class=\"svelte-1xdk4mm\">Action</th><th class=\"svelte-1xdk4mm\">Shortcut</th></tr></thead><tbody><tr><td class=\"svelte-1xdk4mm\">Undo / Redo</td><td class=\"svelte-1xdk4mm\">Ctrl Z / Ctrl Shift Z</td></tr><tr><td class=\"svelte-1xdk4mm\">Cut / Copy / Paste</td><td class=\"svelte-1xdk4mm\">Ctrl X / Ctrl C / Ctrl V</td></tr><tr><td class=\"svelte-1xdk4mm\">Duplicate / Delete selection</td><td class=\"svelte-1xdk4mm\">Ctrl D / Delete</td></tr><tr><td class=\"svelte-1xdk4mm\">Select all</td><td class=\"svelte-1xdk4mm\">Ctrl A</td></tr><tr><td class=\"svelte-1xdk4mm\">Group / Ungroup</td><td class=\"svelte-1xdk4mm\">Ctrl G / Ctrl Shift G</td></tr><tr><td class=\"svelte-1xdk4mm\">Comment selection / Add comment</td><td class=\"svelte-1xdk4mm\">C</td></tr><tr><td class=\"svelte-1xdk4mm\">Fit and center selection</td><td class=\"svelte-1xdk4mm\">F / .</td></tr><tr><td class=\"svelte-1xdk4mm\">Rename selection</td><td class=\"svelte-1xdk4mm\">F2</td></tr><tr><td class=\"svelte-1xdk4mm\">Pan / Zoom</td><td class=\"svelte-1xdk4mm\">Middle mouse / Wheel</td></tr><tr><td class=\"svelte-1xdk4mm\">Dismiss a menu or panel</td><td class=\"svelte-1xdk4mm\">Escape</td></tr></tbody></table> <p class=\"svelte-1xdk4mm\">In menus, use arrows to move, Home/End to jump, type a label to find it, and Enter/Space to choose it. Tab dismisses the menu.</p>", 1), id = /* @__PURE__ */ K("<p class=\"svelte-1xdk4mm\">Browse node families on the floating shelf. Middle mouse pans the graph; the wheel zooms around the pointer. Use the dividers or their arrow keys to resize Preview and Details. View controls panel visibility and restores the default layout.</p> <p class=\"svelte-1xdk4mm\">File opens workflow documents, saves the current file, imports a fragment into the current graph, and exports a portable copy without local connections. Graph tabs open child views of the current document.</p> <p class=\"svelte-1xdk4mm\">Enable Lattice while the unified document is open, then Send in SillyTavern. Choose model connections on the node bar and advanced overrides in Details. Workflow › Configure opens Workflow Data, and Memory recall offers queue actions and an overview.</p> <p class=\"svelte-1xdk4mm\">Graph groups nodes, creates and saves subgraphs, adds comments and manages portals. Right-click actions remain available beside the relevant node or pin.</p> <p class=\"svelte-1xdk4mm\">Preview follows selection until you pin an output. Workflow › Run to current output tests its dependencies within the displayed request bound. Apply and Reject stay beside the exact result they review.</p> <p class=\"svelte-1xdk4mm\"><a target=\"_blank\" rel=\"noreferrer\" class=\"svelte-1xdk4mm\">Open the project guide</a> · <a target=\"_blank\" rel=\"noreferrer\" class=\"svelte-1xdk4mm\">Node reference</a></p>", 1);
 function ad(e, t) {
 	He(t, !0);
 	var n = Ir(), r = B(n), i = (e) => {

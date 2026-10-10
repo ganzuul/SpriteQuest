@@ -76,6 +76,18 @@ test('menu capabilities follow exact node, multi, group and wire selection', () 
     f.select('wire', 'a'); assert.equal(f.capabilities().hasSelection, true); assert.equal(f.capabilities().inspect, false); assert.equal(f.capabilities().duplicate, false); assert.equal(f.capabilities().comment, false);
 });
 
+test('Fit selection is available for wires, empty group frames and a single multiple-selection ID', () => {
+    const f = fixture();
+    assert.equal(f.capabilities().fitSelection, false);
+    f.select('wire', 'a'); assert.equal(f.capabilities().fitSelection, true);
+    f.select(null); f.env.canvas.wireMulti.add('a'); assert.equal(f.capabilities().fitSelection, true);
+    f.env.canvas.wireMulti.clear(); f.env.canvas.multi.add('second'); assert.equal(f.capabilities().fitSelection, true);
+    f.env.editorDraw.groups.empty = { id: 'empty', title: 'Empty', frame: { x: 700, y: 200, w: 400, h: 200 } };
+    f.select('group', 'empty'); assert.equal(f.capabilities().fitSelection, true);
+    assert.equal(f.session.openInstance(['second']).ok, true); f.refresh(); f.select('node', 'work');
+    assert.equal(f.session.readEditor().readOnly, true); assert.equal(f.capabilities().fitSelection, true);
+});
+
 
 test('group and ungroup menu commands use real typed edits and retain undo', () => {
     const f = fixture(); f.select('multi', ['first/path', 'second']);

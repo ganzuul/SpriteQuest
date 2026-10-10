@@ -2,6 +2,63 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { fixture, mouse } from './canvas-fixture.mjs';
 
+test('fitting a primary and multiple node selection centers their union and commits the fitted camera', async t => {
+    const committed = [];
+    const { canvas, graph, host, b } = fixture({ onViewCommit: () => committed.push({ ...graph.view }) });
+    t.after(async () => { await canvas.destroy(); host.remove(); });
+    b.x = 2050;
+    graph.view.zoom = 2;
+    canvas.setMulti(['b']); canvas.select({ kind: 'node', id: 'a' });
+
+    canvas.fitSelection();
+
+    const zoom = 1000 / (2160 + 120);
+    assert.deepEqual(graph.view, { x: 500 - 1130 * zoom, y: 400 - 74 * zoom, zoom });
+    assert.deepEqual(committed, [{ ...graph.view }]);
+});
+
+test('fitting a selected wire centers its measured endpoints rather than the whole graph', async t => {
+    const { canvas, graph, host } = fixture();
+    t.after(async () => { await canvas.destroy(); host.remove(); });
+    canvas.geometry.measure('a', 160, 48, [{ id: 'out', direction: 'out', x: 120, y: 40 }]);
+    canvas.geometry.measure('b', 160, 48, [{ id: 'in', direction: 'in', x: 10, y: 10 }]);
+    canvas.select({ kind: 'wire', id: 'edge' });
+
+    canvas.fitSelection();
+
+    assert.deepEqual(graph.view, { x: 182, y: 310, zoom: 1.2 });
+});
+
+test('fitting folded cards and empty expanded groups uses their displayed bounds', async t => {
+    const { canvas, graph, host, a, b } = fixture();
+    t.after(async () => { await canvas.destroy(); host.remove(); });
+    graph.groups.fold = { id: 'fold', title: 'Fold', collapsed: true, frame: { x: -200, y: -100, w: 1000, h: 500 } };
+    graph.groups.empty = { id: 'empty', title: 'Empty', frame: { x: 700, y: 200, w: 400, h: 200 } };
+    a.inGroup = b.inGroup = 'fold';
+    canvas.render(); canvas.geometry.measure('group:fold', 300, 120);
+    canvas.select({ kind: 'group', id: 'fold' });
+    canvas.fitSelection();
+    assert.deepEqual(graph.view, { x: 560, y: 448, zoom: 1.2 });
+
+    canvas.select({ kind: 'group', id: 'empty' });
+    canvas.fitSelection();
+    assert.deepEqual(graph.view, { x: -580, y: 40, zoom: 1.2 });
+});
+
+test('fitting during a node drag leaves the camera and pointer movement intact', async t => {
+    let commits = 0;
+    const { canvas, graph, host, a } = fixture({ onViewCommit: () => commits++ });
+    t.after(async () => { await canvas.destroy(); host.remove(); });
+    mouse(host.querySelector('[data-id="a"]'), 'mousedown', 80, 80);
+    mouse(window, 'mousemove', 110, 120);
+    canvas.fitSelection();
+    mouse(window, 'mousemove', 120, 130);
+    assert.deepEqual([a.x, a.y], [90, 100]);
+    assert.deepEqual(graph.view, { x: 0, y: 0, zoom: 1 });
+    assert.equal(commits, 0);
+    mouse(window, 'mouseup', 120, 130);
+});
+
 test('centering a selected node preserves zoom and commits the displayed camera', async t => {
     const committed = [];
     const { canvas, graph, host } = fixture({ onViewCommit: () => committed.push({ ...graph.view }) });

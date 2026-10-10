@@ -564,7 +564,7 @@ function build() {
         if (typing()) return;
         if (event.key === 'Escape') { if (event.defaultPrevented) return; event.preventDefault(); if (canvas.cancelGesture()) return; if (canvas.selection || canvas.multi.size) { canvas.setMulti([]); canvas.select(null); } else close(); return; }
         if (event.key === 'F2' && selectedKind === 'node') { event.preventDefault(); focusAlias(selected); return; }
-        if (key === 'f' && !mod && !event.altKey && !event.repeat) { event.preventDefault(); canvas.centerSelection(); return; }
+        if (key === 'f' && !mod && !event.altKey && !event.repeat) { event.preventDefault(); canvas.fitSelection(); return; }
         if (compactCardShortcut(event)) { event.preventDefault(); return; }
         if (key === 'c' && !event.shiftKey && !mod && !event.altKey && !event.repeat && commentShortcutAvailable()) { event.preventDefault(); addComment(); return; }
         if (mod && !event.altKey) {
@@ -718,6 +718,7 @@ function menuCommandAction(name) {
 }
 function selectionMenuCapabilities() {
     const editor = graphViews?.readEditor(), selection = canvas?.selection;
+    const hasSelection = !!selection || !!canvas?.multi.size || !!canvas?.wireMulti?.size;
     const node = selection?.kind === 'node' ? editorDraw?.nodes[selection.id] : null;
     const group = selection?.kind === 'group' ? editorDraw?.groups?.[selection.id] : null;
     const ids = canvas?.multi.size > 1 ? [...canvas.multi] : group ? groupMembers(editorDraw, group.id).map(member => member.id) : node ? [node.id] : [];
@@ -737,8 +738,8 @@ function selectionMenuCapabilities() {
         comment: editable && ordinary.length > 0 && !nodes.some(item => ['subgraph-input', 'subgraph-output'].includes(item?.type)),
         compact: !!node && canvas.multi.size < 2 && !boundary && !isCommentFrame(node) && !!editorDraw.nativeCards?.[node.id],
         compactChecked: !!node && readNodePresentation(node, editor?.view.nodePresentation[node.id]).compact === true,
-        fitSelection: ids.length > 0,
-        hasSelection: !!selection || !!canvas?.multi.size || !!canvas?.wireMulti?.size,
+        fitSelection: hasSelection,
+        hasSelection,
         stop: !!activity?.busy && activity.graph === current && (activity.documentToken === undefined || activity.documentToken === documentSession.capture()),
     };
 }
@@ -1169,7 +1170,7 @@ function onCanvasMenu({ event, node, wire, at, group = null, several = null }) {
         const compact = readNodePresentation(node, editor.view.nodePresentation[node.id]).compact;
             presentation.push(entry('compact', 'Compact card', 'compact', () => presentNode(node.id, 'compact', !compact), false, 'Shift C', { checked: compact }));
     }
-    if (node || group || several) presentation.push(entry('fit-selection', 'Fit selection', 'fit', () => canvas.fitSelection(), false, '.'));
+    if (node || group || several || wire) presentation.push(entry('fit-selection', 'Fit selection', 'fit', () => canvas.fitSelection(), false, 'F'));
     section([...organization, ...presentation]);
     if (wire) {
         section([entry('portals', 'Manage portals', 'portals', () => openPortalManager({ edgeId: wire.id }))]);

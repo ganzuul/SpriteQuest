@@ -110,7 +110,7 @@ Drag a card by its body to move it. Drag a rectangle on empty space to select in
 
 Below 50% zoom, cards use an overview mode that hides small labels and extra controls and reduces shadows. Full detail returns at 60% zoom. Hover over a card, select it, or use Tab to focus it to reveal its details at any zoom. Card sizes and wire endpoints stay fixed; titles, ports, selection and execution indicators remain visible.
 
-Use **Graph → Fit to view** or **Fit selection** to recover your position. Press **F** to center the selected item or the combined selection; with nothing selected, it centers all nodes. F preserves the current zoom and is ignored while typing or dragging. Select/Pan and zoom commands are also in the Graph menu. Keyboard shortcuts are listed at the end of this manual.
+Use **View → Fit graph** or **Fit selection** to recover your position. Press **F** to fit and center the selected item or the combined selection in one action; with nothing selected, it fits the graph. The period key is an optional alias. F is ignored while typing or dragging. **View → Center selection** centers without changing zoom. Select/Pan is in Graph; zoom commands are in View. Keyboard shortcuts are listed at the end of this manual.
 
 Choose **Graph → Rename workflow**, or right-click a graph or subgraph tab and choose **Rename**, to edit its name directly in the tab. Enter or leaving the field commits the name; Escape cancels. A blank name keeps the existing name.
 
@@ -348,8 +348,8 @@ The current operations provide one owned native generation, auxiliary Model Call
 | Middle-drag / Space + left-drag | Pan |
 | Wheel | Zoom around pointer |
 | Ctrl/Cmd+A | Select all cards |
-| Period | Fit selection, or graph if nothing is selected |
-| F | Center the selection, or all nodes if nothing is selected, without changing zoom; ignored while typing or dragging |
+| F | Fit and center the selection, or fit the graph if nothing is selected; ignored while typing or dragging |
+| Period | Optional alias for fitting and centering the selection, or fitting the graph |
 | Ctrl/Cmd+Z / Ctrl/Cmd+Shift+Z | Undo / redo graph edits |
 | Ctrl/Cmd+C / X / V | Copy / cut / paste selection outside text editors |
 | F2 on selected node | Rename its presentation alias |

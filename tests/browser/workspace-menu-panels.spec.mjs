@@ -77,6 +77,11 @@ test('validation and Help show current data and documentation without running or
     await page.keyboard.press('Tab'); await expect(guide.getByRole('button', {name:'Close panel',exact:true})).toBeFocused();
     expect(await page.evaluate(() => structuredClone(window.canvasHarness.graph))).toEqual(before);
     expect(await page.evaluate(() => window.canvasHarness.providerCalls())).toBe(0);
+    await page.keyboard.press('Escape');
+    await menubar.getByRole('menuitem', {name:'Help',exact:true}).click();
+    await page.getByRole('menuitem', {name:'Keyboard shortcuts',exact:true}).click();
+    const shortcuts = page.getByRole('dialog', {name:'Keyboard shortcuts',exact:true});
+    await expect(shortcuts.getByRole('row', {name:'Fit and center selection F / .',exact:true})).toBeVisible();
 });
 
 test('View pins the selected output and Workflow diagnostics retain its exact source and target', async ({ page }) => {

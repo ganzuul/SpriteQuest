@@ -88,6 +88,25 @@ The complete suites then passed **263/263 Node files and 329/329 browser cases i
 
 Final visual captures, including host keycap CSS, are under `.tmp/integration-confirm-menu-visuals/`: File, View, Graph and Workflow dropdowns, desktop headers and a 360px layout. These were visually compared with the original reference. No known actionable source omission remains in the reviewed scope. All original worktrees and recovery evidence remain available for user testing. Automated checks do not replace testing the real operating-system pickers, host theme, provider and Send lifecycle.
 
+## F fits and centers selection
+
+During user testing, the user requested that a single **F** press fit and center the selection instead of preserving zoom. F now invokes Fit selection. View and context-menu shortcut hints advertise F, Help describes F and period as aliases, and the manual and quick start explain the combined action. Center selection remains a separate, unbound menu action that preserves zoom. With no selection, F uses the existing shelf-aware Fit graph behavior.
+
+Fit selection now shares the measured bounds and gesture protections of centering: primary and multiple node selections, measured wire endpoints, folded cards and empty group frames use their displayed geometry. Camera changes commit without changing graph edits or selection. The capability check permits fitting wires and empty groups, including read-only views. Typing, command modifiers, repeated F events, closed canvases, open menus and active drags remain protected.
+
+Failing tests first reproduced the previous F zoom behavior, the menu eligibility gap, folded-card invalid bounds and fitting during a drag. After implementation, an isolated copy of `c9e7b76` containing only this follow-up passed **263/263 Node files and 41/41 affected browser cases**. Two independent reviews found no actionable issues. Concurrent File-command edits in the primary checkout were preserved separately and excluded from the verified candidate and published bundle.
+
+| Follow-up check | Result | Evidence |
+| --- | --- | --- |
+| Complete Node suite | 263/263 files | `.tmp/focus-fit-isolated-node.log` |
+| Affected browser suite | 41/41 cases: camera, selection, shortcuts, context menus, consolidated menus and workspace panels | `.tmp/focus-fit-isolated-browser.log` |
+| Types/build/assets | 0 errors and warnings; 180 modules; 521 imports | `.tmp/focus-fit-isolated-types.log`, `.tmp/focus-fit-isolated-build.log`, `.tmp/focus-fit-isolated-assets.log` |
+| Isolated installation | 0 errors, missing assets, API requests or provider calls | `.tmp/focus-fit-isolated-smoke.log` |
+| Documentation | 11 documents, 225 links, 74 operations, 20 screenshots | `.tmp/focus-fit-isolated-doc-check.log` |
+| Preservation | Ten archives and nine source checkouts verified | `.tmp/focus-fit-preservation.log` |
+
+The follow-up receipt `focus-fit-confirmation.json` records the published file blobs, exact Main SHA, hashed evidence and additional `all-refs-focus-fit.bundle`. The earlier menu repair receipt, bundle and handoff remain preserved. Worktree cleanup still requires user acceptance of pushed Main.
+
 ## Recovery and retained worktrees
 
 Recovery directory: `F:/git/SillyCanvas/.tmp/integration-preservation-2026-10-10/`.

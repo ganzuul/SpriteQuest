@@ -488,7 +488,7 @@ export class Canvas {
 
     selectAll() { if (this.graph) this.setMulti(Object.keys(this.graph.nodes)); }
 
-    centerSelection() {
+    centerSelection({ fit = false } = {}) {
         if (!this.graph || this.drag || this.marquee || this.pan || this.#nativeBridge()?.hasContentGesture()) return;
         this.#finishZoom(false);
         const ids = new Set(this.multi);
@@ -521,9 +521,11 @@ export class Canvas {
         }
         const bounds = boxes.filter(box => ['x', 'y', 'w', 'h'].every(key => Number.isFinite(box[key])) && box.w >= 0 && box.h >= 0);
         if (!bounds.length) return;
-        const cx = (Math.min(...bounds.map(box => box.x)) + Math.max(...bounds.map(box => box.x + box.w))) / 2;
-        const cy = (Math.min(...bounds.map(box => box.y)) + Math.max(...bounds.map(box => box.y + box.h))) / 2;
+        const minX = Math.min(...bounds.map(box => box.x)), maxX = Math.max(...bounds.map(box => box.x + box.w));
+        const minY = Math.min(...bounds.map(box => box.y)), maxY = Math.max(...bounds.map(box => box.y + box.h));
+        const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
         const rect = this.host.getBoundingClientRect(), view = this.view;
+        if (fit) view.zoom = Math.max(0.25, Math.min(1.2, rect.width / (maxX - minX + 120), rect.height / (maxY - minY + 120)));
         view.x = rect.width / 2 - cx * view.zoom;
         view.y = rect.height / 2 - cy * view.zoom;
         this.applyTransform();
@@ -531,28 +533,13 @@ export class Canvas {
     }
 
     fitSelection() {
-        this.#finishZoom(false);
-        const ids = this.#pickedIds();
-        if (!ids.size) { this.fit(); return; }
-        const boxes = [];
-        const groups = new Set();
-        for (const id of ids) {
-            const n = this.graph.nodes[id]; if (!n) continue;
-            const g = this.#folded(n);
-            if (g) {
-                if (groups.has(g.id)) continue; groups.add(g.id);
-                boxes.push({ x: g.x, y: g.y, w: g.w || 260, h: this.geometry.get(`group:${g.id}`, 80) });
-            } else boxes.push({ x: n.x, y: n.y, w: this.widthOf(n), h: this.heightOf(n) || 90 });
+        if (!this.graph || this.drag || this.marquee || this.pan || this.#nativeBridge()?.hasContentGesture()) return;
+        if (!this.selection && !this.multi.size && !this.wireMulti.size) {
+            this.fit();
+            this.hooks.onViewCommit?.();
+            return;
         }
-        const selectedGroup = this.selection?.kind === 'group' ? this.graph.groups?.[this.selection.id] : null;
-        if (selectedGroup && !selectedGroup.collapsed) boxes.push(this.#nativeGroupFrame(selectedGroup));
-        if (!boxes.length) return;
-        const minX = Math.min(...boxes.map(b => b.x)) - 60, minY = Math.min(...boxes.map(b => b.y)) - 60;
-        const maxX = Math.max(...boxes.map(b => b.x + b.w)) + 60, maxY = Math.max(...boxes.map(b => b.y + b.h)) + 60;
-        const rect = this.host.getBoundingClientRect();
-        const zoom = Math.max(0.25, Math.min(1.2, rect.width / (maxX - minX), rect.height / (maxY - minY)));
-        Object.assign(this.view, { zoom, x: (rect.width - (minX + maxX) * zoom) / 2, y: (rect.height - (minY + maxY) * zoom) / 2 });
-        this.applyTransform();
+        this.centerSelection({ fit: true });
     }
 
     cancelGesture(reason = 'cancel') {

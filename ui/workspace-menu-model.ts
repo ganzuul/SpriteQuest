@@ -34,7 +34,7 @@ export function workspaceMenus(view: WorkbenchView, panels: WorkspaceMenuPanels 
  {name:'View',groups:[
   [check('Show Details','inspector',!!view.inspectorOpen),check('Show preview','toggle-preview',panels.previewOpen),check('Show node shelf','toggle-shelf',panels.shelfOpen)],
   [check('Follow selection','follow-preview',preview?.followSelection ?? true,!preview,'radio'),check('Pin current output','pin-preview',!!preview?.pinned,!preview?.selectedKey || preview?.status === 'removed','radio')],
-  [row('Fit graph','fit','fit'),row('Fit selection','fit-selection','fit',!c.fitSelection,'.'),row('Center selection','center-selection','fit',!c.hasSelection,'F'),row('Zoom in','zoom-in','add'),row('Zoom out','zoom-out','minus')],
+  [row('Fit graph','fit','fit'),row('Fit selection','fit-selection','fit',!c.fitSelection,'F'),row('Center selection','center-selection','fit',!c.hasSelection),row('Zoom in','zoom-in','add'),row('Zoom out','zoom-out','minus')],
   [row('Reset panel layout','reset-layout','reset'),row('Theme and colours…','theme','theme')]
  ]},
  {name:'Graph',groups:[

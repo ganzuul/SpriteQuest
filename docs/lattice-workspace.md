@@ -12,7 +12,7 @@ Fresh launch opens **Unified story workflow**, with Lattice disabled. Existing i
 
 Use **File → Save workflow** or **Save As…** to save the editable document to disk. Browsers without direct file access offer **Download JSON…** instead. A recovery draft retains committed work across reloads; it does not save the file on disk. **Open Recent** reopens previously accessed files in supported browsers. See [save, import, and share](operators-manual.md#save-import-and-share) for modified-document prompts and recovery.
 
-The menu bar contains **File**, **Edit**, **View**, **Graph**, **Workflow** and **Help**. Use **Graph → Add node…** to search for nodes and subgraphs, and **View → Fit graph** or **Fit selection** to recover your position.
+The menu bar contains **File**, **Edit**, **View**, **Graph**, **Workflow** and **Help**. Use **Graph → Add node…** to search for nodes and subgraphs, and **View → Fit graph** or **Fit selection** to recover your position. Press **F** to fit and center the selection in one action; with nothing selected, it fits the graph.
 
 The default **Ember** theme follows SillyTavern's panel, text, control and quote colors. **View → Theme and colours…** offers Ember, Lattice, Ash, Graphite, Slate, Obsidian, Harbor and Signal. Harbor and Signal also identify connection types with labeled pins, distinct shapes and wire patterns.
 

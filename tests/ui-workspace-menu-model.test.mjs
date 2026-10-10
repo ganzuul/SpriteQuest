@@ -4,6 +4,11 @@ import { workspaceMenus } from '../ui/workspace-menu-model.ts';
 const base = {history:{undo:false,redo:false}, camera:{mode:'select'}, selectionActions:{copy:false,cut:false,delete:false}, menuCapabilities:{}, outputPreview:null};
 const items = (state, name, panels) => workspaceMenus(state,panels).find(menu=>menu.name===name).groups.flat();
 const item = (state,name,command,panels) => items(state,name,panels).find(entry=>entry.command===command);
+
+test('View advertises F for Fit selection and leaves zoom-preserving Center selection unbound',()=>{
+ assert.equal(item(base,'View','fit-selection').shortcut,'F');
+ assert.equal(item(base,'View','center-selection').shortcut,'');
+});
 test('six menu groups expose current actions and no unified or legacy generation entries',()=>{
  const workflow={phase:'unified',assigned:false,busy:false,issues:[],nodes:[],result:null};
  assert.deepEqual(workspaceMenus({...base,workflow}).map(menu=>menu.name),['File','Edit','View','Graph','Workflow','Help']);

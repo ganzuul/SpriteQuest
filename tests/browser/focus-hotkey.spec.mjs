@@ -13,11 +13,12 @@ async function centerOffset(page, selector) {
         const left = Math.min(...boxes.map(box => box.left)), right = Math.max(...boxes.map(box => box.right));
         const top = Math.min(...boxes.map(box => box.top)), bottom = Math.max(...boxes.map(box => box.bottom));
         return { x: (left + right) / 2 - (host.left + host.width / 2),
-            y: (top + bottom) / 2 - (host.top + host.height / 2), zoom: window.canvasHarness.canvas.view.zoom };
+            y: (top + bottom) / 2 - (host.top + host.height / 2), zoom: window.canvasHarness.canvas.view.zoom,
+            contained: left >= host.left && right <= host.right && top >= host.top && bottom <= host.bottom };
     }, selector);
 }
 
-test('F centers the selected node while preserving zoom and selection', async ({ page }) => {
+test('F fits and centers the selected node while preserving selection and history', async ({ page }) => {
     await openCanvas(page);
     const before = await page.evaluate(async () => {
         const h = window.canvasHarness;
@@ -30,16 +31,17 @@ test('F centers the selected node while preserving zoom and selection', async ({
     const offset = await centerOffset(page, '.pc-node[data-id="n0"]');
     expect(Math.abs(offset.x)).toBeLessThan(1);
     expect(Math.abs(offset.y)).toBeLessThan(1);
-    expect(offset.zoom).toBe(.8);
+    expect(offset.zoom).toBe(1.2);
+    expect(offset.contained).toBe(true);
     expect(await page.evaluate(() => window.canvasHarness.canvas.selection)).toEqual({ kind: 'node', id: 'n0' });
     expect(await page.evaluate(() => {
         const h = window.canvasHarness; return { nodes: h.graph.nodes, history: h.H.peek(h.graph) };
     })).toEqual(before);
 });
 
-test('F centers all nodes with no selection and the combined bounds of two or more selections', async ({ page }) => {
+test('F fits and centers the combined bounds of two or more selections', async ({ page }) => {
     await openCanvas(page);
-    for (const ids of [[], ['n0', 'n1'], ['n0', 'n1', 'n2']]) {
+    for (const ids of [['n0', 'n1'], ['n0', 'n1', 'n2']]) {
         await page.evaluate(async ids => {
             const h = window.canvasHarness;
             h.canvas.select(null); h.canvas.setMulti(ids);
@@ -51,9 +53,47 @@ test('F centers all nodes with no selection and the combined bounds of two or mo
         const offset = await centerOffset(page, selector);
         expect(Math.abs(offset.x), `horizontal center of ${JSON.stringify(ids)}`).toBeLessThan(1);
         expect(Math.abs(offset.y), `vertical center of ${JSON.stringify(ids)}`).toBeLessThan(1);
-        expect(offset.zoom).toBe(1.4);
+        expect(offset.zoom).toBeLessThanOrEqual(1.2);
+        expect(offset.contained).toBe(true);
         expect(await page.evaluate(() => [...window.canvasHarness.canvas.multi])).toEqual(ids);
     }
+});
+
+test('F with no selection frames the graph using the same shelf-aware view as Fit graph', async ({ page }) => {
+    await openCanvas(page);
+    const fitted = await page.evaluate(async () => {
+        const h = window.canvasHarness;
+        h.canvas.select(null); h.canvas.setMulti([]);
+        h.canvas.fit();
+        const fitted = { ...h.canvas.view };
+        await h.view({ x: -390, y: 135, zoom: 1.4 });
+        return fitted;
+    });
+    await page.locator('.pc-canvas-host').focus();
+    await page.keyboard.press('f');
+    expect(await page.evaluate(() => ({ ...window.canvasHarness.canvas.view }))).toEqual(fitted);
+    expect((await centerOffset(page, '.pc-node')).contained).toBe(true);
+});
+
+test('View advertises F for fitting, period remains an alias, and Center selection preserves zoom', async ({ page }) => {
+    await openCanvas(page);
+    await page.evaluate(async () => {
+        const h = window.canvasHarness;
+        h.canvas.select({ kind: 'node', id: 'n0' });
+        await h.view({ x: -430, y: 215, zoom: .8 });
+    });
+    await page.getByRole('menubar', { name: 'Workspace menus' }).getByRole('menuitem', { name: 'View', exact: true }).click();
+    await expect(page.getByRole('menuitem', { name: 'Fit selection', exact: true }).locator('kbd')).toHaveText('F');
+    const center = page.getByRole('menuitem', { name: 'Center selection', exact: true });
+    await expect(center.locator('kbd')).toHaveCount(0);
+    await center.click();
+    expect((await centerOffset(page, '.pc-node[data-id="n0"]')).zoom).toBe(.8);
+    await page.locator('.pc-canvas-host').focus();
+    await page.keyboard.press('f');
+    const fitted = await page.evaluate(() => ({ ...window.canvasHarness.canvas.view }));
+    await page.evaluate(() => window.canvasHarness.view({ x: -430, y: 215, zoom: .8 }));
+    await page.keyboard.press('.');
+    expect(await page.evaluate(() => ({ ...window.canvasHarness.canvas.view }))).toEqual(fitted);
 });
 
 test('F leaves the camera alone while typing, with command modifiers, or when the canvas is closed', async ({ page }) => {
