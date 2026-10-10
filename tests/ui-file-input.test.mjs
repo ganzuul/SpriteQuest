@@ -80,20 +80,14 @@ const { readFile, mkdtemp, writeFile, rm } = await import('node:fs/promises');
 const { tmpdir } = await import('node:os');
 const { join, resolve, relative, isAbsolute } = await import('node:path');
 const { pathToFileURL } = await import('node:url');
-const { compile } = await import('svelte/compiler');
+const { compiled } = await import('./helpers/svelte-compile.mjs');
 const { JSDOM } = await import('jsdom');
 const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true });
 globalThis.window = dom.window; globalThis.document = dom.window.document;
 for (const key of ['Node', 'Element', 'Text', 'Comment', 'Document', 'HTMLElement', 'HTMLButtonElement', 'HTMLInputElement', 'HTMLSelectElement', 'MutationObserver']) Object.defineProperty(globalThis, key, { configurable: true, value: dom.window[key] });
 const clientURL = new URL('../node_modules/svelte/src/index-client.js', import.meta.url).href;
 const { mount, unmount, flushSync, tick } = await import(clientURL);
-async function compiled(name, directory, source) {
-    const output = compile(source, { filename: name + '.svelte', generate: 'client', css: 'injected' });
-    assert.deepEqual(output.warnings.filter(warning => warning.code.startsWith('a11y')), []);
-    const code = output.js.code.replace(/(['"])(svelte(?:\/[^'"]*)?)\1/g, (_, quote, specifier) => JSON.stringify(specifier === 'svelte' ? clientURL : import.meta.resolve(specifier)));
-    const path = join(directory, name + '.mjs'); await writeFile(path, code);
-    return { path, component: (await import(pathToFileURL(path).href)).default };
-}
+
 async function detailsFixture(view, actions) {
     const directory = await mkdtemp(join(tmpdir(), 'lattice-file-input-'));
     const host = document.createElement('div'); document.body.append(host);

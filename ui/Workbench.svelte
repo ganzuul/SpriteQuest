@@ -127,7 +127,7 @@
                 {@const details = view.commentDetails}
                 <CommentDetails comment={details.comment} onPatch={patch => actions.commentDetails?.patch(details.selection, patch)} onCommand={command => actions.commentDetails?.command(details.selection, command)} />
             {/if}
-            <div hidden={!!view.commentDetails}><NodeDetails view={view.commentDetails ? null : view.nodeDetails ?? null} actions={actions.nodeDetails} /></div>
+            <div class="pc-node-details-holder" hidden={!!view.commentDetails}><NodeDetails view={view.commentDetails ? null : view.nodeDetails ?? null} actions={actions.nodeDetails} /></div>
         </div>
     </div>
     {#if overlay}
@@ -151,8 +151,9 @@
     .pc-examples-dialog > header { flex: none; height: 42px; box-sizing: border-box; padding: 7px 10px; margin: 0; border-bottom: 1px solid var(--pc-border); }
     .pc-examples-dialog h2 { font-size: 14px; margin: 0; }
     .pc-manager-dialog { max-height: calc(100% - 24px); max-width: calc(100% - 24px); overflow: auto; border-radius: 4px; }
-    .pc-workspace-details { flex: 0 0 var(--pc-details-width, 258px); width: var(--pc-details-width, 258px); min-width: 0; overflow: auto; border-left: 1px solid var(--pc-border); background: var(--pc-panel); }
-    .pc-details-heading { display: flex; align-items: center; gap: 5px; padding: 8px 12px; font-size: 11px; border-bottom: 1px solid var(--pc-border); }
+    .pc-workspace-details { flex: 0 0 var(--pc-details-width, 258px); width: var(--pc-details-width, 258px); min-width: 0; overflow: auto; border-left: 1px solid var(--pc-border); background: var(--pc-panel); display: flex; flex-direction: column; }
+    .pc-node-details-holder:not([hidden]) { flex: 1; display: flex; flex-direction: column; }
+    .pc-details-heading { flex: none; display: flex; align-items: center; gap: 5px; padding: 8px 12px; font-size: 11px; border-bottom: 1px solid var(--pc-border); }
     .pc-details-heading strong { margin-right: auto; } .pc-details-heading button { padding: 3px 5px; border: 1px solid var(--pc-border); border-radius: 2px; background: var(--pc-block); color: inherit; font: inherit; font-size: 10px; }
     .pc-workspace-run { position: absolute; left: 14px; bottom: 13px; z-index: 20; }
     .pc-native-flat :global(.pc-canvas-host) { background-image: none; }

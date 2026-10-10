@@ -104,7 +104,7 @@ test('Rename focuses the alias editor and Compact card changes presentation with
     const before = await snapshot(page);
     await heading(page, 'n0').click({ button: 'right' });
     await action(page, 'Rename').click();
-    const alias = page.getByLabel('Alias', { exact: true });
+    const alias = page.getByLabel('Node name', { exact: true });
     await expect(alias).toBeFocused();
     expect(await snapshot(page)).toEqual(before);
     await alias.fill('Local menu alias'); await alias.press('Tab');
@@ -224,6 +224,14 @@ test('host keyboard styling cannot add shortcut badges or expand the context-men
     });
     expect(metrics.width).toBe(296);
     for (const height of metrics.rows) expect(height).toBe(32);
+    await menu(page).getByRole('menuitemcheckbox', { name: 'Compact card', exact: true }).click();
+    await page.evaluate(async () => { await window.canvasHarness.view({ x: 180, y: 10, zoom: 1 }); });
+    await page.locator('.pc-node[data-id="n1"]').click({ button: 'right' });
+    const compact = menu(page).getByRole('menuitemcheckbox', { name: 'Compact card', exact: true });
+    await expect(compact).toHaveAttribute('aria-checked', 'true');
+    await expect(compact.locator('.pc-context-shortcut')).toHaveText('Shift C');
+    await expect(compact.locator('.pc-context-check')).toHaveText('✓');
+    expect((await compact.boundingBox()).height).toBe(32);
 });
 
 test('long subgraph menus fit a small viewport and keyboard navigation skips read-only commands', async ({ page }) => {

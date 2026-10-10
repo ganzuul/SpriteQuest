@@ -64,7 +64,7 @@ test('F leaves the camera alone while typing, with command modifiers, or when th
         await h.view({ x: -430, y: 215, zoom: .8 });
         return { ...h.canvas.view };
     });
-    const alias = page.getByLabel('Alias', { exact: true });
+    const alias = page.getByLabel('Node name', { exact: true });
     await alias.fill('Alias');
     await alias.press('f');
     await expect(alias).toHaveValue('Aliasf');

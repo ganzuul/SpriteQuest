@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { chooseControl, controlValue } from './details-helpers.mjs';
 
 async function launch(page, phase = 'post') {
     await page.goto('/tests/browser/harness.html');
@@ -28,15 +29,15 @@ test('post canonical Transpose nodes and Details retain reference, scope and boo
     await launch(page);
     await expect(page.locator('[data-family="Transpose"]')).toBeEnabled();
     const id = await insert(page, 'Transpose', 'style-transfer');
-    await page.getByLabel('Mode', { exact: true }).selectOption('character-voice');
-    await page.getByLabel('Input type', { exact: true }).selectOption('draft');
-    await page.getByLabel('Scope', { exact: true }).selectOption('dialogue');
-    await expect(page.getByLabel('Mode', { exact: true })).toHaveValue('character-voice');
-    await expect(page.getByLabel('Scope', { exact: true })).toHaveValue('dialogue');
-    await page.getByLabel('Reference', { exact: true }).selectOption('data');
-    await page.getByLabel('Mode', { exact: true }).selectOption('rhythm');
-    await expect(page.getByLabel('Scope', { exact: true })).toHaveValue('dialogue');
-    await page.getByLabel('Scope', { exact: true }).selectOption('narration');
+    await chooseControl(page, 'Mode', 'character-voice');
+    await chooseControl(page, 'Input type', 'draft');
+    await chooseControl(page, 'Scope', 'dialogue');
+    await expect.poll(() => controlValue(page, 'Mode')).toBe('character-voice');
+    await expect.poll(() => controlValue(page, 'Scope')).toBe('dialogue');
+    await chooseControl(page, 'Reference', 'data');
+    await chooseControl(page, 'Mode', 'rhythm');
+    await expect.poll(() => controlValue(page, 'Scope')).toBe('dialogue');
+    await chooseControl(page, 'Scope', 'narration');
     await expect.poll(() => page.evaluate(id => { const node = window.canvasHarness.graph.nodes[id]; return [node.referenceKind, node.mode, node.scope]; }, id)).toEqual(['data', 'rhythm', 'narration']);
     await expect(page.locator(`.pc-node[data-id="${id}"] .pc-port[data-port="reference"]`)).toHaveAttribute('data-kind', 'data');
     const glossary = await insert(page, 'Transpose', 'terminology-map');
@@ -48,9 +49,9 @@ test('post canonical Transpose nodes and Details retain reference, scope and boo
 test('canonical cleanup node retains category selection independently of mode and scope', async ({ page }) => {
     await launch(page);
     const id = await insert(page, 'Surface', 'repair');
-    await page.getByLabel('Mode', { exact: true }).selectOption('strict');
-    await expect(page.getByLabel('Mode', { exact: true })).toHaveValue('strict');
-    await expect(page.getByLabel('Scope', { exact: true })).toHaveValue('narration');
+    await chooseControl(page, 'Mode', 'strict');
+    await expect.poll(() => controlValue(page, 'Mode')).toBe('strict');
+    await expect.poll(() => controlValue(page, 'Scope')).toBe('narration');
     await page.getByLabel('Policy categories (empty selects all)', { exact: true }).fill('generic-tension-atmosphere');
     await page.locator('[data-save-control="categories"]').click();
     await expect.poll(() => page.evaluate(id => window.canvasHarness.graph.nodes[id].categories, id)).toEqual(['generic-tension-atmosphere']);
@@ -60,14 +61,13 @@ test('canonical cleanup node retains category selection independently of mode an
 test('Repair Details shows scope and policy controls only for cleanup modes', async ({ page }) => {
     await launch(page);
     await insert(page, 'Surface', 'repair');
-    const mode = page.getByLabel('Mode', { exact: true });
-    await expect(mode).toHaveValue('repair');
+    await expect.poll(() => controlValue(page, 'Mode')).toBe('repair');
     await expect(page.getByLabel('Scope', { exact: true })).toHaveCount(0);
     await expect(page.getByLabel('Policy categories (empty selects all)', { exact: true })).toHaveCount(0);
-    await mode.selectOption('contextual');
-    await expect(page.getByLabel('Scope', { exact: true })).toHaveValue('narration');
+    await chooseControl(page, 'Mode', 'contextual');
+    await expect.poll(() => controlValue(page, 'Scope')).toBe('narration');
     await expect(page.getByLabel('Policy categories (empty selects all)', { exact: true })).toBeVisible();
-    await mode.selectOption('scan');
+    await chooseControl(page, 'Mode', 'scan');
     await expect(page.getByLabel('Scope', { exact: true })).toHaveCount(0);
     expect(await page.evaluate(() => window.canvasHarness.providerCalls())).toBe(0);
 });
@@ -76,16 +76,16 @@ for (const phase of ['pre', 'post']) test(`${phase} canonical Style and Format T
     await launch(page, phase);
     for (const operation of ['style-transfer', 'format-transfer']) {
         const id = await insert(page, 'Transpose', operation);
-        await expect(page.getByLabel('Input type', { exact: true })).toHaveValue('text');
+        await expect.poll(() => controlValue(page, 'Input type')).toBe('text');
         await expect(page.locator(`.pc-node[data-id="${id}"] .pc-port[data-dir="in"][data-port="in"]`)).toHaveAttribute('data-kind', 'text');
         await expect(page.locator(`.pc-node[data-id="${id}"] .pc-port[data-dir="out"][data-port="out"]`)).toHaveAttribute('data-kind', 'text');
         expect(await page.evaluate(id => window.canvasHarness.graph.nodes[id].inputKind, id)).toBe('text');
-        if (phase === 'pre') await expect(page.getByLabel('Input type', { exact: true }).locator('option[value="draft"]')).toHaveCount(0);
+        if (phase === 'pre') await expect(page.getByLabel('Input type', { exact: true }).locator('option[value="draft"], input[type="radio"][value="draft"]')).toHaveCount(0);
         if (operation === 'style-transfer') {
-            await page.getByLabel('Mode', { exact: true }).selectOption('rhythm');
+            await chooseControl(page, 'Mode', 'rhythm');
             await expect.poll(() => page.evaluate(id => window.canvasHarness.graph.nodes[id].mode, id)).toBe('rhythm');
         }
-        await page.getByLabel('Strength', { exact: true }).selectOption('balanced');
+        await chooseControl(page, 'Strength', 'balanced');
         await expect.poll(() => page.evaluate(id => window.canvasHarness.graph.nodes[id].strength, id)).toBe('balanced');
     }
     expect(await page.evaluate(() => window.canvasHarness.providerCalls())).toBe(0);

@@ -1,3 +1,4 @@
+import { applyTextModifiers } from './modifiers.js?v=0.26.0';
 import { operationFor } from './catalog.js?v=0.26.0';
 import { cloneWorkflowDocument } from './document.js?v=0.26.0';
 import { resolveWorkflow } from './resolve.js?v=0.26.0';
@@ -163,9 +164,15 @@ async function executeWorkflow(original,ports,hooks={}) {
             const result=await executeNode(node,inputs,op,{...ports,phase:plan.phase,binding,request,root:unit.address.instancePath.length===0,address:unit.address,executeIntrospection:hooks.executeIntrospection});
             if(stopped())return finish(failure('ABORTED','Workflow was stopped.',node.id));
             if(!result?.ok){emit('node-settled',{address:unit.address,status:'failed',error:safeError(result?.error)});return finish(result??failure('WORKFLOW_FAILED','The operation returned no result.',node.id));}
-            const artifact=freezeArtifact(result.artifact);
+            let output=result.artifact,modifierMetadata;
+            if(node.modifiers?.length) {
+                const modified=applyTextModifiers(output?.text,node.modifiers);
+                if(!modified.ok){const error={...modified.error,nodeId:node.id};emit('node-settled',{address:unit.address,status:'failed',error:safeError(error)});return finish({ok:false,error});}
+                output={...output,text:modified.data.text};modifierMetadata={rawText:modified.data.rawText,trace:modified.data.trace};
+            }
+            const artifact=freezeArtifact(output),recordedArtifact=modifierMetadata?freezeArtifact({...artifact,modifiers:modifierMetadata}):artifact;
             const metadata={source:artifact?.source,binding:safeBinding(ports.bindingSummary?.(binding)??{role:node.modelRole,profileId:binding?.profileId,model:binding?.model}),reports:result.reports};
-            for(const port of unit.outputPorts){artifacts.set(artifactKey({...unit.address,portId:port.id}),artifact);recorder.capture({address:unit.address,direction:'output',portId:port.id,artifact,...metadata});}
+            for(const port of unit.outputPorts){artifacts.set(artifactKey({...unit.address,portId:port.id}),artifact);recorder.capture({address:unit.address,direction:'output',portId:port.id,artifact:recordedArtifact,...metadata});}
             if(unit.terminal){const terminal={kind:'terminal',address:unit.address};terminals.push({terminal,artifact});recorder.capture({address:unit.address,direction:'terminal',artifact,...metadata});}
             emit('node-settled',{address:unit.address,status:'completed'});
         }

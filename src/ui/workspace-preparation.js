@@ -8,6 +8,8 @@ import { ARTIFACT_KINDS, operationFor, portsForNode } from '../workflow/catalog.
 import { definitionChain } from '../workflow/composition-edit.js?v=0.26.0';
 import { FAMILY_PALETTE, paletteForOperation, readNodePresentation } from './node-palette.js?v=0.26.0';
 import { isCommentFrame } from '../canvas/comment-frames.js?v=0.26.0';
+import { modifierTypes, modifierSummary, applyTextModifiers } from '../workflow/modifiers.js?v=0.26.0';
+import { boundedText, RENDERED_TEXT_BYTES } from '../workflow/record-data.js?v=0.26.0';
 const rootIdentity = root => ({ kind: 'root', workflowId: root.id });
 /** First activation favors readable named cards; users can pan or explicitly Fit. */
 export function initialWorkspaceCamera(node, { width, shelf, meter } = {}) {
@@ -31,13 +33,15 @@ export function prepareWorkspaceViews(root, options = {}) {
         const drawBase = prepareEditorDrawBase(view,root.definitions);
         // Saved primitive null means inheritance; only an explicit enclosing
         // instance null map blocks it. Cache that source distinction with the view.
-        drawBase.bindingBlocks = {};
+        drawBase.bindingBlocks = {}; drawBase.instanceBindingSources = {};
         const chain = view.instancePath.length ? definitionChain(root, view.instancePath) : [];
         for (const node of Object.values(view.savedGraph.nodes)) {
             const binding = {};
             for (let depth = chain.length - 1; depth >= 0; depth--) Object.assign(binding, chain[depth].node.nodeBindingOverrides?.[nodeBindingOverrideKey(view.instancePath.slice(depth + 1), node.id)] ?? {});
             const fields = Object.fromEntries(Object.entries(binding).filter(([, value]) => value === null).map(([field]) => [field, true]));
             if (Object.keys(fields).length) drawBase.bindingBlocks[node.id] = fields;
+            const role = node.modelRole ?? drawBase.nativeCards[node.id]?.modelRole;
+            if (Object.keys(binding).length || chain.some(owner => Object.keys(owner.node.roleOverrides?.[role] ?? {}).some(key => ['profileId','model'].includes(key) && !node[key]))) drawBase.instanceBindingSources[node.id] = true;
         }
         return { identity, ...(view.definitionRef ? { definitionRef: view.definitionRef } : {}), readOnly: !view.editable, savedGraph: view.savedGraph, effectiveNodes: view.effectiveNodes, interface: view.interface, ports: view.ports, drawBase };
     });
@@ -82,12 +86,14 @@ export function projectWorkspacePanels(editor, workflow, state, revision, select
     const fileInput = saved?.operation === 'file-input' ? { fileName: typeof saved.fileName === 'string' ? saved.fileName : '', loaded: saved.loaded === true } : null;
     const controls = metadata ? Object.entries(metadata.controlDescriptors).filter(([key, descriptor]) => {
         if (descriptor.hidden || fileInput && ['fileName', 'content', 'loaded'].includes(key)) return false;
+        const effectiveNode = editor.prepared.effectiveNodes[selectedId];
+        if (!visibleDetailControl(saved, metadata.defaults, key) && !visibleDetailControl(effectiveNode, metadata.defaults, key)) return false;
         const condition = descriptor.visibleWhen;
-        return !condition || (saved?.[condition.key] ?? metadata.defaults[condition.key] ?? metadata.controlDescriptors[condition.key]?.default) === condition.value;
+        return !condition || [saved,effectiveNode].some(node => (node?.[condition.key] ?? metadata.defaults[condition.key] ?? metadata.controlDescriptors[condition.key]?.default) === condition.value);
     }).map(([key, descriptor]) => {
         const fallback = metadata.defaults[key] ?? descriptor.default;
         const value = saved?.[key] ?? fallback, effectiveValue = editor.prepared.effectiveNodes[selectedId]?.[key] ?? fallback;
-        return { ...detailControl(key, descriptor.label || key.replace(/([A-Z])/g,' $1'), descriptor, value), effective: JSON.stringify(effectiveValue), source: JSON.stringify(value) === JSON.stringify(effectiveValue) ? 'Saved setting' : 'Effective instance override' };
+        return { ...detailControl(key, descriptor.label || friendlyControlLabel(key), descriptor, value), ...detailPresentation(saved.operation, key), ...(JSON.stringify(value) === JSON.stringify(effectiveValue) ? {} : { effective: displayEffective(effectiveValue), source: 'Effective instance override' }) };
     }) : [];
     const modes = [{ value: 'inherit', label: 'Inherit role' }, { value: 'override', label: 'Override' }];
     const field = (key, options) => {
@@ -98,12 +104,23 @@ export function projectWorkspacePanels(editor, workflow, state, revision, select
     const interfacePort = metadata?.boundary ? editor.prepared.interface.find(port => port.id === saved?.interfacePortId && port.boundaryNodeId === selectedId) : null;
     const boundary = interfacePort ? { id: interfacePort.id, label: interfacePort.label, direction: interfacePort.direction, kind: interfacePort.kind, required: interfacePort.required, kinds: [...ARTIFACT_KINDS] } : null;
     const commentDetails = isCommentFrame(saved) ? { selection, comment: { id: saved.id, x: saved.x, y: saved.y, w: saved.w, h: saved.h, title: saved.title ?? 'Comment', content: saved.content ?? '', color: saved.color ?? '#637d89', moveContents: saved.moveContents !== false, selected: true, readOnly: editor.readOnly || library } } : null;
-    const nodeDetails = saved && metadata && !commentDetails ? { ...selection, title: boundary?.label ?? (presentation.alias || (typeof saved.title === 'string' ? saved.title : metadata.canonicalTitle)), canonicalTitle: metadata.canonicalTitle, iconPath: metadata.iconPath, family: metadata.family, phase: graph.mode.slice(7), alias: presentation.alias, compact: presentation.compact, enabled: saved.enabled !== false, readOnly: editor.readOnly || library, canPresent: true, controls, ...(fileInput ? { fileInput } : {}), ...(boundary ? { boundary } : {}),
-        model: metadata.modelRole ? { role: saved.modelRole ?? metadata.modelRole, roleEditable: true, profile: field('profileId', workflow.profiles.map(profile => ({ value: profile.id, label: profile.name }))), model: field('model'), effective: effective?.effective || (library ? [editor.prepared.effectiveNodes[selectedId]?.profileId ?? graph.roles?.[saved.modelRole ?? metadata.modelRole]?.profileId,editor.prepared.effectiveNodes[selectedId]?.model ?? graph.roles?.[saved.modelRole ?? metadata.modelRole]?.model].filter(Boolean).join(' · ') : ''), source: 'Saved node override or containing role' } : null,
+    const nodeDetails = saved && metadata && !commentDetails ? { ...selection, title: boundary?.label ?? (presentation.alias || (typeof saved.title === 'string' ? saved.title : metadata.canonicalTitle)), canonicalTitle: metadata.canonicalTitle, operation: saved.operation, iconPath: metadata.iconPath, family: metadata.family, familyColor: metadata.familyColor, phase: graph.mode.slice(7), alias: presentation.alias, compact: presentation.compact, enabled: saved.enabled !== false, readOnly: editor.readOnly || library, canPresent: true, controls, ...(fileInput ? { fileInput } : {}), ...(boundary ? { boundary } : {}),
+        model: metadata.modelRole && (effective?.effective !== 'No model call' || saved.model || saved.profileId || Object.keys(editor?.prepared.drawBase.bindingBlocks?.[selectedId] ?? {}).length) ? { role: saved.modelRole ?? metadata.modelRole, roleEditable: true, profile: field('profileId', workflow.profiles.map(profile => ({ value: profile.id, label: profile.name }))), model: field('model'), effective: effective?.effective || (library ? [editor.prepared.effectiveNodes[selectedId]?.profileId ?? graph.roles?.[saved.modelRole ?? metadata.modelRole]?.profileId,editor.prepared.effectiveNodes[selectedId]?.model ?? graph.roles?.[saved.modelRole ?? metadata.modelRole]?.model].filter(Boolean).join(' · ') : ''), source: editor.prepared.drawBase.instanceBindingSources?.[selectedId] ? 'Containing instance override' : saved.profileId || saved.model ? 'Node override' : 'Inherited from ' + (saved.modelRole ?? metadata.modelRole), ...(effective?.issue ? {issue: effective.issue} : {}) } : null,
+        modifiers: modifierView(saved, metadata, !(editor.readOnly || library)),
         ports: metadata.ports.map(port => ({ id: port.port, label: port.label, direction: port.dir === 'in' ? 'input' : 'output', kind: port.kind })), issues: [] } : null;
     const choices = library ? [] : previewChoices ?? previewChoicesFor(editor.prepared, workflow.targets);
     const target = pinnedPreview || selectedTarget, selectedKey = choices.find(choice => targetKey(choice.target) === targetKey(target))?.key ?? '';
     const result = workflow.result, sections = result ? result.sections.map((section,i) => ({ id: String(i), label: section.kind, ...section })) : [];
+    if (!library && !state.busy && saved && nodeDetails?.modifiers && target?.nodeId === selectedId && target?.workflowId === workflow.graphId && target?.portId === nodeDetails.modifiers.outputPortId && JSON.stringify(target.instancePath) === JSON.stringify(path)) {
+        const source = sections.find(section => section.format === 'structured-text' && typeof section.recordedRawText === 'string');
+        if (source) {
+            const local = applyTextModifiers(source.recordedRawText, saved.modifiers ?? []);
+            if (local.ok && JSON.stringify(local.data.trace) !== JSON.stringify(source.recordedModifierTrace ?? [])) {
+                const text = boundedText(local.data.text, RENDERED_TEXT_BYTES - 2);
+                sections.push({id:'local-modifiers',kind:'text',label:'Local modifier preview · recorded source',text,format:'structured-text',truncated:text !== local.data.text});
+            }
+        }
+    }
     const selector = editor?.view.identity.kind === 'root' ? result?.selectedReviewHandle ?? null : null;
     const outputPreview = { sourceKey: revision, title: 'Output preview', statusDetail: [!library && memoryStatus(result?.memoryCommit), state.status].filter(Boolean).join(' · '), status: !library && target && !selectedKey ? 'removed' : !result ? 'not-run' : state.availability === 'current' ? 'current' : 'stale', choices, selectedKey, pinned: !!pinnedPreview, followSelection: !pinnedPreview, sections: library || target && !selectedKey ? [] : sections, issues: library ? ['Library inspection is read-only and has no runtime output.'] : workflow.issues, busy: state.busy, runHere: library || !selectedKey ? null : { enabled: !state.busy && !workflow.targetSummary?.issues?.length, callBound: workflow.targetSummary?.callBound ?? workflow.callBound, issue: workflow.targetSummary?.issues?.join(' ') }, review: selector ? { selector, canApply: result.applyAvailable, fresh: !result.applyIssue && state.availability === 'current', selectedRootTerminal: editor?.view.identity.kind === 'root' && target?.kind === 'terminal' && !target.address.instancePath.length, mode: 'root', issue: result.applyIssue } : null };
     const rowSource = state.runState || state.recording, rows = rootWorkflow.rows?.length ? rootWorkflow.rows : idleRunRows, flat = [];
@@ -133,7 +150,7 @@ function prepareEditorDrawBase(view,snapshots) {
             const family = operation?.family || 'Subgraphs', palette = FAMILY_PALETTE.find(item => item.name === family), discovery = paletteForOperation(node.operation);
             drawBase.nativeCards[node.id] = { canonicalTitle: title, family, familyColor: palette?.color || '#a3aa99', iconPath: wrapper || boundary ? palette?.icon : discovery.icon,
                 body: wrapper ? 'Open the pinned subgraph' : boundary ? 'Definition interface' : operation.title,
-                hostResult: !!operation?.terminal, controlDescriptors: structuredClone(operation?.controlDescriptors ?? {}), defaults: structuredClone(operation?.defaults ?? {}), modelRole: operation?.modelRole ?? null,
+                hostResult: !!operation?.terminal, modifierSummary: modifierSummary(node.modifiers ?? []), controlDescriptors: structuredClone(operation?.controlDescriptors ?? {}), defaults: structuredClone(operation?.defaults ?? {}), modelRole: operation?.modelRole ?? null,
                 ...(interfacePort ? { boundary: { direction: interfacePort.direction, editable: view.editable === true } } : {}),
                 ports: actualPorts.map(port => { const dir = port.direction === 'input' ? 'in' : 'out'; return { id: `${dir}:${port.id}`, port: port.id, dir, side: dir === 'in' ? 'left' : 'right', row: ++rows[dir], kind: port.kind, label: port.label, className: `pc-port pc-port-${dir}`, title: `${port.label}: ${port.kind}` }; }) };
         }
@@ -202,12 +219,40 @@ export function prepareLibraryViews(workflowId, snapshots) {
 
 function detailControl(key,label,descriptor,value) {
  const editor=descriptor.editor==='json'||descriptor.type==='object'||descriptor.type==='array'&&descriptor.items!=='string'?'json':descriptor.type==='enum'?'enum':descriptor.type==='array'?'lines':['integer','number'].includes(descriptor.type)?'number':descriptor.type==='boolean'?'boolean':'text';
- return {key,label,value:value ?? descriptor.default,editor,...(descriptor.help?{help:descriptor.help}:{}),...(editor==='json'?{representation:'json-value'}:{}),...(descriptor.values?{options:descriptor.values.map(value=>({value,label:value}))}:{}),...(descriptor.min!==undefined?{min:descriptor.min}:{}),...(descriptor.max!==undefined?{max:descriptor.max}:{}),...(editor==='number'?{step:descriptor.step ?? (descriptor.type==='integer'?1:'any')}:{})};
+ return {key,label,value:value ?? descriptor.default,editor,...(descriptor.help?{help:descriptor.help}:{}),...(editor==='json'?(descriptor.type==='string'?{representation:'json-text',allowEmpty:true}:{representation:'json-value'}):{}),...(descriptor.values?{options:descriptor.values.map(value=>({value,label:value}))}:{}),...(descriptor.min!==undefined?{min:descriptor.min}:{}),...(descriptor.max!==undefined?{max:descriptor.max}:{}),...(editor==='number'?{step:descriptor.step ?? (descriptor.type==='integer'?1:'any')}:{})};
+}
+const friendlyControlLabel = key => ({ maxTokens: 'Output tokens', budgetTokens: 'Token budget', pins: 'Pinned wording', rules: 'Rules' }[key] ?? key.replace(/([A-Z])/g, char => ' ' + char.toLowerCase()).replace(/^./, char => char.toUpperCase()));
+const displayEffective = value => {const text = typeof value === 'string' ? value : JSON.stringify(value);return text?.length > 256 ? text.slice(0,256) + '…' : text;};
+function visibleDetailControl(node, defaults, key) {
+ const value = name => node?.[name] ?? defaults[name];
+ if (node?.operation === 'compose') return key !== 'template' || value('mode') === 'template' ? key !== 'separator' || value('mode') === 'join' : false;
+ if (node?.operation === 'text-rules') return key !== 'separator' || value('mode') === 'extract' ? !['scope','protectedLiterals'].includes(key) || value('inputKind') === 'draft' : false;
+ if (node?.operation === 'smart-compactor' && key === 'maxTokens') return value('method') === 'compress';
+ return true;
+}
+function detailPresentation(operation, key) {
+ const structured = key === 'sections' && operation === 'compose' ? 'sections'
+  : key === 'fields' && operation === 'select-fields' ? 'fields'
+  : key === 'rules' && operation === 'text-rules' ? 'rules'
+  : key === 'inputs' && operation === 'context-join' ? 'slots'
+  : key === 'updates' && operation === 'state' ? 'numeric-map'
+  : key === 'durations' ? 'durations' : undefined;
+ const group = ['pins','protectedLiterals','exemptions'].includes(key) ? 'Protections'
+  : ['min','max','baseline','decay'].includes(key) ? 'Bounds'
+  : key === 'durations' ? 'Phases'
+  : ['separator','maxTokens'].includes(key) ? 'Output' : 'Main';
+ return {group, ...(group !== 'Main' ? {advanced:true} : {}), ...(structured ? {structured} : {}), ...(['actorId','curveId','trackId','idempotencyKey','promptId'].includes(key) ? {singleLine:true} : {})};
+}
+function modifierView(node, metadata, editable) {
+ const outputs = metadata.ports.filter(port => port.dir === 'out');
+ if (node.type !== 'workflow' || metadata.hostResult || outputs.length !== 1 || outputs[0].kind !== 'text') return null;
+ const options = Object.values(modifierTypes).map(type => ({type:type.type,label:type.label,defaultSettings:structuredClone(type.defaultSettings),fields:type.fields.map(field => detailControl(field.key,field.label,{type:field.type === 'enum' ? 'enum' : field.type,values:field.options,min:field.min,max:field.max}, type.defaultSettings[field.key]))}));
+ return {items:structuredClone(node.modifiers ?? []), options, editable, outputPortId:outputs[0].port};
 }
 export function projectDefinitionInstance(info,wrapper,profiles=[],effectiveControls={},effectiveBindings={}) {
  const modes=[{value:'inherit',label:'Inherit definition'},{value:'override',label:'Override'},{value:'block',label:'Block inheritance'}];
  const field=(binding,key)=>({mode:Object.hasOwn(binding ?? {},key)?binding[key]===null?'block':'override':'inherit',value:binding?.[key] ?? null,allowedModes:modes,...(key==='profileId'?{options:profiles.map(profile=>({value:profile.id,label:profile.name}))}:{})});
- const parameters=info.parameters.map(row=>({...row,overridden:Object.hasOwn(wrapper.parameterOverrides ?? {},row.id),control:{...row.control,value:Object.hasOwn(wrapper.parameterOverrides ?? {},row.id)?wrapper.parameterOverrides[row.id]:row.control.value,effective:JSON.stringify(effectiveControls[row.id] ?? row.control.value),source:'Definition value with containing instance overrides'}}));
+ const parameters=info.parameters.map(row=>{const value=Object.hasOwn(wrapper.parameterOverrides ?? {},row.id)?wrapper.parameterOverrides[row.id]:row.control.value,effective=effectiveControls[row.id] ?? row.control.value;return {...row,overridden:Object.hasOwn(wrapper.parameterOverrides ?? {},row.id),control:{...row.control,value,...(JSON.stringify(value)===JSON.stringify(effective)?{}:{effective:displayEffective(effective),source:'Effective instance override'})}};});
  const bindings=[...info.roles.map(role=>({key:'role:'+role.id,label:'Role '+role.label,target:{kind:'role',role:role.id},saved:wrapper.roleOverrides?.[role.id]})),...info.nodeBindings.map(row=>({key:'node:'+row.id,label:row.label,target:row.target,saved:wrapper.nodeBindingOverrides?.[row.id]}))].map(row=>({key:row.key,label:row.label,target:row.target,editable:true,profile:field(row.saved,'profileId'),model:field(row.saved,'model'),effective:effectiveBindings[row.key] || 'No model call',source:'Saved instance override or definition binding'}));
  return {parameters,bindings};
 }

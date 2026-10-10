@@ -4,7 +4,7 @@ import { readFile, mkdtemp, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve, relative, isAbsolute } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { compile } from 'svelte/compiler';
+import { compiled } from './helpers/svelte-compile.mjs';
 import { JSDOM } from 'jsdom';
 import { prepareNodeControlChange } from '../src/workflow/ports.js';
 
@@ -14,13 +14,7 @@ for (const key of ['Node', 'Element', 'Text', 'Comment', 'Document', 'HTMLElemen
 const clientURL = new URL('../node_modules/svelte/src/index-client.js', import.meta.url).href;
 const { mount, unmount, flushSync, tick } = await import(clientURL);
 
-async function compiled(name, directory, source) {
-    const output = compile(source, { filename: name + '.svelte', generate: 'client', css: 'injected' });
-    assert.deepEqual(output.warnings.filter(warning => warning.code.startsWith('a11y')), []);
-    const code = output.js.code.replace(/(['"])(svelte(?:\/[^'"]*)?)\1/g, (_, quote, specifier) => JSON.stringify(specifier === 'svelte' ? clientURL : import.meta.resolve(specifier)));
-    const path = join(directory, name + '.mjs'); await writeFile(path, code);
-    return { path, component: (await import(pathToFileURL(path).href)).default };
-}
+
 async function fixture(view, actions) {
     const directory = await mkdtemp(join(tmpdir(), 'lattice-detail-drafts-'));
     const host = document.createElement('div'); document.body.append(host);
@@ -182,7 +176,7 @@ test('valid JSON and line drafts survive other saves and require their own expli
         f.host.querySelector('[data-save-control="exemptions"]').click(); await settle();
         assert.deepEqual(f.graph().nodes.scan.exemptions, ['new exemption', 'second exemption']);
         assert.deepEqual(f.edits.map(edit => edit.key), ['caseSensitive', 'rules', 'exemptions']);
-        assert.match(f.host.textContent, /Saved setting/); assert.match(f.host.textContent, /String and structured rules retain their metadata/);
+        assert.doesNotMatch(f.host.textContent, /Saved setting/); assert.match(f.host.textContent, /String and structured rules retain their metadata/);
         assert.deepEqual(f.graph().nodes.scan.protectedLiterals, ['weave']);
     } finally { await f.close(); }
 });

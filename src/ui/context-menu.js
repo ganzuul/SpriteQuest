@@ -171,25 +171,28 @@ export function showContextMenu({ root, x, y, label = 'Context actions', items =
             text.className = 'pc-context-label';
             text.textContent = item.label;
             button.append(text);
+            const trailing = document.createElement('span');
+            trailing.className = 'pc-context-trailing';
             if (item.shortcut) {
                 const shortcut = document.createElement('kbd');
                 shortcut.className = 'pc-context-shortcut';
                 shortcut.setAttribute('aria-hidden', 'true');
                 shortcut.textContent = item.shortcut;
-                button.append(shortcut);
+                trailing.append(shortcut);
             }
             if (checked) {
                 const check = document.createElement('span');
                 check.className = 'pc-context-check';
                 check.setAttribute('aria-hidden', 'true');
                 check.textContent = item.checked ? '✓' : '';
-                button.append(check);
+                trailing.append(check);
             }
             if (item.children?.length) {
                 button.setAttribute('aria-haspopup', 'menu');
                 button.setAttribute('aria-expanded', 'false');
-                button.append(svgIcon(document, 'M9 5l7 7-7 7', 'pc-context-chevron'));
+                trailing.append(svgIcon(document, 'M9 5l7 7-7 7', 'pc-context-chevron'));
             }
+            if (trailing.children.length) button.append(trailing);
             const entry = { button, item, menu: state };
             state.entries.push(entry);
             listen(state, button, 'click', event => { event.stopPropagation(); choose(entry); });

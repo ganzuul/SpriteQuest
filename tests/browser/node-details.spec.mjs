@@ -6,6 +6,15 @@ const selectCompose = async page => {
     await expect(details(page)).toBeVisible();
 };
 
+async function sectionsJson(page) {
+    const toggle = details(page).getByRole('button', { name: 'Edit Sections as JSON', exact: true });
+    const editor = details(page).getByLabel('Sections', { exact: true });
+    await expect(toggle.or(editor)).toBeVisible();
+    if (await toggle.isVisible()) await toggle.click();
+    await expect(editor).toBeVisible();
+    return editor;
+}
+
 async function setup(page) {
     await page.goto('/tests/browser/harness.html');
     await page.waitForFunction(() => !!window.canvasHarness);
@@ -28,12 +37,13 @@ async function setup(page) {
 test('invalid JSON is retained after switching roots and returning to the qualified node', async ({ page }) => {
     await setup(page);
     const before = await page.evaluate(() => structuredClone(window.canvasHarness.graph.nodes.n0.sections));
-    const editor = details(page).getByLabel('Sections', { exact: true });
+    const editor = await sectionsJson(page);
     await editor.fill('{"unfinished":');
     await details(page).getByRole('button', { name: 'Save Sections', exact: true }).click();
     await expect(editor).toHaveAttribute('aria-invalid', 'true');
     await page.getByLabel('Workflow', { exact: true }).selectOption('details-other-root');
     await selectCompose(page);
+    await sectionsJson(page);
     await expect(editor).toHaveValue(JSON.stringify(before, null, 2));
     await page.getByLabel('Workflow', { exact: true }).selectOption('details-draft-root');
     await selectCompose(page);
@@ -47,7 +57,7 @@ test('invalid JSON is retained after switching roots and returning to the qualif
 
 test('comment inspection preserves an invalid node draft for the mounted workspace lifetime', async ({ page }) => {
     await setup(page);
-    const editor = details(page).getByLabel('Sections', { exact: true });
+    const editor = await sectionsJson(page);
     await editor.fill('{"unfinished":');
     await details(page).getByRole('button', { name: 'Save Sections', exact: true }).click();
     await page.locator('.pc-comment-frame[data-id="annotation"] .pc-comment-select').click();

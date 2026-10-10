@@ -4,7 +4,7 @@ import { readFile, mkdtemp, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve, relative, isAbsolute } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { compile } from 'svelte/compiler';
+import { compiled } from './helpers/svelte-compile.mjs';
 import { JSDOM } from 'jsdom';
 import { starterGraph } from '../src/workflow/starters.js?v=0.26.0';
 import { cloneWorkflowDocument } from '../src/workflow/document.js?v=0.26.0';
@@ -21,13 +21,7 @@ globalThis.window = dom.window; globalThis.document = dom.window.document;
 for (const key of ['Node', 'Element', 'Text', 'Comment', 'Document', 'HTMLElement', 'HTMLMediaElement', 'HTMLButtonElement', 'HTMLInputElement', 'HTMLSelectElement', 'MutationObserver']) Object.defineProperty(globalThis, key, { configurable: true, value: dom.window[key] });
 const clientURL = new URL('../node_modules/svelte/src/index-client.js', import.meta.url).href;
 const { mount, unmount, flushSync, tick } = await import(clientURL);
-async function compiled(name, directory, source) {
-    const output = compile(source, { filename: name + '.svelte', generate: 'client', css: 'injected' });
-    assert.deepEqual(output.warnings.filter(warning => warning.code.startsWith('a11y')), []);
-    const code = output.js.code.replace(/(['"])(svelte(?:\/[^'"]*)?)\1/g, (_, quote, specifier) => JSON.stringify(specifier === 'svelte' ? clientURL : import.meta.resolve(specifier)));
-    const path = join(directory, name + '.mjs'); await writeFile(path, code);
-    return { path, component: (await import(pathToFileURL(path).href)).default };
-}
+
 async function fixture(view, actions) {
     const directory = await mkdtemp(join(tmpdir(), 'lattice-binding-drafts-'));
     const host = document.createElement('div'); document.body.append(host);

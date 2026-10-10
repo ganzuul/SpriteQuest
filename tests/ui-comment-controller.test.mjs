@@ -273,6 +273,7 @@ for (const key of ['Delete', 'Backspace']) test(`actual ${key} shortcut deletes 
         f.env.okToDelete = () => assert.fail('Keyboard deletion cannot request confirmation');
         f.env.confirmBox = () => assert.fail('Keyboard deletion cannot open a dialog');
         f.env.typing = controllerFunction('typing', f.env);
+        f.env.compactCardShortcut = controllerFunction('compactCardShortcut', f.env);
         const handler = controllerKeydown(f.env);
         real.host.focus(); const event = new window.KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }); handler(event);
         assert.equal(event.defaultPrevented, true); assert.equal(f.root.nodes.source, undefined); assert.equal(f.commits(), 1);

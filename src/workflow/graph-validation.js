@@ -1,3 +1,4 @@
+import { validateNodeModifiers } from './modifiers.js?v=0.26.0';
 import { ARTIFACT_KINDS, operationFor, describeOperation, portsForNode } from './catalog.js?v=0.26.0';
 import { cloneDefinitionData, computeDefinitionIdentity, definitionRefKey, inspectDefinitionMetadata, describeExposedParameter, nodeBindingOverrideKey, artifactAddressKey } from './definition-data.js?v=0.26.0';
 import { samePath, safeId } from './composition-edit.js?v=0.26.0';
@@ -66,6 +67,7 @@ function inspectScope(graph, { definition, snapshots = {} } = {}) {
         if (!record(node) || !idText(id) || node.id !== id) return fail('MALFORMED_WORKFLOW', 'Invalid node identity.');
         if (!presentationValid(node) || node.presentation !== undefined && !presentationValid(node.presentation)) return fail('INVALID_SETTINGS', 'Invalid node presentation or layout.', id);
         if (node.enabled !== undefined && typeof node.enabled !== 'boolean' || node.inGroup !== undefined && (!idText(node.inGroup) || !Object.hasOwn(graph.groups ?? {}, node.inGroup))) return fail('INVALID_SETTINGS', 'Invalid enabled/group setting.', id);
+        if (node.type !== 'workflow') { const modifiers=validateNodeModifiers(node,[]); if(!modifiers.ok)return {...modifiers,error:{...modifiers.error,nodeId:id}}; }
         if (node.type === 'note') continue;
         if (node.type === 'subgraph-input' || node.type === 'subgraph-output') {
             if (!definition) return fail('ROOT_BOUNDARY', 'Boundary nodes belong inside definitions.', id);
@@ -80,6 +82,8 @@ function inspectScope(graph, { definition, snapshots = {} } = {}) {
         }
         const described = describeOperation(graph, node);
         if (!described.ok) return { ...described, error: { ...described.error, nodeId: id } };
+        const modifiers=validateNodeModifiers(node,described.data.ports.filter(port=>port.direction==='output'));
+        if(!modifiers.ok)return {...modifiers,error:{...modifiers.error,nodeId:id}};
         const operation = described.data.descriptor;
         if (node.operationVersion !== undefined && node.operationVersion !== 1) return fail('UNKNOWN_OPERATION', 'Unknown operation or version.', id);
         if (operation.phase !== graph.mode.slice(7)) return fail('WRONG_PHASE', 'An operation does not support the containing phase.', id);

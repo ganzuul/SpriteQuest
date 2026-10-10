@@ -114,11 +114,17 @@ Edits participate in undo/redo. Text fields keep normal browser editing shortcut
 
 ## Configure operations in Details
 
-Select a node to inspect its canonical type, family, phase, settings, and ports. **Alias** gives it a local display name; **Compact card** reduces its visual footprint while retaining real pins. Presentation changes do not change execution.
+Select a node to edit its name and settings. The header retains its type, family and phase; secondary controls, model bindings, and ports expand when needed. Editing **Node name** gives it a local display name; restore the canonical name to clear that alias. **Compact card** reduces its visual footprint while retaining real pins. Use the node's right-click menu or **Shift+C** with its graph card focused. Presentation changes do not change execution.
 
 Right-click a node for grouped editing, preview, organization, and presentation actions. **Rename** focuses its alias, **Compact card** toggles its presentation, and **Fit selection** frames the current selection. Right-clicking within a multiselection keeps that selection; right-clicking another item makes it the action target. Menu shortcuts appear beside their commands. Use Up/Down or Home/End to navigate, Enter to choose, Right/Left to enter or leave an output submenu, and Escape to dismiss the menu while keeping your selection.
 
-Operation controls depend on the node. An **Enabled** checkbox is not a bypass: a disabled operation blocks validation. Delete and Duplicate act on the selected operation where editing is allowed.
+Operation controls follow the node's current mode. Disable remains in the graph menu: a disabled operation blocks validation; disconnecting an optional input can instead select its fallback. Required inputs must stay connected. Duplicate and Delete are in the node's secondary commands and right-click menu.
+
+Text Rules, selected fields, Compose sections, Context Join slots, State values and phase durations use row editors. **Edit JSON** exposes the same draft for precise or unsupported shapes. Pattern Scan retains its distinct phrase-rule JSON editor. **Save …** validates the complete candidate; unfinished JSON remains a draft across node and graph switching. Inherited values are explained when they differ from the saved setting.
+
+Nodes with one Text output have a bottom modifier tray. **Trim** and **Wrap** toggle quickly; the add menu also offers **Whitespace**, literal **Replace**, and **Unwrap fence**. Modifiers apply in order after the node produces its Text, before every downstream consumer. Each can be disabled, removed or reordered; disabling retains its settings. Settings save explicitly and all edits support graph undo. Active counts remain visible on full and compact cards. Typed Draft, Context, Data and host outputs keep their dedicated nodes.
+
+After a run, Preview retains the modified output, raw source and modifier trace when recording limits permit. Changing modifiers can show a **Local modifier preview · recorded source** without another model request. This diagnostic uses the retained source and does not refresh the run or grant Apply authority; rerun the graph to update downstream outputs. Large or incomplete recordings cannot provide a local preview.
 
 Mode, input/output type and other controls may change a node's pins. An edit that would make an existing wire incompatible is rejected without changing the node or its connections. Disconnect or replace the affected wire, then change the setting.
 
@@ -126,7 +132,7 @@ Mode, input/output type and other controls may change a node's pins. An edit tha
 
 Compose has join/template modes, Text/Guidance output, named sections, a separator, and template placeholders. The Structured guidance example connects Select Fields to Compose's **Data** pin.
 
-![Compose details showing the operation's mode, output, template, sections, and separator controls](images/compose-details.png)
+![Compose details showing template mode, Guidance output, template placeholders, and section editing](images/compose-details.png)
 
 *This template maps structured fields into a writing brief. Sections can also have their own connected Text inputs.*
 
@@ -142,7 +148,7 @@ The original starter supplies direction and constraint. Add a tone field to its 
 
 ### Deterministic editorial rules
 
-![Text Rules operation settings showing Draft input, replacement mode, Rules JSON, and the Save Rules action](images/text-rules-details.png)
+![Text Rules settings showing Draft input, replacement mode, literal rule rows, and the Save Rules action](images/text-rules-details.png)
 
 *Literal cleanup proposes `very very` → `very`. Save Rules validates the editor before the graph can use the change.*
 
@@ -162,7 +168,7 @@ To edit a completed reply, choose **Input type → Draft** in an After reply gra
 
 Smart Compactor lets you choose selection or model-backed compression, a target context budget, recent messages to preserve, and exact protected literals. Response Plan has operation instructions and a completion cap.
 
-![Response Plan details showing instructions, completion cap, Analysis role, connection mode, and model mode](images/model-details.png)
+![Response Plan details showing instructions and inherited model binding controls](images/model-details.png)
 
 *The model settings show role inheritance and effective connection information. The demonstration host has no bound Analysis profile, so setup is required before running.*
 
@@ -316,6 +322,7 @@ The current operations provide bounded host context, text/data processing, plann
 | Ctrl/Cmd+Z / Ctrl/Cmd+Shift+Z | Undo / redo graph edits |
 | Ctrl/Cmd+C / X / V | Copy / cut / paste selection outside text editors |
 | F2 on selected node | Rename its presentation alias |
+| Shift+C on focused graph card | Toggle Compact card |
 | Click wire | Select a connection |
 | Shift/Ctrl-click wire | Extend connection selection |
 | Delete/Backspace | Immediately delete selected nodes or connections outside an editor; Undo restores them |

@@ -4,7 +4,7 @@ import { readFile, mkdtemp, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve, relative, isAbsolute } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { compile } from 'svelte/compiler';
+import { compiled } from './helpers/svelte-compile.mjs';
 import { JSDOM } from 'jsdom';
 import { prepareNativeSearchCatalog, filterNativeSearchChoices, resolveNativeSearchChoice } from '../src/ui/native-search-catalog.js?v=0.26.0';
 import { FAMILY_PALETTE, paletteForOperation } from '../src/ui/node-palette.js?v=0.26.0';
@@ -22,13 +22,7 @@ globalThis.window = dom.window; globalThis.document = dom.window.document;
 for (const key of ['Node', 'Element', 'Text', 'Comment', 'Document', 'HTMLElement', 'HTMLMediaElement', 'HTMLButtonElement', 'HTMLInputElement', 'HTMLSelectElement', 'MutationObserver']) Object.defineProperty(globalThis, key, { configurable: true, value: dom.window[key] });
 const clientURL = new URL('../node_modules/svelte/src/index-client.js', import.meta.url).href;
 const { mount, unmount, flushSync, tick } = await import(clientURL);
-async function compiled(name, directory, source) {
-    const output = compile(source, { filename: name + '.svelte', generate: 'client', css: 'injected' });
-    assert.deepEqual(output.warnings.filter(warning => warning.code.startsWith('a11y')), []);
-    const code = output.js.code.replace(/(['"])(svelte(?:\/[^'"]*)?)\1/g, (_, quote, specifier) => JSON.stringify(specifier === 'svelte' ? clientURL : import.meta.resolve(specifier)));
-    const path = join(directory, name + '.mjs'); await writeFile(path, code);
-    return { path, component: (await import(pathToFileURL(path).href)).default };
-}
+
 async function fixture(view, actions, name = 'NodeDetails') {
     const directory = await mkdtemp(join(tmpdir(), 'lattice-introspection-details-')), host = document.createElement('div'); document.body.append(host);
     let mounted;
@@ -50,6 +44,8 @@ function details(root, revision = 'revision1') {
     return projectWorkspacePanels(session.data.readEditor(), workflow, { busy: false }, revision, null, null).nodeDetails;
 }
 const input = (element, value, event = 'input') => { assert.ok(element); element.value = value; element.dispatchEvent(new dom.window.Event(event, { bubbles: true })); flushSync(); };
+const rawEditor = (f, label) => { const toggle = f.host.querySelector('[aria-label="Edit ' + label + ' as JSON"]'); if (toggle) { toggle.click(); flushSync(); } return f.host.querySelector('[aria-label="' + label + '"]'); };
+const chooseMode = (f, value) => { const group = f.host.querySelector('[role="radiogroup"][aria-label="Mode"]'); if (group) { const radio = group.querySelector('input[value="' + value + '"]'); assert.ok(radio); radio.checked = true; radio.dispatchEvent(new dom.window.Event('change', { bubbles: true })); flushSync(); } else input(f.host.querySelector('[aria-label="Mode"]'), value, 'change'); };
 const settle = async () => { await tick(); flushSync(); };
 
 test('native picker discovers all six Introspection tools and phase-safe mode choices', () => {
@@ -96,14 +92,14 @@ test('actual State Details edit fractional numbers and JSON maps with complete-c
         const decay = f.host.querySelector('[aria-label="Decay"]'); assert.equal(decay.type, 'number'); assert.equal(decay.step, '0.01'); assert.equal(decay.value, '0.25');
         const baseline = f.host.querySelector('[aria-label="Baseline"]'); assert.equal(baseline.step, 'any');
         input(decay, '0.35', 'change'); await settle(); assert.equal(root.nodes.work.decay, 0.35);
-        const durations = f.host.querySelector('[aria-label="Phase durations"]'); assert.equal(durations.tagName, 'TEXTAREA'); assert.deepEqual(JSON.parse(durations.value), { onset: 1, peak: 1, plateau: 1, decline: 1, aftermath: 1 });
+        const durations = rawEditor(f, 'Phase durations'); assert.equal(durations.tagName, 'TEXTAREA'); assert.deepEqual(JSON.parse(durations.value), { onset: 1, peak: 1, plateau: 1, decline: 1, aftermath: 1 });
         input(durations, '{broken'); f.host.querySelector('[data-save-control="durations"]').click(); flushSync(); assert.match(f.host.textContent, /valid JSON/); assert.equal(edits.length, 1);
         input(durations, '{"onset":0}'); f.host.querySelector('[data-save-control="durations"]').click(); await settle(); assert.match(f.host.textContent, /INVALID_SETTINGS/); assert.equal(durations.value, '{"onset":0}'); assert.equal(root.nodes.work.durations, undefined);
         input(durations, '{"onset":2,"peak":3}'); f.host.querySelector('[data-save-control="durations"]').click(); await settle(); assert.deepEqual(root.nodes.work.durations, { onset: 2, peak: 3 });
-        input(f.host.querySelector('[aria-label="Mode"]'), 'value', 'change'); await settle();
-        assert.equal(root.nodes.work.mode, 'value'); assert.equal(f.host.querySelector('[aria-label="Phase durations"]'), null);
+        chooseMode(f, 'value'); await settle();
+        assert.equal(root.nodes.work.mode, 'value'); assert.equal(rawEditor(f, 'Phase durations'), null);
         for (const key of ['decay', 'durations', 'curveId', 'steps', 'baseline']) assert.equal(Object.hasOwn(root.nodes.work, key), false, 'mode change removes stale ' + key);
-        const updates = f.host.querySelector('[aria-label="Values"]'); assert.deepEqual(JSON.parse(updates.value), {});
+        const updates = rawEditor(f, 'Values'); assert.deepEqual(JSON.parse(updates.value), {});
         input(updates, '{"confidence":0.6}'); f.host.querySelector('[data-save-control="updates"]').click(); await settle(); assert.deepEqual(root.nodes.work.updates, { confidence: 0.6 });
     } finally { await f.close(); }
 });
@@ -121,9 +117,9 @@ test('object drafts retain current revision guards when a mode removes their con
     const pending = [], root = graph('state', { mode: 'curve' });
     const f = await fixture(details(root), { editControl(captured) { return new Promise(resolve => pending.push(resolve)); } });
     try {
-        input(f.host.querySelector('[aria-label="Phase durations"]'), '{"onset":4}'); f.host.querySelector('[data-save-control="durations"]').click(); flushSync(); assert.equal(pending.length, 1);
+        input(rawEditor(f, 'Phase durations'), '{"onset":4}'); f.host.querySelector('[data-save-control="durations"]').click(); flushSync(); assert.equal(pending.length, 1);
         f.update(details(graph('state', { mode: 'value' }), 'revision2'));
-        assert.equal(f.host.querySelector('[aria-label="Phase durations"]'), null); assert.ok(f.host.querySelector('[aria-label="Values"]'));
+        assert.equal(rawEditor(f, 'Phase durations'), null); assert.ok(rawEditor(f, 'Values'));
         pending[0]({ ok: false, error: { code: 'OLD', message: 'obsolete duration rejection' } }); await settle(); assert.doesNotMatch(f.host.textContent, /obsolete duration rejection/);
     } finally { await f.close(); }
 });

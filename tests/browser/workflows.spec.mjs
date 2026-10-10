@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { chooseControl, openDetailGroup } from './details-helpers.mjs';
 
 const preview = page => page.locator('.pc-output-preview');
 const details = page => page.getByRole('region', { name: 'Node details', exact: true });
@@ -90,8 +91,8 @@ async function expectRequests(page, actual, bound) {
 }
 async function saveRules(page, rules) {
     const region = details(page);
-    await region.getByLabel('rules', { exact: true }).fill(JSON.stringify(rules, null, 2));
-    await region.getByRole('button', { name: 'Save rules', exact: true }).click();
+    await region.getByLabel('Rules', { exact: true }).fill(JSON.stringify(rules, null, 2));
+    await region.getByRole('button', { name: 'Save Rules', exact: true }).click();
 }
 // Review/Send fixtures use the public saved graph, never a panel
 // DTO or manufactured review handle. UI binding itself is tested separately.
@@ -117,12 +118,12 @@ test('editing imported structured scan rules preserves findings and metadata and
         window.canvasHarness.S.touchGraph(window.canvasHarness.graph); window.canvasHarness.UI.refreshIfOpen();
     });
     await inspectOperation(page, 'pattern-scan');
-    const editor = page.getByLabel('rules', { exact: true });
+    const editor = page.getByLabel('Rules', { exact: true });
     const initial = await editor.inputValue();
     await editor.focus(); await page.evaluate(() => { window.ruleEditorElement = document.activeElement; });
     await editor.fill(JSON.stringify([...JSON.parse(initial), 'tapestry'], null, 2));
     expect(await page.evaluate(() => document.activeElement === window.ruleEditorElement && document.contains(window.ruleEditorElement))).toBe(true);
-    await details(page).getByRole('button', { name: 'Save rules', exact: true }).click();
+    await details(page).getByRole('button', { name: 'Save Rules', exact: true }).click();
     const read = () => page.evaluate(async () => {
         const node = Object.values(window.canvasHarness.graph.nodes).find(node => node.operation === 'pattern-scan');
         const { scanDraft } = await import('/src/workflow/repair.js?v=' + window.canvasHarness.version);
@@ -141,11 +142,11 @@ test('editing imported structured scan rules preserves findings and metadata and
     expect(state.scan.artifact.findings.map(f => f.text)).toEqual(['Delve', 'weave', 'tapestry']);
     const saved = state.node.rules;
     await editor.fill('{"phrase":');
-    await details(page).getByRole('button', { name: 'Save rules', exact: true }).click();
+    await details(page).getByRole('button', { name: 'Save Rules', exact: true }).click();
     await expect(editor).toHaveAttribute('aria-invalid', 'true');
     await expect(details(page).getByRole('alert')).toContainText('Enter valid JSON before saving.');
     expect((await read()).node.rules).toEqual(saved);
-    await page.getByLabel('case Sensitive', { exact: true }).uncheck();
+    await page.getByLabel('Case sensitive', { exact: true }).uncheck();
     await expect(editor).toHaveValue('{"phrase":');
     await expect(editor).toHaveAttribute('aria-invalid', 'true');
     await expect(details(page).getByRole('alert')).toContainText('Enter valid JSON before saving.');
@@ -167,9 +168,9 @@ test('formation request summary follows scan mode and additional reachable repai
     await installWorkflow(page, 'Reviewed AI De-slop');
     await fixtureRole(page, 'Prose', 'prose');
     await inspectOperation(page, 'repair');
-    await page.getByLabel('Mode', { exact: true }).selectOption('scan');
+    await chooseControl(page, 'Mode', 'scan');
     await expectBound(page, 0);
-    await page.getByLabel('Mode', { exact: true }).selectOption('repair');
+    await chooseControl(page, 'Mode', 'repair');
     await page.evaluate(() => {
         const { graph, S, UI } = window.canvasHarness;
         const group = Object.values(graph.groups)[0];
@@ -198,8 +199,8 @@ test('install and explicitly bind and assign a pre workflow without arming it', 
     expect(await page.evaluate(() => Object.hasOwn(window.canvasHarness.S.settings(),'workflowMode'))).toBe(false);
     expect(await page.evaluate(() => window.canvasHarness.S.settings().enabled)).toBe(false);
     await inspectOperation(page, 'smart-compactor');
-    await page.getByLabel('target Tokens', { exact: true }).fill('900');
-    await page.getByLabel('target Tokens', { exact: true }).press('Tab');
+    await page.getByLabel('Target tokens', { exact: true }).fill('900');
+    await page.getByLabel('Target tokens', { exact: true }).press('Tab');
     expect(await page.evaluate(() => Object.values(window.canvasHarness.graph.nodes).find(node => node.operation === 'smart-compactor').targetTokens)).toBe(900);
     await expectBound(page, 2);
 });
@@ -224,15 +225,18 @@ test('post setup opens the same AI De-slop primitives and preserves a focused ed
     await openFormation(page);
     expect(await page.evaluate(() => Object.keys(window.canvasHarness.graph.nodes))).toEqual(ids);
     await inspectOperation(page, 'pattern-scan');
-    const rules = page.getByLabel('rules', { exact: true });
+    const rules = page.getByLabel('Rules', { exact: true });
     await rules.focus(); await page.evaluate(() => { window.workflowEditorProbe = document.activeElement; });
     await rules.fill(JSON.stringify(['tapestry', 'delve'], null, 2));
     expect(await page.evaluate(() => document.activeElement === window.workflowEditorProbe && document.contains(window.workflowEditorProbe))).toBe(true);
-    await details(page).getByRole('button', { name: 'Save rules', exact: true }).click();
+    await details(page).getByRole('button', { name: 'Save Rules', exact: true }).click();
     await inspectOperation(page, 'repair');
-    await expect(details(page).locator('.pc-detail-meta')).toHaveText('Surface · post phase');
-    await expect(details(page).getByText('Effective connection: prose · workflow-test-model', { exact: true })).toBeVisible();
-    await expect(details(page).getByText('Saved node override or containing role', { exact: true })).toBeVisible();
+    await expect(details(page).getByLabel('Node name', { exact: true })).toHaveValue('Repair');
+    await expect(details(page).locator('.pc-detail-identity')).toContainText('Surface · post phase');
+    const modelSummary = details(page).locator('[data-model-controls] > summary');
+    await expect(modelSummary).toHaveText('Prose · Inherit role · prose · workflow-test-model');
+    await expect(details(page).getByLabel('Model mode', { exact: true })).not.toBeVisible();
+    await openDetailGroup(page, 'Model');
     expect(await page.evaluate(() => window.canvasHarness.graph.roles.Prose)).toEqual({ profileId: 'prose', model: null });
     await details(page).getByLabel('Model mode', { exact: true }).selectOption('override');
     await expect(details(page).getByLabel('Model identifier', { exact: true })).toBeVisible();
@@ -240,7 +244,7 @@ test('post setup opens the same AI De-slop primitives and preserves a focused ed
     await details(page).getByLabel('Model identifier', { exact: true }).fill('node-override-model');
     await details(page).getByLabel('Model identifier', { exact: true }).press('Tab');
     expect(await page.evaluate(() => Object.values(window.canvasHarness.graph.nodes).find(node => node.operation === 'repair').model)).toBe('node-override-model');
-    await expect(details(page).getByText('Effective connection: prose · node-override-model', { exact: true })).toBeVisible();
+    await expect(modelSummary).toHaveText('Prose · Override · prose · node-override-model');
 });
 
 
@@ -486,6 +490,8 @@ test('the native inspector provides a keyboard-accessible duplicate action', asy
     await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
     await installWorkflow(page, 'Scene guidance');
     await inspectOperation(page, 'response-plan');
+    await details(page).getByLabel('Node commands', { exact: true }).focus();
+    await page.keyboard.press('Enter');
     await expect(details(page).getByRole('button', { name: 'Duplicate', exact: true })).toBeVisible();
     await details(page).getByRole('button', { name: 'Duplicate', exact: true }).focus();
     await page.keyboard.press('Enter');
@@ -628,12 +634,12 @@ test('narrow workflow inspection and review remain opaque during selection feedb
             });
         });
         expect(opacity, theme + ' must hide graph content throughout inspection feedback').toEqual([255, 255, 255]);
-        const editor = page.getByLabel('rules', { exact: true });
+        const editor = page.getByLabel('Rules', { exact: true });
         await editor.focus(); await page.evaluate(() => { window.narrowWorkflowEditor = document.activeElement; });
         await editor.fill(JSON.stringify(['delve'], null, 2));
         expect(await page.evaluate(() => document.activeElement === window.narrowWorkflowEditor && document.contains(window.narrowWorkflowEditor))).toBe(true);
     }
-    await details(page).getByRole('button', { name: 'Save rules', exact: true }).click();
+    await details(page).getByRole('button', { name: 'Save Rules', exact: true }).click();
     expect(await page.evaluate(() => Object.values(window.canvasHarness.graph.nodes).find(node => node.operation === 'pattern-scan').rules)).toEqual(['delve']);
     await runRoot(page);
     await expect(page.getByRole('button', { name: 'Apply reviewed candidate', exact: true })).toBeVisible();

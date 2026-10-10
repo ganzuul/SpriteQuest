@@ -44,7 +44,7 @@ for (const phase of ['pre', 'post']) test(`${phase} File Input stores an undoabl
     await page.locator('.pc-output-preview [data-run-here]').click();
     await expect(page.locator('.pc-run-meter-label')).toHaveText('Completed');
     await expect(page.locator('.pc-output-preview [role="tabpanel"] pre')).toContainText('Café');
-    expect(JSON.parse(await page.locator('.pc-output-preview [role="tabpanel"] pre').textContent())).toEqual({ kind: 'text', text: 'First line\nCafé 🙂\n' });
+    expect(await page.locator('.pc-output-preview [role="tabpanel"] pre').textContent()).toBe('First line\nCafé 🙂\n');
     await page.getByRole('button', { name: 'Undo', exact: true }).click();
     await expect(page.getByLabel('Choose file', { exact: true })).toBeEnabled();
     expect(await page.evaluate(id => window.canvasHarness.graph.nodes[id].loaded, id)).toBe(false);

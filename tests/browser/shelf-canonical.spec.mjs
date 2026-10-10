@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { chooseControl, controlValue } from './details-helpers.mjs';
 
 async function launch(page, phase) {
     await page.goto('/tests/browser/harness.html');
@@ -34,27 +35,27 @@ test('flat family shelf exposes one canonical node and Details changes its mode 
         await page.keyboard.press('Escape');
 
         await choose(page, 'Introspection', 'memory');
-        await expect(page.getByLabel('Mode', { exact: true }).locator('option[value="commit"]')).toHaveCount(phase === 'post' ? 1 : 0);
+        await expect(page.getByRole('radiogroup', { name: 'Mode', exact: true }).getByRole('radio', { name: 'commit', exact: true })).toHaveCount(phase === 'post' ? 1 : 0);
 
         await page.locator('[data-family="Derive"]').click();
         await expect(page.locator('[data-shelf-choice^="operation:json-decode"]')).toHaveCount(1);
         await page.keyboard.press('Escape');
         const json = await choose(page, 'Derive', 'json-decode');
-        await expect(page.getByLabel('Mode', { exact: true })).toHaveValue('parse');
-        await page.getByLabel('Mode', { exact: true }).selectOption('check');
+        await expect.poll(() => controlValue(page, 'Mode')).toBe('parse');
+        await chooseControl(page, 'Mode', 'check');
         await expect.poll(() => page.evaluate(id => window.canvasHarness.graph.nodes[id].mode, json)).toBe('check');
         await expect(page.locator(`.pc-node[data-id="${json}"] .pc-port[data-dir="in"][data-port="in"]`)).toHaveAttribute('data-kind', 'data');
         await page.getByRole('button', { name: 'Undo', exact: true }).click();
-        await expect(page.getByLabel('Mode', { exact: true })).toHaveValue('parse');
+        await expect.poll(() => controlValue(page, 'Mode')).toBe('parse');
         await expect(page.locator(`.pc-node[data-id="${json}"] .pc-port[data-dir="in"][data-port="in"]`)).toHaveAttribute('data-kind', 'text');
         await page.getByRole('button', { name: 'Redo', exact: true }).click();
-        await expect(page.getByLabel('Mode', { exact: true })).toHaveValue('check');
+        await expect.poll(() => controlValue(page, 'Mode')).toBe('check');
 
         await page.locator('[data-family="Shaping"]').click();
         await expect(page.locator('[data-shelf-choice^="operation:reroute"]')).toHaveCount(1);
         await page.keyboard.press('Escape');
         const reroute = await choose(page, 'Shaping', 'reroute');
-        await page.getByLabel('Artifact kind', { exact: true }).selectOption('data');
+        await chooseControl(page, 'Artifact kind', 'data');
         await expect.poll(() => page.evaluate(id => window.canvasHarness.graph.nodes[id].artifactKind, reroute)).toBe('data');
         await expect(page.locator(`.pc-node[data-id="${reroute}"] .pc-port[data-dir="in"]`)).toHaveAttribute('data-kind', 'data');
         await expect(page.locator(`.pc-node[data-id="${reroute}"] .pc-port[data-dir="out"]`)).toHaveAttribute('data-kind', 'data');

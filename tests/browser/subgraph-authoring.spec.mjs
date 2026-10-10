@@ -1,3 +1,4 @@
+import { setCompact, openDetailGroup } from './details-helpers.mjs';
 import { test, expect } from '@playwright/test';
 
 async function setup(page) {
@@ -50,7 +51,7 @@ test('selection creates an editable tab with shared input, output fanout, preser
     await expect(page.locator('.pc-node-subgraph-input')).toHaveCount(3);
     await expect(page.locator('.pc-node-subgraph-output')).toHaveCount(1);
     await page.locator('.pc-node-subgraph-input .pc-native-heading').first().click();
-    await expect(page.getByLabel('Subgraph port label', { exact: true })).toBeEnabled();
+    await expect(page.getByLabel('Node name', { exact: true })).toBeEnabled();
     await page.getByRole('button', { name: 'Undo', exact: true }).click();
     await expect(page.locator('.pc-graph-tabs [role="tab"]')).toHaveCount(1);
     expect((await snapshot(page)).root).toEqual(before);
@@ -64,24 +65,24 @@ test('selection creates an editable tab with shared input, output fanout, preser
 test('boundary blocks rename real parent pins and add a typed input that can be wired with the mouse', async ({ page }) => {
     await setup(page); const wrapperId = await create(page);
     await page.locator('.pc-node-subgraph-input:has(.pc-port[data-kind="text"]) .pc-native-heading').click();
-    await expect(page.getByLabel('Subgraph port label', { exact: true })).toBeEnabled();
-    const previousLabel = await page.getByLabel('Subgraph port label', { exact: true }).inputValue();
-    await page.getByLabel('Subgraph port label', { exact: true }).fill('Source text');
+    await expect(page.getByLabel('Node name', { exact: true })).toBeEnabled();
+    const previousLabel = await page.getByLabel('Node name', { exact: true }).inputValue();
+    await page.getByLabel('Node name', { exact: true }).fill('Source text');
     await page.locator('[data-save-boundary]').click();
     let state = await snapshot(page);
     expect(state.definition.interface.find(port => port.direction === 'input' && port.kind === 'text').label).toBe('Source text');
     await page.getByRole('button', { name: 'Undo', exact: true }).click();
-    await expect(page.getByLabel('Subgraph port label', { exact: true })).toHaveValue(previousLabel);
+    await expect(page.getByLabel('Node name', { exact: true })).toHaveValue(previousLabel);
     await page.getByRole('button', { name: 'Redo', exact: true }).click();
-    await expect(page.getByLabel('Subgraph port label', { exact: true })).toHaveValue('Source text');
+    await expect(page.getByLabel('Node name', { exact: true })).toHaveValue('Source text');
     await page.locator('.pc-graph-tabs [role="tab"]').first().click();
     await expect(page.locator(`.pc-node[data-id="${wrapperId}"] .pc-native-pin-label`).filter({ hasText: 'Source text' })).toHaveCount(1);
     await page.locator(`.pc-node[data-id="${wrapperId}"] .pc-native-heading`).dblclick();
     await page.locator('.pc-family-row[data-family="Subgraphs"]').click();
     await page.locator('[data-shelf-choice="boundary:input"]').click();
     await expect(page.locator('.pc-node-subgraph-input')).toHaveCount(4);
-    await expect(page.getByLabel('Subgraph port label', { exact: true })).toBeFocused();
-    await page.getByLabel('Subgraph port label', { exact: true }).fill('Alternate text');
+    await expect(page.getByLabel('Node name', { exact: true })).toBeFocused();
+    await page.getByLabel('Node name', { exact: true }).fill('Alternate text');
     await page.locator('[data-save-boundary]').click();
     state = await snapshot(page);
     const added = state.definition.interface.find(port => port.label === 'Alternate text');
@@ -112,7 +113,7 @@ test('empty subgraph bodies add input and output nodes from the shelf', async ({
     await expect(page.locator('.pc-graph-tabs [role="tab"][aria-selected="true"]')).toContainText('Subgraph');
     await page.locator('.pc-family-row[data-family="Subgraphs"]').click();
     await page.locator('[data-shelf-choice="boundary:input"]').click();
-    await expect(page.getByLabel('Subgraph port label', { exact: true })).toBeFocused();
+    await expect(page.getByLabel('Node name', { exact: true })).toBeFocused();
     await expect(page.locator('.pc-node-subgraph-input')).toHaveCount(1);
     await page.locator('.pc-family-row[data-family="Subgraphs"]').click();
     await page.locator('[data-shelf-choice="boundary:output"]').click();
@@ -124,6 +125,7 @@ test('ordinary Delete removes connected interface pins and Undo restores the com
     const port = before.definition.interface.find(item => item.direction === 'output');
     await page.locator(`.pc-node[data-id="${port.boundaryNodeId}"] .pc-native-heading`).click();
     await expect(page.locator('.pc-node-subgraph-output button')).toHaveCount(0);
+    await page.getByLabel('Node commands',{exact:true}).click();
     await page.locator('.pc-node-details').getByRole('button', { name: 'Delete', exact: true }).click();
     const deleted = await snapshot(page);
     expect(deleted.definition.interface.some(item => item.id === port.id)).toBe(false);
@@ -158,7 +160,7 @@ test('explicit shelf saves update future insertions while placed copies and dele
     await wrapper.dblclick();
     await page.locator('.pc-family-row[data-family="Subgraphs"]').click();
     await page.locator('[data-shelf-choice="boundary:output"]').click();
-    await page.getByLabel('Subgraph port label', { exact: true }).fill('Another output');
+    await page.getByLabel('Node name', { exact: true }).fill('Another output');
     await page.locator('[data-save-boundary]').click();
     await page.locator('.pc-graph-tabs [role="tab"]').first().click();
     await wrapper.click({ button: 'right' });
@@ -192,9 +194,9 @@ test('extracting an existing subgraph preserves descendant tabs, presentation an
     });
     await page.locator('.pc-node[data-id="first/path"] .pc-native-heading').dblclick();
     await page.locator('.pc-node[data-id="work"] .pc-native-heading').click();
-    await page.getByLabel('Alias', { exact: true }).fill('My inner wrapper');
-    await page.getByLabel('Alias', { exact: true }).press('Tab');
-    await page.getByLabel('Compact card', { exact: true }).check();
+    await page.getByLabel('Node name', { exact: true }).fill('My inner wrapper');
+    await page.getByLabel('Node name', { exact: true }).press('Tab');
+    await setCompact(page, true);
     await page.evaluate(() => window.canvasHarness.view({ x: 511, y: 193, zoom: 0.7 }));
     await page.locator('.pc-node[data-id="work"]').click({ button: 'right' });
     await page.getByRole('menuitem', { name: 'Open subgraph', exact: true }).click();
@@ -211,9 +213,9 @@ test('extracting an existing subgraph preserves descendant tabs, presentation an
     for (const expected of relocated) expect((await savedViews()).find(view => JSON.stringify(view.identity) === JSON.stringify(expected.identity))).toEqual(expected);
     await expect(page.locator('.pc-graph-tabs [role="tab"]')).toHaveCount(4);
     await page.locator('.pc-graph-tabs [role="tab"]').filter({ hasText: 'Outer' }).click();
-    await page.getByLabel('Alias', { exact: true }).fill('Edited after extraction');
-    await page.getByLabel('Alias', { exact: true }).press('Tab');
-    await page.getByLabel('Compact card', { exact: true }).uncheck();
+    await page.getByLabel('Node name', { exact: true }).fill('Edited after extraction');
+    await page.getByLabel('Node name', { exact: true }).press('Tab');
+    await setCompact(page, false);
     await page.evaluate(() => window.canvasHarness.view({ x: 611, y: 230, zoom: 0.65 }));
     await page.getByRole('button', { name: /^Close Plan/ }).click();
     await page.locator('.pc-graph-tabs [role="tab"]').first().click();
@@ -241,9 +243,9 @@ test('nested tabs first opened after extraction retain their presentation throug
     await page.locator('.pc-node[data-id="first/path"]').click({ button: 'right' });
     await page.getByRole('menuitem', { name: 'Open subgraph', exact: true }).click();
     await page.locator('.pc-node[data-id="work"] .pc-native-heading').click();
-    await page.getByLabel('Alias', { exact: true }).fill('Opened after extraction');
-    await page.getByLabel('Alias', { exact: true }).press('Tab');
-    await page.getByLabel('Compact card', { exact: true }).check();
+    await page.getByLabel('Node name', { exact: true }).fill('Opened after extraction');
+    await page.getByLabel('Node name', { exact: true }).press('Tab');
+    await setCompact(page, true);
     await page.evaluate(() => window.canvasHarness.view({ x: 611, y: 230, zoom: 0.65 }));
     await page.locator('.pc-node[data-id="work"]').click({ button: 'right' });
     await page.getByRole('menuitem', { name: 'Open subgraph', exact: true }).click();
@@ -279,6 +281,7 @@ test('effective wrapper contents survive editable body changes and explicit shel
     await wrapper.click({ button: 'right' });
     await page.getByRole('menuitem', { name: 'Make editable copy', exact: true }).click();
     await page.locator('.pc-node[data-id="compact"] .pc-native-heading').click();
+    await openDetailGroup(page,'Model');
     await expect(page.getByLabel('Model mode', { exact: true })).toHaveValue('block');
     await page.getByLabel('Model mode', { exact: true }).selectOption('inherit');
     await expect.poll(() => page.evaluate(async () => {
@@ -287,9 +290,9 @@ test('effective wrapper contents survive editable body changes and explicit shel
     })).toBe('parent-model');
     await page.getByRole('button', { name: 'Undo', exact: true }).click();
     await expect(page.getByLabel('Model mode', { exact: true })).toHaveValue('block');
-    await expect(page.getByLabel('target Tokens', { exact: true })).toHaveValue('720');
-    await page.getByLabel('target Tokens', { exact: true }).fill('2500');
-    await page.getByLabel('target Tokens', { exact: true }).press('Tab');
+    await expect(page.getByLabel('Target tokens', { exact: true })).toHaveValue('720');
+    await page.getByLabel('Target tokens', { exact: true }).fill('2500');
+    await page.getByLabel('Target tokens', { exact: true }).press('Tab');
     const effectiveTokens = () => page.evaluate(async () => {
         const h = window.canvasHarness, { inspectExpandedGraph } = await import('/src/workflow/graph-validation.js?v=' + h.version);
         return inspectExpandedGraph(h.S.getGraph('effective-instance-root')).data.primitives.find(unit => unit.address.instancePath[0] === 'one' && unit.address.nodeId === 'compact').node.targetTokens;

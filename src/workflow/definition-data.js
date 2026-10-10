@@ -1,4 +1,5 @@
-import { ARTIFACT_KINDS, operationFor, semanticControlsForNode } from './catalog.js?v=0.26.0';
+import { validateNodeModifiers } from './modifiers.js?v=0.26.0';
+import { ARTIFACT_KINDS, operationFor, portsForNode, semanticControlsForNode } from './catalog.js?v=0.26.0';
 
 const fail = (code, message) => ({ ok: false, error: { code, message } });
 const record = value => value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -146,8 +147,10 @@ export function computeDefinitionIdentity(value) {
         const nodes = {};
         for (const [id, node] of Object.entries(draft.body.nodes)) {
             if (!record(node) || node.id !== id) return fail('DEFINITION_BODY', 'Invalid body node identity.');
+            const modifiers=validateNodeModifiers(node,node.type==='workflow'?portsForNode(draft.body,node).filter(port=>port.direction==='output'):[]);
+            if(!modifiers.ok)return modifiers;
             if (node.type === 'note') continue;
-            const common = { id: node.id, type: node.type, enabled: node.enabled !== false };
+            const common = { id: node.id, type: node.type, enabled: node.enabled !== false, ...(node.modifiers === undefined ? {} : { modifiers: node.modifiers }) };
             if (node.type === 'workflow') {
                 const operation = operationFor(node, { phase: draft.body.mode.slice(7) });
                 if (!operation) return fail('UNKNOWN_OPERATION', 'Cannot hash an unknown operation.');

@@ -1,3 +1,4 @@
+import { setCompact } from './details-helpers.mjs';
 import { test, expect } from '@playwright/test';
 import { approvedEmber, openEmber, measureEmber, assertEmber, assertColor, hasOuterRing } from './ember-fixture.mjs';
 
@@ -23,9 +24,9 @@ test('Ember inherits a different live host theme without changing host colors or
 test('Ember keeps orange selection and compact aliases while real JSON failure retains its error priority',async({page},testInfo)=>{
     const ids=await openEmber(page),initial=await measureEmber(page),selected=initial.nodes.find(node=>node.id===ids.firstCompose);
     assertColor(selected.border,approvedEmber.settings.tokens.SmartThemeQuoteColor,'orange selected border');expect(hasOuterRing(selected.shadow,approvedEmber.settings.tokens.SmartThemeQuoteColor)).toBe(true);
-    await page.getByLabel('Alias',{exact:true}).fill('Local Scene');await page.getByLabel('Alias',{exact:true}).press('Tab');await page.getByRole('checkbox',{name:'Compact card',exact:true}).check();await page.evaluate(()=>window.canvasHarness.settle());
+    await page.getByLabel('Node name',{exact:true}).fill('Local Scene');await page.getByLabel('Node name',{exact:true}).press('Tab');await setCompact(page, true);await page.evaluate(()=>window.canvasHarness.settle());
     const compact=await measureEmber(page);assertEmber(compact);expect(compact.nodes.find(node=>node.id===ids.firstCompose).classes).toContain('pc-node-compact');
-    await page.getByRole('checkbox',{name:'Compact card',exact:true}).uncheck();
+    await setCompact(page, false);
     await page.evaluate(id=>{const h=window.canvasHarness;h.graph.nodes[id].sections[0].text='{broken';h.S.save();h.UI.refreshIfOpen();},ids.firstCompose);await page.evaluate(()=>window.canvasHarness.settle());
     const failed=page.locator('.pc-node-native[data-id="'+ids.jsonDecode+'"]'),before=await failed.boundingBox();
     await page.locator('.pc-root-run').click();await expect(failed).toHaveClass(/pc-trace-failed/);await expect(page.locator('.pc-run-meter-label')).toHaveText('Failed');await failed.locator('.pc-native-heading').click();
