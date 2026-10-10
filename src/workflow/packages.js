@@ -1,10 +1,11 @@
+import { ACTIVE_PROFILE_ID } from './model-profiles.js?v=0.26.0';
 import { safeWorkflowData, validateGraphStructure } from './contracts.js?v=0.26.0';
 import { OPERATIONS, operationFor } from './catalog.js?v=0.26.0';
 import { cloneDefinitionData, computeDefinitionIdentity, definitionRefKey, inspectDefinitionMetadata, validateDefinition } from './definitions.js?v=0.26.0';
 const limit = 2000000;
 const fail = (code, message) => ({ ok: false, error: { code, message } });
 const pick = (value, keys) => Object.fromEntries(keys.filter(key => Object.hasOwn(value, key)).map(key => [key, value[key]]));
-const portableBindings = bindings => Object.fromEntries(Object.entries(bindings ?? {}).map(([id, binding]) => [id, { ...pick(binding, ['model']), ...(Object.hasOwn(binding, 'profileId') ? { profileId: null } : {}) }]));
+const portableBindings = bindings => Object.fromEntries(Object.entries(bindings ?? {}).map(([id, binding]) => [id, { ...pick(binding, ['model']), ...(Object.hasOwn(binding, 'profileId') ? { profileId: binding.profileId === ACTIVE_PROFILE_ID ? ACTIVE_PROFILE_ID : null } : {}) }]));
 function portableDefinition(definition) {
     const copy = pick(definition, ['id', 'version', 'semanticHash', 'name', 'description']);
     copy.interface = definition.interface.map(port => pick(port, ['id', 'label', 'direction', 'kind', 'required', 'cardinality', 'boundaryNodeId']));
@@ -23,7 +24,7 @@ function portableNativeDocument(graph) {
         ...((OPERATIONS[node.operation]?.family === 'Introspection' ? operationFor(node, { phase: graph.mode.slice(7) }) : OPERATIONS[node.operation])?.controls ?? []), ...(node.operation === 'validate-patches' ? ['protectedLiterals'] : []),
     ])]));
     for (const node of Object.values(copy.nodes)) {
-        if (Object.hasOwn(node, 'profileId')) node.profileId = null;
+        if (Object.hasOwn(node, 'profileId') && node.profileId !== ACTIVE_PROFILE_ID) node.profileId = null;
         if (node.type === 'subgraph') {
             node.definition = pick(node.definition, ['id', 'version', 'semanticHash']);
             node.roleOverrides = portableBindings(node.roleOverrides);

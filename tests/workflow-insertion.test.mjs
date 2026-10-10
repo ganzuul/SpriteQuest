@@ -185,6 +185,7 @@ test('review diagnostics report phase, terminal effects, conservative bound and 
     assert.deepEqual(candidate.roles[identityMap.roles.Analysis], imported.roles.Analysis);
     assert.equal(candidate.nodes[identityMap.nodes['response-plan']].profileId, 'node-profile');
     delete imported.roles;
+    imported.nodes['smart-compactor'].profileId = null; // Saved legacy binding remains unresolved without its role.
     const unbound = prepareWorkflowInsertion(destination, imported);
     assert.equal(unbound.ok, true);
     assert.deepEqual(unbound.data.diagnostics.unresolvedBindings, [{ nodeId: unbound.data.identityMap.nodes['smart-compactor'], address: { workflowId: destination.id, instancePath: [], nodeId: unbound.data.identityMap.nodes['smart-compactor'] }, role: unbound.data.identityMap.roles.Analysis, missing: ['profileId', 'model'] }]);

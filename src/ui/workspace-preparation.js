@@ -10,6 +10,7 @@ import { FAMILY_PALETTE, paletteForOperation, readNodePresentation } from './nod
 import { isCommentFrame } from '../canvas/comment-frames.js?v=0.26.0';
 import { modifierTypes, modifierSummary, applyTextModifiers } from '../workflow/modifiers.js?v=0.26.0';
 import { boundedText, RENDERED_TEXT_BYTES } from '../workflow/record-data.js?v=0.26.0';
+import { prepareNodeProfileOptions } from './node-profile-preparation.js?v=0.26.0';
 const rootIdentity = root => ({ kind: 'root', workflowId: root.id });
 /** First activation favors readable named cards; users can pan or explicitly Fit. */
 export function initialWorkspaceCamera(node, { width, shelf, meter } = {}) {
@@ -69,6 +70,26 @@ export function projectEditorDraw(editor) {
     }
     for (const [id, presentation] of Object.entries(view.groupPresentation ?? {})) if (Object.hasOwn(graph.groups, id)) Object.assign(graph.groups[id], structuredClone(presentation));
     return graph;
+}
+
+/** Cheap per-node decoration rows from prepared metadata, independent of selection. */
+export function projectNodeProfiles(editor, workflow, revision) {
+    if (!editor?.prepared) return [];
+    const library = editor.view.identity.kind === 'library', path = editor.view.identity.instancePath ?? [];
+    const options = (workflow.profiles ?? []).map(profile => ({ value: profile.id, label: profile.name, apiLabel: profile.apiLabel || '', model: profile.model || '', active: profile.active === true }));
+    const available = options.length ? options : prepareNodeProfileOptions();
+    return Object.values(editor.prepared.effectiveNodes).flatMap(node => {
+        const op = operationFor(node), bound = op?.requestBound;
+        const requestBound = typeof bound === 'function' ? bound(node) : bound || 0;
+        if (!requestBound) return [];
+        const prepared = library ? null : workflow.nodes.find(row => row.id === node.id);
+        const role = node.modelRole ?? op.modelRole;
+        const value = prepared?.profileId ?? node.profileId ?? editor.prepared.savedGraph.roles?.[role]?.profileId ?? '';
+        const option = available.find(option => option.value === value);
+        const model = prepared?.model || node.model || prepared?.resolvedModel || (option ? option.model : '') || '';
+        const address = library ? { kind: 'library', definitionRef: editor.prepared.definitionRef, nodeId: node.id } : { workflowId: workflow.graphId, instancePath: [...path], nodeId: node.id };
+        return [{ id: node.id, selection: { selectionKey: JSON.stringify([editor.view.key, node.id]), revision, address }, value, label: option?.label || (value ? 'Unavailable connection · ' + value : 'Choose a connection'), model, editable: !library, options: available }];
+    });
 }
 
 const targetKey = target => JSON.stringify(target);

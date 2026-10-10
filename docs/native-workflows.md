@@ -8,7 +8,7 @@ Install from the repository's default branch using the steps below.
 
 1. Open SillyTavern's **Extensions → Install extension**. Enter repository URL `https://github.com/MentallyQuill/Lattice`, leave **Branch or tag name (optional)** blank to install the default branch, click **Install** (or **Install just for me**), then reload. Open LATTICE beside Send or with `/lattice`.
 2. Open **Workflows → Workflow examples…** and choose a lesson, or open [Scene guidance](../workflows/native-guidance.json) or [Reviewed AI De-slop](../workflows/reviewed-de-slop.json) with **File → Open workflow…**. Each opening creates its own editable graph. Opening, importing, and editing never arm generation or make a model call.
-3. Select each model-calling node and choose its own SillyTavern Connection Manager profile in **Details → Connection profile**. Scene guidance has separate Smart Compactor and Response Plan connections; repair has its own connection. Each node uses the selected profile's model by default. Choose **Model mode → Override** only when that node needs a different model identifier.
+3. Choose a model-calling node's connection in the grey bar below its card, or in **Details → Connection profile**. The bar opens a searchable list of current SillyTavern Connection Manager profiles; keywords match the name, API label and model. **Active SillyTavern model** always appears first and follows the host's current connection and model. Newly created model-capable nodes select it. Existing fixed profiles and role inheritance retain their bindings. Scene guidance has separate Smart Compactor and Response Plan connections; repair has its own connection. Each node uses the selected profile's model by default. Choose **Model mode → Override** only when that node needs a different model identifier.
 4. Use **Workflows → Assign pre phase** for guidance, or **Assign post phase** for reviewed repair. Arming is a separate action. A missing/deleted profile or unsupported route blocks the run with a useful issue.
 5. Use **Run** to inspect the workflow's result. To use guidance on normal sends, arm the extension and send as usual. For repair, wait for a completed assistant reply before running, then compare the candidate with the original.
 
@@ -16,7 +16,7 @@ For an existing installation, update it in **Manage Extensions** and reload. If 
 
 **Run can spend model tokens.** A manual guidance run computes guidance without publishing it. A later Send runs the enabled pre workflow again, with up to two more auxiliary requests; the manual result is not cached for Send.
 
-Connections stay fixed to your bindings; Lattice does not activate a profile globally. Auxiliary requests contain the operation's own instructions and supplied context. They use the bound profile's route and sampler preset, without copying the native main prompt's system text into every request. Credentials stay in SillyTavern's secret store.
+Saved-profile connections stay fixed to your bindings; the active-model option follows SillyTavern at request time. Lattice does not activate a profile globally. Auxiliary requests contain the operation's own instructions and supplied context. They use the bound profile's route and sampler preset, without copying the native main prompt's system text into every request. Credentials stay in SillyTavern's secret store.
 
 ## Model-backed examples
 
@@ -74,7 +74,7 @@ Memory's local application and durable saving are separate. The public SillyTave
 
 ## Share JSON
 
-The complete portable examples include [native-guidance.json](../workflows/native-guidance.json), [reviewed-de-slop.json](../workflows/reviewed-de-slop.json), and the zero-call examples in [the workspace guide](lattice-workspace.md). Use **File → Open workflow…** to open a workflow, or **Import into graph…** to review an addition to the current graph. Export uses a versioned `lattice-workflow` package; composed workflows include their pinned subgraph definitions. Individual subgraphs export as their own JSON packages. Exports omit bound profile IDs and credentials, so choose local profiles for imported model nodes in Details before running.
+The complete portable examples include [native-guidance.json](../workflows/native-guidance.json), [reviewed-de-slop.json](../workflows/reviewed-de-slop.json), and the zero-call examples in [the workspace guide](lattice-workspace.md). Use **File → Open workflow…** to open a workflow, or **Import into graph…** to review an addition to the current graph. Export uses a versioned `lattice-workflow` package; composed workflows include their pinned subgraph definitions. Individual subgraphs export as their own JSON packages. Exports strip local saved-profile IDs and credentials; recipients rebind those fixed connections in the node bar or Details before running. **Active SillyTavern model** survives export in nodes, roles and occurrence overrides, and follows the recipient's configured host connection and model.
 
 The three [native Introspection examples](../examples/introspection/native/) are portable schema-3/runtime-2 workflows. The version-1 manifests directly under `examples/introspection/` are package-harness inputs requiring injected services; use the native directory for canvas import. Both formats have synthetic fixture coverage without API calls.
 

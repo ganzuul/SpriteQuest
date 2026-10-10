@@ -52,7 +52,7 @@
         "x": 410,
         "y": 140,
         "w": 260,
-        "profileId": null,
+        "profileId": "lattice:active-sillytavern",
         "model": null,
         "modelRole": "Analysis",
         "mode": "experience",

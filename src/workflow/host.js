@@ -326,7 +326,7 @@ export function createNativeWorkflowController(ports) {
                 return result;
             },
             bindingSummary:ports.bindingSummary??bindingSummary,
-            request:ports.request??(request=>requestModel(request,context())),
+            request:ports.request??(request=>requestModel(request,context)),
             onStage:ports.onStage,onEvent:event=>{observe(ports.onEvent,event);observe(options.onEvent,event);},
         },{prepare:(plan,controls)=>prepareRun(run,plan,controls,options),executeIntrospection:(node,inputs,operationPorts)=>introspect(run,node,inputs,operationPorts),settle:transport=>settleRun(run,transport)});}
         finally {delete run.cancel;run.bindingContexts.clear();run.memoryIntents.clear();run.memoryTerminals.clear();run.memorySession?.release();run.memorySession=null;}

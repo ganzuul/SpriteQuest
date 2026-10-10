@@ -1,3 +1,4 @@
+import { ACTIVE_PROFILE_ID } from './model-profiles.js?v=0.26.0';
 import { validateNodeModifiers } from './modifiers.js?v=0.26.0';
 import { ARTIFACT_KINDS, operationFor, portsForNode, semanticControlsForNode } from './catalog.js?v=0.26.0';
 
@@ -127,7 +128,7 @@ const portableBinding = (binding, primitiveFallback = false) => {
     if (!record(binding) || binding.model !== undefined && binding.model !== null && typeof binding.model !== 'string' || binding.profileId !== undefined && binding.profileId !== null && typeof binding.profileId !== 'string') throw new Error('binding');
     // Roles/overrides inherit absent fields, while explicit null blocks inheritance.
     // Saved primitive null and absence both use the existing role fallback behavior.
-    return primitiveFallback || Object.hasOwn(binding, 'model') ? { model: binding.model ?? null } : {};
+    return { ...(primitiveFallback || Object.hasOwn(binding, 'model') ? { model: binding.model ?? null } : {}), ...(binding.profileId === ACTIVE_PROFILE_ID ? { profileId: ACTIVE_PROFILE_ID } : {}) };
 };
 
 /** Compute portable semantic identity and a detached draft with explicit catalog defaults.

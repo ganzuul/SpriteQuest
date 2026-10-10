@@ -9,7 +9,7 @@ export interface Port { id: string; className: string; dir: 'in' | 'out'; side: 
 export interface NodeCardData { id: string; x: number; y: number; w: number; type: string; className: string; title: string; titleHint: string; label: string; iconPath: string; body: string | null; ports: Port[]; compact: boolean; hostResult: boolean; enabled: boolean; modifierSummary?: { count: number; labels: readonly string[]; text: string }; boundary?: { direction: 'input' | 'output'; editable: boolean }; off?: boolean; offHint?: string }
 export interface GroupCardData { id: string; collapsed: boolean; x: number; y: number; w: number; h?: number; className: string; title: string; body: string; count: string }
 export interface WireData { kind?: string; id: string; d: string; className: string; label: { x: number; y: number; text: string; className: string; anchor?: string; id?: string; title?: string } }
-export interface CanvasActions { hostResult: (id: string) => void; hoverPin: (pin: { nodeId: string; dir: string; port: string } | null) => void; group: (id: string, action: 'open' | 'collapse') => void }
+export interface CanvasActions { hostResult: (id: string) => void; hoverPin: (pin: { nodeId: string; dir: string; port: string } | null) => void; group: (id: string, action: 'open' | 'collapse') => void; editProfile?: (selection: DetailSelection, value: string) => DetailEditResponse; refreshProfiles?: (selection: DetailSelection) => unknown }
 export interface PositionUpdate { id: string; x: number; y: number; w?: number; h?: number }
 export interface HistoryView { undo: boolean; redo: boolean; undoTitle: string; redoTitle: string; note: string; showNote: boolean }
 export interface ImportReviewView {

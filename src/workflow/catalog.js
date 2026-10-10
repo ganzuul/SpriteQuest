@@ -1,3 +1,4 @@
+import { ACTIVE_PROFILE_ID } from './model-profiles.js?v=0.26.0';
 import { PRIMITIVE_OPERATIONS, describePrimitive } from './operations/nodes.js?v=0.26.0';
 import { describeContextJoin } from './operations/context-join.js?v=0.26.0';
 import { TRANSPOSE_OPERATIONS, describeTranspose } from './operations/transpose-nodes.js?v=0.26.0';
@@ -177,5 +178,5 @@ export function operationDefaults(id = 'scene-context', { mode } = {}) {
         op = described.data.descriptor;
     }
     if (!op) throw new Error(`Unknown workflow operation: ${id}`);
-    return { operation: id, ...(op.minimumSchema === 3 ? { operationVersion: 1 } : {}), title: op.title, modelRole: op.modelRole, profileId: null, model: null, ...structuredClone(op.defaults) };
+    return { operation: id, ...(op.minimumSchema === 3 ? { operationVersion: 1 } : {}), title: op.title, modelRole: op.modelRole, profileId: op.modelRole ? ACTIVE_PROFILE_ID : null, model: null, ...structuredClone(op.defaults) };
 }

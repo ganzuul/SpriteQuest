@@ -1,3 +1,4 @@
+import { ACTIVE_PROFILE_ID, ACTIVE_PROFILE_NAME, activeModelMetadata } from './model-profiles.js?v=0.26.0';
 const fail = (code, message) => ({ok:false,error:{code,message}});
 const resolved = new WeakMap();
 const fingerprint = () => globalThis.crypto.randomUUID();
@@ -36,6 +37,7 @@ function completionEvidence(raw, binding) {
 /** Authenticate a captured binding and recheck its effective host dependencies. */
 export function bindingStatus(binding, context) {
     try {
+        context = typeof context === 'function' ? context() : context;
         const remembered = resolved.get(binding);
         if (!remembered || safeSignature(binding) !== remembered.metadata) return fail('BINDING_CHANGED', 'Resolve the fixed connection again before requesting.');
         const current = resolveBinding(remembered.node, remembered.graph, context);
@@ -49,29 +51,48 @@ export function bindingSummary(binding) {
     const remembered = binding && resolved.get(binding);
     return remembered ? Object.freeze({...remembered.summary,fingerprint:remembered.fingerprint}) : undefined;
 }
-/** Send node-owned messages through the fixed profile, without activating it. */
-export async function requestModel({binding,messages,maxTokens,signal},context) {
+/** Send owned messages through the selected fixed or active route without activation. */
+export async function requestModel({binding,messages,maxTokens,signal},contextOrGetter) {
+    const getContext = typeof contextOrGetter === 'function' ? contextOrGetter : () => contextOrGetter;
     if (signal?.aborted) return fail('ABORTED', 'The request was stopped.');
     if (!Number.isSafeInteger(maxTokens) || maxTokens <= 0 || maxTokens > 65536 || !Array.isArray(messages) || !messages.length || messages.length > 1000 || messages.some(message=>!message || !['system','user','assistant','tool'].includes(message.role) || typeof message.content !== 'string')) return fail('INVALID_REQUEST', 'Provide owned messages and a positive bounded completion limit.');
-    if (typeof context.ConnectionManagerRequestService?.sendRequest !== 'function') return fail('SERVICE_UNAVAILABLE', 'SillyTavern Connection Manager is unavailable.');
+    const context = getContext();
     const authentication = bindingStatus(binding, context);
     if (!authentication.ok) return authentication;
-    const check = () => bindingStatus(binding, context).ok;
+    const check = () => bindingStatus(binding, getContext).ok;
     if (!check()) return fail('BINDING_CHANGED', 'The fixed connection changed after preflight. Run preflight again.');
     try {
         const tc = binding.api === 'textgenerationwebui';
-        const payload = {model:binding.model,max_tokens:maxTokens,stream:false,...(tc ? {api_type:binding.source,api_server:binding.endpoint} : {chat_completion_source:binding.source,messages})};
+        const active = binding.profileId === ACTIVE_PROFILE_ID;
+        const service = tc ? context.TextCompletionService : context.ChatCompletionService;
+        if (active ? typeof service?.presetToGeneratePayload !== 'function' || typeof service?.sendRequest !== 'function' : typeof context.ConnectionManagerRequestService?.sendRequest !== 'function') return fail('SERVICE_UNAVAILABLE', 'The required SillyTavern request service is unavailable.');
+        const capture = resolved.get(binding).active;
+        const payload = {model:binding.model,max_tokens:maxTokens,stream:false,...(tc ? {api_type:binding.source,api_server:binding.endpoint} : {chat_completion_source:binding.source,messages:structuredClone(messages)})};
         if (!tc && ENDPOINT_FIELDS[binding.source]) payload[ENDPOINT_FIELDS[binding.source]] = binding.endpoint;
         Object.assign(payload,binding.endpointDependencies ?? {});
+        // The CC converter chooses max_tokens or max_completion_tokens for its model.
+        // An owned max_tokens override would restore a field the host deliberately removes.
+        if (active && !tc) delete payload.max_tokens;
+        if (active && tc && binding.model === null) delete payload.model;
         let overrides = payload;
-        if (!tc) {
-            overrides = await context.ChatCompletionService.presetToGeneratePayload(presetByName(context,'openai',binding.preset),{chat_completion_source:binding.source},payload);
+        if (active && tc) {
+            if (capture.instruct?.enabled && typeof service.constructPrompt !== 'function') return fail('SERVICE_UNAVAILABLE', 'The host instruct formatter is unavailable.');
+            payload.prompt = capture.instruct?.enabled ? service.constructPrompt(structuredClone(messages),structuredClone(capture.instruct)) : messages.map(message=>message.content).join('\n\n');
+            overrides = service.presetToGeneratePayload({}, {genamt:maxTokens},payload);
+        } else if (!tc) {
+            overrides = await context.ChatCompletionService.presetToGeneratePayload(active ? structuredClone(capture.settings) : presetByName(context,'openai',binding.preset),{chat_completion_source:binding.source,...(active ? {openai_max_tokens:maxTokens} : {})},payload);
             overrides.custom_include_body = '';
             overrides.custom_exclude_body = '';
         }
+        if (active) {
+            // Bound the host-selected aliases without inventing unsupported model fields.
+            if (tc || Object.hasOwn(overrides,'max_tokens') || !Object.hasOwn(overrides,'max_completion_tokens')) overrides.max_tokens = maxTokens;
+            if (!tc && Object.hasOwn(overrides,'max_completion_tokens')) overrides.max_completion_tokens = maxTokens;
+            overrides.stream = false;
+        }
         if (signal?.aborted) return fail('ABORTED', 'The request was stopped before transmission.');
         if (!check()) return fail('BINDING_CHANGED', 'The fixed connection changed before transmission. Run preflight again.');
-        const raw = await context.ConnectionManagerRequestService.sendRequest(binding.profileId,messages,maxTokens,{stream:false,extractData:false,includePreset:tc,includeInstruct:true,signal},overrides);
+        const raw = active ? await service.sendRequest(overrides,false,signal) : await context.ConnectionManagerRequestService.sendRequest(binding.profileId,messages,maxTokens,{stream:false,extractData:false,includePreset:tc,includeInstruct:true,signal},overrides);
         const choice = raw?.choices?.[0];
         if (signal?.aborted) return fail('ABORTED', 'The request was stopped; ignore its late output.');
         const {finish,usage} = completionEvidence(raw,binding);
@@ -91,8 +112,10 @@ export async function requestModel({binding,messages,maxTokens,signal},context) 
     }
 }
 export function resolveBinding(node, graph, context) {
+    context = typeof context === 'function' ? context() : context;
     const role = graph.roles?.[node.modelRole];
     const profileId = node.profileId || role?.profileId;
+    if (profileId === ACTIVE_PROFILE_ID) return resolveActiveBinding(node,context,role);
     if (!profileId) return fail('BINDING_MISSING', 'Choose a connection profile for this node in Details.');
     if (typeof context.ConnectionManagerRequestService?.getProfile !== 'function') return fail('SERVICE_UNAVAILABLE', 'SillyTavern Connection Manager is unavailable.');
     let profile;
@@ -120,5 +143,33 @@ export function resolveBinding(node, graph, context) {
     if ((tc || field) && !endpoint) return fail('ENDPOINT_MISSING', 'The fixed profile requires an available endpoint.');
     const data = {profileId,profileName:profile.name,model:model || null,source:tc ? route.type : route.source,api:route.selected,endpoint:endpoint || null,endpointOrigin:(tc || field) && profile['api-url'] ? 'profile' : (field && preset[field]) || (extraFields.length && preset[extraFields[0]]) ? 'preset' : endpoint ? 'host' : 'provider',preset:profile.preset || null,instruct:profile.instruct || null,...(extraFields.length ? {endpointDependencies:extras} : {})};
     resolved.set(data,{node:{profileId:node.profileId,model:node.model,modelRole:node.modelRole},graph:{roles:{[node.modelRole]:{profileId:role?.profileId,model:role?.model}}},metadata:safeSignature(data),signature:safeSignature([data,preset,tc ? presetByName(context,'instruct',profile.instruct) : null]),summary:{role:node.modelRole??null,profileId,model:data.model},fingerprint:fingerprint()});
+    return {ok:true,data};
+}
+
+const HOST_LOADED_TC_MODELS = new Set(['koboldcpp','ooba','generic','tabby','llamacpp']);
+const NATIVE_CHAT_FIELDS = new Set(['prompts','prompt_order','send_if_empty','impersonation_prompt','new_chat_prompt','new_group_chat_prompt','new_example_chat_prompt','continue_nudge_prompt','wi_format','scenario_format','personality_format','group_nudge_prompt','assistant_prefill','assistant_impersonation','continue_prefill','continue_postfix']);
+// Private captures retain request-affecting live values. They never become provenance.
+function activeSettings(settings, chat = false) {
+    return JSON.parse(JSON.stringify(settings ?? {}, (key,item) => /secret|password|credentials?|(?:api|access)[_-]?token|api.?key|custom_headers|authorization/i.test(key) || chat && NATIVE_CHAT_FIELDS.has(key) ? undefined : item));
+}
+function resolveActiveBinding(node, context, role) {
+    const metadata = activeModelMetadata(context);
+    if (!metadata) return fail('UNSUPPORTED_BINDING', 'Only active chat/text completion connections are supported.');
+    const tc = context.mainApi === 'textgenerationwebui', source = metadata.api;
+    if ((!tc && LOSSY_CC_SOURCES.has(source)) || tc && source === 'infermaticai') return fail('UNSUPPORTED_BINDING', 'This installed host wrapper discards completion evidence. Use a connection that preserves its completion reason.');
+    const settings = activeSettings(tc ? context.textCompletionSettings : context.chatCompletionSettings, !tc);
+    if (!tc && PROXY_SOURCES.has(source) && settings.reverse_proxy) return fail('UNSUPPORTED_BINDING', 'This route inherits a reverse proxy that cannot be isolated through the public host services. Use a direct connection.');
+    const model = node.model || (!node.profileId && role?.model) || metadata.model;
+    if (!model && !(tc && HOST_LOADED_TC_MODELS.has(source))) return fail('MODEL_MISSING', 'Select a model in SillyTavern or on the node.');
+    const field = ENDPOINT_FIELDS[source];
+    const extraFields = source === 'azure' ? ['azure_base_url','azure_deployment_name','azure_api_version'] : source === 'workers_ai' ? ['workers_ai_account_id'] : [];
+    const extras = Object.fromEntries(extraFields.map(key=>[key,settings[key]]));
+    if (extraFields.some(key=>!extras[key])) return fail('ENDPOINT_MISSING', 'The provider requires endpoint/account configuration in its host settings.');
+    const endpoint = tc ? context.getTextGenServer?.(source) : field ? settings[field] : extras.azure_base_url || extras.workers_ai_account_id || null;
+    if ((tc || field) && !endpoint) return fail('ENDPOINT_MISSING', 'The active connection requires an available endpoint.');
+    const data = {profileId:ACTIVE_PROFILE_ID,profileName:ACTIVE_PROFILE_NAME,model:model || null,source,api:context.mainApi,endpoint:endpoint || null,endpointOrigin:endpoint ? 'host' : 'provider',preset:null,instruct:null,...(extraFields.length ? {endpointDependencies:extras} : {})};
+    const stopping = activeSettings({custom_stopping_strings:context.powerUserSettings?.custom_stopping_strings,custom_stopping_strings_macro:context.powerUserSettings?.custom_stopping_strings_macro,...(tc ? {single_line:context.powerUserSettings?.single_line} : {})});
+    const active = {settings,stopping,...(tc ? {instruct:activeSettings(context.powerUserSettings?.instruct),context:activeSettings(context.powerUserSettings?.context)} : {})};
+    resolved.set(data,{node:{profileId:node.profileId,model:node.model,modelRole:node.modelRole},graph:{roles:{[node.modelRole]:{profileId:role?.profileId,model:role?.model}}},metadata:safeSignature(data),signature:safeSignature([data,active]),active,summary:{role:node.modelRole??null,profileId:ACTIVE_PROFILE_ID,model:data.model},fingerprint:fingerprint()});
     return {ok:true,data};
 }

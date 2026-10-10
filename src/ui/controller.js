@@ -1,4 +1,6 @@
 import { resolveBinding } from '../workflow/connections.js?v=0.26.0';
+import { activeModelMetadata } from '../workflow/model-profiles.js?v=0.26.0';
+import { readNodeProfileMetadata, nodeProfileMetadataKey } from './node-profile-preparation.js?v=0.26.0';
 import * as workflowRuntime from '../run.js?v=0.26.0';
 import { workflowSignature } from '../workflow/runtime.js?v=0.26.0';
 import { installWorkflowExample } from '../workflow/examples.js?v=0.26.0';
@@ -27,7 +29,7 @@ import { createNativeWireBridge } from './native-wire-bridge.js?v=0.26.0';
 import { readNodePresentation } from './node-palette.js?v=0.26.0';
 import { showContextMenu } from './context-menu.js?v=0.26.0';
 import { readTextFile } from './file-input.js?v=0.26.0';
-import { prepareWorkspaceViews, prepareLibraryViews, projectEditorDraw, initialWorkspaceCamera, projectWorkspacePanels } from './workspace-preparation.js?v=0.26.0';
+import { prepareWorkspaceViews, prepareLibraryViews, projectEditorDraw, initialWorkspaceCamera, projectWorkspacePanels, projectNodeProfiles } from './workspace-preparation.js?v=0.26.0';
 import { prepareWorkflowProjection, projectPreparedWorkflow, createWorkflowSession } from './workflow-surface.js?v=0.26.0';
 import { ctx, safe, settings, save, allGraphs, getGraph, createGraph, duplicateGraph, deleteGraph, touchGraph, commitGraphEdit, stepGraphHistory, resolveGraph, exportGraph, importGraph, onGraphTouched, groupMembers } from '../state.js?v=0.26.0';
 import { applyTheme } from '../theme.js?v=0.26.0';
@@ -115,7 +117,7 @@ export function profiles() {
 }
 
 
-let workflowRevision = null;
+let workflowRevision = null, nodeProfileInputsKey = null;
 let workflowProjection = null, workflowProjectionGraph = null;
 let workflowState = { result: null, busy: false, status: '', applyIssue: '' };
 const workflowSession = createWorkflowSession({ runtime: () => workflowRuntime.getNativeWorkflowController?.(), rootCurrent: () => current, runEpoch: () => rootRunEpoch, active: isOpen, changed: state => {
@@ -124,10 +126,21 @@ const workflowSession = createWorkflowSession({ runtime: () => workflowRuntime.g
     if (isOpen() && !documentTransition) { if (authorityChanged) refreshWorkflowPreparation(); updateWorkflowProjection(); }
 } });
 const receiveAutomaticWorkflow = () => workflowSession.receiveAutomatic(workflowRuntime.getNativeWorkflowController?.()?.lastAutomaticResult?.());
-function workspaceInputs() { return { settings: settings(), profiles: profiles(), result: workflowState.result, resolveBinding: (node, graph) => resolveBinding(node, graph, ctx()), candidateStatus: candidate => workflowRuntime.getNativeWorkflowController?.()?.candidateStatus?.(candidate) }; }
+function workspaceInputs() { const context = ctx(), hostProfiles = profiles(); nodeProfileInputsKey = nodeProfileMetadataKey(context, hostProfiles); return { settings: settings(), profiles: readNodeProfileMetadata(context, hostProfiles), activeModel: activeModelMetadata(context), result: workflowState.result, resolveBinding: (node, graph) => resolveBinding(node, graph, ctx()), candidateStatus: candidate => workflowRuntime.getNativeWorkflowController?.()?.candidateStatus?.(candidate) }; }
 function refreshWorkflowPreparation() {
     if (!current || !workspacePrepared) return;
     workspacePrepared.workflow = prepareWorkflowProjection(current, { ...workspaceInputs(), ...(workspacePrepared.planner ? { planner: workspacePrepared.planner } : {}) });
+}
+/** Explicit host events and popup opening refresh metadata; camera/selection reuse it. */
+function refreshNodeProfileMetadata(selection = null) {
+    if (!isOpen() || !graphViews || !workspacePrepared) return;
+    if (selection && !detailCapture(selection, true).ok) return;
+    refreshWorkflowPreparation(); updateWorkflowProjection();
+}
+function refreshNodeProfileSettings() {
+    if (!isOpen() || !graphViews || !workspacePrepared) return;
+    if (nodeProfileMetadataKey(ctx(), profiles()) === nodeProfileInputsKey) return;
+    refreshNodeProfileMetadata();
 }
 function persistGraphViews(flush = false, deferSerialization = false, persistSettings = save) {
     clearTimeout(viewSaveTimer);
@@ -301,6 +314,7 @@ function updateWorkflowProjection() {
     const view = workflowView();
     const revision = graphViews ? graphViews.readEditContext().sessionId + ':' + workspaceRevision : String(uiEpoch);
     const rootWorkflow = projectPreparedWorkflow(workspacePrepared?.workflow,workflowState);
+    if (canvas && graphViews) canvas.setNodeProfiles?.(projectNodeProfiles(graphViews.readEditor(), view, revision));
     const panels = graphViews ? projectWorkspacePanels(graphViews.readEditor(), view, workflowState, revision, selectedPreview, pinnedPreview, rootWorkflow, workspacePrepared.idleRunRows, workspacePrepared.previewChoices) : {};
     if (canvas && graphViews && editorDraw && canvasTraceRows!==view.rows) { canvasTraceRows=view.rows;const traces = []; const visit = rows => { for (const row of rows ?? []) { traces.push({ id: row.address.nodeId, status: row.status }); } }; if(graphViews.readEditor().view.identity.kind!=='library')visit(view.rows); canvas.setTrace(traces); }
     workbench?.update({ workflow: view, rootWorkflow, ...panels, nativeDiagnostic: workspaceIssue, nativeFlatCanvas: !settings().ui?.theme?.style?.grid });
@@ -436,6 +450,10 @@ function build() {
     for (const name of ['CHAT_CHANGED', 'MESSAGE_EDITED', 'MESSAGE_UPDATED', 'MESSAGE_DELETED', 'MESSAGE_SWIPED', 'MESSAGE_SENT', 'GENERATION_STARTED', 'GENERATION_ENDED', 'GENERATION_STOPPED']) {
         if (nativeContext.eventTypes?.[name]) nativeContext.eventSource?.on?.(nativeContext.eventTypes[name], () => { if (isOpen()) workflowSession.refreshFreshness(); });
     }
+    for (const name of ['CHATCOMPLETION_MODEL_CHANGED', 'CHATCOMPLETION_SOURCE_CHANGED', 'MAIN_API_CHANGED', 'CONNECTION_PROFILE_LOADED', 'CONNECTION_PROFILE_CREATED', 'CONNECTION_PROFILE_UPDATED', 'CONNECTION_PROFILE_DELETED', 'OAI_PRESET_CHANGED_AFTER', 'PRESET_CHANGED', 'PRESET_DELETED', 'PRESET_RENAMED', 'SETTINGS_LOADED_AFTER', 'EXTENSION_SETTINGS_LOADED']) {
+        if (nativeContext.eventTypes?.[name]) nativeContext.eventSource?.on?.(nativeContext.eventTypes[name], () => refreshNodeProfileMetadata());
+    }
+    if (nativeContext.eventTypes?.SETTINGS_UPDATED) nativeContext.eventSource?.on?.(nativeContext.eventTypes.SETTINGS_UPDATED, refreshNodeProfileSettings);
     const panes = safe(() => JSON.parse(globalThis.localStorage?.getItem('lattice.workspace.panes') || '{}')) || {};
     root.classList.toggle('pc-details-hidden', typeof panes.inspector === 'boolean' ? !panes.inspector : window.innerWidth < 860); syncPaneToggles();
     document.addEventListener('pc-theme', () => { if (canvas && isOpen()) { updateWorkflowProjection(); canvas.render(); } });
@@ -461,6 +479,14 @@ function build() {
         nativeCard: node => editorDraw?.nativeCards?.[node.id], nativeBridge: () => nativeWireBridge,
         viewKey: () => graphViews?.readEditor().view.key,
         nativeScope() { const editor = graphViews?.readEditor(); return editor?.view.identity.kind === 'library' ? { readOnly: true } : { workflowId: current?.id, instancePath: editor?.view.identity.instancePath ?? [], readOnly: !editor || editor.readOnly }; },
+        editProfile(selection, value) {
+            const editor = graphViews?.readEditor(); if (!editor || editor.view.identity.kind === 'library') return { ok: false, error: { code: 'READ_ONLY', message: 'Library definitions are read-only.' } };
+            const revision = graphViews.readEditContext().sessionId + ':' + workspaceRevision;
+            const row = projectNodeProfiles(editor, workflowView(), revision).find(row => row.id === selection.address.nodeId);
+            if (!row || !row.options.some(option => option.value === value)) return { ok: false, error: { code: 'PROFILE_MISSING', message: 'This connection is no longer available.' } };
+            return nodeDetailsActions.editBinding(selection, 'profileId', 'override', value);
+        },
+        refreshProfiles: refreshNodeProfileMetadata,
         nativeAttachments, canEdit: () => !readGraphEditContext().readOnly,
         onNativeDelete: deleteNativeSelection, onNativeGroupPresentation: (id, collapsed) => nativeGroupPresenter?.(id, collapsed),
         onDragBlock(blocked) { if (blocked) beginPositionEdit(); },

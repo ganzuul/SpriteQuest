@@ -60,9 +60,9 @@ Use **Tools → Theme and colours** to choose Ember, Lattice, Ash, Graphite, Sla
 
 The thirty tiles follow a fixed learning order. Opening a tile creates a fresh copy every time. A recipe's separate Pre/Post companions validate and install together; select them from the **Workflow** selector. Existing workflows, phase assignments, and enabled state are preserved. Opening does not run anything, assign a phase, or arm the copies.
 
-Model-backed lessons arrive without local connections. Select each model-calling node and choose its own connection profile in **Details**. The selected profile's model is the default; an override is optional. Inspect a manual run before assigning a phase from **Workflows** and arming for normal sends. Pending Node Details text, model override mode/value, and boundary drafts survive browsing and returning to their qualified node; invalid JSON still requires correction before Save.
+New model-capable nodes and canonical starters select **Active SillyTavern model**, which follows your configured host connection and model. Inspect each model-calling node's grey profile bar or **Details → Connection profile**; choose a saved profile when that node needs a fixed connection. The connection's model is the default; a node model override is optional. Inspect a manual run before assigning a phase from **Workflows** and arming for normal sends. Pending Node Details text, model override mode/value, and boundary drafts survive browsing and returning to their qualified node; invalid JSON still requires correction before Save.
 
-The [quick start](lattice-workspace.md) walks through changing a brief and trying Literal cleanup. Scene guidance and Reviewed AI De-slop use auxiliary model operations; choose local connection profiles for their model nodes in Details before running them.
+The [quick start](lattice-workspace.md) walks through changing a brief and trying Literal cleanup. Scene guidance and Reviewed AI De-slop use auxiliary model operations; their canonical starters follow **Active SillyTavern model**, and each node can instead use a saved profile selected in its bar or Details.
 
 There are three useful scales of work:
 
@@ -176,7 +176,7 @@ Smart Compactor lets you choose selection or model-backed compression, a target 
 
 *Model settings show the node's effective connection. Choose a local connection profile before running a model-backed node.*
 
-Select each model-calling node and choose its **Connection profile** in Details. The node uses that profile's default model; choose **Model mode → Override** to enter a different model identifier for that operation. Scene guidance's Smart Compactor and Response Plan can use different profiles and models. Inspect the effective value and any issue below the controls. This does not globally activate a different SillyTavern connection. See [model connections and supported routes](native-workflows.md).
+Each model-calling node has a grey connection bar below its card and small model-only text above. Open the bar to search current saved profiles by name, API label and model, or choose **Active SillyTavern model** to follow the host's current connection. New model-capable nodes use the active option; existing bindings remain intact. The list keeps the active option first, accepts multiple case-insensitive keywords, scrolls independently of the canvas, and supports arrows, Enter and Escape. Click outside to close it. An unavailable saved profile stays visibly unavailable until you choose another connection. Select a node to change the same **Connection profile** in Details. The node uses that profile's default model; choose **Model mode → Override** to enter a different model identifier for that operation. Scene guidance's Smart Compactor and Response Plan can use different profiles and models. Inspect the effective value and any issue below the controls. This does not globally activate a different SillyTavern connection. Changing a profile affects that node only and supports Undo and Redo. A pinned subgraph occurrence stores its connection override on the owning workflow wrapper, leaving its shared definition and sibling occurrences intact; library inspection remains read-only. See [model connections and supported routes](native-workflows.md).
 
 After configuring the model nodes, choose **Workflows → Assign pre phase** or **Assign post phase** for the selected workflow. Arming remains a separate action.
 
@@ -288,7 +288,7 @@ When the unsaved-changes prompt appears, **Save** downloads the current workflow
 
 An additive import requires matching phases, assigns fresh node identities, and preserves internal connections and relative layout. Review role requirements, terminal changes, and request bounds before accepting the insertion. Import itself does not run or arm the workflow.
 
-Save retains connection bindings in SillyTavern settings. Export downloads a `.workflow.json` sharing copy and omits bound profile IDs and credentials. Open these files with **File → Open workflow…**; recipients configure local model connections before running. The browser controls where downloads are saved. Composed workflows carry their pinned definitions. Unsupported versions, dangling connections, incompatible artifacts, or cycles produce validation issues.
+Save retains connection bindings in SillyTavern settings. Export downloads a `.workflow.json` sharing copy and strips local saved-profile IDs and credentials. Open these files with **File → Open workflow…**; recipients rebind exported fixed connections before running. **Active SillyTavern model** remains portable in nodes, roles and occurrence overrides, following the recipient's configured host connection and model. The browser controls where downloads are saved. Composed workflows carry their pinned definitions. Unsupported versions, dangling connections, incompatible artifacts, or cycles produce validation issues.
 
 ## Develop your own writing system
 
