@@ -1,6 +1,8 @@
 import { cloneDefinitionData, definitionRefKey } from './definitions.js?v=0.27.0';
 import { cloneWorkflowDocument } from './document.js?v=0.27.0';
-import { ARTIFACT_KINDS, OPERATIONS, describeOperation, operationDefaults, portsForNode } from './catalog.js?v=0.27.0';
+import { ARTIFACT_KINDS, OPERATIONS, describeOperation, operationDefaults, operationFor, portsForNode } from './catalog.js?v=0.27.0';
+import { ACTIVE_PROFILE_ID } from './model-profiles.js?v=0.27.0';
+import { INTROSPECTION_NATIVE_OPERATIONS } from './introspection/native.js?v=0.27.0';
 import { prepareGraphCandidate } from './prepared-graph-edit.js?v=0.27.0';
 import { prepareLocalDefinitionEdit } from './definition-library.js?v=0.27.0';
 import { compositionIds, definitionChain, ownsDefinitionPath, safeId } from './composition-edit.js?v=0.27.0';
@@ -144,17 +146,27 @@ function create(context, command) {
     if (!point(command.graphPoint)) return fail('INVALID_COMMAND', 'Capture a finite graph point before opening search.');
     if (typeof command.operation !== 'string' || !Object.hasOwn(OPERATIONS, command.operation)) return fail('UNKNOWN_OPERATION', 'Choose a declared operation.');
     const controls = command.controls === undefined ? {} : command.controls;
-    if (!keys(controls, OPERATIONS[command.operation].controls) || command.operation === 'reroute' && Object.hasOwn(controls, 'artifactKind')) return fail('INVALID_SETTINGS', 'Presets may contain only declared operation controls; Reroute creation requires its top-level artifact kind.');
+    if (!record(controls)) return fail('INVALID_SETTINGS', 'Presets must be plain operation controls.');
+    let defaults;
+    try { defaults = operationDefaults(command.operation, { mode: controls.mode }); }
+    catch { return fail('INVALID_SETTINGS', 'Select a supported operation mode.'); }
+    const declared = Object.hasOwn(INTROSPECTION_NATIVE_OPERATIONS, command.operation)
+        ? operationFor({ type: 'workflow', ...defaults }) ?? OPERATIONS[command.operation]
+        : OPERATIONS[command.operation];
+    if (!keys(controls, declared.controls) || command.operation === 'reroute' && Object.hasOwn(controls, 'artifactKind')) return fail('INVALID_SETTINGS', 'Presets may contain only declared operation controls; Reroute creation requires its top-level artifact kind.');
     if (command.operation === 'reroute' ? !ARTIFACT_KINDS.includes(command.artifactKind) : command.artifactKind !== undefined) return fail('INVALID_SETTINGS', 'Only typed reroute creation accepts an actual artifact kind.');
     if (command.connection !== undefined && (!keys(command.connection, ['origin', 'portId', 'replace']) || !endpoint(command.connection.origin) || !safeId(command.connection.portId) || command.connection.replace !== undefined && typeof command.connection.replace !== 'boolean')) return fail('INVALID_COMMAND', 'Choose an existing origin and an explicit new-node port.');
     if(command.phase!==undefined&&(!['pre','post'].includes(command.phase)||context.scope.mode!=='native-unified'&&command.phase!==context.scope.mode.slice(7)))return fail('WRONG_PHASE','Choose a supported stage in the current workflow.');
     const id = context.allocate('node');
-    const node = { id, type: 'workflow', ...operationDefaults(command.operation), ...structuredClone(controls), x: command.graphPoint.x, y: command.graphPoint.y };
+    const node = { id, type: 'workflow', ...defaults, ...structuredClone(controls), x: command.graphPoint.x, y: command.graphPoint.y };
     if (command.operation === 'reroute') Object.assign(node, { artifactKind: command.artifactKind, compact: true });
     if(command.phase!==undefined)node.phase=command.phase;
     else if(OPERATIONS[command.operation].minimumSchema===3&&context.scope.mode!=='native-unified'||command.operation==='reroute'&&context.scope.mode!=='native-unified')node.phase=context.scope.mode.slice(7);
     const described = describeOperation(context.metadata(), node);
     if (!described.ok) return described;
+    // Configured modes can introduce a model call absent from registration defaults.
+    node.modelRole = described.data.descriptor.modelRole;
+    node.profileId = node.modelRole ? ACTIVE_PROFILE_ID : null;
     context.scope.nodes[id] = node; context.addedNodeIds.push(id); context.changed = true;
     return command.connection ? connect(context, command.connection.origin, { nodeId: id, portId: command.connection.portId }, command.connection.replace) : { ok: true };
 }

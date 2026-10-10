@@ -32,7 +32,7 @@ These are combinations of the shipped tools. **File → Open examples…** offer
 | **Node details** | Edit operation controls, aliases, compact cards, and model bindings; inspect effective values and validation issues. |
 | **Per-operation model connections** | Choose each model node’s connection profile and model in Details without switching SillyTavern’s main connection; For Each exposes its pinned helper’s role selectors too. |
 | **One native workflow** | Connect preparation to Generate Reply, process its owned Draft, and review the result in one graph. |
-| **Typed decisions and branches** | Use Decision or configured Jev/Laya Fast Decision with explicit confidence gates, skipped paths and unresolved policies. |
+| **Typed decisions and branches** | Use ordinary Decision with explicit accepted, rejected and unresolved routes; Confidence Gate handles authored numeric policies. |
 | **Workflow Data and accepted effects** | Read authorized logical targets, project append/keyed updates, and settle file/clock/outcome consequences with the chosen reviewed result. |
 | **Scoped character context and Recall** | Process present actors separately and queue selected-actor memories through canvas controls or shortcuts. |
 | **Recorded previews** | Inspect inputs and outputs, follow selection, pin an artifact, or run only a selected output's dependencies. |
@@ -56,7 +56,7 @@ The [node reference](docs/node-reference.md) lists the actual reusable operation
 | **Native lifecycle** | On Send, Player Event Source, Generate Reply · SillyTavern, Review / Publish |
 | **Context and model work** | Scene Context, Actor Context, Model Call, Response Plan, Revise Draft, Extract, Enrich |
 | **Assembly and editing** | Compose, Text Rules, Transpose, Draft Text, Render Notes, Append/Combine |
-| **Decisions and control** | Decision, Fast Decision, Confidence Gate, Condition, Branch, Join, Collect, pinned For Each |
+| **Decisions and control** | Decision, Confidence Gate, Condition, Branch, Join, Collect, pinned For Each |
 | **Canonical events and item rules** | Event Normalize, Confirm Events, Scene Presence, Current Holder, Character Direction, Prompted Memory |
 | **Randomness** | Effect Library, Random Pick, Effect Author, Stage Outcome, Outcome Commit |
 | **Documents and collections** | Read File, Format, Project Document, Write to File; lookup/filter/count/sum/threshold/project/flatten |
@@ -89,9 +89,9 @@ Select processing nodes, right-click, and choose **Create Subgraph**. The editor
 
 For updates, use **Manage Extensions**, then reload. Installation, import, and editing do not make model calls.
 
-The [unified workflow guide](docs/unified-workflows.md) walks through applying an example to **Story-2 on default-user**, chaining different models, using Fast Decision, recording private moments, queueing recall and managing accepted effects. A full unified native generation starts with ordinary Send; supported **Run to here** paths inspect without acceptance.
+The [unified workflow guide](docs/unified-workflows.md) walks through applying an example to **Story-2 on default-user**, chaining different models, using Decision, recording private moments, queueing recall and managing accepted effects. A full unified native generation starts with ordinary Send; supported **Run to here** paths inspect without acceptance.
 
-Opening a unified example makes an independent editable copy the active document. It makes no model request and does not change **Enable Lattice**. Set each auxiliary model’s local Connection profile in Details; configure For Each’s **Helper model bindings** separately. **Tools → Workflow Data…** authorizes logical JSON/text targets, and **Tools → Fast connections…** configures typed Jev/Laya endpoints. Local connection IDs and credentials are excluded from portable exports.
+Opening a unified example makes an independent editable copy the active document. It makes no model request and does not change **Enable Lattice**. Choose each auxiliary model’s connection on its node bar; Details provides advanced model settings; configure For Each’s **Helper model bindings** separately. **Tools → Workflow Data…** authorizes logical JSON/text targets. Local connection IDs and credentials are excluded from portable exports.
 
 Saved unified documents retain their content and recovery draft. Earlier unified example IDs remain installable while the visible picker shows the 30 new lessons. Saved pre/post roots are retired. On upgrade, LATTICE preserves their original graphs, bindings and active selection in a cold recovery archive, then opens a disabled unified starter when needed. **File → Export archived workflows…** downloads the archive as JSON. Archived roots cannot execute or import as current workflows, and recovery makes no model requests. Rebuild useful operations in a new unified graph; there is no automatic converter.
 

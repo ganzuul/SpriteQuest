@@ -80,7 +80,7 @@ test('changing a boundary capability expires its pending acknowledgment and repl
     } finally { await f.close(); }
 });
 
-test('boundary details edit the interface port and delete through the ordinary node action', async () => {
+test('boundary details edit the interface port through the captured interface action', async () => {
     const edits = [], ordinary = [];
     const f = await fixture('NodeDetails', boundary(), {
         editInterface: (captured, edit) => { edits.push([captured, edit]); return success(); },
@@ -98,8 +98,7 @@ test('boundary details edit the interface port and delete through the ordinary n
         assert.equal(f.host.querySelector('[data-add-boundary], [data-remove-boundary]'), null);
         assert.equal(f.host.querySelector('[aria-label="Enabled"]'), null, 'boundaries are interface declarations rather than enabled operations');
         assert.equal([...f.host.querySelectorAll('button')].some(button => button.textContent === 'Duplicate'), false);
-        [...f.host.querySelectorAll('button')].find(button => button.textContent === 'Delete').click(); await tick(); flushSync();
-        assert.equal(edits.length, 1); assert.deepEqual(ordinary, ['remove']);
+        assert.equal(edits.length, 1); assert.deepEqual(ordinary, []);
     } finally { await f.close(); }
 });
 
@@ -114,8 +113,6 @@ test('read-only boundary controls reject raw events and interface failures prese
         for (const control of f.host.querySelectorAll('[data-boundary-controls] input, [data-boundary-controls] select, [data-boundary-controls] button')) assert.equal(control.disabled, true);
         input(label, 'Forbidden'); change(f.host.querySelector('[aria-label="Subgraph port type"]'), 'text');
         f.host.querySelector('[data-save-boundary]').dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
-        const deleteButton = [...f.host.querySelectorAll('button')].find(button => button.textContent === 'Delete'); assert.equal(deleteButton.disabled, true);
-        deleteButton.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
         assert.deepEqual(edits, []); assert.deepEqual(removed, []);
         f.update(boundary()); input(f.host.querySelector('[aria-label="Node name"]'), 'First draft');
         f.host.querySelector('[data-save-boundary]').click(); flushSync();
@@ -219,35 +216,30 @@ test('model controls honor producer allowed modes and show inherited effective b
     const f = await fixture('NodeDetails', node({ canonicalTitle: 'Response Plan', model }), { editBinding: (...args) => { calls.push(args); return success(); }, editField: success });
     try {
         assert.match(f.host.textContent, /Effective connection: Reasoner · profile model/); assert.match(f.host.textContent, /Instance role override/);
-        const connection = f.host.querySelector('[aria-label="Connection mode"]');
-        assert.deepEqual([...connection.options].map(option => option.value), ['inherit', 'override'], 'historical null fallback does not acquire invented block semantics');
-        assert.equal(f.host.querySelector('[aria-label="Model mode"]').value, 'block');
-        change(connection, 'override');
-        assert.equal(calls.length, 0, 'choosing Override only reveals the value editor');
-        change(f.host.querySelector('[aria-label="Connection profile"]'), 'profileA');
-        assert.deepEqual(calls[0], [{ selectionKey: JSON.stringify(address), revision: 'revision1', address }, 'profileId', 'override', 'profileA']);
-        f.update(node({ model, readOnly: true })); change(f.host.querySelector('[aria-label="Model mode"]'), 'inherit');
-        assert.equal(calls.length, 1);
+        assert.equal(f.host.querySelector('[aria-label="Connection mode"]'),null);
+        assert.equal(f.host.querySelector('[aria-label="Connection profile"]'),null);
+        assert.equal(f.host.querySelector('[data-reset-profile]').disabled,true);
+        assert.equal(f.host.querySelector('[aria-label="Model mode"]').value,'block');
+        change(f.host.querySelector('[aria-label="Model mode"]'),'inherit');await tick();flushSync();
+        assert.deepEqual(calls[0],[{selectionKey:JSON.stringify(address),revision:'revision1',address},'model','inherit',null]);
+        f.update(node({model,readOnly:true}));change(f.host.querySelector('[aria-label="Model mode"]'),'inherit');assert.equal(calls.length,1);
         f.update(node({ model: null })); assert.equal(f.host.querySelector('[data-model-controls]'), null);
     } finally { await f.close(); }
 });
 
 test('shared instance bindings can be configured while authored node controls remain read-only', async () => {
     const calls = [], allowedModes = [{ value: 'inherit', label: 'Inherit role' }, { value: 'override', label: 'Override' }];
-    const model = { role: 'Analysis', roleEditable: true, editable: true, effective: 'Inherited connection', source: 'Containing instance', profile: { mode: 'inherit', allowedModes, value: null, options: [{ value: 'profileA', label: 'Reasoner' }] }, model: { mode: 'inherit', allowedModes, value: null } };
+    const model = { role: 'Analysis', roleEditable: true, editable: true, effective: 'Inherited connection', source: 'Containing instance', profile: { mode: 'override', allowedModes, value: 'profileA', options: [{ value: 'profileA', label: 'Reasoner' }] }, model: { mode: 'inherit', allowedModes, value: null } };
     const view = node({ controls: [], readOnly: true, model });
     const f = await fixture('NodeDetails', view, { editBinding: (...args) => { calls.push(['binding', ...args]); return success(); }, editField: (...args) => { calls.push(['field', ...args]); return success(); } });
     try {
-        const connection = f.host.querySelector('[aria-label="Connection profile"]');
-        assert.equal(connection.disabled, false, 'a pinned instance allows a local connection override');
-        change(connection, 'profileA'); await tick(); flushSync();
-        assert.deepEqual(calls, [['binding', { selectionKey: JSON.stringify(address), revision: 'revision1', address }, 'profileId', 'override', 'profileA']]);
+        const reset=f.host.querySelector('[data-reset-profile]');assert.equal(reset.disabled,false);reset.click();await tick();flushSync();
+        assert.deepEqual(calls,[['binding',{selectionKey:JSON.stringify(address),revision:'revision1',address},'profileId','inherit',null]]);
         const role = f.host.querySelector('[aria-label="Model role"]');
         assert.equal(role.disabled, true); change(role, 'Forbidden role');
         assert.equal(calls.length, 1, 'binding authority does not grant authored field edits');
         f.update(node({ ...view, revision: 'library', model: { ...model, editable: false } }));
-        assert.equal(f.host.querySelector('[aria-label="Connection profile"]').disabled, true);
-        change(f.host.querySelector('[aria-label="Connection profile"]'), 'profileA');
+        assert.equal(f.host.querySelector('[data-reset-profile]').disabled,true);f.host.querySelector('[data-reset-profile]').click();
         change(f.host.querySelector('[aria-label="Model mode"]'), 'override');
         assert.equal(f.host.querySelector('[aria-label="Model identifier"]'), null);
         assert.equal(calls.length, 1, 'a revoked binding capability also rejects raw events');
@@ -262,7 +254,7 @@ test('shared model controls distinguish the definition model from an explicit pr
     try {
         const mode = () => f.host.querySelector('[aria-label="Model mode"]');
         assert.equal(mode().selectedOptions[0].textContent, 'Use definition model');
-        assert.equal(f.host.querySelector('[aria-label="Connection mode"]').selectedOptions[0].textContent, 'Use definition binding');
+        assert.equal(f.host.querySelector('[data-reset-profile]').textContent,'Use definition connection');assert.equal(f.host.querySelector('[data-reset-profile]').disabled,true);
         change(mode(), 'inherit'); assert.equal(calls.length, 0, 'the untouched definition has no instance override to reset');
         change(mode(), 'block'); await tick(); flushSync();
         assert.deepEqual(calls[0].slice(1), ['model', 'block', null]);
@@ -452,20 +444,20 @@ test('primary controls precede collapsed purpose groups, and only changed proven
     } finally { await f.close(); }
 });
 
-test('model settings expose the connection immediately while advanced compatibility modes remain staged', async () => {
+test('advanced model settings start collapsed and retain optional model drafts', async () => {
     const inherit = { value: 'inherit', label: 'Inherit role' }, override = { value: 'override', label: 'Override' };
     const model = { role: 'Analysis', roleEditable: true, effective: 'Reasoner · saved-model', source: 'Containing role', profile: { mode: 'inherit', allowedModes: [inherit, override], value: null }, model: { mode: 'inherit', allowedModes: [inherit, override], value: null } };
     const edits = [], f = await fixture('NodeDetails', node({ model }), { editBinding: (...args) => { edits.push(args); return success(); } });
     try {
         const group = f.host.querySelector('[data-model-controls]');
-        assert.equal(group.tagName, 'DETAILS'); assert.equal(group.open, true);
-        assert.ok(group.querySelector('[aria-label="Connection profile"]'));
-        assert.equal(group.querySelector('[data-binding-advanced]').open, false);
-        assert.match(group.querySelector('summary').textContent, /Model connection.*Reasoner/);
-        change(f.host.querySelector('[aria-label="Model mode"]'), 'override');
-        assert.equal(edits.length, 0); assert.equal(group.open, true, 'staged override editors are visible');
+        assert.equal(group.tagName, 'DETAILS'); assert.equal(group.open, false);
+        assert.equal(group.querySelector('[aria-label="Connection profile"]'),null);
+        assert.equal(group.querySelector('[data-binding-advanced]'),null);
+        assert.equal(group.querySelector('summary').textContent,'Advanced model settings');
+        group.open=true;change(f.host.querySelector('[aria-label="Model mode"]'), 'override');
+        assert.equal(edits.length, 0); assert.equal(group.open, true, 'the opened advanced panel keeps its staged override editor visible');
         f.update(node({ revision: 'issue', model: { ...model, issue: 'Choose a connection to run.' } }));
-        assert.equal(group.open, true); assert.match(group.textContent, /Choose a connection to run/);
+        assert.equal(group.open, true); assert.match(f.host.querySelector('[role="alert"]').textContent, /Choose a connection to run/);
     } finally { await f.close(); }
 });
 
@@ -750,23 +742,23 @@ test('the identity header displays a preserved saved title when no alias exists 
     } finally { await f.close(); }
 });
 
-test('model binding issues appear once with an attention summary and preserve distinct effective connections', async () => {
+test('model binding issues remain visible outside collapsed advanced settings and preserve distinct effective connections', async () => {
     const allowedModes = [{ value: 'inherit', label: 'Inherit role' }, { value: 'override', label: 'Override' }];
     const issue = 'Assign a fixed connection to this node or its model role.';
     const model = { role: 'Analysis', roleEditable: true, effective: '  ' + issue + '  ', source: 'Inherited from Analysis', issue, profile: { mode: 'inherit', allowedModes, value: null }, model: { mode: 'inherit', allowedModes, value: null } };
     const f = await fixture('NodeDetails', node({ controls: [], model }), { editBinding: success });
     try {
         const group = f.host.querySelector('[data-model-controls]');
-        assert.equal(group.open, true, 'binding failures expose their detailed alert');
-        assert.match(group.querySelector('summary').textContent, /Model connection.*Binding needs attention$/);
-        assert.equal(group.textContent.split(issue).length - 1, 1, 'the detailed binding failure must appear only once');
-        assert.equal(group.querySelector('[role="alert"]').textContent, issue);
+        assert.equal(group.open, false);
+        assert.equal(group.querySelector('summary').textContent,'Advanced model settings');
+        assert.equal(f.host.textContent.split(issue).length - 1, 1, 'the detailed binding failure must appear only once');
+        assert.equal(f.host.querySelector('[role="alert"]').textContent, issue);
         assert.doesNotMatch(group.textContent, /Effective connection:/, 'the identical effective failure is omitted after trimming');
         assert.match(group.textContent, /Inherited from Analysis/);
         f.update(node({ revision: 'distinct-effective', controls: [], model: { ...model, effective: 'Reasoner · saved-model' } }));
         assert.match(group.textContent, /Effective connection: Reasoner · saved-model/, 'an effective binding distinct from the issue remains useful');
-        assert.equal(group.textContent.split(issue).length - 1, 1);
-        assert.match(group.querySelector('summary').textContent, /Binding needs attention$/);
+        assert.equal(f.host.textContent.split(issue).length - 1, 1);
+        assert.equal(group.querySelector('summary').textContent,'Advanced model settings');
     } finally { await f.close(); }
 });
 test('single-line identifiers commit compact text inputs, guard disabled events and retain multiline textarea values', async () => {

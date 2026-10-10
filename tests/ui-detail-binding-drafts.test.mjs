@@ -102,24 +102,20 @@ async function savedFixture(schema, values = {}) {
     return { ...f, root, before, calls, view, unrelatedRevision: () => commit({ kind: 'enabled', value: false }) };
 }
 
-test('an inherited node connection can be selected directly and commits its own profile', async () => {
-    const f = await savedFixture(3);
+for (const schema of [2, 3]) test(`schema ${schema} Details keeps profile selection on the canvas and resets a saved connection directly`, async () => {
+    const f = await savedFixture(schema, { profileId: 'profileA' });
     try {
-        assert.equal(mode(f, 'profileId').value, 'inherit');
-        const connection = editor(f, 'profileId');
-        assert.ok(connection, 'Connection profile is available before choosing an override mode');
-        assert.equal(f.host.querySelector('[data-model-controls]').open, true);
-        assert.equal(connection.value, 'role-profile', 'the direct selector shows the effective inherited connection');
-        change(connection, 'profileA'); await settle();
-        assert.equal(f.calls.length, 1);
-        assert.equal(f.calls[0].mode, 'override'); assert.equal(f.calls[0].value, 'profileA');
-        assert.equal(f.root.nodes[nodeId].profileId, 'profileA');
-        assert.equal(mode(f, 'profileId').value, 'override');
-        assert.equal(editor(f, 'profileId').value, 'profileA');
-        assert.deepEqual(f.root.roles.Analysis, f.before.roles.Analysis, 'choosing a node connection leaves shared role bindings intact');
+        assert.equal(editor(f, 'profileId'), null, 'the canvas picker owns ordinary profile selection');
+        assert.equal(mode(f, 'profileId'), null, 'Details has no profile Override draft path');
+        assert.equal(f.host.querySelector('[data-model-controls]').open, false, 'advanced settings start collapsed');
+        const reset = f.host.querySelector('[data-reset-profile]'); assert.ok(reset);
+        assert.equal(reset.disabled, false); reset.click(); await settle();
+        assert.deepEqual(f.calls.map(({field, mode, value}) => ({field, mode, value})), [{field:'profileId', mode:'inherit', value:null}]);
+        assert.equal(Object.hasOwn(f.root.nodes[nodeId], 'profileId'), false);
+        assert.deepEqual(f.root.roles.Analysis, f.before.roles.Analysis);
+        assert.equal(typeof history.undo(f.root), 'string'); assert.equal(f.root.nodes[nodeId].profileId, 'profileA');
     } finally { await f.close(); }
 });
-
 test('clearing a model override on a node with its own connection restores the profile model', async () => {
     const f = await savedFixture(3, { profileId: 'profileA', model: 'custom-model' });
     try {
@@ -136,7 +132,7 @@ test('clearing a model override on a node with its own connection restores the p
     } finally { await f.close(); }
 });
 
-for (const schema of [2, 3]) for (const field of ['profileId', 'model']) {
+for (const schema of [2, 3]) for (const field of ['model']) {
     test(`schema ${schema} ${field} Override reveals a local editor, then a nonempty value commits through the real producer/projector`, async () => {
         const f = await savedFixture(schema), selected = field === 'profileId' ? 'profileA' : 'chosen-model';
         try {
@@ -183,19 +179,6 @@ function plainView(extra = {}) {
     return { selectionKey: 'selected-plan', revision: 'revision1', address: { workflowId: 'root', instancePath: [], nodeId }, title: 'Response Plan', canonicalTitle: 'Response Plan', iconPath: 'M3 5h18', family: 'Shaping', phase: 'pre', alias: '', compact: false, enabled: true, readOnly: false, canPresent: true, controls: [], ports: [], model: { role: 'Analysis', roleEditable: true, effective: 'Actual role connection · role-model', source: 'Saved node override or containing role', profile: { mode: 'inherit', allowedModes, value: null, options: options.profiles.map(p => ({ value: p.id, label: p.name })) }, model: { mode: 'inherit', allowedModes, value: null } }, ...extra };
 }
 
-test('an unbound node can choose a connection without staging a compatibility mode', async () => {
-    const view = plainView();
-    view.model.effective = ''; view.model.profile.effectiveValue = null; view.model.model.effectiveValue = null;
-    const calls = [], f = await fixture(view, { editBinding: (...args) => { calls.push(args); return { ok: true }; } });
-    try {
-        assert.equal(editor(f, 'profileId').value, '');
-        assert.equal(mode(f, 'profileId').value, 'inherit');
-        change(editor(f, 'profileId'), 'profileA'); await settle();
-        assert.deepEqual(calls[0].slice(1), ['profileId', 'override', 'profileA']);
-        assert.equal(mode(f, 'model').value, 'inherit');
-        assert.equal(editor(f, 'model'), null, 'selecting a profile does not invent a model override');
-    } finally { await f.close(); }
-});
 
 test('clearing a shared instance model override saves an explicit profile default instead of resetting it', async () => {
     const view = plainView({ readOnly: true });
@@ -210,28 +193,7 @@ test('clearing a shared instance model override saves an explicit profile defaul
     } finally { await f.close(); }
 });
 
-test('an unavailable selected connection remains visible and can be replaced directly', async () => {
-    const view = plainView();
-    view.model.profile = { ...view.model.profile, mode: 'override', value: 'removed-profile', effectiveValue: 'removed-profile' };
-    const calls = [], f = await fixture(view, { editBinding: (...args) => { calls.push(args); return { ok: true }; } });
-    try {
-        const connection = editor(f, 'profileId');
-        assert.equal(connection.value, 'removed-profile', 'a removed profile is not silently shown as no selection');
-        assert.match(connection.selectedOptions[0].textContent, /Unavailable.*removed-profile/);
-        change(connection, 'profileA'); await settle();
-        assert.deepEqual(calls[0].slice(1), ['profileId', 'override', 'profileA']);
-    } finally { await f.close(); }
-});
 
-test('an effective instance profile blocker does not display the blocked definition connection', async () => {
-    const view = plainView();
-    view.model.profile = { ...view.model.profile, mode: 'block', value: 'profileA', effectiveValue: null, allowedModes: [...allowedModes, { value: 'block', label: 'Blocked by instance' }] };
-    const f = await fixture(view, { editBinding: () => ({ ok: true }) });
-    try {
-        assert.equal(mode(f, 'profileId').value, 'block');
-        assert.equal(editor(f, 'profileId').value, '', 'a blocked effective profile must not fall back to the definition profile');
-    } finally { await f.close(); }
-});
 
 test('root switching restores a binding override draft only while its mode is supported', async () => {
     const calls = [], f = await fixture(plainView(), { editBinding: (...args) => { calls.push(args); return { ok: true }; } });
@@ -255,7 +217,7 @@ test('root switching restores a binding override draft only while its mode is su
 test('Inherit cancels unsaved override modes without writing null, and readonly or unsupported modes cannot stage a draft', async () => {
     const calls = [], f = await fixture(plainView(), { editBinding: (...args) => { calls.push(args); return { ok: true }; } });
     try {
-        for (const field of ['profileId', 'model']) {
+        for (const field of ['model']) {
             change(mode(f, field), 'override'); assert.ok(editor(f, field));
             change(mode(f, field), 'inherit');
             if (field === 'profileId') assert.equal(editor(f, field).value, '');
@@ -271,7 +233,7 @@ test('Inherit cancels unsaved override modes without writing null, and readonly 
         assert.ok(editor(f, 'model'), 'a raw readonly mode event cannot discard the local override');
         assert.match(f.host.textContent, /Enter a model identifier/, 'a raw readonly input cannot stage text or clear the draft error'); assert.equal(calls.length, 0);
         f.update(plainView({ selectionKey: 'another', readOnly: true }));
-        change(mode(f, 'profileId'), 'override'); assert.equal(editor(f, 'profileId').value, ''); assert.equal(editor(f, 'profileId').disabled, true); assert.equal(calls.length, 0);
+        assert.equal(editor(f, 'profileId'), null); assert.equal(mode(f, 'profileId'), null); assert.equal(calls.length, 0);
         const view = plainView(); view.model.model.allowedModes = [allowedModes[0]];
         f.update(view); change(mode(f, 'model'), 'override'); assert.equal(editor(f, 'model'), null); assert.equal(calls.length, 0);
     } finally { await f.close(); }
@@ -316,7 +278,7 @@ for (const extra of [{ selectionKey: 'another-plan' }, { address: { workflowId: 
 test('saved valid overrides remain directly editable and the effective summary is never derived from a draft', async () => {
     const f = await savedFixture(3, { profileId: 'profileA', model: 'saved-model' });
     try {
-        assert.equal(editor(f, 'profileId').value, 'profileA'); assert.equal(editor(f, 'model').value, 'saved-model');
+        assert.equal(editor(f, 'profileId'), null); assert.equal(editor(f, 'model').value, 'saved-model');
         const actualEffective = f.view().model.effective;
         input(editor(f, 'model'), 'unsaved-model');
         assert.equal(f.calls.length, 0); assert.equal(f.root.nodes[nodeId].model, 'saved-model');
@@ -324,4 +286,16 @@ test('saved valid overrides remain directly editable and the effective summary i
         f.unrelatedRevision(); await settle(); assert.equal(editor(f, 'model').value, 'unsaved-model');
         change(editor(f, 'model'), 'edited-model'); await settle(); assert.equal(f.root.nodes[nodeId].model, 'edited-model');
     } finally { await f.close(); }
+});
+
+test('a qualified pinned occurrence can reset an explicit null connection to its definition without staging a profile draft', async () => {
+    const view = plainView({readOnly:true, address:{workflowId:'root', instancePath:['wrapper'], nodeId}});
+    view.model.editable=true;
+    view.model.profile={mode:'block', value:null, effectiveValue:null, allowedModes:[{value:'inherit',label:'Use definition binding'},{value:'override',label:'Override'},{value:'block',label:'Blocked by instance'}]};
+    const calls=[],f=await fixture(view,{editBinding:(...args)=>{calls.push(args);return {ok:true};}});
+    try {
+        assert.equal(editor(f,'profileId'),null); assert.equal(mode(f,'profileId'),null);
+        const reset=f.host.querySelector('[data-reset-profile]');assert.ok(reset);assert.equal(reset.disabled,false);
+        reset.click();await settle();assert.deepEqual(calls,[[{selectionKey:view.selectionKey,revision:view.revision,address:view.address},'profileId','inherit',null]]);
+    }finally{await f.close();}
 });

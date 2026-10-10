@@ -1,7 +1,6 @@
 import type {RecallBadgeView,RecallProjection,RecallActions} from './recall-types';
 import type { WorkflowExampleLesson } from '../src/workflow/examples';
 import type { StoryDocumentsView, StoryDocumentsActions, ConfigureNodeView, ConfigureNodeActions } from './storage-setup-types';
-import type { FastConnectionsView, FastConnectionsActions } from './fast-connections-types';
 import type { GraphViews, GraphViewActions } from './view-types';
 import type { NodeDetailsView, NodeDetailsActions, OutputPreviewView, OutputPreviewActions, RunDetailsView, RunDetailsActions } from './detail-types';
 import type { RunMeterView } from './run-meter-types';
@@ -51,7 +50,6 @@ export interface WorkbenchView {
     nativeSearch?: NodeSearchView | null; nativePinMenu?: PinMenuView | null; nativeChoices?: readonly SearchChoice[];
     importReview?: ImportReviewView | null;
     documentPrompt?: DocumentPromptView | null;
-    fastConnections?: FastConnectionsView; fastConnectionsActive?: boolean;
     recall?: RecallProjection;
     storyDocuments?: StoryDocumentsView; configureNode?: ConfigureNodeView | null;
     examples?: readonly WorkflowExampleTile[];
@@ -70,7 +68,6 @@ export interface WorkbenchActions {
     resizeStart?: () => void; resizeDetails?: (width: number) => void;
     acceptImport?: () => void; cancelImport?: () => void; prepareImportAgain?: () => void;
     documentPrompt?: DocumentPromptActions;
-    fastConnections?: FastConnectionsActions;
     recall?: RecallActions;
     storyDocuments?: StoryDocumentsActions; configureNode?: ConfigureNodeActions;
     openExample?: (id: string) => boolean | Promise<boolean>;
@@ -86,7 +83,6 @@ export interface WorkflowBoundedResultView { kind: 'bounded'; ok: boolean; error
 export interface WorkflowView {
     graphId: string; name: string; phase: string; selectedId: string | null;
     profiles: { id: string; name: string }[];
-    fastConnections?: { value: string; label: string }[];
     families: { name: string; description: string; operations: { id: string; title: string; phase: string; compatible: boolean }[] }[];
     nodes: WorkflowNodeView[]; groups: { id: string; title: string; members: string[]; collapsed: boolean; callBound: number }[];
     callBound: number; issues: string[]; busy: boolean; status: string; quoteHelp: string;

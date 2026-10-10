@@ -7,6 +7,8 @@ import { serializeWorkflowDocument } from './workflow/document-file.js?v=0.27.0'
 import { createWorkflowDocumentSession } from './ui/document-session.js?v=0.27.0';
 import { commitPreparedGraph, graphEditSignature } from './workflow/transactions.js?v=0.27.0';
 import * as graphHistory from './history.js?v=0.27.0';
+import { definitionRefKey } from './workflow/definition-data.js?v=0.27.0';
+import { containsRetiredModelCall, cloneArchivedWorkflow, retiredLibraryKeys, recoveryLibraryKeys, portableArchivedWorkflow, portableArchivedDefinition } from './workflow/retired-workflows.js?v=0.27.0';
 
 export const MODULE = 'lattice';
 export const ctx = () => globalThis.SillyTavern.getContext();
@@ -59,16 +61,16 @@ function checkSettings(value) {
 function checkArchivedWorkflows(value) {
     if (value === undefined) return;
     const archive = dataRecord(value), graphs = dataRecord(archive?.graphs);
-    if (!archive || archive.schema !== 1 || !graphs || !safeWorkflowData(Object.fromEntries(Object.entries(archive).filter(([key]) => key !== 'graphs'))) || Object.keys(archive).some(key => !['schema', 'graphs', 'bindings', 'activeGraphId'].includes(key))) throw new Error('Lattice archived workflows must be bounded plain data.');
+    if (!archive || archive.schema !== 1 || !graphs || !checkRegistry(archive.definitions ?? {}) || !safeWorkflowData(Object.fromEntries(Object.entries(archive).filter(([key]) => !['graphs', 'definitions'].includes(key)))) || Object.keys(archive).some(key => !['schema', 'graphs', 'bindings', 'activeGraphId', 'definitions', 'entries'].includes(key))) throw new Error('Lattice archived workflows must be bounded plain data.');
     for (const [id, graph] of Object.entries(graphs)) {
-        const checked = cloneWorkflowDocument(graph);
-        if (!checked.ok || checked.data.id !== id || !['native-pre', 'native-post'].includes(checked.data.mode)) throw new Error('Lattice archived workflow ' + id + ' is invalid.');
+        const checked = cloneArchivedWorkflow(graph);
+        if (!checked.ok || checked.data.id !== id) throw new Error('Lattice archived workflow ' + id + ' is invalid.');
     }
 }
 
 /** Read old authoring entries independently; originals remain available even when unreadable. */
 function migrateSettings(value, saved) {
-    if (saved.schema !== 1) return;
+    if (saved.schema !== 1) return applySettings(value, prepareFastRetirement(saved));
     const graphs = legacyRecord(saved.graphs), views = legacyRecord(saved.workspaceViews ?? {}), recovery = [], retired = [];
     if (!graphs) recovery.push({ id: 'legacy-workflow-data', name: 'Previous workflow data', issue: 'The previous workflow registry is unreadable.', original: saved.graphs });
     else for (const id of Reflect.ownKeys(graphs)) {
@@ -78,9 +80,10 @@ function migrateSettings(value, saved) {
             continue;
         }
         const original = descriptor.value;
-        const checked = cloneWorkflowDocument(original), entry = { id, name: safe(() => Object.getOwnPropertyDescriptor(original, 'name')?.value, id), original };
+        const fast = containsRetiredModelCall(original);
+        const checked = fast ? cloneArchivedWorkflow(original) : cloneWorkflowDocument(original), entry = { id, name: safe(() => Object.getOwnPropertyDescriptor(original, 'name')?.value, id), original };
         if (typeof entry.name !== 'string' || !entry.name) entry.name = id;
-        if (checked.ok && checked.data.id === id && checked.data.mode === 'native-unified') entry.graph = checked.data;
+        if (checked.ok && checked.data.id === id && checked.data.mode === 'native-unified' && !fast) entry.graph = checked.data;
         else if (checked.ok && checked.data.id === id) { retired.push([id, original]); entry.issue = 'Retired workflow roots remain available for recovery export only.'; }
         else entry.issue = checked.error?.message ?? 'The previous document identity does not match its registry entry.';
         if (views && Object.hasOwn(views, id)) {
@@ -106,8 +109,9 @@ function migrateSettings(value, saved) {
         ?? recovery.find(entry => entry.id === bindings?.workflowGraphId && entry.graph)
         ?? recovery.find(entry => entry.graph);
     const next = { ...saved, schema: 2, migrationRecovery: recovery, recoveryDraft: selected ? { graph: structuredClone(selected.graph), workspaceViews: structuredClone(selected.workspaceViews ?? null) } : null };
+    if (!selected) next.enabled = false;
     if (retired.length) {
-        const archive = saved.archivedWorkflows ? structuredClone(saved.archivedWorkflows) : { schema: 1, graphs: {}, bindings: { preGraphId: bindings?.preGraphId ?? null, postGraphId: bindings?.postGraphId ?? null }, activeGraphId: saved.activeGraphId ?? null };
+        const archive = saved.archivedWorkflows ? structuredClone(saved.archivedWorkflows) : { schema: 1, graphs: {}, bindings: { ...bindings }, activeGraphId: saved.activeGraphId ?? null };
         for (const [id, original] of retired) {
             if (Object.hasOwn(archive.graphs, id) && JSON.stringify(archive.graphs[id]) !== JSON.stringify(original)) throw new Error('Lattice archived workflow identity conflicts with an existing original.');
             archive.graphs[id] = structuredClone(original);
@@ -116,14 +120,84 @@ function migrateSettings(value, saved) {
         if (!selected) next.enabled = false;
     }
     for (const field of ['graphs', 'activeGraphId', 'nativeBindings', 'workspaceViews']) delete next[field];
-    // Admit the replacement in full before modifying old settings or document ownership.
+    return applySettings(value, prepareFastRetirement(next));
+}
+
+/** Plan cold recovery changes without cloning unreadable historical originals. */
+function prepareFastRetirement(saved) {
+    let next = saved, archive = saved.archivedWorkflows, recovery = saved.migrationRecovery;
+    const replace = (field, value) => { if (next === saved) next = { ...saved }; next[field] = value; };
+    const archiveItem = (field, key, item) => {
+        const previous = archive?.[field]?.[key];
+        if (previous !== undefined) {
+            if (JSON.stringify(previous) !== JSON.stringify(item)) throw new Error('Lattice archived workflow identity conflicts with an existing original.');
+            return;
+        }
+        archive = { ...(archive ?? { schema: 1, graphs: {}, bindings: {}, activeGraphId: null }), [field]: { ...archive?.[field], [key]: structuredClone(item) } };
+        replace('archivedWorkflows', archive);
+    };
+    const retireGraph = graph => {
+        if (!containsRetiredModelCall(graph)) return false;
+        const checked = cloneArchivedWorkflow(graph);
+        if (!checked.ok) return false;
+        archiveItem('graphs', checked.data.id, checked.data);
+        return true;
+    };
+    const draft = dataRecord(saved.recoveryDraft);
+    if (draft && containsRetiredModelCall(draft.graph)) {
+        retireGraph(draft.graph);
+        if (!recovery.some(entry => dataRecord(entry)?.original === saved.recoveryDraft)) {
+            const ids = new Set(recovery.map(entry => dataRecord(entry)?.id));
+            let id = 'retired-recovery-draft', suffix = 1;
+            while (ids.has(id)) id = 'retired-recovery-draft-' + suffix++;
+            recovery = [...recovery, { id, name: draft.graph.name || 'Retired recovery draft', issue: 'Retired model calls remain available for recovery export only.', original: saved.recoveryDraft }];
+            replace('migrationRecovery', recovery);
+        }
+        replace('recoveryDraft', null); replace('enabled', false);
+    }
+    const coldRecovery = recovery.map(entry => {
+        const record = dataRecord(entry);
+        if (!record) return entry;
+        const original = dataRecord(record.original);
+        const fast = [record.graph, original?.graph, record.original].map(retireGraph).some(Boolean);
+        if (!fast || !Object.hasOwn(record, 'graph')) return entry;
+        const cold = { ...record, issue: 'Retired model calls remain available for recovery export only.' };
+        delete cold.graph; delete cold.workspaceViews;
+        return cold;
+    });
+    if (coldRecovery.some((entry, index) => entry !== recovery[index])) replace('migrationRecovery', coldRecovery);
+    const library = saved.subgraphLibrary, definitions = library.definitions ?? {}, retired = retiredLibraryKeys(definitions);
+    if (retired.size) {
+        const live = { ...definitions }, entries = { ...(library.entries ?? {}) };
+        for (const key of recoveryLibraryKeys(definitions, retired)) archiveItem('definitions', key, definitions[key]);
+        for (const key of retired) delete live[key];
+        for (const [id, ref] of Object.entries(entries)) if (retired.has(definitionRefKey(ref))) { archiveItem('entries', id, ref); delete entries[id]; }
+        replace('subgraphLibrary', { ...library, definitions: live, ...(library.entries ? { entries } : {}) });
+    }
+    return next;
+}
+
+/** Validate every changed property before applying any migration or owning a document. */
+function applySettings(value, next) {
     checkSettings(next);
-    for (const field of new Set([...Object.keys(value), ...Object.keys(next)])) {
+    const changed = [...new Set([...Object.keys(value), ...Object.keys(next)])].filter(field => Object.hasOwn(value, field) !== Object.hasOwn(next, field) || value[field] !== next[field]);
+    const writable = new Set(changed);
+    if (shared.owner !== value) {
+        // Ownership persists a new recovery envelope even for an unchanged draft.
+        writable.add('recoveryDraft');
+        const recovered = dataRecord(next.recoveryDraft), checked = recovered && admitActiveDocument(recovered.graph);
+        if (checked?.error?.code === 'WRONG_PHASE') writable.add('enabled');
+        if (next.recoveryDraft && !checked?.ok || checked?.ok && recovered.workspaceViews != null && !serializeWorkflowDocument(checked.data, recovered.workspaceViews).ok) {
+            writable.add('migrationRecovery');
+            if (!Object.isExtensible(next.migrationRecovery) || Object.getOwnPropertyDescriptor(next.migrationRecovery, 'length')?.writable !== true) throw new Error('Lattice settings are read-only; previous workflows were not changed.');
+        }
+    }
+    for (const field of writable) {
         const descriptor = Object.getOwnPropertyDescriptor(value, field);
         if (Object.hasOwn(next, field) ? (descriptor ? descriptor.writable !== true : !Object.isExtensible(value)) : descriptor?.configurable !== true || descriptor?.writable !== true) throw new Error('Lattice settings are read-only; previous workflows were not changed.');
     }
-    for (const field of Object.keys(value)) if (!Object.hasOwn(next, field)) delete value[field];
-    Object.assign(value, next);
+    for (const field of changed) if (!Object.hasOwn(next, field)) delete value[field]; else value[field] = next[field];
+    return changed.length > 0;
 }
 
 function ownDocument(value) {
@@ -154,8 +228,10 @@ export function settings() {
     }
     if (!('value' in property)) throw new Error('Lattice settings must not contain an accessor.');
     const value = property.value;
-    if (!admitted.has(value)) { const saved = checkSettings(value); migrateSettings(value, saved); admitted.add(value); if (saved.schema === 1) safe(() => c.saveSettingsDebounced()); }
+    let migrated = false;
+    if (!admitted.has(value)) { const saved = checkSettings(value); migrated = migrateSettings(value, saved); admitted.add(value); }
     ownDocument(value);
+    if (migrated) safe(() => c.saveSettingsDebounced());
     return value;
 }
 function persistRecovery() {
@@ -273,11 +349,12 @@ export function ungroup(graph, id) {
 export function exportGraph(graph = activeWorkflow()) { return graph ? JSON.stringify(exportWorkflow(graph)) : null; }
 /** Recovery download only; retired documents never become executable imports. */
 export function exportArchivedWorkflows() {
-    const archive = settings().archivedWorkflows;
-    if (!archive || !Object.keys(archive.graphs).length) return null;
-    return JSON.stringify({ kind: 'lattice-workflow-archive', schema: 1,
-        graphs: Object.fromEntries(Object.entries(archive.graphs).map(([id, graph]) => [id, exportWorkflow(graph).graph])),
-        bindings: structuredClone(archive.bindings), activeGraphId: archive.activeGraphId });
+    const current = settings(), archive = current.archivedWorkflows;
+    if (!archive || (!Object.keys(archive.graphs).length && !Object.keys(archive.definitions ?? {}).length)) return null;
+    const snapshots = { ...current.subgraphLibrary.definitions, ...archive.definitions };
+    return JSON.stringify({ kind: 'lattice-workflow-archive', ...archive,
+        graphs: Object.fromEntries(Object.entries(archive.graphs).map(([id, graph]) => [id, portableArchivedWorkflow(graph)])),
+        ...(archive.definitions ? { definitions: Object.fromEntries(Object.entries(archive.definitions).map(([key, definition]) => [key, portableArchivedDefinition(definition, snapshots)])) } : {}) });
 }
 export function importGraph(json) {
     const parsed = parseWorkflow(json);

@@ -25,8 +25,8 @@
                 const tuple=JSON.parse(key),row=node.helperBindings?.roles.find(row=>row.role===tuple[1]);
                 return row && tuple[2]==='model' && node.helperBindings?.editable && value.helperKey===node.helperBindings.helperKey ? [[key,value]] : [];
             }
-            if (key === 'model' || key === 'profileId') {
-                const binding = key === 'model' ? node.model?.model : node.model?.profile;
+            if (key === 'model') {
+                const binding = node.model?.model;
                 return binding?.allowedModes.some(option => option.value === 'override') ? [[key, value]] : [];
             }
             if (key === 'boundary') return node.boundary && value.boundaryId === node.boundary.id && value.boundaryDirection === node.boundary.direction ? [[key, { ...value, artifactKind: node.boundary.kinds.includes(value.artifactKind ?? '') ? value.artifactKind : node.boundary.kind }]] : [];
@@ -66,8 +66,8 @@
     }
     function draftContract(node: NodeDetailsView, key: string) {
         if(key.startsWith('["helper-binding",')){const tuple=JSON.parse(key);return node.helperBindings?.editable && node.helperBindings.roles.some(row=>row.role===tuple[1]) ? JSON.stringify(['helper-binding',node.helperBindings.helperKey,tuple[1],tuple[2]]) : null;}
-        if (key === 'model' || key === 'profileId') {
-            const binding = key === 'model' ? node.model?.model : node.model?.profile;
+        if (key === 'model') {
+            const binding = node.model?.model;
             return binding?.allowedModes.some(option => option.value === 'override') ? JSON.stringify(['binding', key, node.model?.editable ?? !node.readOnly]) : null;
         }
         const control = node.controls.find(control => control.key === key);
@@ -147,25 +147,26 @@
     const helperBindingKey=(role:string,field:'profileId'|'model')=>JSON.stringify(['helper-binding',role,field]);
     const helperRow=(role:string)=>view?.helperBindings?.roles.find(row=>row.role===role);
     const canEditHelperBindings=()=>!!view?.helperBindings?.editable&&!view.readOnly&&!!actions.editHelperBinding;
+    const canEditHelperField=(role:string,field:'profileId'|'model')=>canEditHelperBindings()&&helperRow(role)?.[field==='profileId'?'profile':'model'].editable!==false;
     const helperModelMode=(role:string)=>drafts[helperBindingKey(role,'model')]?'override':helperRow(role)?.model.mode;
     function editHelperBinding(role:string,field:'profileId'|'model',mode:DetailBindingMode,value:string|null){
-        if(!canEditHelperBindings()||!helperRow(role))return;
+        if(!canEditHelperField(role,field)||!helperRow(role))return;
         void perform(helperBindingKey(role,field),false,captured=>actions.editHelperBinding!(captured,role,field,mode,value));
     }
     function draftHelperModel(role:string,text:string){
-        if(!canEditHelperBindings()||!helperRow(role))return;
+        if(!canEditHelperField(role,'model')||!helperRow(role))return;
         const key=helperBindingKey(role,'model');nextDraftGeneration(key);requests.delete(key);
         drafts={...drafts,[key]:{text,error:'',pending:false,helperKey:view?.helperBindings?.helperKey}};errors={...errors,[key]:''};
     }
     function chooseHelperModelMode(role:string,mode:DetailBindingMode){
-        const row=helperRow(role);if(!canEditHelperBindings()||!row?.model.allowedModes.some(option=>option.value===mode))return;
+        const row=helperRow(role);if(!canEditHelperField(role,'model')||!row?.model.allowedModes.some(option=>option.value===mode))return;
         const key=helperBindingKey(role,'model');
         if(mode==='override'){draftHelperModel(role,drafts[key]?.text??row.model.value??'');return;}
         requests.delete(key);const next={...drafts};delete next[key];drafts=next;errors={...errors,[key]:''};
         if(mode!==row.model.mode)editHelperBinding(role,'model',mode,null);
     }
     function saveHelperModel(role:string,text:string){
-        if(!canEditHelperBindings()||helperModelMode(role)!=='override')return;
+        if(!canEditHelperField(role,'model')||helperModelMode(role)!=='override')return;
         draftHelperModel(role,text);const key=helperBindingKey(role,'model');
         if(!text.trim()||text.length>256){errors={...errors,[key]:'Enter a model identifier of 1–256 characters.'};return;}
         editHelperBinding(role,'model','override',text);
@@ -179,19 +180,15 @@
     const canEditBinding = (node: NodeDetailsView | null = view) => !!node?.model && (node.model.editable ?? !node.readOnly) && !!actions.editBinding;
     const bindingMode = (field: 'profileId' | 'model') => drafts[field] ? 'override' : bindingFor(field)?.mode;
     const bindingText = (field: 'profileId' | 'model') => drafts[field]?.text ?? bindingFor(field)?.value ?? '';
-    const profileSelection = () => {
-        const profile = view?.model?.profile;
-        return drafts.profileId?.text ?? (profile && Object.hasOwn(profile, 'effectiveValue') ? profile.effectiveValue ?? '' : profile?.value ?? '');
-    };
     const usesProfileModel = () => view?.model?.profile.mode === 'override' || !!view?.model?.profileDefaultModel;
-    function draftBinding(field: 'profileId' | 'model', text: string) {
+    function draftBinding(field: 'model', text: string) {
         if (!canEditBinding() || !bindingFor(field)?.allowedModes.some(option => option.value === 'override')) return;
         nextDraftGeneration(field);
         requests.delete(field);
         drafts = { ...drafts, [field]: { text, error: '', pending: false } };
         errors = { ...errors, [field]: '' };
     }
-    function chooseBindingMode(field: 'profileId' | 'model', mode: string) {
+    function chooseBindingMode(field: 'model', mode: string) {
         const binding = bindingFor(field);
         if (!canEditBinding() || !binding?.allowedModes.some(option => option.value === mode)) return;
         // Revealing an editor is local; null keeps its historical saved fallback.
@@ -201,7 +198,7 @@
         errors = { ...errors, [field]: '' };
         if (mode !== binding.mode) editBinding(field, mode, null);
     }
-    function saveBinding(field: 'profileId' | 'model', text: string) {
+    function saveBinding(field: 'model', text: string) {
         if (!canEditBinding() || (field === 'model' && bindingMode(field) !== 'override') || !bindingFor(field)?.allowedModes.some(option => option.value === 'override')) return;
         draftBinding(field, text);
         if (!text.trim()) {
@@ -209,7 +206,7 @@
             if (field === 'model' && usesProfileModel() && bindingFor(field)?.allowedModes.some(option => option.value === defaultMode)) {
                 chooseBindingMode(field, defaultMode); return;
             }
-            drafts = { ...drafts, [field]: { text, error: field === 'profileId' ? 'Choose a connection before saving an override.' : 'Enter a model identifier before saving an override.', pending: false } };
+            drafts = { ...drafts, [field]: { text, error: 'Enter a model identifier before saving an override.', pending: false } };
             return;
         }
         editBinding(field, 'override', text);
@@ -295,10 +292,6 @@
         return [...groups].sort(([a], [b]) => a === 'Main' ? -1 : b === 'Main' ? 1 : 0);
     };
     const groupHasError = (controls: DetailControl[]) => controls.some(control => !!(drafts[control.key]?.error || errors[control.key]));
-    const modelSummary = () => {
-        if (!view?.model) return '';
-        return `Model connection · ${view.model.issue ? 'Binding needs attention' : view.model.effective || 'Choose a connection'}`;
-    };
     function editName(value: string) {
         if (!view || view.boundary || !actions.present) return;
         void perform('alias', true, captured => actions.present!(captured, 'alias', value === view?.canonicalTitle ? '' : value));
@@ -340,14 +333,9 @@
             {#if !view.boundary && (view.alias || view.title || view.canonicalTitle) !== view.canonicalTitle}<small data-canonical-title>Canonical type: {view.canonicalTitle}</small>{/if}
             <small>{view.boundary ? 'Subgraph ' + view.boundary.direction : view.family + ' · ' + view.phase + ' phase'}</small>
         </div>
-        {#if actions.duplicate || actions.remove}<details class="pc-detail-commands"><summary aria-label="Node commands" title="Node commands">⋯</summary><div class="pc-detail-command-list">
-            {#if !view.boundary && actions.duplicate}<button type="button" disabled={view.readOnly} onclick={() => { if (view && !view.readOnly) actions.duplicate?.(selection(view)); }}>Duplicate</button>{/if}
-            {#if actions.remove}<button type="button" class="pc-detail-danger" disabled={view.readOnly} onclick={() => { if (view && !view.readOnly) actions.remove?.(selection(view)); }}>Delete</button>{/if}
-        </div></details>{/if}
     </header>
     {#if view.phaseEditable}<label>Workflow stage<select aria-label="Workflow stage" value={view.phase} disabled={view.readOnly || !actions.editPhase} onchange={event => { const phase = event.currentTarget.value as 'pre' | 'post'; void perform('phase', false, captured => actions.editPhase!(captured, phase)); }}><option value="pre">Preparation · before Generate Reply</option><option value="post">Response · after Generate Reply</option></select></label>{#if errors.phase}<p role="alert" class="pc-detail-error">{errors.phase}</p>{/if}{/if}
     {#if view.recall}<RecallDetails view={view.recall} actions={{queue:()=>actions.queueRecall?.(selection(view!))??{ok:false,error:{code:'RECALL_UNAVAILABLE',message:'Memory recall is unavailable.'}},cancel:()=>actions.cancelRecall?.(selection(view!))??{ok:false,error:{code:'RECALL_UNAVAILABLE',message:'Memory recall is unavailable.'}},revealShortcut:actions.revealRecallShortcut}} />{/if}
-    {#if view.operation === 'fast-decision'}<p><button type="button" onclick={() => actions.openFastConnections?.()} disabled={!actions.openFastConnections}>Configure Fast connections…</button></p>{/if}
     {#if view.readOnly || !view.enabled}<p class="pc-detail-state">{#if view.readOnly}<span>Read-only body</span>{/if}{#if !view.enabled}<span class="pc-detail-blocked">Blocks run · Disabled</span>{/if}</p>{/if}
     {#if errors.alias}<p class="pc-detail-error" role="alert">{errors.alias}</p>{/if}
     {#if view.boundary}
@@ -383,16 +371,16 @@
     {/if}
     {#if view.helperBindings}
         <details class="pc-detail-group" data-helper-model-controls open><summary>Helper model bindings</summary>
-            <small>Choose a connection for each text model role in the pinned helper. These selections belong to this For Each node.</small>
+            <small>Choose connections for inherited text model roles in the pinned helper. Explicit helper-node bindings take precedence. These selections belong to this For Each node.</small>
             {#each view.helperBindings.roles as row (row.role)}
                 <fieldset><legend>{row.label}</legend>
-                    <label>Connection profile<select aria-label={row.role+' connection profile'} value={row.profile.value??''} disabled={!canEditHelperBindings()} onchange={event=>editHelperBinding(row.role,'profileId',event.currentTarget.value?'override':'inherit',event.currentTarget.value||null)}>
+                    <label>Connection profile<select aria-label={row.role+' connection profile'} value={row.profile.value??''} disabled={!canEditHelperField(row.role,'profileId')} onchange={event=>editHelperBinding(row.role,'profileId',event.currentTarget.value?'override':'inherit',event.currentTarget.value||null)}>
                         <option value="">Use helper connection</option>
                         {#if row.profile.value && !(row.profile.options??[]).some(option=>option.value===row.profile.value)}<option value={row.profile.value}>Unavailable connection · {row.profile.value}</option>{/if}
                         {#each row.profile.options??[] as option (option.value)}<option value={option.value}>{option.label}</option>{/each}
                     </select></label>
-                    <label>Model mode<select aria-label={row.role+' model mode'} value={helperModelMode(row.role)} disabled={!canEditHelperBindings()} onchange={event=>chooseHelperModelMode(row.role,event.currentTarget.value as DetailBindingMode)}>{#each row.model.allowedModes as option (option.value)}<option value={option.value}>{option.label}</option>{/each}</select></label>
-                    {#if helperModelMode(row.role)==='override'}<label>Model identifier<input aria-label={row.role+' model identifier'} value={drafts[helperBindingKey(row.role,'model')]?.text??row.model.value??''} disabled={!canEditHelperBindings()} oninput={event=>draftHelperModel(row.role,event.currentTarget.value)} onchange={event=>saveHelperModel(row.role,event.currentTarget.value)} /></label>{/if}
+                    <label>Model mode<select aria-label={row.role+' model mode'} value={helperModelMode(row.role)} disabled={!canEditHelperField(row.role,'model')} onchange={event=>chooseHelperModelMode(row.role,event.currentTarget.value as DetailBindingMode)}>{#each row.model.allowedModes as option (option.value)}<option value={option.value}>{option.label}</option>{/each}</select></label>
+                    {#if helperModelMode(row.role)==='override'}<label>Model identifier<input aria-label={row.role+' model identifier'} value={drafts[helperBindingKey(row.role,'model')]?.text??row.model.value??''} disabled={!canEditHelperField(row.role,'model')} oninput={event=>draftHelperModel(row.role,event.currentTarget.value)} onchange={event=>saveHelperModel(row.role,event.currentTarget.value)} /></label>{/if}
                     <small>Effective connection: {row.effective}</small><small>{row.source}</small>{#if row.caveat}<small>{row.caveat}</small>{/if}
                     {#if errors[helperBindingKey(row.role,'profileId')] || errors[helperBindingKey(row.role,'model')]}<p class="pc-detail-error" role="alert">{errors[helperBindingKey(row.role,'profileId')] || errors[helperBindingKey(row.role,'model')]}</p>{/if}
                 </fieldset>
@@ -401,17 +389,15 @@
         </details>
     {/if}
     {#if view.model}
-        <details class="pc-detail-group" data-model-controls open><summary>{modelSummary()}</summary>
-            <label>Connection profile<select aria-label="Connection profile" value={profileSelection()} disabled={!canEditBinding() || !view.model.profile.allowedModes.some(option => option.value === 'override')} onchange={event => saveBinding('profileId', event.currentTarget.value)}><option value="">Choose a connection</option>{#if profileSelection() && !(view.model.profile.options ?? []).some(option => option.value === profileSelection())}<option value={profileSelection()}>Unavailable connection · {profileSelection()}</option>{/if}{#each view.model.profile.options ?? [] as option (option.value)}<option value={option.value}>{option.label}</option>{/each}</select></label>
+        {#if view.model.issue}<p class="pc-detail-error" role="alert">{view.model.issue}</p>{/if}
+        <details class="pc-detail-group" data-model-controls><summary>Advanced model settings</summary>
+            <button type="button" data-reset-profile disabled={!canEditBinding() || view.model.profile.mode === 'inherit' || !view.model.profile.allowedModes.some(option => option.value === 'inherit')} onclick={() => editBinding('profileId', 'inherit', null)}>{view.readOnly ? 'Use definition connection' : 'Use inherited connection'}</button>
+            <small>Choose a connection with the bar under this node. Reset removes this node's connection override.</small>
             <label>Model mode<select aria-label="Model mode" value={bindingMode('model')} disabled={!canEditBinding()} onchange={event => chooseBindingMode('model', event.currentTarget.value)}>{#each view.model.model.allowedModes as option (option.value)}<option value={option.value}>{option.value === 'inherit' && !view.readOnly ? usesProfileModel() || !view.model.model.effectiveValue ? 'Use profile model' : 'Existing role model' : option.label}</option>{/each}</select></label>
             {#if bindingMode('model') === 'override'}<label>Model identifier<input aria-label="Model identifier" value={bindingText('model')} disabled={!canEditBinding()} oninput={event => draftBinding('model', event.currentTarget.value)} onchange={event => saveBinding('model', event.currentTarget.value)} /></label>{/if}
-            <details data-binding-advanced><summary>Advanced connection settings</summary>
-                <label>Connection mode<select aria-label="Connection mode" value={bindingMode('profileId')} disabled={!canEditBinding()} onchange={event => chooseBindingMode('profileId', event.currentTarget.value)}>{#each view.model.profile.allowedModes as option (option.value)}<option value={option.value}>{option.label}</option>{/each}</select></label>
-                <label>Model role<input aria-label="Model role" value={view.model.role} disabled={view.readOnly || !view.model.roleEditable || !actions.editField} onchange={event => { const value = event.currentTarget.value; if (view?.model?.roleEditable && actions.editField) void perform('modelRole', false, captured => actions.editField!(captured, 'modelRole', value)); }} /></label>
-            </details>
+            <label>Model role<input aria-label="Model role" value={view.model.role} disabled={view.readOnly || !view.model.roleEditable || !actions.editField} onchange={event => { const value = event.currentTarget.value; if (view?.model?.roleEditable && actions.editField) void perform('modelRole', false, captured => actions.editField!(captured, 'modelRole', value)); }} /></label>
             {#if !view.model.issue || view.model.effective.trim() !== view.model.issue.trim()}<small>Effective connection: {view.model.effective}</small>{/if}{#if view.model.source}<small>{view.model.source}</small>{/if}
-            {#if view.model.issue}<p class="pc-detail-error" role="alert">{view.model.issue}</p>{/if}
-            {#if errors.modelRole || drafts.profileId?.error || errors.profileId || drafts.model?.error || errors.model}<p class="pc-detail-error" role="alert">{errors.modelRole || drafts.profileId?.error || errors.profileId || drafts.model?.error || errors.model}</p>{/if}
+            {#if errors.modelRole || errors.profileId || drafts.model?.error || errors.model}<p class="pc-detail-error" role="alert">{errors.modelRole || errors.profileId || drafts.model?.error || errors.model}</p>{/if}
         </details>
     {/if}
     {#if view.ports.length}<details class="pc-detail-group"><summary>Inputs and outputs</summary>{#each view.ports as port (port.direction + ':' + port.id)}<p class="pc-detail-port">{port.direction === 'input' ? 'In' : 'Out'} · {port.label}<small>{port.kind}</small></p>{/each}</details>{/if}
@@ -445,10 +431,7 @@
     input[type='checkbox'] { accent-color: var(--pc-accent); }
     .pc-detail-check { display: flex; align-items: center; gap: 6px; } button { min-height: 27px; padding: 4px 8px; border: 1px solid var(--pc-border); border-radius: 2px; background: var(--pc-control); color: var(--pc-text); font: inherit; font-size: 11px; cursor: pointer; }
     button:hover:not(:disabled) { background: color-mix(in srgb, var(--pc-text) 10%, var(--pc-control)); } :is(button, input, select):focus-visible { outline: 2px solid var(--pc-accent); outline-offset: 1px; }
-    :disabled { opacity: .55; cursor: default; } .pc-detail-error { color: var(--pc-error); font-size: 11px; overflow-wrap: anywhere; } .pc-detail-danger { color: var(--pc-error); }
+    :disabled { opacity: .55; cursor: default; } .pc-detail-error { color: var(--pc-error); font-size: 11px; overflow-wrap: anywhere; }
     .pc-detail-port { display: flex; justify-content: space-between; gap: 8px; margin: 8px 0; font-size: 11px; } summary { cursor: pointer; font-size: 11px; color: var(--pc-muted); overflow-wrap: anywhere; }
     .pc-detail-actions { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; } .pc-detail-empty { color: var(--pc-muted); }
-    .pc-detail-commands { position: relative; flex: none; padding-top: 2px; } .pc-detail-commands summary { padding: 2px 5px; list-style: none; font-size: 18px; line-height: 20px; } .pc-detail-commands summary::-webkit-details-marker { display: none; }
-    .pc-detail-command-list { position: absolute; top: 28px; right: 0; z-index: 2; display: grid; gap: 3px; min-width: 90px; padding: 4px; border: 1px solid var(--pc-border); background: var(--pc-panel-solid); }
-    .pc-detail-command-list button { text-align: left; background: transparent; border: 0; }
 </style>

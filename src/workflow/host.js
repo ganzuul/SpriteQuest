@@ -243,16 +243,13 @@ export function createNativeWorkflowController(ports) {
         if(active) {active.controller.abort(reason); const abort=active.abortPrimary;active.abortPrimary=null;try{abort?.(true);}catch{/* Native abort callback is best effort. */}}
         active=null;
     };
-    const bindingChecks=(run,entries)=>entries.map(({address,binding,capability})=>({address,binding,...(capability==='typed-decision'?{capability}:{}),...run.bindingContexts.get(binding)}));
+    const bindingChecks=(run,entries)=>entries.map(({address,binding})=>({address,binding,...run.bindingContexts.get(binding)}));
     const bindingFresh=(run)=>{
         for(const check of run.bindingChecks??[]) {
             let status;
             try {
                 if(ports.bindingStatus)status=ports.bindingStatus(check.binding,context());
-                else if(check.capability==='typed-decision') {
-                    const current=ports.resolveFastBinding?.(check.node,check.graph,check.address);
-                    status=check.metadata && current?.ok&&same(current.data,check.metadata)?{ok:true}:fail('BINDING_CHANGED','The typed connection changed after preflight. Run preflight again.');
-                } else if(!ports.resolveBinding)status=bindingStatus(check.binding,context());
+                else if(!ports.resolveBinding)status=bindingStatus(check.binding,context());
                 else {
                     const current=ports.resolveBinding(check.node,check.graph,check.address);
                     status=check.metadata && current?.ok&&same(current.data,check.metadata)?{ok:true}:fail('BINDING_CHANGED','The fixed connection changed after preflight. Run preflight again.');
@@ -508,11 +505,6 @@ export function createNativeWorkflowController(ports) {
                 return result;
             },
             bindingSummary:ports.bindingSummary??bindingSummary,
-            resolveFastBinding:ports.resolveFastBinding ? (node,graph,address)=>{
-                const result=ports.resolveFastBinding(node,graph,address);
-                if(result?.ok && !ports.bindingStatus)run.bindingContexts.set(result.data,{node:{fastConnectionId:node.fastConnectionId,modelRole:node.modelRole},graph:{roles:{}},metadata:structuredClone(result.data)});
-                return result;
-            } : undefined,fastBindingSummary:ports.fastBindingSummary,requestFastDecision:ports.requestFastDecision,
             request:ports.request??(request=>requestNativeModel(run,request)),
             ...(Object.getOwnPropertyDescriptor(run.originalGraph,'mode')?.value==='native-unified'?{actorContext:(actorId,request,presence)=>{const scoped=scopedActors(run);return scoped.ok?scoped.data.actorContext(actorId,request,presence):scoped;}}:{}),
             ...(run.unified?{retainDraftEventSource:payload=>{if(!run.draftEvidence){const captured=createNativeDraftEvidenceRegistry({getOriginalDraft:()=>run.nativeDraft,isCurrent:()=>fresh(run)&&nativePrefixFresh(run)&&sourceFresh(run),signal:run.controller.signal});if(!captured.ok)return captured;run.draftEvidence=captured.data;}const retained=run.draftEvidence.retain(payload);if(retained.ok){const source=retained.data.source??payload.source;run.draftSources??=new Map();run.draftSources.set(JSON.stringify([source.value.sourceId,source.value.revision,source.value.sceneId,source.value.visibility,source.value.actorId??null]),payload.draft);if(run.recallCaptured){const captured=recall.captureSourceArtifact(run,source,{source:source.value,text:source.value.text,fresh:()=>fresh(run)&&nativePrefixFresh(run)&&sourceFresh(run)&&run.draftEvidence.validate([],payload.draft).ok});if(!captured.ok)return captured;}}return retained;}}:{}),
@@ -645,7 +637,7 @@ export function createNativeWorkflowController(ports) {
             if(run.nativeBoundary)return fail('MULTIPLE_NATIVE_GENERATIONS','One native generation boundary is supported.');
             run.nativeBoundary=true;
             // This is a private runtime snapshot: opaque binding identity must be
-            // retained, including independently selected typed fallback bindings.
+            // retained through preparation and native release.
             const preparationFresh=()=>{
                 if(!nativePrefixFresh(run)||!sourceFresh(run)||run.recallCaptured&&!recall.fresh(run))return fail('STALE_SOURCE','Source changed while preparing native generation.');
                 if(typeof operationPorts.getRequestBindings!=='function')return fail('BINDING_CHECK_UNAVAILABLE','Native preparation requires its private request binding snapshot.');

@@ -34,7 +34,8 @@
     const above = $derived(row.y + barTop - row.visibleBounds.y - 14);
     const upwards = $derived(below < 130 && above > below);
     const floating = $derived(Math.max(above, below) < 78);
-    const listHeight = $derived(Math.max(0, Math.min(244, (floating ? row.visibleBounds.h - 16 : upwards ? above : below) - 54)));
+    const menuHeight = $derived(Math.max(0, floating ? row.visibleBounds.h - 16 : upwards ? above : below));
+    const listHeight = $derived(Math.max(0, Math.min(244, menuHeight - 54)));
     const floatingTop = $derived(row.visibleBounds.y + 8 - row.y - barTop);
     const optionId = (index: number) => `${row.id}-profile-option-${index}`;
     function close(focus = false, preserveEditFocus = false) {
@@ -105,7 +106,7 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22v-5M15 8V2M17 8a1 1 0 0 1 1 1v4a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1zM9 8V2" /></svg><span class="profile-value">{row.label}</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
         </button>
         {#if opened}
-            <div class="profile-menu" style:width={`${menuWidth}px`} style:left={`${menuLeft}px`} style:top={floating ? `${floatingTop}px` : upwards ? 'auto' : `${barHeight + 6}px`} style:bottom={!floating && upwards ? `${barHeight + 6}px` : 'auto'}>
+            <div class="profile-menu" style:width={`${menuWidth}px`} style:max-height={`${menuHeight}px`} style:left={`${menuLeft}px`} style:top={floating ? `${floatingTop}px` : upwards ? 'auto' : `${barHeight + 6}px`} style:bottom={!floating && upwards ? `${barHeight + 6}px` : 'auto'}>
                 <div class="profile-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6"/><path d="m15 15 5 5" /></svg><input bind:this={input} bind:value={query} oninput={search} role="combobox" aria-label="Search connection profiles" aria-autocomplete="list" aria-expanded="true" aria-controls={`${row.id}-profile-list`} aria-activedescendant={active >= 0 && results.length ? optionId(active) : undefined} placeholder="Search connection profiles…" autocomplete="off" spellcheck="false" maxlength="200" /></div>
                 <div class="profile-options" id={`${row.id}-profile-list`} role="listbox" aria-label="Connection profiles" bind:this={list} style:max-height={`${listHeight}px`} onwheel={wheel}>
                     {#each results as option, index (option.value)}
@@ -121,27 +122,33 @@
 </div>
 
 <style>
-    .pc-node-profile { position:absolute; pointer-events:none; color:#e4e5de; font:14px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif; }
+    .pc-node-profile { position:absolute; pointer-events:none; color:var(--pc-text); font-family:var(--pc-font,inherit); font-size:14px; line-height:1.4; color-scheme:dark; }
+    :global(:root[data-pc-light="1"]) .pc-node-profile { color-scheme:light; }
     .pc-node-profile * { box-sizing:border-box; }
-    .node-model-meta { position:absolute; bottom:8px; left:0; width:100%; color:#aeb0a6; font-size:11px; overflow-wrap:anywhere; }
+    .node-model-meta { position:absolute; bottom:8px; left:0; width:100%; color:var(--pc-muted); font-size:11px; overflow-wrap:anywhere; }
     .profile-picker { position:absolute; width:100%; pointer-events:auto; }
-    .profile-bar { display:flex; align-items:center; gap:7px; width:100%; padding:8px; border:1px solid #565751; border-radius:4px; background:#3c3d39; color:#e4e5de; font:inherit; font-size:12px; min-height:35px; text-align:left; }
-    .profile-bar:hover { background:#464741; } .profile-bar:disabled { cursor:default; }
+    .profile-bar { display:flex; align-items:center; gap:7px; width:100%; padding:8px; margin:0; border:1px solid var(--pc-border); border-radius:var(--pc-r); background:var(--pc-control); color:var(--pc-text); font:inherit; font-size:12px; min-height:35px; text-align:left; cursor:pointer; appearance:none; filter:none; text-shadow:none; box-shadow:inset 0 1px 0 color-mix(in srgb,var(--pc-text) 4%,transparent),inset 0 -1px 0 color-mix(in srgb,var(--pc-canvas) 25%,transparent); }
+    .profile-bar:hover:enabled { background:color-mix(in srgb,var(--pc-text) 7%,var(--pc-control)); } .profile-bar:disabled { cursor:default; }
+    .profile-bar:focus-visible { outline:2px solid var(--pc-accent); outline-offset:2px; }
     svg { fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
     .profile-bar svg { width:14px; height:14px; flex:0 0 14px; }
     .profile-value { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; }
-    .profile-menu { position:absolute; background:#252622; border:1px solid #5c5e54; border-radius:5px; box-shadow:0 12px 32px #0006; overflow:hidden; z-index:3; color-scheme:dark; }
-    .profile-search { display:flex; align-items:center; gap:8px; padding:11px 12px; border-bottom:1px solid #4a4c42; background:#30312c; }
-    .profile-search svg { width:16px; height:16px; flex:0 0 16px; color:#aeb0a6; }
-    .profile-search input, :global(:root[data-pc-own="1"] .pc-root) .profile-search input { width:100%; min-width:0; padding:3px 0; margin:0; border:0; border-radius:0; background:transparent; color:#e4e5de; font:14px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif; }
-    .profile-search input::placeholder { color:#aeb0a6; }
+    /* Popovers obscure the canvas even when SillyTavern's panel token is translucent. */
+    .profile-menu { --profile-panel:rgb(from var(--pc-panel-solid) r g b / 1); position:absolute; display:flex; flex-direction:column; background:var(--pc-panel-solid); background:var(--profile-panel); border:1px solid var(--pc-border); border-radius:var(--pc-r); box-shadow:inset 0 1px 0 color-mix(in srgb,var(--pc-text) 4%,transparent),0 12px 32px #0006; overflow:hidden; z-index:3; }
+    .profile-search { display:flex; flex-shrink:0; align-items:center; gap:8px; padding:11px 12px; border-bottom:1px solid var(--pc-border); background:var(--pc-field); }
+    .profile-search:focus-within { box-shadow:inset 0 -2px 0 var(--pc-accent); }
+    .profile-search svg { width:16px; height:16px; flex:0 0 16px; color:var(--pc-muted); }
+    .profile-search input, :global(:root[data-pc-own="1"] .pc-root) .profile-search input { width:100%; min-width:0; padding:3px 0; margin:0; border:0; border-radius:0; background:transparent; color:var(--pc-text); font:inherit; appearance:none; filter:none; text-shadow:none; box-shadow:none; }
+    .profile-search input::placeholder { color:var(--pc-muted); opacity:1; }
     .profile-search input:focus, :global(:root[data-pc-own="1"] .pc-root) .profile-search input:focus { outline:none; box-shadow:none; }
-    .profile-options { max-height:244px; overflow-y:auto; overscroll-behavior:contain; scrollbar-gutter:stable; scrollbar-width:auto; scrollbar-color:#74766c #20211e; padding:4px; }
-    .profile-options::-webkit-scrollbar { width:10px; } .profile-options::-webkit-scrollbar-track { background:#20211e; } .profile-options::-webkit-scrollbar-thumb { background:#74766c; border:2px solid #20211e; border-radius:5px; }
-    .profile-option { display:flex; align-items:flex-start; gap:7px; padding:9px 8px; width:100%; border:0; border-radius:3px; background:transparent; color:#e4e5de; text-align:left; font:13px/1.35 system-ui,-apple-system,"Segoe UI",sans-serif; }
-    .profile-option:hover,.profile-option.is-active { background:#34362f; } .profile-option[aria-selected="true"] { background:#394032; }
-    .profile-option-copy { min-width:0; flex:1; } .profile-name { display:block; overflow-wrap:anywhere; } .profile-meta { display:block; margin-top:3px; color:#aeb0a6; font-size:11px; overflow-wrap:anywhere; }
+    .profile-options { min-height:0; flex:1 1 auto; max-height:244px; overflow-y:auto; overscroll-behavior:contain; scrollbar-gutter:stable; scrollbar-width:auto; scrollbar-color:var(--pc-muted) var(--profile-panel); padding:4px; }
+    .profile-options::-webkit-scrollbar { width:10px; } .profile-options::-webkit-scrollbar-track { background:var(--profile-panel); } .profile-options::-webkit-scrollbar-thumb { background:var(--pc-muted); border:2px solid var(--profile-panel); border-radius:var(--pc-r); }
+    .profile-option { display:flex; align-items:flex-start; gap:7px; padding:9px 8px; margin:0; width:100%; border:0; border-radius:var(--pc-r); background:transparent; color:var(--pc-text); text-align:left; font:inherit; font-size:13px; line-height:1.35; cursor:pointer; appearance:none; filter:none; text-shadow:none; box-shadow:none; }
+    .profile-option:hover:enabled,.profile-option.is-active { background:color-mix(in srgb,var(--pc-text) 7%,var(--profile-panel)); } .profile-option[aria-selected="true"] { background:color-mix(in srgb,var(--pc-accent) 14%,var(--profile-panel)); }
+    .profile-option.is-active,.profile-option:focus-visible { outline:2px solid var(--pc-accent); outline-offset:-2px; }
+    .profile-option:disabled { cursor:default; }
+    .profile-option-copy { min-width:0; flex:1; } .profile-name { display:block; overflow-wrap:anywhere; } .profile-meta { display:block; margin-top:3px; color:var(--pc-muted); font-size:11px; overflow-wrap:anywhere; }
     .profile-check { width:14px; min-height:17px; flex:0 0 14px; margin-top:2px; } .profile-check svg { width:14px; height:14px; }
-    .profile-error { padding:8px 12px; color:#f0b4a8; font-size:12px; }
+    .profile-error { flex:0 1 auto; min-height:0; max-height:84px; overflow-y:auto; overflow-wrap:anywhere; padding:8px 12px; color:var(--pc-error); font-size:12px; }
     @media(pointer:coarse) { .profile-bar,.profile-option { min-height:44px; } }
 </style>

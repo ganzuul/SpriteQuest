@@ -1,6 +1,6 @@
 import type {Binding,DefinitionRef,NativeNode,Result,SnapshotTable} from '../workflow/types';
 import type {DetailBindingMode,DetailHelperBindings} from '../../ui/detail-types';
-export interface IterationTextRole {role:string;bindings:Binding[];nestedOverride:boolean;}
+export interface IterationTextRole {role:string;bindings:Binding[];calls:{label:string;binding:Binding;profileEditable:boolean;modelEditable:boolean;fixedNode:boolean}[];nestedOverride:boolean;explicitNodeBinding:boolean;}
 export function inspectIterationTextRoles(helper:DefinitionRef,definitions:SnapshotTable,inheritedRoles?:Record<string,Binding>,roleOverrides?:Record<string,Binding>):Result<IterationTextRole[]>;
 export function prepareIterationBindings(node:NativeNode,definitions:SnapshotTable,profiles?:{id:string;name:string}[],inheritedRoles?:Record<string,Binding>):Omit<DetailHelperBindings,'editable'>;
 export function prepareIterationBindingOverride(node:NativeNode,definitions:SnapshotTable,input:{role:string;field:'profileId'|'model';mode:DetailBindingMode;value?:string|null}):Result<{roleOverrides:Record<string,Binding>}>;

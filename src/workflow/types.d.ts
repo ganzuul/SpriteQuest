@@ -29,7 +29,7 @@ export interface OperationDescriptor {
     id: string; title: string; family: string; phase: WorkflowPhase | 'both' | null;
     minimumSchema?: 3; input: ArtifactKind | null; output: ArtifactKind | null;
     controls: string[]; controlDescriptors: Record<string, ControlDescriptor>; defaults: Record<string, unknown>;
-    requestCapability?: 'text-completion' | 'typed-decision'; fallbackModelRole?: string;
+    requestCapability?: 'text-completion';
     requestBound: number | ((node: NativeNode) => number); modelRole: string | null; terminal: boolean; dynamicPorts?: boolean;
     rootOnly?: boolean; requiresStateInDefinition?: boolean; modes?: string[];
     acceptsSkippedInputs?: boolean; hostOperation?: boolean; nativeBoundary?: boolean;
@@ -184,7 +184,7 @@ export interface OperationExecutionContext {
 /** Trusted root transport only; public execution never obtains this capability. */
 export interface HostOperationExecutionContext extends OperationExecutionContext {
     /** Detached current request references; exact binding identities remain private host authority. */
-    getRequestBindings(): ReadonlyArray<Readonly<{ address: NodeAddress; binding: Binding | import('./fast-connections').FastBinding; capability: 'text-completion' | 'typed-decision'; role: string; iteration?: IterationProvenance }>>;
+    getRequestBindings(): ReadonlyArray<Readonly<{ address: NodeAddress; binding: Binding; capability: 'text-completion'; role: string; iteration?: IterationProvenance }>>;
 }
 export type HostOperationExecutor = (node: NativeNode, inputs: Record<string, WorkflowArtifact>, local: HostOperationExecutionContext) => Promise<OperationResult> | OperationResult;
 
@@ -192,6 +192,7 @@ export type HostOperationExecutor = (node: NativeNode, inputs: Record<string, Wo
 export type RunStatus = 'empty' | 'waiting' | 'queued' | 'running' | 'cancelling' | 'completed' | 'skipped' | 'unresolved' | 'failed' | 'blocked' | 'not-run' | 'cancelled' | 'invalid' | 'stale';
 export type RunSettlement = 'completed' | 'unresolved' | 'failed' | 'cancelled' | 'invalid' | 'stale';
 export interface SafeRunError { code: string; message: string; truncated?: boolean; }
+/** Historical recordings may describe the retired typed transport; active operations use text completion. */
 export interface BindingSummary { capability?: 'text-completion' | 'typed-decision'; provider?: 'jev' | 'laya' | 'compatible'; connectionId?: string; role?: string; profileId?: string | null; model?: string | null; fingerprint?: string; truncated?: boolean; }
 export interface SourceSummary {
     kind?: string; phase?: string; chatId?: string | number | null; characterId?: string | number | null; groupId?: string | number | null;

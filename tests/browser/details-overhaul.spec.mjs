@@ -102,8 +102,9 @@ for(const theme of ['lattice','ash']) for(const state of ['model','curve','reado
             await expect(page.getByRole('button',{name:'Edit Phase durations as JSON',exact:true})).toBeVisible();
         } else {
             await expect(page.getByText('Blocks run · Disabled',{exact:true})).toBeVisible();
-            await expect(page.getByLabel('Model mode',{exact:true})).toBeVisible();
-            await expect(page.locator('details[data-model-controls] > summary')).toContainText('Binding needs attention');
+            await expect(page.getByLabel('Model mode',{exact:true})).toBeHidden();
+            await expect(page.locator('details[data-model-controls] > summary')).toHaveText('Advanced model settings');
+            await expect(page.locator('.pc-node-details > [role="alert"]').filter({ hasText: /profile|connection/i })).toBeVisible();
         }
         expect(await page.locator('.pc-workspace-details').evaluate(e=>e.scrollWidth-e.clientWidth)).toBeLessThanOrEqual(1);
         await page.screenshot({path:testInfo.outputPath(`details-${state}-${theme}.png`),animations:'disabled'});

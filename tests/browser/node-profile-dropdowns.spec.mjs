@@ -168,3 +168,85 @@ test('text-completion settings updates refresh active labels while unchanged wor
     await page.evaluate(async () => { const h = window.canvasHarness; for (let i = 0; i < 8; i++) { await h.view({ x: 60 + i, y: 110, zoom: .85 }); h.canvas.select({ kind: 'node', id: 'compact' }); h.canvas.select(null); await h.context.eventSource.emit(h.context.eventTypes.SETTINGS_UPDATED); } });
     expect(await page.evaluate(() => ({ profiles: window.profileBindingReads, models: window.profileModelReads }))).toEqual(reads);
 });
+
+test('unified model nodes and configured model modes expose independent active profile controls', async ({ page }, testInfo) => {
+    await fixture(page);
+    await page.getByRole('button', { name: 'Collapse preview', exact: true }).click();
+    const ids = await page.evaluate(async () => {
+        const h = window.canvasHarness;
+        const { prepareNativeConnectionEdit } = await import('/src/workflow/connection-edits.js?v=' + h.version);
+        let graph = { id: 'unified-profiles', name: 'Unified model profiles', schema: 3, runtime: 2, mode: 'native-unified', nodes: {}, wires: {}, portals: {}, definitions: {} };
+        const cases = [
+            ['decision', {}, 'pre'], ['model-call', {}, 'pre'], ['enrich', {}, 'post'],
+            ['extract', { mode: 'model' }, 'post'], ['revise-draft', {}, 'post'], ['effect-author', {}, 'post'],
+            ['express', { mode: 'inner-voice' }, 'pre'], ['context', { mode: 'focus', method: 'compress' }, 'pre'],
+            ['item-use-trigger', { itemId: 'wand', mode: 'extract' }, 'post'],
+            ['prompted-memory', { actorId: 'mara' }, 'pre'], ['character-direction', { actorId: 'mara' }, 'pre'],
+            ['extract', { mode: 'literal' }, 'post'],
+        ];
+        const ids = [];
+        for (const [index, [operation, controls, phase]] of cases.entries()) {
+            const result = prepareNativeConnectionEdit(graph, { kind: 'create', operation, controls, phase, graphPoint: { x: index % 3 * 270, y: Math.floor(index / 3) * 220 } });
+            if (!result.ok) throw new Error(operation + ': ' + JSON.stringify(result.error));
+            graph = result.data.candidate;
+            ids.push({ operation, id: result.data.addedNodeIds[0], model: index < 11 });
+        }
+        await h.activate(graph); await h.view({ x: 210, y: 45, zoom: .78 }); h.canvas.select(null);
+        return ids;
+    });
+    await expect(page.locator('.pc-node-profile')).toHaveCount(11);
+    for (const node of ids) {
+        if (!node.model) { await expect(picker(page, node.id)).toHaveCount(0); continue; }
+        await expect(bar(page, node.id)).toContainText('Active SillyTavern model');
+        await expect(picker(page, node.id).locator('.node-model-meta')).toHaveText('active-host-model');
+    }
+    const decision = ids.find(node => node.operation === 'decision');
+    await choose(page, decision.id, 'fast');
+    await expect(bar(page, decision.id)).toContainText('Fast compact');
+    await expect(picker(page, decision.id).locator('.node-model-meta')).toHaveText('compact-model');
+    const modelCall = ids.find(node => node.operation === 'model-call');
+    await expect(bar(page, modelCall.id)).toContainText('Active SillyTavern model');
+    await page.getByRole('button', { name: 'Undo', exact: true }).click();
+    await expect(bar(page, decision.id)).toContainText('Active SillyTavern model');
+    const extract = ids.find(node => node.operation === 'extract' && node.model);
+    await page.locator(`.pc-node-native[data-id="${extract.id}"] .pc-native-heading`).click();
+    await chooseControl(page, 'Mode', 'literal');
+    await expect(picker(page, extract.id)).toHaveCount(0);
+    await page.getByRole('button', { name: 'Undo', exact: true }).click();
+    await expect(bar(page, extract.id)).toContainText('Active SillyTavern model');
+    await page.screenshot({ path: testInfo.outputPath('unified-model-profiles.png') });
+    expect(await page.evaluate(() => window.canvasHarness.providerCalls())).toBe(0);
+});
+
+test('a rejected profile edit keeps its error and scrollable list inside a short canvas viewport', async ({ page }) => {
+    await fixture(page);
+    await page.setViewportSize({ width: 620, height: 400 });
+    await page.evaluate(async () => {
+        const h = window.canvasHarness;
+        await h.view({ x: -340, y: -10, zoom: .72 });
+        h.canvas.hooks.editProfile = () => ({ ok: false, error: { code: 'UNAVAILABLE', message: 'This connection is unavailable. Choose another profile or retry after refreshing connection settings. '.repeat(3) } });
+    });
+    await bar(page).click();
+    await picker(page).getByRole('option').first().click();
+    await expect(picker(page).getByRole('alert')).toBeVisible();
+    const menu = await picker(page).locator('.profile-menu').boundingBox();
+    const canvas = await page.locator('.pc-canvas-host').boundingBox();
+    expect(menu.y).toBeGreaterThanOrEqual(canvas.y);
+    expect(menu.y + menu.height).toBeLessThanOrEqual(canvas.y + canvas.height);
+    const list = picker(page).getByRole('listbox');
+    await list.hover(); await page.mouse.wheel(0, 500);
+    await expect.poll(() => list.evaluate(element => element.scrollTop)).toBeGreaterThan(0);
+    await page.keyboard.press('Escape');
+    await expect(picker(page).getByRole('combobox')).toHaveCount(0);
+});
+
+test('Details keeps connection selection on the node bar and resets root and qualified overrides directly',async({page})=>{
+ await fixture(page);await page.locator('.pc-node-native[data-id="plan"] .pc-native-heading').click();
+ const details=page.locator('.pc-node-details');await expect(details.getByRole('combobox',{name:'Connection profile',exact:true})).toHaveCount(0);await expect(details.getByRole('combobox',{name:'Connection mode',exact:true})).toHaveCount(0);
+ await expect(details.locator('[data-model-controls]')).not.toHaveAttribute('open','');await details.locator('[data-model-controls] > summary').click();
+ await details.getByRole('button',{name:'Use inherited connection',exact:true}).click();expect(await page.evaluate(()=>Object.hasOwn(window.canvasHarness.graph.nodes.plan,'profileId'))).toBe(false);await expect(bar(page)).toContainText('Fast compact');
+ await choose(page,'plan','active');await expect(bar(page)).toContainText('Active SillyTavern model');
+ await fixture(page,true);await page.locator('.pc-node-native[data-id="first/path"] .pc-native-heading').dblclick();await page.locator('.pc-node-native[data-id="work"] .pc-native-heading').dblclick();await page.evaluate(async()=>{const h=window.canvasHarness,node=h.canvas.graph.nodes.work;await h.view({x:420-node.x*.9,y:170-node.y*.9,zoom:.9});h.canvas.select(null);});await choose(page,'work','fast');await page.locator('.pc-node-native[data-id="work"] .pc-native-heading').click();
+ await details.locator('[data-model-controls] > summary').click();await details.getByRole('button',{name:'Use definition connection',exact:true}).click();
+ expect(await page.evaluate(()=>window.canvasHarness.S.getGraph('prepared-root').nodes['first/path'].nodeBindingOverrides??{})).toEqual({});await expect(bar(page,'work')).toContainText('Definition connection');
+});

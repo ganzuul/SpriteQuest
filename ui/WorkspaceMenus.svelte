@@ -23,10 +23,10 @@
         switch (name) {
             case 'File': return [item('New workflow', 'new', shortcut('N'), view.document?.busy), item('Open workflow…', 'open-workflow', shortcut('O'), view.document?.busy), { ...item('Open Recent', '', '', !view.document?.native || !view.document.recents.length || view.document.busy), submenu: 'Open Recent' }, item('Open examples…', 'examples', '', view.document?.busy), { ...item('Recover previous workflows', '', '', !view.document?.recovery.length || view.document.busy), submenu: 'Recover previous workflows' }, ...(view.document?.native ? [item('Save workflow', 'save', shortcut('S'), view.document.busy), item('Save As…', 'save-as', shortcut('Shift S'), view.document.busy)] : [item('Download JSON…', 'download-document', shortcut('S'), view.document?.busy)]), item('Import into graph…', 'import-into-graph'), item('Export workflow JSON…', 'export'), ...(view.hasArchivedWorkflows ? [item('Export archived workflows', 'export-archived-workflows')] : []), item('Close workspace', 'close')];
             case 'Edit': return [item('Undo', 'undo', shortcut('Z'), !view.history.undo), item('Redo', 'redo', shortcut('Shift Z'), !view.history.redo), item('Copy', 'copy', shortcut('C'), !view.selectionActions?.copy), item('Cut', 'cut', shortcut('X'), !view.selectionActions?.cut), item('Paste', 'paste', shortcut('V')), item('Delete selection', 'delete-selection', 'Del', !view.selectionActions?.delete)];
-            case 'Graph': return [item('Select tool', 'select-tool'), item('Pan tool', 'pan-tool'), item('Zoom in', 'zoom-in'), item('Zoom out', 'zoom-out'), item('Fit to view', 'fit'), item('Fit selection', 'fit-selection', '', !view.selectionCount), item('Rename graph', 'rename'), item('Stop workflow', 'stop-workflow', '', !rootWorkflow?.busy)];
+            case 'Graph': return [item('Select tool', 'select-tool'), item('Pan tool', 'pan-tool'), item('Zoom in', 'zoom-in'), item('Zoom out', 'zoom-out'), item('Fit to view', 'fit'), item('Fit selection', 'fit-selection', '', !view.selectionCount), item('Manage portals…', 'manage-portals'), item('Rename graph', 'rename'), item('Stop workflow', 'stop-workflow', '', !rootWorkflow?.busy)];
             case 'Node': return [item('Add node…', 'add-node'), item('Inspect selection', 'reveal-inspector'),{...item('Memory recall',''),submenu:'Memory recall'}];
             case 'Preview': return [item('Show preview', 'show-preview'), item('Collapse preview', 'collapse-preview')];
-            case 'Tools': return [item('Workflow Data…', 'story-documents'), item('Fast connections…', 'fast-connections'), item('Theme and colours', 'theme'), item('Toggle inspector', 'inspector')];
+            case 'Tools': return [item('Workflow Data…', 'story-documents'), item('Theme and colours', 'theme'), item('Toggle inspector', 'inspector')];
             default: return [item('Workspace guide', 'help')];
         }
     }
@@ -71,7 +71,7 @@
         const recallAction=recallMenuActions[value];
         close(true);
         if(recallAction){const result=recallAction();Promise.resolve(result).then(result=>{if(!result.ok){actions.recall?.reportIssue(result.error.message);actions.recall?.refresh();}});return;}
-        if (['examples', 'show-preview', 'collapse-preview', 'add-node', 'help', 'fast-connections', 'story-documents', 'memory-recall'].includes(value)) local(value);
+        if (['examples', 'show-preview', 'collapse-preview', 'add-node', 'help', 'story-documents', 'memory-recall'].includes(value)) local(value);
         else if (value === 'select-tool' || value === 'pan-tool') actions.mode(value === 'select-tool' ? 'select' : 'pan');
         else if (value === 'zoom-in' || value === 'zoom-out') actions.zoom(value === 'zoom-in' ? 1.15 : 1 / 1.15);
         else actions.command(value);

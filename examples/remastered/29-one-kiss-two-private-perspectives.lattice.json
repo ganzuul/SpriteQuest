@@ -5,7 +5,7 @@
   "graph": {
     "id": "remastered-lesson-29",
     "name": "29. One kiss, two private perspectives",
-    "description": "Confirm shared native kiss evidence, verify both actors, then separately permit and stage each actor’s private model-authored reflection with independent receipts.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nSelect a configured typed Jev/Laya connection on kiss-decision; credentials remain outside the portable graph.\nReplace both canonical avatar IDs with loaded actors; authorize separate actor-private JSON rowan-moments and iris-moments as [].\nBoth per-actor allowModelAuthoredReflection flags default false. Change each separately only when authoring permission exists for that actor, especially a player-controlled actor.\n\nOpen One kiss, two private perspectives and inspect the named pins.\nNo candidate kiss or unresolved actor presence deliberately holds before Review. Rejected or uncertain typed kiss evidence preserves the original Draft with no private reflection calls or saves; uncertainty is not acceptance. Inspect the gate instead of treating the scene as accepted intimacy.\nThe shared quote/source/span are observed evidence; reflectionOrigin remains model-authored.\nBoth actors must first be verified present. After that shared prerequisite, each permitted leg reads only its own Actor Context and private target; no private text enters public notes.\nReview separate receipts: native publication and each actor file have independent durability; one failed file is not an atomic rollback of both.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: Default at most 3 auxiliary requests: extraction 1 + typed Decision 1 + cast 1. With both explicit permissions at most 5, adding one private reflection request per present actor. No automatic fallback. One ordinary native generation.\nCheckpoints:\nConfirm Events.out: Only accepted exact shared native kiss evidence can authorize the two independently permitted legs.\nWrite to File.receipt: Rowan’s pending private receipt is independent of Iris’s receipt.",
+    "description": "Confirm shared native kiss evidence, verify both actors, then separately permit and stage each actor’s private model-authored reflection with independent receipts.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nChoose an ordinary connection on the Decision node bar or use Active SillyTavern.\nReplace both canonical avatar IDs with loaded actors; authorize separate actor-private JSON rowan-moments and iris-moments as [].\nBoth per-actor allowModelAuthoredReflection flags default false. Change each separately only when authoring permission exists for that actor, especially a player-controlled actor.\n\nOpen One kiss, two private perspectives and inspect the named pins.\nNo candidate kiss or unresolved actor presence deliberately holds before Review. Rejected kiss evidence preserves the original Draft with no private reflection calls or saves; a null Decision answer holds Confirm Events before Review. Inspect the gate instead of treating the scene as accepted intimacy.\nThe shared quote/source/span are observed evidence; reflectionOrigin remains model-authored.\nBoth actors must first be verified present. After that shared prerequisite, each permitted leg reads only its own Actor Context and private target; no private text enters public notes.\nReview separate receipts: native publication and each actor file have independent durability; one failed file is not an atomic rollback of both.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: Default at most 3 auxiliary requests: extraction 1 + ordinary Decision 1 + cast 1. With both explicit permissions at most 5, adding one private reflection request per present actor. One ordinary native generation.\nCheckpoints:\nConfirm Events.out: Only accepted exact shared native kiss evidence can authorize the two independently permitted legs.\nWrite to File.receipt: Rowan’s pending private receipt is independent of Iris’s receipt.",
     "schema": 3,
     "runtime": 2,
     "mode": "native-unified",
@@ -409,39 +409,35 @@
       "kiss-decision": {
         "id": "kiss-decision",
         "type": "workflow",
-        "operation": "fast-decision",
+        "operation": "decision",
         "operationVersion": 1,
-        "title": "Fast Decision",
+        "title": "Decision",
         "enabled": true,
         "x": 2980,
         "y": 240,
         "w": 300,
         "h": 210,
         "inGroup": "stage-8",
-        "profileId": null,
+        "profileId": "lattice:active-sillytavern",
         "model": null,
-        "modelRole": "fastDecision",
+        "modelRole": "decision",
         "phase": "post",
-        "alias": "Fast Decision",
+        "alias": "Decision",
         "inputKind": "data",
         "questions": {
           "kiss": {
             "type": "noul",
-            "instructions": "Does this exact canonical candidate evidence establish a kiss actually occurring now between Rowan and Iris? Reject planned, negated, recalled or uncertain intimacy. This probability does not establish consent or authorize escalation."
+            "instructions": "Does this exact canonical candidate evidence establish a kiss actually occurring now between Rowan and Iris? Reject planned, negated or recalled intimacy. Return accepted true, false or null when unresolved; this answer does not establish consent or authorize escalation."
           }
         },
-        "maxTokens": 2048,
-        "fastConnectionId": "",
-        "fallbackEnabled": false,
-        "fallbackAllowedCodes": [],
-        "fallbackProfileId": ""
+        "maxTokens": 2048
       },
       "kiss-gate": {
         "id": "kiss-gate",
         "type": "workflow",
-        "operation": "confidence-gate",
+        "operation": "select-fields",
         "operationVersion": 1,
-        "title": "Confidence Gate",
+        "title": "Select Fields",
         "enabled": true,
         "x": 3340,
         "y": 240,
@@ -452,15 +448,17 @@
         "model": null,
         "modelRole": null,
         "phase": "post",
-        "alias": "Confidence Gate",
-        "metricPath": [
-          "answers",
-          "kiss",
-          "noul"
-        ],
-        "acceptMin": 0.9,
-        "rejectMax": 0.1,
-        "direction": "higher"
+        "alias": "Select Fields",
+        "fields": [
+          {
+            "name": "accepted",
+            "path": [
+              "answers",
+              "kiss",
+              "accepted"
+            ]
+          }
+        ]
       },
       "kiss-record": {
         "id": "kiss-record",
@@ -1733,7 +1731,7 @@
         "y": 0,
         "w": 900,
         "h": 180,
-        "content": "Confirm shared native kiss evidence, verify both actors, then separately permit and stage each actor’s private model-authored reflection with independent receipts.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nSelect a configured typed Jev/Laya connection on kiss-decision; credentials remain outside the portable graph.\nReplace both canonical avatar IDs with loaded actors; authorize separate actor-private JSON rowan-moments and iris-moments as [].\nBoth per-actor allowModelAuthoredReflection flags default false. Change each separately only when authoring permission exists for that actor, especially a player-controlled actor.\n\nOpen One kiss, two private perspectives and inspect the named pins.\nNo candidate kiss or unresolved actor presence deliberately holds before Review. Rejected or uncertain typed kiss evidence preserves the original Draft with no private reflection calls or saves; uncertainty is not acceptance. Inspect the gate instead of treating the scene as accepted intimacy.\nThe shared quote/source/span are observed evidence; reflectionOrigin remains model-authored.\nBoth actors must first be verified present. After that shared prerequisite, each permitted leg reads only its own Actor Context and private target; no private text enters public notes.\nReview separate receipts: native publication and each actor file have independent durability; one failed file is not an atomic rollback of both.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: Default at most 3 auxiliary requests: extraction 1 + typed Decision 1 + cast 1. With both explicit permissions at most 5, adding one private reflection request per present actor. No automatic fallback. One ordinary native generation.\nCheckpoints:\nConfirm Events.out: Only accepted exact shared native kiss evidence can authorize the two independently permitted legs.\nWrite to File.receipt: Rowan’s pending private receipt is independent of Iris’s receipt.",
+        "content": "Confirm shared native kiss evidence, verify both actors, then separately permit and stage each actor’s private model-authored reflection with independent receipts.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nChoose an ordinary connection on the Decision node bar or use Active SillyTavern.\nReplace both canonical avatar IDs with loaded actors; authorize separate actor-private JSON rowan-moments and iris-moments as [].\nBoth per-actor allowModelAuthoredReflection flags default false. Change each separately only when authoring permission exists for that actor, especially a player-controlled actor.\n\nOpen One kiss, two private perspectives and inspect the named pins.\nNo candidate kiss or unresolved actor presence deliberately holds before Review. Rejected kiss evidence preserves the original Draft with no private reflection calls or saves; a null Decision answer holds Confirm Events before Review. Inspect the gate instead of treating the scene as accepted intimacy.\nThe shared quote/source/span are observed evidence; reflectionOrigin remains model-authored.\nBoth actors must first be verified present. After that shared prerequisite, each permitted leg reads only its own Actor Context and private target; no private text enters public notes.\nReview separate receipts: native publication and each actor file have independent durability; one failed file is not an atomic rollback of both.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: Default at most 3 auxiliary requests: extraction 1 + ordinary Decision 1 + cast 1. With both explicit permissions at most 5, adding one private reflection request per present actor. One ordinary native generation.\nCheckpoints:\nConfirm Events.out: Only accepted exact shared native kiss evidence can authorize the two independently permitted legs.\nWrite to File.receipt: Rowan’s pending private receipt is independent of Iris’s receipt.",
         "commentFrame": true,
         "moveContents": false
       }
@@ -1871,7 +1869,7 @@
         "id": "edge-17",
         "route": "wire",
         "from": "kiss-gate",
-        "fromPort": "accepted",
+        "fromPort": "out",
         "to": "confirmed-kiss",
         "toPort": "decisions"
       },
@@ -2071,7 +2069,7 @@
         "id": "edge-43",
         "route": "wire",
         "from": "kiss-gate",
-        "fromPort": "accepted",
+        "fromPort": "out",
         "to": "rowan-kiss-prompt",
         "toPort": "condition"
       },
@@ -2351,7 +2349,7 @@
         "id": "edge-79",
         "route": "wire",
         "from": "kiss-gate",
-        "fromPort": "accepted",
+        "fromPort": "out",
         "to": "iris-kiss-prompt",
         "toPort": "condition"
       },
@@ -2804,9 +2802,9 @@
         "model": null,
         "profileId": "lattice:active-sillytavern"
       },
-      "fastDecision": {
+      "decision": {
         "model": null,
-        "profileId": null
+        "profileId": "lattice:active-sillytavern"
       }
     },
     "portals": {},

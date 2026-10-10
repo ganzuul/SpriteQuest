@@ -2,7 +2,6 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { exportWorkflow, parseWorkflow } from '../src/workflow/packages.js';
 import { validateGraphStructure, validateWorkflow } from '../src/workflow/contracts.js';
-import { operationDefaults } from '../src/workflow/catalog.js';
 import { computeDefinitionIdentity, definitionRefKey } from '../src/workflow/definitions.js';
 import { serializeWorkflowDocument, parseWorkflowDocument } from '../src/workflow/document-file.js';
 
@@ -63,17 +62,14 @@ test('a retired root package cannot reactivate an archived workflow through impo
 });
 
 test('recovery removes Fast Decision selectors from roots, nested pins and exposed overrides without editing originals', async () => {
-    const fast = id => ({ id, type: 'workflow', operation: 'fast-decision', operationVersion: 1, ...operationDefaults('fast-decision'), fastConnectionId: 'private-fast-selector', fallbackEnabled: true, fallbackProfileId: 'private-text-selector', fallbackAllowedCodes: ['RATE_LIMITED'] });
-    const finalize = draft => {
-        const checked = computeDefinitionIdentity(draft);
-        assert.equal(checked.ok, true, JSON.stringify(checked.error));
-        return { ...checked.data.materializedDefinition, semanticHash: checked.data.semanticHash };
-    };
+    // Cold snapshots preserve authored pre-retirement identities without asking the current catalog to admit them.
+    const fast = id => ({ id, type: 'workflow', operation: 'fast-decision', operationVersion: 1, title: 'Fast Decision', modelRole: 'fastDecision', profileId: null, model: null, inputKind: 'data', questions: { decision: { type: 'noul', instructions: 'Does the supplied scene establish the described event?' } }, maxTokens: 2048, fastConnectionId: 'private-fast-selector', fallbackEnabled: true, fallbackProfileId: 'private-text-selector', fallbackAllowedCodes: ['RATE_LIMITED'] });
+    const snapshot = (draft, semanticHash) => ({ ...draft, semanticHash });
     const ref = definition => ({ id: definition.id, version: definition.version, semanticHash: definition.semanticHash });
     const parameters = instancePath => ['fastConnectionId', 'fallbackProfileId', 'fallbackEnabled'].map(controlId => ({ id: controlId, label: controlId, target: { instancePath, nodeId: 'fast', controlId } }));
     const overrides = { fastConnectionId: 'private-override-fast', fallbackProfileId: 'private-override-text', fallbackEnabled: true };
-    const child = finalize({ id: 'fast-child', version: 1, name: 'Fast child', interface: [], parameters: parameters([]), body: { schema: 3, runtime: 2, mode: 'native-pre', nodes: { fast: fast('fast') }, wires: {} } });
-    const parent = finalize({ id: 'fast-parent', version: 1, name: 'Fast parent', interface: [], parameters: parameters(['child']), body: { schema: 3, runtime: 2, mode: 'native-pre', nodes: { child: { id: 'child', type: 'subgraph', definition: ref(child), parameterOverrides: overrides, roleOverrides: {}, nodeBindingOverrides: {} } }, wires: {} } });
+    const child = snapshot({ id: 'fast-child', version: 1, name: 'Fast child', interface: [], parameters: parameters([]), body: { schema: 3, runtime: 2, mode: 'native-pre', nodes: { fast: fast('fast') }, wires: {} } }, 'a'.repeat(64));
+    const parent = snapshot({ id: 'fast-parent', version: 1, name: 'Fast parent', interface: [], parameters: parameters(['child']), body: { schema: 3, runtime: 2, mode: 'native-pre', nodes: { child: { id: 'child', type: 'subgraph', definition: ref(child), parameterOverrides: overrides, roleOverrides: {}, nodeBindingOverrides: {} } }, wires: {} } }, 'b'.repeat(64));
     const graph = legacyGraph();
     graph.nodes.fast = fast('fast');
     graph.nodes.parent = { id: 'parent', type: 'subgraph', definition: ref(parent), parameterOverrides: overrides, roleOverrides: {}, nodeBindingOverrides: {} };
@@ -89,7 +85,9 @@ test('recovery removes Fast Decision selectors from roots, nested pins and expos
             assert.deepEqual(node.fallbackAllowedCodes, ['RATE_LIMITED']);
         }
     }
-    assert.equal(validateGraphStructure(exported).ok, true);
+    assert.equal(exported.mode, 'native-pre');
+    assert.equal(exported.definitions[definitionRefKey(child)].semanticHash, child.semanticHash);
+    assert.equal(exported.definitions[definitionRefKey(parent)].semanticHash, parent.semanticHash);
     assert.equal(host.saves(), 1);
 });
 

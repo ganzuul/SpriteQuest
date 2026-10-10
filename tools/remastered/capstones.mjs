@@ -117,7 +117,7 @@ export function capstones() {
         entries.push(r.finish(...draft));
     }
     {
-        r = builder(29, 'One kiss, two private perspectives', 'Confirm shared native kiss evidence, verify both actors, then separately permit and stage each actor’s private model-authored reflection with independent receipts.', 'Fast Decision gate, Actor Context isolation and partial private persistence');
+        r = builder(29, 'One kiss, two private perspectives', 'Confirm shared native kiss evidence, verify both actors, then separately permit and stage each actor’s private model-authored reflection with independent receipts.', 'Ordinary Decision gate, Actor Context isolation and partial private persistence');
         const source = draftEvidence(r);
         const candidates = eventCandidates(r, source, { instructions: 'At most one scene-action candidate: an actual on-page kiss between Rowan and Iris. Return [] for a plan, recollection, claim or negation.' });
         r.add('one-kiss', 'collection', {
@@ -125,17 +125,15 @@ export function capstones() {
         });
         r.connect(candidates, 'out', 'one-kiss', 'in');
         const candidate = unwrapEvent(r, 'one-kiss', 'kiss-candidate', 'post');
-        r.add('kiss-decision', 'fast-decision', { phase: 'post', fastConnectionId: '', questions: { kiss: { type: 'noul', instructions: 'Does this exact canonical candidate evidence establish a kiss actually occurring now between Rowan and Iris? Reject planned, negated, recalled or uncertain intimacy. This probability does not establish consent or authorize escalation.' } } });
+        r.add('kiss-decision', 'decision', { phase: 'post', questions: { kiss: { type: 'noul', instructions: 'Does this exact canonical candidate evidence establish a kiss actually occurring now between Rowan and Iris? Reject planned, negated or recalled intimacy. Return accepted true, false or null when unresolved; this answer does not establish consent or authorize escalation.' } } });
         r.connect(candidate, 'out', 'kiss-decision', 'in');
-        r.add('kiss-gate', 'confidence-gate', {
-            phase: 'post', metricPath: ['answers', 'kiss', 'noul'], acceptMin: .9, rejectMax: .1
-        });
+        r.add('kiss-gate', 'select-fields', { phase: 'post', fields: [{ name: 'accepted', path: ['answers', 'kiss', 'accepted'] }] });
         r.connect('kiss-decision', 'out', 'kiss-gate', 'in');
         r.add('kiss-record', 'format', { phase: 'post' });
         r.connect(candidate, 'out', 'kiss-record', 'in');
         r.add('confirmed-kiss', 'confirm-events', { phase: 'post', mode: 'single-gate' });
         r.connect('kiss-record', 'records', 'confirmed-kiss', 'events');
-        r.connect('kiss-gate', 'accepted', 'confirmed-kiss', 'decisions');
+        r.connect('kiss-gate', 'out', 'confirmed-kiss', 'decisions');
         const presences = cast(r, source, { phase: 'post', actors: [actor, partner] });
         r.data('presence-policy', [{ match: { status: 'present' }, accepted: true }, { match: { status: 'absent' }, accepted: false }], 'post');
         for (const [key, actorId] of [['rowan', actor], ['iris', partner]]) {
@@ -177,7 +175,7 @@ export function capstones() {
             r.connect(key + '-present-prompt', 'yes', key + '-partner-prompt', 'in');
             r.connect((key === 'rowan' ? 'iris' : 'rowan') + '-present', 'out', key + '-partner-prompt', 'condition');
             r.connect(key + '-partner-prompt', 'yes', key + '-kiss-prompt', 'in');
-            r.connect('kiss-gate', 'accepted', key + '-kiss-prompt', 'condition');
+            r.connect('kiss-gate', 'out', key + '-kiss-prompt', 'condition');
             r.connect(key + '-kiss-prompt', 'yes', key + '-prompt-gate', 'in');
             r.connect(key + '-permitted', 'out', key + '-prompt-gate', 'condition');
             r.add(key + '-reflect', 'model-call', { phase: 'post', outputKind: 'data', instructions: 'Private reflection belongs only to ' + actorId + '. Label it model-authored; do not invent another shared action.' });
@@ -202,10 +200,10 @@ export function capstones() {
             r.connect(key + '-record', 'out', key + '-save', 'records');
             r.connect('confirmed-kiss', 'out', key + '-save', 'evidence');
         }
-        r.requirements = ['Select a configured typed Jev/Laya connection on kiss-decision; credentials remain outside the portable graph.', 'Replace both canonical avatar IDs with loaded actors; authorize separate actor-private JSON rowan-moments and iris-moments as [].', 'Both per-actor allowModelAuthoredReflection flags default false. Change each separately only when authoring permission exists for that actor, especially a player-controlled actor.'];
-        r.cases = [{ when: 'No candidate kiss or unresolved presence', expect: 'This lesson explicitly holds before Review: no private reflection call, file settlement or native publication. Required canonical evidence barriers are not bypassed.' }, { when: 'Typed evidence is rejected or its metric remains uncertain', expect: 'No private reflection is called or staged; the original owned Draft remains available for Review. The uncertain metric remains explicitly unresolved, never accepted.' }, { when: 'Either actor is absent', expect: 'Both private model legs and saves are skipped; the owned Draft remains available. Both actors must be genuinely present before either reflection is eligible.' }, { when: 'Only one actor permission is enabled', expect: 'Only that present actor may request and stage a private reflection; the other private leg is skipped.' }, { when: 'One private save fails', expect: 'Each receipt remains independently durable; native publication and the other accepted save do not imply an atomic rollback.' }];
-        r.steps = ['No candidate kiss or unresolved actor presence deliberately holds before Review. Rejected or uncertain typed kiss evidence preserves the original Draft with no private reflection calls or saves; uncertainty is not acceptance. Inspect the gate instead of treating the scene as accepted intimacy.', 'The shared quote/source/span are observed evidence; reflectionOrigin remains model-authored.', 'Both actors must first be verified present. After that shared prerequisite, each permitted leg reads only its own Actor Context and private target; no private text enters public notes.', 'Review separate receipts: native publication and each actor file have independent durability; one failed file is not an atomic rollback of both.'];
-        r.budget = 'Default at most 3 auxiliary requests: extraction 1 + typed Decision 1 + cast 1. With both explicit permissions at most 5, adding one private reflection request per present actor. No automatic fallback. One ordinary native generation.';
+        r.requirements = ['Choose an ordinary connection on the Decision node bar or use Active SillyTavern.', 'Replace both canonical avatar IDs with loaded actors; authorize separate actor-private JSON rowan-moments and iris-moments as [].', 'Both per-actor allowModelAuthoredReflection flags default false. Change each separately only when authoring permission exists for that actor, especially a player-controlled actor.'];
+        r.cases = [{ when: 'No candidate kiss or unresolved presence', expect: 'This lesson explicitly holds before Review: no private reflection call, file settlement or native publication. Required canonical evidence barriers are not bypassed.' }, { when: 'Decision rejects the evidence', expect: 'No private reflection is called or staged; the original owned Draft remains available for Review.' }, { when: 'Decision returns null', expect: 'Confirm Events holds as UNRESOLVED_INPUT before Review, with no private reflection calls or file writes.' }, { when: 'Either actor is absent', expect: 'Both private model legs and saves are skipped; the owned Draft remains available. Both actors must be genuinely present before either reflection is eligible.' }, { when: 'Only one actor permission is enabled', expect: 'Only that present actor may request and stage a private reflection; the other private leg is skipped.' }, { when: 'One private save fails', expect: 'Each receipt remains independently durable; native publication and the other accepted save do not imply an atomic rollback.' }];
+        r.steps = ['No candidate kiss or unresolved actor presence deliberately holds before Review. Rejected kiss evidence preserves the original Draft with no private reflection calls or saves; a null Decision answer holds Confirm Events before Review. Inspect the gate instead of treating the scene as accepted intimacy.', 'The shared quote/source/span are observed evidence; reflectionOrigin remains model-authored.', 'Both actors must first be verified present. After that shared prerequisite, each permitted leg reads only its own Actor Context and private target; no private text enters public notes.', 'Review separate receipts: native publication and each actor file have independent durability; one failed file is not an atomic rollback of both.'];
+        r.budget = 'Default at most 3 auxiliary requests: extraction 1 + ordinary Decision 1 + cast 1. With both explicit permissions at most 5, adding one private reflection request per present actor. One ordinary native generation.';
         r.check('confirmed-kiss', 'out', 'Only accepted exact shared native kiss evidence can authorize the two independently permitted legs.');
         r.check('rowan-save', 'receipt', 'Rowan’s pending private receipt is independent of Iris’s receipt.');
         entries.push(r.finish());

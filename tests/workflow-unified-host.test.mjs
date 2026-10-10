@@ -167,15 +167,15 @@ test('lifecycle descriptions reject accessor and coercion hooks without evaluati
     assert.equal(reads, 0);
 });
 
-test('controller forwards separately injected typed decision binding and request capabilities', async () => {
-    const graph = { id: 'fast-target', schema: 3, runtime: 2, mode: 'native-unified', nodes: { scene: { id: 'scene', type: 'workflow', operation: 'compose', sections: [{ name: 'scene', text: 'They kissed.' }] }, fast: { id: 'fast', type: 'workflow', operation: 'fast-decision', inputKind: 'text', fastConnectionId: 'jev', questions: { kiss: { type: 'noul', instructions: 'Did they kiss?' } } } }, wires: { source: { id: 'source', route: 'wire', from: 'scene', fromPort: 'out', to: 'fast', toPort: 'in' } }, portals: {}, definitions: {} };
-    let bindings = 0, typedCalls = 0, summaries = 0;
-    const binding = Object.freeze({ connectionId: 'jev', model: 'jev-current', provider: 'jev' });
-    const f = nativeFixture(graph, { ports: { resolveFastBinding() { bindings++; return { ok: true, data: binding }; }, fastBindingSummary() { summaries++; return { model: 'jev-current', profileId: null }; }, requestFastDecision(options) { typedCalls++; assert.equal(options.binding, binding); assert.equal(options.state, 'They kissed.'); return { ok: true, data: { model: 'jev-current', answers: { kiss: { type: 'noul', noul: 0.8 } }, usage: { input_tokens: 4, output_tokens: 1 } } }; }, bindingStatus: () => ({ ok: true }) } });
-    const result = await f.controller.runTarget(graph, { workflowId: graph.id, instancePath: [], nodeId: 'fast', portId: 'out' });
+test('controller forwards the ordinary Decision binding and bounded request', async () => {
+    const graph = { id: 'decision-target', schema: 3, runtime: 2, mode: 'native-unified', nodes: { scene: { id: 'scene', type: 'workflow', operation: 'compose', sections: [{ name: 'scene', text: 'They kissed.' }] }, decision: { id: 'decision', type: 'workflow', operation: 'decision', inputKind: 'text', questions: { kiss: { type: 'noul', instructions: 'Did they kiss?' } } } }, wires: { source: { id: 'source', route: 'wire', from: 'scene', fromPort: 'out', to: 'decision', toPort: 'in' } }, portals: {}, definitions: {} };
+    let bindings = 0, calls = 0, summaries = 0;
+    const binding = Object.freeze({ profileId: 'decision-profile', model: 'decision-current' });
+    const f = nativeFixture(graph, { resolveBinding() { bindings++; return { ok: true, data: binding }; }, request(options) { calls++; assert.equal(options.binding, binding); assert.equal(JSON.parse(options.messages[1].content).state, 'They kissed.'); return { ok: true, data: { text: '{"answers":{"kiss":{"type":"noul","accepted":true}}}',finish:'stop',usage: { input_tokens: 4, output_tokens: 1 } } }; }, ports: { bindingSummary() { summaries++; return { model: 'decision-current', profileId: 'decision-profile' }; }, bindingStatus: () => ({ ok: true }) } });
+    const result = await f.controller.runTarget(graph, { workflowId: graph.id, instancePath: [], nodeId: 'decision', portId: 'out' });
     assert.equal(result.ok, true, JSON.stringify(result.error));
-    assert.equal(bindings, 1); assert.equal(typedCalls, 1); assert.ok(summaries > 0);
-    assert.equal(result.actualCalls, 1); assert.equal(f.requests(), 0);
+    assert.equal(bindings, 1); assert.equal(calls, 1); assert.ok(summaries > 0);
+    assert.equal(result.actualCalls, 1); assert.equal(result.callBound,1);assert.equal(f.requests(), 0);
 });
 
 test('native continuation waits for the nonbusy barrier and captures distinct generation outputs once', async () => {
@@ -349,31 +349,30 @@ test('preparation checks every completed pre binding even when Join selects a di
     assert.equal(Object.values(f.c.extensionPrompts).some(value => value.value === 'Chosen guidance.'), false);
 });
 
-test('native release without guidance validates typed primary and independent Decision fallback bindings', async () => {
-    for (const changed of ['typed', 'fallback', 'none']) {
+test('native release without guidance validates the ordinary Decision profile and model', async () => {
+    for (const changed of ['profile', 'model', 'none']) {
         const graph = unifiedGraph({ revise: false });
         graph.nodes.state = { id: 'state', type: 'workflow', operation: 'compose', sections: [{ name: 'scene', text: 'They kissed.' }] };
-        graph.nodes.fast = { id: 'fast', type: 'workflow', operation: 'fast-decision', inputKind: 'text', fastConnectionId: 'jev', fallbackEnabled: true, fallbackAllowedCodes: ['RATE_LIMITED'], fallbackProfileId: 'independent-text', questions: { kiss: { type: 'noul', instructions: 'Did they kiss?' } } };
+        graph.nodes.decision = { id: 'decision', type: 'workflow', operation: 'decision', inputKind: 'text', profileId: 'independent-text', questions: { kiss: { type: 'noul', instructions: 'Did they kiss?' } } };
         graph.nodes.check = { id: 'check', type: 'workflow', operation: 'condition', path: ['answers', 'kiss', 'accepted'], operator: 'equals', value: true };
         graph.nodes.branch = { id: 'branch', type: 'workflow', operation: 'branch', artifactKind: 'data' };
-        graph.wires.state = { id: 'state', route: 'wire', from: 'state', fromPort: 'out', to: 'fast', toPort: 'in' };
-        graph.wires.check = { id: 'check', route: 'wire', from: 'fast', fromPort: 'out', to: 'check', toPort: 'in' };
+        graph.wires.state = { id: 'state', route: 'wire', from: 'state', fromPort: 'out', to: 'decision', toPort: 'in' };
+        graph.wires.check = { id: 'check', route: 'wire', from: 'decision', fromPort: 'out', to: 'check', toPort: 'in' };
         graph.wires.condition = { id: 'condition', route: 'wire', from: 'check', fromPort: 'out', to: 'branch', toPort: 'condition' };
         graph.wires.activation.to = 'branch'; graph.wires.activation.toPort = 'in';
         graph.wires.selected = { id: 'selected', route: 'wire', from: 'branch', fromPort: 'yes', to: 'generate', toPort: 'activation' };
-        let typedModel = 'typed-original', fallbackModel = 'fallback-original', typedCalls = 0, fallbackCalls = 0, aborted = 0;
+        let profile = 'independent-text', model = 'model-original', calls = 0, aborted = 0;
         const f = nativeFixture(graph, {
-            ports: { resolveFastBinding: () => ({ ok: true, data: { connectionId: 'jev', model: typedModel, provider: 'jev' } }), requestFastDecision: async () => { typedCalls++; return { ok: false, error: { code: 'RATE_LIMITED', message: 'Bounded fixture failure.' } }; } },
-            resolveBinding: node => { assert.equal(node.profileId, 'independent-text'); return { ok: true, data: { profileId: 'independent-text', model: fallbackModel } }; },
-            request: async () => { fallbackCalls++; if (changed === 'typed') typedModel = 'typed-changed'; if (changed === 'fallback') fallbackModel = 'fallback-changed'; return { ok: true, data: { text: '{"answers":{"kiss":{"type":"noul","accepted":true}}}', finish: 'stop' } }; },
+            resolveBinding: node => { assert.equal(node.profileId, 'independent-text'); return { ok: true, data: { profileId: profile, model } }; },
+            request: async () => { calls++; if (changed === 'profile') profile = 'profile-changed'; if (changed === 'model') model = 'model-changed'; return { ok: true, data: { text: '{"answers":{"kiss":{"type":"noul","accepted":true}}}', finish: 'stop' } }; },
             abort: () => { aborted++; }
         });
-        const ready = await f.start(); assert.equal(typedCalls, 1); assert.equal(fallbackCalls, 1);
+        const ready = await f.start(); assert.equal(calls, 1);
         if (changed !== 'none') { assert.equal(ready.ok, false, changed); assert.equal(ready.error.code, 'BINDING_CHANGED', changed); assert.equal(aborted, 1); assert.deepEqual(ready.reviewHandles, []); }
         else {
             assert.equal(ready.awaitingNative, true, JSON.stringify(ready.error)); assert.equal(ready.published, false); assert.equal(aborted, 0);
             addReply(f); await f.c.eventSource.emit('MESSAGE_RECEIVED', 1, 'normal'); f.setBusy(false); await f.c.eventSource.emit('GENERATION_ENDED', 2);
-            const result = await settled(f); assert.equal(result.ok, true, JSON.stringify(result.error)); assert.equal(result.reviewHandles.length, 1); assert.equal(typedCalls + fallbackCalls, 2);
+            const result = await settled(f); assert.equal(result.ok, true, JSON.stringify(result.error)); assert.equal(result.reviewHandles.length, 1); assert.equal(calls, 1);
         }
     }
 });

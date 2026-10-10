@@ -1,6 +1,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {existsSync} from 'node:fs';
+test('Decision lessons retain stable packages and use nullable ordinary answers',async()=>{
+ const {REMASTERED_WORKFLOW_EXAMPLE_DATA:entries}=await import('../src/workflow/remastered-example-data.js');
+ const promise=entries[10].packages[0].graph,kiss=entries[28].packages[0].graph;
+ assert.equal(promise.nodes['promise-decision'].operation,'decision');
+ assert.equal(promise.nodes['promise-gate'].operation,'branch');
+ assert.deepEqual(promise.nodes['promise-acceptance'].fields[0].path,['answers','promise','accepted']);
+ assert.equal(kiss.nodes['kiss-decision'].operation,'decision');
+ assert.deepEqual(kiss.nodes['kiss-gate'].fields[0].path,['answers','kiss','accepted']);
+ assert.ok(Object.values(kiss.wires).some(w=>w.from==='kiss-gate'&&w.fromPort==='out'&&w.to==='confirmed-kiss'));
+ assert.ok(existsSync(new URL('../examples/remastered/11-detect-a-promise-with-fast-decision.lattice.json',import.meta.url)));
+ for(const entry of entries)assert.equal(JSON.stringify(entry.packages).includes('fast-decision'),false);
+});
 test('new authored curriculum supplies exactly thirty complete unified lessons', async()=>{
  const path=new URL('../src/workflow/remastered-example-data.js',import.meta.url);
  assert.ok(existsSync(path),'The new curriculum data has not been authored');

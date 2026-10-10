@@ -3,7 +3,6 @@ import {projectRecallView} from './recall-projection.js?v=0.27.0';
 import { prepareIterationBindingOverride } from './iteration-bindings.js?v=0.27.0';
 import { createStoryDocumentSetup } from './story-document-setup.js?v=0.27.0';
 import { createConfiguredNodeSession, configuredCreationStage, nodeNeedsConfiguration, iterationHelperChoices } from './configured-node-creation.js?v=0.27.0';
-import { checkFastSettingsScope, fastSettingsPersistence, saveFastConnection } from './provider-settings.js?v=0.27.0';
 import { resolveBinding } from '../workflow/connections.js?v=0.27.0';
 import { activeModelMetadata } from '../workflow/model-profiles.js?v=0.27.0';
 import { readNodeProfileMetadata, nodeProfileMetadataKey } from './node-profile-preparation.js?v=0.27.0';
@@ -151,41 +150,6 @@ const storyDocumentsActions = {
     async save(key, definition) { const setup = storySetup(); return setup ? storyDocumentsChanged(await setup.save(key, definition)) : { ok: false, error: { code: 'DOCUMENT_SETUP_UNAVAILABLE', message: 'Workflow Data setup is unavailable.' } }; },
     async remove(key, targetId) { const setup = storySetup(); return setup ? storyDocumentsChanged(await setup.remove(key, targetId)) : { ok: false, error: { code: 'DOCUMENT_SETUP_UNAVAILABLE', message: 'Workflow Data setup is unavailable.' } }; },
 };
-function fastSetupView() {
-    try {
-        const snapshot = workflowRuntime.fastConnectionState?.();
-        if (!snapshot?.ok) throw new Error('unavailable');
-        return { userId: snapshot.data.userId, issue: '', connections: snapshot.data.connections.map(item => ({ id: item.id, label: item.label, provider: item.provider, model: item.model, ...(item.endpoint ? { endpoint: item.endpoint } : {}), credentialReady: item.credentialReady === true })) };
-    } catch { return { userId: '', connections: [], issue: 'Fast connection settings are unavailable for the active user. Reopen this panel after SillyTavern finishes loading.' }; }
-}
-function refreshFastSettings() { workbench?.update({ fastConnections: fastSetupView() }); }
-function fastSettingsChanged() {
-    workflowSession.cancel('Fast connection settings changed');
-    refreshWorkflowPreparation(); updateWorkflowProjection(); refreshFastSettings();
-}
-const fastConnectionsActions = {
-    refresh: refreshFastSettings,
-    async save(configuration, key, userId) {
-        const result = await saveFastConnection(workflowRuntime.getFastConnectionRegistry?.(), configuration, key, userId);
-        fastSettingsChanged(); return result;
-    },
-    async remove(id, userId) {
-        try {
-            const registry = workflowRuntime.getFastConnectionRegistry?.(), scoped = checkFastSettingsScope(registry, userId); if (!scoped.ok) return scoped;
-            const removed = registry.remove(id); if (!removed.ok) return { ok: false, error: { code: 'FAST_SETTINGS_FAILED', message: 'The selected Fast connection could not be removed.' } };
-            const saved = await registry.save(); fastSettingsChanged();
-            const current = checkFastSettingsScope(registry, userId); if (!current.ok) return current;
-            return fastSettingsPersistence(saved, 'Connection removed and configuration saved.', 'Connection removed locally; SillyTavern save is unconfirmed.');
-        } catch { return { ok: false, error: { code: 'FAST_SETTINGS_FAILED', message: 'The Fast connection could not be removed.' } }; }
-    },
-    clearCredential(id, userId) {
-        try {
-            const registry = workflowRuntime.getFastConnectionRegistry?.(), scoped = checkFastSettingsScope(registry, userId); if (!scoped.ok) return scoped;
-            const cleared = registry.clearCredential(id); fastSettingsChanged();
-            return cleared.ok ? { ok: true, data: { message: 'Session key cleared. Re-enter it before an authenticated Fast call.' } } : { ok: false, error: { code: 'FAST_SETTINGS_FAILED', message: 'The session key could not be cleared.' } };
-        } catch { return { ok: false, error: { code: 'FAST_SETTINGS_FAILED', message: 'The session key could not be cleared.' } }; }
-    },
-};
 let recallProjection = null, refreshingRecall = false, recallDetailsView = null;
 function recallSelectionIds(){return canvas?.multi.size?[...canvas.multi]:canvas?.selection?.kind==='node'?[canvas.selection.id]:[];}
 function recallSetupView(){
@@ -200,7 +164,7 @@ function recallUiContext(){if(!isOpen()||!graphViews||!recallProjection)return n
 const recallCommands=createRecallCommands({readContext:recallUiContext,isContextCurrent:captured=>{const now=recallUiContext();return !!now&&now.editorToken===captured.editorToken&&now.documentToken===captured.documentToken&&now.selectionEpoch===captured.selectionEpoch;},captureRecall:()=>workflowRuntime.getNativeWorkflowController?.()?.captureRecall?.(),changeRecallQueues:(capture,request)=>workflowRuntime.getNativeWorkflowController?.()?.changeRecallQueues?.(capture,request),openDetails:openRecallDetails,changed:refreshRecallOverview});
 function captureRecallActions(nodeIds,scope='selected'){const captured=recallCommands.capture(nodeIds,scope);return {queue:()=>captured.ok?recallCommands.change(captured.data,'queue'):captured,cancel:()=>captured.ok?recallCommands.change(captured.data,'cancel'):captured};}
 const recallActions={refresh:refreshRecallOverview,capture:captureRecallActions,reportIssue:message=>toast(message,'error'),change(nodeIds,action,scope='selected'){const result=captureRecallActions(nodeIds,scope)[action]();if(!result.ok)toast(result.error.message,'error');return result;},reveal:openRecallDetails};
-function workspaceInputs() { const snapshot = fastSetupView(), context = ctx(), hostProfiles = profiles(); nodeProfileInputsKey = nodeProfileMetadataKey(context, hostProfiles); return { settings: settings(), profiles: readNodeProfileMetadata(context, hostProfiles), activeModel: activeModelMetadata(context), fastConnections: snapshot.connections, result: workflowState.result, resolveBinding: (node, graph) => resolveBinding(node, graph, ctx()), resolveFastBinding: node => workflowRuntime.fastConnectionPreview?.(node) ?? { ok: false, error: { code: 'SERVICE_UNAVAILABLE', message: 'Fast Decision is unavailable for the active user.' } }, candidateStatus: candidate => workflowRuntime.getNativeWorkflowController?.()?.candidateStatus?.(candidate) }; }
+function workspaceInputs() { const context = ctx(), hostProfiles = profiles(); nodeProfileInputsKey = nodeProfileMetadataKey(context, hostProfiles); return { settings: settings(), profiles: readNodeProfileMetadata(context, hostProfiles), activeModel: activeModelMetadata(context), result: workflowState.result, resolveBinding: (node, graph) => resolveBinding(node, graph, ctx()), candidateStatus: candidate => workflowRuntime.getNativeWorkflowController?.()?.candidateStatus?.(candidate) }; }
 function refreshWorkflowPreparation() {
     if (!current || !workspacePrepared) return;
     workspacePrepared.workflow = prepareWorkflowProjection(current, { ...workspaceInputs(), ...(workspacePrepared.planner ? { planner: workspacePrepared.planner } : {}) });
@@ -448,7 +412,7 @@ export function close() {
     cancelImportReview(); document.removeEventListener('pc-native-result', receiveAutomaticWorkflow);
     documentTransition = true; workflowSession.cancel('Workflow view closed'); documentTransition = false;
     canvas?.cancelGesture(); persistGraphViews(true); graphViews?.deactivate(); graphViews = null; rootRunEpoch++; uiEpoch++;
-    workbench?.update({ graphViews: undefined, fastConnectionsActive: false });
+    workbench?.update({ graphViews: undefined });
     nativeWireBridge?.cancel('view-close'); root?.classList.remove('pc-open');
 }
 export function toggle() { isOpen() ? close() : open(); }
@@ -498,7 +462,7 @@ function build() {
         command(name) {
             if (name.startsWith('open-recent:')) return ensureDocumentCommands().recent(name.slice(12));
             if (name.startsWith('recover-workflow:')) return ensureDocumentCommands().recover(name.slice(17));
-            const commands = { new: onNewGraph, rename: onRenameGraph, save: onSaveGraph, 'save-as': () => onSaveGraph(true), 'download-document': onSaveGraph, 'clear-recent': () => ensureDocumentCommands().clearRecent(), 'open-workflow': onImportGraph, 'import-into-graph': onImportIntoGraph, export: onExportGraph, 'export-archived-workflows': onExportArchivedWorkflows, undo: doUndo, redo: doRedo,
+            const commands = { new: onNewGraph, rename: onRenameGraph, save: onSaveGraph, 'save-as': () => onSaveGraph(true), 'download-document': onSaveGraph, 'clear-recent': () => ensureDocumentCommands().clearRecent(), 'open-workflow': onImportGraph, 'import-into-graph': onImportIntoGraph, export: onExportGraph, 'export-archived-workflows': onExportArchivedWorkflows, 'manage-portals': () => openPortalManager(), undo: doUndo, redo: doRedo,
                 fit: () => canvas.fit(), 'fit-selection': () => canvas.fitSelection(), copy: () => copySelection(), cut: () => copySelection(true), paste: pasteFromClipboard,
                 'delete-selection': () => canvas.deleteSelection(), 'run-workflow': workflowActions.run, 'stop-workflow': () => workflowSession.cancel('Stopped by user'),
                 theme: toggleThemePopover, inspector: togglePane, 'reveal-inspector': () => { if (root.classList.contains('pc-details-hidden')) togglePane(); }, close };
@@ -509,7 +473,7 @@ function build() {
         graphViewActions, nodeDetails: nodeDetailsActions, commentDetails: commentDetailsActions, outputPreview: outputPreviewActions, runDetails: runDetailsActions,
         chooseNative: chooseNativeNode, managePortals: () => openPortalManager(), shelfSubgraph: shelfSubgraphAction,
         subgraphSave: { close() { pendingSubgraphSave = null; workbench.update({ subgraphSave: null }); }, save: saveSubgraphToShelf },
-        documentPrompt: { choose: chooseDocumentPrompt }, fastConnections: fastConnectionsActions,
+        documentPrompt: { choose: chooseDocumentPrompt },
         recall: recallActions, storyDocuments: storyDocumentsActions, configureNode: configureNodeActions,
         acceptImport: acceptImportReview, cancelImport: cancelImportReview, prepareImportAgain,
     });
@@ -798,7 +762,7 @@ function doRedo() { restoreGraphHistory('redo', 'Redid'); }
 
 function renderDocumentState() {
     if (!workbench) return;
-    workbench.update({ document: ensureDocumentCommands().view(), graphId: current?.id ?? '', enabled: !!settings().enabled, hasArchivedWorkflows: Object.keys(settings().archivedWorkflows?.graphs ?? {}).length > 0 });
+    workbench.update({ document: ensureDocumentCommands().view(), graphId: current?.id ?? '', enabled: !!settings().enabled, hasArchivedWorkflows: Object.keys(settings().archivedWorkflows?.graphs ?? {}).length > 0 || Object.keys(settings().archivedWorkflows?.definitions ?? {}).length > 0 });
 }
 
 function renderStatus() { safe(() => document.dispatchEvent(new CustomEvent('pc-state'))); workbench.update({ enabled: !!settings().enabled }); refreshRecallOverview(); }
@@ -897,6 +861,7 @@ function onExportGraph() {
         return true;
     } catch (error) { toast(error?.message || 'The workflow could not be exported.', 'error'); return false; }
 }
+
 
 function cancelImportReview() { pendingImport = null; workbench?.update({ importReview: null }); }
 
@@ -1471,7 +1436,6 @@ const nodeDetailsActions = {
     cancelRecall(selection){const captured=detailCapture(selection,true);return captured.ok?recallActions.change([selection.address.nodeId],'cancel'):captured;},
     revealRecallShortcut:nodeId=>openRecallDetails(nodeId),
     editHelperBinding(selection,role,field,mode,value) { return editIterationHelperBinding(selection,role,field,mode,value); },
-    openFastConnections() { workbench?.update({ fastConnectionsActive: true }); },
     editPhase(selection, phase) {
         const captured = detailCapture(selection); if (!captured.ok) return captured;
         return commitCaptured(captured.data, prepareScopeMutation(captured.data, context => {

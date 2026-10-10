@@ -195,15 +195,13 @@ test('lesson 24 wires genuine scheduled crossings and retained interrupt remaind
  }
 });
 
-test('lesson 11 uses one typed connection and preserves accepted, rejected and unresolved confidence routes',async()=>{
- for(const [metric,label] of [[.97,true],[.03,false],[.55,undefined]]){
-  const graph=installed(11);node(graph,'promise-decision').fastConnectionId='fixture-typed';let typed=0;
-  const binding={connectionId:'fixture-typed',model:'fixture-jev',provider:'jev'};
-  const f=unifiedRecipeHost(graph,{request:async()=>{throw Error('Fast must not silently use ordinary fallback');},ports:{resolveFastBinding:()=>({ok:true,data:binding}),fastBindingSummary:()=>({model:binding.model,profileId:null}),requestFastDecision:async()=>{typed++;return {ok:true,data:{model:binding.model,answers:{promise:{type:'noul',noul:metric}},usage:{input_tokens:8,output_tokens:1}}};}}});
+test('lesson 11 uses one ordinary Decision and preserves accepted rejected and unresolved routes',async()=>{
+ for(const accepted of [true,false,null]){
+  const f=unifiedRecipeHost(installed(11),{request:async()=>response({answers:{promise:{type:'noul',accepted}}})});
   try {
    const result=await f.generate('Rowan listens to the promise.');assert.equal(result.ok,true,JSON.stringify(result.error));
-   const outcome=result.recording.artifacts.map(a=>a.value?.value).find(v=>v?.metric===metric&&v?.policy);
-   assert.ok(outcome);assert.equal(outcome.accepted,label);assert.equal(typed,1);assert.equal(f.calls(),0);assert.equal(f.saves(),0);assert.ok(candidate(result).text.startsWith('Rowan listens'));
+   const answer=result.recording.artifacts.map(a=>a.value?.value).find(v=>v?.answers?.promise);
+   assert.ok(answer);assert.equal(answer.answers.promise.accepted,accepted);assert.equal(f.calls(),1);assert.equal(f.saves(),0);assert.equal(result.reviewHandles.length,1);assert.ok(candidate(result).text.startsWith('Rowan listens'));
   } finally {f.controller.dispose();}
  }
 });
@@ -288,17 +286,18 @@ test('lesson 29 requires explicit per-actor permission and preserves isolated pr
  const body='Rowan and Iris kiss beside the lighthouse door.';
  for(const permission of [false,true,'rowan-only']){
   const permitted=key=>permission===true||(permission==='rowan-only'&&key==='rowan'),count=permission===true?2:permission==='rowan-only'?1:0;
-  const graph=installed(29);node(graph,'kiss-decision').fastConnectionId='fixture-kiss';
+  const graph=installed(29);
   for(const key of ['rowan','iris'])node(graph,key+'-permission-text').text=JSON.stringify({allowModelAuthoredReflection:permitted(key)});
-  let typed=0;const reflections=[];const binding={connectionId:'fixture-kiss',model:'fixture-jev',provider:'jev'};
-  const f=unifiedRecipeHost(graph,{configureContext:privateCastContext,documents:[privateDoc('rowan-moments',actor),privateDoc('iris-moments',partner)],ports:{resolveFastBinding:()=>({ok:true,data:binding}),fastBindingSummary:()=>({model:binding.model,profileId:null}),requestFastDecision:async()=>{typed++;return {ok:true,data:{model:binding.model,answers:{kiss:{type:'noul',noul:.97}},usage:{input_tokens:8,output_tokens:1}}};}},request:async options=>{
+  const reflections=[];
+  const f=unifiedRecipeHost(graph,{configureContext:privateCastContext,documents:[privateDoc('rowan-moments',actor),privateDoc('iris-moments',partner)],request:async options=>{
    const material=JSON.parse(options.messages[1].content);
+   if(material.questions?.kiss)return response({answers:{kiss:{type:'noul',accepted:true}}});
    if(material.request?.startsWith('Return exactly {sceneId')){const source=material.data;return response({sceneId:source.sceneId,sourceId:source.sourceId,revision:source.revision,actors:[{actorId:actor,status:'present',evidence:body},{actorId:partner,status:'present',evidence:body}]});}
    if(material.context?.source?.actorId){reflections.push(material);return response({reflection:material.context.source.actorId===actor?'Rowan privately remembers the sea.':'Iris privately remembers the fire.'});}
    return response([{eventType:'scene-action',actorId:actor,objectId:partner,position:{start:0,end:body.length},semantics:'actual'}]);
   }});
   try {
-   const result=await f.generate(body);assert.equal(result.ok,true,JSON.stringify(result.error));assert.equal(candidate(result).text,body);assert.equal(f.saves(),0);assert.equal(typed,1);assert.equal(f.calls(),2+count);assert.equal(reflections.length,count);
+   const result=await f.generate(body);assert.equal(result.ok,true,JSON.stringify(result.error));assert.equal(candidate(result).text,body);assert.equal(f.saves(),0);assert.equal(f.calls(),3+count);assert.equal(reflections.length,count);
    for(const material of reflections){const text=JSON.stringify(material);assert.equal(text.includes('ROWAN PRIVATE SEA')&&text.includes('IRIS PRIVATE FIRE'),false);assert.match(text,material.context.source.actorId===actor?/ROWAN PRIVATE SEA/:/IRIS PRIVATE FIRE/);}
    assert.doesNotMatch(candidate(result).text,/PRIVATE SEA|PRIVATE FIRE|privately remembers/);
    const applied=await f.controller.apply(result.reviewHandles[0]);assert.equal(applied.ok,true,JSON.stringify(applied.error));assert.equal(f.saves(),count);
@@ -345,18 +344,19 @@ test('lesson 27 holds a rejected or unresolved wild novelty proposal without pub
  try {const result=await f.generate('A rejected wild proposal.');assert.equal(result.ok,false);assert.equal(result.reviewHandles?.length??0,0);assert.equal(draws,1);assert.equal(f.saves(),0);assert.equal(f.c.chatMetadata.latticeDocuments,undefined);assert.equal(f.c.chat.length,1,'Unresolved required effect guidance holds native generation');}finally{f.controller.dispose();}
  }
 });
-test('lesson 29 preserves rejected and unresolved confidence while holding missing evidence without private reflections',async()=>{
+test('lesson 29 skips rejected evidence but holds unresolved or missing evidence before private reflection',async()=>{
  const body='Rowan and Iris discuss the lighthouse.';
- for(const [empty,metric] of [[true,.97],[false,.05],[false,.55]]){
-  const graph=installed(29);node(graph,'kiss-decision').fastConnectionId='fixture-kiss';for(const key of ['rowan','iris'])node(graph,key+'-permission-text').text=JSON.stringify({allowModelAuthoredReflection:true});
-  const binding={connectionId:'fixture-kiss',model:'fixture-jev',provider:'jev'};let typed=0;
-  const f=unifiedRecipeHost(graph,{configureContext:privateCastContext,documents:[privateDoc('rowan-moments',actor),privateDoc('iris-moments',partner)],ports:{resolveFastBinding:()=>({ok:true,data:binding}),fastBindingSummary:()=>({model:binding.model,profileId:null}),requestFastDecision:async()=>{typed++;return {ok:true,data:{model:binding.model,answers:{kiss:{type:'noul',noul:metric}},usage:{input_tokens:8,output_tokens:1}}};}},request:async options=>{
+ for(const [empty,accepted] of [[true,true],[false,false],[false,null]]){
+  const graph=installed(29);for(const key of ['rowan','iris'])node(graph,key+'-permission-text').text=JSON.stringify({allowModelAuthoredReflection:true});
+  let decisions=0;
+  const f=unifiedRecipeHost(graph,{configureContext:privateCastContext,documents:[privateDoc('rowan-moments',actor),privateDoc('iris-moments',partner)],request:async options=>{
    const material=JSON.parse(options.messages[1].content);
+   if(material.questions?.kiss){decisions++;return response({answers:{kiss:{type:'noul',accepted}}});}
    if(material.request?.startsWith('Return exactly {sceneId')){const source=material.data;return response({sceneId:source.sceneId,sourceId:source.sourceId,revision:source.revision,actors:[{actorId:actor,status:'present',evidence:body},{actorId:partner,status:'present',evidence:body}]});}
    if(material.context?.source?.actorId)throw Error('Absent/unconfirmed kiss must not request private reflection');
    return response(empty?[]:[{eventType:'scene-action',actorId:actor,objectId:partner,position:{start:0,end:body.length},semantics:'actual'}]);
   }});
-  try {const result=await f.generate(body);if(!empty){assert.equal(result.ok,true,JSON.stringify(result.error));assert.equal(candidate(result).text,body);assert.equal(result.reviewHandles.length,1);if(metric===.55){const gate=result.recording.artifacts.map(a=>a.value?.value).find(v=>v?.metric===metric&&v?.policy);assert.ok(gate,'Unresolved confidence remains an explicit recorded result');assert.equal(gate.accepted,undefined);}assert.equal((await f.controller.apply(result.reviewHandles[0])).ok,true);}else{assert.equal(result.ok,false,'Missing candidate evidence holds: '+JSON.stringify({empty,metric}));assert.equal(result.error.code,'UNRESOLVED_INPUT');assert.equal(result.reviewHandles?.length??0,0);}assert.equal(f.saves(),0);assert.equal(typed,empty?0:1);assert.equal(f.c.chatMetadata.latticeDocuments,undefined);assert.equal(f.c.chat.at(-1).mes,body);}finally{f.controller.dispose();}
+  try {const result=await f.generate(body);if(!empty&&accepted===false){assert.equal(result.ok,true,JSON.stringify(result.error));assert.equal(candidate(result).text,body);assert.equal(result.reviewHandles.length,1);assert.equal((await f.controller.apply(result.reviewHandles[0])).ok,true);}else{assert.equal(result.ok,false);assert.equal(result.error.code,'UNRESOLVED_INPUT');assert.equal(result.reviewHandles?.length??0,0);}assert.equal(f.saves(),0);assert.equal(decisions,empty?0:1);assert.equal(f.c.chatMetadata.latticeDocuments,undefined);assert.equal(f.c.chat.at(-1).mes,body);}finally{f.controller.dispose();}
  }
 });
 
@@ -376,15 +376,16 @@ test('lesson 27 requires an actual use and accepted known holder before drawing 
 test('lesson 29 requires both actors present before either permitted private reflection',async()=>{
  const body='Rowan and Iris kiss beside the lighthouse door.';
  for(const [rowanPresent,irisStatus] of [[false,'absent'],[true,'absent'],[true,'unresolved']]){
-  const graph=installed(29);node(graph,'kiss-decision').fastConnectionId='fixture-kiss';for(const key of ['rowan','iris'])node(graph,key+'-permission-text').text=JSON.stringify({allowModelAuthoredReflection:true});
-  const binding={connectionId:'fixture-kiss',model:'fixture-jev',provider:'jev'};const reflections=[];
-  const f=unifiedRecipeHost(graph,{configureContext:privateCastContext,documents:[privateDoc('rowan-moments',actor),privateDoc('iris-moments',partner)],ports:{resolveFastBinding:()=>({ok:true,data:binding}),fastBindingSummary:()=>({model:binding.model,profileId:null}),requestFastDecision:async()=>({ok:true,data:{model:binding.model,answers:{kiss:{type:'noul',noul:.97}},usage:{input_tokens:8,output_tokens:1}}})},request:async options=>{
+  const graph=installed(29);for(const key of ['rowan','iris'])node(graph,key+'-permission-text').text=JSON.stringify({allowModelAuthoredReflection:true});
+  const reflections=[];
+  const f=unifiedRecipeHost(graph,{configureContext:privateCastContext,documents:[privateDoc('rowan-moments',actor),privateDoc('iris-moments',partner)],request:async options=>{
    const material=JSON.parse(options.messages[1].content);
+   if(material.questions?.kiss)return response({answers:{kiss:{type:'noul',accepted:true}}});
    if(material.request?.startsWith('Return exactly {sceneId')){const source=material.data;return response({sceneId:source.sceneId,sourceId:source.sourceId,revision:source.revision,actors:[{actorId:actor,status:rowanPresent?'present':'absent',evidence:body},{actorId:partner,status:irisStatus,evidence:body}]});}
    if(material.context?.source?.actorId){reflections.push(material.context.source.actorId);assert.equal(material.context.source.actorId,actor);assert.doesNotMatch(JSON.stringify(material),/IRIS PRIVATE FIRE/);return response({reflection:'Rowan alone privately remembers the sea.'});}
    return response([{eventType:'scene-action',actorId:actor,objectId:partner,position:{start:0,end:body.length},semantics:'actual'}]);
   }});
-  try {const result=await f.generate(body);if(irisStatus==='unresolved'){assert.equal(result.ok,false,'Unresolved participation is held explicitly');assert.equal(result.error.code,'UNRESOLVED_INPUT');assert.equal(result.reviewHandles?.length??0,0);}else{assert.equal(result.ok,true,JSON.stringify(result.error));assert.equal(candidate(result).text,body);assert.equal((await f.controller.apply(result.reviewHandles[0])).ok,true);}assert.deepEqual(reflections,[],'A paired kiss recipe needs both actually present actors');assert.equal(f.calls(),2);assert.equal(f.saves(),0);assert.deepEqual(documentContent(f,'rowan-moments'),[]);assert.deepEqual(documentContent(f,'iris-moments'),[]);}finally{f.controller.dispose();}
+  try {const result=await f.generate(body);if(irisStatus==='unresolved'){assert.equal(result.ok,false,'Unresolved participation is held explicitly');assert.equal(result.error.code,'UNRESOLVED_INPUT');assert.equal(result.reviewHandles?.length??0,0);}else{assert.equal(result.ok,true,JSON.stringify(result.error));assert.equal(candidate(result).text,body);assert.equal((await f.controller.apply(result.reviewHandles[0])).ok,true);}assert.deepEqual(reflections,[],'A paired kiss recipe needs both actually present actors');assert.equal(f.calls(),3);assert.equal(f.saves(),0);assert.deepEqual(documentContent(f,'rowan-moments'),[]);assert.deepEqual(documentContent(f,'iris-moments'),[]);}finally{f.controller.dispose();}
  }
 });
 

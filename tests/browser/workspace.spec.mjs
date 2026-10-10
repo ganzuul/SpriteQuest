@@ -1,5 +1,6 @@
 import { rootCommand, expectRootBusy } from './workflow-commands.mjs';
 import { test, expect } from '@playwright/test';
+import { chooseNodeProfile } from './details-helpers.mjs';
 
 async function previewMenu(page, command) {
     await page.getByRole('button', { name: 'Preview', exact: true }).focus();
@@ -213,7 +214,7 @@ test('Run to here and Stop remain active while the preview divider resizes', asy
     for (const operation of ['smart-compactor', 'response-plan']) {
         const id = await page.evaluate(operation => Object.values(window.canvasHarness.graph.nodes).find(node => node.operation === operation).id, operation);
         await page.locator(`.pc-node-native[data-id="${id}"] .pc-native-heading`).click();
-        await page.getByRole('region', { name: 'Node details', exact: true }).getByLabel('Connection profile', { exact: true }).selectOption('analysis');
+        await chooseNodeProfile(page, id, 'analysis');
     }
     await page.locator('.pc-output-preview [data-run-here]').click();
     await expect(page.locator('.pc-root-stop')).toHaveText('■ Stop');

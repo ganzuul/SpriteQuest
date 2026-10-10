@@ -119,27 +119,27 @@ test('cancel after awaited child execution and unsafe failures never publish or 
 
 import {executeModelNode} from '../src/workflow/operations/model-nodes.js?v=0.27.0';
 import {executeDecision} from '../src/workflow/operations/decision-nodes.js?v=0.27.0';
-const requestHelper=(id='mixed')=>definition({id,nodes:{decide:{id:'decide',type:'workflow',operation:'fast-decision',fastConnectionId:'jev-saved',questions:{event:{type:'noul',instructions:'An event?'}}},compose:{id:'compose',type:'workflow',operation:'compose',mode:'template',template:'{{data:}}'},model:{id:'model',type:'workflow',operation:'model-call',outputKind:'data'}},wires:{a:edge('a','entry','out','decide','in'),b:edge('b','decide','out','compose','data'),c:edge('c','compose','out','model','prompt'),d:edge('d','model','out','exit','in')}});
+const requestHelper=(id='mixed')=>definition({id,nodes:{decide:{id:'decide',type:'workflow',operation:'decision',questions:{event:{type:'noul',instructions:'An event?'}}},compose:{id:'compose',type:'workflow',operation:'compose',mode:'template',template:'{{data:}}'},model:{id:'model',type:'workflow',operation:'model-call',outputKind:'data'}},wires:{a:edge('a','entry','out','decide','in'),b:edge('b','decide','out','compose','data'),c:edge('c','compose','out','model','prompt'),d:edge('d','model','out','exit','in')}});
 function requestExecutor(seen,provider){return async(unit,inputs,local)=>{
  if(unit.node.operation==='for-each')return executeControl(unit.node,inputs,local);
  const metadata={childAddress:unit.address,modelRole:unit.node.modelRole,binding:{profileId:unit.node.profileId,model:unit.node.model}};
- if(unit.node.operation==='fast-decision')return executeDecision(unit.node,inputs,{phase:local.phase,typedRequest:options=>local.request({...options,...metadata,capability:'typed-decision'})});
+ if(unit.node.operation==='decision')return executeDecision(unit.node,inputs,{phase:local.phase,request:options=>local.request({...options,...metadata,capability:'text-completion'})});
  if(unit.node.operation==='model-call')return executeModelNode(unit.node,inputs,{phase:local.phase,request:options=>local.request({...options,...metadata,capability:'text-completion'})});
  return executePrimitive(unit.node,inputs,{phase:local.phase});
 };}
 
-test('mixed typed and text adapters share ordered per-iteration requests and real child provenance',async()=>{
+test('Decision and Model Call share ordered per-iteration requests and real child provenance',async()=>{
  const fixture=setup(requestHelper()),compiled=compile(fixture,{requestBoundPerIteration:2});assert.equal(compiled.ok,true,JSON.stringify(compiled.error));assert.equal(compiled.data.description.requestBound,2);
- const seen=[];const request=async options=>{seen.push(options);return options.capability==='typed-decision'?{ok:true,data:{model:'Jev',answers:{event:{type:'noul',noul:0.8}},usage:{input_tokens:2,output_tokens:1}}}:{ok:true,data:{text:'{"observation":"surprise"}',finish:'stop',usage:{input:3,output:2}}};};
+ const seen=[];const request=async options=>{seen.push(options);return options.iteration.childAddress.nodeId==='decide'?{ok:true,data:{text:'{"answers":{"event":{"type":"noul","accepted":true}}}',finish:'stop',usage:{input_tokens:2,output_tokens:1}}}:{ok:true,data:{text:'{"observation":"surprise"}',finish:'stop',usage:{input:3,output:2}}};};
  const each={type:'workflow',operation:'for-each',helper:fixture.ref,mode:'map',limit:2,requestBoundPerIteration:2};
  const result=await executeControl(each,{in:data([{amount:1},{amount:2}])},{address,phase:'pre',rootMode:'native-unified',request,iterateHelper:(call,ports)=>compiler.executeCompiledIteration(compiled.data.token,call,{...ports,executeUnit:requestExecutor()})});
- assert.equal(result.ok,true,JSON.stringify(result.error));assert.deepEqual(result.outputs.out.value,[{observation:'surprise'},{observation:'surprise'}]);assert.deepEqual(seen.map(x=>x.capability),['typed-decision','text-completion','typed-decision','text-completion']);
+ assert.equal(result.ok,true,JSON.stringify(result.error));assert.deepEqual(result.outputs.out.value,[{observation:'surprise'},{observation:'surprise'}]);assert.deepEqual(seen.map(x=>x.capability),['text-completion','text-completion','text-completion','text-completion']);
  assert.deepEqual(seen.map(x=>x.iteration.childAddress.instancePath),[['each','iteration-0'],['each','iteration-0'],['each','iteration-1'],['each','iteration-1']]);assert.deepEqual(seen.map(x=>x.iteration.childAddress.nodeId),['decide','model','decide','model']);
 });
 
 test('nested mixed helper requests retain both finite wrappers and actual nested child identities',async()=>{
  const child=requestHelper('mixed-child'),ref={id:child.id,version:1,semanticHash:child.semanticHash};const parent=definition({id:'nested-models',nodes:{nested:{id:'nested',type:'workflow',operation:'for-each',helper:ref,limit:2,requestBoundPerIteration:2}},wires:{a:edge('a','entry','out','nested','in'),b:edge('b','nested','out','exit','in')}}),fixture=setup(parent,{[definitionRefKey(ref)]:child}),compiled=compile(fixture,{requestBoundPerIteration:4});assert.equal(compiled.ok,true,JSON.stringify(compiled.error));assert.equal(compiled.data.description.requestBound,4);
- const seen=[];const request=async options=>{seen.push(options);return options.capability==='typed-decision'?{ok:true,data:{model:'Jev',answers:{event:{type:'noul',noul:0.8}},usage:{input_tokens:1,output_tokens:1}}}:{ok:true,data:{text:'{"done":true}',finish:'stop'}};};
+ const seen=[];const request=async options=>{seen.push(options);return options.iteration.childAddress.nodeId==='decide'?{ok:true,data:{text:'{"answers":{"event":{"type":"noul","accepted":true}}}',finish:'stop',usage:{input_tokens:1,output_tokens:1}}}:{ok:true,data:{text:'{"done":true}',finish:'stop'}};};
  const each={type:'workflow',operation:'for-each',helper:fixture.ref,limit:1,requestBoundPerIteration:4};const result=await executeControl(each,{in:data([[{amount:1},{amount:2}]])},{address,phase:'pre',rootMode:'native-unified',request,iterateHelper:(call,ports)=>compiler.executeCompiledIteration(compiled.data.token,call,{...ports,executeUnit:requestExecutor()})});
  assert.equal(result.ok,true,JSON.stringify(result.error));assert.equal(seen.length,4);assert.deepEqual(result.outputs.out.value,[[{done:true},{done:true}]]);assert.deepEqual(seen[2].iteration.childAddress.instancePath,['each','iteration-0','nested','iteration-1']);
  const tooSmall=compile(fixture,{requestBoundPerIteration:3});assert.equal(tooSmall.ok,false);assert.equal(tooSmall.error.code,'ITERATION_CALL_LIMIT');

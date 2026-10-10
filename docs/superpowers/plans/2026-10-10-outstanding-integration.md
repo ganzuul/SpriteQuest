@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Consolidate outstanding repository work into verified Main and close eight integrated linked worktrees, retaining the active shelf checkout.
+**Goal:** Consolidate outstanding repository work into verified Main and close all nine integrated linked worktrees.
 
 **Architecture:** Prepare a candidate integration branch in the primary checkout after preserving its original files and all source worktrees. Merge source history sequentially, resolve overlaps by reviewed intent, regenerate the UI bundle, and promote the tested candidate to Main. Read-only audits and independent reviews can run in parallel; Git mutations remain sequential.
 
@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- Exclude the entire active `compact-node-shelf/SillyCanvas` checkout, including scale, opacity, bold labels and icons.
+- Include the completed compact shelf, opacity, bold labels and icons; integrate it last after typed pins.
 - Preserve Main's 0.27 curriculum and retired-root guards; keep every installed import consistently versioned.
 - Preserve document independence, scoped metadata, provider-default behavior, and zero unintended model calls.
 - Keep source branches, verified archives and the Git bundle; never remove a source before its state is accounted for.
@@ -77,12 +77,12 @@
 
 **Files:** Main ref, registered worktree state, integration report and preservation manifest.
 
-**Interfaces:** Consumes a verified candidate; produces consolidated Main and only the protected shelf linked checkout.
+**Interfaces:** Consumes a verified candidate; produces consolidated Main and no linked checkouts.
 
 - [ ] Recheck GitHub Main and local source state for concurrent changes; reconcile anything new before promotion.
 - [ ] Fast-forward local Main to the verified candidate. Publish through a normal push only if the user authorizes publication of the reviewed result; otherwise report local Main ahead of origin. If published, verify GitHub SHA with network-enabled GitHub CLI.
-- [ ] Verify preserved archives and hashes before closing the eight included linked worktrees. Prefer native archive when available for the owning attachment; otherwise use exact checked Git worktree paths backed by the preservation archives. Keep recovery branch refs.
-- [ ] Recheck `git worktree list`, Main status and source accounting. Confirm only the primary checkout and active shelf worktree remain.
+- [ ] Verify preserved archives and hashes before closing the nine included linked worktrees. Prefer native archive when available for the owning attachment; otherwise use exact checked Git worktree paths backed by the preservation archives. Keep recovery branch refs.
+- [ ] Recheck `git worktree list`, Main status and source accounting. Confirm only the primary checkout remains.
 
 ## Plan review
 

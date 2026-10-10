@@ -31,7 +31,7 @@ function mountedNodeBindings(def,definitions,primitives,overrides) {
     const bindings={};
     for(const unit of primitives){
         const op=operationFor(unit.node),role=unit.node.modelRole??op?.modelRole;
-        if(!role||op?.requestCapability==='typed-decision')continue;
+        if(!role)continue;
         const path=unit.address.instancePath,chain=path.length?definitionChain({nodes:def.body.nodes,definitions},path):[];
         const saved=(chain?.at(-1)?.definition.body??def.body).nodes[unit.address.nodeId];
         const explicit={};

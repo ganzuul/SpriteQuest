@@ -91,7 +91,7 @@ export function projectNodeProfiles(editor, workflow, revision) {
     return Object.values(editor.prepared.effectiveNodes).flatMap(node => {
         const op = operationFor(node), bound = op?.requestBound;
         const requestBound = typeof bound === 'function' ? bound(node) : bound || 0;
-        if (!requestBound || op.requestCapability === 'typed-decision') return [];
+        if (!requestBound) return [];
         const prepared = library ? null : workflow.nodes.find(row => row.id === node.id);
         const role = node.modelRole ?? op.modelRole;
         const value = prepared?.profileId ?? node.profileId ?? editor.prepared.savedGraph.roles?.[role]?.profileId ?? '';
@@ -123,15 +123,12 @@ export function projectWorkspacePanels(editor, workflow, state, revision, select
         if (key === 'roleOverrides' && saved.operation === 'for-each' || descriptor.hidden || fileInput && ['fileName', 'content', 'loaded'].includes(key)) return false;
         const effectiveNode = editor.prepared.effectiveNodes[selectedId];
         if (!visibleDetailControl(saved, metadata.defaults, key) && !visibleDetailControl(effectiveNode, metadata.defaults, key)) return false;
-        if (saved.operation === 'fast-decision' && ['fallbackProfileId', 'fallbackAllowedCodes'].includes(key)) return true;
         const condition = descriptor.visibleWhen;
         return !condition || [saved,effectiveNode].some(node => (node?.[condition.key] ?? metadata.defaults[condition.key] ?? metadata.controlDescriptors[condition.key]?.default) === condition.value);
     }).map(([key, descriptor]) => {
         const fallback = metadata.defaults[key] ?? descriptor.default;
         const value = saved?.[key] ?? fallback, effectiveValue = editor.prepared.effectiveNodes[selectedId]?.[key] ?? fallback;
-        const selector = saved.operation === 'fast-decision' && key === 'fastConnectionId' ? workflow.fastConnections ?? [] : saved.operation === 'fast-decision' && key === 'fallbackProfileId' ? workflow.profiles.map(profile => ({ value: profile.id, label: profile.name })) : null;
-        const options = selector ? [{ value: '', label: key === 'fastConnectionId' ? 'Choose a configured Fast connection' : 'Choose a fallback text connection' }, ...(value && !selector.some(option => option.value === value) ? [{ value, label: 'Unavailable connection · ' + value }] : []), ...selector] : null;
-        return { ...detailControl(key, descriptor.label || friendlyControlLabel(key), ['recall','hotkey-arm'].includes(saved.operation)&&descriptor.values?{...descriptor,valueLabels:Object.fromEntries(descriptor.values.map(value=>[value,recallControlLabel(key,value)??value]))}:descriptor, value), ...detailPresentation(saved.operation, key), ...(options ? { editor: 'enum', options, help: key === 'fastConnectionId' ? 'Configure Jev, Laya or a compatible typed model in Fast connections. Only this selector is stored in the workflow.' : 'Select this profile and error codes before enabling fallback. The fallback uses the selected profile model.' } : {}), ...(JSON.stringify(value) === JSON.stringify(effectiveValue) ? {} : { effective: displayEffective(effectiveValue), source: 'Effective instance override' }) };
+        return { ...detailControl(key, descriptor.label || friendlyControlLabel(key), ['recall','hotkey-arm'].includes(saved.operation)&&descriptor.values?{...descriptor,valueLabels:Object.fromEntries(descriptor.values.map(value=>[value,recallControlLabel(key,value)??value]))}:descriptor, value), ...detailPresentation(saved.operation, key), ...(JSON.stringify(value) === JSON.stringify(effectiveValue) ? {} : { effective: displayEffective(effectiveValue), source: 'Effective instance override' }) };
     }) : [];
     const modes = [{ value: 'inherit', label: 'Inherit role' }, { value: 'override', label: 'Override' }];
     const field = (key, options) => {
@@ -155,7 +152,7 @@ export function projectWorkspacePanels(editor, workflow, state, revision, select
     const boundary = interfacePort ? { id: interfacePort.id, label: interfacePort.label, direction: interfacePort.direction, kind: interfacePort.kind, required: interfacePort.required, kinds: [...ARTIFACT_KINDS] } : null;
     const commentDetails = isCommentFrame(saved) ? { selection, comment: { id: saved.id, x: saved.x, y: saved.y, w: saved.w, h: saved.h, title: saved.title ?? 'Comment', content: saved.content ?? '', color: saved.color ?? '#637d89', moveContents: saved.moveContents !== false, selected: true, readOnly: editor.readOnly || library } } : null;
     const nodeDetails = saved && metadata && !commentDetails ? { ...selection, title: boundary?.label ?? (presentation.alias || (typeof saved.title === 'string' ? saved.title : metadata.canonicalTitle)), canonicalTitle: metadata.canonicalTitle, operation: saved.operation, iconPath: metadata.iconPath, family: metadata.family, familyColor: metadata.familyColor, phase: effective?.phase ?? phaseForNode(graph,saved) ?? metadata.phase ?? graph.mode.slice(7), phaseEditable: graph.mode === 'native-unified' && OPERATIONS[saved.operation]?.phase === 'both', alias: presentation.alias, compact: presentation.compact, enabled: saved.enabled !== false, readOnly: editor.readOnly || library, canPresent: true, controls, ...(fileInput ? { fileInput } : {}), ...(boundary ? { boundary } : {}),
-        model: metadata.requestCapability !== 'typed-decision' && metadata.modelRole && (effective?.effective !== 'No model call' || saved.model || saved.profileId || Object.keys(editor?.prepared.drawBase.bindingBlocks?.[selectedId] ?? {}).length) ? { role: saved.modelRole ?? metadata.modelRole, roleEditable: true, editable: !library, profileDefaultModel: editor.prepared.drawBase.profileDefaultModels?.[selectedId] ?? !!saved.profileId, profile: field('profileId', workflow.profiles.map(profile => ({ value: profile.id, label: profile.name }))), model: field('model'), effective: effective?.effective || (library ? [editor.prepared.effectiveNodes[selectedId]?.profileId ?? graph.roles?.[saved.modelRole ?? metadata.modelRole]?.profileId,editor.prepared.effectiveNodes[selectedId]?.model ?? graph.roles?.[saved.modelRole ?? metadata.modelRole]?.model].filter(Boolean).join(' · ') : ''), source: editor.prepared.drawBase.instanceBindingSources?.[selectedId] ? 'Containing instance override' : saved.profileId || saved.model ? 'Node override' : 'Inherited from ' + (saved.modelRole ?? metadata.modelRole), ...(effective?.issue ? {issue: effective.issue} : {}) } : null,
+        model: metadata.modelRole && (effective?.effective !== 'No model call' || saved.model || saved.profileId || Object.keys(editor?.prepared.drawBase.bindingBlocks?.[selectedId] ?? {}).length) ? { role: saved.modelRole ?? metadata.modelRole, roleEditable: true, editable: !library, profileDefaultModel: editor.prepared.drawBase.profileDefaultModels?.[selectedId] ?? !!saved.profileId, profile: field('profileId', workflow.profiles.map(profile => ({ value: profile.id, label: profile.name }))), model: field('model'), effective: effective?.effective || (library ? [editor.prepared.effectiveNodes[selectedId]?.profileId ?? graph.roles?.[saved.modelRole ?? metadata.modelRole]?.profileId,editor.prepared.effectiveNodes[selectedId]?.model ?? graph.roles?.[saved.modelRole ?? metadata.modelRole]?.model].filter(Boolean).join(' · ') : ''), source: editor.prepared.drawBase.instanceBindingSources?.[selectedId] ? 'Containing instance override' : saved.profileId || saved.model ? 'Node override' : 'Inherited from ' + (saved.modelRole ?? metadata.modelRole), ...(effective?.issue ? {issue: effective.issue} : {}) } : null,
         helperBindings: saved.operation === 'for-each' ? { ...editor.prepared.drawBase.iterationBindings?.[selectedId], editable: !(editor.readOnly || library) } : null,
         modifiers: modifierView(saved, metadata, !(editor.readOnly || library)),
         ports: metadata.ports.map(port => ({ id: port.port, label: port.label, direction: port.dir === 'in' ? 'input' : 'output', kind: port.kind })), issues: [] } : null;
@@ -291,7 +288,7 @@ function detailPresentation(operation, key) {
   : key === 'inputs' && operation === 'context-join' ? 'slots'
   : key === 'updates' && operation === 'state' ? 'numeric-map'
   : key === 'durations' ? 'durations' : undefined;
- const group = operation === 'fast-decision' && key.startsWith('fallback') ? 'Decision fallback' : ['pins','protectedLiterals','exemptions'].includes(key) ? 'Protections'
+ const group = ['pins','protectedLiterals','exemptions'].includes(key) ? 'Protections'
   : ['min','max','baseline','decay'].includes(key) ? 'Bounds'
   : key === 'durations' ? 'Phases'
   : ['separator','maxTokens'].includes(key) ? 'Output' : 'Main';

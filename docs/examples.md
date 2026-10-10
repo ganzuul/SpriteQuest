@@ -13,7 +13,7 @@ Every lesson has its own On Send → Generate Reply → Review / Publish lifecyc
 1. Use a disposable chat and select the actual native reply character. Adapt demonstration actor IDs, item IDs, aliases and instructions deliberately. Canonical actor IDs normally use `character:<avatar filename>`.
 2. Read the lesson requirements and call budget. Inspect its named checkpoints in Preview; independent copies retain aliases while internal IDs change.
 3. Bind every ordinary model node to **Active SillyTavern model** or a local Connection profile. The main reply uses SillyTavern's normal connection. Model Call's **Instructions** is its system message; Prompt Source supplies material. Character Direction uses its own literal `systemPrompt`. Its optional Data input supplies projected State or file values; public data or data from that exact same actor grant stays within the actor request.
-4. Configure **For Each → Helper model bindings** separately. Pure helpers need no model; model-backed helpers make bounded requests per item. **Tools → Fast connections…** configures typed Jev/Laya/compatible endpoints. Ordinary fallback must be explicitly enabled and bound. No lesson creates a provider or installs a typed endpoint.
+4. Configure **For Each → Helper model bindings** separately. Pure helpers need no model; model-backed helpers make bounded requests per item.
 5. Authorize live logical document targets in **Tools → Workflow Data…**, in the selected user/chat/actor scope, and initialize the shapes named by the lesson. These are not arbitrary OS paths. File Input imports a UTF-8 snapshot; it does not authorize a live file.
 6. Resolve validation/binding issues, keep the configured document open, and select **Enable Lattice**. Send normally in SillyTavern. Manual inspection does not start another native reply or queue recall.
 7. Compare the proposed body and staged effects at Review / Publish. Apply preserves the native original as a swipe and settles this reviewed result's authorized effects. Reject leaves accepted-policy effects unapplied.
@@ -34,7 +34,7 @@ Auxiliary calls are additional to native generation. The lesson budget includes 
 | 8 | Add an Observed Items dropdown | Reply Snapshot → Extract → Render Notes → Append. |
 | 9 | Show a travel card only when there is a destination | Condition → Branch → Join preserves a skipped Draft. |
 | 10 | Decide whether this scene needs a recap | Keyed Decision answers, including unresolved. |
-| 11 | Detect a promise with Fast Decision | Typed answer, Confidence Gate and explicit fallback. |
+| 11 | Detect a promise with Decision | Nullable accepted answer with explicit Branch routes. |
 | 12 | Plan, write, polish, and annotate one reply | Grouped planning, revision, extraction and enrichment. |
 | 13 | Build one reusable item-card processor | Exact pinned pure helper reused with parameters. |
 | 14 | Give every clue its own explanation | Bounded For Each model helper and ordered results. |

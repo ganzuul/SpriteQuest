@@ -3149,49 +3149,49 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
   {
     "id": "lesson-11",
     "number": 11,
-    "title": "Detect a promise with Fast Decision",
-    "goal": "Use a separately configured typed Jev/Laya connection and an explicit probability policy for promise detection.",
+    "title": "Detect a promise with Decision",
+    "goal": "Use an ordinary Decision with explicit accepted, rejected and unresolved routes for promise detection.",
     "lesson": {
       "difficulty": "Composition",
-      "focus": "Fast Decision and Confidence Gate",
+      "focus": "Decision, Select Fields and Branch",
       "learn": [
-        "Fast Decision and Confidence Gate",
+        "Decision, Select Fields and Branch",
         "Trace named artifacts to the owned Draft or accepted proposal."
       ],
       "requirements": [
         "Open this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.",
-        "Select a real configured typed Jev/Laya Fast Decision connection. Portable fastConnectionId is blank; credentials are never exported."
+        "Choose an ordinary connection on the Decision node bar or use Active SillyTavern."
       ],
       "steps": [
-        "Open Detect a promise with Fast Decision and inspect the named pins.",
-        "Inspect the explicit 0.90/0.10 policy and the separately labeled unresolved route.",
-        "Fallback exercise: enable fallback only for SERVICE_UNAVAILABLE and select a local ordinary fallback profile. Fallback textual answers retain their own fields; never pretend they have typed noul metrics.",
+        "Open Detect a promise with Decision and inspect the named pins.",
+        "Inspect answers.promise.accepted as true, false or null.",
+        "Branch routes all three outcomes explicitly; the optional Join preserves the native Draft for Review. Try hopeful or hypothetical wording without treating unresolved evidence as acceptance.",
         "Send in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals."
       ],
       "checkpoints": [
         {
-          "node": "Confidence Gate",
+          "node": "Branch",
           "port": "unresolved",
-          "expect": "A middle probability or fallback without typed metric remains visibly unresolved."
+          "expect": "A null answer remains an explicit unresolved route without claiming acceptance."
         }
       ],
       "experiments": [
         {
-          "change": "Raise acceptMin to0.99.",
-          "expect": "The same provider metric can move from accepted to unresolved."
+          "change": "Use hopeful or hypothetical promise wording",
+          "expect": "Inspect the nullable accepted answer and selected Branch route."
         }
       ],
       "cases": [
         {
-          "when": "Typed probability lies between policy thresholds",
-          "expect": "The explicit unresolved route is shown without treating it as false."
+          "when": "Unresolved promise evidence",
+          "expect": "The explicit unresolved route preserves the native Draft without acceptance."
         },
         {
           "when": "Rejected or stopped",
           "expect": "The existing story and staged effects are retained without settlement."
         }
       ],
-      "callBudget": "Default: 1 typed auxiliary request, no fallback. Exercise: at most 2 requests (typed attempt + explicitly enabled local fallback). One ordinary native generation."
+      "callBudget": "1 ordinary Decision auxiliary request and one ordinary native generation."
     },
     "packages": [
       {
@@ -3200,8 +3200,8 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
         "minRuntime": 2,
         "graph": {
           "id": "remastered-lesson-11",
-          "name": "11. Detect a promise with Fast Decision",
-          "description": "Use a separately configured typed Jev/Laya connection and an explicit probability policy for promise detection.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nSelect a real configured typed Jev/Laya Fast Decision connection. Portable fastConnectionId is blank; credentials are never exported.\n\nOpen Detect a promise with Fast Decision and inspect the named pins.\nInspect the explicit 0.90/0.10 policy and the separately labeled unresolved route.\nFallback exercise: enable fallback only for SERVICE_UNAVAILABLE and select a local ordinary fallback profile. Fallback textual answers retain their own fields; never pretend they have typed noul metrics.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: Default: 1 typed auxiliary request, no fallback. Exercise: at most 2 requests (typed attempt + explicitly enabled local fallback). One ordinary native generation.\nCheckpoints:\nConfidence Gate.unresolved: A middle probability or fallback without typed metric remains visibly unresolved.",
+          "name": "11. Detect a promise with Decision",
+          "description": "Use an ordinary Decision with explicit accepted, rejected and unresolved routes for promise detection.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nChoose an ordinary connection on the Decision node bar or use Active SillyTavern.\n\nOpen Detect a promise with Decision and inspect the named pins.\nInspect answers.promise.accepted as true, false or null.\nBranch routes all three outcomes explicitly; the optional Join preserves the native Draft for Review. Try hopeful or hypothetical wording without treating unresolved evidence as acceptance.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 1 ordinary Decision auxiliary request and one ordinary native generation.\nCheckpoints:\nBranch.unresolved: A null answer remains an explicit unresolved route without claiming acceptance.",
           "schema": 3,
           "runtime": 2,
           "mode": "native-unified",
@@ -3248,11 +3248,11 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "operationVersion": 1,
               "title": "Review / Publish",
               "enabled": true,
-              "x": 2260,
+              "x": 2620,
               "y": 240,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-6",
+              "inGroup": "stage-7",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -3279,38 +3279,34 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
             "promise-decision": {
               "id": "promise-decision",
               "type": "workflow",
-              "operation": "fast-decision",
+              "operation": "decision",
               "operationVersion": 1,
-              "title": "Fast Decision",
+              "title": "Decision",
               "enabled": true,
               "x": 460,
               "y": 560,
               "w": 300,
               "h": 210,
               "inGroup": "stage-1",
-              "profileId": null,
+              "profileId": "lattice:active-sillytavern",
               "model": null,
-              "modelRole": "fastDecision",
-              "alias": "Fast Decision",
+              "modelRole": "decision",
+              "alias": "Decision",
               "inputKind": "text",
               "questions": {
                 "promise": {
                   "type": "noul",
-                  "instructions": "Does this exact text contain an explicit promise by its speaker? A hope or hypothetical promise is insufficient."
+                  "instructions": "Does this exact text contain an explicit promise by its speaker? A hope or hypothetical promise is insufficient. Return accepted true, false or null when unresolved."
                 }
               },
-              "maxTokens": 2048,
-              "fastConnectionId": "",
-              "fallbackEnabled": false,
-              "fallbackAllowedCodes": [],
-              "fallbackProfileId": ""
+              "maxTokens": 2048
             },
-            "promise-gate": {
-              "id": "promise-gate",
+            "promise-acceptance": {
+              "id": "promise-acceptance",
               "type": "workflow",
-              "operation": "confidence-gate",
+              "operation": "select-fields",
               "operationVersion": 1,
-              "title": "Confidence Gate",
+              "title": "Select Fields",
               "enabled": true,
               "x": 820,
               "y": 240,
@@ -3320,15 +3316,35 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "profileId": null,
               "model": null,
               "modelRole": null,
-              "alias": "Confidence Gate",
-              "metricPath": [
-                "answers",
-                "promise",
-                "noul"
-              ],
-              "acceptMin": 0.9,
-              "rejectMax": 0.1,
-              "direction": "higher"
+              "alias": "Select Fields",
+              "fields": [
+                {
+                  "name": "accepted",
+                  "path": [
+                    "answers",
+                    "promise",
+                    "accepted"
+                  ]
+                }
+              ]
+            },
+            "promise-gate": {
+              "id": "promise-gate",
+              "type": "workflow",
+              "operation": "branch",
+              "operationVersion": 1,
+              "title": "Branch",
+              "enabled": true,
+              "x": 1180,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "inGroup": "stage-3",
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "artifactKind": "data",
+              "alias": "Branch"
             },
             "gate-outcome": {
               "id": "gate-outcome",
@@ -3337,11 +3353,11 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "operationVersion": 1,
               "title": "Join",
               "enabled": true,
-              "x": 1180,
+              "x": 1540,
               "y": 240,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-3",
+              "inGroup": "stage-4",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -3374,11 +3390,11 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "operationVersion": 1,
               "title": "Compose",
               "enabled": true,
-              "x": 1540,
+              "x": 1900,
               "y": 240,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-4",
+              "inGroup": "stage-5",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -3386,7 +3402,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "alias": "Compose",
               "mode": "template",
               "outputKind": "text",
-              "template": "<details><summary>Fast Decision and Confidence Gate</summary>\n{{data:}}\n</details>",
+              "template": "<details><summary>Decision, Select Fields and Branch</summary>\n{{data:}}\n</details>",
               "sections": [],
               "separator": "\n\n"
             },
@@ -3397,11 +3413,11 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "operationVersion": 1,
               "title": "Append",
               "enabled": true,
-              "x": 1900,
+              "x": 2260,
               "y": 240,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-5",
+              "inGroup": "stage-6",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -3418,7 +3434,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "y": 0,
               "w": 900,
               "h": 180,
-              "content": "Use a separately configured typed Jev/Laya connection and an explicit probability policy for promise detection.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nSelect a real configured typed Jev/Laya Fast Decision connection. Portable fastConnectionId is blank; credentials are never exported.\n\nOpen Detect a promise with Fast Decision and inspect the named pins.\nInspect the explicit 0.90/0.10 policy and the separately labeled unresolved route.\nFallback exercise: enable fallback only for SERVICE_UNAVAILABLE and select a local ordinary fallback profile. Fallback textual answers retain their own fields; never pretend they have typed noul metrics.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: Default: 1 typed auxiliary request, no fallback. Exercise: at most 2 requests (typed attempt + explicitly enabled local fallback). One ordinary native generation.\nCheckpoints:\nConfidence Gate.unresolved: A middle probability or fallback without typed metric remains visibly unresolved.",
+              "content": "Use an ordinary Decision with explicit accepted, rejected and unresolved routes for promise detection.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nChoose an ordinary connection on the Decision node bar or use Active SillyTavern.\n\nOpen Detect a promise with Decision and inspect the named pins.\nInspect answers.promise.accepted as true, false or null.\nBranch routes all three outcomes explicitly; the optional Join preserves the native Draft for Review. Try hopeful or hypothetical wording without treating unresolved evidence as acceptance.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 1 ordinary Decision auxiliary request and one ordinary native generation.\nCheckpoints:\nBranch.unresolved: A null answer remains an explicit unresolved route without claiming acceptance.",
               "commentFrame": true,
               "moveContents": false
             }
@@ -3445,59 +3461,75 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "route": "wire",
               "from": "promise-decision",
               "fromPort": "out",
-              "to": "promise-gate",
+              "to": "promise-acceptance",
               "toPort": "in"
             },
             "edge-4": {
               "id": "edge-4",
               "route": "wire",
-              "from": "promise-gate",
-              "fromPort": "accepted",
-              "to": "gate-outcome",
-              "toPort": "accepted"
+              "from": "promise-decision",
+              "fromPort": "out",
+              "to": "promise-gate",
+              "toPort": "in"
             },
             "edge-5": {
               "id": "edge-5",
               "route": "wire",
-              "from": "promise-gate",
-              "fromPort": "rejected",
-              "to": "gate-outcome",
-              "toPort": "rejected"
+              "from": "promise-acceptance",
+              "fromPort": "out",
+              "to": "promise-gate",
+              "toPort": "condition"
             },
             "edge-6": {
               "id": "edge-6",
+              "route": "wire",
+              "from": "promise-gate",
+              "fromPort": "yes",
+              "to": "gate-outcome",
+              "toPort": "accepted"
+            },
+            "edge-7": {
+              "id": "edge-7",
+              "route": "wire",
+              "from": "promise-gate",
+              "fromPort": "no",
+              "to": "gate-outcome",
+              "toPort": "rejected"
+            },
+            "edge-8": {
+              "id": "edge-8",
               "route": "wire",
               "from": "promise-gate",
               "fromPort": "unresolved",
               "to": "gate-outcome",
               "toPort": "unresolved"
             },
-            "edge-7": {
-              "id": "edge-7",
+            "edge-9": {
+              "id": "edge-9",
               "route": "wire",
               "from": "gate-outcome",
               "fromPort": "out",
               "to": "notes",
               "toPort": "data"
             },
-            "edge-8": {
-              "id": "edge-8",
+            "edge-10": {
+              "id": "edge-10",
               "route": "wire",
               "from": "generate",
               "fromPort": "draft",
               "to": "append",
               "toPort": "draft"
             },
-            "edge-9": {
-              "id": "edge-9",
+            "edge-11": {
+              "id": "edge-11",
               "route": "wire",
               "from": "notes",
               "fromPort": "out",
               "to": "append",
               "toPort": "section"
             },
-            "edge-10": {
-              "id": "edge-10",
+            "edge-12": {
+              "id": "edge-12",
               "route": "wire",
               "from": "append",
               "fromPort": "out",
@@ -3547,12 +3579,12 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "color": "#57416e",
               "collapsed": false,
               "members": [
-                "promise-gate"
+                "promise-acceptance"
               ]
             },
             "stage-3": {
               "id": "stage-3",
-              "title": "Response processing",
+              "title": "Preparation / processing",
               "description": "Stage 3. Wires determine execution; folding is presentation only.",
               "x": 1155,
               "y": 190,
@@ -3561,7 +3593,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "color": "#57416e",
               "collapsed": false,
               "members": [
-                "gate-outcome"
+                "promise-gate"
               ]
             },
             "stage-4": {
@@ -3575,14 +3607,28 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "color": "#57416e",
               "collapsed": false,
               "members": [
-                "notes"
+                "gate-outcome"
               ]
             },
             "stage-5": {
               "id": "stage-5",
-              "title": "Preparation / processing",
+              "title": "Response processing",
               "description": "Stage 5. Wires determine execution; folding is presentation only.",
               "x": 1875,
+              "y": 190,
+              "w": 350,
+              "h": 285,
+              "color": "#57416e",
+              "collapsed": false,
+              "members": [
+                "notes"
+              ]
+            },
+            "stage-6": {
+              "id": "stage-6",
+              "title": "Preparation / processing",
+              "description": "Stage 6. Wires determine execution; folding is presentation only.",
+              "x": 2235,
               "y": 190,
               "w": 350,
               "h": 285,
@@ -3592,11 +3638,11 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
                 "append"
               ]
             },
-            "stage-6": {
-              "id": "stage-6",
+            "stage-7": {
+              "id": "stage-7",
               "title": "Review / accepted staging",
-              "description": "Stage 6. Wires determine execution; folding is presentation only.",
-              "x": 2235,
+              "description": "Stage 7. Wires determine execution; folding is presentation only.",
+              "x": 2595,
               "y": 190,
               "w": 350,
               "h": 285,
@@ -3608,9 +3654,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
             }
           },
           "roles": {
-            "fastDecision": {
+            "decision": {
               "model": null,
-              "profileId": null
+              "profileId": "lattice:active-sillytavern"
             }
           },
           "portals": {},
@@ -17185,20 +17231,20 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
     "goal": "Confirm shared native kiss evidence, verify both actors, then separately permit and stage each actor’s private model-authored reflection with independent receipts.",
     "lesson": {
       "difficulty": "Capstone",
-      "focus": "Fast Decision gate, Actor Context isolation and partial private persistence",
+      "focus": "Ordinary Decision gate, Actor Context isolation and partial private persistence",
       "learn": [
-        "Fast Decision gate, Actor Context isolation and partial private persistence",
+        "Ordinary Decision gate, Actor Context isolation and partial private persistence",
         "Trace named artifacts to the owned Draft or accepted proposal."
       ],
       "requirements": [
         "Open this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.",
-        "Select a configured typed Jev/Laya connection on kiss-decision; credentials remain outside the portable graph.",
+        "Choose an ordinary connection on the Decision node bar or use Active SillyTavern.",
         "Replace both canonical avatar IDs with loaded actors; authorize separate actor-private JSON rowan-moments and iris-moments as [].",
         "Both per-actor allowModelAuthoredReflection flags default false. Change each separately only when authoring permission exists for that actor, especially a player-controlled actor."
       ],
       "steps": [
         "Open One kiss, two private perspectives and inspect the named pins.",
-        "No candidate kiss or unresolved actor presence deliberately holds before Review. Rejected or uncertain typed kiss evidence preserves the original Draft with no private reflection calls or saves; uncertainty is not acceptance. Inspect the gate instead of treating the scene as accepted intimacy.",
+        "No candidate kiss or unresolved actor presence deliberately holds before Review. Rejected kiss evidence preserves the original Draft with no private reflection calls or saves; a null Decision answer holds Confirm Events before Review. Inspect the gate instead of treating the scene as accepted intimacy.",
         "The shared quote/source/span are observed evidence; reflectionOrigin remains model-authored.",
         "Both actors must first be verified present. After that shared prerequisite, each permitted leg reads only its own Actor Context and private target; no private text enters public notes.",
         "Review separate receipts: native publication and each actor file have independent durability; one failed file is not an atomic rollback of both.",
@@ -17228,8 +17274,12 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
           "expect": "This lesson explicitly holds before Review: no private reflection call, file settlement or native publication. Required canonical evidence barriers are not bypassed."
         },
         {
-          "when": "Typed evidence is rejected or its metric remains uncertain",
-          "expect": "No private reflection is called or staged; the original owned Draft remains available for Review. The uncertain metric remains explicitly unresolved, never accepted."
+          "when": "Decision rejects the evidence",
+          "expect": "No private reflection is called or staged; the original owned Draft remains available for Review."
+        },
+        {
+          "when": "Decision returns null",
+          "expect": "Confirm Events holds as UNRESOLVED_INPUT before Review, with no private reflection calls or file writes."
         },
         {
           "when": "Either actor is absent",
@@ -17244,7 +17294,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
           "expect": "Each receipt remains independently durable; native publication and the other accepted save do not imply an atomic rollback."
         }
       ],
-      "callBudget": "Default at most 3 auxiliary requests: extraction 1 + typed Decision 1 + cast 1. With both explicit permissions at most 5, adding one private reflection request per present actor. No automatic fallback. One ordinary native generation."
+      "callBudget": "Default at most 3 auxiliary requests: extraction 1 + ordinary Decision 1 + cast 1. With both explicit permissions at most 5, adding one private reflection request per present actor. One ordinary native generation."
     },
     "packages": [
       {
@@ -17254,7 +17304,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
         "graph": {
           "id": "remastered-lesson-29",
           "name": "29. One kiss, two private perspectives",
-          "description": "Confirm shared native kiss evidence, verify both actors, then separately permit and stage each actor’s private model-authored reflection with independent receipts.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nSelect a configured typed Jev/Laya connection on kiss-decision; credentials remain outside the portable graph.\nReplace both canonical avatar IDs with loaded actors; authorize separate actor-private JSON rowan-moments and iris-moments as [].\nBoth per-actor allowModelAuthoredReflection flags default false. Change each separately only when authoring permission exists for that actor, especially a player-controlled actor.\n\nOpen One kiss, two private perspectives and inspect the named pins.\nNo candidate kiss or unresolved actor presence deliberately holds before Review. Rejected or uncertain typed kiss evidence preserves the original Draft with no private reflection calls or saves; uncertainty is not acceptance. Inspect the gate instead of treating the scene as accepted intimacy.\nThe shared quote/source/span are observed evidence; reflectionOrigin remains model-authored.\nBoth actors must first be verified present. After that shared prerequisite, each permitted leg reads only its own Actor Context and private target; no private text enters public notes.\nReview separate receipts: native publication and each actor file have independent durability; one failed file is not an atomic rollback of both.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: Default at most 3 auxiliary requests: extraction 1 + typed Decision 1 + cast 1. With both explicit permissions at most 5, adding one private reflection request per present actor. No automatic fallback. One ordinary native generation.\nCheckpoints:\nConfirm Events.out: Only accepted exact shared native kiss evidence can authorize the two independently permitted legs.\nWrite to File.receipt: Rowan’s pending private receipt is independent of Iris’s receipt.",
+          "description": "Confirm shared native kiss evidence, verify both actors, then separately permit and stage each actor’s private model-authored reflection with independent receipts.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nChoose an ordinary connection on the Decision node bar or use Active SillyTavern.\nReplace both canonical avatar IDs with loaded actors; authorize separate actor-private JSON rowan-moments and iris-moments as [].\nBoth per-actor allowModelAuthoredReflection flags default false. Change each separately only when authoring permission exists for that actor, especially a player-controlled actor.\n\nOpen One kiss, two private perspectives and inspect the named pins.\nNo candidate kiss or unresolved actor presence deliberately holds before Review. Rejected kiss evidence preserves the original Draft with no private reflection calls or saves; a null Decision answer holds Confirm Events before Review. Inspect the gate instead of treating the scene as accepted intimacy.\nThe shared quote/source/span are observed evidence; reflectionOrigin remains model-authored.\nBoth actors must first be verified present. After that shared prerequisite, each permitted leg reads only its own Actor Context and private target; no private text enters public notes.\nReview separate receipts: native publication and each actor file have independent durability; one failed file is not an atomic rollback of both.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: Default at most 3 auxiliary requests: extraction 1 + ordinary Decision 1 + cast 1. With both explicit permissions at most 5, adding one private reflection request per present actor. One ordinary native generation.\nCheckpoints:\nConfirm Events.out: Only accepted exact shared native kiss evidence can authorize the two independently permitted legs.\nWrite to File.receipt: Rowan’s pending private receipt is independent of Iris’s receipt.",
           "schema": 3,
           "runtime": 2,
           "mode": "native-unified",
@@ -17658,39 +17708,35 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
             "kiss-decision": {
               "id": "kiss-decision",
               "type": "workflow",
-              "operation": "fast-decision",
+              "operation": "decision",
               "operationVersion": 1,
-              "title": "Fast Decision",
+              "title": "Decision",
               "enabled": true,
               "x": 2980,
               "y": 240,
               "w": 300,
               "h": 210,
               "inGroup": "stage-8",
-              "profileId": null,
+              "profileId": "lattice:active-sillytavern",
               "model": null,
-              "modelRole": "fastDecision",
+              "modelRole": "decision",
               "phase": "post",
-              "alias": "Fast Decision",
+              "alias": "Decision",
               "inputKind": "data",
               "questions": {
                 "kiss": {
                   "type": "noul",
-                  "instructions": "Does this exact canonical candidate evidence establish a kiss actually occurring now between Rowan and Iris? Reject planned, negated, recalled or uncertain intimacy. This probability does not establish consent or authorize escalation."
+                  "instructions": "Does this exact canonical candidate evidence establish a kiss actually occurring now between Rowan and Iris? Reject planned, negated or recalled intimacy. Return accepted true, false or null when unresolved; this answer does not establish consent or authorize escalation."
                 }
               },
-              "maxTokens": 2048,
-              "fastConnectionId": "",
-              "fallbackEnabled": false,
-              "fallbackAllowedCodes": [],
-              "fallbackProfileId": ""
+              "maxTokens": 2048
             },
             "kiss-gate": {
               "id": "kiss-gate",
               "type": "workflow",
-              "operation": "confidence-gate",
+              "operation": "select-fields",
               "operationVersion": 1,
-              "title": "Confidence Gate",
+              "title": "Select Fields",
               "enabled": true,
               "x": 3340,
               "y": 240,
@@ -17701,15 +17747,17 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "model": null,
               "modelRole": null,
               "phase": "post",
-              "alias": "Confidence Gate",
-              "metricPath": [
-                "answers",
-                "kiss",
-                "noul"
-              ],
-              "acceptMin": 0.9,
-              "rejectMax": 0.1,
-              "direction": "higher"
+              "alias": "Select Fields",
+              "fields": [
+                {
+                  "name": "accepted",
+                  "path": [
+                    "answers",
+                    "kiss",
+                    "accepted"
+                  ]
+                }
+              ]
             },
             "kiss-record": {
               "id": "kiss-record",
@@ -18982,7 +19030,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "y": 0,
               "w": 900,
               "h": 180,
-              "content": "Confirm shared native kiss evidence, verify both actors, then separately permit and stage each actor’s private model-authored reflection with independent receipts.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nSelect a configured typed Jev/Laya connection on kiss-decision; credentials remain outside the portable graph.\nReplace both canonical avatar IDs with loaded actors; authorize separate actor-private JSON rowan-moments and iris-moments as [].\nBoth per-actor allowModelAuthoredReflection flags default false. Change each separately only when authoring permission exists for that actor, especially a player-controlled actor.\n\nOpen One kiss, two private perspectives and inspect the named pins.\nNo candidate kiss or unresolved actor presence deliberately holds before Review. Rejected or uncertain typed kiss evidence preserves the original Draft with no private reflection calls or saves; uncertainty is not acceptance. Inspect the gate instead of treating the scene as accepted intimacy.\nThe shared quote/source/span are observed evidence; reflectionOrigin remains model-authored.\nBoth actors must first be verified present. After that shared prerequisite, each permitted leg reads only its own Actor Context and private target; no private text enters public notes.\nReview separate receipts: native publication and each actor file have independent durability; one failed file is not an atomic rollback of both.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: Default at most 3 auxiliary requests: extraction 1 + typed Decision 1 + cast 1. With both explicit permissions at most 5, adding one private reflection request per present actor. No automatic fallback. One ordinary native generation.\nCheckpoints:\nConfirm Events.out: Only accepted exact shared native kiss evidence can authorize the two independently permitted legs.\nWrite to File.receipt: Rowan’s pending private receipt is independent of Iris’s receipt.",
+              "content": "Confirm shared native kiss evidence, verify both actors, then separately permit and stage each actor’s private model-authored reflection with independent receipts.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nChoose an ordinary connection on the Decision node bar or use Active SillyTavern.\nReplace both canonical avatar IDs with loaded actors; authorize separate actor-private JSON rowan-moments and iris-moments as [].\nBoth per-actor allowModelAuthoredReflection flags default false. Change each separately only when authoring permission exists for that actor, especially a player-controlled actor.\n\nOpen One kiss, two private perspectives and inspect the named pins.\nNo candidate kiss or unresolved actor presence deliberately holds before Review. Rejected kiss evidence preserves the original Draft with no private reflection calls or saves; a null Decision answer holds Confirm Events before Review. Inspect the gate instead of treating the scene as accepted intimacy.\nThe shared quote/source/span are observed evidence; reflectionOrigin remains model-authored.\nBoth actors must first be verified present. After that shared prerequisite, each permitted leg reads only its own Actor Context and private target; no private text enters public notes.\nReview separate receipts: native publication and each actor file have independent durability; one failed file is not an atomic rollback of both.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: Default at most 3 auxiliary requests: extraction 1 + ordinary Decision 1 + cast 1. With both explicit permissions at most 5, adding one private reflection request per present actor. One ordinary native generation.\nCheckpoints:\nConfirm Events.out: Only accepted exact shared native kiss evidence can authorize the two independently permitted legs.\nWrite to File.receipt: Rowan’s pending private receipt is independent of Iris’s receipt.",
               "commentFrame": true,
               "moveContents": false
             }
@@ -19120,7 +19168,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "id": "edge-17",
               "route": "wire",
               "from": "kiss-gate",
-              "fromPort": "accepted",
+              "fromPort": "out",
               "to": "confirmed-kiss",
               "toPort": "decisions"
             },
@@ -19320,7 +19368,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "id": "edge-43",
               "route": "wire",
               "from": "kiss-gate",
-              "fromPort": "accepted",
+              "fromPort": "out",
               "to": "rowan-kiss-prompt",
               "toPort": "condition"
             },
@@ -19600,7 +19648,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "id": "edge-79",
               "route": "wire",
               "from": "kiss-gate",
-              "fromPort": "accepted",
+              "fromPort": "out",
               "to": "iris-kiss-prompt",
               "toPort": "condition"
             },
@@ -20053,9 +20101,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "model": null,
               "profileId": "lattice:active-sillytavern"
             },
-            "fastDecision": {
+            "decision": {
               "model": null,
-              "profileId": null
+              "profileId": "lattice:active-sillytavern"
             }
           },
           "portals": {},

@@ -6,6 +6,6 @@ The thirty numbered `.lattice.json` packages each contain a complete independent
 
 The imported harbor lore is a snapshot. Campaign notebook and journal examples use live authorized targets. The sword99 fixture exists only to exercise a threshold in a disposable story. The wand JSON and weighted text libraries share explicit configured library identity settings. Private Rowan/Iris moments and the directional relationship state require actual host-authorized actors; imported bytes cannot grant that authority.
 
-Ordinary native generation uses the active SillyTavern connection. Auxiliary models may use Active SillyTavern or explicitly chosen local bindings. Fast Decision requires its separately configured typed Jev/Laya connection; blank connection IDs intentionally require local setup. Each lesson documents default/optional request bounds, checkpoints, experiments and negative cases. Preview, Reject and Stop do not settle file, clock, outcome or private memory proposals.
+Ordinary native generation uses the active SillyTavern connection. Auxiliary models may use Active SillyTavern or explicitly chosen local bindings. Decision uses an ordinary model connection and explicit true, false or null answers. Each lesson documents default/optional request bounds, checkpoints, experiments and negative cases. Preview, Reject and Stop do not settle file, clock, outcome or private memory proposals.
 
 Regenerate deterministically with `node tools/build-remastered-examples.mjs` from the repository root.

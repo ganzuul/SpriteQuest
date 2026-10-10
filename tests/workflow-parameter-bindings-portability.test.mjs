@@ -211,9 +211,8 @@ test('Active host selection stays semantic and portable in direct and exposed Fo
  assert.deepEqual(exportWorkflow(parsed),exported);
 });
 
-test('only ordinary text models default to the Active host profile',()=>{
+test('ordinary model calls default to the Active host profile and retired typed calls are unavailable',()=>{
  assert.equal(operationDefaults('decision').profileId,ACTIVE_PROFILE_ID);
  assert.equal(operationDefaults('model-call').profileId,ACTIVE_PROFILE_ID);
- assert.equal(operationDefaults('fast-decision').profileId,null);
- assert.equal(operationDefaults('fast-decision').fastConnectionId,'');
+ assert.throws(()=>operationDefaults('fast-decision'),/Unknown workflow operation: fast-decision/);
 });

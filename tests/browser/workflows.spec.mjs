@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { chooseControl, openDetailGroup } from './details-helpers.mjs';
+import { chooseControl, chooseNodeProfile, openDetailGroup } from './details-helpers.mjs';
 
 const preview = page => page.locator('.pc-output-preview');
 const details = page => page.getByRole('region', { name: 'Node details', exact: true });
@@ -31,8 +31,9 @@ async function installWorkflow(page, title) {
     }, title);
 }
 async function bindNode(page, operation, profile) {
-    const region = await inspectOperation(page, operation);
-    await region.getByLabel('Connection profile', { exact: true }).selectOption(profile);
+    await inspectOperation(page, operation);
+    await chooseNodeProfile(page, await operationId(page, operation), profile);
+    await openDetailGroup(page, 'Model');
 }
 async function expectCurrentDocument(page) {
     await expect(page.locator('.pc-root-workflow-status')).toContainText('unified');
@@ -224,7 +225,10 @@ test('independently bind model nodes in a unified workflow without arming it', a
     await expect(page.getByRole('button', { name: 'Setup', exact: true })).toHaveCount(0);
     await openExample(page, 'Keep useful context within a budget');
     const compactDetails = await inspectOperation(page, 'smart-compactor');
-    await expect(compactDetails.getByLabel('Connection profile', { exact: true })).toHaveValue('lattice:active-sillytavern');
+    const compactId = await operationId(page, 'smart-compactor');
+    await expect(page.locator(`.pc-node-profile[data-id="${compactId}"] .profile-bar`)).toContainText('Active');
+    await expect(compactDetails.getByLabel('Connection profile', { exact: true })).toHaveCount(0);
+    await expect(compactDetails.locator('[data-model-controls] > summary')).toHaveText('Advanced model settings');
     const before = await page.evaluate(() => { const settings = window.canvasHarness.S.settings(); return { enabled: settings.enabled, collection: Object.hasOwn(settings,'graphs') }; });
     expect(before).toEqual({ enabled: false, collection: false });
     const roleBefore = await page.evaluate(() => structuredClone(window.canvasHarness.graph.roles.Analysis));
@@ -282,10 +286,9 @@ test('unified workflow keeps its AI De-slop primitives and preserves a focused e
     await inspectOperation(page, 'repair');
     await expect(details(page).getByLabel('Node name', { exact: true })).toHaveValue('Repair');
     await expect(details(page).locator('.pc-detail-identity')).toContainText('Surface · post phase');
-    const modelSummary = details(page).locator('[data-model-controls] > summary');
-    await expect(modelSummary).toContainText('workflow-test-model');
+    const modelBinding = await openDetailGroup(page, 'Model');
+    await expect(modelBinding).toContainText('workflow-test-model');
     await expect(details(page).getByLabel('Model mode', { exact: true })).toBeVisible();
-    await openDetailGroup(page, 'Model');
     expect(await page.evaluate(() => window.canvasHarness.graph.roles.Prose)).toEqual({ profileId: null, model: null });
     expect(await page.evaluate(() => Object.values(window.canvasHarness.graph.nodes).find(node => node.operation === 'repair').profileId)).toBe('prose');
     await details(page).getByLabel('Model mode', { exact: true }).selectOption('override');
@@ -294,7 +297,7 @@ test('unified workflow keeps its AI De-slop primitives and preserves a focused e
     await details(page).getByLabel('Model identifier', { exact: true }).fill('node-override-model');
     await details(page).getByLabel('Model identifier', { exact: true }).press('Tab');
     expect(await page.evaluate(() => Object.values(window.canvasHarness.graph.nodes).find(node => node.operation === 'repair').model)).toBe('node-override-model');
-    await expect(modelSummary).toContainText('node-override-model');
+    await expect(modelBinding).toContainText('node-override-model');
 });
 
 
@@ -308,7 +311,9 @@ test('examples and model details open without domain scans or provider requests'
     await inspectOperation(page, 'response-plan');
     expect(await page.evaluate(() => window.nativeLoreScans)).toBe(0);
     expect(await page.evaluate(() => window.canvasHarness.providerCalls())).toBe(0);
-    await expect(details(page).getByLabel('Connection profile', { exact: true })).toBeVisible();
+    const id = await operationId(page, 'response-plan');
+    await expect(page.locator(`.pc-node-profile[data-id="${id}"] .profile-bar`)).toBeVisible();
+    await expect(details(page).locator('[data-model-controls] > summary')).toHaveText('Advanced model settings');
 });
 
 
@@ -519,15 +524,12 @@ test('named wire inspection describes artifact flow', async ({ page }) => {
 });
 
 
-test('the native inspector provides a keyboard-accessible duplicate action', async ({ page }) => {
+test('the native canvas provides a keyboard-accessible duplicate action', async ({ page }) => {
     await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
     await installWorkflow(page, 'Scene guidance');
     await inspectOperation(page, 'response-plan');
-    await details(page).getByLabel('Node commands', { exact: true }).focus();
-    await page.keyboard.press('Enter');
-    await expect(details(page).getByRole('button', { name: 'Duplicate', exact: true })).toBeVisible();
-    await details(page).getByRole('button', { name: 'Duplicate', exact: true }).focus();
-    await page.keyboard.press('Enter');
+    await page.getByLabel('Node canvas', { exact: true }).focus();
+    await page.keyboard.press('Control+d');
     expect(await page.evaluate(() => Object.values(window.canvasHarness.graph.nodes).filter(node => node.operation === 'response-plan').length)).toBe(2);
 });
 

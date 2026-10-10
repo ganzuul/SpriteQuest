@@ -64,7 +64,6 @@ Model calls below are maximum auxiliary calls **per execution of that operation*
 | Surface | [Render Notes](#render-notes) | Both | Public Data → disclosure/plain Text | 0 |
 | Surface | [Append / Combine](#append-and-combine) | Response | Draft + optional section Text → Draft | 0 |
 | Derive | [Decision](#decision) | Both | Data/Text → typed judgment Data | 1 |
-| Derive | [Fast Decision](#fast-decision) | Both | Data/Text → typed provider Data | 1–2 |
 | Shaping | [Confidence Gate](#confidence-gate) | Both | Data → accepted/rejected/unresolved Data | 0 |
 | Shaping | [Condition](#condition) | Both | Data → explicit comparison Data | 0 |
 | Shaping | [Branch](#branch) | Both | Artifact + decision → yes/no/unresolved artifact | 0 |
@@ -484,15 +483,11 @@ These four nodes belong to a native-unified **root** workflow. They cannot be hi
 
 ### Decision
 
-**Both stages; one text request through the Decision role.** State input is Data or Text; output is a strict Data decision record. Controls: State input, keyed Questions, Decision token limit. Questions use `noul`, `choice` or `score`; choices/rubrics are authored. Text noul answers have `accepted: true/false/null`, optional short evidence and self-reported confidence. Bind an ordinary local Connection profile. A null answer stays unresolved until an explicit downstream policy handles it.
-
-### Fast Decision
-
-**Both stages; one typed request, at most two when explicit fallback is enabled.** Uses the same State and Questions contract, plus **Fast connection**, **Allow Decision fallback**, supported **Fallback on errors** and a separate **Fallback text connection**. Configure Jev/Laya/compatible endpoints in **Tools → Fast connections…**. Typed noul answers expose a probability in `answers.<id>.noul`; choice/score answers expose checked alternatives, distributions and confidence. No implicit probability-to-boolean threshold is applied. Fallback returns ordinary Decision answers, not invented typed probabilities. See [setup and gates](unified-workflows.md#decision-fast-decision-and-confidence).
+**Both stages; one text request through the Decision role.** State input is Data or Text; output is a strict Data decision record. Controls: State input, keyed Questions, Decision token limit. Questions use `noul`, `choice` or `score`; choices/rubrics are authored. Text noul answers have `accepted: true/false/null`, optional short evidence and self-reported confidence. Choose an ordinary local profile in the node’s canvas bar. Use advanced Details for optional model overrides and inheritance. A null answer stays unresolved until an explicit downstream policy handles it.
 
 ### Confidence Gate
 
-**Both stages; zero calls.** Data input, mutually exclusive `accepted`, `rejected`, `unresolved` Data outputs. Controls: Metric path (array of keys), acceptance minimum, rejection maximum and higher/lower direction. Thresholds must not overlap. Missing/nonfinite metrics and the middle region route unresolved. Output wraps the original decision and explicit accepted result when resolved. It expresses policy rather than proof of an event.
+**Both stages; zero calls.** Data input, mutually exclusive `accepted`, `rejected`, `unresolved` Data outputs. Controls: Metric path (array of keys), acceptance minimum, rejection maximum and higher/lower direction. Thresholds must not overlap. Missing/nonfinite metrics and the middle region route unresolved. Output wraps the original decision and explicit accepted result when resolved. It accepts finite numeric metrics, not booleans. Select Decision acceptance into `{accepted}` for Confirm Events rather than feeding it into this numeric gate. Self-reported confidence expresses model certainty rather than proof of an event.
 
 ### Condition
 
@@ -510,7 +505,7 @@ These four nodes belong to a native-unified **root** workflow. They cannot be hi
 
 **Both stages; bounded helper calls.** Required array Data and, in **projected-state** mode, required explicit state Data. Outputs: result array Data and projected state Data. Controls: exact pinned Helper, Limit (1–128), Request bound per iteration (0–16), Mode (`map`/`projected-state`). The total bound is their product; nested helpers share the run's finite budget and bounded nesting.
 
-Choose an existing pinned Data item/result helper in **Configure node**. **Details → Helper model bindings** offers the actual helper's text role selectors, selected-profile model default and custom model overrides, including recursive roles. Explicit nested/primitive choices win over an outer role override and are reported. Root-only host authority operations are not iteration helper bodies. The collection is processed in deterministic order; over-limit or invalid helper paths hold before partial effects. Portable exports omit local saved-profile IDs, which must be selected locally after import. The **Active SillyTavern model** selection remains portable and follows the recipient’s host connection. See [model binding behavior](unified-workflows.md#choose-a-different-model-for-each-job).
+Choose an existing pinned Data item/result helper in **Configure node**. **Details → Helper model bindings** offers the actual helper's text role selectors, selected-profile model default and custom model overrides, including recursive roles. Explicit nested/primitive choices, including Active or a fixed helper-node profile, win over an outer role override and are reported. Inspect which calls an override can affect before changing it. Root-only host authority operations are not iteration helper bodies. The collection is processed in deterministic order; over-limit or invalid helper paths hold before partial effects. Portable exports omit local saved-profile IDs, which must be selected locally after import. The **Active SillyTavern model** selection remains portable and follows the recipient’s host connection. See [model binding behavior](unified-workflows.md#choose-a-different-model-for-each-job).
 
 ## Events and actors
 

@@ -20,31 +20,22 @@ test('Decision is editable through the real catalog and executes on its own text
     assert.equal(output(result,'decision').value.answers.kiss.accepted,true);assert.equal(row(result,'decision').request.status,'completed');
 });
 
-test('Fast Decision uses the typed capability without tokenizing or resolving a text model',async()=>{
-    const root=graph({source:node('source','compose',{sections:[{name:'scene',text:'Mira kissed Elias.'}]}),fast:node('fast','fast-decision',{inputKind:'text',fastConnectionId:'local-laya',questions:{kiss:{type:'noul',instructions:'Did Mira kiss Elias?'}}})},[wire('scene','source','out','fast','in')]);
-    const binding={connectionId:'local-laya',capability:'typed-decision',provider:'laya',model:'laya-any'};let calls=0,binds=0;
-    const result=await runWorkflow(root,{target:target('fast'),resolveBinding:async()=>{throw new Error('Text binding must stay inactive');},bindingSummary:()=>{throw new Error('Text binding summary must stay inactive');},fastBindingSummary:()=>binding,countTokens:async()=>{throw new Error('Typed protocol has no completion tokenizer');},resolveFastBinding:async selected=>{assert.equal(selected.fastConnectionId,'local-laya');binds++;return {ok:true,data:binding};},requestFastDecision:async options=>{assert.equal(options.binding,binding);assert.equal(options.state,'Mira kissed Elias.');calls++;return {ok:true,data:{model:'laya-any',answers:{kiss:{type:'noul',noul:0.97}},usage:{input_tokens:12,output_tokens:4}}};}});
-    assert.equal(result.ok,true,JSON.stringify(result.error));assert.equal(calls,1);assert.equal(binds,1);assert.equal(result.actualCalls,1);assert.equal(result.callBound,1);
-    assert.equal(output(result,'fast').value.answers.kiss.noul,0.97);assert.equal(row(result,'fast').request.capability,'typed-decision');assert.equal(row(result,'fast').request.inputTokens,null);assert.equal(row(result,'fast').request.usage.input_tokens,12);
+
+
+test('Decision request failure records one attempt without starting another transport',async()=>{
+    const root=graph({source:node('source','compose',{sections:[{name:'scene',text:'Mira kissed Elias.'}]}),decision:node('decision','decision',{inputKind:'text',profileId:'independent-text',questions:{kiss:{type:'noul',instructions:'Did Mira kiss Elias?'}}})},[wire('scene','source','out','decision','in')]);
+    const binding={model:'other-model',profileId:'independent-text'},events=[],order=[];
+    const result=await runWorkflow(root,{target:target('decision'),onEvent:event=>events.push(event),resolveBinding:async selected=>{order.push('bind');assert.equal(selected.profileId,'independent-text');assert.equal(selected.modelRole,'decision');return {ok:true,data:binding};},countTokens:async()=>({tokens:10}),request:async options=>{order.push('text');assert.equal(options.binding,binding);return {ok:false,error:{code:'RATE_LIMITED',message:'Retry later'}};}});
+    assert.equal(result.ok,false);assert.equal(result.error.code,'RATE_LIMITED');assert.equal(result.callBound,1);assert.equal(result.actualCalls,1);assert.deepEqual(order,['bind','text']);
+    assert.deepEqual(events.filter(event=>event.type==='request-start').map(event=>[event.attempt,event.capability]),[[1,'text-completion']]);
+    assert.equal(row(result,'decision').request.status,'failed');
 });
 
-test('explicit Fast fallback counts both capabilities and binds text only after an allowed failure',async()=>{
-    const root=graph({source:node('source','compose',{sections:[{name:'scene',text:'Mira kissed Elias.'}]}),fast:node('fast','fast-decision',{inputKind:'text',fastConnectionId:'jev-main',fallbackEnabled:true,fallbackAllowedCodes:['RATE_LIMITED'],fallbackProfileId:'independent-fallback',questions:{kiss:{type:'noul',instructions:'Did Mira kiss Elias?'}}})},[wire('scene','source','out','fast','in')]);
-    const fastBinding={model:'jev',connectionId:'jev-main'},textBinding={model:'other-model',profileId:'independent-fallback'};const events=[],order=[];
-    const ports={target:target('fast'),onEvent:event=>events.push(event),resolveFastBinding:async()=>({ok:true,data:fastBinding}),resolveBinding:async selected=>{order.push('text-bind');assert.equal(selected.profileId,'independent-fallback');assert.equal(selected.modelRole,'decision');return {ok:true,data:textBinding};},countTokens:async()=>({tokens:10}),requestFastDecision:async options=>{order.push('typed');assert.equal(options.binding,fastBinding);return {ok:false,error:{code:'RATE_LIMITED',message:'Retry later'}};},request:async options=>{order.push('text');assert.equal(options.binding,textBinding);return {ok:true,data:{text:JSON.stringify({answers:{kiss:{type:'noul',accepted:true}}}),finish:'stop'}};}};
-    const result=await runWorkflow(root,ports);assert.equal(result.ok,true,JSON.stringify(result.error));assert.equal(result.callBound,2);assert.equal(result.actualCalls,2);assert.deepEqual(order,['typed','text-bind','text']);
-    assert.deepEqual(events.filter(event=>event.type==='request-start').map(event=>[event.attempt,event.capability]),[[1,'typed-decision'],[2,'text-completion']]);
-    assert.equal(output(result,'fast').value.fallback.reason,'RATE_LIMITED');assert.equal(row(result,'fast').request.capability,'text-completion');
-    order.length=0;
-    const held=await runWorkflow(root,{...ports,requestFastDecision:async()=>({ok:false,error:{code:'AUTH_FAILED',message:'No'}})});
-    assert.equal(held.ok,false);assert.equal(held.error.code,'AUTH_FAILED');assert.equal(held.actualCalls,1);assert.deepEqual(order,[]);
-});
-
-test('typed malformed or cancelled responses fail instead of becoming No',async()=>{
-    const root=graph({source:node('source','compose',{sections:[{name:'scene',text:'Mira kissed Elias.'}]}),fast:node('fast','fast-decision',{inputKind:'text',fastConnectionId:'jev-main'})},[wire('scene','source','out','fast','in')]);
-    const ports={target:target('fast'),resolveFastBinding:async()=>({ok:true,data:{model:'jev'}}),requestFastDecision:async()=>({ok:true,data:{model:'jev',answers:{decision:{type:'noul',noul:2}},usage:{input_tokens:1,output_tokens:1}}})};
-    const malformed=await runWorkflow(root,ports);assert.equal(malformed.error.code,'INVALID_FAST_RESPONSE');assert.equal(malformed.actualCalls,1);assert.equal(row(malformed,'fast').request.status,'failed');
-    const controller=new AbortController();const cancelled=await runWorkflow(root,{...ports,signal:controller.signal,requestFastDecision:async()=>{controller.abort();return {ok:true,data:{model:'jev',answers:{decision:{type:'noul',noul:0.9}},usage:{input_tokens:1,output_tokens:1}}};}});
+test('malformed or cancelled Decision responses fail instead of becoming No',async()=>{
+    const root=graph({source:node('source','compose',{sections:[{name:'scene',text:'Mira kissed Elias.'}]}),decision:node('decision','decision',{inputKind:'text'})},[wire('scene','source','out','decision','in')]);
+    const ports={target:target('decision'),resolveBinding:async()=>({ok:true,data:{profileId:'text',model:'decision-model'}}),countTokens:async()=>({tokens:1}),request:async()=>({ok:true,data:{text:'{"answers":{"decision":{"type":"noul","accepted":2}}}',finish:'stop'}})};
+    const malformed=await runWorkflow(root,ports);assert.equal(malformed.error.code,'INVALID_DECISION_OUTPUT');assert.equal(malformed.actualCalls,1);assert.equal(row(malformed,'decision').status,'failed');
+    const controller=new AbortController();const cancelled=await runWorkflow(root,{...ports,signal:controller.signal,request:async()=>{controller.abort();return {ok:true,data:{text:'{"answers":{"decision":{"type":"noul","accepted":true}}}',finish:'stop'}};}});
     assert.equal(cancelled.error.code,'ABORTED');assert.equal(cancelled.recording.status,'cancelled');assert.equal(cancelled.actualCalls,1);
 });
 
@@ -79,30 +70,36 @@ test('extracted notes append to the Draft while the story-body output excludes t
     assert.equal(result.ok, true, JSON.stringify(result.error)); assert.equal(result.actualCalls, 0); assert.match(output(result, 'append').text, /<details>/); assert.match(output(result, 'append').text, /Broken wand/); assert.equal(output(result, 'body').text, 'She raised the broken wand.');
 });
 
-test('explicit Fast fallback survives unavailable primary binding and reports only transmitted calls', async () => {
-    const root = graph({ source: node('source', 'text', { text: 'Mira kissed Elias.' }), fast: node('fast', 'fast-decision', { inputKind: 'text', fastConnectionId: 'missing', fallbackEnabled: true, fallbackAllowedCodes: ['SERVICE_UNAVAILABLE'], fallbackProfileId: 'independent-fallback' }) }, [wire('a', 'source', 'out', 'fast', 'in')]);
-    let fastBindings = 0, textBindings = 0, textCalls = 0;
-    const base = { target: target('fast'), resolveFastBinding: async () => { fastBindings++; return { ok: false, error: { code: 'SERVICE_UNAVAILABLE', message: 'Primary unavailable' } }; }, resolveBinding: async () => { textBindings++; return { ok: true, data: { profileId: 'fallback' } }; }, countTokens: async () => ({ tokens: 5 }), request: async () => { textCalls++; return { ok: true, data: { text: '{"answers":{"decision":{"type":"noul","accepted":true}}}', finish: 'stop' } }; } };
-    const unavailableBinding = await runWorkflow(root, base);
-    assert.equal(unavailableBinding.ok, true, JSON.stringify(unavailableBinding.error)); assert.equal(fastBindings, 1); assert.equal(textBindings, 1); assert.equal(textCalls, 1); assert.equal(unavailableBinding.actualCalls, 1); assert.equal(output(unavailableBinding, 'fast').value.actualCalls, 1);
-    fastBindings = 0; textBindings = 0; textCalls = 0;
-    const unavailableTransport = await runWorkflow(root, { ...base, resolveFastBinding: async () => { fastBindings++; return { ok: true, data: { model: 'typed' } }; } });
-    assert.equal(unavailableTransport.ok, true, JSON.stringify(unavailableTransport.error)); assert.equal(unavailableTransport.actualCalls, 1); assert.equal(output(unavailableTransport, 'fast').value.actualCalls, 1); assert.equal(fastBindings, 1); assert.equal(textBindings, 1); assert.equal(textCalls, 1);
+test('unavailable Decision binding reports zero transmitted calls', async () => {
+    const root = graph({ source: node('source', 'text', { text: 'Mira kissed Elias.' }), decision: node('decision', 'decision', { inputKind: 'text', profileId: 'missing' }) }, [wire('a', 'source', 'out', 'decision', 'in')]);
+    let bindings = 0, calls = 0, tokenizations = 0;
+    const result = await runWorkflow(root, { target: target('decision'), resolveBinding: async () => { bindings++; return { ok: false, error: { code: 'BINDING_MISSING', message: 'Profile unavailable' } }; }, countTokens: async () => { tokenizations++; return { tokens: 5 }; }, request: async () => { calls++; return { ok: true, data: { text: '{}', finish: 'stop' } }; } });
+    assert.equal(result.ok, false); assert.equal(result.error.code, 'BINDING_MISSING'); assert.equal(bindings, 1); assert.equal(calls, 0); assert.equal(tokenizations, 0); assert.equal(result.actualCalls, 0);
 });
 
-test('host settlement receives the independent fallback binding and recording identifies its completion connection', async () => {
+test('host settlement retains the ordinary Decision binding and records its completion connection', async () => {
     const { runWorkflowForHost } = await import('../src/workflow/runtime.js');
-    const root = graph({ source: node('source', 'text', { text: 'A kiss.' }), fast: node('fast', 'fast-decision', { inputKind: 'text', fastConnectionId: 'jev', fallbackEnabled: true, fallbackAllowedCodes: ['RATE_LIMITED'], fallbackProfileId: 'fallback-text' }) }, [wire('a', 'source', 'out', 'fast', 'in')]);
-    const primary = { connectionId: 'jev', model: 'jev', provider: 'jev' }, fallback = { profileId: 'fallback-text', model: 'separate-model' }; let retained;
-    const result = await runWorkflowForHost(root, { resolveFastBinding: async () => ({ ok: true, data: primary }), resolveBinding: async () => ({ ok: true, data: fallback }), countTokens: async () => ({ tokens: 5 }), requestFastDecision: async () => ({ ok: false, error: { code: 'RATE_LIMITED', message: 'Busy' } }), request: async () => ({ ok: true, data: { text: '{"answers":{"decision":{"type":"noul","accepted":true}}}', finish: 'stop' } }) }, { settle: async value => { retained = value.bindings; return { ok: true }; } });
-    assert.equal(result.error.code, 'MISSING_TERMINAL');
-    const targeted = await runWorkflowForHost(root, { target: target('fast'), resolveFastBinding: async () => ({ ok: true, data: primary }), resolveBinding: async () => ({ ok: true, data: fallback }), countTokens: async () => ({ tokens: 5 }), requestFastDecision: async () => ({ ok: false, error: { code: 'RATE_LIMITED', message: 'Busy' } }), request: async () => ({ ok: true, data: { text: '{"answers":{"decision":{"type":"noul","accepted":true}}}', finish: 'stop' } }) }, { settle: async value => { retained = value.bindings; return { ok: true }; } });
-    assert.equal(targeted.ok, true, JSON.stringify(targeted.error)); assert.deepEqual(retained.map(item => [item.binding, item.capability, item.role]), [[primary, 'typed-decision', 'fastDecision'], [fallback, 'text-completion', 'decision']]); assert.equal(row(targeted, 'fast').binding.profileId, 'fallback-text'); assert.equal(row(targeted, 'fast').binding.model, 'separate-model'); assert.equal(row(targeted, 'fast').binding.capability, 'text-completion'); assert.equal(output(targeted, 'fast').value.actualCalls, 2);
+    const root = graph({ source: node('source', 'text', { text: 'A kiss.' }), decision: node('decision', 'decision', { inputKind: 'text', profileId: 'decision-text' }) }, [wire('a', 'source', 'out', 'decision', 'in')]);
+    const binding = { profileId: 'decision-text', model: 'separate-model' }; let retained;
+    const ports = { resolveBinding: async () => ({ ok: true, data: binding }), countTokens: async () => ({ tokens: 5 }), request: async () => ({ ok: true, data: { text: '{"answers":{"decision":{"type":"noul","accepted":true}}}', finish: 'stop' } }) };
+    const hooks = { settle: async value => { retained = value.bindings; return { ok: true }; } };
+    const result = await runWorkflowForHost(root, ports, hooks); assert.equal(result.error.code, 'MISSING_TERMINAL');
+    const targeted = await runWorkflowForHost(root, { ...ports, target: target('decision') }, hooks);
+    assert.equal(targeted.ok, true, JSON.stringify(targeted.error)); assert.deepEqual(retained.map(item => [item.binding, item.capability, item.role]), [[binding, 'text-completion', 'decision']]); assert.equal(retained[0].binding,binding); assert.equal(row(targeted, 'decision').binding.profileId, 'decision-text'); assert.equal(row(targeted, 'decision').binding.model, 'separate-model'); assert.equal(row(targeted, 'decision').binding.capability, 'text-completion'); assert.equal(output(targeted, 'decision').value.actualCalls, 1);
 });
 
-for (const phase of ['pre','post']) test('enabled Fast fallback binds only after activation in unified '+phase+' targets', async () => {
-    const root = graph({ source: node('source', 'text', { text: 'A kiss.' }), fast: node('fast', 'fast-decision', { inputKind: 'text', fastConnectionId: 'missing', fallbackEnabled: true, fallbackAllowedCodes: ['SERVICE_UNAVAILABLE'], fallbackProfileId: 'text-fallback' }) }, [wire('a', 'source', 'out', 'fast', 'in')]); for(const selected of Object.values(root.nodes))selected.phase=phase;
-    let fastBindings = 0, textBindings = 0;
-    const result = await runWorkflow(root, { target: target('fast'), resolveFastBinding: async () => { fastBindings++; return { ok: false, error: { code: 'SERVICE_UNAVAILABLE', message: 'Unavailable' } }; }, resolveBinding: async () => { textBindings++; return { ok: true, data: { profileId: 'text-fallback' } }; }, countTokens: async () => ({ tokens: 4 }), request: async () => ({ ok: true, data: { text: '{"answers":{"decision":{"type":"noul","accepted":true}}}', finish: 'stop' } }) });
-    assert.equal(result.ok, true, JSON.stringify(result.error)); assert.equal(fastBindings, 1); assert.equal(textBindings, 1); assert.equal(result.actualCalls, 1); assert.equal(output(result, 'fast').value.actualCalls, 1);
+for (const phase of ['pre', 'post']) test('ordinary Decision target preserves its authored ' + phase + ' stage', async () => {
+    const root = graph({ source: node('source', 'text', { text: 'A kiss.',phase }), decision: node('decision', 'decision', { inputKind: 'text', profileId: 'decision-text',phase }) }, [wire('a', 'source', 'out', 'decision', 'in')]);
+    let bindings = 0;
+    const result = await runWorkflow(root, { target: target('decision'), resolveBinding: async () => { bindings++; return { ok: true, data: { profileId: 'decision-text' } }; }, countTokens: async () => ({ tokens: 4 }), request: async () => ({ ok: true, data: { text: '{"answers":{"decision":{"type":"noul","accepted":true}}}', finish: 'stop' } }) });
+    assert.equal(result.ok, true, JSON.stringify(result.error)); assert.equal(bindings, 1); assert.equal(result.actualCalls, 1); assert.equal(output(result, 'decision').value.actualCalls, 1);
+});
+
+test('retired Fast Decision is unavailable in the catalog and rejects execution before effects',async()=>{
+    const root=graph({source:node('source','text',{text:'Scene'}),retired:node('retired','fast-decision',{inputKind:'text'})},[wire('scene','source','out','retired','in')]);
+    assert.throws(()=>operationDefaults('fast-decision'),/Unknown workflow operation/);
+    assert.equal(describeOperation(root,root.nodes.retired).ok,false);
+    let effects=0;const effect=()=>{effects++;return {ok:true,data:{}};};
+    const result=await runWorkflow(root,{target:target('retired'),resolveBinding:effect,countTokens:effect,request:effect,resolveFastBinding:effect,requestFastDecision:effect});
+    assert.equal(result.ok,false);assert.equal(result.actualCalls,0);assert.equal(effects,0);
 });

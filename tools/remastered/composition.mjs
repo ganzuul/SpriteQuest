@@ -50,20 +50,23 @@ export function composition() {
         entries.push(r.finish(...joined));
     }
     {
-        r = builder(11, 'Detect a promise with Fast Decision', 'Use a separately configured typed Jev/Laya connection and an explicit probability policy for promise detection.', 'Fast Decision and Confidence Gate');
+        r = builder(11, 'Detect a promise with Decision', 'Use an ordinary Decision with explicit accepted, rejected and unresolved routes for promise detection.', 'Decision, Select Fields and Branch');
         r.add('promise-text', 'text', { text: 'I promise to bring your lantern back tomorrow.' });
-        r.add('promise-decision', 'fast-decision', { inputKind: 'text', fastConnectionId: '', questions: { promise: { type: 'noul', instructions: 'Does this exact text contain an explicit promise by its speaker? A hope or hypothetical promise is insufficient.' } } });
+        r.add('promise-decision', 'decision', { inputKind: 'text', questions: { promise: { type: 'noul', instructions: 'Does this exact text contain an explicit promise by its speaker? A hope or hypothetical promise is insufficient. Return accepted true, false or null when unresolved.' } } });
         r.connect('promise-text', 'out', 'promise-decision', 'in');
-        r.add('promise-gate', 'confidence-gate', { metricPath: ['answers', 'promise', 'noul'], acceptMin: .9, rejectMax: .1 });
+        r.add('promise-acceptance', 'select-fields', { fields: [{ name: 'accepted', path: ['answers', 'promise', 'accepted'] }] });
+        r.connect('promise-decision', 'out', 'promise-acceptance', 'in');
+        r.add('promise-gate', 'branch');
         r.connect('promise-decision', 'out', 'promise-gate', 'in');
+        r.connect('promise-acceptance', 'out', 'promise-gate', 'condition');
         r.add('gate-outcome', 'join', { phase: 'post', inputs: ['accepted', 'rejected', 'unresolved'].map(id => ({ id, label: id, required: false })) });
-        for (const port of ['accepted', 'rejected', 'unresolved'])
-            r.connect('promise-gate', port, 'gate-outcome', port);
+        for (const [port, input] of [['yes', 'accepted'], ['no', 'rejected'], ['unresolved', 'unresolved']])
+            r.connect('promise-gate', port, 'gate-outcome', input);
         const output = r.summary('gate-outcome');
-        r.requirements = ['Select a real configured typed Jev/Laya Fast Decision connection. Portable fastConnectionId is blank; credentials are never exported.'];
-        r.steps = ['Inspect the explicit 0.90/0.10 policy and the separately labeled unresolved route.', 'Fallback exercise: enable fallback only for SERVICE_UNAVAILABLE and select a local ordinary fallback profile. Fallback textual answers retain their own fields; never pretend they have typed noul metrics.'];
-        r.budget = 'Default: 1 typed auxiliary request, no fallback. Exercise: at most 2 requests (typed attempt + explicitly enabled local fallback). One ordinary native generation.';
-        r.check('promise-gate', 'unresolved', 'A middle probability or fallback without typed metric remains visibly unresolved.');
+        r.requirements = ['Choose an ordinary connection on the Decision node bar or use Active SillyTavern.'];
+        r.steps = ['Inspect answers.promise.accepted as true, false or null.', 'Branch routes all three outcomes explicitly; the optional Join preserves the native Draft for Review. Try hopeful or hypothetical wording without treating unresolved evidence as acceptance.'];
+        r.budget = '1 ordinary Decision auxiliary request and one ordinary native generation.';
+        r.check('promise-gate', 'unresolved', 'A null answer remains an explicit unresolved route without claiming acceptance.');
         entries.push(r.finish(...output));
     }
     {

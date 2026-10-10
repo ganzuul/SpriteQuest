@@ -1,8 +1,9 @@
 import { test, expect } from '@playwright/test';
+import { chooseNodeProfile, openDetailGroup } from './details-helpers.mjs';
 
 const details = page => page.getByRole('region', { name: 'Node details', exact: true });
 const activeTab = page => page.locator('.pc-graph-tab[aria-selected="true"]');
-const modelSummary = page => details(page).locator('[data-model-controls] > summary');
+const modelBinding = page => details(page).locator('[data-model-controls]');
 
 async function sharedModelFixture(page) {
     await page.goto('/tests/browser/harness.html');
@@ -52,43 +53,44 @@ test('a pinned instance edits its own connection and profile model with Undo and
     await page.locator('.pc-node-native[data-id="work"] .pc-native-heading').click();
     await expect(details(page).getByText('Read-only body', { exact: true })).toBeVisible();
     await expect(details(page).getByLabel('Instructions', { exact: true })).toBeDisabled();
-    const profile = details(page).getByLabel('Connection profile', { exact: true });
+    const profile = page.locator('.pc-node-profile[data-id="work"] .profile-bar');
+    await openDetailGroup(page, 'Model');
     const modelMode = details(page).getByLabel('Model mode', { exact: true });
     const undo = page.getByRole('button', { name: 'Undo', exact: true });
     const redo = page.getByRole('button', { name: 'Redo', exact: true });
     const childTabId = await activeTab(page).getAttribute('id');
     await expect(profile).toBeEnabled();
-    await expect(profile).toHaveValue('local');
+    await expect(profile).toContainText('Definition connection');
     await expect(modelMode.locator('option:checked')).toHaveText('Use definition model');
-    await expect(modelSummary(page)).toContainText('local · definition-model');
+    await expect(modelBinding(page)).toContainText('local · definition-model');
 
-    await profile.selectOption('cheap');
-    await expect(modelSummary(page)).toContainText('cheap · definition-model');
+    await chooseNodeProfile(page, 'work', 'cheap');
+    await expect(modelBinding(page)).toContainText('cheap · definition-model');
     expect((await savedBindings(page)).overrides).toEqual({ '[[],"work"]': { profileId: 'cheap' } });
     await expect(undo).toBeEnabled();
     await undo.click();
     await expect(activeTab(page)).toHaveAttribute('id', childTabId);
-    await expect(profile).toHaveValue('local');
-    await expect(modelSummary(page)).toContainText('local · definition-model');
+    await expect(profile).toContainText('Definition connection');
+    await expect(modelBinding(page)).toContainText('local · definition-model');
     expect((await savedBindings(page)).overrides).toEqual({});
     await expect(redo).toBeEnabled();
     await redo.click();
     await expect(activeTab(page)).toHaveAttribute('id', childTabId);
-    await expect(profile).toHaveValue('cheap');
-    await expect(modelSummary(page)).toContainText('cheap · definition-model');
+    await expect(profile).toContainText('Instance connection');
+    await expect(modelBinding(page)).toContainText('cheap · definition-model');
 
     await modelMode.selectOption('block');
     await expect(modelMode.locator('option:checked')).toHaveText('Use profile model');
-    await expect(modelSummary(page)).toContainText('cheap · cheap-profile-model');
+    await expect(modelBinding(page)).toContainText('cheap · cheap-profile-model');
     expect((await savedBindings(page)).overrides).toEqual({ '[[],"work"]': { profileId: 'cheap', model: null } });
     await undo.click();
     await expect(activeTab(page)).toHaveAttribute('id', childTabId);
     await expect(modelMode.locator('option:checked')).toHaveText('Use definition model');
-    await expect(modelSummary(page)).toContainText('cheap · definition-model');
+    await expect(modelBinding(page)).toContainText('cheap · definition-model');
     await redo.click();
     await expect(activeTab(page)).toHaveAttribute('id', childTabId);
     await expect(modelMode.locator('option:checked')).toHaveText('Use profile model');
-    await expect(modelSummary(page)).toContainText('cheap · cheap-profile-model');
+    await expect(modelBinding(page)).toContainText('cheap · cheap-profile-model');
     const after = await savedBindings(page);
     expect(after.definitions).toEqual(before.definitions);
     expect(after.sibling).toEqual(before.sibling);
@@ -97,8 +99,9 @@ test('a pinned instance edits its own connection and profile model with Undo and
     await page.getByRole('tab', { name: 'Shared pinned model nodes', exact: true }).click();
     await page.locator('.pc-node-native[data-id="second"] .pc-native-heading').dblclick();
     await page.locator('.pc-node-native[data-id="work"] .pc-native-heading').click();
-    await expect(details(page).getByLabel('Connection profile', { exact: true })).toHaveValue('local');
+    await expect(profile).toContainText('Definition connection');
+    await openDetailGroup(page, 'Model');
     await expect(details(page).getByLabel('Model mode', { exact: true }).locator('option:checked')).toHaveText('Use definition model');
-    await expect(modelSummary(page)).toContainText('local · definition-model');
+    await expect(modelBinding(page)).toContainText('local · definition-model');
     expect(await page.evaluate(() => window.canvasHarness.providerCalls())).toBe(0);
 });

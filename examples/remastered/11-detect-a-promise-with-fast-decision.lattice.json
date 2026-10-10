@@ -4,8 +4,8 @@
   "minRuntime": 2,
   "graph": {
     "id": "remastered-lesson-11",
-    "name": "11. Detect a promise with Fast Decision",
-    "description": "Use a separately configured typed Jev/Laya connection and an explicit probability policy for promise detection.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nSelect a real configured typed Jev/Laya Fast Decision connection. Portable fastConnectionId is blank; credentials are never exported.\n\nOpen Detect a promise with Fast Decision and inspect the named pins.\nInspect the explicit 0.90/0.10 policy and the separately labeled unresolved route.\nFallback exercise: enable fallback only for SERVICE_UNAVAILABLE and select a local ordinary fallback profile. Fallback textual answers retain their own fields; never pretend they have typed noul metrics.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: Default: 1 typed auxiliary request, no fallback. Exercise: at most 2 requests (typed attempt + explicitly enabled local fallback). One ordinary native generation.\nCheckpoints:\nConfidence Gate.unresolved: A middle probability or fallback without typed metric remains visibly unresolved.",
+    "name": "11. Detect a promise with Decision",
+    "description": "Use an ordinary Decision with explicit accepted, rejected and unresolved routes for promise detection.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nChoose an ordinary connection on the Decision node bar or use Active SillyTavern.\n\nOpen Detect a promise with Decision and inspect the named pins.\nInspect answers.promise.accepted as true, false or null.\nBranch routes all three outcomes explicitly; the optional Join preserves the native Draft for Review. Try hopeful or hypothetical wording without treating unresolved evidence as acceptance.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 1 ordinary Decision auxiliary request and one ordinary native generation.\nCheckpoints:\nBranch.unresolved: A null answer remains an explicit unresolved route without claiming acceptance.",
     "schema": 3,
     "runtime": 2,
     "mode": "native-unified",
@@ -52,11 +52,11 @@
         "operationVersion": 1,
         "title": "Review / Publish",
         "enabled": true,
-        "x": 2260,
+        "x": 2620,
         "y": 240,
         "w": 300,
         "h": 210,
-        "inGroup": "stage-6",
+        "inGroup": "stage-7",
         "profileId": null,
         "model": null,
         "modelRole": null,
@@ -83,38 +83,34 @@
       "promise-decision": {
         "id": "promise-decision",
         "type": "workflow",
-        "operation": "fast-decision",
+        "operation": "decision",
         "operationVersion": 1,
-        "title": "Fast Decision",
+        "title": "Decision",
         "enabled": true,
         "x": 460,
         "y": 560,
         "w": 300,
         "h": 210,
         "inGroup": "stage-1",
-        "profileId": null,
+        "profileId": "lattice:active-sillytavern",
         "model": null,
-        "modelRole": "fastDecision",
-        "alias": "Fast Decision",
+        "modelRole": "decision",
+        "alias": "Decision",
         "inputKind": "text",
         "questions": {
           "promise": {
             "type": "noul",
-            "instructions": "Does this exact text contain an explicit promise by its speaker? A hope or hypothetical promise is insufficient."
+            "instructions": "Does this exact text contain an explicit promise by its speaker? A hope or hypothetical promise is insufficient. Return accepted true, false or null when unresolved."
           }
         },
-        "maxTokens": 2048,
-        "fastConnectionId": "",
-        "fallbackEnabled": false,
-        "fallbackAllowedCodes": [],
-        "fallbackProfileId": ""
+        "maxTokens": 2048
       },
-      "promise-gate": {
-        "id": "promise-gate",
+      "promise-acceptance": {
+        "id": "promise-acceptance",
         "type": "workflow",
-        "operation": "confidence-gate",
+        "operation": "select-fields",
         "operationVersion": 1,
-        "title": "Confidence Gate",
+        "title": "Select Fields",
         "enabled": true,
         "x": 820,
         "y": 240,
@@ -124,15 +120,35 @@
         "profileId": null,
         "model": null,
         "modelRole": null,
-        "alias": "Confidence Gate",
-        "metricPath": [
-          "answers",
-          "promise",
-          "noul"
-        ],
-        "acceptMin": 0.9,
-        "rejectMax": 0.1,
-        "direction": "higher"
+        "alias": "Select Fields",
+        "fields": [
+          {
+            "name": "accepted",
+            "path": [
+              "answers",
+              "promise",
+              "accepted"
+            ]
+          }
+        ]
+      },
+      "promise-gate": {
+        "id": "promise-gate",
+        "type": "workflow",
+        "operation": "branch",
+        "operationVersion": 1,
+        "title": "Branch",
+        "enabled": true,
+        "x": 1180,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-3",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "artifactKind": "data",
+        "alias": "Branch"
       },
       "gate-outcome": {
         "id": "gate-outcome",
@@ -141,11 +157,11 @@
         "operationVersion": 1,
         "title": "Join",
         "enabled": true,
-        "x": 1180,
+        "x": 1540,
         "y": 240,
         "w": 300,
         "h": 210,
-        "inGroup": "stage-3",
+        "inGroup": "stage-4",
         "profileId": null,
         "model": null,
         "modelRole": null,
@@ -178,11 +194,11 @@
         "operationVersion": 1,
         "title": "Compose",
         "enabled": true,
-        "x": 1540,
+        "x": 1900,
         "y": 240,
         "w": 300,
         "h": 210,
-        "inGroup": "stage-4",
+        "inGroup": "stage-5",
         "profileId": null,
         "model": null,
         "modelRole": null,
@@ -190,7 +206,7 @@
         "alias": "Compose",
         "mode": "template",
         "outputKind": "text",
-        "template": "<details><summary>Fast Decision and Confidence Gate</summary>\n{{data:}}\n</details>",
+        "template": "<details><summary>Decision, Select Fields and Branch</summary>\n{{data:}}\n</details>",
         "sections": [],
         "separator": "\n\n"
       },
@@ -201,11 +217,11 @@
         "operationVersion": 1,
         "title": "Append",
         "enabled": true,
-        "x": 1900,
+        "x": 2260,
         "y": 240,
         "w": 300,
         "h": 210,
-        "inGroup": "stage-5",
+        "inGroup": "stage-6",
         "profileId": null,
         "model": null,
         "modelRole": null,
@@ -222,7 +238,7 @@
         "y": 0,
         "w": 900,
         "h": 180,
-        "content": "Use a separately configured typed Jev/Laya connection and an explicit probability policy for promise detection.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nSelect a real configured typed Jev/Laya Fast Decision connection. Portable fastConnectionId is blank; credentials are never exported.\n\nOpen Detect a promise with Fast Decision and inspect the named pins.\nInspect the explicit 0.90/0.10 policy and the separately labeled unresolved route.\nFallback exercise: enable fallback only for SERVICE_UNAVAILABLE and select a local ordinary fallback profile. Fallback textual answers retain their own fields; never pretend they have typed noul metrics.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: Default: 1 typed auxiliary request, no fallback. Exercise: at most 2 requests (typed attempt + explicitly enabled local fallback). One ordinary native generation.\nCheckpoints:\nConfidence Gate.unresolved: A middle probability or fallback without typed metric remains visibly unresolved.",
+        "content": "Use an ordinary Decision with explicit accepted, rejected and unresolved routes for promise detection.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nChoose an ordinary connection on the Decision node bar or use Active SillyTavern.\n\nOpen Detect a promise with Decision and inspect the named pins.\nInspect answers.promise.accepted as true, false or null.\nBranch routes all three outcomes explicitly; the optional Join preserves the native Draft for Review. Try hopeful or hypothetical wording without treating unresolved evidence as acceptance.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 1 ordinary Decision auxiliary request and one ordinary native generation.\nCheckpoints:\nBranch.unresolved: A null answer remains an explicit unresolved route without claiming acceptance.",
         "commentFrame": true,
         "moveContents": false
       }
@@ -249,59 +265,75 @@
         "route": "wire",
         "from": "promise-decision",
         "fromPort": "out",
-        "to": "promise-gate",
+        "to": "promise-acceptance",
         "toPort": "in"
       },
       "edge-4": {
         "id": "edge-4",
         "route": "wire",
-        "from": "promise-gate",
-        "fromPort": "accepted",
-        "to": "gate-outcome",
-        "toPort": "accepted"
+        "from": "promise-decision",
+        "fromPort": "out",
+        "to": "promise-gate",
+        "toPort": "in"
       },
       "edge-5": {
         "id": "edge-5",
         "route": "wire",
-        "from": "promise-gate",
-        "fromPort": "rejected",
-        "to": "gate-outcome",
-        "toPort": "rejected"
+        "from": "promise-acceptance",
+        "fromPort": "out",
+        "to": "promise-gate",
+        "toPort": "condition"
       },
       "edge-6": {
         "id": "edge-6",
+        "route": "wire",
+        "from": "promise-gate",
+        "fromPort": "yes",
+        "to": "gate-outcome",
+        "toPort": "accepted"
+      },
+      "edge-7": {
+        "id": "edge-7",
+        "route": "wire",
+        "from": "promise-gate",
+        "fromPort": "no",
+        "to": "gate-outcome",
+        "toPort": "rejected"
+      },
+      "edge-8": {
+        "id": "edge-8",
         "route": "wire",
         "from": "promise-gate",
         "fromPort": "unresolved",
         "to": "gate-outcome",
         "toPort": "unresolved"
       },
-      "edge-7": {
-        "id": "edge-7",
+      "edge-9": {
+        "id": "edge-9",
         "route": "wire",
         "from": "gate-outcome",
         "fromPort": "out",
         "to": "notes",
         "toPort": "data"
       },
-      "edge-8": {
-        "id": "edge-8",
+      "edge-10": {
+        "id": "edge-10",
         "route": "wire",
         "from": "generate",
         "fromPort": "draft",
         "to": "append",
         "toPort": "draft"
       },
-      "edge-9": {
-        "id": "edge-9",
+      "edge-11": {
+        "id": "edge-11",
         "route": "wire",
         "from": "notes",
         "fromPort": "out",
         "to": "append",
         "toPort": "section"
       },
-      "edge-10": {
-        "id": "edge-10",
+      "edge-12": {
+        "id": "edge-12",
         "route": "wire",
         "from": "append",
         "fromPort": "out",
@@ -351,12 +383,12 @@
         "color": "#57416e",
         "collapsed": false,
         "members": [
-          "promise-gate"
+          "promise-acceptance"
         ]
       },
       "stage-3": {
         "id": "stage-3",
-        "title": "Response processing",
+        "title": "Preparation / processing",
         "description": "Stage 3. Wires determine execution; folding is presentation only.",
         "x": 1155,
         "y": 190,
@@ -365,7 +397,7 @@
         "color": "#57416e",
         "collapsed": false,
         "members": [
-          "gate-outcome"
+          "promise-gate"
         ]
       },
       "stage-4": {
@@ -379,14 +411,28 @@
         "color": "#57416e",
         "collapsed": false,
         "members": [
-          "notes"
+          "gate-outcome"
         ]
       },
       "stage-5": {
         "id": "stage-5",
-        "title": "Preparation / processing",
+        "title": "Response processing",
         "description": "Stage 5. Wires determine execution; folding is presentation only.",
         "x": 1875,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "notes"
+        ]
+      },
+      "stage-6": {
+        "id": "stage-6",
+        "title": "Preparation / processing",
+        "description": "Stage 6. Wires determine execution; folding is presentation only.",
+        "x": 2235,
         "y": 190,
         "w": 350,
         "h": 285,
@@ -396,11 +442,11 @@
           "append"
         ]
       },
-      "stage-6": {
-        "id": "stage-6",
+      "stage-7": {
+        "id": "stage-7",
         "title": "Review / accepted staging",
-        "description": "Stage 6. Wires determine execution; folding is presentation only.",
-        "x": 2235,
+        "description": "Stage 7. Wires determine execution; folding is presentation only.",
+        "x": 2595,
         "y": 190,
         "w": 350,
         "h": 285,
@@ -412,9 +458,9 @@
       }
     },
     "roles": {
-      "fastDecision": {
+      "decision": {
         "model": null,
-        "profileId": null
+        "profileId": "lattice:active-sillytavern"
       }
     },
     "portals": {},

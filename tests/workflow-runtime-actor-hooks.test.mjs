@@ -25,7 +25,7 @@ test('real helper seeds and cloned normalized child outputs retain exact scope b
  const retained=new WeakSet();let checked=0,seeds=0,children=0;
  const result=await runWorkflowForHost(g,{...ports(),target:{...target,nodeId:'each'}},{retainScopedOutput:payload=>{retained.add(payload.artifact);if(payload.seed)seeds++;if(payload.address.instancePath.length)children++;return {ok:true,data:{retained:true}};},authorizeModelInputs:({node,inputs})=>{assert.equal(node.operation,'decision');assert.equal(retained.has(inputs.in),true);checked++;return {ok:true};}});
  assert.equal(result.ok,true,JSON.stringify(result.error));assert.equal(checked,6);assert.equal(seeds,4);assert.equal(children>=6,true);assert.equal(result.actualCalls,2);
- for(const stop of [false,true]){const abort=new AbortController();let revoked=false,requests=0;const held=await runWorkflowForHost(g,{...ports(),target:{...target,nodeId:'each'},signal:abort.signal,resolveFastBinding:()=>({ok:true,data:{connectionId:'typed',model:'jev'}}),onEvent:event=>{if(event.type==='request-start'){revoked=true;if(stop)abort.abort();}},request:()=>{requests++;return {ok:true,data:{text:'{}',finish:'stop'}};}},{authorizeModelInputs:()=>revoked?{ok:false,error:{code:'STALE_ACTOR_SCOPE',message:'Child changed.'}}:{ok:true}});assert.equal(held.ok,false);assert.match(held.error.code,/ABORTED|STALE_ACTOR_SCOPE/);assert.equal(requests,0);assert.equal(held.actualCalls,0);}
+ for(const stop of [false,true]){const abort=new AbortController();let revoked=false,requests=0;const held=await runWorkflowForHost(g,{...ports(),target:{...target,nodeId:'each'},signal:abort.signal,onEvent:event=>{if(event.type==='request-start'){revoked=true;if(stop)abort.abort();}},request:()=>{requests++;return {ok:true,data:{text:'{}',finish:'stop'}};}},{authorizeModelInputs:()=>revoked?{ok:false,error:{code:'STALE_ACTOR_SCOPE',message:'Child changed.'}}:{ok:true}});assert.equal(held.ok,false);assert.match(held.error.code,/ABORTED|STALE_ACTOR_SCOPE/);assert.equal(requests,0);assert.equal(held.actualCalls,0);}
 
 });
 
@@ -36,13 +36,12 @@ test('scope mutation inside tokenizer is held immediately before the actual tran
 });
 
 
-test('request progress callbacks cannot revoke root or typed scope and still dispatch',async()=>{
- for(const typed of [false,true])for(const stop of [false,true]){let revoked=false,requests=0;const abort=new AbortController(),g=graph();if(typed)g.nodes.decision={...g.nodes.decision,operation:'fast-decision',fastConnectionId:'typed'};
-  const result=await runWorkflowForHost(g,{...ports(),signal:abort.signal,resolveFastBinding:()=>({ok:true,data:{connectionId:'typed',model:'jev'}}),onEvent:event=>{if(event.type==='request-start'){revoked=true;if(stop)abort.abort();}},request:()=>{requests++;return {ok:true,data:{text:'{}',finish:'stop'}};},requestFastDecision:()=>{requests++;return {ok:true,data:{}};}},{authorizeModelInputs:()=>revoked?{ok:false,error:{code:'STALE_ACTOR_SCOPE',message:'Changed at progress.'}}:{ok:true}});
+test('request progress callbacks cannot revoke scope and still dispatch',async()=>{
+ for(const stop of [false,true]){let revoked=false,requests=0;const abort=new AbortController(),g=graph();
+  const result=await runWorkflowForHost(g,{...ports(),signal:abort.signal,onEvent:event=>{if(event.type==='request-start'){revoked=true;if(stop)abort.abort();}},request:()=>{requests++;return {ok:true,data:{text:'{}',finish:'stop'}};}},{authorizeModelInputs:()=>revoked?{ok:false,error:{code:'STALE_ACTOR_SCOPE',message:'Changed at progress.'}}:{ok:true}});
   assert.equal(requests,0);assert.equal(result.ok,false);assert.match(result.error.code,/ABORTED|STALE_ACTOR_SCOPE/);assert.equal(result.actualCalls,0);
  }
 });
-
 
 test('injected request-start clock callbacks cannot revoke scope before transport',async()=>{
  let authorized=0,revoked=false,requests=0;const result=await runWorkflowForHost(graph(),{...ports(),clock:{now:()=>{if(authorized===2)revoked=true;return 1;},monotonic:()=>1},request:()=>{requests++;return {ok:true,data:{text:'{}',finish:'stop'}};}},{authorizeModelInputs:()=>{authorized++;return revoked?{ok:false,error:{code:'STALE_ACTOR_SCOPE',message:'Clock changed scope.'}}:{ok:true};}});assert.equal(result.ok,false);assert.equal(result.error.code,'STALE_ACTOR_SCOPE');assert.equal(requests,0);assert.equal(result.actualCalls,0);

@@ -160,7 +160,7 @@ export function resolveBinding(node, graph, context) {
     const role = graph.roles?.[node.modelRole];
     const profileId = node.profileId || role?.profileId;
     if (profileId === ACTIVE_PROFILE_ID) return resolveActiveBinding(node,context,role);
-    if (!profileId) return fail('BINDING_MISSING', 'Choose a connection profile for this node in Details.');
+    if (!profileId) return fail('BINDING_MISSING', 'Choose a connection profile from the dropdown beneath this node.');
     if (typeof context.ConnectionManagerRequestService?.getProfile !== 'function') return fail('SERVICE_UNAVAILABLE', 'SillyTavern Connection Manager is unavailable.');
     let profile;
     try { profile = context.ConnectionManagerRequestService.getProfile(profileId); }
