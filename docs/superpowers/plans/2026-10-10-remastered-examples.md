@@ -75,7 +75,7 @@ Generator exports REMASTERED_WORKFLOW_EXAMPLE_DATA from src/workflow/remastered-
 - [x] Run npm test, npm run check:types, npm run build, npm run check:assets, npm run test:browser, npm run smoke:install; inspect representative screenshots and helper/group layouts.
 - [x] Review existing main launcher/polish changes separately, preserve them and validate appropriate tests; include them under the user's prior all-repository-changes instruction when integrating.
 - [x] Refresh release/version consistently if needed; verify GitHub authentication using gh with network permission.
-- [ ] Commit, integrate into main without force/reset, verify final main, push and confirm remote SHA with gh.
+- [x] Commit, integrate into main without force/reset, verify final main, push and confirm remote SHA with gh.
 
 ## Execution record
 
@@ -111,4 +111,4 @@ Before this integration, all 248 unit files passed; the broad browser run passed
 - Independent final merge review: **20/20 targeted interaction tests passed**, no actionable findings. Additional owner checks: **59/59 catalog/configuration tests**, **47/47 freshness/retirement/prior-unified tests**, and **34/34 native memory settlement tests**.
 - Verified main cleanup commit included: **64cf727**; earlier Workflow Data/launcher commit **d047477** retained. Unrelated active-chat plans and work artifacts remain untouched.
 
-Git integration and remote verification are recorded after the approved push.
+Main fast-forwarded to release commit `bcb224ef11084ac2e6ced7fd50fe4fbdf31639cc`, then passed fresh workspace admission/layout/retirement checks (4/4 files), assets, documentation and clean-install smoke. `git push origin main` succeeded; GitHub CLI independently confirmed that exact origin/main SHA. The subsequent verification-record commit changes this plan only; tested runtime, generated assets and examples remain identical.
