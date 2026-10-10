@@ -1,6 +1,5 @@
 import { computeDefinitionIdentity, definitionRefKey, validateDefinition } from '../definitions.js?v=0.26.0';
-import { exportSubgraph, exportWorkflow, parseSubgraph, parseWorkflow } from '../packages.js?v=0.26.0';
-import { resolveWorkflow } from '../resolve.js?v=0.26.0';
+import { exportSubgraph, parseSubgraph } from '../packages.js?v=0.26.0';
 
 const fail = (code, message) => ({ ok: false, error: { code, message } });
 const primitive = (id, operation, settings = {}) => ({ id, type: 'workflow', operation, operationVersion: 1, ...settings });
@@ -102,32 +101,4 @@ export function createLibrarySubgraph(id) {
         return packageDefinition(sceneCompass(lens.data.definition), { [definitionRefKey(lens.data.definition)]: lens.data.definition });
     }
     return fail('UNKNOWN_LIBRARY_SUBGRAPH', 'Unknown library subgraph ID.');
-}
-
-/** Complete authoring roots supply sources and explicit terminal/review operations. */
-export function createLibraryWorkflow(id) {
-    if (id === 'context-lens') return fail('LIBRARY_UTILITY_ONLY', 'Context Lens outputs Context and is a utility subgraph, not a complete Guidance workflow.');
-    if (!['scene-compass', 'literal-cleanup', 'formatting-cleanup', 'prose-cleanup'].includes(id)) return fail('UNKNOWN_LIBRARY_WORKFLOW', 'Unknown complete library workflow ID.');
-    const created = createLibrarySubgraph(id);
-    if (!created.ok) return created;
-    const parsed = parseSubgraph(created.data.json);
-    if (!parsed.ok) return parsed;
-    const { definition: pinned, definitions } = parsed.data;
-    const pre = id === 'scene-compass';
-    const graph = {
-        id: `lattice.library.workflow.${id}`, name: pinned.name, schema: 3, runtime: 2, mode: pinned.body.mode,
-        nodes: { source: primitive('source', pre ? 'scene-context' : 'reply-snapshot'), library: instance('library', pinned),
-            ...(pre ? { output: primitive('output', 'guidance') } : { review: primitive('review', 'review-gate'), apply: primitive('apply', 'apply-reply') }) },
-        wires: { source: wire('source', 'source', 'library', 'out', pinned.interface[0].id),
-            ...(pre ? { output: wire('output', 'library', 'output', pinned.interface[1].id) }
-                : { review: wire('review', 'library', 'review', pinned.interface[1].id), apply: wire('apply', 'review', 'apply') }) },
-        definitions: { ...definitions, [definitionRefKey(pinned)]: pinned }, roles: pinned.body.roles, groups: {}, portals: {},
-    };
-    const resolved = resolveWorkflow(graph);
-    if (!resolved.ok) return resolved;
-    try {
-        const json = JSON.stringify(exportWorkflow(graph), null, 2) + '\n';
-        const portable = parseWorkflow(json);
-        return portable.ok ? { ok: true, data: { graph: portable.data, json } } : portable;
-    } catch { return fail('LIBRARY_PACKAGE', 'The library workflow could not be packaged.'); }
 }

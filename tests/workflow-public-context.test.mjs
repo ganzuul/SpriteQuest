@@ -4,7 +4,7 @@ import {snapshotContext,createNativeWorkflowController} from '../src/workflow/ho
 import {describeOperation,operationDefaults,semanticControlsForNode} from '../src/workflow/catalog.js';
 import {computeDefinitionIdentity} from '../src/workflow/definitions.js';
 import {artifactVisibility} from '../src/workflow/artifact-privacy.js';
-import {starterGraph} from '../src/workflow/starters.js';
+import { fixtureGraph as starterGraph } from './helpers/workflow-fixtures.mjs';
 import {unifiedRecipeHost} from './helpers/unified-recipe-host.mjs';
 const response=text=>({ok:true,data:{text:typeof text==='string'?text:JSON.stringify(text),finish:'stop'}});
 const publicNode={visibilityMode:'public'};
@@ -72,7 +72,7 @@ for(const source of ['chat','character'])for(const replacement of ['restricted',
  const c=context(),graph=starterGraph('native-guidance');graph.nodes['scene-context'].visibilityMode='public';graph.nodes['smart-compactor'].method='select';
  let entered,release,reads=0;const ready=new Promise(r=>entered=r),wait=new Promise(r=>release=r);
  const controller=createNativeWorkflowController({context:()=>c,isBusy:()=>false,countTokens:async()=>({tokens:1,method:'fixture'}),resolveBinding:()=>({ok:true,data:{profileId:'fixture',model:'fixture'}}),request:async()=>{entered();await wait;return response('Public plan.');}});
- const pending=controller.runPre(graph);const early=await Promise.race([ready.then(()=>null),pending]);assert.equal(early,null,JSON.stringify(early?.error));const material=source==='chat'?c.chat[0]:c.characters[0].data;
+ const pending=controller.runTarget(graph,{workflowId:graph.id,instancePath:[],nodeId:'guidance',portId:'out'});const early=await Promise.race([ready.then(()=>null),pending]);assert.equal(early,null,JSON.stringify(early?.error));const material=source==='chat'?c.chat[0]:c.characters[0].data;
  if(replacement==='restricted')material.visibleTo=['mara'];else Object.defineProperty(material,'visibleTo',{enumerable:true,get(){reads++;return ['mara'];}});
  release();const result=await pending;assert.equal(result.ok,false);assert.equal(result.error.code,'STALE_SOURCE');assert.equal(reads,0);controller.dispose();
 });
@@ -117,7 +117,7 @@ for(const source of ['chat','character'])for(const replacement of ['hidden','acc
  const c=context(),graph=starterGraph('native-guidance');graph.nodes['scene-context'].visibilityMode='public';graph.nodes['smart-compactor'].method='select';
  let entered,release,reads=0;const ready=new Promise(r=>entered=r),wait=new Promise(r=>release=r);
  const controller=createNativeWorkflowController({context:()=>c,isBusy:()=>false,countTokens:async()=>({tokens:1,method:'fixture'}),resolveBinding:()=>({ok:true,data:{profileId:'fixture',model:'fixture'}}),request:async()=>{entered();await wait;return response('Public plan.');}});
- const pending=controller.runPre(graph);const early=await Promise.race([ready.then(()=>null),pending]);assert.equal(early,null,JSON.stringify(early?.error));const material=source==='chat'?c.chat[0]:c.characters[0].data;
+ const pending=controller.runTarget(graph,{workflowId:graph.id,instancePath:[],nodeId:'guidance',portId:'out'});const early=await Promise.race([ready.then(()=>null),pending]);assert.equal(early,null,JSON.stringify(early?.error));const material=source==='chat'?c.chat[0]:c.characters[0].data;
  if(replacement==='hidden')material.visibility={kind:'hidden'};else Object.defineProperty(material,'visibility',{enumerable:true,get(){reads++;return {kind:'public'};}});
  release();const result=await pending;assert.equal(result.ok,false);assert.equal(result.error.code,'STALE_SOURCE');assert.equal(reads,0);controller.dispose();
 });
@@ -143,7 +143,7 @@ for(const replacement of ['visibleTo','hidden','accessor'])test('native public w
  const c=context(),graph=starterGraph('native-guidance');graph.nodes['scene-context'].visibilityMode='public';graph.nodes['smart-compactor'].method='select';
  let entered,release,reads=0;const ready=new Promise(r=>entered=r),wait=new Promise(r=>release=r);
  const controller=createNativeWorkflowController({context:()=>c,isBusy:()=>false,countTokens:async()=>({tokens:1,method:'fixture'}),resolveBinding:()=>({ok:true,data:{profileId:'fixture',model:'fixture'}}),request:async()=>{entered();await wait;return response('Public plan.');}});
- const pending=controller.runPre(graph);const early=await Promise.race([ready.then(()=>null),pending]);assert.equal(early,null,JSON.stringify(early?.error));const card=c.characters[0];
+ const pending=controller.runTarget(graph,{workflowId:graph.id,instancePath:[],nodeId:'guidance',portId:'out'});const early=await Promise.race([ready.then(()=>null),pending]);assert.equal(early,null,JSON.stringify(early?.error));const card=c.characters[0];
  if(replacement==='visibleTo')card.visibleTo=['mara'];else if(replacement==='hidden')card.visibility={kind:'hidden'};else Object.defineProperty(card,'visibility',{enumerable:true,get(){reads++;return {kind:'public'};}});
  release();const result=await pending;assert.equal(result.ok,false);assert.equal(result.error.code,'STALE_SOURCE');assert.equal(reads,0);controller.dispose();
 });

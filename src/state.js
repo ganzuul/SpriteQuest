@@ -32,23 +32,60 @@ function checkRegistry(value) {
     return entries && Object.values(entries).every(safeWorkflowData);
 }
 
-function checkSettings(value) {
+function checkSettings(value, { allowRetired = false } = {}) {
     const saved = dataRecord(value), metadata = {}, graphs = dataRecord(saved?.graphs), library = dataRecord(saved?.subgraphLibrary);
-    if (saved) for (const [key, item] of Object.entries(saved)) if (!['graphs', 'subgraphLibrary', 'workspaceViews'].includes(key)) metadata[key] = item;
+    if (saved) for (const [key, item] of Object.entries(saved)) if (!['graphs', 'subgraphLibrary', 'workspaceViews', 'archivedWorkflows'].includes(key)) metadata[key] = item;
     if (!saved || !safeWorkflowData(metadata) || saved.schema !== 1 || typeof saved.enabled !== 'boolean' || !graphs || !plain(saved.nativeBindings) || !plain(saved.ui) || !library || !checkRegistry(library.definitions ?? {}) || !safeWorkflowData(Object.fromEntries(Object.entries(library).filter(([key]) => key !== 'definitions'))) || !checkRegistry(saved.workspaceViews ?? {})) throw new Error('Lattice settings must be a current plain-data document (schema 1).');
     if (Object.hasOwn(saved, 'workflowMode')) throw new Error('Lattice settings contain an unsupported workflow mode.');
     const checkedGraphs = {};
     for (const [id, graph] of Object.entries(graphs)) {
         const checked = cloneWorkflowDocument(graph);
         if (!checked.ok || checked.data.id !== id) throw new Error('Lattice workflow document ' + id + ' is invalid: ' + (checked.error?.message ?? 'unsupported identity'));
+        if (!allowRetired && checked.data.mode !== 'native-unified') throw new Error('Lattice active workflows must use the unified workflow mode.');
         checkedGraphs[id] = checked.data;
     }
     if (saved.activeGraphId !== null && !Object.hasOwn(graphs, saved.activeGraphId)) throw new Error('Lattice settings refer to an unavailable active workflow.');
-    for (const [phase, field] of [['pre', 'preGraphId'], ['post', 'postGraphId'], ['unified', 'workflowGraphId']]) {
+    for (const [phase, field] of (allowRetired ? [['pre', 'preGraphId'], ['post', 'postGraphId'], ['unified', 'workflowGraphId']] : [['unified', 'workflowGraphId']])) {
         const id = saved.nativeBindings[field];
-        if (phase === 'unified' && id === undefined) continue; // Legacy settings remain independently assigned.
+        if (allowRetired && id === undefined) continue;
         if (id !== null && (typeof id !== 'string' || checkedGraphs[id]?.mode !== 'native-' + phase)) throw new Error('Lattice ' + phase + ' binding does not identify a current workflow.');
     }
+    if (saved.archivedWorkflows !== undefined) {
+        const archive = dataRecord(saved.archivedWorkflows), archivedGraphs = dataRecord(archive?.graphs);
+        if (!archive || archive.schema !== 1 || !archivedGraphs || !safeWorkflowData(Object.fromEntries(Object.entries(archive).filter(([key]) => key !== 'graphs'))) || Object.keys(archive).some(key => !['schema', 'graphs', 'bindings', 'activeGraphId'].includes(key))) throw new Error('Lattice archived workflows must be bounded plain data.');
+        for (const [id, graph] of Object.entries(archivedGraphs)) {
+            const checked = cloneWorkflowDocument(graph);
+            if (!checked.ok || graph.id !== id || !['native-pre', 'native-post'].includes(graph.mode)) throw new Error('Lattice archived workflow ' + id + ' is invalid.');
+        }
+    }
+}
+
+/** Retired roots remain recoverable data and never enter executable registries. */
+function archiveRetiredWorkflows(value) {
+    const retired = Object.entries(value.graphs).filter(([, graph]) => ['native-pre', 'native-post'].includes(graph.mode));
+    if (!retired.length && Object.keys(value.nativeBindings).length === 1 && Object.hasOwn(value.nativeBindings, 'workflowGraphId')) return false;
+    const next = structuredClone(value);
+    if (retired.length) {
+        const archive = next.archivedWorkflows ?? { schema: 1, graphs: {}, bindings: { preGraphId: value.nativeBindings.preGraphId ?? null, postGraphId: value.nativeBindings.postGraphId ?? null }, activeGraphId: value.activeGraphId };
+        for (const [id, graph] of retired) {
+            if (Object.hasOwn(archive.graphs, id) && JSON.stringify(archive.graphs[id]) !== JSON.stringify(graph)) throw new Error('Lattice archived workflow identity conflicts with an existing original.');
+            archive.graphs[id] = structuredClone(graph);
+            delete next.graphs[id];
+        }
+        next.archivedWorkflows = archive;
+        if (!Object.keys(next.graphs).length) installStarter('unified-basic', next);
+        if (!Object.hasOwn(next.graphs, next.activeGraphId)) next.activeGraphId = value.nativeBindings.workflowGraphId ?? Object.keys(next.graphs)[0];
+    }
+    next.nativeBindings = { workflowGraphId: value.nativeBindings.workflowGraphId ?? null };
+    if (next.nativeBindings.workflowGraphId === null) next.enabled = false;
+    checkSettings(next);
+    const changedKeys = ['nativeBindings', 'enabled', ...(retired.length ? ['graphs', 'activeGraphId', 'archivedWorkflows'] : [])];
+    for (const key of changedKeys) {
+        const descriptor = Object.getOwnPropertyDescriptor(value, key);
+        if (descriptor ? descriptor.writable !== true : !Object.isExtensible(value)) throw new Error('Lattice settings are read-only; retired workflows were not changed.');
+    }
+    for (const key of changedKeys) value[key] = next[key];
+    return true;
 }
 
 /** Admit saved settings once; camera projections never repeat domain validation. */
@@ -57,7 +94,7 @@ export function settings() {
     if (!plain(root)) throw new Error('Lattice: getContext() exposed no extension settings.');
     const property = Object.getOwnPropertyDescriptor(root, MODULE);
     if (!property) {
-        const value = { schema: 1, enabled: false, graphs: {}, activeGraphId: null, nativeBindings: { workflowGraphId: null, preGraphId: null, postGraphId: null }, subgraphLibrary: { definitions: {} }, ui: {} };
+        const value = { schema: 1, enabled: false, graphs: {}, activeGraphId: null, nativeBindings: { workflowGraphId: null }, subgraphLibrary: { definitions: {} }, ui: {} };
         const graph = installStarter('unified-basic', value);
         value.activeGraphId = graph.id;
         checkSettings(value);
@@ -66,21 +103,26 @@ export function settings() {
     }
     if (!('value' in property)) throw new Error('Lattice settings must not contain an accessor.');
     const value = property.value;
-    if (!admitted.has(value)) { checkSettings(value); admitted.add(value); }
+    if (!admitted.has(value)) {
+        checkSettings(value, { allowRetired: true });
+        const changed = archiveRetiredWorkflows(value);
+        checkSettings(value); admitted.add(value);
+        if (changed) safe(() => c.saveSettingsDebounced());
+    }
     return value;
 }
 export function save() { safe(() => ctx().saveSettingsDebounced()); }
 
 /** An empty current authoring document; terminals and connections are explicit. */
-export function blankGraph(name = 'Untitled', phase = 'unified') {
-    return { id: uid('g'), name, description: '', schema: 3, runtime: 2, mode: phase === 'unified' ? 'native-unified' : phase === 'post' ? 'native-post' : 'native-pre', createdAt: Date.now(), updatedAt: Date.now(), nodes: {}, wires: {}, portals: {}, definitions: {}, groups: {}, roles: {}, view: { x: 0, y: 0, zoom: 1 } };
+export function blankGraph(name = 'Untitled') {
+    return { id: uid('g'), name, description: '', schema: 3, runtime: 2, mode: 'native-unified', createdAt: Date.now(), updatedAt: Date.now(), nodes: {}, wires: {}, portals: {}, definitions: {}, groups: {}, roles: {}, view: { x: 0, y: 0, zoom: 1 } };
 }
 export function allGraphs() { return Object.values(settings().graphs).sort((a, b) => a.name.localeCompare(b.name)); }
 export function getGraph(id) { return settings().graphs[id] ?? null; }
 export function resolveGraph() { const graph = getGraph(settings().activeGraphId); return { graph, source: graph ? 'active' : 'none' }; }
-export function createGraph(name, phase = 'unified') {
-    const graph = blankGraph(name || 'Untitled', phase);
-    if (phase === 'unified') { const starter = starterGraph('unified-basic'); Object.assign(graph, { nodes: starter.nodes, wires: starter.wires }); }
+export function createGraph(name) {
+    const graph = blankGraph(name || 'Untitled');
+    const starter = starterGraph('unified-basic'); Object.assign(graph, { nodes: starter.nodes, wires: starter.wires });
     settings().graphs[graph.id] = graph; save(); return graph;
 }
 export function duplicateGraph(id, name) {
@@ -91,7 +133,7 @@ export function duplicateGraph(id, name) {
 export function deleteGraph(id) {
     const value = settings(); if (!Object.hasOwn(value.graphs, id)) return;
     delete value.graphs[id];
-    for (const field of ['workflowGraphId', 'preGraphId', 'postGraphId']) if (value.nativeBindings[field] === id) value.nativeBindings[field] = null;
+    if (value.nativeBindings.workflowGraphId === id) value.nativeBindings.workflowGraphId = null;
     if (!Object.keys(value.graphs).length) { const graph = blankGraph(); value.graphs[graph.id] = graph; }
     if (value.activeGraphId === id) value.activeGraphId = Object.keys(value.graphs)[0];
     save();
@@ -152,6 +194,14 @@ export function ungroup(graph, id) {
 }
 
 export function exportGraph(id) { const graph = getGraph(id); return graph ? JSON.stringify(exportWorkflow(graph)) : null; }
+/** Recovery download only; retired documents never become executable imports. */
+export function exportArchivedWorkflows() {
+    const archive = settings().archivedWorkflows;
+    if (!archive || !Object.keys(archive.graphs).length) return null;
+    return JSON.stringify({ kind: 'lattice-workflow-archive', schema: 1,
+        graphs: Object.fromEntries(Object.entries(archive.graphs).map(([id, graph]) => [id, exportWorkflow(graph).graph])),
+        bindings: structuredClone(archive.bindings), activeGraphId: archive.activeGraphId });
+}
 export function importGraph(json) {
     const parsed = parseWorkflow(json);
     if (!parsed.ok) return { ...parsed, reason: parsed.error.message };

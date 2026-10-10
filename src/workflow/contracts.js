@@ -31,6 +31,7 @@ export function validateGraphStructure(graph) {
 export function validateWorkflow(graph, { phase } = {}) {
     const validation = validateGraphStructure(graph);
     if (!validation.ok) return validation;
+    if (graph.mode !== 'native-unified') return fail('WRONG_PHASE', 'Executable root workflows require native-unified. Stage-specific bodies are reusable definitions only.');
     if (phase && graph.mode !== 'native-' + phase) return fail('WRONG_PHASE', 'The workflow operation does not support this phase.');
     return resolveWorkflow(graph);
 }

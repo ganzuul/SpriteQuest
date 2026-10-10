@@ -1,18 +1,15 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import * as runtime from '../src/workflow/runtime.js';
-import * as connections from '../src/workflow/connections.js';
-import * as starters from '../src/workflow/starters.js';
-import { createLiveGuard, createRequestBoundary, runLiveSession, createLiveReservationBridge, productionModulePath, runSyntheticFixtures } from '../tools/live-workflow-test.mjs';
-const model = 'z-ai/glm-5.2';
+import { createProviderTestGuard, createRequestBoundary, runProviderTestSession, createReservationBridge, productionModulePath } from '../tools/provider-test-guard.mjs';
+const model = 'fixture-plain';
 const owned = [{role:'system',content:'Synthetic fixture only.'},{role:'user',content:'A synthetic blue lantern.'}];
-const options = { live:true, host:'http://127.0.0.1:8000', priorAttempts:3, maxAttempts:3 };
+const options = { live:true, host:'http://127.0.0.1:8000', priorAttempts:0, maxAttempts:3, approvedModels:[model], fixtureLabels:['bounded auxiliary request'] };
 const request = {binding:{model},messages:owned,maxTokens:1024};
 const response = {ok:true,data:{text:'Fixture answer',finish:'stop',usage:{prompt_tokens:20,completion_tokens:3}}};
 function probe(config = options, reply = response) {
     let executions = 0;
-    const guard = createLiveGuard(config);
+    const guard = createProviderTestGuard(config);
     return {guard, executions:()=>executions, send:input=>guard.request(input, async()=>{ executions++; return reply; })};
 }
 // Removing the opt-in check would execute this paid boundary.
@@ -22,23 +19,23 @@ test('without explicit live opt-in no transport executes', async()=>{
 });
 // An unchecked host would send credentials to a remote server.
 test('only plain HTTP loopback hosts are accepted', ()=>{
-    for (const host of ['https://example.com','http://127.0.0.1.evil:8000','http://localhost:8000','http://user:pass@127.0.0.1:8000']) assert.throws(()=>createLiveGuard({...options,host}),/loopback/i);
+    for (const host of ['https://example.com','http://127.0.0.1.evil:8000','http://localhost:8000','http://user:pass@127.0.0.1:8000']) assert.throws(()=>createProviderTestGuard({...options,host}),/loopback/i);
 });
 test('unapproved models and excessive completion caps fail before transport', async()=>{
     const p = probe();
     for (const input of [{...request,binding:{model:'z-ai/glm-5.1'}},{...request,maxTokens:4097},{...request,maxTokens:0},{...request,maxTokens:2.5}]) await assert.rejects(p.send(input),/model|cap/i);
     assert.equal(p.executions(),0);
 });
-test('the global prior allowance and local bound refuse extra attempts', async()=>{
-    assert.throws(()=>createLiveGuard({...options,priorAttempts:2}),/prior/i);
-    assert.throws(()=>createLiveGuard({...options,maxAttempts:6}),/attempt/i);
+test('the caller ledger and per-run bound refuse extra attempts', async()=>{
+    assert.throws(()=>createProviderTestGuard({...options,priorAttempts:-1}),/prior/i);
+    assert.throws(()=>createProviderTestGuard({...options,maxAttempts:6}),/attempt/i);
     const p = probe({...options,maxAttempts:1});
     assert.equal((await p.send(request)).ok,true);
     await assert.rejects(p.send(request),/attempt/i);
     assert.equal(p.executions(),1); assert.equal(p.guard.attempts(),1);
 });
 test('only one exact owned backend payload consumes a reservation', async()=>{
-    const guard = createLiveGuard(options); let paid = 0;
+    const guard = createProviderTestGuard(options); let paid = 0;
     assert.equal(guard.authorize({model,max_tokens:1024,messages:owned,chat_completion_source:'nanogpt'}),false);
     await guard.request(request,async()=>{
         assert.equal(guard.authorize({model,max_tokens:1024,messages:[...owned,{role:'user',content:'Unexpected private input'}],chat_completion_source:'nanogpt'}),false);
@@ -57,14 +54,14 @@ test('provider rejection stops the session without retry', async()=>{
     assert.equal(p.executions(),1);
 });
 test('a thrown transport is counted and cannot be retried', async()=>{
-    const guard=createLiveGuard(options); let paid=0;
+    const guard=createProviderTestGuard(options); let paid=0;
     await assert.rejects(guard.request(request,async()=>{paid++;throw Error('failure');}),/failure/);
     await assert.rejects(guard.request(request,async()=>{paid++;return response;}),/stopped/i);
     assert.equal(paid,1); assert.equal(guard.attempts(),1);
 });
 
 test('reservation bridge refuses invalid and concurrent sends without replacing the owned payload', async()=>{
-    const guard=createLiveGuard(options), bridge=createLiveReservationBridge(guard);
+    const guard=createProviderTestGuard(options), bridge=createReservationBridge(guard);
     await assert.rejects(bridge.reserve({...request,binding:{model:'unapproved'}}),/model/i);
     await bridge.reserve(request);
     await assert.rejects(bridge.reserve(request),/attempt|active/i);
@@ -74,42 +71,14 @@ test('reservation bridge refuses invalid and concurrent sends without replacing 
 });
 test('dedicated module routing refuses arbitrary files and serves an actual production module', async()=>{
     const root=fileURLToPath(new URL('../',import.meta.url));
-    const path=await productionModulePath(root,'http://127.0.0.1/__lattice-live-test/src/workflow/runtime.js?v=0.19.1');
+    const path=await productionModulePath(root,'http://127.0.0.1/__lattice-provider-test/src/workflow/runtime.js?v=0.19.1');
     assert.equal(path,fileURLToPath(new URL('../src/workflow/runtime.js',import.meta.url)));
-    for (const url of ['http://127.0.0.1/__lattice-live-test/.git/config','http://127.0.0.1/__lattice-live-test/src/state.js','http://127.0.0.1/__lattice-live-test/src/workflow/../../.aws/credentials']) await assert.rejects(productionModulePath(root,url),/module/i);
-});
-test('production fixture graphs compact pinned text, plan bounded guidance and return a reviewed candidate in exactly three requests', async()=>{
-    const guard=createLiveGuard(options), bridge=createLiveReservationBridge(guard);
-    const host={
-        CONNECT_API_MAP:{nanogpt:{selected:'openai',source:'nanogpt'}},chatCompletionSettings:{},
-        ChatCompletionService:{presetToGeneratePayload:async(_preset,_route,payload)=>payload},
-        ConnectionManagerRequestService:{getProfile:()=>({name:'Synthetic profile',api:'nanogpt',model}),sendRequest:async(_profile,messages,maxTokens,_options,payload)=>{
-            assert.equal(guard.authorize(payload),true);
-            const text=messages[0].content.startsWith('Summarize') ? 'A traveler waits by a blue lantern and a closed gate, undecided about entering.' : messages[0].content.startsWith('Write concise') ? 'Offer the traveler a choice to wait or examine the gate. LANTERN-KEEP-26 remains a constraint.' : '{"patches":[{"index":0,"replacement":"showed"}]}';
-            return {choices:[{message:{content:text},finish_reason:'stop'}],usage:{prompt_tokens:50,completion_tokens:20,total_tokens:70,cost:0,currency:'USD',privateField:'must never reach report'}};
-        }},
-    };
-    const results=await runSyntheticFixtures({version:'0.19.0',profileId:'fixture-profile'},{runtime,connections,starters,host,reserve:bridge.reserve,finish:bridge.finish});
-    assert.equal(results.length,2);
-    assert.deepEqual(results.map(result=>[result.ok,result.actualCalls]),[[true,2],[true,1]]);
-    assert.deepEqual(results.flatMap(result=>result.recording.rows.filter(row=>row.attempts).map(row=>row.binding.model)),['z-ai/glm-5.2','z-ai/glm-5.2:thinking','z-ai/glm-5.2']);
-    assert.equal(results[0].constraints.pinPreserved,true);
-    assert.equal(results[0].constraints.compactionWithinBudget,true);
-    assert.equal(results[0].constraints.guidanceWithinBudget,true);
-    assert.equal(results[1].recording.terminal.kind,'candidate');
-    assert.equal(results[1].recording.terminal.text,'The lantern was showed the keeper\'s patience. The gate stayed shut.');
-    assert.equal(results[1].review.required,true); assert.equal(results[1].review.handle,null,'public runtime diagnostics grant no Apply authority');
-    assert.ok(results.every(result=>!('artifact' in result)&&!('calls' in result)&&!('reports' in result)));
-    assert.equal(results[1].constraints.originalPreserved,true);
-    assert.equal(results[1].constraints.unselectedTextPreserved,true);
-    assert.equal(results[1].constraints.reviewRequired,true);
-    assert.equal(JSON.stringify(results).includes('privateField'),false);
-    assert.equal(guard.attempts(),3);
+    for (const url of ['http://127.0.0.1/__lattice-provider-test/.git/config','http://127.0.0.1/__lattice-provider-test/src/state.js','http://127.0.0.1/__lattice-provider-test/src/workflow/../../.aws/credentials']) await assert.rejects(productionModulePath(root,url),/module/i);
 });
 const backendUrl='http://127.0.0.1:8000/api/backends/chat-completions/generate';
 const backendPayload={model,max_tokens:1024,messages:owned,chat_completion_source:'nanogpt'};
 test('outbound boundary blocks actual host hyphenated generation and direct-provider endpoints before reservation',()=>{
-    const boundary=createRequestBoundary(createLiveGuard(options),options.host);
+    const boundary=createRequestBoundary(createProviderTestGuard(options),options.host);
     for (const url of [
         'http://127.0.0.1:8000/api/horde/generate-text',
         'http://127.0.0.1:8000/api/openai/generate-image',
@@ -125,7 +94,7 @@ test('outbound boundary blocks actual host hyphenated generation and direct-prov
     assert.equal(boundary.counts().backendAccepted,0);
 });
 test('outbound boundary admits only exact origin POST path and one active owned request',async()=>{
-    const guard=createLiveGuard(options),boundary=createRequestBoundary(guard,options.host);
+    const guard=createProviderTestGuard(options),boundary=createRequestBoundary(guard,options.host);
     await guard.request(request,async()=>{
         for (const attempt of [
             {url:backendUrl.replace(':8000',':8001'),method:'POST'},
@@ -143,14 +112,14 @@ test('outbound boundary admits only exact origin POST path and one active owned 
     assert.equal(guard.attempts(),1);
 });
 test('outbound boundary keeps only required local readiness and tokenizer APIs available',()=>{
-    const boundary=createRequestBoundary(createLiveGuard(options),options.host);
+    const boundary=createRequestBoundary(createProviderTestGuard(options),options.host);
     for (const [path,method] of [['/','GET'],['/script.js','GET'],['/scripts/text-completion.js','GET'],['/csrf-token','GET'],['/api/extensions/discover','GET'],['/api/settings/get','POST'],['/api/tokenizers/openai/encode','POST']]) assert.equal(boundary.allow({url:options.host+path,method}),true);
     for (const [path,method] of [['/api/settings/save','POST'],['/api/secrets/find','POST'],['/api/secrets/view','POST'],['/api/chats/get','POST'],['/api/tokenizers/remote/kobold/count','POST'],['/proxy/https://provider.example/generate','GET']]) assert.equal(boundary.allow({url:options.host+path,method}),false);
 });
 
 test('exception after one admitted attempt returns a sanitized ledger with unknown usage and no retry',async()=>{
     let executions=0;
-    const report=await runLiveSession(options,{execute:async({guard,boundary,stage})=>{
+    const report=await runProviderTestSession(options,{execute:async({guard,boundary,stage})=>{
         stage('evaluate');
         await guard.request(request,async()=>{
             executions++;
@@ -159,20 +128,20 @@ test('exception after one admitted attempt returns a sanitized ledger with unkno
         });
     }});
     assert.equal(report.status,'failed'); assert.equal(report.failureStage,'evaluate');
-    assert.equal(report.priorAttempts,3); assert.equal(report.attempts,1); assert.equal(report.totalAttempts,4);
+    assert.equal(report.priorAttempts,0); assert.equal(report.attempts,1); assert.equal(report.totalAttempts,1);
     assert.equal(report.backendAccepted,1); assert.equal(report.attemptLedger[0].usageStatus,'unknown');
     assert.equal(report.attemptLedger[0].usage,null); assert.equal(executions,1);
     assert.equal(JSON.stringify(report).includes('private-cookie-and-provider-body'),false);
 });
 test('cleanup failure preserves completed fixture progress and the paid ledger',async()=>{
-    const fixture={label:'plain compactor + thinking planner',ok:true,actualCalls:1,callBound:2,constraints:{pinPreserved:true},recording:{status:'completed',rows:[],terminal:{kind:'guidance',format:'structured',text:'Synthetic guidance'}},review:{required:false,handle:null}};
+    const fixture={label:'bounded auxiliary request',ok:true,actualCalls:1,callBound:2,constraints:{pinPreserved:true},recording:{status:'completed',rows:[],terminal:{kind:'guidance',format:'structured',text:'Synthetic guidance'}},review:{required:false,handle:null}};
     let cleanups=0;
-    const report=await runLiveSession(options,{execute:async({guard,boundary,recordFixture})=>{
+    const report=await runProviderTestSession(options,{execute:async({guard,boundary,recordFixture})=>{
         await guard.request(request,async()=>{assert.equal(boundary.allow({url:backendUrl,method:'POST',payload:backendPayload}),true);return response;});
         recordFixture(fixture);
     },cleanup:async()=>{cleanups++;throw Error('private cleanup details');}});
     assert.equal(report.status,'failed'); assert.equal(report.failureStage,'cleanup');
-    assert.equal(report.totalAttempts,4); assert.equal(report.backendAccepted,1);
+    assert.equal(report.totalAttempts,1); assert.equal(report.backendAccepted,1);
     assert.equal(report.completedFixtures,1); assert.equal(report.fixtures[0].recording.terminal.text,'Synthetic guidance');
     assert.equal(report.attemptLedger[0].usageStatus,'reported');
     assert.equal(report.attemptLedger[0].usage.completion_tokens,3);
@@ -180,28 +149,28 @@ test('cleanup failure preserves completed fixture progress and the paid ledger',
 });
 test('startup exceptions and missing live opt-in produce machine-readable zero-attempt reports',async()=>{
     for (const failureStage of ['manifest','browser','navigation']) {
-        const report=await runLiveSession(options,{execute:async({stage})=>{stage(failureStage);throw Error('private startup details');}});
-        assert.equal(report.status,'failed'); assert.equal(report.failureStage,failureStage);assert.equal(report.totalAttempts,3);assert.equal(report.attempts,0);
+        const report=await runProviderTestSession(options,{execute:async({stage})=>{stage(failureStage);throw Error('private startup details');}});
+        assert.equal(report.status,'failed'); assert.equal(report.failureStage,failureStage);assert.equal(report.totalAttempts,0);assert.equal(report.attempts,0);
     }
     let starts=0;
-    const disabled=await runLiveSession({...options,live:false},{execute:async()=>{starts++;}});
-    assert.equal(disabled.status,'disabled');assert.equal(disabled.totalAttempts,3);assert.equal(starts,0);
+    const disabled=await runProviderTestSession({...options,live:false},{execute:async()=>{starts++;}});
+    assert.equal(disabled.status,'disabled');assert.equal(disabled.totalAttempts,0);assert.equal(starts,0);
 });
 
 test('browser loss with an unfinished admitted reservation conservatively retains the unknown attempt',async()=>{
-    const report=await runLiveSession(options,{execute:async({guard,boundary,stage})=>{
+    const report=await runProviderTestSession(options,{execute:async({guard,boundary,stage})=>{
         stage('evaluate');
-        await createLiveReservationBridge(guard).reserve(request);
+        await createReservationBridge(guard).reserve(request);
         assert.equal(boundary.allow({url:backendUrl,method:'POST',payload:backendPayload}),true);
         throw Error('private browser disconnect details');
     }});
-    assert.equal(report.attempts,1);assert.equal(report.totalAttempts,4);assert.equal(report.backendAccepted,1);
+    assert.equal(report.attempts,1);assert.equal(report.totalAttempts,1);assert.equal(report.backendAccepted,1);
     assert.equal(report.attemptLedger[0].outcome,'reserved');assert.equal(report.unknownUsageAttempts,1);
     assert.equal(report.completedFixtures,0);assert.equal(JSON.stringify(report).includes('private browser disconnect details'),false);
 });
 
 test('local OpenAI tokenizer admits the actual host count and encode/decode model queries without a paid reservation',()=>{
-    const guard=createLiveGuard(options),boundary=createRequestBoundary(guard,options.host);
+    const guard=createProviderTestGuard(options),boundary=createRequestBoundary(guard,options.host);
     for (const path of [
         '/api/tokenizers/openai/count?model=gpt-4o',
         '/api/tokenizers/openai/count?model=z-ai%2Fglm-5.2%3Athinking',
@@ -211,7 +180,7 @@ test('local OpenAI tokenizer admits the actual host count and encode/decode mode
     assert.equal(boundary.counts().backendAccepted,0);assert.equal(guard.attempts(),0);
 });
 test('local tokenizer query permission excludes duplicate unknown unbounded and nonlocal requests',()=>{
-    const boundary=createRequestBoundary(createLiveGuard(options),options.host);
+    const boundary=createRequestBoundary(createProviderTestGuard(options),options.host);
     for (const path of [
         '/api/tokenizers/openai/count',
         '/api/tokenizers/openai/count?model=',
@@ -227,4 +196,10 @@ test('local tokenizer query permission excludes duplicate unknown unbounded and 
     assert.equal(boundary.allow({url:options.host+'/api/tokenizers/openai/count?model=gpt-4o',method:'GET'}),false);
     assert.equal(boundary.allow({url:'http://127.0.0.1:8001/api/tokenizers/openai/count?model=gpt-4o',method:'POST'}),false);
     assert.equal(boundary.allow({url:'https://provider.example/api/tokenizers/openai/count?model=gpt-4o',method:'POST'}),false);
+});
+
+test('approved models and fixture labels are explicit current session configuration',async()=>{
+ const p=probe({...options,approvedModels:[]});await assert.rejects(p.send(request),/model/i);assert.equal(p.executions(),0);
+ const report=await runProviderTestSession(options,{execute:async({recordFixture})=>recordFixture({label:'retired workflow',ok:true})});
+ assert.equal(report.status,'failed');assert.equal(report.completedFixtures,0);
 });

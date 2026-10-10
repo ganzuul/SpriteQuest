@@ -4,7 +4,8 @@ import { runWorkflow } from '../src/workflow/runtime.js';
 import { runWorkflowForHost } from '../src/workflow/runtime.js';
 import { expandRecordAddress } from '../src/workflow/record-data.js';
 import { createRunRecorder } from '../src/workflow/recording.js';
-import { starterGraph } from '../src/workflow/starters.js';
+import { fixtureGraph as starterGraph } from './helpers/workflow-fixtures.mjs';
+const guidanceTarget=root=>({workflowId:root.id,instancePath:[],nodeId:'guidance',portId:'out'});
 import { requestModel, resolveBinding } from '../src/workflow/connections.js';
 import { createRunState, reduceRunState } from '../src/workflow/run-state.js';
 
@@ -27,7 +28,7 @@ test('Branch routes only its selected output and skips an unbound model without 
         model: node('model', 'repair'), planned: node('planned', 'validate-patches'), selected: node('selected', 'apply-reply'),
         fallback: node('fallback', 'repair', { mode: 'scan' }), checked: node('checked', 'validate-patches'), final: node('final', 'apply-reply'),
     }, [wire('a', 'json', 'out', 'data', 'in'), wire('b', 'data', 'out', 'condition', 'in'), wire('c', 'condition', 'out', 'branch', 'condition'), wire('d', 'source', 'out', 'branch', 'in'), wire('e', 'branch', 'yes', 'model', 'in'), wire('f', 'model', 'out', 'planned', 'in'), wire('g', 'branch', 'no', 'fallback', 'in'), wire('h', 'fallback', 'out', 'checked', 'in'), wire('i', 'checked', 'out', 'final', 'in'), wire('j', 'planned', 'out', 'selected', 'in')]);
-    for (const mode of ['native-unified', 'native-post']) {
+    for (const mode of ['native-unified']) {
         let bindings = 0, requests = 0;
         const result = await runWorkflow({ ...root, mode }, { snapshot: () => ({ kind: 'draft', text: 'An ordinary scene.', spans: [], source: { originalText: 'An ordinary scene.' } }), countTokens: async () => ({ tokens: 8 }), resolveBinding: () => { bindings++; return { ok: false, error: { code: 'PROFILE_MISSING', message: 'Missing' } }; }, request: () => { requests++; } });
         assert.equal(result.ok, true, JSON.stringify(result.error));
@@ -39,21 +40,21 @@ test('Branch routes only its selected output and skips an unbound model without 
     }
 });
 
-test('unconditional legacy models preflight before sources and retain binding failure recording', async () => {
+test('activated sources precede binding failure and retain bounded failure recording', async () => {
     const root = starterGraph('native-guidance'), effects = [], events = [];
-    const result = await runWorkflow(root, {
-        snapshot: () => { effects.push('snapshot'); },
+    const result = await runWorkflow(root, { target: guidanceTarget(root),
+        snapshot: () => { effects.push('snapshot'); return {kind:'context',messages:[{id:'1',role:'user',text:'A scene.',source:'chat'}]}; },
+        countTokens: async () => ({tokens:1,method:'fixture'}),
         resolveBinding: node => { effects.push('bind:' + node.id); return node.operation === 'response-plan' ? { ok: false, error: { code: 'FIXTURE_UNBOUND', message: 'Choose a profile' } } : { ok: true, data: { profileId: 'fixed', model: 'fixture' } }; },
         request: () => { effects.push('request'); }, onEvent: event => events.push(event),
     });
     assert.equal(result.error?.code, 'FIXTURE_UNBOUND');
-    assert.deepEqual(effects, ['bind:smart-compactor', 'bind:response-plan']);
+    assert.deepEqual(effects, ['snapshot','bind:smart-compactor','bind:response-plan']);
     assert.equal(result.actualCalls, 0); assert.equal(result.recording.status, 'failed');
-    assert.equal(unit(result, 'scene-context').status, 'not-run'); assert.equal(unit(result, 'smart-compactor').status, 'not-run');
+    assert.equal(unit(result, 'scene-context').status, 'completed'); assert.equal(unit(result, 'smart-compactor').status, 'completed');
     assert.equal(unit(result, 'response-plan').status, 'failed'); assert.equal(unit(result, 'guidance').status, 'blocked');
     assert.equal(unit(result, 'response-plan').error.code, 'FIXTURE_UNBOUND');
     assert.ok(events.some(event => event.type === 'node-phase' && event.address?.nodeId === 'response-plan' && event.phase === 'binding'));
-    assert.equal(events.some(event => event.type === 'node-phase' && event.phase === 'executing'), false);
 });
 
 test('unified sources and injected host outputs keep activation-time binding', async () => {
@@ -61,23 +62,23 @@ test('unified sources and injected host outputs keep activation-time binding', a
     const ports = { snapshot: () => undefined, resolveBinding: () => { bindings++; return { ok: false, error: { code: 'UNBOUND', message: 'No profile' } }; } };
     const unified = await runWorkflow({ ...root, mode: 'native-unified' }, { ...ports, target: { workflowId: root.id, instancePath: [], nodeId: 'response-plan', portId: 'out' } });
     assert.equal(unified.error?.code, 'INVALID_SNAPSHOT'); assert.equal(bindings, 0);
-    const skipped = await runWorkflowForHost(root, ports, { executeHostOperation: () => ({ ok: true, outputStates: { out: { status: 'skipped' } } }) });
+    const skipped = await runWorkflowForHost(root, {...ports,target:guidanceTarget(root)}, { executeHostOperation: () => ({ ok: true, outputStates: { out: { status: 'skipped' } } }) });
     assert.equal(skipped.ok, true, JSON.stringify(skipped.error)); assert.equal(bindings, 0);
     assert.equal(unit(skipped, 'response-plan').status, 'skipped');
 });
 
-test('cached legacy preflight bindings still authenticate against current host state before transmission', async () => {
+test('an activated binding authenticates current host state after tokenizer callbacks', async () => {
     const root = starterGraph('native-guidance'), profile = { id: 'fixed', name: 'Fixed', api: 'oai', model: 'original' };
-    for (const node of Object.values(root.nodes)) if (['smart-compactor', 'response-plan'].includes(node.operation)) node.profileId = 'fixed';
+    root.nodes['smart-compactor'].profileId='fixed';root.nodes['smart-compactor'].targetTokens=64;root.nodes['smart-compactor'].keepRecent=0;
     let lookups = 0, transmitted = 0;
     const context = { CONNECT_API_MAP: { oai: { selected: 'openai', source: 'openai' } }, chatCompletionSettings: {}, ConnectionManagerRequestService: { getProfile: () => profile, sendRequest: () => { transmitted++; } } };
-    const result = await runWorkflow(root, {
+    const result = await runWorkflow(root, { target:{workflowId:root.id,instancePath:[],nodeId:'smart-compactor',portId:'out'},
         resolveBinding: (node, graph) => { lookups++; return resolveBinding(node, graph, context); },
-        snapshot: () => { assert.equal(lookups, 2); profile.model = 'changed-after-preflight'; return { kind: 'context', messages: [{ id: '1', role: 'user', text: 'What happens next?', source: 'chat' }] }; },
-        countTokens: async () => ({ tokens: 2, method: 'fixture' }), request: options => requestModel(options, context),
+        snapshot: () => { assert.equal(lookups, 0); return { kind: 'context', messages: [{ id: '1', role: 'user', text: 'What happens next?', source: 'chat' }] }; },
+        countTokens: async text => { profile.model='changed-after-binding';return { tokens: text.length?1000:0, method: 'fixture' }; }, request: options => requestModel(options, context),
     });
     assert.equal(result.error?.code, 'BINDING_CHANGED'); assert.equal(result.recording.status, 'stale');
-    assert.equal(lookups, 2); assert.equal(transmitted, 0);
+    assert.equal(lookups, 1); assert.equal(transmitted, 0);
 });
 
 test('a dependency-unsettled preflight marker never authorizes early execution or concurrent binding', () => {
@@ -200,4 +201,14 @@ test('empty For Each reserves its conservative bound without binding a model or 
     let effects=0;const effect=()=>{effects++;throw new Error('Empty iteration');};
     const result=await runWorkflow(root,{target:address('each'),resolveBinding:effect,request:effect,countTokens:effect,iterateHelper:effect});
     assert.equal(result.ok,true,JSON.stringify(result.error));assert.equal(result.callBound,6);assert.equal(result.actualCalls,0);assert.equal(effects,0);assert.deepEqual(output(result,'each').value,[]);
+});
+
+
+test('retired root modes fail execution admission before any source or model effects', async () => {
+    for (const mode of ['native-pre', 'native-post']) {
+        const root = graph({ source: node('source', mode === 'native-pre' ? 'scene-context' : 'reply-snapshot') }, [], mode);
+        let effects = 0; const effect = () => { effects++; throw Error('Retired root executed'); };
+        const result = await runWorkflow(root, { target: address('source'), snapshot: effect, resolveBinding: effect, countTokens: effect, request: effect });
+        assert.equal(result.ok, false); assert.equal(result.error.code, 'WRONG_PHASE'); assert.equal(effects, 0); assert.equal(result.actualCalls, 0);
+    }
 });

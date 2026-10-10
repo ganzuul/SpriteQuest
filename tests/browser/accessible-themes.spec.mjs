@@ -21,6 +21,10 @@ test('the actual theme picker offers the eight approved themes and shows readabl
 });
 
 test('example thumbnails follow accessible palettes and shapes, then restore Ember without editing authored comment colors', async ({ page }, testInfo) => {
+    await page.route('**/src/workflow/unified-example-data.js*',async route=>{
+        const response=await route.fetch(),source=await response.text();
+        await route.fulfill({response,body:source+"\nUNIFIED_WORKFLOW_EXAMPLE_DATA[0].packages[0].graph.nodes['theme-comment']={id:'theme-comment',type:'note',commentFrame:true,moveContents:false,title:'Authored theme comment',content:'Preserve this color.',color:'#637d89',x:0,y:0,w:500,h:300};"});
+    });
     await openEmber(page);
     await page.getByRole('button', { name: 'File', exact: true }).click();
     await page.getByRole('menuitem', { name: 'Open examples…', exact: true }).click();
@@ -168,7 +172,7 @@ test('Signal keeps pin actions neutral and distinguishes a failed selected card 
         const h = window.canvasHarness;
         h.graph.nodes[id].sections[0].text = '{broken'; h.S.save(); h.UI.refreshIfOpen();
     }, ids.firstCompose);
-    await page.locator('.pc-root-run').click();
+    await page.evaluate(()=>window.canvasHarness.canvas.select({kind:'node',id:'guidance'}));await page.locator('.pc-output-preview [data-run-here]').click();
     await expect(page.locator('.pc-run-meter-label')).toHaveText('Failed');
     const failed = page.locator('.pc-node-native[data-id="' + ids.jsonDecode + '"]');
     await failed.locator('.pc-native-heading').click();

@@ -36,6 +36,7 @@ test('a populated Transpose family opens and dispatches its checked creation cho
     });
 });
 async function fixture(props, check) {
+    props = { choices: initial.families.flatMap(family => family.operations.map(entry => ({ id: 'operation:' + entry.id, label: entry.title, family: family.name, phase: entry.phase, ...(entry.compatible ? {} : { disabledReason: 'Unavailable in this helper stage.' }) }))), ...props };
     const directory = await mkdtemp(join(tmpdir(), 'lattice-node-shelf-')), host = document.createElement('div');
     host.className = 'pc-canvas-area'; host.getBoundingClientRect = () => ({ left: 0, top: 0, right: 1024, bottom: 600, width: 1024, height: 600 });
     Object.defineProperty(host, 'clientWidth', { value: 1024 }); Object.defineProperty(host, 'clientHeight', { value: 600 }); document.body.append(host);
@@ -53,15 +54,15 @@ async function fixture(props, check) {
 }
 test('families directly expose canonical nodes with individual icons and shortcodes', async () => {
     const calls = [];
-    await fixture({ view: initial, add: (...args) => calls.push(args) }, async host => {
+    await fixture({ view: initial, choose: (...args) => calls.push(args) }, async host => {
         await click(host.querySelector('[data-family="Shaping"]'));
         assert.equal(host.querySelectorAll('[data-family]').length, 8);
-        assert.deepEqual([...host.querySelectorAll('[data-shelf-choice]')].map(row => row.dataset.shelfChoice), ['smart-compactor', 'response-plan']);
+        assert.deepEqual([...host.querySelectorAll('[data-shelf-choice]')].map(row => row.dataset.shelfChoice), ['operation:smart-compactor', 'operation:response-plan']);
         assert.equal(host.querySelectorAll('.pc-shelf-menu').length, 1);
         assert.equal(host.querySelector('.pc-family-menu').getAttribute('aria-label'), 'Shaping nodes');
         assert.equal(host.querySelector('[data-subfamily], .pc-sub-chevron'), null);
-        const node = host.querySelector('[data-shelf-choice="smart-compactor"]'); assert.ok(node.querySelector('svg')); assert.equal(node.querySelector('small').textContent, 'cp');
-        await click(node); assert.deepEqual(calls, [['smart-compactor']]); assert.equal(host.querySelector('.pc-family-menu'), null);
+        const node = host.querySelector('[data-shelf-choice="operation:smart-compactor"]'); assert.ok(node.querySelector('svg')); assert.equal(node.querySelector('small').textContent, 'cp');
+        await click(node); assert.deepEqual(calls, [['operation:smart-compactor']]); assert.equal(host.querySelector('.pc-family-menu'), null);
     });
 });
 test('dragging a shelf choice dispatches its canvas drop point once and clears the dragging cursor', async () => {
@@ -106,13 +107,13 @@ test('pointer cancellation cleans up a shelf drag and a now-disabled choice cann
 });
 test('shelf keyboard traversal owns focus and an incompatible phase cannot dispatch through a raw click', async () => {
     const calls = [];
-    await fixture({ view: initial, add: (...args) => calls.push(args) }, async host => {
+    await fixture({ view: initial, choose: (...args) => calls.push(args) }, async host => {
         const family = host.querySelector('[data-family="Output"]'); await keys(family, 'ArrowRight');
-        assert.equal(document.activeElement.dataset.shelfChoice, 'guidance');
-        await keys(document.activeElement, 'End'); assert.equal(document.activeElement.dataset.shelfChoice, 'guidance');
+        assert.equal(document.activeElement.dataset.shelfChoice, 'operation:guidance');
+        await keys(document.activeElement, 'End'); assert.equal(document.activeElement.dataset.shelfChoice, 'operation:guidance');
         await keys(document.activeElement, 'ArrowLeft'); assert.equal(document.activeElement, family);
         assert.equal(host.querySelector('.pc-family-menu'), null); await keys(family, 'ArrowRight');
-        const incompatible = host.querySelector('[data-shelf-choice="apply-reply"]'); assert.equal(incompatible.disabled, true);
+        const incompatible = host.querySelector('[data-shelf-choice="operation:apply-reply"]'); assert.equal(incompatible.disabled, true);
         incompatible.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true })); flushSync(); assert.deepEqual(calls, []);
         await keys(host.querySelector('.pc-family-menu'), 'Escape'); assert.equal(document.activeElement, family);
     });
@@ -176,11 +177,11 @@ test('saved shelf menus dismiss on outside click and reject actions for entries 
     });
 });
 test('hover opens aligned drawers without stealing focus and Escape cancels deferred opening', async () => {
-    await fixture({ view: initial, add: () => assert.fail('Browsing cannot create nodes') }, async host => {
+    await fixture({ view: initial, choose: () => assert.fail('Browsing cannot create nodes') }, async host => {
         const focus = document.createElement('input'); host.append(focus); focus.focus();
         const family = host.querySelector('[data-family="Shaping"]'); family.dispatchEvent(new dom.window.MouseEvent('pointerenter')); flushSync(); await tick();
         assert.equal(document.activeElement, focus);
-        assert.ok(host.querySelector('[data-shelf-choice="smart-compactor"]')); assert.equal(document.activeElement, focus);
+        assert.ok(host.querySelector('[data-shelf-choice="operation:smart-compactor"]')); assert.equal(document.activeElement, focus);
         await keys(host.querySelector('.pc-family-menu'), 'Escape'); assert.equal(host.querySelector('.pc-family-menu'), null);
         family.dispatchEvent(new dom.window.MouseEvent('pointerenter')); flushSync();
         await keys(family, 'Escape'); assert.equal(host.querySelector('.pc-family-menu'), null); assert.equal(document.activeElement, family);
@@ -197,7 +198,7 @@ test('a current disabled catalog entry rejects a raw event from its previously e
 });
 
 test('dismissal cancels deferred focus and family replacement opens its direct node menu', async () => {
-    await fixture({ view: initial, add: () => assert.fail('Navigation cannot create nodes') }, async host => {
+    await fixture({ view: initial, choose: () => assert.fail('Navigation cannot create nodes') }, async host => {
         const output = host.querySelector('[data-family="Output"]');
         output.click(); flushSync();
         output.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); flushSync();
@@ -208,7 +209,7 @@ test('dismissal cancels deferred focus and family replacement opens its direct n
         const shaping = host.querySelector('[data-family="Shaping"]'); shaping.click(); flushSync();
         await tick(); flushSync();
         assert.equal(host.querySelector('.pc-family-menu').getAttribute('aria-label'), 'Shaping nodes');
-        assert.equal(document.activeElement.dataset.shelfChoice, 'smart-compactor');
+        assert.equal(document.activeElement.dataset.shelfChoice, 'operation:smart-compactor');
         document.body.dispatchEvent(new dom.window.MouseEvent('pointerdown', { bubbles: true })); flushSync();
         assert.equal(host.querySelector('.pc-family-menu'), null);
         await click(output); await keys(document.activeElement, 'Tab'); assert.equal(host.querySelector('.pc-family-menu'), null);

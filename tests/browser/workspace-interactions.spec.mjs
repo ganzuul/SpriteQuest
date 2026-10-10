@@ -41,12 +41,13 @@ test('workspace labels resist text highlighting while editors and recorded outpu
     await page.waitForFunction(() => !!window.canvasHarness);
     await page.evaluate(async () => {
         const h = window.canvasHarness;
-        const { starterGraph } = await import('/src/workflow/starters.js?v=' + h.version);
+        const { fixtureGraph: starterGraph } = await import('/tests/helpers/workflow-fixtures.mjs');
         await h.activate(starterGraph('structured-guidance'));
     });
     await page.locator('.pc-brand').dblclick();
     expect(await page.evaluate(() => window.getSelection().toString())).toBe('');
-    await page.locator('.pc-root-run').click();
+    await page.locator('.pc-node-native[data-id="select-fields"] .pc-native-heading').click();
+    await page.locator('.pc-output-preview [data-run-here]').click();
     await expect(page.locator('.pc-run-meter-label')).toHaveText('Completed');
     await page.locator('.pc-node-native[data-id="select-fields"] .pc-native-heading').click();
     const output = page.locator('.pc-output-preview [role="tabpanel"] pre');

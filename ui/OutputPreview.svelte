@@ -66,7 +66,7 @@
                 </article>
             </div>
         {:else}
-            <p class="pc-preview-empty">{view.status === 'not-run' ? 'Run this workflow or use Run to here to inspect an output.' : 'No recorded artifact is available for this output.'}</p>
+            <p class="pc-preview-empty">{view.status === 'not-run' ? 'Send an assigned workflow or use Run to here to inspect an output.' : 'No recorded artifact is available for this output.'}</p>
         {/if}
         {#if view.settlement}
             <section aria-label="Accepted consequences" class="pc-preview-settlement">

@@ -156,6 +156,7 @@ test('workflow and standalone packages retain declared Text/Data controls and po
     assert.deepEqual(parsed.data.definition.body.nodes.pick.fields[0].default, { profileId: 'ordinary data', model: 'ordinary data' });
     const g = graph('post', { instance: { id: 'instance', type: 'subgraph', definition: { id: snapshot.id, version: 1, semanticHash: snapshot.semanticHash }, parameterOverrides: {}, roleOverrides: { Portable: { profileId: 'secret local', model: 'portable override' }, Blocked: { model: null } }, nodeBindingOverrides: {} } });
     g.definitions[definitionRefKey(snapshot)] = snapshot;
+    g.mode = 'native-unified';
     const roundtrip = parseWorkflow(JSON.stringify(exportWorkflow(g)));
     assert.equal(roundtrip.ok, true, JSON.stringify(roundtrip));
     assert.equal(roundtrip.data.nodes.instance.roleOverrides.Portable.profileId, null);

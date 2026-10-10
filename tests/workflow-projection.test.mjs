@@ -4,10 +4,16 @@ import { installMock } from './mock.js';
 installMock();
 const surface=await import('../src/ui/workflow-surface.js');
 const { prepareWorkflowPlanner }=await import('../src/workflow/resolve.js?v=0.26.0');
-const { starterGraph }=await import('../src/workflow/starters.js');
+const { fixtureGraph: starterGraph } = await import('./helpers/workflow-fixtures.mjs');
 const { cloneWorkflowDocument }=await import('../src/workflow/document.js');
-const { runWorkflow }=await import('../src/workflow/runtime.js');
-const { siblingWorkflow,twoOutputWorkflow }=await import('./fixtures/workflow-prepared-fixture.mjs');
+const {runWorkflow:executeWorkflow}=await import('../src/workflow/runtime.js');
+const {nativeFixture,reviewGraph}=await import('./helpers/native-workflow-fixture.mjs');
+const {withNativeBoundary}=await import('./helpers/workflow-fixtures.mjs');
+const allTarget=graph=>({workflowId:graph.id,instancePath:[],nodeId:graph.nodes.joined?'joined':'guidance',portId:'out'});
+const runWorkflow=(graph,ports={})=>executeWorkflow(graph,{target:allTarget(graph),...ports});
+const {siblingWorkflow:savedSiblingWorkflow,twoOutputWorkflow:savedTwoOutputWorkflow}=await import('./fixtures/workflow-prepared-fixture.mjs');
+function joinedGraph(graph){graph.nodes.joined={id:'joined',type:'workflow',operation:'join',artifactKind:'guidance',inputs:[{id:'one',label:'One',required:true},{id:'two',label:'Two',required:true}]};for(const id of ['one','two'])graph.wires['joined-'+id]={id:'joined-'+id,route:'wire',from:id,fromPort:'out',to:'joined',toPort:id};if(graph.nodes.source)graph.nodes.source.visibilityMode='public';return withNativeBoundary(graph,'joined');}
+const siblingWorkflow=()=>joinedGraph(savedSiblingWorkflow()),twoOutputWorkflow=swapped=>joinedGraph(savedTwoOutputWorkflow(swapped));
 const { resolveWorkflow }=await import('../src/workflow/resolve.js');
 const { parseRunPlan,freeze }=await import('../src/workflow/record-data.js');
 const { createRunRecorder,formatRecordedArtifact }=await import('../src/workflow/recording.js');
@@ -25,8 +31,7 @@ test('root preparation owns binding work and every selection/view projection use
     assert.equal(bindings,2);assert.equal(freshness,0);assert.equal(Object.isFrozen(root),false);
 });
 test('multiple root review handles require explicit terminal selection and target runs never acquire Apply',()=>{
-    const root=graph3('reviewed-de-slop');root.nodes.repair.mode='scan';root.nodes.secondApply={id:'secondApply',type:'workflow',operation:'apply-reply'};
-    root.wires.second={id:'second',route:'wire',from:'review-gate',fromPort:'out',to:'secondApply',toPort:'in'};
+    const root=reviewGraph({second:true,revise:false});
     const plan=parseRunPlan(resolveWorkflow(root).data),recorder=createRunRecorder({runId:'multiple'});recorder.accept({runId:'multiple',seq:1,at:1,elapsedMs:0,type:'plan',plan});
     recorder.capture({address:plan.terminals[0].address,direction:'terminal',artifact:freeze({kind:'candidate',text:'x'.repeat(300000)})});
     recorder.accept({runId:'multiple',seq:2,at:2,elapsedMs:1,type:'run-settled',status:'completed'});
@@ -44,7 +49,7 @@ test('multiple root review handles require explicit terminal selection and targe
 test('qualified sibling selection ignores unrelated missing bindings and resolves wrapper recording previews',async()=>{
     const root=siblingWorkflow();let preparations=0;
     const ports={snapshot:()=>({kind:'context',messages:[{id:'scene',role:'user',text:'Scene.',source:'chat'}]}),countTokens:async()=>({tokens:1,method:'fixture'}),resolveBinding:()=>({ok:true,data:{profileId:'fixture',model:'fixture'}}),request:async()=>({ok:true,data:{text:'Prepared proposal',finish:'stop'}})};
-    const session=surface.createWorkflowSession({runtime:()=>({runPre:(graph,options)=>runWorkflow(graph,{...ports,...options}),cancel(){}}),current:()=>root,epoch:()=>1,active:()=>true,changed(){}});await session.run();const result=session.result();
+    const session=surface.createWorkflowSession({runtime:()=>({runTarget:(graph,target,options)=>runWorkflow(graph,{...ports,...options,target}),cancel(){}}),current:()=>root,epoch:()=>1,active:()=>true,changed(){}});await session.run({target:allTarget(root)});const result=session.result();
     assert.equal(result.ok,true,JSON.stringify(result.error));
     const prepared=surface.prepareWorkflowProjection(root,{result,resolveBinding:(_node,bindingGraph)=>{assert.deepEqual(bindingGraph.roles,{});return ++preparations===1?{ok:false,error:{message:'First missing'}}:{ok:true,data:{profileId:'second',model:'fixture',authorization:'private'}};}});
     assert.equal(preparations,2);assert.match(surface.projectPreparedWorkflow(prepared).issues.join(' '),/First missing/);
@@ -65,8 +70,8 @@ test('foreign planner and projection objects reject without invoking caller prop
 test('bounded artifact previews and zero-call starter metadata come from the actual recording',async()=>{
     assert.equal(typeof surface.prepareWorkflowProjection,'function');const root=starterGraph('structured-guidance');let bindings=0;
     const result=await runWorkflow(root,{countTokens:async()=>({tokens:1,method:'fixture'})});assert.equal(result.ok,true,JSON.stringify(result.error));
-    const prepared=surface.prepareWorkflowProjection(root,{result,resolveBinding:()=>{bindings++;throw new Error('zero call');}}),target={kind:'terminal',address:{workflowId:root.id,instancePath:[],nodeId:'guidance'}};
-    const view=surface.projectPreparedWorkflow(prepared,{result,recording:result.recording,selectedTarget:target});assert.equal(bindings,0);assert.equal(view.callBound,0);assert.equal(view.result.applyAvailable,false);assert.ok(view.result.sections[0].text.includes('quiet conversation'));assert.ok(!('calls' in view.result));assert.equal(view.rows.length,5);
+    const prepared=surface.prepareWorkflowProjection(root,{result,resolveBinding:()=>{bindings++;throw new Error('zero call');}}),target=allTarget(root);
+    const view=surface.projectPreparedWorkflow(prepared,{result,recording:result.recording,selectedTarget:target});assert.equal(bindings,0);assert.equal(view.callBound,0);assert.equal(view.result.applyAvailable,false);assert.ok(view.result.sections[0].text.includes('quiet conversation'));assert.ok(!('calls' in view.result));assert.equal(view.rows.length,Object.keys(root.nodes).length);
     assert.equal(surface.projectPreparedWorkflow(prepared,{selectedTarget:target,status:'Selection only'}).rows,view.rows,'unchanged recording/view uses the prepared row lookup');
 });
 test('original current full rendering and cached target recordings retain separate compatible result shapes',async()=>{
@@ -99,20 +104,20 @@ test('malformed supported phase values produce safe diagnostics without binding 
 });
 test('recorded wrapper aliases survive definition revisions and unknown stale mappings stay unavailable',async()=>{
     const root=twoOutputWorkflow(),ports={countTokens:async()=>({tokens:1,method:'fixture'})};
-    const session=surface.createWorkflowSession({runtime:()=>({runPre:(graph,options)=>runWorkflow(graph,{...ports,...options}),cancel(){}}),current:()=>root,epoch:()=>1,active:()=>true,changed(){}});await session.run();const result=session.result(),recording=result.recording;
+    const session=surface.createWorkflowSession({runtime:()=>({runTarget:(graph,target,options)=>runWorkflow(graph,{...ports,...options,target}),cancel(){}}),current:()=>root,epoch:()=>1,active:()=>true,changed(){}});await session.run({target:allTarget(root)});const result=session.result(),recording=result.recording;
     const first={workflowId:root.id,instancePath:[],nodeId:'wrapper',portId:'first'},second={...first,portId:'second'};
     const initial=surface.prepareWorkflowProjection(root,{result}),before=surface.projectPreparedWorkflow(initial,{selectedTarget:first});assert.ok(before.result.sections[0].text.includes('Alpha'));assert.ok(surface.projectPreparedWorkflow(initial,{selectedTarget:second}).result.sections[0].text.includes('Beta'));
-    const unknownRoot=twoOutputWorkflow(),unknown=await runWorkflow(unknownRoot,ports),targetResult=await runWorkflow(unknownRoot,{...ports,target:first});
+    const unknownRoot=twoOutputWorkflow(),native=nativeFixture(unknownRoot),unknown=await native.generate(unknownRoot),targetResult=await runWorkflow(unknownRoot,{...ports,target:first});
     Object.assign(root,twoOutputWorkflow(true));const changed=surface.prepareWorkflowProjection(root,{result});const historical=surface.projectPreparedWorkflow(changed,{selectedTarget:first,availability:'stale'});
     assert.ok(historical.result.sections[0].text.includes('Alpha'),'old wrapper first cannot be relabeled through the new Beta route');assert.equal(historical.recording,recording);assert.deepEqual(historical.result.previewTarget,{workflowId:root.id,instancePath:['wrapper'],nodeId:'alpha',portId:'out'});
     const pinned=surface.projectPreparedWorkflow(changed,{selectedTarget:second,pinnedPreview:before.result.previewTarget,availability:'stale'});assert.ok(pinned.result.sections[0].text.includes('Alpha'));
     const uncaptured=surface.projectPreparedWorkflow(surface.prepareWorkflowProjection(root,{result:unknown}),{selectedTarget:first,availability:'stale'});assert.equal(uncaptured.result.sections[0].format,'omitted');assert.match(uncaptured.result.sections[0].text,/historical wrapper mapping unavailable/);assert.equal(uncaptured.result.previewTarget,null);assert.equal(uncaptured.recording,unknown.recording);
     const unprovenCurrent=surface.projectPreparedWorkflow(surface.prepareWorkflowProjection(root,{result:unknown}),{selectedTarget:first});assert.equal(unprovenCurrent.result.sections[0].format,'omitted','current availability alone cannot prove old mapping');
-    const uncapturedRoot=twoOutputWorkflow(),uncapturedSession=surface.createWorkflowSession({runtime:()=>({runPre:(graph,options)=>runWorkflow(graph,{...ports,...options}),cancel(){}}),current:()=>uncapturedRoot,epoch:()=>1,active:()=>true,changed(){}});await uncapturedSession.run();Object.assign(uncapturedRoot,twoOutputWorkflow(true));
+    const uncapturedRoot=twoOutputWorkflow(),uncapturedSession=surface.createWorkflowSession({runtime:()=>({runTarget:(graph,target,options)=>runWorkflow(graph,{...ports,...options,target}),cancel(){}}),current:()=>uncapturedRoot,epoch:()=>1,active:()=>true,changed(){}});await uncapturedSession.run({target:allTarget(uncapturedRoot)});Object.assign(uncapturedRoot,twoOutputWorkflow(true));
     const mismatchedRevision=surface.projectPreparedWorkflow(surface.prepareWorkflowProjection(uncapturedRoot,{result:uncapturedSession.result()}),{selectedTarget:first});assert.equal(mismatchedRevision.result.sections[0].format,'omitted','registered adoption cannot seed aliases from a different current definition revision');
     const recovered=surface.projectPreparedWorkflow(surface.prepareWorkflowProjection(root,{result:targetResult}),{selectedTarget:first,availability:'stale'});assert.ok(recovered.result.sections[0].text.includes('Alpha'),'admitted target/resolvedTarget recovers the exact old primitive');assert.equal(recovered.result.applyAvailable,false);
     const automatic=surface.createWorkflowSession({runtime:()=>({cancel(){}}),current:()=>unknownRoot,epoch:()=>1,active:()=>true,changed(){}}),{workflowSignature}=await import('../src/workflow/runtime.js');
-    automatic.receiveAutomatic({origin:{kind:'send',phase:'pre',graph:unknownRoot,graphId:unknownRoot.id,runId:unknown.runId,signature:workflowSignature(unknownRoot)},result:unknown});
+    automatic.receiveAutomatic({origin:{kind:'send',phase:'unified',graph:unknownRoot,graphId:unknownRoot.id,runId:unknown.runId,signature:workflowSignature(unknownRoot)},result:unknown});
     const freshAuto=surface.prepareWorkflowProjection(unknownRoot,{result:automatic.result()});assert.ok(surface.projectPreparedWorkflow(freshAuto,{selectedTarget:first}).result.sections[0].text.includes('Alpha'),'verified automatic adoption seeds unchanged current wrapper mapping');
     const oldAuto=surface.prepareWorkflowProjection(root,{result:automatic.result()});assert.ok(surface.projectPreparedWorkflow(oldAuto,{selectedTarget:first,availability:'stale'}).result.sections[0].text.includes('Alpha'),'the captured alias is not replaced by a later definition');
     assert.equal(Object.isFrozen(root),false);
@@ -120,8 +125,8 @@ test('recorded wrapper aliases survive definition revisions and unknown stale ma
 
 test('preview addresses are detached immutable DTOs and cannot rewrite recorded wrapper history',async()=>{
     const root=twoOutputWorkflow(),ports={countTokens:async()=>({tokens:1,method:'fixture'})};
-    const session=surface.createWorkflowSession({runtime:()=>({runPre:(graph,options)=>runWorkflow(graph,{...ports,...options}),cancel(){}}),current:()=>root,epoch:()=>1,active:()=>true,changed(){}});
-    await session.run();const result=session.result(),recording=result.recording;
+    const session=surface.createWorkflowSession({runtime:()=>({runTarget:(graph,target,options)=>runWorkflow(graph,{...ports,...options,target}),cancel(){}}),current:()=>root,epoch:()=>1,active:()=>true,changed(){}});
+    await session.run({target:allTarget(root)});const result=session.result(),recording=result.recording;
     const first={workflowId:root.id,instancePath:[],nodeId:'wrapper',portId:'first'},canonical={workflowId:root.id,instancePath:['wrapper'],nodeId:'alpha',portId:'out'};
     const prepared=surface.prepareWorkflowProjection(root,{result}),project=()=>surface.projectPreparedWorkflow(prepared,{selectedTarget:first});
     const initial=project(),preview=initial.result.previewTarget,text=view=>view.result.sections.map(section=>section.text).join(' ');
@@ -136,7 +141,7 @@ test('preview addresses are detached immutable DTOs and cannot rewrite recorded 
     const recovered=surface.projectPreparedWorkflow(targetPrepared,{selectedTarget:first});mutate(recovered.result.previewTarget);
     assert.deepEqual(recovered.result.previewTarget,canonical);assert.equal(Object.isFrozen(recovered.result.previewTarget),true);assert.equal(Object.isFrozen(recovered.result.previewTarget.instancePath),true);
     assert.ok(text(surface.projectPreparedWorkflow(targetPrepared,{selectedTarget:first})).includes('Alpha'));
-    const terminal={kind:'terminal',address:{workflowId:root.id,instancePath:[],nodeId:'one'}},terminalView=surface.projectPreparedWorkflow(prepared,{selectedTarget:terminal});
+    const terminal={kind:'terminal',address:{workflowId:root.id,instancePath:[],nodeId:'review-publish'}},terminalRun=await nativeFixture(root).generate(root),terminalView=surface.projectPreparedWorkflow(surface.prepareWorkflowProjection(root,{result:terminalRun}),{selectedTarget:terminal});
     assert.deepEqual(terminalView.result.previewTarget,terminal);mutate(terminalView.result.previewTarget);assert.deepEqual(terminalView.result.previewTarget,terminal);
     assert.equal(Object.isFrozen(terminalView.result.previewTarget),true);assert.equal(Object.isFrozen(terminalView.result.previewTarget.address),true);assert.equal(Object.isFrozen(terminalView.result.previewTarget.address.instancePath),true);
     Object.assign(root,twoOutputWorkflow(true));const stale=surface.projectPreparedWorkflow(surface.prepareWorkflowProjection(root,{result}),{selectedTarget:first,availability:'stale'});

@@ -161,7 +161,7 @@ test('search starts with an accessible input and outside presses dismiss anywher
 });
 
 test('real cached purpose, shortcode and known operation alias terms independently filter the source-compiled popup', async () => {
-    const catalog = prepareNativeSearchCatalog({ schema: 3, runtime: 2, mode: 'native-pre', workflowId: 'query-root', viewPath: [], inDefinition: false }).data;
+    const catalog = prepareNativeSearchCatalog({ schema: 3, runtime: 2, mode: 'native-unified', workflowId: 'query-root', viewPath: [], inDefinition: false }).data;
     const cached = filterNativeSearchChoices(catalog, { origin: { dir: 'out', kind: 'context' }, contextSensitive: true });
     const item = cached.find(choice => choice.id === 'operation:smart-compactor'), calls = [];
     const fields = { label: item.label, family: item.family, purpose: item.purpose, shortcode: item.shortcode, searchAliases: item.searchAliases.join(' ') };

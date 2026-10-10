@@ -270,11 +270,12 @@ test('the New save prompt wraps backward from dialog focus into its buttons', as
     await page.keyboard.press('Shift+Tab');
     await expect(dialog.getByRole('button', { name: 'Cancel', exact: true })).toBeFocused();
     await page.keyboard.press('Tab');
-    await expect(dialog.getByRole('combobox', { name: 'New workflow type', exact: true })).toBeFocused();
-    await page.keyboard.press('Tab');
     await expect(dialog.getByRole('button', { name: 'Save', exact: true })).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(dialog.getByRole('button', { name: 'Discard', exact: true })).toBeFocused();
     await page.keyboard.press('Shift+Tab');
-    await expect(dialog.getByRole('combobox', { name: 'New workflow type', exact: true })).toBeFocused();
+    await expect(dialog.getByRole('button', { name: 'Save', exact: true })).toBeFocused();
+    await expect(dialog.getByRole('combobox')).toHaveCount(0);
     await page.keyboard.press('Shift+Tab');
     await expect(dialog.getByRole('button', { name: 'Cancel', exact: true })).toBeFocused();
     await page.keyboard.press('Escape');
@@ -369,4 +370,28 @@ test('File Close retains committed workflow data and restores the same workspace
         camera: { ...window.canvasHarness.canvas.view },
         providerCalls: window.canvasHarness.providerCalls(),
     }))).toEqual({ sameRoot: true, sameDocument: true, camera, providerCalls: 0 });
+});
+
+
+test('File exports archived workflows only when a portable archive is present', async ({ page }) => {
+    await load(page);
+    await page.getByRole('button', { name: 'File', exact: true }).click();
+    await expect(page.getByRole('menuitem', { name: 'Export archived workflows', exact: true })).toHaveCount(0);
+    await page.keyboard.press('Escape');
+    const before = await snapshot(page);
+    await page.evaluate(async () => {
+        const h = window.canvasHarness, { fixtureGraph } = await import('/tests/helpers/workflow-fixtures.mjs');
+        const archived = fixtureGraph('reviewed-de-slop'); archived.mode='native-post';
+        archived.roles.Prose.profileId='local-private-profile'; archived.nodes.repair.profileId='local-private-profile';
+        h.S.settings().archivedWorkflows={schema:1,graphs:{[archived.id]:archived},bindings:{preGraphId:null,postGraphId:archived.id},activeGraphId:archived.id};
+        h.S.save(); h.UI.refreshIfOpen(); await h.settle();
+    });
+    const [download] = await Promise.all([page.waitForEvent('download'),menu(page,'Export archived workflows')]);
+    expect(download.suggestedFilename()).toBe('lattice-archived-workflows.json');
+    const chunks=[];for await(const chunk of await download.createReadStream())chunks.push(chunk);
+    const json=Buffer.concat(chunks).toString('utf8'),archive=JSON.parse(json);
+    expect(archive).toMatchObject({kind:'lattice-workflow-archive',schema:1});
+    expect(Object.values(archive.graphs)[0].mode).toBe('native-post');
+    expect(json).not.toContain('local-private-profile');
+    expect(await snapshot(page)).toEqual(before);
 });
