@@ -46,7 +46,7 @@ The prose writer receives selected typed policies and optional Context. Preservi
 | Formatting Cleanup | Draft -> Candidate | 0 |
 | Prose Cleanup | Draft and optional Context -> Candidate | 1 Prose; Inspect/empty permissions means 0 |
 
-Import packages from [examples/library/subgraphs](../examples/library/subgraphs/) through **Subgraphs → Manage subgraphs…**. Definitions have verified identities and pinned dependencies; saved revisions remain separate shelf choices. Model bindings remain unresolved until configured. Reusable bodies contain neither root sources nor Apply authority.
+Packages in [examples/library/subgraphs](../examples/library/subgraphs/) illustrate reusable typed interfaces. Save a wrapper through **Add to Subgraphs** and insert saved definitions from the Subgraphs shelf. Definitions have verified identities and pinned dependencies; the shelf shows the latest explicitly saved entry for each reusable item. Model bindings remain unresolved until configured. Reusable bodies contain neither root sources nor Apply authority.
 
 The workflow starter picker offers Scene Compass, Literal phrase cleanup, Formatting cleanup and Prose cleanup. Complete files are in [examples/library/workflows](../examples/library/workflows/). Context Lens is a utility without a standalone Guidance workflow. The existing Literal cleanup starter remains a separate deterministic Text Rules example.
 

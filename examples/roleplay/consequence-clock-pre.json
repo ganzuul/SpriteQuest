@@ -1,0 +1,189 @@
+{
+  "kind": "lattice-workflow",
+  "schema": 2,
+  "minRuntime": 2,
+  "graph": {
+    "id": "example-consequence-clock-pre",
+    "name": "Count settled messages · Pre",
+    "description": "Count distinct eligible settled public messages, avoiding duplicate ticks within the retained evidence window.\n\nLesson: Track unions eligible settled public message IDs once each. Its bounded count does not classify domain actions.\n\nLimitations: Native Events are public messages, not classified actions. Every retained track ID must remain in current settled evidence; the 64-position horizon needs explicit reconciliation/archive support. Domain clocks need an Event Mapper/Filter. Metadata saves may be unconfirmed.\n\nOpening installs an unassigned copy. Bind local model roles and provide the documented evidence before running.\n\nPre: at most 0 auxiliary calls. Preview before publishing or applying.\n\nTry changing:\nInspect identical Track inputs twice; compare count and addedCount.\nRename Track ID “ferry-wait”; update both field paths for an independent clock.\n\nDocumentation specimen (does not seed chat or actor memory):\n\nEvent input: The clock contains e1 and e2. Current settled Events contains e1, e2, e3; only e3 is new.\n\nDeterministic result: Clock = 3 distinct events: e1, e2, e3. Replaying that same settled evidence keeps it at 3.\n\nCount messages: Post: zero calls; full Run writes locally without review, save may be unconfirmed.\n\nRead the clock: Pre: exact paths, empty-state defaults, zero calls; no automatic consequence.\n\nEvidence horizon: ≤64 IDs/refs; all retained IDs must remain in current evidence. Longer histories need reconciliation/archive. No domain-event detector.\n\nRead the current clock (pre-state)\nPurpose: Read the stored clock.\nInspect: Check selected actor/store/track.\n\nClock count and counted IDs (pre-fields)\nPurpose: Select count and ID list.\nInspect: Check count/IDs; fallback 0 is not a write.\n\nPressure without event invention (pre-compose)\nPurpose: Render the count’s limited meaning.\nInspect: Check paths; Compose does no threshold math.\n\nBounded clock brief (pre-output)\nPurpose: Expose pacing guidance.\nInspect: Check count against actual circumstances.",
+    "schema": 3,
+    "runtime": 2,
+    "mode": "native-pre",
+    "nodes": {
+      "pre-state": {
+        "id": "pre-state",
+        "type": "workflow",
+        "operation": "memory",
+        "operationVersion": 1,
+        "title": "Memory · state",
+        "enabled": true,
+        "x": 80,
+        "y": 120,
+        "w": 260,
+        "h": 150,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Read the current clock",
+        "mode": "read",
+        "view": "state"
+      },
+      "pre-fields": {
+        "id": "pre-fields",
+        "type": "workflow",
+        "operation": "select-fields",
+        "operationVersion": 1,
+        "title": "Select Fields",
+        "enabled": true,
+        "x": 465,
+        "y": 120,
+        "w": 260,
+        "h": 150,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Clock count and counted IDs",
+        "fields": [
+          {
+            "name": "count",
+            "path": [
+              "payload",
+              "tracks",
+              "harbor-pressure",
+              "count"
+            ],
+            "required": false,
+            "default": 0
+          },
+          {
+            "name": "eventIds",
+            "path": [
+              "payload",
+              "tracks",
+              "harbor-pressure",
+              "eventIds"
+            ],
+            "required": false,
+            "default": []
+          }
+        ]
+      },
+      "pre-compose": {
+        "id": "pre-compose",
+        "type": "workflow",
+        "operation": "compose",
+        "operationVersion": 1,
+        "title": "Compose",
+        "enabled": true,
+        "x": 850,
+        "y": 120,
+        "w": 260,
+        "h": 150,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Pressure without event invention",
+        "mode": "template",
+        "outputKind": "guidance",
+        "template": "Harbor-pressure: {{data:/count}} distinct eligible public messages.\nIDs: {{data:/eventIds}}\nPacing context only: no proof of theft, elapsed time or suspicion. Consequences need established circumstances; leave player response open.",
+        "sections": [],
+        "separator": "\n\n"
+      },
+      "pre-output": {
+        "id": "pre-output",
+        "type": "workflow",
+        "operation": "guidance",
+        "operationVersion": 1,
+        "title": "Guidance",
+        "enabled": true,
+        "x": 1235,
+        "y": 120,
+        "w": 260,
+        "h": 150,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Bounded clock brief",
+        "budgetTokens": 360
+      },
+      "comment-1": {
+        "id": "comment-1",
+        "type": "note",
+        "title": "Before reply · Count settled messages",
+        "x": 439,
+        "y": 34,
+        "w": 697,
+        "h": 262,
+        "color": "#637d89",
+        "content": "Post: zero calls; full Run writes locally without review, save may be unconfirmed.",
+        "commentFrame": true,
+        "moveContents": true
+      },
+      "comment-2": {
+        "id": "comment-2",
+        "type": "note",
+        "title": "Read present context and actor history",
+        "x": 54,
+        "y": 34,
+        "w": 312,
+        "h": 262,
+        "color": "#637d89",
+        "content": "Check selected actor/store/track.",
+        "commentFrame": true,
+        "moveContents": true
+      },
+      "comment-3": {
+        "id": "comment-3",
+        "type": "note",
+        "title": "Publish bounded guidance",
+        "x": 1209,
+        "y": 34,
+        "w": 312,
+        "h": 262,
+        "color": "#637d89",
+        "content": "Check count against actual circumstances.",
+        "commentFrame": true,
+        "moveContents": true
+      }
+    },
+    "wires": {
+      "wire-1": {
+        "id": "wire-1",
+        "route": "wire",
+        "from": "pre-state",
+        "fromPort": "out",
+        "to": "pre-fields",
+        "toPort": "in"
+      },
+      "wire-2": {
+        "id": "wire-2",
+        "route": "wire",
+        "from": "pre-fields",
+        "fromPort": "out",
+        "to": "pre-compose",
+        "toPort": "data"
+      },
+      "wire-3": {
+        "id": "wire-3",
+        "route": "wire",
+        "from": "pre-compose",
+        "fromPort": "out",
+        "to": "pre-output",
+        "toPort": "in"
+      }
+    },
+    "groups": {},
+    "roles": {},
+    "portals": {},
+    "definitions": {},
+    "template": {
+      "id": "consequence-clock",
+      "version": 1
+    },
+    "view": {
+      "x": 0,
+      "y": 0,
+      "zoom": 1
+    }
+  }
+}

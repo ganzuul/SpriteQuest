@@ -9,19 +9,14 @@ test('current saved root draws normalized named wires without changing its docum
  assert.ok(Object.values(draw.wires).every(edge=>edge.route==='wire'&&edge.fromPort&&edge.toPort));assert.deepEqual(root,before);
 });
 
-test('actual root Subgraphs manager opens with an empty shelf and no selected definition', async () => {
- const { readFile } = await import('node:fs/promises'), { createGraphViewSession } = await import('../src/ui/graph-view-session.js?v=0.26.0');
- const root = starterGraph('reviewed-de-slop'), prepared = prepareWorkspaceViews(root); assert.equal(prepared.ok, true);
- const session = createGraphViewSession({root,activationId:'empty-manager',...prepared.data}).data;
- const owner = {key:'subgraphs-empty',revision:'empty:1',scope:{kind:'graph',workflowId:root.id,instancePath:[]},libraryRevision:'0'};
- let shown;
- const env = {current:root,graphViews:session,selected:null,managerOwner:()=>owner,canvas:{multi:new Set()},workflowProjection:{profiles:[]},definitionRefKey,
-  workspacePrepared:{...prepared.data,shelfDefinitions:{},libraryDefinitions:{},definitionInfo:{},libraryIssue:''},
-  workbench:{updateActions(){},update(value){shown=value.subgraphManager;}}};
- const text = await readFile(new URL('../src/ui/controller.js',import.meta.url),'utf8'), start = text.indexOf('function openSubgraphManager('), next = text.indexOf('\nfunction ',start+1);
- const open = Function('env','with(env){'+text.slice(start,next<0?undefined:next)+';return openSubgraphManager;}')(env);
- assert.doesNotThrow(()=>open()); assert.ok(shown);assert.deepEqual(shown.entries,[]);assert.equal(shown.definition,null);assert.equal(shown.instance,null);
- assert.equal(shown.capabilities.importJSON,true);assert.equal(shown.capabilities.removeRevision,false);assert.equal(shown.capabilities.insert,false);
+test('an empty root shelf still exposes disabled subgraph interface nodes', async () => {
+ const { prepareNativeSearchCatalog } = await import('../src/ui/native-search-catalog.js?v=0.26.0');
+ const result = prepareNativeSearchCatalog({schema:3,runtime:2,mode:'native-pre',workflowId:'empty-shelf',viewPath:[],inDefinition:false});
+ assert.equal(result.ok,true);
+ const boundaries=result.data.choices.filter(choice=>choice.id.startsWith('boundary:'));
+ assert.deepEqual(boundaries.map(choice=>choice.label),['Input','Output']);
+ assert.ok(boundaries.every(choice=>choice.disabledReason));
+ assert.equal(result.data.choices.some(choice=>choice.definitionRef),false);
 });
 test('definition manager metadata keeps declared editor types and real nested primitive targets',()=>{
  const root=siblingWorkflow(),original=Object.values(root.definitions)[0],draft=structuredClone(original);delete draft.semanticHash;draft.parameters=[{id:'instructions',label:'Instructions',target:{instancePath:[],nodeId:'work',controlId:'instructions'}}];

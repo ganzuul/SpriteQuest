@@ -33,9 +33,9 @@ async function fixture(view, actions) {
     try {
         const source = await readFile(new URL('../ui/NodeDetails.svelte', import.meta.url), 'utf8');
         const leaf = await compiled('NodeDetails', directory, source);
-        const harness = await compiled('DetailDraftHarness', directory, `<script>import Leaf from ${JSON.stringify(pathToFileURL(leaf.path).href)}; let { initial, actions } = $props(); let view = $state.raw(initial); export function update(next) { view = next; }</script><Leaf {view} {actions} />`);
+        const harness = await compiled('DetailDraftHarness', directory, `<script>import Leaf from ${JSON.stringify(pathToFileURL(leaf.path).href)}; let { initial, actions } = $props(); let view = $state.raw(initial), visible = $state(true); export function update(next) { view = next; } export function setMounted(next) { visible = next; }</script>{#if visible}<Leaf {view} {actions} />{/if}`);
         mounted = mount(harness.component, { target: host, props: { initial: view, actions } }); flushSync();
-        return { host, update(next) { mounted.update(next); flushSync(); }, close: cleanup };
+        return { host, update(next) { mounted.update(next); flushSync(); }, setMounted(next) { mounted.setMounted(next); flushSync(); }, close: cleanup };
     } catch (error) { await cleanup(); throw error; }
 }
 const address = { workflowId: 'root', instancePath: [], nodeId: 'scan' };
@@ -85,6 +85,86 @@ test('an invalid JSON draft and error survive an unrelated saved checkbox revisi
         assert.deepEqual(f.edits, [{ key: 'caseSensitive', value: false }]);
     } finally { await f.close(); }
 });
+
+test('invalid JSON drafts survive changing roots and returning without saving either workflow', async () => {
+    const f = await savedFixture();
+    try {
+        input(editor(f), '{"phrase":'); save(f).click(); flushSync();
+        const other = initialGraph(); other.id = 'other-root'; other.nodes.scan.rules = ['Other committed rules'];
+        f.update(node(other, { address: { ...address, workflowId: 'other-root' } }));
+        assert.equal(editor(f).value, '[\n  "Other committed rules"\n]');
+        input(editor(f), '["other draft"]');
+        f.update(node(f.graph(), { revision: 'revision2' }));
+        assert.equal(editor(f).value, '{"phrase":');
+        assert.equal(editor(f).getAttribute('aria-invalid'), 'true');
+        assert.match(f.host.querySelector('[role="alert"]').textContent, /valid JSON/);
+        save(f).click(); await settle();
+        assert.deepEqual(f.edits, [], 'returning to invalid text never publishes a control edit');
+        assert.deepEqual(f.graph().nodes.scan.rules, savedRules);
+        assert.deepEqual(other.nodes.scan.rules, ['Other committed rules']);
+        f.update(node(other, { address: { ...address, workflowId: 'other-root' } }));
+        assert.equal(editor(f).value, '["other draft"]', 'each root retains its own pending text');
+    } finally { await f.close(); }
+});
+
+test('unmounting the inspector expires its private cached drafts before a fresh instance uses the same address', async () => {
+    const edits = [], f = await fixture(node(), { editControl: (...args) => { edits.push(args); return { ok: true }; } });
+    try {
+        input(editor(f), '{"phrase":'); save(f).click(); flushSync();
+        f.update(node(undefined, { address: { ...address, workflowId: 'other-root' } }));
+        input(editor(f), '["other private draft"]');
+        f.update(node()); assert.equal(editor(f).value, '{"phrase":');
+        const previousInspector = f.host.querySelector('.pc-node-details');
+        f.setMounted(false); assert.equal(previousInspector.isConnected, false);
+        f.setMounted(true);
+        assert.notEqual(f.host.querySelector('.pc-node-details'), previousInspector, 'this is a new instance from the same imported component module');
+        assert.equal(editor(f).value, JSON.stringify(savedRules, null, 2));
+        assert.equal(editor(f).getAttribute('aria-invalid'), 'false');
+        assert.equal(f.host.querySelector('[role="alert"]'), null);
+        f.update(node(undefined, { address: { ...address, workflowId: 'other-root' } }));
+        assert.equal(editor(f).value, JSON.stringify(savedRules, null, 2), 'the other qualified cached draft is also private to the destroyed instance');
+        assert.deepEqual(edits, [], 'destroying and mounting inspectors never publishes unsaved edits');
+    } finally { await f.close(); }
+});
+
+test('a restored draft cannot cross a changed editor contract for the same field', async () => {
+    const edits = [], f = await fixture(node(), { editControl: (...args) => { edits.push(args); return { ok: true }; } });
+    try {
+        input(editor(f), '{"phrase":'); save(f).click(); flushSync();
+        f.update(node(undefined, { address: { ...address, workflowId: 'other-root' } }));
+        f.update(node(undefined, { revision: 'revision2', controls: [{ key: 'rules', label: 'rules', editor: 'lines', value: ['Current line setting'] }] }));
+        assert.equal(editor(f).value, 'Current line setting', 'a JSON draft must not become line data');
+        assert.equal(editor(f).getAttribute('aria-invalid'), 'false'); assert.deepEqual(edits, []);
+        input(editor(f), 'Unsaved lines');
+        f.update(null); f.update(node(undefined, { revision: 'revision3' }));
+        assert.equal(editor(f).value, JSON.stringify(savedRules, null, 2), 'line text must not become a JSON-value draft');
+        assert.deepEqual(edits, []);
+    } finally { await f.close(); }
+});
+
+for (const nextAddress of [
+    { ...address, workflowId: 'other-root' },
+    { ...address, instancePath: ['sibling/part', 'nested|part'] },
+    { kind: 'library', definitionRef: { id: 'definition', version: 1, semanticHash: 'pinned' }, nodeId: 'scan' },
+]) {
+    test(`returning from ${'kind' in nextAddress ? 'a library definition' : nextAddress.workflowId === 'root' ? 'a sibling instance' : 'another root'} expires pending callbacks even at the same revision`, async () => {
+        const pending = [], captures = [], f = await fixture(node(), { editControl(captured) { captures.push(captured); return new Promise(resolve => pending.push(resolve)); } });
+        try {
+            input(editor(f), '["first draft"]'); save(f).click(); flushSync();
+            f.update(node(undefined, { address: nextAddress }));
+            assert.equal(editor(f).value, JSON.stringify(savedRules, null, 2));
+            input(editor(f), '["separate draft"]');
+            f.update(node()); assert.equal(editor(f).value, '["first draft"]'); assert.equal(save(f).disabled, false);
+            save(f).click(); flushSync(); assert.equal(save(f).disabled, true);
+            pending[0]({ ok: true }); await settle();
+            assert.equal(editor(f).value, '["first draft"]'); assert.equal(save(f).disabled, true, 'old completion cannot release the newer save');
+            pending[1]({ ok: false, error: { code: 'CURRENT', message: 'Current root rejected this draft' } }); await settle();
+            assert.match(f.host.textContent, /Current root rejected/); assert.equal(save(f).disabled, false);
+            assert.deepEqual(captures.map(capture => capture.address), [address, address]);
+            f.update(node(undefined, { address: nextAddress })); assert.equal(editor(f).value, '["separate draft"]');
+        } finally { await f.close(); }
+    });
+}
 
 test('valid JSON and line drafts survive other saves and require their own explicit Save', async () => {
     const f = await savedFixture();

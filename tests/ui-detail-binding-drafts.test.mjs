@@ -150,6 +150,26 @@ const allowedModes = [{ value: 'inherit', label: 'Inherit role' }, { value: 'ove
 function plainView(extra = {}) {
     return { selectionKey: 'selected-plan', revision: 'revision1', address: { workflowId: 'root', instancePath: [], nodeId }, title: 'Response Plan', canonicalTitle: 'Response Plan', iconPath: 'M3 5h18', family: 'Shaping', phase: 'pre', alias: '', compact: false, enabled: true, readOnly: false, canPresent: true, controls: [], ports: [], model: { role: 'Analysis', roleEditable: true, effective: 'Actual role connection · role-model', source: 'Saved node override or containing role', profile: { mode: 'inherit', allowedModes, value: null, options: options.profiles.map(p => ({ value: p.id, label: p.name })) }, model: { mode: 'inherit', allowedModes, value: null } }, ...extra };
 }
+
+test('root switching restores a binding override draft only while its mode is supported', async () => {
+    const calls = [], f = await fixture(plainView(), { editBinding: (...args) => { calls.push(args); return { ok: true }; } });
+    try {
+        change(mode(f, 'model'), 'override'); input(editor(f, 'model'), '   '); change(editor(f, 'model'), '   ');
+        const other = plainView({ address: { workflowId: 'other-root', instancePath: [], nodeId } });
+        f.update(other); assert.equal(editor(f, 'model'), null);
+        change(mode(f, 'model'), 'override'); input(editor(f, 'model'), 'Other unsaved identifier');
+        f.update(plainView({ revision: 'revision2' }));
+        assert.equal(mode(f, 'model').value, 'override'); assert.equal(editor(f, 'model').value, '   ');
+        assert.match(f.host.textContent, /Enter a model identifier/);
+        assert.match(f.host.textContent, /Effective connection: Actual role connection · role-model/);
+        assert.deepEqual(calls, [], 'browsing and invalid overrides never change committed bindings');
+        f.update(other); assert.equal(editor(f, 'model').value, 'Other unsaved identifier');
+        const unsupported = plainView({ revision: 'revision3' }); unsupported.model.model.allowedModes = [allowedModes[0]];
+        f.update(unsupported);
+        assert.equal(mode(f, 'model').value, 'inherit'); assert.equal(editor(f, 'model'), null, 'an unsupported restored override cannot reveal an editor');
+        assert.doesNotMatch(f.host.textContent, /Enter a model identifier/); assert.deepEqual(calls, []);
+    } finally { await f.close(); }
+});
 test('Inherit cancels unsaved override modes without writing null, and readonly or unsupported modes cannot stage a draft', async () => {
     const calls = [], f = await fixture(plainView(), { editBinding: (...args) => { calls.push(args); return { ok: true }; } });
     try {

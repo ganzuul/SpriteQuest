@@ -1,0 +1,197 @@
+{
+  "kind": "lattice-workflow",
+  "schema": 2,
+  "minRuntime": 2,
+  "graph": {
+    "id": "example-persistent-conditions-pre",
+    "name": "Record injuries and fatigue · Pre",
+    "description": "Retain evidence-backed actor conditions so later behavior can account for them until recovery.\n\nLesson: Persist evidenced actor conditions across scenes; Recovery needs evidence, then Reflect adapts present behavior.\n\nLimitations: This is model-proposed actor state, not medical simulation or authoritative health math. Full Post root Run writes memory and must use settled evidence.\n\nOpening installs an unassigned copy. Bind local model roles and provide the documented evidence before running.\n\nPre: at most 1 auxiliary calls. Preview before publishing or applying.\n\nTry changing:\nSwitch Capture to Recovery after settled treatment/rest; inspect proposed limits before full Run.\nChange movement emphasis to climbing; compare hints while stored injury remains.\n\nDocumentation specimen (does not seed chat or actor memory):\n\nSettled condition: Rin twisted her left ankle in the previous scene. No recovery has been established.\n\nBehavior brief: Keep the ankle condition in actor state and account for it in movement. Do not reset it simply because the scene changes.\n\nCapture a condition: Analysis ≤1. Full Post Run writes locally without review; save may be unconfirmed.\n\nUse the condition: Separate Pre Reflect Analysis ≤1; Behavior deterministic. Connections unbound.\n\nRecovery limits: No medical math/seeded injury/scene-reset healing. Custom Curve needs nonbaseline initialization; absent curve starts at Baseline.\n\nStored limits for Rin (pre-state)\nPurpose: Read stored movement limits.\nInspect: Check unresolved stored ankle condition.\n\nWhat Rin is attempting now (pre-scene)\nPurpose: Read current attempted movement.\nInspect: Check source IDs/omissions/actual action.\n\nMovement with an injured ankle (pre-reflect)\nPurpose: Appraise limits in this scene.\nInspect: Check movement possibilities/condition refs.\n\nRender Rin’s behavior options (pre-express)\nPurpose: Render behaviorHints unchanged.\nInspect: Check exact hint rendering; no model call.\n\nCondition-aware movement brief (pre-output)\nPurpose: Expose movement guidance.\nInspect: Check brief; leave player choice open.",
+    "schema": 3,
+    "runtime": 2,
+    "mode": "native-pre",
+    "nodes": {
+      "pre-state": {
+        "id": "pre-state",
+        "type": "workflow",
+        "operation": "memory",
+        "operationVersion": 1,
+        "title": "Memory · state",
+        "enabled": true,
+        "x": 80,
+        "y": 120,
+        "w": 260,
+        "h": 150,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Stored limits for Rin",
+        "mode": "read",
+        "view": "state"
+      },
+      "pre-scene": {
+        "id": "pre-scene",
+        "type": "workflow",
+        "operation": "scene-context",
+        "operationVersion": 1,
+        "title": "Scene Context",
+        "enabled": true,
+        "x": 80,
+        "y": 425,
+        "w": 260,
+        "h": 150,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "What Rin is attempting now",
+        "recentMessages": 10,
+        "includeCharacter": true
+      },
+      "pre-reflect": {
+        "id": "pre-reflect",
+        "type": "workflow",
+        "operation": "reflect",
+        "operationVersion": 1,
+        "title": "Reflect · character",
+        "enabled": true,
+        "x": 465,
+        "y": 272.5,
+        "w": 260,
+        "h": 150,
+        "profileId": null,
+        "model": null,
+        "modelRole": "Analysis",
+        "alias": "Movement with an injured ankle",
+        "mode": "character",
+        "maxTokens": 1100,
+        "instructions": "Use Rin’s stored ankle limit and present movement. Suggest support/less demanding routes as possibilities in behaviorHints. No invented severity, diagnosis, scene-reset healing or player decisions."
+      },
+      "pre-express": {
+        "id": "pre-express",
+        "type": "workflow",
+        "operation": "express",
+        "operationVersion": 1,
+        "title": "Express · behavior",
+        "enabled": true,
+        "x": 850,
+        "y": 272.5,
+        "w": 260,
+        "h": 182,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Render Rin’s behavior options",
+        "mode": "behavior",
+        "maxTokens": 512,
+        "instructions": "Movement options from the supplied assessment."
+      },
+      "pre-output": {
+        "id": "pre-output",
+        "type": "workflow",
+        "operation": "guidance",
+        "operationVersion": 1,
+        "title": "Guidance",
+        "enabled": true,
+        "x": 1235,
+        "y": 272.5,
+        "w": 260,
+        "h": 150,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Condition-aware movement brief",
+        "budgetTokens": 460
+      },
+      "comment-1": {
+        "id": "comment-1",
+        "type": "note",
+        "title": "Before reply · Record injuries and fatigue",
+        "x": 439,
+        "y": 186.5,
+        "w": 697,
+        "h": 294,
+        "color": "#637d89",
+        "content": "Analysis ≤1. Full Post Run writes locally without review; save may be unconfirmed.",
+        "commentFrame": true,
+        "moveContents": true
+      },
+      "comment-2": {
+        "id": "comment-2",
+        "type": "note",
+        "title": "Read present context and actor history",
+        "x": 54,
+        "y": 34,
+        "w": 312,
+        "h": 567,
+        "color": "#637d89",
+        "content": "Check unresolved stored ankle condition.\nCheck source IDs/omissions/actual action.",
+        "commentFrame": true,
+        "moveContents": true
+      },
+      "comment-3": {
+        "id": "comment-3",
+        "type": "note",
+        "title": "Publish bounded guidance",
+        "x": 1209,
+        "y": 186.5,
+        "w": 312,
+        "h": 262,
+        "color": "#637d89",
+        "content": "Check brief; leave player choice open.",
+        "commentFrame": true,
+        "moveContents": true
+      }
+    },
+    "wires": {
+      "wire-1": {
+        "id": "wire-1",
+        "route": "wire",
+        "from": "pre-scene",
+        "fromPort": "out",
+        "to": "pre-reflect",
+        "toPort": "context"
+      },
+      "wire-2": {
+        "id": "wire-2",
+        "route": "wire",
+        "from": "pre-state",
+        "fromPort": "out",
+        "to": "pre-reflect",
+        "toPort": "state"
+      },
+      "wire-3": {
+        "id": "wire-3",
+        "route": "wire",
+        "from": "pre-reflect",
+        "fromPort": "out",
+        "to": "pre-express",
+        "toPort": "assessment"
+      },
+      "wire-4": {
+        "id": "wire-4",
+        "route": "wire",
+        "from": "pre-express",
+        "fromPort": "out",
+        "to": "pre-output",
+        "toPort": "in"
+      }
+    },
+    "groups": {},
+    "roles": {
+      "Analysis": {
+        "model": null,
+        "profileId": null
+      }
+    },
+    "portals": {},
+    "definitions": {},
+    "template": {
+      "id": "persistent-conditions",
+      "version": 1
+    },
+    "view": {
+      "x": 0,
+      "y": 0,
+      "zoom": 1
+    }
+  }
+}

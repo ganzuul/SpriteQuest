@@ -1,7 +1,7 @@
 import type { GraphViews, GraphViewActions } from './view-types';
 import type { NodeDetailsView, NodeDetailsActions, OutputPreviewView, OutputPreviewActions, RunDetailsView, RunDetailsActions } from './detail-types';
 import type { RunMeterView } from './run-meter-types';
-import type { PortalManagerView, PortalManagerActions, SubgraphManagerView, SubgraphManagerActions } from './manager-types';
+import type { PortalManagerView, PortalManagerActions } from './manager-types';
 import type { NodeSearchView, NodeSearchActions, PinMenuView, PinMenuActions, SearchChoice } from './native-wire-types';
 import type { DetailSelection, DetailEditResponse } from './detail-types';
 import type { CommentFrameData, CommentPatch, CommentCommand } from './comment-types';
@@ -9,7 +9,7 @@ export interface Port { id: string; className: string; dir: 'in' | 'out'; side: 
 export interface NodeCardData { id: string; x: number; y: number; w: number; type: string; className: string; title: string; titleHint: string; label: string; iconPath: string; body: string | null; ports: Port[]; compact: boolean; hostResult: boolean; enabled: boolean; boundary?: { direction: 'input' | 'output'; editable: boolean }; off?: boolean; offHint?: string }
 export interface GroupCardData { id: string; collapsed: boolean; x: number; y: number; w: number; h?: number; className: string; title: string; body: string; count: string }
 export interface WireData { kind?: string; id: string; d: string; className: string; label: { x: number; y: number; text: string; className: string; anchor?: string; id?: string; title?: string } }
-export interface CanvasActions { hostResult: (id: string) => void; hoverPin: (pin: { nodeId: string; dir: string; port: string } | null) => void; group: (id: string, action: 'open' | 'collapse') => void; boundary?: (id: string, action: 'edit' | 'add') => void }
+export interface CanvasActions { hostResult: (id: string) => void; hoverPin: (pin: { nodeId: string; dir: string; port: string } | null) => void; group: (id: string, action: 'open' | 'collapse') => void }
 export interface PositionUpdate { id: string; x: number; y: number; w?: number; h?: number }
 export interface HistoryView { undo: boolean; redo: boolean; undoTitle: string; redoTitle: string; note: string; showNote: boolean }
 export interface ImportReviewView {
@@ -19,6 +19,14 @@ export interface ImportReviewView {
     inheritedBindingCount: number; terminals: { title: string; operation: string }[];
     bindingReviewRequired: boolean; error: string;
 }
+export interface SubgraphSaveView { key: string; name: string; targetId: string | null; entries: { id: string; name: string }[]; error?: string }
+export interface SubgraphSaveActions { close(): void; save(key: string, name: string, targetId: string | null): unknown }
+export interface WorkflowExamplePin extends Port { x: number; y: number }
+export interface WorkflowExampleNode { id: string; x: number; y: number; w: number; h: number; title: string; className: string; iconPath: string; body: string | null; ports: WorkflowExamplePin[] }
+export interface WorkflowExampleWire { id: string; d: string; kind: string; from: { nodeId: string; portId: string }; to: { nodeId: string; portId: string } }
+export interface WorkflowExampleComment { id: string; x: number; y: number; w: number; h: number; title: string; content: string; color: string }
+export interface WorkflowExampleThumbnail { bounds: { x: number; y: number; w: number; h: number }; nodes: WorkflowExampleNode[]; wires: WorkflowExampleWire[]; comments: WorkflowExampleComment[] }
+export interface WorkflowExampleTile { id: string; number: number; title: string; goal: string; thumbnail: WorkflowExampleThumbnail | null; issue: string }
 export interface WorkbenchView {
     graphs: { id: string; name: string }[]; graphId: string; armed: boolean; inspectorOpen: boolean; detailsWidth?: number;
     history: HistoryView; camera: { x: number; y: number; zoom: number; mode: string }; selectionCount: number;
@@ -26,22 +34,27 @@ export interface WorkbenchView {
     nativeFlatCanvas?: boolean; nativeDiagnostic?: string; readOnly?: boolean; graphViews?: GraphViews;
     nodeDetails?: NodeDetailsView | null; outputPreview?: OutputPreviewView | null; runDetails?: RunDetailsView | null; runMeter?: RunMeterView | null;
     commentDetails?: { comment: CommentFrameData; selection: DetailSelection } | null;
-    portalManager?: PortalManagerView | null; subgraphManager?: SubgraphManagerView | null;
+    portalManager?: PortalManagerView | null; subgraphSave?: SubgraphSaveView | null;
     nativeSearch?: NodeSearchView | null; nativePinMenu?: PinMenuView | null; nativeChoices?: readonly SearchChoice[];
     importReview?: ImportReviewView | null;
+    examples?: readonly WorkflowExampleTile[];
+    examplesIssue?: string;
     selectionActions?: { copy: boolean; cut: boolean; delete: boolean };
 }
 export interface WorkbenchActions {
     logoUrl?: string;
     graphViewActions?: GraphViewActions; nodeDetails?: NodeDetailsActions; outputPreview?: OutputPreviewActions; runDetails?: RunDetailsActions;
     commentDetails?: { patch: (selection: DetailSelection, patch: CommentPatch) => DetailEditResponse; command: (selection: DetailSelection, command: CommentCommand) => DetailEditResponse };
-    portalManager?: PortalManagerActions; subgraphManager?: SubgraphManagerActions; managePortals?: () => void; manageSubgraphs?: () => void;
-    chooseNative?: (id: string) => void; nativeSearch?: NodeSearchActions; nativePinMenu?: PinMenuActions; openRunDetails?: () => void;
+    portalManager?: PortalManagerActions; managePortals?: () => void;
+    shelfSubgraph?: (id: string, action: 'delete' | 'open') => void; subgraphSave?: SubgraphSaveActions;
+    chooseNative?: (id: string, at?: { x: number; y: number }) => void; nativeSearch?: NodeSearchActions; nativePinMenu?: PinMenuActions; openRunDetails?: () => void;
     pickGraph: (id: string) => void; arm: (enabled: boolean) => void; command: (name: string) => void;
     mode: (mode: string) => void; zoom: (factor: number) => void; fitSelection: () => void;
-    resizeStart?: () => void; resizeDetails?: (width: number) => void; addNode?: (id: string) => void;
+    resizeStart?: () => void; resizeDetails?: (width: number) => void; addNode?: (id: string, at?: { x: number; y: number }) => void;
     workflowSetup?: Pick<WorkflowActions, 'install' | 'bindRole' | 'assign'>;
     acceptImport?: () => void; cancelImport?: () => void; prepareImportAgain?: () => void;
+    openExample?: (id: string) => boolean | Promise<boolean>;
+    refreshExamples?: () => boolean | void;
 }
 
 

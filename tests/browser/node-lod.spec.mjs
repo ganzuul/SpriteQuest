@@ -170,11 +170,9 @@ test('switching library definitions resets detail even when both drawings have n
         await h.activate(root); return Object.keys(root.definitions);
     });
     const openLibrary = async key => {
-        await page.getByRole('button', { name: 'Node', exact: true }).click();
-        await page.getByRole('menuitem', { name: 'Subgraphs', exact: true }).click();
-        await page.getByLabel('Library revision', { exact: true }).selectOption(key);
-        await page.locator('[data-subgraph-open-library]').click();
-        await page.getByRole('button', { name: 'Close', exact: true }).click();
+        await page.locator('.pc-family-row[data-family="Subgraphs"]').click();
+        await page.locator('[data-shelf-choice=' + JSON.stringify('definition:' + key) + ']').click({ button: 'right' });
+        await page.getByRole('menuitem', { name: 'Open saved definition', exact: true }).click();
         await page.mouse.move(1400, 990);
     };
     await openLibrary(keys[0]); await page.evaluate(() => window.canvasHarness.view({ zoom: .55 }));

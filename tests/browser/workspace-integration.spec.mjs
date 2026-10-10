@@ -4,23 +4,32 @@ async function activate(page,fixture='nestedWorkflow') {
  const id=await page.evaluate(async fixture=>{const h=window.canvasHarness;const { [fixture==='portalWorkflow'?'siblingWorkflow':fixture]: create }=await import('/tests/fixtures/workflow-prepared-fixture.mjs');const root=create();if(fixture==='portalWorkflow'){const {computeDefinitionIdentity,definitionRefKey}=await import('/src/workflow/definitions.js?v='+h.version);const draft=structuredClone(Object.values(root.definitions)[0]);delete draft.semanticHash;draft.body.portals={publisher:{id:'publisher',label:'Saved publisher',kind:'guidance',source:{nodeId:'work',portId:'out'}}};draft.body.wires.b={id:'b',route:'portal',portalId:'publisher',to:'exit',toPort:'in'};const checked=computeDefinitionIdentity(draft);const definition={...checked.data.materializedDefinition,semanticHash:checked.data.semanticHash},ref={id:definition.id,version:definition.version,semanticHash:definition.semanticHash};root.definitions={[definitionRefKey(ref)]:definition};root.nodes['first/path'].definition=ref;root.nodes.second.definition=ref;}root.name='Actual workspace integration';h.S.settings().graphs[root.id]=root;h.UI.refreshIfOpen();window.workspaceRootId=root.id;return root.id;},fixture);
  await page.getByRole('combobox',{name:'Workflow',exact:true}).selectOption(id);await page.evaluate(()=>window.canvasHarness.settle());expect(await page.evaluate(()=>window.canvasHarness.canvas.graph.id)).toBe(id);return id;
 }
+async function subgraphCommand(page, id, command) {
+ await page.locator(`.pc-node-native[data-id="${id}"] .pc-native-heading`).click({button:'right'});
+ await page.getByRole('menuitem',{name:command,exact:true}).click();
+}
+async function openShelfDefinition(page, key) {
+ await page.locator('.pc-family-row[data-family="Subgraphs"]').click();
+ await page.locator('[data-shelf-choice='+JSON.stringify('definition:'+key)+']').click({button:'right'});
+ await page.getByRole('menuitem',{name:'Open saved definition',exact:true}).click();
+}
 test('real activated child tabs retain root identity, camera and readonly alias without document/history edits',async({page})=>{
  const id=await activate(page);await page.evaluate(()=>{const context=window.canvasHarness.context;context.extensionSettings.connectionManager ??={profiles:[]};const manager=context.extensionSettings.connectionManager,profiles=manager.profiles;window.workspaceBindingReads=0;Object.defineProperty(manager,'profiles',{configurable:true,get(){window.workspaceBindingReads++;return profiles;}});});const before=await page.evaluate(id=>JSON.stringify(window.canvasHarness.S.getGraph(id)),id);
  await page.locator('.pc-node-native[data-id="first/path"] .pc-native-heading').dblclick();await expect(page.locator('.pc-graph-tabs [role="tab"][aria-selected="true"]')).toContainText('Outer');await expect(page.locator('.pc-graph-location')).toContainText('Outer');
  await page.locator('.pc-node-native[data-id="work"]').click();await expect(page.getByLabel('Alias',{exact:true})).toBeEnabled();await page.getByLabel('Alias',{exact:true}).fill('Local wrapper alias');await page.getByLabel('Alias',{exact:true}).press('Tab');
  await page.getByRole('button',{name:'Graph',exact:true}).click();await page.getByRole('menuitem',{name:'Zoom in',exact:true}).click();await settleCamera(page);const childCamera=await page.evaluate(()=>({...window.canvasHarness.canvas.view}));
- await graphTab(page,{name:'Graph 1',exact:true}).click();await graphTab(page,{name:/Outer/}).click();expect(await page.evaluate(()=>({...window.canvasHarness.canvas.view}))).toEqual(childCamera);
+ await graphTab(page,{name:'Actual workspace integration',exact:true}).click();await graphTab(page,{name:/Outer/}).click();expect(await page.evaluate(()=>({...window.canvasHarness.canvas.view}))).toEqual(childCamera);
  expect(await page.evaluate(id=>JSON.stringify(window.canvasHarness.S.getGraph(id)),id)).toBe(before);await expect(page.getByRole('button',{name:'Undo',exact:true})).toBeDisabled();await expect(page.getByLabel('Alias',{exact:true})).toHaveValue('Local wrapper alias');expect(await page.evaluate(()=>window.workspaceBindingReads)).toBe(0);
 });
 test('local copy uses the real editable parent, then child body edits take one root history step',async({page})=>{
- const id=await activate(page,'siblingWorkflow');await page.locator('.pc-node-native[data-id="first/path"] .pc-native-heading').dblclick();await page.locator('.pc-details-heading').getByRole('button',{name:'Subgraphs',exact:true}).click();await expect(page.locator('[data-subgraph-local-copy]')).toBeEnabled();await page.locator('[data-subgraph-local-copy]').click();await page.getByRole('button',{name:'Close',exact:true}).click();
+ const id=await activate(page,'siblingWorkflow');await subgraphCommand(page,'first/path','Make editable copy');
  const owned=await page.evaluate(id=>window.canvasHarness.S.getGraph(id).localDefinitionOwners,id);expect(owned).toEqual(expect.arrayContaining([expect.objectContaining({instancePath:['first/path']})]));
  await page.locator('.pc-node-native[data-id="work"]').click();await expect(page.getByLabel('instructions',{exact:true})).toBeEnabled();await page.getByLabel('instructions',{exact:true}).fill('Owned body edit');await page.getByLabel('instructions',{exact:true}).press('Tab');
  const savedInstructions=await page.evaluate(id=>{const root=window.canvasHarness.S.getGraph(id);return root.definitions[JSON.stringify([root.nodes['first/path'].definition.id,root.nodes['first/path'].definition.version,root.nodes['first/path'].definition.semanticHash])].body.nodes.work.instructions;},id);expect(savedInstructions).toBe('Owned body edit');
  await page.getByRole('button',{name:'Undo',exact:true}).click();await expect(page.getByLabel('instructions',{exact:true})).toHaveValue('');await page.getByRole('button',{name:'Undo',exact:true}).click();expect(await page.evaluate(id=>window.canvasHarness.S.getGraph(id).nodes['first/path'].localCopy,id)).toBeUndefined();await expect(page.getByLabel('instructions',{exact:true})).toBeDisabled();
 });
 test('actual library inspection opens the exact nested pin and cannot gain runtime edit authority',async({page})=>{
- const id=await activate(page);await page.locator('.pc-node-native[data-id="first/path"]').click();await page.locator('.pc-details-heading').getByRole('button',{name:'Subgraphs',exact:true}).click();await page.locator('[data-subgraph-open-library]').click();await page.getByRole('button',{name:'Close',exact:true}).click();
+ const id=await activate(page);await subgraphCommand(page,'first/path','Open saved definition');
  await expect(page.locator('.pc-graph-tabs [role="tab"][aria-selected="true"]')).toContainText('Outer');await page.locator('.pc-node-native[data-id="work"] .pc-native-heading').dblclick();await expect(page.locator('.pc-graph-tabs [role="tab"][aria-selected="true"]')).toContainText('Plan');
  await page.locator('.pc-node-native[data-id="work"]').click();await expect(page.getByLabel('instructions',{exact:true})).toBeDisabled();await expect(page.getByLabel('Alias',{exact:true})).toBeEnabled();
  const state=await page.evaluate(id=>({root:window.canvasHarness.S.getGraph(id).id,drawId:window.canvasHarness.canvas.graph.id,readOnly:window.canvasHarness.canvas.hooks.nativeScope()}),id);expect(state.root).toBe(id);expect(state.drawId).toBeUndefined();expect(state.readOnly.workflowId).toBeUndefined();
@@ -91,17 +100,14 @@ async function editCommand(page, name) {
 }
 async function ownedChild(page) {
     const id = await activate(page, 'siblingWorkflow');
-    await page.locator('.pc-node-native[data-id="first/path"] .pc-native-heading').dblclick();
-    await page.locator('.pc-details-heading').getByRole('button', { name: 'Subgraphs', exact: true }).click();
-    await page.locator('[data-subgraph-local-copy]').click();
-    await page.getByRole('button', { name: 'Close', exact: true }).click();
+    await subgraphCommand(page, 'first/path', 'Make editable copy');
     return id;
 }
 
 test('actual root selection survives view roundtrips with matching paint and one undoable Delete', async ({ page }) => {
     const id = await activate(page, 'siblingWorkflow');
     await page.locator('.pc-node-native[data-id="first/path"] .pc-native-heading').dblclick();
-    const child = graphTab(page, { name: /Plan/ }), root = graphTab(page, { name: 'Graph 1', exact: true });
+    const child = graphTab(page, { name: /Plan/ }), root = graphTab(page, { name: 'Actual workspace integration', exact: true });
     await root.click();
     await page.locator('.pc-node-native[data-id="one"] .pc-native-heading').click();
     await child.click(); await root.click();
@@ -146,7 +152,7 @@ test('owned child Edit and Cut use its saved scope and reject blocked or stale c
     await page.evaluate(() => Object.defineProperty(navigator.clipboard, 'writeText', { configurable: true, value: () => new Promise(resolve => { window.workspaceFinishCut = resolve; }) }));
     await editCommand(page, 'Cut');
     await page.waitForFunction(() => !!window.workspaceFinishCut);
-    await graphTab(page, { name: 'Graph 1', exact: true }).click();
+    await graphTab(page, { name: 'Actual workspace integration', exact: true }).click();
     await page.evaluate(() => window.workspaceFinishCut()); await page.evaluate(() => window.canvasHarness.settle());
     expect(await page.evaluate(id => JSON.stringify(window.canvasHarness.S.getGraph(id)), id)).toBe(before);
     await graphTab(page, { name: /Plan/ }).click();
@@ -169,12 +175,10 @@ test('actual nested library Copy and Paste carries its exact closure into an unr
         const { starterGraph } = await import('/src/workflow/starters.js?v=' + h.version);
         const source = nestedWorkflow(), root = starterGraph('structured-guidance'), definition = Object.values(source.definitions).find(item => item.id === 'prepared-outer');
         h.S.settings().subgraphLibrary = { definitions: source.definitions }; h.S.settings().graphs[root.id] = root; h.UI.refreshIfOpen();
-        return { id: root.id, key: JSON.stringify([definition.id, definition.version, definition.semanticHash]) };
+        return { id: root.id, name: root.name, key: JSON.stringify([definition.id, definition.version, definition.semanticHash]) };
     });
     await page.getByRole('combobox', { name: 'Workflow', exact: true }).selectOption(state.id);
-    await page.locator('.pc-details-heading').getByRole('button', { name: 'Subgraphs', exact: true }).click();
-    await page.getByLabel('Library revision', { exact: true }).selectOption(state.key);
-    await page.locator('[data-subgraph-open-library]').click(); await page.getByRole('button', { name: 'Close', exact: true }).click();
+    await openShelfDefinition(page, state.key);
     const library = graphTab(page, { name: /Outer/ });
     await page.locator('.pc-node-native[data-id="work"] .pc-native-heading').click();
     await page.getByRole('button', { name: 'Edit', exact: true }).click();
@@ -185,7 +189,7 @@ test('actual nested library Copy and Paste carries its exact closure into an unr
     await expect.poll(() => page.evaluate(async () => { try { return Object.keys(JSON.parse(await navigator.clipboard.readText()).graph.definitions).length; } catch { return 0; } })).toBe(1);
     const clipText = await page.evaluate(() => navigator.clipboard.readText());
     expect(await page.evaluate(id => Object.keys(window.canvasHarness.S.getGraph(id).definitions).length, state.id)).toBe(0);
-    await graphTab(page, { name: 'Graph 1', exact: true }).click();
+    await graphTab(page, { name: state.name, exact: true }).click();
     await editCommand(page, 'Paste');
     await expect.poll(() => page.evaluate(id => Object.keys(window.canvasHarness.S.getGraph(id).definitions).length, state.id)).toBe(1);
     expect(await page.evaluate(id => Object.values(window.canvasHarness.S.getGraph(id).nodes).some(node => node.type === 'subgraph' && node.definition.id === 'prepared-plan'), state.id)).toBe(true);
@@ -220,7 +224,7 @@ test('native root and child frame joins align at fractional and high DPR with no
         try {
             await activate(page, 'siblingWorkflow');
             const check = async () => {
-                const graph = await page.locator('.pc-canvas-area').boundingBox(), first = await graphTab(page, { name: 'Graph 1', exact: true }).boundingBox();
+                const graph = await page.locator('.pc-canvas-area').boundingBox(), first = await graphTab(page, { name: 'Actual workspace integration', exact: true }).boundingBox();
                 expect(first.x).toBeCloseTo(graph.x, 4);
                 const paint = await page.locator('.pc-canvas-area').evaluate(element => { const edge = getComputedStyle(element, '::after'), preview = getComputedStyle(document.querySelector('.pc-preview-pane'), '::after'); return { content: edge.content, shadow: edge.boxShadow, pointer: edge.pointerEvents, z: edge.zIndex, left: edge.left, previewShadow: preview.boxShadow }; });
                 expect(paint.content).toBe('""'); expect(paint.pointer).toBe('none'); expect(paint.z).toBe('4'); expect(paint.left).toBe('1px');

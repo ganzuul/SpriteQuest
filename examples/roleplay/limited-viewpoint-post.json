@@ -1,0 +1,214 @@
+{
+  "kind": "lattice-workflow",
+  "schema": 2,
+  "minRuntime": 2,
+  "graph": {
+    "id": "example-limited-viewpoint-post",
+    "name": "Try a closer narration viewpoint",
+    "description": "Propose a narration pass based on a supplied focal character's observations and viewpoint.\n\nLesson: A focal actor and supplied observations guide narrative distance; this does not enforce knowledge isolation.\n\nLimitations: This changes expression. It cannot enforce knowledge isolation or prove that every hidden fact was removed.\n\nOpening installs an unassigned copy. Bind local model roles and provide the documented evidence before running.\n\nPost: at most 1 auxiliary calls. Preview before publishing or applying.\n\nTry changing:\nChange Distance to restrained third person while keeping Jon focal.\nAdd only a source-supported observation and check for invented knowledge or other actors' thoughts.\n\nDocumentation specimen (does not seed chat or actor memory):\n\nBefore: Jon stood by the door. The latch was cold beneath his hand.\n\nAfter: The latch chilled Jon's palm. He stayed by the door.\n\nViewpoint path: reply.out → close.in; viewpoint.out → close.reference; close → validate → review → apply. One Prose call.\n\nEditorial focalization: FocalActor/Observations/Distance are Compose text, not controls named focalActor or knowledgeBoundary. No hidden-fact filter exists.\n\nJon at the cold latch (reply)\nPurpose: Freeze the latest completed text-only cold-latch reply.\nFixture: Jon stood by the door. The latch was cold beneath his hand. \"Wait here,\" Mira said from the corridor.\nInspect: Confirm Jon by door, cold contact and Mira speaking from corridor.\n\nJon · close third-person lens (viewpoint)\nPurpose: Supply Jon's close-third-person lens.\nInspect: Trace observations to the reply; no hidden knowledge granted.\n\nLead with Jon's sensation (close)\nPurpose: Foreground Jon's supplied cold sensation.\nInspect: No new beliefs, consent or offscreen facts; dialogue stays exact.\n\nCheck Jon-viewpoint patches (validate)\nPurpose: Validate Jon-viewpoint narration patches.\nInspect: Check names/corridor and unchanged Wait here speech.\n\nReview focal knowledge (review)\nPurpose: Require an evidence-based viewpoint review.\nInspect: Reject Mira's thoughts or Jon's invented interpretation.\n\nOffer closer Jon narration (apply)\nPurpose: Offer closer Jon narration.\nInspect: Full root Host result: compare knowledge claims, then Apply or Reject.",
+    "schema": 3,
+    "runtime": 2,
+    "mode": "native-post",
+    "nodes": {
+      "reply": {
+        "id": "reply",
+        "type": "workflow",
+        "operation": "reply-snapshot",
+        "operationVersion": 1,
+        "title": "Reply Snapshot",
+        "enabled": true,
+        "x": 80,
+        "y": 120,
+        "w": 260,
+        "h": 150,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Jon at the cold latch"
+      },
+      "viewpoint": {
+        "id": "viewpoint",
+        "type": "workflow",
+        "operation": "compose",
+        "operationVersion": 1,
+        "title": "Compose",
+        "enabled": true,
+        "x": 80,
+        "y": 425,
+        "w": 260,
+        "h": 158,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Jon · close third-person lens",
+        "mode": "join",
+        "outputKind": "text",
+        "template": "",
+        "sections": [
+          {
+            "name": "FocalActor",
+            "text": "Jon is focal; use third person. Foreground physical observations attributed to him."
+          },
+          {
+            "name": "Observations",
+            "text": "Jon is by the door; latch is cold beneath his hand; Mira says Wait here from the corridor. Speech is audible evidence, not her thoughts."
+          },
+          {
+            "name": "Distance",
+            "text": "Close third person, concrete sensation without explanation. Original specimen: The rail chilled Ada's fingers. She stayed on the landing. Ada/rail are style only."
+          }
+        ],
+        "separator": "\n\n"
+      },
+      "close": {
+        "id": "close",
+        "type": "workflow",
+        "operation": "style-transfer",
+        "operationVersion": 1,
+        "title": "Style Transfer",
+        "enabled": true,
+        "x": 465,
+        "y": 272.5,
+        "w": 260,
+        "h": 150,
+        "profileId": null,
+        "model": null,
+        "modelRole": "Prose",
+        "alias": "Lead with Jon's sensation",
+        "inputKind": "draft",
+        "referenceKind": "text",
+        "scope": "narration",
+        "protectedLiterals": [
+          "Jon",
+          "Mira",
+          "corridor"
+        ],
+        "strength": "light",
+        "instructions": "Lead with cold latch against Jon's hand. Retain doorway position and Mira's corridor location; keep speech exact. Add no thought, hidden fact, first-person voice or consent.",
+        "maxTokens": 768,
+        "mode": "narration"
+      },
+      "validate": {
+        "id": "validate",
+        "type": "workflow",
+        "operation": "validate-patches",
+        "operationVersion": 1,
+        "title": "Validate Patches",
+        "enabled": true,
+        "x": 850,
+        "y": 272.5,
+        "w": 260,
+        "h": 150,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Check Jon-viewpoint patches"
+      },
+      "review": {
+        "id": "review",
+        "type": "workflow",
+        "operation": "review-gate",
+        "operationVersion": 1,
+        "title": "Review Gate",
+        "enabled": true,
+        "x": 1235,
+        "y": 272.5,
+        "w": 260,
+        "h": 150,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Review focal knowledge"
+      },
+      "apply": {
+        "id": "apply",
+        "type": "workflow",
+        "operation": "apply-reply",
+        "operationVersion": 1,
+        "title": "Apply Reply",
+        "enabled": true,
+        "x": 1620,
+        "y": 272.5,
+        "w": 260,
+        "h": 150,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Offer closer Jon narration"
+      },
+      "comment-1": {
+        "id": "comment-1",
+        "type": "note",
+        "title": "After reply · Try a closer narration viewpoint",
+        "x": 54,
+        "y": 186.5,
+        "w": 697,
+        "h": 422.5,
+        "color": "#637d89",
+        "content": "reply.out → close.in; viewpoint.out → close.reference; close → validate → review → apply. One Prose call.",
+        "commentFrame": true,
+        "moveContents": true
+      }
+    },
+    "wires": {
+      "wire-1": {
+        "id": "wire-1",
+        "route": "wire",
+        "from": "reply",
+        "fromPort": "out",
+        "to": "close",
+        "toPort": "in"
+      },
+      "wire-2": {
+        "id": "wire-2",
+        "route": "wire",
+        "from": "viewpoint",
+        "fromPort": "out",
+        "to": "close",
+        "toPort": "reference"
+      },
+      "wire-3": {
+        "id": "wire-3",
+        "route": "wire",
+        "from": "close",
+        "fromPort": "out",
+        "to": "validate",
+        "toPort": "in"
+      },
+      "wire-4": {
+        "id": "wire-4",
+        "route": "wire",
+        "from": "validate",
+        "fromPort": "out",
+        "to": "review",
+        "toPort": "in"
+      },
+      "wire-5": {
+        "id": "wire-5",
+        "route": "wire",
+        "from": "review",
+        "fromPort": "out",
+        "to": "apply",
+        "toPort": "in"
+      }
+    },
+    "groups": {},
+    "roles": {
+      "Prose": {
+        "model": null,
+        "profileId": null
+      }
+    },
+    "portals": {},
+    "definitions": {},
+    "template": {
+      "id": "limited-viewpoint",
+      "version": 1
+    },
+    "view": {
+      "x": 0,
+      "y": 0,
+      "zoom": 1
+    }
+  }
+}

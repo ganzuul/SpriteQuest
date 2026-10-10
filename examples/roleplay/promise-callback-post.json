@@ -1,0 +1,171 @@
+{
+  "kind": "lattice-workflow",
+  "schema": 2,
+  "minRuntime": 2,
+  "graph": {
+    "id": "example-promise-callback-post",
+    "name": "Recall promises about a topic · Post",
+    "description": "Recall stored promise episodes with a saved topic query, then render optional next-reply guidance.\n\nLesson: Capture the actor’s evidenced promise, then recall saved Query “ferry”. Commitment is not proof of fulfillment.\n\nLimitations: The zero-call query is saved configuration and does not trigger itself from each turn. Use Reflect Recall at Pre 1 for present-context appraisal; dynamic trigger binding is future work.\n\nOpening installs an unassigned copy. Bind local model roles and provide the documented evidence before running.\n\nPost: at most 1 auxiliary calls. Writes actor memory on full Run. Inspect local update and save acknowledgment separately; unconfirmed saving is not durable saving.\n\nTry changing:\nChange Query to “harbor”; compare matched IDs. Recall has no per-turn input.\nInspect fulfillment evidence with Capture to here before a full Run.\n\nDocumentation specimen (does not seed chat or actor memory):\n\nStored promise: Sol promised to meet Mira at the ferry before dawn.\n\nConfigured ferry recall: Return the stored promise in a bounded brief. Treat it as a commitment, not proof that Sol has arrived.\n\nFixed-query callback: No inputs/trigger; saved Query runs every Pre run. Reflect Recall + Context/Episodes is the one-Analysis alternative.\n\nCapture the commitment: Analysis ≤1, unbound. To here never writes; full Post Run writes local memory without review. Save may be unconfirmed.\n\nNo seeded state: Fixtures only; opening seeds nothing. Pre Recall/Compose/Guidance: zero calls.\n\nPromise capture: prior actor (post-state)\nPurpose: Read prior selected actor state.\nInspect: Check actor/chat scope/store version.\n\nPromise capture: settled evidence (post-events)\nPurpose: Read eligible messages.\nInspect: Check actual promise/ID/revision.\n\nCapture the ferry commitment (post-capture)\nPurpose: Propose promise episodes.\nInspect: Run to here: inspect changes/exact evidence.\n\nSettle promise capture (post-commit)\nPurpose: Settle root capture.\nInspect: Check local update/save acknowledgment.",
+    "schema": 3,
+    "runtime": 2,
+    "mode": "native-post",
+    "nodes": {
+      "post-state": {
+        "id": "post-state",
+        "type": "workflow",
+        "operation": "memory",
+        "operationVersion": 1,
+        "title": "Memory · state",
+        "enabled": true,
+        "x": 80,
+        "y": 120,
+        "w": 260,
+        "h": 150,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Promise capture: prior actor",
+        "mode": "read",
+        "view": "state"
+      },
+      "post-events": {
+        "id": "post-events",
+        "type": "workflow",
+        "operation": "memory",
+        "operationVersion": 1,
+        "title": "Memory · events",
+        "enabled": true,
+        "x": 80,
+        "y": 425,
+        "w": 260,
+        "h": 150,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Promise capture: settled evidence",
+        "mode": "read",
+        "view": "events"
+      },
+      "post-capture": {
+        "id": "post-capture",
+        "type": "workflow",
+        "operation": "internalize",
+        "operationVersion": 1,
+        "title": "Internalize · experience",
+        "enabled": true,
+        "x": 465,
+        "y": 272.5,
+        "w": 260,
+        "h": 150,
+        "profileId": null,
+        "model": null,
+        "modelRole": "Analysis",
+        "alias": "Capture the ferry commitment",
+        "mode": "experience",
+        "maxTokens": 1100,
+        "instructions": "Capture evidenced promises/fulfillment as actor episodes with exact settled IDs/revisions. Ferry-before-dawn commitment does not establish arrival. Preserve failure/fulfillment history. No traits, numeric maps or player-intent changes."
+      },
+      "post-commit": {
+        "id": "post-commit",
+        "type": "workflow",
+        "operation": "memory",
+        "operationVersion": 1,
+        "title": "Memory · commit",
+        "enabled": true,
+        "x": 850,
+        "y": 272.5,
+        "w": 260,
+        "h": 150,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Settle promise capture",
+        "mode": "commit",
+        "idempotencyKey": "lattice-memory-commit"
+      },
+      "comment-1": {
+        "id": "comment-1",
+        "type": "note",
+        "title": "After reply · Recall promises about a topic",
+        "x": 439,
+        "y": 186.5,
+        "w": 312,
+        "h": 262,
+        "color": "#637d89",
+        "content": "No inputs/trigger; saved Query runs every Pre run. Reflect Recall + Context/Episodes is the one-Analysis alternative.",
+        "commentFrame": true,
+        "moveContents": true
+      },
+      "comment-2": {
+        "id": "comment-2",
+        "type": "note",
+        "title": "Read settled evidence",
+        "x": 54,
+        "y": 34,
+        "w": 312,
+        "h": 567,
+        "color": "#637d89",
+        "content": "Check actor/chat scope/store version.\nCheck actual promise/ID/revision.",
+        "commentFrame": true,
+        "moveContents": true
+      },
+      "comment-3": {
+        "id": "comment-3",
+        "type": "note",
+        "title": "Commit only on full root Run",
+        "x": 824,
+        "y": 186.5,
+        "w": 312,
+        "h": 262,
+        "color": "#637d89",
+        "content": "Check local update/save acknowledgment.",
+        "commentFrame": true,
+        "moveContents": true
+      }
+    },
+    "wires": {
+      "wire-1": {
+        "id": "wire-1",
+        "route": "wire",
+        "from": "post-state",
+        "fromPort": "out",
+        "to": "post-capture",
+        "toPort": "state"
+      },
+      "wire-2": {
+        "id": "wire-2",
+        "route": "wire",
+        "from": "post-events",
+        "fromPort": "out",
+        "to": "post-capture",
+        "toPort": "events"
+      },
+      "wire-3": {
+        "id": "wire-3",
+        "route": "wire",
+        "from": "post-capture",
+        "fromPort": "out",
+        "to": "post-commit",
+        "toPort": "proposal"
+      }
+    },
+    "groups": {},
+    "roles": {
+      "Analysis": {
+        "model": null,
+        "profileId": null
+      }
+    },
+    "portals": {},
+    "definitions": {},
+    "template": {
+      "id": "promise-callback",
+      "version": 1
+    },
+    "view": {
+      "x": 0,
+      "y": 0,
+      "zoom": 1
+    }
+  }
+}

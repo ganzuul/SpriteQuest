@@ -5,6 +5,7 @@ import { prepareWorkspaceViews, prepareLibraryViews, projectEditorDraw, projectW
 import { createGraphViewSession } from '../src/ui/graph-view-session.js?v=0.26.0';
 import { captureGraphEditContext, commitPreparedGraph } from '../src/workflow/transactions.js?v=0.26.0';
 import { prepareCommentEdit } from '../src/workflow/comment-edits.js?v=0.26.0';
+import { prepareSubgraphNodeDeletion } from '../src/workflow/subgraph-authoring.js?v=0.26.0';
 import { createCommentFrame, fitCommentFrame, containedCommentNodes, isCommentFrame } from '../src/canvas/comment-frames.js?v=0.26.0';
 import { captureCommentPresentation, applyCommentPresentation, applyCommentGroupPresentation } from '../src/ui/comment-presentation.js?v=0.26.0';
 import { viewIdentityKey } from '../src/ui/view-state.js?v=0.26.0';
@@ -42,7 +43,7 @@ function fixture(root = { id:'comment-controller-' + ++sequence,schema:3,runtime
     const canvas = {multi:new Set(),selection:null,pointer:{x:12,y:18},host:{getBoundingClientRect:()=>({left:0,top:0,width:800,height:600})},widthOf:n=>n.w ?? 160,heightOf:n=>n.h ?? 48,toGraph:(x,y)=>({x,y}),setMulti(ids){this.multi=new Set(ids);},select(item){this.selection=item;},cancelGesture(){}};
     const env = { current:root,graphViews:session,canvas,editorDraw:projectEditorDraw(session.readEditor()),editorCaptures:new WeakMap(),commentCaptures:new WeakMap(),commentPresentationEffects:new WeakMap(),pendingCommentPresentation:new WeakMap(),pendingSubgraphPresentation:new WeakMap(),workspaceRevision:0,workspaceIssue:'',selected:null,selectedKind:null,
         isOpen:()=>true,activeEditRoot:()=>env.current,readGraphEditContext:()=>env.graphViews.readEditContext(),captureGraphEditContext,prepareCommentEdit,createCommentFrame,fitCommentFrame,containedCommentNodes,isCommentFrame,captureCommentPresentation,applyCommentPresentation,applyCommentGroupPresentation,viewIdentityKey,projectEditorDraw,definitionRefKey,H,groupMembers:(graph,id)=>Object.values(graph.nodes).filter(node=>node.inGroup===id),
-        prepareQualifiedScopeEdit,reconcileOwners,ownershipEntries,prunePrivateSnapshots,makeClip,makeDefinitionClip,readClip,prepareClipPaste,okToDelete:()=>true,detachedClip:null,flashHistoryNote(){},navigator:{clipboard:{async writeText(value){env.copied=value;}}},
+        prepareSubgraphNodeDeletion,prepareQualifiedScopeEdit,reconcileOwners,ownershipEntries,prunePrivateSnapshots,makeClip,makeDefinitionClip,readClip,prepareClipPaste,okToDelete:()=>true,detachedClip:null,flashHistoryNote(){},navigator:{clipboard:{async writeText(value){env.copied=value;}}},
         settings:()=>stored,save(){},toast(message){failures.push(message);},persistGraphViews(){const saved=env.graphViews?.serialize();if(saved?.ok)stored.workspaceViews[root.id]=saved.data;},workbench:{focusCommentTitle(id,check){if(check())env.focused=id;}},graphDocumentHooks:{},
         commitGraphEdit(graph,command){const result=commitPreparedGraph(graph,command);if(result.ok && result.data.changed){commits++;refresh();}return result;},
     };

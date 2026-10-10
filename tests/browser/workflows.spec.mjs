@@ -31,10 +31,6 @@ async function expectBound(page, bound) {
     await closeSetup(page);
     await expect(page.locator('.pc-root-workflow-status')).toContainText('≤ ' + bound + ' requests');
 }
-async function closeSubgraphManager(page) {
-    const manager = page.getByRole('region', { name: 'Manage subgraphs', exact: true });
-    if (await manager.isVisible()) await manager.getByRole('button', { name: 'Close', exact: true }).click();
-}
 async function operationId(page, operation) {
     return page.evaluate(operation => Object.values(window.canvasHarness.graph.nodes).find(node => node.operation === operation)?.id, operation);
 }
@@ -271,7 +267,6 @@ test('current setup opens without domain scans or provider requests', async ({ p
 test('current empty-canvas creation offers compatible operations', async ({ page }) => {
     await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
     await installWorkflow(page, 'Scene guidance');
-    await closeSubgraphManager(page);
     await page.locator('.pc-canvas-host').dblclick({ position: { x: 8, y: 8 } });
     expect(await page.evaluate(() => Object.values(window.canvasHarness.graph.nodes).some(node => node.type === 'prompt'))).toBe(false);
     const search = page.getByRole('dialog', { name: 'Add node', exact: true });
@@ -446,7 +441,6 @@ test('Send indicator and arm messages follow pre assignment and manual post-only
 test('review controls and comparison stay usable in a narrow viewport', async ({ page }) => {
     await reviewFixture(page);
     await page.setViewportSize({ width: 760, height: 900 });
-    await closeSubgraphManager(page);
     await runRoot(page);
     await expect((await artifact(page, 'candidate')).locator('pre')).toContainText('We delve.');
     await candidateText(page, 'We explore.');
@@ -641,7 +635,6 @@ test('narrow workflow inspection and review remain opaque during selection feedb
     }
     await details(page).getByRole('button', { name: 'Save rules', exact: true }).click();
     expect(await page.evaluate(() => Object.values(window.canvasHarness.graph.nodes).find(node => node.operation === 'pattern-scan').rules)).toEqual(['delve']);
-    await closeSubgraphManager(page);
     await runRoot(page);
     await expect(page.getByRole('button', { name: 'Apply reviewed candidate', exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -653,17 +646,22 @@ test('narrow toolbar exposes readable labeled pane and theme controls', async ({
     await page.setViewportSize({ width: 760, height: 1000 });
     for (const theme of ['midnight', 'parchment']) {
         await page.evaluate(async theme => (await import('/src/theme.js?v=' + window.canvasHarness.version)).setPreset(theme), theme);
-        await expect(page.locator('.pc-details-heading').getByRole('button', { name: 'Subgraphs', exact: true })).toBeVisible();
+        await expect(page.locator('.pc-details-heading').getByRole('button', { name: 'Subgraphs', exact: true })).toHaveCount(0);
         await expect(page.getByRole('button', { name: 'Toggle inspector', exact: true }).getByText('Details', { exact: true })).toBeVisible();
         await page.getByRole('button', { name: 'Tools', exact: true }).click();
         await expect(page.getByRole('menuitem', { name: 'Theme and colours', exact: true })).toBeVisible();
         await page.keyboard.press('Escape');
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     }
-    const subgraphs = page.locator('.pc-details-heading').getByRole('button', { name: 'Subgraphs', exact: true });
+    const subgraphs = page.locator('.pc-family-row[data-family="Subgraphs"]');
     await subgraphs.focus(); await page.keyboard.press('Enter');
-    const manager = page.getByRole('region', { name: 'Manage subgraphs', exact: true });
-    await expect(manager).toBeVisible(); await manager.getByRole('button', { name: 'Close', exact: true }).click();
+    const shelf = page.getByRole('menu', { name: 'Subgraphs nodes', exact: true });
+    await expect(shelf.locator('[data-shelf-group="Interface"]')).toBeVisible();
+    await expect(shelf.locator('[data-shelf-choice="boundary:input"]')).toBeDisabled();
+    await expect(shelf.locator('[data-shelf-choice="boundary:output"]')).toBeDisabled();
+    await expect(page.getByRole('region', { name: 'Manage subgraphs', exact: true })).toHaveCount(0);
+    await expect(shelf.getByRole('menuitem', { name: /Manage subgraphs/i })).toHaveCount(0);
+    await page.keyboard.press('Escape');
     const detailsToggle = page.getByRole('button', { name: 'Toggle inspector', exact: true }), previous = await detailsToggle.getAttribute('aria-pressed');
     await detailsToggle.focus(); await page.keyboard.press('Enter');
     await expect(detailsToggle).toHaveAttribute('aria-pressed', previous === 'true' ? 'false' : 'true');

@@ -20,7 +20,7 @@ async function create(page) {
     await page.locator('.pc-node[data-id="n2"] .pc-native-heading').click({ modifiers: ['Shift'] });
     await expect.poll(() => page.evaluate(() => [...window.canvasHarness.canvas.multi].sort())).toEqual(['n1', 'n2']);
     await page.locator('.pc-node[data-id="n1"] .pc-native-heading').click({ button: 'right' });
-    await page.getByRole('menuitem', { name: 'Create Subgraph', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Create subgraph', exact: true }).click();
     await expect(page.locator('.pc-graph-tabs [role="tab"][aria-selected="true"]')).toContainText('Subgraph');
     return page.evaluate(() => {
         const root = structuredClone(window.canvasHarness.S.getGraph('subgraph-authoring'));
@@ -63,8 +63,8 @@ test('selection creates an editable tab with shared input, output fanout, preser
 
 test('boundary blocks rename real parent pins and add a typed input that can be wired with the mouse', async ({ page }) => {
     await setup(page); const wrapperId = await create(page);
-    await page.locator('.pc-node-subgraph-input:has(.pc-port[data-kind="text"])').getByRole('button', { name: 'Edit input', exact: true }).click();
-    await expect(page.getByLabel('Subgraph port label', { exact: true })).toBeFocused();
+    await page.locator('.pc-node-subgraph-input:has(.pc-port[data-kind="text"]) .pc-native-heading').click();
+    await expect(page.getByLabel('Subgraph port label', { exact: true })).toBeEnabled();
     const previousLabel = await page.getByLabel('Subgraph port label', { exact: true }).inputValue();
     await page.getByLabel('Subgraph port label', { exact: true }).fill('Source text');
     await page.locator('[data-save-boundary]').click();
@@ -77,7 +77,8 @@ test('boundary blocks rename real parent pins and add a typed input that can be 
     await page.locator('.pc-graph-tabs [role="tab"]').first().click();
     await expect(page.locator(`.pc-node[data-id="${wrapperId}"] .pc-native-pin-label`).filter({ hasText: 'Source text' })).toHaveCount(1);
     await page.locator(`.pc-node[data-id="${wrapperId}"] .pc-native-heading`).dblclick();
-    await page.locator('.pc-node-subgraph-input:has(.pc-port[data-kind="text"])').getByRole('button', { name: 'Add input', exact: true }).click();
+    await page.locator('.pc-family-row[data-family="Subgraphs"]').click();
+    await page.locator('[data-shelf-choice="boundary:input"]').click();
     await expect(page.locator('.pc-node-subgraph-input')).toHaveCount(4);
     await expect(page.getByLabel('Subgraph port label', { exact: true })).toBeFocused();
     await page.getByLabel('Subgraph port label', { exact: true }).fill('Alternate text');
@@ -99,7 +100,7 @@ test('boundary blocks rename real parent pins and add a typed input that can be 
     expect(await page.evaluate(() => window.canvasHarness.toasts.filter(item => item.level === 'error'))).toEqual([]);
 });
 
-test('empty subgraph bodies offer input and output creation from the canvas menu', async ({ page }) => {
+test('empty subgraph bodies add input and output nodes from the shelf', async ({ page }) => {
     await setup(page);
     await page.evaluate(() => {
         const root = window.canvasHarness.S.getGraph('subgraph-authoring');
@@ -107,16 +108,77 @@ test('empty subgraph bodies offer input and output creation from the canvas menu
         window.canvasHarness.UI.refreshIfOpen();
     });
     await page.locator('.pc-node[data-id="note"]').click({ button: 'right' });
-    await page.getByRole('menuitem', { name: 'Create Subgraph', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Create subgraph', exact: true }).click();
     await expect(page.locator('.pc-graph-tabs [role="tab"][aria-selected="true"]')).toContainText('Subgraph');
-    const host = await page.locator('.pc-canvas-host').boundingBox();
-    await page.mouse.click(host.x + host.width - 80, host.y + host.height - 80, { button: 'right' });
-    await page.getByRole('menuitem', { name: 'Add subgraph input', exact: true }).click();
+    await page.locator('.pc-family-row[data-family="Subgraphs"]').click();
+    await page.locator('[data-shelf-choice="boundary:input"]').click();
     await expect(page.getByLabel('Subgraph port label', { exact: true })).toBeFocused();
     await expect(page.locator('.pc-node-subgraph-input')).toHaveCount(1);
-    await page.mouse.click(host.x + host.width - 80, host.y + host.height - 180, { button: 'right' });
-    await page.getByRole('menuitem', { name: 'Add subgraph output', exact: true }).click();
+    await page.locator('.pc-family-row[data-family="Subgraphs"]').click();
+    await page.locator('[data-shelf-choice="boundary:output"]').click();
     await expect(page.locator('.pc-node-subgraph-output')).toHaveCount(1);
+});
+
+test('ordinary Delete removes connected interface pins and Undo restores the complete graph', async ({ page }) => {
+    await setup(page); const wrapperId = await create(page), before = await snapshot(page);
+    const port = before.definition.interface.find(item => item.direction === 'output');
+    await page.locator(`.pc-node[data-id="${port.boundaryNodeId}"] .pc-native-heading`).click();
+    await expect(page.locator('.pc-node-subgraph-output button')).toHaveCount(0);
+    await page.locator('.pc-node-details').getByRole('button', { name: 'Delete', exact: true }).click();
+    const deleted = await snapshot(page);
+    expect(deleted.definition.interface.some(item => item.id === port.id)).toBe(false);
+    expect(deleted.definition.body.nodes[port.boundaryNodeId]).toBeUndefined();
+    expect(Object.values(deleted.root.wires).some(edge => edge.from === wrapperId && edge.fromPort === port.id)).toBe(false);
+    await page.getByRole('button', { name: 'Undo', exact: true }).click();
+    expect((await snapshot(page)).root).toEqual(before.root);
+    await expect(page.locator('.pc-node-subgraph-output')).toHaveCount(1);
+    await page.getByRole('button', { name: 'Redo', exact: true }).click();
+    expect((await snapshot(page)).root).toEqual(deleted.root);
+});
+
+test('explicit shelf saves update future insertions while placed copies and deletion stay independent', async ({ page }) => {
+    await setup(page);
+    await page.locator('.pc-family-row[data-family="Subgraphs"]').click();
+    await expect(page.locator('[data-shelf-choice="boundary:input"]')).toBeDisabled();
+    await expect(page.locator('[data-shelf-choice="boundary:output"]')).toBeDisabled();
+    const wrapperId = await create(page);
+    await page.locator('.pc-graph-tabs [role="tab"]').first().click();
+    const wrapper = page.locator(`.pc-node[data-id="${wrapperId}"] .pc-native-heading`);
+    await wrapper.click({ button: 'right' });
+    await page.getByRole('menuitem', { name: 'Add to Subgraphs', exact: true }).click();
+    await page.getByLabel('Subgraph name', { exact: true }).fill('Reusable cleanup');
+    await page.locator('[data-save-subgraph]').click();
+    const saved = await page.evaluate(async () => { const L = await import('/src/library.js?v=' + window.canvasHarness.version); return L.getSubgraphShelfEntries().data[0]; });
+    const key = JSON.stringify([saved.id, saved.version, saved.semanticHash]);
+    await page.locator('.pc-family-row[data-family="Subgraphs"]').click();
+    await page.locator('[data-shelf-choice]').filter({ hasText: 'Reusable cleanup' }).click();
+    const pinned = await snapshot(page);
+    const savedWrapper = Object.values(pinned.root.nodes).find(node => node.type === 'subgraph' && node.id !== wrapperId);
+    expect(savedWrapper.definition).toEqual({ id: saved.id, version: saved.version, semanticHash: saved.semanticHash });
+    await wrapper.dblclick();
+    await page.locator('.pc-family-row[data-family="Subgraphs"]').click();
+    await page.locator('[data-shelf-choice="boundary:output"]').click();
+    await page.getByLabel('Subgraph port label', { exact: true }).fill('Another output');
+    await page.locator('[data-save-boundary]').click();
+    await page.locator('.pc-graph-tabs [role="tab"]').first().click();
+    await wrapper.click({ button: 'right' });
+    await page.getByRole('menuitem', { name: 'Add to Subgraphs', exact: true }).click();
+    await page.getByLabel('Save as', { exact: true }).selectOption(saved.id);
+    await page.getByLabel('Subgraph name', { exact: true }).fill('Reusable cleanup');
+    await page.locator('[data-save-subgraph]').click();
+    const updated = await page.evaluate(async () => { const L = await import('/src/library.js?v=' + window.canvasHarness.version); return L.getSubgraphShelfEntries().data[0]; });
+    expect(updated.version).toBeGreaterThan(saved.version);
+    expect(updated.interface.some(port => port.label === 'Another output')).toBe(true);
+    const afterUpdate = (await snapshot(page)).root;
+    expect(afterUpdate.nodes[savedWrapper.id]).toEqual(pinned.root.nodes[savedWrapper.id]);
+    const oldDefinition = afterUpdate.definitions[key]; expect(oldDefinition).toEqual(pinned.root.definitions[key]);
+    await page.locator('.pc-family-row[data-family="Subgraphs"]').click();
+    const row = page.locator('[data-shelf-choice]').filter({ hasText: 'Reusable cleanup' });
+    await expect(row).toHaveCount(1);
+    await row.click({ button: 'right' }); await page.getByRole('menuitem', { name: 'Delete', exact: true }).click();
+    await expect(row).toHaveCount(0);
+    expect((await snapshot(page)).root).toEqual(afterUpdate);
+    expect(await page.evaluate(() => window.canvasHarness.providerCalls())).toBe(0);
 });
 
 test('extracting an existing subgraph preserves descendant tabs, presentation and camera through undo and redo', async ({ page }) => {
@@ -143,7 +205,7 @@ test('extracting an existing subgraph preserves descendant tabs, presentation an
     const descendants = before.filter(view => view.identity.kind === 'instance');
     expect(descendants).toHaveLength(2);
     await page.locator('.pc-node[data-id="first/path"] .pc-native-heading').click({ button: 'right' });
-    await page.getByRole('menuitem', { name: 'Create Subgraph', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Create subgraph', exact: true }).click();
     const wrapperId = await page.evaluate(() => Object.values(window.canvasHarness.S.getGraph('relocated-subgraph-views').nodes).find(node => node.type === 'subgraph' && node.id !== 'second').id);
     const relocated = descendants.map(view => ({ ...view, identity: { ...view.identity, instancePath: [wrapperId, ...view.identity.instancePath] } }));
     for (const expected of relocated) expect((await savedViews()).find(view => JSON.stringify(view.identity) === JSON.stringify(expected.identity))).toEqual(expected);
@@ -175,7 +237,7 @@ test('nested tabs first opened after extraction retain their presentation throug
     });
     await expect(page.locator('.pc-graph-tabs [role="tab"]')).toHaveCount(1);
     await page.locator('.pc-node[data-id="first/path"] .pc-native-heading').click({ button: 'right' });
-    await page.getByRole('menuitem', { name: 'Create Subgraph', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Create subgraph', exact: true }).click();
     await page.locator('.pc-node[data-id="first/path"]').click({ button: 'right' });
     await page.getByRole('menuitem', { name: 'Open subgraph', exact: true }).click();
     await page.locator('.pc-node[data-id="work"] .pc-native-heading').click();
@@ -196,4 +258,65 @@ test('nested tabs first opened after extraction retain their presentation throug
     await page.getByRole('button', { name: 'Redo', exact: true }).click();
     for (const expected of outgoing) expect((await savedViews()).find(view => JSON.stringify(view.identity) === JSON.stringify(expected.identity))).toEqual(expected);
     expect(await page.evaluate(() => window.canvasHarness.providerCalls())).toBe(0);
+});
+
+test('effective wrapper contents survive editable body changes and explicit shelf saves from graph and library tabs', async ({ page }) => {
+    await page.goto('/tests/browser/harness.html');
+    await page.waitForFunction(() => !!window.canvasHarness);
+    await page.evaluate(async () => {
+        const h = window.canvasHarness, { effectiveInstanceWorkflow } = await import('/tests/fixtures/workflow-effective-instance.mjs');
+        const root = effectiveInstanceWorkflow();
+        root.nodes.one.nodeBindingOverrides = { '[[],"compact"]': { model: null } };
+        await h.activate(root); await h.view({ x: 160, y: 50, zoom: 0.85 });
+    });
+    const rootSnapshot = () => page.evaluate(() => { const root = structuredClone(window.canvasHarness.S.getGraph('effective-instance-root')); delete root.updatedAt; return root; });
+    const before = await rootSnapshot(), wrapper = page.locator('.pc-node[data-id="one"] .pc-native-heading');
+    await wrapper.click({ button: 'right' });
+    await page.getByRole('menuitem', { name: 'Add to Subgraphs', exact: true }).click();
+    await page.getByLabel('Subgraph name', { exact: true }).fill('Configured instance');
+    await page.locator('[data-save-subgraph]').click();
+    expect(await rootSnapshot()).toEqual(before);
+    await wrapper.click({ button: 'right' });
+    await page.getByRole('menuitem', { name: 'Make editable copy', exact: true }).click();
+    await page.locator('.pc-node[data-id="compact"] .pc-native-heading').click();
+    await expect(page.getByLabel('Model mode', { exact: true })).toHaveValue('block');
+    await page.getByLabel('Model mode', { exact: true }).selectOption('inherit');
+    await expect.poll(() => page.evaluate(async () => {
+        const h = window.canvasHarness, { inspectExpandedGraph } = await import('/src/workflow/graph-validation.js?v=' + h.version);
+        return inspectExpandedGraph(h.S.getGraph('effective-instance-root')).data.primitives.find(unit => unit.address.instancePath[0] === 'one' && unit.address.nodeId === 'compact').node.model;
+    })).toBe('parent-model');
+    await page.getByRole('button', { name: 'Undo', exact: true }).click();
+    await expect(page.getByLabel('Model mode', { exact: true })).toHaveValue('block');
+    await expect(page.getByLabel('target Tokens', { exact: true })).toHaveValue('720');
+    await page.getByLabel('target Tokens', { exact: true }).fill('2500');
+    await page.getByLabel('target Tokens', { exact: true }).press('Tab');
+    const effectiveTokens = () => page.evaluate(async () => {
+        const h = window.canvasHarness, { inspectExpandedGraph } = await import('/src/workflow/graph-validation.js?v=' + h.version);
+        return inspectExpandedGraph(h.S.getGraph('effective-instance-root')).data.primitives.find(unit => unit.address.instancePath[0] === 'one' && unit.address.nodeId === 'compact').node.targetTokens;
+    });
+    await expect.poll(effectiveTokens).toBe(2500);
+    await page.getByRole('button', { name: 'Undo', exact: true }).click(); await expect.poll(effectiveTokens).toBe(720);
+    await page.getByRole('button', { name: 'Redo', exact: true }).click(); await expect.poll(effectiveTokens).toBe(2500);
+    await page.locator('.pc-graph-tabs [role="tab"]').first().click();
+    await wrapper.click({ button: 'right' });
+    await page.getByRole('menuitem', { name: 'Add to Subgraphs', exact: true }).click();
+    await page.getByLabel('Subgraph name', { exact: true }).fill('Edited instance');
+    await page.locator('[data-save-subgraph]').click();
+    const savedValues = await page.evaluate(async () => {
+        const h = window.canvasHarness, L = await import('/src/library.js?v=' + h.version), { inspectDefinitionGraph } = await import('/src/workflow/graph-validation.js?v=' + h.version);
+        const snapshots = L.getSubgraphLibrary().data.definitions;
+        return L.getSubgraphShelfEntries().data.map(definition => { const expanded = inspectDefinitionGraph(definition, snapshots).data.expansion; const compact = expanded.primitives.find(unit => unit.address.nodeId === 'compact').node; return { name: definition.name, targetTokens: compact.targetTokens, model: compact.model }; });
+    });
+    expect(savedValues).toEqual([{ name: 'Configured instance', targetTokens: 720, model: null }, { name: 'Edited instance', targetTokens: 2500, model: null }]);
+    await page.locator('.pc-family-row[data-family="Subgraphs"]').click();
+    await page.locator('[data-shelf-choice]').filter({ hasText: 'Configured instance' }).click({ button: 'right' });
+    await page.getByRole('menuitem', { name: 'Open saved definition', exact: true }).click();
+    await page.evaluate(() => window.canvasHarness.view({ x: 320, y: 180, zoom: 0.85 }));
+    await page.locator('.pc-node-subgraph .pc-native-heading').click({ button: 'right' });
+    await page.getByRole('menuitem', { name: 'Add to Subgraphs', exact: true }).click();
+    await expect(page.getByLabel('Subgraph name', { exact: true })).toBeVisible();
+    await page.getByLabel('Subgraph name', { exact: true }).fill('Saved from library');
+    await page.locator('[data-save-subgraph]').click();
+    expect(await page.evaluate(() => window.canvasHarness.providerCalls())).toBe(0);
+    expect(await page.evaluate(() => window.canvasHarness.toasts.filter(item => item.level === 'error'))).toEqual([]);
 });

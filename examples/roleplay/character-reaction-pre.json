@@ -1,0 +1,171 @@
+{
+  "kind": "lattice-workflow",
+  "schema": 2,
+  "minRuntime": 2,
+  "graph": {
+    "id": "example-character-reaction-pre",
+    "name": "Suggest a character reaction",
+    "description": "Appraise the current event against supplied traits, goals, and actor history to suggest a reaction.\n\nLesson: Reflect Character produces an interpretation from Context and explicit State. Express Behavior deterministically renders its behaviorHints, so shape the reaction in Reflect instead of assuming Express will rewrite it.\n\nLimitations: Reflection is model interpretation. Internalize does not rewrite enduring traits, and an unwired state pin does not read memory automatically.\n\nOpening installs an unassigned copy. Bind local model roles and provide the documented evidence before running.\n\nPre: at most 1 auxiliary calls. Preview before publishing or applying.\n\nTry changing:\nChange the offer from unsolicited help to an ally first asking what Mira needs; compare how the same independence value changes the proposed behavior.\nRemove the State wire in a copy and compare Reflection evidence: the fallback is empty scoped state, so stored relationships should no longer appear.\n\nDocumentation specimen (does not seed chat or actor memory):\n\nEvidence: Mira values independence. An ally offers help without asking what she needs.\n\nBehavior brief: Let gratitude coexist with resistance to being managed. Show a specific response without replacing her enduring values.\n\nSources → interpretation → delivery: Wire Scene to Reflect context and Express context; State to Reflect state and Express state; Reflect to Express assessment; Express to Guidance. Reflection is a candidate assessment, not settled psychological truth.\n\nMake a reaction subgraph later: Reflect+Express is a reusable Context + State Data → Guidance body. Expose typed input/output boundaries and instructions as appropriate. Keep Memory Read and the host Guidance budget in the root parent; explicitly wire State inside the definition.\n\nLocal model: Only Reflect uses the local Analysis role, at most once. Deterministic Express requires no model profile. Import leaves connection/model choices unresolved.\n\nHelp without asking (pre-scene)\nPurpose: Read six exchanges and Mira's card so an immediate offer can be appraised against her supplied value of independence.\nFixture: Character: Mira values independence and practical cooperation; she dislikes having decisions made for her. Chat: Sol takes her tools and says he will finish the repair for her without asking. Mira has not yet answered.\nInspect: Confirm the trait and exact offer are present. Character material is evidence to appraise; this source does not establish Mira's unspoken feelings.\n\nMira's supported history (pre-state)\nPurpose: Read actor-state Data explicitly, including any prior relationship with Sol, rather than using Reflect's empty-state fallback.\nFixture: Select Mira as the active host actor. Existing supported history can add context; an empty native state is valid and the card still supplies the independence value. No imported plain JSON seeds this store.\nInspect: Inspect actor/chat scope, version and actual relationships. Wire this snapshot to Reflect state and Express state; keep Memory at the root.\n\nIndependence meets assistance (pre-reflect)\nPurpose: Create scoped Reflection Data that separates the observed offer from interpretations and possible character behavior.\nInspect: Inspect appraisals and behaviorHints for a specific response to this offer. Check that history is cited only when it was actually supplied.\n\nPractical boundary behavior (pre-express)\nPurpose: Render the reflection's behaviorHints as zero-call Guidance; optional matching state and context validate supplied evidence.\nInspect: Expect behaviorHints joined verbatim. The empty Instructions setting is intentional: deterministic Behavior ignores it and Output tokens; edit Reflect to change this brief.\n\nMira's reaction direction (pre-guidance)\nPurpose: Expose the interpreted reaction as optional writing direction, with a budget for a boundary and one cooperative gesture.\nInspect: Read the Host result and compare it with source evidence. This Pre path does not update enduring traits or persist a relationship change.",
+    "schema": 3,
+    "runtime": 2,
+    "mode": "native-pre",
+    "nodes": {
+      "pre-scene": {
+        "id": "pre-scene",
+        "type": "workflow",
+        "operation": "scene-context",
+        "operationVersion": 1,
+        "title": "Scene Context",
+        "enabled": true,
+        "x": 80,
+        "y": 120,
+        "w": 260,
+        "h": 150,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Help without asking",
+        "recentMessages": 6,
+        "includeCharacter": true
+      },
+      "pre-state": {
+        "id": "pre-state",
+        "type": "workflow",
+        "operation": "memory",
+        "operationVersion": 1,
+        "title": "Memory · state",
+        "enabled": true,
+        "x": 80,
+        "y": 425,
+        "w": 260,
+        "h": 150,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Mira's supported history",
+        "mode": "read",
+        "view": "state"
+      },
+      "pre-reflect": {
+        "id": "pre-reflect",
+        "type": "workflow",
+        "operation": "reflect",
+        "operationVersion": 1,
+        "title": "Reflect · character",
+        "enabled": true,
+        "x": 465,
+        "y": 272.5,
+        "w": 260,
+        "h": 150,
+        "profileId": null,
+        "model": null,
+        "modelRole": "Analysis",
+        "alias": "Independence meets assistance",
+        "mode": "character",
+        "maxTokens": 900,
+        "instructions": "Appraise Sol taking Mira's tools and offering to finish her repair without asking, using her supplied independence and practical-cooperation values plus actual state. Gratitude may coexist with resistance to being managed; mark that as interpretation, not observed private feeling. Put two or three specific optional behavior hints in behaviorHints: acknowledge useful help, reclaim choice over the task, or ask Sol to take one agreed part. Keep enduring traits intact. Do not invent a quarrel, relationship change, accepted offer, or player response. Preserve evidence and possibility labels."
+      },
+      "pre-express": {
+        "id": "pre-express",
+        "type": "workflow",
+        "operation": "express",
+        "operationVersion": 1,
+        "title": "Express · behavior",
+        "enabled": true,
+        "x": 850,
+        "y": 272.5,
+        "w": 260,
+        "h": 182,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Practical boundary behavior",
+        "mode": "behavior",
+        "maxTokens": 256,
+        "instructions": ""
+      },
+      "pre-guidance": {
+        "id": "pre-guidance",
+        "type": "workflow",
+        "operation": "guidance",
+        "operationVersion": 1,
+        "title": "Guidance",
+        "enabled": true,
+        "x": 1235,
+        "y": 272.5,
+        "w": 260,
+        "h": 150,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Mira's reaction direction",
+        "budgetTokens": 340
+      },
+      "comment-1": {
+        "id": "comment-1",
+        "type": "note",
+        "title": "Before reply · Suggest a character reaction",
+        "x": 439,
+        "y": 186.5,
+        "w": 697,
+        "h": 294,
+        "color": "#637d89",
+        "content": "Wire Scene to Reflect context and Express context; State to Reflect state and Express state; Reflect to Express assessment; Express to Guidance. Reflection is a candidate assessment, not settled psychological truth.",
+        "commentFrame": true,
+        "moveContents": true
+      }
+    },
+    "wires": {
+      "wire-1": {
+        "id": "wire-1",
+        "route": "wire",
+        "from": "pre-scene",
+        "fromPort": "out",
+        "to": "pre-reflect",
+        "toPort": "context"
+      },
+      "wire-2": {
+        "id": "wire-2",
+        "route": "wire",
+        "from": "pre-state",
+        "fromPort": "out",
+        "to": "pre-reflect",
+        "toPort": "state"
+      },
+      "wire-3": {
+        "id": "wire-3",
+        "route": "wire",
+        "from": "pre-reflect",
+        "fromPort": "out",
+        "to": "pre-express",
+        "toPort": "assessment"
+      },
+      "wire-4": {
+        "id": "wire-4",
+        "route": "wire",
+        "from": "pre-express",
+        "fromPort": "out",
+        "to": "pre-guidance",
+        "toPort": "in"
+      }
+    },
+    "groups": {},
+    "roles": {
+      "Analysis": {
+        "model": null,
+        "profileId": null
+      }
+    },
+    "portals": {},
+    "definitions": {},
+    "template": {
+      "id": "character-reaction",
+      "version": 1
+    },
+    "view": {
+      "x": 0,
+      "y": 0,
+      "zoom": 1
+    }
+  }
+}

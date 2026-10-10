@@ -12,6 +12,9 @@ import { captureGraphEditContext, commitPreparedGraph } from '../src/workflow/tr
 import { definitionRefKey } from '../src/workflow/definition-data.js?v=0.26.0';
 import * as H from '../src/history.js?v=0.26.0';
 import { captureRelocatedSubgraphViews, restoreSubgraphViews } from '../src/ui/subgraph-view-state.js?v=0.26.0';
+import { showContextMenu } from '../src/ui/context-menu.js?v=0.26.0';
+import { readNodePresentation } from '../src/ui/node-palette.js?v=0.26.0';
+import { projectPreparedWorkflow } from '../src/ui/workflow-surface.js?v=0.26.0';
 
 const source = await readFile(new URL('../src/ui/controller.js', import.meta.url), 'utf8');
 function actual(name, env) {
@@ -36,7 +39,7 @@ function fixture(mutator = null) {
     const prepared = prepareWorkspaceViews(graph); assert.equal(prepared.ok, true, JSON.stringify(prepared));
     const session = createGraphViewSession({ root: graph, activationId: 'subgraph-' + sequence, ...prepared.data }).data;
     let commits = 0, fits = 0;
-    const env = { current: graph, graphViews: session, editorDraw: projectEditorDraw(session.readEditor()), editorCaptures: new WeakMap(), workspaceRevision: 0,
+    const env = { current: graph, graphViews: session, workspacePrepared: prepared.data, workflowState: { busy: false }, pinnedPreview: null, editorDraw: projectEditorDraw(session.readEditor()), editorCaptures: new WeakMap(), workspaceRevision: 0,
         isOpen: () => true, activeEditRoot: () => graph, readGraphEditContext: () => session.readEditContext(), captureGraphEditContext,
         prepareCreateFromSelection, prepareOwnedDefinitionMetadataEdit, definitionRefKey, crypto: globalThis.crypto,
         captureRelocatedSubgraphViews, restoreSubgraphViews, H, subgraphPresentationEffects: new WeakMap(), pendingSubgraphPresentation: new WeakMap(), viewIdentityKey: view => JSON.stringify(view),
@@ -120,9 +123,10 @@ function conversionMenu(f, nodeId) {
     Object.assign(f.env, { document, window: dom.window, root: document.querySelector('main'), isCommentFrame, operationFor,
         el(tag, cls, text) { const element = document.createElement(tag); if (cls) element.className = cls; if (text !== undefined) element.textContent = text; return element; },
         canCreateSubgraph: (...args) => actual('canCreateSubgraph', f.env)(...args),
+        canvasPreviewMenuItems: (...args) => actual('canvasPreviewMenuItems', f.env)(...args), showContextMenu, readNodePresentation, projectPreparedWorkflow,
     });
     actual('onCanvasMenu', f.env)({ event: { clientX: 20, clientY: 20 }, node: f.env.editorDraw.nodes[nodeId], at: { x: 0, y: 0 } });
-    const item = [...document.querySelectorAll('[role="menuitem"]')].find(button => button.textContent === 'Create Subgraph');
+    const item = [...document.querySelectorAll('[role="menuitem"]')].find(button => button.textContent === 'Create subgraph');
     assert.ok(item); return { item, close: () => dom.window.close() };
 }
 

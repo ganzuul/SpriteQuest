@@ -1,7 +1,7 @@
 // Presentation DTOs only. No root documents, transactions or opaque capabilities reach popovers.
 export type ScreenPoint = Readonly<{ x: number; y: number }>;
 export type SearchPort = Readonly<{ portId: string; dir: 'in' | 'out'; kind: string; label?: string; required?: boolean }>;
-export type SearchChoice = Readonly<{ id: string; label: string; family: string; phase: string; ports: readonly SearchPort[]; purpose?: string; shortcode?: string; searchAliases?: readonly string[]; disabledReason?: string }>;
+export type SearchChoice = Readonly<{ id: string; label: string; family: string; phase: string; ports: readonly SearchPort[]; purpose?: string; shortcode?: string; searchAliases?: readonly string[]; disabledReason?: string; definitionRef?: Readonly<{ id: string; version: number; semanticHash: string }> }>;
 export type NodeSearchView = Readonly<{
     key: string | number;
     mode: 'nodes' | 'ports';

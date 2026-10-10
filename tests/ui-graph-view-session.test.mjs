@@ -26,6 +26,28 @@ const create = (options = {}) => {
     return accepted(api.createGraphViewSession({ root, activationId: 'activation-1', navigation, preparedViews: cache(navigation), ...options }));
 };
 
+test('root graph names appear on fresh and restored tabs and refresh without expiring editor context', () => {
+    const namedRoot = { ...root, name: 'Draft graph' }, navigation = entries(), preparedViews = cache(navigation);
+    const session = create({ root: namedRoot, navigation, preparedViews });
+    assert.equal(session.project().graphViews.tabs[0].label, 'Draft graph');
+    accepted(session.openInstance(['a', 'nested']));
+    accepted(session.updateView({ camera: { x: 8, y: 9, zoom: 0.75 } }));
+    const token = session.captureEditorContext(), key = session.readEditor().view.key;
+    namedRoot.name = 'Renamed graph';
+    accepted(session.replacePreparedViews({ navigation, preparedViews }, { invalidateEditor: false }));
+    assert.equal(session.project().graphViews.tabs[0].label, 'Renamed graph');
+    assert.equal(session.readEditor().view.breadcrumbs[0].label, 'Renamed graph');
+    assert.equal(session.readEditor().view.key, key);
+    assert.deepEqual(session.readEditor().view.camera, { x: 8, y: 9, zoom: 0.75 });
+    assert.equal(session.isEditorContextCurrent(token), true);
+    const restored = create({ root: namedRoot, navigation, preparedViews, persisted: accepted(session.serialize()) });
+    assert.equal(restored.project().graphViews.tabs[0].label, 'Renamed graph');
+    assert.equal(restored.readEditor().view.breadcrumbs[0].label, 'Renamed graph');
+    delete namedRoot.name;
+    accepted(session.replacePreparedViews({ navigation, preparedViews }, { invalidateEditor: false }));
+    assert.equal(session.project().graphViews.tabs[0].label, 'Graph 1');
+});
+
 // Navigation owns only editor presentation; the root request still sees its original reference and epoch.
 test('cached editor navigation preserves externally owned root execution and separate presentation', async () => {
     assert.equal(typeof api.createGraphViewSession, 'function');

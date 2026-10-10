@@ -5,6 +5,7 @@ import { cloneWorkflowDocument } from './document.js?v=0.26.0';
 import { projectIntrospectionNode } from './introspection/native.js?v=0.26.0';
 import { executeIntrospection } from './introspection/nodes.js?v=0.26.0';
 import { parseRecord } from './introspection/contracts.js?v=0.26.0';
+import { snapshotPromptSource, promptSourceFingerprint } from './prompt-source.js?v=0.26.0';
 import { createNativeMemoryAdapter, nativeMemoryFingerprint, nativeMemoryScope, nativeVisibility } from './introspection/host-memory.js?v=0.26.0';
 
 // Internal review seam: observations contain no authority or retained payload values.
@@ -158,10 +159,14 @@ export function createNativeWorkflowController(ports) {
         return {ok:true};
     };
     const fresh=(run)=>run.epoch===epoch && !run.controller.signal.aborted && same(run.identity,identity(context())) && run.signature===workflowSignature(run.originalGraph) && (!run.native || (ports.isEnabled?.() !== false && ports.getGraph?.('pre')===run.originalGraph));
-    const sourceFresh=run=>[...(run.pendingSources?.values()??[])].every(validSource) && [...(run.sceneSources??[])].every(entry=>entry.text!==null && sourceText(entry.chat)===entry.text && (entry.characterVisibility===undefined || (entry.characterVisibility!==null && characterVisibility(context())===entry.characterVisibility)));
+    const promptFresh = run => [...(run.promptSources?.values() ?? [])].every(entry => {
+        const current = promptSourceFingerprint(context(), entry.node);
+        return current.ok && current.data === entry.fingerprint;
+    });
+    const sourceFresh=run=>promptFresh(run) && [...(run.pendingSources?.values()??[])].every(validSource) && [...(run.sceneSources??[])].every(entry=>entry.text!==null && sourceText(entry.chat)===entry.text && (entry.characterVisibility===undefined || (entry.characterVisibility!==null && characterVisibility(context())===entry.characterVisibility)));
     const start=(graph,native=false,abortPrimary=null,target)=>{
         cancel('Superseded by a new workflow');
-        const run={epoch,runId:token(),controller:new AbortController(),originalGraph:graph,native,abortPrimary,pending:true,target,mode:target===undefined?'root':'target',pendingSources:new Map(),sceneSources:[],bindingContexts:new Map(),bindingChecks:[],reviewHandles:[],memoryTerminals:new Map(),memoryIntents:new Map(),memorySession:null,memoryCommit:null};
+        const run={epoch,runId:token(),controller:new AbortController(),originalGraph:graph,native,abortPrimary,pending:true,target,mode:target===undefined?'root':'target',pendingSources:new Map(),sceneSources:[],promptSources:new Map(),bindingContexts:new Map(),bindingChecks:[],reviewHandles:[],memoryTerminals:new Map(),memoryIntents:new Map(),memorySession:null,memoryCommit:null};
         active=run;return run;
     };
     function prepareRun(run,plan,controls,options) {
@@ -172,6 +177,12 @@ export function createNativeWorkflowController(ports) {
         for(const unit of plan.primitives)if(unit.included && unit.terminal && unit.address.instancePath.length===0 && unit.node.operation==='memory' && unit.node.mode==='commit')run.memoryTerminals.set(addressKey(unit.address),unit.node);
         if(run.memoryTerminals.size>1)return fail('MULTIPLE_MEMORY_COMMITS','Use one Memory Commit terminal per native root run.');
         if(!fresh(run))return fail('STALE_RUN','Workflow source or settings changed.');
+        for (const unit of plan.primitives) if (unit.included && unit.node.operation === 'prompt-source') {
+            const key = JSON.stringify([unit.node.source ?? 'system', unit.node.promptId ?? 'main', unit.node.form ?? 'raw']);
+            if (run.promptSources.has(key)) continue;
+            const snapshot = snapshotPromptSource(context(), unit.node); if (!snapshot.ok) return snapshot;
+            run.promptSources.set(key, { node: { source: unit.node.source ?? 'system', promptId: unit.node.promptId ?? 'main', form: unit.node.form ?? 'raw' }, artifact: freezeArtifact(structuredClone(snapshot.artifact)), fingerprint: snapshot.fingerprint });
+        }
         if(options.phase==='post' && (ports.isBusy?.()||applying))return fail('BUSY','Wait for generation or reply application to finish.');
         if(run.native) {
             const tail=(options.chat??[]).at(-1),liveTail=context().chat?.at(-1);
@@ -207,6 +218,12 @@ export function createNativeWorkflowController(ports) {
         return result;
     }
     function selectedSnapshot(run,phase,node,options) {
+        if (node.operation === 'prompt-source') {
+            if (!fresh(run)) return fail('STALE_RUN', 'Workflow source or settings changed.');
+            const key = JSON.stringify([node.source ?? 'system', node.promptId ?? 'main', node.form ?? 'raw']);
+            const entry = run.promptSources.get(key);
+            return entry ? { ok: true, artifact: entry.artifact } : fail('PROMPT_UNAVAILABLE', 'The configured prompt source was not captured.');
+        }
         const c=context();
         if(!fresh(run))return fail('STALE_RUN','Workflow source or settings changed.');
         if(phase==='pre') {
@@ -289,7 +306,7 @@ export function createNativeWorkflowController(ports) {
             onStage:ports.onStage,onEvent:event=>{observe(ports.onEvent,event);observe(options.onEvent,event);},
         },{prepare:(plan,controls)=>prepareRun(run,plan,controls,options),executeIntrospection:(node,inputs,operationPorts)=>introspect(run,node,inputs,operationPorts),settle:transport=>settleRun(run,transport)});}
         finally {delete run.cancel;run.bindingContexts.clear();run.memoryIntents.clear();run.memoryTerminals.clear();run.memorySession?.release();run.memorySession=null;}
-        if(!value.ok||run.mode==='target') {run.pendingSources.clear();run.sceneSources.length=0;run.bindingChecks=[];for(const [id,entry]of candidates)if(entry.run===run)candidates.delete(id);for(const [id,entry]of sources)if(entry.run===run)sources.delete(id);if(run.native)clear();}
+        if(!value.ok||run.mode==='target') {run.pendingSources.clear();run.sceneSources.length=0;run.promptSources.clear();run.bindingChecks=[];for(const [id,entry]of candidates)if(entry.run===run)candidates.delete(id);for(const [id,entry]of sources)if(entry.run===run)sources.delete(id);if(run.native)clear();}
         else run.pendingSources.clear();
         const publicValue=freezeArtifact({...value,...(run.memoryCommit?{memoryCommit:run.memoryCommit}:{}),reviewHandles:value.ok?run.reviewHandles:[]});
         run.publicResult=publicValue;
@@ -335,7 +352,7 @@ export function createNativeWorkflowController(ports) {
     }
     function validSource(entry) {
         const c=context(),s=entry.source;
-        return fresh(entry.run) && !ports.isBusy?.() && c.chat===entry.chat && c.chat.length===s.chatLength && c.chat.every((m,i)=>m===entry.refs[i]) && c.chat[s.messageIndex]===entry.message && s.messageIndex===c.chat.length-1 && completed(entry.message) && !incompleteStream(c,s.messageIndex) && !stoppedRevision(entry.message) && (entry.message.swipe_id??0)===s.swipeId && entry.message.swipes?.[s.swipeId]===entry.swipeText && entry.message.mes===s.originalText && sourceText(c.chat)===entry.prefix;
+        return fresh(entry.run) && promptFresh(entry.run) && !ports.isBusy?.() && c.chat===entry.chat && c.chat.length===s.chatLength && c.chat.every((m,i)=>m===entry.refs[i]) && c.chat[s.messageIndex]===entry.message && s.messageIndex===c.chat.length-1 && completed(entry.message) && !incompleteStream(c,s.messageIndex) && !stoppedRevision(entry.message) && (entry.message.swipe_id??0)===s.swipeId && entry.message.swipes?.[s.swipeId]===entry.swipeText && entry.message.mes===s.originalText && sourceText(c.chat)===entry.prefix;
     }
     function candidateEntry(selector) {
         if(selector?.handleId) {
@@ -350,7 +367,7 @@ export function createNativeWorkflowController(ports) {
         if(entry.applied)return fail('ALREADY_APPLIED','This revision has already been applied.');
         if(applying||ports.isBusy?.())return fail('BUSY','Wait for generation or reply application to finish.');
         const effective=bindingFresh(entry.run);if(!effective.ok)return effective;
-        return validSource(entry)?{ok:true}:fail('STALE_SOURCE','The chat, reply or swipe changed. Run the workflow again.');
+        return validSource(entry)?{ok:true}:fail('STALE_SOURCE','The chat, reply, swipe, or prompt source changed. Run the workflow again.');
     }
     async function apply(selector) {
         const entry=candidateEntry(selector),candidate=entry?.candidate;
@@ -361,7 +378,7 @@ export function createNativeWorkflowController(ports) {
         }
         if(applying)return fail('BUSY','A reply application is already in progress.');
         const effective=bindingFresh(entry.run);if(!effective.ok)return notify(effective);
-        if(!validSource(entry))return notify(fail('STALE_SOURCE','The chat, reply or swipe changed. Run the workflow again.'));
+        if(!validSource(entry))return notify(fail('STALE_SOURCE','The chat, reply, swipe, or prompt source changed. Run the workflow again.'));
         const c=context(),m=entry.message,index=entry.source.messageIndex;
         if(typeof c.saveChat!=='function' || typeof c.updateMessageBlock!=='function' || typeof c.swipe?.refresh!=='function' || typeof ports.syncMesToSwipe!=='function' || typeof ports.syncSwipeToMes!=='function')return notify(fail('APPLY_UNAVAILABLE','Required native save, display or swipe synchronization APIs are unavailable.'));
         const backup=structuredClone(m); let mutated=false,saveAttempted=false;
@@ -390,7 +407,7 @@ export function createNativeWorkflowController(ports) {
                 && Array.isArray(m.swipe_info) && m.swipe_info.length===swipeId+1
                 && same(m.swipe_info.slice(0,swipeId),preserved.info)
                 && same(revisionMetadata(m.swipe_info[swipeId]),expectedMetadata) && same(revisionMetadata(m),expectedMetadata);
-            const stillApplied=()=>intactSwipes() && fresh(entry.run) && bindingFresh(entry.run).ok && !ports.isBusy?.() && context().chat===entry.chat && c.chat.length===entry.source.chatLength && c.chat.every((item,i)=>item===entry.refs[i]) && m.mes===candidate.text && m.swipe_id===swipeId;
+            const stillApplied=()=>intactSwipes() && fresh(entry.run) && promptFresh(entry.run) && bindingFresh(entry.run).ok && !ports.isBusy?.() && context().chat===entry.chat && c.chat.length===entry.source.chatLength && c.chat.every((item,i)=>item===entry.refs[i]) && m.mes===candidate.text && m.swipe_id===swipeId;
             if(!stillApplied())throw new Error('Revision synchronization failed');
             internalEvents++;
             try {

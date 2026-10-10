@@ -32,17 +32,18 @@ export interface NodeDetailsView extends DetailSelection {
     title: string; canonicalTitle: string; iconPath: string; family: string; phase: string;
     alias: string; compact: boolean; enabled: boolean; readOnly: boolean; canPresent: boolean;
     controls: DetailControl[]; model: DetailModelBinding | null;
+    fileInput?: { fileName: string; loaded: boolean };
     boundary?: { id: string; label: string; direction: 'input' | 'output'; kind: string; required: boolean; kinds: string[] };
     ports: { id: string; label: string; direction: 'input' | 'output'; kind: string }[];
     status?: string; issues?: string[];
 }
 export interface NodeDetailsActions {
+    loadFile?: (selection: DetailSelection, file: File) => DetailEditResponse;
     present?: (selection: DetailSelection, field: 'alias' | 'compact', value: string | boolean) => DetailEditResponse;
     editControl?: (selection: DetailSelection, key: string, value: unknown) => DetailEditResponse;
     editField?: (selection: DetailSelection, key: 'enabled' | 'modelRole', value: boolean | string) => DetailEditResponse;
     editBinding?: (selection: DetailSelection, field: 'profileId' | 'model', mode: DetailBindingMode, value: string | null) => DetailEditResponse;
     editInterface?: (selection: DetailSelection, edit: ManagerInterfaceEdit) => DetailEditResponse;
-    addBoundary?: (selection: DetailSelection, direction: 'input' | 'output') => DetailEditResponse;
     duplicate?: (selection: DetailSelection) => void; remove?: (selection: DetailSelection) => void;
 }
 export interface PreviewSection {

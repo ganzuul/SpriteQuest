@@ -1,0 +1,307 @@
+{
+  "kind": "lattice-workflow",
+  "schema": 2,
+  "minRuntime": 2,
+  "graph": {
+    "id": "example-style-blend-post",
+    "name": "Combine two style references",
+    "description": "Compose two style references into a feature brief, then propose a prose pass for review.\n\nLesson: Named Compose Text inputs combine independent references; a template adds priorities before one style-transfer request.\n\nLimitations: References express qualitative priorities. Prose cannot be guaranteed to be a numerical percentage blend.\n\nOpening installs an unassigned copy. Bind local model roles and provide the documented evidence before running.\n\nPost: at most 1 auxiliary calls. Preview before publishing or applying.\n\nTry changing:\nSwap Imagery for restrained sound imagery while retaining the Rhythm source.\nPrioritize imagery over rhythm in Priority; compare fact preservation, pauses and image count.\n\nDocumentation specimen (does not seed chat or actor memory):\n\nBefore: She waited at the gate while the cold wind blew.\n\nAfter: She waited at the gate. The wind had teeth.\n\nNamed Text inputs: rhythmReference.out → blend.section.Rhythm; imageryReference.out → blend.section.Imagery; blend.out → transfer.reference; reply.out → transfer.in; transfer → validate → review → apply.\n\nInputs override fallbacks: Connect both inputs; blank fallbacks do not enforce connection. Priorities are qualitative text, not percentage controls. Three Compose nodes cost zero calls; transfer costs at most one Prose call.\n\nCold gate · frozen scene (reply)\nPurpose: Freeze the latest completed text-only gate reply.\nFixture: She waited at the gate while the cold wind blew. The courier had not arrived.\nInspect: Waiting, gate, cold wind and absent courier are the only story facts.\n\nInfluence A · short pauses (rhythmReference)\nPurpose: Supply a reusable rhythm-only Text reference.\nInspect: Inspect standalone Text; bell and desk supply no scene facts.\n\nInfluence B · compact sensation (imageryReference)\nPurpose: Supply an independent imagery-only Text reference.\nInspect: Inspect standalone Text; coat is not a gate-scene fact.\n\nJoin two named references (blend)\nPurpose: Combine connected Text inputs with feature priorities.\nInspect: Both connected inputs replace blank fallbacks; Priority appears once.\n\nBlend pause and cold image (transfer)\nPurpose: Recast narration using the assembled feature brief.\nInspect: Check pauses/image count; metaphor must not establish literal injury.\n\nCheck blended narration (validate)\nPurpose: Validate source-bound blend patches.\nInspect: Check protected gate/courier and authorized narration windows.\n\nReview feature balance (review)\nPurpose: Require rhythm, image and fact comparison.\nInspect: Find A's pauses and one B-like image; reject imported bell/desk/coat facts.\n\nOffer blended gate prose (apply)\nPurpose: Offer the final blended candidate.\nInspect: Full root Host result: compare gate facts, then Apply or Reject.",
+    "schema": 3,
+    "runtime": 2,
+    "mode": "native-post",
+    "nodes": {
+      "reply": {
+        "id": "reply",
+        "type": "workflow",
+        "operation": "reply-snapshot",
+        "operationVersion": 1,
+        "title": "Reply Snapshot",
+        "enabled": true,
+        "x": 80,
+        "y": 120,
+        "w": 260,
+        "h": 150,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Cold gate · frozen scene"
+      },
+      "rhythmReference": {
+        "id": "rhythmReference",
+        "type": "workflow",
+        "operation": "compose",
+        "operationVersion": 1,
+        "title": "Compose",
+        "enabled": true,
+        "x": 80,
+        "y": 425,
+        "w": 260,
+        "h": 150,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Influence A · short pauses",
+        "mode": "join",
+        "outputKind": "text",
+        "template": "",
+        "sections": [
+          {
+            "name": "RhythmSample",
+            "text": "Use short declarative sentences; pause when attention shifts. Original sample: The bell stopped. He stayed at the desk. Borrow rhythm only."
+          }
+        ],
+        "separator": "\n\n"
+      },
+      "imageryReference": {
+        "id": "imageryReference",
+        "type": "workflow",
+        "operation": "compose",
+        "operationVersion": 1,
+        "title": "Compose",
+        "enabled": true,
+        "x": 80,
+        "y": 730,
+        "w": 260,
+        "h": 150,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Influence B · compact sensation",
+        "mode": "join",
+        "outputKind": "text",
+        "template": "",
+        "sections": [
+          {
+            "name": "ImagerySample",
+            "text": "Use one compact physical metaphor for an existing sensation. Original sample: The cold worried at the cuff of her coat. Borrow imagery only."
+          }
+        ],
+        "separator": "\n\n"
+      },
+      "blend": {
+        "id": "blend",
+        "type": "workflow",
+        "operation": "compose",
+        "operationVersion": 1,
+        "title": "Compose",
+        "enabled": true,
+        "x": 465,
+        "y": 425,
+        "w": 260,
+        "h": 158,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Join two named references",
+        "mode": "template",
+        "outputKind": "text",
+        "template": "Rhythm: {{section:Rhythm}}\n\nImagery: {{section:Imagery}}\n\nPriority: {{section:Priority}}",
+        "sections": [
+          {
+            "name": "Rhythm",
+            "text": ""
+          },
+          {
+            "name": "Imagery",
+            "text": ""
+          },
+          {
+            "name": "Priority",
+            "text": "Keep waiting and absent courier legible first; then use A's pauses and at most one B-like cold-wind image. Never import sample facts."
+          }
+        ],
+        "separator": "\n\n"
+      },
+      "transfer": {
+        "id": "transfer",
+        "type": "workflow",
+        "operation": "style-transfer",
+        "operationVersion": 1,
+        "title": "Style Transfer",
+        "enabled": true,
+        "x": 850,
+        "y": 425,
+        "w": 260,
+        "h": 150,
+        "profileId": null,
+        "model": null,
+        "modelRole": "Prose",
+        "alias": "Blend pause and cold image",
+        "inputKind": "draft",
+        "referenceKind": "text",
+        "scope": "narration",
+        "protectedLiterals": [
+          "gate",
+          "courier"
+        ],
+        "strength": "balanced",
+        "instructions": "Retain waiting at gate, cold wind and absent courier. Use short pauses and at most one compact wind image. Add no clothing, injury, motive, arrival or elapsed time.",
+        "maxTokens": 768,
+        "mode": "rhythm"
+      },
+      "validate": {
+        "id": "validate",
+        "type": "workflow",
+        "operation": "validate-patches",
+        "operationVersion": 1,
+        "title": "Validate Patches",
+        "enabled": true,
+        "x": 1235,
+        "y": 425,
+        "w": 260,
+        "h": 150,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Check blended narration"
+      },
+      "review": {
+        "id": "review",
+        "type": "workflow",
+        "operation": "review-gate",
+        "operationVersion": 1,
+        "title": "Review Gate",
+        "enabled": true,
+        "x": 1620,
+        "y": 425,
+        "w": 260,
+        "h": 150,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Review feature balance"
+      },
+      "apply": {
+        "id": "apply",
+        "type": "workflow",
+        "operation": "apply-reply",
+        "operationVersion": 1,
+        "title": "Apply Reply",
+        "enabled": true,
+        "x": 2005,
+        "y": 425,
+        "w": 260,
+        "h": 150,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Offer blended gate prose"
+      },
+      "comment-1": {
+        "id": "comment-1",
+        "type": "note",
+        "title": "Influence A · short pauses",
+        "x": 54,
+        "y": 339,
+        "w": 312,
+        "h": 262,
+        "color": "#637d89",
+        "content": "Supply a reusable rhythm-only Text reference.\nInspect standalone Text; bell and desk supply no scene facts.",
+        "commentFrame": true,
+        "moveContents": true
+      },
+      "comment-2": {
+        "id": "comment-2",
+        "type": "note",
+        "title": "Influence B · compact sensation",
+        "x": 54,
+        "y": 644,
+        "w": 312,
+        "h": 262,
+        "color": "#637d89",
+        "content": "Supply an independent imagery-only Text reference.\nInspect standalone Text; coat is not a gate-scene fact.",
+        "commentFrame": true,
+        "moveContents": true
+      },
+      "comment-3": {
+        "id": "comment-3",
+        "type": "note",
+        "title": "Join two named references",
+        "x": 439,
+        "y": 339,
+        "w": 312,
+        "h": 270,
+        "color": "#637d89",
+        "content": "Combine connected Text inputs with feature priorities.\nBoth connected inputs replace blank fallbacks; Priority appears once.",
+        "commentFrame": true,
+        "moveContents": true
+      }
+    },
+    "wires": {
+      "wire-1": {
+        "id": "wire-1",
+        "route": "wire",
+        "from": "reply",
+        "fromPort": "out",
+        "to": "transfer",
+        "toPort": "in"
+      },
+      "wire-2": {
+        "id": "wire-2",
+        "route": "wire",
+        "from": "rhythmReference",
+        "fromPort": "out",
+        "to": "blend",
+        "toPort": "section.Rhythm"
+      },
+      "wire-3": {
+        "id": "wire-3",
+        "route": "wire",
+        "from": "imageryReference",
+        "fromPort": "out",
+        "to": "blend",
+        "toPort": "section.Imagery"
+      },
+      "wire-4": {
+        "id": "wire-4",
+        "route": "wire",
+        "from": "blend",
+        "fromPort": "out",
+        "to": "transfer",
+        "toPort": "reference"
+      },
+      "wire-5": {
+        "id": "wire-5",
+        "route": "wire",
+        "from": "transfer",
+        "fromPort": "out",
+        "to": "validate",
+        "toPort": "in"
+      },
+      "wire-6": {
+        "id": "wire-6",
+        "route": "wire",
+        "from": "validate",
+        "fromPort": "out",
+        "to": "review",
+        "toPort": "in"
+      },
+      "wire-7": {
+        "id": "wire-7",
+        "route": "wire",
+        "from": "review",
+        "fromPort": "out",
+        "to": "apply",
+        "toPort": "in"
+      }
+    },
+    "groups": {},
+    "roles": {
+      "Prose": {
+        "model": null,
+        "profileId": null
+      }
+    },
+    "portals": {},
+    "definitions": {},
+    "template": {
+      "id": "style-blend",
+      "version": 1
+    },
+    "view": {
+      "x": 0,
+      "y": 0,
+      "zoom": 1
+    }
+  }
+}

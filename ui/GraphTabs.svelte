@@ -3,12 +3,14 @@
     import type { GraphViews, GraphViewActions, GraphViewInfo } from './view-types';
     let { views, actions = {}, panelId, idPrefix = 'pc-graph-view' }: { views?: GraphViews; actions?: GraphViewActions; panelId?: string; idPrefix?: string } = $props();
     let nav = $state<HTMLElement>(null!), menu = $state<HTMLDivElement>(null!), trigger = $state<HTMLButtonElement>(null!);
-    let menuOpen = $state(false), focusKey = $state(''), previousActive = '';
+    let menuOpen = $state(false), focusKey = $state(''), contextKey = $state(''), contextX = $state(0), contextY = $state(0), previousActive = '';
+    const contextTarget = $derived(views?.tabs.find(view => view.key === contextKey));
     const tabElements: Record<string, HTMLButtonElement> = {};
     $effect(() => {
         const activeKey = views?.active.key ?? '';
-        if (previousActive !== activeKey) { focusKey = activeKey; menuOpen = false; }
+        if (previousActive !== activeKey) { focusKey = activeKey; closeMenu(); }
         else if (views && !views.tabs.some(tab => tab.key === focusKey)) focusKey = activeKey;
+        if (contextKey && !contextTarget) closeMenu();
         previousActive = activeKey;
     });
     function fullLabel(view: GraphViewInfo) {
@@ -18,6 +20,12 @@
     }
     function focusTab(key: string) { focusKey = key; actions.focusView?.(key); tabElements[key]?.focus({ preventScroll: true }); }
     function tabKeys(event: KeyboardEvent, index: number) {
+        if (views && (event.key === 'ContextMenu' || event.key === 'F10' && event.shiftKey)) {
+            event.preventDefault(); event.stopPropagation();
+            const view = views.tabs[index], bounds = tabElements[view.key]?.getBoundingClientRect();
+            openContextMenu(view, bounds?.left ?? 8, bounds?.bottom ?? 8);
+            return;
+        }
         if (!views || !['ArrowLeft', 'ArrowRight', 'Home', 'End', 'Delete'].includes(event.key)) return;
         event.preventDefault(); event.stopPropagation();
         if (event.key === 'Delete') { if (views.tabs[index].identity.kind !== 'root') closeTab(views.tabs[index]); return; }
@@ -31,9 +39,28 @@
         const currentKey = views?.active.key;
         if (currentKey && views?.tabs.some(tab => tab.key === currentKey)) { focusKey = currentKey; tabElements[currentKey]?.focus({ preventScroll: true }); }
     }
-    function closeMenu(restore = false) { menuOpen = false; if (restore) trigger?.focus({ preventScroll: true }); }
+    function closeMenu(restore = false) {
+        const target = contextKey ? tabElements[contextKey] : trigger;
+        menuOpen = false; contextKey = '';
+        if (restore) target?.focus({ preventScroll: true });
+    }
+    function contextTab(event: MouseEvent, view: GraphViewInfo) {
+        event.preventDefault(); event.stopPropagation();
+        openContextMenu(view, event.clientX, event.clientY);
+    }
+    async function openContextMenu(view: GraphViewInfo, x: number, y: number) {
+        contextKey = view.key; contextX = x; contextY = y; menuOpen = true;
+        await tick();
+        if (!menuOpen || contextKey !== view.key) return;
+        const bounds = menu?.getBoundingClientRect();
+        contextX = Math.min(Math.max(8, x), Math.max(8, window.innerWidth - (bounds?.width ?? 0) - 8));
+        contextY = Math.min(Math.max(8, y), Math.max(8, window.innerHeight - (bounds?.height ?? 0) - 8));
+        menu?.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus({ preventScroll: true });
+    }
     async function toggleMenu() {
-        menuOpen = !menuOpen;
+        const wasContext = !!contextKey;
+        contextKey = '';
+        menuOpen = wasContext || !menuOpen;
         if (menuOpen) { await tick(); if (menuOpen) menu?.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus(); }
     }
     function menuKeys(event: KeyboardEvent) {
@@ -46,31 +73,48 @@
         buttons[event.key === 'Home' ? 0 : event.key === 'End' ? buttons.length - 1 : (index + (event.key === 'ArrowUp' ? buttons.length - 1 : 1)) % buttons.length]?.focus();
     }
     function menuAction(action: () => void) { closeMenu(true); action(); }
+    function contextAction(action: (view: GraphViewInfo) => void) {
+        const target = contextTarget;
+        if (!target) return;
+        closeMenu(true); action(target);
+    }
 </script>
-<svelte:window onpointerdown={(event) => { if (menuOpen && !nav?.contains(event.target as Node)) closeMenu(); }} />
+<svelte:window onpointerdown={(event) => { if (menuOpen && !menu?.contains(event.target as Node) && event.target !== trigger) closeMenu(); }} onresize={() => closeMenu()} />
 {#if views}
-    <nav class="pc-graph-tabs pc-graph-tabs-multi" aria-label="Open graph views" bind:this={nav}>
+    <nav class="pc-graph-tabs pc-graph-tabs-multi" class:pc-graph-tabs-menu-open={menuOpen} aria-label="Open graph views" bind:this={nav}>
         <div class="pc-graph-tab-list" role="tablist" aria-label="Graph views">
             {#each views.tabs as view, index (view.key)}
                 <div class="pc-graph-tab-item" class:pc-graph-tab-active={view.key === views.active.key}>
-                    <button type="button" class="pc-graph-tab" class:pc-graph-tab-closeable={view.identity.kind !== 'root'} role="tab" id={`${idPrefix}-${index}`} aria-controls={panelId} aria-selected={view.key === views.active.key} tabindex={view.key === (focusKey || views.active.key) ? 0 : -1} title={fullLabel(view)} onclick={() => focusTab(view.key)} onkeydown={(event) => tabKeys(event, index)} bind:this={tabElements[view.key]}><span>{view.label}</span>{#if view.readOnly}<span class="pc-graph-tab-lock" aria-label="Read only">◇</span>{/if}</button>
-                    {#if view.identity.kind !== 'root'}<button type="button" class="pc-graph-tab-close" aria-label={`Close ${view.label} · ${fullLabel(view)}`} title={`Close ${fullLabel(view)}`} tabindex={view.key === (focusKey || views.active.key) ? 0 : -1} onclick={() => closeTab(view)}>×</button>{/if}
+                    <button type="button" class="pc-graph-tab" class:pc-graph-tab-closeable={view.identity.kind !== 'root'} role="tab" id={`${idPrefix}-${index}`} aria-controls={panelId} aria-selected={view.key === views.active.key} aria-haspopup="menu" aria-expanded={menuOpen && contextKey === view.key} tabindex={view.key === (focusKey || views.active.key) ? 0 : -1} title={fullLabel(view)} onclick={() => focusTab(view.key)} onpointerdown={(event) => { if (event.button === 2) event.preventDefault(); }} oncontextmenu={(event) => contextTab(event, view)} onkeydown={(event) => tabKeys(event, index)} bind:this={tabElements[view.key]}><span>{view.label}</span>{#if view.readOnly}<span class="pc-graph-tab-lock" aria-label="Read only">◇</span>{/if}</button>
+                    {#if view.identity.kind !== 'root'}<button type="button" class="pc-graph-tab-close" aria-label={`Close ${view.label} · ${fullLabel(view)}`} title={`Close ${fullLabel(view)}`} tabindex={view.key === (focusKey || views.active.key) ? 0 : -1} onclick={() => closeTab(view)} oncontextmenu={(event) => contextTab(event, view)} onkeydown={(event) => tabKeys(event, index)}>×</button>{/if}
                 </div>
             {/each}
         </div>
-        <button type="button" class="pc-graph-view-overflow" aria-label="Graph view actions" title="Focus, close or reopen graph views" aria-haspopup="menu" aria-expanded={menuOpen} onclick={toggleMenu} bind:this={trigger}>⋯</button>
+        <button type="button" class="pc-graph-view-overflow" aria-label="Graph view actions" title="Focus, close or reopen graph views" aria-haspopup="menu" aria-expanded={menuOpen && !contextKey} onclick={toggleMenu} bind:this={trigger}>⋯</button>
         {#if menuOpen}
-            <div class="pc-graph-view-menu" role="menu" aria-label="Graph view actions" tabindex="-1" onkeydown={menuKeys} bind:this={menu}>
+            <div class="pc-graph-view-menu" class:pc-graph-tab-menu={!!contextKey} style={contextKey ? `left: ${contextX}px; top: ${contextY}px;` : undefined} role="menu" aria-label={contextTarget ? `Actions for ${contextTarget.label}` : 'Graph view actions'} tabindex="-1" onkeydown={menuKeys} bind:this={menu}>
+                {#if contextTarget}
+                    {@const target = contextTarget}
+                    {@const renameBlocked = actions.canRenameView?.(target.key) === false}
+                    <button type="button" role="menuitem" disabled={!actions.saveView} onclick={() => contextAction(view => actions.saveView?.(view.key))}>Save workflow</button>
+                    <button type="button" role="menuitem" disabled={!actions.exportView} onclick={() => contextAction(view => actions.exportView?.(view.key))}>{target.identity.kind === 'root' ? 'Export workflow JSON' : 'Export subgraph JSON'}</button>
+                    <button type="button" role="menuitem" disabled={target.identity.kind === 'library' || renameBlocked || !actions.renameView} title={target.identity.kind === 'library' ? 'Library inspection is read only.' : renameBlocked ? 'Make a local copy of the containing graph to rename this subgraph.' : undefined} onclick={() => contextAction(view => actions.renameView?.(view.key))}>{target.identity.kind === 'root' ? 'Rename graph' : 'Rename subgraph'}</button>
+                    <button type="button" role="menuitem" disabled={target.identity.kind === 'root' || !actions.closeView} onclick={() => contextAction(view => closeTab(view))}>Close tab</button>
+                    <button type="button" role="menuitem" disabled={views.tabs.every(view => view.identity.kind === 'root' || view.key === target.key) || !actions.closeOtherViews} onclick={() => contextAction(view => actions.closeOtherViews?.(view.key))}>Close other tabs</button>
+                    {#each views.closedViews as view (view.key)}<button type="button" role="menuitem" disabled={!actions.reopenView} title={fullLabel(view)} onclick={() => menuAction(() => actions.reopenView?.(view.key))}>Reopen {view.label} · {fullLabel(view)}</button>{/each}
+                {:else}
                 {#each views.tabs as view (view.key)}<button type="button" role="menuitem" title={fullLabel(view)} onclick={() => menuAction(() => focusTab(view.key))}>Focus {fullLabel(view)}</button>{/each}
                 <button type="button" role="menuitem" disabled={views.active.identity.kind === 'root' || !actions.closeView} onclick={() => menuAction(() => closeTab(views!.active))}>Close active view</button>
                 <button type="button" role="menuitem" disabled={views.tabs.every(view => view.identity.kind === 'root' || view.key === views!.active.key) || !actions.closeOtherViews} onclick={() => menuAction(() => actions.closeOtherViews?.(views!.active.key))}>Close other views</button>
                 {#each views.closedViews as view (view.key)}<button type="button" role="menuitem" title={fullLabel(view)} onclick={() => menuAction(() => actions.reopenView?.(view.key))}>Reopen {view.label} · {fullLabel(view)}</button>{/each}
+                {/if}
             </div>
         {/if}
     </nav>
 {/if}
 <style>
     .pc-graph-tabs-multi { gap: 4px; min-width: 0; }
+    .pc-graph-tabs-multi.pc-graph-tabs-menu-open { z-index: 30; }
     .pc-graph-tab-list { display: flex; align-items: stretch; min-width: 0; flex: 1; overflow-x: auto; scrollbar-width: none; }
     .pc-graph-tab-list::-webkit-scrollbar { display: none; }
     .pc-graph-tab-item { position: relative; display: flex; flex: 0 0 auto; max-width: 220px; }
@@ -85,6 +129,7 @@
     .pc-graph-tab-close:hover, .pc-graph-view-overflow:hover { color: var(--pc-accent); background: var(--pc-panel); }
     .pc-graph-tab-close:focus-visible, .pc-graph-view-overflow:focus-visible, .pc-graph-view-menu button:focus-visible { outline: 2px solid var(--pc-accent); outline-offset: -2px; }
     .pc-graph-view-menu { position: absolute; top: 100%; right: 4px; z-index: 10; display: flex; flex-direction: column; width: max-content; max-width: min(420px, calc(100vw - 40px)); max-height: min(360px, 60vh); overflow: auto; padding: 4px; border: 1px solid var(--pc-border); border-radius: 4px; background: var(--pc-panel-solid); box-shadow: var(--pc-recess); }
+    .pc-graph-tab-menu { position: fixed; right: auto; z-index: 70; }
     .pc-graph-view-menu button { display: block; width: 100%; padding: 6px 8px; border: 0; border-radius: 2px; background: transparent; color: var(--pc-text); font: inherit; font-size: 12px; text-align: left; overflow-wrap: anywhere; }
     .pc-graph-view-menu button:hover:not(:disabled) { background: var(--pc-panel); color: var(--pc-accent); }
     .pc-graph-view-menu button:disabled { opacity: .45; }

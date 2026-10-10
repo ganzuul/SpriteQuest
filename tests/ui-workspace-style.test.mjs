@@ -60,14 +60,14 @@ test('Ember execution rings retain priority over selection without bringing back
     assert.equal(Number(style('.pc-native-pin-label').opacity || 1), 1, 'Execution dimming stays on the existing interior wrappers');
 });
 
-test('Ember Details and managers consume host surfaces without boxing preview buttons', async () => {
-    const components = [['NodeDetails', 'pc-node-details'], ['PortalManager', 'pc-manager'], ['SubgraphManager', 'pc-manager'], ['OutputPreview', 'pc-output-preview']];
+test('Ember Details, portal manager and subgraph saves consume host surfaces without boxing preview buttons', async () => {
+    const components = [['NodeDetails', 'pc-node-details'], ['PortalManager', 'pc-manager'], ['SubgraphSave', 'pc-subgraph-save'], ['OutputPreview', 'pc-output-preview']];
     for (const [name, className] of components) {
         const source = await readFile(new URL('../ui/' + name + '.svelte', import.meta.url), 'utf8');
         const componentCss = compile(source, { filename: name + '.svelte', generate: 'client', css: 'external' }).css.code;
         const scopedClass = componentCss.match(/\.svelte-[a-z0-9]+/)[0].slice(1);
         // Production imports the compiled component sheet before workspace overrides.
-        const fixture = new JSDOM(`<style>${componentCss}</style><style>${css}</style><div class="pc-root"><section class="${className}"><header><button>Action</button></header><label>Field<input></label><small>Quiet text</small><footer>Result</footer></section></div>`);
+        const fixture = new JSDOM(`<style>${componentCss}</style><style>${css}</style><div class="pc-root"><section class="${className}"><header><button>Action</button></header><label>Field<input></label><small>Quiet text</small><p class="pc-save-error">Save failed</p><footer>Result</footer></section></div>`);
         const root = fixture.window.document.documentElement; root.dataset.pcOwn = '1'; root.dataset.pcPreset = 'ember';
         for (const element of fixture.window.document.querySelectorAll('section, section *')) element.classList.add(scopedClass);
         const computed = selector => fixture.window.getComputedStyle(fixture.window.document.querySelector(selector));
@@ -80,6 +80,7 @@ test('Ember Details and managers consume host surfaces without boxing preview bu
             assert.equal(computed('button').background, 'var(--pc-control)', name + ' inherits raised control surface');
             assert.equal(computed('small').color, 'var(--pc-muted)', name + ' inherits quiet text');
             assert.equal(computed('input').background, 'var(--pc-field)', name + ' inherits field surface');
+            if (name === 'SubgraphSave') assert.equal(computed('.pc-save-error').color, 'var(--pc-error)', 'save rejection keeps the semantic error color');
         }
     }
 });

@@ -17,6 +17,32 @@ const store = options => api.createViewState({ workflowId, navigation: navigatio
 const active = view => view.project().active;
 const accepted = result => { assert.equal(result.ok, true, JSON.stringify(result)); return result.data; };
 
+test('root names refresh tabs and breadcrumbs while retaining presentation and editor context', () => {
+    const view = store({ rootLabel: 'Story graph' });
+    assert.ok(view);
+    assert.equal(active(view).label, 'Story graph');
+    accepted(view.openInstance(['a', 'b']));
+    accepted(view.updateView({ camera: { x: 18, y: -4, zoom: 1.5 } }));
+    const context = view.captureContext(), key = active(view).key;
+    accepted(view.replaceNavigation(navigation(), { rootLabel: 'Renamed graph' }));
+    assert.equal(view.project().tabs[0].label, 'Renamed graph');
+    assert.deepEqual(active(view).breadcrumbs.map(crumb => crumb.label), ['Renamed graph', 'Alias parent', 'Alias nested']);
+    assert.equal(active(view).key, key);
+    assert.deepEqual(active(view).camera, { x: 18, y: -4, zoom: 1.5 });
+    assert.equal(view.isContextCurrent(context), true);
+    accepted(view.replaceNavigation(navigation()));
+    assert.equal(view.project().tabs[0].label, 'Renamed graph', 'A child label refresh retains the root name');
+    const restored = store({ rootLabel: 'Reloaded name', persisted: accepted(view.serialize()) });
+    assert.equal(restored.project().tabs[0].label, 'Reloaded name');
+    assert.equal(active(restored).breadcrumbs[0].label, 'Reloaded name');
+});
+
+test('root labels normalize whitespace and keep long or absent graph names navigable', () => {
+    assert.equal(active(store({ rootLabel: '  Named graph  ' })).label, 'Named graph');
+    assert.equal(active(store({ rootLabel: 'x'.repeat(300) })).label, 'x'.repeat(256));
+    for (const rootLabel of [undefined, null, '', '   ', 42]) assert.equal(active(store({ rootLabel })).label, 'Graph 1');
+});
+
 test('qualified group positions persist locally without changing current navigation authority', () => {
     const view = store(), before = active(view).key;
     const position = { collapsed: true, x: 13.5, y: -9, frame: { x: 13.5, y: -9, w: 260, h: 140 } };

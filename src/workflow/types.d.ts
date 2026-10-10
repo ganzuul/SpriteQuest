@@ -15,7 +15,7 @@ export interface PortDescriptor {
     /** Inputs accept one binding; outputs may fan out to many consumers. */
     cardinality: 'one';
 }
-export type ControlDescriptor = ({ label?: string; editor?: 'text' | 'json'; exposable?: boolean } & (
+export type ControlDescriptor = ({ label?: string; editor?: 'text' | 'json'; exposable?: boolean; maxLength?: number; multiline?: boolean; hidden?: boolean; visibleWhen?: { key: string; value: string }; help?: string } & (
     | { type: 'integer'; min: number; max: number; default: number }
     | { type: 'number'; min: number; max: number; step?: number | 'any'; default: number }
     | { type: 'enum'; values: string[]; default: string }
@@ -67,7 +67,7 @@ export interface DefinitionSnapshot extends DefinitionRef {
     interface: InterfacePort[]; parameters: ExposedParameter[]; body: DefinitionBody;
 }
 export type SnapshotTable = Record<string, DefinitionSnapshot>;
-export interface DefinitionLibrary { definitions: SnapshotTable; }
+export interface DefinitionLibrary { definitions: SnapshotTable; entries?: Record<string, DefinitionRef>; }
 export interface LibraryEdit { library: DefinitionLibrary; ref?: DefinitionRef; changed: boolean; addedDefinitionKeys?: string[]; }
 export interface DefinitionDiagnostics { ref: DefinitionRef; definition: DefinitionSnapshot; interface: InterfacePort[]; parameters: ExposedParameter[]; parameterDescriptors: Record<string, ControlDescriptor>; nodeCount: number; wireCount: number; }
 export interface SubgraphInstance {
@@ -133,7 +133,7 @@ export interface PreparedGraphEdit {
 export interface ConnectionCommand { from: Endpoint; to: Endpoint; replace?: boolean; }
 export interface LocalDefinitionOwner { instancePath: string[]; definitionId: string; }
 export interface QualifiedInstanceCommand { instancePath?: string[]; instanceId?: string; }
-export interface LocalCopyCommand extends QualifiedInstanceCommand { id: string; name?: string; }
+export interface LocalCopyCommand extends QualifiedInstanceCommand { id: string; name?: string; materializeOverrides?: boolean; }
 export interface LocalDefinitionEditCommand extends QualifiedInstanceCommand { expectedRef: DefinitionRef; draft: DefinitionSnapshot; }
 export interface ChangedDefinitionRef { instancePath: string[]; before: DefinitionRef; after: DefinitionRef; }
 export interface LocalDefinitionEdit extends PreparedGraphEdit { instancePath: string[]; changedRefs: ChangedDefinitionRef[]; copying: boolean; }

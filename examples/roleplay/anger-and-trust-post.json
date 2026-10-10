@@ -1,0 +1,171 @@
+{
+  "kind": "lattice-workflow",
+  "schema": 2,
+  "minRuntime": 2,
+  "graph": {
+    "id": "example-anger-and-trust-post",
+    "name": "Consider recovery after an apology",
+    "description": "Use a settled apology to propose a recovery update for temporary actor conditions.\n\nLesson: Recovery updates a temporary condition from settled events while retaining separately supported guarded beliefs. The next Pre workflow reads that committed state and expresses a reaction; a proposal alone never becomes memory.\n\nLimitations: Full Post root Run writes memory without a review-click. A separate zero-call Curve example needs an already initialized curve; it does not infer emotion.\n\nOpening installs an unassigned copy. Bind local model roles and provide the documented evidence before running.\n\nPost: at most 1 auxiliary calls. Writes actor memory on full Run. Inspect local update and save acknowledgment separately; unconfirmed saving is not durable saving.\n\nTry changing:\nChange the settled apology from accepted to acknowledged without acceptance; inspect whether Recovery preserves the stronger unresolved condition.\nRun to Internalize, inspect its sourceRefs, then compare a full root Run's settlement and save diagnostics before using the Pre companion.\n\nDocumentation specimen (does not seed chat or actor memory):\n\nSettled event: Sol apologized for reading Mira's letter. She accepted the apology.\n\nProposed update: Immediate anger eases. Trust remains guarded until later behavior supplies more evidence.\n\nPost evidence → proposal → settlement: Keep State+Events→Internalize Recovery→Commit in a Post root workflow. Full Run may write actor memory without a review-click; report local update separately from confirmed saving.\n\nPre sources → interpretation → delivery: Wire Scene+State→Reflect Character, Reflect→Express Behavior, then Guidance; also feed the same Scene/State to Express. This companion reads actual committed state, never the Post proposal directly.\n\nRecovery is evidence-based: Both model nodes need local Analysis bindings. This recipe has at most one request per phase. A zero-call Curve alternative requires an initialized curve and cannot infer the truth of an emotion.\n\nAnger and guarded trust (post-state)\nPurpose: Read Mira's scoped prior State so temporary anger and guarded relationship evidence can be treated as different items.\nFixture: Demo prerequisite: supported existing state records Mira's immediate anger after Sol read her letter and her guarded trust toward him. Plain JSON is not a scoped actor-state record; importing this example makes no live seed.\nInspect: Inspect actual conditions, relationships, sourceRefs and version. If guarded trust is absent, do not invent it merely to reproduce the specimen.\n\nAccepted apology evidence (post-events)\nPurpose: Read settled Events Data for the apology and acceptance; these references authorize the recovery proposal.\nFixture: Post demo prerequisite: a supported settled message says Sol apologized for reading Mira's letter; Mira accepted the apology. Use actual native event IDs and revisions in the same selected actor/chat scope.\nInspect: Confirm acceptance was actually settled, not only offered. Empty Events cannot support Internalize, and a fictional fixture string cannot create host event authority.\n\nEase anger; retain the boundary (post-internalize)\nPurpose: Propose a recovery change for the temporary reaction while keeping supported guarded relationship state distinct.\nInspect: Run to here to inspect each proposed item and sourceRef. Expect a temporary-condition change with separately retained relationship evidence; no persistence happens at this node.\n\nSettle recovery once (post-commit)\nPurpose: Settle the validated proposal after a successful full Post root Run, using the native derived transaction key.\nInspect: Inspect the Commit Host diagnostic and separate local-update/save acknowledgment. Commit has no output pin and needs no review-click; previews and target runs never write.",
+    "schema": 3,
+    "runtime": 2,
+    "mode": "native-post",
+    "nodes": {
+      "post-state": {
+        "id": "post-state",
+        "type": "workflow",
+        "operation": "memory",
+        "operationVersion": 1,
+        "title": "Memory · state",
+        "enabled": true,
+        "x": 80,
+        "y": 120,
+        "w": 260,
+        "h": 150,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Anger and guarded trust",
+        "mode": "read",
+        "view": "state"
+      },
+      "post-events": {
+        "id": "post-events",
+        "type": "workflow",
+        "operation": "memory",
+        "operationVersion": 1,
+        "title": "Memory · events",
+        "enabled": true,
+        "x": 80,
+        "y": 425,
+        "w": 260,
+        "h": 150,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Accepted apology evidence",
+        "mode": "read",
+        "view": "events"
+      },
+      "post-internalize": {
+        "id": "post-internalize",
+        "type": "workflow",
+        "operation": "internalize",
+        "operationVersion": 1,
+        "title": "Internalize · recovery",
+        "enabled": true,
+        "x": 465,
+        "y": 272.5,
+        "w": 260,
+        "h": 150,
+        "profileId": null,
+        "model": null,
+        "modelRole": "Analysis",
+        "alias": "Ease anger; retain the boundary",
+        "mode": "recovery",
+        "maxTokens": 1200,
+        "instructions": "Use only the supplied apology and acceptance events with exact IDs/revisions. Ease Mira's supported temporary anger if acceptance warrants it. Retain the prior guarded trust and unresolved letter-boundary consequence; acceptance of an apology is not proof of restored trust. Do not declare forgiveness, intimacy, baseline recovery or a new numeric trust score unless evidence explicitly supports it. Preserve enduring traits and unrelated items. Leave values, curves and tracks unchanged. Classify emotional easing as interpretation when not directly observed."
+      },
+      "post-commit": {
+        "id": "post-commit",
+        "type": "workflow",
+        "operation": "memory",
+        "operationVersion": 1,
+        "title": "Memory · commit",
+        "enabled": true,
+        "x": 850,
+        "y": 272.5,
+        "w": 260,
+        "h": 150,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Settle recovery once",
+        "mode": "commit",
+        "idempotencyKey": "lattice-memory-commit"
+      },
+      "comment-1": {
+        "id": "comment-1",
+        "type": "note",
+        "title": "After reply · Consider recovery after an apology",
+        "x": 439,
+        "y": 186.5,
+        "w": 312,
+        "h": 262,
+        "color": "#637d89",
+        "content": "Keep State+Events→Internalize Recovery→Commit in a Post root workflow. Full Run may write actor memory without a review-click; report local update separately from confirmed saving.",
+        "commentFrame": true,
+        "moveContents": true
+      },
+      "comment-2": {
+        "id": "comment-2",
+        "type": "note",
+        "title": "Read settled evidence",
+        "x": 54,
+        "y": 34,
+        "w": 312,
+        "h": 567,
+        "color": "#637d89",
+        "content": "Inspect actual conditions, relationships, sourceRefs and version. If guarded trust is absent, do not invent it merely to reproduce the specimen.\nConfirm acceptance was actually settled, not only offered. Empty Events cannot support Internalize, and a fictional fixture string cannot create host event authority.",
+        "commentFrame": true,
+        "moveContents": true
+      },
+      "comment-3": {
+        "id": "comment-3",
+        "type": "note",
+        "title": "Commit only on full root Run",
+        "x": 824,
+        "y": 186.5,
+        "w": 312,
+        "h": 262,
+        "color": "#637d89",
+        "content": "Inspect the Commit Host diagnostic and separate local-update/save acknowledgment. Commit has no output pin and needs no review-click; previews and target runs never write.",
+        "commentFrame": true,
+        "moveContents": true
+      }
+    },
+    "wires": {
+      "wire-1": {
+        "id": "wire-1",
+        "route": "wire",
+        "from": "post-state",
+        "fromPort": "out",
+        "to": "post-internalize",
+        "toPort": "state"
+      },
+      "wire-2": {
+        "id": "wire-2",
+        "route": "wire",
+        "from": "post-events",
+        "fromPort": "out",
+        "to": "post-internalize",
+        "toPort": "events"
+      },
+      "wire-3": {
+        "id": "wire-3",
+        "route": "wire",
+        "from": "post-internalize",
+        "fromPort": "out",
+        "to": "post-commit",
+        "toPort": "proposal"
+      }
+    },
+    "groups": {},
+    "roles": {
+      "Analysis": {
+        "model": null,
+        "profileId": null
+      }
+    },
+    "portals": {},
+    "definitions": {},
+    "template": {
+      "id": "anger-and-trust",
+      "version": 1
+    },
+    "view": {
+      "x": 0,
+      "y": 0,
+      "zoom": 1
+    }
+  }
+}

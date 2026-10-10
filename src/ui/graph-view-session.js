@@ -60,11 +60,11 @@ export function createGraphViewSession({ root, activationId, navigation = [], pr
     if (!root || typeof root !== 'object' || typeof root.id !== 'string' || !root.id) return fail('VIEW_ROOT', 'Expected the active workflow root.');
     if (typeof activationId !== 'string' || !activationId) return fail('VIEW_ACTIVATION', 'Expected a root activation identity.');
     const workflowId = root.id;
-    let views = createViewState({ workflowId, navigation, initialCamera });
+    let views = createViewState({ workflowId, navigation, initialCamera, rootLabel: root.name });
     if (!views) return fail('VIEW_NAVIGATION', 'Expected complete prepared graph navigation.');
     let warnings = Object.freeze([]);
     if (persisted !== undefined) {
-        const restored = createViewState({ workflowId, navigation, persisted, initialCamera });
+        const restored = createViewState({ workflowId, navigation, persisted, initialCamera, rootLabel: root.name });
         if (restored) views = restored;
         else warnings = freeze([{ code: 'VIEW_PERSISTENCE', message: 'Saved graph view presentation was invalid. The root workflow is available with fresh view presentation.' }]);
     }
@@ -105,12 +105,12 @@ export function createGraphViewSession({ root, activationId, navigation = [], pr
         replacePreparedViews({ navigation: nextNavigation, preparedViews: nextViews } = {}, { invalidateEditor = true } = {}) {
             if (!active) return fail('VIEW_INACTIVE', 'The graph view session is closed.');
             if (!rootCurrent()) return fail('VIEW_ROOT_CHANGED', 'The workflow root identity changed.');
-            if (!createViewState({ workflowId, navigation: nextNavigation })) return fail('VIEW_NAVIGATION', 'Expected complete prepared graph navigation.');
+            if (!createViewState({ workflowId, navigation: nextNavigation, rootLabel: root.name })) return fail('VIEW_NAVIGATION', 'Expected complete prepared graph navigation.');
             const checked = prepareCache(workflowId, nextNavigation, nextViews);
             if (!checked.ok) return checked;
             if (invalidateEditor !== true && invalidateEditor !== false) return fail('VIEW_CONTEXT_REQUIRED', 'Expected an explicit editor invalidation policy.');
             if (!invalidateEditor && (checked.data.size !== prepared.size || [...checked.data].some(([key, value]) => !prepared.has(key) || JSON.stringify(value) !== JSON.stringify(prepared.get(key))))) return fail('VIEW_CONTEXT_REQUIRED', 'Only cached navigation label changes may preserve an editor context.');
-            const replaced = views.replaceNavigation(nextNavigation);
+            const replaced = views.replaceNavigation(nextNavigation, { rootLabel: root.name ?? 'Graph 1' });
             if (!replaced.ok) return replaced;
             prepared = checked.data;
             if (invalidateEditor) views.invalidateContext();

@@ -5,7 +5,8 @@ import { ARTIFACT_KINDS, describeOperation, operationFor } from './catalog.js?v=
 import { applyDeclaredNodeControlChange, graphDocumentSignature } from './ports.js?v=0.26.0';
 import { selectSubgraphClosure } from './packages.js?v=0.26.0';
 import { prepareGraphCandidate } from './prepared-graph-edit.js?v=0.26.0';
-import { compositionIds, definitionChain, ownershipEntries, ownsDefinitionPath, samePath, safeId, prunePrivateSnapshots } from './composition-edit.js?v=0.26.0';
+import { compositionIds, definitionChain, ownershipEntries, ownsDefinitionPath, samePath, pathStartsWith, safeId, prunePrivateSnapshots } from './composition-edit.js?v=0.26.0';
+import { inspectExpandedGraph } from './graph-validation.js?v=0.26.0';
 
 const fail = (code, message) => ({ ok: false, error: { code, message } });
 const record = value => value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -48,7 +49,7 @@ export function prepareQualifiedScopeEdit(root, input, mutateSavedScope) {
 }
 
 const nodeFields = {
-    controls: ['controls', 'removeEdgeIds'], enabled: ['value'], 'model-role': ['mode', 'value'], binding: ['field', 'mode', 'value'],
+    controls: ['controls', 'removeEdgeIds'], enabled: ['value'], 'model-role': ['mode', 'value'], binding: ['field', 'mode', 'value', 'consumeOverride'],
     'parameter-override': ['expectedInstanceRef', 'parameterId', 'mode', 'value'], 'binding-override': ['expectedInstanceRef', 'target', 'field', 'mode', 'value'],
 };
 /** Prepare saved primitive fields or wrapper overrides in one actual qualified root candidate. */
@@ -57,6 +58,7 @@ export function prepareNativeNodeEdit(root, input) {
     const command = admitted.data;
     if (!record(command) || typeof command.kind !== 'string' || !Object.hasOwn(nodeFields, command.kind) || !only(command, ['kind', 'viewPath', 'expectedRef', 'nodeId', ...nodeFields[command.kind]]) || !safeId(command.nodeId)) return fail('INVALID_COMMAND', 'Expected a known qualified node command.');
     if (command.kind === 'controls' && (!record(command.controls) || command.removeEdgeIds !== undefined && (!Array.isArray(command.removeEdgeIds) || !command.removeEdgeIds.every(safeId)))) return fail('INVALID_COMMAND', 'Expected controls and explicit incident wire IDs.');
+    if (command.consumeOverride !== undefined && typeof command.consumeOverride !== 'boolean') return fail('INVALID_COMMAND', 'Expected an explicit binding override consumption flag.');
     if (command.kind === 'enabled' && typeof command.value !== 'boolean') return fail('INVALID_COMMAND', 'Enabled requires a boolean.');
     const binding = command.kind === 'binding' || command.kind === 'binding-override';
     if (binding && !['profileId', 'model'].includes(command.field)) return fail('INVALID_COMMAND', 'Expected a model or profile field.');
@@ -69,7 +71,34 @@ export function prepareNativeNodeEdit(root, input) {
         const target = command.target;
         if (target?.kind === 'role' ? !only(target, ['kind', 'role']) || !safeId(target.role) : target?.kind !== 'node' || !only(target, ['kind', 'instancePath', 'nodeId']) || !Array.isArray(target.instancePath) || target.instancePath.length > 8 || !target.instancePath.every(safeId) || !safeId(target.nodeId)) return fail('INVALID_COMMAND', 'Expected an actual role or structural primitive target.');
     }
-    return prepareQualifiedScopeEdit(root, command, applyNativeNodeEdit);
+    const prepared = prepareQualifiedScopeEdit(root, command, applyNativeNodeEdit);
+    if (!prepared.ok || command.kind !== 'binding' || !command.consumeOverride || !command.viewPath.length) return prepared;
+    return consumeEditedBinding(root, prepared.data, command);
+}
+
+// A copied explicit null remains a wrapper blocker because saved primitive null means
+// inheritance. Editing that field supersedes the blocker in the owning instance only.
+function consumeEditedBinding(original, prepared, command) {
+    let candidate = prepared.candidate;
+    for (let depth = command.viewPath.length - 1; depth >= 0; depth--) {
+        const prefix = command.viewPath.slice(0, depth + 1), chain = definitionChain(candidate, prefix), wrapper = chain.at(-1).node;
+        const key = nodeBindingOverrideKey(command.viewPath.slice(depth + 1), command.nodeId);
+        if (!Object.hasOwn(wrapper.nodeBindingOverrides?.[key] ?? {}, command.field)) continue;
+        if (!depth) {
+            delete wrapper.nodeBindingOverrides[key][command.field];
+            if (!Object.keys(wrapper.nodeBindingOverrides[key]).length) delete wrapper.nodeBindingOverrides[key];
+        } else {
+            const parentPath = prefix.slice(0, -1), parent = definitionChain(candidate, parentPath).at(-1).definition;
+            const draft = structuredClone(parent), nested = draft.body.nodes[prefix.at(-1)];
+            delete nested.nodeBindingOverrides[key][command.field];
+            if (!Object.keys(nested.nodeBindingOverrides[key]).length) delete nested.nodeBindingOverrides[key];
+            const revised = prepareLocalDefinitionEdit(candidate, { instancePath: parentPath, expectedRef: reference(parent), draft });
+            if (!revised.ok) return revised;
+            candidate = revised.data.candidate;
+        }
+    }
+    const final = prepareGraphCandidate(original, candidate);
+    return final.ok ? { ok: true, data: { ...prepared, ...final.data } } : final;
 }
 
 function applyNativeNodeEdit(context, command) {
@@ -187,8 +216,130 @@ export function makeLocalCopy(graph, command) {
     const input = qualifiedInstance(graph, command); if (!input.ok) return input;
     const { candidate, path, chain } = input.data, ids = compositionIds(candidate);
     if (!ids.claim(command.id) || command.name !== undefined && typeof command.name !== 'string') return fail('DEFINITION_CONFLICT', 'A local copy requires a fresh safe ID and optional display name.');
+    if (command.materializeOverrides !== undefined && typeof command.materializeOverrides !== 'boolean') return fail('INVALID_COMMAND', 'Expected an explicit override materialization flag.');
+    if (command.materializeOverrides) {
+        const materialized = materializeQualifiedInstance(graph, path, command.id, command.name, ids); if (!materialized.ok) return materialized;
+        const data = materialized.data, revisedChain = structuredClone(chain);
+        Object.assign(candidate.definitions, data.definitions);
+        const owners = ownershipEntries(candidate);
+        for (const entry of data.owners) {
+            const existing = owners.find(owner => samePath(owner.instancePath, entry.instancePath));
+            if (existing) existing.definitionId = entry.definitionId; else owners.push(entry);
+        }
+        candidate.localDefinitionOwners = owners;
+        for (let depth = 0; depth < path.length; depth++) {
+            const wrapper = depth ? revisedChain[depth - 1].definition.body.nodes[path[depth]] : candidate.nodes[path[depth]];
+            if (depth === path.length - 1) {
+                wrapper.parameterOverrides = {}; wrapper.roleOverrides = {}; wrapper.nodeBindingOverrides = data.nullBindings;
+            } else consumeSubtreeOverrides(wrapper, revisedChain[depth].definition, path.slice(depth + 1));
+        }
+        const revised = reviseQualified(graph, candidate, path, revisedChain, data.definition, true, ids);
+        if (revised.ok) revised.data.changedRefs.push(...data.changedRefs.filter(change => change.instancePath.length > path.length));
+        return revised;
+    }
     const draft = { ...structuredClone(chain.at(-1).definition), id: command.id, version: 1, ...(command.name === undefined ? {} : { name: command.name }) };
     return reviseQualified(graph, candidate, path, chain, draft, true, ids);
+}
+
+function consumeSubtreeOverrides(wrapper, definition, relativePath) {
+    for (const parameter of definition.parameters) if (pathStartsWith(parameter.target.instancePath, relativePath)) delete wrapper.parameterOverrides?.[parameter.id];
+    for (const key of Object.keys(wrapper.nodeBindingOverrides ?? {})) {
+        const [targetPath] = JSON.parse(key);
+        if (pathStartsWith(targetPath, relativePath)) delete wrapper.nodeBindingOverrides[key];
+    }
+}
+
+/** Detached effective saved contents for the explicit shelf action. Inherited role
+ * fields and catalog defaults remain inherited; only actual wrapper overrides bake in.
+ */
+export function materializeInstanceDefinition(graph, command) {
+    const input = qualifiedInstance(graph, command); if (!input.ok) return input;
+    const ids = compositionIds(input.data.candidate);
+    if (!ids.claim(command.id) || command.name !== undefined && typeof command.name !== 'string') return fail('DEFINITION_CONFLICT', 'Materialization requires a fresh safe ID and optional display name.');
+    const built = materializeQualifiedInstance(graph, input.data.path, command.id, command.name, ids, true); if (!built.ok) return built;
+    const data = built.data;
+    if (Object.keys(data.nullBindings).length) {
+        // The existing native wrapper is the lossless representation of explicit
+        // null blocking. A shelf definition has no outer wrapper, so retain it inside
+        // a bounded shell rather than fixing an inherited profile/model to this host.
+        const inner = structuredClone(data.definition); inner.id = ids.next(`${command.id}-definition`);
+        const saved = finalizedDefinition(inner); if (!saved.ok) return saved;
+        delete data.definitions[definitionRefKey(data.definition)];
+        data.definitions[definitionRefKey(saved.data)] = saved.data;
+        const wrapperId = ids.next('saved-instance'), nodes = {}, wires = {};
+        nodes[wrapperId] = { id: wrapperId, type: 'subgraph', definition: reference(saved.data), parameterOverrides: {}, roleOverrides: {}, nodeBindingOverrides: data.nullBindings };
+        const shell = structuredClone(data.definition);
+        for (const port of shell.interface) {
+            nodes[port.boundaryNodeId] = structuredClone(shell.body.nodes[port.boundaryNodeId]);
+            const id = ids.next('saved-wire');
+            wires[id] = { id, route: 'wire', ...(port.direction === 'input' ? { from: port.boundaryNodeId, fromPort: 'out', to: wrapperId, toPort: port.id } : { from: wrapperId, fromPort: port.id, to: port.boundaryNodeId, toPort: 'in' }) };
+        }
+        shell.parameters = shell.parameters.map(parameter => ({ ...parameter, target: { ...parameter.target, instancePath: [wrapperId, ...parameter.target.instancePath] } }));
+        shell.body = { schema: 3, runtime: 2, mode: shell.body.mode, nodes, wires };
+        const finished = finalizedDefinition(shell); if (!finished.ok) return finished;
+        data.definition = finished.data; data.definitions[definitionRefKey(finished.data)] = finished.data;
+    }
+    const checked = selectSubgraphClosure(data.definition, data.definitions);
+    return checked.ok ? { ok: true, data: { definition: checked.data.definition, definitions: checked.data.definitions } } : checked;
+}
+
+function finalizedDefinition(draft) {
+    delete draft.semanticHash;
+    const identity = computeDefinitionIdentity(draft);
+    return identity.ok ? { ok: true, data: { ...structuredClone(identity.data.materializedDefinition), semanticHash: identity.data.semanticHash } } : identity;
+}
+
+function materializeQualifiedInstance(graph, selectedPath, id, name, ids, captureEnclosingRoles = false) {
+    const checked = inspectExpandedGraph(graph); if (!checked.ok) return checked;
+    const definitions = {}, nullBindings = {}, owners = [], changedRefs = [];
+    const visit = (path, definitionId) => {
+        const chain = definitionChain(graph, path), { definition, node: wrapper } = chain.at(-1);
+        const draft = { ...structuredClone(definition), id: definitionId, version: 1, ...(samePath(path, selectedPath) && name !== undefined ? { name } : {}) };
+        const effective = checked.data.scopes.find(scope => samePath(scope.instancePath, path)).graph;
+        if (captureEnclosingRoles && samePath(path, selectedPath) && path.length > 1) {
+            const roles = {};
+            for (const context of chain.slice(0, -1)) for (const table of [context.definition.body.roles ?? {}, context.node.roleOverrides ?? {}]) {
+                for (const [role, binding] of Object.entries(table)) roles[role] = { ...(roles[role] ?? {}), ...structuredClone(binding) };
+            }
+            for (const [role, binding] of Object.entries(draft.body.roles ?? {})) roles[role] = { ...(roles[role] ?? {}), ...binding };
+            draft.body.roles = roles;
+        }
+        for (const [role, binding] of Object.entries(wrapper.roleOverrides ?? {})) {
+            draft.body.roles ??= {};
+            draft.body.roles[role] = { ...(draft.body.roles[role] ?? {}), ...structuredClone(binding) };
+        }
+        for (const node of Object.values(draft.body.nodes)) {
+            if (node.type === 'subgraph') {
+                const child = visit([...path, node.id], ids.next(`${id}-definition`)); if (!child.ok) return child;
+                node.definition = reference(child.data);
+                node.parameterOverrides = {}; node.roleOverrides = {}; node.nodeBindingOverrides = {};
+            } else if (operationFor(node, { phase: draft.body.mode.slice(7) })) {
+                const bindings = {};
+                for (let depth = chain.length - 1; depth >= 0; depth--) {
+                    const context = chain[depth], relative = path.slice(depth + 1);
+                    for (const [parameterId] of Object.entries(context.node.parameterOverrides ?? {})) {
+                        const parameter = context.definition.parameters.find(item => item.id === parameterId);
+                        if (parameter.target.nodeId === node.id && samePath(parameter.target.instancePath, relative)) node[parameter.target.controlId] = structuredClone(effective.nodes[node.id][parameter.target.controlId]);
+                    }
+                    Object.assign(bindings, context.node.nodeBindingOverrides?.[nodeBindingOverrideKey(relative, node.id)] ?? {});
+                }
+                for (const field of Object.keys(bindings)) {
+                    node[field] = effective.nodes[node.id][field];
+                    if (node[field] === null) {
+                        const key = nodeBindingOverrideKey(path.slice(selectedPath.length), node.id);
+                        nullBindings[key] ??= {}; nullBindings[key][field] = null;
+                    }
+                }
+            }
+        }
+        const finished = finalizedDefinition(draft); if (!finished.ok) return finished;
+        definitions[definitionRefKey(finished.data)] = finished.data;
+        owners.push({ instancePath: [...path], definitionId });
+        changedRefs.push({ instancePath: [...path], before: reference(definition), after: reference(finished.data) });
+        return finished;
+    };
+    const built = visit(selectedPath, id);
+    return built.ok ? { ok: true, data: { definition: built.data, definitions, nullBindings, owners, changedRefs } } : built;
 }
 
 /** Reviewable explicit update: missing mappings retain the same stable ID; null drops an override.

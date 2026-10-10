@@ -10,6 +10,7 @@ HANDOFF.md
 ROADMAP.md
 
 # Development artifacts
+.tmp/
 .superpowers/
 test-results/
 playwright-report/

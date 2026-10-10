@@ -13,13 +13,13 @@
     const item = (label: string, command: string, shortcut = '', disabled = false): Item => ({ label, command, shortcut, disabled });
     function items(name: string): Item[] {
         switch (name) {
-            case 'File': return [item('New workflow', 'new'), item('Open workflow…', 'open-workflow'), item('Import workflow', 'import'), item('Import into graph…', 'import-into-graph'), item('Export workflow', 'export'), item('Close workspace', 'close')];
+            case 'File': return [item('New workflow', 'new'), item('Open workflow…', 'open-workflow'), item('Open examples…', 'examples'), item('Save workflow', 'save'), item('Import into graph…', 'import-into-graph'), item('Export workflow JSON…', 'export'), item('Close workspace', 'close')];
             case 'Edit': return [item('Undo', 'undo', 'Ctrl Z', !view.history.undo), item('Redo', 'redo', 'Ctrl Shift Z', !view.history.redo), item('Copy', 'copy', 'Ctrl C', !view.selectionActions?.copy), item('Cut', 'cut', 'Ctrl X', !view.selectionActions?.cut), item('Paste', 'paste', 'Ctrl V'), item('Delete selection', 'delete-selection', 'Del', !view.selectionActions?.delete)];
             case 'Graph': return [item('Select tool', 'select-tool'), item('Pan tool', 'pan-tool'), item('Zoom in', 'zoom-in'), item('Zoom out', 'zoom-out'), item('Fit to view', 'fit'), item('Fit selection', 'fit-selection', '', !view.selectionCount), item('Duplicate workflow', 'duplicate'), item('Rename workflow', 'rename'), item('Delete workflow', 'delete')];
-            case 'Node': return [item('Add node…', 'add-node'), item('Inspect selection', 'reveal-inspector'), item('Subgraphs', 'subgraphs')];
+            case 'Node': return [item('Add node…', 'add-node'), item('Inspect selection', 'reveal-inspector')];
             case 'Preview': return [item('Show preview', 'show-preview'), item('Collapse preview', 'collapse-preview')];
-            case 'Workflows': return [item('Workflow setup…', 'workflow-setup'), item('Workflow examples…', 'workflow-setup'), item('Run workflow', 'run-workflow', '', !rootWorkflow || !!rootWorkflow?.busy || !!rootWorkflow?.issues.length), item('Stop workflow', 'stop-workflow', '', !rootWorkflow?.busy), item('Subgraphs', 'subgraphs')];
-            case 'Tools': return [item('Theme and colours', 'theme'), item('Toggle inspector', 'inspector'), item('Manage subgraphs', 'subgraphs')];
+            case 'Workflows': return [item('Workflow setup…', 'workflow-setup'), item('Workflow examples…', 'examples'), item('Run workflow', 'run-workflow', '', !rootWorkflow || !!rootWorkflow?.busy || !!rootWorkflow?.issues.length), item('Stop workflow', 'stop-workflow', '', !rootWorkflow?.busy)];
+            case 'Tools': return [item('Theme and colours', 'theme'), item('Toggle inspector', 'inspector')];
             default: return [item('Workspace guide', 'help')];
         }
     }
@@ -33,7 +33,7 @@
     }
     function command(value: string) {
         close(true);
-        if (['open-workflow', 'workflow-setup', 'show-preview', 'collapse-preview', 'add-node', 'help'].includes(value)) local(value);
+        if (['workflow-setup', 'examples', 'show-preview', 'collapse-preview', 'add-node', 'help'].includes(value)) local(value);
         else if (value === 'select-tool' || value === 'pan-tool') actions.mode(value === 'select-tool' ? 'select' : 'pan');
         else if (value === 'zoom-in' || value === 'zoom-out') actions.zoom(value === 'zoom-in' ? 1.15 : 1 / 1.15);
         else actions.command(value);

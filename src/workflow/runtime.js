@@ -5,6 +5,7 @@ import { compactContext, formatContext } from './compactor.js?v=0.26.0';
 import { scanDraft, repairDraft, validatePatches } from './repair.js?v=0.26.0';
 import { graphSemanticSignature } from './ports.js?v=0.26.0';
 import { executePrimitive, PRIMITIVE_OPERATIONS } from './operations/nodes.js?v=0.26.0';
+import { executeInput, INPUT_OPERATIONS } from './operations/input-nodes.js?v=0.26.0';
 import { executeContextJoin } from './operations/context-join.js?v=0.26.0';
 import { executeTranspose, TRANSPOSE_OPERATIONS } from './operations/transpose-nodes.js?v=0.26.0';
 import { cleanupDraft, CLEANUP_MODES } from './operations/prose-cleanup.js?v=0.26.0';
@@ -31,6 +32,7 @@ function planWorkflow(graph,ports) {
 }
 async function executeNode(node,inputs,op,local) {
     const input=inputs.in;
+    if(node.operation!=='prompt-source' && Object.hasOwn(INPUT_OPERATIONS,node.operation))return executeInput(node,{phase:local.phase});
     if(Object.hasOwn(PRIMITIVE_OPERATIONS,node.operation))return executePrimitive(node,inputs,{phase:local.phase,...(local.signal?{signal:local.signal}:{}),...(local.createWorker?{createWorker:local.createWorker}:{}),...(local.timeoutMs!==undefined?{timeoutMs:local.timeoutMs}:{})});
     if(node.operation==='context-join')return executeContextJoin(node,inputs);
     if(Object.hasOwn(TRANSPOSE_OPERATIONS,node.operation))return executeTranspose(node,inputs,{phase:local.phase,request:local.request,countTokens:local.countTokens,binding:local.binding,...(local.signal?{signal:local.signal}:{})});
@@ -47,8 +49,8 @@ async function executeNode(node,inputs,op,local) {
         return executeIntrospection(projected.data,inputs,capabilities);
     }
     switch(node.operation) {
-        case 'scene-context':case 'reply-snapshot': {
-            const snapshot=await local.snapshot(op.phase,node),result=snapshot?.ok===false?snapshot:success(structuredClone(snapshot));
+        case 'scene-context':case 'reply-snapshot':case 'prompt-source': {
+            const snapshot=await local.snapshot(op.phase,node),result=snapshot?.ok===false?snapshot:success(structuredClone(snapshot?.ok===true?snapshot.artifact:snapshot));
             if(result.ok && snapshot?.report)result.reports.push(snapshot.report);
             return result.ok && result.artifact?.kind!==op.output?failure('INVALID_SNAPSHOT','The host did not provide the expected frozen source.',node.id):result;
         }

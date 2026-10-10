@@ -1,6 +1,8 @@
 const NECK = 18;
+const RETURN_DEPTH = 28;
 const pointText = point => `${point.x},${point.y}`;
 const offset = (point, x, y = 0) => ({ x: point.x + x, y: point.y + y });
+const mix = (a, b, weight) => ({ x: a.x * (1 - weight) + b.x * weight, y: a.y * (1 - weight) + b.y * weight });
 
 function pointAt(points, t) {
     if (points.length === 2) return {
@@ -73,7 +75,7 @@ export function buildConnectionRoute(from, to) {
     const dx = arrival.x - departure.x, dy = arrival.y - departure.y;
     const segments = [[start, departure]];
 
-    // Keep one topology and one bow side as close necks cross. Smoothly converge to
+    // Keep one bow side as close necks cross. Smoothly converge to
     // a midpoint-subdivided forward cubic once there is room for a compact spline.
     const gap = dx * fromDirection;
     const progress = fromDirection === -toDirection ? Math.min(1, Math.max(0, gap / 24)) : 0;
@@ -106,10 +108,44 @@ export function buildConnectionRoute(from, to) {
     // separation already supplies curvature, so let that bow recede smoothly.
     const middle = { x: (departure.x + arrival.x) / 2,
         y: (departure.y + arrival.y) / 2 + fromDirection * bow * (1 - blend) * (1 - backwardBlend * verticalBlend) };
-    segments.push(
+    const curves = [
         [departure, offset(departure, fromDirection * endHandle), offset(middle, -tangent.x * middleHandle, -tangent.y * middleHandle), middle],
         [middle, offset(middle, tangent.x * middleHandle, tangent.y * middleHandle), offset(arrival, toDirection * endHandle), arrival],
-    );
+    ];
+    // Nearly level returning pins use local rounded turns and a straight span.
+    // Morph the original controls so dragging either pin preserves smooth joins.
+    const levelProgress = Math.min(1, Math.abs(dy) / (2 * RETURN_DEPTH));
+    const levelBlend = levelProgress * levelProgress * (3 - 2 * levelProgress);
+    const roundedWeight = fromDirection === -toDirection ? backwardBlend * (1 - levelBlend) : 0;
+    if (roundedWeight > 0) {
+        const laneY = (departure.y + arrival.y) / 2 + fromDirection * RETURN_DEPTH;
+        const sourceHandle = Math.abs(laneY - departure.y) * 2 / 3;
+        const targetHandle = Math.abs(laneY - arrival.y) * 2 / 3;
+        const entry = { x: departure.x, y: laneY }, exit = { x: arrival.x, y: laneY };
+        const sourceTurn = [departure, offset(departure, fromDirection * sourceHandle), offset(entry, fromDirection * sourceHandle), entry];
+        const targetTurn = [exit, offset(exit, toDirection * targetHandle), offset(arrival, toDirection * targetHandle), arrival];
+        const first = curves[0].map((point, i) => mix(point, sourceTurn[i], roundedWeight));
+        const last = curves[1].map((point, i) => mix(point, targetTurn[i], roundedWeight));
+        const laneStart = first[3], laneEnd = last[0];
+        const laneHandle = Math.min(middleHandle, Math.hypot(laneEnd.x - laneStart.x, laneEnd.y - laneStart.y) / 3);
+        // At zero weight the extra span collapses to the original midpoint.
+        // Keep that original path for spans below numerical drawing precision.
+        if (laneHandle > 1e-6) {
+            // Blend local vectors before adding graph coordinates: subtracting
+            // large control points can erase the horizontal component. Bounded
+            // handles also keep tiny angle errors local on very long spans.
+            const original = { x: tangent.x * middleHandle, y: tangent.y * middleHandle };
+            const incoming = mix(original, { x: -fromDirection * sourceHandle, y: 0 }, roundedWeight);
+            const outgoing = mix(original, { x: toDirection * targetHandle, y: 0 }, roundedWeight);
+            const inLength = Math.hypot(incoming.x, incoming.y), outLength = Math.hypot(outgoing.x, outgoing.y);
+            const inDirection = inLength ? { x: incoming.x / inLength, y: incoming.y / inLength } : { x: -fromDirection, y: 0 };
+            const outDirection = outLength ? { x: outgoing.x / outLength, y: outgoing.y / outLength } : { x: -fromDirection, y: 0 };
+            curves.splice(0, 2, first,
+                [laneStart, offset(laneStart, inDirection.x * laneHandle, inDirection.y * laneHandle),
+                    offset(laneEnd, -outDirection.x * laneHandle, -outDirection.y * laneHandle), laneEnd], last);
+        }
+    }
+    segments.push(...curves);
     segments.push([arrival, end]);
     const d = `M ${pointText(start)} ` + segments.map(points =>
         `${points.length === 2 ? 'L' : 'C'} ${points.slice(1).map(pointText).join(' ')}`).join(' ');

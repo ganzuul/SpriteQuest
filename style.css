@@ -32,6 +32,13 @@
     color: var(--pc-text);
     font-size: 0.92em;
     font-family: var(--pc-font, inherit);
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.pc-root :is(input, textarea, [contenteditable]:not([contenteditable="false"]), pre, .pc-detail-error, .pc-preview-note, .pc-preview-error, .pc-run-error, .pc-native-diagnostic) {
+    -webkit-user-select: text;
+    user-select: text;
 }
 
 .pc-root.pc-open { display: flex; }
@@ -499,10 +506,20 @@
 .pc-root.pc-details-hidden .pc-inspector { display: none; }
 .pc-root .pc-inspector.pc-flash { animation: pc-flash .4s ease; }
 @keyframes pc-flash { from { background: color-mix(in srgb, var(--pc-flow) 18%, var(--pc-panel)); } to { background: var(--pc-panel); } }
-.pc-context-menu { position: fixed; z-index: 31510; min-width: 190px; max-width: calc(100vw - 8px); padding: 4px; border-radius: 4px; border: 1px solid var(--pc-border); background: var(--pc-panel); box-shadow: 0 8px 20px #0005; }
-.pc-context-menu button { display: block; width: 100%; padding: 6px 10px; border: 0; border-radius: 2px; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
-.pc-context-menu button:hover:enabled { background: color-mix(in srgb, var(--pc-text) 10%, transparent); }
-.pc-context-menu button:focus-visible { outline: 2px solid var(--pc-flow); }
+.pc-root .pc-context-menu { --pc-menu-bg: #202120; --pc-menu-fg: #deded9; --pc-menu-muted: #91988a; --pc-menu-rule: #30332d; --pc-menu-hover: #34372f; --pc-menu-blue: #75b9ce; --pc-menu-red: #db6f68; --pc-menu-green: #adb895; position: fixed; z-index: 31510; box-sizing: border-box; width: 296px; max-width: calc(100vw - 16px); max-height: calc(100dvh - 16px); overflow-y: auto; overscroll-behavior: contain; padding: 6px; border-radius: 7px; border: 1px solid var(--pc-menu-rule); background: var(--pc-menu-bg); color: var(--pc-menu-fg); box-shadow: 0 8px 20px #0002; font: 400 14px/1.4 system-ui, sans-serif; user-select: none; }
+:root[data-pc-light="1"] .pc-root .pc-context-menu { --pc-menu-bg: #f5f5f1; --pc-menu-fg: #31332d; --pc-menu-muted: #72776a; --pc-menu-rule: #dedfd8; --pc-menu-hover: #e4e6dc; --pc-menu-blue: #277995; --pc-menu-red: #aa3a3a; --pc-menu-green: #62714e; }
+.pc-root .pc-context-menu .pc-context-item { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; align-items: center; gap: 10px; box-sizing: border-box; min-height: 32px; width: 100%; margin: 0; padding: 5px 8px; border: 0; border-radius: 3px; background: transparent; color: inherit; box-shadow: none; font: inherit; text-align: left; cursor: pointer; }
+.pc-root .pc-context-menu .pc-context-item:hover:enabled, .pc-root .pc-context-menu .pc-context-item:focus-visible { background: var(--pc-menu-hover); }
+.pc-root .pc-context-menu .pc-context-item:focus-visible { outline: 2px solid var(--pc-menu-blue); outline-offset: -2px; }
+.pc-root .pc-context-menu .pc-context-item:disabled { opacity: .4; cursor: default; }
+.pc-context-icon, .pc-context-chevron { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; color: var(--pc-menu-muted); }
+.pc-context-label { overflow-wrap: anywhere; }
+.pc-context-shortcut, .pc-context-check { color: var(--pc-menu-muted); white-space: nowrap; font: 400 12px/1.4 system-ui, sans-serif; }
+.pc-context-menu [data-tone="preview"] > .pc-context-icon { color: var(--pc-menu-blue); }
+.pc-context-menu [data-tone="subgraph"] > .pc-context-icon { color: var(--pc-menu-green); }
+.pc-context-menu [data-tone="danger"] > .pc-context-icon { color: var(--pc-menu-red); }
+.pc-context-menu [role="separator"] { margin: 5px 8px; border: 0; border-top: 1px solid var(--pc-menu-rule); }
+@media (pointer: coarse) { .pc-root .pc-context-menu .pc-context-item { min-height: 44px; } }
 .pc-workflow-starter { padding: 10px; margin: 8px 0; border: 1px solid var(--pc-border); border-radius: 4px; }
 .pc-workflow-starter p { margin: 6px 0; }
 .pc-workflow-starter small { display: block; color: var(--pc-muted); margin-bottom: 8px; }
@@ -517,13 +534,14 @@
 
 /* Ember keeps family hues consistent and brightens supporting semantic sources. */
 :root[data-pc-preset="ember"] .pc-root { --pc-raised: var(--pc-control); --pc-node: var(--pc-field); --pc-manager-background: var(--pc-panel); }
-:root[data-pc-preset="ember"] .pc-root :is(.pc-node-details, .pc-manager) { color: var(--pc-text); border-color: var(--pc-border); }
-:root[data-pc-preset="ember"] .pc-root :is(.pc-node-details, .pc-manager) :is(label, legend) { color: var(--pc-text); }
-:root[data-pc-preset="ember"] .pc-root :is(.pc-node-details, .pc-manager) :is(small, summary, .pc-detail-meta, .pc-detail-empty, .pc-note) { color: var(--pc-muted); }
-:root[data-pc-preset="ember"] .pc-root :is(.pc-node-details, .pc-manager) :is(header, details, fieldset) { border-color: var(--pc-border); }
-:root[data-pc-preset="ember"] .pc-root :is(.pc-node-details, .pc-manager, .pc-details-heading) button { background: var(--pc-control); color: var(--pc-text); border-color: var(--pc-border); }
-:root[data-pc-preset="ember"] .pc-root :is(.pc-node-details, .pc-manager, .pc-details-heading) button:hover:enabled { background: color-mix(in srgb, var(--pc-text) 7%, var(--pc-control)); }
-:root[data-pc-preset="ember"] .pc-root :is(.pc-node-details, .pc-manager) :is(.pc-error, .pc-detail-error, .pc-detail-danger) { color: var(--pc-error); }
+:root[data-pc-preset="ember"] .pc-root :is(.pc-node-details, .pc-manager, .pc-subgraph-save) { color: var(--pc-text); border-color: var(--pc-border); }
+:root[data-pc-preset="ember"] .pc-root :is(.pc-node-details, .pc-manager, .pc-subgraph-save) :is(label, legend) { color: var(--pc-text); }
+:root[data-pc-preset="ember"] .pc-root :is(.pc-node-details, .pc-manager, .pc-subgraph-save) :is(small, summary, .pc-detail-meta, .pc-detail-empty, .pc-note) { color: var(--pc-muted); }
+:root[data-pc-preset="ember"] .pc-root .pc-subgraph-save p { color: var(--pc-muted); }
+:root[data-pc-preset="ember"] .pc-root :is(.pc-node-details, .pc-manager, .pc-subgraph-save) :is(header, details, fieldset) { border-color: var(--pc-border); }
+:root[data-pc-preset="ember"] .pc-root :is(.pc-node-details, .pc-manager, .pc-subgraph-save, .pc-details-heading) button { background: var(--pc-control); color: var(--pc-text); border-color: var(--pc-border); }
+:root[data-pc-preset="ember"] .pc-root :is(.pc-node-details, .pc-manager, .pc-subgraph-save, .pc-details-heading) button:hover:enabled { background: color-mix(in srgb, var(--pc-text) 7%, var(--pc-control)); }
+:root[data-pc-preset="ember"] .pc-root :is(.pc-node-details, .pc-manager, .pc-subgraph-save) :is(.pc-error, .pc-detail-error, .pc-detail-danger, .pc-save-error) { color: var(--pc-error); }
 :root[data-pc-preset="ember"] .pc-root .pc-family-input { --pc-family: #96ad52; }
 :root[data-pc-preset="ember"] .pc-root .pc-family-shaping { --pc-family: #589aab; }
 :root[data-pc-preset="ember"] .pc-root .pc-family-surface { --pc-family: #92c9ad; }

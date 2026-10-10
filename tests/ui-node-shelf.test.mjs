@@ -13,6 +13,11 @@ const client = new URL('../node_modules/svelte/src/index-client.js', import.meta
 const { mount, unmount, flushSync, tick } = await import(client);
 const click = async element => { element.click(); flushSync(); await tick(); flushSync(); };
 const keys = async (element, key) => { element.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key, bubbles: true, cancelable: true })); flushSync(); await tick(); flushSync(); };
+const pointer = async (element, type, x, y) => {
+    const event = new dom.window.MouseEvent(type, { bubbles: true, cancelable: true, clientX: x, clientY: y, button: 0 });
+    Object.defineProperty(event, 'pointerId', { value: 7 });
+    element.dispatchEvent(event); flushSync(); await tick(); flushSync();
+};
 const initial = { native: true, families: [
     { name: 'Shaping', operations: [{ id: 'smart-compactor', title: 'Smart Compactor', phase: 'pre', compatible: true }, { id: 'response-plan', title: 'Response Plan', phase: 'pre', compatible: true }] },
     { name: 'Output', operations: [{ id: 'guidance', title: 'Guidance', phase: 'pre', compatible: true }, { id: 'apply-reply', title: 'Apply Reply', phase: 'post', compatible: false }] },
@@ -59,6 +64,46 @@ test('families directly expose canonical nodes with individual icons and shortco
         await click(node); assert.deepEqual(calls, [['smart-compactor']]); assert.equal(host.querySelector('.pc-family-menu'), null);
     });
 });
+test('dragging a shelf choice dispatches its canvas drop point once and clears the dragging cursor', async () => {
+    const calls = [], choices = [{ id: 'operation:compose', label: 'Compose', family: 'Shaping', phase: 'pre' }];
+    await fixture({ view: initial, choices, choose: (...args) => calls.push(args), add() {} }, async host => {
+        const canvas = document.createElement('div'); canvas.className = 'pc-canvas-host'; host.prepend(canvas);
+        const hitTest = document.elementFromPoint; document.elementFromPoint = () => canvas;
+        try {
+            await click(host.querySelector('[data-family="Shaping"]'));
+            const button = host.querySelector('[data-shelf-choice="operation:compose"]');
+            await pointer(button, 'pointerdown', 150, 90);
+            await pointer(window, 'pointermove', 600, 300);
+            assert.equal(document.body.classList.contains('pc-shelf-dragging'), true);
+            assert.deepEqual(calls, [], 'No node is created before release');
+            await pointer(window, 'pointerup', 600, 300);
+            assert.deepEqual(calls, [['operation:compose', { x: 600, y: 300 }]]);
+            assert.equal(document.body.classList.contains('pc-shelf-dragging'), false);
+            assert.equal(host.querySelector('.pc-family-menu'), null);
+        } finally { document.elementFromPoint = hitTest; }
+    });
+});
+test('pointer cancellation cleans up a shelf drag and a now-disabled choice cannot be dropped', async () => {
+    for (const cancel of [true, false]) {
+        const calls = [], choice = { id: 'operation:compose', label: 'Compose', family: 'Shaping', phase: 'pre' };
+        await fixture({ view: initial, choices: [choice], choose: (...args) => calls.push(args), add() {} }, async host => {
+            const canvas = document.createElement('div'); canvas.className = 'pc-canvas-host'; host.prepend(canvas);
+            const hitTest = document.elementFromPoint; document.elementFromPoint = () => canvas;
+            try {
+                await click(host.querySelector('[data-family="Shaping"]'));
+                const button = host.querySelector('[data-shelf-choice="operation:compose"]');
+                await pointer(button, 'pointerdown', 150, 90); await pointer(window, 'pointermove', 600, 300);
+                if (cancel) await pointer(window, 'pointercancel', 600, 300);
+                else choice.disabledReason = 'Insertion is no longer available.';
+                await pointer(window, 'pointerup', 600, 300);
+                button.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true, detail: 1 })); flushSync();
+                assert.deepEqual(calls, []);
+                assert.equal(document.body.classList.contains('pc-shelf-dragging'), false);
+                assert.equal(host.querySelector('.pc-shelf-drag-preview'), null);
+            } finally { document.elementFromPoint = hitTest; }
+        });
+    }
+});
 test('shelf keyboard traversal owns focus and an incompatible phase cannot dispatch through a raw click', async () => {
     const calls = [];
     await fixture({ view: initial, add: (...args) => calls.push(args) }, async host => {
@@ -72,22 +117,62 @@ test('shelf keyboard traversal owns focus and an incompatible phase cannot dispa
         await keys(host.querySelector('.pc-family-menu'), 'Escape'); assert.equal(document.activeElement, family);
     });
 });
-test('saved subgraph revisions remain separate choices and read-only mutation is guarded', async () => {
+test('saved subgraphs and interface nodes use separate shelf groups without a manager item', async () => {
     const calls = [], choices = [
         { id: 'operation:compose:input', label: 'Compose · Input', family: 'Shaping', phase: 'pre', purpose: 'Named text', shortcode: 'coi', ports: [] },
-        { id: 'definition:exact-pin', label: 'Saved cleanup', family: 'Subgraphs', phase: 'pre', shortcode: 'sg', ports: [] },
-        { id: 'definition:older-pin', label: 'Saved cleanup · revision 1', family: 'Subgraphs', phase: 'pre', shortcode: 'sg', ports: [] },
+        { id: 'boundary:input', label: 'Input', family: 'Subgraphs', phase: 'pre', disabledReason: 'Open a subgraph to add an input.', ports: [] },
+        { id: 'boundary:output', label: 'Output', family: 'Subgraphs', phase: 'pre', disabledReason: 'Open a subgraph to add an output.', ports: [] },
+        { id: 'definition:exact-pin', label: 'Saved cleanup', family: 'Subgraphs', phase: 'pre', shortcode: 'sg', definitionRef: { id: 'cleanup', version: 2, semanticHash: 'abc' }, ports: [] },
+        { id: 'definition:other-pin', label: 'Another cleanup', family: 'Subgraphs', phase: 'pre', shortcode: 'sg', definitionRef: { id: 'other', version: 1, semanticHash: 'def' }, ports: [] },
     ];
-    await fixture({ view: initial, choices, choose: id => calls.push(id), add: () => assert.fail('Catalog choices use the checked producer'), manageSubgraphs: () => calls.push('manage') }, async host => {
+    await fixture({ view: initial, choices, choose: id => calls.push(id), add: () => assert.fail('Catalog choices use the checked producer') }, async host => {
         await click(host.querySelector('[data-family="Subgraphs"]'));
-        assert.deepEqual([...host.querySelectorAll('[data-shelf-choice]')].map(row => row.dataset.shelfChoice), ['definition:exact-pin', 'definition:older-pin']);
+        assert.deepEqual([...host.querySelectorAll('[data-shelf-choice]')].map(row => row.dataset.shelfChoice), ['boundary:input', 'boundary:output', 'definition:exact-pin', 'definition:other-pin']);
+        assert.deepEqual([...host.querySelectorAll('[data-shelf-group]')].map(row => row.textContent.trim()), ['Interface', 'Library']);
+        for (const id of ['boundary:input', 'boundary:output']) { const button = host.querySelector('[data-shelf-choice="' + id + '"]'); assert.equal(button.disabled, true); assert.match(button.title, /Open a subgraph/); button.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true })); }
+        assert.deepEqual(calls, []);
         await click(host.querySelector('[data-shelf-choice="definition:exact-pin"]')); assert.deepEqual(calls, ['definition:exact-pin']);
-        await click(host.querySelector('[data-family="Subgraphs"]')); await click(host.querySelector('[data-shelf-manage]')); assert.equal(calls.at(-1), 'manage');
+        await click(host.querySelector('[data-family="Subgraphs"]')); assert.equal(host.querySelector('[data-shelf-manage]'), null);
     });
     await fixture({ view: initial, choices, readOnly: true, choose: id => calls.push(id), add: () => assert.fail('Read-only creation') }, async host => {
         await click(host.querySelector('[data-family="Shaping"]'));
         const button = host.querySelector('[data-shelf-choice="operation:compose:input"]'); assert.equal(button.disabled, true);
-        button.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true })); flushSync(); assert.deepEqual(calls, ['definition:exact-pin', 'manage']);
+        button.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true })); flushSync(); assert.deepEqual(calls, ['definition:exact-pin']);
+    });
+});
+
+test('saved shelf entries have explicit Delete and Open menus even inside a read-only body', async () => {
+    const calls = [], choice = { id: 'definition:cleanup', label: 'Cleanup', family: 'Subgraphs', phase: 'pre', definitionRef: { id: 'cleanup', version: 1, semanticHash: 'abc' } };
+    await fixture({ view: initial, choices: [choice], readOnly: true, choose: () => assert.fail('Right-click cannot insert a subgraph'), add() {}, shelfSubgraph: (...args) => calls.push(args) }, async host => {
+        await click(host.querySelector('[data-family="Subgraphs"]'));
+        const row = host.querySelector('[data-shelf-choice="definition:cleanup"]');
+        assert.equal(row.disabled, false); assert.equal(row.getAttribute('aria-disabled'), 'false', 'available context actions must remain accessible in a read-only graph');
+        assert.equal(row.getAttribute('data-insertion-disabled'), 'true');
+        await click(row); assert.deepEqual(calls, [], 'a shelf action row cannot insert into a read-only graph');
+        row.dispatchEvent(new dom.window.MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 300, clientY: 120 })); flushSync(); await tick(); flushSync();
+        const menu = () => host.querySelector('[role="menu"][aria-label="Cleanup actions"]'); assert.ok(menu());
+        const remove = menu().querySelector('[data-shelf-subgraph-action="delete"]'); assert.equal(remove.disabled, false); await click(remove);
+        assert.deepEqual(calls, [['definition:cleanup', 'delete']]); assert.equal(menu(), null);
+        await click(host.querySelector('[data-family="Subgraphs"]'));
+        await keys(host.querySelector('[data-shelf-choice="definition:cleanup"]'), 'ContextMenu');
+        assert.ok(menu()); assert.equal(document.activeElement.dataset.shelfSubgraphAction, 'open');
+        await keys(document.activeElement, 'Escape'); assert.equal(menu(), null);
+        await keys(host.querySelector('[data-shelf-choice="definition:cleanup"]'), 'ContextMenu');
+        await click(menu().querySelector('[data-shelf-subgraph-action="open"]')); assert.deepEqual(calls.at(-1), ['definition:cleanup', 'open']);
+    });
+});
+
+test('saved shelf menus dismiss on outside click and reject actions for entries removed since opening', async () => {
+    const calls = [], choices = [{ id: 'definition:cleanup', label: 'Cleanup', family: 'Subgraphs', phase: 'pre', definitionRef: { id: 'cleanup', version: 1, semanticHash: 'abc' } }];
+    await fixture({ view: initial, choices, choose() {}, add() {}, shelfSubgraph: (...args) => calls.push(args) }, async host => {
+        await click(host.querySelector('[data-family="Subgraphs"]'));
+        await keys(host.querySelector('[data-shelf-choice="definition:cleanup"]'), 'ContextMenu');
+        document.body.dispatchEvent(new dom.window.MouseEvent('pointerdown', { bubbles: true })); flushSync();
+        assert.equal(host.querySelector('[data-shelf-subgraph-action]'), null);
+        await click(host.querySelector('[data-family="Subgraphs"]'));
+        await keys(host.querySelector('[data-shelf-choice="definition:cleanup"]'), 'ContextMenu');
+        const remove = host.querySelector('[data-shelf-subgraph-action="delete"]'); choices.splice(0);
+        remove.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true })); flushSync(); assert.deepEqual(calls, []);
     });
 });
 test('hover opens aligned drawers without stealing focus and Escape cancels deferred opening', async () => {

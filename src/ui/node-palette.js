@@ -35,6 +35,11 @@ const groups = {
 };
 export const PALETTE_GROUPS = Object.freeze(Object.fromEntries(Object.entries(groups).map(([name, icon]) => [name, Object.freeze({ name, icon })])));
 const metadata = {
+    'subgraph-input': ['Input', 'si', 'M3 12h18m-7-7 7 7-7 7'],
+    'subgraph-output': ['Output', 'so', 'M21 12H3m7-7-7 7 7 7'],
+    text: ['Sources', 'tx', 'M3 4h18M12 4v16M7 20h10'],
+    'file-input': ['Sources', 'fi', 'M14 2H5v20h14V7Zm0 0v5h5M8 12h8M8 16h8'],
+    'prompt-source': ['Sources', 'pr', 'M4 4h16v12H9l-5 4ZM8 8h8M8 12h5'],
     'scene-context': ['Sources', 'sc', 'M12 5c-3-2-6-2-9-1v15c3-1 6-1 9 1 3-2 6-2 9-1V4c-3-1-6-1-9 1Zm0 0v15'],
     'reply-snapshot': ['Sources', 'rs', 'M3 6h4l2-3h6l2 3h4v15H3ZM16 13a4 4 0 1 0-8 0 4 4 0 0 0 8 0'],
     'smart-compactor': ['Context', 'cp', 'M3 3l6 6M3 9h6V3M21 21l-6-6m0 6v-6h6M3 21l6-6M3 15h6v6M21 3l-6 6m0-6v6h6'],

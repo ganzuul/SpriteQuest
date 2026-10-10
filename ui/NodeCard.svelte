@@ -18,17 +18,4 @@
     {#if card.type === 'note'}<div class="pc-node-body">{card.body}</div>{/if}
     {#if card.compact}<span class="pc-native-alias" title={card.titleHint}>{card.title}</span>{/if}
     {#if card.hostResult}<button type="button" class="pc-node-action pc-host-result" aria-label="Preview host result" onmousedown={stop} onclick={(event) => { stop(event); actions.hostResult(card.id); }}><i class="fa-solid fa-eye" aria-hidden="true"></i> Host result</button>{/if}
-    {#if card.boundary}
-        <div class="pc-boundary-actions" data-boundary-actions>
-            <button type="button" class="pc-node-action" aria-label={'Edit ' + card.boundary.direction} disabled={!card.boundary.editable || !actions.boundary} onpointerdowncapture={stop} onmousedowncapture={stop} onclickcapture={event => { stop(event); if (card.boundary?.editable) actions.boundary?.(card.id, 'edit'); }}>Edit {card.boundary.direction}</button>
-            <button type="button" class="pc-node-action" aria-label={'Add ' + card.boundary.direction} disabled={!card.boundary.editable || !actions.boundary} onpointerdowncapture={stop} onmousedowncapture={stop} onclickcapture={event => { stop(event); if (card.boundary?.editable) actions.boundary?.(card.id, 'add'); }}>Add {card.boundary.direction}</button>
-        </div>
-    {/if}
 </div>
-
-<style>
-    .pc-boundary-actions { display: flex; gap: 6px; padding: 8px 10px; }
-    .pc-boundary-actions .pc-node-action { margin: 0; padding: 3px 5px; border: 1px solid var(--pc-border, #ffffff20); border-radius: 2px; font-size: 11px; cursor: pointer; }
-    .pc-boundary-actions :disabled { opacity: .5; cursor: default; }
-    :global(.pc-node-compact) .pc-boundary-actions { flex-direction: column; gap: 3px; padding: 4px; }
-</style>

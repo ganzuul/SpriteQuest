@@ -11,11 +11,12 @@
     import RunDetails from './RunDetails.svelte';
     import RunMeter from './RunMeter.svelte';
     import PortalManager from './PortalManager.svelte';
-    import SubgraphManager from './SubgraphManager.svelte';
+    import SubgraphSave from './SubgraphSave.svelte';
     import NodeSearch from './NodeSearch.svelte';
     import PinMenu from './PinMenu.svelte';
     import NodeShelf from './NodeShelf.svelte';
     import WorkflowSetup from './WorkflowSetup.svelte';
+    import ExamplesBrowser from './ExamplesBrowser.svelte';
     import ImportReview from './ImportReview.svelte';
     import type { WorkbenchView, WorkbenchActions } from './types';
     let { actions }: { actions: WorkbenchActions } = $props();
@@ -42,6 +43,8 @@
     let overlay = $state('');
     let dialog = $state<HTMLDivElement>(null!);
     let overlayAnchor: HTMLElement | null = null;
+    let overlayEpoch = 0;
+    let examplesScroll = $state(0);
     let shelf: { openSearch(): void };
     function persist() { try { localStorage.setItem(storageKey, JSON.stringify({ height: previewHeight, collapsed })); } catch { /* Private storage may be disabled. */ } }
     function resizeStart() { actions.resizeStart?.(); }
@@ -49,16 +52,23 @@
     export function revealPreview() { collapse(false); }
     export function revealWorkflowSetup() { return local('workflow-setup'); }
     async function local(command: string) {
-        if (command === 'open-workflow') toolbar.focusGraphSelect();
-        else if (command === 'show-preview') collapse(false);
+        if (command === 'show-preview') collapse(false);
         else if (command === 'collapse-preview') collapse(true);
         else if (command === 'add-node') shelf.openSearch();
-        else { overlayAnchor = document.activeElement as HTMLElement; overlay = command; await tick(); dialog.querySelector<HTMLButtonElement>('button')?.focus(); }
+        else { overlayAnchor = document.activeElement as HTMLElement; if (command === 'examples') actions.refreshExamples?.(); overlayEpoch++; overlay = command; await tick(); dialog.querySelector<HTMLButtonElement>('button')?.focus(); }
     }
-    function closeOverlay() { overlay = ''; overlayAnchor?.focus({ preventScroll: true }); }
-    function managerKeys(event: KeyboardEvent, kind: 'portalManager' | 'subgraphManager') {
+    function closeOverlay() { overlayEpoch++; overlay = ''; overlayAnchor?.focus({ preventScroll: true }); }
+    async function openExample(id: string) {
+        const epoch = overlayEpoch;
+        try {
+            const opened = await actions.openExample?.(id);
+            if (opened === true && epoch === overlayEpoch && overlay === 'examples') closeOverlay();
+            return opened === true;
+        } catch { return false; }
+    }
+    function managerKeys(event: KeyboardEvent) {
         event.stopPropagation();
-        if (event.key === 'Escape') { event.preventDefault(); actions[kind]?.close?.(); return; }
+        if (event.key === 'Escape') { event.preventDefault(); actions.portalManager?.close?.(); return; }
         if (event.key === 'Tab') {
             const elements = [...(event.currentTarget as HTMLElement).querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), summary, [tabindex="0"]')];
             const first = elements[0], last = elements.at(-1);
@@ -99,39 +109,43 @@
             </section>
             {#if !collapsed}<PaneDivider height={Math.min(previewHeight, maxHeight)} max={maxHeight} start={resizeStart} change={(height) => { previewHeight = height; persist(); }} />{/if}
             <GraphTabs views={view.graphViews} actions={actions.graphViewActions} panelId="pc-workspace-graph" />
+            <GraphBreadcrumbs view={view.graphViews?.active} actions={actions.graphViewActions} />
             <div class="pc-canvas-area" id="pc-workspace-graph" role="tabpanel">
                 <div class="pc-workspace-run"><RunMeter view={view.runMeter ?? null} open={() => { overlay = 'run-details'; }} /></div>
-                <GraphBreadcrumbs view={view.graphViews?.active} actions={actions.graphViewActions} />
                 <div class="pc-canvas-host" aria-label="Node canvas" bind:this={canvasHost}></div>
                 {#if view.nativeDiagnostic}<p class="pc-native-diagnostic" role="alert">{view.nativeDiagnostic}</p>{/if}
-                <NodeShelf view={view.workflow} choices={view.nativeChoices} choose={actions.chooseNative} manageSubgraphs={actions.manageSubgraphs} readOnly={view.readOnly} add={(id) => actions.addNode?.(id)} bind:this={shelf} />
+                <NodeShelf view={view.workflow} choices={view.nativeChoices} choose={actions.chooseNative} shelfSubgraph={actions.shelfSubgraph} readOnly={view.readOnly} add={(id, at) => actions.addNode?.(id, at)} bind:this={shelf} />
             </div>
         </div>
         {#if view.inspectorOpen}{#key view.graphViews?.active.key ?? view.graphId}<DetailsDivider width={detailsWidth} max={detailsMax} start={resizeStart} preview={(width) => detailsDraft = width} change={commitDetails} />{/key}{/if}
         <div class="pc-inspector pc-workspace-details" hidden={!view.inspectorOpen} bind:this={inspector}>
-            <header class="pc-details-heading"><strong>Details</strong><button type="button" onclick={() => actions.managePortals?.()}>Portals</button><button type="button" onclick={() => actions.manageSubgraphs?.()}>Subgraphs</button></header>
+            <header class="pc-details-heading"><strong>Details</strong><button type="button" onclick={() => actions.managePortals?.()}>Portals</button></header>
             {#if view.commentDetails}
                 {@const details = view.commentDetails}
                 <CommentDetails comment={details.comment} onPatch={patch => actions.commentDetails?.patch(details.selection, patch)} onCommand={command => actions.commentDetails?.command(details.selection, command)} />
-            {:else}<NodeDetails view={view.nodeDetails ?? null} actions={actions.nodeDetails} />{/if}
+            {/if}
+            <div hidden={!!view.commentDetails}><NodeDetails view={view.commentDetails ? null : view.nodeDetails ?? null} actions={actions.nodeDetails} /></div>
         </div>
     </div>
     {#if overlay}
         <div class="pc-workspace-overlay">
-            <div class="pc-workspace-dialog" role="dialog" tabindex="-1" aria-modal="true" aria-label={overlay === 'workflow-setup' ? 'Workflow setup' : overlay === 'run-details' ? 'Run details' : 'Workspace guide'} bind:this={dialog} onkeydown={overlayKeys} onpaste={(event) => event.stopPropagation()}>
-                <header><h2>{overlay === 'workflow-setup' ? 'Workflow setup' : overlay === 'run-details' ? 'Run details' : 'Workspace guide'}</h2><button type="button" class="pc-btn menu_button" aria-label="Close panel" onclick={closeOverlay}>×</button></header>
-                {#if overlay === 'run-details'}<RunDetails view={view.runDetails ?? null} actions={actions.runDetails} />{:else if overlay === 'workflow-setup'}<WorkflowSetup view={view.rootWorkflow ?? view.workflow} {actions} />{:else}<p>Browse node families on the floating shelf. Middle mouse pans the graph; the wheel zooms around the pointer. Use the divider or its arrow keys to resize Preview.</p><p>Setup contains workflow examples, phase assignment and role defaults. Subgraphs manages reusable definitions. Arm enables the selected host workflow; Run tests it explicitly.</p><p>File › Import into graph reviews a same-phase fragment before one undoable insertion. Import workflow opens a separate graph.</p><p>Right-click empty graph space or drag from a pin to search for compatible nodes. Double-click a subgraph to open its saved body in a graph tab. Pinned bodies are read-only; Make local copy enables edits through the real parent instance.</p><p>The Subgraphs shelf manages individual subgraph JSON files. Portals connect pins through named references. Preview artifact tabs show results for the selected node; Run to here checks the request bound before running. Apply reviews the fresh result against the full root workflow.</p>{/if}
+            <div class="pc-workspace-dialog" class:pc-examples-dialog={overlay === 'examples'} role="dialog" tabindex="-1" aria-modal="true" aria-label={overlay === 'examples' ? 'Examples' : overlay === 'workflow-setup' ? 'Workflow setup' : overlay === 'run-details' ? 'Run details' : 'Workspace guide'} bind:this={dialog} onkeydown={overlayKeys} onpaste={(event) => event.stopPropagation()}>
+                <header><h2>{overlay === 'examples' ? 'Examples' : overlay === 'workflow-setup' ? 'Workflow setup' : overlay === 'run-details' ? 'Run details' : 'Workspace guide'}</h2><button type="button" class="pc-btn menu_button" aria-label="Close panel" onclick={closeOverlay}>×</button></header>
+                {#if overlay === 'examples'}<ExamplesBrowser examples={view.examples} issue={view.examplesIssue} retry={actions.refreshExamples} scrollTop={examplesScroll} scroll={top => examplesScroll = top} open={openExample} />{:else if overlay === 'run-details'}<RunDetails view={view.runDetails ?? null} actions={actions.runDetails} />{:else if overlay === 'workflow-setup'}<WorkflowSetup view={view.rootWorkflow ?? view.workflow} {actions} />{:else}<p>Browse node families on the floating shelf. Middle mouse pans the graph; the wheel zooms around the pointer. Use the divider or its arrow keys to resize Preview.</p><p>Setup contains workflow examples, phase assignment and role defaults. Arm enables the selected host workflow; Run tests it explicitly.</p><p>File › Open workflow chooses a JSON file and opens a separate workflow. Save workflow keeps committed edits and connections in SillyTavern. Export workflow JSON downloads a portable sharing copy without local connections. Import into graph reviews a same-phase fragment before one undoable insertion.</p><p>Select nodes and right-click Create Subgraph to open their connected body in a new tab. Double-click a subgraph to open it. Add Input and Output nodes from the Subgraphs shelf inside an editable subgraph, then name and configure their ports in Details.</p><p>Right-click a subgraph block and choose Add to Subgraphs to save it for reuse. Right-click a saved shelf entry to delete it. Saving updates the shelf only when you choose to save; existing placed copies stay unchanged. Portals connect pins through named references. Preview artifact tabs show results for the selected node; Run to here checks the request bound before running. Apply reviews the fresh result against the full root workflow.</p>{/if}
             </div>
         </div>
     {/if}
     <NodeSearch view={view.nativeSearch} actions={actions.nativeSearch} />
     <PinMenu view={view.nativePinMenu} actions={actions.nativePinMenu} />
-    {#if view.portalManager}<div class="pc-workspace-overlay"><div class="pc-manager-dialog" role="dialog" tabindex="-1" aria-modal="true" aria-label="Manage portals" onkeydown={(event) => managerKeys(event, 'portalManager')} onpaste={(event) => event.stopPropagation()}><PortalManager view={view.portalManager} actions={actions.portalManager} /></div></div>{/if}
-    {#if view.subgraphManager}<div class="pc-workspace-overlay"><div class="pc-manager-dialog" role="dialog" tabindex="-1" aria-modal="true" aria-label="Manage subgraphs" onkeydown={(event) => managerKeys(event, 'subgraphManager')} onpaste={(event) => event.stopPropagation()}><SubgraphManager view={view.subgraphManager} actions={actions.subgraphManager} /></div></div>{/if}
+    {#if view.portalManager}<div class="pc-workspace-overlay"><div class="pc-manager-dialog" role="dialog" tabindex="-1" aria-modal="true" aria-label="Manage portals" onkeydown={managerKeys} onpaste={(event) => event.stopPropagation()}><PortalManager view={view.portalManager} actions={actions.portalManager} /></div></div>{/if}
+    {#if view.subgraphSave}<SubgraphSave view={view.subgraphSave} actions={actions.subgraphSave} />{/if}
     {#if view.importReview}<ImportReview view={view.importReview} {actions} />{/if}
 </div>
 
 <style>
+    .pc-workspace-dialog.pc-examples-dialog { box-sizing: border-box; display: flex; flex-direction: column; width: 560px; height: 430px; max-width: calc(100% - 24px); max-height: calc(100% - 24px); padding: 0; overflow: hidden; border-radius: 4px; background: var(--pc-panel-solid); }
+    .pc-examples-dialog > header { flex: none; height: 42px; box-sizing: border-box; padding: 7px 10px; margin: 0; border-bottom: 1px solid var(--pc-border); }
+    .pc-examples-dialog h2 { font-size: 14px; margin: 0; }
     .pc-manager-dialog { max-height: calc(100% - 24px); max-width: calc(100% - 24px); overflow: auto; border-radius: 4px; }
     .pc-workspace-details { flex: 0 0 var(--pc-details-width, 258px); width: var(--pc-details-width, 258px); min-width: 0; overflow: auto; border-left: 1px solid var(--pc-border); background: var(--pc-panel); }
     .pc-details-heading { display: flex; align-items: center; gap: 5px; padding: 8px 12px; font-size: 11px; border-bottom: 1px solid var(--pc-border); }
@@ -149,7 +163,7 @@
     .pc-native-workspace.pc-native-workspace :global(.pc-graph-tab[aria-selected="true"]) { color: var(--pc-flow); border-color: var(--pc-flow); background: var(--pc-canvas); }
     .pc-native-workspace :global(.pc-graph-tab-list) { padding: 0 6px 3px 0; margin-bottom: -3px; }
     .pc-native-workspace :global(.pc-graph-tab[aria-selected="true"]::after) { background: var(--pc-canvas); border-color: var(--pc-flow); }
-    .pc-native-workspace :global(.pc-graph-location) { position: absolute; top: 0; left: 0; right: 0; z-index: 5; }
+    .pc-native-workspace :global(.pc-graph-location) { flex: 0 0 auto; border-color: var(--pc-flow); background: var(--pc-canvas); }
     .pc-native-workspace :global(.pc-canvas-host) { border-radius: 4px; }
     .pc-native-workspace :global(.pc-inspector) { box-sizing: border-box; flex-basis: var(--pc-details-width, 258px); width: var(--pc-details-width, 258px); padding: 0; position: static; }
     .pc-native-workspace :global(.pc-node-native) { background: var(--pc-block); border-radius: 4px; }

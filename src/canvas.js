@@ -72,7 +72,6 @@ export class Canvas {
         host.innerHTML = '';
         this.layer = mountCanvas(host, {
             hostResult: id => this.hooks.onHostResult?.(this.graph?.nodes[id]),
-            boundary: (id, action) => this.hooks.onBoundary?.(this.graph?.nodes[id], action),
             hoverPin: pin => { this.hoverPin = pin; this.#applyFocus(); },
             group: (id, action) => this.setCollapsed(id, action === 'collapse'),
         });

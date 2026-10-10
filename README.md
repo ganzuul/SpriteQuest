@@ -2,7 +2,7 @@
 
 **A visual workspace for engineering writing workflows.**
 
-LATTICE turns a writing process into a system you can build, inspect, and reuse. Connect context sources, model operations, text transformations, structured data, and review steps in a node graph. Package a useful process as a subgraph, expose its settings, and compose it into a larger workflow.
+LATTICE turns a writing process into a system you can build, inspect, and reuse. Connect context sources, model operations, text transformations, structured data, and review steps in a node graph. Package a useful process as a subgraph, edit its body in a graph tab, and compose it into a larger workflow.
 
 It runs inside SillyTavern. Your workflows can prepare guidance for a conversation or propose edits to a completed reply, while SillyTavern handles the main generation. Those integration points give your writing systems a place to run; the editor gives you the tools to design them.
 
@@ -17,16 +17,16 @@ It runs inside SillyTavern. Your workflows can prepare guidance for a conversati
 - **Structured writing briefs:** parse JSON, select the fields you need, and compose them into repeatable guidance templates.
 - **Editorial pipelines:** scan configured patterns, apply literal or regex rules, or ask a model for bounded repairs; validate and review the proposed result.
 - **Actor memory and state:** reflect on supplied evidence, express optional behavior guidance, internalize settled events, and track deterministic consequences.
-- **Reusable writing tools:** wrap a sequence in a subgraph with named inputs, outputs, and exposed parameters, then use it in other workflows.
+- **Reusable writing tools:** wrap a sequence in a subgraph with named inputs and outputs, then use it in other workflows.
 
-These are combinations of the shipped tools. The eleven workflow examples are starting points for your own processes.
+These are combinations of the shipped tools. **File → Open examples…** offers thirty roleplay lessons, from a literal scene brief to reusable context and reaction subgraphs. Setup also retains eleven technical starters for exploring individual capabilities.
 
 ## Key features
 
 | Feature | What it gives you |
 | --- | --- |
 | **Typed node graphs** | Connect Context, Draft, Text, Data, Guidance, Patches, and Candidate artifacts through named pins. Connections determine dependencies. |
-| **Reusable subgraphs** | Package operations behind a typed interface, expose selected settings, and compose nested processes. |
+| **Reusable subgraphs** | Package operations behind a typed interface, customize an editable copy, and compose nested processes. |
 | **Graph tabs** | Open subgraph bodies without losing your place in the parent workflow. Each instance retains its own view. |
 | **Node shelf and contextual search** | Open a family to choose an operation directly, search operations and subgraphs, or discover compatible nodes while connecting a pin. |
 | **Node details** | Edit operation controls, aliases, compact cards, and model bindings; inspect effective values and validation issues. |
@@ -45,10 +45,13 @@ These are combinations of the shipped tools. The eleven workflow examples are st
 
 ## Available nodes
 
-This development branch contains **25 operations**, plus subgraph instances and their input/output boundaries. **0** means no auxiliary model call; counts are per operation execution, separate from the normal SillyTavern reply.
+This development branch contains **28 operations**, plus subgraph instances and their input/output boundaries. **0** means no auxiliary model call; counts are per operation execution, separate from the normal SillyTavern reply.
 
 | Family | Node | Purpose | Model calls |
 | --- | --- | --- | ---: |
+| Input | **Text** | Supply literal notes, instructions or reference passages | 0 |
+| Input | **File Input** | Read an imported UTF-8 text snapshot saved with the workflow | 0 |
+| Input | **Prompt Source** | Read a configured system template or selected host prompt block | 0 |
 | Input | **Scene Context** | Read bounded recent conversation and selected character fields | 0 |
 | Input | **Reply Snapshot** | Freeze the latest completed text reply for review | 0 |
 | Shaping | **Smart Compactor** | Select or summarize context while protecting chosen material | 0–1 |
@@ -77,7 +80,7 @@ This development branch contains **25 operations**, plus subgraph instances and 
 
 Repair also offers Inspect, Contextual Cleanup and Strict Avoidance modes using the complete category-based policy. Nodes have phase and artifact requirements; the [node reference](docs/node-reference.md) explains their ports and controls. The [reference library guide](docs/lattice-reference-library.md) covers reusable Context Lens, Scene Compass and cleanup workflows.
 
-The shelf and contextual search offer one entry per operation. Choose variants in **Details**: Reflect's Character/Recall/Scene modes, JSON Decode's Parse/Check modes, Reroute's Artifact kind, and the other operation controls. All six Introspection nodes expose their eighteen modes this way. Saved subgraph revisions remain separate choices.
+The shelf and contextual search offer one entry per operation. Choose variants in **Details**: Reflect's Character/Recall/Scene modes, JSON Decode's Parse/Check modes, Reroute's Artifact kind, and the other operation controls. All six Introspection nodes expose their eighteen modes this way. The Subgraphs shelf shows the latest explicitly saved entry for each reusable item; placed copies retain their exact saved contents.
 
 New Transpose nodes accept and return **Text** in either graph phase. Choose **Input type → Draft** in an After reply graph to produce source-bound Patches for validation and review. Existing saved nodes without an Input type setting retain their Draft behavior. See the [reference library guide](docs/lattice-reference-library.md) for reference inputs and independent mode/scope controls.
 
@@ -85,7 +88,7 @@ Memory is root-only; Commit is a Post terminal and writes only after a successfu
 
 ## Reuse a process, inspect its internals
 
-Select processing nodes, right-click, and choose **Create Subgraph**. The editor opens their body in a new editable tab, creates and wires typed input/output boundaries, and reconnects the parent workflow through the new subgraph block. Click a boundary to edit its port name or use **Add input/output** to extend the interface. Undo restores the original nodes and connections in one step.
+Select processing nodes, right-click, and choose **Create Subgraph**. The editor opens their body in a new editable tab, creates and wires typed input/output boundaries, and reconnects the parent workflow through the new subgraph block. Click a boundary to edit its port in Details. Add Input and Output nodes from the Subgraphs shelf; they are enabled inside editable subgraphs. Save a wrapper with **Add to Subgraphs**, then explicitly create or update a shelf entry. Placed copies retain their saved contents. Undo restores the original nodes and connections in one step.
 
 ![LATTICE subgraph body open in a second graph tab, showing Draft and Patches boundaries around Text Rules](docs/images/subgraph-tab.png)
 
@@ -96,12 +99,16 @@ Select processing nodes, right-click, and choose **Create Subgraph**. The editor
 1. In SillyTavern, open **Extensions → Install extension**.
 2. Enter `https://github.com/MentallyQuill/Lattice`, leaving the branch field blank to install `main`.
 3. Install, then reload SillyTavern. Open LATTICE from its logo on the left of the chat bar or with `/lattice`. Fresh launch selects **Structured guidance**, with workflows disabled and no phase assigned.
-4. Try the selected zero-call graph, or open **Workflows → Workflow examples…** and install another starter.
+4. Try the selected zero-call graph, or open **File → Open examples…** and choose **Build a brief from JSON** (lesson 3).
 5. Configure any model roles, click **Run**, and inspect the recorded results. Assign a phase and arm only when you want integration with normal sends.
 
 For updates, use **Manage Extensions**, then reload. Installation, import, and editing do not make model calls.
 
 **Before reply (Pre)** prepares material for a reply that has not been written yet. Assign and arm a Guidance workflow to add its bounded direction before a normal Send; a manual Run lets you inspect it first. **After reply (Post)** supports work on a completed reply: run a repair graph manually, inspect its candidate, then apply it explicitly. Ordinary Text tools, including Transpose, work in either phase; host reply sources and application nodes impose the reply-specific limits.
+
+The thirty roleplay examples open immediately as independent, editable current workflows. Each opening creates a fresh copy; recipes with separate Pre/Post companions validate and install all members together, with the companions available in the Workflow selector. Opening makes no provider request and does not run, assign a phase, or arm the copies. Configure unresolved roles and local connections explicitly in Setup before model-backed runs. **Workflows → Workflow examples…** opens the same picker. The bundled lessons contain 37 phase packages and six embedded subgraph definitions.
+
+The eleven technical starters below remain available in **Setup**:
 
 | Starter | What it demonstrates | Maximum auxiliary calls |
 | --- | --- | ---: |

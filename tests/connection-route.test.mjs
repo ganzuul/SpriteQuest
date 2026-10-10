@@ -90,6 +90,22 @@ test('same-height backward connections retain a compact stable returning bow', (
     assert.deepEqual(route(from, to), result, 'same graph endpoints give deterministic geometry');
 });
 
+test('level backward wires take a shallow rounded shortcut', () => {
+    for (const side of ['right', 'left']) for (const width of [80, 240, 600]) {
+        const sign = direction(side);
+        const from = { x: sign * 300, y: 90, side };
+        const to = { x: sign * (300 - width), y: 90, side: side === 'right' ? 'left' : 'right' };
+        const result = route(from, to), points = samples(result.d, 1000);
+        assertPinNecks(result.d, from, to);
+        assert.ok(points.every(point => Math.abs(point.y - 90) <= 32), 'level return depth stays shallow as the pins move apart');
+        assert.ok(points.every(point => point.x * sign >= 267 - width && point.x * sign <= 333), 'rounded turns stay local to the pins');
+        const interior = points.filter(point => point.x * sign >= 300 - width * .85 && point.x * sign <= 300 - width * .15);
+        assert.ok(interior.length > 2);
+        assert.ok(Math.max(...interior.map(point => point.y)) - Math.min(...interior.map(point => point.y)) < .5,
+            'the central span is straight instead of a broad bowl');
+    }
+});
+
 test('vertically separated backward connections flow diagonally through the middle', () => {
     for (const side of ['right', 'left']) for (const dy of [-300, 300]) {
         const sign = direction(side);
@@ -217,6 +233,17 @@ test('coincident necks retain stable nonzero curvature as vertical displacement 
     }
 });
 
+test('rounded returns stay stable as the pins leave level alignment', () => {
+    for (const side of ['right', 'left']) {
+        const sign = direction(side), from = { x: sign * 300, y: 90, side };
+        for (const dy of [-56, -28, 0, 28, 56]) {
+            const target = { x: sign * 60, side: side === 'right' ? 'left' : 'right' };
+            assertAdjacentRoutesStayClose(from, { ...target, y: 90 + dy - .001 }, { ...target, y: 90 + dy + .001 },
+                `rounded return dy ${dy}, source ${side}`);
+        }
+    }
+});
+
 test('intermediate close-to-forward shapes preserve smooth joins and labels on the route', () => {
     for (const x of [36, 38, 42, 48, 54, 58, 60, 62]) for (const y of [-80, 0, 80]) {
         const from = { x: 0, y: 0, side: 'right' }, to = { x, y, side: 'left' };
@@ -239,5 +266,15 @@ test('extreme finite separation keeps every routed control point and label finit
             assert.ok(parts.flat().every(point => Number.isFinite(point.x) && Number.isFinite(point.y)));
             assert.ok(Number.isFinite(result.label.x) && Number.isFinite(result.label.y));
         }
+    }
+});
+
+test('nearly level returns stay shallow at extreme finite horizontal separations', () => {
+    for (const side of ['right', 'left']) for (const width of [1e155, 1e160]) for (const dy of [-28, 0, 28]) {
+        const sign = direction(side);
+        const result = route({ x: 0, y: 0, side }, { x: -sign * width, y: dy, side: side === 'right' ? 'left' : 'right' });
+        assert.ok(segments(result.d).flat().every(point => Math.abs(point.y) <= 128),
+            'horizontal distance must not amplify tiny tangent errors into a vertical detour');
+        assert.ok(Math.abs(result.label.y) <= 128, 'label stays with the shallow return');
     }
 });

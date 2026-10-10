@@ -1,0 +1,158 @@
+{
+  "kind": "lattice-workflow",
+  "schema": 2,
+  "minRuntime": 2,
+  "graph": {
+    "id": "example-configured-phrase-repair-post",
+    "name": "Replace a repeated phrase",
+    "description": "Replace known habitual wording with an explicit literal rule and no model call.\n\nLesson: Draft Text Rules makes exact literal replacements without a model; scope and protected literals bound the change, with explicit review afterward.\n\nLimitations: Configured literal replacement does not detect semantic repetition or judge whether the replacement reads well.\n\nOpening installs an unassigned copy. Bind local model roles and provide the documented evidence before running.\n\nPost: at most 0 auxiliary calls. Preview before publishing or applying.\n\nTry changing:\nChange replacement to breathed out and compare the fixed phrase in context.\nProtect the complete configured phrase and verify no replacement is proposed.\n\nDocumentation specimen (does not seed chat or actor memory):\n\nBefore: He let out a breath he didn't know he was holding, then opened the letter.\n\nAfter: He exhaled, then opened the letter.\n\nFirst editable rule: reply → rules → validate → review → apply. All deterministic; no model profile. Rule JSON explicitly chooses literal kind, pattern, replacement and empty flags.\n\nLiteral limits: whole permits matching in narration/dialogue, excluding protected literals. Only configured wording changes; semantic repetition detection and context-sensitive repairs belong to later lessons.\n\nLetter-opening phrase · snapshot (reply)\nPurpose: Freeze the latest completed text-only breath-phrase reply.\nFixture: He let out a breath he didn't know he was holding, then opened the letter. \"No more delays,\" Mira said.\nInspect: Confirm exact phrase and exhale-before-letter chronology.\n\nOne literal breath replacement (rules)\nPurpose: Replace an approved habitual phrase deterministically.\nInspect: Expected He exhaled, then opened the letter.; exact case-sensitive matching. No match means no change.\n\nCheck the fixed-phrase boundary (validate)\nPurpose: Validate literal changes against the frozen source.\nInspect: Check original surrounding text and protected Mira/No more delays.\n\nReview exhale and chronology (review)\nPurpose: Require approval of the fixed wording choice.\nInspect: Exhaling still precedes opening; reject if the phrase was intentional.\n\nOffer the literal phrase repair (apply)\nPurpose: Offer the zero-call repair candidate.\nInspect: Full root Host result: compare the phrase, then Apply or Reject.",
+    "schema": 3,
+    "runtime": 2,
+    "mode": "native-post",
+    "nodes": {
+      "reply": {
+        "id": "reply",
+        "type": "workflow",
+        "operation": "reply-snapshot",
+        "operationVersion": 1,
+        "title": "Reply Snapshot",
+        "enabled": true,
+        "x": 80,
+        "y": 120,
+        "w": 260,
+        "h": 150,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Letter-opening phrase · snapshot"
+      },
+      "rules": {
+        "id": "rules",
+        "type": "workflow",
+        "operation": "text-rules",
+        "operationVersion": 1,
+        "title": "Text Rules",
+        "enabled": true,
+        "x": 465,
+        "y": 120,
+        "w": 260,
+        "h": 150,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "One literal breath replacement",
+        "inputKind": "draft",
+        "mode": "replace",
+        "rules": [
+          {
+            "kind": "literal",
+            "pattern": "let out a breath he didn't know he was holding",
+            "replacement": "exhaled",
+            "flags": ""
+          }
+        ],
+        "separator": "\n",
+        "scope": "whole",
+        "protectedLiterals": [
+          "Mira",
+          "No more delays"
+        ]
+      },
+      "validate": {
+        "id": "validate",
+        "type": "workflow",
+        "operation": "validate-patches",
+        "operationVersion": 1,
+        "title": "Validate Patches",
+        "enabled": true,
+        "x": 850,
+        "y": 120,
+        "w": 260,
+        "h": 150,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Check the fixed-phrase boundary"
+      },
+      "review": {
+        "id": "review",
+        "type": "workflow",
+        "operation": "review-gate",
+        "operationVersion": 1,
+        "title": "Review Gate",
+        "enabled": true,
+        "x": 1235,
+        "y": 120,
+        "w": 260,
+        "h": 150,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Review exhale and chronology"
+      },
+      "apply": {
+        "id": "apply",
+        "type": "workflow",
+        "operation": "apply-reply",
+        "operationVersion": 1,
+        "title": "Apply Reply",
+        "enabled": true,
+        "x": 1620,
+        "y": 120,
+        "w": 260,
+        "h": 150,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Offer the literal phrase repair"
+      }
+    },
+    "wires": {
+      "wire-1": {
+        "id": "wire-1",
+        "route": "wire",
+        "from": "reply",
+        "fromPort": "out",
+        "to": "rules",
+        "toPort": "in"
+      },
+      "wire-2": {
+        "id": "wire-2",
+        "route": "wire",
+        "from": "rules",
+        "fromPort": "out",
+        "to": "validate",
+        "toPort": "in"
+      },
+      "wire-3": {
+        "id": "wire-3",
+        "route": "wire",
+        "from": "validate",
+        "fromPort": "out",
+        "to": "review",
+        "toPort": "in"
+      },
+      "wire-4": {
+        "id": "wire-4",
+        "route": "wire",
+        "from": "review",
+        "fromPort": "out",
+        "to": "apply",
+        "toPort": "in"
+      }
+    },
+    "groups": {},
+    "roles": {},
+    "portals": {},
+    "definitions": {},
+    "template": {
+      "id": "configured-phrase-repair",
+      "version": 1
+    },
+    "view": {
+      "x": 0,
+      "y": 0,
+      "zoom": 1
+    }
+  }
+}

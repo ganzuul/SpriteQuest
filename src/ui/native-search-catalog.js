@@ -48,6 +48,9 @@ const matchingPorts = (choice, origin) => choice?.ports.filter(port => port.dir 
 // Static discovery metadata, separate from placed-node aliases and saved operation controls.
 // Existing shortcodes follow the approved shelf; new tools use the same quiet mnemonic convention.
 const searchMetadata = cloneDefinitionData({
+    text: { purpose: 'Supply editable literal text without a model call.', shortcode: 'tx', searchAliases: ['raw text', 'literal', 'constant', 'custom prompt'] },
+    'file-input': { purpose: 'Read an imported text file snapshot saved with the workflow.', shortcode: 'fi', searchAliases: ['file', 'json file', 'load file', 'import text', 'markdown'] },
+    'prompt-source': { purpose: 'Read a configured host system prompt or selected prompt entry.', shortcode: 'pr', searchAliases: ['active system prompt', 'host prompt', 'prompt manager', 'prompt block'] },
     'scene-context': { purpose: 'Capture recent messages and character information.', shortcode: 'sc', searchAliases: ['scene-context', 'chat history'] },
     'reply-snapshot': { purpose: 'Capture the assistant response before cleanup.', shortcode: 'rs', searchAliases: ['reply-snapshot', 'original reply'] },
     'smart-compactor': { purpose: 'Reduce token usage while preserving protected facts.', shortcode: 'cp', searchAliases: ['smart-compactor', 'compaction'] },
@@ -99,7 +102,7 @@ export function prepareNativeSearchCatalog(scope, options = {}) {
         || ['checkedLibraryEntries', 'checkedLibraryClosures'].some(key => settings[key] !== undefined && !Array.isArray(settings[key]))) return fail('Expected the checked schema-3 scope and local shelf metadata.');
     const phase = input.mode.slice(7), choices = [], commands = new Map();
     const addOperation = (operation, variant, label, controls, artifactKind) => {
-        if (input.inDefinition && rootOnly.has(operation)) return;
+        if (input.inDefinition && (rootOnly.has(operation) || OPERATIONS[operation].rootOnly)) return;
         if (operation === 'reroute' && !artifactKind) artifactKind = 'text';
         if (OPERATIONS[operation].family === 'Transpose' && !variant) controls = { inputKind: 'text', ...controls };
         const description = describeOperation(input, { type: 'workflow', ...operationDefaults(operation, { mode: controls?.mode }), ...controls,
@@ -121,6 +124,13 @@ export function prepareNativeSearchCatalog(scope, options = {}) {
     }
     for (const [operation, variant, label, controls] of presets) addOperation(operation, variant, label, controls);
     for (const kind of ARTIFACT_KINDS) addOperation('reroute', kind, 'Reroute · ' + kind[0].toUpperCase() + kind.slice(1), undefined, kind);
+    for (const direction of ['input', 'output']) {
+        const id = 'boundary:' + direction, label = direction === 'input' ? 'Input' : 'Output';
+        choices.push({ id, label, family: 'Subgraphs', phase, purpose: `Expose a named subgraph ${direction} connection.`, shortcode: direction === 'input' ? 'si' : 'so', searchAliases: ['subgraph ' + direction, 'boundary'],
+            ports: [{ portId: direction === 'input' ? 'out' : 'in', dir: direction === 'input' ? 'out' : 'in', kind: 'text', label, required: false }],
+            ...(!input.inDefinition ? { disabledReason: 'Available inside a subgraph.' } : {}) });
+        if (input.inDefinition) commands.set(id, freeze({ kind: 'create-boundary', direction, artifactKind: 'text' }));
+    }
     const shelfIds = new Set();
     for (const entry of settings.checkedLibraryEntries ?? []) {
         const ref = entry?.definitionRef;
@@ -191,6 +201,7 @@ export function resolveNativeSearchChoice(catalog, id) {
 
 export function matchNativeSearchPorts(catalog, id, origin) {
     if (!registries.has(catalog)) return [];
+    if (typeof id === 'string' && id.startsWith('boundary:')) return [];
     const copied = cloneDefinitionData(origin);
     if (!copied.ok || !validOrigin(copied.data)) return [];
     const choice = choiceViews.get(catalog)?.get(id);
@@ -206,6 +217,7 @@ export function filterNativeSearchChoices(catalog, options = {}) {
     if (typeof query !== 'string' || typeof contextSensitive !== 'boolean' || origin !== null && !validOrigin(origin)) return [];
     const needle = query.toLocaleLowerCase().trim();
     return catalog.choices.flatMap(choice => {
+        if (origin && choice.id.startsWith('boundary:')) return [];
         if (needle && !queryText(choice).includes(needle)) return [];
         if (!origin || !contextSensitive || matchingPorts(choice, origin).length) return [choice];
         const alternate = choiceVariants.get(catalog)?.get(choice.id)?.find(item =>

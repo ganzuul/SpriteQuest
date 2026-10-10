@@ -45,44 +45,85 @@ const success = () => ({ ok: true });
 const boundary = extra => node({ title: 'Scene', canonicalTitle: 'Scene', controls: [], model: null,
     boundary: { id: 'scene', label: 'Scene', direction: 'input', kind: 'context', required: true, kinds: ['context', 'text', 'data'] }, ...extra });
 
-test('boundary details edit the interface port and add either direction without ordinary node mutations', async () => {
-    const edits = [], added = [], ordinary = [];
+test('boundary drafts retain label and required across roots while unsupported types use the current interface', async () => {
+    const edits = [], f = await fixture('NodeDetails', boundary(), { editInterface: (...args) => { edits.push(args); return success(); } });
+    try {
+        input(f.host.querySelector('[aria-label="Subgraph port label"]'), 'Unsaved scene');
+        change(f.host.querySelector('[aria-label="Subgraph port type"]'), 'text');
+        const required = f.host.querySelector('[aria-label="Required subgraph port"]'); required.checked = false;
+        required.dispatchEvent(new dom.window.Event('change', { bubbles: true })); flushSync();
+        f.update(boundary({ address: { ...address, workflowId: 'other-root' } }));
+        assert.equal(f.host.querySelector('[aria-label="Subgraph port label"]').value, 'Scene');
+        f.update(boundary({ revision: 'revision2' }));
+        assert.equal(f.host.querySelector('[aria-label="Subgraph port label"]').value, 'Unsaved scene');
+        assert.equal(f.host.querySelector('[aria-label="Subgraph port type"]').value, 'text');
+        assert.equal(f.host.querySelector('[aria-label="Required subgraph port"]').checked, false);
+        assert.deepEqual(edits, [], 'restoring boundary fields requires an explicit Save');
+        f.update(boundary({ address: { ...address, workflowId: 'other-root' } }));
+        f.update(boundary({ revision: 'revision3', boundary: { ...boundary().boundary, kind: 'data', kinds: ['context', 'data'] } }));
+        assert.equal(f.host.querySelector('[aria-label="Subgraph port label"]').value, 'Unsaved scene');
+        assert.equal(f.host.querySelector('[aria-label="Subgraph port type"]').value, 'data', 'removed artifact kinds cannot be restored');
+        assert.equal(f.host.querySelector('[aria-label="Required subgraph port"]').checked, false);
+        f.host.querySelector('[data-save-boundary]').click(); await tick(); flushSync();
+        assert.deepEqual(edits[0], [{ selectionKey: JSON.stringify(address), revision: 'revision3', address }, { kind: 'update', id: 'scene', label: 'Unsaved scene', artifactKind: 'data', required: false }]);
+    } finally { await f.close(); }
+});
+
+test('changing a boundary capability expires its pending acknowledgment and replacing the port discards its draft', async () => {
+    const pending = [], original = boundary(), f = await fixture('NodeDetails', original, { editInterface: () => new Promise(resolve => pending.push(resolve)) });
+    try {
+        input(f.host.querySelector('[aria-label="Subgraph port label"]'), 'Pending scene');
+        change(f.host.querySelector('[aria-label="Subgraph port type"]'), 'text');
+        f.host.querySelector('[data-save-boundary]').click(); flushSync();
+        f.update(boundary({ revision: 'revision2', boundary: { ...original.boundary, kind: 'data', kinds: ['context', 'data'] } }));
+        assert.equal(f.host.querySelector('[aria-label="Subgraph port label"]').value, 'Pending scene');
+        assert.equal(f.host.querySelector('[aria-label="Subgraph port type"]').value, 'data');
+        assert.equal(f.host.querySelector('[data-save-boundary]').disabled, false);
+        pending[0](success()); await tick(); flushSync();
+        assert.equal(f.host.querySelector('[aria-label="Subgraph port label"]').value, 'Pending scene', 'the old acknowledgment cannot erase a revalidated draft');
+        f.update(boundary({ revision: 'revision3', boundary: { ...original.boundary, id: 'replacement', label: 'Replacement port', direction: 'output' } }));
+        assert.equal(f.host.querySelector('[aria-label="Subgraph port label"]').value, 'Replacement port');
+        assert.equal(f.host.querySelector('[aria-label="Subgraph port type"]').value, 'context');
+    } finally { await f.close(); }
+});
+
+test('boundary details edit the interface port and delete through the ordinary node action', async () => {
+    const edits = [], ordinary = [];
     const f = await fixture('NodeDetails', boundary(), {
         editInterface: (captured, edit) => { edits.push([captured, edit]); return success(); },
-        addBoundary: (captured, direction) => { added.push([captured, direction]); return success(); },
         duplicate: () => ordinary.push('duplicate'), remove: () => ordinary.push('remove'), editField: () => ordinary.push('field'),
     });
     try {
         const label = f.host.querySelector('[aria-label="Subgraph port label"]'); assert.ok(label);
         assert.equal(label.value, 'Scene');
+        assert.match(f.host.textContent, /Deleting this node removes its port and attached connections/);
         input(label, 'Story context'); change(f.host.querySelector('[aria-label="Subgraph port type"]'), 'text');
         const required = f.host.querySelector('[aria-label="Required subgraph port"]'); required.checked = false; required.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
         flushSync(); f.host.querySelector('[data-save-boundary]').click(); await tick(); flushSync();
         const captured = { selectionKey: JSON.stringify(address), revision: 'revision1', address };
         assert.deepEqual(edits, [[captured, { kind: 'update', id: 'scene', label: 'Story context', artifactKind: 'text', required: false }]]);
-        for (const direction of ['input', 'output']) { f.host.querySelector('[data-add-boundary="' + direction + '"]').click(); await tick(); flushSync(); }
-        assert.deepEqual(added, [[captured, 'input'], [captured, 'output']]);
+        assert.equal(f.host.querySelector('[data-add-boundary], [data-remove-boundary]'), null);
         assert.equal(f.host.querySelector('[aria-label="Enabled"]'), null, 'boundaries are interface declarations rather than enabled operations');
-        assert.equal([...f.host.querySelectorAll('button')].some(button => ['Duplicate', 'Delete'].includes(button.textContent)), false);
-        f.host.querySelector('[data-remove-boundary]').click(); await tick(); flushSync();
-        assert.deepEqual(edits.at(-1), [captured, { kind: 'remove', id: 'scene' }]); assert.deepEqual(ordinary, []);
+        assert.equal([...f.host.querySelectorAll('button')].some(button => button.textContent === 'Duplicate'), false);
+        [...f.host.querySelectorAll('button')].find(button => button.textContent === 'Delete').click(); await tick(); flushSync();
+        assert.equal(edits.length, 1); assert.deepEqual(ordinary, ['remove']);
     } finally { await f.close(); }
 });
 
 test('read-only boundary controls reject raw events and interface failures preserve a newer qualified selection', async () => {
-    const edits = [], added = [], pending = [];
+    const edits = [], removed = [], pending = [];
     const f = await fixture('NodeDetails', boundary({ readOnly: true }), {
         editInterface: (captured, edit) => { edits.push([captured, edit]); return new Promise(resolve => pending.push(resolve)); },
-        addBoundary: (...args) => { added.push(args); return success(); },
+        remove: (...args) => removed.push(args),
     });
     try {
         const label = f.host.querySelector('[aria-label="Subgraph port label"]'); assert.ok(label); assert.equal(label.disabled, true);
         for (const control of f.host.querySelectorAll('[data-boundary-controls] input, [data-boundary-controls] select, [data-boundary-controls] button')) assert.equal(control.disabled, true);
         input(label, 'Forbidden'); change(f.host.querySelector('[aria-label="Subgraph port type"]'), 'text');
         f.host.querySelector('[data-save-boundary]').dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
-        f.host.querySelector('[data-remove-boundary]').dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
-        f.host.querySelector('[data-add-boundary="input"]').dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
-        assert.deepEqual(edits, []); assert.deepEqual(added, []);
+        const deleteButton = [...f.host.querySelectorAll('button')].find(button => button.textContent === 'Delete'); assert.equal(deleteButton.disabled, true);
+        deleteButton.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
+        assert.deepEqual(edits, []); assert.deepEqual(removed, []);
         f.update(boundary()); input(f.host.querySelector('[aria-label="Subgraph port label"]'), 'First draft');
         f.host.querySelector('[data-save-boundary]').click(); flushSync();
         input(f.host.querySelector('[aria-label="Subgraph port label"]'), 'Newer draft');
@@ -149,20 +190,16 @@ test('boundary revision changes preserve truly unsaved fields and delayed save a
     } finally { await f.close(); }
 });
 
-test('boundary cards dispatch edit and same-direction add actions without canvas selection or drag events', async () => {
-    const calls = [], bubbled = [];
+test('boundary cards have no bespoke actions and support ordinary canvas selection', async () => {
+    const bubbled = [];
     const card = { id: 'entry', x: 0, y: 0, w: 260, type: 'subgraph-input', className: 'pc-node', title: 'Story context', titleHint: 'Story context', label: 'Story context', iconPath: 'M1 2', body: null, ports: [], compact: false, hostResult: false, enabled: true, boundary: { direction: 'input', editable: true } };
-    const f = await fixture('NodeCard', card, { boundary: (...args) => calls.push(args), hoverPin() {}, hostResult() {}, group() {} }, 'card');
+    const f = await fixture('NodeCard', card, { hoverPin() {}, hostResult() {}, group() {} }, 'card');
     try {
         f.host.addEventListener('pointerdown', () => bubbled.push('pointer drag')); f.host.addEventListener('mousedown', () => bubbled.push('drag')); f.host.addEventListener('click', () => bubbled.push('select'));
-        for (const label of ['Edit input', 'Add input']) {
-            const button = f.host.querySelector('[aria-label="' + label + '"]'); assert.ok(button);
-            button.dispatchEvent(new dom.window.Event('pointerdown', { bubbles: true })); button.dispatchEvent(new dom.window.MouseEvent('mousedown', { bubbles: true })); button.click();
-        }
-        assert.deepEqual(calls, [['entry', 'edit'], ['entry', 'add']]); assert.deepEqual(bubbled, []);
+        assert.equal(f.host.querySelector('button'), null);
+        f.host.querySelector('[data-id="entry"]').click(); assert.deepEqual(bubbled, ['select']);
         f.update({ ...card, boundary: { direction: 'output', editable: false } });
-        for (const label of ['Edit output', 'Add output']) { const button = f.host.querySelector('[aria-label="' + label + '"]'); assert.ok(button); assert.equal(button.disabled, true); button.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true })); }
-        assert.equal(calls.length, 2, 'raw events cannot bypass read-only boundary action permission');
+        assert.equal(f.host.querySelector('button'), null);
         f.update({ ...card, boundary: undefined }); assert.equal(f.host.querySelector('[data-boundary-actions]'), null);
     } finally { await f.close(); }
 });

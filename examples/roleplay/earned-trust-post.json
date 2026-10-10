@@ -1,0 +1,171 @@
+{
+  "kind": "lattice-workflow",
+  "schema": 2,
+  "minRuntime": 2,
+  "graph": {
+    "id": "example-earned-trust-post",
+    "name": "Record relationship patterns",
+    "description": "Record model-appraised relationship patterns from settled events for later guidance.\n\nLesson: Relationship changes follow evidence: retain setbacks, distinguish one reliable act from recurrence, and avoid automatic trust math.\n\nLimitations: No automatic numerical trust delta exists. Updates are model proposals tied to evidence; actor memories and receipts have bounded capacity.\n\nOpening installs an unassigned copy. Bind local model roles and provide the documented evidence before running.\n\nPost: at most 1 auxiliary calls. Writes actor memory on full Run. Inspect local update and save acknowledgment separately; unconfirmed saving is not durable saving.\n\nTry changing:\nChange Pattern to Experience for a single kept promise; compare observation with recurrence claim.\nAdd a settled setback; inspect retention of both disappointment and reliability.\n\nDocumentation specimen (does not seed chat or actor memory):\n\nRelationship evidence: Sol kept a promise after previously disappointing Mira. One reliable act is now settled.\n\nProposed direction: A small opening in trust is plausible. Keep the earlier disappointment in history rather than replacing it with instant devotion.\n\nRecord the pattern: Analysis ≤1, unbound; numeric maps retained. State Value cannot infer trust deltas.\n\nExpress the arc: Separate Pre Character Analysis ≤1; Behavior deterministic.\n\nHistory/effects: Full Post Run writes locally without review; save may be unconfirmed. Bounded history; no seed. Custom curves need explicit phase/value/elapsed, absent starts Baseline.\n\nMira’s relationship history (post-state)\nPurpose: Read Mira’s relationship history.\nInspect: Check relationships/beliefs/traits; select Mira.\n\nReliability and setbacks (post-events)\nPurpose: Read settled reliability/setbacks.\nFixture: Fixture: Sol previously disappointed Mira; now he keeps one promise. One reliable act is settled, not a repeated pattern.\nInspect: Check promises actually kept/exact refs.\n\nRecord a cautious opening (post-pattern)\nPurpose: Propose a cautious interpretation.\nInspect: Run to here: inspect changes/classifications.\n\nSettle the arc evidence (post-commit)\nPurpose: Settle root arc capture.\nInspect: Check scope, local update/save status.",
+    "schema": 3,
+    "runtime": 2,
+    "mode": "native-post",
+    "nodes": {
+      "post-state": {
+        "id": "post-state",
+        "type": "workflow",
+        "operation": "memory",
+        "operationVersion": 1,
+        "title": "Memory · state",
+        "enabled": true,
+        "x": 80,
+        "y": 120,
+        "w": 260,
+        "h": 150,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Mira’s relationship history",
+        "mode": "read",
+        "view": "state"
+      },
+      "post-events": {
+        "id": "post-events",
+        "type": "workflow",
+        "operation": "memory",
+        "operationVersion": 1,
+        "title": "Memory · events",
+        "enabled": true,
+        "x": 80,
+        "y": 425,
+        "w": 260,
+        "h": 150,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Reliability and setbacks",
+        "mode": "read",
+        "view": "events"
+      },
+      "post-pattern": {
+        "id": "post-pattern",
+        "type": "workflow",
+        "operation": "internalize",
+        "operationVersion": 1,
+        "title": "Internalize · pattern",
+        "enabled": true,
+        "x": 465,
+        "y": 272.5,
+        "w": 260,
+        "h": 150,
+        "profileId": null,
+        "model": null,
+        "modelRole": "Analysis",
+        "alias": "Record a cautious opening",
+        "mode": "pattern",
+        "maxTokens": 1300,
+        "instructions": "Update Mira from settled evidence: one kept promise after disappointment suggests possible reliability, not recurrence/devotion. Preserve both episodes with exact refs and labels. No traits, forced romance, player feelings or numeric-map changes."
+      },
+      "post-commit": {
+        "id": "post-commit",
+        "type": "workflow",
+        "operation": "memory",
+        "operationVersion": 1,
+        "title": "Memory · commit",
+        "enabled": true,
+        "x": 850,
+        "y": 272.5,
+        "w": 260,
+        "h": 150,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Settle the arc evidence",
+        "mode": "commit",
+        "idempotencyKey": "lattice-memory-commit"
+      },
+      "comment-1": {
+        "id": "comment-1",
+        "type": "note",
+        "title": "After reply · Record relationship patterns",
+        "x": 439,
+        "y": 186.5,
+        "w": 312,
+        "h": 262,
+        "color": "#637d89",
+        "content": "Analysis ≤1, unbound; numeric maps retained. State Value cannot infer trust deltas.",
+        "commentFrame": true,
+        "moveContents": true
+      },
+      "comment-2": {
+        "id": "comment-2",
+        "type": "note",
+        "title": "Read settled evidence",
+        "x": 54,
+        "y": 34,
+        "w": 312,
+        "h": 567,
+        "color": "#637d89",
+        "content": "Check relationships/beliefs/traits; select Mira.\nCheck promises actually kept/exact refs.",
+        "commentFrame": true,
+        "moveContents": true
+      },
+      "comment-3": {
+        "id": "comment-3",
+        "type": "note",
+        "title": "Commit only on full root Run",
+        "x": 824,
+        "y": 186.5,
+        "w": 312,
+        "h": 262,
+        "color": "#637d89",
+        "content": "Check scope, local update/save status.",
+        "commentFrame": true,
+        "moveContents": true
+      }
+    },
+    "wires": {
+      "wire-1": {
+        "id": "wire-1",
+        "route": "wire",
+        "from": "post-state",
+        "fromPort": "out",
+        "to": "post-pattern",
+        "toPort": "state"
+      },
+      "wire-2": {
+        "id": "wire-2",
+        "route": "wire",
+        "from": "post-events",
+        "fromPort": "out",
+        "to": "post-pattern",
+        "toPort": "events"
+      },
+      "wire-3": {
+        "id": "wire-3",
+        "route": "wire",
+        "from": "post-pattern",
+        "fromPort": "out",
+        "to": "post-commit",
+        "toPort": "proposal"
+      }
+    },
+    "groups": {},
+    "roles": {
+      "Analysis": {
+        "model": null,
+        "profileId": null
+      }
+    },
+    "portals": {},
+    "definitions": {},
+    "template": {
+      "id": "earned-trust",
+      "version": 1
+    },
+    "view": {
+      "x": 0,
+      "y": 0,
+      "zoom": 1
+    }
+  }
+}

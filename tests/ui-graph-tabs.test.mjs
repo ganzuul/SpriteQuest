@@ -7,6 +7,12 @@ import { pathToFileURL } from 'node:url';
 import { compile } from 'svelte/compiler';
 import { JSDOM } from 'jsdom';
 import { createGraphViewSession } from '../src/ui/graph-view-session.js';
+import { prepareWorkspaceViews, prepareLibraryViews } from '../src/ui/workspace-preparation.js';
+import { viewIdentityKey } from '../src/ui/view-state.js';
+import { definitionRefKey } from '../src/workflow/definition-data.js';
+import { computeDefinitionIdentity } from '../src/workflow/definitions.js';
+import { exportWorkflow, exportSubgraph, parseWorkflow, parseSubgraph } from '../src/workflow/packages.js';
+import { createLibraryWorkflow, createLibrarySubgraph } from '../src/workflow/library/subgraphs.js';
 
 const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true });
 globalThis.window = dom.window;
@@ -28,7 +34,196 @@ async function component(name, directory, suppliedSource) {
 const rootIdentity = { kind: 'root', workflowId: 'root' };
 const root = { key: 'root', identity: rootIdentity, label: 'Graph 1', readOnly: false, breadcrumbs: [] };
 const child = (key, label) => ({ key, identity: { kind: 'instance', workflowId: 'root', instancePath: [key] }, label, readOnly: true, breadcrumbs: [{ key: 'root', identity: rootIdentity, label: 'Graph 1' }, { key, identity: { kind: 'instance', workflowId: 'root', instancePath: [key] }, label }] });
-const keydown = (element, key) => { element.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key, bubbles: true, cancelable: true })); flushSync(); };
+const keydown = (element, key, options = {}) => { element.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...options })); flushSync(); };
+
+async function controllerFunction(name, env) {
+    const source = await readFile(new URL('../src/ui/controller.js', import.meta.url), 'utf8');
+    const start = source.indexOf('function ' + name + '(');
+    assert.ok(start >= 0, `Actual controller function ${name} is available`);
+    const end = source.indexOf('\n}', start) + 2;
+    return Function('env', 'with(env){' + source.slice(start, end) + ';return ' + name + ';}')(env);
+}
+
+test('saving a clicked graph view flushes the workflow and retained presentation without navigation', async () => {
+    const session = actualSession(); accepted(session.openInstance(['parent'])); accepted(session.openInstance(['sibling']));
+    const activeKey = session.readEditor().view.key, clicked = session.project().graphViews.tabs.find(view => view.label === 'Parent');
+    const stored = {}; let saves = 0;
+    const env = { graphViews: session, current: session.readRoot(), viewSaveTimer: null, settings: () => stored, save: () => saves++, clearTimeout() {}, setTimeout() { assert.fail('An explicit save must flush immediately'); }, canvas: { cancelGesture() { accepted(session.updateView({ camera: { x: 70, y: 90, zoom: 1.5 } })); } } };
+    env.persistGraphViews = await controllerFunction('persistGraphViews', env);
+    const saveView = await controllerFunction('onSaveGraphView', env);
+    saveView(clicked.key);
+    assert.equal(saves, 1); assert.equal(session.readEditor().view.key, activeKey);
+    const persisted = stored.workspaceViews['actual/root'];
+    assert.equal(persisted.activeKey, activeKey);
+    assert.deepEqual(persisted.views.find(view => view.identity.instancePath?.[0] === 'sibling').camera, { x: 70, y: 90, zoom: 1.5 });
+    saveView('removed-tab'); assert.equal(saves, 1, 'a removed tab cannot act on another workflow');
+});
+
+test('tab exports download the clicked root or exact pinned subgraph revision without changing active view', async () => {
+    const graph = accepted(createLibraryWorkflow('scene-compass')).graph;
+    graph.id = 'tab-export-root'; graph.name = 'Export workflow';
+    const lens = accepted(createLibrarySubgraph('context-lens')).definition;
+    const revised = accepted(computeDefinitionIdentity({ ...structuredClone(lens), version: 2, name: 'Other library revision' }));
+    const newer = { ...revised.materializedDefinition, semanticHash: revised.semanticHash };
+    const snapshots = { ...graph.definitions, [definitionRefKey(newer)]: newer };
+    const library = accepted(prepareLibraryViews(graph.id, snapshots));
+    const prepared = accepted(prepareWorkspaceViews(graph));
+    const workspacePrepared = { ...prepared, preparedViews: [...prepared.preparedViews, ...library.preparedViews], libraryDefinitions: snapshots };
+    const session = accepted(createGraphViewSession({ root: graph, activationId: 'tab-exports', ...workspacePrepared, navigation: [...prepared.navigation, ...library.navigation] }));
+    const parentId = Object.values(graph.nodes).find(node => node.type === 'subgraph').id;
+    accepted(session.openInstance([parentId, 'lens']));
+    const instanceKey = session.readEditor().view.key;
+    const libraryRef = { id: newer.id, version: newer.version, semanticHash: newer.semanticHash };
+    accepted(session.openLibrary(libraryRef)); const libraryKey = session.readEditor().view.key;
+    const rootKey = session.project().graphViews.tabs[0].key; accepted(session.focusView(rootKey));
+    const blobs = new Map(), downloads = [], revoked = [], later = [];
+    const env = { current: graph, graphViews: session, workspacePrepared, viewIdentityKey, definitionRefKey, exportSubgraph, Blob, URL: { createObjectURL(blob) { const url = 'blob:tab-export-' + blobs.size; blobs.set(url, blob); return url; }, revokeObjectURL(url) { revoked.push(url); } }, setTimeout(callback) { later.push(callback); }, exportGraph(id) { assert.equal(id, 'tab-export-root'); return JSON.stringify(exportWorkflow(graph)); }, toast(message) { assert.fail(message); }, document: { createElement(name) { const element = document.createElement(name); element.addEventListener('click', event => { event.preventDefault(); downloads.push({ file: element.download, blob: blobs.get(element.href) }); }); return element; } } };
+    const exportView = await controllerFunction('onExportGraphView', env);
+    env.downloadGraphViewJSON = await controllerFunction('downloadGraphViewJSON', env);
+    exportView(instanceKey); exportView(libraryKey); exportView(rootKey);
+    assert.equal(downloads.length, 3);
+    const instance = accepted(parseSubgraph(await downloads[0].blob.text()));
+    assert.deepEqual([instance.definition.id, instance.definition.version, instance.definition.semanticHash], [lens.id, 1, lens.semanticHash]);
+    const inspected = accepted(parseSubgraph(await downloads[1].blob.text()));
+    assert.deepEqual([inspected.definition.id, inspected.definition.version, inspected.definition.semanticHash], [newer.id, 2, newer.semanticHash]);
+    assert.equal(accepted(parseWorkflow(await downloads[2].blob.text())).id, 'tab-export-root');
+    assert.match(downloads[0].file, /\.subgraph\.json$/); assert.match(downloads[2].file, /\.workflow\.json$/);
+    assert.equal(session.readEditor().view.key, rootKey);
+    exportView('removed-tab'); assert.equal(downloads.length, 3);
+    later.forEach(callback => callback()); assert.deepEqual(revoked, ['blob:tab-export-0', 'blob:tab-export-1', 'blob:tab-export-2']);
+});
+
+// A context action belongs to the clicked tab even while a different view stays active.
+test('right-click closes the clicked inactive tab without activating it', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'lattice-graph-tab-context-'));
+    const host = document.createElement('div'); document.body.append(host);
+    let mounted;
+    try {
+        const session = actualSession();
+        accepted(session.openInstance(['parent']));
+        accepted(session.openInstance(['sibling']));
+        const change = action => { accepted(action()); mounted.refresh(); };
+        const Harness = await reactiveSessionComponent('GraphTabs', directory);
+        mounted = mount(Harness, { target: host, props: { session, actions: { focusView: key => change(() => session.focusView(key)), closeView: key => change(() => session.closeView(key)) } } }); flushSync();
+        const tab = [...host.querySelectorAll('[role="tab"]')].find(element => element.textContent.startsWith('Parent'));
+        const activeKey = session.readEditor().view.key;
+        const event = new dom.window.MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 60, clientY: 35 });
+        tab.dispatchEvent(event); flushSync(); await tick();
+        assert.equal(event.defaultPrevented, true, 'replace the browser context menu');
+        assert.equal(session.readEditor().view.key, activeKey);
+        const menu = host.querySelector('[role="menu"]');
+        assert.ok(menu, 'tab context actions appear');
+        [...menu.querySelectorAll('button')].find(button => button.textContent === 'Close tab').click(); flushSync(); await tick();
+        assert.equal(session.readEditor().view.key, activeKey);
+        assert.deepEqual(session.project().graphViews.tabs.map(view => view.label), ['Graph 1', 'Sibling']);
+        assert.deepEqual(session.project().graphViews.closedViews.map(view => view.label), ['Parent']);
+        assert.equal(host.querySelector('[role="menu"]'), null);
+    } finally {
+        if (mounted) await unmount(mounted);
+        host.remove();
+        await rm(directory, { recursive: true, force: true });
+    }
+});
+
+test('tab context commands keep their clicked target for saving exporting renaming and closing others', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'lattice-graph-tab-context-actions-'));
+    const host = document.createElement('div'); document.body.append(host);
+    let mounted;
+    try {
+        const GraphTabs = await component('GraphTabs', directory);
+        const first = child('first', 'First child'), second = child('second', 'Second child'), closed = child('closed', 'Closed child');
+        const calls = [];
+        mounted = mount(GraphTabs, { target: host, props: { views: { workflowId: 'root', viewEpoch: 1, active: first, tabs: [root, first, second], closedViews: [closed] }, actions: { focusView: key => calls.push(['focus', key]), saveView: key => calls.push(['save', key]), exportView: key => calls.push(['export', key]), renameView: key => calls.push(['rename', key]), closeView: key => calls.push(['close', key]), closeOtherViews: key => calls.push(['others', key]), reopenView: key => calls.push(['reopen', key]) } } }); flushSync();
+        const tabs = [...host.querySelectorAll('[role="tab"]')];
+        const command = async (tab, label) => {
+            tab.dispatchEvent(new dom.window.MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 50, clientY: 20 })); flushSync(); await tick();
+            const button = [...host.querySelectorAll('[role="menuitem"]')].find(element => element.textContent === label);
+            assert.ok(button, `${label} is offered`); assert.equal(button.disabled, false);
+            button.click(); flushSync(); await tick();
+        };
+        await command(tabs[2], 'Save workflow'); assert.deepEqual(calls.at(-1), ['save', 'second']);
+        await command(tabs[2], 'Export subgraph JSON'); assert.deepEqual(calls.at(-1), ['export', 'second']);
+        await command(tabs[2], 'Rename subgraph'); assert.deepEqual(calls.at(-1), ['rename', 'second']);
+        await command(tabs[2], 'Close other tabs'); assert.deepEqual(calls.at(-1), ['others', 'second']);
+        await command(tabs[2], 'Reopen Closed child · Graph 1 / Closed child ("closed")'); assert.deepEqual(calls.at(-1), ['reopen', 'closed']);
+        await command(tabs[0], 'Export workflow JSON'); assert.deepEqual(calls.at(-1), ['export', 'root']);
+        await command(tabs[0], 'Rename graph'); assert.deepEqual(calls.at(-1), ['rename', 'root']);
+        tabs[0].dispatchEvent(new dom.window.MouseEvent('contextmenu', { bubbles: true, cancelable: true })); flushSync(); await tick();
+        const closeRoot = [...host.querySelectorAll('[role="menuitem"]')].find(element => element.textContent === 'Close tab');
+        assert.equal(closeRoot.disabled, true); closeRoot.click(); flushSync();
+        assert.equal(calls.some(([action]) => action === 'focus' || action === 'close'), false);
+        assert.equal(tabs[1].getAttribute('aria-selected'), 'true');
+    } finally {
+        if (mounted) await unmount(mounted);
+        host.remove();
+        await rm(directory, { recursive: true, force: true });
+    }
+});
+
+test('tab rename availability follows the containing graph capability and keeps library inspection read only', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'lattice-graph-tab-rename-capability-'));
+    const host = document.createElement('div'); document.body.append(host);
+    let mounted;
+    try {
+        const GraphTabs = await component('GraphTabs', directory);
+        const editableParent = child('allowed', 'Pinned child in root'), pinnedParent = child('blocked', 'Nested pinned child');
+        const identity = { kind: 'library', workflowId: 'root', definitionRef: { id: 'library', version: 3, semanticHash: 'exact' } };
+        const library = { key: 'library', identity, label: 'Library definition', readOnly: true, breadcrumbs: [] };
+        const renamed = [];
+        mounted = mount(GraphTabs, { target: host, props: { views: { workflowId: 'root', viewEpoch: 1, active: root, tabs: [root, editableParent, pinnedParent, library], closedViews: [] }, actions: { renameView: key => renamed.push(key), canRenameView: key => key !== 'blocked' } } }); flushSync();
+        const tabs = [...host.querySelectorAll('[role="tab"]')];
+        const rename = async index => {
+            tabs[index].dispatchEvent(new dom.window.MouseEvent('contextmenu', { bubbles: true, cancelable: true })); flushSync(); await tick();
+            return [...host.querySelectorAll('[role="menuitem"]')].find(button => button.textContent.startsWith('Rename'));
+        };
+        assert.equal((await rename(0)).disabled, false);
+        const allowed = await rename(1); assert.equal(allowed.disabled, false); allowed.click(); flushSync(); assert.deepEqual(renamed, ['allowed']);
+        const blocked = await rename(2); assert.equal(blocked.disabled, true); assert.match(blocked.title, /local copy.*containing graph/i); blocked.click(); flushSync();
+        assert.equal((await rename(3)).disabled, true);
+        assert.deepEqual(renamed, ['allowed']);
+    } finally {
+        if (mounted) await unmount(mounted);
+        host.remove();
+        await rm(directory, { recursive: true, force: true });
+    }
+});
+
+test('keyboard tab menus restore their trigger and dismiss when the target or workspace changes', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'lattice-graph-tab-context-keyboard-'));
+    const host = document.createElement('div'); document.body.append(host);
+    let mounted;
+    try {
+        await component('GraphTabs', directory);
+        const first = child('first', 'First child'), second = child('second', 'Second child');
+        const initial = { workflowId: 'root', viewEpoch: 1, active: first, tabs: [root, first, second], closedViews: [] };
+        const source = `<script>import GraphTabs from ${JSON.stringify(pathToFileURL(join(directory, 'GraphTabs.mjs')).href)}; let { initial } = $props(); let views = $state(initial); export function update(next) { views = next; }</script><GraphTabs {views} actions={{ saveView() {}, exportView() {}, renameView() {}, closeView() {}, closeOtherViews() {} }} />`;
+        const Harness = await component('GraphTabKeyboardHarness', directory, source);
+        mounted = mount(Harness, { target: host, props: { initial } }); flushSync();
+        const tabs = [...host.querySelectorAll('[role="tab"]')];
+        const menu = () => host.querySelector('[role="menu"]');
+        tabs[2].focus(); keydown(tabs[2], 'F10', { shiftKey: true }); await tick();
+        assert.ok(menu(), 'Shift+F10 opens the focused tab menu');
+        assert.equal(document.activeElement.textContent, 'Save workflow');
+        keydown(document.activeElement, 'End'); assert.equal(document.activeElement.textContent, 'Close other tabs');
+        keydown(document.activeElement, 'Escape'); assert.equal(menu(), null); assert.equal(document.activeElement, tabs[2]);
+        keydown(tabs[2], 'ContextMenu'); await tick(); assert.ok(menu());
+        tabs[0].dispatchEvent(new dom.window.MouseEvent('pointerdown', { bubbles: true })); flushSync();
+        assert.equal(menu(), null, 'clicking another tab dismisses the menu');
+        keydown(tabs[2], 'ContextMenu'); await tick();
+        window.dispatchEvent(new dom.window.Event('resize')); flushSync(); assert.equal(menu(), null);
+        keydown(tabs[2], 'ContextMenu'); await tick();
+        mounted.update({ ...initial, tabs: [root, first], viewEpoch: 2 }); flushSync(); await tick();
+        assert.equal(menu(), null, 'removing the clicked target dismisses the menu');
+        keydown(tabs[1], 'ContextMenu'); await tick();
+        mounted.update({ ...initial, active: root, viewEpoch: 3 }); flushSync(); await tick();
+        assert.equal(menu(), null, 'active-view transitions dismiss the menu');
+        assert.deepEqual([...host.querySelectorAll('[role="tab"]')].map(tab => tab.tabIndex), [0, -1, -1]);
+    } finally {
+        if (mounted) await unmount(mounted);
+        host.remove();
+        await rm(directory, { recursive: true, force: true });
+    }
+});
 
 // Exercise the real source component without rebuilding or consuming the Workbench's generated bundle.
 test('tabs retain the root default and provide roving focus, sibling close controls and reopen commands', async () => {

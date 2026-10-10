@@ -79,11 +79,13 @@ export function viewIdentityKey(value) {
     return identity ? identityKey(identity) : null;
 }
 
-function preparedNavigation(workflowId, value) {
+const rootLabelValue = value => typeof value === 'string' && value.trim() ? value.trim().slice(0, 256) : 'Graph 1';
+
+function preparedNavigation(workflowId, value, rootLabel) {
     const entries = plain(value);
     if (!Array.isArray(entries) || entries.length > 2000) return null;
     const root = { kind: 'root', workflowId }, rootKey = identityKey(root);
-    const result = new Map([[rootKey, { identity: root, label: 'Graph 1', readOnly: false }]]);
+    const result = new Map([[rootKey, { identity: root, label: rootLabelValue(rootLabel), readOnly: false }]]);
     for (const entry of entries) {
         const identity = identityFrom(entry?.identity);
         if (!record(entry) || !ownKeys(entry, ['identity', 'label', 'readOnly']) || !identity || identity.workflowId !== workflowId || !textId(entry.label) || entry.label.length > 256 || (entry.readOnly !== undefined && typeof entry.readOnly !== 'boolean') || (identity.kind === 'library' && entry.readOnly === false)) return null;
@@ -146,7 +148,7 @@ function creationOptions(value) {
     try {
         if (!record(value) || ![Object.prototype, null].includes(Object.getPrototypeOf(value))) return null;
         const descriptors = Object.getOwnPropertyDescriptors(value), keys = Reflect.ownKeys(descriptors);
-        if (keys.some(key => !['workflowId', 'navigation', 'persisted', 'initialCamera'].includes(key))) return null;
+        if (keys.some(key => !['workflowId', 'navigation', 'persisted', 'initialCamera', 'rootLabel'].includes(key))) return null;
         const result = {};
         for (const key of keys) {
             if (!descriptors[key].enumerable || !('value' in descriptors[key])) return null;
@@ -218,7 +220,7 @@ export function createViewState(options) {
     const copy = creationOptions(options);
     if (!record(copy) || !textId(copy.workflowId) || copy.workflowId.length > MAX_BYTES) return null;
     const workflowId = copy.workflowId, rootIdentity = { kind: 'root', workflowId }, rootKey = identityKey(rootIdentity);
-    let navigation = preparedNavigation(workflowId, copy.navigation ?? []);
+    let navigation = preparedNavigation(workflowId, copy.navigation ?? [], copy.rootLabel);
     if (!navigation) return null;
     let views = new Map([[rootKey, { identity: rootIdentity, open: true, ...emptyPresentation(), camera: initialCameraValue(copy.initialCamera) }]]);
     let activeKey = rootKey, epoch = 0;
@@ -286,8 +288,8 @@ export function createViewState(options) {
             const parentKey = navigation.get(activeKey).parentKey;
             return parentKey ? open(navigation.get(parentKey).identity) : success();
         },
-        replaceNavigation(value) {
-            const next = preparedNavigation(workflowId, value);
+        replaceNavigation(value, { rootLabel = navigation.get(rootKey).label } = {}) {
+            const next = preparedNavigation(workflowId, value, rootLabel);
             if (!next) return fail('VIEW_NAVIGATION', 'Expected complete prepared graph navigation.');
             const replacementKey = next.has(activeKey) ? activeKey : nearestKey(views.get(activeKey).identity, next, rootKey);
             const previousPermission = navigation.get(activeKey).readOnly;

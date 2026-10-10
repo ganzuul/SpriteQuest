@@ -2,7 +2,7 @@
 
 [Documentation](README.md) · [Operator's manual](operators-manual.md) · [Model setup](native-workflows.md)
 
-This reference covers the **25 operations** in this LATTICE 0.26.0 development branch and the structural nodes used by subgraphs. A starter is a complete workflow built from operations; a subgraph is a reusable process with its own interface. Neither is an extra model engine.
+This reference covers the **28 operations** in this LATTICE 0.26.0 development branch and the structural nodes used by subgraphs. A starter is a complete workflow built from operations; a subgraph is a reusable process with its own interface. Neither is an extra model engine.
 
 ## Read the graph's types
 
@@ -24,6 +24,9 @@ Model calls below are maximum auxiliary calls **per execution of that operation*
 
 | Family | Operation | Phase | Artifact flow | Calls |
 | --- | --- | --- | --- | ---: |
+| Input | [Text](#text) | Both | Literal → Text | 0 |
+| Input | [File Input](#file-input) | Both | Imported snapshot → Text | 0 |
+| Input | [Prompt Source](#prompt-source) | Both; root only | Configured host block → Text | 0 |
 | Input | [Scene Context](#scene-context) | Pre | Source → Context | 0 |
 | Input | [Reply Snapshot](#reply-snapshot) | Post | Source → Draft | 0 |
 | Shaping | [Smart Compactor](#smart-compactor) | Pre | Context → Context | 0–1 |
@@ -50,9 +53,29 @@ Model calls below are maximum auxiliary calls **per execution of that operation*
 | Output | [Review Gate](#review-gate) | Post | Candidate → Candidate requiring review | 0 |
 | Output | [Apply Reply](#apply-reply) | Post | Candidate → Host result | 0 |
 
-Open a shelf family to choose a node directly. Each operation appears once; choose modes and artifact kinds in **Details**. The **Subgraphs** family keeps separate entries for saved revisions and offers **Manage subgraphs…**. **Transpose** contains Style Transfer, Format Transfer and Terminology Map; see [the reference library guide](lattice-reference-library.md). **Introspection** contains six operations with eighteen modes selected in Details; their named pins and controls change with the selected mode.
+Open a shelf family to choose a node directly. Each operation appears once; choose modes and artifact kinds in **Details**. The **Subgraphs** family has Input/Output interface nodes and saved definitions. Interface nodes are available inside editable subgraphs. Right-click a wrapper to save it and right-click a saved shelf entry to delete it. **Transpose** contains Style Transfer, Format Transfer and Terminology Map; see [the reference library guide](lattice-reference-library.md). **Introspection** contains six operations with eighteen modes selected in Details; their named pins and controls change with the selected mode.
 
 ## Input
+
+### Text
+
+Supply literal multiline text, notes, custom instructions, or a reference passage. It has no inputs, makes no model request, and preserves the text without macro expansion. Edit **Text** in Details. Empty text is valid; the limit is 100,000 UTF-16 units. Text works in either phase and inside reusable subgraphs.
+
+**Connect:** Text → Compose section, Style Transfer Reference, or JSON Decode.
+
+### File Input
+
+Choose a UTF-8 text file in Details. The filename and imported contents are saved with the node and included in portable workflows; execution uses that snapshot. Choose **Replace file** to refresh it explicitly. An empty imported file is valid, while an unloaded node fails visibly. File selection rejects invalid UTF-8, more than 400,000 bytes, or more than 100,000 UTF-16 units without replacing the previous snapshot. It works in either phase and inside reusable subgraphs.
+
+**Connect:** File Input → JSON Decode → Select Fields → Compose. JSON is parsed by JSON Decode; this picker does not import a workflow package.
+
+### Prompt Source
+
+Read a configured host prompt block as Text. **Source → System** selects the enabled system template with supported host character/chat override rules. **Source → Prompt entry** selects a configured Prompt Manager entry by stable **Prompt ID**. Known disabled or inactive entries fail; if the host exposes no activation order, the snapshot reports its enabled state as unknown. This is the configured block, not the final assembled generation prompt.
+
+**Form → Raw** preserves any bounded template. **Resolved** expands pure host name and formatting macros such as `{{char}}`, `{{user}}`, and `{{newline}}`. It rejects custom, state-changing, character-field, lore, random/time, angle-token macros, and literal brace fragments. Use Raw for structured templates with braces or broader macro syntax. Missing, disabled, unsupported, or oversized sources fail visibly. Prompt sources are frozen before execution and checked again before host settlement. Both phases are supported, at the root only; pass their Text into a reusable subgraph through a boundary. Exports retain selectors, not captured prompt text.
+
+**Connect:** Prompt Source → Compose section, Text Rules, or Style Transfer Reference. Reading a prompt does not publish or replace it; Compose → Guidance supplies generation guidance.
 
 ### Scene Context
 
@@ -352,6 +375,6 @@ Expose the final Candidate as a root Host result. Running the node prepares the 
 | **Input boundary** | Bring an interface input into the body | Typed output corresponding to an exposed input |
 | **Output boundary** | Return a body result through the interface | Typed input corresponding to an exposed output |
 
-Boundary nodes belong to the subgraph interface. A definition's selected controls can become exposed parameters; the wrapper's overrides are edited in **Manage subgraphs**, not by changing the pinned body. Pinned definitions open read-only. **Make local copy** enables private body edits through the instance.
+Boundary nodes belong to the subgraph interface. Click one to edit its name, type, and required setting in Details. Add or delete boundaries like ordinary nodes; deleting a boundary also removes its attached parent and body connections. Pinned definitions open read-only. Right-click a wrapper and choose **Make editable copy** for private body edits. Use **Add to Subgraphs** to explicitly save a new shelf entry or update an existing one; placed copies keep their saved contents.
 
 The supplied [Literal cleanup subgraph](../workflows/subgraphs/literal-cleanup.json) exposes Draft → Patches and a Rules parameter. Keep Validate Patches, Review Gate, and Apply Reply in the parent. See [the manual's subgraph walkthrough](operators-manual.md#reuse-a-process-with-subgraphs).

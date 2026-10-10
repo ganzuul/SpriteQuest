@@ -118,6 +118,17 @@ async function exportedJSON(page, action) {
     return JSON.parse(await readFile(await (await pending).path(), 'utf8'));
 }
 
+async function subgraphCommand(page, id, command) {
+    await card(page, id).click({ button: 'right' });
+    await page.getByRole('menuitem', { name: command, exact: true }).click();
+}
+
+async function shelfCommand(page, key, command) {
+    await page.locator('.pc-family-row[data-family="Subgraphs"]').click();
+    await page.locator('[data-shelf-choice=' + JSON.stringify('definition:' + key) + ']').click({ button: 'right' });
+    await page.getByRole('menuitem', { name: command, exact: true }).click();
+}
+
 test.afterEach(async ({ page }) => {
     expect(await page.evaluate(() => window.canvasHarness?.providerCalls() ?? 0)).toBe(0);
 });
@@ -256,7 +267,7 @@ test('selected-node menu creates a frame whose resize, fit and delete leave its 
     const expected = surrounding(await bounds(page, ['n0', 'n1']));
     await selectNodes(page, ['n0', 'n1']);
     await card(page, 'n1').click({ button: 'right' });
-    await page.getByRole('menuitem', { name: 'Add comment around selection', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Comment around selection', exact: true }).click();
     const id = await page.evaluate(() => Object.values(window.canvasHarness.graph.nodes).find(node => node.commentFrame).id);
     expectRectangle(await rectangle(page, id), expected);
     await card(page, 'n0').click();
@@ -301,11 +312,11 @@ test('clipboard and downloaded workflow roundtrip preserve authored comment fiel
     await expect.poll(() => page.evaluate(() => Object.values(window.canvasHarness.graph.nodes).filter(node => node.commentFrame).length)).toBe(2);
     const pasted = await page.evaluate(id => Object.values(window.canvasHarness.graph.nodes).find(node => node.commentFrame && node.id !== id), id);
     expect(pasted).toMatchObject({ ...authored, x: pasted.x, y: pasted.y });
-    const exported = await exportedJSON(page, () => menu(page, 'File', 'Export workflow'));
+    const exported = await exportedJSON(page, () => menu(page, 'File', 'Export workflow JSON…'));
     expect(exported.graph.nodes[id]).toMatchObject(authored);
     await page.getByRole('button', { name: 'File', exact: true }).click();
     const chooser = page.waitForEvent('filechooser');
-    await page.getByRole('menuitem', { name: 'Import workflow', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Open workflow…', exact: true }).click();
     await (await chooser).setFiles({ name: 'comment.workflow.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(exported)) });
     await expect.poll(() => page.evaluate(() => window.canvasHarness.graph.id)).not.toBe('comment-acceptance');
     expect(await page.evaluate(id => window.canvasHarness.graph.nodes[id], id)).toMatchObject(authored);
@@ -330,22 +341,31 @@ async function sharedFrameFixture(page) {
 
 test('downloaded subgraphs retain comment fields when imported back into the library', async ({ page }) => {
     const source = await sharedFrameFixture(page);
-    await card(page, 'first/path').click();
-    await page.locator('.pc-details-heading').getByRole('button', { name: 'Subgraphs', exact: true }).click();
-    await page.getByLabel('Library revision', { exact: true }).selectOption(source.key);
-    const exported = await exportedJSON(page, () => page.locator('[data-subgraph-export]').click());
+    const before = await page.evaluate(id => JSON.stringify(window.canvasHarness.S.getGraph(id)), source.id);
+    const exported = await exportedJSON(page, () => subgraphCommand(page, 'first/path', 'Export subgraph'));
     const authored = { type: 'note', commentFrame: true, moveContents: false, title: 'Pinned comment',
         content: 'Read-only\nPreserved notes', color: '#718c69', x: 16, y: 20, w: 930, h: 330 };
     expect(exported.definition.body.nodes.annotation).toMatchObject(authored);
-    await page.locator('[data-subgraph-remove]').click();
-    await expect.poll(() => page.evaluate(key => Object.hasOwn(window.canvasHarness.S.settings().subgraphLibrary.definitions, key), source.key)).toBe(false);
-    const chooser = page.waitForEvent('filechooser');
-    await page.locator('[data-subgraph-import]').click();
-    await (await chooser).setFiles({ name: 'comment.subgraph.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(exported)) });
-    await expect.poll(() => page.evaluate(key => Object.hasOwn(window.canvasHarness.S.settings().subgraphLibrary.definitions, key), source.key)).toBe(true);
+    await shelfCommand(page, source.key, 'Delete');
+    await page.locator('.pc-family-row[data-family="Subgraphs"]').click();
+    await expect(page.locator('[data-shelf-choice=' + JSON.stringify('definition:' + source.key) + ']')).toHaveCount(0);
+    await page.keyboard.press('Escape');
+    // Shelf removal retains exact snapshots for placed instances. Reimport the
+    // downloaded package through the same checked library API as file import.
+    await page.evaluate(async exported => {
+        const h = window.canvasHarness;
+        const { parseSubgraph } = await import('/src/workflow/packages.js?v=' + h.version);
+        const { installSubgraphDefinition } = await import('/src/library.js?v=' + h.version);
+        const parsed = parseSubgraph(JSON.stringify(exported));
+        if (!parsed.ok) throw Error(parsed.error.message);
+        const installed = installSubgraphDefinition(parsed.data.definition, parsed.data.definitions);
+        if (!installed.ok) throw Error(installed.error.message);
+        h.UI.refreshIfOpen(); await h.settle();
+    }, exported);
     expect(await page.evaluate(key => window.canvasHarness.S.settings().subgraphLibrary.definitions[key].body.nodes.annotation, source.key)).toMatchObject(authored);
-    await page.getByLabel('Library revision', { exact: true }).selectOption(source.key);
-    await page.locator('[data-subgraph-open-library]').click(); await page.getByRole('button', { name: 'Close', exact: true }).click();
+    expect(await page.evaluate(id => JSON.stringify(window.canvasHarness.S.getGraph(id)), source.id)).toBe(before);
+    await expect(page.getByRole('button', { name: 'Undo', exact: true })).toBeDisabled();
+    await shelfCommand(page, source.key, 'Open saved definition');
     await expect(frame(page, 'annotation').locator('.pc-comment-title')).toHaveText('Pinned comment');
 });
 
@@ -354,13 +374,7 @@ for (const kind of ['shared', 'library']) {
         const source = await sharedFrameFixture(page);
         const before = await page.evaluate(id => JSON.stringify(window.canvasHarness.S.getGraph(id)), source.id);
         if (kind === 'shared') await card(page, 'first/path').dblclick();
-        else {
-            await card(page, 'first/path').click();
-            await page.locator('.pc-details-heading').getByRole('button', { name: 'Subgraphs', exact: true }).click();
-            await page.getByLabel('Library revision', { exact: true }).selectOption(source.key);
-            await page.locator('[data-subgraph-open-library]').click();
-            await page.getByRole('button', { name: 'Close', exact: true }).click();
-        }
+        else await shelfCommand(page, source.key, 'Open saved definition');
         await page.evaluate(() => window.canvasHarness.view({ x: 180, y: 160, zoom: .8 }));
         const annotation = frame(page, 'annotation');
         await annotation.locator('.pc-comment-select').click();
@@ -382,6 +396,16 @@ for (const kind of ['shared', 'library']) {
 test('direct splines keep horizontal pin leads and returning bows while cards receive clicks above wires', async ({ page }) => {
     for (const variant of ['ordinary', 'backward']) {
         await setup(page, variant);
+        if (variant === 'backward') await page.evaluate(async () => {
+            const h = window.canvasHarness, path = h.canvas.svg.querySelector('.pc-wire[data-id="w1"]');
+            const point = path.getPointAtLength(path.getTotalLength() / 2);
+            const obstacle = h.canvas.nodeLayer.querySelector('.pc-node[data-id="n2"]').getBoundingClientRect();
+            // Arrange the stacking check around the actual route, independently
+            // of whether a returning connection uses a bow or a shallow span.
+            Object.assign(h.graph.nodes.n2, { x: point.x - obstacle.width / h.canvas.view.zoom / 2,
+                y: point.y - obstacle.height / h.canvas.view.zoom / 2 });
+            h.S.touchGraph(h.graph); h.UI.refreshIfOpen(); await h.settle();
+        });
         const route = await page.evaluate(() => {
             const { canvas } = window.canvasHarness, wire = canvas.graph.wires.w1;
             const path = canvas.svg.querySelector('.pc-wire[data-id="w1"]'), hit = canvas.svg.querySelector('.pc-wire-hit[data-id="w1"]');

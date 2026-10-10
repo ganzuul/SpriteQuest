@@ -1,0 +1,200 @@
+{
+  "kind": "lattice-workflow",
+  "schema": 2,
+  "minRuntime": 2,
+  "graph": {
+    "id": "example-concise-recast-post",
+    "name": "Draft a shorter reply",
+    "description": "Propose a shorter version of the reply for review, using a supplied concise-writing reference.\n\nLesson: A reference requests approximate brevity; maxTokens caps the auxiliary completion, not final word count.\n\nLimitations: Length is requested from the model, not enforced as an exact word count. Meaning still needs review.\n\nOpening installs an unassigned copy. Bind local model roles and provide the documented evidence before running.\n\nPost: at most 1 auxiliary calls. Preview before publishing or applying.\n\nTry changing:\nRequest light trimming instead of roughly one-third fewer words and compare retained actions.\nProtect slowly turned the handle and see where remaining compression occurs.\n\nDocumentation specimen (does not seed chat or actor memory):\n\nBefore: After taking a moment to look at the door, she reached out her hand and slowly turned the handle.\n\nAfter: She studied the door, then slowly turned the handle.\n\nConcise path: reply.out → tighten.in; brief.out → tighten.reference; tighten → validate → review → apply. One Prose call.\n\nTwo budgets: Word reduction is Compose text; maxTokens is the actual completion cap. No targetLength/reductionPercent control exists.\n\nDoor action · verbose source (reply)\nPurpose: Freeze the latest completed text-only verbose door reply.\nFixture: After taking a moment to look at the door, she reached out her hand and slowly turned the handle. She waited for the latch to click.\nInspect: Observe door → slowly turn handle → wait; latch has not clicked.\n\nKeep verbs, trim setup (brief)\nPurpose: Supply concise rhythm and preserved actions.\nInspect: The crossing sample teaches compression only.\n\nTighten action rhythm (tighten)\nPurpose: Trim setup without losing the action sequence.\nInspect: Check all three actions and protected slowly/latch.\n\nCheck concise-action patches (validate)\nPurpose: Validate concise-action patches.\nInspect: Check protected words and source-bound replacements.\n\nReview the three-action sequence (review)\nPurpose: Require a three-action comparison.\nInspect: Reject omitted observation, faster turning or a completed click.\n\nOffer concise door prose (apply)\nPurpose: Offer concise door prose.\nInspect: Full root Host result: check sequence, then Apply or Reject.",
+    "schema": 3,
+    "runtime": 2,
+    "mode": "native-post",
+    "nodes": {
+      "reply": {
+        "id": "reply",
+        "type": "workflow",
+        "operation": "reply-snapshot",
+        "operationVersion": 1,
+        "title": "Reply Snapshot",
+        "enabled": true,
+        "x": 80,
+        "y": 120,
+        "w": 260,
+        "h": 150,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Door action · verbose source"
+      },
+      "brief": {
+        "id": "brief",
+        "type": "workflow",
+        "operation": "compose",
+        "operationVersion": 1,
+        "title": "Compose",
+        "enabled": true,
+        "x": 80,
+        "y": 425,
+        "w": 260,
+        "h": 158,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Keep verbs, trim setup",
+        "mode": "join",
+        "outputKind": "text",
+        "template": "",
+        "sections": [
+          {
+            "name": "Aim",
+            "text": "Request roughly one-third fewer words by trimming action scaffolding. Keep meaningful speed, hesitation and unfinished outcomes."
+          },
+          {
+            "name": "Sample",
+            "text": "Original specimen: Before making her way across the room, she took a look at the floor. / She checked the floor before crossing."
+          },
+          {
+            "name": "MustKeep",
+            "text": "Retain door observation, slow handle turn and wait for latch, in order. Do not open the door or make the latch click."
+          }
+        ],
+        "separator": "\n\n"
+      },
+      "tighten": {
+        "id": "tighten",
+        "type": "workflow",
+        "operation": "style-transfer",
+        "operationVersion": 1,
+        "title": "Style Transfer",
+        "enabled": true,
+        "x": 465,
+        "y": 272.5,
+        "w": 260,
+        "h": 150,
+        "profileId": null,
+        "model": null,
+        "modelRole": "Prose",
+        "alias": "Tighten action rhythm",
+        "inputKind": "draft",
+        "referenceKind": "text",
+        "scope": "whole",
+        "protectedLiterals": [
+          "slowly",
+          "latch"
+        ],
+        "strength": "balanced",
+        "instructions": "Trim scaffolding and duplication. Retain door observation, slow turn, wait, sequence and unresolved latch. Aim for rough reduction; never force a count or imply the door opens.",
+        "maxTokens": 640,
+        "mode": "rhythm"
+      },
+      "validate": {
+        "id": "validate",
+        "type": "workflow",
+        "operation": "validate-patches",
+        "operationVersion": 1,
+        "title": "Validate Patches",
+        "enabled": true,
+        "x": 850,
+        "y": 272.5,
+        "w": 260,
+        "h": 150,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Check concise-action patches"
+      },
+      "review": {
+        "id": "review",
+        "type": "workflow",
+        "operation": "review-gate",
+        "operationVersion": 1,
+        "title": "Review Gate",
+        "enabled": true,
+        "x": 1235,
+        "y": 272.5,
+        "w": 260,
+        "h": 150,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Review the three-action sequence"
+      },
+      "apply": {
+        "id": "apply",
+        "type": "workflow",
+        "operation": "apply-reply",
+        "operationVersion": 1,
+        "title": "Apply Reply",
+        "enabled": true,
+        "x": 1620,
+        "y": 272.5,
+        "w": 260,
+        "h": 150,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Offer concise door prose"
+      }
+    },
+    "wires": {
+      "wire-1": {
+        "id": "wire-1",
+        "route": "wire",
+        "from": "reply",
+        "fromPort": "out",
+        "to": "tighten",
+        "toPort": "in"
+      },
+      "wire-2": {
+        "id": "wire-2",
+        "route": "wire",
+        "from": "brief",
+        "fromPort": "out",
+        "to": "tighten",
+        "toPort": "reference"
+      },
+      "wire-3": {
+        "id": "wire-3",
+        "route": "wire",
+        "from": "tighten",
+        "fromPort": "out",
+        "to": "validate",
+        "toPort": "in"
+      },
+      "wire-4": {
+        "id": "wire-4",
+        "route": "wire",
+        "from": "validate",
+        "fromPort": "out",
+        "to": "review",
+        "toPort": "in"
+      },
+      "wire-5": {
+        "id": "wire-5",
+        "route": "wire",
+        "from": "review",
+        "fromPort": "out",
+        "to": "apply",
+        "toPort": "in"
+      }
+    },
+    "groups": {},
+    "roles": {
+      "Prose": {
+        "model": null,
+        "profileId": null
+      }
+    },
+    "portals": {},
+    "definitions": {},
+    "template": {
+      "id": "concise-recast",
+      "version": 1
+    },
+    "view": {
+      "x": 0,
+      "y": 0,
+      "zoom": 1
+    }
+  }
+}

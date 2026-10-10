@@ -12,12 +12,14 @@ import { createGraphViewSession } from '../src/ui/graph-view-session.js?v=0.26.0
 import { prepareWorkspaceViews, prepareLibraryViews, projectEditorDraw, projectWorkspacePanels } from '../src/ui/workspace-preparation.js?v=0.26.0';
 import * as H from '../src/history.js?v=0.26.0';
 import { readNodePresentation } from '../src/ui/node-palette.js?v=0.26.0';
+import { viewIdentityKey } from '../src/ui/view-state.js?v=0.26.0';
 
 const groupId = 'ai-de-slop';
 const controllerText = await readFile(new URL('../src/ui/controller.js', import.meta.url), 'utf8');
 function controllerFunction(name, env) {
     env.activeEditRoot ??= () => env.current;
     env.readNodePresentation ??= readNodePresentation;
+    env.viewIdentityKey ??= viewIdentityKey;
     env.pendingCommentPresentation ??= new WeakMap();
     env.pendingSubgraphPresentation ??= new WeakMap();
     if (name !== 'applyPendingCommentPresentation') env.applyPendingCommentPresentation ??= controllerFunction('applyPendingCommentPresentation', env);

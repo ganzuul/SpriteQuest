@@ -2,24 +2,44 @@
     import { onDestroy, untrack } from 'svelte';
     import type { DetailBindingMode, DetailControl, DetailEditResponse, DetailSelection, NodeDetailsActions, NodeDetailsView } from './detail-types';
     let { view, actions = {}, idPrefix = 'pc-node-details' }: { view: NodeDetailsView | null; actions?: NodeDetailsActions; idPrefix?: string } = $props();
-    let drafts = $state<Record<string, { text: string; error: string; pending: boolean; artifactKind?: string; required?: boolean }>>({});
+    type LocalDraft = { text: string; error: string; pending: boolean; editor?: DetailControl['editor']; representation?: 'json-text' | 'json-value'; artifactKind?: string; required?: boolean; boundaryId?: string; boundaryDirection?: 'input' | 'output' };
+    let drafts = $state<Record<string, LocalDraft>>({});
     let errors = $state<Record<string, string>>({});
-    let identity = '', revision = '';
+    let identity = '', revision = '', support = '';
     let sequence = 0, boundaryDraftSequence = 0;
     const requests = new Map<string, number>();
+    // The mounted workspace inspector owns drafts; qualified nodes never share them.
+    const draftCache = new Map<string, typeof drafts>();
+    const settledDrafts = (values: typeof drafts) => Object.fromEntries(Object.entries(values).map(([key, value]) => [key, { ...value, pending: false }]));
+    function supportedDrafts(values: typeof drafts, node: NodeDetailsView | null) {
+        if (!node) return {};
+        return Object.fromEntries(Object.entries(settledDrafts(values)).flatMap(([key, value]) => {
+            if (key === 'model' || key === 'profileId') {
+                const binding = key === 'model' ? node.model?.model : node.model?.profile;
+                return binding?.allowedModes.some(option => option.value === 'override') ? [[key, value]] : [];
+            }
+            if (key === 'boundary') return node.boundary && value.boundaryId === node.boundary.id && value.boundaryDirection === node.boundary.direction ? [[key, { ...value, artifactKind: node.boundary.kinds.includes(value.artifactKind ?? '') ? value.artifactKind : node.boundary.kind }]] : [];
+            if (key === 'fileInput') return node.fileInput ? [[key, value]] : [];
+            return node.controls.some(control => control.key === key && control.editor === value.editor && control.representation === value.representation && (control.editor === 'json' || control.editor === 'lines')) ? [[key, value]] : [];
+        }));
+    }
     const selectionIdentity = (node: DetailSelection) => JSON.stringify([node.selectionKey, 'kind' in node.address
         ? [node.address.kind, node.address.definitionRef.id, node.address.definitionRef.version, node.address.definitionRef.semanticHash, node.address.nodeId]
         : [node.address.workflowId, node.address.instancePath, node.address.nodeId]]);
     let alive = true;
-    onDestroy(() => { alive = false; requests.clear(); });
+    onDestroy(() => { alive = false; requests.clear(); draftCache.clear(); });
     $effect(() => {
         const next = view ? selectionIdentity(view) : '', nextRevision = view?.revision ?? '';
+        const nextSupport = JSON.stringify([view?.controls.map(control => [control.key, control.editor, control.representation]), view?.model?.profile.allowedModes, view?.model?.model.allowedModes, view?.boundary && [view.boundary.id, view.boundary.direction, view.boundary.kinds], !!view?.fileInput]);
         const changedSelection = next !== identity;
-        if (changedSelection || nextRevision !== revision) {
-            if (changedSelection) boundaryDraftSequence++;
-            identity = next; revision = nextRevision; requests.clear(); sequence++; errors = {};
+        if (changedSelection || nextRevision !== revision || nextSupport !== support) {
+            if (changedSelection || nextSupport !== support) boundaryDraftSequence++;
+            if (changedSelection) {
+                if (identity) draftCache.set(identity, untrack(() => settledDrafts(drafts)));
+            }
+            identity = next; revision = nextRevision; support = nextSupport; requests.clear(); sequence++; errors = {};
             // A revision expires writes, while unsaved text still belongs to this node.
-            drafts = changedSelection ? {} : untrack(() => Object.fromEntries(Object.entries(drafts).map(([key, value]) => [key, { ...value, pending: false }])));
+            drafts = supportedDrafts(changedSelection ? draftCache.get(next) ?? {} : untrack(() => drafts), view);
         }
     });
     const selection = (node: NodeDetailsView): DetailSelection => ({ selectionKey: node.selectionKey, revision: node.revision, address: 'kind' in node.address ? { ...node.address, definitionRef: { ...node.address.definitionRef } } : { ...node.address, instancePath: [...node.address.instancePath] } });
@@ -44,10 +64,17 @@
             else { const next = { ...drafts }; delete next[key]; drafts = next; }
         }
     }
+    function chooseFile(input: HTMLInputElement) {
+        const file = input.files?.[0]; input.value = '';
+        if (!file || !view?.fileInput || view.readOnly || !actions.loadFile || drafts.fileInput?.pending) return;
+        drafts = { ...drafts, fileInput: { text: '', error: '', pending: false } };
+        // perform captures this selection synchronously before the file action starts reading.
+        void perform('fileInput', false, captured => actions.loadFile!(captured, file));
+    }
     function draft(control: DetailControl, text: string) {
         if (!view || view.readOnly) return;
         requests.delete(control.key);
-        drafts = { ...drafts, [control.key]: { text, error: '', pending: false } };
+        drafts = { ...drafts, [control.key]: { text, error: '', pending: false, editor: control.editor, representation: control.representation } };
         errors = { ...errors, [control.key]: '' };
     }
     function save(control: DetailControl) {
@@ -60,7 +87,7 @@
                     const parsed = JSON.parse(text);
                     if (control.representation !== 'json-text') value = parsed;
                 }
-            } catch { drafts = { ...drafts, [control.key]: { text, error: 'Enter valid JSON before saving.', pending: false } }; return; }
+            } catch { drafts = { ...drafts, [control.key]: { text, error: 'Enter valid JSON before saving.', pending: false, editor: control.editor, representation: control.representation } }; return; }
         } else if (control.editor === 'lines') value = text.split('\n').filter(line => line.trim());
         void perform(control.key, false, captured => actions.editControl!(captured, control.key, value));
     }
@@ -121,16 +148,16 @@
         const next = { ...boundaryValues(), [field]: value };
         boundaryDraftSequence++;
         requests.delete('boundary'); errors = { ...errors, boundary: '' };
-        drafts = { ...drafts, boundary: { text: String(next.label), artifactKind: String(next.artifactKind), required: next.required === true, error: '', pending: false } };
+        drafts = { ...drafts, boundary: { text: String(next.label), artifactKind: String(next.artifactKind), required: next.required === true, error: '', pending: false, boundaryId: view.boundary.id, boundaryDirection: view.boundary.direction } };
     }
-    function editBoundary(remove = false) {
+    function editBoundary() {
         if (!view?.boundary || view.readOnly || !actions.editInterface || drafts.boundary?.pending) return;
         const id = view.boundary.id, values = boundaryValues();
-        if (!remove && (!values.label.trim() || !view.boundary.kinds.includes(values.artifactKind))) return;
+        if (!values.label.trim() || !view.boundary.kinds.includes(values.artifactKind)) return;
         const draftSequence = ++boundaryDraftSequence;
-        drafts = { ...drafts, boundary: { text: values.label, artifactKind: values.artifactKind, required: values.required, error: '', pending: false } };
+        drafts = { ...drafts, boundary: { text: values.label, artifactKind: values.artifactKind, required: values.required, error: '', pending: false, boundaryId: id, boundaryDirection: view.boundary.direction } };
         void perform('boundary', false, async captured => {
-            const result = await actions.editInterface!(captured, remove ? { kind: 'remove', id } : { kind: 'update', id, ...values });
+            const result = await actions.editInterface!(captured, { kind: 'update', id, ...values });
             // A successful interface transaction can publish its revision before this response settles.
             // Only its acknowledged draft expires; newer local edits still belong to the selected port.
             if (result.ok && alive && view?.boundary?.id === id && selectionIdentity(view) === selectionIdentity(captured) && boundaryDraftSequence === draftSequence) {
@@ -138,11 +165,6 @@
             }
             return result;
         });
-    }
-    function addBoundary(direction: 'input' | 'output') {
-        if (!view?.boundary || view.readOnly || !actions.addBoundary || drafts['boundary-add']?.pending) return;
-        drafts = { ...drafts, 'boundary-add': { text: '', error: '', pending: false } };
-        void perform('boundary-add', false, captured => actions.addBoundary!(captured, direction));
     }
 </script>
 
@@ -155,10 +177,9 @@
             <label>Port label<input id={idPrefix + '-boundary-label'} aria-label="Subgraph port label" value={boundaryValues().label} disabled={view.readOnly || !actions.editInterface} oninput={event => draftBoundary('label', event.currentTarget.value)} /></label>
             <label>Type<select aria-label="Subgraph port type" value={boundaryValues().artifactKind} disabled={view.readOnly || !actions.editInterface} onchange={event => draftBoundary('artifactKind', event.currentTarget.value)}>{#each view.boundary.kinds as kind}<option value={kind}>{kind}</option>{/each}</select></label>
             <label class="pc-detail-check"><input aria-label="Required subgraph port" type="checkbox" checked={boundaryValues().required} disabled={view.readOnly || !actions.editInterface} onchange={event => draftBoundary('required', event.currentTarget.checked)} /> Required</label>
-            <div class="pc-detail-actions"><button type="button" data-save-boundary disabled={view.readOnly || !actions.editInterface || !boundaryValues().label.trim() || !!drafts.boundary?.pending} onclick={() => editBoundary()}>{drafts.boundary?.pending ? 'Validating…' : 'Save port'}</button><button type="button" data-remove-boundary class="pc-detail-danger" disabled={view.readOnly || !actions.editInterface || !!drafts.boundary?.pending} onclick={() => editBoundary(true)}>Remove {view.boundary.direction}</button></div>
-            <small>Labels appear on the subgraph block. Disconnect incompatible connections before changing the type or removing this port.</small>
-            <div class="pc-detail-actions"><button type="button" data-add-boundary="input" disabled={view.readOnly || !actions.addBoundary || !!drafts['boundary-add']?.pending} onclick={() => addBoundary('input')}>Add input</button><button type="button" data-add-boundary="output" disabled={view.readOnly || !actions.addBoundary || !!drafts['boundary-add']?.pending} onclick={() => addBoundary('output')}>Add output</button></div>
-            {#if drafts.boundary?.error || errors.boundary || drafts['boundary-add']?.error || errors['boundary-add']}<p class="pc-detail-error" role="alert">{drafts.boundary?.error || errors.boundary || drafts['boundary-add']?.error || errors['boundary-add']}</p>{/if}
+            <div class="pc-detail-actions"><button type="button" data-save-boundary disabled={view.readOnly || !actions.editInterface || !boundaryValues().label.trim() || !!drafts.boundary?.pending} onclick={() => editBoundary()}>{drafts.boundary?.pending ? 'Validating…' : 'Save port'}</button></div>
+            <small>Labels appear on the subgraph block. Disconnect incompatible connections before changing the type. Deleting this node removes its port and attached connections.</small>
+            {#if drafts.boundary?.error || errors.boundary}<p class="pc-detail-error" role="alert">{drafts.boundary?.error || errors.boundary}</p>{/if}
         </fieldset>
     {/if}
     <fieldset class="pc-detail-group"><legend>Presentation</legend>
@@ -173,6 +194,16 @@
         <label class="pc-detail-check"><input aria-label="Enabled" type="checkbox" checked={view.enabled} disabled={view.readOnly || !actions.editField} onchange={event => { const value = event.currentTarget.checked; if (actions.editField) void perform('enabled', false, captured => actions.editField!(captured, 'enabled', value)); }} /> Enabled</label>
         <small>Disabled operations block execution.</small>
         {#if errors.enabled}<p class="pc-detail-error" role="alert">{errors.enabled}</p>{/if}
+        {#if view.fileInput}
+            <div data-file-input-controls>
+                <label>{view.fileInput.loaded ? 'Replace file' : 'Choose file'}<input type="file" aria-label={view.fileInput.loaded ? 'Replace file' : 'Choose file'} accept=".txt,.md,.json,text/plain,text/markdown,application/json" disabled={view.readOnly || !actions.loadFile || !!drafts.fileInput?.pending} aria-invalid={!!errors.fileInput} aria-describedby={errors.fileInput ? idPrefix + '-error-fileInput' : undefined} onchange={event => chooseFile(event.currentTarget)} /></label>
+                <p>{view.fileInput.loaded ? 'Loaded file: ' + view.fileInput.fileName : 'No file loaded.'}</p>
+                <small>The file's UTF-8 text is embedded in this workflow. Runs use the saved snapshot; replace the file to refresh it.</small>
+                <small>Choose a .txt, .md or .json file up to 400,000 bytes and 100,000 UTF-16 code units.</small>
+                {#if drafts.fileInput?.pending}<p role="status">Loading file…</p>{/if}
+                {#if errors.fileInput}<p id={idPrefix + '-error-fileInput'} class="pc-detail-error" role="alert">{errors.fileInput}</p>{/if}
+            </div>
+        {/if}
         {#each view.controls as control (control.key)}
             <label>{control.label}
             {#if control.editor === 'enum'}
@@ -211,7 +242,7 @@
     {#if view.ports.length}<details><summary>Inputs and outputs</summary>{#each view.ports as port (port.direction + ':' + port.id)}<p class="pc-detail-port">{port.direction === 'input' ? 'In' : 'Out'} · {port.label}<small>{port.kind}</small></p>{/each}</details>{/if}
     {#if view.status}<p role="status">{view.status}</p>{/if}
     {#each view.issues ?? [] as issue}<p class="pc-detail-error">{issue}</p>{/each}
-    {#if !view.boundary}<footer><button type="button" disabled={view.readOnly || !actions.duplicate} onclick={() => { if (view && !view.readOnly) actions.duplicate?.(selection(view)); }}>Duplicate</button><button type="button" class="pc-detail-danger" disabled={view.readOnly || !actions.remove} onclick={() => { if (view && !view.readOnly) actions.remove?.(selection(view)); }}>Delete</button></footer>{/if}
+    <footer>{#if !view.boundary}<button type="button" disabled={view.readOnly || !actions.duplicate} onclick={() => { if (view && !view.readOnly) actions.duplicate?.(selection(view)); }}>Duplicate</button>{/if}<button type="button" class="pc-detail-danger" disabled={view.readOnly || !actions.remove} onclick={() => { if (view && !view.readOnly) actions.remove?.(selection(view)); }}>Delete</button></footer>
 {:else}
     <p class="pc-detail-empty">Select a node to inspect its settings.</p>
 {/if}

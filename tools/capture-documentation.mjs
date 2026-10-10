@@ -137,6 +137,10 @@ try {
         await page.evaluate(async id => { window.canvasHarness.canvas.select({ kind: 'node', id }); await window.canvasHarness.settle(); }, id);
         await page.locator('.pc-node-details h3').waitFor({ state: 'visible' });
     }
+    async function subgraphCommand(id, command) {
+        await page.locator(`.pc-node-native[data-id="${id}"] .pc-native-heading`).click({ button: 'right' });
+        await page.getByRole('menuitem', { name: command, exact: true }).click();
+    }
     async function shot(name, selector) {
         if (selector === '.pc-inspector') {
             await page.setViewportSize({ width: 1680, height: 1400 });
@@ -243,20 +247,18 @@ try {
     await run();
     await select('text-rules');
     await shot('subgraph-instance');
-    await page.locator('.pc-details-heading').getByRole('button', { name: 'Subgraphs', exact: true }).click();
-    for (const label of ['Library', 'Interface', 'Exposed parameters']) {
-        const summary = page.locator('.pc-manager-dialog summary').filter({ hasText: new RegExp('^' + label + '$') });
-        if (await summary.count() && await summary.evaluate(element => element.parentElement.open)) await summary.click();
-    }
-    await shot('subgraph-overrides', '.pc-manager-dialog');
-    await page.getByRole('button', { name: 'Close', exact: true }).click();
+    await subgraphCommand('text-rules', 'Add to Subgraphs');
+    await shot('subgraph-save', '.pc-subgraph-save');
+    await page.getByRole('button', { name: 'Close save subgraph', exact: true }).click();
     await page.locator('.pc-node-native[data-id="text-rules"] .pc-native-heading').dblclick();
     await fit();
     await select('rules');
     await shot('subgraph-tab');
-    await page.locator('.pc-details-heading').getByRole('button', { name: 'Subgraphs', exact: true }).click();
-    await shot('subgraph-manager', '.pc-manager-dialog');
-    await page.getByRole('button', { name: 'Close', exact: true }).click();
+    await page.locator('.pc-graph-tabs').getByRole('tab').first().click();
+    await subgraphCommand('text-rules', 'Make editable copy');
+    await fit();
+    await select('entry');
+    await shot('subgraph-interface', '.pc-node-details');
     await activate('native-guidance');
     await select('smart-compactor');
     await shot('scene-planning-graph');

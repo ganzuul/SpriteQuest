@@ -22,11 +22,25 @@ npm run check
 | `src/canvas.js`, `src/canvas/` | Graph gestures, camera, selection, geometry, cards, and connections |
 | `src/workflow/catalog.js` | Registered operations, controls, phases, and artifact contracts |
 | `src/workflow/operations/` | Operation implementations and deterministic primitives |
-| `src/workflow/starters.js` | Included example definitions |
+| `src/workflow/starters.js` | Eleven technical starter definitions retained in Setup |
+| `src/workflow/examples.js`, `src/workflow/example-data.js` | Validated bundled roleplay recipes and atomic independent-copy installation |
+| `src/ui/example-catalog.js`, `ui/ExamplesBrowser.svelte` | Actual-package thumbnail projection and compact example picker |
+| `tools/build-roleplay-examples.mjs` | Generate native roleplay packages and bundled runtime data from the authoring catalog |
+| `examples/roleplay/` | Thirty lessons as 37 portable phase packages, including six embedded definitions |
 | `workflows/`, `workflows/subgraphs/` | Portable workflow and subgraph packages |
 | `tests/browser/` | Mock host and production UI acceptance fixtures |
 
 Use `node tools/bump-version.mjs <version>` for release metadata and versioned import queries, then rebuild. Hard reload SillyTavern after updating installed assets so its modules load together.
+
+Recipe authoring data lives in `docs/research/2026-10-09-lattice-example-catalog.json`. After changing its node settings, typed wires, comment groups, or subgraph drafts, regenerate the portable packages and `src/workflow/example-data.js`:
+
+```powershell
+node tools/build-roleplay-examples.mjs
+```
+
+The generator validates every package and embedded definition, including the authored model roles and call bounds. Runtime opening uses the bundled local data rather than reading the research catalog or fetching packages. `src/ui/controller.js` selects the installed primary copy; all companion copies become available in the Workflow selector without phase assignment or arming.
+
+`tests/workflow-example-execution.test.mjs` supplies seven native execution fixtures with synthetic host evidence and deterministic model adapters. They verify representative outputs, review/application boundaries, and memory behavior without live provider requests; they do not claim live-model validation of all thirty lessons.
 
 ## Local UI harness
 
@@ -46,7 +60,7 @@ This script uses the installed Playwright Chromium browser and a temporary local
 
 The fixtures supply synthetic writing material, saved workflow data, layout positions, and the supplied Literal cleanup subgraph. Captures use actual navigation, settings panels, runs, and review controls. Completed examples must succeed with zero auxiliary model calls. All nonlocal requests and mutating HTTP requests are blocked; any page error or blocked request fails the capture. The script closes its browser and server afterward.
 
-The 20 captures cover workspace orientation, context assembly, node shelf/search, setup, operation details, recorded preview, reply review, execution details, and subgraph instances, tabs, interfaces, and parameter overrides. The shelf capture opens a family directly to canonical node rows; operation modes belong in Details. The subgraph manager is reached through **Subgraphs → Manage subgraphs…**. An ignored evidence report is written to `benchmark-results/documentation-capture.json`.
+The 20 captures cover workspace orientation, context assembly, node shelf/search, setup, operation details, recorded preview, reply review, execution details, and subgraph instances, tabs, interfaces, and parameter overrides. The shelf capture opens a family directly to canonical node rows; operation modes belong in Details. Subgraphs are created from canvas selection, edited through boundary Details, and saved with the wrapper context menu. The shelf offers Input/Output nodes and saved-definition context actions. An ignored evidence report is written to `benchmark-results/documentation-capture.json`.
 
 When changing discovery metadata, keep one public choice per operation and retain mode/kind names as search aliases. Pin-aware creation can select a compatible checked configuration without adding duplicate public rows. Preserve saved node settings and distinct subgraph revision identities. Transpose's new Text creation defaults must coexist with saved nodes whose omitted Input type retains Draft → Patches behavior.
 

@@ -16,6 +16,20 @@ function catalog(input = scope(), options) {
 }
 const choice = (value, id) => value.choices.find(item => item.id === id);
 
+test('Subgraphs Input and Output are disabled outside definitions and create checked boundaries inside', () => {
+    const root = catalog(), child = catalog(scope('native-pre', { inDefinition: true, viewPath: ['instance'] }));
+    for (const direction of ['input', 'output']) {
+        const id = 'boundary:' + direction, item = choice(root, id), inside = choice(child, id);
+        assert.equal(item.family, 'Subgraphs'); assert.equal(item.label, direction === 'input' ? 'Input' : 'Output');
+        assert.match(item.disabledReason, /inside a subgraph/i); assert.equal(api.resolveNativeSearchChoice(root, id), null);
+        assert.equal(inside.disabledReason, undefined);
+        assert.deepEqual(inside.ports, [{ portId: direction === 'input' ? 'out' : 'in', dir: direction === 'input' ? 'out' : 'in', kind: 'text', label: inside.label, required: false }]);
+        assert.deepEqual(api.resolveNativeSearchChoice(child, id), { kind: 'create-boundary', direction, artifactKind: 'text' });
+        assert.deepEqual(api.matchNativeSearchPorts(child, id, { dir: direction === 'input' ? 'in' : 'out', kind: 'text' }), []);
+        for (const contextSensitive of [true, false]) assert.equal(api.filterNativeSearchChoices(child, { origin: { dir: 'out', kind: 'text' }, contextSensitive }).some(item => item.id === id), false);
+    }
+});
+
 test('canonical discovery lists each operation once and keeps modes out of node labels', () => {
     for (const mode of ['native-pre', 'native-post']) {
         const value = catalog(scope(mode));
@@ -204,7 +218,7 @@ test('closure phase filtering keeps exact private scope and optional empty snaps
         const value = catalog(scope(mode, { viewPath: ['owned', 'nested'], inDefinition: true }), { checkedLibraryClosures: [pre, post] });
         const wanted = mode === 'native-pre' ? pre : post, other = mode === 'native-pre' ? post : pre;
         assert.deepEqual(value.scope.viewPath, ['owned', 'nested']);
-        assert.deepEqual(value.choices.filter(item => item.family === 'Subgraphs').map(item => item.label), [wanted.definition.name]);
+        assert.deepEqual(value.choices.filter(item => item.definitionRef).map(item => item.label), [wanted.definition.name]);
         assert.equal(api.resolveNativeSearchChoice(value, 'definition:' + definitionRefKey(other.definition)), null);
         assert.ok(api.resolveNativeSearchChoice(value, 'definition:' + definitionRefKey(wanted.definition)));
         for (const operation of ['scene-context', 'reply-snapshot', 'guidance', 'apply-reply']) assert.equal(choice(value, 'operation:' + operation), undefined);
@@ -339,7 +353,7 @@ test('cached query and context matching preserve multiple real compatible ports 
     assert.deepEqual(matched.map(c => c.id), ['operation:context-join']);
     assert.deepEqual(api.matchNativeSearchPorts(value, matched[0].id, origin).map(p => p.portId), ['context-1', 'context-2']);
     assert.equal(api.filterNativeSearchChoices(value, { query: 'JSON', origin, contextSensitive: true }).length, 0);
-    assert.equal(api.filterNativeSearchChoices(value, { query: 'JSON', origin, contextSensitive: false }).length, 1);
+    assert.deepEqual(api.filterNativeSearchChoices(value, { query: 'JSON', origin, contextSensitive: false }).map(choice => choice.id).sort(), ['operation:file-input', 'operation:json-decode']);
     assert.equal(api.matchNativeSearchPorts(value, 'operation:json-decode:check', origin).length, 0);
     assert.equal(api.resolveNativeSearchChoice(value, 'missing'), null);
     assert.equal(api.resolveNativeSearchChoice({ ...value }, 'operation:compose'), null, 'foreign catalog cannot provide checked commands');
@@ -354,7 +368,7 @@ test('checked shelf entries retain exact revision and actual interface choices b
     assert.equal(validateDefinition(definition, { [definitionRefKey(definition)]: definition }).ok, true, 'real 257-interface source is accepted by the existing definition validator');
     const ref = { id, version: 4, semanticHash: definition.semanticHash }, ports = interfacePorts.map(({ boundaryNodeId, ...port }) => port);
     const value = catalog(scope(), { checkedLibraryEntries: [{ definitionRef: ref, name: 'Saved shape', phase: 'pre', ports }] });
-    const item = value.choices.find(c => c.family === 'Subgraphs');
+    const item = value.choices.find(c => c.definitionRef);
     assert.deepEqual(item.definitionRef, ref);
     assert.equal(item.ports.length, 257);
     assert.match(item.disabledReason, /atomic/i);
@@ -380,7 +394,7 @@ test('genuine interface and data overlimits reject while a disabled shelf remain
     assert.equal(api.prepareNativeSearchCatalog(scope(), { checkedLibraryEntries: [{ definitionRef: ref, name: 'Saved', phase: 'pre', ports }] }).ok, false);
     assert.equal(api.prepareNativeSearchCatalog(scope('native-pre', { workflowId: '界'.repeat(700000) })).ok, false);
     const value = catalog(scope(), { checkedLibraryEntries: [{ definitionRef: ref, name: 'Saved', phase: 'pre', ports: ports.slice(0, 1) }] });
-    assert.match(api.filterNativeSearchChoices(value, { query: 'Saved' })[0].disabledReason, /checked definition.*atomic/i);
+    assert.match(api.filterNativeSearchChoices(value, { query: 'Saved' }).find(choice => choice.definitionRef?.id === ref.id).disabledReason, /checked definition.*atomic/i);
 });
 
 test('public cached filter rejects accessor or malformed options without evaluating them', () => {
@@ -408,7 +422,7 @@ test('cached operation purpose, prototype shortcode and known aliases each indep
 
 test('saved subgraph label and admitted optional search metadata remain immutable without placed-node aliases', () => {
     const entry = { definitionRef: { id: 'saved', version: 1, semanticHash: 'sha256:' + 'e'.repeat(64) }, name: 'Saved Loom', phase: 'pre', ports: [], purpose: 'Reusable arrangement', shortcode: 'lm', searchAliases: ['woven branch'] };
-    const value = catalog(scope(), { checkedLibraryEntries: [entry] }), item = value.choices.find(choice => choice.family === 'Subgraphs');
+    const value = catalog(scope(), { checkedLibraryEntries: [entry] }), item = value.choices.find(choice => choice.definitionRef);
     assert.equal(item.label, 'Saved Loom'); assert.deepEqual(item.searchAliases, ['woven branch']);
     for (const term of ['Saved Loom', 'arrangement', 'lm', 'woven branch']) assert.ok(api.filterNativeSearchChoices(value, { query: term }).some(choice => choice.id === item.id));
     entry.name = 'Changed'; entry.searchAliases.push('changed alias'); assert.equal(item.label, 'Saved Loom'); assert.deepEqual(item.searchAliases, ['woven branch']);

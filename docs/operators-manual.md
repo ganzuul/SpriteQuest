@@ -47,14 +47,18 @@ The workflow bar reports phase, assignment, request bound, and autosave. Selecti
 ## Start from a working example
 
 1. Open the LATTICE logo on the left of the chat bar or type `/lattice`.
-2. Open **Setup**, or **Workflows → Workflow examples…**.
-3. Install **Structured guidance** for a model-free graph without needing an existing reply.
-4. Close setup and click **Run**.
+2. Choose **File → Open examples…**, immediately below **Open workflow…**. **Workflows → Workflow examples…** opens the same picker.
+3. Choose **Build a brief from JSON** (lesson 3). The picker closes and its independent, editable copy becomes the current workflow.
+4. Click **Run**. This lesson needs no model connection or existing reply.
 5. Select nodes in turn to inspect the source Text, decoded Data, selected fields, and composed Guidance.
 
-![Workflow setup showing phase assignment and four installable examples](images/workflow-setup.png)
+![Open examples picker with canvas thumbnails and the first nine lessons, including Build a brief from JSON](images/examples-picker.png)
 
-*Installing an example creates an editable workflow. Role binding, phase assignment, and arming are separate actions.*
+*Choose a named tile to open its native workflow immediately. Build a brief from JSON is the third lesson.*
+
+The thirty tiles follow a fixed learning order. Opening a tile creates a fresh copy every time. A recipe's separate Pre/Post companions validate and install together; select them from the **Workflow** selector. Existing workflows, phase assignments, and enabled state are preserved. Opening does not run anything, assign a phase, or arm the copies.
+
+Model-backed lessons arrive with unresolved local roles. Configure roles and connections explicitly in **Setup**, then inspect a manual run before assigning a phase and arming for normal sends. Pending Node Details text, model override mode/value, and boundary drafts survive browsing and returning to their qualified node; invalid JSON still requires correction before Save.
 
 The [quick start](lattice-workspace.md) walks through changing a brief and trying Literal cleanup. Scene guidance and Reviewed AI De-slop use auxiliary model operations; configure their **Analysis** or **Prose** roles before running them.
 
@@ -110,6 +114,8 @@ Edits participate in undo/redo. Text fields keep normal browser editing shortcut
 
 Select a node to inspect its canonical type, family, phase, settings, and ports. **Alias** gives it a local display name; **Compact card** reduces its visual footprint while retaining real pins. Presentation changes do not change execution.
 
+Right-click a node for grouped editing, preview, organization, and presentation actions. **Rename** focuses its alias, **Compact card** toggles its presentation, and **Fit selection** frames the current selection. Right-clicking within a multiselection keeps that selection; right-clicking another item makes it the action target. Menu shortcuts appear beside their commands. Use Up/Down or Home/End to navigate, Enter to choose, Right/Left to enter or leave an output submenu, and Escape to dismiss the menu while keeping your selection.
+
 Operation controls depend on the node. An **Enabled** checkbox is not a bypass: a disabled operation blocks validation. Delete and Duplicate act on the selected operation where editing is allowed.
 
 Mode, input/output type and other controls may change a node's pins. An edit that would make an existing wire incompatible is rejected without changing the node or its connections. Disconnect or replace the affected wire, then change the setting.
@@ -160,6 +166,10 @@ Smart Compactor lets you choose selection or model-backed compression, a target 
 
 Bind role defaults in **Setup**. In Details, choose an explicit connection/model override for one operation when it needs a different route. Inspect the effective value and any issue shown below the control. This does not globally activate a different SillyTavern connection. See [model setup and supported routes](native-workflows.md).
 
+![Workflow Setup showing phase assignment and technical starter buttons](images/workflow-setup.png)
+
+*Setup retains the eleven technical starters and manages model roles and phase assignment. This screenshot shows Setup, not the thirty-tile Open examples picker.*
+
 ## Run and inspect results
 
 Click **Run** to execute the root. The toolbar becomes **Stop** while busy. The bottom-left meter records completion or failure; click it for node-level details, including expanded stages within subgraphs.
@@ -173,6 +183,8 @@ An active node receives a bright ring. Failed nodes have a red ring and dimmed c
 ### Read Preview
 
 Select a node and use **Preview output** to choose its output or the root Host result. The artifact tabs show the sections recorded for that target, including input/output data where available. **Follow selection** updates Preview as you explore; **Pin preview** holds an output while you inspect another node.
+
+The node context menu also offers **Pin preview** and **Run to here** for available outputs. Nodes with several outputs open a submenu so you can choose the port explicitly. Pinning holds the chosen output target as selection changes; it does not freeze a recorded result. Library inspection has no runtime output actions.
 
 ![Recorded Guidance artifact in Preview with output selection, pin/follow controls, status, and Run to here](images/guidance-preview.png)
 
@@ -202,11 +214,11 @@ Local application and durable saving are reported separately. The host save wrap
 
 ## Reuse a process with subgraphs
 
-A subgraph packages operations behind named, typed inputs/outputs. You can expose selected operation settings as parameters and set instance overrides. Nested subgraphs let you compose a larger process without placing every primitive in the parent editor.
+A subgraph packages operations behind named, typed inputs/outputs. Nested subgraphs let you compose a larger process without placing every primitive in the parent editor.
 
 ### Place and open a reusable tool
 
-Import the supplied [Literal cleanup subgraph JSON](../workflows/subgraphs/literal-cleanup.json) through **Subgraphs → Manage subgraphs… → Import .json**. Choose an editable destination and insert the definition. Connect its Draft input from Reply Snapshot and its Patches output into Validate Patches.
+Choose a saved definition from **Subgraphs → Library** to insert a copy into the current editable graph. The supplied [Literal cleanup subgraph JSON](../workflows/subgraphs/literal-cleanup.json) illustrates a Draft → Patches interface. Connect its Draft input from Reply Snapshot and its Patches output into Validate Patches.
 
 ![Literal cleanup subgraph instance connected between Reply Snapshot and Validate Patches in a parent workflow](images/subgraph-instance.png)
 
@@ -220,31 +232,23 @@ Double-click the wrapper to open its body in a graph tab. **Graph 1** remains th
 
 Closing a tab hides that view. Use **Graph view actions** to reopen it. Switching tabs does not stop a root run, and the toolbar Run action still belongs to the root workflow.
 
-### Expose settings and edit one instance
+### Edit one instance
 
-Select the wrapper in the parent and open **Details → Subgraphs**. The manager shows the definition's interface, exposed parameters, and instance settings. Use **Parameter overrides** to change an exposed Rules value for this wrapper and **Save override** to commit it. **Use definition value** removes the override.
-
-![Subgraph manager with pinned-instance controls and an exposed Rules parameter override](images/subgraph-overrides.png)
-
-*Wrapper overrides customize the process without changing its pinned body. Make local copy gives this instance private body-editing authority.*
-
-Use **Make local copy** when you need to edit the body's operations or interface. Local copies preserve their parent instance and do not change sibling instances. **Unpack** replaces one wrapper level with its body nodes while preserving settings, bindings, and parent connections.
+Right-click the wrapper and choose **Make editable copy** to open a private editable body. The copy preserves this instance's configured settings and model overrides, and edits in its body take effect. Model fields inherited from the parent workflow remain inherited. Edit its operations and interface in that tab. Sibling instances keep their pinned contents. **Unpack subgraph** replaces one wrapper level with its body nodes while preserving settings, bindings, and parent connections.
 
 ### Create and manage definitions
 
-To package your own sequence, select the desired nodes in an editable graph, right-click the selection, and choose **Create Subgraph**. You can also right-click a group to package its members. The selected nodes move into a new editable graph tab, with typed input blocks on the left and output blocks on the right. Crossing connections are wired through those boundaries, and the parent graph receives a connected subgraph block in place of the selection. Shared inputs and output fanout are preserved. Creation is one undoable edit.
+To package your own sequence, select the desired nodes in an editable graph, right-click the selection, and choose **Create subgraph**. You can also right-click a group to package its members. The selected nodes move into a new editable graph tab, with typed input blocks on the left and output blocks on the right. Crossing connections are wired through those boundaries, and the parent graph receives a connected subgraph block in place of the selection. Shared inputs and output fanout are preserved. Creation is one undoable edit.
 
-Click an input or output block, or its **Edit input/output** button, to rename the actual port and set its artifact type in Details. **Add input/output** creates another boundary and selects its label for editing; connect its pin to the interior nodes as usual. Names and ports update automatically on the parent block. In an editable subgraph tab, right-click empty canvas space to add an input or output even when the subgraph has no ports yet. New inputs are optional until you mark them required. Disconnect a port before removing it or changing its type when its existing connections would become invalid.
+Click an input or output block to rename the port, change its artifact type, or mark it required in Details. Choose **Input** or **Output** from **Subgraphs → Interface** to add another boundary, then wire it to the interior nodes. These shelf choices are disabled outside an editable subgraph. New inputs are optional. Delete a boundary through the ordinary node Delete action; its pin and attached body and parent connections are removed together in one undoable edit. Disconnect incompatible connections before changing a port's type.
+
+![Subgraph input selected with its port settings and ordinary Delete action in Details](images/subgraph-interface.png)
 
 Workflow input/output operations such as Scene Context, Reply Snapshot, Guidance, and Apply Reply stay in the root graph. Select the processing nodes between them to create a subgraph. Existing boundary blocks remain in their containing subgraph.
 
-![Subgraph manager showing the reusable definition library, JSON import/export, and typed interface](images/subgraph-manager.png)
+Right-click a wrapper and choose **Add to Subgraphs** to save it for reuse. Name it and choose **Save new subgraph** or explicitly update an existing shelf entry. Editing a body does not automatically save it. Updates affect future insertions; existing placed copies keep their exact contents. Right-click a saved entry in the shelf to **Delete** it or **Open saved definition** for inspection. Deleting a shelf entry preserves placed copies. **Export subgraph** on a wrapper downloads its portable JSON package.
 
-*The library stores revisions. The Interface section describes the Draft input and Patches output of the selected definition.*
-
-The manager is the reusable subgraph library. It supports definition import/export, duplication, interface and parameter editing where allowed, saving revisions, and explicit instance updates. Its **Convert selection** action also opens the newly created editable tab. Exposed parameters map to eligible operation controls; they are not arbitrary code. Imported definitions and existing instances retain pinned snapshots. Removing a shelf revision does not break placed instances.
-
-For a revision update, choose the target revision, prepare its interface/parameter/binding mappings, inspect the result, then accept it. Existing instances do not silently adopt a changed library definition. Role and node binding overrides are also scoped to the instance where supported.
+![Compact Save subgraph dialog with a name and explicit new or update choice](images/subgraph-save.png)
 
 ## Organize connections with portals and reroutes
 
@@ -260,16 +264,19 @@ Autosave persists committed workspace edits. It does not accept unsaved JSON dra
 
 | Action | Result |
 | --- | --- |
-| Workflow selector / Open workflow | Switch to a saved root workflow |
-| File → Import workflow | Open a workflow JSON as a separate graph |
+| Workflow selector | Switch to a workflow already saved in Lattice |
+| File → New workflow | Create a separate blank workflow |
+| File → Open workflow… | Choose a workflow JSON file in the system picker and open it as a separate graph |
+| File → Save workflow | Request a save in SillyTavern, retaining local connections and workspace views |
 | File → Import into graph… | Review an additive insertion into the current graph |
-| File → Export workflow | Export a portable workflow package with pinned definitions |
-| Subgraph manager → Import/Export .json | Share an individual reusable definition |
-| Node → Subgraphs | Manage reusable definitions and insert their pinned instances |
+| File → Export workflow JSON… | Download a portable workflow package with pinned definitions |
+| File → Close workspace | Close the editor while retaining committed workflows and workspace views |
+| Wrapper → Export subgraph | Download an individual reusable definition |
+| Wrapper → Add to Subgraphs; shelf entry → Delete | Save reusable definitions and remove shelf entries |
 
 An additive import requires matching phases, assigns fresh node identities, and preserves internal connections and relative layout. Review role requirements, terminal changes, and request bounds before accepting the insertion. Import itself does not run or arm the workflow.
 
-Exports omit bound profile IDs and credentials. Recipients configure local model connections before running. Composed workflows carry their pinned definitions. Unsupported versions, dangling connections, incompatible artifacts, or cycles produce validation issues.
+Save retains connection bindings in SillyTavern settings. Export downloads a `.workflow.json` sharing copy and omits bound profile IDs and credentials. Open these files with **File → Open workflow…**; recipients configure local model connections before running. The browser controls where downloads are saved. Composed workflows carry their pinned definitions. Unsupported versions, dangling connections, incompatible artifacts, or cycles produce validation issues.
 
 ## Develop your own writing system
 
@@ -282,7 +289,7 @@ Start from the material and result you need, then choose the operations between 
 | Combined context branches | Context sources → optional selection → Context Join → Response Plan | Duplicate/conflicting identities and reintroduction reports |
 | Deterministic editorial cleanup | Reply Snapshot → Text Rules → Validate Patches → Review Gate → Apply Reply | Exact replacements and source freshness |
 | Model-assisted editorial repair | Reply Snapshot → Pattern Scan → Repair → Validate Patches → Review Gate → Apply Reply | Selected spans, protected wording, candidate and model trace |
-| Shared editorial tool | Draft → cleanup subgraph → Patches, with review in the parent | Interface, exposed parameters, pinned revision, parent review path |
+| Shared editorial tool | Draft → cleanup subgraph → Patches, with review in the parent | Interface, editable body settings, pinned contents, parent review path |
 
 The first, fourth, and fifth compositions ship as starter examples; Scene guidance supplies the second. Context assembly and subgraph composition demonstrate how the same tools combine beyond those starters.
 

@@ -2,14 +2,16 @@ import { resolveBinding } from '../workflow/connections.js?v=0.26.0';
 import * as workflowRuntime from '../run.js?v=0.26.0';
 import { workflowSignature } from '../workflow/runtime.js?v=0.26.0';
 import { installStarter } from '../workflow/starters.js?v=0.26.0';
+import { installWorkflowExample } from '../workflow/examples.js?v=0.26.0';
+import { projectWorkflowExamples } from './example-catalog.js?v=0.26.0';
 import { operationFor } from '../workflow/catalog.js?v=0.26.0';
 import { isWorkflowGraph } from '../workflow/contracts.js?v=0.26.0';
 import { parseWorkflowInsertionFile, prepareWorkflowInsertion } from '../workflow/insertion.js?v=0.26.0';
 import { captureGraphEditContext } from '../workflow/transactions.js?v=0.26.0';
 import { viewIdentityKey } from './view-state.js?v=0.26.0';
 import { createGraphViewSession } from './graph-view-session.js?v=0.26.0';
-import { prepareNativeNodeEdit, prepareQualifiedScopeEdit, makeLocalCopy, prepareOwnedDefinitionMetadataEdit, prepareQualifiedInstanceUpdate, reconcileOwners } from '../workflow/definition-library.js?v=0.26.0';
-import { ownershipEntries, prunePrivateSnapshots } from '../workflow/composition-edit.js?v=0.26.0';
+import { prepareNativeNodeEdit, prepareQualifiedScopeEdit, makeLocalCopy, materializeInstanceDefinition, prepareOwnedDefinitionMetadataEdit } from '../workflow/definition-library.js?v=0.26.0';
+import { prepareSubgraphNodeDeletion } from '../workflow/subgraph-authoring.js?v=0.26.0';
 import { prepareNativeConnectionEdit } from '../workflow/connection-edits.js?v=0.26.0';
 import { prepareCommentEdit } from '../workflow/comment-edits.js?v=0.26.0';
 import { createCommentFrame, containedCommentNodes, fitCommentFrame, isCommentFrame } from '../canvas/comment-frames.js?v=0.26.0';
@@ -18,12 +20,14 @@ import { captureRelocatedSubgraphViews, refreshRelocatedSubgraphViews, restoreSu
 import { preparePortalRename, prepareCreateFromSelection, prepareUnpack, prepareQualifiedPortalEdit } from '../workflow/composition.js?v=0.26.0';
 import { prepareGraphCandidate } from '../workflow/prepared-graph-edit.js?v=0.26.0';
 import { definitionRefKey } from '../workflow/definition-data.js?v=0.26.0';
-import { exportSubgraph, parseSubgraph } from '../workflow/packages.js?v=0.26.0';
+import { exportSubgraph } from '../workflow/packages.js?v=0.26.0';
 import { makeClip, makeDefinitionClip, readClip, prepareClipPaste } from '../workflow/clipboard.js?v=0.26.0';
 import { prepareNativeSearchCatalog, resolveNativeSearchChoice } from './native-search-catalog.js?v=0.26.0';
 import { createNativeWireBridge } from './native-wire-bridge.js?v=0.26.0';
 import { readNodePresentation } from './node-palette.js?v=0.26.0';
-import { prepareWorkspaceViews, prepareLibraryViews, projectEditorDraw, initialWorkspaceCamera, projectWorkspacePanels, projectDefinitionInstance, projectDefinitionUpdate } from './workspace-preparation.js?v=0.26.0';
+import { showContextMenu } from './context-menu.js?v=0.26.0';
+import { readTextFile } from './file-input.js?v=0.26.0';
+import { prepareWorkspaceViews, prepareLibraryViews, projectEditorDraw, initialWorkspaceCamera, projectWorkspacePanels } from './workspace-preparation.js?v=0.26.0';
 import { prepareWorkflowProjection, projectPreparedWorkflow, createWorkflowSession } from './workflow-surface.js?v=0.26.0';
 import { ctx, safe, settings, save, allGraphs, getGraph, createGraph, duplicateGraph, deleteGraph, touchGraph, commitGraphEdit, stepGraphHistory, resolveGraph, exportGraph, importGraph, onGraphTouched, groupMembers } from '../state.js?v=0.26.0';
 import { applyTheme } from '../theme.js?v=0.26.0';
@@ -32,6 +36,8 @@ import * as H from '../history.js?v=0.26.0';
 import * as L from '../library.js?v=0.26.0';
 import { Canvas } from '../canvas.js?v=0.26.0';
 import { createWorkbench } from './workbench.js?v=0.26.0';
+import { nodeCard } from '../canvas/presentation.js?v=0.26.0';
+import { measureNodeCard } from '../../dist/lattice-ui.js?v=0.26.0';
 
 let workbench = null;
 let root = null;
@@ -39,6 +45,7 @@ let canvas = null;
 let current = null;      // graph in view
 let selected = null;     // node or wire
 let selectedKind = null;
+let selectionEpoch = 0;
 let uiEpoch = 0;
 let graphEditAdapter = null;
 let pendingImport = null;
@@ -46,6 +53,7 @@ let graphViews = null, workspacePrepared = null, editorDraw = null, rootRunEpoch
 let documentTransition = false, libraryRevision = 0, restoringEditor = false, canvasTraceRows = null;
 let viewSaveTimer = null, pinnedPreview = null, selectedPreview = null, nativeWireBridge = null, nativeCatalog = null, positionEdit = null;
 let nativeGroupPresenter = null, detachedClip = null, workspaceIssue = '';
+let pendingSubgraphSave = null;
 const editorCaptures = new WeakMap();
 const commentCaptures = new WeakMap(), commentPresentationEffects = new WeakMap(), pendingCommentPresentation = new WeakMap();
 const subgraphPresentationEffects = new WeakMap(), pendingSubgraphPresentation = new WeakMap();
@@ -117,7 +125,7 @@ function refreshWorkflowPreparation() {
     if (!current || !workspacePrepared) return;
     workspacePrepared.workflow = prepareWorkflowProjection(current, { ...workspaceInputs(), ...(workspacePrepared.planner ? { planner: workspacePrepared.planner } : {}) });
 }
-function persistGraphViews(flush = false, deferSerialization = false) {
+function persistGraphViews(flush = false, deferSerialization = false, persistSettings = save) {
     clearTimeout(viewSaveTimer);
     const snapshot = () => {
         if (graphViews) { const result = graphViews.serialize(); if (result.ok) { settings().workspaceViews ??= {}; settings().workspaceViews[graphViews.readRoot().id] = result.data; } }
@@ -128,9 +136,10 @@ function persistGraphViews(flush = false, deferSerialization = false) {
     const persist = () => {
         viewSaveTimer = null;
         if (deferSerialization) snapshot();
-        save();
+        return persistSettings();
     };
-    if (flush) persist(); else viewSaveTimer = setTimeout(persist, 180);
+    if (flush) return persist();
+    viewSaveTimer = setTimeout(persist, 180);
 }
 function prepareWorkspaceDocument() {
     const result = prepareWorkspaceViews(current, workspaceInputs());
@@ -140,13 +149,15 @@ function prepareWorkspaceDocument() {
     const shelf = L.loadSubgraphLibrary();
     workspacePrepared.libraryIssue = shelf.ok ? '' : shelf.error.message;
     workspacePrepared.shelfDefinitions = shelf.ok ? shelf.data.definitions : {};
+    const entries = shelf.ok ? L.getSubgraphShelfEntries() : shelf;
+    workspacePrepared.shelfEntries = entries.ok ? entries.data : [];
     workspacePrepared.libraryDefinitions = { ...workspacePrepared.shelfDefinitions, ...(current.definitions ?? {}) };
     const library = prepareLibraryViews(current.id, workspacePrepared.libraryDefinitions);
     if (library.ok) { workspacePrepared.definitionInfo = library.data.definitionInfo; workspacePrepared.navigation.push(...library.data.navigation); workspacePrepared.preparedViews.push(...library.data.preparedViews); }
     else { workspacePrepared.definitionInfo = {}; workspacePrepared.libraryIssue = library.error.message; }
     workspacePrepared.catalogs = new Map();
     for (const view of workspacePrepared.preparedViews) if (view.identity.kind !== 'library') {
-        const catalog = prepareNativeSearchCatalog({schema:3,runtime:2,mode:current.mode,workflowId:current.id,viewPath:view.identity.instancePath ?? [],inDefinition:view.identity.kind === 'instance'}, {checkedLibraryClosures:Object.values(workspacePrepared.shelfDefinitions).map(definition=>({definition,snapshots:workspacePrepared.shelfDefinitions}))});
+        const catalog = prepareNativeSearchCatalog({schema:3,runtime:2,mode:current.mode,workflowId:current.id,viewPath:view.identity.instancePath ?? [],inDefinition:view.identity.kind === 'instance'}, {checkedLibraryClosures:workspacePrepared.shelfEntries.map(definition=>({definition,snapshots:workspacePrepared.shelfDefinitions}))});
         if (catalog.ok) workspacePrepared.catalogs.set(viewIdentityKey(view.identity),catalog.data);
     }
     return true;
@@ -195,10 +206,50 @@ function navigateGraphView(action, ...args) {
     if (!result.ok) return toast(result.error.message, 'error');
     activateEditorDraw(); persistGraphViews();
 }
+function onSaveGraphView(key) {
+    if (!graphViews?.project().graphViews.tabs.some(view => view.key === key)) return;
+    canvas?.cancelGesture(); persistGraphViews(true);
+}
+async function onSaveGraph() {
+    try {
+        const context = ctx();
+        if (typeof context?.saveSettingsDebounced !== 'function') throw new Error('SillyTavern settings save is unavailable.');
+        canvas?.cancelGesture();
+        await persistGraphViews(true, false, () => context.saveSettingsDebounced());
+        toast('Workflow save requested in SillyTavern.', 'info');
+    } catch (error) { toast(error?.message || 'The workflow save could not be requested.', 'error'); }
+}
+function downloadGraphViewJSON(json, fileName) {
+    const url = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+    try {
+        const anchor = document.createElement('a');
+        anchor.href = url; anchor.download = fileName; anchor.click();
+    } finally { setTimeout(() => URL.revokeObjectURL(url), 0); }
+}
+function onExportGraphView(key) {
+    const view = graphViews?.project().graphViews.tabs.find(view => view.key === key);
+    if (!view) return;
+    try {
+        if (view.identity.kind === 'root') {
+            const json = exportGraph(current.id);
+            if (!json) throw new Error('The workflow is no longer available.');
+            downloadGraphViewJSON(json, `${current.name.replace(/[^\w-]+/g, '_')}.workflow.json`);
+            return;
+        }
+        const prepared = workspacePrepared?.preparedViews.find(entry => viewIdentityKey(entry.identity) === view.key);
+        const ref = view.identity.kind === 'library' ? view.identity.definitionRef : prepared?.definitionRef;
+        const definition = ref && workspacePrepared?.libraryDefinitions[definitionRefKey(ref)];
+        if (!definition) throw new Error('The subgraph is no longer available.');
+        downloadGraphViewJSON(JSON.stringify(exportSubgraph(definition, workspacePrepared.libraryDefinitions), null, 2), `${definition.name.replace(/[^\w-]+/g, '_')}.subgraph.json`);
+    } catch (error) { toast(error?.message || 'The graph could not be exported.', 'error'); }
+}
 const graphViewActions = {
     openInstance: path => navigateGraphView('openInstance', [...path]), openLibrary: ref => navigateGraphView('openLibrary', ref),
     focusView: key => navigateGraphView('focusView', key), closeView: key => navigateGraphView('closeView', key), reopenView: key => navigateGraphView('reopenView', key), revealParent: () => navigateGraphView('revealParent'),
     closeOtherViews(key) { if (!graphViews) return; for (const tab of graphViews.project().graphViews.tabs) if (tab.identity.kind !== 'root' && tab.key !== key) graphViews.closeView(tab.key); activateEditorDraw(); persistGraphViews(); },
+    saveView: key => onSaveGraphView(key),
+    exportView: key => onExportGraphView(key),
+    renameView: key => onRenameGraphView(key), canRenameView: key => canRenameGraphView(key),
 };
 function samePreviewTerminal(first, second) {
     return first?.kind === 'terminal' && second?.kind === 'terminal' && Array.isArray(first.address?.instancePath) && Array.isArray(second.address?.instancePath)
@@ -290,7 +341,7 @@ const workflowActions = {
     assign(phase) { if (current?.mode !== 'native-' + phase) return; workflowSession.cancel('Workflow assignment changed'); settings().nativeBindings[phase === 'pre' ? 'preGraphId' : 'postGraphId'] = current.id; save(); updateWorkflowProjection(); renderStatus(); },
     run: () => graphViews ? workflowSession.run() : toast('The current workflow is unavailable.', 'error'),
     apply: selector => applyPreviewReview(selector), reject: () => workflowSession.reject(),
-    addNode(operation, at = null) { const token = captureEditor(); if (!token.ok) return token; return commitCaptured(token.data, prepareNativeConnectionEdit(current, { kind: 'create', operation, graphPoint: at || defaultNodeSpot(), ...scopeCommand(token.data) })); },
+    addNode(operation, at = null) { const token = captureEditor(); if (!token.ok) return token; return commitCaptured(token.data, prepareShelfNodeCreation(token.data, { kind: 'create', operation }, at)); },
 };
 function defaultNodeSpot() {
     const rect = canvas.host.getBoundingClientRect(), zoom = canvas.view.zoom || 1;
@@ -323,7 +374,8 @@ function setCanvasGraph() {
     documentTransition = true; workflowSession.cancel('Workflow graph changed'); documentTransition = false;
     uiEpoch++; selected = null; selectedKind = null; pinnedPreview = null; selectedPreview = null;
     canvas?.cancelGesture(); nativeWireBridge?.cancel('root-change'); cancelImportReview();
-    workbench.update({ portalManager: null, subgraphManager: null, nodeDetails: null, commentDetails: null, outputPreview: null, nativeChoices: [], nativeSearch: null, nativePinMenu: null });
+    pendingSubgraphSave = null;
+    workbench.update({ portalManager: null, subgraphSave: null, nodeDetails: null, commentDetails: null, outputPreview: null, nativeChoices: [], nativeSearch: null, nativePinMenu: null });
     if (prepareWorkspaceDocument()) {
         const created = createGraphViewSession({ root: current, activationId: String(uiEpoch), ...workspacePrepared, persisted: settings().workspaceViews?.[current.id], initialCamera: current.view });
         if (created.ok) { graphViews = created.data; root.classList.remove('pc-details-hidden'); syncPaneToggles(); activateEditorDraw(); }
@@ -351,19 +403,22 @@ function mkBtn(icon, title, fn, cls = '') { const button = el('button', 'pc-btn 
 function build() {
     if (root) return;
     workbench = createWorkbench({
+        openExample: onOpenExample,
+        refreshExamples: refreshExampleCatalog,
         pickGraph(id) { const picked = getGraph(id); if (!picked) return renderGraphSelect(); current = picked; settings().activeGraphId = picked.id; save(); setCanvasGraph(); renderAll(); },
         arm(enabled) { settings().enabled = enabled; save(); renderStatus(); },
         command(name) {
-            const commands = { new: onNewGraph, duplicate: onDuplicateGraph, rename: onRenameGraph, delete: onDeleteGraph, import: onImportGraph, 'import-into-graph': onImportIntoGraph, export: onExportGraph, undo: doUndo, redo: doRedo,
+            const commands = { new: onNewGraph, duplicate: onDuplicateGraph, rename: onRenameGraph, delete: onDeleteGraph, save: onSaveGraph, import: onImportGraph, 'open-workflow': onImportGraph, 'import-into-graph': onImportIntoGraph, export: onExportGraph, undo: doUndo, redo: doRedo,
                 fit: () => canvas.fit(), 'fit-selection': () => canvas.fitSelection(), copy: () => copySelection(), cut: () => copySelection(true), paste: pasteFromClipboard,
                 'delete-selection': () => canvas.deleteSelection(), 'run-workflow': workflowActions.run, 'stop-workflow': () => workflowSession.cancel('Stopped by user'),
-                theme: toggleThemePopover, subgraphs: openSubgraphManager, inspector: togglePane, 'reveal-inspector': () => { if (root.classList.contains('pc-details-hidden')) togglePane(); }, close };
+                theme: toggleThemePopover, inspector: togglePane, 'reveal-inspector': () => { if (root.classList.contains('pc-details-hidden')) togglePane(); }, close };
             return commands[name]?.();
         },
         mode: mode => canvas.setMode(mode), zoom: factor => { const rect = canvas.host.getBoundingClientRect(); canvas.zoomBy(factor, rect.left + rect.width / 2, rect.top + rect.height / 2); }, fitSelection: () => canvas.fitSelection(),
         resizeStart: () => canvas?.cancelGesture(), resizeDetails, addNode: workflowActions.addNode,
         workflowSetup: workflowActions, graphViewActions, nodeDetails: nodeDetailsActions, commentDetails: commentDetailsActions, outputPreview: outputPreviewActions, runDetails: runDetailsActions,
-        chooseNative: chooseNativeNode, managePortals: () => openPortalManager(), manageSubgraphs: () => openSubgraphManager(),
+        chooseNative: chooseNativeNode, managePortals: () => openPortalManager(), shelfSubgraph: shelfSubgraphAction,
+        subgraphSave: { close() { pendingSubgraphSave = null; workbench.update({ subgraphSave: null }); }, save: saveSubgraphToShelf },
         acceptImport: acceptImportReview, cancelImport: cancelImportReview, prepareImportAgain,
     });
     root = workbench.root; hookHistory();
@@ -376,6 +431,7 @@ function build() {
     document.addEventListener('pc-theme', () => { if (canvas && isOpen()) { updateWorkflowProjection(); canvas.render(); } });
     canvas = new Canvas(workbench.parts.canvasHost, {
         onSelect(item, kind) {
+            selectionEpoch++;
             selected = canvas.multi.size > 1 ? [...canvas.multi] : item; selectedKind = canvas.multi.size > 1 ? 'multi' : kind;
             if (graphViews && !restoringEditor) { selectedPreview = null; const primary = item && kind ? { kind, id: item.id } : null;
                 graphViews.updateView({ selection: { primary, multi: [...canvas.multi] }, inspector: { ...graphViews.readEditor().view.inspector, item: primary } }); persistGraphViews(false, true); updateWorkflowProjection(); }
@@ -387,7 +443,6 @@ function build() {
         onOpen(node) { if (graphViews && node.type === 'subgraph') { const editor = graphViews.readEditor(); return editor.view.identity.kind === 'library' ? navigateGraphView('openLibrary', node.definition) : navigateGraphView('openInstance', [...(editor.view.identity.instancePath ?? []), node.id]); } showSettings({ kind: 'node', id: node.id }); },
         onToast: message => toast(message, 'error'), onReveal: showSettings,
         onHostResult(node) { showSettings({ kind: 'node', id: node.id }); workbench.revealPreview(); },
-        onBoundary(node, action) { if (action === 'add') addSubgraphBoundary(node.type === 'subgraph-input' ? 'input' : 'output', node.id); else focusBoundaryLabel(node.id); },
         onContextMenu: onCanvasMenu,
         onEmptyContextMenu(payload) {
             if (graphViews?.readEditor().view.identity.kind !== 'instance' && !canvas.multi.size) return false;
@@ -418,6 +473,18 @@ function build() {
         if (event.key === '.' && !mod) { event.preventDefault(); canvas.fitSelection(); }
         if (['Delete', 'Backspace'].includes(event.key)) { event.preventDefault(); canvas.deleteSelection(); }
     });
+    refreshExampleCatalog();
+}
+function refreshExampleCatalog() {
+    try {
+        workbench.update({ examples: projectWorkflowExamples(), examplesIssue: '' });
+        return true;
+    } catch (error) {
+        const message = error?.message || 'The workflow examples could not be loaded.';
+        workbench.update({ examplesIssue: message });
+        toast(message, 'error');
+        return false;
+    }
 }
 function typing() { const active = document.activeElement; return ['INPUT', 'TEXTAREA', 'SELECT'].includes(active?.tagName) || active?.isContentEditable; }
 function currentPick() {
@@ -505,7 +572,7 @@ function updateSelectionCount() {
     const editor = graphViews?.readEditor(), graph = editor?.prepared.savedGraph, pick = currentPick(), selection = canvas?.selection;
     const copyable = id => graph?.nodes[id] && !['subgraph-input', 'subgraph-output'].includes(graph.nodes[id].type);
     const picked = pick?.nodeIds ?? pick?.groupIds?.flatMap(id => groupMembers(graph, id).map(node => node.id)) ?? [];
-    const copy = picked.length > 0 && picked.every(copyable), canDelete = selection?.kind === 'wire' ? !!graph?.wires[selection.id] : selection?.kind === 'group' ? !!graph?.groups?.[selection.id] && groupMembers(graph, selection.id).every(node => copyable(node.id)) : copy;
+    const copy = picked.length > 0 && picked.every(copyable), canDelete = selection?.kind === 'wire' ? !!graph?.wires[selection.id] : selection?.kind === 'group' ? !!graph?.groups?.[selection.id] : picked.length > 0 && picked.every(id => !!graph?.nodes[id]);
     workbench.update({ selectionCount: canvas?.multi.size || (selection?.kind === 'node' ? 1 : 0), selectionActions: { copy, cut: copy && !editor?.readOnly, delete: canDelete && !editor?.readOnly } });
 }
 function showSettings(selection) { if (root.classList.contains('pc-details-hidden')) togglePane(); canvas.select(selection); const inspector = workbench.parts.inspector; inspector.scrollTop = 0; inspector.classList.add('pc-flash'); requestAnimationFrame(revealNarrowDetails); setTimeout(() => inspector.classList.remove('pc-flash'), 400); }
@@ -600,7 +667,7 @@ function renderGraphSelect() {
 function renderStatus() { safe(() => document.dispatchEvent(new CustomEvent('pc-state'))); workbench.update({ armed: !!settings().enabled }); }
 async function onNewGraph() {
     const graph = current, epoch = uiEpoch;
-    const name = await inputBox('Name for the new workflow');
+    const name = (await inputBox('Name for the new workflow'))?.trim();
     if (!name || !stillEditing(graph, epoch)) return;
     current = createGraph(name);
     settings().activeGraphId = current.id; save();
@@ -617,6 +684,58 @@ async function onDuplicateGraph() {
     settings().activeGraphId = current.id; save();
     setCanvasGraph();
     renderAll();
+}
+
+function containingGraphView(view) {
+    if (view?.identity.kind !== 'instance') return null;
+    const path = view.identity.instancePath.slice(0, -1);
+    const identity = path.length ? { kind: 'instance', workflowId: view.identity.workflowId, instancePath: path } : { kind: 'root', workflowId: view.identity.workflowId };
+    const key = viewIdentityKey(identity);
+    return { path, key, prepared: workspacePrepared?.preparedViews.find(entry => viewIdentityKey(entry.identity) === key) };
+}
+function canRenameGraphView(key) {
+    const view = graphViews?.project().graphViews.tabs.find(view => view.key === key);
+    return view?.identity.kind === 'root' || view?.identity.kind === 'instance' && containingGraphView(view)?.prepared?.readOnly === false;
+}
+async function onRenameGraphView(key) {
+    const session = graphViews, view = session?.project().graphViews.tabs.find(view => view.key === key);
+    if (!view || !canRenameGraphView(key)) return;
+    if (view.identity.kind === 'root') return onRenameGraph();
+    const graph = current, parent = containingGraphView(view), nodeId = view.identity.instancePath.at(-1);
+    const wrapper = parent.prepared.savedGraph.nodes[nodeId];
+    const expectedPin = definitionRefKey(wrapper.definition), revision = workspaceRevision, captured = captureEditor(true);
+    if (!captured.ok) return;
+    const name = (await inputBox('Rename subgraph', view.label))?.trim().slice(0, 80);
+    if (!name || !editorCurrent(captured.data) || graphViews !== session || current !== graph || workspaceRevision !== revision || !canRenameGraphView(key)) return;
+    const originalKey = session.project().graphViews.active.key, parentWasOpen = session.project().graphViews.tabs.some(tab => tab.key === parent.key);
+    navigateGraphView(parent.path.length ? 'openInstance' : 'focusView', parent.path.length ? parent.path : parent.key);
+    const token = captureEditor();
+    if (token.ok) {
+        const prepared = prepareQualifiedScopeEdit(graph, scopeCommand(token.data), ({ scope }) => {
+            const node = scope.nodes[nodeId];
+            if (node?.type !== 'subgraph' || definitionRefKey(node.definition) !== expectedPin) return { ok: false, error: { code: 'STALE_DEFINITION', message: 'The subgraph changed. Rename it again.' } };
+            node.title = name;
+            if (typeof node.alias === 'string') node.alias = name;
+            if (typeof node.presentation?.alias === 'string') node.presentation.alias = name;
+            return { ok: true, data: {} };
+        });
+        const alias = graphViews.readEditor().view.nodePresentation[nodeId]?.alias;
+        const beforeState = alias ? commentDocumentState(graph) : null, receipt = alias ? H.capturePresentationStep(graph) : null;
+        const result = commitCaptured(token.data, prepared);
+        if (result.ok) {
+            const parentView = graphViews.readEditor().view;
+            if (alias && result.data.changed) {
+                const handle = Object.freeze({});
+                if (H.attachPresentationEffect(graph, { receipt, effect: handle, beforeState, afterState: commentDocumentState(graph) })) {
+                    subgraphPresentationEffects.set(handle, { root: graph, aliasRename: { viewKey: parent.key, nodeId, before: alias, after: name } });
+                    graphViews.updateView({ nodePresentation: { ...parentView.nodePresentation, [nodeId]: { ...parentView.nodePresentation[nodeId], alias: name } } }, parent.key);
+                } else toast('The node alias could not be attached to this Rename Undo step.', 'error');
+            }
+        }
+    }
+    if (session.project().graphViews.tabs.some(tab => tab.key === originalKey)) navigateGraphView('focusView', originalKey);
+    if (!parentWasOpen && originalKey !== parent.key) navigateGraphView('closeView', parent.key);
+    persistGraphViews(true); renderAll();
 }
 
 async function onRenameGraph() {
@@ -639,12 +758,11 @@ async function onDeleteGraph() {
 }
 
 function onExportGraph() {
-    const json = exportGraph(current.id);
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
-    a.download = `${current.name.replace(/[^\w-]+/g, '_')}.workflow.json`;
-    a.click();
-    URL.revokeObjectURL(a.href);
+    try {
+        const json = exportGraph(current.id);
+        if (!json) throw new Error('The workflow is no longer available.');
+        downloadGraphViewJSON(json, `${current.name.replace(/[^\w-]+/g, '_')}.workflow.json`);
+    } catch (error) { toast(error?.message || 'The workflow could not be exported.', 'error'); }
 }
 
 function cancelImportReview() { pendingImport = null; workbench?.update({ importReview: null }); }
@@ -722,23 +840,49 @@ function acceptImportReview() {
     renderAll(); flashHistoryNote(`Imported ${ids.length} nodes`);
 }
 
+function onOpenExample(id) {
+    try {
+        const opened = installWorkflowExample(id, settings());
+        if (!opened.ok) { toast(opened.error.message, 'error'); return false; }
+        current = opened.data.graph;
+        settings().activeGraphId = current.id;
+        save();
+        setCanvasGraph();
+        renderAll();
+        const graph = current, epoch = uiEpoch;
+        // Opening settles the panes and initial camera before fitting the authored canvas.
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+            if (stillEditing(graph, epoch) && graphViews?.readEditor().view.identity.kind === 'root') canvas.fit();
+        }));
+        toast(`Opened "${current.name}".${opened.data.companions.length ? ' Companion workflow also opened.' : ''}`, 'success');
+        return true;
+    } catch (error) {
+        toast(error?.message || 'The example workflow could not be opened.', 'error');
+        return false;
+    }
+}
+
 function onImportGraph() {
     const graph = current, epoch = uiEpoch;
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.json,application/json';
     input.addEventListener('change', async () => {
-        const file = input.files?.[0];
-        if (!file) return;
-        const text = await file.text();
-        if (!stillEditing(graph, epoch)) return;
-        const res = importGraph(text);
-        if (!res.ok) return toast(res.reason, 'error');
-        current = res.graph;
-        settings().activeGraphId = current.id; save();
-        setCanvasGraph();
-        renderAll();
-        toast(`Imported "${current.name}".`, 'success');
+        try {
+            const file = input.files?.[0];
+            if (!file) return;
+            let text;
+            try { text = await file.text(); }
+            catch (error) { if (!stillEditing(graph, epoch)) return; throw error; }
+            if (!stillEditing(graph, epoch)) return;
+            const res = importGraph(text);
+            if (!res.ok) return toast(res.reason, 'error');
+            current = res.graph;
+            settings().activeGraphId = current.id; save();
+            setCanvasGraph();
+            renderAll();
+            toast(`Opened "${current.name}".`, 'success');
+        } catch (error) { toast(error?.message || 'The workflow file could not be opened.', 'error'); }
     });
     input.click();
 }
@@ -773,53 +917,114 @@ function ungroupSelection(id = canvas.selection?.kind === 'group' ? canvas.selec
 function canCreateSubgraph(nodeIds) {
     return nodeIds.length > 0 && nodeIds.every(id => {
         const candidate = editorDraw.nodes[id];
-        if (!candidate || ['subgraph-input', 'subgraph-output'].includes(candidate.type) || ['scene-context', 'reply-snapshot', 'guidance', 'apply-reply'].includes(candidate.operation)) return false;
+        if (!candidate || ['subgraph-input', 'subgraph-output'].includes(candidate.type) || (['scene-context', 'reply-snapshot', 'guidance', 'apply-reply'].includes(candidate.operation) || operationFor(candidate)?.rootOnly)) return false;
         const operation = operationFor(candidate, { phase: editorDraw.mode.slice(7) });
         return !operation?.rootOnly && (!operation?.requiresStateInDefinition || Object.values(editorDraw.wires).some(wire => wire.to === id && wire.toPort === 'state'));
     });
 }
+function canvasPreviewMenuItems(node, token) {
+    const editor = graphViews.readEditor();
+    if (!node || editor.view.identity.kind === 'library') return [];
+    const path = editor.view.identity.instancePath ?? [], sourceKey = editorCaptures.get(token)?.revision;
+    const choices = workspacePrepared.previewChoices.filter(choice => {
+        const address = choice.target.kind === 'terminal' ? choice.target.address : choice.target;
+        return address.workflowId === current.id && address.nodeId === node.id && JSON.stringify(address.instancePath) === JSON.stringify(path);
+    });
+    if (!choices.length) return [];
+    const ports = editorDraw.nativeCards[node.id]?.ports ?? [];
+    const labelFor = target => target.kind === 'terminal' ? 'Host result' : ports.find(port => port.dir === 'out' && port.port === target.portId)?.label || target.portId;
+    const summaryFor = target => projectPreparedWorkflow(workspacePrepared.workflow, { ...workflowState, viewPath: path, selectedId: node.id, selectedTarget: target, pinnedPreview: null }).targetSummary;
+    const currentKey = () => editorCurrent(token) && sourceKey === graphViews.readEditContext().sessionId + ':' + workspaceRevision;
+    const runs = choices.map(choice => {
+        const target = structuredClone(choice.target), summary = summaryFor(target);
+        return { id: 'run-to-here', label: choices.length > 1 ? labelFor(target) : 'Run to here', icon: 'run', tone: 'preview',
+            disabled: !!workflowState.busy || !!summary.issues.length,
+            hint: workflowState.busy ? 'A workflow is already running.' : summary.issues.join(' ') || `Run this output and its dependencies. Maximum auxiliary calls: ${summary.callBound}.`,
+            action: () => {
+                if (!currentKey() || workflowState.busy || summaryFor(target).issues.length) return;
+                outputPreviewActions.select(sourceKey, choice.key, target);
+                workbench.revealPreview(); outputPreviewActions.runHere(sourceKey, target);
+            } };
+    });
+    const pins = choices.map(choice => {
+        const target = structuredClone(choice.target), pinned = JSON.stringify(pinnedPreview) === JSON.stringify(target);
+        return { id: 'pin-preview', label: choices.length > 1 ? labelFor(target) : pinned ? 'Unpin preview' : 'Pin preview', icon: 'pin', tone: 'preview', checked: pinned, action: () => {
+            if (!currentKey()) return;
+            if (JSON.stringify(pinnedPreview) === JSON.stringify(target)) outputPreviewActions.follow();
+            else { outputPreviewActions.select(sourceKey, choice.key, target); outputPreviewActions.pin(sourceKey, target); }
+            workbench.revealPreview();
+        } };
+    });
+    return choices.length > 1 ? [
+        { id: 'run-to-here', label: 'Run to here', icon: 'run', tone: 'preview', disabled: runs.every(item => item.disabled), children: runs },
+        { id: 'pin-preview', label: 'Pin preview', icon: 'pin', tone: 'preview', children: pins },
+    ] : [...runs, ...pins];
+}
 function onCanvasMenu({ event, node, wire, at, group = null, several = null }) {
+    if (several?.length) canvas.setMulti(several);
+    else if (node || group || wire) {
+        canvas.setMulti([]);
+        canvas.select({ kind: node ? 'node' : group ? 'group' : 'wire', id: node?.id ?? group?.id ?? wire.id });
+    }
     const captured = captureEditor(true); if (!captured.ok) return;
-    const readOnly = graphViews.readEditor().readOnly, menu = el('div', 'pc-context-menu'); menu.setAttribute('role', 'menu'); menu.style.left = event.clientX + 'px'; menu.style.top = event.clientY + 'px';
-    root.querySelector('.pc-context-menu')?.remove();
-    const closeMenu = () => { menu.remove(); document.removeEventListener('pointerdown', away, true); };
-    const away = event => { if (!menu.contains(event.target)) closeMenu(); };
-    const action = (label, fn, disabled = false, hint = '') => { const button = el('button', '', label); button.type = 'button'; button.setAttribute('role', 'menuitem'); button.disabled = disabled; if (hint) button.title = hint; button.onclick = () => { closeMenu(); if (editorCurrent(captured.data)) fn(); }; menu.append(button); };
+    const editor = graphViews.readEditor(), readOnly = editor.readOnly, items = [];
+    const entry = (id, label, icon, action, disabled = false, shortcut = '', extra = {}) => ({ id, label, icon, action, disabled, shortcut, ...extra });
+    const section = entries => { if (!entries.length) return; if (items.length) items.push({ separator: true }); items.push(...entries); };
     const boundaryNode = node && ['subgraph-input', 'subgraph-output'].includes(node.type);
     if (isCommentFrame(node)) {
-        action('Details', () => showSettings({ kind: 'node', id: node.id }));
-        action('Fit to contents', () => commentCommand(captureCommentEdit(), node.id, 'fit'), readOnly);
-        action('Delete comment', () => commentCommand(captureCommentEdit(), node.id, 'delete'), readOnly);
-    } else if (boundaryNode && !several) { action('Details', () => focusBoundaryLabel(node.id)); }
-    else if (node || group || several) { action('Details', () => showSettings({ kind: node ? 'node' : group ? 'group' : 'node', id: node?.id || group?.id || several?.[0] })); action('Copy', () => copySelection()); action('Cut', () => copySelection(true), readOnly); action('Delete', () => canvas.deleteSelection(), readOnly); }
-    if (node && !isCommentFrame(node) || group || several) action('Add comment around selection', () => addComment(at, several ?? (group ? groupMembers(editorDraw, group.id).map(node => node.id) : [node.id])), readOnly);
-    if (node && !boundaryNode) { action('Duplicate', () => duplicateSelected(node), readOnly); if (node.type === 'subgraph') action('Open subgraph', () => graphViewActions.openInstance([...(graphViews.readEditor().view.identity.instancePath ?? []), node.id])); }
+        section([entry('details', 'Details', 'details', () => showSettings({ kind: 'node', id: node.id })),
+            entry('fit-contents', 'Fit to contents', 'fit', () => commentCommand(captureCommentEdit(), node.id, 'fit'), readOnly),
+            entry('duplicate', 'Duplicate', 'duplicate', () => duplicateSelected(node), readOnly, 'Ctrl D')]);
+    } else if (boundaryNode && !several) {
+        section([entry('details', 'Details', 'details', () => focusBoundaryLabel(node.id))]);
+    } else if (node || group || several) {
+        const primary = [entry('details', 'Details', 'details', () => showSettings({ kind: node ? 'node' : group ? 'group' : 'node', id: node?.id || group?.id || several?.[0] }))];
+        if (node && !several) {
+            if (operationFor(node)) primary.push(entry('rename', 'Rename', 'rename', () => focusAlias(node), false, 'F2'));
+            primary.push(entry('duplicate', 'Duplicate', 'duplicate', () => duplicateSelected(node), readOnly, 'Ctrl D'));
+        }
+        section(primary);
+        section([entry('copy', 'Copy', 'copy', () => copySelection(), false, 'Ctrl C'), entry('cut', 'Cut', 'cut', () => copySelection(true), readOnly, 'Ctrl X')]);
+    }
+    if (node && !several && !isCommentFrame(node)) section(canvasPreviewMenuItems(node, captured.data));
+    if (node?.type === 'subgraph' && !several) section([
+        entry('open-subgraph', 'Open subgraph', 'open', () => editor.view.identity.kind === 'library' ? subgraphWrapperAction(node.id, 'open') : graphViewActions.openInstance([...(editor.view.identity.instancePath ?? []), node.id]), false, '', { tone: 'subgraph' }),
+        entry('save-subgraph', 'Add to Subgraphs', 'save', () => openSubgraphSave(node.id), false, '', { tone: 'subgraph' }),
+        entry('editable-copy', 'Make editable copy', 'edit', () => subgraphWrapperAction(node.id, 'copy'), readOnly),
+        entry('saved-definition', 'Open saved definition', 'library', () => subgraphWrapperAction(node.id, 'open')),
+        entry('export-subgraph', 'Export subgraph', 'export', () => subgraphWrapperAction(node.id, 'export')),
+        entry('unpack-subgraph', 'Unpack subgraph', 'unpack', () => subgraphWrapperAction(node.id, 'unpack'), readOnly),
+    ]);
+    const organization = [];
+    if (node && !isCommentFrame(node) || group || several) organization.push(entry('comment-selection', 'Comment around selection', 'comment', () => addComment(at, several ?? (group ? groupMembers(editorDraw, group.id).map(member => member.id) : [node.id])), readOnly, 'C'));
     const subgraphNodes = several ?? (group ? groupMembers(editorDraw, group.id).map(member => member.id) : node && !isCommentFrame(node) ? [node.id] : []);
     if (subgraphNodes.length) {
         const eligible = canCreateSubgraph(subgraphNodes);
-        action('Create Subgraph', () => createSubgraph(subgraphNodes), readOnly || !eligible, !eligible ? 'Keep root-only operations and existing boundaries in their containing graph; connect an explicit snapshot before extracting State.' : 'Move the selected nodes into an editable subgraph and preserve their connections.');
+        organization.push(entry('create-subgraph', 'Create subgraph', 'subgraph', () => createSubgraph(subgraphNodes), readOnly || !eligible, '', { tone: 'subgraph', hint: !eligible ? 'Keep root-only operations and existing boundaries in their containing graph; connect an explicit snapshot before extracting State.' : 'Move the selected nodes into an editable subgraph and preserve their connections.' }));
     }
-    if (node && ['subgraph-input', 'subgraph-output'].includes(node.type)) {
-        const direction = node.type === 'subgraph-input' ? 'input' : 'output';
-        action('Edit ' + direction, () => focusBoundaryLabel(node.id));
-        action('Add ' + direction, () => addSubgraphBoundary(direction, node.id), readOnly);
+    if (several?.length > 1) organization.push(entry('group', 'Group selected nodes', 'group', () => groupSelection(several), readOnly, 'Ctrl G'));
+    if (group) organization.push(entry('ungroup', 'Ungroup', 'ungroup', () => ungroupSelection(group.id), readOnly, 'Ctrl Shift G'));
+    const presentation = [];
+    if (node && !several && !isCommentFrame(node)) {
+        const compact = readNodePresentation(node, editor.view.nodePresentation[node.id]).compact;
+        presentation.push(entry('compact', 'Compact card', 'compact', () => presentNode(node.id, 'compact', !compact), false, '', { checked: compact }));
     }
-    if (several?.length > 1) action('Group selected nodes', () => groupSelection(several), readOnly);
-    if (group) action('Ungroup', () => ungroupSelection(group.id), readOnly);
-    if (wire) { action('Disconnect', () => { const token = captureEditor(); if (token.ok) commitCaptured(token.data, prepareNativeConnectionEdit(current, { kind: 'disconnect', edgeIds: [wire.id], ...scopeCommand(token.data) })); }, readOnly); action('Manage portals', () => openPortalManager({ edgeId: wire.id })); }
+    if (node || group || several) presentation.push(entry('fit-selection', 'Fit selection', 'fit', () => canvas.fitSelection(), false, '.'));
+    section([...organization, ...presentation]);
+    if (wire) {
+        section([entry('portals', 'Manage portals', 'portals', () => openPortalManager({ edgeId: wire.id }))]);
+        section([entry('disconnect', 'Disconnect', 'disconnect', () => { const token = captureEditor(); if (token.ok) commitCaptured(token.data, prepareNativeConnectionEdit(current, { kind: 'disconnect', edgeIds: [wire.id], ...scopeCommand(token.data) })); }, readOnly, '', { tone: 'danger' })]);
+    }
     if (!node && !wire && !group && !several) {
-        action('Add node', () => nativeWireBridge?.openUnconnectedSearch({ graphPoint: at, screenAnchor: { x: event.clientX, y: event.clientY } }), readOnly);
-        if (graphViews.readEditor().view.identity.kind === 'instance') {
-            action('Add subgraph input', () => addSubgraphBoundary('input', null, at), readOnly);
-            action('Add subgraph output', () => addSubgraphBoundary('output', null, at), readOnly);
-        }
-        action('Add comment', () => addComment(at, []), readOnly); action('Paste', pasteFromClipboard, readOnly); action('Fit graph', () => canvas.fit());
+        section([entry('add-node', 'Add node', 'add', () => nativeWireBridge?.openUnconnectedSearch({ graphPoint: at, screenAnchor: { x: event.clientX, y: event.clientY } }), readOnly), entry('add-comment', 'Add comment', 'comment', () => addComment(at, []), readOnly, 'C')]);
+        section([entry('paste', 'Paste', 'paste', pasteFromClipboard, readOnly, 'Ctrl V')]);
+        section([entry('fit-graph', 'Fit graph', 'fit', () => canvas.fit())]);
     }
-    action('Manage subgraphs', () => openSubgraphManager()); root.append(menu);
-    const menuBounds = menu.getBoundingClientRect();
-    menu.style.left = Math.max(4, Math.min(event.clientX, window.innerWidth - menuBounds.width - 4)) + 'px';
-    menu.style.top = Math.max(4, Math.min(event.clientY, window.innerHeight - menuBounds.height - 4)) + 'px';
-    document.addEventListener('pointerdown', away, true);
+    if (isCommentFrame(node)) section([entry('delete-comment', 'Delete comment', 'delete', () => commentCommand(captureCommentEdit(), node.id, 'delete'), readOnly, 'Del', { tone: 'danger' })]);
+    else if (node || group || several) section([entry('delete', 'Delete', 'delete', () => canvas.deleteSelection(), readOnly, 'Del', { tone: 'danger' })]);
+    showContextMenu({ root, x: event.clientX, y: event.clientY, items,
+        label: several ? 'Selection actions' : isCommentFrame(node) ? 'Comment actions' : boundaryNode ? 'Port actions' : group ? 'Group actions' : wire ? 'Connection actions' : node ? 'Node actions' : 'Canvas actions',
+        isCurrent: () => editorCurrent(captured.data), restoreFocus: () => canvas.host?.focus({ preventScroll: true }) });
 }
 function createSubgraph(nodeIds, name = null) {
     const captured = captureEditor(); if (!captured.ok) return captured;
@@ -853,7 +1058,7 @@ function createSubgraph(nodeIds, name = null) {
     }
     canvas.setMulti([]); canvas.select({ kind: 'node', id: instanceId });
     graphViews.updateView({ selection: { primary: { kind: 'node', id: instanceId }, multi: [] } });
-    workbench.update({ subgraphManager: null });
+    workbench.update({ subgraphSave: null });
     navigateGraphView('openInstance', [...parentPath, instanceId]);
     if (JSON.stringify(graphViews.readEditor().view.identity.instancePath) !== JSON.stringify([...parentPath, instanceId])) return result;
     graphViews.updateView({ nodePresentation: presentation });
@@ -870,6 +1075,22 @@ function handleSubgraphHistory(graph, event) {
     if (!event?.effect || !['undo', 'redo'].includes(event.direction)) return;
     const stored = subgraphPresentationEffects.get(event.effect);
     if (stored?.root !== graph) return;
+    if (stored.aliasRename) {
+        const rename = stored.aliasRename, live = graphViews?.readRoot() === graph;
+        const serialized = live ? graphViews.serialize().data : settings().workspaceViews?.[graph.id];
+        const view = serialized?.views.find(view => viewIdentityKey(view.identity) === rename.viewKey);
+        if (!view) return;
+        const nodePresentation = { ...view.nodePresentation, [rename.nodeId]: { ...view.nodePresentation[rename.nodeId], alias: event.direction === 'undo' ? rename.before : rename.after } };
+        if (live) {
+            const result = graphViews.updateView({ nodePresentation }, rename.viewKey);
+            if (!result.ok) return toast(result.error.message, 'error');
+            persistGraphViews(true);
+        } else {
+            settings().workspaceViews[graph.id] = { ...serialized, views: serialized.views.map(entry => entry === view ? { ...entry, nodePresentation } : entry) };
+            save();
+        }
+        return;
+    }
     // History notifies before navigation prunes the outgoing instance paths.
     // Carry the latest presentation, including edits made since extraction.
     const serialized = graphViews?.readRoot() === graph ? graphViews.serialize().data : settings().workspaceViews?.[graph.id];
@@ -1116,14 +1337,24 @@ const commentDetailsActions = {
     command(selection, command) { const captured = detailCapture(selection); return captured.ok ? commentCommand(captured.data, selection.address.nodeId, command) : captured; },
 };
 const nodeDetailsActions = {
+    async loadFile(selection, file) {
+        const captured = detailCapture(selection); if (!captured.ok) return captured;
+        const selectedEpoch = selectionEpoch;
+        const stillSelected = () => selectionEpoch === selectedEpoch && selectedKind === 'node' && selected?.id === selection.address.nodeId;
+        if (!stillSelected()) return { ok: false, error: { code: 'STALE_CONTEXT', message: 'The selected node changed.' } };
+        if (editorDraw?.nodes[selection.address.nodeId]?.operation !== 'file-input') return { ok: false, error: { code: 'INVALID_FILE_TARGET', message: 'Select a File Input node.' } };
+        const loaded = await readTextFile(file); if (!loaded.ok) return loaded;
+        const currentSelection = detailCapture(selection); if (!currentSelection.ok) return currentSelection;
+        if (!stillSelected()) return { ok: false, error: { code: 'STALE_CONTEXT', message: 'The selected node changed while reading the file.' } };
+        return commitCaptured(captured.data, prepareNode(current, { ...scopeCommand(captured.data), kind: 'controls', nodeId: selection.address.nodeId, controls: loaded.data }));
+    },
     present(selection, field, value) { const captured = detailCapture(selection, true); if (!captured.ok) return captured; presentNode(selection.address.nodeId,field,value); return { ok: true }; },
     editControl(selection,key,value) { const captured = detailCapture(selection); return captured.ok ? commitCaptured(captured.data,prepareNode(current,{ ...scopeCommand(captured.data),kind:'controls',nodeId:selection.address.nodeId,controls:{[key]:value} })) : captured; },
     editField(selection,key,value) { const captured = detailCapture(selection); return captured.ok ? commitCaptured(captured.data,prepareNode(current,{ ...scopeCommand(captured.data),kind:key === 'enabled' ? 'enabled' : 'model-role',nodeId:selection.address.nodeId,...(key === 'enabled' ? {value} : {mode:'set',value}) })) : captured; },
-    editBinding(selection,field,mode,value) { const captured = detailCapture(selection); return captured.ok ? commitCaptured(captured.data,prepareNode(current,{ ...scopeCommand(captured.data),kind:'binding',nodeId:selection.address.nodeId,field,mode:mode === 'inherit' ? 'remove' : 'set',...(mode === 'inherit' ? {} : {value:mode==='block'?null:value}) })) : captured; },
+    editBinding(selection,field,mode,value) { const captured = detailCapture(selection); return captured.ok ? commitCaptured(captured.data,prepareNode(current,{ ...scopeCommand(captured.data),kind:'binding',nodeId:selection.address.nodeId,field,consumeOverride:true,mode:mode === 'inherit' ? 'remove' : 'set',...(mode === 'inherit' ? {} : {value:mode==='block'?null:value}) })) : captured; },
     duplicate(selection) { const captured=detailCapture(selection);if(captured.ok)duplicateSelected(editorDraw.nodes[selection.address.nodeId],false); },
-    remove(selection) { const captured = detailCapture(selection); if (captured.ok) deleteNativeSelection({kind:'node',id:selection.address.nodeId}); },
+    remove(selection) { const captured = detailCapture(selection); if (captured.ok) deleteNativeSelection({kind:'node',id:selection.address.nodeId}, captured.data); },
     editInterface: editSubgraphInterface,
-    addBoundary(selection, direction) { const captured = detailCapture(selection); return captured.ok ? addSubgraphBoundary(direction, selection.address.nodeId) : captured; },
 };
 const outputPreviewActions = {
     select(key,choice,target) { if (key !== graphViews?.readEditContext().sessionId + ':' + workspaceRevision) return; selectedPreview = target; updateWorkflowProjection(); },
@@ -1143,13 +1374,50 @@ function jumpNativeNode(capture, target) {
 function replaceNativeBridge() {
     nativeGroupPresenter = prepareGroupPresentation();
     nativeWireBridge?.cancel('view-change'); nativeWireBridge = null; nativeCatalog = null;
-    const editor = graphViews?.readEditor(); if (!editor || editor.view.identity.kind === 'library') { workbench?.update({nativeChoices:[],nativeSearch:null,nativePinMenu:null}); return; }
+    const editor = graphViews?.readEditor(); if (!editor) { workbench?.update({nativeChoices:[],nativeSearch:null,nativePinMenu:null}); return; }
+    if (editor.view.identity.kind === 'library') {
+        nativeCatalog = workspacePrepared.catalogs.get(viewIdentityKey({ kind: 'root', workflowId: current.id }));
+        workbench.update({ nativeChoices: nativeCatalog?.choices ?? [], nativeSearch: null, nativePinMenu: null });
+        return;
+    }
     nativeCatalog = workspacePrepared.catalogs.get(editor.view.key);
     if (!nativeCatalog) return;
-    nativeWireBridge = createNativeWireBridge({catalog:nativeCatalog,adapter:{capture:()=>captureEditor(),captureNavigation:()=>captureEditor(true),isCurrent:editorCurrent,prepare:(capture,command)=>prepareNativeConnectionEdit(current,{...command,...scopeCommand(capture)}),commit:(capture,prepared)=>commitCaptured(capture,{ok:true,data:prepared}),jump:jumpNativeNode},onUpdate:(view,requests)=>{canvas?.updateNativeWire?.(view,requests);workbench?.update({nativeSearch:view.search,nativePinMenu:view.menu});const actions=nativeWireBridge?.actions();workbench?.updateActions?.({nativeSearch:actions?.search ?? {},nativePinMenu:actions?.menu ?? {}});}});
+    nativeWireBridge = createNativeWireBridge({catalog:nativeCatalog,adapter:{capture:()=>captureEditor(),captureNavigation:()=>captureEditor(true),isCurrent:editorCurrent,prepare:(capture,command)=>prepareNativeCreation(capture,command),commit:(capture,prepared)=>{const result=commitCaptured(capture,{ok:true,data:prepared});if(result.ok&&prepared.addedBoundaryNodeId)focusBoundaryLabel(prepared.addedBoundaryNodeId);return result;},jump:jumpNativeNode},onUpdate:(view,requests)=>{canvas?.updateNativeWire?.(view,requests);workbench?.update({nativeSearch:view.search,nativePinMenu:view.menu});const actions=nativeWireBridge?.actions();workbench?.updateActions?.({nativeSearch:actions?.search ?? {},nativePinMenu:actions?.menu ?? {}});}});
     workbench.update({nativeChoices:nativeCatalog.choices});
 }
-function chooseNativeNode(id) { if (!nativeCatalog) return; const choice=resolveNativeSearchChoice(nativeCatalog,id), captured=captureEditor(); if (!choice || !captured.ok) return; commitCaptured(captured.data,prepareNativeConnectionEdit(current,{kind:'create',...choice,graphPoint:defaultNodeSpot(),...scopeCommand(captured.data)})); }
+function prepareNativeCreation(capture, command) {
+    if (command.kind !== 'create-boundary') return prepareNativeConnectionEdit(current, { ...command, ...scopeCommand(capture) });
+    if (!editorCurrent(capture)) return { ok: false, error: { code: 'STALE_CONTEXT', message: 'The graph view changed.' } };
+    const editor = graphViews.readEditor(), direction = command.direction;
+    if (editor.view.identity.kind !== 'instance' || editor.readOnly || command.connection || !['input', 'output'].includes(direction)) return { ok: false, error: { code: 'INVALID_PORT', message: 'Open an editable subgraph to add a port.' } };
+    const base = direction === 'input' ? 'Input' : 'Output', labels = new Set(editor.prepared.interface.map(port => port.label));
+    let label = base, index = 2; while (labels.has(label)) label = base + ' ' + index++;
+    return prepareOwnedDefinitionMetadataEdit(current, { instancePath: [...editor.view.identity.instancePath], expectedRef: editor.prepared.definitionRef, kind: 'interface', edit: { kind: 'add', direction, label, artifactKind: command.artifactKind ?? 'text', required: false, graphPoint: command.graphPoint } });
+}
+function prepareShelfNodeCreation(capture, command, at = null) {
+    // Commit refreshes the canvas, so settle pending camera motion before placement.
+    canvas.cancelGesture();
+    if (at) return prepareNativeCreation(capture, { ...command, graphPoint: canvas.toGraph(at.x, at.y) });
+    const provisional = prepareNativeCreation(capture, { ...command, graphPoint: { x: 0, y: 0 } });
+    if (!provisional.ok) return provisional;
+    const workspace = prepareWorkspaceViews(provisional.data.candidate, workspaceInputs());
+    if (!workspace.ok) return workspace;
+    const path = scopeCommand(capture).viewPath;
+    const preparedView = workspace.data.preparedViews.find(view => JSON.stringify(view.identity.instancePath ?? []) === JSON.stringify(path));
+    const id = provisional.data.addedBoundaryNodeId ?? provisional.data.addedNodeIds?.[0], graph = preparedView?.drawBase, node = graph?.nodes[id];
+    if (!node) return { ok: false, error: { code: 'VIEW_INACTIVE', message: 'The new node cannot be placed in this graph view.' } };
+    const size = measureNodeCard(canvas.nodeLayer, nodeCard(node, { graph })), rect = canvas.host.getBoundingClientRect();
+    const origin = canvas.toGraph(rect.left + (rect.width - size.width) / 2, rect.top + (rect.height - size.height) / 2);
+    // Reprepare private definitions so their content pins include the final coordinates.
+    return prepareNativeCreation(capture, { ...command, graphPoint: origin });
+}
+function chooseNativeNode(id, at = null) {
+    if (!nativeCatalog) return;
+    const choice = resolveNativeSearchChoice(nativeCatalog, id), captured = captureEditor(); if (!choice || !captured.ok) return;
+    const prepared = prepareShelfNodeCreation(captured.data, { kind: 'create', ...choice }, at);
+    const result = commitCaptured(captured.data, prepared);
+    if (result.ok && prepared.data.addedBoundaryNodeId) focusBoundaryLabel(prepared.data.addedBoundaryNodeId);
+}
 function deleteNativeSelection(selection, existingToken = null) {
     const captured=existingToken ? { ok: editorCurrent(existingToken), data: existingToken } : captureEditor(); if (!captured.ok) return Promise.resolve(false);
     const ids=selection?.kind === 'node' ? [selection.id] : ['nodes','multi'].includes(selection?.kind) ? selection.ids : selection?.kind === 'group' ? Object.values(editorDraw.nodes).filter(node=>node.inGroup===selection.id || editorDraw.groups?.[selection.id]?.members?.includes(node.id)).map(node=>node.id) : [...canvas.multi];
@@ -1160,23 +1428,7 @@ function deleteNativeSelection(selection, existingToken = null) {
         if (!groupIds.length && ids.length && ids.every(id => isCommentFrame(editorDraw.nodes[id]))) {
             return commitCaptured(captured.data, prepareCommentEdit(current, { kind: 'delete-batch', nodeIds: ids, ...scopeCommand(captured.data) })).ok;
         }
-        const prepared = prepareQualifiedScopeEdit(current, scopeCommand(captured.data), context => {
-            for (const id of ids) {
-                delete context.scope.nodes[id];
-                for (const portal of Object.values(context.scope.portals ?? {})) if (portal.source.nodeId === id) {
-                    for (const edge of Object.values(context.scope.wires)) if (edge.route === 'portal' && edge.portalId === portal.id) delete context.scope.wires[edge.id];
-                    delete context.scope.portals[portal.id];
-                }
-                for (const edge of Object.values(context.scope.wires)) if (edge.from === id || edge.to === id) delete context.scope.wires[edge.id];
-                for (const group of Object.values(context.scope.groups ?? {})) if (group.members) group.members = group.members.filter(member => member !== id);
-            }
-            for (const id of groupIds) delete context.scope.groups?.[id];
-            if (!context.path.length) {
-                reconcileOwners(context.candidate);
-                prunePrivateSnapshots(context.candidate, new Set(ownershipEntries(context.original).map(owner => owner.definitionId)));
-            }
-            return { ok: true, data: {} };
-        });
+        const prepared = prepareSubgraphNodeDeletion(current, { ...scopeCommand(captured.data), nodeIds: ids, groupIds });
         return commitCaptured(captured.data, prepared).ok;
     };
     return Promise.resolve(remove());
@@ -1197,59 +1449,73 @@ function openPortalManager(conversion=null,selectedPortalId=null) {
  const actions={close:()=>workbench.update({portalManager:null}),selectPortal:(capture,id)=>{if(currentManager(owner,capture))openPortalManager(conversion,id);},create:(capture,label,source)=>apply(capture,{kind:'create',label,source}),retarget:(capture,portalId,source)=>apply(capture,{kind:'retarget',portalId,source}),connect:(capture,portalId,to,replace)=>apply(capture,{kind:'bind',portalId,to,replace}),restoreWire:(capture,edgeId)=>apply(capture,{kind:'restore',edgeId}),deletePublisher:(capture,portalId,consumers)=>apply(capture,{kind:'delete',portalId,consumers}),convertWire:(capture,edgeId)=>apply(capture,{kind:'convert-wire',edgeId,publisher:{kind:'create',label:conversion?.label || edgeId}}),convertOutput:(capture,endpoint)=>apply(capture,{kind:'create',label:conversion?.label || endpoint.portId,source:endpoint}),
  rename(capture,portalId,label,mode){if(!currentManager(owner,capture))return staleManager();const actual=graph.portals?.[portalId];if(!actual)return staleManager();if(mode==='presentation'){const portalPresentation={...editor.view.portalPresentation,[portalId]:{identity:editor.view.identity,...(editor.prepared.definitionRef?{definitionRef:editor.prepared.definitionRef}:{}),source:actual.source,label}};const result=graphViews.updateView({portalPresentation});if(result.ok){persistGraphViews();openPortalManager(conversion,portalId);}return result;}const token=captureEditor();if(!token.ok)return token;const result=commitCaptured(token.data,preparePortalRename(current,{portalId,label}));if(result.ok)openPortalManager(conversion,portalId);return result;},
  jumpSource:(capture,source)=>{if(currentManager(owner,capture)&&publishers.some(portal=>JSON.stringify(portal.source)===JSON.stringify(source)))canvas.select({kind:'node',id:source.nodeId});},jumpConsumer:(capture,edgeId)=>{if(currentManager(owner,capture)){const edge=graph.wires[edgeId];if(edge)canvas.select({kind:'node',id:edge.to});}}};
- workbench.updateActions({portalManager:actions});workbench.update({portalManager:view,subgraphManager:null});
+ workbench.updateActions({portalManager:actions});workbench.update({portalManager:view,subgraphSave:null});
 }
-function openSubgraphManager(selectedRef=null, updateRef=null, preparedUpdate=null) {
- const owner=managerOwner('subgraphs');if(!owner)return;const editor=graphViews.readEditor(),path=editor.view.identity.instancePath ?? [],selectedNode=editor.prepared.savedGraph.nodes[selected?.id];
- const selectedWrapper=selectedNode?.type==='subgraph'?selectedNode:null;
- const childPath=editor.view.identity.kind==='library'?null:selectedWrapper?[...path,selectedWrapper.id]:editor.view.identity.kind==='instance'?[...path]:null;
- const parentPath=childPath?.slice(0,-1), parentIdentity=parentPath?.length?{kind:'instance',workflowId:current.id,instancePath:parentPath}:{kind:'root',workflowId:current.id};
- const parent=childPath?workspacePrepared.preparedViews.find(view=>viewIdentityKey(view.identity)===viewIdentityKey(parentIdentity)):null;
- const wrapper=selectedWrapper || (childPath?parent?.savedGraph.nodes[childPath.at(-1)]:null);
- const ref=wrapper?.definition || (editor.view.identity.kind==='library'?editor.prepared.definitionRef:null);
- selectedRef ??= ref || Object.values(workspacePrepared.shelfDefinitions)[0];if(selectedRef&&selectedRef.body)selectedRef={id:selectedRef.id,version:selectedRef.version,semanticHash:selectedRef.semanticHash};
- const definition=selectedRef?workspacePrepared.libraryDefinitions[definitionRefKey(selectedRef)]:null;
- const entries=Object.values(workspacePrepared.libraryDefinitions).map(definition=>{const info=workspacePrepared.definitionInfo[definitionRefKey(definition)];return {key:definitionRefKey(definition),ref:info.ref,name:info.name,phase:info.phase,nodeCount:info.nodeCount,wireCount:info.wireCount};});
- const instanceEditable=!!parent&&!parent.readOnly,bodyEditable=childPath?workspacePrepared.preparedViews.find(view=>view.identity.kind==='instance'&&JSON.stringify(view.identity.instancePath)===JSON.stringify(childPath))?.readOnly===false:false;
- const instanceInfo=wrapper&&childPath?workspacePrepared.definitionInfo[definitionRefKey(wrapper.definition)]:null;
- const effectiveControls=Object.fromEntries((instanceInfo?.parameters ?? []).map(parameter=>{const at=[...childPath,...parameter.target.instancePath],scope=workspacePrepared.preparedViews.find(view=>view.identity.kind==='instance'&&JSON.stringify(view.identity.instancePath)===JSON.stringify(at));return [parameter.id,scope?.effectiveNodes[parameter.target.nodeId]?.[parameter.target.controlId]];}));
- const effectiveBindings={};
- if(instanceInfo)for(const view of workspacePrepared.preparedViews)if(view.identity.kind==='instance'&&childPath.every((id,index)=>view.identity.instancePath[index]===id)){
-  const projected=projectPreparedWorkflow(workspacePrepared.workflow,{viewPath:view.identity.instancePath});
-  for(const node of projected.nodes){const relative=view.identity.instancePath.slice(childPath.length),key='node:'+JSON.stringify([relative,node.id]);effectiveBindings[key]=node.effective;const role=node.modelRole;if(role){const roleKey='role:'+role;effectiveBindings[roleKey]=[...new Set([...(effectiveBindings[roleKey]?[effectiveBindings[roleKey]]:[]),node.effective])].join(' / ');}}
- }
- const instance=instanceInfo?{address:{workflowId:current.id,instancePath:[...parentPath],nodeId:wrapper.id},ref:wrapper.definition,owned:bodyEditable,...projectDefinitionInstance(instanceInfo,wrapper,workflowProjection.profiles,effectiveControls,effectiveBindings)}:null;
- const permissions={libraryWrite:!workspacePrepared.libraryIssue,insert:!editor.readOnly&&editor.view.identity.kind!=='library',instanceEdit:instanceEditable,bodyEdit:bodyEditable};
- const capabilities={importJSON:permissions.libraryWrite,exportJSON:!!definition,duplicate:permissions.libraryWrite&&!!definition,renameRevision:permissions.libraryWrite&&!!definition,removeRevision:permissions.libraryWrite&&!!definition&&Object.hasOwn(workspacePrepared.shelfDefinitions,definitionRefKey(selectedRef)),insert:permissions.insert&&!!definition,makeLocalCopy:instanceEditable,saveToShelf:bodyEditable&&permissions.libraryWrite,editInterface:bodyEditable&&!!definition&&definitionRefKey(selectedRef)===definitionRefKey(instance.ref),editParameter:bodyEditable&&!!definition&&definitionRefKey(selectedRef)===definitionRefKey(instance.ref),editParameterOverride:instanceEditable,editBindingOverride:instanceEditable,prepareUpdate:instanceEditable,acceptUpdate:!!preparedUpdate,convertSelection:!editor.readOnly&&!!canvas.multi.size&&canCreateSubgraph([...canvas.multi]),unpack:instanceEditable};
- const info=definition?workspacePrepared.definitionInfo[definitionRefKey(selectedRef)]:null;
- const detail=info?{ref:info.ref,name:info.name,description:info.description,interface:info.interface,parameters:info.parameters,eligibleTargets:info.eligibleTargets,kinds:['context','draft','patches','candidate','guidance','text','data'],exposureNote:'Only declared saved primitive controls may be exposed.'}:null;
- const targetInfo=updateRef?workspacePrepared.definitionInfo[definitionRefKey(updateRef)]:null;
- const selectedKey=updateRef?definitionRefKey(updateRef):'';
- const view={managerKey:owner.key,revision:owner.revision,libraryRevision:owner.libraryRevision,scope:owner.scope,scopeLabel:editor.view.breadcrumbs.map(crumb=>crumb.label).join(' / ')||'Graph 1',selectedRef,entries,permissions,capabilities,definition:detail,instance,destinations:permissions.insert?[{key:editor.view.key,label:editor.view.label}]:[],selectedDestinationKey:permissions.insert?editor.view.key:'',update:instance?{choices:entries.filter(entry=>entry.ref.id===instance.ref.id&&JSON.stringify(entry.ref)!==JSON.stringify(instance.ref)).map(entry=>({key:entry.key,label:entry.name+' · v'+entry.ref.version,ref:entry.ref})),selectedKey,...(targetInfo?projectDefinitionUpdate(instanceInfo,targetInfo):{portMap:[],parameterMap:[],roleMap:[],nodeBindingMap:[]}),preparedKey:preparedUpdate?.key||null,summary:preparedUpdate?['Immutable full-root revision with reviewed mappings']:[]}:null,selection:canvas.multi.size?{nodeIds:[...canvas.multi],label:canvas.multi.size+' nodes'}:null,issue:workspacePrepared.libraryIssue||null};
- const refreshShelf=result=>{if(result.ok){libraryRevision++;refreshWorkspaceDocument();openSubgraphManager(selectedRef);}return result;};
- const currentCapture=capture=>currentManager(owner,capture);
- const shelfDefinition=ref=>workspacePrepared.libraryDefinitions[definitionRefKey(ref)];
- const inParent=(capture,address,pin,producer)=>{if(!currentCapture(capture)||!instance||JSON.stringify(address)!==JSON.stringify(instance.address)||JSON.stringify(pin)!==JSON.stringify(instance.ref)||!instanceEditable)return staleManager();const expected=workspacePrepared.preparedViews.find(view=>viewIdentityKey(view.identity)===viewIdentityKey(parentIdentity));if(expected?.readOnly)return staleManager();navigateGraphView(parentPath.length?'openInstance':'focusView',parentPath.length?parentPath:graphViews.project().graphViews.tabs[0].key);const token=captureEditor();if(!token.ok)return token;const result=commitCaptured(token.data,producer(token.data));if(result.ok){navigateGraphView('openInstance',childPath);openSubgraphManager();}return result;};
- const inBody=(capture,producer)=>{if(!currentCapture(capture)||!bodyEditable||!instance)return staleManager();navigateGraphView('openInstance',childPath);const token=captureEditor();if(!token.ok)return token;const result=commitCaptured(token.data,producer(token.data));if(result.ok)openSubgraphManager();return result;};
- const actions={close:()=>workbench.update({subgraphManager:null}),selectRef:(capture,ref)=>{if(currentCapture(capture))openSubgraphManager(ref);},openLibrary:(capture,ref)=>{if(currentCapture(capture))navigateGraphView('openLibrary',ref);},selectDestination:()=>{},
- insert(capture,ref,destinationKey){if(!currentCapture(capture)||destinationKey!==editor.view.key)return staleManager();const token=captureEditor();return token.ok?commitCaptured(token.data,prepareNativeConnectionEdit(current,{kind:'create-instance',definition:shelfDefinition(ref),snapshots:workspacePrepared.libraryDefinitions,graphPoint:defaultNodeSpot(),...scopeCommand(token.data)})):token;},
- exportJSON(capture,ref){if(!currentCapture(capture))return staleManager();{const text=JSON.stringify(exportSubgraph(shelfDefinition(ref),workspacePrepared.libraryDefinitions),null,2);const blob=new Blob([text],{type:'application/json'}),url=URL.createObjectURL(blob),anchor=document.createElement('a');anchor.href=url;anchor.download=shelfDefinition(ref).name+'.subgraph.json';anchor.click();setTimeout(()=>URL.revokeObjectURL(url),0);return {ok:true};}},
- importJSON(capture){if(!currentCapture(capture))return staleManager();return new Promise(resolve=>{const input=document.createElement('input');input.type='file';input.accept='.json,application/json';input.addEventListener('cancel',()=>resolve({ok:true}),{once:true});input.addEventListener('change',async()=>{try{const file=input.files?.[0];if(!file)return resolve({ok:true});const json=await file.text();if(!currentCapture(capture))return resolve(staleManager());const result=parseSubgraph(json);resolve(result.ok?refreshShelf(L.installSubgraphDefinition(result.data.definition,result.data.definitions)):result);}catch{resolve({ok:false,error:{code:'READ_FAILED',message:'The definition file could not be read.'}});}},{once:true});input.click();});},
- duplicate(capture,ref,name){if(!currentCapture(capture))return staleManager();const definition=structuredClone(shelfDefinition(ref));definition.id='shelf-'+crypto.randomUUID();definition.name=name;return refreshShelf(L.reviseSubgraphDefinition(definition,workspacePrepared.libraryDefinitions));},
- renameRevision(capture,ref,name){if(!currentCapture(capture))return staleManager();return refreshShelf(L.reviseSubgraphDefinition({...structuredClone(shelfDefinition(ref)),name},workspacePrepared.libraryDefinitions));},
- removeRevision(capture,ref){return currentCapture(capture)?refreshShelf(L.removeSubgraphDefinition(ref)):staleManager();},
- openInstance(capture,address){if(currentCapture(capture)&&instance&&JSON.stringify(address)===JSON.stringify(instance.address))navigateGraphView('openInstance',childPath);},
- makeLocalCopy(capture,address,ref){return inParent(capture,address,ref,()=>makeLocalCopy(current,{instancePath:childPath,id:'local-'+crypto.randomUUID()}));},
- saveToShelf(capture,mode,targetRef,name){if(!currentCapture(capture)||!bodyEditable||!permissions.libraryWrite||!name.trim()||mode==='revision'&&!entries.some(entry=>definitionRefKey(entry.ref)===definitionRefKey(targetRef)))return staleManager();const draft=structuredClone(workspacePrepared.libraryDefinitions[definitionRefKey(instance.ref)]);draft.id=mode==='new'?'shelf-'+crypto.randomUUID():targetRef.id;draft.name=name;delete draft.semanticHash;return refreshShelf(L.reviseSubgraphDefinition(draft,workspacePrepared.libraryDefinitions));},
- editInterface(capture,edit){if(!capabilities.editInterface)return staleManager();return inBody(capture,()=>prepareOwnedDefinitionMetadataEdit(current,{instancePath:childPath,expectedRef:instance.ref,kind:'interface',edit}));},
- editParameter(capture,edit){if(!capabilities.editParameter)return staleManager();return inBody(capture,()=>prepareOwnedDefinitionMetadataEdit(current,{instancePath:childPath,expectedRef:instance.ref,kind:'parameter',edit}));},
- editParameterOverride(capture,parameterId,mode,value){return inParent(capture,instance?.address,instance?.ref,token=>prepareNode(current,{...scopeCommand(token),nodeId:wrapper.id,expectedInstanceRef:instance.ref,kind:'parameter-override',parameterId,mode,...(mode==='reset'?{}:{value})}));},
- editBindingOverride(capture,target,field,mode,value){return inParent(capture,instance?.address,instance?.ref,token=>prepareNode(current,{...scopeCommand(token),nodeId:wrapper.id,expectedInstanceRef:instance.ref,kind:'binding-override',target,field,mode:mode==='inherit'?'reset':'set',...(mode==='inherit'?{}:{value:mode==='block'?null:value})}));},
- convertSelection(capture,nodeIds,name){if(!currentCapture(capture)||editor.readOnly||JSON.stringify([...nodeIds].sort())!==JSON.stringify([...canvas.multi].sort()))return staleManager();return createSubgraph(nodeIds,name);},
- unpack(capture,address,ref){return inParent(capture,address,ref,()=>prepareAtCurrent(prepareUnpack,{instancePath:childPath}));},
- selectUpdateRef:(capture,ref)=>{if(currentCapture(capture))openSubgraphManager(selectedRef,ref);},
- prepareUpdate(capture,fromRef,targetRef,mappings){if(!currentCapture(capture)||!instance||definitionRefKey(fromRef)!==definitionRefKey(instance.ref)||!targetInfo||definitionRefKey(targetRef)!==definitionRefKey(targetInfo.ref))return staleManager();const result=prepareQualifiedInstanceUpdate(current,{viewPath:parentPath,...(parentPath.length?{expectedRef:parent.definitionRef}:{}),instanceId:wrapper.id,expectedInstanceRef:fromRef,definition:shelfDefinition(targetRef),snapshots:workspacePrepared.libraryDefinitions,...mappings});if(result.ok){const key=crypto.randomUUID();openSubgraphManager(selectedRef,targetRef,{key,prepared:result,fromRef,targetRef});}return result;},
- acceptUpdate(capture,key,fromRef,targetRef){if(!preparedUpdate||key!==preparedUpdate.key||JSON.stringify(fromRef)!==JSON.stringify(preparedUpdate.fromRef)||JSON.stringify(targetRef)!==JSON.stringify(preparedUpdate.targetRef))return staleManager();return inParent(capture,instance.address,fromRef,()=>preparedUpdate.prepared);},
- };
- workbench.updateActions({subgraphManager:actions});workbench.update({subgraphManager:view,portalManager:null});
+function openSubgraphSave(nodeId) {
+    const captured = captureEditor(true); if (!captured.ok) return captured;
+    const editor = graphViews.readEditor(), wrapper = editor.prepared.savedGraph.nodes[nodeId];
+    const definition = wrapper?.type === 'subgraph' && workspacePrepared.libraryDefinitions[definitionRefKey(wrapper.definition)];
+    const shelf = L.getSubgraphShelfEntries();
+    if (!definition || !shelf.ok) return { ok: false, error: { code: 'MISSING_DEFINITION', message: 'The subgraph cannot be saved.' } };
+    const captureId = 'saved-' + crypto.randomUUID(), libraryView = editor.view.identity.kind === 'library';
+    const source = libraryView ? { schema: 3, runtime: 2, mode: editor.prepared.savedGraph.mode, nodes: { [captureId]: { id: captureId, type: 'subgraph', definition: editor.prepared.definitionRef } }, wires: {}, definitions: workspacePrepared.libraryDefinitions } : current;
+    const instancePath = libraryView ? [captureId, nodeId] : [...(editor.view.identity.instancePath ?? []), nodeId];
+    const contents = materializeInstanceDefinition(source, { instancePath, id: captureId + '-definition' });
+    if (!contents.ok) { toast(contents.error.message, 'error'); return contents; }
+    const key = crypto.randomUUID(), entries = shelf.data.map(item => ({ id: item.id, name: item.name }));
+    const view = { key, name: definition.name, targetId: entries.some(item => item.id === definition.id) ? definition.id : null, entries };
+    pendingSubgraphSave = { key, token: captured.data, definition: contents.data.definition, snapshots: contents.data.definitions, entries: shelf.data.map(item => ({ id: item.id, ref: definitionRefKey(item) })), view };
+    workbench.update({ subgraphSave: view, portalManager: null });
+    return { ok: true };
+}
+function saveSubgraphToShelf(key, name, targetId) {
+    const pending = pendingSubgraphSave;
+    const reject = message => {
+        if (pending && pending.key === key) workbench.update({ subgraphSave: { ...pending.view, error: message } });
+        return { ok: false, error: { code: 'STALE_CONTEXT', message } };
+    };
+    if (!pending || pending.key !== key || !editorCurrent(pending.token)) return reject('The graph view changed. Close this dialog and save again.');
+    if (typeof name !== 'string' || !name.trim() || name.trim().length > 80) return reject('Enter a name of up to 80 characters.');
+    const loaded = L.loadSubgraphLibrary(); if (!loaded.ok) return reject(loaded.error.message);
+    const entries = L.getSubgraphShelfEntries();
+    if (!entries.ok) return reject(entries.error.message);
+    if (targetId !== null && (!pending.entries.some(item => item.id === targetId) || !entries.data.some(item => item.id === targetId && pending.entries.some(previous => previous.id === targetId && previous.ref === definitionRefKey(item))))) return reject('The saved subgraph changed. Close this dialog and save again.');
+    const draft = structuredClone(pending.definition); delete draft.semanticHash;
+    draft.id = targetId ?? 'shelf-' + crypto.randomUUID(); draft.name = name.trim();
+    const result = L.saveSubgraphDefinition(draft, pending.snapshots, targetId);
+    if (!result.ok) return reject(result.error.message);
+    libraryRevision++; pendingSubgraphSave = null;
+    workbench.update({ subgraphSave: null }); refreshWorkspaceDocument();
+    toast(targetId === null ? 'Added to Subgraphs.' : 'Saved subgraph updated.', 'success');
+    return result;
+}
+function shelfSubgraphAction(id, action) {
+    if (!L.loadSubgraphLibrary().ok) return;
+    const choice = nativeCatalog?.choices.find(item => item.id === id && item.definitionRef), entries = L.getSubgraphShelfEntries();
+    if (!choice || !entries.ok || !entries.data.some(item => definitionRefKey(item) === definitionRefKey(choice.definitionRef))) return;
+    if (action === 'open') return navigateGraphView('openLibrary', choice.definitionRef);
+    if (action !== 'delete') return;
+    const result = L.removeSubgraphShelfEntry(choice.definitionRef.id);
+    if (!result.ok) { toast(result.error.message, 'error'); return result; }
+    libraryRevision++; refreshWorkspaceDocument();
+    return result;
+}
+function subgraphWrapperAction(nodeId, action) {
+    const captured = captureEditor(action === 'open' || action === 'export'); if (!captured.ok) return captured;
+    const editor = graphViews.readEditor(), wrapper = editor.prepared.savedGraph.nodes[nodeId];
+    if (wrapper?.type !== 'subgraph') return;
+    if (action === 'open') return navigateGraphView('openLibrary', wrapper.definition);
+    const definition = workspacePrepared.libraryDefinitions[definitionRefKey(wrapper.definition)];
+    if (action === 'export' && definition) {
+        const text = JSON.stringify(exportSubgraph(definition, workspacePrepared.libraryDefinitions), null, 2);
+        const url = URL.createObjectURL(new Blob([text], { type: 'application/json' })), anchor = document.createElement('a');
+        anchor.href = url; anchor.download = definition.name + '.subgraph.json'; anchor.click(); setTimeout(() => URL.revokeObjectURL(url), 0);
+        return { ok: true };
+    }
+    const instancePath = [...(editor.view.identity.instancePath ?? []), nodeId];
+    if (action === 'unpack') return commitCaptured(captured.data, prepareUnpack(current, { instancePath }));
+    if (action !== 'copy') return;
+    const result = commitCaptured(captured.data, makeLocalCopy(current, { instancePath, id: 'local-' + crypto.randomUUID(), materializeOverrides: true }));
+    if (result.ok) navigateGraphView('openInstance', instancePath);
+    return result;
 }

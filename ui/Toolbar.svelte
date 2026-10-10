@@ -21,7 +21,7 @@
             <span class={`pc-history-note${state.history.showNote ? ' pc-show' : ''}`}>{state.history.note}</span>
         </div>
         <button type="button" class="pc-btn menu_button pc-root-run" disabled={!workflow || (!workflow.busy && !!workflow.issues.length)} title={workflow?.issues.join('\n') || 'Run the root workflow'} onclick={() => actions.command(workflow?.busy ? 'stop-workflow' : 'run-workflow')}>{workflow?.busy ? '■ Stop' : '▶ Run'}</button>
-        <span class="pc-root-workflow-status" role="status">{workflow ? `${workflow.phase} · ${workflow.assigned ? 'Assigned' : 'Unassigned'} · ≤ ${workflow.callBound} requests` : 'Workflow unavailable'} · Autosave</span>
+        <span class="pc-root-workflow-status" role="status">{workflow ? `${workflow.phase} · ${workflow.assigned ? 'Assigned' : 'Unassigned'} · ≤ ${workflow.callBound} requests` : 'Workflow unavailable'} · Autosave in SillyTavern</span>
         <button type="button" class="pc-btn menu_button" title="Workflow setup" onclick={() => local('workflow-setup')}>Setup</button>
         <div class="pc-header-actions pc-surface-actions">
             <button type="button" class={`pc-btn menu_button pc-pane-toggle${state.inspectorOpen ? ' pc-on' : ''}`} title="Show or hide the inspector" aria-label="Toggle inspector" aria-pressed={state.inspectorOpen} bind:this={inspBtn} onclick={() => actions.command('inspector')}>Details</button>

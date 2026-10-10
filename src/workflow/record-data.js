@@ -102,6 +102,12 @@ export function safeSource(raw, depth = 0, traversal = { remaining: 128 }) {
         else if (value === null && ['chatId', 'characterId', 'groupId'].includes(key)) result[key] = null;
         else if (Number.isSafeInteger(value) && (['chatId', 'characterId', 'groupId'].includes(key) || value >= 0)) result[key] = value;
     }
+    for (const key of ['source', 'block', 'form', 'mainApi', 'override', 'promptId', 'orderScope']) {
+        const value = own(raw, key);
+        if (typeof value === 'string') { result[key] = boundedText(value, 256); if (value !== result[key]) result.truncated = true; }
+    }
+    const enabled = own(raw, 'enabled');
+    if (typeof enabled === 'boolean' || enabled === null) result.enabled = enabled;
     // Context Join stores source scopes here; preserve safe per-pin provenance, never source tokens.
     if (own(raw, 'operation') === 'context-join' && depth < 8) {
         result.operation = 'context-join';

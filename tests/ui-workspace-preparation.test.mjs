@@ -6,7 +6,85 @@ import { createGraphViewSession } from '../src/ui/graph-view-session.js?v=0.26.0
 import { createWorkflowSession, projectPreparedWorkflow } from '../src/ui/workflow-surface.js?v=0.26.0';
 import { makeClip, makeDefinitionClip, readClip } from '../src/workflow/clipboard.js?v=0.26.0';
 import { isCommentFrame } from '../src/canvas/comment-frames.js?v=0.26.0';
+import { prepareSubgraphNodeDeletion } from '../src/workflow/subgraph-authoring.js?v=0.26.0';
 const api = await import('../src/ui/workspace-preparation.js?v=0.26.0');
+
+test('copied explicit null blockers project as blocked and choosing inheritance restores the parent role', async () => {
+    const { effectiveInstanceWorkflow } = await import('./fixtures/workflow-effective-instance.mjs');
+    const { makeLocalCopy, prepareNativeNodeEdit } = await import('../src/workflow/definition-library.js?v=0.26.0');
+    const { definitionRefKey } = await import('../src/workflow/definitions.js?v=0.26.0');
+    const { inspectExpandedGraph } = await import('../src/workflow/graph-validation.js?v=0.26.0');
+    const source = effectiveInstanceWorkflow(); source.nodes.one.nodeBindingOverrides = { '[[],"compact"]': { model: null } };
+    const root = makeLocalCopy(source, { instancePath: ['one'], id: 'projected-private', materializeOverrides: true }).data.candidate;
+    const prepared = api.prepareWorkspaceViews(root); assert.equal(prepared.ok, true, JSON.stringify(prepared));
+    const session = createGraphViewSession({ root, activationId: 'blocked-binding', ...prepared.data }).data;
+    session.openInstance(['one']); session.updateView({ selection: { primary: { kind: 'node', id: 'compact' }, multi: [] } });
+    const workflow = projectPreparedWorkflow(prepared.data.workflow, { viewPath: ['one'], selectedId: 'compact' });
+    const details = api.projectWorkspacePanels(session.readEditor(), workflow, {}, 'blocked', null, null).nodeDetails;
+    assert.equal(details.model.model.mode, 'block');
+    assert.deepEqual(details.model.model.allowedModes.map(option => option.value), ['inherit', 'override', 'block']);
+    assert.equal(details.model.profile.mode, 'inherit', 'An absent profile is not a blocker');
+    const saved = root.definitions[definitionRefKey(root.nodes.one.definition)];
+    const result = prepareNativeNodeEdit(root, { kind: 'binding', viewPath: ['one'], expectedRef: root.nodes.one.definition, nodeId: 'compact', field: 'model', mode: 'remove', consumeOverride: true });
+    assert.equal(result.ok, true, JSON.stringify(result));
+    assert.equal(inspectExpandedGraph(result.data.candidate).data.primitives.find(unit => unit.address.instancePath[0] === 'one' && unit.address.nodeId === 'compact').node.model, 'parent-model');
+    assert.equal(saved.body.nodes.compact.model, null, 'Projection and detached edits preserve the source snapshot');
+});
+
+test('saved wrapper names give repeated subgraph instances separate tabs and matching parent cards', async () => {
+    const { siblingWorkflow } = await import('./fixtures/workflow-prepared-fixture.mjs');
+    const { nodeCard } = await import('../src/canvas/presentation.js');
+    const root = siblingWorkflow();
+    root.name = 'Composition';
+    root.nodes['first/path'].title = 'Renamed instance';
+    root.nodes.second.alias = 'Sibling alias';
+    let bindings = 0;
+    const prepared = api.prepareWorkspaceViews(root, { resolveBinding: () => { bindings++; return { ok: true, data: {} }; } });
+    assert.equal(prepared.ok, true, JSON.stringify(prepared));
+    assert.deepEqual(prepared.data.navigation.map(entry => entry.label), ['Renamed instance', 'Sibling alias']);
+    const session = createGraphViewSession({ root, activationId: 'instance-labels', ...prepared.data }).data;
+    const drawing = api.projectEditorDraw(session.readEditor());
+    assert.equal(nodeCard(drawing.nodes['first/path'], { graph: drawing }).title, 'Renamed instance');
+    assert.equal(nodeCard(drawing.nodes.second, { graph: drawing }).title, 'Sibling alias');
+    assert.equal(session.openInstance(['first/path']).ok, true);
+    assert.deepEqual(session.readEditor().view.breadcrumbs.map(crumb => crumb.label), ['Composition', 'Renamed instance']);
+    assert.equal(session.openInstance(['second']).ok, true);
+    assert.deepEqual(session.project().graphViews.tabs.map(tab => tab.label), ['Composition', 'Renamed instance', 'Sibling alias']);
+    const before = bindings, token = session.captureEditorContext();
+    root.name = 'Renamed composition';
+    assert.equal(session.replacePreparedViews(prepared.data, { invalidateEditor: false }).ok, true);
+    assert.equal(session.project().graphViews.tabs[0].label, 'Renamed composition');
+    assert.equal(session.isEditorContextCurrent(token), true);
+    assert.equal(bindings, before, 'A root label refresh reuses prepared views without binding reads');
+});
+
+test('saved subgraph presentation aliases precede title and definition labels', async () => {
+    const { siblingWorkflow } = await import('./fixtures/workflow-prepared-fixture.mjs');
+    const root = siblingWorkflow();
+    root.nodes['first/path'].title = 'Title';
+    root.nodes['first/path'].alias = 'Legacy alias';
+    root.nodes['first/path'].presentation = { alias: 'Current alias' };
+    root.nodes.second.title = 'Second title';
+    root.nodes.second.presentation = { alias: '' };
+    const prepared = api.prepareWorkspaceViews(root);
+    assert.equal(prepared.ok, true, JSON.stringify(prepared));
+    assert.deepEqual(prepared.data.navigation.map(entry => entry.label), ['Current alias', 'Second title']);
+    assert.equal(Object.values(root.definitions)[0].name, 'Plan', 'Instance names do not rename their shared definition');
+});
+
+test('long saved wrapper titles retain a navigable bounded subgraph tab', async () => {
+    const { siblingWorkflow } = await import('./fixtures/workflow-prepared-fixture.mjs');
+    const root = siblingWorkflow();
+    root.nodes['first/path'].title = 'x'.repeat(300);
+    const prepared = api.prepareWorkspaceViews(root);
+    assert.equal(prepared.ok, true, JSON.stringify(prepared));
+    const created = createGraphViewSession({ root, activationId: 'long-instance-label', ...prepared.data });
+    assert.equal(created.ok, true, JSON.stringify(created));
+    assert.equal(created.data.openInstance(['first/path']).ok, true);
+    assert.equal(created.data.readEditor().view.label, 'x'.repeat(256));
+    assert.equal(root.nodes['first/path'].title, 'x'.repeat(300), 'The display bound preserves the saved title');
+});
+
 test('prepared editor drawing is detached and overlays never change the activated root', async () => {
     assert.equal(typeof api.prepareWorkspaceViews, 'function');
     const root = cloneWorkflowDocument(starterGraph('native-guidance')).data; root.id = 'workspace-root';
@@ -58,7 +136,7 @@ test('not-run meter uses cached checked root rows before events without a second
 // Execute the actual bounded controller functions, with real accepted Canvas/store/domain APIs.
 // Only external UI notifications are replaced; the function bodies are read from current source.
 const controllerText=await(await import('node:fs/promises')).readFile(new URL('../src/ui/controller.js',import.meta.url),'utf8');
-function controllerFunction(name,env){env.activeEditRoot ??= () => env.current;env.isCommentFrame ??= isCommentFrame;env.pendingCommentPresentation ??= new WeakMap();env.pendingSubgraphPresentation ??= new WeakMap();if(name!=='applyPendingCommentPresentation')env.applyPendingCommentPresentation ??= controllerFunction('applyPendingCommentPresentation',env);if(name==='activateEditorDraw')env.applyPendingSubgraphPresentation ??= controllerFunction('applyPendingSubgraphPresentation',env);const start=controllerText.indexOf('function '+name+'(');assert.ok(start>=0,'Actual controller function '+name);const next=controllerText.indexOf('\nfunction ',start+1);const source=(controllerText.slice(start-6,start)==='async '?'async ':'')+controllerText.slice(start,next<0?undefined:next);return Function('env','with(env){'+source+';return '+name+';}')(env);}
+function controllerFunction(name,env){env.activeEditRoot ??= () => env.current;env.isCommentFrame ??= isCommentFrame;env.prepareSubgraphNodeDeletion ??= prepareSubgraphNodeDeletion;env.pendingCommentPresentation ??= new WeakMap();env.pendingSubgraphPresentation ??= new WeakMap();if(name!=='applyPendingCommentPresentation')env.applyPendingCommentPresentation ??= controllerFunction('applyPendingCommentPresentation',env);if(name==='activateEditorDraw')env.applyPendingSubgraphPresentation ??= controllerFunction('applyPendingSubgraphPresentation',env);const start=controllerText.indexOf('function '+name+'(');assert.ok(start>=0,'Actual controller function '+name);const next=controllerText.indexOf('\nfunction ',start+1);const source=(controllerText.slice(start-6,start)==='async '?'async ':'')+controllerText.slice(start,next<0?undefined:next);return Function('env','with(env){'+source+';return '+name+';}')(env);}
 async function restoreFixture(){
  const {siblingWorkflow}=await import('./fixtures/workflow-prepared-fixture.mjs');const root=siblingWorkflow(),prepared=api.prepareWorkspaceViews(root),session=createGraphViewSession({root,activationId:'restore',...prepared.data}).data;const env={current:root,graphViews:session,editorDraw:null,selected:null,selectedKind:null,restoringEditor:false,selectedPreview:null,canvasTraceRows:null,cancelImportReview(){},replaceNativeBridge(){},syncPaneToggles(){},updateWorkflowProjection(){},paintHistory(){},workbench:{update(){}}};
  const {fixture}=await import('./canvas-fixture.mjs');const real=fixture({nativeCard:node=>env.editorDraw?.nativeCards[node.id],nativeScope:()=>({workflowId:root.id,instancePath:session.readEditor().view.identity.instancePath??[],readOnly:session.readEditor().readOnly}),canEdit:()=>!session.readEditor().readOnly});env.canvas=real.canvas;env.root=document.createElement('div');env.projectEditorDraw=api.projectEditorDraw;const restore=controllerFunction('activateEditorDraw',env);env.activate=()=>{restore();for(const node of Object.values(env.editorDraw.nodes))real.canvas.geometry.measure(node.id,160,48,env.editorDraw.nativeCards[node.id]?.ports.map(pin=>({id:pin.port,direction:pin.dir,x:pin.dir==='in'?0:160,y:24,side:pin.side,kind:pin.kind}))??[]);real.canvas.render();};return {...env,env,session,real};
@@ -73,9 +151,10 @@ test('actual controller roundtrip preserves primary node wire and supported ephe
 
 test('Edit availability uses the actual child saved scope and readonly library permission',async()=>{
  const {siblingWorkflow}=await import('./fixtures/workflow-prepared-fixture.mjs');const root=siblingWorkflow(),saved=structuredClone(Object.values(root.definitions)[0].body);let readOnly=false,last;const canvas={selection:{kind:'node',id:'work'},multi:new Set()},env={current:root,canvas,currentPick:()=>({nodeIds:['work']}),groupMembers:(graph,id)=>Object.values(graph.nodes).filter(node=>node.inGroup===id),graphViews:{readEditor:()=>({prepared:{savedGraph:saved},readOnly,view:{identity:{kind:'instance'}}})},editorDraw:saved,workbench:{update(value){last=value;}}};const update=controllerFunction('updateSelectionCount',env);update();assert.deepEqual(last.selectionActions,{copy:true,cut:true,delete:true});
- root.nodes.entry={id:'entry',type:'workflow',operation:'scene-context'};canvas.selection={kind:'node',id:'entry'};env.currentPick=()=>({nodeIds:['entry']});update();assert.deepEqual(last.selectionActions,{copy:false,cut:false,delete:false});
+ root.nodes.entry={id:'entry',type:'workflow',operation:'scene-context'};canvas.selection={kind:'node',id:'entry'};env.currentPick=()=>({nodeIds:['entry']});update();assert.deepEqual(last.selectionActions,{copy:false,cut:false,delete:true},'The actual child boundary can be deleted without copying it as an ordinary node');
+ root.nodes.rootOnly={id:'rootOnly',type:'workflow',operation:'scene-context'};canvas.selection={kind:'node',id:'rootOnly'};env.currentPick=()=>({nodeIds:['rootOnly']});update();assert.deepEqual(last.selectionActions,{copy:false,cut:false,delete:false},'A root-only node is absent from the actual child scope');
  canvas.selection={kind:'wire',id:'a'};env.currentPick=()=>null;update();assert.equal(last.selectionActions.delete,true);saved.groups={child:{id:'child'}};canvas.selection={kind:'group',id:'child'};update();assert.equal(last.selectionActions.delete,true);
- readOnly=true;canvas.selection={kind:'node',id:'work'};env.currentPick=()=>({nodeIds:['work']});update();assert.deepEqual(last.selectionActions,{copy:true,cut:false,delete:false});
+ readOnly=true;canvas.selection={kind:'node',id:'entry'};env.currentPick=()=>({nodeIds:['entry']});update();assert.deepEqual(last.selectionActions,{copy:false,cut:false,delete:false});canvas.selection={kind:'node',id:'work'};env.currentPick=()=>({nodeIds:['work']});update();assert.deepEqual(last.selectionActions,{copy:true,cut:false,delete:false});
 });
 
 test('nested library Copy bundles only its real reachable pin closure and actual insertion accepts it',async()=>{
