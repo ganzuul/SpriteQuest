@@ -1,6 +1,6 @@
 import { safeWorkflowData, validateGraphStructure } from './contracts.js?v=0.26.0';
 import { cloneWorkflowDocument } from './document.js?v=0.26.0';
-import { operationFor, describeOperation, semanticControlsForNode } from './catalog.js?v=0.26.0';
+import { operationFor, describeOperation, semanticControlsForNode, phaseForNode } from './catalog.js?v=0.26.0';
 import { INTROSPECTION_NATIVE_OPERATIONS, introspectionDefaults } from './introspection/native.js?v=0.26.0';
 export { portsForNode } from './catalog.js?v=0.26.0';
 
@@ -15,10 +15,10 @@ export function graphSemanticSignature(graph) {
     const inheritedBinding = value => value && typeof value === 'object' && !Array.isArray(value)
         ? Object.fromEntries(['profileId', 'model'].filter(key => Object.hasOwn(value, key)).map(key => [key, value[key]])) : binding(value);
     const nodes = Object.entries(graph.nodes ?? {}).filter(([, node]) => node.type !== 'note').map(([key, node]) => {
-        const operation = operationFor(node, { phase: graph.mode?.slice(7) });
+        const operation = operationFor(node, { phase: phaseForNode(graph, node), mode: graph.mode });
         const controls = semanticControlsForNode(node, operation);
         if (node.operation === 'validate-patches') controls.protectedLiterals = node.protectedLiterals === undefined ? [] : node.protectedLiterals;
-        return { key, id: node.id, type: node.type, operation: node.operation, operationVersion: node.operationVersion === undefined ? 1 : node.operationVersion, enabled: node.enabled !== false, modelRole: node.modelRole ?? operation?.modelRole ?? null, ...binding(node), controls,
+        return { key, id: node.id, type: node.type, operation: node.operation, ...(graph.mode==='native-unified'?{phase:phaseForNode(graph,node)}:{}), operationVersion: node.operationVersion === undefined ? 1 : node.operationVersion, enabled: node.enabled !== false, modelRole: node.modelRole ?? operation?.modelRole ?? null, ...binding(node), controls,
             ...(node.modifiers === undefined ? {} : { modifiers: node.modifiers }),
             ...(node.operation === 'reroute' ? { artifactKind: node.artifactKind, phase: node.phase } : {}),
             ...(node.type === 'subgraph' ? { definition: node.definition, parameterOverrides: node.parameterOverrides ?? {}, roleOverrides: Object.fromEntries(Object.entries(node.roleOverrides ?? {}).map(([key, value]) => [key, inheritedBinding(value)])), nodeBindingOverrides: Object.fromEntries(Object.entries(node.nodeBindingOverrides ?? {}).map(([key, value]) => [key, inheritedBinding(value)])) } : {}),

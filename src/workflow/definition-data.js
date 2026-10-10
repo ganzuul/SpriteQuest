@@ -1,5 +1,5 @@
 import { validateNodeModifiers } from './modifiers.js?v=0.26.0';
-import { ARTIFACT_KINDS, operationFor, portsForNode, semanticControlsForNode } from './catalog.js?v=0.26.0';
+import { ARTIFACT_KINDS, operationFor, portsForNode, semanticControlsForNode, phaseForNode } from './catalog.js?v=0.26.0';
 
 const fail = (code, message) => ({ ok: false, error: { code, message } });
 const record = value => value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -66,7 +66,7 @@ export function inspectDefinitionMetadata(value) {
     if (!record(definition) || !idText(definition.id) || !Number.isSafeInteger(definition.version) || definition.version < 1 || typeof definition.name !== 'string' || (definition.description !== undefined && typeof definition.description !== 'string')) return fail('DEFINITION_METADATA', 'A definition requires an ID, positive exact version and display name.');
     if (definition.semanticHash !== undefined && !/^sha256:[0-9a-f]{64}$/.test(definition.semanticHash)) return fail('DEFINITION_HASH', 'Expected a sha256 hash.');
     const body = definition.body;
-    if (!record(body) || body.schema !== 3 || body.runtime !== 2 || !['native-pre', 'native-post'].includes(body.mode) || !record(body.nodes) || !record(body.wires)) return fail('DEFINITION_BODY', 'Expected a schema-3/runtime-2 body with an explicit phase.');
+    if (!record(body) || body.schema !== 3 || body.runtime !== 2 || !['native-pre', 'native-post', 'native-unified'].includes(body.mode) || !record(body.nodes) || !record(body.wires)) return fail('DEFINITION_BODY', 'Expected a schema-3/runtime-2 body with an explicit phase.');
     if (!Array.isArray(definition.interface) || !Array.isArray(definition.parameters)) return fail('DEFINITION_INTERFACE', 'Expected interface and exposed-parameter lists.');
     if (Object.keys(body.nodes).length > 1000 || Object.keys(body.wires).length > 2000) return fail('DEFINITION_LIMIT', 'Definition body exceeds local traversal limits.');
     const portIds = new Set(), boundaries = new Set(), boundaryPorts = {};
@@ -152,7 +152,7 @@ export function computeDefinitionIdentity(value) {
             if (node.type === 'note') continue;
             const common = { id: node.id, type: node.type, enabled: node.enabled !== false, ...(node.modifiers === undefined ? {} : { modifiers: node.modifiers }) };
             if (node.type === 'workflow') {
-                const operation = operationFor(node, { phase: draft.body.mode.slice(7) });
+                const operation = operationFor(node, { phase: draft.body.mode === 'native-unified' ? phaseForNode(draft.body, node) : draft.body.mode.slice(7), mode: draft.body.mode });
                 if (!operation) return fail('UNKNOWN_OPERATION', 'Cannot hash an unknown operation.');
                 const controls = {};
                 for (const controlId of operation.controls) {
@@ -177,7 +177,8 @@ export function computeDefinitionIdentity(value) {
                 node.modelRole ??= operation.modelRole;
                 Object.assign(controls, semanticControlsForNode(node, operation));
                 nodes[id] = { ...common, operation: node.operation, operationVersion: node.operationVersion, modelRole: node.modelRole, binding: portableBinding(node, true), controls,
-                    ...(node.operation === 'reroute' ? pick(node, ['artifactKind', 'phase']) : {}) };
+                    ...(node.operation === 'reroute' ? pick(node, ['artifactKind', 'phase']) : {}),
+                    ...(draft.body.mode === 'native-unified' ? { phase: operation.phase } : {}) };
             } else if (node.type === 'subgraph') {
                 if (!record(node.definition)) return fail('DEFINITION_REF', 'An instance requires an exact definition reference.');
                 nodes[id] = { ...common, definition: pick(node.definition, ['id', 'version', 'semanticHash']), parameterOverrides: node.parameterOverrides ?? {}, roleOverrides: mapRecords(node.roleOverrides, portableBinding), nodeBindingOverrides: mapRecords(node.nodeBindingOverrides, portableBinding) };

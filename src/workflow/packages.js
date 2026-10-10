@@ -1,5 +1,5 @@
 import { safeWorkflowData, validateGraphStructure } from './contracts.js?v=0.26.0';
-import { OPERATIONS, operationFor } from './catalog.js?v=0.26.0';
+import { OPERATIONS, operationFor, phaseForNode } from './catalog.js?v=0.26.0';
 import { cloneDefinitionData, computeDefinitionIdentity, definitionRefKey, inspectDefinitionMetadata, validateDefinition } from './definitions.js?v=0.26.0';
 const limit = 2000000;
 const fail = (code, message) => ({ ok: false, error: { code, message } });
@@ -20,7 +20,7 @@ function portableNativeDocument(graph) {
         'profileId', 'model', 'modelRole', 'artifactKind', 'phase', 'alias', ...(node.type === 'note' ? ['content', 'commentFrame', 'moveContents'] : []),
         ...(node.type === 'subgraph' ? ['definition', 'parameterOverrides', 'roleOverrides', 'nodeBindingOverrides'] : []),
         ...(['subgraph-input', 'subgraph-output'].includes(node.type) ? ['interfacePortId'] : []),
-        ...((OPERATIONS[node.operation]?.family === 'Introspection' ? operationFor(node, { phase: graph.mode.slice(7) }) : OPERATIONS[node.operation])?.controls ?? []), ...(node.operation === 'validate-patches' ? ['protectedLiterals'] : []),
+        ...((OPERATIONS[node.operation]?.family === 'Introspection' ? operationFor(node, { phase: phaseForNode(graph, node), mode: graph.mode }) : OPERATIONS[node.operation])?.controls ?? []), ...(node.operation === 'validate-patches' ? ['protectedLiterals'] : []),
     ])]));
     for (const node of Object.values(copy.nodes)) {
         if (Object.hasOwn(node, 'profileId')) node.profileId = null;

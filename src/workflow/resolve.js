@@ -76,7 +76,7 @@ export function resolveWorkflow(root, options = {}) {
         perNodeBounds: primitives.map(unit => ({ address: unit.address, requestBound: unit.requestBound, included: unit.included })),
         requiredRoles: [...new Set(primitives.filter(unit => unit.included && unit.requestBound > 0).map(unit => unit.node.modelRole).filter(Boolean))],
         ...(target === undefined ? {} : { target: structuredClone(target), resolvedTarget }),
-        units: primitives.map(unit => ({ address: unit.address, operation: unit.node.operation, label: unit.node.alias ?? unit.node.title ?? unit.node.operation, included: unit.included, dependencies: unit.dependencies, requestBound: unit.requestBound, inputPorts: unit.inputPorts.map(port => port.id), outputPorts: unit.outputPorts.map(port => port.id) })),
+        units: primitives.map(unit => ({ address: unit.address, operation: unit.node.operation, phase: unit.phase, label: unit.node.alias ?? unit.node.title ?? unit.node.operation, included: unit.included, dependencies: unit.dependencies, requestBound: unit.requestBound, inputPorts: unit.inputPorts.map(port => port.id), outputPorts: unit.outputPorts.map(port => port.id) })),
     } };
 }
 /** Owned content preparation. Caller root is neither retained in public DTOs nor frozen. */

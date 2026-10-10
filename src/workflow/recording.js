@@ -1,6 +1,6 @@
 import { applyTextModifiers } from './modifiers.js?v=0.26.0';
 import { createRunState, reduceRunState } from './run-state.js?v=0.26.0';
-import { addressKey, nodeAddress, own, plain, dense, parseRunPlan, freeze, encode, bytes, textBytes, boundedText, safeSource, safeBinding, safeError, safeUsage, errorResult, successResult, TOTAL_RECORD_BYTES, ARTIFACT_RECORD_BYTES, RENDERED_TEXT_BYTES } from './record-data.js?v=0.26.0';
+import { addressKey, nodeAddress, own, plain, dense, parseRunPlan, freeze, encode, bytes, textBytes, boundedText, safeSource, safeBinding, safeError, safePortState, safeUsage, errorResult, successResult, TOTAL_RECORD_BYTES, ARTIFACT_RECORD_BYTES, RENDERED_TEXT_BYTES } from './record-data.js?v=0.26.0';
 
 export { TOTAL_RECORD_BYTES, ARTIFACT_RECORD_BYTES, RENDERED_TEXT_BYTES };
 /** @template T @typedef {{ok:true,data:T}|{ok:false,error:{code:string,message:string}}} Result */
@@ -15,7 +15,7 @@ function internPlan(plan, runId) {
         const index = addresses.length; addresses.push([workflow, path, string(value.nodeId)]); addressIndexes.set(key, index); return index;
     }
     for (const unit of plan.units) address(unit.address);
-    const units = plan.units.map(unit => ({ address: address(unit.address), included: unit.included, dependencies: unit.dependencies.map(address), requestBound: unit.requestBound,
+    const units = plan.units.map(unit => ({ address: address(unit.address), included: unit.included, ...(unit.phase?{phase:unit.phase}:{}), dependencies: unit.dependencies.map(address), requestBound: unit.requestBound,
         status: unit.included ? 'waiting' : 'not-run', subphase: null, attempts: 0, startedAt: null, settledAt: null, durationMs: null,
         ports: [...unit.inputPorts.map(portId => ({ direction: 'input', port: string(portId), artifact: null })), ...unit.outputPorts.map(portId => ({ direction: 'output', port: string(portId), artifact: null }))] }));
     const target = value => value.kind === 'terminal' ? { kind: 'terminal', address: address(value.address) } : { address: address(value), port: string(value.portId) };
@@ -166,6 +166,7 @@ export function createRunRecorder(options) {
     function boundPending() {
         let pendingBytes = 0, prefixEnded = false; const seen = new Set();
         for (const [, capture] of orderedCaptures()) {
+            if(capture.identity===null)continue;
             if (seen.has(capture.identity)) continue; seen.add(capture.identity);
             // Keep a canonical prefix rather than packing around gaps. The bounded scalar cost
             // survives payload eviction, so a deleted middle entry still ends that prefix.
@@ -189,7 +190,7 @@ export function createRunRecorder(options) {
         try {
             if (finished) return errorResult('RUN_FINISHED', 'This diagnostic recorder is finished.');
             if (!skeleton || !plain(raw)) return errorResult('CAPTURE_NOT_PLANNED', 'Capture requires an admitted run plan.');
-            if (['cancelling', 'cancelled', 'failed', 'completed', 'invalid', 'stale'].includes(state.status)) return errorResult('RUN_CLOSED', 'Late diagnostic captures cannot reopen a closed run.');
+            if (['cancelling', 'cancelled', 'failed', 'completed', 'unresolved', 'invalid', 'stale'].includes(state.status)) return errorResult('RUN_CLOSED', 'Late diagnostic captures cannot reopen a closed run.');
             const address = nodeAddress(own(raw, 'address')), direction = own(raw, 'direction'), portId = own(raw, 'portId');
             const unitIndex = address ? state.plan.units.findIndex(unit => addressKey(unit.address) === addressKey(address)) : -1;
             if (unitIndex < 0 || !state.plan.units[unitIndex].included) return errorResult('CAPTURE_NOT_PLANNED', 'The capture address is outside the selected plan.');
@@ -204,11 +205,15 @@ export function createRunRecorder(options) {
                 portRank = portIndex + (direction === 'output' ? unit.inputPorts.length : 0);
             }
             const key = unitIndex + ':' + portRank; if (captures.has(key)) return successResult(undefined);
+            const rawState=own(raw,'state'),status=rawState===undefined?'completed':own(rawState,'status');
+            if(!['completed','skipped','unresolved'].includes(status))return errorResult('INVALID_CAPTURE_STATE','Capture requires a valid port state.');
+            const portState=safePortState(rawState??{status:'completed'});if(!portState)return errorResult('INVALID_CAPTURE_STATE','Capture requires plain port state.');
+            if(status!=='completed'){if(own(raw,'artifact')!==undefined)return errorResult('INVALID_CAPTURE_STATE','Only completed ports contain artifacts.');captures.set(key,{unitIndex,portRank,direction,portId,identity:null,state:portState});return successResult(undefined);}
             const artifact = own(raw, 'artifact'); let identity = 'capture:' + nextIdentity++;
             if (artifact && typeof artifact === 'object' && deeplyImmutable(artifact)) { if (!immutableIds.has(artifact)) immutableIds.set(artifact, identity); identity = immutableIds.get(artifact); }
             const kind = boundedText(own(artifact, 'kind'), 128) ?? 'unknown';
             if (!candidates.has(identity)) candidates.set(identity, candidateArtifact(artifact));
-            captures.set(key, { unitIndex, portRank, direction, portId, identity, kind, size: bytes(candidates.get(identity)) + 256 });
+            captures.set(key, { unitIndex, portRank, direction, portId, identity, kind, state:portState, size: bytes(candidates.get(identity)) + 256 });
             captureMetadata(raw, unitIndex, portRank);
             boundPending();
             return successResult(undefined);
@@ -219,7 +224,7 @@ export function createRunRecorder(options) {
         if (!skeleton) return freeze({ version: 1, runId, lastSeq: state.lastSeq, status: state.status, at: state.at, elapsedMs: state.elapsedMs, plan: null, identities: { strings: [], paths: [null], addresses: [] }, units: [], hierarchy: [], terminals: [], artifacts: [], ...(state.error ? { error: state.error } : {}) });
         const record = JSON.parse(encode(skeleton));
         record.lastSeq = state.lastSeq; record.status = state.status; record.at = state.at; record.elapsedMs = state.elapsedMs;
-        const optional = state.nodes.map(node => ({ operation: node.operation, ...(node.label !== undefined ? { label: node.label } : {}), ...(node.metadataTruncated ? { metadataTruncated: true } : {}), ...(node.request ? { request: node.request } : {}), ...(node.error ? { error: node.error } : {}), ...(node.binding ? { binding: node.binding } : {}) }));
+        const optional = state.nodes.map(node => ({ operation: node.operation, ...(node.label !== undefined ? { label: node.label } : {}), ...(node.metadataTruncated ? { metadataTruncated: true } : {}), ...(node.request ? { request: node.request } : {}), ...(node.error ? { error: node.error } : {}), ...(node.reason?{reason:node.reason}:{}), ...(node.binding ? { binding: node.binding } : {}) }));
         const runOptional = state.error ? { error: state.error } : {};
         state.nodes.forEach((node, index) => {
             for (const key of ['status', 'subphase', 'attempts', 'startedAt', 'settledAt', 'durationMs']) record.units[index][key] = node[key];
@@ -237,6 +242,8 @@ export function createRunRecorder(options) {
         Object.assign(record, runOptional); optional.forEach((extra, index) => Object.assign(record.units[index], extra));
         for (const [key, capture] of ordered) {
             const unit = record.units[capture.unitIndex];
+            if(capture.direction!=='terminal')unit.ports[capture.portRank].state=capture.state;
+            if(capture.identity===null)continue;
             if (!retained.has(capture.identity)) {
                 const id = record.artifacts.length;
                 const origin = { address: unit.address, direction: capture.direction, ...(capture.direction !== 'terminal' ? { port: unit.ports[capture.portRank].port } : {}) };

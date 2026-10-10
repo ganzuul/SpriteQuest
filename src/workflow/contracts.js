@@ -14,7 +14,7 @@ export function isWorkflowGraph(graph) {
     try {
         const fields = plainDescriptors(graph);
         return !!fields && fields.schema?.value === 3 && fields.runtime?.value === 2
-            && ['native-pre', 'native-post'].includes(fields.mode?.value)
+            && ['native-pre', 'native-post', 'native-unified'].includes(fields.mode?.value)
             && !!plainDescriptors(fields.nodes?.value, 1000) && !!plainDescriptors(fields.wires?.value, 2000)
             && ['groups', 'roles', 'portals', 'definitions'].every(key => fields[key]?.value == null || !!plainDescriptors(fields[key].value));
     } catch { return false; }

@@ -1,5 +1,5 @@
 import { validateNodeModifiers } from './modifiers.js?v=0.26.0';
-import { ARTIFACT_KINDS, operationFor, describeOperation, portsForNode } from './catalog.js?v=0.26.0';
+import { ARTIFACT_KINDS, operationFor, describeOperation, portsForNode, phaseForNode } from './catalog.js?v=0.26.0';
 import { cloneDefinitionData, computeDefinitionIdentity, definitionRefKey, inspectDefinitionMetadata, describeExposedParameter, nodeBindingOverrideKey, artifactAddressKey } from './definition-data.js?v=0.26.0';
 import { samePath, safeId } from './composition-edit.js?v=0.26.0';
 
@@ -50,7 +50,7 @@ function controlValid(value, descriptor) {
 function inspectScope(graph, { definition, snapshots = {} } = {}) {
     if (!record(graph) || !record(graph.nodes) || !record(graph.wires) || !['groups', 'roles', 'portals', 'definitions'].every(key => record(graph[key] ?? {}))) return fail('MALFORMED_WORKFLOW', 'Expected native graph containers.');
     if (graph.schema !== 3 || graph.runtime !== 2) return fail('UNSUPPORTED_VERSION', 'Expected schema 3 and runtime 2.');
-    if (!['native-pre', 'native-post'].includes(graph.mode)) return fail('WRONG_PHASE', 'Expected an explicit native workflow phase.');
+    if (!['native-pre', 'native-post', 'native-unified'].includes(graph.mode)) return fail('WRONG_PHASE', 'Expected an explicit native workflow phase.');
     if (definition && Object.keys(graph.definitions ?? {}).length) return fail('DEFINITION_REF', 'Bundle all pinned snapshots in the owning table, not inside definition bodies.');
     if (definition && graph.localDefinitionOwners !== undefined) return fail('LOCAL_COPY_OWNERSHIP', 'Ownership registries belong only to the root document.');
     if (graph.name !== undefined && typeof graph.name !== 'string' || Object.values(graph.roles ?? {}).some(binding => !bindingValid(binding))) return fail('INVALID_SETTINGS', 'Invalid workflow metadata or role binding.');
@@ -77,7 +77,7 @@ function inspectScope(graph, { definition, snapshots = {} } = {}) {
             const checked = inspectInstance(node, snapshots);
             if (!checked.ok) return checked;
             if (node.localCopy !== undefined && (definition || !record(node.localCopy) || Object.keys(node.localCopy).length !== 1 || node.localCopy.definitionId !== node.definition.id)) return fail('LOCAL_COPY_OWNERSHIP', 'Local-copy ownership belongs to one root instance and its exact definition ID.', id);
-            if (checked.data.body.mode !== graph.mode) return fail('WRONG_PHASE', 'The instance phase differs from its container.', id);
+            if (graph.mode !== 'native-unified' && checked.data.body.mode !== graph.mode) return fail('WRONG_PHASE', 'The instance phase differs from its container.', id);
             continue;
         }
         const described = describeOperation(graph, node);
@@ -86,7 +86,7 @@ function inspectScope(graph, { definition, snapshots = {} } = {}) {
         if(!modifiers.ok)return {...modifiers,error:{...modifiers.error,nodeId:id}};
         const operation = described.data.descriptor;
         if (node.operationVersion !== undefined && node.operationVersion !== 1) return fail('UNKNOWN_OPERATION', 'Unknown operation or version.', id);
-        if (operation.phase !== graph.mode.slice(7)) return fail('WRONG_PHASE', 'An operation does not support the containing phase.', id);
+        if (operation.phase !== phaseForNode(graph, node)) return fail('WRONG_PHASE', 'An operation does not support the containing phase.', id);
         if (definition && (operation.rootOnly || ['scene-context', 'reply-snapshot', 'guidance', 'apply-reply'].includes(operation.id))) return fail('ROOT_ONLY_OPERATION', 'Root-only operations cannot appear in reusable definitions.', id);
         if (definition && operation.requiresStateInDefinition && !wires.some(wire => wire?.to === id && wire.toPort === 'state')) return fail('ROOT_ONLY_OPERATION', 'State inside a reusable definition requires an explicit snapshot input.', id);
         if (operation.id === 'memory' && operation.terminal && node.enabled !== false && ++memoryCommits > 1) return fail('MULTIPLE_MEMORY_COMMITS', 'A root workflow supports one Memory Commit terminal.', id);
@@ -349,8 +349,8 @@ function expandChecked(root, snapshots, rootDefinition) {
             graph.roles ??= {};
             for (const [role, binding] of Object.entries(localContext.node.roleOverrides ?? {})) graph.roles[role] = { ...(Object.hasOwn(graph.roles, role) ? graph.roles[role] : {}), ...binding };
         }
-        for (const node of Object.values(graph.nodes ?? {})) if (operationFor(node, { phase: graph.mode.slice(7) })) {
-            const operation = operationFor(node, { phase: graph.mode.slice(7) });
+        for (const node of Object.values(graph.nodes ?? {})) if (operationFor(node, { phase: phaseForNode(graph, node), mode: graph.mode })) {
+            const operation = operationFor(node, { phase: phaseForNode(graph, node), mode: graph.mode });
             for (const [id, descriptor] of Object.entries(operation.controlDescriptors)) if (node[id] === undefined && (operation.family !== 'Introspection' || Object.hasOwn(operation.defaults, id))) node[id] = structuredClone(descriptor.default);
             node.operationVersion ??= 1;
             node.modelRole ??= operation.modelRole;
@@ -377,7 +377,7 @@ function expandChecked(root, snapshots, rootDefinition) {
         const parent = path.length ? address(path.slice(0, -1), path.at(-1)) : undefined;
         for (const node of Object.values(graph.nodes)) {
             if (node.type === 'note') continue;
-            const at = address(path, node.id), operation = operationFor(node, { phase: graph.mode.slice(7) });
+            const at = address(path, node.id), operation = operationFor(node, { phase: phaseForNode(graph, node), mode: graph.mode });
             const enabled = ancestorEnabled && node.enabled !== false;
             const ports = portsForNode({ ...graph, definitions: snapshots, interface: definition?.interface }, node);
             for (const port of ports) {
@@ -387,7 +387,7 @@ function expandChecked(root, snapshots, rootDefinition) {
             }
             if (operation) {
                 const requestBound = typeof operation.requestBound === 'function' ? operation.requestBound(node) : operation.requestBound;
-                const unit = { address: at, node, enabled, requestBound, inputPorts: ports.filter(port => port.direction === 'input'), outputPorts: ports.filter(port => port.direction === 'output'), terminal: operation.terminal };
+                const unit = { address: at, node, phase: operation.phase, enabled, requestBound, inputPorts: ports.filter(port => port.direction === 'input'), outputPorts: ports.filter(port => port.direction === 'output'), terminal: operation.terminal };
                 primitives.push(unit); hierarchy.push({ address: at, kind: 'primitive', ...(parent ? { parent } : {}) });
             } else if (node.type === 'subgraph') {
                 instances.push({ instancePath: [...path, node.id], definition: node.definition });

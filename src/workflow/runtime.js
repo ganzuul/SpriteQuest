@@ -8,12 +8,13 @@ import { graphSemanticSignature } from './ports.js?v=0.26.0';
 import { executePrimitive, PRIMITIVE_OPERATIONS } from './operations/nodes.js?v=0.26.0';
 import { executeInput, INPUT_OPERATIONS } from './operations/input-nodes.js?v=0.26.0';
 import { executeContextJoin } from './operations/context-join.js?v=0.26.0';
+import { executeControl, CONTROL_OPERATIONS } from './operations/control-nodes.js?v=0.26.0';
 import { executeTranspose, TRANSPOSE_OPERATIONS } from './operations/transpose-nodes.js?v=0.26.0';
 import { cleanupDraft, CLEANUP_MODES } from './operations/prose-cleanup.js?v=0.26.0';
 import { executeIntrospection } from './introspection/nodes.js?v=0.26.0';
 import { INTROSPECTION_NATIVE_OPERATIONS, projectIntrospectionNode } from './introspection/native.js?v=0.26.0';
 import { admitRunPlan, createRunRecorder } from './recording.js?v=0.26.0';
-import { addressKey, freeze, own, parseRunPlan, safeBinding, safeError, safeUsage, boundedText } from './record-data.js?v=0.26.0';
+import { addressKey, freeze, own, plain, parseRunPlan, safeBinding, safeError, safeIteration, safeUsage, boundedText } from './record-data.js?v=0.26.0';
 
 /** Execution identity shared by the host and UI. Canvas presentation never invalidates work. */
 export const workflowSignature = graphSemanticSignature;
@@ -33,6 +34,11 @@ function planWorkflow(graph,ports) {
 }
 async function executeNode(node,inputs,op,local) {
     const input=inputs.in;
+    if(op.hostOperation||local.executeHostOperation&&['scene-context','reply-snapshot','prompt-source'].includes(node.operation)) {
+        if(!local.root||!local.executeHostOperation)return failure('HOST_OPERATION_REQUIRED','This operation requires its owned root host adapter.',node.id);
+        return local.executeHostOperation(node,inputs,{phase:local.phase,rootMode:local.rootMode,root:local.root,address:local.address,inputStates:local.inputStates,request:local.request,...(local.signal?{signal:local.signal}:{})});
+    }
+    if(Object.hasOwn(CONTROL_OPERATIONS,node.operation))return executeControl(node,inputs,local);
     if(node.operation!=='prompt-source' && Object.hasOwn(INPUT_OPERATIONS,node.operation))return executeInput(node,{phase:local.phase});
     if(Object.hasOwn(PRIMITIVE_OPERATIONS,node.operation))return executePrimitive(node,inputs,{phase:local.phase,...(local.signal?{signal:local.signal}:{}),...(local.createWorker?{createWorker:local.createWorker}:{}),...(local.timeoutMs!==undefined?{timeoutMs:local.timeoutMs}:{})});
     if(node.operation==='context-join')return executeContextJoin(node,inputs);
@@ -40,7 +46,7 @@ async function executeNode(node,inputs,op,local) {
     if(Object.hasOwn(INTROSPECTION_NATIVE_OPERATIONS,node.operation)) {
         const projected=projectIntrospectionNode(node);if(!projected.ok)return projected;
         const capabilities={phase:local.phase,root:local.root,request:local.request,countTokens:local.countTokens,binding:local.binding,...(local.signal?{signal:local.signal}:{})};
-        if(local.executeIntrospection)return local.executeIntrospection(node,inputs,{...capabilities,address:local.address});
+        if(local.executeIntrospection)return local.executeIntrospection(node,inputs,{...capabilities,address:local.address,rootMode:local.rootMode,inputStates:local.inputStates});
         // Public execution can consume explicitly injected reads, but never obtains
         // the commit capability or trusted host settlement authority.
         const memory=own(local,'memory');
@@ -86,7 +92,7 @@ export async function runWorkflowForHost(graph,ports={},hooks={}) { return execu
 
 async function executeWorkflow(original,ports,hooks={}) {
     const schema=versionMetadata(own(original,'schema')),runtime=versionMetadata(own(original,'runtime')),mode=ports.target===undefined?'root':'target';
-    const artifacts=new Map(),bindings=new Map(),nodeCalls=new Map(),terminals=[];
+    const artifacts=new Map(),outputStates=new Map(),bindings=new Map(),nodeCalls=new Map(),terminals=[];
     let runId,recorder,plan,safePlan,current,callBound=0,actualCalls=0,seq=0,lastElapsed=0,cancelling=false,closed=false,removeAbort=()=>{};
     let now,monotonic,started;
     const safeFailure=result=>{const error=safeError(result?.error)??{code:'WORKFLOW_FAILED',message:'Workflow preparation failed; inspect the source, connection and tokenizer.'};if(current && safePlan?.units.some(unit=>unit.included&&addressKey(unit.address)===addressKey(current.address)))Object.assign(error,{nodeId:current.address.nodeId,address:current.address});return {ok:false,error};};
@@ -101,7 +107,7 @@ async function executeWorkflow(original,ports,hooks={}) {
     const stopped=()=>ports.signal?.aborted||cancelling;
     const finish=raw=>{
         const result=raw.ok?raw:safeFailure(raw);
-        if(recorder && !closed){if(stopped())cancel();emit('run-settled',{status:stopped()?'cancelled':result.ok?'completed':!safePlan?'invalid':/^STALE|BINDING_CHANGED/.test(result.error?.code)?'stale':'failed',...(!result.ok?{error:safeError(result.error),...(current&&safePlan?{failedAddress:current.address}:{})}:{})});closed=true;}
+        if(recorder && !closed){if(stopped())cancel();emit('run-settled',{status:stopped()?'cancelled':result.ok?'completed':raw.unresolved?'unresolved':!safePlan?'invalid':/^STALE|BINDING_CHANGED/.test(result.error?.code)?'stale':'failed',...(!result.ok?{error:safeError(result.error),...(current&&safePlan&&!raw.unresolved?{failedAddress:current.address}:{})}:{})});closed=true;}
         const recording=recorder?.finish();
         const identity=typeof runId==='string'?{runId}:{};
         return freezeArtifact({...(schema!==undefined?{schema}:{}),...(runtime!==undefined?{runtime}:{}),...identity,mode,ok:result.ok,callBound,actualCalls,...(recording?{recording}:{}),...(!result.ok?{error:result.error}:{}),...(result.preview?{preview:true}:{})});
@@ -130,21 +136,40 @@ async function executeWorkflow(original,ports,hooks={}) {
         const preparation=await hooks.prepare?.(plan,{cancel,originalGraphSnapshot});if(preparation?.ok===false)return finish(preparation);
         const nodes=plan.primitives.filter(unit=>unit.included);
         const bindingGraph={...prepared.graph,roles:{}};
-        for(const unit of nodes) {
-            if(!unit.requestBound)continue;current=unit;if(stopped())return finish(failure('ABORTED','Workflow was stopped.',unit.address.nodeId));
+        const bindUnit=async(unit,op)=>{
+            current=unit;const node=unit.node;
             emit('node-phase',{address:unit.address,phase:'binding'});
-            const op=operationFor(unit.node,{phase:plan.phase}),resolved=await ports.resolveBinding?.({...unit.node,modelRole:unit.node.modelRole??op.modelRole},bindingGraph,unit.address);
-            if(stopped())return finish(failure('ABORTED','Workflow was stopped.',unit.address.nodeId));
-            if(!resolved?.ok){const error=resolved??failure('BINDING_MISSING','Resolve every fixed model connection before running.');emit('node-settled',{address:unit.address,status:'failed',error:safeError(error.error)});return finish({...error,error:{...error.error,nodeId:unit.address.nodeId}});}
-            bindings.set(addressKey(unit.address),resolved.data);
-            emit('node-phase',{address:unit.address,phase:'binding',binding:safeBinding(ports.bindingSummary?.(resolved.data)??{role:unit.node.modelRole,profileId:resolved.data?.profileId,model:resolved.data?.model})});
+            const resolved=await ports.resolveBinding?.({...node,modelRole:node.modelRole??op.modelRole},bindingGraph,unit.address);
+            if(stopped())return failure('ABORTED','Workflow was stopped.',node.id);
+            if(!resolved?.ok){const error=resolved??failure('BINDING_MISSING','Resolve the activated model connection before running.');emit('node-settled',{address:unit.address,status:'failed',error:safeError(error.error)});return error;}
+            const binding=resolved.data;bindings.set(addressKey(unit.address),binding);
+            emit('node-phase',{address:unit.address,phase:'binding',binding:safeBinding(ports.bindingSummary?.(binding)??{role:node.modelRole??op.modelRole,profileId:binding?.profileId,model:binding?.model})});
+            return resolved;
+        };
+        // Unconditional legacy plans retain fixed-model preflight before any source
+        // effects. Controls and owned host outputs can deactivate nodes, so those
+        // plans (and unified plans) bind only after actual input activation.
+        const legacyPreflight=['native-pre','native-post'].includes(prepared.graph.mode)&&!hooks.executeHostOperation&&nodes.every(unit=>!Object.hasOwn(CONTROL_OPERATIONS,unit.node.operation)&&!operationFor(unit.node,{phase:unit.phase,mode:prepared.graph.mode}).hostOperation);
+        if(legacyPreflight)for(const unit of nodes){
+            const op=operationFor(unit.node,{phase:unit.phase,mode:prepared.graph.mode});
+            if(stopped())return finish(failure('ABORTED','Workflow was stopped.',unit.node.id));
+            if(unit.requestBound&&op.modelRole){const bound=await bindUnit(unit,op);if(!bound.ok)return finish(bound);}
         }
+        let unresolved=false;
         for(const unit of nodes) {
-            current=unit;const node=unit.node,key=addressKey(unit.address),op=operationFor(node,{phase:plan.phase}),binding=bindings.get(key);
+            current=unit;const node=unit.node,key=addressKey(unit.address),op=operationFor(node,{phase:unit.phase,mode:prepared.graph.mode});let binding=bindings.get(key);
             if(stopped())return finish(failure('ABORTED','Workflow was stopped.',node.id));
+            const inputs=Object.create(null),inputStates=Object.create(null);
+            for(const edge of plan.edges)if(addressKey(edge.to)===key){const state=outputStates.get(artifactKey(edge.from))??{status:'unresolved',reason:{code:'OUTPUT_MISSING',message:'The upstream output has not resolved.'}};inputStates[edge.to.portId]=state;if(state.status==='completed')inputs[edge.to.portId]=artifacts.get(artifactKey(edge.from));}
+            for(const port of unit.inputPorts)if(Object.hasOwn(inputStates,port.id))recorder.capture({address:unit.address,direction:'input',portId:port.id,state:inputStates[port.id],...(Object.hasOwn(inputs,port.id)?{artifact:inputs[port.id],source:inputs[port.id]?.source}:{})});
+            const held=Object.values(inputStates).find(state=>state.status==='unresolved');
+            const skipped=unit.inputPorts.some(port=>port.required&&inputStates[port.id]?.status==='skipped');
+            if(held||skipped){const status=held?'unresolved':'skipped',state={status,reason:held?.reason??{code:'INPUT_SKIPPED',message:'A required branch input was skipped.'}};if(held)unresolved=true;
+                for(const port of unit.outputPorts){outputStates.set(artifactKey({...unit.address,portId:port.id}),state);recorder.capture({address:unit.address,direction:'output',portId:port.id,state});}
+                emit('node-settled',{address:unit.address,status,reason:state.reason});continue;
+            }
+            if(unit.requestBound&&op.modelRole&&!bindings.has(key)){const bound=await bindUnit(unit,op);if(!bound.ok)return finish(bound);binding=bound.data;}
             emit('node-phase',{address:unit.address,phase:'executing'});observe(ports.onStage,freezeArtifact(structuredClone(node)),unit.address);
-            const inputs=Object.create(null);for(const edge of plan.edges)if(addressKey(edge.to)===key)inputs[edge.to.portId]=artifacts.get(artifactKey(edge.from));
-            for(const port of unit.inputPorts)if(Object.hasOwn(inputs,port.id))recorder.capture({address:unit.address,direction:'input',portId:port.id,artifact:inputs[port.id],source:inputs[port.id]?.source});
             const request=async options=>{
                 if(stopped())return failure('ABORTED','Workflow was stopped.',node.id);
                 if(actualCalls>=callBound||(nodeCalls.get(key)??0)>=unit.requestBound)return failure('CALL_LIMIT','Workflow request limit reached.',node.id);
@@ -152,8 +177,9 @@ async function executeWorkflow(original,ports,hooks={}) {
                 if(stopped())return failure('ABORTED','Workflow was stopped.',node.id);
                 if(!Number.isFinite(tokenCount?.tokens)||tokenCount.tokens<0)return failure('TOKEN_COUNT_FAILED','The tokenizer returned an invalid count.',node.id);
                 const attempt=(nodeCalls.get(key)??0)+1;nodeCalls.set(key,attempt);actualCalls++;
-                emit('request-start',{address:unit.address,attempt,maxTokens:options.maxTokens,inputTokens:tokenCount.tokens});const requestStarted=lastElapsed;
-                let response;try{response=await ports.request({...options,binding,signal:ports.signal});}catch{response=failure(stopped()?'ABORTED':'REQUEST_FAILED','Auxiliary request failed; no retry was made.',node.id);}
+                const iteration=node.operation==='for-each'?safeIteration(options.iteration):undefined;
+                emit('request-start',{address:unit.address,attempt,maxTokens:options.maxTokens,inputTokens:tokenCount.tokens,...(iteration?{iteration}:{})});const requestStarted=lastElapsed;
+                let response;try{response=await ports.request({...options,binding:node.operation==='for-each'?options.binding??binding:binding,signal:ports.signal});}catch{response=failure(stopped()?'ABORTED':'REQUEST_FAILED','Auxiliary request failed; no retry was made.',node.id);}
                 if(!response||typeof response.ok!=='boolean'||(response.ok&&typeof response.data?.text!=='string')||(!response.ok&&!response.error))response=failure('INVALID_RESPONSE','Auxiliary request returned an invalid result.',node.id);
                 if(stopped())response=failure('ABORTED','Ignore the stopped request result.',node.id);
                 else if(response.ok&&cutoff(response.data.finish))response={ok:false,error:{code:'TRUNCATED_OUTPUT',message:'Auxiliary output reached its completion limit.',usage:response.data.usage,finish:response.data.finish}};
@@ -161,25 +187,29 @@ async function executeWorkflow(original,ports,hooks={}) {
                 const metadata=response.ok?response.data:response.error;
                 emit('request-settled',{address:unit.address,attempt,status:stopped()?'cancelled':response.ok?'completed':'failed',durationMs:Math.max(0,monotonic()-started-requestStarted),...(metadata?.finish!==undefined?{finish:boundedText(metadata.finish,128)??null}:{}),...(safeUsage(metadata?.usage)!==undefined?{usage:safeUsage(metadata.usage)}:{}),...(!response.ok?{error:safeError(response.error)}:{})});return response;
             };
-            const result=await executeNode(node,inputs,op,{...ports,phase:plan.phase,binding,request,root:unit.address.instancePath.length===0,address:unit.address,executeIntrospection:hooks.executeIntrospection});
+            const result=await executeNode(node,inputs,op,{...ports,phase:unit.phase,rootMode:prepared.graph.mode,binding,request,inputStates:freezeArtifact(inputStates),root:unit.address.instancePath.length===0,address:unit.address,executeIntrospection:hooks.executeIntrospection,executeHostOperation:hooks.executeHostOperation});
             if(stopped())return finish(failure('ABORTED','Workflow was stopped.',node.id));
             if(!result?.ok){emit('node-settled',{address:unit.address,status:'failed',error:safeError(result?.error)});return finish(result??failure('WORKFLOW_FAILED','The operation returned no result.',node.id));}
-            let output=result.artifact,modifierMetadata;
-            if(node.modifiers?.length) {
-                const modified=applyTextModifiers(output?.text,node.modifiers);
-                if(!modified.ok){const error={...modified.error,nodeId:node.id};emit('node-settled',{address:unit.address,status:'failed',error:safeError(error)});return finish({ok:false,error});}
-                output={...output,text:modified.data.text};modifierMetadata={rawText:modified.data.rawText,trace:modified.data.trace};
+            const outputs=own(result,'outputs'),states=own(result,'outputStates');
+            if(outputs!==undefined&&!plain(outputs)||states!==undefined&&!plain(states)||[...Object.keys(outputs??{}),...Object.keys(states??{})].some(id=>!unit.outputPorts.some(port=>port.id===id))){const error=failure('INVALID_OUTPUT','The operation returned undeclared output ports.',node.id);emit('node-settled',{address:unit.address,status:'failed',error:error.error});return finish(error);}
+            const metadata={binding:safeBinding(ports.bindingSummary?.(binding)??{role:node.modelRole,profileId:binding?.profileId,model:binding?.model}),reports:result.reports};
+            let allSkipped=unit.outputPorts.length>0,hasUnresolved=false;
+            for(const port of unit.outputPorts){let output=own(outputs,port.id);if(outputs===undefined&&port.id==='out')output=result.artifact;
+                const rawState=own(states,port.id),status=rawState===undefined?(output===undefined?'unresolved':'completed'):own(rawState,'status');
+                if(!['completed','skipped','unresolved'].includes(status)||status==='completed'&&(output===undefined||own(output,'kind')!==port.kind)||status!=='completed'&&output!==undefined){const error=failure('INVALID_OUTPUT','Output state and artifact must match the declared port.',node.id);emit('node-settled',{address:unit.address,status:'failed',error:error.error});return finish(error);}
+                const reason=safeError(own(rawState,'reason')),state=freezeArtifact({status,...(reason?{reason}:{})});outputStates.set(artifactKey({...unit.address,portId:port.id}),state);allSkipped&&=status==='skipped';hasUnresolved||=status==='unresolved';
+                if(status!=='completed'){recorder.capture({address:unit.address,direction:'output',portId:port.id,state});continue;}
+                let modifierMetadata;if(node.modifiers?.length){const modified=applyTextModifiers(output?.text,node.modifiers);if(!modified.ok){emit('node-settled',{address:unit.address,status:'failed',error:safeError(modified.error)});return finish(modified);}output={...output,text:modified.data.text};modifierMetadata={rawText:modified.data.rawText,trace:modified.data.trace};}
+                const artifact=freezeArtifact(output),recordedArtifact=modifierMetadata?freezeArtifact({...artifact,modifiers:modifierMetadata}):artifact;artifacts.set(artifactKey({...unit.address,portId:port.id}),artifact);recorder.capture({address:unit.address,direction:'output',portId:port.id,artifact:recordedArtifact,state,source:artifact?.source,...metadata});
             }
-            const artifact=freezeArtifact(output),recordedArtifact=modifierMetadata?freezeArtifact({...artifact,modifiers:modifierMetadata}):artifact;
-            const metadata={source:artifact?.source,binding:safeBinding(ports.bindingSummary?.(binding)??{role:node.modelRole,profileId:binding?.profileId,model:binding?.model}),reports:result.reports};
-            for(const port of unit.outputPorts){artifacts.set(artifactKey({...unit.address,portId:port.id}),artifact);recorder.capture({address:unit.address,direction:'output',portId:port.id,artifact:recordedArtifact,...metadata});}
-            if(unit.terminal){const terminal={kind:'terminal',address:unit.address};terminals.push({terminal,artifact});recorder.capture({address:unit.address,direction:'terminal',artifact,...metadata});}
-            emit('node-settled',{address:unit.address,status:'completed'});
+            if(unit.terminal){const artifact=freezeArtifact(result.artifact),terminal={kind:'terminal',address:unit.address};terminals.push({terminal,artifact});recorder.capture({address:unit.address,direction:'terminal',artifact,state:{status:'completed'},source:artifact?.source,...metadata});}
+            if(hasUnresolved)unresolved=true;emit('node-settled',{address:unit.address,status:hasUnresolved?'unresolved':allSkipped?'skipped':'completed'});
         }
         current=null;
+        if(unresolved)return finish({...failure('UNRESOLVED_INPUT','A selected workflow output is unresolved; dependent work is held.'),unresolved:true});
         const settlement=await hooks.settle?.({mode,terminals:mode==='root'?terminals:[],bindings:plan.primitives.filter(unit=>bindings.has(addressKey(unit.address))).map(unit=>({address:unit.address,binding:bindings.get(addressKey(unit.address))}))});
         if(stopped())return finish(failure('ABORTED','Workflow was stopped.'));if(settlement?.ok===false)return finish(settlement);
         return finish({ok:true});
     } catch {return finish(failure(stopped()?'ABORTED':'WORKFLOW_FAILED','Workflow preparation failed; inspect the source, connection and tokenizer.',current?.node.id));}
-    finally {removeAbort();artifacts.clear();bindings.clear();nodeCalls.clear();terminals.length=0;plan=null;safePlan=null;recorder=null;current=null;}
+    finally {removeAbort();artifacts.clear();outputStates.clear();bindings.clear();nodeCalls.clear();terminals.length=0;plan=null;safePlan=null;recorder=null;current=null;}
 }

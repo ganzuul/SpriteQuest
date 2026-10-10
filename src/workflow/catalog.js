@@ -4,6 +4,7 @@ import { TRANSPOSE_OPERATIONS, describeTranspose } from './operations/transpose-
 import { CLEANUP_MODES, validateCleanupSettings } from './operations/prose-cleanup.js?v=0.26.0';
 import { INTROSPECTION_NATIVE_OPERATIONS, describeNativeIntrospection, introspectionDefaults } from './introspection/native.js?v=0.26.0';
 import { INPUT_OPERATIONS, describeInput } from './operations/input-nodes.js?v=0.26.0';
+import { CONTROL_OPERATIONS, describeControl } from './operations/control-nodes.js?v=0.26.0';
 
 /** Native operation metadata. Artifact flow, rather than canvas placement, defines execution. */
 export const FAMILIES = ['Input', 'Shaping', 'Surface', 'Transpose', 'Introspection', 'Derive', 'Output'];
@@ -50,13 +51,40 @@ const transposeDescriptor = source => ({ ...source, minimumSchema: 3,
 Object.assign(OPERATIONS, Object.fromEntries(Object.entries(TRANSPOSE_OPERATIONS).map(([id, source]) => [id, transposeDescriptor(source)])));
 Object.assign(OPERATIONS, INTROSPECTION_NATIVE_OPERATIONS);
 Object.assign(OPERATIONS, INPUT_OPERATIONS);
+Object.assign(OPERATIONS, CONTROL_OPERATIONS);
 OPERATIONS.repair.controlDescriptors.categories.label = 'Policy categories (empty selects all)';
 for (const [key, label] of Object.entries({ mode: 'Mode', scope: 'Scope', caseSensitive: 'Case sensitive', strength: 'Strength', instructions: 'Instructions', maxTokens: 'Output tokens', protectedLiterals: 'Protected literals' })) OPERATIONS.repair.controlDescriptors[key].label = label;
 const contextJoinDescriptor = source => ({ ...source, controlDescriptors: { inputs: { ...source.controlDescriptors.inputs, label: 'Inputs', editor: 'json', exposable: false } } });
 OPERATIONS['context-join'] = contextJoinDescriptor(describeContextJoin({ type: 'workflow', operation: 'context-join', operationVersion: 1, inputs: [{ id: 'context-1', label: 'Context 1' }, { id: 'context-2', label: 'Context 2' }] }).data.descriptor);
-const newOperation = id => Object.hasOwn(INPUT_OPERATIONS, id) || Object.hasOwn(PRIMITIVE_OPERATIONS, id) || Object.hasOwn(TRANSPOSE_OPERATIONS, id) || Object.hasOwn(INTROSPECTION_NATIVE_OPERATIONS, id) || id === 'context-join' || id === 'repair';
+const newOperation = id => Object.hasOwn(CONTROL_OPERATIONS, id) || Object.hasOwn(INPUT_OPERATIONS, id) || Object.hasOwn(PRIMITIVE_OPERATIONS, id) || Object.hasOwn(TRANSPOSE_OPERATIONS, id) || Object.hasOwn(INTROSPECTION_NATIVE_OPERATIONS, id) || id === 'context-join' || id === 'repair';
 const failure = (code, message) => ({ ok: false, error: { code, message } });
+function ownMetadata(value, key) {
+    if (!value || typeof value !== 'object' || Array.isArray(value) || ![Object.prototype, null].includes(Object.getPrototypeOf(value))) throw new Error('plain metadata');
+    const property = Object.getOwnPropertyDescriptor(value, key);
+    if (!property) return undefined;
+    if (!property.enumerable || !Object.hasOwn(property, 'value')) throw new Error('own metadata');
+    return property.value;
+}
+/** Effective operation capability; generation stage is derived separately from dependencies.
+ * @returns {import('./types').WorkflowPhase | null}
+ */
+export function phaseForNode(graph, node) {
+    try {
+        const mode = ownMetadata(graph, 'mode'), id = ownMetadata(node, 'operation');
+        if (!['native-pre', 'native-post', 'native-unified'].includes(mode) || ownMetadata(node, 'type') !== 'workflow' || typeof id !== 'string' || !Object.hasOwn(OPERATIONS, id)) return null;
+        const declared = ownMetadata(node, 'phase');
+        if (declared !== undefined && !['pre', 'post'].includes(declared)) return null;
+        const op = OPERATIONS[id];
+        const fixed = Object.hasOwn(TRANSPOSE_OPERATIONS, id) && ownMetadata(node, 'inputKind') === 'text' ? undefined
+            : id === 'memory' && ownMetadata(node, 'mode') === 'commit' || id === 'text-rules' && ownMetadata(node, 'inputKind') === 'draft' ? 'post'
+            : id === 'compose' && ownMetadata(node, 'outputKind') === 'guidance' ? 'pre'
+            : ['pre', 'post'].includes(op.phase) ? op.phase : undefined;
+        const phase = mode === 'native-unified' ? declared ?? fixed ?? 'pre' : mode === 'native-pre' ? 'pre' : 'post';
+        return declared !== undefined && declared !== phase || fixed !== undefined && fixed !== phase ? null : phase;
+    } catch { return null; }
+}
 function dynamicDescription(node, phase) {
+    if (Object.hasOwn(CONTROL_OPERATIONS, node.operation)) return describeControl(node, { phase });
     if (Object.hasOwn(INPUT_OPERATIONS, node.operation)) return describeInput(node, { phase });
     if (Object.hasOwn(INTROSPECTION_NATIVE_OPERATIONS, node.operation)) return describeNativeIntrospection(node, { phase });
     if (node.operation === 'repair') {
@@ -88,24 +116,34 @@ function dynamicDescription(node, phase) {
         return result.ok ? { ok: true, data: { ...result.data, descriptor: transposeDescriptor(result.data.descriptor) } } : result;
     }
     if (node.operation === 'context-join') {
-        const result = describeContextJoin({ type: 'workflow', operation: 'context-join', operationVersion: node.operationVersion ?? 1, inputs: node.inputs === undefined ? structuredClone(OPERATIONS['context-join'].defaults.inputs) : node.inputs }, { phase });
+        const result = describeContextJoin({ type: 'workflow', operation: 'context-join', operationVersion: ownMetadata(node, 'operationVersion') ?? 1, inputs: ownMetadata(node, 'inputs') === undefined ? structuredClone(OPERATIONS['context-join'].defaults.inputs) : ownMetadata(node, 'inputs') }, { phase });
         return result.ok ? { ok: true, data: { ...result.data, descriptor: contextJoinDescriptor(result.data.descriptor) } } : result;
     }
     const result = describePrimitive(node, { phase });
     return result.ok ? { ok: true, data: { ...result.data, descriptor: { ...primitiveDescriptor(result.data.descriptor), minimumSchema: 3 } } } : result;
 }
 /** Compatibility metadata projection. Graph validators supply the containing phase. */
-export function operationFor(node, { phase } = {}) {
-    const op = node?.type === 'workflow' && typeof node.operation === 'string' && Object.hasOwn(OPERATIONS, node.operation) ? OPERATIONS[node.operation] : null;
-    if (!op) return null;
-    if (newOperation(op.id)) {
-        const effectivePhase = phase ?? node.phase ?? (op.phase === 'post' || op.id === 'memory' && node.mode === 'commit' || op.id === 'text-rules' && node.inputKind === 'draft' ? 'post' : 'pre');
-        const described = dynamicDescription(node, effectivePhase);
-        return described.ok ? described.data.descriptor : null;
-    }
-    if (op.id !== 'reroute') return op;
-    return ARTIFACT_KINDS.includes(node.artifactKind) && ['pre', 'post'].includes(node.phase)
-        ? { ...op, phase: node.phase, input: node.artifactKind, output: node.artifactKind } : null;
+export function operationFor(node, { phase, mode } = {}) {
+    try {
+        const id = ownMetadata(node, 'operation');
+        const op = ownMetadata(node, 'type') === 'workflow' && typeof id === 'string' && Object.hasOwn(OPERATIONS, id) ? OPERATIONS[id] : null;
+        if (!op) return null;
+        const declared = ownMetadata(node, 'phase');
+        if (declared !== undefined && !['pre', 'post'].includes(declared)) return null;
+        if (newOperation(op.id)) {
+            const effectivePhase = phase ?? declared ?? (op.phase === 'post' || op.id === 'memory' && ownMetadata(node, 'mode') === 'commit' || op.id === 'text-rules' && ownMetadata(node, 'inputKind') === 'draft' ? 'post' : 'pre');
+            if (declared !== undefined && declared !== effectivePhase) return null;
+            const described = dynamicDescription(node, effectivePhase);
+            return described.ok ? described.data.descriptor : null;
+        }
+        if (op.id !== 'reroute') {
+            if (declared !== undefined && declared !== op.phase) return null;
+            return op.id === 'guidance' && mode === 'native-unified' ? { ...op, output: 'guidance', terminal: false } : op;
+        }
+        const artifactKind = ownMetadata(node, 'artifactKind');
+        return ARTIFACT_KINDS.includes(artifactKind) && ['pre', 'post'].includes(declared)
+            ? { ...op, phase: declared, input: artifactKind, output: artifactKind } : null;
+    } catch { return null; }
 }
 /** One checked producer for effective descriptor, settings validation and actual named pins.
  * @returns {import('./types').Result<import('./types').OperationDescription>}
@@ -125,14 +163,16 @@ export function describeOperation(graph, node) {
         if (version !== undefined && version !== 1) return failure('UNKNOWN_OPERATION', 'Unknown workflow operation version.');
         if (newOperation(id)) {
             if (own(graph, 'schema') !== 3 || own(graph, 'runtime') !== 2) return failure('UNSUPPORTED_VERSION', 'This operation requires schema 3 and runtime 2.');
-            const mode = own(graph, 'mode');
-            if (!['native-pre', 'native-post'].includes(mode)) return failure('WRONG_PHASE', 'Expected a native workflow phase.');
+            const phase = phaseForNode(graph, node);
+            if (!phase) return failure('WRONG_PHASE', 'The operation does not support its effective native phase.');
             // Context Join receives only its declared settings; no envelope metadata is runtime Context.
             if (id === 'context-join') own(node, 'inputs');
-            const result = dynamicDescription(node, mode.slice(7));
+            const result = dynamicDescription(node, phase);
             return !result.ok && result.error.code === 'INVALID_PHASE' ? failure('WRONG_PHASE', result.error.message) : result;
         }
-        const descriptor = operationFor(node);
+        const phase = phaseForNode(graph, node);
+        if (!phase) return failure('WRONG_PHASE', 'The operation does not support its effective native phase.');
+        const descriptor = operationFor(node, { phase, mode: own(graph, 'mode') });
         if (!descriptor) return failure('UNKNOWN_OPERATION', 'Unknown workflow operation.');
         return { ok: true, data: { descriptor, ports: [
             ...(descriptor.input ? [{ id: 'in', label: 'Input', kind: descriptor.input, direction: 'input', required: true, cardinality: 'one' }] : []),

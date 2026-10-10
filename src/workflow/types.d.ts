@@ -3,6 +3,8 @@ export type Result<T> = { ok: true; data: T } | { ok: false; error: WorkflowErro
 export interface WorkflowError { code: string; message: string; nodeId?: string; address?: NodeAddress; }
 export type ArtifactKind = 'context' | 'draft' | 'patches' | 'candidate' | 'guidance' | 'text' | 'data';
 export type WorkflowPhase = 'pre' | 'post';
+export type WorkflowRunPhase = WorkflowPhase | 'unified';
+export type NativeWorkflowMode = 'native-pre' | 'native-post' | 'native-unified';
 export interface Endpoint { nodeId: string; portId: string; }
 export interface NodeAddress { workflowId: string; instancePath: string[]; nodeId: string; }
 export interface ArtifactAddress extends NodeAddress { portId: string; }
@@ -29,6 +31,7 @@ export interface OperationDescriptor {
     controls: string[]; controlDescriptors: Record<string, ControlDescriptor>; defaults: Record<string, unknown>;
     requestBound: number | ((node: NativeNode) => number); modelRole: string | null; terminal: boolean; dynamicPorts?: boolean;
     rootOnly?: boolean; requiresStateInDefinition?: boolean; modes?: string[];
+    acceptsSkippedInputs?: boolean; hostOperation?: boolean;
 }
 export interface OperationDescription { descriptor: OperationDescriptor; ports: PortDescriptor[]; }
 export interface Binding { profileId?: string | null; model?: string | null; }
@@ -57,7 +60,7 @@ export interface BoundaryNode { id: string; type: 'subgraph-input' | 'subgraph-o
 export interface ParameterTarget { instancePath: string[]; nodeId: string; controlId: string; }
 export interface ExposedParameter { id: string; label: string; target: ParameterTarget; }
 export interface DefinitionBody {
-    schema: 3; runtime: 2; mode: 'native-pre' | 'native-post';
+    schema: 3; runtime: 2; mode: NativeWorkflowMode;
     nodes: Record<string, NativeNode | SubgraphInstance | BoundaryNode>;
     wires: Record<string, DirectWire | PortalWire>;
     groups?: Record<string, Record<string, unknown>>;
@@ -82,7 +85,7 @@ export interface SubgraphInstance {
 interface NativeDocument {
     id?: string;
     name?: string;
-    mode: 'native-pre' | 'native-post';
+    mode: NativeWorkflowMode;
     nodes: Record<string, NativeNode | SubgraphInstance>;
     groups?: Record<string, Record<string, unknown>>;
     roles?: Record<string, Binding>;
@@ -100,17 +103,17 @@ export interface TerminalTarget { kind: 'terminal'; address: NodeAddress; }
 export type WorkflowTarget = ArtifactAddress | TerminalTarget;
 export interface ResolvedEdge { from: ArtifactAddress; to: ArtifactAddress; disabled?: boolean; provenance?: { wireId: string; portalId?: string; instancePath: string[] }; }
 export interface RunUnit {
-    address: NodeAddress; operation: string; label?: string; included: boolean;
+    address: NodeAddress; operation: string; phase?: WorkflowPhase; label?: string; included: boolean;
     dependencies: NodeAddress[]; requestBound: number; inputPorts: string[]; outputPorts: string[];
 }
 export interface RunHierarchyEntry { address: NodeAddress; kind: 'instance' | 'primitive'; parent?: NodeAddress; included: boolean; }
 export interface RunPlan {
-    workflowId: string; phase: WorkflowPhase; mode: 'root' | 'target';
+    workflowId: string; phase: WorkflowRunPhase; mode: 'root' | 'target';
     target?: WorkflowTarget; resolvedTarget?: WorkflowTarget;
     units: RunUnit[]; hierarchy: RunHierarchyEntry[]; terminals: TerminalTarget[]; callBound: number;
 }
 export interface ResolvedPrimitive {
-    address: NodeAddress; node: NativeNode; enabled: boolean; terminal: boolean; included: boolean;
+    address: NodeAddress; node: NativeNode; phase: WorkflowPhase; enabled: boolean; terminal: boolean; included: boolean;
     inputPorts: PortDescriptor[]; outputPorts: PortDescriptor[]; requestBound: number; dependencies: NodeAddress[];
 }
 export interface BoundaryMapping {
@@ -168,10 +171,21 @@ export interface TextArtifact { kind: 'text'; text: string; }
 export interface RecordedTextArtifact extends TextArtifact { modifiers?: import('./modifiers').TextModifierMetadata; }
 export interface DataArtifact { kind: 'data'; value: import('./operations/json-data').JsonValue; }
 export type ContextArtifact = import('./operations/context-data').RuntimeContext;
+export type WorkflowArtifact = TextArtifact | DataArtifact | ContextArtifact | { kind: 'draft' | 'patches' | 'candidate' | 'guidance'; [key: string]: unknown };
+export interface PortState { status: 'completed' | 'skipped' | 'unresolved'; reason?: SafeRunError; }
+/** Actual output pins are independent; legacy artifact is admitted only on the conventional out pin. */
+export type OperationResult = { ok: true; artifact?: WorkflowArtifact; outputs?: Record<string, WorkflowArtifact>; outputStates?: Record<string, PortState>; reports?: unknown[] } | { ok: false; error: WorkflowError };
+export interface OperationExecutionContext {
+    phase: WorkflowPhase; rootMode: NativeWorkflowMode; root: boolean; address: NodeAddress;
+    inputStates: Readonly<Record<string, PortState>>; signal?: AbortSignal;
+    request: import('./operations/control-nodes').IterationRequest;
+}
+/** Trusted root transport only; public execution never obtains this capability. */
+export type HostOperationExecutor = (node: NativeNode, inputs: Record<string, WorkflowArtifact>, local: OperationExecutionContext) => Promise<OperationResult> | OperationResult;
 
 /** Frozen diagnostic data; authenticated connection objects never enter these DTOs. */
-export type RunStatus = 'empty' | 'waiting' | 'queued' | 'running' | 'cancelling' | 'completed' | 'failed' | 'blocked' | 'not-run' | 'cancelled' | 'invalid' | 'stale';
-export type RunSettlement = 'completed' | 'failed' | 'cancelled' | 'invalid' | 'stale';
+export type RunStatus = 'empty' | 'waiting' | 'queued' | 'running' | 'cancelling' | 'completed' | 'skipped' | 'unresolved' | 'failed' | 'blocked' | 'not-run' | 'cancelled' | 'invalid' | 'stale';
+export type RunSettlement = 'completed' | 'unresolved' | 'failed' | 'cancelled' | 'invalid' | 'stale';
 export interface SafeRunError { code: string; message: string; truncated?: boolean; }
 export interface BindingSummary { role?: string; profileId?: string | null; model?: string | null; fingerprint?: string; truncated?: boolean; }
 export interface SourceSummary {
@@ -182,22 +196,23 @@ export interface SourceSummary {
 export type ReportedUsage = Partial<Record<'inputTokens' | 'outputTokens' | 'totalTokens' | 'promptTokens' | 'completionTokens' | 'input_tokens' | 'output_tokens' | 'total_tokens' | 'prompt_tokens' | 'completion_tokens' | 'cached_tokens' | 'reasoning_tokens', number>>;
 export interface RequestSummary {
     attempt: number; status: 'running' | 'completed' | 'failed' | 'cancelled'; maxTokens: number;
-    inputTokens: number | null; startedAt: number; durationMs?: number; finish?: string | null; usage?: ReportedUsage | null; error?: SafeRunError;
+    inputTokens: number | null; startedAt: number; durationMs?: number; finish?: string | null; usage?: ReportedUsage | null; error?: SafeRunError; iteration?: IterationProvenance;
 }
+export interface IterationProvenance { index: number; helper: DefinitionRef; childAddress?: NodeAddress; childOmitted?: true; }
 interface EventClock { runId: string; seq: number; at: number; elapsedMs: number; }
 export type RunEvent = EventClock & (
     | { type: 'plan'; plan: RunPlan }
     | { type: 'run-cancelling'; reason?: SafeRunError }
     | { type: 'run-settled'; status: RunSettlement; error?: SafeRunError; failedAddress?: NodeAddress }
     | { type: 'node-phase'; address: NodeAddress; phase: 'binding' | 'executing'; binding?: BindingSummary }
-    | { type: 'request-start'; address: NodeAddress; attempt: number; maxTokens: number; inputTokens?: number | null }
+    | { type: 'request-start'; address: NodeAddress; attempt: number; maxTokens: number; inputTokens?: number | null; iteration?: IterationProvenance }
     | { type: 'request-settled'; address: NodeAddress; attempt: number; status: 'completed' | 'failed' | 'cancelled'; durationMs: number; finish?: string | null; usage?: ReportedUsage | null; error?: SafeRunError }
-    | { type: 'node-settled'; address: NodeAddress; status: 'completed' | 'failed' | 'cancelled'; error?: SafeRunError }
+    | { type: 'node-settled'; address: NodeAddress; status: 'completed' | 'skipped' | 'unresolved' | 'failed' | 'cancelled'; error?: SafeRunError; reason?: SafeRunError }
 );
 export interface RunNodeState extends RunUnit {
     status: RunStatus; subphase: 'binding' | 'executing' | 'request' | 'cancelling' | null;
     attempts: number; request: RequestSummary | null; startedAt: number | null; settledAt: number | null; durationMs: number | null;
-    binding?: BindingSummary; error?: SafeRunError; metadataTruncated?: boolean;
+    binding?: BindingSummary; error?: SafeRunError; reason?: SafeRunError; metadataTruncated?: boolean;
 }
 export interface RunState { runId: string; lastSeq: number; status: RunStatus; plan: RunPlan | null; nodes: RunNodeState[]; elapsedMs: number; at: number | null; error?: SafeRunError; }
 export interface RunRow {
@@ -207,11 +222,11 @@ export interface RunRow {
 }
 export type RecordedTarget = { kind: 'terminal'; address: number } | { address: number; port: number };
 export interface RecordedUnit {
-    address: number; included: boolean; dependencies: number[]; requestBound: number; status: RunStatus;
+    address: number; included: boolean; phase?: WorkflowPhase; dependencies: number[]; requestBound: number; status: RunStatus;
     subphase: RunNodeState['subphase']; attempts: number; startedAt: number | null; settledAt: number | null; durationMs: number | null;
-    ports: { direction: 'input' | 'output'; port: number; artifact: number | null }[];
+    ports: { direction: 'input' | 'output'; port: number; artifact: number | null; state?: PortState }[];
     operation?: string; label?: string; request?: RequestSummary; binding?: BindingSummary; source?: SourceSummary;
-    error?: SafeRunError; reports?: Record<string, string | number | boolean>[]; metadataTruncated?: boolean; metadataOmitted?: boolean;
+    error?: SafeRunError; reason?: SafeRunError; reports?: Record<string, string | number | boolean>[]; metadataTruncated?: boolean; metadataOmitted?: boolean;
 }
 export type RecordedArtifact = {
     id: number; origin: { address: number; direction: 'input' | 'output' | 'terminal'; port?: number }; kind: string;
@@ -222,7 +237,7 @@ export type RecordedArtifact = {
 );
 export interface Recording {
     version: 1; runId: string; lastSeq: number; status: RunStatus; at: number | null; elapsedMs: number;
-    plan: { workflowId: number; phase: WorkflowPhase; mode: 'root' | 'target'; callBound: number; target?: RecordedTarget; resolvedTarget?: RecordedTarget } | null;
+    plan: { workflowId: number; phase: WorkflowRunPhase; mode: 'root' | 'target'; callBound: number; target?: RecordedTarget; resolvedTarget?: RecordedTarget } | null;
     identities: { strings: string[]; paths: (null | [number, number])[]; addresses: [number, number, number][] };
     units: RecordedUnit[]; hierarchy: { address: number; kind: 'instance' | 'primitive'; included: boolean; parent?: number }[];
     terminals: { kind: 'terminal'; address: number; artifact: number | null }[]; artifacts: RecordedArtifact[];
@@ -243,5 +258,6 @@ export type WorkflowRunResult = BoundedWorkflowRunResult | WorkflowPreparationFa
 export type HostWorkflowRunResult = WorkflowRunResult & { reviewHandles?: TerminalReviewHandle[]; published?: boolean; fallback?: 'native'; memoryCommit?: { applied: boolean; acknowledged: boolean; version: number }; };
 export interface WorkflowRunOptions {
     target?: WorkflowTarget; onEvent?: (event: RunEvent) => unknown; runId?: string;
-    clock?: { now(): number; monotonic(): number }; phase?: WorkflowPhase; signal?: AbortSignal; preview?: boolean; dryRun?: boolean;
+    clock?: { now(): number; monotonic(): number }; phase?: WorkflowRunPhase; signal?: AbortSignal; preview?: boolean; dryRun?: boolean;
+    iterateHelper?: import('./operations/control-nodes').IterateHelper;
 }

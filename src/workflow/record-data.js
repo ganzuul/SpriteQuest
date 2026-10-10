@@ -73,6 +73,22 @@ export function safeError(raw) {
     const code = boundedText(own(raw, 'code'), 128), message = boundedText(own(raw, 'message'), 2048);
     return { code, message, ...(code !== own(raw, 'code') || message !== own(raw, 'message') ? { truncated: true } : {}) };
 }
+/** Port state is mandatory metadata; bound its reason within each reserved recording row. */
+export function safePortState(raw) {
+    if(!plain(raw)||!['completed','skipped','unresolved'].includes(own(raw,'status')))return undefined;
+    const reason=safeError(own(raw,'reason'));
+    const message=reason&&boundedText(reason.message,128);
+    return {status:own(raw,'status'),...(reason?{reason:{code:reason.code,message,...(reason.truncated||message!==reason.message?{truncated:true}:{})}}:{})};
+}
+/** Exact bounded helper identity accompanies aggregated requests without exposing bindings. */
+export function safeIteration(raw) {
+    if(!plain(raw))return undefined;
+    const index=own(raw,'index'),helper=own(raw,'helper'),id=own(helper,'id'),version=own(helper,'version'),semanticHash=own(helper,'semanticHash');
+    if(!Number.isSafeInteger(index)||index<0||index>=128||!plain(helper)||typeof id!=='string'||!id||id.length>128||!Number.isSafeInteger(version)||version<1||typeof semanticHash!=='string'||!/^sha256:[0-9a-f]{64}$/.test(semanticHash))return undefined;
+    const child=nodeAddress(own(raw,'childAddress'));
+    const validChild=child&&child.workflowId.length<=128&&child.nodeId.length<=128&&child.instancePath.every(id=>id.length<=128);
+    return {index,helper:{id,version,semanticHash},...(validChild?{childAddress:child}:own(raw,'childAddress')===undefined?{}:{childOmitted:true})};
+}
 export function safeBinding(raw) {
     if (!plain(raw)) return undefined;
     const result = {};
@@ -155,7 +171,7 @@ export function targetAddress(raw) {
 export function parseRunPlan(raw) {
     if (!plain(raw)) return null;
     const workflowId = own(raw, 'workflowId'), phase = own(raw, 'phase'), mode = own(raw, 'mode');
-    if (typeof workflowId !== 'string' || !workflowId || !['pre', 'post'].includes(phase) || !['root', 'target'].includes(mode)) return null;
+    if (typeof workflowId !== 'string' || !workflowId || !['pre', 'post', 'unified'].includes(phase) || !['root', 'target'].includes(mode)) return null;
     const unitData = own(raw, 'units'), hierarchyData = own(raw, 'hierarchy'), terminalData = own(raw, 'terminals'), callBound = own(raw, 'callBound');
     if (!dense(unitData, 1000) || !dense(hierarchyData, 9000) || !dense(terminalData, 1000) || !Number.isSafeInteger(callBound) || callBound < 0) return null;
     const units = [], hierarchy = [], terminals = [], identities = new Set();
@@ -167,7 +183,9 @@ export function parseRunPlan(raw) {
         const dependencies = [], dependencyData = own(rawUnit, 'dependencies');
         if (!dense(dependencyData, 2000)) return null;
         for (let j = 0; j < dependencyData.length; j++) { const dependency = nodeAddress(own(dependencyData, String(j))); if (!dependency || dependency.workflowId !== workflowId) return null; dependencies.push(dependency); }
-        const unit = { address, included, operation: boundedText(operation, 256), dependencies, requestBound, inputPorts: [], outputPorts: [] };
+        const unitPhase = own(rawUnit, 'phase');
+        if (unitPhase !== undefined && !['pre', 'post'].includes(unitPhase) || phase === 'unified' && unitPhase === undefined) return null;
+        const unit = { address, included, operation: boundedText(operation, 256), ...(unitPhase === undefined ? {} : { phase: unitPhase }), dependencies, requestBound, inputPorts: [], outputPorts: [] };
         for (const direction of ['inputPorts', 'outputPorts']) {
             const ports = own(rawUnit, direction); if (!dense(ports, 1000)) return null;
             for (let j = 0; j < ports.length; j++) { const id = own(ports, String(j)); if (typeof id !== 'string' || !id || unit[direction].includes(id)) return null; unit[direction].push(id); }
