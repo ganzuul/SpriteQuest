@@ -4,8 +4,8 @@ import { computeDefinitionIdentity, definitionRefKey } from '../src/workflow/def
 import { resolveWorkflow } from '../src/workflow/resolve.js?v=0.27.0';
 import { unifiedRecipeHost } from './helpers/unified-recipe-host.mjs';
 
-function system(nodes, wires = {}, interfacePorts = []) {
-    const draft = { id: 'system', version: 1, name: 'System', interface: interfacePorts, parameters: [], body: { schema: 3, runtime: 2, mode: 'native-unified', nodes, wires } };
+function system(nodes, wires = {}, interfacePorts = [], id = 'system') {
+    const draft = { id, version: 1, name: 'System', interface: interfacePorts, parameters: [], body: { schema: 3, runtime: 2, mode: 'native-unified', nodes, wires } };
     const result = computeDefinitionIdentity(draft); assert.equal(result.ok, true, JSON.stringify(result));
     return { ...result.data.materializedDefinition, semanticHash: result.data.semanticHash };
 }
@@ -240,4 +240,64 @@ test('identical sibling Outcome Commit projections reject an explicit shared tar
     let draws = 0;
     const f = unifiedRecipeHost(graph, { playerText: 'Mara uses her wand.', random: () => { draws++; return 0.9; }, documents: [{ targetId: 'shared-outcomes', name: 'Shared Outcomes', format: 'json', content: '[]', visibility: { kind: 'public' } }] });
     const result = await f.generate('Blue sparks appear.'); assert.equal(result.ok, false); assert.equal(result.error.code, 'DUPLICATE_EFFECT_TARGET'); assert.equal(f.saves(), 0); assert.equal(draws, 1); f.controller.dispose();
+});
+
+test('missing output provenance survives an optional system input while an unbound input stays legal', async () => {
+    const source = system({ exit: { id: 'exit', type: 'subgraph-output', interfacePortId: 'out' } }, {}, [{ id: 'out', label: 'Out', kind: 'text', direction: 'output', required: false, cardinality: 'one', boundaryNodeId: 'exit' }], 'source-system');
+    const destination = system({ entry: { id: 'entry', type: 'subgraph-input', interfacePortId: 'in' }, compose: node('compose', 'compose', { sections: [{ name: 'Source', text: 'fallback' }] }) }, { entry: edge('entry', 'entry', 'out', 'compose', 'section.Source') }, [{ id: 'in', label: 'In', kind: 'text', direction: 'input', required: false, cardinality: 'one', boundaryNodeId: 'entry' }]);
+    const graph = main(destination, ['dest']);
+    graph.nodes.source = main(source, ['source']).nodes.source;
+    graph.definitions[definitionRefKey(source)] = source;
+    graph.wires.source = edge('source', 'source', 'out', 'dest', 'in');
+    const selected = { workflowId: 'main', instancePath: ['dest'], nodeId: 'compose', portId: 'out' };
+    const result = resolveWorkflow(graph, { target: selected });
+    assert.equal(result.ok, false); assert.equal(result.error.code, 'MISSING_INPUT');
+    assert.deepEqual(result.error.address, { workflowId: 'main', instancePath: [], nodeId: 'source' });
+    const f = unifiedRecipeHost(graph);
+    const rejected = await f.controller.runTarget(graph, selected);
+    assert.equal(rejected.ok, false); assert.equal(rejected.error.code, 'MISSING_INPUT');
+    assert.equal(f.calls(), 0); assert.equal(f.saves(), 0); assert.deepEqual(f.catalog.snapshot().data.documents, []);
+    delete graph.wires.source;
+    assert.equal(resolveWorkflow(graph, { target: selected }).ok, true);
+    const unbound = await f.controller.runTarget(graph, selected);
+    assert.equal(unbound.ok, true, JSON.stringify(unbound.error));
+    f.controller.dispose();
+});
+
+function disabledPassThrough(nested) {
+    const ports = [{ id: 'in', label: 'In', kind: 'text', direction: 'input', required: false, cardinality: 'one', boundaryNodeId: 'entry' }, { id: 'out', label: 'Out', kind: 'text', direction: 'output', required: false, cardinality: 'one', boundaryNodeId: 'exit' }];
+    const boundaries = { entry: { id: 'entry', type: 'subgraph-input', interfacePortId: 'in' }, exit: { id: 'exit', type: 'subgraph-output', interfacePortId: 'out' } };
+    let definition = system(boundaries, { pass: edge('pass', 'entry', 'out', 'exit', 'in') }, ports, 'pass-through');
+    const childDefinitions = nested ? { [definitionRefKey(definition)]: definition } : {};
+    if (nested) {
+        const child = main(definition, ['child']).nodes.child;
+        definition = system({ ...boundaries, child }, { entry: edge('entry', 'entry', 'out', 'child', 'in'), exit: edge('exit', 'child', 'out', 'exit', 'in') }, ports, 'ancestor');
+    }
+    const graph = main(definition); Object.assign(graph.definitions, childDefinitions); graph.nodes.one.enabled = false;
+    graph.nodes.upstream = node('upstream', 'text', { text: 'Live source' });
+    graph.nodes.compose = node('compose', 'compose', { sections: [{ name: 'System', text: 'fallback' }] });
+    graph.wires.upstream = edge('upstream', 'upstream', 'out', 'one', 'in');
+    graph.wires.result = edge('result', 'one', 'out', 'compose', 'section.System');
+    return graph;
+}
+for (const nested of [false, true]) test(`disabled ${nested ? 'ancestor of a pass-through' : 'pass-through'} output skips consumers without activating upstream`, async () => {
+    const graph = disabledPassThrough(nested), selected = { workflowId: 'main', instancePath: [], nodeId: 'compose', portId: 'out' };
+    const planned = resolveWorkflow(graph, { target: selected });
+    assert.equal(planned.ok, true, JSON.stringify(planned.error));
+    assert.equal(planned.data.primitives.find(unit => unit.node.id === 'upstream').included, false);
+    assert.equal(planned.data.callBound, 0);
+    const f = unifiedRecipeHost(graph), result = await f.controller.runTarget(graph, selected);
+    assert.equal(result.ok, true, JSON.stringify(result.error));
+    assert.equal(result.recording.units.find(unit => unit.operation === 'text').status, 'not-run');
+    const compose = result.recording.units.find(unit => unit.operation === 'compose');
+    assert.equal(compose.ports.find(port => result.recording.identities.strings[port.port] === 'section.System').state.status, 'skipped');
+    assert.equal(result.recording.artifacts.findLast(artifact => artifact.kind === 'text').value.text, 'fallback');
+    assert.ok(result.recording.units.some(unit => unit.operation === 'subgraph-output' && unit.status === 'skipped'));
+    graph.nodes.compose = node('compose', 'reroute', { artifactKind: 'text' }); graph.wires.result.toPort = 'in';
+    const required = await f.controller.runTarget(graph, selected);
+    assert.equal(required.ok, true, JSON.stringify(required.error));
+    assert.equal(required.recording.units.find(unit => unit.operation === 'reroute').status, 'skipped');
+    assert.equal(required.recording.units.find(unit => unit.operation === 'text').status, 'not-run');
+    assert.equal(f.calls(), 0); assert.equal(f.saves(), 0); assert.deepEqual(f.catalog.snapshot().data.documents, []);
+    f.controller.dispose();
 });

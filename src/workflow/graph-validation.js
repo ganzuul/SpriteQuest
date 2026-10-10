@@ -421,16 +421,18 @@ function expandChecked(root, snapshots, rootDefinition) {
     };
     const visited = visit(root, [], rootDefinition);
     if (!visited.ok) return visited;
-    // A disabled, unfinished exposed output still publishes skipped state. These
+    // Every disabled exposed output publishes skipped state and severs upstream demand. These
     // execution records are derived from ancestor participation, never graph fields.
     for (const output of inactiveOutputs) {
         const key = artifactAddressKey({ ...output.address, portId: 'in' });
-        if (incoming.has(key)) continue;
         virtual.delete(key);
         primitives.push({ address: output.address, node: { ...output.node, operation: 'subgraph-output' }, phase: output.phase, enabled: false, systemDisabled: true, requestBound: 0, inputPorts: [], outputPorts: output.ports.map(port => ({ ...port, direction: 'output' })), terminal: false });
         hierarchy.push({ address: output.address, kind: 'primitive', parent: output.parent });
     }
-    const active = new Set();
+    const active = new Set(), missingSources = new Map();
+    const exposedOutputs = new Map(boundaryMappings.filter(mapping => mapping.direction === 'output').map(mapping => {
+        const at = { ...mapping.instance, portId: mapping.portId }; return [artifactAddressKey(at), at];
+    }));
     const sourceFor = at => {
         const key = artifactAddressKey(at);
         if (!virtual.has(key)) return at;
@@ -439,6 +441,10 @@ function expandChecked(root, snapshots, rootDefinition) {
         active.add(key);
         const edge = incoming.get(key), source = edge ? sourceFor(edge.from) : null;
         if (edge && blocked.has(artifactAddressKey(edge.from))) blocked.add(key);
+        if (!source) {
+            const origin = (edge && missingSources.get(artifactAddressKey(edge.from))) || exposedOutputs.get(key);
+            if (origin) missingSources.set(key, origin);
+        }
         active.delete(key); outputSources.set(key, source); return source;
     };
     try {
@@ -448,7 +454,7 @@ function expandChecked(root, snapshots, rootDefinition) {
             if (!edge) continue;
             const from = sourceFor(edge.from);
             if (from) edges.push({ from, to, provenance: edge.provenance, disabled: blocked.has(artifactAddressKey(edge.from)) });
-            else if (boundaryMappings.some(mapping => mapping.direction === 'output' && artifactAddressKey({ ...mapping.instance, portId: mapping.portId }) === artifactAddressKey(edge.from))) unresolvedEdges.push({ from: edge.from, to });
+            else if (missingSources.has(artifactAddressKey(edge.from))) unresolvedEdges.push({ from: missingSources.get(artifactAddressKey(edge.from)), to });
         }
         for (const mapping of boundaryMappings) {
             const at = { ...mapping.instance, portId: mapping.portId };
