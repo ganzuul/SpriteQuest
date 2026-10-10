@@ -7,7 +7,7 @@ test('For Each declares bounded role overrides using the existing binding shape'
  assert.deepEqual(CONTROL_OPERATIONS['for-each'].defaults.roleOverrides,{});
  assert.equal(describeControl(each({roleOverrides:{decision:{profileId:'chosen',model:null}}})).ok,true);
  for(const roleOverrides of [[],{decision:{endpoint:'secret'}},{decision:{model:7}},{'':{profileId:'p'}},{decision:{profileId:' '.repeat(2)}},Object.fromEntries(Array.from({length:65},(_,i)=>['role'+i,{profileId:'p'}]))])assert.equal(describeControl(each({roleOverrides})).ok,false,JSON.stringify(roleOverrides));
-});import {computeDefinitionIdentity,definitionRefKey} from '../src/workflow/definition-data.js?v=0.26.0';
+});import {computeDefinitionIdentity,definitionRefKey,nodeBindingOverrideKey} from '../src/workflow/definition-data.js?v=0.26.0';
 import {runWorkflow} from '../src/workflow/runtime.js?v=0.26.0';
 import {resolveBinding,requestModel} from '../src/workflow/connections.js?v=0.26.0';
 const edge=(id,from,fromPort,to,toPort)=>({id,route:'wire',from,fromPort,to,toPort});
@@ -101,7 +101,7 @@ test('unknown helper roles fail before source effects and disconnected model rol
 test('friendly effective helper binding reports explicit nested wrapper precedence without masking it with the outer choice',()=>{
  const f=fixture(),raw={id:'bound-wrapper',version:1,name:'Bound wrapper',interface:f.def.interface,parameters:[],body:{schema:3,runtime:2,mode:'native-unified',nodes:{entry:{id:'entry',type:'subgraph-input',interfacePortId:'item'},exit:{id:'exit',type:'subgraph-output',interfacePortId:'result'},child:{id:'child',type:'subgraph',definition:f.ref,roleOverrides:{decision:{profileId:'ambient',model:null}}}},wires:{a:edge('a','entry','out','child','item'),b:edge('b','child','result','exit','in')}}};
  const identity=computeDefinitionIdentity(raw),def={...identity.data.materializedDefinition,semanticHash:identity.data.semanticHash},ref={id:def.id,version:1,semanticHash:def.semanticHash};f.root.definitions[definitionRefKey(ref)]=def;f.root.nodes.each.helper=ref;
- const row=panel(f).helperBindings.roles[0];assert.equal(row.profile.value,'chosen');assert.match(row.effective,/ambient/);assert.doesNotMatch(row.effective,/chosen/);assert.match(row.caveat,/nested/);
+ const row=panel(f).helperBindings.roles[0];assert.equal(row.profile.value,'chosen');assert.match(row.effective,/Ambient connection/);assert.doesNotMatch(row.effective,/Chosen connection/);assert.match(row.caveat,/nested/);
 });
 import {validIterationRoleOverrides} from '../src/workflow/operations/control-nodes.js?v=0.26.0';
 test('helper binding validation rejects accessor selectors without invoking callbacks',()=>{
@@ -131,12 +131,27 @@ test('readonly library For Each inspection retains a complete helper binding DTO
 });
 
 
-test('Fast Decision fixed fallback remains executable without exposing an unsupported text role override',async()=>{
- const f=fixture({}),raw=structuredClone(f.def);delete raw.semanticHash;raw.body.roles={};raw.body.nodes.decide={...raw.body.nodes.decide,operation:'fast-decision',modelRole:'fastDecision',fastConnectionId:'fast',fallbackEnabled:true,fallbackAllowedCodes:['REQUEST_FAILED'],fallbackProfileId:'chosen'};
- const identity=computeDefinitionIdentity(raw);assert.equal(identity.ok,true,JSON.stringify(identity.error));const def={...identity.data.materializedDefinition,semanticHash:identity.data.semanticHash},ref={id:def.id,version:1,semanticHash:def.semanticHash};f.root.definitions={[definitionRefKey(ref)]:def};f.root.nodes.each.helper=ref;f.root.nodes.each.requestBoundPerIteration=2;
- const host=textHost();let typed=0;const execute=()=>runWorkflow(f.root,{target:f.target,resolveFastBinding:()=>({ok:true,data:{connectionId:'fast'}}),resolveBinding:(n,g)=>resolveBinding(n,g,host.context),countTokens:async()=>({tokens:1}),requestFastDecision:async()=>{typed++;return {ok:false,error:{code:'REQUEST_FAILED',message:'Unavailable'}};},request:options=>requestModel(options,host.context)});
- const first=await execute();assert.equal(first.ok,true,JSON.stringify(first.error));assert.equal(first.actualCalls,2);assert.equal(typed,1);assert.equal(host.requests[0].profileId,'chosen');
- const view=panel(f);assert.deepEqual(view.helperBindings.roles,[],'A fixed fallback profile is authored on Fast Decision, not a supported helper text role');
- const edit=prepareIterationBindingOverride(f.root.nodes.each,f.root.definitions,{role:'decision',field:'profileId',mode:'override',value:'ambient'});assert.equal(edit.ok,false);assert.deepEqual(f.root.nodes.each.roleOverrides,{});
- assert.equal((await execute()).ok,true);assert.equal(typed,2);assert.equal(host.requests[1].profileId,'chosen');
+test('For Each reports explicit Active and fixed helper-node connections and disables choices that affect no calls',()=>{
+ for(const profileId of ['lattice:active-sillytavern','ambient']){
+  const f=fixture(),raw=structuredClone(f.def);delete raw.semanticHash;raw.body.nodes.decide.profileId=profileId;
+  const identity=computeDefinitionIdentity(raw);assert.equal(identity.ok,true,JSON.stringify(identity.error));const def={...identity.data.materializedDefinition,semanticHash:identity.data.semanticHash},ref={id:def.id,version:1,semanticHash:def.semanticHash};f.root.definitions={[definitionRefKey(ref)]:def};f.root.nodes.each.helper=ref;
+  const before=structuredClone(f.root),row=panel(f).helperBindings.roles[0];
+  assert.equal(row.profile.editable,false);assert.equal(row.model.editable,false);assert.equal(row.profile.value,'chosen');
+  assert.match(row.source,/Explicit helper-node/);assert.match(row.caveat,/0 of 1 helper calls/);
+  assert.match(row.effective,new RegExp(profileId==='ambient'?'Ambient connection':'Active SillyTavern model'));assert.deepEqual(f.root,before);
+ }
+});
+test('an explicit ordinary helper-node profile keeps its captured request despite a For Each role choice',async()=>{
+ const f=fixture(),raw=structuredClone(f.def);delete raw.semanticHash;raw.body.nodes.decide.profileId='ambient';
+ const identity=computeDefinitionIdentity(raw),def={...identity.data.materializedDefinition,semanticHash:identity.data.semanticHash},ref={id:def.id,version:1,semanticHash:def.semanticHash};f.root.definitions={[definitionRefKey(ref)]:def};f.root.nodes.each.helper=ref;
+ const before=structuredClone(f.def),host=textHost();const result=await runWorkflow(f.root,{target:f.target,resolveBinding:(n,g)=>resolveBinding(n,g,host.context),countTokens:async()=>({tokens:1}),request:options=>requestModel(options,host.context)});
+ assert.equal(result.ok,true,JSON.stringify(result.error));assert.equal(result.actualCalls,1);assert.deepEqual(host.requests.map(r=>[r.profileId,r.payload.model]),[['ambient','ambient-model']]);assert.deepEqual(f.def,before);
+});
+
+test('a fixed helper occurrence profile leaves an inherited model override useful and projects its captured model',async()=>{
+ const f=fixture({decision:{profileId:'chosen',model:'custom-helper-model'}}),raw={id:'profile-wrapper',version:1,name:'Profile wrapper',interface:f.def.interface,parameters:[],body:{schema:3,runtime:2,mode:'native-unified',nodes:{entry:{id:'entry',type:'subgraph-input',interfacePortId:'item'},exit:{id:'exit',type:'subgraph-output',interfacePortId:'result'},child:{id:'child',type:'subgraph',definition:f.ref,nodeBindingOverrides:{[nodeBindingOverrideKey([],'decide')]:{profileId:'ambient'}}}},wires:{a:edge('a','entry','out','child','item'),b:edge('b','child','result','exit','in')}}};
+ const identity=computeDefinitionIdentity(raw);assert.equal(identity.ok,true,JSON.stringify(identity.error));const def={...identity.data.materializedDefinition,semanticHash:identity.data.semanticHash},ref={id:def.id,version:1,semanticHash:def.semanticHash};f.root.definitions[definitionRefKey(ref)]=def;f.root.nodes.each.helper=ref;
+ const host=textHost(),result=await runWorkflow(f.root,{target:f.target,resolveBinding:(n,g)=>resolveBinding(n,g,host.context),countTokens:async()=>({tokens:1}),request:options=>requestModel(options,host.context)});
+ assert.equal(result.ok,true,JSON.stringify(result.error));assert.deepEqual(host.requests.map(r=>[r.profileId,r.payload.model]),[['ambient','custom-helper-model']]);
+ const row=panel(f).helperBindings.roles[0];assert.equal(row.profile.editable,false);assert.equal(row.model.editable,true);assert.match(row.effective,/custom-helper-model/);
 });

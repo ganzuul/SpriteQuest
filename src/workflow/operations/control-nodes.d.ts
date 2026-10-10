@@ -1,18 +1,15 @@
 import type { DataArtifact, DefinitionRef, NativeNode, NativeWorkflowMode, NodeAddress, OperationDescription, OperationDescriptor, OperationResult, PortState, ReportedUsage, Result, WorkflowPhase } from '../types';
 import type { JsonValue } from './json-data';
 import type { ArtifactVisibility } from '../artifact-privacy';
-import type { DecisionState, DecisionQuestions, FastResponse } from '../decision';
 
 export type ControlOperationId = 'condition' | 'branch' | 'confidence-gate' | 'join' | 'collect' | 'for-each';
 export interface ForEachControls { helper:DefinitionRef; limit:number; requestBoundPerIteration:number; mode:'map'|'projected-state'; roleOverrides?:Record<string,import('../types').Binding>; }
 export interface JoinSlot { id: string; label: string; required: boolean; }
 export interface IterationRequestMetadata { binding?: unknown; childAddress?: NodeAddress; modelRole?: string; signal?: AbortSignal; }
 export interface TextIterationRequestOptions extends IterationRequestMetadata { capability?: 'text-completion'; messages: { role: string; content: string }[]; maxTokens: number; }
-export interface TypedIterationRequestOptions extends IterationRequestMetadata { capability: 'typed-decision'; state: DecisionState; questions: DecisionQuestions; }
-export type IterationRequestOptions = TextIterationRequestOptions | TypedIterationRequestOptions;
+export type IterationRequestOptions = TextIterationRequestOptions;
 export interface IterationRequest {
     (options: TextIterationRequestOptions): Promise<Result<{ text: string; finish?: string; usage?: ReportedUsage }>>;
-    (options: TypedIterationRequestOptions): Promise<Result<FastResponse | { response: FastResponse; usage?: ReportedUsage; provenance?: Record<string, JsonValue> }>>;
 }
 /** item/state are detached bounded JSON; the adapter resolves the exact pinned helper. */
 export interface IterationInvocation {

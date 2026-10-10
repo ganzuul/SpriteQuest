@@ -34,3 +34,13 @@ export async function openDetailGroup(page, name) {
     await expect.poll(() => group.evaluate(element => element.open)).toBe(true);
     return group;
 }
+
+export async function chooseNodeProfile(page, id, profileId) {
+    const label = await page.evaluate(profileId => window.canvasHarness.context.extensionSettings.connectionManager.profiles.find(profile => profile.id === profileId)?.name, profileId);
+    expect(label, 'the fixture exposes the selected connection profile').toBeTruthy();
+    const picker = page.locator(`.pc-node-profile[data-id="${id}"]`);
+    await picker.locator('.profile-bar').click();
+    await picker.getByRole('combobox').fill(label);
+    await picker.getByRole('option').filter({ has: page.locator('.profile-name').getByText(label, { exact: true }) }).click();
+    await expect(picker.locator('.profile-bar')).toContainText(label);
+}

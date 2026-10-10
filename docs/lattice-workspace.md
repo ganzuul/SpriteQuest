@@ -22,9 +22,9 @@ The starter is **On Send → Generate Reply · SillyTavern → Review / Publish*
 2. Choose **Workflows → Assign unified workflow**, then enable **Arm**.
 3. Send a player message in SillyTavern normally. The starter waits for that generation’s completed Draft and records its review result.
 4. Select **Review / Publish · Host result** in Preview. Inspect the original and candidate; Apply preserves the original as a swipe and publishes the chosen result, while Reject leaves it alone. The unchanged starter is useful for learning the review path.
-5. Open a unified example from **File → Open examples…** to add preparation, prose editing or notes. Configure every model node and For Each helper role in Details before sending. Authorize document targets in **Tools → Workflow Data…** when the example needs them.
+5. Open a unified example from **File → Open examples…** to add preparation, prose editing or notes. Choose each model node’s profile in its canvas bar and configure For Each helper roles in Details before sending. Authorize document targets in **Tools → Workflow Data…** when the example needs them.
 
-A full unified Run requires the native generation owned by Send. **Run to here** previews supported dependencies without accepting effects. See the [practical unified guide](unified-workflows.md) for one-graph model chains, Fast Decision, Recall, clocks and file writes.
+A full unified Run requires the native generation owned by Send. **Run to here** previews supported dependencies without accepting effects. See the [practical unified guide](unified-workflows.md) for one-graph model chains, Decision, Recall, clocks and file writes.
 
 ## Build and inspect a legacy brief
 
@@ -72,6 +72,6 @@ Unified examples keep their preparation and response branches in one editable gr
 | [Scene guidance](../workflows/native-guidance.json) | Pre | 2 |
 | [Reviewed AI De-slop](../workflows/reviewed-de-slop.json) | Post | 1 |
 
-For model-backed examples, select each model-calling node and choose its **Connection profile** in Details. The profile supplies the model by default; choose a model override when needed. Manual runs can spend tokens, and Send does not reuse a manual guidance result.
+For model-backed examples, choose each model-calling node’s connection in its canvas bar. The profile supplies the model by default; use **Details → Advanced model settings** for an optional model override or inheritance reset. Manual runs can spend tokens, and Send does not reuse a manual guidance result.
 
 Next, read the [operator's manual](operators-manual.md) to discover nodes, connect pins, open subgraph tabs, customize instances, and inspect recorded outputs. Use the [node reference](node-reference.md) to design a process beyond the starter examples.

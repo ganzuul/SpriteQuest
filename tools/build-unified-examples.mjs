@@ -7,7 +7,7 @@ import {exportWorkflow,parseWorkflow} from '../src/workflow/packages.js';
 import {validateWorkflow} from '../src/workflow/contracts.js';
 const root=new URL('../',import.meta.url), entries=[];
 const must=(result,label)=>{if(!result.ok)throw Error(`${label}: ${JSON.stringify(result.error)}`);return result.data;};
-function recipe(id,title,goal,setup='Bind the Prose role to a local auxiliary model. Assign this copy as the Unified workflow, arm Lattice, then send normally in SillyTavern.') {
+function recipe(id,title,goal,setup='Choose each auxiliary model’s local profile in its canvas bar. Configure For Each helper roles in Details where present. Assign this copy as the Unified workflow, arm Lattice, then send normally in SillyTavern.') {
  const graph={id:`unified-example-${id}`,name:title,description:`${goal}\n\nSetup: ${setup}\n\nInspect: On Send owns this generation. Generate Reply uses the ordinary SillyTavern connection. Auxiliary roles remain unassigned in this portable example. Review the final narrative and proposed consequences; Apply publishes a new swipe and settles staged writes. Preview and bounded runs never settle.\n\nGenerated suggestions are proposals. Quoted observations preserve source identity; notes never establish canonical events. Private records cannot be appended to public notes.`,schema:3,runtime:2,mode:'native-unified',template:{id:`unified-${id}`,version:1},nodes:{},wires:{},roles:{},groups:{},portals:{},definitions:{},view:{x:0,y:0,zoom:0.7}};
  // Portable recipes deliberately inherit authored roles; new-node Active defaults must not pin template primitives.
  let wire=0;

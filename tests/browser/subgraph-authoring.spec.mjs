@@ -125,8 +125,8 @@ test('ordinary Delete removes connected interface pins and Undo restores the com
     const port = before.definition.interface.find(item => item.direction === 'output');
     await page.locator(`.pc-node[data-id="${port.boundaryNodeId}"] .pc-native-heading`).click();
     await expect(page.locator('.pc-node-subgraph-output button')).toHaveCount(0);
-    await page.getByLabel('Node commands',{exact:true}).click();
-    await page.locator('.pc-node-details').getByRole('button', { name: 'Delete', exact: true }).click();
+    await page.getByRole('button', { name: 'Edit', exact: true }).click();
+    await page.getByRole('menuitem', { name: /^Delete selection/ }).click();
     const deleted = await snapshot(page);
     expect(deleted.definition.interface.some(item => item.id === port.id)).toBe(false);
     expect(deleted.definition.body.nodes[port.boundaryNodeId]).toBeUndefined();

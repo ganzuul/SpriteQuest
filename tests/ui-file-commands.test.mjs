@@ -316,3 +316,9 @@ test('New activates an untitled unified workflow without requesting a name', asy
     assert.equal(S.allGraphs().length, 2);
     assert.deepEqual(fixture.changes, ['save', 'save', 'canvas', 'render']);
 });
+
+test('archived workflow export downloads the recovery copy and handles an empty archive without changing a workflow',async()=>{
+ const calls=[],env={exportArchivedWorkflows:()=>'{"kind":"lattice-workflow-archive"}',downloadGraphViewJSON:(...args)=>calls.push(args),toast:(...args)=>calls.push(args)};
+ const exportArchive=await controllerFunction('onExportArchivedWorkflows',env);assert.equal(exportArchive(),true);assert.deepEqual(calls[0],['{"kind":"lattice-workflow-archive"}','lattice-archived-workflows.json']);
+ calls.length=0;env.exportArchivedWorkflows=()=>null;assert.equal(exportArchive(),false);assert.equal(calls.some(call=>call[1]==='lattice-archived-workflows.json'),false);
+});

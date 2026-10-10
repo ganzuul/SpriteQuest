@@ -43,3 +43,14 @@ test('a late successful helper model save preserves a newer draft for that same 
  let resolveEdit;const f=await fixture(view(),{editHelperBinding:()=>new Promise(resolve=>{resolveEdit=resolve;})});
  try{change(f.host.querySelector('[aria-label="decision model mode"]'),'override');const model=f.host.querySelector('[aria-label="decision model identifier"]');input(model,'submitted-model');change(model,'submitted-model');f.update(view({revision:'r2'}));await settle();input(f.host.querySelector('[aria-label="decision model identifier"]'),'newer-model');resolveEdit({ok:true});await settle();assert.equal(f.host.querySelector('[aria-label="decision model identifier"]').value,'newer-model');}finally{await f.close();}
 });
+
+test('helper controls with no affected calls stay disabled while useful model inheritance editing remains available',async()=>{
+ const initial=view();initial.helperBindings.roles[0].profile.editable=false;initial.helperBindings.roles[0].model.editable=true;initial.helperBindings.roles[0].caveat='Explicit helper-node connection: Active SillyTavern model. Connection choice affects 0 of 1 helper calls.';
+ const calls=[],f=await fixture(initial,{editHelperBinding:(...args)=>{calls.push(args);return {ok:true};}});
+ try{
+  const profile=f.host.querySelector('[aria-label="decision connection profile"]');assert.equal(profile.disabled,true);change(profile,'chosen');await settle();assert.deepEqual(calls,[]);
+  assert.match(f.host.textContent,/Explicit helper-node connection: Active SillyTavern model/);
+  assert.equal(f.host.querySelector('[aria-label="decision model mode"]').disabled,false);
+  change(f.host.querySelector('[aria-label="decision model mode"]'),'override');const model=f.host.querySelector('[aria-label="decision model identifier"]');input(model,'useful-model');change(model,'useful-model');await settle();assert.deepEqual(calls[0].slice(1),['decision','model','override','useful-model']);
+ }finally{await f.close();}
+});

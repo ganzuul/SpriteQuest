@@ -8,7 +8,7 @@ import { addressKey, nodeAddress, targetAddress, own, plain, safeBinding, safeEr
 import { workflowSignature } from '../workflow/runtime.js?v=0.26.0';
 import { FAMILIES, OPERATIONS, operationFor, phaseForNode } from '../workflow/catalog.js?v=0.26.0';
 import { safeWorkflowData } from '../workflow/contracts.js?v=0.26.0';
-import { fastConnectionChoices, fastFallbackAllowed, fastFallbackNode, workflowBindingKey } from './provider-settings.js?v=0.26.0';
+import { workflowBindingKey } from './provider-settings.js?v=0.26.0';
 import { readNodePresentation } from './node-palette.js?v=0.26.0';
 import { prepareNodeProfileOptions } from './node-profile-preparation.js?v=0.26.0';
 const descriptions = { Input: 'Bring material into a workflow.', Shaping: 'Change the plan or amount of material.', Surface: 'Refine expression.', Transpose: 'Apply a reference’s qualities.', Derive: 'Extract findings from a source.', Introspection: 'Reflect on experience, context and actor state.', Output: 'Inspect or commit an artifact.' };
@@ -107,17 +107,16 @@ function safeHandle(raw) {
     const terminal = targetAddress(own(raw, 'terminal')), handleId = own(raw, 'handleId'), runId = own(raw, 'runId');
     return terminal?.kind === 'terminal' && !terminal.address.instancePath.length && typeof handleId === 'string' && handleId && typeof runId === 'string' && runId ? freeze({ handleId, runId, terminal }) : null;
 }
-function baseWorkflowView(graph, profiles, settings, fastConnections = [], activeModel = null) {
+function baseWorkflowView(graph, profiles, settings, activeModel = null) {
     const phase = typeof graph.mode === 'string' ? graph.mode.slice(7) : '';
     return { graphId: graph.id || '', name: graph.name || '', phase,
         assigned: graph.id === settings.nativeBindings?.[workflowBindingKey(graph.mode)] && (graph.mode === 'native-unified' || !settings.nativeBindings?.workflowGraphId),
-        fastConnections: fastConnectionChoices({ ok: true, data: { connections: fastConnections } }),
         profiles: prepareNodeProfileOptions(profiles, activeModel).map(({ value, label, ...metadata }) => ({ id: value, name: label, ...metadata })),
         families: FAMILIES.map(name => ({ name, description: descriptions[name], operations: Object.values(OPERATIONS).filter(op => op.family === name || name === 'Surface' && ['pattern-scan', 'validate-patches'].includes(op.id)).map(op => ({ id: op.id, title: op.title, phase: op.phase === 'both' ? phase : op.phase || phase, compatible: (phase === 'unified' || !op.phase || op.phase === 'both' || op.phase === phase) && (!op.minimumSchema || graph.schema >= op.minimumSchema) })) })),
         quoteHelp: QUOTE_SCOPE_HELP };
 }
 /** Root preparation boundary. The returned token is branded and contains no public authority. */
-export function prepareWorkflowProjection(root, { planner, profiles = [], fastConnections = [], activeModel = null, settings = {}, result = null, resolveBinding, resolveFastBinding, candidateStatus } = {}) {
+export function prepareWorkflowProjection(root, { planner, profiles = [], activeModel = null, settings = {}, result = null, resolveBinding, candidateStatus } = {}) {
     const token = Object.freeze({});
     const reject = (message, base = {}) => { projections.set(token, { failure: { ...emptyView(message), ...base, issues: [message] }, result }); return token; };
     if (planner !== undefined) {
@@ -128,27 +127,19 @@ export function prepareWorkflowProjection(root, { planner, profiles = [], fastCo
     if (!cloned.ok) return reject(cloned.error.message);
     const graph = cloned.data;
     const prepared = planner === undefined ? prepareWorkflowPlanner(root) : { ok: true, data: planner };
-    if (!prepared.ok) return reject(prepared.error.message, baseWorkflowView(graph, profiles, settings, fastConnections, activeModel));
+    if (!prepared.ok) return reject(prepared.error.message, baseWorkflowView(graph, profiles, settings, activeModel));
     planner = prepared.data;
     const composition = prepareCompositionViews(root, planner);
-    if (!composition.ok) return reject(composition.error.message, baseWorkflowView(graph, profiles, settings, fastConnections, activeModel));
+    if (!composition.ok) return reject(composition.error.message, baseWorkflowView(graph, profiles, settings, activeModel));
     const inventory = planner.inventory, bindings = new Map(), boundIssues = new Map();
     // Effective materialized model overrides are explicit; inherited definitions cannot re-read root roles.
     for (const unit of inventory.primitives) if (unit.requestBound > 0) {
-        let resolution, fallback, fallbackActive = false;
-        const operation = operationFor(unit.node, { phase: unit.phase, mode: graph.mode });
-        const typed = operation?.requestCapability === 'typed-decision';
+        let resolution;
         const bindingGraph = { schema: 3, runtime: 2, mode: graph.mode, roles: {} };
-        try { resolution = (typed ? resolveFastBinding : resolveBinding)?.(unit.node, bindingGraph); }
+        try { resolution = resolveBinding?.(unit.node, bindingGraph); }
         catch { resolution = { ok: false, error: { message: 'Connection preparation failed.' } }; }
-        if (typed && unit.node.fallbackEnabled === true && (resolution?.ok || fastFallbackAllowed(unit.node, resolution))) {
-            try { fallback = resolveBinding?.(fastFallbackNode(unit.node), bindingGraph); }
-            catch { fallback = { ok: false, error: { message: 'The selected fallback connection is unavailable.' } }; }
-            if (!fallback?.ok) boundIssues.set(addressKey(unit.address), 'Decision fallback: ' + (fallback?.error?.message || 'Choose an available text connection and profile model.'));
-            else if (!resolution?.ok) { resolution = fallback; fallbackActive = true; }
-        }
         const binding = resolution?.ok ? safeBinding(resolution.data) : null;
-        bindings.set(addressKey(unit.address), { ...(binding || {}), ...(fallbackActive ? { fallbackActive: true } : {}) });
+        bindings.set(addressKey(unit.address), binding || {});
         if (!resolution?.ok && !boundIssues.has(addressKey(unit.address))) boundIssues.set(addressKey(unit.address), resolution?.error?.message || 'Bind ' + (unit.node.modelRole || 'model') + ' to an available connection before running.');
     }
     const withBindings = summary => {
@@ -179,7 +170,7 @@ export function prepareWorkflowProjection(root, { planner, profiles = [], fastCo
                 input: metadata.input || 'snapshot', output: metadata.output || 'host output', terminal: metadata.terminal, modelRole: role,
                 profileId: node.profileId || '', model: node.model || '', resolvedModel: binding?.model || '', requestBound: unit?.requestBound ?? 0, enabled: node.enabled !== false,
                 issue: boundIssues.get(addressKey(address)) || undefined,
-                effective: unit?.requestBound ? (binding?.fallbackActive ? 'Decision fallback · ' : '') + [binding?.profileId, binding?.model].filter(Boolean).join(' · ') || boundIssues.get(addressKey(address)) || 'Model connection' : 'No model call',
+                effective: unit?.requestBound ? [binding?.profileId, binding?.model].filter(Boolean).join(' · ') || boundIssues.get(addressKey(address)) || 'Model connection' : 'No model call',
                 controls: nodeControls(node, metadata), ports: view.ports.filter(pin => pin.address.nodeId === node.id) }];
         });
         const groups = Object.values(view.savedGraph.groups ?? {}).map(group => {
@@ -197,7 +188,7 @@ export function prepareWorkflowProjection(root, { planner, profiles = [], fastCo
         const freshness = candidateStatus?.(handle);
         handles.set(handle.handleId, freeze({ handle, issue: freshness?.ok === false ? freshness.error.message : '', persistOnly: freshness?.ok === true && freshness.persistOnly === true }));
     }
-    projections.set(token, { base: freeze(baseWorkflowView(graph, profiles, settings, fastConnections, activeModel)), rootSummary, summaries, views, handles, previewTargets, result, rows: new WeakMap() }); return token;
+    projections.set(token, { base: freeze(baseWorkflowView(graph, profiles, settings, activeModel)), rootSummary, summaries, views, handles, previewTargets, result, rows: new WeakMap() }); return token;
 }
 function cachedRows(owner, source, viewPath) {
     if (!source || typeof source !== 'object') return noRows;

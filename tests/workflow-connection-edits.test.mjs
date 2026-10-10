@@ -506,19 +506,21 @@ test('Context focus creation admits only its mode controls and defaults compress
     assert.equal(added.inputCount, undefined, 'defaults from assemble do not leak into focus');
     assert.equal(prepare(graph, { ...command, controls: { ...command.controls, inputCount: 3 } }).error.code, 'INVALID_SETTINGS');
 });
-test('configured Introspection creation selects its effective role without binding deterministic or typed nodes', () => {
+test('configured Introspection creation selects its effective role without binding deterministic nodes', () => {
     const graph = { id: 'configured-model-modes', schema: 3, runtime: 2, mode: 'native-unified', nodes: {}, wires: {}, portals: {}, definitions: {} };
     for (const [operation, controls, role, profileId] of [
         ['express', { mode: 'inner-voice' }, 'Prose', ACTIVE_PROFILE_ID],
         ['express', { mode: 'behavior' }, null, null],
         ['context', { mode: 'focus', method: 'select' }, null, null],
         ['item-use-trigger', { itemId: 'wand', mode: 'candidates' }, null, null],
-        ['fast-decision', {}, 'fastDecision', null],
     ]) {
         const edit = accepted(prepare(graph, { kind: 'create', operation, controls, graphPoint: { x: 10, y: 20 } }), graph), added = edit.candidate.nodes[edit.addedNodeIds[0]];
         assert.equal(added.modelRole, role, operation + ':' + controls.mode);
         assert.equal(added.profileId, profileId, operation + ':' + controls.mode);
     }
+    const retired = prepare(graph, { kind: 'create', operation: 'fast-decision', controls: {}, graphPoint: { x: 10, y: 20 } });
+    assert.equal(retired.ok, false, 'retired model calls cannot be created');
+    assert.deepEqual(graph.nodes, {}, 'rejection leaves the graph unchanged');
 });
 test('inserting a reroute in a unified Post wire preserves dependency-derived stage',()=>{
  const graph={id:'unified-route',schema:3,runtime:2,mode:'native-unified',nodes:{source:{id:'source',type:'workflow',operation:'text',text:'post',phase:'post'},compose:{id:'compose',type:'workflow',operation:'compose',sections:[{name:'body',text:''}]}},wires:{edge:{id:'edge',route:'wire',from:'source',fromPort:'out',to:'compose',toPort:'section.body'}},portals:{},definitions:{}};

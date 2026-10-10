@@ -25,6 +25,7 @@ export type DetailBindingMode = 'inherit' | 'override' | 'block';
 export interface DetailModifier { id: string; type: string; version: 1; enabled: boolean; settings: Record<string, unknown>; }
 export interface DetailModifierOption { type: string; label: string; defaultSettings: Record<string, unknown>; fields: DetailControl[]; }
 export interface DetailBindingField {
+    editable?: boolean;
     mode: DetailBindingMode; allowedModes: { value: DetailBindingMode; label: string }[];
     value: string | null; effectiveValue?: string | null; options?: { value: string; label: string }[];
 }
@@ -49,7 +50,6 @@ export interface NodeDetailsView extends DetailSelection {
 }
 export interface NodeDetailsActions {
     editPhase?: (selection: DetailSelection, phase: 'pre' | 'post') => DetailEditResponse;
-    openFastConnections?: () => void;
     loadFile?: (selection: DetailSelection, file: File) => DetailEditResponse;
     present?: (selection: DetailSelection, field: 'alias' | 'compact', value: string | boolean) => DetailEditResponse;
     editControl?: (selection: DetailSelection, key: string, value: unknown) => DetailEditResponse;

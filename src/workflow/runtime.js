@@ -19,7 +19,6 @@ import { executeContextJoin } from './operations/context-join.js?v=0.26.0';
 import { executeControl, CONTROL_OPERATIONS } from './operations/control-nodes.js?v=0.26.0';
 import { executeDecision, DECISION_OPERATIONS } from './operations/decision-nodes.js?v=0.26.0';
 import { executeModelNode, MODEL_OPERATIONS } from './operations/model-nodes.js?v=0.26.0';
-import { prepareFastDecisionRequest, validateFastDecisionResponse } from './decision.js?v=0.26.0';
 import { executeTranspose, TRANSPOSE_OPERATIONS } from './operations/transpose-nodes.js?v=0.26.0';
 import { cleanupDraft, CLEANUP_MODES } from './operations/prose-cleanup.js?v=0.26.0';
 import { executeIntrospection } from './introspection/nodes.js?v=0.26.0';
@@ -168,12 +167,11 @@ async function executeWorkflow(original,ports,hooks={}) {
         if(ports.dryRun||ports.preview)return finish({ok:true,preview:true});
         const preparation=await hooks.prepare?.(plan,{cancel,originalGraphSnapshot});if(preparation?.ok===false)return finish(preparation);
         const bindingGraph={...prepared.graph,roles:{}};
-        const summarizeBinding=(binding,node,op)=>safeBinding((op.requestCapability==='typed-decision'?ports.fastBindingSummary?.(binding):ports.bindingSummary?.(binding))??{role:node.modelRole??op.modelRole,profileId:binding?.profileId,model:binding?.model,capability:op.requestCapability,connectionId:binding?.connectionId,provider:binding?.provider});
+        const summarizeBinding=(binding,node,op)=>safeBinding(ports.bindingSummary?.(binding)??{role:node.modelRole??op.modelRole,profileId:binding?.profileId,model:binding?.model,capability:op.requestCapability});
         const bindUnit=async(unit,op,duringExecution=false)=>{
             current=unit;const node=unit.node;
             if(!duringExecution)emit('node-phase',{address:unit.address,phase:'binding'});
-            const resolver=op.requestCapability==='typed-decision'?ports.resolveFastBinding:ports.resolveBinding;
-            const resolved=await resolver?.({...node,modelRole:node.modelRole??op.modelRole},bindingGraph,unit.address);
+            const resolved=await ports.resolveBinding?.({...node,modelRole:node.modelRole??op.modelRole},bindingGraph,unit.address);
             if(stopped())return failure('ABORTED','Workflow was stopped.',node.id);
             if(!resolved?.ok){const error=resolved??failure('BINDING_MISSING','Resolve the activated model connection before running.');if(!duringExecution)emit('node-settled',{address:unit.address,status:'failed',error:safeError(error.error)});return error;}
             const binding=resolved.data,key=addressKey(unit.address);bindings.set(key,binding);
@@ -189,7 +187,7 @@ async function executeWorkflow(original,ports,hooks={}) {
         if(legacyPreflight)for(const unit of nodes){
             const op=operationFor(unit.node,{phase:unit.phase,mode:prepared.graph.mode});
             if(stopped())return finish(failure('ABORTED','Workflow was stopped.',unit.node.id));
-            if(unit.requestBound&&op.modelRole&&!(op.requestCapability==='typed-decision'&&op.fallbackModelRole)){const bound=await bindUnit(unit,op);if(!bound.ok)return finish(bound);}
+            if(unit.requestBound&&op.modelRole){const bound=await bindUnit(unit,op);if(!bound.ok)return finish(bound);}
         }
         const nativeBoundary=mode==='root'&&prepared.graph.mode==='native-unified'?nodes.find(unit=>operationFor(unit.node,{phase:unit.phase,mode:prepared.graph.mode}).nativeBoundary):undefined;
         const getRequestBindings=()=>Object.freeze([...requestBindings.values()].map(entry=>Object.freeze({...entry,address:freezeArtifact(structuredClone(entry.address))})));
@@ -212,7 +210,7 @@ async function executeWorkflow(original,ports,hooks={}) {
                 for(const port of unit.outputPorts){outputStates.set(artifactKey({...unit.address,portId:port.id}),state);recorder.capture({address:unit.address,direction:'output',portId:port.id,state});}
                 unitStates.set(key,state);emit('node-settled',{address:unit.address,status,reason:state.reason});continue;
             }
-            const lazyBinding=(!legacyPreflight||op.requestCapability==='typed-decision'&&!!op.fallbackModelRole)&&(Object.hasOwn(MODEL_OPERATIONS,node.operation)||Object.hasOwn(DECISION_OPERATIONS,node.operation)||Object.hasOwn(EVENT_OPERATIONS,node.operation)||Object.hasOwn(RANDOM_OPERATIONS,node.operation));
+            const lazyBinding=!legacyPreflight&&(Object.hasOwn(MODEL_OPERATIONS,node.operation)||Object.hasOwn(DECISION_OPERATIONS,node.operation)||Object.hasOwn(EVENT_OPERATIONS,node.operation)||Object.hasOwn(RANDOM_OPERATIONS,node.operation));
             if(unit.requestBound&&op.modelRole&&!bindings.has(key)&&!lazyBinding){const bound=await bindUnit(unit,op);if(!bound.ok)return finish(bound);binding=bound.data;}
             emit('node-phase',{address:unit.address,phase:'executing'});observe(ports.onStage,freezeArtifact(structuredClone(node)),unit.address);
             const authorizeInputs=async(selectedNode,selectedInputs,address,capability)=>{
@@ -228,46 +226,26 @@ async function executeWorkflow(original,ports,hooks={}) {
                 return retained?.ok===true&&retained.data?.retained===true?retained:retained?.ok===false?retained:failure('ACTOR_SCOPE_FAILED','The private artifact scope was not retained.',payload.node?.id??node.id);
             };
             const childAuthorizers=new Map();
-            let operationOpen=true,requestInFlight=false,fallbackBinding;
+            let operationOpen=true,requestInFlight=false;
             const requestFailure=()=>failure(closed||!operationOpen?'REQUEST_SCOPE_CLOSED':stopped()?'ABORTED':'CALL_LIMIT',closed||!operationOpen?'This operation request scope has closed.':stopped()?'Workflow was stopped.':'Workflow request limit reached.',node.id);
             const admitted=()=>!closed&&operationOpen&&!stopped()&&actualCalls<callBound&&(nodeCalls.get(key)??0)<unit.requestBound;
-            const trackedRequest=async(capability,options)=>{
+            const trackedRequest=async(options)=>{
+                const capability='text-completion';
                 if(!admitted())return requestFailure();
                 if(requestInFlight)return failure('REQUEST_IN_FLIGHT','This operation already has an active request.',node.id);
-                const typed=capability==='typed-decision';
-                if(typed&&op.requestCapability!=='typed-decision'&&node.operation!=='for-each')return failure('REQUEST_CAPABILITY_MISMATCH','This node does not authorize a typed request.',node.id);
-                if(!typed&&op.requestCapability==='typed-decision'&&!op.fallbackModelRole)return failure('REQUEST_CAPABILITY_MISMATCH','Enable an explicit independent Decision fallback first.',node.id);
+                if(own(options,'capability')!==undefined&&own(options,'capability')!==capability)return failure('REQUEST_CAPABILITY_MISMATCH','This node authorizes text completion requests only.',node.id);
                 requestInFlight=true;
                 try{
                     // Actual helper requests authorize their exact child inputs before forwarding here.
                     if(node.operation!=='for-each'){const authorized=await authorizeInputs(node,inputs,unit.address,capability);if(!authorized.ok)return authorized;if(!admitted())return requestFailure();}
-                    if(lazyBinding&&!bindings.has(key)&&(typed||op.requestCapability!=='typed-decision')){
+                    if(lazyBinding&&!bindings.has(key)){
                         const bound=await bindUnit(unit,op,true);if(!admitted())return requestFailure();if(!bound.ok)return bound;binding=bound.data;
                     }
-                    let requestBinding=node.operation==='for-each'?(own(options,'binding')??binding):binding,tokenCount={tokens:null},preparedOptions=options;
-                    if(typed){
-                        const checked=prepareFastDecisionRequest({state:own(options,'state'),questions:own(options,'questions')});if(!checked.ok)return checked;
-                        if(typeof ports.requestFastDecision!=='function')return failure('SERVICE_UNAVAILABLE','The typed decision capability is unavailable.',node.id);
-                        preparedOptions=freezeArtifact(checked.data);
-                    }else{
-                        if(op.requestCapability==='typed-decision'){
-                            if(!fallbackBinding){
-                                const selected=await ports.resolveBinding?.({...node,modelRole:op.fallbackModelRole,profileId:node.fallbackProfileId,model:null},bindingGraph,unit.address);
-                                if(!admitted())return requestFailure();
-                                if(!selected?.ok)return selected??failure('BINDING_MISSING','Resolve the separately selected fallback text connection.',node.id);
-                                fallbackBinding=selected.data;
-                                requestBindings.set(JSON.stringify([key,'fallback']),{address:unit.address,binding:fallbackBinding,capability:'text-completion',role:op.fallbackModelRole});
-                                const summary=summarizeBinding(fallbackBinding,{...node,modelRole:op.fallbackModelRole},{...op,requestCapability:'text-completion'});bindingReports.set(key,summary);
-                                emit('node-binding',{address:unit.address,binding:summary});
-                            }
-                            requestBinding=fallbackBinding;
-                        }
-                        if(!Array.isArray(options?.messages)||typeof ports.countTokens!=='function'||typeof ports.request!=='function')return failure('REQUEST_UNAVAILABLE','A verified completion capability and tokenizer are required.',node.id);
-                        tokenCount=await ports.countTokens(options.messages.map(item=>item.role+': '+item.content).join('\n'));
-                        if(!admitted())return requestFailure();
-                        if(!Number.isFinite(tokenCount?.tokens)||tokenCount.tokens<0)return failure('TOKEN_COUNT_FAILED','The tokenizer returned an invalid count.',node.id);
-
-                    }
+                    const requestBinding=node.operation==='for-each'?(own(options,'binding')??binding):binding;
+                    if(!Array.isArray(options?.messages)||typeof ports.countTokens!=='function'||typeof ports.request!=='function')return failure('REQUEST_UNAVAILABLE','A verified completion capability and tokenizer are required.',node.id);
+                    const tokenCount=await ports.countTokens(options.messages.map(item=>item.role+': '+item.content).join('\n'));
+                    if(!admitted())return requestFailure();
+                    if(!Number.isFinite(tokenCount?.tokens)||tokenCount.tokens<0)return failure('TOKEN_COUNT_FAILED','The tokenizer returned an invalid count.',node.id);
                     if(node.operation==='for-each'){
                         const iteration=safeIteration(own(options,'iteration')),role=own(options,'modelRole')??'iterationHelper';
                         requestBindings.set(JSON.stringify([key,'iteration',actualCalls]),{address:unit.address,binding:requestBinding,capability,role,...(iteration?{iteration}:{})});
@@ -282,7 +260,7 @@ async function executeWorkflow(original,ports,hooks={}) {
                     const authorized=await (finalGuard?finalGuard(capability):authorizeInputs(node,inputs,unit.address,capability));if(!authorized.ok)return authorized;if(!admitted())return requestFailure();
                     const attempt=(nodeCalls.get(key)??0)+1;
                     const iteration=node.operation==='for-each'?safeIteration(options.iteration):undefined;
-                    emit('request-start',{address:unit.address,attempt,maxTokens:typed?0:options.maxTokens,inputTokens:tokenCount.tokens,capability,...(iteration?{iteration}:{})});const requestStarted=lastElapsed;
+                    emit('request-start',{address:unit.address,attempt,maxTokens:options.maxTokens,inputTokens:tokenCount.tokens,capability,...(iteration?{iteration}:{})});const requestStarted=lastElapsed;
                     // Progress and injected clock callbacks run user code. Recheck the exact
                     // request capability after all of them, immediately before dispatch.
                     let dispatchGuard=!admitted()?requestFailure():await (finalGuard?finalGuard(capability):authorizeInputs(node,inputs,unit.address,capability));
@@ -290,44 +268,40 @@ async function executeWorkflow(original,ports,hooks={}) {
                     if(!dispatchGuard.ok){emit('request-settled',{address:unit.address,attempt,status:stopped()?'cancelled':'failed',durationMs:0,error:safeError(dispatchGuard.error)});return dispatchGuard;}
                     nodeCalls.set(key,attempt);actualCalls++;
                     let response;
-                    try{response=await (typed?ports.requestFastDecision:ports.request)({...preparedOptions,binding:requestBinding,signal:ports.signal});}
+                    try{response=await ports.request({...options,binding:requestBinding,signal:ports.signal});}
                     catch{response=failure(stopped()?'ABORTED':'REQUEST_FAILED','Auxiliary request failed; no retry was made.',node.id);}
                     if(closed||!operationOpen)return requestFailure();
                     if(!response||typeof response.ok!=='boolean'||(!response.ok&&!response.error))response=failure('INVALID_RESPONSE','Auxiliary request returned an invalid result.',node.id);
                     if(stopped())response=failure('ABORTED','Ignore the stopped request result.',node.id);
-                    else if(response.ok&&typed){
-                        const checked=validateFastDecisionResponse(response.data?.response??response.data,preparedOptions.questions);
-                        if(!checked.ok)response=checked;
-                    }else if(response.ok){
+                    else if(response.ok){
                         if(typeof response.data?.text!=='string')response=failure('INVALID_RESPONSE','Auxiliary completion returned no text.',node.id);
                         else if(cutoff(response.data.finish))response={ok:false,error:{code:'TRUNCATED_OUTPUT',message:'Auxiliary output reached its completion limit.',usage:response.data.usage,finish:response.data.finish}};
                         else if(!complete(response.data.finish))response={ok:false,error:{code:'COMPLETION_UNVERIFIED',message:'Auxiliary output has no verified completion evidence.',usage:response.data.usage,finish:response.data.finish??null}};
                     }
-                    const metadata=response.ok?response.data:response.error,usage=typed&&response.ok?metadata?.response?.usage??metadata?.usage:metadata?.usage;
+                    const metadata=response.ok?response.data:response.error,usage=metadata?.usage;
                     emit('request-settled',{address:unit.address,attempt,status:stopped()?'cancelled':response.ok?'completed':'failed',durationMs:Math.max(0,monotonic()-started-requestStarted),...(metadata?.finish!==undefined?{finish:boundedText(metadata.finish,128)??null}:{}),...(safeUsage(usage)!==undefined?{usage:safeUsage(usage)}:{}),...(!response.ok?{error:safeError(response.error)}:{})});return response;
                 }finally{requestInFlight=false;}
             };
-            const request=options=>trackedRequest(node.operation==='for-each'&&own(options,'capability')==='typed-decision'?'typed-decision':'text-completion',options),typedRequest=options=>trackedRequest('typed-decision',options);
+            const request=trackedRequest;
             const executeHelperUnit=async(child,childInputs,childLocal)=>{
                 const childNode=child.node,childOp=operationFor(childNode,{phase:childLocal.phase,mode:prepared.graph.mode});
                 if(!childOp||childOp.rootOnly||childOp.hostOperation||childOp.nativeBoundary||childOp.terminal)return failure('ITERATION_AUTHORITY','Helpers cannot acquire root authority.',node.id);
                 let childOpen=true,childCalls=0;const childBindings=new Map(),recovered=new WeakSet();
                 const childKey=addressKey(child.address);childAuthorizers.set(childKey,capability=>childOpen?authorizeInputs(childNode,childInputs,child.address,capability):failure('REQUEST_SCOPE_CLOSED','The helper request scope has closed.',childNode.id));
                 const childIterate=childLocal.iterateHelper?async(...args)=>{const result=await childLocal.iterateHelper(...args);if(result?.ok===true)recovered.add(result);return result;}:undefined;
-                const childRequest=async(capability,options)=>{
+                const childRequest=async(options)=>{
+                    const capability='text-completion';
                     if(!childOpen||closed||!operationOpen)return failure('REQUEST_SCOPE_CLOSED','The helper request scope has closed.',node.id);
                     if(stopped())return failure('ABORTED','Workflow was stopped.',node.id);
                     if(childCalls>=child.requestBound)return failure('ITERATION_CALL_LIMIT','The helper node request bound was reached.',node.id);
+                    if(own(options,'capability')!==undefined&&own(options,'capability')!==capability)return failure('REQUEST_CAPABILITY_MISMATCH','The helper authorizes text completion requests only.',childNode.id);
                     if(childNode.operation==='for-each')return childLocal.request({...options,capability});
                     const authorized=await authorizeInputs(childNode,childInputs,child.address,capability);if(!authorized.ok)return authorized;
                     if(!childOpen||closed||!operationOpen||stopped())return requestFailure();
-                    const typed=capability==='typed-decision';
-                    if(typed&&childOp.requestCapability!=='typed-decision'||!typed&&childOp.requestCapability==='typed-decision'&&!childOp.fallbackModelRole)return failure('REQUEST_CAPABILITY_MISMATCH','The helper node does not authorize this request.',node.id);
-                    const role=typed?childNode.modelRole??childOp.modelRole:childOp.requestCapability==='typed-decision'?childOp.fallbackModelRole:childNode.modelRole??childOp.modelRole;
-                    const selectedNode={...childNode,modelRole:role,...(!typed&&childOp.requestCapability==='typed-decision'?{profileId:childNode.fallbackProfileId,model:null}:{})};
+                    const role=childNode.modelRole??childOp.modelRole;
+                    const selectedNode={...childNode,modelRole:role};
                     if(!childBindings.has(capability)){
-                        const resolver=typed?ports.resolveFastBinding:ports.resolveBinding;
-                        const selected=await resolver?.(selectedNode,{...bindingGraph,roles:childLocal.roles},child.address);
+                        const selected=await ports.resolveBinding?.(selectedNode,{...bindingGraph,roles:childLocal.roles},child.address);
                         if(!childOpen||closed||!operationOpen||stopped())return requestFailure();
                         if(!selected?.ok)return selected??failure('BINDING_MISSING','Resolve the activated helper model connection.',node.id);
                         childBindings.set(capability,selected.data);
@@ -336,11 +310,11 @@ async function executeWorkflow(original,ports,hooks={}) {
                     childCalls++;
                     return childLocal.request({...options,capability,binding:childBindings.get(capability),modelRole:role,childAddress:child.address});
                 };
-                try{return await executeNode(childNode,childInputs,childOp,{...ports,...childLocal,iterateHelper:childIterate,isRecoveredIterationResult:result=>recovered.has(result),binding:undefined,request:options=>childRequest(childNode.operation==='for-each'&&own(options,'capability')==='typed-decision'?'typed-decision':'text-completion',options),typedRequest:options=>childRequest('typed-decision',options),getRequestCount:()=>childCalls,executeIntrospection:hooks.executeIntrospection,executeHostOperation:undefined});}
+                try{return await executeNode(childNode,childInputs,childOp,{...ports,...childLocal,iterateHelper:childIterate,isRecoveredIterationResult:result=>recovered.has(result),binding:undefined,request:childRequest,getRequestCount:()=>childCalls,executeIntrospection:hooks.executeIntrospection,executeHostOperation:undefined});}
                 finally{childOpen=false;childBindings.clear();childAuthorizers.delete(childKey);}
             };
             const recovered=new WeakSet(),compiled=helperPrograms.get(key),iterateHelper=compiled?async(invocation,helperPorts)=>{const result=await executeCompiledIteration(compiled,invocation,{executeUnit:executeHelperUnit,request:helperPorts.request,signal:ports.signal,retainScopedOutput:payload=>retainScopedOutput({...payload,inputs:payload.seed?inputs:payload.inputs})});if(result?.ok===true)recovered.add(result);return result;}:ports.iterateHelper;
-            const rawResult=await executeNode(node,inputs,op,{...ports,phase:unit.phase,rootMode:prepared.graph.mode,binding,request,typedRequest,iterateHelper,isRecoveredIterationResult:result=>recovered.has(result),getRequestCount:()=>nodeCalls.get(key)??0,inputStates:freezeArtifact(inputStates),root:unit.address.instancePath.length===0,address:unit.address,executeIntrospection:hooks.executeIntrospection,executeHostOperation:hooks.executeHostOperation,getRequestBindings});
+            const rawResult=await executeNode(node,inputs,op,{...ports,phase:unit.phase,rootMode:prepared.graph.mode,binding,request,iterateHelper,isRecoveredIterationResult:result=>recovered.has(result),getRequestCount:()=>nodeCalls.get(key)??0,inputStates:freezeArtifact(inputStates),root:unit.address.instancePath.length===0,address:unit.address,executeIntrospection:hooks.executeIntrospection,executeHostOperation:hooks.executeHostOperation,getRequestBindings});
             // Native generation authors the public story from scoped portrayal guidance; it never publishes guidance verbatim.
             const result=preserveArtifactPrivacy(rawResult,node.operation==='generate-reply'?{}:inputs);
             operationOpen=false;

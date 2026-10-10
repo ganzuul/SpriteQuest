@@ -37,7 +37,7 @@ test('actual library inspection opens the exact nested pin and cannot gain runti
 
 test('readonly portal manager writes a scoped local label and retains the authored root document',async({page})=>{
  const id=await activate(page,'portalWorkflow'),before=await page.evaluate(id=>JSON.stringify(window.canvasHarness.S.getGraph(id)),id);
- await page.locator('.pc-node-native[data-id="first/path"] .pc-native-heading').dblclick();await page.locator('.pc-details-heading').getByRole('button',{name:'Portals',exact:true}).click();
+ await page.locator('.pc-node-native[data-id="first/path"] .pc-native-heading').dblclick();await page.getByRole('button',{name:'Graph',exact:true}).click();await page.getByRole('menuitem',{name:'Manage portals…',exact:true}).click();
  await expect(page.getByLabel('Portal name',{exact:true})).toHaveValue('Saved publisher');await expect(page.locator('[data-portal-create]')).toBeDisabled();await page.getByLabel('Portal name',{exact:true}).fill('Local label');await page.locator('[data-portal-rename]').click();await expect(page.getByLabel('Portal name',{exact:true})).toHaveValue('Local label');await page.getByRole('button',{name:'Close',exact:true}).click();
  expect(await page.evaluate(id=>JSON.stringify(window.canvasHarness.S.getGraph(id)),id)).toBe(before);await expect(page.getByRole('button',{name:'Undo',exact:true})).toBeDisabled();
  const persisted=await page.evaluate(id=>window.canvasHarness.S.settings().workspaceViews[id],id);const child=persisted.views.find(view=>view.identity.kind==='instance');expect(child.portalPresentation.publisher.label).toBe('Local label');expect(child.portalPresentation.publisher.source).toEqual({nodeId:'work',portId:'out'});

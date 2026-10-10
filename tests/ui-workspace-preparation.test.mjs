@@ -384,19 +384,19 @@ test('native plaintext paste uses valid Compose sections and one real root trans
     }
 });
 
-test('unified workspace keeps effective node stages and shows typed decisions separately from completion profiles',()=>{
+test('unified workspace keeps effective node stages and prepares ordinary Decision profiles',()=>{
     const root=cloneWorkflowDocument(starterGraph('literal-cleanup')).data;root.mode='native-unified';
     root.nodes.context={id:'context',type:'workflow',operation:'scene-context'};
-    root.nodes.fast={id:'fast',type:'workflow',operation:'fast-decision',fastConnectionId:'local-laya'};
-    let textResolutions=0,fastResolutions=0;
-    const prepared=api.prepareWorkspaceViews(root,{settings:{nativeBindings:{workflowGraphId:root.id}},resolveBinding:()=>{textResolutions++;return {ok:true,data:{profileId:'ordinary'}};},resolveFastBinding:()=>{fastResolutions++;return {ok:true,data:{connectionId:'local-laya',capability:'typed-decision',provider:'laya',model:'laya-any'}};}});
-    assert.equal(prepared.ok,true,JSON.stringify(prepared.error));assert.equal(textResolutions,0);assert.equal(fastResolutions,1);
+    root.nodes.decision={id:'decision',type:'workflow',operation:'decision',profileId:'ordinary'};
+    let textResolutions=0;
+    const prepared=api.prepareWorkspaceViews(root,{settings:{nativeBindings:{workflowGraphId:root.id}},resolveBinding:()=>{textResolutions++;return {ok:true,data:{profileId:'ordinary'}};}});
+    assert.equal(prepared.ok,true,JSON.stringify(prepared.error));assert.equal(textResolutions,1);
     const session=createGraphViewSession({root,activationId:'unified-panels',...prepared.data}).data;
-    session.updateView({selection:{primary:{kind:'node',id:'fast'},multi:[]}});
-    const workflow=projectPreparedWorkflow(prepared.data.workflow,{selectedId:'fast'});assert.equal(workflow.assigned,true);
+    session.updateView({selection:{primary:{kind:'node',id:'decision'},multi:[]}});
+    const workflow=projectPreparedWorkflow(prepared.data.workflow,{selectedId:'decision'});assert.equal(workflow.assigned,true);
     assert.ok(workflow.nodes.some(node=>node.id==='reply-snapshot'&&node.phase==='post'));assert.ok(workflow.nodes.some(node=>node.id==='context'&&node.phase==='pre'));
     assert.ok(workflow.families.flatMap(family=>family.operations).find(operation=>operation.id==='repair').compatible);
     const details=api.projectWorkspacePanels(session.readEditor(),workflow,{},'unified',null,null).nodeDetails;
-    assert.equal(details.phase,'pre');assert.equal(details.model,null);assert.ok(details.controls.some(control=>control.key==='fastConnectionId'));
-    const drawing=api.projectEditorDraw(session.readEditor());assert.equal(drawing.nativeCards.fast.canonicalTitle,'Fast Decision');assert.equal(drawing.nativeCards['reply-snapshot'].ports[0].kind,'draft');
+    assert.equal(details.phase,'pre');assert.equal(details.model.profile.value,'ordinary');
+    const drawing=api.projectEditorDraw(session.readEditor());assert.equal(drawing.nativeCards.decision.canonicalTitle,'Decision');assert.equal(drawing.nativeCards['reply-snapshot'].ports[0].kind,'draft');
 });

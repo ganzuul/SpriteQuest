@@ -1,7 +1,7 @@
 import { prepareIterationBindingOverride } from './iteration-bindings.js?v=0.26.0';
 import { createStoryDocumentSetup } from './story-document-setup.js?v=0.26.0';
 import { createConfiguredNodeSession, configuredCreationStage, nodeNeedsConfiguration, iterationHelperChoices } from './configured-node-creation.js?v=0.26.0';
-import { checkFastSettingsScope, fastSettingsPersistence, saveFastConnection, workflowBindingKey, workflowCreationPhase } from './provider-settings.js?v=0.26.0';
+import { workflowBindingKey, workflowCreationPhase } from './provider-settings.js?v=0.26.0';
 import { resolveBinding } from '../workflow/connections.js?v=0.26.0';
 import { activeModelMetadata } from '../workflow/model-profiles.js?v=0.26.0';
 import { readNodeProfileMetadata, nodeProfileMetadataKey } from './node-profile-preparation.js?v=0.26.0';
@@ -35,7 +35,7 @@ import { showContextMenu } from './context-menu.js?v=0.26.0';
 import { readTextFile } from './file-input.js?v=0.26.0';
 import { prepareWorkspaceViews, prepareLibraryViews, projectEditorDraw, initialWorkspaceCamera, projectWorkspacePanels, projectNodeProfiles } from './workspace-preparation.js?v=0.26.0';
 import { prepareWorkflowProjection, projectPreparedWorkflow, createWorkflowSession } from './workflow-surface.js?v=0.26.0';
-import { ctx, safe, settings, save, allGraphs, getGraph, createGraph, duplicateGraph, deleteGraph, touchGraph, commitGraphEdit, stepGraphHistory, resolveGraph, exportGraph, importGraph, onGraphTouched, groupMembers } from '../state.js?v=0.26.0';
+import { ctx, safe, settings, save, allGraphs, getGraph, createGraph, duplicateGraph, deleteGraph, touchGraph, commitGraphEdit, stepGraphHistory, resolveGraph, exportGraph, exportArchivedWorkflows, importGraph, onGraphTouched, groupMembers } from '../state.js?v=0.26.0';
 import { applyTheme } from '../theme.js?v=0.26.0';
 import { renderThemeEditor } from '../theme-editor.js?v=0.26.0';
 import * as H from '../history.js?v=0.26.0';
@@ -153,47 +153,12 @@ const storyDocumentsActions = {
     async save(key, definition) { const setup = storySetup(); return setup ? storyDocumentsChanged(await setup.save(key, definition)) : { ok: false, error: { code: 'DOCUMENT_SETUP_UNAVAILABLE', message: 'Workflow Data setup is unavailable.' } }; },
     async remove(key, targetId) { const setup = storySetup(); return setup ? storyDocumentsChanged(await setup.remove(key, targetId)) : { ok: false, error: { code: 'DOCUMENT_SETUP_UNAVAILABLE', message: 'Workflow Data setup is unavailable.' } }; },
 };
-function fastSetupView() {
-    try {
-        const snapshot = workflowRuntime.fastConnectionState?.();
-        if (!snapshot?.ok) throw new Error('unavailable');
-        return { userId: snapshot.data.userId, issue: '', connections: snapshot.data.connections.map(item => ({ id: item.id, label: item.label, provider: item.provider, model: item.model, ...(item.endpoint ? { endpoint: item.endpoint } : {}), credentialReady: item.credentialReady === true })) };
-    } catch { return { userId: '', connections: [], issue: 'Fast connection settings are unavailable for the active user. Reopen this panel after SillyTavern finishes loading.' }; }
-}
-function refreshFastSettings() { workbench?.update({ fastConnections: fastSetupView() }); }
-function fastSettingsChanged() {
-    workflowSession.cancel('Fast connection settings changed');
-    refreshWorkflowPreparation(); updateWorkflowProjection(); refreshFastSettings();
-}
-const fastConnectionsActions = {
-    refresh: refreshFastSettings,
-    async save(configuration, key, userId) {
-        const result = await saveFastConnection(workflowRuntime.getFastConnectionRegistry?.(), configuration, key, userId);
-        fastSettingsChanged(); return result;
-    },
-    async remove(id, userId) {
-        try {
-            const registry = workflowRuntime.getFastConnectionRegistry?.(), scoped = checkFastSettingsScope(registry, userId); if (!scoped.ok) return scoped;
-            const removed = registry.remove(id); if (!removed.ok) return { ok: false, error: { code: 'FAST_SETTINGS_FAILED', message: 'The selected Fast connection could not be removed.' } };
-            const saved = await registry.save(); fastSettingsChanged();
-            const current = checkFastSettingsScope(registry, userId); if (!current.ok) return current;
-            return fastSettingsPersistence(saved, 'Connection removed and configuration saved.', 'Connection removed locally; SillyTavern save is unconfirmed.');
-        } catch { return { ok: false, error: { code: 'FAST_SETTINGS_FAILED', message: 'The Fast connection could not be removed.' } }; }
-    },
-    clearCredential(id, userId) {
-        try {
-            const registry = workflowRuntime.getFastConnectionRegistry?.(), scoped = checkFastSettingsScope(registry, userId); if (!scoped.ok) return scoped;
-            const cleared = registry.clearCredential(id); fastSettingsChanged();
-            return cleared.ok ? { ok: true, data: { message: 'Session key cleared. Re-enter it before an authenticated Fast call.' } } : { ok: false, error: { code: 'FAST_SETTINGS_FAILED', message: 'The session key could not be cleared.' } };
-        } catch { return { ok: false, error: { code: 'FAST_SETTINGS_FAILED', message: 'The session key could not be cleared.' } }; }
-    },
-};
 function recallSetupView(){
     try{const response=workflowRuntime.getNativeWorkflowController?.()?.syncRecall?.();return response?.ok===true?response.data:{scope:null,nodes:[],issue:response?.error?.message??'Recall state is unavailable.'};}catch{return {scope:null,nodes:[],issue:'Recall state is unavailable.'};}
 }
 function refreshRecallArms(){const view=recallSetupView();workbench?.update({recallArms:view});return view;}
 const recallArmsActions={refresh:refreshRecallArms,arm(nodeId){const result=workflowRuntime.getNativeWorkflowController?.()?.armRecall?.(nodeId);refreshRecallArms();return result??{ok:false,error:{code:'RECALL_UNAVAILABLE',message:'Recall is unavailable.'}};},disarm(nodeId){const result=workflowRuntime.getNativeWorkflowController?.()?.disarmRecall?.(nodeId);refreshRecallArms();return result??{ok:false,error:{code:'RECALL_UNAVAILABLE',message:'Recall is unavailable.'}};}};
-function workspaceInputs() { const snapshot = fastSetupView(), context = ctx(), hostProfiles = profiles(); nodeProfileInputsKey = nodeProfileMetadataKey(context, hostProfiles); return { settings: settings(), profiles: readNodeProfileMetadata(context, hostProfiles), activeModel: activeModelMetadata(context), fastConnections: snapshot.connections, result: workflowState.result, resolveBinding: (node, graph) => resolveBinding(node, graph, ctx()), resolveFastBinding: node => workflowRuntime.fastConnectionPreview?.(node) ?? { ok: false, error: { code: 'SERVICE_UNAVAILABLE', message: 'Fast Decision is unavailable for the active user.' } }, candidateStatus: candidate => workflowRuntime.getNativeWorkflowController?.()?.candidateStatus?.(candidate) }; }
+function workspaceInputs() { const context = ctx(), hostProfiles = profiles(); nodeProfileInputsKey = nodeProfileMetadataKey(context, hostProfiles); return { settings: settings(), profiles: readNodeProfileMetadata(context, hostProfiles), activeModel: activeModelMetadata(context), result: workflowState.result, resolveBinding: (node, graph) => resolveBinding(node, graph, ctx()), candidateStatus: candidate => workflowRuntime.getNativeWorkflowController?.()?.candidateStatus?.(candidate) }; }
 function refreshWorkflowPreparation() {
     if (!current || !workspacePrepared) return;
     workspacePrepared.workflow = prepareWorkflowProjection(current, { ...workspaceInputs(), ...(workspacePrepared.planner ? { planner: workspacePrepared.planner } : {}) });
@@ -454,7 +419,7 @@ export function close() {
     cancelImportReview(); document.removeEventListener('pc-native-result', receiveAutomaticWorkflow);
     documentTransition = true; workflowSession.cancel('Workflow view closed'); documentTransition = false;
     canvas?.cancelGesture(); persistGraphViews(true); graphViews?.deactivate(); graphViews = null; rootRunEpoch++; uiEpoch++;
-    workbench?.update({ graphViews: undefined, fastConnectionsActive: false });
+    workbench?.update({ graphViews: undefined });
     nativeWireBridge?.cancel('view-close'); root?.classList.remove('pc-open');
 }
 export function toggle() { isOpen() ? close() : open(); }
@@ -501,7 +466,7 @@ function build() {
         pickGraph(id) { const picked = getGraph(id); if (!picked) return renderGraphSelect(); current = picked; settings().activeGraphId = picked.id; save(); setCanvasGraph(); renderAll(); },
         arm(enabled) { settings().enabled = enabled; save(); renderStatus(); },
         command(name) {
-            const commands = { new: () => onNewGraph('unified'), 'new-pre': () => onNewGraph('pre'), 'new-post': () => onNewGraph('post'), duplicate: onDuplicateGraph, rename: onRenameGraph, delete: onDeleteGraph, save: onSaveGraph, import: onImportGraph, 'open-workflow': onImportGraph, 'import-into-graph': onImportIntoGraph, export: onExportGraph, undo: doUndo, redo: doRedo,
+            const commands = { new: () => onNewGraph('unified'), 'new-pre': () => onNewGraph('pre'), 'new-post': () => onNewGraph('post'), duplicate: onDuplicateGraph, rename: onRenameGraph, delete: onDeleteGraph, save: onSaveGraph, import: onImportGraph, 'open-workflow': onImportGraph, 'import-into-graph': onImportIntoGraph, export: onExportGraph, 'export-archived-workflows': onExportArchivedWorkflows, 'manage-portals': () => openPortalManager(), undo: doUndo, redo: doRedo,
                 fit: () => canvas.fit(), 'fit-selection': () => canvas.fitSelection(), copy: () => copySelection(), cut: () => copySelection(true), paste: pasteFromClipboard,
                 'delete-selection': () => canvas.deleteSelection(), 'run-workflow': workflowActions.run, 'stop-workflow': () => workflowSession.cancel('Stopped by user'), 'assign-workflow-phase': () => workflowActions.assign(current?.mode?.slice(7)),
                 theme: toggleThemePopover, inspector: togglePane, 'reveal-inspector': () => { if (root.classList.contains('pc-details-hidden')) togglePane(); }, close };
@@ -512,7 +477,7 @@ function build() {
         graphViewActions, nodeDetails: nodeDetailsActions, commentDetails: commentDetailsActions, outputPreview: outputPreviewActions, runDetails: runDetailsActions,
         chooseNative: chooseNativeNode, managePortals: () => openPortalManager(), shelfSubgraph: shelfSubgraphAction,
         subgraphSave: { close() { pendingSubgraphSave = null; workbench.update({ subgraphSave: null }); }, save: saveSubgraphToShelf },
-        newWorkflowPrompt: { choose: chooseNewWorkflow }, fastConnections: fastConnectionsActions,
+        newWorkflowPrompt: { choose: chooseNewWorkflow },
         recallArms: recallArmsActions, storyDocuments: storyDocumentsActions, configureNode: configureNodeActions,
         acceptImport: acceptImportReview, cancelImport: cancelImportReview, prepareImportAgain,
     });
@@ -786,7 +751,7 @@ function doUndo() { restoreGraphHistory('undo', 'Undid'); }
 function doRedo() { restoreGraphHistory('redo', 'Redid'); }
 
 function renderGraphSelect() {
-    workbench.update({ graphs: allGraphs().map(g => ({ id: g.id, name: g.name })), graphId: current?.id ?? '', armed: !!settings().enabled });
+    workbench.update({ graphs: allGraphs().map(g => ({ id: g.id, name: g.name })), graphId: current?.id ?? '', hasArchivedWorkflows: Object.keys(settings().archivedWorkflows?.graphs ?? {}).length > 0 || Object.keys(settings().archivedWorkflows?.definitions ?? {}).length > 0, armed: !!settings().enabled });
 }
 
 function renderStatus() { safe(() => document.dispatchEvent(new CustomEvent('pc-state'))); workbench.update({ armed: !!settings().enabled }); }
@@ -917,6 +882,15 @@ function onExportGraph() {
         workflowSaveRequests.delete(current);
         return true;
     } catch (error) { toast(error?.message || 'The workflow could not be exported.', 'error'); return false; }
+}
+
+function onExportArchivedWorkflows() {
+    try {
+        const json = exportArchivedWorkflows();
+        if (!json) { toast('No archived workflows are available.', 'info'); return false; }
+        downloadGraphViewJSON(json, 'lattice-archived-workflows.json');
+        return true;
+    } catch (error) { toast(error?.message || 'The archived workflows could not be exported.', 'error'); return false; }
 }
 
 function cancelImportReview() { pendingImport = null; workbench?.update({ importReview: null }); }
@@ -1517,7 +1491,6 @@ const commentDetailsActions = {
 };
 const nodeDetailsActions = {
     editHelperBinding(selection,role,field,mode,value) { return editIterationHelperBinding(selection,role,field,mode,value); },
-    openFastConnections() { workbench?.update({ fastConnectionsActive: true }); },
     editPhase(selection, phase) {
         const captured = detailCapture(selection); if (!captured.ok) return captured;
         return commitCaptured(captured.data, prepareScopeMutation(captured.data, context => {

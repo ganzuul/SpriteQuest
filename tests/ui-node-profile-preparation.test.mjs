@@ -112,7 +112,7 @@ test('unified creation projects active profiles on every current text model oper
     }
 });
 
-test('unified deterministic modes and host operations omit profile bars while typed decisions keep their own connection control', () => {
+test('unified deterministic modes and host operations omit profile bars', () => {
     let root = { id: 'unified-profile-free', schema: 3, runtime: 2, mode: 'native-unified', nodes: {}, wires: {}, portals: {}, definitions: {} };
     for (const [operation, controls, phase] of [
         ['smart-compactor', { method: 'select' }, 'pre'], ['repair', { mode: 'scan' }, 'post'], ['repair', { mode: 'inspect' }, 'post'],
@@ -120,7 +120,6 @@ test('unified deterministic modes and host operations omit profile bars while ty
         ['context', { mode: 'assemble' }, 'pre'], ['context', { mode: 'perspective', actorId: 'character:mara' }, 'pre'], ['context', { mode: 'focus', method: 'select' }, 'pre'],
         ['extract', { mode: 'literal' }, 'post'], ['extract', { mode: 'literal', inputKind: 'text' }, 'pre'],
         ['item-use-trigger', { itemId: 'wand', mode: 'candidates' }, 'post'],
-        ['fast-decision', {}, 'pre'], ['fast-decision', { fallbackEnabled: true, fallbackProfileId: 'saved', fallbackAllowedCodes: ['REQUEST_FAILED'] }, 'pre'],
         ['on-send', {}, 'pre'], ['draft-event-source', {}, 'post'], ['review-publish', {}, 'post'],
         ['read-file', { targetId: 'story-notes' }, 'pre'], ['story-clock', { clockId: 'story-clock' }, 'pre'],
         ['time-trigger', { scheduleId: 'curse' }, 'post'], ['state', { mode: 'value' }, 'pre'],

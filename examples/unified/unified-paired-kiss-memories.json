@@ -5,7 +5,7 @@
   "graph": {
     "id": "unified-example-paired-kiss-memories",
     "name": "A kiss leaves two separate private memories",
-    "description": "Normalize exact kiss evidence, make a Fast Decision with an explicit probability gate, and give each present character a separate private reflection model and unique accepted memory file.\n\nSetup: Load both actors and replace character:mara.png / character:elias.png everywhere with their real canonical avatar IDs. Create actor-private JSON mara-moments for Mara and elias-moments for Elias, each initially []. Bind Prose for candidate/cast/reflection models. Choose a real configured typed Fast connection on kiss-decision: the portable graph deliberately leaves fastConnectionId blank and never includes an endpoint or credential. Inspect/edit kiss-gate acceptMin 0.90 and rejectMax 0.10. These are authored policy thresholds, not a guarantee that provider probabilities are calibrated. A single quoted actual kiss is confirmed; plans, recalled kisses and uncertainty cannot write. In reflection-authorship-text, change allowModelAuthoredFeelings from false to true only when the story author permits invented inner feelings for both actors, especially a player-controlled actor. The default false skips both private reflection calls and memory writes while preserving ordinary review. Each permitted reflection uses that actor’s exact Context and prior private file; Apply accepts it as model-authored private canon. The saved sceneSummary is the exact shared kiss quote, sceneEvidence preserves its canonical source/span, and reflection plus Recall-compatible text are separate from those facts with reflectionOrigin model-authored. Stable record/event ID and sourceRefs come from canonical evidence rather than the reflection model. Private memories never enter public notes. Apply adds each file uniquely by id; review both private receipts separately.\n\nInspect: On Send owns this generation. Generate Reply uses the ordinary SillyTavern connection. Auxiliary roles remain unassigned in this portable example. Review the final narrative and proposed consequences; Apply publishes a new swipe and settles staged writes. Preview and bounded runs never settle.\n\nGenerated suggestions are proposals. Quoted observations preserve source identity; notes never establish canonical events. Private records cannot be appended to public notes.",
+    "description": "Normalize exact kiss evidence, confirm it with an ordinary Decision, and give each present character a separate private reflection model and unique accepted memory file.\n\nSetup: Load both actors and replace character:mara.png / character:elias.png everywhere with their real canonical avatar IDs. Create actor-private JSON mara-moments for Mara and elias-moments for Elias, each initially []. Choose a local profile in each candidate/cast/reflection model’s canvas bar and on kiss-decision. Portable connections remain unassigned. kiss-acceptance preserves answers.kiss.accepted as true, false or null: only true confirms the quoted event, false skips reflections and writes, and null holds the dependent branches unresolved. A single quoted actual kiss is confirmed; plans, recalled kisses and uncertainty cannot write. In reflection-authorship-text, change allowModelAuthoredFeelings from false to true only when the story author permits invented inner feelings for both actors, especially a player-controlled actor. The default false skips both private reflection calls and memory writes while preserving ordinary review. Each permitted reflection uses that actor’s exact Context and prior private file; Apply accepts it as model-authored private canon. The saved sceneSummary is the exact shared kiss quote, sceneEvidence preserves its canonical source/span, and reflection plus Recall-compatible text are separate from those facts with reflectionOrigin model-authored. Stable record/event ID and sourceRefs come from canonical evidence rather than the reflection model. Private memories never enter public notes. Apply adds each file uniquely by id; review both private receipts separately.\n\nInspect: On Send owns this generation. Generate Reply uses the ordinary SillyTavern connection. Auxiliary roles remain unassigned in this portable example. Review the final narrative and proposed consequences; Apply publishes a new swipe and settles staged writes. Preview and bounded runs never settle.\n\nGenerated suggestions are proposals. Quoted observations preserve source identity; notes never establish canonical events. Private records cannot be appended to public notes.",
     "schema": 3,
     "runtime": 2,
     "mode": "native-unified",
@@ -306,9 +306,9 @@
       "kiss-decision": {
         "id": "kiss-decision",
         "type": "workflow",
-        "operation": "fast-decision",
+        "operation": "decision",
         "operationVersion": 1,
-        "title": "Fast Decision",
+        "title": "Decision",
         "enabled": true,
         "x": 2300,
         "y": 1080,
@@ -316,26 +316,22 @@
         "h": 160,
         "profileId": null,
         "model": null,
-        "modelRole": "fastDecision",
+        "modelRole": "decision",
         "inputKind": "data",
         "questions": {
           "kiss": {
             "type": "noul",
-            "instructions": "Does this single exact canonical candidate quote establish a kiss that actually occurs now between character:mara.png and character:elias.png? Reject plans, memories, mentions, offscreen claims and ambiguous intimacy. Return probability only; this node does not establish consent or authorize escalation."
+            "instructions": "Does this single exact canonical candidate quote establish a kiss that actually occurs now between character:mara.png and character:elias.png? Reject plans, memories, mentions, offscreen claims and ambiguous intimacy. Return accepted true, false or null when unresolved; this node does not establish consent or authorize escalation."
           }
         },
-        "maxTokens": 2048,
-        "fastConnectionId": "",
-        "fallbackEnabled": false,
-        "fallbackAllowedCodes": [],
-        "fallbackProfileId": ""
+        "maxTokens": 2048
       },
-      "kiss-gate": {
-        "id": "kiss-gate",
+      "kiss-acceptance": {
+        "id": "kiss-acceptance",
         "type": "workflow",
-        "operation": "confidence-gate",
+        "operation": "select-fields",
         "operationVersion": 1,
-        "title": "Confidence Gate",
+        "title": "Select Fields",
         "enabled": true,
         "x": 2670,
         "y": 1080,
@@ -344,14 +340,16 @@
         "profileId": null,
         "model": null,
         "modelRole": null,
-        "metricPath": [
-          "answers",
-          "kiss",
-          "noul"
-        ],
-        "acceptMin": 0.9,
-        "rejectMax": 0.1,
-        "direction": "higher"
+        "fields": [
+          {
+            "name": "accepted",
+            "path": [
+              "answers",
+              "kiss",
+              "accepted"
+            ]
+          }
+        ]
       },
       "confirmed-kiss": {
         "id": "confirmed-kiss",
@@ -369,6 +367,32 @@
         "modelRole": null,
         "mode": "single-gate"
       },
+      "kiss-confirmed-count": {
+        "id": "kiss-confirmed-count",
+        "type": "workflow",
+        "operation": "collection",
+        "operationVersion": 1,
+        "title": "Collection",
+        "enabled": true,
+        "x": 2670,
+        "y": 840,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "count",
+        "collectionPath": [],
+        "fieldPath": [],
+        "value": "",
+        "operator": "equals",
+        "missingPolicy": "hold",
+        "thresholds": "[]",
+        "mergePolicy": "keep-all",
+        "identityPath": [
+          "id"
+        ]
+      },
       "kiss-accepted": {
         "id": "kiss-accepted",
         "type": "workflow",
@@ -383,11 +407,9 @@
         "profileId": null,
         "model": null,
         "modelRole": null,
-        "path": [
-          "accepted"
-        ],
-        "operator": "equals",
-        "value": true
+        "path": [],
+        "operator": "greater-than",
+        "value": 0
       },
       "cast-prompt": {
         "id": "cast-prompt",
@@ -471,6 +493,22 @@
         "model": null,
         "modelRole": null,
         "actorId": "character:elias.png"
+      },
+      "kiss-confirmed-route": {
+        "id": "kiss-confirmed-route",
+        "type": "workflow",
+        "operation": "branch",
+        "operationVersion": 1,
+        "title": "Branch",
+        "enabled": true,
+        "x": 3040,
+        "y": 1320,
+        "w": 270,
+        "h": 160,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "artifactKind": "data"
       },
       "source-ref": {
         "id": "source-ref",
@@ -1421,7 +1459,7 @@
         "route": "wire",
         "from": "kiss-decision",
         "fromPort": "out",
-        "to": "kiss-gate",
+        "to": "kiss-acceptance",
         "toPort": "in"
       },
       "wire-19": {
@@ -1435,509 +1473,533 @@
       "wire-20": {
         "id": "wire-20",
         "route": "wire",
-        "from": "kiss-gate",
-        "fromPort": "accepted",
+        "from": "kiss-acceptance",
+        "fromPort": "out",
         "to": "confirmed-kiss",
         "toPort": "decisions"
       },
       "wire-21": {
         "id": "wire-21",
         "route": "wire",
-        "from": "kiss-gate",
-        "fromPort": "accepted",
-        "to": "kiss-accepted",
+        "from": "confirmed-kiss",
+        "fromPort": "out",
+        "to": "kiss-confirmed-count",
         "toPort": "in"
       },
       "wire-22": {
         "id": "wire-22",
+        "route": "wire",
+        "from": "kiss-confirmed-count",
+        "fromPort": "out",
+        "to": "kiss-accepted",
+        "toPort": "in"
+      },
+      "wire-23": {
+        "id": "wire-23",
         "route": "wire",
         "from": "cast-prompt",
         "fromPort": "out",
         "to": "cast-prompt-gate",
         "toPort": "in"
       },
-      "wire-23": {
-        "id": "wire-23",
+      "wire-24": {
+        "id": "wire-24",
         "route": "wire",
         "from": "kiss-accepted",
         "fromPort": "out",
         "to": "cast-prompt-gate",
         "toPort": "condition"
       },
-      "wire-24": {
-        "id": "wire-24",
+      "wire-25": {
+        "id": "wire-25",
         "route": "wire",
         "from": "cast-prompt-gate",
         "fromPort": "yes",
         "to": "cast",
         "toPort": "prompt"
       },
-      "wire-25": {
-        "id": "wire-25",
+      "wire-26": {
+        "id": "wire-26",
         "route": "wire",
         "from": "event-source",
         "fromPort": "out",
         "to": "cast",
         "toPort": "data"
       },
-      "wire-26": {
-        "id": "wire-26",
+      "wire-27": {
+        "id": "wire-27",
         "route": "wire",
         "from": "cast",
         "fromPort": "out",
         "to": "mara-presence",
         "toPort": "in"
       },
-      "wire-27": {
-        "id": "wire-27",
+      "wire-28": {
+        "id": "wire-28",
         "route": "wire",
         "from": "cast",
         "fromPort": "out",
         "to": "elias-presence",
         "toPort": "in"
       },
-      "wire-28": {
-        "id": "wire-28",
+      "wire-29": {
+        "id": "wire-29",
         "route": "wire",
         "from": "confirmed-kiss",
         "fromPort": "out",
+        "to": "kiss-confirmed-route",
+        "toPort": "in"
+      },
+      "wire-30": {
+        "id": "wire-30",
+        "route": "wire",
+        "from": "kiss-accepted",
+        "fromPort": "out",
+        "to": "kiss-confirmed-route",
+        "toPort": "condition"
+      },
+      "wire-31": {
+        "id": "wire-31",
+        "route": "wire",
+        "from": "kiss-confirmed-route",
+        "fromPort": "yes",
         "to": "source-ref",
         "toPort": "in"
       },
-      "wire-29": {
-        "id": "wire-29",
+      "wire-32": {
+        "id": "wire-32",
         "route": "wire",
         "from": "source-ref",
         "fromPort": "out",
         "to": "source-ref-list",
         "toPort": "in"
       },
-      "wire-30": {
-        "id": "wire-30",
+      "wire-33": {
+        "id": "wire-33",
         "route": "wire",
         "from": "source-ref-list",
         "fromPort": "text",
         "to": "source-refs",
         "toPort": "in"
       },
-      "wire-31": {
-        "id": "wire-31",
+      "wire-34": {
+        "id": "wire-34",
         "route": "wire",
         "from": "mara-presence",
         "fromPort": "out",
         "to": "mara-is-present",
         "toPort": "in"
       },
-      "wire-32": {
-        "id": "wire-32",
+      "wire-35": {
+        "id": "wire-35",
         "route": "wire",
         "from": "mara-presence",
         "fromPort": "out",
         "to": "mara-present-route",
         "toPort": "in"
       },
-      "wire-33": {
-        "id": "wire-33",
+      "wire-36": {
+        "id": "wire-36",
         "route": "wire",
         "from": "mara-is-present",
         "fromPort": "out",
         "to": "mara-present-route",
         "toPort": "condition"
       },
-      "wire-34": {
-        "id": "wire-34",
+      "wire-37": {
+        "id": "wire-37",
         "route": "wire",
         "from": "mara-present-route",
         "fromPort": "yes",
         "to": "mara-both-present",
         "toPort": "in"
       },
-      "wire-35": {
-        "id": "wire-35",
+      "wire-38": {
+        "id": "wire-38",
         "route": "wire",
         "from": "elias-is-present",
         "fromPort": "out",
         "to": "mara-both-present",
         "toPort": "condition"
       },
-      "wire-36": {
-        "id": "wire-36",
+      "wire-39": {
+        "id": "wire-39",
         "route": "wire",
         "from": "mara-both-present",
         "fromPort": "yes",
         "to": "mara-context",
         "toPort": "presence"
       },
-      "wire-37": {
-        "id": "wire-37",
+      "wire-40": {
+        "id": "wire-40",
         "route": "wire",
         "from": "mara-both-present",
         "fromPort": "yes",
         "to": "mara-file",
         "toPort": "presence"
       },
-      "wire-38": {
-        "id": "wire-38",
+      "wire-41": {
+        "id": "wire-41",
         "route": "wire",
         "from": "confirmed-kiss",
         "fromPort": "out",
         "to": "mara-reflection-input",
         "toPort": "event"
       },
-      "wire-39": {
-        "id": "wire-39",
+      "wire-42": {
+        "id": "wire-42",
         "route": "wire",
         "from": "mara-file",
         "fromPort": "document",
         "to": "mara-reflection-input",
         "toPort": "prior"
       },
-      "wire-40": {
-        "id": "wire-40",
+      "wire-43": {
+        "id": "wire-43",
         "route": "wire",
         "from": "mara-prompt",
         "fromPort": "out",
         "to": "mara-prompt-live",
         "toPort": "in"
       },
-      "wire-41": {
-        "id": "wire-41",
+      "wire-44": {
+        "id": "wire-44",
         "route": "wire",
         "from": "mara-is-present",
         "fromPort": "out",
         "to": "mara-prompt-live",
         "toPort": "condition"
       },
-      "wire-42": {
-        "id": "wire-42",
+      "wire-45": {
+        "id": "wire-45",
         "route": "wire",
         "from": "mara-prompt-live",
         "fromPort": "yes",
         "to": "mara-prompt-both",
         "toPort": "in"
       },
-      "wire-43": {
-        "id": "wire-43",
+      "wire-46": {
+        "id": "wire-46",
         "route": "wire",
         "from": "elias-is-present",
         "fromPort": "out",
         "to": "mara-prompt-both",
         "toPort": "condition"
       },
-      "wire-44": {
-        "id": "wire-44",
+      "wire-47": {
+        "id": "wire-47",
         "route": "wire",
         "from": "mara-prompt-both",
         "fromPort": "yes",
         "to": "mara-prompt-permitted",
         "toPort": "in"
       },
-      "wire-45": {
-        "id": "wire-45",
+      "wire-48": {
+        "id": "wire-48",
         "route": "wire",
         "from": "reflection-authorship-allowed",
         "fromPort": "out",
         "to": "mara-prompt-permitted",
         "toPort": "condition"
       },
-      "wire-46": {
-        "id": "wire-46",
+      "wire-49": {
+        "id": "wire-49",
         "route": "wire",
         "from": "mara-prompt-permitted",
         "fromPort": "yes",
         "to": "mara-reflect",
         "toPort": "prompt"
       },
-      "wire-47": {
-        "id": "wire-47",
+      "wire-50": {
+        "id": "wire-50",
         "route": "wire",
         "from": "mara-reflection-input",
         "fromPort": "out",
         "to": "mara-reflect",
         "toPort": "data"
       },
-      "wire-48": {
-        "id": "wire-48",
+      "wire-51": {
+        "id": "wire-51",
         "route": "wire",
         "from": "mara-context",
         "fromPort": "out",
         "to": "mara-reflect",
         "toPort": "context"
       },
-      "wire-49": {
-        "id": "wire-49",
+      "wire-52": {
+        "id": "wire-52",
         "route": "wire",
         "from": "mara-reflect",
         "fromPort": "out",
         "to": "mara-record-input",
         "toPort": "reflection"
       },
-      "wire-50": {
-        "id": "wire-50",
+      "wire-53": {
+        "id": "wire-53",
         "route": "wire",
         "from": "confirmed-kiss",
         "fromPort": "out",
         "to": "mara-record-input",
         "toPort": "events"
       },
-      "wire-51": {
-        "id": "wire-51",
+      "wire-54": {
+        "id": "wire-54",
         "route": "wire",
         "from": "source-refs",
         "fromPort": "out",
         "to": "mara-record-input",
         "toPort": "refs"
       },
-      "wire-52": {
-        "id": "wire-52",
+      "wire-55": {
+        "id": "wire-55",
         "route": "wire",
         "from": "mara-record-input",
         "fromPort": "out",
         "to": "mara-record",
         "toPort": "in"
       },
-      "wire-53": {
-        "id": "wire-53",
+      "wire-56": {
+        "id": "wire-56",
         "route": "wire",
         "from": "mara-file",
         "fromPort": "reference",
         "to": "mara-save",
         "toPort": "reference"
       },
-      "wire-54": {
-        "id": "wire-54",
+      "wire-57": {
+        "id": "wire-57",
         "route": "wire",
         "from": "mara-record",
         "fromPort": "out",
         "to": "mara-save",
         "toPort": "records"
       },
-      "wire-55": {
-        "id": "wire-55",
+      "wire-58": {
+        "id": "wire-58",
         "route": "wire",
         "from": "mara-both-present",
         "fromPort": "yes",
         "to": "mara-save",
         "toPort": "presence"
       },
-      "wire-56": {
-        "id": "wire-56",
+      "wire-59": {
+        "id": "wire-59",
         "route": "wire",
         "from": "confirmed-kiss",
         "fromPort": "out",
         "to": "mara-save",
         "toPort": "evidence"
       },
-      "wire-57": {
-        "id": "wire-57",
+      "wire-60": {
+        "id": "wire-60",
         "route": "wire",
         "from": "elias-presence",
         "fromPort": "out",
         "to": "elias-is-present",
         "toPort": "in"
       },
-      "wire-58": {
-        "id": "wire-58",
+      "wire-61": {
+        "id": "wire-61",
         "route": "wire",
         "from": "elias-presence",
         "fromPort": "out",
         "to": "elias-present-route",
         "toPort": "in"
       },
-      "wire-59": {
-        "id": "wire-59",
+      "wire-62": {
+        "id": "wire-62",
         "route": "wire",
         "from": "elias-is-present",
         "fromPort": "out",
         "to": "elias-present-route",
         "toPort": "condition"
       },
-      "wire-60": {
-        "id": "wire-60",
+      "wire-63": {
+        "id": "wire-63",
         "route": "wire",
         "from": "elias-present-route",
         "fromPort": "yes",
         "to": "elias-both-present",
         "toPort": "in"
       },
-      "wire-61": {
-        "id": "wire-61",
+      "wire-64": {
+        "id": "wire-64",
         "route": "wire",
         "from": "mara-is-present",
         "fromPort": "out",
         "to": "elias-both-present",
         "toPort": "condition"
       },
-      "wire-62": {
-        "id": "wire-62",
+      "wire-65": {
+        "id": "wire-65",
         "route": "wire",
         "from": "elias-both-present",
         "fromPort": "yes",
         "to": "elias-context",
         "toPort": "presence"
       },
-      "wire-63": {
-        "id": "wire-63",
+      "wire-66": {
+        "id": "wire-66",
         "route": "wire",
         "from": "elias-both-present",
         "fromPort": "yes",
         "to": "elias-file",
         "toPort": "presence"
       },
-      "wire-64": {
-        "id": "wire-64",
+      "wire-67": {
+        "id": "wire-67",
         "route": "wire",
         "from": "confirmed-kiss",
         "fromPort": "out",
         "to": "elias-reflection-input",
         "toPort": "event"
       },
-      "wire-65": {
-        "id": "wire-65",
+      "wire-68": {
+        "id": "wire-68",
         "route": "wire",
         "from": "elias-file",
         "fromPort": "document",
         "to": "elias-reflection-input",
         "toPort": "prior"
       },
-      "wire-66": {
-        "id": "wire-66",
+      "wire-69": {
+        "id": "wire-69",
         "route": "wire",
         "from": "elias-prompt",
         "fromPort": "out",
         "to": "elias-prompt-live",
         "toPort": "in"
       },
-      "wire-67": {
-        "id": "wire-67",
+      "wire-70": {
+        "id": "wire-70",
         "route": "wire",
         "from": "elias-is-present",
         "fromPort": "out",
         "to": "elias-prompt-live",
         "toPort": "condition"
       },
-      "wire-68": {
-        "id": "wire-68",
+      "wire-71": {
+        "id": "wire-71",
         "route": "wire",
         "from": "elias-prompt-live",
         "fromPort": "yes",
         "to": "elias-prompt-both",
         "toPort": "in"
       },
-      "wire-69": {
-        "id": "wire-69",
+      "wire-72": {
+        "id": "wire-72",
         "route": "wire",
         "from": "mara-is-present",
         "fromPort": "out",
         "to": "elias-prompt-both",
         "toPort": "condition"
       },
-      "wire-70": {
-        "id": "wire-70",
+      "wire-73": {
+        "id": "wire-73",
         "route": "wire",
         "from": "elias-prompt-both",
         "fromPort": "yes",
         "to": "elias-prompt-permitted",
         "toPort": "in"
       },
-      "wire-71": {
-        "id": "wire-71",
+      "wire-74": {
+        "id": "wire-74",
         "route": "wire",
         "from": "reflection-authorship-allowed",
         "fromPort": "out",
         "to": "elias-prompt-permitted",
         "toPort": "condition"
       },
-      "wire-72": {
-        "id": "wire-72",
+      "wire-75": {
+        "id": "wire-75",
         "route": "wire",
         "from": "elias-prompt-permitted",
         "fromPort": "yes",
         "to": "elias-reflect",
         "toPort": "prompt"
       },
-      "wire-73": {
-        "id": "wire-73",
+      "wire-76": {
+        "id": "wire-76",
         "route": "wire",
         "from": "elias-reflection-input",
         "fromPort": "out",
         "to": "elias-reflect",
         "toPort": "data"
       },
-      "wire-74": {
-        "id": "wire-74",
+      "wire-77": {
+        "id": "wire-77",
         "route": "wire",
         "from": "elias-context",
         "fromPort": "out",
         "to": "elias-reflect",
         "toPort": "context"
       },
-      "wire-75": {
-        "id": "wire-75",
+      "wire-78": {
+        "id": "wire-78",
         "route": "wire",
         "from": "elias-reflect",
         "fromPort": "out",
         "to": "elias-record-input",
         "toPort": "reflection"
       },
-      "wire-76": {
-        "id": "wire-76",
+      "wire-79": {
+        "id": "wire-79",
         "route": "wire",
         "from": "confirmed-kiss",
         "fromPort": "out",
         "to": "elias-record-input",
         "toPort": "events"
       },
-      "wire-77": {
-        "id": "wire-77",
+      "wire-80": {
+        "id": "wire-80",
         "route": "wire",
         "from": "source-refs",
         "fromPort": "out",
         "to": "elias-record-input",
         "toPort": "refs"
       },
-      "wire-78": {
-        "id": "wire-78",
+      "wire-81": {
+        "id": "wire-81",
         "route": "wire",
         "from": "elias-record-input",
         "fromPort": "out",
         "to": "elias-record",
         "toPort": "in"
       },
-      "wire-79": {
-        "id": "wire-79",
+      "wire-82": {
+        "id": "wire-82",
         "route": "wire",
         "from": "elias-file",
         "fromPort": "reference",
         "to": "elias-save",
         "toPort": "reference"
       },
-      "wire-80": {
-        "id": "wire-80",
+      "wire-83": {
+        "id": "wire-83",
         "route": "wire",
         "from": "elias-record",
         "fromPort": "out",
         "to": "elias-save",
         "toPort": "records"
       },
-      "wire-81": {
-        "id": "wire-81",
+      "wire-84": {
+        "id": "wire-84",
         "route": "wire",
         "from": "elias-both-present",
         "fromPort": "yes",
         "to": "elias-save",
         "toPort": "presence"
       },
-      "wire-82": {
-        "id": "wire-82",
+      "wire-85": {
+        "id": "wire-85",
         "route": "wire",
         "from": "confirmed-kiss",
         "fromPort": "out",
         "to": "elias-save",
         "toPort": "evidence"
       },
-      "wire-83": {
-        "id": "wire-83",
+      "wire-86": {
+        "id": "wire-86",
         "route": "wire",
         "from": "generate",
         "fromPort": "draft",
@@ -1951,7 +2013,7 @@
         "model": null,
         "profileId": null
       },
-      "fastDecision": {
+      "decision": {
         "model": null,
         "profileId": null
       }

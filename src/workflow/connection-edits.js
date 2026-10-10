@@ -166,7 +166,7 @@ function create(context, command) {
     if (!described.ok) return described;
     // Configured modes can introduce a model call absent from registration defaults.
     node.modelRole = described.data.descriptor.modelRole;
-    node.profileId = node.modelRole && described.data.descriptor.requestCapability !== 'typed-decision' ? ACTIVE_PROFILE_ID : null;
+    node.profileId = node.modelRole ? ACTIVE_PROFILE_ID : null;
     context.scope.nodes[id] = node; context.addedNodeIds.push(id); context.changed = true;
     return command.connection ? connect(context, command.connection.origin, { nodeId: id, portId: command.connection.portId }, command.connection.replace) : { ok: true };
 }
