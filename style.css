@@ -437,34 +437,35 @@
 .pc-root .pc-graph-tab:focus-visible { outline: 2px solid var(--pc-accent); outline-offset: -3px; }
 .pc-root .pc-canvas-area { border: 1px solid var(--pc-border); border-radius: 4px; background: var(--pc-panel-solid); box-shadow: var(--pc-recess); min-height: 140px; overflow: hidden; }
 .pc-canvas-host { border-radius: 4px; }
-/* Shelf depth comes from its rounded perimeter; faces and menu rows stay flat. */
-.pc-node-shelf, .pc-shelf-menu { --pc-shelf-edge: color-mix(in srgb, var(--pc-text) 12%, var(--pc-panel-solid)); }
-.pc-node-shelf { position: absolute; top: 13px; left: 13px; display: flex; flex-direction: column; gap: 3px; width: 138px; max-height: calc(100% - 62px); overflow-x: hidden; overflow-y: auto; z-index: 6; scrollbar-width: thin; scrollbar-color: #555 transparent; }
+/* Shelf and drawers use 80% of their original geometry and share a translucent surface. */
+.pc-node-shelf, .pc-shelf-menu { --pc-shelf-edge: color-mix(in srgb, var(--pc-text) 12%, var(--pc-panel-solid)); --pc-shelf-surface: color-mix(in srgb, var(--pc-control) 90%, transparent); }
+.pc-node-shelf { position: absolute; top: 13px; left: 13px; display: flex; flex-direction: column; gap: 2.4px; width: 110.4px; max-height: calc(100% - 62px); overflow-x: hidden; overflow-y: auto; z-index: 6; scrollbar-width: thin; scrollbar-color: #555 transparent; }
 .pc-root .pc-family-row, :root[data-pc-own="1"] .pc-root .pc-family-row,
-.pc-root .pc-shelf-menu button, :root[data-pc-own="1"] .pc-root .pc-shelf-menu button { display: flex; flex: 0 0 42px; align-items: center; gap: 9px; min-height: 42px; height: 42px; margin: 0; padding: 5px 6px; text-align: left; font: inherit; font-size: 14px; line-height: 1; border: 0; border-radius: 4px; cursor: pointer; }
-.pc-root .pc-family-row, :root[data-pc-own="1"] .pc-root .pc-family-row { width: 128px; padding: 4px 5px; border: 1px solid color-mix(in srgb, var(--pc-text) 4%, var(--pc-control)); font-weight: 400; color: var(--pc-family); background: var(--pc-control); box-shadow: none; }
-.pc-node-shelf::-webkit-scrollbar { width: 6px; height: 0; }
-.pc-node-shelf::-webkit-scrollbar-thumb { background: #555; border-radius: 3px; }
+.pc-root .pc-shelf-menu button, :root[data-pc-own="1"] .pc-root .pc-shelf-menu button { display: flex; flex: 0 0 33.6px; align-items: center; gap: 7.2px; min-height: 33.6px; height: 33.6px; margin: 0; padding: 4px 4.8px; text-align: left; font: inherit; font-size: 11.2px; font-weight: 700; line-height: 1; border: 0; border-radius: 3.2px; cursor: pointer; }
+.pc-root .pc-family-row, :root[data-pc-own="1"] .pc-root .pc-family-row { width: 102.4px; padding: 3.2px 4px; border: 1px solid color-mix(in srgb, var(--pc-text) 4%, var(--pc-control)); color: var(--pc-family); background: var(--pc-shelf-surface); box-shadow: none; }
+.pc-family-row span { letter-spacing: -.2px; }
+.pc-node-shelf::-webkit-scrollbar { width: 4.8px; height: 0; }
+.pc-node-shelf::-webkit-scrollbar-thumb { background: #555; border-radius: 2.4px; }
 .pc-node-shelf::-webkit-scrollbar-track { background: transparent; }
-.pc-family-row svg, .pc-shelf-menu svg { width: 24px; height: 24px; flex: 0 0 24px; }
+.pc-family-row svg, .pc-shelf-menu svg { width: 19.2px; height: 19.2px; flex: 0 0 19.2px; }
 .pc-family-row svg { color: var(--pc-family); }
-.pc-root .pc-family-row:hover:enabled, :root[data-pc-own="1"] .pc-root .pc-family-row:hover:enabled { background: color-mix(in srgb, var(--pc-text) 7%, var(--pc-control)); border-color: var(--pc-shelf-edge); }
+.pc-root .pc-family-row:hover:enabled, :root[data-pc-own="1"] .pc-root .pc-family-row:hover:enabled { background: color-mix(in srgb, var(--pc-text) 7%, var(--pc-shelf-surface)); border-color: var(--pc-shelf-edge); }
 .pc-root .pc-family-row[aria-expanded="true"], .pc-root .pc-family-row[aria-expanded="true"]:hover:enabled,
-:root[data-pc-own="1"] .pc-root .pc-family-row[aria-expanded="true"], :root[data-pc-own="1"] .pc-root .pc-family-row[aria-expanded="true"]:hover:enabled { background: color-mix(in srgb, var(--pc-text) 9%, var(--pc-control)); border-color: var(--pc-shelf-edge); font-weight: 600; }
+:root[data-pc-own="1"] .pc-root .pc-family-row[aria-expanded="true"], :root[data-pc-own="1"] .pc-root .pc-family-row[aria-expanded="true"]:hover:enabled { background: color-mix(in srgb, var(--pc-text) 9%, var(--pc-shelf-surface)); border-color: var(--pc-shelf-edge); }
 .pc-root .pc-family-row:disabled { opacity: .46; }
-.pc-shelf-menu { position: absolute; display: flex; flex-direction: column; gap: 3px; z-index: 9; border: 1px solid var(--pc-shelf-edge); border-radius: 10px; background: var(--pc-panel-solid); color: var(--pc-text); box-shadow: 0 3px 8px #00000035; padding: 3px; box-sizing: border-box; max-width: calc(100% - 8px); max-height: calc(100% - 8px); overflow: auto; }
-.pc-family-menu { width: 250px; }
-.pc-leaf-menu { width: 250px; z-index: 10; }
-.pc-root .pc-shelf-menu button, :root[data-pc-own="1"] .pc-root .pc-shelf-menu button { width: 100%; font-weight: 600; background: transparent; box-shadow: none; color: var(--pc-family, var(--pc-text)); }
-.pc-root .pc-shelf-menu button:is(:hover, :focus-visible):enabled, :root[data-pc-own="1"] .pc-root .pc-shelf-menu button:is(:hover, :focus-visible):enabled { background: color-mix(in srgb, var(--pc-text) 7%, var(--pc-control)); }
+.pc-shelf-menu { position: absolute; display: flex; flex-direction: column; gap: 2.4px; z-index: 9; border: 1px solid var(--pc-shelf-edge); border-radius: 8px; background: var(--pc-shelf-surface); color: var(--pc-text); box-shadow: 0 2.4px 6.4px #00000035; padding: 2.4px; box-sizing: border-box; max-width: calc(100% - 8px); max-height: calc(100% - 8px); overflow: auto; }
+.pc-family-menu { width: 200px; }
+.pc-leaf-menu { width: 200px; z-index: 10; }
+.pc-root .pc-shelf-menu button, :root[data-pc-own="1"] .pc-root .pc-shelf-menu button { width: 100%; background: transparent; box-shadow: none; color: var(--pc-family, var(--pc-text)); }
+.pc-root .pc-shelf-menu button:is(:hover, :focus-visible):enabled, :root[data-pc-own="1"] .pc-root .pc-shelf-menu button:is(:hover, :focus-visible):enabled { background: color-mix(in srgb, var(--pc-text) 7%, transparent); }
 .pc-root .pc-family-menu button[aria-expanded="true"], .pc-root .pc-family-menu button[aria-expanded="true"]:is(:hover, :focus-visible):enabled,
-:root[data-pc-own="1"] .pc-root .pc-family-menu button[aria-expanded="true"], :root[data-pc-own="1"] .pc-root .pc-family-menu button[aria-expanded="true"]:is(:hover, :focus-visible):enabled { background: color-mix(in srgb, var(--pc-text) 12%, var(--pc-control)); }
+:root[data-pc-own="1"] .pc-root .pc-family-menu button[aria-expanded="true"], :root[data-pc-own="1"] .pc-root .pc-family-menu button[aria-expanded="true"]:is(:hover, :focus-visible):enabled { background: color-mix(in srgb, var(--pc-text) 12%, transparent); }
 .pc-shelf-menu svg { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-.pc-subfamily-name { flex: 1; min-width: 0; font-size: 12px; }
-.pc-shelf-menu .pc-sub-chevron { width: 18px; height: 18px; flex-basis: 18px; color: #858585; }
+.pc-subfamily-name { flex: 1; min-width: 0; font-size: 9.6px; }
+.pc-shelf-menu .pc-sub-chevron { width: 14.4px; height: 14.4px; flex-basis: 14.4px; color: #858585; }
 .pc-catalog-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.pc-leaf-menu small { color: var(--pc-muted); font: 500 12px/1 ui-monospace, monospace; margin-left: auto; }
-.pc-leaf-menu input { width: 100%; margin-bottom: 4px; }
+.pc-leaf-menu small { color: var(--pc-muted); font: 500 9.6px/1 ui-monospace, monospace; margin-left: auto; }
+.pc-root .pc-leaf-menu input { width: 100%; margin-bottom: 3.2px; padding: 4.8px; font-size: 11.2px; }
 .pc-shelf-replaced { visibility: hidden; pointer-events: none; }
 .pc-workspace-overlay { position: absolute; inset: 0; z-index: 25; display: flex; align-items: center; justify-content: center; padding: 12px; background: #0007; }
 .pc-workspace-dialog { background: var(--pc-panel-solid); border: 1px solid var(--pc-border); border-radius: 4px; width: 440px; max-width: 100%; max-height: calc(100% - 24px); overflow: auto; padding: 14px; box-shadow: var(--pc-recess), 0 8px 28px #0005; }

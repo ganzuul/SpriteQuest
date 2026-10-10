@@ -6623,7 +6623,7 @@ var ll = "M3 7 12 2l9 5v10l-9 5-9-5ZM3 7l9 5 9-5M12 12v10", ul = "M3 6l4-2 4 2v5
 	"prompt-source": [
 		"Sources",
 		"pr",
-		"M4 4h16v12H9l-5 4ZM8 8h8M8 12h5"
+		"M8 3h13v13h-8l-5 5v-7M2 8h12m-3-3 3 3-3 3"
 	],
 	"scene-context": [
 		"Sources",
@@ -6708,7 +6708,7 @@ var ll = "M3 7 12 2l9 5v10l-9 5-9-5ZM3 7l9 5 9-5M12 12v10", ul = "M3 6l4-2 4 2v5
 	"review-gate": [
 		"Review",
 		"rg",
-		"M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Zm13 0a3 3 0 1 0-6 0 3 3 0 0 0 6 0"
+		"M2 10s4-6 9-6 9 6 9 6-4 6-9 6-9-6-9-6ZM13 10a2 2 0 1 0-4 0 2 2 0 0 0 4 0m1 9 3 3 5-6"
 	],
 	"apply-reply": [
 		"Delivery",
@@ -6749,6 +6749,241 @@ var ll = "M3 7 12 2l9 5v10l-9 5-9-5ZM3 7l9 5 9-5M12 12v10", ul = "M3 6l4-2 4 2v5
 		"State",
 		"sv",
 		fl.State
+	],
+	condition: [
+		"Validation",
+		"cn",
+		"M12 2 22 12 12 22 2 12Zm-4 10 3 3 5-6"
+	],
+	branch: [
+		"Routing",
+		"br",
+		"M3 12h6m0 0 6-7h6m-4-3 4 3-4 3M9 12l6 7h6m-4-3 4 3-4 3"
+	],
+	join: [
+		"Assembly",
+		"jn",
+		"M3 5h5l6 7-6 7H3M14 12h7m-4-4 4 4-4 4"
+	],
+	collect: [
+		"Assembly",
+		"cl",
+		"M3 14v7h18v-7M7 3v12m-3-3 3 3 3-3M17 3v12m-3-3 3 3 3-3"
+	],
+	"confidence-gate": [
+		"Validation",
+		"cg",
+		"M4 18a9 9 0 1 1 16 0M12 12l5-5M5 19h14M8 19v3m8-3v3"
+	],
+	"for-each": [
+		"Routing",
+		"fe",
+		"M20 7a8 8 0 0 0-14-2L3 8m0-5v5h5M4 17a8 8 0 0 0 14 2l3-3m0 5v-5h-5M8 12h1m3 0h1m3 0h1"
+	],
+	decision: [
+		"Analysis",
+		"dc",
+		"M4 3h16v18H4ZM7 8l2 2 3-4M14 8h3M7 15h3m4 0h3"
+	],
+	"fast-decision": [
+		"Analysis",
+		"fd",
+		"M13 2 4 14h7l-1 8 10-13h-7Z"
+	],
+	combine: [
+		"Assembly",
+		"cb",
+		"M3 3h6v7H3ZM3 14h6v7H3ZM9 6h3l4 6-4 6H9M16 12h5m-3-3 3 3-3 3"
+	],
+	append: [
+		"Assembly",
+		"ap",
+		"M14 2H4v20h14V6Zm0 0v4h4M7 10h5m-5 4h5M18 12v8m-4-4h8"
+	],
+	"render-notes": [
+		"Delivery",
+		"rn",
+		"M4 3h16v12l-6 6H4Zm10 18v-6h6M8 7h8M8 11h8M8 15h3"
+	],
+	enrich: [
+		"Assembly",
+		"en",
+		"M3 5h7M3 12h10M3 19h16M17 2l1.5 4.5L23 8l-4.5 1.5L17 14l-1.5-4.5L11 8l4.5-1.5Z"
+	],
+	"draft-text": [
+		"Extraction",
+		"dt",
+		"M14 2H4v20h16V8Zm0 0v6h6M7 11h10M12 11v7M9 18h6"
+	],
+	extract: [
+		"Extraction",
+		"ec",
+		"M3 3h18l-7 8v4h-4v-4ZM8 19h8v3H8Z"
+	],
+	"model-call": [
+		"Analysis",
+		"mc",
+		"M8 3H4v14h5l-5 4M4 17h16V9M16 2l1.5 4.5L22 8l-4.5 1.5L16 14l-1.5-4.5L10 8l4.5-1.5Z"
+	],
+	"revise-draft": [
+		"Revision",
+		"rv",
+		"M13 2H4v20h6M13 2v5h5V5ZM7 11h5m-5 4h3M12 18l7-7 3 3-7 7h-3Zm5-5 3 3"
+	],
+	"player-event-source": [
+		"Sources",
+		"pe",
+		"M11 6a3 3 0 1 0-6 0 3 3 0 0 0 6 0M2 21v-4a6 6 0 0 1 12 0v4M19 8l-4 6h4l-1 7 5-8h-4Z"
+	],
+	"on-send": [
+		"Sources",
+		"os",
+		"M3 5h18v14H3ZM3 5l9 7 9-7M12 14v8m-3-3 3 3 3-3"
+	],
+	"generate-reply": [
+		"Sources",
+		"gr",
+		"M20 9V3H4v14h5l-5 4M14 12a5 5 0 1 0 7 7m0-5v5h-5"
+	],
+	"review-publish": [
+		"Delivery",
+		"pb",
+		"M8 3H4v18h11M8 2h7v4H8ZM7 11l2 2 4-5M15 15h7m-3-3 3 3-3 3"
+	],
+	format: [
+		"Parsing",
+		"fm",
+		"M5 3H2v18h3M19 3h3v18h-3M8 6h8M8 10h5M8 14h8M8 18h5"
+	],
+	"read-file": [
+		"Sources",
+		"rd",
+		"M14 2H4v20h16v-5M14 2v5h6V7ZM8 12h14m-4-4 4 4-4 4"
+	],
+	"write-file": [
+		"Delivery",
+		"wf",
+		"M14 2H6v7M6 17v5h14V8L14 2M14 2v6h6M2 13h12m-4-4 4 4-4 4"
+	],
+	"project-document": [
+		"Assembly",
+		"pd",
+		"M13 2H3v12h14V6Zm0 0v4h4M6 9h7M8 18h13v4H8ZM11 14v4m-3-3 3 3 3-3"
+	],
+	"commit-clock": [
+		"Delivery",
+		"cc",
+		"M20 10a8 8 0 1 0-8 10M12 5v7l-4 2M14 19l3 3 5-6"
+	],
+	"story-clock": [
+		"Sources",
+		"ck",
+		"M21 12a9 9 0 1 0-18 0 9 9 0 0 0 18 0ZM12 6v6l4 3"
+	],
+	"time-trigger": [
+		"Routing",
+		"tt",
+		"M19 13a7 7 0 1 0-14 0 7 7 0 0 0 14 0ZM12 9v4l3 2M2 5l4-3m12 0 4 3M7 19l-2 3m12-3 2 3"
+	],
+	"advance-time": [
+		"Routing",
+		"at",
+		"M15 5a8 8 0 1 0 0 14M10 6v6l-3 2M14 12h8m-4-4 4 4-4 4"
+	],
+	"actor-context": [
+		"Context",
+		"ac",
+		"M5 3H2v18h3M19 3h3v18h-3M15 8a3 3 0 1 0-6 0 3 3 0 0 0 6 0M7 19v-2a5 5 0 0 1 10 0v2"
+	],
+	"draft-event-source": [
+		"Sources",
+		"de",
+		"M14 2H4v20h16V8Zm0 0v6h6M12 10l-4 5h4l-1 5 6-7h-5Z"
+	],
+	"event-normalize": [
+		"Parsing",
+		"ev",
+		"M2 4h6M4 12h4M3 20h5M10 12h4m-2-2 2 2-2 2M17 4h5M17 12h5M17 20h5"
+	],
+	"prompted-memory": [
+		"Memory",
+		"pm",
+		"M3 3h18v13h-8l-6 5v-5H3ZM7 7h4v6H7Zm6 0h4v6h-4M11 7l1 1 1-1"
+	],
+	"item-mention-trigger": [
+		"Routing",
+		"mt",
+		"M3 3h9l9 9-9 9-9-9ZM7 7h.01M12 8v4h-2m7 1v4h-2"
+	],
+	"item-use-trigger": [
+		"Routing",
+		"ut",
+		"M3 8v13h13l5-5M3 8l5-5h5M17 2l-5 8h5l-1 7 6-10h-5Z"
+	],
+	"confirm-events": [
+		"Validation",
+		"ce",
+		"M3 2h18v20H3ZM6 7l2 2 3-4M14 7h4M6 16l2 2 3-4M14 16h4"
+	],
+	"current-holder": [
+		"Context",
+		"ch",
+		"M7 3h8v7H7ZM2 14h4l3-3h4l2 3h5a2 2 0 0 1 1 4l-8 4-7-3H2ZM9 14h6"
+	],
+	"scene-presence": [
+		"Context",
+		"sp",
+		"M19 9c0 5-7 13-7 13S5 14 5 9a7 7 0 1 1 14 0ZM15 9a3 3 0 1 0-6 0 3 3 0 0 0 6 0"
+	],
+	"character-direction": [
+		"Guidance",
+		"cd",
+		"M12 6a3 3 0 1 0-6 0 3 3 0 0 0 6 0M3 20v-3a6 6 0 0 1 12 0v3M15 10h7m-4-4 4 4-4 4"
+	],
+	"parse-effect-library": [
+		"Library",
+		"el",
+		"M3 4h4v17H3ZM9 4h4v17H9ZM17 12l4 9M17 2v6m-3-3h6"
+	],
+	"random-pick": [
+		"Routing",
+		"pk",
+		"M4 3h16a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1ZM7 7h.01M12 12h.01M17 17h.01"
+	],
+	"commit-outcomes": [
+		"Delivery",
+		"oc",
+		"M3 3h16v10M3 3v16h9M7 7h.01M12 12h.01M14 19l3 3 5-6"
+	],
+	"saved-outcome": [
+		"Memory",
+		"ou",
+		"M5 2h14v20l-7-5-7 5ZM9 7h6v6H9ZM12 10h.01"
+	],
+	"effect-author": [
+		"Revision",
+		"ea",
+		"M3 21l2-7L16 3l5 5-11 11Zm2-7 5 5m-7 2 4-4M4 2v6M1 5h6M21 15v6m-3-3h6"
+	],
+	"stage-outcome": [
+		"Assembly",
+		"su",
+		"M3 17v5h18v-5M7 4h10v9H7ZM12 13v5m-3-3 3 3 3-3M10 8h.01m4 1h.01"
+	],
+	collection: [
+		"Extraction",
+		"ct",
+		"M21 5c0 2-4 3-9 3S3 7 3 5s4-3 9-3 9 1 9 3Zm-18 0v7c0 2 4 3 9 3s9-1 9-3V5M3 12v7c0 2 4 3 9 3s9-1 9-3v-7"
+	],
+	recall: [
+		"Memory",
+		"rc",
+		"M4 8v13h15V10M7 14h8M7 18h5M7 8a7 7 0 0 1 13-2M7 3v5h5"
+	],
+	"hotkey-arm": [
+		"Routing",
+		"hk",
+		"M2 7h20v14H2ZM6 11h.01m4 0h.01m4 0h.01m4 0h.01M6 17h12M17 2v3m-2-1h4"
 	]
 }, hl = Object.freeze(Object.fromEntries(Object.entries(ml).map(([e, [t, n, r]]) => [e, Object.freeze({
 	group: t,
@@ -6880,14 +7115,14 @@ function Dl(e, t) {
 			top: M(i, U(a), c),
 			left: i.left,
 			right: i.right
-		}, c.width, c.height, 128);
+		}, c.width, c.height, i.width);
 		R(u, m.x, !0), R(d, m.y, !0), R(l, m.compact, !0), n && U(a).querySelector("button:not(:disabled)")?.focus({ preventScroll: !0 });
 	}
 	async function re() {
 		let e = ++p;
 		if (R(o, ""), R(s, !0), R(c, ""), await dr(), e !== p || !U(s) || !U(a)?.isConnected) return;
-		let t = ee();
-		R(u, Math.min(136, Math.max(4, t.width - 254)), !0), R(d, 13), U(a).querySelector("input")?.focus();
+		let t = ee(), n = i.getBoundingClientRect(), r = U(a).getBoundingClientRect();
+		R(u, Math.max(4, Math.min(n.right - t.left + 3, t.width - r.width - 4)), !0), R(d, n.top - t.top), U(a).querySelector("input")?.focus();
 	}
 	function ie(e, n) {
 		let i = k(e.family).find((t) => t.id === e.id);

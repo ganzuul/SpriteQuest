@@ -107,14 +107,15 @@
         if (family === name) { if (focus) menuPanel?.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus({ preventScroll: true }); return; }
         const request = ++opening; family = name; search = false; anchor = button; await tick();
         if (request !== opening || family !== name || !menuPanel?.isConnected) return;
-        const rect = button.getBoundingClientRect(), size = menuPanel.getBoundingClientRect(), spot = position({ top: menuTop(rect, menuPanel, size), left: rect.left, right: rect.right }, size.width, size.height, 128);
+        const rect = button.getBoundingClientRect(), size = menuPanel.getBoundingClientRect(), spot = position({ top: menuTop(rect, menuPanel, size), left: rect.left, right: rect.right }, size.width, size.height, rect.width);
         x = spot.x; y = spot.y; compact = spot.compact;
         if (focus) menuPanel.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus({ preventScroll: true });
     }
     export async function openSearch() {
         const request = ++opening; family = ''; search = true; query = ''; await tick();
         if (request !== opening || !search || !menuPanel?.isConnected) return;
-        const pane = bounds(); x = Math.min(136, Math.max(4, pane.width - 254)); y = 13;
+        const pane = bounds(), rect = shelf.getBoundingClientRect(), size = menuPanel.getBoundingClientRect();
+        x = Math.max(4, Math.min(rect.right - pane.left + 3, pane.width - size.width - 4)); y = rect.top - pane.top;
         menuPanel.querySelector<HTMLInputElement>('input')?.focus();
     }
     function select(entry: Entry, at?: ClientPoint) {
@@ -189,11 +190,11 @@
 {/if}
 {#if dragPreview}<div class="pc-shelf-drag-preview" aria-hidden="true" style:--pc-family={familyColor(dragPreview.family)} style:left={`${dragPreview.x + 12}px`} style:top={`${dragPreview.y + 12}px`}>{dragPreview.title}</div>{/if}
 <style>
-    .pc-shelf-group { padding: 7px 9px 3px; color: #a0aaa6; font-size: 10px; }
-    .pc-shelf-subgraph-menu { z-index: 40; min-width: 170px; }
+    .pc-shelf-group { padding: 5.6px 7.2px 2.4px; color: #a0aaa6; font-size: 8px; }
+    .pc-shelf-subgraph-menu { z-index: 40; min-width: 136px; }
     [aria-disabled="true"] { opacity: .5; }
     [data-shelf-choice][data-insertion-disabled="false"] { cursor: grab; touch-action: none; }
     [data-insertion-disabled="true"][aria-haspopup="menu"] { cursor: context-menu; }
     :global(body.pc-shelf-dragging), :global(body.pc-shelf-dragging *) { cursor: grabbing !important; }
-    .pc-shelf-drag-preview { position: fixed; z-index: 100; pointer-events: none; padding: 8px 12px; border: 1px solid var(--pc-family); border-radius: 4px; background: var(--pc-block); color: var(--pc-family); font-size: 12px; box-shadow: 0 3px 12px #0006; }
+    .pc-shelf-drag-preview { position: fixed; z-index: 100; pointer-events: none; padding: 6.4px 9.6px; border: 1px solid var(--pc-family); border-radius: 3.2px; background: var(--pc-block); color: var(--pc-family); font-size: 9.6px; box-shadow: 0 2.4px 9.6px #0006; }
 </style>

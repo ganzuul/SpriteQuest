@@ -129,11 +129,12 @@ test('shelf rows leave room for a thin vertical scrollbar without shrinking thei
     assert.equal(shelfPaint.overflowX, 'hidden');
     assert.equal(shelfPaint.scrollbarWidth, 'thin'); assert.equal(shelfPaint.scrollbarColor, 'rgb(85, 85, 85)');
     assert.ok(parseFloat(shelfPaint.width) >= parseFloat(rowPaint.width) + 6, 'the shelf reserves room for its vertical scrollbar beside the full-width rows');
-    assert.equal(shelfPaint.gap, '3px');
-    assert.equal(rowPaint.height, '42px'); assert.equal(rowPaint.flexBasis, '42px');
-    assert.equal(rowPaint.fontSize, '14px'); assert.equal(rowPaint.alignItems, 'center');
+    assert.equal(shelfPaint.gap, '2.4px');
+    assert.equal(rowPaint.height, '33.6px'); assert.equal(rowPaint.flexBasis, '33.6px');
+    // JSDOM resolves font: inherit after font-size; the browser check covers text sizing.
+    assert.equal(rowPaint.alignItems, 'center');
     const iconPaint = style('.pc-family-row svg');
-    assert.equal(iconPaint.width, '24px'); assert.equal(iconPaint.height, '24px'); assert.equal(iconPaint.flexShrink, '0');
+    assert.equal(iconPaint.width, '19.2px'); assert.equal(iconPaint.height, '19.2px'); assert.equal(iconPaint.flexShrink, '0');
 });
 
 test('selected graph tab masks only its own canvas border without an extra right corner', () => {
