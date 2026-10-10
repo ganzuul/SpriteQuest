@@ -1,6 +1,6 @@
-import { computeDefinitionIdentity, definitionRefKey, validateDefinition } from '../definitions.js?v=0.26.0';
-import { exportSubgraph, exportWorkflow, parseSubgraph, parseWorkflow } from '../packages.js?v=0.26.0';
-import { resolveWorkflow } from '../resolve.js?v=0.26.0';
+import { computeDefinitionIdentity, definitionRefKey, validateDefinition } from '../definitions.js?v=0.27.0';
+import { exportSubgraph, exportWorkflow, parseSubgraph, parseWorkflow } from '../packages.js?v=0.27.0';
+import { resolveWorkflow } from '../resolve.js?v=0.27.0';
 
 const fail = (code, message) => ({ ok: false, error: { code, message } });
 const primitive = (id, operation, settings = {}) => ({ id, type: 'workflow', operation, operationVersion: 1, ...settings });

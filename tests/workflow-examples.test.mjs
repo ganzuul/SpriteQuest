@@ -1,15 +1,15 @@
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { parseWorkflow, exportWorkflow } from '../src/workflow/packages.js?v=0.26.0';
-import { validateWorkflow } from '../src/workflow/contracts.js?v=0.26.0';
-import { computeDefinitionIdentity, definitionRefKey, validateDefinition } from '../src/workflow/definitions.js?v=0.26.0';
+import { parseWorkflow, exportWorkflow } from '../src/workflow/packages.js?v=0.27.0';
+import { validateWorkflow } from '../src/workflow/contracts.js?v=0.27.0';
+import { computeDefinitionIdentity, definitionRefKey, validateDefinition } from '../src/workflow/definitions.js?v=0.27.0';
 
 const folder = new URL('../examples/roleplay/', import.meta.url);
 assert.ok(existsSync(folder), 'thirty complete bundled examples must be delivered as portable files');
 const files = readdirSync(folder).filter(name => name.endsWith('.json'));
 assert.equal(files.length, 37, 'all thirty recipes include their seven separate phase companions');
 // Archived recipes remain contract fixtures after the visible catalog is remastered.
-const { WORKFLOW_EXAMPLE_DATA } = await import('../src/workflow/example-data.js?v=0.26.0');
+const { WORKFLOW_EXAMPLE_DATA } = await import('../src/workflow/example-data.js?v=0.27.0');
 const api = await installerWithCatalog(WORKFLOW_EXAMPLE_DATA);
 const { listWorkflowExamples } = api;
 const entries = listWorkflowExamples().filter(entry => entry.number <= 30);

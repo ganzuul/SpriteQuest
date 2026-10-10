@@ -5,8 +5,8 @@ import { computeDefinitionIdentity, definitionRefKey, validateDefinition } from 
 import { prepareNativeConnectionEdit } from '../src/workflow/connection-edits.js';
 import { createNativeWireBridge } from '../src/ui/native-wire-bridge.js';
 import { captureGraphEditContext, commitPreparedGraph } from '../src/workflow/transactions.js';
-import * as history from '../src/history.js?v=0.26.0';
-const api = await import('../src/ui/native-search-catalog.js?v=0.26.0').catch(() => ({}));
+import * as history from '../src/history.js?v=0.27.0';
+const api = await import('../src/ui/native-search-catalog.js?v=0.27.0').catch(() => ({}));
 const scope = (mode = 'native-pre', extra = {}) => ({ schema: 3, runtime: 2, mode, workflowId: 'root', viewPath: [], inDefinition: false, ...extra });
 function catalog(input = scope(), options) {
     assert.equal(typeof api.prepareNativeSearchCatalog, 'function');
@@ -452,4 +452,17 @@ test('one unified shelf exposes preparation and reply processing with their actu
         const command=api.resolveNativeSearchChoice(unified,item.id);const described=describeOperation(scope('native-unified'),{type:'workflow',...operationDefaults(command.operation),...command.controls,...(item.requiresConfiguration?configuredSamples[command.operation]:{}),...(command.artifactKind?{artifactKind:command.artifactKind,phase:'pre'}:{})});
         assert.equal(described.ok,true,item.id+' '+JSON.stringify(described.error));assert.deepEqual(item.ports,described.data.ports.map(({id,label,kind,direction,required})=>({portId:id,label,kind,dir:direction==='input'?'in':'out',required})));
     }
+});
+
+test('Data pin discovery offers Character Direction data without inventing its required actor configuration', () => {
+    const value = catalog(scope('native-unified')), origin = {dir:'out', kind:'data'};
+    const items = api.filterNativeSearchChoices(value, {query:'Character Direction', origin});
+    const item = items.find(item => item.id === 'operation:character-direction');
+    assert.ok(item);
+    assert.equal(item.requiresConfiguration, true);
+    assert.deepEqual(api.matchNativeSearchPorts(value, item.id, origin).map(port => [port.portId, port.kind, port.required]), [['presence','data',true], ['data','data',false]]);
+    const command = api.resolveNativeSearchChoice(value, item.id);
+    assert.equal(command.requiresConfiguration, true);
+    assert.equal(Object.hasOwn(command.controls ?? {}, 'actorId'), false);
+    assert.equal(describeOperation(scope('native-unified'), {type:'workflow', ...operationDefaults(command.operation), ...command.controls}).ok, false);
 });

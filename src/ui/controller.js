@@ -1,49 +1,49 @@
-import { prepareIterationBindingOverride } from './iteration-bindings.js?v=0.26.0';
-import { createStoryDocumentSetup } from './story-document-setup.js?v=0.26.0';
-import { createConfiguredNodeSession, configuredCreationStage, nodeNeedsConfiguration, iterationHelperChoices } from './configured-node-creation.js?v=0.26.0';
-import { checkFastSettingsScope, fastSettingsPersistence, saveFastConnection, workflowBindingKey, workflowCreationPhase } from './provider-settings.js?v=0.26.0';
-import { resolveBinding } from '../workflow/connections.js?v=0.26.0';
-import { activeModelMetadata } from '../workflow/model-profiles.js?v=0.26.0';
-import { readNodeProfileMetadata, nodeProfileMetadataKey } from './node-profile-preparation.js?v=0.26.0';
-import * as workflowRuntime from '../run.js?v=0.26.0';
-import { workflowSignature } from '../workflow/runtime.js?v=0.26.0';
-import { installWorkflowExample } from '../workflow/examples.js?v=0.26.0';
-import { projectWorkflowExamples } from './example-catalog.js?v=0.26.0';
-import { OPERATIONS, operationFor, portsForNode } from '../workflow/catalog.js?v=0.26.0';
-import { validateNodeModifiers } from '../workflow/modifiers.js?v=0.26.0';
-import { isWorkflowGraph } from '../workflow/contracts.js?v=0.26.0';
-import { parseWorkflowInsertionFile, prepareWorkflowInsertion } from '../workflow/insertion.js?v=0.26.0';
-import { captureGraphEditContext } from '../workflow/transactions.js?v=0.26.0';
-import { viewIdentityKey } from './view-state.js?v=0.26.0';
-import { createGraphViewSession } from './graph-view-session.js?v=0.26.0';
-import { prepareNativeNodeEdit, prepareQualifiedScopeEdit, makeLocalCopy, materializeInstanceDefinition, prepareOwnedDefinitionMetadataEdit } from '../workflow/definition-library.js?v=0.26.0';
-import { prepareSubgraphNodeDeletion } from '../workflow/subgraph-authoring.js?v=0.26.0';
-import { prepareNativeConnectionEdit } from '../workflow/connection-edits.js?v=0.26.0';
-import { prepareCommentEdit } from '../workflow/comment-edits.js?v=0.26.0';
-import { createCommentFrame, containedCommentNodes, fitCommentFrame, isCommentFrame } from '../canvas/comment-frames.js?v=0.26.0';
-import { captureCommentPresentation, applyCommentPresentation, applyCommentGroupPresentation } from './comment-presentation.js?v=0.26.0';
-import { captureRelocatedSubgraphViews, refreshRelocatedSubgraphViews, restoreSubgraphViews } from './subgraph-view-state.js?v=0.26.0';
-import { preparePortalRename, prepareCreateFromSelection, prepareUnpack, prepareQualifiedPortalEdit } from '../workflow/composition.js?v=0.26.0';
-import { prepareGraphCandidate } from '../workflow/prepared-graph-edit.js?v=0.26.0';
-import { definitionRefKey } from '../workflow/definition-data.js?v=0.26.0';
-import { exportSubgraph } from '../workflow/packages.js?v=0.26.0';
-import { makeClip, makeDefinitionClip, readClip, prepareClipPaste } from '../workflow/clipboard.js?v=0.26.0';
-import { prepareNativeSearchCatalog, resolveNativeSearchChoice } from './native-search-catalog.js?v=0.26.0';
-import { createNativeWireBridge } from './native-wire-bridge.js?v=0.26.0';
-import { readNodePresentation } from './node-palette.js?v=0.26.0';
-import { showContextMenu } from './context-menu.js?v=0.26.0';
-import { readTextFile } from './file-input.js?v=0.26.0';
-import { prepareWorkspaceViews, prepareLibraryViews, projectEditorDraw, initialWorkspaceCamera, projectWorkspacePanels, projectNodeProfiles } from './workspace-preparation.js?v=0.26.0';
-import { prepareWorkflowProjection, projectPreparedWorkflow, createWorkflowSession } from './workflow-surface.js?v=0.26.0';
-import { ctx, safe, settings, save, allGraphs, getGraph, createGraph, duplicateGraph, deleteGraph, touchGraph, commitGraphEdit, stepGraphHistory, resolveGraph, exportGraph, importGraph, onGraphTouched, groupMembers } from '../state.js?v=0.26.0';
-import { applyTheme } from '../theme.js?v=0.26.0';
-import { renderThemeEditor } from '../theme-editor.js?v=0.26.0';
-import * as H from '../history.js?v=0.26.0';
-import * as L from '../library.js?v=0.26.0';
-import { Canvas } from '../canvas.js?v=0.26.0';
-import { createWorkbench } from './workbench.js?v=0.26.0';
-import { nodeCard } from '../canvas/presentation.js?v=0.26.0';
-import { measureNodeCard } from '../../dist/lattice-ui.js?v=0.26.0';
+import { prepareIterationBindingOverride } from './iteration-bindings.js?v=0.27.0';
+import { createStoryDocumentSetup } from './story-document-setup.js?v=0.27.0';
+import { createConfiguredNodeSession, configuredCreationStage, nodeNeedsConfiguration, iterationHelperChoices } from './configured-node-creation.js?v=0.27.0';
+import { checkFastSettingsScope, fastSettingsPersistence, saveFastConnection, workflowBindingKey, workflowCreationPhase } from './provider-settings.js?v=0.27.0';
+import { resolveBinding } from '../workflow/connections.js?v=0.27.0';
+import { activeModelMetadata } from '../workflow/model-profiles.js?v=0.27.0';
+import { readNodeProfileMetadata, nodeProfileMetadataKey } from './node-profile-preparation.js?v=0.27.0';
+import * as workflowRuntime from '../run.js?v=0.27.0';
+import { workflowSignature } from '../workflow/runtime.js?v=0.27.0';
+import { installWorkflowExample } from '../workflow/examples.js?v=0.27.0';
+import { projectWorkflowExamples } from './example-catalog.js?v=0.27.0';
+import { OPERATIONS, operationFor, portsForNode } from '../workflow/catalog.js?v=0.27.0';
+import { validateNodeModifiers } from '../workflow/modifiers.js?v=0.27.0';
+import { isWorkflowGraph } from '../workflow/contracts.js?v=0.27.0';
+import { parseWorkflowInsertionFile, prepareWorkflowInsertion } from '../workflow/insertion.js?v=0.27.0';
+import { captureGraphEditContext } from '../workflow/transactions.js?v=0.27.0';
+import { viewIdentityKey } from './view-state.js?v=0.27.0';
+import { createGraphViewSession } from './graph-view-session.js?v=0.27.0';
+import { prepareNativeNodeEdit, prepareQualifiedScopeEdit, makeLocalCopy, materializeInstanceDefinition, prepareOwnedDefinitionMetadataEdit } from '../workflow/definition-library.js?v=0.27.0';
+import { prepareSubgraphNodeDeletion } from '../workflow/subgraph-authoring.js?v=0.27.0';
+import { prepareNativeConnectionEdit } from '../workflow/connection-edits.js?v=0.27.0';
+import { prepareCommentEdit } from '../workflow/comment-edits.js?v=0.27.0';
+import { createCommentFrame, containedCommentNodes, fitCommentFrame, isCommentFrame } from '../canvas/comment-frames.js?v=0.27.0';
+import { captureCommentPresentation, applyCommentPresentation, applyCommentGroupPresentation } from './comment-presentation.js?v=0.27.0';
+import { captureRelocatedSubgraphViews, refreshRelocatedSubgraphViews, restoreSubgraphViews } from './subgraph-view-state.js?v=0.27.0';
+import { preparePortalRename, prepareCreateFromSelection, prepareUnpack, prepareQualifiedPortalEdit } from '../workflow/composition.js?v=0.27.0';
+import { prepareGraphCandidate } from '../workflow/prepared-graph-edit.js?v=0.27.0';
+import { definitionRefKey } from '../workflow/definition-data.js?v=0.27.0';
+import { exportSubgraph } from '../workflow/packages.js?v=0.27.0';
+import { makeClip, makeDefinitionClip, readClip, prepareClipPaste } from '../workflow/clipboard.js?v=0.27.0';
+import { prepareNativeSearchCatalog, resolveNativeSearchChoice } from './native-search-catalog.js?v=0.27.0';
+import { createNativeWireBridge } from './native-wire-bridge.js?v=0.27.0';
+import { readNodePresentation } from './node-palette.js?v=0.27.0';
+import { showContextMenu } from './context-menu.js?v=0.27.0';
+import { readTextFile } from './file-input.js?v=0.27.0';
+import { prepareWorkspaceViews, prepareLibraryViews, projectEditorDraw, initialWorkspaceCamera, projectWorkspacePanels, projectNodeProfiles } from './workspace-preparation.js?v=0.27.0';
+import { prepareWorkflowProjection, projectPreparedWorkflow, createWorkflowSession } from './workflow-surface.js?v=0.27.0';
+import { ctx, safe, settings, save, allGraphs, getGraph, createGraph, duplicateGraph, deleteGraph, touchGraph, commitGraphEdit, stepGraphHistory, resolveGraph, exportGraph, importGraph, onGraphTouched, groupMembers } from '../state.js?v=0.27.0';
+import { applyTheme } from '../theme.js?v=0.27.0';
+import { renderThemeEditor } from '../theme-editor.js?v=0.27.0';
+import * as H from '../history.js?v=0.27.0';
+import * as L from '../library.js?v=0.27.0';
+import { Canvas } from '../canvas.js?v=0.27.0';
+import { createWorkbench } from './workbench.js?v=0.27.0';
+import { nodeCard } from '../canvas/presentation.js?v=0.27.0';
+import { measureNodeCard } from '../../dist/lattice-ui.js?v=0.27.0';
 
 let workbench = null;
 let root = null;
@@ -139,19 +139,19 @@ function storySetup() {
 }
 function refreshStoryDocuments(notice = '') {
     const snapshot = storySetup()?.snapshot();
-    workbench?.update({ storyDocuments: snapshot?.ok ? { ...snapshot.data, notice } : { key: '', revision: '', scope: { userId: '', chatId: '' }, documents: [], issue: 'Story documents require an active user and chat.' } });
+    workbench?.update({ storyDocuments: snapshot?.ok ? { ...snapshot.data, notice } : { key: '', revision: '', scope: { userId: '', chatId: '' }, documents: [], issue: 'Workflow Data requires an active user and chat.' } });
 }
 function storyDocumentsChanged(result) {
     if (!result.ok) return result;
-    workflowSession.cancel('Story document authorization changed');
+    workflowSession.cancel('Workflow Data authorization changed');
     refreshWorkflowPreparation(); updateWorkflowProjection(); refreshStoryDocuments(result.data.message);
     return result;
 }
 const storyDocumentsActions = {
     refresh: () => refreshStoryDocuments(),
-    load(key, targetId) { return storySetup()?.load(key, targetId) ?? { ok: false, error: { code: 'DOCUMENT_SETUP_UNAVAILABLE', message: 'Story document setup is unavailable.' } }; },
-    async save(key, definition) { const setup = storySetup(); return setup ? storyDocumentsChanged(await setup.save(key, definition)) : { ok: false, error: { code: 'DOCUMENT_SETUP_UNAVAILABLE', message: 'Story document setup is unavailable.' } }; },
-    async remove(key, targetId) { const setup = storySetup(); return setup ? storyDocumentsChanged(await setup.remove(key, targetId)) : { ok: false, error: { code: 'DOCUMENT_SETUP_UNAVAILABLE', message: 'Story document setup is unavailable.' } }; },
+    load(key, targetId) { return storySetup()?.load(key, targetId) ?? { ok: false, error: { code: 'DOCUMENT_SETUP_UNAVAILABLE', message: 'Workflow Data setup is unavailable.' } }; },
+    async save(key, definition) { const setup = storySetup(); return setup ? storyDocumentsChanged(await setup.save(key, definition)) : { ok: false, error: { code: 'DOCUMENT_SETUP_UNAVAILABLE', message: 'Workflow Data setup is unavailable.' } }; },
+    async remove(key, targetId) { const setup = storySetup(); return setup ? storyDocumentsChanged(await setup.remove(key, targetId)) : { ok: false, error: { code: 'DOCUMENT_SETUP_UNAVAILABLE', message: 'Workflow Data setup is unavailable.' } }; },
 };
 function fastSetupView() {
     try {
@@ -1600,7 +1600,7 @@ function cancelConfiguredNode(key = pendingConfiguredNode?.key) {
 }
 function commitNodeCreation(capture, prepared) {
     const documentLease = prepared?.ok && nodeCreationScopes.get(prepared.data);
-    if (documentLease && !documentLease.isCurrent()) return { ok: false, error: { code: 'STALE_DOCUMENT_SETUP', message: 'Story document authorization changed before node creation. Reopen configuration.' } };
+    if (documentLease && !documentLease.isCurrent()) return { ok: false, error: { code: 'STALE_DOCUMENT_SETUP', message: 'Workflow Data authorization changed before node creation. Reopen configuration.' } };
     return commitCaptured(capture, prepared);
 }
 function requestNodeCreation(capture, command, at = null, shelf = false) {
@@ -1617,7 +1617,7 @@ function requestNodeCreation(capture, command, at = null, shelf = false) {
     let targets = [], documentScopeKey;
     if (['read-file', 'story-clock', 'commit-outcomes'].includes(command.operation)) {
         const captured = workflowRuntime.getStoryDocumentCatalog?.()?.capture();
-        if (!captured?.ok) return { ok: false, error: { code: 'DOCUMENT_SETUP_UNAVAILABLE', message: 'Open an active chat and authorize a target in Tools › Story documents before creating this node.' } };
+        if (!captured?.ok) return { ok: false, error: { code: 'DOCUMENT_SETUP_UNAVAILABLE', message: 'Open an active chat and authorize a target in Tools › Workflow Data before creating this node.' } };
         documentScopeKey = globalThis.crypto.randomUUID(); nodeDocumentCaptures.set(documentScopeKey, captured.data);
         targets = captured.data.documents.map(({ content, ...summary }) => summary);
     }

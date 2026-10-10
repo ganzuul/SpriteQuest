@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {readFile} from 'node:fs/promises';
-import {createChatDocumentCatalog} from '../src/workflow/document-catalog.js?v=0.26.0';
-import {prepareNativeConnectionEdit} from '../src/workflow/connection-edits.js?v=0.26.0';
-import {createConfiguredNodeSession,configuredCreationStage,nodeNeedsConfiguration,iterationHelperChoices} from '../src/ui/configured-node-creation.js?v=0.26.0';
+import {createChatDocumentCatalog} from '../src/workflow/document-catalog.js?v=0.27.0';
+import {prepareNativeConnectionEdit} from '../src/workflow/connection-edits.js?v=0.27.0';
+import {createConfiguredNodeSession,configuredCreationStage,nodeNeedsConfiguration,iterationHelperChoices} from '../src/ui/configured-node-creation.js?v=0.27.0';
 const source=await readFile(new URL('../src/ui/controller.js',import.meta.url),'utf8');
 function actual(name,env){const start=source.indexOf('function '+name+'('),end=source.indexOf('\n}',start)+2;assert.ok(start>=0);return Function('env','with(env){'+source.slice(start,end)+';return '+name+';}')(env);}
 function fixture(){

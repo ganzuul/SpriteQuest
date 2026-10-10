@@ -6,7 +6,7 @@ import { createNativeWorkflowController } from '../../src/workflow/host.js';
 import { createNativeMemoryAdapter } from '../../src/workflow/introspection/host-memory.js';
 import { makeRecord } from '../../src/workflow/introspection/contracts.js';
 // Match host.js's module URL: binding authentication is held in its WeakMap.
-import { bindingStatus } from '../../src/workflow/connections.js?v=0.26.0';
+import { bindingStatus } from '../../src/workflow/connections.js?v=0.27.0';
 
 // Read every companion package: the public primary-graph listing omits seven phases.
 export const examplePhases = WORKFLOW_EXAMPLE_DATA.flatMap(entry => entry.packages.map(pack => ({

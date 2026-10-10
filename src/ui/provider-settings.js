@@ -1,4 +1,4 @@
-import { cloneJsonValue } from '../workflow/operations/json-data.js?v=0.26.0';
+import { cloneJsonValue } from '../workflow/operations/json-data.js?v=0.27.0';
 const fail = (code, message) => ({ ok: false, error: { code, message } });
 const fallbackCodes = ['REQUEST_FAILED', 'SERVICE_UNAVAILABLE', 'RATE_LIMITED', 'PROVIDER_OVERLOADED', 'AUTH_MISSING', 'HTTP_ERROR', 'INVALID_FAST_RESPONSE'];
 const workflowKeys = { 'native-unified': 'workflowGraphId', 'native-pre': 'preGraphId', 'native-post': 'postGraphId' };

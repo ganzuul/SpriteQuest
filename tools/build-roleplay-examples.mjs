@@ -1,8 +1,8 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { operationDefaults, portsForNode } from '../src/workflow/catalog.js?v=0.26.0';
-import { exportWorkflow, parseWorkflow } from '../src/workflow/packages.js?v=0.26.0';
-import { validateWorkflow } from '../src/workflow/contracts.js?v=0.26.0';
-import { computeDefinitionIdentity, definitionRefKey, validateDefinition } from '../src/workflow/definitions.js?v=0.26.0';
+import { operationDefaults, portsForNode } from '../src/workflow/catalog.js?v=0.27.0';
+import { exportWorkflow, parseWorkflow } from '../src/workflow/packages.js?v=0.27.0';
+import { validateWorkflow } from '../src/workflow/contracts.js?v=0.27.0';
+import { computeDefinitionIdentity, definitionRefKey, validateDefinition } from '../src/workflow/definitions.js?v=0.27.0';
 
 const root = new URL('../', import.meta.url);
 const catalog = JSON.parse(await readFile(new URL('docs/research/2026-10-09-lattice-example-catalog.json', root), 'utf8'));

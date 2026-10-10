@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { installMock } from './mock.js';
 installMock();
-const S = await import('../src/state.js?v=0.26.0');
+const S = await import('../src/state.js?v=0.27.0');
 
 async function openController(env) {
     const source = await readFile(new URL('../src/ui/controller.js', import.meta.url), 'utf8');
@@ -59,7 +59,7 @@ test('opening an example persists its real editable root without changing existi
         toast: (message, type) => notices.push({ message, type }),
     };
     const open = await openController(env);
-    const { installWorkflowExample } = await import('../src/workflow/examples.js?v=0.26.0');
+    const { installWorkflowExample } = await import('../src/workflow/examples.js?v=0.27.0');
     env.installWorkflowExample = installWorkflowExample;
     assert.equal(open('lesson-01'), true);
     assert.notEqual(env.current.id, original.id);
@@ -81,7 +81,7 @@ test('opening an example does not fit a child tab entered before layout settles'
     const original = S.createGraph('Example fit owner');
     const frames = [];
     let viewKind = 'root';
-    const { installWorkflowExample } = await import('../src/workflow/examples.js?v=0.26.0');
+    const { installWorkflowExample } = await import('../src/workflow/examples.js?v=0.27.0');
     const env = {
         current: original, uiEpoch: 1, settings: S.settings, installWorkflowExample,
         save() {}, setCanvasGraph() { env.uiEpoch++; }, renderAll() {}, toast() {},
@@ -99,7 +99,7 @@ test('an unavailable example leaves the current workflow and saved workspace unt
     const original = S.createGraph('Failed example open original'), stored = S.settings();
     stored.activeGraphId = original.id;
     const before = structuredClone(stored), notices = [];
-    const { installWorkflowExample } = await import('../src/workflow/examples.js?v=0.26.0');
+    const { installWorkflowExample } = await import('../src/workflow/examples.js?v=0.27.0');
     const env = {
         current: original, settings: S.settings, installWorkflowExample,
         save() { assert.fail('Failed opening cannot save'); },

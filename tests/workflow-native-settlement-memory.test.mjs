@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createNativeMemoryAdapter } from '../src/workflow/introspection/host-memory.js?v=0.26.0';
-import { makeRecord } from '../src/workflow/introspection/contracts.js?v=0.26.0';
-import { advanceState } from '../src/workflow/introspection/context-state.js?v=0.26.0';
+import { createNativeMemoryAdapter } from '../src/workflow/introspection/host-memory.js?v=0.27.0';
+import { makeRecord } from '../src/workflow/introspection/contracts.js?v=0.27.0';
+import { advanceState } from '../src/workflow/introspection/context-state.js?v=0.27.0';
 async function fixture() {
     let writes=0;
     const c={chatId:'story',characterId:0,groupId:null,characters:[{avatar:'mara.png'}],chatMetadata:{},chat:[{mes:'I draw the sword.',is_user:true},{mes:'The sword killed Orr.',is_user:false,swipe_id:0,swipes:['The sword killed Orr.'],swipe_info:[{gen_started:1,gen_finished:2}],gen_started:1,gen_finished:2}]};
@@ -58,8 +58,8 @@ for(const mutation of ['selected-text','selected-swipe','history','visibility'])
  const loaded=createNativeMemoryAdapter({context:()=>f.c}).capture().data;
  try{const state=await loaded.memory.read({view:'state'});assert.equal(state.ok,true);assert.ok(state.reports.some(x=>x.code==='INVALIDATED_SOURCES'));assert.equal(f.writes(),1);}finally{loaded.release();}
 });
-test('accepted memory rebase rejects a changed original swipe and a final source beyond the native memory bound',async()=>{
- for(const mutation of ['original','oversize']){const f=await episodeFixture();await publishAccepted(f,mutation==='oversize'?'The sword killed Orr. '+'x'.repeat(4100):undefined);if(mutation==='original')f.c.chat[1].swipes[0]='The sword spared Orr.';const result=await f.session.memory.commit(f.intent,{root:true});assert.equal(result.ok,false);assert.equal(f.writes(),0);assert.equal(f.c.chatMetadata.latticeIntrospection,undefined);}
+test('accepted memory rebase rejects a changed original swipe and a final source beyond the accepted publication bound',async()=>{
+ for(const mutation of ['original','oversize']){const f=await episodeFixture();await publishAccepted(f);if(mutation==='oversize'){f.c.chat[1].mes+='x'.repeat(100000);f.c.chat[1].swipes[1]=f.c.chat[1].mes;}if(mutation==='original')f.c.chat[1].swipes[0]='The sword spared Orr.';const result=await f.session.memory.commit(f.intent,{root:true});assert.equal(result.ok,false);assert.equal(f.writes(),0);assert.equal(f.c.chatMetadata.latticeIntrospection,undefined);}
 });
 
 test('accepted memory retains historical source references and rewrites no text values',async()=>{
@@ -82,4 +82,12 @@ for(const mutation of ['abort','selected-text','original-swipe','visibility','ac
  const subtle=globalThis.crypto.subtle,prior=Object.getOwnPropertyDescriptor(subtle,'digest'),digest=subtle.digest;let changed=false;
  Object.defineProperty(subtle,'digest',{configurable:true,value:async function(...args){const result=await Reflect.apply(digest,this,args);let source;try{source=JSON.parse(new TextDecoder().decode(args[1]));}catch{}if(!changed&&Array.isArray(source)&&source[0]===1&&source[2]===body){changed=true;if(mutation==='abort')f.controller.abort();else if(mutation==='selected-text'){f.c.chat[1].mes='The sword spared Orr.';f.c.chat[1].swipes[1]=f.c.chat[1].mes;}else if(mutation==='original-swipe')f.c.chat[1].swipes[0]='The sword spared Orr.';else if(mutation==='visibility')f.c.chat[1].visibleTo=['character:other.png'];else f.c.characterId=1;}return result;}});
  try{const result=await f.session.memory.commit(f.intent,{root:true});assert.equal(changed,true);assert.equal(result.ok,false);assert.equal(f.writes(),0);assert.equal(f.c.chatMetadata.latticeIntrospection,undefined);}finally{if(prior)Object.defineProperty(subtle,'digest',prior);else delete subtle.digest;}
+});
+
+for(const mutation of ['text','visibility','abort'])test('long accepted source rejects '+mutation+' during historical-reference hashing after reload',async()=>{
+ const f=await episodeFixture(),body='The sword killed Orr. '+ 'N'.repeat(5000);await publishAccepted(f,body);assert.equal((await f.session.memory.commit(f.intent,{root:true})).ok,true);f.session.release();
+ const cancellation=new AbortController(),loaded=createNativeMemoryAdapter({context:()=>f.c}).capture({signal:cancellation.signal}).data;
+ const subtle=globalThis.crypto.subtle,prior=Object.getOwnPropertyDescriptor(subtle,'digest'),digest=subtle.digest;let changed=false;
+ Object.defineProperty(subtle,'digest',{configurable:true,value:async function(...args){const result=await Reflect.apply(digest,this,args);let source;try{source=JSON.parse(new TextDecoder().decode(args[1]));}catch{}if(!changed&&Array.isArray(source)&&source[0]===1&&source[2]===body){changed=true;if(mutation==='abort')cancellation.abort();else if(mutation==='visibility')f.c.chat[1].visibleTo=['character:other.png'];else{f.c.chat[1].mes+=' changed';f.c.chat[1].swipes[1]=f.c.chat[1].mes;}}return result;}});
+ try{const state=await loaded.memory.read({view:'state'});assert.equal(changed,true);if(mutation==='abort'){assert.equal(state.ok,false);assert.equal(state.error.code,'CANCELLED');}else{assert.equal(state.ok,true);assert.ok(state.reports.some(report=>report.code==='INVALIDATED_SOURCES'));}assert.equal(f.writes(),1);}finally{if(prior)Object.defineProperty(subtle,'digest',prior);else delete subtle.digest;loaded.release();}
 });

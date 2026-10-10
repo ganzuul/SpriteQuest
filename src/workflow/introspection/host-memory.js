@@ -1,5 +1,5 @@
-import { createChatMetadataBackend, createMemoryService } from './memory.js?v=0.26.0';
-import { COLLECTIONS, fail, freeze, makeRecord, ownData, parseRecord, validateEvidence } from './contracts.js?v=0.26.0';
+import { createChatMetadataBackend, createMemoryService } from './memory.js?v=0.27.0';
+import { COLLECTIONS, fail, freeze, makeRecord, ownData, parseRecord, validateEvidence } from './contracts.js?v=0.27.0';
 
 const good = data => ({ ok: true, data });
 const id = value => typeof value === 'string' && value.trim().length > 0 && value.length <= 128 && !['__proto__', 'prototype', 'constructor'].includes(value);
@@ -69,21 +69,22 @@ export function createNativeMemoryAdapter({ context, selectActor, isSettled, sto
         const checked = checkAuthority(authority); if (!checked.ok) return checked;
         try {
             // The model event window stays bounded. Missing historical refs are checked
-            // against their exact native index and revision without exporting older text.
+            // against their exact native index and revision without exporting older or
+            // oversized presentation text. Publication provenance has its own larger bound.
             const chat = context().chat;
             const refs = [...new Map(result.reports.filter(report => report.code === 'INVALIDATED_SOURCES').flatMap(report => report.sourceRefs).map(ref => [JSON.stringify([ref.id, ref.revision]), ref])).values()];
             const sources = refs.map(ref => {
                 const match = /^chat:(0|[1-9]\d*)$/.exec(ref.id), index = match ? Number(match[1]) : NaN;
                 if (!Number.isSafeInteger(index)) return null;
-                const descriptor = selected(context(), index, isSettled, authority.scope.actorId);
-                return descriptor ? { index, message: chat?.[index], descriptor } : null;
+                const descriptor = selected(context(), index, isSettled, authority.scope.actorId, 100000);
+                return descriptor ? { index, message: chat?.[index], descriptor, maxLength: 100000 } : null;
             });
             const revisions = await Promise.all(sources.map(source => source ? nativeMemoryFingerprint(source.descriptor) : null));
             const current = context(), verified = new Set();
             const record = parseRecord(result.artifact), selectedRefs = new Set(record.ok ? record.data.sourceRefs.map(ref => JSON.stringify([ref.id, ref.revision])) : []);
             for (let index = 0; index < refs.length; index++) {
                 const source = sources[index], ref = refs[index];
-                if (source && revisions[index] === ref.revision && current.chat === chat && current.chat?.[source.index] === source.message && selected(current, source.index, isSettled, authority.scope.actorId) === source.descriptor) {
+                if (source && revisions[index] === ref.revision && current.chat === chat && current.chat?.[source.index] === source.message && selected(current, source.index, isSettled, authority.scope.actorId, source.maxLength) === source.descriptor) {
                     const key = JSON.stringify([ref.id, ref.revision]); verified.add(key);
                     if (selectedRefs.has(key) && !authority.readSources.has(key)) authority.readSources.set(key, source);
                 }
@@ -173,8 +174,8 @@ export function createNativeMemoryAdapter({ context, selectActor, isSettled, sto
             const state = parseRecord(input.state, 'actor-state'); if (!state.ok) return state;
             const live = () => checkAuthority(authority).ok
                 && selectedForSlot(context(), plan.index) === plan.descriptor
-                && selected(context(), plan.index, isSettled, scope.actorId) === plan.finalDescriptor;
-            if (!live()) return fail('INVALID_ACCEPTED_MEMORY', 'The exact accepted original and bounded selected source must remain unchanged.');
+                && selected(context(), plan.index, isSettled, scope.actorId, 100000) === plan.finalDescriptor;
+            if (!live()) return fail('INVALID_ACCEPTED_MEMORY', 'The exact accepted original and selected publication must remain unchanged.');
             let originalRevision, finalRevision;
             try { [originalRevision, finalRevision] = await Promise.all([nativeMemoryFingerprint(plan.descriptor), nativeMemoryFingerprint(plan.finalDescriptor)]); }
             catch { return fail('INVALID_ACCEPTED_MEMORY', 'The accepted native source could not be fingerprinted.'); }
@@ -259,7 +260,7 @@ export function createNativeMemoryAdapter({ context, selectActor, isSettled, sto
                 try {
                     const checked = checkAuthority(authority); if (!checked.ok) return checked;
                     const c = context();
-                    return [...authority.readSources.values()].every(source => c.chat?.[source.index] === source.message && slot.selected(c, source.index) === source.descriptor)
+                    return [...authority.readSources.values()].every(source => c.chat?.[source.index] === source.message && (source.maxLength ? selected(c, source.index, isSettled, authority.scope.actorId, source.maxLength) : slot.selected(c, source.index)) === source.descriptor)
                         ? good(undefined) : fail('STALE_SOURCE', 'Selected memory evidence changed after it was read.');
                 } catch { return fail('STALE_SOURCE', 'Selected memory evidence could not be rechecked.'); }
             };

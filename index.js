@@ -1,9 +1,9 @@
 /** Lattice launcher and host integration. The workflow never replaces SillyTavern's prompt. */
-import { MODULE, settings, save, ctx, safe } from './src/state.js?v=0.26.0';
-import { getNativeWorkflowController, initializeNativeWorkflowController, workflowSignature, sendWorkflowState } from './src/run.js?v=0.26.0';
-import * as UI from './src/ui.js?v=0.26.0';
-import { applyTheme } from './src/theme.js?v=0.26.0';
-import { renderThemeEditor } from './src/theme-editor.js?v=0.26.0';
+import { MODULE, settings, save, ctx, safe } from './src/state.js?v=0.27.0';
+import { getNativeWorkflowController, initializeNativeWorkflowController, workflowSignature, sendWorkflowState } from './src/run.js?v=0.27.0';
+import * as UI from './src/ui.js?v=0.27.0';
+import { applyTheme } from './src/theme.js?v=0.27.0';
+import { renderThemeEditor } from './src/theme-editor.js?v=0.27.0';
 const logoUrl = new URL('./assets/lattice-logo.svg', import.meta.url).href;
 
 globalThis.latticeGenerationInterceptor = async (chat, contextSize, abort, type) => {
@@ -44,7 +44,7 @@ function addSendbarButton() {
     if (existing) { if (existing.parentElement !== bar) bar.append(existing); paintSendbar(); return true; }
     const button = document.createElement('button');
     button.id = 'pc-sendbar'; button.className = 'pc-chat-launcher interactable'; button.type = 'button'; button.setAttribute('aria-label', 'Open Lattice');
-    const logo = document.createElement('img'); logo.src = logoUrl; logo.alt = ''; logo.draggable = false; logo.setAttribute('aria-hidden', 'true'); button.append(logo);
+    const logo = document.createElement('span'); logo.className = 'pc-chat-launcher-icon'; logo.style.setProperty('--pc-launcher-logo', `url("${logoUrl}")`); logo.setAttribute('aria-hidden', 'true'); button.append(logo);
     button.addEventListener('click', () => UI.open());
     button.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); UI.open(); } });
     button.addEventListener('contextmenu', event => {

@@ -1,4 +1,4 @@
-@import url('./dist/lattice.css?v=0.26.0');
+@import url('./dist/lattice.css?v=0.27.0');
 
 /* Current Lattice workspace. Explicit themes may replace these color roles. */
 :root {
@@ -580,9 +580,10 @@
 :root[data-pc-preset="ember"] .pc-root .pc-node-native.pc-trace-cancelled { outline: 1px dashed var(--pc-warn); outline-offset: 1px; }
 
 /* Chat launcher lives with the left-side chat controls. */
-#pc-sendbar.pc-chat-launcher { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 36px; width: 36px; height: 36px; min-width: 0; padding: 2px; margin: 0; border: 0; border-radius: 3px; background: transparent; box-shadow: none; cursor: pointer; }
-#pc-sendbar.pc-chat-launcher img { display: block; width: 30px; height: 30px; object-fit: contain; pointer-events: none; }
-#pc-sendbar.pc-chat-launcher:hover { background: color-mix(in srgb, var(--SmartThemeBodyColor, #dcdcd2) 7%, transparent); }
+#pc-sendbar.pc-chat-launcher { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 var(--bottomFormBlockSize, 36px); width: var(--bottomFormBlockSize, 36px); height: var(--bottomFormBlockSize, 36px); min-width: 0; padding: 2px; margin: 0; border: 0; border-radius: 3px; background: transparent; color: var(--SmartThemeBodyColor, #dcdcd2); opacity: 0.7; transition: opacity var(--animation-duration-2x, 200ms); box-shadow: none; cursor: pointer; }
+/* Center the painted mass of the rotated, layered logo within the host control. */
+#pc-sendbar.pc-chat-launcher .pc-chat-launcher-icon { display: block; flex: 0 0 30px; width: 30px; height: 30px; background: currentColor; mask: var(--pc-launcher-logo) center / contain no-repeat; transform: translate(-2px, -2px); pointer-events: none; }
+#pc-sendbar.pc-chat-launcher:hover { opacity: 1; filter: brightness(1.2); background: color-mix(in srgb, var(--SmartThemeBodyColor, #dcdcd2) 7%, transparent); }
 #pc-sendbar.pc-chat-launcher:focus-visible { outline: 2px solid var(--SmartThemeQuoteColor, #e18a24); outline-offset: 1px; }
 
 /* Colorblind-friendly themes retain type names and add matching pin/wire cues. */

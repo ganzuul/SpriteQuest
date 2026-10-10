@@ -1,8 +1,8 @@
 import { mkdir, readFile, writeFile, rename, open, unlink } from 'node:fs/promises';
 import { dirname, resolve, relative, isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { requestModel } from '../src/workflow/connections.js?v=0.26.0';
-import { validateWorkflow } from '../src/workflow/contracts.js?v=0.26.0';
+import { requestModel } from '../src/workflow/connections.js?v=0.27.0';
+import { validateWorkflow } from '../src/workflow/contracts.js?v=0.27.0';
 import { createExampleFixture, examplePhases, currentMemory, guidance, withBrowserWorker } from '../tests/helpers/workflow-example-fixtures.mjs';
 import { liveCaseSpec } from './roleplay-soak-cases.mjs';
 

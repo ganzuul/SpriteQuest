@@ -37,11 +37,11 @@ Generator exports REMASTERED_WORKFLOW_EXAMPLE_DATA from src/workflow/remastered-
 
 **Consumes:** Existing contracts/descriptors and approved design. **Produces:** Shared interface and 30 complete valid bundles, sample fixtures, real pinned helpers and annotations.
 
-- [ ] Write one failing behavior/authoring test proving missing new lesson package or flow; record Red.
-- [ ] Implement focused generator/builder and independently authored recipes for all 30 exact goals. Follow incremental tests for source, conditional, helper and effect wiring.
-- [ ] Lay out root/helper DAGs deliberately, author operation-preserving aliases, comments and consistent group membership; annotate setup and checkpoints.
-- [ ] Export/parse/prepare/install validate every bundle and inspect request bounds/authority.
-- [ ] Run authored/layout tests and generator twice to confirm deterministic output; report evidence and concerns.
+- [x] Write one failing behavior/authoring test proving missing new lesson package or flow; record Red.
+- [x] Implement focused generator/builder and independently authored recipes for all 30 exact goals. Follow incremental tests for source, conditional, helper and effect wiring.
+- [x] Lay out root/helper DAGs deliberately, author operation-preserving aliases, comments and consistent group membership; annotate setup and checkpoints.
+- [x] Export/parse/prepare/install validate every bundle and inspect request bounds/authority.
+- [x] Run authored/layout tests and generator twice to confirm deterministic output; report evidence and concerns.
 
 ### Task 2: Present and install the teaching catalog
 
@@ -49,11 +49,11 @@ Generator exports REMASTERED_WORKFLOW_EXAMPLE_DATA from src/workflow/remastered-
 
 **Consumes:** Shared metadata interface and generated 30 entries. **Produces:** Exactly 30 visible numbered/searchable/filterable teaching examples with details, independent installation, archived-ID compatibility and detached metadata.
 
-- [ ] Write and run one failing test for visible new lessons/search/details, not exact prose.
-- [ ] Wire new catalog and preserve old packages only for archived install lookup. Keep saved registry intact on browsing/opening; installation adds independent roots only.
-- [ ] Expose goal/focus/difficulty/setup/instructions and useful catalog search/filter. Keep unavailable package diagnostics and accessible keyboard interaction.
-- [ ] Preserve graph readme in authored comments; show lesson details before opening, with clear setup and actual checkpoints. Improve group thumbnail geometry if needed.
-- [ ] Verify metadata detached/immutable, unchanged existing graphs, unavailable tiles, search by node/topic, difficulty and details/install behavior through real UI tests.
+- [x] Write and run one failing test for visible new lessons/search/details, not exact prose.
+- [x] Wire new catalog and preserve old packages only for archived install lookup. Keep saved registry intact on browsing/opening; installation adds independent roots only.
+- [x] Expose goal/focus/difficulty/setup/instructions and useful catalog search/filter. Keep unavailable package diagnostics and accessible keyboard interaction.
+- [x] Preserve graph readme in authored comments; show lesson details before opening, with clear setup and actual checkpoints. Improve group thumbnail geometry if needed.
+- [x] Verify metadata detached/immutable, unchanged existing graphs, unavailable tiles, search by node/topic, difficulty and details/install behavior through real UI tests.
 
 ### Task 3: Verify behavior and document the collection
 
@@ -61,20 +61,20 @@ Generator exports REMASTERED_WORKFLOW_EXAMPLE_DATA from src/workflow/remastered-
 
 **Consumes:** New bundles/runtime catalog, original engine verification contracts. **Produces:** Accurate learner guide, cross-catalog coverage audit and meaningful authored-flow behavior verification while legacy contract tests remain valid.
 
-- [ ] Write one failing integration case for new authored flow with real runner and narrowly stubbed external responses; record Red.
-- [ ] Verify representative original/new Draft handling, optional/semantic decisions, pure helper iteration, staged document acceptance/rejection/dedupe, confirmed event/holder and capstone wiring.
-- [ ] Use existing engine tests for detailed privacy/time/random/partial-save contracts and add cases where new wiring could violate them.
-- [ ] Update expected visible catalog counts/IDs under changed requirements; retain archived fixtures/contract coverage instead of deleting tests for legacy compatibility.
-- [ ] Document 30 independent goals, setup/model roles, source coverage, actual limitations, safe fixtures and acceptance behavior; add relative local links.
+- [x] Write one failing integration case for new authored flow with real runner and narrowly stubbed external responses; record Red.
+- [x] Verify representative original/new Draft handling, optional/semantic decisions, pure helper iteration, staged document acceptance/rejection/dedupe, confirmed event/holder and capstone wiring.
+- [x] Use existing engine tests for detailed privacy/time/random/partial-save contracts and add cases where new wiring could violate them.
+- [x] Update expected visible catalog counts/IDs under changed requirements; retain archived fixtures/contract coverage instead of deleting tests for legacy compatibility.
+- [x] Document 30 independent goals, setup/model roles, source coverage, actual limitations, safe fixtures and acceptance behavior; add relative local links.
 
 ### Task 4: Integration and release verification
 
 **Files:** generated UI bundles/release version files as needed; relevant verification records; unrelated existing changes on main remain intact.
 
-- [ ] Review each owned task diff for spec and quality, fix findings with covering tests and re-review.
+- [x] Review each owned task diff for spec and quality, fix findings with covering tests and re-review.
 - [ ] Run npm test, npm run check:types, npm run build, npm run check:assets, npm run test:browser, npm run smoke:install; inspect representative screenshots and helper/group layouts.
-- [ ] Review existing main launcher/polish changes separately, preserve them and validate appropriate tests; include them under the user's prior all-repository-changes instruction when integrating.
-- [ ] Refresh release/version consistently if needed; verify GitHub authentication using gh with network permission.
+- [x] Review existing main launcher/polish changes separately, preserve them and validate appropriate tests; include them under the user's prior all-repository-changes instruction when integrating.
+- [x] Refresh release/version consistently if needed; verify GitHub authentication using gh with network permission.
 - [ ] Commit, integrate into main without force/reset, verify final main, push and confirm remote SHA with gh.
 
 ## Execution record
@@ -90,3 +90,5 @@ Actual UI captures also showed that ordinary Fit to view obscured input nodes be
 Multi-turn execution of the native Memory lesson exposed a retained-source lifecycle failure: Apply preserved the original native reply and selected the reviewed swipe, while stored episode references still named the original revision. Accepted memory persistence now rebases only that exact owned native source reference to the verified selected publication revision. Unrelated historical references, model prose, proposal identity and receipt fingerprints remain unchanged. The original-preserving publication and actor visibility are rechecked around asynchronous hashing; cancellation, release or edits prevent persistence. Reload validates the current selected source without granting authority over arbitrary older swipes.
 
 The progression lesson also compares the original experience value with the final projected value after all confirmed rewards. Real two-objective 260-to-300 acceptance and rejection cases cover the complete threshold crossing.
+
+Large appended notes retain the separate native evidence and publication bounds: model-facing settled events remain limited to 4,096 characters, while exact accepted or historical selected-publication provenance is validated within the existing 100,000-character publication limit. Native Apply, controller disposal, metadata reload, canonical Recall and a second accepted Internalize turn are covered together. Presentation notes are never added to event evidence. Edited publications, cancellation and actor/visibility changes invalidate retained authority.

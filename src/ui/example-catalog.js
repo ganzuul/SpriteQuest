@@ -1,8 +1,8 @@
-import { listWorkflowExampleResults } from '../workflow/examples.js?v=0.26.0';
-import { prepareWorkspaceViews } from './workspace-preparation.js?v=0.26.0';
-import { nodeCards } from '../canvas/presentation.js?v=0.26.0';
-import { isCommentFrame } from '../canvas/comment-frames.js?v=0.26.0';
-import { buildConnectionRoute } from '../canvas/connection-route.js?v=0.26.0';
+import { listWorkflowExampleResults } from '../workflow/examples.js?v=0.27.0';
+import { prepareWorkspaceViews } from './workspace-preparation.js?v=0.27.0';
+import { nodeCards } from '../canvas/presentation.js?v=0.27.0';
+import { isCommentFrame } from '../canvas/comment-frames.js?v=0.27.0';
+import { buildConnectionRoute } from '../canvas/connection-route.js?v=0.27.0';
 
 const PRESENTATION_REVISION = 3;
 let cacheKey = '', cachedTiles;

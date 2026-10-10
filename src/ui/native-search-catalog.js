@@ -1,7 +1,7 @@
-import { deferredNodeDescription } from './configured-node-creation.js?v=0.26.0';
-import { ARTIFACT_KINDS, FAMILIES, OPERATIONS, describeOperation, operationDefaults } from '../workflow/catalog.js?v=0.26.0';
-import { cloneDefinitionData, definitionRefKey } from '../workflow/definitions.js?v=0.26.0';
-import { selectSubgraphClosure } from '../workflow/packages.js?v=0.26.0';
+import { deferredNodeDescription } from './configured-node-creation.js?v=0.27.0';
+import { ARTIFACT_KINDS, FAMILIES, OPERATIONS, describeOperation, operationDefaults } from '../workflow/catalog.js?v=0.27.0';
+import { cloneDefinitionData, definitionRefKey } from '../workflow/definitions.js?v=0.27.0';
+import { selectSubgraphClosure } from '../workflow/packages.js?v=0.27.0';
 
 const registries = new WeakMap();
 const choiceViews = new WeakMap();

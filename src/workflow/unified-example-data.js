@@ -2190,7 +2190,7 @@ export const UNIFIED_WORKFLOW_EXAMPLE_DATA = [
     "id": "unified-scene-journal",
     "number": 40,
     "title": "A scene journal in an append-only document",
-    "goal": "Append a quoted journal entry to an authorized story document only after the candidate is accepted.",
+    "goal": "Append a quoted journal entry to an authorized workflow data document only after the candidate is accepted.",
     "packages": [
       {
         "kind": "lattice-workflow",
@@ -2199,7 +2199,7 @@ export const UNIFIED_WORKFLOW_EXAMPLE_DATA = [
         "graph": {
           "id": "unified-example-scene-journal",
           "name": "A scene journal in an append-only document",
-          "description": "Append a quoted journal entry to an authorized story document only after the candidate is accepted.\n\nSetup: Create a public Text document with targetId scene-journal in Story Documents. Bind Prose; assign and arm this Unified workflow. Append keeps existing contents. Review receipts separately from native chat durability.\n\nInspect: On Send owns this generation. Generate Reply uses the ordinary SillyTavern connection. Auxiliary roles remain unassigned in this portable example. Review the final narrative and proposed consequences; Apply publishes a new swipe and settles staged writes. Preview and bounded runs never settle.\n\nGenerated suggestions are proposals. Quoted observations preserve source identity; notes never establish canonical events. Private records cannot be appended to public notes.",
+          "description": "Append a quoted journal entry to an authorized workflow data document only after the candidate is accepted.\n\nSetup: Create a public Text document with targetId scene-journal in Workflow Data. Bind Prose; assign and arm this Unified workflow. Append keeps existing contents. Review receipts separately from native chat durability.\n\nInspect: On Send owns this generation. Generate Reply uses the ordinary SillyTavern connection. Auxiliary roles remain unassigned in this portable example. Review the final narrative and proposed consequences; Apply publishes a new swipe and settles staged writes. Preview and bounded runs never settle.\n\nGenerated suggestions are proposals. Quoted observations preserve source identity; notes never establish canonical events. Private records cannot be appended to public notes.",
           "schema": 3,
           "runtime": 2,
           "mode": "native-unified",

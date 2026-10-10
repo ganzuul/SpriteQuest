@@ -1,6 +1,6 @@
-import { operationDefaults } from './catalog.js?v=0.26.0';
-import { createLibraryWorkflow } from './library/subgraphs.js?v=0.26.0';
-import { createIntrospectionStarter } from './introspection/starters.js?v=0.26.0';
+import { operationDefaults } from './catalog.js?v=0.27.0';
+import { createLibraryWorkflow } from './library/subgraphs.js?v=0.27.0';
+import { createIntrospectionStarter } from './introspection/starters.js?v=0.27.0';
 export const STARTERS = [
     { id: 'unified-basic', version: 1, title: 'Unified story workflow', purpose: 'Prepare, generate a native reply, and review the final Draft in one workflow.', phase: 'unified', roles: [], callBound: 0, operations: ['on-send', 'generate-reply', 'review-publish'] },
     { id: 'native-guidance', version: 1, title: 'Scene guidance', purpose: 'Shape scene direction while SillyTavern writes the reply.', phase: 'pre', roles: ['Analysis'], callBound: 2, operations: ['scene-context', 'smart-compactor', 'response-plan', 'guidance'] },

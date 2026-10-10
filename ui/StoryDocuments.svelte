@@ -17,18 +17,18 @@
    else if(kind==='remove')result=await actions.remove(key,selected);
    else {const definition:StoryDocumentDefinition={targetId,name,format,content,visibility:visibility==='actor-private'?{kind:visibility,actorId}:{kind:visibility}};if(format==='csv')definition.columns=columns.split(',').map(column=>column.trim()).filter(Boolean);result=await actions.save(key,definition);}
    if(key!==view.key||request!==generation)return;
-   if(!result?.ok){failure=result?.error?.message??'Story document setup could not be applied.';return;}
+   if(!result?.ok){failure=result?.error?.message??'Workflow Data setup could not be applied.';return;}
    if(kind==='load'){const definition=result.data?.definition;if(!definition){failure='The initial template could not be loaded.';return;}targetId=definition.targetId;name=definition.name;format=definition.format;content=definition.content;visibility=definition.visibility.kind;actorId=definition.visibility.actorId??'';columns=definition.columns?.join(', ')??'';loaded=true;}
    else {message=result.data?.message??'Authorization updated locally.';loaded=false;}
-  }catch{if(key===view.key&&request===generation)failure='Story document setup could not be applied.';}
+  }catch{if(key===view.key&&request===generation)failure='Workflow Data setup could not be applied.';}
   finally{if(key===view.key&&request===generation)pending=false;}
  }
 </script>
 <div class="pc-story-documents">
  <p>Active user: {view.scope.userId || 'Unavailable'} · Chat: {view.scope.chatId || 'Unavailable'}</p>
- <p>Authorize logical story documents here. Updating an authorization or its initial template leaves existing canonical document content intact. Read File and Write File use these target IDs.</p>
+ <p>Manage the documents used by your workflows here. Updating an authorization or its initial template leaves existing canonical document content intact. Read File and Write File use these target IDs.</p>
  {#if view.issue}<p role="alert">{view.issue}</p>{/if}
- <label>Story document<select aria-label="Story document" bind:value={selected} onchange={select} disabled={pending}><option value="">New document authorization</option>{#each view.documents as doc (doc.targetId)}<option value={doc.targetId}>{doc.name} ({doc.targetId}, {doc.format}, {doc.visibility.kind})</option>{/each}</select></label>
+ <label>Workflow data document<select aria-label="Workflow data document" bind:value={selected} onchange={select} disabled={pending}><option value="">New document authorization</option>{#each view.documents as doc (doc.targetId)}<option value={doc.targetId}>{doc.name} ({doc.targetId}, {doc.format}, {doc.visibility.kind})</option>{/each}</select></label>
  <div class="pc-document-actions"><button type="button" disabled={!selected||pending} onclick={()=>perform('load')}>Load initial template</button><button type="button" disabled={!selected||pending} onclick={()=>perform('remove')}>Remove authorization</button><button type="button" disabled={pending} onclick={()=>actions?.refresh()}>Refresh scope</button></div>
  <form onsubmit={event=>{event.preventDefault();void perform('save');}}>
   <label>Logical target ID<input aria-label="Logical target ID" maxlength="128" bind:value={targetId} disabled={!!selected||pending} placeholder="souls.json" /></label>

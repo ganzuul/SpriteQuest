@@ -204,11 +204,12 @@ test('open an example and independently bind its model nodes without arming it',
         c.ConnectionManagerRequestService.getProfile = id => c.extensionSettings.connectionManager.profiles.find(profile => profile.id === id);
     });
     await expect(page.getByRole('button', { name: 'Setup', exact: true })).toHaveCount(0);
-    await openExample(page, 'Prepare a scene recap');
+    await openExample(page, 'Keep useful context within a budget');
     const compactDetails = await inspectOperation(page, 'smart-compactor');
-    await expect(compactDetails.getByLabel('Connection profile', { exact: true })).toHaveValue('');
-    const before = await page.evaluate(() => { const settings = window.canvasHarness.S.settings(); return { enabled: settings.enabled, assigned: settings.nativeBindings.preGraphId }; });
+    await expect(compactDetails.getByLabel('Connection profile', { exact: true })).toHaveValue('lattice:active-sillytavern');
+    const before = await page.evaluate(() => { const settings = window.canvasHarness.S.settings(); return { enabled: settings.enabled, assigned: settings.nativeBindings.workflowGraphId };  });
     expect(before).toEqual({ enabled: false, assigned: null });
+    const roleBefore = await page.evaluate(() => structuredClone(window.canvasHarness.graph.roles.Analysis));
     await bindNode(page, 'smart-compactor', 'analysis');
     await expect(details(page).getByLabel('Model mode', { exact: true }).locator('option:checked')).toHaveText('Use profile model');
     await bindNode(page, 'response-plan', 'planning');
@@ -218,16 +219,23 @@ test('open an example and independently bind its model nodes without arming it',
     await details(page).getByLabel('Model identifier', { exact: true }).press('Tab');
     expect(await page.evaluate(() => {
         const nodes = Object.values(window.canvasHarness.graph.nodes), compact = nodes.find(node => node.operation === 'smart-compactor'), plan = nodes.find(node => node.operation === 'response-plan');
-        return { compact: [compact.profileId, compact.model], plan: [plan.profileId, plan.model], roleProfile: window.canvasHarness.graph.roles.Analysis.profileId };
-    })).toEqual({ compact: ['analysis', null], plan: ['planning', 'independent-plan-model'], roleProfile: null });
-    await assignPhase(page, 'pre');
+        return { compact: [compact.profileId, compact.model], plan: [plan.profileId, plan.model] };
+    })).toEqual({ compact: ['analysis', null], plan: ['planning', 'independent-plan-model'] });
+    expect(await page.evaluate(() => window.canvasHarness.graph.roles.Analysis)).toEqual(roleBefore);
+    await page.getByRole('button', {name:'Workflows', exact:true}).click();
+    await page.getByRole('menuitem', {name:'Assign unified workflow', exact:true}).click();
+    await expect(page.locator('.pc-root-workflow-status')).toContainText('unified · Assigned');
     expect(await page.evaluate(() => Object.hasOwn(window.canvasHarness.S.settings(),'workflowMode'))).toBe(false);
     expect(await page.evaluate(() => window.canvasHarness.S.settings().enabled)).toBe(false);
     await inspectOperation(page, 'smart-compactor');
     await page.getByLabel('Target tokens', { exact: true }).fill('900');
     await page.getByLabel('Target tokens', { exact: true }).press('Tab');
     expect(await page.evaluate(() => Object.values(window.canvasHarness.graph.nodes).find(node => node.operation === 'smart-compactor').targetTokens)).toBe(900);
+    await expectBound(page, 1);
+    await chooseControl(page, 'Method', 'compress');
     await expectBound(page, 2);
+    expect(await page.evaluate(() => window.canvasHarness.providerCalls())).toBe(0);
+    expect(await page.evaluate(() => window.canvasHarness.S.settings().enabled)).toBe(false);
 });
 
 
@@ -280,7 +288,7 @@ test('examples and model details open without domain scans or provider requests'
         window.nativeLoreScans = 0;
         window.canvasHarness.context.getWorldInfoPrompt = async () => { window.nativeLoreScans++; return {}; };
     });
-    await openExample(page, 'Prepare a scene recap');
+    await openExample(page, 'Keep useful context within a budget');
     await inspectOperation(page, 'response-plan');
     expect(await page.evaluate(() => window.nativeLoreScans)).toBe(0);
     expect(await page.evaluate(() => window.canvasHarness.providerCalls())).toBe(0);

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { installMock } from './mock.js';
 import { siblingWorkflow } from './fixtures/workflow-prepared-fixture.mjs';
 import { computeDefinitionIdentity, definitionRefKey } from '../src/workflow/definitions.js';
-import * as shelf from '../src/library.js?v=0.26.0';
+import * as shelf from '../src/library.js?v=0.27.0';
 
 const ref = definition => ({ id: definition.id, version: definition.version, semanticHash: definition.semanticHash });
 const definition = () => Object.values(siblingWorkflow().definitions)[0];

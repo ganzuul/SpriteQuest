@@ -7,7 +7,7 @@ const hooks=registerHooks({resolve(specifier,context,next){if(specifier==='/scri
 test('installed facade passes one runtime request object to the real typed transport',async()=>{
     const c=installMock();Object.assign(c,{chatId:'story',characterId:0,chat:[{mes:'I use the wand.',is_user:true}],characters:[{data:{name:'Mara'}}]});globalThis.latticeFacadeUser='default-user';
     const previousFetch=globalThis.fetch;let calls=0;globalThis.fetch=async(url,options)=>{calls++;assert.equal(url,'http://localhost:8080/v1/systemone');const body=JSON.parse(options.body);assert.equal(body.model,'local');assert.deepEqual(body.state,{scene:'The wand flashes.'});assert.ok(body.questions.event);return {ok:true,status:200,text:async()=>JSON.stringify({model:'local',answers:{event:{type:'noul',noul:0.95}},usage:{input_tokens:2,output_tokens:1}})};};
-    try{const facade=await import('../src/run.js?v=0.26.0');await facade.initializeNativeWorkflowController();assert.equal(facade.getFastConnectionRegistry().upsert({id:'local',provider:'laya',model:'local',endpoint:'http://localhost:8080/v1/systemone'}).ok,true);
+    try{const facade=await import('../src/run.js?v=0.27.0');await facade.initializeNativeWorkflowController();assert.equal(facade.getFastConnectionRegistry().upsert({id:'local',provider:'laya',model:'local',endpoint:'http://localhost:8080/v1/systemone'}).ok,true);
         const nodes={text:{id:'text',type:'workflow',operation:'text',text:JSON.stringify({scene:'The wand flashes.'})},decode:{id:'decode',type:'workflow',operation:'json-decode'},decision:{id:'decision',type:'workflow',operation:'fast-decision',fastConnectionId:'local',questions:{event:{type:'noul',instructions:'Was the wand used?'}}}};
         const graph={id:'facade',schema:3,runtime:2,mode:'native-pre',nodes,wires:{a:{id:'a',route:'wire',from:'text',fromPort:'out',to:'decode',toPort:'in'},b:{id:'b',route:'wire',from:'decode',fromPort:'out',to:'decision',toPort:'in'}},portals:{},definitions:{}};
         const result=await facade.getNativeWorkflowController().runTarget(graph,{workflowId:graph.id,instancePath:[],nodeId:'decision',portId:'out'});assert.equal(result.ok,true,JSON.stringify(result.error));assert.equal(result.actualCalls,1);assert.equal(calls,1);
@@ -17,7 +17,7 @@ test('installed facade passes one runtime request object to the real typed trans
 test('installed facade shares scoped catalog authorization with its trusted native controller',async()=>{
     const c=installMock();Object.assign(c,{chatId:'story',characterId:0,chat:[{mes:'A soul is captured.',is_user:true}],chatMetadata:{},characters:[{name:'Mara',avatar:'mara.png',chat:'Story-2'}]});globalThis.latticeFacadeUser='default-user';
     try {
-        const facade=await import('../src/run.js?v=0.26.0'),catalog=facade.getStoryDocumentCatalog();
+        const facade=await import('../src/run.js?v=0.27.0'),catalog=facade.getStoryDocumentCatalog();
         assert.equal(catalog,facade.getStoryDocumentCatalog());assert.equal(facade.storyDocumentState().ok,true);
         assert.equal(catalog.define({targetId:'souls',name:'Sword souls',format:'json',content:'[]',visibility:{kind:'hidden'}}).ok,true);
         const graph={id:'file-facade',schema:3,runtime:2,mode:'native-unified',nodes:{read:{id:'read',type:'workflow',operation:'read-file',targetId:'souls'}},wires:{},portals:{},definitions:{}};

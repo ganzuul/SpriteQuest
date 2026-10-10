@@ -1,7 +1,7 @@
-import {OPERATIONS,operationDefaults,describeOperation} from '../workflow/catalog.js?v=0.26.0';
-import {cloneDefinitionData,definitionRefKey} from '../workflow/definition-data.js?v=0.26.0';
-import {inspectDefinitionGraph} from '../workflow/graph-validation.js?v=0.26.0';
-import {freeze} from '../workflow/record-data.js?v=0.26.0';
+import {OPERATIONS,operationDefaults,describeOperation} from '../workflow/catalog.js?v=0.27.0';
+import {cloneDefinitionData,definitionRefKey} from '../workflow/definition-data.js?v=0.27.0';
+import {inspectDefinitionGraph} from '../workflow/graph-validation.js?v=0.27.0';
+import {freeze} from '../workflow/record-data.js?v=0.27.0';
 const fail=(code,message)=>({ok:false,error:{code,message}});
 const pin=(id,kind,direction,required=false,label=id)=>({id,label,kind,direction,required,cardinality:'one'});
 const input=(id,kind='data',required=true,label=id)=>pin(id,kind,'input',required,label),output=(id,kind='data',label=id)=>pin(id,kind,'output',false,label);
@@ -11,7 +11,7 @@ const factories={
  'time-trigger':()=>[input('previous','data',true,'Previous Story Clock'),input('destination','data',true,'Projected Story Clock'),input('consumed','data',false,'Settled occurrence IDs (optional)'),output('occurrences','data','Ordered due events'),output('report','data','Time trigger report')],
  'for-each':controls=>[input('in'),input('state','data',controls.mode==='projected-state'),output('out'),output('state')],
  'scene-presence':()=>[input('in'),output('out')],
- 'character-direction':()=>[input('presence'),output('out','guidance')],
+ 'character-direction':()=>[input('presence'),input('data','data',false),output('out','guidance')],
  'actor-context':()=>[input('presence'),output('out','context')],
  'prompted-memory':()=>[input('presence'),input('event'),output('out')],
  'item-mention-trigger':()=>[input('source'),input('entities'),input('state','data',false),output('out'),output('state')],
@@ -35,7 +35,7 @@ export function iterationHelperChoices(root){
 export function validateConfiguredNodeControls(operation,text,options){
  try{if(typeof text!=='string'||text.length>200000)return fail('INVALID_CONFIGURATION','Controls must be a bounded JSON object.');const raw=JSON.parse(text),checked=cloneDefinitionData(raw),base=OPERATIONS[operation];if(!checked.ok||!base||!raw||Array.isArray(raw)||typeof raw!=='object'||Object.keys(raw).some(key=>!base.controls.includes(key)))return fail('INVALID_CONFIGURATION','Use only declared node controls in the JSON object.');
   const controls=checked.data,node={type:'workflow',...operationDefaults(operation),...controls,phase:options.phase},described=describeOperation({schema:3,runtime:2,mode:'native-unified'},node);if(!described.ok)return fail('INVALID_CONFIGURATION','Complete the required identities and settings using the declared node controls.');
-  if(operation==='read-file'&&!options.targets.some(target=>target.targetId===node.targetId)||['story-clock','commit-outcomes'].includes(operation)&&!options.targets.some(target=>target.targetId===(operation==='story-clock'?node.clockId:node.targetId)&&target.format==='json'))return fail('DOCUMENT_NOT_AUTHORIZED','Select an actual authorized story-document target.');
+  if(operation==='read-file'&&!options.targets.some(target=>target.targetId===node.targetId)||['story-clock','commit-outcomes'].includes(operation)&&!options.targets.some(target=>target.targetId===(operation==='story-clock'?node.clockId:node.targetId)&&target.format==='json'))return fail('DOCUMENT_NOT_AUTHORIZED','Select an actual authorized workflow data target.');
   if(operation==='for-each'&&(!options.helpers.some(helper=>definitionRefKey(helper.ref)===definitionRefKey(node.helper)&&(node.mode!=='projected-state'||helper.stateful))))return fail('INVALID_ITERATION_HELPER','Choose an exact bundled Data helper compatible with the iteration mode.');
   return {ok:true,data:{controls,ports:described.data.ports}};
  }catch{return fail('INVALID_CONFIGURATION','Use valid bounded JSON controls; identities remain logical values.');}

@@ -1,4 +1,4 @@
-import {validateRecallArmProposal,validateRecallScope} from '../workflow/recall-state.js?v=0.26.0';
+import {validateRecallArmProposal,validateRecallScope} from '../workflow/recall-state.js?v=0.27.0';
 const fail=(code,message)=>({ok:false,error:{code,message}});
 const editable=element=>['INPUT','TEXTAREA','SELECT'].includes(element?.tagName)||element?.isContentEditable===true||element?.getAttribute?.('role')==='textbox';
 /** DOM listeners only forward an exact shortcut; native controller rechecks its live scope. */

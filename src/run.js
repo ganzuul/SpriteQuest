@@ -1,15 +1,15 @@
 /** Current Lattice host facade. SillyTavern owns native reply generation. */
-import { ctx, safe, settings } from './state.js?v=0.26.0';
-import { validateWorkflow } from './workflow/contracts.js?v=0.26.0';
-import { createNativeWorkflowController } from './workflow/host.js?v=0.26.0';
-import { bindingStatus } from './workflow/connections.js?v=0.26.0';
-import { createFastRegistry } from './workflow/fast-registry.js?v=0.26.0';
-import { createFastHostBridge } from './workflow/fast-host.js?v=0.26.0';
-import { createChatDocumentCatalog } from './workflow/document-catalog.js?v=0.26.0';
-import { createRecallShortcutRegistry } from './ui/recall-shortcuts.js?v=0.26.0';
-import { createNativePersistenceVerifier } from './workflow/native-persistence.js?v=0.26.0';
-export { runWorkflow, workflowSignature } from './workflow/runtime.js?v=0.26.0';
-export { createNativeWorkflowController, snapshotContext, snapshotReply } from './workflow/host.js?v=0.26.0';
+import { ctx, safe, settings } from './state.js?v=0.27.0';
+import { validateWorkflow } from './workflow/contracts.js?v=0.27.0';
+import { createNativeWorkflowController } from './workflow/host.js?v=0.27.0';
+import { bindingStatus } from './workflow/connections.js?v=0.27.0';
+import { createFastRegistry } from './workflow/fast-registry.js?v=0.27.0';
+import { createFastHostBridge } from './workflow/fast-host.js?v=0.27.0';
+import { createChatDocumentCatalog } from './workflow/document-catalog.js?v=0.27.0';
+import { createRecallShortcutRegistry } from './ui/recall-shortcuts.js?v=0.27.0';
+import { createNativePersistenceVerifier } from './workflow/native-persistence.js?v=0.27.0';
+export { runWorkflow, workflowSignature } from './workflow/runtime.js?v=0.27.0';
+export { createNativeWorkflowController, snapshotContext, snapshotReply } from './workflow/host.js?v=0.27.0';
 
 let controller, helpers, userHelpers, nativeUserReader, initialization, fastRegistry, fastBridge, documentCatalog, persistenceVerifier, recallShortcuts, recallEvents;
 const fastSettingsKey = 'lattice_fast_connections';

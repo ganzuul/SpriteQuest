@@ -1,10 +1,10 @@
-import { own } from './record-data.js?v=0.26.0';
-import { isNativeDraftEvidenceRegistry } from './native-draft-evidence.js?v=0.26.0';
-import { createStagedEffects } from './staged-effects.js?v=0.26.0';
-import { createFileStore, createChatDocumentBackend } from './file-store.js?v=0.26.0';
-import { snapshotDraft, readDraftBody } from './draft-revisions.js?v=0.26.0';
-import { cloneJsonValue } from './operations/json-data.js?v=0.26.0';
-import { validateOccurrences } from './operations/event-data.js?v=0.26.0';
+import { own } from './record-data.js?v=0.27.0';
+import { isNativeDraftEvidenceRegistry } from './native-draft-evidence.js?v=0.27.0';
+import { createStagedEffects } from './staged-effects.js?v=0.27.0';
+import { createFileStore, createChatDocumentBackend } from './file-store.js?v=0.27.0';
+import { snapshotDraft, readDraftBody } from './draft-revisions.js?v=0.27.0';
+import { cloneJsonValue } from './operations/json-data.js?v=0.27.0';
+import { validateOccurrences } from './operations/event-data.js?v=0.27.0';
 const fail=(code,message)=>({ok:false,error:{code,message}});
 function trustedConfig(raw,allowed) {
     try {if(!raw||typeof raw!=='object'||![Object.prototype,null].includes(Object.getPrototypeOf(raw)))return {};const descriptors=Object.getOwnPropertyDescriptors(raw);if(Reflect.ownKeys(raw).some(key=>typeof key!=='string'||!allowed.includes(key)||!descriptors[key].enumerable||!Object.hasOwn(descriptors[key],'value')))return {};return Object.fromEntries(Object.entries(descriptors).map(([key,property])=>[key,property.value]));}catch{return {};}
@@ -82,7 +82,7 @@ export function createNativeFileSession(config) {
     const visibility=targetId=>{
         const doc=definitions.get(targetId);if(!doc)return fail('FILE_NOT_AUTHORIZED','Select a document authorized in this chat.');
         if(doc.visibility.kind==='actor-private'&&doc.visibility.actorId!==config.scope.actorId)return fail('PRIVATE_DESTINATION','Select this actor’s authorized private document.');
-        return current()?good(doc.visibility):fail('STALE_FILE_SCOPE','Story document authorization changed.');
+        return current()?good(doc.visibility):fail('STALE_FILE_SCOPE','Workflow Data authorization changed.');
     };
     return good(Object.freeze({store,visibility,release:()=>store.release(),
         async intentId(node,evidence){const checked=cloneJsonValue(evidence);if(!checked.ok)return checked;const identities=checked.data.value.flatMap(value=>Array.isArray(value?.events)?value.events:[value]).map(value=>value?.eventId).filter(Boolean);const source=(config.getOriginalDraft?.()??config.originalDraft)?.source;if(!source)return fail('NATIVE_SOURCE_REQUIRED','A completed native source is required before staging a write.');const data=canonical([config.scope.userId,config.scope.chatId,config.workflowId,node.id,identities.length?identities:[source.messageIndex,source.swipeId,source.originalText]]);const bytes=new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(data)));return current()?good('native:'+Array.from(bytes,byte=>byte.toString(16).padStart(2,'0')).join('')):fail('STALE_FILE_SCOPE','Document intent scope changed.');},

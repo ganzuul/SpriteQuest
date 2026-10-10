@@ -1,4 +1,4 @@
-import { captureFastBinding, fastBindingSummary, requestFastDecision } from './fast-connections.js?v=0.26.0';
+import { captureFastBinding, fastBindingSummary, requestFastDecision } from './fast-connections.js?v=0.27.0';
 const fail=(code,message)=>({ok:false,error:{code,message}});
 /** Trusted host bridge; public preview DTOs never grant request or review authority. */
 export function createFastHostBridge(registry, { completionBindingStatus } = {}) {

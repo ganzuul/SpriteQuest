@@ -1,9 +1,9 @@
-import { artifactVisibility } from '../artifact-privacy.js?v=0.26.0';
-import { cloneJsonValue } from './json-data.js?v=0.26.0';
-import { decodeJson } from './json-decode.js?v=0.26.0';
-import { formatRecords } from './format-records.js?v=0.26.0';
-import { prepareDocumentMutation } from './document-mutations.js?v=0.26.0';
-import { freeze } from '../record-data.js?v=0.26.0';
+import { artifactVisibility } from '../artifact-privacy.js?v=0.27.0';
+import { cloneJsonValue } from './json-data.js?v=0.27.0';
+import { decodeJson } from './json-decode.js?v=0.27.0';
+import { formatRecords } from './format-records.js?v=0.27.0';
+import { prepareDocumentMutation } from './document-mutations.js?v=0.27.0';
+import { freeze } from '../record-data.js?v=0.27.0';
 
 const references = new WeakMap();
 const fail=(code,message)=>({ok:false,error:{code,message}});

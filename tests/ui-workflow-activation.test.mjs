@@ -2,11 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { installMock } from './mock.js';
-import { starterGraph } from '../src/workflow/starters.js?v=0.26.0';
-import { prepareWorkflowProjection, projectPreparedWorkflow } from '../src/ui/workflow-surface.js?v=0.26.0';
-import { workflowBindingKey, workflowCreationPhase } from '../src/ui/provider-settings.js?v=0.26.0';
+import { starterGraph } from '../src/workflow/starters.js?v=0.27.0';
+import { prepareWorkflowProjection, projectPreparedWorkflow } from '../src/ui/workflow-surface.js?v=0.27.0';
+import { workflowBindingKey, workflowCreationPhase } from '../src/ui/provider-settings.js?v=0.27.0';
 installMock();
-const S = await import('../src/state.js?v=0.26.0');
+const S = await import('../src/state.js?v=0.27.0');
 const source = await readFile(new URL('../src/ui/controller.js', import.meta.url), 'utf8');
 function actual(name, env) {
     const start = source.indexOf('function '+name+'('), end = source.indexOf('\nfunction ', start+1);
