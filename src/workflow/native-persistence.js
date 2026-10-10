@@ -41,7 +41,12 @@ export function createNativePersistenceVerifier(ports){
         try{captured=capture(raw);}catch{return fail('PERSISTENCE_VERIFICATION_UNAVAILABLE','Select bounded story metadata in the active user’s character chat.');}
         let saveAttempted=false;
         const result=(acknowledged,reasonCode)=>({ok:true,data:{appliedLocally:true,saveAttempted,verificationAttempted:verificationAttempted,acknowledged,persistence:acknowledged?'confirmed':'save-unverified',...(reasonCode?{reasonCode}:{})}});let verificationAttempted=false;
-        if(save){const c=methods.getContext();if(typeof c.saveMetadata!=='function')return fail('NATIVE_SAVE_UNAVAILABLE','A native metadata save method is required.');if(!current(captured))return result(false,'STALE_PERSISTENCE_SCOPE');try{saveAttempted=true;await c.saveMetadata();}catch{return result(false,'NATIVE_SAVE_UNVERIFIED');}}
+        if(save){
+            let c,saveMethod;try{c=methods.getContext();saveMethod=c.saveMetadata;}catch{return result(false,'NATIVE_SAVE_UNAVAILABLE');}
+            if(typeof saveMethod!=='function')return fail('NATIVE_SAVE_UNAVAILABLE','A native metadata save method is required.');
+            if(!current(captured))return result(false,'STALE_PERSISTENCE_SCOPE');
+            try{saveAttempted=true;await saveMethod.call(c);}catch{return result(false,'NATIVE_SAVE_UNVERIFIED');}
+        }
         if(signal?.aborted)return result(false,'CANCELLED');if(!current(captured))return result(false,'STALE_PERSISTENCE_SCOPE');
         try{
             const c=methods.getContext();if(typeof c.getRequestHeaders!=='function'||typeof fetchMethod!=='function')return result(false,'PERSISTENCE_VERIFICATION_UNAVAILABLE');
