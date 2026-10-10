@@ -19,6 +19,7 @@ export function graphSemanticSignature(graph) {
         const controls = semanticControlsForNode(node, operation);
         if (node.operation === 'validate-patches') controls.protectedLiterals = node.protectedLiterals === undefined ? [] : node.protectedLiterals;
         return { key, id: node.id, type: node.type, operation: node.operation, operationVersion: node.operationVersion === undefined ? 1 : node.operationVersion, enabled: node.enabled !== false, modelRole: node.modelRole ?? operation?.modelRole ?? null, ...binding(node), controls,
+            ...(node.modifiers === undefined ? {} : { modifiers: node.modifiers }),
             ...(node.operation === 'reroute' ? { artifactKind: node.artifactKind, phase: node.phase } : {}),
             ...(node.type === 'subgraph' ? { definition: node.definition, parameterOverrides: node.parameterOverrides ?? {}, roleOverrides: Object.fromEntries(Object.entries(node.roleOverrides ?? {}).map(([key, value]) => [key, inheritedBinding(value)])), nodeBindingOverrides: Object.fromEntries(Object.entries(node.nodeBindingOverrides ?? {}).map(([key, value]) => [key, inheritedBinding(value)])) } : {}),
             ...(['subgraph-input', 'subgraph-output'].includes(node.type) ? { interfacePortId: node.interfacePortId } : {}),

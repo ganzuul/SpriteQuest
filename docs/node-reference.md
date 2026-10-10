@@ -108,7 +108,7 @@ Fit a Context artifact to a target while retaining protected material. **Select*
 | `pins` | Case-sensitive literal strings whose containing messages stay verbatim | Empty |
 | `maxTokens` | Completion cap for a compression request | 1,024 |
 
-![Smart Compactor details with selection method, context budget, recent-message retention, protected pins, and model settings](images/compactor-details.png)
+![Smart Compactor details with compression method, context budget, recent-message retention, and secondary protection settings](images/compactor-details.png)
 
 **Connect:** Scene Context → Smart Compactor → Response Plan. Missing protected literals or protected material exceeding the target produce an error; they are not silently removed. Compress uses the **Analysis** role by default.
 
@@ -157,7 +157,7 @@ Constraint: {{data:/constraint}}
 Tone: {{data:/tone}}
 ```
 
-![Compose operation controls showing template mode, Guidance output, template placeholders, sections, and separator](images/compose-details.png)
+![Compose controls showing template mode, Guidance output, template placeholders, and section editing](images/compose-details.png)
 
 **Connect:** Select Fields → Compose's Data pin → Guidance. Use `{{{{` to emit a literal `{{`. Missing sections/paths and invalid placeholders fail rather than producing incomplete guidance. These are Compose placeholders, not arbitrary scripting or host macro evaluation.
 

@@ -32,6 +32,14 @@ test('Shift-drag preserves and moves the selected set with real mouse input', as
     const after = await page.evaluate(ids => ({ positions: ids.slice(0, 2).map(id => [window.canvasHarness.graph.nodes[id].x, window.canvasHarness.graph.nodes[id].y]), count: window.canvasHarness.canvas.multi.size }), ids);
     expect(after).toEqual({ positions: before.map(([x, y]) => [x + 40, y + 35]), count: 2 });
 });
+async function sectionsJson(page) {
+    const toggle = page.getByRole('button', { name: 'Edit Sections as JSON', exact: true });
+    const editor = page.getByLabel('Sections', { exact: true });
+    await expect(toggle.or(editor)).toBeVisible();
+    if (await toggle.isVisible()) await toggle.click();
+    await expect(editor).toBeVisible();
+    return editor;
+}
 async function setup(page) {
     await page.goto('/tests/browser/harness.html');
     await page.waitForFunction(() => !!window.canvasHarness);
@@ -73,7 +81,7 @@ test('Ctrl+A selects blocks, Escape clears selection, and shortcuts leave text c
     expect(await page.evaluate(() => window.canvasHarness.canvas.multi.size)).toBe(0);
     await expect(page.locator('.pc-root')).toBeVisible();
     const card = page.locator(`.pc-node[data-id="${ids[0]}"]`); await card.click();
-    const text = page.getByLabel('Sections',{exact:true}); await text.focus();
+    const text = await sectionsJson(page); await text.focus();
     await page.keyboard.press('Control+a'); await page.keyboard.press('Backspace');
     expect(await page.evaluate(id => !!window.canvasHarness.graph.nodes[id], ids[0])).toBe(true);
 });

@@ -64,6 +64,7 @@ function presentNodeCard(node, prepared, { selection, multi = new Set(), trace }
         title: String(prepared.boundary ? prepared.canonicalTitle : node.presentation?.alias || node.title || prepared.canonicalTitle).slice(0, 80),
         titleHint: prepared.canonicalTitle, label: prepared.canonicalTitle, iconPath: prepared.iconPath,
         compact, body: prepared.body, ports: prepared.ports, hostResult: prepared.hostResult === true,
+        ...(prepared.modifierSummary?.count ? {modifierSummary:prepared.modifierSummary} : {}),
         ...(prepared.boundary ? { boundary: { ...prepared.boundary } } : {}),
         enabled: node.enabled !== false,
         offHint: node.enabled === false ? 'Disabled operations block workflow preflight.' : undefined,

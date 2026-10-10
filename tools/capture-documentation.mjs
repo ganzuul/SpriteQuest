@@ -6,16 +6,28 @@ import { join } from 'node:path';
 
 // Real production UI, local mock host, synthetic material, no provider requests.
 const root = fileURLToPath(new URL('../', import.meta.url));
-const base = 'http://127.0.0.1:4186';
+const portText = process.env.LATTICE_DOC_PORT ?? '4186';
+const port = Number(portText);
+if (!/^\d+$/.test(portText) || !Number.isInteger(port) || port < 1 || port > 65535) throw new Error('LATTICE_DOC_PORT must be an integer from 1 to 65535.');
+const base = 'http://127.0.0.1:' + port;
+const shotNames = [
+    'workspace-overview', 'compose-details', 'guidance-preview', 'select-fields-details', 'json-decode-details',
+    'node-shelf', 'node-search', 'workflow-setup', 'text-rules-details', 'text-rules-graph', 'review-candidate',
+    'run-details', 'subgraph-instance', 'subgraph-save', 'subgraph-tab', 'subgraph-interface',
+    'scene-planning-graph', 'compactor-details', 'model-details', 'context-assembly',
+];
+const requestedShots = process.env.LATTICE_DOC_SHOTS === undefined ? null : new Set(process.env.LATTICE_DOC_SHOTS.split(',').map(name => name.trim()));
+if (requestedShots && [...requestedShots].some(name => !shotNames.includes(name))) throw new Error('LATTICE_DOC_SHOTS must list known screenshot names separated by commas.');
+const expectedShots = requestedShots ?? new Set(shotNames);
 const output = join(root, 'docs', 'images');
 const evidence = { status: 'running', screenshots: [], graphChecks: [], runs: [], errors: [], blockedRequests: [] };
 try {
     const response = await fetch(base + '/manifest.json', { signal: AbortSignal.timeout(500) });
-    if (response.ok) throw new Error('Port 4186 is already serving a host. Stop it before capturing this checkout.');
-} catch (error) { if (error.message.startsWith('Port 4186')) throw error; }
+    if (response.ok) throw new Error('Port ' + port + ' is already serving a host. Stop it before capturing this checkout.');
+} catch (error) { if (error.message.startsWith('Port ' + port)) throw error; }
 await mkdir(output, { recursive: true });
 const server = spawn(process.execPath, ['tools/serve-harness.mjs'], {
-    cwd: root, env: { ...process.env, PORT: '4186' }, stdio: 'ignore', windowsHide: true,
+    cwd: root, env: { ...process.env, PORT: String(port) }, stdio: 'ignore', windowsHide: true,
 });
 let browser;
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -135,20 +147,28 @@ try {
     async function select(id) {
         // Selection uses the real canvas controller; this avoids clicking a wire over a card.
         await page.evaluate(async id => { window.canvasHarness.canvas.select({ kind: 'node', id }); await window.canvasHarness.settle(); }, id);
-        await page.locator('.pc-node-details h3').waitFor({ state: 'visible' });
+        await page.getByRole('region', { name: 'Node details', exact: true }).getByLabel('Node name', { exact: true }).waitFor({ state: 'visible' });
     }
     async function subgraphCommand(id, command) {
         await page.locator(`.pc-node-native[data-id="${id}"] .pc-native-heading`).click({ button: 'right' });
         await page.getByRole('menuitem', { name: command, exact: true }).click();
     }
     async function shot(name, selector) {
+        if (!selector && name !== 'node-shelf') await checkConnections(name);
+        if (requestedShots && !requestedShots.has(name)) return;
         if (selector === '.pc-inspector') {
             await page.setViewportSize({ width: 1680, height: 1400 });
+            const height = await page.locator('.pc-inspector').evaluate(panel => {
+                panel.scrollTop = 0;
+                const content = panel.querySelector('.pc-node-details');
+                const bottom = Math.max(...[...content.children].map(element => element.getBoundingClientRect().bottom));
+                return Math.ceil(window.innerHeight - panel.getBoundingClientRect().bottom + bottom + 12);
+            });
+            await page.setViewportSize({ width: 1680, height: Math.max(360, Math.min(1400, height)) });
             await page.locator('.pc-inspector').evaluate(panel => { panel.scrollTop = 0; });
         }
-        await page.mouse.move(1400, 20);
+        if (name !== 'node-shelf') await page.mouse.move(1400, 20);
         await page.evaluate(() => window.canvasHarness.settle());
-        if (!selector) await checkConnections(name);
         const path = join(output, name + '.png');
         if (selector) await page.locator(selector).screenshot({ path, animations: 'disabled' });
         else await page.screenshot({ path, animations: 'disabled' });
@@ -182,10 +202,11 @@ try {
         if (!result.wires || result.failures.length) throw new Error('Screenshot connection layout failed: ' + JSON.stringify(result));
     }
     async function operationControls() {
-        await page.locator('.pc-inspector').evaluate(panel => {
-            const operation = panel.querySelectorAll('.pc-detail-group')[1];
-            panel.scrollTop += operation.getBoundingClientRect().top - panel.getBoundingClientRect().top - 12;
-        });
+        await page.locator('.pc-node-details [data-operation-controls]').scrollIntoViewIfNeeded();
+    }
+    async function openDetailGroup(selector) {
+        const group = page.locator('.pc-node-details ' + selector);
+        if (!await group.evaluate(element => element.open)) await group.locator(':scope > summary').click();
     }
     async function run() {
         await page.locator('.pc-root-run').click();
@@ -213,9 +234,7 @@ try {
     await page.locator('[data-family="Derive"]').hover();
     await page.locator('.pc-family-menu').waitFor({ state: 'visible' });
     // Keep the real canonical node menu open for the screenshot by retaining the hover.
-    await page.screenshot({ path: join(output, 'node-shelf.png'), animations: 'disabled' });
-    evidence.screenshots.push({ name: 'node-shelf' });
-    console.log('Captured node-shelf');
+    await shot('node-shelf');
     await page.mouse.move(1400, 20);
     await page.locator('.pc-header').click({ position: { x: 1100, y: 15 } });
     await page.getByRole('button', { name: 'Node', exact: true }).click();
@@ -228,9 +247,7 @@ try {
     await activate('literal-cleanup');
     await run();
     await select('text-rules');
-    const rulesBox = await page.getByLabel('Rules', { exact: true }).boundingBox();
-    await page.mouse.move(rulesBox.x + rulesBox.width - 3, rulesBox.y + rulesBox.height - 3);
-    await page.mouse.down(); await page.mouse.move(rulesBox.x + rulesBox.width - 3, rulesBox.y + rulesBox.height + 130); await page.mouse.up();
+    await page.getByLabel('Rule 1 pattern', { exact: true }).waitFor({ state: 'visible' });
     await operationControls();
     await shot('text-rules-details', '.pc-inspector');
     await shot('text-rules-graph');
@@ -263,14 +280,18 @@ try {
     await select('smart-compactor');
     await shot('scene-planning-graph');
     await operationControls();
+    await openDetailGroup('[data-control-group="Protections"]');
+    await page.getByLabel('Pinned wording', { exact: true }).waitFor({ state: 'visible' });
     await shot('compactor-details', '.pc-inspector');
     await select('response-plan');
+    await openDetailGroup('[data-model-controls]');
+    await openDetailGroup('[data-control-group="Output"]');
     await page.locator('[data-model-controls]').scrollIntoViewIfNeeded();
     await shot('model-details', '.pc-inspector');
     await activate('branching');
     await select('context-join');
     await shot('context-assembly');
-    if (evidence.screenshots.length !== 20 || evidence.runs.some(run => run.calls !== 0)) throw new Error('Required twenty sanitized screenshots or zero-request demonstrations were omitted.');
+    if (evidence.screenshots.length !== expectedShots.size || evidence.screenshots.some(shot => !expectedShots.has(shot.name)) || evidence.runs.some(run => run.calls !== 0)) throw new Error('Required sanitized screenshots or zero-request demonstrations were omitted.');
     if (evidence.errors.length || evidence.blockedRequests.length) throw new Error(JSON.stringify(evidence));
     evidence.status = 'passed';
     console.log(JSON.stringify({ captured: evidence.screenshots.length, errors: evidence.errors, blockedRequests: evidence.blockedRequests }));

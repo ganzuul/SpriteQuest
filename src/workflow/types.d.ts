@@ -37,6 +37,7 @@ export interface NativeNode extends Binding {
     type: 'workflow' | 'note';
     operation?: string;
     operationVersion?: 1;
+    modifiers?: import('./modifiers').NodeModifier[];
     enabled?: boolean;
     modelRole?: string | null;
     artifactKind?: ArtifactKind;
@@ -163,6 +164,8 @@ export interface CompositionViews { workflowId: string; views: CompositionView[]
 export interface NodeControlChangeCommand { nodeId: string; controls: Record<string, unknown>; removeEdgeIds?: string[]; }
 /** Authoritative values use the operation engines' bounded runtime contracts. */
 export interface TextArtifact { kind: 'text'; text: string; }
+/** Diagnostic-only metadata; runtime Text remains the strict kind/text envelope. */
+export interface RecordedTextArtifact extends TextArtifact { modifiers?: import('./modifiers').TextModifierMetadata; }
 export interface DataArtifact { kind: 'data'; value: import('./operations/json-data').JsonValue; }
 export type ContextArtifact = import('./operations/context-data').RuntimeContext;
 
@@ -225,6 +228,11 @@ export interface Recording {
     terminals: { kind: 'terminal'; address: number; artifact: number | null }[]; artifacts: RecordedArtifact[];
     error?: SafeRunError; metadataOmitted?: boolean;
     retention?: { policy: 'canonical-prefix'; payloadAllowance: number; pendingBytes: number; metadataAllowance: number; pendingMetadataBytes: number };
+}
+export interface RecordedPreviewSection {
+    kind: string; label?: string; format: 'structured-text' | 'json-prefix-text' | 'omitted'; text: string; truncated: boolean;
+    /** Present only for a complete retained Text source; local recomputation is always a stale preview. */
+    recordedRawText?: string; recordedModifierTrace?: readonly import('./modifiers').ModifierTrace[];
 }
 export interface TerminalReviewHandle { handleId: string; runId: string; terminal: TerminalTarget; }
 interface BoundedRunData { runId: string; ok: boolean; callBound: number; actualCalls: number; recording: Recording; error?: WorkflowError; preview?: true; }

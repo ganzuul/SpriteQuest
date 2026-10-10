@@ -1,3 +1,4 @@
+import { setCompact } from './details-helpers.mjs';
 import { test, expect } from '@playwright/test';
 async function activateNative(page, variant = 'standard') {
     await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
@@ -131,15 +132,15 @@ test('native compact aliases preserve identity, real pins and the execution sign
         window.compactProbe = { card: h.canvas.nodeLayer.querySelector(`[data-id="${node.id}"]`), signature: graphSemanticSignature(h.graph), signatureOf: graphSemanticSignature, title: node.title };
         window.compactProbe.port = window.compactProbe.card.querySelector('.pc-port-in'); window.compactProbe.draw = h.canvas.graph; return node.id;
     });
-    const alias = page.getByLabel('Alias', { exact: true }); await expect(alias).toHaveAttribute('maxlength', '80');
+    const alias = page.getByLabel('Node name', { exact: true }); await expect(alias).toHaveAttribute('maxlength', '80');
     await alias.fill('<img src=x onerror=alert(1)> Quiet'); await alias.press('Tab');
     await expect(page.locator(`.pc-node-native[data-id="${id}"] .pc-node-title`)).toHaveText('<img src=x onerror=alert(1)> Quiet');
-    await page.getByLabel('Compact card', { exact: true }).check();
+    await setCompact(page, true);
     const card = page.locator(`.pc-node-native[data-id="${id}"]`); await expect(card).toHaveClass(/pc-node-compact/);
     await expect(card.locator('.pc-native-alias')).toHaveText('<img src=x onerror=alert(1)> Quiet'); await expect(card.locator('img')).toHaveCount(0);
     await expect(page.getByText('Canonical type: Smart Compactor', { exact: true })).toBeVisible();
     expect(await page.evaluate(id => { const h = window.canvasHarness, p = window.compactProbe; return { sameCard: h.canvas.nodeLayer.contains(p.card), samePin: p.card.contains(p.port), signature: p.signatureOf(h.graph) === p.signature, title: h.graph.nodes[id].title === p.title }; }, id)).toEqual({ sameCard: true, samePin: true, signature: true, title: true });
-    await page.getByRole('button', { name: 'Reset alias', exact: true }).click(); await expect(alias).toHaveValue(''); await expect(card.locator('.pc-native-alias')).toHaveText('Smart Compactor');
+    await alias.fill('Smart Compactor'); await alias.press('Tab'); await expect(alias).toHaveValue('Smart Compactor'); await expect(card.locator('.pc-native-alias')).toHaveText('Smart Compactor');
     await card.locator('.pc-native-alias').click(); await page.keyboard.press('F2'); await expect(alias).toBeFocused();
     expect(await page.evaluate(() => window.compactProbe.draw === window.canvasHarness.canvas.graph)).toBe(true);
     await expect(page.locator('.pc-node-native[data-id="scene-context"] .pc-port-in')).toHaveCount(0);

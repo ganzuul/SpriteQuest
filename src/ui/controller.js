@@ -4,7 +4,8 @@ import { workflowSignature } from '../workflow/runtime.js?v=0.26.0';
 import { installStarter } from '../workflow/starters.js?v=0.26.0';
 import { installWorkflowExample } from '../workflow/examples.js?v=0.26.0';
 import { projectWorkflowExamples } from './example-catalog.js?v=0.26.0';
-import { operationFor } from '../workflow/catalog.js?v=0.26.0';
+import { operationFor, portsForNode } from '../workflow/catalog.js?v=0.26.0';
+import { validateNodeModifiers } from '../workflow/modifiers.js?v=0.26.0';
 import { isWorkflowGraph } from '../workflow/contracts.js?v=0.26.0';
 import { parseWorkflowInsertionFile, prepareWorkflowInsertion } from '../workflow/insertion.js?v=0.26.0';
 import { captureGraphEditContext } from '../workflow/transactions.js?v=0.26.0';
@@ -316,9 +317,15 @@ function presentNode(id, key, value) {
     Object.assign(editorDraw.nodes[id].presentation ??= {}, nodePresentation[id]); canvas.render(true); updateWorkflowProjection(); persistGraphViews();
 }
 function focusAlias(node) {
-    if (!operationFor(node)) return;
+    if (!editorDraw?.nativeCards?.[node?.id] || isCommentFrame(node)) return;
     showSettings({ kind: 'node', id: node.id });
-    const input = root.querySelector('[aria-label="Alias"]'); input?.focus(); input?.select();
+    const input = root.querySelector('[aria-label="Node name"]'); input?.focus(); input?.select();
+}
+function compactCardShortcut(event) {
+    if (event.key.toLowerCase() !== 'c' || !event.shiftKey || event.ctrlKey || event.metaKey || event.altKey || event.repeat || typing() || !commentShortcutAvailable()) return false;
+    if (selectedKind !== 'node' || !selected?.id || !canvas?.host?.contains(document.activeElement) || !editorDraw?.nativeCards?.[selected.id] || isCommentFrame(selected)) return false;
+    const node = editorDraw.nodes[selected.id];
+    presentNode(node.id, 'compact', node.presentation?.compact !== true); return true;
 }
 function syncNativeRevision(reason) {
     if (!isWorkflowGraph(current)) return false;
@@ -462,7 +469,8 @@ function build() {
         if (!isOpen() || typing()) return; const mod = event.ctrlKey || event.metaKey, key = event.key.toLowerCase();
         if (event.key === 'Escape') { event.preventDefault(); if (canvas.cancelGesture()) return; if (canvas.selection || canvas.multi.size) { canvas.setMulti([]); canvas.select(null); } else close(); return; }
         if (event.key === 'F2' && selectedKind === 'node') { event.preventDefault(); focusAlias(selected); return; }
-        if (key === 'c' && !mod && !event.altKey && !event.repeat && commentShortcutAvailable()) { event.preventDefault(); addComment(); return; }
+        if (compactCardShortcut(event)) { event.preventDefault(); return; }
+        if (key === 'c' && !event.shiftKey && !mod && !event.altKey && !event.repeat && commentShortcutAvailable()) { event.preventDefault(); addComment(); return; }
         if (mod && !event.altKey) {
             if (key === 'a') { event.preventDefault(); canvas.selectAll(); return; }
             if (key === 'g') { event.preventDefault(); event.shiftKey ? ungroupSelection() : groupSelection(); return; }
@@ -1007,7 +1015,7 @@ function onCanvasMenu({ event, node, wire, at, group = null, several = null }) {
     const presentation = [];
     if (node && !several && !isCommentFrame(node)) {
         const compact = readNodePresentation(node, editor.view.nodePresentation[node.id]).compact;
-        presentation.push(entry('compact', 'Compact card', 'compact', () => presentNode(node.id, 'compact', !compact), false, '', { checked: compact }));
+            presentation.push(entry('compact', 'Compact card', 'compact', () => presentNode(node.id, 'compact', !compact), false, 'Shift C', { checked: compact }));
     }
     if (node || group || several) presentation.push(entry('fit-selection', 'Fit selection', 'fit', () => canvas.fitSelection(), false, '.'));
     section([...organization, ...presentation]);
@@ -1116,7 +1124,7 @@ function focusBoundaryLabel(nodeId) {
     const captured = captureEditor(true); if (!captured.ok) return;
     requestAnimationFrame(() => {
         if (!editorCurrent(captured.data) || canvas.selection?.id !== nodeId) return;
-        const input = workbench.parts.inspector.querySelector('[aria-label="Subgraph port label"]');
+        const input = workbench.parts.inspector.querySelector('[aria-label="Node name"]');
         if (input && !input.disabled) { input.focus({ preventScroll: true }); input.select(); }
     });
 }
@@ -1350,6 +1358,17 @@ const nodeDetailsActions = {
     },
     present(selection, field, value) { const captured = detailCapture(selection, true); if (!captured.ok) return captured; presentNode(selection.address.nodeId,field,value); return { ok: true }; },
     editControl(selection,key,value) { const captured = detailCapture(selection); return captured.ok ? commitCaptured(captured.data,prepareNode(current,{ ...scopeCommand(captured.data),kind:'controls',nodeId:selection.address.nodeId,controls:{[key]:value} })) : captured; },
+    editModifiers(selection,items) {
+        const captured = detailCapture(selection); if (!captured.ok) return captured;
+        return commitCaptured(captured.data, prepareScopeMutation(captured.data, context => {
+            const node = context.scope.nodes[selection.address.nodeId];
+            if (!node) return {ok:false,error:{code:'STALE_CONTEXT',message:'The selected node changed.'}};
+            const checked = validateNodeModifiers({...node,modifiers:items}, portsForNode(context.metadata(),node).filter(port => port.direction === 'output'));
+            if (!checked.ok) return checked;
+            if (checked.data.modifiers.length) node.modifiers = structuredClone(checked.data.modifiers); else delete node.modifiers;
+            return {ok:true,data:{}};
+        }));
+    },
     editField(selection,key,value) { const captured = detailCapture(selection); return captured.ok ? commitCaptured(captured.data,prepareNode(current,{ ...scopeCommand(captured.data),kind:key === 'enabled' ? 'enabled' : 'model-role',nodeId:selection.address.nodeId,...(key === 'enabled' ? {value} : {mode:'set',value}) })) : captured; },
     editBinding(selection,field,mode,value) { const captured = detailCapture(selection); return captured.ok ? commitCaptured(captured.data,prepareNode(current,{ ...scopeCommand(captured.data),kind:'binding',nodeId:selection.address.nodeId,field,consumeOverride:true,mode:mode === 'inherit' ? 'remove' : 'set',...(mode === 'inherit' ? {} : {value:mode==='block'?null:value}) })) : captured; },
     duplicate(selection) { const captured=detailCapture(selection);if(captured.ok)duplicateSelected(editorDraw.nodes[selection.address.nodeId],false); },

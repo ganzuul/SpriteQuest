@@ -269,6 +269,7 @@ for (const key of ['Delete', 'Backspace']) test(`actual ${key} shortcut deletes 
         f.env.typing = controllerFunction('typing', f.env);
         const start = controllerText.indexOf("document.addEventListener('keydown', event => {");
         const end = controllerText.indexOf('\n    });', start);
+        f.env.compactCardShortcut = controllerFunction('compactCardShortcut',f.env);
         const handler = Function('env', 'with(env){return ' + controllerText.slice(start + "document.addEventListener('keydown', ".length, end + 6) + ';}')(f.env);
         real.host.focus(); const event = new window.KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }); handler(event);
         assert.equal(event.defaultPrevented, true); assert.equal(f.root.nodes.source, undefined); assert.equal(f.commits(), 1);

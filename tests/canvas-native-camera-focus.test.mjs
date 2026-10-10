@@ -4,7 +4,7 @@ import { readFile, mkdtemp, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve, relative, isAbsolute } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { compile } from 'svelte/compiler';
+import { compiled } from './helpers/svelte-compile.mjs';
 import { fixture, mouse, dom, version } from './canvas-fixture.mjs';
 
 for (const key of ['Node', 'Element', 'Text', 'Comment', 'Document', 'HTMLMediaElement', 'HTMLButtonElement', 'HTMLInputElement', 'HTMLSelectElement', 'MutationObserver']) Object.defineProperty(globalThis, key, { configurable: true, value: dom.window[key] });
@@ -21,13 +21,7 @@ after(async () => {
     assert.ok(rel && !rel.startsWith('..') && !isAbsolute(rel));
     await rm(target, { recursive: true, force: true });
 });
-const source = await readFile(new URL('../ui/NodeDetails.svelte', import.meta.url), 'utf8');
-const output = compile(source, { filename: 'NodeDetails.svelte', generate: 'client', css: 'injected' });
-assert.deepEqual(output.warnings.filter(warning => warning.code.startsWith('a11y')), []);
-const code = output.js.code.replace(/(['"])(svelte(?:\/[^'"]*)?)\1/g, (_, quote, specifier) => JSON.stringify(specifier === 'svelte' ? clientURL : import.meta.resolve(specifier)));
-const componentPath = join(directory, 'NodeDetails.mjs');
-await writeFile(componentPath, code);
-const Details = (await import(pathToFileURL(componentPath).href)).default;
+const { component: Details } = await compiled('NodeDetails', directory);
 let sequence = 0;
 const keyboard = (target, type, key, code = key) => {
     const event = new dom.window.KeyboardEvent(type, { bubbles: true, cancelable: true, key, code });
@@ -51,14 +45,14 @@ async function cameraFixture() {
     const detailHost = document.createElement('div'); workspace.append(detailHost);
     const edited = () => { counts.edits++; return { ok: true }; };
     const mounted = mount(Details, { target: detailHost, props: { view, actions: { present: edited, editField: edited, editControl: edited, editBinding: edited } } }); flushSync();
-    const editor = detailHost.querySelector('textarea[aria-label="instructions"]'); assert.ok(editor && !editor.disabled);
+    const editor = detailHost.querySelector('textarea[aria-label="Instructions"]'); assert.ok(editor && !editor.disabled);
     const saved = JSON.stringify(root), content = JSON.stringify({ nodes: real.canvas.graph.nodes, wires: real.canvas.graph.wires, groups: real.canvas.graph.groups, updatedAt: real.canvas.graph.updatedAt });
     const baseline = { ...counts }, node = real.host.querySelector('.pc-node-native'); assert.ok(node);
     return { ...real, workspace, detailHost, editor, node, counts,
         assertPreserved() {
             assert.equal(document.activeElement, editor, 'the exact mounted NodeDetails editor must retain focus');
             assert.equal(editor.isConnected, true);
-            assert.equal(detailHost.querySelector('textarea[aria-label="instructions"]'), editor);
+            assert.equal(detailHost.querySelector('textarea[aria-label="Instructions"]'), editor);
             assert.equal(real.host.querySelector('.pc-node-native'), node, 'camera motion must retain the keyed card');
             assert.equal(JSON.stringify(root), saved);
             assert.equal(JSON.stringify({ nodes: real.canvas.graph.nodes, wires: real.canvas.graph.wires, groups: real.canvas.graph.groups, updatedAt: real.canvas.graph.updatedAt }), content);

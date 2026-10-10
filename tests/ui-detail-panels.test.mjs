@@ -4,7 +4,7 @@ import { readFile, mkdtemp, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve, relative, isAbsolute } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { compile } from 'svelte/compiler';
+import { compiled } from './helpers/svelte-compile.mjs';
 import { JSDOM } from 'jsdom';
 import { prepareNodeControlChange } from '../src/workflow/ports.js';
 import { describeOperation } from '../src/workflow/catalog.js';
@@ -15,14 +15,7 @@ for (const key of ['Node', 'Element', 'Text', 'Comment', 'Document', 'HTMLElemen
 const clientURL = new URL('../node_modules/svelte/src/index-client.js', import.meta.url).href;
 const { mount, unmount, flushSync, tick } = await import(clientURL);
 
-async function compiled(name, directory, source) {
-    source ??= await readFile(new URL('../ui/' + name + '.svelte', import.meta.url), 'utf8');
-    const output = compile(source, { filename: name + '.svelte', generate: 'client', css: 'injected' });
-    assert.deepEqual(output.warnings.filter(warning => warning.code.startsWith('a11y')), []);
-    const code = output.js.code.replace(/(['"])(svelte(?:\/[^'"]*)?)\1/g, (_, quote, specifier) => JSON.stringify(specifier === 'svelte' ? clientURL : import.meta.resolve(specifier)));
-    const path = join(directory, name + '.mjs'); await writeFile(path, code);
-    return { path, component: (await import(pathToFileURL(path).href)).default };
-}
+
 async function fixture(name, view, actions, prop = 'view') {
     const directory = await mkdtemp(join(tmpdir(), 'lattice-detail-panels-'));
     const host = document.createElement('div'); document.body.append(host);
@@ -48,20 +41,20 @@ const boundary = extra => node({ title: 'Scene', canonicalTitle: 'Scene', contro
 test('boundary drafts retain label and required across roots while unsupported types use the current interface', async () => {
     const edits = [], f = await fixture('NodeDetails', boundary(), { editInterface: (...args) => { edits.push(args); return success(); } });
     try {
-        input(f.host.querySelector('[aria-label="Subgraph port label"]'), 'Unsaved scene');
+        input(f.host.querySelector('[aria-label="Node name"]'), 'Unsaved scene');
         change(f.host.querySelector('[aria-label="Subgraph port type"]'), 'text');
         const required = f.host.querySelector('[aria-label="Required subgraph port"]'); required.checked = false;
         required.dispatchEvent(new dom.window.Event('change', { bubbles: true })); flushSync();
         f.update(boundary({ address: { ...address, workflowId: 'other-root' } }));
-        assert.equal(f.host.querySelector('[aria-label="Subgraph port label"]').value, 'Scene');
+        assert.equal(f.host.querySelector('[aria-label="Node name"]').value, 'Scene');
         f.update(boundary({ revision: 'revision2' }));
-        assert.equal(f.host.querySelector('[aria-label="Subgraph port label"]').value, 'Unsaved scene');
+        assert.equal(f.host.querySelector('[aria-label="Node name"]').value, 'Unsaved scene');
         assert.equal(f.host.querySelector('[aria-label="Subgraph port type"]').value, 'text');
         assert.equal(f.host.querySelector('[aria-label="Required subgraph port"]').checked, false);
         assert.deepEqual(edits, [], 'restoring boundary fields requires an explicit Save');
         f.update(boundary({ address: { ...address, workflowId: 'other-root' } }));
         f.update(boundary({ revision: 'revision3', boundary: { ...boundary().boundary, kind: 'data', kinds: ['context', 'data'] } }));
-        assert.equal(f.host.querySelector('[aria-label="Subgraph port label"]').value, 'Unsaved scene');
+        assert.equal(f.host.querySelector('[aria-label="Node name"]').value, 'Unsaved scene');
         assert.equal(f.host.querySelector('[aria-label="Subgraph port type"]').value, 'data', 'removed artifact kinds cannot be restored');
         assert.equal(f.host.querySelector('[aria-label="Required subgraph port"]').checked, false);
         f.host.querySelector('[data-save-boundary]').click(); await tick(); flushSync();
@@ -72,17 +65,17 @@ test('boundary drafts retain label and required across roots while unsupported t
 test('changing a boundary capability expires its pending acknowledgment and replacing the port discards its draft', async () => {
     const pending = [], original = boundary(), f = await fixture('NodeDetails', original, { editInterface: () => new Promise(resolve => pending.push(resolve)) });
     try {
-        input(f.host.querySelector('[aria-label="Subgraph port label"]'), 'Pending scene');
+        input(f.host.querySelector('[aria-label="Node name"]'), 'Pending scene');
         change(f.host.querySelector('[aria-label="Subgraph port type"]'), 'text');
         f.host.querySelector('[data-save-boundary]').click(); flushSync();
         f.update(boundary({ revision: 'revision2', boundary: { ...original.boundary, kind: 'data', kinds: ['context', 'data'] } }));
-        assert.equal(f.host.querySelector('[aria-label="Subgraph port label"]').value, 'Pending scene');
+        assert.equal(f.host.querySelector('[aria-label="Node name"]').value, 'Pending scene');
         assert.equal(f.host.querySelector('[aria-label="Subgraph port type"]').value, 'data');
         assert.equal(f.host.querySelector('[data-save-boundary]').disabled, false);
         pending[0](success()); await tick(); flushSync();
-        assert.equal(f.host.querySelector('[aria-label="Subgraph port label"]').value, 'Pending scene', 'the old acknowledgment cannot erase a revalidated draft');
+        assert.equal(f.host.querySelector('[aria-label="Node name"]').value, 'Pending scene', 'the old acknowledgment cannot erase a revalidated draft');
         f.update(boundary({ revision: 'revision3', boundary: { ...original.boundary, id: 'replacement', label: 'Replacement port', direction: 'output' } }));
-        assert.equal(f.host.querySelector('[aria-label="Subgraph port label"]').value, 'Replacement port');
+        assert.equal(f.host.querySelector('[aria-label="Node name"]').value, 'Replacement port');
         assert.equal(f.host.querySelector('[aria-label="Subgraph port type"]').value, 'context');
     } finally { await f.close(); }
 });
@@ -94,7 +87,7 @@ test('boundary details edit the interface port and delete through the ordinary n
         duplicate: () => ordinary.push('duplicate'), remove: () => ordinary.push('remove'), editField: () => ordinary.push('field'),
     });
     try {
-        const label = f.host.querySelector('[aria-label="Subgraph port label"]'); assert.ok(label);
+        const label = f.host.querySelector('[aria-label="Node name"]'); assert.ok(label);
         assert.equal(label.value, 'Scene');
         assert.match(f.host.textContent, /Deleting this node removes its port and attached connections/);
         input(label, 'Story context'); change(f.host.querySelector('[aria-label="Subgraph port type"]'), 'text');
@@ -117,22 +110,22 @@ test('read-only boundary controls reject raw events and interface failures prese
         remove: (...args) => removed.push(args),
     });
     try {
-        const label = f.host.querySelector('[aria-label="Subgraph port label"]'); assert.ok(label); assert.equal(label.disabled, true);
+        const label = f.host.querySelector('[aria-label="Node name"]'); assert.ok(label); assert.equal(label.disabled, true);
         for (const control of f.host.querySelectorAll('[data-boundary-controls] input, [data-boundary-controls] select, [data-boundary-controls] button')) assert.equal(control.disabled, true);
         input(label, 'Forbidden'); change(f.host.querySelector('[aria-label="Subgraph port type"]'), 'text');
         f.host.querySelector('[data-save-boundary]').dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
         const deleteButton = [...f.host.querySelectorAll('button')].find(button => button.textContent === 'Delete'); assert.equal(deleteButton.disabled, true);
         deleteButton.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
         assert.deepEqual(edits, []); assert.deepEqual(removed, []);
-        f.update(boundary()); input(f.host.querySelector('[aria-label="Subgraph port label"]'), 'First draft');
+        f.update(boundary()); input(f.host.querySelector('[aria-label="Node name"]'), 'First draft');
         f.host.querySelector('[data-save-boundary]').click(); flushSync();
-        input(f.host.querySelector('[aria-label="Subgraph port label"]'), 'Newer draft');
+        input(f.host.querySelector('[aria-label="Node name"]'), 'Newer draft');
         pending[0]({ ok: false, error: { code: 'OLD', message: 'Obsolete port error' } }); await tick(); flushSync();
-        assert.doesNotMatch(f.host.textContent, /Obsolete port error/); assert.equal(f.host.querySelector('[aria-label="Subgraph port label"]').value, 'Newer draft');
+        assert.doesNotMatch(f.host.textContent, /Obsolete port error/); assert.equal(f.host.querySelector('[aria-label="Node name"]').value, 'Newer draft');
         f.host.querySelector('[data-save-boundary]').click(); flushSync();
         f.update(boundary({ selectionKey: 'sibling-boundary', revision: 'revision2', address: { ...address, instancePath: ['instance/two'] } }));
         pending[1]({ ok: false, error: { code: 'STALE', message: 'Wrong sibling error' } }); await tick(); flushSync();
-        assert.doesNotMatch(f.host.textContent, /Wrong sibling error/); assert.equal(f.host.querySelector('[aria-label="Subgraph port label"]').value, 'Scene');
+        assert.doesNotMatch(f.host.textContent, /Wrong sibling error/); assert.equal(f.host.querySelector('[aria-label="Node name"]').value, 'Scene');
         assert.deepEqual(edits[1][0], { selectionKey: JSON.stringify(address), revision: 'revision1', address });
     } finally { await f.close(); }
 });
@@ -147,17 +140,17 @@ test('acknowledged boundary saves clear their draft after the synchronous commit
         },
     });
     try {
-        input(f.host.querySelector('[aria-label="Subgraph port label"]'), 'Saved scene');
+        input(f.host.querySelector('[aria-label="Node name"]'), 'Saved scene');
         change(f.host.querySelector('[aria-label="Subgraph port type"]'), 'text');
         const required = f.host.querySelector('[aria-label="Required subgraph port"]'); required.checked = false; required.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
         flushSync(); f.host.querySelector('[data-save-boundary]').click(); await tick(); flushSync();
-        assert.equal(f.host.querySelector('[aria-label="Subgraph port label"]').value, 'Saved scene');
+        assert.equal(f.host.querySelector('[aria-label="Node name"]').value, 'Saved scene');
         f.update({ ...original, revision: 'undo-revision' });
-        assert.equal(f.host.querySelector('[aria-label="Subgraph port label"]').value, 'Scene');
+        assert.equal(f.host.querySelector('[aria-label="Node name"]').value, 'Scene');
         assert.equal(f.host.querySelector('[aria-label="Subgraph port type"]').value, 'context');
         assert.equal(f.host.querySelector('[aria-label="Required subgraph port"]').checked, true);
         f.update(boundary({ revision: 'manager-revision', boundary: { ...original.boundary, label: 'Manager label', kind: 'data', required: false } }));
-        assert.equal(f.host.querySelector('[aria-label="Subgraph port label"]').value, 'Manager label');
+        assert.equal(f.host.querySelector('[aria-label="Node name"]').value, 'Manager label');
         assert.equal(f.host.querySelector('[aria-label="Subgraph port type"]').value, 'data');
         assert.equal(f.host.querySelector('[aria-label="Required subgraph port"]').checked, false);
     } finally { await f.close(); }
@@ -172,19 +165,19 @@ test('boundary revision changes preserve truly unsaved fields and delayed save a
         },
     });
     try {
-        input(f.host.querySelector('[aria-label="Subgraph port label"]'), 'Unsaved scene');
+        input(f.host.querySelector('[aria-label="Node name"]'), 'Unsaved scene');
         change(f.host.querySelector('[aria-label="Subgraph port type"]'), 'text');
         const required = f.host.querySelector('[aria-label="Required subgraph port"]'); required.checked = false; required.dispatchEvent(new dom.window.Event('change', { bubbles: true })); flushSync();
         f.update({ ...original, revision: 'unrelated-revision' });
-        assert.equal(f.host.querySelector('[aria-label="Subgraph port label"]').value, 'Unsaved scene');
+        assert.equal(f.host.querySelector('[aria-label="Node name"]').value, 'Unsaved scene');
         assert.equal(f.host.querySelector('[aria-label="Subgraph port type"]').value, 'text');
         assert.equal(f.host.querySelector('[aria-label="Required subgraph port"]').checked, false);
         f.host.querySelector('[data-save-boundary]').click(); flushSync();
-        input(f.host.querySelector('[aria-label="Subgraph port label"]'), 'Newer scene');
+        input(f.host.querySelector('[aria-label="Node name"]'), 'Newer scene');
         change(f.host.querySelector('[aria-label="Subgraph port type"]'), 'data');
         pending[0](success()); await tick(); flushSync();
         f.update({ ...original, revision: 'undo-revision' });
-        assert.equal(f.host.querySelector('[aria-label="Subgraph port label"]').value, 'Newer scene');
+        assert.equal(f.host.querySelector('[aria-label="Node name"]').value, 'Newer scene');
         assert.equal(f.host.querySelector('[aria-label="Subgraph port type"]').value, 'data');
         assert.equal(f.host.querySelector('[aria-label="Required subgraph port"]').checked, false);
     } finally { await f.close(); }
@@ -208,14 +201,14 @@ test('selected deterministic details keep canonical identity and guard readonly 
     const calls = [];
     const f = await fixture('NodeDetails', node({ readOnly: true }), { present: (...args) => { calls.push(['present', ...args]); return success(); }, editControl: (...args) => { calls.push(['control', ...args]); return success(); }, editField: (...args) => { calls.push(['field', ...args]); return success(); } });
     try {
-        assert.match(f.host.textContent, /Canonical type: Compose/); assert.match(f.host.textContent, /My wording/);
+        assert.match(f.host.textContent, /Compose/); assert.equal(f.host.querySelector('[aria-label="Node name"]').value, 'My wording');
         assert.equal(f.host.querySelector('[data-model-controls]'), null);
         assert.equal(f.host.querySelector('[aria-label="Sections"]').disabled, true);
-        change(f.host.querySelector('[aria-label="Alias"]'), 'Alias two');
+        change(f.host.querySelector('[aria-label="Node name"]'), 'Alias two');
         assert.equal(calls.length, 1); assert.deepEqual(calls[0], ['present', { selectionKey: JSON.stringify(address), revision: 'revision1', address }, 'alias', 'Alias two']);
         input(f.host.querySelector('[aria-label="Sections"]'), '[]'); f.host.querySelector('[data-save-control="sections"]').click();
         assert.equal(calls.length, 1, 'raw events cannot bypass readonly semantic guard');
-        f.update(node({ readOnly: true, canPresent: false })); change(f.host.querySelector('[aria-label="Alias"]'), 'blocked');
+        f.update(node({ readOnly: true, canPresent: false })); change(f.host.querySelector('[aria-label="Node name"]'), 'blocked');
         assert.equal(calls.length, 1, 'presentation permission has its own guard');
     } finally { await f.close(); }
 });
@@ -379,5 +372,379 @@ test('reject addresses the explicitly selected terminal rather than an unrelated
         const button = () => [...f.host.querySelectorAll('button')].find(button => button.textContent === 'Reject candidate');
         assert.equal(button().disabled, true); button().click(); assert.equal(rejected.length, 0);
         f.update(preview({ selectedKey: 'applyA', status: 'stale' })); assert.equal(button().disabled, false); button().click(); assert.deepEqual(rejected, [selector('applyA')]);
+    } finally { await f.close(); }
+});
+
+
+test('the identity editor clears a canonical alias and disabled nodes expose Blocks run without inspector presentation switches', async () => {
+    const calls = [], f = await fixture('NodeDetails', node({ enabled: false, familyColor: 'var(--pc-family-shaping)' }), { present: (...args) => { calls.push(args); return success(); }, duplicate() {}, remove() {} });
+    try {
+        const name = f.host.querySelector('header [aria-label="Node name"]');
+        assert.ok(name, 'the editable identity belongs to the header');
+        assert.equal(name.value, 'My wording');
+        assert.match(f.host.textContent, /Blocks run/);
+        assert.equal(f.host.querySelector('[aria-label="Compact card"], [aria-label="Enabled"]'), null);
+        assert.equal(f.host.querySelector('footer'), null);
+        assert.equal([...f.host.querySelectorAll('legend')].some(legend => legend.textContent === 'Presentation'), false);
+        change(name, 'Compose'); await tick(); flushSync();
+        assert.deepEqual(calls, [[{ selectionKey: JSON.stringify(address), revision: 'revision1', address }, 'alias', '']]);
+        f.update(node({ alias: '', title: 'Compose' }));
+        assert.equal(f.host.querySelector('[aria-label="Node name"]').value, 'Compose');
+        assert.equal(f.host.querySelector('[data-canonical-title]'), null, 'canonical names are not duplicated');
+    } finally { await f.close(); }
+});
+
+test('primary controls precede collapsed purpose groups, and only changed provenance is shown', async () => {
+    const f = await fixture('NodeDetails', node({ controls: [
+        { key: 'instructions', label: 'Instructions', editor: 'text', value: 'Write clearly', group: 'Main', effective: 'Write clearly', source: 'Saved setting' },
+        { key: 'count', label: 'Count', editor: 'number', value: 2, min: 0, max: 10, group: 'Limits', effective: '3', source: 'Effective instance override' },
+        { key: 'style', label: 'Style', editor: 'enum', value: 'plain', options: [{ value: 'plain', label: 'Plain' }, { value: 'formal', label: 'Formal' }], group: 'Advanced', advanced: true, exposureNote: 'Inherited from enclosing instance' },
+    ] }), { editControl: success });
+    try {
+        assert.equal(f.host.querySelector('[aria-label="Instructions"]').closest('details'), null);
+        const limits = f.host.querySelector('[aria-label="Count"]').closest('details');
+        assert.ok(limits); assert.equal(limits.open, false); assert.match(limits.querySelector('summary').textContent, /Limits/);
+        assert.equal(f.host.querySelector('[aria-label="Instructions"]').compareDocumentPosition(limits) & dom.window.Node.DOCUMENT_POSITION_FOLLOWING, dom.window.Node.DOCUMENT_POSITION_FOLLOWING);
+        assert.doesNotMatch(f.host.textContent, /Effective: Write clearly|Saved setting/);
+        assert.match(f.host.textContent, /Effective: 3/);
+        assert.match(f.host.textContent, /Inherited from enclosing instance/);
+    } finally { await f.close(); }
+});
+
+test('model summary starts collapsed and validation issues open it while binding modes remain staged', async () => {
+    const inherit = { value: 'inherit', label: 'Inherit role' }, override = { value: 'override', label: 'Override' };
+    const model = { role: 'Analysis', roleEditable: true, effective: 'Reasoner · saved-model', source: 'Containing role', profile: { mode: 'inherit', allowedModes: [inherit, override], value: null }, model: { mode: 'inherit', allowedModes: [inherit, override], value: null } };
+    const edits = [], f = await fixture('NodeDetails', node({ model }), { editBinding: (...args) => { edits.push(args); return success(); } });
+    try {
+        const group = f.host.querySelector('[data-model-controls]');
+        assert.equal(group.tagName, 'DETAILS'); assert.equal(group.open, false);
+        assert.match(group.querySelector('summary').textContent, /Analysis.*Inherit.*Reasoner/);
+        change(f.host.querySelector('[aria-label="Model mode"]'), 'override');
+        assert.equal(edits.length, 0); assert.equal(group.open, true, 'staged override editors are visible');
+        f.update(node({ revision: 'issue', model: { ...model, issue: 'Choose a connection to run.' } }));
+        assert.equal(group.open, true); assert.match(group.textContent, /Choose a connection to run/);
+    } finally { await f.close(); }
+});
+
+
+const modifierOptions = [
+    { type: 'trim', label: 'Trim', defaultSettings: Object.freeze({ edges: 'both' }), fields: [{ key: 'edges', label: 'Edges', value: 'both', editor: 'enum', options: [{ value: 'both', label: 'Both' }, { value: 'start', label: 'Start' }, { value: 'end', label: 'End' }] }] },
+    { type: 'wrap', label: 'Wrap', defaultSettings: Object.freeze({ prefix: '', suffix: '' }), fields: [{ key: 'prefix', label: 'Prefix', editor: 'text', value: '' }, { key: 'suffix', label: 'Suffix', editor: 'text', value: '' }] },
+    { type: 'replace', label: 'Replace', defaultSettings: Object.freeze({ pattern: 'text', replacement: '', caseSensitive: true, occurrence: 'all' }), fields: [{ key: 'pattern', label: 'Find', editor: 'text', value: 'text' }, { key: 'replacement', label: 'Replace with', editor: 'text', value: '' }] },
+];
+const modifier = (id, type, settings, enabled = true) => ({ id, type, version: 1, enabled, settings });
+const modifierView = (items = [], extra = {}) => node({ modifiers: { items, options: modifierOptions, editable: true, outputPortId: 'out' }, ...extra });
+const toggle = (element, value) => { element.checked = value; element.dispatchEvent(new dom.window.Event('change', { bubbles: true })); flushSync(); };
+
+test('eligible text modifiers quick toggles add immutable defaults and retain disabled entries', async () => {
+    const edits = []; let revision = 1, current = modifierView();
+    const f = await fixture('NodeDetails', current, { editModifiers: (captured, items) => { edits.push([captured, items]); current = modifierView(structuredClone(items), { revision: 'saved-' + ++revision }); f.update(current); return success(); } });
+    try {
+        assert.ok(f.host.querySelector('[data-modifier-controls]'));
+        toggle(f.host.querySelector('[aria-label="Trim output"]'), true); await tick(); flushSync();
+        assert.equal(edits.length, 1); const first = edits[0][1][0];
+        assert.match(first.id, /^[A-Za-z0-9_-]{1,64}$/);
+        assert.deepEqual({ ...first, id: 'checked' }, { id: 'checked', type: 'trim', version: 1, enabled: true, settings: { edges: 'both' } });
+        assert.notEqual(first.settings, modifierOptions[0].defaultSettings);
+        toggle(f.host.querySelector('[aria-label="Trim output"]'), false); await tick(); flushSync();
+        assert.equal(current.modifiers.items.length, 1); assert.equal(current.modifiers.items[0].id, first.id); assert.equal(current.modifiers.items[0].enabled, false);
+        assert.match(f.host.textContent, /Disabled/);
+        toggle(f.host.querySelector('[aria-label="Wrap output"]'), true); await tick(); flushSync();
+        assert.equal(current.modifiers.items.length, 2); assert.notEqual(current.modifiers.items[0].id, current.modifiers.items[1].id);
+        assert.deepEqual(modifierOptions[1].defaultSettings, { prefix: '', suffix: '' });
+        f.update(node()); assert.equal(f.host.querySelector('[data-modifier-controls]'), null, 'unsupported outputs have no modifier tray');
+    } finally { await f.close(); }
+});
+
+test('modifier order, enabled and removal actions submit the complete ordered stack', async () => {
+    const edits = [], initial = [modifier('trim-a', 'trim', { edges: 'start' }), modifier('wrap-a', 'wrap', { prefix: '<', suffix: '>' })];
+    let current = modifierView(initial), revision = 1;
+    const f = await fixture('NodeDetails', current, { editModifiers: (captured, items) => { edits.push(items); current = modifierView(structuredClone(items), { revision: 'saved-' + ++revision }); f.update(current); return success(); } });
+    try {
+        assert.equal(f.host.querySelector('[aria-label="Move Trim up"]').disabled, true);
+        f.host.querySelector('[aria-label="Move Wrap up"]').click(); await tick(); flushSync();
+        assert.deepEqual(edits[0].map(item => item.id), ['wrap-a', 'trim-a']);
+        assert.deepEqual(edits[0][0].settings, { prefix: '<', suffix: '>' });
+        toggle(f.host.querySelector('[aria-label="Enable Wrap modifier"]'), false); await tick(); flushSync();
+        assert.equal(edits[1][0].enabled, false); assert.equal(edits[1][0].id, 'wrap-a');
+        f.host.querySelector('[aria-label="Remove Wrap modifier"]').click(); await tick(); flushSync();
+        assert.deepEqual(edits[2], [initial[0]]);
+        change(f.host.querySelector('[aria-label="Add text modifier"]'), 'replace'); await tick(); flushSync();
+        assert.deepEqual(edits[3].map(item => item.type), ['trim', 'replace']);
+        assert.deepEqual(edits[3][1].settings, { pattern: 'text', replacement: '', caseSensitive: true, occurrence: 'all' });
+    } finally { await f.close(); }
+});
+
+test('modifier settings stage both fields for explicit validation, then acknowledged revisions let undo restore values', async () => {
+    const edits = [], original = [modifier('wrap-a', 'wrap', { prefix: '<', suffix: '>' })]; let revision = 1;
+    const f = await fixture('NodeDetails', modifierView(original), { editModifiers: (captured, items) => { edits.push(items); f.update(modifierView(structuredClone(items), { revision: 'saved-' + ++revision })); return success(); } });
+    try {
+        input(f.host.querySelector('[aria-label="Wrap Prefix"]'), '['); input(f.host.querySelector('[aria-label="Wrap Suffix"]'), ']');
+        assert.equal(edits.length, 0); assert.deepEqual(original[0].settings, { prefix: '<', suffix: '>' });
+        f.host.querySelector('[aria-label="Save Wrap settings"]').click(); await tick(); flushSync();
+        assert.deepEqual(edits, [[modifier('wrap-a', 'wrap', { prefix: '[', suffix: ']' })]]);
+        f.update(modifierView(original, { revision: 'undo' }));
+        assert.equal(f.host.querySelector('[aria-label="Wrap Prefix"]').value, '<'); assert.equal(f.host.querySelector('[aria-label="Wrap Suffix"]').value, '>');
+    } finally { await f.close(); }
+});
+
+test('modifier validation errors and drafts survive unrelated revisions and qualified navigation', async () => {
+    const pending = [], items = [modifier('wrap-a', 'wrap', { prefix: '<', suffix: '>' })];
+    const f = await fixture('NodeDetails', modifierView(items), { editModifiers: () => new Promise(resolve => pending.push(resolve)) });
+    try {
+        input(f.host.querySelector('[aria-label="Wrap Prefix"]'), 'Unsaved'); f.host.querySelector('[aria-label="Save Wrap settings"]').click();
+        pending[0]({ ok: false, error: { code: 'INVALID', message: 'Rejected complete stack' } }); await tick(); flushSync();
+        assert.match(f.host.textContent, /Rejected complete stack/);
+        f.update(modifierView(items, { revision: 'unrelated' })); assert.equal(f.host.querySelector('[aria-label="Wrap Prefix"]').value, 'Unsaved'); assert.match(f.host.textContent, /Rejected complete stack/);
+        f.update(modifierView(items, { address: { ...address, workflowId: 'other-root' } })); assert.equal(f.host.querySelector('[aria-label="Wrap Prefix"]').value, '<');
+        f.update(modifierView(items, { revision: 'return' })); assert.equal(f.host.querySelector('[aria-label="Wrap Prefix"]').value, 'Unsaved'); assert.match(f.host.textContent, /Rejected complete stack/);
+        f.host.querySelector('[aria-label="Save Wrap settings"]').click(); input(f.host.querySelector('[aria-label="Wrap Prefix"]'), 'Newer');
+        pending[1](success()); await tick(); flushSync();
+        assert.equal(f.host.querySelector('[aria-label="Wrap Prefix"]').value, 'Newer');
+    } finally { await f.close(); }
+});
+
+test('modifier semantic permissions reject raw events and the bounded tray cannot append a seventeenth entry', async () => {
+    const edits = [], items = [modifier('wrap-a', 'wrap', { prefix: '<', suffix: '>' })];
+    const f = await fixture('NodeDetails', modifierView(items, { readOnly: true }), { editModifiers: (...args) => { edits.push(args); return success(); } });
+    try {
+        for (const control of f.host.querySelectorAll('[data-modifier-controls] input, [data-modifier-controls] select, [data-modifier-controls] textarea, [data-modifier-controls] button')) assert.equal(control.disabled, true);
+        toggle(f.host.querySelector('[aria-label="Trim output"]'), true); input(f.host.querySelector('[aria-label="Wrap Prefix"]'), 'Forbidden');
+        f.host.querySelector('[aria-label="Save Wrap settings"]').dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
+        f.host.querySelector('[aria-label="Remove Wrap modifier"]').dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
+        assert.deepEqual(edits, []);
+        f.update(modifierView(items, { modifiers: { items, options: modifierOptions, editable: false, outputPortId: 'out' } })); toggle(f.host.querySelector('[aria-label="Trim output"]'), true); assert.deepEqual(edits, []);
+        const full = Array.from({ length: 16 }, (_, index) => modifier('trim-' + index, 'trim', { edges: 'both' }));
+        f.update(modifierView(full)); assert.equal(f.host.querySelector('[aria-label="Add text modifier"]').disabled, true); assert.equal(f.host.querySelector('[aria-label="Wrap output"]').disabled, true);
+        change(f.host.querySelector('[aria-label="Add text modifier"]'), 'replace'); toggle(f.host.querySelector('[aria-label="Wrap output"]'), true); assert.deepEqual(edits, []);
+    } finally { await f.close(); }
+});
+
+test('short choices are keyboard native segmented radios while longer enums retain a dropdown', async () => {
+    const edits = [], controls = [
+        { key: 'style', label: 'Style', editor: 'enum', value: 'plain', options: [{ value: 'plain', label: 'Plain' }, { value: 'formal', label: 'Formal' }] },
+        { key: 'source', label: 'Source', editor: 'enum', value: 'one', options: [{ value: 'one', label: 'Selected system prompt' }, { value: 'two', label: 'Selected prompt entry' }] },
+    ];
+    const f = await fixture('NodeDetails', node({ controls }), { editControl: (...args) => { edits.push(args); return success(); } });
+    try {
+        const group = f.host.querySelector('[role="radiogroup"][aria-label="Style"]'); assert.ok(group);
+        const chosen = group.querySelector('input[value="formal"]'); chosen.checked = true; chosen.dispatchEvent(new dom.window.Event('change', { bubbles: true })); await tick(); flushSync();
+        assert.equal(edits[0][1], 'style'); assert.equal(edits[0][2], 'formal');
+        assert.equal(f.host.querySelector('[aria-label="Source"]').tagName, 'SELECT');
+        f.update(node({ controls, readOnly: true }));
+        const blocked = f.host.querySelector('[role="radiogroup"] input[value="plain"]'); assert.equal(blocked.disabled, true); blocked.checked = true; blocked.dispatchEvent(new dom.window.Event('change', { bubbles: true })); await tick(); flushSync();
+        assert.equal(edits.length, 1);
+    } finally { await f.close(); }
+});
+
+test('structured row and raw views share parent Save validation and keep invalid text through revisions', async () => {
+    const values = [], controls = [{ key: 'sections', label: 'Sections', editor: 'json', representation: 'json-value', structured: 'sections', value: [{ name: 'intro', text: 'Hello' }] }];
+    const f = await fixture('NodeDetails', node({ controls }), { editControl: (captured, key, value) => { values.push(value); return success(); } });
+    try {
+        input(f.host.querySelector('[aria-label="Section 1 text"]'), 'New text'); assert.equal(values.length, 0);
+        f.host.querySelector('[data-save-control="sections"]').click(); await tick(); flushSync(); assert.deepEqual(values, [[{ name: 'intro', text: 'New text' }]]);
+        f.host.querySelector('[aria-label="Edit Sections as JSON"]').click(); flushSync();
+        input(f.host.querySelector('[aria-label="Sections"]'), '{unfinished'); f.host.querySelector('[data-save-control="sections"]').click(); flushSync();
+        assert.equal(values.length, 1); assert.equal(f.host.querySelector('[aria-label="Sections"]').getAttribute('aria-invalid'), 'true'); assert.match(f.host.querySelector('[role="alert"]').textContent, /valid JSON/);
+        f.update(node({ controls, revision: 'unrelated' })); assert.equal(f.host.querySelector('[aria-label="Sections"]').value, '{unfinished'); assert.equal(f.host.querySelector('[aria-label="Sections"]').getAttribute('aria-invalid'), 'true');
+        f.update(node({ controls, revision: 'read-only', readOnly: true })); input(f.host.querySelector('[aria-label="Sections"]'), '[]'); f.host.querySelector('[data-save-control="sections"]').dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true })); assert.equal(values.length, 1);
+    } finally { await f.close(); }
+});
+
+test('a delayed modifier settings acknowledgment clears its saved draft after reorder so Undo restores saved values', async () => {
+    const initial = [modifier('trim-a', 'trim', { edges: 'both' }), modifier('wrap-a', 'wrap', { prefix: '<', suffix: '>' })];
+    const pending = [], edits = []; let revision = 1;
+    const f = await fixture('NodeDetails', modifierView(initial), { editModifiers: (captured, items) => {
+        edits.push({ captured, items: structuredClone(items) });
+        f.update(modifierView(structuredClone(items), { revision: 'saved-' + ++revision }));
+        return edits.length === 1 ? new Promise(resolve => pending.push(resolve)) : success();
+    } });
+    try {
+        input(f.host.querySelector('[aria-label="Wrap Prefix"]'), '[');
+        f.host.querySelector('[aria-label="Save Wrap settings"]').click(); flushSync();
+        assert.equal(edits.length, 1); assert.equal(edits[0].items[1].settings.prefix, '[');
+        f.host.querySelector('[aria-label="Move Wrap up"]').click(); await tick(); flushSync();
+        assert.deepEqual(edits[1].items.map(item => item.id), ['wrap-a', 'trim-a']);
+        assert.match(f.host.textContent, /Unsaved/, 'the pending acknowledgment still owns the submitted draft');
+        pending[0](success()); await tick(); flushSync();
+        assert.doesNotMatch(f.host.textContent, /Unsaved/, 'reordering the same entries does not invalidate a saved settings acknowledgment');
+        f.update(modifierView(initial, { revision: 'undo-settings' }));
+        assert.equal(f.host.querySelector('[aria-label="Wrap Prefix"]').value, '<', 'the acknowledged draft must not hide Undo');
+    } finally { await f.close(); }
+});
+
+for (const changeWhilePending of ['newer-draft', 'remove-readd', 'qualified-return']) {
+    test(`an obsolete modifier settings acknowledgment preserves ${changeWhilePending} after reorder`, async () => {
+        const initial = [modifier('trim-a', 'trim', { edges: 'both' }), modifier('wrap-a', 'wrap', { prefix: '<', suffix: '>' })];
+        const pending = []; let edits = 0, revision = 1, saved;
+        const f = await fixture('NodeDetails', modifierView(initial), { editModifiers: (captured, items) => {
+            saved = structuredClone(items);
+            f.update(modifierView(saved, { revision: 'saved-' + ++revision }));
+            return ++edits === 1 ? new Promise(resolve => pending.push(resolve)) : success();
+        } });
+        try {
+            input(f.host.querySelector('[aria-label="Wrap Prefix"]'), '['); f.host.querySelector('[aria-label="Save Wrap settings"]').click(); flushSync();
+            f.host.querySelector('[aria-label="Move Wrap up"]').click(); await tick(); flushSync();
+            if (changeWhilePending === 'newer-draft') input(f.host.querySelector('[aria-label="Wrap Prefix"]'), 'Newer');
+            else if (changeWhilePending === 'remove-readd') {
+                f.host.querySelector('[aria-label="Remove Wrap modifier"]').click(); await tick(); flushSync();
+                assert.equal(f.host.querySelector('[aria-label="Wrap Prefix"]'), null);
+                f.update(modifierView(initial, { revision: 'restore-entry' }));
+                input(f.host.querySelector('[aria-label="Wrap Prefix"]'), 'Replacement draft');
+            } else {
+                f.update(modifierView(saved, { revision: 'sibling', address: { ...address, instancePath: ['instance/two'] } }));
+                f.update(modifierView(saved, { revision: 'return' }));
+            }
+            const expected = changeWhilePending === 'newer-draft' ? 'Newer' : changeWhilePending === 'remove-readd' ? 'Replacement draft' : '[';
+            pending[0](success()); await tick(); flushSync();
+            assert.equal(f.host.querySelector('[aria-label="Wrap Prefix"]').value, expected);
+            assert.match(f.host.textContent, /Unsaved/, 'an older acknowledgment cannot erase a draft from a newer generation or node visit');
+            f.update(modifierView(initial, { revision: 'undo-settings' }));
+            assert.equal(f.host.querySelector('[aria-label="Wrap Prefix"]').value, expected);
+        } finally { await f.close(); }
+    });
+}
+
+
+for (const editor of ['json', 'lines']) {
+    test(`an acknowledged ${editor} control Save clears its draft after synchronous revision publication so Undo is visible`, async () => {
+        const control = { key: 'words', label: 'Words', editor, value: ['Before'], ...(editor === 'json' ? { representation: 'json-value' } : {}) };
+        const original = node({ controls: [control] }), edits = [];
+        const f = await fixture('NodeDetails', original, { editControl: (captured, key, value) => {
+            edits.push({ captured, key, value });
+            f.update(node({ revision: 'saved-control', controls: [{ ...control, value }] }));
+            return success();
+        } });
+        try {
+            input(f.host.querySelector('[aria-label="Words"]'), editor === 'json' ? '["After"]' : 'After');
+            f.host.querySelector('[data-save-control="words"]').click(); await tick(); flushSync();
+            assert.deepEqual(edits[0].value, ['After']);
+            f.update({ ...original, revision: 'undo-control' });
+            assert.equal(f.host.querySelector('[aria-label="Words"]').value, editor === 'json' ? '[\n  "Before"\n]' : 'Before', 'an accepted draft cannot keep masking the restored saved value');
+        } finally { await f.close(); }
+    });
+}
+
+test('an acknowledged model override clears its draft after synchronous revision publication so Undo restores the binding', async () => {
+    const allowedModes = [{ value: 'inherit', label: 'Inherit role' }, { value: 'override', label: 'Override' }];
+    const model = { role: 'Analysis', roleEditable: true, effective: 'Connection · Before', source: 'Node override', profile: { mode: 'inherit', allowedModes, value: null }, model: { mode: 'override', allowedModes, value: 'Before' } };
+    const original = node({ controls: [], model });
+    const f = await fixture('NodeDetails', original, { editBinding: (captured, field, mode, value) => {
+        assert.equal(field, 'model'); assert.equal(mode, 'override'); assert.equal(value, 'After');
+        f.update(node({ revision: 'saved-binding', controls: [], model: { ...model, effective: 'Connection · After', model: { ...model.model, value } } }));
+        return success();
+    } });
+    try {
+        input(f.host.querySelector('[aria-label="Model identifier"]'), 'After'); change(f.host.querySelector('[aria-label="Model identifier"]'), 'After'); await tick(); flushSync();
+        f.update({ ...original, revision: 'undo-binding' });
+        assert.equal(f.host.querySelector('[aria-label="Model identifier"]').value, 'Before');
+    } finally { await f.close(); }
+});
+
+for (const changeWhilePending of ['newer-draft', 'qualified-return', 'editor-contract', 'newer-save']) {
+    test(`a delayed control acknowledgment preserves ${changeWhilePending} after publishing its saved revision`, async () => {
+        const control = { key: 'words', label: 'Words', editor: 'json', representation: 'json-value', value: ['Before'] };
+        const pending = []; let revision = 1, saved;
+        const f = await fixture('NodeDetails', node({ controls: [control] }), { editControl: (captured, key, value) => {
+            if (!pending.length) {
+                saved = node({ revision: 'saved-' + ++revision, controls: [{ ...control, value }] });
+                f.update(saved);
+            }
+            return new Promise(resolve => pending.push(resolve));
+        } });
+        try {
+            input(f.host.querySelector('[aria-label="Words"]'), '["After"]'); f.host.querySelector('[data-save-control="words"]').click(); flushSync();
+            if (changeWhilePending === 'newer-draft') input(f.host.querySelector('[aria-label="Words"]'), '["Newer"]');
+            else if (changeWhilePending === 'qualified-return') {
+                f.update({ ...saved, address: { ...address, instancePath: ['instance/two'] } });
+                f.update(saved);
+            } else if (changeWhilePending === 'editor-contract') {
+                f.update(node({ revision: 'lines-contract', controls: [{ key: 'words', label: 'Words', editor: 'lines', value: ['Replacement'] }] }));
+                input(f.host.querySelector('[aria-label="Words"]'), 'Replacement draft');
+            } else {
+                f.host.querySelector('[data-save-control="words"]').click(); flushSync();
+                assert.equal(pending.length, 2);
+            }
+            pending[0](success()); await tick(); flushSync();
+            const expected = changeWhilePending === 'newer-draft' ? '["Newer"]' : changeWhilePending === 'editor-contract' ? 'Replacement draft' : '["After"]';
+            assert.equal(f.host.querySelector('[aria-label="Words"]').value, expected);
+            if (changeWhilePending === 'newer-save') {
+                pending[1]({ ok: false, error: { code: 'LATEST', message: 'Latest validation failure' } }); await tick(); flushSync();
+                assert.match(f.host.textContent, /Latest validation failure/); assert.equal(f.host.querySelector('[aria-label="Words"]').value, '["After"]', 'the older acknowledgment did not erase the newer pending save');
+            } else if (changeWhilePending !== 'editor-contract') {
+                f.update(node({ revision: 'undo-control', controls: [control] }));
+                assert.equal(f.host.querySelector('[aria-label="Words"]').value, expected, 'a stale acknowledgment cannot erase a later draft or a draft restored on a new visit');
+            }
+        } finally { await f.close(); }
+    });
+}
+
+
+test('an older modifier settings acknowledgment cannot release a newer pending Save of the same draft', async () => {
+    const initial = [modifier('wrap-a', 'wrap', { prefix: '<', suffix: '>' })], pending = [];
+    const f = await fixture('NodeDetails', modifierView(initial), { editModifiers: (captured, items) => {
+        if (!pending.length) f.update(modifierView(structuredClone(items), { revision: 'saved-first' }));
+        return new Promise(resolve => pending.push(resolve));
+    } });
+    try {
+        input(f.host.querySelector('[aria-label="Wrap Prefix"]'), '['); f.host.querySelector('[aria-label="Save Wrap settings"]').click(); flushSync();
+        f.host.querySelector('[aria-label="Save Wrap settings"]').click(); flushSync(); assert.equal(pending.length, 2);
+        pending[0](success()); await tick(); flushSync();
+        assert.equal(f.host.querySelector('[aria-label="Save Wrap settings"]').disabled, true, 'the older success must not release the latest validation');
+        pending[1]({ ok: false, error: { code: 'LATEST', message: 'Latest modifier failure' } }); await tick(); flushSync();
+        assert.match(f.host.textContent, /Latest modifier failure/); assert.match(f.host.textContent, /Unsaved/); assert.equal(f.host.querySelector('[aria-label="Wrap Prefix"]').value, '[');
+    } finally { await f.close(); }
+});
+
+test('the identity header displays a preserved saved title when no alias exists and shows its canonical subtitle', async () => {
+    const f = await fixture('NodeDetails', node({ alias: '', title: 'Saved wording', canonicalTitle: 'Compose' }), { present: success });
+    try {
+        assert.equal(f.host.querySelector('[aria-label="Node name"]').value, 'Saved wording');
+        assert.match(f.host.querySelector('[data-canonical-title]').textContent, /Compose/);
+        f.update(node({ alias: '', title: 'Compose', canonicalTitle: 'Compose' }));
+        assert.equal(f.host.querySelector('[aria-label="Node name"]').value, 'Compose');
+        assert.equal(f.host.querySelector('[data-canonical-title]'), null);
+    } finally { await f.close(); }
+});
+
+test('model binding issues appear once with an attention summary and preserve distinct effective connections', async () => {
+    const allowedModes = [{ value: 'inherit', label: 'Inherit role' }, { value: 'override', label: 'Override' }];
+    const issue = 'Assign a fixed connection to this node or its model role.';
+    const model = { role: 'Analysis', roleEditable: true, effective: '  ' + issue + '  ', source: 'Inherited from Analysis', issue, profile: { mode: 'inherit', allowedModes, value: null }, model: { mode: 'inherit', allowedModes, value: null } };
+    const f = await fixture('NodeDetails', node({ controls: [], model }), { editBinding: success });
+    try {
+        const group = f.host.querySelector('[data-model-controls]');
+        assert.equal(group.open, true, 'binding failures expose their detailed alert');
+        assert.match(group.querySelector('summary').textContent, /Analysis.*Inherit role.*Binding needs attention$/);
+        assert.equal(group.textContent.split(issue).length - 1, 1, 'the detailed binding failure must appear only once');
+        assert.equal(group.querySelector('[role="alert"]').textContent, issue);
+        assert.doesNotMatch(group.textContent, /Effective connection:/, 'the identical effective failure is omitted after trimming');
+        assert.match(group.textContent, /Inherited from Analysis/);
+        f.update(node({ revision: 'distinct-effective', controls: [], model: { ...model, effective: 'Reasoner · saved-model' } }));
+        assert.match(group.textContent, /Effective connection: Reasoner · saved-model/, 'an effective binding distinct from the issue remains useful');
+        assert.equal(group.textContent.split(issue).length - 1, 1);
+        assert.match(group.querySelector('summary').textContent, /Binding needs attention$/);
+    } finally { await f.close(); }
+});
+test('single-line identifiers commit compact text inputs, guard disabled events and retain multiline textarea values', async () => {
+    const identifier = { key: 'curveId', label: 'Curve ID', editor: 'text', singleLine: true, value: 'curve-a' };
+    const prose = { key: 'instructions', label: 'Instructions', editor: 'text', value: 'Write a scene.' };
+    const edits = [], f = await fixture('NodeDetails', node({ controls: [identifier, prose] }), { editControl: (...args) => { edits.push(args); return success(); } });
+    try {
+        const compact = f.host.querySelector('[aria-label="Curve ID"]');
+        assert.equal(compact.tagName, 'INPUT'); assert.equal(compact.type, 'text'); assert.equal(compact.value, 'curve-a');
+        assert.equal(f.host.querySelector('[aria-label="Instructions"]').tagName, 'TEXTAREA', 'prose editors keep their existing multiline affordance');
+        change(compact, 'curve-b'); await tick(); flushSync();
+        assert.equal(edits.length, 1); assert.equal(edits[0][1], 'curveId'); assert.equal(edits[0][2], 'curve-b');
+        f.update(node({ revision: 'readonly-identifier', readOnly: true, controls: [identifier, prose] }));
+        const disabled = f.host.querySelector('[aria-label="Curve ID"]'); assert.equal(disabled.disabled, true);
+        change(disabled, 'blocked'); await tick(); flushSync(); assert.equal(edits.length, 1, 'raw disabled events cannot write identifiers');
+        for (const value of ['first\nsecond', 'first\rsecond']) {
+            f.update(node({ revision: 'multiline-' + value.charCodeAt(5), controls: [{ ...identifier, value }, prose] }));
+            const multiline = f.host.querySelector('[aria-label="Curve ID"]');
+            assert.equal(multiline.tagName, 'TEXTAREA', 'either newline form preserves the multiline editor');
+            assert.equal(multiline.value, value.replace(/\r/g, '\n'), 'line breaks remain visible instead of being stripped by a text input');
+            assert.equal(edits.length, 1, 'switching editor shape never rewrites the saved identifier');
+        }
     } finally { await f.close(); }
 });

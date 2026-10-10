@@ -3,7 +3,7 @@ import { cloneWorkflowDocument } from '../workflow/document.js?v=0.26.0';
 import { sha256Text } from '../workflow/definition-data.js?v=0.26.0';
 import { prepareCompositionViews } from '../workflow/composition-views.js?v=0.26.0';
 import { createRunState, reduceRunState, projectRunRows } from '../workflow/run-state.js?v=0.26.0';
-import { formatRecordedArtifact } from '../workflow/recording.js?v=0.26.0';
+import { formatRecordedArtifact, formatRecordedTextModifiers } from '../workflow/recording.js?v=0.26.0';
 import { addressKey, nodeAddress, targetAddress, own, plain, safeBinding, safeError, expandRecordAddress, freeze } from '../workflow/record-data.js?v=0.26.0';
 import { workflowSignature } from '../workflow/runtime.js?v=0.26.0';
 import { FAMILIES, OPERATIONS, operationFor } from '../workflow/catalog.js?v=0.26.0';
@@ -159,6 +159,7 @@ export function prepareWorkflowProjection(root, { planner, profiles = [], settin
                 title: presentation.alias || (typeof node.title === 'string' ? node.title : '') || metadata.title, operation: node.operation || 'subgraph', family: metadata.family, phase: metadata.phase || inventory.phase,
                 input: metadata.input || 'snapshot', output: metadata.output || 'host output', terminal: metadata.terminal, modelRole: role,
                 profileId: node.profileId || '', model: node.model || '', enabled: node.enabled !== false,
+                issue: boundIssues.get(addressKey(address)) || undefined,
                 effective: unit?.requestBound ? [binding?.profileId, binding?.model].filter(Boolean).join(' · ') || boundIssues.get(addressKey(address)) || 'Model connection' : 'No model call',
                 controls: nodeControls(node, metadata), ports: view.ports.filter(pin => pin.address.nodeId === node.id) }];
         });
@@ -200,7 +201,9 @@ function boundedSections(recording, target) {
         artifactId = unit?.ports.find(port => port.direction === 'output' && recording.identities.strings[port.port] === target.portId)?.artifact;
     }
     const artifact = recording.artifacts.find(item => item.id === artifactId);
-    return artifact ? [{ kind: artifact.kind, ...formatRecordedArtifact(artifact) }] : [];
+    if(!artifact)return [];
+    const textSections=formatRecordedTextModifiers(artifact);
+    return textSections.length ? textSections : [{ kind: artifact.kind, ...formatRecordedArtifact(artifact) }];
 }
 /** Selection/navigation projection: no resolver, binding, freshness or signature work. */
 export function projectPreparedWorkflow(prepared, { viewPath = [], selectedId = null, selectedAddress, selectedTarget, selectedReviewHandle, pinnedPreview, result, recording, runState = null, availability = 'current', preparationError = null, busy = false, status = '', applyIssue = '' } = {}) {

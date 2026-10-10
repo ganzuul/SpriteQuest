@@ -53,7 +53,7 @@ test('workspace labels resist text highlighting while editors and recorded outpu
     await expect(output).toContainText('A quiet conversation.');
     await output.dblclick();
     expect(await page.evaluate(() => window.getSelection().toString())).not.toBe('');
-    const alias = page.getByLabel('Alias', { exact: true });
+    const alias = page.getByLabel('Node name', { exact: true });
     await alias.fill('Selectable alias');
     expect(await alias.evaluate(input => {
         input.select(); return input.value.slice(input.selectionStart, input.selectionEnd);
@@ -106,8 +106,8 @@ test('subgraph rename undo restores an existing parent node alias', async ({ pag
     const tabs = page.locator('.pc-graph-tabs [role="tab"]');
     await tabs.first().click();
     await page.locator('.pc-node-native[data-id="first/path"] .pc-native-heading').click();
-    await page.getByLabel('Alias', { exact: true }).fill('Prior local alias');
-    await page.getByLabel('Alias', { exact: true }).press('Tab');
+    await page.getByLabel('Node name', { exact: true }).fill('Prior local alias');
+    await page.getByLabel('Node name', { exact: true }).press('Tab');
     await tabs.nth(2).click();
     await page.evaluate(() => {
         const context = window.canvasHarness.context;

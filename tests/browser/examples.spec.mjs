@@ -101,7 +101,7 @@ test('each of thirty tiles activates an independently editable native primary wo
         expect(active.mode).toMatch(/^native-(pre|post)$/);
         await expect(page.getByRole('combobox', { name: 'Workflow', exact: true })).toHaveValue(active.savedId);
         await page.locator('.pc-canvas-host .pc-node-native .pc-native-heading').first().click();
-        await expect(page.getByRole('checkbox', { name: 'Enabled', exact: true })).toBeEnabled();
+        await expect(page.getByRole('textbox', { name: 'Node name', exact: true })).toBeEnabled();
     }
     const after = await page.evaluate(() => {
         const h = window.canvasHarness, settings = h.S.settings();
@@ -120,8 +120,8 @@ test('reopening a tile preserves the edited first copy and advanced subgraphs op
     await expect(dialog).toBeHidden();
     const firstId = await page.evaluate(() => window.canvasHarness.graph.id);
     await page.locator('.pc-canvas-host .pc-node-native .pc-native-heading').first().click();
-    await page.getByRole('textbox', { name: 'Alias', exact: true }).fill('My edited brief');
-    await page.getByRole('textbox', { name: 'Alias', exact: true }).press('Tab');
+    await page.getByRole('textbox', { name: 'Node name', exact: true }).fill('My edited brief');
+    await page.getByRole('textbox', { name: 'Node name', exact: true }).press('Tab');
     await expect(page.locator('.pc-canvas-host .pc-node-title').first()).toHaveText('My edited brief');
     const edited = await page.evaluate(() => structuredClone(window.canvasHarness.graph));
     dialog = await openExamples(page);
@@ -139,13 +139,13 @@ test('reopening a tile preserves the edited first copy and advanced subgraphs op
     await page.evaluate(async () => { await window.canvasHarness.view({ x: 280, y: 60, zoom: 0.7 }); });
     await expect(page.locator('.pc-canvas-host .pc-node-subgraph-input').first()).toBeVisible();
     await page.locator('.pc-canvas-host .pc-node-subgraph-input .pc-native-heading').first().click();
-    await expect(page.getByRole('textbox', { name: 'Subgraph port label', exact: true })).toBeDisabled();
+    await expect(page.getByRole('textbox', { name: 'Node name', exact: true })).toBeDisabled();
     await page.locator('.pc-graph-tabs [role="tab"]').first().click();
     await page.locator('.pc-canvas-host .pc-node-subgraph .pc-native-heading').first().click({ button: 'right' });
     await page.getByRole('menuitem', { name: 'Make editable copy', exact: true }).click();
     await page.evaluate(async () => { await window.canvasHarness.view({ x: 280, y: 60, zoom: 0.7 }); });
     await page.locator('.pc-canvas-host .pc-node-subgraph-input .pc-native-heading').first().click();
-    await expect(page.getByRole('textbox', { name: 'Subgraph port label', exact: true })).toBeEnabled();
+    await expect(page.getByRole('textbox', { name: 'Node name', exact: true })).toBeEnabled();
     await page.getByRole('button', { name: 'Graph', exact: true }).click();
     await page.getByRole('menuitem', { name: 'Fit to view', exact: true }).click();
     await page.getByRole('dialog', { name: 'Lattice', exact: true }).screenshot({ path: testInfo.outputPath('example-30-opened-subgraph.png') });

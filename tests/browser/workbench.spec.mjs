@@ -1,17 +1,26 @@
 import { test, expect } from '@playwright/test';
+async function sectionsJson(page) {
+    const toggle = page.getByRole('button', { name: 'Edit Sections as JSON', exact: true });
+    const editor = page.getByLabel('Sections', { exact: true });
+    await expect(toggle.or(editor)).toBeVisible();
+    if (await toggle.isVisible()) await toggle.click();
+    await expect(editor).toBeVisible();
+    return editor;
+}
 async function launch(page) { await page.goto('/tests/browser/harness.html'); await page.waitForFunction(()=>!!window.canvasHarness); }
 test('a first click after editing switches Details to the clicked current node', async ({page})=>{
     await launch(page); const ids=await page.evaluate(()=>window.canvasHarness.reset(2,2));
     await page.evaluate(()=>window.canvasHarness.view({x:180,y:0,zoom:1}));
     await page.locator('.pc-node[data-id="'+ids[0]+'"] .pc-native-heading').click();
-    const editor=page.getByLabel('Sections',{exact:true}); await editor.fill('{unfinished'); await editor.focus();
+    const editor=await sectionsJson(page); await editor.fill('{unfinished'); await editor.focus();
     await page.locator('.pc-node[data-id="'+ids[1]+'"] .pc-native-heading').click();
     expect(await page.evaluate(()=>window.canvasHarness.canvas.selection.id)).toBe(ids[1]);
+    await sectionsJson(page);
     await expect(editor).toHaveValue(JSON.stringify([{name:'Text',text:'Synthetic rendering fixture.'}],null,2));
 });
 test('camera menus retain the focused Details editor and unsaved JSON draft',async({page})=>{
     await launch(page); const id=await page.evaluate(()=>Object.values(window.canvasHarness.graph.nodes).find(node=>node.operation==='compose'&&node.sections?.length).id); await page.locator('.pc-node[data-id="'+id+'"] .pc-native-heading').click();
-    const editor=page.getByLabel('Sections',{exact:true}); await editor.fill('{unfinished'); await editor.focus();
+    const editor=await sectionsJson(page); await editor.fill('{unfinished'); await editor.focus();
     await page.evaluate(()=>{window.editorProbe=document.activeElement;});
     const before=await page.evaluate(()=>JSON.stringify(window.canvasHarness.graph));
     await page.evaluate(async()=>{const h=window.canvasHarness; await h.view({x:90,y:70,zoom:.8}); h.canvas.host.dispatchEvent(new WheelEvent('wheel',{clientX:250,clientY:250,deltaY:-30,cancelable:true})); await h.settle();});

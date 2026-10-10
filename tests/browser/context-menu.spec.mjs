@@ -104,7 +104,7 @@ test('Rename focuses the alias editor and Compact card changes presentation with
     const before = await snapshot(page);
     await heading(page, 'n0').click({ button: 'right' });
     await action(page, 'Rename').click();
-    const alias = page.getByLabel('Alias', { exact: true });
+    const alias = page.getByLabel('Node name', { exact: true });
     await expect(alias).toBeFocused();
     expect(await snapshot(page)).toEqual(before);
     await alias.fill('Local menu alias'); await alias.press('Tab');

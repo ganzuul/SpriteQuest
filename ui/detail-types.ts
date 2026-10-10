@@ -13,6 +13,8 @@ interface DetailControlBase {
     key: string; label: string; value: unknown;
     options?: { value: string; label: string }[]; min?: number; max?: number; step?: number | 'any';
     effective?: string; source?: string; help?: string; exposureNote?: string;
+    group?: string; advanced?: boolean; singleLine?: boolean;
+    structured?: 'rules' | 'fields' | 'sections' | 'slots' | 'numeric-map' | 'durations';
 }
 export type DetailControl = DetailControlBase & (
     /** JSON-text returns the original text; json-value returns JSON.parse(text). */
@@ -20,6 +22,8 @@ export type DetailControl = DetailControlBase & (
     | { editor: 'text' | 'number' | 'boolean' | 'enum' | 'lines'; representation?: never; allowEmpty?: never }
 );
 export type DetailBindingMode = 'inherit' | 'override' | 'block';
+export interface DetailModifier { id: string; type: string; version: 1; enabled: boolean; settings: Record<string, unknown>; }
+export interface DetailModifierOption { type: string; label: string; defaultSettings: Record<string, unknown>; fields: DetailControl[]; }
 export interface DetailBindingField {
     mode: DetailBindingMode; allowedModes: { value: DetailBindingMode; label: string }[];
     value: string | null; options?: { value: string; label: string }[];
@@ -30,8 +34,10 @@ export interface DetailModelBinding {
 }
 export interface NodeDetailsView extends DetailSelection {
     title: string; canonicalTitle: string; iconPath: string; family: string; phase: string;
+    operation?: string; familyColor?: string;
     alias: string; compact: boolean; enabled: boolean; readOnly: boolean; canPresent: boolean;
     controls: DetailControl[]; model: DetailModelBinding | null;
+    modifiers?: { items: DetailModifier[]; options: DetailModifierOption[]; editable: boolean; outputPortId: string } | null;
     fileInput?: { fileName: string; loaded: boolean };
     boundary?: { id: string; label: string; direction: 'input' | 'output'; kind: string; required: boolean; kinds: string[] };
     ports: { id: string; label: string; direction: 'input' | 'output'; kind: string }[];
@@ -41,6 +47,7 @@ export interface NodeDetailsActions {
     loadFile?: (selection: DetailSelection, file: File) => DetailEditResponse;
     present?: (selection: DetailSelection, field: 'alias' | 'compact', value: string | boolean) => DetailEditResponse;
     editControl?: (selection: DetailSelection, key: string, value: unknown) => DetailEditResponse;
+    editModifiers?: (selection: DetailSelection, items: DetailModifier[]) => DetailEditResponse;
     editField?: (selection: DetailSelection, key: 'enabled' | 'modelRole', value: boolean | string) => DetailEditResponse;
     editBinding?: (selection: DetailSelection, field: 'profileId' | 'model', mode: DetailBindingMode, value: string | null) => DetailEditResponse;
     editInterface?: (selection: DetailSelection, edit: ManagerInterfaceEdit) => DetailEditResponse;
