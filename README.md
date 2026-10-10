@@ -33,7 +33,7 @@ These are combinations of the shipped tools. **File → Open examples…** offer
 | **Per-operation model connections** | Choose each model node’s connection profile and model in Details without switching SillyTavern’s main connection; For Each exposes its pinned helper’s role selectors too. |
 | **One native workflow** | Connect preparation to Generate Reply, process its owned Draft, and review the result in one graph. |
 | **Typed decisions and branches** | Use Decision or configured Jev/Laya Fast Decision with explicit confidence gates, skipped paths and unresolved policies. |
-| **Story documents and accepted effects** | Read authorized logical targets, project append/keyed updates, and settle file/clock/outcome consequences with the chosen reviewed result. |
+| **Workflow Data and accepted effects** | Read authorized logical targets, project append/keyed updates, and settle file/clock/outcome consequences with the chosen reviewed result. |
 | **Scoped character context and Recall** | Process present actors separately and arm selected-actor memories through visible controls or shortcuts. |
 | **Recorded previews** | Inspect inputs and outputs, follow selection, pin an artifact, or run only a selected output's dependencies. |
 | **Execution visibility** | See node states, expanded subgraph stages, request bounds, actual calls, and failures. |
@@ -85,13 +85,13 @@ Select processing nodes, right-click, and choose **Create Subgraph**. The editor
 2. Enter `https://github.com/MentallyQuill/Lattice`, leaving the branch field blank to install `main`.
 3. Install, then reload SillyTavern. Open LATTICE from its logo on the left of the chat bar or with `/lattice`. Fresh launch selects **Unified story workflow**, with workflows disabled and unassigned. Existing saved selections remain.
 4. Choose **Workflows → Assign unified workflow**, enable **Arm**, and Send a player message in SillyTavern. The starter makes no auxiliary calls and exposes its completed native Draft for review.
-5. Select **Review / Publish · Host result** in Preview, inspect it, and Apply or Reject. For a richer pipeline, open a unified example and configure its model nodes, For Each helper roles and required Story Documents before the next Send.
+5. Select **Review / Publish · Host result** in Preview, inspect it, and Apply or Reject. For a richer pipeline, open a unified example and configure its model nodes, For Each helper roles and required workflow data documents before the next Send.
 
 For updates, use **Manage Extensions**, then reload. Installation, import, and editing do not make model calls.
 
 The [unified workflow guide](docs/unified-workflows.md) walks through applying an example to **Story-2 on default-user**, chaining different models, using Fast Decision, recording private moments, arming Recall and managing accepted effects. A full unified native generation starts with ordinary Send; supported **Run to here** paths inspect without acceptance.
 
-Unified examples open as independent editable workflows. They do not run, assign or arm themselves. Set each auxiliary model’s local Connection profile in Details; configure For Each’s **Helper model bindings** separately. **Tools → Story documents…** authorizes logical JSON/text targets, and **Tools → Fast connections…** configures typed Jev/Laya endpoints. Local connection IDs and credentials are excluded from portable exports.
+Unified examples open as independent editable workflows. They do not run, assign or arm themselves. Set each auxiliary model’s local Connection profile in Details; configure For Each’s **Helper model bindings** separately. **Tools → Workflow Data…** authorizes logical JSON/text targets, and **Tools → Fast connections…** configures typed Jev/Laya endpoints. Local connection IDs and credentials are excluded from portable exports.
 
 Legacy **Before reply (Pre)** workflows still prepare bounded guidance, while **After reply (Post)** workflows remain manual tools for a completed reply. The Workflows menu labels these as legacy. Existing saved graphs are retained; migration is explicit reuse in a new unified copy, with no automatic converter.
 

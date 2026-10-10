@@ -77,7 +77,7 @@ try {
         field.style.cssText = 'flex:1;background:transparent;border:0;resize:none;text-align:center;color:inherit';
         bar.append(left, field, right); document.body.append(bar);
     });
-    evidence.launcher = await page.locator('#pc-sendbar').evaluate(element => ({ parent: element.parentElement.id, imageLoaded: element.querySelector('img').complete && element.querySelector('img').naturalWidth > 0 }));
+    evidence.launcher = await page.locator('#pc-sendbar').evaluate(async element => { const image = new Image(); image.src = getComputedStyle(element.querySelector('.pc-chat-launcher-icon')).maskImage.slice(5, -2); await image.decode(); return { parent: element.parentElement.id, imageLoaded: image.naturalWidth > 0 }; });
     assert.equal(evidence.launcher.parent, 'leftSendForm'); assert.equal(evidence.launcher.imageLoaded, true);
     await capture('chatbar-left-logo', page.locator('#polish-chatbar'));
     assert.equal(evidence.providerCalls, 0); assert.deepEqual(evidence.errors, []); assert.deepEqual(evidence.blocked, []);

@@ -22,7 +22,7 @@ The starter is **On Send → Generate Reply · SillyTavern → Review / Publish*
 2. Choose **Workflows → Assign unified workflow**, then enable **Arm**.
 3. Send a player message in SillyTavern normally. The starter waits for that generation’s completed Draft and records its review result.
 4. Select **Review / Publish · Host result** in Preview. Inspect the original and candidate; Apply preserves the original as a swipe and publishes the chosen result, while Reject leaves it alone. The unchanged starter is useful for learning the review path.
-5. Open a unified example from **File → Open examples…** to add preparation, prose editing or notes. Configure every model node and For Each helper role in Details before sending. Authorize document targets in **Tools → Story documents…** when the example needs them.
+5. Open a unified example from **File → Open examples…** to add preparation, prose editing or notes. Configure every model node and For Each helper role in Details before sending. Authorize document targets in **Tools → Workflow Data…** when the example needs them.
 
 A full unified Run requires the native generation owned by Send. **Run to here** previews supported dependencies without accepting effects. See the [practical unified guide](unified-workflows.md) for one-graph model chains, Fast Decision, Recall, clocks and file writes.
 

@@ -116,7 +116,12 @@ test('the chat launcher uses the loaded Lattice logo in the left host controls',
     await setup(page);
     const launcher = page.locator('#leftSendForm > #pc-sendbar');
     await expect(launcher).toHaveAttribute('aria-label', 'Open Lattice');
-    expect(await launcher.locator('img').evaluate(image => image.complete && image.naturalWidth > 0)).toBe(true);
-    await expect(launcher.locator('img')).toHaveAttribute('src', /assets\/lattice-logo\.svg$/);
+    const icon = launcher.locator('.pc-chat-launcher-icon');
+    expect(await icon.evaluate(async element => { const image = new Image(); image.src = getComputedStyle(element).maskImage.slice(5, -2); await image.decode(); return image.naturalWidth > 0; })).toBe(true);
+    for (const [color, expected] of [['#dcdcd2', 'rgb(220, 220, 210)'], ['#c9d8ee', 'rgb(201, 216, 238)']]) {
+        await page.evaluate(color => document.documentElement.style.setProperty('--SmartThemeBodyColor', color), color);
+        await expect(icon).toHaveCSS('background-color', expected);
+    }
+    await expect(launcher).toHaveCSS('opacity', '0.7');
     await expect(page.locator('#rightSendForm #pc-sendbar')).toHaveCount(0);
 });
