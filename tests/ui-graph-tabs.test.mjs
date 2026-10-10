@@ -38,8 +38,9 @@ const keydown = (element, key, options = {}) => { element.dispatchEvent(new dom.
 
 async function controllerFunction(name, env) {
     const source = await readFile(new URL('../src/ui/controller.js', import.meta.url), 'utf8');
-    const start = source.indexOf('function ' + name + '(');
+    let start = source.indexOf('function ' + name + '(');
     assert.ok(start >= 0, `Actual controller function ${name} is available`);
+    if (source.slice(start - 6, start) === 'async ') start -= 6;
     const end = source.indexOf('\n}', start) + 2;
     return Function('env', 'with(env){' + source.slice(start, end) + ';return ' + name + ';}')(env);
 }
@@ -50,6 +51,10 @@ test('saving a clicked graph view flushes the workflow and retained presentation
     const stored = {}; let saves = 0;
     const env = { graphViews: session, current: session.readRoot(), viewSaveTimer: null, settings: () => stored, save: () => saves++, clearTimeout() {}, setTimeout() { assert.fail('An explicit save must flush immediately'); }, canvas: { cancelGesture() { accepted(session.updateView({ camera: { x: 70, y: 90, zoom: 1.5 } })); } } };
     env.persistGraphViews = await controllerFunction('persistGraphViews', env);
+    env.savedWorkflowDocuments = new WeakMap(); env.workflowSaveRequests = new WeakMap();
+    env.workflowDocumentSnapshot = await controllerFunction('workflowDocumentSnapshot', env);
+    env.ctx = () => ({ saveSettingsDebounced: env.save }); env.toast = () => {};
+    env.onSaveGraph = await controllerFunction('onSaveGraph', env);
     const saveView = await controllerFunction('onSaveGraphView', env);
     saveView(clicked.key);
     assert.equal(saves, 1); assert.equal(session.readEditor().view.key, activeKey);
@@ -80,6 +85,9 @@ test('tab exports download the clicked root or exact pinned subgraph revision wi
     const env = { current: graph, graphViews: session, workspacePrepared, viewIdentityKey, definitionRefKey, exportSubgraph, Blob, URL: { createObjectURL(blob) { const url = 'blob:tab-export-' + blobs.size; blobs.set(url, blob); return url; }, revokeObjectURL(url) { revoked.push(url); } }, setTimeout(callback) { later.push(callback); }, exportGraph(id) { assert.equal(id, 'tab-export-root'); return JSON.stringify(exportWorkflow(graph)); }, toast(message) { assert.fail(message); }, document: { createElement(name) { const element = document.createElement(name); element.addEventListener('click', event => { event.preventDefault(); downloads.push({ file: element.download, blob: blobs.get(element.href) }); }); return element; } } };
     const exportView = await controllerFunction('onExportGraphView', env);
     env.downloadGraphViewJSON = await controllerFunction('downloadGraphViewJSON', env);
+    env.savedWorkflowDocuments = new WeakMap(); env.workflowSaveRequests = new WeakMap();
+    env.workflowDocumentSnapshot = await controllerFunction('workflowDocumentSnapshot', env);
+    env.onExportGraph = await controllerFunction('onExportGraph', env);
     exportView(instanceKey); exportView(libraryKey); exportView(rootKey);
     assert.equal(downloads.length, 3);
     const instance = accepted(parseSubgraph(await downloads[0].blob.text()));
@@ -133,7 +141,7 @@ test('tab context commands keep their clicked target for saving exporting renami
         const GraphTabs = await component('GraphTabs', directory);
         const first = child('first', 'First child'), second = child('second', 'Second child'), closed = child('closed', 'Closed child');
         const calls = [];
-        mounted = mount(GraphTabs, { target: host, props: { views: { workflowId: 'root', viewEpoch: 1, active: first, tabs: [root, first, second], closedViews: [closed] }, actions: { focusView: key => calls.push(['focus', key]), saveView: key => calls.push(['save', key]), exportView: key => calls.push(['export', key]), renameView: key => calls.push(['rename', key]), closeView: key => calls.push(['close', key]), closeOtherViews: key => calls.push(['others', key]), reopenView: key => calls.push(['reopen', key]) } } }); flushSync();
+        mounted = mount(GraphTabs, { target: host, props: { views: { workflowId: 'root', viewEpoch: 1, active: first, tabs: [root, first, second], closedViews: [closed] }, actions: { focusView: key => calls.push(['focus', key]), saveView: key => calls.push(['save', key]), exportView: key => calls.push(['export', key]), renameView: (key, name) => calls.push(['rename', key, name]), closeView: key => calls.push(['close', key]), closeOtherViews: key => calls.push(['others', key]), reopenView: key => calls.push(['reopen', key]) } } }); flushSync();
         const tabs = [...host.querySelectorAll('[role="tab"]')];
         const command = async (tab, label) => {
             tab.dispatchEvent(new dom.window.MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 50, clientY: 20 })); flushSync(); await tick();
@@ -143,16 +151,58 @@ test('tab context commands keep their clicked target for saving exporting renami
         };
         await command(tabs[2], 'Save workflow'); assert.deepEqual(calls.at(-1), ['save', 'second']);
         await command(tabs[2], 'Export subgraph JSON'); assert.deepEqual(calls.at(-1), ['export', 'second']);
-        await command(tabs[2], 'Rename subgraph'); assert.deepEqual(calls.at(-1), ['rename', 'second']);
+        await command(tabs[2], 'Rename subgraph');
+        const input = host.querySelector('input[aria-label="Subgraph name"]');
+        assert.ok(input, 'Rename edits the clicked tab inline');
+        assert.equal(document.activeElement, input);
+        assert.equal(input.value.slice(input.selectionStart, input.selectionEnd), 'Second child');
+        assert.deepEqual(calls.at(-1), ['export', 'second'], 'opening the editor does not rename yet');
+        input.value = 'Renamed second'; input.dispatchEvent(new dom.window.Event('input', { bubbles: true }));
+        keydown(input, 'Enter'); await tick();
+        assert.deepEqual(calls.at(-1), ['rename', 'second', 'Renamed second']);
+        assert.equal(host.querySelector('input'), null);
+        input.dispatchEvent(new dom.window.FocusEvent('blur'));
+        assert.equal(calls.filter(([action]) => action === 'rename').length, 1, 'Enter and blur commit once');
         await command(tabs[2], 'Close other tabs'); assert.deepEqual(calls.at(-1), ['others', 'second']);
         await command(tabs[2], 'Reopen Closed child · Graph 1 / Closed child ("closed")'); assert.deepEqual(calls.at(-1), ['reopen', 'closed']);
         await command(tabs[0], 'Export workflow JSON'); assert.deepEqual(calls.at(-1), ['export', 'root']);
-        await command(tabs[0], 'Rename graph'); assert.deepEqual(calls.at(-1), ['rename', 'root']);
+        await command(tabs[0], 'Rename graph');
+        const rootInput = host.querySelector('input[aria-label="Graph name"]');
+        rootInput.value = 'Renamed root'; rootInput.dispatchEvent(new dom.window.Event('input', { bubbles: true }));
+        keydown(rootInput, 'Enter'); await tick();
+        assert.deepEqual(calls.at(-1), ['rename', 'root', 'Renamed root']);
         tabs[0].dispatchEvent(new dom.window.MouseEvent('contextmenu', { bubbles: true, cancelable: true })); flushSync(); await tick();
         const closeRoot = [...host.querySelectorAll('[role="menuitem"]')].find(element => element.textContent === 'Close tab');
         assert.equal(closeRoot.disabled, true); closeRoot.click(); flushSync();
         assert.equal(calls.some(([action]) => action === 'focus' || action === 'close'), false);
         assert.equal(tabs[1].getAttribute('aria-selected'), 'true');
+    } finally {
+        if (mounted) await unmount(mounted);
+        host.remove();
+        await rm(directory, { recursive: true, force: true });
+    }
+});
+
+test('events from a dismissed rename input cannot commit or cancel a later editor', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'lattice-graph-tab-rename-events-'));
+    const host = document.createElement('div'); document.body.append(host);
+    let mounted;
+    try {
+        const GraphTabs = await component('GraphTabs', directory), first = child('first', 'First child'), calls = [];
+        mounted = mount(GraphTabs, { target: host, props: { views: { workflowId: 'root', viewEpoch: 1, active: root, tabs: [root, first], closedViews: [] }, actions: { renameView: (key, name) => calls.push([key, name]) } } }); flushSync();
+        await mounted.startRename('root'); flushSync();
+        const oldInput = host.querySelector('input');
+        keydown(oldInput, 'Escape'); await tick();
+        for (const key of ['first', 'root']) {
+            await mounted.startRename(key); flushSync();
+            const input = host.querySelector('input');
+            input.value = 'Current draft'; input.dispatchEvent(new dom.window.Event('input', { bubbles: true }));
+            oldInput.dispatchEvent(new dom.window.FocusEvent('blur')); flushSync();
+            assert.deepEqual(calls, [], 'late blur cannot save another rename');
+            keydown(oldInput, 'Escape'); await tick();
+            assert.equal(host.querySelector('input'), input, 'late Escape cannot dismiss another rename');
+            keydown(input, 'Escape'); await tick();
+        }
     } finally {
         if (mounted) await unmount(mounted);
         host.remove();
@@ -170,17 +220,20 @@ test('tab rename availability follows the containing graph capability and keeps 
         const identity = { kind: 'library', workflowId: 'root', definitionRef: { id: 'library', version: 3, semanticHash: 'exact' } };
         const library = { key: 'library', identity, label: 'Library definition', readOnly: true, breadcrumbs: [] };
         const renamed = [];
-        mounted = mount(GraphTabs, { target: host, props: { views: { workflowId: 'root', viewEpoch: 1, active: root, tabs: [root, editableParent, pinnedParent, library], closedViews: [] }, actions: { renameView: key => renamed.push(key), canRenameView: key => key !== 'blocked' } } }); flushSync();
+        mounted = mount(GraphTabs, { target: host, props: { views: { workflowId: 'root', viewEpoch: 1, active: root, tabs: [root, editableParent, pinnedParent, library], closedViews: [] }, actions: { renameView: (key, name) => renamed.push([key, name]), canRenameView: key => key !== 'blocked' } } }); flushSync();
         const tabs = [...host.querySelectorAll('[role="tab"]')];
         const rename = async index => {
             tabs[index].dispatchEvent(new dom.window.MouseEvent('contextmenu', { bubbles: true, cancelable: true })); flushSync(); await tick();
             return [...host.querySelectorAll('[role="menuitem"]')].find(button => button.textContent.startsWith('Rename'));
         };
         assert.equal((await rename(0)).disabled, false);
-        const allowed = await rename(1); assert.equal(allowed.disabled, false); allowed.click(); flushSync(); assert.deepEqual(renamed, ['allowed']);
+        const allowed = await rename(1); assert.equal(allowed.disabled, false); allowed.click(); flushSync(); await tick();
+        const input = host.querySelector('input'); input.value = 'Renamed child'; input.dispatchEvent(new dom.window.Event('input', { bubbles: true }));
+        input.dispatchEvent(new dom.window.FocusEvent('blur')); flushSync();
+        assert.deepEqual(renamed, [['allowed', 'Renamed child']]);
         const blocked = await rename(2); assert.equal(blocked.disabled, true); assert.match(blocked.title, /local copy.*containing graph/i); blocked.click(); flushSync();
         assert.equal((await rename(3)).disabled, true);
-        assert.deepEqual(renamed, ['allowed']);
+        assert.deepEqual(renamed, [['allowed', 'Renamed child']]);
     } finally {
         if (mounted) await unmount(mounted);
         host.remove();

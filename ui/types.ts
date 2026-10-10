@@ -21,6 +21,8 @@ export interface ImportReviewView {
 }
 export interface SubgraphSaveView { key: string; name: string; targetId: string | null; entries: { id: string; name: string }[]; error?: string }
 export interface SubgraphSaveActions { close(): void; save(key: string, name: string, targetId: string | null): unknown }
+export interface NewWorkflowPromptView { name: string }
+export interface NewWorkflowPromptActions { choose(choice: 'save' | 'discard' | 'cancel'): void }
 export interface WorkflowExamplePin extends Port { x: number; y: number }
 export interface WorkflowExampleNode { id: string; x: number; y: number; w: number; h: number; title: string; className: string; iconPath: string; body: string | null; ports: WorkflowExamplePin[] }
 export interface WorkflowExampleWire { id: string; d: string; kind: string; from: { nodeId: string; portId: string }; to: { nodeId: string; portId: string } }
@@ -37,6 +39,7 @@ export interface WorkbenchView {
     portalManager?: PortalManagerView | null; subgraphSave?: SubgraphSaveView | null;
     nativeSearch?: NodeSearchView | null; nativePinMenu?: PinMenuView | null; nativeChoices?: readonly SearchChoice[];
     importReview?: ImportReviewView | null;
+    newWorkflowPrompt?: NewWorkflowPromptView | null;
     examples?: readonly WorkflowExampleTile[];
     examplesIssue?: string;
     selectionActions?: { copy: boolean; cut: boolean; delete: boolean };
@@ -53,6 +56,7 @@ export interface WorkbenchActions {
     resizeStart?: () => void; resizeDetails?: (width: number) => void; addNode?: (id: string, at?: { x: number; y: number }) => void;
     workflowSetup?: Pick<WorkflowActions, 'install' | 'bindRole' | 'assign'>;
     acceptImport?: () => void; cancelImport?: () => void; prepareImportAgain?: () => void;
+    newWorkflowPrompt?: NewWorkflowPromptActions;
     openExample?: (id: string) => boolean | Promise<boolean>;
     refreshExamples?: () => boolean | void;
 }

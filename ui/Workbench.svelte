@@ -12,6 +12,7 @@
     import RunMeter from './RunMeter.svelte';
     import PortalManager from './PortalManager.svelte';
     import SubgraphSave from './SubgraphSave.svelte';
+    import NewWorkflowPrompt from './NewWorkflowPrompt.svelte';
     import NodeSearch from './NodeSearch.svelte';
     import PinMenu from './PinMenu.svelte';
     import NodeShelf from './NodeShelf.svelte';
@@ -23,9 +24,11 @@
     let view = $state.raw<WorkbenchView>({ graphs: [], graphId: '', armed: false, inspectorOpen: true, history: { undo: false, redo: false, undoTitle: 'Nothing to undo', redoTitle: 'Nothing to redo', note: '', showNote: false }, camera: { x: 0, y: 0, zoom: 1, mode: 'select' }, selectionCount: 0 });
     let root: HTMLDivElement, body: HTMLDivElement, canvasHost: HTMLDivElement, stage: HTMLDivElement, inspector: HTMLDivElement;
     let toolbar: { focusGraphSelect(): void; getParts(): { header: HTMLElement; graphSelect: HTMLSelectElement; arm: HTMLInputElement; inspBtn: HTMLButtonElement } };
+    let graphTabs: { startRename(key: string): Promise<void> };
     export function getParts() { return { root, parts: { ...toolbar.getParts(), inspector, canvasHost } }; }
     export function updateActions(value: Partial<WorkbenchActions>) { actions = { ...actions, ...value }; }
     export function update(value: Partial<WorkbenchView>) { view = { ...view, ...value }; }
+    export function renameGraphView(key: string) { return graphTabs?.startRename(key); }
     export async function focusCommentTitle(id: string, isCurrent: () => boolean) {
         await tick();
         if (!isCurrent()) return;
@@ -108,7 +111,7 @@
                 </div>
             </section>
             {#if !collapsed}<PaneDivider height={Math.min(previewHeight, maxHeight)} max={maxHeight} start={resizeStart} change={(height) => { previewHeight = height; persist(); }} />{/if}
-            <GraphTabs views={view.graphViews} actions={actions.graphViewActions} panelId="pc-workspace-graph" />
+            <GraphTabs views={view.graphViews} actions={actions.graphViewActions} panelId="pc-workspace-graph" bind:this={graphTabs} />
             <GraphBreadcrumbs view={view.graphViews?.active} actions={actions.graphViewActions} />
             <div class="pc-canvas-area" id="pc-workspace-graph" role="tabpanel">
                 <div class="pc-workspace-run"><RunMeter view={view.runMeter ?? null} open={() => { overlay = 'run-details'; }} /></div>
@@ -140,6 +143,7 @@
     {#if view.portalManager}<div class="pc-workspace-overlay"><div class="pc-manager-dialog" role="dialog" tabindex="-1" aria-modal="true" aria-label="Manage portals" onkeydown={managerKeys} onpaste={(event) => event.stopPropagation()}><PortalManager view={view.portalManager} actions={actions.portalManager} /></div></div>{/if}
     {#if view.subgraphSave}<SubgraphSave view={view.subgraphSave} actions={actions.subgraphSave} />{/if}
     {#if view.importReview}<ImportReview view={view.importReview} {actions} />{/if}
+    {#if view.newWorkflowPrompt}<NewWorkflowPrompt view={view.newWorkflowPrompt} actions={actions.newWorkflowPrompt} />{/if}
 </div>
 
 <style>

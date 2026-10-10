@@ -33,6 +33,12 @@ function controllerActions(name, next, env) {
     assert.ok(start >= 0 && end > start, 'Actual controller actions ' + name);
     return Function('env', 'with(env){' + controllerText.slice(start, end) + ';return ' + name + ';}')(env);
 }
+function controllerKeydown(env) {
+    const prefix = "document.addEventListener('keydown', ", start = controllerText.indexOf(prefix + 'event => {');
+    const end = controllerText.indexOf('\n    });', start);
+    assert.ok(start >= 0 && end > start, 'Actual controller key handler');
+    return Function('env', 'with(env){return ' + controllerText.slice(start + prefix.length, end + 6) + ';}')(env);
+}
 const frame = () => ({ id:'frame',type:'note',commentFrame:true,moveContents:true,title:'Comment',content:'Notes',color:'#637d89',x:80,y:0,w:220,h:160 });
 let sequence = 0;
 function fixture(root = { id:'comment-controller-' + ++sequence,schema:3,runtime:2,mode:'native-pre',nodes:{ source:{id:'source',type:'workflow',operation:'scene-context',x:0,y:0},outside:{id:'outside',type:'workflow',operation:'scene-context',x:600,y:100},frame:frame() },wires:{},groups:{},portals:{},roles:{},definitions:{} }) {
@@ -41,7 +47,7 @@ function fixture(root = { id:'comment-controller-' + ++sequence,schema:3,runtime
     const session = createGraphViewSession({root,activationId:'comment-'+sequence,navigation:[...prepared.data.navigation,...library.data.navigation],preparedViews:[...prepared.data.preparedViews,...library.data.preparedViews]}).data;
     const stored = {workspaceViews:{}}, failures = []; let commits = 0;
     const canvas = {multi:new Set(),selection:null,pointer:{x:12,y:18},host:{getBoundingClientRect:()=>({left:0,top:0,width:800,height:600})},widthOf:n=>n.w ?? 160,heightOf:n=>n.h ?? 48,toGraph:(x,y)=>({x,y}),setMulti(ids){this.multi=new Set(ids);},select(item){this.selection=item;},cancelGesture(){}};
-    const env = { current:root,graphViews:session,canvas,editorDraw:projectEditorDraw(session.readEditor()),editorCaptures:new WeakMap(),commentCaptures:new WeakMap(),commentPresentationEffects:new WeakMap(),pendingCommentPresentation:new WeakMap(),pendingSubgraphPresentation:new WeakMap(),workspaceRevision:0,workspaceIssue:'',selected:null,selectedKind:null,
+    const env = { current:root,graphViews:session,canvas,editorDraw:projectEditorDraw(session.readEditor()),editorCaptures:new WeakMap(),commentCaptures:new WeakMap(),commentPresentationEffects:new WeakMap(),pendingCommentPresentation:new WeakMap(),pendingSubgraphPresentation:new WeakMap(),workspaceRevision:0,workspaceIssue:'',selected:null,selectedKind:null,pendingNewWorkflow:null,
         isOpen:()=>true,activeEditRoot:()=>env.current,readGraphEditContext:()=>env.graphViews.readEditContext(),captureGraphEditContext,prepareCommentEdit,createCommentFrame,fitCommentFrame,containedCommentNodes,isCommentFrame,captureCommentPresentation,applyCommentPresentation,applyCommentGroupPresentation,viewIdentityKey,projectEditorDraw,definitionRefKey,H,groupMembers:(graph,id)=>Object.values(graph.nodes).filter(node=>node.inGroup===id),
         prepareSubgraphNodeDeletion,prepareQualifiedScopeEdit,reconcileOwners,ownershipEntries,prunePrivateSnapshots,makeClip,makeDefinitionClip,readClip,prepareClipPaste,okToDelete:()=>true,detachedClip:null,flashHistoryNote(){},navigator:{clipboard:{async writeText(value){env.copied=value;}}},
         settings:()=>stored,save(){},toast(message){failures.push(message);},persistGraphViews(){const saved=env.graphViews?.serialize();if(saved?.ok)stored.workspaceViews[root.id]=saved.data;},workbench:{focusCommentTitle(id,check){if(check())env.focused=id;}},graphDocumentHooks:{},
@@ -267,15 +273,35 @@ for (const key of ['Delete', 'Backspace']) test(`actual ${key} shortcut deletes 
         f.env.okToDelete = () => assert.fail('Keyboard deletion cannot request confirmation');
         f.env.confirmBox = () => assert.fail('Keyboard deletion cannot open a dialog');
         f.env.typing = controllerFunction('typing', f.env);
-        const start = controllerText.indexOf("document.addEventListener('keydown', event => {");
-        const end = controllerText.indexOf('\n    });', start);
-        const handler = Function('env', 'with(env){return ' + controllerText.slice(start + "document.addEventListener('keydown', ".length, end + 6) + ';}')(f.env);
+        const handler = controllerKeydown(f.env);
         real.host.focus(); const event = new window.KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }); handler(event);
         assert.equal(event.defaultPrevented, true); assert.equal(f.root.nodes.source, undefined); assert.equal(f.commits(), 1);
         assert.ok(H.undo(f.root)); f.refresh(); assert.deepEqual(f.root.nodes, before.nodes); assert.equal(H.undo(f.root), null);
         const input = document.createElement('input'); document.body.append(input); input.focus(); handler(new window.KeyboardEvent('keydown', { key, cancelable: true }));
         assert.ok(f.root.nodes.source, 'Typing in a field preserves the selected node'); input.remove();
     } finally { f.unlisten(); await real.canvas.destroy(); }
+});
+
+test('pending new-workflow prompt blocks node deletion shortcuts and Escape preserves the selection', async () => {
+    const f = fixture(), real = (await import('./canvas-fixture.mjs')).fixture({ onNativeDelete: selection => f.env.deleteNativeSelection(selection) });
+    const promptRoot = document.createElement('div'), prompt = document.createElement('div');
+    prompt.className = 'pc-new-workflow-prompt'; prompt.tabIndex = -1; promptRoot.append(prompt); document.body.append(promptRoot);
+    try {
+        f.env.canvas = real.canvas; real.canvas.setGraph(f.env.editorDraw); real.canvas.select({ kind: 'node', id: 'source' });
+        const before = structuredClone(f.root), selection = structuredClone(real.canvas.selection), choices = [];
+        f.env.root = promptRoot; f.env.pendingNewWorkflow = { previousWorkflowId: f.root.id };
+        f.env.typing = controllerFunction('typing', f.env);
+        f.env.chooseNewWorkflow = choice => { choices.push(choice); f.env.pendingNewWorkflow = null; };
+        const handler = controllerKeydown(f.env);
+        for (const key of ['Delete', 'Backspace']) {
+            real.host.focus(); const event = new window.KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }); handler(event);
+            assert.equal(event.defaultPrevented, true); assert.equal(document.activeElement, prompt);
+            assert.deepEqual(f.root, before); assert.deepEqual(real.canvas.selection, selection); assert.equal(f.commits(), 0);
+        }
+        const escape = new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }); handler(escape);
+        assert.equal(escape.defaultPrevented, true); assert.deepEqual(choices, ['cancel']);
+        assert.deepEqual(f.root, before); assert.deepEqual(real.canvas.selection, selection); assert.equal(H.undo(f.root), null);
+    } finally { promptRoot.remove(); f.unlisten(); await real.canvas.destroy(); }
 });
 
 test('comment commit and Undo Redo synchronously persist authored coordinate-overlay changes', () => {

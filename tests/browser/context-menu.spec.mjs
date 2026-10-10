@@ -193,6 +193,39 @@ test('multi-output subgraph commands choose a qualified output instead of silent
     await expect(page.locator('.pc-output-preview [role="tabpanel"] pre')).not.toContainText('Alpha');
 });
 
+test('host keyboard styling cannot add shortcut badges or expand the context-menu rows', async ({ page }) => {
+    await setup(page);
+    await page.addStyleTag({ content: `kbd {
+        display: inline-block;
+        padding: 2px 4px;
+        font-family: var(--monoFontFamily);
+        white-space: nowrap;
+        background-color: rgba(255, 255, 255, 0.9);
+        color: #333;
+        border: 1px solid #b4b4b4;
+        border-radius: 3px;
+        box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2), 0 2px 0 0 rgba(255, 255, 255, 0.7) inset;
+        font-size: 90%;
+        line-height: 1;
+    }` });
+    await heading(page, 'n1').click({ button: 'right' });
+    const metrics = await menu(page).evaluate(element => ({
+        width: element.getBoundingClientRect().width,
+        rows: [...element.querySelectorAll('.pc-context-item')].map(row => row.getBoundingClientRect().height),
+        shortcuts: [...element.querySelectorAll('.pc-context-shortcut')].map(shortcut => {
+            const style = getComputedStyle(shortcut);
+            return { background: style.backgroundColor, padding: style.padding, border: style.borderWidth,
+                radius: style.borderRadius, shadow: style.boxShadow, fontSize: style.fontSize };
+        }),
+    }));
+    expect(metrics.shortcuts.length).toBeGreaterThan(0);
+    for (const shortcut of metrics.shortcuts) expect(shortcut).toEqual({
+        background: 'rgba(0, 0, 0, 0)', padding: '0px', border: '0px', radius: '0px', shadow: 'none', fontSize: '12px',
+    });
+    expect(metrics.width).toBe(296);
+    for (const height of metrics.rows) expect(height).toBe(32);
+});
+
 test('long subgraph menus fit a small viewport and keyboard navigation skips read-only commands', async ({ page }) => {
     await setup(page);
     await page.setViewportSize({ width: 736, height: 480 });

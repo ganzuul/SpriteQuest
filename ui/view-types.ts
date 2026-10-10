@@ -24,6 +24,6 @@ export interface GraphViewActions {
     closeOtherViews?: (key: string) => void;
     saveView?: (key: string) => void;
     exportView?: (key: string) => void;
-    renameView?: (key: string) => void;
+    renameView?: (key: string, name: string) => void;
     canRenameView?: (key: string) => boolean;
 }

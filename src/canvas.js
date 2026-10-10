@@ -442,6 +442,48 @@ export class Canvas {
 
     selectAll() { if (this.graph) this.setMulti(Object.keys(this.graph.nodes)); }
 
+    centerSelection() {
+        if (!this.graph || this.drag || this.marquee || this.pan || this.#nativeBridge()?.hasContentGesture()) return;
+        this.#finishZoom(false);
+        const ids = new Set(this.multi);
+        if (this.selection?.kind === 'node') ids.add(this.selection.id);
+        const all = !this.selection && !this.multi.size && !this.wireMulti.size;
+        if (all) for (const id of Object.keys(this.graph.nodes)) ids.add(id);
+        const boxes = [], groups = new Set();
+        const addGroup = group => {
+            if (!group || groups.has(group.id)) return;
+            groups.add(group.id);
+            const card = this.#groupCard(group), key = `group:${group.id}`;
+            boxes.push(group.collapsed ? { x: card.x, y: card.y, w: this.geometry.width(key, card.w), h: this.geometry.get(key, 90) } : card);
+        };
+        for (const id of ids) {
+            const node = this.graph.nodes[id];
+            if (!node) continue;
+            const group = this.#folded(node);
+            if (group) addGroup(group);
+            else boxes.push({ x: node.x, y: node.y, w: this.widthOf(node), h: this.heightOf(node) });
+        }
+        if (this.selection?.kind === 'group') addGroup(this.graph.groups?.[this.selection.id]);
+        if (all) for (const group of Object.values(this.graph.groups ?? {})) addGroup(group);
+        const wires = new Set(this.wireMulti);
+        if (this.selection?.kind === 'wire') wires.add(this.selection.id);
+        for (const id of wires) {
+            const wire = this.graph.wires[id];
+            if (!wire) continue;
+            const from = this.endpoint(wire.from, 'out', wire.fromPort), to = this.endpoint(wire.to, 'in', wire.toPort);
+            if (from && to) boxes.push({ x: Math.min(from.x, to.x), y: Math.min(from.y, to.y), w: Math.abs(from.x - to.x), h: Math.abs(from.y - to.y) });
+        }
+        const bounds = boxes.filter(box => ['x', 'y', 'w', 'h'].every(key => Number.isFinite(box[key])) && box.w >= 0 && box.h >= 0);
+        if (!bounds.length) return;
+        const cx = (Math.min(...bounds.map(box => box.x)) + Math.max(...bounds.map(box => box.x + box.w))) / 2;
+        const cy = (Math.min(...bounds.map(box => box.y)) + Math.max(...bounds.map(box => box.y + box.h))) / 2;
+        const rect = this.host.getBoundingClientRect(), view = this.view;
+        view.x = rect.width / 2 - cx * view.zoom;
+        view.y = rect.height / 2 - cy * view.zoom;
+        this.applyTransform();
+        this.hooks.onViewCommit?.();
+    }
+
     fitSelection() {
         this.#finishZoom(false);
         const ids = this.#pickedIds();

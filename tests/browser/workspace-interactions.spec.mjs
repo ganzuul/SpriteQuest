@@ -65,14 +65,15 @@ test('workspace labels resist text highlighting while editors and recorded outpu
 
 test('renaming an inactive subgraph tab updates its parent node and supports undo without switching views', async ({ page }) => {
     await openNestedWorkspace(page);
-    await page.evaluate(() => {
-        const context = window.canvasHarness.context;
-        context.POPUP_TYPE = { INPUT: 'input' };
-        context.callGenericPopup = async () => 'Renamed outer subgraph';
-    });
     const tabs = page.locator('.pc-graph-tabs [role="tab"]');
     await tabs.nth(1).click({ button: 'right' });
     await page.getByRole('menuitem', { name: 'Rename subgraph', exact: true }).click();
+    const rename = page.locator('.pc-graph-tabs').getByRole('textbox', { name: 'Subgraph name', exact: true });
+    await expect(rename).toBeFocused();
+    await expect(rename).toHaveValue('A long subgraph name that wraps on small screens');
+    await rename.fill('Renamed outer subgraph');
+    await rename.press('Tab');
+    await expect(rename).toHaveCount(0);
     await expect(tabs.nth(1)).toContainText('Renamed outer subgraph');
     await expect(tabs.nth(2)).toHaveAttribute('aria-selected', 'true');
     await expect(page.locator('.pc-graph-location')).toContainText('Renamed outer subgraph');
@@ -86,15 +87,19 @@ test('renaming an inactive subgraph tab updates its parent node and supports und
 
 test('renaming the root graph from its inactive tab updates the workflow name and breadcrumb', async ({ page }) => {
     await openNestedWorkspace(page);
-    await page.evaluate(() => {
-        const context = window.canvasHarness.context;
-        context.POPUP_TYPE = { INPUT: 'input' };
-        context.callGenericPopup = async () => 'Renamed workflow';
-    });
     const tabs = page.locator('.pc-graph-tabs [role="tab"]');
+    const existingDialogs = await page.getByRole('dialog').count();
     await tabs.first().click({ button: 'right' });
     await expect(page.getByRole('menuitem', { name: 'Close tab', exact: true })).toBeDisabled();
     await page.getByRole('menuitem', { name: 'Rename graph', exact: true }).click();
+    const rename = page.locator('.pc-graph-tabs').getByRole('textbox', { name: 'Graph name', exact: true });
+    await expect(rename).toBeFocused();
+    await expect(page.getByRole('dialog')).toHaveCount(existingDialogs);
+    await expect(rename).toHaveValue('Workspace interactions');
+    expect(await rename.evaluate(input => input.value.slice(input.selectionStart, input.selectionEnd))).toBe('Workspace interactions');
+    await rename.fill('Renamed workflow');
+    await rename.press('Enter');
+    await expect(rename).toHaveCount(0);
     await expect(tabs.first()).toHaveText('Renamed workflow');
     await expect(tabs.nth(2)).toHaveAttribute('aria-selected', 'true');
     await expect(page.locator('.pc-graph-location')).toContainText('Renamed workflow');
@@ -109,13 +114,11 @@ test('subgraph rename undo restores an existing parent node alias', async ({ pag
     await page.getByLabel('Alias', { exact: true }).fill('Prior local alias');
     await page.getByLabel('Alias', { exact: true }).press('Tab');
     await tabs.nth(2).click();
-    await page.evaluate(() => {
-        const context = window.canvasHarness.context;
-        context.POPUP_TYPE = { INPUT: 'input' };
-        context.callGenericPopup = async () => 'Renamed alias subgraph';
-    });
     await tabs.nth(1).click({ button: 'right' });
     await page.getByRole('menuitem', { name: 'Rename subgraph', exact: true }).click();
+    const rename = page.locator('.pc-graph-tabs').getByRole('textbox', { name: 'Subgraph name', exact: true });
+    await rename.fill('Renamed alias subgraph');
+    await rename.press('Enter');
     await expect(tabs.nth(1)).toContainText('Renamed alias subgraph');
     await tabs.first().click();
     await expect(page.locator('.pc-node-native[data-id="first/path"] .pc-native-heading')).toHaveText('Renamed alias subgraph');
@@ -132,6 +135,33 @@ test('subgraph rename undo restores an existing parent node alias', async ({ pag
     });
     await expect(page.locator('.pc-node-native[data-id="first/path"] .pc-native-heading')).toHaveText('Prior local alias');
     expect(await page.evaluate(() => window.renameStoredViews.views.find(view => view.identity.kind === 'root').nodePresentation['first/path'].alias)).toBe('Renamed alias subgraph');
+});
+
+test('Graph menu inline rename cancels with Escape, ignores blank names, and supports root undo and redo', async ({ page }) => {
+    await openNestedWorkspace(page);
+    const tabs = page.locator('.pc-graph-tabs [role="tab"]');
+    const rename = page.locator('.pc-graph-tabs').getByRole('textbox', { name: 'Graph name', exact: true });
+    for (const [draft, key] of [['Canceled workflow', 'Escape'], ['   ', 'Enter']]) {
+        await page.getByRole('button', { name: 'Graph', exact: true }).click();
+        await page.getByRole('menuitem', { name: 'Rename workflow', exact: true }).click();
+        await expect(rename).toBeFocused();
+        await rename.fill(draft);
+        await rename.press(key);
+        await expect(rename).toHaveCount(0);
+        await expect(tabs.first()).toHaveText('Workspace interactions');
+        expect(await page.evaluate(() => window.canvasHarness.S.getGraph('prepared-root').name)).toBe('Workspace interactions');
+    }
+    await page.getByRole('button', { name: 'Graph', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Rename workflow', exact: true }).click();
+    await rename.fill('Menu renamed workflow');
+    await rename.press('Enter');
+    await expect(tabs.first()).toHaveText('Menu renamed workflow');
+    await expect(tabs.nth(2)).toHaveAttribute('aria-selected', 'true');
+    await tabs.first().click();
+    await page.getByRole('button', { name: 'Undo', exact: true }).click();
+    await expect(tabs.first()).toHaveText('Workspace interactions');
+    await page.getByRole('button', { name: 'Redo', exact: true }).click();
+    await expect(tabs.first()).toHaveText('Menu renamed workflow');
 });
 
 test('root tab context actions stay above the floating canvas controls', async ({ page }) => {

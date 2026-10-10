@@ -19,6 +19,14 @@ async function controllerFunction(name, env) {
     return Function('env', 'with(env){' + source.slice(start, end) + ';return ' + name + ';}')(env);
 }
 
+async function installSaveTracking(env) {
+    env.savedWorkflowDocuments = new WeakMap();
+    env.workflowSaveRequests = new WeakMap();
+    env.workflowDocumentSnapshot = await controllerFunction('workflowDocumentSnapshot', env);
+    env.hasUnsavedWorkflowChanges = await controllerFunction('hasUnsavedWorkflowChanges', env);
+    env.savedWorkflowDocuments.set(env.current, env.workflowDocumentSnapshot(env.current));
+}
+
 async function openEnvironment(file) {
     const original = { ...S.blankGraph('Original workflow'), id: 'original' };
     const stored = { schema: 1, enabled: false, activeGraphId: original.id, graphs: { original }, nativeBindings: { preGraphId: null, postGraphId: null }, subgraphLibrary: { definitions: {} }, ui: {} };
@@ -129,6 +137,7 @@ async function saveEnvironment() {
         toast: (message, type) => notices.push({ message, type }),
     };
     env.persistGraphViews = await controllerFunction('persistGraphViews', env);
+    await installSaveTracking(env);
     return { env, host, graph, stored, session, notices, save: await controllerFunction('onSaveGraph', env) };
 }
 
@@ -178,6 +187,28 @@ test('Save reports synchronous and asynchronous host errors without success feed
     }
 });
 
+test('a delayed Save cannot replace the checkpoint of a newer successful Save', async () => {
+    const fixture = await saveEnvironment();
+    let finish;
+    fixture.graph.description = 'First edit';
+    fixture.host.saveSettingsDebounced = () => new Promise(resolve => { finish = resolve; });
+    const first = fixture.save();
+    fixture.graph.description = 'Latest saved edit';
+    fixture.host.saveSettingsDebounced = () => {};
+    await fixture.save();
+    finish(); await first;
+    assert.equal(fixture.env.hasUnsavedWorkflowChanges(fixture.graph), false);
+});
+
+test('saving through a graph tab clears the current workflow unsaved checkpoint', async () => {
+    const fixture = await saveEnvironment();
+    fixture.graph.description = 'Saved through graph tab';
+    fixture.env.onSaveGraph = fixture.save;
+    const saveView = await controllerFunction('onSaveGraphView', fixture.env);
+    await saveView(fixture.session.readEditor().view.key);
+    assert.equal(fixture.env.hasUnsavedWorkflowChanges(fixture.graph), false);
+});
+
 async function exportEnvironment() {
     const blobs = new Map(), downloads = [], revoked = [], later = [], notices = [];
     const env = {
@@ -195,6 +226,7 @@ async function exportEnvironment() {
         toast: (message, type) => notices.push({ message, type }),
     };
     env.downloadGraphViewJSON = await controllerFunction('downloadGraphViewJSON', env);
+    await installSaveTracking(env);
     return { env, downloads, revoked, later, notices, export: await controllerFunction('onExportGraph', env) };
 }
 
@@ -243,33 +275,41 @@ test('Export downloads the whole current root while a subgraph view is active', 
     assert.deepEqual(fixture.revoked, ['blob:workflow-0']);
 });
 
-async function newEnvironment(name) {
+async function newEnvironment() {
     const host = installMock();
     const original = S.createGraph('Original workflow');
     S.settings().activeGraphId = original.id;
     const changes = [];
     host.saveSettingsDebounced = () => changes.push('save');
     const env = {
-        ...S, current: original, uiEpoch: 1, inputBox: async () => name,
+        ...S, current: original, uiEpoch: 1, canvas: null, pendingNewWorkflow: null,
+        workbench: { update() {} },
         setCanvasGraph: () => changes.push('canvas'), renderAll: () => changes.push('render'),
     };
     env.stillEditing = (graph, epoch) => env.current === graph && env.uiEpoch === epoch;
+    await installSaveTracking(env);
+    env.requestNewWorkflowChoice = await controllerFunction('requestNewWorkflowChoice', env);
+    env.chooseNewWorkflow = await controllerFunction('chooseNewWorkflow', env);
     return { env, original, changes, create: await controllerFunction('onNewGraph', env) };
 }
 
-test('New ignores a whitespace-only workflow name without creating or saving a graph', async () => {
-    const fixture = await newEnvironment(' \n\t ');
-    await fixture.create();
+test('New Cancel preserves unsaved workflow edits without creating or saving a graph', async () => {
+    const fixture = await newEnvironment();
+    fixture.original.description = 'Unsaved edits';
+    const pending = fixture.create();
+    fixture.env.chooseNewWorkflow('cancel');
+    await pending;
     assert.equal(fixture.env.current, fixture.original);
     assert.equal(S.allGraphs().length, 1);
     assert.equal(S.settings().activeGraphId, fixture.original.id);
     assert.deepEqual(fixture.changes, []);
 });
 
-test('New trims an accepted name and activates the exact new workflow', async () => {
-    const fixture = await newEnvironment('  Named workflow  ');
+test('New activates an untitled blank workflow without requesting a name', async () => {
+    const fixture = await newEnvironment();
     await fixture.create();
-    assert.equal(fixture.env.current.name, 'Named workflow');
+    assert.equal(fixture.env.current.name, 'Untitled workflow');
+    assert.deepEqual(fixture.env.current.nodes, {});
     assert.notEqual(fixture.env.current, fixture.original);
     assert.equal(S.resolveGraph().graph, fixture.env.current);
     assert.equal(S.allGraphs().length, 2);

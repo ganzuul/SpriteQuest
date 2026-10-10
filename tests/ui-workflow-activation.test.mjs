@@ -12,7 +12,7 @@ function actual(name, env) {
 }
 function fixture() {
     const original = S.createGraph('Z current'); S.settings().activeGraphId = original.id;
-    const env = { ...S, current: original, uiEpoch: 1, isOpen: () => true, inputBox: async () => 'A new', confirmBox: async () => true, renderAll() {}, toast() {}, setCanvasGraph() { assert.equal(S.settings().activeGraphId, env.current.id); } };
+    const env = { ...S, current: original, uiEpoch: 1, canvas: null, pendingNewWorkflow: null, hasUnsavedWorkflowChanges: () => false, isOpen: () => true, inputBox: async () => 'A new', confirmBox: async () => true, renderAll() {}, toast() {}, setCanvasGraph() { assert.equal(S.settings().activeGraphId, env.current.id); } };
     env.stillEditing = actual('stillEditing', env);
     return env;
 }
@@ -28,8 +28,9 @@ test('Delete activates the exact surviving root selected by current state', asyn
 });
 test('captured New continuation cannot switch roots after the active view changes', async () => {
     const env = fixture(), count = S.allGraphs().length; let finish;
-    env.inputBox = () => new Promise(resolve => { finish=resolve; }); const pending = actual('onNewGraph',env)();
-    env.uiEpoch++; finish('Too late'); await pending; assert.equal(S.allGraphs().length,count);
+    env.hasUnsavedWorkflowChanges = () => true;
+    env.requestNewWorkflowChoice = () => new Promise(resolve => { finish=resolve; }); const pending = actual('onNewGraph',env)();
+    env.uiEpoch++; finish('discard'); await pending; assert.equal(S.allGraphs().length,count);
 });
 test('Import persists the actual newly opened root after the captured file read', async () => {
     const env = fixture(), text = S.exportGraph(env.current.id); let change;

@@ -64,6 +64,9 @@ test('graph navigation flushes the cancelled source camera before changing the a
 
 test('close flushes the final cancelled camera before deactivating the view session', () => {
     const f = persistenceFixture();
+    f.env.pendingNewWorkflow = null;
+    f.env.chooseNewWorkflow = controllerFunction('chooseNewWorkflow', f.env);
+    f.env.workbench = { update() {} };
     Object.assign(f.env, { canvas: { cancelGesture() { f.session.updateView({ camera: { x: 45, y: -20, zoom: 1.2 } }); f.persist(false, true); } }, persistGraphViews: f.persist, cancelImportReview() {}, document: { removeEventListener() {} }, receiveAutomaticWorkflow() {}, documentTransition: false, workflowSession: { cancel() {} }, rootRunEpoch: 0, uiEpoch: 0, nativeWireBridge: null, root: { classList: { remove() {} } } });
     controllerFunction('close', f.env)();
     assert.equal(f.env.graphViews, null); assert.equal(f.scheduled.size, 0);

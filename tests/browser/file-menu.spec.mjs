@@ -96,24 +96,179 @@ test('File Export JSON downloads a portable copy that Open can reopen without ch
     expect(Object.keys(after.graphs[after.activeGraphId].nodes)).toHaveLength(Object.keys(file.graph.nodes).length);
 });
 
-test('File New cancels cleanly, rejects empty names and retains existing workflows', async ({ page }) => {
+test('File New immediately opens a blank canvas and retains existing workflows', async ({ page }) => {
     await load(page);
+    await page.evaluate(() => window.canvasHarness.view({ x: 180, y: 120, zoom: 0.75 }));
     const before = await snapshot(page);
-    for (const name of [null, '   ']) {
-        page.once('dialog', dialog => name === null ? dialog.dismiss() : dialog.accept(name));
-        await menu(page, 'New workflow');
-        await page.evaluate(() => window.canvasHarness.settle());
-        expect(await snapshot(page)).toEqual(before);
-    }
-    page.once('dialog', dialog => dialog.accept('  New authored workflow  '));
     await menu(page, 'New workflow');
-    await expect.poll(() => page.evaluate(() => window.canvasHarness.graph.name)).toBe('New authored workflow');
+    await expect.poll(() => page.evaluate(() => window.canvasHarness.graph.id)).not.toBe(before.activeGraphId);
     const after = await snapshot(page);
+    expect(after.graphs[after.activeGraphId].name).toBe('Untitled workflow');
     expect(Object.keys(after.graphs)).toHaveLength(Object.keys(before.graphs).length + 1);
     expect(after.graphs[before.activeGraphId]).toEqual(before.graphs[before.activeGraphId]);
     expect(after.graphs[after.activeGraphId].nodes).toEqual({});
     expect(after.enabled).toBe(before.enabled);
     expect(after.nativeBindings).toEqual(before.nativeBindings);
+});
+
+test('closing and reopening the same workflow cancels its inline rename draft', async ({ page }) => {
+    await load(page);
+    await page.getByRole('button', { name: 'Graph', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Rename workflow', exact: true }).click();
+    const rename = page.locator('.pc-graph-tabs').getByRole('textbox', { name: 'Graph name', exact: true });
+    await rename.fill('Discarded rename draft');
+    await page.evaluate(async () => {
+        const h = window.canvasHarness;
+        h.UI.refreshIfOpen(); await h.settle();
+    });
+    await expect(rename).toHaveValue('Discarded rename draft');
+    await page.evaluate(async () => {
+        const h = window.canvasHarness, graph = h.graph;
+        h.UI.close();
+        graph.name = 'Changed while closed'; h.S.touchGraph(graph);
+        h.UI.open(); await h.settle();
+    });
+    await expect(rename).toHaveCount(0);
+    await expect(page.locator('.pc-graph-tabs [role="tab"]').first()).toHaveText('Changed while closed');
+    expect(await page.evaluate(() => window.canvasHarness.graph.name)).toBe('Changed while closed');
+});
+
+test('File New offers to save edited workflow changes and Cancel preserves the canvas', async ({ page }) => {
+    await load(page);
+    await page.evaluate(async () => {
+        const h = window.canvasHarness;
+        h.graph.description = 'Unsaved workflow description';
+        h.S.touchGraph(h.graph); h.UI.refreshIfOpen(); await h.settle();
+        await h.view({ x: 120, y: 80, zoom: 0.75 });
+    });
+    const before = await snapshot(page);
+    await menu(page, 'New workflow');
+    const dialog = page.getByRole('dialog', { name: 'Save workflow changes?', exact: true });
+    await expect(dialog).toBeVisible({ timeout: 2500 });
+    await expect(dialog.getByRole('button', { name: 'Save', exact: true })).toBeVisible();
+    await dialog.getByRole('button', { name: 'Cancel', exact: true }).click();
+    await expect(dialog).toHaveCount(0);
+    expect(await snapshot(page)).toEqual(before);
+    expect(await page.evaluate(() => ({ ...window.canvasHarness.canvas.view }))).toMatchObject({ x: 120, y: 80, zoom: 0.75 });
+    await menu(page, 'New workflow');
+    await expect(dialog).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(dialog).toHaveCount(0);
+    expect(await snapshot(page)).toEqual(before);
+});
+
+test('File New Save downloads all current workflow edits before opening a blank canvas', async ({ page }) => {
+    await load(page);
+    await page.evaluate(async () => {
+        const h = window.canvasHarness;
+        h.graph.description = 'Save these workflow edits';
+        h.S.touchGraph(h.graph); h.UI.refreshIfOpen(); await h.settle();
+    });
+    const before = await snapshot(page);
+    await menu(page, 'New workflow');
+    const dialog = page.getByRole('dialog', { name: 'Save workflow changes?', exact: true });
+    const [download] = await Promise.all([
+        page.waitForEvent('download', { timeout: 2500 }),
+        dialog.getByRole('button', { name: 'Save', exact: true }).click({ timeout: 2500 }),
+    ]);
+    const chunks = [];
+    for await (const chunk of await download.createReadStream()) chunks.push(chunk);
+    const file = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+    expect(file.graph.id).toBe(before.activeGraphId);
+    expect(file.graph.description).toBe('Save these workflow edits');
+    expect(Object.keys(file.graph.nodes)).toEqual(Object.keys(before.graphs[before.activeGraphId].nodes));
+    await expect.poll(() => page.evaluate(() => window.canvasHarness.graph.id)).not.toBe(before.activeGraphId);
+    const after = await snapshot(page);
+    expect(after.graphs[after.activeGraphId].nodes).toEqual({});
+    expect(after.graphs[before.activeGraphId]).toEqual(before.graphs[before.activeGraphId]);
+});
+
+test('File New Discard opens a blank canvas without downloading the edited workflow', async ({ page }) => {
+    await load(page);
+    const downloads = [];
+    page.on('download', download => downloads.push(download));
+    await page.evaluate(async () => {
+        const h = window.canvasHarness;
+        h.graph.description = 'Kept in the workspace';
+        h.S.touchGraph(h.graph); h.UI.refreshIfOpen(); await h.settle();
+    });
+    const before = await snapshot(page);
+    await menu(page, 'New workflow');
+    await page.getByRole('dialog', { name: 'Save workflow changes?', exact: true }).getByRole('button', { name: 'Discard', exact: true }).click();
+    await expect.poll(() => page.evaluate(() => window.canvasHarness.graph.id)).not.toBe(before.activeGraphId);
+    const after = await snapshot(page);
+    expect(after.graphs[after.activeGraphId].nodes).toEqual({});
+    expect(after.graphs[before.activeGraphId]).toEqual(before.graphs[before.activeGraphId]);
+    expect(downloads).toEqual([]);
+});
+
+test('File New keeps the current workflow if its save download fails', async ({ page }) => {
+    await load(page);
+    await page.evaluate(async () => {
+        const h = window.canvasHarness;
+        h.graph.description = 'Changes must remain available';
+        h.S.touchGraph(h.graph); h.UI.refreshIfOpen(); await h.settle();
+        URL.createObjectURL = () => { throw new Error('Save download failed'); };
+    });
+    const before = await snapshot(page);
+    await menu(page, 'New workflow');
+    await page.getByRole('dialog', { name: 'Save workflow changes?', exact: true }).getByRole('button', { name: 'Save', exact: true }).click();
+    await expect.poll(() => page.evaluate(() => window.canvasHarness.toasts.at(-1))).toMatchObject({ type: 'error', message: 'Save download failed' });
+    expect(await snapshot(page)).toEqual(before);
+    await menu(page, 'New workflow');
+    await expect(page.getByRole('dialog', { name: 'Save workflow changes?', exact: true })).toBeVisible();
+    await page.keyboard.press('Escape');
+    expect(await snapshot(page)).toEqual(before);
+});
+
+test('the New save prompt blocks canvas shortcuts when the backdrop takes focus', async ({ page }) => {
+    await load(page);
+    await page.evaluate(async () => {
+        const h = window.canvasHarness;
+        h.canvas.select({ kind: 'node', id: Object.keys(h.graph.nodes)[0] });
+        h.graph.description = 'Protect this workflow';
+        h.S.touchGraph(h.graph); h.UI.refreshIfOpen(); await h.settle();
+    });
+    const before = await snapshot(page);
+    await menu(page, 'New workflow');
+    const dialog = page.getByRole('dialog', { name: 'Save workflow changes?', exact: true });
+    await expect(dialog).toBeVisible();
+    await page.mouse.click(5, 5);
+    await page.keyboard.press('Delete');
+    expect(await snapshot(page)).toEqual(before);
+    await page.evaluate(() => {
+        const clipboardData = new DataTransfer();
+        clipboardData.setData('text/plain', 'Do not paste onto the canvas');
+        document.dispatchEvent(new ClipboardEvent('paste', { clipboardData, bubbles: true, cancelable: true }));
+    });
+    expect(await snapshot(page)).toEqual(before);
+    await page.keyboard.press('Tab');
+    expect(await dialog.evaluate(element => element.contains(document.activeElement))).toBe(true);
+    await page.keyboard.press('Escape');
+    await expect(dialog).toHaveCount(0);
+    expect(await snapshot(page)).toEqual(before);
+});
+
+test('the New save prompt wraps backward from dialog focus into its buttons', async ({ page }) => {
+    await load(page);
+    await page.evaluate(async () => {
+        const h = window.canvasHarness;
+        h.graph.description = 'Keep focus in the prompt';
+        h.S.touchGraph(h.graph); h.UI.refreshIfOpen(); await h.settle();
+    });
+    await menu(page, 'New workflow');
+    const dialog = page.getByRole('dialog', { name: 'Save workflow changes?', exact: true });
+    await page.mouse.click(5, 5);
+    await page.keyboard.press('Delete');
+    await expect(dialog).toBeFocused();
+    await page.keyboard.press('Shift+Tab');
+    await expect(dialog.getByRole('button', { name: 'Cancel', exact: true })).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(dialog.getByRole('button', { name: 'Save', exact: true })).toBeFocused();
+    await page.keyboard.press('Shift+Tab');
+    await expect(dialog.getByRole('button', { name: 'Cancel', exact: true })).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(dialog).toHaveCount(0);
 });
 
 test('cancelling either File picker leaves all workflows and assignments unchanged', async ({ page }) => {

@@ -4,15 +4,41 @@
     let { views, actions = {}, panelId, idPrefix = 'pc-graph-view' }: { views?: GraphViews; actions?: GraphViewActions; panelId?: string; idPrefix?: string } = $props();
     let nav = $state<HTMLElement>(null!), menu = $state<HTMLDivElement>(null!), trigger = $state<HTMLButtonElement>(null!);
     let menuOpen = $state(false), focusKey = $state(''), contextKey = $state(''), contextX = $state(0), contextY = $state(0), previousActive = '';
+    let renameKey = $state(''), renameName = $state(''), renameInput = $state<HTMLInputElement>(null!);
+    let renameWorkflowId = '';
+    let renameOwner: HTMLInputElement | null = null, renameEpoch = 0;
     const contextTarget = $derived(views?.tabs.find(view => view.key === contextKey));
     const tabElements: Record<string, HTMLButtonElement> = {};
     $effect(() => {
         const activeKey = views?.active.key ?? '';
-        if (previousActive !== activeKey) { focusKey = activeKey; closeMenu(); }
+        if (previousActive !== activeKey) { focusKey = activeKey; closeMenu(); renameKey = ''; }
         else if (views && !views.tabs.some(tab => tab.key === focusKey)) focusKey = activeKey;
         if (contextKey && !contextTarget) closeMenu();
+        if (renameKey && (views?.workflowId !== renameWorkflowId || !views.tabs.some(tab => tab.key === renameKey))) renameKey = '';
         previousActive = activeKey;
     });
+    export async function startRename(key: string) {
+        const view = views?.tabs.find(view => view.key === key);
+        if (!view || view.identity.kind === 'library' || !actions.renameView || actions.canRenameView?.(key) === false) return;
+        const epoch = ++renameEpoch; renameOwner = null;
+        closeMenu(); renameWorkflowId = views!.workflowId; renameName = view.label; renameKey = key;
+        await tick();
+        if (renameKey !== key || renameEpoch !== epoch) return;
+        renameOwner = renameInput;
+        renameInput?.focus({ preventScroll: true }); renameInput?.select();
+    }
+    async function finishRename(input: HTMLInputElement, commit: boolean, restoreFocus = true) {
+        const key = renameKey, view = views?.tabs.find(view => view.key === key), name = renameName.trim();
+        if (!key || input !== renameOwner) return;
+        renameKey = ''; renameOwner = null;
+        if (commit && view && name && name !== view.label && views?.workflowId === renameWorkflowId && view.identity.kind !== 'library' && actions.canRenameView?.(key) !== false) actions.renameView?.(key, name);
+        if (restoreFocus) { await tick(); tabElements[key]?.focus({ preventScroll: true }); }
+    }
+    function renameKeys(event: KeyboardEvent) {
+        event.stopPropagation();
+        if (event.isComposing) return;
+        if (event.key === 'Enter' || event.key === 'Escape') { event.preventDefault(); finishRename(event.currentTarget as HTMLInputElement, event.key === 'Enter'); }
+    }
     function fullLabel(view: GraphViewInfo) {
         const location = view.breadcrumbs.map(crumb => crumb.label).join(' / ') || view.label;
         const identity = view.identity;
@@ -84,8 +110,9 @@
     <nav class="pc-graph-tabs pc-graph-tabs-multi" class:pc-graph-tabs-menu-open={menuOpen} aria-label="Open graph views" bind:this={nav}>
         <div class="pc-graph-tab-list" role="tablist" aria-label="Graph views">
             {#each views.tabs as view, index (view.key)}
-                <div class="pc-graph-tab-item" class:pc-graph-tab-active={view.key === views.active.key}>
-                    <button type="button" class="pc-graph-tab" class:pc-graph-tab-closeable={view.identity.kind !== 'root'} role="tab" id={`${idPrefix}-${index}`} aria-controls={panelId} aria-selected={view.key === views.active.key} aria-haspopup="menu" aria-expanded={menuOpen && contextKey === view.key} tabindex={view.key === (focusKey || views.active.key) ? 0 : -1} title={fullLabel(view)} onclick={() => focusTab(view.key)} onpointerdown={(event) => { if (event.button === 2) event.preventDefault(); }} oncontextmenu={(event) => contextTab(event, view)} onkeydown={(event) => tabKeys(event, index)} bind:this={tabElements[view.key]}><span>{view.label}</span>{#if view.readOnly}<span class="pc-graph-tab-lock" aria-label="Read only">◇</span>{/if}</button>
+                <div class="pc-graph-tab-item" class:pc-graph-tab-active={view.key === views.active.key} class:pc-graph-tab-editing={renameKey === view.key}>
+                    <button type="button" class="pc-graph-tab" class:pc-graph-tab-closeable={view.identity.kind !== 'root'} role="tab" id={`${idPrefix}-${index}`} aria-controls={panelId} aria-selected={view.key === views.active.key} aria-haspopup="menu" aria-expanded={menuOpen && contextKey === view.key} tabindex={renameKey !== view.key && view.key === (focusKey || views.active.key) ? 0 : -1} title={fullLabel(view)} onclick={() => focusTab(view.key)} onpointerdown={(event) => { if (event.button === 2) event.preventDefault(); }} oncontextmenu={(event) => contextTab(event, view)} onkeydown={(event) => tabKeys(event, index)} bind:this={tabElements[view.key]}><span>{view.label}</span>{#if view.readOnly}<span class="pc-graph-tab-lock" aria-label="Read only">◇</span>{/if}</button>
+                    {#if renameKey === view.key}<input type="text" class="pc-graph-tab-rename" class:pc-graph-tab-closeable={view.identity.kind !== 'root'} aria-label={view.identity.kind === 'root' ? 'Graph name' : 'Subgraph name'} title="Enter to save, Escape to cancel" maxlength={view.identity.kind === 'instance' ? 80 : undefined} bind:value={renameName} bind:this={renameInput} onkeydown={renameKeys} onblur={(event) => finishRename(event.currentTarget, true, false)} />{/if}
                     {#if view.identity.kind !== 'root'}<button type="button" class="pc-graph-tab-close" aria-label={`Close ${view.label} · ${fullLabel(view)}`} title={`Close ${fullLabel(view)}`} tabindex={view.key === (focusKey || views.active.key) ? 0 : -1} onclick={() => closeTab(view)} oncontextmenu={(event) => contextTab(event, view)} onkeydown={(event) => tabKeys(event, index)}>×</button>{/if}
                 </div>
             {/each}
@@ -98,7 +125,7 @@
                     {@const renameBlocked = actions.canRenameView?.(target.key) === false}
                     <button type="button" role="menuitem" disabled={!actions.saveView} onclick={() => contextAction(view => actions.saveView?.(view.key))}>Save workflow</button>
                     <button type="button" role="menuitem" disabled={!actions.exportView} onclick={() => contextAction(view => actions.exportView?.(view.key))}>{target.identity.kind === 'root' ? 'Export workflow JSON' : 'Export subgraph JSON'}</button>
-                    <button type="button" role="menuitem" disabled={target.identity.kind === 'library' || renameBlocked || !actions.renameView} title={target.identity.kind === 'library' ? 'Library inspection is read only.' : renameBlocked ? 'Make a local copy of the containing graph to rename this subgraph.' : undefined} onclick={() => contextAction(view => actions.renameView?.(view.key))}>{target.identity.kind === 'root' ? 'Rename graph' : 'Rename subgraph'}</button>
+                    <button type="button" role="menuitem" disabled={target.identity.kind === 'library' || renameBlocked || !actions.renameView} title={target.identity.kind === 'library' ? 'Library inspection is read only.' : renameBlocked ? 'Make a local copy of the containing graph to rename this subgraph.' : undefined} onclick={() => contextAction(view => startRename(view.key))}>{target.identity.kind === 'root' ? 'Rename graph' : 'Rename subgraph'}</button>
                     <button type="button" role="menuitem" disabled={target.identity.kind === 'root' || !actions.closeView} onclick={() => contextAction(view => closeTab(view))}>Close tab</button>
                     <button type="button" role="menuitem" disabled={views.tabs.every(view => view.identity.kind === 'root' || view.key === target.key) || !actions.closeOtherViews} onclick={() => contextAction(view => actions.closeOtherViews?.(view.key))}>Close other tabs</button>
                     {#each views.closedViews as view (view.key)}<button type="button" role="menuitem" disabled={!actions.reopenView} title={fullLabel(view)} onclick={() => menuAction(() => actions.reopenView?.(view.key))}>Reopen {view.label} · {fullLabel(view)}</button>{/each}
@@ -121,6 +148,11 @@
     .pc-graph-tabs-multi .pc-graph-tab { display: flex; align-items: center; gap: 5px; min-width: 0; max-width: 220px; white-space: nowrap; }
     .pc-graph-tab > span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
     .pc-graph-tab-closeable { padding-right: 28px; }
+    .pc-graph-tab-editing { min-width: 110px; }
+    .pc-graph-tab-editing .pc-graph-tab { flex: 1; }
+    .pc-graph-tab-editing .pc-graph-tab > span:first-child { visibility: hidden; }
+    .pc-graph-tabs-multi input.pc-graph-tab-rename { all: unset; box-sizing: border-box; position: absolute; left: 10px; right: 10px; top: 4px; bottom: 4px; width: calc(100% - 20px); padding: 1px 3px; border: 1px solid var(--pc-accent); border-radius: 2px; background: var(--pc-canvas); color: var(--pc-text); font: inherit; font-size: 12px; user-select: text; }
+    .pc-graph-tabs-multi input.pc-graph-tab-rename.pc-graph-tab-closeable { right: 28px; width: calc(100% - 38px); }
     .pc-graph-tabs-multi .pc-graph-tab:not([aria-selected="true"]) { background: var(--pc-panel); margin-bottom: 0; color: var(--pc-muted); }
     .pc-graph-tabs-multi .pc-graph-tab:not([aria-selected="true"])::after { display: none; }
     .pc-graph-tab-lock { font-size: 10px; }

@@ -104,7 +104,9 @@ Drag a card by its body to move it. Drag a rectangle on empty space to select in
 
 Below 50% zoom, cards use an overview mode that hides small labels and extra controls and reduces shadows. Full detail returns at 60% zoom. Hover over a card, select it, or use Tab to focus it to reveal its details at any zoom. Card sizes and wire endpoints stay fixed; titles, ports, selection and execution indicators remain visible.
 
-Use **Graph → Fit to view** or **Fit selection** to recover your position. Select/Pan and zoom commands are also in the Graph menu. Keyboard shortcuts are listed at the end of this manual.
+Use **Graph → Fit to view** or **Fit selection** to recover your position. Press **F** to center the selected item or the combined selection; with nothing selected, it centers all nodes. F preserves the current zoom and is ignored while typing or dragging. Select/Pan and zoom commands are also in the Graph menu. Keyboard shortcuts are listed at the end of this manual.
+
+Choose **Graph → Rename workflow**, or right-click a graph or subgraph tab and choose **Rename**, to edit its name directly in the tab. Enter or leaving the field commits the name; Escape cancels. A blank name keeps the existing name.
 
 Use **Details** to show or hide the right panel. Drag its left-edge handle to adjust its width. Drag the divider between Preview and the graph to resize them; both handles also respond to arrow keys. **Collapse preview** provides more graph space. Reopening Preview restores the selected output.
 
@@ -265,7 +267,7 @@ Autosave persists committed workspace edits. It does not accept unsaved JSON dra
 | Action | Result |
 | --- | --- |
 | Workflow selector | Switch to a workflow already saved in Lattice |
-| File → New workflow | Create a separate blank workflow |
+| File → New workflow | Offer Save, Discard, or Cancel for unsaved changes, then open a separate blank Untitled workflow |
 | File → Open workflow… | Choose a workflow JSON file in the system picker and open it as a separate graph |
 | File → Save workflow | Request a save in SillyTavern, retaining local connections and workspace views |
 | File → Import into graph… | Review an additive insertion into the current graph |
@@ -273,6 +275,8 @@ Autosave persists committed workspace edits. It does not accept unsaved JSON dra
 | File → Close workspace | Close the editor while retaining committed workflows and workspace views |
 | Wrapper → Export subgraph | Download an individual reusable definition |
 | Wrapper → Add to Subgraphs; shelf entry → Delete | Save reusable definitions and remove shelf entries |
+
+When the unsaved-changes prompt appears, **Save** downloads the current workflow JSON, **Discard** continues without downloading, and **Cancel** keeps the current canvas open. Save and Discard open the blank workflow while retaining the existing workflow and its edits in the workspace. Creating a workflow does not request a name; rename its tab when needed.
 
 An additive import requires matching phases, assigns fresh node identities, and preserves internal connections and relative layout. Review role requirements, terminal changes, and request bounds before accepting the insertion. Import itself does not run or arm the workflow.
 
@@ -308,6 +312,7 @@ The current operations provide bounded host context, text/data processing, plann
 | Wheel | Zoom around pointer |
 | Ctrl/Cmd+A | Select all cards |
 | Period | Fit selection, or graph if nothing is selected |
+| F | Center the selection, or all nodes if nothing is selected, without changing zoom; ignored while typing or dragging |
 | Ctrl/Cmd+Z / Ctrl/Cmd+Shift+Z | Undo / redo graph edits |
 | Ctrl/Cmd+C / X / V | Copy / cut / paste selection outside text editors |
 | F2 on selected node | Rename its presentation alias |
