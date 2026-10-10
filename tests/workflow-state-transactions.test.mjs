@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { installMock } from './mock.js';
-import { starterGraph } from '../src/workflow/starters.js';
+import { fixtureGraph as starterGraph } from './helpers/workflow-fixtures.mjs';
 import { prepareWorkflowInsertion } from '../src/workflow/insertion.js';
 import { captureGraphEditContext } from '../src/workflow/transactions.js?v=0.26.0';
 import * as H from '../src/history.js?v=0.26.0';
@@ -25,7 +25,7 @@ test('named endpoint rewires record immediately as a structural history step', a
 });
 
 function fixture() {
-    const host = installMock({ settings: { enabled: false, nativeBindings: { preGraphId: null, postGraphId: null }, graphs: {} } });
+    const host = installMock({ settings: { enabled: false, nativeBindings: { workflowGraphId: null }, graphs: {} } });
     let saves = 0; host.saveSettingsDebounced = () => saves++;
     const root = starterGraph('native-guidance'); root.id = `state-transaction-${++serial}`;
     root.recording = { id: 'diagnostic' }; root.authority = { apply: 'current-only' };
@@ -44,7 +44,7 @@ test('state accepted document commit and semantic undo/redo persist, cancel and 
     const unsubscribe = S.onGraphTouched((graph, options) => { if (graph !== root) return; touched.push(options); if (options?.history !== false) H.noteChange(graph); });
     try {
         assert.equal(S.commitGraphEdit(root, prepared, hooks).ok, true);
-        assert.deepEqual(calls, [['cancel', root.id], ['reconcile', 8]]);
+        assert.deepEqual(calls, [['cancel', root.id], ['reconcile', Object.keys(prepared.candidate.nodes).length]]);
         assert.deepEqual(touched, [{ history: false, semanticChanged: true }]);
         assert.equal(saves(), 1); assert.equal(root.authority.apply, 'current-only');
         assert.equal(S.stepGraphHistory(root, 'undo', hooks).data.semanticChanged, true);
@@ -53,7 +53,7 @@ test('state accepted document commit and semantic undo/redo persist, cancel and 
         assert.equal(S.stepGraphHistory(root, 'redo', hooks).data.changed, false);
         assert.equal(saves(), 3); assert.equal(calls.length, 6);
         assert.deepEqual(root.recording, { id: 'diagnostic' });
-        assert.deepEqual(host.extensionSettings.lattice.nativeBindings, { preGraphId: null, postGraphId: null });
+        assert.deepEqual(host.extensionSettings.lattice.nativeBindings, { workflowGraphId: null });
         assert.equal(host.extensionSettings.lattice.enabled, false);
         assert.equal(Object.hasOwn(host.extensionSettings.lattice, 'workflowMode'), false);
     } finally { unsubscribe(); }
@@ -65,7 +65,7 @@ test('native presentation undo preserves authority and recording and performs on
     root.nodes['response-plan'].presentation = { alias: 'Plan alias', compact: true };
     H.noteChange(root); H.flush(root);
     assert.equal(S.stepGraphHistory(root, 'undo', hooks).data.semanticChanged, false);
-    assert.deepEqual(calls, [['reconcile', 4]]);
+    assert.deepEqual(calls, [['reconcile', Object.keys(root.nodes).length]]);
     assert.equal(S.stepGraphHistory(root, 'redo', hooks).data.semanticChanged, false);
     assert.equal(calls.length, 2); assert.equal(saves(), 2);
     assert.equal(root.view, view); assert.equal(root.authority, authority); assert.equal(root.recording, recording);

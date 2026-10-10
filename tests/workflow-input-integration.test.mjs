@@ -4,13 +4,13 @@ import { describeOperation, operationDefaults } from '../src/workflow/catalog.js
 import { validateGraphStructure } from '../src/workflow/contracts.js';
 
 const node = (id, operation, controls = {}) => ({ id, type: 'workflow', operation, operationVersion: 1, ...controls });
-const graph = (phase, nodes, wires = {}) => ({ id: 'input-integration', schema: 3, runtime: 2, mode: `native-${phase}`, nodes, wires, definitions: {}, portals: {} });
+const graph = (phase, nodes, wires = {}) => ({ id: 'input-integration', schema: 3, runtime: 2, mode: 'native-unified', nodes: Object.fromEntries(Object.entries(nodes).map(([id,node])=>[id,{phase,...node}])), wires, definitions: {}, portals: {} });
 const wire = (id, from, to, toPort = 'in') => ({ id, route: 'wire', from, fromPort: 'out', to, toPort });
 
 test('the Input shelf operations describe a zero-call Text source in both phases', () => {
     for (const phase of ['pre', 'post']) for (const operation of ['text', 'file-input', 'prompt-source']) {
         const source = node('source', operation), g = graph(phase, { source });
-        const result = describeOperation(g, source);
+        const result = describeOperation(g, g.nodes.source);
         assert.equal(result.ok, true, JSON.stringify(result));
         assert.equal(result.data.descriptor.family, 'Input');
         assert.equal(result.data.descriptor.phase, phase);
@@ -32,7 +32,7 @@ test('Text flows through JSON Decode and Compose into zero-call guidance', async
         output: node('output', 'guidance'),
     }, { a: wire('a', 'text', 'decode'), b: wire('b', 'decode', 'compose', 'data'), c: wire('c', 'compose', 'output') });
     let requests = 0;
-    const result = await runWorkflow(g, { countTokens: () => ({ tokens: 10 }), request: () => { requests++; throw Error('Unexpected request'); } });
+    const result = await runWorkflow(g, { target: {workflowId:g.id,instancePath:[],nodeId:'output',portId:'out'}, countTokens: () => ({ tokens: 10 }), request: () => { requests++; throw Error('Unexpected request'); } });
     assert.equal(result.ok, true, JSON.stringify(result.error));
     assert.equal(result.actualCalls, 0);
     assert.equal(requests, 0);
@@ -42,7 +42,7 @@ test('Text flows through JSON Decode and Compose into zero-call guidance', async
 import { prepareNativeSearchCatalog } from '../src/ui/native-search-catalog.js';
 
 test('source discovery has canonical Input entries and hides host prompts inside subgraphs',()=>{
-    const scope={schema:3,runtime:2,mode:'native-pre',workflowId:'input-integration',viewPath:[],inDefinition:false};
+    const scope={schema:3,runtime:2,mode:'native-unified',workflowId:'input-integration',viewPath:[],inDefinition:false};
     const root=prepareNativeSearchCatalog(scope);
     assert.equal(root.ok,true);
     for(const operation of ['text','file-input','prompt-source']) {

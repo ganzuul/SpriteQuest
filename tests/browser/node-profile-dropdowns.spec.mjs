@@ -24,7 +24,7 @@ async function fixture(page, shared = false) {
             const { nestedWorkflow } = await import('/tests/fixtures/workflow-prepared-fixture.mjs'); root = nestedWorkflow(); root.name = 'Pinned profile instances';
             Object.assign(root.nodes['first/path'], { x: 360, y: 160 }); Object.assign(root.nodes.second, { x: 700, y: 160 });
         } else {
-            root = { id: 'profile-root', name: 'Node profile controls', schema: 3, runtime: 2, mode: 'native-pre', roles: { Analysis: { profileId: 'cheap' } }, definitions: {}, groups: {}, portals: {}, wires: {}, nodes: {
+            root = { id: 'profile-root', name: 'Node profile controls', schema: 3, runtime: 2, mode: 'native-unified', roles: { Analysis: { profileId: 'cheap' } }, definitions: {}, groups: {}, portals: {}, wires: {}, nodes: {
                 scene: { id: 'scene', type: 'workflow', operation: 'scene-context', x: 30, y: 160 },
                 compact: { id: 'compact', type: 'workflow', operation: 'smart-compactor', method: 'compress', profileId: 'cheap', x: 310, y: 160 },
                 plan: { id: 'plan', type: 'workflow', operation: 'response-plan', profileId: 'saved', x: 620, y: 160 },

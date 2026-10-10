@@ -22,7 +22,7 @@ const leaf = finalize({ id: 'shared-leaf', version: 1, name: 'Leaf', interface: 
 const outerDraft = structuredClone(leaf); outerDraft.id = 'outer'; outerDraft.body.nodes.work = instance('work', leaf); outerDraft.body.wires.a.toPort = 'input'; outerDraft.body.wires.b.fromPort = 'output';
 const outer = finalize(outerDraft);
 function graph(id, profileId, model) {
-    return { id, schema: 3, runtime: 2, mode: 'native-pre', roles: { Analysis: { profileId, model } }, nodes: {
+    return { id, schema: 3, runtime: 2, mode: 'native-unified', roles: { Analysis: { profileId, model } }, nodes: {
         source: { id: 'source', type: 'workflow', operation: 'scene-context' }, placed: { ...instance('placed', outer), inGroup: 'boxed' }, direct: { id: 'direct', type: 'workflow', operation: 'smart-compactor', method: 'compress' },
     }, wires: {
         input: { id: 'input', route: 'portal', portalId: 'context', to: 'placed', toPort: 'input' }, direct: { id: 'direct', route: 'wire', from: 'source', fromPort: 'out', to: 'direct', toPort: 'in' },
@@ -81,7 +81,7 @@ crossConflict.definitions = { [definitionRefKey(crossLeaf)]: crossLeaf }; crossC
 let conflictAllocations = 0;
 assert.equal(prepareWorkflowInsertion(recipient, crossConflict, { allocateId: () => `attempt-${++conflictAllocations}` }).error.code, 'DEFINITION_CONFLICT');
 assert.equal(conflictAllocations, 0, 'cross-table semantic conflicts reject before rename/allocation');
-const fragment = structuredClone(inheritedSource); delete fragment.nodes.source; fragment.wires = {}; delete fragment.portals.context;
+const fragment = structuredClone(inheritedSource); delete fragment.nodes.source; fragment.wires = {}; delete fragment.portals.context; fragment.mode = 'native-pre';
 const nestedOwner = makeLocalCopy(recipient, { instancePath: ['placed', 'work'], id: 'nested-recipient-private' }); assert.equal(nestedOwner.ok, true);
 const nestedRoot = nestedOwner.data.candidate, nestedBefore = structuredClone(nestedRoot);
 assert.equal(prepareWorkflowInsertion(recipient, fragment, { viewPath: ['placed', 'work'] }).error.code, 'READ_ONLY_VIEW');
@@ -97,7 +97,7 @@ const nestedAdded = nestedInventory.find(unit => unit.address.instancePath[0] ==
 assert.equal(nestedAdded.node.model, 'source-model'); assert.equal(nestedAdded.node.profileId, 'source-profile');
 assert.equal(nestedInsert.data.diagnostics.importedCallBound, 2);
 assert.equal(nestedInsert.data.diagnostics.importedBindingOverrides.every(item => item.address.instancePath.slice(0, 2).join(',') === 'placed,work'), true);
-assert.equal(prepareWorkflowInsertion(nestedRoot, source, { viewPath: ['placed', 'work'] }).error.code, 'ROOT_ONLY_OPERATION');
+assert.equal(prepareWorkflowInsertion(nestedRoot, { ...source, mode: 'native-pre' }, { viewPath: ['placed', 'work'] }).error.code, 'ROOT_ONLY_OPERATION');
 // A readonly import cannot take the recipient's existing private identity or permissions.
 let repeatedRecipient = structuredClone(privateSource.data.candidate);
 const privateOwners = structuredClone(repeatedRecipient.localDefinitionOwners), originalPrivateRef = structuredClone(repeatedRecipient.nodes.placed.definition);

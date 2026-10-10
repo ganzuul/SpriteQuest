@@ -1,16 +1,19 @@
 import assert from 'node:assert/strict';
+import { withNativeBoundary } from './helpers/workflow-fixtures.mjs';
 const { validateWorkflow } = await import('../src/workflow/contracts.js');
 function fixturePreGraph() {
-    return { id: 'pre', name: 'Pre', schema: 3, runtime: 2, mode: 'native-pre', roles: { Analysis: { profileId: null, model: null } }, nodes: {
+    const graph = { id: 'contracts', name: 'Contracts', schema: 3, runtime: 2, mode: 'native-unified', roles: { Analysis: { profileId: null, model: null } }, nodes: {
         source: { id: 'source', type: 'workflow', operation: 'scene-context', enabled: true, x: 0, y: 0 },
         compact: { id: 'compact', type: 'workflow', operation: 'smart-compactor', enabled: true, x: 0, y: 100, targetTokens: 1200, keepRecent: 2, method: 'select', pins: [] },
         plan: { id: 'plan', type: 'workflow', operation: 'response-plan', enabled: true, modelRole: 'Analysis', x: 0, y: 200, maxTokens: 768 },
         output: { id: 'output', type: 'workflow', operation: 'guidance', enabled: true, x: 0, y: 300, budgetTokens: 768 },
     }, wires: { a: { id: 'a', route: 'wire', from: 'source', fromPort: 'out', to: 'compact', toPort: 'in' }, b: { id: 'b', route: 'wire', from: 'compact', fromPort: 'out', to: 'plan', toPort: 'in' }, c: { id: 'c', route: 'wire', from: 'plan', fromPort: 'out', to: 'output', toPort: 'in' } }, groups: {} };
+    for (const node of Object.values(graph.nodes)) node.phase = 'pre';
+    return withNativeBoundary(graph, 'output');
 }
 const graph = fixturePreGraph();
 graph.nodes.plan.y = -500;
-assert.deepEqual(validateWorkflow(graph).data.primitives.filter(unit => unit.included).map(unit => unit.node).map(n => n.id), ['source', 'compact', 'plan', 'output']);
+assert.deepEqual(validateWorkflow(graph).data.primitives.filter(unit => unit.included).map(unit => unit.node).map(n => n.id), ['source', 'compact', 'plan', 'output', 'on-send', 'generate-reply', 'review-publish']);
 
 // A wire cycle must fail before execution, even when positions suggest an order.
 const cycle = fixturePreGraph();
@@ -40,12 +43,13 @@ const invalidNumber = fixturePreGraph();
 invalidNumber.nodes.compact.targetTokens = 0;
 assert.equal(validateWorkflow(invalidNumber).error?.code, 'INVALID_SETTINGS');
 const noTerminal = fixturePreGraph();
-delete noTerminal.nodes.output; delete noTerminal.wires.c;
+delete noTerminal.nodes['review-publish']; delete noTerminal.wires.draft;
 assert.equal(validateWorkflow(noTerminal).error?.code, 'MISSING_TERMINAL');
+assert.match(validateWorkflow(noTerminal).error?.message, /Review.*Publish/i);
 const reachable = fixturePreGraph();
 reachable.nodes.compact.method = 'compress';
 reachable.nodes.unused = { id: 'unused', type: 'workflow', operation: 'response-plan', maxTokens: 768 };
-assert.deepEqual({ ids: validateWorkflow(reachable).data.primitives.filter(unit => unit.included).map(unit => unit.node).map(n => n.id), bound: validateWorkflow(reachable).data.callBound }, { ids: ['source', 'compact', 'plan', 'output'], bound: 2 });
+assert.deepEqual({ ids: validateWorkflow(reachable).data.primitives.filter(unit => unit.included).map(unit => unit.node).map(n => n.id), bound: validateWorkflow(reachable).data.callBound }, { ids: ['source', 'compact', 'plan', 'output', 'on-send', 'generate-reply', 'review-publish'], bound: 2 });
 // Malformed external objects fail safely rather than throwing or trusting prototypes.
 const malformed = [null, [], { ...fixturePreGraph(), nodes: null }, Object.assign(Object.create({ injected: true }), fixturePreGraph()), { ...fixturePreGraph(), name: 'x'.repeat(2000001) }];
 for (const item of malformed) assert.equal(validateWorkflow(item).error?.code, 'MALFORMED_WORKFLOW');
@@ -97,7 +101,7 @@ assert.equal(parseWorkflow(JSON.stringify(secretPackage)).error?.code, 'MALFORME
 const annotated = fixturePreGraph();
 annotated.nodes.note = { id: 'note', type: 'note', content: 'An editor annotation', x: 100, y: 100 };
 assert.equal(validateWorkflow(annotated).ok, true);
-assert.deepEqual(validateWorkflow(annotated).data.primitives.filter(unit => unit.included).map(unit => unit.node).map(n => n.id), ['source', 'compact', 'plan', 'output']);
+assert.deepEqual(validateWorkflow(annotated).data.primitives.filter(unit => unit.included).map(unit => unit.node).map(n => n.id), ['source', 'compact', 'plan', 'output', 'on-send', 'generate-reply', 'review-publish']);
 const brokenFormation = fixturePreGraph();
 brokenFormation.groups.formation = { id: 'formation', members: ['missing', 'plan'] };
 assert.equal(validateWorkflow(brokenFormation).error?.code, 'INVALID_GROUP');
@@ -107,7 +111,7 @@ assert.equal(validateWorkflow(futureFormation).error?.code, 'INVALID_GROUP');
 const offGroup = fixturePreGraph();
 offGroup.groups.off = { id: 'off', collapsed: true }; offGroup.nodes.compact.inGroup = 'off';
 assert.equal(validateWorkflow(offGroup).ok, true, 'visual group state does not disable executable nodes');
-const scanOnly = { id: 'post', schema: 3, runtime: 2, mode: 'native-post', roles: { Prose: { profileId: null, model: null } }, nodes: {
+const scanOnly = { id: 'post', schema: 3, runtime: 2, mode: 'native-unified', roles: { Prose: { profileId: null, model: null } }, nodes: {
     source: { id: 'source', type: 'workflow', operation: 'reply-snapshot' },
     scan: { id: 'scan', type: 'workflow', operation: 'pattern-scan' },
     repair: { id: 'repair', type: 'workflow', operation: 'repair', mode: 'scan' },
@@ -115,11 +119,13 @@ const scanOnly = { id: 'post', schema: 3, runtime: 2, mode: 'native-post', roles
     review: { id: 'review', type: 'workflow', operation: 'review-gate' },
     apply: { id: 'apply', type: 'workflow', operation: 'apply-reply' },
 }, wires: { a: { id: 'a', route: 'wire', from: 'source', fromPort: 'out', to: 'scan', toPort: 'in' }, b: { id: 'b', route: 'wire', from: 'scan', fromPort: 'out', to: 'repair', toPort: 'in' }, c: { id: 'c', route: 'wire', from: 'repair', fromPort: 'out', to: 'validate', toPort: 'in' }, d: { id: 'd', route: 'wire', from: 'validate', fromPort: 'out', to: 'review', toPort: 'in' }, e: { id: 'e', route: 'wire', from: 'review', fromPort: 'out', to: 'apply', toPort: 'in' } } };
-assert.equal(validateWorkflow(scanOnly).data.callBound, 0);
-assert.deepEqual(validateWorkflow(scanOnly).data.requiredRoles, []);
+for (const node of Object.values(scanOnly.nodes)) node.phase = 'post';
+const scanTarget = { workflowId: scanOnly.id, instancePath: [], nodeId: 'review', portId: 'out' };
+assert.equal(validateWorkflow(scanOnly, { target: scanTarget }).data.callBound, 0);
+assert.deepEqual(validateWorkflow(scanOnly, { target: scanTarget }).data.requiredRoles, []);
 scanOnly.nodes.repair.mode = 'repair';
-assert.equal(validateWorkflow(scanOnly).data.callBound, 1);
-assert.deepEqual(validateWorkflow(scanOnly).data.requiredRoles, ['Prose']);
+assert.equal(validateWorkflow(scanOnly, { target: scanTarget }).data.callBound, 1);
+assert.deepEqual(validateWorkflow(scanOnly, { target: scanTarget }).data.requiredRoles, ['Prose']);
 assert.equal(validateWorkflow(fixturePreGraph()).data.callBound, 1);
 assert.throws(() => exportWorkflow(secretPackage.graph));
 assert.equal(parseWorkflow('x'.repeat(2000001)).ok, false);

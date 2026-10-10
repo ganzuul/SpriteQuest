@@ -20,7 +20,7 @@
             <button type="button" class={`pc-btn menu_button pc-redo${state.history.redo ? '' : ' pc-disabled'}`} disabled={!state.history.redo} title={state.history.redoTitle} aria-label="Redo" onclick={() => actions.command('redo')}>↷</button>
             <span class={`pc-history-note${state.history.showNote ? ' pc-show' : ''}`}>{state.history.note}</span>
         </div>
-        <button type="button" class="pc-btn menu_button pc-root-run" disabled={!workflow || (!workflow.busy && !!workflow.issues.length)} title={workflow?.issues.join('\n') || 'Run the root workflow'} onclick={() => actions.command(workflow?.busy ? 'stop-workflow' : 'run-workflow')}>{workflow?.busy ? '■ Stop' : '▶ Run'}</button>
+        {#if workflow?.busy}<button type="button" class="pc-btn menu_button pc-root-stop" title="Stop the workflow" onclick={() => actions.command('stop-workflow')}>■ Stop</button>{/if}
         <span class="pc-root-workflow-status" role="status">{workflow ? `${workflow.phase} · ${workflow.assigned ? 'Assigned' : 'Unassigned'} · ≤ ${workflow.callBound} requests` : 'Workflow unavailable'} · Autosave in SillyTavern</span>
         <div class="pc-header-actions pc-surface-actions">
             <button type="button" class={`pc-btn menu_button pc-pane-toggle${state.inspectorOpen ? ' pc-on' : ''}`} title="Show or hide the inspector" aria-label="Toggle inspector" aria-pressed={state.inspectorOpen} bind:this={inspBtn} onclick={() => actions.command('inspector')}>Details</button>

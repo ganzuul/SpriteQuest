@@ -90,8 +90,8 @@ try {
         const node = Object.values(graph.nodes).find(node => node.operation === 'generate-reply'); canvas.select({ kind: 'node', id: node.id });
         UI.close(); window.lattice.open(); await settle();
         return { publicHelpers, mounted: root === document.querySelector('.pc-root'), sharedGraph: graph === window.canvasHarness.graph,
-            launchers: document.getElementById('pc-sendbar')?.parentElement?.id === 'leftSendForm' && !!document.getElementById('pc-sendbar')?.querySelector('img[src$="/assets/lattice-logo.svg"]') && !!document.getElementById('pc-menu-launch'), workbench: root.dataset.pcWorkbench,
-            fresh: h.freshSettingsAbsent && graph.template.id === 'unified-basic' && graph.mode === 'native-unified' && graph.schema === 3 && graph.runtime === 2 && !S.settings().enabled && S.settings().nativeBindings.workflowGraphId === null && S.settings().nativeBindings.preGraphId === null && S.settings().nativeBindings.postGraphId === null,
+            launchers: document.getElementById('pc-sendbar')?.parentElement?.id === 'leftSendForm' && !!document.getElementById('pc-sendbar')?.querySelector('.pc-chat-launcher-icon') && !!document.getElementById('pc-menu-launch'), workbench: root.dataset.pcWorkbench,
+            fresh: h.freshSettingsAbsent && graph.template.id === 'unified-basic' && graph.mode === 'native-unified' && graph.schema === 3 && graph.runtime === 2 && !S.settings().enabled && S.settings().nativeBindings.workflowGraphId === null && !Object.hasOwn(S.settings().nativeBindings,'preGraphId') && !Object.hasOwn(S.settings().nativeBindings,'postGraphId'),
             providerCalls: h.providerCalls(), retiredPins: !!root.querySelector('.pc-node-output,.pc-port-key,.pc-port-stage,.pc-tok'), node: !!root.querySelector(`[data-id="${node.id}"]`) };
     });
     if (errors.length || missing.length || !result.publicHelpers || !result.mounted || !result.sharedGraph || !result.launchers || !result.fresh || result.providerCalls || result.retiredPins || !result.node || result.workbench !== 'svelte') throw Error(JSON.stringify({ result, errors, missing }));

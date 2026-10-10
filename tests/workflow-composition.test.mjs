@@ -4,7 +4,7 @@ import { graphSemanticSignature } from '../src/workflow/ports.js';
 import * as definitions from '../src/workflow/definitions.js';
 import * as catalog from '../src/workflow/catalog.js';
 
-const root = () => ({ id: 'root', schema: 3, runtime: 2, mode: 'native-pre', nodes: {
+const root = () => ({ id: 'root', schema: 3, runtime: 2, mode: 'native-unified', nodes: {
     source: { id: 'source', type: 'workflow', operation: 'scene-context' },
     compact: { id: 'compact', type: 'workflow', operation: 'smart-compactor' },
 }, wires: { edge: { id: 'edge', route: 'portal', portalId: 'shared', to: 'compact', toPort: 'in' } },
@@ -59,7 +59,8 @@ withTerminals.wires.b = { id: 'b', route: 'wire', from: 'compact', fromPort: 'ou
 withTerminals.wires.c = { id: 'c', route: 'wire', from: 'plan', fromPort: 'out', to: 'output', toPort: 'in' };
 withTerminals.nodes.compact.parameterOverrides.method = 'compress';
 withTerminals.nodes.compact.roleOverrides.Analysis = { profileId: 'instance-profile', model: 'instance-model' };
-const resolved = resolver.resolveWorkflow(withTerminals);
+const outputTarget = {workflowId:'root',instancePath:[],nodeId:'output',portId:'out'};
+const resolved = resolver.resolveWorkflow(withTerminals, {target: outputTarget});
 assert.equal(resolved.ok, true, JSON.stringify(resolved));
 assert.equal(resolved.data.primitives.length, 5);
 assert.equal(resolved.data.primitives.filter(unit => unit.included).length, 4);
@@ -70,7 +71,7 @@ assert.equal(work.node.method, 'compress');
 assert.equal(work.node.profileId, 'instance-profile');
 assert.equal(work.node.model, 'instance-model');
 assert.equal(snapshot.body.nodes.work.method, 'select', 'shared pinned snapshots remain unchanged');
-assert.deepEqual(resolved.data.terminals, [{ kind: 'terminal', address: { workflowId: 'root', instancePath: [], nodeId: 'output' } }]);
+assert.deepEqual(resolved.data.terminals, []);
 const target = { workflowId: 'root', instancePath: [], nodeId: 'compact', portId: 'output' };
 const targetResult = resolver.resolveWorkflow(withTerminals, { target });
 assert.equal(targetResult.ok, true);
@@ -80,11 +81,11 @@ assert.equal(targetResult.data.callBound, 1);
 assert.deepEqual(targetResult.data.target, target);
 assert.deepEqual(targetResult.data.resolvedTarget, { ...work.address, portId: 'out' });
 assert.equal(resolver.resolveWorkflow(withTerminals, { target: { ...target, portId: 'missing' } }).error.code, 'INVALID_TARGET');
-assert.equal(resolver.resolveWorkflow(withTerminals, { target: { workflowId: 'root', instancePath: [], nodeId: 'output', portId: 'out' } }).error.code, 'INVALID_TARGET');
-assert.equal(resolver.resolveWorkflow(withTerminals, { target: resolved.data.terminals[0] }).ok, true);
+assert.equal(resolver.resolveWorkflow(withTerminals, { target: { kind:'terminal',address:{ workflowId: 'root', instancePath: [], nodeId: 'output' } } }).error.code, 'INVALID_TARGET');
+assert.equal(resolver.resolveWorkflow(withTerminals, { target: outputTarget }).ok, true);
 const incomplete = structuredClone(withTerminals); delete incomplete.wires.edge;
 assert.equal(validateGraphStructure(incomplete).ok, true);
-assert.equal(resolver.resolveWorkflow(incomplete).error.code, 'MISSING_INPUT');
+assert.equal(resolver.resolveWorkflow(incomplete, {target: outputTarget}).error.code, 'MISSING_INPUT');
 
 const signature = graphSemanticSignature(withTerminals), renamed = structuredClone(withTerminals);
 renamed.portals.shared.label = 'Renamed'; renamed.nodes.compact.alias = 'Renamed instance';
@@ -105,11 +106,11 @@ siblings.nodes.output2 = { id: 'output2', type: 'workflow', operation: 'guidance
 siblings.wires.d = { id: 'd', route: 'portal', portalId: 'shared', to: 'compact/second', toPort: 'input' };
 siblings.wires.e = { id: 'e', route: 'wire', from: 'compact/second', fromPort: 'output', to: 'plan2', toPort: 'in' };
 siblings.wires.f = { id: 'f', route: 'wire', from: 'plan2', fromPort: 'out', to: 'output2', toPort: 'in' };
-const siblingsPlan = resolver.resolveWorkflow(siblings);
+const siblingsPlan = resolver.resolveWorkflow(siblings, {target: outputTarget});
 assert.equal(siblingsPlan.ok, true);
 assert.equal(siblingsPlan.data.primitives.filter(unit => unit.address.nodeId === 'source').length, 1);
 assert.equal(siblingsPlan.data.primitives.filter(unit => unit.address.nodeId === 'work').length, 2);
-assert.equal(siblingsPlan.data.callBound, 4);
+assert.equal(siblingsPlan.data.callBound, 2);
 
 const outerDraft = definitionDraft(); outerDraft.id = 'outer';
 outerDraft.body.nodes.work = { ...instance('work'), parameterOverrides: { method: 'compress' } };
@@ -125,7 +126,7 @@ nestedRoot.definitions[definitions.definitionRefKey(outer)] = outer;
 nestedRoot.nodes.compact.definition = refFor(outer);
 nestedRoot.nodes.compact.parameterOverrides.method = 'select';
 nestedRoot.nodes.compact.nodeBindingOverrides[definitions.nodeBindingOverrideKey(['work'], 'work')] = { profileId: 'outer-node-profile', model: 'outer-node-model' };
-const nestedPlan = resolver.resolveWorkflow(nestedRoot);
+const nestedPlan = resolver.resolveWorkflow(nestedRoot, {target: outputTarget});
 assert.equal(nestedPlan.ok, true, JSON.stringify(nestedPlan));
 const nestedWork = nestedPlan.data.primitives.find(unit => unit.address.instancePath.length === 2);
 assert.equal(nestedWork.node.method, 'select');
@@ -138,7 +139,7 @@ const optionalDraft = definitionDraft(); optionalDraft.interface[0].required = f
 const optional = finalize(optionalDraft), optionalRoot = structuredClone(withTerminals);
 optionalRoot.definitions = { [definitions.definitionRefKey(optional)]: optional }; optionalRoot.nodes.compact.definition = refFor(optional); delete optionalRoot.wires.edge;
 assert.equal(validateGraphStructure(optionalRoot).ok, true);
-assert.equal(resolver.resolveWorkflow(optionalRoot).error.code, 'MISSING_INPUT');
+assert.equal(resolver.resolveWorkflow(optionalRoot, {target: outputTarget}).error.code, 'MISSING_INPUT');
 
 const recursive = definitionDraft(); recursive.semanticHash = `sha256:${'0'.repeat(64)}`;
 recursive.body.nodes.work = { ...instance('work'), definition: refFor(recursive) };
@@ -174,7 +175,7 @@ const packages = await import('../src/workflow/packages.js');
 const exported = packages.exportWorkflow(nestedRoot);
 const imported = packages.parseWorkflow(JSON.stringify(exported));
 assert.equal(imported.ok, true);
-assert.equal(resolver.resolveWorkflow(imported.data).ok, true);
+assert.equal(resolver.resolveWorkflow(imported.data, {target: outputTarget}).ok, true);
 assert.equal(Object.values(imported.data.definitions).find(item => item.id === snapshot.id).semanticHash, snapshot.semanticHash);
 assert.equal(Object.values(imported.data.definitions).find(item => item.id === snapshot.id).body.roles.Analysis.profileId, null);
 assert.equal(Object.values(imported.data.nodes.compact.nodeBindingOverrides)[0].profileId, null);
@@ -195,11 +196,11 @@ assert.equal(resolver.resolveWorkflow(withTerminals, { target: wrongTagged }).er
 const disabledBoundary = definitionDraft(); disabledBoundary.body.nodes.entry.enabled = false;
 const disabledSnapshot = finalize(disabledBoundary), disabledRoot = structuredClone(withTerminals);
 disabledRoot.definitions = { [definitions.definitionRefKey(disabledSnapshot)]: disabledSnapshot }; disabledRoot.nodes.compact.definition = refFor(disabledSnapshot);
-assert.equal(resolver.resolveWorkflow(disabledRoot).error.code, 'DISABLED_OPERATION');
+assert.equal(resolver.resolveWorkflow(disabledRoot, {target: outputTarget}).error.code, 'DISABLED_OPERATION');
 
 const partialRole = structuredClone(withTerminals);
 partialRole.nodes.compact.roleOverrides.Analysis = { profileId: 'override-only-profile' };
-assert.equal(resolver.resolveWorkflow(partialRole).data.primitives.find(unit => unit.address.nodeId === 'work').node.model, 'model');
+assert.equal(resolver.resolveWorkflow(partialRole, {target: outputTarget}).data.primitives.find(unit => unit.address.nodeId === 'work').node.model, 'model');
 
 const escape = root(); escape.portals.shared.source.instancePath = ['outside'];
 assert.equal(validateGraphStructure(escape).error.code, 'INVALID_PORTAL');
@@ -215,7 +216,7 @@ extraRequiredDraft.body.wires.extraB = { id: 'extraB', route: 'wire', from: 'ext
 const extraRequired = finalize(extraRequiredDraft), extraRoot = structuredClone(withTerminals);
 extraRoot.definitions = { [definitions.definitionRefKey(extraRequired)]: extraRequired }; extraRoot.nodes.compact.definition = refFor(extraRequired);
 assert.equal(validateGraphStructure(extraRoot).ok, true);
-assert.equal(resolver.resolveWorkflow(extraRoot).error.code, 'MISSING_INPUT');
+assert.equal(resolver.resolveWorkflow(extraRoot, {target: outputTarget}).ok, true, 'target completeness excludes an unrelated unfinished output');
 
 // Internal targets check only the selected branch; a full run honors every required interface.
 assert.equal(resolver.resolveWorkflow(extraRoot, { target }).ok, true);
@@ -237,7 +238,7 @@ assert.equal(revision.data.ref.version, 2);
 assert.notEqual(revision.data.ref.semanticHash, snapshot.semanticHash);
 const deleted = libraryApi.removeLibraryEntry(library.data.library, refFor(snapshot));
 assert.deepEqual(deleted.data.library.definitions, {});
-assert.equal(resolver.resolveWorkflow(withTerminals).ok, true, 'workflow-owned snapshots survive shelf deletion');
+assert.equal(resolver.resolveWorkflow(withTerminals, {target: outputTarget}).ok, true, 'workflow-owned snapshots survive shelf deletion');
 const copied = libraryApi.makeLocalCopy(withTerminals, { instanceId: 'compact', id: 'private-copy', name: 'Private copy' });
 assert.equal(copied.ok, true);
 assert.equal(copied.data.candidate.nodes.compact.definition.id, 'private-copy');
@@ -246,7 +247,7 @@ assert.equal(withTerminals.nodes.compact.definition.id, snapshot.id);
 const updated = libraryApi.prepareInstanceUpdate(withTerminals, { instanceId: 'compact', definition: revision.data.library.definitions[definitions.definitionRefKey(revision.data.ref)] });
 assert.equal(updated.ok, true);
 assert.equal(updated.data.candidate.nodes.compact.definition.version, 2);
-assert.equal(resolver.resolveWorkflow(updated.data.candidate).data.primitives.find(unit => unit.address.nodeId === 'work').node.targetTokens, 555);
+assert.equal(resolver.resolveWorkflow(updated.data.candidate, {target: outputTarget}).data.primitives.find(unit => unit.address.nodeId === 'work').node.targetTokens, 555);
 
 assert.deepEqual(copied.data.candidate.nodes.compact.localCopy, { definitionId: 'private-copy' });
 const localDraft = structuredClone(copied.data.candidate.definitions[definitions.definitionRefKey(copied.data.candidate.nodes.compact.definition)]);
@@ -254,7 +255,7 @@ localDraft.body.nodes.work.targetTokens = 777;
 const localEdit = libraryApi.prepareLocalDefinitionEdit(copied.data.candidate, { instanceId: 'compact', expectedRef: copied.data.candidate.nodes.compact.definition, draft: localDraft });
 assert.equal(localEdit.ok, true);
 assert.equal(localEdit.data.candidate.nodes.compact.definition.version, 2);
-assert.equal(resolver.resolveWorkflow(localEdit.data.candidate).data.primitives.find(unit => unit.address.nodeId === 'work').node.targetTokens, 777);
+assert.equal(resolver.resolveWorkflow(localEdit.data.candidate, {target: outputTarget}).data.primitives.find(unit => unit.address.nodeId === 'work').node.targetTokens, 777);
 assert.equal(libraryApi.prepareLocalDefinitionEdit(withTerminals, { instanceId: 'compact', expectedRef: refFor(snapshot), draft: snapshot }).error.code, 'READ_ONLY_DEFINITION');
 assert.equal(libraryApi.prepareLocalDefinitionEdit(localEdit.data.candidate, { instanceId: 'compact', expectedRef: copied.data.candidate.nodes.compact.definition, draft: localDraft }).error.code, 'STALE_DEFINITION');
 const duplicateOwner = structuredClone(copied.data.candidate); duplicateOwner.nodes.otherOwner = { ...duplicateOwner.nodes.compact, id: 'otherOwner' };
@@ -274,7 +275,7 @@ const mappedUpdate = libraryApi.prepareInstanceUpdate(withTerminals, { instanceI
 assert.equal(mappedUpdate.ok, true);
 assert.equal(mappedUpdate.data.candidate.wires.edge.toPort, 'renamed/input');
 assert.deepEqual(mappedUpdate.data.candidate.nodes.compact.parameterOverrides, { 'new-method': 'compress' });
-assert.equal(resolver.resolveWorkflow(mappedUpdate.data.candidate).ok, true);
+assert.equal(resolver.resolveWorkflow(mappedUpdate.data.candidate, {target: outputTarget}).ok, true);
 
 // Depth is checked across shared DAG branches; direct/indirect references never resolve remotely.
 const chainTable = { [definitions.definitionRefKey(snapshot)]: snapshot }; let child = snapshot;

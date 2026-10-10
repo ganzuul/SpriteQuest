@@ -1,10 +1,9 @@
 import { UNIFIED_WORKFLOW_EXAMPLE_DATA } from './unified-example-data.js?v=0.26.0';
-import { WORKFLOW_EXAMPLE_DATA } from './example-data.js?v=0.26.0';
 import { parseWorkflow } from './packages.js?v=0.26.0';
 import { cloneWorkflowDocument } from './document.js?v=0.26.0';
 import { validateWorkflow } from './contracts.js?v=0.26.0';
 
-const ALL_WORKFLOW_EXAMPLES = [...WORKFLOW_EXAMPLE_DATA,...UNIFIED_WORKFLOW_EXAMPLE_DATA];
+const ALL_WORKFLOW_EXAMPLES = UNIFIED_WORKFLOW_EXAMPLE_DATA;
 let sequence = 0;
 const fail = (code, message) => ({ ok: false, error: { code, message } });
 const plain = value => value !== null && typeof value === 'object' && [Object.prototype, null].includes(Object.getPrototypeOf(value));

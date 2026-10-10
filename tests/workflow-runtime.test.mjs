@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { runWorkflow } from '../src/workflow/runtime.js';
-import { starterGraph } from '../src/workflow/starters.js';
+import { runWorkflow as runEngine } from '../src/workflow/runtime.js';
+import { fixtureGraph as starterGraph } from './helpers/workflow-fixtures.mjs';
+const runWorkflow=(graph,ports={})=>runEngine(graph,{target:graph.nodes.guidance?{workflowId:graph.id,instancePath:[],nodeId:'guidance',portId:'out'}:{kind:'terminal',address:{workflowId:graph.id,instancePath:[],nodeId:'apply-reply'}},...ports});
 import { callCount } from '../src/run.js';
 const countTokens = async text => ({ tokens: Math.ceil(text.length / 4), method: 'fixture' });
 const binding = { profileId: 'fixed', model: 'fake' };
 const context = { kind: 'context', messages: [{ id: '1', role: 'user', text: 'What happens next?', source: 'chat' }] };
-const terminal = result => result.recording.artifacts.find(entry => entry.id === result.recording.terminals[0]?.artifact)?.value;
+const terminal = result => result.recording.artifacts.findLast(entry => entry.kind === 'guidance' || entry.kind === 'candidate')?.value;
 const ports = { snapshot: () => structuredClone(context), countTokens, resolveBinding: () => ({ ok: true, data: binding }) };
 
 test('current guidance uses fixed bindings, preserves authoring data and records bounded request evidence', async () => {

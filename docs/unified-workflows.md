@@ -13,14 +13,14 @@ The normal SillyTavern connection writes the main reply. Other model nodes have 
 3. Choose **File → Open examples…** or **Workflows → Workflow examples…**. Open a unified example whose goal fits your story. Each opening creates an independent editable copy; it does not send a request, assign the workflow or enable LATTICE. The example's description contains its setup and inspection instructions.
 4. Adapt its literal instructions, actor/item identities, schemas and document targets. Example names and actors are authored demonstration material. A loaded character's canonical ID is normally `character:<avatar filename>`; a display name alone is not a live actor identity.
 5. Choose every ordinary text-model node’s connection in its grey profile bar or **Details → Connection profile**. Use **Active SillyTavern model** to follow the current host connection/model, or choose a saved Connection Manager profile for a fixed connection. Leave **Model mode → Use profile model** unless that particular node needs an explicit model identifier. Configure any **For Each → Helper model bindings** as well; assigning the extraction node's profile does not assign its confirmation helper.
-6. If the example reads or writes documents, authorize its named targets in **Tools → Story documents…** first. If it uses Fast Decision, configure **Tools → Fast connections…** and select that connection in the node. Resolve the graph's validation and binding issues before sending.
+6. If the example reads or writes documents, authorize its named targets in **Tools → Workflow Data…** first. If it uses Fast Decision, configure **Tools → Fast connections…** and select that connection in the node. Resolve the graph's validation and binding issues before sending.
 7. Choose **Workflows → Assign unified workflow**, then enable **Arm**. Assignment chooses the host workflow; Arm enables integration. Merely selecting a graph in the editor does not assign it.
 8. Return to SillyTavern and **Send** your next player message normally. The workflow runs the necessary preparation, resumes from the completed native Draft, and records its response-stage results. A generated swipe can run the same assigned workflow when its configured sources and target policies permit it.
 9. Open Preview and select the desired **Review / Publish · Host result**. Compare the original, proposed body, appended sections, model trace and staged consequences. Choose **Apply reviewed candidate** or **Reject candidate**.
 
 Apply creates a new assistant swipe and preserves the native original. It then settles the effects associated with that exact reviewed root result. Reject leaves the original and does not accept its pending file, clock, random-outcome or accepted-policy Recall effects. A completed candidate is still a proposal until you apply it.
 
-Use **Run to here** to inspect supported preparation or source operations without accepting changes. A full unified workflow containing Generate Reply needs an owned SillyTavern generation; a manual Run does not secretly start another main reply. Legacy pre/post tools still support their existing explicit Run behavior.
+Use **Run to here** to inspect supported preparation or source operations without accepting changes. A full unified workflow containing Generate Reply needs an owned SillyTavern generation; a manual Run does not secretly start another main reply.
 
 ## Pick a concrete starting flow
 
@@ -124,9 +124,9 @@ A paired memorable-moment workflow can confirm an actual kiss in the completed b
 
 Native generation currently has one selected actor. Actor Context allows separate present-actor processing; it does not authorize another actor's private direction as the selected actor's native guidance. Group generation and automatic multi-character native prompting are not implied by a public cast list.
 
-## Authorize Story Documents and preserve their structure
+## Authorize Workflow Data and preserve its structure
 
-**Tools → Story documents…** manages logical targets for the actual user and chat. A target such as `souls.json` is a scoped story-document identifier, not an arbitrary operating-system file path. Canonical document content lives in LATTICE's chat metadata store.
+**Tools → Workflow Data…** manages logical targets for the actual user and chat. A target such as `souls.json` is a scoped workflow data document identifier, not an arbitrary operating-system file path. Canonical document content lives in LATTICE's chat metadata store.
 
 Create an authorization with a unique target ID, display name, format, visibility and initial template. Formats are **JSON**, **JSON Lines**, **CSV**, **Plain text** and **Markdown**. CSV needs declared columns. Actor-private authorization also needs its canonical actor ID. Hidden documents cannot be exposed to public model/notes branches by changing a graph label.
 
@@ -163,11 +163,11 @@ An unknown save outcome is different from a retryable failure. **PERSISTENCE_UNK
 
 State and projection receipts shown before Apply remain proposed diagnostics. Accepted file content uses the schema you authored. A generic JSON writer does not automatically promote every nested `acceptance: "pending"` string in an arbitrary document to canonical truth; author the canonical event/state shape deliberately and consult the accepted effect receipt.
 
-Legacy Memory Commit retains its documented immediate full-root Post settlement. Unified memory effects join the accepted root result. Review the workflow mode before treating a full Run as a harmless memory preview.
+Memory Commit stages its effects for the accepted root Review / Publish result. Diagnostic execution never settles memory.
 
 ## Story time: midnight, 14:00 and eight-hour intervals
 
-Story time is an authored clock measured in integer minutes. It is separate from your computer's wall clock and the number of messages sent. **Story Clock** reads the accepted scoped clock document. In Story documents' JSON editor, **Story clock template** creates a valid starting schema: minute 0 is midnight on day one, with a 1,440-minute day and an explicit calendar identity.
+Story time is an authored clock measured in integer minutes. It is separate from your computer's wall clock and the number of messages sent. **Story Clock** reads the accepted scoped clock document. In Workflow Data's JSON editor, **Story clock template** creates a valid starting schema: minute 0 is midnight on day one, with a 1,440-minute day and an explicit calendar identity.
 
 ```json
 {
@@ -229,18 +229,18 @@ Native Recall currently serves the selected native actor. Multiple present actor
 
 ## Move an existing pre/post setup
 
-Saved **native-pre** and **native-post** workflows remain available. **Workflows → New legacy pre workflow / New legacy post workflow** creates explicit tools, and the assigned legacy phase keeps its existing behavior. Selecting a legacy assignment replaces the unified host assignment; separate assignments are not a way to stack a second host generation pipeline on top of the unified workflow.
+Saved native-pre and native-post roots are retired. Migration preserves their original graphs, bindings and active selection in a cold archive: `settings.archivedWorkflows = { schema: 1, graphs, bindings, activeGraphId }`. When the active selection was retired, the workspace opens a disabled, unassigned unified starter. Archived roots cannot execute, become assigned or import as current workflows.
 
-There is no automatic legacy converter. Create a new unified workflow or open an updated example, then reuse suitable operations or pinned subgraphs explicitly:
+**File → Export archived workflows…** downloads the recovery archive as JSON. This recovery action makes no model requests and does not convert the contents. Preserve that download while rebuilding a needed process in a new unified workflow or updated example:
 
-1. Keep preparation Context/Text/Guidance logic upstream of Generate Reply.
-2. Replace the legacy host Guidance terminal with a wire to Generate Reply's guidance pin.
-3. Replace a latest-reply Snapshot dependency with the owned Generate Reply Draft where the response process needs this generation's reply.
-4. Keep compatible patch validation where useful, or use Revise Draft for direct source-bound Draft revisions. End the final Draft in Review / Publish.
-5. Keep native sources, Memory, file references, Recall, clocks and publication at the root when their contracts require it. Reusable pure processing belongs in subgraphs.
-6. Rebind local model and helper connections, authorize documents, inspect the graph, then assign and Arm it.
+1. Place preparation Context/Text/Guidance logic upstream of Generate Reply and set explicit stages.
+2. Wire bounded Guidance into Generate Reply's guidance pin.
+3. Use the owned Generate Reply Draft for processing this generation's response.
+4. End the final Draft in Review / Publish. Patch tools retain diagnostic utility but do not grant publication authority.
+5. Keep native sources, Memory, file references, Recall, clocks and publication at the root where required. Stage-specific reusable processing definitions remain pinned.
+6. Rebind local model/helper connections, authorize documents, inspect supported outputs with Run to here, then assign and Arm.
 
-Imports and exports preserve pinned definition identities and supported saved controls. Adding a fragment is a reviewed edit with phase/type checks, not an implicit conversion between workflow modes. Preserve the original legacy graph while adapting a copy.
+Current imports preserve pinned identities and controls; additive imports use stage/type checks. There is no automatic converter or production compatibility starter for a retired root.
 
 ## When a run holds
 

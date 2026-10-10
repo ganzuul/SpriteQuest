@@ -7,7 +7,7 @@ import { siblingWorkflow, nestedWorkflow } from './fixtures/workflow-prepared-fi
 
 let clipboard;
 try { clipboard = await import('../src/workflow/clipboard.js'); } catch { clipboard = {}; }
-const graph = () => ({ id: 'current', schema: 3, runtime: 2, mode: 'native-pre', nodes: {
+const graph = () => ({ id: 'current', schema: 3, runtime: 2, mode: 'native-unified', nodes: {
     source: { id: 'source', type: 'workflow', operation: 'scene-context', x: 20, y: 30 },
     compact: { id: 'compact', type: 'workflow', operation: 'smart-compactor', x: 320, y: 30, profileId: 'private-profile', model: 'portable-model', modelRole: 'Analysis', inGroup: 'pair' },
     output: { id: 'output', type: 'workflow', operation: 'response-plan', x: 600, y: 30 },

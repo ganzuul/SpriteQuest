@@ -94,7 +94,7 @@ test('modifier application rejects oversized sources and expanding intermediate 
 
 const {runWorkflow}=await import('../src/workflow/runtime.js');
 const {validateGraphStructure}=await import('../src/workflow/contracts.js');
-const graphOf=nodes=>({id:'modifiers',schema:3,runtime:2,mode:'native-pre',nodes,wires:{},portals:{},definitions:{},groups:{},roles:{}});
+const graphOf=nodes=>({id:'modifiers',schema:3,runtime:2,mode:'native-unified',nodes,wires:{},portals:{},definitions:{},groups:{},roles:{}});
 const textNode=(modifiers)=>({id:'source',type:'workflow',operation:'text',text:' raw ',...(modifiers?{modifiers}:{})});
 const target={workflowId:'modifiers',instancePath:[],nodeId:'source',portId:'out'};
 test('graph admission rejects invalid and incompatible modifiers before source binding requests or writes', async () => {

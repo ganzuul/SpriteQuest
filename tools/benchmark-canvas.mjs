@@ -40,9 +40,9 @@ try {
     for (const size of process.argv.includes('--quick') ? [100, 250] : [25, 100, 250]) for (const theme of ['ember', 'ash', 'signal']) for (const zoom of [1, 2.2]) for (const mode of ['zoom', 'pan', 'multi-drag']) {
         const setup = await page.evaluate(async ({ size, theme, zoom, mode }) => {
             const b = window.bench, c = b.canvas; c.cancelGesture(); b.theme.setPreset(theme);
-            const graph = { id: 'benchmark', name: 'Benchmark', schema:3,runtime:2,mode:'native-pre',roles:{},portals:{},definitions:{},nodes: {}, wires: {}, groups: {}, view: { x: 40, y: 40, zoom } };
+            const graph = { id: 'benchmark', name: 'Benchmark', schema:3,runtime:2,mode:'native-unified',roles:{},portals:{},definitions:{},nodes: {}, wires: {}, groups: {}, view: { x: 40, y: 40, zoom } };
             for (let i = 0; i < size; i++) {
-                graph.nodes['n'+i] = { ...b.operationDefaults('compose'), id:'n'+i,type:'workflow',operation:'compose',operationVersion:1,enabled:true,title:'Text '+i,outputKind:'text',sections:[{name:'Text',text:'Synthetic native text. '.repeat(12)}],x:(i%8)*230,y:Math.floor(i/8)*180 };
+                graph.nodes['n'+i] = { ...b.operationDefaults('compose'), id:'n'+i,type:'workflow',operation:'compose',operationVersion:1,phase:'pre',enabled:true,title:'Text '+i,outputKind:'text',sections:[{name:'Text',text:'Synthetic native text. '.repeat(12)}],x:(i%8)*230,y:Math.floor(i/8)*180 };
                 if(i>0)graph.wires['w'+i]={id:'w'+i,route:'wire',from:'n'+(i-1),fromPort:'out',to:'n'+i,toPort:'section.Text'};
             }
             const start = performance.now(); c.setGraph(b.prepare(graph)); const renderMs = performance.now() - start;

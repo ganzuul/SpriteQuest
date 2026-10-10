@@ -2,7 +2,7 @@
 export const UNIFIED_WORKFLOW_EXAMPLE_DATA = [
   {
     "id": "unified-guidance-prose-notes",
-    "number": 31,
+    "number": 1,
     "title": "Guide, revise and annotate a scene",
     "goal": "Build guidance, generate a native reply, polish its prose, extract notable items, enrich them with context and append an expandable notes section.",
     "packages": [
@@ -303,7 +303,7 @@ export const UNIFIED_WORKFLOW_EXAMPLE_DATA = [
   },
   {
     "id": "unified-combat-tactics",
-    "number": 32,
+    "number": 2,
     "title": "Combat with a tactical recap",
     "goal": "Present readable action and a quoted recap of positions, injuries and visible hazards.",
     "packages": [
@@ -554,7 +554,7 @@ export const UNIFIED_WORKFLOW_EXAMPLE_DATA = [
   },
   {
     "id": "unified-clue-board",
-    "number": 33,
+    "number": 3,
     "title": "Mystery evidence and open questions",
     "goal": "Append observed clues and character claims while keeping speculation distinct.",
     "packages": [
@@ -828,7 +828,7 @@ export const UNIFIED_WORKFLOW_EXAMPLE_DATA = [
   },
   {
     "id": "unified-travel-vignettes",
-    "number": 34,
+    "number": 4,
     "title": "Travel with useful landmarks",
     "goal": "Produce evocative travel prose with a compact list of public route details.",
     "packages": [
@@ -1096,7 +1096,7 @@ export const UNIFIED_WORKFLOW_EXAMPLE_DATA = [
   },
   {
     "id": "unified-inventory-discoveries",
-    "number": 35,
+    "number": 5,
     "title": "Inventory discoveries with provenance",
     "goal": "List newly noticed objects without automatically changing inventory ownership.",
     "packages": [
@@ -1287,7 +1287,7 @@ export const UNIFIED_WORKFLOW_EXAMPLE_DATA = [
   },
   {
     "id": "unified-npc-promises",
-    "number": 36,
+    "number": 6,
     "title": "Promises and obligations",
     "goal": "Keep a visible list of promises and deadlines that characters actually state.",
     "packages": [
@@ -1478,7 +1478,7 @@ export const UNIFIED_WORKFLOW_EXAMPLE_DATA = [
   },
   {
     "id": "unified-sign-translation",
-    "number": 37,
+    "number": 7,
     "title": "Signs and suggested translations",
     "goal": "Extract signs and inscriptions, then show proposed translations beside the original evidence.",
     "packages": [
@@ -1719,7 +1719,7 @@ export const UNIFIED_WORKFLOW_EXAMPLE_DATA = [
   },
   {
     "id": "unified-continuity-warnings",
-    "number": 38,
+    "number": 8,
     "title": "Continuity facts after a voice pass",
     "goal": "Polish narration and surface quotable continuity facts for human review.",
     "packages": [
@@ -1937,7 +1937,7 @@ export const UNIFIED_WORKFLOW_EXAMPLE_DATA = [
   },
   {
     "id": "unified-emotional-subtext",
-    "number": 39,
+    "number": 9,
     "title": "Slow burn with observable moments",
     "goal": "Improve restrained prose and annotate visible gestures without treating inference as a relationship score.",
     "packages": [
@@ -2188,9 +2188,9 @@ export const UNIFIED_WORKFLOW_EXAMPLE_DATA = [
   },
   {
     "id": "unified-scene-journal",
-    "number": 40,
+    "number": 10,
     "title": "A scene journal in an append-only document",
-    "goal": "Append a quoted journal entry to an authorized story document only after the candidate is accepted.",
+    "goal": "Append a quoted journal entry to an authorized workflow data document only after the candidate is accepted.",
     "packages": [
       {
         "kind": "lattice-workflow",
@@ -2199,7 +2199,7 @@ export const UNIFIED_WORKFLOW_EXAMPLE_DATA = [
         "graph": {
           "id": "unified-example-scene-journal",
           "name": "A scene journal in an append-only document",
-          "description": "Append a quoted journal entry to an authorized story document only after the candidate is accepted.\n\nSetup: Create a public Text document with targetId scene-journal in Story Documents. Bind Prose; assign and arm this Unified workflow. Append keeps existing contents. Review receipts separately from native chat durability.\n\nInspect: On Send owns this generation. Generate Reply uses the ordinary SillyTavern connection. Auxiliary roles remain unassigned in this portable example. Review the final narrative and proposed consequences; Apply publishes a new swipe and settles staged writes. Preview and bounded runs never settle.\n\nGenerated suggestions are proposals. Quoted observations preserve source identity; notes never establish canonical events. Private records cannot be appended to public notes.",
+          "description": "Append a quoted journal entry to an authorized workflow data document only after the candidate is accepted.\n\nSetup: Create a public Text document with targetId scene-journal in Workflow Data. Bind Prose; assign and arm this Unified workflow. Append keeps existing contents. Review receipts separately from native chat durability.\n\nInspect: On Send owns this generation. Generate Reply uses the ordinary SillyTavern connection. Auxiliary roles remain unassigned in this portable example. Review the final narrative and proposed consequences; Apply publishes a new swipe and settles staged writes. Preview and bounded runs never settle.\n\nGenerated suggestions are proposals. Quoted observations preserve source identity; notes never establish canonical events. Private records cannot be appended to public notes.",
           "schema": 3,
           "runtime": 2,
           "mode": "native-unified",
@@ -2443,7 +2443,7 @@ export const UNIFIED_WORKFLOW_EXAMPLE_DATA = [
   },
   {
     "id": "unified-broken-wand",
-    "number": 41,
+    "number": 11,
     "title": "A broken wand with a genuinely wild branch",
     "goal": "Extract each actual wand use, confirm it, preserve ordered holders, draw a weighted fixed/generated effect, author only a selected wild entry and settle its outcome ledger on acceptance.",
     "packages": [
@@ -3463,7 +3463,7 @@ export const UNIFIED_WORKFLOW_EXAMPLE_DATA = [
   },
   {
     "id": "unified-curse-at-2pm",
-    "number": 42,
+    "number": 12,
     "title": "An inconvenient daily transformation",
     "goal": "Read accepted story time, apply an explicitly authored duration, interrupt at the first due event, guide native generation and stage the effective clock and remainder for acceptance.",
     "packages": [
@@ -3733,7 +3733,7 @@ export const UNIFIED_WORKFLOW_EXAMPLE_DATA = [
   },
   {
     "id": "unified-midnight-bell",
-    "number": 43,
+    "number": 13,
     "title": "A curse that triggers at midnight",
     "goal": "Read accepted story time, apply an explicitly authored duration, interrupt at the first due event, guide native generation and stage the effective clock and remainder for acceptance.",
     "packages": [
@@ -4003,7 +4003,7 @@ export const UNIFIED_WORKFLOW_EXAMPLE_DATA = [
   },
   {
     "id": "unified-eight-hour-curse",
-    "number": 44,
+    "number": 14,
     "title": "A curse anchored every eight hours",
     "goal": "Read accepted story time, apply an explicitly authored duration, interrupt at the first due event, guide native generation and stage the effective clock and remainder for acceptance.",
     "packages": [
@@ -4274,7 +4274,7 @@ export const UNIFIED_WORKFLOW_EXAMPLE_DATA = [
   },
   {
     "id": "unified-general-experience",
-    "number": 45,
+    "number": 15,
     "title": "Experience from confirmed scene events",
     "goal": "Use generic State Progression, an authored reward table, canonical event identity and schema-aware file replacement to track experience.",
     "packages": [
@@ -5295,7 +5295,7 @@ export const UNIFIED_WORKFLOW_EXAMPLE_DATA = [
   },
   {
     "id": "unified-hundred-souls",
-    "number": 46,
+    "number": 16,
     "title": "A soul-stealing sword levels up at 100",
     "goal": "Read the sword document, confirm canonical kills, project unique captured souls, count before/after, cross 100 once, project level fields, and stage one final replacement of the same document.",
     "packages": [
@@ -6493,7 +6493,7 @@ export const UNIFIED_WORKFLOW_EXAMPLE_DATA = [
   },
   {
     "id": "unified-directed-relationship",
-    "number": 47,
+    "number": 17,
     "title": "Slow-burn directed relationship pacing",
     "goal": "Confirm a new considerate interaction, stamp accepted story time, apply small authored directed deltas with scene/day caps, cooldown and diminishing returns, and persist the private projection after Apply.",
     "packages": [
@@ -7401,7 +7401,7 @@ export const UNIFIED_WORKFLOW_EXAMPLE_DATA = [
   },
   {
     "id": "unified-dice-stakes",
-    "number": 48,
+    "number": 18,
     "title": "Real dice with frozen stakes",
     "goal": "Confirm an actual player roll, freeze authored stakes, draw a uniform d20, calculate the bonus and difficulty comparison, guide native narration and append a roll receipt.",
     "packages": [
@@ -8559,7 +8559,7 @@ export const UNIFIED_WORKFLOW_EXAMPLE_DATA = [
   },
   {
     "id": "unified-alternate-takes",
-    "number": 49,
+    "number": 19,
     "title": "Two event-preserving alternate takes",
     "goal": "Generate one native scene, create two narration-only tone revisions, check event equivalence independently and offer separate review candidates.",
     "packages": [
@@ -9093,7 +9093,7 @@ export const UNIFIED_WORKFLOW_EXAMPLE_DATA = [
   },
   {
     "id": "unified-solvable-puzzle",
-    "number": 50,
+    "number": 20,
     "title": "An authored puzzle with a hidden answer",
     "goal": "Validate one finite authored code puzzle, give graded hints from the player action, compare an explicit answer locally and generate the next scene without sending the solution to a model.",
     "packages": [
@@ -9822,7 +9822,7 @@ export const UNIFIED_WORKFLOW_EXAMPLE_DATA = [
   },
   {
     "id": "unified-campaign-callback",
-    "number": 51,
+    "number": 21,
     "title": "Campaign threads return at the right moment",
     "goal": "Read accepted threads, match relevance to the new player turn, check public continuity, prepare callback guidance and distinguish offered, advanced and fulfilled updates.",
     "packages": [
@@ -10882,7 +10882,7 @@ export const UNIFIED_WORKFLOW_EXAMPLE_DATA = [
   },
   {
     "id": "unified-ensemble-perspectives",
-    "number": 52,
+    "number": 22,
     "title": "An ensemble with bounded public perspectives",
     "goal": "Resolve the present cast from the native scene, author two separate observable perspectives, reconcile their shared timeline and attach an intercut perspective panel.",
     "packages": [
@@ -11582,7 +11582,7 @@ export const UNIFIED_WORKFLOW_EXAMPLE_DATA = [
   },
   {
     "id": "unified-mystery-evidence-board",
-    "number": 53,
+    "number": 23,
     "title": "Evidence, testimony and possible explanations",
     "goal": "Extract exact observations and attributed claims, retain source quotes, propose hypotheses separately, check contradictions and append a spoiler-safe board while staging new evidence.",
     "packages": [
@@ -12077,7 +12077,7 @@ export const UNIFIED_WORKFLOW_EXAMPLE_DATA = [
   },
   {
     "id": "unified-downtime-factions",
-    "number": 54,
+    "number": 24,
     "title": "Downtime with competing faction proposals",
     "goal": "Advance an authored bounded downtime period, collect faction proposals, check resource conflicts, guide arrival and commit the accepted time and public faction developments.",
     "packages": [
@@ -12849,7 +12849,7 @@ export const UNIFIED_WORKFLOW_EXAMPLE_DATA = [
   },
   {
     "id": "unified-exploration-map",
-    "number": 55,
+    "number": 25,
     "title": "Exploration cards with accepted map evidence",
     "goal": "Read known public locations, guide exploration, extract newly observed routes, check spatial continuity, separate suspected connections and merge accepted discovery records.",
     "packages": [
@@ -13342,7 +13342,7 @@ export const UNIFIED_WORKFLOW_EXAMPLE_DATA = [
   },
   {
     "id": "unified-crafting-receipt",
-    "number": 56,
+    "number": 26,
     "title": "Crafting with exact costs and a specialist card",
     "goal": "Check ingredient counts before generation, confirm a completed crafting event, debit authored costs once using general State, and attach a quoted specialist card.",
     "packages": [
@@ -14599,7 +14599,7 @@ export const UNIFIED_WORKFLOW_EXAMPLE_DATA = [
   },
   {
     "id": "unified-story-documents",
-    "number": 57,
+    "number": 27,
     "title": "A scene as letters, notices and witness messages",
     "goal": "Generate the shared public scene, create three attributed in-world documents, check chronology and audience knowledge, and append the packet as proposed artifacts.",
     "packages": [
@@ -15205,7 +15205,7 @@ export const UNIFIED_WORKFLOW_EXAMPLE_DATA = [
   },
   {
     "id": "unified-character-specific-prompt",
-    "number": 58,
+    "number": 28,
     "title": "A separate prompt for the character in this scene",
     "goal": "Confirm the selected character is genuinely present, apply a separate system prompt just to that character, then continue through ordinary native generation.",
     "packages": [
@@ -15469,7 +15469,7 @@ export const UNIFIED_WORKFLOW_EXAMPLE_DATA = [
   },
   {
     "id": "unified-item-triggered-memory",
-    "number": 59,
+    "number": 29,
     "title": "An item recalls a memory for its actual holder",
     "goal": "Watch a real item mention, resolve its current holder, apply the supplied prompt to that actor’s authorized memory, and stage only that actor’s private proposal.",
     "packages": [
@@ -16988,7 +16988,7 @@ export const UNIFIED_WORKFLOW_EXAMPLE_DATA = [
   },
   {
     "id": "unified-paired-kiss-memories",
-    "number": 60,
+    "number": 30,
     "title": "A kiss leaves two separate private memories",
     "goal": "Normalize exact kiss evidence, make a Fast Decision with an explicit probability gate, and give each present character a separate private reflection model and unique accepted memory file.",
     "packages": [
@@ -18967,7 +18967,7 @@ export const UNIFIED_WORKFLOW_EXAMPLE_DATA = [
   },
   {
     "id": "unified-recall-memories",
-    "number": 61,
+    "number": 31,
     "title": "Recall private moments on a hotkey or scene trigger",
     "goal": "Arm private memory injection for the next owned reply/swipe, or automatically match a real keyword or genuinely present character, then guide only the current native actor.",
     "packages": [

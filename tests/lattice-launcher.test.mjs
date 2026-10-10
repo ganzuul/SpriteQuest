@@ -27,8 +27,9 @@ test('chat launcher uses the Lattice logo on the left without submitting or gene
     assert.equal(button.tagName, 'BUTTON'); assert.equal(button.type, 'button');
     assert.equal(button.getAttribute('aria-label'), 'Open Lattice');
     assert.equal(button.classList.contains('fa-diagram-project'), false);
-    assert.match(button.querySelector('img').src, /\/assets\/lattice-logo\.svg$/);
-    assert.equal(button.querySelector('img').alt, '');
+    const icon = button.querySelector('.pc-chat-launcher-icon');
+    assert.match(icon.style.getPropertyValue('--pc-launcher-logo'), /\/assets\/lattice-logo\.svg"\)$/);
+    assert.equal(icon.getAttribute('aria-hidden'), 'true');
     let submits = 0; f.env.document.querySelector('form').addEventListener('submit', event => { event.preventDefault(); submits++; });
     button.click(); assert.equal(f.opens(), 1); assert.equal(submits, 0);
     button.dispatchEvent(new f.dom.window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
@@ -47,4 +48,22 @@ test('launcher waits for the left control group and remounts without duplicating
     assert.equal(f.env.document.querySelectorAll('#pc-sendbar').length, 1);
     f.saved.ui.sendbarButton = false; assert.equal(f.mount(), true); assert.equal(f.env.document.getElementById('pc-sendbar'), null);
     f.saved.ui.sendbarButton = true; assert.equal(f.mount(), true); assert.equal(f.env.document.querySelectorAll('#pc-sendbar').length, 1);
+});
+
+
+test('assigned unified graph edits cancel native authority while another graph is open', () => {
+    const dom = new JSDOM('<body></body>');
+    const graph = id => ({ id, schema: 3, runtime: 2, mode: 'native-unified', nodes: { text: { id: 'text', type: 'workflow', operation: 'text', text: id } }, wires: {} });
+    const open = graph('open'), assigned = graph('assigned');
+    const saved = { enabled: true, activeGraphId: open.id, nativeBindings: { workflowGraphId: assigned.id }, graphs: { open, assigned } };
+    const cancellations = [], runtime = { cancel: reason => cancellations.push(reason), dispose() {} };
+    const env = { document: dom.window.document, ctx: () => ({ eventTypes: {} }), settings: () => saved,
+        initializeNativeWorkflowController: async () => {}, getNativeWorkflowController: () => runtime,
+        workflowSignature: value => JSON.stringify(value.nodes), paintSendbar() {}, applyTheme() {}, mountLauncher() {}, addSlashCommand() {}, MODULE: 'lattice', UI: {}, safe: fn => fn(), globalThis: { addEventListener() {} } };
+    const start = source.indexOf('function boot()'), end = source.indexOf('\n}', start) + 2;
+    Function('env', 'with(env){' + source.slice(start, end) + ';boot();}')(env);
+    assigned.nodes.text.text = 'Assigned graph changed';
+    dom.window.document.dispatchEvent(new dom.window.Event('pc-state'));
+    assert.deepEqual(cancellations, ['Workflow settings changed']);
+    assert.equal(saved.activeGraphId, open.id);
 });
