@@ -59,7 +59,7 @@
         "y": 140,
         "w": 260,
         "inGroup": "ai-de-slop",
-        "profileId": null,
+        "profileId": "lattice:active-sillytavern",
         "model": null,
         "modelRole": "Prose",
         "mode": "repair",

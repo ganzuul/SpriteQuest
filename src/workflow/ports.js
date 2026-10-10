@@ -134,7 +134,10 @@ export function applyDeclaredNodeControlChange(context, command) {
         delete candidate.wires[id];
     }
     if(changesMode) {
-        const settings=new Set(INTROSPECTION_NATIVE_OPERATIONS[node.operation].modes.flatMap(mode=>operationFor({...node,...introspectionDefaults(node.operation,mode)},{phase:node.operation==='memory'&&mode==='commit'?'post':'pre'}).controls));
+        // Discover controls across modes independently of the saved occurrence stage.
+        // The selected mode and preserved stage were checked together above.
+        const {phase: occurrencePhase, ...modeMetadata}=node;
+        const settings=new Set(INTROSPECTION_NATIVE_OPERATIONS[node.operation].modes.flatMap(mode=>operationFor({...modeMetadata,...introspectionDefaults(node.operation,mode)},{phase:node.operation==='memory'&&mode==='commit'?'post':'pre'}).controls));
         for(const key of settings)delete node[key];
         Object.assign(node,defaults);
     }

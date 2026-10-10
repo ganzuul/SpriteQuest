@@ -1,6 +1,6 @@
 # LATTICE operator's manual
 
-[Documentation](README.md) · [Quick start](lattice-workspace.md) · [Node reference](node-reference.md) · [Model setup and troubleshooting](native-workflows.md)
+[Documentation](README.md) · [Unified workflows](unified-workflows.md) · [Quick start](lattice-workspace.md) · [Node reference](node-reference.md) · [Model setup and troubleshooting](native-workflows.md)
 
 LATTICE is a workspace for designing writing processes as connected, inspectable systems. A workflow can prepare context, assemble structured direction, transform text, propose edits, and expose a reviewed result. Subgraphs let you turn a useful sequence into a reusable tool.
 
@@ -42,9 +42,11 @@ The workflow bar reports phase, assignment, request bound, and autosave. Selecti
 
 Use **Tools → Theme and colours** to choose Ember, Lattice, Ash, Graphite, Slate, Obsidian, Harbor or Signal, or customize the selected theme. Ember follows SillyTavern's panel, text, controls and quote accent. Harbor uses blue and amber; Signal uses high contrast grayscale. Both add pin shapes and wire patterns, with a visible type-cue legend in the picker.
 
-**Run** explicitly executes the root workflow. **Arm** enables configured host integration. A manual guidance run previews its result; a normal Send with assigned and armed guidance executes that workflow again. Reviewed reply editing needs its own explicit Apply action.
+**Arm** enables the assigned host workflow. A unified workflow starts through ordinary SillyTavern **Send**, prepares guidance, and resumes from its owned completed reply. Supported **Run to here** paths preview dependencies without accepting effects; a full unified graph containing Generate Reply requires that owned native generation. Legacy tools retain manual **Run**: a guidance run previews its result, and a later assigned/armed Send executes that guidance again. Reviewed reply editing needs an explicit Apply action.
 
-**Before reply (Pre)** means the workflow can prepare guidance before SillyTavern writes its reply. Assign and arm it when you want a normal Send to run the graph and add that guidance. **After reply (Post)** means a graph can work from a completed reply: run a repair graph manually, review its proposed result, then choose Apply. Running a reply repair does not itself change the reply. Text transformations can run in either phase; reply-specific sources and review/application nodes require their matching host context.
+**Unified** keeps Preparation and Response stages in one graph around a single **Generate Reply · SillyTavern** boundary. Choose **Workflows → Assign unified workflow**, Arm, then Send normally. Inspect **Review / Publish · Host result** in Preview and Apply to add a new swipe preserving the original and accept its staged effects. Opening a workflow does not assign or arm it.
+
+Legacy **Before reply (Pre)** graphs prepare guidance before normal Send; legacy **After reply (Post)** graphs work manually from a completed reply. Their assignments are labeled **Assign legacy pre phase** and **Assign legacy post phase**. Running a reply repair does not itself change the reply. Text transformations can run in either stage; reply-specific sources and outputs still require their matching host context. The [unified guide](unified-workflows.md#apply-an-example-to-story-2) gives the actual Story-2/default-user setup.
 
 ## Start from a working example
 
@@ -58,11 +60,11 @@ Use **Tools → Theme and colours** to choose Ember, Lattice, Ash, Graphite, Sla
 
 *Choose a named tile to open its native workflow immediately. Build a brief from JSON is the third lesson.*
 
-The thirty tiles follow a fixed learning order. Opening a tile creates a fresh copy every time. A recipe's separate Pre/Post companions validate and install together; select them from the **Workflow** selector. Existing workflows, phase assignments, and enabled state are preserved. Opening does not run anything, assign a phase, or arm the copies.
+The picker contains unified story workflows and legacy learning examples. Opening a tile creates a fresh copy every time. Unified examples keep their preparation and response in one workflow. Some legacy recipes include separate Pre/Post companions that validate and install together; select those from the **Workflow** selector. Existing workflows, assignments and enabled state are preserved. Opening does not run anything, assign a workflow, or arm the copies.
 
-Model-backed lessons arrive without local connections. Select each model-calling node and choose its own connection profile in **Details**. The selected profile's model is the default; an override is optional. Inspect a manual run before assigning a phase from **Workflows** and arming for normal sends. Pending Node Details text, model override mode/value, and boundary drafts survive browsing and returning to their qualified node; invalid JSON still requires correction before Save.
+New ordinary text-model nodes and canonical legacy starters select **Active SillyTavern model**, which follows your configured host connection and model. Inspect an ordinary model node’s grey profile bar or **Details → Connection profile**; choose a saved profile when that node needs a fixed connection. The connection’s model is the default; a node model override is optional. Imported unified recipes can have unassigned local connections, including For Each helper roles, so follow their setup instructions. Configure a unified example before assigning/arming and using Send; inspect legacy tools with manual Run before enabling their host integration. Pending Node Details text, model override mode/value, and boundary drafts survive browsing and returning to their qualified node; invalid JSON still requires correction before Save.
 
-The [quick start](lattice-workspace.md) walks through changing a brief and trying Literal cleanup. Scene guidance and Reviewed AI De-slop use auxiliary model operations; choose local connection profiles for their model nodes in Details before running them.
+The [quick start](lattice-workspace.md) walks through changing a brief and trying Literal cleanup. Scene guidance and Reviewed AI De-slop use auxiliary model operations; their canonical starters follow **Active SillyTavern model**, and each node can instead use a saved profile selected in its bar or Details.
 
 There are three useful scales of work:
 
@@ -174,15 +176,17 @@ Smart Compactor lets you choose selection or model-backed compression, a target 
 
 ![Response Plan details showing instructions and model binding controls](images/model-details.png)
 
-*Model settings show the node's effective connection. Choose a local connection profile before running a model-backed node.*
+*Model settings show the node's effective connection. Check Active SillyTavern model or choose a saved profile for a fixed connection before running a model-backed node.*
 
-Select each model-calling node and choose its **Connection profile** in Details. The node uses that profile's default model; choose **Model mode → Override** to enter a different model identifier for that operation. Scene guidance's Smart Compactor and Response Plan can use different profiles and models. Inspect the effective value and any issue below the controls. This does not globally activate a different SillyTavern connection. See [model connections and supported routes](native-workflows.md).
+Each ordinary text-model node has a grey connection bar below its card and small model-only text above. Open the bar to search current saved profiles by name, API label and model, or choose **Active SillyTavern model** to follow the host's current connection. New ordinary text-model nodes use the active option; existing bindings remain intact. The list keeps the active option first, accepts multiple case-insensitive keywords, scrolls independently of the canvas, and supports arrows, Enter and Escape. Click outside to close it. An unavailable saved profile stays visibly unavailable until you choose another connection. Select a node to change the same **Connection profile** in Details. The node uses that profile's default model; choose **Model mode → Override** to enter a different model identifier for that operation. Scene guidance's Smart Compactor and Response Plan can use different profiles and models. Inspect the effective value and any issue below the controls. This does not globally activate a different SillyTavern connection. Changing a profile affects that node only and supports Undo and Redo. A pinned subgraph occurrence stores its connection override on the owning workflow wrapper, leaving its shared definition and sibling occurrences intact; library inspection remains read-only. See [model connections and supported routes](native-workflows.md).
 
-After configuring the model nodes, choose **Workflows → Assign pre phase** or **Assign post phase** for the selected workflow. Arming remains a separate action.
+**For Each → Helper model bindings** configures the exact pinned helper’s ordinary text-model roles separately; explicit nested bindings retain precedence. **Fast Decision** instead uses its explicit typed connection in **Tools → Fast connections…** and its node connection selector, with authored thresholds and opt-in fallback. The ordinary Active/Saved profile picker does not convert a chat model into a Jev/Laya typed endpoint.
+
+After configuration, choose **Workflows → Assign unified workflow** and Arm for a unified graph, then Send normally. Legacy graphs use **Assign legacy pre phase** or **Assign legacy post phase**. Arming remains a separate action.
 
 ## Run and inspect results
 
-Click **Run** to execute the root. The toolbar becomes **Stop** while busy. The bottom-left meter records completion or failure; click it for node-level details, including expanded stages within subgraphs.
+For a legacy/manual tool, click **Run** to execute the root. For a unified graph containing Generate Reply, use ordinary SillyTavern **Send** after assignment and arming; supported **Run to here** previews remain diagnostic. The toolbar becomes **Stop** while busy. The bottom-left meter records completion or failure; click it for node-level details, including expanded stages within subgraphs.
 
 ![Run details showing a completed five-stage deterministic workflow and zero requests](images/run-details.png)
 
@@ -205,6 +209,8 @@ The node context menu also offers **Pin preview** and **Run to here** for availa
 Changing an operation setting or a connection cancels active work and makes previous results **Stale**. Camera movement, selection, aliases, compact cards, and tab changes preserve run validity. Stale results can be inspected but cannot supply a fresh Apply action. Large recordings may explicitly truncate or omit diagnostic entries; application uses the retained full candidate rather than the visible excerpt.
 
 ## Review a proposed reply edit
+
+A unified workflow records its final **Review / Publish · Host result** after the owned native Send and response processing. Select that root result in Preview, compare the original and candidate, and Apply or Reject. Apply preserves the original swipe and accepts only that result’s staged effects. The following steps cover the legacy manual repair tools.
 
 1. Wait for the latest assistant reply to finish. The supported target is a completed text-only reply.
 2. Run **Literal cleanup** or a configured **Reviewed AI De-slop** workflow.
@@ -288,7 +294,7 @@ When the unsaved-changes prompt appears, **Save** downloads the current workflow
 
 An additive import requires matching phases, assigns fresh node identities, and preserves internal connections and relative layout. Review role requirements, terminal changes, and request bounds before accepting the insertion. Import itself does not run or arm the workflow.
 
-Save retains connection bindings in SillyTavern settings. Export downloads a `.workflow.json` sharing copy and omits bound profile IDs and credentials. Open these files with **File → Open workflow…**; recipients configure local model connections before running. The browser controls where downloads are saved. Composed workflows carry their pinned definitions. Unsupported versions, dangling connections, incompatible artifacts, or cycles produce validation issues.
+Save retains connection bindings in SillyTavern settings. Export downloads a `.workflow.json` sharing copy and strips local saved-profile IDs and credentials. Open these files with **File → Open workflow…**; recipients rebind exported fixed connections before running. **Active SillyTavern model** remains portable in nodes, roles and occurrence overrides, following the recipient's configured host connection and model. The browser controls where downloads are saved. Composed workflows carry their pinned definitions. Unsupported versions, dangling connections, incompatible artifacts, or cycles produce validation issues.
 
 ## Develop your own writing system
 
@@ -305,7 +311,7 @@ Start from the material and result you need, then choose the operations between 
 
 The first, fourth, and fifth compositions ship as starter examples; Scene guidance supplies the second. Context assembly and subgraph composition demonstrate how the same tools combine beyond those starters.
 
-The current operations provide bounded host context, text/data processing, planning, scoped actor memory, and reply review. Do not assume arbitrary tool execution, general document import, image/audio workflows, or a free-form model generation node from the presence of a graph editor. Build with the [available node contracts](node-reference.md); new tools can extend that vocabulary in later releases.
+The current operations provide one owned native generation, auxiliary Model Call, bounded host context, text/data processing, planning, scoped actor memory, story-document mutations and reply review. Arbitrary tool execution, unrestricted filesystem access and image/audio workflows are not implied by the graph editor. Build with the [available node contracts](node-reference.md) and [unified workflow guide](unified-workflows.md).
 
 ## Keyboard and connection reference
 

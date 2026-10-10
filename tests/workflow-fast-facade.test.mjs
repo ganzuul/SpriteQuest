@@ -11,7 +11,7 @@ test('installed facade passes one runtime request object to the real typed trans
         const nodes={text:{id:'text',type:'workflow',operation:'text',text:JSON.stringify({scene:'The wand flashes.'})},decode:{id:'decode',type:'workflow',operation:'json-decode'},decision:{id:'decision',type:'workflow',operation:'fast-decision',fastConnectionId:'local',questions:{event:{type:'noul',instructions:'Was the wand used?'}}}};
         const graph={id:'facade',schema:3,runtime:2,mode:'native-pre',nodes,wires:{a:{id:'a',route:'wire',from:'text',fromPort:'out',to:'decode',toPort:'in'},b:{id:'b',route:'wire',from:'decode',fromPort:'out',to:'decision',toPort:'in'}},portals:{},definitions:{}};
         const result=await facade.getNativeWorkflowController().runTarget(graph,{workflowId:graph.id,instancePath:[],nodeId:'decision',portId:'out'});assert.equal(result.ok,true,JSON.stringify(result.error));assert.equal(result.actualCalls,1);assert.equal(calls,1);
-    }finally{globalThis.fetch=previousFetch;delete globalThis.latticeFacadeUser;hooks.deregister();}
+    }finally{globalThis.fetch=previousFetch;delete globalThis.latticeFacadeUser;}
 });
 
 test('installed facade shares scoped catalog authorization with its trusted native controller',async()=>{
@@ -25,4 +25,24 @@ test('installed facade shares scoped catalog authorization with its trusted nati
         assert.equal(result.ok,true,JSON.stringify(result.error));assert.equal(result.actualCalls,0);
         const lease=catalog.capture();assert.equal(lease.ok,true);globalThis.latticeFacadeUser='someone-else';assert.equal(lease.data.isCurrent(),false);assert.equal(facade.storyDocumentState().data.documents.length,0);
     } finally {delete globalThis.latticeFacadeUser;}
+});
+
+
+test('installed facade supplies native read-only user authority to a private character request',async()=>{
+ const c=installMock(),actorId='character:mara.png';let privateController;globalThis.latticeFacadeUser='default-user';
+ Object.assign(c,{mainApi:'openai',chatId:'Story-2',characterId:0,groupId:null,chat:[{mes:'Mara waits by the sea.',is_user:true,extra:{}}],characters:[{avatar:'mara.png',data:{name:'Mara',description:'PRIVATE SEA',visibility:{kind:'actor-private',actorId}}}],chatCompletionSettings:{chat_completion_source:'nanogpt',nanogpt_model:'active-model'},CONNECT_API_MAP:{nanogpt:{selected:'openai',source:'nanogpt'}},getChatCompletionModel:settings=>settings.nanogpt_model});
+ c.setExtensionPrompt=(key,value)=>{c.extensionPrompts[key]={value};};
+ const sent=[];c.ChatCompletionService={presetToGeneratePayload:async(_preset,_overrides,payload)=>payload,sendRequest:async payload=>{sent.push(JSON.stringify(payload.messages));const material=JSON.parse(payload.messages.at(-1).content),source=material.context?.source;return {choices:[{message:{content:source?.actorId===undefined&&source?JSON.stringify({sceneId:source.sceneId,sourceId:source.sourceId,revision:source.revision,actors:[{actorId,status:'present',evidence:c.chat[0].mes}]}):'Mara considers the sea.'},finish_reason:'stop'}]};}};
+ try{
+  const facade=await import('../src/run.js?v=0.26.0&private-transport'),{operationDefaults}=await import('../src/workflow/catalog.js'),{ACTIVE_PROFILE_ID}=await import('../src/workflow/model-profiles.js');
+  const make=(id,operation,controls={})=>({id,type:'workflow',...operationDefaults(operation),...controls});
+  const graph={id:'private-facade',schema:3,runtime:2,mode:'native-unified',roles:{},nodes:{scene:make('scene','scene-context',{visibilityMode:'public',includeCharacter:false}),prompt:make('prompt','text',{text:'Quote the present cast from context.source.'}),cast:make('cast','model-call',{profileId:ACTIVE_PROFILE_ID,outputKind:'data'}),presence:make('presence','scene-presence',{actorId}),direction:make('direction','character-direction',{profileId:ACTIVE_PROFILE_ID,actorId,systemPrompt:'Only Mara receives her own private direction.'})},wires:{},definitions:{},portals:{}};
+  for(const[id,from,fromPort,to,toPort]of[['scene','scene','out','cast','context'],['prompt','prompt','out','cast','prompt'],['cast','cast','out','presence','in'],['presence','presence','out','direction','presence']])graph.wires[id]={id,route:'wire',from,fromPort,to,toPort};
+  graph.nodes.send=make('send','on-send');graph.nodes.generate=make('generate','generate-reply');graph.nodes.review=make('review','review-publish');
+  graph.wires.activation={id:'activation',route:'wire',from:'send',fromPort:'activation',to:'generate',toPort:'activation'};graph.wires.guidance={id:'guidance',route:'wire',from:'direction',fromPort:'out',to:'generate',toPort:'guidance'};graph.wires.draft={id:'draft',route:'wire',from:'generate',fromPort:'draft',to:'review',toPort:'draft'};
+  Object.assign(c.extensionSettings.lattice,{enabled:true,graphs:{[graph.id]:graph},activeGraphId:graph.id,nativeBindings:{workflowGraphId:graph.id,preGraphId:null,postGraphId:null}});
+  const listeners=new Map();c.eventTypes={GENERATION_STARTED:'started',GENERATION_ENDED:'ended',GENERATION_STOPPED:'stopped'};c.eventSource={on(name,fn){const list=listeners.get(name)??[];list.push(fn);listeners.set(name,list);},removeListener(name,fn){listeners.set(name,(listeners.get(name)??[]).filter(item=>item!==fn));},async emit(name,...args){for(const fn of listeners.get(name)??[])await fn(...args);}};
+  await facade.initializeNativeWorkflowController();const controller=privateController=facade.getNativeWorkflowController();await c.eventSource.emit('started','normal',{},false);const result=await controller.beforeGenerate(c.chat.map(message=>({...message})),8192,()=>{},'normal');
+  assert.equal(result.ok,true,JSON.stringify(result.error));assert.equal(sent.length,2);assert.equal(sent[0].includes('PRIVATE SEA'),false);assert.equal(sent[1].includes('PRIVATE SEA'),true);
+ }finally{privateController?.dispose();delete globalThis.latticeFacadeUser;hooks.deregister();}
 });

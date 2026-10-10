@@ -25,6 +25,7 @@ export function mountCanvas(target, actions) {
         ...component.getLayers(),
         setComments: (comments, actions) => flushSync(() => component.setComments(comments, actions)),
         setNodes: nodes => flushSync(() => component.setNodes(nodes)),
+        setNodeProfiles: rows => flushSync(() => component.setNodeProfiles(rows)),
         setGroups: groups => flushSync(() => component.setGroups(groups)),
         setWires: (wires, bounds, ghost) => flushSync(() => component.setWires(wires, bounds, ghost)),
         setPositions: (nodes, groups) => flushSync(() => component.setPositions(nodes, groups)),

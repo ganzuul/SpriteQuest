@@ -183,13 +183,14 @@ export async function runSyntheticFixtures({version,profileId},dependencies) {
             };
             const pre=starterGraph('native-guidance');
             pre.roles.Analysis={profileId,model:'z-ai/glm-5.2:thinking'};
-            Object.assign(pre.nodes['smart-compactor'],{model:'z-ai/glm-5.2',targetTokens:700,keepRecent:1,pins:['LANTERN-KEEP-26'],maxTokens:1024,purpose:'Summarize the repeated setup in at most 80 words.'});
-            Object.assign(pre.nodes['response-plan'],{maxTokens:4096,instructions:'In at most 120 words suggest two optional next beats; preserve the user decision and LANTERN-KEEP-26. No new established events.'});
+            Object.assign(pre.nodes['smart-compactor'],{profileId,model:'z-ai/glm-5.2',targetTokens:700,keepRecent:1,pins:['LANTERN-KEEP-26'],maxTokens:1024,purpose:'Summarize the repeated setup in at most 80 words.'});
+            Object.assign(pre.nodes['response-plan'],{profileId,model:'z-ai/glm-5.2:thinking',maxTokens:4096,instructions:'In at most 120 words suggest two optional next beats; preserve the user decision and LANTERN-KEEP-26. No new established events.'});
             const contextArtifact={kind:'context',messages:[
                 {id:'history',role:'user',text:'A fictional traveler waits at a blue lantern beside a closed gate. The traveler has not decided whether to enter. '.repeat(40),source:'synthetic'},
                 {id:'recent',role:'user',text:'LANTERN-KEEP-26: The gate remains closed; the traveler chooses what happens next.',source:'synthetic'},
             ]};
             const post=starterGraph('reviewed-de-slop');post.roles.Prose={profileId,model:'z-ai/glm-5.2'};
+            Object.assign(post.nodes.repair,{profileId,model:'z-ai/glm-5.2'});
             const text='The lantern was a testament to the keeper\'s patience. The gate stayed shut.';
             const draft={kind:'draft',text,source:{chatId:'synthetic-fixture',messageIndex:0,swipeId:0,originalText:text,token:'synthetic-26'},context:{kind:'context',messages:[{id:'scene',role:'user',text:'The fictional gate remains closed.',source:'synthetic'}]}};
             const signal=AbortSignal.timeout(180000);

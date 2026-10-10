@@ -2,7 +2,7 @@ import { setCompact } from './details-helpers.mjs';
 import { test, expect } from '@playwright/test';
 import { approvedEmber, openEmber, measureEmber, assertEmber, assertColor, hasOuterRing } from './ember-fixture.mjs';
 
-test('approved Dark Lite Ember uses fill-only alpha and consistent family colors on the real fresh default',async({page},testInfo)=>{
+test('approved Dark Lite Ember verifies fresh unified startup then preserves fill-only alpha and family colors',async({page},testInfo)=>{
     const errors=[];page.on('pageerror',error=>errors.push(error.message));
     await openEmber(page);const initial=await measureEmber(page);assertEmber(initial);
     expect(initial.nodes).toHaveLength(5);expect(initial.shelf.find(row=>row.family==='Transpose').disabled).toBe(false);

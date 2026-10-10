@@ -11,9 +11,12 @@ import { createNativePersistenceVerifier } from './workflow/native-persistence.j
 export { runWorkflow, workflowSignature } from './workflow/runtime.js?v=0.26.0';
 export { createNativeWorkflowController, snapshotContext, snapshotReply } from './workflow/host.js?v=0.26.0';
 
-let controller, helpers, userHelpers, initialization, fastRegistry, fastBridge, documentCatalog, persistenceVerifier, recallShortcuts, recallEvents;
+let controller, helpers, userHelpers, nativeUserReader, initialization, fastRegistry, fastBridge, documentCatalog, persistenceVerifier, recallShortcuts, recallEvents;
 const fastSettingsKey = 'lattice_fast_connections';
 const currentUser = () => userHelpers?.getCurrentUserHandle?.();
+// The immutable native export reads the current handle without invoking graph or
+// request hooks. Private transport uses this separate passive authority last.
+const transportUserId = () => nativeUserReader?.();
 function hostSettings() {
     const c = ctx(), root = c.extensionSettings ?? c.extension_settings;
     if (!root || typeof root !== 'object' || Array.isArray(root)) throw new Error('Host settings unavailable');
@@ -62,7 +65,7 @@ export function sendWorkflowState() {
 export function getNativeWorkflowController() {
     return controller ??= createNativeWorkflowController({
         registerRecallHotkey: request => { recallShortcuts ??= createRecallShortcutRegistry(globalThis.document,{changed:()=>safe(()=>globalThis.document.dispatchEvent(new CustomEvent('pc-recall-state')))}); return recallShortcuts.register(request); },
-        context: ctx, userId: currentUser, documentCatalog: getStoryDocumentCatalog(), persistenceVerifier: getNativePersistenceVerifier(),
+        context: ctx, userId: currentUser, transportUserId, documentCatalog: getStoryDocumentCatalog(), persistenceVerifier: getNativePersistenceVerifier(),
         isEnabled: () => settings().enabled === true,
         getGraph: phase => settings().graphs[settings().nativeBindings[phase === 'unified' ? 'workflowGraphId' : phase === 'pre' ? 'preGraphId' : 'postGraphId']],
         isBusy: () => !helpers || helpers.isGenerating(),
@@ -80,7 +83,7 @@ export function initializeNativeWorkflowController() {
     current.syncRecall();
     initialization ??= Promise.allSettled([
         import('/script.js').then(module => { if (['isGenerating', 'syncMesToSwipe', 'syncSwipeToMes'].every(key => typeof module[key] === 'function')) helpers = module; }),
-        import('/scripts/user.js').then(module => { if (typeof module.getCurrentUserHandle === 'function') userHelpers = module; }),
+        import('/scripts/user.js').then(module => { if (typeof module.getCurrentUserHandle === 'function') { userHelpers = module; nativeUserReader = module.getCurrentUserHandle; } }),
     ]);
     return initialization.then(result=>{current.syncRecall();return result;});
 }

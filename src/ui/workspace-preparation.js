@@ -11,6 +11,7 @@ import { FAMILY_PALETTE, paletteForOperation, readNodePresentation } from './nod
 import { isCommentFrame } from '../canvas/comment-frames.js?v=0.26.0';
 import { modifierTypes, modifierSummary, applyTextModifiers } from '../workflow/modifiers.js?v=0.26.0';
 import { addressKey, boundedText, RENDERED_TEXT_BYTES } from '../workflow/record-data.js?v=0.26.0';
+import { prepareNodeProfileOptions } from './node-profile-preparation.js?v=0.26.0';
 const rootIdentity = root => ({ kind: 'root', workflowId: root.id });
 /** First activation favors readable named cards; users can pan or explicitly Fit. */
 export function initialWorkspaceCamera(node, { width, shelf, meter } = {}) {
@@ -28,6 +29,7 @@ export function prepareWorkspaceViews(root, options = {}) {
     const primitivePhases = new Map(planner.inventory.primitives.map(unit => [addressKey(unit.address), unit.phase]));
     const composition = prepareCompositionViews(root, planner); if (!composition.ok) return composition;
     const workflow = prepareWorkflowProjection(root, { ...options, ...(planner ? { planner } : {}) });
+    const helperProfiles = prepareNodeProfileOptions(options.profiles ?? [], options.activeModel).map(option => ({ id: option.value, name: option.label }));
     const navigation = [], preparedViews = composition.data.views.map(view => {
         const identity = view.instancePath.length ? { kind: 'instance', workflowId: root.id, instancePath: [...view.instancePath] } : rootIdentity(root);
         const wrapper = view.instancePath.length ? definitionChain(root, view.instancePath).at(-1) : null;
@@ -43,7 +45,7 @@ export function prepareWorkspaceViews(root, options = {}) {
             for(const [role,binding]of Object.entries(owner.node.roleOverrides??{}))helperRoles[role]={...(helperRoles[role]??{}),...binding};
         }
         for (const node of Object.values(view.savedGraph.nodes)) {
-            if(node.operation==='for-each')drawBase.iterationBindings[node.id]=prepareIterationBindings(node,root.definitions??{},options.profiles??[],helperRoles);
+            if(node.operation==='for-each')drawBase.iterationBindings[node.id]=prepareIterationBindings(node,root.definitions??{},helperProfiles,helperRoles);
             const binding = {};
             for (let depth = chain.length - 1; depth >= 0; depth--) Object.assign(binding, chain[depth].node.nodeBindingOverrides?.[nodeBindingOverrideKey(view.instancePath.slice(depth + 1), node.id)] ?? {});
             const fields = Object.fromEntries(Object.entries(binding).filter(([, value]) => value === null).map(([field]) => [field, true]));
@@ -77,6 +79,26 @@ export function projectEditorDraw(editor) {
     }
     for (const [id, presentation] of Object.entries(view.groupPresentation ?? {})) if (Object.hasOwn(graph.groups, id)) Object.assign(graph.groups[id], structuredClone(presentation));
     return graph;
+}
+
+/** Cheap per-node decoration rows from prepared metadata, independent of selection. */
+export function projectNodeProfiles(editor, workflow, revision) {
+    if (!editor?.prepared) return [];
+    const library = editor.view.identity.kind === 'library', path = editor.view.identity.instancePath ?? [];
+    const options = (workflow.profiles ?? []).map(profile => ({ value: profile.id, label: profile.name, apiLabel: profile.apiLabel || '', model: profile.model || '', active: profile.active === true }));
+    const available = options.length ? options : prepareNodeProfileOptions();
+    return Object.values(editor.prepared.effectiveNodes).flatMap(node => {
+        const op = operationFor(node), bound = op?.requestBound;
+        const requestBound = typeof bound === 'function' ? bound(node) : bound || 0;
+        if (!requestBound || op.requestCapability === 'typed-decision') return [];
+        const prepared = library ? null : workflow.nodes.find(row => row.id === node.id);
+        const role = node.modelRole ?? op.modelRole;
+        const value = prepared?.profileId ?? node.profileId ?? editor.prepared.savedGraph.roles?.[role]?.profileId ?? '';
+        const option = available.find(option => option.value === value);
+        const model = prepared?.model || node.model || prepared?.resolvedModel || (option ? option.model : '') || '';
+        const address = library ? { kind: 'library', definitionRef: editor.prepared.definitionRef, nodeId: node.id } : { workflowId: workflow.graphId, instancePath: [...path], nodeId: node.id };
+        return [{ id: node.id, selection: { selectionKey: JSON.stringify([editor.view.key, node.id]), revision, address }, value, label: option?.label || (value ? 'Unavailable connection · ' + value : 'Choose a connection'), model, editable: !library, options: available }];
+    });
 }
 
 const targetKey = target => JSON.stringify(target);
@@ -243,7 +265,7 @@ export function prepareLibraryViews(workflowId, snapshots) {
         const view={savedGraph:actual.body,effectiveNodes:scope.graph.nodes,interface:actual.interface};
         navigation.push({identity,label:actual.name,readOnly:true});
         const drawBase=prepareEditorDrawBase(view,snapshots);drawBase.iterationBindings={};
-        for(const node of Object.values(actual.body.nodes))if(node.operation==='for-each')drawBase.iterationBindings[node.id]=prepareIterationBindings(node,snapshots,[],scope.graph.roles??{});
+        for(const node of Object.values(actual.body.nodes))if(node.operation==='for-each')drawBase.iterationBindings[node.id]=prepareIterationBindings(node,snapshots,prepareNodeProfileOptions().map(option=>({id:option.value,name:option.label})),scope.graph.roles??{});
         preparedViews.push({identity,definitionRef:ref,readOnly:true,...view,ports,drawBase});
     }
     return {ok:true,data:{navigation,preparedViews,definitionInfo}};

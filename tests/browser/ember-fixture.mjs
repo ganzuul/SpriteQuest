@@ -37,10 +37,15 @@ export async function openEmber(page, { url='/tests/browser/harness.html', token
     });
     await page.goto(url);await page.waitForFunction(()=>!!window.canvasHarness);
     await page.evaluate(async()=>{await window.canvasHarness.settle();await document.fonts.ready;});
-    const ids=await page.evaluate(()=>{
+    const ids=await page.evaluate(async()=>{
         const h=window.canvasHarness,g=h.graph,s=h.S.settings();
-        if(!h.freshSettingsAbsent||g.name!=='Structured guidance'||g.schema!==3||g.runtime!==2||s.enabled||s.nativeBindings.preGraphId!==null||s.nativeBindings.postGraphId!==null||h.providerCalls()!==0)throw Error('Ember must exercise the actual fresh disabled, unassigned, zero-call default.');
-        const nodes=Object.values(g.nodes);
+        const {validateWorkflow}=await import('/src/workflow/contracts.js?v='+h.version),fresh=validateWorkflow(g);
+        if(!h.freshSettingsAbsent||g.name!=='Unified story workflow'||g.template?.id!=='unified-basic'||g.mode!=='native-unified'||g.schema!==3||g.runtime!==2||s.enabled!==false||s.nativeBindings.workflowGraphId!==null||s.nativeBindings.preGraphId!==null||s.nativeBindings.postGraphId!==null||h.providerCalls()!==0||!fresh.ok||fresh.data.callBound!==0)throw Error('Ember must first verify the actual fresh unified, disabled, unassigned, zero-call default.');
+        // The approved theme fixture covers five cards, all original semantic
+        // pins and four wires. Activate the public starter after checking startup.
+        const {starterGraph}=await import('/src/workflow/starters.js?v='+h.version);
+        await h.activate(starterGraph('structured-guidance'));
+        const nodes=Object.values(h.graph.nodes);
         return {firstCompose:nodes.find(n=>n.operation==='compose'&&n.sections?.some(s=>s.name==='Scene')).id,jsonDecode:nodes.find(n=>n.operation==='json-decode').id,guidanceCompose:nodes.find(n=>n.operation==='compose'&&n.outputKind==='guidance').id};
     });
     await page.locator('.pc-node-native[data-id="'+ids.firstCompose+'"] .pc-native-heading').click();

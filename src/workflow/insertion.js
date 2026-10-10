@@ -1,3 +1,4 @@
+import { ACTIVE_PROFILE_ID } from './model-profiles.js?v=0.26.0';
 import { safeWorkflowData, validateGraphStructure } from './contracts.js?v=0.26.0';
 import { cloneWorkflowDocument } from './document.js?v=0.26.0';
 import { operationFor } from './catalog.js?v=0.26.0';
@@ -31,7 +32,7 @@ function reviewDiagnostics(candidate, added, viewPath, importedBindingOverrides,
     const imported = units.filter(unit => pathStartsWith(unit.address.instancePath, viewPath) && added.nodes.includes(unit.address.instancePath.length > viewPath.length ? unit.address.instancePath[viewPath.length] : unit.address.nodeId));
     const requests = imported.filter(unit => bound(unit) > 0);
     const unresolvedBindings = requests.flatMap(({ node, address }) => {
-        const missing = ['profileId', 'model'].filter(key => !node[key]);
+        const missing = ['profileId', 'model'].filter(key => !node[key] && !(key === 'model' && node.profileId === ACTIVE_PROFILE_ID));
         return missing.length ? [{ nodeId: node.id, address, role: node.modelRole ?? null, missing }] : [];
     });
     return { ok: true, data: {

@@ -102,9 +102,12 @@ async function saveRules(page, rules) {
 // Review/Send fixtures use the public saved graph, never a panel
 // DTO or manufactured review handle. UI binding itself is tested separately.
 async function fixtureRole(page, role, profile) {
-    await page.evaluate(({ role, profile }) => {
-        const h = window.canvasHarness;
+    await page.evaluate(async ({ role, profile }) => {
+        const h = window.canvasHarness, { ACTIVE_PROFILE_ID } = await import('/src/workflow/model-profiles.js?v=' + h.version);
         h.graph.roles ??= {}; h.graph.roles[role] = { profileId: profile, model: null };
+        // These synthetic runtime cases deliberately exercise legacy role inheritance.
+        // Preserve all independently selected node profiles and model overrides.
+        for (const node of Object.values(h.graph.nodes)) if (node.modelRole === role && node.profileId === ACTIVE_PROFILE_ID) node.profileId = null;
         h.S.touchGraph(h.graph); h.UI.refreshIfOpen();
     }, { role, profile });
 }
@@ -396,6 +399,8 @@ test('automatic Send evidence stays with its original graph through post review,
         const h = window.canvasHarness, s = h.S.settings();
         const pre = (await import('/src/workflow/starters.js?v=' + window.canvasHarness.version)).installStarter('native-guidance', s);
         pre.roles.Analysis.profileId = 'prose';
+        const { ACTIVE_PROFILE_ID } = await import('/src/workflow/model-profiles.js?v=' + h.version);
+        for (const node of Object.values(pre.nodes)) if (node.modelRole === 'Analysis' && node.profileId === ACTIVE_PROFILE_ID) node.profileId = null;
         s.nativeBindings.preGraphId = pre.id; s.enabled = true;
         h.S.save(); h.UI.refreshIfOpen(); return pre.id;
     });

@@ -9,6 +9,7 @@ import { isCommentFrame, containedCommentNodes } from './canvas/comment-frames.j
 import { mountCanvas } from '../dist/lattice-ui.js?v=0.26.0';
 const groupMembers = (graph, id) => Object.values(graph?.nodes ?? {}).filter(node => node.inGroup === id);
 const groupOf = (graph, node) => node && graph?.groups?.[node.inGroup];
+const inNodeProfile = event => event.target?.closest?.('.pc-node-profile');
 
 // Prepared cards expand catalog metadata beyond the authoring budget. Keep this
 // draw-only traversal bounded independently; authoring admission stays unchanged.
@@ -63,6 +64,8 @@ export class Canvas {
         this.operationEpoch = 0;
         this.spaceDown = false;
         this.geometry = createGeometryCache();
+        this.nodeProfiles = [];
+        this.nodeProfileVersion = 0;
         this.nodeElements = new Map();
         this.incident = new Map();
         this.wireViews = new Map();
@@ -74,6 +77,8 @@ export class Canvas {
             hostResult: id => this.hooks.onHostResult?.(this.graph?.nodes[id]),
             hoverPin: pin => { this.hoverPin = pin; this.#applyFocus(); },
             group: (id, action) => this.setCollapsed(id, action === 'collapse'),
+            editProfile: (selection, value) => this.hooks.editProfile?.(selection, value) ?? { ok: false, error: { code: 'unavailable', message: 'Profile editing is unavailable' } },
+            refreshProfiles: selection => this.hooks.refreshProfiles?.(selection),
         });
         this.viewport = this.layer.viewport; this.svg = this.layer.svg; this.nodeLayer = this.layer.nodeLayer; this.commentLayer = this.layer.commentLayer;
         this.frames = createFrameScheduler((flags, time) => {
@@ -90,6 +95,7 @@ export class Canvas {
             }
             if (changed && this.graph) {
                 this.layer.setGroups(Object.values(this.graph.groups ?? {}).map(group => this.#groupCard(group)));
+                this.#drawNodeProfiles();
                 this.frames.schedule(2);
             }
         });
@@ -121,6 +127,7 @@ export class Canvas {
         const detailScopeKey = this.hooks.viewKey?.() ?? nativeSelectionKey;
         if (graph.id !== this.graph?.id || detailScopeKey !== this.detailScopeKey) delete this.host.dataset.pcDetail;
         this.detailScopeKey = detailScopeKey;
+        this.nodeProfiles = []; this.nodeProfileVersion++;
         this.graph = graph; this.selection = null; this.multi.clear();
         if (scope?.workflowId && this.nativeSelectionRoot !== scope.workflowId) this.wireSelections.clear();
         this.nativeSelectionRoot = scope?.workflowId ?? this.nativeSelectionRoot;
@@ -132,6 +139,25 @@ export class Canvas {
     setTrace(trace) {
         this.trace = new Map((trace ?? []).map(t => [t.id, t]));
         this.render();
+    }
+
+    /** Accept prepared profile metadata; layout adds only cached native bounds. */
+    setNodeProfiles(rows) {
+        this.nodeProfiles = Array.isArray(rows) ? rows : [];
+        this.nodeProfileVersion++;
+        this.#drawNodeProfiles();
+    }
+
+    #drawNodeProfiles() {
+        if (!this.graph) return;
+        const rect = this.host.getBoundingClientRect(), view = this.view, zoom = view.zoom || 1;
+        const visibleBounds = { x: -view.x / zoom, y: -view.y / zoom, w: rect.width / zoom, h: rect.height / zoom };
+        this.layer.setNodeProfiles(this.nodeProfiles.flatMap(row => {
+            const node = this.graph.nodes[row.id];
+            if (!node || isCommentFrame(node) || this.#folded(node)) return [];
+            return [{ ...row, x: node.x, y: node.y, w: this.widthOf(node), h: this.heightOf(node),
+                clearance: node.presentation?.compact ? 38 : 0, authorityVersion: this.nodeProfileVersion, visibleBounds }];
+        }));
     }
 
     applyTransform() {
@@ -161,6 +187,7 @@ export class Canvas {
             this.host.style.backgroundPosition = at;
         }
         this.hooks.onView?.({ ...v, mode: this.mode });
+        this.#drawNodeProfiles();
     }
 
     toGraph(clientX, clientY) {
@@ -306,6 +333,7 @@ export class Canvas {
         this.#measureCards('.pc-node-group');
         this.geometry.retain([...Object.keys(this.graph.nodes), ...Object.keys(groups).map(id => `group:${id}`)]);
         this.#paintMulti();
+        this.#drawNodeProfiles();
     }
 
     #measureCards(selector) {
@@ -663,6 +691,7 @@ export class Canvas {
         this.layer.setPositions(ids.map(id => this.graph.nodes[id]).filter(Boolean).map(n => ({ id: n.id, x: n.x, y: n.y, ...(isCommentFrame(n) ? { w: this.widthOf(n), h: this.heightOf(n) } : {}) })), []);
         this.layer.setGroups(Object.values(this.graph.groups ?? {}).map(g => this.#groupCard(g)));
         this.#drawWires(new Set(ids));
+        this.#drawNodeProfiles();
     }
 
     #crossedDragThreshold(e) {
@@ -714,6 +743,7 @@ export class Canvas {
     #nativeHit(e) {
         const element = document.elementFromPoint(e.clientX, e.clientY);
         if (!element || !this.host.contains(element)) return { kind: 'outside' };
+        if (element.closest('.pc-node-profile')) return { kind: 'surface' };
         const pin = this.#nativePin(element); if (pin) return { kind: 'pin', pin };
         if (element.closest('.pc-node, .pc-group-frame')) return { kind: 'body' };
         if (element.closest('button, input, textarea, select, summary, a, [contenteditable="true"], .pc-wire-hit, .pc-comment-header, .pc-comment-resize')) return { kind: 'surface' };
@@ -745,14 +775,17 @@ export class Canvas {
             this.applyTransform(); this.hooks.onViewCommit?.();
         });
         on(host, 'pointerover', event => {
+            if (inNodeProfile(event)) return;
             const wire = event.target.closest?.('.pc-wire-hit[data-id]');
             if (wire) { this.hoverWire = wire.dataset.id; this.#applyFocus(); }
         });
         on(host, 'pointerout', event => {
+            if (inNodeProfile(event)) return;
             const wire = event.target.closest?.('.pc-wire-hit[data-id]');
             if (wire && !wire.contains(event.relatedTarget)) { this.hoverWire = null; this.#applyFocus(); }
         });
         on(document, 'keydown', (e) => {
+            if (inNodeProfile(e)) return;
             const root = host.closest('.pc-root');
             if (root && !root.classList.contains('pc-open')) return;
             if (e.key === 'Escape' && !typing(e) && (host.contains(e.target) || host.contains(document.activeElement))) {
@@ -765,11 +798,17 @@ export class Canvas {
         });
         on(document, 'keyup', (e) => {
             if (e.code === 'Space' || e.key === ' ') { this.spaceDown = false; host.classList.remove('pc-space-pan'); }
-        });
+        }, { capture: true });
         on(window, 'blur', () => this.cancelGesture('blur'));
-        on(window, 'resize', () => this.cancelGesture());
-        on(host, 'pointercancel', () => this.cancelGesture('pointercancel'));
+        // A drag begun on the canvas may end on a control that stops bubbling.
+        // Cancel it before control isolation runs so it cannot remain stuck.
+        on(window, 'mouseup', e => {
+            if (inNodeProfile(e) && (this.drag || this.pan || this.marquee)) this.cancelGesture('profile-surface');
+        }, { capture: true });
+        on(window, 'resize', () => { this.cancelGesture(); this.#drawNodeProfiles(); });
+        on(host, 'pointercancel', e => { if (!inNodeProfile(e)) this.cancelGesture('pointercancel'); });
         on(host, 'lostpointercapture', e => {
+            if (inNodeProfile(e)) return;
             {
                 if (this.drag || this.marquee || this.pan) { this.cancelGesture(); return; }
                 this.nativeCaptures.delete(e.pointerId);
@@ -778,6 +817,7 @@ export class Canvas {
             }
         });
         on(host, 'pointerdown', (e) => {
+            if (inNodeProfile(e)) return;
             this.#finishZoom(false);
             if (e.button === 0 && !inEditor(e) && !e.target.closest('.pc-node-action')) {
                 const pinElement = e.target.closest('.pc-port'), pin = this.#nativePin(e.target);
@@ -812,9 +852,10 @@ export class Canvas {
             if (!this.drag && !this.pan && !this.marquee) this.gestureRect = null;
         });
         // Where the pointer is on the canvas, so a paste lands under it.
-        on(host, 'mousemove', (e) => { if (this.graph) this.pointer = this.toGraph(e.clientX, e.clientY); });
+        on(host, 'mousemove', (e) => { if (!inNodeProfile(e) && this.graph) this.pointer = this.toGraph(e.clientX, e.clientY); });
         on(host, 'mouseleave', () => { this.pointer = null; });
         on(host, 'wheel', (e) => {
+            if (inNodeProfile(e)) return;
             if (!this.graph || this.drag || this.marquee || this.pan || this.#nativeBridge()?.hasContentGesture()) return;
             e.preventDefault();
             const rect = this.wheelRect ?? host.getBoundingClientRect();
@@ -822,6 +863,7 @@ export class Canvas {
             if (this.#queueZoom(factor, { x: e.clientX - rect.left, y: e.clientY - rect.top })) this.wheelRect = rect;
         }, { passive: false });
         on(host, 'mousedown', (e) => {
+            if (inNodeProfile(e)) return;
             if (!this.graph) return;
             if (this.nativeMouseSuppressed || e.target.closest('.pc-port')) { e.preventDefault(); return; }
             if (e.target.closest('.pc-node-action')) return;
@@ -963,6 +1005,7 @@ export class Canvas {
             }
         });
         on(window, 'mousemove', (e) => {
+            if (inNodeProfile(e)) return;
             if (this.marquee) {
                 this.#updateMarquee(e);
                 return;
@@ -1018,6 +1061,7 @@ export class Canvas {
             }
         });
         on(window, 'mouseup', (e) => {
+            if (inNodeProfile(e)) return;
             this.frames.flush(); this.gestureRect = null; this.host.classList.remove('pc-interacting');
             if (this.marquee) {
                 this.#updateMarquee(e); const m = this.marquee; this.marquee = null; m.box.remove();
@@ -1045,6 +1089,7 @@ export class Canvas {
             if (this.pan) { this.frames.flush(); this.pan = null; this.host.classList.remove('pc-panning'); this.hooks.onViewCommit?.(); }
         });
         on(host, 'dblclick', (e) => {
+            if (inNodeProfile(e)) return;
             if (inEditor(e)) return;
             if (e.target.closest('[data-action]')) return;
             const comment = e.target.closest('.pc-comment-header')?.closest('.pc-comment-frame');
@@ -1075,6 +1120,7 @@ export class Canvas {
             this.#openNativeSearch(e);
         });
         on(host, 'contextmenu', (e) => {
+            if (inNodeProfile(e)) return;
             if (inEditor(e)) return;
             e.preventDefault();
             {

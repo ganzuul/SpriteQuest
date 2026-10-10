@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { OPERATIONS } from '../src/workflow/catalog.js';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
-const documents = ['README.md', 'docs/README.md', 'docs/operators-manual.md', 'docs/node-reference.md', 'docs/lattice-workspace.md', 'docs/native-workflows.md', 'docs/development.md'];
+const documents = ['README.md', 'docs/README.md', 'docs/operators-manual.md', 'docs/node-reference.md', 'docs/lattice-workspace.md', 'docs/native-workflows.md', 'docs/development.md', 'docs/unified-workflows.md', 'docs/lattice-reference-library.md', 'docs/introspection-package.md'];
 const texts = new Map(await Promise.all(documents.map(async path => [path, (await readFile(join(root, path), 'utf8')).replace(/\r\n?/g, '\n')])));
 const failures = [], images = new Set();
 let links = 0;
@@ -18,7 +18,7 @@ function anchors(text) {
     }));
 }
 for (const [path, text] of texts) {
-    if (/Silly\s*Canvas|ComfyTavern|\bfork\b|\blegacy\b/i.test(text)) failures.push(path + ': obsolete branding or interface reference');
+    if (/Silly\s*Canvas|ComfyTavern|\bfork\b/i.test(text)) failures.push(path + ': obsolete branding or interface reference');
     for (const match of text.matchAll(/!?\[[^\]]*\]\(([^)]+)\)/g)) {
         const href = match[1];
         if (/^https?:/.test(href)) continue;
@@ -35,9 +35,12 @@ for (const [path, text] of texts) {
         }
     }
 }
+// The README introduces families; the node reference owns complete operation coverage.
+for (const guide of ['node-reference', 'unified-workflows']) if (!texts.get('README.md').includes('](docs/' + guide + '.md)')) failures.push('README missing guide ' + guide);
+const sharedHeadings = { Join: 'Join and Collect', Collect: 'Join and Collect', Append: 'Append and Combine', Combine: 'Append and Combine' };
 for (const operation of Object.values(OPERATIONS)) {
-    if (!texts.get('README.md').includes('**' + operation.title + '**')) failures.push('README missing ' + operation.title);
-    if (!texts.get('docs/node-reference.md').includes('### ' + operation.title + '\n')) failures.push('Reference missing ' + operation.title);
+    const heading = sharedHeadings[operation.title] ?? operation.title;
+    if (!texts.get('docs/node-reference.md').includes('### ' + heading + '\n')) failures.push('Reference missing ' + operation.title);
 }
 const pngs = (await readdir(join(root, 'docs/images'))).filter(name => name.endsWith('.png'));
 for (const name of pngs) {

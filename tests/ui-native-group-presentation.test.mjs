@@ -9,7 +9,7 @@ import { workflowSignature } from '../src/workflow/runtime.js?v=0.26.0';
 import { createNativeWorkflowController } from '../src/workflow/host.js?v=0.26.0';
 import { createWorkflowSession, prepareWorkflowProjection, projectPreparedWorkflow } from '../src/ui/workflow-surface.js?v=0.26.0';
 import { createGraphViewSession } from '../src/ui/graph-view-session.js?v=0.26.0';
-import { prepareWorkspaceViews, prepareLibraryViews, projectEditorDraw, projectWorkspacePanels } from '../src/ui/workspace-preparation.js?v=0.26.0';
+import { prepareWorkspaceViews, prepareLibraryViews, projectEditorDraw, projectWorkspacePanels, projectNodeProfiles } from '../src/ui/workspace-preparation.js?v=0.26.0';
 import * as H from '../src/history.js?v=0.26.0';
 import { readNodePresentation } from '../src/ui/node-palette.js?v=0.26.0';
 import { viewIdentityKey } from '../src/ui/view-state.js?v=0.26.0';
@@ -48,7 +48,7 @@ function prepared(schema = 3) {
     return { root, definition, ref, views, preparation: result.data, bindings: () => bindings };
 }
 async function controllerFixture(schema = 3) {
-    const f = prepared(schema), counters = { persist: 0, projection: 0, changes: 0 }, env = { current: f.root, graphViews: f.views, editorDraw: null, nativeGroupPresenter: null, rootRunEpoch: 7, workspaceRevision: 1, workspacePrepared: { ...f.preparation, catalogs: new Map() }, nativeWireBridge: null, nativeCatalog: null, editorCaptures: new WeakMap(), selected: null, selectedKind: null, selectedPreview: null, restoringEditor: false, canvasTraceRows: null, root: document.createElement('div'), projectEditorDraw, isOpen: () => true, cancelImportReview() {}, replaceNativeBridge() {}, syncPaneToggles() {}, updateWorkflowProjection() { counters.projection++; }, paintHistory() {}, workbench: { update() {} }, persistGraphViews() { counters.persist++; } };
+    const f = prepared(schema), counters = { persist: 0, projection: 0, changes: 0 }, env = { current: f.root, graphViews: f.views, editorDraw: null, nativeGroupPresenter: null, rootRunEpoch: 7, workspaceRevision: 1, workspacePrepared: { ...f.preparation, catalogs: new Map() }, nativeWireBridge: null, nativeCatalog: null, editorCaptures: new WeakMap(), selected: null, selectedKind: null, selectedPreview: null, restoringEditor: false, canvasTraceRows: null, root: document.createElement('div'), projectEditorDraw, projectNodeProfiles, isOpen: () => true, cancelImportReview() {}, replaceNativeBridge() {}, syncPaneToggles() {}, updateWorkflowProjection() { counters.projection++; }, paintHistory() {}, workbench: { update() {} }, persistGraphViews() { counters.persist++; } };
     for (const name of ['captureEditor', 'editorCurrent', 'prepareGroupPresentation', 'replaceNativeBridge']) { const fn = controllerFunction(name, env); if (fn) env[name] = fn; }
     assert.equal(typeof env.prepareGroupPresentation, 'function', 'the actual controller needs a qualified local group presentation adapter');
     const real = fixture({ nativeCard: node => env.editorDraw?.nativeCards[node.id], nativeScope: () => f.views.readEditor().view.identity.kind === 'library' ? { readOnly: true } : { workflowId: f.root.id, instancePath: f.views.readEditor().view.identity.instancePath ?? [], readOnly: f.views.readEditor().readOnly }, canEdit: () => !f.views.readEditor().readOnly, onNativeGroupPresentation: (id, collapsed) => env.nativeGroupPresenter?.(id, collapsed), onChange: () => { counters.changes++; } }); env.canvas = real.canvas;

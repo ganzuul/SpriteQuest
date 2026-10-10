@@ -1,10 +1,11 @@
+import { ACTIVE_PROFILE_ID } from './model-profiles.js?v=0.26.0';
 import { safeWorkflowData, validateGraphStructure } from './contracts.js?v=0.26.0';
 import { OPERATIONS, operationFor, phaseForNode } from './catalog.js?v=0.26.0';
 import { cloneDefinitionData, computeDefinitionIdentity, definitionRefKey, inspectDefinitionMetadata, validateDefinition } from './definitions.js?v=0.26.0';
 const limit = 2000000;
 const fail = (code, message) => ({ ok: false, error: { code, message } });
 const pick = (value, keys) => Object.fromEntries(keys.filter(key => Object.hasOwn(value, key)).map(key => [key, value[key]]));
-const portableBindings = bindings => Object.fromEntries(Object.entries(bindings ?? {}).map(([id, binding]) => [id, { ...pick(binding, ['model']), ...(Object.hasOwn(binding, 'profileId') ? { profileId: null } : {}) }]));
+const portableBindings = bindings => Object.fromEntries(Object.entries(bindings ?? {}).map(([id, binding]) => [id, { ...pick(binding, ['model']), ...(Object.hasOwn(binding, 'profileId') ? { profileId: binding.profileId === ACTIVE_PROFILE_ID ? ACTIVE_PROFILE_ID : null } : {}) }]));
 // Parameter values are authored JSON unless the exact exposed control is a binding.
 // Resolve against the original flat table before any portable hashes are changed.
 function exposedParameterNode(definition, parameter, snapshots) {
@@ -78,7 +79,7 @@ function portableNativeDocument(graph, context) {
         ...((OPERATIONS[node.operation]?.family === 'Introspection' ? operationFor(node, { phase: phaseForNode(graph, node), mode: graph.mode }) : OPERATIONS[node.operation])?.controls ?? []), ...(node.operation === 'validate-patches' ? ['protectedLiterals'] : []),
     ])]));
     for (const [id, node] of Object.entries(copy.nodes)) {
-        if (Object.hasOwn(node, 'profileId')) node.profileId = null;
+        if (Object.hasOwn(node, 'profileId') && node.profileId !== ACTIVE_PROFILE_ID) node.profileId = null;
         if (node.type === 'workflow' && node.operation === 'for-each') {
             if (Object.hasOwn(node, 'roleOverrides')) node.roleOverrides = portableBindings(node.roleOverrides);
             if (Object.hasOwn(node, 'helper')) node.helper = context.reference(node.helper);

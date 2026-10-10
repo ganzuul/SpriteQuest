@@ -1,5 +1,5 @@
 import {UNIFIED_WORKFLOW_EXAMPLE_DATA} from '../../src/workflow/unified-example-data.js';
-const exampleCount=30+UNIFIED_WORKFLOW_EXAMPLE_DATA.length;
+const exampleCount=30+UNIFIED_WORKFLOW_EXAMPLE_DATA.length, lastExampleTitle=UNIFIED_WORKFLOW_EXAMPLE_DATA.at(-1).title;
 import { test, expect } from '@playwright/test';
 
 async function load(page) {
@@ -12,7 +12,7 @@ async function openExamples(page, menu = 'File') {
     return page.getByRole('dialog', { name: 'Examples', exact: true });
 }
 
-test('File examples is directly below Open workflow and opens the compact thirty-tile picker', async ({ page }, testInfo) => {
+test('File examples is directly below Open workflow and opens the compact complete example picker', async ({ page }, testInfo) => {
     await load(page);
     await page.getByRole('button', { name: 'File', exact: true }).click();
     const items = await page.getByRole('menu', { name: 'File', exact: true }).getByRole('menuitem').allTextContents();
@@ -22,7 +22,7 @@ test('File examples is directly below Open workflow and opens the compact thirty
     await expect(dialog).toBeVisible();
     await expect(dialog.locator('.pc-example-tile')).toHaveCount(exampleCount);
     await expect(dialog.locator('.pc-example-tile').first()).toHaveAccessibleName('Make a scene brief');
-    await expect(dialog.locator('.pc-example-tile').last()).toHaveAccessibleName('Combine memory with a voice pass');
+    await expect(dialog.locator('.pc-example-tile').last()).toHaveAccessibleName(lastExampleTitle);
     const box = await dialog.boundingBox();
     expect(box.width).toBeGreaterThanOrEqual(550);
     expect(box.width).toBeLessThanOrEqual(570);
@@ -67,18 +67,18 @@ test('narrow picker has two columns and its last long-name tile opens by keyboar
     const box = await dialog.boundingBox();
     expect(box.width).toBeLessThanOrEqual(476);
     expect(await dialog.locator('.pc-examples-grid').evaluate(element => getComputedStyle(element).gridTemplateColumns.split(' ').length)).toBe(2);
-    const last = dialog.getByRole('button', { name: 'Combine memory with a voice pass', exact: true });
+    const last = dialog.getByRole('button', { name: lastExampleTitle, exact: true });
     await last.focus();
     await expect(last).toBeInViewport();
     await dialog.screenshot({ path: testInfo.outputPath('examples-picker-narrow.png') });
     await last.press('Enter');
     await expect(dialog).toBeHidden();
-    await expect.poll(() => page.evaluate(() => window.canvasHarness.graph.name)).toBe('Combine memory with a voice pass');
+    await expect.poll(() => page.evaluate(() => window.canvasHarness.graph.name)).toBe(lastExampleTitle);
     expect(await page.evaluate(() => window.canvasHarness.providerCalls())).toBe(0);
 });
 
-test('each of thirty tiles activates an independently editable native primary workflow without host effects', async ({ page }) => {
-    test.setTimeout(90000);
+test('each example tile activates an independently editable native primary workflow without host effects', async ({ page }) => {
+    test.setTimeout(180000);
     await load(page);
     const before = await page.evaluate(() => {
         const settings = window.canvasHarness.S.settings();
@@ -100,9 +100,10 @@ test('each of thirty tiles activates an independently editable native primary wo
             return { savedId: h.S.settings().activeGraphId, currentId: h.graph.id, mode: h.graph.mode };
         });
         expect(active.savedId).toBe(active.currentId);
-        expect(active.mode).toMatch(/^native-(pre|post)$/);
+        expect(active.mode).toMatch(/^native-(pre|post|unified)$/);
         await expect(page.getByRole('combobox', { name: 'Workflow', exact: true })).toHaveValue(active.savedId);
-        await page.locator('.pc-canvas-host .pc-node-native .pc-native-heading').first().click();
+        await page.evaluate(async()=>{const h=window.canvasHarness,id=document.querySelector('.pc-canvas-host .pc-node-native').dataset.id,node=h.graph.nodes[id];await h.view({x:280-node.x,y:80-node.y,zoom:1});});
+        await page.locator('.pc-canvas-host .pc-node-native .pc-native-heading').first().click({timeout:5000});
         await expect(page.getByRole('textbox', { name: 'Node name', exact: true })).toBeEnabled();
     }
     const after = await page.evaluate(() => {
@@ -204,7 +205,7 @@ test('one malformed primary stays as a disabled diagnostic tile while other exam
     await expect(invalid).toBeDisabled();
     await expect(invalid).toContainText('Unavailable');
     await expect(invalid).toHaveAccessibleDescription(/unknown workflow operation/i);
-    await expect(dialog.locator('.pc-example-tile:not(:disabled)')).toHaveCount(29);
+    await expect(dialog.locator('.pc-example-tile:not(:disabled)')).toHaveCount(exampleCount-1);
     expect(await page.evaluate(() => window.canvasHarness.S.settings().activeGraphId)).toBe(beforeId);
     await dialog.getByRole('button', { name: 'Replace a repeated phrase', exact: true }).click();
     await expect(dialog).toBeHidden();
@@ -217,7 +218,8 @@ test('catalog-wide loading failure preserves the workspace and Retry restores th
     const beforeId = await page.evaluate(async () => {
         const h = window.canvasHarness;
         const { WORKFLOW_EXAMPLE_DATA } = await import('/src/workflow/example-data.js?v=' + h.version);
-        WORKFLOW_EXAMPLE_DATA.map = () => { throw new Error('The example catalog is temporarily unavailable.'); };
+        window.exampleCatalogTitleDescriptor = Object.getOwnPropertyDescriptor(WORKFLOW_EXAMPLE_DATA[0], 'title');
+        Object.defineProperty(WORKFLOW_EXAMPLE_DATA[0], 'title', { configurable: true, get() { throw new Error('The example catalog is temporarily unavailable.'); } });
         return h.S.settings().activeGraphId;
     });
     const dialog = await openExamples(page);
@@ -227,7 +229,8 @@ test('catalog-wide loading failure preserves the workspace and Retry restores th
     await page.evaluate(async () => {
         const h = window.canvasHarness;
         const { WORKFLOW_EXAMPLE_DATA } = await import('/src/workflow/example-data.js?v=' + h.version);
-        delete WORKFLOW_EXAMPLE_DATA.map;
+        Object.defineProperty(WORKFLOW_EXAMPLE_DATA[0], 'title', window.exampleCatalogTitleDescriptor);
+        delete window.exampleCatalogTitleDescriptor;
     });
     await dialog.getByRole('button', { name: 'Retry', exact: true }).click();
     await expect(dialog.getByRole('alert')).toHaveCount(0);

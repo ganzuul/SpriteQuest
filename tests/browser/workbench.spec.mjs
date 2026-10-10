@@ -19,7 +19,7 @@ test('a first click after editing switches Details to the clicked current node',
     await expect(editor).toHaveValue(JSON.stringify([{name:'Text',text:'Synthetic rendering fixture.'}],null,2));
 });
 test('camera menus retain the focused Details editor and unsaved JSON draft',async({page})=>{
-    await launch(page); const id=await page.evaluate(()=>Object.values(window.canvasHarness.graph.nodes).find(node=>node.operation==='compose'&&node.sections?.length).id); await page.locator('.pc-node[data-id="'+id+'"] .pc-native-heading').click();
+    await launch(page); const id=await page.evaluate(async()=> (await window.canvasHarness.reset(2,2))[0]); await page.evaluate(()=>window.canvasHarness.view({x:180,y:0,zoom:1})); await page.locator('.pc-node[data-id="'+id+'"] .pc-native-heading').click();
     const editor=await sectionsJson(page); await editor.fill('{unfinished'); await editor.focus();
     await page.evaluate(()=>{window.editorProbe=document.activeElement;});
     const before=await page.evaluate(()=>JSON.stringify(window.canvasHarness.graph));

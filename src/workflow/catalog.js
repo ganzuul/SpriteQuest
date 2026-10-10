@@ -1,3 +1,4 @@
+import { ACTIVE_PROFILE_ID } from './model-profiles.js?v=0.26.0';
 import { RECALL_OPERATIONS, describeRecallNode } from './operations/recall-nodes.js?v=0.26.0';
 import { LIFECYCLE_OPERATIONS, describeLifecycleNode } from './operations/lifecycle-nodes.js?v=0.26.0';
 import { FILE_OPERATIONS, describeFileNode } from './operations/file-nodes.js?v=0.26.0';
@@ -212,7 +213,7 @@ export function semanticControlsForNode(node, operation = operationFor(node)) {
     // Additive editor controls must preserve existing version-1 semantic pins.
     if (node.operation === 'for-each') {
         if (!Object.keys(controls.roleOverrides ?? {}).length) delete controls.roleOverrides;
-        else controls.roleOverrides = Object.fromEntries(Object.entries(controls.roleOverrides).map(([role,binding]) => [role,Object.hasOwn(binding,'model') ? {model:binding.model} : {}]));
+        else controls.roleOverrides = Object.fromEntries(Object.entries(controls.roleOverrides).map(([role,binding]) => [role,{...(Object.hasOwn(binding,'model') ? {model:binding.model} : {}),...(binding.profileId === ACTIVE_PROFILE_ID ? {profileId:ACTIVE_PROFILE_ID} : {})}]));
     }
     if (node.operation === 'scene-context' && controls.visibilityMode === 'actor') delete controls.visibilityMode;
     if (Object.hasOwn(TRANSPOSE_OPERATIONS, node.operation) && controls.inputKind === 'draft') delete controls.inputKind;
@@ -251,5 +252,5 @@ export function operationDefaults(id = 'scene-context', { mode } = {}) {
         op = described.data.descriptor;
     }
     if (!op) throw new Error(`Unknown workflow operation: ${id}`);
-    return { operation: id, ...(op.minimumSchema === 3 ? { operationVersion: 1 } : {}), title: op.title, modelRole: op.modelRole, profileId: null, model: null, ...structuredClone(op.defaults) };
+    return { operation: id, ...(op.minimumSchema === 3 ? { operationVersion: 1 } : {}), title: op.title, modelRole: op.modelRole, profileId: op.modelRole && op.requestCapability !== 'typed-decision' ? ACTIVE_PROFILE_ID : null, model: null, ...structuredClone(op.defaults) };
 }

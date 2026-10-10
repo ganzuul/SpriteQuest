@@ -1,6 +1,8 @@
 # Workflow unification implementation progress
 
-Goal created: 2026-10-10. Status: active; implementation and final main integration remain outstanding.
+Goal created: 2026-10-10. Status: implementation validated; final main merge and remote verification pending.
+
+The checklist below reflects the current release. Later checkpoint narratives preserve the chronological implementation history; their remaining-work descriptions refer to those earlier commits. The final validation checkpoint at the end supersedes them.
 
 ## Authority and scope
 
@@ -27,7 +29,7 @@ XP and relationship intensity are recipes built from general structures. Prefer 
 
 ## Implementation workstreams to plan and complete
 
-- [ ] Unified graph contracts, source/stage capabilities, current native graph conversion, definition/package compatibility, and diagnostics.
+- [x] Unified graph contracts, source/stage capabilities, current native graph conversion, definition/package compatibility, and diagnostics.
 - [ ] Named operation outputs, port activation/skip/unresolved states, conditional scheduling, optional joins, bounded ordered iteration, recording, cancellation, and owned native generation continuation.
 - [ ] Normal SillyTavern Send/generation integration, single workflow binding, source/chat/user/generation correlation, final review/publication, accepted consequence settlement, and partial failure recovery.
 - [ ] Composable Draft lineage, generic model calls/revisions, extraction/enrichment, checked assembly, Combine/Append, notes rendering, and final output authority.
@@ -77,7 +79,7 @@ Plan saved: docs/superpowers/plans/2026-10-10-workflow-unification.md. The imple
 
 Fresh scoped evidence includes 139 Draft/model tests, 63 decision/storage tests, and 81 event/Draft/progression integration tests. Every checkpoint closed independent review findings before commit. A later clean full project check and live native validation are still required.
 
-## Current integration work
+## Earlier integration checkpoint
 
 The first central runtime/editor segment is ready for independent review. It registers Decision/Fast Decision and Draft/model adapters, separates typed requests and connection summaries, accounts for explicit fallback, defers new model bindings until actual requests, and exposes both stages on one unified shelf. Its focused suite passed 122/122 tests. The project type check passed before the final small binding-summary adjustment; review will verify current source again.
 
@@ -123,3 +125,15 @@ Independent reviews closed native source/currentness, private canonical memory, 
 Fresh evidence: 17 scoped recipe tests; 12 additional-flow tests; 23 helper-authoring/runtime checks; browser helper connection and Story-2 document/Recall authoring both passed; Svelte types0errors/0warnings; production build passed. Installed SillyTavern browser smoke validates both native event orders using actual public host helpers and an isolated synthetic reply. It blocks paid/provider traffic and host writes, so it does not claim real provider output or durable persistence.
 
 The broad test pass exposed stale extracted-controller fixtures and old default/menu expectations. Those fixtures are updated without weakening their behavioral assertions. Final combined tests/assets/browser/install checks and reconciliation of the separately committed searchable profile picker remain required. Main has not yet been merged or pushed.
+
+## Final validation checkpoint (2026-10-10)
+
+All implementation and independent reviews are complete. The combined release preserves the primary design-document commit 993d988 and the searchable profile-picker commit 1a8b1d1. Conflict resolution retains unified stages, typed Fast controls, Active ordinary/helper model bindings, actor-private dispatch and portable binding semantics. All other worktrees were rechecked clean; the details-panel branch was already an ancestor of main.
+
+The final suite passed 244/244 test files and 268/268 browser checks. Svelte checking found zero errors and zero warnings; production build and 497 versioned local imports passed. Clean installation mounted without development dependencies, missing assets, browser errors or provider calls. Documentation verification passed ten current guides, 235 local links, all 75 registered operations and twenty screenshots.
+
+Final independent reviews closed private-transport callback races with a separate captured native read-only user authority, passive model configuration checks and exact actor/source comparisons immediately before sending. Twenty-eight actual native-adapter cases and the installed facade's own private-character request verify this seam. Browser-discovered Memory/State mode edits now retain their explicit response stage. Paired-memory recipes default reflection authorship permission off and save canonical quotes separately from explicitly model-authored feelings.
+
+Installed SillyTavern default-user validation passed both Received-first and Ended-first orders through 72 production modules. One run prepares guidance, resumes a synthetic native reply, revises and appends notes, reviews before writes, preserves the original swipe, and appends the accepted journal once; repeated Apply adds no effects. Actual native helpers and event emitter are exercised. Provider generation and save acknowledgements are synthetic, so paid provider behavior and durable real-host persistence are not claimed. Story-2 was untouched.
+
+The original two design documents remain byte-for-byte equal to the primary checkout. Detailed capability boundaries and validation are recorded in [the release report](../superpowers/reports/2026-10-10-workflow-unification.md). The authorized main merge, push and exact GitHub SHA verification are the only remaining goal actions.

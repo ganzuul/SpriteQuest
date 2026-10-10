@@ -14,7 +14,7 @@ function fixture(graph,options={}) {
     const controller=createNativeWorkflowController({context:()=>c,getGraph:()=>graph,isEnabled:()=>true,isBusy:()=>false,countTokens:async text=>({tokens:Math.ceil(text.length/4),method:'fixture'}),...(options.resolveBinding?{resolveBinding:options.resolveBinding}:{}),onResult:options.onResult,request:options.request??(async()=>({ok:true,data:{text:'{"patches":[{"index":0,"replacement":"explore"}]}',finish:'stop'}})),onEvent:event=>{events.push(event);options.onEvent?.(event);},syncMesToSwipe:index=>{const m=c.chat[index];m.swipes[m.swipe_id]=m.mes;return true;},syncSwipeToMes:(index,id)=>{const m=c.chat[index];m.swipe_id=id;m.mes=m.swipes[id];Object.assign(m,structuredClone(m.swipe_info[id]));return true;}});
     return {controller,c,message,profile,events};
 }
-function graph3(kind) {const g=starterGraph(kind);for(const role of Object.values(g.roles))role.profileId='fixed';return cloneWorkflowDocument(g).data;}
+function graph3(kind) {const g=starterGraph(kind);for(const role of Object.values(g.roles))role.profileId='fixed';for(const node of Object.values(g.nodes))if(node.modelRole)node.profileId=null;return cloneWorkflowDocument(g).data;}
 
 test('schema3 keeps all addressed candidate handles private and Apply rejects changed effective profiles',async()=>{
     const graph=graph3('reviewed-de-slop');graph.nodes.second={id:'second',type:'workflow',operation:'apply-reply'};graph.wires.second={id:'second',route:'wire',from:'review-gate',fromPort:'out',to:'second',toPort:'in'};

@@ -3,6 +3,7 @@ import test from 'node:test';
 import { resolveBinding } from '../src/workflow/connections.js';
 import { computeDefinitionIdentity, definitionRefKey, nodeBindingOverrideKey } from '../src/workflow/definitions.js';
 import { resolveWorkflow } from '../src/workflow/resolve.js';
+import { exportWorkflow, parseWorkflow } from '../src/workflow/packages.js';
 import { runWorkflow } from '../src/workflow/runtime.js';
 
 const role = { profileId: 'role-profile', model: 'role-model' };
@@ -160,4 +161,26 @@ test('an explicit wrapper profile null blocks role fallback before any request',
     assert.equal(result.ok, false);
     assert.equal(result.error.code, 'BINDING_MISSING');
     assert.deepEqual(requests, []);
+});
+
+test('an active profile occurrence override follows live model while its pinned sibling keeps the inherited profile', async () => {
+    host.mainApi = 'openai';host.chatCompletionSettings = {chat_completion_source:'nanogpt',nanogpt_model:'live-model'};
+    host.getChatCompletionModel = settings => settings.nanogpt_model;
+    host.ChatCompletionService = {presetToGeneratePayload:async()=>({}),sendRequest:async()=>({})};
+    const { result, requests } = await execute(nested({}, {profileId:'lattice:active-sillytavern'}));
+    assert.equal(result.ok, true, JSON.stringify(result.error));
+    assert.deepEqual(requests, [
+        [['first','child'],'work','lattice:active-sillytavern','live-model'],
+        [['second','child'],'work','role-profile','role-model'],
+    ]);
+});
+
+
+test('portable pinned occurrence selectors preserve the active marker while stripping sibling local role profiles', () => {
+    const graph = nested({}, {profileId:'lattice:active-sillytavern'});
+    const imported = parseWorkflow(JSON.stringify(exportWorkflow(graph)));
+    assert.equal(imported.ok,true,JSON.stringify(imported.error));
+    assert.equal(imported.data.nodes.first.nodeBindingOverrides[nodeBindingOverrideKey(['child'],'work')].profileId,'lattice:active-sillytavern');
+    assert.equal(graph.roles.Analysis.profileId,'role-profile');
+    assert.equal(imported.data.roles.Analysis.profileId,null);
 });

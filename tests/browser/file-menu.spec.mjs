@@ -96,7 +96,7 @@ test('File Export JSON downloads a portable copy that Open can reopen without ch
     expect(Object.keys(after.graphs[after.activeGraphId].nodes)).toHaveLength(Object.keys(file.graph.nodes).length);
 });
 
-test('File New immediately opens a blank canvas and retains existing workflows', async ({ page }) => {
+test('File New immediately opens a unified starter and retains existing workflows', async ({ page }) => {
     await load(page);
     await page.evaluate(() => window.canvasHarness.view({ x: 180, y: 120, zoom: 0.75 }));
     const before = await snapshot(page);
@@ -106,7 +106,9 @@ test('File New immediately opens a blank canvas and retains existing workflows',
     expect(after.graphs[after.activeGraphId].name).toBe('Untitled workflow');
     expect(Object.keys(after.graphs)).toHaveLength(Object.keys(before.graphs).length + 1);
     expect(after.graphs[before.activeGraphId]).toEqual(before.graphs[before.activeGraphId]);
-    expect(after.graphs[after.activeGraphId].nodes).toEqual({});
+    expect(after.graphs[after.activeGraphId].mode).toBe('native-unified');
+    expect(Object.values(after.graphs[after.activeGraphId].nodes).map(node=>node.operation)).toEqual(['on-send','generate-reply','review-publish']);
+    expect(Object.keys(after.graphs[after.activeGraphId].wires)).toHaveLength(2);
     expect(after.enabled).toBe(before.enabled);
     expect(after.nativeBindings).toEqual(before.nativeBindings);
 });
@@ -157,7 +159,7 @@ test('File New offers to save edited workflow changes and Cancel preserves the c
     expect(await snapshot(page)).toEqual(before);
 });
 
-test('File New Save downloads all current workflow edits before opening a blank canvas', async ({ page }) => {
+test('File New Save downloads all current workflow edits before opening a unified starter', async ({ page }) => {
     await load(page);
     await page.evaluate(async () => {
         const h = window.canvasHarness;
@@ -179,11 +181,13 @@ test('File New Save downloads all current workflow edits before opening a blank 
     expect(Object.keys(file.graph.nodes)).toEqual(Object.keys(before.graphs[before.activeGraphId].nodes));
     await expect.poll(() => page.evaluate(() => window.canvasHarness.graph.id)).not.toBe(before.activeGraphId);
     const after = await snapshot(page);
-    expect(after.graphs[after.activeGraphId].nodes).toEqual({});
+    expect(after.graphs[after.activeGraphId].mode).toBe('native-unified');
+    expect(Object.values(after.graphs[after.activeGraphId].nodes).map(node=>node.operation)).toEqual(['on-send','generate-reply','review-publish']);
+    expect(Object.keys(after.graphs[after.activeGraphId].wires)).toHaveLength(2);
     expect(after.graphs[before.activeGraphId]).toEqual(before.graphs[before.activeGraphId]);
 });
 
-test('File New Discard opens a blank canvas without downloading the edited workflow', async ({ page }) => {
+test('File New Discard opens a unified starter without downloading the edited workflow', async ({ page }) => {
     await load(page);
     const downloads = [];
     page.on('download', download => downloads.push(download));
@@ -197,7 +201,9 @@ test('File New Discard opens a blank canvas without downloading the edited workf
     await page.getByRole('dialog', { name: 'Save workflow changes?', exact: true }).getByRole('button', { name: 'Discard', exact: true }).click();
     await expect.poll(() => page.evaluate(() => window.canvasHarness.graph.id)).not.toBe(before.activeGraphId);
     const after = await snapshot(page);
-    expect(after.graphs[after.activeGraphId].nodes).toEqual({});
+    expect(after.graphs[after.activeGraphId].mode).toBe('native-unified');
+    expect(Object.values(after.graphs[after.activeGraphId].nodes).map(node=>node.operation)).toEqual(['on-send','generate-reply','review-publish']);
+    expect(Object.keys(after.graphs[after.activeGraphId].wires)).toHaveLength(2);
     expect(after.graphs[before.activeGraphId]).toEqual(before.graphs[before.activeGraphId]);
     expect(downloads).toEqual([]);
 });
@@ -264,7 +270,11 @@ test('the New save prompt wraps backward from dialog focus into its buttons', as
     await page.keyboard.press('Shift+Tab');
     await expect(dialog.getByRole('button', { name: 'Cancel', exact: true })).toBeFocused();
     await page.keyboard.press('Tab');
+    await expect(dialog.getByRole('combobox', { name: 'New workflow type', exact: true })).toBeFocused();
+    await page.keyboard.press('Tab');
     await expect(dialog.getByRole('button', { name: 'Save', exact: true })).toBeFocused();
+    await page.keyboard.press('Shift+Tab');
+    await expect(dialog.getByRole('combobox', { name: 'New workflow type', exact: true })).toBeFocused();
     await page.keyboard.press('Shift+Tab');
     await expect(dialog.getByRole('button', { name: 'Cancel', exact: true })).toBeFocused();
     await page.keyboard.press('Escape');

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { prepareWorkflowProjection, projectPreparedWorkflow } from '../src/ui/workflow-surface.js?v=0.26.0';
-import { prepareWorkspaceViews, projectWorkspacePanels } from '../src/ui/workspace-preparation.js?v=0.26.0';
+import { prepareWorkspaceViews, projectWorkspacePanels, projectNodeProfiles } from '../src/ui/workspace-preparation.js?v=0.26.0';
 import { createGraphViewSession } from '../src/ui/graph-view-session.js?v=0.26.0';
 const api = await import('../src/ui/provider-settings.js?v=0.26.0').catch(() => ({}));
 const graph = (controls = {}) => ({id:'provider-ui',name:'Provider UI',schema:3,runtime:2,mode:'native-pre',roles:{},nodes:{source:{id:'source',type:'workflow',operation:'compose',sections:[{name:'scene',text:'A scene.'}],outputKind:'text'},fast:{id:'fast',type:'workflow',operation:'fast-decision',inputKind:'text',fastConnectionId:'jev',...controls},render:{id:'render',type:'workflow',operation:'compose',mode:'template',outputKind:'guidance',template:'Decision: {{data:/answers}}'},guidance:{id:'guidance',type:'workflow',operation:'guidance'}},wires:{wire:{id:'wire',route:'wire',from:'source',fromPort:'out',to:'fast',toPort:'in'},data:{id:'data',route:'wire',from:'fast',fromPort:'out',to:'render',toPort:'data'},publish:{id:'publish',route:'wire',from:'render',fromPort:'out',to:'guidance',toPort:'in'}},portals:{},definitions:{},groups:{}});
@@ -110,4 +110,17 @@ test('inferred response stage is shared by compiled inventory, graph card and ed
  // Committing the displayed stage must preserve valid stage admission.
  root.nodes.decision.phase=details.phase;assert.equal(prepareWorkspaceViews(root).ok,true);
  root.nodes.decision.phase='pre';assert.equal(prepareWorkspaceViews(root).ok,false);
+});
+
+test('Fast Decision keeps its typed selector without an ordinary model profile bar',()=>{
+ const root=graph({fallbackEnabled:true,fallbackAllowedCodes:['SERVICE_UNAVAILABLE'],fallbackProfileId:'text-fallback'});
+ const prepared=prepareWorkspaceViews(root,{profiles:[{id:'text-fallback',name:'Text fallback'}],fastConnections:[{id:'jev',label:'Scene judge',provider:'jev',model:'jev-any',credentialReady:true}],activeModel:{apiLabel:'Host API',model:'host-model'},resolveFastBinding:()=>({ok:true,data:{model:'jev-any'}}),resolveBinding:()=>({ok:true,data:{profileId:'text-fallback',model:'text'}})});
+ assert.equal(prepared.ok,true,JSON.stringify(prepared));
+ const session=createGraphViewSession({root,activationId:'typed-profile-bar',...prepared.data}).data;
+ const workflow=projectPreparedWorkflow(prepared.data.workflow,{selectedId:'fast'});
+ assert.equal(projectNodeProfiles(session.readEditor(),workflow,'typed:1').some(row=>row.id==='fast'),false);
+ const details=projectWorkspacePanels(session.readEditor(),workflow,{},'typed:1',null,null).nodeDetails;
+ assert.equal(details.model,null);
+ assert.equal(details.controls.find(control=>control.key==='fastConnectionId').value,'jev');
+ assert.equal(details.controls.find(control=>control.key==='fallbackProfileId').value,'text-fallback');
 });

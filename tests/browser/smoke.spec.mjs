@@ -15,12 +15,15 @@ test('a settings-free launch opens the current disabled unassigned zero-request 
             oldGlobals: ['sillyCanvas','promptCanvas','comfyTavernGenerationInterceptor'].some(key => Object.hasOwn(window,key)),
             mode: Object.hasOwn(settings,'workflowMode'), prepared: h.canvas.graph !== h.graph && !!h.canvas.graph.nativeCards };
     });
-    expect(launch).toMatchObject({fresh:true,name:'Structured guidance',schema:3,runtime:2,enabled:false,bound:0,calls:0,currentGlobal:true,oldGlobals:false,mode:false,prepared:true});
-    expect(launch.bindings).toEqual({preGraphId:null,postGraphId:null});
-    await expect(page.locator('.pc-node-native')).toHaveCount(5);
+    expect(launch).toMatchObject({fresh:true,name:'Unified story workflow',schema:3,runtime:2,enabled:false,bound:0,calls:0,currentGlobal:true,oldGlobals:false,mode:false,prepared:true});
+    expect(launch.bindings).toEqual({preGraphId:null,postGraphId:null,workflowGraphId:null});
+    await expect(page.locator('.pc-node-native')).toHaveCount(3);
     await expect(page.locator('.pc-node-output,.pc-port-key,.pc-port-stage,.pc-tok')).toHaveCount(0);
     await expect(page.getByLabel('Workflow mode',{exact:true})).toHaveCount(0);
-    await page.locator('.pc-root-run').click(); await expect(page.locator('.pc-run-meter-label')).toHaveText('Completed');
+    const before=await page.evaluate(()=>JSON.stringify(window.canvasHarness.graph));
+    await page.locator('.pc-root-run').click(); await expect(page.locator('.pc-root')).toContainText('Assign and enable this unified workflow, then Send in SillyTavern.');
+    await expect(page.locator('.pc-run-meter-label')).toHaveText('Not run');
+    expect(await page.evaluate(()=>JSON.stringify(window.canvasHarness.graph))).toBe(before);
     expect(await page.evaluate(()=>window.canvasHarness.providerCalls())).toBe(0);
     expect(requests.filter(url=>new URL(url).pathname.startsWith('/api/'))).toEqual([]);
     expect(errors).toEqual([]);

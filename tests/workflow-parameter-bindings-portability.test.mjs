@@ -1,3 +1,5 @@
+import {operationDefaults} from '../src/workflow/catalog.js';
+import {ACTIVE_PROFILE_ID} from '../src/workflow/model-profiles.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {computeDefinitionIdentity, definitionRefKey, inspectPinnedDefinitionIdentity} from '../src/workflow/definitions.js';
@@ -188,4 +190,30 @@ test('ordinary notes with non-executable helper metadata export without treating
  const nodes={n:{id:'n',type:'note',content:'ordinary note',operation:'for-each',helper:null}},graph={id:'notes',schema:3,runtime:2,mode:'native-unified',nodes,wires:{}};
  const exported=exportWorkflow(graph);assert.equal(exported.kind,'lattice-workflow');assert.equal(parseWorkflow(JSON.stringify(exported)).ok,true);assert.equal(exported.graph.nodes.n.content,'ordinary note');
  const definition=finalize({id:'note-helper',version:1,name:'Note helper',interface:[],parameters:[],body:{schema:3,runtime:2,mode:'native-unified',nodes,wires:{}}}),standalone=exportSubgraph(definition);assert.equal(parseSubgraph(JSON.stringify(standalone)).ok,true);assert.equal(standalone.definition.body.nodes.n.content,'ordinary note');
+});
+
+test('Active host selection stays semantic and portable in direct and exposed For Each helper bindings', () => {
+ const f=fixture(ACTIVE_PROFILE_ID), each=structuredClone(byId(f.graph,'qualified-each'));
+ const identity = profileId => { const draft=structuredClone(each); draft.body.nodes.each.roleOverrides={decision:{profileId}}; return must(computeDefinitionIdentity(draft)); };
+ const first=identity('local-one'), second=identity('local-two'), active=identity(ACTIVE_PROFILE_ID);
+ assert.equal(first.semanticHash,second.semanticHash);
+ assert.notEqual(active.semanticHash,first.semanticHash);
+ assert.equal(JSON.parse(active.canonicalContent).body.nodes.each.controls.roleOverrides.decision.profileId,ACTIVE_PROFILE_ID);
+ const finalized={...active.materializedDefinition,semanticHash:active.semanticHash};
+ const table=Object.fromEntries(Object.entries(f.graph.definitions).filter(([,definition])=>definition.id!==finalized.id));
+ table[definitionRefKey(finalized)]=finalized;
+ const portable=exportSubgraph(finalized,table);
+ assert.equal(portable.definition.body.nodes.each.roleOverrides.decision.profileId,ACTIVE_PROFILE_ID);
+ must(parseSubgraph(JSON.stringify(portable)));
+ const exported=exportWorkflow(f.graph), parsed=must(parseWorkflow(JSON.stringify(exported)));
+ assert.equal(parsed.nodes.wrapper.parameterOverrides.bindings.decision.profileId,ACTIVE_PROFILE_ID);
+ assert.equal(byId(parsed,'nested-holder').body.nodes.child.parameterOverrides.bindings.decision.profileId,ACTIVE_PROFILE_ID);
+ assert.deepEqual(exportWorkflow(parsed),exported);
+});
+
+test('only ordinary text models default to the Active host profile',()=>{
+ assert.equal(operationDefaults('decision').profileId,ACTIVE_PROFILE_ID);
+ assert.equal(operationDefaults('model-call').profileId,ACTIVE_PROFILE_ID);
+ assert.equal(operationDefaults('fast-decision').profileId,null);
+ assert.equal(operationDefaults('fast-decision').fastConnectionId,'');
 });

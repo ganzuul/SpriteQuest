@@ -44,6 +44,34 @@ const visibilityStamp = material => {
     const visibility=nativeVisibility(material),disclosure=contextDisclosure(material);
     return visibility.ok&&disclosure.ok?JSON.stringify({...visibility.data,...(disclosure.data.present?{disclosure:disclosure.data.visibility}:{})}):null;
 };
+// Private transport watch: inspect bounded own source data, then compare after all
+// host callbacks. Context wrappers may be new objects; native source refs stay exact.
+const actorTransportWatch = (c,actorId,chatId) => {
+    try {
+        const own=(value,key)=>{const property=value&&Object.getOwnPropertyDescriptor(value,key);if(!property)return undefined;if(!property.enumerable||!Object.hasOwn(property,'value'))throw Error();return property.value;};
+        const scalar=value=>{if(value===undefined||value===null||typeof value==='boolean'||typeof value==='number'&&Number.isFinite(value)||typeof value==='string'&&value.length<=100000)return value;throw Error();};
+        const characters=own(c,'characters'),chat=own(c,'chat');
+        if(!Array.isArray(characters)||characters.length>10000||!Array.isArray(chat)||chat.length>10000)throw Error();
+        const actorRefs=[],loaded=[];let wrapper,data;
+        for(let index=0;index<characters.length;index++){
+            const entry=own(characters,String(index));actorRefs.push(entry);if(!entry)continue;
+            const avatar=own(entry,'avatar');if(avatar!==undefined&&(typeof avatar!=='string'||!avatar.trim()||avatar.length>240))throw Error();
+            const canonical='character:'+(avatar??index);loaded.push([index,canonical]);
+            if(canonical===actorId){if(wrapper)throw Error();wrapper=entry;data=own(entry,'data')??entry;}
+        }
+        if(!wrapper||!data)throw Error();
+        const fields={};for(const key of ['name','description','personality','scenario']){const value=own(data,key);if(value!==undefined&&(typeof value!=='string'||value.length>100000))throw Error();fields[key]=value;}
+        const labels=[visibilityStamp(wrapper),visibilityStamp(data)];if(labels.includes(null))throw Error();
+        const refs=[],messages=[];for(let index=Math.max(0,chat.length-1000);index<chat.length;index++){
+            const message=own(chat,String(index));refs.push(message);if(!message)throw Error();const label=visibilityStamp(message);if(label===null)throw Error();
+            messages.push([index,...['mes','swipe_id','is_user','is_system','is_tool'].map(key=>scalar(own(message,key))),label]);
+        }
+        const stamp=JSON.stringify({chatId:scalar(chatId),characterId:scalar(own(c,'characterId')),groupId:scalar(own(c,'groupId')),loaded,fields,labels,length:chat.length,messages});
+        if(new TextEncoder().encode(stamp).length>4000000)throw Error();
+        return {characters,chat,wrapper,data,actorRefs,refs,stamp};
+    } catch {return null;}
+};
+const sameActorTransportWatch=(captured,current)=>!!captured&&!!current&&captured.characters===current.characters&&captured.chat===current.chat&&captured.wrapper===current.wrapper&&captured.data===current.data&&captured.stamp===current.stamp&&captured.actorRefs.length===current.actorRefs.length&&captured.actorRefs.every((entry,index)=>entry===current.actorRefs[index])&&captured.refs.length===current.refs.length&&captured.refs.every((entry,index)=>entry===current.refs[index]);
 const characterVisibility = c => {
     const wrapper=c.characters?.[c.characterId],data=wrapper?.data??wrapper;
     const wrapperStamp=visibilityStamp(wrapper),dataStamp=visibilityStamp(data);
@@ -149,11 +177,14 @@ export function snapshotReply(context,messageIndex=context.chat?.length-1) {
 /** Owns cancellation, guidance lifetime and explicit local revision commits. */
 export function createNativeWorkflowController(ports) {
     const context=ports.context;
+    // Separate native read-only capability, captured once. General userId freshness
+    // callbacks may have effects and cannot serve as final private transport authority.
+    const transportUserId=typeof ports.transportUserId==='function'?ports.transportUserId:null;
     const documentCatalog=ports.documentCatalog??createChatDocumentCatalog({getContext:context,getUserId:()=>ports.userId?.()});
     const persistenceVerifier=ports.persistenceVerifier??createNativePersistenceVerifier({getContext:context,getUserId:()=>ports.userId?.()});
     const fileBarriers=new Map();
     const outcomeCache=createNativeOutcomeCache({...(typeof ports.random==='function'?{random:ports.random}:{})});
-    function releaseRun(run) {if(!run||run.resourcesReleased)return;run.resourcesReleased=true;recall.releaseRun(run);run.memorySession?.release();run.memorySession=null;run.storySession?.release();run.storySession=null;run.draftEvidence?.release();run.draftEvidence=null;run.draftSources?.clear();delete run.nativeContext;for(const session of run.fileSessions?.values()??[])session.release();run.fileSessions?.clear();run.fileSession?.release();run.fileSession=null;run.actorContext?.release();run.actorContext=null;for(const session of run.actorMemorySessions?.values()??[])session.release();run.actorMemorySessions?.clear();run.stagedFiles.length=0;run.memoryIntents.clear();run.memoryTerminals.clear();}
+    function releaseRun(run) {if(!run||run.resourcesReleased)return;run.resourcesReleased=true;run.modelScopes?.clear();run.modelAddresses=new WeakMap();recall.releaseRun(run);run.memorySession?.release();run.memorySession=null;run.storySession?.release();run.storySession=null;run.draftEvidence?.release();run.draftEvidence=null;run.draftSources?.clear();delete run.nativeContext;for(const session of run.fileSessions?.values()??[])session.release();run.fileSessions?.clear();run.fileSession?.release();run.fileSession=null;run.actorContext?.release();run.actorContext=null;for(const session of run.actorMemorySessions?.values()??[])session.release();run.actorMemorySessions?.clear();run.stagedFiles.length=0;run.memoryIntents.clear();run.memoryTerminals.clear();}
     let epoch=0, active=null, result=null, automaticResult=null, applying=false, internalEvents=0, unsubscribe=null;
     let generationSequence=0, generation={dryRun:false,type:'normal'};
     const keys=new Set(), sources=new Map(), candidates=new Map(), stopped=new WeakMap();
@@ -244,7 +275,7 @@ export function createNativeWorkflowController(ports) {
     const sourceFresh=run=>playerSourceFresh(run) && memoryFresh(run) && promptFresh(run) && [...(run.pendingSources?.values()??[])].every(validSource) && [...(run.sceneSources??[])].every(entry=>entry.text!==null && sourceText(entry.chat)===entry.text && (entry.characterVisibility===undefined || (entry.characterVisibility!==null && characterVisibility(context())===entry.characterVisibility)) && (entry.characterSnapshots??[]).every(captured=>characterText(snapshotContext(context(),{chat:entry.chat,node:captured.node}))===captured.text));
     const start=(graph,native=false,abortPrimary=null,target)=>{
         cancel('Superseded by a new workflow');
-        const run={epoch,runId:token(),controller:new AbortController(),originalGraph:graph,native,abortPrimary,pending:true,target,mode:target===undefined?'root':'target',pendingSources:new Map(),sceneSources:[],promptSources:new Map(),bindingContexts:new Map(),bindingChecks:[],reviewHandles:[],memoryTerminals:new Map(),memoryIntents:new Map(),memorySession:null,memoryCommit:null,invalidMemoryEvidence:false,fileSession:null,fileSessions:new Map(),fileReferences:new WeakMap(),actorContext:null,actorMemorySessions:new Map(),stagedFiles:[],retainResources:false,resourcesReleased:false};
+        const run={epoch,runId:token(),controller:new AbortController(),originalGraph:graph,native,abortPrimary,pending:true,target,mode:target===undefined?'root':'target',pendingSources:new Map(),sceneSources:[],promptSources:new Map(),bindingContexts:new Map(),modelAddresses:new WeakMap(),modelScopes:new Map(),bindingChecks:[],reviewHandles:[],memoryTerminals:new Map(),memoryIntents:new Map(),memorySession:null,memoryCommit:null,invalidMemoryEvidence:false,fileSession:null,fileSessions:new Map(),fileReferences:new WeakMap(),actorContext:null,actorMemorySessions:new Map(),stagedFiles:[],retainResources:false,resourcesReleased:false};
         active=run;return run;
     };
     function prepareRun(run,plan,controls,options) {
@@ -442,6 +473,45 @@ export function createNativeWorkflowController(ports) {
         }
         return {ok:true};
     }
+    // Exact normalized engine inputs and bindings remain private to this run. A graph
+    // can name a model, but cannot supply or replace this transport authorization.
+    function authorizeModelScope(run,payload) {
+        const stopped=()=>run.controller.signal.aborted||run.resourcesReleased||run.epoch!==epoch;
+        if(stopped())return fail('ABORTED','The auxiliary request scope has closed.');
+        if(!fresh(run)||!sourceFresh(run)||run.unified&&!nativePrefixFresh(run))return fail('STALE_SOURCE','The captured source changed before auxiliary dispatch.');
+        const scoped=scopedActors(run);if(!scoped.ok)return scoped;
+        const event=scoped.data.authorizeEventInputs(payload.node,payload.inputs);
+        const checked=event.ok?scoped.data.authorizeModelInputs(payload.inputs):event;
+        if(!checked.ok)return checked;
+        if(stopped())return fail('ABORTED','The auxiliary request scope has closed.');
+        if(!fresh(run)||!sourceFresh(run)||run.unified&&!nativePrefixFresh(run))return fail('STALE_SOURCE','The captured source changed before auxiliary dispatch.');
+        return stopped()?fail('ABORTED','The auxiliary request scope has closed.'):checked;
+    }
+    function requestNativeModel(run,request) {
+        const key=run.modelAddresses.get(request.binding),scope=run.modelScopes.get(key);
+        if(run.hostUnified&&(!scope||scope.capability!=='text-completion'))return fail('ACTOR_SCOPE_FAILED','Use this run’s exact authorized auxiliary inputs.');
+        const mark=scope?artifactVisibility(scope.inputs):null,actorId=scope&&['character-direction','prompted-memory'].includes(scope.node.operation)?scope.node.actorId:mark?.kind==='actor-private'?mark.actorId:null;
+        if(actorId&&!transportUserId)return fail('ACTOR_SCOPE_FAILED','Private transport requires the native read-only user authority.');
+        const beforeSend=checkBinding=>{
+            if(typeof checkBinding!=='function')return fail('BINDING_CHANGED','The native transport binding check is unavailable.');
+            if(scope){
+                const initial=actorId?context():null,captured=actorId?actorTransportWatch(initial,actorId,identity(initial).chatId):null;
+                if(actorId&&!captured)return fail('ACTOR_CONTEXT_CHANGED','The live actor source cannot be checked before transmission.');
+                const checked=authorizeModelScope(run,scope);if(!checked.ok)return checked;
+                // Acquire the current wrapper last, then run only own-data comparisons
+                // and local lifecycle checks; no user/source/binding callbacks follow.
+                const current=context(),chatId=identity(current).chatId;
+                if(actorId){let userId;try{userId=transportUserId();}catch{return fail('ACTOR_SCOPE_FAILED','The native read-only user authority is unavailable.');}if(typeof userId!=='string'||userId!==run.userId)return fail('ACTOR_CONTEXT_CHANGED','The private transport user scope changed.');}
+                const binding=checkBinding(current);if(!binding.ok)return binding;
+                if(actorId&&!sameActorTransportWatch(captured,actorTransportWatch(current,actorId,chatId)))return fail('ACTOR_CONTEXT_CHANGED','The live actor source changed before transmission.');
+                return run.controller.signal.aborted||run.resourcesReleased||run.epoch!==epoch?fail('ABORTED','The auxiliary request scope has closed.'):checked;
+            }
+            if(!fresh(run)||!sourceFresh(run)||run.unified&&!nativePrefixFresh(run))return fail('STALE_SOURCE','The captured source changed before auxiliary dispatch.');
+            const binding=checkBinding(context());if(!binding.ok)return binding;
+            return run.controller.signal.aborted||run.resourcesReleased||run.epoch!==epoch?fail('ABORTED','The auxiliary request scope has closed.'):{ok:true};
+        };
+        return requestModel(request,context,{beforeSend});
+    }
     async function execute(run,options) {
         let value;
         try {value=await runWorkflowForHost(run.originalGraph,{
@@ -449,6 +519,7 @@ export function createNativeWorkflowController(ports) {
             snapshot:(phase,node)=>selectedSnapshot(run,phase,node,options),countTokens:ports.countTokens,
             resolveBinding:(node,graph,address)=>{
                 const result=(ports.resolveBinding??((n,g)=>resolveBinding(n,g,context())))(node,graph,address);
+                if(result?.ok&&result.data&&typeof result.data==='object')run.modelAddresses.set(result.data,addressKey(address));
                 if(result?.ok && ports.resolveBinding && !ports.bindingStatus) {
                     const role=graph.roles?.[node.modelRole];
                     run.bindingContexts.set(result.data,{node:{profileId:node.profileId,model:node.model,modelRole:node.modelRole},graph:{roles:role?{[node.modelRole]:{profileId:role.profileId,model:role.model}}:{}},metadata:structuredClone(result.data)});
@@ -461,7 +532,7 @@ export function createNativeWorkflowController(ports) {
                 if(result?.ok && !ports.bindingStatus)run.bindingContexts.set(result.data,{node:{fastConnectionId:node.fastConnectionId,modelRole:node.modelRole},graph:{roles:{}},metadata:structuredClone(result.data)});
                 return result;
             } : undefined,fastBindingSummary:ports.fastBindingSummary,requestFastDecision:ports.requestFastDecision,
-            request:ports.request??(request=>requestModel(request,context())),
+            request:ports.request??(request=>requestNativeModel(run,request)),
             ...(Object.getOwnPropertyDescriptor(run.originalGraph,'mode')?.value==='native-unified'?{actorContext:(actorId,request,presence)=>{const scoped=scopedActors(run);return scoped.ok?scoped.data.actorContext(actorId,request,presence):scoped;}}:{}),
             ...(run.unified?{retainDraftEventSource:payload=>{if(!run.draftEvidence){const captured=createNativeDraftEvidenceRegistry({getOriginalDraft:()=>run.nativeDraft,isCurrent:()=>fresh(run)&&nativePrefixFresh(run)&&sourceFresh(run),signal:run.controller.signal});if(!captured.ok)return captured;run.draftEvidence=captured.data;}const retained=run.draftEvidence.retain(payload);if(retained.ok){const source=retained.data.source??payload.source;run.draftSources??=new Map();run.draftSources.set(JSON.stringify([source.value.sourceId,source.value.revision,source.value.sceneId,source.value.visibility,source.value.actorId??null]),payload.draft);if(run.recallCaptured){const captured=recall.captureSourceArtifact(run,source,{source:source.value,text:source.value.text,fresh:()=>fresh(run)&&nativePrefixFresh(run)&&sourceFresh(run)&&run.draftEvidence.validate([],payload.draft).ok});if(!captured.ok)return captured;}}return retained;}}:{}),
             ...(Object.getOwnPropertyDescriptor(run.originalGraph,'mode')?.value==='native-unified'?{retainTimeProjection:async payload=>{const state=await scopedStoryState(run);return state.ok?state.data.retainTimeProjection(payload):state;},
@@ -469,8 +540,8 @@ export function createNativeWorkflowController(ports) {
             reuseNativeOutcome:outcome=>run.storySession?run.storySession.reuseNativeOutcome(outcome):{ok:true,data:null},
             retainNativeOutcome:async payload=>run.storySession?run.storySession.retainNativeOutcome(payload):{ok:true}}:{}),
             onStage:ports.onStage,onEvent:event=>{observe(ports.onEvent,event);observe(options.onEvent,event);},
-        },{prepare:(plan,controls)=>prepareRun(run,plan,controls,options),executeIntrospection:(node,inputs,operationPorts)=>introspect(run,node,inputs,operationPorts),...(run.unified||Object.getOwnPropertyDescriptor(run.originalGraph,'mode')?.value==='native-unified'?{executeHostOperation:(node,inputs,operationPorts)=>nativeOperation(run,node,inputs,operationPorts,options)}:{}),authorizeModelInputs:payload=>{if(!fresh(run)||!sourceFresh(run)||run.unified&&!nativePrefixFresh(run))return fail('STALE_SOURCE','The captured source changed before auxiliary dispatch.');const scoped=scopedActors(run);if(!scoped.ok)return scoped;const event=scoped.data.authorizeEventInputs(payload.node,payload.inputs);return event.ok?scoped.data.authorizeModelInputs(payload.inputs):event;},retainScopedOutput:payload=>retainActorOutput(run,payload),retainRecallProvenance:payload=>run.recallCaptured?recall.retain(run,payload):{ok:true,data:{retained:true}},settle:transport=>settleRun(run,transport)});}
-        finally {delete run.cancel;run.bindingContexts.clear();if(!run.retainResources)releaseRun(run);}
+        },{prepare:(plan,controls)=>prepareRun(run,plan,controls,options),executeIntrospection:(node,inputs,operationPorts)=>introspect(run,node,inputs,operationPorts),...(run.unified||Object.getOwnPropertyDescriptor(run.originalGraph,'mode')?.value==='native-unified'?{executeHostOperation:(node,inputs,operationPorts)=>nativeOperation(run,node,inputs,operationPorts,options)}:{}),authorizeModelInputs:payload=>{const checked=authorizeModelScope(run,payload);if(checked.ok)run.modelScopes.set(addressKey(payload.address),Object.freeze({node:payload.node,inputs:payload.inputs,capability:payload.capability}));return checked;},retainScopedOutput:payload=>retainActorOutput(run,payload),retainRecallProvenance:payload=>run.recallCaptured?recall.retain(run,payload):{ok:true,data:{retained:true}},settle:transport=>settleRun(run,transport)});}
+        finally {delete run.cancel;run.bindingContexts.clear();run.modelScopes.clear();run.modelAddresses=new WeakMap();if(!run.retainResources)releaseRun(run);}
         if(!value.ok||run.mode==='target') {releaseRun(run);run.pendingSources.clear();run.sceneSources.length=0;run.promptSources.clear();run.bindingChecks=[];for(const [id,entry]of candidates)if(entry.run===run)candidates.delete(id);for(const [id,entry]of sources)if(entry.run===run)sources.delete(id);if(run.native)clear();}
         else run.pendingSources.clear();
         const publicValue=freezeArtifact({...value,...(run.memoryCommit?{memoryCommit:run.memoryCommit}:{}),reviewHandles:value.ok?run.reviewHandles:[]});

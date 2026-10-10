@@ -17,14 +17,14 @@ export const version = JSON.parse(readFileSync(new URL('../manifest.json', impor
 // Compile only the current Canvas components. Focused renderer tests do not depend on a stale full UI bundle.
 const directory = await mkdtemp(join(tmpdir(), 'lattice-canvas-components-'));
 const clientURL = new URL('../node_modules/svelte/src/index-client.js', import.meta.url).href;
-for (const name of ['NodeCard', 'GroupCard', 'WireLayer', 'CommentFrame', 'CanvasLayer']) {
+for (const name of ['NodeCard', 'GroupCard', 'WireLayer', 'CommentFrame', 'NodeProfilePicker', 'CanvasLayer']) {
     const source = await readFile(new URL(`../ui/${name}.svelte`, import.meta.url), 'utf8');
     const output = compile(source, { filename: `${name}.svelte`, generate: 'client', css: 'injected' });
     const code = output.js.code.replace(/(['"])(svelte(?:\/[^'" ]*)?)\1/g, (_, quote, specifier) => JSON.stringify(specifier === 'svelte' ? clientURL : import.meta.resolve(specifier))).replace(/\.svelte(['"])/g, '.mjs$1');
     await writeFile(join(directory, `${name}.mjs`), code);
 }
 const entry = `import {mount,unmount,flushSync} from ${JSON.stringify(clientURL)}; import CanvasLayer from './CanvasLayer.mjs';
-export function mountCanvas(target,actions) { const component=mount(CanvasLayer,{target,props:{actions}}); flushSync(); return { ...component.getLayers(), setComments:(comments,actions)=>flushSync(()=>component.setComments(comments,actions)), setNodes:nodes=>flushSync(()=>component.setNodes(nodes)), setGroups:groups=>flushSync(()=>component.setGroups(groups)), setWires:(wires,bounds,ghost)=>flushSync(()=>component.setWires(wires,bounds,ghost)), setPositions:(nodes,groups)=>flushSync(()=>component.setPositions(nodes,groups)), destroy:()=>unmount(component) }; }`;
+export function mountCanvas(target,actions) { const component=mount(CanvasLayer,{target,props:{actions}}); flushSync(); return { ...component.getLayers(), setComments:(comments,actions)=>flushSync(()=>component.setComments(comments,actions)), setNodes:nodes=>flushSync(()=>component.setNodes(nodes)), setNodeProfiles:rows=>flushSync(()=>component.setNodeProfiles(rows)), setGroups:groups=>flushSync(()=>component.setGroups(groups)), setWires:(wires,bounds,ghost)=>flushSync(()=>component.setWires(wires,bounds,ghost)), setPositions:(nodes,groups)=>flushSync(()=>component.setPositions(nodes,groups)), destroy:()=>unmount(component) }; }`;
 await writeFile(join(directory, 'entry.mjs'), entry);
 const loader = registerHooks({ resolve(specifier, context, next) { return specifier.includes('/dist/lattice-ui.js') ? { url: pathToFileURL(join(directory, 'entry.mjs')).href, shortCircuit: true } : next(specifier, context); } });
 export const { Canvas } = await import(`../src/canvas.js?v=${version}`); loader.deregister();
