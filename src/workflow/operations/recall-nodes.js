@@ -2,7 +2,7 @@ import { cloneJsonValue, stringifyJsonValue } from './json-data.js?v=0.26.0';
 import { validateOccurrences } from './event-data.js?v=0.26.0';
 import { own, plain, freeze } from '../record-data.js?v=0.26.0';
 import { artifactVisibility, preserveArtifactPrivacy, validVisibilityMetadata } from '../artifact-privacy.js?v=0.26.0';
-import { validateRecallScope, validateRecallArmProposal } from '../recall-state.js?v=0.26.0';
+import { validateRecallScope, validateRecallQueueProposal } from '../recall-state.js?v=0.26.0';
 const fail=(code,message)=>({ok:false,error:{code,message}}),id=value=>typeof value==='string'&&!!value.trim()&&value.length<=256;
 const eventId=value=>typeof value==='string'&&!!value.trim()&&value.length<=2048;
 const exact=(value,keys,required=keys)=>plain(value)&&Object.keys(value).every(key=>keys.includes(key))&&required.every(key=>Object.hasOwn(value,key));
@@ -28,7 +28,7 @@ function resolve(node,options){
   if(descriptor.type==='string'&&(typeof settings[key]!=='string'||settings[key].length>descriptor.maxLength)||descriptor.type==='integer'&&(!Number.isSafeInteger(settings[key])||settings[key]<descriptor.min||settings[key]>descriptor.max)||descriptor.type==='enum'&&!descriptor.values.includes(settings[key])||descriptor.type==='boolean'&&typeof settings[key]!=='boolean'||descriptor.type==='array'&&(!Array.isArray(settings[key])||settings[key].length>descriptor.max||settings[key].some(value=>!id(value))||new Set(settings[key]).size!==settings[key].length))return fail('INVALID_SETTINGS','Use supported bounded Recall controls.');
  }
  if(!id(settings.actorId)||!id(settings.memorySetId))return fail('INVALID_SETTINGS','Select an actor and memory set explicitly.');
- if(operation==='hotkey-arm'){const checked=validateRecallArmProposal({schemaVersion:1,type:'recall-arm-proposal',...settings});if(!checked.ok)return checked;}
+ if(operation==='hotkey-arm'){const checked=validateRecallQueueProposal({schemaVersion:1,type:'recall-arm-proposal',...settings});if(!checked.ok)return checked;}
  else if(settings.activation.includes('keyword')&&!settings.keywords.length||settings.activation.includes('event')&&!settings.eventTypes.length)return fail('INVALID_SETTINGS','An automatic trigger needs explicit keywords or event types.');
  const ports=operation==='hotkey-arm'?[pin('proposal','data','output')]:[pin('records','data','input'),pin('presence','data','input'),...(settings.activation.includes('keyword')?[pin('source','data','input')]:[]),...(settings.activation.includes('event')?[pin('events','data','input')]:[]),pin('out','guidance','output'),pin('records','data','output'),pin('report','data','output')];
  return {ok:true,data:{descriptor:{...base,phase},ports,settings}};

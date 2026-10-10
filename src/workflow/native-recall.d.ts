@@ -1,16 +1,22 @@
 import type {DataArtifact,NativeNode,NodeAddress,Result,WorkflowPhase,NativeGraph3,OperationResult,WorkflowArtifact} from './types';
 import type {RecallScope,RecallGeneration,RecallHotkey} from './recall-state';
 export interface NativeRecallSource {readonly sourceId:string;readonly revision:string;readonly sceneId:string;readonly watch?:string;}
-export interface NativeRecallStatus {readonly scope:RecallScope|null;readonly nodes:readonly {readonly nodeId:string;readonly actorId:string;readonly memorySetId:string;readonly hotkey:RecallHotkey;readonly target:string;readonly uses:string;readonly consumeOn:string;readonly armed:boolean;readonly remaining:{readonly reply:boolean;readonly swipe:boolean};readonly pendingCount:number;}[];}
+export interface RecallRequestSummary {readonly memorySetId:string;readonly target:string;readonly uses:string;readonly consumeOn:string;readonly queued:boolean;readonly remaining:{readonly reply:boolean;readonly swipe:boolean};readonly pendingGenerationCount:number;readonly pendingState:null|'generation'|'acceptance';}
+export interface RecallShortcutSummary {readonly nodeId:string;readonly actorId:string;readonly memorySetId:string;readonly hotkey:RecallHotkey;readonly target:string;readonly uses:string;readonly consumeOn:string;readonly queued:boolean;readonly remaining:{readonly reply:boolean;readonly swipe:boolean};readonly pendingCount:number;}
+export interface NativeRecallStatus {readonly scope:RecallScope|null;readonly version:number;readonly requests:readonly RecallRequestSummary[];readonly shortcuts:readonly RecallShortcutSummary[];}
+declare const commandCapture:unique symbol;
+export interface RecallCommandCapture {readonly [commandCapture]:true;}
 /** App-owned coherent active scope. Graph configuration never supplies these functions. */
 export interface NativeRecallPorts {
- getActive:()=>{scope:RecallScope;graph:NativeGraph3;signature:string}|null;
+ getActive:()=>{owner?:object;scope:RecallScope;graph:NativeGraph3;signature:string}|null;
  /** Listener owns editable-focus/conflict policy; returning cleanup is mandatory. */
  registerHotkey?:(entry:{readonly scope:RecallScope;readonly nodeId:string;readonly hotkey:RecallHotkey;readonly onPress:()=>Result<NativeRecallStatus>})=>Result<{dispose:()=>void}>;
 }
 export interface NativeRecallController {
  sync():Result<NativeRecallStatus>;status():Result<NativeRecallStatus>;
- arm(nodeId:string):Result<NativeRecallStatus>;disarm(nodeId:string):Result<NativeRecallStatus>;
+ queue(nodeId:string):Result<NativeRecallStatus>;cancel(nodeId:string):Result<NativeRecallStatus>;
+ captureQueueCommand():Result<RecallCommandCapture>;changeQueues(capture:RecallCommandCapture,request:{action:'queue'|'cancel';shortcutNodeIds:readonly string[]}):Result<NativeRecallStatus>;
+ resetDocument(owner:object|null):void;subscribe(listener:()=>void):()=>void;
  begin(exactRun:object,controls:{scope:RecallScope;signature:string;signal?:AbortSignal;getGeneration:()=>RecallGeneration|null;isCurrent:()=>boolean}):Result<{captured:true}>;
  /** Private trusted host-producer seam: the exact result must come from the live read/source adapter. */
  capture(exactRun:object,exactRawResult:OperationResult,details:{kind:'source'|'file'|'memory';source?:NativeRecallSource;fresh:()=>boolean;text?:string;recordValue?:unknown}):Result<{retained:true}>;
@@ -26,5 +32,5 @@ export interface NativeRecallController {
  effects(exactRun:object):{intentId:string;targetId:string;proposed:{kind:'recall'};preflight:()=>Result<unknown>;commit:()=>Result<unknown>}[];
  releaseRun(exactRun:object):void;dispose():void;
 }
-/** Ephemeral bounded scopes: no exported/imported graph restores arms, claims or producer authority. */
+/** Ephemeral bounded scopes: no exported/imported graph restores queues, claims or producer authority. */
 export function createNativeRecallController(ports:NativeRecallPorts):NativeRecallController;
