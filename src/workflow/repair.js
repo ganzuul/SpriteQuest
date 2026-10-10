@@ -1,3 +1,4 @@
+import { snapshotDraft, retainDraftAuthority, readDraftBody } from './draft-revisions.js?v=0.26.0';
 const MAX_TEXT = 100000, MAX_SPANS = 256;
 const success = artifact => ({ ok: true, artifact, reports: [], calls: [], trace: [] });
 const failure = (code, message, node, artifact) => ({ ok: false, error: { code, message, ...(node?.id ? { nodeId: node.id } : {}) }, ...(artifact ? { artifact } : {}), reports: [], calls: [], trace: [] });
@@ -59,7 +60,9 @@ export function scanDraft(draft, node = {}) {
     if (!validFindings(draft.findings)) return failure('INVALID_DRAFT', 'Draft findings must be a dense array of plain inspection records.', node, draft);
     if ((draft.findings?.length ?? 0) > 4096) return failure('SCAN_LIMIT', 'Scan accepts at most 4,096 total findings. Narrow the source or rules; no findings were truncated.', node, draft);
     if (draft?.text?.length > MAX_TEXT) return failure('INPUT_LIMIT', 'Draft exceeds the 100,000 UTF-16-unit scan/repair limit. Narrow the source before running; no text was truncated.', node, draft);
-    if (draft.source.originalText !== draft.text) return failure('STALE_SOURCE', 'Draft text must match its frozen original source.', node, draft);
+    const revision = Object.hasOwn(draft, 'lineage') || Object.hasOwn(draft, 'revisionId') || draft.text !== draft.source.originalText ? snapshotDraft(draft) : { ok: true, data: { revised: false } };
+    if (!revision.ok) return failure(revision.error.code, revision.error.message, node, draft);
+    if (revision.data.revised) draft = revision.data.draft;
     const hasSpans = Object.hasOwn(draft, 'spans');
     if (draft.spans?.length > MAX_SPANS) return failure('SPAN_LIMIT', 'Scan accepts at most 256 original editable spans.', node, draft);
     if (hasSpans && (!Array.isArray(draft.spans) || Array.from(draft.spans).some(span => !span))) return failure('INVALID_SPANS', 'Existing permissions require a dense original span array.', node, draft);
@@ -76,11 +79,16 @@ export function scanDraft(draft, node = {}) {
     const exemptionCaseSensitive = draft.exemptions?.length ? draft.caseSensitive ?? false : node.caseSensitive ?? false;
     if (protectedLiterals.length > 128 || exemptions.length > 128) return failure('INVALID_SETTINGS', 'Combined protections and exemptions accept at most 128 unique literals.', node, draft);
     const selectedScope = (node.scope ?? 'authorized') === 'authorized' ? 'whole' : node.scope;
-    const scope = scopeRanges(text, selectedScope);
+    const body = revision.data.revised ? readDraftBody(draft) : { ok: true, data: { text } };
+    if (!body.ok) return failure(body.error.code, body.error.message, node, draft);
+    const scope = scopeRanges(body.data.text, selectedScope);
     if (scope.unmatched.length && selectedScope !== 'whole') {
         if ((draft.findings?.length ?? 0) >= 4096) return failure('SCAN_LIMIT', 'The unmatched-quote finding exceeds the 4,096 total finding limit.', node, draft);
         const result = success({ ...draft, spans: [], findings: [...(draft.findings ?? []), { code: 'UNMATCHED_QUOTES', offsets: scope.unmatched }], scope: draft.scope ?? selectedScope, caseSensitive: exemptionCaseSensitive, rules: structuredClone(node.rules ?? []), exemptions, protectedLiterals });
         result.reports.push({ code: 'UNMATCHED_QUOTES', message: 'Unmatched double quotes prevent deterministic narration/dialogue scanning.', offsets: scope.unmatched });
+        const retained = retainDraftAuthority(draft, result.artifact);
+        if (!retained.ok) return failure(retained.error.code, retained.error.message, node, draft);
+        result.artifact = retained.data.draft;
         return result;
     }
 
@@ -109,6 +117,9 @@ export function scanDraft(draft, node = {}) {
     if (normalized.length > MAX_SPANS) return failure('SPAN_LIMIT', 'Scan exceeds 256 normalized editable spans. Narrow the rules or scope; no permissions were truncated.', node, draft);
     const result = success({ ...draft, spans: normalized.map((span, index) => ({ index, ...span, text: text.slice(span.start, span.end) })), findings: [...(draft.findings ?? []), ...findings], scope: draft.scope ?? selectedScope, caseSensitive: exemptionCaseSensitive, rules: structuredClone(node.rules ?? []), exemptions, protectedLiterals });
     if (scope.unmatched.length) result.reports.push({ code: 'UNMATCHED_QUOTES', message: 'Unmatched double quotes were found; whole-text scope remains explicit.', offsets: scope.unmatched });
+    const retained = retainDraftAuthority(draft, result.artifact);
+    if (!retained.ok) return failure(retained.error.code, retained.error.message, node, draft);
+    result.artifact = retained.data.draft;
     return result;
 }
 function invalidSpans(draft) {
@@ -117,7 +128,9 @@ function invalidSpans(draft) {
     const exemptions = draft.exemptions === undefined ? [] : draft.exemptions;
     if (!Array.isArray(exemptions) || exemptions.length > 128 || !literalList(Array.from(exemptions))) return true;
     const exempted = literalRanges(draft.text, exemptions, draft.caseSensitive ?? false);
-    const allowed = scopeRanges(draft.text, draft.scope ?? 'whole');
+    const body = Object.hasOwn(draft, 'revisionId') ? readDraftBody(draft) : { ok: true, data: { text: draft.text } };
+    if (!body.ok) return true;
+    const allowed = scopeRanges(body.data.text, draft.scope ?? 'whole');
     const boundary = offset => !(offset > 0 && offset < draft.text.length && /[\uD800-\uDBFF]/u.test(draft.text[offset - 1]) && /[\uDC00-\uDFFF]/u.test(draft.text[offset]));
     return !Array.isArray(draft?.spans) || draft.spans.some((span, index) =>
         !span || span.index !== index || !Number.isSafeInteger(span.start) || !Number.isSafeInteger(span.end) ||
@@ -177,11 +190,15 @@ export async function repairDraft(draft, node = {}, ports = {}) {
     if (draft?.text?.length > MAX_TEXT) return failure('INPUT_LIMIT', 'Draft exceeds the 100,000 UTF-16-unit repair limit. Narrow the source before running; no text was transmitted.', node, draft);
     if (draft?.spans?.length > MAX_SPANS) return failure('SPAN_LIMIT', 'Repair accepts at most 256 normalized spans. Narrow the rules or scope before running; no text was transmitted.', node, draft);
     if (ports.signal?.aborted) return failure('ABORTED', 'Repair was stopped.', node, draft);
-    if (draft.source.originalText !== draft.text) return failure('STALE_SOURCE', 'Draft text must match its frozen original source.', node, draft);
+    const revision = Object.hasOwn(draft, 'lineage') || Object.hasOwn(draft, 'revisionId') || draft.text !== draft.source.originalText ? snapshotDraft(draft) : { ok: true, data: { revised: false } };
+    if (!revision.ok) return failure(revision.error.code, revision.error.message, node, draft);
+    if (revision.data.revised) draft = revision.data.draft;
     if (invalidSpans(draft)) return failure('INVALID_SPANS', 'Editable spans must be ordered, normalized, nonoverlapping original ranges.', node, draft);
     if (!validContext(draft)) return failure('INVALID_CONTEXT', 'Nearby context must be bounded plain JSON with dense messages containing id, role and text; no request was sent.', node, draft);
     node = { id: node.id, mode: node.mode ?? 'repair', modelRole: node.modelRole ?? 'Prose', maxTokens: node.maxTokens ?? 2048, strength: node.strength ?? 'light', instructions: node.instructions ?? '', protectedLiterals: [...(node.protectedLiterals ?? [])] };
-    const frozen = freeze(structuredClone(draft));
+    const retained = retainDraftAuthority(draft, structuredClone(draft));
+    if (!retained.ok) return failure(retained.error.code, retained.error.message, node, draft);
+    const frozen = freeze(retained.data.draft);
     if (node.mode === 'scan' || frozen.spans?.length === 0) return success({ kind: 'patches', draft: frozen, patches: [], protectedLiterals: [...(frozen.protectedLiterals ?? []), ...(node.protectedLiterals ?? [])] });
     const messages = [
         { role: 'system', content: 'Repair selected prose spans only. Return exactly one raw JSON object using exactly this schema: {"patches":[{"index":0,"replacement":"..."}]}. Do not include Markdown, code fences, backticks, commentary, or surrounding text. Use only supplied indices; preserve protected wording. Unselected original text cannot change.' },
@@ -209,7 +226,8 @@ export function validatePatches(artifact, node = {}) {
     if (artifact?.kind !== 'patches' || !validDraft(artifact.draft)) return failure('INVALID_PATCHES', 'Expected patches attached to a frozen original draft.', node, artifact?.draft);
     const { draft } = artifact;
     const preserved = { ...draft, usage: artifact.usage, finish: artifact.finish };
-    if (draft?.source?.originalText !== draft?.text) return failure('STALE_SOURCE', 'Draft text must match its frozen original source.', node, preserved);
+    const revision = Object.hasOwn(draft, 'lineage') || Object.hasOwn(draft, 'revisionId') || draft.text !== draft.source.originalText ? snapshotDraft(draft) : { ok: true, data: { revised: false } };
+    if (!revision.ok) return failure(revision.error.code, revision.error.message, node, preserved);
     if (invalidSpans(draft)) return failure('INVALID_SPANS', 'Editable spans must be ordered, normalized, nonoverlapping original ranges.', node, preserved);
     if (['length', 'max_tokens', 'max_output_tokens'].includes(artifact.finish)) return failure('TRUNCATED_OUTPUT', 'Repair output reached its completion limit; keep the original.', node, preserved);
     if (typeof artifact.patches === 'string' && artifact.patches.length > MAX_TEXT) return failure('OUTPUT_LIMIT', 'Repair JSON exceeds 100,000 UTF-16 units; keep the original.', node, preserved);
@@ -230,7 +248,7 @@ export function validatePatches(artifact, node = {}) {
     for (const change of [...changes].sort((a, b) => b.start - a.start)) text = text.slice(0, change.start) + change.replacement + text.slice(change.end);
     const pins = [...(draft.protectedLiterals ?? []), ...(artifact.protectedLiterals ?? []), ...(node.protectedLiterals ?? [])];
     if (pins.some(pin => literalRanges(text, [pin]).length < literalRanges(draft.text, [pin]).length)) return failure('PROTECTED_LITERAL_REMOVED', 'Repair removed protected literal wording.', node, preserved);
-    const result = success({ kind: 'candidate', original: draft.text, text, source: draft.source, findings: draft.findings ?? [], changes, reviewRequired: true, usage: artifact.usage, finish: artifact.finish, ...(draft.derived !== undefined ? { derived: draft.derived } : {}) });
+    const result = success({ kind: 'candidate', original: draft.source.originalText, text, source: draft.source, findings: draft.findings ?? [], changes, reviewRequired: true, ...(revision.data.revised ? { baseline: draft.text, parentRevisionId: draft.revisionId, rootRevisionId: draft.rootRevisionId, lineage: draft.lineage, offsetSpace: 'parent-revision' } : {}), usage: artifact.usage, finish: artifact.finish, ...(draft.derived !== undefined ? { derived: draft.derived } : {}) });
     if (text === draft.text) result.reports.push({ code: 'NO_CHANGES', message: 'No prose changes were proposed.' });
     return result;
 }

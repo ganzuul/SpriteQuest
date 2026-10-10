@@ -1,3 +1,4 @@
+import { snapshotDraft, retainDraftAuthority, readDraftBody } from '../draft-revisions.js?v=0.26.0';
 import { validatePatches } from '../repair.js?v=0.26.0';
 
 const failure = (code, message) => ({ ok: false, error: { code, message } });
@@ -84,17 +85,25 @@ export function prepareReferenceDraft(draft, settings = {}) {
     catch { return failure('INVALID_DRAFT', 'Draft must contain bounded own plain data.'); }
     if (!snapshot || !['kind', 'text', 'source'].every(key => Object.hasOwn(snapshot, key)) || snapshot.kind !== 'draft' || typeof snapshot.text !== 'string' || !snapshot.source || typeof snapshot.source !== 'object' || !Object.hasOwn(snapshot.source, 'originalText') || typeof snapshot.source.originalText !== 'string') return failure('INVALID_DRAFT', 'Draft requires own original source text.');
     if (snapshot.text.length > 100000) return failure('INPUT_LIMIT', 'Draft exceeds 100,000 UTF-16 units.');
-    if (snapshot.source.originalText !== snapshot.text) return failure('STALE_SOURCE', 'Draft must match its original source.');
+    const revision = Object.hasOwn(snapshot, 'lineage') || Object.hasOwn(snapshot, 'revisionId') || snapshot.text !== snapshot.source.originalText ? snapshotDraft(draft) : { ok: true, data: { revised: false } };
+    if (!revision.ok) return failure(revision.error.code, revision.error.message);
+    if (revision.data.revised) {
+        const retained = retainDraftAuthority(draft, snapshot);
+        if (!retained.ok) return retained;
+        snapshot = retained.data.draft;
+    }
     try { settings = cloneData(settings); }
     catch { return failure('INVALID_SETTINGS', 'Settings require bounded own plain data.'); }
     if (!settings || Array.isArray(settings) || typeof settings !== 'object' || Object.keys(settings).some(key => !['scope', 'protectedLiterals'].includes(key)) || !['authorized', 'whole', 'narration', 'dialogue'].includes(settings.scope === undefined ? 'authorized' : settings.scope) || !validPins(settings.protectedLiterals === undefined ? [] : settings.protectedLiterals) || !validPins(snapshot.protectedLiterals === undefined ? [] : snapshot.protectedLiterals)) return failure('INVALID_SETTINGS', 'Use a supported scope and bounded nonblank protected literals.');
     const pins = [...new Set([...(snapshot.protectedLiterals ?? []), ...(settings.protectedLiterals ?? [])])];
     if (pins.length > 128) return failure('INVALID_SETTINGS', 'At most 128 unique protected literals are permitted.');
+    const body = revision.data.revised ? readDraftBody(snapshot) : { ok: true, data: { text: snapshot.text } };
+    if (!body.ok) return body;
     let selected;
     if (!Object.hasOwn(snapshot, 'spans')) {
         if (Object.hasOwn(snapshot, 'scope')) return failure('INVALID_SPANS', 'Scoped Drafts require existing permissions.');
         if ((settings.scope ?? 'authorized') === 'authorized') return failure('SCOPE_REQUIRED', 'An unannotated Draft requires explicit scope.');
-        try { selected = scopeRanges(snapshot.text, settings.scope); }
+        try { selected = scopeRanges(body.data.text, settings.scope); }
         catch { return failure('UNMATCHED_QUOTES', 'Ambiguous or unmatched double quotes prevent deterministic scope.'); }
         snapshot.spans = selected.filter(([start, end]) => end > start).map(([start, end], index) => ({ index, start, end, text: snapshot.text.slice(start, end) }));
     }
@@ -103,7 +112,7 @@ export function prepareReferenceDraft(draft, settings = {}) {
     const initial = validatePatches(record({ kind: 'patches', draft: snapshot, patches: [] }), record({}));
     if (!initial.ok) return { ok: false, error: initial.error };
     // Existing parent permissions are validated before any later narrowing.
-    try { selected ??= scopeRanges(snapshot.text, settings.scope ?? 'authorized'); }
+    try { selected ??= scopeRanges(body.data.text, settings.scope ?? 'authorized'); }
     catch { return failure('UNMATCHED_QUOTES', 'Ambiguous or unmatched double quotes prevent deterministic scope.'); }
     const protectedText = protectedRanges(snapshot.text, pins);
     const windows = [];

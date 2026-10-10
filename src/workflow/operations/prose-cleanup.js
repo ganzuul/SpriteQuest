@@ -1,3 +1,4 @@
+import { retainDraftAuthority } from '../draft-revisions.js?v=0.26.0';
 import { SLOP_POLICY_DATA } from '../library/slop-policy-data.js?v=0.26.0';
 import { selectSlopPolicies } from '../library/slop-policies.js?v=0.26.0';
 import { prepareReferenceDraft, alignReferenceCandidate } from './reference-draft.js?v=0.26.0';
@@ -144,7 +145,9 @@ export async function cleanupDraft(draft, settings = {}, ports = {}) {
     if (!inspected.ok) return inspected;
     if (prepared.data.draft.findings !== undefined && !Array.isArray(prepared.data.draft.findings)) return failure('INVALID_DRAFT', 'Draft findings require a dense own-data array.');
     if ((prepared.data.draft.findings?.length ?? 0) + inspected.data.length > 4096) return failure('SCAN_LIMIT', 'Combined inspection exceeds 4,096 findings; narrow upstream findings or categories.');
-    prepared = prepareReferenceDraft({ ...prepared.data.draft, findings: [...(prepared.data.draft.findings ?? []), ...inspected.data] }, { scope: settings.scope, protectedLiterals: settings.protectedLiterals });
+    const annotated = retainDraftAuthority(prepared.data.draft, { ...prepared.data.draft, findings: [...(prepared.data.draft.findings ?? []), ...inspected.data] });
+    if (!annotated.ok) return annotated;
+    prepared = prepareReferenceDraft(annotated.data.draft, { scope: settings.scope, protectedLiterals: settings.protectedLiterals });
     if (!prepared.ok) return prepared;
     let context = [];
     const explicitContext = Object.hasOwn(ports, 'context');
