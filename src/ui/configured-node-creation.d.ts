@@ -6,7 +6,8 @@ export interface ConfiguredCreationCommand {kind?:string;operation:string;contro
 export interface ConfiguredCreationView {key:string;operation:string;title:string;controls:string;phase:WorkflowPhase;phaseLocked:boolean;targets:ConfiguredCreationOptions['targets'];helpers:IterationHelperChoice[]}
 /** Pure honest discovery metadata; no executable identities or capabilities are manufactured. */
 export function deferredNodeDescription(operation:string,controls?:Record<string,unknown>):OperationDescription|null;
-export function nodeNeedsConfiguration(operation:string):boolean;
+/** Preset-backed nodes add immediately; explicit custom targets and malformed controls still require configuration. */
+export function nodeNeedsConfiguration(operation:string,controls?:Record<string,unknown>):boolean;
 export function configuredCreationStage(operation:string,mode:NativeWorkflowMode,effectivePhase?:WorkflowPhase):{phase:WorkflowPhase;phaseLocked:boolean};
 export function iterationHelperChoices(root:NativeGraph3):IterationHelperChoice[];
 export function validateConfiguredNodeControls(operation:string,text:string,options:ConfiguredCreationOptions):Result<{controls:Record<string,JsonValue>;ports:PortDescriptor[]}>;

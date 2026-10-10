@@ -13,7 +13,7 @@ The normal SillyTavern connection writes the main reply. Other model nodes have 
 3. Choose **File → Open examples…** or **Workflows → Workflow examples…**. Open a unified example whose goal fits your story. Each opening creates an independent editable copy; it does not send a request, assign the workflow or enable LATTICE. The example's description contains its setup and inspection instructions.
 4. Adapt its literal instructions, actor/item identities, schemas and document targets. Example names and actors are authored demonstration material. A loaded character's canonical ID is normally `character:<avatar filename>`; a display name alone is not a live actor identity.
 5. Choose every ordinary text-model node’s connection in its grey profile bar or **Details → Connection profile**. Use **Active SillyTavern model** to follow the current host connection/model, or choose a saved Connection Manager profile for a fixed connection. Leave **Model mode → Use profile model** unless that particular node needs an explicit model identifier. Configure any **For Each → Helper model bindings** as well; assigning the extraction node's profile does not assign its confirmation helper.
-6. If the example reads or writes documents, authorize its named targets in **Tools → Workflow Data…** first. If it uses Fast Decision, configure **Tools → Fast connections…** and select that connection in the node. Resolve the graph's validation and binding issues before sending.
+6. New Story Clock, Read File and Outcome Commit nodes use automatic Workflow Data presets. If the example names custom document targets, authorize those targets in **Tools → Workflow Data…** or select compatible existing sources in node Details. If it uses Fast Decision, configure **Tools → Fast connections…** and select that connection in the node. Resolve the graph's validation and binding issues before sending.
 7. Choose **Workflows → Assign unified workflow**, then enable **Arm**. Assignment chooses the host workflow; Arm enables integration. Merely selecting a graph in the editor does not assign it.
 8. Return to SillyTavern and **Send** your next player message normally. The workflow runs the necessary preparation, resumes from the completed native Draft, and records its response-stage results. A generated swipe can run the same assigned workflow when its configured sources and target policies permit it.
 9. Open Preview and select the desired **Review / Publish · Host result**. Compare the original, proposed body, appended sections, model trace and staged consequences. Choose **Apply reviewed candidate** or **Reject candidate**.
@@ -126,13 +126,15 @@ Native generation currently has one selected actor. Actor Context allows separat
 
 ## Authorize Workflow Data and preserve its structure
 
-**Tools → Workflow Data…** manages logical targets for the actual user and chat. A target such as `souls.json` is a scoped workflow data document identifier, not an arbitrary operating-system file path. Canonical document content lives in LATTICE's chat metadata store.
+New **Story Clock**, **Read File** and **Outcome Commit** nodes need no prior Workflow Data setup. They select **Chat clock**, empty plain-text **Chat notes** and an empty JSON **Chat outcomes** list respectively. A unified run makes only its referenced presets available in the active user/chat. Adjust initial values or content in the node’s Details, and open **Advanced** for its source, Format and Visibility. Clock and outcomes sources keep their required JSON format. Existing saved content is retained when settings change.
 
-Create an authorization with a unique target ID, display name, format, visibility and initial template. Formats are **JSON**, **JSON Lines**, **CSV**, **Plain text** and **Markdown**. CSV needs declared columns. Actor-private authorization also needs its canonical actor ID. Hidden documents cannot be exposed to public model/notes branches by changing a graph label.
+**Tools → Workflow Data…** manages custom logical targets for the actual user and chat, including named recipe targets. A target such as `souls.json` is a scoped workflow data document identifier, not an arbitrary operating-system file path. Canonical document content lives in LATTICE's chat metadata store.
+
+For a custom target, create an authorization with a unique target ID, display name, format, visibility and initial template. Formats are **JSON**, **JSON Lines**, **CSV**, **Plain text** and **Markdown**. CSV needs declared columns. Actor-private authorization also needs its canonical actor ID. Hidden documents cannot be exposed to public model/notes branches by changing a graph label.
 
 The initial template defines the structure used before canonical content exists. Updating an authorization or its template leaves existing canonical document content intact. For an existing authorization, explicitly choose **Load initial template** before editing that template. **Remove authorization** revokes access; it is not a graph instruction to delete a filesystem file.
 
-Adding nodes with required controls opens **Configure node**. Pick the Preparation/Response stage, authorized target or exact pinned Data helper where offered, and complete the declared controls. Cancel leaves the graph unchanged. Other controls remain editable in Details. A node can be valid without making its branch selected: connect its result where it is needed.
+Nodes with automatic Workflow Data presets are added directly to the canvas. Operations that need additional authored controls still open **Configure node**. Pick the Preparation/Response stage or exact pinned Data helper where offered, and complete the declared controls. Cancel leaves the graph unchanged. Other controls remain editable in Details. A node can be valid without making its branch selected: connect its result where it is needed.
 
 **Read File** returns serialized Text, parsed document Data and a live reference. The exact reference must feed Write to File for the same authorized target and actor scope. A filename string or copied reference cannot replace it. Use JSON Decode, Select Fields or Collection to select a nested list explicitly.
 
@@ -167,7 +169,11 @@ Legacy Memory Commit retains its documented immediate full-root Post settlement.
 
 ## Story time: midnight, 14:00 and eight-hour intervals
 
-Story time is an authored clock measured in integer minutes. It is separate from your computer's wall clock and the number of messages sent. **Story Clock** reads the accepted scoped clock document. In Workflow Data's JSON editor, **Story clock template** creates a valid starting schema: minute 0 is midnight on day one, with a 1,440-minute day and an explicit calendar identity.
+Story time is an authored clock measured in integer minutes. It is separate from your computer's wall clock and the number of messages sent. Add **Story Clock** to use the automatic **Chat clock**, starting at midnight on Day 1 with a 24-hour day. Select the node and use **Details → Starting values** to adjust its starting day, time and hours per day. **Advanced** contains the source, Visibility, required JSON Format and calendar settings. Changing these initial values leaves existing saved time intact.
+
+Nodes choosing the same clock source share its saved timeline. Use **+** beside the Clock source in Advanced to create a named, independent clock; separate clocks do not synchronize automatically. **Story Clock** reads the accepted scoped clock document when the workflow runs.
+
+For an explicit custom clock target, **Tools → Workflow Data… → Story clock template** in the JSON editor remains available. It creates a valid starting schema whose internal `clockId` must match that target. This custom-target example uses minute 0 for midnight on Day 1, a 1,440-minute day and an explicit calendar identity:
 
 ```json
 {
@@ -238,7 +244,7 @@ There is no automatic legacy converter. Create a new unified workflow or open an
 3. Replace a latest-reply Snapshot dependency with the owned Generate Reply Draft where the response process needs this generation's reply.
 4. Keep compatible patch validation where useful, or use Revise Draft for direct source-bound Draft revisions. End the final Draft in Review / Publish.
 5. Keep native sources, Memory, file references, Recall, clocks and publication at the root when their contracts require it. Reusable pure processing belongs in subgraphs.
-6. Rebind local model and helper connections, authorize documents, inspect the graph, then assign and Arm it.
+6. Rebind local model and helper connections, authorize custom document targets where needed, inspect the graph, then assign and Arm it.
 
 Imports and exports preserve pinned definition identities and supported saved controls. Adding a fragment is a reviewed edit with phase/type checks, not an implicit conversion between workflow modes. Preserve the original legacy graph while adapting a copy.
 

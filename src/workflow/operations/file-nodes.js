@@ -4,6 +4,7 @@ import { decodeJson } from './json-decode.js?v=0.26.0';
 import { formatRecords } from './format-records.js?v=0.26.0';
 import { prepareDocumentMutation } from './document-mutations.js?v=0.26.0';
 import { freeze } from '../record-data.js?v=0.26.0';
+import { workflowDataPresetFor } from '../workflow-data-defaults.js?v=0.26.0';
 
 const references = new WeakMap();
 const fail=(code,message)=>({ok:false,error:{code,message}});
@@ -27,7 +28,7 @@ const schemaControl=textControl('','Schema',100000);
 schemaControl.editor='json';
 const controls={
     format:{inputMode:enumControl('records','Input',['records','json-text']),format:enumControl('json','Serialization',formats),jsonShape:enumControl('records','JSON shape',['records','single']),mapping:enumControl('preserve','Fields',['preserve','select']),fields:control('array',[],'Field mapping',{items:'record',max:128,editor:'json'}),schema:schemaControl,columns:control('array',[],'CSV columns',{items:'string',max:128}),separator:textControl('\n','Separator'),trailingSeparator:control('boolean',false,'Trailing separator')},
-    'read-file':{targetId:textControl('','Authorized target',256),schema:schemaControl,columns:control('array',[],'CSV columns',{items:'string',max:128})},
+    'read-file':{targetId:textControl(workflowDataPresetFor('read-file').targetId,'Data source',256),schema:schemaControl,columns:control('array',[],'CSV columns',{items:'string',max:128})},
     'write-file':{mode:enumControl('append','Mutation',['append','add','add-unique','upsert','update-fields','replace']),collectionPath:textControl('','Collection JSON Pointer'),missingPath:enumControl('error','Missing collection',['error','create']),key:textControl('id','Identity field',256),fieldPolicy:enumControl('merge','Upsert policy',['merge','replace']),fields:control('array',[],'Updated fields',{items:'string',max:128}),schema:schemaControl,columns:control('array',[],'CSV columns',{items:'string',max:128}),separator:textControl('\n','Separator'),emptyPolicy:enumControl('omit','Separator for empty destination',['omit','include']),trailingSeparator:control('boolean',false,'Trailing separator')},
 };
 controls['project-document']={...structuredClone(controls['write-file']),format:enumControl('json','Document format',formats)};controls['project-document'].mode.default='add';
@@ -46,6 +47,7 @@ function resolve(rawNode,rawOptions={}){
         const captured=cloneJsonValue(Object.fromEntries(base.controls.map(key=>[key,Object.hasOwn(node,key)?node[key]:base.defaults[key]])));
         if(!captured.ok)return fail('INVALID_SETTINGS','File controls require bounded own JSON data.');
         const settings=captured.data.value;
+        if(node.operation==='read-file'&&settings.targetId==='')settings.targetId=base.defaults.targetId;
         for(const [key,descriptor] of Object.entries(base.controlDescriptors)){
             const value=settings[key];
             if(descriptor.type==='string'&&(typeof value!=='string'||value.length>descriptor.maxLength)||descriptor.type==='enum'&&!descriptor.values.includes(value)||descriptor.type==='boolean'&&typeof value!=='boolean'||descriptor.type==='array'&&(!Array.isArray(value)||value.length>descriptor.max||descriptor.items==='string'&&value.some(item=>typeof item!=='string')))return fail('INVALID_SETTINGS','File controls require their declared type and bound.');

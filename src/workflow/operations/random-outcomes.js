@@ -2,6 +2,7 @@ import { preserveArtifactPrivacy, validVisibilityMetadata, artifactVisibility } 
 import { cloneJsonValue, stringifyJsonValue } from './json-data.js?v=0.26.0';
 import { validateOccurrences } from './event-data.js?v=0.26.0';
 import { own, plain, freeze, safeUsage } from '../record-data.js?v=0.26.0';
+import { workflowDataPresetFor } from '../workflow-data-defaults.js?v=0.26.0';
 
 const fail=(code,message)=>({ok:false,error:{code,message}});
 const exact=(value,keys)=>plain(value)&&Object.keys(value).every(key=>keys.includes(key));
@@ -153,8 +154,8 @@ const string=(value,maxLength=256)=>({type:'string',default:value,maxLength});
 const register=(id,title,defaults,controls,extra={})=>({id,title,family:'Randomness',phase:'both',minimumSchema:3,minimumRuntime:2,operationVersion:1,input:'data',output:'data',defaults,controls:Object.keys(defaults),controlDescriptors:controls,requestBound:0,modelRole:null,terminal:false,dynamicPorts:true,...extra});
 export const RANDOM_OPERATIONS = {
     'parse-effect-library':register('parse-effect-library','Effect Library',{format:'json',libraryId:'',revision:'',itemId:'',mechanicalPolicy:'narrative-only'},{format:{type:'enum',default:'json',values:['data','json','text']},libraryId:string(''),revision:string(''),itemId:string(''),mechanicalPolicy:{type:'enum',default:'narrative-only',values:['narrative-only','require-mechanics']}}),
-    'random-pick':register('random-pick','Random Pick',{rerollPolicy:'reuse',rerollId:'',ledgerId:''},{rerollPolicy:{type:'enum',default:'reuse',values:['reuse','explicit']},rerollId:string(''),ledgerId:string('')}),
-    'commit-outcomes':register('commit-outcomes','Outcome Commit',{targetId:''},{targetId:string('')},{family:'Output',phase:'post',rootOnly:true,hostOperation:true,terminal:true}),
+    'random-pick':register('random-pick','Random Pick',{rerollPolicy:'reuse',rerollId:'',ledgerId:''},{rerollPolicy:{type:'enum',default:'reuse',values:['reuse','explicit']},rerollId:string(''),ledgerId:{...string(''),label:'Outcomes ID (optional)'}}),
+    'commit-outcomes':register('commit-outcomes','Outcome Commit',{targetId:workflowDataPresetFor('commit-outcomes').targetId},{targetId:string(workflowDataPresetFor('commit-outcomes').targetId)},{family:'Output',phase:'post',rootOnly:true,hostOperation:true,terminal:true}),
     'saved-outcome':register('saved-outcome','Saved Outcome',{},{}),
     'effect-author':register('effect-author','Effect Author',{instructions:'',maxTokens:2048},{instructions:string('',4096),maxTokens:{type:'integer',default:2048,min:1,max:8192}},{requestBound:1,modelRole:'effectAuthor'}),
     'stage-outcome':register('stage-outcome','Stage Outcome',{},{}),
@@ -180,8 +181,9 @@ function resolve(node,options={}) {
             ||control.type==='enum'&&!control.values.includes(settings[key])
             ||control.type==='integer'&&(!Number.isSafeInteger(settings[key])||settings[key]<control.min||settings[key]>control.max))return fail('INVALID_SETTINGS','Use supported bounded Random controls.');
     }
+    if(operation==='commit-outcomes'&&settings.targetId==='')settings.targetId=base.defaults.targetId;
     let ports;
-    if(operation==='commit-outcomes') {if(!id(settings.targetId))return fail('INVALID_SETTINGS','Choose an authorized outcome ledger target.');ports=[pin('outcomes','data','input',true),pin('receipt','data','output')];}
+    if(operation==='commit-outcomes') {if(!id(settings.targetId))return fail('INVALID_SETTINGS','Choose an authorized outcomes source.');ports=[pin('outcomes','data','input',true),pin('receipt','data','output')];}
     else if(operation==='parse-effect-library') {
         if(!id(settings.libraryId)||!id(settings.revision)||!id(settings.itemId))return fail('INVALID_SETTINGS','Supply explicit library, revision and item identities.');
         ports=[pin('in',settings.format==='data'?'data':'text','input',true),pin('out','data','output')];
@@ -229,7 +231,7 @@ async function executeRandomRaw(node,namedInputs,local={}) {
             if(own(local,'root')!==true)return fail('ROOT_ONLY','Outcome Commit requires a root workflow.');
             const stage=own(local,'stageNativeOutcomes');if(typeof stage!=='function')return fail('HOST_OPERATION_REQUIRED','Outcome Commit requires a trusted accepted-state host.');
             const staged=await stage(settings.targetId,namedInputs.outcomes.value);if(own(local,'signal')?.aborted)return fail('ABORTED','Outcome staging was stopped.');
-            if(staged?.ok!==true)return fail('OUTCOME_COMMIT_FAILED','The resolved native outcomes could not be staged; verify their event sources and authorized ledger.');
+            if(staged?.ok!==true)return fail('OUTCOME_COMMIT_FAILED','The resolved native outcomes could not be staged; verify their event sources and authorized outcome data.');
             const bounded=cloneJsonValue(staged.data);if(!bounded.ok)return fail('OUTCOME_COMMIT_FAILED','Outcome staging requires a bounded descriptive receipt.');
             const receipt={kind:'data',value:bounded.data.value};return {ok:true,artifact:receipt,outputs:{receipt},reports:[{operation:descriptor.id,actualCalls:0,status:'staged'}]};
         }

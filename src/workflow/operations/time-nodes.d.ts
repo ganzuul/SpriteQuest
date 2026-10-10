@@ -12,7 +12,7 @@ export interface TimeNodeExecution {
     stageStoryClock?: (report:unknown,occurrences?:unknown)=>Result<Record<string,unknown>>|Promise<Result<Record<string,unknown>>>;
     signal?: AbortSignal;
     /** Trusted captured user/chat-scoped accepted clock, schemaVersion 1 and positive revision.
-     * The host supplies initialization and scope/currentness policy. No ambient default is used.
+     * The host supplies scoped presets, initialization and currentness policy. No wall clock is used.
      */
     readStoryClock?: (clockId: string, options: { signal?: AbortSignal }) => Result<StoryClock> | Promise<Result<StoryClock>>;
 }

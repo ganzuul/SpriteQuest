@@ -45,21 +45,20 @@
 <style>
     .pc-detail-control { min-width: 0; margin: 9px 0; }
     label, .pc-control-label { display: block; color: var(--pc-text); font-size: 11px; line-height: 1.5; }
-    input:not([type='checkbox']), select, textarea { width: 100%; min-width: 0; box-sizing: border-box; margin-top: 4px; min-height: 28px; padding: 5px 7px; border: 1px solid var(--pc-border); border-radius: 2px; background: var(--pc-field); color: var(--pc-text); font: inherit; }
+    input:not([type='checkbox']), select, textarea { width: 100%; min-width: 0; box-sizing: border-box; margin-top: 4px; min-height: 28px; padding: 5px 7px; border: 1px solid var(--pc-border); border-radius: 4px; background: var(--pc-field); color: var(--pc-text); font: inherit; }
     textarea { display: block; min-height: 88px; resize: vertical; line-height: 1.5; }
     .pc-control-number { display: grid; grid-template-columns: minmax(0, 1fr) minmax(58px, 38%); align-items: center; gap: 3px 8px; }
     .pc-control-number input { margin-top: 0; padding-right: 2px; } .pc-control-number :is(small, p) { grid-column: 1 / -1; }
-    .pc-control-segments { display: flex; margin-top: 4px; gap: 0; min-width: 0; }
+    .pc-control-segments { display: flex; margin-top: 4px; gap: 0; min-width: 0; padding: 3px; border-radius: 4px; background: var(--pc-field); }
     .pc-control-segments label { position: relative; flex: 1; min-width: 0; text-align: center; }
     .pc-control-segments input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
-    .pc-control-segments span { display: block; box-sizing: border-box; padding: 5px 3px; border: 1px solid var(--pc-border); background: var(--pc-field); overflow-wrap: anywhere; }
-    .pc-control-segments label + label span { border-left: 0; }
-    .pc-control-segments input:checked + span { background: var(--pc-control); color: var(--pc-accent); border-bottom-color: var(--pc-accent); }
+    .pc-control-segments span { display: block; box-sizing: border-box; padding: 5px 3px; border: 0; border-radius: 4px; background: transparent; overflow-wrap: anywhere; }
+    .pc-control-segments input:checked + span { background: color-mix(in srgb, var(--pc-text) 12%, var(--pc-control)); color: var(--pc-text); }
     .pc-control-segments input:focus-visible + span { outline: 2px solid var(--pc-accent); outline-offset: 1px; }
     .pc-control-segments input:disabled + span { opacity: .55; }
     .pc-detail-check { display: flex; align-items: center; gap: 6px; } input[type='checkbox'] { accent-color: var(--pc-accent); flex: none; margin: 0; }
     small { display: block; margin-top: 4px; color: var(--pc-muted); font-size: 10px; line-height: 1.5; overflow-wrap: anywhere; }
-    button { margin-top: 5px; min-height: 26px; max-width: 100%; padding: 4px 8px; border: 1px solid var(--pc-border); border-radius: 2px; background: var(--pc-control); color: var(--pc-text); font: inherit; font-size: 11px; cursor: pointer; overflow-wrap: anywhere; }
+    button { margin-top: 5px; min-height: 26px; max-width: 100%; padding: 4px 8px; border: 1px solid var(--pc-border); border-radius: 4px; background: var(--pc-control); color: var(--pc-text); font: inherit; font-size: 11px; cursor: pointer; overflow-wrap: anywhere; }
     button:hover:not(:disabled) { background: color-mix(in srgb, var(--pc-text) 10%, var(--pc-control)); } :is(button, input, select, textarea):focus-visible { outline: 2px solid var(--pc-accent); outline-offset: 1px; }
     :disabled { opacity: .55; cursor: default; } .pc-detail-error { color: var(--pc-error); font-size: 11px; overflow-wrap: anywhere; margin: 6px 0; }
 </style>

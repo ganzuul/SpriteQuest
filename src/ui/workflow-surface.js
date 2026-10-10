@@ -117,7 +117,7 @@ function baseWorkflowView(graph, profiles, settings, fastConnections = [], activ
         quoteHelp: QUOTE_SCOPE_HELP };
 }
 /** Root preparation boundary. The returned token is branded and contains no public authority. */
-export function prepareWorkflowProjection(root, { planner, profiles = [], fastConnections = [], activeModel = null, settings = {}, result = null, resolveBinding, resolveFastBinding, candidateStatus } = {}) {
+export function prepareWorkflowProjection(root, { planner, profiles = [], fastConnections = [], activeModel = null, workflowData = null, settings = {}, result = null, resolveBinding, resolveFastBinding, candidateStatus } = {}) {
     const token = Object.freeze({});
     const reject = (message, base = {}) => { projections.set(token, { failure: { ...emptyView(message), ...base, issues: [message] }, result }); return token; };
     if (planner !== undefined) {
@@ -197,7 +197,7 @@ export function prepareWorkflowProjection(root, { planner, profiles = [], fastCo
         const freshness = candidateStatus?.(handle);
         handles.set(handle.handleId, freeze({ handle, issue: freshness?.ok === false ? freshness.error.message : '', persistOnly: freshness?.ok === true && freshness.persistOnly === true }));
     }
-    projections.set(token, { base: freeze(baseWorkflowView(graph, profiles, settings, fastConnections, activeModel)), rootSummary, summaries, views, handles, previewTargets, result, rows: new WeakMap() }); return token;
+    projections.set(token, { base: freeze({ ...baseWorkflowView(graph, profiles, settings, fastConnections, activeModel), workflowData }), rootSummary, summaries, views, handles, previewTargets, result, rows: new WeakMap() }); return token;
 }
 function cachedRows(owner, source, viewPath) {
     if (!source || typeof source !== 'object') return noRows;

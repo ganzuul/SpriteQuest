@@ -12,6 +12,7 @@ import { isCommentFrame } from '../canvas/comment-frames.js?v=0.26.0';
 import { modifierTypes, modifierSummary, applyTextModifiers } from '../workflow/modifiers.js?v=0.26.0';
 import { addressKey, boundedText, RENDERED_TEXT_BYTES } from '../workflow/record-data.js?v=0.26.0';
 import { prepareNodeProfileOptions } from './node-profile-preparation.js?v=0.26.0';
+import { projectWorkflowData } from './workflow-data-setup.js?v=0.26.0';
 const rootIdentity = root => ({ kind: 'root', workflowId: root.id });
 /** First activation favors readable named cards; users can pan or explicitly Fit. */
 export function initialWorkspaceCamera(node, { width, shelf, meter } = {}) {
@@ -119,7 +120,9 @@ export function projectWorkspacePanels(editor, workflow, state, revision, select
     const address = library ? {kind:'library',definitionRef:editor.prepared.definitionRef,nodeId:selectedId} : { workflowId: workflow.graphId, instancePath: [...path], nodeId: selectedId };
     const presentation = readNodePresentation(saved, editor?.view.nodePresentation[selectedId]);
     const fileInput = saved?.operation === 'file-input' ? { fileName: typeof saved.fileName === 'string' ? saved.fileName : '', loaded: saved.loaded === true } : null;
+    const workflowData = saved ? projectWorkflowData(editor.prepared.effectiveNodes[selectedId] ?? saved, workflow.workflowData ?? {}, !(editor.readOnly || library)) : null;
     const controls = metadata ? Object.entries(metadata.controlDescriptors).filter(([key, descriptor]) => {
+        if (workflowData && (key === workflowData.controlKey || saved.operation === 'story-clock' && key === 'calendarId')) return false;
         if (key === 'roleOverrides' && saved.operation === 'for-each' || descriptor.hidden || fileInput && ['fileName', 'content', 'loaded'].includes(key)) return false;
         const effectiveNode = editor.prepared.effectiveNodes[selectedId];
         if (!visibleDetailControl(saved, metadata.defaults, key) && !visibleDetailControl(effectiveNode, metadata.defaults, key)) return false;
@@ -157,6 +160,7 @@ export function projectWorkspacePanels(editor, workflow, state, revision, select
     const nodeDetails = saved && metadata && !commentDetails ? { ...selection, title: boundary?.label ?? (presentation.alias || (typeof saved.title === 'string' ? saved.title : metadata.canonicalTitle)), canonicalTitle: metadata.canonicalTitle, operation: saved.operation, iconPath: metadata.iconPath, family: metadata.family, familyColor: metadata.familyColor, phase: effective?.phase ?? phaseForNode(graph,saved) ?? metadata.phase ?? graph.mode.slice(7), phaseEditable: graph.mode === 'native-unified' && OPERATIONS[saved.operation]?.phase === 'both', alias: presentation.alias, compact: presentation.compact, enabled: saved.enabled !== false, readOnly: editor.readOnly || library, canPresent: true, controls, ...(fileInput ? { fileInput } : {}), ...(boundary ? { boundary } : {}),
         model: metadata.requestCapability !== 'typed-decision' && metadata.modelRole && (effective?.effective !== 'No model call' || saved.model || saved.profileId || Object.keys(editor?.prepared.drawBase.bindingBlocks?.[selectedId] ?? {}).length) ? { role: saved.modelRole ?? metadata.modelRole, roleEditable: true, editable: !library, profileDefaultModel: editor.prepared.drawBase.profileDefaultModels?.[selectedId] ?? !!saved.profileId, profile: field('profileId', workflow.profiles.map(profile => ({ value: profile.id, label: profile.name }))), model: field('model'), effective: effective?.effective || (library ? [editor.prepared.effectiveNodes[selectedId]?.profileId ?? graph.roles?.[saved.modelRole ?? metadata.modelRole]?.profileId,editor.prepared.effectiveNodes[selectedId]?.model ?? graph.roles?.[saved.modelRole ?? metadata.modelRole]?.model].filter(Boolean).join(' · ') : ''), source: editor.prepared.drawBase.instanceBindingSources?.[selectedId] ? 'Containing instance override' : saved.profileId || saved.model ? 'Node override' : 'Inherited from ' + (saved.modelRole ?? metadata.modelRole), ...(effective?.issue ? {issue: effective.issue} : {}) } : null,
         helperBindings: saved.operation === 'for-each' ? { ...editor.prepared.drawBase.iterationBindings?.[selectedId], editable: !(editor.readOnly || library) } : null,
+        ...(workflowData ? { workflowData } : {}),
         modifiers: modifierView(saved, metadata, !(editor.readOnly || library)),
         ports: metadata.ports.map(port => ({ id: port.port, label: port.label, direction: port.dir === 'in' ? 'input' : 'output', kind: port.kind })), issues: [] } : null;
     const choices = library ? [] : previewChoices ?? previewChoicesFor(editor.prepared, workflow.targets);
@@ -285,6 +289,8 @@ function visibleDetailControl(node, defaults, key) {
  return true;
 }
 function detailPresentation(operation, key) {
+ if (operation === 'read-file' && ['schema', 'columns'].includes(key)) return {group:'Validation', advanced:true};
+ if (operation === 'read-file' && ['actorScope', 'actorId'].includes(key)) return {group:'Actor access', advanced:true, ...(key === 'actorId' ? {singleLine:true} : {})};
  const structured = key === 'sections' && operation === 'compose' ? 'sections'
   : key === 'fields' && operation === 'select-fields' ? 'fields'
   : key === 'rules' && operation === 'text-rules' ? 'rules'

@@ -8,6 +8,7 @@ import { parseRecord } from './introspection/contracts.js?v=0.26.0';
 import { artifactVisibility, preserveArtifactPrivacy, validVisibilityMetadata } from './artifact-privacy.js?v=0.26.0';
 import { createAcceptedNativeSettlement, createNativeFileSession, validateNativeFileEvidence } from './native-settlement.js?v=0.26.0';
 import { createChatDocumentCatalog } from './document-catalog.js?v=0.26.0';
+import { ensureWorkflowDataDefaults } from './workflow-data-defaults.js?v=0.26.0';
 import { createNativePersistenceVerifier } from './native-persistence.js?v=0.26.0';
 import { createNativeDraftEvidenceRegistry } from './native-draft-evidence.js?v=0.26.0';
 import { createNativeActorContext } from './native-actor-context.js?v=0.26.0';
@@ -282,6 +283,7 @@ export function createNativeWorkflowController(ports) {
         run.cancel=controls.cancel;
         const captured=controls.originalGraphSnapshot;
         run.graph={id:captured.id,name:captured.name,schema:captured.schema,runtime:captured.runtime,mode:captured.mode};
+        run.workflowDataNodes=Object.fromEntries([...plan.primitives.filter(unit=>unit.included).map(unit=>unit.node),...(controls.workflowDataNodes??[])].map((node,index)=>[index,node]));
         run.signature=workflowSignature(captured);run.identity=identity(context());run.hostUnified=captured.mode==='native-unified';if(run.hostUnified&&!run.unified)run.userId=ports.userId?.();
         if(run.unified){
             const selected=plan.primitives.filter(unit=>unit.included);
@@ -615,6 +617,11 @@ export function createNativeWorkflowController(ports) {
             const grant=actors.authorizeActor(request.actorId,request.presence);if(!grant.ok)return grant;actorGrant=grant.data.grant;actorId=grant.data.scope.actorId;key=Object.freeze({actorId,presence:request.presence});
         }else{if(run.fileSession)return {ok:true,data:run.fileSession};const actor=nativeMemoryScope(context(),ports.selectIntrospectionActor);actorId=actor.ok?actor.data.actorId:undefined;}
         const live=()=>fresh(run)&&(!run.unified||nativePrefixFresh(run))&&(!run.effectEntry||acceptedSourceFresh(run.effectEntry)&&sourceFresh(run))&&(!actorGrant||actors.checkActorGrant(actorGrant).ok);
+        if(!run.workflowDataDefaultsPrepared){
+            const prepared=ensureWorkflowDataDefaults({catalog:documentCatalog,graph:{nodes:run.workflowDataNodes},scope:{userId:run.userId,chatId:run.identity.chatId},context,isCurrent:live});
+            if(!prepared.ok)return prepared;
+            run.workflowDataDefaultsPrepared=true;
+        }
         const session=createNativeFileSession({catalog:documentCatalog,scope:{userId:run.userId,chatId:run.identity.chatId,...(actorId?{actorId}:{})},context,userId:()=>ports.userId?.(),persistenceVerifier,signal:run.controller.signal,isCurrent:live,barriers:fileBarriers,workflowId:run.graph.id,getOriginalDraft:()=>run.nativeDraft??{source:{messageIndex:context().chat.length-1,swipeId:context().chat.at(-1)?.swipe_id??0,originalText:context().chat.at(-1)?.mes??''}},validateEvidence:()=>({ok:true}),stage:effect=>{if(!live())return fail('STALE_RUN','The accepted effect source changed.');run.stagedFiles.push(effect);return {ok:true};}});
         if(!session.ok)return session;if(!live()){session.data.release();return fail('STALE_RUN','The native file scope changed during capture.');}const captured=Object.freeze({...session.data,actorId,...(actorGrant?{actorGrant,presence:request.presence}:{})});run.fileSessions.set(key,captured);if(key==='selected')run.fileSession=captured;return {ok:true,data:captured};
     }
@@ -714,7 +721,7 @@ export function createNativeWorkflowController(ports) {
             const state=await scopedStoryState(run);if(!state.ok)return state;
             if(node.operation==='commit-outcomes')return executeRandom(node,inputs,{phase:operationPorts.phase,root:true,signal:run.controller.signal,stageNativeOutcomes:state.data.stageOutcomes});
             const result=await executeTimeNode(node,inputs,{phase:operationPorts.phase,root:true,signal:run.controller.signal,readStoryClock:state.data.readClock,stageStoryClock:state.data.stageClock});
-            if(result.ok&&node.operation==='story-clock'){const registered=state.data.registerClock(result.outputs.out.value,node.clockId);if(!registered.ok)return registered;}
+            if(result.ok&&node.operation==='story-clock'){const registered=state.data.registerClock(result.outputs.out.value,result.outputs.out.value.clockId);if(!registered.ok)return registered;}
             return result;
         }
         if(['read-file','write-file'].includes(node.operation)) {

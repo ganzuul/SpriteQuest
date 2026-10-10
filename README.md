@@ -85,13 +85,15 @@ Select processing nodes, right-click, and choose **Create Subgraph**. The editor
 2. Enter `https://github.com/MentallyQuill/Lattice`, leaving the branch field blank to install `main`.
 3. Install, then reload SillyTavern. Open LATTICE from its logo on the left of the chat bar or with `/lattice`. Fresh launch selects **Unified story workflow**, with workflows disabled and unassigned. Existing saved selections remain.
 4. Choose **Workflows → Assign unified workflow**, enable **Arm**, and Send a player message in SillyTavern. The starter makes no auxiliary calls and exposes its completed native Draft for review.
-5. Select **Review / Publish · Host result** in Preview, inspect it, and Apply or Reject. For a richer pipeline, open a unified example and configure its model nodes, For Each helper roles and required workflow data documents before the next Send.
+5. Select **Review / Publish · Host result** in Preview, inspect it, and Apply or Reject. For a richer pipeline, open a unified example and configure its model nodes and For Each helper roles before the next Send. New Story Clock, Read File and Outcome Commit nodes have automatic Workflow Data presets.
 
 For updates, use **Manage Extensions**, then reload. Installation, import, and editing do not make model calls.
 
 The [unified workflow guide](docs/unified-workflows.md) walks through applying an example to **Story-2 on default-user**, chaining different models, using Fast Decision, recording private moments, arming Recall and managing accepted effects. A full unified native generation starts with ordinary Send; supported **Run to here** paths inspect without acceptance.
 
-Unified examples open as independent editable workflows. They do not run, assign or arm themselves. Set each auxiliary model’s local Connection profile in Details; configure For Each’s **Helper model bindings** separately. **Tools → Workflow Data…** authorizes logical JSON/text targets, and **Tools → Fast connections…** configures typed Jev/Laya endpoints. Local connection IDs and credentials are excluded from portable exports.
+Unified examples open as independent editable workflows. They do not run, assign or arm themselves. Set each auxiliary model’s local Connection profile in Details; configure For Each’s **Helper model bindings** separately. Default Workflow Data needs no setup: Story Clock starts on Day 1 at 00:00 with a 24-hour day, Read File uses empty plain-text notes, and Outcome Commit uses an empty JSON outcomes list. The referenced presets become available in the active user/chat when the unified workflow runs.
+
+Adjust a node’s **Details → Starting values** or initial content, and use **Advanced** for its source, Format and Visibility. Nodes using the same clock share saved time; create a separate clock with **+** for an independent timeline. Changing initial values preserves existing saved time and document content. **Tools → Workflow Data…** remains available for managing custom targets, including those named by imported examples. **Tools → Fast connections…** configures typed Jev/Laya endpoints. Local connection IDs and credentials are excluded from portable exports.
 
 Legacy **Before reply (Pre)** workflows still prepare bounded guidance, while **After reply (Post)** workflows remain manual tools for a completed reply. The Workflows menu labels these as legacy. Existing saved graphs are retained; migration is explicit reuse in a new unified copy, with no automatic converter.
 
