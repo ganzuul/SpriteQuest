@@ -14,7 +14,7 @@
     let comments = $state.raw<CommentFrameData[]>([]);
     let nodeProfiles = $state.raw<NodeProfileData[]>([]);
     let commentActions = $state.raw<CommentFrameActions>({ select() {}, update() {}, command() {} });
-    let ghost = $state.raw<{ d: string; className: string } | null>(null);
+    let ghost = $state.raw<{ d: string; className: string; kind: string } | null>(null);
     let bounds = $state.raw({ w: 4000, h: 4000 });
     let viewport: HTMLDivElement, svg: SVGSVGElement, nodeLayer: HTMLDivElement, commentLayer: HTMLDivElement;
     export function getLayers() { return { viewport, svg, nodeLayer, commentLayer }; }

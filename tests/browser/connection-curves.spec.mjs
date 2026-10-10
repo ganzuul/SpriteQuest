@@ -49,6 +49,22 @@ async function renderedWire(page) {
             const before = graphPoint(at - 4), after = graphPoint(at + 4);
             return Math.abs(after.y - before.y) / Math.hypot(after.x - before.x, after.y - before.y);
         });
+        const tokens = path.getAttribute('d').match(/[MLC]|[-+]?(?:\d*\.\d+|\d+\.?\d*)(?:e[-+]?\d+)?/gi);
+        let index = 0, point;
+        const geometry = [];
+        const read = () => ({ x: Number(tokens[index++]), y: Number(tokens[index++]) });
+        while (index < tokens.length) {
+            const command = tokens[index++];
+            if (command === 'M') point = read();
+            else {
+                const controls = command === 'C' ? [read(), read()] : [];
+                const end = read();
+                geometry.push({ command, start: point, controls, end });
+                point = end;
+            }
+        }
+        const departureLead = geometry[0], arrivalLead = geometry.at(-1);
+        const sourceTurn = geometry[1], targetTurn = geometry.at(-2);
         return {
             d: path.getAttribute('d'), hitD: hit.getAttribute('d'),
             start: screenPoint(0), departure: screenPoint(5), arrival: screenPoint(length - 5), end: screenPoint(length),
@@ -57,8 +73,24 @@ async function renderedWire(page) {
             output: pin(wire.from, 'out', wire.fromPort), input: pin(wire.to, 'in', wire.toPort),
             middleVerticalFraction: Math.min(...middleSlopes),
             labelDistance: Math.min(...samples.map(p => Math.hypot(p.x - labelPoint.x, p.y - labelPoint.y))),
+            departureLead: { x: departureLead.end.x - departureLead.start.x, y: departureLead.end.y - departureLead.start.y },
+            arrivalLead: { x: arrivalLead.start.x - arrivalLead.end.x, y: arrivalLead.start.y - arrivalLead.end.y },
+            middleIsLine: geometry[2]?.command === 'L',
+            turnRadius: Math.max(...[
+                ...[...sourceTurn.controls, sourceTurn.end].map(point => Math.hypot(point.x - sourceTurn.start.x, point.y - sourceTurn.start.y)),
+                ...[targetTurn.start, ...targetTurn.controls].map(point => Math.hypot(point.x - targetTurn.end.x, point.y - targetTurn.end.y)),
+            ]),
         };
     });
+}
+
+function expectDirectRoute(wire) {
+    expect(wire.departureLead.x, 'output lead extends 25 graph pixels to the right').toBeCloseTo(25, 5);
+    expect(wire.departureLead.y, 'output lead stays horizontal').toBeCloseTo(0, 5);
+    expect(wire.arrivalLead.x, 'input lead extends 25 graph pixels to the left').toBeCloseTo(-25, 5);
+    expect(wire.arrivalLead.y, 'input lead stays horizontal').toBeCloseTo(0, 5);
+    expect(wire.middleIsLine, 'compact turns frame a literal direct middle span').toBe(true);
+    expect(wire.turnRadius, 'rounded turns stay close to the lead ends').toBeLessThanOrEqual(15);
 }
 
 test('native level backward wires keep a compact return at different horizontal separations', async ({ page }, testInfo) => {
@@ -85,6 +117,7 @@ test('native level backward wires keep a compact return at different horizontal 
         }, separation);
         await page.evaluate(() => window.canvasHarness.view({ x: 0, y: 0, zoom: .73 }));
         const wire = await renderedWire(page);
+        expectDirectRoute(wire);
         const gap = wire.graphStart.x - wire.graphEnd.x;
         expect(gap, 'each layout increases the backward pin separation').toBeGreaterThan(previousGap + 150);
         previousGap = gap;
@@ -95,7 +128,7 @@ test('native level backward wires keep a compact return at different horizontal 
         expect(Math.abs(wire.departure.y - wire.start.y), 'output lead remains horizontal').toBeLessThan(1);
         expect(wire.end.x).toBeGreaterThan(wire.arrival.x);
         expect(Math.abs(wire.end.y - wire.arrival.y), 'input lead remains horizontal').toBeLessThan(1);
-        expect(wire.verticalDeviation, `level return at a ${Math.round(gap)}px pin separation stays shallow`).toBeLessThanOrEqual(36);
+        expect(wire.verticalDeviation, `level return at a ${Math.round(gap)}px pin separation stays six pixels shallow`).toBeLessThanOrEqual(7);
         expect(wire.hitD, 'hit target follows the visible cable').toBe(wire.d);
         expect(wire.labelDistance, 'wire kind label is anchored on the visible curve').toBeLessThan(1);
         await page.evaluate(() => window.canvasHarness.view({ x: 75, y: 60, zoom: .95 }));
@@ -121,9 +154,10 @@ test('native level backward wires keep a compact return at different horizontal 
 
 for (const targetAbove of [true, false]) {
     const direction = targetAbove ? 'above' : 'below';
-    test(`native backward wire to a target far ${direction} stays curved through its middle`, async ({ page }, testInfo) => {
+    test(`native backward wire to a target far ${direction} follows a direct diagonal middle`, async ({ page }, testInfo) => {
         await arrangeBackwardWire(page, targetAbove);
         const wire = await renderedWire(page);
+        expectDirectRoute(wire);
         expect(wire.input.x).toBeLessThan(wire.output.x);
         expect(Math.abs(wire.input.y - wire.output.y)).toBeGreaterThan(300);
         expect(Math.hypot(wire.start.x - wire.output.x, wire.start.y - wire.output.y), 'wire begins at the visible output pin').toBeLessThanOrEqual(1);

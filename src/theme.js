@@ -1,6 +1,7 @@
 /** Lattice workspace themes and explicit user overrides. */
 
 import { settings, save, safe } from './state.js?v=0.27.0';
+import { ARTIFACT_KINDS, ARTIFACT_PIN_COLORS } from './ui/artifact-glyph.js?v=0.27.0';
 
 /** The roles, in the order the editor lists them. */
 export const ROLES = [
@@ -15,7 +16,6 @@ export const ROLES = [
     { key: 'error', label: 'Errors and switched-off blocks', group: 'meaning' },
 ];
 const MEANING = ROLES.filter(r => r.group === 'meaning').map(r => r.key);
-const PIN_KINDS = ['context', 'guidance', 'draft', 'findings', 'patches', 'text', 'data', 'candidate'];
 
 /**
  * The look of a theme, apart from its colours. Each is a small choice, set on
@@ -77,18 +77,18 @@ export const PRESETS = {
         colors: { panel: '#121417', block: '#1b1e23', canvas: '#08090b', border: '#343a42', text: '#e4e7eb', muted: '#a5abb4', flow: '#e18a24', warn: '#e3c341', error: '#e57676' },
     },
     harbor: {
-        name: 'Harbor', note: 'Blue and amber with distinct pin shapes and patterned wires for colorblind-friendly connections.',
+        name: 'Harbor', note: 'Blue and amber with the shared type shapes and patterned wires for colorblind-friendly connections.',
         accessible: true,
         style: { ...DEFAULT_STYLE },
         colors: { panel: '#17232d', block: '#233340', canvas: '#0e1820', border: '#657988', text: '#f2f5f7', muted: '#b9c8d2', flow: '#e69f00', warn: '#f0e442', error: '#ffb4a2' },
-        pins: { context: '#f0e442', guidance: '#cc79a7', draft: '#7fd8c5', findings: '#ff9f70', patches: '#ffffff', text: '#e69f00', data: '#56b4e9', candidate: '#cbd5e1' },
+        pins: { context: '#f0e442', guidance: '#cc79a7', draft: '#7fd8c5', patches: '#ffffff', text: '#e69f00', data: '#56b4e9', candidate: '#cbd5e1' },
     },
     signal: {
-        name: 'Signal', note: 'High contrast grayscale with distinct pin shapes and patterned wires for colorblind-friendly connections.',
+        name: 'Signal', note: 'High contrast grayscale with the shared type shapes and patterned wires for colorblind-friendly connections.',
         accessible: true,
         style: { ...DEFAULT_STYLE },
         colors: { panel: '#151515', block: '#262626', canvas: '#080808', border: '#929292', text: '#ffffff', muted: '#d0d0d0', flow: '#ffffff', warn: '#ffffff', error: '#ffffff' },
-        pins: { context: '#f2f2f2', guidance: '#f2f2f2', draft: '#f2f2f2', findings: '#f2f2f2', patches: '#f2f2f2', text: '#f2f2f2', data: '#f2f2f2', candidate: '#f2f2f2' },
+        pins: { context: '#f2f2f2', guidance: '#f2f2f2', draft: '#f2f2f2', patches: '#f2f2f2', text: '#f2f2f2', data: '#f2f2f2', candidate: '#f2f2f2' },
     },
 };
 
@@ -262,7 +262,7 @@ export function applyTheme() {
     const data = doc.documentElement.dataset;
     data.pcPreset = preset;
     data.pcAccessible = PRESETS[preset].accessible ? '1' : '0';
-    for (const kind of PIN_KINDS) root.removeProperty('--pc-kind-' + kind);
+    for (const kind of [...ARTIFACT_KINDS, 'findings']) root.removeProperty('--pc-kind-' + kind);
 
     // The look: data attributes for style.css, and a few sizes as variables.
     for (const part of Object.keys(STYLE_OPTIONS)) data[`pc${part[0].toUpperCase()}${part.slice(1)}`] = style[part];
@@ -309,7 +309,7 @@ export function applyTheme() {
         const fitted = fitContrast(c, [panel, block], 3);
         if (fitted !== c) root.setProperty(`--pc-${key}`, toHex(fitted));
     }
-    for (const [kind, color] of Object.entries(PRESETS[preset].pins ?? {})) {
+    for (const [kind, color] of Object.entries({ ...ARTIFACT_PIN_COLORS, ...PRESETS[preset].pins })) {
         const c = parseColor(color);
         const fitted = fitContrast(c, [block, canvas], 3);
         root.setProperty('--pc-kind-' + kind, fitted === c ? color : toHex(fitted));

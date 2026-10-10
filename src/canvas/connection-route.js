@@ -1,19 +1,14 @@
-const NECK = 18;
-const RETURN_DEPTH = 28;
+const NECK = 25;
+const TURN = 12;
+const RETURN_DEPTH = 6;
 const pointText = point => `${point.x},${point.y}`;
 const offset = (point, x, y = 0) => ({ x: point.x + x, y: point.y + y });
 const mix = (a, b, weight) => ({ x: a.x * (1 - weight) + b.x * weight, y: a.y * (1 - weight) + b.y * weight });
 
 function pointAt(points, t) {
-    if (points.length === 2) return {
-        x: points[0].x * (1 - t) + points[1].x * t,
-        y: points[0].y * (1 - t) + points[1].y * t,
-    };
-    const u = 1 - t;
-    return {
-        x: u ** 3 * points[0].x + 3 * u ** 2 * t * points[1].x + 3 * u * t ** 2 * points[2].x + t ** 3 * points[3].x,
-        y: u ** 3 * points[0].y + 3 * u ** 2 * t * points[1].y + 3 * u * t ** 2 * points[2].y + t ** 3 * points[3].y,
-    };
+    let row = points;
+    while (row.length > 1) row = row.slice(1).map((point, i) => mix(row[i], point, t));
+    return row[0];
 }
 
 // Approximate arc length, then evaluate the real curve at the interpolated parameter.
@@ -21,12 +16,15 @@ function pointAt(points, t) {
 function routeLabel(segments) {
     const intervals = [];
     let length = 0;
+    // Normalize only the length calculation: finite graph endpoints may have a
+    // separation larger than Number.MAX_VALUE. Evaluate labels in graph space.
+    const scale = Math.max(1, ...segments.flat().flatMap(point => [Math.abs(point.x), Math.abs(point.y)]));
     for (const points of segments) {
         const steps = points.length === 2 ? 1 : 64;
         let previous = points[0];
         for (let i = 1; i <= steps; i++) {
             const next = pointAt(points, i / steps);
-            const distance = Math.hypot(next.x - previous.x, next.y - previous.y);
+            const distance = Math.hypot(next.x / scale - previous.x / scale, next.y / scale - previous.y / scale);
             intervals.push({ points, start: (i - 1) / steps, end: i / steps, distance });
             length += distance;
             previous = next;
@@ -57,11 +55,11 @@ export function buildDragConnectionRoute(origin, pointer) {
 }
 
 /**
- * Direct graph-space spline shared by settled wires and hit targets.
+ * Direct graph-space route shared by settled wires and hit targets.
  * Endpoints have finite x/y and side: 'left' | 'right'. Omitted sides default to
  * source-right and target-left. No card bounds required.
- * Short horizontal necks clear the usual 12px pin inset; returning paths bow locally
- * and may pass behind cards. This helper does not perform obstacle routing.
+ * Horizontal leads clear the usual 12px pin inset. Small smooth turns frame a
+ * straight middle span, which may pass behind cards; there is no obstacle routing.
  * @param {{x: number, y: number, side?: string}} from
  * @param {{x: number, y: number, side?: string}} to
  * @returns {{d: string, label: {x: number, y: number}}}
@@ -75,78 +73,41 @@ export function buildConnectionRoute(from, to) {
     const dx = arrival.x - departure.x, dy = arrival.y - departure.y;
     const segments = [[start, departure]];
 
-    // Keep one bow side as close necks cross. Smoothly converge to
-    // a midpoint-subdivided forward cubic once there is room for a compact spline.
-    const gap = dx * fromDirection;
-    const progress = fromDirection === -toDirection ? Math.min(1, Math.max(0, gap / 24)) : 0;
-    const blend = progress * progress * (3 - 2 * progress);
-    const backwardProgress = Math.min(1, Math.max(0, -gap / 24));
-    const backwardBlend = backwardProgress * backwardProgress * (3 - 2 * backwardProgress);
     const span = Math.hypot(dx, dy);
-    const bow = Math.min(96, Math.max(32, span * 0.2));
-    const verticalProgress = Math.min(1, Math.abs(dy) / (2 * bow));
-    const verticalBlend = verticalProgress * verticalProgress * (3 - 2 * verticalProgress);
-    const forwardHandle = Math.min(100, Math.max(0, gap) * 0.4);
-    // Steep returns need only a small turn outside each neck. Keep the broader
-    // handles for level bows, with an even weight that is stable across dy=0.
-    const steepness = (dy / Math.hypot(span, 24)) ** 2;
-    const returningHandle = Math.min(72, Math.max(24, span * 0.22)) * (1 - 0.8 * backwardBlend * steepness);
-    const endHandle = returningHandle * (1 - blend) + forwardHandle / 2 * blend;
-    const forwardTangent = { x: (dx - fromDirection * forwardHandle) / 4, y: dy / 4 };
-    const returningMiddleHandle = Math.min(64, Math.max(18, span * 0.18));
-    const middleHandle = returningMiddleHandle * (1 - blend) + Math.hypot(forwardTangent.x, forwardTangent.y) * blend;
-    // Rotating, instead of lerping opposite vectors, keeps the join tangent nonzero.
-    // The forward angle is measured in the source side's local coordinate system.
-    const forwardAngle = Math.atan2(fromDirection * forwardTangent.y, Math.max(0, fromDirection * forwardTangent.x));
-    // Farther behind the source, follow the chord rather than flattening the
-    // middle. Unwrap around PI and fade to the existing close-pin turn so moving
-    // across either axis cannot flip the bow or collapse its join tangent.
-    const backwardTilt = Math.atan2(fromDirection * dy, Math.max(24, -gap));
-    const angle = Math.PI * (1 - blend) + forwardAngle * blend - backwardBlend * backwardTilt;
-    const tangent = { x: fromDirection * Math.cos(angle), y: fromDirection * Math.sin(angle) };
-    // Level pins need a bow to avoid a doubled-back straight line. Vertical
-    // separation already supplies curvature, so let that bow recede smoothly.
-    const middle = { x: (departure.x + arrival.x) / 2,
-        y: (departure.y + arrival.y) / 2 + fromDirection * bow * (1 - blend) * (1 - backwardBlend * verticalBlend) };
-    const curves = [
-        [departure, offset(departure, fromDirection * endHandle), offset(middle, -tangent.x * middleHandle, -tangent.y * middleHandle), middle],
-        [middle, offset(middle, tangent.x * middleHandle, tangent.y * middleHandle), offset(arrival, toDirection * endHandle), arrival],
-    ];
-    // Nearly level returning pins use local rounded turns and a straight span.
-    // Morph the original controls so dragging either pin preserves smooth joins.
-    const levelProgress = Math.min(1, Math.abs(dy) / (2 * RETURN_DEPTH));
-    const levelBlend = levelProgress * levelProgress * (3 - 2 * levelProgress);
-    const roundedWeight = fromDirection === -toDirection ? backwardBlend * (1 - levelBlend) : 0;
-    if (roundedWeight > 0) {
-        const laneY = (departure.y + arrival.y) / 2 + fromDirection * RETURN_DEPTH;
-        const sourceHandle = Math.abs(laneY - departure.y) * 2 / 3;
-        const targetHandle = Math.abs(laneY - arrival.y) * 2 / 3;
-        const entry = { x: departure.x, y: laneY }, exit = { x: arrival.x, y: laneY };
-        const sourceTurn = [departure, offset(departure, fromDirection * sourceHandle), offset(entry, fromDirection * sourceHandle), entry];
-        const targetTurn = [exit, offset(exit, toDirection * targetHandle), offset(arrival, toDirection * targetHandle), arrival];
-        const first = curves[0].map((point, i) => mix(point, sourceTurn[i], roundedWeight));
-        const last = curves[1].map((point, i) => mix(point, targetTurn[i], roundedWeight));
-        const laneStart = first[3], laneEnd = last[0];
-        const laneHandle = Math.min(middleHandle, Math.hypot(laneEnd.x - laneStart.x, laneEnd.y - laneStart.y) / 3);
-        // At zero weight the extra span collapses to the original midpoint.
-        // Keep that original path for spans below numerical drawing precision.
-        if (laneHandle > 1e-6) {
-            // Blend local vectors before adding graph coordinates: subtracting
-            // large control points can erase the horizontal component. Bounded
-            // handles also keep tiny angle errors local on very long spans.
-            const original = { x: tangent.x * middleHandle, y: tangent.y * middleHandle };
-            const incoming = mix(original, { x: -fromDirection * sourceHandle, y: 0 }, roundedWeight);
-            const outgoing = mix(original, { x: toDirection * targetHandle, y: 0 }, roundedWeight);
-            const inLength = Math.hypot(incoming.x, incoming.y), outLength = Math.hypot(outgoing.x, outgoing.y);
-            const inDirection = inLength ? { x: incoming.x / inLength, y: incoming.y / inLength } : { x: -fromDirection, y: 0 };
-            const outDirection = outLength ? { x: outgoing.x / outLength, y: outgoing.y / outLength } : { x: -fromDirection, y: 0 };
-            curves.splice(0, 2, first,
-                [laneStart, offset(laneStart, inDirection.x * laneHandle, inDirection.y * laneHandle),
-                    offset(laneEnd, -outDirection.x * laneHandle, -outDirection.y * laneHandle), laneEnd], last);
-        }
-    }
-    segments.push(...curves);
-    segments.push([arrival, end]);
+    let unit;
+    if (!Number.isFinite(span)) {
+        // Subtract scaled coordinates when even the endpoint difference overflows.
+        const scale = Math.max(Math.abs(departure.x), Math.abs(departure.y), Math.abs(arrival.x), Math.abs(arrival.y));
+        const x = arrival.x / scale - departure.x / scale, y = arrival.y / scale - departure.y / scale;
+        const length = Math.hypot(x, y);
+        unit = { x: x / length, y: y / length };
+    } else unit = span ? { x: dx / span, y: dy / span } : { x: fromDirection, y: 0 };
+
+    const bend = Math.min(TURN, span / 4), handle = Math.min(6, bend / 2);
+    // Either endpoint can reverse against the middle chord, including a target
+    // on the same side as its source. Grow the shallow return smoothly inside
+    // the local fallback so crossing horizontal alignment cannot flip its depth.
+    const returnProgress = Math.min(1, Math.max(0, -dx * fromDirection / TURN, dx * toDirection / TURN));
+    const returnWeight = returnProgress * returnProgress * (3 - 2 * returnProgress);
+    const returnDepth = returnWeight * RETURN_DEPTH * Math.max(0, 1 - Math.abs(dy) / 12);
+    const normal = { x: -unit.y * returnDepth, y: unit.x * returnDepth };
+    const directEntry = offset(departure, unit.x * bend + normal.x, unit.y * bend + normal.y);
+    const directExit = offset(arrival, -unit.x * bend + normal.x, -unit.y * bend + normal.y);
+
+    // The chord direction is undefined at coincident lead ends. Fade the direct
+    // turns into one fixed small arch there, rather than flipping its normal.
+    // Its middle span and tangent handles shrink continuously to zero.
+    const progress = Math.min(1, span / (2 * TURN));
+    const weight = progress * progress * (3 - 2 * progress);
+    const apex = offset(mix(departure, arrival, .5), 0, -fromDirection * RETURN_DEPTH);
+    const entry = mix(apex, directEntry, weight), exit = mix(apex, directExit, weight);
+    const endHandle = 6 * (1 - weight) + handle * weight;
+    const middleHandle = handle * weight;
+    segments.push([departure, offset(departure, fromDirection * endHandle),
+        offset(entry, -unit.x * middleHandle, -unit.y * middleHandle), entry]);
+    if (entry.x !== exit.x || entry.y !== exit.y) segments.push([entry, exit]);
+    segments.push([exit, offset(exit, unit.x * middleHandle, unit.y * middleHandle),
+        offset(arrival, toDirection * endHandle), arrival], [arrival, end]);
     const d = `M ${pointText(start)} ` + segments.map(points =>
         `${points.length === 2 ? 'L' : 'C'} ${points.slice(1).map(pointText).join(' ')}`).join(' ');
     return { d, label: routeLabel(segments) };

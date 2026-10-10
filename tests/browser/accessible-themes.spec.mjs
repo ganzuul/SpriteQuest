@@ -3,21 +3,22 @@ import { openEmber, measureEmber, assertEmber, colorChannels } from './ember-fix
 
 test('the actual theme picker offers the eight approved themes and shows readable accessible pin cues', async ({ page }, testInfo) => {
     await openEmber(page);
-    await page.getByRole('menubar', { name: 'Workspace menus' }).getByRole('menuitem', { name: 'View', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'View', exact: true }).click();
     await page.getByRole('menuitem', { name: 'Theme and colours…', exact: true }).click();
     const picker = page.locator('.pc-theme-pop');
     await expect(picker).toBeVisible();
     expect(await picker.locator('.pc-th-name').allTextContents()).toEqual(['Ember', 'Lattice', 'Ash', 'Graphite', 'Slate', 'Obsidian', 'Harbor', 'Signal']);
     for (const name of ['Harbor', 'Signal']) {
         await picker.locator('.pc-th-preset').filter({ has: page.locator('.pc-th-name', { hasText: name }) }).click();
-        await expect(picker.locator('.pc-th-kind-legend li')).toHaveCount(8);
-        const cues = await picker.locator('.pc-th-pin-cue').evaluateAll(elements => elements.map(e => ({ kind: e.dataset.kind, width: e.getBoundingClientRect().width, height: e.getBoundingClientRect().height, shape: getComputedStyle(e).clipPath })));
-        expect(cues.every(cue => cue.width >= 10 && cue.height >= 10)).toBe(true);
+        await expect(picker.locator('.pc-th-kind-legend li')).toHaveCount(7);
+        const cues = await picker.locator('.pc-th-pin-cue').evaluateAll(elements => elements.map(e => ({ kind: e.dataset.kind, width: e.getBoundingClientRect().width, height: e.getBoundingClientRect().height, shape: e.querySelector('[data-glyph]').innerHTML, scale: e.querySelector('[data-glyph]').getAttribute('transform') })));
+        expect(cues.every(cue => cue.width === 18 && cue.height === 18 && cue.scale === 'scale(0.5625)')).toBe(true);
         expect(cues.find(cue => cue.kind === 'guidance').shape).toContain('polygon');
+        expect(cues.some(cue => cue.kind === 'findings')).toBe(false);
         await picker.screenshot({ path: testInfo.outputPath(name.toLowerCase() + '-theme-picker.png') });
     }
     await picker.locator('.pc-th-preset').filter({ has: page.locator('.pc-th-name', { hasText: 'Ember' }) }).click();
-    await expect(picker.locator('.pc-th-kind-legend')).toHaveCount(0);
+    await expect(picker.locator('.pc-th-kind-legend li')).toHaveCount(7);
 });
 
 test('example thumbnails follow accessible palettes and shapes, then restore Ember without editing authored comment colors', async ({ page }, testInfo) => {
@@ -26,7 +27,7 @@ test('example thumbnails follow accessible palettes and shapes, then restore Emb
         await route.fulfill({response,body:source+"\nUNIFIED_WORKFLOW_EXAMPLE_DATA[0].packages[0].graph.nodes['theme-comment']={id:'theme-comment',type:'note',commentFrame:true,moveContents:false,title:'Authored theme comment',content:'Preserve this color.',color:'#637d89',x:0,y:0,w:500,h:300};"});
     });
     await openEmber(page);
-    await page.getByRole('menubar', { name: 'Workspace menus' }).getByRole('menuitem', { name: 'File', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'File', exact: true }).click();
     await page.getByRole('menuitem', { name: 'Open examples…', exact: true }).click();
     const examples = page.getByRole('dialog', { name: 'Examples', exact: true });
     await expect(examples).toBeVisible();
@@ -38,16 +39,15 @@ test('example thumbnails follow accessible palettes and shapes, then restore Emb
             T.setPreset(preset); await h.settle();
         }, preset);
         const paint = await examples.evaluate(e => {
-            const cue = kind => getComputedStyle(e.querySelector('.pc-example-pin-cue[data-kind="' + kind + '"]'));
+            const cue = kind => e.querySelector('.pc-example-pin-cue[data-kind="' + kind + '"]');
             const data = cue('data'), text = cue('text');
-            return { dot: getComputedStyle(e.querySelector('.pc-example-pin-dot')).display, cue: data.display, data: data.fill, text: text.fill, ring: text.stroke, ringWidth: text.strokeWidth, comments: [...e.querySelectorAll('.pc-example-comment rect')].map(rect => getComputedStyle(rect).stroke) };
+            return { dots: e.querySelectorAll('.pc-example-pin-dot').length, cue: getComputedStyle(data).display, data: getComputedStyle(data.querySelector('[data-glyph]')).fill, text: getComputedStyle(text.querySelector('[data-glyph]')).fill, capsule: text.querySelector('rect').getAttribute('rx'), comments: [...e.querySelectorAll('.pc-example-comment rect')].map(rect => getComputedStyle(rect).stroke) };
         });
-        expect(paint.dot).toBe('none');
+        expect(paint.dots).toBe(0);
         expect(paint.cue).not.toBe('none');
-        expect(paint.text).toBe('none');
-        expect(paint.ringWidth).toBe('2px');
+        expect(paint.capsule).toBe('3.465');
         expect(paint.data).toBe(preset === 'harbor' ? 'rgb(86, 180, 233)' : 'rgb(242, 242, 242)');
-        expect(paint.ring).toBe(preset === 'harbor' ? 'rgb(230, 159, 0)' : 'rgb(242, 242, 242)');
+        expect(paint.text).toBe(preset === 'harbor' ? 'rgb(230, 159, 0)' : 'rgb(242, 242, 242)');
         if (preset === 'signal') expect(new Set(paint.comments)).toEqual(new Set(['rgb(208, 208, 208)']));
         await examples.screenshot({ path: testInfo.outputPath(preset + '-examples.png') });
     }
@@ -55,8 +55,8 @@ test('example thumbnails follow accessible palettes and shapes, then restore Emb
         const h = window.canvasHarness, T = await import('/src/theme.js?v=' + h.version);
         T.setPreset('ember'); await h.settle();
     });
-    expect(await examples.locator('.pc-example-pin-dot').first().evaluate(e => getComputedStyle(e).display)).not.toBe('none');
-    expect(await examples.locator('.pc-example-pin-cue').first().evaluate(e => getComputedStyle(e).display)).toBe('none');
+    await expect(examples.locator('.pc-example-pin-dot')).toHaveCount(0);
+    expect(await examples.locator('.pc-example-pin-cue').first().evaluate(e => getComputedStyle(e).display)).not.toBe('none');
     expect(await examples.locator('.pc-example-comment rect').evaluateAll(elements => elements.map(e => e.style.stroke))).toEqual(authoredColors);
     expect(await examples.locator('.pc-example-comment rect').evaluateAll(elements => elements.map(e => getComputedStyle(e).stroke))).not.toEqual(authoredColors.map(() => 'rgb(208, 208, 208)'));
 });
@@ -112,28 +112,29 @@ test('Signal gives real compatible and invalid connection targets different visi
     expect(await page.evaluate(() => Object.keys(window.canvasHarness.graph.wires))).toEqual([]);
 });
 
-test('accessible themes distinguish connection types with shapes and patterns, then restore ordinary Ember cues', async ({ page }) => {
+test('accessible themes keep shared pin shapes and add wire patterns, then restore Ember colors', async ({ page }) => {
     await openEmber(page);
     const before = await measureEmber(page);
     const readCues = () => page.evaluate(() => {
         const pin = kind => {
             const e = document.querySelector('.pc-port[data-kind="' + kind + '"]');
-            const c = getComputedStyle(e, '::after');
-            return { radius: c.borderRadius, shape: c.clipPath, border: c.borderStyle, size: c.width, hit: e.getBoundingClientRect().width };
+            const glyph = e.querySelector('[data-glyph]');
+            return { shape: glyph.innerHTML, scale: glyph.getAttribute('transform'), hit: e.getBoundingClientRect().width };
         };
         const wire = kind => getComputedStyle(document.querySelector('.pc-wire-native[data-kind="' + kind + '"]')).strokeDasharray;
         return { preset: document.documentElement.dataset.pcPreset, accessible: document.documentElement.dataset.pcAccessible, data: pin('data'), text: pin('text'), guidance: pin('guidance'), dataWire: wire('data'), textWire: wire('text'), guidanceWire: wire('guidance') };
     });
+    const original = await readCues();
     for (const preset of ['harbor', 'signal']) {
         await page.evaluate(async preset => {
             const h = window.canvasHarness, T = await import('/src/theme.js?v=' + h.version);
             T.setPreset(preset); await h.settle();
         }, preset);
         const cues = await readCues();
-        expect(cues.data.radius).toBe('0px');
-        expect(cues.text.radius).toBe('50%');
-        expect(cues.text.border).toBe('solid');
-        expect(cues.guidance.shape).toContain('polygon');
+        expect(cues.data.shape).toBe(original.data.shape);
+        expect(cues.text.shape).toBe(original.text.shape);
+        expect(cues.guidance.shape).toBe(original.guidance.shape);
+        expect(cues.data.scale).toBe('scale(0.5625)');
         expect(cues.dataWire).not.toBe('none');
         expect(cues.guidanceWire).not.toBe(cues.dataWire);
         expect(cues.textWire).toBe('none');
@@ -147,7 +148,7 @@ test('accessible themes distinguish connection types with shapes and patterns, t
         T.setPreset('ember'); await h.settle();
     });
     const restored = await readCues();
-    expect(restored.data.radius).toBe('50%');
+    expect(restored.data.shape).toBe(original.data.shape);
     expect(restored.dataWire).toBe('none');
     assertEmber(await measureEmber(page));
 });

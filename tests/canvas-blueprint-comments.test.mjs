@@ -23,6 +23,7 @@ test('settled connection, hit target and label use the shared graph-space spline
         assert.equal(hit.getAttribute('d'), route.d);
         assert.equal(Number(label.getAttribute('x')), route.label.x);
         assert.equal(Number(label.getAttribute('y')), route.label.y);
+        assert.equal(label.getAttribute('data-id'), 'edge', 'connection label remains associated with its wire for contextual disclosure');
     } finally { await env.canvas.destroy(); }
 });
 

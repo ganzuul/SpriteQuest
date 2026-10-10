@@ -49,10 +49,10 @@ test('retired saved selections fall back to Ember and preserve explicit custom c
     }
 });
 
-test('Harbor and Signal expose accessible connection colors only while selected', () => {
+test('themes restore their own seven-kind palettes when switching from accessible presets', () => {
     const pins = {
-        harbor: { context: '#f0e442', guidance: '#cc79a7', draft: '#7fd8c5', findings: '#ff9f70', patches: '#ffffff', text: '#e69f00', data: '#56b4e9', candidate: '#cbd5e1' },
-        signal: { context: '#f2f2f2', guidance: '#f2f2f2', draft: '#f2f2f2', findings: '#f2f2f2', patches: '#f2f2f2', text: '#f2f2f2', data: '#f2f2f2', candidate: '#f2f2f2' },
+        harbor: { context: '#f0e442', guidance: '#cc79a7', draft: '#7fd8c5', patches: '#ffffff', text: '#e69f00', data: '#56b4e9', candidate: '#cbd5e1' },
+        signal: { context: '#f2f2f2', guidance: '#f2f2f2', draft: '#f2f2f2', patches: '#f2f2f2', text: '#f2f2f2', data: '#f2f2f2', candidate: '#f2f2f2' },
     };
     for (const [preset, expected] of Object.entries(pins)) {
         T.setPreset(preset);
@@ -63,12 +63,17 @@ test('Harbor and Signal expose accessible connection colors only while selected'
             T.setPreset(preset);
             T.setPreset(next);
             assert.equal(root.dataset.pcAccessible, '0', next);
-            for (const kind of Object.keys(expected)) assert.equal(value('kind-' + kind), '', `${next} clears ${kind}`);
+            const defaults = { context: '#f0e442', guidance: '#cc79a7', draft: '#7fd8c5', patches: '#ed8956', candidate: '#b49af2', text: '#e69f00', data: '#56b4e9' };
+            for (const [kind, color] of Object.entries(defaults)) {
+                const fitted = T.fitContrast(T.parseColor(color), [T.parseColor(T.PRESETS[next].colors.block), T.parseColor(T.PRESETS[next].colors.canvas)], 3);
+                assert.equal(value('kind-' + kind), T.toHex(fitted), `${next} restores ${kind}`);
+            }
+            assert.equal(value('kind-findings'), '', 'No retired Findings token remains');
         }
     }
 });
 
-for (const preset of ['harbor', 'signal']) {
+for (const preset of Object.keys(T.PRESETS)) {
     test(`${preset} connection colors stay visible on custom card and canvas surfaces`, () => {
         for (const surfaces of [
             { block: '#ffffff', canvas: '#ffffff' },
@@ -79,7 +84,7 @@ for (const preset of ['harbor', 'signal']) {
             T.setPreset(preset);
             T.setColor('block', surfaces.block);
             T.setColor('canvas', surfaces.canvas);
-            for (const kind of ['context', 'guidance', 'draft', 'findings', 'patches', 'text', 'data', 'candidate']) {
+            for (const kind of ['context', 'guidance', 'draft', 'patches', 'text', 'data', 'candidate']) {
                 const color = T.parseColor(value('kind-' + kind));
                 for (const [surface, background] of Object.entries(surfaces)) {
                     assert.ok(T.contrast(color, T.parseColor(background)) >= 3, `${preset} ${kind} on custom ${surface}`);
@@ -99,7 +104,7 @@ for (const preset of ['harbor', 'signal']) {
             T.setPreset(preset);
             T.setColor('block', surfaces.block);
             T.setColor('canvas', surfaces.canvas);
-            for (const kind of ['context', 'guidance', 'draft', 'findings', 'patches', 'text', 'data', 'candidate']) {
+            for (const kind of ['context', 'guidance', 'draft', 'patches', 'text', 'data', 'candidate']) {
                 const color = T.parseColor(value('kind-' + kind));
                 for (const [surface, background] of Object.entries(surfaces)) {
                     const ratio = T.contrast(color, T.parseColor(background));

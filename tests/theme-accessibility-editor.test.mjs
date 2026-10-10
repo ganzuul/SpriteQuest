@@ -21,9 +21,12 @@ const version = JSON.parse(readFileSync(new URL('../manifest.json', import.meta.
 const T = await import(`../src/theme.js?v=${version}`);
 const { renderThemeEditor } = await import(`../src/theme-editor.js?v=${version}`);
 const box = document.getElementById('editor');
+const themeStyle = document.createElement('style');
+themeStyle.textContent = readFileSync(new URL('../style.css', import.meta.url), 'utf8');
+document.head.append(themeStyle);
 
-test('an accessible preset explains pin shapes and wire patterns beside the picker', () => {
-    for (const preset of ['harbor', 'signal']) {
+test('every preset explains the shared seven pin shapes and accessible presets also explain patterns', () => {
+    for (const preset of Object.keys(T.PRESETS)) {
         T.setPreset(preset);
         renderThemeEditor(box);
         const legend = box.querySelector('.pc-th-accessibility');
@@ -31,17 +34,21 @@ test('an accessible preset explains pin shapes and wire patterns beside the pick
         assert.equal(legend.closest('details'), null);
         assert.match(legend.textContent, /labels/i);
         for (const cue of [
-            'Context: filled circle', 'Text: ring', 'Data: square', 'Guidance: diamond',
-            'Draft: pentagon', 'Findings: triangle', 'Patches: hexagon', 'Candidate: plus',
+            'Context: filled circle', 'Text: capsule', 'Data: square', 'Guidance: diamond',
+            'Draft: pentagon', 'Patches: triangle', 'Candidate: ring with center dot',
         ]) assert.ok(legend.textContent.includes(cue), cue);
-        assert.match(legend.textContent, /Text wires are solid/i);
-        assert.match(legend.textContent, /data dashed/i);
-        assert.match(legend.textContent, /guidance dotted/i);
-        assert.match(legend.textContent, /other types use distinct patterns/i);
+        assert.equal(legend.querySelectorAll('.pc-th-pin-cue').length, 7);
+        assert.equal(legend.querySelector('[data-kind="findings"]'), null);
+        if (T.PRESETS[preset].accessible) {
+            assert.match(legend.textContent, /Text wires are solid/i);
+            assert.match(legend.textContent, /data dashed/i);
+            assert.match(legend.textContent, /guidance dotted/i);
+            assert.match(legend.textContent, /other types use distinct patterns/i);
+        }
     }
     T.setPreset('lattice');
     renderThemeEditor(box);
-    assert.equal(box.querySelector('.pc-th-accessibility'), null, 'Ordinary themes do not offer cues they do not use');
+    assert.ok(box.querySelector('.pc-th-accessibility'), 'Ordinary themes offer the same seven glyphs');
 });
 
 test('Signal accepts its shared meaning colors while still warning about unreadable custom text', () => {
@@ -68,7 +75,7 @@ async function withPreview(check) {
     const host = document.createElement('div');
     document.body.append(host);
     const { mount, unmount, flushSync, tick } = await import(new URL('../node_modules/svelte/src/index-client.js', import.meta.url).href);
-    const kinds = ['context', 'text', 'data', 'guidance', 'draft', 'findings', 'patches', 'candidate'];
+    const kinds = ['context', 'text', 'data', 'guidance', 'draft', 'patches', 'candidate'];
     const ports = kinds.map((kind, index) => ({ id: kind, port: kind, dir: 'in', kind, label: `${kind} input`, optional: false, x: 10, y: 32 + index * 18 }));
     const example = {
         id: 'typed-cues', number: 1, title: 'Typed preview', goal: 'Inspect named pin cues', issue: '',
@@ -96,26 +103,27 @@ async function withPreview(check) {
 test('example thumbnails offer distinct cue geometry at each named pin position', async () => {
     await withPreview((host, ports) => {
         const cues = [...host.querySelectorAll('.pc-example-pin-cue')];
-        assert.equal(cues.length, 8, 'Every named type has an accessible pin shape in its thumbnail');
-        assert.equal(new Set(cues.map(cue => cue.getAttribute('d'))).size, 8, 'The eight typed cues have different geometry');
+        assert.equal(cues.length, 7, 'Every named type has the shared pin shape in its thumbnail');
+        assert.equal(new Set(cues.map(cue => cue.innerHTML)).size, 7, 'The seven typed cues have different geometry');
         for (const pin of ports) {
             const cue = host.querySelector(`.pc-example-pin-cue[data-kind="${pin.kind}"]`);
-            assert.equal(cue.getAttribute('transform'), `translate(${pin.x} ${pin.y})`, 'Cue geometry remains at its authored pin position');
+            assert.equal(Number(cue.getAttribute('x')) + 9, pin.x, 'Cue geometry remains at its authored pin position');
+            assert.equal(Number(cue.getAttribute('y')) + 9, pin.y);
             assert.ok(host.textContent.includes(pin.label), `${pin.kind} keeps its visible label`);
         }
-        assert.equal(host.querySelectorAll('.pc-example-pin-dot').length, 8, 'Ordinary themes retain their original circle preview');
+        assert.equal(host.querySelectorAll('.pc-example-pin-dot').length, 0, 'All themes use one shared glyph instead of a circle fallback');
     });
 });
 
 test('example pin colors consume typed theme tokens with their ordinary color fallbacks', async () => {
     await withPreview(host => {
         for (const [kind, expected] of [
-            ['context', 'var(--pc-kind-context, #72adc0)'], ['text', 'var(--pc-kind-text, #a5bfa0)'],
-            ['data', 'var(--pc-kind-data, #7e9bc5)'], ['guidance', 'var(--pc-kind-guidance, #c190be)'],
-            ['draft', 'var(--pc-kind-draft, #92c9ad)'], ['findings', 'var(--pc-kind-findings, #b65b9e)'],
-            ['patches', 'var(--pc-kind-patches, #b65b9e)'], ['candidate', 'var(--pc-kind-candidate, #cca56d)'],
+            ['context', 'var(--pc-kind-context, #f0e442)'], ['text', 'var(--pc-kind-text, #e69f00)'],
+            ['data', 'var(--pc-kind-data, #56b4e9)'], ['guidance', 'var(--pc-kind-guidance, #cc79a7)'],
+            ['draft', 'var(--pc-kind-draft, #7fd8c5)'],
+            ['patches', 'var(--pc-kind-patches, #ed8956)'], ['candidate', 'var(--pc-kind-candidate, #b49af2)'],
         ]) {
-            const dot = host.querySelector(`.pc-example-pin-dot[data-kind="${kind}"]`);
+            const dot = host.querySelector(`.pc-example-pin-cue[data-kind="${kind}"]`);
             assert.equal(getComputedStyle(dot).getPropertyValue('--pc-pin-color').replace(/\s+/g, ''), expected.replace(/\s+/g, ''), `${kind} inherits its preset pin color`);
         }
     });

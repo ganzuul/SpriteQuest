@@ -1,5 +1,6 @@
 <script lang="ts">
     import type { NodeCardData, CanvasActions } from './types';
+    import ArtifactPin from './ArtifactPin.svelte';
     let { card, actions }: { card: NodeCardData; actions: CanvasActions } = $props();
     const stop = (event: Event) => event.stopPropagation();
 </script>
@@ -11,7 +12,7 @@
         {#each card.ports as port (port.id)}
             <div class={`pc-native-row pc-native-row-${port.dir}`} style:grid-row={port.row}>
                 <span class="pc-native-pin-label">{port.label}</span>
-                <div class={port.className} data-node={card.id} data-dir={port.dir} data-port={port.port} data-side={port.side} data-kind={port.kind} title={port.title} role="img" aria-label={port.title} onmouseenter={() => actions.hoverPin({ nodeId: card.id, dir: port.dir, port: port.port })} onmouseleave={() => actions.hoverPin(null)}></div>
+                <div class={port.className} data-node={card.id} data-dir={port.dir} data-port={port.port} data-side={port.side} data-kind={port.kind} title={port.title} role="img" aria-label={port.title} onmouseenter={() => actions.hoverPin({ nodeId: card.id, dir: port.dir, port: port.port })} onmouseleave={() => actions.hoverPin(null)}><ArtifactPin kind={port.kind} /></div>
             </div>
         {/each}
     </div>
