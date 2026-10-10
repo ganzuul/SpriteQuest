@@ -1,3 +1,4 @@
+import type {AddSystemView, AddSystemActions} from './system-authoring-types';
 import type {RecallBadgeView,RecallProjection,RecallActions} from './recall-types';
 import type { WorkflowExampleLesson } from '../src/workflow/examples';
 import type { StoryDocumentsView, StoryDocumentsActions, ConfigureNodeView, ConfigureNodeActions } from './storage-setup-types';
@@ -47,7 +48,7 @@ export interface WorkbenchView {
     nativeFlatCanvas?: boolean; nativeDiagnostic?: string; readOnly?: boolean; graphViews?: GraphViews;
     nodeDetails?: NodeDetailsView | null; outputPreview?: OutputPreviewView | null; runDetails?: RunDetailsView | null; runMeter?: RunMeterView | null;
     commentDetails?: { comment: CommentFrameData; selection: DetailSelection } | null;
-    portalManager?: PortalManagerView | null; subgraphSave?: SubgraphSaveView | null;
+    addSystem?: AddSystemView | null; portalManager?: PortalManagerView | null; subgraphSave?: SubgraphSaveView | null;
     nativeSearch?: NodeSearchView | null; nativePinMenu?: PinMenuView | null; nativeChoices?: readonly SearchChoice[];
     importReview?: ImportReviewView | null;
     documentPrompt?: DocumentPromptView | null;
@@ -56,13 +57,13 @@ export interface WorkbenchView {
     examples?: readonly WorkflowExampleTile[];
     examplesIssue?: string;
     selectionActions?: { copy: boolean; cut: boolean; delete: boolean };
-    menuCapabilities?: { inspect: boolean; rename: boolean; duplicate: boolean; group: boolean; ungroup: boolean; createSubgraph: boolean; saveSubgraph: boolean; comment: boolean; compact: boolean; compactChecked: boolean; fitSelection: boolean; hasSelection: boolean; stop: boolean };
+    menuCapabilities?: { addSystem?: boolean; inspect: boolean; rename: boolean; duplicate: boolean; group: boolean; ungroup: boolean; createSubgraph: boolean; saveSubgraph: boolean; comment: boolean; compact: boolean; compactChecked: boolean; fitSelection: boolean; hasSelection: boolean; stop: boolean };
 }
 export interface WorkbenchActions {
     logoUrl?: string;
     graphViewActions?: GraphViewActions; nodeDetails?: NodeDetailsActions; outputPreview?: OutputPreviewActions; runDetails?: RunDetailsActions;
     commentDetails?: { patch: (selection: DetailSelection, patch: CommentPatch) => DetailEditResponse; command: (selection: DetailSelection, command: CommentCommand) => DetailEditResponse };
-    portalManager?: PortalManagerActions; managePortals?: () => void;
+    addSystem?: AddSystemActions; portalManager?: PortalManagerActions; managePortals?: () => void;
     shelfSubgraph?: (id: string, action: 'delete' | 'open') => void; subgraphSave?: SubgraphSaveActions;
     chooseNative?: (id: string, at?: { x: number; y: number }) => void; nativeSearch?: NodeSearchActions; nativePinMenu?: PinMenuActions; openRunDetails?: () => void;
     setEnabled: (enabled: boolean) => void; command: (name: string) => void;

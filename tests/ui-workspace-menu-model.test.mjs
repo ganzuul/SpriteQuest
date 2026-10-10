@@ -55,3 +55,9 @@ test('owned root activity disables diagnostics even when the selected preview is
  assert.equal(item({...base,rootWorkflow:{...rootWorkflow,ownedBusy:false},outputPreview},'Workflow','run-preview').disabled,false);
 
 });
+
+test('Workflow Add system availability follows root authoring capability from a read-only child and busy root',()=>{
+ assert.equal(item({...base,readOnly:true,menuCapabilities:{addSystem:true},rootWorkflow:{ownedBusy:false}},'Workflow','add-system').disabled,false);
+ assert.equal(item({...base,menuCapabilities:{addSystem:true},rootWorkflow:{ownedBusy:true}},'Workflow','add-system').disabled,true);
+ assert.equal(item({...base,menuCapabilities:{addSystem:false}},'Workflow','add-system').disabled,true);
+});

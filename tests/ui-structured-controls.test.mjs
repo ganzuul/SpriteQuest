@@ -213,3 +213,10 @@ test('rejected numeric edits restore the displayed value from the shared draft',
         assert.equal(editor.value, expected); assert.equal(f.read().text, initial); assert.deepEqual(f.read().changes, []);
     });
 });
+
+test('section rows expose typed Guidance, required and skipped policy with order preserved',async()=>{
+ await fixture('sections','[{"name":"Guide","text":"fallback","kind":"guidance","required":false,"onSkipped":"omit"},{"name":"Text","text":"literal"}]',async f=>{
+  input(f.host,'Section 1 kind','text','change');input(f.host,'Section 1 required',true,'change');input(f.host,'Section 1 skipped source','fallback','change');click(f.host,'Move section 1 down');
+  assert.deepEqual(JSON.parse(f.read().text)[1],{name:'Guide',text:'fallback',kind:'text',required:true,onSkipped:'fallback'});
+ });
+});

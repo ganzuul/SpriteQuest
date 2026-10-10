@@ -7,7 +7,7 @@ export interface WorkspaceMenu { name: string; groups: WorkspaceMenuItem[][] }
 const iconTones: Record<string, WorkspaceMenuIconTone> = {
  new: 'yellow', save: 'blue', 'save-as': 'blue', 'download-document': 'blue', export: 'blue', 'export-archived-workflows': 'blue',
  'delete-selection': 'red', 'reset-layout': 'green', theme: 'purple', 'add-node': 'blue', 'details-selection': 'blue',
- 'create-subgraph': 'purple', 'save-subgraph': 'blue', 'comment-selection': 'yellow', 'add-comment': 'yellow', 'manage-portals': 'purple',
+ 'add-system': 'purple', 'create-subgraph': 'purple', 'save-subgraph': 'blue', 'comment-selection': 'yellow', 'add-comment': 'yellow', 'manage-portals': 'purple',
  'validate-workflow': 'green', 'review-host-result': 'blue', 'stop-workflow': 'red', 'run-preview': 'green', configure: 'blue',
  'story-documents': 'teal', 'memory-recall-menu': 'purple', 'recall-queue-selected': 'green', 'recall-queue-all': 'green',
  'recall-cancel-selected': 'red', 'recall-cancel-all': 'red', 'memory-recall': 'purple', help: 'blue',
@@ -44,6 +44,7 @@ export function workspaceMenus(view: WorkbenchView, panels: WorkspaceMenuPanels 
   [check('Select tool','select-tool',view.camera?.mode !== 'pan',false,'radio'),check('Pan tool','pan-tool',view.camera?.mode === 'pan',false,'radio'),check('Compact cards','compact-selection',!!c.compactChecked,!c.compact)]
  ]},
  {name:'Workflow',groups:[
+  [row('Add system…','add-system','subgraph',!c.addSystem || busy)],
   [check('Enable Lattice','enable-workflow',!!view.enabled,!root)],
   [row('Validate workflow','validate-workflow','check',!root),row('Review host result','review-host-result','details',!root?.nodes?.some(node=>node.terminal)),row('Stop workflow','stop-workflow','stop',!c.stop)],
   [row('Run to current output','run-preview','run',!preview?.runHere?.enabled || !!preview?.busy || busy),row('Run details…','run-details','details',!view.runDetails)],

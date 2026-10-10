@@ -1,3 +1,5 @@
+import { prepareAddSystem, projectSystemAuthoring } from '../workflow/system-authoring.js?v=0.27.0';
+import { preflightSystemViews, captureSystemPresentation, refreshSystemPresentation, restoreSystemViews } from './system-authoring-views.js?v=0.27.0';
 import {createRecallCommands} from './recall-commands.js?v=0.27.0';
 import {projectRecallView} from './recall-projection.js?v=0.27.0';
 import { prepareIterationBindingOverride } from './iteration-bindings.js?v=0.27.0';
@@ -64,7 +66,8 @@ let graphViews = null, workspacePrepared = null, editorDraw = null, rootRunEpoch
 let documentTransition = false, libraryRevision = 0, restoringEditor = false, canvasTraceRows = null;
 let viewSaveTimer = null, pinnedPreview = null, selectedPreview = null, nativeWireBridge = null, nativeCatalog = null, positionEdit = null;
 let nativeGroupPresenter = null, detachedClip = null, workspaceIssue = '';
-let pendingSubgraphSave = null;
+let pendingSubgraphSave = null, pendingAddSystem = null;
+const systemPresentationEffects = new WeakMap(), pendingSystemPresentation = new WeakMap();
 let workflowActivityUnsubscribe = null;
 let pendingDocumentPrompt = null;
 let workflowFiles = null, documentCommands = null, fileStorageIssue = '';
@@ -237,6 +240,7 @@ function activateEditorDraw() {
     // effect, while the Canvas must still reflect the current validated view.
     applyPendingCommentPresentation();
     applyPendingSubgraphPresentation();
+    applyPendingSystemPresentation();
     const editor = graphViews.readEditor();
     editorDraw = projectEditorDraw(editor); canvasTraceRows=null;
     replaceNativeBridge();
@@ -444,7 +448,7 @@ function setCanvasGraph({ cancelRun = true } = {}) {
     documentTransition = false;
     uiEpoch++; selected = null; selectedKind = null; pinnedPreview = null; selectedPreview = null;
     canvas?.cancelGesture(); nativeWireBridge?.cancel('root-change'); cancelImportReview();
-    pendingSubgraphSave = null;
+    pendingSubgraphSave = null; pendingAddSystem = null; workbench?.update({ addSystem: null });
     workbench.update({ graphViews: undefined, portalManager: null, subgraphSave: null, nodeDetails: null, commentDetails: null, outputPreview: null, nativeChoices: [], nativeSearch: null, nativePinMenu: null });
     if (prepareWorkspaceDocument()) {
         const created = createGraphViewSession({ root: current, activationId: String(uiEpoch), ...workspacePrepared, persisted: activeWorkspaceViews(), initialCamera: current.view });
@@ -490,6 +494,7 @@ function build() {
         resizeStart: () => canvas?.cancelGesture(), resizeDetails,
         graphViewActions, nodeDetails: nodeDetailsActions, commentDetails: commentDetailsActions, outputPreview: outputPreviewActions, runDetails: runDetailsActions,
         chooseNative: chooseNativeNode, managePortals: () => openPortalManager(), shelfSubgraph: shelfSubgraphAction,
+        addSystem: { close() { pendingAddSystem = null; workbench.update({ addSystem: null }); }, preview: previewAddSystem, submit: submitAddSystem },
         subgraphSave: { close() { pendingSubgraphSave = null; workbench.update({ subgraphSave: null }); }, save: saveSubgraphToShelf },
         documentPrompt: { choose: chooseDocumentPrompt },
         recall: recallActions, storyDocuments: storyDocumentsActions, configureNode: configureNodeActions,
@@ -700,6 +705,7 @@ function menuCommandAction(name) {
         'clear-selection': () => { canvas.setMulti([]); canvas.select(null); },
         'details-selection': allowed('inspect', () => showSettings({ ...canvas.selection })),
         'rename-selection': allowed('rename', () => { const node = editorDraw.nodes[canvas.selection.id]; return ['subgraph-input', 'subgraph-output'].includes(node.type) ? focusBoundaryLabel(node.id) : focusAlias(node); }),
+        'add-system': allowed('addSystem', () => openAddSystem()),
         'save-subgraph': allowed('saveSubgraph', () => openSubgraphSave(canvas.selection.id)),
         'center-selection': allowed('hasSelection', () => canvas.centerSelection()),
         'manage-portals': () => openPortalManager(),
@@ -727,6 +733,7 @@ function selectionMenuCapabilities() {
     const ordinary = nodes.filter(item => item && !isCommentFrame(item));
     const activity = workflowRuntime.getNativeWorkflowController?.()?.activity?.();
     return {
+        addSystem: rootSystemWritable(),
         inspect: !!node && canvas.multi.size < 2,
         rename: !!node && canvas.multi.size < 2 && (boundary ? editable : !isCommentFrame(node) && !!editorDraw.nativeCards?.[node.id]),
         duplicate: editable && copyable,
@@ -795,7 +802,7 @@ function hookHistory() {
     if (historyHooked) return;
     historyHooked = true;
     onGraphTouched((g, options) => { if (options?.history !== false) H.noteChange(g); if (g === current) { syncNativeRevision('Workflow edited'); renderDocumentState(); } });
-    H.onHistoryChange((g, event) => { handleCommentHistory(g, event); handleSubgraphHistory(g, event); if (g === current) paintHistory(); });
+    H.onHistoryChange((g, event) => { handleCommentHistory(g, event); handleSubgraphHistory(g, event); handleSystemHistory(g, event); if (g === current) paintHistory(); });
 }
 
 function historyEditContext() {
@@ -1847,4 +1854,73 @@ function ensureDocumentCommands() {
     if (fileStorageIssue) documentCommands.storageIssue(fileStorageIssue);
     Promise.resolve(workflowFiles.ready).then(result => { if (result?.ok === false) documentCommands?.storageIssue(result.error.message); if (documentCommands) renderDocumentState(); }, () => documentCommands?.storageIssue('Recent workflow files could not be persisted in this browser.'));
     return documentCommands;
+}
+
+function rootSystemWritable() {
+    return isOpen() && !!graphViews && activeEditRoot() === current && current?.schema === 3 && current.runtime === 2 && current.mode === 'native-unified' && graphViews.readEditor().view.identity.kind !== 'library' && !documentTransition && !workflowState.busy && !workflowRuntime.getNativeWorkflowController?.()?.activity?.()?.busy;
+}
+function openAddSystem() {
+    if (!rootSystemWritable()) return { ok: false, error: { code: 'VIEW_INACTIVE', message: 'Main is unavailable for system editing.' } };
+    const origin = captureEditor(true); if (!origin.ok) return origin;
+    const context = captureGraphEditContext(current, () => ({ sessionId: graphViews?.readEditContext().sessionId ?? 'inactive', viewPath: [], readOnly: !rootSystemWritable() || !editorCurrent(origin.data) })); if (!context.ok) return context;
+    const entries = L.getSubgraphShelfEntries(), library = L.loadSubgraphLibrary(); if (!entries.ok) return entries; if (!library.ok) return library;
+    const projected = projectSystemAuthoring(current, entries.data.map(definition => ({ definition, snapshots: library.data.definitions }))); if (!projected.ok) return projected;
+    const key = crypto.randomUUID(); pendingAddSystem = { key, origin: origin.data, context: context.data, libraryRevision, librarySignature: JSON.stringify(library.data), picker: projected.data, prepared: null };
+    workbench.update({ addSystem: { ...projected.data, key } }); return { ok: true, data: { key } };
+}
+function previewAddSystem(key, draft) {
+    const pending = pendingAddSystem;
+    if (!pending || pending.key !== key || !editorCurrent(pending.origin) || pending.libraryRevision !== libraryRevision || !systemShelfCurrent(pending)) return { ok: false, error: { code: 'STALE_CONTEXT', message: 'The graph view or saved library changed. Reopen Add system.' } };
+    pending.prepared = null;
+    const choice = pending.picker.choices.find(item => item.key === draft.choiceKey); if (!choice) return { ok: false, error: { code: 'INVALID_DEFINITION', message: 'Choose the captured saved system revision.' } };
+    const prepared = prepareAddSystem(current, { definition: choice.definition, snapshots: choice.snapshots, graphPoint: { x: 120, y: 100 }, inputs: draft.inputs, outputs: draft.outputs, parameterOverrides: draft.parameterOverrides, ...(draft.guidance ? { guidance: draft.guidance } : {}) }); if (!prepared.ok) return prepared;
+    const views = prepareSystemWorkspace(prepared.data.candidate); if (!views.ok) return views;
+    const before = graphViews.serialize(); if (!before.ok) return before;
+    const preflight = preflightSystemViews(prepared.data.candidate, views.data, before.data, prepared.data.instanceId); if (!preflight.ok) return preflight;
+    pending.prepared = prepared;
+    const describe = (nodeId, portId) => {
+        if (nodeId === prepared.data.instanceId) return choice.name + ' · ' + (choice.definition.interface.find(port => port.id === portId)?.label ?? portId);
+        const node = prepared.data.candidate.nodes[nodeId];
+        if (node?.operation === 'compose' && (portId === 'out' || portId.startsWith('section.'))) return (node.alias || node.title || 'Compose Guidance') + ' · ' + (portId === 'out' ? 'Output' : portId.slice(8) + ' section');
+        return pending.picker.pins.find(pin => pin.nodeId === nodeId && pin.portId === portId)?.label ?? node?.alias ?? node?.title ?? node?.operation ?? 'System';
+    };
+    const connections = prepared.data.addedEdgeIds.map(id => { const edge = prepared.data.candidate.wires[id]; return describe(edge.from, edge.fromPort) + ' → ' + describe(edge.to, edge.toPort) + (prepared.data.preview.some(change => change.kind === 'guidance' && change.nodeId === edge.to && edge.toPort === 'section.' + change.sectionName) ? ' → Generate Reply' : ''); });
+    return { ok: true, data: { connections, changes: prepared.data.preview } };
+}
+function submitAddSystem(key) {
+    const pending = pendingAddSystem;
+    const reject = message => { workbench.update({ addSystem: pending ? { ...pending.picker, key: pending.key, error: message } : null }); return { ok: false, error: { code: 'STALE_CONTEXT', message } }; };
+    if (!pending || pending.key !== key || !pending.prepared?.ok || !editorCurrent(pending.origin) || pending.libraryRevision !== libraryRevision || !systemShelfCurrent(pending)) return reject('The graph view or saved library changed. Reopen Add system.');
+    const prepared = pending.prepared, views = prepareSystemWorkspace(prepared.data.candidate); if (!views.ok) return reject(views.error.message);
+    persistGraphViews(true); const before = graphViews.serialize(); if (!before.ok) return reject(before.error.message);
+    const preflight = preflightSystemViews(prepared.data.candidate, views.data, before.data, prepared.data.instanceId); if (!preflight.ok) return reject(preflight.error.message);
+    const beforeState = commentDocumentState(current), receipt = H.capturePresentationStep(current);
+    const result = commitGraphEdit(current, { ...prepared.data, context: pending.context }, graphDocumentHooks); if (!result.ok) return reject(result.error.message);
+    const afterState = commentDocumentState(current), restored = restoreSystemViews(graphViews, preflight.data.after.views.filter(view => view.identity.kind === 'root' || view.identity.kind === 'instance' && view.identity.instancePath[0] === prepared.data.instanceId), preflight.data.after.activeKey);
+    if (!restored.ok) return reject(restored.error.message);
+    pendingAddSystem = null; workbench.update({ addSystem: null }); activateEditorDraw(); canvas.fit({ avoidShelf: true }); persistGraphViews(true);
+    const handle = Object.freeze({}), effect = captureSystemPresentation(before.data, graphViews.serialize().data, prepared.data.instanceId);
+    if (H.attachPresentationEffect(current, { receipt, effect: handle, beforeState, afterState })) systemPresentationEffects.set(handle, { root: current, effect });
+    else toast('The system tab layout could not be attached to this Undo step.', 'error');
+    return result;
+}
+function handleSystemHistory(graph, event) {
+    const stored = event?.effect && systemPresentationEffects.get(event.effect); if (stored?.root !== graph || !['undo', 'redo'].includes(event.direction)) return;
+    if (graphViews?.readRoot() === graph) refreshSystemPresentation(stored.effect, graphViews.serialize().data, event.direction);
+    pendingSystemPresentation.set(graph, { snapshots: stored.effect[event.direction === 'undo' ? 'before' : 'after'].views, activeKey: stored.effect[event.direction === 'undo' ? 'before' : 'after'].activeKey });
+}
+function applyPendingSystemPresentation() {
+    if (!graphViews) return; const graph = graphViews.readRoot(), pending = pendingSystemPresentation.get(graph); if (!pending) return;
+    const restored = restoreSystemViews(graphViews, pending.snapshots, pending.activeKey); if (restored.ok) pendingSystemPresentation.delete(graph); else toast(restored.error.message, 'error');
+}
+
+function prepareSystemWorkspace(candidate) {
+    const prepared = prepareWorkspaceViews(candidate, workspaceInputs()); if (!prepared.ok) return prepared;
+    const library = L.loadSubgraphLibrary(); if (!library.ok) return library;
+    const inspected = prepareLibraryViews(candidate.id, { ...library.data.definitions, ...(candidate.definitions ?? {}) }); if (!inspected.ok) return inspected;
+    prepared.data.navigation.push(...inspected.data.navigation); prepared.data.preparedViews.push(...inspected.data.preparedViews);
+    return prepared;
+}
+function systemShelfCurrent(pending) {
+    const library = L.loadSubgraphLibrary(); return library.ok && JSON.stringify(library.data) === pending.librarySignature;
 }

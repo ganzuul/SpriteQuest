@@ -35,6 +35,7 @@ function fixture(graph = siblingWorkflow()) {
         canvas: { selection: null, multi: new Set(), wireMulti: new Set() }, selected: null, selectedKind: null,
         operationFor, isCommentFrame, readNodePresentation, groupMembers, definitionRefKey, prepareCreateFromSelection, captureRelocatedSubgraphViews, createCommentFrame, prepareCommentEdit, makeClip, makeDefinitionClip, readClip, prepareClipPaste, H, captureGraphEditContext, prepareQualifiedScopeEdit, editorCaptures: new WeakMap(), workspaceRevision: 0, isOpen: () => true, activeEditRoot: () => graph, readGraphEditContext: () => session.readEditContext(), graphDocumentHooks: {}, workbench: { focusCommentTitle() {}, update() {} }, persistGraphViews() {}, toast() {}, workflowState: { busy: false }, workflowRuntime: { getNativeWorkflowController: () => ({ activity: () => null }) } };
     const documentToken = Object.freeze({}); env.documentSession = { capture: () => documentToken };
+    env.documentTransition = false; env.rootSystemWritable = actual('rootSystemWritable', env);
     env.canCreateSubgraph = actual('canCreateSubgraph', env);
     env.selectionMenuCapabilities = actual('selectionMenuCapabilities', env);
     env.stopOwnedWorkflow = actual('stopOwnedWorkflow', env);
