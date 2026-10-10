@@ -4,7 +4,7 @@
 
 All nine linked worktrees are included in the integration. The user initially excluded the active compact shelf, then included its completed scale, opacity, bold-label and icon work. The user subsequently requested hands-on testing of merged and pushed Main before cleanup. **Keep all nine checkouts, source branches and recovery archives until the user confirms cleanup.**
 
-Starting local and GitHub Main: `7d1c0cf8b474484622152b7b14b86cce51ed8822`, release 0.27.0. Candidate: `codex/integrate-outstanding-2026-10-10` in the primary `F:/git/SillyCanvas` checkout. Source merges were sequential; independent intent audits and reviews ran in parallel. Candidate verification is complete. Publication uses a fast-forward and normal push; the preservation directory's `handoff.json` records the confirmed local/GitHub SHA and final bundle hash after publication. Cleanup remains deferred until user acceptance.
+Starting local and GitHub Main: `7d1c0cf8b474484622152b7b14b86cce51ed8822`, release 0.27.0. Source merges were sequential on `codex/integrate-outstanding-2026-10-10`; independent intent audits and reviews ran in parallel. **Verified integration `6d9d0cc6464f9048aa1921340f106c812968d6a0` was fast-forwarded into local Main and normally pushed to GitHub.** Network-enabled GitHub CLI confirmed that exact SHA; local/origin Main had zero divergence. The primary `F:/git/SillyCanvas` checkout is now on `main`. This documentation receipt follows the functional integration; the preservation directory's `handoff.json` records the final confirmed local/GitHub SHA and complete bundle hash. Cleanup remains deferred until user acceptance.
 
 ## Source accounting
 

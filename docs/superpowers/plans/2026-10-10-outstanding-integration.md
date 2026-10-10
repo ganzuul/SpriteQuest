@@ -73,7 +73,7 @@
 - [x] Run `npm run smoke:install`, current documentation capture/check, and relevant visual/interaction captures. Check provider requests remain absent in synthetic checks.
 - [x] Obtain independent source/semantic and UI/cross-feature reviews; fix material findings and rerun affected checks.
 - [x] Verify every included source tip is reachable or explicitly accounted for and Main-local original files are preserved.
-- [ ] Commit the verified candidate and record exact commands/results, conflict decisions and recovery locations.
+- [x] Commit the verified candidate and record commands/results, conflict decisions and recovery locations. Integration commit: `6d9d0cc6464f9048aa1921340f106c812968d6a0`.
 
 ## Task 5: Publish Main for testing; defer cleanup until acceptance
 
@@ -82,8 +82,8 @@
 **Interfaces:** Consumes a verified candidate; produces pushed Main with all nine linked checkouts retained for user testing. Removing those checkouts is a later phase requiring explicit user confirmation.
 
 - [x] Recheck GitHub Main and local source state for concurrent changes; reconcile anything new before promotion. GitHub Main remains `7d1c0cf`; all ten archives and nine source checkouts freshly verified.
-- [ ] Fast-forward local Main to the verified candidate and publish through a normal push for the user's testing. Verify GitHub SHA with network-enabled GitHub CLI.
-- [ ] Hand the merged and pushed result to the user for hands-on testing. Keep every linked checkout and recovery branch intact until the user confirms cleanup.
+- [x] Fast-forward local Main to the verified candidate and publish through a normal push for the user's testing. GitHub SHA confirmed with network-enabled GitHub CLI: `6d9d0cc6464f9048aa1921340f106c812968d6a0`; local and origin Main have zero divergence.
+- [x] Prepare the merged and pushed handoff and hands-on checklist in the integration report. All nine linked checkouts and recovery branches remain intact until the user confirms cleanup.
 - [ ] After the user's confirmation: verify preserved archives and hashes before closing the nine included linked worktrees. Prefer native archive when available for the owning attachment; otherwise use exact checked Git worktree paths backed by the preservation archives. Keep recovery branch refs.
 - [ ] After cleanup: recheck `git worktree list`, Main status and source accounting. Confirm only the primary checkout remains.
 
