@@ -61,7 +61,7 @@ function workspaceStarter(starter) {
     }
     return graph;
 }
-/** Prepare an independent starter document; activation and arming belong to callers. */
+/** Prepare an independent starter document; activation and enabling belong to callers. */
 export function installStarter(id) {
     const graph = starterGraph(id), suffix = globalThis.crypto?.randomUUID?.() ?? String(Date.now()) + '-' + Math.random().toString(36).slice(2);
     const ids = Object.fromEntries(Object.keys(graph.nodes).map(nodeId => [nodeId, nodeId + '-' + suffix]));

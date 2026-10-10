@@ -2,7 +2,7 @@
 
 Date: 2026-10-10.
 
-Status: interaction direction approved; design spec and implementation plan prepared for review. This approval covers document creation, not implementation.
+Status: design and worktree integration approved by the user; implemented on `codex/canvas-memory-recall`. Validation is recorded in the companion plan.
 
 Companion: [Implementation plan](../plans/2026-10-10-canvas-memory-recall.md).
 

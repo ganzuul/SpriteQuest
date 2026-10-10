@@ -63,7 +63,7 @@ test('portable export removes local connection references and Open accepts that 
     expect(await page.evaluate(() => window.canvasHarness.graph.id)).toBe(file.graph.id);
 });
 
-test('New opens a detached unified starter and preserves Arm', async ({ page }) => {
+test('New opens a detached unified starter and preserves Enable Lattice', async ({ page }) => {
     await load(page); const before = await snapshot(page); await menu(page, 'New workflow');
     await expect.poll(() => page.evaluate(() => window.canvasHarness.graph.id)).not.toBe(before.graph.id);
     const after = await snapshot(page); expect(after.graph.name).toBe('Untitled workflow');

@@ -132,7 +132,7 @@ async function captureFresh(env) {
         const h = window.canvasHarness, settings = h.S.settings(), graph = h.graph;
         const { validateWorkflow } = await import('/src/workflow/contracts.js?v=' + h.version);
         const checked = validateWorkflow(graph);
-        if (!h.freshSettingsAbsent || graph.name !== 'Structured guidance' || graph.schema !== 3 || graph.runtime !== 2 || !checked.ok || checked.data.callBound !== 0 || settings.enabled || settings.nativeBindings.preGraphId !== null || settings.nativeBindings.postGraphId !== null || Object.hasOwn(settings, 'workflowMode') || h.providerCalls() !== 0) throw Error('Actual fresh launch did not use the disabled unassigned zero-request current default.');
+        if (!h.freshSettingsAbsent || graph.mode !== 'native-unified' || graph.schema !== 3 || graph.runtime !== 2 || !checked.ok || checked.data.callBound !== 0 || settings.enabled || Object.hasOwn(settings, 'nativeBindings') || Object.hasOwn(settings, 'workflowMode') || h.providerCalls() !== 0) throw Error('Actual fresh launch did not use the disabled zero-request current default.');
         if (document.querySelector('.pc-node-output,.pc-port-key,.pc-port-stage,.pc-tok') || ['sillyCanvas','promptCanvas','comfyTavernGenerationInterceptor'].some(key => Object.hasOwn(window,key))) throw Error('A retired surface or global survived fresh startup.');
         await h.settle(); await document.fonts.ready;
         return { id: graph.id, mode: graph.mode, nodeIds: Object.keys(graph.nodes), definitionRefs: Object.keys(graph.definitions), fresh: true, hostCss: h.hostCss, providerCalls: h.providerCalls() };

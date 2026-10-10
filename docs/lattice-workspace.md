@@ -8,7 +8,9 @@ Start with one unified graph around ordinary SillyTavern generation. Then explor
 
 Install from `https://github.com/MentallyQuill/Lattice` in SillyTavern's **Extensions → Install extension**, leaving the branch field blank. Reload, then open the LATTICE logo on the left of the chat bar or type `/lattice`.
 
-Fresh launch opens **Unified story workflow**, with workflows disabled and unassigned. Existing saved selections are retained. Use **File → Open examples…** to install another copy or a different example. Opening, installing, or importing makes no provider request.
+Fresh launch opens **Unified story workflow**, with Lattice disabled. Existing installations restore their recovery draft; older saved workflows are available through **File → Recover previous workflows**. Use **File → Open examples…** for an independent copy or a different example. Opening and importing make no provider request and do not change **Enable Lattice**.
+
+Use **File → Save workflow** or **Save As…** to save the editable document to disk. Browsers without direct file access offer **Download JSON…** instead. A recovery draft retains committed work across reloads; it does not save the file on disk. **Open Recent** reopens previously accessed files in supported browsers. See [save, import, and share](operators-manual.md#save-import-and-share) for modified-document prompts and recovery.
 
 The default **Ember** theme follows SillyTavern's panel, text, control and quote colors, with a neutral canvas and translucent node fills. **Tools → Theme and colours** offers eight themes: Ember, Lattice, Ash, Graphite, Slate, Obsidian, Harbor and Signal. Choose one or customize its colors and look.
 
@@ -19,7 +21,7 @@ The default **Ember** theme follows SillyTavern's panel, text, control and quote
 The starter is **On Send → Generate Reply · SillyTavern → Review / Publish**. It makes no auxiliary model requests; the normal native reply still uses your SillyTavern connection.
 
 1. Open the story and select its native character in SillyTavern. For the Story-2 example, use default-user and the Story-2 chat.
-2. Choose **Workflows → Assign unified workflow**, then enable **Arm**.
+2. Keep the starter open, then select **Enable Lattice**.
 3. Send a player message in SillyTavern normally. The starter waits for that generation’s completed Draft and records its review result.
 4. Select **Review / Publish · Host result** in Preview. Inspect the original and candidate; Apply preserves the original as a swipe and publishes the chosen result, while Reject leaves it alone. The unchanged starter is useful for learning the review path.
 5. Open a unified example from **File → Open examples…** to add preparation, prose editing or notes. Configure every model node and For Each helper role in Details before sending. Authorize document targets in **Tools → Workflow Data…** when the example needs them.
@@ -43,7 +45,7 @@ Compose (JSON source) → JSON Decode → Select Fields → Compose (Guidance) �
 
 *The captured example adds tone and uses synthetic harbor-scene material. The supplied starter begins with direction and constraint.*
 
-This example needs no connection profile or existing reply. A manual run previews the brief. To use it with normal sends, choose **Workflows → Assign legacy pre phase** and enable workflows. Send executes the configured pre workflow and installs its optional guidance for that generation.
+This example needs no connection profile or existing reply. A manual run previews the brief. To use it with normal sends, keep this Pre document open and select **Enable Lattice**. Send executes the open Pre workflow and installs its optional guidance for that generation.
 
 ## Propose an exact legacy reply edit
 

@@ -45,7 +45,7 @@ function getFastBridge() { return fastBridge ??= createFastHostBridge(getFastCon
 export const fastConnectionState = () => getFastConnectionRegistry().snapshot();
 export const fastConnectionPreview = node => getFastBridge().preview(node);
 export function callCount(graph) { const checked = validateWorkflow(graph); return checked.ok ? checked.data.callBound : 0; }
-/** Send follows the one open document; Arm remains a separate host preference. */
+/** Send follows the one open document; Enable Lattice remains a separate host preference. */
 export function sendWorkflowState() {
     const current = activeWorkflow(), mode = safe(() => Object.getOwnPropertyDescriptor(current ?? {}, 'mode')?.value), unified = mode === 'native-unified';
     const checked = current ? validateWorkflow(current, unified ? {} : { phase: 'pre' }) : null;

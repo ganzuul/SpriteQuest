@@ -15,7 +15,7 @@ Reflect, Internalize and State produce candidate records. Express Behavior/Atten
 
 ## Native workflow examples
 
-The **Workflow examples…** picker includes three Introspection starters. Each install creates an independent editable graph, leaves model connections unresolved, and neither assigns a phase nor arms the extension.
+**File → Open examples…** includes three Introspection starters. Opening one makes an independent editable copy the active document, leaves model connections unresolved, and does not change **Enable Lattice**.
 
 | Native workflow | Phase and flow | Maximum auxiliary requests |
 | --- | --- | --- |
@@ -23,7 +23,7 @@ The **Workflow examples…** picker includes three Introspection starters. Each 
 | [Internalize and commit](../examples/introspection/native/internalize-and-commit.json) | Post: Memory Read State + Memory Read Events → Internalize Experience → Memory Commit | 1 Analysis |
 | [Consequence clock](../examples/introspection/native/consequence-clock.json) | Post: Memory Read State + Memory Read Events → State Track → Memory Commit | 0 |
 
-Choose a local **Analysis** connection before running the first two. Consequence clock needs no model profile. Run to here inspects a selected output's dependencies without publishing guidance or writing memory. A manual Pre Run computes guidance; assigning Pre and arming causes Send to run the graph again and publish the bounded result. The normal SillyTavern reply is an additional request.
+Choose a local **Analysis** connection before running the first two. Consequence clock needs no model profile. Run to here inspects a selected output's dependencies without publishing guidance or writing memory. A manual Pre Run computes guidance; keeping that Pre document open and enabling Lattice causes Send to run it again and publish the bounded result. The normal SillyTavern reply is an additional request.
 
 **A successful full Post root Run with Memory Commit writes actor memory.** Commit has a required `proposal` Data input, no output pin, and a recorded Host result. Only one Commit is allowed in a Post root graph, and it settles after every branch succeeds. A failed/cancelled run, preview, target Run, dry-run, or public `runWorkflow` call cannot settle it. Memory Read/Recall/Commit cannot appear inside reusable subgraphs. State can appear in a subgraph with an explicit `state` input.
 

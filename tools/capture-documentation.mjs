@@ -241,9 +241,7 @@ try {
     await page.getByRole('menuitem', { name: 'Add node…', exact: true }).click();
     await shot('node-search');
     await page.keyboard.press('Escape');
-    await page.getByRole('button', { name: 'Workflows', exact: true }).click();
-    await page.getByRole('menuitem', { name: 'Assign pre phase', exact: true }).click();
-    if (await page.evaluate(() => window.canvasHarness.S.settings().nativeBindings.preGraphId) !== 'structured-guidance') throw new Error('The Workflows menu did not assign the selected pre workflow.');
+    if (await page.evaluate(() => window.canvasHarness.S.activeWorkflow().id) !== 'structured-guidance') throw new Error('Opening did not activate the current pre workflow document.');
     await activate('literal-cleanup');
     await run();
     await select('text-rules');

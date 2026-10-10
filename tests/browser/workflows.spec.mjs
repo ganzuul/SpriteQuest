@@ -195,7 +195,7 @@ test('formation request summary follows scan mode and additional reachable repai
     await expectBound(page, 2);
 });
 
-test('open an example and independently bind its model nodes without arming it', async ({ page }) => {
+test('open an example and independently bind its model nodes without enabling it', async ({ page }) => {
     await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
     await page.evaluate(() => {
         const c = window.canvasHarness.context;
@@ -387,7 +387,7 @@ test('manual pre Run and actual Send retain bounded addressed request evidence',
     await runRoot(page,'guidance'); await expectRequests(page,1,2);
     const manual=await page.evaluate(async()=>{const h=window.canvasHarness,r=(await import('/src/run.js?v='+h.version)).getNativeWorkflowController().lastResult();return {ok:r.ok,calls:r.actualCalls,status:r.recording.status,raw:('calls' in r)||('artifact' in r)||('reports' in r),published:Object.keys(h.context.extensionPrompts).some(k=>k.startsWith('lattice:guidance:'))};});
     expect(manual).toEqual({ok:true,calls:1,status:'completed',raw:false,published:false});
-    await page.getByLabel('Arm',{exact:true}).check(); await page.evaluate(async()=>{const c=window.canvasHarness.context;await window.latticeGenerationInterceptor(c.chat,8192,()=>{},'normal');});
+    await page.getByLabel('Enable Lattice',{exact:true}).check(); await page.evaluate(async()=>{const c=window.canvasHarness.context;await window.latticeGenerationInterceptor(c.chat,8192,()=>{},'normal');});
     const automatic=await page.evaluate(async()=>{const h=window.canvasHarness,r=(await import('/src/run.js?v='+h.version)).getNativeWorkflowController().lastAutomaticResult().result;return {ok:r.ok,calls:r.actualCalls,status:r.recording.status,usage:r.recording.units.find(u=>u.attempts).request.usage.completion_tokens,published:Object.values(h.context.extensionPrompts).some(p=>p.value==='Send guidance.')};});
     expect(automatic).toEqual({ok:true,calls:1,status:'completed',usage:17,published:true}); expect(await page.evaluate(()=>window.workflowRequests.length)).toBe(2);
 });
@@ -418,7 +418,7 @@ test('automatic Send follows its current pre document through close and reopen',
     await expect(page.getByText('Send while closed.',{exact:true})).toHaveCount(0);
 });
 
-test('Send indicator and Arm messages follow the open document mode', async ({ page }) => {
+test('Send indicator and Enable Lattice messages follow the open document mode', async ({ page }) => {
     await reviewFixture(page); await installWorkflow(page,'Scene guidance');
     await page.evaluate(() => { const h = window.canvasHarness; h.graph.name = 'Open native guidance'; h.S.settings().enabled = true; h.S.touchGraph(h.graph); document.dispatchEvent(new CustomEvent('pc-state')); });
     const indicator = page.locator('#pc-sendbar');

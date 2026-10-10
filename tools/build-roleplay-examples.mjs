@@ -9,6 +9,7 @@ const catalog = JSON.parse(await readFile(new URL('docs/research/2026-10-09-latt
 const directory = new URL('examples/roleplay/', root);
 const clone = value => structuredClone(value);
 const check = (result, label) => { if (!result.ok) throw new Error(`${label}: ${result.error.code}: ${result.error.message}`); return result.data; };
+const friendlyCopy = text => text.replace(/\bassigned, armed\b/gi,'open and enabled').replace(/\barmed native-send\b/gi,'enabled Send').replace(/\barmed\b/gi,'enabled');
 const nodeNotes = detail => [
     `${detail.alias} (${detail.key})`,
     `Purpose: ${detail.purpose}`,
@@ -18,6 +19,9 @@ const nodeNotes = detail => [
 
 function materializeNode(node, detail) {
     const base = node.type === 'workflow' ? operationDefaults(node.operation, { mode: detail?.settings?.mode ?? node.mode }) : {};
+    // Teaching examples resolve their explicit model roles; current-node defaults must not shadow those bindings.
+    if (Object.hasOwn(base, 'profileId')) base.profileId = null;
+    if (node.operation === 'scene-context') delete base.visibilityMode;
     return { ...base, ...clone(node), ...clone(detail?.settings ?? {}), ...(detail?.alias ? { alias: detail.alias } : {}), enabled: true, w: 260 };
 }
 
@@ -53,7 +57,7 @@ function materializeDefinitions(entry) {
     for (const item of entry.subgraphs ?? []) {
         const draft = clone(item.nativeDefinitionDraft);
         const details = entry.nodeDetails.filter(detail => detail.definitionId === draft.id && detail.operation !== 'subgraph');
-        draft.description = details.map(nodeNotes).join('\n\n');
+        draft.description = friendlyCopy(details.map(nodeNotes).join('\n\n'));
         draft.body.nodes = Object.fromEntries(Object.entries(draft.body.nodes).map(([id, node]) => {
             const detail = details.find(detail => (detail.nativeNodeId ?? detail.key.split(/[./]/).at(-1)) === id);
             return [id, materializeNode(node, detail)];
@@ -73,14 +77,14 @@ function materializeGraph(entry, authored, primary, snapshots) {
     const graph = { id: `example-${entry.id}-${phase}`, name: primary ? entry.title : `${entry.title} · ${authored.phase}`, schema: 3, runtime: 2, mode: `native-${phase}`,
         template: { id: entry.id, version: 1 }, roles: {}, nodes: {}, wires: {}, groups: {}, portals: {}, definitions: {}, view: { x: 0, y: 0, zoom: 1 } };
     const details = entry.nodeDetails.filter(detail => detail.phase === authored.phase);
-    graph.description = [entry.goal, `Lesson: ${entry.lesson}`, `Limitations: ${entry.limitation}`,
-        'Opening installs an unassigned copy. Bind local model roles and provide the documented evidence before running.',
+    graph.description = friendlyCopy([entry.goal, `Lesson: ${entry.lesson}`, `Limitations: ${entry.limitation}`,
+        'Opening makes this example the active workflow document. Bind local model roles and provide the documented evidence before running.',
         ...entry.variants.filter(variant => variant.phase === authored.phase).map(variant => `${variant.phase}: at most ${variant.maxCalls} auxiliary calls. ${variant.effect === 'actor-memory' ? 'Writes actor memory on full Run. Inspect local update and save acknowledgment separately; unconfirmed saving is not durable saving.' : 'Preview before publishing or applying.'}`),
         `Try changing:\n${entry.tryChanging.join('\n')}`,
         'Documentation specimen (does not seed chat or actor memory):', `${entry.preview.beforeLabel}: ${entry.preview.before}`, `${entry.preview.afterLabel}: ${entry.preview.after}`,
         ...entry.annotations.map(annotation => `${annotation.title}: ${annotation.text}`),
         ...details.map(nodeNotes),
-    ].join('\n\n');
+    ].join('\n\n'));
     for (const visual of authored.nodes) {
         const detail = details.find(detail => detail.key === visual.id);
         if (!detail) throw new Error(`${entry.id}: missing settings for ${visual.id}`);

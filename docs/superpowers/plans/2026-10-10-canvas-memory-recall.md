@@ -1,6 +1,6 @@
 # Canvas Memory Recall Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Replace artillery vocabulary with clear activation/queue terminology and make recall visible and controllable on nodes, selections, Details, and the Node menu.
 
@@ -32,7 +32,7 @@ Retain the spec's serialized compatibility discriminants and schema/version valu
 
 ## Execution baseline and file ownership
 
-Planning checkout: `F:/git/SillyCanvas`, main `d047477`, `0.26.0`. Product changes are not made by this planning turn.
+Planning checkout: `F:/git/SillyCanvas`, main `d047477`, `0.26.0`. The user subsequently approved integration in an isolated worktree.
 
 At execution, inspect `git status`, active artifacts/worktrees, and current instructions. Use the worktree skill to obtain an isolated implementation checkout. Start from a reviewed baseline that includes the workflow-files active-document lifecycle (`activeWorkflow`, `documentSession.capture/stillCurrent`, activation cancellation). If absent, resolve that integration before Task 1; do not implement an assigned-graph fallback. Adapt to integrated legacy-removal/profile cleanup rather than reverting it. No merge, push, release, or deployment is part of this plan.
 
@@ -58,11 +58,11 @@ Do not assign two workers ownership of `controller.js`, `host.js`, or shared vie
 - Rename live application methods/types to queue terminology: state `queue`, `cancel`, `validateRecallQueueProposal`, `RecallQueueProposal`, and `RecallRequestState`; native `queue`, `cancel`; host `queueRecall`, `cancelRecall`. Update owned callers/tests; old persisted discriminants remain exact values.
 - State `changeQueues(request: {action:'queue'; proposals:readonly RecallQueueProposal[]} | {action:'cancel'; memorySetIds:readonly string[]}): Result<{changedMemorySetIds:readonly string[]}>`. Single actions delegate to it. Compare actor/memorySet/target/uses/consumeOn policy, excluding physical hotkey identity. `cancel(memorySetId:string)` cancels that shared request and its unconsumed claims; absence is an idempotent no-op.
 - `NativeRecallPorts.getActive()` returns `{owner:object, scope:RecallScope, graph:NativeGraph3, signature:string} | null`; `owner` is the exact document activation token supplied through the host by `documentSession.capture()`. Never serialize it. Add native `resetDocument(owner:object|null):void`, delegated by host `resetRecallDocument(owner:object|null):void`. In the existing workflow activation listener, cancel the run and call `resetRecallDocument(documentSession.capture())` even while disabled. A changed owner releases previous slots/listeners/claims immediately; the same exact owner is a no-op.
-- Native `capture():Result<RecallCommandCapture>` returns an opaque application-owned capture; no imported object can substitute for it. Native `changeQueues(capture:RecallCommandCapture, request:{action:'queue'|'cancel'; shortcutNodeIds:readonly string[]}):Result<NativeRecallStatus>` revalidates the exact document/scope/signature, resolves/deduplicates policies, then invokes one state batch. Host delegates as `captureRecall` and `changeRecallQueues`.
+- Native `captureQueueCommand():Result<RecallCommandCapture>` returns an opaque application-owned capture; no imported object can substitute for it. Native `changeQueues(capture:RecallCommandCapture, request:{action:'queue'|'cancel'; shortcutNodeIds:readonly string[]}):Result<NativeRecallStatus>` revalidates the exact document/scope/signature, resolves/deduplicates policies, then invokes one state batch. Host delegates as `captureRecall` and `changeRecallQueues`.
 - `NativeRecallStatus` becomes `{scope:RecallScope|null, version:number, requests:readonly RecallRequestSummary[], shortcuts:readonly RecallShortcutSummary[]}`. Request summaries contain memorySetId, target, uses, consumeOn, queued, remaining, pendingGenerationCount, and pendingState (`null | 'generation' | 'acceptance'`). Shortcut summaries contain nodeId, actorId, memorySetId, validated hotkey and policy. No memory text, owner token, claim object, or private generation IDs are included.
 - Add native `subscribe(listener:()=>void):()=>void`; notify after queue/cancel, reservation/release, complete-success/accepted consumption, reset, and scope changes. Subscribe once in `src/run.js` to dispatch existing `pc-recall-state`; do not recursively notify when unchanged status is merely read. Version changes only when display-relevant state changes.
 
-- [ ] **Step 1: Write failing behavioral tests.** Use fixtures from existing recall suites; pin these assertions:
+- [x] **Step 1: Write failing behavioral tests.** Use fixtures from existing recall suites; pin these assertions:
 
 ```js
 // Test: repeated queue and different shortcuts share the pending request.
@@ -75,15 +75,15 @@ assert.deepEqual(controller.status().data.requests, before);
 
 Add named tests for `conflicting batch leaves every set unchanged`, `capacity overflow changes nothing`, `cancel deduplicates matching shortcuts`, `identical document replacement revokes requests and old capture`, `pending state separates generation from acceptance`, `notifications change once per logical transition`, and `disabled re-enabled scope preserves only current-document unspent queues`. Assert zero provider calls and no exported live state. Preserve first-successful-Recall generation dedup and existing failure/Stop/Reject policies.
 
-- [ ] **Step 2: Run the new suite and relevant existing suites to see the missing API/behavior fail.**
+- [x] **Step 2: Run the new suite and relevant existing suites to see the missing API/behavior fail.**
 
 Run: `node --import ./tools/node-test-host.mjs --test --test-isolation=none tests/workflow-recall-queue-batch.test.mjs tests/workflow-recall-state.test.mjs tests/workflow-recall-nodes.test.mjs tests/workflow-native-recall.test.mjs tests/recall-shortcuts.test.mjs`.
 
-- [ ] **Step 3: Implement the declared interfaces and update existing callers.** Preflight bounded plain-data requests and all policy/capacity checks before changing maps. Read coherent authority once for the batch, then perform callback-free synchronous mutation. Preserve current claim object authority and settlement gates. Changing document owner releases every obsolete slot even when IDs/signatures match. Shortcut registration resolves per-node hotkeys, while queue identity resolves per memory set. Replace current runtime diagnostic messages with Queue/Cancel wording; internal runtime error codes also use queue terminology unless an existing external compatibility contract requires the old code. Keep existing bounds of 64 stored request slots, 1024 activation identities, and 32 live scoped native slots; include deduplication and reclaimable inactive slots in preflight capacity calculation. Queue during a pending generation never releases its claim.
+- [x] **Step 3: Implement the declared interfaces and update existing callers.** Preflight bounded plain-data requests and all policy/capacity checks before changing maps. Read coherent authority once for the batch, then perform callback-free synchronous mutation. Preserve current claim object authority and settlement gates. Changing document owner releases every obsolete slot even when IDs/signatures match. Shortcut registration resolves per-node hotkeys, while queue identity resolves per memory set. Replace current runtime diagnostic messages with Queue/Cancel wording; internal runtime error codes also use queue terminology unless an existing external compatibility contract requires the old code. Keep existing bounds of 64 stored request slots, 1024 activation identities, and 32 live scoped native slots; include deduplication and reclaimable inactive slots in preflight capacity calculation. Queue during a pending generation never releases its claim.
 
-- [ ] **Step 4: Run all six existing Recall suites plus the new suite.** Include `tests/workflow-recall-registration.test.mjs` and `tests/workflow-native-recall-provenance.test.mjs`. Expected: all pass, no skipped new tests and no provider access. Confirm automatic trigger/privacy/provenance regressions remain intact.
+- [x] **Step 4: Run all six existing Recall suites plus the new suite.** Include `tests/workflow-recall-registration.test.mjs` and `tests/workflow-native-recall-provenance.test.mjs`. Expected: all pass, no skipped new tests and no provider access. Confirm automatic trigger/privacy/provenance regressions remain intact.
 
-- [ ] **Step 5: Commit this deliverable alone.** Stage exact owned files and use a focused queue-semantics commit message.
+- [x] **Step 5: Commit this deliverable alone.** Stage exact owned files and use a focused queue-semantics commit message.
 
 ## Task 2: Friendly labels, shared UI projection, and guarded commands
 
@@ -98,7 +98,7 @@ Run: `node --import ./tools/node-test-host.mjs --test --test-isolation=none test
 - `change` validates editor/document/selection identity, reevaluates eligibility for the captured IDs, rejects stale recall captures, and dispatches one native batch. `changed` refreshes projected status once. Empty/ineligible commands are no-ops with friendly reasons, never an all-nodes fallback.
 - Rename integration view property to `enabled`, callback to `setEnabled`, and toolbar text to `Enable Lattice`. Rename Workbench recall view/action property to `recall`. Do not rename persisted settings' existing `enabled` field.
 
-- [ ] **Step 1: Write the projection/adapter/label tests.** Pin shared-set and selection behavior:
+- [x] **Step 1: Write the projection/adapter/label tests.** Pin shared-set and selection behavior:
 
 ```js
 // Test: three selected cards represent one manual request.
@@ -111,13 +111,13 @@ assert.equal(recallActivationLabel('armed'), 'Manual queue');
 
 Also test automatic-only/missing Shortcut, conflicting Shortcut policy, partial target intersection, unrelated/other-actor/nested/library exclusions, disabled state, known-invalid enum labels, inherited read-only capability, zero/mixed selections, and cancelled/replaced editor/document/selection captures. A missing Shortcut never creates a node or a default key. An enabled invalid workflow retains a useful setup reason.
 
-- [ ] **Step 2: Run the three new suites and observe failure.** Run each with `node --import ./tools/node-test-host.mjs tests/<suite>.test.mjs`.
+- [x] **Step 2: Run the three new suites and observe failure.** Run each with `node --import ./tools/node-test-host.mjs tests/<suite>.test.mjs`.
 
-- [ ] **Step 3: Implement the contracts and activation vocabulary.** Format physical-key shortcuts using existing rules. Choose a stable representative Shortcut by sorted node ID after verifying compatible policies; retain all keys/nodes for display. Compare queue policy separately from Recall filters; document that independent selections use different memory-set IDs. Centralize all queue/cancel eligibility in this projection and adapter.
+- [x] **Step 3: Implement the contracts and activation vocabulary.** Format physical-key shortcuts using existing rules. Choose a stable representative Shortcut by sorted node ID after verifying compatible policies; retain all keys/nodes for display. Compare queue policy separately from Recall filters; document that independent selections use different memory-set IDs. Centralize all queue/cancel eligibility in this projection and adapter.
 
-- [ ] **Step 4: Run the new tests, type check, and existing projection/toolbar tests affected by the view renames.** Run `npm run check:types`; expected no errors. Ensure old serialized workflows still parse and show `Recall Shortcut`.
+- [x] **Step 4: Run the new tests, type check, and existing projection/toolbar tests affected by the view renames.** Run `npm run check:types`; expected no errors. Ensure old serialized workflows still parse and show `Recall Shortcut`.
 
-- [ ] **Step 5: Commit the vocabulary/projection/command contracts and their callers/tests.**
+- [x] **Step 5: Commit the vocabulary/projection/command contracts and their callers/tests.**
 
 ## Task 3: Status badges and cheap live canvas updates
 
@@ -125,15 +125,15 @@ Also test automatic-only/missing Shortcut, conflicting Shortcut policy, partial 
 
 **Interfaces:** consume Task 2 `RecallProjection`/`RecallBadgeView`. Add optional `recall?:RecallBadgeView` to `NodeCardData`, `Canvas.setRecallStatus(status:Readonly<Record<string,RecallBadgeView>>):void`, `CanvasLayer.setRecallStatus(status:Readonly<Record<string,RecallBadgeView>>):void`, and `CanvasActions.openRecallDetails(nodeId:string):void`. Keep status in the renderer, separate from saved prepared graph data. Pass it into ordinary node-card drawing and update keyed cards without `setGraph`.
 
-- [ ] **Step 1: Write failing rendering/state tests.** Assert linked Recall/Shortcut badges agree, pending overrides green, disabled removes active badges, compact cards retain badges, and removing a request removes all linked badges. With spies on graph preparation, `setGraph`, and geometry measurement, assert a runtime update invokes none; an active drag continues and card/pin/wire coordinates remain unchanged.
+- [x] **Step 1: Write failing rendering/state tests.** Assert linked Recall/Shortcut badges agree, pending overrides green, disabled removes active badges, compact cards retain badges, and removing a request removes all linked badges. With spies on graph preparation, `setGraph`, and geometry measurement, assert a runtime update invokes none; an active drag continues and card/pin/wire coordinates remain unchanged.
 
-- [ ] **Step 2: Run `tests/canvas-recall-status.test.mjs` directly and the new browser test with `npx playwright test tests/browser/recall-canvas.spec.mjs`.** Expected failures: missing status setter/badge and interaction.
+- [x] **Step 2: Run `tests/canvas-recall-status.test.mjs` directly and the new browser test with `npx playwright test tests/browser/recall-canvas.spec.mjs`.** Expected failures: missing status setter/badge and interaction.
 
-- [ ] **Step 3: Implement the badge and refresh bridge.** Reserve lower-right status space, use 16 CSS px glyph/24 CSS px hit area (44 coarse pointer), and a 10-screen-px minimum painted glyph at zoom 0.25. Give it its own CSS class, green/amber theme tokens, reservation/acceptance markers, tooltip and accessible button name. Stop drag/context shortcut propagation. Badge click/Enter/Space selects the card and opens Memory recall Details; no queue toggle. Preserve compact alias/profile clearance and keyed focus. In the controller, runtime events project and update cards/panels, never prepare the workspace merely to change a badge.
+- [x] **Step 3: Implement the badge and refresh bridge.** Reserve lower-right status space, use 16 CSS px glyph/24 CSS px hit area (44 coarse pointer), and a 10-screen-px minimum painted glyph at zoom 0.25. Give it its own CSS class, green/amber theme tokens, reservation/acceptance markers, tooltip and accessible button name. Stop drag/context shortcut propagation. Badge click/Enter/Space selects the card and opens Memory recall Details; no queue toggle. Preserve compact alias/profile clearance and keyed focus. In the controller, runtime events project and update cards/panels, never prepare the workspace merely to change a badge.
 
-- [ ] **Step 4: Run those tests and existing `tests/canvas-presentation-batch.test.mjs`, `tests/canvas-prepared-only.test.mjs`, and `tests/ui-workspace-preparation.test.mjs`, plus `tests/browser/rendering.spec.mjs` and `tests/browser/node-lod.spec.mjs`.** Retain their behavioral checks if integration moves them. Expected: no geometry, drag, profile, preparation, or focus regression.
+- [x] **Step 4: Run those tests and existing `tests/canvas-presentation-batch.test.mjs`, `tests/canvas-prepared-only.test.mjs`, and `tests/ui-workspace-preparation.test.mjs`, plus `tests/browser/rendering.spec.mjs` and `tests/browser/node-lod.spec.mjs`.** Retain their behavioral checks if integration moves them. Expected: no geometry, drag, profile, preparation, or focus regression.
 
-- [ ] **Step 5: Commit the status-rendering deliverable.**
+- [x] **Step 5: Commit the status-rendering deliverable.**
 
 ## Task 4: Node/selection context actions and runtime Details controls
 
@@ -141,17 +141,17 @@ Also test automatic-only/missing Shortcut, conflicting Shortcut policy, partial 
 
 **Interfaces:** consume Task 2 projection and command capture. `RecallDetails` props are `{view:RecallNodeStatus; actions:{queue:()=>DetailEditResponse;cancel:()=>DetailEditResponse;revealShortcut:(nodeId:string)=>void}}`. Extend `NodeDetailsView` with optional `recall:RecallNodeStatus`, and `NodeDetailsActions` with `queueRecall(selection:DetailSelection)` and `cancelRecall(selection:DetailSelection)` returning `DetailEditResponse`. These methods use their own runtime pending/error path, not the authored-control `perform()`/commit path.
 
-- [ ] **Step 1: Write failing interaction tests.** Assert right-clicking one of three selected relevant nodes retains the selection and yields `Queue recall for 3 nodes`; after queueing a mixed state, Cancel counts only queued eligible cards. Assert unique memory-set hint/count, unrelated node exclusion, zero-eligible disabled action, missing Shortcut explanation, and conflict reason. Open a menu or Details, replace document with identical ID/content, then invoke its captured action: no request in either document changes.
+- [x] **Step 1: Write failing interaction tests.** Assert right-clicking one of three selected relevant nodes retains the selection and yields `Queue recall for 3 nodes`; after queueing a mixed state, Cancel counts only queued eligible cards. Assert unique memory-set hint/count, unrelated node exclusion, zero-eligible disabled action, missing Shortcut explanation, and conflict reason. Open a menu or Details, replace document with identical ID/content, then invoke its captured action: no request in either document changes.
 
 Add `queue status refresh preserves unfinished Details draft and focus`: type an uncommitted control value, queue via shortcut/runtime event, and assert the draft/focused element persist. Assert document dirty snapshot and Undo history unchanged by Queue/Cancel. A policy field edit still goes through normal authoring and invalidates obsolete requests.
 
-- [ ] **Step 2: Run the new Details suite and relevant existing context-menu tests to observe failure.** Use direct Node suite commands and `npx playwright test tests/browser/context-menu.spec.mjs tests/browser/recall-canvas.spec.mjs`.
+- [x] **Step 2: Run the new Details suite and relevant existing context-menu tests to observe failure.** Use direct Node suite commands and `npx playwright test tests/browser/context-menu.spec.mjs tests/browser/recall-canvas.spec.mjs`.
 
-- [ ] **Step 3: Add a separated recall context section using captured IDs and existing `showContextMenu` stale guards.** Preserve Canvas's existing multi-selection handling. Add an icon mapping from the private context-menu registry; all labels/counts/reasons come from Task 2. Add `RecallDetails` under the selected root node's Details with shared status, policy/shortcut display and navigation. Queue/Cancel remain runtime operations; policy edits retain existing controls/qualified `DetailSelection` authoring gates.
+- [x] **Step 3: Add a separated recall context section using captured IDs and existing `showContextMenu` stale guards.** Preserve Canvas's existing multi-selection handling. Add an icon mapping from the private context-menu registry; all labels/counts/reasons come from Task 2. Add `RecallDetails` under the selected root node's Details with shared status, policy/shortcut display and navigation. Queue/Cancel remain runtime operations; policy edits retain existing controls/qualified `DetailSelection` authoring gates.
 
-- [ ] **Step 4: Run new tests and existing `ui-detail-draft-revisions`, `ui-details-commands`, `ui-details-projection`, and context-menu suites.** Expected: consistent mutations from context/Details/shortcuts and no uncommitted-draft or stale-context mutation.
+- [x] **Step 4: Run new tests and existing `ui-detail-draft-revisions`, `ui-details-commands`, `ui-details-projection`, and context-menu suites.** Expected: consistent mutations from context/Details/shortcuts and no uncommitted-draft or stale-context mutation.
 
-- [ ] **Step 5: Commit context and Details integration.**
+- [x] **Step 5: Commit context and Details integration.**
 
 ## Task 5: Node-menu global commands and grouped overview
 
@@ -159,17 +159,17 @@ Add `queue status refresh preserves unfinished Details draft and focus`: type an
 
 **Interfaces:** `RecallOverview` consumes Task 2 memory-set rows and shared queue/cancel adapter; each row includes matching root node IDs/titles and reveal-node actions. Local overlay command is `memory-recall`; single dialog title/heading is `Memory recall`. Workbench `recall` view/actions route refresh, selected/all queue/cancel, and reveal. Reuse the integrated workflow-files renderer's `submenu` descriptor and `subItems()` path to add a `Memory recall` submenu under Node; preserve File/Recent/recovery behavior and do not create a second renderer.
 
-- [ ] **Step 1: Write failing navigation/capability tests.** Assert the spec's five commands appear in Node, recall is absent from Tools, selected/all scopes stay distinct, global queue changes only the current authorized root sets, no duplicate overview row appears for matching cards, and rows reveal the correct node. Assert one dialog heading and one Close control; no memory text or raw policy/discriminant strings are rendered. Test all empty states and optional summary count by unique memory sets.
+- [x] **Step 1: Write failing navigation/capability tests.** Assert the spec's five commands appear in Node, recall is absent from Tools, selected/all scopes stay distinct, global queue changes only the current authorized root sets, no duplicate overview row appears for matching cards, and rows reveal the correct node. Assert one dialog heading and one Close control; no memory text or raw policy/discriminant strings are rendered. Test all empty states and optional summary count by unique memory sets.
 
 Add keyboard regression: open Node menu with a selected node, press Delete, Space, printable graph shortcuts, then Escape. The graph is unchanged, activation keys run only the focused command, separators/heading never take focus, and Escape restores the opener. Retain existing arrow/Home/End/Tab behavior.
 
-- [ ] **Step 2: Run the new overview/menu tests and observe failure.** Run `node --import ./tools/node-test-host.mjs tests/ui-recall-overview.test.mjs` and `npx playwright test tests/browser/recall-menu.spec.mjs`.
+- [x] **Step 2: Run the new overview/menu tests and observe failure.** Run `node --import ./tools/node-test-host.mjs tests/ui-recall-overview.test.mjs` and `npx playwright test tests/browser/recall-menu.spec.mjs`.
 
-- [ ] **Step 3: Implement the Node → Memory recall submenu, accurate selected/all capabilities, and grouped overview.** Keep overview supporting the direct canvas flow. Replace old overlay/component/view names throughout owned callers, remove Tools entry, and use exact friendly labels. Global actions capture root/document/scope even from a child view; selection actions in child/library views remain ineligible. If retaining the top badge, label it `Recall queued · N memory sets`.
+- [x] **Step 3: Implement the Node → Memory recall submenu, accurate selected/all capabilities, and grouped overview.** Keep overview supporting the direct canvas flow. Replace old overlay/component/view names throughout owned callers, remove Tools entry, and use exact friendly labels. Global actions capture root/document/scope even from a child view; selection actions in child/library views remain ineligible. If retaining the top badge, label it `Recall queued · N memory sets`.
 
-- [ ] **Step 4: Run new tests plus existing workspace-menu, file-menu, and unified-authoring tests.** Update fixtures to the integrated active-document flow and `Enable Lattice`; do not restore removed assignment/selector controls for tests. Expected: zero provider calls for all UI queue/cancel flows and no menu-key leakage.
+- [x] **Step 4: Run new tests plus existing workspace-menu, file-menu, and unified-authoring tests.** Update fixtures to the integrated active-document flow and `Enable Lattice`; do not restore removed assignment/selector controls for tests. Expected: zero provider calls for all UI queue/cancel flows and no menu-key leakage.
 
-- [ ] **Step 5: Commit overview/menu relocation and browser fixture updates.**
+- [x] **Step 5: Commit overview/menu relocation and browser fixture updates.**
 
 ## Task 6: Documentation, compatibility sweep, visual review, and release gates
 
@@ -206,3 +206,16 @@ Coverage: Task 1 owns runtime identity/atomicity/lifecycle/notifications; Task 2
 Recommended execution method: Native implementation in one isolated checkout, with independent integrated review. These tasks share runtime/view/controller contracts; keeping their integration in one implementer's context reduces coordination risk. Subagent-driven execution remains available if the user prefers per-task independent review.
 
 Review the spec and this plan, then choose Native or Subagent-driven execution before product implementation. The current approval authorized creating these reviewable documents only.
+
+
+## Integration record
+
+Implementation worktree: `C:/Users/Keptin/.codex/worktrees/canvas-memory-recall/SillyCanvas`, branch `codex/canvas-memory-recall`, based on main `d047477`. The active-document prerequisite was imported as a selective, tested snapshot from the workflow-files worktree; that checkout was left untouched.
+
+- Task 1: shared request semantics, atomic batches, exact document ownership, lifecycle notifications. The new command token method is `captureQueueCommand`; the existing `capture` producer-provenance method keeps its purpose.
+- Task 2: shared friendly labels and typed projection/command contracts. Serialized workflow discriminants retain their compatible values.
+- Tasks 3–5: committed together because the renderer, Details, context actions and Node menu share one controller boundary. Runtime refreshes do not author or prepare the graph.
+- Review corrections: exact-token cleanup releases inactive/unretained reservations without restoring spent uses; all-node captures have an explicit root scope; local Details/context sections require the root view; pending icons have separate markers and fitted theme colors.
+- Example regeneration pins portable teaching recipes to their explicit model-role bindings, preserving their control settings and definition identities while updating prose.
+
+Validation results are added after the final suite completes. No merge, push, release or deployment is included.
