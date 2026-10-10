@@ -1,6 +1,6 @@
 # LATTICE performance overhaul design
 
-Date: 2026-10-10. Status: proposed for user review; product implementation has not started.
+Date: 2026-10-10. Status: approved for execution and implementation on 2026-10-10; no further approval asks requested.
 
 Branch: `codex/lattice-performance-overhaul`, based on verified GitHub Main `143ec11cdd35c5478990198d51823f1076922bd7`.
 
