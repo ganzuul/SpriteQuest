@@ -413,32 +413,12 @@
 .pc-root .pc-body { position: relative; }
 .pc-root .pc-stage { overflow: visible; }
 .pc-root .pc-inspector { border: 1px solid var(--pc-border); border-radius: 4px; background: var(--pc-panel-solid); box-shadow: var(--pc-recess); }
-/* Details controls have shallow edges; structural sections stay flat. */
-.pc-root .pc-inspector {
-    --pc-detail-edge-light: #ffffff12;
-    --pc-detail-edge-dark: #0005;
-    --pc-detail-raised: inset 1px 1px 0 var(--pc-detail-edge-light), inset -1px -1px 0 var(--pc-detail-edge-dark);
-    --pc-detail-inset: inset 1px 1px 0 var(--pc-detail-edge-dark), inset -1px -1px 0 var(--pc-detail-edge-light);
-}
-:root[data-pc-light="1"] .pc-root .pc-inspector { --pc-detail-edge-light: #fffa; --pc-detail-edge-dark: #0002; }
-.pc-root .pc-inspector :is(.pc-node-details, .pc-comment-details) :is(input:not(:where([type="checkbox"], [type="radio"], .pc-detail-name)), select, textarea) { box-shadow: var(--pc-detail-inset); }
-.pc-root .pc-inspector :is(.pc-node-details, .pc-comment-details) :is(select, textarea):focus { box-shadow: var(--pc-detail-inset), 0 0 0 2px color-mix(in srgb, var(--pc-accent) 25%, transparent); }
-.pc-root .pc-inspector :is(.pc-node-details, .pc-comment-details) button:not(:where(.pc-detail-command-list button)),
-.pc-root .pc-inspector .pc-details-heading button,
-.pc-root .pc-inspector .pc-control-segments span { box-shadow: var(--pc-detail-raised); }
-.pc-root .pc-inspector :is(.pc-node-details, .pc-comment-details) button:active:not(:disabled):not(:where(.pc-detail-command-list button)),
-.pc-root .pc-inspector :is(.pc-node-details, .pc-comment-details) button[aria-pressed="true"]:not(:where(.pc-detail-command-list button)),
-.pc-root .pc-inspector .pc-details-heading button:active:not(:disabled),
-.pc-root .pc-inspector .pc-control-segments input:checked + span { box-shadow: var(--pc-detail-inset); }
-.pc-root .pc-inspector :is(.pc-node-details, .pc-comment-details) :is(button, input, select, textarea):focus-visible,
-.pc-root .pc-inspector .pc-details-heading button:focus-visible { outline: 2px solid var(--pc-accent); outline-offset: 1px; }
-.pc-root .pc-inspector .pc-detail-identity .pc-detail-name { box-shadow: none; }
-.pc-root .pc-inspector .pc-detail-identity .pc-detail-name:is(:hover, :focus):not(:disabled) { box-shadow: var(--pc-detail-inset); }
-.pc-root .pc-inspector .pc-detail-commands > summary:is(:hover, :focus-visible),
-.pc-root .pc-inspector .pc-detail-commands[open] > summary { border-radius: 2px; background: var(--pc-control); box-shadow: var(--pc-detail-raised); }
-.pc-root .pc-inspector .pc-detail-commands > summary:focus-visible { outline: 2px solid var(--pc-accent); outline-offset: 1px; }
-.pc-root .pc-inspector .pc-detail-commands[open] > summary { box-shadow: var(--pc-detail-inset); }
-.pc-root .pc-inspector .pc-detail-command-list button { box-shadow: none; }
+/* Details controls share the workspace's softened corners. */
+:root .pc-root .pc-inspector :is(.pc-node-details, .pc-comment-details, .pc-details-heading) :is(input:not(:where([type="checkbox"], [type="radio"])), select, textarea, button:not(:where(.pc-detail-command-list button))) { border-radius: var(--pc-r); }
+.pc-root .pc-inspector .pc-detail-command-list { border-radius: var(--pc-r); }
+.pc-root .pc-inspector .pc-control-segments label:first-child span { border-radius: var(--pc-r) 0 0 var(--pc-r); }
+.pc-root .pc-inspector .pc-control-segments label:last-child span { border-radius: 0 var(--pc-r) var(--pc-r) 0; }
+.pc-root .pc-inspector .pc-control-segments label:only-child span { border-radius: var(--pc-r); }
 .pc-preview-pane { display: flex; flex-direction: column; flex: 0 0 var(--pc-preview-height, 220px); min-height: 0; border: 1px solid var(--pc-border); border-radius: 4px; background: var(--pc-panel-solid); box-shadow: var(--pc-recess); overflow: hidden; }
 .pc-preview-pane.pc-preview-collapsed { flex-basis: auto; margin-bottom: 8px; }
 .pc-preview-pane-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 4px 10px; min-height: 34px; border-bottom: 1px solid var(--pc-border); font-size: 12px; }
