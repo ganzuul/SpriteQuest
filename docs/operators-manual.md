@@ -29,8 +29,8 @@ This manual follows the 0.26.0 interface. Screenshots use synthetic writing mate
 
 | Area | Use it for |
 | --- | --- |
-| Menu bar | File operations, editing, graph navigation, node discovery, setup, and tools |
-| Workflow bar | Choose the root workflow, undo/redo, Run/Stop, Setup, Details, and Arm |
+| Menu bar | File operations, editing, graph navigation, node discovery, phase assignment, and tools |
+| Workflow bar | Choose the root workflow, undo/redo, Run/Stop, Details, and Arm |
 | Preview above the graph | Inspect a recorded output and its artifact tabs; pin it or follow selection |
 | Graph tabs | Switch between the root **Graph 1** and opened subgraph bodies |
 | Graph editor | Arrange nodes and connect typed input/output pins |
@@ -60,9 +60,9 @@ Use **Tools → Theme and colours** to choose Ember, Lattice, Ash, Graphite, Sla
 
 The thirty tiles follow a fixed learning order. Opening a tile creates a fresh copy every time. A recipe's separate Pre/Post companions validate and install together; select them from the **Workflow** selector. Existing workflows, phase assignments, and enabled state are preserved. Opening does not run anything, assign a phase, or arm the copies.
 
-Model-backed lessons arrive with unresolved local roles. Configure roles and connections explicitly in **Setup**, then inspect a manual run before assigning a phase and arming for normal sends. Pending Node Details text, model override mode/value, and boundary drafts survive browsing and returning to their qualified node; invalid JSON still requires correction before Save.
+Model-backed lessons arrive without local connections. Select each model-calling node and choose its own connection profile in **Details**. The selected profile's model is the default; an override is optional. Inspect a manual run before assigning a phase from **Workflows** and arming for normal sends. Pending Node Details text, model override mode/value, and boundary drafts survive browsing and returning to their qualified node; invalid JSON still requires correction before Save.
 
-The [quick start](lattice-workspace.md) walks through changing a brief and trying Literal cleanup. Scene guidance and Reviewed AI De-slop use auxiliary model operations; configure their **Analysis** or **Prose** roles before running them.
+The [quick start](lattice-workspace.md) walks through changing a brief and trying Literal cleanup. Scene guidance and Reviewed AI De-slop use auxiliary model operations; choose local connection profiles for their model nodes in Details before running them.
 
 There are three useful scales of work:
 
@@ -172,15 +172,13 @@ To edit a completed reply, choose **Input type → Draft** in an After reply gra
 
 Smart Compactor lets you choose selection or model-backed compression, a target context budget, recent messages to preserve, and exact protected literals. Response Plan has operation instructions and a completion cap.
 
-![Response Plan details showing instructions and inherited model binding controls](images/model-details.png)
+![Response Plan details showing instructions and model binding controls](images/model-details.png)
 
-*The model settings show role inheritance and effective connection information. The demonstration host has no bound Analysis profile, so setup is required before running.*
+*Model settings show the node's effective connection. Choose a local connection profile before running a model-backed node.*
 
-Bind role defaults in **Setup**. In Details, choose an explicit connection/model override for one operation when it needs a different route. Inspect the effective value and any issue shown below the control. This does not globally activate a different SillyTavern connection. See [model setup and supported routes](native-workflows.md).
+Select each model-calling node and choose its **Connection profile** in Details. The node uses that profile's default model; choose **Model mode → Override** to enter a different model identifier for that operation. Scene guidance's Smart Compactor and Response Plan can use different profiles and models. Inspect the effective value and any issue below the controls. This does not globally activate a different SillyTavern connection. See [model connections and supported routes](native-workflows.md).
 
-![Workflow Setup showing phase assignment and technical starter buttons](images/workflow-setup.png)
-
-*Setup retains the eleven technical starters and manages model roles and phase assignment. This screenshot shows Setup, not the thirty-tile Open examples picker.*
+After configuring the model nodes, choose **Workflows → Assign pre phase** or **Assign post phase** for the selected workflow. Arming remains a separate action.
 
 ## Run and inspect results
 

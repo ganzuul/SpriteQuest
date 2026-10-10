@@ -12,7 +12,7 @@ if (!/^\d+$/.test(portText) || !Number.isInteger(port) || port < 1 || port > 655
 const base = 'http://127.0.0.1:' + port;
 const shotNames = [
     'workspace-overview', 'compose-details', 'guidance-preview', 'select-fields-details', 'json-decode-details',
-    'node-shelf', 'node-search', 'workflow-setup', 'text-rules-details', 'text-rules-graph', 'review-candidate',
+    'node-shelf', 'node-search', 'text-rules-details', 'text-rules-graph', 'review-candidate',
     'run-details', 'subgraph-instance', 'subgraph-save', 'subgraph-tab', 'subgraph-interface',
     'scene-planning-graph', 'compactor-details', 'model-details', 'context-assembly',
 ];
@@ -241,9 +241,9 @@ try {
     await page.getByRole('menuitem', { name: 'Add node…', exact: true }).click();
     await shot('node-search');
     await page.keyboard.press('Escape');
-    await page.getByRole('button', { name: 'Setup', exact: true }).click();
-    await shot('workflow-setup', '.pc-workspace-dialog');
-    await page.getByRole('button', { name: 'Close panel', exact: true }).click();
+    await page.getByRole('button', { name: 'Workflows', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Assign pre phase', exact: true }).click();
+    if (await page.evaluate(() => window.canvasHarness.S.settings().nativeBindings.preGraphId) !== 'structured-guidance') throw new Error('The Workflows menu did not assign the selected pre workflow.');
     await activate('literal-cleanup');
     await run();
     await select('text-rules');

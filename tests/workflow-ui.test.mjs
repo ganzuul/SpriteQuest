@@ -18,7 +18,7 @@ test('actual zero-call examples and operation controls project without connectio
     let bindings=0;
     for (const id of ['literal-cleanup','structured-guidance']) {
         const view=project(starterGraph(id),{resolveBinding(){bindings++;throw new Error('No model needed');}});
-        assert.equal(view.callBound,0); assert.equal(view.issues.length,0); assert.equal(view.starters.length,11);
+        assert.equal(view.callBound,0); assert.equal(view.issues.length,0);
         assert.equal(view.nodes.some(node=>node.controls.length>0),true);
     }
     assert.equal(bindings,0);

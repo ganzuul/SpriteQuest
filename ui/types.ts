@@ -54,7 +54,6 @@ export interface WorkbenchActions {
     pickGraph: (id: string) => void; arm: (enabled: boolean) => void; command: (name: string) => void;
     mode: (mode: string) => void; zoom: (factor: number) => void; fitSelection: () => void;
     resizeStart?: () => void; resizeDetails?: (width: number) => void; addNode?: (id: string, at?: { x: number; y: number }) => void;
-    workflowSetup?: Pick<WorkflowActions, 'install' | 'bindRole' | 'assign'>;
     acceptImport?: () => void; cancelImport?: () => void; prepareImportAgain?: () => void;
     newWorkflowPrompt?: NewWorkflowPromptActions;
     openExample?: (id: string) => boolean | Promise<boolean>;
@@ -70,12 +69,10 @@ export interface WorkflowReviewSelector { handleId: string; runId: string; termi
 export interface WorkflowBoundedResultView { kind: 'bounded'; ok: boolean; error: string; actualCalls: number; callBound: number; runId?: string; sections: { kind: string; format: string; text: string; truncated: boolean }[]; previewTarget?: WorkflowTarget | null; tokenMethods: string[]; applyAvailable: boolean; selectedReviewHandle?: WorkflowReviewSelector | null; applyIssue: string; memoryCommit?: Readonly<{ applied: boolean; acknowledged: boolean; version: number }> }
 export interface WorkflowView {
     graphId: string; name: string; phase: string; assigned: boolean; selectedId: string | null;
-    roles: { name: string; profileId: string; model: string }[]; profiles: { id: string; name: string }[];
-    starters: { id: string; title: string; purpose: string; phase: string; roles: string[]; callBound: number }[];
+    profiles: { id: string; name: string }[];
     families: { name: string; description: string; operations: { id: string; title: string; phase: string; compatible: boolean }[] }[];
     nodes: WorkflowNodeView[]; groups: { id: string; title: string; members: string[]; collapsed: boolean; callBound: number }[];
     callBound: number; issues: string[]; busy: boolean; status: string; quoteHelp: string;
     availability?: 'current' | 'stale' | 'superseded' | 'cancelled'; preparationError?: { code: string; message: string } | null;
     result: WorkflowBoundedResultView | null;
 }
-export interface WorkflowActions { install: (id: string) => void; bindRole: (name: string, profileId: string, model: string) => void; assign: (phase: string) => void; }

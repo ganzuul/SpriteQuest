@@ -26,11 +26,11 @@ export interface DetailModifier { id: string; type: string; version: 1; enabled:
 export interface DetailModifierOption { type: string; label: string; defaultSettings: Record<string, unknown>; fields: DetailControl[]; }
 export interface DetailBindingField {
     mode: DetailBindingMode; allowedModes: { value: DetailBindingMode; label: string }[];
-    value: string | null; options?: { value: string; label: string }[];
+    value: string | null; effectiveValue?: string | null; options?: { value: string; label: string }[];
 }
 export interface DetailModelBinding {
     role: string; roleEditable: boolean; profile: DetailBindingField; model: DetailBindingField;
-    effective: string; source: string; issue?: string;
+    effective: string; source: string; issue?: string; profileDefaultModel?: boolean; editable?: boolean;
 }
 export interface NodeDetailsView extends DetailSelection {
     title: string; canonicalTitle: string; iconPath: string; family: string; phase: string;

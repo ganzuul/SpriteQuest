@@ -119,15 +119,15 @@ test('Inspect selection reveals Details and the root tab has quote-orange keyboa
     await expect(tab).toBeFocused(); await expect(tab).toHaveCSS('outline-color', 'rgb(225, 138, 36)');
 });
 
-for (const panel of ['Setup', 'Help']) test(`${panel} dialog suppresses background graph shortcuts with button focus`, async ({ page }) => {
+for (const panel of ['Examples', 'Help']) test(`${panel} dialog suppresses background graph shortcuts with button focus`, async ({ page }) => {
     await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
     const ids = await page.evaluate(() => window.canvasHarness.reset());
     const before = await page.evaluate(id => {
         const h = window.canvasHarness; h.canvas.select({ kind: 'node', id });
         return { nodes: Object.keys(h.graph.nodes), selection: h.canvas.selection, multi: [...h.canvas.multi], history: h.H.peek(h.graph) };
     }, ids[0]);
-    await page.getByRole('button', { name: panel, exact: true }).click();
-    if (panel === 'Help') await page.getByRole('menuitem', { name: 'Workspace guide', exact: true }).click();
+    await page.getByRole('button', { name: panel === 'Examples' ? 'File' : 'Help', exact: true }).click();
+    await page.getByRole('menuitem', { name: panel === 'Examples' ? 'Open examples…' : 'Workspace guide', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Close panel', exact: true })).toBeFocused();
     for (const key of ['Control+a', 'Control+z', 'Delete', 'Control+x', 'Control+g', 'Control+d']) await page.keyboard.press(key);
     expect(await page.evaluate(() => { const h = window.canvasHarness; return { nodes: Object.keys(h.graph.nodes), selection: h.canvas.selection, multi: [...h.canvas.multi], history: h.H.peek(h.graph) }; })).toEqual(before);
@@ -149,10 +149,10 @@ test('flat workspace menus support keyboard navigation, Escape and outside dismi
     await expect(page.getByRole('dialog', { name: 'Lattice', exact: true })).toBeVisible();
     await file.click(); await page.locator('.pc-brand').click();
     await expect(page.getByRole('menu', { name: 'File', exact: true })).toHaveCount(0);
-    await page.getByRole('button', { name: 'Setup', exact: true }).click();
-    await expect(page.getByRole('dialog', { name: 'Workflow setup', exact: true })).toBeVisible();
+    await file.click(); await page.getByRole('menuitem', { name: 'Open examples…', exact: true }).click();
+    await expect(page.getByRole('dialog', { name: 'Examples', exact: true })).toBeVisible();
     await page.keyboard.press('Escape');
-    await expect(page.getByRole('button', { name: 'Setup', exact: true })).toBeFocused();
+    await expect(file).toBeFocused();
     await expect(page.locator('.pc-root')).toHaveClass(/pc-open/);
 });
 
@@ -205,10 +205,15 @@ test('root Run and Stop remain active while the preview divider resizes', async 
         c.ConnectionManagerRequestService = { getProfile: id => c.extensionSettings.connectionManager.profiles.find(profile => profile.id === id), sendRequest: () => { window.shellRequests++; return new Promise(resolve => { window.finishShellRequest = resolve; }); } };
         c.ChatCompletionService = { presetToGeneratePayload: async (_preset, _route, payload) => payload };
     });
-    await page.getByRole('button', { name: 'Setup', exact: true }).click();
-    await page.getByRole('button', { name: 'Install Scene guidance', exact: true }).click();
-    await page.getByRole('dialog', { name: 'Workflow setup', exact: true }).getByLabel('Analysis connection', { exact: true }).selectOption('analysis');
-    await page.getByRole('button', { name: 'Close panel', exact: true }).click();
+    await page.evaluate(async () => {
+        const h = window.canvasHarness, { installStarter } = await import('/src/workflow/starters.js?v=' + h.version);
+        await h.activate(installStarter('native-guidance', h.S.settings()));
+    });
+    for (const operation of ['smart-compactor', 'response-plan']) {
+        const id = await page.evaluate(operation => Object.values(window.canvasHarness.graph.nodes).find(node => node.operation === operation).id, operation);
+        await page.locator(`.pc-node-native[data-id="${id}"] .pc-native-heading`).click();
+        await page.getByRole('region', { name: 'Node details', exact: true }).getByLabel('Connection profile', { exact: true }).selectOption('analysis');
+    }
     await page.locator('.pc-root-run').click();
     await expect(page.locator('.pc-root-run')).toHaveText('■ Stop');
     await expect.poll(() => page.evaluate(() => window.shellRequests)).toBe(1);

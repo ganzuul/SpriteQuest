@@ -40,7 +40,7 @@
     onDestroy(() => { alive = false; requests.clear(); draftCache.clear(); draftGenerations.clear(); modifierGenerations.clear(); });
     $effect(() => {
         const next = view ? selectionIdentity(view) : '', nextRevision = view?.revision ?? '';
-        const nextSupport = JSON.stringify([view?.controls.map(control => [control.key, control.editor, control.representation]), view?.model?.profile.allowedModes, view?.model?.model.allowedModes, view?.boundary && [view.boundary.id, view.boundary.direction, view.boundary.kinds], !!view?.fileInput, view?.modifiers && [view.modifiers.items.map(item => [item.id, item.type]).sort(([a], [b]) => a.localeCompare(b)), view.modifiers.options.map(option => [option.type, option.fields.map(field => [field.key, field.editor])]), view.modifiers.editable, view.readOnly]]);
+        const nextSupport = JSON.stringify([view?.controls.map(control => [control.key, control.editor, control.representation]), view?.model?.profile.allowedModes, view?.model?.model.allowedModes, view?.model?.editable, view?.boundary && [view.boundary.id, view.boundary.direction, view.boundary.kinds], !!view?.fileInput, view?.modifiers && [view.modifiers.items.map(item => [item.id, item.type]).sort(([a], [b]) => a.localeCompare(b)), view.modifiers.options.map(option => [option.type, option.fields.map(field => [field.key, field.editor])]), view.modifiers.editable, view.readOnly]]);
         const changedSelection = next !== identity;
         if (changedSelection || nextRevision !== revision || nextSupport !== support) {
             if (changedSelection || nextSupport !== support) { boundaryDraftSequence++; modifierEpoch++; }
@@ -62,7 +62,7 @@
     function draftContract(node: NodeDetailsView, key: string) {
         if (key === 'model' || key === 'profileId') {
             const binding = key === 'model' ? node.model?.model : node.model?.profile;
-            return binding?.allowedModes.some(option => option.value === 'override') ? 'binding:' + key : null;
+            return binding?.allowedModes.some(option => option.value === 'override') ? JSON.stringify(['binding', key, node.model?.editable ?? !node.readOnly]) : null;
         }
         const control = node.controls.find(control => control.key === key);
         return control && (control.editor === 'json' || control.editor === 'lines') ? JSON.stringify([control.editor, control.representation, control.allowEmpty, control.structured]) : null;
@@ -74,7 +74,8 @@
     }
     async function perform(key: string, presentation: boolean, operation: (captured: DetailSelection) => DetailEditResponse) {
         const node = view;
-        if (!node || (presentation ? !node.canPresent : node.readOnly)) return;
+        const bindingEdit = key === 'profileId' || key === 'model';
+        if (!node || (presentation ? !node.canPresent : bindingEdit ? !canEditBinding(node) : node.readOnly)) return;
         const captured = selection(node), token = ++sequence, visit = draftVisit, contract = draftContract(node, key);
         const generation = drafts[key] && contract ? nextDraftGeneration(key) : null;
         requests.set(key, token); errors = { ...errors, [key]: '' };
@@ -143,10 +144,16 @@
         void perform(field, false, captured => actions.editBinding!(captured, field, mode as DetailBindingMode, value));
     }
     const bindingFor = (field: 'profileId' | 'model') => field === 'profileId' ? view?.model?.profile : view?.model?.model;
+    const canEditBinding = (node: NodeDetailsView | null = view) => !!node?.model && (node.model.editable ?? !node.readOnly) && !!actions.editBinding;
     const bindingMode = (field: 'profileId' | 'model') => drafts[field] ? 'override' : bindingFor(field)?.mode;
     const bindingText = (field: 'profileId' | 'model') => drafts[field]?.text ?? bindingFor(field)?.value ?? '';
+    const profileSelection = () => {
+        const profile = view?.model?.profile;
+        return drafts.profileId?.text ?? (profile && Object.hasOwn(profile, 'effectiveValue') ? profile.effectiveValue ?? '' : profile?.value ?? '');
+    };
+    const usesProfileModel = () => view?.model?.profile.mode === 'override' || !!view?.model?.profileDefaultModel;
     function draftBinding(field: 'profileId' | 'model', text: string) {
-        if (!view || view.readOnly || !actions.editBinding || !bindingFor(field)?.allowedModes.some(option => option.value === 'override')) return;
+        if (!canEditBinding() || !bindingFor(field)?.allowedModes.some(option => option.value === 'override')) return;
         nextDraftGeneration(field);
         requests.delete(field);
         drafts = { ...drafts, [field]: { text, error: '', pending: false } };
@@ -154,7 +161,7 @@
     }
     function chooseBindingMode(field: 'profileId' | 'model', mode: string) {
         const binding = bindingFor(field);
-        if (!view || view.readOnly || !actions.editBinding || !binding?.allowedModes.some(option => option.value === mode)) return;
+        if (!canEditBinding() || !binding?.allowedModes.some(option => option.value === mode)) return;
         // Revealing an editor is local; null keeps its historical saved fallback.
         if (mode === 'override') { draftBinding(field, bindingText(field)); return; }
         requests.delete(field);
@@ -163,9 +170,13 @@
         if (mode !== binding.mode) editBinding(field, mode, null);
     }
     function saveBinding(field: 'profileId' | 'model', text: string) {
-        if (!view || view.readOnly || bindingMode(field) !== 'override' || !actions.editBinding || !bindingFor(field)?.allowedModes.some(option => option.value === 'override')) return;
+        if (!canEditBinding() || (field === 'model' && bindingMode(field) !== 'override') || !bindingFor(field)?.allowedModes.some(option => option.value === 'override')) return;
         draftBinding(field, text);
         if (!text.trim()) {
+            const defaultMode = view?.readOnly ? 'block' : 'inherit';
+            if (field === 'model' && usesProfileModel() && bindingFor(field)?.allowedModes.some(option => option.value === defaultMode)) {
+                chooseBindingMode(field, defaultMode); return;
+            }
             drafts = { ...drafts, [field]: { text, error: field === 'profileId' ? 'Choose a connection before saving an override.' : 'Enter a model identifier before saving an override.', pending: false } };
             return;
         }
@@ -252,12 +263,9 @@
         return [...groups].sort(([a], [b]) => a === 'Main' ? -1 : b === 'Main' ? 1 : 0);
     };
     const groupHasError = (controls: DetailControl[]) => controls.some(control => !!(drafts[control.key]?.error || errors[control.key]));
-    const modelNeedsAttention = () => !!(view?.model?.issue || drafts.profileId || drafts.model || errors.modelRole || errors.profileId || errors.model);
     const modelSummary = () => {
         if (!view?.model) return '';
-        const profile = bindingMode('profileId'), model = bindingMode('model');
-        const mode = profile === 'block' || model === 'block' ? 'Inheritance blocked' : view.model.source === 'Containing instance override' ? 'Instance binding' : profile === 'override' || model === 'override' ? 'Override' : 'Inherit role';
-        return `${view.model.role || 'Model'} · ${mode} · ${view.model.issue ? 'Binding needs attention' : view.model.effective || 'Missing binding'}`;
+        return `Model connection · ${view.model.issue ? 'Binding needs attention' : view.model.effective || 'Choose a connection'}`;
     };
     function editName(value: string) {
         if (!view || view.boundary || !actions.present) return;
@@ -339,14 +347,14 @@
         {/each}
     {/if}
     {#if view.model}
-        <details class="pc-detail-group" data-model-controls open={modelNeedsAttention()}><summary>{modelSummary()}</summary>
-            <label>Model role<input aria-label="Model role" value={view.model.role} disabled={view.readOnly || !view.model.roleEditable || !actions.editField} onchange={event => { const value = event.currentTarget.value; if (view?.model?.roleEditable && actions.editField) void perform('modelRole', false, captured => actions.editField!(captured, 'modelRole', value)); }} /></label>
-            <label>Connection mode<select aria-label="Connection mode" value={bindingMode('profileId')} disabled={view.readOnly || !actions.editBinding} onchange={event => chooseBindingMode('profileId', event.currentTarget.value)}>{#each view.model.profile.allowedModes as option (option.value)}<option value={option.value}>{option.label}</option>{/each}</select></label>
-            {#if bindingMode('profileId') === 'override'}
-                <label>Connection profile<select aria-label="Connection profile" value={bindingText('profileId')} disabled={view.readOnly || !actions.editBinding} onchange={event => saveBinding('profileId', event.currentTarget.value)}><option value="">Choose a connection</option>{#each view.model.profile.options ?? [] as option (option.value)}<option value={option.value}>{option.label}</option>{/each}</select></label>
-            {/if}
-            <label>Model mode<select aria-label="Model mode" value={bindingMode('model')} disabled={view.readOnly || !actions.editBinding} onchange={event => chooseBindingMode('model', event.currentTarget.value)}>{#each view.model.model.allowedModes as option (option.value)}<option value={option.value}>{option.label}</option>{/each}</select></label>
-            {#if bindingMode('model') === 'override'}<label>Model identifier<input aria-label="Model identifier" value={bindingText('model')} disabled={view.readOnly || !actions.editBinding} oninput={event => draftBinding('model', event.currentTarget.value)} onchange={event => saveBinding('model', event.currentTarget.value)} /></label>{/if}
+        <details class="pc-detail-group" data-model-controls open><summary>{modelSummary()}</summary>
+            <label>Connection profile<select aria-label="Connection profile" value={profileSelection()} disabled={!canEditBinding() || !view.model.profile.allowedModes.some(option => option.value === 'override')} onchange={event => saveBinding('profileId', event.currentTarget.value)}><option value="">Choose a connection</option>{#if profileSelection() && !(view.model.profile.options ?? []).some(option => option.value === profileSelection())}<option value={profileSelection()}>Unavailable connection · {profileSelection()}</option>{/if}{#each view.model.profile.options ?? [] as option (option.value)}<option value={option.value}>{option.label}</option>{/each}</select></label>
+            <label>Model mode<select aria-label="Model mode" value={bindingMode('model')} disabled={!canEditBinding()} onchange={event => chooseBindingMode('model', event.currentTarget.value)}>{#each view.model.model.allowedModes as option (option.value)}<option value={option.value}>{option.value === 'inherit' && !view.readOnly ? usesProfileModel() || !view.model.model.effectiveValue ? 'Use profile model' : 'Existing role model' : option.label}</option>{/each}</select></label>
+            {#if bindingMode('model') === 'override'}<label>Model identifier<input aria-label="Model identifier" value={bindingText('model')} disabled={!canEditBinding()} oninput={event => draftBinding('model', event.currentTarget.value)} onchange={event => saveBinding('model', event.currentTarget.value)} /></label>{/if}
+            <details data-binding-advanced><summary>Advanced connection settings</summary>
+                <label>Connection mode<select aria-label="Connection mode" value={bindingMode('profileId')} disabled={!canEditBinding()} onchange={event => chooseBindingMode('profileId', event.currentTarget.value)}>{#each view.model.profile.allowedModes as option (option.value)}<option value={option.value}>{option.label}</option>{/each}</select></label>
+                <label>Model role<input aria-label="Model role" value={view.model.role} disabled={view.readOnly || !view.model.roleEditable || !actions.editField} onchange={event => { const value = event.currentTarget.value; if (view?.model?.roleEditable && actions.editField) void perform('modelRole', false, captured => actions.editField!(captured, 'modelRole', value)); }} /></label>
+            </details>
             {#if !view.model.issue || view.model.effective.trim() !== view.model.issue.trim()}<small>Effective connection: {view.model.effective}</small>{/if}{#if view.model.source}<small>{view.model.source}</small>{/if}
             {#if view.model.issue}<p class="pc-detail-error" role="alert">{view.model.issue}</p>{/if}
             {#if errors.modelRole || drafts.profileId?.error || errors.profileId || drafts.model?.error || errors.model}<p class="pc-detail-error" role="alert">{errors.modelRole || drafts.profileId?.error || errors.profileId || drafts.model?.error || errors.model}</p>{/if}

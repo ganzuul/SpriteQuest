@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { installMock } from './mock.js';
+import { starterGraph } from '../src/workflow/starters.js?v=0.26.0';
+import { prepareWorkflowProjection, projectPreparedWorkflow } from '../src/ui/workflow-surface.js?v=0.26.0';
 installMock();
 const S = await import('../src/state.js?v=0.26.0');
 const source = await readFile(new URL('../src/ui/controller.js', import.meta.url), 'utf8');
@@ -37,4 +39,19 @@ test('Import persists the actual newly opened root after the captured file read'
     const input = { files: [{ name:'current.workflow.json', text:async()=>text }], addEventListener(_name,handler) { change=handler; }, click(){} };
     env.document = { createElement:()=>input }; actual('onImportGraph',env)(); await change();
     assert.equal(S.resolveGraph().graph,env.current);
+});
+
+test('phase assignment immediately refreshes the cached current workflow status', () => {
+    const graph = starterGraph('native-guidance'), config = { nativeBindings: { preGraphId: null, postGraphId: null } };
+    const env = { current: graph, workspacePrepared: { workflow: prepareWorkflowProjection(graph, { settings: config }) },
+        settings: () => config, save() {}, workflowSession: { cancel() {} }, presentNode() {}, prepareWorkflowProjection,
+        workspaceInputs: () => ({ settings: config }), updateWorkflowProjection() {}, renderStatus() {},
+    };
+    env.refreshWorkflowPreparation = actual('refreshWorkflowPreparation', env);
+    const start = source.indexOf('const workflowActions = {'), end = source.indexOf('\nfunction defaultNodeSpot', start);
+    const actions = Function('env', 'with(env){' + source.slice(start, end) + ';return workflowActions;}')(env);
+    assert.equal(projectPreparedWorkflow(env.workspacePrepared.workflow).assigned, false);
+    actions.assign('pre');
+    assert.equal(config.nativeBindings.preGraphId, graph.id);
+    assert.equal(projectPreparedWorkflow(env.workspacePrepared.workflow).assigned, true);
 });

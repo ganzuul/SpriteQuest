@@ -33,13 +33,18 @@ export function prepareWorkspaceViews(root, options = {}) {
         const drawBase = prepareEditorDrawBase(view,root.definitions);
         // Saved primitive null means inheritance; only an explicit enclosing
         // instance null map blocks it. Cache that source distinction with the view.
-        drawBase.bindingBlocks = {}; drawBase.instanceBindingSources = {};
+        drawBase.bindingBlocks = {}; drawBase.instanceBindingSources = {}; drawBase.profileDefaultModels = {}; drawBase.instanceBindingValues = {};
         const chain = view.instancePath.length ? definitionChain(root, view.instancePath) : [];
         for (const node of Object.values(view.savedGraph.nodes)) {
             const binding = {};
             for (let depth = chain.length - 1; depth >= 0; depth--) Object.assign(binding, chain[depth].node.nodeBindingOverrides?.[nodeBindingOverrideKey(view.instancePath.slice(depth + 1), node.id)] ?? {});
             const fields = Object.fromEntries(Object.entries(binding).filter(([, value]) => value === null).map(([field]) => [field, true]));
             if (Object.keys(fields).length) drawBase.bindingBlocks[node.id] = fields;
+            // The root inspector can reset only the top wrapper's override.
+            // Inner pinned wrappers contribute effective defaults, not edit ownership.
+            const rootBinding = chain[0]?.node.nodeBindingOverrides?.[nodeBindingOverrideKey(view.instancePath.slice(1), node.id)];
+            if (rootBinding && Object.keys(rootBinding).length) drawBase.instanceBindingValues[node.id] = { ...rootBinding };
+            drawBase.profileDefaultModels[node.id] = Object.hasOwn(binding, 'profileId') ? !!binding.profileId : !!node.profileId;
             const role = node.modelRole ?? drawBase.nativeCards[node.id]?.modelRole;
             if (Object.keys(binding).length || chain.some(owner => Object.keys(owner.node.roleOverrides?.[role] ?? {}).some(key => ['profileId','model'].includes(key) && !node[key]))) drawBase.instanceBindingSources[node.id] = true;
         }
@@ -97,15 +102,27 @@ export function projectWorkspacePanels(editor, workflow, state, revision, select
     }) : [];
     const modes = [{ value: 'inherit', label: 'Inherit role' }, { value: 'override', label: 'Override' }];
     const field = (key, options) => {
-        const blocked = editor?.prepared.drawBase.bindingBlocks?.[selectedId]?.[key] === true;
-        return { mode: blocked ? 'block' : saved?.[key] ? 'override' : 'inherit', value: saved?.[key] ?? null, allowedModes: blocked ? [...modes, { value: 'block', label: 'Blocked by instance' }] : modes, ...(options ? { options } : {}) };
+        const explicitNull = editor?.prepared.drawBase.bindingBlocks?.[selectedId]?.[key] === true;
+        const pinnedInstance = !library && editor.readOnly;
+        const ownProfile = editor.prepared.drawBase.profileDefaultModels?.[selectedId] === true;
+        if (pinnedInstance) {
+            const instance = editor.prepared.drawBase.instanceBindingValues?.[selectedId], present = Object.hasOwn(instance ?? {}, key);
+            const value = present ? instance[key] : null;
+            const inherited = [{ value: 'inherit', label: key === 'profileId' ? 'Use definition binding' : 'Use definition model' }, { value: 'override', label: 'Override' }];
+            const allowedModes = explicitNull || key === 'model' && ownProfile ? [...inherited, { value: 'block', label: key === 'model' && ownProfile ? 'Use profile model' : 'Blocked by instance' }] : inherited;
+            return { mode: present ? value === null ? 'block' : 'override' : 'inherit', value, effectiveValue: editor.prepared.effectiveNodes[selectedId]?.[key] ?? null, allowedModes, ...(options ? { options } : {}) };
+        }
+        const profileModelDefault = key === 'model' && explicitNull && ownProfile;
+        const blocked = explicitNull && !profileModelDefault;
+        const value = profileModelDefault ? null : saved?.[key] ?? null;
+        return { mode: blocked ? 'block' : value ? 'override' : 'inherit', value, effectiveValue: editor.prepared.effectiveNodes[selectedId]?.[key] ?? null, allowedModes: blocked ? [...modes, { value: 'block', label: 'Blocked by instance' }] : modes, ...(options ? { options } : {}) };
     };
     const selection = { selectionKey: JSON.stringify([editor?.view.key, selectedId]), revision, address };
     const interfacePort = metadata?.boundary ? editor.prepared.interface.find(port => port.id === saved?.interfacePortId && port.boundaryNodeId === selectedId) : null;
     const boundary = interfacePort ? { id: interfacePort.id, label: interfacePort.label, direction: interfacePort.direction, kind: interfacePort.kind, required: interfacePort.required, kinds: [...ARTIFACT_KINDS] } : null;
     const commentDetails = isCommentFrame(saved) ? { selection, comment: { id: saved.id, x: saved.x, y: saved.y, w: saved.w, h: saved.h, title: saved.title ?? 'Comment', content: saved.content ?? '', color: saved.color ?? '#637d89', moveContents: saved.moveContents !== false, selected: true, readOnly: editor.readOnly || library } } : null;
     const nodeDetails = saved && metadata && !commentDetails ? { ...selection, title: boundary?.label ?? (presentation.alias || (typeof saved.title === 'string' ? saved.title : metadata.canonicalTitle)), canonicalTitle: metadata.canonicalTitle, operation: saved.operation, iconPath: metadata.iconPath, family: metadata.family, familyColor: metadata.familyColor, phase: graph.mode.slice(7), alias: presentation.alias, compact: presentation.compact, enabled: saved.enabled !== false, readOnly: editor.readOnly || library, canPresent: true, controls, ...(fileInput ? { fileInput } : {}), ...(boundary ? { boundary } : {}),
-        model: metadata.modelRole && (effective?.effective !== 'No model call' || saved.model || saved.profileId || Object.keys(editor?.prepared.drawBase.bindingBlocks?.[selectedId] ?? {}).length) ? { role: saved.modelRole ?? metadata.modelRole, roleEditable: true, profile: field('profileId', workflow.profiles.map(profile => ({ value: profile.id, label: profile.name }))), model: field('model'), effective: effective?.effective || (library ? [editor.prepared.effectiveNodes[selectedId]?.profileId ?? graph.roles?.[saved.modelRole ?? metadata.modelRole]?.profileId,editor.prepared.effectiveNodes[selectedId]?.model ?? graph.roles?.[saved.modelRole ?? metadata.modelRole]?.model].filter(Boolean).join(' · ') : ''), source: editor.prepared.drawBase.instanceBindingSources?.[selectedId] ? 'Containing instance override' : saved.profileId || saved.model ? 'Node override' : 'Inherited from ' + (saved.modelRole ?? metadata.modelRole), ...(effective?.issue ? {issue: effective.issue} : {}) } : null,
+        model: metadata.modelRole && (effective?.effective !== 'No model call' || saved.model || saved.profileId || Object.keys(editor?.prepared.drawBase.bindingBlocks?.[selectedId] ?? {}).length) ? { role: saved.modelRole ?? metadata.modelRole, roleEditable: true, editable: !library, profileDefaultModel: editor.prepared.drawBase.profileDefaultModels?.[selectedId] ?? !!saved.profileId, profile: field('profileId', workflow.profiles.map(profile => ({ value: profile.id, label: profile.name }))), model: field('model'), effective: effective?.effective || (library ? [editor.prepared.effectiveNodes[selectedId]?.profileId ?? graph.roles?.[saved.modelRole ?? metadata.modelRole]?.profileId,editor.prepared.effectiveNodes[selectedId]?.model ?? graph.roles?.[saved.modelRole ?? metadata.modelRole]?.model].filter(Boolean).join(' · ') : ''), source: editor.prepared.drawBase.instanceBindingSources?.[selectedId] ? 'Containing instance override' : saved.profileId || saved.model ? 'Node override' : 'Inherited from ' + (saved.modelRole ?? metadata.modelRole), ...(effective?.issue ? {issue: effective.issue} : {}) } : null,
         modifiers: modifierView(saved, metadata, !(editor.readOnly || library)),
         ports: metadata.ports.map(port => ({ id: port.port, label: port.label, direction: port.dir === 'in' ? 'input' : 'output', kind: port.kind })), issues: [] } : null;
     const choices = library ? [] : previewChoices ?? previewChoicesFor(editor.prepared, workflow.targets);

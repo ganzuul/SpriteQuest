@@ -365,8 +365,10 @@ function expandChecked(root, snapshots, rootDefinition) {
                 if (Object.hasOwn(context.node.nodeBindingOverrides ?? {}, bindingKey)) Object.assign(explicitBinding, context.node.nodeBindingOverrides[bindingKey]);
             }
             const role = graph.roles?.[node.modelRole] ?? {};
+            // A node-selected profile uses its own model unless a node/instance model overrides it.
+            const profileOverride = node.profileId != null || Object.hasOwn(explicitBinding, 'profileId');
             node.profileId = node.profileId ?? role.profileId ?? null;
-            node.model = node.model ?? role.model ?? null;
+            node.model = node.model ?? (profileOverride ? null : role.model ?? null);
             Object.assign(node, explicitBinding);
         }
         const scope = inspectScope(graph, { definition, snapshots });

@@ -17,7 +17,7 @@ export function sendWorkflowState() {
     const graph = checked?.ok ? assigned : null;
     return {
         automatic: !!graph,
-        armLabel: graph ? 'Enable guidance before Send' : 'Enable workflows (assign pre guidance in Setup)',
+        armLabel: graph ? 'Enable guidance before Send' : 'Enable workflows (assign the pre phase from Workflows)',
         armedText: graph ? '"' + graph.name + '" adds guidance before Send (maximum ' + checked.data.callBound + ' auxiliary requests). SillyTavern builds its normal prompt. Post repair remains manual.' : assigned ? 'The assigned workflow cannot run: ' + checked.error.message + ' SillyTavern builds its normal prompt.' : 'No pre workflow is assigned. Post repair is manual via Run and review. SillyTavern builds its normal prompt.',
         offText: 'Lattice is off. SillyTavern builds its normal prompt. Post repair requires manual Run and review.',
     };

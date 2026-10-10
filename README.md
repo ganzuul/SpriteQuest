@@ -19,7 +19,7 @@ It runs inside SillyTavern. Your workflows can prepare guidance for a conversati
 - **Actor memory and state:** reflect on supplied evidence, express optional behavior guidance, internalize settled events, and track deterministic consequences.
 - **Reusable writing tools:** wrap a sequence in a subgraph with named inputs and outputs, then use it in other workflows.
 
-These are combinations of the shipped tools. **File → Open examples…** offers thirty roleplay lessons, from a literal scene brief to reusable context and reaction subgraphs. Setup also retains eleven technical starters for exploring individual capabilities.
+These are combinations of the shipped tools. **File → Open examples…** offers thirty roleplay lessons, from a literal scene brief to reusable context and reaction subgraphs. The workflow JSON examples below also explore individual capabilities.
 
 ## Key features
 
@@ -30,7 +30,7 @@ These are combinations of the shipped tools. **File → Open examples…** offer
 | **Graph tabs** | Open subgraph bodies without losing your place in the parent workflow. Each instance retains its own view. |
 | **Node shelf and contextual search** | Open a family to choose an operation directly, search operations and subgraphs, or discover compatible nodes while connecting a pin. |
 | **Node details** | Edit operation controls, aliases, compact cards, and model bindings; inspect effective values and validation issues. |
-| **Per-operation model connections** | Use role defaults or individual profile/model overrides without switching SillyTavern's active connection globally. |
+| **Per-operation model connections** | Choose each model node's connection profile in Details, use its profile model, or add an optional model override without switching SillyTavern's active connection globally. |
 | **Recorded previews** | Inspect inputs and outputs, follow selection, pin an artifact, or run only a selected output's dependencies. |
 | **Execution visibility** | See node states, expanded subgraph stages, request bounds, actual calls, and failures. |
 | **Portals and reroutes** | Keep a large graph readable while preserving its dependencies. |
@@ -41,7 +41,7 @@ These are combinations of the shipped tools. **File → Open examples…** offer
 
 ![LATTICE context assembly graph with two context branches joining before a Response Plan](docs/images/context-assembly.png)
 
-*Combine context branches with named inputs. This authored example includes a model planning step; bind its Analysis role before a full run.*
+*Combine context branches with named inputs. This authored example includes a model planning step; choose that node's connection profile in Details before a full run.*
 
 ## Available nodes
 
@@ -100,15 +100,15 @@ Select processing nodes, right-click, and choose **Create Subgraph**. The editor
 2. Enter `https://github.com/MentallyQuill/Lattice`, leaving the branch field blank to install `main`.
 3. Install, then reload SillyTavern. Open LATTICE from its logo on the left of the chat bar or with `/lattice`. Fresh launch selects **Structured guidance**, with workflows disabled and no phase assigned.
 4. Try the selected zero-call graph, or open **File → Open examples…** and choose **Build a brief from JSON** (lesson 3).
-5. Configure any model roles, click **Run**, and inspect the recorded results. Assign a phase and arm only when you want integration with normal sends.
+5. Choose each model node's connection profile in Details, click **Run**, and inspect the recorded results. Assign a phase from Workflows and arm only when you want integration with normal sends.
 
 For updates, use **Manage Extensions**, then reload. Installation, import, and editing do not make model calls.
 
 **Before reply (Pre)** prepares material for a reply that has not been written yet. Assign and arm a Guidance workflow to add its bounded direction before a normal Send; a manual Run lets you inspect it first. **After reply (Post)** supports work on a completed reply: run a repair graph manually, inspect its candidate, then apply it explicitly. Ordinary Text tools, including Transpose, work in either phase; host reply sources and application nodes impose the reply-specific limits.
 
-The thirty roleplay examples open immediately as independent, editable current workflows. Each opening creates a fresh copy; recipes with separate Pre/Post companions validate and install all members together, with the companions available in the Workflow selector. Opening makes no provider request and does not run, assign a phase, or arm the copies. Configure unresolved roles and local connections explicitly in Setup before model-backed runs. **Workflows → Workflow examples…** opens the same picker. The bundled lessons contain 37 phase packages and six embedded subgraph definitions.
+The thirty roleplay examples open immediately as independent, editable current workflows. Each opening creates a fresh copy; recipes with separate Pre/Post companions validate and install all members together, with the companions available in the Workflow selector. Opening makes no provider request and does not run, assign a phase, or arm the copies. Select each model-calling node and choose its own local connection profile in Details before model-backed runs. Its profile model is the default; a model override is optional. Assign the selected workflow's phase from **Workflows**. **Workflows → Workflow examples…** opens the same picker. The bundled lessons contain 37 phase packages and six embedded subgraph definitions.
 
-The eleven technical starters below remain available in **Setup**:
+Open the following technical examples as JSON with **File → Open workflow…**:
 
 | Starter | What it demonstrates | Maximum auxiliary calls |
 | --- | --- | ---: |

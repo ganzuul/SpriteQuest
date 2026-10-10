@@ -93,7 +93,7 @@ export async function requestModel({binding,messages,maxTokens,signal},context) 
 export function resolveBinding(node, graph, context) {
     const role = graph.roles?.[node.modelRole];
     const profileId = node.profileId || role?.profileId;
-    if (!profileId) return fail('BINDING_MISSING', 'Assign a fixed connection to this node or its model role.');
+    if (!profileId) return fail('BINDING_MISSING', 'Choose a connection profile for this node in Details.');
     if (typeof context.ConnectionManagerRequestService?.getProfile !== 'function') return fail('SERVICE_UNAVAILABLE', 'SillyTavern Connection Manager is unavailable.');
     let profile;
     try { profile = context.ConnectionManagerRequestService.getProfile(profileId); }

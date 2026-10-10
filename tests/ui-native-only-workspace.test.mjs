@@ -14,15 +14,6 @@ test('the installed workspace has one unconditional current shell', async () => 
     assert.deepEqual(compile(shell, { filename: 'Workbench.svelte', generate: 'client' }).warnings.filter(warning => warning.code.startsWith('a11y')), []);
 });
 
-test('setup exposes actual examples and assignment with no mode selector', async () => {
-    const setup = await read('ui/WorkflowSetup.svelte');
-    assert.doesNotMatch(setup, /workflowMode|setMode|Legacy|enable native mode|view\.native/);
-    assert.match(setup, /view\.starters as starter/);
-    assert.match(setup, /Maximum \{starter\.callBound\} auxiliary requests/);
-    assert.match(setup, /Arming is a separate action/);
-    assert.deepEqual(compile(setup, { filename: 'WorkflowSetup.svelte', generate: 'client' }).warnings.filter(warning => warning.code.startsWith('a11y')), []);
-});
-
 test('shell geometry is shared across themes and graph tabs have no fallback', async () => {
     const [shell, tabs, types, entry] = await Promise.all(['ui/Workbench.svelte', 'ui/GraphTabs.svelte', 'ui/detail-types.ts', 'ui/entry.js'].map(read));
     assert.doesNotMatch(shell, /pc-native-default|nativeDefaultTheme/);

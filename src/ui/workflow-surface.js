@@ -8,7 +8,6 @@ import { addressKey, nodeAddress, targetAddress, own, plain, safeBinding, safeEr
 import { workflowSignature } from '../workflow/runtime.js?v=0.26.0';
 import { FAMILIES, OPERATIONS, operationFor } from '../workflow/catalog.js?v=0.26.0';
 import { safeWorkflowData } from '../workflow/contracts.js?v=0.26.0';
-import { STARTERS } from '../workflow/starters.js?v=0.26.0';
 import { readNodePresentation } from './node-palette.js?v=0.26.0';
 const descriptions = { Input: 'Bring material into a workflow.', Shaping: 'Change the plan or amount of material.', Surface: 'Refine expression.', Transpose: 'Apply a reference’s qualities.', Derive: 'Extract findings from a source.', Introspection: 'Reflect on experience, context and actor state.', Output: 'Inspect or commit an artifact.' };
 const choices = { method: ['select', 'compress'], scope: ['whole', 'narration', 'dialogue'], strength: ['light', 'medium', 'strong'] };
@@ -49,7 +48,7 @@ function safeMemoryCommit(raw) {
     return typeof applied === 'boolean' && typeof acknowledged === 'boolean' && Number.isSafeInteger(version) && version >= 0 ? freeze({ applied, acknowledged, version }) : null;
 }
 const summaryView = result => result.ok ? { callBound: result.data.callBound, issues: [], requiredBindingAddresses: result.data.requiredBindingAddresses } : { callBound: 0, issues: [result.error.message], requiredBindingAddresses: [] };
-const emptyView = message => ({ graphId: '', name: '', phase: '', assigned: false, roles: [], profiles: [], starters: [], families: [], nodes: [], groups: [], selectedId: null, callBound: 0, issues: [message], busy: false, status: '', result: null, quoteHelp: QUOTE_SCOPE_HELP, rows: [], targets: [] });
+const emptyView = message => ({ graphId: '', name: '', phase: '', assigned: false, profiles: [], families: [], nodes: [], groups: [], selectedId: null, callBound: 0, issues: [message], busy: false, status: '', result: null, quoteHelp: QUOTE_SCOPE_HELP, rows: [], targets: [] });
 // Keep a fixed digest, never the semantic signature's saved controls/body text.
 function rememberRecordingRevision(recording, revision) {
     if (recording && typeof recording === 'object' && typeof revision === 'string' && !historicalPreviews.has(recording)) historicalPreviews.set(recording, { revision: sha256Text(revision), aliases: null });
@@ -93,16 +92,9 @@ function safeHandle(raw) {
 }
 function baseWorkflowView(graph, profiles, settings) {
     const phase = typeof graph.mode === 'string' ? graph.mode.slice(7) : '';
-    const roles = Object.keys(graph.roles ?? {});
-    for (const node of Object.values(graph.nodes ?? {})) {
-        const role = node.modelRole ?? operationFor(node, { phase })?.modelRole;
-        if (role && !roles.includes(role)) roles.push(role);
-    }
     return { graphId: graph.id || '', name: graph.name || '', phase,
         assigned: graph.id === settings.nativeBindings?.[phase === 'pre' ? 'preGraphId' : 'postGraphId'],
-        roles: roles.map(name => ({ name, profileId: graph.roles?.[name]?.profileId || '', model: graph.roles?.[name]?.model || '' })),
         profiles: profiles.map(profile => ({ id: profile.id, name: profile.name || profile.id })),
-        starters: STARTERS.map(({ operations, ...starter }) => structuredClone(starter)),
         families: FAMILIES.map(name => ({ name, description: descriptions[name], operations: Object.values(OPERATIONS).filter(op => op.family === name || name === 'Surface' && ['pattern-scan', 'validate-patches'].includes(op.id)).map(op => ({ id: op.id, title: op.title, phase: op.phase === 'both' ? phase : op.phase || phase, compatible: (!op.phase || op.phase === 'both' || op.phase === phase) && (!op.minimumSchema || graph.schema >= op.minimumSchema) })) })),
         quoteHelp: QUOTE_SCOPE_HELP };
 }

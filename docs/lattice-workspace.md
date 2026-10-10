@@ -8,7 +8,7 @@ Begin with two working examples that use no model calls. One assembles a structu
 
 Install from `https://github.com/MentallyQuill/Lattice` in SillyTavern's **Extensions → Install extension**, leaving the branch field blank. Reload, then open the LATTICE logo on the left of the chat bar or type `/lattice`.
 
-Fresh launch opens **Structured guidance**, with workflows disabled and no phase assigned. Use **Workflows → Workflow examples…** to install another copy or a different example. Opening, installing, or importing makes no provider request.
+Fresh launch opens **Structured guidance**, with workflows disabled and no phase assigned. Use **File → Open examples…** to install another copy or a different example. Opening, installing, or importing makes no provider request.
 
 The default **Ember** theme follows SillyTavern's panel, text, control and quote colors, with a neutral canvas and translucent node fills. **Tools → Theme and colours** offers eight themes: Ember, Lattice, Ash, Graphite, Slate, Obsidian, Harbor and Signal. Choose one or customize its colors and look.
 
@@ -31,7 +31,7 @@ Compose (JSON source) → JSON Decode → Select Fields → Compose (Guidance) �
 
 *The captured example adds tone and uses synthetic harbor-scene material. The supplied starter begins with direction and constraint.*
 
-This example needs no connection profile or existing reply. A manual run previews the brief. To use it with normal sends, open Setup, assign the pre phase and enable workflows. Send executes the configured pre workflow and installs its optional guidance for that generation.
+This example needs no connection profile or existing reply. A manual run previews the brief. To use it with normal sends, choose **Workflows → Assign pre phase** and enable workflows. Send executes the configured pre workflow and installs its optional guidance for that generation.
 
 ## Propose an exact reply edit
 
@@ -58,6 +58,6 @@ Apply rechecks the source and creates a new swipe preserving the original. Editi
 | [Scene guidance](../workflows/native-guidance.json) | Pre | 2 |
 | [Reviewed AI De-slop](../workflows/reviewed-de-slop.json) | Post | 1 |
 
-For model-backed examples, bind **Analysis** or **Prose** in Setup. Details allows per-operation profile/model overrides. Manual runs can spend tokens, and Send does not reuse a manual guidance result.
+For model-backed examples, select each model-calling node and choose its **Connection profile** in Details. The profile supplies the model by default; choose a model override when needed. Manual runs can spend tokens, and Send does not reuse a manual guidance result.
 
 Next, read the [operator's manual](operators-manual.md) to discover nodes, connect pins, open subgraph tabs, customize instances, and inspect recorded outputs. Use the [node reference](node-reference.md) to design a process beyond the starter examples.

@@ -33,5 +33,5 @@ export function mountCanvas(target, actions) {
 }
 export function mountWorkbench(target, actions) {
     const component = mount(Workbench, { target, props: { actions } }); flushSync();
-    return { ...component.getParts(), update: view => flushSync(() => component.update(view)), updateActions: actions => flushSync(() => component.updateActions(actions)), revealPreview: () => flushSync(() => component.revealPreview()), revealWorkflowSetup: () => flushSync(() => component.revealWorkflowSetup()), renameGraphView: key => component.renameGraphView(key), focusCommentTitle: (id, isCurrent) => component.focusCommentTitle(id, isCurrent), destroy: () => unmount(component) };
+    return { ...component.getParts(), update: view => flushSync(() => component.update(view)), updateActions: actions => flushSync(() => component.updateActions(actions)), revealPreview: () => flushSync(() => component.revealPreview()), renameGraphView: key => component.renameGraphView(key), focusCommentTitle: (id, isCurrent) => component.focusCommentTitle(id, isCurrent), destroy: () => unmount(component) };
 }

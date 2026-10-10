@@ -3,48 +3,54 @@ import { chooseControl, openDetailGroup } from './details-helpers.mjs';
 
 const preview = page => page.locator('.pc-output-preview');
 const details = page => page.getByRole('region', { name: 'Node details', exact: true });
-async function openSetup(page) {
-    const dialog = page.getByRole('dialog', { name: 'Workflow setup', exact: true });
-    if (!await dialog.isVisible()) await page.getByRole('button', { name: 'Setup', exact: true }).click();
+async function openExamples(page) {
+    await page.getByRole('button', { name: 'File', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Open examples…', exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: 'Examples', exact: true });
     await expect(dialog).toBeVisible(); return dialog;
 }
-async function closeSetup(page) {
-    const dialog = page.getByRole('dialog', { name: 'Workflow setup', exact: true });
-    if (await dialog.isVisible()) await dialog.getByRole('button', { name: 'Close panel', exact: true }).click();
+async function openExample(page, title) {
+    const dialog = await openExamples(page);
+    await dialog.getByRole('button', { name: title, exact: true }).click();
+    await expect(dialog).toBeHidden();
 }
+// Runtime regressions retain their exact technical starter fixture. Public
+// example opening and per-node binding are exercised below through actual UI.
 async function installWorkflow(page, title) {
-    const dialog = await openSetup(page);
-    await dialog.getByRole('button', { name: 'Install ' + title, exact: true }).click();
-    await closeSetup(page);
+    await page.evaluate(async title => {
+        const h = window.canvasHarness, { STARTERS, installStarter } = await import('/src/workflow/starters.js?v=' + h.version);
+        const starter = STARTERS.find(starter => starter.title === title);
+        if (!starter) throw new Error('Unknown starter fixture: ' + title);
+        await h.activate(installStarter(starter.id, h.S.settings()));
+    }, title);
 }
-async function bindRole(page, role, profile) {
-    const dialog = await openSetup(page);
-    await dialog.getByLabel(role + ' connection', { exact: true }).selectOption(profile);
+async function bindNode(page, operation, profile) {
+    const region = await inspectOperation(page, operation);
+    await region.getByLabel('Connection profile', { exact: true }).selectOption(profile);
 }
 async function assignPhase(page, phase) {
-    const dialog = await openSetup(page);
-    await dialog.getByRole('button', { name: 'Assign ' + phase + ' phase', exact: true }).click();
-    await closeSetup(page);
+    await page.getByRole('button', { name: 'Workflows', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Assign ' + phase + ' phase', exact: true }).click();
+    await expect(page.locator('.pc-root-workflow-status')).toContainText(phase + ' · Assigned');
+    await page.getByRole('button', { name: 'Workflows', exact: true }).click();
+    await expect(page.getByRole('menuitem', { name: 'Assigned to ' + phase + ' phase', exact: true })).toBeDisabled();
+    await page.keyboard.press('Escape');
 }
 async function expectBound(page, bound) {
-    const dialog = await openSetup(page);
-    await expect(dialog.getByText('Maximum auxiliary requests: ' + bound, { exact: true })).toBeVisible();
-    await closeSetup(page);
     await expect(page.locator('.pc-root-workflow-status')).toContainText('≤ ' + bound + ' requests');
 }
 async function operationId(page, operation) {
     return page.evaluate(operation => Object.values(window.canvasHarness.graph.nodes).find(node => node.operation === operation)?.id, operation);
 }
 async function openFormation(page) {
-    await closeSetup(page);
     const group = page.getByRole('group', { name: 'Group: AI De-slop', exact: true });
-    await group.getByRole('button', { name: 'Open group', exact: true }).click();
+    const open = group.getByRole('button', { name: 'Open group', exact: true });
+    if (await open.count()) await open.click();
     const scan = await operationId(page, 'pattern-scan'), repair = await operationId(page, 'repair');
     await expect(page.locator(`.pc-node-native[data-id="${scan}"]`)).toBeVisible();
     await expect(page.locator(`.pc-node-native[data-id="${repair}"]`)).toBeVisible();
 }
 async function inspectOperation(page, operation) {
-    await closeSetup(page);
     const id = await operationId(page, operation); expect(id).toBeTruthy();
     const card = page.locator(`.pc-node-native[data-id="${id}"]`);
     if (!await card.count()) await openFormation(page);
@@ -54,7 +60,6 @@ async function inspectOperation(page, operation) {
     await expect(details(page)).toBeVisible(); return details(page);
 }
 async function selectTerminal(page, operation, pin = true) {
-    await closeSetup(page);
     const id = await operationId(page, operation); expect(id).toBeTruthy();
     const leaf = preview(page), select = leaf.getByRole('combobox', { name: 'Preview output', exact: true });
     const key = await select.locator('option').evaluateAll((options, id) => options.find(option => {
@@ -187,14 +192,31 @@ test('formation request summary follows scan mode and additional reachable repai
     await expectBound(page, 2);
 });
 
-test('install and explicitly bind and assign a pre workflow without arming it', async ({ page }) => {
+test('open an example and independently bind its model nodes without arming it', async ({ page }) => {
     await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
-    await page.evaluate(() => { window.canvasHarness.context.extensionSettings.connectionManager = { profiles: [{ id: 'analysis', name: 'Analysis connection' }] }; });
-    await installWorkflow(page, 'Scene guidance');
-    const setup = await openSetup(page); await expect(setup.getByText('Assign a fixed connection to this node or its model role.', { exact: true })).toBeVisible(); await expect(setup.getByLabel('Analysis connection', { exact: true })).toHaveValue('');
+    await page.evaluate(() => {
+        const c = window.canvasHarness.context;
+        c.extensionSettings.connectionManager = { profiles: [{ id: 'analysis', name: 'Analysis connection', api: 'openai', model: 'compact-profile-model', preset: null }, { id: 'planning', name: 'Planning connection', api: 'openai', model: 'plan-profile-model', preset: null }] };
+        c.CONNECT_API_MAP = { openai: { selected: 'openai', source: 'openai' } };
+        c.ConnectionManagerRequestService.getProfile = id => c.extensionSettings.connectionManager.profiles.find(profile => profile.id === id);
+    });
+    await expect(page.getByRole('button', { name: 'Setup', exact: true })).toHaveCount(0);
+    await openExample(page, 'Prepare a scene recap');
+    const compactDetails = await inspectOperation(page, 'smart-compactor');
+    await expect(compactDetails.getByLabel('Connection profile', { exact: true })).toHaveValue('');
     const before = await page.evaluate(() => { const settings = window.canvasHarness.S.settings(); return { enabled: settings.enabled, assigned: settings.nativeBindings.preGraphId }; });
     expect(before).toEqual({ enabled: false, assigned: null });
-    await bindRole(page, 'Analysis', 'analysis');
+    await bindNode(page, 'smart-compactor', 'analysis');
+    await expect(details(page).getByLabel('Model mode', { exact: true }).locator('option:checked')).toHaveText('Use profile model');
+    await bindNode(page, 'response-plan', 'planning');
+    await expect(details(page).getByLabel('Model mode', { exact: true }).locator('option:checked')).toHaveText('Use profile model');
+    await details(page).getByLabel('Model mode', { exact: true }).selectOption('override');
+    await details(page).getByLabel('Model identifier', { exact: true }).fill('independent-plan-model');
+    await details(page).getByLabel('Model identifier', { exact: true }).press('Tab');
+    expect(await page.evaluate(() => {
+        const nodes = Object.values(window.canvasHarness.graph.nodes), compact = nodes.find(node => node.operation === 'smart-compactor'), plan = nodes.find(node => node.operation === 'response-plan');
+        return { compact: [compact.profileId, compact.model], plan: [plan.profileId, plan.model], roleProfile: window.canvasHarness.graph.roles.Analysis.profileId };
+    })).toEqual({ compact: ['analysis', null], plan: ['planning', 'independent-plan-model'], roleProfile: null });
     await assignPhase(page, 'pre');
     expect(await page.evaluate(() => Object.hasOwn(window.canvasHarness.S.settings(),'workflowMode'))).toBe(false);
     expect(await page.evaluate(() => window.canvasHarness.S.settings().enabled)).toBe(false);
@@ -207,7 +229,7 @@ test('install and explicitly bind and assign a pre workflow without arming it', 
 
 
 
-test('post setup opens the same AI De-slop primitives and preserves a focused editor', async ({ page }) => {
+test('post workflow keeps its AI De-slop primitives and preserves a focused editor', async ({ page }) => {
     await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
     await page.evaluate(() => {
         const c = window.canvasHarness.context;
@@ -219,7 +241,7 @@ test('post setup opens the same AI De-slop primitives and preserves a focused ed
     await installWorkflow(page, 'Reviewed AI De-slop');
     const ids = await page.evaluate(() => Object.keys(window.canvasHarness.graph.nodes));
     await expect(page.getByRole('group', { name: 'Group: AI De-slop', exact: true })).toBeVisible();
-    await bindRole(page, 'Prose', 'prose');
+    await bindNode(page, 'repair', 'prose');
     await assignPhase(page, 'post');
     await expectBound(page, 1);
     await openFormation(page);
@@ -234,33 +256,32 @@ test('post setup opens the same AI De-slop primitives and preserves a focused ed
     await expect(details(page).getByLabel('Node name', { exact: true })).toHaveValue('Repair');
     await expect(details(page).locator('.pc-detail-identity')).toContainText('Surface · post phase');
     const modelSummary = details(page).locator('[data-model-controls] > summary');
-    await expect(modelSummary).toHaveText('Prose · Inherit role · prose · workflow-test-model');
-    await expect(details(page).getByLabel('Model mode', { exact: true })).not.toBeVisible();
+    await expect(modelSummary).toContainText('workflow-test-model');
+    await expect(details(page).getByLabel('Model mode', { exact: true })).toBeVisible();
     await openDetailGroup(page, 'Model');
-    expect(await page.evaluate(() => window.canvasHarness.graph.roles.Prose)).toEqual({ profileId: 'prose', model: null });
+    expect(await page.evaluate(() => window.canvasHarness.graph.roles.Prose)).toEqual({ profileId: null, model: null });
+    expect(await page.evaluate(() => Object.values(window.canvasHarness.graph.nodes).find(node => node.operation === 'repair').profileId)).toBe('prose');
     await details(page).getByLabel('Model mode', { exact: true }).selectOption('override');
     await expect(details(page).getByLabel('Model identifier', { exact: true })).toBeVisible();
     expect(await page.evaluate(() => Object.values(window.canvasHarness.graph.nodes).find(node => node.operation === 'repair').model)).toBeNull();
     await details(page).getByLabel('Model identifier', { exact: true }).fill('node-override-model');
     await details(page).getByLabel('Model identifier', { exact: true }).press('Tab');
     expect(await page.evaluate(() => Object.values(window.canvasHarness.graph.nodes).find(node => node.operation === 'repair').model)).toBe('node-override-model');
-    await expect(modelSummary).toHaveText('Prose · Override · prose · node-override-model');
+    await expect(modelSummary).toContainText('node-override-model');
 });
 
 
-test('current setup opens without domain scans or provider requests', async ({ page }) => {
+test('examples and model details open without domain scans or provider requests', async ({ page }) => {
     await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
-    await installWorkflow(page, 'Scene guidance');
     await page.evaluate(() => {
         window.nativeLoreScans = 0;
         window.canvasHarness.context.getWorldInfoPrompt = async () => { window.nativeLoreScans++; return {}; };
     });
-    await openSetup(page);
+    await openExample(page, 'Prepare a scene recap');
+    await inspectOperation(page, 'response-plan');
     expect(await page.evaluate(() => window.nativeLoreScans)).toBe(0);
     expect(await page.evaluate(() => window.canvasHarness.providerCalls())).toBe(0);
-    const setup = page.getByRole('dialog', { name: 'Workflow setup', exact: true });
-    await expect(setup).toBeVisible();
-    await expect(setup.getByLabel('Workflow mode', { exact: true })).toHaveCount(0);
+    await expect(details(page).getByLabel('Connection profile', { exact: true })).toBeVisible();
 });
 
 
@@ -602,7 +623,7 @@ test('accepted semantic additive import cancels a root request and history canno
 
 
 
-test('an imported native graph with omitted role records can bind its required role', async ({ page }) => {
+test('an imported native graph with omitted role records can bind its model node', async ({ page }) => {
     await reviewFixture(page);
     const imported = await page.evaluate(() => {
         const h = window.canvasHarness, envelope = JSON.parse(h.S.exportGraph(h.graph.id));
@@ -610,8 +631,9 @@ test('an imported native graph with omitted role records can bind its required r
         const result = h.S.importGraph(JSON.stringify(envelope)); h.UI.refreshIfOpen(); return result.graph.id;
     });
     await page.getByRole('combobox', { name: 'Workflow', exact: true }).selectOption(imported);
-    await bindRole(page, 'Prose', 'prose');
-    expect(await page.evaluate(() => window.canvasHarness.graph.roles?.Prose?.profileId)).toBe('prose');
+    await bindNode(page, 'repair', 'prose');
+    expect(await page.evaluate(() => Object.values(window.canvasHarness.graph.nodes).find(node => node.operation === 'repair').profileId)).toBe('prose');
+    expect(await page.evaluate(() => window.canvasHarness.graph.roles?.Prose?.profileId)).toBeUndefined();
 });
 
 

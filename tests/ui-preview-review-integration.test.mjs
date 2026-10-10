@@ -126,13 +126,14 @@ async function workbenchFixture(actions) {
     catch (error) { await close(); throw error; }
 }
 
-test('the actual Setup bridge opens examples without host work', async () => {
-    const f = adapter(); await f.run(); const mounted = await workbenchFixture({ close() {}, resizeStart() {}, workflowSetup: {} });
+test('the actual workspace opens examples without host work', async () => {
+    const f = adapter(); await f.run(); const mounted = await workbenchFixture({ command() {}, resizeStart() {} });
     try {
         mounted.bridge.update(f.env.panels); const before = structuredClone(f.root), counters = { ...f.counters };
-        mounted.bridge.revealWorkflowSetup(); await (await import(clientURL)).tick(); flushSync();
-        const dialog = mounted.host.querySelector('[role="dialog"][aria-label="Workflow setup"]'); assert.ok(dialog, 'Setup opens the actual current panel');
-        assert.equal(dialog.querySelector('[aria-label="Workflow mode"]'), null); assert.equal(dialog.querySelector('h3').textContent, f.root.name); assert.match(dialog.textContent, /latest completed assistant reply/); assert.equal(mounted.host.querySelectorAll('.pc-output-preview').length, 1); assert.deepEqual(f.root, before); assert.deepEqual(f.counters, counters); assert.equal(f.counters.requests, 0);
+        [...mounted.host.querySelectorAll('button')].find(button => button.textContent === 'File').click(); await (await import(clientURL)).tick(); flushSync();
+        [...mounted.host.querySelectorAll('[role="menuitem"]')].find(button => button.textContent === 'Open examples…').click(); await (await import(clientURL)).tick(); flushSync();
+        const dialog = mounted.host.querySelector('[role="dialog"][aria-label="Examples"]'); assert.ok(dialog, 'Examples opens the actual current picker');
+        assert.equal(mounted.host.querySelectorAll('.pc-output-preview').length, 1); assert.deepEqual(f.root, before); assert.deepEqual(f.counters, counters); assert.equal(f.counters.requests, 0);
     } finally { await mounted.close(); }
 });
 

@@ -1,7 +1,6 @@
 import { resolveBinding } from '../workflow/connections.js?v=0.26.0';
 import * as workflowRuntime from '../run.js?v=0.26.0';
 import { workflowSignature } from '../workflow/runtime.js?v=0.26.0';
-import { installStarter } from '../workflow/starters.js?v=0.26.0';
 import { installWorkflowExample } from '../workflow/examples.js?v=0.26.0';
 import { projectWorkflowExamples } from './example-catalog.js?v=0.26.0';
 import { operationFor, portsForNode } from '../workflow/catalog.js?v=0.26.0';
@@ -344,17 +343,7 @@ function syncNativeRevision(reason) {
 }
 const workflowActions = {
     presentNode,
-    install(id) { workflowSession.cancel('New workflow'); current = installStarter(id, settings()); save(); setCanvasGraph(); renderAll(); },
-    bindRole(name, profileId, model) {
-        if (!graphViews) return;
-        navigateGraphView('focusView', graphViews.project().graphViews.tabs[0].key);
-        const token = captureEditor(); if (!token.ok) return token;
-        return commitCaptured(token.data, prepareScopeMutation(token.data, context => {
-            context.scope.roles ??= {}; context.scope.roles[name] = { profileId: profileId || null, model: model || null };
-            return { ok: true, data: {} };
-        }));
-    },
-    assign(phase) { if (current?.mode !== 'native-' + phase) return; workflowSession.cancel('Workflow assignment changed'); settings().nativeBindings[phase === 'pre' ? 'preGraphId' : 'postGraphId'] = current.id; save(); updateWorkflowProjection(); renderStatus(); },
+    assign(phase) { if (current?.mode !== 'native-' + phase) return; workflowSession.cancel('Workflow assignment changed'); settings().nativeBindings[phase === 'pre' ? 'preGraphId' : 'postGraphId'] = current.id; save(); refreshWorkflowPreparation(); updateWorkflowProjection(); renderStatus(); },
     run: () => graphViews ? workflowSession.run() : toast('The current workflow is unavailable.', 'error'),
     apply: selector => applyPreviewReview(selector), reject: () => workflowSession.reject(),
     addNode(operation, at = null) { const token = captureEditor(); if (!token.ok) return token; return commitCaptured(token.data, prepareShelfNodeCreation(token.data, { kind: 'create', operation }, at)); },
@@ -430,13 +419,13 @@ function build() {
         command(name) {
             const commands = { new: onNewGraph, duplicate: onDuplicateGraph, rename: onRenameGraph, delete: onDeleteGraph, save: onSaveGraph, import: onImportGraph, 'open-workflow': onImportGraph, 'import-into-graph': onImportIntoGraph, export: onExportGraph, undo: doUndo, redo: doRedo,
                 fit: () => canvas.fit(), 'fit-selection': () => canvas.fitSelection(), copy: () => copySelection(), cut: () => copySelection(true), paste: pasteFromClipboard,
-                'delete-selection': () => canvas.deleteSelection(), 'run-workflow': workflowActions.run, 'stop-workflow': () => workflowSession.cancel('Stopped by user'),
+                'delete-selection': () => canvas.deleteSelection(), 'run-workflow': workflowActions.run, 'stop-workflow': () => workflowSession.cancel('Stopped by user'), 'assign-workflow-phase': () => workflowActions.assign(current?.mode?.slice(7)),
                 theme: toggleThemePopover, inspector: togglePane, 'reveal-inspector': () => { if (root.classList.contains('pc-details-hidden')) togglePane(); }, close };
             return commands[name]?.();
         },
         mode: mode => canvas.setMode(mode), zoom: factor => { const rect = canvas.host.getBoundingClientRect(); canvas.zoomBy(factor, rect.left + rect.width / 2, rect.top + rect.height / 2); }, fitSelection: () => canvas.fitSelection(),
         resizeStart: () => canvas?.cancelGesture(), resizeDetails, addNode: workflowActions.addNode,
-        workflowSetup: workflowActions, graphViewActions, nodeDetails: nodeDetailsActions, commentDetails: commentDetailsActions, outputPreview: outputPreviewActions, runDetails: runDetailsActions,
+        graphViewActions, nodeDetails: nodeDetailsActions, commentDetails: commentDetailsActions, outputPreview: outputPreviewActions, runDetails: runDetailsActions,
         chooseNative: chooseNativeNode, managePortals: () => openPortalManager(), shelfSubgraph: shelfSubgraphAction,
         subgraphSave: { close() { pendingSubgraphSave = null; workbench.update({ subgraphSave: null }); }, save: saveSubgraphToShelf },
         newWorkflowPrompt: { choose: chooseNewWorkflow },
@@ -647,9 +636,17 @@ function hookHistory() {
     H.onHistoryChange((g, event) => { handleCommentHistory(g, event); handleSubgraphHistory(g, event); if (g === current) paintHistory(); });
 }
 
+function historyEditContext() {
+    const context = readGraphEditContext(), editor = graphViews?.readEditor();
+    // History belongs to the root document, including connection overrides on
+    // shared instances. Library definitions remain read-only.
+    return editor?.readOnly && editor.view.identity.kind === 'instance'
+        ? { ...context, viewPath: [], readOnly: !isOpen() || activeEditRoot() !== current }
+        : context;
+}
 function paintHistory() {
     if (!workbench || !current) return;
-    const next = H.peek(current), allowed = !readGraphEditContext().readOnly;
+    const next = H.peek(current), allowed = !historyEditContext().readOnly;
     workbench.update({ history: { undo: allowed && !!next.undo, redo: allowed && !!next.redo,
         undoTitle: next.undo ? `Undo: ${next.undo} (Ctrl+Z)` : 'Nothing to undo',
         redoTitle: next.redo ? `Redo: ${next.redo} (Ctrl+Shift+Z)` : 'Nothing to redo', note: historyNote, showNote: historyNoteVisible } });
@@ -681,7 +678,7 @@ function flashHistoryNote(text) {
 function restoreGraphHistory(direction, verb) {
     const graph = activeEditRoot();
     if (!graph) return;
-    const context = captureGraphEditContext(graph, readGraphEditContext);
+    const context = captureGraphEditContext(graph, historyEditContext);
     if (!context.ok) return toast(context.error.message, 'error');
     const result = stepGraphHistory(graph, direction, graphDocumentHooks);
     if (result.ok) afterHistory(result.data.label, verb);
@@ -1389,6 +1386,21 @@ function detailCapture(selection, presentation = false) {
     if (selection.revision !== actualRevision || selection.selectionKey !== JSON.stringify([editor.view.key, selection.address.nodeId]) || (library ? selection.address.kind!=='library'||definitionRefKey(selection.address.definitionRef)!==definitionRefKey(editor.prepared.definitionRef) : selection.address.kind==='library'||selection.address.workflowId!==current.id||JSON.stringify(selection.address.instancePath)!==JSON.stringify(editor.view.identity.instancePath ?? []))) return { ok: false, error: { code: 'STALE_CONTEXT', message: 'The selected node changed.' } };
     return captured;
 }
+function editInstanceBinding(selection, field, mode, value) {
+    const captured = detailCapture(selection, true); if (!captured.ok) return captured;
+    const editor = graphViews.readEditor(), path = selection.address.instancePath;
+    if (editor.view.identity.kind !== 'instance' || !path.length) return { ok: false, error: { code: 'INVALID_INSTANCE', message: 'Select a node in a workflow instance.' } };
+    // Bind this occurrence on its root wrapper, leaving pinned definitions and
+    // sibling instances unchanged. Keep the active child tab and selection.
+    const context = captureGraphEditContext(current, () => ({ sessionId: readGraphEditContext().sessionId, viewPath: [], readOnly: !editorCurrent(captured.data) }));
+    if (!context.ok) return context;
+    const resetting = mode === 'inherit';
+    const prepared = prepareNode(current, { kind: 'binding-override', viewPath: [], nodeId: path[0], expectedInstanceRef: current.nodes[path[0]].definition,
+        target: { kind: 'node', instancePath: path.slice(1), nodeId: selection.address.nodeId }, field, mode: resetting ? 'reset' : 'set',
+        ...(resetting ? {} : { value: mode === 'block' ? null : value }) });
+    if (!prepared.ok) return prepared;
+    return commitGraphEdit(current, { ...prepared.data, context: context.data, viewPath: [] }, graphDocumentHooks);
+}
 const commentDetailsActions = {
     patch(selection, patch) { const captured = detailCapture(selection); return captured.ok ? commentPatch(captured.data, selection.address.nodeId, patch) : captured; },
     command(selection, command) { const captured = detailCapture(selection); return captured.ok ? commentCommand(captured.data, selection.address.nodeId, command) : captured; },
@@ -1419,7 +1431,7 @@ const nodeDetailsActions = {
         }));
     },
     editField(selection,key,value) { const captured = detailCapture(selection); return captured.ok ? commitCaptured(captured.data,prepareNode(current,{ ...scopeCommand(captured.data),kind:key === 'enabled' ? 'enabled' : 'model-role',nodeId:selection.address.nodeId,...(key === 'enabled' ? {value} : {mode:'set',value}) })) : captured; },
-    editBinding(selection,field,mode,value) { const captured = detailCapture(selection); return captured.ok ? commitCaptured(captured.data,prepareNode(current,{ ...scopeCommand(captured.data),kind:'binding',nodeId:selection.address.nodeId,field,consumeOverride:true,mode:mode === 'inherit' ? 'remove' : 'set',...(mode === 'inherit' ? {} : {value:mode==='block'?null:value}) })) : captured; },
+    editBinding(selection,field,mode,value) { if (graphViews?.readEditor().readOnly && graphViews.readEditor().view.identity.kind === 'instance') return editInstanceBinding(selection,field,mode,value); const captured = detailCapture(selection); return captured.ok ? commitCaptured(captured.data,prepareNode(current,{ ...scopeCommand(captured.data),kind:'binding',nodeId:selection.address.nodeId,field,consumeOverride:true,mode:mode === 'inherit' ? 'remove' : 'set',...(mode === 'inherit' ? {} : {value:mode==='block'?null:value}) })) : captured; },
     duplicate(selection) { const captured=detailCapture(selection);if(captured.ok)duplicateSelected(editorDraw.nodes[selection.address.nodeId],false); },
     remove(selection) { const captured = detailCapture(selection); if (captured.ok) deleteNativeSelection({kind:'node',id:selection.address.nodeId}, captured.data); },
     editInterface: editSubgraphInterface,

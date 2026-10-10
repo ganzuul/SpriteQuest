@@ -7,9 +7,9 @@ Install from the repository's default branch using the steps below.
 ## Start with an example
 
 1. Open SillyTavern's **Extensions → Install extension**. Enter repository URL `https://github.com/MentallyQuill/Lattice`, leave **Branch or tag name (optional)** blank to install the default branch, click **Install** (or **Install just for me**), then reload. Open LATTICE beside Send or with `/lattice`.
-2. Open **Workflows → Workflow examples…** and choose **Install Scene guidance** or **Install Reviewed AI De-slop**. Each install creates its own editable graph and opens setup. Installing, importing, and editing never arm generation or make a model call.
-3. Choose a SillyTavern Connection Manager profile for each role: **Analysis** for scene guidance, **Prose** for repair. An optional role model override uses that model with the chosen profile. Inspect a model operation to override its connection/model independently.
-4. Use **Assign pre phase** for guidance, or **Assign post phase** for reviewed repair. Arming is a separate action. A missing/deleted profile or unsupported route blocks the run with a useful issue.
+2. Open **Workflows → Workflow examples…** and choose a lesson, or open [Scene guidance](../workflows/native-guidance.json) or [Reviewed AI De-slop](../workflows/reviewed-de-slop.json) with **File → Open workflow…**. Each opening creates its own editable graph. Opening, importing, and editing never arm generation or make a model call.
+3. Select each model-calling node and choose its own SillyTavern Connection Manager profile in **Details → Connection profile**. Scene guidance has separate Smart Compactor and Response Plan connections; repair has its own connection. Each node uses the selected profile's model by default. Choose **Model mode → Override** only when that node needs a different model identifier.
+4. Use **Workflows → Assign pre phase** for guidance, or **Assign post phase** for reviewed repair. Arming is a separate action. A missing/deleted profile or unsupported route blocks the run with a useful issue.
 5. Use **Run** to inspect the workflow's result. To use guidance on normal sends, arm the extension and send as usual. For repair, wait for a completed assistant reply before running, then compare the candidate with the original.
 
 For an existing installation, update it in **Manage Extensions** and reload. If you need to change branches, select the desired branch in **Manage Extensions → Switch branch**, click **Switch**, then reload. Install URLs use the repository address above without a `/tree/` suffix.
@@ -60,7 +60,7 @@ Apply reports local in-memory success separately from persistence. The host's sa
 
 ## Actor memory and state
 
-Install **Reflect and express**, **Internalize and commit** or **Consequence clock** from Workflow examples. Installation creates an independent graph without assigning a phase or arming. Bind **Analysis** for Reflect/Internalize; the deterministic Consequence clock requires no connection. The [Introspection guide](introspection-package.md) covers all modes, typed records and controls.
+Open [Reflect and express](../examples/introspection/native/reflect-and-express.json), [Internalize and commit](../examples/introspection/native/internalize-and-commit.json) or [Consequence clock](../examples/introspection/native/consequence-clock.json) with **File → Open workflow…**. Opening creates an independent graph without assigning a phase or arming. Choose a connection profile in Details for Reflect or Internalize; the deterministic Consequence clock requires no connection. The [Introspection guide](introspection-package.md) covers all modes, typed records and controls.
 
 Reflect Character makes one bounded assessment request; Express Behavior renders its hints as Guidance without another request. Context Focus defaults to Select, so the Pre starter's bound is one Analysis call. Run previews its guidance; an assigned, armed Pre send runs it again. Internalize Experience makes one Analysis request to propose supported actor updates. State Track proposes a count of distinct settled event IDs without a model. Neither proposal persists on its own.
 
@@ -74,7 +74,7 @@ Memory's local application and durable saving are separate. The public SillyTave
 
 ## Share JSON
 
-The complete portable examples include [native-guidance.json](../workflows/native-guidance.json), [reviewed-de-slop.json](../workflows/reviewed-de-slop.json), and the zero-call examples in [the workspace guide](lattice-workspace.md). Use **File → Open workflow…** to open a workflow, or **Import into graph…** to review an addition to the current graph. Export uses a versioned `lattice-workflow` package; composed workflows include their pinned subgraph definitions. Individual subgraphs export as their own JSON packages. Exports omit bound profile IDs and credentials, so imported model roles need local setup before running.
+The complete portable examples include [native-guidance.json](../workflows/native-guidance.json), [reviewed-de-slop.json](../workflows/reviewed-de-slop.json), and the zero-call examples in [the workspace guide](lattice-workspace.md). Use **File → Open workflow…** to open a workflow, or **Import into graph…** to review an addition to the current graph. Export uses a versioned `lattice-workflow` package; composed workflows include their pinned subgraph definitions. Individual subgraphs export as their own JSON packages. Exports omit bound profile IDs and credentials, so choose local profiles for imported model nodes in Details before running.
 
 The three [native Introspection examples](../examples/introspection/native/) are portable schema-3/runtime-2 workflows. The version-1 manifests directly under `examples/introspection/` are package-harness inputs requiring injected services; use the native directory for canvas import. Both formats have synthetic fixture coverage without API calls.
 
