@@ -1,0 +1,277 @@
+{
+  "ok": true,
+  "host": "http://127.0.0.1:8000",
+  "version": "0.27.0",
+  "installedCanvasModule": "/scripts/extensions/third-party/Lattice/src/canvas.js?v=0.27.0",
+  "fixtures": [
+    {
+      "name": "steep forward above",
+      "gap": {
+        "x": 100,
+        "y": -300
+      },
+      "pinError": 0,
+      "directMiddle": true,
+      "leads": 25,
+      "hitMatches": true,
+      "zoomInvariant": true,
+      "noHooks": true,
+      "noTangentOvershoot": true,
+      "noCurvatureInflection": true
+    },
+    {
+      "name": "steep forward below",
+      "gap": {
+        "x": 100,
+        "y": 300
+      },
+      "pinError": 0,
+      "directMiddle": true,
+      "leads": 25,
+      "hitMatches": true,
+      "zoomInvariant": true,
+      "noHooks": true,
+      "noTangentOvershoot": true,
+      "noCurvatureInflection": true
+    },
+    {
+      "name": "close steep forward above 52",
+      "gap": {
+        "x": 52,
+        "y": -300
+      },
+      "pinError": 0,
+      "directMiddle": true,
+      "leads": 25,
+      "hitMatches": true,
+      "zoomInvariant": true,
+      "noHooks": true,
+      "noTangentOvershoot": true,
+      "noCurvatureInflection": true
+    },
+    {
+      "name": "close steep forward below 52",
+      "gap": {
+        "x": 52,
+        "y": 300
+      },
+      "pinError": 0,
+      "directMiddle": true,
+      "leads": 25,
+      "hitMatches": true,
+      "zoomInvariant": true,
+      "noHooks": true,
+      "noTangentOvershoot": true,
+      "noCurvatureInflection": true
+    },
+    {
+      "name": "close steep forward above 60",
+      "gap": {
+        "x": 60,
+        "y": -300
+      },
+      "pinError": 0,
+      "directMiddle": true,
+      "leads": 25,
+      "hitMatches": true,
+      "zoomInvariant": true,
+      "noHooks": true,
+      "noTangentOvershoot": true,
+      "noCurvatureInflection": true
+    },
+    {
+      "name": "close steep forward below 60",
+      "gap": {
+        "x": 60,
+        "y": 300
+      },
+      "pinError": 0,
+      "directMiddle": true,
+      "leads": 25,
+      "hitMatches": true,
+      "zoomInvariant": true,
+      "noHooks": true,
+      "noTangentOvershoot": true,
+      "noCurvatureInflection": true
+    },
+    {
+      "name": "tall steep forward above",
+      "gap": {
+        "x": 100,
+        "y": -600
+      },
+      "pinError": 0,
+      "directMiddle": true,
+      "leads": 25,
+      "hitMatches": true,
+      "zoomInvariant": true,
+      "noHooks": true,
+      "noTangentOvershoot": true,
+      "noCurvatureInflection": true
+    },
+    {
+      "name": "tall steep forward below",
+      "gap": {
+        "x": 100,
+        "y": 600
+      },
+      "pinError": 0,
+      "directMiddle": true,
+      "leads": 25,
+      "hitMatches": true,
+      "zoomInvariant": true,
+      "noHooks": true,
+      "noTangentOvershoot": true,
+      "noCurvatureInflection": true
+    },
+    {
+      "name": "wide steep forward above",
+      "gap": {
+        "x": 300,
+        "y": -900
+      },
+      "pinError": 0,
+      "directMiddle": true,
+      "leads": 25,
+      "hitMatches": true,
+      "zoomInvariant": true,
+      "noHooks": true,
+      "noTangentOvershoot": true,
+      "noCurvatureInflection": true
+    },
+    {
+      "name": "wide steep forward below",
+      "gap": {
+        "x": 300,
+        "y": 900
+      },
+      "pinError": 0,
+      "directMiddle": true,
+      "leads": 25,
+      "hitMatches": true,
+      "zoomInvariant": true,
+      "noHooks": true,
+      "noTangentOvershoot": true,
+      "noCurvatureInflection": true
+    },
+    {
+      "name": "ordinary forward above",
+      "gap": {
+        "x": 300,
+        "y": -60
+      },
+      "pinError": 0,
+      "directMiddle": true,
+      "leads": 25,
+      "hitMatches": true,
+      "zoomInvariant": true
+    },
+    {
+      "name": "ordinary forward below",
+      "gap": {
+        "x": 300,
+        "y": 60
+      },
+      "pinError": 0,
+      "directMiddle": true,
+      "leads": 25,
+      "hitMatches": true,
+      "zoomInvariant": true
+    },
+    {
+      "name": "ordinary level forward",
+      "gap": {
+        "x": 300,
+        "y": 0
+      },
+      "pinError": 0,
+      "directMiddle": true,
+      "leads": 25,
+      "hitMatches": true,
+      "zoomInvariant": true
+    },
+    {
+      "name": "steep backward above",
+      "gap": {
+        "x": -300,
+        "y": -600
+      },
+      "pinError": 0,
+      "directMiddle": true,
+      "leads": 25,
+      "hitMatches": true,
+      "zoomInvariant": true
+    },
+    {
+      "name": "steep backward below",
+      "gap": {
+        "x": -300,
+        "y": 600
+      },
+      "pinError": 0,
+      "directMiddle": true,
+      "leads": 25,
+      "hitMatches": true,
+      "zoomInvariant": true
+    },
+    {
+      "name": "level backward 300",
+      "gap": {
+        "x": -300,
+        "y": 0
+      },
+      "pinError": 0,
+      "directMiddle": true,
+      "leads": 25,
+      "hitMatches": true,
+      "zoomInvariant": true
+    },
+    {
+      "name": "level backward 520",
+      "gap": {
+        "x": -520,
+        "y": 0
+      },
+      "pinError": 0,
+      "directMiddle": true,
+      "leads": 25,
+      "hitMatches": true,
+      "zoomInvariant": true
+    },
+    {
+      "name": "level backward 820",
+      "gap": {
+        "x": -820,
+        "y": 0
+      },
+      "pinError": 0,
+      "directMiddle": true,
+      "leads": 25,
+      "hitMatches": true,
+      "zoomInvariant": true
+    }
+  ],
+  "screenshotFixtures": [
+    "steep forward above",
+    "steep forward below"
+  ],
+  "cameraZooms": [
+    0.4,
+    0.73,
+    1.2
+  ],
+  "hostStateUnchanged": true,
+  "detachedAuthoringPreserved": true,
+  "actualProviderRequests": 0,
+  "providerAttempts": 0,
+  "hostPersistenceWrites": 0,
+  "authenticatedLoginWrites": 1,
+  "screenshot": "F:\\git\\SillyCanvas\\docs\\research\\artifacts\\connection-routing\\sillytavern-routing-fixed.png",
+  "boundary": {
+    "modelBlocked": 0,
+    "writeBlocked": 14,
+    "externalBlocked": 0,
+    "otherBlocked": 1,
+    "permittedReads": 4
+  }
+}

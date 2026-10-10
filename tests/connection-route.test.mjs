@@ -82,6 +82,77 @@ test('forward connections stay compact and leave/arrive horizontally', () => {
     assert.ok(points.every((p, i) => !i || p.x >= points[i - 1].x), 'forward curve does not double back');
 });
 
+// A forward turn should rotate directly from its horizontal lead toward the
+// middle. Fixed horizontal handles used to make steep turns hook past the join,
+// and simply shortening that handle still left an S-shaped inflection.
+function forwardTurnFixtures() {
+    return ['right', 'left'].flatMap(side => [-1, 1].flatMap(vertical => [
+        { gap: 51, rise: 300 },
+        { gap: 52, rise: 300 },
+        { gap: 60, rise: 300 },
+        { gap: 75, rise: 80 },
+        { gap: 100, rise: 150 },
+        { gap: 100, rise: 300 },
+        { gap: 240, rise: 1200 },
+    ].map(({ gap, rise }) => ({
+        from: { x: 0, y: 0, side },
+        to: { x: direction(side) * gap, y: vertical * rise, side: side === 'right' ? 'left' : 'right' },
+        description: `${side} output, gap ${gap}, rise ${vertical * rise}`,
+    }))));
+}
+
+function derivatives(points) {
+    return points.slice(1).map((point, i) => ({
+        x: (points.length - 1) * (point.x - points[i].x),
+        y: (points.length - 1) * (point.y - points[i].y),
+    }));
+}
+
+test('steep forward endpoint turns never hook back against the horizontal travel direction', () => {
+    const failures = [];
+    for (const { from, to, description } of forwardTurnFixtures()) {
+        const result = route(from, to), parts = segments(result.d);
+        assertPinNecks(result.d, from, to);
+        assert.equal(parts[2].length, 2, 'a steep forward cable keeps a literal straight middle');
+        for (const [name, turn, lead] of [
+            ['source', parts[1], parts[0].at(-1)],
+            ['target', parts[3], parts.at(-1)[0]],
+        ]) {
+            assert.ok(turn.every(point => distance(point, lead) <= 15), `${description}: ${name} turn stays compact`);
+            const velocity = derivatives(turn);
+            const minimumX = Math.min(...Array.from({ length: 1001 }, (_, index) => at(velocity, index / 1000).x * direction(from.side)));
+            if (minimumX < -1e-8) failures.push(`${description}: ${name} turn reverses x tangent by ${minimumX}`);
+        }
+    }
+    assert.deepEqual(failures, [], 'forward endpoint turns must not double back horizontally');
+});
+
+test('steep forward turns rotate once toward the middle without tangent overshoot or inflection', () => {
+    const failures = [];
+    for (const { from, to, description } of forwardTurnFixtures()) {
+        const parts = segments(route(from, to).d);
+        const horizontal = direction(from.side), vertical = Math.sign(to.y - from.y);
+        const middle = parts[2];
+        const middleAngle = Math.atan2((middle[1].y - middle[0].y) * vertical, (middle[1].x - middle[0].x) * horizontal);
+        for (const [name, turn, rotation] of [['source', parts[1], 1], ['target', parts[3], -1]]) {
+            const velocity = derivatives(turn), acceleration = derivatives(velocity);
+            let previousAngle = name === 'source' ? 0 : middleAngle;
+            for (let index = 0; index <= 1000; index++) {
+                const t = index / 1000, v = at(velocity, t), a = at(acceleration, t);
+                const angle = Math.atan2(v.y * vertical, v.x * horizontal);
+                const curvature = (v.x * a.y - v.y * a.x) * horizontal * vertical * rotation;
+                if (Math.hypot(v.x, v.y) < 1e-6 || angle < -1e-8 || angle > middleAngle + 1e-8
+                    || (angle - previousAngle) * rotation < -1e-8 || curvature < -1e-8) {
+                    failures.push(`${description}: ${name} changes its turn direction at t=${t} (angle ${angle}, middle ${middleAngle}, signed curvature ${curvature})`);
+                    break;
+                }
+                previousAngle = angle;
+            }
+        }
+    }
+    assert.deepEqual(failures, [], 'endpoint tangents must rotate monotonically between the lead and middle directions');
+});
+
 test('settled wires use a literal direct middle span between compact turns', () => {
     for (const [from, to] of [
         [{ x: 20, y: 40, side: 'right' }, { x: 320, y: 170, side: 'left' }],

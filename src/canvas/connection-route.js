@@ -70,20 +70,30 @@ export function buildConnectionRoute(from, to) {
     const toDirection = to.side === 'right' ? 1 : -1;
     const departure = offset(start, fromDirection * NECK);
     const arrival = offset(end, toDirection * NECK);
-    const dx = arrival.x - departure.x, dy = arrival.y - departure.y;
     const segments = [[start, departure]];
 
-    const span = Math.hypot(dx, dy);
+    const span = Math.hypot(arrival.x - departure.x, arrival.y - departure.y);
+    // Opposite pin sides share the horizontal space between their necks. Keep
+    // both corners inside that corridor, including very steep narrow wires.
+    // An imperceptible minimum retains nonzero tangents at exact alignment.
+    const horizontalSpace = fromDirection === -toDirection ? Math.abs(arrival.x - departure.x) / 2 : Infinity;
+    const setback = Math.min(TURN / 2, span / 8, Math.max(.001, horizontalSpace));
+    // Round virtual corners beyond the mandatory necks. Placing the turn end
+    // on a ray through the neck itself forces an inflection: a horizontal
+    // departure must overshoot that ray before it can join its tangent.
+    const departureCorner = offset(departure, fromDirection * setback);
+    const arrivalCorner = offset(arrival, toDirection * setback);
+    const dx = arrivalCorner.x - departureCorner.x, dy = arrivalCorner.y - departureCorner.y;
+    const chord = Math.hypot(dx, dy);
     let unit;
-    if (!Number.isFinite(span)) {
+    if (!Number.isFinite(chord)) {
         // Subtract scaled coordinates when even the endpoint difference overflows.
-        const scale = Math.max(Math.abs(departure.x), Math.abs(departure.y), Math.abs(arrival.x), Math.abs(arrival.y));
-        const x = arrival.x / scale - departure.x / scale, y = arrival.y / scale - departure.y / scale;
+        const scale = Math.max(Math.abs(departureCorner.x), Math.abs(departureCorner.y), Math.abs(arrivalCorner.x), Math.abs(arrivalCorner.y));
+        const x = arrivalCorner.x / scale - departureCorner.x / scale, y = arrivalCorner.y / scale - departureCorner.y / scale;
         const length = Math.hypot(x, y);
         unit = { x: x / length, y: y / length };
-    } else unit = span ? { x: dx / span, y: dy / span } : { x: fromDirection, y: 0 };
+    } else unit = chord ? { x: dx / chord, y: dy / chord } : { x: fromDirection, y: 0 };
 
-    const bend = Math.min(TURN, span / 4), handle = Math.min(6, bend / 2);
     // Either endpoint can reverse against the middle chord, including a target
     // on the same side as its source. Grow the shallow return smoothly inside
     // the local fallback so crossing horizontal alignment cannot flip its depth.
@@ -91,8 +101,18 @@ export function buildConnectionRoute(from, to) {
     const returnWeight = returnProgress * returnProgress * (3 - 2 * returnProgress);
     const returnDepth = returnWeight * RETURN_DEPTH * Math.max(0, 1 - Math.abs(dy) / 12);
     const normal = { x: -unit.y * returnDepth, y: unit.x * returnDepth };
-    const directEntry = offset(departure, unit.x * bend + normal.x, unit.y * bend + normal.y);
-    const directExit = offset(arrival, -unit.x * bend + normal.x, -unit.y * bend + normal.y);
+    const directEntry = offset(departureCorner, unit.x * setback + normal.x, unit.y * setback + normal.y);
+    const directExit = offset(arrivalCorner, -unit.x * setback + normal.x, -unit.y * setback + normal.y);
+
+    // Cubic circular-fillet handles for equal tangent setbacks. Each end has
+    // its own angle; same-side pins can turn forward at one end and back at
+    // the other. A level reversal retains the shallow returning semicircle.
+    const filletHandle = cosine => {
+        const halfCosine = Math.sqrt(Math.max(0, (1 + cosine) / 2));
+        return 4 / 3 * setback * halfCosine / (1 + halfCosine) + 2 / 3 * returnDepth;
+    };
+    const departureHandle = filletHandle(fromDirection * unit.x);
+    const arrivalHandle = filletHandle(-toDirection * unit.x);
 
     // The chord direction is undefined at coincident lead ends. Fade the direct
     // turns into one fixed small arch there, rather than flipping its normal.
@@ -101,13 +121,15 @@ export function buildConnectionRoute(from, to) {
     const weight = progress * progress * (3 - 2 * progress);
     const apex = offset(mix(departure, arrival, .5), 0, -fromDirection * RETURN_DEPTH);
     const entry = mix(apex, directEntry, weight), exit = mix(apex, directExit, weight);
-    const endHandle = 6 * (1 - weight) + handle * weight;
-    const middleHandle = handle * weight;
-    segments.push([departure, offset(departure, fromDirection * endHandle),
-        offset(entry, -unit.x * middleHandle, -unit.y * middleHandle), entry]);
+    const departureEndHandle = 6 * (1 - weight) + departureHandle * weight;
+    const arrivalEndHandle = 6 * (1 - weight) + arrivalHandle * weight;
+    const departureMiddleHandle = (setback * (1 - weight) + departureHandle * weight) * weight;
+    const arrivalMiddleHandle = (setback * (1 - weight) + arrivalHandle * weight) * weight;
+    segments.push([departure, offset(departure, fromDirection * departureEndHandle),
+        offset(entry, -unit.x * departureMiddleHandle, -unit.y * departureMiddleHandle), entry]);
     if (entry.x !== exit.x || entry.y !== exit.y) segments.push([entry, exit]);
-    segments.push([exit, offset(exit, unit.x * middleHandle, unit.y * middleHandle),
-        offset(arrival, toDirection * endHandle), arrival], [arrival, end]);
+    segments.push([exit, offset(exit, unit.x * arrivalMiddleHandle, unit.y * arrivalMiddleHandle),
+        offset(arrival, toDirection * arrivalEndHandle), arrival], [arrival, end]);
     const d = `M ${pointText(start)} ` + segments.map(points =>
         `${points.length === 2 ? 'L' : 'C'} ${points.slice(1).map(pointText).join(' ')}`).join(' ');
     return { d, label: routeLabel(segments) };

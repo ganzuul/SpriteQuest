@@ -472,7 +472,7 @@ export class Canvas {
         const selected = new Set(ids);
         return Object.values(this.graph.groups ?? {}).filter(group => {
             const members = groupMembers(this.graph, group.id);
-            return group.collapsed && (group.id === extraGroup || members.length && members.every(node => selected.has(node.id)));
+            return group.id === extraGroup || group.collapsed && members.length && members.every(node => selected.has(node.id));
         }).map(group => {
             const frame = this.#nativeGroupFrame(group);
             return { id: group.id, x: group.x ?? frame.x, y: group.y ?? frame.y,
@@ -933,9 +933,12 @@ export class Canvas {
                 const action = e.target.closest('[data-action]')?.dataset.action;
                 if (action === 'collapse' || action === 'open') { this.setCollapsed(gid, action === 'collapse'); return; }
                 const group = this.graph.groups[gid], members = groupMembers(this.graph, gid).map(node => node.id);
-                if (!group.collapsed) { this.multi.clear(); this.select({ kind: 'group', id: gid }); return; }
+                if (!group.collapsed) {
+                    this.multi.clear(); this.select({ kind: 'group', id: gid });
+                    if (!e.target.closest('.pc-group-frame-head')) return;
+                }
                 let selected = this.#pickedIds();
-                if (e.shiftKey || e.ctrlKey || e.metaKey || e.altKey) {
+                if (group.collapsed && (e.shiftKey || e.ctrlKey || e.metaKey || e.altKey)) {
                     const remove = e.altKey || (e.ctrlKey || e.metaKey) && !e.shiftKey && members.every(id => selected.has(id));
                     for (const id of members) if (remove) selected.delete(id); else selected.add(id);
                     this.setMulti([...selected]); if (!e.shiftKey || remove) return;

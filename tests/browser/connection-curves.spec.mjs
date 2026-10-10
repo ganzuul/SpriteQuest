@@ -21,6 +21,32 @@ async function arrangeBackwardWire(page, targetAbove) {
     await page.evaluate(() => window.canvasHarness.view({ x: 0, y: 0, zoom: .73 }));
 }
 
+async function arrangeSteepForwardWire(page, targetAbove) {
+    await arrangeBackwardWire(page, targetAbove);
+    await page.evaluate(async targetAbove => {
+        const h = window.canvasHarness;
+        Object.assign(h.graph.nodes.n0, { x: 220, y: targetAbove ? 550 : 90 });
+        Object.assign(h.graph.nodes.n1, { x: 700, y: targetAbove ? 90 : 550 });
+        h.S.touchGraph(h.graph);
+        h.UI.refreshIfOpen();
+        await h.settle();
+        const wire = h.canvas.graph.wires.w1;
+        const pin = (node, direction, port) => {
+            const card = h.canvas.nodeLayer.querySelector(`.pc-node-native[data-id="${node}"]`);
+            const rect = card.querySelector(`.pc-port[data-dir="${direction}"][data-port="${port}"]`).getBoundingClientRect();
+            return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 };
+        };
+        const output = pin(wire.from, 'out', wire.fromPort), input = pin(wire.to, 'in', wire.toPort);
+        // Position the visible native pins rather than relying on card widths or
+        // port row offsets. This is the steep forward layout that formed hooks.
+        h.graph.nodes.n1.x += 100 - (input.x - output.x) / h.canvas.view.zoom;
+        h.graph.nodes.n1.y += (targetAbove ? -300 : 300) - (input.y - output.y) / h.canvas.view.zoom;
+        h.S.touchGraph(h.graph);
+        h.UI.refreshIfOpen();
+        await h.settle();
+    }, targetAbove);
+}
+
 async function renderedWire(page) {
     return page.evaluate(() => {
         const { canvas } = window.canvasHarness;
@@ -65,6 +91,24 @@ async function renderedWire(page) {
         }
         const departureLead = geometry[0], arrivalLead = geometry.at(-1);
         const sourceTurn = geometry[1], targetTurn = geometry.at(-2);
+        const middle = geometry[2], vertical = Math.sign(middle.end.y - middle.start.y) || 1;
+        const middleAngle = Math.atan2((middle.end.y - middle.start.y) * vertical, middle.end.x - middle.start.x);
+        const endpointTurns = [sourceTurn, targetTurn].map((turn, turnIndex) => {
+            // Native SVG samples catch the shape painted by the browser, including
+            // a tiny reversal confined to either compact endpoint turn.
+            const localPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            localPath.setAttribute('d', `M ${turn.start.x},${turn.start.y} C ${[...turn.controls, turn.end].map(point => `${point.x},${point.y}`).join(' ')}`);
+            const turnLength = localPath.getTotalLength();
+            const points = Array.from({ length: 161 }, (_, index) => localPath.getPointAtLength(turnLength * index / 160));
+            const tangents = points.slice(1).map((point, index) => ({ x: point.x - points[index].x, y: point.y - points[index].y }));
+            const angles = tangents.map(tangent => Math.atan2(tangent.y * vertical, tangent.x));
+            const rotation = turnIndex === 0 ? 1 : -1;
+            return {
+                minimumStepX: Math.min(...tangents.map(tangent => tangent.x)),
+                angleOvershoot: Math.max(...angles.map(angle => Math.max(-angle, angle - middleAngle))),
+                angleReversal: Math.max(0, ...angles.slice(1).map((angle, index) => (angles[index] - angle) * rotation)),
+            };
+        });
         return {
             d: path.getAttribute('d'), hitD: hit.getAttribute('d'),
             start: screenPoint(0), departure: screenPoint(5), arrival: screenPoint(length - 5), end: screenPoint(length),
@@ -76,6 +120,7 @@ async function renderedWire(page) {
             departureLead: { x: departureLead.end.x - departureLead.start.x, y: departureLead.end.y - departureLead.start.y },
             arrivalLead: { x: arrivalLead.start.x - arrivalLead.end.x, y: arrivalLead.start.y - arrivalLead.end.y },
             middleIsLine: geometry[2]?.command === 'L',
+            endpointTurns,
             turnRadius: Math.max(...[
                 ...[...sourceTurn.controls, sourceTurn.end].map(point => Math.hypot(point.x - sourceTurn.start.x, point.y - sourceTurn.start.y)),
                 ...[targetTurn.start, ...targetTurn.controls].map(point => Math.hypot(point.x - targetTurn.end.x, point.y - targetTurn.end.y)),
@@ -91,6 +136,29 @@ function expectDirectRoute(wire) {
     expect(wire.arrivalLead.y, 'input lead stays horizontal').toBeCloseTo(0, 5);
     expect(wire.middleIsLine, 'compact turns frame a literal direct middle span').toBe(true);
     expect(wire.turnRadius, 'rounded turns stay close to the lead ends').toBeLessThanOrEqual(15);
+}
+
+for (const targetAbove of [true, false]) {
+    const direction = targetAbove ? 'above' : 'below';
+    test(`native steep forward endpoint turns toward a target ${direction} never hook or overshoot`, async ({ page }, testInfo) => {
+        await arrangeSteepForwardWire(page, targetAbove);
+        await expect(page.locator('.pc-node-native')).toHaveCount(2);
+        const wire = await renderedWire(page);
+        expectDirectRoute(wire);
+        expect(wire.graphEnd.x - wire.graphStart.x, 'visible native pins reproduce the 100px forward gap').toBeCloseTo(100, 1);
+        expect(Math.abs(wire.graphEnd.y - wire.graphStart.y), 'visible native pins reproduce the 300px steep rise').toBeCloseTo(300, 1);
+        expect(Math.hypot(wire.start.x - wire.output.x, wire.start.y - wire.output.y), 'wire begins at its native output pin').toBeLessThanOrEqual(1);
+        expect(Math.hypot(wire.end.x - wire.input.x, wire.end.y - wire.input.y), 'wire ends at its native input pin').toBeLessThanOrEqual(1);
+        expect(wire.hitD, 'hit target follows the painted steep cable').toBe(wire.d);
+        expect(wire.labelDistance, 'wire label remains on the visible steep cable').toBeLessThan(1);
+        await page.locator('.pc-canvas').screenshot({ path: testInfo.outputPath(`steep-forward-${direction}.png`) });
+        for (const [index, turn] of wire.endpointTurns.entries()) {
+            const name = index === 0 ? 'source' : 'target';
+            expect.soft(turn.minimumStepX, `${name} compact turn never hooks backward`).toBeGreaterThanOrEqual(-.0001);
+            expect.soft(turn.angleOvershoot, `${name} tangent stays between horizontal and the straight middle angle`).toBeLessThan(.005);
+            expect.soft(turn.angleReversal, `${name} tangent rotates once without an S-shaped inflection`).toBeLessThan(.005);
+        }
+    });
 }
 
 test('native level backward wires keep a compact return at different horizontal separations', async ({ page }, testInfo) => {
