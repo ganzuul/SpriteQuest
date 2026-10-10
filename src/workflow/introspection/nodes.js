@@ -2,20 +2,21 @@ import { ownData, inspectCapabilities, fail, freeze, parseRecord, makeRecord } f
 import { reflect, internalize, express } from './analysis.js?v=0.26.0';
 import { shapeContext, advanceState } from './context-state.js?v=0.26.0';
 import { parseRuntimeContext } from '../operations/context-data.js?v=0.26.0';
+import { PROGRESSION_STATE_MODES, describeProgressionState, executeProgressionState } from '../operations/progression-nodes.js?v=0.26.0';
 
-const MODES = { reflect: ['character','recall','scene'], internalize: ['experience','pattern','recovery'], express: ['behavior','attention','inner-voice'], context: ['assemble','perspective','focus'], memory: ['read','recall','commit'], state: ['value','curve','track'] };
+const MODES = { reflect: ['character','recall','scene'], internalize: ['experience','pattern','recovery'], express: ['behavior','attention','inner-voice'], context: ['assemble','perspective','focus'], memory: ['read','recall','commit'], state: ['value','curve','track',...PROGRESSION_STATE_MODES] };
 const COMMON = ['mode'];
 const CONTROLS = {
     reflect: ['maxTokens','instructions'], internalize: ['maxTokens','instructions'], express: ['maxTokens','instructions'],
     'context:assemble':['inputCount'], 'context:perspective':['actorId'], 'context:focus':['method','targetTokens','maxTokens','keepRecent','pins','purpose'],
     'memory:read':['view'], 'memory:recall':['query','limit'], 'memory:commit':['idempotencyKey'],
-    'state:value':['updates','min','max'], 'state:curve':['curveId','steps','decay','baseline','durations'], 'state:track':['trackId'],
+    'state:value':['updates','min','max'], 'state:curve':['curveId','steps','decay','baseline','durations'], 'state:track':['trackId'], 'state:progression':[], 'state:time-decay':[],
 };
 const DEFAULTS = {
     reflect:{mode:'character',maxTokens:2048,instructions:''}, internalize:{mode:'experience',maxTokens:2048,instructions:''}, express:{mode:'behavior',maxTokens:2048,instructions:''},
     'context:assemble':{mode:'assemble',inputCount:2}, 'context:perspective':{mode:'perspective',actorId:''}, 'context:focus':{mode:'focus',method:'select',targetTokens:1200,maxTokens:1024,keepRecent:2,pins:[],purpose:''},
     'memory:read':{mode:'read',view:'state'}, 'memory:recall':{mode:'recall',query:'',limit:8}, 'memory:commit':{mode:'commit',idempotencyKey:''},
-    'state:value':{mode:'value',min:0,max:1}, 'state:curve':{mode:'curve',curveId:'emotion',steps:1,decay:0.25,baseline:0,durations:{onset:1,peak:1,plateau:1,decline:1,aftermath:1}}, 'state:track':{mode:'track',trackId:'consequences'},
+    'state:value':{mode:'value',min:0,max:1}, 'state:curve':{mode:'curve',curveId:'emotion',steps:1,decay:0.25,baseline:0,durations:{onset:1,peak:1,plateau:1,decline:1,aftermath:1}}, 'state:track':{mode:'track',trackId:'consequences'}, 'state:progression':{mode:'progression'}, 'state:time-decay':{mode:'time-decay'},
 };
 const id = value => typeof value === 'string' && value.trim().length > 0 && value.length <= 128;
 const boundedText = value => typeof value === 'string' && value.length <= 4096;
@@ -59,8 +60,9 @@ function describe(parsed,phase) {
     if (op === 'express') ports = [port('assessment','data'),port('state','data',false),port('events','data',false),port('episodes','data',false),port('context','context',false)];
     if (op === 'context') ports = mode === 'assemble' ? Array.from({length:settings.inputCount},(_,i)=>port(`in${i+1}`,'context')) : [port('context','context')];
     if (terminal) ports = [port('proposal','data')];
-    if (op === 'state') ports = [port('state','data',false),...(mode === 'track' ? [port('events','data')] : [])];
-    ports.push({id:'out',label:output,kind:output,direction:'output',required:false,cardinality:'one'});
+    const genericState = op === 'state' && PROGRESSION_STATE_MODES.includes(mode);
+    if (op === 'state') ports = genericState ? describeProgressionState(settings).data.ports : [port('state','data',false),...(mode === 'track' ? [port('events','data')] : [])];
+    if (!genericState) ports.push({id:'out',label:output,kind:output,direction:'output',required:false,cardinality:'one'});
     const controlDescriptors = Object.fromEntries(controls.map(name => [name, name === 'mode' ? enumControl(MODES[op]) : {type:['updates','durations','pins'].includes(name) ? 'json' : typeof settings[name] === 'number' ? 'number' : 'text',default:structuredClone(settings[name] ?? {})}]));
     return freeze({ok:true,data:{descriptor:{id:op,title:op[0].toUpperCase()+op.slice(1),family:'Introspection',phase:terminal ? 'post' : 'both',minimumSchema:3,dynamicPorts:true,input:ports.some(p=>p.direction==='input') ? ports[0].kind : null,output,requestBound,modelRole,terminal,rootOnly,modes:[...MODES[op]],controls,defaults:settings,controlDescriptors},ports}});
 }
@@ -79,6 +81,11 @@ export async function executeIntrospection(node,namedInputs={},ports={}) {
         const description = describeIntrospection(node,{...(ports.phase ? {phase:ports.phase} : {})}); if (!description.ok) return description;
         const inputs = ownData(namedInputs); if (!inputs.ok || !map(inputs.data)) return fail('INVALID_INPUT','Expected bounded plain named inputs.');
         const fingerprint = JSON.stringify(inputs.data);
+        const {node:n,settings} = parsed.data, input = inputs.data;
+        if (n.operation === 'state' && PROGRESSION_STATE_MODES.includes(settings.mode)) {
+            const result = executeProgressionState(settings,input,ports);
+            return result.ok ? {...result,reports:[...result.reports,{code:'INTROSPECTION_EXECUTION',operation:n.operation,mode:settings.mode,requests:0}]} : result;
+        }
         const known = description.data.ports.filter(p=>p.direction==='input');
         if (Object.keys(inputs.data).some(key=>!known.some(p=>p.id===key))) return fail('INVALID_INPUT','Unknown named input.');
         for (const p of known) {
@@ -87,7 +94,6 @@ export async function executeIntrospection(node,namedInputs={},ports={}) {
             const valid = p.kind === 'context' ? parseRuntimeContext(value) : parseRecord(value);
             if (!valid.ok) return valid;
         }
-        const {node:n,settings} = parsed.data, input = inputs.data;
         if (ports.signal?.aborted) return fail('ABORTED','Introspection was stopped.');
         if (description.data.descriptor.rootOnly && ports.root === false) return fail('ROOT_ONLY','Memory operations require the root graph.');
         let calls = 0;

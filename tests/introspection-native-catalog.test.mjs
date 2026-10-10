@@ -10,7 +10,7 @@ const graph = (nodes, phase = 'pre', wires = {}) => ({ id: 'native', schema: 3, 
 const native = (operation, settings = {}) => ({ id: 'introspection', type: 'workflow', ...operationDefaults(operation), ...settings });
 const modes = {
     reflect: ['character', 'recall', 'scene'], internalize: ['experience', 'pattern', 'recovery'], express: ['behavior', 'attention', 'inner-voice'],
-    context: ['assemble', 'perspective', 'focus'], memory: ['read', 'recall', 'commit'], state: ['value', 'curve', 'track'],
+    context: ['assemble', 'perspective', 'focus'], memory: ['read', 'recall', 'commit'], state: ['value', 'curve', 'track', 'progression', 'time-decay'],
 };
 for (const [operation, entries] of Object.entries(modes)) {
     assert.equal(OPERATIONS[operation].family, 'Introspection');
