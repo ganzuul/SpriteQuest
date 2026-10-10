@@ -9,6 +9,9 @@ import { executePrimitive, PRIMITIVE_OPERATIONS } from './operations/nodes.js?v=
 import { executeInput, INPUT_OPERATIONS } from './operations/input-nodes.js?v=0.26.0';
 import { executeContextJoin } from './operations/context-join.js?v=0.26.0';
 import { executeControl, CONTROL_OPERATIONS } from './operations/control-nodes.js?v=0.26.0';
+import { executeDecision, DECISION_OPERATIONS } from './operations/decision-nodes.js?v=0.26.0';
+import { executeModelNode, MODEL_OPERATIONS } from './operations/model-nodes.js?v=0.26.0';
+import { prepareFastDecisionRequest, validateFastDecisionResponse } from './decision.js?v=0.26.0';
 import { executeTranspose, TRANSPOSE_OPERATIONS } from './operations/transpose-nodes.js?v=0.26.0';
 import { cleanupDraft, CLEANUP_MODES } from './operations/prose-cleanup.js?v=0.26.0';
 import { executeIntrospection } from './introspection/nodes.js?v=0.26.0';
@@ -38,6 +41,8 @@ async function executeNode(node,inputs,op,local) {
         if(!local.root||!local.executeHostOperation)return failure('HOST_OPERATION_REQUIRED','This operation requires its owned root host adapter.',node.id);
         return local.executeHostOperation(node,inputs,{phase:local.phase,rootMode:local.rootMode,root:local.root,address:local.address,inputStates:local.inputStates,request:local.request,...(local.signal?{signal:local.signal}:{})});
     }
+    if(Object.hasOwn(MODEL_OPERATIONS,node.operation))return executeModelNode(node,inputs,local);
+    if(Object.hasOwn(DECISION_OPERATIONS,node.operation))return executeDecision(node,inputs,local);
     if(Object.hasOwn(CONTROL_OPERATIONS,node.operation))return executeControl(node,inputs,local);
     if(node.operation!=='prompt-source' && Object.hasOwn(INPUT_OPERATIONS,node.operation))return executeInput(node,{phase:local.phase});
     if(Object.hasOwn(PRIMITIVE_OPERATIONS,node.operation))return executePrimitive(node,inputs,{phase:local.phase,...(local.signal?{signal:local.signal}:{}),...(local.createWorker?{createWorker:local.createWorker}:{}),...(local.timeoutMs!==undefined?{timeoutMs:local.timeoutMs}:{})});
@@ -92,7 +97,7 @@ export async function runWorkflowForHost(graph,ports={},hooks={}) { return execu
 
 async function executeWorkflow(original,ports,hooks={}) {
     const schema=versionMetadata(own(original,'schema')),runtime=versionMetadata(own(original,'runtime')),mode=ports.target===undefined?'root':'target';
-    const artifacts=new Map(),outputStates=new Map(),bindings=new Map(),nodeCalls=new Map(),terminals=[];
+    const artifacts=new Map(),outputStates=new Map(),bindings=new Map(),requestBindings=new Map(),bindingReports=new Map(),nodeCalls=new Map(),terminals=[];
     let runId,recorder,plan,safePlan,current,callBound=0,actualCalls=0,seq=0,lastElapsed=0,cancelling=false,closed=false,removeAbort=()=>{};
     let now,monotonic,started;
     const safeFailure=result=>{const error=safeError(result?.error)??{code:'WORKFLOW_FAILED',message:'Workflow preparation failed; inspect the source, connection and tokenizer.'};if(current && safePlan?.units.some(unit=>unit.included&&addressKey(unit.address)===addressKey(current.address)))Object.assign(error,{nodeId:current.address.nodeId,address:current.address});return {ok:false,error};};
@@ -136,14 +141,18 @@ async function executeWorkflow(original,ports,hooks={}) {
         const preparation=await hooks.prepare?.(plan,{cancel,originalGraphSnapshot});if(preparation?.ok===false)return finish(preparation);
         const nodes=plan.primitives.filter(unit=>unit.included);
         const bindingGraph={...prepared.graph,roles:{}};
-        const bindUnit=async(unit,op)=>{
+        const summarizeBinding=(binding,node,op)=>safeBinding((op.requestCapability==='typed-decision'?ports.fastBindingSummary?.(binding):ports.bindingSummary?.(binding))??{role:node.modelRole??op.modelRole,profileId:binding?.profileId,model:binding?.model,capability:op.requestCapability,connectionId:binding?.connectionId,provider:binding?.provider});
+        const bindUnit=async(unit,op,duringExecution=false)=>{
             current=unit;const node=unit.node;
-            emit('node-phase',{address:unit.address,phase:'binding'});
-            const resolved=await ports.resolveBinding?.({...node,modelRole:node.modelRole??op.modelRole},bindingGraph,unit.address);
+            if(!duringExecution)emit('node-phase',{address:unit.address,phase:'binding'});
+            const resolver=op.requestCapability==='typed-decision'?ports.resolveFastBinding:ports.resolveBinding;
+            const resolved=await resolver?.({...node,modelRole:node.modelRole??op.modelRole},bindingGraph,unit.address);
             if(stopped())return failure('ABORTED','Workflow was stopped.',node.id);
-            if(!resolved?.ok){const error=resolved??failure('BINDING_MISSING','Resolve the activated model connection before running.');emit('node-settled',{address:unit.address,status:'failed',error:safeError(error.error)});return error;}
-            const binding=resolved.data;bindings.set(addressKey(unit.address),binding);
-            emit('node-phase',{address:unit.address,phase:'binding',binding:safeBinding(ports.bindingSummary?.(binding)??{role:node.modelRole??op.modelRole,profileId:binding?.profileId,model:binding?.model})});
+            if(!resolved?.ok){const error=resolved??failure('BINDING_MISSING','Resolve the activated model connection before running.');if(!duringExecution)emit('node-settled',{address:unit.address,status:'failed',error:safeError(error.error)});return error;}
+            const binding=resolved.data,key=addressKey(unit.address);bindings.set(key,binding);
+            requestBindings.set(JSON.stringify([key,'primary']),{address:unit.address,binding,capability:op.requestCapability??'text-completion',role:node.modelRole??op.modelRole});
+            bindingReports.set(key,summarizeBinding(binding,node,op));
+            emit(duringExecution?'node-binding':'node-phase',{address:unit.address,...(duringExecution?{}:{phase:'binding'}),binding:summarizeBinding(binding,node,op)});
             return resolved;
         };
         // Unconditional legacy plans retain fixed-model preflight before any source
@@ -153,7 +162,7 @@ async function executeWorkflow(original,ports,hooks={}) {
         if(legacyPreflight)for(const unit of nodes){
             const op=operationFor(unit.node,{phase:unit.phase,mode:prepared.graph.mode});
             if(stopped())return finish(failure('ABORTED','Workflow was stopped.',unit.node.id));
-            if(unit.requestBound&&op.modelRole){const bound=await bindUnit(unit,op);if(!bound.ok)return finish(bound);}
+            if(unit.requestBound&&op.modelRole&&!(op.requestCapability==='typed-decision'&&op.fallbackModelRole)){const bound=await bindUnit(unit,op);if(!bound.ok)return finish(bound);}
         }
         let unresolved=false;
         for(const unit of nodes) {
@@ -168,31 +177,78 @@ async function executeWorkflow(original,ports,hooks={}) {
                 for(const port of unit.outputPorts){outputStates.set(artifactKey({...unit.address,portId:port.id}),state);recorder.capture({address:unit.address,direction:'output',portId:port.id,state});}
                 emit('node-settled',{address:unit.address,status,reason:state.reason});continue;
             }
-            if(unit.requestBound&&op.modelRole&&!bindings.has(key)){const bound=await bindUnit(unit,op);if(!bound.ok)return finish(bound);binding=bound.data;}
+            const lazyBinding=(!legacyPreflight||op.requestCapability==='typed-decision'&&!!op.fallbackModelRole)&&(Object.hasOwn(MODEL_OPERATIONS,node.operation)||Object.hasOwn(DECISION_OPERATIONS,node.operation));
+            if(unit.requestBound&&op.modelRole&&!bindings.has(key)&&!lazyBinding){const bound=await bindUnit(unit,op);if(!bound.ok)return finish(bound);binding=bound.data;}
             emit('node-phase',{address:unit.address,phase:'executing'});observe(ports.onStage,freezeArtifact(structuredClone(node)),unit.address);
-            const request=async options=>{
-                if(stopped())return failure('ABORTED','Workflow was stopped.',node.id);
-                if(actualCalls>=callBound||(nodeCalls.get(key)??0)>=unit.requestBound)return failure('CALL_LIMIT','Workflow request limit reached.',node.id);
-                const tokenCount=await ports.countTokens(options.messages.map(item=>item.role+': '+item.content).join('\n'));
-                if(stopped())return failure('ABORTED','Workflow was stopped.',node.id);
-                if(!Number.isFinite(tokenCount?.tokens)||tokenCount.tokens<0)return failure('TOKEN_COUNT_FAILED','The tokenizer returned an invalid count.',node.id);
-                const attempt=(nodeCalls.get(key)??0)+1;nodeCalls.set(key,attempt);actualCalls++;
-                const iteration=node.operation==='for-each'?safeIteration(options.iteration):undefined;
-                emit('request-start',{address:unit.address,attempt,maxTokens:options.maxTokens,inputTokens:tokenCount.tokens,...(iteration?{iteration}:{})});const requestStarted=lastElapsed;
-                let response;try{response=await ports.request({...options,binding:node.operation==='for-each'?options.binding??binding:binding,signal:ports.signal});}catch{response=failure(stopped()?'ABORTED':'REQUEST_FAILED','Auxiliary request failed; no retry was made.',node.id);}
-                if(!response||typeof response.ok!=='boolean'||(response.ok&&typeof response.data?.text!=='string')||(!response.ok&&!response.error))response=failure('INVALID_RESPONSE','Auxiliary request returned an invalid result.',node.id);
-                if(stopped())response=failure('ABORTED','Ignore the stopped request result.',node.id);
-                else if(response.ok&&cutoff(response.data.finish))response={ok:false,error:{code:'TRUNCATED_OUTPUT',message:'Auxiliary output reached its completion limit.',usage:response.data.usage,finish:response.data.finish}};
-                else if(response.ok&&!complete(response.data.finish))response={ok:false,error:{code:'COMPLETION_UNVERIFIED',message:'Auxiliary output has no verified completion evidence.',usage:response.data.usage,finish:response.data.finish??null}};
-                const metadata=response.ok?response.data:response.error;
-                emit('request-settled',{address:unit.address,attempt,status:stopped()?'cancelled':response.ok?'completed':'failed',durationMs:Math.max(0,monotonic()-started-requestStarted),...(metadata?.finish!==undefined?{finish:boundedText(metadata.finish,128)??null}:{}),...(safeUsage(metadata?.usage)!==undefined?{usage:safeUsage(metadata.usage)}:{}),...(!response.ok?{error:safeError(response.error)}:{})});return response;
+            let operationOpen=true,requestInFlight=false,fallbackBinding;
+            const requestFailure=()=>failure(closed||!operationOpen?'REQUEST_SCOPE_CLOSED':stopped()?'ABORTED':'CALL_LIMIT',closed||!operationOpen?'This operation request scope has closed.':stopped()?'Workflow was stopped.':'Workflow request limit reached.',node.id);
+            const admitted=()=>!closed&&operationOpen&&!stopped()&&actualCalls<callBound&&(nodeCalls.get(key)??0)<unit.requestBound;
+            const trackedRequest=async(capability,options)=>{
+                if(!admitted())return requestFailure();
+                if(requestInFlight)return failure('REQUEST_IN_FLIGHT','This operation already has an active request.',node.id);
+                const typed=capability==='typed-decision';
+                if(typed&&op.requestCapability!=='typed-decision')return failure('REQUEST_CAPABILITY_MISMATCH','This node does not authorize a typed request.',node.id);
+                if(!typed&&op.requestCapability==='typed-decision'&&!op.fallbackModelRole)return failure('REQUEST_CAPABILITY_MISMATCH','Enable an explicit independent Decision fallback first.',node.id);
+                requestInFlight=true;
+                try{
+                    if(lazyBinding&&!bindings.has(key)&&(typed||op.requestCapability!=='typed-decision')){
+                        const bound=await bindUnit(unit,op,true);if(!admitted())return requestFailure();if(!bound.ok)return bound;binding=bound.data;
+                    }
+                    let requestBinding=binding,tokenCount={tokens:null},preparedOptions=options;
+                    if(typed){
+                        const checked=prepareFastDecisionRequest({state:own(options,'state'),questions:own(options,'questions')});if(!checked.ok)return checked;
+                        if(typeof ports.requestFastDecision!=='function')return failure('SERVICE_UNAVAILABLE','The typed decision capability is unavailable.',node.id);
+                        preparedOptions=freezeArtifact(checked.data);
+                    }else{
+                        if(op.requestCapability==='typed-decision'){
+                            if(!fallbackBinding){
+                                const selected=await ports.resolveBinding?.({...node,modelRole:op.fallbackModelRole,profileId:node.fallbackProfileId,model:null},bindingGraph,unit.address);
+                                if(!admitted())return requestFailure();
+                                if(!selected?.ok)return selected??failure('BINDING_MISSING','Resolve the separately selected fallback text connection.',node.id);
+                                fallbackBinding=selected.data;
+                                requestBindings.set(JSON.stringify([key,'fallback']),{address:unit.address,binding:fallbackBinding,capability:'text-completion',role:op.fallbackModelRole});
+                                const summary=summarizeBinding(fallbackBinding,{...node,modelRole:op.fallbackModelRole},{...op,requestCapability:'text-completion'});bindingReports.set(key,summary);
+                                emit('node-binding',{address:unit.address,binding:summary});
+                            }
+                            requestBinding=fallbackBinding;
+                        }
+                        if(!Array.isArray(options?.messages)||typeof ports.countTokens!=='function'||typeof ports.request!=='function')return failure('REQUEST_UNAVAILABLE','A verified completion capability and tokenizer are required.',node.id);
+                        tokenCount=await ports.countTokens(options.messages.map(item=>item.role+': '+item.content).join('\n'));
+                        if(!admitted())return requestFailure();
+                        if(!Number.isFinite(tokenCount?.tokens)||tokenCount.tokens<0)return failure('TOKEN_COUNT_FAILED','The tokenizer returned an invalid count.',node.id);
+                        if(node.operation==='for-each')requestBinding=options.binding??binding;
+                    }
+                    if(!admitted())return requestFailure();
+                    const attempt=(nodeCalls.get(key)??0)+1;nodeCalls.set(key,attempt);actualCalls++;
+                    const iteration=node.operation==='for-each'?safeIteration(options.iteration):undefined;
+                    emit('request-start',{address:unit.address,attempt,maxTokens:typed?0:options.maxTokens,inputTokens:tokenCount.tokens,capability,...(iteration?{iteration}:{})});const requestStarted=lastElapsed;
+                    let response;
+                    try{response=await (typed?ports.requestFastDecision:ports.request)({...preparedOptions,binding:requestBinding,signal:ports.signal});}
+                    catch{response=failure(stopped()?'ABORTED':'REQUEST_FAILED','Auxiliary request failed; no retry was made.',node.id);}
+                    if(closed||!operationOpen)return requestFailure();
+                    if(!response||typeof response.ok!=='boolean'||(!response.ok&&!response.error))response=failure('INVALID_RESPONSE','Auxiliary request returned an invalid result.',node.id);
+                    if(stopped())response=failure('ABORTED','Ignore the stopped request result.',node.id);
+                    else if(response.ok&&typed){
+                        const checked=validateFastDecisionResponse(response.data?.response??response.data,preparedOptions.questions);
+                        if(!checked.ok)response=checked;
+                    }else if(response.ok){
+                        if(typeof response.data?.text!=='string')response=failure('INVALID_RESPONSE','Auxiliary completion returned no text.',node.id);
+                        else if(cutoff(response.data.finish))response={ok:false,error:{code:'TRUNCATED_OUTPUT',message:'Auxiliary output reached its completion limit.',usage:response.data.usage,finish:response.data.finish}};
+                        else if(!complete(response.data.finish))response={ok:false,error:{code:'COMPLETION_UNVERIFIED',message:'Auxiliary output has no verified completion evidence.',usage:response.data.usage,finish:response.data.finish??null}};
+                    }
+                    const metadata=response.ok?response.data:response.error,usage=typed&&response.ok?metadata?.response?.usage??metadata?.usage:metadata?.usage;
+                    emit('request-settled',{address:unit.address,attempt,status:stopped()?'cancelled':response.ok?'completed':'failed',durationMs:Math.max(0,monotonic()-started-requestStarted),...(metadata?.finish!==undefined?{finish:boundedText(metadata.finish,128)??null}:{}),...(safeUsage(usage)!==undefined?{usage:safeUsage(usage)}:{}),...(!response.ok?{error:safeError(response.error)}:{})});return response;
+                }finally{requestInFlight=false;}
             };
-            const result=await executeNode(node,inputs,op,{...ports,phase:unit.phase,rootMode:prepared.graph.mode,binding,request,inputStates:freezeArtifact(inputStates),root:unit.address.instancePath.length===0,address:unit.address,executeIntrospection:hooks.executeIntrospection,executeHostOperation:hooks.executeHostOperation});
+            const request=options=>trackedRequest('text-completion',options),typedRequest=options=>trackedRequest('typed-decision',options);
+            const result=await executeNode(node,inputs,op,{...ports,phase:unit.phase,rootMode:prepared.graph.mode,binding,request,typedRequest,getRequestCount:()=>nodeCalls.get(key)??0,inputStates:freezeArtifact(inputStates),root:unit.address.instancePath.length===0,address:unit.address,executeIntrospection:hooks.executeIntrospection,executeHostOperation:hooks.executeHostOperation});
+            operationOpen=false;
+            if(requestInFlight)return finish(failure('PENDING_REQUEST','The operation returned before its active request settled.',node.id));
             if(stopped())return finish(failure('ABORTED','Workflow was stopped.',node.id));
             if(!result?.ok){emit('node-settled',{address:unit.address,status:'failed',error:safeError(result?.error)});return finish(result??failure('WORKFLOW_FAILED','The operation returned no result.',node.id));}
             const outputs=own(result,'outputs'),states=own(result,'outputStates');
             if(outputs!==undefined&&!plain(outputs)||states!==undefined&&!plain(states)||[...Object.keys(outputs??{}),...Object.keys(states??{})].some(id=>!unit.outputPorts.some(port=>port.id===id))){const error=failure('INVALID_OUTPUT','The operation returned undeclared output ports.',node.id);emit('node-settled',{address:unit.address,status:'failed',error:error.error});return finish(error);}
-            const metadata={binding:safeBinding(ports.bindingSummary?.(binding)??{role:node.modelRole,profileId:binding?.profileId,model:binding?.model}),reports:result.reports};
+            const metadata={binding:bindingReports.get(key),reports:result.reports};
             let allSkipped=unit.outputPorts.length>0,hasUnresolved=false;
             for(const port of unit.outputPorts){let output=own(outputs,port.id);if(outputs===undefined&&port.id==='out')output=result.artifact;
                 const rawState=own(states,port.id),status=rawState===undefined?(output===undefined?'unresolved':'completed'):own(rawState,'status');
@@ -207,9 +263,9 @@ async function executeWorkflow(original,ports,hooks={}) {
         }
         current=null;
         if(unresolved)return finish({...failure('UNRESOLVED_INPUT','A selected workflow output is unresolved; dependent work is held.'),unresolved:true});
-        const settlement=await hooks.settle?.({mode,terminals:mode==='root'?terminals:[],bindings:plan.primitives.filter(unit=>bindings.has(addressKey(unit.address))).map(unit=>({address:unit.address,binding:bindings.get(addressKey(unit.address))}))});
+        const settlement=await hooks.settle?.({mode,terminals:mode==='root'?terminals:[],bindings:plan.primitives.flatMap(unit=>[...requestBindings.values()].filter(entry=>addressKey(entry.address)===addressKey(unit.address)))});
         if(stopped())return finish(failure('ABORTED','Workflow was stopped.'));if(settlement?.ok===false)return finish(settlement);
         return finish({ok:true});
     } catch {return finish(failure(stopped()?'ABORTED':'WORKFLOW_FAILED','Workflow preparation failed; inspect the source, connection and tokenizer.',current?.node.id));}
-    finally {removeAbort();artifacts.clear();outputStates.clear();bindings.clear();nodeCalls.clear();terminals.length=0;plan=null;safePlan=null;recorder=null;current=null;}
+    finally {removeAbort();artifacts.clear();outputStates.clear();bindings.clear();requestBindings.clear();bindingReports.clear();nodeCalls.clear();terminals.length=0;plan=null;safePlan=null;recorder=null;current=null;}
 }

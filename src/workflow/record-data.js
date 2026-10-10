@@ -92,8 +92,9 @@ export function safeIteration(raw) {
 export function safeBinding(raw) {
     if (!plain(raw)) return undefined;
     const result = {};
-    for (const key of ['role', 'profileId', 'model', 'fingerprint']) {
+    for (const key of ['role', 'profileId', 'model', 'fingerprint', 'connectionId', 'capability', 'provider']) {
         const value = own(raw, key);
+        if (key === 'capability' && !['text-completion','typed-decision'].includes(value) || key === 'provider' && !['jev','laya','compatible'].includes(value)) continue;
         if (typeof value === 'string') { result[key] = boundedText(value, 256); if (value !== result[key]) result.truncated = true; }
         else if (value === null && (key === 'model' || key === 'profileId')) result[key] = null;
     }

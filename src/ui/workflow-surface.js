@@ -6,7 +6,7 @@ import { createRunState, reduceRunState, projectRunRows } from '../workflow/run-
 import { formatRecordedArtifact, formatRecordedTextModifiers } from '../workflow/recording.js?v=0.26.0';
 import { addressKey, nodeAddress, targetAddress, own, plain, safeBinding, safeError, expandRecordAddress, freeze } from '../workflow/record-data.js?v=0.26.0';
 import { workflowSignature } from '../workflow/runtime.js?v=0.26.0';
-import { FAMILIES, OPERATIONS, operationFor } from '../workflow/catalog.js?v=0.26.0';
+import { FAMILIES, OPERATIONS, operationFor, phaseForNode } from '../workflow/catalog.js?v=0.26.0';
 import { safeWorkflowData } from '../workflow/contracts.js?v=0.26.0';
 import { readNodePresentation } from './node-palette.js?v=0.26.0';
 const descriptions = { Input: 'Bring material into a workflow.', Shaping: 'Change the plan or amount of material.', Surface: 'Refine expression.', Transpose: 'Apply a reference’s qualities.', Derive: 'Extract findings from a source.', Introspection: 'Reflect on experience, context and actor state.', Output: 'Inspect or commit an artifact.' };
@@ -93,13 +93,13 @@ function safeHandle(raw) {
 function baseWorkflowView(graph, profiles, settings) {
     const phase = typeof graph.mode === 'string' ? graph.mode.slice(7) : '';
     return { graphId: graph.id || '', name: graph.name || '', phase,
-        assigned: graph.id === settings.nativeBindings?.[phase === 'pre' ? 'preGraphId' : 'postGraphId'],
+        assigned: graph.id === settings.nativeBindings?.[phase === 'unified' ? 'workflowGraphId' : phase === 'pre' ? 'preGraphId' : 'postGraphId'],
         profiles: profiles.map(profile => ({ id: profile.id, name: profile.name || profile.id })),
-        families: FAMILIES.map(name => ({ name, description: descriptions[name], operations: Object.values(OPERATIONS).filter(op => op.family === name || name === 'Surface' && ['pattern-scan', 'validate-patches'].includes(op.id)).map(op => ({ id: op.id, title: op.title, phase: op.phase === 'both' ? phase : op.phase || phase, compatible: (!op.phase || op.phase === 'both' || op.phase === phase) && (!op.minimumSchema || graph.schema >= op.minimumSchema) })) })),
+        families: FAMILIES.map(name => ({ name, description: descriptions[name], operations: Object.values(OPERATIONS).filter(op => op.family === name || name === 'Surface' && ['pattern-scan', 'validate-patches'].includes(op.id)).map(op => ({ id: op.id, title: op.title, phase: op.phase === 'both' ? phase : op.phase || phase, compatible: (phase === 'unified' || !op.phase || op.phase === 'both' || op.phase === phase) && (!op.minimumSchema || graph.schema >= op.minimumSchema) })) })),
         quoteHelp: QUOTE_SCOPE_HELP };
 }
 /** Root preparation boundary. The returned token is branded and contains no public authority. */
-export function prepareWorkflowProjection(root, { planner, profiles = [], settings = {}, result = null, resolveBinding, candidateStatus } = {}) {
+export function prepareWorkflowProjection(root, { planner, profiles = [], settings = {}, result = null, resolveBinding, resolveFastBinding, candidateStatus } = {}) {
     const token = Object.freeze({});
     const reject = (message, base = {}) => { projections.set(token, { failure: { ...emptyView(message), ...base, issues: [message] }, result }); return token; };
     if (planner !== undefined) {
@@ -118,7 +118,7 @@ export function prepareWorkflowProjection(root, { planner, profiles = [], settin
     // Effective materialized model overrides are explicit; inherited definitions cannot re-read root roles.
     for (const unit of inventory.primitives) if (unit.requestBound > 0) {
         let resolution;
-        try { resolution = resolveBinding?.(unit.node, { schema: 3, runtime: 2, mode: graph.mode, roles: {} }); }
+        try { const operation=operationFor(unit.node,{phase:unit.phase,mode:graph.mode}); const resolver=operation?.requestCapability==='typed-decision'?resolveFastBinding:resolveBinding; resolution = resolver?.(unit.node, { schema: 3, runtime: 2, mode: graph.mode, roles: {} }); }
         catch (error) { resolution = { ok: false, error: { message: error?.message || 'Connection preparation failed.' } }; }
         const binding = resolution?.ok ? safeBinding(resolution.data) : null;
         bindings.set(addressKey(unit.address), binding || {});
@@ -143,7 +143,7 @@ export function prepareWorkflowProjection(root, { planner, profiles = [], settin
     for (const view of composition.data.views) {
         const nodes = Object.values(view.effectiveNodes).flatMap(node => {
             const address = { workflowId: inventory.workflowId, instancePath: view.instancePath, nodeId: node.id }, unit = units.get(addressKey(address));
-            const op = operationFor(node, { phase: inventory.phase });
+            const op = operationFor(node, { phase: unit?.phase ?? phaseForNode(view.savedGraph,node), mode: graph.mode });
             if (!op && node.type !== 'subgraph') return [];
             const binding = bindings.get(addressKey(address)), role = node.modelRole ?? op?.modelRole ?? null;
             const metadata = op || { title: typeof node.title === 'string' && node.title || 'Subgraph', family: 'Subgraphs', phase: inventory.phase, terminal: false, defaults: {} }, presentation = readNodePresentation(node);

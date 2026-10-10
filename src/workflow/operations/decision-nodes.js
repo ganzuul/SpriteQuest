@@ -49,8 +49,11 @@ export async function executeDecision(node,inputs,local={}){
         const state=cloneJsonValue(own(input,settings.inputKind==='text'?'text':'value'));if(!state.ok)return fail('INVALID_INPUT','State must be bounded own JSON or text.');
         if(node.operation==='fast-decision'&&!settings.fastConnectionId.trim())return fail('BINDING_MISSING','Select a configured typed Fast Decision connection.');
         const request={state:state.data.value,questions:settings.questions,maxTokens:settings.maxTokens,...(node.operation==='fast-decision'?{fallback:{enabled:settings.fallbackEnabled,allowedCodes:settings.fallbackAllowedCodes}}:{})};
+        const initialCount=typeof local.getRequestCount==='function'?local.getRequestCount():undefined;
+        if(initialCount!==undefined&&(!Number.isSafeInteger(initialCount)||initialCount<0))return fail('INVALID_PORTS','The request counter must be a nonnegative safe integer.');
         const result=await (node.operation==='decision'?runDecision(request,local):runFastDecision(request,local));
         if(!result.ok)return result;
+        if(initialCount!==undefined){const count=local.getRequestCount()-initialCount;if(!Number.isSafeInteger(count)||count<0||count>checked.data.descriptor.requestBound)return fail('INVALID_PORTS','The request counter exceeds this node budget.');result.data.actualCalls=count;}
         const output=cloneJsonValue(result.data);if(!output.ok)return fail('DECISION_OUTPUT_LIMIT','The decision record exceeds portable JSON limits.');
         return {ok:true,artifact:{kind:'data',value:output.data.value},reports:[{operation:node.operation,actualCalls:result.data.actualCalls,source:result.data.source,...(result.data.fallback?{fallback:result.data.fallback}:{})}]};
     }catch{return fail('INVALID_INPUT','Decision state requires bounded own data.');}

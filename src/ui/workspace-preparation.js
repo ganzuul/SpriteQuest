@@ -4,7 +4,7 @@ import { definitionRefKey, nodeBindingOverrideKey } from '../workflow/definition
 import { prepareWorkflowPlanner } from '../workflow/resolve.js?v=0.26.0';
 import { prepareCompositionViews } from '../workflow/composition-views.js?v=0.26.0';
 import { prepareWorkflowProjection, projectPreparedWorkflow } from './workflow-surface.js?v=0.26.0';
-import { ARTIFACT_KINDS, operationFor, portsForNode } from '../workflow/catalog.js?v=0.26.0';
+import { ARTIFACT_KINDS, operationFor, portsForNode, phaseForNode } from '../workflow/catalog.js?v=0.26.0';
 import { definitionChain } from '../workflow/composition-edit.js?v=0.26.0';
 import { FAMILY_PALETTE, paletteForOperation, readNodePresentation } from './node-palette.js?v=0.26.0';
 import { isCommentFrame } from '../canvas/comment-frames.js?v=0.26.0';
@@ -121,8 +121,8 @@ export function projectWorkspacePanels(editor, workflow, state, revision, select
     const interfacePort = metadata?.boundary ? editor.prepared.interface.find(port => port.id === saved?.interfacePortId && port.boundaryNodeId === selectedId) : null;
     const boundary = interfacePort ? { id: interfacePort.id, label: interfacePort.label, direction: interfacePort.direction, kind: interfacePort.kind, required: interfacePort.required, kinds: [...ARTIFACT_KINDS] } : null;
     const commentDetails = isCommentFrame(saved) ? { selection, comment: { id: saved.id, x: saved.x, y: saved.y, w: saved.w, h: saved.h, title: saved.title ?? 'Comment', content: saved.content ?? '', color: saved.color ?? '#637d89', moveContents: saved.moveContents !== false, selected: true, readOnly: editor.readOnly || library } } : null;
-    const nodeDetails = saved && metadata && !commentDetails ? { ...selection, title: boundary?.label ?? (presentation.alias || (typeof saved.title === 'string' ? saved.title : metadata.canonicalTitle)), canonicalTitle: metadata.canonicalTitle, operation: saved.operation, iconPath: metadata.iconPath, family: metadata.family, familyColor: metadata.familyColor, phase: graph.mode.slice(7), alias: presentation.alias, compact: presentation.compact, enabled: saved.enabled !== false, readOnly: editor.readOnly || library, canPresent: true, controls, ...(fileInput ? { fileInput } : {}), ...(boundary ? { boundary } : {}),
-        model: metadata.modelRole && (effective?.effective !== 'No model call' || saved.model || saved.profileId || Object.keys(editor?.prepared.drawBase.bindingBlocks?.[selectedId] ?? {}).length) ? { role: saved.modelRole ?? metadata.modelRole, roleEditable: true, editable: !library, profileDefaultModel: editor.prepared.drawBase.profileDefaultModels?.[selectedId] ?? !!saved.profileId, profile: field('profileId', workflow.profiles.map(profile => ({ value: profile.id, label: profile.name }))), model: field('model'), effective: effective?.effective || (library ? [editor.prepared.effectiveNodes[selectedId]?.profileId ?? graph.roles?.[saved.modelRole ?? metadata.modelRole]?.profileId,editor.prepared.effectiveNodes[selectedId]?.model ?? graph.roles?.[saved.modelRole ?? metadata.modelRole]?.model].filter(Boolean).join(' · ') : ''), source: editor.prepared.drawBase.instanceBindingSources?.[selectedId] ? 'Containing instance override' : saved.profileId || saved.model ? 'Node override' : 'Inherited from ' + (saved.modelRole ?? metadata.modelRole), ...(effective?.issue ? {issue: effective.issue} : {}) } : null,
+    const nodeDetails = saved && metadata && !commentDetails ? { ...selection, title: boundary?.label ?? (presentation.alias || (typeof saved.title === 'string' ? saved.title : metadata.canonicalTitle)), canonicalTitle: metadata.canonicalTitle, operation: saved.operation, iconPath: metadata.iconPath, family: metadata.family, familyColor: metadata.familyColor, phase: metadata.phase ?? phaseForNode(graph,saved) ?? graph.mode.slice(7), alias: presentation.alias, compact: presentation.compact, enabled: saved.enabled !== false, readOnly: editor.readOnly || library, canPresent: true, controls, ...(fileInput ? { fileInput } : {}), ...(boundary ? { boundary } : {}),
+        model: metadata.requestCapability !== 'typed-decision' && metadata.modelRole && (effective?.effective !== 'No model call' || saved.model || saved.profileId || Object.keys(editor?.prepared.drawBase.bindingBlocks?.[selectedId] ?? {}).length) ? { role: saved.modelRole ?? metadata.modelRole, roleEditable: true, editable: !library, profileDefaultModel: editor.prepared.drawBase.profileDefaultModels?.[selectedId] ?? !!saved.profileId, profile: field('profileId', workflow.profiles.map(profile => ({ value: profile.id, label: profile.name }))), model: field('model'), effective: effective?.effective || (library ? [editor.prepared.effectiveNodes[selectedId]?.profileId ?? graph.roles?.[saved.modelRole ?? metadata.modelRole]?.profileId,editor.prepared.effectiveNodes[selectedId]?.model ?? graph.roles?.[saved.modelRole ?? metadata.modelRole]?.model].filter(Boolean).join(' · ') : ''), source: editor.prepared.drawBase.instanceBindingSources?.[selectedId] ? 'Containing instance override' : saved.profileId || saved.model ? 'Node override' : 'Inherited from ' + (saved.modelRole ?? metadata.modelRole), ...(effective?.issue ? {issue: effective.issue} : {}) } : null,
         modifiers: modifierView(saved, metadata, !(editor.readOnly || library)),
         ports: metadata.ports.map(port => ({ id: port.port, label: port.label, direction: port.dir === 'in' ? 'input' : 'output', kind: port.kind })), issues: [] } : null;
     const choices = library ? [] : previewChoices ?? previewChoicesFor(editor.prepared, workflow.targets);
@@ -157,7 +157,7 @@ function prepareEditorDrawBase(view,snapshots) {
             node.presentation = { ...node.presentation, ...readNodePresentation(node) };
             if (typeof node.title !== 'string') delete node.title;
             node.x ??= 40 + index % 3 * 240; node.y ??= 40 + Math.floor(index++ / 3) * 160;
-            const operation = operationFor(node, { phase: view.savedGraph.mode?.slice(7) });
+            const operation = operationFor(node, { phase: phaseForNode(view.savedGraph,node), mode: view.savedGraph.mode });
             const wrapper = node.type === 'subgraph', boundary = ['subgraph-input', 'subgraph-output'].includes(node.type);
             if (node.type === 'note') { drawBase.nativeCards[node.id] = { canonicalTitle: 'Note', family: 'Organization', familyColor: '#a3aa99', iconPath: 'M5 3h14v18H5zM8 7h8M8 11h8M8 15h5', body: typeof node.content === 'string' ? node.content : '', ports: [], hostResult: false, defaults: {}, controlDescriptors: {}, modelRole: null }; continue; }
             if (!operation && !wrapper && !boundary) continue;
@@ -165,7 +165,7 @@ function prepareEditorDrawBase(view,snapshots) {
             const interfacePort = boundary ? view.interface.find(port => port.id === node.interfacePortId && port.boundaryNodeId === node.id) : null;
             const title = operation?.title || (wrapper ? snapshots?.[JSON.stringify([node.definition.id, node.definition.version, node.definition.semanticHash])]?.name || 'Subgraph' : interfacePort?.label || node.interfacePortId);
             const family = operation?.family || 'Subgraphs', palette = FAMILY_PALETTE.find(item => item.name === family), discovery = paletteForOperation(node.operation);
-            drawBase.nativeCards[node.id] = { canonicalTitle: title, family, familyColor: palette?.color || '#a3aa99', iconPath: wrapper || boundary ? palette?.icon : discovery.icon,
+            drawBase.nativeCards[node.id] = { canonicalTitle: title, ...(operation?.phase ? { phase: operation.phase } : {}), ...(operation?.requestCapability ? { requestCapability: operation.requestCapability } : {}), family, familyColor: palette?.color || '#a3aa99', iconPath: wrapper || boundary ? palette?.icon : discovery.icon,
                 body: wrapper ? 'Open the pinned subgraph' : boundary ? 'Definition interface' : operation.title,
                 hostResult: !!operation?.terminal, modifierSummary: modifierSummary(node.modifiers ?? []), controlDescriptors: structuredClone(operation?.controlDescriptors ?? {}), defaults: structuredClone(operation?.defaults ?? {}), modelRole: operation?.modelRole ?? null,
                 ...(interfacePort ? { boundary: { direction: interfacePort.direction, editable: view.editable === true } } : {}),
@@ -212,7 +212,7 @@ export function prepareLibraryViews(workflowId, snapshots) {
         const eligibleTargets=[],nodeBindings=[],roles=new Map();
         for(const scope of expansion.scopes) for(const role of Object.keys(scope.graph.roles ?? {})) roles.set(role,{id:role,label:role});
         for(const unit of expansion.primitives) {
-            const operation=operationFor(unit.node,{phase:actual.body.mode.slice(7)});
+            const operation=operationFor(unit.node,{phase:phaseForNode(actual.body,unit.node),mode:actual.body.mode});
             const role=unit.node.modelRole ?? operation?.modelRole;if(role)roles.set(role,{id:role,label:role});
             const target={instancePath:[...unit.address.instancePath],nodeId:unit.address.nodeId};
             nodeBindings.push({id:JSON.stringify([target.instancePath,target.nodeId]),label:[...target.instancePath,operation?.title || target.nodeId].join(' / '),target:{kind:'node',...target}});

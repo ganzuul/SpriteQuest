@@ -95,7 +95,7 @@ export function prepareNativeSearchCatalog(scope, options = {}) {
     if (!admitted.ok) return admitted;
     const input = admitted.data.scope, settings = admitted.data.options;
     if (!exact(input, ['schema', 'runtime', 'mode', 'workflowId', 'viewPath', 'inDefinition'])
-        || input.schema !== 3 || input.runtime !== 2 || !['native-pre', 'native-post'].includes(input.mode)
+        || input.schema !== 3 || input.runtime !== 2 || !['native-pre', 'native-post', 'native-unified'].includes(input.mode)
         || !text(input.workflowId) || !Array.isArray(input.viewPath) || input.viewPath.length > 8 || !input.viewPath.every(text)
         || typeof input.inDefinition !== 'boolean' || input.inDefinition !== (input.viewPath.length > 0)
         || !exact(settings, ['checkedLibraryEntries', 'checkedLibraryClosures'])
@@ -106,12 +106,12 @@ export function prepareNativeSearchCatalog(scope, options = {}) {
         if (operation === 'reroute' && !artifactKind) artifactKind = 'text';
         if (OPERATIONS[operation].family === 'Transpose' && !variant) controls = { inputKind: 'text', ...controls };
         const description = describeOperation(input, { type: 'workflow', ...operationDefaults(operation, { mode: controls?.mode }), ...controls,
-            ...(artifactKind ? { artifactKind, phase } : {}) });
-        if (!description.ok || description.data.descriptor.phase !== phase) return;
+            ...(artifactKind ? { artifactKind, phase: phase === 'unified' ? 'pre' : phase } : {}) });
+        if (!description.ok || phase !== 'unified' && description.data.descriptor.phase !== phase) return;
         const id = 'operation:' + operation + (variant ? ':' + variant : '');
         const baseSearch = searchMetadata[operation] ?? { purpose: '', shortcode: '', searchAliases: [operation] }, variantSearch = variantSearchMetadata[operation + ':' + (variant?.startsWith('text-') ? variant.slice(5) : variant)];
         const metadata = variantSearch ? { ...variantSearch, searchAliases: [...baseSearch.searchAliases, ...variantSearch.searchAliases] } : baseSearch;
-        choices.push({ id, label: label ?? description.data.descriptor.title, family: description.data.descriptor.family, phase, ...metadata,
+        choices.push({ id, label: label ?? description.data.descriptor.title, family: description.data.descriptor.family, phase: description.data.descriptor.phase, ...metadata,
             ports: description.data.ports.map(portProjection) });
         commands.set(id, freeze({ operation, ...(controls ? { controls: structuredClone(controls) } : {}), ...(artifactKind ? { artifactKind } : {}) }));
     };
@@ -134,7 +134,7 @@ export function prepareNativeSearchCatalog(scope, options = {}) {
     const shelfIds = new Set();
     for (const entry of settings.checkedLibraryEntries ?? []) {
         const ref = entry?.definitionRef;
-        if (!exact(entry, ['definitionRef', 'name', 'phase', 'ports', 'purpose', 'shortcode', 'searchAliases']) || !text(entry.name) || !['pre', 'post'].includes(entry.phase)
+        if (!exact(entry, ['definitionRef', 'name', 'phase', 'ports', 'purpose', 'shortcode', 'searchAliases']) || !text(entry.name) || !['pre', 'post', 'unified'].includes(entry.phase)
             || !exact(ref, ['id', 'version', 'semanticHash']) || !text(ref.id) || !Number.isSafeInteger(ref.version) || ref.version < 1 || !/^sha256:[0-9a-f]{64}$/.test(ref.semanticHash)
             || !Array.isArray(entry.ports) || entry.ports.length > 1000
             || ['purpose', 'shortcode'].some(key => entry[key] !== undefined && typeof entry[key] !== 'string')
@@ -148,7 +148,7 @@ export function prepareNativeSearchCatalog(scope, options = {}) {
         const id = 'definition:' + definitionRefKey(ref);
         if (shelfIds.has(id)) return fail('A shelf revision must be unique.');
         shelfIds.add(id);
-        if (entry.phase !== phase) continue;
+        if (phase !== 'unified' && entry.phase !== phase) continue;
         choices.push({ id, label: entry.name, family: 'Subgraphs', phase, definitionRef: { ...ref }, ports: entry.ports.map(portProjection),
             purpose: entry.purpose ?? 'Reusable saved definition with named interface ports.', shortcode: entry.shortcode ?? 'sg', searchAliases: entry.searchAliases ?? [],
             disabledReason: 'Checked definition content is required for atomic insertion.' });
@@ -162,7 +162,7 @@ export function prepareNativeSearchCatalog(scope, options = {}) {
         const id = 'definition:' + definitionRefKey(ref);
         if (shelfIds.has(id)) return fail('A shelf revision must be unique.');
         shelfIds.add(id);
-        if (definition.body.mode.slice(7) !== phase) continue;
+        if (phase !== 'unified' && definition.body.mode.slice(7) !== phase) continue;
         choices.push({ id, label: definition.name, family: 'Subgraphs', phase, definitionRef: ref, ports: definition.interface.map(portProjection),
             purpose: 'Reusable saved definition with named interface ports.', shortcode: 'sg', searchAliases: [] });
         commands.set(id, freeze({ kind: 'create-instance', definition, snapshots: definitions }));

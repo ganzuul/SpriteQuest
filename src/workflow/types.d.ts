@@ -17,18 +17,19 @@ export interface PortDescriptor {
     /** Inputs accept one binding; outputs may fan out to many consumers. */
     cardinality: 'one';
 }
-export type ControlDescriptor = ({ label?: string; editor?: 'text' | 'json'; exposable?: boolean; maxLength?: number; multiline?: boolean; hidden?: boolean; visibleWhen?: { key: string; value: string }; help?: string } & (
+export type ControlDescriptor = ({ label?: string; editor?: 'text' | 'json'; exposable?: boolean; maxLength?: number; multiline?: boolean; hidden?: boolean; visibleWhen?: { key: string; value: string | boolean | number }; help?: string } & (
     | { type: 'integer'; min: number; max: number; default: number }
     | { type: 'number'; min: number; max: number; step?: number | 'any'; default: number }
     | { type: 'enum'; values: string[]; default: string }
     | { type: 'string'; default: string }
     | { type: 'boolean'; default: boolean }
-    | { type: 'array'; items: 'string' | 'string-or-record' | 'record' | 'context-slot'; min?: number; max?: number; default: unknown[] }
+    | { type: 'array'; items: 'string' | 'string-or-record' | 'record' | 'context-slot' | 'json'; min?: number; max?: number; default: unknown[] }
     | { type: 'object'; max?: number; default: { [key: string]: import('./operations/json-data').JsonValue } }));
 export interface OperationDescriptor {
     id: string; title: string; family: string; phase: WorkflowPhase | 'both' | null;
     minimumSchema?: 3; input: ArtifactKind | null; output: ArtifactKind | null;
     controls: string[]; controlDescriptors: Record<string, ControlDescriptor>; defaults: Record<string, unknown>;
+    requestCapability?: 'text-completion' | 'typed-decision'; fallbackModelRole?: string;
     requestBound: number | ((node: NativeNode) => number); modelRole: string | null; terminal: boolean; dynamicPorts?: boolean;
     rootOnly?: boolean; requiresStateInDefinition?: boolean; modes?: string[];
     acceptsSkippedInputs?: boolean; hostOperation?: boolean;
@@ -187,7 +188,7 @@ export type HostOperationExecutor = (node: NativeNode, inputs: Record<string, Wo
 export type RunStatus = 'empty' | 'waiting' | 'queued' | 'running' | 'cancelling' | 'completed' | 'skipped' | 'unresolved' | 'failed' | 'blocked' | 'not-run' | 'cancelled' | 'invalid' | 'stale';
 export type RunSettlement = 'completed' | 'unresolved' | 'failed' | 'cancelled' | 'invalid' | 'stale';
 export interface SafeRunError { code: string; message: string; truncated?: boolean; }
-export interface BindingSummary { role?: string; profileId?: string | null; model?: string | null; fingerprint?: string; truncated?: boolean; }
+export interface BindingSummary { capability?: 'text-completion' | 'typed-decision'; provider?: 'jev' | 'laya' | 'compatible'; connectionId?: string; role?: string; profileId?: string | null; model?: string | null; fingerprint?: string; truncated?: boolean; }
 export interface SourceSummary {
     kind?: string; phase?: string; chatId?: string | number | null; characterId?: string | number | null; groupId?: string | number | null;
     messageIndex?: number; swipeId?: number; revision?: string | number; truncated?: boolean;
@@ -196,7 +197,7 @@ export interface SourceSummary {
 export type ReportedUsage = Partial<Record<'inputTokens' | 'outputTokens' | 'totalTokens' | 'promptTokens' | 'completionTokens' | 'input_tokens' | 'output_tokens' | 'total_tokens' | 'prompt_tokens' | 'completion_tokens' | 'cached_tokens' | 'reasoning_tokens', number>>;
 export interface RequestSummary {
     attempt: number; status: 'running' | 'completed' | 'failed' | 'cancelled'; maxTokens: number;
-    inputTokens: number | null; startedAt: number; durationMs?: number; finish?: string | null; usage?: ReportedUsage | null; error?: SafeRunError; iteration?: IterationProvenance;
+    inputTokens: number | null; capability?: 'text-completion' | 'typed-decision'; startedAt: number; durationMs?: number; finish?: string | null; usage?: ReportedUsage | null; error?: SafeRunError; iteration?: IterationProvenance;
 }
 export interface IterationProvenance { index: number; helper: DefinitionRef; childAddress?: NodeAddress; childOmitted?: true; }
 interface EventClock { runId: string; seq: number; at: number; elapsedMs: number; }
@@ -205,7 +206,8 @@ export type RunEvent = EventClock & (
     | { type: 'run-cancelling'; reason?: SafeRunError }
     | { type: 'run-settled'; status: RunSettlement; error?: SafeRunError; failedAddress?: NodeAddress }
     | { type: 'node-phase'; address: NodeAddress; phase: 'binding' | 'executing'; binding?: BindingSummary }
-    | { type: 'request-start'; address: NodeAddress; attempt: number; maxTokens: number; inputTokens?: number | null; iteration?: IterationProvenance }
+    | { type: 'node-binding'; address: NodeAddress; binding: BindingSummary }
+    | { type: 'request-start'; address: NodeAddress; attempt: number; maxTokens: number; inputTokens?: number | null; capability?: 'text-completion' | 'typed-decision'; iteration?: IterationProvenance }
     | { type: 'request-settled'; address: NodeAddress; attempt: number; status: 'completed' | 'failed' | 'cancelled'; durationMs: number; finish?: string | null; usage?: ReportedUsage | null; error?: SafeRunError }
     | { type: 'node-settled'; address: NodeAddress; status: 'completed' | 'skipped' | 'unresolved' | 'failed' | 'cancelled'; error?: SafeRunError; reason?: SafeRunError }
 );

@@ -5,6 +5,8 @@ import { CLEANUP_MODES, validateCleanupSettings } from './operations/prose-clean
 import { INTROSPECTION_NATIVE_OPERATIONS, describeNativeIntrospection, introspectionDefaults } from './introspection/native.js?v=0.26.0';
 import { INPUT_OPERATIONS, describeInput } from './operations/input-nodes.js?v=0.26.0';
 import { CONTROL_OPERATIONS, describeControl } from './operations/control-nodes.js?v=0.26.0';
+import { DECISION_OPERATIONS, describeDecision } from './operations/decision-nodes.js?v=0.26.0';
+import { MODEL_OPERATIONS, describeModelNode } from './operations/model-nodes.js?v=0.26.0';
 
 /** Native operation metadata. Artifact flow, rather than canvas placement, defines execution. */
 export const FAMILIES = ['Input', 'Shaping', 'Surface', 'Transpose', 'Introspection', 'Derive', 'Output'];
@@ -52,11 +54,13 @@ Object.assign(OPERATIONS, Object.fromEntries(Object.entries(TRANSPOSE_OPERATIONS
 Object.assign(OPERATIONS, INTROSPECTION_NATIVE_OPERATIONS);
 Object.assign(OPERATIONS, INPUT_OPERATIONS);
 Object.assign(OPERATIONS, CONTROL_OPERATIONS);
+Object.assign(OPERATIONS, DECISION_OPERATIONS);
+Object.assign(OPERATIONS, MODEL_OPERATIONS);
 OPERATIONS.repair.controlDescriptors.categories.label = 'Policy categories (empty selects all)';
 for (const [key, label] of Object.entries({ mode: 'Mode', scope: 'Scope', caseSensitive: 'Case sensitive', strength: 'Strength', instructions: 'Instructions', maxTokens: 'Output tokens', protectedLiterals: 'Protected literals' })) OPERATIONS.repair.controlDescriptors[key].label = label;
 const contextJoinDescriptor = source => ({ ...source, controlDescriptors: { inputs: { ...source.controlDescriptors.inputs, label: 'Inputs', editor: 'json', exposable: false } } });
 OPERATIONS['context-join'] = contextJoinDescriptor(describeContextJoin({ type: 'workflow', operation: 'context-join', operationVersion: 1, inputs: [{ id: 'context-1', label: 'Context 1' }, { id: 'context-2', label: 'Context 2' }] }).data.descriptor);
-const newOperation = id => Object.hasOwn(CONTROL_OPERATIONS, id) || Object.hasOwn(INPUT_OPERATIONS, id) || Object.hasOwn(PRIMITIVE_OPERATIONS, id) || Object.hasOwn(TRANSPOSE_OPERATIONS, id) || Object.hasOwn(INTROSPECTION_NATIVE_OPERATIONS, id) || id === 'context-join' || id === 'repair';
+const newOperation = id => Object.hasOwn(MODEL_OPERATIONS, id) || Object.hasOwn(DECISION_OPERATIONS, id) || Object.hasOwn(CONTROL_OPERATIONS, id) || Object.hasOwn(INPUT_OPERATIONS, id) || Object.hasOwn(PRIMITIVE_OPERATIONS, id) || Object.hasOwn(TRANSPOSE_OPERATIONS, id) || Object.hasOwn(INTROSPECTION_NATIVE_OPERATIONS, id) || id === 'context-join' || id === 'repair';
 const failure = (code, message) => ({ ok: false, error: { code, message } });
 function ownMetadata(value, key) {
     if (!value || typeof value !== 'object' || Array.isArray(value) || ![Object.prototype, null].includes(Object.getPrototypeOf(value))) throw new Error('plain metadata');
@@ -76,7 +80,7 @@ export function phaseForNode(graph, node) {
         if (declared !== undefined && !['pre', 'post'].includes(declared)) return null;
         const op = OPERATIONS[id];
         const fixed = Object.hasOwn(TRANSPOSE_OPERATIONS, id) && ownMetadata(node, 'inputKind') === 'text' ? undefined
-            : id === 'memory' && ownMetadata(node, 'mode') === 'commit' || id === 'text-rules' && ownMetadata(node, 'inputKind') === 'draft' ? 'post'
+            : id === 'extract' && ownMetadata(node, 'inputKind') !== 'text' || id === 'memory' && ownMetadata(node, 'mode') === 'commit' || id === 'text-rules' && ownMetadata(node, 'inputKind') === 'draft' ? 'post'
             : id === 'compose' && ownMetadata(node, 'outputKind') === 'guidance' ? 'pre'
             : ['pre', 'post'].includes(op.phase) ? op.phase : undefined;
         const phase = mode === 'native-unified' ? declared ?? fixed ?? 'pre' : mode === 'native-pre' ? 'pre' : 'post';
@@ -84,6 +88,8 @@ export function phaseForNode(graph, node) {
     } catch { return null; }
 }
 function dynamicDescription(node, phase) {
+    if (Object.hasOwn(MODEL_OPERATIONS, node.operation)) return describeModelNode(node, { phase });
+    if (Object.hasOwn(DECISION_OPERATIONS, node.operation)) return describeDecision(node, { phase });
     if (Object.hasOwn(CONTROL_OPERATIONS, node.operation)) return describeControl(node, { phase });
     if (Object.hasOwn(INPUT_OPERATIONS, node.operation)) return describeInput(node, { phase });
     if (Object.hasOwn(INTROSPECTION_NATIVE_OPERATIONS, node.operation)) return describeNativeIntrospection(node, { phase });
@@ -131,7 +137,7 @@ export function operationFor(node, { phase, mode } = {}) {
         const declared = ownMetadata(node, 'phase');
         if (declared !== undefined && !['pre', 'post'].includes(declared)) return null;
         if (newOperation(op.id)) {
-            const effectivePhase = phase ?? declared ?? (op.phase === 'post' || op.id === 'memory' && ownMetadata(node, 'mode') === 'commit' || op.id === 'text-rules' && ownMetadata(node, 'inputKind') === 'draft' ? 'post' : 'pre');
+            const effectivePhase = phase ?? declared ?? (op.phase === 'post' || op.id === 'extract' && ownMetadata(node, 'inputKind') !== 'text' || op.id === 'memory' && ownMetadata(node, 'mode') === 'commit' || op.id === 'text-rules' && ownMetadata(node, 'inputKind') === 'draft' ? 'post' : 'pre');
             if (declared !== undefined && declared !== effectivePhase) return null;
             const described = dynamicDescription(node, effectivePhase);
             return described.ok ? described.data.descriptor : null;

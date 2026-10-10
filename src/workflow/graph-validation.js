@@ -42,7 +42,7 @@ function controlValid(value, descriptor) {
         : descriptor.type === 'number' ? Number.isFinite(value) && value >= descriptor.min && value <= descriptor.max
         : descriptor.type === 'enum' ? descriptor.values.includes(value)
         : descriptor.type === 'object' ? record(value) && [Object.prototype, null].includes(Object.getPrototypeOf(value)) && (descriptor.max === undefined || Object.keys(value).length <= descriptor.max) && cloneDefinitionData(value).ok
-        : descriptor.type === 'array' ? Array.isArray(value) && value.every(item => typeof item === 'string' || ['string-or-record', 'record', 'context-slot'].includes(descriptor.items) && record(item))
+        : descriptor.type === 'array' ? Array.isArray(value) && (descriptor.items === 'json' ? cloneDefinitionData(value).ok : value.every(item => typeof item === 'string' || ['string-or-record', 'record', 'context-slot'].includes(descriptor.items) && record(item)))
         : typeof value === descriptor.type;
 }
 

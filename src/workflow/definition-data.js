@@ -107,7 +107,7 @@ export function describeExposedControl(value, controlId) {
         : descriptor.type === 'number' ? Number.isFinite(current) && current >= descriptor.min && current <= descriptor.max
         : descriptor.type === 'enum' ? descriptor.values.includes(current)
         : descriptor.type === 'object' ? record(current) && [Object.prototype, null].includes(Object.getPrototypeOf(current)) && (descriptor.max === undefined || Object.keys(current).length <= descriptor.max)
-        : descriptor.type === 'array' ? Array.isArray(current) && current.every(item => typeof item === 'string' || ['string-or-record', 'record', 'context-slot'].includes(descriptor.items) && record(item))
+        : descriptor.type === 'array' ? Array.isArray(current) && (descriptor.items === 'json' ? cloneDefinitionData(current).ok : current.every(item => typeof item === 'string' || ['string-or-record', 'record', 'context-slot'].includes(descriptor.items) && record(item)))
         : typeof current === descriptor.type;
     if (!valid) return fail('DEFINITION_PARAMETER', 'Saved control default does not match its catalog descriptor.');
     return cloneDefinitionData({ ...descriptor, default: current });

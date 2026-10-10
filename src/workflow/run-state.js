@@ -76,10 +76,15 @@ export function reduceRunState(previous, raw) {
                 node.subphase = phase;
                 const binding = safeBinding(own(raw, 'binding')); if (binding) node.binding = binding;
                 if (phase === 'executing') { nodes = nodes.map(item => item.included && item.status === 'waiting' ? { ...item, status: 'queued' } : item); node.status = 'running'; node.startedAt = elapsedMs; next.status = 'running'; }
+            } else if (type === 'node-binding') {
+                const binding = safeBinding(own(raw, 'binding'));
+                if (node.status !== 'running' || node.request?.status === 'running' || !binding || !Object.keys(binding).length) return previous;
+                node.binding = binding;
             } else if (type === 'request-start') {
                 const attempt = own(raw, 'attempt'), maxTokens = own(raw, 'maxTokens'), inputTokens = own(raw, 'inputTokens');
                 if (node.status !== 'running' || (node.request && node.request.status === 'running') || !Number.isSafeInteger(attempt) || attempt !== node.attempts + 1 || attempt > node.requestBound || !number(maxTokens) || (inputTokens !== undefined && inputTokens !== null && !number(inputTokens))) return previous;
                 node.attempts = attempt; node.subphase = 'request'; node.request = { attempt, status: 'running', maxTokens, inputTokens: inputTokens ?? null, startedAt: elapsedMs };
+                const capability=own(raw,'capability');if(['text-completion','typed-decision'].includes(capability))node.request.capability=capability;
                 const iteration=safeIteration(own(raw,'iteration'));if(iteration)node.request.iteration=iteration;
             } else if (type === 'request-settled') {
                 const attempt = own(raw, 'attempt'), status = own(raw, 'status'), durationMs = own(raw, 'durationMs');

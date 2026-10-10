@@ -46,7 +46,7 @@ function resolve(node, options) {
         // Match the actual portable JSON type so graph-level generic control admission stays strict.
         const type = Array.isArray(settings.value) ? 'array' : settings.value === null ? 'object' : typeof settings.value;
         if (settings.value === null) delete descriptor.controlDescriptors.value;
-        else descriptor.controlDescriptors.value = control(type, settings.value, type === 'array' ? { items: 'string-or-record' } : type==='number'?{min:-Number.MAX_VALUE,max:Number.MAX_VALUE}:{});
+        else descriptor.controlDescriptors.value = control(type, settings.value, type === 'array' ? { items: 'json' } : type==='number'?{min:-Number.MAX_VALUE,max:Number.MAX_VALUE}:{});
         ports = [pin('in', 'data', 'input', true), pin('out', 'data', 'output')];
     } else if (['join','collect'].includes(operation)) {
         if (!kinds.includes(settings.artifactKind) || !Array.isArray(settings.inputs) || settings.inputs.length<1 || settings.inputs.length>16 || settings.inputs.some(slot=>!plain(slot)||typeof slot.id!=='string'||!slot.id||slot.id.length>128||slot.id==='out'||typeof slot.label!=='string'||slot.label.length>80||typeof slot.required!=='boolean'||Object.keys(slot).some(key=>!['id','label','required'].includes(key))) || new Set(settings.inputs.map(slot=>slot.id)).size!==settings.inputs.length || operation==='join'&&!['first','last'].includes(settings.selection)) return fail('INVALID_SETTINGS','Join requires 1–16 unique typed input slots with explicit required flags.');

@@ -143,3 +143,13 @@ test('terminal settlement preserves closed request data and prior fail-fast stat
         assert.equal(final.nodes[1].settledAt, 8);
     }
 });
+
+test('lazy binding records only on an executing node outside an active request and omits credentials', () => {
+    let state = api.reduceRunState(api.createRunState('run-1'), event(1, 'plan', { plan: plan() }));
+    assert.equal(api.reduceRunState(state, event(2, 'node-binding', { address: address('a'), binding: { model: 'chosen' } })), state);
+    state = api.reduceRunState(state, event(3, 'node-phase', { address: address('a'), phase: 'executing' }));
+    state = api.reduceRunState(state, event(4, 'node-binding', { address: address('a'), binding: { model: 'chosen', authorization: 'SECRET', capability: 'typed-decision', provider: 'laya' } }));
+    assert.deepEqual(state.nodes[0].binding, { model: 'chosen', capability: 'typed-decision', provider: 'laya' });
+    state = api.reduceRunState(state, event(5, 'request-start', { address: address('a'), attempt: 1, maxTokens: 10 }));
+    assert.equal(api.reduceRunState(state, event(6, 'node-binding', { address: address('a'), binding: { model: 'changed' } })), state);
+});

@@ -431,3 +431,15 @@ test('saved subgraph label and admitted optional search metadata remain immutabl
     for (const searchAliases of [[42], 'not an array']) assert.equal(api.prepareNativeSearchCatalog(scope(), { checkedLibraryEntries: [{ ...entry, searchAliases }] }).ok, false);
     assert.equal(api.prepareNativeSearchCatalog(scope(), { placedNodeAliases: ['placed node alias'] }).ok, false);
 });
+
+test('one unified shelf exposes preparation and reply processing with their actual pins',()=>{
+    const unified=catalog(scope('native-unified'));
+    for(const id of ['scene-context','reply-snapshot','response-plan','repair','guidance','apply-reply','condition','decision','fast-decision'])assert.ok(choice(unified,'operation:'+id),id);
+    assert.equal(choice(unified,'operation:scene-context').phase,'pre');assert.equal(choice(unified,'operation:reply-snapshot').phase,'post');
+    assert.equal(choice(unified,'operation:guidance').ports.find(port=>port.dir==='out').kind,'guidance');
+    assert.equal(choice(unified,'operation:decision').label,'Decision');assert.equal(choice(unified,'operation:fast-decision').label,'Fast Decision');
+    for(const item of unified.choices.filter(item=>item.id.startsWith('operation:'))){
+        const command=api.resolveNativeSearchChoice(unified,item.id);const described=describeOperation(scope('native-unified'),{type:'workflow',...operationDefaults(command.operation),...command.controls,...(command.artifactKind?{artifactKind:command.artifactKind,phase:'pre'}:{})});
+        assert.equal(described.ok,true,item.id+' '+JSON.stringify(described.error));assert.deepEqual(item.ports,described.data.ports.map(({id,label,kind,direction,required})=>({portId:id,label,kind,dir:direction==='input'?'in':'out',required})));
+    }
+});
