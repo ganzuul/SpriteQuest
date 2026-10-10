@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Consolidate outstanding repository work into verified Main and close all nine integrated linked worktrees.
+**Goal:** Consolidate outstanding repository work into verified, pushed Main; retain all nine linked worktrees until the user tests that result and confirms cleanup.
 
 **Architecture:** Prepare a candidate integration branch in the primary checkout after preserving its original files and all source worktrees. Merge source history sequentially, resolve overlaps by reviewed intent, regenerate the UI bundle, and promote the tested candidate to Main. Read-only audits and independent reviews can run in parallel; Git mutations remain sequential.
 
@@ -17,6 +17,7 @@
 - Preserve document independence, scoped metadata, provider-default behavior, and zero unintended model calls.
 - Keep source branches, verified archives and the Git bundle; never remove a source before its state is accounted for.
 - Do not force-push. Cleanup follows a verified Main.
+- The user requested hands-on testing of merged and pushed integrations before cleanup. Publish verified Main normally, then keep all checkouts and recovery points pending the user's confirmation.
 
 ## Review Focus
 
@@ -56,8 +57,8 @@
 
 - [x] Merge profile cleanup `2486c44`; retain current curriculum/retirement work while adding themed selectors, appropriate default recovery and advanced Details cleanup.
 - [x] Merge automatic workflow data `2033351`; reconcile captured/current document scope and preserved profile cleanup.
-- [ ] Merge consolidated menus `4933a7e`; keep the six-menu design, panel controls, diagnostics and activity updates with document lifecycle and Fast retirement.
-- [ ] Merge typed-pin routing `58f8a03`; retain typed shape/color semantics and direct wire lead behavior alongside the shared Recall projection.
+- [x] Merge consolidated menus `4933a7e`; keep the six-menu design, panel controls, diagnostics and activity updates with document lifecycle and Fast retirement.
+- [x] Merge typed-pin routing `58f8a03`; retain typed shape/color semantics and direct wire lead behavior alongside the shared Recall projection.
 - [ ] Merge completed compact shelf snapshot `50d28c1`; reconcile scale, shared opacity, bold labels and unique operation icons with current catalog/context lifecycle.
 - [ ] For each conflict, review all participating versions and original requirements; record the decision. Rebuild generated assets from the final source rather than selecting a branch's old bundle.
 - [ ] Run meaningful focused tests for each merge and cross-feature browser flows. Update obsolete test expectations only where approved behavior changed.
@@ -81,9 +82,10 @@
 **Interfaces:** Consumes a verified candidate; produces consolidated Main and no linked checkouts.
 
 - [ ] Recheck GitHub Main and local source state for concurrent changes; reconcile anything new before promotion.
-- [ ] Fast-forward local Main to the verified candidate. Publish through a normal push only if the user authorizes publication of the reviewed result; otherwise report local Main ahead of origin. If published, verify GitHub SHA with network-enabled GitHub CLI.
-- [ ] Verify preserved archives and hashes before closing the nine included linked worktrees. Prefer native archive when available for the owning attachment; otherwise use exact checked Git worktree paths backed by the preservation archives. Keep recovery branch refs.
-- [ ] Recheck `git worktree list`, Main status and source accounting. Confirm only the primary checkout remains.
+- [ ] Fast-forward local Main to the verified candidate and publish through a normal push for the user's testing. Verify GitHub SHA with network-enabled GitHub CLI.
+- [ ] Hand the merged and pushed result to the user for hands-on testing. Keep every linked checkout and recovery branch intact until the user confirms cleanup.
+- [ ] After the user's confirmation: verify preserved archives and hashes before closing the nine included linked worktrees. Prefer native archive when available for the owning attachment; otherwise use exact checked Git worktree paths backed by the preservation archives. Keep recovery branch refs.
+- [ ] After cleanup: recheck `git worktree list`, Main status and source accounting. Confirm only the primary checkout remains.
 
 ## Plan review
 

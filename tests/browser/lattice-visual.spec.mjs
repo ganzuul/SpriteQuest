@@ -96,8 +96,8 @@ test('approved floating shelf retains an aligned canonical node menu and quiet s
     await expect(menu).toBeVisible();
     await expect(page.locator('[data-subfamily], .pc-leaf-menu')).toHaveCount(0);
     const [button, drawer] = await Promise.all([family.boundingBox(), menu.boundingBox()]);
-    expect(button.width).toBe(128); expect(button.height).toBe(42);
-    expect(drawer.width).toBe(250);
+    expect(button.width).toBeCloseTo(102.4, 1); expect(button.height).toBeCloseTo(33.6, 1);
+    expect(drawer.width).toBe(200);
     expect(drawer.x - button.x - button.width).toBeCloseTo(3, 0);
     const rows = await page.evaluate(() => {
         const read = element => {
@@ -112,11 +112,13 @@ test('approved floating shelf retains an aligned canonical node menu and quiet s
     });
     for (const collection of [rows.families, rows.choices]) {
         expect(collection.length).toBeGreaterThanOrEqual(2);
-        for (const row of collection) expect(row).toMatchObject({ height: 42, iconWidth: 24, iconHeight: 24 });
-        for (let index = 1; index < collection.length; index++) expect(collection[index].y - collection[index - 1].y).toBeCloseTo(45, 1);
+        for (const row of collection) {
+            expect(row.height).toBeCloseTo(33.6, 1); expect(row.iconWidth).toBeCloseTo(19.2, 1); expect(row.iconHeight).toBeCloseTo(19.2, 1);
+        }
+        for (let index = 1; index < collection.length; index++) expect(collection[index].y - collection[index - 1].y).toBeCloseTo(36, 1);
     }
-    expect(rows.family.font).toBe('14px');
-    for (const row of rows.choices) expect(row.font).toBe('14px');
+    expect(rows.family.font).toBe('11.2px');
+    for (const row of rows.choices) expect(row.font).toBe('11.2px');
     const area = await page.locator('.pc-canvas-area').boundingBox();
     expect(drawer.y).toBeGreaterThanOrEqual(area.y + 4);
     expect(drawer.y + drawer.height).toBeLessThanOrEqual(area.y + area.height - 4);

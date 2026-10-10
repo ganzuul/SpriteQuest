@@ -87,13 +87,14 @@ test('a tall Preview leaves shelf rows full width with a themed vertical scrollb
         const next = row.nextElementSibling.getBoundingClientRect();
         return { scrollWidth: element.scrollWidth, clientWidth: element.clientWidth, scrollHeight: element.scrollHeight, clientHeight: element.clientHeight,
             overflowX: style.overflowX, scrollbarWidth: style.scrollbarWidth, scrollbarColor: style.scrollbarColor,
-            rowWidth: r.width, rowHeight: r.height, rowPitch: next.y - r.y, iconWidth: icon.width, iconHeight: icon.height,
+            rowWidth: r.width, rowHeight: r.height, rowPitch: next.y - r.y, fontSize: getComputedStyle(row).fontSize, iconWidth: icon.width, iconHeight: icon.height,
             iconCenter: icon.y + icon.height / 2 - r.y, textCenter: text.y + text.height / 2 - r.y };
     });
     expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth);
     expect(dimensions.scrollHeight).toBeGreaterThan(dimensions.clientHeight);
-    expect(dimensions).toMatchObject({ overflowX: 'hidden', scrollbarWidth: 'thin', scrollbarColor: 'rgb(85, 85, 85) rgba(0, 0, 0, 0)', rowWidth: 128, rowHeight: 42, rowPitch: 45, iconWidth: 24, iconHeight: 24 });
-    expect(dimensions.iconCenter).toBeCloseTo(21, 1); expect(dimensions.textCenter).toBeCloseTo(21, 1);
+    expect(dimensions).toMatchObject({ overflowX: 'hidden', scrollbarWidth: 'thin', scrollbarColor: 'rgb(85, 85, 85) rgba(0, 0, 0, 0)', fontSize: '11.2px' });
+    for (const [key, expected] of Object.entries({ rowWidth: 102.4, rowHeight: 33.6, rowPitch: 36, iconWidth: 19.2, iconHeight: 19.2 })) expect(dimensions[key]).toBeCloseTo(expected, 1);
+    expect(dimensions.iconCenter).toBeCloseTo(16.8, 1); expect(dimensions.textCenter).toBeCloseTo(16.8, 1);
 });
 
 test('hover and compatible connection targets highlight and a near-origin drag uses a single smooth cubic', async ({ page }) => {
