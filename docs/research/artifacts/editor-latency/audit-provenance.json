@@ -1,0 +1,49 @@
+{
+  "created": "2026-10-10T21:13:07.012Z",
+  "runtime": {
+    "node": "v24.16.0",
+    "platform": "win32",
+    "release": "10.0.19045",
+    "arch": "x64",
+    "cpu": "AMD Ryzen 7 5800X 8-Core Processor             ",
+    "logicalCpus": 16
+  },
+  "measurementCommand": "node docs/research/artifacts/editor-latency/audit-editor-latency.mjs --source=.tmp/editor-latency-baseline",
+  "cleanMotionCommand": "node docs/research/artifacts/editor-latency/audit-editor-latency.mjs --source=.tmp/editor-latency-baseline --output=.tmp/latency-motion-clean --sizes=25,100,250 --rates=1,4 --repeats=2 --modes=selection",
+  "guardVerificationCommand": "node docs/research/artifacts/editor-latency/audit-editor-latency.mjs --source=.tmp/editor-latency-baseline --output=.tmp/latency-guard-verification --sizes=2 --rates=1 --repeats=2",
+  "note": "Measured app/build snapshot is identified by the manifest; head/status are ancestor live checkout provenance. Final stored probe adds fingerprinting and outcome guards around the same timed actions, plus a motion setup debounce wait; changes verified separately.",
+  "artifacts": [
+    {
+      "name": "audit-editor-latency.mjs",
+      "sha256": "bb369e8cd2f7e39f9880898950c94af8d7c9bcd31d8ea79370c3dac2025f3ef8"
+    },
+    {
+      "name": "analyze-editor-profile.mjs",
+      "sha256": "3cbc77548b3b2a825a75e89d0878a0905bf038423e6d6a3c7260635eb00b4a64"
+    },
+    {
+      "name": "editor-latency-results.json",
+      "sha256": "647cd38219530158ff0b5e4d15efe51efa5ea472c9c016e6501930aff696e284"
+    },
+    {
+      "name": "editor-latency-motion-clean.json",
+      "sha256": "d1093d6f54ee50521785af0824a99bfec5da2c1d6fc7da5033f6770e464550d8"
+    },
+    {
+      "name": "editor-latency-guard-verification.json",
+      "sha256": "f83938e168cae5d744e9538ec5bbf7feb886a7c55735a7a8f033b169c0ddcd2b"
+    },
+    {
+      "name": "editor-latency-source-manifest.json",
+      "sha256": "5f02745f92f8ed1f2485361970634838be9f2933d3f9fcb93f3b0e1373a37b4e"
+    },
+    {
+      "name": "detail-toggle-250.cpuprofile",
+      "sha256": "9a2c51b95e842d8334ea1f6aafc822a17276502694dcf1af7dda879ecadbdae6"
+    },
+    {
+      "name": "editor-latency-profile-summary.json",
+      "sha256": "c393b9181546f7e6c3bf907656668a6cd8fbe42fae1bab9ef0619b32bf95e20e"
+    }
+  ]
+}

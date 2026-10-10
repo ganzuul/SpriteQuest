@@ -1,0 +1,63 @@
+{
+  "created": "2026-10-10T21:34:25.616Z",
+  "baseCommit": "143ec11cdd35c5478990198d51823f1076922bd7",
+  "branch": "codex/lattice-performance-overhaul",
+  "command": "node docs/research/artifacts/editor-latency/audit-editor-latency.mjs --sizes=25,100 --rates=1 --repeats=3 --modes=detail-toggle,selection,shelf-create,connect-release --output=.tmp/performance-main-baseline",
+  "runtime": {
+    "node": "v24.16.0",
+    "platform": "win32",
+    "release": "10.0.19045",
+    "arch": "x64",
+    "cpu": "AMD Ryzen 7 5800X 8-Core Processor             ",
+    "logicalCpus": 16
+  },
+  "probeSha256": "bb369e8cd2f7e39f9880898950c94af8d7c9bcd31d8ea79370c3dac2025f3ef8",
+  "browser": "151.0.7922.34",
+  "bundleSha256": "13034e7c7e7e3a1f0f609eb1ebae6c3f3d8389cfe72336c8f0af2424fc0132cd",
+  "sourceFiles": 267,
+  "checks": {
+    "unitTestFiles": 263,
+    "typeErrors": 0,
+    "typeWarnings": 0,
+    "build": "passed",
+    "assets": "passed",
+    "browserGroups": 24,
+    "browserErrors": 0,
+    "blockedRequests": 0,
+    "providerCalls": 0
+  },
+  "note": "Clean Main product source rebuilt for measurements. Raw status includes generated build output and documentation. Generated dist files were retained locally with the samples and restored to Git contents after measurement. This is a preliminary three-plain-sample action baseline plus separate instrumented motion, not full browser acceptance or authenticated host measurement.",
+  "artifacts": [
+    {
+      "name": "editor-latency-results.json",
+      "bytes": 96155,
+      "sha256": "ce1b3531ae9ad502138744556dbf0b2a9d31081a8f44095cc18fad1596511d82"
+    },
+    {
+      "name": "editor-latency-source-manifest.json",
+      "bytes": 44139,
+      "sha256": "bc4a97e244d3b38cca264f0f5b7fe3211444f49ce0d4466e6921f7aebf4d3de6"
+    },
+    {
+      "name": "unit-tests.txt",
+      "bytes": 9762,
+      "sha256": "338c29b22def68f6813693af2214c0c149498126f8e2da1cb82a13fe9c362656"
+    },
+    {
+      "name": "types.txt",
+      "bytes": 256,
+      "sha256": "eeae71f43e6f344b093f5e9c9217b1f151f78bd583617748281155acb5db1556"
+    },
+    {
+      "name": "build.txt",
+      "bytes": 304,
+      "sha256": "1cd35eb286816df26de8fbc3f3f173fcbc0dd00a7f1874406fc7766f3ebab256"
+    },
+    {
+      "name": "assets.txt",
+      "bytes": 166,
+      "sha256": "4d7ca582c62bc7ad92e471971882592ea9ba5f1ba46e7155eb13a18b5181da00"
+    }
+  ],
+  "verificationLogNormalization": "Saved verification logs normalize CRLF to LF only; original command logs remain in .tmp."
+}

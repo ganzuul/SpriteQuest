@@ -1,0 +1,8 @@
+
+> lattice@0.27.0 check:types
+> svelte-check --tsconfig ./tsconfig.json
+
+Loading svelte-check in workspace: c:\Users\Keptin\.codex\worktrees\lattice-performance-overhaul\SillyCanvas
+Getting Svelte diagnostics...
+
+svelte-check found 0 errors and 0 warnings
