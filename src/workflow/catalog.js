@@ -44,7 +44,7 @@ export const OPERATIONS = {
 };
 const primitiveDescriptor = source => ({ ...source, minimumSchema: 3,
     controlDescriptors: Object.fromEntries(source.controlDescriptors.map(control => [control.key, {
-        ...(control.type === 'enum' ? { type: 'enum', values: control.options } : control.type === 'text' || typeof source.defaults[control.key] === 'string' ? { type: 'string' } : { type: 'array', items: control.key === 'protectedLiterals' ? 'string' : 'record' }),
+        ...(control.type === 'integer' ? { type: 'integer', min: control.minimum, max: control.maximum } : control.type === 'enum' ? { type: 'enum', values: control.options } : control.type === 'text' || typeof source.defaults[control.key] === 'string' ? { type: 'string' } : { type: 'array', items: control.key === 'protectedLiterals' ? 'string' : 'record' }),
         default: structuredClone(source.defaults[control.key]), label: control.label, editor: control.type === 'json' && control.key !== 'protectedLiterals' ? 'json' : 'text',
         ...(Array.isArray(source.defaults[control.key]) ? { max: ['fields', 'protectedLiterals'].includes(control.key) ? 128 : 64 } : {}),
     }])),
@@ -210,6 +210,10 @@ export function describeOperation(graph, node) {
 /** Slot labels are presentation; stable slot identity and order are semantic. */
 export function semanticControlsForNode(node, operation = operationFor(node)) {
     const controls = Object.fromEntries((operation?.controls ?? []).map(key => [key, node[key] === undefined ? operation.defaults[key] : node[key]]));
+    if (node.operation === 'compose') {
+        if (controls.budgetTokens === 0) delete controls.budgetTokens;
+        if (Array.isArray(controls.sections)) controls.sections = controls.sections.map(section => { const normalized = { ...section }; if (normalized.kind === 'text') delete normalized.kind; if (normalized.required === false) delete normalized.required; if (normalized.onSkipped === 'fallback') delete normalized.onSkipped; return normalized; });
+    }
     // Additive editor controls must preserve existing version-1 semantic pins.
     if (node.operation === 'for-each') {
         if (!Object.keys(controls.roleOverrides ?? {}).length) delete controls.roleOverrides;

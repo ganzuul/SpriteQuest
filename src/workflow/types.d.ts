@@ -173,10 +173,16 @@ export interface TextArtifact { kind: 'text'; text: string; }
 export interface RecordedTextArtifact extends TextArtifact { modifiers?: import('./modifiers').TextModifierMetadata; }
 export interface DataArtifact { kind: 'data'; value: import('./operations/json-data').JsonValue; }
 export type ContextArtifact = import('./operations/context-data').RuntimeContext;
-export type WorkflowArtifact = TextArtifact | DataArtifact | ContextArtifact | { kind: 'draft' | 'patches' | 'candidate' | 'guidance'; [key: string]: unknown };
+export interface GuidanceArtifact { kind: 'guidance'; text: string; visibility?: import('./artifact-privacy').ArtifactVisibility | 'public' | 'hidden' | 'actor-private'; scope?: { actorId?: string; [key: string]: unknown }; sourceRefs?: unknown[]; [key: string]: unknown; }
+export type WorkflowArtifact = GuidanceArtifact | TextArtifact | DataArtifact | ContextArtifact | { kind: 'draft' | 'patches' | 'candidate'; [key: string]: unknown };
 export interface PortState { status: 'completed' | 'skipped' | 'unresolved'; reason?: SafeRunError; }
 /** Actual output pins are independent; legacy artifact is admitted only on the conventional out pin. */
 export type OperationResult = { ok: true; artifact?: WorkflowArtifact; outputs?: Record<string, WorkflowArtifact>; outputStates?: Record<string, PortState>; reports?: unknown[] } | { ok: false; error: WorkflowError };
+export interface ScopedOutputRetention {
+    node: NativeNode; address: NodeAddress; inputs: Record<string, WorkflowArtifact>;
+    inputStates?: Readonly<Record<string, PortState>>; artifact: WorkflowArtifact;
+    portId: string; rawResult: OperationResult;
+}
 export interface OperationExecutionContext {
     phase: WorkflowPhase; rootMode: NativeWorkflowMode; root: boolean; address: NodeAddress;
     inputStates: Readonly<Record<string, PortState>>; signal?: AbortSignal;

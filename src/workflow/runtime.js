@@ -68,7 +68,7 @@ async function executeNode(node,inputs,op,local) {
     if(Object.hasOwn(DECISION_OPERATIONS,node.operation))return executeDecision(node,inputs,local);
     if(Object.hasOwn(CONTROL_OPERATIONS,node.operation))return executeControl(node,inputs,local);
     if(node.operation!=='prompt-source' && Object.hasOwn(INPUT_OPERATIONS,node.operation))return executeInput(node,{phase:local.phase});
-    if(Object.hasOwn(PRIMITIVE_OPERATIONS,node.operation))return executePrimitive(node,inputs,{phase:local.phase,...(local.signal?{signal:local.signal}:{}),...(local.createWorker?{createWorker:local.createWorker}:{}),...(local.timeoutMs!==undefined?{timeoutMs:local.timeoutMs}:{})});
+    if(Object.hasOwn(PRIMITIVE_OPERATIONS,node.operation))return executePrimitive(node,inputs,{phase:local.phase,...(local.inputStates?{inputStates:local.inputStates}:{}),...(local.countTokens?{countTokens:local.countTokens}:{}),...(local.signal?{signal:local.signal}:{}),...(local.createWorker?{createWorker:local.createWorker}:{}),...(local.timeoutMs!==undefined?{timeoutMs:local.timeoutMs}:{})});
     if(node.operation==='context-join')return executeContextJoin(node,inputs);
     if(Object.hasOwn(TRANSPOSE_OPERATIONS,node.operation))return executeTranspose(node,inputs,{phase:local.phase,request:local.request,countTokens:local.countTokens,binding:local.binding,...(local.signal?{signal:local.signal}:{})});
     if(Object.hasOwn(INTROSPECTION_NATIVE_OPERATIONS,node.operation)) {
@@ -326,7 +326,7 @@ async function executeWorkflow(original,ports,hooks={}) {
                 if(status!=='completed'){recorder.capture({address:unit.address,direction:'output',portId:port.id,state});continue;}
                 let modifierMetadata;if(node.modifiers?.length){const modified=applyTextModifiers(output?.text,node.modifiers);if(!modified.ok){emit('node-settled',{address:unit.address,status:'failed',error:safeError(modified.error)});return finish(modified);}output={...output,text:modified.data.text};modifierMetadata={rawText:modified.data.rawText,trace:modified.data.trace};}
                 const artifact=freezeArtifact(output),recordedArtifact=modifierMetadata?freezeArtifact({...artifact,modifiers:modifierMetadata}):artifact;
-                const scoped=await retainScopedOutput({node,address:unit.address,inputs,artifact,portId:port.id,rawResult});if(!scoped.ok)return finish(scoped);
+                const scoped=await retainScopedOutput({node,address:unit.address,inputs,inputStates,artifact,portId:port.id,rawResult});if(!scoped.ok)return finish(scoped);
                 if(prepared.graph.mode==='native-unified'&&mode==='root'&&unit.address.instancePath.length===0&&typeof hooks.retainRecallProvenance==='function'){
                     let retained;try{retained=await hooks.retainRecallProvenance({node,address:unit.address,inputs,artifact,portId:port.id,rawResult});}catch{return finish(failure('RECALL_PROVENANCE_FAILED','The private recall source could not be retained.',node.id));}
                     if(stopped())return finish(failure('ABORTED','Workflow was stopped.',node.id));

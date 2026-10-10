@@ -167,7 +167,7 @@ export function computeDefinitionIdentity(value) {
                         continue;
                     }
                     // Additive defaults preserve both prior version-1 pins and old saved bodies.
-                    if ((node.operation === 'for-each' && controlId === 'roleOverrides' && !Object.keys(control.data.default ?? {}).length) || (node.operation === 'scene-context' && controlId === 'visibilityMode' && control.data.default === 'actor') || (node.operation === 'format' && controlId === 'jsonShape' && control.data.default === 'records') || (['read-file','write-file'].includes(node.operation) && ((controlId === 'actorScope' && control.data.default === 'selected') || (controlId === 'actorId' && control.data.default === '')))) {
+                    if ((node.operation === 'compose' && controlId === 'budgetTokens' && control.data.default === 0) || (node.operation === 'for-each' && controlId === 'roleOverrides' && !Object.keys(control.data.default ?? {}).length) || (node.operation === 'scene-context' && controlId === 'visibilityMode' && control.data.default === 'actor') || (node.operation === 'format' && controlId === 'jsonShape' && control.data.default === 'records') || (['read-file','write-file'].includes(node.operation) && ((controlId === 'actorScope' && control.data.default === 'selected') || (controlId === 'actorId' && control.data.default === '')))) {
                         delete node[controlId];
                         continue;
                     }

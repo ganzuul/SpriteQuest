@@ -35,9 +35,9 @@ test('static registration describes zero-request primitives and explicit editabl
         assert.equal(descriptor.terminal, false);
         assert.deepEqual(descriptor.controls, Object.keys(descriptor.defaults));
         assert.deepEqual(descriptor.controlDescriptors.map(control => control.key), descriptor.controls);
-        assert.ok(descriptor.controlDescriptors.every(control => ['enum', 'text', 'json'].includes(control.type)));
+        assert.ok(descriptor.controlDescriptors.every(control => ['enum', 'text', 'json', 'integer'].includes(control.type)));
     }
-    assert.deepEqual(api.PRIMITIVE_OPERATIONS.compose.defaults, { mode: 'join', outputKind: 'text', template: '', sections: [], separator: '\n\n' });
+    assert.deepEqual(api.PRIMITIVE_OPERATIONS.compose.defaults, { mode: 'join', outputKind: 'text', template: '', sections: [], separator: '\n\n', budgetTokens: 0 });
     assert.deepEqual(api.PRIMITIVE_OPERATIONS['text-rules'].defaults, { inputKind: 'text', mode: 'replace', rules: [], separator: '\n', scope: 'authorized', protectedLiterals: [] });
     assert.deepEqual(api.PRIMITIVE_OPERATIONS['json-decode'].defaults, { mode: 'parse', schema: '' });
     assert.deepEqual(api.PRIMITIVE_OPERATIONS['select-fields'].defaults, { fields: [] });
@@ -438,4 +438,90 @@ test('effective descriptors require a phase and provide stable named Compose pin
     const reordered = api.describePrimitive({ ...node, sections: [...node.sections].reverse(), phase: 'post', enabled: true, operationVersion: 1 });
     assert.equal(reordered.data.descriptor.phase, 'post');
     assert.deepEqual(reordered.data.ports.filter(port => port.id.startsWith('section.')).map(port => port.id), ['section.last', 'section.first']);
+});
+
+test('Compose accepts original typed Guidance on declared stable section pins', async () => {
+    const node = { operation: 'compose', outputKind: 'guidance', sections: [{ name: 'actor', text: 'fallback', kind: 'guidance', required: true }] };
+    const described = api.describePrimitive(node);
+    assert.equal(described.ok, true, JSON.stringify(described.error));
+    assert.deepEqual(described.data.ports.find(port => port.id === 'section.actor'), { id: 'section.actor', label: 'actor', direction: 'input', kind: 'guidance', required: true, cardinality: 'one' });
+    const original = Object.freeze({ kind: 'guidance', text: 'Mara hesitates.' });
+    const result = await api.executePrimitive(node, { 'section.actor': original });
+    assert.equal(result.ok, true, JSON.stringify(result.error));
+    assert.equal(result.artifact.text, original.text);
+    assert.equal((await api.executePrimitive(node, { 'section.actor': { kind: 'text', text: 'wrong' } })).error.code, 'INVALID_INPUT');
+    assert.equal((await api.executePrimitive(node, {})).error.code, 'MISSING_INPUT');
+});
+
+test('Compose omits skipped optional sources in join and binds empty template values with ordered reports', async () => {
+    const sections = [{ name: 'first', text: 'A' }, { name: 'system', text: 'fallback', kind: 'guidance', onSkipped: 'omit' }, { name: 'last', text: 'B' }];
+    const execution = { phase: 'pre', inputStates: { 'section.system': { status: 'skipped' } } };
+    const joined = await api.executePrimitive({ operation: 'compose', sections, separator: '|' }, {}, execution);
+    assert.equal(joined.ok, true, JSON.stringify(joined.error));
+    assert.equal(joined.artifact.text, 'A|B');
+    assert.deepEqual(joined.reports.map(report => [report.portId, report.status]), [['section.first', 'fallback'], ['section.system', 'omitted'], ['section.last', 'fallback']]);
+    const templated = await api.executePrimitive({ operation: 'compose', mode: 'template', template: '{{section:first}}/{{section:system}}/{{section:last}}', sections }, {}, execution);
+    assert.equal(templated.artifact.text, 'A//B');
+});
+
+test('Compose contribution resolution refuses unresolved sources before any fallback renders', async () => {
+    const node = { operation: 'compose', sections: [{ name: 'system', text: 'fallback', kind: 'guidance' }] };
+    const result = await api.executePrimitive(node, {}, { phase: 'pre', inputStates: { 'section.system': { status: 'unresolved' } } });
+    assert.equal(result.error?.code, 'INPUT_UNRESOLVED');
+    assert.equal(Object.hasOwn(result, 'artifact'), false);
+});
+
+test('Compose measures the final template against its additional token budget without truncation', async () => {
+    const node = { operation: 'compose', mode: 'template', template: '{{section:a}}{{section:a}}', sections: [{ name: 'a', text: 'four' }], budgetTokens: 2 };
+    const seen = [];
+    const result = await api.executePrimitive(node, {}, { phase: 'pre', countTokens: async text => { seen.push(text); return { tokens: 3 }; } });
+    assert.equal(result.error?.code, 'COMPOSE_OVERFLOW');
+    assert.deepEqual(seen, ['fourfour']);
+    assert.equal(Object.hasOwn(result, 'artifact'), false);
+    const exact = await api.executePrimitive(node, {}, { phase: 'pre', countTokens: async () => ({ tokens: 2 }) });
+    assert.equal(exact.artifact.text, 'fourfour');
+    assert.deepEqual(exact.reports.at(-1), { code: 'COMPOSE_BUDGET', tokens: 2, budget: 2 });
+    assert.equal((await api.executePrimitive(node, {}, { phase: 'pre' })).error.code, 'TOKENIZER_REQUIRED');
+});
+
+test('Compose distinguishes skipped required inputs from missing ones without executing state getters', async () => {
+    const node = { operation: 'compose', outputKind: 'guidance', sections: [{ name: 'system', text: '', kind: 'guidance', required: true }] };
+    const skipped = await api.executePrimitive(node, {}, { inputStates: { 'section.system': { status: 'skipped' } } });
+    assert.equal(skipped.error?.code, 'INPUT_SKIPPED');
+    let reads = 0;
+    const state = {}; Object.defineProperty(state, 'status', { enumerable: true, get() { reads++; return 'completed'; } });
+    assert.equal((await api.executePrimitive(node, {}, { inputStates: { 'section.system': state } })).ok, false);
+    assert.equal(reads, 0);
+});
+
+test('Compose rejects explicitly invalid additive controls instead of interpreting them as defaults', () => {
+    for (const [key, value] of [['kind', null], ['required', null], ['onSkipped', null]]) {
+        const node = { operation: 'compose', sections: [{ name: 'a', text: 'A', [key]: value }] };
+        assert.equal(api.describePrimitive(node, { phase: 'pre' }).ok, false, key);
+    }
+    for (const budgetTokens of [-1, 8193, 1.5, null]) assert.equal(api.describePrimitive({ operation: 'compose', budgetTokens }, { phase: 'pre' }).ok, false);
+});
+
+test('Compose tokenizer failures are bounded Results and never execute response getters', async () => {
+    const node = { operation: 'compose', budgetTokens: 1 };
+    let reads = 0;
+    const accessor = {}; Object.defineProperty(accessor, 'tokens', { enumerable: true, get() { reads++; return 1; } });
+    for (const response of [null, accessor, { tokens: -1 }, { tokens: 1.5 }]) {
+        const result = await api.executePrimitive(node, {}, { phase: 'pre', countTokens: async () => response });
+        assert.equal(result.error?.code, 'TOKEN_COUNT_FAILED'); assert.equal(Object.hasOwn(result, 'artifact'), false);
+    }
+    assert.equal(reads, 0);
+});
+
+test('Compose holds an unresolved connected Data input even when rendering uses no Data', async () => {
+    const result = await api.executePrimitive({ operation: 'compose', sections: [{ name: 'public', text: 'Public.' }] }, {}, { phase: 'pre', inputStates: { data: { status: 'unresolved' } } });
+    assert.equal(result.error?.code, 'INPUT_UNRESOLVED');
+});
+
+test('Compose source/state descriptor lookup ignores inherited pin getters', async () => {
+    let reads = 0; Object.defineProperty(Object.prototype, 'section.actor', { configurable: true, get() { reads++; throw Error('Inherited pin lookup'); } });
+    try {
+        const result = await api.executePrimitive({ operation: 'compose', sections: [{ name: 'actor', text: 'Fallback' }] }, {}, { phase: 'pre', inputStates: {} });
+        assert.equal(result.ok, true, JSON.stringify(result.error)); assert.equal(result.artifact.text, 'Fallback'); assert.equal(reads, 0);
+    } finally { delete Object.prototype['section.actor']; }
 });
