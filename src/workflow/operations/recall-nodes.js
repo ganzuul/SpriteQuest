@@ -16,7 +16,7 @@ const registration=(id,title,defaults,controls,output)=>({id,title,family:'Recal
 export const RECALL_OPERATIONS={
  recall:registration('recall','Recall',{...common,activation:'armed',keywords:[],caseSensitive:false,eventTypes:[],partnerIds:[],tags:[],recordIds:[],limit:8,maxCharacters:12000,maxTokens:2048,title:'Recalled memories'},
  {...commonControls,activation:control('enum','armed',{values:['armed','keyword','event','character','armed-or-keyword','armed-or-event','armed-or-character']}),keywords:control('array',[],{items:'string',max:32}),caseSensitive:control('boolean',false),eventTypes:control('array',[],{items:'string',max:32}),partnerIds:control('array',[],{items:'string',max:32}),tags:control('array',[],{items:'string',max:32}),recordIds:control('array',[],{items:'string',max:64}),limit:control('integer',8,{min:1,max:64}),maxCharacters:control('integer',12000,{min:1,max:100000}),maxTokens:control('integer',2048,{min:1,max:8192}),title:control('string','Recalled memories',{maxLength:256})},'guidance'),
- 'hotkey-arm':registration('hotkey-arm','Hotkey Arm',{...common,uses:'next-match',consumeOn:'accepted',hotkey},
+ 'hotkey-arm':registration('hotkey-arm','Recall Shortcut',{...common,uses:'next-match',consumeOn:'accepted',hotkey},
  {...commonControls,uses:control('enum','next-match',{values:['next-match','one-per-type','until-disarmed']}),consumeOn:control('enum','accepted',{values:['success','accepted']}),hotkey:control('object',hotkey)},'data'),
 };
 function resolve(node,options){

@@ -36,14 +36,14 @@ export interface WorkflowExampleWire { id: string; d: string; kind: string; from
 export interface WorkflowExampleComment { id: string; x: number; y: number; w: number; h: number; title: string; content: string; color: string }
 export interface WorkflowExampleThumbnail { bounds: { x: number; y: number; w: number; h: number }; nodes: WorkflowExampleNode[]; wires: WorkflowExampleWire[]; comments: WorkflowExampleComment[] }
 export interface WorkflowExampleTile { id: string; number: number; title: string; goal: string; thumbnail: WorkflowExampleThumbnail | null; issue: string }
-export interface RecallArmsView {
+export interface RecallOverviewView {
     scope: {userId:string;chatId:string;workflowId:string;actorId:string} | null;
-    nodes: {nodeId:string;actorId:string;memorySetId:string;hotkey:{code:string;ctrl:boolean;alt:boolean;shift:boolean;meta:boolean};target:string;uses:string;consumeOn:string;armed:boolean;remaining:{reply:boolean;swipe:boolean};pendingCount:number}[];
+    nodes: {nodeId:string;actorId:string;memorySetId:string;hotkey:{code:string;ctrl:boolean;alt:boolean;shift:boolean;meta:boolean};target:string;uses:string;consumeOn:string;queued:boolean;remaining:{reply:boolean;swipe:boolean};pendingCount:number}[];
     issue?:string;
 }
-export interface RecallArmsActions {refresh():void;arm(nodeId:string):DetailEditResponse;disarm(nodeId:string):DetailEditResponse;}
+export interface RecallOverviewActions {refresh():void;queue(nodeId:string):DetailEditResponse;cancel(nodeId:string):DetailEditResponse;}
 export interface WorkbenchView {
-    graphId: string; armed: boolean; inspectorOpen: boolean; detailsWidth?: number;
+    graphId: string; enabled: boolean; inspectorOpen: boolean; detailsWidth?: number;
     document?: WorkflowDocumentView;
     history: HistoryView; camera: { x: number; y: number; zoom: number; mode: string }; selectionCount: number;
     workflow?: WorkflowView; rootWorkflow?: WorkflowView;
@@ -55,7 +55,7 @@ export interface WorkbenchView {
     importReview?: ImportReviewView | null;
     documentPrompt?: DocumentPromptView | null;
     fastConnections?: FastConnectionsView; fastConnectionsActive?: boolean;
-    recallArms?: RecallArmsView;
+    recall?: RecallOverviewView;
     storyDocuments?: StoryDocumentsView; configureNode?: ConfigureNodeView | null;
     examples?: readonly WorkflowExampleTile[];
     examplesIssue?: string;
@@ -68,13 +68,13 @@ export interface WorkbenchActions {
     portalManager?: PortalManagerActions; managePortals?: () => void;
     shelfSubgraph?: (id: string, action: 'delete' | 'open') => void; subgraphSave?: SubgraphSaveActions;
     chooseNative?: (id: string, at?: { x: number; y: number }) => void; nativeSearch?: NodeSearchActions; nativePinMenu?: PinMenuActions; openRunDetails?: () => void;
-    arm: (enabled: boolean) => void; command: (name: string) => void;
+    setEnabled: (enabled: boolean) => void; command: (name: string) => void;
     mode: (mode: string) => void; zoom: (factor: number) => void; fitSelection: () => void;
     resizeStart?: () => void; resizeDetails?: (width: number) => void; addNode?: (id: string, at?: { x: number; y: number }) => void;
     acceptImport?: () => void; cancelImport?: () => void; prepareImportAgain?: () => void;
     documentPrompt?: DocumentPromptActions;
     fastConnections?: FastConnectionsActions;
-    recallArms?: RecallArmsActions;
+    recall?: RecallOverviewActions;
     storyDocuments?: StoryDocumentsActions; configureNode?: ConfigureNodeActions;
     openExample?: (id: string) => boolean | Promise<boolean>;
     refreshExamples?: () => boolean | void;

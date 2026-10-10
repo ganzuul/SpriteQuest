@@ -189,10 +189,10 @@ const fastConnectionsActions = {
     },
 };
 function recallSetupView(){
-    try{const response=workflowRuntime.getNativeWorkflowController?.()?.syncRecall?.();return response?.ok===true?response.data:{scope:null,nodes:[],issue:response?.error?.message??'Recall state is unavailable.'};}catch{return {scope:null,nodes:[],issue:'Recall state is unavailable.'};}
+    try{const response=workflowRuntime.getNativeWorkflowController?.()?.syncRecall?.();return response?.ok===true?{...response.data,nodes:response.data.shortcuts}:{scope:null,nodes:[],issue:response?.error?.message??'Recall state is unavailable.'};}catch{return {scope:null,nodes:[],issue:'Recall state is unavailable.'};}
 }
-function refreshRecallArms(){const view=recallSetupView();workbench?.update({recallArms:view});return view;}
-const recallArmsActions={refresh:refreshRecallArms,arm(nodeId){const result=workflowRuntime.getNativeWorkflowController?.()?.armRecall?.(nodeId);refreshRecallArms();return result??{ok:false,error:{code:'RECALL_UNAVAILABLE',message:'Recall is unavailable.'}};},disarm(nodeId){const result=workflowRuntime.getNativeWorkflowController?.()?.disarmRecall?.(nodeId);refreshRecallArms();return result??{ok:false,error:{code:'RECALL_UNAVAILABLE',message:'Recall is unavailable.'}};}};
+function refreshRecallOverview(){const view=recallSetupView();workbench?.update({recall:view});return view;}
+const recallActions={refresh:refreshRecallOverview,queue(nodeId){const result=workflowRuntime.getNativeWorkflowController?.()?.queueRecall?.(nodeId);refreshRecallOverview();return result??{ok:false,error:{code:'RECALL_UNAVAILABLE',message:'Recall is unavailable.'}};},cancel(nodeId){const result=workflowRuntime.getNativeWorkflowController?.()?.cancelRecall?.(nodeId);refreshRecallOverview();return result??{ok:false,error:{code:'RECALL_UNAVAILABLE',message:'Recall is unavailable.'}};}};
 function workspaceInputs() { const snapshot = fastSetupView(), context = ctx(), hostProfiles = profiles(); nodeProfileInputsKey = nodeProfileMetadataKey(context, hostProfiles); return { settings: settings(), profiles: readNodeProfileMetadata(context, hostProfiles), activeModel: activeModelMetadata(context), fastConnections: snapshot.connections, result: workflowState.result, resolveBinding: (node, graph) => resolveBinding(node, graph, ctx()), resolveFastBinding: node => workflowRuntime.fastConnectionPreview?.(node) ?? { ok: false, error: { code: 'SERVICE_UNAVAILABLE', message: 'Fast Decision is unavailable for the active user.' } }, candidateStatus: candidate => workflowRuntime.getNativeWorkflowController?.()?.candidateStatus?.(candidate) }; }
 function refreshWorkflowPreparation() {
     if (!current || !workspacePrepared) return;
@@ -369,7 +369,7 @@ function updateWorkflowProjection() {
     if (canvas && graphViews) canvas.setNodeProfiles?.(projectNodeProfiles(graphViews.readEditor(), view, revision));
     const panels = graphViews ? projectWorkspacePanels(graphViews.readEditor(), view, workflowState, revision, selectedPreview, pinnedPreview, rootWorkflow, workspacePrepared.idleRunRows, workspacePrepared.previewChoices) : {};
     if (canvas && graphViews && editorDraw && canvasTraceRows!==view.rows) { canvasTraceRows=view.rows;const traces = []; const visit = rows => { for (const row of rows ?? []) { traces.push({ id: row.address.nodeId, status: row.status }); } }; if(graphViews.readEditor().view.identity.kind!=='library')visit(view.rows); canvas.setTrace(traces); }
-    workbench?.update({ workflow: view, rootWorkflow, recallArms: recallSetupView(), ...panels, nativeDiagnostic: workspaceIssue, nativeFlatCanvas: !settings().ui?.theme?.style?.grid });
+    workbench?.update({ workflow: view, rootWorkflow, recall: recallSetupView(), ...panels, nativeDiagnostic: workspaceIssue, nativeFlatCanvas: !settings().ui?.theme?.style?.grid });
 }
 function prepareGroupPresentation() {
     const captured = captureEditor(true); if (!captured.ok) return null;
@@ -481,7 +481,7 @@ function build() {
     workbench = createWorkbench({
         openExample: onOpenExample,
         refreshExamples: refreshExampleCatalog,
-        arm(enabled) { settings().enabled = enabled; save(); renderStatus(); },
+        setEnabled(enabled) { settings().enabled = enabled; save(); renderStatus(); },
         command(name) {
             if (name.startsWith('open-recent:')) return ensureDocumentCommands().recent(name.slice(12));
             if (name.startsWith('recover-workflow:')) return ensureDocumentCommands().recover(name.slice(17));
@@ -497,7 +497,7 @@ function build() {
         chooseNative: chooseNativeNode, managePortals: () => openPortalManager(), shelfSubgraph: shelfSubgraphAction,
         subgraphSave: { close() { pendingSubgraphSave = null; workbench.update({ subgraphSave: null }); }, save: saveSubgraphToShelf },
         documentPrompt: { choose: chooseDocumentPrompt }, fastConnections: fastConnectionsActions,
-        recallArms: recallArmsActions, storyDocuments: storyDocumentsActions, configureNode: configureNodeActions,
+        recall: recallActions, storyDocuments: storyDocumentsActions, configureNode: configureNodeActions,
         acceptImport: acceptImportReview, cancelImport: cancelImportReview, prepareImportAgain,
     });
     root = workbench.root; hookHistory();
@@ -513,8 +513,8 @@ function build() {
     if (nativeContext.eventTypes?.SETTINGS_UPDATED) nativeContext.eventSource?.on?.(nativeContext.eventTypes.SETTINGS_UPDATED, refreshNodeProfileSettings);
     const panes = safe(() => JSON.parse(globalThis.localStorage?.getItem('lattice.workspace.panes') || '{}')) || {};
     root.classList.toggle('pc-details-hidden', typeof panes.inspector === 'boolean' ? !panes.inspector : window.innerWidth < 860); syncPaneToggles();
-    document.addEventListener('pc-recall-state', () => { if(isOpen())refreshRecallArms(); });
-    document.addEventListener('pc-state', () => { if(isOpen())refreshRecallArms(); });
+    document.addEventListener('pc-recall-state', () => { if(isOpen())refreshRecallOverview(); });
+    document.addEventListener('pc-state', () => { if(isOpen())refreshRecallOverview(); });
     document.addEventListener('pc-theme', () => { if (canvas && isOpen()) { updateWorkflowProjection(); canvas.render(); } });
     canvas = new Canvas(workbench.parts.canvasHost, {
         onSelect(item, kind) {
@@ -775,10 +775,10 @@ function doRedo() { restoreGraphHistory('redo', 'Redid'); }
 
 function renderDocumentState() {
     if (!workbench) return;
-    workbench.update({ document: ensureDocumentCommands().view(), graphId: current?.id ?? '', armed: !!settings().enabled });
+    workbench.update({ document: ensureDocumentCommands().view(), graphId: current?.id ?? '', enabled: !!settings().enabled });
 }
 
-function renderStatus() { safe(() => document.dispatchEvent(new CustomEvent('pc-state'))); workbench.update({ armed: !!settings().enabled }); }
+function renderStatus() { safe(() => document.dispatchEvent(new CustomEvent('pc-state'))); workbench.update({ enabled: !!settings().enabled }); }
 async function onNewGraph() {
     canvas?.cancelGesture();
     return ensureDocumentCommands().newDocument();

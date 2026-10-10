@@ -4,8 +4,8 @@
     let { state, actions, local }: { state: WorkbenchView; actions: WorkbenchActions; local: (command: string) => void } = $props();
     const workflow = $derived(state.rootWorkflow ?? state.workflow);
     const documentState = $derived(state.document?.dirty ? 'Modified' : state.document?.busy ? '' : state.document?.status ? '' : state.document ? 'Saved' : 'Unsaved');
-    let header: HTMLElement, arm: HTMLInputElement, inspBtn: HTMLButtonElement;
-    export function getParts() { return { header, arm, inspBtn }; }
+    let header: HTMLElement, enabledControl: HTMLInputElement, inspBtn: HTMLButtonElement;
+    export function getParts() { return { header, enabledControl, inspBtn }; }
 </script>
 <header class="pc-header" data-pc-ui="svelte" bind:this={header}>
     <div class="pc-menubar">
@@ -24,6 +24,6 @@
         <div class="pc-header-actions pc-surface-actions">
             <button type="button" class={`pc-btn menu_button pc-pane-toggle${state.inspectorOpen ? ' pc-on' : ''}`} title="Show or hide the inspector" aria-label="Toggle inspector" aria-pressed={state.inspectorOpen} bind:this={inspBtn} onclick={() => actions.command('inspector')}>Details</button>
         </div>
-        <label class="pc-arm"><input class="pc-arm-input" type="checkbox" checked={state.armed} bind:this={arm} onchange={(event) => actions.arm(event.currentTarget.checked)} /><span>Arm</span></label>
+        <label class="pc-enable"><input class="pc-enable-input" type="checkbox" checked={state.enabled} bind:this={enabledControl} onchange={(event) => actions.setEnabled(event.currentTarget.checked)} /><span>Enable Lattice</span></label>
     </div>
 </header>

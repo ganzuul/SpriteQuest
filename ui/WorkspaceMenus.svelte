@@ -24,7 +24,7 @@
             case 'Graph': return [item('Select tool', 'select-tool'), item('Pan tool', 'pan-tool'), item('Zoom in', 'zoom-in'), item('Zoom out', 'zoom-out'), item('Fit to view', 'fit'), item('Fit selection', 'fit-selection', '', !view.selectionCount), item('Rename graph', 'rename'), item('Run workflow', 'run-workflow', '', !rootWorkflow || !!rootWorkflow?.busy || !!rootWorkflow?.issues.length), item('Stop workflow', 'stop-workflow', '', !rootWorkflow?.busy)];
             case 'Node': return [item('Add node…', 'add-node'), item('Inspect selection', 'reveal-inspector')];
             case 'Preview': return [item('Show preview', 'show-preview'), item('Collapse preview', 'collapse-preview')];
-            case 'Tools': return [item('Recall arms…', 'recall-arms'), item('Workflow Data…', 'story-documents'), item('Fast connections…', 'fast-connections'), item('Theme and colours', 'theme'), item('Toggle inspector', 'inspector')];
+            case 'Tools': return [item('Memory recall…', 'memory-recall'), item('Workflow Data…', 'story-documents'), item('Fast connections…', 'fast-connections'), item('Theme and colours', 'theme'), item('Toggle inspector', 'inspector')];
             default: return [item('Workspace guide', 'help')];
         }
     }
@@ -57,7 +57,7 @@
     }
     function command(value: string) {
         close(true);
-        if (['examples', 'show-preview', 'collapse-preview', 'add-node', 'help', 'fast-connections', 'story-documents', 'recall-arms'].includes(value)) local(value);
+        if (['examples', 'show-preview', 'collapse-preview', 'add-node', 'help', 'fast-connections', 'story-documents', 'memory-recall'].includes(value)) local(value);
         else if (value === 'select-tool' || value === 'pan-tool') actions.mode(value === 'select-tool' ? 'select' : 'pan');
         else if (value === 'zoom-in' || value === 'zoom-out') actions.zoom(value === 'zoom-in' ? 1.15 : 1 / 1.15);
         else actions.command(value);

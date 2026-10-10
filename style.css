@@ -512,8 +512,8 @@
 .pc-root .pc-header-actions { display: flex; align-items: center; gap: 4px; }
 .pc-root .pc-btn { cursor: pointer; display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; white-space: nowrap; }
 .pc-root .pc-close { margin-left: auto; }
-.pc-root .pc-arm { display: flex; align-items: center; gap: 6px; cursor: pointer; padding: 4px 10px; border: 1px solid var(--pc-border); border-radius: 2px; background: var(--pc-control); }
-.pc-root .pc-arm-input { width: 16px; min-width: 16px; height: 16px; accent-color: var(--pc-accent); }
+.pc-root .pc-enable { display: flex; align-items: center; gap: 6px; cursor: pointer; padding: 4px 10px; border: 1px solid var(--pc-border); border-radius: 2px; background: var(--pc-control); }
+.pc-root .pc-enable-input { width: 16px; min-width: 16px; height: 16px; accent-color: var(--pc-accent); }
 .pc-root .pc-node-title { flex: 1 1 auto; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pc-root .pc-node-head { display: flex; align-items: center; gap: 6px; padding: 6px 8px; border-bottom: 1px solid var(--pc-border); }
 .pc-root .pc-node-body { padding: 7px 9px; font-size: 12px; line-height: 1.4; color: var(--pc-muted); max-height: 120px; overflow: hidden; white-space: pre-wrap; overflow-wrap: anywhere; }
