@@ -1,9 +1,10 @@
+import { checkFastSettingsScope, fastSettingsPersistence, saveFastConnection, workflowBindingKey, workflowCreationPhase } from './provider-settings.js?v=0.26.0';
 import { resolveBinding } from '../workflow/connections.js?v=0.26.0';
 import * as workflowRuntime from '../run.js?v=0.26.0';
 import { workflowSignature } from '../workflow/runtime.js?v=0.26.0';
 import { installWorkflowExample } from '../workflow/examples.js?v=0.26.0';
 import { projectWorkflowExamples } from './example-catalog.js?v=0.26.0';
-import { operationFor, portsForNode } from '../workflow/catalog.js?v=0.26.0';
+import { OPERATIONS, operationFor, portsForNode } from '../workflow/catalog.js?v=0.26.0';
 import { validateNodeModifiers } from '../workflow/modifiers.js?v=0.26.0';
 import { isWorkflowGraph } from '../workflow/contracts.js?v=0.26.0';
 import { parseWorkflowInsertionFile, prepareWorkflowInsertion } from '../workflow/insertion.js?v=0.26.0';
@@ -124,7 +125,42 @@ const workflowSession = createWorkflowSession({ runtime: () => workflowRuntime.g
     if (isOpen() && !documentTransition) { if (authorityChanged) refreshWorkflowPreparation(); updateWorkflowProjection(); }
 } });
 const receiveAutomaticWorkflow = () => workflowSession.receiveAutomatic(workflowRuntime.getNativeWorkflowController?.()?.lastAutomaticResult?.());
-function workspaceInputs() { return { settings: settings(), profiles: profiles(), result: workflowState.result, resolveBinding: (node, graph) => resolveBinding(node, graph, ctx()), candidateStatus: candidate => workflowRuntime.getNativeWorkflowController?.()?.candidateStatus?.(candidate) }; }
+function fastSetupView() {
+    try {
+        const snapshot = workflowRuntime.fastConnectionState?.();
+        if (!snapshot?.ok) throw new Error('unavailable');
+        return { userId: snapshot.data.userId, issue: '', connections: snapshot.data.connections.map(item => ({ id: item.id, label: item.label, provider: item.provider, model: item.model, ...(item.endpoint ? { endpoint: item.endpoint } : {}), credentialReady: item.credentialReady === true })) };
+    } catch { return { userId: '', connections: [], issue: 'Fast connection settings are unavailable for the active user. Reopen this panel after SillyTavern finishes loading.' }; }
+}
+function refreshFastSettings() { workbench?.update({ fastConnections: fastSetupView() }); }
+function fastSettingsChanged() {
+    workflowSession.cancel('Fast connection settings changed');
+    refreshWorkflowPreparation(); updateWorkflowProjection(); refreshFastSettings();
+}
+const fastConnectionsActions = {
+    refresh: refreshFastSettings,
+    async save(configuration, key, userId) {
+        const result = await saveFastConnection(workflowRuntime.getFastConnectionRegistry?.(), configuration, key, userId);
+        fastSettingsChanged(); return result;
+    },
+    async remove(id, userId) {
+        try {
+            const registry = workflowRuntime.getFastConnectionRegistry?.(), scoped = checkFastSettingsScope(registry, userId); if (!scoped.ok) return scoped;
+            const removed = registry.remove(id); if (!removed.ok) return { ok: false, error: { code: 'FAST_SETTINGS_FAILED', message: 'The selected Fast connection could not be removed.' } };
+            const saved = await registry.save(); fastSettingsChanged();
+            const current = checkFastSettingsScope(registry, userId); if (!current.ok) return current;
+            return fastSettingsPersistence(saved, 'Connection removed and configuration saved.', 'Connection removed locally; SillyTavern save is unconfirmed.');
+        } catch { return { ok: false, error: { code: 'FAST_SETTINGS_FAILED', message: 'The Fast connection could not be removed.' } }; }
+    },
+    clearCredential(id, userId) {
+        try {
+            const registry = workflowRuntime.getFastConnectionRegistry?.(), scoped = checkFastSettingsScope(registry, userId); if (!scoped.ok) return scoped;
+            const cleared = registry.clearCredential(id); fastSettingsChanged();
+            return cleared.ok ? { ok: true, data: { message: 'Session key cleared. Re-enter it before an authenticated Fast call.' } } : { ok: false, error: { code: 'FAST_SETTINGS_FAILED', message: 'The session key could not be cleared.' } };
+        } catch { return { ok: false, error: { code: 'FAST_SETTINGS_FAILED', message: 'The session key could not be cleared.' } }; }
+    },
+};
+function workspaceInputs() { const snapshot = fastSetupView(); return { settings: settings(), profiles: profiles(), fastConnections: snapshot.connections, result: workflowState.result, resolveBinding: (node, graph) => resolveBinding(node, graph, ctx()), resolveFastBinding: node => workflowRuntime.fastConnectionPreview?.(node) ?? { ok: false, error: { code: 'SERVICE_UNAVAILABLE', message: 'Fast Decision is unavailable for the active user.' } }, candidateStatus: candidate => workflowRuntime.getNativeWorkflowController?.()?.candidateStatus?.(candidate) }; }
 function refreshWorkflowPreparation() {
     if (!current || !workspacePrepared) return;
     workspacePrepared.workflow = prepareWorkflowProjection(current, { ...workspaceInputs(), ...(workspacePrepared.planner ? { planner: workspacePrepared.planner } : {}) });
@@ -343,7 +379,7 @@ function syncNativeRevision(reason) {
 }
 const workflowActions = {
     presentNode,
-    assign(phase) { if (current?.mode !== 'native-' + phase) return; workflowSession.cancel('Workflow assignment changed'); settings().nativeBindings[phase === 'pre' ? 'preGraphId' : 'postGraphId'] = current.id; save(); refreshWorkflowPreparation(); updateWorkflowProjection(); renderStatus(); },
+    assign(phase) { const key = workflowBindingKey(current?.mode); if (!key || current?.mode !== 'native-' + phase) return; workflowSession.cancel('Workflow assignment changed'); settings().nativeBindings ??= {}; settings().nativeBindings[key] = current.id; if (phase !== 'unified') settings().nativeBindings.workflowGraphId = null; save(); refreshWorkflowPreparation(); updateWorkflowProjection(); renderStatus(); },
     run: () => graphViews ? workflowSession.run() : toast('The current workflow is unavailable.', 'error'),
     apply: selector => applyPreviewReview(selector), reject: () => workflowSession.reject(),
     addNode(operation, at = null) { const token = captureEditor(); if (!token.ok) return token; return commitCaptured(token.data, prepareShelfNodeCreation(token.data, { kind: 'create', operation }, at)); },
@@ -371,7 +407,7 @@ export function close() {
     cancelImportReview(); document.removeEventListener('pc-native-result', receiveAutomaticWorkflow);
     documentTransition = true; workflowSession.cancel('Workflow view closed'); documentTransition = false;
     canvas?.cancelGesture(); persistGraphViews(true); graphViews?.deactivate(); graphViews = null; rootRunEpoch++; uiEpoch++;
-    workbench?.update({ graphViews: undefined });
+    workbench?.update({ graphViews: undefined, fastConnectionsActive: false });
     nativeWireBridge?.cancel('view-close'); root?.classList.remove('pc-open');
 }
 export function toggle() { isOpen() ? close() : open(); }
@@ -417,7 +453,7 @@ function build() {
         pickGraph(id) { const picked = getGraph(id); if (!picked) return renderGraphSelect(); current = picked; settings().activeGraphId = picked.id; save(); setCanvasGraph(); renderAll(); },
         arm(enabled) { settings().enabled = enabled; save(); renderStatus(); },
         command(name) {
-            const commands = { new: onNewGraph, duplicate: onDuplicateGraph, rename: onRenameGraph, delete: onDeleteGraph, save: onSaveGraph, import: onImportGraph, 'open-workflow': onImportGraph, 'import-into-graph': onImportIntoGraph, export: onExportGraph, undo: doUndo, redo: doRedo,
+            const commands = { new: () => onNewGraph('unified'), 'new-pre': () => onNewGraph('pre'), 'new-post': () => onNewGraph('post'), duplicate: onDuplicateGraph, rename: onRenameGraph, delete: onDeleteGraph, save: onSaveGraph, import: onImportGraph, 'open-workflow': onImportGraph, 'import-into-graph': onImportIntoGraph, export: onExportGraph, undo: doUndo, redo: doRedo,
                 fit: () => canvas.fit(), 'fit-selection': () => canvas.fitSelection(), copy: () => copySelection(), cut: () => copySelection(true), paste: pasteFromClipboard,
                 'delete-selection': () => canvas.deleteSelection(), 'run-workflow': workflowActions.run, 'stop-workflow': () => workflowSession.cancel('Stopped by user'), 'assign-workflow-phase': () => workflowActions.assign(current?.mode?.slice(7)),
                 theme: toggleThemePopover, inspector: togglePane, 'reveal-inspector': () => { if (root.classList.contains('pc-details-hidden')) togglePane(); }, close };
@@ -428,7 +464,7 @@ function build() {
         graphViewActions, nodeDetails: nodeDetailsActions, commentDetails: commentDetailsActions, outputPreview: outputPreviewActions, runDetails: runDetailsActions,
         chooseNative: chooseNativeNode, managePortals: () => openPortalManager(), shelfSubgraph: shelfSubgraphAction,
         subgraphSave: { close() { pendingSubgraphSave = null; workbench.update({ subgraphSave: null }); }, save: saveSubgraphToShelf },
-        newWorkflowPrompt: { choose: chooseNewWorkflow },
+        newWorkflowPrompt: { choose: chooseNewWorkflow }, fastConnections: fastConnectionsActions,
         acceptImport: acceptImportReview, cancelImport: cancelImportReview, prepareImportAgain,
     });
     root = workbench.root; hookHistory();
@@ -691,17 +727,18 @@ function renderGraphSelect() {
 }
 
 function renderStatus() { safe(() => document.dispatchEvent(new CustomEvent('pc-state'))); workbench.update({ armed: !!settings().enabled }); }
-async function onNewGraph() {
+async function onNewGraph(phase = 'unified') {
+    phase = workflowCreationPhase(phase); if (!phase) return;
     if (pendingNewWorkflow) return;
     canvas?.cancelGesture();
     const graph = current, epoch = uiEpoch;
     if (hasUnsavedWorkflowChanges(graph)) {
-        const choice = await requestNewWorkflowChoice(graph);
+        const chosen = await requestNewWorkflowChoice(graph, phase), choice = chosen.choice; phase = chosen.phase;
         if (choice === 'cancel' || !stillEditing(graph, epoch)) return;
         if (choice === 'save' && !onExportGraph()) return;
     }
     if (!stillEditing(graph, epoch)) return;
-    current = createGraph('Untitled workflow');
+    current = createGraph('Untitled workflow', phase);
     settings().activeGraphId = current.id; save();
     setCanvasGraph();
     renderAll();
@@ -716,19 +753,19 @@ function hasUnsavedWorkflowChanges(graph) {
     return !!graph && savedWorkflowDocuments.has(graph) && savedWorkflowDocuments.get(graph) !== workflowDocumentSnapshot(graph);
 }
 
-function requestNewWorkflowChoice(graph) {
+function requestNewWorkflowChoice(graph, phase) {
     return new Promise(resolve => {
         pendingNewWorkflow = { resolve };
-        workbench.update({ newWorkflowPrompt: { name: graph.name } });
+        workbench.update({ newWorkflowPrompt: { name: graph.name, phase } });
     });
 }
 
-function chooseNewWorkflow(choice) {
+function chooseNewWorkflow(choice, phase = 'unified') {
     if (!pendingNewWorkflow || !['save', 'discard', 'cancel'].includes(choice)) return;
     const pending = pendingNewWorkflow;
     pendingNewWorkflow = null;
     workbench.update({ newWorkflowPrompt: null });
-    pending.resolve(choice);
+    pending.resolve({ choice, phase: workflowCreationPhase(phase) ?? 'unified' });
 }
 
 async function onDuplicateGraph() {
@@ -1406,6 +1443,15 @@ const commentDetailsActions = {
     command(selection, command) { const captured = detailCapture(selection); return captured.ok ? commentCommand(captured.data, selection.address.nodeId, command) : captured; },
 };
 const nodeDetailsActions = {
+    openFastConnections() { workbench?.update({ fastConnectionsActive: true }); },
+    editPhase(selection, phase) {
+        const captured = detailCapture(selection); if (!captured.ok) return captured;
+        return commitCaptured(captured.data, prepareScopeMutation(captured.data, context => {
+            const node = context.scope.nodes[selection.address.nodeId];
+            if (!node || context.scope.mode !== 'native-unified' || OPERATIONS[node.operation]?.phase !== 'both' || !['pre', 'post'].includes(phase)) return { ok: false, error: { code: 'INVALID_PHASE', message: 'Choose a preparation or response stage for a both-stage node in a unified workflow.' } };
+            node.phase = phase; return { ok: true, data: {} };
+        }));
+    },
     async loadFile(selection, file) {
         const captured = detailCapture(selection); if (!captured.ok) return captured;
         const selectedEpoch = selectionEpoch;

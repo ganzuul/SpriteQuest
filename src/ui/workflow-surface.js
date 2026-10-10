@@ -8,6 +8,7 @@ import { addressKey, nodeAddress, targetAddress, own, plain, safeBinding, safeEr
 import { workflowSignature } from '../workflow/runtime.js?v=0.26.0';
 import { FAMILIES, OPERATIONS, operationFor, phaseForNode } from '../workflow/catalog.js?v=0.26.0';
 import { safeWorkflowData } from '../workflow/contracts.js?v=0.26.0';
+import { fastConnectionChoices, fastFallbackAllowed, fastFallbackNode, workflowBindingKey } from './provider-settings.js?v=0.26.0';
 import { readNodePresentation } from './node-palette.js?v=0.26.0';
 const descriptions = { Input: 'Bring material into a workflow.', Shaping: 'Change the plan or amount of material.', Surface: 'Refine expression.', Transpose: 'Apply a reference’s qualities.', Derive: 'Extract findings from a source.', Introspection: 'Reflect on experience, context and actor state.', Output: 'Inspect or commit an artifact.' };
 const choices = { method: ['select', 'compress'], scope: ['whole', 'narration', 'dialogue'], strength: ['light', 'medium', 'strong'] };
@@ -90,16 +91,17 @@ function safeHandle(raw) {
     const terminal = targetAddress(own(raw, 'terminal')), handleId = own(raw, 'handleId'), runId = own(raw, 'runId');
     return terminal?.kind === 'terminal' && !terminal.address.instancePath.length && typeof handleId === 'string' && handleId && typeof runId === 'string' && runId ? freeze({ handleId, runId, terminal }) : null;
 }
-function baseWorkflowView(graph, profiles, settings) {
+function baseWorkflowView(graph, profiles, settings, fastConnections = []) {
     const phase = typeof graph.mode === 'string' ? graph.mode.slice(7) : '';
     return { graphId: graph.id || '', name: graph.name || '', phase,
-        assigned: graph.id === settings.nativeBindings?.[phase === 'unified' ? 'workflowGraphId' : phase === 'pre' ? 'preGraphId' : 'postGraphId'],
+        assigned: graph.id === settings.nativeBindings?.[workflowBindingKey(graph.mode)] && (graph.mode === 'native-unified' || !settings.nativeBindings?.workflowGraphId),
+        fastConnections: fastConnectionChoices({ ok: true, data: { connections: fastConnections } }),
         profiles: profiles.map(profile => ({ id: profile.id, name: profile.name || profile.id })),
         families: FAMILIES.map(name => ({ name, description: descriptions[name], operations: Object.values(OPERATIONS).filter(op => op.family === name || name === 'Surface' && ['pattern-scan', 'validate-patches'].includes(op.id)).map(op => ({ id: op.id, title: op.title, phase: op.phase === 'both' ? phase : op.phase || phase, compatible: (phase === 'unified' || !op.phase || op.phase === 'both' || op.phase === phase) && (!op.minimumSchema || graph.schema >= op.minimumSchema) })) })),
         quoteHelp: QUOTE_SCOPE_HELP };
 }
 /** Root preparation boundary. The returned token is branded and contains no public authority. */
-export function prepareWorkflowProjection(root, { planner, profiles = [], settings = {}, result = null, resolveBinding, resolveFastBinding, candidateStatus } = {}) {
+export function prepareWorkflowProjection(root, { planner, profiles = [], fastConnections = [], settings = {}, result = null, resolveBinding, resolveFastBinding, candidateStatus } = {}) {
     const token = Object.freeze({});
     const reject = (message, base = {}) => { projections.set(token, { failure: { ...emptyView(message), ...base, issues: [message] }, result }); return token; };
     if (planner !== undefined) {
@@ -110,19 +112,28 @@ export function prepareWorkflowProjection(root, { planner, profiles = [], settin
     if (!cloned.ok) return reject(cloned.error.message);
     const graph = cloned.data;
     const prepared = planner === undefined ? prepareWorkflowPlanner(root) : { ok: true, data: planner };
-    if (!prepared.ok) return reject(prepared.error.message, baseWorkflowView(graph, profiles, settings));
+    if (!prepared.ok) return reject(prepared.error.message, baseWorkflowView(graph, profiles, settings, fastConnections));
     planner = prepared.data;
     const composition = prepareCompositionViews(root, planner);
     if (!composition.ok) return reject(composition.error.message, baseWorkflowView(graph, profiles, settings));
     const inventory = planner.inventory, bindings = new Map(), boundIssues = new Map();
     // Effective materialized model overrides are explicit; inherited definitions cannot re-read root roles.
     for (const unit of inventory.primitives) if (unit.requestBound > 0) {
-        let resolution;
-        try { const operation=operationFor(unit.node,{phase:unit.phase,mode:graph.mode}); const resolver=operation?.requestCapability==='typed-decision'?resolveFastBinding:resolveBinding; resolution = resolver?.(unit.node, { schema: 3, runtime: 2, mode: graph.mode, roles: {} }); }
-        catch (error) { resolution = { ok: false, error: { message: error?.message || 'Connection preparation failed.' } }; }
+        let resolution, fallback, fallbackActive = false;
+        const operation = operationFor(unit.node, { phase: unit.phase, mode: graph.mode });
+        const typed = operation?.requestCapability === 'typed-decision';
+        const bindingGraph = { schema: 3, runtime: 2, mode: graph.mode, roles: {} };
+        try { resolution = (typed ? resolveFastBinding : resolveBinding)?.(unit.node, bindingGraph); }
+        catch { resolution = { ok: false, error: { message: 'Connection preparation failed.' } }; }
+        if (typed && unit.node.fallbackEnabled === true && (resolution?.ok || fastFallbackAllowed(unit.node, resolution))) {
+            try { fallback = resolveBinding?.(fastFallbackNode(unit.node), bindingGraph); }
+            catch { fallback = { ok: false, error: { message: 'The selected fallback connection is unavailable.' } }; }
+            if (!fallback?.ok) boundIssues.set(addressKey(unit.address), 'Decision fallback: ' + (fallback?.error?.message || 'Choose an available text connection and profile model.'));
+            else if (!resolution?.ok) { resolution = fallback; fallbackActive = true; }
+        }
         const binding = resolution?.ok ? safeBinding(resolution.data) : null;
-        bindings.set(addressKey(unit.address), binding || {});
-        if (!resolution?.ok) boundIssues.set(addressKey(unit.address), resolution?.error?.message || 'Bind ' + (unit.node.modelRole || 'model') + ' to an available connection before running.');
+        bindings.set(addressKey(unit.address), { ...(binding || {}), ...(fallbackActive ? { fallbackActive: true } : {}) });
+        if (!resolution?.ok && !boundIssues.has(addressKey(unit.address))) boundIssues.set(addressKey(unit.address), resolution?.error?.message || 'Bind ' + (unit.node.modelRole || 'model') + ' to an available connection before running.');
     }
     const withBindings = summary => {
         const safe = summaryView(summary), issues = [...safe.issues];
@@ -152,7 +163,7 @@ export function prepareWorkflowProjection(root, { planner, profiles = [], settin
                 input: metadata.input || 'snapshot', output: metadata.output || 'host output', terminal: metadata.terminal, modelRole: role,
                 profileId: node.profileId || '', model: node.model || '', enabled: node.enabled !== false,
                 issue: boundIssues.get(addressKey(address)) || undefined,
-                effective: unit?.requestBound ? [binding?.profileId, binding?.model].filter(Boolean).join(' · ') || boundIssues.get(addressKey(address)) || 'Model connection' : 'No model call',
+                effective: unit?.requestBound ? (binding?.fallbackActive ? 'Decision fallback · ' : '') + [binding?.profileId, binding?.model].filter(Boolean).join(' · ') || boundIssues.get(addressKey(address)) || 'Model connection' : 'No model call',
                 controls: nodeControls(node, metadata), ports: view.ports.filter(pin => pin.address.nodeId === node.id) }];
         });
         const groups = Object.values(view.savedGraph.groups ?? {}).map(group => {
@@ -163,14 +174,14 @@ export function prepareWorkflowProjection(root, { planner, profiles = [], settin
         views.set(pathKey(view.instancePath), freeze({ instancePath: view.instancePath, editable: view.editable, nodes, groups, targets: targets.filter(target => pathKey((target.kind === 'terminal' ? target.address : target).instancePath) === pathKey(view.instancePath)) }));
     }
     const handles = new Map();
-    const applyTerminals = new Set(inventory.primitives.filter(unit => unit.terminal && unit.node.operation === 'apply-reply').map(unit => addressKey(unit.address)));
+    const applyTerminals = new Set(inventory.primitives.filter(unit => unit.terminal && ['apply-reply', 'review-publish'].includes(unit.node.operation)).map(unit => addressKey(unit.address)));
     for (const raw of result?.reviewHandles || []) {
         const handle = safeHandle(raw);
         if (!handle || handle.runId !== result.runId || handle.terminal.address.workflowId !== graph.id || result.mode !== 'root' || !result.ok || !applyTerminals.has(addressKey(handle.terminal.address))) continue;
         const freshness = candidateStatus?.(handle);
         handles.set(handle.handleId, freeze({ handle, issue: freshness?.ok === false ? freshness.error.message : '' }));
     }
-    projections.set(token, { base: freeze(baseWorkflowView(graph, profiles, settings)), rootSummary, summaries, views, handles, previewTargets, result, rows: new WeakMap() }); return token;
+    projections.set(token, { base: freeze(baseWorkflowView(graph, profiles, settings, fastConnections)), rootSummary, summaries, views, handles, previewTargets, result, rows: new WeakMap() }); return token;
 }
 function cachedRows(owner, source, viewPath) {
     if (!source || typeof source !== 'object') return noRows;
@@ -274,13 +285,14 @@ export function createWorkflowSession({ runtime, current, epoch, rootCurrent = c
         result: () => result,
         receiveAutomatic(record) {
             const graph = rootCurrent(), origin = record?.origin;
-            if (!active() || !record?.result || !origin || origin.kind !== 'send' || origin.phase !== 'pre' || graph?.mode !== 'native-pre' || origin.graph !== graph || origin.graphId !== graph.id || origin.signature !== workflowSignature(graph) || ignoredAutomatic.has(record) || displayedAutomatic === record) return;
+            if (!active() || !record?.result || !origin || origin.kind !== 'send' || !['pre', 'unified'].includes(origin.phase) || graph?.mode !== 'native-' + origin.phase || origin.graph !== graph || origin.graphId !== graph.id || origin.signature !== workflowSignature(graph) || ignoredAutomatic.has(record) || displayedAutomatic === record) return;
             if (busy) { ignoredAutomatic.add(record); return; }
             // A payload-free superseded Send cannot replace the one retained diagnostic.
-            if (!record.result.recording) return;
+            const received = record.result.recording;
+            if (!received || record.result.mode !== 'root' || typeof origin.runId !== 'string' || !origin.runId || origin.runId !== record.result.runId || origin.runId !== received.runId || received.plan?.mode !== 'root' || received.plan?.phase !== origin.phase || received.identities?.strings?.[received.plan?.workflowId] !== graph.id) return;
             if (availability !== 'current' && recording?.runId === record.result.recording.runId) return;
             generation++; invocation = null; displayedAutomatic = record; adopt(record.result, false, origin.signature); applyIssue = '';
-            status = `Automatic Send · pre phase · "${origin.graphName || graph.name}". ${result?.ok ? 'Review the result.' : record.result.error?.message || 'Run failed.'}`; publish();
+            status = `Automatic Send · ${origin.phase === 'unified' ? 'unified workflow' : 'pre phase'} · "${origin.graphName || graph.name}". ${result?.ok ? 'Review the result.' : record.result.error?.message || 'Run failed.'}`; publish();
         },
         refreshFreshness(selector) {
             const handle = safeHandle(selector);
@@ -289,6 +301,11 @@ export function createWorkflowSession({ runtime, current, epoch, rootCurrent = c
             applyIssue = freshness?.ok === false ? freshness.error.message : ''; publish();
         },
         async run(options = {}) {
+            if (options.target === undefined && rootCurrent()?.mode === 'native-unified') {
+                preparationError = { code: 'NATIVE_SEND_REQUIRED', message: 'Assign and enable this unified workflow, then Send in SillyTavern. Generate Reply continues that native generation. Use Run to here to test supported nodes.' };
+                status = preparationError.message; publish();
+                return { schema: 3, runtime: 2, mode: 'root', ok: false, actualCalls: 0, error: preparationError };
+            }
             const controller = runtime(), previous = controller?.lastAutomaticResult?.();
             if (previous?.origin.graph === rootCurrent()) ignoredAutomatic.add(previous);
             displayedAutomatic = null;

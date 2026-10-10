@@ -34,7 +34,7 @@ export interface DetailModelBinding {
 }
 export interface NodeDetailsView extends DetailSelection {
     title: string; canonicalTitle: string; iconPath: string; family: string; phase: string;
-    operation?: string; familyColor?: string;
+    operation?: string; familyColor?: string; phaseEditable?: boolean;
     alias: string; compact: boolean; enabled: boolean; readOnly: boolean; canPresent: boolean;
     controls: DetailControl[]; model: DetailModelBinding | null;
     modifiers?: { items: DetailModifier[]; options: DetailModifierOption[]; editable: boolean; outputPortId: string } | null;
@@ -44,6 +44,8 @@ export interface NodeDetailsView extends DetailSelection {
     status?: string; issues?: string[];
 }
 export interface NodeDetailsActions {
+    editPhase?: (selection: DetailSelection, phase: 'pre' | 'post') => DetailEditResponse;
+    openFastConnections?: () => void;
     loadFile?: (selection: DetailSelection, file: File) => DetailEditResponse;
     present?: (selection: DetailSelection, field: 'alias' | 'compact', value: string | boolean) => DetailEditResponse;
     editControl?: (selection: DetailSelection, key: string, value: unknown) => DetailEditResponse;

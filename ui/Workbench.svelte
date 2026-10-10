@@ -12,6 +12,7 @@
     import RunMeter from './RunMeter.svelte';
     import PortalManager from './PortalManager.svelte';
     import SubgraphSave from './SubgraphSave.svelte';
+    import FastConnections from './FastConnections.svelte';
     import NewWorkflowPrompt from './NewWorkflowPrompt.svelte';
     import NodeSearch from './NodeSearch.svelte';
     import PinMenu from './PinMenu.svelte';
@@ -26,7 +27,7 @@
     let graphTabs: { startRename(key: string): Promise<void> };
     export function getParts() { return { root, parts: { ...toolbar.getParts(), inspector, canvasHost } }; }
     export function updateActions(value: Partial<WorkbenchActions>) { actions = { ...actions, ...value }; }
-    export function update(value: Partial<WorkbenchView>) { view = { ...view, ...value }; }
+    export function update(value: Partial<WorkbenchView>) { view = { ...view, ...value }; if (value.fastConnectionsActive === true) void local('fast-connections'); else if (value.fastConnectionsActive === false && overlay === 'fast-connections') closeOverlay(); }
     export function renameGraphView(key: string) { return graphTabs?.startRename(key); }
     export async function focusCommentTitle(id: string, isCurrent: () => boolean) {
         await tick();
@@ -56,7 +57,7 @@
         if (command === 'show-preview') collapse(false);
         else if (command === 'collapse-preview') collapse(true);
         else if (command === 'add-node') shelf.openSearch();
-        else { overlayAnchor = document.activeElement as HTMLElement; if (command === 'examples') actions.refreshExamples?.(); overlayEpoch++; overlay = command; await tick(); dialog.querySelector<HTMLButtonElement>('button')?.focus(); }
+        else { overlayAnchor = document.activeElement as HTMLElement; if (command === 'examples') actions.refreshExamples?.(); if (command === 'fast-connections') actions.fastConnections?.refresh?.(); const epoch = ++overlayEpoch; overlay = command; await tick(); if (epoch === overlayEpoch && overlay === command) dialog?.querySelector<HTMLButtonElement>('button')?.focus(); }
     }
     function closeOverlay() { overlayEpoch++; overlay = ''; overlayAnchor?.focus({ preventScroll: true }); }
     async function openExample(id: string) {
@@ -83,7 +84,7 @@
         event.stopPropagation();
         if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); closeOverlay(); }
         if (event.key === 'Tab') {
-            const elements = [...dialog.querySelectorAll<HTMLElement>('button:not(:disabled), input, select, textarea, [tabindex="0"]')];
+            const elements = [...dialog.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex="0"]')];
             const first = elements[0], last = elements.at(-1);
             if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
             if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
@@ -130,9 +131,9 @@
     </div>
     {#if overlay}
         <div class="pc-workspace-overlay">
-            <div class="pc-workspace-dialog" class:pc-examples-dialog={overlay === 'examples'} role="dialog" tabindex="-1" aria-modal="true" aria-label={overlay === 'examples' ? 'Examples' : overlay === 'run-details' ? 'Run details' : 'Workspace guide'} bind:this={dialog} onkeydown={overlayKeys} onpaste={(event) => event.stopPropagation()}>
-                <header><h2>{overlay === 'examples' ? 'Examples' : overlay === 'run-details' ? 'Run details' : 'Workspace guide'}</h2><button type="button" class="pc-btn menu_button" aria-label="Close panel" onclick={closeOverlay}>×</button></header>
-                {#if overlay === 'examples'}<ExamplesBrowser examples={view.examples} issue={view.examplesIssue} retry={actions.refreshExamples} scrollTop={examplesScroll} scroll={top => examplesScroll = top} open={openExample} />{:else if overlay === 'run-details'}<RunDetails view={view.runDetails ?? null} actions={actions.runDetails} />{:else}<p>Browse node families on the floating shelf. Middle mouse pans the graph; the wheel zooms around the pointer. Use the divider or its arrow keys to resize Preview.</p><p>Open examples and assign the selected workflow's phase from Workflows. Select each model-calling node to choose its connection profile and optional model override in Details. Arm enables the selected host workflow; Run tests it explicitly.</p><p>File › Open workflow chooses a JSON file and opens a separate workflow. Save workflow keeps committed edits and connections in SillyTavern. Export workflow JSON downloads a portable sharing copy without local connections. Import into graph reviews a same-phase fragment before one undoable insertion.</p><p>Select nodes and right-click Create Subgraph to open their connected body in a new tab. Double-click a subgraph to open it. Add Input and Output nodes from the Subgraphs shelf inside an editable subgraph, then name and configure their ports in Details.</p><p>Right-click a subgraph block and choose Add to Subgraphs to save it for reuse. Right-click a saved shelf entry to delete it. Saving updates the shelf only when you choose to save; existing placed copies stay unchanged. Portals connect pins through named references. Preview artifact tabs show results for the selected node; Run to here checks the request bound before running. Apply reviews the fresh result against the full root workflow.</p>{/if}
+            <div class="pc-workspace-dialog" class:pc-examples-dialog={overlay === 'examples'} role="dialog" tabindex="-1" aria-modal="true" aria-label={overlay === 'examples' ? 'Examples' : overlay === 'run-details' ? 'Run details' : overlay === 'fast-connections' ? 'Fast connections' : 'Workspace guide'} bind:this={dialog} onkeydown={overlayKeys} onpaste={(event) => event.stopPropagation()}>
+                <header><h2>{overlay === 'examples' ? 'Examples' : overlay === 'run-details' ? 'Run details' : overlay === 'fast-connections' ? 'Fast connections' : 'Workspace guide'}</h2><button type="button" class="pc-btn menu_button" aria-label="Close panel" onclick={closeOverlay}>×</button></header>
+                {#if overlay === 'examples'}<ExamplesBrowser examples={view.examples} issue={view.examplesIssue} retry={actions.refreshExamples} scrollTop={examplesScroll} scroll={top => examplesScroll = top} open={openExample} />{:else if overlay === 'fast-connections'}<FastConnections view={view.fastConnections ?? { userId: '', connections: [], issue: 'Fast connection settings are unavailable.' }} actions={actions.fastConnections} close={closeOverlay} />{:else if overlay === 'run-details'}<RunDetails view={view.runDetails ?? null} actions={actions.runDetails} />{:else}<p>Browse node families on the floating shelf. Middle mouse pans the graph; the wheel zooms around the pointer. Use the divider or its arrow keys to resize Preview.</p><p>Open examples and assign a unified workflow from Workflows. Its preparation stage feeds Generate Reply, and its response stage reshapes the captured Draft before Review and Publish. Legacy pre and post workflows remain selectable. Select model nodes to choose a text connection profile in Details. Fast Decision uses a configured typed connection from Tools › Fast connections and an optional separately selected Decision fallback. Arm enables the assigned host workflow. Unified generation starts with Send in SillyTavern; Run to here tests supported nodes. Run tests legacy workflows explicitly.</p><p>File › Open workflow chooses a JSON file and opens a separate workflow. Save workflow keeps committed edits and connections in SillyTavern. Export workflow JSON downloads a portable sharing copy without local connections. Import into graph reviews a same-phase fragment before one undoable insertion.</p><p>Select nodes and right-click Create Subgraph to open their connected body in a new tab. Double-click a subgraph to open it. Add Input and Output nodes from the Subgraphs shelf inside an editable subgraph, then name and configure their ports in Details.</p><p>Right-click a subgraph block and choose Add to Subgraphs to save it for reuse. Right-click a saved shelf entry to delete it. Saving updates the shelf only when you choose to save; existing placed copies stay unchanged. Portals connect pins through named references. Preview artifact tabs show results for the selected node; Run to here checks the request bound before running. Apply reviews the fresh result against the full root workflow.</p>{/if}
             </div>
         </div>
     {/if}

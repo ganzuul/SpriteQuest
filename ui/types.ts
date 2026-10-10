@@ -1,3 +1,4 @@
+import type { FastConnectionsView, FastConnectionsActions } from './fast-connections-types';
 import type { GraphViews, GraphViewActions } from './view-types';
 import type { NodeDetailsView, NodeDetailsActions, OutputPreviewView, OutputPreviewActions, RunDetailsView, RunDetailsActions } from './detail-types';
 import type { RunMeterView } from './run-meter-types';
@@ -21,8 +22,8 @@ export interface ImportReviewView {
 }
 export interface SubgraphSaveView { key: string; name: string; targetId: string | null; entries: { id: string; name: string }[]; error?: string }
 export interface SubgraphSaveActions { close(): void; save(key: string, name: string, targetId: string | null): unknown }
-export interface NewWorkflowPromptView { name: string }
-export interface NewWorkflowPromptActions { choose(choice: 'save' | 'discard' | 'cancel'): void }
+export interface NewWorkflowPromptView { name: string; phase?: 'unified' | 'pre' | 'post' }
+export interface NewWorkflowPromptActions { choose(choice: 'save' | 'discard' | 'cancel', phase?: 'unified' | 'pre' | 'post'): void }
 export interface WorkflowExamplePin extends Port { x: number; y: number }
 export interface WorkflowExampleNode { id: string; x: number; y: number; w: number; h: number; title: string; className: string; iconPath: string; body: string | null; ports: WorkflowExamplePin[] }
 export interface WorkflowExampleWire { id: string; d: string; kind: string; from: { nodeId: string; portId: string }; to: { nodeId: string; portId: string } }
@@ -40,6 +41,7 @@ export interface WorkbenchView {
     nativeSearch?: NodeSearchView | null; nativePinMenu?: PinMenuView | null; nativeChoices?: readonly SearchChoice[];
     importReview?: ImportReviewView | null;
     newWorkflowPrompt?: NewWorkflowPromptView | null;
+    fastConnections?: FastConnectionsView; fastConnectionsActive?: boolean;
     examples?: readonly WorkflowExampleTile[];
     examplesIssue?: string;
     selectionActions?: { copy: boolean; cut: boolean; delete: boolean };
@@ -56,6 +58,7 @@ export interface WorkbenchActions {
     resizeStart?: () => void; resizeDetails?: (width: number) => void; addNode?: (id: string, at?: { x: number; y: number }) => void;
     acceptImport?: () => void; cancelImport?: () => void; prepareImportAgain?: () => void;
     newWorkflowPrompt?: NewWorkflowPromptActions;
+    fastConnections?: FastConnectionsActions;
     openExample?: (id: string) => boolean | Promise<boolean>;
     refreshExamples?: () => boolean | void;
 }
@@ -70,6 +73,7 @@ export interface WorkflowBoundedResultView { kind: 'bounded'; ok: boolean; error
 export interface WorkflowView {
     graphId: string; name: string; phase: string; assigned: boolean; selectedId: string | null;
     profiles: { id: string; name: string }[];
+    fastConnections?: { value: string; label: string }[];
     families: { name: string; description: string; operations: { id: string; title: string; phase: string; compatible: boolean }[] }[];
     nodes: WorkflowNodeView[]; groups: { id: string; title: string; members: string[]; collapsed: boolean; callBound: number }[];
     callBound: number; issues: string[]; busy: boolean; status: string; quoteHelp: string;
