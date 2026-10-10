@@ -56,11 +56,11 @@ Legacy **Before reply (Pre)** graphs prepare guidance before normal Send; legacy
 4. Click **Run**. This lesson needs no model connection or existing reply.
 5. Select nodes in turn to inspect the source Text, decoded Data, selected fields, and composed Guidance.
 
-![Open examples picker with canvas thumbnails and the first nine lessons, including Build a brief from JSON](images/examples-picker.png)
+![Earlier examples picker illustrating canvas thumbnails](images/examples-picker.png)
 
 *Choose a named tile to open its native workflow immediately. Build a brief from JSON is the third lesson.*
 
-The picker contains unified story workflows and legacy learning examples. Opening a tile creates a fresh copy every time. Unified examples keep their preparation and response in one workflow. Some legacy recipes include separate Pre/Post companions that validate and install together; select those from the **Workflow** selector. Existing workflows, assignments and enabled state are preserved. Opening does not run anything, assign a workflow, or arm the copies.
+The picker contains [30 numbered unified lessons](examples.md), with goal/technique search, difficulty filters and lesson details. Opening a tile creates a fresh copy every time. Each lesson keeps its preparation and response in one workflow. Saved legacy Pre/Post workflows and archived package IDs remain compatible. Existing workflows, assignments and enabled state are preserved. Opening does not run anything, assign a workflow, or arm the copies.
 
 New ordinary text-model nodes and canonical legacy starters select **Active SillyTavern model**, which follows your configured host connection and model. Inspect an ordinary model node’s grey profile bar or **Details → Connection profile**; choose a saved profile when that node needs a fixed connection. The connection’s model is the default; a node model override is optional. Imported unified recipes can have unassigned local connections, including For Each helper roles, so follow their setup instructions. Configure a unified example before assigning/arming and using Send; inspect legacy tools with manual Run before enabling their host integration. Pending Node Details text, model override mode/value, and boundary drafts survive browsing and returning to their qualified node; invalid JSON still requires correction before Save.
 

@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { OPERATIONS } from '../src/workflow/catalog.js';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
-const documents = ['README.md', 'docs/README.md', 'docs/operators-manual.md', 'docs/node-reference.md', 'docs/lattice-workspace.md', 'docs/native-workflows.md', 'docs/development.md', 'docs/unified-workflows.md', 'docs/lattice-reference-library.md', 'docs/introspection-package.md'];
+const documents = ['README.md', 'docs/README.md', 'docs/examples.md', 'docs/operators-manual.md', 'docs/node-reference.md', 'docs/lattice-workspace.md', 'docs/native-workflows.md', 'docs/development.md', 'docs/unified-workflows.md', 'docs/lattice-reference-library.md', 'docs/introspection-package.md'];
 const texts = new Map(await Promise.all(documents.map(async path => [path, (await readFile(join(root, path), 'utf8')).replace(/\r\n?/g, '\n')])));
 const failures = [], images = new Set();
 let links = 0;

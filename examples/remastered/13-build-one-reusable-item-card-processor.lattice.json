@@ -1,0 +1,584 @@
+{
+  "kind": "lattice-workflow",
+  "schema": 2,
+  "minRuntime": 2,
+  "graph": {
+    "id": "remastered-lesson-13",
+    "name": "13. Build one reusable item-card processor",
+    "description": "Reuse one exact pinned pure helper twice with a typed data boundary and an exposed title.\n\nAssign this independent copy as Unified and arm Lattice before Send. Ordinary generation uses Active SillyTavern.\n\nOpen Build one reusable item-card processor and inspect the named pins.\nOpen either helper instance and inspect Item:data → Result:text.\nChange one card-title override and observe that the other instance retains its own title.\nThe pure helper has no host source, native generation, file write or private grant.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 0 auxiliary model requests; one ordinary native generation.\nCheckpoints:\nSubgraph · lantern card.result: The first exact helper snapshot yields its own overridden item-card title.",
+    "schema": 3,
+    "runtime": 2,
+    "mode": "native-unified",
+    "nodes": {
+      "send": {
+        "id": "send",
+        "type": "workflow",
+        "operation": "on-send",
+        "operationVersion": 1,
+        "title": "On Send",
+        "enabled": true,
+        "x": 100,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-0",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "On Send"
+      },
+      "generate": {
+        "id": "generate",
+        "type": "workflow",
+        "operation": "generate-reply",
+        "operationVersion": 1,
+        "title": "Generate Reply · SillyTavern",
+        "enabled": true,
+        "x": 460,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-1",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Generate Reply · SillyTavern",
+        "budgetTokens": 768
+      },
+      "review": {
+        "id": "review",
+        "type": "workflow",
+        "operation": "review-publish",
+        "operationVersion": 1,
+        "title": "Review / Publish",
+        "enabled": true,
+        "x": 1900,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-5",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Review / Publish"
+      },
+      "lantern-text": {
+        "id": "lantern-text",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 100,
+        "y": 560,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-0",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "pre",
+        "alias": "Text · authored input",
+        "text": "{\"name\":\"Lantern\",\"description\":\"A cracked glass lantern.\"}"
+      },
+      "lantern": {
+        "id": "lantern",
+        "type": "workflow",
+        "operation": "json-decode",
+        "operationVersion": 1,
+        "title": "JSON Decode",
+        "enabled": true,
+        "x": 460,
+        "y": 560,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-1",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "pre",
+        "alias": "JSON Decode",
+        "mode": "parse",
+        "schema": ""
+      },
+      "lantern-card": {
+        "id": "lantern-card",
+        "type": "subgraph",
+        "enabled": true,
+        "x": 820,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-2",
+        "alias": "Subgraph · lantern card",
+        "definition": {
+          "id": "remastered-item-card",
+          "version": 1,
+          "semanticHash": "sha256:32e8762a04fc9e1a7061d3a7d3dee41b02e434fd3624dbeaab3e697cd75ba42d"
+        },
+        "parameterOverrides": {
+          "card-title": "Lantern card: {{data:/name}}  -  {{data:/description}}"
+        },
+        "roleOverrides": {},
+        "nodeBindingOverrides": {}
+      },
+      "chart-text": {
+        "id": "chart-text",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 100,
+        "y": 880,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-0",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "pre",
+        "alias": "Text · authored input",
+        "text": "{\"name\":\"Chart\",\"description\":\"A folded coastal chart.\"}"
+      },
+      "chart": {
+        "id": "chart",
+        "type": "workflow",
+        "operation": "json-decode",
+        "operationVersion": 1,
+        "title": "JSON Decode",
+        "enabled": true,
+        "x": 460,
+        "y": 880,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-1",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "pre",
+        "alias": "JSON Decode",
+        "mode": "parse",
+        "schema": ""
+      },
+      "chart-card": {
+        "id": "chart-card",
+        "type": "subgraph",
+        "enabled": true,
+        "x": 820,
+        "y": 560,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-2",
+        "alias": "Subgraph · chart card",
+        "definition": {
+          "id": "remastered-item-card",
+          "version": 1,
+          "semanticHash": "sha256:32e8762a04fc9e1a7061d3a7d3dee41b02e434fd3624dbeaab3e697cd75ba42d"
+        },
+        "parameterOverrides": {
+          "card-title": "Chart card: {{data:/name}}  -  {{data:/description}}"
+        },
+        "roleOverrides": {},
+        "nodeBindingOverrides": {}
+      },
+      "cards": {
+        "id": "cards",
+        "type": "workflow",
+        "operation": "compose",
+        "operationVersion": 1,
+        "title": "Compose",
+        "enabled": true,
+        "x": 1180,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-3",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "post",
+        "alias": "Compose",
+        "mode": "join",
+        "outputKind": "text",
+        "template": "",
+        "sections": [
+          {
+            "name": "Lantern",
+            "text": ""
+          },
+          {
+            "name": "Chart",
+            "text": ""
+          }
+        ],
+        "separator": "\n\n"
+      },
+      "append": {
+        "id": "append",
+        "type": "workflow",
+        "operation": "append",
+        "operationVersion": 1,
+        "title": "Append",
+        "enabled": true,
+        "x": 1540,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-4",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Append",
+        "sectionId": "lesson-13",
+        "separator": "\n\n"
+      },
+      "lesson-note": {
+        "id": "lesson-note",
+        "type": "note",
+        "title": "Lesson instructions",
+        "enabled": true,
+        "x": 100,
+        "y": 0,
+        "w": 900,
+        "h": 180,
+        "content": "Reuse one exact pinned pure helper twice with a typed data boundary and an exposed title.\n\nAssign this independent copy as Unified and arm Lattice before Send. Ordinary generation uses Active SillyTavern.\n\nOpen Build one reusable item-card processor and inspect the named pins.\nOpen either helper instance and inspect Item:data → Result:text.\nChange one card-title override and observe that the other instance retains its own title.\nThe pure helper has no host source, native generation, file write or private grant.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 0 auxiliary model requests; one ordinary native generation.\nCheckpoints:\nSubgraph · lantern card.result: The first exact helper snapshot yields its own overridden item-card title.",
+        "commentFrame": true,
+        "moveContents": false
+      }
+    },
+    "wires": {
+      "edge-1": {
+        "id": "edge-1",
+        "route": "wire",
+        "from": "send",
+        "fromPort": "activation",
+        "to": "generate",
+        "toPort": "activation"
+      },
+      "edge-2": {
+        "id": "edge-2",
+        "route": "wire",
+        "from": "lantern-text",
+        "fromPort": "out",
+        "to": "lantern",
+        "toPort": "in"
+      },
+      "edge-3": {
+        "id": "edge-3",
+        "route": "wire",
+        "from": "lantern",
+        "fromPort": "out",
+        "to": "lantern-card",
+        "toPort": "item"
+      },
+      "edge-4": {
+        "id": "edge-4",
+        "route": "wire",
+        "from": "chart-text",
+        "fromPort": "out",
+        "to": "chart",
+        "toPort": "in"
+      },
+      "edge-5": {
+        "id": "edge-5",
+        "route": "wire",
+        "from": "chart",
+        "fromPort": "out",
+        "to": "chart-card",
+        "toPort": "item"
+      },
+      "edge-6": {
+        "id": "edge-6",
+        "route": "wire",
+        "from": "lantern-card",
+        "fromPort": "result",
+        "to": "cards",
+        "toPort": "section.Lantern"
+      },
+      "edge-7": {
+        "id": "edge-7",
+        "route": "wire",
+        "from": "chart-card",
+        "fromPort": "result",
+        "to": "cards",
+        "toPort": "section.Chart"
+      },
+      "edge-8": {
+        "id": "edge-8",
+        "route": "wire",
+        "from": "generate",
+        "fromPort": "draft",
+        "to": "append",
+        "toPort": "draft"
+      },
+      "edge-9": {
+        "id": "edge-9",
+        "route": "wire",
+        "from": "cards",
+        "fromPort": "out",
+        "to": "append",
+        "toPort": "section"
+      },
+      "edge-10": {
+        "id": "edge-10",
+        "route": "wire",
+        "from": "append",
+        "fromPort": "out",
+        "to": "review",
+        "toPort": "draft"
+      }
+    },
+    "groups": {
+      "stage-0": {
+        "id": "stage-0",
+        "title": "Preparation / processing",
+        "description": "Stage 0. Wires determine execution; folding is presentation only.",
+        "x": 75,
+        "y": 190,
+        "w": 350,
+        "h": 925,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "send",
+          "lantern-text",
+          "chart-text"
+        ]
+      },
+      "stage-1": {
+        "id": "stage-1",
+        "title": "Native generation",
+        "description": "Stage 1. Wires determine execution; folding is presentation only.",
+        "x": 435,
+        "y": 190,
+        "w": 350,
+        "h": 925,
+        "color": "#284e67",
+        "collapsed": false,
+        "members": [
+          "generate",
+          "lantern",
+          "chart"
+        ]
+      },
+      "stage-2": {
+        "id": "stage-2",
+        "title": "Preparation / processing",
+        "description": "Stage 2. Wires determine execution; folding is presentation only.",
+        "x": 795,
+        "y": 190,
+        "w": 350,
+        "h": 605,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "lantern-card",
+          "chart-card"
+        ]
+      },
+      "stage-3": {
+        "id": "stage-3",
+        "title": "Response processing",
+        "description": "Stage 3. Wires determine execution; folding is presentation only.",
+        "x": 1155,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "cards"
+        ]
+      },
+      "stage-4": {
+        "id": "stage-4",
+        "title": "Preparation / processing",
+        "description": "Stage 4. Wires determine execution; folding is presentation only.",
+        "x": 1515,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "append"
+        ]
+      },
+      "stage-5": {
+        "id": "stage-5",
+        "title": "Review / accepted staging",
+        "description": "Stage 5. Wires determine execution; folding is presentation only.",
+        "x": 1875,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "review"
+        ]
+      }
+    },
+    "roles": {},
+    "portals": {},
+    "definitions": {
+      "[\"remastered-item-card\",1,\"sha256:32e8762a04fc9e1a7061d3a7d3dee41b02e434fd3624dbeaab3e697cd75ba42d\"]": {
+        "id": "remastered-item-card",
+        "version": 1,
+        "semanticHash": "sha256:32e8762a04fc9e1a7061d3a7d3dee41b02e434fd3624dbeaab3e697cd75ba42d",
+        "name": "Observed item card",
+        "description": "Pure processor: no host sources, publication, private grants or settlement. Inspect the typed interface and exposed controls.",
+        "interface": [
+          {
+            "id": "item",
+            "label": "Item",
+            "direction": "input",
+            "kind": "data",
+            "required": true,
+            "cardinality": "one",
+            "boundaryNodeId": "item"
+          },
+          {
+            "id": "result",
+            "label": "Result",
+            "direction": "output",
+            "kind": "text",
+            "required": false,
+            "cardinality": "one",
+            "boundaryNodeId": "result"
+          }
+        ],
+        "parameters": [
+          {
+            "id": "card-title",
+            "label": "Card title",
+            "target": {
+              "instancePath": [],
+              "nodeId": "render",
+              "controlId": "template"
+            }
+          }
+        ],
+        "body": {
+          "id": "item-card-body",
+          "schema": 3,
+          "runtime": 2,
+          "mode": "native-unified",
+          "nodes": {
+            "item": {
+              "id": "item",
+              "type": "subgraph-input",
+              "enabled": true,
+              "x": 100,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "interfacePortId": "item"
+            },
+            "result": {
+              "id": "result",
+              "type": "subgraph-output",
+              "enabled": true,
+              "x": 1180,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "interfacePortId": "result"
+            },
+            "select": {
+              "id": "select",
+              "type": "workflow",
+              "operation": "select-fields",
+              "operationVersion": 1,
+              "title": "Select Fields",
+              "enabled": true,
+              "x": 460,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "alias": "Select Fields",
+              "fields": [
+                {
+                  "name": "name",
+                  "path": [
+                    "name"
+                  ]
+                },
+                {
+                  "name": "description",
+                  "path": [
+                    "description"
+                  ]
+                }
+              ]
+            },
+            "render": {
+              "id": "render",
+              "type": "workflow",
+              "operation": "compose",
+              "operationVersion": 1,
+              "title": "Compose",
+              "enabled": true,
+              "x": 820,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "alias": "Compose",
+              "mode": "template",
+              "outputKind": "text",
+              "template": "Observed item: {{data:/name}}  -  {{data:/description}}",
+              "sections": [],
+              "separator": "\n\n"
+            }
+          },
+          "wires": {
+            "edge-1": {
+              "id": "edge-1",
+              "route": "wire",
+              "from": "item",
+              "fromPort": "out",
+              "to": "select",
+              "toPort": "in"
+            },
+            "edge-2": {
+              "id": "edge-2",
+              "route": "wire",
+              "from": "select",
+              "fromPort": "out",
+              "to": "render",
+              "toPort": "data"
+            },
+            "edge-3": {
+              "id": "edge-3",
+              "route": "wire",
+              "from": "render",
+              "fromPort": "out",
+              "to": "result",
+              "toPort": "in"
+            }
+          },
+          "groups": {},
+          "roles": {},
+          "portals": {},
+          "definitions": {}
+        }
+      }
+    },
+    "template": {
+      "id": "lesson-13",
+      "version": 1
+    },
+    "view": {
+      "x": 0,
+      "y": 0,
+      "zoom": 0.65
+    }
+  }
+}

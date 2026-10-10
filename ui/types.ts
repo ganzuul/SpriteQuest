@@ -1,3 +1,4 @@
+import type { WorkflowExampleLesson } from '../src/workflow/examples';
 import type { StoryDocumentsView, StoryDocumentsActions, ConfigureNodeView, ConfigureNodeActions } from './storage-setup-types';
 import type { FastConnectionsView, FastConnectionsActions } from './fast-connections-types';
 import type { GraphViews, GraphViewActions } from './view-types';
@@ -29,8 +30,8 @@ export interface WorkflowExamplePin extends Port { x: number; y: number }
 export interface WorkflowExampleNode { id: string; x: number; y: number; w: number; h: number; title: string; className: string; iconPath: string; body: string | null; ports: WorkflowExamplePin[] }
 export interface WorkflowExampleWire { id: string; d: string; kind: string; from: { nodeId: string; portId: string }; to: { nodeId: string; portId: string } }
 export interface WorkflowExampleComment { id: string; x: number; y: number; w: number; h: number; title: string; content: string; color: string }
-export interface WorkflowExampleThumbnail { bounds: { x: number; y: number; w: number; h: number }; nodes: WorkflowExampleNode[]; wires: WorkflowExampleWire[]; comments: WorkflowExampleComment[] }
-export interface WorkflowExampleTile { id: string; number: number; title: string; goal: string; thumbnail: WorkflowExampleThumbnail | null; issue: string }
+export interface WorkflowExampleThumbnail { bounds: { x: number; y: number; w: number; h: number }; nodes: WorkflowExampleNode[]; wires: WorkflowExampleWire[]; comments: WorkflowExampleComment[]; groups: { id: string; title: string; x: number; y: number; w: number; h: number }[] }
+export interface WorkflowExampleTile { id: string; number: number; title: string; goal: string; lesson?: WorkflowExampleLesson; thumbnail: WorkflowExampleThumbnail | null; issue: string }
 export interface RecallArmsView {
     scope: {userId:string;chatId:string;workflowId:string;actorId:string} | null;
     nodes: {nodeId:string;actorId:string;memorySetId:string;hotkey:{code:string;ctrl:boolean;alt:boolean;shift:boolean;meta:boolean};target:string;uses:string;consumeOn:string;armed:boolean;remaining:{reply:boolean;swipe:boolean};pendingCount:number}[];

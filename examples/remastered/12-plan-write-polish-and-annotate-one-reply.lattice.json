@@ -1,0 +1,460 @@
+{
+  "kind": "lattice-workflow",
+  "schema": 2,
+  "minRuntime": 2,
+  "graph": {
+    "id": "remastered-lesson-12",
+    "name": "12. Plan, write, polish, and annotate one reply",
+    "description": "Combine a public plan with native generation, narration revision, item extraction and suggested enrichment.\n\nAssign this independent copy as Unified and arm Lattice before Send. Ordinary generation uses Active SillyTavern.\n\nOpen Plan, write, polish, and annotate one reply and inspect the named pins.\nFollow preparation and response groups by wires. Folding a group changes presentation only.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 4 auxiliary requests: Response Plan, Revise Draft, Extract and Enrich; one ordinary native generation.\nCheckpoints:\nEnrich.out: Observations keep evidence; suggestions remain labeled separately.",
+    "schema": 3,
+    "runtime": 2,
+    "mode": "native-unified",
+    "nodes": {
+      "send": {
+        "id": "send",
+        "type": "workflow",
+        "operation": "on-send",
+        "operationVersion": 1,
+        "title": "On Send",
+        "enabled": true,
+        "x": 100,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-0",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "On Send"
+      },
+      "generate": {
+        "id": "generate",
+        "type": "workflow",
+        "operation": "generate-reply",
+        "operationVersion": 1,
+        "title": "Generate Reply · SillyTavern",
+        "enabled": true,
+        "x": 820,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-2",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Generate Reply · SillyTavern",
+        "budgetTokens": 768
+      },
+      "review": {
+        "id": "review",
+        "type": "workflow",
+        "operation": "review-publish",
+        "operationVersion": 1,
+        "title": "Review / Publish",
+        "enabled": true,
+        "x": 2980,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-8",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Review / Publish"
+      },
+      "scene": {
+        "id": "scene",
+        "type": "workflow",
+        "operation": "scene-context",
+        "title": "Scene Context",
+        "enabled": true,
+        "x": 100,
+        "y": 560,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-0",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Scene Context",
+        "recentMessages": 5,
+        "includeCharacter": false,
+        "visibilityMode": "public"
+      },
+      "plan": {
+        "id": "plan",
+        "type": "workflow",
+        "operation": "response-plan",
+        "title": "Response Plan",
+        "enabled": true,
+        "x": 460,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-1",
+        "profileId": "lattice:active-sillytavern",
+        "model": null,
+        "modelRole": "Analysis",
+        "alias": "Response Plan",
+        "instructions": "Plan the next public beat, leaving the player decision open.",
+        "maxTokens": 768
+      },
+      "polish": {
+        "id": "polish",
+        "type": "workflow",
+        "operation": "revise-draft",
+        "operationVersion": 1,
+        "title": "Revise Draft",
+        "enabled": true,
+        "x": 1180,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-3",
+        "profileId": "lattice:active-sillytavern",
+        "model": null,
+        "modelRole": "Prose",
+        "alias": "Revise Draft",
+        "instructions": "Make narration clear and concise. Copy dialogue, facts and actions unchanged.",
+        "scope": "narration",
+        "protectedLiterals": [],
+        "maxTokens": 2048
+      },
+      "items": {
+        "id": "items",
+        "type": "workflow",
+        "operation": "extract",
+        "operationVersion": 1,
+        "title": "Extract",
+        "enabled": true,
+        "x": 1540,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-4",
+        "profileId": "lattice:active-sillytavern",
+        "model": null,
+        "modelRole": "Prose",
+        "phase": "post",
+        "alias": "Extract",
+        "inputKind": "draft",
+        "mode": "model",
+        "instructions": "Extract explicitly observed physical items with exact quotes. Mentions do not establish ownership.",
+        "schema": "",
+        "patterns": [],
+        "maxTokens": 2048
+      },
+      "suggestions": {
+        "id": "suggestions",
+        "type": "workflow",
+        "operation": "enrich",
+        "operationVersion": 1,
+        "title": "Enrich",
+        "enabled": true,
+        "x": 1900,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-5",
+        "profileId": "lattice:active-sillytavern",
+        "model": null,
+        "modelRole": "Prose",
+        "phase": "post",
+        "alias": "Enrich",
+        "instructions": "For each observed item suggest one sensory detail consistent with public context. Label additions as suggestions, never observed facts.",
+        "maxTokens": 2048
+      },
+      "notes": {
+        "id": "notes",
+        "type": "workflow",
+        "operation": "render-notes",
+        "operationVersion": 1,
+        "title": "Public planning → generation → revision → notes",
+        "enabled": true,
+        "x": 2260,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-6",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "post",
+        "alias": "Render Notes",
+        "format": "html"
+      },
+      "append": {
+        "id": "append",
+        "type": "workflow",
+        "operation": "append",
+        "operationVersion": 1,
+        "title": "Append",
+        "enabled": true,
+        "x": 2620,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-7",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Append",
+        "sectionId": "lesson-12",
+        "separator": "\n\n"
+      },
+      "lesson-note": {
+        "id": "lesson-note",
+        "type": "note",
+        "title": "Lesson instructions",
+        "enabled": true,
+        "x": 100,
+        "y": 0,
+        "w": 900,
+        "h": 180,
+        "content": "Combine a public plan with native generation, narration revision, item extraction and suggested enrichment.\n\nAssign this independent copy as Unified and arm Lattice before Send. Ordinary generation uses Active SillyTavern.\n\nOpen Plan, write, polish, and annotate one reply and inspect the named pins.\nFollow preparation and response groups by wires. Folding a group changes presentation only.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 4 auxiliary requests: Response Plan, Revise Draft, Extract and Enrich; one ordinary native generation.\nCheckpoints:\nEnrich.out: Observations keep evidence; suggestions remain labeled separately.",
+        "commentFrame": true,
+        "moveContents": false
+      }
+    },
+    "wires": {
+      "edge-1": {
+        "id": "edge-1",
+        "route": "wire",
+        "from": "send",
+        "fromPort": "activation",
+        "to": "generate",
+        "toPort": "activation"
+      },
+      "edge-2": {
+        "id": "edge-2",
+        "route": "wire",
+        "from": "scene",
+        "fromPort": "out",
+        "to": "plan",
+        "toPort": "in"
+      },
+      "edge-3": {
+        "id": "edge-3",
+        "route": "wire",
+        "from": "plan",
+        "fromPort": "out",
+        "to": "generate",
+        "toPort": "guidance"
+      },
+      "edge-4": {
+        "id": "edge-4",
+        "route": "wire",
+        "from": "generate",
+        "fromPort": "draft",
+        "to": "polish",
+        "toPort": "draft"
+      },
+      "edge-5": {
+        "id": "edge-5",
+        "route": "wire",
+        "from": "polish",
+        "fromPort": "out",
+        "to": "items",
+        "toPort": "source"
+      },
+      "edge-6": {
+        "id": "edge-6",
+        "route": "wire",
+        "from": "items",
+        "fromPort": "out",
+        "to": "suggestions",
+        "toPort": "data"
+      },
+      "edge-7": {
+        "id": "edge-7",
+        "route": "wire",
+        "from": "scene",
+        "fromPort": "out",
+        "to": "suggestions",
+        "toPort": "context"
+      },
+      "edge-8": {
+        "id": "edge-8",
+        "route": "wire",
+        "from": "suggestions",
+        "fromPort": "out",
+        "to": "notes",
+        "toPort": "data"
+      },
+      "edge-9": {
+        "id": "edge-9",
+        "route": "wire",
+        "from": "polish",
+        "fromPort": "out",
+        "to": "append",
+        "toPort": "draft"
+      },
+      "edge-10": {
+        "id": "edge-10",
+        "route": "wire",
+        "from": "notes",
+        "fromPort": "out",
+        "to": "append",
+        "toPort": "section"
+      },
+      "edge-11": {
+        "id": "edge-11",
+        "route": "wire",
+        "from": "append",
+        "fromPort": "out",
+        "to": "review",
+        "toPort": "draft"
+      }
+    },
+    "groups": {
+      "stage-0": {
+        "id": "stage-0",
+        "title": "Preparation / processing",
+        "description": "Stage 0. Wires determine execution; folding is presentation only.",
+        "x": 75,
+        "y": 190,
+        "w": 350,
+        "h": 605,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "send",
+          "scene"
+        ]
+      },
+      "stage-1": {
+        "id": "stage-1",
+        "title": "Preparation / processing",
+        "description": "Stage 1. Wires determine execution; folding is presentation only.",
+        "x": 435,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "plan"
+        ]
+      },
+      "stage-2": {
+        "id": "stage-2",
+        "title": "Native generation",
+        "description": "Stage 2. Wires determine execution; folding is presentation only.",
+        "x": 795,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#284e67",
+        "collapsed": false,
+        "members": [
+          "generate"
+        ]
+      },
+      "stage-3": {
+        "id": "stage-3",
+        "title": "Preparation / processing",
+        "description": "Stage 3. Wires determine execution; folding is presentation only.",
+        "x": 1155,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "polish"
+        ]
+      },
+      "stage-4": {
+        "id": "stage-4",
+        "title": "Response processing",
+        "description": "Stage 4. Wires determine execution; folding is presentation only.",
+        "x": 1515,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "items"
+        ]
+      },
+      "stage-5": {
+        "id": "stage-5",
+        "title": "Response processing",
+        "description": "Stage 5. Wires determine execution; folding is presentation only.",
+        "x": 1875,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "suggestions"
+        ]
+      },
+      "stage-6": {
+        "id": "stage-6",
+        "title": "Response processing",
+        "description": "Stage 6. Wires determine execution; folding is presentation only.",
+        "x": 2235,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "notes"
+        ]
+      },
+      "stage-7": {
+        "id": "stage-7",
+        "title": "Preparation / processing",
+        "description": "Stage 7. Wires determine execution; folding is presentation only.",
+        "x": 2595,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "append"
+        ]
+      },
+      "stage-8": {
+        "id": "stage-8",
+        "title": "Review / accepted staging",
+        "description": "Stage 8. Wires determine execution; folding is presentation only.",
+        "x": 2955,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "review"
+        ]
+      }
+    },
+    "roles": {
+      "Analysis": {
+        "model": null,
+        "profileId": "lattice:active-sillytavern"
+      },
+      "Prose": {
+        "model": null,
+        "profileId": "lattice:active-sillytavern"
+      }
+    },
+    "portals": {},
+    "definitions": {},
+    "template": {
+      "id": "lesson-12",
+      "version": 1
+    },
+    "view": {
+      "x": 0,
+      "y": 0,
+      "zoom": 0.65
+    }
+  }
+}

@@ -1,0 +1,321 @@
+{
+  "kind": "lattice-workflow",
+  "schema": 2,
+  "minRuntime": 2,
+  "graph": {
+    "id": "remastered-lesson-06",
+    "name": "6. Bring a lore sheet into the scene",
+    "description": "Load an imported UTF-8 snapshot, decode JSON, and select only the current location facts.\n\nAssign this independent copy as Unified and arm Lattice before Send. Ordinary generation uses Active SillyTavern.\n\nOpen Bring a lore sheet into the scene and inspect the named pins.\nInspect the imported snapshot content; it does not read a live file.\nSelect location and constraint while omitting unrelated lore.\nFor plain text, remove JSON Decode and Select Fields, then connect File Input.out to a Compose text section.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 0 auxiliary model requests; one ordinary native generation.\nCheckpoints:\nSelect Fields · scene facts.out: Only location and constraint reach Guidance.",
+    "schema": 3,
+    "runtime": 2,
+    "mode": "native-unified",
+    "nodes": {
+      "send": {
+        "id": "send",
+        "type": "workflow",
+        "operation": "on-send",
+        "operationVersion": 1,
+        "title": "On Send",
+        "enabled": true,
+        "x": 100,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-0",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "On Send"
+      },
+      "generate": {
+        "id": "generate",
+        "type": "workflow",
+        "operation": "generate-reply",
+        "operationVersion": 1,
+        "title": "Generate Reply · SillyTavern",
+        "enabled": true,
+        "x": 1540,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-4",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Generate Reply · SillyTavern",
+        "budgetTokens": 768
+      },
+      "review": {
+        "id": "review",
+        "type": "workflow",
+        "operation": "review-publish",
+        "operationVersion": 1,
+        "title": "Review / Publish",
+        "enabled": true,
+        "x": 1900,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-5",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Review / Publish"
+      },
+      "lore": {
+        "id": "lore",
+        "type": "workflow",
+        "operation": "file-input",
+        "operationVersion": 1,
+        "title": "File Input",
+        "enabled": true,
+        "x": 100,
+        "y": 560,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-0",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "File Input · imported snapshot",
+        "fileName": "harbor-lore.json",
+        "content": "{\"location\":\"North Harbor\",\"constraint\":\"The lighthouse is dark.\",\"unrelated\":\"A distant kingdom holds a festival.\"}",
+        "loaded": true
+      },
+      "decode": {
+        "id": "decode",
+        "type": "workflow",
+        "operation": "json-decode",
+        "operationVersion": 1,
+        "title": "JSON Decode",
+        "enabled": true,
+        "x": 460,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-1",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "JSON Decode",
+        "mode": "parse",
+        "schema": ""
+      },
+      "selection": {
+        "id": "selection",
+        "type": "workflow",
+        "operation": "select-fields",
+        "operationVersion": 1,
+        "title": "Select Fields",
+        "enabled": true,
+        "x": 820,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-2",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Select Fields · scene facts",
+        "fields": [
+          {
+            "name": "location",
+            "path": [
+              "location"
+            ]
+          },
+          {
+            "name": "constraint",
+            "path": [
+              "constraint"
+            ]
+          }
+        ]
+      },
+      "guidance": {
+        "id": "guidance",
+        "type": "workflow",
+        "operation": "compose",
+        "operationVersion": 1,
+        "title": "Compose",
+        "enabled": true,
+        "x": 1180,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-3",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Compose",
+        "mode": "template",
+        "outputKind": "guidance",
+        "template": "Use this supplied material as context; preserve established facts and player choices.\n{{data:}}",
+        "sections": [],
+        "separator": "\n\n"
+      },
+      "lesson-note": {
+        "id": "lesson-note",
+        "type": "note",
+        "title": "Lesson instructions",
+        "enabled": true,
+        "x": 100,
+        "y": 0,
+        "w": 900,
+        "h": 180,
+        "content": "Load an imported UTF-8 snapshot, decode JSON, and select only the current location facts.\n\nAssign this independent copy as Unified and arm Lattice before Send. Ordinary generation uses Active SillyTavern.\n\nOpen Bring a lore sheet into the scene and inspect the named pins.\nInspect the imported snapshot content; it does not read a live file.\nSelect location and constraint while omitting unrelated lore.\nFor plain text, remove JSON Decode and Select Fields, then connect File Input.out to a Compose text section.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 0 auxiliary model requests; one ordinary native generation.\nCheckpoints:\nSelect Fields · scene facts.out: Only location and constraint reach Guidance.",
+        "commentFrame": true,
+        "moveContents": false
+      }
+    },
+    "wires": {
+      "edge-1": {
+        "id": "edge-1",
+        "route": "wire",
+        "from": "send",
+        "fromPort": "activation",
+        "to": "generate",
+        "toPort": "activation"
+      },
+      "edge-2": {
+        "id": "edge-2",
+        "route": "wire",
+        "from": "lore",
+        "fromPort": "out",
+        "to": "decode",
+        "toPort": "in"
+      },
+      "edge-3": {
+        "id": "edge-3",
+        "route": "wire",
+        "from": "decode",
+        "fromPort": "out",
+        "to": "selection",
+        "toPort": "in"
+      },
+      "edge-4": {
+        "id": "edge-4",
+        "route": "wire",
+        "from": "selection",
+        "fromPort": "out",
+        "to": "guidance",
+        "toPort": "data"
+      },
+      "edge-5": {
+        "id": "edge-5",
+        "route": "wire",
+        "from": "guidance",
+        "fromPort": "out",
+        "to": "generate",
+        "toPort": "guidance"
+      },
+      "edge-6": {
+        "id": "edge-6",
+        "route": "wire",
+        "from": "generate",
+        "fromPort": "draft",
+        "to": "review",
+        "toPort": "draft"
+      }
+    },
+    "groups": {
+      "stage-0": {
+        "id": "stage-0",
+        "title": "Preparation / processing",
+        "description": "Stage 0. Wires determine execution; folding is presentation only.",
+        "x": 75,
+        "y": 190,
+        "w": 350,
+        "h": 605,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "send",
+          "lore"
+        ]
+      },
+      "stage-1": {
+        "id": "stage-1",
+        "title": "Preparation / processing",
+        "description": "Stage 1. Wires determine execution; folding is presentation only.",
+        "x": 435,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "decode"
+        ]
+      },
+      "stage-2": {
+        "id": "stage-2",
+        "title": "Preparation / processing",
+        "description": "Stage 2. Wires determine execution; folding is presentation only.",
+        "x": 795,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "selection"
+        ]
+      },
+      "stage-3": {
+        "id": "stage-3",
+        "title": "Preparation / processing",
+        "description": "Stage 3. Wires determine execution; folding is presentation only.",
+        "x": 1155,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "guidance"
+        ]
+      },
+      "stage-4": {
+        "id": "stage-4",
+        "title": "Native generation",
+        "description": "Stage 4. Wires determine execution; folding is presentation only.",
+        "x": 1515,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#284e67",
+        "collapsed": false,
+        "members": [
+          "generate"
+        ]
+      },
+      "stage-5": {
+        "id": "stage-5",
+        "title": "Review / accepted staging",
+        "description": "Stage 5. Wires determine execution; folding is presentation only.",
+        "x": 1875,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "review"
+        ]
+      }
+    },
+    "roles": {},
+    "portals": {},
+    "definitions": {},
+    "template": {
+      "id": "lesson-06",
+      "version": 1
+    },
+    "view": {
+      "x": 0,
+      "y": 0,
+      "zoom": 0.65
+    }
+  }
+}

@@ -151,7 +151,7 @@
 </div>
 
 <style>
-    .pc-workspace-dialog.pc-examples-dialog { box-sizing: border-box; display: flex; flex-direction: column; width: 560px; height: 430px; max-width: calc(100% - 24px); max-height: calc(100% - 24px); padding: 0; overflow: hidden; border-radius: 4px; background: var(--pc-panel-solid); }
+    .pc-workspace-dialog.pc-examples-dialog { box-sizing: border-box; display: flex; flex-direction: column; width: 760px; height: 680px; max-width: calc(100% - 24px); max-height: calc(100% - 24px); padding: 0; overflow: hidden; border-radius: 4px; background: var(--pc-panel-solid); }
     .pc-examples-dialog > header { flex: none; height: 42px; box-sizing: border-box; padding: 7px 10px; margin: 0; border-bottom: 1px solid var(--pc-border); }
     .pc-examples-dialog h2 { font-size: 14px; margin: 0; }
     .pc-manager-dialog { max-height: calc(100% - 24px); max-width: calc(100% - 24px); overflow: auto; border-radius: 4px; }

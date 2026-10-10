@@ -119,3 +119,51 @@ test('the last trusted current callback cannot release or abort and still author
   const result=operation==='grant'?f.service.checkActorGrant(actual.data.grant):await f.service.actorContext('character:mara.png',{sceneId:'Story-2',sourceId:'scene-source',revision:'r1'},f.p);assert.equal(count>=finalCheck,true);assert.equal(result.ok,false);assert.equal(result.data,undefined);f.service.release();
  }
 });
+
+test('Character Direction retains exact same actor Data authority through capture, model admission and native guidance',async()=>{
+ const f=fixture(),node={operation:'character-direction',actorId:'character:mara.png'},grant=f.service.authorizeActor(node.actorId,f.p).data.grant;
+ const projected=data({trust:.85,affection:.75},{kind:'actor-private',actorId:node.actorId});assert.equal(f.service.retainScopedArtifact(projected,grant).ok,true);let calls=0;
+ const inputs={presence:f.p,data:projected};const result=await executeEvent(node,inputs,{actorContext:f.service.actorContext,signal:f.signal.signal,request:async request=>{calls++;assert.equal(f.service.authorizeEventInputs(node,inputs).ok,true);const payload=JSON.parse(request.messages[1].content);assert.deepEqual(payload.data,{trust:.85,affection:.75});assert.equal(payload.scope.actorId,node.actorId);return {ok:true,data:{text:'Mara trusts Elias enough to lower her guard.',finish:'stop'}};}});
+ assert.equal(result.ok,true,JSON.stringify(result.error));assert.equal(calls,1);const artifact=freeze(result.artifact);assert.equal(f.service.retainGuidance({node,inputs,artifact,rawResult:result}).ok,true);assert.equal(f.service.authorizeGuidance(artifact).ok,true);assert.equal(f.service.authorizeGuidance(freeze(structuredClone(artifact))).ok,false);
+});
+
+for(const denied of ['forged','clone','stale','other actor','mixed','hidden'])test('Character Direction '+denied+' Data never reaches private actor capture or model dispatch',async()=>{
+ let reads=0;const f=fixture({readMemories:async()=>{reads++;return {ok:true,data:[]};}}),node={operation:'character-direction',actorId:'character:mara.png'};
+ const actorId=denied==='other actor'?'character:elias.png':node.actorId,exactPresence=actorId===node.actorId?f.p:f.e,grant=f.service.authorizeActor(actorId,exactPresence).data.grant;
+ let projected=data({trust:.85},{kind:'actor-private',actorId});
+ if(denied!=='forged')assert.equal(f.service.retainScopedArtifact(projected,grant).ok,true);
+ if(denied==='clone')projected=freeze(structuredClone(projected));
+ if(denied==='stale')f.c.characters[0].data.description='Changed private source';
+ if(denied==='mixed')projected=data([{visibility:'actor-private',actorId:node.actorId,value:'sea'},{visibility:'actor-private',actorId:'character:elias.png',value:'fire'}]);
+ if(denied==='hidden')projected=data({secret:'hidden'},{kind:'hidden'});
+ let calls=0;const result=await executeEvent(node,{presence:f.p,data:projected},{actorContext:f.service.actorContext,signal:f.signal.signal,request:async()=>{calls++;throw Error('unsafe model dispatch');}});
+ assert.equal(result.ok,false,denied);assert.equal(result.error.code,'ACTOR_MODEL_SCOPE',denied);assert.equal(reads,0,denied);assert.equal(calls,0,denied);assert.equal(result.artifact,undefined);
+});
+
+test('Character Direction event authority rejects a retained other actor input even after valid actor context capture',async()=>{
+ const f=fixture(),node={operation:'character-direction',actorId:'character:mara.png'};await f.service.actorContext(node.actorId,{sceneId:'Story-2',sourceId:'scene-source',revision:'r1'},f.p);
+ const grant=f.service.authorizeActor('character:elias.png',f.e).data.grant,other=data({trust:1},{kind:'actor-private',actorId:'character:elias.png'});assert.equal(f.service.retainScopedArtifact(other,grant).ok,true);assert.equal(f.service.authorizeModelInputs({data:other}).ok,true);
+ const checked=f.service.authorizeEventInputs(node,{presence:f.p,data:other});assert.equal(checked.ok,false);assert.equal(checked.error.code,'ACTOR_MODEL_SCOPE');
+});
+
+test('Character Direction rechecks retained Data after actor capture callbacks before reading private memories',async()=>{
+ let f,armed=false,contexts=0,reads=0;f=fixture({context:()=>{if(armed&&++contexts===2)f.c.characters[0].data.description='Changed while capturing current actor';return f.c;},readMemories:async()=>{reads++;return {ok:true,data:[]};}});
+ const node={operation:'character-direction',actorId:'character:mara.png'},grant=f.service.authorizeSelectedActor().data.grant,projected=data({trust:.85},{kind:'actor-private',actorId:node.actorId});assert.equal(f.service.retainScopedArtifact(projected,grant).ok,true);armed=true;let calls=0;
+ const result=await executeEvent(node,{presence:f.p,data:projected},{actorContext:f.service.actorContext,signal:f.signal.signal,request:async()=>{calls++;throw Error('stale Data dispatch');}});
+ assert.equal(result.ok,false);assert.equal(result.error.code,'ACTOR_MODEL_SCOPE');assert.equal(reads,0);assert.equal(calls,0);assert.equal(result.artifact,undefined);
+});
+
+test('Character Direction checks captured presence after final Data authorization callbacks before returning private context',async()=>{
+ let f,afterMemory=false,contexts=0;f=fixture({context:()=>{if(afterMemory&&++contexts===3)f.setProof(false);return f.c;},readMemories:async()=>{afterMemory=true;return {ok:true,data:[]};}});
+ const actorId='character:mara.png',grant=f.service.authorizeSelectedActor().data.grant,projected=data({trust:.85},{kind:'actor-private',actorId});assert.equal(f.service.retainScopedArtifact(projected,grant).ok,true);
+ const result=await f.service.actorContext(actorId,{sceneId:'Story-2',sourceId:'scene-source',revision:'r1',signal:f.signal.signal,data:projected},f.p);
+ assert.equal(result.ok,false);assert.equal(result.data,undefined);assert.equal(result.error.code,'ACTOR_PRESENCE_UNVERIFIED');
+});
+
+test('Character Direction admission rechecks captured presence after selected Data authorization before dispatch',async()=>{
+ let f,armed=false,contexts=0;f=fixture({context:()=>{if(armed&&++contexts===2)f.setProof(false);return f.c;}});
+ const node={operation:'character-direction',actorId:'character:mara.png'},grant=f.service.authorizeSelectedActor().data.grant,projected=data({trust:.85},{kind:'actor-private',actorId:node.actorId});assert.equal(f.service.retainScopedArtifact(projected,grant).ok,true);
+ assert.equal((await f.service.actorContext(node.actorId,{sceneId:'Story-2',sourceId:'scene-source',revision:'r1',signal:f.signal.signal,data:projected},f.p)).ok,true);armed=true;
+ const result=f.service.authorizeEventInputs(node,{presence:f.p,data:projected});let calls=0;if(result.ok)calls++;
+ assert.equal(result.ok,false);assert.equal(result.error.code,'ACTOR_CONTEXT_CHANGED');assert.equal(calls,0);
+});

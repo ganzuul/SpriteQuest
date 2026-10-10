@@ -1,0 +1,1411 @@
+{
+  "kind": "lattice-workflow",
+  "schema": 2,
+  "minRuntime": 2,
+  "graph": {
+    "id": "remastered-lesson-25",
+    "name": "25. Award experience from confirmed progress",
+    "description": "Project generic authored State rules from confirmed native objectives with identity-ledger deduplication and accepted persistence.\n\nAssign this independent copy as Unified and arm Lattice before Send. Ordinary generation uses Active SillyTavern.\nPublic JSON player-progression starts {\"values\":[{\"key\":\"experience\",\"value\":80}],\"ledger\":[]}. Replace actor IDs for actual participants.\n\nOpen Award experience from confirmed progress and inspect the named pins.\nAn occurrence identity earns at most one rule award; replay reuses the identity ledger.\nCollection compares the original experience to the final projected experience after every confirmed objective. The default 80→100 crosses 100; an initial 260 plus two rewards of 20 reaches 300 and crosses 300.\nNo confirmed objective preserves the original experience and produces no threshold crossing. Missing or ambiguous experience records hold; no receipt position is assumed.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: At most 4 auxiliary requests: 1 extraction + up to 3 confirmations; one ordinary native generation.\nCheckpoints:\nState.receipt: Ordered per-event receipts and duplicate status come from generic authored rules.\nSelect Fields.out: The original and final experience values include every ordered confirmed reward.\nCollection.out: All thresholds crossed by the complete before→after projection appear in notes.",
+    "schema": 3,
+    "runtime": 2,
+    "mode": "native-unified",
+    "nodes": {
+      "send": {
+        "id": "send",
+        "type": "workflow",
+        "operation": "on-send",
+        "operationVersion": 1,
+        "title": "On Send",
+        "enabled": true,
+        "x": 100,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-0",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "On Send"
+      },
+      "generate": {
+        "id": "generate",
+        "type": "workflow",
+        "operation": "generate-reply",
+        "operationVersion": 1,
+        "title": "Generate Reply · SillyTavern",
+        "enabled": true,
+        "x": 460,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-1",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Generate Reply · SillyTavern",
+        "budgetTokens": 768
+      },
+      "review": {
+        "id": "review",
+        "type": "workflow",
+        "operation": "review-publish",
+        "operationVersion": 1,
+        "title": "Review / Publish",
+        "enabled": true,
+        "x": 5860,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-16",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Review / Publish"
+      },
+      "draft-scope": {
+        "id": "draft-scope",
+        "type": "workflow",
+        "operation": "select-fields",
+        "operationVersion": 1,
+        "title": "Select Fields",
+        "enabled": true,
+        "x": 820,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-2",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "post",
+        "alias": "Select Fields · owned native identity",
+        "fields": [
+          {
+            "name": "sourceId",
+            "path": [
+              "runId"
+            ]
+          },
+          {
+            "name": "revision",
+            "path": [
+              "runId"
+            ]
+          },
+          {
+            "name": "sceneId",
+            "path": [
+              "source",
+              "chatId"
+            ]
+          },
+          {
+            "name": "visibility",
+            "path": [
+              "publicVisibility"
+            ],
+            "required": false,
+            "default": "public"
+          }
+        ]
+      },
+      "native-source": {
+        "id": "native-source",
+        "type": "workflow",
+        "operation": "draft-event-source",
+        "operationVersion": 1,
+        "title": "Draft Event Source",
+        "enabled": true,
+        "x": 1180,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-3",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Draft Event Source"
+      },
+      "entities-text": {
+        "id": "entities-text",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 100,
+        "y": 560,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-0",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "post",
+        "alias": "Text · authored input",
+        "text": "{\"actorIds\":[\"character:rowan.png\",\"character:iris.png\"],\"itemIds\":[]}"
+      },
+      "entities": {
+        "id": "entities",
+        "type": "workflow",
+        "operation": "json-decode",
+        "operationVersion": 1,
+        "title": "JSON Decode",
+        "enabled": true,
+        "x": 460,
+        "y": 560,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-1",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "post",
+        "alias": "JSON Decode",
+        "mode": "parse",
+        "schema": ""
+      },
+      "candidate-request": {
+        "id": "candidate-request",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 100,
+        "y": 880,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-0",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "post",
+        "alias": "Text",
+        "text": "Return exactly a raw JSON array of {eventType,actorId,objectId only when relevant,position:{start,end},semantics}. Copy exact UTF-16 evidence spans from supplied source.text. Use only supplied canonical actor IDs character:rowan.png, character:iris.png. Target eventType scene-action. Distinguish actual, mentioned, planned, threatened, recalled, proposed, uncertain. Extract only an explicitly completed objective with exact evidence; at most three."
+      },
+      "candidates": {
+        "id": "candidates",
+        "type": "workflow",
+        "operation": "model-call",
+        "operationVersion": 1,
+        "title": "Model Call",
+        "enabled": true,
+        "x": 1540,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-4",
+        "profileId": "lattice:active-sillytavern",
+        "model": null,
+        "modelRole": "Prose",
+        "phase": "post",
+        "alias": "Model Call",
+        "instructions": "Extract candidates only; never confirm or fabricate evidence.",
+        "outputKind": "data",
+        "schema": "",
+        "maxTokens": 2048
+      },
+      "events": {
+        "id": "events",
+        "type": "workflow",
+        "operation": "event-normalize",
+        "operationVersion": 1,
+        "title": "Event Normalize",
+        "enabled": true,
+        "x": 1900,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-5",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "post",
+        "alias": "Event Normalize",
+        "mode": "candidates",
+        "eventType": "",
+        "absoluteMinute": -1
+      },
+      "confirm-each": {
+        "id": "confirm-each",
+        "type": "workflow",
+        "operation": "for-each",
+        "operationVersion": 1,
+        "title": "For Each",
+        "enabled": true,
+        "x": 2260,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-6",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "post",
+        "alias": "For Each",
+        "helper": {
+          "id": "remastered-lesson-25-confirmation",
+          "version": 1,
+          "semanticHash": "sha256:2d1e276acf38bfe69341e879b4db199560a6ffc417b7641442dbf7d1f569d74e"
+        },
+        "limit": 3,
+        "requestBoundPerIteration": 1,
+        "mode": "map",
+        "roleOverrides": {
+          "decision": {
+            "profileId": "lattice:active-sillytavern"
+          }
+        }
+      },
+      "confirmed": {
+        "id": "confirmed",
+        "type": "workflow",
+        "operation": "collection",
+        "operationVersion": 1,
+        "title": "Collection",
+        "enabled": true,
+        "x": 2620,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-7",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "post",
+        "alias": "Collection",
+        "mode": "flatten",
+        "collectionPath": [],
+        "fieldPath": [],
+        "value": "",
+        "operator": "equals",
+        "missingPolicy": "hold",
+        "thresholds": "[]",
+        "mergePolicy": "keep-all",
+        "identityPath": [
+          "id"
+        ]
+      },
+      "progression-file": {
+        "id": "progression-file",
+        "type": "workflow",
+        "operation": "read-file",
+        "operationVersion": 1,
+        "title": "Read File",
+        "enabled": true,
+        "x": 100,
+        "y": 1200,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-0",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Read File · authorized live target",
+        "targetId": "player-progression",
+        "schema": "",
+        "columns": [],
+        "actorScope": "selected",
+        "actorId": ""
+      },
+      "progression": {
+        "id": "progression",
+        "type": "workflow",
+        "operation": "json-decode",
+        "operationVersion": 1,
+        "title": "JSON Decode",
+        "enabled": true,
+        "x": 460,
+        "y": 880,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-1",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "pre",
+        "alias": "JSON Decode",
+        "mode": "parse",
+        "schema": ""
+      },
+      "rules-text": {
+        "id": "rules-text",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 100,
+        "y": 1520,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-0",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "pre",
+        "alias": "Text · authored input",
+        "text": "{\"ruleSetId\":\"objective-rewards\",\"revision\":1,\"rules\":[{\"ruleId\":\"completed-objective\",\"eventType\":\"objective-completed\",\"targetKey\":\"experience\",\"identityFields\":[\"occurrenceId\"],\"mode\":\"add\",\"amount\":20,\"min\":0,\"max\":1000}]}"
+      },
+      "rules": {
+        "id": "rules",
+        "type": "workflow",
+        "operation": "json-decode",
+        "operationVersion": 1,
+        "title": "JSON Decode",
+        "enabled": true,
+        "x": 460,
+        "y": 1200,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-1",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "pre",
+        "alias": "JSON Decode",
+        "mode": "parse",
+        "schema": ""
+      },
+      "progress-events": {
+        "id": "progress-events",
+        "type": "workflow",
+        "operation": "event-normalize",
+        "operationVersion": 1,
+        "title": "Event Normalize",
+        "enabled": true,
+        "x": 2980,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-8",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "post",
+        "alias": "Event Normalize",
+        "mode": "progression",
+        "eventType": "objective-completed",
+        "absoluteMinute": -1
+      },
+      "award": {
+        "id": "award",
+        "type": "workflow",
+        "operation": "state",
+        "operationVersion": 1,
+        "title": "State",
+        "enabled": true,
+        "x": 3340,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-9",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "post",
+        "alias": "State",
+        "mode": "progression"
+      },
+      "before-experience": {
+        "id": "before-experience",
+        "type": "workflow",
+        "operation": "collection",
+        "operationVersion": 1,
+        "title": "Collection",
+        "enabled": true,
+        "x": 820,
+        "y": 560,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-2",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "post",
+        "alias": "Collection",
+        "mode": "lookup",
+        "collectionPath": [
+          "values"
+        ],
+        "fieldPath": [
+          "key"
+        ],
+        "value": "experience",
+        "operator": "equals",
+        "missingPolicy": "hold",
+        "thresholds": "[]",
+        "mergePolicy": "keep-all",
+        "identityPath": [
+          "id"
+        ]
+      },
+      "after-experience": {
+        "id": "after-experience",
+        "type": "workflow",
+        "operation": "collection",
+        "operationVersion": 1,
+        "title": "Collection",
+        "enabled": true,
+        "x": 3700,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-10",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "post",
+        "alias": "Collection",
+        "mode": "lookup",
+        "collectionPath": [
+          "values"
+        ],
+        "fieldPath": [
+          "key"
+        ],
+        "value": "experience",
+        "operator": "equals",
+        "missingPolicy": "hold",
+        "thresholds": "[]",
+        "mergePolicy": "keep-all",
+        "identityPath": [
+          "id"
+        ]
+      },
+      "experience-pair": {
+        "id": "experience-pair",
+        "type": "workflow",
+        "operation": "collect",
+        "operationVersion": 1,
+        "title": "Collect",
+        "enabled": true,
+        "x": 4060,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-11",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "artifactKind": "data",
+        "phase": "post",
+        "alias": "Collect",
+        "inputs": [
+          {
+            "id": "before",
+            "label": "Original experience",
+            "required": true
+          },
+          {
+            "id": "after",
+            "label": "Final projected experience",
+            "required": true
+          }
+        ]
+      },
+      "change": {
+        "id": "change",
+        "type": "workflow",
+        "operation": "select-fields",
+        "operationVersion": 1,
+        "title": "Select Fields",
+        "enabled": true,
+        "x": 4420,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-12",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "post",
+        "alias": "Select Fields",
+        "fields": [
+          {
+            "name": "before",
+            "path": [
+              "0",
+              "value",
+              "value"
+            ]
+          },
+          {
+            "name": "after",
+            "path": [
+              "1",
+              "value",
+              "value"
+            ]
+          }
+        ]
+      },
+      "levels": {
+        "id": "levels",
+        "type": "workflow",
+        "operation": "collection",
+        "operationVersion": 1,
+        "title": "Collection",
+        "enabled": true,
+        "x": 4780,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-13",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "post",
+        "alias": "Collection",
+        "mode": "threshold",
+        "collectionPath": [],
+        "fieldPath": [],
+        "value": "",
+        "operator": "equals",
+        "missingPolicy": "hold",
+        "thresholds": "[100,300,600]",
+        "mergePolicy": "keep-all",
+        "identityPath": [
+          "id"
+        ]
+      },
+      "save-format": {
+        "id": "save-format",
+        "type": "workflow",
+        "operation": "format",
+        "operationVersion": 1,
+        "title": "Format",
+        "enabled": true,
+        "x": 3700,
+        "y": 560,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-10",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "post",
+        "alias": "Format",
+        "inputMode": "records",
+        "format": "json",
+        "jsonShape": "single",
+        "mapping": "preserve",
+        "fields": [],
+        "schema": "",
+        "columns": [],
+        "separator": "\n",
+        "trailingSeparator": false
+      },
+      "save": {
+        "id": "save",
+        "type": "workflow",
+        "operation": "write-file",
+        "operationVersion": 1,
+        "title": "Write to File",
+        "enabled": true,
+        "x": 4060,
+        "y": 560,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-11",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Write to File",
+        "mode": "replace",
+        "collectionPath": "",
+        "missingPath": "error",
+        "key": "id",
+        "fieldPolicy": "merge",
+        "fields": [],
+        "schema": "",
+        "columns": [],
+        "separator": "\n",
+        "emptyPolicy": "omit",
+        "trailingSeparator": false,
+        "actorScope": "selected",
+        "actorId": ""
+      },
+      "notes": {
+        "id": "notes",
+        "type": "workflow",
+        "operation": "compose",
+        "operationVersion": 1,
+        "title": "Compose",
+        "enabled": true,
+        "x": 5140,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-14",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "post",
+        "alias": "Compose",
+        "mode": "template",
+        "outputKind": "text",
+        "template": "<details><summary>State progression rules, Collection thresholds and identity ledger</summary>\n{{data:}}\n</details>",
+        "sections": [],
+        "separator": "\n\n"
+      },
+      "append": {
+        "id": "append",
+        "type": "workflow",
+        "operation": "append",
+        "operationVersion": 1,
+        "title": "Append",
+        "enabled": true,
+        "x": 5500,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-15",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Append",
+        "sectionId": "lesson-25",
+        "separator": "\n\n"
+      },
+      "lesson-note": {
+        "id": "lesson-note",
+        "type": "note",
+        "title": "Lesson instructions",
+        "enabled": true,
+        "x": 100,
+        "y": 0,
+        "w": 900,
+        "h": 180,
+        "content": "Project generic authored State rules from confirmed native objectives with identity-ledger deduplication and accepted persistence.\n\nAssign this independent copy as Unified and arm Lattice before Send. Ordinary generation uses Active SillyTavern.\nPublic JSON player-progression starts {\"values\":[{\"key\":\"experience\",\"value\":80}],\"ledger\":[]}. Replace actor IDs for actual participants.\n\nOpen Award experience from confirmed progress and inspect the named pins.\nAn occurrence identity earns at most one rule award; replay reuses the identity ledger.\nCollection compares the original experience to the final projected experience after every confirmed objective. The default 80→100 crosses 100; an initial 260 plus two rewards of 20 reaches 300 and crosses 300.\nNo confirmed objective preserves the original experience and produces no threshold crossing. Missing or ambiguous experience records hold; no receipt position is assumed.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: At most 4 auxiliary requests: 1 extraction + up to 3 confirmations; one ordinary native generation.\nCheckpoints:\nState.receipt: Ordered per-event receipts and duplicate status come from generic authored rules.\nSelect Fields.out: The original and final experience values include every ordered confirmed reward.\nCollection.out: All thresholds crossed by the complete before→after projection appear in notes.",
+        "commentFrame": true,
+        "moveContents": false
+      }
+    },
+    "wires": {
+      "edge-1": {
+        "id": "edge-1",
+        "route": "wire",
+        "from": "send",
+        "fromPort": "activation",
+        "to": "generate",
+        "toPort": "activation"
+      },
+      "edge-2": {
+        "id": "edge-2",
+        "route": "wire",
+        "from": "generate",
+        "fromPort": "metadata",
+        "to": "draft-scope",
+        "toPort": "in"
+      },
+      "edge-3": {
+        "id": "edge-3",
+        "route": "wire",
+        "from": "generate",
+        "fromPort": "draft",
+        "to": "native-source",
+        "toPort": "in"
+      },
+      "edge-4": {
+        "id": "edge-4",
+        "route": "wire",
+        "from": "draft-scope",
+        "fromPort": "out",
+        "to": "native-source",
+        "toPort": "scope"
+      },
+      "edge-5": {
+        "id": "edge-5",
+        "route": "wire",
+        "from": "entities-text",
+        "fromPort": "out",
+        "to": "entities",
+        "toPort": "in"
+      },
+      "edge-6": {
+        "id": "edge-6",
+        "route": "wire",
+        "from": "candidate-request",
+        "fromPort": "out",
+        "to": "candidates",
+        "toPort": "prompt"
+      },
+      "edge-7": {
+        "id": "edge-7",
+        "route": "wire",
+        "from": "native-source",
+        "fromPort": "out",
+        "to": "candidates",
+        "toPort": "data"
+      },
+      "edge-8": {
+        "id": "edge-8",
+        "route": "wire",
+        "from": "native-source",
+        "fromPort": "out",
+        "to": "events",
+        "toPort": "source"
+      },
+      "edge-9": {
+        "id": "edge-9",
+        "route": "wire",
+        "from": "entities",
+        "fromPort": "out",
+        "to": "events",
+        "toPort": "entities"
+      },
+      "edge-10": {
+        "id": "edge-10",
+        "route": "wire",
+        "from": "candidates",
+        "fromPort": "out",
+        "to": "events",
+        "toPort": "candidates"
+      },
+      "edge-11": {
+        "id": "edge-11",
+        "route": "wire",
+        "from": "events",
+        "fromPort": "out",
+        "to": "confirm-each",
+        "toPort": "in"
+      },
+      "edge-12": {
+        "id": "edge-12",
+        "route": "wire",
+        "from": "confirm-each",
+        "fromPort": "out",
+        "to": "confirmed",
+        "toPort": "in"
+      },
+      "edge-13": {
+        "id": "edge-13",
+        "route": "wire",
+        "from": "progression-file",
+        "fromPort": "text",
+        "to": "progression",
+        "toPort": "in"
+      },
+      "edge-14": {
+        "id": "edge-14",
+        "route": "wire",
+        "from": "rules-text",
+        "fromPort": "out",
+        "to": "rules",
+        "toPort": "in"
+      },
+      "edge-15": {
+        "id": "edge-15",
+        "route": "wire",
+        "from": "confirmed",
+        "fromPort": "out",
+        "to": "progress-events",
+        "toPort": "events"
+      },
+      "edge-16": {
+        "id": "edge-16",
+        "route": "wire",
+        "from": "progression",
+        "fromPort": "out",
+        "to": "award",
+        "toPort": "state"
+      },
+      "edge-17": {
+        "id": "edge-17",
+        "route": "wire",
+        "from": "rules",
+        "fromPort": "out",
+        "to": "award",
+        "toPort": "rules"
+      },
+      "edge-18": {
+        "id": "edge-18",
+        "route": "wire",
+        "from": "progress-events",
+        "fromPort": "out",
+        "to": "award",
+        "toPort": "events"
+      },
+      "edge-19": {
+        "id": "edge-19",
+        "route": "wire",
+        "from": "progression",
+        "fromPort": "out",
+        "to": "before-experience",
+        "toPort": "in"
+      },
+      "edge-20": {
+        "id": "edge-20",
+        "route": "wire",
+        "from": "award",
+        "fromPort": "out",
+        "to": "after-experience",
+        "toPort": "in"
+      },
+      "edge-21": {
+        "id": "edge-21",
+        "route": "wire",
+        "from": "before-experience",
+        "fromPort": "out",
+        "to": "experience-pair",
+        "toPort": "before"
+      },
+      "edge-22": {
+        "id": "edge-22",
+        "route": "wire",
+        "from": "after-experience",
+        "fromPort": "out",
+        "to": "experience-pair",
+        "toPort": "after"
+      },
+      "edge-23": {
+        "id": "edge-23",
+        "route": "wire",
+        "from": "experience-pair",
+        "fromPort": "out",
+        "to": "change",
+        "toPort": "in"
+      },
+      "edge-24": {
+        "id": "edge-24",
+        "route": "wire",
+        "from": "change",
+        "fromPort": "out",
+        "to": "levels",
+        "toPort": "in"
+      },
+      "edge-25": {
+        "id": "edge-25",
+        "route": "wire",
+        "from": "award",
+        "fromPort": "out",
+        "to": "save-format",
+        "toPort": "in"
+      },
+      "edge-26": {
+        "id": "edge-26",
+        "route": "wire",
+        "from": "progression-file",
+        "fromPort": "reference",
+        "to": "save",
+        "toPort": "reference"
+      },
+      "edge-27": {
+        "id": "edge-27",
+        "route": "wire",
+        "from": "save-format",
+        "fromPort": "text",
+        "to": "save",
+        "toPort": "text"
+      },
+      "edge-28": {
+        "id": "edge-28",
+        "route": "wire",
+        "from": "levels",
+        "fromPort": "out",
+        "to": "notes",
+        "toPort": "data"
+      },
+      "edge-29": {
+        "id": "edge-29",
+        "route": "wire",
+        "from": "generate",
+        "fromPort": "draft",
+        "to": "append",
+        "toPort": "draft"
+      },
+      "edge-30": {
+        "id": "edge-30",
+        "route": "wire",
+        "from": "notes",
+        "fromPort": "out",
+        "to": "append",
+        "toPort": "section"
+      },
+      "edge-31": {
+        "id": "edge-31",
+        "route": "wire",
+        "from": "append",
+        "fromPort": "out",
+        "to": "review",
+        "toPort": "draft"
+      }
+    },
+    "groups": {
+      "stage-0": {
+        "id": "stage-0",
+        "title": "Preparation / processing",
+        "description": "Stage 0. Wires determine execution; folding is presentation only.",
+        "x": 75,
+        "y": 190,
+        "w": 350,
+        "h": 1565,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "send",
+          "entities-text",
+          "candidate-request",
+          "progression-file",
+          "rules-text"
+        ]
+      },
+      "stage-1": {
+        "id": "stage-1",
+        "title": "Native generation",
+        "description": "Stage 1. Wires determine execution; folding is presentation only.",
+        "x": 435,
+        "y": 190,
+        "w": 350,
+        "h": 1245,
+        "color": "#284e67",
+        "collapsed": false,
+        "members": [
+          "generate",
+          "entities",
+          "progression",
+          "rules"
+        ]
+      },
+      "stage-2": {
+        "id": "stage-2",
+        "title": "Response processing",
+        "description": "Stage 2. Wires determine execution; folding is presentation only.",
+        "x": 795,
+        "y": 190,
+        "w": 350,
+        "h": 605,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "draft-scope",
+          "before-experience"
+        ]
+      },
+      "stage-3": {
+        "id": "stage-3",
+        "title": "Preparation / processing",
+        "description": "Stage 3. Wires determine execution; folding is presentation only.",
+        "x": 1155,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "native-source"
+        ]
+      },
+      "stage-4": {
+        "id": "stage-4",
+        "title": "Response processing",
+        "description": "Stage 4. Wires determine execution; folding is presentation only.",
+        "x": 1515,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "candidates"
+        ]
+      },
+      "stage-5": {
+        "id": "stage-5",
+        "title": "Response processing",
+        "description": "Stage 5. Wires determine execution; folding is presentation only.",
+        "x": 1875,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "events"
+        ]
+      },
+      "stage-6": {
+        "id": "stage-6",
+        "title": "Response processing",
+        "description": "Stage 6. Wires determine execution; folding is presentation only.",
+        "x": 2235,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "confirm-each"
+        ]
+      },
+      "stage-7": {
+        "id": "stage-7",
+        "title": "Response processing",
+        "description": "Stage 7. Wires determine execution; folding is presentation only.",
+        "x": 2595,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "confirmed"
+        ]
+      },
+      "stage-8": {
+        "id": "stage-8",
+        "title": "Response processing",
+        "description": "Stage 8. Wires determine execution; folding is presentation only.",
+        "x": 2955,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "progress-events"
+        ]
+      },
+      "stage-9": {
+        "id": "stage-9",
+        "title": "Response processing",
+        "description": "Stage 9. Wires determine execution; folding is presentation only.",
+        "x": 3315,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "award"
+        ]
+      },
+      "stage-10": {
+        "id": "stage-10",
+        "title": "Response processing",
+        "description": "Stage 10. Wires determine execution; folding is presentation only.",
+        "x": 3675,
+        "y": 190,
+        "w": 350,
+        "h": 605,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "after-experience",
+          "save-format"
+        ]
+      },
+      "stage-11": {
+        "id": "stage-11",
+        "title": "Review / accepted staging",
+        "description": "Stage 11. Wires determine execution; folding is presentation only.",
+        "x": 4035,
+        "y": 190,
+        "w": 350,
+        "h": 605,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "experience-pair",
+          "save"
+        ]
+      },
+      "stage-12": {
+        "id": "stage-12",
+        "title": "Response processing",
+        "description": "Stage 12. Wires determine execution; folding is presentation only.",
+        "x": 4395,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "change"
+        ]
+      },
+      "stage-13": {
+        "id": "stage-13",
+        "title": "Response processing",
+        "description": "Stage 13. Wires determine execution; folding is presentation only.",
+        "x": 4755,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "levels"
+        ]
+      },
+      "stage-14": {
+        "id": "stage-14",
+        "title": "Response processing",
+        "description": "Stage 14. Wires determine execution; folding is presentation only.",
+        "x": 5115,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "notes"
+        ]
+      },
+      "stage-15": {
+        "id": "stage-15",
+        "title": "Preparation / processing",
+        "description": "Stage 15. Wires determine execution; folding is presentation only.",
+        "x": 5475,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "append"
+        ]
+      },
+      "stage-16": {
+        "id": "stage-16",
+        "title": "Review / accepted staging",
+        "description": "Stage 16. Wires determine execution; folding is presentation only.",
+        "x": 5835,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "review"
+        ]
+      }
+    },
+    "roles": {
+      "Prose": {
+        "model": null,
+        "profileId": "lattice:active-sillytavern"
+      }
+    },
+    "portals": {},
+    "definitions": {
+      "[\"remastered-lesson-25-confirmation\",1,\"sha256:2d1e276acf38bfe69341e879b4db199560a6ffc417b7641442dbf7d1f569d74e\"]": {
+        "id": "remastered-lesson-25-confirmation",
+        "version": 1,
+        "semanticHash": "sha256:2d1e276acf38bfe69341e879b4db199560a6ffc417b7641442dbf7d1f569d74e",
+        "name": "Confirm one exact occurrence",
+        "description": "Pure processor: no host sources, publication, private grants or settlement. Inspect the typed interface and exposed controls.",
+        "interface": [
+          {
+            "id": "item",
+            "label": "Item",
+            "direction": "input",
+            "kind": "data",
+            "required": true,
+            "cardinality": "one",
+            "boundaryNodeId": "item"
+          },
+          {
+            "id": "result",
+            "label": "Result",
+            "direction": "output",
+            "kind": "data",
+            "required": false,
+            "cardinality": "one",
+            "boundaryNodeId": "result"
+          }
+        ],
+        "parameters": [],
+        "body": {
+          "id": "lesson-25-confirmation-body",
+          "schema": 3,
+          "runtime": 2,
+          "mode": "native-unified",
+          "nodes": {
+            "item": {
+              "id": "item",
+              "type": "subgraph-input",
+              "enabled": true,
+              "x": 100,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "interfacePortId": "item"
+            },
+            "result": {
+              "id": "result",
+              "type": "subgraph-output",
+              "enabled": true,
+              "x": 1540,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "interfacePortId": "result"
+            },
+            "decision": {
+              "id": "decision",
+              "type": "workflow",
+              "operation": "decision",
+              "operationVersion": 1,
+              "title": "Decision",
+              "enabled": true,
+              "x": 460,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "profileId": "lattice:active-sillytavern",
+              "model": null,
+              "modelRole": "decision",
+              "alias": "Decision",
+              "inputKind": "data",
+              "questions": {
+                "actual": {
+                  "type": "noul",
+                  "instructions": "Does this exact candidate evidence establish an actual completed action now? Reject plans, negation, threats, recollection and ambiguous grammar."
+                }
+              },
+              "maxTokens": 2048
+            },
+            "acceptance": {
+              "id": "acceptance",
+              "type": "workflow",
+              "operation": "select-fields",
+              "operationVersion": 1,
+              "title": "Select Fields",
+              "enabled": true,
+              "x": 820,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "alias": "Select Fields",
+              "fields": [
+                {
+                  "name": "accepted",
+                  "path": [
+                    "answers",
+                    "actual",
+                    "accepted"
+                  ]
+                }
+              ]
+            },
+            "single-record": {
+              "id": "single-record",
+              "type": "workflow",
+              "operation": "format",
+              "operationVersion": 1,
+              "title": "Format",
+              "enabled": true,
+              "x": 460,
+              "y": 560,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "alias": "Format",
+              "inputMode": "records",
+              "format": "json",
+              "mapping": "preserve",
+              "fields": [],
+              "schema": "",
+              "columns": [],
+              "separator": "\n",
+              "trailingSeparator": false
+            },
+            "confirm": {
+              "id": "confirm",
+              "type": "workflow",
+              "operation": "confirm-events",
+              "operationVersion": 1,
+              "title": "Confirm Events",
+              "enabled": true,
+              "x": 1180,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "alias": "Confirm Events",
+              "mode": "single-gate"
+            }
+          },
+          "wires": {
+            "edge-1": {
+              "id": "edge-1",
+              "route": "wire",
+              "from": "item",
+              "fromPort": "out",
+              "to": "decision",
+              "toPort": "in"
+            },
+            "edge-2": {
+              "id": "edge-2",
+              "route": "wire",
+              "from": "decision",
+              "fromPort": "out",
+              "to": "acceptance",
+              "toPort": "in"
+            },
+            "edge-3": {
+              "id": "edge-3",
+              "route": "wire",
+              "from": "item",
+              "fromPort": "out",
+              "to": "single-record",
+              "toPort": "in"
+            },
+            "edge-4": {
+              "id": "edge-4",
+              "route": "wire",
+              "from": "single-record",
+              "fromPort": "records",
+              "to": "confirm",
+              "toPort": "events"
+            },
+            "edge-5": {
+              "id": "edge-5",
+              "route": "wire",
+              "from": "acceptance",
+              "fromPort": "out",
+              "to": "confirm",
+              "toPort": "decisions"
+            },
+            "edge-6": {
+              "id": "edge-6",
+              "route": "wire",
+              "from": "confirm",
+              "fromPort": "out",
+              "to": "result",
+              "toPort": "in"
+            }
+          },
+          "groups": {},
+          "roles": {
+            "decision": {
+              "model": null,
+              "profileId": "lattice:active-sillytavern"
+            }
+          },
+          "portals": {},
+          "definitions": {}
+        }
+      }
+    },
+    "template": {
+      "id": "lesson-25",
+      "version": 1
+    },
+    "view": {
+      "x": 0,
+      "y": 0,
+      "zoom": 0.65
+    }
+  }
+}

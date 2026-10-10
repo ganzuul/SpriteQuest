@@ -8,7 +8,9 @@ const folder = new URL('../examples/roleplay/', import.meta.url);
 assert.ok(existsSync(folder), 'thirty complete bundled examples must be delivered as portable files');
 const files = readdirSync(folder).filter(name => name.endsWith('.json'));
 assert.equal(files.length, 37, 'all thirty recipes include their seven separate phase companions');
-const api = await import('../src/workflow/examples.js?v=0.26.0');
+// Archived recipes remain contract fixtures after the visible catalog is remastered.
+const { WORKFLOW_EXAMPLE_DATA } = await import('../src/workflow/example-data.js?v=0.26.0');
+const api = await installerWithCatalog(WORKFLOW_EXAMPLE_DATA);
 const { listWorkflowExamples } = api;
 const entries = listWorkflowExamples().filter(entry => entry.number <= 30);
 assert.equal(entries.length, 30);
@@ -44,7 +46,7 @@ for (const envelope of packages) {
 assert.equal(definitions.size, 6, 'the final lessons ship all six verified embedded definitions');
 for (const [index, entry] of entries.entries()) {
     assert.equal(validateWorkflow(entry.graph).data.callBound, expectedBounds[index], entry.title);
-    assert.deepEqual(Object.keys(entry).sort(), ['goal', 'graph', 'id', 'number', 'title']);
+    assert.deepEqual(Object.keys(entry).sort(), ['goal', 'graph', 'id', 'lesson', 'number', 'title']);
     assert.ok(packages.some(envelope => envelope.graph.id === entry.graph.id));
     assert.ok(entry.graph.description.includes('Inspect:'), 'node-specific teaching notes survive portable export');
 }
@@ -108,14 +110,13 @@ assert.equal(JSON.stringify(settings), beforeUnknown);
 
 // A syntactically portable companion with a missing required boundary input must
 // fail full admission before the already-valid primary can be installed.
-const { WORKFLOW_EXAMPLE_DATA } = await import('../src/workflow/example-data.js?v=0.26.0');
 async function installerWithRecipe(recipe) {
     return installerWithCatalog([recipe]);
 }
 async function installerWithCatalog(catalog) {
-    const fixtureURL = 'data:text/javascript,' + encodeURIComponent(`export const WORKFLOW_EXAMPLE_DATA = ${JSON.stringify(catalog)};`);
+    const fixtureURL = 'data:text/javascript,' + encodeURIComponent(`export const WORKFLOW_EXAMPLE_DATA = ${JSON.stringify(catalog)}; export const REMASTERED_WORKFLOW_EXAMPLE_DATA = WORKFLOW_EXAMPLE_DATA;`);
     const moduleURL = new URL('../src/workflow/examples.js', import.meta.url);
-    const source = readFileSync(moduleURL, 'utf8').replace(/from '(\.\/[^']+)'/g, (_, path) => `from ${JSON.stringify(path.startsWith('./example-data.js') ? fixtureURL : new URL(path, moduleURL).href)}`);
+    const source = readFileSync(moduleURL, 'utf8').replace(/from '(\.\/[^']+)'/g, (_, path) => `from ${JSON.stringify((path.startsWith('./example-data.js') || path.startsWith('./remastered-example-data.js')) ? fixtureURL : new URL(path, moduleURL).href)}`);
     return import('data:text/javascript,' + encodeURIComponent(source));
 }
 const incompleteRecipe = structuredClone(WORKFLOW_EXAMPLE_DATA.find(entry => entry.id === 'continuity-and-voice'));

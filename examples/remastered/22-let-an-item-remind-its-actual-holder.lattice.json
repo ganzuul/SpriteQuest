@@ -1,0 +1,1210 @@
+{
+  "kind": "lattice-workflow",
+  "schema": 2,
+  "minRuntime": 2,
+  "graph": {
+    "id": "remastered-lesson-22",
+    "name": "22. Let an item remind its actual holder",
+    "description": "Match a real item mention, use explicit accepted ownership, and stage one private prompted memory for the actual holder.\n\nAssign this independent copy as Unified and arm Lattice before Send. Ordinary generation uses Active SillyTavern.\nSelect native Rowan and existing accepted native memory episodes associated with the signal lantern. Prompted Memory recall reads that host episode store; the output file cannot seed native memory authority.\nAccepted item-holders must identify Rowan as holder; a mention by another actor grants no ownership. Create actor-private JSON Workflow Data rowan-item-memories as an initially empty output array.\n\nOpen Let an item remind its actual holder and inspect the named pins.\nThis reminder pipeline watches the exact just-generated owned native Draft, after generation. A real on-page signal-lantern mention triggers current post presence, native episode recall and private save staging. It stages a remembered event for later portrayal; it does not inject Guidance into this generation.\nThis root is scoped to Rowan: another holder yields no matching private proposal.\nDefault recall/allowCreate false requires an existing permitted memory. Opt-in exercise may explicitly permit a new pending invented memory.\nReview the private receipt separately; private memory never enters public notes.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: At most 2 auxiliary requests: cast interpretation and prompted memory when holder/presence match; one ordinary native generation.\nCheckpoints:\nWrite to File.receipt: Only Rowan’s private target receives a pending memory with canonical mention evidence.",
+    "schema": 3,
+    "runtime": 2,
+    "mode": "native-unified",
+    "nodes": {
+      "send": {
+        "id": "send",
+        "type": "workflow",
+        "operation": "on-send",
+        "operationVersion": 1,
+        "title": "On Send",
+        "enabled": true,
+        "x": 100,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-0",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "On Send"
+      },
+      "generate": {
+        "id": "generate",
+        "type": "workflow",
+        "operation": "generate-reply",
+        "operationVersion": 1,
+        "title": "Generate Reply · SillyTavern",
+        "enabled": true,
+        "x": 460,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-1",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Generate Reply · SillyTavern",
+        "budgetTokens": 768
+      },
+      "review": {
+        "id": "review",
+        "type": "workflow",
+        "operation": "review-publish",
+        "operationVersion": 1,
+        "title": "Review / Publish",
+        "enabled": true,
+        "x": 820,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-2",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Review / Publish"
+      },
+      "draft-scope": {
+        "id": "draft-scope",
+        "type": "workflow",
+        "operation": "select-fields",
+        "operationVersion": 1,
+        "title": "Select Fields",
+        "enabled": true,
+        "x": 820,
+        "y": 560,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-2",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "post",
+        "alias": "Select Fields · owned native identity",
+        "fields": [
+          {
+            "name": "sourceId",
+            "path": [
+              "runId"
+            ]
+          },
+          {
+            "name": "revision",
+            "path": [
+              "runId"
+            ]
+          },
+          {
+            "name": "sceneId",
+            "path": [
+              "source",
+              "chatId"
+            ]
+          },
+          {
+            "name": "visibility",
+            "path": [
+              "publicVisibility"
+            ],
+            "required": false,
+            "default": "public"
+          }
+        ]
+      },
+      "mention-source": {
+        "id": "mention-source",
+        "type": "workflow",
+        "operation": "draft-event-source",
+        "operationVersion": 1,
+        "title": "Draft Event Source",
+        "enabled": true,
+        "x": 1180,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-3",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "post",
+        "alias": "Draft Event Source"
+      },
+      "entities-text": {
+        "id": "entities-text",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 100,
+        "y": 560,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-0",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "post",
+        "alias": "Text · authored input",
+        "text": "{\"actorIds\":[\"character:rowan.png\",\"character:iris.png\"],\"itemIds\":[\"signal-lantern\"]}"
+      },
+      "entities": {
+        "id": "entities",
+        "type": "workflow",
+        "operation": "json-decode",
+        "operationVersion": 1,
+        "title": "JSON Decode",
+        "enabled": true,
+        "x": 460,
+        "y": 560,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-1",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "post",
+        "alias": "JSON Decode",
+        "mode": "parse",
+        "schema": ""
+      },
+      "mention": {
+        "id": "mention",
+        "type": "workflow",
+        "operation": "item-mention-trigger",
+        "operationVersion": 1,
+        "title": "Item Mention Trigger",
+        "enabled": true,
+        "x": 1540,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-4",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "post",
+        "alias": "Item Mention Trigger",
+        "actorId": "character:rowan.png",
+        "itemId": "signal-lantern",
+        "aliases": [
+          "signal lantern",
+          "lantern"
+        ],
+        "watch": "draft",
+        "activation": "once-per-source",
+        "caseSensitive": false
+      },
+      "holders-file": {
+        "id": "holders-file",
+        "type": "workflow",
+        "operation": "read-file",
+        "operationVersion": 1,
+        "title": "Read File",
+        "enabled": true,
+        "x": 100,
+        "y": 880,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-0",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "post",
+        "alias": "Read File · authorized live target",
+        "targetId": "accepted-item-holders",
+        "schema": "",
+        "columns": [],
+        "actorScope": "selected",
+        "actorId": ""
+      },
+      "holders": {
+        "id": "holders",
+        "type": "workflow",
+        "operation": "json-decode",
+        "operationVersion": 1,
+        "title": "JSON Decode",
+        "enabled": true,
+        "x": 460,
+        "y": 880,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-1",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "post",
+        "alias": "JSON Decode",
+        "mode": "parse",
+        "schema": ""
+      },
+      "holder": {
+        "id": "holder",
+        "type": "workflow",
+        "operation": "current-holder",
+        "operationVersion": 1,
+        "title": "Current Holder",
+        "enabled": true,
+        "x": 1900,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-5",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "post",
+        "alias": "Current Holder"
+      },
+      "actor-events": {
+        "id": "actor-events",
+        "type": "workflow",
+        "operation": "collection",
+        "operationVersion": 1,
+        "title": "Collection",
+        "enabled": true,
+        "x": 2260,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-6",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "post",
+        "alias": "Collection",
+        "mode": "filter",
+        "collectionPath": [],
+        "fieldPath": [
+          "holderId"
+        ],
+        "value": "character:rowan.png",
+        "operator": "equals",
+        "missingPolicy": "hold",
+        "thresholds": "[]",
+        "mergePolicy": "keep-all",
+        "identityPath": [
+          "id"
+        ]
+      },
+      "event-count": {
+        "id": "event-count",
+        "type": "workflow",
+        "operation": "collection",
+        "operationVersion": 1,
+        "title": "Collection",
+        "enabled": true,
+        "x": 2620,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-7",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "post",
+        "alias": "Collection",
+        "mode": "count",
+        "collectionPath": [],
+        "fieldPath": [],
+        "value": "",
+        "operator": "equals",
+        "missingPolicy": "hold",
+        "thresholds": "[]",
+        "mergePolicy": "keep-all",
+        "identityPath": [
+          "id"
+        ]
+      },
+      "has-event": {
+        "id": "has-event",
+        "type": "workflow",
+        "operation": "condition",
+        "operationVersion": 1,
+        "title": "Condition",
+        "enabled": true,
+        "x": 2980,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-8",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "post",
+        "alias": "Condition",
+        "path": [],
+        "operator": "greater-than",
+        "value": 0
+      },
+      "mention-route": {
+        "id": "mention-route",
+        "type": "workflow",
+        "operation": "branch",
+        "operationVersion": 1,
+        "title": "Branch",
+        "enabled": true,
+        "x": 3340,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-9",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "artifactKind": "data",
+        "phase": "post",
+        "alias": "Branch"
+      },
+      "one-event": {
+        "id": "one-event",
+        "type": "workflow",
+        "operation": "collection",
+        "operationVersion": 1,
+        "title": "Collection",
+        "enabled": true,
+        "x": 3700,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-10",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "post",
+        "alias": "Collection",
+        "mode": "lookup",
+        "collectionPath": [],
+        "fieldPath": [
+          "holderId"
+        ],
+        "value": "character:rowan.png",
+        "operator": "equals",
+        "missingPolicy": "hold",
+        "thresholds": "[]",
+        "mergePolicy": "keep-all",
+        "identityPath": [
+          "id"
+        ]
+      },
+      "owned-mention": {
+        "id": "owned-mention",
+        "type": "workflow",
+        "operation": "select-fields",
+        "operationVersion": 1,
+        "title": "Select Fields",
+        "enabled": true,
+        "x": 4060,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-11",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "post",
+        "alias": "Select Fields",
+        "fields": [
+          {
+            "name": "schemaVersion",
+            "path": [
+              "value",
+              "schemaVersion"
+            ],
+            "required": true
+          },
+          {
+            "name": "recordType",
+            "path": [
+              "value",
+              "recordType"
+            ],
+            "required": true
+          },
+          {
+            "name": "eventId",
+            "path": [
+              "value",
+              "eventId"
+            ],
+            "required": true
+          },
+          {
+            "name": "eventType",
+            "path": [
+              "value",
+              "eventType"
+            ],
+            "required": true
+          },
+          {
+            "name": "sceneId",
+            "path": [
+              "value",
+              "sceneId"
+            ],
+            "required": true
+          },
+          {
+            "name": "source",
+            "path": [
+              "value",
+              "source"
+            ],
+            "required": true
+          },
+          {
+            "name": "actorId",
+            "path": [
+              "value",
+              "actorId"
+            ],
+            "required": true
+          },
+          {
+            "name": "objectId",
+            "path": [
+              "value",
+              "objectId"
+            ],
+            "required": false
+          },
+          {
+            "name": "itemId",
+            "path": [
+              "value",
+              "itemId"
+            ],
+            "required": false
+          },
+          {
+            "name": "position",
+            "path": [
+              "value",
+              "position"
+            ],
+            "required": true
+          },
+          {
+            "name": "evidence",
+            "path": [
+              "value",
+              "evidence"
+            ],
+            "required": true
+          },
+          {
+            "name": "semantics",
+            "path": [
+              "value",
+              "semantics"
+            ],
+            "required": true
+          },
+          {
+            "name": "status",
+            "path": [
+              "value",
+              "status"
+            ],
+            "required": true
+          },
+          {
+            "name": "acceptance",
+            "path": [
+              "value",
+              "acceptance"
+            ],
+            "required": true
+          },
+          {
+            "name": "confirmation",
+            "path": [
+              "value",
+              "confirmation"
+            ],
+            "required": false
+          },
+          {
+            "name": "holderId",
+            "path": [
+              "value",
+              "holderId"
+            ],
+            "required": false
+          }
+        ]
+      },
+      "cast-request": {
+        "id": "cast-request",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 100,
+        "y": 1200,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-0",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "post",
+        "alias": "Text",
+        "text": "Return exactly {sceneId,sourceId,revision,actors:[{actorId,status,evidence}]}. Copy identity from data. Check only character:rowan.png. Present requires exact current scene quote and actual participation, not name mention, remembered actor, card text or offscreen speculation. Status is present, absent or unresolved."
+      },
+      "cast": {
+        "id": "cast",
+        "type": "workflow",
+        "operation": "model-call",
+        "operationVersion": 1,
+        "title": "Model Call",
+        "enabled": true,
+        "x": 1540,
+        "y": 560,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-4",
+        "profileId": "lattice:active-sillytavern",
+        "model": null,
+        "modelRole": "Prose",
+        "phase": "post",
+        "alias": "Model Call",
+        "instructions": "Interpret genuine scene participation from the unchanged supplied source; copy its IDs and evidence exactly.",
+        "outputKind": "data",
+        "schema": "",
+        "maxTokens": 2048
+      },
+      "cast-presence-0": {
+        "id": "cast-presence-0",
+        "type": "workflow",
+        "operation": "scene-presence",
+        "operationVersion": 1,
+        "title": "Scene Presence",
+        "enabled": true,
+        "x": 1900,
+        "y": 560,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-5",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "post",
+        "alias": "Scene Presence",
+        "actorId": "character:rowan.png"
+      },
+      "rowan-present": {
+        "id": "rowan-present",
+        "type": "workflow",
+        "operation": "condition",
+        "operationVersion": 1,
+        "title": "Condition",
+        "enabled": true,
+        "x": 2260,
+        "y": 560,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-6",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "post",
+        "alias": "Condition",
+        "path": [
+          "status"
+        ],
+        "operator": "equals",
+        "value": "present"
+      },
+      "rowan-route": {
+        "id": "rowan-route",
+        "type": "workflow",
+        "operation": "branch",
+        "operationVersion": 1,
+        "title": "Branch",
+        "enabled": true,
+        "x": 2620,
+        "y": 560,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-7",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "artifactKind": "data",
+        "phase": "post",
+        "alias": "Branch"
+      },
+      "remember": {
+        "id": "remember",
+        "type": "workflow",
+        "operation": "prompted-memory",
+        "operationVersion": 1,
+        "title": "Prompted Memory",
+        "enabled": true,
+        "x": 4420,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-12",
+        "profileId": "lattice:active-sillytavern",
+        "model": null,
+        "modelRole": "promptedMemory",
+        "phase": "post",
+        "alias": "Prompted Memory",
+        "actorId": "character:rowan.png",
+        "mode": "recall",
+        "prompt": "Select one of Rowan’s supplied authorized existing memories associated with the signal lantern. No invented memory or partner’s private history.",
+        "allowCreate": false,
+        "maxTokens": 1024
+      },
+      "memories": {
+        "id": "memories",
+        "type": "workflow",
+        "operation": "read-file",
+        "operationVersion": 1,
+        "title": "Read File",
+        "enabled": true,
+        "x": 2980,
+        "y": 560,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-8",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "post",
+        "alias": "Read File",
+        "targetId": "rowan-item-memories",
+        "schema": "",
+        "columns": [],
+        "actorScope": "presence",
+        "actorId": "character:rowan.png"
+      },
+      "save": {
+        "id": "save",
+        "type": "workflow",
+        "operation": "write-file",
+        "operationVersion": 1,
+        "title": "Write to File",
+        "enabled": true,
+        "x": 4780,
+        "y": 240,
+        "w": 300,
+        "h": 228,
+        "inGroup": "stage-13",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "post",
+        "alias": "Write to File",
+        "mode": "add-unique",
+        "collectionPath": "",
+        "missingPath": "error",
+        "key": "eventId",
+        "fieldPolicy": "merge",
+        "fields": [],
+        "schema": "",
+        "columns": [],
+        "separator": "\n",
+        "emptyPolicy": "omit",
+        "trailingSeparator": false,
+        "actorScope": "presence",
+        "actorId": "character:rowan.png"
+      },
+      "lesson-note": {
+        "id": "lesson-note",
+        "type": "note",
+        "title": "Lesson instructions",
+        "enabled": true,
+        "x": 100,
+        "y": 0,
+        "w": 900,
+        "h": 180,
+        "content": "Match a real item mention, use explicit accepted ownership, and stage one private prompted memory for the actual holder.\n\nAssign this independent copy as Unified and arm Lattice before Send. Ordinary generation uses Active SillyTavern.\nSelect native Rowan and existing accepted native memory episodes associated with the signal lantern. Prompted Memory recall reads that host episode store; the output file cannot seed native memory authority.\nAccepted item-holders must identify Rowan as holder; a mention by another actor grants no ownership. Create actor-private JSON Workflow Data rowan-item-memories as an initially empty output array.\n\nOpen Let an item remind its actual holder and inspect the named pins.\nThis reminder pipeline watches the exact just-generated owned native Draft, after generation. A real on-page signal-lantern mention triggers current post presence, native episode recall and private save staging. It stages a remembered event for later portrayal; it does not inject Guidance into this generation.\nThis root is scoped to Rowan: another holder yields no matching private proposal.\nDefault recall/allowCreate false requires an existing permitted memory. Opt-in exercise may explicitly permit a new pending invented memory.\nReview the private receipt separately; private memory never enters public notes.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: At most 2 auxiliary requests: cast interpretation and prompted memory when holder/presence match; one ordinary native generation.\nCheckpoints:\nWrite to File.receipt: Only Rowan’s private target receives a pending memory with canonical mention evidence.",
+        "commentFrame": true,
+        "moveContents": false
+      }
+    },
+    "wires": {
+      "edge-1": {
+        "id": "edge-1",
+        "route": "wire",
+        "from": "send",
+        "fromPort": "activation",
+        "to": "generate",
+        "toPort": "activation"
+      },
+      "edge-2": {
+        "id": "edge-2",
+        "route": "wire",
+        "from": "generate",
+        "fromPort": "metadata",
+        "to": "draft-scope",
+        "toPort": "in"
+      },
+      "edge-3": {
+        "id": "edge-3",
+        "route": "wire",
+        "from": "generate",
+        "fromPort": "draft",
+        "to": "mention-source",
+        "toPort": "in"
+      },
+      "edge-4": {
+        "id": "edge-4",
+        "route": "wire",
+        "from": "draft-scope",
+        "fromPort": "out",
+        "to": "mention-source",
+        "toPort": "scope"
+      },
+      "edge-5": {
+        "id": "edge-5",
+        "route": "wire",
+        "from": "entities-text",
+        "fromPort": "out",
+        "to": "entities",
+        "toPort": "in"
+      },
+      "edge-6": {
+        "id": "edge-6",
+        "route": "wire",
+        "from": "mention-source",
+        "fromPort": "out",
+        "to": "mention",
+        "toPort": "source"
+      },
+      "edge-7": {
+        "id": "edge-7",
+        "route": "wire",
+        "from": "entities",
+        "fromPort": "out",
+        "to": "mention",
+        "toPort": "entities"
+      },
+      "edge-8": {
+        "id": "edge-8",
+        "route": "wire",
+        "from": "holders-file",
+        "fromPort": "text",
+        "to": "holders",
+        "toPort": "in"
+      },
+      "edge-9": {
+        "id": "edge-9",
+        "route": "wire",
+        "from": "mention",
+        "fromPort": "out",
+        "to": "holder",
+        "toPort": "events"
+      },
+      "edge-10": {
+        "id": "edge-10",
+        "route": "wire",
+        "from": "holders",
+        "fromPort": "out",
+        "to": "holder",
+        "toPort": "holders"
+      },
+      "edge-11": {
+        "id": "edge-11",
+        "route": "wire",
+        "from": "holder",
+        "fromPort": "events",
+        "to": "actor-events",
+        "toPort": "in"
+      },
+      "edge-12": {
+        "id": "edge-12",
+        "route": "wire",
+        "from": "actor-events",
+        "fromPort": "out",
+        "to": "event-count",
+        "toPort": "in"
+      },
+      "edge-13": {
+        "id": "edge-13",
+        "route": "wire",
+        "from": "event-count",
+        "fromPort": "out",
+        "to": "has-event",
+        "toPort": "in"
+      },
+      "edge-14": {
+        "id": "edge-14",
+        "route": "wire",
+        "from": "actor-events",
+        "fromPort": "out",
+        "to": "mention-route",
+        "toPort": "in"
+      },
+      "edge-15": {
+        "id": "edge-15",
+        "route": "wire",
+        "from": "has-event",
+        "fromPort": "out",
+        "to": "mention-route",
+        "toPort": "condition"
+      },
+      "edge-16": {
+        "id": "edge-16",
+        "route": "wire",
+        "from": "mention-route",
+        "fromPort": "yes",
+        "to": "one-event",
+        "toPort": "in"
+      },
+      "edge-17": {
+        "id": "edge-17",
+        "route": "wire",
+        "from": "one-event",
+        "fromPort": "out",
+        "to": "owned-mention",
+        "toPort": "in"
+      },
+      "edge-18": {
+        "id": "edge-18",
+        "route": "wire",
+        "from": "cast-request",
+        "fromPort": "out",
+        "to": "cast",
+        "toPort": "prompt"
+      },
+      "edge-19": {
+        "id": "edge-19",
+        "route": "wire",
+        "from": "mention-source",
+        "fromPort": "out",
+        "to": "cast",
+        "toPort": "data"
+      },
+      "edge-20": {
+        "id": "edge-20",
+        "route": "wire",
+        "from": "cast",
+        "fromPort": "out",
+        "to": "cast-presence-0",
+        "toPort": "in"
+      },
+      "edge-21": {
+        "id": "edge-21",
+        "route": "wire",
+        "from": "cast-presence-0",
+        "fromPort": "out",
+        "to": "rowan-present",
+        "toPort": "in"
+      },
+      "edge-22": {
+        "id": "edge-22",
+        "route": "wire",
+        "from": "cast-presence-0",
+        "fromPort": "out",
+        "to": "rowan-route",
+        "toPort": "in"
+      },
+      "edge-23": {
+        "id": "edge-23",
+        "route": "wire",
+        "from": "rowan-present",
+        "fromPort": "out",
+        "to": "rowan-route",
+        "toPort": "condition"
+      },
+      "edge-24": {
+        "id": "edge-24",
+        "route": "wire",
+        "from": "owned-mention",
+        "fromPort": "out",
+        "to": "remember",
+        "toPort": "event"
+      },
+      "edge-25": {
+        "id": "edge-25",
+        "route": "wire",
+        "from": "rowan-route",
+        "fromPort": "yes",
+        "to": "remember",
+        "toPort": "presence"
+      },
+      "edge-26": {
+        "id": "edge-26",
+        "route": "wire",
+        "from": "rowan-route",
+        "fromPort": "yes",
+        "to": "memories",
+        "toPort": "presence"
+      },
+      "edge-27": {
+        "id": "edge-27",
+        "route": "wire",
+        "from": "rowan-route",
+        "fromPort": "yes",
+        "to": "save",
+        "toPort": "presence"
+      },
+      "edge-28": {
+        "id": "edge-28",
+        "route": "wire",
+        "from": "memories",
+        "fromPort": "reference",
+        "to": "save",
+        "toPort": "reference"
+      },
+      "edge-29": {
+        "id": "edge-29",
+        "route": "wire",
+        "from": "remember",
+        "fromPort": "out",
+        "to": "save",
+        "toPort": "records"
+      },
+      "edge-30": {
+        "id": "edge-30",
+        "route": "wire",
+        "from": "owned-mention",
+        "fromPort": "out",
+        "to": "save",
+        "toPort": "evidence"
+      },
+      "edge-31": {
+        "id": "edge-31",
+        "route": "wire",
+        "from": "generate",
+        "fromPort": "draft",
+        "to": "review",
+        "toPort": "draft"
+      }
+    },
+    "groups": {
+      "stage-0": {
+        "id": "stage-0",
+        "title": "Preparation / processing",
+        "description": "Stage 0. Wires determine execution; folding is presentation only.",
+        "x": 75,
+        "y": 190,
+        "w": 350,
+        "h": 1245,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "send",
+          "entities-text",
+          "holders-file",
+          "cast-request"
+        ]
+      },
+      "stage-1": {
+        "id": "stage-1",
+        "title": "Native generation",
+        "description": "Stage 1. Wires determine execution; folding is presentation only.",
+        "x": 435,
+        "y": 190,
+        "w": 350,
+        "h": 925,
+        "color": "#284e67",
+        "collapsed": false,
+        "members": [
+          "generate",
+          "entities",
+          "holders"
+        ]
+      },
+      "stage-2": {
+        "id": "stage-2",
+        "title": "Review / accepted staging",
+        "description": "Stage 2. Wires determine execution; folding is presentation only.",
+        "x": 795,
+        "y": 190,
+        "w": 350,
+        "h": 605,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "review",
+          "draft-scope"
+        ]
+      },
+      "stage-3": {
+        "id": "stage-3",
+        "title": "Response processing",
+        "description": "Stage 3. Wires determine execution; folding is presentation only.",
+        "x": 1155,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "mention-source"
+        ]
+      },
+      "stage-4": {
+        "id": "stage-4",
+        "title": "Response processing",
+        "description": "Stage 4. Wires determine execution; folding is presentation only.",
+        "x": 1515,
+        "y": 190,
+        "w": 350,
+        "h": 605,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "mention",
+          "cast"
+        ]
+      },
+      "stage-5": {
+        "id": "stage-5",
+        "title": "Response processing",
+        "description": "Stage 5. Wires determine execution; folding is presentation only.",
+        "x": 1875,
+        "y": 190,
+        "w": 350,
+        "h": 605,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "holder",
+          "cast-presence-0"
+        ]
+      },
+      "stage-6": {
+        "id": "stage-6",
+        "title": "Response processing",
+        "description": "Stage 6. Wires determine execution; folding is presentation only.",
+        "x": 2235,
+        "y": 190,
+        "w": 350,
+        "h": 605,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "actor-events",
+          "rowan-present"
+        ]
+      },
+      "stage-7": {
+        "id": "stage-7",
+        "title": "Response processing",
+        "description": "Stage 7. Wires determine execution; folding is presentation only.",
+        "x": 2595,
+        "y": 190,
+        "w": 350,
+        "h": 605,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "event-count",
+          "rowan-route"
+        ]
+      },
+      "stage-8": {
+        "id": "stage-8",
+        "title": "Response processing",
+        "description": "Stage 8. Wires determine execution; folding is presentation only.",
+        "x": 2955,
+        "y": 190,
+        "w": 350,
+        "h": 605,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "has-event",
+          "memories"
+        ]
+      },
+      "stage-9": {
+        "id": "stage-9",
+        "title": "Response processing",
+        "description": "Stage 9. Wires determine execution; folding is presentation only.",
+        "x": 3315,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "mention-route"
+        ]
+      },
+      "stage-10": {
+        "id": "stage-10",
+        "title": "Response processing",
+        "description": "Stage 10. Wires determine execution; folding is presentation only.",
+        "x": 3675,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "one-event"
+        ]
+      },
+      "stage-11": {
+        "id": "stage-11",
+        "title": "Response processing",
+        "description": "Stage 11. Wires determine execution; folding is presentation only.",
+        "x": 4035,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "owned-mention"
+        ]
+      },
+      "stage-12": {
+        "id": "stage-12",
+        "title": "Response processing",
+        "description": "Stage 12. Wires determine execution; folding is presentation only.",
+        "x": 4395,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "remember"
+        ]
+      },
+      "stage-13": {
+        "id": "stage-13",
+        "title": "Review / accepted staging",
+        "description": "Stage 13. Wires determine execution; folding is presentation only.",
+        "x": 4755,
+        "y": 190,
+        "w": 350,
+        "h": 303,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "save"
+        ]
+      }
+    },
+    "roles": {
+      "Prose": {
+        "model": null,
+        "profileId": "lattice:active-sillytavern"
+      },
+      "promptedMemory": {
+        "model": null,
+        "profileId": "lattice:active-sillytavern"
+      }
+    },
+    "portals": {},
+    "definitions": {},
+    "template": {
+      "id": "lesson-22",
+      "version": 1
+    },
+    "view": {
+      "x": 0,
+      "y": 0,
+      "zoom": 0.65
+    }
+  }
+}

@@ -19,7 +19,7 @@ It runs inside SillyTavern. A unified workflow prepares guidance, uses it for th
 - **Actor memory and state:** reflect on supplied evidence, express optional behavior guidance, internalize settled events, and track deterministic consequences.
 - **Reusable writing tools:** wrap a sequence in a subgraph with named inputs and outputs, then use it in other workflows.
 
-These are combinations of the shipped tools. **File → Open examples…** offers unified story flows alongside the original roleplay lessons. Examples include prose-and-notes chains, item effects, story-time triggers, generic progression and scoped actor memory. Each opens as an editable copy with its own setup instructions. The workflow JSON examples below also explore individual capabilities.
+These are combinations of the shipped tools. **File → Open examples…** offers [30 numbered unified lessons](docs/examples.md), searchable by goal or node technique and filterable by difficulty. Lessons include prose-and-notes chains, item effects, story-time triggers, generic progression and scoped actor memory. Each opens as an editable copy with its own setup instructions. The workflow JSON examples below also explore individual capabilities.
 
 ## Key features
 

@@ -1,0 +1,478 @@
+{
+  "kind": "lattice-workflow",
+  "schema": 2,
+  "minRuntime": 2,
+  "graph": {
+    "id": "remastered-lesson-14",
+    "name": "14. Give every clue its own explanation",
+    "description": "Map a bounded ordered clue collection through a pure explanation helper.\n\nAssign this independent copy as Unified and arm Lattice before Send. Ordinary generation uses Active SillyTavern.\n\nOpen Give every clue its own explanation and inspect the named pins.\nInspect three input clues and their ordered helper results.\nSet ClueAnalyst under For Each helper bindings; the per-iteration bound is one call.\nA fourth clue exceeds the explicit limit and holds without silently processing an unbounded list.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: At most 3 auxiliary Model Calls: 3 iterations × 1. One ordinary native generation.\nCheckpoints:\nFor Each.out: Three ordered results preserve clue identity and label interpretation.",
+    "schema": 3,
+    "runtime": 2,
+    "mode": "native-unified",
+    "nodes": {
+      "send": {
+        "id": "send",
+        "type": "workflow",
+        "operation": "on-send",
+        "operationVersion": 1,
+        "title": "On Send",
+        "enabled": true,
+        "x": 100,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-0",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "On Send"
+      },
+      "generate": {
+        "id": "generate",
+        "type": "workflow",
+        "operation": "generate-reply",
+        "operationVersion": 1,
+        "title": "Generate Reply · SillyTavern",
+        "enabled": true,
+        "x": 460,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-1",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Generate Reply · SillyTavern",
+        "budgetTokens": 768
+      },
+      "review": {
+        "id": "review",
+        "type": "workflow",
+        "operation": "review-publish",
+        "operationVersion": 1,
+        "title": "Review / Publish",
+        "enabled": true,
+        "x": 1900,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-5",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Review / Publish"
+      },
+      "clues-text": {
+        "id": "clues-text",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 100,
+        "y": 560,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-0",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "pre",
+        "alias": "Text · authored input",
+        "text": "[{\"id\":\"wet-boots\",\"quote\":\"The guard’s boots drip seawater.\"},{\"id\":\"warm-wax\",\"quote\":\"The broken seal is still warm.\"},{\"id\":\"quiet-bell\",\"quote\":\"The bell rope lies slack.\"}]"
+      },
+      "clues": {
+        "id": "clues",
+        "type": "workflow",
+        "operation": "json-decode",
+        "operationVersion": 1,
+        "title": "JSON Decode",
+        "enabled": true,
+        "x": 460,
+        "y": 560,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-1",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "pre",
+        "alias": "JSON Decode",
+        "mode": "parse",
+        "schema": ""
+      },
+      "explain-each": {
+        "id": "explain-each",
+        "type": "workflow",
+        "operation": "for-each",
+        "operationVersion": 1,
+        "title": "For Each",
+        "enabled": true,
+        "x": 820,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-2",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "For Each",
+        "helper": {
+          "id": "remastered-clue-explanation",
+          "version": 1,
+          "semanticHash": "sha256:0793c1cf04da04f61974108c91312ca0ba5b43464f808f23c1f96cfe2da85dcb"
+        },
+        "limit": 3,
+        "requestBoundPerIteration": 1,
+        "mode": "map",
+        "roleOverrides": {
+          "ClueAnalyst": {
+            "profileId": "lattice:active-sillytavern"
+          }
+        }
+      },
+      "notes": {
+        "id": "notes",
+        "type": "workflow",
+        "operation": "compose",
+        "operationVersion": 1,
+        "title": "Compose",
+        "enabled": true,
+        "x": 1180,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-3",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "post",
+        "alias": "Compose",
+        "mode": "template",
+        "outputKind": "text",
+        "template": "<details><summary>Bounded For Each and helper model bindings</summary>\n{{data:}}\n</details>",
+        "sections": [],
+        "separator": "\n\n"
+      },
+      "append": {
+        "id": "append",
+        "type": "workflow",
+        "operation": "append",
+        "operationVersion": 1,
+        "title": "Append",
+        "enabled": true,
+        "x": 1540,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-4",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Append",
+        "sectionId": "lesson-14",
+        "separator": "\n\n"
+      },
+      "lesson-note": {
+        "id": "lesson-note",
+        "type": "note",
+        "title": "Lesson instructions",
+        "enabled": true,
+        "x": 100,
+        "y": 0,
+        "w": 900,
+        "h": 180,
+        "content": "Map a bounded ordered clue collection through a pure explanation helper.\n\nAssign this independent copy as Unified and arm Lattice before Send. Ordinary generation uses Active SillyTavern.\n\nOpen Give every clue its own explanation and inspect the named pins.\nInspect three input clues and their ordered helper results.\nSet ClueAnalyst under For Each helper bindings; the per-iteration bound is one call.\nA fourth clue exceeds the explicit limit and holds without silently processing an unbounded list.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: At most 3 auxiliary Model Calls: 3 iterations × 1. One ordinary native generation.\nCheckpoints:\nFor Each.out: Three ordered results preserve clue identity and label interpretation.",
+        "commentFrame": true,
+        "moveContents": false
+      }
+    },
+    "wires": {
+      "edge-1": {
+        "id": "edge-1",
+        "route": "wire",
+        "from": "send",
+        "fromPort": "activation",
+        "to": "generate",
+        "toPort": "activation"
+      },
+      "edge-2": {
+        "id": "edge-2",
+        "route": "wire",
+        "from": "clues-text",
+        "fromPort": "out",
+        "to": "clues",
+        "toPort": "in"
+      },
+      "edge-3": {
+        "id": "edge-3",
+        "route": "wire",
+        "from": "clues",
+        "fromPort": "out",
+        "to": "explain-each",
+        "toPort": "in"
+      },
+      "edge-4": {
+        "id": "edge-4",
+        "route": "wire",
+        "from": "explain-each",
+        "fromPort": "out",
+        "to": "notes",
+        "toPort": "data"
+      },
+      "edge-5": {
+        "id": "edge-5",
+        "route": "wire",
+        "from": "generate",
+        "fromPort": "draft",
+        "to": "append",
+        "toPort": "draft"
+      },
+      "edge-6": {
+        "id": "edge-6",
+        "route": "wire",
+        "from": "notes",
+        "fromPort": "out",
+        "to": "append",
+        "toPort": "section"
+      },
+      "edge-7": {
+        "id": "edge-7",
+        "route": "wire",
+        "from": "append",
+        "fromPort": "out",
+        "to": "review",
+        "toPort": "draft"
+      }
+    },
+    "groups": {
+      "stage-0": {
+        "id": "stage-0",
+        "title": "Preparation / processing",
+        "description": "Stage 0. Wires determine execution; folding is presentation only.",
+        "x": 75,
+        "y": 190,
+        "w": 350,
+        "h": 605,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "send",
+          "clues-text"
+        ]
+      },
+      "stage-1": {
+        "id": "stage-1",
+        "title": "Native generation",
+        "description": "Stage 1. Wires determine execution; folding is presentation only.",
+        "x": 435,
+        "y": 190,
+        "w": 350,
+        "h": 605,
+        "color": "#284e67",
+        "collapsed": false,
+        "members": [
+          "generate",
+          "clues"
+        ]
+      },
+      "stage-2": {
+        "id": "stage-2",
+        "title": "Preparation / processing",
+        "description": "Stage 2. Wires determine execution; folding is presentation only.",
+        "x": 795,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "explain-each"
+        ]
+      },
+      "stage-3": {
+        "id": "stage-3",
+        "title": "Response processing",
+        "description": "Stage 3. Wires determine execution; folding is presentation only.",
+        "x": 1155,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "notes"
+        ]
+      },
+      "stage-4": {
+        "id": "stage-4",
+        "title": "Preparation / processing",
+        "description": "Stage 4. Wires determine execution; folding is presentation only.",
+        "x": 1515,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "append"
+        ]
+      },
+      "stage-5": {
+        "id": "stage-5",
+        "title": "Review / accepted staging",
+        "description": "Stage 5. Wires determine execution; folding is presentation only.",
+        "x": 1875,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "review"
+        ]
+      }
+    },
+    "roles": {},
+    "portals": {},
+    "definitions": {
+      "[\"remastered-clue-explanation\",1,\"sha256:0793c1cf04da04f61974108c91312ca0ba5b43464f808f23c1f96cfe2da85dcb\"]": {
+        "id": "remastered-clue-explanation",
+        "version": 1,
+        "semanticHash": "sha256:0793c1cf04da04f61974108c91312ca0ba5b43464f808f23c1f96cfe2da85dcb",
+        "name": "Explain one public clue",
+        "description": "Pure processor: no host sources, publication, private grants or settlement. Inspect the typed interface and exposed controls.",
+        "interface": [
+          {
+            "id": "item",
+            "label": "Item",
+            "direction": "input",
+            "kind": "data",
+            "required": true,
+            "cardinality": "one",
+            "boundaryNodeId": "item"
+          },
+          {
+            "id": "result",
+            "label": "Result",
+            "direction": "output",
+            "kind": "data",
+            "required": false,
+            "cardinality": "one",
+            "boundaryNodeId": "result"
+          }
+        ],
+        "parameters": [],
+        "body": {
+          "id": "clue-explanation-body",
+          "schema": 3,
+          "runtime": 2,
+          "mode": "native-unified",
+          "nodes": {
+            "item": {
+              "id": "item",
+              "type": "subgraph-input",
+              "enabled": true,
+              "x": 100,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "interfacePortId": "item"
+            },
+            "result": {
+              "id": "result",
+              "type": "subgraph-output",
+              "enabled": true,
+              "x": 820,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "interfacePortId": "result"
+            },
+            "prompt": {
+              "id": "prompt",
+              "type": "workflow",
+              "operation": "text",
+              "operationVersion": 1,
+              "title": "Text",
+              "enabled": true,
+              "x": 100,
+              "y": 560,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "alias": "Text",
+              "text": "Explain one possible significance of this supplied public clue. Return {id,quote,interpretation}; copy id and quote exactly and label the explanation as an interpretation."
+            },
+            "explain": {
+              "id": "explain",
+              "type": "workflow",
+              "operation": "model-call",
+              "operationVersion": 1,
+              "title": "Model Call",
+              "enabled": true,
+              "x": 460,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "profileId": "lattice:active-sillytavern",
+              "model": null,
+              "modelRole": "ClueAnalyst",
+              "alias": "Model Call",
+              "instructions": "You are a cautious investigator. No hidden facts or solved mystery.",
+              "outputKind": "data",
+              "schema": "",
+              "maxTokens": 2048
+            }
+          },
+          "wires": {
+            "edge-1": {
+              "id": "edge-1",
+              "route": "wire",
+              "from": "prompt",
+              "fromPort": "out",
+              "to": "explain",
+              "toPort": "prompt"
+            },
+            "edge-2": {
+              "id": "edge-2",
+              "route": "wire",
+              "from": "item",
+              "fromPort": "out",
+              "to": "explain",
+              "toPort": "data"
+            },
+            "edge-3": {
+              "id": "edge-3",
+              "route": "wire",
+              "from": "explain",
+              "fromPort": "out",
+              "to": "result",
+              "toPort": "in"
+            }
+          },
+          "groups": {},
+          "roles": {
+            "ClueAnalyst": {
+              "model": null,
+              "profileId": "lattice:active-sillytavern"
+            }
+          },
+          "portals": {},
+          "definitions": {}
+        }
+      }
+    },
+    "template": {
+      "id": "lesson-14",
+      "version": 1
+    },
+    "view": {
+      "x": 0,
+      "y": 0,
+      "zoom": 0.65
+    }
+  }
+}

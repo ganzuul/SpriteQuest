@@ -1,0 +1,498 @@
+{
+  "kind": "lattice-workflow",
+  "schema": 2,
+  "minRuntime": 2,
+  "graph": {
+    "id": "remastered-lesson-17",
+    "name": "17. Record only the scene you accept",
+    "description": "Extract narrative records, format them against a schema, project an add-unique journal and stage an accepted same-target replacement.\n\nAssign this independent copy as Unified and arm Lattice before Send. Ordinary generation uses Active SillyTavern.\nCreate public JSON Workflow Data accepted-scene-journal as []. Bind Prose for extraction.\n\nOpen Record only the scene you accept and inspect the named pins.\nInspect Format.records and Project Document.receipt before Apply.\nWrite to File.reference is the exact live Read File reference; preview never saves.\nEach file receipt is separate from native chat durability.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 1 auxiliary Extract request; one ordinary native generation. Formatting, projection and staging make no model requests.\nCheckpoints:\nWrite to File.receipt: The same-target journal replacement is pending until acceptance.",
+    "schema": 3,
+    "runtime": 2,
+    "mode": "native-unified",
+    "nodes": {
+      "send": {
+        "id": "send",
+        "type": "workflow",
+        "operation": "on-send",
+        "operationVersion": 1,
+        "title": "On Send",
+        "enabled": true,
+        "x": 100,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-0",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "On Send"
+      },
+      "generate": {
+        "id": "generate",
+        "type": "workflow",
+        "operation": "generate-reply",
+        "operationVersion": 1,
+        "title": "Generate Reply · SillyTavern",
+        "enabled": true,
+        "x": 460,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-1",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Generate Reply · SillyTavern",
+        "budgetTokens": 768
+      },
+      "review": {
+        "id": "review",
+        "type": "workflow",
+        "operation": "review-publish",
+        "operationVersion": 1,
+        "title": "Review / Publish",
+        "enabled": true,
+        "x": 820,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-2",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Review / Publish"
+      },
+      "journal": {
+        "id": "journal",
+        "type": "workflow",
+        "operation": "read-file",
+        "operationVersion": 1,
+        "title": "Read File",
+        "enabled": true,
+        "x": 100,
+        "y": 560,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-0",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Read File · live journal",
+        "targetId": "accepted-scene-journal",
+        "schema": "",
+        "columns": [],
+        "actorScope": "selected",
+        "actorId": ""
+      },
+      "records": {
+        "id": "records",
+        "type": "workflow",
+        "operation": "extract",
+        "operationVersion": 1,
+        "title": "Extract",
+        "enabled": true,
+        "x": 820,
+        "y": 560,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-2",
+        "profileId": "lattice:active-sillytavern",
+        "model": null,
+        "modelRole": "Prose",
+        "phase": "post",
+        "alias": "Extract",
+        "inputKind": "draft",
+        "mode": "model",
+        "instructions": "Return an array of public scene records {id,text}. Use stable IDs for identical quoted completed actions; copy exact narrative quotes into text. Exclude hypothetical actions.",
+        "schema": "",
+        "patterns": [],
+        "maxTokens": 2048
+      },
+      "record-array": {
+        "id": "record-array",
+        "type": "workflow",
+        "operation": "select-fields",
+        "operationVersion": 1,
+        "title": "Select Fields",
+        "enabled": true,
+        "x": 1180,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-3",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "post",
+        "alias": "Select Fields",
+        "fields": [
+          {
+            "name": "records",
+            "path": [
+              "records"
+            ]
+          }
+        ]
+      },
+      "record-list": {
+        "id": "record-list",
+        "type": "workflow",
+        "operation": "collection",
+        "operationVersion": 1,
+        "title": "Collection",
+        "enabled": true,
+        "x": 1540,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-4",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "post",
+        "alias": "Collection",
+        "mode": "project",
+        "collectionPath": [
+          "records"
+        ],
+        "fieldPath": [],
+        "value": "",
+        "operator": "equals",
+        "missingPolicy": "hold",
+        "thresholds": "[]",
+        "mergePolicy": "keep-all",
+        "identityPath": [
+          "id"
+        ]
+      },
+      "format": {
+        "id": "format",
+        "type": "workflow",
+        "operation": "format",
+        "operationVersion": 1,
+        "title": "Format",
+        "enabled": true,
+        "x": 1900,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-5",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "post",
+        "alias": "Format",
+        "inputMode": "records",
+        "format": "json",
+        "jsonShape": "records",
+        "mapping": "select",
+        "fields": [
+          {
+            "name": "id",
+            "path": [
+              "id"
+            ]
+          },
+          {
+            "name": "text",
+            "path": [
+              "text"
+            ]
+          }
+        ],
+        "schema": "{\"type\":\"object\",\"required\":[\"id\",\"text\"],\"properties\":{\"id\":{\"type\":\"string\"},\"text\":{\"type\":\"string\"}},\"additionalProperties\":false}",
+        "columns": [],
+        "separator": "\n",
+        "trailingSeparator": false
+      },
+      "project": {
+        "id": "project",
+        "type": "workflow",
+        "operation": "project-document",
+        "operationVersion": 1,
+        "title": "Project Document",
+        "enabled": true,
+        "x": 2260,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-6",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "post",
+        "alias": "Project Document",
+        "mode": "add-unique",
+        "collectionPath": "",
+        "missingPath": "error",
+        "key": "id",
+        "fieldPolicy": "merge",
+        "fields": [],
+        "schema": "{\"type\":\"object\",\"required\":[\"id\",\"text\"],\"properties\":{\"id\":{\"type\":\"string\"},\"text\":{\"type\":\"string\"}},\"additionalProperties\":false}",
+        "columns": [],
+        "separator": "\n",
+        "emptyPolicy": "omit",
+        "trailingSeparator": false,
+        "format": "json"
+      },
+      "save": {
+        "id": "save",
+        "type": "workflow",
+        "operation": "write-file",
+        "operationVersion": 1,
+        "title": "Write to File",
+        "enabled": true,
+        "x": 2620,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-7",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Write to File",
+        "mode": "replace",
+        "collectionPath": "",
+        "missingPath": "error",
+        "key": "id",
+        "fieldPolicy": "merge",
+        "fields": [],
+        "schema": "{\"type\":\"array\",\"items\":{\"type\":\"object\",\"required\":[\"id\",\"text\"],\"properties\":{\"id\":{\"type\":\"string\"},\"text\":{\"type\":\"string\"}},\"additionalProperties\":false}}",
+        "columns": [],
+        "separator": "\n",
+        "emptyPolicy": "omit",
+        "trailingSeparator": false,
+        "actorScope": "selected",
+        "actorId": ""
+      },
+      "lesson-note": {
+        "id": "lesson-note",
+        "type": "note",
+        "title": "Lesson instructions",
+        "enabled": true,
+        "x": 100,
+        "y": 0,
+        "w": 900,
+        "h": 180,
+        "content": "Extract narrative records, format them against a schema, project an add-unique journal and stage an accepted same-target replacement.\n\nAssign this independent copy as Unified and arm Lattice before Send. Ordinary generation uses Active SillyTavern.\nCreate public JSON Workflow Data accepted-scene-journal as []. Bind Prose for extraction.\n\nOpen Record only the scene you accept and inspect the named pins.\nInspect Format.records and Project Document.receipt before Apply.\nWrite to File.reference is the exact live Read File reference; preview never saves.\nEach file receipt is separate from native chat durability.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 1 auxiliary Extract request; one ordinary native generation. Formatting, projection and staging make no model requests.\nCheckpoints:\nWrite to File.receipt: The same-target journal replacement is pending until acceptance.",
+        "commentFrame": true,
+        "moveContents": false
+      }
+    },
+    "wires": {
+      "edge-1": {
+        "id": "edge-1",
+        "route": "wire",
+        "from": "send",
+        "fromPort": "activation",
+        "to": "generate",
+        "toPort": "activation"
+      },
+      "edge-2": {
+        "id": "edge-2",
+        "route": "wire",
+        "from": "generate",
+        "fromPort": "draft",
+        "to": "records",
+        "toPort": "source"
+      },
+      "edge-3": {
+        "id": "edge-3",
+        "route": "wire",
+        "from": "records",
+        "fromPort": "out",
+        "to": "record-array",
+        "toPort": "in"
+      },
+      "edge-4": {
+        "id": "edge-4",
+        "route": "wire",
+        "from": "record-array",
+        "fromPort": "out",
+        "to": "record-list",
+        "toPort": "in"
+      },
+      "edge-5": {
+        "id": "edge-5",
+        "route": "wire",
+        "from": "record-list",
+        "fromPort": "out",
+        "to": "format",
+        "toPort": "in"
+      },
+      "edge-6": {
+        "id": "edge-6",
+        "route": "wire",
+        "from": "journal",
+        "fromPort": "text",
+        "to": "project",
+        "toPort": "source"
+      },
+      "edge-7": {
+        "id": "edge-7",
+        "route": "wire",
+        "from": "format",
+        "fromPort": "records",
+        "to": "project",
+        "toPort": "records"
+      },
+      "edge-8": {
+        "id": "edge-8",
+        "route": "wire",
+        "from": "journal",
+        "fromPort": "reference",
+        "to": "save",
+        "toPort": "reference"
+      },
+      "edge-9": {
+        "id": "edge-9",
+        "route": "wire",
+        "from": "project",
+        "fromPort": "text",
+        "to": "save",
+        "toPort": "text"
+      },
+      "edge-10": {
+        "id": "edge-10",
+        "route": "wire",
+        "from": "generate",
+        "fromPort": "draft",
+        "to": "review",
+        "toPort": "draft"
+      }
+    },
+    "groups": {
+      "stage-0": {
+        "id": "stage-0",
+        "title": "Preparation / processing",
+        "description": "Stage 0. Wires determine execution; folding is presentation only.",
+        "x": 75,
+        "y": 190,
+        "w": 350,
+        "h": 605,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "send",
+          "journal"
+        ]
+      },
+      "stage-1": {
+        "id": "stage-1",
+        "title": "Native generation",
+        "description": "Stage 1. Wires determine execution; folding is presentation only.",
+        "x": 435,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#284e67",
+        "collapsed": false,
+        "members": [
+          "generate"
+        ]
+      },
+      "stage-2": {
+        "id": "stage-2",
+        "title": "Review / accepted staging",
+        "description": "Stage 2. Wires determine execution; folding is presentation only.",
+        "x": 795,
+        "y": 190,
+        "w": 350,
+        "h": 605,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "review",
+          "records"
+        ]
+      },
+      "stage-3": {
+        "id": "stage-3",
+        "title": "Response processing",
+        "description": "Stage 3. Wires determine execution; folding is presentation only.",
+        "x": 1155,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "record-array"
+        ]
+      },
+      "stage-4": {
+        "id": "stage-4",
+        "title": "Response processing",
+        "description": "Stage 4. Wires determine execution; folding is presentation only.",
+        "x": 1515,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "record-list"
+        ]
+      },
+      "stage-5": {
+        "id": "stage-5",
+        "title": "Response processing",
+        "description": "Stage 5. Wires determine execution; folding is presentation only.",
+        "x": 1875,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "format"
+        ]
+      },
+      "stage-6": {
+        "id": "stage-6",
+        "title": "Response processing",
+        "description": "Stage 6. Wires determine execution; folding is presentation only.",
+        "x": 2235,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "project"
+        ]
+      },
+      "stage-7": {
+        "id": "stage-7",
+        "title": "Review / accepted staging",
+        "description": "Stage 7. Wires determine execution; folding is presentation only.",
+        "x": 2595,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "save"
+        ]
+      }
+    },
+    "roles": {
+      "Prose": {
+        "model": null,
+        "profileId": "lattice:active-sillytavern"
+      }
+    },
+    "portals": {},
+    "definitions": {},
+    "template": {
+      "id": "lesson-17",
+      "version": 1
+    },
+    "view": {
+      "x": 0,
+      "y": 0,
+      "zoom": 0.65
+    }
+  }
+}

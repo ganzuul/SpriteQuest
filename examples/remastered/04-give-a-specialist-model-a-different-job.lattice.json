@@ -1,0 +1,200 @@
+{
+  "kind": "lattice-workflow",
+  "schema": 2,
+  "minRuntime": 2,
+  "graph": {
+    "id": "remastered-lesson-04",
+    "name": "4. Give a specialist model a different job",
+    "description": "Give an auxiliary Model Call its own system Instructions and pass its result into native Guidance.\n\nAssign this independent copy as Unified and arm Lattice before Send. Ordinary generation uses Active SillyTavern.\nSet SceneDesigner to Active SillyTavern or choose a different configured local auxiliary model.\n\nOpen Give a specialist model a different job and inspect the named pins.\nInspect Model Call.instructions: this is the auxiliary system message.\nChange the auxiliary binding independently of ordinary native generation.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 1 auxiliary Model Call request; one ordinary native generation; no retries.\nCheckpoints:\nModel Call · separate job.out: A specialist suggestion becomes material for Compose Guidance.",
+    "schema": 3,
+    "runtime": 2,
+    "mode": "native-unified",
+    "nodes": {
+      "send": {
+        "id": "send",
+        "type": "workflow",
+        "operation": "on-send",
+        "operationVersion": 1,
+        "title": "On Send",
+        "enabled": true,
+        "x": 100,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "On Send"
+      },
+      "generate": {
+        "id": "generate",
+        "type": "workflow",
+        "operation": "generate-reply",
+        "operationVersion": 1,
+        "title": "Generate Reply · SillyTavern",
+        "enabled": true,
+        "x": 1180,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Generate Reply · SillyTavern",
+        "budgetTokens": 768
+      },
+      "review": {
+        "id": "review",
+        "type": "workflow",
+        "operation": "review-publish",
+        "operationVersion": 1,
+        "title": "Review / Publish",
+        "enabled": true,
+        "x": 1540,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Review / Publish"
+      },
+      "request": {
+        "id": "request",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 100,
+        "y": 560,
+        "w": 300,
+        "h": 210,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Text · specialist task",
+        "text": "Suggest a single environmental complication for the current scene. Keep it reversible."
+      },
+      "specialist": {
+        "id": "specialist",
+        "type": "workflow",
+        "operation": "model-call",
+        "operationVersion": 1,
+        "title": "Model Call",
+        "enabled": true,
+        "x": 460,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "profileId": "lattice:active-sillytavern",
+        "model": null,
+        "modelRole": "SceneDesigner",
+        "alias": "Model Call · separate job",
+        "instructions": "You are a concise scene designer. Return one practical complication, preserve player agency, and never write the finished reply.",
+        "outputKind": "text",
+        "schema": "",
+        "maxTokens": 2048
+      },
+      "guidance": {
+        "id": "guidance",
+        "type": "workflow",
+        "operation": "compose",
+        "operationVersion": 1,
+        "title": "Compose",
+        "enabled": true,
+        "x": 820,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Compose",
+        "mode": "join",
+        "outputKind": "guidance",
+        "template": "",
+        "sections": [
+          {
+            "name": "Material",
+            "text": ""
+          }
+        ],
+        "separator": "\n\n"
+      },
+      "lesson-note": {
+        "id": "lesson-note",
+        "type": "note",
+        "title": "Lesson instructions",
+        "enabled": true,
+        "x": 100,
+        "y": 0,
+        "w": 900,
+        "h": 180,
+        "content": "Give an auxiliary Model Call its own system Instructions and pass its result into native Guidance.\n\nAssign this independent copy as Unified and arm Lattice before Send. Ordinary generation uses Active SillyTavern.\nSet SceneDesigner to Active SillyTavern or choose a different configured local auxiliary model.\n\nOpen Give a specialist model a different job and inspect the named pins.\nInspect Model Call.instructions: this is the auxiliary system message.\nChange the auxiliary binding independently of ordinary native generation.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 1 auxiliary Model Call request; one ordinary native generation; no retries.\nCheckpoints:\nModel Call · separate job.out: A specialist suggestion becomes material for Compose Guidance.",
+        "commentFrame": true,
+        "moveContents": false
+      }
+    },
+    "wires": {
+      "edge-1": {
+        "id": "edge-1",
+        "route": "wire",
+        "from": "send",
+        "fromPort": "activation",
+        "to": "generate",
+        "toPort": "activation"
+      },
+      "edge-2": {
+        "id": "edge-2",
+        "route": "wire",
+        "from": "request",
+        "fromPort": "out",
+        "to": "specialist",
+        "toPort": "prompt"
+      },
+      "edge-3": {
+        "id": "edge-3",
+        "route": "wire",
+        "from": "specialist",
+        "fromPort": "out",
+        "to": "guidance",
+        "toPort": "section.Material"
+      },
+      "edge-4": {
+        "id": "edge-4",
+        "route": "wire",
+        "from": "guidance",
+        "fromPort": "out",
+        "to": "generate",
+        "toPort": "guidance"
+      },
+      "edge-5": {
+        "id": "edge-5",
+        "route": "wire",
+        "from": "generate",
+        "fromPort": "draft",
+        "to": "review",
+        "toPort": "draft"
+      }
+    },
+    "groups": {},
+    "roles": {
+      "SceneDesigner": {
+        "model": null,
+        "profileId": "lattice:active-sillytavern"
+      }
+    },
+    "portals": {},
+    "definitions": {},
+    "template": {
+      "id": "lesson-04",
+      "version": 1
+    },
+    "view": {
+      "x": 0,
+      "y": 0,
+      "zoom": 0.65
+    }
+  }
+}

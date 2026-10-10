@@ -61,12 +61,13 @@ test('opening an example persists its real editable root without changing existi
     const open = await openController(env);
     const { installWorkflowExample } = await import('../src/workflow/examples.js?v=0.26.0');
     env.installWorkflowExample = installWorkflowExample;
-    assert.equal(open('scene-brief-basics'), true);
+    assert.equal(open('lesson-01'), true);
     assert.notEqual(env.current.id, original.id);
-    assert.equal(env.current.name, 'Make a scene brief');
+    assert.equal(env.current.name, '1. Follow a reply from Send to Review');
     assert.equal(stored.activeGraphId, env.current.id);
     assert.equal(S.resolveGraph().graph, env.current);
-    assert.equal(Object.values(env.current.nodes).filter(n => n.type === 'workflow').length, 2);
+    assert.equal(Object.values(env.current.nodes).filter(n => n.type === 'workflow').length, 3);
+    assert.ok(Object.values(env.current.nodes).some(n => n.type === 'note' && /Generate Reply/.test(n.content)));
     assert.deepEqual(stored.graphs[original.id], before.original);
     assert.deepEqual(stored.nativeBindings, before.bindings);
     assert.equal(stored.enabled, true);

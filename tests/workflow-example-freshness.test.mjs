@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { installWorkflowExample, listWorkflowExamples } from '../src/workflow/examples.js';
+import { installWorkflowExample } from '../src/workflow/examples.js';
+import { graphBy } from './helpers/workflow-example-fixtures.mjs';
 import { createNativeWorkflowController } from '../src/workflow/host.js';
 import { createNativeMemoryAdapter } from '../src/workflow/introspection/host-memory.js';
 
@@ -10,7 +11,7 @@ const guidance = context => Object.values(context.extensionPrompts).map(prompt =
 const hint = 'Rin may return to discuss the unresolved ferry inquiry. Leave Rowan free to respond.';
 
 function fixture({ includeCharacter = true, selectActor } = {}) {
-    const graph = listWorkflowExamples().find(entry => entry.id === 'offscreen-agenda').graph;
+    const graph = graphBy('offscreen-agenda');
     graph.nodes['pre-scene'].includeCharacter = includeCharacter;
     const entered = deferred(), release = deferred();
     let requests = 0, saves = 0, supplied;
@@ -274,7 +275,7 @@ test('promise callback clears installed guidance if selected aged evidence chang
 
 async function duringReflectIdentityGuidance(explicitState) {
     const f = await promiseFixture(); agePromiseSources(f);
-    const graph = listWorkflowExamples().find(entry => entry.id === 'offscreen-agenda').graph;
+    const graph = graphBy('offscreen-agenda');
     for (const [id, wire] of Object.entries(graph.wires)) if (wire.from === 'pre-episodes' || (!explicitState && wire.from === 'pre-state')) delete graph.wires[id];
     delete graph.nodes['pre-episodes']; if (!explicitState) delete graph.nodes['pre-state'];
     const entered = deferred(), release = deferred(), direction = 'Mira can keep the conversation open.';

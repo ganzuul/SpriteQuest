@@ -78,7 +78,7 @@ Model calls below are maximum auxiliary calls **per execution of that operation*
 | Events | [Current Holder](#current-holder) | Both | Ordered events + holders → attributed events/holders | 0 |
 | Events | [Scene Presence](#scene-presence) | Both | Checked cast → one actor participation | 0 |
 | Events | [Actor Context](#actor-context) | Both; root | Exact presence → authorized private Context | 0 |
-| Events | [Character Direction](#character-direction) | Both | Exact presence → private Guidance | 0–1 |
+| Events | [Character Direction](#character-direction) | Both | Exact presence + optional Data → private Guidance | 0–1 |
 | Events | [Prompted Memory](#prompted-memory) | Both | Presence + actual holder event → private proposal | 0–1 |
 | Input | [Read File](#read-file) | Both; root | Authorized target + optional presence → Text/document/reference | 0 |
 | Shaping | [Format](#format) | Both | Records/raw JSON → checked Data/serialized Text | 0 |
@@ -548,7 +548,7 @@ Choose an existing pinned Data item/result helper in **Configure node**. **Detai
 
 ### Character Direction
 
-**Both stages; one characterDirection request when present.** Required exact presence Data; output actor-private Guidance. Controls: Actor ID, separate System prompt, Completion limit. The actor's own authorized card/context/memories inform its request. Native Generate may use exact live output only for its currently selected actor. Absent actors make no request; another actor's private guidance cannot be relabeled as public.
+**Both stages; one characterDirection request when present.** Required exact presence Data and optional **Data** for bounded state or other conditioning material; output actor-private Guidance. Private Data must retain the exact current authority for this actor. Hidden, mixed, forged, stale or another actor's private input holds before dispatch. Controls: Actor ID, separate System prompt, Completion limit. The actor's own authorized card/context/memories inform its request. Native Generate may use exact live output only for its currently selected actor. Absent actors make no request; another actor's private guidance cannot be relabeled as public.
 
 ### Prompted Memory
 

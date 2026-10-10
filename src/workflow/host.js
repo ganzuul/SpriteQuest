@@ -480,9 +480,9 @@ export function createNativeWorkflowController(ports) {
         if(stopped())return fail('ABORTED','The auxiliary request scope has closed.');
         if(!fresh(run)||!sourceFresh(run)||run.unified&&!nativePrefixFresh(run))return fail('STALE_SOURCE','The captured source changed before auxiliary dispatch.');
         const scoped=scopedActors(run);if(!scoped.ok)return scoped;
-        const event=scoped.data.authorizeEventInputs(payload.node,payload.inputs);
-        const checked=event.ok?scoped.data.authorizeModelInputs(payload.inputs):event;
-        if(!checked.ok)return checked;
+        const checked=scoped.data.authorizeModelInputs(payload.inputs);if(!checked.ok)return checked;
+        // Data authorization can run host callbacks; validate captured event authority last.
+        const event=scoped.data.authorizeEventInputs(payload.node,payload.inputs);if(!event.ok)return event;
         if(stopped())return fail('ABORTED','The auxiliary request scope has closed.');
         if(!fresh(run)||!sourceFresh(run)||run.unified&&!nativePrefixFresh(run))return fail('STALE_SOURCE','The captured source changed before auxiliary dispatch.');
         return stopped()?fail('ABORTED','The auxiliary request scope has closed.'):checked;

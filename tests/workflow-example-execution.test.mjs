@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Worker as ThreadWorker } from 'node:worker_threads';
-import { listWorkflowExamples } from '../src/workflow/examples.js';
+import { graphBy } from './helpers/workflow-example-fixtures.mjs';
 import { createNativeWorkflowController } from '../src/workflow/host.js';
 import { createNativeMemoryAdapter } from '../src/workflow/introspection/host-memory.js';
 
@@ -18,7 +18,7 @@ class BrowserWorker {
     postMessage(data) { this.worker.postMessage(data); }
     terminate() { return this.worker.terminate(); }
 }
-const graphFor = id => listWorkflowExamples().find(entry => entry.id === id).graph;
+const graphFor = id => graphBy(id);
 function fixture(graph, text = 'Mira waits at the closed ferry gate.', request) {
     let requests = 0, memorySaves = 0;
     const message = { mes: text, is_user: false, swipe_id: 0, swipes: [text], swipe_info: [{ extra: {}, gen_started: 1, gen_finished: 2 }], extra: {}, gen_started: 1, gen_finished: 2 };

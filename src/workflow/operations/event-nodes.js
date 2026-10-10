@@ -1,6 +1,6 @@
 import { parseRuntimeContext } from './context-data.js?v=0.26.0';
 import { validateStoryClock } from '../story-time.js?v=0.26.0';
-import { preserveArtifactPrivacy, validVisibilityMetadata } from '../artifact-privacy.js?v=0.26.0';
+import { artifactVisibility, preserveArtifactPrivacy, validVisibilityMetadata } from '../artifact-privacy.js?v=0.26.0';
 import { cloneJsonValue, stringifyJsonValue } from './json-data.js?v=0.26.0';
 import { normalizeOccurrences, confirmOccurrences, resolveItemHolders, matchLiteralTrigger, validateOccurrences, toProgressionEvents, sourceFromDraft } from './event-data.js?v=0.26.0';
 import { own, plain, freeze } from '../record-data.js?v=0.26.0';
@@ -50,7 +50,7 @@ function resolve(node,options={}) {
     if(operation==='draft-event-source')ports=[pin('in','draft','input',true),pin('scope','data','input',true),pin('out','data','output')];
     else if(operation==='event-normalize')ports=settings.mode==='progression'?[pin('events','data','input',true),pin('clock','data','input'),pin('out','data','output')]:[pin('source','data','input',true),pin('entities','data','input',true),pin('candidates','data','input',true),pin('out','data','output')];
     else if(operation==='scene-presence')ports=[pin('in','data','input',true),pin('out','data','output')];
-    else if(['actor-context','character-direction'].includes(operation))ports=[pin('presence','data','input',true),pin('out',operation==='actor-context'?'context':'guidance','output')];
+    else if(['actor-context','character-direction'].includes(operation))ports=[pin('presence','data','input',true),...(operation==='character-direction'?[pin('data','data','input')]:[]),pin('out',operation==='actor-context'?'context':'guidance','output')];
     else if(operation==='prompted-memory')ports=[pin('presence','data','input',true),pin('event','data','input',true),pin('out','data','output')];
     else if(operation==='item-mention-trigger')ports=[pin('source','data','input',true),pin('entities','data','input',true),pin('state','data','input'),pin('out','data','output'),pin('state','data','output')];
     else if(operation==='item-use-trigger')ports=[pin('source','data','input',true),pin('entities','data','input',true),...(settings.mode==='candidates'?[pin('candidates','data','input',true)]:[]),pin('out','data','output')];
@@ -66,7 +66,7 @@ export function describeEvent(node,options={}) {
     const result=resolve(node,options);if(!result.ok)return result;
     return {ok:true,data:{descriptor:result.data.descriptor,ports:result.data.ports}};
 }
-function inputsFor(raw,ports) {
+function inputsFor(raw,ports,operation) {
     const cloned=cloneJsonValue(raw);if(!cloned.ok)return cloned;
     const inputs=cloned.data.value;if(!plain(inputs))return fail('INVALID_INPUT','Event inputs require named Data artifacts.');
     const allowed=ports.filter(port=>port.direction==='input');
@@ -76,7 +76,11 @@ function inputsFor(raw,ports) {
         const artifact=inputs[port.id];
         if(port.kind==='draft') {
             if(!plain(artifact)||artifact.kind!=='draft'||typeof artifact.text!=='string'||!plain(artifact.source))return fail('INVALID_INPUT','Draft Event Source requires a checked Draft.');
-        } else if(!exact(artifact,['kind','value','visibility'])||!validVisibilityMetadata(artifact)||artifact.kind!=='data'||!Object.hasOwn(artifact,'value'))return fail('INVALID_INPUT','Event input requires bounded Data.');
+        } else {
+            const projection=operation==='character-direction'&&port.id==='data'&&(Object.hasOwn(artifact??{},'status')||Object.hasOwn(artifact??{},'acceptance'));
+            if(!exact(artifact,projection?['kind','value','visibility','status','acceptance']:['kind','value','visibility'])||!validVisibilityMetadata(artifact)||artifact.kind!=='data'||!Object.hasOwn(artifact,'value')
+                ||projection&&(artifact.status!=='proposed'||artifact.acceptance!=='pending'))return fail('INVALID_INPUT','Event input requires bounded Data.');
+        }
     }
     return {ok:true,data:{inputs}};
 }
@@ -94,14 +98,14 @@ function privateScope(value,actorId) {
     if(Object.hasOwn(value,'visibleTo')&&(!Array.isArray(value.visibleTo)||!value.visibleTo.includes(actorId)))return false;
     return Object.values(value).every(item=>privateScope(item,actorId));
 }
-async function scopedContext(presence,actorId,local,exactPresence) {
+async function scopedContext(presence,actorId,local,exactPresence,exactData) {
     if(!exact(presence,['schemaVersion','recordType','sceneId','sourceId','revision','actorId','status','evidence'])
         ||presence.schemaVersion!==1||presence.recordType!=='scene-presence'||presence.actorId!==actorId||!id(presence.sceneId)||!id(presence.sourceId)||!id(presence.revision)
         ||!['present','absent','unresolved'].includes(presence.status))return fail('INVALID_PRESENCE','Direction requires the selected actors checked scene presence.');
     if(presence.status!=='present')return {ok:true,outputStates:{out:{status:presence.status==='absent'?'skipped':'unresolved',reason:{code:presence.status==='absent'?'ACTOR_ABSENT':'PRESENCE_UNRESOLVED',message:'This actor is not confirmed to participate at this scene stage.'}}}};
     if(own(local,'signal')?.aborted)return fail('ABORTED','The actor request was stopped.');
     if(typeof own(local,'actorContext')!=='function')return fail('ACTOR_CONTEXT_MISSING','The trusted host must supply this actors authorized context.');
-    let response;try{response=await own(local,'actorContext')(actorId,{sceneId:presence.sceneId,sourceId:presence.sourceId,revision:presence.revision,signal:own(local,'signal')},exactPresence);}catch{return fail('ACTOR_CONTEXT_FAILED','The authorized actor context could not be captured.');}
+    let response;try{response=await own(local,'actorContext')(actorId,{sceneId:presence.sceneId,sourceId:presence.sourceId,revision:presence.revision,signal:own(local,'signal'),...(exactData===undefined?{}:{data:exactData})},exactPresence);}catch{return fail('ACTOR_CONTEXT_FAILED','The authorized actor context could not be captured.');}
     if(own(local,'signal')?.aborted)return fail('ABORTED','Ignore the stopped actor context.');
     const validated=cloneJsonValue(response);if(!validated.ok)return fail('INVALID_ACTOR_CONTEXT','Actor context must be bounded plain data.');
     if(validated.data.value.ok===false)return validated.data.value;
@@ -132,7 +136,7 @@ async function executeEventRaw(node,namedInputs,local={}) {
         const result=resolve(node,{phase:own(local,'phase')});if(!result.ok)return result;
         const {descriptor,settings,ports}=result.data;
         if(descriptor.id==='actor-context'&&own(local,'root')!==true)return fail('ROOT_ONLY','Actor Context requires this run’s private root actor capability.');
-        const validated=inputsFor(namedInputs,ports);if(!validated.ok)return validated;
+        const validated=inputsFor(namedInputs,ports,descriptor.id);if(!validated.ok)return validated;
         const inputs=validated.data.inputs;
         if(descriptor.id==='draft-event-source') {
             const result=sourceFromDraft(own(namedInputs,'in'),inputs.scope.value);if(!result.ok)return result;
@@ -190,6 +194,8 @@ async function executeEventRaw(node,namedInputs,local={}) {
             const result=resolveItemHolders(inputs.holders.value,inputs.events.value);if(!result.ok)return result;
             return {ok:true,outputs:{events:{kind:'data',value:result.data.events},holders:{kind:'data',value:result.data.holders}},reports:[{operation:descriptor.id,actualCalls:0}]};
         }
+        const directionData=descriptor.id==='character-direction'?own(namedInputs,'data'):undefined;
+        if(directionData!==undefined){const mark=artifactVisibility(inputs);if(mark.kind==='hidden'||mark.kind==='actor-private'&&mark.actorId!==settings.actorId)return fail('ACTOR_MODEL_SCOPE','Character Direction Data must be public or belong only to the selected actor.');}
         const presence=inputs.presence.value;
         const snapshot=stringifyJsonValue(namedInputs);if(!snapshot.ok)return snapshot;
         let event;
@@ -200,7 +206,7 @@ async function executeEventRaw(node,namedInputs,local={}) {
             if(event.source.visibility==='actor-private'&&event.source.actorId!==settings.actorId)return fail('ACTOR_SCOPE_MISMATCH','This actor cannot receive another actors private trigger evidence.');
             if(settings.mode==='create'&&!settings.allowCreate)return fail('MEMORY_CREATION_NOT_ALLOWED','The workflow author must explicitly permit invented character history.');
         }
-        const context=await scopedContext(presence,settings.actorId,local,own(namedInputs,'presence'));if(!context.ok||context.outputStates)return context;
+        const context=await scopedContext(presence,settings.actorId,local,own(namedInputs,'presence'),directionData);if(!context.ok||context.outputStates)return context;
         const current=stringifyJsonValue(namedInputs);if(!current.ok||current.data.text!==snapshot.data.text)return fail('STALE_INPUT','Event evidence changed while the actor context was captured.');
         if(descriptor.id==='actor-context'){
             const messages=[],omissions=[...(context.data.context.omissions??[])];let remaining=100000;
@@ -234,7 +240,7 @@ async function executeEventRaw(node,namedInputs,local={}) {
             }
             return {ok:true,artifact:{kind:'data',value:{schemaVersion:1,recordType:'prompted-memory',eventId:event.eventId,actorId:settings.actorId,sceneId:event.sceneId,visibility:'actor-private',acceptance:'pending',memory,...(output.reflection===undefined?{}:{reflection:output.reflection}),...(output.direction===undefined?{}:{direction:output.direction}),sourceRefs:[{sourceId:event.source.sourceId,revision:event.source.revision}]}},reports:[{operation:descriptor.id,actualCalls:1,actorId:settings.actorId}]};
         }
-        const messages=[{role:'system',content:settings.systemPrompt+'\nWrite guidance only for '+settings.actorId+'. Preserve the player choices, common scene events and other actors. Private interpretations remain private; this output is a proposal.'},{role:'user',content:JSON.stringify(context.data)}];
+        const messages=[{role:'system',content:settings.systemPrompt+'\nWrite guidance only for '+settings.actorId+'. Preserve the player choices, common scene events and other actors. Private interpretations remain private; this output is a proposal.'},{role:'user',content:JSON.stringify(directionData===undefined?context.data:{...context.data,data:inputs.data.value})}];
         const response=await infer(messages,settings,local,namedInputs,snapshot.data.text);if(!response.ok)return response;
         return {ok:true,artifact:{kind:'guidance',text:response.data.text,scope:{actorId:settings.actorId,sceneId:presence.sceneId},visibility:'actor-private',acceptance:'pending',sourceRefs:[{sourceId:presence.sourceId,revision:presence.revision}]},reports:[{operation:descriptor.id,actualCalls:1,actorId:settings.actorId,...(response.data.usage?{usage:response.data.usage}:{})}]};
     } catch {return fail('INVALID_INPUT','Event nodes require bounded own data inputs and settings.');}

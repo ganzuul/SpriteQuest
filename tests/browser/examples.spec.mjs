@@ -1,5 +1,4 @@
-import {UNIFIED_WORKFLOW_EXAMPLE_DATA} from '../../src/workflow/unified-example-data.js';
-const exampleCount=30+UNIFIED_WORKFLOW_EXAMPLE_DATA.length, lastExampleTitle=UNIFIED_WORKFLOW_EXAMPLE_DATA.at(-1).title;
+const exampleCount=30, lastExampleTitle='A relationship that changes slowly over weeks';
 import { test, expect } from '@playwright/test';
 
 async function load(page) {
@@ -21,13 +20,13 @@ test('File examples is directly below Open workflow and opens the compact comple
     const dialog = page.getByRole('dialog', { name: 'Examples', exact: true });
     await expect(dialog).toBeVisible();
     await expect(dialog.locator('.pc-example-tile')).toHaveCount(exampleCount);
-    await expect(dialog.locator('.pc-example-tile').first()).toHaveAccessibleName('Make a scene brief');
+    await expect(dialog.locator('.pc-example-tile').first()).toHaveAccessibleName('Follow a reply from Send to Review');
     await expect(dialog.locator('.pc-example-tile').last()).toHaveAccessibleName(lastExampleTitle);
     const box = await dialog.boundingBox();
-    expect(box.width).toBeGreaterThanOrEqual(550);
-    expect(box.width).toBeLessThanOrEqual(570);
-    expect(box.height).toBeGreaterThanOrEqual(420);
-    expect(box.height).toBeLessThanOrEqual(440);
+    expect(box.width).toBeGreaterThanOrEqual(750);
+    expect(box.width).toBeLessThanOrEqual(770);
+    expect(box.height).toBeGreaterThanOrEqual(670);
+    expect(box.height).toBeLessThanOrEqual(690);
     const previews = dialog.locator('.pc-example-preview');
     await expect(previews).toHaveCount(exampleCount);
     expect(await previews.first().evaluate(element => element.getBoundingClientRect().height)).toBe(72);
@@ -42,8 +41,8 @@ test('both menus retain picker scroll, trap Tab, close on Escape and restore tri
     const close = dialog.getByRole('button', { name: 'Close panel', exact: true });
     await expect(close).toBeFocused();
     await close.press('Shift+Tab');
-    await expect(dialog.locator('.pc-example-tile').last()).toBeFocused();
-    await dialog.locator('.pc-example-tile').last().press('Tab');
+    await expect(dialog.locator('.pc-example-details-button').last()).toBeFocused();
+    await dialog.locator('.pc-example-details-button').last().press('Tab');
     await expect(close).toBeFocused();
     const scrollTop = await dialog.locator('.pc-examples-grid').evaluate(async element => {
         element.scrollTop = element.scrollHeight;
@@ -73,7 +72,7 @@ test('narrow picker has two columns and its last long-name tile opens by keyboar
     await dialog.screenshot({ path: testInfo.outputPath('examples-picker-narrow.png') });
     await last.press('Enter');
     await expect(dialog).toBeHidden();
-    await expect.poll(() => page.evaluate(() => window.canvasHarness.graph.name)).toBe(lastExampleTitle);
+    await expect.poll(() => page.evaluate(() => window.canvasHarness.graph.name)).toBe('30. ' + lastExampleTitle);
     expect(await page.evaluate(() => window.canvasHarness.providerCalls())).toBe(0);
 });
 
@@ -87,13 +86,13 @@ test('each example tile activates an independently editable native primary workf
     const examples = await page.evaluate(async () => {
         const h = window.canvasHarness;
         const { listWorkflowExamples } = await import('/src/workflow/examples.js?v=' + h.version);
-        return listWorkflowExamples().map(example => ({ title: example.title, count: Object.values(example.graph.nodes).filter(node => node.type !== 'note' || !node.commentFrame).length }));
+        return listWorkflowExamples().map(example => ({ title: example.title, graphName: example.graph.name, count: Object.values(example.graph.nodes).filter(node => node.type !== 'note' || !node.commentFrame).length }));
     });
     for (const example of examples) {
         const dialog = await openExamples(page);
         await dialog.getByRole('button', { name: example.title, exact: true }).click();
         await expect(dialog).toBeHidden();
-        await expect.poll(() => page.evaluate(() => window.canvasHarness.graph.name)).toBe(example.title);
+        await expect.poll(() => page.evaluate(() => window.canvasHarness.graph.name)).toBe(example.graphName);
         await expect(page.locator('.pc-canvas-host .pc-node-native')).toHaveCount(example.count);
         const active = await page.evaluate(() => {
             const h = window.canvasHarness;
@@ -119,7 +118,7 @@ test('each example tile activates an independently editable native primary workf
 test('reopening a tile preserves the edited first copy and advanced subgraphs open for inspection', async ({ page }, testInfo) => {
     await load(page);
     let dialog = await openExamples(page);
-    await dialog.getByRole('button', { name: 'Make a scene brief', exact: true }).click();
+    await dialog.getByRole('button', { name: 'Follow a reply from Send to Review', exact: true }).click();
     await expect(dialog).toBeHidden();
     const firstId = await page.evaluate(() => window.canvasHarness.graph.id);
     await page.locator('.pc-canvas-host .pc-node-native .pc-native-heading').first().click();
@@ -128,14 +127,14 @@ test('reopening a tile preserves the edited first copy and advanced subgraphs op
     await expect(page.locator('.pc-canvas-host .pc-node-title').first()).toHaveText('My edited brief');
     const edited = await page.evaluate(() => structuredClone(window.canvasHarness.graph));
     dialog = await openExamples(page);
-    await dialog.getByRole('button', { name: 'Make a scene brief', exact: true }).click();
+    await dialog.getByRole('button', { name: 'Follow a reply from Send to Review', exact: true }).click();
     await expect(dialog).toBeHidden();
     expect(await page.evaluate(() => window.canvasHarness.graph.id)).not.toBe(firstId);
-    await expect.poll(() => page.evaluate(() => window.canvasHarness.graph.name)).toBe('Make a scene brief (2)');
+    await expect.poll(() => page.evaluate(() => window.canvasHarness.graph.name)).toBe('1. Follow a reply from Send to Review (2)');
     expect(await page.evaluate(id => structuredClone(window.canvasHarness.S.getGraph(id)), firstId)).toEqual(edited);
     await expect(page.locator('.pc-canvas-host .pc-node-title').first()).not.toHaveText('My edited brief');
     dialog = await openExamples(page);
-    await dialog.getByRole('button', { name: 'Combine memory with a voice pass', exact: true }).click();
+    await dialog.getByRole('button', { name: 'Build one reusable item-card processor', exact: true }).click();
     await expect(dialog).toBeHidden();
     await page.locator('.pc-canvas-host .pc-node-subgraph .pc-native-heading').first().dblclick();
     await expect(page.locator('.pc-graph-tabs [role="tab"]')).toHaveCount(2);
@@ -153,63 +152,51 @@ test('reopening a tile preserves the edited first copy and advanced subgraphs op
     await page.getByRole('menuitem', { name: 'Fit to view', exact: true }).click();
     await page.getByRole('dialog', { name: 'Lattice', exact: true }).screenshot({ path: testInfo.outputPath('example-30-opened-subgraph.png') });
     dialog = await openExamples(page);
-    await dialog.getByRole('button', { name: 'Make a scene brief', exact: true }).click();
+    await dialog.getByRole('button', { name: 'Follow a reply from Send to Review', exact: true }).click();
     await expect(dialog).toBeHidden();
     await expect(page.locator('.pc-graph-tabs [role="tab"]')).toHaveCount(1);
-    await expect.poll(() => page.evaluate(() => window.canvasHarness.graph.name)).toBe('Make a scene brief (3)');
+    await expect.poll(() => page.evaluate(() => window.canvasHarness.graph.name)).toBe('1. Follow a reply from Send to Review (3)');
     expect(await page.evaluate(() => window.canvasHarness.providerCalls())).toBe(0);
 });
 
-test('a malformed companion keeps the picker and previous root, then allows retry after repair', async ({ page }) => {
+test('an archived malformed companion leaves saved workflows unchanged and allows repair', async ({page}) => {
     await load(page);
-    const dialog = await openExamples(page);
-    const before = await page.evaluate(async () => {
+    const result = await page.evaluate(async () => {
         const h = window.canvasHarness;
-        const { WORKFLOW_EXAMPLE_DATA } = await import('/src/workflow/example-data.js?v=' + h.version);
-        const example = WORKFLOW_EXAMPLE_DATA.find(example => example.number === 20);
-        window.examplesCorruptCompanion = example.packages[1].graph.nodes;
-        example.packages[1].graph.nodes = {};
-        return structuredClone({ graphs: h.S.settings().graphs, activeGraphId: h.S.settings().activeGraphId });
+        const {WORKFLOW_EXAMPLE_DATA} = await import('/src/workflow/example-data.js?v=' + h.version);
+        const {installWorkflowExample} = await import('/src/workflow/examples.js?v=' + h.version);
+        const entry = WORKFLOW_EXAMPLE_DATA.find(entry => entry.number === 20);
+        const before = structuredClone(h.S.settings()), nodes = entry.packages[1].graph.nodes;
+        entry.packages[1].graph.nodes = {};
+        const failed = installWorkflowExample(entry.id, h.S.settings());
+        const unchanged = JSON.stringify(h.S.settings()) === JSON.stringify(before);
+        entry.packages[1].graph.nodes = nodes;
+        const repaired = installWorkflowExample(entry.id, h.S.settings());
+        return {failed: failed.ok, unchanged, repaired: repaired.ok, companions: repaired.data?.companions.length, calls: h.providerCalls()};
     });
-    const tile = dialog.getByRole('button', { name: 'Record injuries and fatigue', exact: true });
-    await tile.click();
-    await expect(dialog).toBeVisible();
-    await expect(tile).toBeEnabled();
-    expect(await page.evaluate(() => {
-        const settings = window.canvasHarness.S.settings();
-        return structuredClone({ graphs: settings.graphs, activeGraphId: settings.activeGraphId });
-    })).toEqual(before);
-    await page.evaluate(async () => {
-        const h = window.canvasHarness;
-        const { WORKFLOW_EXAMPLE_DATA } = await import('/src/workflow/example-data.js?v=' + h.version);
-        WORKFLOW_EXAMPLE_DATA.find(example => example.number === 20).packages[1].graph.nodes = window.examplesCorruptCompanion;
-    });
-    await tile.click();
-    await expect(dialog).toBeHidden();
-    await expect.poll(() => page.evaluate(() => window.canvasHarness.graph.name)).toBe('Record injuries and fatigue');
-    expect(await page.evaluate(() => window.canvasHarness.providerCalls())).toBe(0);
+    expect(result).toEqual({failed:false, unchanged:true, repaired:true, companions:1, calls:0});
 });
 
 test('one malformed primary stays as a disabled diagnostic tile while other examples still open', async ({ page }) => {
     await load(page);
     const beforeId = await page.evaluate(async () => {
         const h = window.canvasHarness;
-        const { WORKFLOW_EXAMPLE_DATA } = await import('/src/workflow/example-data.js?v=' + h.version);
+        const { REMASTERED_WORKFLOW_EXAMPLE_DATA: WORKFLOW_EXAMPLE_DATA } = await import('/src/workflow/remastered-example-data.js?v=' + h.version);
         const primary = WORKFLOW_EXAMPLE_DATA[0].packages[0].graph;
         Object.values(primary.nodes).find(node => node.type === 'workflow').operation = 'missing-example-operation';
         return h.S.settings().activeGraphId;
     });
     const dialog = await openExamples(page);
     await expect(dialog.locator('.pc-example-tile')).toHaveCount(exampleCount);
-    const invalid = dialog.getByRole('button', { name: 'Make a scene brief', exact: true });
+    const invalid = dialog.getByRole('button', { name: 'Follow a reply from Send to Review', exact: true });
     await expect(invalid).toBeDisabled();
     await expect(invalid).toContainText('Unavailable');
     await expect(invalid).toHaveAccessibleDescription(/unknown workflow operation/i);
     await expect(dialog.locator('.pc-example-tile:not(:disabled)')).toHaveCount(exampleCount-1);
     expect(await page.evaluate(() => window.canvasHarness.S.settings().activeGraphId)).toBe(beforeId);
-    await dialog.getByRole('button', { name: 'Replace a repeated phrase', exact: true }).click();
+    await dialog.getByRole('button', { name: 'Give this scene one clear direction', exact: true }).click();
     await expect(dialog).toBeHidden();
-    await expect.poll(() => page.evaluate(() => window.canvasHarness.graph.name)).toBe('Replace a repeated phrase');
+    await expect.poll(() => page.evaluate(() => window.canvasHarness.graph.name)).toBe('2. Give this scene one clear direction');
     expect(await page.evaluate(() => window.canvasHarness.providerCalls())).toBe(0);
 });
 
@@ -217,7 +204,7 @@ test('catalog-wide loading failure preserves the workspace and Retry restores th
     await load(page);
     const beforeId = await page.evaluate(async () => {
         const h = window.canvasHarness;
-        const { WORKFLOW_EXAMPLE_DATA } = await import('/src/workflow/example-data.js?v=' + h.version);
+        const { REMASTERED_WORKFLOW_EXAMPLE_DATA: WORKFLOW_EXAMPLE_DATA } = await import('/src/workflow/remastered-example-data.js?v=' + h.version);
         window.exampleCatalogTitleDescriptor = Object.getOwnPropertyDescriptor(WORKFLOW_EXAMPLE_DATA[0], 'title');
         Object.defineProperty(WORKFLOW_EXAMPLE_DATA[0], 'title', { configurable: true, get() { throw new Error('The example catalog is temporarily unavailable.'); } });
         return h.S.settings().activeGraphId;
@@ -228,14 +215,14 @@ test('catalog-wide loading failure preserves the workspace and Retry restores th
     expect(await page.evaluate(() => window.canvasHarness.S.settings().activeGraphId)).toBe(beforeId);
     await page.evaluate(async () => {
         const h = window.canvasHarness;
-        const { WORKFLOW_EXAMPLE_DATA } = await import('/src/workflow/example-data.js?v=' + h.version);
+        const { REMASTERED_WORKFLOW_EXAMPLE_DATA: WORKFLOW_EXAMPLE_DATA } = await import('/src/workflow/remastered-example-data.js?v=' + h.version);
         Object.defineProperty(WORKFLOW_EXAMPLE_DATA[0], 'title', window.exampleCatalogTitleDescriptor);
         delete window.exampleCatalogTitleDescriptor;
     });
     await dialog.getByRole('button', { name: 'Retry', exact: true }).click();
     await expect(dialog.getByRole('alert')).toHaveCount(0);
     await expect(dialog.locator('.pc-example-tile:not(:disabled)')).toHaveCount(exampleCount);
-    await dialog.getByRole('button', { name: 'Make a scene brief', exact: true }).click();
+    await dialog.getByRole('button', { name: 'Follow a reply from Send to Review', exact: true }).click();
     await expect(dialog).toBeHidden();
     expect(await page.evaluate(() => window.canvasHarness.providerCalls())).toBe(0);
 });

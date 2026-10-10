@@ -6,7 +6,11 @@ export interface ScopedActorContext {
     scope: { actorId: string; sceneId: string }; visibility: 'actor-private';
     context: JsonValue; memories?: ActorMemoryContext[];
 }
-export interface ActorContextRequest { sceneId: string; sourceId: string; revision: string; signal?: AbortSignal; }
+export interface ActorContextRequest {
+    sceneId: string; sourceId: string; revision: string; signal?: AbortSignal;
+    /** Optional exact Character Direction Data artifact; the host verifies its retained actor authority before capture. */
+    data?: WorkflowArtifact;
+}
 export interface EventModelRequest { messages: readonly { role: string; content: string }[]; maxTokens: number; signal?: AbortSignal; }
 export interface EventExecution {
     phase?: WorkflowPhase; signal?: AbortSignal; root?: boolean;

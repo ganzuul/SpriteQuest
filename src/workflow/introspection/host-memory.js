@@ -1,5 +1,5 @@
 import { createChatMetadataBackend, createMemoryService } from './memory.js?v=0.26.0';
-import { fail, freeze, makeRecord, ownData, parseRecord, validateEvidence } from './contracts.js?v=0.26.0';
+import { COLLECTIONS, fail, freeze, makeRecord, ownData, parseRecord, validateEvidence } from './contracts.js?v=0.26.0';
 
 const good = data => ({ ok: true, data });
 const id = value => typeof value === 'string' && value.trim().length > 0 && value.length <= 128 && !['__proto__', 'prototype', 'constructor'].includes(value);
@@ -165,6 +165,29 @@ export function createNativeMemoryAdapter({ context, selectActor, isSettled, sto
             const result = makeRecord('events', { scope, store: { id: storeId, version: 0 } }, { events: material }, refs);
             return result.ok ? good(result.data) : result;
         };
+        // Publication preserves the original body, but selects a new native revision.
+        // Store that exact selected revision so a later adapter needs no old-swipe authority.
+        const rebaseAcceptedState = async (input, authority) => {
+            const plan = slot.accepted.get(authority.signal);
+            if (!plan) return good(input);
+            const state = parseRecord(input.state, 'actor-state'); if (!state.ok) return state;
+            const live = () => checkAuthority(authority).ok
+                && selectedForSlot(context(), plan.index) === plan.descriptor
+                && selected(context(), plan.index, isSettled, scope.actorId) === plan.finalDescriptor;
+            if (!live()) return fail('INVALID_ACCEPTED_MEMORY', 'The exact accepted original and bounded selected source must remain unchanged.');
+            let originalRevision, finalRevision;
+            try { [originalRevision, finalRevision] = await Promise.all([nativeMemoryFingerprint(plan.descriptor), nativeMemoryFingerprint(plan.finalDescriptor)]); }
+            catch { return fail('INVALID_ACCEPTED_MEMORY', 'The accepted native source could not be fingerprinted.'); }
+            if (!live()) return fail('INVALID_ACCEPTED_MEMORY', 'The accepted native source changed while its revision was captured.');
+            const originalId = 'chat:' + plan.index;
+            const replace = refs => refs.map(ref => ref.id === originalId && ref.revision === originalRevision ? { id: originalId, revision: finalRevision } : ref);
+            const payload = { ...state.data.payload };
+            for (const collection of COLLECTIONS) payload[collection] = payload[collection].map(item => ({ ...item, sourceRefs: replace(item.sourceRefs) }));
+            const rebased = makeRecord('actor-state', state.data, payload, replace(state.data.sourceRefs));
+            if (!rebased.ok) return rebased;
+            // Receipt fingerprint remains the original checked intent for exact idempotent replay.
+            return good({ ...input, state: rebased.data });
+        };
         const saveMetadata = async next => {
             const persistence = slot.persistence;
             const checked = persistence && checkAuthority(persistence.authority);
@@ -200,10 +223,11 @@ export function createNativeMemoryAdapter({ context, selectActor, isSettled, sto
                 const checked = checkAuthority(authority); if (!checked.ok) return checked;
                 const persistence = persistenceGuard(input.receipt.key, input.receipt.fingerprint); if (!persistence.ok) return persistence;
                 const evidence = sourceCheck(controls.sourceRefs ?? []); if (!evidence.ok) return evidence;
+                const rebased = await rebaseAcceptedState(input, authority); if (!rebased.ok) return rebased;
                 const c = context();
                 slot.persistence = { authority, sourceRefs: controls.sourceRefs, before: structuredClone(c.chatMetadata?.latticeIntrospection?.[storeId]?.[scope.actorId]), failure: null, saveAttempted: false };
                 try {
-                    const result = await slot.backend.compareAndSwap(input, controls);
+                    const result = await slot.backend.compareAndSwap(rebased.data, controls);
                     if (slot.persistence.failure) { slot.backend = backend(); return slot.persistence.failure; }
                     return result;
                 } finally { slot.persistence = null; }

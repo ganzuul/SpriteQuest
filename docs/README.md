@@ -5,6 +5,7 @@ Build writing processes from typed operations, inspect their intermediate result
 | Guide | Start here when you want to… |
 | --- | --- |
 | [Quick start](lattice-workspace.md) | Assign the unified starter, Send and review; explore zero-auxiliary-call legacy tools |
+| [Thirty example workflows](examples.md) | Choose a lesson, configure fixtures, and follow accepted effects |
 | [Unified workflows](unified-workflows.md) | Apply an example to a story, chain models and decisions, configure documents/Recall, track story time and migrate a copy |
 | [Operator's manual](operators-manual.md) | Learn the editor, shelf, Details, Preview, execution, tabs, and subgraphs through screenshots |
 | [Node reference](node-reference.md) | Find every available node's artifacts, controls, model requirements, and connection examples |

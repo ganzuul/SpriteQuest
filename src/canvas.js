@@ -248,7 +248,7 @@ export class Canvas {
         this.hooks.onViewCommit?.();
     }
 
-    fit({ avoidShelf = false } = {}) {
+    fit({ avoidShelf = true } = {}) {
         this.#finishZoom(false);
         const boxes = Object.values(this.graph?.nodes ?? {}).filter(n => !this.#folded(n)).map(n => ({ x: n.x, y: n.y, w: this.widthOf(n), h: this.heightOf(n) || 160 }));
         for (const g of Object.values(this.graph?.groups ?? {})) {
@@ -272,7 +272,8 @@ export class Canvas {
             ? Math.min(Math.max(0, rect.width - 80), Math.max(0, shelfRect.right - rect.left + 24)) : 0;
         const width = rect.width - leftInset;
         const height = rect.height - topInset;
-        const zoom = Math.max(0.25, Math.min(1.2, Math.min(width / (maxX - minX), height / (maxY - minY))));
+        // A complete graph overview may need to zoom below the ordinary interaction floor.
+        const zoom = Math.max(0.05, Math.min(1.2, Math.min(width / (maxX - minX), height / (maxY - minY))));
         const v = this.view;
         v.zoom = zoom;
         v.x = leftInset - minX * zoom + (width - (maxX - minX) * zoom) / 2;

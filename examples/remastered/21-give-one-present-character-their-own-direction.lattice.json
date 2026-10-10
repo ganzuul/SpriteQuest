@@ -1,0 +1,346 @@
+{
+  "kind": "lattice-workflow",
+  "schema": 2,
+  "minRuntime": 2,
+  "graph": {
+    "id": "remastered-lesson-21",
+    "name": "21. Give one present character their own direction",
+    "description": "Verify current participation and give the selected native actor a literal private portrayal system prompt.\n\nAssign this independent copy as Unified and arm Lattice before Send. Ordinary generation uses Active SillyTavern.\nSelect native Rowan and replace character:rowan.png with the actual loaded canonical avatar ID.\n\nOpen Give one present character their own direction and inspect the named pins.\nInspect cast evidence; name mention or character-card text cannot establish presence.\nCharacter Direction.systemPrompt is literal, separately authored text for this actor.\nAbsent skips the direction; unresolved holds. The private result may guide only the selected native actor.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: At most 2 auxiliary requests: 1 participation interpretation + 1 Character Direction only if present; one ordinary native generation.\nCheckpoints:\nCharacter Direction.out: Only the genuinely present selected native actor contributes private Guidance.",
+    "schema": 3,
+    "runtime": 2,
+    "mode": "native-unified",
+    "nodes": {
+      "send": {
+        "id": "send",
+        "type": "workflow",
+        "operation": "on-send",
+        "operationVersion": 1,
+        "title": "On Send",
+        "enabled": true,
+        "x": 100,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-0",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "On Send"
+      },
+      "generate": {
+        "id": "generate",
+        "type": "workflow",
+        "operation": "generate-reply",
+        "operationVersion": 1,
+        "title": "Generate Reply · SillyTavern",
+        "enabled": true,
+        "x": 1540,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-4",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Generate Reply · SillyTavern",
+        "budgetTokens": 768
+      },
+      "review": {
+        "id": "review",
+        "type": "workflow",
+        "operation": "review-publish",
+        "operationVersion": 1,
+        "title": "Review / Publish",
+        "enabled": true,
+        "x": 1900,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-5",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Review / Publish"
+      },
+      "scene": {
+        "id": "scene",
+        "type": "workflow",
+        "operation": "scene-context",
+        "title": "Scene Context",
+        "enabled": true,
+        "x": 100,
+        "y": 560,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-0",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Scene Context",
+        "recentMessages": 12,
+        "includeCharacter": false,
+        "visibilityMode": "public"
+      },
+      "cast-request": {
+        "id": "cast-request",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 100,
+        "y": 880,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-0",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "pre",
+        "alias": "Text",
+        "text": "Return exactly {sceneId,sourceId,revision,actors:[{actorId,status,evidence}]}. Copy identity from context.source. Check only character:rowan.png. Present requires exact current scene quote and actual participation, not name mention, remembered actor, card text or offscreen speculation. Status is present, absent or unresolved."
+      },
+      "cast": {
+        "id": "cast",
+        "type": "workflow",
+        "operation": "model-call",
+        "operationVersion": 1,
+        "title": "Model Call",
+        "enabled": true,
+        "x": 460,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-1",
+        "profileId": "lattice:active-sillytavern",
+        "model": null,
+        "modelRole": "Prose",
+        "phase": "pre",
+        "alias": "Model Call",
+        "instructions": "Interpret genuine scene participation from the unchanged supplied source; copy its IDs and evidence exactly.",
+        "outputKind": "data",
+        "schema": "",
+        "maxTokens": 2048
+      },
+      "cast-presence-0": {
+        "id": "cast-presence-0",
+        "type": "workflow",
+        "operation": "scene-presence",
+        "operationVersion": 1,
+        "title": "Scene Presence",
+        "enabled": true,
+        "x": 820,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-2",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "pre",
+        "alias": "Scene Presence",
+        "actorId": "character:rowan.png"
+      },
+      "direction": {
+        "id": "direction",
+        "type": "workflow",
+        "operation": "character-direction",
+        "operationVersion": 1,
+        "title": "Character Direction",
+        "enabled": true,
+        "x": 1180,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-3",
+        "profileId": "lattice:active-sillytavern",
+        "model": null,
+        "modelRole": "characterDirection",
+        "alias": "Character Direction",
+        "actorId": "character:rowan.png",
+        "systemPrompt": "Portray Rowan with patient attention to concrete evidence and restrained humor. Preserve the player’s agency. These instructions apply only while Rowan participates.",
+        "maxTokens": 1024
+      },
+      "lesson-note": {
+        "id": "lesson-note",
+        "type": "note",
+        "title": "Lesson instructions",
+        "enabled": true,
+        "x": 100,
+        "y": 0,
+        "w": 900,
+        "h": 180,
+        "content": "Verify current participation and give the selected native actor a literal private portrayal system prompt.\n\nAssign this independent copy as Unified and arm Lattice before Send. Ordinary generation uses Active SillyTavern.\nSelect native Rowan and replace character:rowan.png with the actual loaded canonical avatar ID.\n\nOpen Give one present character their own direction and inspect the named pins.\nInspect cast evidence; name mention or character-card text cannot establish presence.\nCharacter Direction.systemPrompt is literal, separately authored text for this actor.\nAbsent skips the direction; unresolved holds. The private result may guide only the selected native actor.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: At most 2 auxiliary requests: 1 participation interpretation + 1 Character Direction only if present; one ordinary native generation.\nCheckpoints:\nCharacter Direction.out: Only the genuinely present selected native actor contributes private Guidance.",
+        "commentFrame": true,
+        "moveContents": false
+      }
+    },
+    "wires": {
+      "edge-1": {
+        "id": "edge-1",
+        "route": "wire",
+        "from": "send",
+        "fromPort": "activation",
+        "to": "generate",
+        "toPort": "activation"
+      },
+      "edge-2": {
+        "id": "edge-2",
+        "route": "wire",
+        "from": "cast-request",
+        "fromPort": "out",
+        "to": "cast",
+        "toPort": "prompt"
+      },
+      "edge-3": {
+        "id": "edge-3",
+        "route": "wire",
+        "from": "scene",
+        "fromPort": "out",
+        "to": "cast",
+        "toPort": "context"
+      },
+      "edge-4": {
+        "id": "edge-4",
+        "route": "wire",
+        "from": "cast",
+        "fromPort": "out",
+        "to": "cast-presence-0",
+        "toPort": "in"
+      },
+      "edge-5": {
+        "id": "edge-5",
+        "route": "wire",
+        "from": "cast-presence-0",
+        "fromPort": "out",
+        "to": "direction",
+        "toPort": "presence"
+      },
+      "edge-6": {
+        "id": "edge-6",
+        "route": "wire",
+        "from": "direction",
+        "fromPort": "out",
+        "to": "generate",
+        "toPort": "guidance"
+      },
+      "edge-7": {
+        "id": "edge-7",
+        "route": "wire",
+        "from": "generate",
+        "fromPort": "draft",
+        "to": "review",
+        "toPort": "draft"
+      }
+    },
+    "groups": {
+      "stage-0": {
+        "id": "stage-0",
+        "title": "Preparation / processing",
+        "description": "Stage 0. Wires determine execution; folding is presentation only.",
+        "x": 75,
+        "y": 190,
+        "w": 350,
+        "h": 925,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "send",
+          "scene",
+          "cast-request"
+        ]
+      },
+      "stage-1": {
+        "id": "stage-1",
+        "title": "Preparation / processing",
+        "description": "Stage 1. Wires determine execution; folding is presentation only.",
+        "x": 435,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "cast"
+        ]
+      },
+      "stage-2": {
+        "id": "stage-2",
+        "title": "Preparation / processing",
+        "description": "Stage 2. Wires determine execution; folding is presentation only.",
+        "x": 795,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "cast-presence-0"
+        ]
+      },
+      "stage-3": {
+        "id": "stage-3",
+        "title": "Preparation / processing",
+        "description": "Stage 3. Wires determine execution; folding is presentation only.",
+        "x": 1155,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "direction"
+        ]
+      },
+      "stage-4": {
+        "id": "stage-4",
+        "title": "Native generation",
+        "description": "Stage 4. Wires determine execution; folding is presentation only.",
+        "x": 1515,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#284e67",
+        "collapsed": false,
+        "members": [
+          "generate"
+        ]
+      },
+      "stage-5": {
+        "id": "stage-5",
+        "title": "Review / accepted staging",
+        "description": "Stage 5. Wires determine execution; folding is presentation only.",
+        "x": 1875,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "review"
+        ]
+      }
+    },
+    "roles": {
+      "Prose": {
+        "model": null,
+        "profileId": "lattice:active-sillytavern"
+      },
+      "characterDirection": {
+        "model": null,
+        "profileId": "lattice:active-sillytavern"
+      }
+    },
+    "portals": {},
+    "definitions": {},
+    "template": {
+      "id": "lesson-21",
+      "version": 1
+    },
+    "view": {
+      "x": 0,
+      "y": 0,
+      "zoom": 0.65
+    }
+  }
+}
