@@ -481,7 +481,7 @@ function build() {
             if (name.startsWith('open-recent:')) return ensureDocumentCommands().recent(name.slice(12));
             if (name.startsWith('recover-workflow:')) return ensureDocumentCommands().recover(name.slice(17));
             const commands = { new: onNewGraph, rename: onRenameGraph, save: onSaveGraph, 'save-as': () => onSaveGraph(true), 'download-document': onSaveGraph, 'clear-recent': () => ensureDocumentCommands().clearRecent(), 'open-workflow': onImportGraph, 'import-into-graph': onImportIntoGraph, export: onExportGraph, 'export-archived-workflows': onExportArchivedWorkflows, 'manage-portals': () => openPortalManager(), undo: doUndo, redo: doRedo,
-                fit: () => canvas.fit(), 'fit-selection': () => canvas.fitSelection(), copy: () => copySelection(), cut: () => copySelection(true), paste: pasteFromClipboard,
+                fit: () => canvas.fit(), copy: () => copySelection(), cut: () => copySelection(true), paste: pasteFromClipboard,
                 'delete-selection': () => canvas.deleteSelection(), 'run-workflow': workflowActions.run, 'stop-workflow': stopOwnedWorkflow,
                 theme: toggleThemePopover, inspector: togglePane, 'reveal-inspector': () => { if (root.classList.contains('pc-details-hidden')) togglePane(); }, close };
             return commands[name]?.();
@@ -574,7 +574,6 @@ function build() {
             if (['c', 'x'].includes(key) && !String(window.getSelection?.() ?? '').trim() && currentPick()) { event.preventDefault(); copySelection(key === 'x'); return; }
             if (key === 'd' && selectedKind === 'node') { event.preventDefault(); duplicateSelected(selected); return; }
         }
-        if (event.key === '.' && !mod) { event.preventDefault(); canvas.fitSelection(); }
         if (['Delete', 'Backspace'].includes(event.key)) { event.preventDefault(); canvas.deleteSelection(); }
     });
     refreshExampleCatalog();

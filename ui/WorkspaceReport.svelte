@@ -24,7 +24,7 @@
         <tr><td>Select all</td><td>Ctrl A</td></tr>
         <tr><td>Group / Ungroup</td><td>Ctrl G / Ctrl Shift G</td></tr>
         <tr><td>Comment selection / Add comment</td><td>C</td></tr>
-        <tr><td>Fit and center selection</td><td>F / .</td></tr>
+        <tr><td>Fit and center selection</td><td>F</td></tr>
         <tr><td>Rename selection</td><td>F2</td></tr>
         <tr><td>Pan / Zoom</td><td>Middle mouse / Wheel</td></tr>
         <tr><td>Dismiss a menu or panel</td><td>Escape</td></tr>

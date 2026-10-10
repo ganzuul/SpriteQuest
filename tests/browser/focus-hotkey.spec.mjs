@@ -75,7 +75,7 @@ test('F with no selection frames the graph using the same shelf-aware view as Fi
     expect((await centerOffset(page, '.pc-node')).contained).toBe(true);
 });
 
-test('View advertises F for fitting, period remains an alias, and Center selection preserves zoom', async ({ page }) => {
+test('View advertises F for fitting, period is unbound, and Center selection preserves zoom', async ({ page }) => {
     await openCanvas(page);
     await page.evaluate(async () => {
         const h = window.canvasHarness;
@@ -90,10 +90,16 @@ test('View advertises F for fitting, period remains an alias, and Center selecti
     expect((await centerOffset(page, '.pc-node[data-id="n0"]')).zoom).toBe(.8);
     await page.locator('.pc-canvas-host').focus();
     await page.keyboard.press('f');
-    const fitted = await page.evaluate(() => ({ ...window.canvasHarness.canvas.view }));
+    expect((await centerOffset(page, '.pc-node[data-id="n0"]')).zoom).toBe(1.2);
     await page.evaluate(() => window.canvasHarness.view({ x: -430, y: 215, zoom: .8 }));
+    const beforePeriod = await page.evaluate(() => {
+        window.periodKeyPrevented = null;
+        window.addEventListener('keydown', event => { window.periodKeyPrevented = event.defaultPrevented; }, { once: true });
+        return { ...window.canvasHarness.canvas.view };
+    });
     await page.keyboard.press('.');
-    expect(await page.evaluate(() => ({ ...window.canvasHarness.canvas.view }))).toEqual(fitted);
+    expect(await page.evaluate(() => ({ ...window.canvasHarness.canvas.view }))).toEqual(beforePeriod);
+    expect(await page.evaluate(() => window.periodKeyPrevented)).toBe(false);
 });
 
 test('F leaves the camera alone while typing, with command modifiers, or when the canvas is closed', async ({ page }) => {

@@ -90,7 +90,7 @@ Final visual captures, including host keycap CSS, are under `.tmp/integration-co
 
 ## F fits and centers selection
 
-During user testing, the user requested that a single **F** press fit and center the selection instead of preserving zoom. F now invokes Fit selection. View and context-menu shortcut hints advertise F, Help describes F and period as aliases, and the manual and quick start explain the combined action. Center selection remains a separate, unbound menu action that preserves zoom. With no selection, F uses the existing shelf-aware Fit graph behavior.
+During user testing, the user requested that a single **F** press fit and center the selection instead of preserving zoom. F now invokes Fit selection. View, context menus and Help advertise F, and the manual and quick start explain the combined action. Center selection remains a separate, unbound menu action that preserves zoom. With no selection, F uses the existing shelf-aware Fit graph behavior.
 
 Fit selection now shares the measured bounds and gesture protections of centering: primary and multiple node selections, measured wire endpoints, folded cards and empty group frames use their displayed geometry. Camera changes commit without changing graph edits or selection. The capability check permits fitting wires and empty groups, including read-only views. Typing, command modifiers, repeated F events, closed canvases, open menus and active drags remain protected.
 
@@ -106,6 +106,10 @@ Failing tests first reproduced the previous F zoom behavior, the menu eligibilit
 | Preservation | Ten archives and nine source checkouts verified | `.tmp/focus-fit-preservation.log` |
 
 The follow-up receipt `focus-fit-confirmation.json` records the published file blobs, exact Main SHA, hashed evidence and additional `all-refs-focus-fit.bundle`. The earlier menu repair receipt, bundle and handoff remain preserved. Worktree cleanup still requires user acceptance of pushed Main.
+
+The user subsequently requested retiring the period alias and associated UI debt. The period key binding, Help alias, manual sentence and shortcut-table row are removed. The live Svelte interaction guide also describes F. An unused generic Fit selection dispatch entry is removed; View continues to use its dedicated `actions.fitSelection()` action. F, context-menu fitting and the distinct zoom-preserving Center selection command retain their behavior. Earlier alias descriptions in preserved receipts and dated specifications describe history.
+
+A failing browser regression reproduced period fitting the selection before removal. The isolated cleanup candidate then passed **5/5 affected Node files and 22/22 affected browser cases**, including unchanged camera and unclaimed key events for period, F fitting, typing/drag protections, menu isolation and Help guidance. Types, build, assets, documentation and isolated installation checks passed. Independent review found no actionable issues. Evidence is under `.tmp/period-removal-*.log`; `period-removal-confirmation.json` records the published file blobs and additional `all-refs-period-removal.bundle`. All source worktrees and recovery evidence remain retained.
 
 ## Recovery and retained worktrees
 

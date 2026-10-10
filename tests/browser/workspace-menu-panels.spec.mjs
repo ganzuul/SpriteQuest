@@ -81,7 +81,7 @@ test('validation and Help show current data and documentation without running or
     await menubar.getByRole('menuitem', {name:'Help',exact:true}).click();
     await page.getByRole('menuitem', {name:'Keyboard shortcuts',exact:true}).click();
     const shortcuts = page.getByRole('dialog', {name:'Keyboard shortcuts',exact:true});
-    await expect(shortcuts.getByRole('row', {name:'Fit and center selection F / .',exact:true})).toBeVisible();
+    await expect(shortcuts.getByRole('row', {name:'Fit and center selection F',exact:true})).toBeVisible();
 });
 
 test('View pins the selected output and Workflow diagnostics retain its exact source and target', async ({ page }) => {
