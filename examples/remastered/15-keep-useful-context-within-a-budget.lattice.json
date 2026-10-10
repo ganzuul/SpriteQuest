@@ -5,7 +5,7 @@
   "graph": {
     "id": "remastered-lesson-15",
     "name": "15. Keep useful context within a budget",
-    "description": "Join two public context windows and retain selected recent/protected material under a token budget.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\n\nOpen Keep useful context within a budget and inspect the named pins.\nInspect Context Join source identity/deduplication and Smart Compactor omissions.\nSelection makes no auxiliary call; compress is an optional exercise with one additional call.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: Default select: 1 auxiliary Response Plan request. Compress exercise: up to 2. One ordinary native generation.\nCheckpoints:\nSmart Compactor.out: Recent messages and protected lantern material are retained; omissions remain reported.",
+    "description": "Learn to give a planner useful context without sending everything. You will combine two views of the chat, keep recent messages and lantern details, and see what had to be left out.\n\nWhat you'll learn:\n• Context Join combines context without repeating the same messages.\n• Smart Compactor keeps selected material within a size limit and reports omissions.\n\nBefore you start:\n• Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.\n• This extends the small context window in lesson 3. Choose a model connection for Response Plan. A longer chat mentioning a lantern will make the comparison clearer.\n\nSteps:\n1. Compare the Scene Context boxes: one reads 3 recent public messages and the other reads 12. Context Join combines them without duplicating overlapping messages.\n2. Open Smart Compactor. Its target is 700 tokens, a measure of how much text a model receives. It keeps the two most recent messages and protects material mentioning lantern.\n3. Send a message. Inspect Smart Compactor’s output and report to see which messages were kept and which were omitted before Response Plan uses them.\n4. Leave Method set to select for the first run. It chooses existing material without asking a model to summarize it.\n5. Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes.\n\nCheckpoints:\nSmart Compactor → out: The retained context includes recent messages and protected lantern material. Its report explains what was omitted.\n\nTry this:\nChange Method from select to compress and run again.\nA model can shorten the context, adding one request. Compare what survives in the shorter text and still check its omission report.\n\nIf something is different:\nThe recent or protected material cannot fit: The workflow reports the size problem so you can adjust the target or the protected material.\n\nModel requests: One extra planning request with select; up to two with compress. SillyTavern writes one reply.",
     "schema": 3,
     "runtime": 2,
     "mode": "native-unified",
@@ -18,10 +18,9 @@
         "title": "On Send",
         "enabled": true,
         "x": 100,
-        "y": 240,
+        "y": 826,
         "w": 300,
         "h": 210,
-        "inGroup": "stage-0",
         "profileId": null,
         "model": null,
         "modelRole": null,
@@ -35,10 +34,9 @@
         "title": "Generate Reply · SillyTavern",
         "enabled": true,
         "x": 1540,
-        "y": 240,
+        "y": 826,
         "w": 300,
         "h": 210,
-        "inGroup": "stage-4",
         "profileId": null,
         "model": null,
         "modelRole": null,
@@ -53,10 +51,9 @@
         "title": "Review / Publish",
         "enabled": true,
         "x": 1900,
-        "y": 240,
+        "y": 826,
         "w": 300,
         "h": 210,
-        "inGroup": "stage-5",
         "profileId": null,
         "model": null,
         "modelRole": null,
@@ -69,10 +66,9 @@
         "title": "Scene Context",
         "enabled": true,
         "x": 100,
-        "y": 560,
+        "y": 1116,
         "w": 300,
         "h": 210,
-        "inGroup": "stage-0",
         "profileId": null,
         "model": null,
         "modelRole": null,
@@ -88,10 +84,9 @@
         "title": "Scene Context",
         "enabled": true,
         "x": 100,
-        "y": 880,
+        "y": 1406,
         "w": 300,
         "h": 210,
-        "inGroup": "stage-0",
         "profileId": null,
         "model": null,
         "modelRole": null,
@@ -108,10 +103,9 @@
         "title": "Context Join",
         "enabled": true,
         "x": 460,
-        "y": 240,
+        "y": 826,
         "w": 300,
         "h": 210,
-        "inGroup": "stage-1",
         "profileId": null,
         "model": null,
         "modelRole": null,
@@ -134,10 +128,9 @@
         "title": "Smart Compactor",
         "enabled": true,
         "x": 820,
-        "y": 240,
+        "y": 826,
         "w": 300,
         "h": 210,
-        "inGroup": "stage-2",
         "profileId": "lattice:active-sillytavern",
         "model": null,
         "modelRole": "Analysis",
@@ -158,10 +151,9 @@
         "title": "Response Plan",
         "enabled": true,
         "x": 1180,
-        "y": 240,
+        "y": 826,
         "w": 300,
         "h": 210,
-        "inGroup": "stage-3",
         "profileId": "lattice:active-sillytavern",
         "model": null,
         "modelRole": "Analysis",
@@ -177,8 +169,8 @@
         "x": 100,
         "y": 0,
         "w": 900,
-        "h": 180,
-        "content": "Join two public context windows and retain selected recent/protected material under a token budget.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\n\nOpen Keep useful context within a budget and inspect the named pins.\nInspect Context Join source identity/deduplication and Smart Compactor omissions.\nSelection makes no auxiliary call; compress is an optional exercise with one additional call.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: Default select: 1 auxiliary Response Plan request. Compress exercise: up to 2. One ordinary native generation.\nCheckpoints:\nSmart Compactor.out: Recent messages and protected lantern material are retained; omissions remain reported.",
+        "h": 746,
+        "content": "Learn to give a planner useful context without sending everything. You will combine two views of the chat, keep recent messages and lantern details, and see what had to be left out.\n\nWhat you'll learn:\n• Context Join combines context without repeating the same messages.\n• Smart Compactor keeps selected material within a size limit and reports omissions.\n\nBefore you start:\n• Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.\n• This extends the small context window in lesson 3. Choose a model connection for Response Plan. A longer chat mentioning a lantern will make the comparison clearer.\n\nSteps:\n1. Compare the Scene Context boxes: one reads 3 recent public messages and the other reads 12. Context Join combines them without duplicating overlapping messages.\n2. Open Smart Compactor. Its target is 700 tokens, a measure of how much text a model receives. It keeps the two most recent messages and protects material mentioning lantern.\n3. Send a message. Inspect Smart Compactor’s output and report to see which messages were kept and which were omitted before Response Plan uses them.\n4. Leave Method set to select for the first run. It chooses existing material without asking a model to summarize it.\n5. Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes.\n\nCheckpoints:\nSmart Compactor → out: The retained context includes recent messages and protected lantern material. Its report explains what was omitted.\n\nTry this:\nChange Method from select to compress and run again.\nA model can shorten the context, adding one request. Compare what survives in the shorter text and still check its omission report.\n\nIf something is different:\nThe recent or protected material cannot fit: The workflow reports the size problem so you can adjust the target or the protected material.\n\nModel requests: One extra planning request with select; up to two with compress. SillyTavern writes one reply.",
         "commentFrame": true,
         "moveContents": false
       }
@@ -241,94 +233,7 @@
         "toPort": "draft"
       }
     },
-    "groups": {
-      "stage-0": {
-        "id": "stage-0",
-        "title": "Preparation / processing",
-        "description": "Stage 0. Wires determine execution; folding is presentation only.",
-        "x": 75,
-        "y": 190,
-        "w": 350,
-        "h": 925,
-        "color": "#57416e",
-        "collapsed": false,
-        "members": [
-          "send",
-          "recent",
-          "wider"
-        ]
-      },
-      "stage-1": {
-        "id": "stage-1",
-        "title": "Preparation / processing",
-        "description": "Stage 1. Wires determine execution; folding is presentation only.",
-        "x": 435,
-        "y": 190,
-        "w": 350,
-        "h": 285,
-        "color": "#57416e",
-        "collapsed": false,
-        "members": [
-          "join-context"
-        ]
-      },
-      "stage-2": {
-        "id": "stage-2",
-        "title": "Preparation / processing",
-        "description": "Stage 2. Wires determine execution; folding is presentation only.",
-        "x": 795,
-        "y": 190,
-        "w": 350,
-        "h": 285,
-        "color": "#57416e",
-        "collapsed": false,
-        "members": [
-          "compact"
-        ]
-      },
-      "stage-3": {
-        "id": "stage-3",
-        "title": "Preparation / processing",
-        "description": "Stage 3. Wires determine execution; folding is presentation only.",
-        "x": 1155,
-        "y": 190,
-        "w": 350,
-        "h": 285,
-        "color": "#57416e",
-        "collapsed": false,
-        "members": [
-          "plan"
-        ]
-      },
-      "stage-4": {
-        "id": "stage-4",
-        "title": "Native generation",
-        "description": "Stage 4. Wires determine execution; folding is presentation only.",
-        "x": 1515,
-        "y": 190,
-        "w": 350,
-        "h": 285,
-        "color": "#284e67",
-        "collapsed": false,
-        "members": [
-          "generate"
-        ]
-      },
-      "stage-5": {
-        "id": "stage-5",
-        "title": "Review / accepted staging",
-        "description": "Stage 5. Wires determine execution; folding is presentation only.",
-        "x": 1875,
-        "y": 190,
-        "w": 350,
-        "h": 285,
-        "color": "#57416e",
-        "collapsed": false,
-        "members": [
-          "review"
-        ]
-      }
-    },
+    "groups": {},
     "roles": {
       "Analysis": {
         "model": null,

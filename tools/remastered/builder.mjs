@@ -1,5 +1,8 @@
-import { GUIDE } from './guide.mjs';
-import { OPERATIONS, operationDefaults, portsForNode, describeOperation } from '../../src/workflow/catalog.js';
+import { teachingFor, lessonComment } from './teaching.mjs';
+import { lessonCommentSize } from './comment-layout.mjs';
+import { layout } from './graph-layout.mjs';
+export { layout } from './graph-layout.mjs';
+import { OPERATIONS, operationDefaults } from '../../src/workflow/catalog.js';
 import { validateWorkflow } from '../../src/workflow/contracts.js';
 import { exportWorkflow, parseWorkflow } from '../../src/workflow/packages.js';
 import { computeDefinitionIdentity, definitionRefKey, validateDefinition } from '../../src/workflow/definitions.js';
@@ -9,45 +12,6 @@ export const must = (r, label) => {
         throw Error(`${label}: ${JSON.stringify(r.error)}`);
     return r.data;
 };
-export function layout(graph) {
-    const nodes = Object.values(graph.nodes).filter(n => n.type !== 'note'), levels = new Map(), pending = new Set(nodes.map(n => n.id));
-    for (let round = 0; pending.size && round < 1000; round++)
-        for (const id of [...pending]) {
-            const parents = Object.values(graph.wires).filter(w => w.to === id).map(w => w.from);
-            if (parents.every(p => levels.has(p))) {
-                levels.set(id, Math.max(0, ...parents.map(p => levels.get(p) + 1)));
-                pending.delete(id);
-            }
-        }
-    if (pending.size)
-        throw Error('Cannot lay out cyclic graph');
-    const rows = {};
-    for (const n of nodes) {
-        const col = levels.get(n.id), row = rows[col] ?? 0;
-        rows[col] = row + 1;
-        n.x = 100 + col * 360;
-        n.y = 240 + row * 320;
-        n.w = 300;
-        const pins = portsForNode(graph, n);
-        n.h = Math.max(210, 100 + Math.max(pins.filter(p => p.direction === 'input').length, pins.filter(p => p.direction === 'output').length) * 32);
-    }
-    graph.groups = {};
-    if (nodes.length > 6) {
-        const buckets = {};
-        for (const n of nodes)
-            (buckets[levels.get(n.id)] ??= []).push(n);
-        for (const [stage, members] of Object.entries(buckets)) {
-            const id = 'stage-' + stage;
-            for (const n of members)
-                n.inGroup = id;
-            const title = members.some(n => n.operation === 'generate-reply') ? 'Native generation' : members.some(n => n.operation === 'review-publish' || ['write-file', 'commit-clock', 'commit-outcomes'].includes(n.operation)) ? 'Review / accepted staging' : members.every(n => n.phase === 'post') ? 'Response processing' : 'Preparation / processing';
-            const x = Math.min(...members.map(n => n.x)) - 25, y = Math.min(...members.map(n => n.y)) - 50, right = Math.max(...members.map(n => n.x + n.w)) + 25, bottom = Math.max(...members.map(n => n.y + n.h)) + 25;
-            graph.groups[id] = {
-                id, title, description: 'Stage ' + stage + '. Wires determine execution; folding is presentation only.', x, y, w: right - x, h: bottom - y, collapsed: false, members: members.map(n => n.id), color: title === 'Native generation' ? '#284e67' : '#57416e'
-            };
-        }
-    }
-}
 export function builder(number, title, goal, focus) {
     const id = `lesson-${String(number).padStart(2, '0')}`, graph = {
         id: `remastered-${id}`, name: `${number}. ${title}`, description: goal, schema: 3, runtime: 2, mode: 'native-unified', template: { id, version: 1 }, nodes: {}, wires: {}, roles: {}, groups: {}, portals: {}, definitions: {}, view: { x: 0, y: 0, zoom: .65 }
@@ -154,12 +118,11 @@ export function builder(number, title, goal, focus) {
         connect(draft, port, 'review', 'draft');
         if (!r.checkpoints.length)
             r.check('review', 'draft', 'An owned native Draft is available for deliberate review.');
-        const lesson = {
-            difficulty: number <= 8 ? 'Foundations' : number <= 17 ? 'Composition' : number <= 26 ? 'Advanced' : 'Capstone', focus, learn: r.learn.length ? r.learn : [focus, 'Trace named artifacts to the owned Draft or accepted proposal.'], requirements: ['Open this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.', ...r.requirements], steps: [`Open ${title} and inspect the named pins.`, ...r.steps, 'Send in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.'], checkpoints: r.checkpoints, experiments: r.experiments.length ? r.experiments : [{ change: GUIDE[number][2], expect: GUIDE[number][3] }], cases: r.cases.length ? r.cases : [{ when: GUIDE[number][0], expect: GUIDE[number][1] }, { when: 'Rejected or stopped', expect: 'The existing story and staged effects are retained without settlement.' }], callBudget: r.budget
-        };
-        graph.description = goal + '\n\n' + lesson.requirements.join('\n') + '\n\n' + lesson.steps.join('\n') + '\n\nCalls: ' + lesson.callBudget + '\n' + 'Checkpoints:\n' + lesson.checkpoints.map(c => `${c.node}.${c.port}: ${c.expect}`).join('\n');
+        const { goal: lessonGoal, ...teaching } = teachingFor(number, r.checkpoints);
+        const lesson = { ...teaching, focus };
+        graph.description = lessonComment(lessonGoal, lesson);
         graph.nodes['lesson-note'] = {
-            id: 'lesson-note', type: 'note', content: graph.description, title: 'Lesson instructions', x: 100, y: 0, w: 900, h: 180, enabled: true, commentFrame: true, moveContents: false
+            id: 'lesson-note', type: 'note', content: graph.description, title: 'Lesson instructions', x: 100, y: 0, ...lessonCommentSize(graph.description), enabled: true, commentFrame: true, moveContents: false
         };
         layout(graph);
         must(validateWorkflow(graph), id);
@@ -168,7 +131,7 @@ export function builder(number, title, goal, focus) {
         const parsed = must(parseWorkflow(JSON.stringify(envelope)), id + ' parse');
         must(validateWorkflow(parsed), id + ' round trip');
         return {
-            id, number, title, goal, lesson, packages: [envelope]
+            id, number, title, goal: lessonGoal, lesson, packages: [envelope]
         };
     };
     return r;

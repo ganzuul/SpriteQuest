@@ -5,7 +5,7 @@
   "graph": {
     "id": "remastered-lesson-06",
     "name": "6. Bring a lore sheet into the scene",
-    "description": "Load an imported UTF-8 snapshot, decode JSON, and select only the current location facts.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\n\nOpen Bring a lore sheet into the scene and inspect the named pins.\nInspect the imported snapshot content; it does not read a live file.\nSelect location and constraint while omitting unrelated lore.\nFor plain text, remove JSON Decode and Select Fields, then connect File Input.out to a Compose text section.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 0 auxiliary model requests; one ordinary native generation.\nCheckpoints:\nSelect Fields · scene facts.out: Only location and constraint reach Guidance.",
+    "description": "Use a saved lore-file snapshot while passing only the facts this scene needs to the reply model.\n\nWhat you'll learn:\n• File Input stores a snapshot: a copy of a file’s text saved inside the workflow. Editing the original file does not update this copy.\n• JSON stores named fields and values. JSON Decode turns its text into fields that Select Fields can choose individually.\n• Selecting a few fields keeps unrelated lore out of the guidance.\n\nBefore you start:\n• Use a practice SillyTavern chat where you can try things freely. Open this example, then turn on Enable Lattice before sending a message. Your usual SillyTavern connection writes the reply.\n• The example already includes harbor-lore.json. No file authorization or extra model connection is needed to use this saved copy.\n\nSteps:\n1. Select File Input · imported snapshot and run its out output with Run to here. Preview shows location, constraint, and unrelated lore as JSON text.\n2. Right-click JSON Decode and choose Run to here for out, then read Preview. The text becomes structured data: location is North Harbor and constraint says the lighthouse is dark.\n3. Select Select Fields · scene facts. In Details, inspect Fields: it chooses location and constraint, leaving out unrelated. Run to here for its out output to check those two results before sending.\n4. Send “I arrive at the harbor.” Compare Compose’s guidance and Generate Reply’s draft with the two selected facts; the distant kingdom’s festival was not supplied by this lore branch.\n5. To refresh the snapshot later, select File Input and use Replace file. This imports a new copy; the workflow does not continuously watch the file.\n6. Finish at Review / Publish. Open its Host result in Preview, then choose Apply reviewed candidate to keep the proposed version or Reject candidate to discard it. Previewing an output does not make that choice for you.\n\nCheckpoints:\nSelect Fields · scene facts → out: Select Fields returns location and constraint, with the unrelated festival omitted from this guidance.\n\nTry this:\nRemove the constraint row from Fields, choose Save Fields, then rerun Select Fields.\nOnly location appears in the selected output. Restore the row when you want the lighthouse constraint again.\n\nIf something is different:\nThe imported file contains invalid JSON or ordinary prose.: JSON Decode reports an issue. For plain text, bypass JSON Decode and Select Fields, and connect File Input.out to a Compose text-section input.\nYou edit the original file outside Lattice.: This workflow keeps its existing snapshot until you choose Replace file.\n\nModel requests: 0 extra model requests; 1 normal SillyTavern reply when you Send.",
     "schema": 3,
     "runtime": 2,
     "mode": "native-unified",
@@ -18,10 +18,9 @@
         "title": "On Send",
         "enabled": true,
         "x": 100,
-        "y": 240,
+        "y": 913,
         "w": 300,
         "h": 210,
-        "inGroup": "stage-0",
         "profileId": null,
         "model": null,
         "modelRole": null,
@@ -35,10 +34,9 @@
         "title": "Generate Reply · SillyTavern",
         "enabled": true,
         "x": 1540,
-        "y": 240,
+        "y": 913,
         "w": 300,
         "h": 210,
-        "inGroup": "stage-4",
         "profileId": null,
         "model": null,
         "modelRole": null,
@@ -53,10 +51,9 @@
         "title": "Review / Publish",
         "enabled": true,
         "x": 1900,
-        "y": 240,
+        "y": 913,
         "w": 300,
         "h": 210,
-        "inGroup": "stage-5",
         "profileId": null,
         "model": null,
         "modelRole": null,
@@ -70,10 +67,9 @@
         "title": "File Input",
         "enabled": true,
         "x": 100,
-        "y": 560,
+        "y": 1203,
         "w": 300,
         "h": 210,
-        "inGroup": "stage-0",
         "profileId": null,
         "model": null,
         "modelRole": null,
@@ -90,10 +86,9 @@
         "title": "JSON Decode",
         "enabled": true,
         "x": 460,
-        "y": 240,
+        "y": 913,
         "w": 300,
         "h": 210,
-        "inGroup": "stage-1",
         "profileId": null,
         "model": null,
         "modelRole": null,
@@ -109,10 +104,9 @@
         "title": "Select Fields",
         "enabled": true,
         "x": 820,
-        "y": 240,
+        "y": 913,
         "w": 300,
         "h": 210,
-        "inGroup": "stage-2",
         "profileId": null,
         "model": null,
         "modelRole": null,
@@ -140,10 +134,9 @@
         "title": "Compose",
         "enabled": true,
         "x": 1180,
-        "y": 240,
+        "y": 913,
         "w": 300,
         "h": 210,
-        "inGroup": "stage-3",
         "profileId": null,
         "model": null,
         "modelRole": null,
@@ -162,8 +155,8 @@
         "x": 100,
         "y": 0,
         "w": 900,
-        "h": 180,
-        "content": "Load an imported UTF-8 snapshot, decode JSON, and select only the current location facts.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\n\nOpen Bring a lore sheet into the scene and inspect the named pins.\nInspect the imported snapshot content; it does not read a live file.\nSelect location and constraint while omitting unrelated lore.\nFor plain text, remove JSON Decode and Select Fields, then connect File Input.out to a Compose text section.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 0 auxiliary model requests; one ordinary native generation.\nCheckpoints:\nSelect Fields · scene facts.out: Only location and constraint reach Guidance.",
+        "h": 833,
+        "content": "Use a saved lore-file snapshot while passing only the facts this scene needs to the reply model.\n\nWhat you'll learn:\n• File Input stores a snapshot: a copy of a file’s text saved inside the workflow. Editing the original file does not update this copy.\n• JSON stores named fields and values. JSON Decode turns its text into fields that Select Fields can choose individually.\n• Selecting a few fields keeps unrelated lore out of the guidance.\n\nBefore you start:\n• Use a practice SillyTavern chat where you can try things freely. Open this example, then turn on Enable Lattice before sending a message. Your usual SillyTavern connection writes the reply.\n• The example already includes harbor-lore.json. No file authorization or extra model connection is needed to use this saved copy.\n\nSteps:\n1. Select File Input · imported snapshot and run its out output with Run to here. Preview shows location, constraint, and unrelated lore as JSON text.\n2. Right-click JSON Decode and choose Run to here for out, then read Preview. The text becomes structured data: location is North Harbor and constraint says the lighthouse is dark.\n3. Select Select Fields · scene facts. In Details, inspect Fields: it chooses location and constraint, leaving out unrelated. Run to here for its out output to check those two results before sending.\n4. Send “I arrive at the harbor.” Compare Compose’s guidance and Generate Reply’s draft with the two selected facts; the distant kingdom’s festival was not supplied by this lore branch.\n5. To refresh the snapshot later, select File Input and use Replace file. This imports a new copy; the workflow does not continuously watch the file.\n6. Finish at Review / Publish. Open its Host result in Preview, then choose Apply reviewed candidate to keep the proposed version or Reject candidate to discard it. Previewing an output does not make that choice for you.\n\nCheckpoints:\nSelect Fields · scene facts → out: Select Fields returns location and constraint, with the unrelated festival omitted from this guidance.\n\nTry this:\nRemove the constraint row from Fields, choose Save Fields, then rerun Select Fields.\nOnly location appears in the selected output. Restore the row when you want the lighthouse constraint again.\n\nIf something is different:\nThe imported file contains invalid JSON or ordinary prose.: JSON Decode reports an issue. For plain text, bypass JSON Decode and Select Fields, and connect File Input.out to a Compose text-section input.\nYou edit the original file outside Lattice.: This workflow keeps its existing snapshot until you choose Replace file.\n\nModel requests: 0 extra model requests; 1 normal SillyTavern reply when you Send.",
         "commentFrame": true,
         "moveContents": false
       }
@@ -218,93 +211,7 @@
         "toPort": "draft"
       }
     },
-    "groups": {
-      "stage-0": {
-        "id": "stage-0",
-        "title": "Preparation / processing",
-        "description": "Stage 0. Wires determine execution; folding is presentation only.",
-        "x": 75,
-        "y": 190,
-        "w": 350,
-        "h": 605,
-        "color": "#57416e",
-        "collapsed": false,
-        "members": [
-          "send",
-          "lore"
-        ]
-      },
-      "stage-1": {
-        "id": "stage-1",
-        "title": "Preparation / processing",
-        "description": "Stage 1. Wires determine execution; folding is presentation only.",
-        "x": 435,
-        "y": 190,
-        "w": 350,
-        "h": 285,
-        "color": "#57416e",
-        "collapsed": false,
-        "members": [
-          "decode"
-        ]
-      },
-      "stage-2": {
-        "id": "stage-2",
-        "title": "Preparation / processing",
-        "description": "Stage 2. Wires determine execution; folding is presentation only.",
-        "x": 795,
-        "y": 190,
-        "w": 350,
-        "h": 285,
-        "color": "#57416e",
-        "collapsed": false,
-        "members": [
-          "selection"
-        ]
-      },
-      "stage-3": {
-        "id": "stage-3",
-        "title": "Preparation / processing",
-        "description": "Stage 3. Wires determine execution; folding is presentation only.",
-        "x": 1155,
-        "y": 190,
-        "w": 350,
-        "h": 285,
-        "color": "#57416e",
-        "collapsed": false,
-        "members": [
-          "guidance"
-        ]
-      },
-      "stage-4": {
-        "id": "stage-4",
-        "title": "Native generation",
-        "description": "Stage 4. Wires determine execution; folding is presentation only.",
-        "x": 1515,
-        "y": 190,
-        "w": 350,
-        "h": 285,
-        "color": "#284e67",
-        "collapsed": false,
-        "members": [
-          "generate"
-        ]
-      },
-      "stage-5": {
-        "id": "stage-5",
-        "title": "Review / accepted staging",
-        "description": "Stage 5. Wires determine execution; folding is presentation only.",
-        "x": 1875,
-        "y": 190,
-        "w": 350,
-        "h": 285,
-        "color": "#57416e",
-        "collapsed": false,
-        "members": [
-          "review"
-        ]
-      }
-    },
+    "groups": {},
     "roles": {},
     "portals": {},
     "definitions": {},

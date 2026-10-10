@@ -1,0 +1,191 @@
+/** Learner-facing copy for the first eight lessons; graph behavior stays in foundations.mjs. */
+export const FOUNDATION_TEACHING = {
+    1: {
+        goal: 'Learn how a reply moves through a workflow, from pressing Send to reviewing the result.',
+        learn: [
+            'A workflow is a set of connected boxes. Each box, called a node, does one job.',
+            'Ports are the small labeled connection points on a box. A wire carries a result from an output port to an input port.',
+            'A draft is a reply waiting for review. Generating a draft and choosing to keep it are separate steps.',
+        ],
+        requirements: ['Use your usual working SillyTavern model connection. This lesson needs no extra model.'],
+        steps: [
+            'Find the three boxes: On Send, Generate Reply · SillyTavern, and Review / Publish. Click a box to see its settings in Details.',
+            'Follow the wire from On Send’s activation port to Generate Reply’s activation port. It tells Generate Reply that you have pressed Send.',
+            'Follow the second wire from Generate Reply’s draft port to Review / Publish’s draft port. This carries the reply you will review.',
+            'Send a short message such as “Describe the harbor.” Wait for the reply to finish, then select Generate Reply and choose draft in Preview output to read it.',
+            'Select Review / Publish and choose Host result in Preview output. Find the proposed reply and the review controls; opening this example alone does not start a reply.',
+        ],
+        checkpoints: ['You can read the generated reply at the draft output, then find that same reply waiting in Review / Publish.'],
+        experiments: [{ change: 'Choose Reject candidate for one practice reply.', expect: 'The proposed version is discarded. The original SillyTavern reply stays in the chat; rejecting does not delete that original reply.' }],
+        cases: [
+            { when: 'You only open the example or inspect its boxes.', expect: 'No reply is generated and nothing is published.' },
+            { when: 'You keep the reviewed reply.', expect: 'The reviewed version becomes a new swipe, with the original reply still available.' },
+        ],
+        callBudget: '0 extra model requests; 1 normal SillyTavern reply.',
+    },
+    2: {
+        goal: 'Use one editable instruction to give the next reply a clear direction.',
+        learn: [
+            'Text stores words you write yourself; it does not ask a model to write them.',
+            'Guidance is advice sent to the reply model before it writes the reply. Compose turns the supplied text into that advice.',
+        ],
+        requirements: ['No extra model connection is needed. The Text and Compose boxes prepare the instruction themselves.'],
+        steps: [
+            'Select Text · scene direction. In Details, replace the Text field with “Describe the dark lighthouse and one sound from the water. Leave my next action to me.” Move focus out of the field to save the edit.',
+            'Follow Text’s out wire into Compose’s section.Material port. Follow Compose’s out wire into Generate Reply’s guidance port. These wires place your instruction before reply writing.',
+            'Right-click Compose and choose Run to here for its output. Read Preview: the guidance should contain your lighthouse instruction. This preview prepares advice without writing or publishing a reply.',
+            'Send “I arrive at North Harbor.” After it finishes, compare the reply with your instruction. Look for the setting details and an opportunity to choose your own action.',
+            'Select Generate Reply and inspect its draft output, then follow that draft to Review / Publish as in lesson 1.',
+        ],
+        checkpoints: ['Compose’s output contains the Text instruction, ready to guide Generate Reply before it writes.'],
+        experiments: [{ change: 'Replace the Text instruction with a quiet scene focused on wind and distant bells, then rerun Compose.', expect: 'Preview shows the new advice immediately. The next Send uses it; preparing it needs no extra model request.' }],
+        cases: [
+            { when: 'You change the instruction after a run.', expect: 'The old result becomes Stale. Rerun to see advice from the new wording.' },
+            { when: 'You preview Compose without sending.', expect: 'You see the instruction, but no chat reply is written.' },
+        ],
+        callBudget: '0 extra model requests; 1 normal SillyTavern reply when you Send.',
+    },
+    3: {
+        goal: 'Learn how to give a planning model a small, clearly limited view of the conversation.',
+        learn: [
+            'Context is the background supplied to a model. Scene Context chooses which recent public messages the planner can read.',
+            'A model binding means choosing a connection for a box that asks a model for help. The planner can use your usual connection or another configured connection.',
+            'Response Plan writes advice for the next reply; it does not write the finished reply itself.',
+        ],
+        requirements: ['Use a practice chat with at least four messages so changing the message limit is visible. Choose a working connection for Response Plan.'],
+        steps: [
+            'Select Scene Context · public window. In Details, leave Context visibility at public and Include character off. Recent messages starts at 4.',
+            'Open the connection bar on Response Plan · bounded public plan and choose Active SillyTavern model, or a configured connection. This is the Analysis job used by this lesson.',
+            'Send a simple continuation request. Once it finishes, select Scene Context and inspect its out output in Preview. Read the included messages and the report of omitted material.',
+            'Select Response Plan and inspect out. Find its suggested next scene beat, then follow the wire to Generate Reply’s guidance port.',
+            'Compare the plan with the supplied context. Older messages and private details outside that context should not be presented as information the planner received.',
+        ],
+        checkpoints: [
+            'Scene Context shows the selected recent public messages and identifies material left out.',
+            'Response Plan supplies one next scene beat as advice for Generate Reply.',
+        ],
+        experiments: [{ change: 'Change Recent messages from 4 to 2, then send another continuation request.', expect: 'The planner receives a smaller conversation window. Compare the new context and plan with the previous run.' }],
+        cases: [
+            { when: 'An important older detail is outside the selected window.', expect: 'The planner has not received it. Increase the window if the next reply needs that detail.' },
+            { when: 'The planning connection is unavailable.', expect: 'The planner stops with a connection issue; choose a working connection before trying again.' },
+        ],
+        callBudget: '1 extra Response Plan request; 1 normal SillyTavern reply. No automatic retries.',
+    },
+    4: {
+        goal: 'Use a separate model call to suggest a complication before the main model writes the scene.',
+        learn: [
+            'Model Call is an extra request for a specific job. Its Instructions field is the system message that describes how that helper should behave.',
+            'The connected Text supplies the task. Choosing the helper’s connection does not change SillyTavern’s normal reply connection.',
+        ],
+        requirements: ['Choose a working connection for Model Call · separate job. Its model role is SceneDesigner.'],
+        steps: [
+            'Select Text · specialist task and read its Text field. It asks for one reversible environmental complication, rather than a finished scene.',
+            'Select Model Call · separate job. Read Instructions in Details: the helper should be concise, preserve your choices, and return a practical complication.',
+            'Open the helper’s connection bar and choose Active SillyTavern model or another configured connection. You have now bound the SceneDesigner job to that connection.',
+            'Follow Text.out to Model Call.prompt, then Model Call.out through Compose to Generate Reply.guidance. The helper’s answer becomes advice for the main reply.',
+            'Send “I walk along the harbor wall.” When it finishes, preview Model Call’s out suggestion, Compose’s guidance, and Generate Reply’s draft. Compare the suggestion with how the scene uses it.',
+        ],
+        checkpoints: ['The helper returns a short complication; Compose passes it on as advice for the main reply.'],
+        experiments: [{ change: 'Change only the helper’s connection, then repeat the task.', expect: 'The suggestion comes from the newly selected helper connection. The main reply still uses your usual SillyTavern connection.' }],
+        cases: [
+            { when: 'The helper connection is missing or unavailable.', expect: 'The extra call cannot run. Its connection issue tells you what to fix.' },
+            { when: 'The helper offers a suggestion.', expect: 'It is material for the reply model to use, rather than an event that has already happened in the story.' },
+        ],
+        callBudget: '1 extra Model Call request; 1 normal SillyTavern reply. No automatic retries.',
+    },
+    5: {
+        goal: 'Learn how to reuse text from a SillyTavern prompt and compare its template with its expanded form.',
+        learn: [
+            'Prompt Source reads prompt text that is already configured in SillyTavern. This example starts with Source set to system.',
+            'Raw keeps the template text. Resolved expands supported name and formatting substitutions before passing the text onward.',
+            'Here the prompt text becomes guidance material, just as the Text instruction did in lesson 2.',
+        ],
+        requirements: ['Have a system prompt configured in SillyTavern. To try a particular prompt entry, use an entry ID that exists in your current setup.'],
+        steps: [
+            'Select Prompt Source · existing main block. In Details, check Source is system and Form is raw. Despite the box’s example label, this setting reads the system prompt.',
+            'Right-click Prompt Source and choose Run to here. Read its out text in Preview. Look for any template placeholders that are still written as placeholders.',
+            'Change Form to resolved and run that output again. Compare the text. Supported substitutions should now reflect the current chat; text without substitutions may look unchanged.',
+            'Follow Prompt Source.out into Compose and then Generate Reply.guidance. The copied text supplies advice here; it does not replace Model Call’s Instructions from lesson 4.',
+            'Send a short continuation request. Inspect Compose’s output to see the prompt material supplied for this reply.',
+        ],
+        checkpoints: ['Prompt Source’s output contains the selected prompt text in the chosen raw or resolved form.'],
+        experiments: [{ change: 'Set Source to prompt-entry, then enter an existing Prompt ID, such as main if your setup has it. Preview the output.', expect: 'You read that specific configured entry. Prompt ID appears when prompt-entry is selected.' }],
+        cases: [
+            { when: 'The selected prompt entry does not exist.', expect: 'Prompt Source reports a source issue rather than inventing replacement text.' },
+            { when: 'The prompt contains structured braces or unsupported substitutions.', expect: 'Use raw to keep that text unchanged; resolved supports only the documented substitutions.' },
+        ],
+        callBudget: '0 extra model requests; 1 normal SillyTavern reply when you Send.',
+    },
+    6: {
+        goal: 'Use a saved lore-file snapshot while passing only the facts this scene needs to the reply model.',
+        learn: [
+            'File Input stores a snapshot: a copy of a file’s text saved inside the workflow. Editing the original file does not update this copy.',
+            'JSON stores named fields and values. JSON Decode turns its text into fields that Select Fields can choose individually.',
+            'Selecting a few fields keeps unrelated lore out of the guidance.',
+        ],
+        requirements: ['The example already includes harbor-lore.json. No file authorization or extra model connection is needed to use this saved copy.'],
+        steps: [
+            'Select File Input · imported snapshot and run its out output with Run to here. Preview shows location, constraint, and unrelated lore as JSON text.',
+            'Right-click JSON Decode and choose Run to here for out, then read Preview. The text becomes structured data: location is North Harbor and constraint says the lighthouse is dark.',
+            'Select Select Fields · scene facts. In Details, inspect Fields: it chooses location and constraint, leaving out unrelated. Run to here for its out output to check those two results before sending.',
+            'Send “I arrive at the harbor.” Compare Compose’s guidance and Generate Reply’s draft with the two selected facts; the distant kingdom’s festival was not supplied by this lore branch.',
+            'To refresh the snapshot later, select File Input and use Replace file. This imports a new copy; the workflow does not continuously watch the file.',
+        ],
+        checkpoints: ['Select Fields returns location and constraint, with the unrelated festival omitted from this guidance.'],
+        experiments: [{ change: 'Remove the constraint row from Fields, choose Save Fields, then rerun Select Fields.', expect: 'Only location appears in the selected output. Restore the row when you want the lighthouse constraint again.' }],
+        cases: [
+            { when: 'The imported file contains invalid JSON or ordinary prose.', expect: 'JSON Decode reports an issue. For plain text, bypass JSON Decode and Select Fields, and connect File Input.out to a Compose text-section input.' },
+            { when: 'You edit the original file outside Lattice.', expect: 'This workflow keeps its existing snapshot until you choose Replace file.' },
+        ],
+        callBudget: '0 extra model requests; 1 normal SillyTavern reply when you Send.',
+    },
+    7: {
+        goal: 'Use a second model pass to polish narration while preserving dialogue and an exact place name.',
+        learn: [
+            'Preparation happens before the reply is written; response processing works on the draft afterward.',
+            'Revise Draft requests an edited draft. Editable scope limits the kind of text it may change, and Protected literals lists wording that must stay exact.',
+        ],
+        requirements: ['Choose a working connection for Revise Draft · narration pass, the Prose job. Use a practice scene where North Harbor and dialogue can appear.'],
+        steps: [
+            'Select Text and read its instruction about concrete sounds and movement. Follow it through Compose into Generate Reply.guidance; this part shapes the first draft.',
+            'Select Revise Draft · narration pass. In Details, check Editable scope is narration and Protected literals contains North Harbor. Read Instructions to see the requested polish.',
+            'Choose Active SillyTavern model or another configured connection in the revision box’s connection bar. This extra pass can use the same model as the main reply.',
+            'Send “At North Harbor, Rowan says, ‘The lighthouse is dark.’ Describe the sounds around us.” After it finishes, preview Generate Reply.draft to read the first version.',
+            'Preview Revise Draft.out and compare it with that first version. Look for tighter narration, unchanged dialogue, and North Harbor spelled exactly the same.',
+            'Follow the revised draft’s wire into Review / Publish. The version awaiting review is the polished draft, rather than a separate disconnected piece of text.',
+        ],
+        checkpoints: ['The revised draft may improve narration; dialogue and the protected words North Harbor remain unchanged.'],
+        experiments: [{ change: 'Change Editable scope to dialogue for a separate practice run.', expect: 'The editable region changes. Compare the drafts to check that narration is preserved instead.' }],
+        cases: [
+            { when: 'The model tries to change protected wording or text outside the chosen scope.', expect: 'Validation reports the problem rather than silently accepting the prohibited edit.' },
+            { when: 'You only preview an intermediate revision.', expect: 'Preview lets you compare text. Keeping a final version still goes through Review / Publish.' },
+        ],
+        callBudget: 'At most 1 extra Revise Draft request after 1 normal SillyTavern reply. A draft with no editable narration needs no revision request.',
+    },
+    8: {
+        goal: 'Use exact item mentions to add an expandable notes section to a reply.',
+        learn: [
+            'Reply Snapshot provides a fixed view of reply text. During Send it reads the original reply just generated, before later edits.',
+            'Literal Extract finds the exact words you configure. Render Notes formats the matches, and Append adds that section to the draft.',
+            'An item mention is an observation; it does not mean someone has picked up or owns the item.',
+        ],
+        requirements: ['No extra model connection is needed: this Extract box uses literal matching, rather than asking a model to identify items.'],
+        steps: [
+            'Select Extract · literal observed items. In Details, check Mode is literal and inspect Literal patterns. The starting patterns match lantern and map exactly.',
+            'Follow Reply Snapshot.out into Extract.source. Separately, follow Generate Reply.draft into Append.draft: the snapshot supplies observations while the new draft receives the notes.',
+            'Send “Describe a lantern and a map on the harbor table. Use those exact words.” When it finishes, preview Reply Snapshot.out to check which words actually appeared.',
+            'Preview Extract.out. For each match, check the quoted word and its position in the reply. A missing word produces no matching item record.',
+            'Preview Render Notes.out, then Append.out. Expand the notes section and compare the item list with the reply text before reviewing the completed draft.',
+        ],
+        checkpoints: [
+            'Extract returns matching item records with their exact quotes and positions; a mention makes no ownership claim.',
+            'Append’s output contains the new draft with the formatted item notes added.',
+        ],
+        experiments: [{ change: 'Add {"id":"rope","literal":"rope","label":"Rope"} to Literal patterns, choose Save Literal patterns, and try a reply containing rope.', expect: 'Rope appears only when that exact text is found. Adding a pattern does not add an item to the story or inventory.' }],
+        cases: [
+            { when: 'None of the configured words appears.', expect: 'There are no invented item records; the ordinary draft remains usable.' },
+            { when: 'You use Run to here on Reply Snapshot without a new Send.', expect: 'The diagnostic preview reads the latest existing completed assistant reply. It does not generate a fresh reply or publish notes.' },
+        ],
+        callBudget: '0 extra model requests; 1 normal SillyTavern reply when you Send.',
+    },
+};

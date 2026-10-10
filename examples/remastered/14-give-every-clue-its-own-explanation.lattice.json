@@ -5,7 +5,7 @@
   "graph": {
     "id": "remastered-lesson-14",
     "name": "14. Give every clue its own explanation",
-    "description": "Map a bounded ordered clue collection through a pure explanation helper.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\n\nOpen Give every clue its own explanation and inspect the named pins.\nInspect three input clues and their ordered helper results.\nSet ClueAnalyst under For Each helper bindings; the per-iteration bound is one call.\nA fourth clue exceeds the explicit limit and holds without silently processing an unbounded list.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: At most 3 auxiliary Model Calls: 3 iterations × 1. One ordinary native generation.\nCheckpoints:\nFor Each.out: Three ordered results preserve clue identity and label interpretation.",
+    "description": "Learn to apply the same process to several pieces of information. For Each will send three clues through a reusable explanation process and keep the results in their original order.\n\nWhat you'll learn:\n• Use For Each to repeat a subgraph for a list of items.\n• Set a list limit so a workflow cannot make more requests than you intended.\n\nBefore you start:\n• Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.\n• This extends the reusable process from lesson 13. Choose a connection for ClueAnalyst in For Each’s helper bindings, such as Active SillyTavern.\n\nSteps:\n1. Read the three clues supplied in Text: wet boots, warm wax, and a slack bell rope. Each has an ID and an exact quote.\n2. For Each uses an explanation helper: Text describes the task and Model Call offers one possible interpretation of each supplied clue. You will see their combined results at For Each’s out output.\n3. Check that For Each has a limit of 3 and allows one request for each clue. Send a message and inspect its out result.\n4. Compare each explanation with its original clue. IDs and quotes should stay the same, and the explanations should remain possibilities rather than solutions to the mystery.\n5. Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes.\n\nCheckpoints:\nFor Each → out: The three explanations remain in clue order and preserve their IDs and quotes.\n\nTry this:\nAdd a fourth clue while leaving the limit at 3.\nThe workflow pauses at the limit. It does not silently make a fourth model request; remove the extra clue or deliberately increase the limit.\n\nIf something is different:\nThe clue list exceeds the limit: The workflow waits for you to fix the list or its limit.\n\nModel requests: Up to three extra model requests, one for each clue. SillyTavern writes one reply.",
     "schema": 3,
     "runtime": 2,
     "mode": "native-unified",
@@ -18,10 +18,9 @@
         "title": "On Send",
         "enabled": true,
         "x": 100,
-        "y": 240,
+        "y": 773,
         "w": 300,
         "h": 210,
-        "inGroup": "stage-0",
         "profileId": null,
         "model": null,
         "modelRole": null,
@@ -35,10 +34,9 @@
         "title": "Generate Reply · SillyTavern",
         "enabled": true,
         "x": 460,
-        "y": 240,
+        "y": 773,
         "w": 300,
         "h": 210,
-        "inGroup": "stage-1",
         "profileId": null,
         "model": null,
         "modelRole": null,
@@ -53,10 +51,9 @@
         "title": "Review / Publish",
         "enabled": true,
         "x": 1900,
-        "y": 240,
+        "y": 773,
         "w": 300,
         "h": 210,
-        "inGroup": "stage-5",
         "profileId": null,
         "model": null,
         "modelRole": null,
@@ -70,10 +67,9 @@
         "title": "Text",
         "enabled": true,
         "x": 100,
-        "y": 560,
+        "y": 1063,
         "w": 300,
         "h": 210,
-        "inGroup": "stage-0",
         "profileId": null,
         "model": null,
         "modelRole": null,
@@ -89,10 +85,9 @@
         "title": "JSON Decode",
         "enabled": true,
         "x": 460,
-        "y": 560,
+        "y": 1063,
         "w": 300,
         "h": 210,
-        "inGroup": "stage-1",
         "profileId": null,
         "model": null,
         "modelRole": null,
@@ -109,10 +104,9 @@
         "title": "For Each",
         "enabled": true,
         "x": 820,
-        "y": 240,
+        "y": 773,
         "w": 300,
         "h": 210,
-        "inGroup": "stage-2",
         "profileId": null,
         "model": null,
         "modelRole": null,
@@ -139,10 +133,9 @@
         "title": "Compose",
         "enabled": true,
         "x": 1180,
-        "y": 240,
+        "y": 773,
         "w": 300,
         "h": 210,
-        "inGroup": "stage-3",
         "profileId": null,
         "model": null,
         "modelRole": null,
@@ -162,10 +155,9 @@
         "title": "Append",
         "enabled": true,
         "x": 1540,
-        "y": 240,
+        "y": 773,
         "w": 300,
         "h": 210,
-        "inGroup": "stage-4",
         "profileId": null,
         "model": null,
         "modelRole": null,
@@ -181,8 +173,8 @@
         "x": 100,
         "y": 0,
         "w": 900,
-        "h": 180,
-        "content": "Map a bounded ordered clue collection through a pure explanation helper.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\n\nOpen Give every clue its own explanation and inspect the named pins.\nInspect three input clues and their ordered helper results.\nSet ClueAnalyst under For Each helper bindings; the per-iteration bound is one call.\nA fourth clue exceeds the explicit limit and holds without silently processing an unbounded list.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: At most 3 auxiliary Model Calls: 3 iterations × 1. One ordinary native generation.\nCheckpoints:\nFor Each.out: Three ordered results preserve clue identity and label interpretation.",
+        "h": 693,
+        "content": "Learn to apply the same process to several pieces of information. For Each will send three clues through a reusable explanation process and keep the results in their original order.\n\nWhat you'll learn:\n• Use For Each to repeat a subgraph for a list of items.\n• Set a list limit so a workflow cannot make more requests than you intended.\n\nBefore you start:\n• Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.\n• This extends the reusable process from lesson 13. Choose a connection for ClueAnalyst in For Each’s helper bindings, such as Active SillyTavern.\n\nSteps:\n1. Read the three clues supplied in Text: wet boots, warm wax, and a slack bell rope. Each has an ID and an exact quote.\n2. For Each uses an explanation helper: Text describes the task and Model Call offers one possible interpretation of each supplied clue. You will see their combined results at For Each’s out output.\n3. Check that For Each has a limit of 3 and allows one request for each clue. Send a message and inspect its out result.\n4. Compare each explanation with its original clue. IDs and quotes should stay the same, and the explanations should remain possibilities rather than solutions to the mystery.\n5. Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes.\n\nCheckpoints:\nFor Each → out: The three explanations remain in clue order and preserve their IDs and quotes.\n\nTry this:\nAdd a fourth clue while leaving the limit at 3.\nThe workflow pauses at the limit. It does not silently make a fourth model request; remove the extra clue or deliberately increase the limit.\n\nIf something is different:\nThe clue list exceeds the limit: The workflow waits for you to fix the list or its limit.\n\nModel requests: Up to three extra model requests, one for each clue. SillyTavern writes one reply.",
         "commentFrame": true,
         "moveContents": false
       }
@@ -245,94 +237,7 @@
         "toPort": "draft"
       }
     },
-    "groups": {
-      "stage-0": {
-        "id": "stage-0",
-        "title": "Preparation / processing",
-        "description": "Stage 0. Wires determine execution; folding is presentation only.",
-        "x": 75,
-        "y": 190,
-        "w": 350,
-        "h": 605,
-        "color": "#57416e",
-        "collapsed": false,
-        "members": [
-          "send",
-          "clues-text"
-        ]
-      },
-      "stage-1": {
-        "id": "stage-1",
-        "title": "Native generation",
-        "description": "Stage 1. Wires determine execution; folding is presentation only.",
-        "x": 435,
-        "y": 190,
-        "w": 350,
-        "h": 605,
-        "color": "#284e67",
-        "collapsed": false,
-        "members": [
-          "generate",
-          "clues"
-        ]
-      },
-      "stage-2": {
-        "id": "stage-2",
-        "title": "Preparation / processing",
-        "description": "Stage 2. Wires determine execution; folding is presentation only.",
-        "x": 795,
-        "y": 190,
-        "w": 350,
-        "h": 285,
-        "color": "#57416e",
-        "collapsed": false,
-        "members": [
-          "explain-each"
-        ]
-      },
-      "stage-3": {
-        "id": "stage-3",
-        "title": "Response processing",
-        "description": "Stage 3. Wires determine execution; folding is presentation only.",
-        "x": 1155,
-        "y": 190,
-        "w": 350,
-        "h": 285,
-        "color": "#57416e",
-        "collapsed": false,
-        "members": [
-          "notes"
-        ]
-      },
-      "stage-4": {
-        "id": "stage-4",
-        "title": "Preparation / processing",
-        "description": "Stage 4. Wires determine execution; folding is presentation only.",
-        "x": 1515,
-        "y": 190,
-        "w": 350,
-        "h": 285,
-        "color": "#57416e",
-        "collapsed": false,
-        "members": [
-          "append"
-        ]
-      },
-      "stage-5": {
-        "id": "stage-5",
-        "title": "Review / accepted staging",
-        "description": "Stage 5. Wires determine execution; folding is presentation only.",
-        "x": 1875,
-        "y": 190,
-        "w": 350,
-        "h": 285,
-        "color": "#57416e",
-        "collapsed": false,
-        "members": [
-          "review"
-        ]
-      }
-    },
+    "groups": {},
     "roles": {},
     "portals": {},
     "definitions": {
@@ -397,7 +302,7 @@
               "title": "Text",
               "enabled": true,
               "x": 100,
-              "y": 560,
+              "y": 530,
               "w": 300,
               "h": 210,
               "profileId": null,

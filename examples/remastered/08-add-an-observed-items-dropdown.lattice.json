@@ -5,7 +5,7 @@
   "graph": {
     "id": "remastered-lesson-08",
     "name": "8. Add an Observed Items dropdown",
-    "description": "Extract literal item mentions from the owned generation snapshot and append public notes to the current owned Draft.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\n\nOpen Add an Observed Items dropdown and inspect the named pins.\nIn an owned Send, Reply Snapshot reads the cached original just-generated reply. A bounded Run-to-here preview instead reads the latest existing completed assistant entry.\nThe new native Draft continues to Append and Review; the snapshot is an immutable source view, while the owned Draft continues to review.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 0 auxiliary model requests; one ordinary native generation.\nCheckpoints:\nExtract · literal observed items.out: Literal records retain exact offsets and quotes; a mention grants no inventory ownership.\nAppend.out: Public dropdown notes are appended to the newly owned Draft.",
+    "description": "Use exact item mentions to add an expandable notes section to a reply.\n\nWhat you'll learn:\n• Reply Snapshot provides a fixed view of reply text. During Send it reads the original reply just generated, before later edits.\n• Literal Extract finds the exact words you configure. Render Notes formats the matches, and Append adds that section to the draft.\n• An item mention is an observation; it does not mean someone has picked up or owns the item.\n\nBefore you start:\n• Use a practice SillyTavern chat where you can try things freely. Open this example, then turn on Enable Lattice before sending a message. Your usual SillyTavern connection writes the reply.\n• No extra model connection is needed: this Extract box uses literal matching, rather than asking a model to identify items.\n\nSteps:\n1. Select Extract · literal observed items. In Details, check Mode is literal and inspect Literal patterns. The starting patterns match lantern and map exactly.\n2. Follow Reply Snapshot.out into Extract.source. Separately, follow Generate Reply.draft into Append.draft: the snapshot supplies observations while the new draft receives the notes.\n3. Send “Describe a lantern and a map on the harbor table. Use those exact words.” When it finishes, preview Reply Snapshot.out to check which words actually appeared.\n4. Preview Extract.out. For each match, check the quoted word and its position in the reply. A missing word produces no matching item record.\n5. Preview Render Notes.out, then Append.out. Expand the notes section and compare the item list with the reply text before reviewing the completed draft.\n6. Finish at Review / Publish. Open its Host result in Preview, then choose Apply reviewed candidate to keep the proposed version or Reject candidate to discard it. Previewing an output does not make that choice for you.\n\nCheckpoints:\nExtract · literal observed items → out: Extract returns matching item records with their exact quotes and positions; a mention makes no ownership claim.\nAppend → out: Append’s output contains the new draft with the formatted item notes added.\n\nTry this:\nAdd {\"id\":\"rope\",\"literal\":\"rope\",\"label\":\"Rope\"} to Literal patterns, choose Save Literal patterns, and try a reply containing rope.\nRope appears only when that exact text is found. Adding a pattern does not add an item to the story or inventory.\n\nIf something is different:\nNone of the configured words appears.: There are no invented item records; the ordinary draft remains usable.\nYou use Run to here on Reply Snapshot without a new Send.: The diagnostic preview reads the latest existing completed assistant reply. It does not generate a fresh reply or publish notes.\n\nModel requests: 0 extra model requests; 1 normal SillyTavern reply when you Send.",
     "schema": 3,
     "runtime": 2,
     "mode": "native-unified",
@@ -18,10 +18,9 @@
         "title": "On Send",
         "enabled": true,
         "x": 100,
-        "y": 240,
+        "y": 947,
         "w": 300,
         "h": 210,
-        "inGroup": "stage-0",
         "profileId": null,
         "model": null,
         "modelRole": null,
@@ -35,10 +34,9 @@
         "title": "Generate Reply · SillyTavern",
         "enabled": true,
         "x": 460,
-        "y": 240,
+        "y": 947,
         "w": 300,
         "h": 210,
-        "inGroup": "stage-1",
         "profileId": null,
         "model": null,
         "modelRole": null,
@@ -53,10 +51,9 @@
         "title": "Review / Publish",
         "enabled": true,
         "x": 1540,
-        "y": 240,
+        "y": 947,
         "w": 300,
         "h": 210,
-        "inGroup": "stage-4",
         "profileId": null,
         "model": null,
         "modelRole": null,
@@ -69,10 +66,9 @@
         "title": "Reply Snapshot",
         "enabled": true,
         "x": 100,
-        "y": 560,
+        "y": 1237,
         "w": 300,
         "h": 210,
-        "inGroup": "stage-0",
         "profileId": null,
         "model": null,
         "modelRole": null,
@@ -86,10 +82,9 @@
         "title": "Extract",
         "enabled": true,
         "x": 460,
-        "y": 560,
+        "y": 1237,
         "w": 300,
         "h": 210,
-        "inGroup": "stage-1",
         "profileId": "lattice:active-sillytavern",
         "model": null,
         "modelRole": "Prose",
@@ -121,10 +116,9 @@
         "title": "Reply Snapshot, literal Extract, Render Notes, Append",
         "enabled": true,
         "x": 820,
-        "y": 240,
+        "y": 947,
         "w": 300,
         "h": 210,
-        "inGroup": "stage-2",
         "profileId": null,
         "model": null,
         "modelRole": null,
@@ -140,10 +134,9 @@
         "title": "Append",
         "enabled": true,
         "x": 1180,
-        "y": 240,
+        "y": 947,
         "w": 300,
         "h": 210,
-        "inGroup": "stage-3",
         "profileId": null,
         "model": null,
         "modelRole": null,
@@ -159,8 +152,8 @@
         "x": 100,
         "y": 0,
         "w": 900,
-        "h": 180,
-        "content": "Extract literal item mentions from the owned generation snapshot and append public notes to the current owned Draft.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\n\nOpen Add an Observed Items dropdown and inspect the named pins.\nIn an owned Send, Reply Snapshot reads the cached original just-generated reply. A bounded Run-to-here preview instead reads the latest existing completed assistant entry.\nThe new native Draft continues to Append and Review; the snapshot is an immutable source view, while the owned Draft continues to review.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 0 auxiliary model requests; one ordinary native generation.\nCheckpoints:\nExtract · literal observed items.out: Literal records retain exact offsets and quotes; a mention grants no inventory ownership.\nAppend.out: Public dropdown notes are appended to the newly owned Draft.",
+        "h": 867,
+        "content": "Use exact item mentions to add an expandable notes section to a reply.\n\nWhat you'll learn:\n• Reply Snapshot provides a fixed view of reply text. During Send it reads the original reply just generated, before later edits.\n• Literal Extract finds the exact words you configure. Render Notes formats the matches, and Append adds that section to the draft.\n• An item mention is an observation; it does not mean someone has picked up or owns the item.\n\nBefore you start:\n• Use a practice SillyTavern chat where you can try things freely. Open this example, then turn on Enable Lattice before sending a message. Your usual SillyTavern connection writes the reply.\n• No extra model connection is needed: this Extract box uses literal matching, rather than asking a model to identify items.\n\nSteps:\n1. Select Extract · literal observed items. In Details, check Mode is literal and inspect Literal patterns. The starting patterns match lantern and map exactly.\n2. Follow Reply Snapshot.out into Extract.source. Separately, follow Generate Reply.draft into Append.draft: the snapshot supplies observations while the new draft receives the notes.\n3. Send “Describe a lantern and a map on the harbor table. Use those exact words.” When it finishes, preview Reply Snapshot.out to check which words actually appeared.\n4. Preview Extract.out. For each match, check the quoted word and its position in the reply. A missing word produces no matching item record.\n5. Preview Render Notes.out, then Append.out. Expand the notes section and compare the item list with the reply text before reviewing the completed draft.\n6. Finish at Review / Publish. Open its Host result in Preview, then choose Apply reviewed candidate to keep the proposed version or Reject candidate to discard it. Previewing an output does not make that choice for you.\n\nCheckpoints:\nExtract · literal observed items → out: Extract returns matching item records with their exact quotes and positions; a mention makes no ownership claim.\nAppend → out: Append’s output contains the new draft with the formatted item notes added.\n\nTry this:\nAdd {\"id\":\"rope\",\"literal\":\"rope\",\"label\":\"Rope\"} to Literal patterns, choose Save Literal patterns, and try a reply containing rope.\nRope appears only when that exact text is found. Adding a pattern does not add an item to the story or inventory.\n\nIf something is different:\nNone of the configured words appears.: There are no invented item records; the ordinary draft remains usable.\nYou use Run to here on Reply Snapshot without a new Send.: The diagnostic preview reads the latest existing completed assistant reply. It does not generate a fresh reply or publish notes.\n\nModel requests: 0 extra model requests; 1 normal SillyTavern reply when you Send.",
         "commentFrame": true,
         "moveContents": false
       }
@@ -215,80 +208,7 @@
         "toPort": "draft"
       }
     },
-    "groups": {
-      "stage-0": {
-        "id": "stage-0",
-        "title": "Preparation / processing",
-        "description": "Stage 0. Wires determine execution; folding is presentation only.",
-        "x": 75,
-        "y": 190,
-        "w": 350,
-        "h": 605,
-        "color": "#57416e",
-        "collapsed": false,
-        "members": [
-          "send",
-          "snapshot"
-        ]
-      },
-      "stage-1": {
-        "id": "stage-1",
-        "title": "Native generation",
-        "description": "Stage 1. Wires determine execution; folding is presentation only.",
-        "x": 435,
-        "y": 190,
-        "w": 350,
-        "h": 605,
-        "color": "#284e67",
-        "collapsed": false,
-        "members": [
-          "generate",
-          "items"
-        ]
-      },
-      "stage-2": {
-        "id": "stage-2",
-        "title": "Response processing",
-        "description": "Stage 2. Wires determine execution; folding is presentation only.",
-        "x": 795,
-        "y": 190,
-        "w": 350,
-        "h": 285,
-        "color": "#57416e",
-        "collapsed": false,
-        "members": [
-          "notes"
-        ]
-      },
-      "stage-3": {
-        "id": "stage-3",
-        "title": "Preparation / processing",
-        "description": "Stage 3. Wires determine execution; folding is presentation only.",
-        "x": 1155,
-        "y": 190,
-        "w": 350,
-        "h": 285,
-        "color": "#57416e",
-        "collapsed": false,
-        "members": [
-          "append"
-        ]
-      },
-      "stage-4": {
-        "id": "stage-4",
-        "title": "Review / accepted staging",
-        "description": "Stage 4. Wires determine execution; folding is presentation only.",
-        "x": 1515,
-        "y": 190,
-        "w": 350,
-        "h": 285,
-        "color": "#57416e",
-        "collapsed": false,
-        "members": [
-          "review"
-        ]
-      }
-    },
+    "groups": {},
     "roles": {
       "Prose": {
         "model": null,

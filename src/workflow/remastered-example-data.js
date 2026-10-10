@@ -4,47 +4,51 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
     "id": "lesson-01",
     "number": 1,
     "title": "Follow a reply from Send to Review",
-    "goal": "Trace one ordinary SillyTavern reply from its owned Send activation through generation to deliberate review.",
+    "goal": "Learn how a reply moves through a workflow, from pressing Send to reviewing the result.",
     "lesson": {
       "difficulty": "Foundations",
-      "focus": "On Send → Generate Reply → Review / Publish",
       "learn": [
-        "On Send → Generate Reply → Review / Publish",
-        "Trace named artifacts to the owned Draft or accepted proposal."
+        "A workflow is a set of connected boxes. Each box, called a node, does one job.",
+        "Ports are the small labeled connection points on a box. A wire carries a result from an output port to an input port.",
+        "A draft is a reply waiting for review. Generating a draft and choosing to keep it are separate steps."
       ],
       "requirements": [
-        "Open this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern."
+        "Use a practice SillyTavern chat where you can try things freely. Open this example, then turn on Enable Lattice before sending a message. Your usual SillyTavern connection writes the reply.",
+        "Use your usual working SillyTavern model connection. This lesson needs no extra model."
       ],
       "steps": [
-        "Open Follow a reply from Send to Review and inspect the named pins.",
-        "Inspect On Send.activation and Generate Reply.draft.",
-        "Confirm that opening this example makes it the current document without enabling Lattice or running it.",
-        "Send in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals."
+        "Find the three boxes: On Send, Generate Reply · SillyTavern, and Review / Publish. Click a box to see its settings in Details.",
+        "Follow the wire from On Send’s activation port to Generate Reply’s activation port. It tells Generate Reply that you have pressed Send.",
+        "Follow the second wire from Generate Reply’s draft port to Review / Publish’s draft port. This carries the reply you will review.",
+        "Send a short message such as “Describe the harbor.” Wait for the reply to finish, then select Generate Reply and choose draft in Preview output to read it.",
+        "Select Review / Publish and choose Host result in Preview output. Find the proposed reply and the review controls; opening this example alone does not start a reply.",
+        "Finish at Review / Publish. Open its Host result in Preview, then choose Apply reviewed candidate to keep the proposed version or Reject candidate to discard it. Previewing an output does not make that choice for you."
       ],
       "checkpoints": [
         {
           "node": "Generate Reply · SillyTavern",
           "port": "draft",
-          "expect": "The current generation owns this Draft; review publishes a new swipe only on Apply."
+          "expect": "You can read the generated reply at the draft output, then find that same reply waiting in Review / Publish."
         }
       ],
       "experiments": [
         {
-          "change": "Reject the reviewed Draft.",
-          "expect": "The prior chat remains unchanged."
+          "change": "Choose Reject candidate for one practice reply.",
+          "expect": "The proposed version is discarded. The original SillyTavern reply stays in the chat; rejecting does not delete that original reply."
         }
       ],
       "cases": [
         {
-          "when": "Opening or previewing the package",
-          "expect": "No native generation or publication occurs."
+          "when": "You only open the example or inspect its boxes.",
+          "expect": "No reply is generated and nothing is published."
         },
         {
-          "when": "Rejected or stopped",
-          "expect": "The existing story and staged effects are retained without settlement."
+          "when": "You keep the reviewed reply.",
+          "expect": "The reviewed version becomes a new swipe, with the original reply still available."
         }
       ],
-      "callBudget": "0 auxiliary model requests; one ordinary native generation."
+      "callBudget": "0 extra model requests; 1 normal SillyTavern reply.",
+      "focus": "On Send → Generate Reply → Review / Publish"
     },
     "packages": [
       {
@@ -54,7 +58,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
         "graph": {
           "id": "remastered-lesson-01",
           "name": "1. Follow a reply from Send to Review",
-          "description": "Trace one ordinary SillyTavern reply from its owned Send activation through generation to deliberate review.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\n\nOpen Follow a reply from Send to Review and inspect the named pins.\nInspect On Send.activation and Generate Reply.draft.\nConfirm that opening this example makes it the current document without enabling Lattice or running it.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 0 auxiliary model requests; one ordinary native generation.\nCheckpoints:\nGenerate Reply · SillyTavern.draft: The current generation owns this Draft; review publishes a new swipe only on Apply.",
+          "description": "Learn how a reply moves through a workflow, from pressing Send to reviewing the result.\n\nWhat you'll learn:\n• A workflow is a set of connected boxes. Each box, called a node, does one job.\n• Ports are the small labeled connection points on a box. A wire carries a result from an output port to an input port.\n• A draft is a reply waiting for review. Generating a draft and choosing to keep it are separate steps.\n\nBefore you start:\n• Use a practice SillyTavern chat where you can try things freely. Open this example, then turn on Enable Lattice before sending a message. Your usual SillyTavern connection writes the reply.\n• Use your usual working SillyTavern model connection. This lesson needs no extra model.\n\nSteps:\n1. Find the three boxes: On Send, Generate Reply · SillyTavern, and Review / Publish. Click a box to see its settings in Details.\n2. Follow the wire from On Send’s activation port to Generate Reply’s activation port. It tells Generate Reply that you have pressed Send.\n3. Follow the second wire from Generate Reply’s draft port to Review / Publish’s draft port. This carries the reply you will review.\n4. Send a short message such as “Describe the harbor.” Wait for the reply to finish, then select Generate Reply and choose draft in Preview output to read it.\n5. Select Review / Publish and choose Host result in Preview output. Find the proposed reply and the review controls; opening this example alone does not start a reply.\n6. Finish at Review / Publish. Open its Host result in Preview, then choose Apply reviewed candidate to keep the proposed version or Reject candidate to discard it. Previewing an output does not make that choice for you.\n\nCheckpoints:\nGenerate Reply · SillyTavern → draft: You can read the generated reply at the draft output, then find that same reply waiting in Review / Publish.\n\nTry this:\nChoose Reject candidate for one practice reply.\nThe proposed version is discarded. The original SillyTavern reply stays in the chat; rejecting does not delete that original reply.\n\nIf something is different:\nYou only open the example or inspect its boxes.: No reply is generated and nothing is published.\nYou keep the reviewed reply.: The reviewed version becomes a new swipe, with the original reply still available.\n\nModel requests: 0 extra model requests; 1 normal SillyTavern reply.",
           "schema": 3,
           "runtime": 2,
           "mode": "native-unified",
@@ -67,7 +71,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "On Send",
               "enabled": true,
               "x": 100,
-              "y": 240,
+              "y": 860,
               "w": 300,
               "h": 210,
               "profileId": null,
@@ -83,7 +87,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Generate Reply · SillyTavern",
               "enabled": true,
               "x": 460,
-              "y": 240,
+              "y": 860,
               "w": 300,
               "h": 210,
               "profileId": null,
@@ -100,7 +104,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Review / Publish",
               "enabled": true,
               "x": 820,
-              "y": 240,
+              "y": 860,
               "w": 300,
               "h": 210,
               "profileId": null,
@@ -116,8 +120,8 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "x": 100,
               "y": 0,
               "w": 900,
-              "h": 180,
-              "content": "Trace one ordinary SillyTavern reply from its owned Send activation through generation to deliberate review.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\n\nOpen Follow a reply from Send to Review and inspect the named pins.\nInspect On Send.activation and Generate Reply.draft.\nConfirm that opening this example makes it the current document without enabling Lattice or running it.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 0 auxiliary model requests; one ordinary native generation.\nCheckpoints:\nGenerate Reply · SillyTavern.draft: The current generation owns this Draft; review publishes a new swipe only on Apply.",
+              "h": 780,
+              "content": "Learn how a reply moves through a workflow, from pressing Send to reviewing the result.\n\nWhat you'll learn:\n• A workflow is a set of connected boxes. Each box, called a node, does one job.\n• Ports are the small labeled connection points on a box. A wire carries a result from an output port to an input port.\n• A draft is a reply waiting for review. Generating a draft and choosing to keep it are separate steps.\n\nBefore you start:\n• Use a practice SillyTavern chat where you can try things freely. Open this example, then turn on Enable Lattice before sending a message. Your usual SillyTavern connection writes the reply.\n• Use your usual working SillyTavern model connection. This lesson needs no extra model.\n\nSteps:\n1. Find the three boxes: On Send, Generate Reply · SillyTavern, and Review / Publish. Click a box to see its settings in Details.\n2. Follow the wire from On Send’s activation port to Generate Reply’s activation port. It tells Generate Reply that you have pressed Send.\n3. Follow the second wire from Generate Reply’s draft port to Review / Publish’s draft port. This carries the reply you will review.\n4. Send a short message such as “Describe the harbor.” Wait for the reply to finish, then select Generate Reply and choose draft in Preview output to read it.\n5. Select Review / Publish and choose Host result in Preview output. Find the proposed reply and the review controls; opening this example alone does not start a reply.\n6. Finish at Review / Publish. Open its Host result in Preview, then choose Apply reviewed candidate to keep the proposed version or Reject candidate to discard it. Previewing an output does not make that choice for you.\n\nCheckpoints:\nGenerate Reply · SillyTavern → draft: You can read the generated reply at the draft output, then find that same reply waiting in Review / Publish.\n\nTry this:\nChoose Reject candidate for one practice reply.\nThe proposed version is discarded. The original SillyTavern reply stays in the chat; rejecting does not delete that original reply.\n\nIf something is different:\nYou only open the example or inspect its boxes.: No reply is generated and nothing is published.\nYou keep the reviewed reply.: The reviewed version becomes a new swipe, with the original reply still available.\n\nModel requests: 0 extra model requests; 1 normal SillyTavern reply.",
               "commentFrame": true,
               "moveContents": false
             }
@@ -161,47 +165,50 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
     "id": "lesson-02",
     "number": 2,
     "title": "Give this scene one clear direction",
-    "goal": "Use an editable text instruction as pre-generation Guidance.",
+    "goal": "Use one editable instruction to give the next reply a clear direction.",
     "lesson": {
       "difficulty": "Foundations",
-      "focus": "Text and Compose Guidance",
       "learn": [
-        "Text and Compose Guidance",
-        "Trace named artifacts to the owned Draft or accepted proposal."
+        "Text stores words you write yourself; it does not ask a model to write them.",
+        "Guidance is advice sent to the reply model before it writes the reply. Compose turns the supplied text into that advice."
       ],
       "requirements": [
-        "Open this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern."
+        "Use a practice SillyTavern chat where you can try things freely. Open this example, then turn on Enable Lattice before sending a message. Your usual SillyTavern connection writes the reply.",
+        "No extra model connection is needed. The Text and Compose boxes prepare the instruction themselves."
       ],
       "steps": [
-        "Open Give this scene one clear direction and inspect the named pins.",
-        "Edit Text · scene direction to one concrete instruction.",
-        "Trace section.Material into Compose.out and Generate Reply.guidance.",
-        "Send in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals."
+        "Select Text · scene direction. In Details, replace the Text field with “Describe the dark lighthouse and one sound from the water. Leave my next action to me.” Move focus out of the field to save the edit.",
+        "Follow Text’s out wire into Compose’s section.Material port. Follow Compose’s out wire into Generate Reply’s guidance port. These wires place your instruction before reply writing.",
+        "Right-click Compose and choose Run to here for its output. Read Preview: the guidance should contain your lighthouse instruction. This preview prepares advice without writing or publishing a reply.",
+        "Send “I arrive at North Harbor.” After it finishes, compare the reply with your instruction. Look for the setting details and an opportunity to choose your own action.",
+        "Select Generate Reply and inspect its draft output, then follow that draft to Review / Publish as in lesson 1.",
+        "Finish at Review / Publish. Open its Host result in Preview, then choose Apply reviewed candidate to keep the proposed version or Reject candidate to discard it. Previewing an output does not make that choice for you."
       ],
       "checkpoints": [
         {
           "node": "Compose",
           "port": "out",
-          "expect": "The editable Text becomes Guidance before native generation."
+          "expect": "Compose’s output contains the Text instruction, ready to guide Generate Reply before it writes."
         }
       ],
       "experiments": [
         {
-          "change": "Replace the direction with a quiet sensory scene.",
-          "expect": "The pre-generation Guidance changes without a model request."
+          "change": "Replace the Text instruction with a quiet scene focused on wind and distant bells, then rerun Compose.",
+          "expect": "Preview shows the new advice immediately. The next Send uses it; preparing it needs no extra model request."
         }
       ],
       "cases": [
         {
-          "when": "The text direction changes",
-          "expect": "Only the supplied pre-generation Guidance changes."
+          "when": "You change the instruction after a run.",
+          "expect": "The old result becomes Stale. Rerun to see advice from the new wording."
         },
         {
-          "when": "Rejected or stopped",
-          "expect": "The existing story and staged effects are retained without settlement."
+          "when": "You preview Compose without sending.",
+          "expect": "You see the instruction, but no chat reply is written."
         }
       ],
-      "callBudget": "0 auxiliary model requests; one ordinary native generation."
+      "callBudget": "0 extra model requests; 1 normal SillyTavern reply when you Send.",
+      "focus": "Text and Compose Guidance"
     },
     "packages": [
       {
@@ -211,7 +218,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
         "graph": {
           "id": "remastered-lesson-02",
           "name": "2. Give this scene one clear direction",
-          "description": "Use an editable text instruction as pre-generation Guidance.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\n\nOpen Give this scene one clear direction and inspect the named pins.\nEdit Text · scene direction to one concrete instruction.\nTrace section.Material into Compose.out and Generate Reply.guidance.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 0 auxiliary model requests; one ordinary native generation.\nCheckpoints:\nCompose.out: The editable Text becomes Guidance before native generation.",
+          "description": "Use one editable instruction to give the next reply a clear direction.\n\nWhat you'll learn:\n• Text stores words you write yourself; it does not ask a model to write them.\n• Guidance is advice sent to the reply model before it writes the reply. Compose turns the supplied text into that advice.\n\nBefore you start:\n• Use a practice SillyTavern chat where you can try things freely. Open this example, then turn on Enable Lattice before sending a message. Your usual SillyTavern connection writes the reply.\n• No extra model connection is needed. The Text and Compose boxes prepare the instruction themselves.\n\nSteps:\n1. Select Text · scene direction. In Details, replace the Text field with “Describe the dark lighthouse and one sound from the water. Leave my next action to me.” Move focus out of the field to save the edit.\n2. Follow Text’s out wire into Compose’s section.Material port. Follow Compose’s out wire into Generate Reply’s guidance port. These wires place your instruction before reply writing.\n3. Right-click Compose and choose Run to here for its output. Read Preview: the guidance should contain your lighthouse instruction. This preview prepares advice without writing or publishing a reply.\n4. Send “I arrive at North Harbor.” After it finishes, compare the reply with your instruction. Look for the setting details and an opportunity to choose your own action.\n5. Select Generate Reply and inspect its draft output, then follow that draft to Review / Publish as in lesson 1.\n6. Finish at Review / Publish. Open its Host result in Preview, then choose Apply reviewed candidate to keep the proposed version or Reject candidate to discard it. Previewing an output does not make that choice for you.\n\nCheckpoints:\nCompose → out: Compose’s output contains the Text instruction, ready to guide Generate Reply before it writes.\n\nTry this:\nReplace the Text instruction with a quiet scene focused on wind and distant bells, then rerun Compose.\nPreview shows the new advice immediately. The next Send uses it; preparing it needs no extra model request.\n\nIf something is different:\nYou change the instruction after a run.: The old result becomes Stale. Rerun to see advice from the new wording.\nYou preview Compose without sending.: You see the instruction, but no chat reply is written.\n\nModel requests: 0 extra model requests; 1 normal SillyTavern reply when you Send.",
           "schema": 3,
           "runtime": 2,
           "mode": "native-unified",
@@ -224,7 +231,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "On Send",
               "enabled": true,
               "x": 100,
-              "y": 240,
+              "y": 808,
               "w": 300,
               "h": 210,
               "profileId": null,
@@ -240,7 +247,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Generate Reply · SillyTavern",
               "enabled": true,
               "x": 820,
-              "y": 240,
+              "y": 808,
               "w": 300,
               "h": 210,
               "profileId": null,
@@ -257,7 +264,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Review / Publish",
               "enabled": true,
               "x": 1180,
-              "y": 240,
+              "y": 808,
               "w": 300,
               "h": 210,
               "profileId": null,
@@ -273,7 +280,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Text",
               "enabled": true,
               "x": 100,
-              "y": 560,
+              "y": 1098,
               "w": 300,
               "h": 210,
               "profileId": null,
@@ -290,7 +297,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Compose",
               "enabled": true,
               "x": 460,
-              "y": 240,
+              "y": 808,
               "w": 300,
               "h": 210,
               "profileId": null,
@@ -316,8 +323,8 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "x": 100,
               "y": 0,
               "w": 900,
-              "h": 180,
-              "content": "Use an editable text instruction as pre-generation Guidance.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\n\nOpen Give this scene one clear direction and inspect the named pins.\nEdit Text · scene direction to one concrete instruction.\nTrace section.Material into Compose.out and Generate Reply.guidance.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 0 auxiliary model requests; one ordinary native generation.\nCheckpoints:\nCompose.out: The editable Text becomes Guidance before native generation.",
+              "h": 728,
+              "content": "Use one editable instruction to give the next reply a clear direction.\n\nWhat you'll learn:\n• Text stores words you write yourself; it does not ask a model to write them.\n• Guidance is advice sent to the reply model before it writes the reply. Compose turns the supplied text into that advice.\n\nBefore you start:\n• Use a practice SillyTavern chat where you can try things freely. Open this example, then turn on Enable Lattice before sending a message. Your usual SillyTavern connection writes the reply.\n• No extra model connection is needed. The Text and Compose boxes prepare the instruction themselves.\n\nSteps:\n1. Select Text · scene direction. In Details, replace the Text field with “Describe the dark lighthouse and one sound from the water. Leave my next action to me.” Move focus out of the field to save the edit.\n2. Follow Text’s out wire into Compose’s section.Material port. Follow Compose’s out wire into Generate Reply’s guidance port. These wires place your instruction before reply writing.\n3. Right-click Compose and choose Run to here for its output. Read Preview: the guidance should contain your lighthouse instruction. This preview prepares advice without writing or publishing a reply.\n4. Send “I arrive at North Harbor.” After it finishes, compare the reply with your instruction. Look for the setting details and an opportunity to choose your own action.\n5. Select Generate Reply and inspect its draft output, then follow that draft to Review / Publish as in lesson 1.\n6. Finish at Review / Publish. Open its Host result in Preview, then choose Apply reviewed candidate to keep the proposed version or Reject candidate to discard it. Previewing an output does not make that choice for you.\n\nCheckpoints:\nCompose → out: Compose’s output contains the Text instruction, ready to guide Generate Reply before it writes.\n\nTry this:\nReplace the Text instruction with a quiet scene focused on wind and distant bells, then rerun Compose.\nPreview shows the new advice immediately. The next Send uses it; preparing it needs no extra model request.\n\nIf something is different:\nYou change the instruction after a run.: The old result becomes Stale. Rerun to see advice from the new wording.\nYou preview Compose without sending.: You see the instruction, but no chat reply is written.\n\nModel requests: 0 extra model requests; 1 normal SillyTavern reply when you Send.",
               "commentFrame": true,
               "moveContents": false
             }
@@ -377,53 +384,56 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
     "id": "lesson-03",
     "number": 3,
     "title": "Give the planner only the context it needs",
-    "goal": "Select a small public scene window and observe what the planner omits.",
+    "goal": "Learn how to give a planning model a small, clearly limited view of the conversation.",
     "lesson": {
       "difficulty": "Foundations",
-      "focus": "Public Scene Context and Response Plan",
       "learn": [
-        "Public Scene Context and Response Plan",
-        "Trace named artifacts to the owned Draft or accepted proposal."
+        "Context is the background supplied to a model. Scene Context chooses which recent public messages the planner can read.",
+        "A model binding means choosing a connection for a box that asks a model for help. The planner can use your usual connection or another configured connection.",
+        "Response Plan writes advice for the next reply; it does not write the finished reply itself."
       ],
       "requirements": [
-        "Open this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.",
-        "Bind Analysis to Active SillyTavern or a configured local model."
+        "Use a practice SillyTavern chat where you can try things freely. Open this example, then turn on Enable Lattice before sending a message. Your usual SillyTavern connection writes the reply.",
+        "Use a practice chat with at least four messages so changing the message limit is visible. Choose a working connection for Response Plan."
       ],
       "steps": [
-        "Open Give the planner only the context it needs and inspect the named pins.",
-        "Inspect the Scene Context omission report for older/restricted material.",
-        "Compare the four-message context with the resulting one-beat plan.",
-        "Send in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals."
+        "Select Scene Context · public window. In Details, leave Context visibility at public and Include character off. Recent messages starts at 4.",
+        "Open the connection bar on Response Plan · bounded public plan and choose Active SillyTavern model, or a configured connection. This is the Analysis job used by this lesson.",
+        "Send a simple continuation request. Once it finishes, select Scene Context and inspect its out output in Preview. Read the included messages and the report of omitted material.",
+        "Select Response Plan and inspect out. Find its suggested next scene beat, then follow the wire to Generate Reply’s guidance port.",
+        "Compare the plan with the supplied context. Older messages and private details outside that context should not be presented as information the planner received.",
+        "Finish at Review / Publish. Open its Host result in Preview, then choose Apply reviewed candidate to keep the proposed version or Reject candidate to discard it. Previewing an output does not make that choice for you."
       ],
       "checkpoints": [
         {
           "node": "Scene Context · public window",
           "port": "out",
-          "expect": "Public recent context and omissions exclude restricted host material."
+          "expect": "Scene Context shows the selected recent public messages and identifies material left out."
         },
         {
           "node": "Response Plan · bounded public plan",
           "port": "out",
-          "expect": "One public next-beat plan reaches native Guidance."
+          "expect": "Response Plan supplies one next scene beat as advice for Generate Reply."
         }
       ],
       "experiments": [
         {
-          "change": "Change recentMessages from4 to2.",
-          "expect": "The Scene Context report and visible plan inputs shrink."
+          "change": "Change Recent messages from 4 to 2, then send another continuation request.",
+          "expect": "The planner receives a smaller conversation window. Compare the new context and plan with the previous run."
         }
       ],
       "cases": [
         {
-          "when": "An older/private detail is omitted",
-          "expect": "The planner cannot claim to have received omitted material."
+          "when": "An important older detail is outside the selected window.",
+          "expect": "The planner has not received it. Increase the window if the next reply needs that detail."
         },
         {
-          "when": "Rejected or stopped",
-          "expect": "The existing story and staged effects are retained without settlement."
+          "when": "The planning connection is unavailable.",
+          "expect": "The planner stops with a connection issue; choose a working connection before trying again."
         }
       ],
-      "callBudget": "1 auxiliary Response Plan request; one ordinary native generation; no retries."
+      "callBudget": "1 extra Response Plan request; 1 normal SillyTavern reply. No automatic retries.",
+      "focus": "Public Scene Context and Response Plan"
     },
     "packages": [
       {
@@ -433,7 +443,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
         "graph": {
           "id": "remastered-lesson-03",
           "name": "3. Give the planner only the context it needs",
-          "description": "Select a small public scene window and observe what the planner omits.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nBind Analysis to Active SillyTavern or a configured local model.\n\nOpen Give the planner only the context it needs and inspect the named pins.\nInspect the Scene Context omission report for older/restricted material.\nCompare the four-message context with the resulting one-beat plan.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 1 auxiliary Response Plan request; one ordinary native generation; no retries.\nCheckpoints:\nScene Context · public window.out: Public recent context and omissions exclude restricted host material.\nResponse Plan · bounded public plan.out: One public next-beat plan reaches native Guidance.",
+          "description": "Learn how to give a planning model a small, clearly limited view of the conversation.\n\nWhat you'll learn:\n• Context is the background supplied to a model. Scene Context chooses which recent public messages the planner can read.\n• A model binding means choosing a connection for a box that asks a model for help. The planner can use your usual connection or another configured connection.\n• Response Plan writes advice for the next reply; it does not write the finished reply itself.\n\nBefore you start:\n• Use a practice SillyTavern chat where you can try things freely. Open this example, then turn on Enable Lattice before sending a message. Your usual SillyTavern connection writes the reply.\n• Use a practice chat with at least four messages so changing the message limit is visible. Choose a working connection for Response Plan.\n\nSteps:\n1. Select Scene Context · public window. In Details, leave Context visibility at public and Include character off. Recent messages starts at 4.\n2. Open the connection bar on Response Plan · bounded public plan and choose Active SillyTavern model, or a configured connection. This is the Analysis job used by this lesson.\n3. Send a simple continuation request. Once it finishes, select Scene Context and inspect its out output in Preview. Read the included messages and the report of omitted material.\n4. Select Response Plan and inspect out. Find its suggested next scene beat, then follow the wire to Generate Reply’s guidance port.\n5. Compare the plan with the supplied context. Older messages and private details outside that context should not be presented as information the planner received.\n6. Finish at Review / Publish. Open its Host result in Preview, then choose Apply reviewed candidate to keep the proposed version or Reject candidate to discard it. Previewing an output does not make that choice for you.\n\nCheckpoints:\nScene Context · public window → out: Scene Context shows the selected recent public messages and identifies material left out.\nResponse Plan · bounded public plan → out: Response Plan supplies one next scene beat as advice for Generate Reply.\n\nTry this:\nChange Recent messages from 4 to 2, then send another continuation request.\nThe planner receives a smaller conversation window. Compare the new context and plan with the previous run.\n\nIf something is different:\nAn important older detail is outside the selected window.: The planner has not received it. Increase the window if the next reply needs that detail.\nThe planning connection is unavailable.: The planner stops with a connection issue; choose a working connection before trying again.\n\nModel requests: 1 extra Response Plan request; 1 normal SillyTavern reply. No automatic retries.",
           "schema": 3,
           "runtime": 2,
           "mode": "native-unified",
@@ -446,7 +456,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "On Send",
               "enabled": true,
               "x": 100,
-              "y": 240,
+              "y": 947,
               "w": 300,
               "h": 210,
               "profileId": null,
@@ -462,7 +472,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Generate Reply · SillyTavern",
               "enabled": true,
               "x": 820,
-              "y": 240,
+              "y": 947,
               "w": 300,
               "h": 210,
               "profileId": null,
@@ -479,7 +489,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Review / Publish",
               "enabled": true,
               "x": 1180,
-              "y": 240,
+              "y": 947,
               "w": 300,
               "h": 210,
               "profileId": null,
@@ -494,7 +504,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Scene Context",
               "enabled": true,
               "x": 100,
-              "y": 560,
+              "y": 1237,
               "w": 300,
               "h": 210,
               "profileId": null,
@@ -512,7 +522,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Response Plan",
               "enabled": true,
               "x": 460,
-              "y": 240,
+              "y": 947,
               "w": 300,
               "h": 210,
               "profileId": "lattice:active-sillytavern",
@@ -530,8 +540,8 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "x": 100,
               "y": 0,
               "w": 900,
-              "h": 180,
-              "content": "Select a small public scene window and observe what the planner omits.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nBind Analysis to Active SillyTavern or a configured local model.\n\nOpen Give the planner only the context it needs and inspect the named pins.\nInspect the Scene Context omission report for older/restricted material.\nCompare the four-message context with the resulting one-beat plan.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 1 auxiliary Response Plan request; one ordinary native generation; no retries.\nCheckpoints:\nScene Context · public window.out: Public recent context and omissions exclude restricted host material.\nResponse Plan · bounded public plan.out: One public next-beat plan reaches native Guidance.",
+              "h": 867,
+              "content": "Learn how to give a planning model a small, clearly limited view of the conversation.\n\nWhat you'll learn:\n• Context is the background supplied to a model. Scene Context chooses which recent public messages the planner can read.\n• A model binding means choosing a connection for a box that asks a model for help. The planner can use your usual connection or another configured connection.\n• Response Plan writes advice for the next reply; it does not write the finished reply itself.\n\nBefore you start:\n• Use a practice SillyTavern chat where you can try things freely. Open this example, then turn on Enable Lattice before sending a message. Your usual SillyTavern connection writes the reply.\n• Use a practice chat with at least four messages so changing the message limit is visible. Choose a working connection for Response Plan.\n\nSteps:\n1. Select Scene Context · public window. In Details, leave Context visibility at public and Include character off. Recent messages starts at 4.\n2. Open the connection bar on Response Plan · bounded public plan and choose Active SillyTavern model, or a configured connection. This is the Analysis job used by this lesson.\n3. Send a simple continuation request. Once it finishes, select Scene Context and inspect its out output in Preview. Read the included messages and the report of omitted material.\n4. Select Response Plan and inspect out. Find its suggested next scene beat, then follow the wire to Generate Reply’s guidance port.\n5. Compare the plan with the supplied context. Older messages and private details outside that context should not be presented as information the planner received.\n6. Finish at Review / Publish. Open its Host result in Preview, then choose Apply reviewed candidate to keep the proposed version or Reject candidate to discard it. Previewing an output does not make that choice for you.\n\nCheckpoints:\nScene Context · public window → out: Scene Context shows the selected recent public messages and identifies material left out.\nResponse Plan · bounded public plan → out: Response Plan supplies one next scene beat as advice for Generate Reply.\n\nTry this:\nChange Recent messages from 4 to 2, then send another continuation request.\nThe planner receives a smaller conversation window. Compare the new context and plan with the previous run.\n\nIf something is different:\nAn important older detail is outside the selected window.: The planner has not received it. Increase the window if the next reply needs that detail.\nThe planning connection is unavailable.: The planner stops with a connection issue; choose a working connection before trying again.\n\nModel requests: 1 extra Response Plan request; 1 normal SillyTavern reply. No automatic retries.",
               "commentFrame": true,
               "moveContents": false
             }
@@ -596,48 +606,50 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
     "id": "lesson-04",
     "number": 4,
     "title": "Give a specialist model a different job",
-    "goal": "Give an auxiliary Model Call its own system Instructions and pass its result into native Guidance.",
+    "goal": "Use a separate model call to suggest a complication before the main model writes the scene.",
     "lesson": {
       "difficulty": "Foundations",
-      "focus": "Model Call Instructions and auxiliary binding",
       "learn": [
-        "Model Call Instructions and auxiliary binding",
-        "Trace named artifacts to the owned Draft or accepted proposal."
+        "Model Call is an extra request for a specific job. Its Instructions field is the system message that describes how that helper should behave.",
+        "The connected Text supplies the task. Choosing the helper’s connection does not change SillyTavern’s normal reply connection."
       ],
       "requirements": [
-        "Open this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.",
-        "Set SceneDesigner to Active SillyTavern or choose a different configured local auxiliary model."
+        "Use a practice SillyTavern chat where you can try things freely. Open this example, then turn on Enable Lattice before sending a message. Your usual SillyTavern connection writes the reply.",
+        "Choose a working connection for Model Call · separate job. Its model role is SceneDesigner."
       ],
       "steps": [
-        "Open Give a specialist model a different job and inspect the named pins.",
-        "Inspect Model Call.instructions: this is the auxiliary system message.",
-        "Change the auxiliary binding independently of ordinary native generation.",
-        "Send in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals."
+        "Select Text · specialist task and read its Text field. It asks for one reversible environmental complication, rather than a finished scene.",
+        "Select Model Call · separate job. Read Instructions in Details: the helper should be concise, preserve your choices, and return a practical complication.",
+        "Open the helper’s connection bar and choose Active SillyTavern model or another configured connection. You have now bound the SceneDesigner job to that connection.",
+        "Follow Text.out to Model Call.prompt, then Model Call.out through Compose to Generate Reply.guidance. The helper’s answer becomes advice for the main reply.",
+        "Send “I walk along the harbor wall.” When it finishes, preview Model Call’s out suggestion, Compose’s guidance, and Generate Reply’s draft. Compare the suggestion with how the scene uses it.",
+        "Finish at Review / Publish. Open its Host result in Preview, then choose Apply reviewed candidate to keep the proposed version or Reject candidate to discard it. Previewing an output does not make that choice for you."
       ],
       "checkpoints": [
         {
           "node": "Model Call · separate job",
           "port": "out",
-          "expect": "A specialist suggestion becomes material for Compose Guidance."
+          "expect": "The helper returns a short complication; Compose passes it on as advice for the main reply."
         }
       ],
       "experiments": [
         {
-          "change": "Choose a different local SceneDesigner binding.",
-          "expect": "The specialist uses its separate Instructions; native generation keeps its normal connection."
+          "change": "Change only the helper’s connection, then repeat the task.",
+          "expect": "The suggestion comes from the newly selected helper connection. The main reply still uses your usual SillyTavern connection."
         }
       ],
       "cases": [
         {
-          "when": "Specialist binding is unavailable",
-          "expect": "The missing auxiliary binding holds the specialist call."
+          "when": "The helper connection is missing or unavailable.",
+          "expect": "The extra call cannot run. Its connection issue tells you what to fix."
         },
         {
-          "when": "Rejected or stopped",
-          "expect": "The existing story and staged effects are retained without settlement."
+          "when": "The helper offers a suggestion.",
+          "expect": "It is material for the reply model to use, rather than an event that has already happened in the story."
         }
       ],
-      "callBudget": "1 auxiliary Model Call request; one ordinary native generation; no retries."
+      "callBudget": "1 extra Model Call request; 1 normal SillyTavern reply. No automatic retries.",
+      "focus": "Model Call Instructions and auxiliary binding"
     },
     "packages": [
       {
@@ -647,7 +659,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
         "graph": {
           "id": "remastered-lesson-04",
           "name": "4. Give a specialist model a different job",
-          "description": "Give an auxiliary Model Call its own system Instructions and pass its result into native Guidance.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nSet SceneDesigner to Active SillyTavern or choose a different configured local auxiliary model.\n\nOpen Give a specialist model a different job and inspect the named pins.\nInspect Model Call.instructions: this is the auxiliary system message.\nChange the auxiliary binding independently of ordinary native generation.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 1 auxiliary Model Call request; one ordinary native generation; no retries.\nCheckpoints:\nModel Call · separate job.out: A specialist suggestion becomes material for Compose Guidance.",
+          "description": "Use a separate model call to suggest a complication before the main model writes the scene.\n\nWhat you'll learn:\n• Model Call is an extra request for a specific job. Its Instructions field is the system message that describes how that helper should behave.\n• The connected Text supplies the task. Choosing the helper’s connection does not change SillyTavern’s normal reply connection.\n\nBefore you start:\n• Use a practice SillyTavern chat where you can try things freely. Open this example, then turn on Enable Lattice before sending a message. Your usual SillyTavern connection writes the reply.\n• Choose a working connection for Model Call · separate job. Its model role is SceneDesigner.\n\nSteps:\n1. Select Text · specialist task and read its Text field. It asks for one reversible environmental complication, rather than a finished scene.\n2. Select Model Call · separate job. Read Instructions in Details: the helper should be concise, preserve your choices, and return a practical complication.\n3. Open the helper’s connection bar and choose Active SillyTavern model or another configured connection. You have now bound the SceneDesigner job to that connection.\n4. Follow Text.out to Model Call.prompt, then Model Call.out through Compose to Generate Reply.guidance. The helper’s answer becomes advice for the main reply.\n5. Send “I walk along the harbor wall.” When it finishes, preview Model Call’s out suggestion, Compose’s guidance, and Generate Reply’s draft. Compare the suggestion with how the scene uses it.\n6. Finish at Review / Publish. Open its Host result in Preview, then choose Apply reviewed candidate to keep the proposed version or Reject candidate to discard it. Previewing an output does not make that choice for you.\n\nCheckpoints:\nModel Call · separate job → out: The helper returns a short complication; Compose passes it on as advice for the main reply.\n\nTry this:\nChange only the helper’s connection, then repeat the task.\nThe suggestion comes from the newly selected helper connection. The main reply still uses your usual SillyTavern connection.\n\nIf something is different:\nThe helper connection is missing or unavailable.: The extra call cannot run. Its connection issue tells you what to fix.\nThe helper offers a suggestion.: It is material for the reply model to use, rather than an event that has already happened in the story.\n\nModel requests: 1 extra Model Call request; 1 normal SillyTavern reply. No automatic retries.",
           "schema": 3,
           "runtime": 2,
           "mode": "native-unified",
@@ -660,7 +672,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "On Send",
               "enabled": true,
               "x": 100,
-              "y": 240,
+              "y": 895,
               "w": 300,
               "h": 210,
               "profileId": null,
@@ -676,7 +688,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Generate Reply · SillyTavern",
               "enabled": true,
               "x": 1180,
-              "y": 240,
+              "y": 895,
               "w": 300,
               "h": 210,
               "profileId": null,
@@ -693,7 +705,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Review / Publish",
               "enabled": true,
               "x": 1540,
-              "y": 240,
+              "y": 895,
               "w": 300,
               "h": 210,
               "profileId": null,
@@ -709,7 +721,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Text",
               "enabled": true,
               "x": 100,
-              "y": 560,
+              "y": 1185,
               "w": 300,
               "h": 210,
               "profileId": null,
@@ -726,7 +738,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Model Call",
               "enabled": true,
               "x": 460,
-              "y": 240,
+              "y": 895,
               "w": 300,
               "h": 210,
               "profileId": "lattice:active-sillytavern",
@@ -746,7 +758,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Compose",
               "enabled": true,
               "x": 820,
-              "y": 240,
+              "y": 895,
               "w": 300,
               "h": 210,
               "profileId": null,
@@ -772,8 +784,8 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "x": 100,
               "y": 0,
               "w": 900,
-              "h": 180,
-              "content": "Give an auxiliary Model Call its own system Instructions and pass its result into native Guidance.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nSet SceneDesigner to Active SillyTavern or choose a different configured local auxiliary model.\n\nOpen Give a specialist model a different job and inspect the named pins.\nInspect Model Call.instructions: this is the auxiliary system message.\nChange the auxiliary binding independently of ordinary native generation.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 1 auxiliary Model Call request; one ordinary native generation; no retries.\nCheckpoints:\nModel Call · separate job.out: A specialist suggestion becomes material for Compose Guidance.",
+              "h": 815,
+              "content": "Use a separate model call to suggest a complication before the main model writes the scene.\n\nWhat you'll learn:\n• Model Call is an extra request for a specific job. Its Instructions field is the system message that describes how that helper should behave.\n• The connected Text supplies the task. Choosing the helper’s connection does not change SillyTavern’s normal reply connection.\n\nBefore you start:\n• Use a practice SillyTavern chat where you can try things freely. Open this example, then turn on Enable Lattice before sending a message. Your usual SillyTavern connection writes the reply.\n• Choose a working connection for Model Call · separate job. Its model role is SceneDesigner.\n\nSteps:\n1. Select Text · specialist task and read its Text field. It asks for one reversible environmental complication, rather than a finished scene.\n2. Select Model Call · separate job. Read Instructions in Details: the helper should be concise, preserve your choices, and return a practical complication.\n3. Open the helper’s connection bar and choose Active SillyTavern model or another configured connection. You have now bound the SceneDesigner job to that connection.\n4. Follow Text.out to Model Call.prompt, then Model Call.out through Compose to Generate Reply.guidance. The helper’s answer becomes advice for the main reply.\n5. Send “I walk along the harbor wall.” When it finishes, preview Model Call’s out suggestion, Compose’s guidance, and Generate Reply’s draft. Compare the suggestion with how the scene uses it.\n6. Finish at Review / Publish. Open its Host result in Preview, then choose Apply reviewed candidate to keep the proposed version or Reject candidate to discard it. Previewing an output does not make that choice for you.\n\nCheckpoints:\nModel Call · separate job → out: The helper returns a short complication; Compose passes it on as advice for the main reply.\n\nTry this:\nChange only the helper’s connection, then repeat the task.\nThe suggestion comes from the newly selected helper connection. The main reply still uses your usual SillyTavern connection.\n\nIf something is different:\nThe helper connection is missing or unavailable.: The extra call cannot run. Its connection issue tells you what to fix.\nThe helper offers a suggestion.: It is material for the reply model to use, rather than an event that has already happened in the story.\n\nModel requests: 1 extra Model Call request; 1 normal SillyTavern reply. No automatic retries.",
               "commentFrame": true,
               "moveContents": false
             }
@@ -846,48 +858,51 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
     "id": "lesson-05",
     "number": 5,
     "title": "Reuse a prompt block from SillyTavern",
-    "goal": "Read a real configured prompt block as raw or resolved material for guidance.",
+    "goal": "Learn how to reuse text from a SillyTavern prompt and compare its template with its expanded form.",
     "lesson": {
       "difficulty": "Foundations",
-      "focus": "Prompt Source raw and resolved",
       "learn": [
-        "Prompt Source raw and resolved",
-        "Trace named artifacts to the owned Draft or accepted proposal."
+        "Prompt Source reads prompt text that is already configured in SillyTavern. This example starts with Source set to system.",
+        "Raw keeps the template text. Resolved expands supported name and formatting substitutions before passing the text onward.",
+        "Here the prompt text becomes guidance material, just as the Text instruction did in lesson 2."
       ],
       "requirements": [
-        "Open this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.",
-        "Choose an existing SillyTavern prompt ID; the portable default is main."
+        "Use a practice SillyTavern chat where you can try things freely. Open this example, then turn on Enable Lattice before sending a message. Your usual SillyTavern connection writes the reply.",
+        "Have a system prompt configured in SillyTavern. To try a particular prompt entry, use an entry ID that exists in your current setup."
       ],
       "steps": [
-        "Open Reuse a prompt block from SillyTavern and inspect the named pins.",
-        "Inspect Prompt Source.out before sending.",
-        "Toggle form raw/resolved to observe substitutions; this text is material, not Model Call Instructions.",
-        "Send in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals."
+        "Select Prompt Source · existing main block. In Details, check Source is system and Form is raw. Despite the box’s example label, this setting reads the system prompt.",
+        "Right-click Prompt Source and choose Run to here. Read its out text in Preview. Look for any template placeholders that are still written as placeholders.",
+        "Change Form to resolved and run that output again. Compare the text. Supported substitutions should now reflect the current chat; text without substitutions may look unchanged.",
+        "Follow Prompt Source.out into Compose and then Generate Reply.guidance. The copied text supplies advice here; it does not replace Model Call’s Instructions from lesson 4.",
+        "Send a short continuation request. Inspect Compose’s output to see the prompt material supplied for this reply.",
+        "Finish at Review / Publish. Open its Host result in Preview, then choose Apply reviewed candidate to keep the proposed version or Reject candidate to discard it. Previewing an output does not make that choice for you."
       ],
       "checkpoints": [
         {
           "node": "Prompt Source · existing main block",
           "port": "out",
-          "expect": "A selected prompt block is read without inventing a new system operation."
+          "expect": "Prompt Source’s output contains the selected prompt text in the chosen raw or resolved form."
         }
       ],
       "experiments": [
         {
-          "change": "Set form to resolved.",
-          "expect": "Substitutions use the current host context; the block remains input material."
+          "change": "Set Source to prompt-entry, then enter an existing Prompt ID, such as main if your setup has it. Preview the output.",
+          "expect": "You read that specific configured entry. Prompt ID appears when prompt-entry is selected."
         }
       ],
       "cases": [
         {
-          "when": "Selected prompt ID is missing",
-          "expect": "Prompt Source holds with an inspectable source error."
+          "when": "The selected prompt entry does not exist.",
+          "expect": "Prompt Source reports a source issue rather than inventing replacement text."
         },
         {
-          "when": "Rejected or stopped",
-          "expect": "The existing story and staged effects are retained without settlement."
+          "when": "The prompt contains structured braces or unsupported substitutions.",
+          "expect": "Use raw to keep that text unchanged; resolved supports only the documented substitutions."
         }
       ],
-      "callBudget": "0 auxiliary model requests; one ordinary native generation."
+      "callBudget": "0 extra model requests; 1 normal SillyTavern reply when you Send.",
+      "focus": "Prompt Source raw and resolved"
     },
     "packages": [
       {
@@ -897,7 +912,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
         "graph": {
           "id": "remastered-lesson-05",
           "name": "5. Reuse a prompt block from SillyTavern",
-          "description": "Read a real configured prompt block as raw or resolved material for guidance.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nChoose an existing SillyTavern prompt ID; the portable default is main.\n\nOpen Reuse a prompt block from SillyTavern and inspect the named pins.\nInspect Prompt Source.out before sending.\nToggle form raw/resolved to observe substitutions; this text is material, not Model Call Instructions.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 0 auxiliary model requests; one ordinary native generation.\nCheckpoints:\nPrompt Source · existing main block.out: A selected prompt block is read without inventing a new system operation.",
+          "description": "Learn how to reuse text from a SillyTavern prompt and compare its template with its expanded form.\n\nWhat you'll learn:\n• Prompt Source reads prompt text that is already configured in SillyTavern. This example starts with Source set to system.\n• Raw keeps the template text. Resolved expands supported name and formatting substitutions before passing the text onward.\n• Here the prompt text becomes guidance material, just as the Text instruction did in lesson 2.\n\nBefore you start:\n• Use a practice SillyTavern chat where you can try things freely. Open this example, then turn on Enable Lattice before sending a message. Your usual SillyTavern connection writes the reply.\n• Have a system prompt configured in SillyTavern. To try a particular prompt entry, use an entry ID that exists in your current setup.\n\nSteps:\n1. Select Prompt Source · existing main block. In Details, check Source is system and Form is raw. Despite the box’s example label, this setting reads the system prompt.\n2. Right-click Prompt Source and choose Run to here. Read its out text in Preview. Look for any template placeholders that are still written as placeholders.\n3. Change Form to resolved and run that output again. Compare the text. Supported substitutions should now reflect the current chat; text without substitutions may look unchanged.\n4. Follow Prompt Source.out into Compose and then Generate Reply.guidance. The copied text supplies advice here; it does not replace Model Call’s Instructions from lesson 4.\n5. Send a short continuation request. Inspect Compose’s output to see the prompt material supplied for this reply.\n6. Finish at Review / Publish. Open its Host result in Preview, then choose Apply reviewed candidate to keep the proposed version or Reject candidate to discard it. Previewing an output does not make that choice for you.\n\nCheckpoints:\nPrompt Source · existing main block → out: Prompt Source’s output contains the selected prompt text in the chosen raw or resolved form.\n\nTry this:\nSet Source to prompt-entry, then enter an existing Prompt ID, such as main if your setup has it. Preview the output.\nYou read that specific configured entry. Prompt ID appears when prompt-entry is selected.\n\nIf something is different:\nThe selected prompt entry does not exist.: Prompt Source reports a source issue rather than inventing replacement text.\nThe prompt contains structured braces or unsupported substitutions.: Use raw to keep that text unchanged; resolved supports only the documented substitutions.\n\nModel requests: 0 extra model requests; 1 normal SillyTavern reply when you Send.",
           "schema": 3,
           "runtime": 2,
           "mode": "native-unified",
@@ -910,7 +925,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "On Send",
               "enabled": true,
               "x": 100,
-              "y": 240,
+              "y": 913,
               "w": 300,
               "h": 210,
               "profileId": null,
@@ -926,7 +941,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Generate Reply · SillyTavern",
               "enabled": true,
               "x": 820,
-              "y": 240,
+              "y": 913,
               "w": 300,
               "h": 210,
               "profileId": null,
@@ -943,7 +958,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Review / Publish",
               "enabled": true,
               "x": 1180,
-              "y": 240,
+              "y": 913,
               "w": 300,
               "h": 210,
               "profileId": null,
@@ -959,7 +974,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Prompt Source",
               "enabled": true,
               "x": 100,
-              "y": 560,
+              "y": 1203,
               "w": 300,
               "h": 210,
               "profileId": null,
@@ -978,7 +993,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Compose",
               "enabled": true,
               "x": 460,
-              "y": 240,
+              "y": 913,
               "w": 300,
               "h": 210,
               "profileId": null,
@@ -1004,8 +1019,8 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "x": 100,
               "y": 0,
               "w": 900,
-              "h": 180,
-              "content": "Read a real configured prompt block as raw or resolved material for guidance.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nChoose an existing SillyTavern prompt ID; the portable default is main.\n\nOpen Reuse a prompt block from SillyTavern and inspect the named pins.\nInspect Prompt Source.out before sending.\nToggle form raw/resolved to observe substitutions; this text is material, not Model Call Instructions.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 0 auxiliary model requests; one ordinary native generation.\nCheckpoints:\nPrompt Source · existing main block.out: A selected prompt block is read without inventing a new system operation.",
+              "h": 833,
+              "content": "Learn how to reuse text from a SillyTavern prompt and compare its template with its expanded form.\n\nWhat you'll learn:\n• Prompt Source reads prompt text that is already configured in SillyTavern. This example starts with Source set to system.\n• Raw keeps the template text. Resolved expands supported name and formatting substitutions before passing the text onward.\n• Here the prompt text becomes guidance material, just as the Text instruction did in lesson 2.\n\nBefore you start:\n• Use a practice SillyTavern chat where you can try things freely. Open this example, then turn on Enable Lattice before sending a message. Your usual SillyTavern connection writes the reply.\n• Have a system prompt configured in SillyTavern. To try a particular prompt entry, use an entry ID that exists in your current setup.\n\nSteps:\n1. Select Prompt Source · existing main block. In Details, check Source is system and Form is raw. Despite the box’s example label, this setting reads the system prompt.\n2. Right-click Prompt Source and choose Run to here. Read its out text in Preview. Look for any template placeholders that are still written as placeholders.\n3. Change Form to resolved and run that output again. Compare the text. Supported substitutions should now reflect the current chat; text without substitutions may look unchanged.\n4. Follow Prompt Source.out into Compose and then Generate Reply.guidance. The copied text supplies advice here; it does not replace Model Call’s Instructions from lesson 4.\n5. Send a short continuation request. Inspect Compose’s output to see the prompt material supplied for this reply.\n6. Finish at Review / Publish. Open its Host result in Preview, then choose Apply reviewed candidate to keep the proposed version or Reject candidate to discard it. Previewing an output does not make that choice for you.\n\nCheckpoints:\nPrompt Source · existing main block → out: Prompt Source’s output contains the selected prompt text in the chosen raw or resolved form.\n\nTry this:\nSet Source to prompt-entry, then enter an existing Prompt ID, such as main if your setup has it. Preview the output.\nYou read that specific configured entry. Prompt ID appears when prompt-entry is selected.\n\nIf something is different:\nThe selected prompt entry does not exist.: Prompt Source reports a source issue rather than inventing replacement text.\nThe prompt contains structured braces or unsupported substitutions.: Use raw to keep that text unchanged; resolved supports only the documented substitutions.\n\nModel requests: 0 extra model requests; 1 normal SillyTavern reply when you Send.",
               "commentFrame": true,
               "moveContents": false
             }
@@ -1065,48 +1080,51 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
     "id": "lesson-06",
     "number": 6,
     "title": "Bring a lore sheet into the scene",
-    "goal": "Load an imported UTF-8 snapshot, decode JSON, and select only the current location facts.",
+    "goal": "Use a saved lore-file snapshot while passing only the facts this scene needs to the reply model.",
     "lesson": {
       "difficulty": "Foundations",
-      "focus": "File Input snapshot, JSON Decode, Select Fields",
       "learn": [
-        "File Input snapshot, JSON Decode, Select Fields",
-        "Trace named artifacts to the owned Draft or accepted proposal."
+        "File Input stores a snapshot: a copy of a file’s text saved inside the workflow. Editing the original file does not update this copy.",
+        "JSON stores named fields and values. JSON Decode turns its text into fields that Select Fields can choose individually.",
+        "Selecting a few fields keeps unrelated lore out of the guidance."
       ],
       "requirements": [
-        "Open this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern."
+        "Use a practice SillyTavern chat where you can try things freely. Open this example, then turn on Enable Lattice before sending a message. Your usual SillyTavern connection writes the reply.",
+        "The example already includes harbor-lore.json. No file authorization or extra model connection is needed to use this saved copy."
       ],
       "steps": [
-        "Open Bring a lore sheet into the scene and inspect the named pins.",
-        "Inspect the imported snapshot content; it does not read a live file.",
-        "Select location and constraint while omitting unrelated lore.",
-        "For plain text, remove JSON Decode and Select Fields, then connect File Input.out to a Compose text section.",
-        "Send in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals."
+        "Select File Input · imported snapshot and run its out output with Run to here. Preview shows location, constraint, and unrelated lore as JSON text.",
+        "Right-click JSON Decode and choose Run to here for out, then read Preview. The text becomes structured data: location is North Harbor and constraint says the lighthouse is dark.",
+        "Select Select Fields · scene facts. In Details, inspect Fields: it chooses location and constraint, leaving out unrelated. Run to here for its out output to check those two results before sending.",
+        "Send “I arrive at the harbor.” Compare Compose’s guidance and Generate Reply’s draft with the two selected facts; the distant kingdom’s festival was not supplied by this lore branch.",
+        "To refresh the snapshot later, select File Input and use Replace file. This imports a new copy; the workflow does not continuously watch the file.",
+        "Finish at Review / Publish. Open its Host result in Preview, then choose Apply reviewed candidate to keep the proposed version or Reject candidate to discard it. Previewing an output does not make that choice for you."
       ],
       "checkpoints": [
         {
           "node": "Select Fields · scene facts",
           "port": "out",
-          "expect": "Only location and constraint reach Guidance."
+          "expect": "Select Fields returns location and constraint, with the unrelated festival omitted from this guidance."
         }
       ],
       "experiments": [
         {
-          "change": "Replace snapshot content with plain text.",
-          "expect": "JSON Decode holds until you use the documented direct text-section route."
+          "change": "Remove the constraint row from Fields, choose Save Fields, then rerun Select Fields.",
+          "expect": "Only location appears in the selected output. Restore the row when you want the lighthouse constraint again."
         }
       ],
       "cases": [
         {
-          "when": "Snapshot is not valid JSON",
-          "expect": "JSON Decode holds before guidance."
+          "when": "The imported file contains invalid JSON or ordinary prose.",
+          "expect": "JSON Decode reports an issue. For plain text, bypass JSON Decode and Select Fields, and connect File Input.out to a Compose text-section input."
         },
         {
-          "when": "Rejected or stopped",
-          "expect": "The existing story and staged effects are retained without settlement."
+          "when": "You edit the original file outside Lattice.",
+          "expect": "This workflow keeps its existing snapshot until you choose Replace file."
         }
       ],
-      "callBudget": "0 auxiliary model requests; one ordinary native generation."
+      "callBudget": "0 extra model requests; 1 normal SillyTavern reply when you Send.",
+      "focus": "File Input snapshot, JSON Decode, Select Fields"
     },
     "packages": [
       {
@@ -1116,7 +1134,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
         "graph": {
           "id": "remastered-lesson-06",
           "name": "6. Bring a lore sheet into the scene",
-          "description": "Load an imported UTF-8 snapshot, decode JSON, and select only the current location facts.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\n\nOpen Bring a lore sheet into the scene and inspect the named pins.\nInspect the imported snapshot content; it does not read a live file.\nSelect location and constraint while omitting unrelated lore.\nFor plain text, remove JSON Decode and Select Fields, then connect File Input.out to a Compose text section.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 0 auxiliary model requests; one ordinary native generation.\nCheckpoints:\nSelect Fields · scene facts.out: Only location and constraint reach Guidance.",
+          "description": "Use a saved lore-file snapshot while passing only the facts this scene needs to the reply model.\n\nWhat you'll learn:\n• File Input stores a snapshot: a copy of a file’s text saved inside the workflow. Editing the original file does not update this copy.\n• JSON stores named fields and values. JSON Decode turns its text into fields that Select Fields can choose individually.\n• Selecting a few fields keeps unrelated lore out of the guidance.\n\nBefore you start:\n• Use a practice SillyTavern chat where you can try things freely. Open this example, then turn on Enable Lattice before sending a message. Your usual SillyTavern connection writes the reply.\n• The example already includes harbor-lore.json. No file authorization or extra model connection is needed to use this saved copy.\n\nSteps:\n1. Select File Input · imported snapshot and run its out output with Run to here. Preview shows location, constraint, and unrelated lore as JSON text.\n2. Right-click JSON Decode and choose Run to here for out, then read Preview. The text becomes structured data: location is North Harbor and constraint says the lighthouse is dark.\n3. Select Select Fields · scene facts. In Details, inspect Fields: it chooses location and constraint, leaving out unrelated. Run to here for its out output to check those two results before sending.\n4. Send “I arrive at the harbor.” Compare Compose’s guidance and Generate Reply’s draft with the two selected facts; the distant kingdom’s festival was not supplied by this lore branch.\n5. To refresh the snapshot later, select File Input and use Replace file. This imports a new copy; the workflow does not continuously watch the file.\n6. Finish at Review / Publish. Open its Host result in Preview, then choose Apply reviewed candidate to keep the proposed version or Reject candidate to discard it. Previewing an output does not make that choice for you.\n\nCheckpoints:\nSelect Fields · scene facts → out: Select Fields returns location and constraint, with the unrelated festival omitted from this guidance.\n\nTry this:\nRemove the constraint row from Fields, choose Save Fields, then rerun Select Fields.\nOnly location appears in the selected output. Restore the row when you want the lighthouse constraint again.\n\nIf something is different:\nThe imported file contains invalid JSON or ordinary prose.: JSON Decode reports an issue. For plain text, bypass JSON Decode and Select Fields, and connect File Input.out to a Compose text-section input.\nYou edit the original file outside Lattice.: This workflow keeps its existing snapshot until you choose Replace file.\n\nModel requests: 0 extra model requests; 1 normal SillyTavern reply when you Send.",
           "schema": 3,
           "runtime": 2,
           "mode": "native-unified",
@@ -1129,10 +1147,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "On Send",
               "enabled": true,
               "x": 100,
-              "y": 240,
+              "y": 913,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -1146,10 +1163,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Generate Reply · SillyTavern",
               "enabled": true,
               "x": 1540,
-              "y": 240,
+              "y": 913,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-4",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -1164,10 +1180,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Review / Publish",
               "enabled": true,
               "x": 1900,
-              "y": 240,
+              "y": 913,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-5",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -1181,10 +1196,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "File Input",
               "enabled": true,
               "x": 100,
-              "y": 560,
+              "y": 1203,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -1201,10 +1215,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "JSON Decode",
               "enabled": true,
               "x": 460,
-              "y": 240,
+              "y": 913,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-1",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -1220,10 +1233,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Select Fields",
               "enabled": true,
               "x": 820,
-              "y": 240,
+              "y": 913,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-2",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -1251,10 +1263,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Compose",
               "enabled": true,
               "x": 1180,
-              "y": 240,
+              "y": 913,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-3",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -1273,8 +1284,8 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "x": 100,
               "y": 0,
               "w": 900,
-              "h": 180,
-              "content": "Load an imported UTF-8 snapshot, decode JSON, and select only the current location facts.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\n\nOpen Bring a lore sheet into the scene and inspect the named pins.\nInspect the imported snapshot content; it does not read a live file.\nSelect location and constraint while omitting unrelated lore.\nFor plain text, remove JSON Decode and Select Fields, then connect File Input.out to a Compose text section.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 0 auxiliary model requests; one ordinary native generation.\nCheckpoints:\nSelect Fields · scene facts.out: Only location and constraint reach Guidance.",
+              "h": 833,
+              "content": "Use a saved lore-file snapshot while passing only the facts this scene needs to the reply model.\n\nWhat you'll learn:\n• File Input stores a snapshot: a copy of a file’s text saved inside the workflow. Editing the original file does not update this copy.\n• JSON stores named fields and values. JSON Decode turns its text into fields that Select Fields can choose individually.\n• Selecting a few fields keeps unrelated lore out of the guidance.\n\nBefore you start:\n• Use a practice SillyTavern chat where you can try things freely. Open this example, then turn on Enable Lattice before sending a message. Your usual SillyTavern connection writes the reply.\n• The example already includes harbor-lore.json. No file authorization or extra model connection is needed to use this saved copy.\n\nSteps:\n1. Select File Input · imported snapshot and run its out output with Run to here. Preview shows location, constraint, and unrelated lore as JSON text.\n2. Right-click JSON Decode and choose Run to here for out, then read Preview. The text becomes structured data: location is North Harbor and constraint says the lighthouse is dark.\n3. Select Select Fields · scene facts. In Details, inspect Fields: it chooses location and constraint, leaving out unrelated. Run to here for its out output to check those two results before sending.\n4. Send “I arrive at the harbor.” Compare Compose’s guidance and Generate Reply’s draft with the two selected facts; the distant kingdom’s festival was not supplied by this lore branch.\n5. To refresh the snapshot later, select File Input and use Replace file. This imports a new copy; the workflow does not continuously watch the file.\n6. Finish at Review / Publish. Open its Host result in Preview, then choose Apply reviewed candidate to keep the proposed version or Reject candidate to discard it. Previewing an output does not make that choice for you.\n\nCheckpoints:\nSelect Fields · scene facts → out: Select Fields returns location and constraint, with the unrelated festival omitted from this guidance.\n\nTry this:\nRemove the constraint row from Fields, choose Save Fields, then rerun Select Fields.\nOnly location appears in the selected output. Restore the row when you want the lighthouse constraint again.\n\nIf something is different:\nThe imported file contains invalid JSON or ordinary prose.: JSON Decode reports an issue. For plain text, bypass JSON Decode and Select Fields, and connect File Input.out to a Compose text-section input.\nYou edit the original file outside Lattice.: This workflow keeps its existing snapshot until you choose Replace file.\n\nModel requests: 0 extra model requests; 1 normal SillyTavern reply when you Send.",
               "commentFrame": true,
               "moveContents": false
             }
@@ -1329,93 +1340,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "toPort": "draft"
             }
           },
-          "groups": {
-            "stage-0": {
-              "id": "stage-0",
-              "title": "Preparation / processing",
-              "description": "Stage 0. Wires determine execution; folding is presentation only.",
-              "x": 75,
-              "y": 190,
-              "w": 350,
-              "h": 605,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "send",
-                "lore"
-              ]
-            },
-            "stage-1": {
-              "id": "stage-1",
-              "title": "Preparation / processing",
-              "description": "Stage 1. Wires determine execution; folding is presentation only.",
-              "x": 435,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "decode"
-              ]
-            },
-            "stage-2": {
-              "id": "stage-2",
-              "title": "Preparation / processing",
-              "description": "Stage 2. Wires determine execution; folding is presentation only.",
-              "x": 795,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "selection"
-              ]
-            },
-            "stage-3": {
-              "id": "stage-3",
-              "title": "Preparation / processing",
-              "description": "Stage 3. Wires determine execution; folding is presentation only.",
-              "x": 1155,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "guidance"
-              ]
-            },
-            "stage-4": {
-              "id": "stage-4",
-              "title": "Native generation",
-              "description": "Stage 4. Wires determine execution; folding is presentation only.",
-              "x": 1515,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#284e67",
-              "collapsed": false,
-              "members": [
-                "generate"
-              ]
-            },
-            "stage-5": {
-              "id": "stage-5",
-              "title": "Review / accepted staging",
-              "description": "Stage 5. Wires determine execution; folding is presentation only.",
-              "x": 1875,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "review"
-              ]
-            }
-          },
+          "groups": {},
           "roles": {},
           "portals": {},
           "definitions": {},
@@ -1436,47 +1361,51 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
     "id": "lesson-07",
     "number": 7,
     "title": "Let a second model polish the narration",
-    "goal": "Apply pre-generation direction, then revise only narration while preserving protected literals.",
+    "goal": "Use a second model pass to polish narration while preserving dialogue and an exact place name.",
     "lesson": {
       "difficulty": "Foundations",
-      "focus": "Revise Draft narration scope",
       "learn": [
-        "Revise Draft narration scope",
-        "Trace named artifacts to the owned Draft or accepted proposal."
+        "Preparation happens before the reply is written; response processing works on the draft afterward.",
+        "Revise Draft requests an edited draft. Editable scope limits the kind of text it may change, and Protected literals lists wording that must stay exact."
       ],
       "requirements": [
-        "Open this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.",
-        "Bind Prose to Active SillyTavern or a chosen local model."
+        "Use a practice SillyTavern chat where you can try things freely. Open this example, then turn on Enable Lattice before sending a message. Your usual SillyTavern connection writes the reply.",
+        "Choose a working connection for Revise Draft · narration pass, the Prose job. Use a practice scene where North Harbor and dialogue can appear."
       ],
       "steps": [
-        "Open Let a second model polish the narration and inspect the named pins.",
-        "Compare the native Draft with the narration-only revision before Apply.",
-        "Send in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals."
+        "Select Text and read its instruction about concrete sounds and movement. Follow it through Compose into Generate Reply.guidance; this part shapes the first draft.",
+        "Select Revise Draft · narration pass. In Details, check Editable scope is narration and Protected literals contains North Harbor. Read Instructions to see the requested polish.",
+        "Choose Active SillyTavern model or another configured connection in the revision box’s connection bar. This extra pass can use the same model as the main reply.",
+        "Send “At North Harbor, Rowan says, ‘The lighthouse is dark.’ Describe the sounds around us.” After it finishes, preview Generate Reply.draft to read the first version.",
+        "Preview Revise Draft.out and compare it with that first version. Look for tighter narration, unchanged dialogue, and North Harbor spelled exactly the same.",
+        "Follow the revised draft’s wire into Review / Publish. The version awaiting review is the polished draft, rather than a separate disconnected piece of text.",
+        "Finish at Review / Publish. Open its Host result in Preview, then choose Apply reviewed candidate to keep the proposed version or Reject candidate to discard it. Previewing an output does not make that choice for you."
       ],
       "checkpoints": [
         {
           "node": "Revise Draft · narration pass",
           "port": "out",
-          "expect": "Narration changes; dialogue and the protected literal remain unchanged."
+          "expect": "The revised draft may improve narration; dialogue and the protected words North Harbor remain unchanged."
         }
       ],
       "experiments": [
         {
-          "change": "Set scope to dialogue deliberately.",
-          "expect": "Compare editable regions; narration is preserved instead."
+          "change": "Change Editable scope to dialogue for a separate practice run.",
+          "expect": "The editable region changes. Compare the drafts to check that narration is preserved instead."
         }
       ],
       "cases": [
         {
-          "when": "Protected wording would change",
-          "expect": "Revision validation/review prevents silently changing protected text."
+          "when": "The model tries to change protected wording or text outside the chosen scope.",
+          "expect": "Validation reports the problem rather than silently accepting the prohibited edit."
         },
         {
-          "when": "Rejected or stopped",
-          "expect": "The existing story and staged effects are retained without settlement."
+          "when": "You only preview an intermediate revision.",
+          "expect": "Preview lets you compare text. Keeping a final version still goes through Review / Publish."
         }
       ],
-      "callBudget": "1 auxiliary Revise Draft request after one ordinary native generation."
+      "callBudget": "At most 1 extra Revise Draft request after 1 normal SillyTavern reply. A draft with no editable narration needs no revision request.",
+      "focus": "Revise Draft narration scope"
     },
     "packages": [
       {
@@ -1486,7 +1415,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
         "graph": {
           "id": "remastered-lesson-07",
           "name": "7. Let a second model polish the narration",
-          "description": "Apply pre-generation direction, then revise only narration while preserving protected literals.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nBind Prose to Active SillyTavern or a chosen local model.\n\nOpen Let a second model polish the narration and inspect the named pins.\nCompare the native Draft with the narration-only revision before Apply.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 1 auxiliary Revise Draft request after one ordinary native generation.\nCheckpoints:\nRevise Draft · narration pass.out: Narration changes; dialogue and the protected literal remain unchanged.",
+          "description": "Use a second model pass to polish narration while preserving dialogue and an exact place name.\n\nWhat you'll learn:\n• Preparation happens before the reply is written; response processing works on the draft afterward.\n• Revise Draft requests an edited draft. Editable scope limits the kind of text it may change, and Protected literals lists wording that must stay exact.\n\nBefore you start:\n• Use a practice SillyTavern chat where you can try things freely. Open this example, then turn on Enable Lattice before sending a message. Your usual SillyTavern connection writes the reply.\n• Choose a working connection for Revise Draft · narration pass, the Prose job. Use a practice scene where North Harbor and dialogue can appear.\n\nSteps:\n1. Select Text and read its instruction about concrete sounds and movement. Follow it through Compose into Generate Reply.guidance; this part shapes the first draft.\n2. Select Revise Draft · narration pass. In Details, check Editable scope is narration and Protected literals contains North Harbor. Read Instructions to see the requested polish.\n3. Choose Active SillyTavern model or another configured connection in the revision box’s connection bar. This extra pass can use the same model as the main reply.\n4. Send “At North Harbor, Rowan says, ‘The lighthouse is dark.’ Describe the sounds around us.” After it finishes, preview Generate Reply.draft to read the first version.\n5. Preview Revise Draft.out and compare it with that first version. Look for tighter narration, unchanged dialogue, and North Harbor spelled exactly the same.\n6. Follow the revised draft’s wire into Review / Publish. The version awaiting review is the polished draft, rather than a separate disconnected piece of text.\n7. Finish at Review / Publish. Open its Host result in Preview, then choose Apply reviewed candidate to keep the proposed version or Reject candidate to discard it. Previewing an output does not make that choice for you.\n\nCheckpoints:\nRevise Draft · narration pass → out: The revised draft may improve narration; dialogue and the protected words North Harbor remain unchanged.\n\nTry this:\nChange Editable scope to dialogue for a separate practice run.\nThe editable region changes. Compare the drafts to check that narration is preserved instead.\n\nIf something is different:\nThe model tries to change protected wording or text outside the chosen scope.: Validation reports the problem rather than silently accepting the prohibited edit.\nYou only preview an intermediate revision.: Preview lets you compare text. Keeping a final version still goes through Review / Publish.\n\nModel requests: At most 1 extra Revise Draft request after 1 normal SillyTavern reply. A draft with no editable narration needs no revision request.",
           "schema": 3,
           "runtime": 2,
           "mode": "native-unified",
@@ -1499,7 +1428,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "On Send",
               "enabled": true,
               "x": 100,
-              "y": 240,
+              "y": 947,
               "w": 300,
               "h": 210,
               "profileId": null,
@@ -1515,7 +1444,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Generate Reply · SillyTavern",
               "enabled": true,
               "x": 820,
-              "y": 240,
+              "y": 947,
               "w": 300,
               "h": 210,
               "profileId": null,
@@ -1532,7 +1461,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Review / Publish",
               "enabled": true,
               "x": 1540,
-              "y": 240,
+              "y": 947,
               "w": 300,
               "h": 210,
               "profileId": null,
@@ -1548,7 +1477,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Text",
               "enabled": true,
               "x": 100,
-              "y": 560,
+              "y": 1237,
               "w": 300,
               "h": 210,
               "profileId": null,
@@ -1565,7 +1494,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Compose",
               "enabled": true,
               "x": 460,
-              "y": 240,
+              "y": 947,
               "w": 300,
               "h": 210,
               "profileId": null,
@@ -1591,7 +1520,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Revise Draft",
               "enabled": true,
               "x": 1180,
-              "y": 240,
+              "y": 947,
               "w": 300,
               "h": 210,
               "profileId": "lattice:active-sillytavern",
@@ -1613,8 +1542,8 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "x": 100,
               "y": 0,
               "w": 900,
-              "h": 180,
-              "content": "Apply pre-generation direction, then revise only narration while preserving protected literals.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nBind Prose to Active SillyTavern or a chosen local model.\n\nOpen Let a second model polish the narration and inspect the named pins.\nCompare the native Draft with the narration-only revision before Apply.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 1 auxiliary Revise Draft request after one ordinary native generation.\nCheckpoints:\nRevise Draft · narration pass.out: Narration changes; dialogue and the protected literal remain unchanged.",
+              "h": 867,
+              "content": "Use a second model pass to polish narration while preserving dialogue and an exact place name.\n\nWhat you'll learn:\n• Preparation happens before the reply is written; response processing works on the draft afterward.\n• Revise Draft requests an edited draft. Editable scope limits the kind of text it may change, and Protected literals lists wording that must stay exact.\n\nBefore you start:\n• Use a practice SillyTavern chat where you can try things freely. Open this example, then turn on Enable Lattice before sending a message. Your usual SillyTavern connection writes the reply.\n• Choose a working connection for Revise Draft · narration pass, the Prose job. Use a practice scene where North Harbor and dialogue can appear.\n\nSteps:\n1. Select Text and read its instruction about concrete sounds and movement. Follow it through Compose into Generate Reply.guidance; this part shapes the first draft.\n2. Select Revise Draft · narration pass. In Details, check Editable scope is narration and Protected literals contains North Harbor. Read Instructions to see the requested polish.\n3. Choose Active SillyTavern model or another configured connection in the revision box’s connection bar. This extra pass can use the same model as the main reply.\n4. Send “At North Harbor, Rowan says, ‘The lighthouse is dark.’ Describe the sounds around us.” After it finishes, preview Generate Reply.draft to read the first version.\n5. Preview Revise Draft.out and compare it with that first version. Look for tighter narration, unchanged dialogue, and North Harbor spelled exactly the same.\n6. Follow the revised draft’s wire into Review / Publish. The version awaiting review is the polished draft, rather than a separate disconnected piece of text.\n7. Finish at Review / Publish. Open its Host result in Preview, then choose Apply reviewed candidate to keep the proposed version or Reject candidate to discard it. Previewing an output does not make that choice for you.\n\nCheckpoints:\nRevise Draft · narration pass → out: The revised draft may improve narration; dialogue and the protected words North Harbor remain unchanged.\n\nTry this:\nChange Editable scope to dialogue for a separate practice run.\nThe editable region changes. Compare the drafts to check that narration is preserved instead.\n\nIf something is different:\nThe model tries to change protected wording or text outside the chosen scope.: Validation reports the problem rather than silently accepting the prohibited edit.\nYou only preview an intermediate revision.: Preview lets you compare text. Keeping a final version still goes through Review / Publish.\n\nModel requests: At most 1 extra Revise Draft request after 1 normal SillyTavern reply. A draft with no editable narration needs no revision request.",
               "commentFrame": true,
               "moveContents": false
             }
@@ -1687,48 +1616,56 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
     "id": "lesson-08",
     "number": 8,
     "title": "Add an Observed Items dropdown",
-    "goal": "Extract literal item mentions from the owned generation snapshot and append public notes to the current owned Draft.",
+    "goal": "Use exact item mentions to add an expandable notes section to a reply.",
     "lesson": {
       "difficulty": "Foundations",
-      "focus": "Reply Snapshot, literal Extract, Render Notes, Append",
       "learn": [
-        "Reply Snapshot, literal Extract, Render Notes, Append",
-        "Trace named artifacts to the owned Draft or accepted proposal."
+        "Reply Snapshot provides a fixed view of reply text. During Send it reads the original reply just generated, before later edits.",
+        "Literal Extract finds the exact words you configure. Render Notes formats the matches, and Append adds that section to the draft.",
+        "An item mention is an observation; it does not mean someone has picked up or owns the item."
       ],
       "requirements": [
-        "Open this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern."
+        "Use a practice SillyTavern chat where you can try things freely. Open this example, then turn on Enable Lattice before sending a message. Your usual SillyTavern connection writes the reply.",
+        "No extra model connection is needed: this Extract box uses literal matching, rather than asking a model to identify items."
       ],
       "steps": [
-        "Open Add an Observed Items dropdown and inspect the named pins.",
-        "In an owned Send, Reply Snapshot reads the cached original just-generated reply. A bounded Run-to-here preview instead reads the latest existing completed assistant entry.",
-        "The new native Draft continues to Append and Review; the snapshot is an immutable source view, while the owned Draft continues to review.",
-        "Send in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals."
+        "Select Extract · literal observed items. In Details, check Mode is literal and inspect Literal patterns. The starting patterns match lantern and map exactly.",
+        "Follow Reply Snapshot.out into Extract.source. Separately, follow Generate Reply.draft into Append.draft: the snapshot supplies observations while the new draft receives the notes.",
+        "Send “Describe a lantern and a map on the harbor table. Use those exact words.” When it finishes, preview Reply Snapshot.out to check which words actually appeared.",
+        "Preview Extract.out. For each match, check the quoted word and its position in the reply. A missing word produces no matching item record.",
+        "Preview Render Notes.out, then Append.out. Expand the notes section and compare the item list with the reply text before reviewing the completed draft.",
+        "Finish at Review / Publish. Open its Host result in Preview, then choose Apply reviewed candidate to keep the proposed version or Reject candidate to discard it. Previewing an output does not make that choice for you."
       ],
       "checkpoints": [
         {
           "node": "Extract · literal observed items",
           "port": "out",
-          "expect": "Literal records retain exact offsets and quotes; a mention grants no inventory ownership."
+          "expect": "Extract returns matching item records with their exact quotes and positions; a mention makes no ownership claim."
         },
         {
           "node": "Append",
           "port": "out",
-          "expect": "Public dropdown notes are appended to the newly owned Draft."
+          "expect": "Append’s output contains the new draft with the formatted item notes added."
         }
       ],
       "experiments": [
         {
-          "change": "Add another exact literal item pattern.",
-          "expect": "Only exact matching quoted spans become notes; no inventory transfer occurs."
+          "change": "Add {\"id\":\"rope\",\"literal\":\"rope\",\"label\":\"Rope\"} to Literal patterns, choose Save Literal patterns, and try a reply containing rope.",
+          "expect": "Rope appears only when that exact text is found. Adding a pattern does not add an item to the story or inventory."
         }
       ],
       "cases": [
         {
-          "when": "No literal match",
-          "expect": "Empty notes leave an ordinary usable Draft."
+          "when": "None of the configured words appears.",
+          "expect": "There are no invented item records; the ordinary draft remains usable."
+        },
+        {
+          "when": "You use Run to here on Reply Snapshot without a new Send.",
+          "expect": "The diagnostic preview reads the latest existing completed assistant reply. It does not generate a fresh reply or publish notes."
         }
       ],
-      "callBudget": "0 auxiliary model requests; one ordinary native generation."
+      "callBudget": "0 extra model requests; 1 normal SillyTavern reply when you Send.",
+      "focus": "Reply Snapshot, literal Extract, Render Notes, Append"
     },
     "packages": [
       {
@@ -1738,7 +1675,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
         "graph": {
           "id": "remastered-lesson-08",
           "name": "8. Add an Observed Items dropdown",
-          "description": "Extract literal item mentions from the owned generation snapshot and append public notes to the current owned Draft.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\n\nOpen Add an Observed Items dropdown and inspect the named pins.\nIn an owned Send, Reply Snapshot reads the cached original just-generated reply. A bounded Run-to-here preview instead reads the latest existing completed assistant entry.\nThe new native Draft continues to Append and Review; the snapshot is an immutable source view, while the owned Draft continues to review.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 0 auxiliary model requests; one ordinary native generation.\nCheckpoints:\nExtract · literal observed items.out: Literal records retain exact offsets and quotes; a mention grants no inventory ownership.\nAppend.out: Public dropdown notes are appended to the newly owned Draft.",
+          "description": "Use exact item mentions to add an expandable notes section to a reply.\n\nWhat you'll learn:\n• Reply Snapshot provides a fixed view of reply text. During Send it reads the original reply just generated, before later edits.\n• Literal Extract finds the exact words you configure. Render Notes formats the matches, and Append adds that section to the draft.\n• An item mention is an observation; it does not mean someone has picked up or owns the item.\n\nBefore you start:\n• Use a practice SillyTavern chat where you can try things freely. Open this example, then turn on Enable Lattice before sending a message. Your usual SillyTavern connection writes the reply.\n• No extra model connection is needed: this Extract box uses literal matching, rather than asking a model to identify items.\n\nSteps:\n1. Select Extract · literal observed items. In Details, check Mode is literal and inspect Literal patterns. The starting patterns match lantern and map exactly.\n2. Follow Reply Snapshot.out into Extract.source. Separately, follow Generate Reply.draft into Append.draft: the snapshot supplies observations while the new draft receives the notes.\n3. Send “Describe a lantern and a map on the harbor table. Use those exact words.” When it finishes, preview Reply Snapshot.out to check which words actually appeared.\n4. Preview Extract.out. For each match, check the quoted word and its position in the reply. A missing word produces no matching item record.\n5. Preview Render Notes.out, then Append.out. Expand the notes section and compare the item list with the reply text before reviewing the completed draft.\n6. Finish at Review / Publish. Open its Host result in Preview, then choose Apply reviewed candidate to keep the proposed version or Reject candidate to discard it. Previewing an output does not make that choice for you.\n\nCheckpoints:\nExtract · literal observed items → out: Extract returns matching item records with their exact quotes and positions; a mention makes no ownership claim.\nAppend → out: Append’s output contains the new draft with the formatted item notes added.\n\nTry this:\nAdd {\"id\":\"rope\",\"literal\":\"rope\",\"label\":\"Rope\"} to Literal patterns, choose Save Literal patterns, and try a reply containing rope.\nRope appears only when that exact text is found. Adding a pattern does not add an item to the story or inventory.\n\nIf something is different:\nNone of the configured words appears.: There are no invented item records; the ordinary draft remains usable.\nYou use Run to here on Reply Snapshot without a new Send.: The diagnostic preview reads the latest existing completed assistant reply. It does not generate a fresh reply or publish notes.\n\nModel requests: 0 extra model requests; 1 normal SillyTavern reply when you Send.",
           "schema": 3,
           "runtime": 2,
           "mode": "native-unified",
@@ -1751,10 +1688,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "On Send",
               "enabled": true,
               "x": 100,
-              "y": 240,
+              "y": 947,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -1768,10 +1704,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Generate Reply · SillyTavern",
               "enabled": true,
               "x": 460,
-              "y": 240,
+              "y": 947,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-1",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -1786,10 +1721,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Review / Publish",
               "enabled": true,
               "x": 1540,
-              "y": 240,
+              "y": 947,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-4",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -1802,10 +1736,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Reply Snapshot",
               "enabled": true,
               "x": 100,
-              "y": 560,
+              "y": 1237,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -1819,10 +1752,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Extract",
               "enabled": true,
               "x": 460,
-              "y": 560,
+              "y": 1237,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-1",
               "profileId": "lattice:active-sillytavern",
               "model": null,
               "modelRole": "Prose",
@@ -1854,10 +1786,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Reply Snapshot, literal Extract, Render Notes, Append",
               "enabled": true,
               "x": 820,
-              "y": 240,
+              "y": 947,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-2",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -1873,10 +1804,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Append",
               "enabled": true,
               "x": 1180,
-              "y": 240,
+              "y": 947,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-3",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -1892,8 +1822,8 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "x": 100,
               "y": 0,
               "w": 900,
-              "h": 180,
-              "content": "Extract literal item mentions from the owned generation snapshot and append public notes to the current owned Draft.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\n\nOpen Add an Observed Items dropdown and inspect the named pins.\nIn an owned Send, Reply Snapshot reads the cached original just-generated reply. A bounded Run-to-here preview instead reads the latest existing completed assistant entry.\nThe new native Draft continues to Append and Review; the snapshot is an immutable source view, while the owned Draft continues to review.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 0 auxiliary model requests; one ordinary native generation.\nCheckpoints:\nExtract · literal observed items.out: Literal records retain exact offsets and quotes; a mention grants no inventory ownership.\nAppend.out: Public dropdown notes are appended to the newly owned Draft.",
+              "h": 867,
+              "content": "Use exact item mentions to add an expandable notes section to a reply.\n\nWhat you'll learn:\n• Reply Snapshot provides a fixed view of reply text. During Send it reads the original reply just generated, before later edits.\n• Literal Extract finds the exact words you configure. Render Notes formats the matches, and Append adds that section to the draft.\n• An item mention is an observation; it does not mean someone has picked up or owns the item.\n\nBefore you start:\n• Use a practice SillyTavern chat where you can try things freely. Open this example, then turn on Enable Lattice before sending a message. Your usual SillyTavern connection writes the reply.\n• No extra model connection is needed: this Extract box uses literal matching, rather than asking a model to identify items.\n\nSteps:\n1. Select Extract · literal observed items. In Details, check Mode is literal and inspect Literal patterns. The starting patterns match lantern and map exactly.\n2. Follow Reply Snapshot.out into Extract.source. Separately, follow Generate Reply.draft into Append.draft: the snapshot supplies observations while the new draft receives the notes.\n3. Send “Describe a lantern and a map on the harbor table. Use those exact words.” When it finishes, preview Reply Snapshot.out to check which words actually appeared.\n4. Preview Extract.out. For each match, check the quoted word and its position in the reply. A missing word produces no matching item record.\n5. Preview Render Notes.out, then Append.out. Expand the notes section and compare the item list with the reply text before reviewing the completed draft.\n6. Finish at Review / Publish. Open its Host result in Preview, then choose Apply reviewed candidate to keep the proposed version or Reject candidate to discard it. Previewing an output does not make that choice for you.\n\nCheckpoints:\nExtract · literal observed items → out: Extract returns matching item records with their exact quotes and positions; a mention makes no ownership claim.\nAppend → out: Append’s output contains the new draft with the formatted item notes added.\n\nTry this:\nAdd {\"id\":\"rope\",\"literal\":\"rope\",\"label\":\"Rope\"} to Literal patterns, choose Save Literal patterns, and try a reply containing rope.\nRope appears only when that exact text is found. Adding a pattern does not add an item to the story or inventory.\n\nIf something is different:\nNone of the configured words appears.: There are no invented item records; the ordinary draft remains usable.\nYou use Run to here on Reply Snapshot without a new Send.: The diagnostic preview reads the latest existing completed assistant reply. It does not generate a fresh reply or publish notes.\n\nModel requests: 0 extra model requests; 1 normal SillyTavern reply when you Send.",
               "commentFrame": true,
               "moveContents": false
             }
@@ -1948,80 +1878,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "toPort": "draft"
             }
           },
-          "groups": {
-            "stage-0": {
-              "id": "stage-0",
-              "title": "Preparation / processing",
-              "description": "Stage 0. Wires determine execution; folding is presentation only.",
-              "x": 75,
-              "y": 190,
-              "w": 350,
-              "h": 605,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "send",
-                "snapshot"
-              ]
-            },
-            "stage-1": {
-              "id": "stage-1",
-              "title": "Native generation",
-              "description": "Stage 1. Wires determine execution; folding is presentation only.",
-              "x": 435,
-              "y": 190,
-              "w": 350,
-              "h": 605,
-              "color": "#284e67",
-              "collapsed": false,
-              "members": [
-                "generate",
-                "items"
-              ]
-            },
-            "stage-2": {
-              "id": "stage-2",
-              "title": "Response processing",
-              "description": "Stage 2. Wires determine execution; folding is presentation only.",
-              "x": 795,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "notes"
-              ]
-            },
-            "stage-3": {
-              "id": "stage-3",
-              "title": "Preparation / processing",
-              "description": "Stage 3. Wires determine execution; folding is presentation only.",
-              "x": 1155,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "append"
-              ]
-            },
-            "stage-4": {
-              "id": "stage-4",
-              "title": "Review / accepted staging",
-              "description": "Stage 4. Wires determine execution; folding is presentation only.",
-              "x": 1515,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "review"
-              ]
-            }
-          },
+          "groups": {},
           "roles": {
             "Prose": {
               "model": null,
@@ -2047,52 +1904,49 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
     "id": "lesson-09",
     "number": 9,
     "title": "Show a travel card only when there is a destination",
-    "goal": "Conditionally add a travel card while preserving an ordinary Draft when no destination is authored.",
+    "goal": "Learn to add something to a reply only when it is useful. You will show a travel card when the scene has a destination, and keep the normal reply when it does not.",
     "lesson": {
       "difficulty": "Composition",
-      "focus": "Condition, Branch and Join",
       "learn": [
-        "Condition, Branch and Join",
-        "Trace named artifacts to the owned Draft or accepted proposal."
+        "Use Condition to check a value and Branch to choose a path.",
+        "Use Join to keep a reply available when an optional addition is skipped."
       ],
       "requirements": [
-        "Open this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern."
+        "Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.",
+        "This builds on the reply notes in lesson 8. The destination is supplied by this example, so no travel information needs to be extracted from your chat."
       ],
       "steps": [
-        "Open Show a travel card only when there is a destination and inspect the named pins.",
-        "Edit the authored destination; empty string chooses the no route.",
-        "Condition controls Branch; the optional card reaches Join after the base Draft.",
-        "Missing destination is unresolved and deliberately holds Join; inspect Branch.unresolved.",
-        "Send in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals."
+        "Open the Text box feeding the route data. It names North Harbor as the destination and the dark lighthouse as its landmark.",
+        "Follow the wires through Condition and Branch. Condition checks whether destination has some text; Branch sends the card along its yes path when it does.",
+        "Send a message asking to continue the scene. Look for the travel card in the reply waiting at Review / Publish.",
+        "Change destination to an empty string (\"\"), keeping the field itself. Send again. Branch should take its no path and Join should keep the reply without a travel card.",
+        "Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes."
       ],
       "checkpoints": [
         {
           "node": "Branch",
           "port": "yes",
-          "expect": "A nonempty destination produces a card; no destination skips the optional contribution."
+          "expect": "A destination produces a travel card on the yes output. An empty destination skips the card."
         }
       ],
       "experiments": [
         {
-          "change": "Set destination to an empty string.",
-          "expect": "The native Draft remains reviewable without the travel card."
-        },
-        {
-          "change": "Remove destination.",
-          "expect": "The explicit unresolved route holds review; resolve the missing input."
+          "change": "Remove the destination field entirely instead of leaving it empty.",
+          "expect": "The workflow pauses because it cannot tell whether a destination exists. Restore the field to continue; missing information is different from an empty answer."
         }
       ],
       "cases": [
         {
-          "when": "Condition path is missing",
-          "expect": "Unresolved condition holds review until corrected."
+          "when": "You leave destination empty",
+          "expect": "You can still review the normal reply."
         },
         {
-          "when": "Rejected or stopped",
-          "expect": "The existing story and staged effects are retained without settlement."
+          "when": "You remove destination",
+          "expect": "Branch shows unresolved and review waits for you to fix the missing information."
         }
       ],
-      "callBudget": "0 auxiliary model requests; one ordinary native generation."
+      "callBudget": "No extra model requests. SillyTavern writes one reply.",
+      "focus": "Condition, Branch and Join"
     },
     "packages": [
       {
@@ -2102,7 +1956,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
         "graph": {
           "id": "remastered-lesson-09",
           "name": "9. Show a travel card only when there is a destination",
-          "description": "Conditionally add a travel card while preserving an ordinary Draft when no destination is authored.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\n\nOpen Show a travel card only when there is a destination and inspect the named pins.\nEdit the authored destination; empty string chooses the no route.\nCondition controls Branch; the optional card reaches Join after the base Draft.\nMissing destination is unresolved and deliberately holds Join; inspect Branch.unresolved.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 0 auxiliary model requests; one ordinary native generation.\nCheckpoints:\nBranch.yes: A nonempty destination produces a card; no destination skips the optional contribution.",
+          "description": "Learn to add something to a reply only when it is useful. You will show a travel card when the scene has a destination, and keep the normal reply when it does not.\n\nWhat you'll learn:\n• Use Condition to check a value and Branch to choose a path.\n• Use Join to keep a reply available when an optional addition is skipped.\n\nBefore you start:\n• Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.\n• This builds on the reply notes in lesson 8. The destination is supplied by this example, so no travel information needs to be extracted from your chat.\n\nSteps:\n1. Open the Text box feeding the route data. It names North Harbor as the destination and the dark lighthouse as its landmark.\n2. Follow the wires through Condition and Branch. Condition checks whether destination has some text; Branch sends the card along its yes path when it does.\n3. Send a message asking to continue the scene. Look for the travel card in the reply waiting at Review / Publish.\n4. Change destination to an empty string (\"\"), keeping the field itself. Send again. Branch should take its no path and Join should keep the reply without a travel card.\n5. Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes.\n\nCheckpoints:\nBranch → yes: A destination produces a travel card on the yes output. An empty destination skips the card.\n\nTry this:\nRemove the destination field entirely instead of leaving it empty.\nThe workflow pauses because it cannot tell whether a destination exists. Restore the field to continue; missing information is different from an empty answer.\n\nIf something is different:\nYou leave destination empty: You can still review the normal reply.\nYou remove destination: Branch shows unresolved and review waits for you to fix the missing information.\n\nModel requests: No extra model requests. SillyTavern writes one reply.",
           "schema": 3,
           "runtime": 2,
           "mode": "native-unified",
@@ -2115,10 +1969,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "On Send",
               "enabled": true,
               "x": 100,
-              "y": 240,
+              "y": 808,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -2132,10 +1985,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Generate Reply · SillyTavern",
               "enabled": true,
               "x": 460,
-              "y": 240,
+              "y": 808,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-1",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -2150,10 +2002,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Review / Publish",
               "enabled": true,
               "x": 2260,
-              "y": 240,
+              "y": 808,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-6",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -2167,10 +2018,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Text",
               "enabled": true,
               "x": 100,
-              "y": 560,
+              "y": 1148,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-route-text",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -2186,10 +2037,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "JSON Decode",
               "enabled": true,
               "x": 460,
-              "y": 560,
+              "y": 1148,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-1",
+              "inGroup": "processing-route-text",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -2206,10 +2057,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Condition",
               "enabled": true,
               "x": 820,
-              "y": 240,
+              "y": 1148,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-2",
+              "inGroup": "processing-route-text",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -2228,10 +2079,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Branch",
               "enabled": true,
               "x": 1180,
-              "y": 240,
+              "y": 1513,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-3",
+              "inGroup": "processing-travel-route",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -2247,10 +2098,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Compose",
               "enabled": true,
               "x": 820,
-              "y": 560,
+              "y": 1513,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-2",
+              "inGroup": "processing-travel-route",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -2270,10 +2121,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Append",
               "enabled": true,
               "x": 1540,
-              "y": 240,
+              "y": 1513,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-4",
+              "inGroup": "processing-travel-route",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -2289,10 +2140,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Join",
               "enabled": true,
               "x": 1900,
-              "y": 240,
+              "y": 1513,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-5",
+              "inGroup": "processing-travel-route",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -2321,8 +2172,8 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "x": 100,
               "y": 0,
               "w": 900,
-              "h": 180,
-              "content": "Conditionally add a travel card while preserving an ordinary Draft when no destination is authored.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\n\nOpen Show a travel card only when there is a destination and inspect the named pins.\nEdit the authored destination; empty string chooses the no route.\nCondition controls Branch; the optional card reaches Join after the base Draft.\nMissing destination is unresolved and deliberately holds Join; inspect Branch.unresolved.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 0 auxiliary model requests; one ordinary native generation.\nCheckpoints:\nBranch.yes: A nonempty destination produces a card; no destination skips the optional contribution.",
+              "h": 728,
+              "content": "Learn to add something to a reply only when it is useful. You will show a travel card when the scene has a destination, and keep the normal reply when it does not.\n\nWhat you'll learn:\n• Use Condition to check a value and Branch to choose a path.\n• Use Join to keep a reply available when an optional addition is skipped.\n\nBefore you start:\n• Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.\n• This builds on the reply notes in lesson 8. The destination is supplied by this example, so no travel information needs to be extracted from your chat.\n\nSteps:\n1. Open the Text box feeding the route data. It names North Harbor as the destination and the dark lighthouse as its landmark.\n2. Follow the wires through Condition and Branch. Condition checks whether destination has some text; Branch sends the card along its yes path when it does.\n3. Send a message asking to continue the scene. Look for the travel card in the reply waiting at Review / Publish.\n4. Change destination to an empty string (\"\"), keeping the field itself. Send again. Branch should take its no path and Join should keep the reply without a travel card.\n5. Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes.\n\nCheckpoints:\nBranch → yes: A destination produces a travel card on the yes output. An empty destination skips the card.\n\nTry this:\nRemove the destination field entirely instead of leaving it empty.\nThe workflow pauses because it cannot tell whether a destination exists. Restore the field to continue; missing information is different from an empty answer.\n\nIf something is different:\nYou leave destination empty: You can still review the normal reply.\nYou remove destination: Branch shows unresolved and review waits for you to fix the missing information.\n\nModel requests: No extra model requests. SillyTavern writes one reply.",
               "commentFrame": true,
               "moveContents": false
             }
@@ -2418,105 +2269,37 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
             }
           },
           "groups": {
-            "stage-0": {
-              "id": "stage-0",
-              "title": "Preparation / processing",
-              "description": "Stage 0. Wires determine execution; folding is presentation only.",
+            "processing-route-text": {
+              "id": "processing-route-text",
+              "title": "Prepare reply guidance",
+              "description": "These connected boxes work together. Follow their wires to see how each result is used.",
               "x": 75,
-              "y": 190,
-              "w": 350,
-              "h": 605,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "send",
-                "route-text"
-              ]
-            },
-            "stage-1": {
-              "id": "stage-1",
-              "title": "Native generation",
-              "description": "Stage 1. Wires determine execution; folding is presentation only.",
-              "x": 435,
-              "y": 190,
-              "w": 350,
-              "h": 605,
+              "y": 1098,
+              "w": 1070,
+              "h": 285,
               "color": "#284e67",
               "collapsed": false,
               "members": [
-                "generate",
-                "route"
+                "route-text",
+                "route",
+                "has-destination"
               ]
             },
-            "stage-2": {
-              "id": "stage-2",
-              "title": "Preparation / processing",
-              "description": "Stage 2. Wires determine execution; folding is presentation only.",
+            "processing-travel-route": {
+              "id": "processing-travel-route",
+              "title": "Annotate the reply",
+              "description": "These connected boxes work together. Follow their wires to see how each result is used.",
               "x": 795,
-              "y": 190,
-              "w": 350,
-              "h": 605,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "has-destination",
-                "notes"
-              ]
-            },
-            "stage-3": {
-              "id": "stage-3",
-              "title": "Response processing",
-              "description": "Stage 3. Wires determine execution; folding is presentation only.",
-              "x": 1155,
-              "y": 190,
-              "w": 350,
+              "y": 1463,
+              "w": 1430,
               "h": 285,
               "color": "#57416e",
               "collapsed": false,
               "members": [
-                "travel-route"
-              ]
-            },
-            "stage-4": {
-              "id": "stage-4",
-              "title": "Preparation / processing",
-              "description": "Stage 4. Wires determine execution; folding is presentation only.",
-              "x": 1515,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "append"
-              ]
-            },
-            "stage-5": {
-              "id": "stage-5",
-              "title": "Response processing",
-              "description": "Stage 5. Wires determine execution; folding is presentation only.",
-              "x": 1875,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
+                "travel-route",
+                "notes",
+                "append",
                 "draft-join"
-              ]
-            },
-            "stage-6": {
-              "id": "stage-6",
-              "title": "Review / accepted staging",
-              "description": "Stage 6. Wires determine execution; folding is presentation only.",
-              "x": 2235,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "review"
               ]
             }
           },
@@ -2540,47 +2323,45 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
     "id": "lesson-10",
     "number": 10,
     "title": "Decide whether this scene needs a recap",
-    "goal": "Ask a semantic yes/no question, then route an optional recap with a visible unresolved result.",
+    "goal": "Learn to ask a model a small yes-or-no question. This lesson adds a recap only when the reply contains enough completed actions to make one helpful.",
     "lesson": {
       "difficulty": "Composition",
-      "focus": "Decision structured semantic answer",
       "learn": [
-        "Decision structured semantic answer",
-        "Trace named artifacts to the owned Draft or accepted proposal."
+        "Use Decision when a question needs an understanding of the text.",
+        "Handle yes, no, and an uncertain answer separately."
       ],
       "requirements": [
-        "Open this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern."
+        "Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.",
+        "Use the Branch and Join ideas from lesson 9. Decision and Extract need model connections; choose Active SillyTavern on their node bars to use your current connection."
       ],
       "steps": [
-        "Open Decide whether this scene needs a recap and inspect the named pins.",
-        "Inspect answers.recap.accepted as true, false or null.",
-        "False skips the recap; null takes the explicit unresolved route and preserves the native Draft without claiming semantic acceptance.",
-        "Send in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals."
+        "Read the question in Decision. It asks whether the reply contains at least three distinct completed actions worth recapping.",
+        "Send a message that invites several actions in the scene. Draft Text makes the reply readable by Decision; Select Fields picks out its answer.",
+        "Inspect Decision’s result at out. In answers → recap → accepted, true means yes, false means no, and null means the model could not decide.",
+        "Follow Branch’s chosen path. Yes asks Extract for a recap and appends it as notes. No keeps the original reply. An uncertain answer also keeps the reply, without presenting a recap as confirmed.",
+        "Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes."
       ],
       "checkpoints": [
         {
           "node": "Decision",
           "port": "out",
-          "expect": "The semantic answer is structured; uncertain scenes remain unresolved."
+          "expect": "You can see both the model’s answer and whether it is certain enough to use."
         }
       ],
       "experiments": [
         {
-          "change": "Change the recap criterion to five completed actions.",
-          "expect": "The structured answer may change, with uncertainty still visible."
+          "change": "Change the question to require five completed actions.",
+          "expect": "The same scene may no longer qualify for a recap. Compare the answer and the path that Branch chooses."
         }
       ],
       "cases": [
         {
-          "when": "Semantic accepted is null",
-          "expect": "The explicit unresolved route retains the owned Draft without a recap or an accepted semantic claim."
-        },
-        {
-          "when": "Rejected or stopped",
-          "expect": "The existing story and staged effects are retained without settlement."
+          "when": "The answer is false or null",
+          "expect": "The reply stays available for review without a recap."
         }
       ],
-      "callBudget": "Up to 2 auxiliary requests: 1 Decision, plus 1 Extract only on yes; one ordinary native generation."
+      "callBudget": "Up to two extra model requests: one to decide, then one to extract a recap if the answer is yes. SillyTavern writes one reply.",
+      "focus": "Decision structured semantic answer"
     },
     "packages": [
       {
@@ -2590,7 +2371,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
         "graph": {
           "id": "remastered-lesson-10",
           "name": "10. Decide whether this scene needs a recap",
-          "description": "Ask a semantic yes/no question, then route an optional recap with a visible unresolved result.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\n\nOpen Decide whether this scene needs a recap and inspect the named pins.\nInspect answers.recap.accepted as true, false or null.\nFalse skips the recap; null takes the explicit unresolved route and preserves the native Draft without claiming semantic acceptance.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: Up to 2 auxiliary requests: 1 Decision, plus 1 Extract only on yes; one ordinary native generation.\nCheckpoints:\nDecision.out: The semantic answer is structured; uncertain scenes remain unresolved.",
+          "description": "Learn to ask a model a small yes-or-no question. This lesson adds a recap only when the reply contains enough completed actions to make one helpful.\n\nWhat you'll learn:\n• Use Decision when a question needs an understanding of the text.\n• Handle yes, no, and an uncertain answer separately.\n\nBefore you start:\n• Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.\n• Use the Branch and Join ideas from lesson 9. Decision and Extract need model connections; choose Active SillyTavern on their node bars to use your current connection.\n\nSteps:\n1. Read the question in Decision. It asks whether the reply contains at least three distinct completed actions worth recapping.\n2. Send a message that invites several actions in the scene. Draft Text makes the reply readable by Decision; Select Fields picks out its answer.\n3. Inspect Decision’s result at out. In answers → recap → accepted, true means yes, false means no, and null means the model could not decide.\n4. Follow Branch’s chosen path. Yes asks Extract for a recap and appends it as notes. No keeps the original reply. An uncertain answer also keeps the reply, without presenting a recap as confirmed.\n5. Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes.\n\nCheckpoints:\nDecision → out: You can see both the model’s answer and whether it is certain enough to use.\n\nTry this:\nChange the question to require five completed actions.\nThe same scene may no longer qualify for a recap. Compare the answer and the path that Branch chooses.\n\nIf something is different:\nThe answer is false or null: The reply stays available for review without a recap.\n\nModel requests: Up to two extra model requests: one to decide, then one to extract a recap if the answer is yes. SillyTavern writes one reply.",
           "schema": 3,
           "runtime": 2,
           "mode": "native-unified",
@@ -2603,10 +2384,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "On Send",
               "enabled": true,
               "x": 100,
-              "y": 240,
+              "y": 808,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -2620,10 +2400,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Generate Reply · SillyTavern",
               "enabled": true,
               "x": 460,
-              "y": 240,
+              "y": 808,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-1",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -2638,10 +2417,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Review / Publish",
               "enabled": true,
               "x": 3700,
-              "y": 240,
+              "y": 808,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-10",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -2655,10 +2433,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Draft Text",
               "enabled": true,
               "x": 820,
-              "y": 240,
+              "y": 1148,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-2",
+              "inGroup": "processing-body",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -2673,10 +2451,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Decision",
               "enabled": true,
               "x": 1180,
-              "y": 240,
+              "y": 1148,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-3",
+              "inGroup": "processing-body",
               "profileId": "lattice:active-sillytavern",
               "model": null,
               "modelRole": "decision",
@@ -2699,10 +2477,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Select Fields",
               "enabled": true,
               "x": 1540,
-              "y": 240,
+              "y": 1148,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-4",
+              "inGroup": "processing-body",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -2727,10 +2505,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Branch",
               "enabled": true,
               "x": 1900,
-              "y": 240,
+              "y": 1148,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-5",
+              "inGroup": "processing-body",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -2746,10 +2524,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Extract",
               "enabled": true,
               "x": 2260,
-              "y": 240,
+              "y": 1148,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-6",
+              "inGroup": "processing-body",
               "profileId": "lattice:active-sillytavern",
               "model": null,
               "modelRole": "Prose",
@@ -2770,10 +2548,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Decision structured semantic answer",
               "enabled": true,
               "x": 2620,
-              "y": 240,
+              "y": 1148,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-7",
+              "inGroup": "processing-body",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -2789,10 +2567,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Append",
               "enabled": true,
               "x": 2980,
-              "y": 240,
+              "y": 1148,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-8",
+              "inGroup": "processing-body",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -2808,10 +2586,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Join",
               "enabled": true,
               "x": 3340,
-              "y": 240,
+              "y": 1148,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-9",
+              "inGroup": "processing-body",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -2845,8 +2623,8 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "x": 100,
               "y": 0,
               "w": 900,
-              "h": 180,
-              "content": "Ask a semantic yes/no question, then route an optional recap with a visible unresolved result.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\n\nOpen Decide whether this scene needs a recap and inspect the named pins.\nInspect answers.recap.accepted as true, false or null.\nFalse skips the recap; null takes the explicit unresolved route and preserves the native Draft without claiming semantic acceptance.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: Up to 2 auxiliary requests: 1 Decision, plus 1 Extract only on yes; one ordinary native generation.\nCheckpoints:\nDecision.out: The semantic answer is structured; uncertain scenes remain unresolved.",
+              "h": 728,
+              "content": "Learn to ask a model a small yes-or-no question. This lesson adds a recap only when the reply contains enough completed actions to make one helpful.\n\nWhat you'll learn:\n• Use Decision when a question needs an understanding of the text.\n• Handle yes, no, and an uncertain answer separately.\n\nBefore you start:\n• Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.\n• Use the Branch and Join ideas from lesson 9. Decision and Extract need model connections; choose Active SillyTavern on their node bars to use your current connection.\n\nSteps:\n1. Read the question in Decision. It asks whether the reply contains at least three distinct completed actions worth recapping.\n2. Send a message that invites several actions in the scene. Draft Text makes the reply readable by Decision; Select Fields picks out its answer.\n3. Inspect Decision’s result at out. In answers → recap → accepted, true means yes, false means no, and null means the model could not decide.\n4. Follow Branch’s chosen path. Yes asks Extract for a recap and appends it as notes. No keeps the original reply. An uncertain answer also keeps the reply, without presenting a recap as confirmed.\n5. Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes.\n\nCheckpoints:\nDecision → out: You can see both the model’s answer and whether it is certain enough to use.\n\nTry this:\nChange the question to require five completed actions.\nThe same scene may no longer qualify for a recap. Compare the answer and the path that Branch chooses.\n\nIf something is different:\nThe answer is false or null: The reply stays available for review without a recap.\n\nModel requests: Up to two extra model requests: one to decide, then one to extract a recap if the answer is yes. SillyTavern writes one reply.",
               "commentFrame": true,
               "moveContents": false
             }
@@ -2966,158 +2744,25 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
             }
           },
           "groups": {
-            "stage-0": {
-              "id": "stage-0",
-              "title": "Preparation / processing",
-              "description": "Stage 0. Wires determine execution; folding is presentation only.",
-              "x": 75,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "send"
-              ]
-            },
-            "stage-1": {
-              "id": "stage-1",
-              "title": "Native generation",
-              "description": "Stage 1. Wires determine execution; folding is presentation only.",
-              "x": 435,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#284e67",
-              "collapsed": false,
-              "members": [
-                "generate"
-              ]
-            },
-            "stage-2": {
-              "id": "stage-2",
-              "title": "Preparation / processing",
-              "description": "Stage 2. Wires determine execution; folding is presentation only.",
+            "processing-body": {
+              "id": "processing-body",
+              "title": "Annotate the reply",
+              "description": "These connected boxes work together. Follow their wires to see how each result is used.",
               "x": 795,
-              "y": 190,
-              "w": 350,
+              "y": 1098,
+              "w": 2870,
               "h": 285,
               "color": "#57416e",
               "collapsed": false,
               "members": [
-                "body"
-              ]
-            },
-            "stage-3": {
-              "id": "stage-3",
-              "title": "Response processing",
-              "description": "Stage 3. Wires determine execution; folding is presentation only.",
-              "x": 1155,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "recap-decision"
-              ]
-            },
-            "stage-4": {
-              "id": "stage-4",
-              "title": "Response processing",
-              "description": "Stage 4. Wires determine execution; folding is presentation only.",
-              "x": 1515,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "accepted"
-              ]
-            },
-            "stage-5": {
-              "id": "stage-5",
-              "title": "Response processing",
-              "description": "Stage 5. Wires determine execution; folding is presentation only.",
-              "x": 1875,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "recap-route"
-              ]
-            },
-            "stage-6": {
-              "id": "stage-6",
-              "title": "Response processing",
-              "description": "Stage 6. Wires determine execution; folding is presentation only.",
-              "x": 2235,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "recap"
-              ]
-            },
-            "stage-7": {
-              "id": "stage-7",
-              "title": "Response processing",
-              "description": "Stage 7. Wires determine execution; folding is presentation only.",
-              "x": 2595,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "notes"
-              ]
-            },
-            "stage-8": {
-              "id": "stage-8",
-              "title": "Preparation / processing",
-              "description": "Stage 8. Wires determine execution; folding is presentation only.",
-              "x": 2955,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
+                "body",
+                "recap-decision",
+                "accepted",
+                "recap-route",
+                "recap",
+                "draft-join",
+                "notes",
                 "append"
-              ]
-            },
-            "stage-9": {
-              "id": "stage-9",
-              "title": "Response processing",
-              "description": "Stage 9. Wires determine execution; folding is presentation only.",
-              "x": 3315,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "draft-join"
-              ]
-            },
-            "stage-10": {
-              "id": "stage-10",
-              "title": "Review / accepted staging",
-              "description": "Stage 10. Wires determine execution; folding is presentation only.",
-              "x": 3675,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "review"
               ]
             }
           },
@@ -3150,48 +2795,45 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
     "id": "lesson-11",
     "number": 11,
     "title": "Detect a promise with Decision",
-    "goal": "Use an ordinary Decision with explicit accepted, rejected and unresolved routes for promise detection.",
+    "goal": "Learn to distinguish a promise from a hope or a possibility. You will test a short sentence and show whether the model finds a clear promise, no promise, or an uncertain case.",
     "lesson": {
       "difficulty": "Composition",
-      "focus": "Decision, Select Fields and Branch",
       "learn": [
-        "Decision, Select Fields and Branch",
-        "Trace named artifacts to the owned Draft or accepted proposal."
+        "Reuse Decision and Branch before a reply is written.",
+        "Keep uncertainty visible instead of treating it as agreement."
       ],
       "requirements": [
-        "Open this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.",
-        "Choose an ordinary connection on the Decision node bar or use Active SillyTavern."
+        "Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.",
+        "Use an ordinary model connection on Decision, such as Active SillyTavern. The test sentence is in Text; it does not need to come from your chat."
       ],
       "steps": [
-        "Open Detect a promise with Decision and inspect the named pins.",
-        "Inspect answers.promise.accepted as true, false or null.",
-        "Branch routes all three outcomes explicitly; the optional Join preserves the native Draft for Review. Try hopeful or hypothetical wording without treating unresolved evidence as acceptance.",
-        "Send in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals."
+        "Read the sentence in Text: “I promise to bring your lantern back tomorrow.” Then read the question in Decision.",
+        "Send a message to run the lesson. Inspect Select Fields, which reads answers → promise → accepted from the Decision result.",
+        "Follow Branch’s yes, no, or unresolved path into Join. Join gathers the chosen result so the lesson can add it to the reply as a dropdown.",
+        "Replace the sentence with “I hope I can bring your lantern back tomorrow.” Send again and compare the answer with the original promise.",
+        "Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes."
       ],
       "checkpoints": [
         {
           "node": "Branch",
           "port": "unresolved",
-          "expect": "A null answer remains an explicit unresolved route without claiming acceptance."
+          "expect": "If the answer is null, the unresolved output keeps that uncertainty visible. It does not count as a promise."
         }
       ],
       "experiments": [
         {
-          "change": "Use hopeful or hypothetical promise wording",
-          "expect": "Inspect the nullable accepted answer and selected Branch route."
+          "change": "Try “If I promised to return the lantern, would you trust me?”",
+          "expect": "A question about making a promise should not be treated as a promise already made. Inspect the answer rather than assuming the model got it right."
         }
       ],
       "cases": [
         {
-          "when": "Unresolved promise evidence",
-          "expect": "The explicit unresolved route preserves the native Draft without acceptance."
-        },
-        {
-          "when": "Rejected or stopped",
-          "expect": "The existing story and staged effects are retained without settlement."
+          "when": "The model cannot decide",
+          "expect": "The unresolved result remains visible in the notes, and the reply can still be reviewed."
         }
       ],
-      "callBudget": "1 ordinary Decision auxiliary request and one ordinary native generation."
+      "callBudget": "One extra Decision request. SillyTavern writes one reply.",
+      "focus": "Decision, Select Fields and Branch"
     },
     "packages": [
       {
@@ -3201,7 +2843,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
         "graph": {
           "id": "remastered-lesson-11",
           "name": "11. Detect a promise with Decision",
-          "description": "Use an ordinary Decision with explicit accepted, rejected and unresolved routes for promise detection.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nChoose an ordinary connection on the Decision node bar or use Active SillyTavern.\n\nOpen Detect a promise with Decision and inspect the named pins.\nInspect answers.promise.accepted as true, false or null.\nBranch routes all three outcomes explicitly; the optional Join preserves the native Draft for Review. Try hopeful or hypothetical wording without treating unresolved evidence as acceptance.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 1 ordinary Decision auxiliary request and one ordinary native generation.\nCheckpoints:\nBranch.unresolved: A null answer remains an explicit unresolved route without claiming acceptance.",
+          "description": "Learn to distinguish a promise from a hope or a possibility. You will test a short sentence and show whether the model finds a clear promise, no promise, or an uncertain case.\n\nWhat you'll learn:\n• Reuse Decision and Branch before a reply is written.\n• Keep uncertainty visible instead of treating it as agreement.\n\nBefore you start:\n• Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.\n• Use an ordinary model connection on Decision, such as Active SillyTavern. The test sentence is in Text; it does not need to come from your chat.\n\nSteps:\n1. Read the sentence in Text: “I promise to bring your lantern back tomorrow.” Then read the question in Decision.\n2. Send a message to run the lesson. Inspect Select Fields, which reads answers → promise → accepted from the Decision result.\n3. Follow Branch’s yes, no, or unresolved path into Join. Join gathers the chosen result so the lesson can add it to the reply as a dropdown.\n4. Replace the sentence with “I hope I can bring your lantern back tomorrow.” Send again and compare the answer with the original promise.\n5. Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes.\n\nCheckpoints:\nBranch → unresolved: If the answer is null, the unresolved output keeps that uncertainty visible. It does not count as a promise.\n\nTry this:\nTry “If I promised to return the lantern, would you trust me?”\nA question about making a promise should not be treated as a promise already made. Inspect the answer rather than assuming the model got it right.\n\nIf something is different:\nThe model cannot decide: The unresolved result remains visible in the notes, and the reply can still be reviewed.\n\nModel requests: One extra Decision request. SillyTavern writes one reply.",
           "schema": 3,
           "runtime": 2,
           "mode": "native-unified",
@@ -3214,10 +2856,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "On Send",
               "enabled": true,
               "x": 100,
-              "y": 240,
+              "y": 808,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -3231,10 +2872,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Generate Reply · SillyTavern",
               "enabled": true,
               "x": 460,
-              "y": 240,
+              "y": 808,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-1",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -3249,10 +2889,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Review / Publish",
               "enabled": true,
               "x": 2620,
-              "y": 240,
+              "y": 808,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-7",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -3266,10 +2905,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Text",
               "enabled": true,
               "x": 100,
-              "y": 560,
+              "y": 1148,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-promise-text",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -3284,10 +2923,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Decision",
               "enabled": true,
               "x": 460,
-              "y": 560,
+              "y": 1148,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-1",
+              "inGroup": "processing-promise-text",
               "profileId": "lattice:active-sillytavern",
               "model": null,
               "modelRole": "decision",
@@ -3309,10 +2948,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Select Fields",
               "enabled": true,
               "x": 820,
-              "y": 240,
+              "y": 1148,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-2",
+              "inGroup": "processing-promise-text",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -3336,10 +2975,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Branch",
               "enabled": true,
               "x": 1180,
-              "y": 240,
+              "y": 1148,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-3",
+              "inGroup": "processing-promise-text",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -3354,10 +2993,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Join",
               "enabled": true,
               "x": 1540,
-              "y": 240,
+              "y": 1513,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-4",
+              "inGroup": "processing-gate-outcome",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -3391,10 +3030,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Compose",
               "enabled": true,
               "x": 1900,
-              "y": 240,
+              "y": 1513,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-5",
+              "inGroup": "processing-gate-outcome",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -3414,10 +3053,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Append",
               "enabled": true,
               "x": 2260,
-              "y": 240,
+              "y": 1513,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-6",
+              "inGroup": "processing-gate-outcome",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -3433,8 +3072,8 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "x": 100,
               "y": 0,
               "w": 900,
-              "h": 180,
-              "content": "Use an ordinary Decision with explicit accepted, rejected and unresolved routes for promise detection.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nChoose an ordinary connection on the Decision node bar or use Active SillyTavern.\n\nOpen Detect a promise with Decision and inspect the named pins.\nInspect answers.promise.accepted as true, false or null.\nBranch routes all three outcomes explicitly; the optional Join preserves the native Draft for Review. Try hopeful or hypothetical wording without treating unresolved evidence as acceptance.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 1 ordinary Decision auxiliary request and one ordinary native generation.\nCheckpoints:\nBranch.unresolved: A null answer remains an explicit unresolved route without claiming acceptance.",
+              "h": 728,
+              "content": "Learn to distinguish a promise from a hope or a possibility. You will test a short sentence and show whether the model finds a clear promise, no promise, or an uncertain case.\n\nWhat you'll learn:\n• Reuse Decision and Branch before a reply is written.\n• Keep uncertainty visible instead of treating it as agreement.\n\nBefore you start:\n• Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.\n• Use an ordinary model connection on Decision, such as Active SillyTavern. The test sentence is in Text; it does not need to come from your chat.\n\nSteps:\n1. Read the sentence in Text: “I promise to bring your lantern back tomorrow.” Then read the question in Decision.\n2. Send a message to run the lesson. Inspect Select Fields, which reads answers → promise → accepted from the Decision result.\n3. Follow Branch’s yes, no, or unresolved path into Join. Join gathers the chosen result so the lesson can add it to the reply as a dropdown.\n4. Replace the sentence with “I hope I can bring your lantern back tomorrow.” Send again and compare the answer with the original promise.\n5. Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes.\n\nCheckpoints:\nBranch → unresolved: If the answer is null, the unresolved output keeps that uncertainty visible. It does not count as a promise.\n\nTry this:\nTry “If I promised to return the lantern, would you trust me?”\nA question about making a promise should not be treated as a promise already made. Inspect the answer rather than assuming the model got it right.\n\nIf something is different:\nThe model cannot decide: The unresolved result remains visible in the notes, and the reply can still be reviewed.\n\nModel requests: One extra Decision request. SillyTavern writes one reply.",
               "commentFrame": true,
               "moveContents": false
             }
@@ -3538,118 +3177,37 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
             }
           },
           "groups": {
-            "stage-0": {
-              "id": "stage-0",
-              "title": "Preparation / processing",
-              "description": "Stage 0. Wires determine execution; folding is presentation only.",
+            "processing-promise-text": {
+              "id": "processing-promise-text",
+              "title": "Prepare reply guidance",
+              "description": "These connected boxes work together. Follow their wires to see how each result is used.",
               "x": 75,
-              "y": 190,
-              "w": 350,
-              "h": 605,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "send",
-                "promise-text"
-              ]
-            },
-            "stage-1": {
-              "id": "stage-1",
-              "title": "Native generation",
-              "description": "Stage 1. Wires determine execution; folding is presentation only.",
-              "x": 435,
-              "y": 190,
-              "w": 350,
-              "h": 605,
+              "y": 1098,
+              "w": 1430,
+              "h": 285,
               "color": "#284e67",
               "collapsed": false,
               "members": [
-                "generate",
-                "promise-decision"
-              ]
-            },
-            "stage-2": {
-              "id": "stage-2",
-              "title": "Preparation / processing",
-              "description": "Stage 2. Wires determine execution; folding is presentation only.",
-              "x": 795,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "promise-acceptance"
-              ]
-            },
-            "stage-3": {
-              "id": "stage-3",
-              "title": "Preparation / processing",
-              "description": "Stage 3. Wires determine execution; folding is presentation only.",
-              "x": 1155,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
+                "promise-text",
+                "promise-decision",
+                "promise-acceptance",
                 "promise-gate"
               ]
             },
-            "stage-4": {
-              "id": "stage-4",
-              "title": "Response processing",
-              "description": "Stage 4. Wires determine execution; folding is presentation only.",
+            "processing-gate-outcome": {
+              "id": "processing-gate-outcome",
+              "title": "Annotate the reply",
+              "description": "These connected boxes work together. Follow their wires to see how each result is used.",
               "x": 1515,
-              "y": 190,
-              "w": 350,
+              "y": 1463,
+              "w": 1070,
               "h": 285,
               "color": "#57416e",
               "collapsed": false,
               "members": [
-                "gate-outcome"
-              ]
-            },
-            "stage-5": {
-              "id": "stage-5",
-              "title": "Response processing",
-              "description": "Stage 5. Wires determine execution; folding is presentation only.",
-              "x": 1875,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "notes"
-              ]
-            },
-            "stage-6": {
-              "id": "stage-6",
-              "title": "Preparation / processing",
-              "description": "Stage 6. Wires determine execution; folding is presentation only.",
-              "x": 2235,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
+                "gate-outcome",
+                "notes",
                 "append"
-              ]
-            },
-            "stage-7": {
-              "id": "stage-7",
-              "title": "Review / accepted staging",
-              "description": "Stage 7. Wires determine execution; folding is presentation only.",
-              "x": 2595,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "review"
               ]
             }
           },
@@ -3678,46 +3236,45 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
     "id": "lesson-12",
     "number": 12,
     "title": "Plan, write, polish, and annotate one reply",
-    "goal": "Combine a public plan with native generation, narration revision, item extraction and suggested enrichment.",
+    "goal": "Put the earlier lessons together: plan a scene, write its reply, polish the narration, and add item notes. You will also learn to keep observed facts separate from suggested details.",
     "lesson": {
       "difficulty": "Composition",
-      "focus": "Public planning → generation → revision → notes",
       "learn": [
-        "Public planning → generation → revision → notes",
-        "Trace named artifacts to the owned Draft or accepted proposal."
+        "Combine the planning, revision, and notes from lessons 3, 7, and 8.",
+        "Treat a model’s added interpretation as a suggestion, not evidence."
       ],
       "requirements": [
-        "Open this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern."
+        "Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.",
+        "Choose model connections for Response Plan, Revise Draft, Extract, and Enrich. Active SillyTavern can serve each role. Use a scene with a few physical items to make the notes easy to compare."
       ],
       "steps": [
-        "Open Plan, write, polish, and annotate one reply and inspect the named pins.",
-        "Follow preparation and response groups by wires. Folding a group changes presentation only.",
-        "Send in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals."
+        "Follow Scene Context into Response Plan. The planner receives five recent public messages and suggests the next beat without choosing the player’s action.",
+        "Send a message to continue the scene. Compare Generate Reply’s draft with Revise Draft’s output: the polishing pass should preserve dialogue, facts, and actions.",
+        "Inspect Extract’s item records and their quotes. Enrich then suggests a sensory detail for each observed item using the public scene context.",
+        "Read the dropdown in the final reply. Check which details were actually in the text and which were added as suggestions. If the canvas has a group, folding it only hides its boxes; the wires still control the work.",
+        "Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes."
       ],
       "checkpoints": [
         {
           "node": "Enrich",
           "port": "out",
-          "expect": "Observations keep evidence; suggestions remain labeled separately."
+          "expect": "The notes retain the original quoted observations and label added details as suggestions."
         }
       ],
       "experiments": [
         {
-          "change": "Omit the enrichment leg.",
-          "expect": "The observation-only notes preserve their original evidence."
+          "change": "Try a scene whose reply mentions no physical items.",
+          "expect": "Enrich skips its request when there are no items to describe. You still have a reply to review."
         }
       ],
       "cases": [
         {
-          "when": "Extraction yields zero observed items",
-          "expect": "Enrichment skips its request and native prose remains usable."
-        },
-        {
-          "when": "Rejected or stopped",
-          "expect": "The existing story and staged effects are retained without settlement."
+          "when": "The item list is empty",
+          "expect": "The workflow keeps the reply without inventing observations to fill the notes."
         }
       ],
-      "callBudget": "4 auxiliary requests: Response Plan, Revise Draft, Extract and Enrich; one ordinary native generation."
+      "callBudget": "Up to four extra requests: plan, polish, extract items, and suggest details. SillyTavern writes one reply.",
+      "focus": "Public planning → generation → revision → notes"
     },
     "packages": [
       {
@@ -3727,7 +3284,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
         "graph": {
           "id": "remastered-lesson-12",
           "name": "12. Plan, write, polish, and annotate one reply",
-          "description": "Combine a public plan with native generation, narration revision, item extraction and suggested enrichment.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\n\nOpen Plan, write, polish, and annotate one reply and inspect the named pins.\nFollow preparation and response groups by wires. Folding a group changes presentation only.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 4 auxiliary requests: Response Plan, Revise Draft, Extract and Enrich; one ordinary native generation.\nCheckpoints:\nEnrich.out: Observations keep evidence; suggestions remain labeled separately.",
+          "description": "Put the earlier lessons together: plan a scene, write its reply, polish the narration, and add item notes. You will also learn to keep observed facts separate from suggested details.\n\nWhat you'll learn:\n• Combine the planning, revision, and notes from lessons 3, 7, and 8.\n• Treat a model’s added interpretation as a suggestion, not evidence.\n\nBefore you start:\n• Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.\n• Choose model connections for Response Plan, Revise Draft, Extract, and Enrich. Active SillyTavern can serve each role. Use a scene with a few physical items to make the notes easy to compare.\n\nSteps:\n1. Follow Scene Context into Response Plan. The planner receives five recent public messages and suggests the next beat without choosing the player’s action.\n2. Send a message to continue the scene. Compare Generate Reply’s draft with Revise Draft’s output: the polishing pass should preserve dialogue, facts, and actions.\n3. Inspect Extract’s item records and their quotes. Enrich then suggests a sensory detail for each observed item using the public scene context.\n4. Read the dropdown in the final reply. Check which details were actually in the text and which were added as suggestions. If the canvas has a group, folding it only hides its boxes; the wires still control the work.\n5. Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes.\n\nCheckpoints:\nEnrich → out: The notes retain the original quoted observations and label added details as suggestions.\n\nTry this:\nTry a scene whose reply mentions no physical items.\nEnrich skips its request when there are no items to describe. You still have a reply to review.\n\nIf something is different:\nThe item list is empty: The workflow keeps the reply without inventing observations to fill the notes.\n\nModel requests: Up to four extra requests: plan, polish, extract items, and suggest details. SillyTavern writes one reply.",
           "schema": 3,
           "runtime": 2,
           "mode": "native-unified",
@@ -3740,10 +3297,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "On Send",
               "enabled": true,
               "x": 100,
-              "y": 240,
+              "y": 808,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -3757,10 +3313,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Generate Reply · SillyTavern",
               "enabled": true,
               "x": 820,
-              "y": 240,
+              "y": 808,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-2",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -3775,10 +3330,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Review / Publish",
               "enabled": true,
               "x": 2980,
-              "y": 240,
+              "y": 808,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-8",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -3791,10 +3345,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Scene Context",
               "enabled": true,
               "x": 100,
-              "y": 560,
+              "y": 1148,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-scene",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -3810,10 +3364,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Response Plan",
               "enabled": true,
               "x": 460,
-              "y": 240,
+              "y": 1148,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-1",
+              "inGroup": "processing-scene",
               "profileId": "lattice:active-sillytavern",
               "model": null,
               "modelRole": "Analysis",
@@ -3829,10 +3383,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Revise Draft",
               "enabled": true,
               "x": 1180,
-              "y": 240,
+              "y": 1513,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-3",
+              "inGroup": "processing-polish",
               "profileId": "lattice:active-sillytavern",
               "model": null,
               "modelRole": "Prose",
@@ -3850,10 +3404,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Extract",
               "enabled": true,
               "x": 1540,
-              "y": 240,
+              "y": 1513,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-4",
+              "inGroup": "processing-polish",
               "profileId": "lattice:active-sillytavern",
               "model": null,
               "modelRole": "Prose",
@@ -3874,10 +3428,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Enrich",
               "enabled": true,
               "x": 1900,
-              "y": 240,
+              "y": 1513,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-5",
+              "inGroup": "processing-polish",
               "profileId": "lattice:active-sillytavern",
               "model": null,
               "modelRole": "Prose",
@@ -3894,10 +3448,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Public planning → generation → revision → notes",
               "enabled": true,
               "x": 2260,
-              "y": 240,
+              "y": 1513,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-6",
+              "inGroup": "processing-polish",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -3913,10 +3467,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Append",
               "enabled": true,
               "x": 2620,
-              "y": 240,
+              "y": 1513,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-7",
+              "inGroup": "processing-polish",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -3932,8 +3486,8 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "x": 100,
               "y": 0,
               "w": 900,
-              "h": 180,
-              "content": "Combine a public plan with native generation, narration revision, item extraction and suggested enrichment.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\n\nOpen Plan, write, polish, and annotate one reply and inspect the named pins.\nFollow preparation and response groups by wires. Folding a group changes presentation only.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 4 auxiliary requests: Response Plan, Revise Draft, Extract and Enrich; one ordinary native generation.\nCheckpoints:\nEnrich.out: Observations keep evidence; suggestions remain labeled separately.",
+              "h": 728,
+              "content": "Put the earlier lessons together: plan a scene, write its reply, polish the narration, and add item notes. You will also learn to keep observed facts separate from suggested details.\n\nWhat you'll learn:\n• Combine the planning, revision, and notes from lessons 3, 7, and 8.\n• Treat a model’s added interpretation as a suggestion, not evidence.\n\nBefore you start:\n• Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.\n• Choose model connections for Response Plan, Revise Draft, Extract, and Enrich. Active SillyTavern can serve each role. Use a scene with a few physical items to make the notes easy to compare.\n\nSteps:\n1. Follow Scene Context into Response Plan. The planner receives five recent public messages and suggests the next beat without choosing the player’s action.\n2. Send a message to continue the scene. Compare Generate Reply’s draft with Revise Draft’s output: the polishing pass should preserve dialogue, facts, and actions.\n3. Inspect Extract’s item records and their quotes. Enrich then suggests a sensory detail for each observed item using the public scene context.\n4. Read the dropdown in the final reply. Check which details were actually in the text and which were added as suggestions. If the canvas has a group, folding it only hides its boxes; the wires still control the work.\n5. Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes.\n\nCheckpoints:\nEnrich → out: The notes retain the original quoted observations and label added details as suggestions.\n\nTry this:\nTry a scene whose reply mentions no physical items.\nEnrich skips its request when there are no items to describe. You still have a reply to review.\n\nIf something is different:\nThe item list is empty: The workflow keeps the reply without inventing observations to fill the notes.\n\nModel requests: Up to four extra requests: plan, polish, extract items, and suggest details. SillyTavern writes one reply.",
               "commentFrame": true,
               "moveContents": false
             }
@@ -4029,131 +3583,37 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
             }
           },
           "groups": {
-            "stage-0": {
-              "id": "stage-0",
-              "title": "Preparation / processing",
-              "description": "Stage 0. Wires determine execution; folding is presentation only.",
+            "processing-scene": {
+              "id": "processing-scene",
+              "title": "Plan the scene",
+              "description": "These connected boxes work together. Follow their wires to see how each result is used.",
               "x": 75,
-              "y": 190,
-              "w": 350,
-              "h": 605,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "send",
-                "scene"
-              ]
-            },
-            "stage-1": {
-              "id": "stage-1",
-              "title": "Preparation / processing",
-              "description": "Stage 1. Wires determine execution; folding is presentation only.",
-              "x": 435,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "plan"
-              ]
-            },
-            "stage-2": {
-              "id": "stage-2",
-              "title": "Native generation",
-              "description": "Stage 2. Wires determine execution; folding is presentation only.",
-              "x": 795,
-              "y": 190,
-              "w": 350,
+              "y": 1098,
+              "w": 710,
               "h": 285,
               "color": "#284e67",
               "collapsed": false,
               "members": [
-                "generate"
+                "scene",
+                "plan"
               ]
             },
-            "stage-3": {
-              "id": "stage-3",
-              "title": "Preparation / processing",
-              "description": "Stage 3. Wires determine execution; folding is presentation only.",
+            "processing-polish": {
+              "id": "processing-polish",
+              "title": "Polish and annotate the reply",
+              "description": "These connected boxes work together. Follow their wires to see how each result is used.",
               "x": 1155,
-              "y": 190,
-              "w": 350,
+              "y": 1463,
+              "w": 1790,
               "h": 285,
               "color": "#57416e",
               "collapsed": false,
               "members": [
-                "polish"
-              ]
-            },
-            "stage-4": {
-              "id": "stage-4",
-              "title": "Response processing",
-              "description": "Stage 4. Wires determine execution; folding is presentation only.",
-              "x": 1515,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "items"
-              ]
-            },
-            "stage-5": {
-              "id": "stage-5",
-              "title": "Response processing",
-              "description": "Stage 5. Wires determine execution; folding is presentation only.",
-              "x": 1875,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "suggestions"
-              ]
-            },
-            "stage-6": {
-              "id": "stage-6",
-              "title": "Response processing",
-              "description": "Stage 6. Wires determine execution; folding is presentation only.",
-              "x": 2235,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
+                "polish",
+                "items",
+                "append",
+                "suggestions",
                 "notes"
-              ]
-            },
-            "stage-7": {
-              "id": "stage-7",
-              "title": "Preparation / processing",
-              "description": "Stage 7. Wires determine execution; folding is presentation only.",
-              "x": 2595,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "append"
-              ]
-            },
-            "stage-8": {
-              "id": "stage-8",
-              "title": "Review / accepted staging",
-              "description": "Stage 8. Wires determine execution; folding is presentation only.",
-              "x": 2955,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "review"
               ]
             }
           },
@@ -4186,48 +3646,45 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
     "id": "lesson-13",
     "number": 13,
     "title": "Build one reusable item-card processor",
-    "goal": "Reuse one exact pinned pure helper twice with a typed data boundary and an exposed title.",
+    "goal": "Learn to build a small process once and reuse it. Two item cards will share the same steps for choosing item details and turning them into text, while keeping their own titles.",
     "lesson": {
       "difficulty": "Composition",
-      "focus": "Pinned pure subgraph and exposed parameters",
       "learn": [
-        "Pinned pure subgraph and exposed parameters",
-        "Trace named artifacts to the owned Draft or accepted proposal."
+        "A subgraph is a reusable set of connected steps with an input and an output.",
+        "Change a setting on one use of the subgraph without changing the other."
       ],
       "requirements": [
-        "Open this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern."
+        "Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.",
+        "This builds on Select Fields and Compose from lesson 6. The lantern and chart data are already supplied; making the cards needs no extra model."
       ],
       "steps": [
-        "Open Build one reusable item-card processor and inspect the named pins.",
-        "Open either helper instance and inspect Item:data → Result:text.",
-        "Change one card-title override and observe that the other instance retains its own title.",
-        "The pure helper has no host source, native generation, file write or private grant.",
-        "Send in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals."
+        "Double-click Subgraph · lantern card to open it. Its Item input receives the item data, Select Fields keeps the name and description, and Compose turns those details into the Result text.",
+        "Return to the main workflow tab and double-click Subgraph · chart card. It uses the same saved process with different item data.",
+        "Change only the lantern instance’s Card title setting. Keep the existing placeholders if you still want its name and description inserted.",
+        "Send a message and inspect both Result outputs and the cards appended to the reply. The lantern title should change while the chart title stays the same.",
+        "Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes."
       ],
       "checkpoints": [
         {
           "node": "Subgraph · lantern card",
           "port": "result",
-          "expect": "The first exact helper snapshot yields its own overridden item-card title."
+          "expect": "The lantern instance produces its own card text using its own title setting."
         }
       ],
       "experiments": [
         {
-          "change": "Edit only the Lantern card template override.",
-          "expect": "The Chart card output stays independent."
+          "change": "Change the chart’s description in its supplied Text data.",
+          "expect": "Only the chart card’s description changes. Sharing the process does not make the two items share their data."
         }
       ],
       "cases": [
         {
-          "when": "One instance override changes",
-          "expect": "The other instance retains the same exact helper pin with its own override."
-        },
-        {
-          "when": "Rejected or stopped",
-          "expect": "The existing story and staged effects are retained without settlement."
+          "when": "You change one instance’s Card title",
+          "expect": "The other instance keeps its title. The shared process still selects fields and composes text for both."
         }
       ],
-      "callBudget": "0 auxiliary model requests; one ordinary native generation."
+      "callBudget": "No extra model requests. SillyTavern writes one reply.",
+      "focus": "Pinned pure subgraph and exposed parameters"
     },
     "packages": [
       {
@@ -4237,7 +3694,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
         "graph": {
           "id": "remastered-lesson-13",
           "name": "13. Build one reusable item-card processor",
-          "description": "Reuse one exact pinned pure helper twice with a typed data boundary and an exposed title.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\n\nOpen Build one reusable item-card processor and inspect the named pins.\nOpen either helper instance and inspect Item:data → Result:text.\nChange one card-title override and observe that the other instance retains its own title.\nThe pure helper has no host source, native generation, file write or private grant.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 0 auxiliary model requests; one ordinary native generation.\nCheckpoints:\nSubgraph · lantern card.result: The first exact helper snapshot yields its own overridden item-card title.",
+          "description": "Learn to build a small process once and reuse it. Two item cards will share the same steps for choosing item details and turning them into text, while keeping their own titles.\n\nWhat you'll learn:\n• A subgraph is a reusable set of connected steps with an input and an output.\n• Change a setting on one use of the subgraph without changing the other.\n\nBefore you start:\n• Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.\n• This builds on Select Fields and Compose from lesson 6. The lantern and chart data are already supplied; making the cards needs no extra model.\n\nSteps:\n1. Double-click Subgraph · lantern card to open it. Its Item input receives the item data, Select Fields keeps the name and description, and Compose turns those details into the Result text.\n2. Return to the main workflow tab and double-click Subgraph · chart card. It uses the same saved process with different item data.\n3. Change only the lantern instance’s Card title setting. Keep the existing placeholders if you still want its name and description inserted.\n4. Send a message and inspect both Result outputs and the cards appended to the reply. The lantern title should change while the chart title stays the same.\n5. Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes.\n\nCheckpoints:\nSubgraph · lantern card → result: The lantern instance produces its own card text using its own title setting.\n\nTry this:\nChange the chart’s description in its supplied Text data.\nOnly the chart card’s description changes. Sharing the process does not make the two items share their data.\n\nIf something is different:\nYou change one instance’s Card title: The other instance keeps its title. The shared process still selects fields and composes text for both.\n\nModel requests: No extra model requests. SillyTavern writes one reply.",
           "schema": 3,
           "runtime": 2,
           "mode": "native-unified",
@@ -4250,10 +3707,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "On Send",
               "enabled": true,
               "x": 100,
-              "y": 240,
+              "y": 808,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -4267,10 +3723,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Generate Reply · SillyTavern",
               "enabled": true,
               "x": 460,
-              "y": 240,
+              "y": 808,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-1",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -4285,10 +3740,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Review / Publish",
               "enabled": true,
               "x": 1900,
-              "y": 240,
+              "y": 808,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-5",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -4302,10 +3756,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Text",
               "enabled": true,
               "x": 100,
-              "y": 560,
+              "y": 1148,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-lantern-text",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -4321,10 +3775,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "JSON Decode",
               "enabled": true,
               "x": 460,
-              "y": 560,
+              "y": 1148,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-1",
+              "inGroup": "processing-lantern-text",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -4338,10 +3792,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "type": "subgraph",
               "enabled": true,
               "x": 820,
-              "y": 240,
+              "y": 1148,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-2",
+              "inGroup": "processing-lantern-text",
               "alias": "Subgraph · lantern card",
               "definition": {
                 "id": "remastered-item-card",
@@ -4362,10 +3816,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Text",
               "enabled": true,
               "x": 100,
-              "y": 880,
+              "y": 1513,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-chart-text",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -4381,10 +3835,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "JSON Decode",
               "enabled": true,
               "x": 460,
-              "y": 880,
+              "y": 1513,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-1",
+              "inGroup": "processing-chart-text",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -4398,10 +3852,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "type": "subgraph",
               "enabled": true,
               "x": 820,
-              "y": 560,
+              "y": 1513,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-2",
+              "inGroup": "processing-chart-text",
               "alias": "Subgraph · chart card",
               "definition": {
                 "id": "remastered-item-card",
@@ -4422,10 +3876,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Compose",
               "enabled": true,
               "x": 1180,
-              "y": 240,
+              "y": 1878,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-3",
+              "inGroup": "processing-cards",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -4454,10 +3908,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Append",
               "enabled": true,
               "x": 1540,
-              "y": 240,
+              "y": 1878,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-4",
+              "inGroup": "processing-cards",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -4473,8 +3927,8 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "x": 100,
               "y": 0,
               "w": 900,
-              "h": 180,
-              "content": "Reuse one exact pinned pure helper twice with a typed data boundary and an exposed title.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\n\nOpen Build one reusable item-card processor and inspect the named pins.\nOpen either helper instance and inspect Item:data → Result:text.\nChange one card-title override and observe that the other instance retains its own title.\nThe pure helper has no host source, native generation, file write or private grant.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 0 auxiliary model requests; one ordinary native generation.\nCheckpoints:\nSubgraph · lantern card.result: The first exact helper snapshot yields its own overridden item-card title.",
+              "h": 728,
+              "content": "Learn to build a small process once and reuse it. Two item cards will share the same steps for choosing item details and turning them into text, while keeping their own titles.\n\nWhat you'll learn:\n• A subgraph is a reusable set of connected steps with an input and an output.\n• Change a setting on one use of the subgraph without changing the other.\n\nBefore you start:\n• Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.\n• This builds on Select Fields and Compose from lesson 6. The lantern and chart data are already supplied; making the cards needs no extra model.\n\nSteps:\n1. Double-click Subgraph · lantern card to open it. Its Item input receives the item data, Select Fields keeps the name and description, and Compose turns those details into the Result text.\n2. Return to the main workflow tab and double-click Subgraph · chart card. It uses the same saved process with different item data.\n3. Change only the lantern instance’s Card title setting. Keep the existing placeholders if you still want its name and description inserted.\n4. Send a message and inspect both Result outputs and the cards appended to the reply. The lantern title should change while the chart title stays the same.\n5. Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes.\n\nCheckpoints:\nSubgraph · lantern card → result: The lantern instance produces its own card text using its own title setting.\n\nTry this:\nChange the chart’s description in its supplied Text data.\nOnly the chart card’s description changes. Sharing the process does not make the two items share their data.\n\nIf something is different:\nYou change one instance’s Card title: The other instance keeps its title. The shared process still selects fields and composes text for both.\n\nModel requests: No extra model requests. SillyTavern writes one reply.",
               "commentFrame": true,
               "moveContents": false
             }
@@ -4562,93 +4016,51 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
             }
           },
           "groups": {
-            "stage-0": {
-              "id": "stage-0",
-              "title": "Preparation / processing",
-              "description": "Stage 0. Wires determine execution; folding is presentation only.",
+            "processing-lantern-text": {
+              "id": "processing-lantern-text",
+              "title": "Prepare reply guidance",
+              "description": "These connected boxes work together. Follow their wires to see how each result is used.",
               "x": 75,
-              "y": 190,
-              "w": 350,
-              "h": 925,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "send",
-                "lantern-text",
-                "chart-text"
-              ]
-            },
-            "stage-1": {
-              "id": "stage-1",
-              "title": "Native generation",
-              "description": "Stage 1. Wires determine execution; folding is presentation only.",
-              "x": 435,
-              "y": 190,
-              "w": 350,
-              "h": 925,
+              "y": 1098,
+              "w": 1070,
+              "h": 285,
               "color": "#284e67",
               "collapsed": false,
               "members": [
-                "generate",
+                "lantern-text",
                 "lantern",
-                "chart"
+                "lantern-card"
               ]
             },
-            "stage-2": {
-              "id": "stage-2",
-              "title": "Preparation / processing",
-              "description": "Stage 2. Wires determine execution; folding is presentation only.",
-              "x": 795,
-              "y": 190,
-              "w": 350,
-              "h": 605,
-              "color": "#57416e",
+            "processing-chart-text": {
+              "id": "processing-chart-text",
+              "title": "Prepare reply guidance",
+              "description": "These connected boxes work together. Follow their wires to see how each result is used.",
+              "x": 75,
+              "y": 1463,
+              "w": 1070,
+              "h": 285,
+              "color": "#284e67",
               "collapsed": false,
               "members": [
-                "lantern-card",
+                "chart-text",
+                "chart",
                 "chart-card"
               ]
             },
-            "stage-3": {
-              "id": "stage-3",
-              "title": "Response processing",
-              "description": "Stage 3. Wires determine execution; folding is presentation only.",
+            "processing-cards": {
+              "id": "processing-cards",
+              "title": "Annotate the reply",
+              "description": "These connected boxes work together. Follow their wires to see how each result is used.",
               "x": 1155,
-              "y": 190,
-              "w": 350,
+              "y": 1828,
+              "w": 710,
               "h": 285,
               "color": "#57416e",
               "collapsed": false,
               "members": [
-                "cards"
-              ]
-            },
-            "stage-4": {
-              "id": "stage-4",
-              "title": "Preparation / processing",
-              "description": "Stage 4. Wires determine execution; folding is presentation only.",
-              "x": 1515,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
+                "cards",
                 "append"
-              ]
-            },
-            "stage-5": {
-              "id": "stage-5",
-              "title": "Review / accepted staging",
-              "description": "Stage 5. Wires determine execution; folding is presentation only.",
-              "x": 1875,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "review"
               ]
             }
           },
@@ -4820,48 +4232,45 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
     "id": "lesson-14",
     "number": 14,
     "title": "Give every clue its own explanation",
-    "goal": "Map a bounded ordered clue collection through a pure explanation helper.",
+    "goal": "Learn to apply the same process to several pieces of information. For Each will send three clues through a reusable explanation process and keep the results in their original order.",
     "lesson": {
       "difficulty": "Composition",
-      "focus": "Bounded For Each and helper model bindings",
       "learn": [
-        "Bounded For Each and helper model bindings",
-        "Trace named artifacts to the owned Draft or accepted proposal."
+        "Use For Each to repeat a subgraph for a list of items.",
+        "Set a list limit so a workflow cannot make more requests than you intended."
       ],
       "requirements": [
-        "Open this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern."
+        "Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.",
+        "This extends the reusable process from lesson 13. Choose a connection for ClueAnalyst in For Each’s helper bindings, such as Active SillyTavern."
       ],
       "steps": [
-        "Open Give every clue its own explanation and inspect the named pins.",
-        "Inspect three input clues and their ordered helper results.",
-        "Set ClueAnalyst under For Each helper bindings; the per-iteration bound is one call.",
-        "A fourth clue exceeds the explicit limit and holds without silently processing an unbounded list.",
-        "Send in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals."
+        "Read the three clues supplied in Text: wet boots, warm wax, and a slack bell rope. Each has an ID and an exact quote.",
+        "For Each uses an explanation helper: Text describes the task and Model Call offers one possible interpretation of each supplied clue. You will see their combined results at For Each’s out output.",
+        "Check that For Each has a limit of 3 and allows one request for each clue. Send a message and inspect its out result.",
+        "Compare each explanation with its original clue. IDs and quotes should stay the same, and the explanations should remain possibilities rather than solutions to the mystery.",
+        "Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes."
       ],
       "checkpoints": [
         {
           "node": "For Each",
           "port": "out",
-          "expect": "Three ordered results preserve clue identity and label interpretation."
+          "expect": "The three explanations remain in clue order and preserve their IDs and quotes."
         }
       ],
       "experiments": [
         {
-          "change": "Change one clue quote.",
-          "expect": "The ordered corresponding result changes while other clue identities remain stable."
+          "change": "Add a fourth clue while leaving the limit at 3.",
+          "expect": "The workflow pauses at the limit. It does not silently make a fourth model request; remove the extra clue or deliberately increase the limit."
         }
       ],
       "cases": [
         {
-          "when": "A fourth clue exceeds limit3",
-          "expect": "The helper holds before making unbounded requests."
-        },
-        {
-          "when": "Rejected or stopped",
-          "expect": "The existing story and staged effects are retained without settlement."
+          "when": "The clue list exceeds the limit",
+          "expect": "The workflow waits for you to fix the list or its limit."
         }
       ],
-      "callBudget": "At most 3 auxiliary Model Calls: 3 iterations × 1. One ordinary native generation."
+      "callBudget": "Up to three extra model requests, one for each clue. SillyTavern writes one reply.",
+      "focus": "Bounded For Each and helper model bindings"
     },
     "packages": [
       {
@@ -4871,7 +4280,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
         "graph": {
           "id": "remastered-lesson-14",
           "name": "14. Give every clue its own explanation",
-          "description": "Map a bounded ordered clue collection through a pure explanation helper.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\n\nOpen Give every clue its own explanation and inspect the named pins.\nInspect three input clues and their ordered helper results.\nSet ClueAnalyst under For Each helper bindings; the per-iteration bound is one call.\nA fourth clue exceeds the explicit limit and holds without silently processing an unbounded list.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: At most 3 auxiliary Model Calls: 3 iterations × 1. One ordinary native generation.\nCheckpoints:\nFor Each.out: Three ordered results preserve clue identity and label interpretation.",
+          "description": "Learn to apply the same process to several pieces of information. For Each will send three clues through a reusable explanation process and keep the results in their original order.\n\nWhat you'll learn:\n• Use For Each to repeat a subgraph for a list of items.\n• Set a list limit so a workflow cannot make more requests than you intended.\n\nBefore you start:\n• Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.\n• This extends the reusable process from lesson 13. Choose a connection for ClueAnalyst in For Each’s helper bindings, such as Active SillyTavern.\n\nSteps:\n1. Read the three clues supplied in Text: wet boots, warm wax, and a slack bell rope. Each has an ID and an exact quote.\n2. For Each uses an explanation helper: Text describes the task and Model Call offers one possible interpretation of each supplied clue. You will see their combined results at For Each’s out output.\n3. Check that For Each has a limit of 3 and allows one request for each clue. Send a message and inspect its out result.\n4. Compare each explanation with its original clue. IDs and quotes should stay the same, and the explanations should remain possibilities rather than solutions to the mystery.\n5. Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes.\n\nCheckpoints:\nFor Each → out: The three explanations remain in clue order and preserve their IDs and quotes.\n\nTry this:\nAdd a fourth clue while leaving the limit at 3.\nThe workflow pauses at the limit. It does not silently make a fourth model request; remove the extra clue or deliberately increase the limit.\n\nIf something is different:\nThe clue list exceeds the limit: The workflow waits for you to fix the list or its limit.\n\nModel requests: Up to three extra model requests, one for each clue. SillyTavern writes one reply.",
           "schema": 3,
           "runtime": 2,
           "mode": "native-unified",
@@ -4884,10 +4293,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "On Send",
               "enabled": true,
               "x": 100,
-              "y": 240,
+              "y": 773,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -4901,10 +4309,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Generate Reply · SillyTavern",
               "enabled": true,
               "x": 460,
-              "y": 240,
+              "y": 773,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-1",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -4919,10 +4326,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Review / Publish",
               "enabled": true,
               "x": 1900,
-              "y": 240,
+              "y": 773,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-5",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -4936,10 +4342,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Text",
               "enabled": true,
               "x": 100,
-              "y": 560,
+              "y": 1063,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -4955,10 +4360,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "JSON Decode",
               "enabled": true,
               "x": 460,
-              "y": 560,
+              "y": 1063,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-1",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -4975,10 +4379,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "For Each",
               "enabled": true,
               "x": 820,
-              "y": 240,
+              "y": 773,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-2",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -5005,10 +4408,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Compose",
               "enabled": true,
               "x": 1180,
-              "y": 240,
+              "y": 773,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-3",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -5028,10 +4430,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Append",
               "enabled": true,
               "x": 1540,
-              "y": 240,
+              "y": 773,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-4",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -5047,8 +4448,8 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "x": 100,
               "y": 0,
               "w": 900,
-              "h": 180,
-              "content": "Map a bounded ordered clue collection through a pure explanation helper.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\n\nOpen Give every clue its own explanation and inspect the named pins.\nInspect three input clues and their ordered helper results.\nSet ClueAnalyst under For Each helper bindings; the per-iteration bound is one call.\nA fourth clue exceeds the explicit limit and holds without silently processing an unbounded list.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: At most 3 auxiliary Model Calls: 3 iterations × 1. One ordinary native generation.\nCheckpoints:\nFor Each.out: Three ordered results preserve clue identity and label interpretation.",
+              "h": 693,
+              "content": "Learn to apply the same process to several pieces of information. For Each will send three clues through a reusable explanation process and keep the results in their original order.\n\nWhat you'll learn:\n• Use For Each to repeat a subgraph for a list of items.\n• Set a list limit so a workflow cannot make more requests than you intended.\n\nBefore you start:\n• Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.\n• This extends the reusable process from lesson 13. Choose a connection for ClueAnalyst in For Each’s helper bindings, such as Active SillyTavern.\n\nSteps:\n1. Read the three clues supplied in Text: wet boots, warm wax, and a slack bell rope. Each has an ID and an exact quote.\n2. For Each uses an explanation helper: Text describes the task and Model Call offers one possible interpretation of each supplied clue. You will see their combined results at For Each’s out output.\n3. Check that For Each has a limit of 3 and allows one request for each clue. Send a message and inspect its out result.\n4. Compare each explanation with its original clue. IDs and quotes should stay the same, and the explanations should remain possibilities rather than solutions to the mystery.\n5. Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes.\n\nCheckpoints:\nFor Each → out: The three explanations remain in clue order and preserve their IDs and quotes.\n\nTry this:\nAdd a fourth clue while leaving the limit at 3.\nThe workflow pauses at the limit. It does not silently make a fourth model request; remove the extra clue or deliberately increase the limit.\n\nIf something is different:\nThe clue list exceeds the limit: The workflow waits for you to fix the list or its limit.\n\nModel requests: Up to three extra model requests, one for each clue. SillyTavern writes one reply.",
               "commentFrame": true,
               "moveContents": false
             }
@@ -5111,94 +4512,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "toPort": "draft"
             }
           },
-          "groups": {
-            "stage-0": {
-              "id": "stage-0",
-              "title": "Preparation / processing",
-              "description": "Stage 0. Wires determine execution; folding is presentation only.",
-              "x": 75,
-              "y": 190,
-              "w": 350,
-              "h": 605,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "send",
-                "clues-text"
-              ]
-            },
-            "stage-1": {
-              "id": "stage-1",
-              "title": "Native generation",
-              "description": "Stage 1. Wires determine execution; folding is presentation only.",
-              "x": 435,
-              "y": 190,
-              "w": 350,
-              "h": 605,
-              "color": "#284e67",
-              "collapsed": false,
-              "members": [
-                "generate",
-                "clues"
-              ]
-            },
-            "stage-2": {
-              "id": "stage-2",
-              "title": "Preparation / processing",
-              "description": "Stage 2. Wires determine execution; folding is presentation only.",
-              "x": 795,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "explain-each"
-              ]
-            },
-            "stage-3": {
-              "id": "stage-3",
-              "title": "Response processing",
-              "description": "Stage 3. Wires determine execution; folding is presentation only.",
-              "x": 1155,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "notes"
-              ]
-            },
-            "stage-4": {
-              "id": "stage-4",
-              "title": "Preparation / processing",
-              "description": "Stage 4. Wires determine execution; folding is presentation only.",
-              "x": 1515,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "append"
-              ]
-            },
-            "stage-5": {
-              "id": "stage-5",
-              "title": "Review / accepted staging",
-              "description": "Stage 5. Wires determine execution; folding is presentation only.",
-              "x": 1875,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "review"
-              ]
-            }
-          },
+          "groups": {},
           "roles": {},
           "portals": {},
           "definitions": {
@@ -5263,7 +4577,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
                     "title": "Text",
                     "enabled": true,
                     "x": 100,
-                    "y": 560,
+                    "y": 530,
                     "w": 300,
                     "h": 210,
                     "profileId": null,
@@ -5348,47 +4662,45 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
     "id": "lesson-15",
     "number": 15,
     "title": "Keep useful context within a budget",
-    "goal": "Join two public context windows and retain selected recent/protected material under a token budget.",
+    "goal": "Learn to give a planner useful context without sending everything. You will combine two views of the chat, keep recent messages and lantern details, and see what had to be left out.",
     "lesson": {
       "difficulty": "Composition",
-      "focus": "Context Join and Smart Compactor",
       "learn": [
-        "Context Join and Smart Compactor",
-        "Trace named artifacts to the owned Draft or accepted proposal."
+        "Context Join combines context without repeating the same messages.",
+        "Smart Compactor keeps selected material within a size limit and reports omissions."
       ],
       "requirements": [
-        "Open this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern."
+        "Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.",
+        "This extends the small context window in lesson 3. Choose a model connection for Response Plan. A longer chat mentioning a lantern will make the comparison clearer."
       ],
       "steps": [
-        "Open Keep useful context within a budget and inspect the named pins.",
-        "Inspect Context Join source identity/deduplication and Smart Compactor omissions.",
-        "Selection makes no auxiliary call; compress is an optional exercise with one additional call.",
-        "Send in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals."
+        "Compare the Scene Context boxes: one reads 3 recent public messages and the other reads 12. Context Join combines them without duplicating overlapping messages.",
+        "Open Smart Compactor. Its target is 700 tokens, a measure of how much text a model receives. It keeps the two most recent messages and protects material mentioning lantern.",
+        "Send a message. Inspect Smart Compactor’s output and report to see which messages were kept and which were omitted before Response Plan uses them.",
+        "Leave Method set to select for the first run. It chooses existing material without asking a model to summarize it.",
+        "Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes."
       ],
       "checkpoints": [
         {
           "node": "Smart Compactor",
           "port": "out",
-          "expect": "Recent messages and protected lantern material are retained; omissions remain reported."
+          "expect": "The retained context includes recent messages and protected lantern material. Its report explains what was omitted."
         }
       ],
       "experiments": [
         {
-          "change": "Change method select to compress.",
-          "expect": "The optional compression adds at most one auxiliary request and reports omissions."
+          "change": "Change Method from select to compress and run again.",
+          "expect": "A model can shorten the context, adding one request. Compare what survives in the shorter text and still check its omission report."
         }
       ],
       "cases": [
         {
-          "when": "Protected/recent context cannot fit",
-          "expect": "Budget constraints are reported instead of silently inventing context."
-        },
-        {
-          "when": "Rejected or stopped",
-          "expect": "The existing story and staged effects are retained without settlement."
+          "when": "The recent or protected material cannot fit",
+          "expect": "The workflow reports the size problem so you can adjust the target or the protected material."
         }
       ],
-      "callBudget": "Default select: 1 auxiliary Response Plan request. Compress exercise: up to 2. One ordinary native generation."
+      "callBudget": "One extra planning request with select; up to two with compress. SillyTavern writes one reply.",
+      "focus": "Context Join and Smart Compactor"
     },
     "packages": [
       {
@@ -5398,7 +4710,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
         "graph": {
           "id": "remastered-lesson-15",
           "name": "15. Keep useful context within a budget",
-          "description": "Join two public context windows and retain selected recent/protected material under a token budget.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\n\nOpen Keep useful context within a budget and inspect the named pins.\nInspect Context Join source identity/deduplication and Smart Compactor omissions.\nSelection makes no auxiliary call; compress is an optional exercise with one additional call.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: Default select: 1 auxiliary Response Plan request. Compress exercise: up to 2. One ordinary native generation.\nCheckpoints:\nSmart Compactor.out: Recent messages and protected lantern material are retained; omissions remain reported.",
+          "description": "Learn to give a planner useful context without sending everything. You will combine two views of the chat, keep recent messages and lantern details, and see what had to be left out.\n\nWhat you'll learn:\n• Context Join combines context without repeating the same messages.\n• Smart Compactor keeps selected material within a size limit and reports omissions.\n\nBefore you start:\n• Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.\n• This extends the small context window in lesson 3. Choose a model connection for Response Plan. A longer chat mentioning a lantern will make the comparison clearer.\n\nSteps:\n1. Compare the Scene Context boxes: one reads 3 recent public messages and the other reads 12. Context Join combines them without duplicating overlapping messages.\n2. Open Smart Compactor. Its target is 700 tokens, a measure of how much text a model receives. It keeps the two most recent messages and protects material mentioning lantern.\n3. Send a message. Inspect Smart Compactor’s output and report to see which messages were kept and which were omitted before Response Plan uses them.\n4. Leave Method set to select for the first run. It chooses existing material without asking a model to summarize it.\n5. Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes.\n\nCheckpoints:\nSmart Compactor → out: The retained context includes recent messages and protected lantern material. Its report explains what was omitted.\n\nTry this:\nChange Method from select to compress and run again.\nA model can shorten the context, adding one request. Compare what survives in the shorter text and still check its omission report.\n\nIf something is different:\nThe recent or protected material cannot fit: The workflow reports the size problem so you can adjust the target or the protected material.\n\nModel requests: One extra planning request with select; up to two with compress. SillyTavern writes one reply.",
           "schema": 3,
           "runtime": 2,
           "mode": "native-unified",
@@ -5411,10 +4723,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "On Send",
               "enabled": true,
               "x": 100,
-              "y": 240,
+              "y": 826,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -5428,10 +4739,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Generate Reply · SillyTavern",
               "enabled": true,
               "x": 1540,
-              "y": 240,
+              "y": 826,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-4",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -5446,10 +4756,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Review / Publish",
               "enabled": true,
               "x": 1900,
-              "y": 240,
+              "y": 826,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-5",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -5462,10 +4771,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Scene Context",
               "enabled": true,
               "x": 100,
-              "y": 560,
+              "y": 1116,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -5481,10 +4789,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Scene Context",
               "enabled": true,
               "x": 100,
-              "y": 880,
+              "y": 1406,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -5501,10 +4808,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Context Join",
               "enabled": true,
               "x": 460,
-              "y": 240,
+              "y": 826,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-1",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -5527,10 +4833,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Smart Compactor",
               "enabled": true,
               "x": 820,
-              "y": 240,
+              "y": 826,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-2",
               "profileId": "lattice:active-sillytavern",
               "model": null,
               "modelRole": "Analysis",
@@ -5551,10 +4856,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Response Plan",
               "enabled": true,
               "x": 1180,
-              "y": 240,
+              "y": 826,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-3",
               "profileId": "lattice:active-sillytavern",
               "model": null,
               "modelRole": "Analysis",
@@ -5570,8 +4874,8 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "x": 100,
               "y": 0,
               "w": 900,
-              "h": 180,
-              "content": "Join two public context windows and retain selected recent/protected material under a token budget.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\n\nOpen Keep useful context within a budget and inspect the named pins.\nInspect Context Join source identity/deduplication and Smart Compactor omissions.\nSelection makes no auxiliary call; compress is an optional exercise with one additional call.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: Default select: 1 auxiliary Response Plan request. Compress exercise: up to 2. One ordinary native generation.\nCheckpoints:\nSmart Compactor.out: Recent messages and protected lantern material are retained; omissions remain reported.",
+              "h": 746,
+              "content": "Learn to give a planner useful context without sending everything. You will combine two views of the chat, keep recent messages and lantern details, and see what had to be left out.\n\nWhat you'll learn:\n• Context Join combines context without repeating the same messages.\n• Smart Compactor keeps selected material within a size limit and reports omissions.\n\nBefore you start:\n• Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.\n• This extends the small context window in lesson 3. Choose a model connection for Response Plan. A longer chat mentioning a lantern will make the comparison clearer.\n\nSteps:\n1. Compare the Scene Context boxes: one reads 3 recent public messages and the other reads 12. Context Join combines them without duplicating overlapping messages.\n2. Open Smart Compactor. Its target is 700 tokens, a measure of how much text a model receives. It keeps the two most recent messages and protects material mentioning lantern.\n3. Send a message. Inspect Smart Compactor’s output and report to see which messages were kept and which were omitted before Response Plan uses them.\n4. Leave Method set to select for the first run. It chooses existing material without asking a model to summarize it.\n5. Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes.\n\nCheckpoints:\nSmart Compactor → out: The retained context includes recent messages and protected lantern material. Its report explains what was omitted.\n\nTry this:\nChange Method from select to compress and run again.\nA model can shorten the context, adding one request. Compare what survives in the shorter text and still check its omission report.\n\nIf something is different:\nThe recent or protected material cannot fit: The workflow reports the size problem so you can adjust the target or the protected material.\n\nModel requests: One extra planning request with select; up to two with compress. SillyTavern writes one reply.",
               "commentFrame": true,
               "moveContents": false
             }
@@ -5634,94 +4938,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "toPort": "draft"
             }
           },
-          "groups": {
-            "stage-0": {
-              "id": "stage-0",
-              "title": "Preparation / processing",
-              "description": "Stage 0. Wires determine execution; folding is presentation only.",
-              "x": 75,
-              "y": 190,
-              "w": 350,
-              "h": 925,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "send",
-                "recent",
-                "wider"
-              ]
-            },
-            "stage-1": {
-              "id": "stage-1",
-              "title": "Preparation / processing",
-              "description": "Stage 1. Wires determine execution; folding is presentation only.",
-              "x": 435,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "join-context"
-              ]
-            },
-            "stage-2": {
-              "id": "stage-2",
-              "title": "Preparation / processing",
-              "description": "Stage 2. Wires determine execution; folding is presentation only.",
-              "x": 795,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "compact"
-              ]
-            },
-            "stage-3": {
-              "id": "stage-3",
-              "title": "Preparation / processing",
-              "description": "Stage 3. Wires determine execution; folding is presentation only.",
-              "x": 1155,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "plan"
-              ]
-            },
-            "stage-4": {
-              "id": "stage-4",
-              "title": "Native generation",
-              "description": "Stage 4. Wires determine execution; folding is presentation only.",
-              "x": 1515,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#284e67",
-              "collapsed": false,
-              "members": [
-                "generate"
-              ]
-            },
-            "stage-5": {
-              "id": "stage-5",
-              "title": "Review / accepted staging",
-              "description": "Stage 5. Wires determine execution; folding is presentation only.",
-              "x": 1875,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "review"
-              ]
-            }
-          },
+          "groups": {},
           "roles": {
             "Analysis": {
               "model": null,
@@ -5747,48 +4964,47 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
     "id": "lesson-16",
     "number": 16,
     "title": "Consult the current campaign notebook",
-    "goal": "Read an authorized live campaign notebook and causally guide the reply from its current contents.",
+    "goal": "Learn to consult a notebook that can change between runs. Unlike the imported lore sheet in lesson 6, Read File fetches the current contents of a story document each time you use it.",
     "lesson": {
       "difficulty": "Composition",
-      "focus": "Read File live reference versus imported snapshot",
       "learn": [
-        "Read File live reference versus imported snapshot",
-        "Trace named artifacts to the owned Draft or accepted proposal."
+        "Read an authorized story document through Workflow Data.",
+        "Distinguish a current document from an imported copy.",
+        "An Initial template supplies a new document’s starting contents. Once a saved document exists, editing the template does not overwrite it."
       ],
       "requirements": [
-        "Open this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.",
-        "Create/authorize a public Text Workflow Data target campaign-notebook containing current campaign facts."
+        "Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.",
+        "Open Workflow → Configure → Workflow Data. Set Logical target ID and Document name to campaign-notebook, Format to Plain text, and Visibility to Public. Paste the contents of examples/remastered/fixtures/campaign-notebook.txt into Initial template, or enter your own campaign facts, then choose Save authorization.",
+        "For each new Workflow Data document, also fill in Document name; using the Logical target ID as its name is fine. When a lesson names a fixture, paste the file’s contents into Initial template, then choose Save authorization."
       ],
       "steps": [
-        "Open Consult the current campaign notebook and inspect the named pins.",
-        "Read File captures a live target and revision; edit the target and compare the next run.",
-        "Contrast lesson6 File Input: imported content is a snapshot and cannot supply a live write reference.",
-        "Send in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals."
+        "Check that Read File points to campaign-notebook. Follow its text output through Compose to the guidance input of Generate Reply.",
+        "Send a message about the harbor and inspect the notebook text used for this run.",
+        "For this fresh notebook, select its authorization in Workflow Data and choose Load initial template. Change the lighthouse from dark to lit and choose Save authorization. Send again and compare the supplied text. This works while no saved notebook exists; lesson 17 introduces Write to File for updating saved contents.",
+        "Compare this with File Input in lesson 6. That box keeps its imported copy until you replace it; Read File consults the current document.",
+        "Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes."
       ],
       "checkpoints": [
         {
           "node": "Read File · live Workflow Data",
           "port": "text",
-          "expect": "The current authorized notebook text reaches native Guidance."
+          "expect": "The current notebook text reaches the advice supplied before the reply is written."
         }
       ],
       "experiments": [
         {
-          "change": "Change the authorized notebook text between runs.",
-          "expect": "The next live read sees it; imported snapshots remain unchanged."
+          "change": "For a notebook with no saved contents yet, change its Initial template and save its authorization after a run starts but before you accept the result.",
+          "expect": "The workflow reports that its source changed. Run again to use the new version. Editing a template never overwrites an already saved notebook."
         }
       ],
       "cases": [
         {
-          "when": "Live target revision changes before acceptance",
-          "expect": "A stale captured reference cannot silently write."
-        },
-        {
-          "when": "Rejected or stopped",
-          "expect": "The existing story and staged effects are retained without settlement."
+          "when": "The document is missing or unavailable",
+          "expect": "Read File shows the problem so you can correct the target or its access."
         }
       ],
-      "callBudget": "0 auxiliary model requests; one ordinary native generation."
+      "callBudget": "No extra model requests. SillyTavern writes one reply.",
+      "focus": "Read File live reference versus imported snapshot"
     },
     "packages": [
       {
@@ -5798,7 +5014,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
         "graph": {
           "id": "remastered-lesson-16",
           "name": "16. Consult the current campaign notebook",
-          "description": "Read an authorized live campaign notebook and causally guide the reply from its current contents.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nCreate/authorize a public Text Workflow Data target campaign-notebook containing current campaign facts.\n\nOpen Consult the current campaign notebook and inspect the named pins.\nRead File captures a live target and revision; edit the target and compare the next run.\nContrast lesson6 File Input: imported content is a snapshot and cannot supply a live write reference.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 0 auxiliary model requests; one ordinary native generation.\nCheckpoints:\nRead File · live Workflow Data.text: The current authorized notebook text reaches native Guidance.",
+          "description": "Learn to consult a notebook that can change between runs. Unlike the imported lore sheet in lesson 6, Read File fetches the current contents of a story document each time you use it.\n\nWhat you'll learn:\n• Read an authorized story document through Workflow Data.\n• Distinguish a current document from an imported copy.\n• An Initial template supplies a new document’s starting contents. Once a saved document exists, editing the template does not overwrite it.\n\nBefore you start:\n• Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.\n• Open Workflow → Configure → Workflow Data. Set Logical target ID and Document name to campaign-notebook, Format to Plain text, and Visibility to Public. Paste the contents of examples/remastered/fixtures/campaign-notebook.txt into Initial template, or enter your own campaign facts, then choose Save authorization.\n• For each new Workflow Data document, also fill in Document name; using the Logical target ID as its name is fine. When a lesson names a fixture, paste the file’s contents into Initial template, then choose Save authorization.\n\nSteps:\n1. Check that Read File points to campaign-notebook. Follow its text output through Compose to the guidance input of Generate Reply.\n2. Send a message about the harbor and inspect the notebook text used for this run.\n3. For this fresh notebook, select its authorization in Workflow Data and choose Load initial template. Change the lighthouse from dark to lit and choose Save authorization. Send again and compare the supplied text. This works while no saved notebook exists; lesson 17 introduces Write to File for updating saved contents.\n4. Compare this with File Input in lesson 6. That box keeps its imported copy until you replace it; Read File consults the current document.\n5. Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes.\n\nCheckpoints:\nRead File · live Workflow Data → text: The current notebook text reaches the advice supplied before the reply is written.\n\nTry this:\nFor a notebook with no saved contents yet, change its Initial template and save its authorization after a run starts but before you accept the result.\nThe workflow reports that its source changed. Run again to use the new version. Editing a template never overwrites an already saved notebook.\n\nIf something is different:\nThe document is missing or unavailable: Read File shows the problem so you can correct the target or its access.\n\nModel requests: No extra model requests. SillyTavern writes one reply.",
           "schema": 3,
           "runtime": 2,
           "mode": "native-unified",
@@ -5811,7 +5027,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "On Send",
               "enabled": true,
               "x": 100,
-              "y": 240,
+              "y": 947,
               "w": 300,
               "h": 210,
               "profileId": null,
@@ -5827,7 +5043,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Generate Reply · SillyTavern",
               "enabled": true,
               "x": 820,
-              "y": 240,
+              "y": 947,
               "w": 300,
               "h": 210,
               "profileId": null,
@@ -5844,7 +5060,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Review / Publish",
               "enabled": true,
               "x": 1180,
-              "y": 240,
+              "y": 947,
               "w": 300,
               "h": 210,
               "profileId": null,
@@ -5860,7 +5076,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Read File",
               "enabled": true,
               "x": 100,
-              "y": 560,
+              "y": 1237,
               "w": 300,
               "h": 210,
               "profileId": null,
@@ -5881,7 +5097,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Compose",
               "enabled": true,
               "x": 460,
-              "y": 240,
+              "y": 947,
               "w": 300,
               "h": 210,
               "profileId": null,
@@ -5907,8 +5123,8 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "x": 100,
               "y": 0,
               "w": 900,
-              "h": 180,
-              "content": "Read an authorized live campaign notebook and causally guide the reply from its current contents.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nCreate/authorize a public Text Workflow Data target campaign-notebook containing current campaign facts.\n\nOpen Consult the current campaign notebook and inspect the named pins.\nRead File captures a live target and revision; edit the target and compare the next run.\nContrast lesson6 File Input: imported content is a snapshot and cannot supply a live write reference.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 0 auxiliary model requests; one ordinary native generation.\nCheckpoints:\nRead File · live Workflow Data.text: The current authorized notebook text reaches native Guidance.",
+              "h": 867,
+              "content": "Learn to consult a notebook that can change between runs. Unlike the imported lore sheet in lesson 6, Read File fetches the current contents of a story document each time you use it.\n\nWhat you'll learn:\n• Read an authorized story document through Workflow Data.\n• Distinguish a current document from an imported copy.\n• An Initial template supplies a new document’s starting contents. Once a saved document exists, editing the template does not overwrite it.\n\nBefore you start:\n• Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.\n• Open Workflow → Configure → Workflow Data. Set Logical target ID and Document name to campaign-notebook, Format to Plain text, and Visibility to Public. Paste the contents of examples/remastered/fixtures/campaign-notebook.txt into Initial template, or enter your own campaign facts, then choose Save authorization.\n• For each new Workflow Data document, also fill in Document name; using the Logical target ID as its name is fine. When a lesson names a fixture, paste the file’s contents into Initial template, then choose Save authorization.\n\nSteps:\n1. Check that Read File points to campaign-notebook. Follow its text output through Compose to the guidance input of Generate Reply.\n2. Send a message about the harbor and inspect the notebook text used for this run.\n3. For this fresh notebook, select its authorization in Workflow Data and choose Load initial template. Change the lighthouse from dark to lit and choose Save authorization. Send again and compare the supplied text. This works while no saved notebook exists; lesson 17 introduces Write to File for updating saved contents.\n4. Compare this with File Input in lesson 6. That box keeps its imported copy until you replace it; Read File consults the current document.\n5. Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes.\n\nCheckpoints:\nRead File · live Workflow Data → text: The current notebook text reaches the advice supplied before the reply is written.\n\nTry this:\nFor a notebook with no saved contents yet, change its Initial template and save its authorization after a run starts but before you accept the result.\nThe workflow reports that its source changed. Run again to use the new version. Editing a template never overwrites an already saved notebook.\n\nIf something is different:\nThe document is missing or unavailable: Read File shows the problem so you can correct the target or its access.\n\nModel requests: No extra model requests. SillyTavern writes one reply.",
               "commentFrame": true,
               "moveContents": false
             }
@@ -5968,49 +5184,51 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
     "id": "lesson-17",
     "number": 17,
     "title": "Record only the scene you accept",
-    "goal": "Extract narrative records, format them against a schema, project an add-unique journal and stage an accepted same-target replacement.",
+    "goal": "Learn to save a scene summary only when you accept the reply. The workflow prepares a journal update, avoids duplicate entries, and waits for Apply before saving it.",
     "lesson": {
       "difficulty": "Composition",
-      "focus": "Format, Project Document and Write to File",
       "learn": [
-        "Format, Project Document and Write to File",
-        "Trace named artifacts to the owned Draft or accepted proposal."
+        "Use Format to give records a consistent shape.",
+        "Use Project Document to prepare an updated journal and Write to File to save it after acceptance."
       ],
       "requirements": [
-        "Open this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.",
-        "Create public JSON Workflow Data accepted-scene-journal as []. Bind Prose for extraction."
+        "Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.",
+        "Create a Workflow Data document as in lesson 16, using accepted-scene-journal for its Logical target ID and Document name. Choose Format JSON, Visibility Public, and Initial template [], then Save authorization. Choose a model connection for Extract.",
+        "For each new Workflow Data document, also fill in Document name; using the Logical target ID as its name is fine. When a lesson names a fixture, paste the file’s contents into Initial template, then choose Save authorization."
       ],
       "steps": [
-        "Open Record only the scene you accept and inspect the named pins.",
-        "Inspect Format.records and Project Document.receipt before Apply.",
-        "Write to File.reference is the exact live Read File reference; preview never saves.",
-        "Each file receipt is separate from native chat durability.",
-        "Send in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals."
+        "Follow Read File’s two outputs: text supplies the current journal, while reference identifies the exact document and version that can be saved.",
+        "Send a message and inspect Extract’s records of completed public actions. Format keeps an id and quoted text for each record so every journal entry has the same shape.",
+        "Inspect Project Document’s receipt and proposed text. Its add-unique mode adds new IDs while keeping an existing ID from appearing twice.",
+        "Inspect Write to File’s receipt before Apply. It describes a proposed replacement of the journal; the saved document should still have its old contents.",
+        "Apply the reply, then read the journal in Workflow Data. Check both the chat and the file receipt: they are saved separately, so a file error needs attention even if the reply was published.",
+        "Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes."
       ],
       "checkpoints": [
         {
           "node": "Write to File",
           "port": "receipt",
-          "expect": "The same-target journal replacement is pending until acceptance."
+          "expect": "The journal replacement stays a proposal until you accept the reply."
         }
       ],
       "experiments": [
         {
-          "change": "Reject the staged replacement.",
-          "expect": "No Workflow Data save occurs."
+          "change": "Run another scene and choose Reject at review.",
+          "expect": "The proposed journal entries are discarded and the saved journal keeps its previous contents."
         }
       ],
       "cases": [
         {
-          "when": "A stable journal record already exists",
-          "expect": "Add-unique avoids another copy of that record."
+          "when": "A record with the same ID is already saved",
+          "expect": "The journal keeps one copy of that record."
         },
         {
-          "when": "Rejected or stopped",
-          "expect": "The existing story and staged effects are retained without settlement."
+          "when": "You preview or reject the update",
+          "expect": "The journal is not saved."
         }
       ],
-      "callBudget": "1 auxiliary Extract request; one ordinary native generation. Formatting, projection and staging make no model requests."
+      "callBudget": "One extra request to extract scene records. Formatting and preparing the save need no model. SillyTavern writes one reply.",
+      "focus": "Format, Project Document and Write to File"
     },
     "packages": [
       {
@@ -6020,7 +5238,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
         "graph": {
           "id": "remastered-lesson-17",
           "name": "17. Record only the scene you accept",
-          "description": "Extract narrative records, format them against a schema, project an add-unique journal and stage an accepted same-target replacement.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nCreate public JSON Workflow Data accepted-scene-journal as []. Bind Prose for extraction.\n\nOpen Record only the scene you accept and inspect the named pins.\nInspect Format.records and Project Document.receipt before Apply.\nWrite to File.reference is the exact live Read File reference; preview never saves.\nEach file receipt is separate from native chat durability.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 1 auxiliary Extract request; one ordinary native generation. Formatting, projection and staging make no model requests.\nCheckpoints:\nWrite to File.receipt: The same-target journal replacement is pending until acceptance.",
+          "description": "Learn to save a scene summary only when you accept the reply. The workflow prepares a journal update, avoids duplicate entries, and waits for Apply before saving it.\n\nWhat you'll learn:\n• Use Format to give records a consistent shape.\n• Use Project Document to prepare an updated journal and Write to File to save it after acceptance.\n\nBefore you start:\n• Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.\n• Create a Workflow Data document as in lesson 16, using accepted-scene-journal for its Logical target ID and Document name. Choose Format JSON, Visibility Public, and Initial template [], then Save authorization. Choose a model connection for Extract.\n• For each new Workflow Data document, also fill in Document name; using the Logical target ID as its name is fine. When a lesson names a fixture, paste the file’s contents into Initial template, then choose Save authorization.\n\nSteps:\n1. Follow Read File’s two outputs: text supplies the current journal, while reference identifies the exact document and version that can be saved.\n2. Send a message and inspect Extract’s records of completed public actions. Format keeps an id and quoted text for each record so every journal entry has the same shape.\n3. Inspect Project Document’s receipt and proposed text. Its add-unique mode adds new IDs while keeping an existing ID from appearing twice.\n4. Inspect Write to File’s receipt before Apply. It describes a proposed replacement of the journal; the saved document should still have its old contents.\n5. Apply the reply, then read the journal in Workflow Data. Check both the chat and the file receipt: they are saved separately, so a file error needs attention even if the reply was published.\n6. Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes.\n\nCheckpoints:\nWrite to File → receipt: The journal replacement stays a proposal until you accept the reply.\n\nTry this:\nRun another scene and choose Reject at review.\nThe proposed journal entries are discarded and the saved journal keeps its previous contents.\n\nIf something is different:\nA record with the same ID is already saved: The journal keeps one copy of that record.\nYou preview or reject the update: The journal is not saved.\n\nModel requests: One extra request to extract scene records. Formatting and preparing the save need no model. SillyTavern writes one reply.",
           "schema": 3,
           "runtime": 2,
           "mode": "native-unified",
@@ -6033,10 +5251,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "On Send",
               "enabled": true,
               "x": 100,
-              "y": 240,
+              "y": 913,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -6050,10 +5267,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Generate Reply · SillyTavern",
               "enabled": true,
               "x": 460,
-              "y": 240,
+              "y": 913,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-1",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -6068,10 +5284,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Review / Publish",
               "enabled": true,
               "x": 820,
-              "y": 240,
+              "y": 913,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-2",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -6085,10 +5300,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Read File",
               "enabled": true,
               "x": 100,
-              "y": 560,
+              "y": 1203,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -6107,10 +5321,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Extract",
               "enabled": true,
               "x": 820,
-              "y": 560,
+              "y": 1543,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-2",
+              "inGroup": "processing-records",
               "profileId": "lattice:active-sillytavern",
               "model": null,
               "modelRole": "Prose",
@@ -6131,10 +5345,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Select Fields",
               "enabled": true,
               "x": 1180,
-              "y": 240,
+              "y": 1543,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-3",
+              "inGroup": "processing-records",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -6157,10 +5371,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Collection",
               "enabled": true,
               "x": 1540,
-              "y": 240,
+              "y": 1543,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-4",
+              "inGroup": "processing-records",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -6188,10 +5402,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Format",
               "enabled": true,
               "x": 1900,
-              "y": 240,
+              "y": 1543,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-5",
+              "inGroup": "processing-records",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -6228,10 +5442,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Project Document",
               "enabled": true,
               "x": 2260,
-              "y": 240,
+              "y": 1543,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-6",
+              "inGroup": "processing-records",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -6258,10 +5472,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Write to File",
               "enabled": true,
               "x": 2620,
-              "y": 240,
+              "y": 1543,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-7",
+              "inGroup": "processing-records",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -6288,8 +5502,8 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "x": 100,
               "y": 0,
               "w": 900,
-              "h": 180,
-              "content": "Extract narrative records, format them against a schema, project an add-unique journal and stage an accepted same-target replacement.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nCreate public JSON Workflow Data accepted-scene-journal as []. Bind Prose for extraction.\n\nOpen Record only the scene you accept and inspect the named pins.\nInspect Format.records and Project Document.receipt before Apply.\nWrite to File.reference is the exact live Read File reference; preview never saves.\nEach file receipt is separate from native chat durability.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 1 auxiliary Extract request; one ordinary native generation. Formatting, projection and staging make no model requests.\nCheckpoints:\nWrite to File.receipt: The same-target journal replacement is pending until acceptance.",
+              "h": 833,
+              "content": "Learn to save a scene summary only when you accept the reply. The workflow prepares a journal update, avoids duplicate entries, and waits for Apply before saving it.\n\nWhat you'll learn:\n• Use Format to give records a consistent shape.\n• Use Project Document to prepare an updated journal and Write to File to save it after acceptance.\n\nBefore you start:\n• Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.\n• Create a Workflow Data document as in lesson 16, using accepted-scene-journal for its Logical target ID and Document name. Choose Format JSON, Visibility Public, and Initial template [], then Save authorization. Choose a model connection for Extract.\n• For each new Workflow Data document, also fill in Document name; using the Logical target ID as its name is fine. When a lesson names a fixture, paste the file’s contents into Initial template, then choose Save authorization.\n\nSteps:\n1. Follow Read File’s two outputs: text supplies the current journal, while reference identifies the exact document and version that can be saved.\n2. Send a message and inspect Extract’s records of completed public actions. Format keeps an id and quoted text for each record so every journal entry has the same shape.\n3. Inspect Project Document’s receipt and proposed text. Its add-unique mode adds new IDs while keeping an existing ID from appearing twice.\n4. Inspect Write to File’s receipt before Apply. It describes a proposed replacement of the journal; the saved document should still have its old contents.\n5. Apply the reply, then read the journal in Workflow Data. Check both the chat and the file receipt: they are saved separately, so a file error needs attention even if the reply was published.\n6. Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes.\n\nCheckpoints:\nWrite to File → receipt: The journal replacement stays a proposal until you accept the reply.\n\nTry this:\nRun another scene and choose Reject at review.\nThe proposed journal entries are discarded and the saved journal keeps its previous contents.\n\nIf something is different:\nA record with the same ID is already saved: The journal keeps one copy of that record.\nYou preview or reject the update: The journal is not saved.\n\nModel requests: One extra request to extract scene records. Formatting and preparing the save need no model. SillyTavern writes one reply.",
               "commentFrame": true,
               "moveContents": false
             }
@@ -6377,117 +5591,22 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
             }
           },
           "groups": {
-            "stage-0": {
-              "id": "stage-0",
-              "title": "Preparation / processing",
-              "description": "Stage 0. Wires determine execution; folding is presentation only.",
-              "x": 75,
-              "y": 190,
-              "w": 350,
-              "h": 605,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "send",
-                "journal"
-              ]
-            },
-            "stage-1": {
-              "id": "stage-1",
-              "title": "Native generation",
-              "description": "Stage 1. Wires determine execution; folding is presentation only.",
-              "x": 435,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#284e67",
-              "collapsed": false,
-              "members": [
-                "generate"
-              ]
-            },
-            "stage-2": {
-              "id": "stage-2",
-              "title": "Review / accepted staging",
-              "description": "Stage 2. Wires determine execution; folding is presentation only.",
+            "processing-records": {
+              "id": "processing-records",
+              "title": "Update saved story data",
+              "description": "These connected boxes work together. Follow their wires to see how each result is used.",
               "x": 795,
-              "y": 190,
-              "w": 350,
-              "h": 605,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "review",
-                "records"
-              ]
-            },
-            "stage-3": {
-              "id": "stage-3",
-              "title": "Response processing",
-              "description": "Stage 3. Wires determine execution; folding is presentation only.",
-              "x": 1155,
-              "y": 190,
-              "w": 350,
+              "y": 1493,
+              "w": 2150,
               "h": 285,
               "color": "#57416e",
               "collapsed": false,
               "members": [
-                "record-array"
-              ]
-            },
-            "stage-4": {
-              "id": "stage-4",
-              "title": "Response processing",
-              "description": "Stage 4. Wires determine execution; folding is presentation only.",
-              "x": 1515,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "record-list"
-              ]
-            },
-            "stage-5": {
-              "id": "stage-5",
-              "title": "Response processing",
-              "description": "Stage 5. Wires determine execution; folding is presentation only.",
-              "x": 1875,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "format"
-              ]
-            },
-            "stage-6": {
-              "id": "stage-6",
-              "title": "Response processing",
-              "description": "Stage 6. Wires determine execution; folding is presentation only.",
-              "x": 2235,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "project"
-              ]
-            },
-            "stage-7": {
-              "id": "stage-7",
-              "title": "Review / accepted staging",
-              "description": "Stage 7. Wires determine execution; folding is presentation only.",
-              "x": 2595,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
+                "records",
+                "record-array",
+                "record-list",
+                "format",
+                "project",
                 "save"
               ]
             }
@@ -6517,49 +5636,52 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
     "id": "lesson-18",
     "number": 18,
     "title": "Let existing memories shape the next reply",
-    "goal": "Read genuine actor memory, reflect and express private portrayal Guidance; internalize only already settled events and stage accepted Commit.",
+    "goal": "Teach Rowan to draw on existing private memories, then propose a memory update from the reply you accept. You will follow memory into portrayal and inspect the proposed update before it is saved.",
     "lesson": {
       "difficulty": "Advanced",
-      "focus": "Memory Read/Recall, Reflect, Express, Internalize and Commit",
       "learn": [
-        "Memory Read/Recall, Reflect, Express, Internalize and Commit",
-        "Trace named artifacts to the owned Draft or accepted proposal."
+        "Memory Read supplies the selected actor’s stored state; Memory Recall searches that actor’s existing episodes, or remembered scenes.",
+        "Reflect interprets those records. Express turns the interpretation into portrayal hints; neither makes an interpretation a fact.",
+        "Internalize proposes changes from native event evidence. Memory Commit saves the proposal only when the reply is accepted."
       ],
       "requirements": [
-        "Open this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.",
-        "Select native Rowan and replace character:rowan.png consistently with the selected loaded actor identity. Use actual existing native memory state/episodes/events; imported files cannot create native private authority."
+        "Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.",
+        "Select the loaded Rowan actor and replace character:rowan.png everywhere with that actor’s actual avatar ID. Use Rowan’s authorized native memory store.",
+        "For a useful recall test, have an accepted native episode about Rowan and the lighthouse. A JSON fixture or an imported story paragraph cannot create native memory records."
       ],
       "steps": [
-        "Open Let existing memories shape the next reply and inspect the named pins.",
-        "Inspect Read state, Recall episodes and the event record provenance.",
-        "Express renders private hints deterministically; Collect retains their typed Guidance as private Data for the verified Character Direction native producer.",
-        "Post Memory Read captures the exact just-generated native event evidence; Internalize remains a pending proposal and default transaction-derived Commit settles only on accepted review.",
-        "Send in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals."
+        "Build on lesson 17’s proposed-save pattern. Establish Rowan as participating in the current scene, then send: “Rowan returns to the lighthouse and studies the dark lantern.”",
+        "Compare Memory Read’s state with Memory Recall’s episodes. The default query is current scene and the limit is four. Check which recorded scenes actually reached Reflect.",
+        "Follow Reflect into Express and Collect, then into Character Direction. Look for a restrained Rowan reaction that draws on the supplied memories while leaving the player’s response open.",
+        "After generation, inspect the post-generation Memory Read events and Internalize.out. The proposed changes should cite the native event records they came from, including the completed reply’s exact evidence.",
+        "Compare the memory store before and after Apply. Reject a second test: its proposed episode should never become a stored memory.",
+        "Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes."
       ],
       "checkpoints": [
         {
           "node": "Internalize",
           "port": "out",
-          "expect": "A private proposal descends from genuine settled memory events; rejection leaves memory unchanged."
+          "expect": "Internalize.out shows proposed private changes backed by the supplied native events. Rowan’s stored memory stays unchanged until Apply."
         }
       ],
       "experiments": [
         {
-          "change": "Change Recall query and limit.",
-          "expect": "Only permitted genuine memory episodes feed the selected actor reflection."
+          "change": "Change Memory Recall query to lighthouse and reduce limit from 4 to 1.",
+          "expect": "Reflect receives only the matching permitted episode returned by that search; inspect its input rather than expecting a particular sentence in the reply."
         }
       ],
       "cases": [
         {
-          "when": "No genuinely settled memory events exist",
-          "expect": "Internalize holds; imported prose cannot manufacture private settled history."
+          "when": "There are no eligible native event records.",
+          "expect": "Internalize stops and reports the missing evidence. Imported prose cannot fill that gap."
         },
         {
-          "when": "Rejected or stopped",
-          "expect": "The existing story and staged effects are retained without settlement."
+          "when": "The reply is rejected.",
+          "expect": "The proposed update is discarded and the stored actor memory remains unchanged."
         }
       ],
-      "callBudget": "At most 4 auxiliary requests: Reflect, current participation interpretation, Character Direction and post Internalize. Express behavior and native Memory read/recall/commit are deterministic. One ordinary native generation."
+      "callBudget": "Up to four extra model requests: Reflect, the participation check, Character Direction and Internalize. Express and Memory read, recall and commit make no model requests. There is also one ordinary SillyTavern reply.",
+      "focus": "Memory Read/Recall, Reflect, Express, Internalize and Commit"
     },
     "packages": [
       {
@@ -6569,7 +5691,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
         "graph": {
           "id": "remastered-lesson-18",
           "name": "18. Let existing memories shape the next reply",
-          "description": "Read genuine actor memory, reflect and express private portrayal Guidance; internalize only already settled events and stage accepted Commit.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nSelect native Rowan and replace character:rowan.png consistently with the selected loaded actor identity. Use actual existing native memory state/episodes/events; imported files cannot create native private authority.\n\nOpen Let existing memories shape the next reply and inspect the named pins.\nInspect Read state, Recall episodes and the event record provenance.\nExpress renders private hints deterministically; Collect retains their typed Guidance as private Data for the verified Character Direction native producer.\nPost Memory Read captures the exact just-generated native event evidence; Internalize remains a pending proposal and default transaction-derived Commit settles only on accepted review.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: At most 4 auxiliary requests: Reflect, current participation interpretation, Character Direction and post Internalize. Express behavior and native Memory read/recall/commit are deterministic. One ordinary native generation.\nCheckpoints:\nInternalize.out: A private proposal descends from genuine settled memory events; rejection leaves memory unchanged.",
+          "description": "Teach Rowan to draw on existing private memories, then propose a memory update from the reply you accept. You will follow memory into portrayal and inspect the proposed update before it is saved.\n\nWhat you'll learn:\n• Memory Read supplies the selected actor’s stored state; Memory Recall searches that actor’s existing episodes, or remembered scenes.\n• Reflect interprets those records. Express turns the interpretation into portrayal hints; neither makes an interpretation a fact.\n• Internalize proposes changes from native event evidence. Memory Commit saves the proposal only when the reply is accepted.\n\nBefore you start:\n• Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.\n• Select the loaded Rowan actor and replace character:rowan.png everywhere with that actor’s actual avatar ID. Use Rowan’s authorized native memory store.\n• For a useful recall test, have an accepted native episode about Rowan and the lighthouse. A JSON fixture or an imported story paragraph cannot create native memory records.\n\nSteps:\n1. Build on lesson 17’s proposed-save pattern. Establish Rowan as participating in the current scene, then send: “Rowan returns to the lighthouse and studies the dark lantern.”\n2. Compare Memory Read’s state with Memory Recall’s episodes. The default query is current scene and the limit is four. Check which recorded scenes actually reached Reflect.\n3. Follow Reflect into Express and Collect, then into Character Direction. Look for a restrained Rowan reaction that draws on the supplied memories while leaving the player’s response open.\n4. After generation, inspect the post-generation Memory Read events and Internalize.out. The proposed changes should cite the native event records they came from, including the completed reply’s exact evidence.\n5. Compare the memory store before and after Apply. Reject a second test: its proposed episode should never become a stored memory.\n6. Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes.\n\nCheckpoints:\nInternalize → out: Internalize.out shows proposed private changes backed by the supplied native events. Rowan’s stored memory stays unchanged until Apply.\n\nTry this:\nChange Memory Recall query to lighthouse and reduce limit from 4 to 1.\nReflect receives only the matching permitted episode returned by that search; inspect its input rather than expecting a particular sentence in the reply.\n\nIf something is different:\nThere are no eligible native event records.: Internalize stops and reports the missing evidence. Imported prose cannot fill that gap.\nThe reply is rejected.: The proposed update is discarded and the stored actor memory remains unchanged.\n\nModel requests: Up to four extra model requests: Reflect, the participation check, Character Direction and Internalize. Express and Memory read, recall and commit make no model requests. There is also one ordinary SillyTavern reply.",
           "schema": 3,
           "runtime": 2,
           "mode": "native-unified",
@@ -6582,10 +5704,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "On Send",
               "enabled": true,
               "x": 100,
-              "y": 240,
+              "y": 1017,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -6599,10 +5720,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Generate Reply · SillyTavern",
               "enabled": true,
               "x": 1900,
-              "y": 240,
+              "y": 1017,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-5",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -6617,10 +5737,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Review / Publish",
               "enabled": true,
               "x": 2260,
-              "y": 240,
+              "y": 1017,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-6",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -6633,10 +5752,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Scene Context",
               "enabled": true,
               "x": 100,
-              "y": 560,
+              "y": 1357,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-context",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -6653,10 +5772,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Memory",
               "enabled": true,
               "x": 100,
-              "y": 880,
+              "y": 1647,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-context",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -6672,10 +5791,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Memory",
               "enabled": true,
               "x": 100,
-              "y": 1200,
+              "y": 1937,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-context",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -6692,10 +5811,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Memory",
               "enabled": true,
               "x": 100,
-              "y": 1520,
+              "y": 2592,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-settled",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -6712,10 +5831,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Reflect",
               "enabled": true,
               "x": 460,
-              "y": 240,
+              "y": 1357,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-1",
+              "inGroup": "processing-context",
               "profileId": "lattice:active-sillytavern",
               "model": null,
               "modelRole": "Analysis",
@@ -6732,10 +5851,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Express",
               "enabled": true,
               "x": 820,
-              "y": 240,
+              "y": 1357,
               "w": 300,
               "h": 260,
-              "inGroup": "stage-2",
+              "inGroup": "processing-context",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -6752,10 +5871,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Collect",
               "enabled": true,
               "x": 1180,
-              "y": 240,
+              "y": 1357,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-3",
+              "inGroup": "processing-context",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -6777,10 +5896,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Text",
               "enabled": true,
               "x": 100,
-              "y": 1840,
+              "y": 2227,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-context",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -6796,10 +5915,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Model Call",
               "enabled": true,
               "x": 460,
-              "y": 560,
+              "y": 1647,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-1",
+              "inGroup": "processing-context",
               "profileId": "lattice:active-sillytavern",
               "model": null,
               "modelRole": "Prose",
@@ -6818,10 +5937,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Scene Presence",
               "enabled": true,
               "x": 820,
-              "y": 560,
+              "y": 1697,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-2",
+              "inGroup": "processing-context",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -6837,10 +5956,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Character Direction",
               "enabled": true,
               "x": 1540,
-              "y": 240,
+              "y": 1357,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-4",
+              "inGroup": "processing-context",
               "profileId": "lattice:active-sillytavern",
               "model": null,
               "modelRole": "characterDirection",
@@ -6857,10 +5976,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Internalize",
               "enabled": true,
               "x": 460,
-              "y": 880,
+              "y": 2592,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-1",
+              "inGroup": "processing-settled",
               "profileId": "lattice:active-sillytavern",
               "model": null,
               "modelRole": "Analysis",
@@ -6878,10 +5997,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Memory",
               "enabled": true,
               "x": 820,
-              "y": 880,
+              "y": 2592,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-2",
+              "inGroup": "processing-settled",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -6897,8 +6016,8 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "x": 100,
               "y": 0,
               "w": 900,
-              "h": 180,
-              "content": "Read genuine actor memory, reflect and express private portrayal Guidance; internalize only already settled events and stage accepted Commit.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nSelect native Rowan and replace character:rowan.png consistently with the selected loaded actor identity. Use actual existing native memory state/episodes/events; imported files cannot create native private authority.\n\nOpen Let existing memories shape the next reply and inspect the named pins.\nInspect Read state, Recall episodes and the event record provenance.\nExpress renders private hints deterministically; Collect retains their typed Guidance as private Data for the verified Character Direction native producer.\nPost Memory Read captures the exact just-generated native event evidence; Internalize remains a pending proposal and default transaction-derived Commit settles only on accepted review.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: At most 4 auxiliary requests: Reflect, current participation interpretation, Character Direction and post Internalize. Express behavior and native Memory read/recall/commit are deterministic. One ordinary native generation.\nCheckpoints:\nInternalize.out: A private proposal descends from genuine settled memory events; rejection leaves memory unchanged.",
+              "h": 937,
+              "content": "Teach Rowan to draw on existing private memories, then propose a memory update from the reply you accept. You will follow memory into portrayal and inspect the proposed update before it is saved.\n\nWhat you'll learn:\n• Memory Read supplies the selected actor’s stored state; Memory Recall searches that actor’s existing episodes, or remembered scenes.\n• Reflect interprets those records. Express turns the interpretation into portrayal hints; neither makes an interpretation a fact.\n• Internalize proposes changes from native event evidence. Memory Commit saves the proposal only when the reply is accepted.\n\nBefore you start:\n• Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.\n• Select the loaded Rowan actor and replace character:rowan.png everywhere with that actor’s actual avatar ID. Use Rowan’s authorized native memory store.\n• For a useful recall test, have an accepted native episode about Rowan and the lighthouse. A JSON fixture or an imported story paragraph cannot create native memory records.\n\nSteps:\n1. Build on lesson 17’s proposed-save pattern. Establish Rowan as participating in the current scene, then send: “Rowan returns to the lighthouse and studies the dark lantern.”\n2. Compare Memory Read’s state with Memory Recall’s episodes. The default query is current scene and the limit is four. Check which recorded scenes actually reached Reflect.\n3. Follow Reflect into Express and Collect, then into Character Direction. Look for a restrained Rowan reaction that draws on the supplied memories while leaving the player’s response open.\n4. After generation, inspect the post-generation Memory Read events and Internalize.out. The proposed changes should cite the native event records they came from, including the completed reply’s exact evidence.\n5. Compare the memory store before and after Apply. Reject a second test: its proposed episode should never become a stored memory.\n6. Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes.\n\nCheckpoints:\nInternalize → out: Internalize.out shows proposed private changes backed by the supplied native events. Rowan’s stored memory stays unchanged until Apply.\n\nTry this:\nChange Memory Recall query to lighthouse and reduce limit from 4 to 1.\nReflect receives only the matching permitted episode returned by that search; inspect its input rather than expecting a particular sentence in the reply.\n\nIf something is different:\nThere are no eligible native event records.: Internalize stops and reports the missing evidence. Imported prose cannot fill that gap.\nThe reply is rejected.: The proposed update is discarded and the stored actor memory remains unchanged.\n\nModel requests: Up to four extra model requests: Reflect, the participation check, Character Direction and Internalize. Express and Memory read, recall and commit make no model requests. There is also one ordinary SillyTavern reply.",
               "commentFrame": true,
               "moveContents": false
             }
@@ -7034,111 +6153,43 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
             }
           },
           "groups": {
-            "stage-0": {
-              "id": "stage-0",
-              "title": "Preparation / processing",
-              "description": "Stage 0. Wires determine execution; folding is presentation only.",
+            "processing-context": {
+              "id": "processing-context",
+              "title": "Recall character memories",
+              "description": "These connected boxes work together. Follow their wires to see how each result is used.",
               "x": 75,
-              "y": 190,
-              "w": 350,
-              "h": 1885,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "send",
-                "context",
-                "state",
-                "episodes",
-                "settled",
-                "cast-request"
-              ]
-            },
-            "stage-1": {
-              "id": "stage-1",
-              "title": "Preparation / processing",
-              "description": "Stage 1. Wires determine execution; folding is presentation only.",
-              "x": 435,
-              "y": 190,
-              "w": 350,
-              "h": 925,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "reflect",
-                "cast",
-                "internalize"
-              ]
-            },
-            "stage-2": {
-              "id": "stage-2",
-              "title": "Preparation / processing",
-              "description": "Stage 2. Wires determine execution; folding is presentation only.",
-              "x": 795,
-              "y": 190,
-              "w": 350,
-              "h": 925,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "express",
-                "cast-presence-0",
-                "commit"
-              ]
-            },
-            "stage-3": {
-              "id": "stage-3",
-              "title": "Preparation / processing",
-              "description": "Stage 3. Wires determine execution; folding is presentation only.",
-              "x": 1155,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "express-material"
-              ]
-            },
-            "stage-4": {
-              "id": "stage-4",
-              "title": "Preparation / processing",
-              "description": "Stage 4. Wires determine execution; folding is presentation only.",
-              "x": 1515,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "memory-direction"
-              ]
-            },
-            "stage-5": {
-              "id": "stage-5",
-              "title": "Native generation",
-              "description": "Stage 5. Wires determine execution; folding is presentation only.",
-              "x": 1875,
-              "y": 190,
-              "w": 350,
-              "h": 285,
+              "y": 1307,
+              "w": 1790,
+              "h": 1155,
               "color": "#284e67",
               "collapsed": false,
               "members": [
-                "generate"
+                "context",
+                "reflect",
+                "cast",
+                "state",
+                "episodes",
+                "express",
+                "cast-request",
+                "cast-presence-0",
+                "express-material",
+                "memory-direction"
               ]
             },
-            "stage-6": {
-              "id": "stage-6",
-              "title": "Review / accepted staging",
-              "description": "Stage 6. Wires determine execution; folding is presentation only.",
-              "x": 2235,
-              "y": 190,
-              "w": 350,
+            "processing-settled": {
+              "id": "processing-settled",
+              "title": "Update saved story data",
+              "description": "These connected boxes work together. Follow their wires to see how each result is used.",
+              "x": 75,
+              "y": 2542,
+              "w": 1070,
               "h": 285,
               "color": "#57416e",
               "collapsed": false,
               "members": [
-                "review"
+                "settled",
+                "internalize",
+                "commit"
               ]
             }
           },
@@ -7175,49 +6226,56 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
     "id": "lesson-19",
     "number": 19,
     "title": "Turn narrated actions into confirmed events",
-    "goal": "Normalize exact native body evidence against closed canonical identities, then deliberately confirm each actual event.",
+    "goal": "Turn actions in a generated reply into carefully checked event records. You will distinguish something that happened from something merely planned, mentioned or denied, then append the confirmed records as public notes.",
     "lesson": {
       "difficulty": "Advanced",
-      "focus": "Draft Event Source, Event Normalize, Decision, Confirm Events",
       "learn": [
-        "Draft Event Source, Event Normalize, Decision, Confirm Events",
-        "Trace named artifacts to the owned Draft or accepted proposal."
+        "Draft Event Source supplies the unchanged reply and the exact position of each quoted action.",
+        "Event Normalize checks suggested events against that source and the allowed actor IDs. A candidate is a suggestion, not a confirmed occurrence.",
+        "Decision checks each candidate; Confirm Events keeps accepted occurrences and stops on an unresolved answer."
       ],
       "requirements": [
-        "Open this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.",
-        "Replace canonical Rowan/Iris avatar IDs with actors actually loaded in this disposable story."
+        "Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.",
+        "Use a disposable story with loaded Rowan and Iris actors. Replace character:rowan.png and character:iris.png consistently with their actual avatar IDs.",
+        "Arrange a simple scene that can produce an observable action by either listed actor. This lesson reads the newly generated reply, rather than treating your request as the event itself."
       ],
       "steps": [
-        "Open Turn narrated actions into confirmed events and inspect the named pins.",
-        "Native Draft Event Source owns the unchanged body, source revision and exact evidence spans.",
-        "The extraction model yields candidates; confirmation alone can mark an actual event confirmed.",
-        "A negated, proposed or uncertain action is excluded or holds; notes never establish canon.",
-        "Send in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals."
+        "Recall lesson 8: a literal mention proved only that a word appeared. This lesson adds the Decision check from lesson 10 to determine whether an action actually occurred.",
+        "Send: “Continue the scene as Rowan opens the lighthouse door.” Check that the resulting reply actually describes Rowan opening it before expecting an event record.",
+        "Inspect Draft Event Source.out, then Event Normalize.out. Compare each candidate’s evidence text and position with the unchanged reply; actorId should match a loaded actor.",
+        "Select For Each and read its limit and Helper model bindings in Details. Its helper checks at most three candidates separately, then Collection flattens the confirmed results. Compare the candidate evidence with the confirmed collection.",
+        "Read the appended event notes alongside the narration. The notes report confirmed evidence; adding a note does not create an additional story action.",
+        "Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes."
       ],
       "checkpoints": [
         {
           "node": "Collection",
           "port": "out",
-          "expect": "Only exact, actual, accepted occurrences reach public event notes."
+          "expect": "The final Collection.out contains only confirmed occurrences whose exact quoted actions appear in the native reply. Public notes show those records."
         }
       ],
       "experiments": [
         {
-          "change": "Set a confirmation answer unresolved.",
-          "expect": "The bounded collection holds rather than partially accepting uncertain occurrences."
+          "change": "Use a scene where the reply says “Rowan plans to open the door” or “Rowan did not open the door.”",
+          "expect": "The planned or negated action is excluded or rejected. Compare that result with the completed-action test."
         }
       ],
       "cases": [
         {
-          "when": "A candidate is hypothetical or negated",
-          "expect": "Deliberate confirmation excludes it or holds; it never becomes a confirmed event."
+          "when": "Decision cannot tell whether a candidate happened.",
+          "expect": "A null answer stops confirmation for the collection; uncertain events are not partly accepted."
         },
         {
-          "when": "Rejected or stopped",
-          "expect": "The existing story and staged effects are retained without settlement."
+          "when": "The reply contains no eligible completed action.",
+          "expect": "No confirmed action is added. The lesson does not invent one to fill the notes."
+        },
+        {
+          "when": "More than three candidates reach For Each.",
+          "expect": "The limit stops the run rather than silently checking only part of the evidence."
         }
       ],
-      "callBudget": "At most 4 auxiliary requests: 1 candidate extraction + up to 3 Decision confirmations; one ordinary native generation."
+      "callBudget": "Up to four extra model requests: one extraction and one Decision for each of at most three candidates. There is also one ordinary SillyTavern reply.",
+      "focus": "Draft Event Source, Event Normalize, Decision, Confirm Events"
     },
     "packages": [
       {
@@ -7227,7 +6285,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
         "graph": {
           "id": "remastered-lesson-19",
           "name": "19. Turn narrated actions into confirmed events",
-          "description": "Normalize exact native body evidence against closed canonical identities, then deliberately confirm each actual event.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nReplace canonical Rowan/Iris avatar IDs with actors actually loaded in this disposable story.\n\nOpen Turn narrated actions into confirmed events and inspect the named pins.\nNative Draft Event Source owns the unchanged body, source revision and exact evidence spans.\nThe extraction model yields candidates; confirmation alone can mark an actual event confirmed.\nA negated, proposed or uncertain action is excluded or holds; notes never establish canon.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: At most 4 auxiliary requests: 1 candidate extraction + up to 3 Decision confirmations; one ordinary native generation.\nCheckpoints:\nCollection.out: Only exact, actual, accepted occurrences reach public event notes.",
+          "description": "Turn actions in a generated reply into carefully checked event records. You will distinguish something that happened from something merely planned, mentioned or denied, then append the confirmed records as public notes.\n\nWhat you'll learn:\n• Draft Event Source supplies the unchanged reply and the exact position of each quoted action.\n• Event Normalize checks suggested events against that source and the allowed actor IDs. A candidate is a suggestion, not a confirmed occurrence.\n• Decision checks each candidate; Confirm Events keeps accepted occurrences and stops on an unresolved answer.\n\nBefore you start:\n• Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.\n• Use a disposable story with loaded Rowan and Iris actors. Replace character:rowan.png and character:iris.png consistently with their actual avatar IDs.\n• Arrange a simple scene that can produce an observable action by either listed actor. This lesson reads the newly generated reply, rather than treating your request as the event itself.\n\nSteps:\n1. Recall lesson 8: a literal mention proved only that a word appeared. This lesson adds the Decision check from lesson 10 to determine whether an action actually occurred.\n2. Send: “Continue the scene as Rowan opens the lighthouse door.” Check that the resulting reply actually describes Rowan opening it before expecting an event record.\n3. Inspect Draft Event Source.out, then Event Normalize.out. Compare each candidate’s evidence text and position with the unchanged reply; actorId should match a loaded actor.\n4. Select For Each and read its limit and Helper model bindings in Details. Its helper checks at most three candidates separately, then Collection flattens the confirmed results. Compare the candidate evidence with the confirmed collection.\n5. Read the appended event notes alongside the narration. The notes report confirmed evidence; adding a note does not create an additional story action.\n6. Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes.\n\nCheckpoints:\nCollection → out: The final Collection.out contains only confirmed occurrences whose exact quoted actions appear in the native reply. Public notes show those records.\n\nTry this:\nUse a scene where the reply says “Rowan plans to open the door” or “Rowan did not open the door.”\nThe planned or negated action is excluded or rejected. Compare that result with the completed-action test.\n\nIf something is different:\nDecision cannot tell whether a candidate happened.: A null answer stops confirmation for the collection; uncertain events are not partly accepted.\nThe reply contains no eligible completed action.: No confirmed action is added. The lesson does not invent one to fill the notes.\nMore than three candidates reach For Each.: The limit stops the run rather than silently checking only part of the evidence.\n\nModel requests: Up to four extra model requests: one extraction and one Decision for each of at most three candidates. There is also one ordinary SillyTavern reply.",
           "schema": 3,
           "runtime": 2,
           "mode": "native-unified",
@@ -7240,10 +6298,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "On Send",
               "enabled": true,
               "x": 100,
-              "y": 240,
+              "y": 1034,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -7257,10 +6314,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Generate Reply · SillyTavern",
               "enabled": true,
               "x": 460,
-              "y": 240,
+              "y": 1034,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-1",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -7275,10 +6331,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Review / Publish",
               "enabled": true,
               "x": 3700,
-              "y": 240,
+              "y": 1034,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-10",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -7292,10 +6347,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Select Fields",
               "enabled": true,
               "x": 820,
-              "y": 240,
+              "y": 1374,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-2",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -7339,10 +6394,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Draft Event Source",
               "enabled": true,
               "x": 1180,
-              "y": 240,
+              "y": 1374,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-3",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -7356,10 +6411,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Text",
               "enabled": true,
               "x": 100,
-              "y": 560,
+              "y": 1664,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -7375,10 +6430,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "JSON Decode",
               "enabled": true,
               "x": 460,
-              "y": 560,
+              "y": 1374,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-1",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -7395,10 +6450,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Text",
               "enabled": true,
               "x": 100,
-              "y": 880,
+              "y": 1374,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -7414,10 +6469,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Model Call",
               "enabled": true,
               "x": 1540,
-              "y": 240,
+              "y": 1374,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-4",
+              "inGroup": "processing-draft-scope",
               "profileId": "lattice:active-sillytavern",
               "model": null,
               "modelRole": "Prose",
@@ -7436,10 +6491,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Event Normalize",
               "enabled": true,
               "x": 1900,
-              "y": 240,
+              "y": 1374,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-5",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -7457,10 +6512,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "For Each",
               "enabled": true,
               "x": 2260,
-              "y": 240,
+              "y": 1374,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-6",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -7488,10 +6543,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Collection",
               "enabled": true,
               "x": 2620,
-              "y": 240,
+              "y": 1374,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-7",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -7517,10 +6572,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Compose",
               "enabled": true,
               "x": 2980,
-              "y": 240,
+              "y": 1374,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-8",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -7540,10 +6595,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Append",
               "enabled": true,
               "x": 3340,
-              "y": 240,
+              "y": 1374,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-9",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -7559,8 +6614,8 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "x": 100,
               "y": 0,
               "w": 900,
-              "h": 180,
-              "content": "Normalize exact native body evidence against closed canonical identities, then deliberately confirm each actual event.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nReplace canonical Rowan/Iris avatar IDs with actors actually loaded in this disposable story.\n\nOpen Turn narrated actions into confirmed events and inspect the named pins.\nNative Draft Event Source owns the unchanged body, source revision and exact evidence spans.\nThe extraction model yields candidates; confirmation alone can mark an actual event confirmed.\nA negated, proposed or uncertain action is excluded or holds; notes never establish canon.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: At most 4 auxiliary requests: 1 candidate extraction + up to 3 Decision confirmations; one ordinary native generation.\nCheckpoints:\nCollection.out: Only exact, actual, accepted occurrences reach public event notes.",
+              "h": 954,
+              "content": "Turn actions in a generated reply into carefully checked event records. You will distinguish something that happened from something merely planned, mentioned or denied, then append the confirmed records as public notes.\n\nWhat you'll learn:\n• Draft Event Source supplies the unchanged reply and the exact position of each quoted action.\n• Event Normalize checks suggested events against that source and the allowed actor IDs. A candidate is a suggestion, not a confirmed occurrence.\n• Decision checks each candidate; Confirm Events keeps accepted occurrences and stops on an unresolved answer.\n\nBefore you start:\n• Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.\n• Use a disposable story with loaded Rowan and Iris actors. Replace character:rowan.png and character:iris.png consistently with their actual avatar IDs.\n• Arrange a simple scene that can produce an observable action by either listed actor. This lesson reads the newly generated reply, rather than treating your request as the event itself.\n\nSteps:\n1. Recall lesson 8: a literal mention proved only that a word appeared. This lesson adds the Decision check from lesson 10 to determine whether an action actually occurred.\n2. Send: “Continue the scene as Rowan opens the lighthouse door.” Check that the resulting reply actually describes Rowan opening it before expecting an event record.\n3. Inspect Draft Event Source.out, then Event Normalize.out. Compare each candidate’s evidence text and position with the unchanged reply; actorId should match a loaded actor.\n4. Select For Each and read its limit and Helper model bindings in Details. Its helper checks at most three candidates separately, then Collection flattens the confirmed results. Compare the candidate evidence with the confirmed collection.\n5. Read the appended event notes alongside the narration. The notes report confirmed evidence; adding a note does not create an additional story action.\n6. Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes.\n\nCheckpoints:\nCollection → out: The final Collection.out contains only confirmed occurrences whose exact quoted actions appear in the native reply. Public notes show those records.\n\nTry this:\nUse a scene where the reply says “Rowan plans to open the door” or “Rowan did not open the door.”\nThe planned or negated action is excluded or rejected. Compare that result with the completed-action test.\n\nIf something is different:\nDecision cannot tell whether a candidate happened.: A null answer stops confirmation for the collection; uncertain events are not partly accepted.\nThe reply contains no eligible completed action.: No confirmed action is added. The lesson does not invent one to fill the notes.\nMore than three candidates reach For Each.: The limit stops the run rather than silently checking only part of the evidence.\n\nModel requests: Up to four extra model requests: one extraction and one Decision for each of at most three candidates. There is also one ordinary SillyTavern reply.",
               "commentFrame": true,
               "moveContents": false
             }
@@ -7696,161 +6751,28 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
             }
           },
           "groups": {
-            "stage-0": {
-              "id": "stage-0",
-              "title": "Preparation / processing",
-              "description": "Stage 0. Wires determine execution; folding is presentation only.",
+            "processing-draft-scope": {
+              "id": "processing-draft-scope",
+              "title": "Check story event evidence",
+              "description": "These connected boxes work together. Follow their wires to see how each result is used.",
               "x": 75,
-              "y": 190,
-              "w": 350,
-              "h": 925,
+              "y": 1324,
+              "w": 3590,
+              "h": 575,
               "color": "#57416e",
               "collapsed": false,
               "members": [
-                "send",
+                "draft-scope",
+                "native-source",
+                "candidates",
+                "events",
+                "candidate-request",
+                "entities",
+                "confirm-each",
                 "entities-text",
-                "candidate-request"
-              ]
-            },
-            "stage-1": {
-              "id": "stage-1",
-              "title": "Native generation",
-              "description": "Stage 1. Wires determine execution; folding is presentation only.",
-              "x": 435,
-              "y": 190,
-              "w": 350,
-              "h": 605,
-              "color": "#284e67",
-              "collapsed": false,
-              "members": [
-                "generate",
-                "entities"
-              ]
-            },
-            "stage-2": {
-              "id": "stage-2",
-              "title": "Response processing",
-              "description": "Stage 2. Wires determine execution; folding is presentation only.",
-              "x": 795,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "draft-scope"
-              ]
-            },
-            "stage-3": {
-              "id": "stage-3",
-              "title": "Preparation / processing",
-              "description": "Stage 3. Wires determine execution; folding is presentation only.",
-              "x": 1155,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "native-source"
-              ]
-            },
-            "stage-4": {
-              "id": "stage-4",
-              "title": "Response processing",
-              "description": "Stage 4. Wires determine execution; folding is presentation only.",
-              "x": 1515,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "candidates"
-              ]
-            },
-            "stage-5": {
-              "id": "stage-5",
-              "title": "Response processing",
-              "description": "Stage 5. Wires determine execution; folding is presentation only.",
-              "x": 1875,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "events"
-              ]
-            },
-            "stage-6": {
-              "id": "stage-6",
-              "title": "Response processing",
-              "description": "Stage 6. Wires determine execution; folding is presentation only.",
-              "x": 2235,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "confirm-each"
-              ]
-            },
-            "stage-7": {
-              "id": "stage-7",
-              "title": "Response processing",
-              "description": "Stage 7. Wires determine execution; folding is presentation only.",
-              "x": 2595,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "confirmed"
-              ]
-            },
-            "stage-8": {
-              "id": "stage-8",
-              "title": "Response processing",
-              "description": "Stage 8. Wires determine execution; folding is presentation only.",
-              "x": 2955,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "notes"
-              ]
-            },
-            "stage-9": {
-              "id": "stage-9",
-              "title": "Preparation / processing",
-              "description": "Stage 9. Wires determine execution; folding is presentation only.",
-              "x": 3315,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
+                "confirmed",
+                "notes",
                 "append"
-              ]
-            },
-            "stage-10": {
-              "id": "stage-10",
-              "title": "Review / accepted staging",
-              "description": "Stage 10. Wires determine execution; folding is presentation only.",
-              "x": 3675,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "review"
               ]
             }
           },
@@ -7973,7 +6895,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
                     "title": "Format",
                     "enabled": true,
                     "x": 460,
-                    "y": 560,
+                    "y": 530,
                     "w": 300,
                     "h": 210,
                     "profileId": null,
@@ -8086,48 +7008,57 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
     "id": "lesson-20",
     "number": 20,
     "title": "React when an item is actually used",
-    "goal": "Confirm ordered player item uses and transfers, resolve the actual holder, and guide consequences before generation.",
+    "goal": "Make the next reply react to an item that was actually used. You will check actions in the player message, follow transfers in their written order and attach the consequence to the holder at the moment of use.",
     "lesson": {
       "difficulty": "Advanced",
-      "focus": "Player Event Source, Item Use Trigger, Current Holder",
       "learn": [
-        "Player Event Source, Item Use Trigger, Current Holder",
-        "Trace named artifacts to the owned Draft or accepted proposal."
+        "Player Event Source reads the new player message before generation; lesson 19 instead inspected the generated reply.",
+        "Item Use Trigger suggests uses and transfers. Decision confirms completed actions, and Current Holder applies confirmed transfers in order.",
+        "A mention can identify an item without proving use or ownership. Only confirmed item-used events reach the consequence guidance."
       ],
       "requirements": [
-        "Open this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.",
-        "accepted-item-holders contains {\"signal-lantern\":\"character:rowan.png\"} only when this is established accepted ownership. Replace avatar IDs for this story."
+        "Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.",
+        "In Workflow › Configure › Workflow Data, set Logical target ID to accepted-item-holders, Format to JSON and Visibility to Public. Paste fixtures/accepted-item-holders.json into Initial template and choose Save authorization. Its signal-lantern entry must name the accepted holder.",
+        "Load Rowan and Iris, then replace both example avatar IDs throughout the graph and holder file with their actual IDs. Keep the item ID signal-lantern.",
+        "For each new Workflow Data document, also fill in Document name; using the Logical target ID as its name is fine. When a lesson names a fixture, paste the file’s contents into Initial template, then choose Save authorization."
       ],
       "steps": [
-        "Open React when an item is actually used and inspect the named pins.",
-        "Trace the new real player message through extraction and bounded confirmation.",
-        "Current Holder applies intervening confirmed transfers in order; mention alone does not establish use.",
-        "Send in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals."
+        "Start with the confirmation process from lesson 19, now placed before the reply. Send: “Rowan uses the signal lantern to flash a signal toward the harbor.”",
+        "Compare the player source with Item Use Trigger’s candidates and the confirmed collection. Check that the use is an actual action with an exact quote, rather than an intention.",
+        "Inspect Current Holder.events. The use should carry Rowan’s holderId from the accepted holder map.",
+        "Follow the item-used filter into Compose and Generate Reply.guidance. The reply should respond to the supplied use without inventing a second use or choosing what the player does next.",
+        "Test a transfer with: “Rowan hands the signal lantern to Iris. Iris uses it to flash a signal.” Check that Iris receives the use consequence. This recipe reads ownership and resolves this message; it does not save a changed holder map.",
+        "Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes."
       ],
       "checkpoints": [
         {
           "node": "Current Holder",
           "port": "events",
-          "expect": "Confirmed uses receive actual holder IDs after ordered transfers."
+          "expect": "Current Holder.events attaches the holder at each confirmed use, including transfers that came earlier in the player message."
         }
       ],
       "experiments": [
         {
-          "change": "Include an actual transfer followed by use.",
-          "expect": "Current Holder follows source order and applies the use to the correct holder."
+          "change": "Compare “Rowan uses the signal lantern. Rowan hands it to Iris.” with the transfer-then-use message.",
+          "expect": "The earlier use belongs to Rowan. Reversing the action order changes who holds the item when it is used."
         }
       ],
       "cases": [
         {
-          "when": "The player only mentions the item",
-          "expect": "No actual-use consequence is generated."
+          "when": "The message says only “Rowan talks about the signal lantern.”",
+          "expect": "No item-use consequence is supplied."
         },
         {
-          "when": "Rejected or stopped",
-          "expect": "The existing story and staged effects are retained without settlement."
+          "when": "A proposed transfer is not confirmed.",
+          "expect": "It cannot establish a new holder. Inspect rejected or unresolved evidence before trusting the resulting use."
+        },
+        {
+          "when": "The accepted holder data is missing or invalid.",
+          "expect": "Resolve that setup error instead of assuming the person mentioning the item owns it."
         }
       ],
-      "callBudget": "At most 4 auxiliary requests: 1 Item Use Trigger extraction + up to 3 Decision confirmations; one ordinary native generation."
+      "callBudget": "Up to four extra model requests: one Item Use Trigger extraction and up to three Decision checks. There is also one ordinary SillyTavern reply.",
+      "focus": "Player Event Source, Item Use Trigger, Current Holder"
     },
     "packages": [
       {
@@ -8137,7 +7068,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
         "graph": {
           "id": "remastered-lesson-20",
           "name": "20. React when an item is actually used",
-          "description": "Confirm ordered player item uses and transfers, resolve the actual holder, and guide consequences before generation.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\naccepted-item-holders contains {\"signal-lantern\":\"character:rowan.png\"} only when this is established accepted ownership. Replace avatar IDs for this story.\n\nOpen React when an item is actually used and inspect the named pins.\nTrace the new real player message through extraction and bounded confirmation.\nCurrent Holder applies intervening confirmed transfers in order; mention alone does not establish use.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: At most 4 auxiliary requests: 1 Item Use Trigger extraction + up to 3 Decision confirmations; one ordinary native generation.\nCheckpoints:\nCurrent Holder.events: Confirmed uses receive actual holder IDs after ordered transfers.",
+          "description": "Make the next reply react to an item that was actually used. You will check actions in the player message, follow transfers in their written order and attach the consequence to the holder at the moment of use.\n\nWhat you'll learn:\n• Player Event Source reads the new player message before generation; lesson 19 instead inspected the generated reply.\n• Item Use Trigger suggests uses and transfers. Decision confirms completed actions, and Current Holder applies confirmed transfers in order.\n• A mention can identify an item without proving use or ownership. Only confirmed item-used events reach the consequence guidance.\n\nBefore you start:\n• Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.\n• In Workflow › Configure › Workflow Data, set Logical target ID to accepted-item-holders, Format to JSON and Visibility to Public. Paste fixtures/accepted-item-holders.json into Initial template and choose Save authorization. Its signal-lantern entry must name the accepted holder.\n• Load Rowan and Iris, then replace both example avatar IDs throughout the graph and holder file with their actual IDs. Keep the item ID signal-lantern.\n• For each new Workflow Data document, also fill in Document name; using the Logical target ID as its name is fine. When a lesson names a fixture, paste the file’s contents into Initial template, then choose Save authorization.\n\nSteps:\n1. Start with the confirmation process from lesson 19, now placed before the reply. Send: “Rowan uses the signal lantern to flash a signal toward the harbor.”\n2. Compare the player source with Item Use Trigger’s candidates and the confirmed collection. Check that the use is an actual action with an exact quote, rather than an intention.\n3. Inspect Current Holder.events. The use should carry Rowan’s holderId from the accepted holder map.\n4. Follow the item-used filter into Compose and Generate Reply.guidance. The reply should respond to the supplied use without inventing a second use or choosing what the player does next.\n5. Test a transfer with: “Rowan hands the signal lantern to Iris. Iris uses it to flash a signal.” Check that Iris receives the use consequence. This recipe reads ownership and resolves this message; it does not save a changed holder map.\n6. Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes.\n\nCheckpoints:\nCurrent Holder → events: Current Holder.events attaches the holder at each confirmed use, including transfers that came earlier in the player message.\n\nTry this:\nCompare “Rowan uses the signal lantern. Rowan hands it to Iris.” with the transfer-then-use message.\nThe earlier use belongs to Rowan. Reversing the action order changes who holds the item when it is used.\n\nIf something is different:\nThe message says only “Rowan talks about the signal lantern.”: No item-use consequence is supplied.\nA proposed transfer is not confirmed.: It cannot establish a new holder. Inspect rejected or unresolved evidence before trusting the resulting use.\nThe accepted holder data is missing or invalid.: Resolve that setup error instead of assuming the person mentioning the item owns it.\n\nModel requests: Up to four extra model requests: one Item Use Trigger extraction and up to three Decision checks. There is also one ordinary SillyTavern reply.",
           "schema": 3,
           "runtime": 2,
           "mode": "native-unified",
@@ -8150,10 +7081,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "On Send",
               "enabled": true,
               "x": 100,
-              "y": 240,
+              "y": 1087,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -8167,10 +7097,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Generate Reply · SillyTavern",
               "enabled": true,
               "x": 2980,
-              "y": 240,
+              "y": 1087,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-8",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -8185,10 +7114,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Review / Publish",
               "enabled": true,
               "x": 3340,
-              "y": 240,
+              "y": 1087,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-9",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -8202,10 +7130,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Player Event Source",
               "enabled": true,
               "x": 100,
-              "y": 560,
+              "y": 1427,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-player",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -8219,10 +7147,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Text",
               "enabled": true,
               "x": 100,
-              "y": 880,
+              "y": 1717,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-player",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -8238,10 +7166,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "JSON Decode",
               "enabled": true,
               "x": 460,
-              "y": 240,
+              "y": 1427,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-1",
+              "inGroup": "processing-player",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -8258,10 +7186,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Item Use Trigger",
               "enabled": true,
               "x": 820,
-              "y": 240,
+              "y": 1427,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-2",
+              "inGroup": "processing-player",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -8281,10 +7209,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "For Each",
               "enabled": true,
               "x": 1180,
-              "y": 240,
+              "y": 1427,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-3",
+              "inGroup": "processing-player",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -8312,10 +7240,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Collection",
               "enabled": true,
               "x": 1540,
-              "y": 240,
+              "y": 1427,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-4",
+              "inGroup": "processing-player",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -8341,10 +7269,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Read File",
               "enabled": true,
               "x": 100,
-              "y": 1200,
+              "y": 2007,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-player",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -8363,10 +7291,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "JSON Decode",
               "enabled": true,
               "x": 460,
-              "y": 560,
+              "y": 1717,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-1",
+              "inGroup": "processing-player",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -8383,10 +7311,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Current Holder",
               "enabled": true,
               "x": 1900,
-              "y": 240,
+              "y": 1427,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-5",
+              "inGroup": "processing-player",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -8400,10 +7328,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Collection",
               "enabled": true,
               "x": 2260,
-              "y": 240,
+              "y": 1427,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-6",
+              "inGroup": "processing-player",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -8430,10 +7358,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Compose",
               "enabled": true,
               "x": 2620,
-              "y": 240,
+              "y": 1427,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-7",
+              "inGroup": "processing-player",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -8452,8 +7380,8 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "x": 100,
               "y": 0,
               "w": 900,
-              "h": 180,
-              "content": "Confirm ordered player item uses and transfers, resolve the actual holder, and guide consequences before generation.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\naccepted-item-holders contains {\"signal-lantern\":\"character:rowan.png\"} only when this is established accepted ownership. Replace avatar IDs for this story.\n\nOpen React when an item is actually used and inspect the named pins.\nTrace the new real player message through extraction and bounded confirmation.\nCurrent Holder applies intervening confirmed transfers in order; mention alone does not establish use.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: At most 4 auxiliary requests: 1 Item Use Trigger extraction + up to 3 Decision confirmations; one ordinary native generation.\nCheckpoints:\nCurrent Holder.events: Confirmed uses receive actual holder IDs after ordered transfers.",
+              "h": 1007,
+              "content": "Make the next reply react to an item that was actually used. You will check actions in the player message, follow transfers in their written order and attach the consequence to the holder at the moment of use.\n\nWhat you'll learn:\n• Player Event Source reads the new player message before generation; lesson 19 instead inspected the generated reply.\n• Item Use Trigger suggests uses and transfers. Decision confirms completed actions, and Current Holder applies confirmed transfers in order.\n• A mention can identify an item without proving use or ownership. Only confirmed item-used events reach the consequence guidance.\n\nBefore you start:\n• Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.\n• In Workflow › Configure › Workflow Data, set Logical target ID to accepted-item-holders, Format to JSON and Visibility to Public. Paste fixtures/accepted-item-holders.json into Initial template and choose Save authorization. Its signal-lantern entry must name the accepted holder.\n• Load Rowan and Iris, then replace both example avatar IDs throughout the graph and holder file with their actual IDs. Keep the item ID signal-lantern.\n• For each new Workflow Data document, also fill in Document name; using the Logical target ID as its name is fine. When a lesson names a fixture, paste the file’s contents into Initial template, then choose Save authorization.\n\nSteps:\n1. Start with the confirmation process from lesson 19, now placed before the reply. Send: “Rowan uses the signal lantern to flash a signal toward the harbor.”\n2. Compare the player source with Item Use Trigger’s candidates and the confirmed collection. Check that the use is an actual action with an exact quote, rather than an intention.\n3. Inspect Current Holder.events. The use should carry Rowan’s holderId from the accepted holder map.\n4. Follow the item-used filter into Compose and Generate Reply.guidance. The reply should respond to the supplied use without inventing a second use or choosing what the player does next.\n5. Test a transfer with: “Rowan hands the signal lantern to Iris. Iris uses it to flash a signal.” Check that Iris receives the use consequence. This recipe reads ownership and resolves this message; it does not save a changed holder map.\n6. Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes.\n\nCheckpoints:\nCurrent Holder → events: Current Holder.events attaches the holder at each confirmed use, including transfers that came earlier in the player message.\n\nTry this:\nCompare “Rowan uses the signal lantern. Rowan hands it to Iris.” with the transfer-then-use message.\nThe earlier use belongs to Rowan. Reversing the action order changes who holds the item when it is used.\n\nIf something is different:\nThe message says only “Rowan talks about the signal lantern.”: No item-use consequence is supplied.\nA proposed transfer is not confirmed.: It cannot establish a new holder. Inspect rejected or unresolved evidence before trusting the resulting use.\nThe accepted holder data is missing or invalid.: Resolve that setup error instead of assuming the person mentioning the item owns it.\n\nModel requests: Up to four extra model requests: one Item Use Trigger extraction and up to three Decision checks. There is also one ordinary SillyTavern reply.",
               "commentFrame": true,
               "moveContents": false
             }
@@ -8565,148 +7493,28 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
             }
           },
           "groups": {
-            "stage-0": {
-              "id": "stage-0",
-              "title": "Preparation / processing",
-              "description": "Stage 0. Wires determine execution; folding is presentation only.",
+            "processing-player": {
+              "id": "processing-player",
+              "title": "Check story event evidence",
+              "description": "These connected boxes work together. Follow their wires to see how each result is used.",
               "x": 75,
-              "y": 190,
-              "w": 350,
-              "h": 1245,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "send",
-                "player",
-                "entities-text",
-                "holders-file"
-              ]
-            },
-            "stage-1": {
-              "id": "stage-1",
-              "title": "Preparation / processing",
-              "description": "Stage 1. Wires determine execution; folding is presentation only.",
-              "x": 435,
-              "y": 190,
-              "w": 350,
-              "h": 605,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "entities",
-                "holders"
-              ]
-            },
-            "stage-2": {
-              "id": "stage-2",
-              "title": "Preparation / processing",
-              "description": "Stage 2. Wires determine execution; folding is presentation only.",
-              "x": 795,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "events"
-              ]
-            },
-            "stage-3": {
-              "id": "stage-3",
-              "title": "Preparation / processing",
-              "description": "Stage 3. Wires determine execution; folding is presentation only.",
-              "x": 1155,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "confirm-each"
-              ]
-            },
-            "stage-4": {
-              "id": "stage-4",
-              "title": "Preparation / processing",
-              "description": "Stage 4. Wires determine execution; folding is presentation only.",
-              "x": 1515,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "confirmed"
-              ]
-            },
-            "stage-5": {
-              "id": "stage-5",
-              "title": "Preparation / processing",
-              "description": "Stage 5. Wires determine execution; folding is presentation only.",
-              "x": 1875,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "holder"
-              ]
-            },
-            "stage-6": {
-              "id": "stage-6",
-              "title": "Preparation / processing",
-              "description": "Stage 6. Wires determine execution; folding is presentation only.",
-              "x": 2235,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "actual-uses"
-              ]
-            },
-            "stage-7": {
-              "id": "stage-7",
-              "title": "Preparation / processing",
-              "description": "Stage 7. Wires determine execution; folding is presentation only.",
-              "x": 2595,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "guidance"
-              ]
-            },
-            "stage-8": {
-              "id": "stage-8",
-              "title": "Native generation",
-              "description": "Stage 8. Wires determine execution; folding is presentation only.",
-              "x": 2955,
-              "y": 190,
-              "w": 350,
-              "h": 285,
+              "y": 1377,
+              "w": 2870,
+              "h": 865,
               "color": "#284e67",
               "collapsed": false,
               "members": [
-                "generate"
-              ]
-            },
-            "stage-9": {
-              "id": "stage-9",
-              "title": "Review / accepted staging",
-              "description": "Stage 9. Wires determine execution; folding is presentation only.",
-              "x": 3315,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "review"
+                "player",
+                "events",
+                "entities",
+                "confirm-each",
+                "entities-text",
+                "confirmed",
+                "holder",
+                "holders",
+                "actual-uses",
+                "holders-file",
+                "guidance"
               ]
             }
           },
@@ -8824,7 +7632,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
                     "title": "Format",
                     "enabled": true,
                     "x": 460,
-                    "y": 560,
+                    "y": 530,
                     "w": 300,
                     "h": 210,
                     "profileId": null,
@@ -8937,49 +7745,56 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
     "id": "lesson-21",
     "number": 21,
     "title": "Give one present character their own direction",
-    "goal": "Verify current participation and give the selected native actor a literal private portrayal system prompt.",
+    "goal": "Give one participating character a private portrayal instruction. You will verify that Rowan is actually in the scene, then see how a separate Character Direction prompt influences Rowan’s next reply.",
     "lesson": {
       "difficulty": "Advanced",
-      "focus": "Scene Presence and Character Direction",
       "learn": [
-        "Scene Presence and Character Direction",
-        "Trace named artifacts to the owned Draft or accepted proposal."
+        "Scene Presence checks current participation using scene evidence. A name in a memory or character card is not enough.",
+        "Character Direction.systemPrompt is the instruction you author for this actor; it is separate from the ordinary reply prompt.",
+        "The resulting private Guidance can shape Rowan’s portrayal while leaving player actions and other actors’ private feelings open."
       ],
       "requirements": [
-        "Open this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.",
-        "Select native Rowan and replace character:rowan.png with the actual loaded canonical avatar ID."
+        "Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.",
+        "Select the loaded Rowan actor. Replace character:rowan.png with Rowan’s actual avatar ID in the presence check and Character Direction.",
+        "Establish a recent scene where Rowan visibly participates, such as Rowan and Iris standing beside the lighthouse door. No workflow data file is needed."
       ],
       "steps": [
-        "Open Give one present character their own direction and inspect the named pins.",
-        "Inspect cast evidence; name mention or character-card text cannot establish presence.",
-        "Character Direction.systemPrompt is literal, separately authored text for this actor.",
-        "Absent skips the direction; unresolved holds. The private result may guide only the selected native actor.",
-        "Send in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals."
+        "Lesson 18 used memories to shape portrayal. Here, remove that mental overhead and study only participation plus one explicit character instruction.",
+        "Read Character Direction.systemPrompt. The default asks for patient attention to evidence and restrained humor. Identify those traits in a scene where Rowan can express them.",
+        "Send: “Iris points to fresh scratches on the lighthouse door and asks Rowan what they suggest.” Read Scene Context.out and the cast answer, then find the participation quote in Scene Presence.out.",
+        "Inspect Character Direction.out before comparing Rowan’s generated response with the instruction. Check both the participation status and the supplied direction, rather than judging only the prose.",
+        "Create a later scene that clearly places Rowan elsewhere while Iris examines the door. A mention such as “Iris remembers Rowan’s advice” should not make Rowan a participant.",
+        "Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes."
       ],
       "checkpoints": [
         {
           "node": "Character Direction",
           "port": "out",
-          "expect": "Only the genuinely present selected native actor contributes private Guidance."
+          "expect": "Character Direction.out contributes private Guidance only when the supplied scene evidence verifies Rowan’s current participation."
         }
       ],
       "experiments": [
         {
-          "change": "Change the literal systemPrompt for the selected actor.",
-          "expect": "Only that present actor receives the private portrayal direction."
+          "change": "Edit systemPrompt to ask Rowan for careful, concise observations and one dry joke. Repeat the same participating scene.",
+          "expect": "The supplied portrayal direction changes for Rowan. Compare the direction input as well as the prose; exact wording is still generated by the model."
         }
       ],
       "cases": [
         {
-          "when": "Actor is absent or unresolved",
-          "expect": "Absent skips the private call; unresolved holds it."
+          "when": "Scene Presence reports absent.",
+          "expect": "Character Direction skips its model request; the ordinary reply can continue."
         },
         {
-          "when": "Rejected or stopped",
-          "expect": "The existing story and staged effects are retained without settlement."
+          "when": "Scene Presence reports unresolved.",
+          "expect": "The private direction stops for clarification of the evidence. A name mention does not resolve participation."
+        },
+        {
+          "when": "The selected actor and configured actorId do not match.",
+          "expect": "Correct the identity setup before expecting private character access."
         }
       ],
-      "callBudget": "At most 2 auxiliary requests: 1 participation interpretation + 1 Character Direction only if present; one ordinary native generation."
+      "callBudget": "Up to two extra model requests: one participation check and one Character Direction request if Rowan is present. There is also one ordinary SillyTavern reply.",
+      "focus": "Scene Presence and Character Direction"
     },
     "packages": [
       {
@@ -8989,7 +7804,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
         "graph": {
           "id": "remastered-lesson-21",
           "name": "21. Give one present character their own direction",
-          "description": "Verify current participation and give the selected native actor a literal private portrayal system prompt.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nSelect native Rowan and replace character:rowan.png with the actual loaded canonical avatar ID.\n\nOpen Give one present character their own direction and inspect the named pins.\nInspect cast evidence; name mention or character-card text cannot establish presence.\nCharacter Direction.systemPrompt is literal, separately authored text for this actor.\nAbsent skips the direction; unresolved holds. The private result may guide only the selected native actor.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: At most 2 auxiliary requests: 1 participation interpretation + 1 Character Direction only if present; one ordinary native generation.\nCheckpoints:\nCharacter Direction.out: Only the genuinely present selected native actor contributes private Guidance.",
+          "description": "Give one participating character a private portrayal instruction. You will verify that Rowan is actually in the scene, then see how a separate Character Direction prompt influences Rowan’s next reply.\n\nWhat you'll learn:\n• Scene Presence checks current participation using scene evidence. A name in a memory or character card is not enough.\n• Character Direction.systemPrompt is the instruction you author for this actor; it is separate from the ordinary reply prompt.\n• The resulting private Guidance can shape Rowan’s portrayal while leaving player actions and other actors’ private feelings open.\n\nBefore you start:\n• Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.\n• Select the loaded Rowan actor. Replace character:rowan.png with Rowan’s actual avatar ID in the presence check and Character Direction.\n• Establish a recent scene where Rowan visibly participates, such as Rowan and Iris standing beside the lighthouse door. No workflow data file is needed.\n\nSteps:\n1. Lesson 18 used memories to shape portrayal. Here, remove that mental overhead and study only participation plus one explicit character instruction.\n2. Read Character Direction.systemPrompt. The default asks for patient attention to evidence and restrained humor. Identify those traits in a scene where Rowan can express them.\n3. Send: “Iris points to fresh scratches on the lighthouse door and asks Rowan what they suggest.” Read Scene Context.out and the cast answer, then find the participation quote in Scene Presence.out.\n4. Inspect Character Direction.out before comparing Rowan’s generated response with the instruction. Check both the participation status and the supplied direction, rather than judging only the prose.\n5. Create a later scene that clearly places Rowan elsewhere while Iris examines the door. A mention such as “Iris remembers Rowan’s advice” should not make Rowan a participant.\n6. Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes.\n\nCheckpoints:\nCharacter Direction → out: Character Direction.out contributes private Guidance only when the supplied scene evidence verifies Rowan’s current participation.\n\nTry this:\nEdit systemPrompt to ask Rowan for careful, concise observations and one dry joke. Repeat the same participating scene.\nThe supplied portrayal direction changes for Rowan. Compare the direction input as well as the prose; exact wording is still generated by the model.\n\nIf something is different:\nScene Presence reports absent.: Character Direction skips its model request; the ordinary reply can continue.\nScene Presence reports unresolved.: The private direction stops for clarification of the evidence. A name mention does not resolve participation.\nThe selected actor and configured actorId do not match.: Correct the identity setup before expecting private character access.\n\nModel requests: Up to two extra model requests: one participation check and one Character Direction request if Rowan is present. There is also one ordinary SillyTavern reply.",
           "schema": 3,
           "runtime": 2,
           "mode": "native-unified",
@@ -9002,10 +7817,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "On Send",
               "enabled": true,
               "x": 100,
-              "y": 240,
+              "y": 1069,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -9019,10 +7833,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Generate Reply · SillyTavern",
               "enabled": true,
               "x": 1540,
-              "y": 240,
+              "y": 1069,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-4",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -9037,10 +7850,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Review / Publish",
               "enabled": true,
               "x": 1900,
-              "y": 240,
+              "y": 1069,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-5",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -9053,10 +7865,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Scene Context",
               "enabled": true,
               "x": 100,
-              "y": 560,
+              "y": 1359,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -9073,10 +7884,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Text",
               "enabled": true,
               "x": 100,
-              "y": 880,
+              "y": 1649,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -9092,10 +7902,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Model Call",
               "enabled": true,
               "x": 460,
-              "y": 240,
+              "y": 1069,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-1",
               "profileId": "lattice:active-sillytavern",
               "model": null,
               "modelRole": "Prose",
@@ -9114,10 +7923,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Scene Presence",
               "enabled": true,
               "x": 820,
-              "y": 240,
+              "y": 1069,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-2",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -9133,10 +7941,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Character Direction",
               "enabled": true,
               "x": 1180,
-              "y": 240,
+              "y": 1069,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-3",
               "profileId": "lattice:active-sillytavern",
               "model": null,
               "modelRole": "characterDirection",
@@ -9153,8 +7960,8 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "x": 100,
               "y": 0,
               "w": 900,
-              "h": 180,
-              "content": "Verify current participation and give the selected native actor a literal private portrayal system prompt.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nSelect native Rowan and replace character:rowan.png with the actual loaded canonical avatar ID.\n\nOpen Give one present character their own direction and inspect the named pins.\nInspect cast evidence; name mention or character-card text cannot establish presence.\nCharacter Direction.systemPrompt is literal, separately authored text for this actor.\nAbsent skips the direction; unresolved holds. The private result may guide only the selected native actor.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: At most 2 auxiliary requests: 1 participation interpretation + 1 Character Direction only if present; one ordinary native generation.\nCheckpoints:\nCharacter Direction.out: Only the genuinely present selected native actor contributes private Guidance.",
+              "h": 989,
+              "content": "Give one participating character a private portrayal instruction. You will verify that Rowan is actually in the scene, then see how a separate Character Direction prompt influences Rowan’s next reply.\n\nWhat you'll learn:\n• Scene Presence checks current participation using scene evidence. A name in a memory or character card is not enough.\n• Character Direction.systemPrompt is the instruction you author for this actor; it is separate from the ordinary reply prompt.\n• The resulting private Guidance can shape Rowan’s portrayal while leaving player actions and other actors’ private feelings open.\n\nBefore you start:\n• Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.\n• Select the loaded Rowan actor. Replace character:rowan.png with Rowan’s actual avatar ID in the presence check and Character Direction.\n• Establish a recent scene where Rowan visibly participates, such as Rowan and Iris standing beside the lighthouse door. No workflow data file is needed.\n\nSteps:\n1. Lesson 18 used memories to shape portrayal. Here, remove that mental overhead and study only participation plus one explicit character instruction.\n2. Read Character Direction.systemPrompt. The default asks for patient attention to evidence and restrained humor. Identify those traits in a scene where Rowan can express them.\n3. Send: “Iris points to fresh scratches on the lighthouse door and asks Rowan what they suggest.” Read Scene Context.out and the cast answer, then find the participation quote in Scene Presence.out.\n4. Inspect Character Direction.out before comparing Rowan’s generated response with the instruction. Check both the participation status and the supplied direction, rather than judging only the prose.\n5. Create a later scene that clearly places Rowan elsewhere while Iris examines the door. A mention such as “Iris remembers Rowan’s advice” should not make Rowan a participant.\n6. Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes.\n\nCheckpoints:\nCharacter Direction → out: Character Direction.out contributes private Guidance only when the supplied scene evidence verifies Rowan’s current participation.\n\nTry this:\nEdit systemPrompt to ask Rowan for careful, concise observations and one dry joke. Repeat the same participating scene.\nThe supplied portrayal direction changes for Rowan. Compare the direction input as well as the prose; exact wording is still generated by the model.\n\nIf something is different:\nScene Presence reports absent.: Character Direction skips its model request; the ordinary reply can continue.\nScene Presence reports unresolved.: The private direction stops for clarification of the evidence. A name mention does not resolve participation.\nThe selected actor and configured actorId do not match.: Correct the identity setup before expecting private character access.\n\nModel requests: Up to two extra model requests: one participation check and one Character Direction request if Rowan is present. There is also one ordinary SillyTavern reply.",
               "commentFrame": true,
               "moveContents": false
             }
@@ -9217,94 +8024,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "toPort": "draft"
             }
           },
-          "groups": {
-            "stage-0": {
-              "id": "stage-0",
-              "title": "Preparation / processing",
-              "description": "Stage 0. Wires determine execution; folding is presentation only.",
-              "x": 75,
-              "y": 190,
-              "w": 350,
-              "h": 925,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "send",
-                "scene",
-                "cast-request"
-              ]
-            },
-            "stage-1": {
-              "id": "stage-1",
-              "title": "Preparation / processing",
-              "description": "Stage 1. Wires determine execution; folding is presentation only.",
-              "x": 435,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "cast"
-              ]
-            },
-            "stage-2": {
-              "id": "stage-2",
-              "title": "Preparation / processing",
-              "description": "Stage 2. Wires determine execution; folding is presentation only.",
-              "x": 795,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "cast-presence-0"
-              ]
-            },
-            "stage-3": {
-              "id": "stage-3",
-              "title": "Preparation / processing",
-              "description": "Stage 3. Wires determine execution; folding is presentation only.",
-              "x": 1155,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "direction"
-              ]
-            },
-            "stage-4": {
-              "id": "stage-4",
-              "title": "Native generation",
-              "description": "Stage 4. Wires determine execution; folding is presentation only.",
-              "x": 1515,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#284e67",
-              "collapsed": false,
-              "members": [
-                "generate"
-              ]
-            },
-            "stage-5": {
-              "id": "stage-5",
-              "title": "Review / accepted staging",
-              "description": "Stage 5. Wires determine execution; folding is presentation only.",
-              "x": 1875,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "review"
-              ]
-            }
-          },
+          "groups": {},
           "roles": {
             "Prose": {
               "model": null,
@@ -9334,51 +8054,56 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
     "id": "lesson-22",
     "number": 22,
     "title": "Let an item remind its actual holder",
-    "goal": "Match a real item mention, use explicit accepted ownership, and stage one private prompted memory for the actual holder.",
+    "goal": "Let a mentioned item remind its actual holder of an existing memory. You will connect item ownership and scene participation to a private recall, then stage a separate output record for Rowan.",
     "lesson": {
       "difficulty": "Advanced",
-      "focus": "Item Mention Trigger and Prompted Memory",
       "learn": [
-        "Item Mention Trigger and Prompted Memory",
-        "Trace named artifacts to the owned Draft or accepted proposal."
+        "Item Mention Trigger watches the newly generated reply after generation. A mention starts a reminder, not an item-use consequence.",
+        "Prompted Memory selects from authorized native actor episodes. Its default mode recall and allowCreate false prevent it from inventing a missing memory.",
+        "The output is a private remembered-event record for later use; this workflow does not feed that reminder back into the reply just generated."
       ],
       "requirements": [
-        "Open this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.",
-        "Select native Rowan and existing accepted native memory episodes associated with the signal lantern. Prompted Memory recall reads that host episode store; the output file cannot seed native memory authority.",
-        "Accepted item-holders must identify Rowan as holder; a mention by another actor grants no ownership. Create actor-private JSON Workflow Data rowan-item-memories as an initially empty output array."
+        "Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.",
+        "Select loaded Rowan and replace both example actor IDs consistently. Have an accepted native Rowan episode associated with the signal lantern, using the native memory work from lesson 18.",
+        "In Workflow › Configure › Workflow Data, authorize JSON targets accepted-item-holders and rowan-item-memories using their fixtures as Initial template. Choose Public for the holder map and Actor private with Rowan’s Actor ID for the empty reminder array; choose Save authorization. The map must establish Rowan’s ownership.",
+        "For each new Workflow Data document, also fill in Document name; using the Logical target ID as its name is fine. When a lesson names a fixture, paste the file’s contents into Initial template, then choose Save authorization."
       ],
       "steps": [
-        "Open Let an item remind its actual holder and inspect the named pins.",
-        "This reminder pipeline watches the exact just-generated owned native Draft, after generation. A real on-page signal-lantern mention triggers current post presence, native episode recall and private save staging. It stages a remembered event for later portrayal; it does not inject Guidance into this generation.",
-        "This root is scoped to Rowan: another holder yields no matching private proposal.",
-        "Default recall/allowCreate false requires an existing permitted memory. Opt-in exercise may explicitly permit a new pending invented memory.",
-        "Review the private receipt separately; private memory never enters public notes.",
-        "Send in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals."
+        "Combine the holder check from lesson 20 and the participation check from lesson 21. Send: “Rowan holds the signal lantern beside the lighthouse.” Confirm that the generated reply itself mentions signal lantern or lantern.",
+        "Follow the mention into Current Holder, then the Rowan filter. The mentioned item must belong to Rowan for this Rowan-only reminder path to continue.",
+        "Inspect the post-generation Scene Presence result and Prompted Memory output. The recalled memory should identify an existing permitted episode, with its text kept private.",
+        "Inspect Write to File.receipt. Apply should add one event-linked record to rowan-item-memories; Reject should leave the array unchanged. Check the file rather than expecting extra prose in the same reply.",
+        "Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes."
       ],
       "checkpoints": [
         {
           "node": "Write to File",
           "port": "receipt",
-          "expect": "Only Rowan’s private target receives a pending memory with canonical mention evidence."
+          "expect": "Write to File.receipt proposes a Rowan-private reminder record backed by the exact item mention. It is pending until Apply."
         }
       ],
       "experiments": [
         {
-          "change": "Explicitly opt in to recall-or-create and allowCreate.",
-          "expect": "A newly authored recollection remains a pending private proposal until Apply."
+          "change": "With explicit authoring permission, change Prompted Memory mode to recall-or-create and allowCreate to true in this disposable story.",
+          "expect": "If no existing memory fits, a newly invented recollection may be proposed and labelled accordingly. Saving the output record does not silently add a native episode."
         }
       ],
       "cases": [
         {
-          "when": "No matching mention or another actual holder",
-          "expect": "No Rowan private memory proposal is staged."
+          "when": "No matching mention, Rowan is absent, or another actor holds the item.",
+          "expect": "No Rowan reminder record is staged."
         },
         {
-          "when": "Rejected or stopped",
-          "expect": "The existing story and staged effects are retained without settlement."
+          "when": "No permitted episode exists in default recall mode.",
+          "expect": "The run stops instead of creating a memory. Changing mode alone does not grant creation permission."
+        },
+        {
+          "when": "The reply is rejected.",
+          "expect": "The private output file remains unchanged."
         }
       ],
-      "callBudget": "At most 2 auxiliary requests: cast interpretation and prompted memory when holder/presence match; one ordinary native generation."
+      "callBudget": "Up to two extra model requests: the post-generation participation check and Prompted Memory when its prerequisites match. There is also one ordinary SillyTavern reply.",
+      "focus": "Item Mention Trigger and Prompted Memory"
     },
     "packages": [
       {
@@ -9388,7 +8113,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
         "graph": {
           "id": "remastered-lesson-22",
           "name": "22. Let an item remind its actual holder",
-          "description": "Match a real item mention, use explicit accepted ownership, and stage one private prompted memory for the actual holder.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nSelect native Rowan and existing accepted native memory episodes associated with the signal lantern. Prompted Memory recall reads that host episode store; the output file cannot seed native memory authority.\nAccepted item-holders must identify Rowan as holder; a mention by another actor grants no ownership. Create actor-private JSON Workflow Data rowan-item-memories as an initially empty output array.\n\nOpen Let an item remind its actual holder and inspect the named pins.\nThis reminder pipeline watches the exact just-generated owned native Draft, after generation. A real on-page signal-lantern mention triggers current post presence, native episode recall and private save staging. It stages a remembered event for later portrayal; it does not inject Guidance into this generation.\nThis root is scoped to Rowan: another holder yields no matching private proposal.\nDefault recall/allowCreate false requires an existing permitted memory. Opt-in exercise may explicitly permit a new pending invented memory.\nReview the private receipt separately; private memory never enters public notes.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: At most 2 auxiliary requests: cast interpretation and prompted memory when holder/presence match; one ordinary native generation.\nCheckpoints:\nWrite to File.receipt: Only Rowan’s private target receives a pending memory with canonical mention evidence.",
+          "description": "Let a mentioned item remind its actual holder of an existing memory. You will connect item ownership and scene participation to a private recall, then stage a separate output record for Rowan.\n\nWhat you'll learn:\n• Item Mention Trigger watches the newly generated reply after generation. A mention starts a reminder, not an item-use consequence.\n• Prompted Memory selects from authorized native actor episodes. Its default mode recall and allowCreate false prevent it from inventing a missing memory.\n• The output is a private remembered-event record for later use; this workflow does not feed that reminder back into the reply just generated.\n\nBefore you start:\n• Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.\n• Select loaded Rowan and replace both example actor IDs consistently. Have an accepted native Rowan episode associated with the signal lantern, using the native memory work from lesson 18.\n• In Workflow › Configure › Workflow Data, authorize JSON targets accepted-item-holders and rowan-item-memories using their fixtures as Initial template. Choose Public for the holder map and Actor private with Rowan’s Actor ID for the empty reminder array; choose Save authorization. The map must establish Rowan’s ownership.\n• For each new Workflow Data document, also fill in Document name; using the Logical target ID as its name is fine. When a lesson names a fixture, paste the file’s contents into Initial template, then choose Save authorization.\n\nSteps:\n1. Combine the holder check from lesson 20 and the participation check from lesson 21. Send: “Rowan holds the signal lantern beside the lighthouse.” Confirm that the generated reply itself mentions signal lantern or lantern.\n2. Follow the mention into Current Holder, then the Rowan filter. The mentioned item must belong to Rowan for this Rowan-only reminder path to continue.\n3. Inspect the post-generation Scene Presence result and Prompted Memory output. The recalled memory should identify an existing permitted episode, with its text kept private.\n4. Inspect Write to File.receipt. Apply should add one event-linked record to rowan-item-memories; Reject should leave the array unchanged. Check the file rather than expecting extra prose in the same reply.\n5. Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes.\n\nCheckpoints:\nWrite to File → receipt: Write to File.receipt proposes a Rowan-private reminder record backed by the exact item mention. It is pending until Apply.\n\nTry this:\nWith explicit authoring permission, change Prompted Memory mode to recall-or-create and allowCreate to true in this disposable story.\nIf no existing memory fits, a newly invented recollection may be proposed and labelled accordingly. Saving the output record does not silently add a native episode.\n\nIf something is different:\nNo matching mention, Rowan is absent, or another actor holds the item.: No Rowan reminder record is staged.\nNo permitted episode exists in default recall mode.: The run stops instead of creating a memory. Changing mode alone does not grant creation permission.\nThe reply is rejected.: The private output file remains unchanged.\n\nModel requests: Up to two extra model requests: the post-generation participation check and Prompted Memory when its prerequisites match. There is also one ordinary SillyTavern reply.",
           "schema": 3,
           "runtime": 2,
           "mode": "native-unified",
@@ -9401,10 +8126,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "On Send",
               "enabled": true,
               "x": 100,
-              "y": 240,
+              "y": 1087,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -9418,10 +8142,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Generate Reply · SillyTavern",
               "enabled": true,
               "x": 460,
-              "y": 240,
+              "y": 1087,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-1",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -9436,10 +8159,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Review / Publish",
               "enabled": true,
               "x": 820,
-              "y": 240,
+              "y": 1087,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-2",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -9453,10 +8175,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Select Fields",
               "enabled": true,
               "x": 820,
-              "y": 560,
+              "y": 1427,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-2",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -9500,10 +8222,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Draft Event Source",
               "enabled": true,
               "x": 1180,
-              "y": 240,
+              "y": 1427,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-3",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -9518,10 +8240,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Text",
               "enabled": true,
               "x": 100,
-              "y": 560,
+              "y": 1717,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -9537,10 +8259,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "JSON Decode",
               "enabled": true,
               "x": 460,
-              "y": 560,
+              "y": 1427,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-1",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -9557,10 +8279,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Item Mention Trigger",
               "enabled": true,
               "x": 1540,
-              "y": 240,
+              "y": 1427,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-4",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -9584,10 +8306,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Read File",
               "enabled": true,
               "x": 100,
-              "y": 880,
+              "y": 2007,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -9607,10 +8329,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "JSON Decode",
               "enabled": true,
               "x": 460,
-              "y": 880,
+              "y": 1717,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-1",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -9627,10 +8349,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Current Holder",
               "enabled": true,
               "x": 1900,
-              "y": 240,
+              "y": 1427,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-5",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -9645,10 +8367,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Collection",
               "enabled": true,
               "x": 2260,
-              "y": 240,
+              "y": 1427,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-6",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -9676,10 +8398,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Collection",
               "enabled": true,
               "x": 2620,
-              "y": 240,
+              "y": 1717,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-7",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -9705,10 +8427,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Condition",
               "enabled": true,
               "x": 2980,
-              "y": 240,
+              "y": 1717,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-8",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -9726,10 +8448,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Branch",
               "enabled": true,
               "x": 3340,
-              "y": 240,
+              "y": 1427,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-9",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -9745,10 +8467,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Collection",
               "enabled": true,
               "x": 3700,
-              "y": 240,
+              "y": 1427,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-10",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -9776,10 +8498,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Select Fields",
               "enabled": true,
               "x": 4060,
-              "y": 240,
+              "y": 1427,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-11",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -9924,10 +8646,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Text",
               "enabled": true,
               "x": 100,
-              "y": 1200,
+              "y": 1427,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -9943,10 +8665,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Model Call",
               "enabled": true,
               "x": 1540,
-              "y": 560,
+              "y": 1717,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-4",
+              "inGroup": "processing-draft-scope",
               "profileId": "lattice:active-sillytavern",
               "model": null,
               "modelRole": "Prose",
@@ -9965,10 +8687,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Scene Presence",
               "enabled": true,
               "x": 1900,
-              "y": 560,
+              "y": 1717,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-5",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -9984,10 +8706,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Condition",
               "enabled": true,
               "x": 2260,
-              "y": 560,
+              "y": 1717,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-6",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -10007,10 +8729,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Branch",
               "enabled": true,
               "x": 2620,
-              "y": 560,
+              "y": 1427,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-7",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -10026,10 +8748,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Prompted Memory",
               "enabled": true,
               "x": 4420,
-              "y": 240,
+              "y": 1427,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-12",
+              "inGroup": "processing-draft-scope",
               "profileId": "lattice:active-sillytavern",
               "model": null,
               "modelRole": "promptedMemory",
@@ -10049,10 +8771,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Read File",
               "enabled": true,
               "x": 2980,
-              "y": 560,
+              "y": 1427,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-8",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -10072,10 +8794,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Write to File",
               "enabled": true,
               "x": 4780,
-              "y": 240,
+              "y": 1427,
               "w": 300,
               "h": 228,
-              "inGroup": "stage-13",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -10103,8 +8825,8 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "x": 100,
               "y": 0,
               "w": 900,
-              "h": 180,
-              "content": "Match a real item mention, use explicit accepted ownership, and stage one private prompted memory for the actual holder.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nSelect native Rowan and existing accepted native memory episodes associated with the signal lantern. Prompted Memory recall reads that host episode store; the output file cannot seed native memory authority.\nAccepted item-holders must identify Rowan as holder; a mention by another actor grants no ownership. Create actor-private JSON Workflow Data rowan-item-memories as an initially empty output array.\n\nOpen Let an item remind its actual holder and inspect the named pins.\nThis reminder pipeline watches the exact just-generated owned native Draft, after generation. A real on-page signal-lantern mention triggers current post presence, native episode recall and private save staging. It stages a remembered event for later portrayal; it does not inject Guidance into this generation.\nThis root is scoped to Rowan: another holder yields no matching private proposal.\nDefault recall/allowCreate false requires an existing permitted memory. Opt-in exercise may explicitly permit a new pending invented memory.\nReview the private receipt separately; private memory never enters public notes.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: At most 2 auxiliary requests: cast interpretation and prompted memory when holder/presence match; one ordinary native generation.\nCheckpoints:\nWrite to File.receipt: Only Rowan’s private target receives a pending memory with canonical mention evidence.",
+              "h": 1007,
+              "content": "Let a mentioned item remind its actual holder of an existing memory. You will connect item ownership and scene participation to a private recall, then stage a separate output record for Rowan.\n\nWhat you'll learn:\n• Item Mention Trigger watches the newly generated reply after generation. A mention starts a reminder, not an item-use consequence.\n• Prompted Memory selects from authorized native actor episodes. Its default mode recall and allowCreate false prevent it from inventing a missing memory.\n• The output is a private remembered-event record for later use; this workflow does not feed that reminder back into the reply just generated.\n\nBefore you start:\n• Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.\n• Select loaded Rowan and replace both example actor IDs consistently. Have an accepted native Rowan episode associated with the signal lantern, using the native memory work from lesson 18.\n• In Workflow › Configure › Workflow Data, authorize JSON targets accepted-item-holders and rowan-item-memories using their fixtures as Initial template. Choose Public for the holder map and Actor private with Rowan’s Actor ID for the empty reminder array; choose Save authorization. The map must establish Rowan’s ownership.\n• For each new Workflow Data document, also fill in Document name; using the Logical target ID as its name is fine. When a lesson names a fixture, paste the file’s contents into Initial template, then choose Save authorization.\n\nSteps:\n1. Combine the holder check from lesson 20 and the participation check from lesson 21. Send: “Rowan holds the signal lantern beside the lighthouse.” Confirm that the generated reply itself mentions signal lantern or lantern.\n2. Follow the mention into Current Holder, then the Rowan filter. The mentioned item must belong to Rowan for this Rowan-only reminder path to continue.\n3. Inspect the post-generation Scene Presence result and Prompted Memory output. The recalled memory should identify an existing permitted episode, with its text kept private.\n4. Inspect Write to File.receipt. Apply should add one event-linked record to rowan-item-memories; Reject should leave the array unchanged. Check the file rather than expecting extra prose in the same reply.\n5. Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes.\n\nCheckpoints:\nWrite to File → receipt: Write to File.receipt proposes a Rowan-private reminder record backed by the exact item mention. It is pending until Apply.\n\nTry this:\nWith explicit authoring permission, change Prompted Memory mode to recall-or-create and allowCreate to true in this disposable story.\nIf no existing memory fits, a newly invented recollection may be proposed and labelled accordingly. Saving the output record does not silently add a native episode.\n\nIf something is different:\nNo matching mention, Rowan is absent, or another actor holds the item.: No Rowan reminder record is staged.\nNo permitted episode exists in default recall mode.: The run stops instead of creating a memory. Changing mode alone does not grant creation permission.\nThe reply is rejected.: The private output file remains unchanged.\n\nModel requests: Up to two extra model requests: the post-generation participation check and Prompted Memory when its prerequisites match. There is also one ordinary SillyTavern reply.",
               "commentFrame": true,
               "moveContents": false
             }
@@ -10360,211 +9082,39 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
             }
           },
           "groups": {
-            "stage-0": {
-              "id": "stage-0",
-              "title": "Preparation / processing",
-              "description": "Stage 0. Wires determine execution; folding is presentation only.",
+            "processing-draft-scope": {
+              "id": "processing-draft-scope",
+              "title": "Update saved story data",
+              "description": "These connected boxes work together. Follow their wires to see how each result is used.",
               "x": 75,
-              "y": 190,
-              "w": 350,
-              "h": 1245,
+              "y": 1377,
+              "w": 5030,
+              "h": 865,
               "color": "#57416e",
               "collapsed": false,
               "members": [
-                "send",
-                "entities-text",
-                "holders-file",
-                "cast-request"
-              ]
-            },
-            "stage-1": {
-              "id": "stage-1",
-              "title": "Native generation",
-              "description": "Stage 1. Wires determine execution; folding is presentation only.",
-              "x": 435,
-              "y": 190,
-              "w": 350,
-              "h": 925,
-              "color": "#284e67",
-              "collapsed": false,
-              "members": [
-                "generate",
-                "entities",
-                "holders"
-              ]
-            },
-            "stage-2": {
-              "id": "stage-2",
-              "title": "Review / accepted staging",
-              "description": "Stage 2. Wires determine execution; folding is presentation only.",
-              "x": 795,
-              "y": 190,
-              "w": 350,
-              "h": 605,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "review",
-                "draft-scope"
-              ]
-            },
-            "stage-3": {
-              "id": "stage-3",
-              "title": "Response processing",
-              "description": "Stage 3. Wires determine execution; folding is presentation only.",
-              "x": 1155,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "mention-source"
-              ]
-            },
-            "stage-4": {
-              "id": "stage-4",
-              "title": "Response processing",
-              "description": "Stage 4. Wires determine execution; folding is presentation only.",
-              "x": 1515,
-              "y": 190,
-              "w": 350,
-              "h": 605,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
+                "draft-scope",
+                "mention-source",
                 "mention",
-                "cast"
-              ]
-            },
-            "stage-5": {
-              "id": "stage-5",
-              "title": "Response processing",
-              "description": "Stage 5. Wires determine execution; folding is presentation only.",
-              "x": 1875,
-              "y": 190,
-              "w": 350,
-              "h": 605,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
+                "cast",
+                "entities",
                 "holder",
-                "cast-presence-0"
-              ]
-            },
-            "stage-6": {
-              "id": "stage-6",
-              "title": "Response processing",
-              "description": "Stage 6. Wires determine execution; folding is presentation only.",
-              "x": 2235,
-              "y": 190,
-              "w": 350,
-              "h": 605,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
+                "cast-request",
+                "cast-presence-0",
+                "entities-text",
+                "holders",
                 "actor-events",
-                "rowan-present"
-              ]
-            },
-            "stage-7": {
-              "id": "stage-7",
-              "title": "Response processing",
-              "description": "Stage 7. Wires determine execution; folding is presentation only.",
-              "x": 2595,
-              "y": 190,
-              "w": 350,
-              "h": 605,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
+                "rowan-present",
+                "rowan-route",
+                "holders-file",
                 "event-count",
-                "rowan-route"
-              ]
-            },
-            "stage-8": {
-              "id": "stage-8",
-              "title": "Response processing",
-              "description": "Stage 8. Wires determine execution; folding is presentation only.",
-              "x": 2955,
-              "y": 190,
-              "w": 350,
-              "h": 605,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
+                "mention-route",
+                "remember",
+                "memories",
+                "save",
                 "has-event",
-                "memories"
-              ]
-            },
-            "stage-9": {
-              "id": "stage-9",
-              "title": "Response processing",
-              "description": "Stage 9. Wires determine execution; folding is presentation only.",
-              "x": 3315,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "mention-route"
-              ]
-            },
-            "stage-10": {
-              "id": "stage-10",
-              "title": "Response processing",
-              "description": "Stage 10. Wires determine execution; folding is presentation only.",
-              "x": 3675,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "one-event"
-              ]
-            },
-            "stage-11": {
-              "id": "stage-11",
-              "title": "Response processing",
-              "description": "Stage 11. Wires determine execution; folding is presentation only.",
-              "x": 4035,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
+                "one-event",
                 "owned-mention"
-              ]
-            },
-            "stage-12": {
-              "id": "stage-12",
-              "title": "Response processing",
-              "description": "Stage 12. Wires determine execution; folding is presentation only.",
-              "x": 4395,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "remember"
-              ]
-            },
-            "stage-13": {
-              "id": "stage-13",
-              "title": "Review / accepted staging",
-              "description": "Stage 13. Wires determine execution; folding is presentation only.",
-              "x": 4755,
-              "y": 190,
-              "w": 350,
-              "h": 303,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "save"
               ]
             }
           },
@@ -10597,48 +9147,57 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
     "id": "lesson-23",
     "number": 23,
     "title": "Advance the story clock when the scene is accepted",
-    "goal": "Project an explicit forward story duration from a real Story Clock and commit only on accepted review.",
+    "goal": "Advance story time by an agreed duration and save that advance only with the accepted scene. You will compare the current clock with a proposed clock and test that rejection preserves the original time.",
     "lesson": {
       "difficulty": "Advanced",
-      "focus": "Story Clock, Advance Time proposal, Clock Commit",
       "learn": [
-        "Story Clock, Advance Time proposal, Clock Commit",
-        "Trace named artifacts to the owned Draft or accepted proposal."
+        "Story Clock reads accepted time in story minutes, independent of message count and time spent at the computer.",
+        "Advance Time projects a forward duration. A projection is the proposed result, not a saved clock change.",
+        "Clock Commit stages that result for Apply and protects against saving the same accepted advance twice."
       ],
       "requirements": [
-        "Open this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.",
-        "Create/authorize Story Clock Workflow Data story-clock with calendarId campaign-days, dayLengthMinutes 1440, accepted absoluteMinute and positive revision."
+        "Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.",
+        "In Workflow › Configure › Workflow Data, set Logical target ID to story-clock, Format JSON and Visibility Public. Paste fixtures/story-clock.json into Initial template and choose Save authorization. Keep calendarId campaign-days, dayLengthMinutes 1440 and a positive revision.",
+        "The fixture starts at absoluteMinute 780, or 13:00 on day zero. Set up the live authorized clock; importing JSON alone does not create the host’s clock access.",
+        "For each new Workflow Data document, also fill in Document name; using the Logical target ID as its name is fine. When a lesson names a fixture, paste the file’s contents into Initial template, then choose Save authorization."
       ],
       "steps": [
-        "Open Advance the story clock when the scene is accepted and inspect the named pins.",
-        "Edit the sixty-minute authored proposal only to an actually agreed duration.",
-        "Inspect previous/effective clock, report and remainder. Reject leaves the accepted clock untouched.",
-        "Send in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals."
+        "Use lesson 17’s distinction between a proposed change and a saved change, now for time. Note the starting absoluteMinute and revision in the clock’s initial template.",
+        "Inspect Text · authored input feeding duration. It declares minutes 60 with the agreed-hour-of-travel reason. Agree on that hour in the test story; the workflow does not infer it from your wording.",
+        "Send: “Rowan and Iris spend the agreed hour traveling along the harbor road.” Inspect Advance Time.clock and report: from the fixture, the proposed destination is absoluteMinute 840, or 14:00.",
+        "Check that no remainder is left by this simple duration. The guidance tells the reply to continue after the agreed hour, without deciding the player’s next action.",
+        "Apply and reread the live clock: it should now show 840 and the next revision. In another practice chat with a fresh clock initialized from the fixture, Reject and verify that time stays at 780.",
+        "Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes."
       ],
       "checkpoints": [
         {
           "node": "Clock Commit",
           "port": "receipt",
-          "expect": "Clock settlement is pending; Apply advances the genuine accepted clock once."
+          "expect": "Clock Commit.receipt proposes the sixty-minute advance. The live clock changes once on Apply and stays at its starting time on Reject."
         }
       ],
       "experiments": [
         {
-          "change": "Edit minutes to30 for an agreed shorter duration.",
-          "expect": "The exact forward integer proposal changes; message count does not."
+          "change": "Use another practice chat with a fresh fixture clock, and edit the authored duration’s minutes from 60 to 30 for an agreed shorter journey.",
+          "expect": "The proposed clock becomes absoluteMinute 810, or 13:30. Sending more messages does not itself advance time. Editing Initial template does not reset a clock that has already been saved."
         }
       ],
       "cases": [
         {
-          "when": "The candidate is rejected",
-          "expect": "Accepted story time remains unchanged."
+          "when": "The scene is rejected or stopped.",
+          "expect": "The accepted clock keeps its original minute and revision."
         },
         {
-          "when": "Rejected or stopped",
-          "expect": "The existing story and staged effects are retained without settlement."
+          "when": "The authorized clock or required clock fields are missing.",
+          "expect": "The run reports a setup error rather than choosing a time."
+        },
+        {
+          "when": "The same accepted review is applied again.",
+          "expect": "The clock does not advance for a second copy of that review."
         }
       ],
-      "callBudget": "0 auxiliary model requests; one ordinary native generation."
+      "callBudget": "No extra model requests. Clock reading, projection and commit are deterministic; the workflow generates one ordinary SillyTavern reply.",
+      "focus": "Story Clock, Advance Time proposal, Clock Commit"
     },
     "packages": [
       {
@@ -10648,7 +9207,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
         "graph": {
           "id": "remastered-lesson-23",
           "name": "23. Advance the story clock when the scene is accepted",
-          "description": "Project an explicit forward story duration from a real Story Clock and commit only on accepted review.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nCreate/authorize Story Clock Workflow Data story-clock with calendarId campaign-days, dayLengthMinutes 1440, accepted absoluteMinute and positive revision.\n\nOpen Advance the story clock when the scene is accepted and inspect the named pins.\nEdit the sixty-minute authored proposal only to an actually agreed duration.\nInspect previous/effective clock, report and remainder. Reject leaves the accepted clock untouched.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 0 auxiliary model requests; one ordinary native generation.\nCheckpoints:\nClock Commit.receipt: Clock settlement is pending; Apply advances the genuine accepted clock once.",
+          "description": "Advance story time by an agreed duration and save that advance only with the accepted scene. You will compare the current clock with a proposed clock and test that rejection preserves the original time.\n\nWhat you'll learn:\n• Story Clock reads accepted time in story minutes, independent of message count and time spent at the computer.\n• Advance Time projects a forward duration. A projection is the proposed result, not a saved clock change.\n• Clock Commit stages that result for Apply and protects against saving the same accepted advance twice.\n\nBefore you start:\n• Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.\n• In Workflow › Configure › Workflow Data, set Logical target ID to story-clock, Format JSON and Visibility Public. Paste fixtures/story-clock.json into Initial template and choose Save authorization. Keep calendarId campaign-days, dayLengthMinutes 1440 and a positive revision.\n• The fixture starts at absoluteMinute 780, or 13:00 on day zero. Set up the live authorized clock; importing JSON alone does not create the host’s clock access.\n• For each new Workflow Data document, also fill in Document name; using the Logical target ID as its name is fine. When a lesson names a fixture, paste the file’s contents into Initial template, then choose Save authorization.\n\nSteps:\n1. Use lesson 17’s distinction between a proposed change and a saved change, now for time. Note the starting absoluteMinute and revision in the clock’s initial template.\n2. Inspect Text · authored input feeding duration. It declares minutes 60 with the agreed-hour-of-travel reason. Agree on that hour in the test story; the workflow does not infer it from your wording.\n3. Send: “Rowan and Iris spend the agreed hour traveling along the harbor road.” Inspect Advance Time.clock and report: from the fixture, the proposed destination is absoluteMinute 840, or 14:00.\n4. Check that no remainder is left by this simple duration. The guidance tells the reply to continue after the agreed hour, without deciding the player’s next action.\n5. Apply and reread the live clock: it should now show 840 and the next revision. In another practice chat with a fresh clock initialized from the fixture, Reject and verify that time stays at 780.\n6. Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes.\n\nCheckpoints:\nClock Commit → receipt: Clock Commit.receipt proposes the sixty-minute advance. The live clock changes once on Apply and stays at its starting time on Reject.\n\nTry this:\nUse another practice chat with a fresh fixture clock, and edit the authored duration’s minutes from 60 to 30 for an agreed shorter journey.\nThe proposed clock becomes absoluteMinute 810, or 13:30. Sending more messages does not itself advance time. Editing Initial template does not reset a clock that has already been saved.\n\nIf something is different:\nThe scene is rejected or stopped.: The accepted clock keeps its original minute and revision.\nThe authorized clock or required clock fields are missing.: The run reports a setup error rather than choosing a time.\nThe same accepted review is applied again.: The clock does not advance for a second copy of that review.\n\nModel requests: No extra model requests. Clock reading, projection and commit are deterministic; the workflow generates one ordinary SillyTavern reply.",
           "schema": 3,
           "runtime": 2,
           "mode": "native-unified",
@@ -10661,10 +9220,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "On Send",
               "enabled": true,
               "x": 100,
-              "y": 240,
+              "y": 1034,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -10678,10 +9236,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Generate Reply · SillyTavern",
               "enabled": true,
               "x": 1540,
-              "y": 240,
+              "y": 1034,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-4",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -10696,10 +9253,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Review / Publish",
               "enabled": true,
               "x": 1900,
-              "y": 240,
+              "y": 1034,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-5",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -10713,10 +9269,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Story Clock",
               "enabled": true,
               "x": 100,
-              "y": 560,
+              "y": 1374,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-clock",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -10732,10 +9288,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Text",
               "enabled": true,
               "x": 100,
-              "y": 880,
+              "y": 1664,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-clock",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -10751,10 +9307,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "JSON Decode",
               "enabled": true,
               "x": 460,
-              "y": 240,
+              "y": 1374,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-1",
+              "inGroup": "processing-clock",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -10771,10 +9327,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Advance Time",
               "enabled": true,
               "x": 820,
-              "y": 240,
+              "y": 1374,
               "w": 300,
               "h": 228,
-              "inGroup": "stage-2",
+              "inGroup": "processing-clock",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -10792,10 +9348,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Compose",
               "enabled": true,
               "x": 1180,
-              "y": 240,
+              "y": 1374,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-3",
+              "inGroup": "processing-clock",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -10814,10 +9370,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Clock Commit",
               "enabled": true,
               "x": 1180,
-              "y": 560,
+              "y": 1034,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-3",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -10831,8 +9386,8 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "x": 100,
               "y": 0,
               "w": 900,
-              "h": 180,
-              "content": "Project an explicit forward story duration from a real Story Clock and commit only on accepted review.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nCreate/authorize Story Clock Workflow Data story-clock with calendarId campaign-days, dayLengthMinutes 1440, accepted absoluteMinute and positive revision.\n\nOpen Advance the story clock when the scene is accepted and inspect the named pins.\nEdit the sixty-minute authored proposal only to an actually agreed duration.\nInspect previous/effective clock, report and remainder. Reject leaves the accepted clock untouched.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 0 auxiliary model requests; one ordinary native generation.\nCheckpoints:\nClock Commit.receipt: Clock settlement is pending; Apply advances the genuine accepted clock once.",
+              "h": 954,
+              "content": "Advance story time by an agreed duration and save that advance only with the accepted scene. You will compare the current clock with a proposed clock and test that rejection preserves the original time.\n\nWhat you'll learn:\n• Story Clock reads accepted time in story minutes, independent of message count and time spent at the computer.\n• Advance Time projects a forward duration. A projection is the proposed result, not a saved clock change.\n• Clock Commit stages that result for Apply and protects against saving the same accepted advance twice.\n\nBefore you start:\n• Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.\n• In Workflow › Configure › Workflow Data, set Logical target ID to story-clock, Format JSON and Visibility Public. Paste fixtures/story-clock.json into Initial template and choose Save authorization. Keep calendarId campaign-days, dayLengthMinutes 1440 and a positive revision.\n• The fixture starts at absoluteMinute 780, or 13:00 on day zero. Set up the live authorized clock; importing JSON alone does not create the host’s clock access.\n• For each new Workflow Data document, also fill in Document name; using the Logical target ID as its name is fine. When a lesson names a fixture, paste the file’s contents into Initial template, then choose Save authorization.\n\nSteps:\n1. Use lesson 17’s distinction between a proposed change and a saved change, now for time. Note the starting absoluteMinute and revision in the clock’s initial template.\n2. Inspect Text · authored input feeding duration. It declares minutes 60 with the agreed-hour-of-travel reason. Agree on that hour in the test story; the workflow does not infer it from your wording.\n3. Send: “Rowan and Iris spend the agreed hour traveling along the harbor road.” Inspect Advance Time.clock and report: from the fixture, the proposed destination is absoluteMinute 840, or 14:00.\n4. Check that no remainder is left by this simple duration. The guidance tells the reply to continue after the agreed hour, without deciding the player’s next action.\n5. Apply and reread the live clock: it should now show 840 and the next revision. In another practice chat with a fresh clock initialized from the fixture, Reject and verify that time stays at 780.\n6. Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes.\n\nCheckpoints:\nClock Commit → receipt: Clock Commit.receipt proposes the sixty-minute advance. The live clock changes once on Apply and stays at its starting time on Reject.\n\nTry this:\nUse another practice chat with a fresh fixture clock, and edit the authored duration’s minutes from 60 to 30 for an agreed shorter journey.\nThe proposed clock becomes absoluteMinute 810, or 13:30. Sending more messages does not itself advance time. Editing Initial template does not reset a clock that has already been saved.\n\nIf something is different:\nThe scene is rejected or stopped.: The accepted clock keeps its original minute and revision.\nThe authorized clock or required clock fields are missing.: The run reports a setup error rather than choosing a time.\nThe same accepted review is applied again.: The clock does not advance for a second copy of that review.\n\nModel requests: No extra model requests. Clock reading, projection and commit are deterministic; the workflow generates one ordinary SillyTavern reply.",
               "commentFrame": true,
               "moveContents": false
             }
@@ -10912,91 +9467,22 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
             }
           },
           "groups": {
-            "stage-0": {
-              "id": "stage-0",
-              "title": "Preparation / processing",
-              "description": "Stage 0. Wires determine execution; folding is presentation only.",
+            "processing-clock": {
+              "id": "processing-clock",
+              "title": "Plan scheduled story events",
+              "description": "These connected boxes work together. Follow their wires to see how each result is used.",
               "x": 75,
-              "y": 190,
-              "w": 350,
-              "h": 925,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "send",
-                "clock",
-                "duration-text"
-              ]
-            },
-            "stage-1": {
-              "id": "stage-1",
-              "title": "Preparation / processing",
-              "description": "Stage 1. Wires determine execution; folding is presentation only.",
-              "x": 435,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "duration"
-              ]
-            },
-            "stage-2": {
-              "id": "stage-2",
-              "title": "Preparation / processing",
-              "description": "Stage 2. Wires determine execution; folding is presentation only.",
-              "x": 795,
-              "y": 190,
-              "w": 350,
-              "h": 303,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "advance"
-              ]
-            },
-            "stage-3": {
-              "id": "stage-3",
-              "title": "Review / accepted staging",
-              "description": "Stage 3. Wires determine execution; folding is presentation only.",
-              "x": 1155,
-              "y": 190,
-              "w": 350,
-              "h": 605,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "guidance",
-                "commit-clock"
-              ]
-            },
-            "stage-4": {
-              "id": "stage-4",
-              "title": "Native generation",
-              "description": "Stage 4. Wires determine execution; folding is presentation only.",
-              "x": 1515,
-              "y": 190,
-              "w": 350,
-              "h": 285,
+              "y": 1324,
+              "w": 1430,
+              "h": 575,
               "color": "#284e67",
               "collapsed": false,
               "members": [
-                "generate"
-              ]
-            },
-            "stage-5": {
-              "id": "stage-5",
-              "title": "Review / accepted staging",
-              "description": "Stage 5. Wires determine execution; folding is presentation only.",
-              "x": 1875,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "review"
+                "clock",
+                "advance",
+                "duration",
+                "guidance",
+                "duration-text"
               ]
             }
           },
@@ -11020,54 +9506,57 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
     "id": "lesson-24",
     "number": 24,
     "title": "Make curses and routines happen on schedule",
-    "goal": "Project a finite duration through midnight, daily 14:00 and an origin-anchored eight-hour recurrence; preserve interrupts and consumed identities.",
+    "goal": "Run story events at scheduled times during an agreed rest. You will stop at the first due event, inspect the time still remaining, then compare that interruption with processing the whole duration.",
     "lesson": {
       "difficulty": "Advanced",
-      "focus": "Time Trigger schedules and bounded catch-up",
       "learn": [
-        "Time Trigger schedules and bounded catch-up",
-        "Trace named artifacts to the owned Draft or accepted proposal."
+        "A Time Trigger describes a story schedule: daily midnight, daily 14:00, or every eight hours counted from minute zero.",
+        "Advance Time policy interrupt stops at the first due boundary. Policy catch-up processes all due events within the configured limit.",
+        "Accepted clock records remember which scheduled occurrences were consumed so replay cannot repeat them."
       ],
       "requirements": [
-        "Open this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.",
-        "Authorize story-clock as in lesson23. midnight=0, 14:00=840, eight hours=480 anchored at origin0."
+        "Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.",
+        "Authorize a fresh story-clock in a new practice chat as in lesson 23, using the provided fixture’s absoluteMinute 780 so the expected times below match. Editing Initial template leaves an already saved clock unchanged.",
+        "Read the three schedules in Advance Time and their matching Time Trigger nodes: midnight minuteOfDay 0, daily-routine minuteOfDay 840, and eight-hour-pulse intervalMinutes 480 with anchorMinute 0."
       ],
       "steps": [
-        "Open Make curses and routines happen on schedule and inspect the named pins.",
-        "Default interrupt stops at the first due boundary and reports a remaining duration.",
-        "Switch to catch-up only to enumerate all due events within limit12.",
-        "Story Clock consumed identities prevent duplicate due events on accepted replay; no wall-clock timer is used.",
-        "Send in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals."
+        "Start with lesson 23’s forward-time proposal. This duration is 1500 minutes, or 25 hours. Send: “Rowan rests for the agreed duration, unless the next scheduled occurrence interrupts.”",
+        "Leave policy interrupt. From 13:00, the first due event is daily-routine at 14:00. Inspect the effective clock at 840 and the remainder of 1440 minutes: only one hour has passed.",
+        "Inspect the three Time Trigger outputs and the flattened due-events collection. Only the routine is due at this first interruption; the reply receives those due events rather than spending the remaining day.",
+        "Apply and inspect the live clock’s pendingTimeAdvance and consumed event IDs. The unprocessed duration remains recorded for continuation; this example does not run a background timer.",
+        "Use another practice chat with a fresh clock initialized from the original fixture for the catch-up experiment, so both policies start from the same time.",
+        "Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes."
       ],
       "checkpoints": [
         {
           "node": "Advance Time",
           "port": "remainder",
-          "expect": "The explicit unprocessed duration survives an interrupt."
+          "expect": "Advance Time.remainder retains 1440 unprocessed minutes for the fixture’s interrupt run."
         },
         {
           "node": "Collection",
           "port": "out",
-          "expect": "Three genuine Time Triggers supply finite ordered occurrences for accepted settlement."
+          "expect": "The due-events Collection.out gathers occurrences from all three Time Triggers. The first interrupt has one routine occurrence; catch-up from the fixture has six total."
         }
       ],
       "experiments": [
         {
-          "change": "Switch interrupt to catch-up.",
-          "expect": "All due boundaries within limit12 are projected, with consumed IDs retained on acceptance."
+          "change": "Change Advance Time policy from interrupt to catch-up, keeping the 1500-minute duration and limit 12.",
+          "expect": "The proposed destination is absoluteMinute 2280, the next day at 14:00, with no remainder. Six occurrences are due, including both midnight and the eight-hour pulse at minute 1440."
         }
       ],
       "cases": [
         {
-          "when": "Catch-up would exceed the finite bound",
-          "expect": "The projection holds instead of omitting due occurrences."
+          "when": "A longer catch-up would exceed the configured occurrence limit.",
+          "expect": "The run stops and reports the limit instead of silently omitting scheduled events."
         },
         {
-          "when": "Rejected or stopped",
-          "expect": "The existing story and staged effects are retained without settlement."
+          "when": "The review is rejected.",
+          "expect": "Neither the clock advance nor the consumed occurrence IDs are saved."
         }
       ],
-      "callBudget": "0 auxiliary model requests; one ordinary native generation."
+      "callBudget": "No extra model requests. Time projection and triggers calculate their results directly; the workflow generates one ordinary SillyTavern reply.",
+      "focus": "Time Trigger schedules and bounded catch-up"
     },
     "packages": [
       {
@@ -11077,7 +9566,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
         "graph": {
           "id": "remastered-lesson-24",
           "name": "24. Make curses and routines happen on schedule",
-          "description": "Project a finite duration through midnight, daily 14:00 and an origin-anchored eight-hour recurrence; preserve interrupts and consumed identities.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nAuthorize story-clock as in lesson23. midnight=0, 14:00=840, eight hours=480 anchored at origin0.\n\nOpen Make curses and routines happen on schedule and inspect the named pins.\nDefault interrupt stops at the first due boundary and reports a remaining duration.\nSwitch to catch-up only to enumerate all due events within limit12.\nStory Clock consumed identities prevent duplicate due events on accepted replay; no wall-clock timer is used.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 0 auxiliary model requests; one ordinary native generation.\nCheckpoints:\nAdvance Time.remainder: The explicit unprocessed duration survives an interrupt.\nCollection.out: Three genuine Time Triggers supply finite ordered occurrences for accepted settlement.",
+          "description": "Run story events at scheduled times during an agreed rest. You will stop at the first due event, inspect the time still remaining, then compare that interruption with processing the whole duration.\n\nWhat you'll learn:\n• A Time Trigger describes a story schedule: daily midnight, daily 14:00, or every eight hours counted from minute zero.\n• Advance Time policy interrupt stops at the first due boundary. Policy catch-up processes all due events within the configured limit.\n• Accepted clock records remember which scheduled occurrences were consumed so replay cannot repeat them.\n\nBefore you start:\n• Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.\n• Authorize a fresh story-clock in a new practice chat as in lesson 23, using the provided fixture’s absoluteMinute 780 so the expected times below match. Editing Initial template leaves an already saved clock unchanged.\n• Read the three schedules in Advance Time and their matching Time Trigger nodes: midnight minuteOfDay 0, daily-routine minuteOfDay 840, and eight-hour-pulse intervalMinutes 480 with anchorMinute 0.\n\nSteps:\n1. Start with lesson 23’s forward-time proposal. This duration is 1500 minutes, or 25 hours. Send: “Rowan rests for the agreed duration, unless the next scheduled occurrence interrupts.”\n2. Leave policy interrupt. From 13:00, the first due event is daily-routine at 14:00. Inspect the effective clock at 840 and the remainder of 1440 minutes: only one hour has passed.\n3. Inspect the three Time Trigger outputs and the flattened due-events collection. Only the routine is due at this first interruption; the reply receives those due events rather than spending the remaining day.\n4. Apply and inspect the live clock’s pendingTimeAdvance and consumed event IDs. The unprocessed duration remains recorded for continuation; this example does not run a background timer.\n5. Use another practice chat with a fresh clock initialized from the original fixture for the catch-up experiment, so both policies start from the same time.\n6. Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes.\n\nCheckpoints:\nAdvance Time → remainder: Advance Time.remainder retains 1440 unprocessed minutes for the fixture’s interrupt run.\nCollection → out: The due-events Collection.out gathers occurrences from all three Time Triggers. The first interrupt has one routine occurrence; catch-up from the fixture has six total.\n\nTry this:\nChange Advance Time policy from interrupt to catch-up, keeping the 1500-minute duration and limit 12.\nThe proposed destination is absoluteMinute 2280, the next day at 14:00, with no remainder. Six occurrences are due, including both midnight and the eight-hour pulse at minute 1440.\n\nIf something is different:\nA longer catch-up would exceed the configured occurrence limit.: The run stops and reports the limit instead of silently omitting scheduled events.\nThe review is rejected.: Neither the clock advance nor the consumed occurrence IDs are saved.\n\nModel requests: No extra model requests. Time projection and triggers calculate their results directly; the workflow generates one ordinary SillyTavern reply.",
           "schema": 3,
           "runtime": 2,
           "mode": "native-unified",
@@ -11090,10 +9579,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "On Send",
               "enabled": true,
               "x": 100,
-              "y": 240,
+              "y": 1034,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -11107,10 +9595,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Generate Reply · SillyTavern",
               "enabled": true,
               "x": 2620,
-              "y": 240,
+              "y": 1034,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-7",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -11125,10 +9612,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Review / Publish",
               "enabled": true,
               "x": 2980,
-              "y": 240,
+              "y": 1034,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-8",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -11142,10 +9628,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Story Clock",
               "enabled": true,
               "x": 100,
-              "y": 560,
+              "y": 1374,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-clock",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -11161,10 +9647,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Text",
               "enabled": true,
               "x": 100,
-              "y": 880,
+              "y": 1664,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-clock",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -11180,10 +9666,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "JSON Decode",
               "enabled": true,
               "x": 460,
-              "y": 240,
+              "y": 1374,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-1",
+              "inGroup": "processing-clock",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -11200,10 +9686,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Advance Time",
               "enabled": true,
               "x": 820,
-              "y": 240,
+              "y": 1374,
               "w": 300,
               "h": 228,
-              "inGroup": "stage-2",
+              "inGroup": "processing-clock",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -11241,10 +9727,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Collect",
               "enabled": true,
               "x": 1540,
-              "y": 240,
+              "y": 1374,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-4",
+              "inGroup": "processing-clock",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -11276,10 +9762,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Time Trigger",
               "enabled": true,
               "x": 1180,
-              "y": 240,
+              "y": 1374,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-3",
+              "inGroup": "processing-clock",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -11306,10 +9792,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Time Trigger",
               "enabled": true,
               "x": 1180,
-              "y": 560,
+              "y": 1664,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-3",
+              "inGroup": "processing-clock",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -11336,10 +9822,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Time Trigger",
               "enabled": true,
               "x": 1180,
-              "y": 880,
+              "y": 1954,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-3",
+              "inGroup": "processing-clock",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -11366,10 +9852,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Collection",
               "enabled": true,
               "x": 1900,
-              "y": 240,
+              "y": 1374,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-5",
+              "inGroup": "processing-clock",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -11394,10 +9880,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Compose",
               "enabled": true,
               "x": 2260,
-              "y": 240,
+              "y": 1374,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-6",
+              "inGroup": "processing-clock",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -11416,10 +9902,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Clock Commit",
               "enabled": true,
               "x": 1180,
-              "y": 1200,
+              "y": 1034,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-3",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -11433,8 +9918,8 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "x": 100,
               "y": 0,
               "w": 900,
-              "h": 180,
-              "content": "Project a finite duration through midnight, daily 14:00 and an origin-anchored eight-hour recurrence; preserve interrupts and consumed identities.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nAuthorize story-clock as in lesson23. midnight=0, 14:00=840, eight hours=480 anchored at origin0.\n\nOpen Make curses and routines happen on schedule and inspect the named pins.\nDefault interrupt stops at the first due boundary and reports a remaining duration.\nSwitch to catch-up only to enumerate all due events within limit12.\nStory Clock consumed identities prevent duplicate due events on accepted replay; no wall-clock timer is used.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 0 auxiliary model requests; one ordinary native generation.\nCheckpoints:\nAdvance Time.remainder: The explicit unprocessed duration survives an interrupt.\nCollection.out: Three genuine Time Triggers supply finite ordered occurrences for accepted settlement.",
+              "h": 954,
+              "content": "Run story events at scheduled times during an agreed rest. You will stop at the first due event, inspect the time still remaining, then compare that interruption with processing the whole duration.\n\nWhat you'll learn:\n• A Time Trigger describes a story schedule: daily midnight, daily 14:00, or every eight hours counted from minute zero.\n• Advance Time policy interrupt stops at the first due boundary. Policy catch-up processes all due events within the configured limit.\n• Accepted clock records remember which scheduled occurrences were consumed so replay cannot repeat them.\n\nBefore you start:\n• Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.\n• Authorize a fresh story-clock in a new practice chat as in lesson 23, using the provided fixture’s absoluteMinute 780 so the expected times below match. Editing Initial template leaves an already saved clock unchanged.\n• Read the three schedules in Advance Time and their matching Time Trigger nodes: midnight minuteOfDay 0, daily-routine minuteOfDay 840, and eight-hour-pulse intervalMinutes 480 with anchorMinute 0.\n\nSteps:\n1. Start with lesson 23’s forward-time proposal. This duration is 1500 minutes, or 25 hours. Send: “Rowan rests for the agreed duration, unless the next scheduled occurrence interrupts.”\n2. Leave policy interrupt. From 13:00, the first due event is daily-routine at 14:00. Inspect the effective clock at 840 and the remainder of 1440 minutes: only one hour has passed.\n3. Inspect the three Time Trigger outputs and the flattened due-events collection. Only the routine is due at this first interruption; the reply receives those due events rather than spending the remaining day.\n4. Apply and inspect the live clock’s pendingTimeAdvance and consumed event IDs. The unprocessed duration remains recorded for continuation; this example does not run a background timer.\n5. Use another practice chat with a fresh clock initialized from the original fixture for the catch-up experiment, so both policies start from the same time.\n6. Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes.\n\nCheckpoints:\nAdvance Time → remainder: Advance Time.remainder retains 1440 unprocessed minutes for the fixture’s interrupt run.\nCollection → out: The due-events Collection.out gathers occurrences from all three Time Triggers. The first interrupt has one routine occurrence; catch-up from the fixture has six total.\n\nTry this:\nChange Advance Time policy from interrupt to catch-up, keeping the 1500-minute duration and limit 12.\nThe proposed destination is absoluteMinute 2280, the next day at 14:00, with no remainder. Six occurrences are due, including both midnight and the eight-hour pulse at minute 1440.\n\nIf something is different:\nA longer catch-up would exceed the configured occurrence limit.: The run stops and reports the limit instead of silently omitting scheduled events.\nThe review is rejected.: Neither the clock advance nor the consumed occurrence IDs are saved.\n\nModel requests: No extra model requests. Time projection and triggers calculate their results directly; the workflow generates one ordinary SillyTavern reply.",
               "commentFrame": true,
               "moveContents": false
             }
@@ -11594,135 +10079,27 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
             }
           },
           "groups": {
-            "stage-0": {
-              "id": "stage-0",
-              "title": "Preparation / processing",
-              "description": "Stage 0. Wires determine execution; folding is presentation only.",
+            "processing-clock": {
+              "id": "processing-clock",
+              "title": "Plan scheduled story events",
+              "description": "These connected boxes work together. Follow their wires to see how each result is used.",
               "x": 75,
-              "y": 190,
-              "w": 350,
-              "h": 925,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "send",
-                "clock",
-                "duration-text"
-              ]
-            },
-            "stage-1": {
-              "id": "stage-1",
-              "title": "Preparation / processing",
-              "description": "Stage 1. Wires determine execution; folding is presentation only.",
-              "x": 435,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "duration"
-              ]
-            },
-            "stage-2": {
-              "id": "stage-2",
-              "title": "Preparation / processing",
-              "description": "Stage 2. Wires determine execution; folding is presentation only.",
-              "x": 795,
-              "y": 190,
-              "w": 350,
-              "h": 303,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "advance"
-              ]
-            },
-            "stage-3": {
-              "id": "stage-3",
-              "title": "Review / accepted staging",
-              "description": "Stage 3. Wires determine execution; folding is presentation only.",
-              "x": 1155,
-              "y": 190,
-              "w": 350,
-              "h": 1245,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "trigger-0",
-                "trigger-1",
-                "trigger-2",
-                "commit-clock"
-              ]
-            },
-            "stage-4": {
-              "id": "stage-4",
-              "title": "Preparation / processing",
-              "description": "Stage 4. Wires determine execution; folding is presentation only.",
-              "x": 1515,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "due"
-              ]
-            },
-            "stage-5": {
-              "id": "stage-5",
-              "title": "Preparation / processing",
-              "description": "Stage 5. Wires determine execution; folding is presentation only.",
-              "x": 1875,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "due-events"
-              ]
-            },
-            "stage-6": {
-              "id": "stage-6",
-              "title": "Preparation / processing",
-              "description": "Stage 6. Wires determine execution; folding is presentation only.",
-              "x": 2235,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "guidance"
-              ]
-            },
-            "stage-7": {
-              "id": "stage-7",
-              "title": "Native generation",
-              "description": "Stage 7. Wires determine execution; folding is presentation only.",
-              "x": 2595,
-              "y": 190,
-              "w": 350,
-              "h": 285,
+              "y": 1324,
+              "w": 2510,
+              "h": 865,
               "color": "#284e67",
               "collapsed": false,
               "members": [
-                "generate"
-              ]
-            },
-            "stage-8": {
-              "id": "stage-8",
-              "title": "Review / accepted staging",
-              "description": "Stage 8. Wires determine execution; folding is presentation only.",
-              "x": 2955,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "review"
+                "clock",
+                "advance",
+                "trigger-0",
+                "trigger-1",
+                "trigger-2",
+                "duration",
+                "due",
+                "duration-text",
+                "due-events",
+                "guidance"
               ]
             }
           },
@@ -11746,59 +10123,67 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
     "id": "lesson-25",
     "number": 25,
     "title": "Award experience from confirmed progress",
-    "goal": "Project generic authored State rules from confirmed native objectives with identity-ledger deduplication and accepted persistence.",
+    "goal": "Award experience for completed objectives and report the levels crossed by the full award. You will project a reusable State rule, prevent duplicate rewards and save the result only with the accepted reply.",
     "lesson": {
       "difficulty": "Advanced",
-      "focus": "State progression rules, Collection thresholds and identity ledger",
       "learn": [
-        "State progression rules, Collection thresholds and identity ledger",
-        "Trace named artifacts to the owned Draft or accepted proposal."
+        "State stores values and a ledger of processed occurrence IDs. The ledger prevents the same objective occurrence from earning another reward.",
+        "A progression rule describes an authored change: here, add 20 to experience for each confirmed objective, within 0–1000.",
+        "Collection threshold compares the original value with the final projected value and reports every threshold crossed."
       ],
       "requirements": [
-        "Open this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.",
-        "Public JSON player-progression starts {\"values\":[{\"key\":\"experience\",\"value\":80}],\"ledger\":[]}. Replace actor IDs for actual participants."
+        "Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.",
+        "In Workflow › Configure › Workflow Data, create JSON target player-progression with Visibility Public. Paste its fixture into Initial template and choose Save authorization: experience starts at 80 and ledger is empty.",
+        "Load the participating Rowan and Iris actors and replace their example avatar IDs. This lesson extracts completed objectives from the generated reply, using lesson 19’s evidence checks.",
+        "For each new Workflow Data document, also fill in Document name; using the Logical target ID as its name is fine. When a lesson names a fixture, paste the file’s contents into Initial template, then choose Save authorization."
       ],
       "steps": [
-        "Open Award experience from confirmed progress and inspect the named pins.",
-        "An occurrence identity earns at most one rule award; replay reuses the identity ledger.",
-        "Collection compares the original experience to the final projected experience after every confirmed objective. The default 80→100 crosses 100; an initial 260 plus two rewards of 20 reaches 300 and crosses 300.",
-        "No confirmed objective preserves the original experience and produces no threshold crossing. Missing or ambiguous experience records hold; no receipt position is assumed.",
-        "Send in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals."
+        "Combine lesson 19’s confirmed actions with lesson 17’s proposed file save. Establish an objective such as delivering the harbor chart, then Send a request for the scene where Rowan completes that delivery.",
+        "Inspect the generated reply and confirmed events. A plan to deliver the chart is insufficient. Follow the completed action through Event Normalize’s progression mode into State.",
+        "Read State.receipt for each processed occurrence. With one new confirmed objective, the fixture projects experience from 80 to 100 and adds its occurrence ID to the ledger.",
+        "Inspect Select Fields.out for the original and final experience values, then Collection.out for the thresholds [100,300,600]. The public notes should report crossing 100.",
+        "Apply and inspect player-progression: both the experience value and ledger should be saved. Reject a fresh test to confirm that neither changes.",
+        "Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes."
       ],
       "checkpoints": [
         {
           "node": "State",
           "port": "receipt",
-          "expect": "Ordered per-event receipts and duplicate status come from generic authored rules."
+          "expect": "State.receipt lists the result for each confirmed objective, including duplicate records that earned no additional reward."
         },
         {
           "node": "Select Fields",
           "port": "out",
-          "expect": "The original and final experience values include every ordered confirmed reward."
+          "expect": "Select Fields.out shows the original experience and the final value after all rewards, rather than just one intermediate award."
         },
         {
           "node": "Collection",
           "port": "out",
-          "expect": "All thresholds crossed by the complete before→after projection appear in notes."
+          "expect": "The threshold Collection.out reports every crossed threshold from that complete before-and-after comparison."
         }
       ],
       "experiments": [
         {
-          "change": "Edit the authored reward amount or threshold table.",
-          "expect": "Generic State/Collection changes visibly without adding an XP-specific operation."
+          "change": "In another practice chat, initialize a fresh player-progression document with experience 260 and arrange two distinct completed objectives in the reply.",
+          "expect": "Two confirmed rewards of 20 project a final value of 300 and a crossing at 300. Inspect both receipts and the final comparison; changing Initial template does not reset an already saved progression document."
         }
       ],
       "cases": [
         {
-          "when": "Same confirmed occurrence identity repeats",
-          "expect": "The ledger reports duplicate and awards no extra experience."
+          "when": "An already processed occurrence ID repeats.",
+          "expect": "The ledger reports a duplicate and grants no additional experience."
         },
         {
-          "when": "Rejected or stopped",
-          "expect": "The existing story and staged effects are retained without settlement."
+          "when": "No objective is confirmed.",
+          "expect": "Experience stays unchanged and there is no threshold crossing."
+        },
+        {
+          "when": "The experience record is missing or appears ambiguously more than once.",
+          "expect": "The run stops for correction rather than guessing which value to use."
         }
       ],
-      "callBudget": "At most 4 auxiliary requests: 1 extraction + up to 3 confirmations; one ordinary native generation."
+      "callBudget": "Up to four extra model requests: one extraction and up to three Decision checks. State, thresholds and file staging make no model requests. There is also one ordinary SillyTavern reply.",
+      "focus": "State progression rules, Collection thresholds and identity ledger"
     },
     "packages": [
       {
@@ -11808,7 +10193,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
         "graph": {
           "id": "remastered-lesson-25",
           "name": "25. Award experience from confirmed progress",
-          "description": "Project generic authored State rules from confirmed native objectives with identity-ledger deduplication and accepted persistence.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nPublic JSON player-progression starts {\"values\":[{\"key\":\"experience\",\"value\":80}],\"ledger\":[]}. Replace actor IDs for actual participants.\n\nOpen Award experience from confirmed progress and inspect the named pins.\nAn occurrence identity earns at most one rule award; replay reuses the identity ledger.\nCollection compares the original experience to the final projected experience after every confirmed objective. The default 80→100 crosses 100; an initial 260 plus two rewards of 20 reaches 300 and crosses 300.\nNo confirmed objective preserves the original experience and produces no threshold crossing. Missing or ambiguous experience records hold; no receipt position is assumed.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: At most 4 auxiliary requests: 1 extraction + up to 3 confirmations; one ordinary native generation.\nCheckpoints:\nState.receipt: Ordered per-event receipts and duplicate status come from generic authored rules.\nSelect Fields.out: The original and final experience values include every ordered confirmed reward.\nCollection.out: All thresholds crossed by the complete before→after projection appear in notes.",
+          "description": "Award experience for completed objectives and report the levels crossed by the full award. You will project a reusable State rule, prevent duplicate rewards and save the result only with the accepted reply.\n\nWhat you'll learn:\n• State stores values and a ledger of processed occurrence IDs. The ledger prevents the same objective occurrence from earning another reward.\n• A progression rule describes an authored change: here, add 20 to experience for each confirmed objective, within 0–1000.\n• Collection threshold compares the original value with the final projected value and reports every threshold crossed.\n\nBefore you start:\n• Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.\n• In Workflow › Configure › Workflow Data, create JSON target player-progression with Visibility Public. Paste its fixture into Initial template and choose Save authorization: experience starts at 80 and ledger is empty.\n• Load the participating Rowan and Iris actors and replace their example avatar IDs. This lesson extracts completed objectives from the generated reply, using lesson 19’s evidence checks.\n• For each new Workflow Data document, also fill in Document name; using the Logical target ID as its name is fine. When a lesson names a fixture, paste the file’s contents into Initial template, then choose Save authorization.\n\nSteps:\n1. Combine lesson 19’s confirmed actions with lesson 17’s proposed file save. Establish an objective such as delivering the harbor chart, then Send a request for the scene where Rowan completes that delivery.\n2. Inspect the generated reply and confirmed events. A plan to deliver the chart is insufficient. Follow the completed action through Event Normalize’s progression mode into State.\n3. Read State.receipt for each processed occurrence. With one new confirmed objective, the fixture projects experience from 80 to 100 and adds its occurrence ID to the ledger.\n4. Inspect Select Fields.out for the original and final experience values, then Collection.out for the thresholds [100,300,600]. The public notes should report crossing 100.\n5. Apply and inspect player-progression: both the experience value and ledger should be saved. Reject a fresh test to confirm that neither changes.\n6. Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes.\n\nCheckpoints:\nState → receipt: State.receipt lists the result for each confirmed objective, including duplicate records that earned no additional reward.\nSelect Fields → out: Select Fields.out shows the original experience and the final value after all rewards, rather than just one intermediate award.\nCollection → out: The threshold Collection.out reports every crossed threshold from that complete before-and-after comparison.\n\nTry this:\nIn another practice chat, initialize a fresh player-progression document with experience 260 and arrange two distinct completed objectives in the reply.\nTwo confirmed rewards of 20 project a final value of 300 and a crossing at 300. Inspect both receipts and the final comparison; changing Initial template does not reset an already saved progression document.\n\nIf something is different:\nAn already processed occurrence ID repeats.: The ledger reports a duplicate and grants no additional experience.\nNo objective is confirmed.: Experience stays unchanged and there is no threshold crossing.\nThe experience record is missing or appears ambiguously more than once.: The run stops for correction rather than guessing which value to use.\n\nModel requests: Up to four extra model requests: one extraction and up to three Decision checks. State, thresholds and file staging make no model requests. There is also one ordinary SillyTavern reply.",
           "schema": 3,
           "runtime": 2,
           "mode": "native-unified",
@@ -11821,10 +10206,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "On Send",
               "enabled": true,
               "x": 100,
-              "y": 240,
+              "y": 1139,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -11838,10 +10222,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Generate Reply · SillyTavern",
               "enabled": true,
               "x": 460,
-              "y": 240,
+              "y": 1139,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-1",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -11856,10 +10239,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Review / Publish",
               "enabled": true,
               "x": 5860,
-              "y": 240,
+              "y": 1139,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-16",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -11873,10 +10255,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Select Fields",
               "enabled": true,
               "x": 820,
-              "y": 240,
+              "y": 2209,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-2",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -11920,10 +10302,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Draft Event Source",
               "enabled": true,
               "x": 1180,
-              "y": 240,
+              "y": 2209,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-3",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -11937,10 +10319,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Text",
               "enabled": true,
               "x": 100,
-              "y": 560,
+              "y": 2499,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -11956,10 +10338,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "JSON Decode",
               "enabled": true,
               "x": 460,
-              "y": 560,
+              "y": 2209,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-1",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -11976,10 +10358,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Text",
               "enabled": true,
               "x": 100,
-              "y": 880,
+              "y": 2209,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -11995,10 +10377,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Model Call",
               "enabled": true,
               "x": 1540,
-              "y": 240,
+              "y": 2209,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-4",
+              "inGroup": "processing-draft-scope",
               "profileId": "lattice:active-sillytavern",
               "model": null,
               "modelRole": "Prose",
@@ -12017,10 +10399,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Event Normalize",
               "enabled": true,
               "x": 1900,
-              "y": 240,
+              "y": 2209,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-5",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -12038,10 +10420,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "For Each",
               "enabled": true,
               "x": 2260,
-              "y": 240,
+              "y": 2209,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-6",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -12069,10 +10451,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Collection",
               "enabled": true,
               "x": 2620,
-              "y": 240,
+              "y": 2209,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-7",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -12098,10 +10480,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Read File",
               "enabled": true,
               "x": 100,
-              "y": 1200,
+              "y": 1479,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-progression-file",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -12120,10 +10502,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "JSON Decode",
               "enabled": true,
               "x": 460,
-              "y": 880,
+              "y": 1479,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-1",
+              "inGroup": "processing-progression-file",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -12140,10 +10522,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Text",
               "enabled": true,
               "x": 100,
-              "y": 1520,
+              "y": 1844,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-rules-text",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -12159,10 +10541,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "JSON Decode",
               "enabled": true,
               "x": 460,
-              "y": 1200,
+              "y": 1844,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-1",
+              "inGroup": "processing-rules-text",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -12179,10 +10561,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Event Normalize",
               "enabled": true,
               "x": 2980,
-              "y": 240,
+              "y": 2209,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-8",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -12200,10 +10582,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "State",
               "enabled": true,
               "x": 3340,
-              "y": 240,
+              "y": 2209,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-9",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -12219,10 +10601,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Collection",
               "enabled": true,
               "x": 820,
-              "y": 560,
+              "y": 2499,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-2",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -12252,10 +10634,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Collection",
               "enabled": true,
               "x": 3700,
-              "y": 240,
+              "y": 2209,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-10",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -12285,10 +10667,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Collect",
               "enabled": true,
               "x": 4060,
-              "y": 240,
+              "y": 2209,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-11",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -12316,10 +10698,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Select Fields",
               "enabled": true,
               "x": 4420,
-              "y": 240,
+              "y": 2209,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-12",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -12352,10 +10734,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Collection",
               "enabled": true,
               "x": 4780,
-              "y": 240,
+              "y": 2209,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-13",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -12381,10 +10763,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Format",
               "enabled": true,
               "x": 3700,
-              "y": 560,
+              "y": 2499,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-10",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -12408,10 +10790,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Write to File",
               "enabled": true,
               "x": 4060,
-              "y": 560,
+              "y": 2499,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-11",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -12438,10 +10820,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Compose",
               "enabled": true,
               "x": 5140,
-              "y": 240,
+              "y": 2209,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-14",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -12461,10 +10843,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Append",
               "enabled": true,
               "x": 5500,
-              "y": 240,
+              "y": 2209,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-15",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -12480,8 +10862,8 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "x": 100,
               "y": 0,
               "w": 900,
-              "h": 180,
-              "content": "Project generic authored State rules from confirmed native objectives with identity-ledger deduplication and accepted persistence.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nPublic JSON player-progression starts {\"values\":[{\"key\":\"experience\",\"value\":80}],\"ledger\":[]}. Replace actor IDs for actual participants.\n\nOpen Award experience from confirmed progress and inspect the named pins.\nAn occurrence identity earns at most one rule award; replay reuses the identity ledger.\nCollection compares the original experience to the final projected experience after every confirmed objective. The default 80→100 crosses 100; an initial 260 plus two rewards of 20 reaches 300 and crosses 300.\nNo confirmed objective preserves the original experience and produces no threshold crossing. Missing or ambiguous experience records hold; no receipt position is assumed.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: At most 4 auxiliary requests: 1 extraction + up to 3 confirmations; one ordinary native generation.\nCheckpoints:\nState.receipt: Ordered per-event receipts and duplicate status come from generic authored rules.\nSelect Fields.out: The original and final experience values include every ordered confirmed reward.\nCollection.out: All thresholds crossed by the complete before→after projection appear in notes.",
+              "h": 1059,
+              "content": "Award experience for completed objectives and report the levels crossed by the full award. You will project a reusable State rule, prevent duplicate rewards and save the result only with the accepted reply.\n\nWhat you'll learn:\n• State stores values and a ledger of processed occurrence IDs. The ledger prevents the same objective occurrence from earning another reward.\n• A progression rule describes an authored change: here, add 20 to experience for each confirmed objective, within 0–1000.\n• Collection threshold compares the original value with the final projected value and reports every threshold crossed.\n\nBefore you start:\n• Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.\n• In Workflow › Configure › Workflow Data, create JSON target player-progression with Visibility Public. Paste its fixture into Initial template and choose Save authorization: experience starts at 80 and ledger is empty.\n• Load the participating Rowan and Iris actors and replace their example avatar IDs. This lesson extracts completed objectives from the generated reply, using lesson 19’s evidence checks.\n• For each new Workflow Data document, also fill in Document name; using the Logical target ID as its name is fine. When a lesson names a fixture, paste the file’s contents into Initial template, then choose Save authorization.\n\nSteps:\n1. Combine lesson 19’s confirmed actions with lesson 17’s proposed file save. Establish an objective such as delivering the harbor chart, then Send a request for the scene where Rowan completes that delivery.\n2. Inspect the generated reply and confirmed events. A plan to deliver the chart is insufficient. Follow the completed action through Event Normalize’s progression mode into State.\n3. Read State.receipt for each processed occurrence. With one new confirmed objective, the fixture projects experience from 80 to 100 and adds its occurrence ID to the ledger.\n4. Inspect Select Fields.out for the original and final experience values, then Collection.out for the thresholds [100,300,600]. The public notes should report crossing 100.\n5. Apply and inspect player-progression: both the experience value and ledger should be saved. Reject a fresh test to confirm that neither changes.\n6. Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes.\n\nCheckpoints:\nState → receipt: State.receipt lists the result for each confirmed objective, including duplicate records that earned no additional reward.\nSelect Fields → out: Select Fields.out shows the original experience and the final value after all rewards, rather than just one intermediate award.\nCollection → out: The threshold Collection.out reports every crossed threshold from that complete before-and-after comparison.\n\nTry this:\nIn another practice chat, initialize a fresh player-progression document with experience 260 and arrange two distinct completed objectives in the reply.\nTwo confirmed rewards of 20 project a final value of 300 and a crossing at 300. Inspect both receipts and the final comparison; changing Initial template does not reset an already saved progression document.\n\nIf something is different:\nAn already processed occurrence ID repeats.: The ledger reports a duplicate and grants no additional experience.\nNo objective is confirmed.: Experience stays unchanged and there is no threshold crossing.\nThe experience record is missing or appears ambiguously more than once.: The run stops for correction rather than guessing which value to use.\n\nModel requests: Up to four extra model requests: one extraction and up to three Decision checks. State, thresholds and file staging make no model requests. There is also one ordinary SillyTavern reply.",
               "commentFrame": true,
               "moveContents": false
             }
@@ -12737,252 +11119,67 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
             }
           },
           "groups": {
-            "stage-0": {
-              "id": "stage-0",
-              "title": "Preparation / processing",
-              "description": "Stage 0. Wires determine execution; folding is presentation only.",
+            "processing-progression-file": {
+              "id": "processing-progression-file",
+              "title": "Prepare scene context",
+              "description": "These connected boxes work together. Follow their wires to see how each result is used.",
               "x": 75,
-              "y": 190,
-              "w": 350,
-              "h": 1565,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "send",
-                "entities-text",
-                "candidate-request",
-                "progression-file",
-                "rules-text"
-              ]
-            },
-            "stage-1": {
-              "id": "stage-1",
-              "title": "Native generation",
-              "description": "Stage 1. Wires determine execution; folding is presentation only.",
-              "x": 435,
-              "y": 190,
-              "w": 350,
-              "h": 1245,
+              "y": 1429,
+              "w": 710,
+              "h": 285,
               "color": "#284e67",
               "collapsed": false,
               "members": [
-                "generate",
-                "entities",
-                "progression",
+                "progression-file",
+                "progression"
+              ]
+            },
+            "processing-rules-text": {
+              "id": "processing-rules-text",
+              "title": "Prepare reply guidance",
+              "description": "These connected boxes work together. Follow their wires to see how each result is used.",
+              "x": 75,
+              "y": 1794,
+              "w": 710,
+              "h": 285,
+              "color": "#284e67",
+              "collapsed": false,
+              "members": [
+                "rules-text",
                 "rules"
               ]
             },
-            "stage-2": {
-              "id": "stage-2",
-              "title": "Response processing",
-              "description": "Stage 2. Wires determine execution; folding is presentation only.",
-              "x": 795,
-              "y": 190,
-              "w": 350,
-              "h": 605,
+            "processing-draft-scope": {
+              "id": "processing-draft-scope",
+              "title": "Update saved story data",
+              "description": "These connected boxes work together. Follow their wires to see how each result is used.",
+              "x": 75,
+              "y": 2159,
+              "w": 5750,
+              "h": 575,
               "color": "#57416e",
               "collapsed": false,
               "members": [
                 "draft-scope",
-                "before-experience"
-              ]
-            },
-            "stage-3": {
-              "id": "stage-3",
-              "title": "Preparation / processing",
-              "description": "Stage 3. Wires determine execution; folding is presentation only.",
-              "x": 1155,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "native-source"
-              ]
-            },
-            "stage-4": {
-              "id": "stage-4",
-              "title": "Response processing",
-              "description": "Stage 4. Wires determine execution; folding is presentation only.",
-              "x": 1515,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "candidates"
-              ]
-            },
-            "stage-5": {
-              "id": "stage-5",
-              "title": "Response processing",
-              "description": "Stage 5. Wires determine execution; folding is presentation only.",
-              "x": 1875,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "events"
-              ]
-            },
-            "stage-6": {
-              "id": "stage-6",
-              "title": "Response processing",
-              "description": "Stage 6. Wires determine execution; folding is presentation only.",
-              "x": 2235,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "confirm-each"
-              ]
-            },
-            "stage-7": {
-              "id": "stage-7",
-              "title": "Response processing",
-              "description": "Stage 7. Wires determine execution; folding is presentation only.",
-              "x": 2595,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "confirmed"
-              ]
-            },
-            "stage-8": {
-              "id": "stage-8",
-              "title": "Response processing",
-              "description": "Stage 8. Wires determine execution; folding is presentation only.",
-              "x": 2955,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "progress-events"
-              ]
-            },
-            "stage-9": {
-              "id": "stage-9",
-              "title": "Response processing",
-              "description": "Stage 9. Wires determine execution; folding is presentation only.",
-              "x": 3315,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "award"
-              ]
-            },
-            "stage-10": {
-              "id": "stage-10",
-              "title": "Response processing",
-              "description": "Stage 10. Wires determine execution; folding is presentation only.",
-              "x": 3675,
-              "y": 190,
-              "w": 350,
-              "h": 605,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
+                "native-source",
+                "candidates",
+                "events",
+                "candidate-request",
+                "entities",
+                "confirm-each",
+                "entities-text",
+                "confirmed",
+                "progress-events",
+                "award",
                 "after-experience",
-                "save-format"
-              ]
-            },
-            "stage-11": {
-              "id": "stage-11",
-              "title": "Review / accepted staging",
-              "description": "Stage 11. Wires determine execution; folding is presentation only.",
-              "x": 4035,
-              "y": 190,
-              "w": 350,
-              "h": 605,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
+                "save-format",
                 "experience-pair",
-                "save"
-              ]
-            },
-            "stage-12": {
-              "id": "stage-12",
-              "title": "Response processing",
-              "description": "Stage 12. Wires determine execution; folding is presentation only.",
-              "x": 4395,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "change"
-              ]
-            },
-            "stage-13": {
-              "id": "stage-13",
-              "title": "Response processing",
-              "description": "Stage 13. Wires determine execution; folding is presentation only.",
-              "x": 4755,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "levels"
-              ]
-            },
-            "stage-14": {
-              "id": "stage-14",
-              "title": "Response processing",
-              "description": "Stage 14. Wires determine execution; folding is presentation only.",
-              "x": 5115,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "notes"
-              ]
-            },
-            "stage-15": {
-              "id": "stage-15",
-              "title": "Preparation / processing",
-              "description": "Stage 15. Wires determine execution; folding is presentation only.",
-              "x": 5475,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
+                "save",
+                "before-experience",
+                "change",
+                "levels",
+                "notes",
                 "append"
-              ]
-            },
-            "stage-16": {
-              "id": "stage-16",
-              "title": "Review / accepted staging",
-              "description": "Stage 16. Wires determine execution; folding is presentation only.",
-              "x": 5835,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "review"
               ]
             }
           },
@@ -13105,7 +11302,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
                     "title": "Format",
                     "enabled": true,
                     "x": 460,
-                    "y": 560,
+                    "y": 530,
                     "w": 300,
                     "h": 210,
                     "profileId": null,
@@ -13218,49 +11415,57 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
     "id": "lesson-26",
     "number": 26,
     "title": "Recall a memory with a hotkey or a story trigger",
-    "goal": "Recall unchanged accepted actor records using a real shortcut or real player keyword while consuming activation only on acceptance.",
+    "goal": "Bring an accepted private memory into the next reply using a shortcut or a player-message keyword. You will queue recall, inspect the selected record and see when the queued request is consumed.",
     "lesson": {
       "difficulty": "Advanced",
-      "focus": "Recall and Recall Shortcut reply/swipe/both",
       "learn": [
-        "Recall and Recall Shortcut reply/swipe/both",
-        "Trace named artifacts to the owned Draft or accepted proposal."
+        "Recall selects unchanged accepted records from an actor-private workflow file. Unlike Prompted Memory in lesson 22, it does not ask a model to choose or invent an episode.",
+        "Recall Shortcut queues an activation for a reply, a swipe, or both. One-per-type gives separate available uses for those generation types.",
+        "A queued request is consumed on Apply, so rejecting or stopping a reply keeps it available."
       ],
       "requirements": [
-        "Open this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.",
-        "Select native Rowan; replace canonical avatar ID. Authorize actor-private JSON rowan-moments with accepted Recall-compatible {id,actorId,text} records."
+        "Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.",
+        "Select loaded Rowan and replace character:rowan.png with that actor’s actual avatar ID. Establish Rowan’s current participation using the presence work from lesson 21.",
+        "In Workflow › Configure › Workflow Data, create JSON target rowan-moments with Visibility Actor private and Rowan’s Actor ID. Paste its fixture into Initial template and Save authorization. Records need id, actorId and text; adjust the example actorId consistently.",
+        "For each new Workflow Data document, also fill in Document name; using the Logical target ID as its name is fine. When a lesson names a fixture, paste the file’s contents into Initial template, then choose Save authorization."
       ],
       "steps": [
-        "Open Recall a memory with a hotkey or a story trigger and inspect the named pins.",
-        "Recall Shortcut configures Ctrl+Shift+R; use Queue recall on a relevant node, Node → Memory recall, or the shortcut before an owned generation. Preview never queues recall.",
-        "Use target reply/swipe/both deliberately; this default one-per-type consumes only on Apply.",
-        "The keyword watches real player text; rejected or stopped replies retain the queued recall request.",
-        "Send in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals."
+        "Read the rowan-moments initial template. Confirm that the lighthouse-promise record belongs to Rowan and is the accepted text you intend to reuse.",
+        "Read Recall Shortcut settings: target both, uses one-per-type, consumeOn accepted. Queue recall on the relevant node, use Node → Memory recall, or press Ctrl+Shift+R before generating.",
+        "For the shortcut test, send: “Rowan walks along the harbor wall.” This avoids the lighthouse keyword. Inspect Recall.records, Recall.report and Generate Reply.guidance for the selected private record.",
+        "Reject that reply and check that the queued recall remains available. Try again and Apply: the reply use should now be consumed, with the separate swipe use still available.",
+        "Test the other trigger with “Rowan visits the lighthouse.” The actual player-message keyword can activate recall without a queued shortcut. Compare both reports; neither path edits the memory text.",
+        "Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes."
       ],
       "checkpoints": [
         {
           "node": "Recall",
           "port": "report",
-          "expect": "Selected accepted records retain provenance, private scope and pending consumption."
+          "expect": "Recall.report identifies the accepted private records supplied to guidance and reports the recall activation. Queued consumption stays pending until Apply."
         }
       ],
       "experiments": [
         {
-          "change": "Set hotkey target to swipe.",
-          "expect": "Only an owned new swipe with queued recall can reserve that request."
+          "change": "Set Recall Shortcut target to swipe. Queue recall, use a player message without lighthouse, and compare a new reply with a new swipe.",
+          "expect": "The queued request can be reserved by the swipe, not the reply. The keyword is a separate trigger, so omit it while testing the shortcut target."
         }
       ],
       "cases": [
         {
-          "when": "Preview or rejected native reply",
-          "expect": "Preview cannot queue recall; rejection leaves the queued request available for consumption on acceptance."
+          "when": "The workflow is only previewed.",
+          "expect": "Preview does not queue a recall request."
         },
         {
-          "when": "Rejected or stopped",
-          "expect": "The existing story and staged effects are retained without settlement."
+          "when": "Rowan is absent or neither activation matches.",
+          "expect": "No private record is supplied to portrayal."
+        },
+        {
+          "when": "A queued reply is rejected or stopped.",
+          "expect": "The available recall use and accepted memory file are preserved."
         }
       ],
-      "callBudget": "1 auxiliary cast interpretation; Recall tokenization and accepted activation settlement make no model requests. One ordinary native generation."
+      "callBudget": "One extra model request checks participation. Recall selection and queued-use tracking make no model requests. There is also one ordinary SillyTavern reply.",
+      "focus": "Recall and Recall Shortcut reply/swipe/both"
     },
     "packages": [
       {
@@ -13270,7 +11475,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
         "graph": {
           "id": "remastered-lesson-26",
           "name": "26. Recall a memory with a hotkey or a story trigger",
-          "description": "Recall unchanged accepted actor records using a real shortcut or real player keyword while consuming activation only on acceptance.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nSelect native Rowan; replace canonical avatar ID. Authorize actor-private JSON rowan-moments with accepted Recall-compatible {id,actorId,text} records.\n\nOpen Recall a memory with a hotkey or a story trigger and inspect the named pins.\nRecall Shortcut configures Ctrl+Shift+R; use Queue recall on a relevant node, Node → Memory recall, or the shortcut before an owned generation. Preview never queues recall.\nUse target reply/swipe/both deliberately; this default one-per-type consumes only on Apply.\nThe keyword watches real player text; rejected or stopped replies retain the queued recall request.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 1 auxiliary cast interpretation; Recall tokenization and accepted activation settlement make no model requests. One ordinary native generation.\nCheckpoints:\nRecall.report: Selected accepted records retain provenance, private scope and pending consumption.",
+          "description": "Bring an accepted private memory into the next reply using a shortcut or a player-message keyword. You will queue recall, inspect the selected record and see when the queued request is consumed.\n\nWhat you'll learn:\n• Recall selects unchanged accepted records from an actor-private workflow file. Unlike Prompted Memory in lesson 22, it does not ask a model to choose or invent an episode.\n• Recall Shortcut queues an activation for a reply, a swipe, or both. One-per-type gives separate available uses for those generation types.\n• A queued request is consumed on Apply, so rejecting or stopping a reply keeps it available.\n\nBefore you start:\n• Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.\n• Select loaded Rowan and replace character:rowan.png with that actor’s actual avatar ID. Establish Rowan’s current participation using the presence work from lesson 21.\n• In Workflow › Configure › Workflow Data, create JSON target rowan-moments with Visibility Actor private and Rowan’s Actor ID. Paste its fixture into Initial template and Save authorization. Records need id, actorId and text; adjust the example actorId consistently.\n• For each new Workflow Data document, also fill in Document name; using the Logical target ID as its name is fine. When a lesson names a fixture, paste the file’s contents into Initial template, then choose Save authorization.\n\nSteps:\n1. Read the rowan-moments initial template. Confirm that the lighthouse-promise record belongs to Rowan and is the accepted text you intend to reuse.\n2. Read Recall Shortcut settings: target both, uses one-per-type, consumeOn accepted. Queue recall on the relevant node, use Node → Memory recall, or press Ctrl+Shift+R before generating.\n3. For the shortcut test, send: “Rowan walks along the harbor wall.” This avoids the lighthouse keyword. Inspect Recall.records, Recall.report and Generate Reply.guidance for the selected private record.\n4. Reject that reply and check that the queued recall remains available. Try again and Apply: the reply use should now be consumed, with the separate swipe use still available.\n5. Test the other trigger with “Rowan visits the lighthouse.” The actual player-message keyword can activate recall without a queued shortcut. Compare both reports; neither path edits the memory text.\n6. Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes.\n\nCheckpoints:\nRecall → report: Recall.report identifies the accepted private records supplied to guidance and reports the recall activation. Queued consumption stays pending until Apply.\n\nTry this:\nSet Recall Shortcut target to swipe. Queue recall, use a player message without lighthouse, and compare a new reply with a new swipe.\nThe queued request can be reserved by the swipe, not the reply. The keyword is a separate trigger, so omit it while testing the shortcut target.\n\nIf something is different:\nThe workflow is only previewed.: Preview does not queue a recall request.\nRowan is absent or neither activation matches.: No private record is supplied to portrayal.\nA queued reply is rejected or stopped.: The available recall use and accepted memory file are preserved.\n\nModel requests: One extra model request checks participation. Recall selection and queued-use tracking make no model requests. There is also one ordinary SillyTavern reply.",
           "schema": 3,
           "runtime": 2,
           "mode": "native-unified",
@@ -13283,10 +11488,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "On Send",
               "enabled": true,
               "x": 100,
-              "y": 240,
+              "y": 1069,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -13300,10 +11504,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Generate Reply · SillyTavern",
               "enabled": true,
               "x": 1540,
-              "y": 240,
+              "y": 1069,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-4",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -13318,10 +11521,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Review / Publish",
               "enabled": true,
               "x": 1900,
-              "y": 240,
+              "y": 1069,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-5",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -13334,10 +11536,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Scene Context",
               "enabled": true,
               "x": 100,
-              "y": 560,
+              "y": 1699,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-scene",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -13354,10 +11556,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Text",
               "enabled": true,
               "x": 100,
-              "y": 880,
+              "y": 1989,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-scene",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -13373,10 +11575,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Model Call",
               "enabled": true,
               "x": 460,
-              "y": 240,
+              "y": 1699,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-1",
+              "inGroup": "processing-scene",
               "profileId": "lattice:active-sillytavern",
               "model": null,
               "modelRole": "Prose",
@@ -13395,10 +11597,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Scene Presence",
               "enabled": true,
               "x": 820,
-              "y": 240,
+              "y": 1699,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-2",
+              "inGroup": "processing-scene",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -13414,10 +11616,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Player Event Source",
               "enabled": true,
               "x": 100,
-              "y": 1200,
+              "y": 2279,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-scene",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -13431,10 +11633,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Read File",
               "enabled": true,
               "x": 100,
-              "y": 1520,
+              "y": 2569,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-scene",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -13453,10 +11655,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "JSON Decode",
               "enabled": true,
               "x": 460,
-              "y": 560,
+              "y": 1989,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-1",
+              "inGroup": "processing-scene",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -13472,10 +11674,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Recall Shortcut",
               "enabled": true,
               "x": 100,
-              "y": 1840,
+              "y": 1359,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -13501,10 +11702,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Recalled memories",
               "enabled": true,
               "x": 1180,
-              "y": 240,
+              "y": 1699,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-3",
+              "inGroup": "processing-scene",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -13533,8 +11734,8 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "x": 100,
               "y": 0,
               "w": 900,
-              "h": 180,
-              "content": "Recall unchanged accepted actor records using a real shortcut or real player keyword while consuming activation only on acceptance.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nSelect native Rowan; replace canonical avatar ID. Authorize actor-private JSON rowan-moments with accepted Recall-compatible {id,actorId,text} records.\n\nOpen Recall a memory with a hotkey or a story trigger and inspect the named pins.\nRecall Shortcut configures Ctrl+Shift+R; use Queue recall on a relevant node, Node → Memory recall, or the shortcut before an owned generation. Preview never queues recall.\nUse target reply/swipe/both deliberately; this default one-per-type consumes only on Apply.\nThe keyword watches real player text; rejected or stopped replies retain the queued recall request.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 1 auxiliary cast interpretation; Recall tokenization and accepted activation settlement make no model requests. One ordinary native generation.\nCheckpoints:\nRecall.report: Selected accepted records retain provenance, private scope and pending consumption.",
+              "h": 989,
+              "content": "Bring an accepted private memory into the next reply using a shortcut or a player-message keyword. You will queue recall, inspect the selected record and see when the queued request is consumed.\n\nWhat you'll learn:\n• Recall selects unchanged accepted records from an actor-private workflow file. Unlike Prompted Memory in lesson 22, it does not ask a model to choose or invent an episode.\n• Recall Shortcut queues an activation for a reply, a swipe, or both. One-per-type gives separate available uses for those generation types.\n• A queued request is consumed on Apply, so rejecting or stopping a reply keeps it available.\n\nBefore you start:\n• Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.\n• Select loaded Rowan and replace character:rowan.png with that actor’s actual avatar ID. Establish Rowan’s current participation using the presence work from lesson 21.\n• In Workflow › Configure › Workflow Data, create JSON target rowan-moments with Visibility Actor private and Rowan’s Actor ID. Paste its fixture into Initial template and Save authorization. Records need id, actorId and text; adjust the example actorId consistently.\n• For each new Workflow Data document, also fill in Document name; using the Logical target ID as its name is fine. When a lesson names a fixture, paste the file’s contents into Initial template, then choose Save authorization.\n\nSteps:\n1. Read the rowan-moments initial template. Confirm that the lighthouse-promise record belongs to Rowan and is the accepted text you intend to reuse.\n2. Read Recall Shortcut settings: target both, uses one-per-type, consumeOn accepted. Queue recall on the relevant node, use Node → Memory recall, or press Ctrl+Shift+R before generating.\n3. For the shortcut test, send: “Rowan walks along the harbor wall.” This avoids the lighthouse keyword. Inspect Recall.records, Recall.report and Generate Reply.guidance for the selected private record.\n4. Reject that reply and check that the queued recall remains available. Try again and Apply: the reply use should now be consumed, with the separate swipe use still available.\n5. Test the other trigger with “Rowan visits the lighthouse.” The actual player-message keyword can activate recall without a queued shortcut. Compare both reports; neither path edits the memory text.\n6. Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes.\n\nCheckpoints:\nRecall → report: Recall.report identifies the accepted private records supplied to guidance and reports the recall activation. Queued consumption stays pending until Apply.\n\nTry this:\nSet Recall Shortcut target to swipe. Queue recall, use a player message without lighthouse, and compare a new reply with a new swipe.\nThe queued request can be reserved by the swipe, not the reply. The keyword is a separate trigger, so omit it while testing the shortcut target.\n\nIf something is different:\nThe workflow is only previewed.: Preview does not queue a recall request.\nRowan is absent or neither activation matches.: No private record is supplied to portrayal.\nA queued reply is rejected or stopped.: The available recall use and accepted memory file are preserved.\n\nModel requests: One extra model request checks participation. Recall selection and queued-use tracking make no model requests. There is also one ordinary SillyTavern reply.",
               "commentFrame": true,
               "moveContents": false
             }
@@ -13622,94 +11823,25 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
             }
           },
           "groups": {
-            "stage-0": {
-              "id": "stage-0",
-              "title": "Preparation / processing",
-              "description": "Stage 0. Wires determine execution; folding is presentation only.",
+            "processing-scene": {
+              "id": "processing-scene",
+              "title": "Recall character memories",
+              "description": "These connected boxes work together. Follow their wires to see how each result is used.",
               "x": 75,
-              "y": 190,
-              "w": 350,
-              "h": 1885,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "send",
-                "scene",
-                "cast-request",
-                "player",
-                "memories-file",
-                "hotkey"
-              ]
-            },
-            "stage-1": {
-              "id": "stage-1",
-              "title": "Preparation / processing",
-              "description": "Stage 1. Wires determine execution; folding is presentation only.",
-              "x": 435,
-              "y": 190,
-              "w": 350,
-              "h": 605,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "cast",
-                "memories"
-              ]
-            },
-            "stage-2": {
-              "id": "stage-2",
-              "title": "Preparation / processing",
-              "description": "Stage 2. Wires determine execution; folding is presentation only.",
-              "x": 795,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "cast-presence-0"
-              ]
-            },
-            "stage-3": {
-              "id": "stage-3",
-              "title": "Preparation / processing",
-              "description": "Stage 3. Wires determine execution; folding is presentation only.",
-              "x": 1155,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "recall"
-              ]
-            },
-            "stage-4": {
-              "id": "stage-4",
-              "title": "Native generation",
-              "description": "Stage 4. Wires determine execution; folding is presentation only.",
-              "x": 1515,
-              "y": 190,
-              "w": 350,
-              "h": 285,
+              "y": 1649,
+              "w": 1430,
+              "h": 1155,
               "color": "#284e67",
               "collapsed": false,
               "members": [
-                "generate"
-              ]
-            },
-            "stage-5": {
-              "id": "stage-5",
-              "title": "Review / accepted staging",
-              "description": "Stage 5. Wires determine execution; folding is presentation only.",
-              "x": 1875,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "review"
+                "scene",
+                "cast",
+                "cast-request",
+                "cast-presence-0",
+                "recall",
+                "memories",
+                "player",
+                "memories-file"
               ]
             }
           },
@@ -13738,56 +11870,62 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
     "id": "lesson-27",
     "number": 27,
     "title": "The broken wand: stable randomness with a wild branch",
-    "goal": "Confirm one real wand use and ordered transfers, reuse the event draw, resolve a fixed or novelty-accepted wild effect, guide native prose and settle the outcome only on acceptance.",
+    "goal": "Give a broken wand a weighted effect that stays stable on replay. You will confirm one use and resolve either a fixed effect or a checked new effect.",
     "lesson": {
       "difficulty": "Capstone",
-      "focus": "Event-keyed Random Pick, Saved Outcome, Effect Author and Outcome Commit",
       "learn": [
-        "Event-keyed Random Pick, Saved Outcome, Effect Author and Outcome Commit",
-        "Trace named artifacts to the owned Draft or accepted proposal."
+        "Random Pick ties a weighted draw to the confirmed event ID. Reuse preserves it when that event is processed again.",
+        "A fixed library effect needs no effect-writing model. A generate selection calls Effect Author, then Decision checks whether the proposal is distinct and allowed.",
+        "Outcome Commit saves the resolved effect in a ledger only with the accepted reply."
       ],
       "requirements": [
-        "Open this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.",
-        "Authorize public JSON wand-holders as accepted {\"broken-wand\":\"character:rowan.png\"}; wand-outcomes as [].",
-        "Authorize wand-effects JSON {libraryId:\"wand-effects\",revision:\"r1\",itemId:\"broken-wand\",effects:[{id:\"sparks\",kind:\"fixed\",weight:80,description:\"Blue sparks replace the spell.\"},{id:\"wild\",kind:\"generate\",weight:20}]}."
+        "Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.",
+        "In Workflow › Configure › Workflow Data, authorize wand-holders, wand-effects and wand-outcomes as Public JSON. Paste their fixtures into Initial template and Save authorization. The map must establish Rowan’s ownership; outcomes starts as [].",
+        "Replace Rowan and Iris avatar IDs consistently with loaded actors. Keep libraryId wand-effects, revision r1 and itemId broken-wand. The fixture weights are 80 for blue sparks and 20 for a generated wild effect.",
+        "For each new Workflow Data document, also fill in Document name; using the Logical target ID as its name is fine. When a lesson names a fixture, paste the file’s contents into Initial template, then choose Save authorization."
       ],
       "steps": [
-        "Open The broken wand: stable randomness with a wild branch and inspect the named pins.",
-        "The bounded recipe admits one use and up to two transfers; a second use holds rather than silently truncating.",
-        "Plain-text library exercise: use weights such as 80 | Blue sparks and 20 | @generate:wild, change format to text while preserving library identities.",
-        "Saved Outcome inspects the same event ledger. Random Pick reuses that draw; rejected review never silently rerolls.",
-        "Only the generate branch calls Effect Author and novelty Decision. False/null novelty prevents settlement.",
-        "Send in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals."
+        "Combine lesson 20’s confirmed item use with lesson 14’s per-item processing. Send: “Rowan uses the broken wand to cast a spell toward the empty harbor wall.” Include at most one use and two transfers.",
+        "Inspect Current Holder.events and Random Pick.out. Record the confirmed event ID, selected effect and frozen library identity.",
+        "Follow the resolver helper. A fixed draw supplies blue sparks directly. A wild draw asks Effect Author for one effect with an explicit spellOutcome, duration and consequence, then checks novelty and the mechanical policy.",
+        "Inspect the revised narration, notes and Outcome Commit.receipt. The prose should preserve the confirmed use, holder and resolved effect.",
+        "Apply and inspect wand-outcomes. That same event reuses its outcome; a new use has a new ID and may draw differently.",
+        "Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes."
       ],
       "checkpoints": [
         {
           "node": "Random Pick",
           "port": "out",
-          "expect": "The event identity keys a stable frozen draw; saved outcomes avoid rerolls."
+          "expect": "Random Pick.out ties the draw to the confirmed event ID and freezes the effect and library for reuse."
         },
         {
           "node": "Outcome Commit",
           "port": "receipt",
-          "expect": "Resolved outcomes stage to the authorized ledger only on accepted review."
+          "expect": "Outcome Commit.receipt proposes the result for wand-outcomes; Apply saves it."
         }
       ],
       "experiments": [
         {
-          "change": "Use the documented weighted text effect library.",
-          "expect": "Explicit identity and event-keyed reuse remain; no hidden reroll occurs."
+          "change": "Use fixtures/wand-effects.txt in a separate Plain text document and bind Read File to it. Set Parse Effect Library format to text; preserve library, item and revision settings.",
+          "expect": "Both weighted choices remain available. Changing formats does not reroll an existing event; saved documents keep their original format."
         }
       ],
       "cases": [
         {
-          "when": "Wild novelty is false or unresolved",
-          "expect": "The invented effect cannot resolve or settle and the frozen draw is retained."
+          "when": "A second actual use reaches the resolver.",
+          "expect": "The one-use limit stops the run instead of dropping an effect."
         },
         {
-          "when": "Rejected or stopped",
-          "expect": "The existing story and staged effects are retained without settlement."
+          "when": "Wild-effect novelty is false or null.",
+          "expect": "The invented effect cannot resolve or be saved; the existing draw is retained."
+        },
+        {
+          "when": "Review is rejected.",
+          "expect": "No outcome is saved and the event’s draw is not silently rerolled."
         }
       ],
-      "callBudget": "At most 7 auxiliary requests: Item Use extraction 1 + up to 3 confirmations + wild Effect Author 1 + novelty Decision 1 + narration revision 1; fixed branch at most 5. One ordinary native generation."
+      "callBudget": "Up to seven extra model requests: extraction, three confirmations, wild Effect Author, novelty Decision and narration revision. A fixed effect uses at most five. There is also one ordinary SillyTavern reply.",
+      "focus": "Event-keyed Random Pick, Saved Outcome, Effect Author and Outcome Commit"
     },
     "packages": [
       {
@@ -13797,7 +11935,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
         "graph": {
           "id": "remastered-lesson-27",
           "name": "27. The broken wand: stable randomness with a wild branch",
-          "description": "Confirm one real wand use and ordered transfers, reuse the event draw, resolve a fixed or novelty-accepted wild effect, guide native prose and settle the outcome only on acceptance.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nAuthorize public JSON wand-holders as accepted {\"broken-wand\":\"character:rowan.png\"}; wand-outcomes as [].\nAuthorize wand-effects JSON {libraryId:\"wand-effects\",revision:\"r1\",itemId:\"broken-wand\",effects:[{id:\"sparks\",kind:\"fixed\",weight:80,description:\"Blue sparks replace the spell.\"},{id:\"wild\",kind:\"generate\",weight:20}]}.\n\nOpen The broken wand: stable randomness with a wild branch and inspect the named pins.\nThe bounded recipe admits one use and up to two transfers; a second use holds rather than silently truncating.\nPlain-text library exercise: use weights such as 80 | Blue sparks and 20 | @generate:wild, change format to text while preserving library identities.\nSaved Outcome inspects the same event ledger. Random Pick reuses that draw; rejected review never silently rerolls.\nOnly the generate branch calls Effect Author and novelty Decision. False/null novelty prevents settlement.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: At most 7 auxiliary requests: Item Use extraction 1 + up to 3 confirmations + wild Effect Author 1 + novelty Decision 1 + narration revision 1; fixed branch at most 5. One ordinary native generation.\nCheckpoints:\nRandom Pick.out: The event identity keys a stable frozen draw; saved outcomes avoid rerolls.\nOutcome Commit.receipt: Resolved outcomes stage to the authorized ledger only on accepted review.",
+          "description": "Give a broken wand a weighted effect that stays stable on replay. You will confirm one use and resolve either a fixed effect or a checked new effect.\n\nWhat you'll learn:\n• Random Pick ties a weighted draw to the confirmed event ID. Reuse preserves it when that event is processed again.\n• A fixed library effect needs no effect-writing model. A generate selection calls Effect Author, then Decision checks whether the proposal is distinct and allowed.\n• Outcome Commit saves the resolved effect in a ledger only with the accepted reply.\n\nBefore you start:\n• Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.\n• In Workflow › Configure › Workflow Data, authorize wand-holders, wand-effects and wand-outcomes as Public JSON. Paste their fixtures into Initial template and Save authorization. The map must establish Rowan’s ownership; outcomes starts as [].\n• Replace Rowan and Iris avatar IDs consistently with loaded actors. Keep libraryId wand-effects, revision r1 and itemId broken-wand. The fixture weights are 80 for blue sparks and 20 for a generated wild effect.\n• For each new Workflow Data document, also fill in Document name; using the Logical target ID as its name is fine. When a lesson names a fixture, paste the file’s contents into Initial template, then choose Save authorization.\n\nSteps:\n1. Combine lesson 20’s confirmed item use with lesson 14’s per-item processing. Send: “Rowan uses the broken wand to cast a spell toward the empty harbor wall.” Include at most one use and two transfers.\n2. Inspect Current Holder.events and Random Pick.out. Record the confirmed event ID, selected effect and frozen library identity.\n3. Follow the resolver helper. A fixed draw supplies blue sparks directly. A wild draw asks Effect Author for one effect with an explicit spellOutcome, duration and consequence, then checks novelty and the mechanical policy.\n4. Inspect the revised narration, notes and Outcome Commit.receipt. The prose should preserve the confirmed use, holder and resolved effect.\n5. Apply and inspect wand-outcomes. That same event reuses its outcome; a new use has a new ID and may draw differently.\n6. Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes.\n\nCheckpoints:\nRandom Pick → out: Random Pick.out ties the draw to the confirmed event ID and freezes the effect and library for reuse.\nOutcome Commit → receipt: Outcome Commit.receipt proposes the result for wand-outcomes; Apply saves it.\n\nTry this:\nUse fixtures/wand-effects.txt in a separate Plain text document and bind Read File to it. Set Parse Effect Library format to text; preserve library, item and revision settings.\nBoth weighted choices remain available. Changing formats does not reroll an existing event; saved documents keep their original format.\n\nIf something is different:\nA second actual use reaches the resolver.: The one-use limit stops the run instead of dropping an effect.\nWild-effect novelty is false or null.: The invented effect cannot resolve or be saved; the existing draw is retained.\nReview is rejected.: No outcome is saved and the event’s draw is not silently rerolled.\n\nModel requests: Up to seven extra model requests: extraction, three confirmations, wild Effect Author, novelty Decision and narration revision. A fixed effect uses at most five. There is also one ordinary SillyTavern reply.",
           "schema": 3,
           "runtime": 2,
           "mode": "native-unified",
@@ -13810,10 +11948,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "On Send",
               "enabled": true,
               "x": 100,
-              "y": 240,
+              "y": 1069,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -13827,10 +11964,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Generate Reply · SillyTavern",
               "enabled": true,
               "x": 3700,
-              "y": 240,
+              "y": 1069,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-10",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -13845,10 +11981,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Review / Publish",
               "enabled": true,
               "x": 4780,
-              "y": 240,
+              "y": 1069,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-13",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -13862,10 +11997,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Player Event Source",
               "enabled": true,
               "x": 100,
-              "y": 560,
+              "y": 1409,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-player",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -13879,10 +12014,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Text",
               "enabled": true,
               "x": 100,
-              "y": 880,
+              "y": 1699,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-player",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -13898,10 +12033,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "JSON Decode",
               "enabled": true,
               "x": 460,
-              "y": 240,
+              "y": 1409,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-1",
+              "inGroup": "processing-player",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -13918,10 +12053,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Item Use Trigger",
               "enabled": true,
               "x": 820,
-              "y": 240,
+              "y": 1409,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-2",
+              "inGroup": "processing-player",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -13941,10 +12076,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "For Each",
               "enabled": true,
               "x": 1180,
-              "y": 240,
+              "y": 1409,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-3",
+              "inGroup": "processing-player",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -13972,10 +12107,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Collection",
               "enabled": true,
               "x": 1540,
-              "y": 240,
+              "y": 1409,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-4",
+              "inGroup": "processing-player",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -14001,10 +12136,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Read File",
               "enabled": true,
               "x": 100,
-              "y": 1200,
+              "y": 1989,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-player",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -14023,10 +12158,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "JSON Decode",
               "enabled": true,
               "x": 460,
-              "y": 560,
+              "y": 1699,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-1",
+              "inGroup": "processing-player",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -14043,10 +12178,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Current Holder",
               "enabled": true,
               "x": 1900,
-              "y": 240,
+              "y": 1409,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-5",
+              "inGroup": "processing-player",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -14060,10 +12195,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Collection",
               "enabled": true,
               "x": 2260,
-              "y": 240,
+              "y": 1409,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-6",
+              "inGroup": "processing-player",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -14090,10 +12225,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Read File",
               "enabled": true,
               "x": 100,
-              "y": 1520,
+              "y": 2279,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-player",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -14112,10 +12247,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Effect Library",
               "enabled": true,
               "x": 460,
-              "y": 880,
+              "y": 1989,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-1",
+              "inGroup": "processing-player",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -14134,10 +12269,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Read File",
               "enabled": true,
               "x": 100,
-              "y": 1840,
+              "y": 2569,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-player",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -14156,10 +12291,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "JSON Decode",
               "enabled": true,
               "x": 460,
-              "y": 1200,
+              "y": 2279,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-1",
+              "inGroup": "processing-player",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -14176,10 +12311,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Random Pick",
               "enabled": true,
               "x": 2620,
-              "y": 240,
+              "y": 1409,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-7",
+              "inGroup": "processing-player",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -14196,10 +12331,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "For Each",
               "enabled": true,
               "x": 2980,
-              "y": 240,
+              "y": 1409,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-8",
+              "inGroup": "processing-player",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -14229,10 +12364,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Compose",
               "enabled": true,
               "x": 3340,
-              "y": 240,
+              "y": 1699,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-9",
+              "inGroup": "processing-player",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -14251,10 +12386,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Collection",
               "enabled": true,
               "x": 2620,
-              "y": 560,
+              "y": 1699,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-7",
+              "inGroup": "processing-player",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -14281,10 +12416,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Select Fields",
               "enabled": true,
               "x": 2980,
-              "y": 560,
+              "y": 1699,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-8",
+              "inGroup": "processing-player",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -14429,10 +12564,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Saved Outcome",
               "enabled": true,
               "x": 3340,
-              "y": 560,
+              "y": 1409,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-9",
+              "inGroup": "processing-player",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -14446,10 +12581,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Outcome Commit",
               "enabled": true,
               "x": 3340,
-              "y": 880,
+              "y": 1069,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-9",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -14464,10 +12598,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Revise Draft",
               "enabled": true,
               "x": 4060,
-              "y": 240,
+              "y": 2934,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-11",
+              "inGroup": "processing-polish",
               "profileId": "lattice:active-sillytavern",
               "model": null,
               "modelRole": "Prose",
@@ -14485,10 +12619,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Collect",
               "enabled": true,
               "x": 3700,
-              "y": 560,
+              "y": 2934,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-10",
+              "inGroup": "processing-polish",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -14516,10 +12650,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Compose",
               "enabled": true,
               "x": 4060,
-              "y": 560,
+              "y": 3224,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-11",
+              "inGroup": "processing-polish",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -14539,10 +12673,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Append",
               "enabled": true,
               "x": 4420,
-              "y": 240,
+              "y": 2934,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-12",
+              "inGroup": "processing-polish",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -14558,8 +12692,8 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "x": 100,
               "y": 0,
               "w": 900,
-              "h": 180,
-              "content": "Confirm one real wand use and ordered transfers, reuse the event draw, resolve a fixed or novelty-accepted wild effect, guide native prose and settle the outcome only on acceptance.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nAuthorize public JSON wand-holders as accepted {\"broken-wand\":\"character:rowan.png\"}; wand-outcomes as [].\nAuthorize wand-effects JSON {libraryId:\"wand-effects\",revision:\"r1\",itemId:\"broken-wand\",effects:[{id:\"sparks\",kind:\"fixed\",weight:80,description:\"Blue sparks replace the spell.\"},{id:\"wild\",kind:\"generate\",weight:20}]}.\n\nOpen The broken wand: stable randomness with a wild branch and inspect the named pins.\nThe bounded recipe admits one use and up to two transfers; a second use holds rather than silently truncating.\nPlain-text library exercise: use weights such as 80 | Blue sparks and 20 | @generate:wild, change format to text while preserving library identities.\nSaved Outcome inspects the same event ledger. Random Pick reuses that draw; rejected review never silently rerolls.\nOnly the generate branch calls Effect Author and novelty Decision. False/null novelty prevents settlement.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: At most 7 auxiliary requests: Item Use extraction 1 + up to 3 confirmations + wild Effect Author 1 + novelty Decision 1 + narration revision 1; fixed branch at most 5. One ordinary native generation.\nCheckpoints:\nRandom Pick.out: The event identity keys a stable frozen draw; saved outcomes avoid rerolls.\nOutcome Commit.receipt: Resolved outcomes stage to the authorized ledger only on accepted review.",
+              "h": 989,
+              "content": "Give a broken wand a weighted effect that stays stable on replay. You will confirm one use and resolve either a fixed effect or a checked new effect.\n\nWhat you'll learn:\n• Random Pick ties a weighted draw to the confirmed event ID. Reuse preserves it when that event is processed again.\n• A fixed library effect needs no effect-writing model. A generate selection calls Effect Author, then Decision checks whether the proposal is distinct and allowed.\n• Outcome Commit saves the resolved effect in a ledger only with the accepted reply.\n\nBefore you start:\n• Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.\n• In Workflow › Configure › Workflow Data, authorize wand-holders, wand-effects and wand-outcomes as Public JSON. Paste their fixtures into Initial template and Save authorization. The map must establish Rowan’s ownership; outcomes starts as [].\n• Replace Rowan and Iris avatar IDs consistently with loaded actors. Keep libraryId wand-effects, revision r1 and itemId broken-wand. The fixture weights are 80 for blue sparks and 20 for a generated wild effect.\n• For each new Workflow Data document, also fill in Document name; using the Logical target ID as its name is fine. When a lesson names a fixture, paste the file’s contents into Initial template, then choose Save authorization.\n\nSteps:\n1. Combine lesson 20’s confirmed item use with lesson 14’s per-item processing. Send: “Rowan uses the broken wand to cast a spell toward the empty harbor wall.” Include at most one use and two transfers.\n2. Inspect Current Holder.events and Random Pick.out. Record the confirmed event ID, selected effect and frozen library identity.\n3. Follow the resolver helper. A fixed draw supplies blue sparks directly. A wild draw asks Effect Author for one effect with an explicit spellOutcome, duration and consequence, then checks novelty and the mechanical policy.\n4. Inspect the revised narration, notes and Outcome Commit.receipt. The prose should preserve the confirmed use, holder and resolved effect.\n5. Apply and inspect wand-outcomes. That same event reuses its outcome; a new use has a new ID and may draw differently.\n6. Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes.\n\nCheckpoints:\nRandom Pick → out: Random Pick.out ties the draw to the confirmed event ID and freezes the effect and library for reuse.\nOutcome Commit → receipt: Outcome Commit.receipt proposes the result for wand-outcomes; Apply saves it.\n\nTry this:\nUse fixtures/wand-effects.txt in a separate Plain text document and bind Read File to it. Set Parse Effect Library format to text; preserve library, item and revision settings.\nBoth weighted choices remain available. Changing formats does not reroll an existing event; saved documents keep their original format.\n\nIf something is different:\nA second actual use reaches the resolver.: The one-use limit stops the run instead of dropping an effect.\nWild-effect novelty is false or null.: The invented effect cannot resolve or be saved; the existing draw is retained.\nReview is rejected.: No outcome is saved and the event’s draw is not silently rerolled.\n\nModel requests: Up to seven extra model requests: extraction, three confirmations, wild Effect Author, novelty Decision and narration revision. A fixed effect uses at most five. There is also one ordinary SillyTavern reply.",
               "commentFrame": true,
               "moveContents": false
             }
@@ -14807,214 +12941,54 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
             }
           },
           "groups": {
-            "stage-0": {
-              "id": "stage-0",
-              "title": "Preparation / processing",
-              "description": "Stage 0. Wires determine execution; folding is presentation only.",
+            "processing-player": {
+              "id": "processing-player",
+              "title": "Choose an item effect",
+              "description": "These connected boxes work together. Follow their wires to see how each result is used.",
               "x": 75,
-              "y": 190,
-              "w": 350,
-              "h": 1885,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "send",
-                "player",
-                "entities-text",
-                "holders-file",
-                "library-file",
-                "saved-file"
-              ]
-            },
-            "stage-1": {
-              "id": "stage-1",
-              "title": "Preparation / processing",
-              "description": "Stage 1. Wires determine execution; folding is presentation only.",
-              "x": 435,
-              "y": 190,
-              "w": 350,
-              "h": 1245,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "entities",
-                "holders",
-                "library",
-                "saved"
-              ]
-            },
-            "stage-2": {
-              "id": "stage-2",
-              "title": "Preparation / processing",
-              "description": "Stage 2. Wires determine execution; folding is presentation only.",
-              "x": 795,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "events"
-              ]
-            },
-            "stage-3": {
-              "id": "stage-3",
-              "title": "Preparation / processing",
-              "description": "Stage 3. Wires determine execution; folding is presentation only.",
-              "x": 1155,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "confirm-each"
-              ]
-            },
-            "stage-4": {
-              "id": "stage-4",
-              "title": "Preparation / processing",
-              "description": "Stage 4. Wires determine execution; folding is presentation only.",
-              "x": 1515,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "confirmed"
-              ]
-            },
-            "stage-5": {
-              "id": "stage-5",
-              "title": "Preparation / processing",
-              "description": "Stage 5. Wires determine execution; folding is presentation only.",
-              "x": 1875,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "holder"
-              ]
-            },
-            "stage-6": {
-              "id": "stage-6",
-              "title": "Preparation / processing",
-              "description": "Stage 6. Wires determine execution; folding is presentation only.",
-              "x": 2235,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "actual-uses"
-              ]
-            },
-            "stage-7": {
-              "id": "stage-7",
-              "title": "Preparation / processing",
-              "description": "Stage 7. Wires determine execution; folding is presentation only.",
-              "x": 2595,
-              "y": 190,
-              "w": 350,
-              "h": 605,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "pick",
-                "first-use"
-              ]
-            },
-            "stage-8": {
-              "id": "stage-8",
-              "title": "Preparation / processing",
-              "description": "Stage 8. Wires determine execution; folding is presentation only.",
-              "x": 2955,
-              "y": 190,
-              "w": 350,
-              "h": 605,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "resolve-effects",
-                "use"
-              ]
-            },
-            "stage-9": {
-              "id": "stage-9",
-              "title": "Review / accepted staging",
-              "description": "Stage 9. Wires determine execution; folding is presentation only.",
-              "x": 3315,
-              "y": 190,
-              "w": 350,
-              "h": 925,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "guidance",
-                "saved-outcome",
-                "outcome-commit"
-              ]
-            },
-            "stage-10": {
-              "id": "stage-10",
-              "title": "Native generation",
-              "description": "Stage 10. Wires determine execution; folding is presentation only.",
-              "x": 3675,
-              "y": 190,
-              "w": 350,
-              "h": 605,
+              "y": 1359,
+              "w": 3590,
+              "h": 1445,
               "color": "#284e67",
               "collapsed": false,
               "members": [
-                "generate",
-                "outcome-notes"
+                "player",
+                "events",
+                "entities",
+                "confirm-each",
+                "entities-text",
+                "confirmed",
+                "holder",
+                "holders",
+                "actual-uses",
+                "holders-file",
+                "pick",
+                "first-use",
+                "library",
+                "saved",
+                "resolve-effects",
+                "use",
+                "library-file",
+                "saved-file",
+                "saved-outcome",
+                "guidance"
               ]
             },
-            "stage-11": {
-              "id": "stage-11",
-              "title": "Preparation / processing",
-              "description": "Stage 11. Wires determine execution; folding is presentation only.",
-              "x": 4035,
-              "y": 190,
-              "w": 350,
-              "h": 605,
+            "processing-polish": {
+              "id": "processing-polish",
+              "title": "Polish and annotate the reply",
+              "description": "These connected boxes work together. Follow their wires to see how each result is used.",
+              "x": 3675,
+              "y": 2884,
+              "w": 1070,
+              "h": 575,
               "color": "#57416e",
               "collapsed": false,
               "members": [
                 "polish",
-                "notes"
-              ]
-            },
-            "stage-12": {
-              "id": "stage-12",
-              "title": "Preparation / processing",
-              "description": "Stage 12. Wires determine execution; folding is presentation only.",
-              "x": 4395,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "append"
-              ]
-            },
-            "stage-13": {
-              "id": "stage-13",
-              "title": "Review / accepted staging",
-              "description": "Stage 13. Wires determine execution; folding is presentation only.",
-              "x": 4755,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "review"
+                "append",
+                "notes",
+                "outcome-notes"
               ]
             }
           },
@@ -15137,7 +13111,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
                     "title": "Format",
                     "enabled": true,
                     "x": 460,
-                    "y": 560,
+                    "y": 530,
                     "w": 300,
                     "h": 210,
                     "profileId": null,
@@ -15273,7 +13247,6 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
                     "y": 240,
                     "w": 300,
                     "h": 210,
-                    "inGroup": "stage-0",
                     "interfacePortId": "item"
                   },
                   "result": {
@@ -15284,7 +13257,6 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
                     "y": 240,
                     "w": 300,
                     "h": 210,
-                    "inGroup": "stage-8",
                     "interfacePortId": "result"
                   },
                   "wild": {
@@ -15298,7 +13270,6 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
                     "y": 240,
                     "w": 300,
                     "h": 210,
-                    "inGroup": "stage-1",
                     "profileId": null,
                     "model": null,
                     "modelRole": null,
@@ -15321,7 +13292,6 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
                     "y": 240,
                     "w": 300,
                     "h": 210,
-                    "inGroup": "stage-2",
                     "profileId": null,
                     "model": null,
                     "modelRole": null,
@@ -15339,7 +13309,6 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
                     "y": 240,
                     "w": 300,
                     "h": 210,
-                    "inGroup": "stage-3",
                     "profileId": "lattice:active-sillytavern",
                     "model": null,
                     "modelRole": "effectAuthor",
@@ -15358,7 +13327,6 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
                     "y": 240,
                     "w": 300,
                     "h": 210,
-                    "inGroup": "stage-4",
                     "profileId": "lattice:active-sillytavern",
                     "model": null,
                     "modelRole": "decision",
@@ -15383,7 +13351,6 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
                     "y": 240,
                     "w": 300,
                     "h": 210,
-                    "inGroup": "stage-5",
                     "profileId": null,
                     "model": null,
                     "modelRole": null,
@@ -15410,7 +13377,6 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
                     "y": 240,
                     "w": 300,
                     "h": 210,
-                    "inGroup": "stage-6",
                     "profileId": null,
                     "model": null,
                     "modelRole": null,
@@ -15427,7 +13393,6 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
                     "y": 240,
                     "w": 300,
                     "h": 210,
-                    "inGroup": "stage-7",
                     "profileId": null,
                     "model": null,
                     "modelRole": null,
@@ -15538,134 +13503,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
                     "toPort": "in"
                   }
                 },
-                "groups": {
-                  "stage-0": {
-                    "id": "stage-0",
-                    "title": "Preparation / processing",
-                    "description": "Stage 0. Wires determine execution; folding is presentation only.",
-                    "x": 75,
-                    "y": 190,
-                    "w": 350,
-                    "h": 285,
-                    "color": "#57416e",
-                    "collapsed": false,
-                    "members": [
-                      "item"
-                    ]
-                  },
-                  "stage-1": {
-                    "id": "stage-1",
-                    "title": "Preparation / processing",
-                    "description": "Stage 1. Wires determine execution; folding is presentation only.",
-                    "x": 435,
-                    "y": 190,
-                    "w": 350,
-                    "h": 285,
-                    "color": "#57416e",
-                    "collapsed": false,
-                    "members": [
-                      "wild"
-                    ]
-                  },
-                  "stage-2": {
-                    "id": "stage-2",
-                    "title": "Preparation / processing",
-                    "description": "Stage 2. Wires determine execution; folding is presentation only.",
-                    "x": 795,
-                    "y": 190,
-                    "w": 350,
-                    "h": 285,
-                    "color": "#57416e",
-                    "collapsed": false,
-                    "members": [
-                      "route"
-                    ]
-                  },
-                  "stage-3": {
-                    "id": "stage-3",
-                    "title": "Preparation / processing",
-                    "description": "Stage 3. Wires determine execution; folding is presentation only.",
-                    "x": 1155,
-                    "y": 190,
-                    "w": 350,
-                    "h": 285,
-                    "color": "#57416e",
-                    "collapsed": false,
-                    "members": [
-                      "author"
-                    ]
-                  },
-                  "stage-4": {
-                    "id": "stage-4",
-                    "title": "Preparation / processing",
-                    "description": "Stage 4. Wires determine execution; folding is presentation only.",
-                    "x": 1515,
-                    "y": 190,
-                    "w": 350,
-                    "h": 285,
-                    "color": "#57416e",
-                    "collapsed": false,
-                    "members": [
-                      "novelty"
-                    ]
-                  },
-                  "stage-5": {
-                    "id": "stage-5",
-                    "title": "Preparation / processing",
-                    "description": "Stage 5. Wires determine execution; folding is presentation only.",
-                    "x": 1875,
-                    "y": 190,
-                    "w": 350,
-                    "h": 285,
-                    "color": "#57416e",
-                    "collapsed": false,
-                    "members": [
-                      "acceptance"
-                    ]
-                  },
-                  "stage-6": {
-                    "id": "stage-6",
-                    "title": "Preparation / processing",
-                    "description": "Stage 6. Wires determine execution; folding is presentation only.",
-                    "x": 2235,
-                    "y": 190,
-                    "w": 350,
-                    "h": 285,
-                    "color": "#57416e",
-                    "collapsed": false,
-                    "members": [
-                      "stage"
-                    ]
-                  },
-                  "stage-7": {
-                    "id": "stage-7",
-                    "title": "Preparation / processing",
-                    "description": "Stage 7. Wires determine execution; folding is presentation only.",
-                    "x": 2595,
-                    "y": 190,
-                    "w": 350,
-                    "h": 285,
-                    "color": "#57416e",
-                    "collapsed": false,
-                    "members": [
-                      "join"
-                    ]
-                  },
-                  "stage-8": {
-                    "id": "stage-8",
-                    "title": "Preparation / processing",
-                    "description": "Stage 8. Wires determine execution; folding is presentation only.",
-                    "x": 2955,
-                    "y": 190,
-                    "w": 350,
-                    "h": 285,
-                    "color": "#57416e",
-                    "collapsed": false,
-                    "members": [
-                      "result"
-                    ]
-                  }
-                },
+                "groups": {},
                 "roles": {
                   "effectAuthor": {
                     "model": null,
@@ -15698,56 +13536,62 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
     "id": "lesson-28",
     "number": 28,
     "title": "The soul-stealing sword: an event ledger and a threshold",
-    "goal": "Confirm exact native kills, project an add-unique soul ledger, derive tier from soul count and revise only on the 99-to-100 crossing before accepted same-target persistence.",
+    "goal": "Let a soul-stealing sword gain a tier from recorded kills. You will add one confirmed victim to a 99-record test ledger, detect the crossing to 100 and revise the narration only when a threshold is crossed.",
     "lesson": {
       "difficulty": "Capstone",
-      "focus": "Soul event ledger, before/after count and level threshold",
       "learn": [
-        "Soul event ledger, before/after count and level threshold",
-        "Trace named artifacts to the owned Draft or accepted proposal."
+        "The soul ledger is the source of the count; a separate stored level cannot drift away from it.",
+        "Project Document add-unique uses the victim ID to allow one soul per victim, while retaining the event ID and exact kill evidence.",
+        "Collection threshold compares counts before and after the proposed additions. A crossing activates the optional narration revision."
       ],
       "requirements": [
-        "Open this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.",
-        "Create public JSON sword-souls with actual accepted unique soul records. To exercise the boundary use a disposable fixture with 99 existing records; no invented live history.",
-        "Use loaded canonical attacker/victim avatar IDs and real native evidence; extraction establishes candidates only."
+        "Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.",
+        "In Workflow › Configure › Workflow Data, create JSON target sword-souls with Visibility Public. Paste fixtures/sword-souls-99.json into Initial template and Save authorization. These 99 demonstration records are for the disposable test only.",
+        "Use loaded Rowan and Iris as attacker and opponent for this test, replacing both example avatar IDs consistently. Other victims require the corresponding actual actor identities; do not substitute an unlisted name.",
+        "For each new Workflow Data document, also fill in Document name; using the Logical target ID as its name is fine. When a lesson names a fixture, paste the file’s contents into Initial template, then choose Save authorization."
       ],
       "steps": [
-        "Open The soul-stealing sword: an event ledger and a threshold and inspect the named pins.",
-        "Inspect count-pair before/after and tier: tier derives from the ledger, never a separate level store.",
-        "Add-unique canonical victim identity grants one soul per victim; eventId/source/span retain the actual kill evidence. Regenerated narration cannot grant a second soul for the same victim. A repeated victim with changed event/source evidence deliberately holds as IDENTITY_CONFLICT, preserving the existing ledger for human reconciliation. Proposed/negated kills add nothing.",
-        "Only crossing a threshold triggers the conditional narration pass; ordinary Draft survives a skipped pass.",
-        "Apply replaces exactly the target read by ledger.reference. Reject preserves the original file and soul count.",
-        "Send in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals."
+        "Combine confirmed actions from lesson 19, unique-record saves from lesson 17 and thresholds from lesson 25. Note the fixture’s starting count of 99.",
+        "Send a continuation request for a disposable, already resolved combat scene where the reply describes Rowan killing Iris with the soul-stealing sword. Inspect the reply; a threat or intention should not count.",
+        "Inspect the exact candidate quote and Decision answer. Follow the confirmed kill into Format: id and victimId should identify Iris, and the quote should match the native reply.",
+        "Inspect count-pair.out for before 99 and after 100. Then inspect tier.out against thresholds [100,250,500]. The crossing at 100 should activate the narration pass describing the new tier.",
+        "Compare the revision with the original kill: attacker, victim, dialogue and chronology should be preserved. Apply replaces the same sword-souls file that was read; Reject leaves its 99 records unchanged.",
+        "Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes."
       ],
       "checkpoints": [
         {
           "node": "Select Fields",
           "port": "out",
-          "expect": "The actual accepted ledger count 99 projects 100 for one new confirmed kill."
+          "expect": "count-pair.out shows 99 before and 100 after one new confirmed victim is proposed for the test ledger."
         },
         {
           "node": "Collection",
           "port": "out",
-          "expect": "The crossing and derived tier come from the real before/after counts."
+          "expect": "tier.out derives the new tier and crossing at 100 from those counts. Without a crossing, the original reply survives the skipped revision."
         }
       ],
       "experiments": [
         {
-          "change": "Reject a99-to100 projected crossing.",
-          "expect": "The original soul ledger stays99 and the conditional prose is not accepted."
+          "change": "Reject the proposed 99-to-100 crossing, then reread sword-souls.",
+          "expect": "The ledger still has 99 entries, and the revised tier narration was not accepted."
         }
       ],
       "cases": [
         {
-          "when": "Native narration repeats the same victim kill",
-          "expect": "The stable victim ledger grants no second soul. Changed event/source evidence for that victim deliberately holds as IDENTITY_CONFLICT; reconcile it explicitly without rewriting prior evidence."
+          "when": "The same victim is submitted again with identical evidence.",
+          "expect": "The unique victim record grants no second soul."
         },
         {
-          "when": "Rejected or stopped",
-          "expect": "The existing story and staged effects are retained without settlement."
+          "when": "An existing victim arrives with changed event or source evidence.",
+          "expect": "IDENTITY_CONFLICT stops the run. Compare the records and reconcile the conflict without rewriting prior evidence."
+        },
+        {
+          "when": "The kill is planned, denied or rejected by Decision.",
+          "expect": "No soul is added and no threshold revision is triggered."
         }
       ],
-      "callBudget": "At most 5 auxiliary requests: extraction 1 + up to 3 confirmations + conditional revision 1; one ordinary native generation."
+      "callBudget": "Up to five extra model requests: one extraction, up to three Decision checks and one revision only if a threshold is crossed. There is also one ordinary SillyTavern reply.",
+      "focus": "Soul event ledger, before/after count and level threshold"
     },
     "packages": [
       {
@@ -15757,7 +13601,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
         "graph": {
           "id": "remastered-lesson-28",
           "name": "28. The soul-stealing sword: an event ledger and a threshold",
-          "description": "Confirm exact native kills, project an add-unique soul ledger, derive tier from soul count and revise only on the 99-to-100 crossing before accepted same-target persistence.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nCreate public JSON sword-souls with actual accepted unique soul records. To exercise the boundary use a disposable fixture with 99 existing records; no invented live history.\nUse loaded canonical attacker/victim avatar IDs and real native evidence; extraction establishes candidates only.\n\nOpen The soul-stealing sword: an event ledger and a threshold and inspect the named pins.\nInspect count-pair before/after and tier: tier derives from the ledger, never a separate level store.\nAdd-unique canonical victim identity grants one soul per victim; eventId/source/span retain the actual kill evidence. Regenerated narration cannot grant a second soul for the same victim. A repeated victim with changed event/source evidence deliberately holds as IDENTITY_CONFLICT, preserving the existing ledger for human reconciliation. Proposed/negated kills add nothing.\nOnly crossing a threshold triggers the conditional narration pass; ordinary Draft survives a skipped pass.\nApply replaces exactly the target read by ledger.reference. Reject preserves the original file and soul count.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: At most 5 auxiliary requests: extraction 1 + up to 3 confirmations + conditional revision 1; one ordinary native generation.\nCheckpoints:\nSelect Fields.out: The actual accepted ledger count 99 projects 100 for one new confirmed kill.\nCollection.out: The crossing and derived tier come from the real before/after counts.",
+          "description": "Let a soul-stealing sword gain a tier from recorded kills. You will add one confirmed victim to a 99-record test ledger, detect the crossing to 100 and revise the narration only when a threshold is crossed.\n\nWhat you'll learn:\n• The soul ledger is the source of the count; a separate stored level cannot drift away from it.\n• Project Document add-unique uses the victim ID to allow one soul per victim, while retaining the event ID and exact kill evidence.\n• Collection threshold compares counts before and after the proposed additions. A crossing activates the optional narration revision.\n\nBefore you start:\n• Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.\n• In Workflow › Configure › Workflow Data, create JSON target sword-souls with Visibility Public. Paste fixtures/sword-souls-99.json into Initial template and Save authorization. These 99 demonstration records are for the disposable test only.\n• Use loaded Rowan and Iris as attacker and opponent for this test, replacing both example avatar IDs consistently. Other victims require the corresponding actual actor identities; do not substitute an unlisted name.\n• For each new Workflow Data document, also fill in Document name; using the Logical target ID as its name is fine. When a lesson names a fixture, paste the file’s contents into Initial template, then choose Save authorization.\n\nSteps:\n1. Combine confirmed actions from lesson 19, unique-record saves from lesson 17 and thresholds from lesson 25. Note the fixture’s starting count of 99.\n2. Send a continuation request for a disposable, already resolved combat scene where the reply describes Rowan killing Iris with the soul-stealing sword. Inspect the reply; a threat or intention should not count.\n3. Inspect the exact candidate quote and Decision answer. Follow the confirmed kill into Format: id and victimId should identify Iris, and the quote should match the native reply.\n4. Inspect count-pair.out for before 99 and after 100. Then inspect tier.out against thresholds [100,250,500]. The crossing at 100 should activate the narration pass describing the new tier.\n5. Compare the revision with the original kill: attacker, victim, dialogue and chronology should be preserved. Apply replaces the same sword-souls file that was read; Reject leaves its 99 records unchanged.\n6. Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes.\n\nCheckpoints:\nSelect Fields → out: count-pair.out shows 99 before and 100 after one new confirmed victim is proposed for the test ledger.\nCollection → out: tier.out derives the new tier and crossing at 100 from those counts. Without a crossing, the original reply survives the skipped revision.\n\nTry this:\nReject the proposed 99-to-100 crossing, then reread sword-souls.\nThe ledger still has 99 entries, and the revised tier narration was not accepted.\n\nIf something is different:\nThe same victim is submitted again with identical evidence.: The unique victim record grants no second soul.\nAn existing victim arrives with changed event or source evidence.: IDENTITY_CONFLICT stops the run. Compare the records and reconcile the conflict without rewriting prior evidence.\nThe kill is planned, denied or rejected by Decision.: No soul is added and no threshold revision is triggered.\n\nModel requests: Up to five extra model requests: one extraction, up to three Decision checks and one revision only if a threshold is crossed. There is also one ordinary SillyTavern reply.",
           "schema": 3,
           "runtime": 2,
           "mode": "native-unified",
@@ -15770,10 +13614,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "On Send",
               "enabled": true,
               "x": 100,
-              "y": 240,
+              "y": 1087,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -15787,10 +13630,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Generate Reply · SillyTavern",
               "enabled": true,
               "x": 460,
-              "y": 240,
+              "y": 1087,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-1",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -15805,10 +13647,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Review / Publish",
               "enabled": true,
               "x": 6580,
-              "y": 240,
+              "y": 1087,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-18",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -15822,10 +13663,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Select Fields",
               "enabled": true,
               "x": 820,
-              "y": 240,
+              "y": 1792,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-2",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -15869,10 +13710,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Draft Event Source",
               "enabled": true,
               "x": 1180,
-              "y": 240,
+              "y": 1792,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-3",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -15886,10 +13727,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Text",
               "enabled": true,
               "x": 100,
-              "y": 560,
+              "y": 2082,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -15905,10 +13746,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "JSON Decode",
               "enabled": true,
               "x": 460,
-              "y": 560,
+              "y": 1792,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-1",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -15925,10 +13766,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Text",
               "enabled": true,
               "x": 100,
-              "y": 880,
+              "y": 1792,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -15944,10 +13785,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Model Call",
               "enabled": true,
               "x": 1540,
-              "y": 240,
+              "y": 1792,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-4",
+              "inGroup": "processing-draft-scope",
               "profileId": "lattice:active-sillytavern",
               "model": null,
               "modelRole": "Prose",
@@ -15966,10 +13807,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Event Normalize",
               "enabled": true,
               "x": 1900,
-              "y": 240,
+              "y": 1792,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-5",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -15987,10 +13828,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "For Each",
               "enabled": true,
               "x": 2260,
-              "y": 240,
+              "y": 1792,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-6",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -16018,10 +13859,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Collection",
               "enabled": true,
               "x": 2620,
-              "y": 240,
+              "y": 1792,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-7",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -16047,10 +13888,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Read File",
               "enabled": true,
               "x": 100,
-              "y": 1200,
+              "y": 1427,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-ledger",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -16069,10 +13910,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "JSON Decode",
               "enabled": true,
               "x": 460,
-              "y": 880,
+              "y": 1427,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-1",
+              "inGroup": "processing-ledger",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -16088,10 +13929,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Collection",
               "enabled": true,
               "x": 820,
-              "y": 560,
+              "y": 1427,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-2",
+              "inGroup": "processing-ledger",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -16116,10 +13957,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Format",
               "enabled": true,
               "x": 2980,
-              "y": 240,
+              "y": 1792,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-8",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -16181,10 +14022,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Project Document",
               "enabled": true,
               "x": 3340,
-              "y": 240,
+              "y": 1792,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-9",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -16211,10 +14052,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Collection",
               "enabled": true,
               "x": 3700,
-              "y": 240,
+              "y": 2082,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-10",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -16240,10 +14081,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Collect",
               "enabled": true,
               "x": 4060,
-              "y": 240,
+              "y": 1792,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-11",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -16271,10 +14112,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Select Fields",
               "enabled": true,
               "x": 4420,
-              "y": 240,
+              "y": 1792,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-12",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -16303,10 +14144,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Collection",
               "enabled": true,
               "x": 4780,
-              "y": 240,
+              "y": 1792,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-13",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -16332,10 +14173,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Condition",
               "enabled": true,
               "x": 5140,
-              "y": 240,
+              "y": 1792,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-14",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -16355,10 +14196,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Branch",
               "enabled": true,
               "x": 5500,
-              "y": 240,
+              "y": 1792,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-15",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -16374,10 +14215,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Revise Draft",
               "enabled": true,
               "x": 5860,
-              "y": 240,
+              "y": 1792,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-16",
+              "inGroup": "processing-draft-scope",
               "profileId": "lattice:active-sillytavern",
               "model": null,
               "modelRole": "Prose",
@@ -16395,10 +14236,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Join",
               "enabled": true,
               "x": 6220,
-              "y": 240,
+              "y": 1792,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-17",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -16427,10 +14268,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Write to File",
               "enabled": true,
               "x": 3700,
-              "y": 560,
+              "y": 1792,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-10",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -16457,8 +14298,8 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "x": 100,
               "y": 0,
               "w": 900,
-              "h": 180,
-              "content": "Confirm exact native kills, project an add-unique soul ledger, derive tier from soul count and revise only on the 99-to-100 crossing before accepted same-target persistence.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nCreate public JSON sword-souls with actual accepted unique soul records. To exercise the boundary use a disposable fixture with 99 existing records; no invented live history.\nUse loaded canonical attacker/victim avatar IDs and real native evidence; extraction establishes candidates only.\n\nOpen The soul-stealing sword: an event ledger and a threshold and inspect the named pins.\nInspect count-pair before/after and tier: tier derives from the ledger, never a separate level store.\nAdd-unique canonical victim identity grants one soul per victim; eventId/source/span retain the actual kill evidence. Regenerated narration cannot grant a second soul for the same victim. A repeated victim with changed event/source evidence deliberately holds as IDENTITY_CONFLICT, preserving the existing ledger for human reconciliation. Proposed/negated kills add nothing.\nOnly crossing a threshold triggers the conditional narration pass; ordinary Draft survives a skipped pass.\nApply replaces exactly the target read by ledger.reference. Reject preserves the original file and soul count.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: At most 5 auxiliary requests: extraction 1 + up to 3 confirmations + conditional revision 1; one ordinary native generation.\nCheckpoints:\nSelect Fields.out: The actual accepted ledger count 99 projects 100 for one new confirmed kill.\nCollection.out: The crossing and derived tier come from the real before/after counts.",
+              "h": 1007,
+              "content": "Let a soul-stealing sword gain a tier from recorded kills. You will add one confirmed victim to a 99-record test ledger, detect the crossing to 100 and revise the narration only when a threshold is crossed.\n\nWhat you'll learn:\n• The soul ledger is the source of the count; a separate stored level cannot drift away from it.\n• Project Document add-unique uses the victim ID to allow one soul per victim, while retaining the event ID and exact kill evidence.\n• Collection threshold compares counts before and after the proposed additions. A crossing activates the optional narration revision.\n\nBefore you start:\n• Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.\n• In Workflow › Configure › Workflow Data, create JSON target sword-souls with Visibility Public. Paste fixtures/sword-souls-99.json into Initial template and Save authorization. These 99 demonstration records are for the disposable test only.\n• Use loaded Rowan and Iris as attacker and opponent for this test, replacing both example avatar IDs consistently. Other victims require the corresponding actual actor identities; do not substitute an unlisted name.\n• For each new Workflow Data document, also fill in Document name; using the Logical target ID as its name is fine. When a lesson names a fixture, paste the file’s contents into Initial template, then choose Save authorization.\n\nSteps:\n1. Combine confirmed actions from lesson 19, unique-record saves from lesson 17 and thresholds from lesson 25. Note the fixture’s starting count of 99.\n2. Send a continuation request for a disposable, already resolved combat scene where the reply describes Rowan killing Iris with the soul-stealing sword. Inspect the reply; a threat or intention should not count.\n3. Inspect the exact candidate quote and Decision answer. Follow the confirmed kill into Format: id and victimId should identify Iris, and the quote should match the native reply.\n4. Inspect count-pair.out for before 99 and after 100. Then inspect tier.out against thresholds [100,250,500]. The crossing at 100 should activate the narration pass describing the new tier.\n5. Compare the revision with the original kill: attacker, victim, dialogue and chronology should be preserved. Apply replaces the same sword-souls file that was read; Reject leaves its 99 records unchanged.\n6. Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes.\n\nCheckpoints:\nSelect Fields → out: count-pair.out shows 99 before and 100 after one new confirmed victim is proposed for the test ledger.\nCollection → out: tier.out derives the new tier and crossing at 100 from those counts. Without a crossing, the original reply survives the skipped revision.\n\nTry this:\nReject the proposed 99-to-100 crossing, then reread sword-souls.\nThe ledger still has 99 entries, and the revised tier narration was not accepted.\n\nIf something is different:\nThe same victim is submitted again with identical evidence.: The unique victim record grants no second soul.\nAn existing victim arrives with changed event or source evidence.: IDENTITY_CONFLICT stops the run. Compare the records and reconcile the conflict without rewriting prior evidence.\nThe kill is planned, denied or rejected by Decision.: No soul is added and no threshold revision is triggered.\n\nModel requests: Up to five extra model requests: one extraction, up to three Decision checks and one revision only if a threshold is crossed. There is also one ordinary SillyTavern reply.",
               "commentFrame": true,
               "moveContents": false
             }
@@ -16722,277 +14563,53 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
             }
           },
           "groups": {
-            "stage-0": {
-              "id": "stage-0",
-              "title": "Preparation / processing",
-              "description": "Stage 0. Wires determine execution; folding is presentation only.",
+            "processing-ledger": {
+              "id": "processing-ledger",
+              "title": "Prepare scene context",
+              "description": "These connected boxes work together. Follow their wires to see how each result is used.",
               "x": 75,
-              "y": 190,
-              "w": 350,
-              "h": 1245,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "send",
-                "entities-text",
-                "candidate-request",
-                "ledger"
-              ]
-            },
-            "stage-1": {
-              "id": "stage-1",
-              "title": "Native generation",
-              "description": "Stage 1. Wires determine execution; folding is presentation only.",
-              "x": 435,
-              "y": 190,
-              "w": 350,
-              "h": 925,
+              "y": 1377,
+              "w": 1070,
+              "h": 285,
               "color": "#284e67",
               "collapsed": false,
               "members": [
-                "generate",
-                "entities",
-                "before-ledger"
+                "ledger",
+                "before-ledger",
+                "before"
               ]
             },
-            "stage-2": {
-              "id": "stage-2",
-              "title": "Preparation / processing",
-              "description": "Stage 2. Wires determine execution; folding is presentation only.",
-              "x": 795,
-              "y": 190,
-              "w": 350,
-              "h": 605,
+            "processing-draft-scope": {
+              "id": "processing-draft-scope",
+              "title": "Update saved story data",
+              "description": "These connected boxes work together. Follow their wires to see how each result is used.",
+              "x": 75,
+              "y": 1742,
+              "w": 6470,
+              "h": 575,
               "color": "#57416e",
               "collapsed": false,
               "members": [
                 "draft-scope",
-                "before"
-              ]
-            },
-            "stage-3": {
-              "id": "stage-3",
-              "title": "Preparation / processing",
-              "description": "Stage 3. Wires determine execution; folding is presentation only.",
-              "x": 1155,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "native-source"
-              ]
-            },
-            "stage-4": {
-              "id": "stage-4",
-              "title": "Response processing",
-              "description": "Stage 4. Wires determine execution; folding is presentation only.",
-              "x": 1515,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "candidates"
-              ]
-            },
-            "stage-5": {
-              "id": "stage-5",
-              "title": "Response processing",
-              "description": "Stage 5. Wires determine execution; folding is presentation only.",
-              "x": 1875,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "events"
-              ]
-            },
-            "stage-6": {
-              "id": "stage-6",
-              "title": "Response processing",
-              "description": "Stage 6. Wires determine execution; folding is presentation only.",
-              "x": 2235,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "confirm-each"
-              ]
-            },
-            "stage-7": {
-              "id": "stage-7",
-              "title": "Response processing",
-              "description": "Stage 7. Wires determine execution; folding is presentation only.",
-              "x": 2595,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "confirmed"
-              ]
-            },
-            "stage-8": {
-              "id": "stage-8",
-              "title": "Response processing",
-              "description": "Stage 8. Wires determine execution; folding is presentation only.",
-              "x": 2955,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "format"
-              ]
-            },
-            "stage-9": {
-              "id": "stage-9",
-              "title": "Response processing",
-              "description": "Stage 9. Wires determine execution; folding is presentation only.",
-              "x": 3315,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "project"
-              ]
-            },
-            "stage-10": {
-              "id": "stage-10",
-              "title": "Review / accepted staging",
-              "description": "Stage 10. Wires determine execution; folding is presentation only.",
-              "x": 3675,
-              "y": 190,
-              "w": 350,
-              "h": 605,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
+                "native-source",
+                "candidates",
+                "events",
+                "candidate-request",
+                "entities",
+                "confirm-each",
+                "entities-text",
+                "confirmed",
+                "format",
+                "save",
+                "project",
                 "after",
-                "save"
-              ]
-            },
-            "stage-11": {
-              "id": "stage-11",
-              "title": "Response processing",
-              "description": "Stage 11. Wires determine execution; folding is presentation only.",
-              "x": 4035,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "counts"
-              ]
-            },
-            "stage-12": {
-              "id": "stage-12",
-              "title": "Response processing",
-              "description": "Stage 12. Wires determine execution; folding is presentation only.",
-              "x": 4395,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "count-pair"
-              ]
-            },
-            "stage-13": {
-              "id": "stage-13",
-              "title": "Response processing",
-              "description": "Stage 13. Wires determine execution; folding is presentation only.",
-              "x": 4755,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "tier"
-              ]
-            },
-            "stage-14": {
-              "id": "stage-14",
-              "title": "Response processing",
-              "description": "Stage 14. Wires determine execution; folding is presentation only.",
-              "x": 5115,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "crossed"
-              ]
-            },
-            "stage-15": {
-              "id": "stage-15",
-              "title": "Response processing",
-              "description": "Stage 15. Wires determine execution; folding is presentation only.",
-              "x": 5475,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "level-route"
-              ]
-            },
-            "stage-16": {
-              "id": "stage-16",
-              "title": "Preparation / processing",
-              "description": "Stage 16. Wires determine execution; folding is presentation only.",
-              "x": 5835,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "level-polish"
-              ]
-            },
-            "stage-17": {
-              "id": "stage-17",
-              "title": "Response processing",
-              "description": "Stage 17. Wires determine execution; folding is presentation only.",
-              "x": 6195,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
+                "counts",
+                "count-pair",
+                "tier",
+                "crossed",
+                "level-route",
+                "level-polish",
                 "draft-join"
-              ]
-            },
-            "stage-18": {
-              "id": "stage-18",
-              "title": "Review / accepted staging",
-              "description": "Stage 18. Wires determine execution; folding is presentation only.",
-              "x": 6555,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "review"
               ]
             }
           },
@@ -17115,7 +14732,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
                     "title": "Format",
                     "enabled": true,
                     "x": 460,
-                    "y": 560,
+                    "y": 530,
                     "w": 300,
                     "h": 210,
                     "profileId": null,
@@ -17228,73 +14845,74 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
     "id": "lesson-29",
     "number": 29,
     "title": "One kiss, two private perspectives",
-    "goal": "Confirm shared native kiss evidence, verify both actors, then separately permit and stage each actor’s private model-authored reflection with independent receipts.",
+    "goal": "Record separate private perspectives on one shared kiss. You will confirm the action, verify both participants and separately permit each model-authored reflection.",
     "lesson": {
       "difficulty": "Capstone",
-      "focus": "Ordinary Decision gate, Actor Context isolation and partial private persistence",
       "learn": [
-        "Ordinary Decision gate, Actor Context isolation and partial private persistence",
-        "Trace named artifacts to the owned Draft or accepted proposal."
+        "Confirming the observed kiss does not establish consent, future intimacy or either actor’s private feelings.",
+        "Actor Context supplies each actor’s own private material. The shared quote stays separate from inner interpretation.",
+        "Each file has its own save receipt. One successful save does not guarantee that the other file was saved."
       ],
       "requirements": [
-        "Open this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.",
-        "Choose an ordinary connection on the Decision node bar or use Active SillyTavern.",
-        "Replace both canonical avatar IDs with loaded actors; authorize separate actor-private JSON rowan-moments and iris-moments as [].",
-        "Both per-actor allowModelAuthoredReflection flags default false. Change each separately only when authoring permission exists for that actor, especially a player-controlled actor."
+        "Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.",
+        "Replace both avatar IDs with loaded actors. In Workflow › Configure › Workflow Data, authorize JSON targets rowan-moments and iris-moments as [], with Visibility Actor private and the respective Actor ID. Choose Save authorization for each.",
+        "Choose Active SillyTavern or an ordinary connection on Decision’s node bar. Both allowModelAuthoredReflection flags start false; enable each only with that actor’s authoring permission, especially for a player-controlled actor.",
+        "For each new Workflow Data document, also fill in Document name; using the Logical target ID as its name is fine. When a lesson names a fixture, paste the file’s contents into Initial template, then choose Save authorization."
       ],
       "steps": [
-        "Open One kiss, two private perspectives and inspect the named pins.",
-        "No candidate kiss or unresolved actor presence deliberately holds before Review. Rejected kiss evidence preserves the original Draft with no private reflection calls or saves; a null Decision answer holds Confirm Events before Review. Inspect the gate instead of treating the scene as accepted intimacy.",
-        "The shared quote/source/span are observed evidence; reflectionOrigin remains model-authored.",
-        "Both actors must first be verified present. After that shared prerequisite, each permitted leg reads only its own Actor Context and private target; no private text enters public notes.",
-        "Review separate receipts: native publication and each actor file have independent durability; one failed file is not an atomic rollback of both.",
-        "Send in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals."
+        "Combine lessons 19, 21 and 17: confirmation, presence and file staging. Prepare a scene where both actors participate and agreed to a brief kiss. If permitted, enable only Rowan’s reflection flag before testing.",
+        "Send a continuation request. Inspect the actual kiss quote, kiss-decision answer and confirmed-kiss.out. Planned or remembered intimacy is insufficient.",
+        "Inspect Rowan’s Actor Context and reflection inputs: the shared event and Rowan’s records may be included, never Iris’s private history. Both false permission flags skip both reflections.",
+        "Inspect sharedQuote and reflectionOrigin in the proposed record. The quote records observation; model-authored labels interpretation. These private records add no public notes.",
+        "After Apply, check each file receipt. Rowan’s permitted record should be saved; Iris’s disabled path stays skipped. If permitting both later, inspect both save results.",
+        "Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes."
       ],
       "checkpoints": [
         {
           "node": "Confirm Events",
           "port": "out",
-          "expect": "Only accepted exact shared native kiss evidence can authorize the two independently permitted legs."
+          "expect": "confirmed-kiss.out contains the accepted shared-action evidence for the permitted reflection paths."
         },
         {
           "node": "Write to File",
           "port": "receipt",
-          "expect": "Rowan’s pending private receipt is independent of Iris’s receipt."
+          "expect": "Rowan’s Write to File.receipt proposes a private rowan-moments record independently of Iris’s receipt."
         }
       ],
       "experiments": [
         {
-          "change": "Permit only Rowan’s model-authored reflection.",
-          "expect": "Iris’s private model leg and file proposal remain skipped."
+          "change": "Permit only Rowan’s reflection while both actors are verified present.",
+          "expect": "Only Rowan’s reflection model request and file proposal run; Iris’s private reflection path stays skipped."
         }
       ],
       "cases": [
         {
-          "when": "No candidate kiss or unresolved presence",
-          "expect": "This lesson explicitly holds before Review: no private reflection call, file settlement or native publication. Required canonical evidence barriers are not bypassed."
+          "when": "No kiss candidate exists or participation is unresolved.",
+          "expect": "The run stops before Review with no private reflections or saves."
         },
         {
-          "when": "Decision rejects the evidence",
-          "expect": "No private reflection is called or staged; the original owned Draft remains available for Review."
+          "when": "Decision rejects the kiss.",
+          "expect": "No reflection is requested or staged; the original reply remains available for Review."
         },
         {
-          "when": "Decision returns null",
-          "expect": "Confirm Events holds as UNRESOLVED_INPUT before Review, with no private reflection calls or file writes."
+          "when": "Decision answers null.",
+          "expect": "Confirm Events reports UNRESOLVED_INPUT before Review; no private reflection or write runs."
         },
         {
-          "when": "Either actor is absent",
-          "expect": "Both private model legs and saves are skipped; the owned Draft remains available. Both actors must be genuinely present before either reflection is eligible."
+          "when": "Either actor is absent.",
+          "expect": "Both private reflection and save paths skip; the original reply remains available."
         },
         {
-          "when": "Only one actor permission is enabled",
-          "expect": "Only that present actor may request and stage a private reflection; the other private leg is skipped."
+          "when": "Only one actor’s permission is enabled.",
+          "expect": "Only that actor’s private reflection path may run after both participation checks pass."
         },
         {
-          "when": "One private save fails",
-          "expect": "Each receipt remains independently durable; native publication and the other accepted save do not imply an atomic rollback."
+          "when": "One private save fails.",
+          "expect": "Inspect each receipt. The accepted reply and other successful file save are not automatically undone."
         }
       ],
-      "callBudget": "Default at most 3 auxiliary requests: extraction 1 + ordinary Decision 1 + cast 1. With both explicit permissions at most 5, adding one private reflection request per present actor. One ordinary native generation."
+      "callBudget": "Up to three extra requests by default: extraction, Decision and participation. One permitted reflection raises the maximum to four; both raise it to five. There is also one ordinary SillyTavern reply.",
+      "focus": "Ordinary Decision gate, Actor Context isolation and partial private persistence"
     },
     "packages": [
       {
@@ -17304,7 +14922,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
         "graph": {
           "id": "remastered-lesson-29",
           "name": "29. One kiss, two private perspectives",
-          "description": "Confirm shared native kiss evidence, verify both actors, then separately permit and stage each actor’s private model-authored reflection with independent receipts.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nChoose an ordinary connection on the Decision node bar or use Active SillyTavern.\nReplace both canonical avatar IDs with loaded actors; authorize separate actor-private JSON rowan-moments and iris-moments as [].\nBoth per-actor allowModelAuthoredReflection flags default false. Change each separately only when authoring permission exists for that actor, especially a player-controlled actor.\n\nOpen One kiss, two private perspectives and inspect the named pins.\nNo candidate kiss or unresolved actor presence deliberately holds before Review. Rejected kiss evidence preserves the original Draft with no private reflection calls or saves; a null Decision answer holds Confirm Events before Review. Inspect the gate instead of treating the scene as accepted intimacy.\nThe shared quote/source/span are observed evidence; reflectionOrigin remains model-authored.\nBoth actors must first be verified present. After that shared prerequisite, each permitted leg reads only its own Actor Context and private target; no private text enters public notes.\nReview separate receipts: native publication and each actor file have independent durability; one failed file is not an atomic rollback of both.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: Default at most 3 auxiliary requests: extraction 1 + ordinary Decision 1 + cast 1. With both explicit permissions at most 5, adding one private reflection request per present actor. One ordinary native generation.\nCheckpoints:\nConfirm Events.out: Only accepted exact shared native kiss evidence can authorize the two independently permitted legs.\nWrite to File.receipt: Rowan’s pending private receipt is independent of Iris’s receipt.",
+          "description": "Record separate private perspectives on one shared kiss. You will confirm the action, verify both participants and separately permit each model-authored reflection.\n\nWhat you'll learn:\n• Confirming the observed kiss does not establish consent, future intimacy or either actor’s private feelings.\n• Actor Context supplies each actor’s own private material. The shared quote stays separate from inner interpretation.\n• Each file has its own save receipt. One successful save does not guarantee that the other file was saved.\n\nBefore you start:\n• Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.\n• Replace both avatar IDs with loaded actors. In Workflow › Configure › Workflow Data, authorize JSON targets rowan-moments and iris-moments as [], with Visibility Actor private and the respective Actor ID. Choose Save authorization for each.\n• Choose Active SillyTavern or an ordinary connection on Decision’s node bar. Both allowModelAuthoredReflection flags start false; enable each only with that actor’s authoring permission, especially for a player-controlled actor.\n• For each new Workflow Data document, also fill in Document name; using the Logical target ID as its name is fine. When a lesson names a fixture, paste the file’s contents into Initial template, then choose Save authorization.\n\nSteps:\n1. Combine lessons 19, 21 and 17: confirmation, presence and file staging. Prepare a scene where both actors participate and agreed to a brief kiss. If permitted, enable only Rowan’s reflection flag before testing.\n2. Send a continuation request. Inspect the actual kiss quote, kiss-decision answer and confirmed-kiss.out. Planned or remembered intimacy is insufficient.\n3. Inspect Rowan’s Actor Context and reflection inputs: the shared event and Rowan’s records may be included, never Iris’s private history. Both false permission flags skip both reflections.\n4. Inspect sharedQuote and reflectionOrigin in the proposed record. The quote records observation; model-authored labels interpretation. These private records add no public notes.\n5. After Apply, check each file receipt. Rowan’s permitted record should be saved; Iris’s disabled path stays skipped. If permitting both later, inspect both save results.\n6. Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes.\n\nCheckpoints:\nConfirm Events → out: confirmed-kiss.out contains the accepted shared-action evidence for the permitted reflection paths.\nWrite to File → receipt: Rowan’s Write to File.receipt proposes a private rowan-moments record independently of Iris’s receipt.\n\nTry this:\nPermit only Rowan’s reflection while both actors are verified present.\nOnly Rowan’s reflection model request and file proposal run; Iris’s private reflection path stays skipped.\n\nIf something is different:\nNo kiss candidate exists or participation is unresolved.: The run stops before Review with no private reflections or saves.\nDecision rejects the kiss.: No reflection is requested or staged; the original reply remains available for Review.\nDecision answers null.: Confirm Events reports UNRESOLVED_INPUT before Review; no private reflection or write runs.\nEither actor is absent.: Both private reflection and save paths skip; the original reply remains available.\nOnly one actor’s permission is enabled.: Only that actor’s private reflection path may run after both participation checks pass.\nOne private save fails.: Inspect each receipt. The accepted reply and other successful file save are not automatically undone.\n\nModel requests: Up to three extra requests by default: extraction, Decision and participation. One permitted reflection raises the maximum to four; both raise it to five. There is also one ordinary SillyTavern reply.",
           "schema": 3,
           "runtime": 2,
           "mode": "native-unified",
@@ -17317,10 +14935,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "On Send",
               "enabled": true,
               "x": 100,
-              "y": 240,
+              "y": 1156,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -17334,10 +14951,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Generate Reply · SillyTavern",
               "enabled": true,
               "x": 460,
-              "y": 240,
+              "y": 1156,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-1",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -17352,10 +14968,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Review / Publish",
               "enabled": true,
               "x": 820,
-              "y": 240,
+              "y": 1156,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-2",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -17369,10 +14984,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Select Fields",
               "enabled": true,
               "x": 820,
-              "y": 560,
+              "y": 1496,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-2",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -17416,10 +15031,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Draft Event Source",
               "enabled": true,
               "x": 1180,
-              "y": 240,
+              "y": 1496,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-3",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -17433,10 +15048,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Text",
               "enabled": true,
               "x": 100,
-              "y": 560,
+              "y": 2076,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -17452,10 +15067,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "JSON Decode",
               "enabled": true,
               "x": 460,
-              "y": 560,
+              "y": 1496,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-1",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -17472,10 +15087,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Text",
               "enabled": true,
               "x": 100,
-              "y": 880,
+              "y": 1496,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -17491,10 +15106,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Model Call",
               "enabled": true,
               "x": 1540,
-              "y": 240,
+              "y": 1496,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-4",
+              "inGroup": "processing-draft-scope",
               "profileId": "lattice:active-sillytavern",
               "model": null,
               "modelRole": "Prose",
@@ -17513,10 +15128,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Event Normalize",
               "enabled": true,
               "x": 1900,
-              "y": 240,
+              "y": 1496,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-5",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -17534,10 +15149,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Collection",
               "enabled": true,
               "x": 2260,
-              "y": 240,
+              "y": 1496,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-6",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -17565,10 +15180,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Select Fields",
               "enabled": true,
               "x": 2620,
-              "y": 240,
+              "y": 1496,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-7",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -17713,10 +15328,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Decision",
               "enabled": true,
               "x": 2980,
-              "y": 240,
+              "y": 1496,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-8",
+              "inGroup": "processing-draft-scope",
               "profileId": "lattice:active-sillytavern",
               "model": null,
               "modelRole": "decision",
@@ -17739,10 +15354,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Select Fields",
               "enabled": true,
               "x": 3340,
-              "y": 240,
+              "y": 1496,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-9",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -17767,10 +15382,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Format",
               "enabled": true,
               "x": 2980,
-              "y": 560,
+              "y": 1786,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-8",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -17794,10 +15409,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Confirm Events",
               "enabled": true,
               "x": 3700,
-              "y": 240,
+              "y": 1496,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-10",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -17813,10 +15428,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Text",
               "enabled": true,
               "x": 100,
-              "y": 1200,
+              "y": 1786,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -17832,10 +15447,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Model Call",
               "enabled": true,
               "x": 1540,
-              "y": 560,
+              "y": 1786,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-4",
+              "inGroup": "processing-draft-scope",
               "profileId": "lattice:active-sillytavern",
               "model": null,
               "modelRole": "Prose",
@@ -17854,10 +15469,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Scene Presence",
               "enabled": true,
               "x": 1900,
-              "y": 560,
+              "y": 1786,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-5",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -17873,10 +15488,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Scene Presence",
               "enabled": true,
               "x": 1900,
-              "y": 880,
+              "y": 2076,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-5",
+              "inGroup": "processing-draft-scope",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -17892,10 +15507,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Text",
               "enabled": true,
               "x": 100,
-              "y": 1520,
+              "y": 2441,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-presence-policy-text",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -17911,10 +15526,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "JSON Decode",
               "enabled": true,
               "x": 460,
-              "y": 880,
+              "y": 2441,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-1",
+              "inGroup": "processing-presence-policy-text",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -17931,10 +15546,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Select Fields",
               "enabled": true,
               "x": 2980,
-              "y": 880,
+              "y": 2806,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-8",
+              "inGroup": "processing-rowan-present",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -17958,10 +15573,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Branch",
               "enabled": true,
               "x": 3340,
-              "y": 560,
+              "y": 2806,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-9",
+              "inGroup": "processing-rowan-present",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -17977,10 +15592,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Select Fields",
               "enabled": true,
               "x": 2260,
-              "y": 560,
+              "y": 2806,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-6",
+              "inGroup": "processing-rowan-present",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -18003,10 +15618,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Collection",
               "enabled": true,
               "x": 2620,
-              "y": 560,
+              "y": 2806,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-7",
+              "inGroup": "processing-rowan-present",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -18034,10 +15649,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Text",
               "enabled": true,
               "x": 100,
-              "y": 1840,
+              "y": 3096,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-rowan-present",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -18053,10 +15668,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "JSON Decode",
               "enabled": true,
               "x": 460,
-              "y": 1200,
+              "y": 2806,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-1",
+              "inGroup": "processing-rowan-present",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -18073,10 +15688,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Condition",
               "enabled": true,
               "x": 820,
-              "y": 880,
+              "y": 2806,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-2",
+              "inGroup": "processing-rowan-present",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -18096,10 +15711,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Branch",
               "enabled": true,
               "x": 4060,
-              "y": 240,
+              "y": 2806,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-11",
+              "inGroup": "processing-rowan-present",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -18115,10 +15730,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Branch",
               "enabled": true,
               "x": 3700,
-              "y": 560,
+              "y": 2806,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-10",
+              "inGroup": "processing-rowan-present",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -18134,10 +15749,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Actor Context",
               "enabled": true,
               "x": 4420,
-              "y": 240,
+              "y": 2806,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-12",
+              "inGroup": "processing-rowan-present",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -18153,10 +15768,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Read File",
               "enabled": true,
               "x": 4420,
-              "y": 560,
+              "y": 3096,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-12",
+              "inGroup": "processing-rowan-present",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -18176,10 +15791,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Text",
               "enabled": true,
               "x": 100,
-              "y": 2160,
+              "y": 2806,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-rowan-present",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -18195,10 +15810,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Branch",
               "enabled": true,
               "x": 4420,
-              "y": 880,
+              "y": 3386,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-12",
+              "inGroup": "processing-rowan-present",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -18214,10 +15829,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Branch",
               "enabled": true,
               "x": 3340,
-              "y": 880,
+              "y": 3096,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-9",
+              "inGroup": "processing-rowan-present",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -18233,10 +15848,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Branch",
               "enabled": true,
               "x": 4060,
-              "y": 560,
+              "y": 3096,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-11",
+              "inGroup": "processing-rowan-present",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -18252,10 +15867,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Branch",
               "enabled": true,
               "x": 3700,
-              "y": 880,
+              "y": 3096,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-10",
+              "inGroup": "processing-rowan-present",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -18271,10 +15886,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Model Call",
               "enabled": true,
               "x": 5500,
-              "y": 240,
+              "y": 2806,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-15",
+              "inGroup": "processing-rowan-present",
               "profileId": "lattice:active-sillytavern",
               "model": null,
               "modelRole": "Prose",
@@ -18293,10 +15908,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "JSON Decode",
               "enabled": true,
               "x": 4780,
-              "y": 240,
+              "y": 2806,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-13",
+              "inGroup": "processing-rowan-present",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -18313,10 +15928,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Collect",
               "enabled": true,
               "x": 5140,
-              "y": 240,
+              "y": 2806,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-14",
+              "inGroup": "processing-rowan-present",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -18344,10 +15959,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Collect",
               "enabled": true,
               "x": 5860,
-              "y": 240,
+              "y": 2806,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-16",
+              "inGroup": "processing-rowan-present",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -18375,10 +15990,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Select Fields",
               "enabled": true,
               "x": 6220,
-              "y": 240,
+              "y": 2806,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-17",
+              "inGroup": "processing-rowan-present",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -18450,10 +16065,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Write to File",
               "enabled": true,
               "x": 6580,
-              "y": 240,
+              "y": 2806,
               "w": 300,
               "h": 228,
-              "inGroup": "stage-18",
+              "inGroup": "processing-rowan-present",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -18480,10 +16095,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Select Fields",
               "enabled": true,
               "x": 2980,
-              "y": 1200,
+              "y": 3751,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-8",
+              "inGroup": "processing-iris-present",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -18507,10 +16122,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Branch",
               "enabled": true,
               "x": 3340,
-              "y": 1200,
+              "y": 3751,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-9",
+              "inGroup": "processing-iris-present",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -18526,10 +16141,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Select Fields",
               "enabled": true,
               "x": 2260,
-              "y": 880,
+              "y": 3751,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-6",
+              "inGroup": "processing-iris-present",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -18552,10 +16167,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Collection",
               "enabled": true,
               "x": 2620,
-              "y": 880,
+              "y": 3751,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-7",
+              "inGroup": "processing-iris-present",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -18583,10 +16198,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Text",
               "enabled": true,
               "x": 100,
-              "y": 2480,
+              "y": 4041,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-iris-present",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -18602,10 +16217,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "JSON Decode",
               "enabled": true,
               "x": 460,
-              "y": 1520,
+              "y": 3751,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-1",
+              "inGroup": "processing-iris-present",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -18622,10 +16237,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Condition",
               "enabled": true,
               "x": 820,
-              "y": 1200,
+              "y": 3751,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-2",
+              "inGroup": "processing-iris-present",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -18645,10 +16260,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Branch",
               "enabled": true,
               "x": 4060,
-              "y": 880,
+              "y": 3751,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-11",
+              "inGroup": "processing-iris-present",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -18664,10 +16279,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Branch",
               "enabled": true,
               "x": 3700,
-              "y": 1200,
+              "y": 3751,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-10",
+              "inGroup": "processing-iris-present",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -18683,10 +16298,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Actor Context",
               "enabled": true,
               "x": 4420,
-              "y": 1200,
+              "y": 3751,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-12",
+              "inGroup": "processing-iris-present",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -18702,10 +16317,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Read File",
               "enabled": true,
               "x": 4420,
-              "y": 1520,
+              "y": 4041,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-12",
+              "inGroup": "processing-iris-present",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -18725,10 +16340,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Text",
               "enabled": true,
               "x": 100,
-              "y": 2800,
+              "y": 3751,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-iris-present",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -18744,10 +16359,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Branch",
               "enabled": true,
               "x": 4420,
-              "y": 1840,
+              "y": 4331,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-12",
+              "inGroup": "processing-iris-present",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -18763,10 +16378,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Branch",
               "enabled": true,
               "x": 3340,
-              "y": 1520,
+              "y": 4041,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-9",
+              "inGroup": "processing-iris-present",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -18782,10 +16397,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Branch",
               "enabled": true,
               "x": 4060,
-              "y": 1200,
+              "y": 4041,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-11",
+              "inGroup": "processing-iris-present",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -18801,10 +16416,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Branch",
               "enabled": true,
               "x": 3700,
-              "y": 1520,
+              "y": 4041,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-10",
+              "inGroup": "processing-iris-present",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -18820,10 +16435,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Model Call",
               "enabled": true,
               "x": 5500,
-              "y": 560,
+              "y": 3751,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-15",
+              "inGroup": "processing-iris-present",
               "profileId": "lattice:active-sillytavern",
               "model": null,
               "modelRole": "Prose",
@@ -18842,10 +16457,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "JSON Decode",
               "enabled": true,
               "x": 4780,
-              "y": 560,
+              "y": 3751,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-13",
+              "inGroup": "processing-iris-present",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -18862,10 +16477,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Collect",
               "enabled": true,
               "x": 5140,
-              "y": 560,
+              "y": 3751,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-14",
+              "inGroup": "processing-iris-present",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -18893,10 +16508,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Collect",
               "enabled": true,
               "x": 5860,
-              "y": 560,
+              "y": 3751,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-16",
+              "inGroup": "processing-iris-present",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -18924,10 +16539,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Select Fields",
               "enabled": true,
               "x": 6220,
-              "y": 560,
+              "y": 3751,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-17",
+              "inGroup": "processing-iris-present",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -18999,10 +16614,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Write to File",
               "enabled": true,
               "x": 6580,
-              "y": 560,
+              "y": 3751,
               "w": 300,
               "h": 228,
-              "inGroup": "stage-18",
+              "inGroup": "processing-iris-present",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -19029,8 +16644,8 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "x": 100,
               "y": 0,
               "w": 900,
-              "h": 180,
-              "content": "Confirm shared native kiss evidence, verify both actors, then separately permit and stage each actor’s private model-authored reflection with independent receipts.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nChoose an ordinary connection on the Decision node bar or use Active SillyTavern.\nReplace both canonical avatar IDs with loaded actors; authorize separate actor-private JSON rowan-moments and iris-moments as [].\nBoth per-actor allowModelAuthoredReflection flags default false. Change each separately only when authoring permission exists for that actor, especially a player-controlled actor.\n\nOpen One kiss, two private perspectives and inspect the named pins.\nNo candidate kiss or unresolved actor presence deliberately holds before Review. Rejected kiss evidence preserves the original Draft with no private reflection calls or saves; a null Decision answer holds Confirm Events before Review. Inspect the gate instead of treating the scene as accepted intimacy.\nThe shared quote/source/span are observed evidence; reflectionOrigin remains model-authored.\nBoth actors must first be verified present. After that shared prerequisite, each permitted leg reads only its own Actor Context and private target; no private text enters public notes.\nReview separate receipts: native publication and each actor file have independent durability; one failed file is not an atomic rollback of both.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: Default at most 3 auxiliary requests: extraction 1 + ordinary Decision 1 + cast 1. With both explicit permissions at most 5, adding one private reflection request per present actor. One ordinary native generation.\nCheckpoints:\nConfirm Events.out: Only accepted exact shared native kiss evidence can authorize the two independently permitted legs.\nWrite to File.receipt: Rowan’s pending private receipt is independent of Iris’s receipt.",
+              "h": 1076,
+              "content": "Record separate private perspectives on one shared kiss. You will confirm the action, verify both participants and separately permit each model-authored reflection.\n\nWhat you'll learn:\n• Confirming the observed kiss does not establish consent, future intimacy or either actor’s private feelings.\n• Actor Context supplies each actor’s own private material. The shared quote stays separate from inner interpretation.\n• Each file has its own save receipt. One successful save does not guarantee that the other file was saved.\n\nBefore you start:\n• Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.\n• Replace both avatar IDs with loaded actors. In Workflow › Configure › Workflow Data, authorize JSON targets rowan-moments and iris-moments as [], with Visibility Actor private and the respective Actor ID. Choose Save authorization for each.\n• Choose Active SillyTavern or an ordinary connection on Decision’s node bar. Both allowModelAuthoredReflection flags start false; enable each only with that actor’s authoring permission, especially for a player-controlled actor.\n• For each new Workflow Data document, also fill in Document name; using the Logical target ID as its name is fine. When a lesson names a fixture, paste the file’s contents into Initial template, then choose Save authorization.\n\nSteps:\n1. Combine lessons 19, 21 and 17: confirmation, presence and file staging. Prepare a scene where both actors participate and agreed to a brief kiss. If permitted, enable only Rowan’s reflection flag before testing.\n2. Send a continuation request. Inspect the actual kiss quote, kiss-decision answer and confirmed-kiss.out. Planned or remembered intimacy is insufficient.\n3. Inspect Rowan’s Actor Context and reflection inputs: the shared event and Rowan’s records may be included, never Iris’s private history. Both false permission flags skip both reflections.\n4. Inspect sharedQuote and reflectionOrigin in the proposed record. The quote records observation; model-authored labels interpretation. These private records add no public notes.\n5. After Apply, check each file receipt. Rowan’s permitted record should be saved; Iris’s disabled path stays skipped. If permitting both later, inspect both save results.\n6. Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes.\n\nCheckpoints:\nConfirm Events → out: confirmed-kiss.out contains the accepted shared-action evidence for the permitted reflection paths.\nWrite to File → receipt: Rowan’s Write to File.receipt proposes a private rowan-moments record independently of Iris’s receipt.\n\nTry this:\nPermit only Rowan’s reflection while both actors are verified present.\nOnly Rowan’s reflection model request and file proposal run; Iris’s private reflection path stays skipped.\n\nIf something is different:\nNo kiss candidate exists or participation is unresolved.: The run stops before Review with no private reflections or saves.\nDecision rejects the kiss.: No reflection is requested or staged; the original reply remains available for Review.\nDecision answers null.: Confirm Events reports UNRESOLVED_INPUT before Review; no private reflection or write runs.\nEither actor is absent.: Both private reflection and save paths skip; the original reply remains available.\nOnly one actor’s permission is enabled.: Only that actor’s private reflection path may run after both participation checks pass.\nOne private save fails.: Inspect each receipt. The accepted reply and other successful file save are not automatically undone.\n\nModel requests: Up to three extra requests by default: extraction, Decision and participation. One permitted reflection raises the maximum to four; both raise it to five. There is also one ordinary SillyTavern reply.",
               "commentFrame": true,
               "moveContents": false
             }
@@ -19782,317 +17397,119 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
             }
           },
           "groups": {
-            "stage-0": {
-              "id": "stage-0",
-              "title": "Preparation / processing",
-              "description": "Stage 0. Wires determine execution; folding is presentation only.",
+            "processing-draft-scope": {
+              "id": "processing-draft-scope",
+              "title": "Check story event evidence",
+              "description": "These connected boxes work together. Follow their wires to see how each result is used.",
               "x": 75,
-              "y": 190,
-              "w": 350,
-              "h": 2845,
+              "y": 1446,
+              "w": 3950,
+              "h": 865,
               "color": "#57416e",
               "collapsed": false,
               "members": [
-                "send",
-                "entities-text",
-                "candidate-request",
-                "cast-request",
-                "presence-policy-text",
-                "rowan-permission-text",
-                "rowan-prompt",
-                "iris-permission-text",
-                "iris-prompt"
-              ]
-            },
-            "stage-1": {
-              "id": "stage-1",
-              "title": "Native generation",
-              "description": "Stage 1. Wires determine execution; folding is presentation only.",
-              "x": 435,
-              "y": 190,
-              "w": 350,
-              "h": 1565,
-              "color": "#284e67",
-              "collapsed": false,
-              "members": [
-                "generate",
-                "entities",
-                "presence-policy",
-                "rowan-permission",
-                "iris-permission"
-              ]
-            },
-            "stage-2": {
-              "id": "stage-2",
-              "title": "Review / accepted staging",
-              "description": "Stage 2. Wires determine execution; folding is presentation only.",
-              "x": 795,
-              "y": 190,
-              "w": 350,
-              "h": 1245,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "review",
                 "draft-scope",
-                "rowan-permitted",
-                "iris-permitted"
+                "native-source",
+                "candidates",
+                "events",
+                "cast",
+                "candidate-request",
+                "entities",
+                "one-kiss",
+                "cast-request",
+                "cast-presence-0",
+                "cast-presence-1",
+                "entities-text",
+                "kiss-candidate",
+                "kiss-decision",
+                "kiss-record",
+                "kiss-gate",
+                "confirmed-kiss"
               ]
             },
-            "stage-3": {
-              "id": "stage-3",
-              "title": "Preparation / processing",
-              "description": "Stage 3. Wires determine execution; folding is presentation only.",
-              "x": 1155,
-              "y": 190,
-              "w": 350,
+            "processing-presence-policy-text": {
+              "id": "processing-presence-policy-text",
+              "title": "Process reply details",
+              "description": "These connected boxes work together. Follow their wires to see how each result is used.",
+              "x": 75,
+              "y": 2391,
+              "w": 710,
               "h": 285,
               "color": "#57416e",
               "collapsed": false,
               "members": [
-                "native-source"
+                "presence-policy-text",
+                "presence-policy"
               ]
             },
-            "stage-4": {
-              "id": "stage-4",
-              "title": "Response processing",
-              "description": "Stage 4. Wires determine execution; folding is presentation only.",
-              "x": 1515,
-              "y": 190,
-              "w": 350,
-              "h": 605,
+            "processing-rowan-present": {
+              "id": "processing-rowan-present",
+              "title": "Prepare Rowan's private reflection",
+              "description": "These connected boxes work together. Follow their wires to see how each result is used.",
+              "x": 75,
+              "y": 2756,
+              "w": 6830,
+              "h": 865,
               "color": "#57416e",
               "collapsed": false,
               "members": [
-                "candidates",
-                "cast"
-              ]
-            },
-            "stage-5": {
-              "id": "stage-5",
-              "title": "Response processing",
-              "description": "Stage 5. Wires determine execution; folding is presentation only.",
-              "x": 1875,
-              "y": 190,
-              "w": 350,
-              "h": 925,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "events",
-                "cast-presence-0",
-                "cast-presence-1"
-              ]
-            },
-            "stage-6": {
-              "id": "stage-6",
-              "title": "Response processing",
-              "description": "Stage 6. Wires determine execution; folding is presentation only.",
-              "x": 2235,
-              "y": 190,
-              "w": 350,
-              "h": 925,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "one-kiss",
-                "rowan-status",
-                "iris-status"
-              ]
-            },
-            "stage-7": {
-              "id": "stage-7",
-              "title": "Response processing",
-              "description": "Stage 7. Wires determine execution; folding is presentation only.",
-              "x": 2595,
-              "y": 190,
-              "w": 350,
-              "h": 925,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "kiss-candidate",
-                "rowan-presence-policy",
-                "iris-presence-policy"
-              ]
-            },
-            "stage-8": {
-              "id": "stage-8",
-              "title": "Response processing",
-              "description": "Stage 8. Wires determine execution; folding is presentation only.",
-              "x": 2955,
-              "y": 190,
-              "w": 350,
-              "h": 1245,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "kiss-decision",
-                "kiss-record",
                 "rowan-present",
-                "iris-present"
-              ]
-            },
-            "stage-9": {
-              "id": "stage-9",
-              "title": "Response processing",
-              "description": "Stage 9. Wires determine execution; folding is presentation only.",
-              "x": 3315,
-              "y": 190,
-              "w": 350,
-              "h": 1565,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "kiss-gate",
                 "rowan-route",
+                "rowan-presence-policy",
                 "rowan-present-prompt",
-                "iris-route",
-                "iris-present-prompt"
-              ]
-            },
-            "stage-10": {
-              "id": "stage-10",
-              "title": "Response processing",
-              "description": "Stage 10. Wires determine execution; folding is presentation only.",
-              "x": 3675,
-              "y": 190,
-              "w": 350,
-              "h": 1565,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "confirmed-kiss",
                 "rowan-pair-grant",
+                "rowan-status",
+                "rowan-prompt",
                 "rowan-partner-prompt",
-                "iris-pair-grant",
-                "iris-partner-prompt"
-              ]
-            },
-            "stage-11": {
-              "id": "stage-11",
-              "title": "Response processing",
-              "description": "Stage 11. Wires determine execution; folding is presentation only.",
-              "x": 4035,
-              "y": 190,
-              "w": 350,
-              "h": 1245,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
                 "rowan-grant",
                 "rowan-kiss-prompt",
-                "iris-grant",
-                "iris-kiss-prompt"
-              ]
-            },
-            "stage-12": {
-              "id": "stage-12",
-              "title": "Response processing",
-              "description": "Stage 12. Wires determine execution; folding is presentation only.",
-              "x": 4395,
-              "y": 190,
-              "w": 350,
-              "h": 1885,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
+                "rowan-permitted",
                 "rowan-context",
                 "rowan-file",
+                "rowan-save",
                 "rowan-prompt-gate",
+                "rowan-permission",
+                "rowan-reflect",
+                "rowan-prior",
+                "rowan-record",
+                "rowan-permission-text",
+                "rowan-material",
+                "rowan-parts"
+              ]
+            },
+            "processing-iris-present": {
+              "id": "processing-iris-present",
+              "title": "Prepare Iris's private reflection",
+              "description": "These connected boxes work together. Follow their wires to see how each result is used.",
+              "x": 75,
+              "y": 3701,
+              "w": 6830,
+              "h": 865,
+              "color": "#57416e",
+              "collapsed": false,
+              "members": [
+                "iris-present",
+                "iris-route",
+                "iris-presence-policy",
+                "iris-present-prompt",
+                "iris-pair-grant",
+                "iris-status",
+                "iris-prompt",
+                "iris-partner-prompt",
+                "iris-grant",
+                "iris-kiss-prompt",
+                "iris-permitted",
                 "iris-context",
                 "iris-file",
-                "iris-prompt-gate"
-              ]
-            },
-            "stage-13": {
-              "id": "stage-13",
-              "title": "Response processing",
-              "description": "Stage 13. Wires determine execution; folding is presentation only.",
-              "x": 4755,
-              "y": 190,
-              "w": 350,
-              "h": 605,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "rowan-prior",
-                "iris-prior"
-              ]
-            },
-            "stage-14": {
-              "id": "stage-14",
-              "title": "Response processing",
-              "description": "Stage 14. Wires determine execution; folding is presentation only.",
-              "x": 5115,
-              "y": 190,
-              "w": 350,
-              "h": 605,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "rowan-material",
-                "iris-material"
-              ]
-            },
-            "stage-15": {
-              "id": "stage-15",
-              "title": "Response processing",
-              "description": "Stage 15. Wires determine execution; folding is presentation only.",
-              "x": 5475,
-              "y": 190,
-              "w": 350,
-              "h": 605,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "rowan-reflect",
-                "iris-reflect"
-              ]
-            },
-            "stage-16": {
-              "id": "stage-16",
-              "title": "Response processing",
-              "description": "Stage 16. Wires determine execution; folding is presentation only.",
-              "x": 5835,
-              "y": 190,
-              "w": 350,
-              "h": 605,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "rowan-parts",
+                "iris-save",
+                "iris-prompt-gate",
+                "iris-permission",
+                "iris-reflect",
+                "iris-prior",
+                "iris-record",
+                "iris-permission-text",
+                "iris-material",
                 "iris-parts"
-              ]
-            },
-            "stage-17": {
-              "id": "stage-17",
-              "title": "Response processing",
-              "description": "Stage 17. Wires determine execution; folding is presentation only.",
-              "x": 6195,
-              "y": 190,
-              "w": 350,
-              "h": 605,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "rowan-record",
-                "iris-record"
-              ]
-            },
-            "stage-18": {
-              "id": "stage-18",
-              "title": "Review / accepted staging",
-              "description": "Stage 18. Wires determine execution; folding is presentation only.",
-              "x": 6555,
-              "y": 190,
-              "w": 350,
-              "h": 623,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "rowan-save",
-                "iris-save"
               ]
             }
           },
@@ -20125,56 +17542,57 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
     "id": "lesson-30",
     "number": 30,
     "title": "A relationship that changes slowly over weeks",
-    "goal": "Use directional private generic State with confirmed interactions, caps, cooldowns, diminishing returns and accepted story-time decay to guide NPC portrayal without choosing the player response.",
+    "goal": "Make Rowan’s feelings toward Iris change gradually through confirmed support and story time. You will inspect private values and pacing limits, then use the proposed state to guide portrayal.",
     "lesson": {
       "difficulty": "Capstone",
-      "focus": "Directional State progression pacing and Story Clock decay",
       "learn": [
-        "Directional State progression pacing and Story Clock decay",
-        "Trace named artifacts to the owned Draft or accepted proposal."
+        "Directional state describes Rowan toward Iris, separately from Iris toward Rowan. Values guide portrayal, never consent or player decisions.",
+        "Cooldowns require story time between rewards; scene/day caps limit gains, and diminishing factors reduce repeated rewards.",
+        "Time decay moves values toward zero using accepted Story Clock minutes, rather than messages or wall time."
       ],
       "requirements": [
-        "Open this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.",
-        "Select native Rowan and replace actual avatar IDs. Authorize actor-private JSON rowan-relationship as {values:[...] ,ledger:[]}; include keys rowan-toward-iris-trust, rowan-toward-iris-desire, rowan-toward-iris-tension and rowan-toward-iris-excitement, each with subjectId Rowan, objectId Iris, visibility {kind:actor-private,actorId:Rowan}, and initial values 0,0,2,0 respectively.",
-        "Authorize genuine story-clock; advance accepted elapsed story time using lesson 23, not message count or wall time."
+        "Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.",
+        "Select loaded Rowan and replace both avatar IDs consistently. In Workflow › Configure › Workflow Data, authorize JSON rowan-relationship with Visibility Actor private and Rowan’s Actor ID. Paste its fixture into Initial template and Save authorization: trust/desire/excitement 0, tension 2, empty ledger.",
+        "Keep each row’s subjectId Rowan, objectId Iris and private visibility for Rowan. Authorize story-clock and accept elapsed time using lesson 23.",
+        "For each new Workflow Data document, also fill in Document name; using the Logical target ID as its name is fine. When a lesson names a fixture, paste the file’s contents into Initial template, then choose Save authorization."
       ],
       "steps": [
-        "Open A relationship that changes slowly over weeks and inspect the named pins.",
-        "The direction Rowan→Iris is separate from Iris→Rowan; this root portrays only the selected NPC.",
-        "Authored support gains trust 1, desire 0.1 and temporary excitement 0.5; tension eases 0.25. Trust/desire cooldown 1440 minutes, tension 720, excitement 120; scene/day caps and diminishing factors 1, .5, .25 prevent fast escalation. Duplicate occurrence IDs do not progress.",
-        "Accepted story-time decay returns trust/tension toward baseline by one point per 10080 minutes (week), desire per 40320 minutes (four weeks), and temporary excitement per 480 minutes (eight hours).",
-        "The selected actor grants lawful private file access independently of scene presence. Presence gates Character Direction only. While Rowan is absent, accepted elapsed-time decay can still update and persist authorized private state; no absent interaction is inferred or awarded.",
-        "Private state and portrayal Guidance stay actor-scoped; Apply persists the proposed state and pacing ledgers. Rejection preserves them.",
-        "Send in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals."
+        "Combine lessons 25, 23 and 21: State, time and Character Direction. Establish both actors’ participation, then send: “Rowan finishes repairing Iris’s lantern and hands it back to her.”",
+        "Inspect the confirmed interaction. Decay runs first; progression then proposes trust +1, desire +0.1, tension −0.25 and excitement +0.5, subject to pacing.",
+        "Read State.receipt for changes and reasons. Cooldowns are trust/desire 1440 minutes, tension 720, excitement 120. For trust/desire/excitement, positive scene caps are 1/0.1/0.5 and day caps 1/0.2/1. Diminishing factors are 1, 0.5 and 0.25.",
+        "Inspect Character Direction’s values and Rowan’s reply for gradual reactions that leave player choice open. Apply saves values and pacing records; Reject preserves the previous file.",
+        "Accept time using lesson 23, then test without support. Per point, trust/tension ease over 10080 minutes, desire 40320, excitement 480. The first run starts decay at initialMinute 0; the fixture’s minute 780 already eases some tension.",
+        "Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes."
       ],
       "checkpoints": [
         {
           "node": "State",
           "port": "receipt",
-          "expect": "Directional before/after, pacing reasons and identity ledger remain a pending private proposal."
+          "expect": "State.receipt shows Rowan-toward-Iris values before and after, reward limits, processed occurrence IDs and pending private changes."
         }
       ],
       "experiments": [
         {
-          "change": "Advance accepted time by one week in lesson23.",
-          "expect": "Trust/tension decay one point; desire decays more slowly and temporary excitement fades much faster."
+          "change": "Save some positive values, accept a week in lesson 23 and run without new support.",
+          "expect": "Trust/tension move one point toward zero, desire 0.25; excitement fades to zero within eight hours. Values cannot drop below zero."
         }
       ],
       "cases": [
         {
-          "when": "The selected actor is absent",
-          "expect": "Character Direction is skipped. Selected-actor file access remains authorized; accepted elapsed-time decay may persist, but absent participation never creates a confirmed interaction reward."
+          "when": "Rowan is absent.",
+          "expect": "Character Direction skips. Authorized selected-actor file access still permits elapsed-time decay to be saved; absence does not invent a supportive interaction."
         },
         {
-          "when": "The same occurrence repeats or its cooldown is active",
-          "expect": "Identity ledger, caps and diminishing returns prevent extra progression."
+          "when": "An occurrence repeats or a cooldown applies.",
+          "expect": "No extra reward is granted. Inspect the receipt’s reason instead of inferring progress from repeated prose."
         },
         {
-          "when": "Review is rejected",
-          "expect": "Private state, pacing and decay timestamps remain unchanged."
+          "when": "Review is rejected.",
+          "expect": "Private values, pacing records and decay timestamps remain unchanged."
         }
       ],
-      "callBudget": "At most 6 auxiliary requests: interaction extraction 1 + up to 3 confirmations + cast 1 + private portrayal 1; one ordinary native generation. State rules, decay and file staging are deterministic."
+      "callBudget": "Up to six extra requests: extraction, three confirmations, participation and private portrayal. State rules, decay and file staging make no model requests. There is also one ordinary SillyTavern reply.",
+      "focus": "Directional State progression pacing and Story Clock decay"
     },
     "packages": [
       {
@@ -20184,7 +17602,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
         "graph": {
           "id": "remastered-lesson-30",
           "name": "30. A relationship that changes slowly over weeks",
-          "description": "Use directional private generic State with confirmed interactions, caps, cooldowns, diminishing returns and accepted story-time decay to guide NPC portrayal without choosing the player response.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nSelect native Rowan and replace actual avatar IDs. Authorize actor-private JSON rowan-relationship as {values:[...] ,ledger:[]}; include keys rowan-toward-iris-trust, rowan-toward-iris-desire, rowan-toward-iris-tension and rowan-toward-iris-excitement, each with subjectId Rowan, objectId Iris, visibility {kind:actor-private,actorId:Rowan}, and initial values 0,0,2,0 respectively.\nAuthorize genuine story-clock; advance accepted elapsed story time using lesson 23, not message count or wall time.\n\nOpen A relationship that changes slowly over weeks and inspect the named pins.\nThe direction Rowan→Iris is separate from Iris→Rowan; this root portrays only the selected NPC.\nAuthored support gains trust 1, desire 0.1 and temporary excitement 0.5; tension eases 0.25. Trust/desire cooldown 1440 minutes, tension 720, excitement 120; scene/day caps and diminishing factors 1, .5, .25 prevent fast escalation. Duplicate occurrence IDs do not progress.\nAccepted story-time decay returns trust/tension toward baseline by one point per 10080 minutes (week), desire per 40320 minutes (four weeks), and temporary excitement per 480 minutes (eight hours).\nThe selected actor grants lawful private file access independently of scene presence. Presence gates Character Direction only. While Rowan is absent, accepted elapsed-time decay can still update and persist authorized private state; no absent interaction is inferred or awarded.\nPrivate state and portrayal Guidance stay actor-scoped; Apply persists the proposed state and pacing ledgers. Rejection preserves them.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: At most 6 auxiliary requests: interaction extraction 1 + up to 3 confirmations + cast 1 + private portrayal 1; one ordinary native generation. State rules, decay and file staging are deterministic.\nCheckpoints:\nState.receipt: Directional before/after, pacing reasons and identity ledger remain a pending private proposal.",
+          "description": "Make Rowan’s feelings toward Iris change gradually through confirmed support and story time. You will inspect private values and pacing limits, then use the proposed state to guide portrayal.\n\nWhat you'll learn:\n• Directional state describes Rowan toward Iris, separately from Iris toward Rowan. Values guide portrayal, never consent or player decisions.\n• Cooldowns require story time between rewards; scene/day caps limit gains, and diminishing factors reduce repeated rewards.\n• Time decay moves values toward zero using accepted Story Clock minutes, rather than messages or wall time.\n\nBefore you start:\n• Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.\n• Select loaded Rowan and replace both avatar IDs consistently. In Workflow › Configure › Workflow Data, authorize JSON rowan-relationship with Visibility Actor private and Rowan’s Actor ID. Paste its fixture into Initial template and Save authorization: trust/desire/excitement 0, tension 2, empty ledger.\n• Keep each row’s subjectId Rowan, objectId Iris and private visibility for Rowan. Authorize story-clock and accept elapsed time using lesson 23.\n• For each new Workflow Data document, also fill in Document name; using the Logical target ID as its name is fine. When a lesson names a fixture, paste the file’s contents into Initial template, then choose Save authorization.\n\nSteps:\n1. Combine lessons 25, 23 and 21: State, time and Character Direction. Establish both actors’ participation, then send: “Rowan finishes repairing Iris’s lantern and hands it back to her.”\n2. Inspect the confirmed interaction. Decay runs first; progression then proposes trust +1, desire +0.1, tension −0.25 and excitement +0.5, subject to pacing.\n3. Read State.receipt for changes and reasons. Cooldowns are trust/desire 1440 minutes, tension 720, excitement 120. For trust/desire/excitement, positive scene caps are 1/0.1/0.5 and day caps 1/0.2/1. Diminishing factors are 1, 0.5 and 0.25.\n4. Inspect Character Direction’s values and Rowan’s reply for gradual reactions that leave player choice open. Apply saves values and pacing records; Reject preserves the previous file.\n5. Accept time using lesson 23, then test without support. Per point, trust/tension ease over 10080 minutes, desire 40320, excitement 480. The first run starts decay at initialMinute 0; the fixture’s minute 780 already eases some tension.\n6. Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes.\n\nCheckpoints:\nState → receipt: State.receipt shows Rowan-toward-Iris values before and after, reward limits, processed occurrence IDs and pending private changes.\n\nTry this:\nSave some positive values, accept a week in lesson 23 and run without new support.\nTrust/tension move one point toward zero, desire 0.25; excitement fades to zero within eight hours. Values cannot drop below zero.\n\nIf something is different:\nRowan is absent.: Character Direction skips. Authorized selected-actor file access still permits elapsed-time decay to be saved; absence does not invent a supportive interaction.\nAn occurrence repeats or a cooldown applies.: No extra reward is granted. Inspect the receipt’s reason instead of inferring progress from repeated prose.\nReview is rejected.: Private values, pacing records and decay timestamps remain unchanged.\n\nModel requests: Up to six extra requests: extraction, three confirmations, participation and private portrayal. State rules, decay and file staging make no model requests. There is also one ordinary SillyTavern reply.",
           "schema": 3,
           "runtime": 2,
           "mode": "native-unified",
@@ -20197,10 +17615,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "On Send",
               "enabled": true,
               "x": 100,
-              "y": 240,
+              "y": 1121,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -20214,10 +17631,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Generate Reply · SillyTavern",
               "enabled": true,
               "x": 2980,
-              "y": 240,
+              "y": 1121,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-8",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -20232,10 +17648,9 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Review / Publish",
               "enabled": true,
               "x": 3340,
-              "y": 240,
+              "y": 1121,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-9",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -20249,10 +17664,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Player Event Source",
               "enabled": true,
               "x": 100,
-              "y": 560,
+              "y": 1461,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-player",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -20266,10 +17681,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Text",
               "enabled": true,
               "x": 100,
-              "y": 880,
+              "y": 2041,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-player",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -20285,10 +17700,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "JSON Decode",
               "enabled": true,
               "x": 460,
-              "y": 240,
+              "y": 1751,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-1",
+              "inGroup": "processing-player",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -20305,10 +17720,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Text",
               "enabled": true,
               "x": 100,
-              "y": 1200,
+              "y": 1751,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-player",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -20324,10 +17739,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Model Call",
               "enabled": true,
               "x": 460,
-              "y": 560,
+              "y": 1461,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-1",
+              "inGroup": "processing-player",
               "profileId": "lattice:active-sillytavern",
               "model": null,
               "modelRole": "Prose",
@@ -20346,10 +17761,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Event Normalize",
               "enabled": true,
               "x": 820,
-              "y": 240,
+              "y": 1461,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-2",
+              "inGroup": "processing-player",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -20367,10 +17782,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "For Each",
               "enabled": true,
               "x": 1180,
-              "y": 240,
+              "y": 1461,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-3",
+              "inGroup": "processing-player",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -20398,10 +17813,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Collection",
               "enabled": true,
               "x": 1540,
-              "y": 240,
+              "y": 1461,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-4",
+              "inGroup": "processing-player",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -20426,10 +17841,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Scene Context",
               "enabled": true,
               "x": 100,
-              "y": 1520,
+              "y": 3781,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-player",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -20446,10 +17861,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Text",
               "enabled": true,
               "x": 100,
-              "y": 1840,
+              "y": 3491,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-player",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -20465,10 +17880,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Model Call",
               "enabled": true,
               "x": 460,
-              "y": 880,
+              "y": 2911,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-1",
+              "inGroup": "processing-player",
               "profileId": "lattice:active-sillytavern",
               "model": null,
               "modelRole": "Prose",
@@ -20487,10 +17902,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Scene Presence",
               "enabled": true,
               "x": 820,
-              "y": 560,
+              "y": 2041,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-2",
+              "inGroup": "processing-player",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -20506,10 +17921,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Condition",
               "enabled": true,
               "x": 1180,
-              "y": 560,
+              "y": 1751,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-3",
+              "inGroup": "processing-player",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -20529,10 +17944,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Branch",
               "enabled": true,
               "x": 1540,
-              "y": 560,
+              "y": 1751,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-4",
+              "inGroup": "processing-player",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -20548,10 +17963,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Read File",
               "enabled": true,
               "x": 100,
-              "y": 2160,
+              "y": 2911,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-player",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -20570,10 +17985,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "JSON Decode",
               "enabled": true,
               "x": 460,
-              "y": 1200,
+              "y": 2331,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-1",
+              "inGroup": "processing-player",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -20590,10 +18005,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Story Clock",
               "enabled": true,
               "x": 100,
-              "y": 2480,
+              "y": 2331,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-player",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -20609,10 +18024,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Text",
               "enabled": true,
               "x": 100,
-              "y": 2800,
+              "y": 3201,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-player",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -20628,10 +18043,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "JSON Decode",
               "enabled": true,
               "x": 460,
-              "y": 1520,
+              "y": 2621,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-1",
+              "inGroup": "processing-player",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -20648,10 +18063,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "State",
               "enabled": true,
               "x": 820,
-              "y": 880,
+              "y": 1751,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-2",
+              "inGroup": "processing-player",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -20666,10 +18081,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Text",
               "enabled": true,
               "x": 100,
-              "y": 3120,
+              "y": 2621,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-0",
+              "inGroup": "processing-player",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -20685,10 +18100,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "JSON Decode",
               "enabled": true,
               "x": 460,
-              "y": 1840,
+              "y": 2041,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-1",
+              "inGroup": "processing-player",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -20705,10 +18120,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Event Normalize",
               "enabled": true,
               "x": 1900,
-              "y": 240,
+              "y": 1461,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-5",
+              "inGroup": "processing-player",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -20725,10 +18140,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "State",
               "enabled": true,
               "x": 2260,
-              "y": 240,
+              "y": 1461,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-6",
+              "inGroup": "processing-player",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -20743,10 +18158,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Character Direction",
               "enabled": true,
               "x": 2620,
-              "y": 240,
+              "y": 1461,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-7",
+              "inGroup": "processing-player",
               "profileId": "lattice:active-sillytavern",
               "model": null,
               "modelRole": "characterDirection",
@@ -20763,10 +18178,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Format",
               "enabled": true,
               "x": 2620,
-              "y": 560,
+              "y": 4146,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-7",
+              "inGroup": "processing-save-format",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -20790,10 +18205,10 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "title": "Write to File",
               "enabled": true,
               "x": 2980,
-              "y": 560,
+              "y": 4146,
               "w": 300,
               "h": 210,
-              "inGroup": "stage-8",
+              "inGroup": "processing-save-format",
               "profileId": null,
               "model": null,
               "modelRole": null,
@@ -20820,8 +18235,8 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
               "x": 100,
               "y": 0,
               "w": 900,
-              "h": 180,
-              "content": "Use directional private generic State with confirmed interactions, caps, cooldowns, diminishing returns and accepted story-time decay to guide NPC portrayal without choosing the player response.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nSelect native Rowan and replace actual avatar IDs. Authorize actor-private JSON rowan-relationship as {values:[...] ,ledger:[]}; include keys rowan-toward-iris-trust, rowan-toward-iris-desire, rowan-toward-iris-tension and rowan-toward-iris-excitement, each with subjectId Rowan, objectId Iris, visibility {kind:actor-private,actorId:Rowan}, and initial values 0,0,2,0 respectively.\nAuthorize genuine story-clock; advance accepted elapsed story time using lesson 23, not message count or wall time.\n\nOpen A relationship that changes slowly over weeks and inspect the named pins.\nThe direction Rowan→Iris is separate from Iris→Rowan; this root portrays only the selected NPC.\nAuthored support gains trust 1, desire 0.1 and temporary excitement 0.5; tension eases 0.25. Trust/desire cooldown 1440 minutes, tension 720, excitement 120; scene/day caps and diminishing factors 1, .5, .25 prevent fast escalation. Duplicate occurrence IDs do not progress.\nAccepted story-time decay returns trust/tension toward baseline by one point per 10080 minutes (week), desire per 40320 minutes (four weeks), and temporary excitement per 480 minutes (eight hours).\nThe selected actor grants lawful private file access independently of scene presence. Presence gates Character Direction only. While Rowan is absent, accepted elapsed-time decay can still update and persist authorized private state; no absent interaction is inferred or awarded.\nPrivate state and portrayal Guidance stay actor-scoped; Apply persists the proposed state and pacing ledgers. Rejection preserves them.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: At most 6 auxiliary requests: interaction extraction 1 + up to 3 confirmations + cast 1 + private portrayal 1; one ordinary native generation. State rules, decay and file staging are deterministic.\nCheckpoints:\nState.receipt: Directional before/after, pacing reasons and identity ledger remain a pending private proposal.",
+              "h": 1041,
+              "content": "Make Rowan’s feelings toward Iris change gradually through confirmed support and story time. You will inspect private values and pacing limits, then use the proposed state to guide portrayal.\n\nWhat you'll learn:\n• Directional state describes Rowan toward Iris, separately from Iris toward Rowan. Values guide portrayal, never consent or player decisions.\n• Cooldowns require story time between rewards; scene/day caps limit gains, and diminishing factors reduce repeated rewards.\n• Time decay moves values toward zero using accepted Story Clock minutes, rather than messages or wall time.\n\nBefore you start:\n• Open this lesson in a practice chat and enable Lattice before Send. The main reply uses your current SillyTavern connection.\n• Select loaded Rowan and replace both avatar IDs consistently. In Workflow › Configure › Workflow Data, authorize JSON rowan-relationship with Visibility Actor private and Rowan’s Actor ID. Paste its fixture into Initial template and Save authorization: trust/desire/excitement 0, tension 2, empty ledger.\n• Keep each row’s subjectId Rowan, objectId Iris and private visibility for Rowan. Authorize story-clock and accept elapsed time using lesson 23.\n• For each new Workflow Data document, also fill in Document name; using the Logical target ID as its name is fine. When a lesson names a fixture, paste the file’s contents into Initial template, then choose Save authorization.\n\nSteps:\n1. Combine lessons 25, 23 and 21: State, time and Character Direction. Establish both actors’ participation, then send: “Rowan finishes repairing Iris’s lantern and hands it back to her.”\n2. Inspect the confirmed interaction. Decay runs first; progression then proposes trust +1, desire +0.1, tension −0.25 and excitement +0.5, subject to pacing.\n3. Read State.receipt for changes and reasons. Cooldowns are trust/desire 1440 minutes, tension 720, excitement 120. For trust/desire/excitement, positive scene caps are 1/0.1/0.5 and day caps 1/0.2/1. Diminishing factors are 1, 0.5 and 0.25.\n4. Inspect Character Direction’s values and Rowan’s reply for gradual reactions that leave player choice open. Apply saves values and pacing records; Reject preserves the previous file.\n5. Accept time using lesson 23, then test without support. Per point, trust/tension ease over 10080 minutes, desire 40320, excitement 480. The first run starts decay at initialMinute 0; the fixture’s minute 780 already eases some tension.\n6. Review the final reply and any proposed saved changes at Review / Publish. Choose Apply reviewed candidate to accept them, or Reject candidate to discard them. Preview alone does not save changes.\n\nCheckpoints:\nState → receipt: State.receipt shows Rowan-toward-Iris values before and after, reward limits, processed occurrence IDs and pending private changes.\n\nTry this:\nSave some positive values, accept a week in lesson 23 and run without new support.\nTrust/tension move one point toward zero, desire 0.25; excitement fades to zero within eight hours. Values cannot drop below zero.\n\nIf something is different:\nRowan is absent.: Character Direction skips. Authorized selected-actor file access still permits elapsed-time decay to be saved; absence does not invent a supportive interaction.\nAn occurrence repeats or a cooldown applies.: No extra reward is granted. Inspect the receipt’s reason instead of inferring progress from repeated prose.\nReview is rejected.: Private values, pacing records and decay timestamps remain unchanged.\n\nModel requests: Up to six extra requests: extraction, three confirmations, participation and private portrayal. State rules, decay and file staging make no model requests. There is also one ordinary SillyTavern reply.",
               "commentFrame": true,
               "moveContents": false
             }
@@ -21093,164 +18508,57 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
             }
           },
           "groups": {
-            "stage-0": {
-              "id": "stage-0",
-              "title": "Preparation / processing",
-              "description": "Stage 0. Wires determine execution; folding is presentation only.",
+            "processing-player": {
+              "id": "processing-player",
+              "title": "Check story event evidence",
+              "description": "These connected boxes work together. Follow their wires to see how each result is used.",
               "x": 75,
-              "y": 190,
-              "w": 350,
-              "h": 3165,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "send",
-                "player",
-                "entities-text",
-                "candidate-request",
-                "scene",
-                "cast-request",
-                "relationship-state-file",
-                "clock",
-                "decay-rules-text",
-                "relationship-rules-text"
-              ]
-            },
-            "stage-1": {
-              "id": "stage-1",
-              "title": "Preparation / processing",
-              "description": "Stage 1. Wires determine execution; folding is presentation only.",
-              "x": 435,
-              "y": 190,
-              "w": 350,
-              "h": 1885,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "entities",
-                "candidates",
-                "cast",
-                "relationship-state",
-                "decay-rules",
-                "relationship-rules"
-              ]
-            },
-            "stage-2": {
-              "id": "stage-2",
-              "title": "Preparation / processing",
-              "description": "Stage 2. Wires determine execution; folding is presentation only.",
-              "x": 795,
-              "y": 190,
-              "w": 350,
-              "h": 925,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "events",
-                "cast-presence-0",
-                "decay"
-              ]
-            },
-            "stage-3": {
-              "id": "stage-3",
-              "title": "Preparation / processing",
-              "description": "Stage 3. Wires determine execution; folding is presentation only.",
-              "x": 1155,
-              "y": 190,
-              "w": 350,
-              "h": 605,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "confirm-each",
-                "rowan-present"
-              ]
-            },
-            "stage-4": {
-              "id": "stage-4",
-              "title": "Preparation / processing",
-              "description": "Stage 4. Wires determine execution; folding is presentation only.",
-              "x": 1515,
-              "y": 190,
-              "w": 350,
-              "h": 605,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "confirmed",
-                "rowan-route"
-              ]
-            },
-            "stage-5": {
-              "id": "stage-5",
-              "title": "Preparation / processing",
-              "description": "Stage 5. Wires determine execution; folding is presentation only.",
-              "x": 1875,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "interaction-events"
-              ]
-            },
-            "stage-6": {
-              "id": "stage-6",
-              "title": "Preparation / processing",
-              "description": "Stage 6. Wires determine execution; folding is presentation only.",
-              "x": 2235,
-              "y": 190,
-              "w": 350,
-              "h": 285,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "relationship"
-              ]
-            },
-            "stage-7": {
-              "id": "stage-7",
-              "title": "Preparation / processing",
-              "description": "Stage 7. Wires determine execution; folding is presentation only.",
-              "x": 2595,
-              "y": 190,
-              "w": 350,
-              "h": 605,
-              "color": "#57416e",
-              "collapsed": false,
-              "members": [
-                "portrayal",
-                "save-format"
-              ]
-            },
-            "stage-8": {
-              "id": "stage-8",
-              "title": "Native generation",
-              "description": "Stage 8. Wires determine execution; folding is presentation only.",
-              "x": 2955,
-              "y": 190,
-              "w": 350,
-              "h": 605,
+              "y": 1411,
+              "w": 2870,
+              "h": 2605,
               "color": "#284e67",
               "collapsed": false,
               "members": [
-                "generate",
-                "save"
+                "player",
+                "candidates",
+                "events",
+                "candidate-request",
+                "entities",
+                "confirm-each",
+                "entities-text",
+                "confirmed",
+                "interaction-events",
+                "clock",
+                "relationship",
+                "decay",
+                "relationship-rules",
+                "portrayal",
+                "relationship-state",
+                "decay-rules",
+                "relationship-rules-text",
+                "rowan-route",
+                "relationship-state-file",
+                "decay-rules-text",
+                "cast-presence-0",
+                "rowan-present",
+                "cast",
+                "cast-request",
+                "scene"
               ]
             },
-            "stage-9": {
-              "id": "stage-9",
-              "title": "Review / accepted staging",
-              "description": "Stage 9. Wires determine execution; folding is presentation only.",
-              "x": 3315,
-              "y": 190,
-              "w": 350,
+            "processing-save-format": {
+              "id": "processing-save-format",
+              "title": "Update saved story data",
+              "description": "These connected boxes work together. Follow their wires to see how each result is used.",
+              "x": 2595,
+              "y": 4096,
+              "w": 710,
               "h": 285,
               "color": "#57416e",
               "collapsed": false,
               "members": [
-                "review"
+                "save-format",
+                "save"
               ]
             }
           },
@@ -21377,7 +18685,7 @@ export const REMASTERED_WORKFLOW_EXAMPLE_DATA = [
                     "title": "Format",
                     "enabled": true,
                     "x": 460,
-                    "y": 560,
+                    "y": 530,
                     "w": 300,
                     "h": 210,
                     "profileId": null,
