@@ -76,7 +76,7 @@ function selectionFor(artifact,settings,scope){
 function safeCapability(raw){const result=cloneJsonValue(raw);if(!result.ok||!plain(result.data.value)||typeof result.data.value.ok!=='boolean')return fail('INVALID_RECALL_RESPONSE','The trusted Recall capability returned invalid data.');return result.data.value.ok?{ok:true,data:result.data.value.data}:fail('RECALL_CAPABILITY_FAILED','The trusted Recall capability did not authorize this action.');}
 async function executeRaw(node,namedInputs,local){
  const resolved=resolve(node,{phase:own(local,'phase')});if(!resolved.ok)return resolved;const {descriptor,ports,settings}=resolved.data;
- if(own(local,'root')!==true)return fail('RECALL_ROOT_REQUIRED','Recall arming and activation require the trusted root host.');
+ if(own(local,'root')!==true)return fail('RECALL_ROOT_REQUIRED','Recall queueing and activation require the trusted root host.');
  const validated=inputsFor(namedInputs,ports);if(!validated.ok)return validated;const inputs=validated.data,snapshot=stringifyJsonValue(namedInputs).data.text;
  const session=own(local,'recallState');if(!plain(session)||['current','activate','checkClaim','settle'].some(key=>typeof own(session,key)!=='function'))return fail('RECALL_STATE_MISSING','Bind the trusted scoped Recall state service.');
  // Run this guard after trusted callbacks; it never calls the session or another host capability.
@@ -87,7 +87,7 @@ async function executeRaw(node,namedInputs,local){
  if(descriptor.id==='hotkey-arm'){
   const proposal=freeze({schemaVersion:1,type:'recall-arm-proposal',...settings});let registered=false;
   if(!preview&&typeof own(local,'registerRecallHotkey')==='function'){let result;try{result=safeCapability(await own(local,'registerRecallHotkey')(proposal));}catch{return fail('RECALL_HOTKEY_UNAVAILABLE','The trusted shortcut registration is unavailable.');}if(!result.ok)return result;if(!exact(result.data,['registered'])||result.data.registered!==true)return fail('RECALL_HOTKEY_UNAVAILABLE','The shortcut registration was not acknowledged.');scope=current();if(!scope.ok)return scope;registered=true;}
-  return {ok:true,outputs:{proposal:{kind:'data',value:proposal}},reports:[{operation:'hotkey-arm',actualCalls:0,registered,armed:false}]};
+  return {ok:true,outputs:{proposal:{kind:'data',value:proposal}},reports:[{operation:'hotkey-arm',actualCalls:0,registered,queued:false}]};
  }
  if(preview)return skipped('RECALL_PREVIEW_NO_ACTIVATION','A target preview cannot reserve or consume the next Recall activation.');
  const disclosure=artifactVisibility(inputs);if(disclosure.kind==='hidden'||disclosure.kind==='actor-private'&&disclosure.actorId!==settings.actorId)return fail('RECALL_ACTOR_MISMATCH','Recall evidence must be permitted material for the selected actor.');
@@ -111,6 +111,6 @@ async function executeRaw(node,namedInputs,local){
   let staged;try{staged=safeCapability(await own(local,'stageRecallClaim')(claim,active));}catch{return fail('RECALL_STAGING_FAILED','The host could not retain this Recall claim.');}scope=current();if(!scope.ok)return scope;if(!staged.ok)return staged;if(!exact(staged.data,['staged'])||staged.data.staged!==true)return fail('RECALL_STAGING_FAILED','The private consumption claim was not retained.');const ownedClaim=own(session,'checkClaim')(claim,{stage:descriptor.phase});if(!ownedClaim.ok)return ownedClaim;const unchanged=localCurrent();if(unchanged)return unchanged;retained=true;
   const visibility={kind:'actor-private',actorId:scope.data.actorId},sourceRefs=selected.data.records.map(record=>({id:record.id,...(record.revision?{revision:record.revision}:{})}));
   return {ok:true,outputs:{out:{kind:'guidance',text:selected.data.text,scope:scope.data,visibility,acceptance:'pending',sourceRefs},records:{kind:'data',visibility,value:{schemaVersion:1,type:'recall-selection',scope:scope.data,memorySetId:settings.memorySetId,activationId:active.activationId,records:selected.data.records}},report:{kind:'data',visibility,value:{activationId:active.activationId,recordIds:selected.data.records.map(record=>record.id),omittedCount:selected.data.omittedCount,matchedCount:selected.data.matchedCount,tokens,tokenizerCalls,route:'actor-private-guidance',consumption:'pending'}}},reports:[{operation:'recall',actualCalls:0,selectedCount:selected.data.records.length,omittedCount:selected.data.omittedCount,private:true}]};
- }finally{if(claim&&!retained)try{own(session,'settle')(claim,{status:own(local,'signal')?.aborted?'cancelled':'failed'});}catch{/* The session remains scoped and cannot consume a failed activation. */}}
+ }finally{if(claim&&!retained)try{own(session,'releaseClaim')(claim);}catch{/* The session remains scoped and cannot consume a failed activation. */}}
 }
 export async function executeRecallNode(node,inputs,local={}){try{return preserveArtifactPrivacy(await executeRaw(node,inputs,local),inputs);}catch{return fail(own(local,'signal')?.aborted?'ABORTED':'RECALL_FAILED','Recall failed without publishing private material.');}}

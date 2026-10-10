@@ -114,9 +114,11 @@ export function createRecallState(ports){
   if(outcome.status==='accepted'||entry.consumeOn==='success')consume(entry);
   return good({status:entry.status,consumed:entry.consumed});
  }
+ // Trusted exact-token cleanup can only revoke; it cannot spend or grant authority.
+ function releaseClaim(claim){const entry=claim&&typeof claim==='object'?claimAuthority.get(claim):undefined;if(!entry)return fail('RECALL_CLAIM_UNAUTHORIZED','Release the exact live claim retained by the trusted host.');if(entry.consumed)return good({status:entry.status,consumed:true});if(claims.get(entry.key)===entry){entry.request?.pending.delete(entry.key);claims.delete(entry.key);entry.status='cancelled';}return good({status:entry.status,consumed:false});}
  function cancelEntry(entry){entry.queued=false;entry.remaining={reply:false,swipe:false};for(const key of entry.pending){const claim=claims.get(key);if(claim){claim.status='cancelled';claims.delete(key);}}entry.pending.clear();}
  function cancel(memorySetId){const key=requests.get(memorySetId)?.proposal.memorySetId??memorySetId;const result=changeQueues({action:'cancel',memorySetIds:[key]});if(!result.ok)return result;const entry=[...requests.values()].find(value=>value.proposal.memorySetId===key);return good(entry?requestView(entry):{memorySetId:key,queued:false});}
  const inspect=()=>{const fresh=authority();return fresh.ok?good({scope,requests:[...requests.values()].map(requestView),activationCount:claims.size}):fresh;};
  const release=()=>{released=true;requests.clear();claims.clear();};
- return {ok:true,data:Object.freeze({current,queue,changeQueues,activate,checkClaim,settle,cancel,inspect,release})};
+ return {ok:true,data:Object.freeze({current,queue,changeQueues,activate,checkClaim,settle,releaseClaim,cancel,inspect,release})};
 }

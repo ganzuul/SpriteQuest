@@ -25,19 +25,21 @@ export interface RecallState {
   * The host must call succeeded only at its selected successful owned-generation/workflow boundary.
   */
  settle(claim:RecallClaim,outcome:{status:'succeeded'|'accepted'|'failed'|'cancelled'}):Result<{status:string;consumed:boolean}>;
+ /** Exact trusted cleanup only: revoke without current scope authority; never consume/refund. */
+ releaseClaim(claim:RecallClaim):Result<{status:string;consumed:boolean}>;
  cancel(memorySetId:string):Result<RecallRequestState>;
  inspect():Result<{scope:RecallScope;requests:readonly RecallRequestState[];activationCount:number}>;
  release():void;
 }
 /** Trusted factory port. Return both facets from the same live owner, after any callback side effects.
  * Do not combine independently sampled or separately callback-driven scope/generation evidence.
- * Graph data cannot provide this function or restore the session. Each action invokes it once, then
+ * Graph data cannot provide this function or restore the session. Each authority-bearing action invokes it once, then
  * performs callback-free ownership/reservation/signal checks; no fallback split callbacks are accepted.
  */
 export interface RecallStatePorts { getAuthority:()=>RecallAuthority; signal?:AbortSignal; }
 export function validateRecallScope(raw:unknown):Result<RecallScope>;
 export function validateRecallQueueProposal(raw:unknown):Result<RecallQueueProposal>;
-/** Ephemeral bounded session: restart begins disarmed, 64 live requests and 1024 generation identities.
+/** Ephemeral bounded session: restart begins without queued recall, 64 live requests and 1024 generation identities.
  * Factories are captured user/chat/workflow/actor scopes; actor changes require another session.
  */
 export function createRecallState(ports:RecallStatePorts):Result<RecallState>;
