@@ -18,8 +18,10 @@ test('host buttons cannot box or fill idle flat workspace menus', () => {
 test('named pin hit areas anchor to their label rows at the side of the card', () => {
     assert.equal(style('.pc-native-row').position, 'relative');
     assert.equal(style('.pc-port').position, 'absolute');
-    assert.equal(style('.pc-port').top, '50%');
+    assert.equal(style('.pc-port').top, 'calc(50% + var(--pc-pin-y, 0px))', 'Measured label ink can offset the pin within its row');
     assert.equal(style('.pc-port').left, '12px');
+    assert.equal(style('.pc-port').width, '24px', 'Small glyphs retain the full connection hit target');
+    assert.equal(style('.pc-port').height, '24px');
 });
 
 test('the vertical shelf reserves the run meter strip and remains scrollable', () => {

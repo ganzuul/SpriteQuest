@@ -123,6 +123,7 @@
 .pc-wire.pc-selected { opacity: 1; stroke-width: calc(var(--pc-wire-w) + 1.5); }
 
 .pc-wire-label {
+    visibility: hidden;
     fill: var(--pc-text);
     font-size: 11px;
     text-anchor: middle;
@@ -136,6 +137,9 @@
     stroke-linejoin: round;
 }
 :root[data-pc-own="1"] .pc-wire-label { stroke: var(--pc-canvas, var(--pc-panel-solid)); }
+.pc-wire-hit:hover + .pc-wire-native + .pc-wire-label,
+.pc-wire-native.pc-selected + .pc-wire-label,
+.pc-wire-native.pc-wire-feeds + .pc-wire-label { visibility: visible; }
 
 .pc-node {
     position: absolute;
@@ -319,33 +323,28 @@
 .pc-native-row-in { grid-column: 1; padding: 0 4px 0 24px; }
 .pc-native-row-out { grid-column: 2; padding: 0 24px 0 4px; text-align: right; justify-content: flex-end; }
 .pc-native-pin-label { color: var(--pc-muted); overflow-wrap: anywhere; }
-:root .pc-root .pc-node-native .pc-port { position: absolute; box-sizing: border-box; width: 24px; height: 24px; top: 50%; bottom: auto; margin: 0; border: 0; border-radius: 2px; box-shadow: none; transform: translate(-50%, -50%); background: transparent; }
-.pc-node-native .pc-port::after { content: ''; position: absolute; width: 7px; height: 7px; left: 50%; top: 50%; transform: translate(-50%, -50%); border-radius: 50%; background: var(--pc-pin-color, #72adc0); pointer-events: none; }
+:root .pc-root .pc-node-native .pc-port { position: absolute; box-sizing: border-box; width: 24px; height: 24px; top: calc(50% + var(--pc-pin-y, 0px)); bottom: auto; margin: 0; border: 0; border-radius: 2px; box-shadow: none; transform: translate(-50%, -50%); background: transparent; }
+.pc-pin-glyph { position: absolute; width: 18px; height: 18px; left: 50%; top: 50%; transform: translate(-50%, -50%); overflow: visible; pointer-events: none; color: var(--pc-pin-color); }
+.pc-node-native .pc-port::after { content: none; }
 .pc-node-native .pc-port-in { left: 12px; }
 .pc-node-native .pc-port-out { left: calc(100% - 12px); }
 :root .pc-root .pc-node-native .pc-port:hover { transform: translate(-50%, -50%); background: transparent; box-shadow: none; }
-.pc-node-native .pc-port:hover::after, .pc-node-native .pc-port.pc-pin-highlight::after { box-shadow: 0 0 0 3px color-mix(in srgb, var(--pc-pin-color, #72adc0) 32%, transparent); filter: brightness(1.3); }
-.pc-node-native .pc-port.pc-pin-target::after { box-shadow: 0 0 0 3px color-mix(in srgb, var(--pc-pin-color, #72adc0) 50%, transparent); filter: brightness(1.3); }
-.pc-node-native .pc-port.pc-pin-compatible::after { box-shadow: 0 0 0 2px var(--pc-pin-color, #72adc0), 0 0 0 5px color-mix(in srgb, var(--pc-pin-color, #72adc0) 25%, transparent); }
-.pc-node-native .pc-port.pc-pin-invalid::after { box-shadow: 0 0 0 2px var(--pc-error), 0 0 0 5px color-mix(in srgb, var(--pc-error) 25%, transparent); }
-.pc-node-native [data-kind="context"] { --pc-pin-color: var(--pc-kind-context, #72adc0); }
-.pc-node-native [data-kind="guidance"] { --pc-pin-color: var(--pc-kind-guidance, #c190be); }
-.pc-node-native [data-kind="draft"] { --pc-pin-color: var(--pc-kind-draft, #92c9ad); }
-.pc-node-native [data-kind="findings"] { --pc-pin-color: var(--pc-kind-findings, #b65b9e); }
-.pc-node-native [data-kind="patches"] { --pc-pin-color: var(--pc-kind-patches, #b65b9e); }
-.pc-node-native [data-kind="text"] { --pc-pin-color: var(--pc-kind-text, #a5bfa0); }
-.pc-node-native [data-kind="data"] { --pc-pin-color: var(--pc-kind-data, #7e9bc5); }
+:is(.pc-port, .pc-pin-glyph, .pc-example-pin-cue, .pc-th-pin-cue)[data-kind="context"] { --pc-pin-color: var(--pc-kind-context, #f0e442); }
+:is(.pc-port, .pc-pin-glyph, .pc-example-pin-cue, .pc-th-pin-cue)[data-kind="guidance"] { --pc-pin-color: var(--pc-kind-guidance, #cc79a7); }
+:is(.pc-port, .pc-pin-glyph, .pc-example-pin-cue, .pc-th-pin-cue)[data-kind="draft"] { --pc-pin-color: var(--pc-kind-draft, #7fd8c5); }
+:is(.pc-port, .pc-pin-glyph, .pc-example-pin-cue, .pc-th-pin-cue)[data-kind="patches"] { --pc-pin-color: var(--pc-kind-patches, #ed8956); }
+:is(.pc-port, .pc-pin-glyph, .pc-example-pin-cue, .pc-th-pin-cue)[data-kind="candidate"] { --pc-pin-color: var(--pc-kind-candidate, #b49af2); }
+:is(.pc-port, .pc-pin-glyph, .pc-example-pin-cue, .pc-th-pin-cue)[data-kind="text"] { --pc-pin-color: var(--pc-kind-text, #e69f00); }
+:is(.pc-port, .pc-pin-glyph, .pc-example-pin-cue, .pc-th-pin-cue)[data-kind="data"] { --pc-pin-color: var(--pc-kind-data, #56b4e9); }
 .pc-wire-native { stroke-width: 2px; }
 :root .pc-wire-native.pc-wire-feeds { stroke-width: calc(var(--pc-wire-w) + 1); opacity: 1; filter: brightness(1.2); }
-.pc-wire-native[data-kind="context"] { stroke: var(--pc-kind-context, #72adc0); }
-.pc-wire-native[data-kind="guidance"] { stroke: var(--pc-kind-guidance, #c190be); }
-.pc-wire-native[data-kind="draft"] { stroke: var(--pc-kind-draft, #92c9ad); }
-.pc-wire-native[data-kind="findings"] { stroke: var(--pc-kind-findings, #b65b9e); }
-.pc-wire-native[data-kind="patches"] { stroke: var(--pc-kind-patches, #b65b9e); }
-.pc-wire-native[data-kind="candidate"] { stroke: var(--pc-kind-candidate, #cca56d); }
-.pc-wire-native[data-kind="text"] { stroke: var(--pc-kind-text, #a5bfa0); }
-.pc-wire-native[data-kind="data"] { stroke: var(--pc-kind-data, #7e9bc5); }
-.pc-node-native [data-kind="candidate"] { --pc-pin-color: var(--pc-kind-candidate, #cca56d); }
+.pc-wire-native[data-kind="context"] { stroke: var(--pc-kind-context, #f0e442); }
+.pc-wire-native[data-kind="guidance"] { stroke: var(--pc-kind-guidance, #cc79a7); }
+.pc-wire-native[data-kind="draft"] { stroke: var(--pc-kind-draft, #7fd8c5); }
+.pc-wire-native[data-kind="patches"] { stroke: var(--pc-kind-patches, #ed8956); }
+.pc-wire-native[data-kind="candidate"] { stroke: var(--pc-kind-candidate, #b49af2); }
+.pc-wire-native[data-kind="text"] { stroke: var(--pc-kind-text, #e69f00); }
+.pc-wire-native[data-kind="data"] { stroke: var(--pc-kind-data, #56b4e9); }
 .pc-host-result { display: block; margin: 0 auto 8px; padding: 4px 10px; font-size: 11px; cursor: pointer; }
 :root .pc-root .pc-node-native.pc-node-compact { min-width: 64px; max-width: 92px; margin-bottom: 38px; }
 .pc-node-compact .pc-native-heading { position: absolute; inset: 0; padding: 0; justify-content: center; pointer-events: none; }
@@ -560,7 +559,6 @@
 :root[data-pc-preset="ember"] .pc-root .pc-native-heading,
 :root[data-pc-preset="ember"] .pc-root .pc-native-alias { color: var(--pc-family, #a3aa99); }
 :root[data-pc-preset="ember"] .pc-root .pc-native-pin-label { color: color-mix(in srgb, var(--pc-muted) 68%, var(--SmartThemeBodyColor, var(--pc-text)) 32%); }
-:root[data-pc-preset="ember"] .pc-root .pc-port::after { background: color-mix(in srgb, var(--pc-pin-color, #72adc0) 86%, var(--SmartThemeBodyColor, var(--pc-text)) 14%); }
 :root[data-pc-preset="ember"] .pc-root .pc-node-native { border-width: 0; border-radius: 6px; box-shadow: 0 1px 2px #00000050; }
 :root[data-pc-preset="ember"][data-pc-shape="sharp"] .pc-root .pc-node-native { border-radius: 2px; }
 :root[data-pc-preset="ember"][data-pc-shape="soft"] .pc-root .pc-node-native { border-radius: 16px; }
@@ -595,44 +593,24 @@
 :root[data-pc-preset="harbor"] .pc-root .pc-family-output .pc-native-heading { color: var(--pc-kind-text); }
 :root[data-pc-preset="harbor"] .pc-root .pc-node-details header svg { stroke: var(--pc-kind-data); }
 :root[data-pc-preset="signal"] .pc-root .pc-node-details header svg { stroke: var(--pc-text); }
-:root[data-pc-accessible="1"] .pc-root .pc-port::after { width: 10px; height: 10px; border-radius: 0; }
-:root[data-pc-accessible="1"] .pc-root .pc-port[data-kind="text"]::after { border-radius: 50%; background: transparent; border: 2px solid var(--pc-pin-color); }
-:root[data-pc-accessible="1"] .pc-root .pc-port[data-kind="context"]::after { border-radius: 50%; }
-:root[data-pc-accessible="1"] .pc-root .pc-port[data-kind="guidance"]::after { clip-path: polygon(50% 0,100% 50%,50% 100%,0 50%); width: 12px; height: 12px; }
-:root[data-pc-accessible="1"] .pc-root .pc-port[data-kind="draft"]::after { clip-path: polygon(50% 0,100% 38%,81% 100%,19% 100%,0 38%); }
-:root[data-pc-accessible="1"] .pc-root .pc-port[data-kind="findings"]::after { clip-path: polygon(50% 0,100% 100%,0 100%); }
-:root[data-pc-accessible="1"] .pc-root .pc-port[data-kind="patches"]::after { clip-path: polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%); }
-:root[data-pc-accessible="1"] .pc-root .pc-port[data-kind="candidate"]::after { clip-path: polygon(40% 0,60% 0,60% 40%,100% 40%,100% 60%,60% 60%,60% 100%,40% 100%,40% 60%,0 60%,0 40%,40% 40%); }
-/* Feedback surrounds the glyph so clipped shapes keep their visible target cue. */
-:root[data-pc-accessible="1"] .pc-root .pc-port:is(:hover, .pc-pin-highlight, .pc-pin-target, .pc-pin-compatible, .pc-pin-invalid)::after { box-shadow: none; }
-:root[data-pc-accessible="1"] .pc-root .pc-port:is(:hover, .pc-pin-highlight, .pc-pin-target, .pc-pin-compatible, .pc-pin-invalid)::before { content: ''; position: absolute; box-sizing: border-box; width: 20px; height: 20px; left: 50%; top: 50%; transform: translate(-50%, -50%); border: 1px solid var(--pc-pin-color); border-radius: 50%; pointer-events: none; }
-:root[data-pc-accessible="1"] .pc-root .pc-port.pc-pin-target::before { border-width: 2px; }
-:root[data-pc-accessible="1"] .pc-root .pc-port.pc-pin-compatible::before { border: 3px double var(--pc-pin-color); }
-:root[data-pc-accessible="1"] .pc-root .pc-port.pc-pin-invalid::before { border: 2px dashed var(--pc-error); }
+/* Feedback surrounds the fixed glyph without recoloring or changing its shape. */
+.pc-root .pc-port:is(:hover, .pc-pin-highlight, .pc-pin-target, .pc-pin-compatible, .pc-pin-invalid)::before { content: ''; position: absolute; box-sizing: border-box; width: 20px; height: 20px; left: 50%; top: 50%; transform: translate(-50%, -50%); border: 1px solid var(--pc-pin-color); border-radius: 50%; pointer-events: none; }
+.pc-root .pc-port.pc-pin-target::before { border-width: 2px; }
+.pc-root .pc-port.pc-pin-compatible::before { border: 3px double var(--pc-pin-color); }
+.pc-root .pc-port.pc-pin-invalid::before { border: 2px dashed var(--pc-error); }
 :root[data-pc-accessible="1"] .pc-root .pc-wire-native { stroke-width: 3px; stroke-linecap: round; }
 :root[data-pc-accessible="1"] .pc-root .pc-wire-native[data-kind="data"] { stroke-dasharray: 8 4; }
 :root[data-pc-accessible="1"] .pc-root .pc-wire-native[data-kind="guidance"] { stroke-dasharray: 1 5; }
 :root[data-pc-accessible="1"] .pc-root .pc-wire-native[data-kind="context"] { stroke-dasharray: 12 4 2 4; }
 :root[data-pc-accessible="1"] .pc-root .pc-wire-native[data-kind="draft"] { stroke-dasharray: 14 5; }
-:root[data-pc-accessible="1"] .pc-root .pc-wire-native[data-kind="findings"] { stroke-dasharray: 3 3; }
 :root[data-pc-accessible="1"] .pc-root .pc-wire-native[data-kind="patches"] { stroke-dasharray: 10 3 2 3 2 3; }
 :root[data-pc-accessible="1"] .pc-root .pc-wire-native[data-kind="candidate"] { stroke-dasharray: 2 7; }
 :root[data-pc-accessible="1"] .pc-root .pc-wire-label { fill: var(--pc-text); }
-.pc-root .pc-example-pin-cue { display: none; }
-:root[data-pc-accessible="1"] .pc-root .pc-example-pin-dot { display: none; }
-:root[data-pc-accessible="1"] .pc-root .pc-example-pin-cue { display: inline; fill: var(--pc-pin-color); stroke: none; }
-:root[data-pc-accessible="1"] .pc-root .pc-example-pin-cue[data-kind="text"] { fill: none; stroke: var(--pc-kind-text); stroke-width: 2px; }
+.pc-example-pin-cue { display: inline; color: var(--pc-pin-color); overflow: visible; }
 .pc-th-kind-legend { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 5px 12px; padding: 0; list-style: none; color: var(--pc-text); font-size: 12px; }
 .pc-th-accessibility { color: var(--pc-muted); font-size: 12px; }
 .pc-th-kind-legend li { display: flex; align-items: center; gap: 8px; }
-.pc-th-pin-cue { display: inline-block; flex: 0 0 12px; width: 12px; height: 12px; background: var(--pc-kind-data); }
-.pc-th-pin-cue[data-kind="context"] { background: var(--pc-kind-context); border-radius: 50%; }
-.pc-th-pin-cue[data-kind="text"] { box-sizing: border-box; background: transparent; border: 2px solid var(--pc-kind-text); border-radius: 50%; }
-.pc-th-pin-cue[data-kind="guidance"] { background: var(--pc-kind-guidance); clip-path: polygon(50% 0,100% 50%,50% 100%,0 50%); }
-.pc-th-pin-cue[data-kind="draft"] { background: var(--pc-kind-draft); clip-path: polygon(50% 0,100% 38%,81% 100%,19% 100%,0 38%); }
-.pc-th-pin-cue[data-kind="findings"] { background: var(--pc-kind-findings); clip-path: polygon(50% 0,100% 100%,0 100%); }
-.pc-th-pin-cue[data-kind="patches"] { background: var(--pc-kind-patches); clip-path: polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%); }
-.pc-th-pin-cue[data-kind="candidate"] { background: var(--pc-kind-candidate); clip-path: polygon(40% 0,60% 0,60% 40%,100% 40%,100% 60%,60% 60%,60% 100%,40% 100%,40% 60%,0 60%,0 40%,40% 40%); }
+.pc-th-pin-cue { display: inline-block; flex: 0 0 18px; width: 18px; height: 18px; overflow: visible; color: var(--pc-pin-color); }
 
 /* Native popovers share the selected theme rather than a fixed gray palette. */
 :root[data-pc-own="1"] .pc-root :is(.pc-pin-menu, .pc-node-search, .pc-manager, .pc-subgraph-save) { background: var(--pc-panel-solid); color: var(--pc-text); border-color: var(--pc-border); }

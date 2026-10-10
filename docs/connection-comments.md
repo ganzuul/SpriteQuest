@@ -1,6 +1,8 @@
 # Connections and workflow comments
 
-Connections follow direct, smooth curves between named pins, with short horizontal leads at each end. Backward connections form a compact returning curve. Wires can pass behind cards; hovering or selecting a wire highlights it and both endpoint pins. Ember's translucent charcoal cards let those wires show faintly through, while labels, icons and pins remain solid.
+Connections leave each pin horizontally for 25 canvas pixels, turn locally, and take a straight route through the middle. Backward connections use the same direct route, with a shallow return when the pins are nearly level. Wires can pass behind cards; hovering or selecting a wire highlights it and both endpoint pins and reveals its type label. Ember's translucent charcoal cards let those wires show faintly through, while labels, icons and pins remain solid.
+
+Every theme uses the same data type shapes: Context is a filled circle, Guidance a diamond, Draft a pentagon, Patches a triangle, Candidate a ring with a center dot, Text a capsule, and Data a square. Connection colors match their pins. Harbor and Signal retain accessible palettes and wire patterns; changing themes changes those colors and surfaces without changing the type shapes.
 
 Select nodes, right-click a selected node, and choose **Add comment around selection**. You can also press **C** outside text inputs. With no nodes selected, C creates an empty comment at the canvas cursor or view location. The new comment's title is ready to edit.
 

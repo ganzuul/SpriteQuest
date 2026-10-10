@@ -5,6 +5,7 @@ import { selectionMode, rectangle, intersects, combineSelection } from './canvas
 import { createGeometryCache, indexIncidentWires } from './canvas/geometry.js?v=0.27.0';
 import { nodeCards, preparedCardFor } from './canvas/presentation.js?v=0.27.0';
 import { buildConnectionRoute, buildDragConnectionRoute } from './canvas/connection-route.js?v=0.27.0';
+import { alignCardPins } from './canvas/pin-alignment.js?v=0.27.0';
 import { isCommentFrame, containedCommentNodes } from './canvas/comment-frames.js?v=0.27.0';
 import { mountCanvas } from '../dist/lattice-ui.js?v=0.27.0';
 const groupMembers = (graph, id) => Object.values(graph?.nodes ?? {}).filter(node => node.inGroup === id);
@@ -100,6 +101,14 @@ export class Canvas {
             }
         });
         this.#bind();
+        const fonts = host.ownerDocument.fonts;
+        const refreshFontGeometry = () => {
+            if (!this.graph || this.eventController.signal.aborted) return;
+            this.#measureCards('.pc-node-native[data-id]');
+            this.frames.schedule(2);
+        };
+        fonts?.addEventListener?.('loadingdone', refreshFontGeometry, { signal: this.eventController.signal });
+        fonts?.ready?.then(refreshFontGeometry);
     }
 
     async destroy() {
@@ -346,7 +355,9 @@ export class Canvas {
 
     #measureCard(el, id) {
         if (!el.classList.contains('pc-node-native')) return this.geometry.update(id, el.offsetHeight);
-        const box = el.getBoundingClientRect(), zoom = this.view.zoom || 1;
+        const zoom = this.view.zoom || 1;
+        alignCardPins(el, zoom);
+        const box = el.getBoundingClientRect();
         const pins = [...el.querySelectorAll('.pc-port')].map(port => {
             const dot = port.getBoundingClientRect();
             return { id: port.dataset.port, direction: port.dataset.dir, side: port.dataset.side, kind: port.dataset.kind, x: (dot.left + dot.width / 2 - box.left) / zoom, y: (dot.top + dot.height / 2 - box.top) / zoom };
@@ -674,6 +685,7 @@ export class Canvas {
         const target = native?.target && this.endpoint(native.target.nodeId, native.target.dir, native.target.portId);
         const loose = native?.ghost;
         const ghost = native && native.kind !== 'idle' && origin && loose ? {
+            kind: origin.kind,
             d: target && native.feedback?.compatible === true ? (native.origin.dir === 'out' ? this.#path(origin, target) : this.#path(target, origin)) : buildDragConnectionRoute(origin, loose).d,
             className: 'pc-wire pc-wire-ghost pc-wire-native' + (native.feedback?.compatible === false ? ' pc-wire-invalid' : ''),
         } : null;

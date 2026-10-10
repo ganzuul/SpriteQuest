@@ -51,6 +51,8 @@ function assertPinNecks(d, from, to) {
     const parts = segments(d);
     assert.deepEqual(parts[0][0], { x: from.x, y: from.y });
     assert.deepEqual(parts.at(-1).at(-1), { x: to.x, y: to.y });
+    assert.deepEqual(parts[0].at(-1), { x: from.x + direction(from.side) * 25, y: from.y }, 'source lead travels 25 graph pixels before its turn');
+    assert.deepEqual(parts.at(-1)[0], { x: to.x + direction(to.side) * 25, y: to.y }, 'target lead travels 25 graph pixels from its pin');
     const nearStart = at(parts[0], 0.001), nearEnd = at(parts.at(-1), 0.999);
     assert.ok((nearStart.x - from.x) * direction(from.side) > 0, 'departure follows source side');
     assert.ok((nearEnd.x - to.x) * direction(to.side) > 0, 'arrival follows target side');
@@ -80,14 +82,72 @@ test('forward connections stay compact and leave/arrive horizontally', () => {
     assert.ok(points.every((p, i) => !i || p.x >= points[i - 1].x), 'forward curve does not double back');
 });
 
-test('same-height backward connections retain a compact stable returning bow', () => {
+test('settled wires use a literal direct middle span between compact turns', () => {
+    for (const [from, to] of [
+        [{ x: 20, y: 40, side: 'right' }, { x: 320, y: 170, side: 'left' }],
+        [{ x: 300, y: 90, side: 'right' }, { x: 60, y: 90, side: 'left' }],
+        [{ x: 300, y: 100, side: 'right' }, { x: 60, y: -200, side: 'left' }],
+        [{ x: -123.75, y: -30.125, side: 'left' }, { x: -500.25, y: -180.875, side: 'right' }],
+    ]) {
+        const parts = segments(route(from, to).d);
+        assert.equal(parts.length, 5, 'two leads and two compact turns frame one central span');
+        assert.equal(parts[2].length, 2, 'the middle is a literal straight line');
+        for (const [turn, lead] of [[parts[1], parts[0].at(-1)], [parts[3], parts.at(-1)[0]]]) {
+            assert.ok(turn.every(point => distance(point, lead) <= 15), 'turn controls stay local instead of bowing across the canvas');
+        }
+    }
+});
+
+test('coincident lead ends have bounded continuous local curvature', () => {
+    for (const fromSide of ['right', 'left']) for (const toSide of ['right', 'left']) {
+        const from = { x: 0, y: 0, side: fromSide };
+        const to = { x: 25 * (direction(fromSide) - direction(toSide)), y: 0, side: toSide };
+        const result = route(from, to), points = samples(result.d);
+        const lead = { x: 25 * direction(fromSide), y: 0 };
+        assert.ok(points.every(point => Number.isFinite(point.x) && Number.isFinite(point.y)));
+        assert.ok(points.some(point => Math.abs(point.y) >= 4), 'coincident leads keep a small local turn');
+        assert.ok(segments(result.d).slice(1, -1).flat().every(point => distance(point, lead) <= 12), 'coincidence does not create a broad loop');
+        for (const delta of [{ x: .001, y: 0 }, { x: -.001, y: 0 }, { x: 0, y: .001 }, { x: 0, y: -.001 }]) {
+            const nearby = route(from, { ...to, x: to.x + delta.x, y: delta.y });
+            const other = samples(nearby.d);
+            assert.ok(Math.max(...points.map(point => Math.min(...other.map(candidate => distance(point, candidate))))) < .1,
+                'crossing coincident leads cannot jump between opposite turn shapes');
+            assert.ok(distance(result.label, nearby.label) < .1, 'coincident labels do not jump');
+        }
+    }
+});
+
+test('same-height backward connections retain a six-pixel stable returning turn', () => {
     const from = { x: 300, y: 90, side: 'right' }, to = { x: 60, y: 90, side: 'left' };
     const result = route(from, to);
     assertPinNecks(result.d, from, to);
     const points = samples(result.d);
-    assert.ok(Math.max(...points.map(p => Math.abs(p.y - 90))) >= 24, 'returning wire does not collapse onto its baseline');
+    assert.ok(Math.max(...points.map(p => Math.abs(p.y - 90))) >= 5.9, 'returning wire does not collapse onto its baseline');
+    assert.ok(points.every(p => Math.abs(p.y - 90) <= 6.001), 'returning turn remains only six pixels deep');
     assert.ok(points.every(p => p.y >= -30 && p.y <= 210 && p.x >= -30 && p.x <= 390), 'bow stays near endpoints without perimeter lanes');
     assert.deepEqual(route(from, to), result, 'same graph endpoints give deterministic geometry');
+});
+
+test('same-side level connections turn around either endpoint without a collinear cusp', () => {
+    for (const [from, to] of [
+        [{ x: 0, y: 0, side: 'right' }, { x: 100, y: 0, side: 'right' }],
+        [{ x: 0, y: 0, side: 'right' }, { x: -100, y: 0, side: 'right' }],
+        [{ x: 0, y: 0, side: 'left' }, { x: 100, y: 0, side: 'left' }],
+        [{ x: 0, y: 0, side: 'left' }, { x: -100, y: 0, side: 'left' }],
+    ]) {
+        const result = route(from, to), parts = segments(result.d), points = samples(result.d);
+        assertPinNecks(result.d, from, to);
+        assert.ok(points.some(point => Math.abs(point.y) >= 5.9), 'a reversing endpoint needs a shallow return instead of doubling back along its baseline');
+        assert.ok(points.every(point => Math.abs(point.y) <= 6.001), 'same-side returns keep the six-pixel depth');
+        assert.equal(parts[2].length, 2, 'same-side returns retain a literal straight middle');
+        for (const turn of [parts[1], parts[3]]) {
+            const derivatives = turn.slice(1).map((point, i) => ({ x: 3 * (point.x - turn[i].x), y: 3 * (point.y - turn[i].y) }));
+            for (let i = 0; i <= 1000; i++) {
+                const tangent = at(derivatives, i / 1000);
+                assert.ok(Math.hypot(tangent.x, tangent.y) > .1, 'the rounded turn has no interior zero-speed cusp');
+            }
+        }
+    }
 });
 
 test('level backward wires take a shallow rounded shortcut', () => {
@@ -97,7 +157,7 @@ test('level backward wires take a shallow rounded shortcut', () => {
         const to = { x: sign * (300 - width), y: 90, side: side === 'right' ? 'left' : 'right' };
         const result = route(from, to), points = samples(result.d, 1000);
         assertPinNecks(result.d, from, to);
-        assert.ok(points.every(point => Math.abs(point.y - 90) <= 32), 'level return depth stays shallow as the pins move apart');
+        assert.ok(points.every(point => Math.abs(point.y - 90) <= 6.001), 'level return depth stays shallow as the pins move apart');
         assert.ok(points.every(point => point.x * sign >= 267 - width && point.x * sign <= 333), 'rounded turns stay local to the pins');
         const interior = points.filter(point => point.x * sign >= 300 - width * .85 && point.x * sign <= 300 - width * .15);
         assert.ok(interior.length > 2);
@@ -139,7 +199,7 @@ test('steep backward connections keep port turns close to the pins', () => {
         const from = { x: sign * 300, y: 100, side };
         const to = { x: sign * (300 - dx), y: 100 + dy, side: side === 'right' ? 'left' : 'right' };
         const points = samples(route(from, to).d, 1000);
-        assert.ok(points.every(point => point.x * sign <= 330 && point.x * sign >= 270 - dx),
+        assert.ok(points.every(point => point.x * sign <= 337 && point.x * sign >= 263 - dx),
             'port turns stay within 12px of the horizontal necks instead of forming wide hooks');
     }
 });
@@ -154,7 +214,7 @@ test('close, vertical, and overlapping pins keep finite smooth necks', () => {
         assertPinNecks(result.d, from, to);
         assert.ok(samples(result.d).every(p => Number.isFinite(p.x) && Number.isFinite(p.y)));
         assert.ok(Number.isFinite(result.label.x) && Number.isFinite(result.label.y));
-        assert.ok(samples(result.d).some(p => Math.abs(p.y - from.y) >= 20), 'degenerate horizontal placement still gets curvature');
+        assert.ok(samples(result.d).some(p => Math.abs(p.y - from.y) >= 5), 'degenerate horizontal placement still gets compact curvature');
     }
 });
 
@@ -211,7 +271,7 @@ function assertAdjacentRoutesStayClose(from, firstTo, secondTo, description) {
     assertPinNecks(second.d, from, secondTo);
 }
 
-for (const x of [12, 36, 60]) test(`backward, close necks, and forward transitions remain stable at target gap ${x}`, () => {
+for (const x of [12, 50, 74]) test(`backward, close necks, and forward transitions remain stable at target gap ${x}`, () => {
     for (const side of ['right', 'left']) {
         const from = { x: 0, y: 0, side }, sign = direction(side);
         for (const y of [-300, -20, 0, 20, 300]) {
@@ -226,17 +286,29 @@ for (const x of [12, 36, 60]) test(`backward, close necks, and forward transitio
 test('coincident necks retain stable nonzero curvature as vertical displacement crosses zero', () => {
     for (const fromSide of ['right', 'left']) for (const toSide of ['right', 'left']) {
         const from = { x: 0, y: 0, side: fromSide };
-        const neckCoincidence = 18 * (direction(fromSide) - direction(toSide));
+        const neckCoincidence = 25 * (direction(fromSide) - direction(toSide));
         assertAdjacentRoutesStayClose(from,
             { x: neckCoincidence, y: -0.001, side: toSide },
             { x: neckCoincidence, y: 0.001, side: toSide }, `coincident ${fromSide}/${toSide}`);
     }
 });
 
+test('nearly level lead ends cross their horizontal alignment without a return-depth jump', () => {
+    for (const fromSide of ['right', 'left']) for (const toSide of ['right', 'left']) {
+        const from = { x: 0, y: 0, side: fromSide };
+        const alignedLeadX = 25 * (direction(fromSide) - direction(toSide));
+        for (const y of [-6, -3, 3, 6]) {
+            assertAdjacentRoutesStayClose(from,
+                { x: alignedLeadX - .001, y, side: toSide },
+                { x: alignedLeadX + .001, y, side: toSide }, `aligned lead x, y ${y}, sides ${fromSide}/${toSide}`);
+        }
+    }
+});
+
 test('rounded returns stay stable as the pins leave level alignment', () => {
     for (const side of ['right', 'left']) {
         const sign = direction(side), from = { x: sign * 300, y: 90, side };
-        for (const dy of [-56, -28, 0, 28, 56]) {
+        for (const dy of [-12, -6, 0, 6, 12]) {
             const target = { x: sign * 60, side: side === 'right' ? 'left' : 'right' };
             assertAdjacentRoutesStayClose(from, { ...target, y: 90 + dy - .001 }, { ...target, y: 90 + dy + .001 },
                 `rounded return dy ${dy}, source ${side}`);
@@ -276,5 +348,14 @@ test('nearly level returns stay shallow at extreme finite horizontal separations
         assert.ok(segments(result.d).flat().every(point => Math.abs(point.y) <= 128),
             'horizontal distance must not amplify tiny tangent errors into a vertical detour');
         assert.ok(Math.abs(result.label.y) <= 128, 'label stays with the shallow return');
+    }
+});
+
+test('opposite extreme finite endpoints keep routed coordinates and arc labels finite', () => {
+    for (const fromSide of ['left', 'right']) for (const toSide of ['left', 'right']) {
+        const result = route({ x: -1e308, y: -1e308, side: fromSide }, { x: 1e308, y: 1e308, side: toSide });
+        assert.doesNotMatch(result.d, /NaN|Infinity/);
+        assert.ok(segments(result.d).flat().every(point => Number.isFinite(point.x) && Number.isFinite(point.y)));
+        assert.ok(Number.isFinite(result.label.x) && Number.isFinite(result.label.y), 'half-arc label survives distances larger than Number.MAX_VALUE');
     }
 });

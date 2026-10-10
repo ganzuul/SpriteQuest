@@ -7,6 +7,7 @@
 
 import { safe } from './state.js?v=0.27.0';
 import * as T from './theme.js?v=0.27.0';
+import { ARTIFACT_KINDS, ARTIFACT_PIN_NAMES, createArtifactGlyph } from './ui/artifact-glyph.js?v=0.27.0';
 
 const make = (tag, cls, text) => {
     const n = document.createElement(tag);
@@ -44,23 +45,22 @@ function swatches(colors) {
 
 function accessibilityLegend() {
     const legend = make('div', 'pc-th-accessibility');
-    legend.append(make('strong', '', 'Accessible type cues'));
+    legend.append(make('strong', '', 'Connection type cues'));
     legend.append(make('div', 'pc-hint', 'Labels and pin shapes identify every type.'));
     const kinds = make('ul', 'pc-th-kind-legend');
-    for (const [kind, label, shape] of [
-        ['context', 'Context', 'filled circle'], ['text', 'Text', 'ring'],
-        ['data', 'Data', 'square'], ['guidance', 'Guidance', 'diamond'],
-        ['draft', 'Draft', 'pentagon'], ['findings', 'Findings', 'triangle'],
-        ['patches', 'Patches', 'hexagon'], ['candidate', 'Candidate', 'plus'],
-    ]) {
+    for (const kind of ARTIFACT_KINDS) {
+        const label = kind[0].toUpperCase() + kind.slice(1), shape = ARTIFACT_PIN_NAMES[kind];
         const item = make('li');
-        const cue = make('span', 'pc-th-pin-cue');
+        const cue = createArtifactGlyph(kind);
+        cue.classList.add('pc-th-pin-cue');
         cue.dataset.kind = kind;
         cue.setAttribute('aria-hidden', 'true');
         item.append(cue, make('span', '', `${label}: ${shape}`));
         kinds.append(item);
     }
-    legend.append(kinds, make('div', 'pc-hint', 'Text wires are solid; data dashed; guidance dotted; other types use distinct patterns. Wire type labels remain available.'));
+    legend.append(kinds, make('div', 'pc-hint', T.PRESETS[T.currentTheme().preset].accessible
+        ? 'Text wires are solid; data dashed; guidance dotted; other types use distinct patterns. Hover or select a wire to reveal its type label.'
+        : 'Wire colors match their pin types. Hover or select a wire to reveal its type label.'));
     return legend;
 }
 
@@ -105,7 +105,7 @@ function draw(box) {
     }
     box.append(presets);
     box.append(make('div', 'pc-hint', T.PRESETS[theme.preset].note));
-    if (T.PRESETS[theme.preset].accessible) box.append(accessibilityLegend());
+    box.append(accessibilityLegend());
 
     // the look: shape, font, canvas, wires...
     const look = make('details', 'pc-th-look');

@@ -17,10 +17,11 @@ export const version = JSON.parse(readFileSync(new URL('../manifest.json', impor
 // Compile only the current Canvas components. Focused renderer tests do not depend on a stale full UI bundle.
 const directory = await mkdtemp(join(tmpdir(), 'lattice-canvas-components-'));
 const clientURL = new URL('../node_modules/svelte/src/index-client.js', import.meta.url).href;
-for (const name of ['NodeCard', 'GroupCard', 'WireLayer', 'CommentFrame', 'NodeProfilePicker', 'CanvasLayer']) {
-    const source = await readFile(new URL(`../ui/${name}.svelte`, import.meta.url), 'utf8');
+for (const name of ['ArtifactPin', 'NodeCard', 'GroupCard', 'WireLayer', 'CommentFrame', 'NodeProfilePicker', 'CanvasLayer']) {
+    const sourceURL = new URL(`../ui/${name}.svelte`, import.meta.url);
+    const source = await readFile(sourceURL, 'utf8');
     const output = compile(source, { filename: `${name}.svelte`, generate: 'client', css: 'injected' });
-    const code = output.js.code.replace(/(['"])(svelte(?:\/[^'" ]*)?)\1/g, (_, quote, specifier) => JSON.stringify(specifier === 'svelte' ? clientURL : import.meta.resolve(specifier))).replace(/\.svelte(['"])/g, '.mjs$1');
+    const code = output.js.code.replace(/(['"])(svelte(?:\/[^'" ]*)?)\1/g, (_, quote, specifier) => JSON.stringify(specifier === 'svelte' ? clientURL : import.meta.resolve(specifier))).replace(/(['"])(\.\.?\/[^'"]+)\1/g, (_, quote, specifier) => JSON.stringify(specifier.endsWith('.svelte') ? specifier.replace(/\.svelte$/, '.mjs') : new URL(specifier, sourceURL).href));
     await writeFile(join(directory, `${name}.mjs`), code);
 }
 const entry = `import {mount,unmount,flushSync} from ${JSON.stringify(clientURL)}; import CanvasLayer from './CanvasLayer.mjs';

@@ -46,6 +46,7 @@ test('pending and rejected source-pin hits keep the near-origin wire simple', as
             const source = { nodeId, dir, portId: dir };
             env.canvas.updateNativeWire({ gesture: { kind: 'drag', origin: source, target: source, ghost: point, feedback } }); env.canvas.frames.flush();
             const d = env.host.querySelector('.pc-wire-ghost').getAttribute('d');
+            assert.equal(env.host.querySelector('.pc-wire-ghost').getAttribute('data-kind'), origin.kind, 'free preview carries the dragged artifact type for pin-matched color');
             assert.equal((d.match(/C/g) ?? []).length, 1, 'unadmitted source hit cannot introduce a settled returning bow');
             assert.equal((d.match(/L/g) ?? []).length, 0);
             const coordinates = d.match(/[-+]?(?:\d*\.\d+|\d+\.?\d*)(?:e[-+]?\d+)?/gi).map(Number);
@@ -64,6 +65,7 @@ test('validated targets preview the same established wire from either origin dir
             const target = dir === 'out' ? { nodeId: 'b', dir: 'in', portId: 'in' } : { nodeId: 'a', dir: 'out', portId: 'out' };
             env.canvas.updateNativeWire({ gesture: { kind: 'drag', origin: source, target, ghost: { x: -500, y: -500 }, feedback: { compatible: true } } }); env.canvas.frames.flush();
             assert.equal(env.host.querySelector('.pc-wire-ghost').getAttribute('d'), settled, 'validated target snaps to measured real pin geometry');
+            assert.equal(env.host.querySelector('.pc-wire-ghost').getAttribute('data-kind'), env.canvas.endpoint(source.nodeId, source.dir, source.portId).kind, 'snapped preview preserves type color from either origin direction');
         }
     } finally { await env.canvas.destroy(); }
 });
