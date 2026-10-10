@@ -14,3 +14,12 @@ Build writing processes from typed operations, inspect their intermediate result
 | [Introspection](introspection-package.md) | Use the six native nodes, eighteen modes, actor memory starters, scoped records and package APIs |
 
 The [repository README](../README.md) introduces capabilities and starter workflows. All public screenshots show the current interface. Development research and execution records in the research/superpowers directories are historical working material, not the operator reference.
+
+## Proposed workflow design
+
+These documents consolidate the unified-workflow discussion. They describe proposed behavior and open design decisions rather than currently available features.
+
+| Document | Covers |
+| --- | --- |
+| [Workflow Unification Summary](design/workflow-unification-summary.md) | One workflow across preparation, native ST generation, reply processing, publication, file updates, recall, story time, and reusable progression; runtime, host integration, UI, and open decisions |
+| [Expanded Nodes](design/expanded-nodes.md) | Proposed node contracts, triggers, Decision/Fast Decision, character/item recipes, file updates, hotkey recall, clocks/intervals, general state structures for XP and relationship pacing, and ten additional story flows |
