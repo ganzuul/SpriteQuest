@@ -61,11 +61,12 @@ for (const phase of ['pre', 'post']) test(`${phase} production picker and Detail
     await page.evaluate(async ({ reflection, context, memory }) => {
         const h = window.canvasHarness, root = structuredClone(h.graph);
         Object.assign(root.nodes[memory], { x: 200, y: 80 }); Object.assign(root.nodes[context], { x: 200, y: 300 }); Object.assign(root.nodes[reflection], { x: 650, y: 100 });
-        await h.activate(root); await h.view({ x: 0, y: 0, zoom: 0.8 });
+        await h.activate(root);h.canvas.select({kind:'node',id:memory});await h.view({ x: 0, y: 0, zoom: 0.8 });
     }, { reflection, context, memory });
     await connect(page, memory, 'out', reflection, 'context');
     expect(await page.evaluate(() => Object.keys(window.canvasHarness.graph.wires).length)).toBe(0);
     await page.keyboard.press('Escape');
+    await expect(page.locator('.pc-root')).toHaveClass(/pc-open/);
     await connect(page, memory, 'out', reflection, 'state');
     await expect.poll(() => page.evaluate(() => Object.keys(window.canvasHarness.graph.wires).length)).toBe(1);
     await connect(page, context, 'out', reflection, 'context');

@@ -117,3 +117,23 @@ test('reject explicitly releases retained host consequence handles before cleari
 test('reject after partial publication accurately preserves the already accepted reply',async()=>{
     const f=settlementSession(settledReceipt('partial'));await f.start();await f.session.apply(f.handle);f.session.reject();assert.deepEqual(f.rejected,[f.handle]);assert.match(f.state().status,/accepted reply remains/i);assert.equal(f.state().status.includes('Original reply preserved'),false);
 });
+
+test('document activation expires identical-root diagnostics and accepts only the new activation Send',()=>{
+    const root=starterGraph('structured-guidance');let owner={},opened=true,state;
+    const session=createWorkflowSession({runtime:()=>({cancel(){}}),current:()=>root,epoch:()=>1,documentToken:()=>owner,active:()=>opened,changed:value=>state=value});
+    const sent=automatic(root,response(runRecord(root,'old-document')));sent.origin.documentToken=owner;
+    session.receiveAutomatic(sent);session.cancel();assert.equal(state.recording,sent.result.recording,'Close retains same-document diagnostics');
+    opened=false;owner={};session.syncDocument();assert.equal(state.recording,null);assert.equal(session.result(),null);
+    opened=true;session.receiveAutomatic({...sent,result:{...sent.result}});assert.equal(state.recording,null,'Identical graph and signature cannot replay a different activation');
+    session.receiveAutomatic(automatic(root,response(runRecord(root,'missing-owner'))));assert.equal(state.recording,null,'Document-owned sessions require exact Send ownership');
+    const fresh=automatic(root,response(runRecord(root,'fresh-document')));fresh.origin.documentToken=owner;
+    opened=false;session.receiveAutomatic(fresh);assert.equal(state.recording,null);opened=true;session.receiveAutomatic(fresh);
+    assert.equal(state.recording,fresh.result.recording);assert.equal(state.availability,'current','A new activation Send completed while closed is adopted on reopen');
+});
+
+test('document token replacement rejects a late target result even before UI synchronization',async()=>{
+    const root=starterGraph('structured-guidance');let owner={},state,finish;
+    const session=createWorkflowSession({runtime:()=>({cancel(){},runTarget:()=>new Promise(resolve=>finish=resolve)}),current:()=>root,epoch:()=>1,documentToken:()=>owner,active:()=>true,changed:value=>state=value});
+    const pending=session.run({target:targetOf(root)});owner={};finish(response(runRecord(root,'late-document')));await pending;
+    assert.equal(state.recording,null);session.syncDocument();assert.equal(state.busy,false);
+});

@@ -53,28 +53,28 @@ for (const graph of unsafe) {
         snapshot() { snapshots++; throw new Error('Invalid graph reached source'); },
     });
     assert.equal(result.ok, false);
-    state.settings().graphs.unsafe = graph;
-    state.settings().nativeBindings.workflowGraphId = 'unsafe';
-    assert.equal(sendWorkflowState().automatic, false);
 }
 assert.equal(getterReads, 0); assert.equal(bindings, 1); assert.equal(calls, 0);
 assert.equal(loreScans, 0); assert.equal(snapshots, 1);
-delete state.settings().graphs.unsafe;
-state.settings().nativeBindings.workflowGraphId = null;
+const malformedCurrent = structuredClone(current);
+state.activateWorkflow(malformedCurrent);
+malformedCurrent.schema = 99;
+assert.equal(sendWorkflowState().automatic, false);
+assert.equal(getterReads, 0);
 
 const imported = state.importGraph(JSON.stringify(exportWorkflow(current)));
 assert.equal(imported.ok, true); assert.equal(imported.graph.schema, 3);
-assert.equal(JSON.parse(state.exportGraph(imported.graph.id)).schema, 2);
+assert.equal(JSON.parse(state.exportGraph(imported.graph)).schema, 2);
 const before = structuredClone(state.settings());
 for (const data of [current, { graph: current }, { kind: 'comfytavern-workflow', schema: 2, minRuntime: 2, graph: current },
     { ...exportWorkflow(current), graph: { ...current, schema: 2, runtime: 1 } }]) {
     assert.equal(state.importGraph(JSON.stringify(data)).ok, false);
 }
 assert.deepEqual(state.settings(), before);
-state.settings().nativeBindings.workflowGraphId = imported.graph.id;
+state.activateWorkflow(imported.graph);
 assert.equal(sendWorkflowState().automatic, true);
-assert.match(sendWorkflowState().armedText, /maximum 2 auxiliary requests/i);
-assert.match(sendWorkflowState().armedText, /SillyTavern.*normal prompt|assigned unified workflow/i);
+assert.match(sendWorkflowState().enabledText, /maximum 2 auxiliary requests/i);
+assert.match(sendWorkflowState().enabledText, /one unified workflow/i);
 assert.equal(typeof state.connect, 'undefined');
 assert.equal(typeof state.migrateGraph, 'undefined');
 console.log('workflow-dispatch: current admission and zero effects verified');

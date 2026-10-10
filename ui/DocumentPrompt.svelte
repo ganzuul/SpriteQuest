@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount } from 'svelte';
-    import type { NewWorkflowPromptView, NewWorkflowPromptActions } from './types';
-    let { view, actions }: { view: NewWorkflowPromptView; actions?: NewWorkflowPromptActions } = $props();
+    import type { DocumentPromptView, DocumentPromptActions } from './types';
+    let { view, actions, native = true }: { view: DocumentPromptView; actions?: DocumentPromptActions; native?: boolean } = $props();
     let dialog: HTMLDivElement, cancelButton: HTMLButtonElement;
     onMount(() => {
         const anchor = document.activeElement as HTMLElement;
@@ -20,15 +20,15 @@
     }
 </script>
 <div class="pc-workspace-overlay">
-    <div class="pc-workspace-dialog pc-new-workflow-prompt" role="dialog" aria-modal="true" aria-label="Save workflow changes?" tabindex="-1" bind:this={dialog} onkeydowncapture={keys} onpastecapture={event => event.stopPropagation()}>
+    <div class="pc-workspace-dialog pc-document-prompt" role="dialog" aria-modal="true" aria-label="Save workflow changes?" tabindex="-1" bind:this={dialog} onkeydowncapture={keys} onpastecapture={event => event.stopPropagation()}>
         <h2>Save workflow changes?</h2>
         <p><strong>{view.name}</strong> has unsaved changes.</p>
-        <p>Save downloads workflow JSON before opening a new workflow. Your existing workflow stays in the workspace.</p>
-        <footer><button type="button" onclick={() => actions?.choose('save')}>Save</button><button type="button" onclick={() => actions?.choose('discard')}>Discard</button><button type="button" bind:this={cancelButton} onclick={() => actions?.choose('cancel')}>Cancel</button></footer>
+        {#if native}<p>Save your changes before continuing, or continue without saving.</p>{:else}<p>Download a JSON copy and save it using your browser. To switch documents after downloading, repeat the action and choose Don't Save.</p>{/if}
+        <footer><button type="button" onclick={() => actions?.choose('save')}>{native ? 'Save' : 'Download JSON'}</button><button type="button" onclick={() => actions?.choose('discard')}>Don't Save</button><button type="button" bind:this={cancelButton} onclick={() => actions?.choose('cancel')}>Cancel</button></footer>
     </div>
 </div>
 <style>
-    .pc-new-workflow-prompt { width: min(400px, calc(100% - 28px)); box-sizing: border-box; padding: 16px; color: var(--pc-text); font-size: 12px; }
+    .pc-document-prompt { width: min(400px, calc(100% - 28px)); box-sizing: border-box; padding: 16px; color: var(--pc-text); font-size: 12px; }
     h2 { margin: 0; font-size: 16px; }
     p { color: var(--pc-muted); line-height: 1.5; } strong { color: var(--pc-text); }
     footer { display: flex; justify-content: flex-end; gap: 7px; margin-top: 16px; }

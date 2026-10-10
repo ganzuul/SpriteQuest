@@ -189,7 +189,7 @@ export function createNativeWorkflowController(ports) {
     let generationSequence=0, generation={dryRun:false,type:'normal'};
     const keys=new Set(), sources=new Map(), candidates=new Map(), stopped=new WeakMap();
     const memoryAdapter=createNativeMemoryAdapter({context,selectActor:ports.selectIntrospectionActor,isSettled:(message,index,c)=>!stoppedRevision(message) && !incompleteStream(c,index)});
-    const recall=createNativeRecallController({getActive:()=>{const graph=ports.getGraph?.('unified');if(ports.isEnabled?.()===false||!graph)return null;const c=context(),actor=nativeMemoryScope(c,ports.selectIntrospectionActor);return actor.ok?{graph,signature:workflowSignature(graph),scope:{userId:ports.userId?.(),chatId:identity(c).chatId,workflowId:graph.id,actorId:actor.data.actorId}}:null;},...(typeof ports.registerRecallHotkey==='function'?{registerHotkey:ports.registerRecallHotkey}:{})});
+    const recall=createNativeRecallController({getActive:()=>{const graph=ports.getGraph?.('unified');if(ports.isEnabled?.()===false||!graph)return null;const c=context(),actor=nativeMemoryScope(c,ports.selectIntrospectionActor);return actor.ok?{owner:ports.getDocumentToken?.()??graph,graph,signature:workflowSignature(graph),scope:{userId:ports.userId?.(),chatId:identity(c).chatId,workflowId:graph.id,actorId:actor.data.actorId}}:null;},...(typeof ports.registerRecallHotkey==='function'?{registerHotkey:ports.registerRecallHotkey}:{})});
     const observe=(fn,...args)=>{try{const pending=fn?.(...args);if(pending&&typeof pending.then==='function')Promise.resolve(pending).catch(()=>{});}catch{/* Observers cannot own lifecycle. */}};
     const rememberStopped=c=>{
         const m=c.chat?.at(-1);if(!m)return;
@@ -204,7 +204,9 @@ export function createNativeWorkflowController(ports) {
         const revision=replyRevision(m);
         return (stopped.get(m) ?? []).some(record=>record.revision.swipeId===revision.swipeId && (record.failedStarted!==null?record.failedStarted===revision.started:same(record.revision,revision)));
     };
-    const notify=(value,run=null)=>{
+    const notify=(value,run=null,owner=run)=>{
+        // Replaced documents cannot publish late diagnostics into the current document's cache.
+        if(owner && typeof ports.getDocumentToken==='function' && owner.documentToken!==ports.getDocumentToken())return freezeArtifact({...value,reviewHandles:[],superseded:true});
         const previous=result;
         if(!value.recording && previous?.recording) {
             // A failed attempt has no run identity. Preserve the old diagnostic separately.
@@ -214,7 +216,7 @@ export function createNativeWorkflowController(ports) {
             return failure;
         }
         result=freezeArtifact(value);
-        const origin=run?.native && run.graph ? Object.freeze({graph:run.originalGraph,graphId:run.graph.id,graphName:run.graph.name,signature:run.signature,phase:run.unified?'unified':'pre',kind:'send',runId:run.runId}) : null;
+        const origin=run?.native && run.graph ? Object.freeze({graph:run.originalGraph,documentToken:run.documentToken,graphId:run.graph.id,graphName:run.graph.name,signature:run.signature,phase:run.unified?'unified':'pre',kind:'send',runId:run.runId}) : null;
         if(origin)automaticResult=Object.freeze({result,origin});
         else if(result.recording && automaticResult?.result.recording && automaticResult.result.recording!==result.recording) {
             const prior=automaticResult.result;
@@ -260,7 +262,7 @@ export function createNativeWorkflowController(ports) {
         }
         return {ok:true};
     };
-    const fresh=(run)=>run.epoch===epoch && !run.controller.signal.aborted && same(run.identity,identity(context())) && run.signature===workflowSignature(run.originalGraph) && userFresh(run) && (!run.native || (ports.isEnabled?.() !== false && ports.getGraph?.('unified')===run.originalGraph));
+    const fresh=(run)=>run.epoch===epoch && (typeof ports.getDocumentToken!=='function' || run.documentToken===ports.getDocumentToken()) && !run.controller.signal.aborted && same(run.identity,identity(context())) && run.signature===workflowSignature(run.originalGraph) && userFresh(run) && (!run.native || (ports.isEnabled?.() !== false && ports.getGraph?.('unified')===run.originalGraph));
     const userFresh=run=>!run.unified&&!run.hostUnified || run.userId===ports.userId?.();
     const promptFresh = run => [...(run.promptSources?.values() ?? [])].every(entry => {
         const current = promptSourceFingerprint(context(), entry.node);
@@ -275,7 +277,7 @@ export function createNativeWorkflowController(ports) {
     const sourceFresh=run=>playerSourceFresh(run) && memoryFresh(run) && promptFresh(run) && [...(run.pendingSources?.values()??[])].every(validSource) && [...(run.sceneSources??[])].every(entry=>entry.text!==null && sourceText(entry.chat)===entry.text && (entry.characterVisibility===undefined || (entry.characterVisibility!==null && characterVisibility(context())===entry.characterVisibility)) && (entry.characterSnapshots??[]).every(captured=>characterText(snapshotContext(context(),{chat:entry.chat,node:captured.node}))===captured.text));
     const start=(graph,native=false,abortPrimary=null,target)=>{
         cancel('Superseded by a new workflow');
-        const run={epoch,runId:token(),controller:new AbortController(),originalGraph:graph,native,abortPrimary,pending:true,target,mode:target===undefined?'root':'target',pendingSources:new Map(),sceneSources:[],promptSources:new Map(),bindingContexts:new Map(),modelAddresses:new WeakMap(),modelScopes:new Map(),bindingChecks:[],reviewHandles:[],memoryTerminals:new Map(),memoryIntents:new Map(),memorySession:null,invalidMemoryEvidence:false,fileSession:null,fileSessions:new Map(),fileReferences:new WeakMap(),actorContext:null,actorMemorySessions:new Map(),stagedFiles:[],retainResources:false,resourcesReleased:false};
+        const run={epoch,runId:token(),controller:new AbortController(),originalGraph:graph,documentToken:ports.getDocumentToken?.(),native,abortPrimary,pending:true,target,mode:target===undefined?'root':'target',pendingSources:new Map(),sceneSources:[],promptSources:new Map(),bindingContexts:new Map(),modelAddresses:new WeakMap(),modelScopes:new Map(),bindingChecks:[],reviewHandles:[],memoryTerminals:new Map(),memoryIntents:new Map(),memorySession:null,invalidMemoryEvidence:false,fileSession:null,fileSessions:new Map(),fileReferences:new WeakMap(),actorContext:null,actorMemorySessions:new Map(),stagedFiles:[],retainResources:false,resourcesReleased:false};
         active=run;return run;
     };
     function prepareRun(run,plan,controls,options) {
@@ -742,10 +744,10 @@ export function createNativeWorkflowController(ports) {
         // Admit before replacing run authority or consulting the host. Runtime owns
         // the bounded malformed result, including getter-free version metadata.
         const admitted=cloneWorkflowDocument(graph);
-        if(!admitted.ok)return notify(await runWorkflowForHost(graph,{target}));
+        if(!admitted.ok){const owner={documentToken:ports.getDocumentToken?.()};return notify(await runWorkflowForHost(graph,{target}),null,owner);}
         const run=start(graph,false,null,target);
         const value=await execute(run,{messageIndex,onEvent});
-        if(active===run){active=null;return notify(value);}
+        if(active===run){active=null;return notify(value,run);}
         return value;
     }
     function validSource(entry) {
@@ -775,13 +777,13 @@ export function createNativeWorkflowController(ports) {
     }
     async function apply(selector) {
         const entry=candidateEntry(selector);if(!entry?.settlement)return publishCandidate(selector);
-        if(!acceptedSourceFresh(entry))return notify(fail('STALE_SOURCE','The accepted reply or its captured scope changed.'));
+        if(!acceptedSourceFresh(entry))return notify(fail('STALE_SOURCE','The accepted reply or its captured scope changed.'),null,entry.run);
         if(entry.settlementResult?.status==='settled')return entry.applied;
-        const settled=await entry.settlement.accept(entry.finalDraft);if(!settled.ok)return notify(settled);
+        const settled=await entry.settlement.accept(entry.finalDraft);if(!settled.ok)return notify(settled,null,entry.run);
         entry.settlementResult=settled.data;
         entry.applied=freezeArtifact({...entry.applied,settlement:settled.data});
         if(settled.data.status==='settled')entry.settlement.release();
-        return notify(entry.applied);
+        return notify(entry.applied,null,entry.run);
     }
     function settlementStatus(selector) {const entry=candidateEntry(selector);if(!entry?.settlement)return fail('SETTLEMENT_UNAVAILABLE','This review has no retained consequence bundle.');return entry.settlementResult?{ok:true,data:entry.settlementResult}:entry.settlement.inspect();}
     function retryPersistence(selector) {const entry=candidateEntry(selector);return entry?.settlementResult?.status==='partial'?apply(selector):Promise.resolve(fail('PERSISTENCE_RECOVERY_UNAVAILABLE','Only failed targets in a partially settled accepted review may retry persistence.'));}
@@ -791,13 +793,13 @@ export function createNativeWorkflowController(ports) {
         if(!entry)return notify(fail('STALE_CANDIDATE','This candidate is no longer available; run the workflow again.'));
         if(entry.applied) {
             if(fresh(entry.run) && bindingFresh(entry.run).ok && context().chat?.[entry.source.messageIndex]===entry.message && entry.message.mes===candidate.text && entry.message.swipe_id===entry.applied.swipeId)return entry.applied;
-            return notify(fail('STALE_CANDIDATE','The applied revision is no longer the selected reply.'));
+            return notify(fail('STALE_CANDIDATE','The applied revision is no longer the selected reply.'),null,entry.run);
         }
         if(applying)return fail('BUSY','A reply application is already in progress.');
-        const effective=bindingFresh(entry.run);if(!effective.ok)return notify(effective);
-        if(!validSource(entry))return notify(fail('STALE_SOURCE','The chat, reply, swipe, or prompt source changed. Run the workflow again.'));
+        const effective=bindingFresh(entry.run);if(!effective.ok)return notify(effective,null,entry.run);
+        if(!validSource(entry))return notify(fail('STALE_SOURCE','The chat, reply, swipe, or prompt source changed. Run the workflow again.'),null,entry.run);
         const c=context(),m=entry.message,index=entry.source.messageIndex;
-        if(typeof c.saveChat!=='function' || typeof c.updateMessageBlock!=='function' || typeof c.swipe?.refresh!=='function' || typeof ports.syncMesToSwipe!=='function' || typeof ports.syncSwipeToMes!=='function')return notify(fail('APPLY_UNAVAILABLE','Required native save, display or swipe synchronization APIs are unavailable.'));
+        if(typeof c.saveChat!=='function' || typeof c.updateMessageBlock!=='function' || typeof c.swipe?.refresh!=='function' || typeof ports.syncMesToSwipe!=='function' || typeof ports.syncSwipeToMes!=='function')return notify(fail('APPLY_UNAVAILABLE','Required native save, display or swipe synchronization APIs are unavailable.'),null,entry.run);
         const backup=structuredClone(m); let mutated=false,saveAttempted=false;
         applying=true;
         try {
@@ -838,10 +840,10 @@ export function createNativeWorkflowController(ports) {
             if(saved===false || saved?.ok===false || !stillApplied())throw new Error('Save failed or source changed');
             entry.applied=freezeArtifact({...entry.run.publicResult,ok:true,appliedLocally:true,saveAttempted:true,persistence:'unverified',swipeId});
             for(const [id,sibling]of candidates)if(sibling!==entry&&sibling.source.token===entry.source.token)candidates.delete(id);
-            return notify(entry.applied);
+            return notify(entry.applied,null,entry.run);
         } catch {
             if(mutated) {for(const key of Object.keys(m))delete m[key];Object.assign(m,backup);try{if(context().chat===entry.chat && same(identity(context()),entry.run.identity)){await c.updateMessageBlock(index,m);await c.swipe.refresh(true,false);}}catch{/* Report detectable failure even if refresh fails. */}}
-            return notify({...fail('APPLY_FAILED','The revision could not be applied; the original local message was restored.'),appliedLocally:false,saveAttempted,persistence:saveAttempted?'unverified':'not-attempted'});
+            return notify({...fail('APPLY_FAILED','The revision could not be applied; the original local message was restored.'),appliedLocally:false,saveAttempted,persistence:saveAttempted?'unverified':'not-attempted'},null,entry.run);
         } finally {applying=false;}
     }
     function subscribe() {
@@ -889,7 +891,7 @@ export function createNativeWorkflowController(ports) {
         unsubscribe=()=>{cancel('Controller disposed');for(const [event,fn]of subscriptions)(c.eventSource.removeListener ?? c.eventSource.off)?.call(c.eventSource,event,fn);unsubscribe=null;recall.dispose();};
         return unsubscribe;
     }
-    const controller={beforeGenerate,runTarget,apply,reject,syncRecall:recall.sync,statusRecall:recall.status,armRecall:recall.arm,disarmRecall:recall.disarm,settlementStatus,retryPersistence,candidateStatus,cancel,lastResult:()=>result,lastAutomaticResult:()=>automaticResult,subscribe,dispose:()=>{if(unsubscribe)unsubscribe();else recall.dispose();}};
+    const controller={beforeGenerate,runTarget,apply,reject,syncRecall:recall.sync,statusRecall:recall.status,queueRecall:recall.queue,cancelRecall:recall.cancel,captureRecall:recall.captureQueueCommand,changeRecallQueues:recall.changeQueues,resetRecallDocument:recall.resetDocument,subscribeRecall:recall.subscribe,settlementStatus,retryPersistence,candidateStatus,cancel,lastResult:()=>result,lastAutomaticResult:()=>automaticResult,subscribe,dispose:()=>{if(unsubscribe)unsubscribe();else recall.dispose();}};
     retentionInspectors.set(controller,()=>{
         const runs=new Set([active,...[...sources.values(),...candidates.values()].map(entry=>entry.run)].filter(Boolean));
         const recordings=new Set([result?.recording,automaticResult?.result.recording,...[...runs].map(run=>run.publicResult?.recording),...[...candidates.values()].map(entry=>entry.applied?.recording)].filter(Boolean));

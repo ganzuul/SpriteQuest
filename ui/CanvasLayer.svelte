@@ -1,4 +1,5 @@
 <script lang="ts">
+    import type {RecallBadgeView} from './recall-types';
     import NodeCard from './NodeCard.svelte';
     import GroupCard from './GroupCard.svelte';
     import WireLayer from './WireLayer.svelte';
@@ -9,6 +10,7 @@
     import type { CanvasActions, NodeCardData, GroupCardData, WireData, PositionUpdate } from './types';
     let { actions }: { actions: CanvasActions } = $props();
     let nodes = $state.raw<NodeCardData[]>([]), groups = $state.raw<GroupCardData[]>([]), wires = $state.raw<WireData[]>([]);
+    let recall = $state.raw<Readonly<Record<string,RecallBadgeView>>>({});
     let comments = $state.raw<CommentFrameData[]>([]);
     let nodeProfiles = $state.raw<NodeProfileData[]>([]);
     let commentActions = $state.raw<CommentFrameActions>({ select() {}, update() {}, command() {} });
@@ -17,6 +19,7 @@
     let viewport: HTMLDivElement, svg: SVGSVGElement, nodeLayer: HTMLDivElement, commentLayer: HTMLDivElement;
     export function getLayers() { return { viewport, svg, nodeLayer, commentLayer }; }
     export function setComments(value: CommentFrameData[], callbacks: CommentFrameActions) { comments = value; commentActions = callbacks; }
+    export function setRecallStatus(value:Readonly<Record<string,RecallBadgeView>>) { recall = value; }
     export function setNodes(value: NodeCardData[]) { nodes = value; }
     export function setNodeProfiles(value: NodeProfileData[]) { nodeProfiles = value; }
     export function setGroups(value: GroupCardData[]) { groups = value; }
@@ -37,7 +40,7 @@
     </svg>
     <div class="pc-nodes" bind:this={nodeLayer}>
         {#each groups.filter(group => !group.collapsed) as group (group.id)}<GroupCard {group} {actions} />{/each}
-        {#each nodes as card (card.id)}<NodeCard {card} {actions} />{/each}
+        {#each nodes as card (card.id)}<NodeCard card={{...card,recall:recall[card.id]}} {actions} />{/each}
         {#each groups.filter(group => group.collapsed) as group (group.id)}<GroupCard {group} {actions} />{/each}
     </div>
     <div class="pc-node-profile-layer">

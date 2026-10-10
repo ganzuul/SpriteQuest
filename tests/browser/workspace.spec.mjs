@@ -1,3 +1,4 @@
+import { rootCommand, expectRootBusy } from './workflow-commands.mjs';
 import { test, expect } from '@playwright/test';
 
 async function previewMenu(page, command) {
@@ -138,7 +139,7 @@ for (const panel of ['Examples', 'Help']) test(`${panel} dialog suppresses backg
 test('flat workspace menus support keyboard navigation, Escape and outside dismissal', async ({ page }) => {
     await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
     const labels = await page.locator('.pc-flat-menu').allTextContents();
-    expect(labels).toEqual(['File', 'Edit', 'Graph', 'Node', 'Preview', 'Workflows', 'Tools', 'Help']);
+    expect(labels).toEqual(['File', 'Edit', 'Graph', 'Node', 'Preview', 'Tools', 'Help']);
     const file = page.getByRole('button', { name: 'File', exact: true });
     await file.focus(); await page.keyboard.press('ArrowDown');
     await expect(page.getByRole('menuitem', { name: 'New workflow', exact: true })).toBeFocused();

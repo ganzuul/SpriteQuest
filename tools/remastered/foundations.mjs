@@ -3,7 +3,7 @@ export function foundations() {
     const entries = [];
     let r;
     r = builder(1, 'Follow a reply from Send to Review', 'Trace one ordinary SillyTavern reply from its owned Send activation through generation to deliberate review.', 'On Send → Generate Reply → Review / Publish');
-    r.steps = ['Inspect On Send.activation and Generate Reply.draft.', 'Confirm that opening this example does not assign or run it.'];
+    r.steps = ['Inspect On Send.activation and Generate Reply.draft.', 'Confirm that opening this example makes it the current document without enabling Lattice or running it.'];
     r.check('generate', 'draft', 'The current generation owns this Draft; review publishes a new swipe only on Apply.');
     entries.push(r.finish());
     r = builder(2, 'Give this scene one clear direction', 'Use an editable text instruction as pre-generation Guidance.', 'Text and Compose Guidance');

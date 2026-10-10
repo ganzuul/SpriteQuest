@@ -30,7 +30,7 @@
             <h3>Saved bindings to review</h3><ul>{#each view.unresolvedBindings as binding}<li>{binding.title} · {binding.role}: missing {binding.missing.join(' and ')}</li>{/each}</ul>
         {:else if view.bindingReviewRequired}<p>Saved model metadata is present. Review local connections before running.</p>{/if}
         {#if view.terminals.length}<h3>Imported terminal effects</h3><ul>{#each view.terminals as terminal}<li>{terminal.title} · {terminal.operation}</li>{/each}</ul>{:else}<p>No imported terminal effects.</p>{/if}
-        <p>Insertion keeps internal wiring and relative layout. It does not connect matching names, arm or assign the graph, run requests, publish Guidance, or Apply a reply.</p>
+        <p>Insertion keeps internal wiring and relative layout. Review the inserted nodes before running the workflow.</p>
         {#if view.error}<p role="alert">{view.error}</p>{/if}
         <footer><button type="button" class="pc-btn menu_button" onclick={() => actions.cancelImport?.()}>Cancel</button>{#if view.error}<button type="button" class="pc-btn menu_button" onclick={() => actions.prepareImportAgain?.()}>Prepare again</button>{/if}<button type="button" class="pc-btn menu_button pc-import-accept" disabled={!!view.error} onclick={() => actions.acceptImport?.()}>Insert into graph</button></footer>
     </div>

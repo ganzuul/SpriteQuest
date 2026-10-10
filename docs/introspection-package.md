@@ -15,7 +15,7 @@ Reflect, Internalize and State produce candidate records. Express Behavior/Atten
 
 ## Native workflow examples
 
-The picker contains current unified recipes for accepted progression, actor-private moments and Recall. Each opens as an independent editable root without assignment, arming or requests. Configure ordinary model connections and helper roles before Send. The [unified guide](unified-workflows.md) explains the owned generation and review path.
+**File → Open examples…** contains current unified lessons for accepted progression, actor-private moments and Recall. Each opens as an independent editable active document without provider requests or changing **Enable Lattice**. Configure ordinary model connections and helper roles before Send. The [unified guide](unified-workflows.md) explains the owned generation and review path.
 
 Reflect and Internalize create evidence-backed proposals; Express renders diagnostics without writing. Generate Reply accepts private guidance only from its selected actor's authorized live Character Direction or Recall producer. General private Express output is not a substitute for that grant.
 

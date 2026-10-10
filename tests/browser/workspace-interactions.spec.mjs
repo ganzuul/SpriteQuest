@@ -1,3 +1,4 @@
+import { rootCommand, expectRootBusy } from './workflow-commands.mjs';
 import { test, expect } from '@playwright/test';
 
 async function openNestedWorkspace(page) {
@@ -78,7 +79,7 @@ test('renaming an inactive subgraph tab updates its parent node and supports und
     await expect(tabs.nth(1)).toContainText('Renamed outer subgraph');
     await expect(tabs.nth(2)).toHaveAttribute('aria-selected', 'true');
     await expect(page.locator('.pc-graph-location')).toContainText('Renamed outer subgraph');
-    expect(await page.evaluate(() => window.canvasHarness.S.getGraph('prepared-root').nodes['first/path'].title)).toBe('Renamed outer subgraph');
+    expect(await page.evaluate(() => window.canvasHarness.S.activeWorkflow().nodes['first/path'].title)).toBe('Renamed outer subgraph');
     await tabs.first().click();
     await expect(page.locator('.pc-node-native[data-id="first/path"] .pc-native-heading')).toHaveText('Renamed outer subgraph');
     await page.getByRole('button', { name: 'Undo', exact: true }).click();
@@ -104,7 +105,7 @@ test('renaming the root graph from its inactive tab updates the workflow name an
     await expect(tabs.first()).toHaveText('Renamed workflow');
     await expect(tabs.nth(2)).toHaveAttribute('aria-selected', 'true');
     await expect(page.locator('.pc-graph-location')).toContainText('Renamed workflow');
-    expect(await page.evaluate(() => window.canvasHarness.S.getGraph('prepared-root').name)).toBe('Renamed workflow');
+    expect(await page.evaluate(() => window.canvasHarness.S.activeWorkflow().name)).toBe('Renamed workflow');
 });
 
 test('subgraph rename undo restores an existing parent node alias', async ({ page }) => {
@@ -130,8 +131,8 @@ test('subgraph rename undo restores an existing parent node alias', async ({ pag
     await page.getByRole('button', { name: 'Close canvas', exact: true }).click();
     await page.evaluate(() => {
         const h = window.canvasHarness;
-        window.renameStoredViews = h.S.settings().workspaceViews['prepared-root'];
-        h.H.undo(h.S.getGraph('prepared-root'));
+        window.renameStoredViews = h.S.activeWorkspaceViews();
+        h.H.undo(h.S.activeWorkflow());
         window.lattice.open();
     });
     await expect(page.locator('.pc-node-native[data-id="first/path"] .pc-native-heading')).toHaveText('Prior local alias');
@@ -144,16 +145,16 @@ test('Graph menu inline rename cancels with Escape, ignores blank names, and sup
     const rename = page.locator('.pc-graph-tabs').getByRole('textbox', { name: 'Graph name', exact: true });
     for (const [draft, key] of [['Canceled workflow', 'Escape'], ['   ', 'Enter']]) {
         await page.getByRole('button', { name: 'Graph', exact: true }).click();
-        await page.getByRole('menuitem', { name: 'Rename workflow', exact: true }).click();
+        await page.getByRole('menuitem', { name: 'Rename graph', exact: true }).click();
         await expect(rename).toBeFocused();
         await rename.fill(draft);
         await rename.press(key);
         await expect(rename).toHaveCount(0);
         await expect(tabs.first()).toHaveText('Workspace interactions');
-        expect(await page.evaluate(() => window.canvasHarness.S.getGraph('prepared-root').name)).toBe('Workspace interactions');
+        expect(await page.evaluate(() => window.canvasHarness.S.activeWorkflow().name)).toBe('Workspace interactions');
     }
     await page.getByRole('button', { name: 'Graph', exact: true }).click();
-    await page.getByRole('menuitem', { name: 'Rename workflow', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Rename graph', exact: true }).click();
     await rename.fill('Menu renamed workflow');
     await rename.press('Enter');
     await expect(tabs.first()).toHaveText('Menu renamed workflow');

@@ -1,3 +1,4 @@
+import { rootCommand, expectRootBusy } from './workflow-commands.mjs';
 import { test, expect } from '@playwright/test';
 
 async function openNativeWorkspace(page, starter = 'structured-guidance') {
@@ -8,11 +9,10 @@ async function openNativeWorkspace(page, starter = 'structured-guidance') {
         const version = (await (await fetch('/manifest.json')).json()).version;
         const { fixtureGraph: starterGraph } = await import('/tests/helpers/workflow-fixtures.mjs');
         const graph = starterGraph(starter);
-        h.S.settings().graphs[graph.id] = graph;
-        h.S.save(); h.UI.refreshIfOpen();
+        await h.activate(graph);
         return graph.id;
     }, starter);
-    await page.getByRole('combobox', { name: 'Workflow', exact: true }).selectOption(graphId);
+
     await page.evaluate(() => window.canvasHarness.settle());
 }
 

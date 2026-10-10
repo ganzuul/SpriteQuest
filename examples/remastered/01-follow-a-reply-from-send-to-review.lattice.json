@@ -5,7 +5,7 @@
   "graph": {
     "id": "remastered-lesson-01",
     "name": "1. Follow a reply from Send to Review",
-    "description": "Trace one ordinary SillyTavern reply from its owned Send activation through generation to deliberate review.\n\nAssign this independent copy as Unified and arm Lattice before Send. Ordinary generation uses Active SillyTavern.\n\nOpen Follow a reply from Send to Review and inspect the named pins.\nInspect On Send.activation and Generate Reply.draft.\nConfirm that opening this example does not assign or run it.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 0 auxiliary model requests; one ordinary native generation.\nCheckpoints:\nGenerate Reply · SillyTavern.draft: The current generation owns this Draft; review publishes a new swipe only on Apply.",
+    "description": "Trace one ordinary SillyTavern reply from its owned Send activation through generation to deliberate review.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\n\nOpen Follow a reply from Send to Review and inspect the named pins.\nInspect On Send.activation and Generate Reply.draft.\nConfirm that opening this example makes it the current document without enabling Lattice or running it.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 0 auxiliary model requests; one ordinary native generation.\nCheckpoints:\nGenerate Reply · SillyTavern.draft: The current generation owns this Draft; review publishes a new swipe only on Apply.",
     "schema": 3,
     "runtime": 2,
     "mode": "native-unified",
@@ -68,7 +68,7 @@
         "y": 0,
         "w": 900,
         "h": 180,
-        "content": "Trace one ordinary SillyTavern reply from its owned Send activation through generation to deliberate review.\n\nAssign this independent copy as Unified and arm Lattice before Send. Ordinary generation uses Active SillyTavern.\n\nOpen Follow a reply from Send to Review and inspect the named pins.\nInspect On Send.activation and Generate Reply.draft.\nConfirm that opening this example does not assign or run it.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 0 auxiliary model requests; one ordinary native generation.\nCheckpoints:\nGenerate Reply · SillyTavern.draft: The current generation owns this Draft; review publishes a new swipe only on Apply.",
+        "content": "Trace one ordinary SillyTavern reply from its owned Send activation through generation to deliberate review.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\n\nOpen Follow a reply from Send to Review and inspect the named pins.\nInspect On Send.activation and Generate Reply.draft.\nConfirm that opening this example makes it the current document without enabling Lattice or running it.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 0 auxiliary model requests; one ordinary native generation.\nCheckpoints:\nGenerate Reply · SillyTavern.draft: The current generation owns this Draft; review publishes a new swipe only on Apply.",
         "commentFrame": true,
         "moveContents": false
       }

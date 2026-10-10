@@ -5,7 +5,7 @@
   "graph": {
     "id": "remastered-lesson-26",
     "name": "26. Recall a memory with a hotkey or a story trigger",
-    "description": "Recall unchanged accepted actor records using a real shortcut or real player keyword while consuming activation only on acceptance.\n\nAssign this independent copy as Unified and arm Lattice before Send. Ordinary generation uses Active SillyTavern.\nSelect native Rowan; replace canonical avatar ID. Authorize actor-private JSON rowan-moments with accepted Recall-compatible {id,actorId,text} records.\n\nOpen Recall a memory with a hotkey or a story trigger and inspect the named pins.\nHotkey Arm configures Ctrl+Shift+R; actually arm from Tools or the shortcut before an owned generation. Preview never arms.\nUse target reply/swipe/both deliberately; this default one-per-type consumes only on Apply.\nThe keyword watches real player text; rejected or stopped replies retain the eligible activation.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 1 auxiliary cast interpretation; Recall tokenization and accepted activation settlement make no model requests. One ordinary native generation.\nCheckpoints:\nRecall.report: Selected accepted records retain provenance, private scope and pending consumption.",
+    "description": "Recall unchanged accepted actor records using a real shortcut or real player keyword while consuming activation only on acceptance.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nSelect native Rowan; replace canonical avatar ID. Authorize actor-private JSON rowan-moments with accepted Recall-compatible {id,actorId,text} records.\n\nOpen Recall a memory with a hotkey or a story trigger and inspect the named pins.\nRecall Shortcut configures Ctrl+Shift+R; use Queue recall on a relevant node, Node → Memory recall, or the shortcut before an owned generation. Preview never queues recall.\nUse target reply/swipe/both deliberately; this default one-per-type consumes only on Apply.\nThe keyword watches real player text; rejected or stopped replies retain the queued recall request.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 1 auxiliary cast interpretation; Recall tokenization and accepted activation settlement make no model requests. One ordinary native generation.\nCheckpoints:\nRecall.report: Selected accepted records retain provenance, private scope and pending consumption.",
     "schema": 3,
     "runtime": 2,
     "mode": "native-unified",
@@ -204,7 +204,7 @@
         "type": "workflow",
         "operation": "hotkey-arm",
         "operationVersion": 1,
-        "title": "Hotkey Arm",
+        "title": "Recall Shortcut",
         "enabled": true,
         "x": 100,
         "y": 1840,
@@ -214,7 +214,7 @@
         "profileId": null,
         "model": null,
         "modelRole": null,
-        "alias": "Hotkey Arm",
+        "alias": "Recall Shortcut",
         "actorId": "character:rowan.png",
         "memorySetId": "rowan-moments",
         "target": "both",
@@ -269,7 +269,7 @@
         "y": 0,
         "w": 900,
         "h": 180,
-        "content": "Recall unchanged accepted actor records using a real shortcut or real player keyword while consuming activation only on acceptance.\n\nAssign this independent copy as Unified and arm Lattice before Send. Ordinary generation uses Active SillyTavern.\nSelect native Rowan; replace canonical avatar ID. Authorize actor-private JSON rowan-moments with accepted Recall-compatible {id,actorId,text} records.\n\nOpen Recall a memory with a hotkey or a story trigger and inspect the named pins.\nHotkey Arm configures Ctrl+Shift+R; actually arm from Tools or the shortcut before an owned generation. Preview never arms.\nUse target reply/swipe/both deliberately; this default one-per-type consumes only on Apply.\nThe keyword watches real player text; rejected or stopped replies retain the eligible activation.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 1 auxiliary cast interpretation; Recall tokenization and accepted activation settlement make no model requests. One ordinary native generation.\nCheckpoints:\nRecall.report: Selected accepted records retain provenance, private scope and pending consumption.",
+        "content": "Recall unchanged accepted actor records using a real shortcut or real player keyword while consuming activation only on acceptance.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nSelect native Rowan; replace canonical avatar ID. Authorize actor-private JSON rowan-moments with accepted Recall-compatible {id,actorId,text} records.\n\nOpen Recall a memory with a hotkey or a story trigger and inspect the named pins.\nRecall Shortcut configures Ctrl+Shift+R; use Queue recall on a relevant node, Node → Memory recall, or the shortcut before an owned generation. Preview never queues recall.\nUse target reply/swipe/both deliberately; this default one-per-type consumes only on Apply.\nThe keyword watches real player text; rejected or stopped replies retain the queued recall request.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 1 auxiliary cast interpretation; Recall tokenization and accepted activation settlement make no model requests. One ordinary native generation.\nCheckpoints:\nRecall.report: Selected accepted records retain provenance, private scope and pending consumption.",
         "commentFrame": true,
         "moveContents": false
       }

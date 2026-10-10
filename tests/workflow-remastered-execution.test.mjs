@@ -435,13 +435,13 @@ test('lesson 22 guards missing mention, absent holder and unpermitted invention 
   try {if(mode!=='no-memory')await seedLantern(f);const r=await f.generate(mode==='no-mention'?'Rowan waits beside the sea.':'Rowan carries the signal lantern.');if(['no-mention','absent'].includes(mode)){assert.equal(r.ok,true,JSON.stringify(r.error));assert.equal((await f.controller.apply(r.reviewHandles[0])).ok,true);}else{assert.equal(r.ok,false);assert.equal(r.reviewHandles?.length??0,0);if(mode==='creation-denied')assert.equal(r.error.code,'MEMORY_CREATION_NOT_ALLOWED');}assert.equal(f.saves(),0);assert.deepEqual(documentContent(f,'rowan-item-memories'),[]);}finally{f.controller.dispose();}
  }
 });
-test('lesson 26 recalls unchanged selected-actor records and consumes an actual arm only on accepted review',async()=>{
+test('lesson 26 recalls unchanged selected-actor records and consumes queued recall only on accepted review',async()=>{
  const prior=[{id:'lighthouse-memory',actorId:actor,text:'ROWAN PRIVATE MEMORY: the lighthouse lantern was warm.'}];
  const graph=installed(26),f=unifiedRecipeHost(graph,{playerText:'Rowan walks beside the sea.',configureContext:privateCastContext,documents:[privateDoc('rowan-moments',actor,prior)],request:async options=>{const m=JSON.parse(options.messages[1].content),source=m.context.source;return response({sceneId:source.sceneId,sourceId:source.sourceId,revision:source.revision,actors:[{actorId:actor,status:'present',evidence:f.c.chat.findLast(x=>x.is_user).mes}]});}});
  try {
-  assert.equal(f.controller.statusRecall().data.nodes[0].armed,false,'Preview configuration does not arm Recall');assert.equal(f.controller.armRecall(node(graph,'hotkey').id).ok,true);
+  assert.equal(f.controller.statusRecall().data.shortcuts[0].queued,false,'Preview configuration does not queue recall');assert.equal(f.controller.queueRecall(node(graph,'hotkey').id).ok,true);
   for(let turn=1;turn<=2;turn++){
-   if(turn===2)f.c.chat.push(completedMessage('Rowan listens to the waves.',2,true));const r=await f.generate('Rowan pauses by the shore.');assert.equal(r.ok,true,JSON.stringify(r.error));assert.equal(guidance(r).includes(prior[0].text),turn===1);assert.equal(f.controller.statusRecall().data.nodes[0].remaining.reply,turn===1);assert.equal((await f.controller.apply(r.reviewHandles[0])).ok,true);assert.equal(f.controller.statusRecall().data.nodes[0].remaining.reply,false);assert.equal(f.controller.statusRecall().data.nodes[0].remaining.swipe,true);assert.equal(f.saves(),0);assert.deepEqual(documentContent(f,'rowan-moments'),prior);
+   if(turn===2)f.c.chat.push(completedMessage('Rowan listens to the waves.',2,true));const r=await f.generate('Rowan pauses by the shore.');assert.equal(r.ok,true,JSON.stringify(r.error));assert.equal(guidance(r).includes(prior[0].text),turn===1);assert.equal(f.controller.statusRecall().data.shortcuts[0].remaining.reply,turn===1);assert.equal((await f.controller.apply(r.reviewHandles[0])).ok,true);assert.equal(f.controller.statusRecall().data.shortcuts[0].remaining.reply,false);assert.equal(f.controller.statusRecall().data.shortcuts[0].remaining.swipe,true);assert.equal(f.saves(),0);assert.deepEqual(documentContent(f,'rowan-moments'),prior);
   }
   assert.equal(f.calls(),2);
  }finally{f.controller.dispose();}

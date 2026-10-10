@@ -12,6 +12,7 @@ import { createWorkflowSession, prepareWorkflowProjection, projectPreparedWorkfl
 import { createGraphViewSession } from '../src/ui/graph-view-session.js?v=0.27.0';
 import { prepareWorkspaceViews, prepareLibraryViews, projectEditorDraw, projectWorkspacePanels, projectNodeProfiles } from '../src/ui/workspace-preparation.js?v=0.27.0';
 import * as H from '../src/history.js?v=0.27.0';
+import {projectRecallView} from '../src/ui/recall-projection.js?v=0.27.0';
 import { readNodePresentation } from '../src/ui/node-palette.js?v=0.27.0';
 import { viewIdentityKey } from '../src/ui/view-state.js?v=0.27.0';
 import { createConfiguredNodeSession } from '../src/ui/configured-node-creation.js?v=0.27.0';
@@ -19,6 +20,7 @@ import { createConfiguredNodeSession } from '../src/ui/configured-node-creation.
 const groupId = 'ai-de-slop';
 const controllerText = await readFile(new URL('../src/ui/controller.js', import.meta.url), 'utf8');
 function controllerFunction(name, env) {
+    env.recallProjection ??= {nodes:{}}; env.projectRecallView ??= projectRecallView; env.recallDetailsView ??= null; env.recallSelectionIds ??= () => []; env.recallSetupView ??= () => null;
     env.activeEditRoot ??= () => env.current;
     env.createConfiguredNodeSession ??= createConfiguredNodeSession;
     env.cancelConfiguredNode ??= () => {};

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
 const dom = new JSDOM('<body><div id="chat"></div></body>', { pretendToBeVisual: true });
 Object.assign(globalThis, { window: dom.window, document: dom.window.document, CSS: { escape: s => s }, CustomEvent: dom.window.CustomEvent, HTMLElement: dom.window.HTMLElement, Event: dom.window.Event, MouseEvent: dom.window.MouseEvent });
+for (const key of ['Node','Element','Text','Comment','Document','MutationObserver','HTMLMediaElement','HTMLButtonElement','HTMLInputElement','HTMLSelectElement']) Object.defineProperty(globalThis,key,{configurable:true,writable:true,value:dom.window[key]});
 globalThis.requestAnimationFrame = fn => setTimeout(fn, 0);
 globalThis.getComputedStyle = dom.window.getComputedStyle;
 globalThis.toastr = { info() {}, warning() {}, success() {}, error() {} };
@@ -11,7 +12,7 @@ let lore = 0, snapshots = 0, tokens = 0;
 context.getWorldInfoPrompt = async () => { lore++; return {}; };
 context.getCharacterCardFields = () => { snapshots++; return {}; };
 context.getTokenCountAsync = async () => { tokens++; return 1; };
-const state = await import('../src/state.js');
+const state = await import('../src/state.js?v=0.27.0');
 const { fixtureGraph: starterGraph } = await import('./helpers/workflow-fixtures.mjs');
 const { cloneWorkflowDocument } = await import('../src/workflow/document.js');
 const UI = await import('../src/ui.js');
@@ -20,8 +21,13 @@ for (const schema of [3, 99]) {
     graph.schema = schema;
     if (schema === 99) graph.nodes.legacy = { id: 'legacy', type: 'generate', title: 'Unsupported old block', x: 0, y: 0 };
     const before = structuredClone(graph);
-    state.settings().graphs[graph.id] = graph;
-    state.settings().activeGraphId = graph.id;
+    const previous = state.activeWorkflow(), activation = state.activateWorkflow(graph, { clean: true });
+    if (schema === 99) {
+        assert.equal(activation.ok, false);assert.equal(state.activeWorkflow(), previous);assert.deepEqual(graph,before);
+        assert.equal(lore,0);assert.equal(snapshots,0);assert.equal(tokens,0);
+        continue;
+    }
+    assert.equal(state.activeWorkflow(),graph);
     UI.open();
     await new Promise(resolve => setTimeout(resolve, 80));
     assert.equal(lore, 0, `schema ${schema} controller never gathers legacy lore`);
@@ -31,15 +37,10 @@ for (const schema of [3, 99]) {
     if (schema === 3) {
         assert.ok(document.querySelector('.pc-details-heading')?.textContent.includes('Details'), 'supported native execution opens the actual Details pane');
         assert.equal(document.querySelector('.pc-native-diagnostic'), null, 'supported native execution has no unsupported-version diagnostic');
-    } else {
-        const diagnostic = document.querySelector('.pc-native-diagnostic');
-        assert.ok(diagnostic && !diagnostic.hidden && !diagnostic.closest('[hidden]'), 'unsupported native execution exposes an honest visible diagnostic');
-        assert.match(diagnostic.textContent, /current|supported|schema/i);
     }
     assert.equal(Object.values(graph.nodes).some(node => node.type === 'output'), false);
-    if (schema === 99) assert.equal(document.querySelectorAll('.pc-node').length, 0, 'Rejected documents never reach Canvas');
-    assert.equal(state.getGraph(graph.id), graph, 'UI retains the actual saved root identity');
-    assert.deepEqual(state.getGraph(graph.id), before, 'native preview/context navigation cannot repair or mutate the saved root');
+    assert.equal(state.activeWorkflow(), graph, 'UI retains the actual document root identity');
+    assert.deepEqual(state.activeWorkflow(), before, 'native preview/context navigation cannot repair or mutate the document root');
     UI.close();
 }
 console.log('workflow-controller-dispatch: ok');

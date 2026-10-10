@@ -5,7 +5,7 @@
   "graph": {
     "id": "remastered-lesson-07",
     "name": "7. Let a second model polish the narration",
-    "description": "Apply pre-generation direction, then revise only narration while preserving protected literals.\n\nAssign this independent copy as Unified and arm Lattice before Send. Ordinary generation uses Active SillyTavern.\nBind Prose to Active SillyTavern or a chosen local model.\n\nOpen Let a second model polish the narration and inspect the named pins.\nCompare the native Draft with the narration-only revision before Apply.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 1 auxiliary Revise Draft request after one ordinary native generation.\nCheckpoints:\nRevise Draft · narration pass.out: Narration changes; dialogue and the protected literal remain unchanged.",
+    "description": "Apply pre-generation direction, then revise only narration while preserving protected literals.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nBind Prose to Active SillyTavern or a chosen local model.\n\nOpen Let a second model polish the narration and inspect the named pins.\nCompare the native Draft with the narration-only revision before Apply.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 1 auxiliary Revise Draft request after one ordinary native generation.\nCheckpoints:\nRevise Draft · narration pass.out: Narration changes; dialogue and the protected literal remain unchanged.",
     "schema": 3,
     "runtime": 2,
     "mode": "native-unified",
@@ -133,7 +133,7 @@
         "y": 0,
         "w": 900,
         "h": 180,
-        "content": "Apply pre-generation direction, then revise only narration while preserving protected literals.\n\nAssign this independent copy as Unified and arm Lattice before Send. Ordinary generation uses Active SillyTavern.\nBind Prose to Active SillyTavern or a chosen local model.\n\nOpen Let a second model polish the narration and inspect the named pins.\nCompare the native Draft with the narration-only revision before Apply.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 1 auxiliary Revise Draft request after one ordinary native generation.\nCheckpoints:\nRevise Draft · narration pass.out: Narration changes; dialogue and the protected literal remain unchanged.",
+        "content": "Apply pre-generation direction, then revise only narration while preserving protected literals.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nBind Prose to Active SillyTavern or a chosen local model.\n\nOpen Let a second model polish the narration and inspect the named pins.\nCompare the native Draft with the narration-only revision before Apply.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 1 auxiliary Revise Draft request after one ordinary native generation.\nCheckpoints:\nRevise Draft · narration pass.out: Narration changes; dialogue and the protected literal remain unchanged.",
         "commentFrame": true,
         "moveContents": false
       }

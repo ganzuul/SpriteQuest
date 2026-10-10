@@ -6,9 +6,9 @@ Install from the repository's default branch using the steps below.
 
 ## Start with a unified example
 
-Open a unified example, choose each ordinary model node’s connection in its grey profile bar or Details and configure For Each helper roles in Details, authorize any workflow data documents, then choose **Workflows → Assign unified workflow** and enable **Arm**. Start its native generation with ordinary SillyTavern **Send**. It resumes from the completed native Draft and exposes **Review / Publish · Host result** in Preview. Apply preserves the original and adds the chosen new swipe before settling its staged effects. Manual Run to here inspects supported nodes without accepting writes. The [unified guide](unified-workflows.md#apply-an-example-to-story-2) walks through Story-2 on default-user.
+Open a unified example, choose each ordinary model node’s connection in its grey profile bar or Details and configure For Each helper roles in Details, authorize any workflow data documents, then select **Enable Lattice** while that document is open. Start its native generation with ordinary SillyTavern **Send**. It resumes from the completed native Draft and exposes **Review / Publish · Host result** in Preview. Apply preserves the original and adds the chosen new swipe before settling its staged effects. Manual Run to here inspects supported nodes without accepting writes. The [unified guide](unified-workflows.md#apply-an-example-to-story-2) walks through Story-2 on default-user.
 
-A fresh workspace starts with **Unified story workflow**. Opening a graph does not assign or arm it. Each auxiliary model has an independent connection; Generate Reply uses SillyTavern’s ordinary main connection. Fast Decision requires its configured typed connection in **Tools → Fast connections…**, with explicit threshold and fallback policy.
+A fresh workspace starts with **Unified story workflow**. Opening a graph makes it the active document without changing **Enable Lattice**. Each auxiliary model has an independent connection; Generate Reply uses SillyTavern’s ordinary main connection. Fast Decision requires its configured typed connection in **Tools → Fast connections…**, with explicit threshold and fallback policy.
 
 ## Configure model connections
 
@@ -20,7 +20,7 @@ Requests use the operation's own instructions and supplied context. LATTICE does
 
 ## Model-backed examples
 
-The picker contains [30 independent unified lessons](examples.md). **Plan, write, polish, and annotate one reply** uses different model nodes for revision, extraction and enrichment. **Give one present character their own direction** uses verified actor presence and Character Direction. **Give every clue its own explanation** uses separately bound model helpers with a finite iteration limit. Configure each selected model and helper role before assigning and arming.
+The picker contains [30 independent unified lessons](examples.md). **Plan, write, polish, and annotate one reply** uses different model nodes for revision, extraction and enrichment. **Give one present character their own direction** uses verified actor presence and Character Direction. **Give every clue its own explanation** uses separately bound model helpers with a finite iteration limit. Configure each selected model and helper role before enabling Lattice and using Send.
 
 The ordinary SillyTavern reply is an additional request. Deterministic selection, context already within budget and empty edit permissions can avoid auxiliary calls. Results report actual requests against the selected bound; failed attempts may still cost tokens. There are no implicit retries.
 
@@ -62,7 +62,7 @@ Local application and durable saving are separate. The public metadata wrapper g
 
 ## Share JSON
 
-Current [remastered examples](../examples/remastered/) are portable schema-3/runtime-2 workflows. **File → Open workflow…** opens a separate workflow; **Import into graph…** reviews an additive edit. Portable exports retain pinned definitions and supported controls, while omitting local saved-profile IDs and credentials, including helper overrides. Recipients rebind fixed connections and helper roles. The Active SillyTavern model option follows the recipient's host connection.
+Current [remastered examples](../examples/remastered/) are portable schema-3/runtime-2 workflows. **File → Open workflow…** validates the file and replaces the active document after guarding modified work; **Import into graph…** reviews an additive edit. Portable exports retain pinned definitions and supported controls, while omitting local saved-profile IDs and credentials, including helper overrides. Recipients rebind fixed connections and helper roles. The Active SillyTavern model option follows the recipient's host connection.
 
 Five stage-specific [library subgraphs](../examples/library/subgraphs/) remain reusable processing definitions. Their pre/post body contracts do not make a standalone executable root. Unsupported roots, package versions, dependencies, cycles and incompatible wires fail before settings change.
 

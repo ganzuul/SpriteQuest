@@ -5,7 +5,7 @@
   "graph": {
     "id": "remastered-lesson-02",
     "name": "2. Give this scene one clear direction",
-    "description": "Use an editable text instruction as pre-generation Guidance.\n\nAssign this independent copy as Unified and arm Lattice before Send. Ordinary generation uses Active SillyTavern.\n\nOpen Give this scene one clear direction and inspect the named pins.\nEdit Text · scene direction to one concrete instruction.\nTrace section.Material into Compose.out and Generate Reply.guidance.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 0 auxiliary model requests; one ordinary native generation.\nCheckpoints:\nCompose.out: The editable Text becomes Guidance before native generation.",
+    "description": "Use an editable text instruction as pre-generation Guidance.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\n\nOpen Give this scene one clear direction and inspect the named pins.\nEdit Text · scene direction to one concrete instruction.\nTrace section.Material into Compose.out and Generate Reply.guidance.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 0 auxiliary model requests; one ordinary native generation.\nCheckpoints:\nCompose.out: The editable Text becomes Guidance before native generation.",
     "schema": 3,
     "runtime": 2,
     "mode": "native-unified",
@@ -111,7 +111,7 @@
         "y": 0,
         "w": 900,
         "h": 180,
-        "content": "Use an editable text instruction as pre-generation Guidance.\n\nAssign this independent copy as Unified and arm Lattice before Send. Ordinary generation uses Active SillyTavern.\n\nOpen Give this scene one clear direction and inspect the named pins.\nEdit Text · scene direction to one concrete instruction.\nTrace section.Material into Compose.out and Generate Reply.guidance.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 0 auxiliary model requests; one ordinary native generation.\nCheckpoints:\nCompose.out: The editable Text becomes Guidance before native generation.",
+        "content": "Use an editable text instruction as pre-generation Guidance.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\n\nOpen Give this scene one clear direction and inspect the named pins.\nEdit Text · scene direction to one concrete instruction.\nTrace section.Material into Compose.out and Generate Reply.guidance.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 0 auxiliary model requests; one ordinary native generation.\nCheckpoints:\nCompose.out: The editable Text becomes Guidance before native generation.",
         "commentFrame": true,
         "moveContents": false
       }

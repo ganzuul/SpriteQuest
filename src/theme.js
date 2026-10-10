@@ -300,6 +300,8 @@ export function applyTheme() {
     root.setProperty('--pc-on-accent', light ? '#ffffff' : '#1a1a1e');
     doc.documentElement.dataset.pcLight = light ? '1' : '0';
 
+    // Keep the recall status green readable on custom and host-derived surfaces.
+    root.setProperty('--pc-recall-ready-fit', toHex(fitContrast(parseColor('#8fc878'), [panel, block], 3)));
     for (const key of MEANING) {
         if (preset === 'ember' && key === 'flow' && !Object.hasOwn(custom, key)) continue;
         const c = parseColor(colors[key]);

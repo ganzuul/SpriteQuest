@@ -129,3 +129,6 @@ for (const preset of ['harbor', 'signal']) {
         });
     }
 }
+
+
+test('queued recall green fits custom light surfaces',()=>{T.setPreset('ember');T.setColor('panel','#f5f1eb');T.setColor('block','#ffffff');const color=T.parseColor(value('recall-ready-fit'));assert.ok(color,'theme supplies recall color');assert.ok(T.contrast(color,T.parseColor('#f5f1eb'))>=3);assert.ok(T.contrast(color,T.parseColor('#ffffff'))>=3);});

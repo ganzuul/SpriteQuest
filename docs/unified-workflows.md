@@ -2,25 +2,25 @@
 
 [Documentation](README.md) · [Quick start](lattice-workspace.md) · [Node reference](node-reference.md) · [Model connections](native-workflows.md)
 
-A unified workflow prepares guidance, waits for SillyTavern to generate its ordinary reply, and then processes that reply in the same graph. You assign one workflow. Preparation and response remain useful stages inside it; they no longer require switching between two graphs.
+A unified workflow prepares guidance, waits for SillyTavern to generate its ordinary reply, and then processes that reply in the same graph. You work in one open unified workflow document. Preparation and response remain useful stages inside it; they no longer require switching between two graphs.
 
 The normal SillyTavern connection writes the main reply. Other model nodes have their own connections and can plan, judge, revise, extract or enrich material. Their outputs become graph artifacts that you can inspect before applying the final result.
 
 ## Apply an example to Story-2
 
 1. In SillyTavern, select **default-user**, open **Story-2**, and select the character who will produce the native reply. User, chat and character selection determine the workflow's live sources and private stores.
-2. Open LATTICE beside the chat's Send button, or enter `/lattice`. A fresh workspace starts with **Unified story workflow**, disabled and unassigned. Existing installations retain their saved unified selection; retired pre/post selections move to the recovery archive described below.
-3. Choose **File → Open examples…** or **Workflows → Workflow examples…**. Open a unified example whose goal fits your story. Each opening creates an independent editable copy; it does not send a request, assign the workflow or enable LATTICE. The example's description contains its setup and inspection instructions.
+2. Open LATTICE beside the chat's Send button, or enter `/lattice`. A fresh workspace starts with **Unified story workflow** and Lattice disabled. Existing installations restore their unified recovery draft; previous unified documents are available through **File → Recover previous workflows**. Retired pre/post roots move to the cold archive described below.
+3. Choose **File → Open examples…**. Open a unified example whose goal fits your story. Each opening makes an independent editable copy the active document; it makes no model request and does not change **Enable Lattice**. The example's description contains its setup and inspection instructions.
 4. Adapt its literal instructions, actor/item identities, schemas and document targets. Example names and actors are authored demonstration material. A loaded character's canonical ID is normally `character:<avatar filename>`; a display name alone is not a live actor identity.
 5. Choose every ordinary text-model node’s connection in its grey profile bar or **Details → Connection profile**. Use **Active SillyTavern model** to follow the current host connection/model, or choose a saved Connection Manager profile for a fixed connection. Leave **Model mode → Use profile model** unless that particular node needs an explicit model identifier. Configure any **For Each → Helper model bindings** as well; assigning the extraction node's profile does not assign its confirmation helper.
 6. If the example reads or writes documents, authorize its named targets in **Tools → Workflow Data…** first. If it uses Fast Decision, configure **Tools → Fast connections…** and select that connection in the node. Resolve the graph's validation and binding issues before sending.
-7. Choose **Workflows → Assign unified workflow**, then enable **Arm**. Assignment chooses the host workflow; Arm enables integration. Merely selecting a graph in the editor does not assign it.
-8. Return to SillyTavern and **Send** your next player message normally. The workflow runs the necessary preparation, resumes from the completed native Draft, and records its response-stage results. A generated swipe can run the same assigned workflow when its configured sources and target policies permit it.
+7. Select **Enable Lattice** while the configured document is open. Send uses this active root document; switching between its root and subgraph tabs does not change that choice.
+8. Return to SillyTavern and **Send** your next player message normally. The workflow runs the necessary preparation, resumes from the completed native Draft, and records its response-stage results. A generated swipe can run the same open workflow when its configured sources and target policies permit it.
 9. Open Preview and select the desired **Review / Publish · Host result**. Compare the original, proposed body, appended sections, model trace and staged consequences. Choose **Apply reviewed candidate** or **Reject candidate**.
 
 Apply creates a new assistant swipe and preserves the native original. It then settles the effects associated with that exact reviewed root result. Reject leaves the original and does not accept its pending file, clock, random-outcome or accepted-policy Recall effects. A completed candidate is still a proposal until you apply it.
 
-Use **Run to here** to inspect supported preparation or source operations without accepting changes. A full unified workflow containing Generate Reply needs an owned SillyTavern generation; a manual Run does not secretly start another main reply.
+Use **Run to here** to inspect supported preparation or source operations without accepting changes. Full execution needs the owned SillyTavern generation; Run to here does not start another main reply.
 
 See [Thirty example workflows](examples.md) for the numbered curriculum and safe setup.
 
@@ -34,7 +34,7 @@ For the guidance/prose/items idea, open **Plan, write, polish, and annotate one 
 | **Give one present character their own direction** | Loaded canonical actor identity, source-backed participation and the Character Direction connection/system prompt. |
 | **Let an item remind its actual holder** | Item aliases/entities, confirmed ordered holder state and that actor’s private document/Prompted Memory branch. |
 | **One kiss, two private perspectives** | Both actors’ actual IDs, the configured typed Fast connection/gate, explicit permission to author both reflections, separate Actor Context models and private targets. |
-| **Recall a memory with a hotkey or a story trigger** | Selected actor, authorized record set, matching Recall/Hotkey memory-set IDs and the visible arm policy. |
+| **Recall a memory with a hotkey or a story trigger** | Selected actor, authorized record set, matching Recall/Recall Shortcut memory-set IDs and the visible queue policy. |
 | **The soul-stealing sword: an event ledger and a threshold** | Canonical soul list, confirmed kill identities, projected count/threshold and authorized keyed write. |
 | **A relationship that changes slowly over weeks** | Directed actor scope, authored progression/decay rules, effective story clock and private state target. |
 
@@ -62,7 +62,7 @@ There is one native generation boundary in a unified root workflow. Generate Rep
 
 Wires determine dependencies. A preparation label on an independent node does not make its output reach the native prompt: wire it into guidance or another required preparation input. A response branch must reach a selected terminal or consumed output to run. Canvas position does not impose order. Cycles, incompatible types, invalid pins and unsupported root-only nodes in a helper are rejected.
 
-Nodes usable in either stage expose **Stage → Preparation / Response** in Details. Those settings place an operation around the generation boundary without introducing another workflow selector. Conditions and branch outcomes distinguish **completed**, **skipped** and **unresolved**. A skipped optional contribution can be omitted by Join; an unresolved required contribution holds its dependents rather than treating uncertainty as false.
+Nodes usable in either stage expose **Stage → Preparation / Response** in Details. Those settings place an operation around the generation boundary within the same workflow document. Conditions and branch outcomes distinguish **completed**, **skipped** and **unresolved**. A skipped optional contribution can be omitted by Join; an unresolved required contribution holds its dependents rather than treating uncertainty as false.
 
 ## Choose a different model for each job
 
@@ -206,32 +206,36 @@ A slow-burn relationship can have directed values such as Mara's attraction towa
 
 **State → time-decay** uses the effective Story Clock and authored baseline/rate/bounds rules. It can reduce a temporary value over elapsed story minutes without changing an enduring relationship value. It does not use message count, real elapsed time or a model's guess of emotional truth. A proposed State result must still reach the appropriate accepted persistence path.
 
-## Arm memories manually or recall them automatically
+## Queue memories manually or recall them automatically
 
 A **Recall** node reads checked stored records through an authorized Read File or native Memory source. Records have distinct `id`, the matching canonical `actorId`, nonempty `text`, and optional revision, partner IDs, tags, event ID, recency and source references. Whole matching records are selected within result, character and token budgets. A model rewrite or invented default record does not inherit live file-read authority.
 
-For a file memory set, create an actor-private JSON target, Read File it in the correct actor scope, and route the record list to Recall's `records` pin. Set the same actor and `memorySetId` on Recall and **Hotkey Arm**. Wire Recall's Guidance causally into Generate Reply for a pre-generation reminder. Verify the actor's live presence independently. For keyword activation, connect the current Player Event Source to Recall's source pin; for event activation, supply genuine confirmed occurrences. A reply-stage trigger can affect response processing or a later generation, not the native prompt that already ran.
+For a file memory set, create an actor-private JSON target, Read File it in the correct actor scope, and route the record list to Recall's `records` pin. Set the same actor and `memorySetId` on Recall and **Recall Shortcut**. Wire Recall's Guidance causally into Generate Reply for a pre-generation reminder. Verify the actor's live presence independently. For keyword activation, connect the current Player Event Source to Recall's source pin; for event activation, supply genuine confirmed occurrences. A reply-stage trigger can affect response processing or a later generation, not the native prompt that already ran.
 
-Open **Tools → Recall arms…** after assigning the unified workflow and enabling LATTICE. It shows the live user/chat/actor, each configured memory set, its shortcut, remaining reply/swipe eligibility and pending generations. Use **Arm** and **Disarm** here, or the configured shortcut. An armed badge opens the same panel. Running Hotkey Arm in Preview does not arm it.
+Queue recall from the right-click menu on a matching Recall or Recall Shortcut node, from a selection of those nodes, or from the Memory recall section in Details. A green recall-with-clock badge shows an available manual request; amber shows a reservation or a result awaiting acceptance. Click a badge to inspect its policy. Queue and Cancel do not run a model or change the workflow file.
 
-Hotkeys use physical key codes, such as Control+Shift+R. They require Control, Alt or Meta for letter/digit keys, or a function key. They do not fire while typing in inputs, textareas, selects or editable text, during composition or key repeat. Duplicate active shortcuts require different combinations.
+**Node → Memory recall** offers commands for the selected nodes and all eligible nodes, plus **Memory recall overview…**. The overview groups matching nodes into one row per memory set. Several selected cards can represent one request. Repeating Queue preserves its remaining uses and pending generation; Cancel removes that shared manual request and its pending claims. Automatic triggers keep their own conditions.
 
-| Policy | Behavior |
+| Setting | Meaning |
 | --- | --- |
-| **target: reply / swipe / both** | Eligible next native reply, newly generated swipe, or either; browsing an existing swipe is not generation. |
-| **uses: next-match** | Consume one eligible matching generation. |
-| **uses: one-per-type** | Keep one reply allowance and one swipe allowance. |
-| **uses: until-disarmed** | Continue matching eligible generations until disarmed. |
-| **consumeOn: success** | Consume after the complete workflow succeeds, even if its later candidate is rejected. |
-| **consumeOn: accepted** | Consume only when the exact reviewed result is accepted. Stop, failure and rejection preserve unspent eligibility. |
+| Reply / Generated swipe / Reply and generated swipe | Which newly generated operations may use recall. Navigating an existing swipe does not consume a use. |
+| Next matching generation | Spend one eligible use. |
+| Once for each generation type | Keep one reply allowance and one generated-swipe allowance. |
+| Until cancelled | Repeat until explicitly cancelled. |
+| Successful completion | Spend only after the full workflow completes successfully. Later rejection does not refund it. |
+| Accepted result | Spend when the reviewed candidate is accepted. Stop, failure and Reject release the pending reservation without spending it. |
 
-Arms are ephemeral session state, not portable workflow data. User/chat/workflow/actor changes prevent an unrelated scope from using them; changing the workflow signature revokes its old arm and shortcut. Returning to a retained original scope can expose its unspent arm again. Inspect the current panel after switching, and re-arm if needed.
+Shortcuts use physical key codes, such as Control+Shift+R. Letter and digit shortcuts require Control, Alt or Meta; function keys also work. They skip typing in inputs, textareas, selects or editable text, composition, key repeat and focused menus. Duplicate active combinations require different keys.
 
-Native Recall currently serves the selected native actor. Multiple present actors may have independent Actor Context/private file branches, but a second actor's Recall cannot be injected as private guidance for the selected actor. Recall guidance and diagnostic selections stay actor-private; Render Notes does not declassify them.
+Matching Shortcuts must agree on target, repetition and consumption settings. Different physical keys can share a request. A Recall without a matching Shortcut explains how to add one. Automatic-only Recall nodes are excluded from manual queue actions. For independently requested retrieval selections, use different memory-set IDs; the first successful matching Recall supplies the selection for a given generation.
+
+Queues are private ephemeral session state. They are excluded from workflow files, exports, settings, Undo and modified-file status. Changing the semantic graph or opening/replacing a document revokes obsolete queues and shortcuts, even if the replacement has identical contents. Switching user/chat/actor hides unrelated queues; returning to the same unchanged document and scope may reveal an unspent request. Disabling Lattice hides active badges and makes controls unavailable; re-enabling the same document may reveal an unspent queue.
+
+Native Recall serves the selected native actor. Other present actors can have independent Actor Context/private file branches, but their Recall cannot supply private guidance for the selected actor. Recall guidance and diagnostic selections stay actor-private; Render Notes does not declassify them.
 
 ## Move an existing pre/post setup
 
-Saved native-pre and native-post roots are retired. Migration preserves their original graphs, bindings and active selection in a cold archive: `settings.archivedWorkflows = { schema: 1, graphs, bindings, activeGraphId }`. Saved unified roots and their assignment remain. A retired active selection is replaced by a remaining unified workflow, or a new starter when none remain. Integration is disabled when there is no unified assignment. Archived roots cannot execute, become assigned or import as current workflows.
+Saved native-pre and native-post roots are retired. Migration preserves their original graphs, bindings and active selection in a cold archive. Existing unified documents remain available as recovery drafts. If the previous active document is retired, Lattice opens a unified document or starter with integration disabled. Archived roots cannot execute, open as current documents, or import into current workflows.
 
 **File → Export archived workflows…** downloads the recovery archive as JSON. This recovery action makes no model requests and does not convert the contents. Preserve that download while rebuilding a needed process in a new unified workflow or updated example:
 
@@ -240,7 +244,7 @@ Saved native-pre and native-post roots are retired. Migration preserves their or
 3. Use the owned Generate Reply Draft for processing this generation's response.
 4. End the final Draft in Review / Publish. Patch tools retain diagnostic utility but do not grant publication authority.
 5. Keep native sources, Memory, file references, Recall, clocks and publication at the root where required. Stage-specific reusable processing definitions remain pinned.
-6. Rebind local model/helper connections, authorize documents, inspect supported outputs with Run to here, then assign and Arm.
+6. Rebind local model/helper connections, authorize documents, inspect supported outputs with Run to here, then keep the unified document open and select **Enable Lattice**.
 
 Current imports preserve pinned identities and controls; additive imports use stage/type checks. There is no automatic converter or production compatibility starter for a retired root.
 
@@ -248,7 +252,7 @@ Current imports preserve pinned identities and controls; additive imports use st
 
 | Symptom | Check |
 | --- | --- |
-| A unified Run cannot generate | Start with ordinary SillyTavern Send after assignment and Arm; manual Run to here only tests supported dependencies. |
+| A unified Run cannot generate | Start with ordinary SillyTavern Send with the configured document open and Lattice enabled; manual Run to here only tests supported dependencies. |
 | A model branch has no usable connection | Configure that node and each selected For Each helper role; inspect the effective profile/model and explicit nested overrides. |
 | Fast Decision cannot connect | Verify the typed connection/model, full endpoint and session credential; a text profile is not a SystemOne capability. |
 | A condition is unresolved | Inspect the missing path, null Decision answer or confidence middle range; wire an explicit unresolved policy. |
@@ -258,6 +262,6 @@ Current imports preserve pinned identities and controls; additive imports use st
 | A time step holds | Supply explicit forward integer minutes, matching calendar, valid schedules and a sufficient bounded due-event limit. |
 | Apply is stale | Return to the unchanged owned message/swipe or generate a fresh result; an edited graph/source cannot authorize the old candidate. |
 | A partial Apply failed | Inspect per-effect receipts; supported retry resumes persistence, while an unknown save requires reconciliation first. |
-| Recall did not activate | Check Arm, active selected actor, presence, source/record ancestry, target/use policy, budgets and pending claims in Recall arms. |
+| Recall did not activate | Check Enable Lattice, active selected actor, presence, source/record ancestry, target/use policy, budgets and pending claims in Memory recall. |
 
 For provider route and token-budget limitations, use [Model connections and host integration](native-workflows.md). For exact ports and controls, use the [node reference](node-reference.md). The [design documents](README.md#workflow-design-records) retain the broader proposals and open choices; this guide describes the authoring and host behavior implemented in the workspace.

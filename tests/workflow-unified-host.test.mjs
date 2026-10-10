@@ -431,3 +431,15 @@ test('Send skips a legacy Pre assignment without resolving or publishing it', as
     assert.equal(c.extensionPrompts['lattice:guidance:old'].value, ''); assert.equal(c.extensionPrompts.other.value, 'Keep');
     assert.equal(Object.values(c.extensionPrompts).some(entry => entry.value === 'Retired guidance.'), false);
 });
+
+test('identical document replacement cannot publish a late automatic result over a fresh Send',async()=>{
+    const graph=unifiedGraph();let owner={},release,started;
+    const waiting=new Promise(resolve=>started=resolve);let calls=0;
+    const f=nativeFixture(graph,{ports:{getDocumentToken:()=>owner},request:async()=>{if(++calls===1){started();await new Promise(resolve=>release=resolve);}return {ok:true,data:{text:'Revised reply.',finish:'stop'}};}});
+    await f.start();addReply(f);await f.c.eventSource.emit('MESSAGE_RECEIVED',1,'normal');f.setBusy(false);await f.c.eventSource.emit('GENERATION_ENDED',2);await waiting;
+    owner={};f.controller.cancel('Workflow document replaced');await nextTurn();assert.equal(f.results.length,0,'Replaced document results never notify the current document');
+    f.c.chat.push({mes:'Continue.',is_user:true,extra:{}});await f.start();addReply(f);await f.c.eventSource.emit('MESSAGE_RECEIVED',3,'normal');f.setBusy(false);await f.c.eventSource.emit('GENERATION_ENDED',4);
+    const fresh=await settled(f),automatic=f.controller.lastAutomaticResult();assert.equal(fresh.ok,true);assert.equal(automatic.origin.documentToken,owner);
+    release();await nextTurn();assert.equal(f.controller.lastAutomaticResult(),automatic);assert.equal(f.results.length,1);
+    assert.equal(f.controller.candidateStatus(fresh.reviewHandles[0]).ok,true);
+});

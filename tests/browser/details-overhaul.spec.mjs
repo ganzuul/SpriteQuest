@@ -84,7 +84,7 @@ for(const theme of ['lattice','ash']) for(const state of ['model','curve','reado
                 await h.activate(graph); h.canvas.select({kind:'node',id:'curve'});
             } else {
                 const {effectiveInstanceWorkflow}=await import('/tests/fixtures/workflow-effective-instance.mjs');
-                await h.activate(effectiveInstanceWorkflow());
+                const graph=effectiveInstanceWorkflow();graph.mode='native-unified';await h.activate(graph);
             }
             const t=await import('/src/theme.js?v='+h.version); t.setPreset(theme); await h.settle();
             document.querySelector('.pc-native-workspace').style.setProperty('--pc-details-width','220px');

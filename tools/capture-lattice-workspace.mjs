@@ -113,13 +113,11 @@ async function activate(env, fixture = 'structured') {
         }
         const checked = validateGraphStructure(graph);
         if (!checked.ok) throw new Error('Actual native root fixture rejected: ' + JSON.stringify(checked.error));
-        h.S.settings().graphs[graph.id] = graph;
-        h.S.save(); h.UI.refreshIfOpen();
+        await h.activate(graph);
         if (fixtureName === 'cleanup') await (await import('/src/run.js?v=' + version)).initializeNativeWorkflowController();
         return { id: graph.id, mode: graph.mode, nodeIds: Object.keys(graph.nodes), definitionRefs: Object.keys(graph.definitions),
             wrapperId: fixtureName === 'cleanup' ? 'text-rules' : null };
     }, fixture);
-    await page.getByRole('combobox', { name: 'Workflow', exact: true }).selectOption(fixtureInfo.id);
     await page.evaluate(async () => { await window.canvasHarness.settle(); window.canvasHarness.canvas.fit(); await window.canvasHarness.settle(); await document.fonts.ready; });
     await page.locator('.pc-root.pc-native-workspace[data-pc-workbench="svelte"]').waitFor({ state: 'visible' });
     assert(env.localResponses.has('/dist/lattice-ui.js'), 'Actual production UI bundle was not loaded.');
@@ -133,7 +131,7 @@ async function captureFresh(env) {
         const h = window.canvasHarness, settings = h.S.settings(), graph = h.graph;
         const { validateWorkflow } = await import('/src/workflow/contracts.js?v=' + h.version);
         const checked = validateWorkflow(graph);
-        if (!h.freshSettingsAbsent || graph.name !== 'Unified story workflow' || graph.schema !== 3 || graph.runtime !== 2 || !checked.ok || checked.data.callBound !== 0 || settings.enabled || settings.nativeBindings.workflowGraphId !== null || Object.hasOwn(settings, 'workflowMode') || h.providerCalls() !== 0) throw Error('Actual fresh launch did not use the disabled unassigned zero-request current default.');
+        if (!h.freshSettingsAbsent || graph.mode !== 'native-unified' || graph.schema !== 3 || graph.runtime !== 2 || !checked.ok || checked.data.callBound !== 0 || settings.enabled || Object.hasOwn(settings, 'nativeBindings') || Object.hasOwn(settings, 'workflowMode') || h.providerCalls() !== 0) throw Error('Actual fresh launch did not use the disabled zero-request current default.');
         if (document.querySelector('.pc-node-output,.pc-port-key,.pc-port-stage,.pc-tok') || ['sillyCanvas','promptCanvas','comfyTavernGenerationInterceptor'].some(key => Object.hasOwn(window,key))) throw Error('A retired surface or global survived fresh startup.');
         await h.settle(); await document.fonts.ready;
         return { id: graph.id, mode: graph.mode, nodeIds: Object.keys(graph.nodes), definitionRefs: Object.keys(graph.definitions), fresh: true, hostCss: h.hostCss, providerCalls: h.providerCalls() };
@@ -161,7 +159,7 @@ async function metrics(env) {
                 radius: css.borderTopRightRadius, border: css.borderTopColor, shadow: css.boxShadow,
                 fontFamily: css.fontFamily, fontSize: css.fontSize, fontWeight: css.fontWeight, letterSpacing: css.letterSpacing };
         };
-        return { mode: window.canvasHarness.S.settings().graphs[rootId].mode, viewport: { width: innerWidth, height: innerHeight, dpr: devicePixelRatio },
+        return { mode: window.canvasHarness.S.activeWorkflow().mode, viewport: { width: innerWidth, height: innerHeight, dpr: devicePixelRatio },
             brand: { text: document.querySelector('.pc-brand').textContent.trim(), ...read('.pc-brand'), wordmark: read('.pc-brand span'), fontReady: document.fonts.check('600 20px "Bricolage Grotesque"'), logo: read('.pc-brand img') },
             header: read('.pc-header'), graph: read('.pc-canvas-area'), preview: read('.pc-preview-pane'), inspector: read('.pc-inspector'), shelf: read('.pc-node-shelf'),
             activeTab: read('.pc-graph-tab[aria-selected="true"]'), breadcrumbs: read('.pc-graph-location', true),
@@ -182,8 +180,8 @@ async function metrics(env) {
                 pixels: [...document.querySelectorAll('[data-run-pixel]')].map(pixel => ({ status: pixel.dataset.status, title: pixel.title })) },
             shelfSnapshots: { count: Object.keys(window.canvasHarness.S.settings().subgraphLibrary?.definitions ?? {}).length,
                 refs: Object.keys(window.canvasHarness.S.settings().subgraphLibrary?.definitions ?? {}) },
-            rootSnapshots: { count: Object.keys(window.canvasHarness.S.settings().graphs[rootId].definitions ?? {}).length,
-                refs: Object.keys(window.canvasHarness.S.settings().graphs[rootId].definitions ?? {}) },
+            rootSnapshots: { count: Object.keys(window.canvasHarness.S.activeWorkflow().definitions ?? {}).length,
+                refs: Object.keys(window.canvasHarness.S.activeWorkflow().definitions ?? {}) },
             overflow: document.documentElement.scrollWidth > innerWidth,
             nativeWorkbench: !!document.querySelector('.pc-root.pc-native-workspace[data-pc-workbench="svelte"]') };
     }, env.fixture.id);

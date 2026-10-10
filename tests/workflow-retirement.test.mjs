@@ -4,6 +4,7 @@ import { exportWorkflow, parseWorkflow } from '../src/workflow/packages.js';
 import { validateGraphStructure, validateWorkflow } from '../src/workflow/contracts.js';
 import { operationDefaults } from '../src/workflow/catalog.js';
 import { computeDefinitionIdentity, definitionRefKey } from '../src/workflow/definitions.js';
+import { serializeWorkflowDocument, parseWorkflowDocument } from '../src/workflow/document-file.js';
 
 const legacyGraph = (id = 'old-pre', mode = 'native-pre') => ({ id, name: 'Saved scene tool', description: '', schema: 3, runtime: 2, mode, nodes: { text: { id: 'text', type: 'workflow', operation: 'text', operationVersion: 1, text: 'Keep this authored text.' } }, wires: {}, groups: {}, roles: {}, portals: {}, definitions: {}, view: { x: 4, y: 7, zoom: 1 } });
 function savedSettings(graph) {
@@ -24,9 +25,10 @@ test('retiring a saved Pre root preserves its original and opens an unassigned d
     assert.deepEqual(current.archivedWorkflows?.graphs?.[graph.id], original);
     assert.deepEqual(current.archivedWorkflows.bindings, { preGraphId: graph.id, postGraphId: null });
     assert.equal(current.archivedWorkflows.activeGraphId, graph.id);
-    assert.equal(Object.hasOwn(current.graphs, graph.id), false);
-    assert.equal(current.graphs[current.activeGraphId].mode, 'native-unified');
-    assert.deepEqual(current.nativeBindings, { workflowGraphId: null });
+    assert.equal(Object.hasOwn(current, 'graphs'), false);
+    assert.equal(host.state.activeWorkflow().mode, 'native-unified');
+    assert.equal(Object.hasOwn(current, 'nativeBindings'), false);
+    assert.equal(host.state.recoveredWorkflows().find(entry => entry.id === graph.id)?.graph, undefined);
     assert.equal(current.enabled, false);
     assert.equal(host.saves(), 1);
     assert.equal(host.state.settings(), current);
@@ -105,10 +107,12 @@ test('a mixed workspace keeps its assigned unified workflow enabled and archives
     const unified = starterGraph('unified-basic');
     value.graphs[unified.id] = unified; value.nativeBindings.workflowGraphId = unified.id;
     const host = await stateFor(value), current = host.state.settings();
-    assert.equal(current.activeGraphId, unified.id);
-    assert.deepEqual(current.graphs, { [unified.id]: unified });
+    assert.equal(host.state.activeWorkflow().id, unified.id);
+    assert.deepEqual(host.state.activeWorkflow(), unified);
+    assert.equal(Object.hasOwn(current, 'graphs'), false);
     assert.equal(current.enabled, true);
-    assert.deepEqual(current.nativeBindings, { workflowGraphId: unified.id });
+    assert.equal(Object.hasOwn(current, 'nativeBindings'), false);
+    assert.deepEqual(current.archivedWorkflows.graphs[graph.id], graph);
     const reloaded = await stateFor(structuredClone(current));
     assert.deepEqual(reloaded.state.settings(), current);
     assert.equal(reloaded.saves(), 0);
@@ -136,4 +140,59 @@ test('archive accessors and conflicting originals reject without reads, mutation
     const before = structuredClone(conflict), host = await stateFor(conflict);
     assert.throws(() => host.state.settings(), /identity conflicts/i);
     assert.deepEqual(conflict, before); assert.equal(host.saves(), 0);
+});
+
+test('same-id retired activation rejects without changing document authority, history or events', async () => {
+    const host = await stateFor({ schema: 2, enabled: true, subgraphLibrary: { definitions: {} }, ui: {}, migrationRecovery: [], recoveryDraft: null });
+    const state = host.state;
+    state.settings();
+    const graph = state.activeWorkflow(), token = state.documentSession.capture();
+    const history = await import('../src/history.js?v=0.27.0');
+    graph.name = 'Edited active document';history.noteChange(graph);history.flush(graph);
+    const undo = history.peek(graph), before = structuredClone(host.context.extensionSettings.lattice);
+    let activations = 0;const unsubscribe = state.onWorkflowActivated(() => { activations++; });
+    try {
+        for (const mode of ['native-pre', 'native-post']) {
+            const result = state.activateWorkflow(legacyGraph(graph.id,mode));
+            assert.equal(result?.ok,false);assert.equal(result.error.code,'WRONG_PHASE');
+            assert.equal(state.activeWorkflow(),graph);assert.equal(state.documentSession.stillCurrent(token),true);
+            assert.deepEqual(history.peek(graph),undo);assert.deepEqual(host.context.extensionSettings.lattice,before);
+        }
+        assert.equal(activations,0);assert.equal(host.saves(),0);
+    } finally { unsubscribe(); }
+});
+
+test('a retired schema-2 recovery draft is preserved without becoming the active document', async () => {
+    for (const mode of ['native-pre','native-post']) {
+        const graph = legacyGraph('retired-draft-' + mode,mode), original = { graph, workspaceViews:null };
+        const host = await stateFor({ schema: 2, enabled: true, subgraphLibrary: { definitions: {} }, ui: {}, migrationRecovery: [], recoveryDraft: original });
+        const current = host.state.settings();
+        assert.equal(host.state.activeWorkflow().mode,'native-unified');
+        assert.notEqual(host.state.activeWorkflow().id,graph.id);
+        assert.equal(current.enabled,false,'opening a fallback cannot inherit a retired document enable preference');
+        const retained = host.state.recoveredWorkflows().find(entry => entry.id === 'previous-recovery-draft');
+        assert.deepEqual(retained.original,original);assert.equal(retained.graph,undefined);
+        assert.equal(current.recoveryDraft.graph.mode,'native-unified');
+    }
+});
+
+test('a unified active document retains pinned Pre and Post definition bodies through local save and reopen', async () => {
+    const graph = legacyGraph('unified-with-stage-bodies','native-unified');
+    for (const mode of ['native-pre','native-post']) {
+        const draft = {id:mode + '-body',version:1,name:mode,interface:[],parameters:[],body:{schema:3,runtime:2,mode,nodes:{text:{id:'text',type:'workflow',operation:'text',operationVersion:1,text:'Preserve pinned ' + mode}},wires:{}}};
+        const checked = computeDefinitionIdentity(draft);assert.equal(checked.ok,true,JSON.stringify(checked.error));
+        const definition = {...checked.data.materializedDefinition,semanticHash:checked.data.semanticHash};
+        graph.definitions[definitionRefKey(definition)] = definition;
+        graph.nodes[mode] = {id:mode,type:'subgraph',definition:{id:definition.id,version:definition.version,semanticHash:definition.semanticHash}};
+    }
+    const original = structuredClone(graph);
+    const host = await stateFor({schema:2,enabled:false,subgraphLibrary:{definitions:{}},ui:{},migrationRecovery:[],recoveryDraft:null});
+    assert.notEqual(host.state.activateWorkflow(graph)?.ok,false);
+    assert.equal(host.state.activeWorkflow(),graph);assert.deepEqual(graph,original);
+    const encoded = serializeWorkflowDocument(graph);assert.equal(encoded.ok,true,JSON.stringify(encoded.error));
+    const parsed = parseWorkflowDocument(encoded.data.json);assert.equal(parsed.ok,true,JSON.stringify(parsed.error));
+    assert.deepEqual(parsed.data.graph.definitions,original.definitions);
+    assert.deepEqual(Object.values(parsed.data.graph.definitions).map(definition=>definition.body.mode).sort(),['native-post','native-pre']);
+    assert.notEqual(host.state.activateWorkflow(parsed.data.graph)?.ok,false);
+    assert.deepEqual(host.state.activeWorkflow().definitions,original.definitions);
 });

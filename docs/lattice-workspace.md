@@ -8,7 +8,9 @@ Start with one unified graph around ordinary SillyTavern generation.
 
 Install from `https://github.com/MentallyQuill/Lattice` in SillyTavern's **Extensions → Install extension**, leaving the branch field blank. Reload, then open the LATTICE logo on the left of the chat bar or type `/lattice`.
 
-Fresh launch opens **Unified story workflow**, disabled and unassigned. Use **File → Open examples…** to install an independent copy of one of 31 unified recipes. Opening, installing and importing make no provider request.
+Fresh launch opens **Unified story workflow**, with Lattice disabled. Existing installations restore their unified recovery draft; previous unified documents are available through **File → Recover previous workflows**. **File → Open examples…** offers [30 numbered unified lessons](examples.md), searchable by goal or technique and filterable by difficulty. Opening a lesson creates an independent editable active document. Opening and importing make no provider request and do not change **Enable Lattice**.
+
+Use **File → Save workflow** or **Save As…** to save the editable document to disk. Browsers without direct file access offer **Download JSON…** instead. A recovery draft retains committed work across reloads; it does not save the file on disk. **Open Recent** reopens previously accessed files in supported browsers. See [save, import, and share](operators-manual.md#save-import-and-share) for modified-document prompts and recovery.
 
 The default **Ember** theme follows SillyTavern's panel, text, control and quote colors. **Tools → Theme and colours** offers Ember, Lattice, Ash, Graphite, Slate, Obsidian, Harbor and Signal. Harbor and Signal also identify connection types with labeled pins, distinct shapes and wire patterns.
 
@@ -17,7 +19,7 @@ The default **Ember** theme follows SillyTavern's panel, text, control and quote
 The starter is **On Send → Generate Reply · SillyTavern → Review / Publish**. It makes no auxiliary model requests; the ordinary reply uses your SillyTavern connection.
 
 1. Open your story and select its native character in SillyTavern.
-2. Choose **Workflows → Assign unified workflow**, then enable **Arm**.
+2. Keep the starter open, then select **Enable Lattice**.
 3. Send a player message normally. The starter waits for that generation's completed Draft and records its review result.
 4. Select **Review / Publish · Host result** in Preview. Compare the original and candidate. **Apply reviewed candidate** preserves the original as a swipe and publishes the chosen result; **Reject candidate** leaves it alone.
 5. Open a recipe to add preparation, prose editing or notes. Configure ordinary model nodes and For Each helper roles in Details before sending. Authorize required document targets in **Tools → Workflow Data…**.

@@ -5,7 +5,7 @@
   "graph": {
     "id": "remastered-lesson-12",
     "name": "12. Plan, write, polish, and annotate one reply",
-    "description": "Combine a public plan with native generation, narration revision, item extraction and suggested enrichment.\n\nAssign this independent copy as Unified and arm Lattice before Send. Ordinary generation uses Active SillyTavern.\n\nOpen Plan, write, polish, and annotate one reply and inspect the named pins.\nFollow preparation and response groups by wires. Folding a group changes presentation only.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 4 auxiliary requests: Response Plan, Revise Draft, Extract and Enrich; one ordinary native generation.\nCheckpoints:\nEnrich.out: Observations keep evidence; suggestions remain labeled separately.",
+    "description": "Combine a public plan with native generation, narration revision, item extraction and suggested enrichment.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\n\nOpen Plan, write, polish, and annotate one reply and inspect the named pins.\nFollow preparation and response groups by wires. Folding a group changes presentation only.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 4 auxiliary requests: Response Plan, Revise Draft, Extract and Enrich; one ordinary native generation.\nCheckpoints:\nEnrich.out: Observations keep evidence; suggestions remain labeled separately.",
     "schema": 3,
     "runtime": 2,
     "mode": "native-unified",
@@ -211,7 +211,7 @@
         "y": 0,
         "w": 900,
         "h": 180,
-        "content": "Combine a public plan with native generation, narration revision, item extraction and suggested enrichment.\n\nAssign this independent copy as Unified and arm Lattice before Send. Ordinary generation uses Active SillyTavern.\n\nOpen Plan, write, polish, and annotate one reply and inspect the named pins.\nFollow preparation and response groups by wires. Folding a group changes presentation only.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 4 auxiliary requests: Response Plan, Revise Draft, Extract and Enrich; one ordinary native generation.\nCheckpoints:\nEnrich.out: Observations keep evidence; suggestions remain labeled separately.",
+        "content": "Combine a public plan with native generation, narration revision, item extraction and suggested enrichment.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\n\nOpen Plan, write, polish, and annotate one reply and inspect the named pins.\nFollow preparation and response groups by wires. Folding a group changes presentation only.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 4 auxiliary requests: Response Plan, Revise Draft, Extract and Enrich; one ordinary native generation.\nCheckpoints:\nEnrich.out: Observations keep evidence; suggestions remain labeled separately.",
         "commentFrame": true,
         "moveContents": false
       }

@@ -28,4 +28,4 @@ export interface WorkflowExampleResult extends Omit<WorkflowExample, 'graph'> {
 }
 export function listWorkflowExamples(): WorkflowExample[];
 export function listWorkflowExampleResults(): WorkflowExampleResult[];
-export function installWorkflowExample(id: string, settings: { graphs: Record<string, NativeGraph3> }): Result<InstalledWorkflowExample>;
+export function installWorkflowExample(id: string): Result<InstalledWorkflowExample>;

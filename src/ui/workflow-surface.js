@@ -36,7 +36,7 @@ function safeSettlement(raw) {
     return freeze({status:own(raw,'status'),published:true,receipts});
 }
 const summaryView = result => result.ok ? { callBound: result.data.callBound, issues: [], requiredBindingAddresses: result.data.requiredBindingAddresses } : { callBound: 0, issues: [result.error.message], requiredBindingAddresses: [] };
-const emptyView = message => ({ graphId: '', name: '', phase: '', assigned: false, profiles: [], families: [], nodes: [], groups: [], selectedId: null, callBound: 0, issues: [message], busy: false, status: '', result: null, quoteHelp: QUOTE_SCOPE_HELP, rows: [], targets: [] });
+const emptyView = message => ({ graphId: '', name: '', phase: '', profiles: [], families: [], nodes: [], groups: [], selectedId: null, callBound: 0, issues: [message], busy: false, status: '', result: null, quoteHelp: QUOTE_SCOPE_HELP, rows: [], targets: [] });
 // Keep a fixed digest, never the semantic signature's saved controls/body text.
 function rememberRecordingRevision(recording, revision) {
     if (recording && typeof recording === 'object' && typeof revision === 'string' && !historicalPreviews.has(recording)) historicalPreviews.set(recording, { revision: sha256Text(revision), aliases: null });
@@ -71,7 +71,6 @@ function safeHandle(raw) {
 function baseWorkflowView(graph, profiles, settings, fastConnections = [], activeModel = null) {
     const phase = typeof graph.mode === 'string' ? graph.mode.slice(7) : '';
     return { graphId: graph.id || '', name: graph.name || '', phase,
-        assigned: graph.id === settings.nativeBindings?.workflowGraphId,
         fastConnections: fastConnectionChoices({ ok: true, data: { connections: fastConnections } }),
         profiles: prepareNodeProfileOptions(profiles, activeModel).map(({ value, label, ...metadata }) => ({ id: value, name: label, ...metadata })),
         families: FAMILIES.map(name => ({ name, description: descriptions[name], operations: Object.values(OPERATIONS).filter(op => op.family === name || name === 'Surface' && ['pattern-scan', 'validate-patches'].includes(op.id)).map(op => ({ id: op.id, title: op.title, phase: op.phase === 'both' ? phase : op.phase || phase, compatible: !op.minimumSchema || graph.schema >= op.minimumSchema })) })),
@@ -215,14 +214,22 @@ function boundedResult(raw, handles) {
     for (const key of ['preview', 'published', 'fallback']) if (raw[key] !== undefined) result[key] = raw[key];
     return freeze(result);
 }
-export function createWorkflowSession({ runtime, current, epoch, rootCurrent = current, runEpoch = epoch, active, changed }) {
+export function createWorkflowSession({ runtime, current, epoch, rootCurrent = current, runEpoch = epoch, documentToken, active, changed }) {
     let result = null, recording = null, runState = null, preparationError = null, reviewHandles = [], availability = 'current';
     let busy = false, status = '', applyIssue = '', generation = 0, invocation = null;
-    let ignoredAutomatic = new WeakSet(), displayedAutomatic = null;
+    let ignoredAutomatic = new WeakSet(), displayedAutomatic = null, documentOwner = documentToken?.();
     const publish = () => changed({ result, recording, runState, preparationError, reviewHandles, availability, busy, status, applyIssue });
-    const rootOwned = transaction => active() && rootCurrent() === transaction.graph && generation === transaction.serial;
+    const rootOwned = transaction => active() && rootCurrent() === transaction.graph && generation === transaction.serial && (!documentToken || documentToken() === transaction.documentOwner);
     const valid = transaction => rootOwned(transaction) && runEpoch() === transaction.epoch && !transaction.cancelled;
     const settledValid = transaction => valid(transaction) && workflowSignature(transaction.graph) === transaction.revision;
+    function syncDocument() {
+        const next = documentToken?.();
+        if (next === documentOwner) return;
+        documentOwner = next; generation++; invocation = null;
+        result = null; recording = null; runState = null; preparationError = null; reviewHandles = [];
+        availability = 'current'; busy = false; status = ''; applyIssue = '';
+        displayedAutomatic = null; ignoredAutomatic = new WeakSet(); publish();
+    }
     function clearAuthority() {
         reviewHandles = [];
         if (result?.recording) result = boundedResult(result, reviewHandles);
@@ -243,7 +250,8 @@ export function createWorkflowSession({ runtime, current, epoch, rootCurrent = c
         status = cancelled ? response.error?.message || 'Run cancelled.' : response.ok ? 'Run complete. Review the result.' : response.error?.message || 'Run failed.';
     }
     function capture() {
-        const graph = rootCurrent(), transaction = { graph, epoch: runEpoch(), serial: ++generation, revision: workflowSignature(graph), runId: null, cancelled: false };
+        syncDocument();
+        const graph = rootCurrent(), transaction = { graph, documentOwner, epoch: runEpoch(), serial: ++generation, revision: workflowSignature(graph), runId: null, cancelled: false };
         invocation = transaction; return transaction;
     }
     function observe(transaction, event) {
@@ -260,9 +268,11 @@ export function createWorkflowSession({ runtime, current, epoch, rootCurrent = c
     }
     return {
         result: () => result,
+        syncDocument,
         receiveAutomatic(record) {
+            syncDocument();
             const graph = rootCurrent(), origin = record?.origin;
-            if (!active() || !record?.result || !origin || origin.kind !== 'send' || origin.phase !== 'unified' || graph?.mode !== 'native-unified' || origin.graph !== graph || origin.graphId !== graph.id || origin.signature !== workflowSignature(graph) || ignoredAutomatic.has(record) || displayedAutomatic === record) return;
+            if (!active() || !record?.result || !origin || (documentToken && origin.documentToken !== documentOwner) || origin.kind !== 'send' || origin.phase !== 'unified' || graph?.mode !== 'native-unified' || origin.graph !== graph || origin.graphId !== graph.id || origin.signature !== workflowSignature(graph) || ignoredAutomatic.has(record) || displayedAutomatic === record) return;
             if (busy) { ignoredAutomatic.add(record); return; }
             // A payload-free superseded Send cannot replace the one retained diagnostic.
             const received = record.result.recording;
@@ -272,14 +282,16 @@ export function createWorkflowSession({ runtime, current, epoch, rootCurrent = c
             status = `Automatic Send · unified workflow · "${origin.graphName || graph.name}". ${result?.ok ? 'Review the result.' : record.result.error?.message || 'Run failed.'}`; publish();
         },
         refreshFreshness(selector) {
+            syncDocument();
             const handle = safeHandle(selector);
             const captured = handle && reviewHandles.find(item => item.handleId === handle.handleId && item.runId === handle.runId && targetKey(item.terminal) === targetKey(handle.terminal));
             const freshness = captured ? runtime()?.candidateStatus?.(captured) : null;
             applyIssue = freshness?.ok === false ? freshness.error.message : ''; publish();
         },
         async run(options = {}) {
+            syncDocument();
             if (options.target === undefined) {
-                preparationError = { code: 'NATIVE_SEND_REQUIRED', message: 'Assign and enable this unified workflow, then Send in SillyTavern. Generate Reply continues that native generation. Use Run to here to test supported nodes.' };
+                preparationError = { code: 'NATIVE_SEND_REQUIRED', message: 'Enable this open unified workflow, then Send in SillyTavern. Generate Reply continues that native generation. Use Run to here to test supported nodes.' };
                 status = preparationError.message; publish();
                 return { schema: 3, runtime: 2, mode: 'root', ok: false, actualCalls: 0, error: preparationError };
             }
@@ -306,6 +318,7 @@ export function createWorkflowSession({ runtime, current, epoch, rootCurrent = c
             }
         },
         async apply(selector) {
+            syncDocument();
             if (busy || !result?.ok || availability !== 'current') return;
             const handle = safeHandle(selector);
             const candidate = handle && reviewHandles.find(item => item.handleId === handle.handleId && item.runId === handle.runId && targetKey(item.terminal) === targetKey(handle.terminal));

@@ -1,3 +1,4 @@
+import type {RecallNodeStatus} from './recall-types';
 import type { ManagerInterfaceEdit } from './manager-types';
 
 /** Prepared plain display contracts. These panels never resolve graphs, bindings or authority. */
@@ -37,6 +38,7 @@ export interface DetailHelperBindings {
     roles:{role:string;label:string;profile:DetailBindingField;model:DetailBindingField;effective:string;source:string;caveat?:string}[];
 }
 export interface NodeDetailsView extends DetailSelection {
+    recall?: RecallNodeStatus;
     title: string; canonicalTitle: string; iconPath: string; family: string; phase: string;
     operation?: string; familyColor?: string; phaseEditable?: boolean;
     alias: string; compact: boolean; enabled: boolean; readOnly: boolean; canPresent: boolean;
@@ -48,6 +50,9 @@ export interface NodeDetailsView extends DetailSelection {
     status?: string; issues?: string[];
 }
 export interface NodeDetailsActions {
+    queueRecall?:(selection:DetailSelection)=>DetailEditResponse;
+    cancelRecall?:(selection:DetailSelection)=>DetailEditResponse;
+    revealRecallShortcut?:(nodeId:string)=>void;
     editPhase?: (selection: DetailSelection, phase: 'pre' | 'post') => DetailEditResponse;
     openFastConnections?: () => void;
     loadFile?: (selection: DetailSelection, file: File) => DetailEditResponse;

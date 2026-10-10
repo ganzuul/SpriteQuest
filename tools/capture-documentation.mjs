@@ -119,12 +119,10 @@ try {
             }
             const checked = validateGraphStructure(graph);
             if (!checked.ok) throw new Error(JSON.stringify(checked.error));
-            h.S.settings().graphs[graph.id] = graph;
-            h.S.save(); h.UI.refreshIfOpen();
+            await h.activate(graph);
             if (!['native-guidance', 'branching'].includes(kind)) await (await import('/src/run.js?v=' + v)).initializeNativeWorkflowController();
             return graph.id;
         }, kind);
-        await page.getByRole('combobox', { name: 'Workflow', exact: true }).selectOption(id);
         await page.evaluate(async () => { await window.canvasHarness.settle(); window.canvasHarness.canvas.fit(); await window.canvasHarness.settle(); await document.fonts.ready; });
         if (await page.getByRole('button', { name: 'Toggle inspector' }).getAttribute('aria-pressed') !== 'true') await page.getByRole('button', { name: 'Toggle inspector' }).click();
         await page.evaluate(() => window.canvasHarness.settle());
@@ -253,9 +251,7 @@ try {
     await shot('text-rules-details', '.pc-inspector');
     await shot('text-rules-graph');
     await activate('unified-basic');
-    await page.getByRole('button',{name:'Workflows',exact:true}).click();
-    await page.getByRole('menuitem',{name:'Assign unified workflow',exact:true}).click();
-    await page.getByRole('checkbox',{name:'Arm',exact:true}).check();
+    await page.getByRole('checkbox',{name:'Enable Lattice',exact:true}).check();
     await page.evaluate(async()=>{
         const h=window.canvasHarness,c=h.context;
         Object.assign(c,{chatId:'documentation-unified',characterId:0,groupId:null,characters:[{avatar:'mara.png',data:{name:'Mara'}}],saveChat:async()=>{},updateMessageBlock:async()=>{},swipe:{refresh:async()=>{}}});

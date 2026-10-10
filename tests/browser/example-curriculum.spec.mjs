@@ -1,4 +1,11 @@
 import { test, expect } from '@playwright/test';
+async function finishExampleChoice(page, picker) {
+    const guard=page.getByRole('dialog',{name:'Save workflow changes?',exact:true});
+    await expect.poll(async()=>await guard.isVisible()||!await picker.isVisible()).toBe(true);
+    if(await guard.isVisible())await guard.getByRole('button',{name:"Don't Save",exact:true}).click();
+    await expect(picker).toBeHidden();
+}
+
 async function launch(page) {
     await page.goto('/tests/browser/harness.html');
     await page.waitForFunction(() => !!window.canvasHarness);
@@ -27,16 +34,17 @@ test('curriculum search, difficulty and lesson details teach before independent 
     expect(await page.evaluate(() => JSON.stringify(window.canvasHarness.graph))).toBe(original);
     expect(await page.evaluate(() => window.canvasHarness.providerCalls())).toBe(0);
     await lesson.getByRole('button', {name: 'Open independent copy', exact: true}).click();
-    await expect(dialog).toBeHidden();
+    await finishExampleChoice(page, dialog);
     const after = await page.evaluate(async () => {
         const h = window.canvasHarness, {settings} = await import('/src/state.js?v=' + h.version);
         return {graph: h.graph, stored: settings(), calls: h.providerCalls()};
     });
     expect(after.graph.name).toBe('1. Follow a reply from Send to Review');
     expect(after.stored.enabled).toBe(false);
-    expect(after.stored.nativeBindings.workflowGraphId).toBeNull();
+    expect(Object.hasOwn(after.stored,'nativeBindings')).toBe(false);
     expect(after.calls).toBe(0);
-    expect(Object.values(after.stored.graphs).some(graph => JSON.stringify(graph) === original)).toBe(true);
+    expect(Object.hasOwn(after.stored,'graphs')).toBe(false);
+    expect(JSON.stringify(after.graph)).not.toBe(original);
     expect(Object.values(after.graph.nodes).some(node => node.type === 'note' && /Generate Reply/.test(node.content))).toBe(true);
 });
 test('search supports empty results and an unavailable lesson retains readable instructions', async ({page}) => {
@@ -65,7 +73,7 @@ test('independent opening from details closes without lifecycle errors', async (
     const dialog = await launch(page);
     await dialog.getByRole('button', {name: 'Details for Follow a reply from Send to Review', exact: true}).click();
     await dialog.getByRole('button', {name: 'Open independent copy', exact: true}).click();
-    await expect(dialog).toBeHidden();
+    await finishExampleChoice(page, dialog);
     await page.evaluate(() => window.canvasHarness.settle());
     expect(errors).toEqual([]);
 });

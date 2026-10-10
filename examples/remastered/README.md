@@ -1,6 +1,6 @@
 # Remastered curriculum packages
 
-The thirty numbered `.lattice.json` packages each contain a complete independent Unified root, teaching comments, operation-preserving aliases, readable foldable groups and exact pinned helper snapshots where used. Open or import a package without assigning/running it. Read its lesson instructions before assigning Unified and arming an owned Send.
+The thirty numbered `.lattice.json` packages each contain a complete independent Unified root, teaching comments, operation-preserving aliases, readable foldable groups and exact pinned helper snapshots where used. Opening a package creates an independent active document without a model request or changing **Enable Lattice**. Read its lesson instructions and configure its connections before enabling Lattice and starting an owned Send.
 
 `fixtures/` contains disposable demonstration bytes for the setup exercises. These files are not live private context, canonical event proof, accepted story history or write references. Authorize a corresponding Workflow Data target explicitly in a disposable story before using a live Read File recipe. Public versus actor-private target visibility must match the lesson. Portable packages include no credentials or local profile secrets. Avatar identities are examples; replace them with actual loaded canonical actor IDs consistently.
 

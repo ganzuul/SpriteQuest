@@ -24,7 +24,7 @@
     {/each}
     </ol>
 {:else}
-    <p class="pc-run-empty">Send with an assigned workflow or use Run to here to inspect its processing stages.</p>
+    <p class="pc-run-empty">Enable Lattice and Send with the open workflow, or use Run to here to inspect its processing stages.</p>
 {/if}
 </section>
 

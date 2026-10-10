@@ -96,7 +96,7 @@ Model calls below are maximum auxiliary calls **per execution of that operation*
 | Derive | [Time Trigger](#time-trigger) | Both | Previous/destination clocks → due events/report | 0 |
 | Output | [Clock Commit](#clock-commit) | Response; root | Retained time projection → staged receipt | 0 |
 | Recall | [Recall](#recall) | Both; root | Authorized records/presence/trigger → private Guidance/report | 0 |
-| Recall | [Hotkey Arm](#hotkey-arm) | Both; root | Configured policy → descriptive arm proposal | 0 |
+| Recall | [Recall Shortcut](#recall-shortcut) | Both; root | Configured policy → descriptive recall proposal | 0 |
 
 Open a shelf family to choose a node directly. Each operation appears once; choose modes and artifact kinds in **Details**. The **Subgraphs** family has Input/Output interface nodes and saved definitions. Interface nodes are available inside editable subgraphs. Right-click a wrapper to save it and right-click a saved shelf entry to delete it. **Transpose** contains Style Transfer, Format Transfer and Terminology Map; see [the reference library guide](lattice-reference-library.md). **Introspection** contains its original modes plus generic State progression/time-decay selected in Details; their named pins and controls change with the selected mode.
 
@@ -319,7 +319,7 @@ Use one **Analysis** request to propose actor updates from settled events. **Exp
 
 ### Memory
 
-**Read** returns the selected State, Events or Episodes view as Data. **Recall** finds bounded stored episodes using Query and Results (`limit`, default 8, range 1–64). **Commit** consumes a state proposal and is a Post terminal. All three modes require the root graph and use the active host chat/actor; group chats require a selected actor. Model output cannot choose a store or actor authority.
+**Read** returns the selected State, Events or Episodes view as Data. **Recall** finds bounded stored episodes using Query and Results (`limit`, default 8, range 1–64). **Commit** consumes a state proposal and is a Response terminal. All three modes require the root graph and use the active host chat/actor; group chats require a selected actor. Model output cannot choose a store or actor authority.
 
 **Pins:** Read and Recall have no inputs and produce Data on `out`. Commit requires `proposal` (Data) and has **no output pin**. Its commit intent is recorded as a Host result for diagnostics.
 
@@ -640,12 +640,14 @@ Paths are arrays of keys for structured values. The separate Write collection pa
 
 ### Recall
 
-**Both stages; root only; zero model calls.** Records and live presence Data feed actor-private Guidance, selected-record Data and report Data. Automatic keyword modes add source Data; event modes add genuine confirmed occurrences. Controls: Actor ID, Memory set ID, Target (`reply`/`swipe`/`both`), Activation (`armed`, `keyword`, `event`, `character`, or armed-or variants), filters for keywords/event types/partners/tags/record IDs, result/character/token budgets and Title.
+**Both stages; root only; zero model calls.** Records and live presence Data feed actor-private Guidance, selected-record Data and report Data. Automatic keyword modes add source Data; event modes add genuine confirmed occurrences. Controls: Actor ID, Memory set ID, Target (`reply`/`swipe`/`both`), Activation (Manual queue, `keyword`, `event`, `character`, or manual queue or automatic variants), filters for keywords/event types/partners/tags/record IDs, result/character/token budgets and Title.
 
 Records must descend unchanged from the actual authorized File/Memory read. Imported labels, rewritten model records and invented defaults cannot authorize retrieval. Exact scene presence and event evidence are also required where used. Selection retains whole records; matching none skips, unresolved trigger evidence holds. Native Recall currently binds the selected native actor. The Guidance is private; it is not a public notes section. Wire it causally to Generate Reply for a preparation reminder, or to the appropriate authorized response model for response processing.
 
-### Hotkey Arm
+### Recall Shortcut
 
-**Both stages; root only; zero calls.** Controls: Actor ID, matching Memory set ID, Target, Uses (`next-match`/`one-per-type`/`until-disarmed`), Consume on (`success`/`accepted`) and physical-key modifier object. Its output is a descriptive arm proposal. Merely running the node does not arm it. **Tools → Recall arms…** shows live scope, shortcut, eligibility and pending claims, with manual Arm/Disarm and a visible armed badge.
+**Both stages; root only; zero calls.** Controls: Actor ID, matching Memory set ID, Target, Repetition, Consume on and physical-key modifiers. Target labels are Reply, Generated swipe, and Reply and generated swipe. Repetition labels are Next matching generation, Once for each generation type, and Until cancelled. Consumption labels are Successful completion and Accepted result.
 
-Shortcuts skip typing/composition/repeat, reject duplicates and are revoked for obsolete scopes/settings. Arms are ephemeral and are not exported. Accepted-policy uses survive Stop/failure/rejection; success-policy use is consumed by a complete successful workflow even if its candidate is later rejected. See [Recall setup and policies](unified-workflows.md#arm-memories-manually-or-recall-them-automatically).
+Its output describes a recall policy. Preview does not queue it. Use the node's context menu or Memory recall controls in Details to Queue recall or Cancel recall. Matching Recall and Shortcut cards show shared green queued or amber pending status. **Node → Memory recall** provides selection/global actions and a grouped overview.
+
+Shortcuts skip typing, composition and repeats, reject duplicate physical keys, and expire when their scope or document changes. Queues are ephemeral and excluded from saved workflow data. See [Recall setup and policies](unified-workflows.md#queue-memories-manually-or-recall-them-automatically).

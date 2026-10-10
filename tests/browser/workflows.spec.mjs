@@ -12,7 +12,14 @@ async function openExamples(page) {
 async function openExample(page, title) {
     const dialog = await openExamples(page);
     await dialog.getByRole('button', { name: title, exact: true }).click();
+    await finishExampleChoice(page);
     await expect(dialog).toBeHidden();
+}
+async function finishExampleChoice(page) {
+    const guard=page.getByRole('dialog',{name:'Save workflow changes?',exact:true});
+    const picker=page.getByRole('dialog',{name:'Examples',exact:true});
+    await expect.poll(async()=>await guard.isVisible()||!await picker.isVisible()).toBe(true);
+    if(await guard.isVisible())await guard.getByRole('button',{name:"Don't Save",exact:true}).click();
 }
 // Authoring fixtures retain diagnostic operation layouts as unified roots.
 async function installWorkflow(page, title) {
@@ -27,14 +34,10 @@ async function bindNode(page, operation, profile) {
     const region = await inspectOperation(page, operation);
     await region.getByLabel('Connection profile', { exact: true }).selectOption(profile);
 }
-async function assignWorkflow(page) {
-    await page.getByRole('button', { name: 'Workflows', exact: true }).click();
-    await page.getByRole('menuitem', { name: 'Assign unified workflow', exact: true }).click();
-    await expect(page.locator('.pc-root-workflow-status')).toContainText('unified \u00b7 Assigned');
-    await page.getByRole('button', { name: 'Workflows', exact: true }).click();
-    await expect(page.getByRole('menuitem', { name: 'Unified workflow assigned', exact: true })).toBeDisabled();
-    await expect(page.getByRole('menuitem', { name: 'Run workflow', exact: true })).toHaveCount(0);
-    await page.keyboard.press('Escape');
+async function expectCurrentDocument(page) {
+    await expect(page.locator('.pc-root-workflow-status')).toContainText('unified');
+    await expect(page.getByRole('button',{name:'Workflows',exact:true})).toHaveCount(0);
+    await expect(page.getByRole('combobox',{name:'Workflow',exact:true})).toHaveCount(0);
 }
 async function expectBound(page, bound) {
     await expect(page.locator('.pc-root-workflow-status')).toContainText('≤ ' + bound + ' requests');
@@ -76,7 +79,7 @@ async function selectTerminal(page, operation, pin = true) {
 async function nativeSend(page) {
     await page.evaluate(async () => {
         const h = window.canvasHarness, c = h.context, s = h.S.settings();
-        s.nativeBindings.workflowGraphId = h.graph.id; s.enabled = true;
+        s.enabled = true;
         h.S.save(); h.UI.refreshIfOpen();
         if(!c.chat.at(-1)?.is_user)c.chat.push({mes:'Continue.',is_user:true,extra:{}});
         await c.eventSource.emit(c.eventTypes.GENERATION_STARTED, 'normal', {}, false);
@@ -222,8 +225,8 @@ test('independently bind model nodes in a unified workflow without arming it', a
     await openExample(page, 'Keep useful context within a budget');
     const compactDetails = await inspectOperation(page, 'smart-compactor');
     await expect(compactDetails.getByLabel('Connection profile', { exact: true })).toHaveValue('lattice:active-sillytavern');
-    const before = await page.evaluate(() => { const settings = window.canvasHarness.S.settings(); return { enabled: settings.enabled, assigned: settings.nativeBindings.workflowGraphId }; });
-    expect(before).toEqual({ enabled: false, assigned: null });
+    const before = await page.evaluate(() => { const settings = window.canvasHarness.S.settings(); return { enabled: settings.enabled, collection: Object.hasOwn(settings,'graphs') }; });
+    expect(before).toEqual({ enabled: false, collection: false });
     const roleBefore = await page.evaluate(() => structuredClone(window.canvasHarness.graph.roles.Analysis));
     await bindNode(page, 'smart-compactor', 'analysis');
     await expect(details(page).getByLabel('Model mode', { exact: true }).locator('option:checked')).toHaveText('Use profile model');
@@ -237,7 +240,7 @@ test('independently bind model nodes in a unified workflow without arming it', a
         return { compact: [compact.profileId, compact.model], plan: [plan.profileId, plan.model] };
     })).toEqual({ compact: ['analysis', null], plan: ['planning', 'independent-plan-model'] });
     expect(await page.evaluate(() => window.canvasHarness.graph.roles.Analysis)).toEqual(roleBefore);
-    await assignWorkflow(page);
+    await expectCurrentDocument(page);
     expect(await page.evaluate(() => Object.hasOwn(window.canvasHarness.S.settings(),'workflowMode'))).toBe(false);
     expect(await page.evaluate(() => window.canvasHarness.S.settings().enabled)).toBe(false);
     await inspectOperation(page, 'smart-compactor');
@@ -266,7 +269,7 @@ test('unified workflow keeps its AI De-slop primitives and preserves a focused e
     const ids = await page.evaluate(() => Object.keys(window.canvasHarness.graph.nodes));
     await expect(page.getByRole('group', { name: 'Group: AI De-slop', exact: true })).toBeVisible();
     await bindNode(page, 'repair', 'prose');
-    await assignWorkflow(page);
+    await expectCurrentDocument(page);
     await expectBound(page, 1);
     await openFormation(page);
     expect(await page.evaluate(() => Object.keys(window.canvasHarness.graph.nodes))).toEqual(ids);
@@ -402,8 +405,7 @@ test('switching graph or closing cancels a delayed run and ignores its late resu
     });
     await runRoot(page);
     await page.waitForFunction(() => !!window.finishWorkflowRequest);
-    const other = await page.evaluate(() => window.canvasHarness.S.allGraphs().find(graph => graph.id !== window.canvasHarness.graph.id).id);
-    await page.getByRole('combobox', { name: 'Workflow', exact: true }).selectOption(other);
+    await installWorkflow(page, 'Scene guidance');
     expect(await page.evaluate(() => window.workflowSignal.aborted)).toBe(true);
     await page.evaluate(async () => { window.finishWorkflowRequest({ choices: [{ message: { content: '{"patches":[{"index":0,"replacement":"late"}]}' }, finish_reason: 'stop' }] }); await window.canvasHarness.settle(); });
     await expect(page.getByRole('button', { name: 'Apply reviewed candidate', exact: true })).toHaveCount(0);
@@ -437,38 +439,40 @@ test('Run to here stays diagnostic and actual Send retains addressed request evi
     expect(await page.evaluate(()=>window.workflowRequests.length)).toBe(1);
 });
 
-test('automatic Send evidence stays with its assigned graph across unrelated selection, close, and reopen', async ({ page }) => {
+test('document replacement expires automatic Send evidence and reopening permits a fresh owned Send', async ({ page }) => {
     await reviewFixture(page); await runRoot(page); await candidateText(page,'We explore.');
-    const assigned = await page.evaluate(()=>window.canvasHarness.graph.id);
+    const opened = await page.evaluate(()=>{window.reviewDocument=window.canvasHarness.graph;return window.reviewDocument.id;});
     await installWorkflow(page,'Scene guidance');
     await expect(page.getByRole('button',{name:'Apply reviewed candidate',exact:true})).toHaveCount(0);
-    await page.getByRole('combobox',{name:'Workflow',exact:true}).selectOption(assigned);
+    await page.evaluate(async()=>window.canvasHarness.activate(window.reviewDocument));
     await selectTerminal(page,'review-publish',false);
-    await candidateText(page,'We explore.'); await expect(preview(page).locator('footer')).toContainText('Stale');
+    await expect(preview(page)).not.toContainText('We explore.');
     await expect(page.getByRole('button',{name:'Apply reviewed candidate',exact:true})).toHaveCount(0);
     await page.getByRole('button',{name:'Close canvas',exact:true}).click();
     await page.evaluate(async()=>{const h=window.canvasHarness,c=h.context;window.previousAutomaticRunId=(await import('/src/run.js?v='+h.version)).getNativeWorkflowController().lastAutomaticResult()?.result.runId;if(!c.chat.at(-1)?.is_user)c.chat.push({mes:'Continue.',is_user:true,extra:{}});await c.eventSource.emit(c.eventTypes.GENERATION_STARTED,'normal',{},false);const ready=await window.latticeGenerationInterceptor(c.chat,8192,()=>{},'normal');if(!ready.ok||!ready.awaitingNative)throw Error(JSON.stringify(ready));const now=new Date().toISOString(),index=c.chat.length;c.chat.push({mes:'We delve.',is_user:false,swipe_id:0,swipes:['We delve.'],swipe_info:[{extra:{},gen_started:now,gen_finished:now}],extra:{},gen_started:now,gen_finished:now});await c.eventSource.emit(c.eventTypes.MESSAGE_RECEIVED,index,'normal');await c.eventSource.emit(c.eventTypes.GENERATION_ENDED,c.chat.length);});
     await expect(page.locator('.pc-root')).not.toHaveClass(/pc-open/);
-    await page.waitForFunction(async()=>{const h=window.canvasHarness,r=(await import('/src/run.js?v='+h.version)).getNativeWorkflowController().lastAutomaticResult();return r?.result.ok&&r.result.runId!==window.previousAutomaticRunId&&r.origin.graphId===h.S.settings().nativeBindings.workflowGraphId;});
+    await page.waitForFunction(async()=>{const h=window.canvasHarness,r=(await import('/src/run.js?v='+h.version)).getNativeWorkflowController().lastAutomaticResult();return r?.result.ok&&r.result.runId!==window.previousAutomaticRunId&&r.origin.graphId===h.S.activeWorkflow().id;});
     await page.evaluate(async()=>{window.canvasHarness.UI.open();await window.canvasHarness.settle();});
     await selectTerminal(page,'review-publish',false); await candidateText(page,'We explore.');
-    expect(await page.evaluate(async()=>(await import('/src/run.js?v='+window.canvasHarness.version)).getNativeWorkflowController().lastAutomaticResult().origin.graphId)).toBe(assigned);
+    expect(await page.evaluate(async()=>(await import('/src/run.js?v='+window.canvasHarness.version)).getNativeWorkflowController().lastAutomaticResult().origin.graphId)).toBe(opened);
     expect(await page.evaluate(()=>window.workflowRequests.length)).toBe(2);
+    expect(await page.evaluate(async()=>{
+        const h=window.canvasHarness,controller=(await import('/src/run.js?v='+h.version)).getNativeWorkflowController(),automatic=controller.lastAutomaticResult();
+        return automatic.origin.documentToken===h.S.documentSession.capture() && controller.candidateStatus(automatic.result.reviewHandles[0]).ok;
+    })).toBe(true);
 });
 
-test('Send indicator follows unified assignment while another workflow is open', async ({ page }) => {
+test('Send indicator follows the enabled open unified document', async ({ page }) => {
     await reviewFixture(page);
-    const otherName = await page.evaluate(()=>{const h=window.canvasHarness,s=h.S.settings(),other=h.S.allGraphs().find(g=>g.id!==h.graph.id);other.name='Unrelated current workflow';h.graph.name='Assigned reviewed workflow';s.nativeBindings.workflowGraphId=h.graph.id;s.enabled=true;s.activeGraphId=other.id;h.S.save();document.dispatchEvent(new CustomEvent('pc-state'));return other.name;});
+    await page.evaluate(()=>{const h=window.canvasHarness;h.graph.name='Open reviewed workflow';h.S.settings().enabled=true;h.S.touchGraph(h.graph);document.dispatchEvent(new CustomEvent('pc-state'));});
     const indicator=page.locator('#pc-sendbar');await expect(indicator).toHaveClass(/pc-sendbar-on/);
-    await expect(indicator).toHaveAttribute('title',/Assigned reviewed workflow.*unified workflow/);
+    await expect(indicator).toHaveAttribute('title',/Open reviewed workflow.*unified workflow/);
     await expect(indicator).toHaveAttribute('title',/1 auxiliary requests/);
-    expect(await indicator.getAttribute('title')).not.toContain(otherName);
     await indicator.dispatchEvent('contextmenu');await indicator.dispatchEvent('contextmenu');
-    expect(await page.evaluate(()=>window.canvasHarness.toasts.at(-1).message)).toMatch(/Assigned reviewed workflow.*unified/);
-    await page.evaluate(()=>{const h=window.canvasHarness,s=h.S.settings();s.nativeBindings.workflowGraphId=null;h.S.save();document.dispatchEvent(new CustomEvent('pc-state'));});
+    expect(await page.evaluate(()=>window.canvasHarness.toasts.at(-1).message)).toMatch(/Open reviewed workflow.*unified/);
+    await page.evaluate(()=>{const h=window.canvasHarness;h.S.settings().enabled=false;h.S.save();document.dispatchEvent(new CustomEvent('pc-state'));});
     await expect(indicator).not.toHaveClass(/pc-sendbar-on/);
-    await expect(indicator).toHaveAttribute('title',/Assign a valid unified workflow/);
-    expect(await page.evaluate(()=>Object.hasOwn(window.canvasHarness.S.settings(),'workflowMode'))).toBe(false);
+    expect(await page.evaluate(()=>Object.hasOwn(window.canvasHarness.S.settings(),'nativeBindings'))).toBe(false);
 });
 
 test('review controls and comparison stay usable in a narrow viewport', async ({ page }) => {
@@ -633,12 +637,12 @@ test('accepted semantic additive import cancels a root request and history canno
 
 test('an imported native graph with omitted role records can bind its model node', async ({ page }) => {
     await reviewFixture(page);
-    const imported = await page.evaluate(() => {
-        const h = window.canvasHarness, envelope = JSON.parse(h.S.exportGraph(h.graph.id));
+    const imported = await page.evaluate(async () => {
+        const h = window.canvasHarness, envelope = JSON.parse(h.S.exportGraph(h.graph));
         delete envelope.graph.roles;
-        const result = h.S.importGraph(JSON.stringify(envelope)); h.UI.refreshIfOpen(); return result.graph.id;
+        const result = h.S.importGraph(JSON.stringify(envelope));await h.activate(result.graph);return result.graph.id;
     });
-    await page.getByRole('combobox', { name: 'Workflow', exact: true }).selectOption(imported);
+    expect(imported).toBeTruthy();
     await bindNode(page, 'repair', 'prose');
     expect(await page.evaluate(() => Object.values(window.canvasHarness.graph.nodes).find(node => node.operation === 'repair').profileId)).toBe('prose');
     expect(await page.evaluate(() => window.canvasHarness.graph.roles?.Prose?.profileId)).toBeUndefined();

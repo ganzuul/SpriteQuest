@@ -8,11 +8,11 @@ const { installStarter } = await import('../src/workflow/starters.js?v=0.27.0');
 const { prepareWorkflowProjection, projectPreparedWorkflow } = await import('../src/ui/workflow-surface.js?v=0.27.0');
 const { prepareWorkspaceViews } = await import('../src/ui/workspace-preparation.js?v=0.27.0');
 const project = (root, options) => projectPreparedWorkflow(prepareWorkflowProjection(root, options));
-test('installing any actual example leaves generation unarmed and phases unassigned', () => {
-    const before = structuredClone(S.settings().nativeBindings);
+test('preparing the current starter leaves Lattice disabled and the active document unchanged', () => {
+    const before = S.activeWorkflow();
     for (const id of ['unified-basic']) {
-        const graph = installStarter(id, S.settings()); assert.equal(graph.schema,3); assert.equal(graph.runtime,2);
-        assert.equal(S.settings().enabled,false); assert.deepEqual(S.settings().nativeBindings,before);
+        const graph = installStarter(id); assert.equal(graph.schema,3); assert.equal(graph.runtime,2);
+        assert.equal(S.settings().enabled,false); assert.equal(S.activeWorkflow(),before);
     }
 });
 test('authored zero-call operation layouts project without connection or model effects', () => {

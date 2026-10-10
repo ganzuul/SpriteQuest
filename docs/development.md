@@ -23,22 +23,25 @@ npm run check
 | `src/workflow/catalog.js` | Registered operations, controls, phases, and artifact contracts |
 | `src/workflow/operations/` | Operation implementations and deterministic primitives |
 | `src/workflow/starters.js` | The single zero-auxiliary-call unified starter |
-| `src/workflow/examples.js`, `src/workflow/unified-example-data.js` | Validated bundled unified recipes and atomic independent-copy installation |
+| `src/workflow/examples.js`, `src/workflow/remastered-example-data.js`, `src/workflow/unified-example-data.js` | Validated curriculum/earlier unified recipes and independent-copy opening |
 | `src/ui/example-catalog.js`, `ui/ExamplesBrowser.svelte` | Actual-package thumbnail projection and compact example picker |
-| `tools/build-unified-examples.mjs` | Generate current unified packages and bundled runtime data |
-| `examples/unified/` | Thirty-one independent portable unified workflows |
-| `workflows/`, `workflows/subgraphs/` | Portable workflow and subgraph packages |
+| `tools/build-remastered-examples.mjs`, `tools/remastered/` | Generate the 30 numbered curriculum lessons, fixtures and bundled runtime data |
+| `tools/build-unified-examples.mjs` | Regenerate earlier unified packages retained for existing example IDs |
+| `examples/remastered/`, `examples/unified/` | Thirty visible curriculum lessons and earlier independent unified packages |
+| `workflows/subgraphs/`, `examples/library/subgraphs/` | Retained stage-specific reusable processing packages |
 | `tests/browser/` | Mock host and production UI acceptance fixtures |
 
 Use `node tools/bump-version.mjs <version>` for release metadata and versioned import queries, then rebuild. Hard reload SillyTavern after updating installed assets so its modules load together.
 
-Current recipe authoring lives in **tools/build-unified-examples.mjs**. After changing its nodes, wires or pinned helper drafts, regenerate the portable packages and **src/workflow/unified-example-data.js**:
+Current curriculum authoring lives in **tools/remastered/**. After changing lesson nodes, wires, teaching instructions or pinned helpers, regenerate the portable packages, fixtures and **src/workflow/remastered-example-data.js**:
 
 ```powershell
-node tools/build-unified-examples.mjs
+node tools/build-remastered-examples.mjs
 ```
 
-The generator validates every package and embedded definition. Runtime opening uses bundled local data and atomically installs one independent unified copy without assignment, arming or requests. Catalog tests verify detached copies; unified execution suites verify representative owned sources, actor privacy, review and effects without provider requests. Shared test-only operation layouts live under tests/helpers and never enter the production catalog.
+Earlier unified example IDs use **tools/build-unified-examples.mjs** and **src/workflow/unified-example-data.js**; regenerate that catalog separately when changing those compatibility examples.
+
+The generator validates every package and embedded definition. Runtime opening uses bundled local data to create one independent unified copy as the active document. It makes no provider request and does not change **Enable Lattice**. Catalog tests verify detached copies; unified execution suites verify representative owned sources, actor privacy, review and effects without provider requests. Shared test-only operation layouts live under tests/helpers and never enter the production catalog.
 
 ## Local UI harness
 
@@ -58,7 +61,7 @@ This script uses the installed Playwright Chromium browser and a temporary local
 
 The fixtures supply synthetic writing material, saved workflow data, layout positions, and the supplied Literal cleanup subgraph. Captures use actual navigation, settings panels, Run to here diagnostics, and native review controls. Completed examples must succeed with zero auxiliary model calls. All nonlocal requests and mutating HTTP requests are blocked; any page error or blocked request fails the capture. The script closes its browser and server afterward.
 
-The 19 captures cover workspace orientation, context assembly, node shelf/search, operation Details, recorded preview, reply review, execution details, and subgraph instances, tabs, interfaces, and parameter overrides. The capture flow assigns the unified workflow through the Workflows menu for its owned native-review demonstration. Connection profiles and optional model overrides belong in each node's Details. The shelf capture opens a family directly to canonical node rows; operation modes belong in Details. Subgraphs are created from canvas selection, edited through boundary Details, and saved with the wrapper context menu. The shelf offers Input/Output nodes and saved-definition context actions. An ignored evidence report is written to `benchmark-results/documentation-capture.json`.
+The 19 captures cover workspace orientation, context assembly, node shelf/search, operation Details, recorded preview, reply review, execution details, and subgraph instances, tabs, interfaces, and parameter overrides. The capture flow opens the unified document and enables Lattice for its owned native-review demonstration. Connection profiles and optional model overrides belong in each node's Details. The shelf capture opens a family directly to canonical node rows; operation modes belong in Details. Subgraphs are created from canvas selection, edited through boundary Details, and saved with the wrapper context menu. The shelf offers Input/Output nodes and saved-definition context actions. An ignored evidence report is written to `benchmark-results/documentation-capture.json`.
 
 When changing discovery metadata, keep one public choice per operation and retain mode/kind names as search aliases. Pin-aware creation can select a compatible checked configuration without adding duplicate public rows. Preserve saved node settings and distinct subgraph revision identities. Transpose's new Text creation defaults must coexist with saved nodes whose omitted Input type retains Draft → Patches behavior.
 

@@ -1,6 +1,6 @@
 # Reference tools and reusable workflows
 
-Transpose applies an example or convention to Text or a completed reply Draft. New nodes accept and return Text in either phase. Draft edits produce source-bound Patches for validation and candidate diagnostics. Publishing an owned final Draft requires Review / Publish in a unified root. Installing a workflow does not assign or arm it.
+Transpose applies an example or convention to Text or a completed reply Draft. New nodes accept and return Text in either phase. Draft edits produce source-bound Patches for validation and candidate diagnostics. Publishing an owned final Draft requires Review / Publish in a unified root. Opening a workflow makes it the active document without a model request or changing **Enable Lattice**.
 
 ## Transpose
 

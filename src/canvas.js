@@ -64,6 +64,7 @@ export class Canvas {
         this.operationEpoch = 0;
         this.spaceDown = false;
         this.geometry = createGeometryCache();
+        this.recallStatus = {};
         this.nodeProfiles = [];
         this.nodeProfileVersion = 0;
         this.nodeElements = new Map();
@@ -74,6 +75,7 @@ export class Canvas {
         host.tabIndex = 0;
         host.innerHTML = '';
         this.layer = mountCanvas(host, {
+            openRecallDetails: id => this.hooks.onRecallDetails?.(id),
             hostResult: id => this.hooks.onHostResult?.(this.graph?.nodes[id]),
             hoverPin: pin => { this.hoverPin = pin; this.#applyFocus(); },
             group: (id, action) => this.setCollapsed(id, action === 'collapse'),
@@ -136,6 +138,9 @@ export class Canvas {
         this.nativeWireView = null; this.render();
     }
 
+    /** Runtime display only: never prepare a graph, cancel a gesture or measure geometry. */
+    setRecallStatus(status) { this.recallStatus = status; this.layer.setRecallStatus(status); }
+
     setTrace(trace) {
         this.trace = new Map((trace ?? []).map(t => [t.id, t]));
         this.render();
@@ -167,6 +172,7 @@ export class Canvas {
         const detail = this.host.dataset.pcDetail;
         const next = v.zoom < .5 || detail === 'overview' && v.zoom < .6 ? 'overview' : 'full';
         if (detail !== next) this.host.dataset.pcDetail = next;
+        this.host.style.setProperty('--pc-recall-scale', String(Math.max(1, 0.625 / v.zoom)));
         this.viewport.style.transform = `translate(${v.x}px, ${v.y}px) scale(${v.zoom})`;
         // The canvas background moves and scales with the graph. Each theme
         // background has its own layers, so each gets sizes to match.

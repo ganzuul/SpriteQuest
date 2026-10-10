@@ -1,5 +1,5 @@
 /** Current Lattice host facade. SillyTavern owns native reply generation. */
-import { ctx, safe, settings } from './state.js?v=0.27.0';
+import { ctx, safe, settings, activeWorkflow, onWorkflowActivated, documentSession} from './state.js?v=0.27.0';
 import { validateWorkflow } from './workflow/contracts.js?v=0.27.0';
 import { createNativeWorkflowController } from './workflow/host.js?v=0.27.0';
 import { bindingStatus } from './workflow/connections.js?v=0.27.0';
@@ -45,23 +45,25 @@ function getFastBridge() { return fastBridge ??= createFastHostBridge(getFastCon
 export const fastConnectionState = () => getFastConnectionRegistry().snapshot();
 export const fastConnectionPreview = node => getFastBridge().preview(node);
 export function callCount(graph) { const checked = validateWorkflow(graph); return checked.ok ? checked.data.callBound : 0; }
-/** Send follows its assigned workflow independently of the open editor tab. */
+/** Send follows the one open document; Enable Lattice remains a separate host preference. */
 export function sendWorkflowState() {
-    const value = settings(), assigned = value.graphs[value.nativeBindings.workflowGraphId];
-    const checked = assigned ? validateWorkflow(assigned) : null;
-    const graph = checked?.ok && assigned.mode === 'native-unified' ? assigned : null;
+    const current = activeWorkflow(), mode = safe(() => Object.getOwnPropertyDescriptor(current ?? {}, 'mode')?.value);
+    const checked = current && mode === 'native-unified' ? validateWorkflow(current) : null;
+    const graph = checked?.ok ? current : null;
     return { automatic: !!graph,
-        armLabel: graph ? 'Enable unified workflow on Send' : 'Enable workflows (assign a unified workflow)',
-        armedText: graph ? '"' + graph.name + '" runs one unified workflow across preparation, SillyTavern generation and reply review (maximum ' + checked.data.callBound + ' auxiliary requests). SillyTavern builds its normal prompt.' : 'The assigned unified workflow cannot run: ' + (checked?.error?.message ?? 'Assign a valid unified workflow.') + ' SillyTavern builds its normal prompt.',
-        offText: 'Lattice is off. Enable it to run the assigned unified workflow on Send.',
+        enableLabel: 'Enable Lattice',
+        enabledText: graph ? '"' + graph.name + '" runs one unified workflow across preparation, SillyTavern generation and reply review (maximum ' + checked.data.callBound + ' auxiliary requests). SillyTavern builds its normal prompt.' : 'The open workflow cannot run: ' + (checked?.error?.message ?? 'Open a valid unified workflow.') + ' SillyTavern builds its normal prompt.',
+        offText: 'Lattice is off. Enable it to run the open unified workflow on Send.',
     };
 }
 export function getNativeWorkflowController() {
-    return controller ??= createNativeWorkflowController({
+    if (controller) return controller;
+    controller = createNativeWorkflowController({
+        getDocumentToken: () => documentSession.capture(),
         registerRecallHotkey: request => { recallShortcuts ??= createRecallShortcutRegistry(globalThis.document,{changed:()=>safe(()=>globalThis.document.dispatchEvent(new CustomEvent('pc-recall-state')))}); return recallShortcuts.register(request); },
         context: ctx, userId: currentUser, transportUserId, documentCatalog: getStoryDocumentCatalog(), persistenceVerifier: getNativePersistenceVerifier(),
         isEnabled: () => settings().enabled === true,
-        getGraph: () => settings().graphs[settings().nativeBindings.workflowGraphId],
+        getGraph: () => { const graph = activeWorkflow(); return safe(() => Object.getOwnPropertyDescriptor(graph ?? {}, 'mode')?.value) === 'native-unified' ? graph : null; },
         isBusy: () => !helpers || helpers.isGenerating(),
         syncMesToSwipe: (...args) => helpers?.syncMesToSwipe(...args), syncSwipeToMes: (...args) => helpers?.syncSwipeToMes(...args),
         resolveFastBinding: node => getFastBridge().resolve(node), fastBindingSummary: binding => getFastBridge().summary(binding),
@@ -69,6 +71,9 @@ export function getNativeWorkflowController() {
         countTokens: async text => { const count = ctx().getTokenCountAsync; if (typeof count === 'function') { const tokens = await count(text); if (Number.isFinite(tokens) && tokens >= 0) return { tokens, method: 'host-tokenizer' }; } return { tokens: Math.ceil(text.length / 4), method: 'character-estimate' }; },
         onResult: (result, origin) => { if (!result.ok) safe(() => globalThis.toastr?.warning(result.error.message, 'Lattice workflow')); if (origin) safe(() => globalThis.document?.dispatchEvent(new CustomEvent('pc-native-result'))); },
     });
+    onWorkflowActivated(() => { controller.cancel('Workflow document replaced'); controller.resetRecallDocument(documentSession.capture()); });
+    controller.subscribeRecall(() => safe(() => globalThis.document?.dispatchEvent(new CustomEvent('pc-recall-state'))));
+    return controller;
 }
 /** Public host helpers are imported independently so missing user support cannot disable reviewed workflows. */
 export function initializeNativeWorkflowController() {

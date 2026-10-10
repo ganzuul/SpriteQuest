@@ -12,10 +12,10 @@ function actual(name, env) {
 function fixture(left = true) {
     const dom = new JSDOM('<form id="send_form">' + (left ? '<div id="leftSendForm"><div id="options_button"></div></div>' : '') + '<textarea id="send_textarea"></textarea><div id="rightSendForm"><div id="send_but"></div></div></form>');
     const saved = { enabled: false, ui: {} }; let opens = 0, updates = 0;
-    const env = { document: dom.window.document, settings: () => saved, armed: () => saved.enabled,
+    const env = { document: dom.window.document, settings: () => saved, isEnabled: () => saved.enabled,
         UI: { open() { opens++; } }, updateState() { updates++; env.paintSendbar(); }, safe: fn => fn(),
         logoUrl: new URL('../assets/lattice-logo.svg', import.meta.url).href,
-        sendWorkflowState: () => ({ automatic: false, offText: 'Workflows off', armedText: 'Armed', armLabel: 'Arm' }) };
+        sendWorkflowState: () => ({ automatic: false, offText: 'Workflows off', enabledText: 'Lattice enabled', enableLabel: 'Enable Lattice' }) };
     env.paintSendbar = actual('paintSendbar', env);
     return { dom, saved, env, mount: actual('addSendbarButton', env), opens: () => opens, updates: () => updates };
 }
@@ -51,19 +51,19 @@ test('launcher waits for the left control group and remounts without duplicating
 });
 
 
-test('assigned unified graph edits cancel native authority while another graph is open', () => {
+test('current document edits cancel native authority and obsolete assignments cannot redirect it', () => {
     const dom = new JSDOM('<body></body>');
-    const graph = id => ({ id, schema: 3, runtime: 2, mode: 'native-unified', nodes: { text: { id: 'text', type: 'workflow', operation: 'text', text: id } }, wires: {} });
-    const open = graph('open'), assigned = graph('assigned');
-    const saved = { enabled: true, activeGraphId: open.id, nativeBindings: { workflowGraphId: assigned.id }, graphs: { open, assigned } };
-    const cancellations = [], runtime = { cancel: reason => cancellations.push(reason), dispose() {} };
-    const env = { document: dom.window.document, ctx: () => ({ eventTypes: {} }), settings: () => saved,
-        initializeNativeWorkflowController: async () => {}, getNativeWorkflowController: () => runtime,
-        workflowSignature: value => JSON.stringify(value.nodes), paintSendbar() {}, applyTheme() {}, mountLauncher() {}, addSlashCommand() {}, MODULE: 'lattice', UI: {}, safe: fn => fn(), globalThis: { addEventListener() {} } };
-    const start = source.indexOf('function boot()'), end = source.indexOf('\n}', start) + 2;
-    Function('env', 'with(env){' + source.slice(start, end) + ';boot();}')(env);
-    assigned.nodes.text.text = 'Assigned graph changed';
-    dom.window.document.dispatchEvent(new dom.window.Event('pc-state'));
-    assert.deepEqual(cancellations, ['Workflow settings changed']);
-    assert.equal(saved.activeGraphId, open.id);
+    const graph = id => ({ id, schema: 3, runtime: 2, mode: 'native-unified', nodes: { text: { id: 'text', type: 'workflow', operation: 'compose', sections: [{ name: 'Text', text: id }] } }, wires: {} });
+    const open=graph('open'),unrelated=graph('unrelated'),saved={enabled:true,nativeBindings:{workflowGraphId:unrelated.id}},token={};
+    const cancellations=[],runtime={cancel:reason=>cancellations.push(reason),dispose(){}};
+    const env={document:dom.window.document,ctx:()=>({eventTypes:{}}),settings:()=>saved,activeWorkflow:()=>open,
+        documentSession:{capture:()=>token,stillCurrent:actual=>actual===token},onWorkflowActivated(){},
+        initializeNativeWorkflowController:async()=>{},getNativeWorkflowController:()=>runtime,
+        workflowSignature:value=>JSON.stringify(value.nodes),paintSendbar(){},applyTheme(){},mountLauncher(){},addSlashCommand(){},MODULE:'lattice',UI:{refreshIfOpen(){}},safe:fn=>fn(),globalThis:{addEventListener(){}}};
+    const start=source.indexOf('function boot()'),end=source.indexOf('\n}',start)+2;
+    Function('env','with(env){'+source.slice(start,end)+';boot();}')(env);
+    unrelated.nodes.text.sections[0].text='Unrelated graph changed';dom.window.document.dispatchEvent(new dom.window.Event('pc-state'));
+    assert.deepEqual(cancellations,[]);
+    open.nodes.text.sections[0].text='Open document changed';dom.window.document.dispatchEvent(new dom.window.Event('pc-state'));
+    assert.deepEqual(cancellations,['Workflow settings changed']);assert.equal(env.activeWorkflow(),open);
 });

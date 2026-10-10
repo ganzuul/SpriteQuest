@@ -34,7 +34,7 @@ These are combinations of the shipped tools. **File → Open examples…** offer
 | **One native workflow** | Connect preparation to Generate Reply, process its owned Draft, and review the result in one graph. |
 | **Typed decisions and branches** | Use Decision or configured Jev/Laya Fast Decision with explicit confidence gates, skipped paths and unresolved policies. |
 | **Workflow Data and accepted effects** | Read authorized logical targets, project append/keyed updates, and settle file/clock/outcome consequences with the chosen reviewed result. |
-| **Scoped character context and Recall** | Process present actors separately and arm selected-actor memories through visible controls or shortcuts. |
+| **Scoped character context and Recall** | Process present actors separately and queue selected-actor memories through canvas controls or shortcuts. |
 | **Recorded previews** | Inspect inputs and outputs, follow selection, pin an artifact, or run only a selected output's dependencies. |
 | **Execution visibility** | See node states, expanded subgraph stages, request bounds, actual calls, and failures. |
 | **Portals and reroutes** | Keep a large graph readable while preserving its dependencies. |
@@ -61,7 +61,7 @@ The [node reference](docs/node-reference.md) lists the actual reusable operation
 | **Randomness** | Effect Library, Random Pick, Effect Author, Stage Outcome, Outcome Commit |
 | **Documents and collections** | Read File, Format, Project Document, Write to File; lookup/filter/count/sum/threshold/project/flatten |
 | **Time and progression** | Story Clock, Advance Time, Time Trigger, Clock Commit; generic State progression and time-decay |
-| **Memory** | Reflect, Internalize, Express, scoped Memory, Recall and Hotkey Arm |
+| **Memory** | Reflect, Internalize, Express, scoped Memory, Recall and Recall Shortcut |
 
 Repair also offers Inspect, Contextual Cleanup and Strict Avoidance modes using the complete category-based policy. Nodes have phase and artifact requirements; the [node reference](docs/node-reference.md) explains their ports and controls. The [reference library guide](docs/lattice-reference-library.md) covers reusable Context Lens, Scene Compass and cleanup workflows.
 
@@ -83,17 +83,17 @@ Select processing nodes, right-click, and choose **Create Subgraph**. The editor
 
 1. In SillyTavern, open **Extensions → Install extension**.
 2. Enter `https://github.com/MentallyQuill/Lattice`, leaving the branch field blank to install `main`.
-3. Install, then reload SillyTavern. Open LATTICE from its logo on the left of the chat bar or with `/lattice`. Fresh launch selects **Unified story workflow**, with workflows disabled and unassigned. Existing unified selections remain.
-4. Choose **Workflows → Assign unified workflow**, enable **Arm**, and Send a player message in SillyTavern. The starter makes no auxiliary calls and exposes its completed native Draft for review.
+3. Install, then reload SillyTavern. Open LATTICE from its logo on the left of the chat bar or with `/lattice`. Fresh launch opens **Unified story workflow**, with Lattice disabled. Existing installations restore their unified recovery draft; previous unified documents remain available through **File → Recover previous workflows**.
+4. Keep the starter open, select **Enable Lattice**, and Send a player message in SillyTavern. The starter makes no auxiliary calls and exposes its completed native Draft for review.
 5. Select **Review / Publish · Host result** in Preview, inspect it, and Apply or Reject. For a richer pipeline, open a unified example and configure its model nodes, For Each helper roles and required workflow data documents before the next Send.
 
 For updates, use **Manage Extensions**, then reload. Installation, import, and editing do not make model calls.
 
-The [unified workflow guide](docs/unified-workflows.md) walks through applying an example to **Story-2 on default-user**, chaining different models, using Fast Decision, recording private moments, arming Recall and managing accepted effects. A full unified native generation starts with ordinary Send; supported **Run to here** paths inspect without acceptance.
+The [unified workflow guide](docs/unified-workflows.md) walks through applying an example to **Story-2 on default-user**, chaining different models, using Fast Decision, recording private moments, queueing recall and managing accepted effects. A full unified native generation starts with ordinary Send; supported **Run to here** paths inspect without acceptance.
 
-Unified examples open as independent editable workflows. They do not run, assign or arm themselves. Set each auxiliary model’s local Connection profile in Details; configure For Each’s **Helper model bindings** separately. **Tools → Workflow Data…** authorizes logical JSON/text targets, and **Tools → Fast connections…** configures typed Jev/Laya endpoints. Local connection IDs and credentials are excluded from portable exports.
+Opening a unified example makes an independent editable copy the active document. It makes no model request and does not change **Enable Lattice**. Set each auxiliary model’s local Connection profile in Details; configure For Each’s **Helper model bindings** separately. **Tools → Workflow Data…** authorizes logical JSON/text targets, and **Tools → Fast connections…** configures typed Jev/Laya endpoints. Local connection IDs and credentials are excluded from portable exports.
 
-Saved native-unified roots retain their content and selection. Earlier unified example IDs remain installable while the visible picker shows the 30 new lessons. Saved pre/post roots are retired. On upgrade, LATTICE preserves their original graphs, assignments and active selection in a cold recovery archive, then opens a disabled, unassigned unified starter when needed. **File → Export archived workflows…** downloads the archive as JSON. Archived roots cannot execute or import as current workflows, and recovery makes no model requests. Rebuild useful operations in a new unified graph; there is no automatic converter.
+Saved unified documents retain their content and recovery draft. Earlier unified example IDs remain installable while the visible picker shows the 30 new lessons. Saved pre/post roots are retired. On upgrade, LATTICE preserves their original graphs, bindings and active selection in a cold recovery archive, then opens a disabled unified starter when needed. **File → Export archived workflows…** downloads the archive as JSON. Archived roots cannot execute or import as current workflows, and recovery makes no model requests. Rebuild useful operations in a new unified graph; there is no automatic converter.
 
 Open a current workflow from **File → Open examples…**, or its JSON with **File → Open workflow…**:
 
@@ -103,7 +103,7 @@ Open a current workflow from **File → Open examples…**, or its JSON with **F
 | [17 · Record only the scene you accept](examples/remastered/17-record-only-the-scene-you-accept.lattice.json) | Accepted same-target document projection and duplicate identity handling |
 | [21 · Give one present character their own direction](examples/remastered/21-give-one-present-character-their-own-direction.lattice.json) | Presence-verified actor-private direction |
 | [25 · Award experience from confirmed progress](examples/remastered/25-award-experience-from-confirmed-progress.lattice.json) | Evidence-backed deterministic progression |
-| [26 · Recall a memory with a hotkey or a story trigger](examples/remastered/26-recall-a-memory-with-a-hotkey-or-a-story-trigger.lattice.json) | Scoped Recall with visible arming |
+| [26 · Recall a memory with a hotkey or a story trigger](examples/remastered/26-recall-a-memory-with-a-hotkey-or-a-story-trigger.lattice.json) | Scoped Recall with visible queue controls |
 
 Five pinned stage-specific subgraph definitions remain available as reusable processing tools. Their bodies retain their own stage contracts; complete executable roots are unified. Run to here records diagnostics without publishing guidance, creating Apply authority or settling memory.
 
@@ -116,7 +116,7 @@ Five pinned stage-specific subgraph definitions remain available as reusable pro
 - [Operator's manual](docs/operators-manual.md) — screenshot-guided workspace, graph editing, subgraphs, Details, Preview, and execution.
 - [Node reference](docs/node-reference.md) — every available operation, its artifacts, controls, and connection examples.
 - [Connections and comments](docs/connection-comments.md) — smooth connections, workflow annotations, and comment editing shortcuts.
-- [Quick start](docs/lattice-workspace.md) — assign the zero-auxiliary-call starter, Send and review.
+- [Quick start](docs/lattice-workspace.md) — open the zero-auxiliary-call starter, enable Lattice, Send and review.
 - [Unified workflows](docs/unified-workflows.md) — story setup, one-graph Send/Apply, decisions, actor context, documents, Recall, clocks and migration.
 - [Model connections and host integration](docs/native-workflows.md) — local profiles, token budgets, reply review, supported routes, and troubleshooting.
 - [Introspection](docs/introspection-package.md) — Introspection modes, scoped memory and package APIs.

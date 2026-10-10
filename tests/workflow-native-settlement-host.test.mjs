@@ -46,11 +46,12 @@ function consequenceGraph({memory=false,memoryEpisode=false,twoFiles=false,revis
 }
 function consequenceFixture(options={}) {
     let catalog,saves=0,chatSaves=0,models=0,failSecond=options.failSecond;
-    const f=nativeFixture(consequenceGraph(options),{request:async request=>{models++;if(options.request)return options.request(request);return {ok:true,data:{text:options.revisedText??'Rewritten reply.',finish:'stop'}};},ports:{documentCatalog:{capture:()=>catalog.capture()},persistenceVerifier:{saveAndVerify:async selection=>{saves++;await options.onSave?.(selection,f.c);if(selection.targetId==='two.txt'&&failSecond){failSecond=false;return {ok:false,error:{code:'DISK_UNAVAILABLE',message:'No save'}};}return {ok:true,data:{acknowledged:options.acknowledged!==false}};}}}});
+    const graph=consequenceGraph(options);
+    const f=nativeFixture(graph,{request:async request=>{models++;if(options.request)return options.request(request);return {ok:true,data:{text:options.revisedText??'Rewritten reply.',finish:'stop'}};},ports:{...options.ports,documentCatalog:{capture:()=>catalog.capture()},persistenceVerifier:{saveAndVerify:async selection=>{saves++;await options.onSave?.(selection,f.c);if(selection.targetId==='two.txt'&&failSecond){failSecond=false;return {ok:false,error:{code:'DISK_UNAVAILABLE',message:'No save'}};}return {ok:true,data:{acknowledged:options.acknowledged!==false}};}}}});
     f.c.characters[0].avatar='mara.png';f.c.chatMetadata={unrelated:{keep:true},...(options.previous?{latticeIntrospection:structuredClone(options.previous.chatMetadata.latticeIntrospection)}:{})};if(options.previous)f.c.chat=structuredClone(options.previous.chat);f.c.saveMetadata=async()=>{saves++;return true;};f.c.saveChat=async()=>{chatSaves++;};
     catalog=createChatDocumentCatalog({getContext:()=>f.c,getUserId:()=> 'default-user'});
     for(const id of options.twoFiles?['one','two']:['one'])assert.equal(catalog.define({targetId:id+'.txt',name:id,format:'text',content:'Prior',visibility:{kind:'public'}}).ok,true);
-    return {...f,catalog,saves:()=>saves,chatSaves:()=>chatSaves,models:()=>models,async complete(){f.results.length=0;const prepared=await f.start();assert.equal(prepared.ok,true,JSON.stringify(prepared.error));addReply(f);const replyIndex=f.c.chat.length-1;await f.c.eventSource.emit('MESSAGE_RECEIVED',replyIndex,'normal');f.setBusy(false);await f.c.eventSource.emit('GENERATION_ENDED',replyIndex+1);return settled(f);}};
+    return {...f,graph,catalog,saves:()=>saves,chatSaves:()=>chatSaves,models:()=>models,async complete(){f.results.length=0;const prepared=await f.start();assert.equal(prepared.ok,true,JSON.stringify(prepared.error));addReply(f);const replyIndex=f.c.chat.length-1;await f.c.eventSource.emit('MESSAGE_RECEIVED',replyIndex,'normal');f.setBusy(false);await f.c.eventSource.emit('GENERATION_ENDED',replyIndex+1);return settled(f);}};
 }
 test('native file staging retains review authority and saves only after original-preserving acceptance',async()=>{
     const f=consequenceFixture(),result=await f.complete();assert.equal(result.ok,true,JSON.stringify(result.error));assert.equal(f.saves(),0);assert.equal(f.c.chatMetadata.latticeDocuments,undefined);
@@ -129,4 +130,17 @@ test('a fresh native controller accepts another canonical episode after long-not
  }finally{second.controller.dispose();}
  const loaded=createNativeMemoryAdapter({context:()=>second.c}).capture().data;
  try{const state=await loaded.memory.read({view:'state'});assert.equal(state.ok,true);assert.equal(state.artifact.value.store.version,2);assert.equal(state.reports.some(r=>r.code==='INVALIDATED_SOURCES'),false);assert.deepEqual(state.artifact.value.payload.episodes.map(e=>e.id),['native-episode-chat:1','native-episode-chat:3']);assert.ok(state.artifact.value.payload.episodes.every(e=>e.text==='Native reply.'));assert.equal(JSON.stringify(state).includes(note),false);assert.equal(loaded.readFresh().ok,true);}finally{loaded.release();}
+});
+
+test('late persistence from a replaced document cannot supersede a fresh Send recording',async()=>{
+    let owner={},release,started;
+    const waiting=new Promise(resolve=>started=resolve);
+    const f=consequenceFixture({ports:{getDocumentToken:()=>owner},onSave:async()=>{started();await new Promise(resolve=>release=resolve);}});
+    const original=await f.complete(),accepting=f.controller.apply(original.reviewHandles[0]);await waiting;
+    owner={};Object.assign(f.graph,unifiedGraph({revise:false}));f.controller.cancel('Workflow document replaced');
+    f.c.chat.push({mes:'Continue.',is_user:true,extra:{}});
+    const fresh=await f.complete(),automatic=f.controller.lastAutomaticResult();assert.equal(fresh.ok,true);assert.equal(automatic.result.recording,fresh.recording);
+    release();await accepting;
+    assert.equal(f.controller.lastAutomaticResult(),automatic,'Old persistence cannot strip the current automatic recording');
+    assert.equal(f.controller.lastResult(),fresh);assert.equal(f.controller.candidateStatus(fresh.reviewHandles[0]).ok,true);
 });

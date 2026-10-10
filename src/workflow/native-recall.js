@@ -1,4 +1,4 @@
-import {createRecallState,validateRecallScope,validateRecallArmProposal} from './recall-state.js?v=0.27.0';
+import {createRecallState,validateRecallScope,validateRecallQueueProposal} from './recall-state.js?v=0.27.0';
 import {describeRecallNode,executeRecallNode,RECALL_OPERATIONS} from './operations/recall-nodes.js?v=0.27.0';
 import {parseRecord} from './introspection/contracts.js?v=0.27.0';
 import {validateOccurrences} from './operations/event-data.js?v=0.27.0';
@@ -26,39 +26,45 @@ const proposalFor=node=>Object.fromEntries(['schemaVersion','type',...RECALL_OPE
 const metadataFor=(artifact,proof)=>{const value=artifact?.value;return value&&value.sceneId===proof.source.sceneId&&value.sourceId===proof.source.sourceId&&value.revision===proof.source.revision;};
 /** Controller-local state and source authority. None of these maps or live claims is portable. */
 export function createNativeRecallController(ports) {
- const slots=new Map(),runs=new WeakMap();let disposed=false,selected=null,sequence=0;
+ const slots=new Map(),runs=new WeakMap();let disposed=false,selected=null,sequence=0,documentOwner=null,version=0,lastFingerprint=null;const listeners=new Set(),queueCaptures=new WeakMap();
  function active() {
   if(disposed)return null;
-  try {const raw=ports.getActive();const scope=validateRecallScope(raw?.scope);if(!scope.ok||raw.graph?.mode!=='native-unified'||typeof raw.signature!=='string')return null;return {scope:scope.data,graph:raw.graph,signature:raw.signature};}catch{return null;}
+  try {const raw=ports.getActive();const scope=validateRecallScope(raw?.scope);if(!scope.ok||raw.graph?.mode!=='native-unified'||typeof raw.signature!=='string')return null;return {owner:raw.owner??raw.graph,scope:scope.data,graph:raw.graph,signature:raw.signature};}catch{return null;}
  }
- function sameActive(slot){const now=active();return now&&equalScope(now.scope,slot.scope)&&now.signature===slot.signature?now:null;}
+ function sameActive(slot){const now=active();return now&&now.owner===slot.documentOwner&&equalScope(now.scope,slot.scope)&&now.signature===slot.signature?now:null;}
  function authority(slot){const owner=slot.owner;let generation=null;if(owner&&!owner.closed)try{generation=owner.getGeneration();}catch{/* Invalid owned generation never grants a claim. */}const now=sameActive(slot);if(!now)return {scope:{},generation:null};if(disposed||owner&&(!owner.closed&&owner.slot.owner!==owner))return {scope:{},generation:null};return {scope:now.scope,generation:owner&&!owner.closed&&slot.owner===owner&&!owner.signal?.aborted?generation:null};}
  function deactivate(slot){for(const dispose of slot.listeners.values())try{dispose();}catch{/* Listener cleanup cannot restore authority. */}slot.listeners.clear();}
- function inspect(slot) {
+ function publish(summary){const fingerprint=json(summary);if(fingerprint!==lastFingerprint){lastFingerprint=fingerprint;version++;const subscribers=[...listeners];for(const listener of subscribers)try{listener();}catch{}}return good(freeze({...summary,version}));}
+ function inspect(slot){
   const checked=slot.state.inspect();if(!checked.ok)return checked;
-  return good(freeze({scope:slot.scope,nodes:[...slot.nodes].map(([nodeId,node])=>{const armId=slot.armIds.get(nodeId),arm=checked.data.arms.find(value=>value.armId===armId);return {nodeId,actorId:node.actorId,memorySetId:node.memorySetId,hotkey:node.hotkey,target:node.target,uses:node.uses,consumeOn:node.consumeOn,armed:arm?.armed===true,remaining:arm?.remaining??{reply:false,swipe:false},pendingCount:arm?.pendingGenerationIds.length??0};})}));
+  const requests=checked.data.requests.map(({memorySetId,target,uses,consumeOn,queued,remaining,pendingGenerationCount,pendingState})=>({memorySetId,target,uses,consumeOn,queued,remaining,pendingGenerationCount,pendingState}));
+  const shortcuts=[...slot.nodes].map(([nodeId,node])=>{const request=requests.find(value=>value.memorySetId===node.memorySetId);return {nodeId,...node,queued:request?.queued===true,remaining:request?.remaining??{reply:false,swipe:false},pendingCount:request?.pendingGenerationCount??0};});
+  return publish({scope:slot.scope,requests,shortcuts});
  }
+ function notify(){const now=active();if(selected&&sameActive(selected)&&now)return inspect(selected);return publish({scope:null,requests:[],shortcuts:[]});}
+ function resetDocument(owner){if(documentOwner===owner)return;for(const slot of slots.values()){if(slot.owner)releaseRun(slot.owner.run);deactivate(slot);slot.state.release();}slots.clear();selected=null;documentOwner=owner;publish({scope:null,requests:[],shortcuts:[]});}
+ function subscribe(listener){if(typeof listener!=='function')return ()=>{};listeners.add(listener);return ()=>listeners.delete(listener);}
  function slotFor(now) {
   const slotKey=key(now.scope),previous=slots.get(slotKey);
   if(previous&&previous.signature===now.signature)return good(previous);
   if(previous){deactivate(previous);previous.state.release();slots.delete(slotKey);}
   if(slots.size>=32)return fail('RECALL_SESSION_LIMIT','The controller reached its bounded Recall session limit.');
   const plan=resolveWorkflow(now.graph);if(!plan.ok)return fail('RECALL_GRAPH_INVALID','Recall shortcuts require a valid active unified workflow.');
-  const slot={scope:now.scope,signature:now.signature,nodes:new Map(),armIds:new Map(),listeners:new Map(),registering:new Set(),owner:null,state:null};
+  const slot={documentOwner:now.owner,scope:now.scope,signature:now.signature,nodes:new Map(),listeners:new Map(),registering:new Set(),owner:null,state:null};
   const state=createRecallState({getAuthority:()=>authority(slot)});if(!state.ok)return state;slot.state=state.data;
   for(const unit of plan.data.primitives??[])if(unit.address.instancePath.length===0&&unit.node.operation==='hotkey-arm'){
    const described=describeRecallNode(unit.node,{phase:unit.phase});if(!described.ok||unit.node.actorId!==now.scope.actorId)continue;
-   const checked=validateRecallArmProposal(proposalFor(unit.node));if(checked.ok)slot.nodes.set(unit.node.id,checked.data);
+   const checked=validateRecallQueueProposal(proposalFor(unit.node));if(checked.ok)slot.nodes.set(unit.node.id,checked.data);
   }
   slots.set(slotKey,slot);return good(slot);
  }
  function sync() {
-  const now=active();if(!now){if(selected)deactivate(selected);selected=null;return good({scope:null,nodes:[]});}
-  const captured=slotFor(now);if(!captured.ok)return captured;const slot=captured.data;
+  const now=active();if(!now){if(selected)deactivate(selected);selected=null;return publish({scope:null,requests:[],shortcuts:[]});}
+  if(documentOwner!==now.owner)resetDocument(now.owner);const captured=slotFor(now);if(!captured.ok)return captured;const slot=captured.data;
   if(selected!==slot){if(selected)deactivate(selected);selected=slot;}
   if(typeof ports.registerHotkey==='function')for(const [nodeId,proposal]of slot.nodes)if(!slot.listeners.has(nodeId)){
    if(slot.registering.has(nodeId))return fail('RECALL_REGISTRATION_PENDING','The scoped shortcut registration is already pending.');slot.registering.add(nodeId);
-   let registered;try{registered=ports.registerHotkey({scope:slot.scope,nodeId,hotkey:proposal.hotkey,onPress:()=>sameActive(slot)&&selected===slot?arm(nodeId):fail('STALE_RECALL_SHORTCUT','This shortcut belongs to another active scope.')});}catch{return fail('RECALL_HOTKEY_UNAVAILABLE','The trusted shortcut listener is unavailable.');}finally{slot.registering.delete(nodeId);}
+   let registered;try{registered=ports.registerHotkey({scope:slot.scope,nodeId,hotkey:proposal.hotkey,onPress:()=>sameActive(slot)&&selected===slot?queue(nodeId):fail('STALE_RECALL_SHORTCUT','This shortcut belongs to another active scope.')});}catch{return fail('RECALL_HOTKEY_UNAVAILABLE','The trusted shortcut listener is unavailable.');}finally{slot.registering.delete(nodeId);}
    let dispose;try{dispose=registered?.data?.dispose;}catch{return fail('RECALL_HOTKEY_UNAVAILABLE','The listener returned an unavailable cleanup capability.');}
    if(registered?.ok!==true||typeof dispose!=='function'){try{dispose?.();}catch{}return fail('RECALL_HOTKEY_UNAVAILABLE','The trusted listener did not return its scoped cleanup.');}
    if(!sameActive(slot)||disposed){try{dispose();}catch{}return fail('STALE_RECALL_SHORTCUT','The active scope changed while registering Recall.');}
@@ -66,13 +72,19 @@ export function createNativeRecallController(ports) {
   }
   return inspect(slot);
  }
- function arm(nodeId) {
-  const synced=sync();if(!synced.ok)return synced;const slot=selected,proposal=slot?.nodes.get(nodeId);
-  if(!proposal||!sameActive(slot))return fail('RECALL_NODE_UNAVAILABLE','Select an authorized Hotkey Arm in the active workflow.');
-  const previous=slot.armIds.get(nodeId);if(previous){const cleared=slot.state.disarm(previous);if(!cleared.ok)return cleared;}
-  const armed=slot.state.arm(proposal);if(!armed.ok)return armed;if(!sameActive(slot))return fail('STALE_RECALL_SCOPE','The active Recall scope changed.');slot.armIds.set(nodeId,armed.data.armId);return inspect(slot);
+ function captureQueueCommand(){const synced=sync();if(!synced.ok)return synced;if(!selected||!sameActive(selected))return fail('RECALL_UNAVAILABLE','Enable Lattice and open a unified workflow for the active character.');const capture=Object.freeze({});queueCaptures.set(capture,{slot:selected,documentOwner,signature:selected.signature,version});return good(capture);}
+ function changeQueues(capture,raw){
+  const captured=queueCaptures.get(capture);const synced=sync();if(!synced.ok)return synced;
+  if(!captured||captured.slot!==selected||captured.documentOwner!==documentOwner||captured.signature!==selected?.signature||captured.version!==version||!sameActive(selected))return fail('STALE_RECALL_CONTEXT','Recall scope or status changed. Reopen these controls and try again.');
+  const checked=cloneJsonValue(raw);if(!checked.ok)return fail('INVALID_RECALL_QUEUE','Use a bounded recall selection.');const request=checked.data.value;
+  if(!request||Object.keys(request).some(key=>!['action','shortcutNodeIds'].includes(key))||!['queue','cancel'].includes(request.action)||!Array.isArray(request.shortcutNodeIds)||request.shortcutNodeIds.length>1000||request.shortcutNodeIds.some(id=>typeof id!=='string'||!selected.nodes.has(id)))return fail('RECALL_NODE_UNAVAILABLE','Select configured Recall Shortcuts in the current workflow.');
+  const proposals=[...new Set(request.shortcutNodeIds)].map(id=>selected.nodes.get(id));
+  if(request.action==='queue')for(const proposal of proposals)for(const configured of selected.nodes.values())if(configured.memorySetId===proposal.memorySetId&&['target','uses','consumeOn'].some(key=>configured[key]!==proposal[key]))return fail('RECALL_QUEUE_CONFLICT','Matching Recall Shortcuts use different policies. Make their target, repetition, and consumption settings match.');
+  const result=selected.state.changeQueues(request.action==='queue'?{action:'queue',proposals}:{action:'cancel',memorySetIds:proposals.map(value=>value.memorySetId)});
+  return result.ok?inspect(selected):result;
  }
- function disarm(nodeId){const synced=sync();if(!synced.ok)return synced;const slot=selected,id=slot?.armIds.get(nodeId);if(!id||!sameActive(slot))return fail('RECALL_NODE_UNAVAILABLE','Select a live Recall arm in this active workflow.');const result=slot.state.disarm(id);return result.ok?inspect(slot):result;}
+ function queue(nodeId){const captured=captureQueueCommand();return captured.ok?changeQueues(captured.data,{action:'queue',shortcutNodeIds:[nodeId]}):captured;}
+ function cancel(nodeId){const captured=captureQueueCommand();return captured.ok?changeQueues(captured.data,{action:'cancel',shortcutNodeIds:[nodeId]}):captured;}
  function begin(run,controls) {
   const controlScope=own(controls,'scope'),signature=own(controls,'signature'),getGeneration=own(controls,'getGeneration'),isCurrent=own(controls,'isCurrent'),signal=own(controls,'signal');if(!run||typeof run!=='object'||!validateRecallScope(controlScope).ok||typeof signature!=='string'||typeof getGeneration!=='function'||typeof isCurrent!=='function'||signal!==undefined&&!(signal instanceof AbortSignal))return fail('INVALID_RECALL_OWNER','Bind exact private native run controls.');
   controls={scope:controlScope,signature,getGeneration,isCurrent,signal};
@@ -176,17 +188,17 @@ export function createNativeRecallController(ports) {
   const result=await executeRecallNode(node,bound,{...local,root:true,signal:entry.signal,recallState:entry.slot.state,
    authorizeRecallRecords:(artifact,request)=>{const checked=records(entry,artifact,request.memorySetId);if(!checked.ok)return checked;const verified=presence(entry,bound.presence);if(!verified.ok)return verified;const activated=trigger(entry,node,bound);if(!activated.ok)return activated;return live(entry)?good({scope:entry.scope,memorySetId:request.memorySetId}):fail('STALE_RECALL_SCOPE','Recall source changed during authorization.');},
    stageRecallClaim:(claim,activation)=>{if(!live(entry)||!entry.slot.state.checkClaim(claim,{stage:local.phase}).ok)return fail('RECALL_CLAIM_UNAUTHORIZED','Retain only this generationâ€™s exact live claim.');entry.claims.set(claim,{activation});return good({staged:true});}});
-  if(!live(entry))return fail('ABORTED','Recall was cancelled without publishing private material.');const finalized=preserveArtifactPrivacy(result,bound);if(finalized.ok&&finalized.outputs?.out){const proof={entry,kind:'recall-guidance',fresh:()=>live(entry)&&[...entry.claims].every(([claim])=>entry.slot.state.checkClaim(claim).ok),source:null,producer:finalized};entry.roots.set(finalized,proof);entry.sources.add(proof);}return finalized;
+  if(!live(entry))return fail('ABORTED','Recall was cancelled without publishing private material.');const finalized=preserveArtifactPrivacy(result,bound);if(finalized.ok&&finalized.outputs?.out){const proof={entry,kind:'recall-guidance',fresh:()=>live(entry)&&[...entry.claims].every(([claim])=>entry.slot.state.checkClaim(claim).ok),source:null,producer:finalized};entry.roots.set(finalized,proof);entry.sources.add(proof);}notify();return finalized;
  }
  function fresh(run){const entry=runs.get(run);return !!entry&&live(entry)&&[...entry.sources].every(proof=>proofLive(entry,proof));}
  function hasPending(run){const entry=runs.get(run);return !!entry&&[...entry.claims.values()].some(value=>!value.consumed);}
- function succeed(run){const entry=runs.get(run);if(!entry)return good({settled:true});for(const [claim,value]of entry.claims){const result=entry.slot.state.settle(claim,{status:'succeeded'});if(!result.ok)return result;value.consumed=result.data.consumed;}return good({settled:true});}
+ function succeed(run){const entry=runs.get(run);if(!entry)return good({settled:true});for(const [claim,value]of entry.claims){const result=entry.slot.state.settle(claim,{status:'succeeded'});if(!result.ok)return result;value.consumed=result.data.consumed;}notify();return good({settled:true});}
  function effects(run){const entry=runs.get(run);if(!entry)return [];
   return [...entry.claims].filter(([,value])=>!value.consumed).map(([claim,value])=>({intentId:'recall:'+ ++sequence,targetId:'recall:'+entry.scope.actorId+':'+value.activation.memorySetId,proposed:{kind:'recall'},
    preflight:()=>{if(!live(entry)||[...entry.sources].some(proof=>!proofLive(entry,proof)))return fail('STALE_RECALL_SOURCE','Recall source changed before acceptance.');const checked=entry.slot.state.checkClaim(claim);return checked.ok?good({status:'ready',applied:false,acknowledged:false}):checked;},
-   commit:()=>{if(!live(entry))return fail('STALE_RECALL_SCOPE','Recall acceptance belongs to another generation.');const result=entry.slot.state.settle(claim,{status:'accepted'});if(result.ok)value.consumed=result.data.consumed;return result.ok?good({status:'confirmed',applied:result.data.consumed,acknowledged:true}):result;}}));
+   commit:()=>{if(!live(entry))return fail('STALE_RECALL_SCOPE','Recall acceptance belongs to another generation.');const result=entry.slot.state.settle(claim,{status:'accepted'});if(result.ok){value.consumed=result.data.consumed;notify();}return result.ok?good({status:'confirmed',applied:result.data.consumed,acknowledged:true}):result;}}));
  }
- function releaseRun(run){const entry=runs.get(run);if(!entry||entry.closed)return;for(const [claim,value]of entry.claims)if(!value.consumed)try{entry.slot.state.settle(claim,{status:'cancelled'});}catch{}entry.closed=true;entry.claims.clear();entry.sources.clear();if(entry.slot.owner===entry)entry.slot.owner=null;}
+ function releaseRun(run){const entry=runs.get(run);if(!entry||entry.closed)return;for(const [claim,value]of entry.claims)if(!value.consumed)try{entry.slot.state.releaseClaim(claim);}catch{}entry.closed=true;entry.claims.clear();entry.sources.clear();if(entry.slot.owner===entry)entry.slot.owner=null;notify();}
  function dispose(){if(disposed)return;disposed=true;for(const slot of slots.values()){if(slot.owner)releaseRun(slot.owner.run);deactivate(slot);slot.state.release();}slots.clear();selected=null;disposed=true;}
- return Object.freeze({sync,status:sync,arm,disarm,begin,capture,captureSourceArtifact,retain,lookup,authorizePresence,authorizeHolderEvent,authorizeGuidance,execute,fresh,hasPending,succeed,effects,releaseRun,dispose});
+ return Object.freeze({sync,status:sync,queue,cancel,changeQueues,captureQueueCommand,resetDocument,subscribe,begin,capture,captureSourceArtifact,retain,lookup,authorizePresence,authorizeHolderEvent,authorizeGuidance,execute,fresh,hasPending,succeed,effects,releaseRun,dispose});
 }

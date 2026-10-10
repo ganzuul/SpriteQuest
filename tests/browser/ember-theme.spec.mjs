@@ -1,3 +1,4 @@
+import { rootCommand, expectRootBusy } from './workflow-commands.mjs';
 import { setCompact } from './details-helpers.mjs';
 import { test, expect } from '@playwright/test';
 import { approvedEmber, openEmber, measureEmber, assertEmber, assertColor, hasOuterRing } from './ember-fixture.mjs';
