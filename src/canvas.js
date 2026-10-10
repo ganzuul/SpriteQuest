@@ -1,4 +1,3 @@
-import { isWorkflowGraph } from './workflow/contracts.js?v=0.27.0';
 import { graphPoint, zoomAt, zoomTo, wheelFactor } from './canvas/camera.js?v=0.27.0';
 import { createFrameScheduler } from './canvas/frame.js?v=0.27.0';
 import { selectionMode, rectangle, intersects, combineSelection } from './canvas/selection.js?v=0.27.0';
@@ -7,8 +6,8 @@ import { nodeCards, preparedCardFor } from './canvas/presentation.js?v=0.27.0';
 import { buildConnectionRoute, buildDragConnectionRoute } from './canvas/connection-route.js?v=0.27.0';
 import { alignCardPins } from './canvas/pin-alignment.js?v=0.27.0';
 import { isCommentFrame, containedCommentNodes } from './canvas/comment-frames.js?v=0.27.0';
+import { retainSlots, cardLayoutKey } from './canvas/retained-scene.js?v=0.27.0';
 import { mountCanvas } from '../dist/lattice-ui.js?v=0.27.0';
-const groupMembers = (graph, id) => Object.values(graph?.nodes ?? {}).filter(node => node.inGroup === id);
 const groupOf = (graph, node) => node && graph?.groups?.[node.inGroup];
 const inNodeProfile = event => event.target?.closest?.('.pc-node-profile');
 
@@ -69,6 +68,9 @@ export class Canvas {
         this.nodeProfiles = [];
         this.nodeProfileVersion = 0;
         this.nodeElements = new Map();
+        this.layoutKeys = new Map(); this.dirtyGeometry = new Set(); this.observerSizes = new Map();
+        this.cardSlots = new Map(); this.groupSlots = new Map(); this.commentSlots = new Map();
+        this.layoutEpoch = 0; this.geometryEpoch = 0;
         this.incident = new Map();
         this.wireViews = new Map();
         this.eventController = new window.AbortController();
@@ -87,27 +89,48 @@ export class Canvas {
         this.frames = createFrameScheduler((flags, time) => {
             if (flags & 1) this.#paintCamera(time);
             if (flags & 2) this.#drawWires();
+            if (flags & 8) this.#drawWirePreview();
             if (flags & 4) this.#renderDrag();
         });
         const Resize = globalThis.ResizeObserver ?? window.ResizeObserver;
-        if (Resize) this.resizeObserver = new Resize(entries => {
-            let changed = false;
+        if (Resize) this.createResizeObserver = () => {
+            const epoch = this.geometryEpoch;
+            return new Resize(entries => {
+            if (epoch !== this.geometryEpoch || this.eventController.signal.aborted) return;
+            const changed = new Set();
             for (const entry of entries) {
-                const id = entry.target.dataset.id ?? `group:${entry.target.dataset.group}`;
-                changed = this.#measureCard(entry.target, id) || changed;
+                const id = entry.target.dataset.id ?? 'group:' + entry.target.dataset.group;
+                if (this.nodeElements.get(id) !== entry.target || !this.host.contains(entry.target)) continue;
+                const size = entry.contentRect && [entry.contentRect.width, entry.contentRect.height];
+                const previous = this.observerSizes.get(id);
+                if (size && previous && size.every((value, index) => Math.abs(value - previous[index]) < .6) && !this.dirtyGeometry.has(id)) continue;
+                if (size) this.observerSizes.set(id, size);
+                if (this.#measureCard(entry.target, id)) changed.add(id);
+                this.dirtyGeometry.delete(id);
             }
-            if (changed && this.graph) {
-                this.layer.setGroups(Object.values(this.graph.groups ?? {}).map(group => this.#groupCard(group)));
-                this.#drawNodeProfiles();
-                this.frames.schedule(2);
+            if (changed.size && this.graph) {
+                this.#drawWires(changed, {groups:this.#groupCards(changed), nodeProfiles:this.#nodeProfileRows()});
             }
         });
+        };
+        this.resizeObserver = this.createResizeObserver?.();
+        const layoutChanged = () => {
+            if (!this.graph || this.eventController.signal.aborted) return;
+            this.invalidateGeometry(Object.keys(this.graph.nodes), 'environment');
+        };
+        const Mutation = host.ownerDocument.defaultView.MutationObserver;
+        if (Mutation) {
+            this.layoutObserver = new Mutation(layoutChanged);
+            const root = host.closest('.pc-root');
+            for (const element of [host.ownerDocument.documentElement, root].filter(Boolean)) this.layoutObserver.observe(element, {attributes:true, attributeFilter:['style','class','data-pc-theme']});
+        }
+        const pointerMedia = window.matchMedia?.('(pointer: coarse)');
+        pointerMedia?.addEventListener?.('change', layoutChanged, {signal:this.eventController.signal});
         this.#bind();
         const fonts = host.ownerDocument.fonts;
         const refreshFontGeometry = () => {
             if (!this.graph || this.eventController.signal.aborted) return;
-            this.#measureCards('.pc-node-native[data-id]');
-            this.frames.schedule(2);
+            this.invalidateGeometry(Object.keys(this.graph.nodes), 'fonts');
         };
         fonts?.addEventListener?.('loadingdone', refreshFontGeometry, { signal: this.eventController.signal });
         fonts?.ready?.then(refreshFontGeometry);
@@ -116,7 +139,7 @@ export class Canvas {
     async destroy() {
         this.cancelGesture();
         this.frames.destroy();
-        this.resizeObserver?.disconnect();
+        this.resizeObserver?.disconnect(); this.layoutObserver?.disconnect();
         this.eventController.abort();
         await this.layer.destroy();
     }
@@ -126,25 +149,38 @@ export class Canvas {
         return this.graph.view;
     }
 
-    setGraph(graph) {
+    setGraph(graph, options = {}) {
         if (!graph) return;
-        if (!isWorkflowGraph(graph) || !safePreparedGraph(graph)) throw new Error('Expected a prepared current workflow graph.');
-        for (const node of Object.values(graph.nodes)) preparedCardFor(graph, node, this.hooks);
-        this.cancelGesture();
+        if (!safePreparedGraph(graph)) throw new Error('Expected a prepared current workflow graph.');
+        const admittedCards = nodeCards(Object.values(graph.nodes ?? {}).filter(n => !isCommentFrame(n)), {graph, hooks:this.hooks});
+        this.cancelGesture('view-change', {render:false});
+        // Cancellation restores coordinate overlays on a same-root raw caller.
+        for (const card of admittedCards) { const node = graph.nodes[card.id]; card.x = node.x ?? 0; card.y = node.y ?? 0; }
         if (this.nativeSelectionKey) this.wireSelections.set(this.nativeSelectionKey, [...this.wireMulti]);
-        if (graph !== this.graph) { this.trace = null; this.hoverPin = null; this.hoverWire = null; this.geometry.clear(); this.wireViews.clear(); }
         const scope = this.hooks.nativeScope?.();
         const nativeSelectionKey = scope?.workflowId && Array.isArray(scope.instancePath) ? JSON.stringify([scope.workflowId, scope.instancePath]) : null;
-        const detailScopeKey = this.hooks.viewKey?.() ?? nativeSelectionKey;
-        if (graph.id !== this.graph?.id || detailScopeKey !== this.detailScopeKey) delete this.host.dataset.pcDetail;
+        const legacyScopeKey = this.hooks.viewKey?.() ?? nativeSelectionKey ?? JSON.stringify([graph.id, []]);
+        const detailScopeKey = options.viewKey ?? legacyScopeKey;
+        if (detailScopeKey !== this.detailScopeKey) {
+            this.trace = null; this.layer.setVisualStatus({}); this.hoverPin = null; this.hoverWire = null;
+            this.geometry.clear(); this.wireViews.clear(); this.layoutKeys.clear(); this.dirtyGeometry.clear();
+            this.cardSlots.clear(); this.groupSlots.clear(); this.commentSlots.clear();
+            this.geometryEpoch++; this.resizeObserver?.disconnect();
+            this.resizeObserver = this.createResizeObserver?.();
+            this.nodeElements.clear(); this.observerSizes.clear();
+        }
+        const lodScopeKey = options.lodKey ?? this.hooks.lodKey?.() ?? (this.graph && options.viewKey == null && graph.id === this.graph.id && legacyScopeKey === this.legacyScopeKey ? this.lodScopeKey : detailScopeKey);
+        if (graph.id !== this.graph?.id || lodScopeKey !== this.lodScopeKey) delete this.host.dataset.pcDetail;
+        this.lodScopeKey = lodScopeKey;
         this.detailScopeKey = detailScopeKey;
+        this.legacyScopeKey = legacyScopeKey;
         this.nodeProfiles = []; this.nodeProfileVersion++;
         this.graph = graph; this.selection = null; this.multi.clear();
         if (scope?.workflowId && this.nativeSelectionRoot !== scope.workflowId) this.wireSelections.clear();
         this.nativeSelectionRoot = scope?.workflowId ?? this.nativeSelectionRoot;
         this.nativeSelectionKey = nativeSelectionKey;
         this.wireMulti = new Set((this.wireSelections.get(this.nativeSelectionKey) ?? []).filter(id => graph.wires[id]));
-        this.nativeWireView = null; this.render();
+        this.nativeWireView = null; this.#renderScene(admittedCards);
     }
 
     /** Runtime display only: never prepare a graph, cancel a gesture or measure geometry. */
@@ -152,7 +188,7 @@ export class Canvas {
 
     setTrace(trace) {
         this.trace = new Map((trace ?? []).map(t => [t.id, t]));
-        this.render();
+        this.layer.setVisualStatus(Object.fromEntries(this.trace));
     }
 
     /** Accept prepared profile metadata; layout adds only cached native bounds. */
@@ -162,19 +198,21 @@ export class Canvas {
         this.#drawNodeProfiles();
     }
 
-    #drawNodeProfiles() {
-        if (!this.graph) return;
+    #drawNodeProfiles() { if (this.graph) this.layer.setNodeProfiles(this.#nodeProfileRows()); }
+
+    #nodeProfileRows() {
+        if (!this.graph) return [];
         const rect = this.host.getBoundingClientRect(), view = this.view, zoom = view.zoom || 1;
         const visibleBounds = { x: -view.x / zoom, y: -view.y / zoom, w: rect.width / zoom, h: rect.height / zoom };
-        this.layer.setNodeProfiles(this.nodeProfiles.flatMap(row => {
+        return this.nodeProfiles.flatMap(row => {
             const node = this.graph.nodes[row.id];
             if (!node || isCommentFrame(node) || this.#folded(node)) return [];
             return [{ ...row, x: node.x, y: node.y, w: this.widthOf(node), h: this.heightOf(node),
                 clearance: node.presentation?.compact ? 38 : 0, authorityVersion: this.nodeProfileVersion, visibleBounds }];
-        }));
+        });
     }
 
-    applyTransform() {
+    applyTransform(drawProfiles = true) {
         const v = this.view;
         // Change detail only at zoom thresholds, without rebuilding cards or
         // touching their intrinsic sizes and cached named-pin geometry.
@@ -202,7 +240,7 @@ export class Canvas {
             this.host.style.backgroundPosition = at;
         }
         this.hooks.onView?.({ ...v, mode: this.mode });
-        this.#drawNodeProfiles();
+        if (drawProfiles) this.#drawNodeProfiles();
     }
 
     toGraph(clientX, clientY) {
@@ -296,10 +334,17 @@ export class Canvas {
         this.applyTransform();
     }
 
-    render() {
+    render() { this.#renderScene(); }
+
+    #renderScene(admittedCards) {
         if (!this.graph) return;
         this.incident = indexIncidentWires(Object.values(this.graph.wires));
-        this.applyTransform(); this.#drawNodes(); this.#drawWires();
+        this.groupMembership = new Map();
+        for (const node of Object.values(this.graph.nodes)) if (node.inGroup) {
+            if (!this.groupMembership.has(node.inGroup)) this.groupMembership.set(node.inGroup, []);
+            this.groupMembership.get(node.inGroup).push(node);
+        }
+        this.applyTransform(false); const scene = this.#drawNodes(admittedCards); this.#drawWires(null, scene);
     }
 
     #applyFocus() {
@@ -329,34 +374,104 @@ export class Canvas {
         }
     }
 
-    #drawNodes() {
-        const groups = this.graph.groups ?? {};
-        const context = { graph: this.graph, selection: this.selection, multi: this.multi, trace: this.trace, hooks: this.hooks };
-        const nodes = Object.values(this.graph.nodes).filter(n => !isCommentFrame(n) && !this.#folded(n)).sort((a, b) => (a.y - b.y) || (a.x - b.x));
-        const cards = nodeCards(nodes, context);
+    #layoutEnvironment() {
+        const style = getComputedStyle(this.host);
+        return [this.layoutEpoch, style.font, style.fontSize, style.fontFamily, style.lineHeight,
+            this.host.ownerDocument.documentElement.getAttribute('data-pc-theme'),
+            window.matchMedia?.('(pointer: coarse)').matches ?? false];
+    }
+
+    #groupMembers(id) { return this.groupMembership?.get(id) ?? []; }
+
+    #groupCards(ids = null) {
+        if (!ids) return retainSlots(Object.values(this.graph.groups ?? {}).map(g => this.#groupCard(g)), this.groupSlots);
+        const affected = new Set([...ids].map(id => this.graph.nodes[id]?.inGroup).filter(Boolean));
+        for (const id of ids) if (id.startsWith('group:')) affected.add(id.slice(6));
+        for (const id of affected) {
+            const group = this.graph.groups[id]; if (!group) continue;
+            const value = this.#groupCard(group), signature = JSON.stringify(value);
+            if (this.groupSlots.get(id)?.signature !== signature) this.groupSlots.set(id, {value, signature});
+        }
+        return [...this.groupSlots.values()].map(slot => slot.value);
+    }
+
+    #drawNodes(admittedCards) {
+        const context = { graph: this.graph, selection: this.selection, multi: this.multi, hooks: this.hooks };
+        // Classify the admitted scene once, including folded nodes whose metadata still drives group frames.
+        const all = admittedCards ?? nodeCards(Object.values(this.graph.nodes).filter(n => !isCommentFrame(n)), context);
+        this.preparedCards = new Map(all.map(card => [card.id, card]));
+        const environment = this.#layoutEnvironment();
+        for (const card of all) {
+            const key = cardLayoutKey(card, environment);
+            if (this.layoutKeys.get(card.id) !== key) this.dirtyGeometry.add(card.id);
+            this.layoutKeys.set(card.id, key);
+        }
+        const cards = retainSlots(all.filter(card => !this.#folded(this.graph.nodes[card.id])).sort((a,b) => (a.y-b.y)||(a.x-b.x)), this.cardSlots);
         const draw = this.graph, comments = Object.values(draw.nodes).filter(isCommentFrame);
         const capture = comments.length && this.#canEdit() ? this.hooks.captureCommentEdit?.() : null;
         const current = id => this.graph === draw && isCommentFrame(draw.nodes[id]);
-        this.layer.setComments(comments.map(node => this.#commentCard(node)), {
+        this.layer.applyScene({nodes:cards, groups:this.#groupCards(), comments:retainSlots(comments.map(node => this.#commentCard(node)), this.commentSlots), commentActions:{
             select: id => { if (current(id)) { this.setMulti([]); this.select({ kind: 'node', id }); } },
             update: (id, patch) => { if (current(id) && this.#canEdit()) this.hooks.onCommentPatch?.(capture, id, patch); },
             command: (id, command) => { if (current(id) && this.#canEdit()) this.hooks.onCommentCommand?.(capture, id, command); },
-        });
-        this.layer.setNodes(cards);
-        this.resizeObserver?.disconnect(); this.nodeElements.clear();
+        }});
         this.#measureCards('.pc-node[data-id]');
-        this.layer.setGroups(Object.values(groups).map(g => this.#groupCard(g)));
         this.#measureCards('.pc-node-group');
-        this.geometry.retain([...Object.keys(this.graph.nodes), ...Object.keys(groups).map(id => `group:${id}`)]);
-        this.#paintMulti();
-        this.#drawNodeProfiles();
+        const keep = new Set([...Object.keys(this.graph.nodes), ...Object.keys(this.graph.groups ?? {}).map(id => 'group:' + id)]);
+        for (const [id, element] of this.nodeElements) if (!this.host.contains(element)) {
+            this.resizeObserver?.unobserve(element); this.nodeElements.delete(id); this.observerSizes.delete(id);
+        }
+        this.geometry.retain(keep);
+        for (const map of [this.layoutKeys, this.dirtyGeometry]) for (const id of map.keys()) if (!keep.has(id)) map.delete(id);
+        this.#paintSelection();
+        return {groups:this.#groupCards(), nodeProfiles:this.#nodeProfileRows()};
     }
 
     #measureCards(selector) {
         for (const el of this.nodeLayer.querySelectorAll(selector)) {
             const id = el.dataset.id ?? 'group:' + el.dataset.group;
-            this.nodeElements.set(id, el); this.#measureCard(el, id); this.resizeObserver?.observe(el);
+            const previous = this.nodeElements.get(id);
+            if (previous !== el) {
+                if (previous) this.resizeObserver?.unobserve(previous);
+                this.nodeElements.set(id, el); this.dirtyGeometry.add(id); this.resizeObserver?.observe(el);
+            }
+            if (this.dirtyGeometry.has(id)) {
+                this.#measureCard(el, id); this.dirtyGeometry.delete(id);
+                const style = getComputedStyle(el);
+                this.observerSizes.set(id, [el.clientWidth - (parseFloat(style.paddingLeft)||0) - (parseFloat(style.paddingRight)||0), el.clientHeight - (parseFloat(style.paddingTop)||0) - (parseFloat(style.paddingBottom)||0)]);
+            }
         }
+    }
+
+    /** Explicit layout changes invalidate hidden members too; remount measures their latest contract. */
+    invalidateGeometry(ids = Object.keys(this.graph?.nodes ?? {}), reason = 'layout') {
+        if (!this.graph) return;
+        for (const id of ids) if (this.graph.nodes[id] || id.startsWith('group:')) this.dirtyGeometry.add(id);
+        this.#measureCards('.pc-node[data-id], .pc-node-group');
+        this.#drawWires(new Set(ids), {groups:this.#groupCards(ids), nodeProfiles:this.#nodeProfileRows()});
+    }
+
+    /** Coordinate publication preserves the admitted scene and patches only incident routes. */
+    setPositions(updates, groupUpdates = []) {
+        if (!this.graph) return;
+        const ids = [];
+        for (const update of updates ?? []) {
+            const node = this.graph.nodes[update.id];
+            if (!node || !Number.isFinite(update.x) || !Number.isFinite(update.y)) continue;
+            node.x = update.x; node.y = update.y; ids.push(node.id);
+        }
+        const groups = [];
+        for (const update of groupUpdates) {
+            const group = this.graph.groups?.[update.id]; if (!group) continue;
+            if (Number.isFinite(update.x)) group.x = update.x;
+            if (Number.isFinite(update.y)) group.y = update.y;
+            if (Object.hasOwn(update, 'frame')) {
+                if (update.frame == null) delete group.frame;
+                else if (['x','y','w','h'].every(key => Number.isFinite(update.frame[key]))) group.frame = {...update.frame};
+            }
+            groups.push('group:' + group.id);
+        }
+        this.#renderPositions(ids, groups);
     }
 
     #measureCard(el, id) {
@@ -382,7 +497,7 @@ export class Canvas {
     }
 
     #nativeGroupFrame(g) {
-        const members = groupMembers(this.graph, g.id);
+        const members = this.#groupMembers(g.id);
         if (!members.length) return g.frame ?? { x: g.x ?? 0, y: g.y ?? 0, w: g.w || 260, h: 140 };
         const x = Math.min(...members.map(node => node.x)) - 24, y = Math.min(...members.map(node => node.y)) - 48;
         const right = Math.max(...members.map(node => node.x + this.widthOf(node))) + 24;
@@ -393,14 +508,14 @@ export class Canvas {
     }
 
     #groupCard(g) {
-        const members = groupMembers(this.graph, g.id).sort((a, b) => (a.y - b.y) || (a.x - b.x));
+        const members = this.#groupMembers(g.id).sort((a, b) => (a.y - b.y) || (a.x - b.x));
         const frame = this.#nativeGroupFrame(g), selected = this.selection?.kind === 'group' && this.selection.id === g.id;
         const multi = members.length > 0 && members.every(n => this.multi.has(n.id));
         return {
             id: g.id, collapsed: !!g.collapsed, x: g.collapsed ? g.x ?? frame.x : frame.x, y: g.collapsed ? g.y ?? frame.y : frame.y,
             w: g.collapsed ? g.w || 260 : frame.w, h: frame.h,
             className: (g.collapsed ? 'pc-node pc-node-group' : 'pc-group-frame') + (selected ? ' pc-selected' : '') + (multi ? ' pc-multi' : '') + (members.length ? '' : ' pc-group-empty'),
-            title: g.title || 'Group', body: members.map(n => n.presentation?.alias || n.title || this.#nativeCard(n).canonicalTitle).join(' · '),
+            title: g.title || 'Group', body: members.map(n => n.presentation?.alias || n.title || (this.#nativeCard(n).canonicalTitle ?? this.#nativeCard(n).label)).join(' · '),
             count: `${members.length} node${members.length === 1 ? '' : 's'}`,
         };
     }
@@ -409,7 +524,7 @@ export class Canvas {
         return isCommentFrame(node) ? (Number.isFinite(node.h) && node.h > 0 ? node.h : 220) : this.geometry.get(node?.id);
     }
 
-    #nativeCard(node) { return node && preparedCardFor(this.graph, node, this.hooks); }
+    #nativeCard(node) { return node && (this.preparedCards?.get(node.id) ?? preparedCardFor(this.graph, node, this.hooks)); }
 
     widthOf(node) { return isCommentFrame(node) ? (Number.isFinite(node.w) && node.w > 0 ? node.w : 360) : this.geometry.width(node?.id); }
 
@@ -424,7 +539,7 @@ export class Canvas {
             el.classList.toggle('pc-multi', this.multi.has(el.dataset.id));
         }
         for (const el of this.nodeLayer.querySelectorAll('.pc-node-group')) {
-            const members = groupMembers(this.graph, el.dataset.group);
+            const members = this.#groupMembers(el.dataset.group);
             el.classList.toggle('pc-multi', members.length > 0 && members.every(n => this.multi.has(n.id)));
         }
         for (const el of this.commentLayer.querySelectorAll('.pc-comment-frame[data-id]')) {
@@ -464,14 +579,14 @@ export class Canvas {
     #pickedIds() {
         const ids = new Set(this.multi);
         if (this.selection?.kind === 'node') ids.add(this.selection.id);
-        if (this.selection?.kind === 'group') for (const n of groupMembers(this.graph, this.selection.id)) ids.add(n.id);
+        if (this.selection?.kind === 'group') for (const n of this.#groupMembers(this.selection.id)) ids.add(n.id);
         return ids;
     }
 
     #dragGroups(ids, extraGroup) {
         const selected = new Set(ids);
         return Object.values(this.graph.groups ?? {}).filter(group => {
-            const members = groupMembers(this.graph, group.id);
+            const members = this.#groupMembers(group.id);
             return group.collapsed && (group.id === extraGroup || members.length && members.every(node => selected.has(node.id)));
         }).map(group => {
             const frame = this.#nativeGroupFrame(group);
@@ -542,7 +657,7 @@ export class Canvas {
         this.centerSelection({ fit: true });
     }
 
-    cancelGesture(reason = 'cancel') {
+    cancelGesture(reason = 'cancel', {render = true} = {}) {
         this.operationEpoch++;
         const bridge = this.#nativeBridge();
         const active = !!(this.drag || this.marquee || this.pan || bridge?.hasContentGesture());
@@ -569,7 +684,8 @@ export class Canvas {
                 const surviving = [...this.wireMulti].at(-1);
                 this.selection = surviving ? { kind: 'wire', id: surviving } : null;
             }
-            this.render();
+            if (render) this.render();
+            else { this.layer.setWirePreview(null); this.#paintSelection(); }
             const sel = this.selection;
             const picked = sel?.kind === 'node' ? this.graph.nodes[sel.id] : sel?.kind === 'group' ? this.graph.groups?.[sel.id] : sel?.kind === 'wire' ? this.graph.wires[sel.id] : null;
             this.hooks.onSelect?.(picked, sel?.kind ?? null); this.hooks.onMulti?.([...this.multi]);
@@ -578,7 +694,7 @@ export class Canvas {
             if (bridge && this.graph) {
                 // An idle bridge may have queued cleanup after its ghost was
                 // painted. Cancelling that frame must still clear the draft.
-                this.layer.setWires([...this.wireViews.values()], this.wireBounds ?? { w: 4000, h: 4000 }, null);
+                this.layer.setWirePreview(null);
                 this.#applyFocus();
             }
         }
@@ -640,7 +756,7 @@ export class Canvas {
         }
         for (const g of Object.values(this.graph.groups ?? {})) {
             if (!g.collapsed) continue;
-            if (intersects(r, { x: g.x, y: g.y, w: g.w || 260, h: this.geometry.get(`group:${g.id}`, 80) })) hits.push(...groupMembers(this.graph, g.id).map(n => n.id));
+            if (intersects(r, { x: g.x, y: g.y, w: g.w || 260, h: this.geometry.get(`group:${g.id}`, 80) })) hits.push(...this.#groupMembers(g.id).map(n => n.id));
         }
         this.setMulti([...combineSelection(m.initial, hits, m.mode)]);
     }
@@ -652,7 +768,7 @@ export class Canvas {
 
     #path(from, to) { return buildConnectionRoute(from, to).d; }
 
-    #drawWires(changedNodes = null) {
+    #drawWires(changedNodes = null, scene = null, positions = null) {
         if (!this.graph) return;
         const affected = changedNodes ? new Set([...changedNodes].flatMap(id => [...(this.incident.get(id) ?? [])])) : null;
         const visible = affected ? null : new Set(), bounds = affected ? { ...this.wireBounds } : { w: 4000, h: 4000 };
@@ -667,12 +783,27 @@ export class Canvas {
             const off = [wire.from, wire.to].some(id => this.graph.nodes[id]?.enabled === false);
             const selected = this.selection?.kind === 'wire' && this.selection.id === wire.id || this.wireMulti.has(wire.id);
             const route = buildConnectionRoute(from, to);
-            this.wireViews.set(wire.id, { id: wire.id, kind: from.kind, d: route.d,
+            const next = { id: wire.id, kind: from.kind, d: route.d,
                 className: 'pc-wire pc-wire-native' + (off ? ' pc-wire-off' : '') + (selected ? ' pc-selected' : ''),
-                label: { ...route.label, text: from.kind, className: 'pc-wire-label' } });
+                label: { ...route.label, text: from.kind, className: 'pc-wire-label' } };
+            if (JSON.stringify(this.wireViews.get(wire.id)) !== JSON.stringify(next)) this.wireViews.set(wire.id, next);
         }
         if (visible) for (const id of this.wireViews.keys()) if (!visible.has(id)) this.wireViews.delete(id);
         this.wireBounds = bounds;
+        const publishedWires = [...this.wireViews.values()], ghost = this.#wirePreview();
+        if (positions) this.layer.setPositions(positions, [], {...scene, wires:publishedWires, bounds, ghost});
+        else if (scene) this.layer.applyScene({...scene, wires:publishedWires, bounds, ghost});
+        else this.layer.setWires(publishedWires, bounds, ghost);
+        this.#applyFocus();
+    }
+
+    #drawWirePreview() {
+        this.layer.setWirePreview(this.#wirePreview());
+        if (this.previewFocusChanged) this.#applyFocus();
+        this.previewFocusChanged = false;
+    }
+
+    #wirePreview() {
         const native = this.nativeWireView?.gesture;
         const origin = native?.origin && this.endpoint(native.origin.nodeId, native.origin.dir, native.origin.portId);
         const target = native?.target && this.endpoint(native.target.nodeId, native.target.dir, native.target.portId);
@@ -682,22 +813,19 @@ export class Canvas {
             d: target && native.feedback?.compatible === true ? (native.origin.dir === 'out' ? this.#path(origin, target) : this.#path(target, origin)) : buildDragConnectionRoute(origin, loose).d,
             className: 'pc-wire pc-wire-ghost pc-wire-native' + (native.feedback?.compatible === false ? ' pc-wire-invalid' : ''),
         } : null;
-        this.layer.setWires([...this.wireViews.values()], bounds, ghost);
-        this.#applyFocus();
+        return ghost;
     }
 
     #renderDrag() {
         const d = this.drag; if (!d) return;
         const ids = d.id ? [d.id] : d.several.map(([id]) => id);
-        this.#renderPositions(ids);
+        this.#renderPositions(ids, (d.groups ?? []).map(group => 'group:' + group.id));
         this.#paintSelection();
     }
 
-    #renderPositions(ids) {
-        this.layer.setPositions(ids.map(id => this.graph.nodes[id]).filter(Boolean).map(n => ({ id: n.id, x: n.x, y: n.y, ...(isCommentFrame(n) ? { w: this.widthOf(n), h: this.heightOf(n) } : {}) })), []);
-        this.layer.setGroups(Object.values(this.graph.groups ?? {}).map(g => this.#groupCard(g)));
-        this.#drawWires(new Set(ids));
-        this.#drawNodeProfiles();
+    #renderPositions(ids, groups = []) {
+        const positions = ids.map(id => this.graph.nodes[id]).filter(Boolean).map(n => ({id:n.id, x:n.x, y:n.y, ...(isCommentFrame(n) ? {w:this.widthOf(n),h:this.heightOf(n)} : {})}));
+        this.#drawWires(new Set(ids), {groups:this.#groupCards([...ids, ...groups]),nodeProfiles:this.#nodeProfileRows()}, positions);
     }
 
     #crossedDragThreshold(e) {
@@ -711,6 +839,8 @@ export class Canvas {
     hasContentGesture() { return !!(this.drag || this.#nativeBridge()?.hasContentGesture()); }
 
     updateNativeWire(view, requests = []) {
+        const focusKey = value => { const g=value?.gesture; return JSON.stringify([g?.kind==='idle' ? null : g?.origin, g?.target, g?.feedback?.compatible]); };
+        this.previewFocusChanged = this.previewFocusChanged || focusKey(view) !== focusKey(this.nativeWireView);
         this.nativeWireView = view;
         for (const request of requests ?? []) {
             if (request.type === 'capture-pointer' && !this.nativeCaptures.has(request.pointerId)) {
@@ -722,7 +852,7 @@ export class Canvas {
                 this.nativeEvent?.preventDefault(); this.nativeEvent?.stopPropagation();
             }
         }
-        this.frames.schedule(2);
+        this.frames.schedule(8);
     }
 
     #dispatchNative(event, domEvent) {
@@ -932,7 +1062,7 @@ export class Canvas {
                 e.preventDefault(); e.stopPropagation();
                 const action = e.target.closest('[data-action]')?.dataset.action;
                 if (action === 'collapse' || action === 'open') { this.setCollapsed(gid, action === 'collapse'); return; }
-                const group = this.graph.groups[gid], members = groupMembers(this.graph, gid).map(node => node.id);
+                const group = this.graph.groups[gid], members = this.#groupMembers(gid).map(node => node.id);
                 if (!group.collapsed) { this.multi.clear(); this.select({ kind: 'group', id: gid }); return; }
                 let selected = this.#pickedIds();
                 if (e.shiftKey || e.ctrlKey || e.metaKey || e.altKey) {

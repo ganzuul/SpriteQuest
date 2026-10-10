@@ -27,7 +27,7 @@ async function fixture(kind, initial, check, extra = {}) {
     try {
         const source = await readFile(new URL('../ui/StructuredControl.svelte', import.meta.url), 'utf8');
         const leaf = await compiled('StructuredControl', directory, source);
-        const harness = await compiled('StructuredHarness', directory, `<script>import Leaf from ${JSON.stringify(pathToFileURL(leaf.path).href)}; let { initial, control, initialDisabled, initialError } = $props(); let text = $state(initial); let disabled = $state(initialDisabled); let changes = $state([]); export function read() { return { text, changes: [...changes] }; } export function update(next) { text = next; } export function disable(next) { disabled = next; } function ontext(next) { text = next; changes = [...changes, next]; }</script><Leaf {control} {text} {disabled} {ontext} idPrefix="structured-test" error={initialError} />`);
+        const harness = await compiled('StructuredHarness', directory, `<script>import Leaf from ${JSON.stringify(pathToFileURL(leaf.path).href)}; let { initial, control, initialDisabled, initialError } = $props(); let text = $state(initial); let disabled = $state(initialDisabled); let changes = $state([]); let typed = $state(); export function read() { return { text, typed, changes: [...changes] }; } export function update(next) { text = next; } export function disable(next) { disabled = next; } function ontext(next) { typed = undefined; text = next; changes = [...changes, next]; } function onDraft(value) { typed = value; }</script><Leaf {control} {text} {disabled} {ontext} draftValue={typed} onDraft={control.typedMode ? onDraft : undefined} idPrefix="structured-test" error={initialError} />`);
         const control = { key: kind, label: extra.label ?? kind, value: null, editor: 'json', representation: 'json-value', structured: kind, ...extra.control };
         mounted = mount(harness.component, { target: host, props: { initial, control, initialDisabled: extra.disabled ?? false, initialError: extra.error } }); flushSync(); await tick();
         await check({ host, read: () => mounted.read(), update(next) { mounted.update(next); flushSync(); }, disable(next) { mounted.disable(next); flushSync(); } });
@@ -212,4 +212,22 @@ test('rejected numeric edits restore the displayed value from the shared draft',
         const editor = input(f.host, label, invalid, 'change');
         assert.equal(editor.value, expected); assert.equal(f.read().text, initial); assert.deepEqual(f.read().changes, []);
     });
+});
+
+test('typed row draft updates avoid serializing and reparsing the whole structured value', async () => {
+    await fixture('sections', '[{"name":"Intro","text":"first"},{"name":"Body","text":"second"}]', async f => {
+        const originalParse = JSON.parse, originalStringify = JSON.stringify;
+        let parses = 0, encodes = 0;
+        JSON.parse = function(...args) { parses++; return originalParse.apply(this, args); };
+        JSON.stringify = function(...args) { encodes++; return originalStringify.apply(this, args); };
+        try {
+            input(f.host, 'Section 2 text', 'changed');
+            input(f.host, 'Section 2 text', 'changed twice');
+            assert.equal(parses, 0, 'typed row inputs never parse the parent JSON');
+            assert.equal(encodes, 0, 'typed row inputs never serialize the parent JSON');
+        } finally { JSON.parse = originalParse; JSON.stringify = originalStringify; }
+        assert.deepEqual(f.read().typed, [{ name: 'Intro', text: 'first' }, { name: 'Body', text: 'changed twice' }]);
+        click(f.host, 'Edit sections as JSON');
+        assert.deepEqual(JSON.parse(f.host.querySelector('[aria-label="sections"]').value), f.read().typed);
+    }, { control: { typedMode: true } });
 });

@@ -2,7 +2,7 @@
     import type { DetailControl } from './detail-types';
     type StructuredDetailControl = DetailControl & { structured?: string };
     type Row = Record<string, unknown>;
-    let { control, text, disabled = false, ontext, idPrefix, error = '' }: { control: StructuredDetailControl; text: string; disabled?: boolean; ontext: (text: string) => void; idPrefix: string; error?: string } = $props();
+    let { control, text, disabled = false, ontext, onDraft, draftValue, idPrefix, error = '' }: { control: StructuredDetailControl; text: string; disabled?: boolean; ontext: (text: string) => void; onDraft?: (value: unknown) => void; draftValue?: unknown; idPrefix: string; error?: string } = $props();
     const phases = ['onset', 'peak', 'plateau', 'decline', 'aftermath'];
     function supportedFlags(row: Row) {
         if (!Object.hasOwn(row, 'flags')) return true;
@@ -20,7 +20,7 @@
     let rowMinimum = $derived(control.structured === 'slots' ? 2 : 0);
     function parseRows(): Row[] | null {
         try {
-            const value: unknown = JSON.parse(text);
+            const value: unknown = draftValue === undefined ? JSON.parse(text) : draftValue;
             if (!finiteJson(value)) return null;
             if (control.structured === 'durations') return record(value) && Object.entries(value).every(([phase, duration]) => phases.includes(phase) && Number.isSafeInteger(duration) && Number(duration) >= 1 && Number(duration) <= 64) ? Object.entries(value).map(([name, number]) => ({ name, number })) : null;
             if (control.structured === 'numeric-map') return record(value) && Object.keys(value).length <= 32 && Object.values(value).every(number => typeof number === 'number' && Number.isFinite(number)) ? Object.entries(value).map(([name, number]) => ({ name, number })) : null;
@@ -35,8 +35,9 @@
     let rows = $derived(parseRows());
     let raw = $state(false);
     let editingRaw = $derived(raw || !rows);
+    let rawText = $derived(editingRaw && draftValue !== undefined ? JSON.stringify(draftValue, null, 2) : text);
     function rawInput(value: string) { if (!disabled) { raw = true; ontext(value); } }
-    function emit(value: unknown) { if (!disabled) ontext(JSON.stringify(value, null, 2)); }
+    function emit(value: unknown) { if (!disabled) { if (onDraft) onDraft(value); else ontext(JSON.stringify(value, null, 2)); } }
     function emitRows(value: Row[]) { emit(['numeric-map', 'durations'].includes(control.structured ?? '') ? Object.fromEntries(value.map(row => [String(row.name), row.number])) : value); }
     function change(index: number, key: string, value: unknown) {
         if (disabled || !rows) return;
@@ -68,7 +69,7 @@
         catch {
             // An unfinished nested JSON value belongs to the same parent draft as raw editing.
             let suffix = 0, marker = '__structured_json_0__';
-            while (text.includes(marker)) marker = '__structured_json_' + ++suffix + '__';
+            while ((draftValue === undefined ? text : JSON.stringify(draftValue)).includes(marker)) marker = '__structured_json_' + ++suffix + '__';
             const next = rows.map((row, position) => position === index ? { ...row, [key]: marker } : row);
             raw = true;
             ontext(JSON.stringify(next, null, 2).replace(JSON.stringify(marker), () => value));
@@ -91,7 +92,7 @@
 <div class="pc-structured-control" data-structured-control={control.structured}>
     <div class="pc-structured-mode"><button type="button" aria-label={'Edit ' + control.label + (editingRaw ? ' as rows' : ' as JSON')} disabled={disabled || (editingRaw && !rows)} onclick={() => { if (!disabled && rows) raw = !editingRaw; }}>{editingRaw ? 'Use rows' : 'Edit JSON'}</button></div>
     {#if editingRaw}
-        <label for={idPrefix + '-raw'}>{control.label} (JSON)</label><textarea class="pc-structured-raw" id={idPrefix + '-raw'} aria-label={control.label} aria-invalid={!!error} aria-describedby={error ? idPrefix + '-error' : undefined} value={text} {disabled} oninput={event => rawInput(event.currentTarget.value)} spellcheck="false"></textarea>
+        <label for={idPrefix + '-raw'}>{control.label} (JSON)</label><textarea class="pc-structured-raw" id={idPrefix + '-raw'} aria-label={control.label} aria-invalid={!!error} aria-describedby={error ? idPrefix + '-error' : undefined} value={rawText} {disabled} oninput={event => rawInput(event.currentTarget.value)} spellcheck="false"></textarea>
         {#if !rows}<small>Rows are available when this JSON has a supported shape.</small>{/if}
     {:else if rows}
         <div class="pc-structured-rows">

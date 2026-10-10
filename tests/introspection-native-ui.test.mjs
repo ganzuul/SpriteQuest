@@ -47,6 +47,7 @@ const input = (element, value, event = 'input') => { assert.ok(element); element
 const rawEditor = (f, label) => { const toggle = f.host.querySelector('[aria-label="Edit ' + label + ' as JSON"]'); if (toggle) { toggle.click(); flushSync(); } return f.host.querySelector('[aria-label="' + label + '"]'); };
 const chooseMode = (f, value) => { const group = f.host.querySelector('[role="radiogroup"][aria-label="Mode"]'); if (group) { const radio = group.querySelector('input[value="' + value + '"]'); assert.ok(radio); radio.checked = true; radio.dispatchEvent(new dom.window.Event('change', { bubbles: true })); flushSync(); } else input(f.host.querySelector('[aria-label="Mode"]'), value, 'change'); };
 const settle = async () => { await tick(); flushSync(); };
+const openControlGroup = (f, name) => { const group = f.host.querySelector('[data-control-group="' + name + '"]'); assert.ok(group, 'Missing ' + name + ' disclosure'); if (!group.open) { group.querySelector('summary').click(); flushSync(); } assert.equal(group.open, true); };
 
 test('native picker discovers all six Introspection tools and phase-safe mode choices', () => {
     assert.ok(FAMILY_PALETTE.some(item => item.name === 'Introspection'));
@@ -89,6 +90,8 @@ test('actual State Details edit fractional numbers and JSON maps with complete-c
         root = changed.data.candidate; f.update(details(root, 'revision' + ++revision)); return { ok: true };
     } });
     try {
+        assert.equal(f.host.querySelector('[aria-label="Decay"]'), null, 'advanced controls mount after their disclosure opens');
+        openControlGroup(f, 'Bounds'); openControlGroup(f, 'Phases');
         const decay = f.host.querySelector('[aria-label="Decay"]'); assert.equal(decay.type, 'number'); assert.equal(decay.step, '0.01'); assert.equal(decay.value, '0.25');
         const baseline = f.host.querySelector('[aria-label="Baseline"]'); assert.equal(baseline.step, 'any');
         input(decay, '0.35', 'change'); await settle(); assert.equal(root.nodes.work.decay, 0.35);
@@ -117,6 +120,7 @@ test('object drafts retain current revision guards when a mode removes their con
     const pending = [], root = graph('state', { mode: 'curve' });
     const f = await fixture(details(root), { editControl(captured) { return new Promise(resolve => pending.push(resolve)); } });
     try {
+        openControlGroup(f, 'Phases');
         input(rawEditor(f, 'Phase durations'), '{"onset":4}'); f.host.querySelector('[data-save-control="durations"]').click(); flushSync(); assert.equal(pending.length, 1);
         f.update(details(graph('state', { mode: 'value' }), 'revision2'));
         assert.equal(rawEditor(f, 'Phase durations'), null); assert.ok(rawEditor(f, 'Values'));

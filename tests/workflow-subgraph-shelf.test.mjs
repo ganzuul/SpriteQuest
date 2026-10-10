@@ -12,8 +12,9 @@ const finalize = draft => { const identity = computeDefinitionIdentity(draft); a
 
 test('explicit shelf saves advance one visible head without editing placed snapshots', () => {
     const graph = siblingWorkflow(), before = structuredClone(graph), host = installMock({ settings: { graphs: { [graph.id]: graph } } });
-    S.settings(); // Complete preference migration before counting shelf persistence.
     let saves = 0; host.saveSettingsDebounced = () => saves++;
+    S.settings(); // Capture the host boundary and complete migration before counting shelf persistence.
+    saves = 0;
     const draft = structuredClone(definition()); draft.id = 'saved-plan';
     const first = shelf.saveSubgraphDefinition(draft);
     assert.equal(first.ok, true, JSON.stringify(first));

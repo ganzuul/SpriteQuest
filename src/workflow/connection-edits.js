@@ -1,4 +1,5 @@
 import { cloneDefinitionData, definitionRefKey } from './definitions.js?v=0.27.0';
+import { prepareGraphArtifacts, graphArtifactsFor } from './graph-artifacts.js?v=0.27.0';
 import { cloneWorkflowDocument } from './document.js?v=0.27.0';
 import { ARTIFACT_KINDS, OPERATIONS, describeOperation, operationDefaults, operationFor, portsForNode } from './catalog.js?v=0.27.0';
 import { ACTIVE_PROFILE_ID } from './model-profiles.js?v=0.27.0';
@@ -171,7 +172,7 @@ function create(context, command) {
     return command.connection ? connect(context, command.connection.origin, { nodeId: id, portId: command.connection.portId }, command.connection.replace) : { ok: true };
 }
 
-function createInstance(original, normalized, command, path, ref, factory) {
+function createInstance(original, normalized, command, path, ref, factory, sourceRoot) {
     if (!point(command.graphPoint)) return fail('INVALID_COMMAND', 'Capture a finite graph point before inserting an instance.');
     if (path.length && command.expectedRef === undefined) return fail('STALE_DEFINITION', 'Supply the exact containing definition pin.');
     if (command.connection !== undefined && (!keys(command.connection, ['origin', 'portId', 'replace']) || !endpoint(command.connection.origin) || !safeId(command.connection.portId) || command.connection.replace !== undefined && typeof command.connection.replace !== 'boolean')) return fail('INVALID_COMMAND', 'Choose an existing origin and an explicit instance port.');
@@ -210,7 +211,7 @@ function createInstance(original, normalized, command, path, ref, factory) {
         }
         const revised = draft ? prepareLocalDefinitionEdit({ ...original, definitions: candidate.definitions }, { instancePath: path, expectedRef: ref, draft }) : { ok: true, data: { candidate } };
         if (!revised.ok) return revised;
-        const prepared = prepareGraphCandidate(original, revised.data.candidate, context.addedEdgeIds, context.removedEdgeIds);
+        const prepared = prepareGraphCandidate(original, revised.data.candidate, context.addedEdgeIds, context.removedEdgeIds, sourceRoot);
         return prepared.ok ? { ok: true, data: { ...prepared.data, viewPath: [...path], ...(ref ? { expectedRef: structuredClone(ref) } : {}),
             addedNodeIds: context.addedNodeIds, addedDefinitionKeys: Object.keys(prepared.data.candidate.definitions).filter(key => !Object.hasOwn(original.definitions ?? {}, key)),
             changedRefs: [...imported.data.changedRefs, ...(revised.data.changedRefs ?? [])] }, allocations, ids } : prepared;
@@ -254,15 +255,20 @@ export function prepareNativeConnectionEdit(root, input, options = {}) {
         if (!record(command) || typeof command.kind !== 'string' || !Object.hasOwn(fields, command.kind) || !keys(command, ['kind', 'viewPath', 'expectedRef', ...fields[command.kind]]) || command.replace !== undefined && typeof command.replace !== 'boolean') return fail('INVALID_COMMAND', 'Use a supported native connection command.');
         const path = command.viewPath === undefined ? [] : command.viewPath;
         if (!Array.isArray(path) || path.length > 8 || path.some(id => !safeId(id))) return fail('INVALID_COMMAND', 'Use a bounded path of stable instance IDs.');
-        const normalized = cloneWorkflowDocument(root);
+        const artifacts = prepareGraphArtifacts(root);
+        const normalized = cloneWorkflowDocument(root, artifacts.ok ? { checkedArtifacts: artifacts.data } : {});
         if (!normalized.ok) return normalized;
         // Keep entry preconditions even if a caller-provided ID factory changes its source.
         const original = structuredClone(root), candidate = normalized.data;
+        if (artifacts.ok) {
+            const verified = graphArtifactsFor(original, artifacts.data);
+            if (!verified.ok) return verified;
+        }
         const chain = path.length ? definitionChain(candidate, path) : null;
         if (path.length && (!chain || !ownsDefinitionPath(candidate, path))) return fail('READ_ONLY_VIEW', 'Make a local copy of the complete containing path before editing.');
         const definition = chain?.at(-1).definition, ref = chain?.at(-1).node.definition;
         if (command.expectedRef !== undefined && (!path.length || !keys(command.expectedRef, ['id', 'version', 'semanticHash']) || definitionRefKey(command.expectedRef) !== definitionRefKey(ref))) return fail('STALE_DEFINITION', 'The exact containing definition changed.');
-        if (command.kind === 'create-instance') return createInstance(original, candidate, command, path, ref, factory.data);
+        if (command.kind === 'create-instance') return createInstance(original, candidate, command, path, ref, factory.data, root);
         const draft = definition ? structuredClone(definition) : null, scope = draft?.body ?? candidate;
         scope.portals ??= {};
         const ids = compositionIds(candidate), allocations = [];
@@ -279,10 +285,11 @@ export function prepareNativeConnectionEdit(root, input, options = {}) {
         else result = disconnect(context, command);
         if (!result.ok) return result;
         const finish = () => {
-            const prepared = !context.changed ? prepareGraphCandidate(original, original)
+            const prepared = !context.changed ? prepareGraphCandidate(original, original, [], [], root)
                 : draft ? prepareLocalDefinitionEdit(original, { instancePath: path, expectedRef: ref, draft })
-                    : prepareGraphCandidate(original, candidate, context.addedEdgeIds, context.removedEdgeIds);
-            return prepared.ok ? { ok: true, data: { ...prepared.data, viewPath: [...path], ...(ref ? { expectedRef: structuredClone(ref) } : {}), addedEdgeIds: [...context.addedEdgeIds], removedEdgeIds: [...context.removedEdgeIds], addedNodeIds: [...context.addedNodeIds], removedPortalIds: [...context.removedPortalIds] } } : prepared;
+                    : prepareGraphCandidate(original, candidate, context.addedEdgeIds, context.removedEdgeIds, root);
+            const qualified = prepared.ok && draft ? prepareGraphCandidate(original, prepared.data.candidate, context.addedEdgeIds, context.removedEdgeIds, root) : prepared;
+            return qualified.ok ? { ok: true, data: { ...prepared.data, ...qualified.data, viewPath: [...path], ...(ref ? { expectedRef: structuredClone(ref) } : {}), addedEdgeIds: [...context.addedEdgeIds], removedEdgeIds: [...context.removedEdgeIds], addedNodeIds: [...context.addedNodeIds], removedPortalIds: [...context.removedPortalIds] } } : qualified;
         };
         const provisional = finish();
         if (!provisional.ok || !provisional.data.changed || !factory.data || !allocations.length) return provisional;

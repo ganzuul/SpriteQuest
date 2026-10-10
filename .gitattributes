@@ -1,0 +1,3 @@
+# Preserve the exact generated browser bytes used in latency measurements.
+dist/lattice-ui.js -text
+dist/lattice.css -text

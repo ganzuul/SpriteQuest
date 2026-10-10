@@ -8,7 +8,7 @@ import { RANDOM_OPERATIONS, describeRandom } from './operations/random-outcomes.
 import { COLLECTION_OPERATIONS, describeCollection } from './operations/collection-nodes.js?v=0.27.0';
 import { PRIMITIVE_OPERATIONS, describePrimitive } from './operations/nodes.js?v=0.27.0';
 import { describeContextJoin } from './operations/context-join.js?v=0.27.0';
-import { TRANSPOSE_OPERATIONS, describeTranspose } from './operations/transpose-nodes.js?v=0.27.0';
+import { TRANSPOSE_OPERATIONS, describeTransposeMetadata } from './operations/transpose-nodes.js?v=0.27.0';
 import { CLEANUP_MODES, validateCleanupSettings } from './operations/prose-cleanup.js?v=0.27.0';
 import { INTROSPECTION_NATIVE_OPERATIONS, describeNativeIntrospection, introspectionDefaults } from './introspection/native.js?v=0.27.0';
 import { INPUT_OPERATIONS, describeInput } from './operations/input-nodes.js?v=0.27.0';
@@ -42,10 +42,11 @@ export const OPERATIONS = {
     'apply-reply': descriptor('apply-reply', 'Apply Reply', 'Output', 'post', 'candidate', null, {}, { terminal: true }),
     reroute: descriptor('reroute', 'Reroute', 'Shaping', null, null, null, { artifactKind: 'text' }),
 };
+const cloneDefault = value => value !== null && typeof value === 'object' ? structuredClone(value) : value;
 const primitiveDescriptor = source => ({ ...source, minimumSchema: 3,
     controlDescriptors: Object.fromEntries(source.controlDescriptors.map(control => [control.key, {
         ...(control.type === 'enum' ? { type: 'enum', values: control.options } : control.type === 'text' || typeof source.defaults[control.key] === 'string' ? { type: 'string' } : { type: 'array', items: control.key === 'protectedLiterals' ? 'string' : 'record' }),
-        default: structuredClone(source.defaults[control.key]), label: control.label, editor: control.type === 'json' && control.key !== 'protectedLiterals' ? 'json' : 'text',
+        default: cloneDefault(source.defaults[control.key]), label: control.label, editor: control.type === 'json' && control.key !== 'protectedLiterals' ? 'json' : 'text',
         ...(Array.isArray(source.defaults[control.key]) ? { max: ['fields', 'protectedLiterals'].includes(control.key) ? 128 : 64 } : {}),
     }])),
 });
@@ -56,7 +57,7 @@ const transposeDescriptor = source => ({ ...source, minimumSchema: 3,
             : control.type === 'integer' ? { type: 'integer', min: control.minimum, max: control.maximum }
             : control.type === 'array' ? { type: 'array', items: 'string', max: control.maxItems }
             : { type: 'string' }),
-        default: structuredClone(source.defaults[control.key]), label: control.label,
+        default: cloneDefault(source.defaults[control.key]), label: control.label,
     }])),
 });
 Object.assign(OPERATIONS, Object.fromEntries(Object.entries(TRANSPOSE_OPERATIONS).map(([id, source]) => [id, transposeDescriptor(source)])));
@@ -117,7 +118,7 @@ function dynamicDescription(node, phase) {
             const settings = Object.fromEntries(descriptor.controls.map(key => {
                 const property = Object.getOwnPropertyDescriptor(node, key);
                 if (property && (!property.enumerable || !Object.hasOwn(property, 'value'))) throw new Error('own settings');
-                return [key, property ? property.value : structuredClone(descriptor.defaults[key])];
+                return [key, property ? property.value : cloneDefault(descriptor.defaults[key])];
             }));
             if (!['repair', 'scan', ...CLEANUP_MODES].includes(settings.mode)) return failure('INVALID_SETTINGS', 'Select a supported Repair mode.');
             if (CLEANUP_MODES.includes(settings.mode)) {
@@ -135,7 +136,7 @@ function dynamicDescription(node, phase) {
         } catch { return failure('INVALID_SETTINGS', 'Repair controls require own data properties.'); }
     }
     if (Object.hasOwn(TRANSPOSE_OPERATIONS, node.operation)) {
-        const result = describeTranspose(node, { phase });
+        const result = describeTransposeMetadata(node, { phase });
         return result.ok ? { ok: true, data: { ...result.data, descriptor: transposeDescriptor(result.data.descriptor) } } : result;
     }
     if (node.operation === 'context-join') {

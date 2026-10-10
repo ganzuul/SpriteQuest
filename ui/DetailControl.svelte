@@ -1,9 +1,9 @@
 <script lang="ts">
     import StructuredControl from './StructuredControl.svelte';
     import type { DetailControl } from './detail-types';
-    let { control, text, error = '', disabled = false, pending = false, idPrefix, ontext, onvalue, onnumber, onsave }: {
+    let { control, text, error = '', disabled = false, pending = false, idPrefix, ontext, onDraft, draftValue, onvalue, onnumber, onsave }: {
         control: DetailControl; text: string; error?: string; disabled?: boolean; pending?: boolean; idPrefix: string;
-        ontext: (text: string) => void; onvalue: (value: unknown) => void; onnumber: (input: HTMLInputElement) => void; onsave: () => void;
+        ontext: (text: string) => void; onDraft?: (value: unknown) => void; draftValue?: unknown; onvalue: (value: unknown) => void; onnumber: (input: HTMLInputElement) => void; onsave: () => void;
     } = $props();
     const shortChoices = () => control.editor === 'enum' && (control.options?.length ?? 0) > 1 && (control.options?.length ?? 0) <= 3 && control.options!.every(option => option.label.length <= 10);
     const provenance = () => control.effective !== undefined && control.effective !== text && control.source !== 'Saved setting' ? control.source : '';
@@ -12,7 +12,7 @@
 <div class:pc-control-number={control.editor === 'number'} class="pc-detail-control">
     {#if control.structured && control.editor === 'json'}
         <span class="pc-control-label">{control.label}</span>
-        <StructuredControl {control} {text} {disabled} {ontext} {idPrefix} {error} />
+        <StructuredControl {control} {text} {disabled} {ontext} {onDraft} {draftValue} {idPrefix} {error} />
     {:else if control.editor === 'boolean'}
         <label class="pc-detail-check"><input aria-label={control.label} type="checkbox" checked={Boolean(control.value)} {disabled} onchange={event => { if (!disabled) onvalue(event.currentTarget.checked); }} />{control.label}</label>
     {:else if shortChoices()}

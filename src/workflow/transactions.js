@@ -1,17 +1,21 @@
-import { commitGraphDocument, GRAPH_DOCUMENT_FIELDS } from '../history.js?v=0.27.0';
+import { prepareGraphArtifacts, inspectGraphArtifacts, safeGraphArtifactData } from './graph-artifacts.js?v=0.27.0';
+import { checkedCandidateSnapshot, consumeCheckedCandidate, checkedCandidateArtifacts } from './checked-candidate.js?v=0.27.0';
+import { freeze } from './record-data.js?v=0.27.0';
+import { commitGraphDocument, GRAPH_DOCUMENT_FIELDS, graphHistoryStamp } from '../history.js?v=0.27.0';
 import { graphDocumentSignature, graphSemanticSignature } from './ports.js?v=0.27.0';
-import { safeWorkflowData, validateGraphStructure } from './contracts.js?v=0.27.0';
+import { safeWorkflowData } from './contracts.js?v=0.27.0';
 import { definitionChain, ownsDefinitionPath } from './composition-edit.js?v=0.27.0';
 
 const contexts = new WeakMap();
+const changes = new WeakMap();
+const sameStamp = (a, b) => a.generation === b.generation && a.revision === b.revision;
 const fail = (code, message) => ({ ok: false, error: { code, message } });
 const validContext = value => safeWorkflowData(value) && value && typeof value.sessionId === 'string' && value.sessionId.length > 0 && typeof value.readOnly === 'boolean' && Array.isArray(value.viewPath) && value.viewPath.every(id => typeof id === 'string' && id.length > 0);
 export const graphEditSignature = graphSemanticSignature;
-const validateEditableGraph = validateGraphStructure;
 
 /**
  * @typedef {{sessionId:string, viewPath:string[], readOnly:boolean}} GraphEditContext
- * @typedef {{candidate:import('./types').NativeGraph3, baseSignature:string, baseDocumentSignature:string, viewPath?:string[], context:object}} ContextualPreparedEdit
+ * @typedef {{candidate:import('./types').NativeGraph3, baseSignature:string, baseDocumentSignature:string, viewPath?:string[], context:object, checkedCandidate?:object}} ContextualPreparedEdit
  * @typedef {{changed:boolean, semanticChanged:boolean, rootId:string}} CommitSummary
  */
 
@@ -26,7 +30,7 @@ const validateEditableGraph = validateGraphStructure;
  */
 export function captureGraphEditContext(root, readContext) {
     try {
-        const validation = validateEditableGraph(root);
+        const validation = prepareGraphArtifacts(root);
         if (!validation.ok) return validation;
         if (typeof root.id !== 'string' || !root.id) return fail('INVALID_CONTEXT', 'A stable root ID is required.');
         const current = readContext();
@@ -37,7 +41,7 @@ export function captureGraphEditContext(root, readContext) {
             if (!ownsDefinitionPath(root, current.viewPath)) return fail('READ_ONLY_DEFINITION', 'Make a local copy before editing this definition.');
         }
         const token = Object.freeze({});
-        contexts.set(token, { root, rootId: root.id, readContext, captured: structuredClone(current), baseSignature: graphEditSignature(root), baseDocumentSignature: graphDocumentSignature(root) });
+        contexts.set(token, { stamp: graphHistoryStamp(root), root, rootId: root.id, readContext, captured: structuredClone(current), baseSignature: graphEditSignature(root), baseDocumentSignature: graphDocumentSignature(root) });
         return { ok: true, data: token };
     } catch {
         return fail('CONTEXT_UNAVAILABLE', 'Could not capture the active graph context.');
@@ -55,7 +59,7 @@ export function captureGraphEditContext(root, readContext) {
 export function commitPreparedGraph(root, prepared) {
     try {
         if (!prepared || typeof prepared !== 'object' || Array.isArray(prepared) || ![Object.prototype, null].includes(Object.getPrototypeOf(prepared)) || Object.values(Object.getOwnPropertyDescriptors(prepared)).some(property => !('value' in property))) return fail('INVALID_PREPARATION', 'Expected a plain prepared graph edit.');
-        if (!safeWorkflowData(root)) return fail('MALFORMED_WORKFLOW', 'The destination must remain a bounded plain graph.');
+        if (!safeGraphArtifactData(root)) return fail('MALFORMED_WORKFLOW', 'The destination must remain a bounded plain graph.');
         const context = contexts.get(prepared?.context);
         if (!context || context.root !== root || context.rootId !== root.id) return fail('STALE_ROOT', 'The destination graph was replaced. Prepare the edit again.');
         let current;
@@ -66,18 +70,62 @@ export function commitPreparedGraph(root, prepared) {
         if (context.captured.viewPath.length && !ownsDefinitionPath(root, current.viewPath)) return fail('READ_ONLY_DEFINITION', 'The qualified graph view is no longer owned.');
         if (context.captured.viewPath.length && prepared.viewPath === undefined) return fail('STALE_CONTEXT', 'A child edit must explicitly identify its captured graph view.');
         if (prepared.viewPath !== undefined && (!safeWorkflowData(prepared.viewPath) || JSON.stringify(prepared.viewPath) !== JSON.stringify(context.captured.viewPath))) return fail('STALE_CONTEXT', 'The prepared edit targets a different graph view.');
+        if (!sameStamp(context.stamp, graphHistoryStamp(root))) return fail('STALE_DOCUMENT', 'The document history changed. Prepare the edit again.');
         if (prepared.baseSignature !== context.baseSignature || prepared.baseDocumentSignature !== context.baseDocumentSignature || context.baseSignature !== graphEditSignature(root) || context.baseDocumentSignature !== graphDocumentSignature(root)) return fail('STALE_DOCUMENT', 'The graph changed after import began. Prepare the edit again.');
-        const validation = validateEditableGraph(prepared.candidate);
-        if (!validation.ok) return validation;
-        if (root.mode !== prepared.candidate.mode) return fail('MODE_MISMATCH', 'Import requires the same phase. Open this workflow separately.');
+        const owned = prepared.checkedCandidate === undefined ? null : checkedCandidateSnapshot(root, prepared);
+        if (prepared.checkedCandidate !== undefined && !owned) return fail('INVALID_PREPARATION', 'The checked candidate was changed, cloned or consumed.');
+        const admitted = owned ? { ok: true, data: checkedCandidateArtifacts(prepared.checkedCandidate) } : prepareGraphArtifacts(prepared.candidate);
+        if (!admitted.ok) return admitted;
+        const candidate = owned ?? inspectGraphArtifacts(admitted.data).snapshot;
+        if (root.mode !== candidate.mode) return fail('MODE_MISMATCH', 'Import requires the same phase. Open this workflow separately.');
         const protectedFields = graph => Object.fromEntries(Object.entries(graph).filter(([key]) => !GRAPH_DOCUMENT_FIELDS.includes(key) && !['view', 'selection'].includes(key)));
-        if (graphDocumentSignature(protectedFields(root)) !== graphDocumentSignature(protectedFields(prepared.candidate))) return fail('UNSUPPORTED_EDIT', 'A prepared edit cannot replace root identity, runtime authority, or other noneditable metadata.');
-        const semanticChanged = graphEditSignature(root) !== graphEditSignature(prepared.candidate);
+        if (graphDocumentSignature(protectedFields(root)) !== graphDocumentSignature(protectedFields(candidate))) return fail('UNSUPPORTED_EDIT', 'A prepared edit cannot replace root identity, runtime authority, or other noneditable metadata.');
+        const semanticChanged = graphEditSignature(root) !== graphEditSignature(candidate);
         const rootId = root.id;
-        const changed = commitGraphDocument(root, prepared.candidate);
+        const impact = classifyChange(root, candidate, context.captured.viewPath);
+        const snapshot = candidate;
+        const committedSignature = graphDocumentSignature(snapshot);
+        const committedStamp = Object.freeze({ generation: context.stamp.generation, revision: context.stamp.revision + 1 });
+        const changed = commitGraphDocument(root, snapshot);
+        if (prepared.checkedCandidate !== undefined) consumeCheckedCandidate(prepared.checkedCandidate);
         if (changed) contexts.delete(prepared.context);
-        return { ok: true, data: { changed, semanticChanged: changed && semanticChanged, rootId } };
+        const summary = Object.freeze({ changed, semanticChanged: changed && semanticChanged, rootId });
+        // History observers are synchronous and may mutate or commit again. Only
+        // the exact atomic transition may authorize a retained display artifact.
+        if (changed && sameStamp(committedStamp, graphHistoryStamp(root)) && safeWorkflowData(root) && graphDocumentSignature(root) === committedSignature)
+            changes.set(summary, { root, stamp: committedStamp, signature: committedSignature, record: freeze({ ...impact, candidate: snapshot, artifacts: admitted.data }) });
+        return { ok: true, data: summary };
     } catch {
         return fail('COMMIT_FAILED', 'Could not commit the prepared graph edit.');
     }
+}
+
+/** Positive coordinate classification compares the complete admitted document transition. */
+function classifyChange(before, after, path) {
+    const unknown = { kind: 'unknown', nodeIds: [], groupIds: [] };
+    if (path.length) return unknown;
+    const nodeIds = [], groupIds = [];
+    const strip = (graph, collect) => {
+        const document = Object.fromEntries(GRAPH_DOCUMENT_FIELDS.filter(key => Object.hasOwn(graph, key)).map(key => [key, graph[key]]));
+        for (const [field, ids] of [['nodes', nodeIds], ['groups', groupIds]]) {
+            if (!document[field]) continue;
+            document[field] = Object.fromEntries(Object.entries(document[field]).map(([id, item]) => {
+                const { x, y, ...rest } = item;
+                if (field === 'groups' && rest.frame) { const { x, y, ...frame } = rest.frame; rest.frame = frame; }
+                if (collect) {
+                    const old = before[field]?.[id];
+                    if (old && (old.x !== item.x || old.y !== item.y || field === 'groups' && (old.frame?.x !== item.frame?.x || old.frame?.y !== item.frame?.y))) ids.push(id);
+                }
+                return [id, rest];
+            }));
+        }
+        return graphDocumentSignature(document);
+    };
+    return strip(before, false) === strip(after, true) && (nodeIds.length || groupIds.length) ? { kind: 'coordinates', nodeIds, groupIds } : unknown;
+}
+/** Verify the exact producer summary, destination, history generation and current raw content. */
+export function committedGraphChange(root, summary) {
+    const change = changes.get(summary);
+    if (!change || change.root !== root || !sameStamp(change.stamp, graphHistoryStamp(root)) || !safeGraphArtifactData(root) || graphDocumentSignature(root) !== change.signature) return null;
+    return change.record;
 }

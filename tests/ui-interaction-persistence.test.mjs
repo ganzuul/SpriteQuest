@@ -15,7 +15,8 @@ function persistenceFixture() {
     const session = createGraphViewSession({ root, activationId: 'persistence-activation', navigation: [{ identity: child, label: 'Child' }], preparedViews: [identity, child].map(identity => ({ identity, ...(identity.kind === 'instance' ? { definitionRef: { id: 'definition', version: 1, semanticHash: 'hash' } } : {}), savedGraph: { nodes: {}, wires: {} }, effectiveNodes: {}, interface: [], ports: [] })) }).data;
     session.updateView({ nodePresentation: { retained: { alias: 'Root draft', x: 12 } } }); session.openInstance(['child']); session.updateView({ nodePresentation: { other: { alias: 'Child draft', compact: true } } });
     const stored = {}, scheduled = new Map(); let sequence = 0, serializations = 0, saves = 0;
-    const env = { graphViews: { ...session, serialize() { serializations++; return session.serialize(); } }, activeWorkflow: () => root, setActiveWorkspaceViews: views => { stored.views = views; }, viewSaveTimer: null, save: () => saves++, setTimeout(callback) { scheduled.set(++sequence, callback); return sequence; }, clearTimeout(ticket) { scheduled.delete(ticket); } };
+    const documentToken = {}; const owner = {};
+    const env = { documentSession: { capture: () => documentToken, stillCurrent: token => token === documentToken && env.documentCurrent !== false }, settings: () => owner, graphViews: { ...session, serialize() { serializations++; return session.serialize(); } }, activeWorkflow: () => root, setActiveWorkspaceViews: views => { stored.views = views; }, viewSaveTimer: null, save: () => saves++, setTimeout(callback) { scheduled.set(++sequence, callback); return sequence; }, clearTimeout(ticket) { scheduled.delete(ticket); } };
     return { session, stored, scheduled, env, persist: controllerFunction('persistGraphViews', env), serializations: () => serializations, saves: () => saves };
 }
 
@@ -84,4 +85,27 @@ test('explicit scoped portal presentation snapshots immediately while external s
     assert.equal(saved.portalPresentation?.publisher?.label, 'Local label'); assert.deepEqual(saved.portalPresentation.publisher.source, { nodeId: 'work', portId: 'out' });
     assert.equal(f.saves(), 1); assert.equal(f.scheduled.size, 1);
     assert.deepEqual(saved.nodePresentation, { other: { alias: 'Child draft', compact: true } });
+});
+
+test('a retained save callback cannot serialize or save a replacement document session', () => {
+    const f = persistenceFixture(); f.persist(false, true);
+    const stale = [...f.scheduled.values()][0];
+    f.env.graphViews = { readRoot: () => ({ id: 'replacement' }), serialize: () => assert.fail('Cannot serialize the replacement') };
+    stale(); assert.equal(f.serializations(), 0); assert.equal(f.saves(), 0);
+});
+test('a deferred callback from a replaced activation cannot save even when the view object is retained', () => {
+    const f = persistenceFixture(); f.persist(false, true);
+    const stale = [...f.scheduled.values()][0]; f.env.documentCurrent = false;
+    stale(); assert.equal(f.serializations(), 0); assert.equal(f.saves(), 0);
+});
+
+test('pagehide publishes the pending camera before the state recovery submission and reports host failures once',()=>{
+ const f=persistenceFixture(),listeners=[],issues=[];let report;
+ Object.assign(f.env,{globalThis:{addEventListener(type,listener,options){listeners.push({type,listener,options});}},onRecoveryIssue(listener){report=listener;},toast(message,type){issues.push({message,type});},persistGraphViews:f.persist});
+ controllerFunction('installRecoveryLifecycle',f.env)();
+ assert.equal(listeners.length,1);assert.equal(listeners[0].type,'pagehide');assert.equal(listeners[0].options.capture,true);
+ f.session.updateView({camera:{x:91,y:-42,zoom:1.8}});f.persist(false,true);assert.equal(f.serializations(),0);
+ listeners[0].listener();assert.equal(f.scheduled.size,0);assert.equal(f.saves(),0,'The state pagehide boundary performs the single host submission');
+ assert.deepEqual(f.stored.views.views[1].camera,{x:91,y:-42,zoom:1.8});
+ report({code:'HOST_SAVE',message:'Host unavailable'});assert.deepEqual(issues,[{message:'Host unavailable',type:'error'}]);
 });

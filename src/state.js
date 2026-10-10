@@ -5,7 +5,7 @@ import { safeWorkflowData } from './workflow/contracts.js?v=0.27.0';
 import { cloneWorkflowDocument } from './workflow/document.js?v=0.27.0';
 import { serializeWorkflowDocument } from './workflow/document-file.js?v=0.27.0';
 import { createWorkflowDocumentSession } from './ui/document-session.js?v=0.27.0';
-import { commitPreparedGraph, graphEditSignature } from './workflow/transactions.js?v=0.27.0';
+import { commitPreparedGraph, graphEditSignature, committedGraphChange } from './workflow/transactions.js?v=0.27.0';
 import * as graphHistory from './history.js?v=0.27.0';
 import { definitionRefKey } from './workflow/definition-data.js?v=0.27.0';
 import { containsRetiredModelCall, cloneArchivedWorkflow, retiredLibraryKeys, recoveryLibraryKeys, portableArchivedWorkflow, portableArchivedDefinition } from './workflow/retired-workflows.js?v=0.27.0';
@@ -216,11 +216,16 @@ function applySettings(value, next) {
     return changed.length > 0;
 }
 
-function ownDocument(value) {
+function ownDocument(value, host) {
     if (shared.owner === value) return;
     const original = value.recoveryDraft, recovered = dataRecord(original), checked = recovered && admitActiveDocument(recovered.graph);
     if (checked?.error?.code === 'WRONG_PHASE') value.enabled = false;
+    if (shared.owner) flushRecovery();
     shared.owner = value;
+    shared.recoveryPending = false; shared.settingsSavePending = false; shared.settingsSaveTicket = null;
+    // Keep the admitted host boundary: replacement contexts cannot save this owner.
+    const saver = host.saveSettingsDebounced;
+    shared.ownerBoundary = () => saver.call(host);
     if (recovered && !checked?.ok) value.migrationRecovery.push({ id: 'previous-recovery-draft', name: 'Previous recovery draft', issue: checked?.error?.message ?? 'The previous recovery draft is unreadable.', original: recovered });
     let workspaceViews = checked?.ok ? recovered.workspaceViews ?? null : null;
     if (checked?.ok && workspaceViews !== null && !serializeWorkflowDocument(checked.data, workspaceViews).ok) {
@@ -228,7 +233,7 @@ function ownDocument(value) {
         workspaceViews = null;
     }
     if (original && !recovered) value.migrationRecovery.push({ id: 'previous-recovery-draft', name: 'Previous recovery draft', original, issue: 'The previous recovery draft is unreadable.' });
-    activateDocument(checked?.ok ? checked.data : starterGraph('unified-basic'), { source: checked?.ok ? { kind: 'recovery', name: checked.data.name || 'Recovered workflow' } : null, workspaceViews });
+    activateDocument(checked?.ok ? checked.data : starterGraph('unified-basic'), { source: checked?.ok ? { kind: 'recovery', name: checked.data.name || 'Recovered workflow' } : null, workspaceViews }, { ownerReplacement: true });
 }
 
 /** Admit saved settings once; camera projections never repeat domain validation. */
@@ -239,26 +244,125 @@ export function settings() {
     if (!property) {
         const value = { schema: 2, enabled: false, subgraphLibrary: { definitions: {} }, ui: {}, migrationRecovery: [], recoveryDraft: null };
         checkSettings(value);
-        root[MODULE] = value; admitted.add(value); ownDocument(value);
+        root[MODULE] = value; admitted.add(value); ownDocument(value, c);
         return value;
     }
     if (!('value' in property)) throw new Error('Lattice settings must not contain an accessor.');
     const value = property.value;
     let migrated = false;
     if (!admitted.has(value)) { const saved = checkSettings(value); migrated = migrateSettings(value, saved); admitted.add(value); }
-    ownDocument(value);
-    if (migrated) safe(() => c.saveSettingsDebounced());
+    ownDocument(value, c);
+    if (migrated) save({ recovery: false });
     return value;
 }
-function persistRecovery() {
-    const graph = documentSession.current();
-    if (!shared.owner || !graph) return;
-    const encoded = serializeWorkflowDocument(graph, documentSession.workspaceViews?.() ?? documentSession.capture()?.workspaceViews ?? null);
-    if (!encoded.ok) return;
-    const envelope = JSON.parse(encoded.data.json);
-    shared.owner.recoveryDraft = { graph: envelope.graph, workspaceViews: envelope.workspaceViews ?? null };
+shared.recoveryBatchDepth ??= 0;
+shared.recoveryPending ??= false;
+shared.settingsSavePending ??= false;
+shared.pendingRecoveryTickets ??= new Map();
+shared.recoveryIssueListeners ??= new Set();
+const recoveryIssue = (code, message) => ({ ok: false, error: { code, message } });
+function reportRecovery(result, onIssue) {
+    if (!result.ok) {
+        safe(() => onIssue?.(result.error));
+        for (const listener of shared.recoveryIssueListeners) safe(() => listener(result.error));
+    }
+    return result;
 }
-export function save() { persistRecovery(); safe(() => ctx().saveSettingsDebounced()); }
+export function onRecoveryIssue(listener) { shared.recoveryIssueListeners.add(listener); return () => shared.recoveryIssueListeners.delete(listener); }
+function recoveryTicket() {
+    const captured = documentSession.capture();
+    if (!shared.owner || !captured) return null;
+    if (shared.recoveryTicket?.owner === shared.owner && shared.recoveryTicket.captured === captured) return shared.recoveryTicket;
+    const previous = shared.pendingRecoveryTickets.get(shared.owner);
+    return shared.recoveryTicket = {
+        owner: shared.owner, captured, graph: captured.graph,
+        workspaceViews: documentSession.workspaceViews(), boundary: shared.ownerBoundary,
+        recoveryPending: false, savePending: previous?.savePending ?? false, payload: null,
+    };
+}
+function retainTicket(ticket) { shared.pendingRecoveryTickets.set(ticket.owner, ticket); }
+function releaseTicket(ticket) {
+    if (!ticket.recoveryPending && !ticket.savePending && shared.pendingRecoveryTickets.get(ticket.owner) === ticket) shared.pendingRecoveryTickets.delete(ticket.owner);
+}
+function publishRecovery(ticket, checkedArtifacts, { retry = false } = {}) {
+    ticket.recoveryPending = true; retainTicket(ticket);
+    if (!retry || !ticket.payload) {
+        const encoded = serializeWorkflowDocument(ticket.graph, ticket.workspaceViews, { checkedArtifacts });
+        if (!encoded.ok) { ticket.payload = null; return encoded; }
+        const envelope = encoded.data.recovery ?? JSON.parse(encoded.data.json);
+        ticket.payload = { graph: envelope.graph, workspaceViews: envelope.workspaceViews ?? null };
+    }
+    try { ticket.owner.recoveryDraft = ticket.payload; }
+    catch { return recoveryIssue('RECOVERY_WRITE', 'The workflow recovery draft could not be stored.'); }
+    ticket.recoveryPending = false; releaseTicket(ticket);
+    return { ok: true, data: ticket.payload };
+}
+function submitRecovery(ticket) {
+    if (!ticket) return { ok: true, data: null };
+    ticket.savePending = true; retainTicket(ticket);
+    try { ticket.boundary(); }
+    catch { return recoveryIssue('HOST_SAVE', 'The workflow recovery settings could not be submitted to the host. Pending recovery is retained for retry.'); }
+    // A successful submission of the old envelope cannot discharge a failed new publication.
+    ticket.savePending = ticket.recoveryPending; releaseTicket(ticket);
+    return { ok: true, data: { submitted: true } };
+}
+function persistRecovery(checkedArtifacts, { immediate = false } = {}) {
+    if (shared.recoveryBatchDepth && !immediate) { shared.recoveryPending = true; return { ok: true, data: { deferred: true } }; }
+    const ticket = recoveryTicket();
+    if (!ticket) return { ok: true, data: null };
+    ticket.workspaceViews = documentSession.workspaceViews?.() ?? documentSession.capture()?.workspaceViews ?? null;
+    const result = publishRecovery(ticket, checkedArtifacts);
+    shared.recoveryPending = !result.ok;
+    return result;
+}
+/** Synchronous owner-qualified submission; the host debounce provides no disk acknowledgment. */
+export function flushRecovery({ owner = shared.owner, captured = documentSession.capture(), onRecoveryIssue: onIssue } = {}) {
+    if (!owner || !captured) return { ok: true, data: null };
+    if (owner !== shared.owner || !documentSession.stillCurrent(captured)) return recoveryIssue('STALE_RECOVERY', 'The recovery request belongs to a replaced workflow document.');
+    const result = persistRecovery(undefined, { immediate: true });
+    const ticket = recoveryTicket(), submission = submitRecovery(ticket);
+    shared.settingsSavePending = ticket?.savePending ?? !submission.ok;
+    return reportRecovery(result.ok ? submission.ok ? result : submission : result, onIssue);
+}
+/** Retry captured work without consulting a replacement context or its active document. */
+export function retryPendingRecovery({ onRecoveryIssue: onIssue } = {}) {
+    let result = { ok: true, data: null };
+    for (const ticket of [...shared.pendingRecoveryTickets.values()]) {
+        const recovery = ticket.recoveryPending ? publishRecovery(ticket, undefined, { retry: true }) : { ok: true, data: ticket.payload };
+        const submission = ticket.savePending ? submitRecovery(ticket) : { ok: true, data: null };
+        const attempted = recovery.ok ? submission : recovery;
+        if (!attempted.ok) { reportRecovery(attempted, onIssue); if (result.ok) result = attempted; }
+        if (ticket.owner === shared.owner && documentSession.stillCurrent(ticket.captured)) {
+            shared.recoveryPending = ticket.recoveryPending; shared.settingsSavePending = ticket.savePending;
+        }
+    }
+    return result;
+}
+export function save({ recovery = true, onRecoveryIssue: onIssue } = {}) {
+    const host = ctx(), owner = (host.extensionSettings ?? host.extension_settings)?.[MODULE];
+    // Legacy/preference callers can submit before admitting an active document.
+    // Their new synchronous request never serializes a different owner's graph.
+    const ownsDocument = owner === shared.owner, saver = host.saveSettingsDebounced;
+    const ticket = ownsDocument ? recoveryTicket() : { owner, captured: null, boundary: () => saver.call(host), recoveryPending: false, savePending: false, payload: null };
+    const result = recovery && ownsDocument ? persistRecovery() : { ok: true, data: null };
+    if (shared.recoveryBatchDepth) { shared.settingsSavePending = true; shared.settingsSaveTicket = ticket; return result; }
+    const submission = submitRecovery(ticket);
+    shared.settingsSavePending = ticket?.savePending ?? !submission.ok;
+    return reportRecovery(result.ok ? submission.ok ? result : submission : result, onIssue);
+}
+function finishRecoveryBatch(checkedArtifacts) {
+    if (--shared.recoveryBatchDepth) return { ok: true, data: null };
+    const result = shared.recoveryPending ? persistRecovery(checkedArtifacts) : { ok: true, data: null };
+    const ticket = shared.settingsSaveTicket ?? recoveryTicket();
+    const submission = shared.settingsSavePending ? submitRecovery(ticket) : { ok: true, data: null };
+    shared.settingsSavePending = ticket?.savePending ?? !submission.ok;
+    if (!shared.settingsSavePending) shared.settingsSaveTicket = null;
+    return reportRecovery(result.ok ? submission.ok ? result : submission : result);
+}
+if (!shared.pagehideListener && typeof globalThis.addEventListener === 'function') {
+    shared.pagehideListener = () => flushRecovery();
+    globalThis.addEventListener('pagehide', shared.pagehideListener);
+}
 
 function admitActiveDocument(graph) {
     const checked = cloneWorkflowDocument(graph);
@@ -266,14 +370,17 @@ function admitActiveDocument(graph) {
     return checked.data.mode === 'native-unified' ? checked : { ok: false, error: { code: 'WRONG_PHASE', message: 'Active workflow documents require a unified root. Retired originals are recovery data only.' } };
 }
 
-function activateDocument(graph, options = {}) {
+function activateDocument(graph, options = {}, { ownerReplacement = false } = {}) {
     const checked = admitActiveDocument(graph);
     if (!checked.ok) return checked;
     const previous = documentSession.current();
-    if (previous) graphHistory.dispose(previous);
+    if (previous) {
+        if (!ownerReplacement) flushRecovery({ onRecoveryIssue: options.onRecoveryIssue });
+        graphHistory.dispose(previous);
+    }
     graphHistory.reset(graph);
     const token = documentSession.activate(graph, options);
-    persistRecovery();
+    reportRecovery(persistRecovery(), options.onRecoveryIssue);
     const event = { graph, previous, token };
     for (const listener of activationListeners) safe(() => listener(event));
     safe(() => globalThis.document?.dispatchEvent(new CustomEvent('pc-document-activated', { detail: event })));
@@ -283,7 +390,7 @@ export function activeWorkflow() { settings(); return documentSession.current();
 export function activateWorkflow(graph, options = {}) { const checked = admitActiveDocument(graph); if (!checked.ok) return checked; settings(); return activateDocument(graph, options); }
 export function onWorkflowActivated(listener) { activationListeners.add(listener); return () => activationListeners.delete(listener); }
 export function activeWorkspaceViews() { settings(); return documentSession.workspaceViews?.() ?? documentSession.capture()?.workspaceViews ?? null; }
-export function setActiveWorkspaceViews(data) { settings(); documentSession.workspaceViews(data); persistRecovery(); return data; }
+export function setActiveWorkspaceViews(data, { onRecoveryIssue } = {}) { settings(); documentSession.workspaceViews(data); reportRecovery(persistRecovery(), onRecoveryIssue); return data; }
 export function recoveredWorkflows() { return settings().migrationRecovery.slice(); }
 /** Retain successful example companions as recovery choices, never as recent files. */
 export function retainRecoveryWorkflows(graphs) {
@@ -322,24 +429,35 @@ export function touchGraph(graph) {
     for (const fn of touchListeners) safe(() => fn(graph));
 }
 function finishGraphDocumentEdit(graph, summary, hooks) {
-    if (summary.semanticChanged) safe(() => hooks.onSemanticChange?.(graph, summary));
-    safe(() => hooks.reconcileViews?.(graph, summary));
-    const property = Object.getOwnPropertyDescriptor(graph, 'updatedAt');
-    if (property?.writable || !property && Object.isExtensible(graph)) graph.updatedAt = Date.now();
-    save();
+    const checkedArtifacts = committedGraphChange(graph, summary)?.artifacts;
+    shared.recoveryBatchDepth++;
+    let recovery;
+    try {
+        if (summary.semanticChanged) safe(() => hooks.onSemanticChange?.(graph, summary));
+        safe(() => hooks.reconcileViews?.(graph, summary));
+        const property = Object.getOwnPropertyDescriptor(graph, 'updatedAt');
+        if (property?.writable || !property && Object.isExtensible(graph)) graph.updatedAt = Date.now();
+        save();
+    } finally { recovery = finishRecoveryBatch(checkedArtifacts); }
+    if (!recovery.ok) safe(() => hooks.onRecoveryIssue?.(recovery.error));
     for (const fn of touchListeners) safe(() => fn(graph, { history: false, semanticChanged: summary.semanticChanged }));
+    return recovery;
 }
 export function commitGraphEdit(graph, prepared, hooks = {}) {
     const result = commitPreparedGraph(graph, prepared);
-    if (result.ok && result.data.changed) finishGraphDocumentEdit(graph, result.data, hooks);
+    if (result.ok && result.data.changed) {
+        const recovery = finishGraphDocumentEdit(graph, result.data, hooks);
+        if (!recovery.ok) return { ...result, recovery };
+    }
     return result;
 }
+
 export function stepGraphHistory(graph, direction, hooks = {}) {
     if (!['undo', 'redo'].includes(direction)) return { ok: false, error: { code: 'INVALID_HISTORY_ACTION', message: 'Choose Undo or Redo.' } };
     const before = graphEditSignature(graph), label = graphHistory[direction](graph);
     const summary = { changed: !!label, semanticChanged: !!label && before !== graphEditSignature(graph), rootId: graph.id, label };
-    if (summary.changed) finishGraphDocumentEdit(graph, summary, hooks);
-    return { ok: true, data: summary };
+    const recovery = summary.changed ? finishGraphDocumentEdit(graph, summary, hooks) : null;
+    return { ok: true, data: summary, ...(recovery && !recovery.ok ? { recovery } : {}) };
 }
 
 /** Groups are presentation only; executable interfaces belong to subgraphs. */

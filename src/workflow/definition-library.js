@@ -1,5 +1,6 @@
 import { cloneDefinitionData, computeDefinitionIdentity, definitionRefKey, describeExposedParameter, nodeBindingOverrideKey, validateDefinition } from './definitions.js?v=0.27.0';
 import { safeWorkflowData, validateGraphStructure } from './contracts.js?v=0.27.0';
+import { prepareGraphArtifacts } from './graph-artifacts.js?v=0.27.0';
 import { cloneWorkflowDocument } from './document.js?v=0.27.0';
 import { ARTIFACT_KINDS, describeOperation, operationFor } from './catalog.js?v=0.27.0';
 import { applyDeclaredNodeControlChange, graphDocumentSignature } from './ports.js?v=0.27.0';
@@ -21,7 +22,8 @@ export function prepareQualifiedScopeEdit(root, input, mutateSavedScope) {
     if (!record(command) || !Array.isArray(command.viewPath) || command.viewPath.length > 8 || !command.viewPath.every(safeId)) return fail('INVALID_INSTANCE', 'Expected an explicit bounded containing graph path.');
     const copied = cloneDefinitionData(root); if (!copied.ok) return copied;
     const original = copied.data;
-    const normalized = cloneWorkflowDocument(original); if (!normalized.ok) return normalized;
+    const artifacts = prepareGraphArtifacts(root); if (!artifacts.ok) return artifacts;
+    const normalized = cloneWorkflowDocument(original, { checkedArtifacts: artifacts.data }); if (!normalized.ok) return normalized;
     if (original.schema !== 3 || original.runtime !== 2) return fail('UNSUPPORTED_VERSION', 'Qualified edits require schema 3 and runtime 2.');
     const path = [...command.viewPath], chain = path.length ? definitionChain(original, path) : [];
     if (!chain) return fail('INVALID_INSTANCE', 'The containing graph path does not exist.');
@@ -44,7 +46,7 @@ export function prepareQualifiedScopeEdit(root, input, mutateSavedScope) {
             details = { ...details, changedRefs: revised.data.changedRefs };
         }
     }
-    const prepared = prepareGraphCandidate(original, finished, details.addedEdgeIds ?? [], details.removedEdgeIds ?? []);
+    const prepared = prepareGraphCandidate(original, finished, details.addedEdgeIds ?? [], details.removedEdgeIds ?? [], root);
     return prepared.ok ? { ok: true, data: { ...prepared.data, ...details, viewPath: path, ...(definition ? { expectedRef: reference(definition) } : {}) } } : prepared;
 }
 

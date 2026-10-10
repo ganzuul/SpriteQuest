@@ -142,3 +142,26 @@ test('duplicate protected literals retain the helper unique-pin semantics', asyn
     assert.equal(candidate(result), 'new prose pin');
     assert.deepEqual(result.artifact.protectedLiterals, ['pin']);
 });
+
+test('public Transpose metadata detaches every mutable nested field while catalog metadata stays bounded', async () => {
+    const { describeOperation } = await import('../src/workflow/catalog.js?v=0.27.0');
+    const node = { type: 'workflow', operation: 'style-transfer', inputKind: 'text', phase: 'pre' };
+    const first = must(transpose.describeTranspose(node)).descriptor;
+    const untouched = must(transpose.describeTranspose(node)).descriptor;
+    assert.notEqual(first.controls, untouched.controls);
+    assert.notEqual(first.defaults.protectedLiterals, untouched.defaults.protectedLiterals);
+    first.controls.push('caller-only');
+    first.defaults.protectedLiterals.push('caller-only');
+    first.controlDescriptors.find(control => control.key === 'scope').options.push('caller-only');
+    first.controlDescriptors.find(control => control.key === 'protectedLiterals').items.maxLength = 1;
+    assert.deepEqual(must(transpose.describeTranspose(node)).descriptor, untouched);
+    assert.deepEqual(untouched.controlDescriptors.find(control => control.key === 'inputKind').options, ['text']);
+    const clone = globalThis.structuredClone; let descriptorClones = 0;
+    globalThis.structuredClone = (value, ...args) => { if (value?.id === 'style-transfer') descriptorClones++; return clone(value, ...args); };
+    try {
+        assert.equal(describeOperation({ schema: 3, runtime: 2, mode: 'native-unified' }, node).ok, true);
+        node.scope = 'invalid';
+        assert.equal(describeOperation({ schema: 3, runtime: 2, mode: 'native-unified' }, node).ok, false, 'mutable node controls must still be validated on every description');
+        assert.equal(descriptorClones, 0, 'catalog never clones a whole operation descriptor');
+    } finally { globalThis.structuredClone = clone; }
+});

@@ -1,5 +1,5 @@
 import { inspectExpandedGraph } from './graph-validation.js?v=0.27.0';
-import { preparedWorkflowExpansion } from './resolve.js?v=0.27.0';
+import { preparedWorkflowExpansion, preparedWorkflowSource } from './resolve.js?v=0.27.0';
 import { freeze } from './record-data.js?v=0.27.0';
 import { definitionChain, ownsDefinitionPath, samePath } from './composition-edit.js?v=0.27.0';
 const preparedViews = new WeakMap();
@@ -12,12 +12,13 @@ const preparedViews = new WeakMap();
 export function prepareCompositionViews(root, planner) {
     const checked = planner === undefined ? inspectExpandedGraph(root) : preparedWorkflowExpansion(root, planner); if (!checked.ok) return checked;
     if (planner !== undefined && preparedViews.has(planner)) return preparedViews.get(planner);
+    const source = planner === undefined ? root : preparedWorkflowSource(root, planner);
     const views = checked.data.scopes.map(({ instancePath, graph }) => {
-        const definition = instancePath.length ? definitionChain(root, instancePath).at(-1).definition : null;
-        const saved = definition?.body ?? root;
+        const definition = instancePath.length ? definitionChain(source, instancePath).at(-1).definition : null;
+        const saved = definition?.body ?? source;
         const savedGraph = Object.fromEntries(['schema', 'runtime', 'mode', 'nodes', 'wires', 'groups', 'roles', 'portals'].filter(key => saved[key] !== undefined).map(key => [key, structuredClone(saved[key])]));
         return {
-            instancePath: [...instancePath], editable: !instancePath.length || ownsDefinitionPath(root, instancePath),
+            instancePath: [...instancePath], editable: !instancePath.length || ownsDefinitionPath(source, instancePath),
             ...(definition ? { definitionRef: { id: definition.id, version: definition.version, semanticHash: definition.semanticHash } } : {}),
             savedGraph, effectiveNodes: structuredClone(graph.nodes),
             interface: structuredClone(definition?.interface ?? []),

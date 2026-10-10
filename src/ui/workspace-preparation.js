@@ -1,6 +1,7 @@
 import {recallControlLabel} from '../workflow/recall-labels.js?v=0.27.0';
+import { preparedViewContentIdentity } from './graph-view-session.js?v=0.27.0';
 import { prepareIterationBindings } from './iteration-bindings.js?v=0.27.0';
-import { inspectDefinitionGraph } from '../workflow/graph-validation.js?v=0.27.0';
+import { prepareDefinitionRegistry, inspectPreparedDefinition } from '../workflow/graph-validation.js?v=0.27.0';
 import { projectRunRows } from '../workflow/run-state.js?v=0.27.0';
 import { definitionRefKey, nodeBindingOverrideKey } from '../workflow/definition-data.js?v=0.27.0';
 import { prepareWorkflowPlanner } from '../workflow/resolve.js?v=0.27.0';
@@ -11,9 +12,13 @@ import { definitionChain } from '../workflow/composition-edit.js?v=0.27.0';
 import { FAMILY_PALETTE, paletteForOperation, readNodePresentation } from './node-palette.js?v=0.27.0';
 import { isCommentFrame } from '../canvas/comment-frames.js?v=0.27.0';
 import { modifierTypes, modifierSummary, applyTextModifiers } from '../workflow/modifiers.js?v=0.27.0';
-import { addressKey, boundedText, RENDERED_TEXT_BYTES } from '../workflow/record-data.js?v=0.27.0';
+import { addressKey, boundedText, RENDERED_TEXT_BYTES, freeze } from '../workflow/record-data.js?v=0.27.0';
 import { prepareNodeProfileOptions } from './node-profile-preparation.js?v=0.27.0';
 import { projectWorkflowData } from './workflow-data-setup.js?v=0.27.0';
+const panelCaches = new WeakMap();
+const authoredFieldCaches = new WeakMap();
+const runPanelCaches = new WeakMap();
+const noDisplayRows = Object.freeze([]);
 const rootIdentity = root => ({ kind: 'root', workflowId: root.id });
 /** First activation favors readable named cards; users can pan or explicitly Fit. */
 export function initialWorkspaceCamera(node, { width, shelf, meter } = {}) {
@@ -26,7 +31,7 @@ export function initialWorkspaceCamera(node, { width, shelf, meter } = {}) {
 }
 /** Content/host preparation only. The view session receives detached display DTOs. */
 export function prepareWorkspaceViews(root, options = {}) {
-    const prepared = prepareWorkflowPlanner(root); if (!prepared.ok) return prepared;
+    const prepared = prepareWorkflowPlanner(root, options.artifacts); if (!prepared.ok) return prepared;
     const planner = prepared.data;
     const primitivePhases = new Map(planner.inventory.primitives.map(unit => [addressKey(unit.address), unit.phase]));
     const composition = prepareCompositionViews(root, planner); if (!composition.ok) return composition;
@@ -67,9 +72,30 @@ export function prepareWorkspaceViews(root, options = {}) {
     const previewChoices = preparedViews.flatMap(view => previewChoicesFor(view, projectPreparedWorkflow(workflow, { viewPath: view.identity.instancePath ?? [] }).targets));
     return { ok: true, data: { navigation, preparedViews, workflow, planner, idleRunRows, previewChoices } };
 }
+/** Checked single-card measurement data, never a full-root commit candidate. */
+export function prepareNodePlacement(root, { nodeId, viewPath = [], artifacts } = {}) {
+    const prepared = prepareWorkflowPlanner(root, artifacts); if (!prepared.ok) return prepared;
+    const invalid = () => ({ ok: false, error: { code: 'NODE_PLACEMENT', message: 'Choose an existing node in an admitted editor view.' } });
+    if (typeof nodeId !== 'string' || !nodeId || !Array.isArray(viewPath) || !viewPath.every(id => typeof id === 'string' && id)) return invalid();
+    const planner = prepared.data, composition = prepareCompositionViews(root, planner); if (!composition.ok) return composition;
+    const samePath = path => path.length === viewPath.length && path.every((id, index) => id === viewPath[index]);
+    const view = composition.data.views.find(view => samePath(view.instancePath));
+    if (!view || !Object.hasOwn(view.effectiveNodes, nodeId)) return invalid();
+    const unit = planner.inventory.primitives.find(unit => unit.address.nodeId === nodeId && samePath(unit.address.instancePath));
+    const graph = prepareEditorDrawBase(view, root.definitions, () => unit?.phase, nodeId);
+    if (!graph.nativeCards[nodeId]) return invalid();
+    return { ok: true, data: { graph, node: graph.nodes[nodeId] } };
+}
 /** Cheap detached drawing overlay; never a saved body or full-root commit candidate. */
-export function projectEditorDraw(editor) {
-    const graph = structuredClone(editor.prepared.drawBase), view = editor.view;
+export function projectEditorDraw(editor, { canvasOnly = false } = {}) {
+    const source = editor.prepared.drawBase;
+    // Details keeps its complete prepared metadata. Canvas avoids copying and
+    // traversing repeated editor schemas, while retaining every visual field.
+    const draw = canvasOnly && source.nativeCards ? { ...source, nativeCards: Object.fromEntries(Object.entries(source.nativeCards).map(([id, card]) => {
+        const { controlDescriptors, defaults, ...visual } = card;
+        return [id, visual];
+    })) } : source;
+    const graph = structuredClone(draw), view = editor.view;
     if(view.identity.kind==='root')graph.id=view.identity.workflowId;else delete graph.id;
     graph.view = { ...view.camera }; graph.selection = [...view.selection.multi];
     graph.nodes ??= {}; graph.wires ??= {}; graph.groups ??= {};
@@ -119,75 +145,137 @@ export function projectWorkspacePanels(editor, workflow, state, revision, select
     const selectedId = library ? editor.view.selection.primary?.kind === 'node' ? editor.view.selection.primary.id : null : workflow.selectedId, saved = graph?.nodes[selectedId], effective = library ? null : workflow.nodes.find(node => node.id === selectedId), metadata = editor?.prepared.drawBase?.nativeCards?.[selectedId];
     const address = library ? {kind:'library',definitionRef:editor.prepared.definitionRef,nodeId:selectedId} : { workflowId: workflow.graphId, instancePath: [...path], nodeId: selectedId };
     const presentation = readNodePresentation(saved, editor?.view.nodePresentation[selectedId]);
-    const fileInput = saved?.operation === 'file-input' ? { fileName: typeof saved.fileName === 'string' ? saved.fileName : '', loaded: saved.loaded === true } : null;
-    const workflowData = saved ? projectWorkflowData(editor.prepared.effectiveNodes[selectedId] ?? saved, workflow.workflowData ?? {}, !(editor.readOnly || library)) : null;
-    const controls = metadata ? Object.entries(metadata.controlDescriptors).filter(([key, descriptor]) => {
-        if (workflowData && (key === workflowData.controlKey || saved.operation === 'story-clock' && key === 'calendarId')) return false;
-        if (key === 'roleOverrides' && saved.operation === 'for-each' || descriptor.hidden || fileInput && ['fileName', 'content', 'loaded'].includes(key)) return false;
-        const effectiveNode = editor.prepared.effectiveNodes[selectedId];
-        if (!visibleDetailControl(saved, metadata.defaults, key) && !visibleDetailControl(effectiveNode, metadata.defaults, key)) return false;
-        const condition = descriptor.visibleWhen;
-        return !condition || [saved,effectiveNode].some(node => (node?.[condition.key] ?? metadata.defaults[condition.key] ?? metadata.controlDescriptors[condition.key]?.default) === condition.value);
-    }).map(([key, descriptor]) => {
-        const fallback = metadata.defaults[key] ?? descriptor.default;
-        const value = saved?.[key] ?? fallback, effectiveValue = editor.prepared.effectiveNodes[selectedId]?.[key] ?? fallback;
-        return { ...detailControl(key, descriptor.label || friendlyControlLabel(key), ['recall','hotkey-arm'].includes(saved.operation)&&descriptor.values?{...descriptor,valueLabels:Object.fromEntries(descriptor.values.map(value=>[value,recallControlLabel(key,value)??value]))}:descriptor, value), ...detailPresentation(saved.operation, key), ...(JSON.stringify(value) === JSON.stringify(effectiveValue) ? {} : { effective: displayEffective(effectiveValue), source: 'Effective instance override' }) };
-    }) : [];
-    const modes = [{ value: 'inherit', label: 'Inherit role' }, { value: 'override', label: 'Override' }];
-    const field = (key, options) => {
-        const explicitNull = editor?.prepared.drawBase.bindingBlocks?.[selectedId]?.[key] === true;
-        const pinnedInstance = !library && editor.readOnly;
-        const ownProfile = editor.prepared.drawBase.profileDefaultModels?.[selectedId] === true;
-        if (pinnedInstance) {
-            const instance = editor.prepared.drawBase.instanceBindingValues?.[selectedId], present = Object.hasOwn(instance ?? {}, key);
-            const value = present ? instance[key] : null;
-            const inherited = [{ value: 'inherit', label: key === 'profileId' ? 'Use definition binding' : 'Use definition model' }, { value: 'override', label: 'Override' }];
-            const allowedModes = explicitNull || key === 'model' && ownProfile ? [...inherited, { value: 'block', label: key === 'model' && ownProfile ? 'Use profile model' : 'Blocked by instance' }] : inherited;
-            return { mode: present ? value === null ? 'block' : 'override' : 'inherit', value, effectiveValue: editor.prepared.effectiveNodes[selectedId]?.[key] ?? null, allowedModes, ...(options ? { options } : {}) };
-        }
-        const profileModelDefault = key === 'model' && explicitNull && ownProfile;
-        const blocked = explicitNull && !profileModelDefault;
-        const value = profileModelDefault ? null : saved?.[key] ?? null;
-        return { mode: blocked ? 'block' : value ? 'override' : 'inherit', value, effectiveValue: editor.prepared.effectiveNodes[selectedId]?.[key] ?? null, allowedModes: blocked ? [...modes, { value: 'block', label: 'Blocked by instance' }] : modes, ...(options ? { options } : {}) };
-    };
-    const selection = { selectionKey: JSON.stringify([editor?.view.key, selectedId]), revision, address };
-    const interfacePort = metadata?.boundary ? editor.prepared.interface.find(port => port.id === saved?.interfacePortId && port.boundaryNodeId === selectedId) : null;
-    const boundary = interfacePort ? { id: interfacePort.id, label: interfacePort.label, direction: interfacePort.direction, kind: interfacePort.kind, required: interfacePort.required, kinds: [...ARTIFACT_KINDS] } : null;
-    const commentDetails = isCommentFrame(saved) ? { selection, comment: { id: saved.id, x: saved.x, y: saved.y, w: saved.w, h: saved.h, title: saved.title ?? 'Comment', content: saved.content ?? '', color: saved.color ?? '#637d89', moveContents: saved.moveContents !== false, selected: true, readOnly: editor.readOnly || library } } : null;
-    const nodeDetails = saved && metadata && !commentDetails ? { ...selection, title: boundary?.label ?? (presentation.alias || (typeof saved.title === 'string' ? saved.title : metadata.canonicalTitle)), canonicalTitle: metadata.canonicalTitle, operation: saved.operation, iconPath: metadata.iconPath, family: metadata.family, familyColor: metadata.familyColor, phase: effective?.phase ?? phaseForNode(graph,saved) ?? metadata.phase ?? graph.mode.slice(7), phaseEditable: graph.mode === 'native-unified' && OPERATIONS[saved.operation]?.phase === 'both', alias: presentation.alias, compact: presentation.compact, enabled: saved.enabled !== false, readOnly: editor.readOnly || library, canPresent: true, controls, ...(fileInput ? { fileInput } : {}), ...(boundary ? { boundary } : {}),
-        model: metadata.modelRole && (effective?.effective !== 'No model call' || saved.model || saved.profileId || Object.keys(editor?.prepared.drawBase.bindingBlocks?.[selectedId] ?? {}).length) ? { role: saved.modelRole ?? metadata.modelRole, roleEditable: true, editable: !library, profileDefaultModel: editor.prepared.drawBase.profileDefaultModels?.[selectedId] ?? !!saved.profileId, profile: field('profileId', workflow.profiles.map(profile => ({ value: profile.id, label: profile.name }))), model: field('model'), effective: effective?.effective || (library ? [editor.prepared.effectiveNodes[selectedId]?.profileId ?? graph.roles?.[saved.modelRole ?? metadata.modelRole]?.profileId,editor.prepared.effectiveNodes[selectedId]?.model ?? graph.roles?.[saved.modelRole ?? metadata.modelRole]?.model].filter(Boolean).join(' · ') : ''), source: editor.prepared.drawBase.instanceBindingSources?.[selectedId] ? 'Containing instance override' : saved.profileId || saved.model ? 'Node override' : 'Inherited from ' + (saved.modelRole ?? metadata.modelRole), ...(effective?.issue ? {issue: effective.issue} : {}) } : null,
-        helperBindings: saved.operation === 'for-each' ? { ...editor.prepared.drawBase.iterationBindings?.[selectedId], editable: !(editor.readOnly || library) } : null,
-        ...(workflowData ? { workflowData } : {}),
-        modifiers: modifierView(saved, metadata, !(editor.readOnly || library)),
-        ports: metadata.ports.map(port => ({ id: port.port, label: port.label, direction: port.dir === 'in' ? 'input' : 'output', kind: port.kind })), issues: [] } : null;
-    const choices = library ? [] : previewChoices ?? previewChoicesFor(editor.prepared, workflow.targets);
+    // Only the session can qualify unchanged authored content across its verified
+    // coordinate patch. Ordinary/frozen caller DTOs never transfer that identity.
+    const contentIdentity = preparedViewContentIdentity(editor.prepared), immutableScope = !!contentIdentity;
+    let cache = immutableScope ? panelCaches.get(contentIdentity) : null;
+    if (!cache) { cache = new Map(); if (immutableScope) panelCaches.set(contentIdentity, cache); }
+    const panelKey = JSON.stringify([selectedId, library, editor.readOnly, presentation.alias, presentation.compact]);
+    const dependencies = [effective, workflow.profiles, workflow.workflowData];
+    let authored = immutableScope ? cache.get(panelKey) : null;
+    if (!authored || dependencies.some((value, index) => value !== authored.dependencies[index])) {
+        const produced = (() => {
+            const fileInput = saved?.operation === 'file-input' ? { fileName: typeof saved.fileName === 'string' ? saved.fileName : '', loaded: saved.loaded === true } : null;
+            const workflowData = saved ? projectWorkflowData(editor.prepared.effectiveNodes[selectedId] ?? saved, workflow.workflowData ?? {}, !(editor.readOnly || library)) : null;
+            let fieldCache = immutableScope ? authoredFieldCaches.get(contentIdentity) : null;
+            if (!fieldCache) { fieldCache = new Map(); if (immutableScope) authoredFieldCaches.set(contentIdentity, fieldCache); }
+            const fieldKey = JSON.stringify([selectedId, workflowData?.controlKey]);
+            let fields = fieldCache.get(fieldKey);
+            if (!fields) {
+                const controls = metadata ? Object.entries(metadata.controlDescriptors).filter(([key, descriptor]) => {
+                    if (workflowData && (key === workflowData.controlKey || saved.operation === 'story-clock' && key === 'calendarId')) return false;
+                    if (key === 'roleOverrides' && saved.operation === 'for-each' || descriptor.hidden || fileInput && ['fileName', 'content', 'loaded'].includes(key)) return false;
+                    const effectiveNode = editor.prepared.effectiveNodes[selectedId];
+                    if (!visibleDetailControl(saved, metadata.defaults, key) && !visibleDetailControl(effectiveNode, metadata.defaults, key)) return false;
+                    const condition = descriptor.visibleWhen;
+                    return !condition || [saved,effectiveNode].some(node => (node?.[condition.key] ?? metadata.defaults[condition.key] ?? metadata.controlDescriptors[condition.key]?.default) === condition.value);
+                }).map(([key, descriptor]) => {
+                    const fallback = metadata.defaults[key] ?? descriptor.default;
+                    const value = saved?.[key] ?? fallback, effectiveValue = editor.prepared.effectiveNodes[selectedId]?.[key] ?? fallback;
+                    return { ...detailControl(key, descriptor.label || friendlyControlLabel(key), ['recall','hotkey-arm'].includes(saved.operation)&&descriptor.values?{...descriptor,valueLabels:Object.fromEntries(descriptor.values.map(value=>[value,recallControlLabel(key,value)??value]))}:descriptor, value), ...detailPresentation(saved.operation, key), ...(JSON.stringify(value) === JSON.stringify(effectiveValue) ? {} : { effective: displayEffective(effectiveValue), source: 'Effective instance override' }) };
+                }) : [];
+                fields = freeze(structuredClone({ controls, ports: metadata?.ports.map(port => ({ id: port.port, label: port.label, direction: port.dir === 'in' ? 'input' : 'output', kind: port.kind })) ?? [] }));
+                fieldCache.set(fieldKey, fields);
+            }
+            const { controls } = fields;
+            const modes = [{ value: 'inherit', label: 'Inherit role' }, { value: 'override', label: 'Override' }];
+            const field = (key, options) => {
+                const explicitNull = editor?.prepared.drawBase.bindingBlocks?.[selectedId]?.[key] === true;
+                const pinnedInstance = !library && editor.readOnly;
+                const ownProfile = editor.prepared.drawBase.profileDefaultModels?.[selectedId] === true;
+                if (pinnedInstance) {
+                    const instance = editor.prepared.drawBase.instanceBindingValues?.[selectedId], present = Object.hasOwn(instance ?? {}, key);
+                    const value = present ? instance[key] : null;
+                    const inherited = [{ value: 'inherit', label: key === 'profileId' ? 'Use definition binding' : 'Use definition model' }, { value: 'override', label: 'Override' }];
+                    const allowedModes = explicitNull || key === 'model' && ownProfile ? [...inherited, { value: 'block', label: key === 'model' && ownProfile ? 'Use profile model' : 'Blocked by instance' }] : inherited;
+                    return { mode: present ? value === null ? 'block' : 'override' : 'inherit', value, effectiveValue: editor.prepared.effectiveNodes[selectedId]?.[key] ?? null, allowedModes, ...(options ? { options } : {}) };
+                }
+                const profileModelDefault = key === 'model' && explicitNull && ownProfile;
+                const blocked = explicitNull && !profileModelDefault;
+                const value = profileModelDefault ? null : saved?.[key] ?? null;
+                return { mode: blocked ? 'block' : value ? 'override' : 'inherit', value, effectiveValue: editor.prepared.effectiveNodes[selectedId]?.[key] ?? null, allowedModes: blocked ? [...modes, { value: 'block', label: 'Blocked by instance' }] : modes, ...(options ? { options } : {}) };
+            };
+            const selection = { selectionKey: JSON.stringify([editor?.view.key, selectedId]), revision, address };
+            const interfacePort = metadata?.boundary ? editor.prepared.interface.find(port => port.id === saved?.interfacePortId && port.boundaryNodeId === selectedId) : null;
+            const boundary = interfacePort ? { id: interfacePort.id, label: interfacePort.label, direction: interfacePort.direction, kind: interfacePort.kind, required: interfacePort.required, kinds: [...ARTIFACT_KINDS] } : null;
+            const commentDetails = isCommentFrame(saved) ? { selection, comment: { id: saved.id, x: saved.x, y: saved.y, w: saved.w, h: saved.h, title: saved.title ?? 'Comment', content: saved.content ?? '', color: saved.color ?? '#637d89', moveContents: saved.moveContents !== false, selected: true, readOnly: editor.readOnly || library } } : null;
+            const nodeDetails = saved && metadata && !commentDetails ? { ...selection, title: boundary?.label ?? (presentation.alias || (typeof saved.title === 'string' ? saved.title : metadata.canonicalTitle)), canonicalTitle: metadata.canonicalTitle, operation: saved.operation, iconPath: metadata.iconPath, family: metadata.family, familyColor: metadata.familyColor, phase: effective?.phase ?? phaseForNode(graph,saved) ?? metadata.phase ?? graph.mode.slice(7), phaseEditable: graph.mode === 'native-unified' && OPERATIONS[saved.operation]?.phase === 'both', alias: presentation.alias, compact: presentation.compact, enabled: saved.enabled !== false, readOnly: editor.readOnly || library, canPresent: true, controls, ...(fileInput ? { fileInput } : {}), ...(boundary ? { boundary } : {}),
+                model: metadata.modelRole && (effective?.effective !== 'No model call' || saved.model || saved.profileId || Object.keys(editor?.prepared.drawBase.bindingBlocks?.[selectedId] ?? {}).length) ? { role: saved.modelRole ?? metadata.modelRole, roleEditable: true, editable: !library, profileDefaultModel: editor.prepared.drawBase.profileDefaultModels?.[selectedId] ?? !!saved.profileId, profile: field('profileId', workflow.profiles.map(profile => ({ value: profile.id, label: profile.name }))), model: field('model'), effective: effective?.effective || (library ? [editor.prepared.effectiveNodes[selectedId]?.profileId ?? graph.roles?.[saved.modelRole ?? metadata.modelRole]?.profileId,editor.prepared.effectiveNodes[selectedId]?.model ?? graph.roles?.[saved.modelRole ?? metadata.modelRole]?.model].filter(Boolean).join(' · ') : ''), source: editor.prepared.drawBase.instanceBindingSources?.[selectedId] ? 'Containing instance override' : saved.profileId || saved.model ? 'Node override' : 'Inherited from ' + (saved.modelRole ?? metadata.modelRole), ...(effective?.issue ? {issue: effective.issue} : {}) } : null,
+                helperBindings: saved.operation === 'for-each' ? { ...editor.prepared.drawBase.iterationBindings?.[selectedId], editable: !(editor.readOnly || library) } : null,
+                ...(workflowData ? { workflowData } : {}),
+                modifiers: modifierView(saved, metadata, !(editor.readOnly || library)),
+                ports: fields.ports, issues: [] } : null;
+            if (nodeDetails) nodeDetails.editorContractKey = detailsEditorContractKey(nodeDetails);
+            return { nodeDetails, commentDetails, fields };
+        })();
+        const detached = structuredClone({ nodeDetails: produced.nodeDetails, commentDetails: produced.commentDetails });
+        if (detached.nodeDetails) { detached.nodeDetails.controls = produced.fields.controls; detached.nodeDetails.ports = produced.fields.ports; }
+        authored = { ...freeze(detached), dependencies }; cache.set(panelKey, authored);
+    }
+    const envelope = { selectionKey: JSON.stringify([editor?.view.key, selectedId]), revision, address, ...(editor.documentNamespace ? { documentNamespace: editor.documentNamespace } : {}) };
+    const envelopeKey = JSON.stringify([envelope.selectionKey, envelope.revision, envelope.documentNamespace]);
+    if (!authored.enveloped || authored.envelopeKey !== envelopeKey) {
+        freeze(address); Object.freeze(envelope);
+        authored.enveloped = { nodeDetails: authored.nodeDetails ? Object.freeze({ ...authored.nodeDetails, ...envelope }) : null, commentDetails: authored.commentDetails ? Object.freeze({ ...authored.commentDetails, selection: envelope }) : null }; authored.envelopeKey = envelopeKey;
+    }
+    const { nodeDetails, commentDetails } = authored.enveloped;
+    let choiceCache = immutableScope ? cache.get('preview-choices') : null;
+    if (!choiceCache || choiceCache.source !== workflow.targets) { choiceCache = { source: workflow.targets, choices: freeze(previewChoicesFor(editor.prepared, workflow.targets)) }; cache.set('preview-choices', choiceCache); }
+    const choices = library ? noDisplayRows : previewChoices ?? choiceCache.choices;
     const target = pinnedPreview || selectedTarget, selectedKey = choices.find(choice => targetKey(choice.target) === targetKey(target))?.key ?? '';
-    const result = workflow.result, sections = result ? result.sections.map((section,i) => ({ id: String(i), label: section.kind, ...section })) : [];
-    if (!library && !state.busy && saved && nodeDetails?.modifiers && target?.nodeId === selectedId && target?.workflowId === workflow.graphId && target?.portId === nodeDetails.modifiers.outputPortId && JSON.stringify(target.instancePath) === JSON.stringify(path)) {
-        const source = sections.find(section => section.format === 'structured-text' && typeof section.recordedRawText === 'string');
-        if (source) {
-            const local = applyTextModifiers(source.recordedRawText, saved.modifiers ?? []);
-            if (local.ok && JSON.stringify(local.data.trace) !== JSON.stringify(source.recordedModifierTrace ?? [])) {
-                const text = boundedText(local.data.text, RENDERED_TEXT_BYTES - 2);
-                sections.push({id:'local-modifiers',kind:'text',label:'Local modifier preview · recorded source',text,format:'structured-text',truncated:text !== local.data.text});
+    const result = workflow.result, sectionKey = 'preview-sections:' + selectedId;
+    const sectionDependencies = [result?.sections, saved?.modifiers, targetKey(target), state.busy];
+    let sectionCache = immutableScope && (!result || Object.isFrozen(result.sections)) ? cache.get(sectionKey) : null;
+    if (!sectionCache || sectionDependencies.some((value, index) => value !== sectionCache.dependencies[index])) {
+        const sections = result ? result.sections.map((section,i) => ({ id: String(i), label: section.kind, ...section })) : [];
+        if (!library && !state.busy && saved && nodeDetails?.modifiers && target?.nodeId === selectedId && target?.workflowId === workflow.graphId && target?.portId === nodeDetails.modifiers.outputPortId && JSON.stringify(target.instancePath) === JSON.stringify(path)) {
+            const source = sections.find(section => section.format === 'structured-text' && typeof section.recordedRawText === 'string');
+            if (source) {
+                const local = applyTextModifiers(source.recordedRawText, saved.modifiers ?? []);
+                if (local.ok && JSON.stringify(local.data.trace) !== JSON.stringify(source.recordedModifierTrace ?? [])) {
+                    const text = boundedText(local.data.text, RENDERED_TEXT_BYTES - 2);
+                    sections.push({id:'local-modifiers',kind:'text',label:'Local modifier preview · recorded source',text,format:'structured-text',truncated:text !== local.data.text});
+                }
             }
         }
+        sectionCache = { sections: freeze(structuredClone(sections)), dependencies: sectionDependencies }; cache.set(sectionKey, sectionCache);
     }
+    const sections = sectionCache.sections;
     const selector = editor?.view.identity.kind === 'root' ? result?.selectedReviewHandle ?? null : null;
-    const outputPreview = { sourceKey: revision, title: 'Output preview', statusDetail: state.status || '', status: !library && target && !selectedKey ? 'removed' : !result ? 'not-run' : state.availability === 'current' ? 'current' : 'stale', choices, selectedKey, pinned: !!pinnedPreview, followSelection: !pinnedPreview, sections: library || target && !selectedKey ? [] : sections, issues: library ? ['Library inspection is read-only and has no runtime output.'] : workflow.issues, busy: state.busy, settlement: library ? null : result?.settlement ?? null, runHere: library || !selectedKey ? null : { enabled: !state.busy && !workflow.targetSummary?.issues?.length, callBound: workflow.targetSummary?.callBound ?? workflow.callBound, issue: workflow.targetSummary?.issues?.join(' ') }, review: selector ? { selector, canApply: result.applyAvailable, persistOnly: result.persistOnly, fresh: !result.applyIssue && state.availability === 'current', selectedRootTerminal: editor?.view.identity.kind === 'root' && target?.kind === 'terminal' && !target.address.instancePath.length, mode: 'root', issue: result.applyIssue } : null };
-    const rowSource = state.runState || state.recording, rows = rootWorkflow.rows?.length ? rootWorkflow.rows : idleRunRows, flat = [];
-    const visit = (items, depth) => { for (const row of items) { flat.push({ key: JSON.stringify(row.address), address: row.address, title: readNodePresentation(row.node).alias || (typeof row.node?.title === 'string' ? row.node.title : '') || row.node?.operation || row.address.nodeId, kind: row.kind, depth, status: row.status, subphase: row.subphase, durationMs: row.durationMs ?? null, attempts: row.attempts ?? 0, callBound: row.requestBound ?? 0, usage: row.request?.usage ?? null, issue: row.error?.message }); visit(row.children ?? [],depth+1); } }; visit(rows,0);
-    const executableCount = rows.reduce((sum,row) => sum+row.executableCount,0), completedCount = rows.reduce((sum,row) => sum+row.completedCount,0), status = state.busy ? rowSource?.status || 'running' : rowSource?.status || (result ? result.ok ? 'completed' : 'failed' : 'not-run');
-    const runDetails = { runId: rowSource?.runId || '', status, elapsedMs: rowSource?.elapsedMs ?? null, actualCalls: state.busy ? flat.filter(row=>row.kind==='primitive').reduce((sum,row)=>sum+row.attempts,0) : rootWorkflow.result?.actualCalls ?? flat.filter(row=>row.kind==='primitive').reduce((sum,row)=>sum+row.attempts,0), callBound: rowSource?.plan?.callBound ?? rootWorkflow.result?.callBound ?? rootWorkflow.callBound, completedCount, executableCount, rows: flat, issue: state.preparationError?.message || result?.error || '' };
-    const runMeter = { ...runDetails, rows: rows.map(row => ({ id: JSON.stringify(row.address), title: row.address.nodeId, status: row.status, executableCount: row.executableCount, completedCount: row.completedCount })) };
+    const outputPreview = { sourceKey: revision, title: 'Output preview', statusDetail: state.status || '', status: !library && target && !selectedKey ? 'removed' : !result ? 'not-run' : state.availability === 'current' ? 'current' : 'stale', choices, selectedKey, pinned: !!pinnedPreview, followSelection: !pinnedPreview, sections: library || target && !selectedKey ? noDisplayRows : sections, issues: library ? ['Library inspection is read-only and has no runtime output.'] : workflow.issues, busy: state.busy, settlement: library ? null : result?.settlement ?? null, runHere: library || !selectedKey ? null : { enabled: !state.busy && !workflow.targetSummary?.issues?.length, callBound: workflow.targetSummary?.callBound ?? workflow.callBound, issue: workflow.targetSummary?.issues?.join(' ') }, review: selector ? { selector, canApply: result.applyAvailable, persistOnly: result.persistOnly, fresh: !result.applyIssue && state.availability === 'current', selectedRootTerminal: editor?.view.identity.kind === 'root' && target?.kind === 'terminal' && !target.address.instancePath.length, mode: 'root', issue: result.applyIssue } : null };
+    const rowSource = state.runState || state.recording, rows = rootWorkflow.rows?.length ? rootWorkflow.rows : idleRunRows;
+    let runCache = runPanelCaches.get(rows); if (!runCache) { runCache = []; runPanelCaches.set(rows, runCache); }
+    const runDependencies = [rowSource, state.busy, rootWorkflow.result?.actualCalls, rootWorkflow.result?.callBound, rootWorkflow.callBound, state.preparationError?.message, result?.ok, result?.error];
+    let run = Object.isFrozen(rows) && (!rowSource || Object.isFrozen(rowSource)) ? runCache.find(entry => runDependencies.every((value, index) => value === entry.dependencies[index])) : null;
+    if (!run) {
+        const flat = [];
+        const visit = (items, depth) => { for (const row of items) { flat.push({ key: JSON.stringify(row.address), address: row.address, title: readNodePresentation(row.node).alias || (typeof row.node?.title === 'string' ? row.node.title : '') || row.node?.operation || row.address.nodeId, kind: row.kind, depth, status: row.status, subphase: row.subphase, durationMs: row.durationMs ?? null, attempts: row.attempts ?? 0, callBound: row.requestBound ?? 0, usage: row.request?.usage ?? null, issue: row.error?.message }); visit(row.children ?? [],depth+1); } }; visit(rows,0);
+        const executableCount = rows.reduce((sum,row) => sum+row.executableCount,0), completedCount = rows.reduce((sum,row) => sum+row.completedCount,0), status = state.busy ? rowSource?.status || 'running' : rowSource?.status || (result ? result.ok ? 'completed' : 'failed' : 'not-run');
+        const runDetails = { runId: rowSource?.runId || '', status, elapsedMs: rowSource?.elapsedMs ?? null, actualCalls: state.busy ? flat.filter(row=>row.kind==='primitive').reduce((sum,row)=>sum+row.attempts,0) : rootWorkflow.result?.actualCalls ?? flat.filter(row=>row.kind==='primitive').reduce((sum,row)=>sum+row.attempts,0), callBound: rowSource?.plan?.callBound ?? rootWorkflow.result?.callBound ?? rootWorkflow.callBound, completedCount, executableCount, rows: flat, issue: state.preparationError?.message || result?.error || '' };
+        const runMeter = { ...runDetails, rows: rows.map(row => ({ id: JSON.stringify(row.address), title: row.address.nodeId, status: row.status, executableCount: row.executableCount, completedCount: row.completedCount })) };
+        run = { ...freeze(structuredClone({ runDetails, runMeter })), dependencies: runDependencies };
+        runCache.splice(0, runCache.length, run);
+    }
+    const { runDetails, runMeter } = run;
     return { nodeDetails, commentDetails, outputPreview, runDetails, runMeter };
 }
 
-function prepareEditorDrawBase(view, snapshots, compiledPhase = () => undefined) {
-        const drawBase = structuredClone(view.savedGraph);
-        drawBase.nodes = structuredClone(view.effectiveNodes); drawBase.groups ??= {}; drawBase.wires ??= {}; drawBase.nativeCards = {};
+function prepareEditorDrawBase(view, snapshots, compiledPhase = () => undefined, onlyNodeId) {
+        // Clone effective nodes once; authored nodes were previously copied only
+        // to be discarded. Measurement prepares metadata for its one node.
+        const nodes = onlyNodeId === undefined ? view.effectiveNodes : { [onlyNodeId]: view.effectiveNodes[onlyNodeId] };
+        const drawBase = structuredClone({ ...view.savedGraph, nodes });
+        drawBase.groups ??= {}; drawBase.wires ??= {}; drawBase.nativeCards = {};
         const metadata = { ...view.savedGraph, definitions: snapshots, interface: view.interface };
         let index = 0;
+        if (onlyNodeId !== undefined) {
+            // Missing positions use the same preceding unpositioned-row count
+            // as full preparation without describing those preceding nodes.
+            for (const node of Object.values(view.effectiveNodes)) {
+                if (node.id === onlyNodeId) break;
+                if (node.y == null) index++;
+            }
+        }
         for (const node of Object.values(drawBase.nodes)) {
             node.presentation = { ...node.presentation, ...readNodePresentation(node) };
             if (typeof node.title !== 'string') delete node.title;
@@ -208,16 +296,31 @@ function prepareEditorDrawBase(view, snapshots, compiledPhase = () => undefined)
                 ports: actualPorts.map(port => { const dir = port.direction === 'input' ? 'in' : 'out'; return { id: `${dir}:${port.id}`, port: port.id, dir, side: dir === 'in' ? 'left' : 'right', row: ++rows[dir], kind: port.kind, label: port.label, className: `pc-port pc-port-${dir}`, title: `${port.label}: ${port.kind}` }; }) };
         }
 
-    drawBase.nativeAttachments = {};
+    drawBase.nativeAttachments = prepareEndpointAttachments(drawBase);
+    return drawBase;
+}
+/** Build endpoint navigation once per scope; pins never rescan the wire table. */
+export function prepareEndpointAttachments(drawBase) {
+    const attachments = {};
+    const incoming = new Map(), outgoing = new Map(), subscribers = new Map(), publishers = new Map(), pins = new Map();
+    const endpoint = (nodeId, portId) => JSON.stringify([nodeId, portId]);
+    const append = (map, key, value) => { if (!map.has(key)) map.set(key, []); map.get(key).push(value); };
+    for (const [nodeId, card] of Object.entries(drawBase.nativeCards)) for (const pin of card.ports) pins.set(JSON.stringify([nodeId, pin.dir, pin.port]), pin);
+    for (const edge of Object.values(drawBase.wires ?? {})) {
+        append(incoming, endpoint(edge.to, edge.toPort), edge);
+        if (edge.route === 'portal') append(subscribers, edge.portalId, edge);
+        else append(outgoing, endpoint(edge.from, edge.fromPort), edge);
+    }
+    for (const portal of Object.values(drawBase.portals ?? {})) append(publishers, endpoint(portal.source.nodeId, portal.source.portId), portal);
     for (const [nodeId, card] of Object.entries(drawBase.nativeCards)) for (const port of card.ports) {
         const originalBindings = [], jumps = [];
         const jump = (id, targetId, targetPort, dir, portalLabel) => {
-            const targetCard = drawBase.nativeCards[targetId], pin = targetCard?.ports.find(item => item.port === targetPort && item.dir === dir);
+            const targetCard = drawBase.nativeCards[targetId], pin = pins.get(JSON.stringify([targetId, dir, targetPort]));
             if (!pin) return;
             jumps.push({ id, label: 'Go to ' + targetCard.canonicalTitle + ' · ' + pin.label + (portalLabel ? ' · ' + portalLabel : ''), target: { nodeId: targetId, portId: targetPort, dir } });
         };
-        for (const edge of Object.values(drawBase.wires)) {
-            if (port.dir === 'in' && edge.to === nodeId && edge.toPort === port.port) {
+        for (const edge of (port.dir === 'in' ? incoming : outgoing).get(endpoint(nodeId, port.port)) ?? []) {
+            if (port.dir === 'in') {
                 if (edge.route === 'portal') {
                     const publisher = drawBase.portals?.[edge.portalId];
                     originalBindings.push({ kind: 'portal', id: edge.id, portalId: edge.portalId });
@@ -226,24 +329,26 @@ function prepareEditorDrawBase(view, snapshots, compiledPhase = () => undefined)
                     originalBindings.push({ kind: 'direct', id: edge.id });
                     jump('wire-source:' + edge.id, edge.from, edge.fromPort, 'out');
                 }
-            } else if (port.dir === 'out' && edge.route !== 'portal' && edge.from === nodeId && edge.fromPort === port.port) {
+            } else if (port.dir === 'out') {
                 originalBindings.push({ kind: 'direct', id: edge.id });
                 jump('wire-target:' + edge.id, edge.to, edge.toPort, 'in');
             }
         }
-        for (const portal of Object.values(drawBase.portals ?? {})) if (port.dir === 'out' && portal.source.nodeId === nodeId && portal.source.portId === port.port) {
+        for (const portal of port.dir === 'out' ? publishers.get(endpoint(nodeId, port.port)) ?? [] : []) {
             originalBindings.push({ kind: 'portal-publisher', portalId: portal.id });
-            for (const edge of Object.values(drawBase.wires)) if (edge.route === 'portal' && edge.portalId === portal.id) jump('portal-target:' + edge.id, edge.to, edge.toPort, 'in', portal.label || portal.id);
+            for (const edge of subscribers.get(portal.id) ?? []) jump('portal-target:' + edge.id, edge.to, edge.toPort, 'in', portal.label || portal.id);
         }
-        drawBase.nativeAttachments[JSON.stringify([nodeId, port.dir, port.port])] = { originalBindings, jumps };
+        attachments[JSON.stringify([nodeId, port.dir, port.port])] = { originalBindings, jumps };
     }
-    return drawBase;
+    return attachments;
 }
 /** Content preparation for actual saved definitions. Never creates a workflow or runtime address. */
 export function prepareLibraryViews(workflowId, snapshots) {
     const navigation=[],preparedViews=[],definitionInfo={};
+    const registry = prepareDefinitionRegistry(snapshots); if (!registry.ok) return registry;
+    snapshots = registry.data.snapshots;
     for (const definition of Object.values(snapshots)) {
-        const checked=inspectDefinitionGraph(definition,snapshots);if(!checked.ok)return checked;
+        const checked=inspectPreparedDefinition(registry.data,{id:definition.id,version:definition.version,semanticHash:definition.semanticHash});if(!checked.ok)return checked;
         const {ref,definition:actual,expansion}=checked.data;
         const eligibleTargets=[],nodeBindings=[],roles=new Map();
         for(const scope of expansion.scopes) for(const role of Object.keys(scope.graph.roles ?? {})) roles.set(role,{id:role,label:role});
@@ -316,4 +421,9 @@ export function projectDefinitionInstance(info,wrapper,profiles=[],effectiveCont
 export function projectDefinitionUpdate(previous,next) {
  const rows=(old,choices,compatible=()=>true)=>old.map(row=>{const options=choices.filter(choice=>compatible(row,choice)).map(choice=>({id:choice.id,label:choice.label}));return {from:row.id,label:row.label,to:options.some(choice=>choice.id===row.id)?row.id:null,options,canDrop:true};});
  return {portMap:rows(previous.interface,next.interface,(a,b)=>a.direction===b.direction&&a.kind===b.kind),parameterMap:rows(previous.parameters,next.parameters),roleMap:rows(previous.roles,next.roles),nodeBindingMap:rows(previous.nodeBindings,next.nodeBindings)};
+}
+
+/** Producer contract contains editor compatibility only; revision/activation are write tokens. */
+function detailsEditorContractKey(node) {
+    return JSON.stringify([node.controls.map(control => [control.key, control.editor, control.representation, control.allowEmpty, control.structured]), node.model?.profile.allowedModes, node.model?.model.allowedModes, node.model?.editable, node.helperBindings && [node.helperBindings.helperKey, node.helperBindings.editable, node.helperBindings.roles.map(row => [row.role, row.model.allowedModes])], node.boundary && [node.boundary.id, node.boundary.direction, node.boundary.kinds], !!node.fileInput, node.modifiers && [node.modifiers.items.map(item => [item.id, item.type]).sort(([a], [b]) => a.localeCompare(b)), node.modifiers.options.map(option => [option.type, option.fields.map(field => [field.key, field.editor])]), node.modifiers.editable], node.readOnly]);
 }

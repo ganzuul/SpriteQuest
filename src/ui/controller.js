@@ -16,12 +16,13 @@ import { OPERATIONS, operationFor, portsForNode } from '../workflow/catalog.js?v
 import { validateNodeModifiers } from '../workflow/modifiers.js?v=0.27.0';
 import { isWorkflowGraph } from '../workflow/contracts.js?v=0.27.0';
 import { parseWorkflowInsertionFile, prepareWorkflowInsertion } from '../workflow/insertion.js?v=0.27.0';
-import { captureGraphEditContext } from '../workflow/transactions.js?v=0.27.0';
+import { captureGraphEditContext, committedGraphChange } from '../workflow/transactions.js?v=0.27.0';
 import { viewIdentityKey } from './view-state.js?v=0.27.0';
 import { createGraphViewSession } from './graph-view-session.js?v=0.27.0';
 import { prepareNativeNodeEdit, prepareQualifiedScopeEdit, makeLocalCopy, materializeInstanceDefinition, prepareOwnedDefinitionMetadataEdit } from '../workflow/definition-library.js?v=0.27.0';
 import { prepareSubgraphNodeDeletion } from '../workflow/subgraph-authoring.js?v=0.27.0';
 import { prepareNativeConnectionEdit } from '../workflow/connection-edits.js?v=0.27.0';
+import { checkedCandidateArtifacts } from '../workflow/checked-candidate.js?v=0.27.0';
 import { prepareCommentEdit } from '../workflow/comment-edits.js?v=0.27.0';
 import { createCommentFrame, containedCommentNodes, fitCommentFrame, isCommentFrame } from '../canvas/comment-frames.js?v=0.27.0';
 import { captureCommentPresentation, applyCommentPresentation, applyCommentGroupPresentation } from './comment-presentation.js?v=0.27.0';
@@ -38,9 +39,9 @@ import { showContextMenu } from './context-menu.js?v=0.27.0';
 import { createWorkflowDocumentController } from './document-controller.js?v=0.27.0';
 import { createWorkflowFileAccess } from './workflow-file-access.js?v=0.27.0';
 import { readTextFile } from './file-input.js?v=0.27.0';
-import { prepareWorkspaceViews, prepareLibraryViews, projectEditorDraw, initialWorkspaceCamera, projectWorkspacePanels, projectNodeProfiles } from './workspace-preparation.js?v=0.27.0';
+import { prepareWorkspaceViews, prepareNodePlacement, prepareLibraryViews, projectEditorDraw, initialWorkspaceCamera, projectWorkspacePanels, projectNodeProfiles } from './workspace-preparation.js?v=0.27.0';
 import { prepareWorkflowProjection, projectPreparedWorkflow, createWorkflowSession } from './workflow-surface.js?v=0.27.0';
-import { ctx, safe, settings, save, activeWorkflow, activateWorkflow, documentSession, activeWorkspaceViews, setActiveWorkspaceViews, recoveredWorkflows, retainRecoveryWorkflows, onWorkflowActivated, createGraph, touchGraph, commitGraphEdit, stepGraphHistory, exportGraph, exportArchivedWorkflows, onGraphTouched, groupMembers } from '../state.js?v=0.27.0';
+import { ctx, safe, settings, save, activeWorkflow, activateWorkflow, documentSession, activeWorkspaceViews, setActiveWorkspaceViews, recoveredWorkflows, retainRecoveryWorkflows, onWorkflowActivated, onRecoveryIssue, createGraph, touchGraph, commitGraphEdit, stepGraphHistory, exportGraph, exportArchivedWorkflows, onGraphTouched, groupMembers } from '../state.js?v=0.27.0';
 import { applyTheme } from '../theme.js?v=0.27.0';
 import { renderThemeEditor } from '../theme-editor.js?v=0.27.0';
 import * as H from '../history.js?v=0.27.0';
@@ -70,7 +71,7 @@ let pendingDocumentPrompt = null;
 let workflowFiles = null, documentCommands = null, fileStorageIssue = '';
 let storyDocumentSetup = null, nodeWorkflowDataSetup = null, pendingConfiguredNode = null;
 const nodeDocumentCaptures = new Map(), nodeCreationScopes = new WeakMap();
-const editorCaptures = new WeakMap();
+const editorCaptures = new WeakMap(), workflowNodePresentations = new WeakMap();
 const commentCaptures = new WeakMap(), commentPresentationEffects = new WeakMap(), pendingCommentPresentation = new WeakMap();
 const subgraphPresentationEffects = new WeakMap(), pendingSubgraphPresentation = new WeakMap();
 // Qualified editor context and cached tabs share the existing root workflow runner.
@@ -82,7 +83,7 @@ const graphDocumentHooks = {
         workflowRevision = isWorkflowGraph(graph) ? workflowSignature(graph) : null;
         documentTransition = true; workflowSession.cancel('Workflow document changed'); documentTransition = false;
     },
-    reconcileViews(graph, summary) { if (graph === current) refreshWorkspaceDocument(); graphEditAdapter?.reconcileViews?.(graph, summary); },
+    reconcileViews(graph, summary) { if (graph === current) reconcileWorkspaceDocument(summary); graphEditAdapter?.reconcileViews?.(graph, summary); },
 };
 export const el = (tag, cls, text) => {
     const n = document.createElement(tag);
@@ -191,24 +192,36 @@ function refreshNodeProfileSettings() {
     if (nodeProfileMetadataKey(ctx(), profiles()) === nodeProfileInputsKey) return;
     refreshNodeProfileMetadata();
 }
-function persistGraphViews(flush = false, deferSerialization = false, persistSettings = save) {
+function installRecoveryLifecycle() {
+    onRecoveryIssue(error => toast(error.message, 'error'));
+    // Publish pending camera/selection before the state's pagehide submission.
+    globalThis.addEventListener?.('pagehide', () => { if (graphViews) persistGraphViews(true, false, () => {}); }, { capture: true });
+}
+function persistGraphViews(flush = false, deferSerialization = false, persistSettings = () => save({ recovery: false })) {
     clearTimeout(viewSaveTimer);
+    const session = graphViews, token = documentSession.capture();
+    const current = () => graphViews === session && session && documentSession.stillCurrent(token) && session.readRoot() === activeWorkflow();
     const snapshot = () => {
-        if (graphViews && graphViews.readRoot() === activeWorkflow()) { const result = graphViews.serialize(); if (result.ok) setActiveWorkspaceViews(result.data); }
+        if (!current()) return false;
+        const result = session.serialize();
+        if (!result.ok) return false;
+        setActiveWorkspaceViews(result.data); return true;
     };
-    // Explicit presentation edits/history must publish their saved snapshot in
-    // the same turn. Only live camera and selection bursts defer that work.
+    // Authored presentation is recoverable now; camera and selection bursts
+    // publish once at the boundary captured by this document activation.
     if (!deferSerialization) snapshot();
     const persist = () => {
+        if (!current()) return;
         viewSaveTimer = null;
-        if (deferSerialization) snapshot();
+        if (deferSerialization && !snapshot()) return;
         return persistSettings();
     };
     if (flush) return persist();
     viewSaveTimer = setTimeout(persist, 180);
 }
-function prepareWorkspaceDocument() {
-    const result = prepareWorkspaceViews(current, workspaceInputs());
+
+function prepareWorkspaceDocument(change = null) {
+    const result = prepareWorkspaceViews(current, { ...workspaceInputs(), ...(change?.artifacts ? { artifacts: change.artifacts } : {}) });
     if (!result.ok) { workspaceIssue = result.error.message; toast(workspaceIssue, 'error'); return false; }
     workspaceIssue = '';
     workspacePrepared = result.data; workspaceRevision++;
@@ -232,16 +245,18 @@ function activateEditorDraw() {
     if (!graphViews || !canvas) return;
     cancelConfiguredNode();
     selectedPreview = null;
-    canvas.cancelGesture(); cancelImportReview();
+    // Cancellation belongs to the incoming view restoration; its callbacks
+    // must not overwrite the retained selection or project the outgoing scene.
+    restoringEditor = true;
+    canvas.cancelGesture('view-change', { render: false }); cancelImportReview();
     // A rejected coordinate restoration retains its diagnostic and pending
     // effect, while the Canvas must still reflect the current validated view.
     applyPendingCommentPresentation();
     applyPendingSubgraphPresentation();
     const editor = graphViews.readEditor();
-    editorDraw = projectEditorDraw(editor); canvasTraceRows=null;
+    editorDraw = projectEditorDraw(editor, { canvasOnly: true }); canvasTraceRows=null;
     replaceNativeBridge();
-    restoringEditor=true;
-    canvas.setGraph(editorDraw);
+    canvas.setGraph(editorDraw, { viewKey: graphViews.readEditContext().activationId + ':' + editor.view.key });
     const selection = editor.view.selection.primary;
     const primary=selection && editorDraw[selection.kind === 'node' ? 'nodes' : selection.kind === 'wire' ? 'wires' : 'groups']?.[selection.id] ? selection : null;
     const multi=editor.view.selection.multi.filter(id=>editorDraw.nodes[id]);
@@ -258,13 +273,34 @@ function activateEditorDraw() {
     workbench.update({ graphViews: graphViews.project().graphViews, readOnly: editor.readOnly });
     updateWorkflowProjection(); paintHistory();
 }
-function refreshWorkspaceDocument() {
-    if (!isWorkflowGraph(current) || !prepareWorkspaceDocument()) return;
+function refreshWorkspaceDocument(change = null) {
+    if (!isWorkflowGraph(current) || !prepareWorkspaceDocument(change)) return;
     if (graphViews) {
         const replaced = graphViews.replacePreparedViews(workspacePrepared);
         if (!replaced.ok) return toast(replaced.error.message, 'error');
     }
     activateEditorDraw(); persistGraphViews();
+}
+function reconcileWorkspaceDocument(summary) {
+    const change = committedGraphChange(current, summary);
+    if (change?.kind !== 'coordinates' || !graphViews || !canvas) return refreshWorkspaceDocument(change);
+    const patched = graphViews.applyCommittedCoordinates(summary);
+    if (!patched.ok) return refreshWorkspaceDocument(change);
+    const editor = graphViews.readEditor(), nodePresentation = { ...editor.view.nodePresentation }, groupPresentation = { ...(editor.view.groupPresentation ?? {}) };
+    for (const id of change.nodeIds) if (nodePresentation[id]) {
+        const item = { ...nodePresentation[id] }; delete item.x; delete item.y;
+        if (Object.keys(item).length) nodePresentation[id] = item; else delete nodePresentation[id];
+    }
+    for (const id of change.groupIds) if (groupPresentation[id]) {
+        const item = { ...groupPresentation[id] }; delete item.x; delete item.y; delete item.frame;
+        if (Object.keys(item).length) groupPresentation[id] = item; else delete groupPresentation[id];
+    }
+    graphViews.updateView({ nodePresentation, groupPresentation }); workspaceRevision++;
+    for (const id of change.groupIds) Object.assign(editorDraw.groups[id], structuredClone(change.candidate.groups[id]));
+    const nodeUpdates = change.nodeIds.map(id => ({ id, x: change.candidate.nodes[id].x, y: change.candidate.nodes[id].y }));
+    const groupUpdates = change.groupIds.map(id => ({ id, ...change.candidate.groups[id] }));
+    canvas.setPositions(nodeUpdates, groupUpdates);
+    updateWorkflowProjection(); paintHistory(); persistGraphViews();
 }
 function navigateGraphView(action, ...args) {
     if (!graphViews) return;
@@ -340,7 +376,12 @@ function workflowView() {
     const selectedReviewHandle = workflowState.reviewHandles?.find(handle => samePreviewTerminal(handle.terminal, effectiveTarget));
     view = projectPreparedWorkflow(workspacePrepared?.workflow, { ...workflowState, viewPath, selectedId, selectedTarget: pinnedPreview || selectedPreview, pinnedPreview, selectedReviewHandle });
     const presentation = editor?.view.nodePresentation ?? {};
-    view = { ...view, nodes: view.nodes.map(node => { const saved = editor?.prepared.savedGraph.nodes[node.id] ?? node, overlay = readNodePresentation(saved, presentation[node.id]); return { ...node, ...overlay, title: (overlay.alias || (typeof saved.title === 'string' ? saved.title : '') || node.canonicalTitle).slice(0,80) }; }), issues: [...view.issues, ...(graphViews?.project().warnings.map(warning => warning.message) ?? [])] };
+    view = { ...view, nodes: view.nodes.map(node => { const saved = editor?.prepared.savedGraph.nodes[node.id] ?? node, overlay = readNodePresentation(saved, presentation[node.id]); const title = (overlay.alias || (typeof saved.title === 'string' ? saved.title : '') || node.canonicalTitle).slice(0,80);
+        const key = JSON.stringify([overlay.alias, overlay.compact, title]), previous = workflowNodePresentations.get(node);
+        if (Object.isFrozen(node) && previous?.key === key) return previous.data;
+        const data = Object.freeze({ ...node, ...overlay, title });
+        if (Object.isFrozen(node)) workflowNodePresentations.set(node, { key, data });
+        return data; }), issues: [...view.issues, ...(graphViews?.project().warnings.map(warning => warning.message) ?? [])] };
     workflowProjection = view; workflowProjectionGraph = current;
     return view;
 }
@@ -352,7 +393,7 @@ function updateWorkflowProjection() {
     const rootWorkflow = { ...projectPreparedWorkflow(workspacePrepared?.workflow,workflowState), ownedBusy };
     if (canvas && graphViews) canvas.setNodeProfiles?.(projectNodeProfiles(graphViews.readEditor(), view, revision));
     const recall = recallSetupView();
-    const panels = graphViews ? projectWorkspacePanels(graphViews.readEditor(), view, workflowState, revision, selectedPreview, pinnedPreview, rootWorkflow, workspacePrepared.idleRunRows, workspacePrepared.previewChoices) : {};
+    const panels = graphViews ? projectWorkspacePanels({ ...graphViews.readEditor(), documentNamespace: documentSession.draftNamespace() }, view, workflowState, revision, selectedPreview, pinnedPreview, rootWorkflow, workspacePrepared.idleRunRows, workspacePrepared.previewChoices) : {};
     recallDetailsView=panels.nodeDetails&&graphViews.readEditor().view.identity.kind==='root'&&recallProjection?.nodes[panels.nodeDetails.address.nodeId]?{...panels.nodeDetails,recall:recallProjection.nodes[panels.nodeDetails.address.nodeId]}:null;
     if(recallDetailsView)panels.nodeDetails=recallDetailsView;
     if (panels.outputPreview) panels.outputPreview = { ...panels.outputPreview, busy: panels.outputPreview.busy || !!activity?.busy };
@@ -500,7 +541,7 @@ function build() {
         documentTransition = true; workflowSession.syncDocument(); documentTransition = false;
         if (isOpen()) { current = graph; setCanvasGraph(); renderAll(); }
     });
-    documentSession.subscribe(() => renderDocumentState());
+    documentSession.subscribe(() => renderDocumentState()); installRecoveryLifecycle();
     const nativeContext = ctx();
     for (const name of ['CHAT_CHANGED', 'MESSAGE_EDITED', 'MESSAGE_UPDATED', 'MESSAGE_DELETED', 'MESSAGE_SWIPED', 'MESSAGE_SENT', 'GENERATION_STARTED', 'GENERATION_ENDED', 'GENERATION_STOPPED']) {
         if (nativeContext.eventTypes?.[name]) nativeContext.eventSource?.on?.(nativeContext.eventTypes[name], () => { if (isOpen()) { workflowSession.refreshFreshness(); if (name === 'CHAT_CHANGED') { cancelConfiguredNode(); refreshStoryDocuments(); } } });
@@ -515,6 +556,7 @@ function build() {
     document.addEventListener('pc-state', () => { if(isOpen())refreshRecallOverview(); });
     document.addEventListener('pc-theme', () => { if (canvas && isOpen()) { updateWorkflowProjection(); canvas.render(); } });
     canvas = new Canvas(workbench.parts.canvasHost, {
+        lodKey: () => graphViews ? documentSession.draftNamespace() + ':' + graphViews.readEditor().view.key : undefined,
         onSelect(item, kind) {
             selectionEpoch++;
             selected = canvas.multi.size > 1 ? [...canvas.multi] : item; selectedKind = canvas.multi.size > 1 ? 'multi' : kind;
@@ -657,9 +699,12 @@ function completePositionEdit(ids, groupIds = []) {
             return { ok: true, data: {} };
         }));
         if (!result.ok) return false;
+        const reconciled = graphViews.readEditor().view;
+        if (result.data?.changed && Object.keys(nodes).every(id => reconciled.nodePresentation[id]?.x === undefined && reconciled.nodePresentation[id]?.y === undefined)
+            && Object.keys(groups).every(id => reconciled.groupPresentation?.[id]?.x === undefined && reconciled.groupPresentation?.[id]?.y === undefined && reconciled.groupPresentation?.[id]?.frame === undefined)) return true;
         for (const id of Object.keys(nodes)) if (nodePresentation[id]) { delete nodePresentation[id].x; delete nodePresentation[id].y; if (!Object.keys(nodePresentation[id]).length) delete nodePresentation[id]; }
         for (const id of Object.keys(groups)) if (groupPresentation[id]) { delete groupPresentation[id].x; delete groupPresentation[id].y; delete groupPresentation[id].frame; if (!Object.keys(groupPresentation[id]).length) delete groupPresentation[id]; }
-        graphViews.updateView({ nodePresentation, groupPresentation }); activateEditorDraw(); persistGraphViews(); return true;
+        graphViews.updateView({ nodePresentation, groupPresentation }); persistGraphViews(); return true;
     }
     for (const [id, point] of Object.entries(nodes)) nodePresentation[id] = { ...nodePresentation[id], ...point };
     for (const [id, frame] of Object.entries(groups)) groupPresentation[id] = { ...groupPresentation[id], ...frame };
@@ -1711,12 +1756,11 @@ function prepareShelfNodeCreation(capture, command, at = null) {
     if (at) return prepareNativeCreation(capture, { ...command, graphPoint: canvas.toGraph(at.x, at.y) });
     const provisional = prepareNativeCreation(capture, { ...command, graphPoint: { x: 0, y: 0 } });
     if (!provisional.ok) return provisional;
-    const workspace = prepareWorkspaceViews(provisional.data.candidate, workspaceInputs());
-    if (!workspace.ok) return workspace;
     const path = scopeCommand(capture).viewPath;
-    const preparedView = workspace.data.preparedViews.find(view => JSON.stringify(view.identity.instancePath ?? []) === JSON.stringify(path));
-    const id = provisional.data.addedBoundaryNodeId ?? provisional.data.addedNodeIds?.[0], graph = preparedView?.drawBase, node = graph?.nodes[id];
-    if (!node) return { ok: false, error: { code: 'VIEW_INACTIVE', message: 'The new node cannot be placed in this graph view.' } };
+    const id = provisional.data.addedBoundaryNodeId ?? provisional.data.addedNodeIds?.[0];
+    const placement = prepareNodePlacement(provisional.data.candidate, { nodeId: id, viewPath: path, artifacts: checkedCandidateArtifacts(provisional.data.checkedCandidate) });
+    if (!placement.ok) return placement;
+    const { graph, node } = placement.data;
     const size = measureNodeCard(canvas.nodeLayer, nodeCard(node, { graph })), rect = canvas.host.getBoundingClientRect();
     const origin = canvas.toGraph(rect.left + (rect.width - size.width) / 2, rect.top + (rect.height - size.height) / 2);
     // Reprepare private definitions so their content pins include the final coordinates.

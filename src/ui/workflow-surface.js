@@ -1,3 +1,4 @@
+import { prepareGraphArtifacts } from '../workflow/graph-artifacts.js?v=0.27.0';
 import { prepareWorkflowPlanner, preparedWorkflowExpansion } from '../workflow/resolve.js?v=0.27.0';
 import { cloneWorkflowDocument } from '../workflow/document.js?v=0.27.0';
 import { sha256Text } from '../workflow/definition-data.js?v=0.27.0';
@@ -15,6 +16,7 @@ export const QUOTE_SCOPE_HELP = 'Dialogue is text inside paired ASCII double quo
 // Content/host preparation owns expensive work. Selection projects cached plain data.
 const projections = new WeakMap();
 const historicalPreviews = new WeakMap();
+const recordedSections = new WeakMap();
 const noRows = freeze([]);
 const pathKey = path => JSON.stringify(path);
 const targetKey = target => target?.kind === 'terminal' ? 'terminal:' + addressKey(target.address) : addressKey(target) + ':' + target.portId;
@@ -82,10 +84,14 @@ export function prepareWorkflowProjection(root, { planner, profiles = [], active
         const brand = preparedWorkflowExpansion(root, planner);
         if (!brand.ok) return reject(brand.error.message);
     }
-    const cloned = cloneWorkflowDocument(root);
+    // A historical planner proves ownership, not current raw content. Admit the
+    // current document once, then share that verified expansion with its clone.
+    const artifacts = prepareGraphArtifacts(root);
+    if (!artifacts.ok) return reject(artifacts.error.message);
+    const cloned = cloneWorkflowDocument(root, { checkedArtifacts: artifacts.data });
     if (!cloned.ok) return reject(cloned.error.message);
     const graph = cloned.data;
-    const prepared = planner === undefined ? prepareWorkflowPlanner(root) : { ok: true, data: planner };
+    const prepared = planner === undefined ? prepareWorkflowPlanner(root, artifacts.data) : { ok: true, data: planner };
     if (!prepared.ok) return reject(prepared.error.message, baseWorkflowView(graph, profiles, settings, activeModel));
     planner = prepared.data;
     const composition = prepareCompositionViews(root, planner);
@@ -106,18 +112,28 @@ export function prepareWorkflowProjection(root, { planner, profiles = [], active
         for (const address of safe.requiredBindingAddresses) if (boundIssues.has(addressKey(address))) issues.push(boundIssues.get(addressKey(address)));
         return freeze({ ...safe, issues: [...new Set(issues)] });
     };
-    const rootSummary = withBindings(planner.summarize()), summaries = new Map(), targets = [], previewTargets = new Map();
+    const rootSummary = withBindings(planner.summarize()), summaries = new Map(), targets = [], previewTargets = new Map(), targetInventory = new Map(), targetsByPath = new Map(), boundaryMappings = new Map();
     for (const pin of inventory.pins) if (pin.direction === 'output') targets.push(pin.address);
     targets.push(...inventory.terminals);
     const checked = preparedWorkflowExpansion(root, planner).data;
+    for (const item of checked.boundaryMappings) {
+        const instance = targetKey({ ...item.instance, portId: item.portId }), boundary = targetKey(item.boundary);
+        if (!boundaryMappings.has(instance)) boundaryMappings.set(instance, item);
+        if (!boundaryMappings.has(boundary)) boundaryMappings.set(boundary, item);
+    }
     for (const target of targets) {
-        summaries.set(targetKey(target), withBindings(planner.summarize(target)));
-        const mapping = target.kind === 'terminal' ? null : checked.boundaryMappings.find(item => targetKey({ ...item.instance, portId: item.portId }) === targetKey(target) || targetKey(item.boundary) === targetKey(target));
+        const key = targetKey(target); targetInventory.set(key, target);
+        const path = pathKey((target.kind === 'terminal' ? target.address : target).instancePath);
+        if (!targetsByPath.has(path)) targetsByPath.set(path, []); targetsByPath.get(path).push(target);
+        const mapping = target.kind === 'terminal' ? null : boundaryMappings.get(key);
         previewTargets.set(targetKey(target), ownedPreviewTarget(mapping?.source || target));
     }
     prepareRecordedAliases(root, result?.recording, graph.id, previewTargets);
     const units = new Map(inventory.primitives.map(unit => [addressKey(unit.address), unit])), views = new Map();
     for (const view of composition.data.views) {
+        const portsByNode = new Map(), groupMembers = new Map(), groupBounds = new Map();
+        for (const port of view.ports) { if (!portsByNode.has(port.address.nodeId)) portsByNode.set(port.address.nodeId, []); portsByNode.get(port.address.nodeId).push(port); }
+        for (const node of Object.values(view.savedGraph.nodes)) if (node.inGroup) { if (!groupMembers.has(node.inGroup)) groupMembers.set(node.inGroup, []); groupMembers.get(node.inGroup).push(node.id); }
         const nodes = Object.values(view.effectiveNodes).flatMap(node => {
             const address = { workflowId: inventory.workflowId, instancePath: view.instancePath, nodeId: node.id }, unit = units.get(addressKey(address));
             const op = operationFor(node, { phase: unit?.phase ?? phaseForNode(view.savedGraph,node), mode: graph.mode });
@@ -130,14 +146,15 @@ export function prepareWorkflowProjection(root, { planner, profiles = [], active
                 profileId: node.profileId || '', model: node.model || '', resolvedModel: binding?.model || '', requestBound: unit?.requestBound ?? 0, enabled: node.enabled !== false,
                 issue: boundIssues.get(addressKey(address)) || undefined,
                 effective: unit?.requestBound ? [binding?.profileId, binding?.model].filter(Boolean).join(' · ') || boundIssues.get(addressKey(address)) || 'Model connection' : 'No model call',
-                ports: view.ports.filter(pin => pin.address.nodeId === node.id) }];
+                ports: portsByNode.get(node.id) ?? [] }];
         });
+        for (const node of nodes) { const group = view.savedGraph.nodes[node.id]?.inGroup; if (group) groupBounds.set(group, (groupBounds.get(group) ?? 0) + (units.get(addressKey(node.address))?.requestBound || 0)); }
         const groups = Object.values(view.savedGraph.groups ?? {}).map(group => {
-            const members = Object.values(view.savedGraph.nodes).filter(node => node.inGroup === group.id).map(node => node.id);
+            const members = groupMembers.get(group.id) ?? [];
             return { id: group.id, title: group.title, members, collapsed: group.collapsed,
-                callBound: nodes.filter(node => members.includes(node.id)).reduce((sum, node) => sum + (units.get(addressKey(node.address))?.requestBound || 0), 0) };
+                callBound: groupBounds.get(group.id) ?? 0 };
         });
-        views.set(pathKey(view.instancePath), freeze({ instancePath: view.instancePath, editable: view.editable, nodes, groups, targets: targets.filter(target => pathKey((target.kind === 'terminal' ? target.address : target).instancePath) === pathKey(view.instancePath)) }));
+        views.set(pathKey(view.instancePath), freeze({ instancePath: view.instancePath, editable: view.editable, nodes, groups, targets: targetsByPath.get(pathKey(view.instancePath)) ?? [] }));
     }
     const handles = new Map();
     const applyTerminals = new Set(inventory.primitives.filter(unit => unit.terminal && unit.node.operation === 'review-publish').map(unit => addressKey(unit.address)));
@@ -147,7 +164,7 @@ export function prepareWorkflowProjection(root, { planner, profiles = [], active
         const freshness = candidateStatus?.(handle);
         handles.set(handle.handleId, freeze({ handle, issue: freshness?.ok === false ? freshness.error.message : '', persistOnly: freshness?.ok === true && freshness.persistOnly === true }));
     }
-    projections.set(token, { base: freeze({ ...baseWorkflowView(graph, profiles, settings, activeModel), workflowData }), rootSummary, summaries, views, handles, previewTargets, result, rows: new WeakMap() }); return token;
+    projections.set(token, { base: freeze({ ...baseWorkflowView(graph, profiles, settings, activeModel), workflowData }), rootSummary, summaries, targetInventory, summarize: target => withBindings(planner.summarize(target)), views, handles, previewTargets, result, rows: new WeakMap() }); return token;
 }
 function cachedRows(owner, source, viewPath) {
     if (!source || typeof source !== 'object') return noRows;
@@ -158,7 +175,10 @@ function cachedRows(owner, source, viewPath) {
 }
 const progressSource = (recording, runState) => runState && (!recording || runState.runId !== recording.runId || runState.lastSeq > recording.lastSeq) ? runState : recording;
 function boundedSections(recording, target) {
-    if (!recording || !target) return [];
+    if (!recording || !target) return noRows;
+    let cache = Object.isFrozen(recording) ? recordedSections.get(recording) : null;
+    if (!cache) { cache = new Map(); if (Object.isFrozen(recording)) recordedSections.set(recording, cache); }
+    const key = targetKey(target); if (cache.has(key)) return cache.get(key);
     let artifactId = null;
     if (target.kind === 'terminal') {
         const entry = recording.terminals.find(item => {
@@ -170,9 +190,10 @@ function boundedSections(recording, target) {
         artifactId = unit?.ports.find(port => port.direction === 'output' && recording.identities.strings[port.port] === target.portId)?.artifact;
     }
     const artifact = recording.artifacts.find(item => item.id === artifactId);
-    if(!artifact)return [];
+    if (!artifact) { cache.set(key, noRows); return noRows; }
     const textSections=formatRecordedTextModifiers(artifact);
-    return textSections.length ? textSections : [{ kind: artifact.kind, ...formatRecordedArtifact(artifact) }];
+    const sections = freeze(structuredClone(textSections.length ? textSections : [{ kind: artifact.kind, ...formatRecordedArtifact(artifact) }]));
+    cache.set(key, sections); return sections;
 }
 /** Selection/navigation projection: no resolver, binding, freshness or signature work. */
 export function projectPreparedWorkflow(prepared, { viewPath = [], selectedId = null, selectedAddress, selectedTarget, selectedReviewHandle, pinnedPreview, result, recording, runState = null, availability = 'current', preparationError = null, busy = false, status = '', applyIssue = '' } = {}) {
@@ -184,7 +205,12 @@ export function projectPreparedWorkflow(prepared, { viewPath = [], selectedId = 
     const path = safeWorkflowData(viewPath) && Array.isArray(viewPath) ? pathKey(viewPath) : '', view = owner.views.get(path);
     if (!view) return { ...owner.base, ...emptyView('The selected workflow view is unavailable.'), busy, status };
     const address = nodeAddress(selectedAddress), target = targetAddress(selectedTarget), pinned = targetAddress(pinnedPreview);
-    const summary = target ? owner.summaries.get(targetKey(target)) || { callBound: 0, issues: ['Select an actual output or tagged terminal.'], requiredBindingAddresses: [] } : owner.rootSummary;
+    let summary = owner.rootSummary;
+    if (target) {
+        const key = targetKey(target), actual = owner.targetInventory.get(key);
+        if (actual && !owner.summaries.has(key)) owner.summaries.set(key, owner.summarize(actual));
+        summary = owner.summaries.get(key) || { callBound: 0, issues: ['Select an actual output or tagged terminal.'], requiredBindingAddresses: [] };
+    }
     const selector = safeHandle(selectedReviewHandle), cached = selector ? owner.handles.get(selector.handleId) : null;
     const validHandle = cached && selector.runId === cached.handle.runId && targetKey(selector.terminal) === targetKey(cached.handle.terminal) && target?.kind === 'terminal' && targetKey(target) === targetKey(cached.handle.terminal)
         && result?.mode === 'root' && result?.ok && result.runId === selector.runId && recording?.runId === selector.runId && availability === 'current' && !view.instancePath.length;
