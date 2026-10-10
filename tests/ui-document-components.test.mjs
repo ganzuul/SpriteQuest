@@ -19,7 +19,7 @@ after(async () => {
 const settle = async () => { flushSync(); await tick(); flushSync(); };
 const click = async element => { assert.ok(element, 'the command is visible'); element.click(); await settle(); };
 const key = async (element, value, options = {}) => { element.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: value, bubbles: true, cancelable: true, ...options })); await settle(); };
-const state = document => ({ graphId: 'root', enabled: false, inspectorOpen: false, history: { undo: false, redo: false, undoTitle: '', redoTitle: '', note: '', showNote: false }, camera: { x: 0, y: 0, zoom: 1, mode: 'select' }, selectionCount: 0, document });
+const state = document => ({ graphId: 'root', enabled: false, inspectorOpen: false, history: { undo: false, redo: false, undoTitle: '', redoTitle: '', note: '', showNote: false }, camera: { x: 0, y: 0, zoom: 1, mode: 'select' }, selectionCount: 0, workflow:{graphId:'root',phase:'unified',callBound:0,nodes:[],issues:[]}, document });
 let sequence = 0;
 async function fixture(name, initial, actions = {}, local = () => {}, valueProp = 'state', extraProps = {}) {
     const leaf = await compiled(name, directory);
@@ -28,7 +28,7 @@ async function fixture(name, initial, actions = {}, local = () => {}, valueProp 
     const host = document.createElement('div'); document.body.append(host);
     const mounted = mount(harness.component, { target: host, props: { initial, actions, local, extraProps } }); await settle();
     const menu = name => host.querySelector(`[role="menu"][aria-label="${name}"]`);
-    const item = (label, name = 'File') => [...(menu(name)?.querySelectorAll('[role="menuitem"]') ?? [])].find(element => element.querySelector('span')?.textContent === label || element.textContent.trim() === label);
+    const item = (label, name = 'File') => [...(menu(name)?.querySelectorAll('[role="menuitem"]') ?? [])].find(element => element.getAttribute('aria-label') === label);
     return { host, mounted, menu, item, async open(name = 'File') { if (!menu(name)) await click(host.querySelector(`[data-menu="${name}"]`)); }, async update(next) { mounted.update(next); await settle(); }, async close() { await unmount(mounted); host.remove(); } };
 }
 
@@ -61,14 +61,14 @@ test('Open Recent supports nested keyboard navigation and clearing just the rece
         const file = f.host.querySelector('[data-menu="File"]'); file.focus(); await key(file, 'ArrowDown');
         assert.equal(document.activeElement, f.item('New workflow'));
         const recent = f.item('Open Recent'); assert.ok(recent); assert.equal(recent.getAttribute('aria-haspopup'), 'menu'); recent.focus(); await key(recent, 'ArrowRight');
-        assert.equal(document.activeElement, f.item('first.json', 'Open Recent'));
-        await key(document.activeElement, 'ArrowDown'); assert.equal(document.activeElement, f.item('second.json', 'Open Recent'));
-        await key(document.activeElement, 'ArrowLeft'); assert.equal(f.menu('Open Recent'), null); assert.equal(document.activeElement, recent);
-        await key(recent, 'ArrowRight'); await click(f.item('second.json', 'Open Recent')); assert.deepEqual(commands, ['open-recent:second']); assert.equal(document.activeElement, file);
-        await f.open(); await click(f.item('Open Recent')); await key(f.item('first.json', 'Open Recent'), 'End');
-        const clear = f.item('Clear Recent', 'Open Recent'); assert.equal(document.activeElement, clear); assert.match(clear.title, /Files stay on disk/);
-        await key(clear, 'Escape'); assert.equal(f.menu('Open Recent'), null); assert.equal(document.activeElement, f.item('Open Recent'));
-        await click(f.item('Open Recent')); await click(f.item('Clear Recent', 'Open Recent')); assert.deepEqual(commands, ['open-recent:second', 'clear-recent']); assert.equal(f.menu('File'), null);
+        assert.equal(document.activeElement, f.item('first.json', 'Open Recent options'));
+        await key(document.activeElement, 'ArrowDown'); assert.equal(document.activeElement, f.item('second.json', 'Open Recent options'));
+        await key(document.activeElement, 'ArrowLeft'); assert.equal(f.menu('Open Recent options'), null); assert.equal(document.activeElement, recent);
+        await key(recent, 'ArrowRight'); await click(f.item('second.json', 'Open Recent options')); assert.deepEqual(commands, ['open-recent:second']); assert.equal(document.activeElement, file);
+        await f.open(); await click(f.item('Open Recent')); await key(f.item('first.json', 'Open Recent options'), 'End');
+        const clear = f.item('Clear Recent', 'Open Recent options'); assert.equal(document.activeElement, clear); assert.match(clear.title, /Files stay on disk/);
+        await key(clear, 'Escape'); assert.equal(f.menu('Open Recent options'), null); assert.equal(document.activeElement, f.item('Open Recent'));
+        await click(f.item('Open Recent')); await click(f.item('Clear Recent', 'Open Recent options')); assert.deepEqual(commands, ['open-recent:second', 'clear-recent']); assert.equal(f.menu('File'), null);
     } finally { await f.close(); }
 });
 
@@ -78,10 +78,10 @@ test('migration recovery remains separately selectable when native recent files 
     try {
         await f.open(); assert.equal(f.item('Open Recent').disabled, true);
         await click(f.item('Recover previous workflows'));
-        assert.equal(f.menu('Open Recent'), null); assert.ok(f.menu('Recover previous workflows'));
-        const damaged = f.item('Unreadable scene', 'Recover previous workflows'); assert.equal(damaged.disabled, false); assert.match(damaged.title, /needs repair/);
+        assert.equal(f.menu('Open Recent options'), null); assert.ok(f.menu('Recover previous workflows options'));
+        const damaged = f.item('Unreadable scene', 'Recover previous workflows options'); assert.equal(damaged.disabled, false); assert.match(damaged.title, /needs repair/);
         await click(damaged); assert.deepEqual(commands, ['recover-workflow:damaged']);
-        await f.open(); await click(f.item('Recover previous workflows')); await click(f.item('Old scene', 'Recover previous workflows')); assert.deepEqual(commands, ['recover-workflow:damaged', 'recover-workflow:legacy']);
+        await f.open(); await click(f.item('Recover previous workflows')); await click(f.item('Old scene', 'Recover previous workflows options')); assert.deepEqual(commands, ['recover-workflow:damaged', 'recover-workflow:legacy']);
         assert.equal(f.menu('File'), null);
     } finally { await f.close(); }
 });
@@ -132,7 +132,7 @@ test('hovering then clicking a submenu retains it and supports returning focus w
     try {
         await f.open(); const recent = f.item('Open Recent');
         const hover = new dom.window.Event('pointerenter'); Object.defineProperty(hover, 'pointerType', { value: 'mouse' }); recent.dispatchEvent(hover); await settle();
-        assert.ok(f.menu('Open Recent')); await click(recent); assert.ok(f.menu('Open Recent')); assert.equal(document.activeElement, f.item('scene.json', 'Open Recent'));
+        assert.ok(f.menu('Open Recent options')); await click(recent); assert.ok(f.menu('Open Recent options')); assert.equal(document.activeElement, f.item('scene.json', 'Open Recent options'));
         await key(document.activeElement, 'Escape'); assert.equal(document.activeElement, recent);
         await key(recent, 'Escape'); assert.equal(f.menu('File'), null); assert.equal(document.activeElement, f.host.querySelector('[data-menu="File"]'));
         await f.open(); await click(f.item('Open Recent'));

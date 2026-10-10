@@ -97,3 +97,47 @@ test('recognizable malformed Fast recovery is retained and disables its fallback
     assert.ok(value.migrationRecovery.some(entry => entry.original === original));
     assert.notEqual(state.activeWorkflow().id, graph.id);
 });
+
+for (const kind of ['accessor', 'nonenumerable', 'symbol', 'metadata', 'null-prototype', 'custom-prototype']) test('recovery array ' + kind + ' rejects before reading or changing document authority', async () => {
+    const prior = await host(settings()); prior.state.settings();
+    const graph = prior.state.activeWorkflow(), token = prior.state.documentSession.capture();
+    const value = settings(), recovery = value.migrationRecovery;
+    let reads = 0;
+    if (kind === 'accessor') Object.defineProperty(recovery, '0', { enumerable: true, configurable: true, get() { reads++; return { id: 'history', original: {} }; } });
+    else if (kind === 'nonenumerable') Object.defineProperty(recovery, '0', { enumerable: false, configurable: true, writable: true, value: { id: 'history', original: {} } });
+    else if (kind === 'symbol') recovery[Symbol('metadata')] = {};
+    else if (kind === 'metadata') Object.defineProperty(recovery, 'metadata', { enumerable: true, configurable: true, get() { reads++; return {}; } });
+    else if (kind === 'null-prototype') Object.setPrototypeOf(recovery, null);
+    else Object.setPrototypeOf(recovery, Object.create(Array.prototype, {slice:{get(){reads++;throw Error('Custom recovery methods must stay cold');}}}));
+    const before = Object.getOwnPropertyDescriptors(value), beforeRecovery = Object.getOwnPropertyDescriptors(recovery), next = await host(value);
+    assert.throws(() => next.state.settings(), /migration recovery|independently enumerable/i);
+    assert.equal(reads, 0);
+    assert.deepEqual(Object.getOwnPropertyDescriptors(value), before);
+    assert.deepEqual(Object.getOwnPropertyDescriptors(recovery), beforeRecovery);
+    assert.equal(next.saves(), 0);
+    assert.equal(next.state.documentSession.current(), graph);
+    assert.equal(next.state.documentSession.stillCurrent(token), true);
+});
+
+test('sparse recovery arrays preserve holes and unreadable entries during cold retirement', async () => {
+    const value = settings(), graph = fastGraph();
+    let reads = 0;
+    const unreadable = { get id() { reads++; throw Error('Unreadable entries remain cold'); } };
+    const original = { get unavailable() { reads++; throw Error('Unreadable originals remain cold'); } };
+    value.migrationRecovery.length = 7;
+    value.migrationRecovery[1] = unreadable;
+    value.migrationRecovery[3] = { id: 'unreadable-original', original };
+    value.migrationRecovery[5] = { id: graph.id, graph, original: graph };
+    value.recoveryDraft = { graph, workspaceViews: null };
+    const { state, saves } = await host(value); state.settings();
+    assert.equal(reads, 0);
+    assert.equal(value.migrationRecovery.length, 8);
+    for (const index of [0, 2, 4, 6]) assert.equal(Object.hasOwn(value.migrationRecovery, index), false);
+    assert.equal(value.migrationRecovery[1], unreadable);
+    assert.equal(value.migrationRecovery[3].original, original);
+    assert.equal(Object.hasOwn(value.migrationRecovery[5], 'graph'), false);
+    assert.deepEqual(value.archivedWorkflows.graphs[graph.id], graph);
+    assert.equal(value.enabled, false);
+    const admitted = value.migrationRecovery; state.settings();
+    assert.equal(value.migrationRecovery, admitted); assert.equal(reads, 0); assert.equal(saves(), 1);
+});

@@ -157,7 +157,11 @@ test('overview keeps compact identity, groups, comments and keyboard access to r
     await terminal.focus(); await expect(button).toHaveCSS('visibility', 'visible');
     await page.keyboard.press('Tab'); await expect(button).toBeFocused();
     await expect(button).toHaveCSS('visibility', 'visible');
-    await expect(page.locator('.pc-wire-label').first()).toHaveCSS('visibility', 'visible');
+    const connectionLabel = page.locator('.pc-wire-label').first(), connectionId = await connectionLabel.getAttribute('data-id');
+    await expect(connectionLabel).toHaveCSS('visibility', 'hidden');
+    await page.evaluate(id => window.canvasHarness.canvas.select({ kind: 'wire', id }), connectionId);
+    await expect(connectionLabel).toHaveCSS('visibility', 'visible');
+    expect(await page.evaluate(() => window.canvasHarness.canvas.view.zoom)).toBe(.25);
 });
 
 test('switching library definitions resets detail even when both drawings have no graph id', async ({ page }) => {

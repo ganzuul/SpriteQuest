@@ -71,7 +71,7 @@ test('families directly expose canonical nodes with individual icons and shortco
 
 test('shelf menus survive equal-scope status updates and close when insertion context changes', async () => {
     const choices = [{ id: 'operation:compose', label: 'Compose', family: 'Shaping', phase: 'pre' }], view = { ...initial, graphId: 'current' };
-    await fixture({ view, choices, choose() {}, add() {}, readOnly: false }, async (host, instance) => {
+    await fixture({ view, choices, insertionContextKey: 'session:current:root:1', choose() {}, add() {}, readOnly: false }, async (host, instance) => {
         await click(host.querySelector('[data-family="Shaping"]'));
         const menu = host.querySelector('.pc-family-menu'), focus = document.activeElement;
         instance.update({ view: { ...view, status: 'Saved recovery draft' }, choices: choices.map(choice => ({ ...choice })), readOnly: false }); flushSync(); await tick(); flushSync();
@@ -84,6 +84,36 @@ test('shelf menus survive equal-scope status updates and close when insertion co
         }
     });
 });
+test('sibling tabs and same-id document replacements cancel captured shelf actions', async () => {
+    const transitions = [
+        ['sibling tab', 'session-a:root:instance-right:2'],
+        ['same-id replacement', 'session-b:root:instance-left:1'],
+    ];
+    for (const [transition, nextContext] of transitions) for (const activation of ['click', 'keyboard', 'drag']) {
+        const calls = [], view = { ...initial, graphId: 'root' }, choices = [{ id: 'operation:compose', label: 'Compose', family: 'Shaping', phase: 'pre' }];
+        await fixture({ view, choices, insertionContextKey: 'session-a:root:instance-left:1', choose: (...args) => calls.push(args), readOnly: false }, async (host, instance) => {
+            const canvas = document.createElement('div'); canvas.className = 'pc-canvas-host'; host.prepend(canvas);
+            const hitTest = document.elementFromPoint; document.elementFromPoint = () => canvas;
+            try {
+                const family = host.querySelector('[data-family="Shaping"]');
+                if (activation === 'keyboard') await keys(family, 'ArrowRight');
+                else await click(family);
+                const captured = host.querySelector('[data-shelf-choice="operation:compose"]');
+                if (activation === 'drag') {
+                    await pointer(captured, 'pointerdown', 150, 90); await pointer(window, 'pointermove', 600, 300);
+                    assert.equal(document.body.classList.contains('pc-shelf-dragging'), true);
+                }
+                instance.update({ view: { ...view }, choices: choices.map(choice => ({ ...choice })), insertionContextKey: nextContext }); flushSync(); await tick(); flushSync();
+                assert.equal(host.querySelector('.pc-family-menu'), null, `${transition} closes the old ${activation} menu even with an identical catalog`);
+                assert.equal(document.body.classList.contains('pc-shelf-dragging'), false, 'the old insertion gesture is cancelled');
+                if (activation === 'drag') await pointer(window, 'pointerup', 600, 300);
+                else { if (activation === 'keyboard') await keys(captured, 'Enter'); captured.click(); flushSync(); await tick(); flushSync(); }
+                assert.deepEqual(calls, [], `${transition} cannot dispatch a captured ${activation} action into the replacement scope`);
+            } finally { document.elementFromPoint = hitTest; }
+        });
+    }
+});
+
 test('dragging a shelf choice dispatches its canvas drop point once and clears the dragging cursor', async () => {
     const calls = [], choices = [{ id: 'operation:compose', label: 'Compose', family: 'Shaping', phase: 'pre' }];
     await fixture({ view: initial, choices, choose: (...args) => calls.push(args), add() {} }, async host => {

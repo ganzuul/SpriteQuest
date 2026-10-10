@@ -31,6 +31,7 @@
     }
     async function open(name: string, button: HTMLButtonElement, focus: 'first' | 'last' | false = 'first', toggle = false) {
         if (active === name && toggle) { close(true); return; }
+        actions.resizeStart?.();
         active = name; child = null; anchor = button; rootFocus = menus.findIndex(menu=>menu.name===name);
         openedView = viewKey; search = ''; const current = ++session;
         await tick(); if (current !== session || !panel) return;
@@ -69,7 +70,7 @@
         event.stopPropagation();
         const target = event.target as HTMLButtonElement, rootItem = target.hasAttribute('data-menu');
         if (event.key === 'Tab') { if(active)close(true); return; }
-        if (event.key === 'Escape') { if (active) { event.preventDefault(); close(true); } return; }
+        if (event.key === 'Escape') { if (active) { event.preventDefault(); if (child && target.closest('[role="menu"]') === childPanel) { child=null; childAnchor?.focus({preventScroll:true}); } else close(true); } return; }
         const currentPanel = target.closest<HTMLDivElement>('[role="menu"]') ?? panel;
         const nested = currentPanel === childPanel && !!child;
         const enabled = buttons(currentPanel), index = enabled.indexOf(target);

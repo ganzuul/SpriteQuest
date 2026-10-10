@@ -313,7 +313,7 @@ test('clipboard and downloaded workflow roundtrip preserve authored comment fiel
     await expect.poll(() => page.evaluate(() => Object.values(window.canvasHarness.graph.nodes).filter(node => node.commentFrame).length)).toBe(2);
     const pasted = await page.evaluate(id => Object.values(window.canvasHarness.graph.nodes).find(node => node.commentFrame && node.id !== id), id);
     expect(pasted).toMatchObject({ ...authored, x: pasted.x, y: pasted.y });
-    const exported = await exportedJSON(page, () => menu(page, 'File', 'Export portable workflow…'));
+    const exported = await exportedJSON(page, () => menu(page, 'File', 'Export workflow JSON…'));
     expect(exported.graph.nodes[id]).toMatchObject(authored);
     await page.getByRole('menubar', { name: 'Workspace menus' }).getByRole('menuitem', { name: 'File', exact: true }).click();
     const chooser = page.waitForEvent('filechooser');
@@ -396,7 +396,7 @@ for (const kind of ['shared', 'library']) {
     });
 }
 
-test('direct splines keep horizontal pin leads and returning bows while cards receive clicks above wires', async ({ page }) => {
+test('direct splines keep horizontal pin leads and compact returns while cards receive clicks above wires', async ({ page }) => {
     for (const variant of ['ordinary', 'backward']) {
         await setup(page, variant);
         if (variant === 'backward') await page.evaluate(async () => {
@@ -436,7 +436,8 @@ test('direct splines keep horizontal pin leads and returning bows while cards re
         expect(route.sameHit).toBe(true);
         if (variant === 'ordinary') expect(route.length).toBeLessThan(route.distance + 50);
         else {
-            expect(route.bow).toBeGreaterThan(20);
+            expect(route.bow).toBeLessThanOrEqual(32);
+            expect(route.length).toBeLessThan(route.distance + 110);
             expect(route.covered).toMatchObject({ nodeId: 'n2' });
             await page.mouse.click(route.covered.x, route.covered.y);
             expect(await page.evaluate(() => window.canvasHarness.canvas.selection)).toEqual({ kind: 'node', id: 'n2' });

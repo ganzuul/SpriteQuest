@@ -248,5 +248,5 @@ test('Details keeps connection selection on the node bar and resets root and qua
  await choose(page,'plan','active');await expect(bar(page)).toContainText('Active SillyTavern model');
  await fixture(page,true);await page.locator('.pc-node-native[data-id="first/path"] .pc-native-heading').dblclick();await page.locator('.pc-node-native[data-id="work"] .pc-native-heading').dblclick();await page.evaluate(async()=>{const h=window.canvasHarness,node=h.canvas.graph.nodes.work;await h.view({x:420-node.x*.9,y:170-node.y*.9,zoom:.9});h.canvas.select(null);});await choose(page,'work','fast');await page.locator('.pc-node-native[data-id="work"] .pc-native-heading').click();
  await details.locator('[data-model-controls] > summary').click();await details.getByRole('button',{name:'Use definition connection',exact:true}).click();
- expect(await page.evaluate(()=>window.canvasHarness.S.getGraph('prepared-root').nodes['first/path'].nodeBindingOverrides??{})).toEqual({});await expect(bar(page,'work')).toContainText('Definition connection');
+ expect(await page.evaluate(()=>window.canvasHarness.S.activeWorkflow().nodes['first/path'].nodeBindingOverrides??{})).toEqual({});await expect(bar(page,'work')).toContainText('Definition connection');
 });

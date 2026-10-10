@@ -32,7 +32,7 @@ for (const phase of ['pre', 'post']) test(`${phase} production picker and Detail
     await launch(page, phase);
     await expect(page.locator('[data-family="Introspection"]')).toBeEnabled();
     const familyFit = await page.locator('[data-family="Introspection"]').evaluate(button => ({ buttonRight: button.getBoundingClientRect().right, labelRight: button.querySelector('span').getBoundingClientRect().right }));
-    expect(familyFit.labelRight).toBeLessThanOrEqual(familyFit.buttonRight - 4);
+    expect(familyFit.labelRight).toBeLessThanOrEqual(familyFit.buttonRight - 3.2 + .05);
     await page.locator('[data-family="Introspection"]').click();
     await expect(page.locator('.pc-family-menu [data-shelf-choice]')).toHaveCount(6);
     for (const operation of ['reflect', 'internalize', 'express', 'context', 'memory', 'state']) await expect(page.locator(`[data-shelf-choice="operation:${operation}"]`)).toBeVisible();

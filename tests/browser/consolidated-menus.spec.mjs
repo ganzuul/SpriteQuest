@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 const root = (page, name) => page.getByRole('menubar', { name: 'Workspace menus' }).getByRole('menuitem', { name, exact: true });
 const menu = (page, name) => page.getByRole('menu', { name, exact: true });
 async function start(page) { await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness); await page.evaluate(() => window.canvasHarness.reset()); }
+test('opening a workspace menu cancels held Space pan before isolated key release',async({page})=>{await start(page);await page.locator('.pc-canvas-host').focus();await page.keyboard.down('Space');expect(await page.evaluate(()=>window.canvasHarness.canvas.spaceDown)).toBe(true);await root(page,'File').click();await page.keyboard.up('Space');await page.keyboard.press('Escape');expect(await page.evaluate(()=>window.canvasHarness.canvas.spaceDown)).toBe(false);await expect(page.locator('.pc-canvas-host')).not.toHaveClass(/pc-space-pan/);});
 test('six menus start closed, click arms hover, and dismissal disarms hover', async ({ page }) => {
     await start(page);
     await expect(page.locator('.pc-flat-menu')).toHaveText(['File', 'Edit', 'View', 'Graph', 'Workflow', 'Help']);
@@ -50,7 +51,7 @@ test('menu hit targets and column rails remain reachable in narrow viewports', a
     expect(rails.every(row=>JSON.stringify(row)===JSON.stringify(rails[0]))).toBe(true);
     await page.setViewportSize({width:360,height:520}); await root(page,'Workflow').click();await menu(page,'Workflow').getByRole('menuitem',{name:'Configure',exact:true}).hover();
     for(const name of ['Workflow','Configure options']){const box=await menu(page,name).boundingBox();expect(box.x).toBeGreaterThanOrEqual(0);expect(box.x+box.width).toBeLessThanOrEqual(360);expect(box.y+box.height).toBeLessThanOrEqual(520);}
-    await menu(page,'Configure options').getByRole('menuitem',{name:'Workflow Data…',exact:true}).focus(); await page.keyboard.press('Escape');await expect(root(page,'Workflow')).toBeFocused();
+    await menu(page,'Configure options').getByRole('menuitem',{name:'Workflow Data…',exact:true}).focus(); await page.keyboard.press('Escape');await expect(menu(page,'Workflow').getByRole('menuitem',{name:'Configure',exact:true})).toBeFocused();await expect(menu(page,'Configure options')).toHaveCount(0);await page.keyboard.press('Escape');await expect(root(page,'Workflow')).toBeFocused();
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
 });
 test('checkbox choices and root toggle both reset hover, and Tab resumes outside the menu', async ({ page }) => {

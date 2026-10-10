@@ -143,8 +143,8 @@ test('File menu inline rename cancels with Escape, ignores blank names, and supp
     const tabs = page.locator('.pc-graph-tabs [role="tab"]');
     const rename = page.locator('.pc-graph-tabs').getByRole('textbox', { name: 'Graph name', exact: true });
     for (const [draft, key] of [['Canceled workflow', 'Escape'], ['   ', 'Enter']]) {
-        await page.getByRole('menuitem', { name: 'Graph', exact: true }).click();
-        await page.getByRole('menuitem', { name: 'Rename graph', exact: true }).click();
+        await page.getByRole('menuitem', { name: 'File', exact: true }).click();
+        await page.getByRole('menuitem', { name: 'Rename workflow…', exact: true }).click();
         await expect(rename).toBeFocused();
         await rename.fill(draft);
         await rename.press(key);
@@ -152,8 +152,8 @@ test('File menu inline rename cancels with Escape, ignores blank names, and supp
         await expect(tabs.first()).toHaveText('Workspace interactions');
         expect(await page.evaluate(() => window.canvasHarness.S.activeWorkflow().name)).toBe('Workspace interactions');
     }
-    await page.getByRole('menuitem', { name: 'Graph', exact: true }).click();
-    await page.getByRole('menuitem', { name: 'Rename graph', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'File', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Rename workflow…', exact: true }).click();
     await rename.fill('Menu renamed workflow');
     await rename.press('Enter');
     await expect(tabs.first()).toHaveText('Menu renamed workflow');

@@ -4,8 +4,8 @@
 import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
 const dom = new JSDOM(`<body><div id="chat"></div><div id="drawer"></div></body>`, { pretendToBeVisual: true });
-Object.assign(globalThis, { window: dom.window, document: dom.window.document, CSS: { escape: s => s }, CustomEvent: dom.window.CustomEvent, Element: dom.window.Element, HTMLElement: dom.window.HTMLElement, Event: dom.window.Event, MouseEvent: dom.window.MouseEvent });
-for (const key of ['Node','Text','Comment','Document','HTMLMediaElement','HTMLButtonElement','HTMLInputElement','HTMLSelectElement','MutationObserver']) Object.defineProperty(globalThis,key,{configurable:true,value:dom.window[key]});
+Object.assign(globalThis, { window: dom.window, document: dom.window.document, CSS: { escape: s => s }, CustomEvent: dom.window.CustomEvent, HTMLElement: dom.window.HTMLElement, Event: dom.window.Event, MouseEvent: dom.window.MouseEvent });
+for (const key of ['Node','Element','Text','Comment','Document','HTMLMediaElement','HTMLButtonElement','HTMLInputElement','HTMLSelectElement','MutationObserver']) Object.defineProperty(globalThis,key,{configurable:true,value:dom.window[key]});
 globalThis.requestAnimationFrame = f => setTimeout(f, 0);
 globalThis.getComputedStyle = dom.window.getComputedStyle;
 globalThis.toastr = { info() {}, warning() {}, success() {}, error() {} };

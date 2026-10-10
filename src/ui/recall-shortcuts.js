@@ -1,12 +1,13 @@
 import {validateRecallQueueProposal,validateRecallScope} from '../workflow/recall-state.js?v=0.27.0';
 const fail=(code,message)=>({ok:false,error:{code,message}});
 const editable=element=>['INPUT','TEXTAREA','SELECT'].includes(element?.tagName)||element?.isContentEditable===true||element?.getAttribute?.('role')==='textbox';
+const isolated=element=>!!element?.closest?.('[role="menu"], .pc-workspace-overlay');
 /** DOM listeners only forward an exact shortcut; native controller rechecks its live scope. */
 export function createRecallShortcutRegistry(document,options={}){
  const entries=new Map();let disposed=false,listening=false;
  const key=hotkey=>JSON.stringify([hotkey.code,hotkey.ctrl,hotkey.alt,hotkey.shift,hotkey.meta]);
  function handle(event){
-  if(document.activeElement?.closest?.('[role="menu"]')||disposed||event.defaultPrevented||event.repeat||event.isComposing||editable(event.target)||editable(document.activeElement)||(event.composedPath?.()??[]).some(editable))return;
+  if(isolated(event.target)||isolated(document.activeElement)||disposed||event.defaultPrevented||event.repeat||event.isComposing||editable(event.target)||editable(document.activeElement)||(event.composedPath?.()??[]).some(element=>editable(element)||isolated(element)))return;
   const entry=entries.get(key({code:event.code,ctrl:event.ctrlKey===true,alt:event.altKey===true,shift:event.shiftKey===true,meta:event.metaKey===true}));if(!entry)return;
   let result;try{result=entry.onPress();}catch{return;}
   if(result?.ok!==true||disposed||entries.get(entry.key)!==entry)return;

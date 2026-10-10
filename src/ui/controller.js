@@ -1687,7 +1687,7 @@ function requestNodeCreation(capture, command, at = null, shelf = false) {
     let targets = [], documentScopeKey;
     if (['read-file', 'story-clock', 'commit-outcomes'].includes(command.operation)) {
         const captured = workflowRuntime.getStoryDocumentCatalog?.()?.capture();
-        if (!captured?.ok) return { ok: false, error: { code: 'DOCUMENT_SETUP_UNAVAILABLE', message: 'Open an active chat and authorize a target in Tools › Workflow Data before creating this node.' } };
+        if (!captured?.ok) return { ok: false, error: { code: 'DOCUMENT_SETUP_UNAVAILABLE', message: 'Open an active chat and authorize a target in Workflow › Configure › Workflow Data before creating this node.' } };
         documentScopeKey = globalThis.crypto.randomUUID(); nodeDocumentCaptures.set(documentScopeKey, captured.data);
         targets = captured.data.documents.map(({ content, ...summary }) => summary);
     }

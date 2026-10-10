@@ -59,9 +59,9 @@
 - [x] Merge automatic workflow data `2033351`; reconcile captured/current document scope and preserved profile cleanup.
 - [x] Merge consolidated menus `4933a7e`; keep the six-menu design, panel controls, diagnostics and activity updates with document lifecycle and Fast retirement.
 - [x] Merge typed-pin routing `58f8a03`; retain typed shape/color semantics and direct wire lead behavior alongside the shared Recall projection.
-- [ ] Merge completed compact shelf snapshot `50d28c1`; reconcile scale, shared opacity, bold labels and unique operation icons with current catalog/context lifecycle.
-- [ ] For each conflict, review all participating versions and original requirements; record the decision. Rebuild generated assets from the final source rather than selecting a branch's old bundle.
-- [ ] Run meaningful focused tests for each merge and cross-feature browser flows. Update obsolete test expectations only where approved behavior changed.
+- [x] Merge completed compact shelf snapshot `50d28c1`; reconcile scale, shared opacity, bold labels and unique operation icons with current catalog/context lifecycle.
+- [x] For each conflict, review all participating versions and original requirements; record the decision. Rebuild generated assets from the final source rather than selecting a branch's old bundle.
+- [x] Run meaningful focused tests for each merge and cross-feature browser flows. Update obsolete test expectations only where approved behavior changed.
 
 ## Task 4: Whole-candidate verification and independent review
 
@@ -69,19 +69,19 @@
 
 **Interfaces:** Produces a reviewed candidate SHA, passing verification evidence and a source-by-source accounting report.
 
-- [ ] Run full Node tests, `npm run check:types`, `npm run build`, `npm run check:assets`, and full browser suite on an isolated port with a fresh server.
-- [ ] Run `npm run smoke:install`, current documentation capture/check, and relevant visual/interaction captures. Check provider requests remain absent in synthetic checks.
-- [ ] Obtain independent source/semantic and UI/cross-feature reviews; fix material findings and rerun affected checks.
-- [ ] Verify every included source tip is reachable or explicitly accounted for and Main-local original files are preserved.
+- [x] Run full Node tests, `npm run check:types`, `npm run build`, `npm run check:assets`, and full browser suite on an isolated port with a fresh server. All 263 Node files and 326 browser cases covered by passing results; reviewed stale browser expectations corrected and all affected cases rerun.
+- [x] Run `npm run smoke:install`, current documentation capture/check, and relevant visual/interaction captures. Check provider requests remain absent in synthetic checks.
+- [x] Obtain independent source/semantic and UI/cross-feature reviews; fix material findings and rerun affected checks.
+- [x] Verify every included source tip is reachable or explicitly accounted for and Main-local original files are preserved.
 - [ ] Commit the verified candidate and record exact commands/results, conflict decisions and recovery locations.
 
-## Task 5: Promote Main and close integrated checkouts
+## Task 5: Publish Main for testing; defer cleanup until acceptance
 
 **Files:** Main ref, registered worktree state, integration report and preservation manifest.
 
-**Interfaces:** Consumes a verified candidate; produces consolidated Main and no linked checkouts.
+**Interfaces:** Consumes a verified candidate; produces pushed Main with all nine linked checkouts retained for user testing. Removing those checkouts is a later phase requiring explicit user confirmation.
 
-- [ ] Recheck GitHub Main and local source state for concurrent changes; reconcile anything new before promotion.
+- [x] Recheck GitHub Main and local source state for concurrent changes; reconcile anything new before promotion. GitHub Main remains `7d1c0cf`; all ten archives and nine source checkouts freshly verified.
 - [ ] Fast-forward local Main to the verified candidate and publish through a normal push for the user's testing. Verify GitHub SHA with network-enabled GitHub CLI.
 - [ ] Hand the merged and pushed result to the user for hands-on testing. Keep every linked checkout and recovery branch intact until the user confirms cleanup.
 - [ ] After the user's confirmation: verify preserved archives and hashes before closing the nine included linked worktrees. Prefer native archive when available for the owning attachment; otherwise use exact checked Git worktree paths backed by the preservation archives. Keep recovery branch refs.

@@ -227,7 +227,10 @@ test('independently bind model nodes in a unified workflow without arming it', a
     await openExample(page, 'Keep useful context within a budget');
     const compactDetails = await inspectOperation(page, 'smart-compactor');
     const compactId = await operationId(page, 'smart-compactor');
-    await expect(page.locator(`.pc-node-profile[data-id="${compactId}"] .profile-bar`)).toContainText('Active');
+    const compactBar = page.locator(`.pc-node-profile[data-id="${compactId}"] .profile-bar`);
+    await expect(compactBar).toHaveCount(0);
+    await chooseControl(page, 'Method', 'compress');
+    await expect(compactBar).toContainText('Active');
     await expect(compactDetails.getByLabel('Connection profile', { exact: true })).toHaveCount(0);
     await expect(compactDetails.locator('[data-model-controls] > summary')).toHaveText('Advanced model settings');
     const before = await page.evaluate(() => { const settings = window.canvasHarness.S.settings(); return { enabled: settings.enabled, collection: Object.hasOwn(settings,'graphs') }; });
@@ -252,8 +255,11 @@ test('independently bind model nodes in a unified workflow without arming it', a
     await page.getByLabel('Target tokens', { exact: true }).fill('900');
     await page.getByLabel('Target tokens', { exact: true }).press('Tab');
     expect(await page.evaluate(() => Object.values(window.canvasHarness.graph.nodes).find(node => node.operation === 'smart-compactor').targetTokens)).toBe(900);
+    await chooseControl(page, 'Method', 'select');
+    await expect(compactBar).toHaveCount(0);
     await expectBound(page, 1);
     await chooseControl(page, 'Method', 'compress');
+    await expect(compactBar).toContainText('Analysis connection');
     await expectBound(page, 2);
     expect(await page.evaluate(() => window.canvasHarness.providerCalls())).toBe(0);
     expect(await page.evaluate(() => window.canvasHarness.S.settings().enabled)).toBe(false);
@@ -616,7 +622,7 @@ test('accepted semantic additive import cancels a root request and history canno
     const imported = await page.evaluate(async () => { const h = window.canvasHarness, { exportWorkflow } = await import('/src/workflow/packages.js?v=' + h.version), { operationDefaults } = await import('/src/workflow/catalog.js?v=' + h.version), graph = h.S.blankGraph('Imported snapshot'); graph.nodes.snapshot = { ...operationDefaults('reply-snapshot'), id: 'snapshot', type: 'workflow', operationVersion: 1, x: 0, y: 0 }; return exportWorkflow(graph); });
     await page.getByRole('menuitem', { name: 'File', exact: true }).click();
     const chooser = page.waitForEvent('filechooser');
-    await page.getByRole('menuitem', { name: 'Import into current graph…', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Import into graph…', exact: true }).click();
     await (await chooser).setFiles({ name: 'post-fragment.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(imported)) });
     const review = page.getByRole('dialog', { name: 'Import into graph' });
     await expect(review).toBeVisible();

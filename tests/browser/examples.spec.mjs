@@ -6,7 +6,7 @@ async function load(page) {
     await page.waitForFunction(() => !!window.canvasHarness);
 }
 async function openExamples(page, menu = 'File') {
-    await page.getByRole('button', { name: menu, exact: true }).click();
+    await page.getByRole('menuitem', { name: menu, exact: true }).click();
     await page.getByRole('menuitem', { name: 'Open examples…', exact: true }).click({ timeout: 2500 });
     return page.getByRole('dialog', { name: 'Examples', exact: true });
 }

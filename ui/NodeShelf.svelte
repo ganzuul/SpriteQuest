@@ -4,7 +4,7 @@
     import type { WorkflowView } from './types';
     type ShelfChoice = { id: string; label: string; family: string; phase: string; shortcode?: string; purpose?: string; searchAliases?: readonly string[]; disabledReason?: string; definitionRef?: { id: string; version: number; semanticHash: string } };
     type ClientPoint = { x: number; y: number };
-    let { view, choices = [], choose, shelfSubgraph, readOnly = false }: { view?: WorkflowView; choices?: readonly ShelfChoice[]; choose?: (id: string, at?: ClientPoint) => void; shelfSubgraph?: (id: string, action: 'delete' | 'open') => void; readOnly?: boolean } = $props();
+    let { view, insertionContextKey, choices = [], choose, shelfSubgraph, readOnly = false }: { view?: WorkflowView; insertionContextKey?: string; choices?: readonly ShelfChoice[]; choose?: (id: string, at?: ClientPoint) => void; shelfSubgraph?: (id: string, action: 'delete' | 'open') => void; readOnly?: boolean } = $props();
     let shelf: HTMLElement;
     let menuPanel = $state<HTMLDivElement>(null!);
     let family = $state(''), search = $state(false), query = $state('');
@@ -88,7 +88,7 @@
     function close(restore = false) { endGesture(); opening++; family = ''; search = false; closeSubgraph(); if (restore) anchor?.focus({ preventScroll: true }); }
     let previousContext: { scope: string | undefined; catalog: string; locked: boolean } | undefined;
     $effect(() => {
-        const scope = view?.graphId, locked = readOnly;
+        const scope = JSON.stringify([insertionContextKey, view?.graphId]), locked = readOnly;
         const catalog = JSON.stringify(names.flatMap(name => entries(name).map(entry => [
             entry.id, entry.title, entry.compatible, entry.phase, entry.family, entry.shortcode,
             entry.icon, entry.group, entry.purpose, entry.searchAliases, entry.disabledReason,

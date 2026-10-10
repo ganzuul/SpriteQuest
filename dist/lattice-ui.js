@@ -2924,7 +2924,10 @@ function xa(e, t = {
 					$("Open workflow…", "open-workflow", "open", !!s?.busy, "Ctrl O"),
 					{
 						...$("Open Recent", "recent-menu", "open", !s?.native || !s.recents.length || s.busy),
-						children: [...(s?.recents ?? []).map((e) => $(e.name, "open-recent:" + e.id, "open")), $("Clear Recent", "clear-recent", "clear")]
+						children: [...(s?.recents ?? []).map((e) => $(e.name, "open-recent:" + e.id, "open")), {
+							...$("Clear Recent", "clear-recent", "clear"),
+							title: "Files stay on disk; only this recent list is cleared."
+						}]
 					},
 					$("Open examples…", "examples", "library", !!s?.busy)
 				],
@@ -3145,16 +3148,16 @@ function Ma(e, t) {
 			y: Math.max(4, Math.min(s, a - r.height - 4))
 		};
 	}
-	async function E(e, t, n = "first", o = !1) {
-		if (U(i) === e && o) {
+	async function E(e, n, o = "first", c = !1) {
+		if (U(i) === e && c) {
 			w(!0);
 			return;
 		}
-		R(i, e, !0), R(f, null), l = t, R(a, U(r).findIndex((t) => t.name === e), !0), v = U(S), y = "";
-		let c = ++_;
-		if (await pr(), c !== _ || !U(s)) return;
-		let u = T(U(s), t.getBoundingClientRect());
-		R(p, u.x, !0), R(m, u.y, !0), n && (n === "last" ? C(U(s)).at(-1) : C(U(s))[0])?.focus();
+		t.actions.resizeStart?.(), R(i, e, !0), R(f, null), l = n, R(a, U(r).findIndex((t) => t.name === e), !0), v = U(S), y = "";
+		let u = ++_;
+		if (await pr(), u !== _ || !U(s)) return;
+		let d = T(U(s), n.getBoundingClientRect());
+		R(p, d.x, !0), R(m, d.y, !0), o && (o === "last" ? C(U(s)).at(-1) : C(U(s))[0])?.focus();
 	}
 	async function D(e, n, r = !1) {
 		if (e.disabled || !e.children || !U(i)) return;
@@ -3204,7 +3207,7 @@ function Ma(e, t) {
 			return;
 		}
 		if (e.key === "Escape") {
-			U(i) && (e.preventDefault(), w(!0));
+			U(i) && (e.preventDefault(), U(f) && t.closest("[role=\"menu\"]") === U(c) ? (R(f, null), u?.focus({ preventScroll: !0 })) : w(!0));
 			return;
 		}
 		let o = t.closest("[role=\"menu\"]") ?? U(s), l = o === U(c) && !!U(f), d = C(o), p = d.indexOf(t);
@@ -6897,7 +6900,7 @@ function El(e, t) {
 Tr(["click"]);
 //#endregion
 //#region ui/ConfigureNode.svelte
-var Dl = /* @__PURE__ */ K("<option class=\"svelte-1srbsqt\"> </option>"), Ol = /* @__PURE__ */ K("<p class=\"svelte-1srbsqt\">Authorize a document in Tools › Workflow Data, then reopen node creation.</p>"), kl = /* @__PURE__ */ K("<label class=\"svelte-1srbsqt\">Workflow data document<select aria-label=\"Workflow data document\" class=\"svelte-1srbsqt\"><option class=\"svelte-1srbsqt\">Choose an authorized target</option><!></select></label><!>", 1), Al = /* @__PURE__ */ K("<label class=\"svelte-1srbsqt\">Pinned Data helper<select aria-label=\"Pinned Data helper\" class=\"svelte-1srbsqt\"><option class=\"svelte-1srbsqt\">Choose an existing item/result helper</option><!></select></label><p class=\"svelte-1srbsqt\">Helpers use exact pinned versions with Data item and result ports. Set iteration mode and requestBoundPerIteration in the controls below.</p>", 1), jl = /* @__PURE__ */ K("<p role=\"alert\" class=\"svelte-1srbsqt\"> </p>"), Ml = /* @__PURE__ */ K("<div class=\"pc-workspace-overlay svelte-1srbsqt\"><div class=\"pc-workspace-dialog pc-configure-node svelte-1srbsqt\" role=\"dialog\" aria-modal=\"true\" aria-label=\"Configure node\" tabindex=\"-1\"><header class=\"svelte-1srbsqt\"><h2 class=\"svelte-1srbsqt\"> </h2><button type=\"button\" aria-label=\"Close node configuration\" class=\"svelte-1srbsqt\">×</button></header> <p class=\"svelte-1srbsqt\">Complete the required settings before creating the node. Cancel leaves the graph unchanged.</p> <form class=\"svelte-1srbsqt\"><label class=\"svelte-1srbsqt\">Stage<select aria-label=\"Node stage\" class=\"svelte-1srbsqt\"><option class=\"svelte-1srbsqt\">Preparation</option><option class=\"svelte-1srbsqt\">Response</option></select></label> <!> <!> <label class=\"svelte-1srbsqt\">Declared node controls<textarea aria-label=\"Node controls JSON\" rows=\"14\" maxlength=\"200000\" class=\"svelte-1srbsqt\"></textarea></label> <!> <footer class=\"svelte-1srbsqt\"><button type=\"button\" class=\"svelte-1srbsqt\">Cancel</button><button type=\"submit\" class=\"svelte-1srbsqt\"> </button></footer></form></div></div>");
+var Dl = /* @__PURE__ */ K("<option class=\"svelte-1srbsqt\"> </option>"), Ol = /* @__PURE__ */ K("<p class=\"svelte-1srbsqt\">Authorize a document in Workflow › Configure › Workflow Data, then reopen node creation.</p>"), kl = /* @__PURE__ */ K("<label class=\"svelte-1srbsqt\">Workflow data document<select aria-label=\"Workflow data document\" class=\"svelte-1srbsqt\"><option class=\"svelte-1srbsqt\">Choose an authorized target</option><!></select></label><!>", 1), Al = /* @__PURE__ */ K("<label class=\"svelte-1srbsqt\">Pinned Data helper<select aria-label=\"Pinned Data helper\" class=\"svelte-1srbsqt\"><option class=\"svelte-1srbsqt\">Choose an existing item/result helper</option><!></select></label><p class=\"svelte-1srbsqt\">Helpers use exact pinned versions with Data item and result ports. Set iteration mode and requestBoundPerIteration in the controls below.</p>", 1), jl = /* @__PURE__ */ K("<p role=\"alert\" class=\"svelte-1srbsqt\"> </p>"), Ml = /* @__PURE__ */ K("<div class=\"pc-workspace-overlay svelte-1srbsqt\"><div class=\"pc-workspace-dialog pc-configure-node svelte-1srbsqt\" role=\"dialog\" aria-modal=\"true\" aria-label=\"Configure node\" tabindex=\"-1\"><header class=\"svelte-1srbsqt\"><h2 class=\"svelte-1srbsqt\"> </h2><button type=\"button\" aria-label=\"Close node configuration\" class=\"svelte-1srbsqt\">×</button></header> <p class=\"svelte-1srbsqt\">Complete the required settings before creating the node. Cancel leaves the graph unchanged.</p> <form class=\"svelte-1srbsqt\"><label class=\"svelte-1srbsqt\">Stage<select aria-label=\"Node stage\" class=\"svelte-1srbsqt\"><option class=\"svelte-1srbsqt\">Preparation</option><option class=\"svelte-1srbsqt\">Response</option></select></label> <!> <!> <label class=\"svelte-1srbsqt\">Declared node controls<textarea aria-label=\"Node controls JSON\" rows=\"14\" maxlength=\"200000\" class=\"svelte-1srbsqt\"></textarea></label> <!> <footer class=\"svelte-1srbsqt\"><button type=\"button\" class=\"svelte-1srbsqt\">Cancel</button><button type=\"submit\" class=\"svelte-1srbsqt\"> </button></footer></form></div></div>");
 function Nl(e, t) {
 	He(t, !0);
 	let n, r = /* @__PURE__ */ L(""), i = /* @__PURE__ */ L("pre"), a = /* @__PURE__ */ L(""), o = /* @__PURE__ */ L(""), s = /* @__PURE__ */ L(!1), c = /* @__PURE__ */ L(""), l = "", u = 0, d = /* @__PURE__ */ I(() => t.view.operation === "read-file" || t.view.operation === "story-clock" || t.view.operation === "commit-outcomes");
@@ -7787,7 +7790,7 @@ function hu(e, t) {
 	}
 	let M;
 	Sn(() => {
-		let e = t.view?.graphId, n = r(), i = JSON.stringify(_.flatMap((e) => k(e).map((e) => [
+		let e = JSON.stringify([t.insertionContextKey, t.view?.graphId]), n = r(), i = JSON.stringify(_.flatMap((e) => k(e).map((e) => [
 			e.id,
 			e.title,
 			e.compatible,
@@ -8497,8 +8500,8 @@ function ld(e, t) {
 		"node-reference": "Node reference",
 		shortcuts: "Keyboard shortcuts",
 		about: "About Lattice"
-	})[U(D)] ?? "Workspace guide"), k = /* @__PURE__ */ I(() => U(r).rootWorkflow ?? U(r).workflow), A = /* @__PURE__ */ I(() => n().logoUrl ? new URL("../docs/node-reference.md", n().logoUrl).href : ""), j = /* @__PURE__ */ I(() => n().logoUrl ? new URL("../README.md", n().logoUrl).href : ""), M = /* @__PURE__ */ L(null), ee = null, te = 0, ne = /* @__PURE__ */ L(0), re;
-	function ie() {
+	})[U(D)] ?? "Workspace guide"), k = /* @__PURE__ */ I(() => U(r).rootWorkflow ?? U(r).workflow), A = /* @__PURE__ */ I(() => `${U(r).menuContextKey ?? ""}:${U(r).graphId}:${U(r).graphViews?.active.key ?? ""}:${U(r).graphViews?.viewEpoch ?? ""}`), j = /* @__PURE__ */ I(() => n().logoUrl ? new URL("../docs/node-reference.md", n().logoUrl).href : ""), M = /* @__PURE__ */ I(() => n().logoUrl ? new URL("../README.md", n().logoUrl).href : ""), ee = /* @__PURE__ */ L(null), te = null, ne = 0, re = /* @__PURE__ */ L(0), ie;
+	function ae() {
 		try {
 			localStorage.setItem(g, JSON.stringify({
 				height: U(y),
@@ -8507,16 +8510,16 @@ function ld(e, t) {
 			}));
 		} catch {}
 	}
-	function ae() {
+	function oe() {
 		n().resizeStart?.();
 	}
-	function oe(e) {
-		ae(), R(b, e, !0), ie();
+	function se(e) {
+		oe(), R(b, e, !0), ae();
 	}
-	function se() {
-		oe(!1);
+	function ce() {
+		se(!1);
 	}
-	function ce(e) {
+	function le(e) {
 		let t = U(r).outputPreview;
 		if (!t) return;
 		if (e === "follow-preview" || e === "pin-preview" && t.pinned) {
@@ -8526,48 +8529,48 @@ function ld(e, t) {
 		let i = t.choices.find((e) => e.key === t.selectedKey);
 		if (!i || t.status === "removed") return;
 		let a = structuredClone(i.target);
-		e === "pin-preview" ? n().outputPreview?.pin?.(t.sourceKey, a) : e === "run-preview" && t.runHere?.enabled && !t.busy && !U(k)?.ownedBusy && (oe(!1), n().outputPreview?.runHere?.(t.sourceKey, a));
+		e === "pin-preview" ? n().outputPreview?.pin?.(t.sourceKey, a) : e === "run-preview" && t.runHere?.enabled && !t.busy && !U(k)?.ownedBusy && (se(!1), n().outputPreview?.runHere?.(t.sourceKey, a));
 	}
-	async function le(e) {
-		if (e === "show-preview") oe(!1);
-		else if (e === "collapse-preview") oe(!0);
-		else if (e === "toggle-preview") oe(!U(b));
-		else if (e === "toggle-shelf") ae(), R(S, !U(S)), ie();
-		else if (e === "reset-layout") ae(), R(y, 240), R(b, !1), R(S, !0), E(258), U(r).inspectorOpen || n().command("inspector"), ie();
-		else if (e === "add-node") R(S, !0), ie(), await pr(), re.openSearch();
+	async function ue(e) {
+		if (e === "show-preview") se(!1);
+		else if (e === "collapse-preview") se(!0);
+		else if (e === "toggle-preview") se(!U(b));
+		else if (e === "toggle-shelf") oe(), R(S, !U(S)), ae();
+		else if (e === "reset-layout") oe(), R(y, 240), R(b, !1), R(S, !0), E(258), U(r).inspectorOpen || n().command("inspector"), ae();
+		else if (e === "add-node") R(S, !0), ae(), await pr(), ie.openSearch();
 		else if ([
 			"follow-preview",
 			"pin-preview",
 			"run-preview"
-		].includes(e)) ce(e);
+		].includes(e)) le(e);
 		else {
-			ee = document.activeElement, e === "examples" && n().refreshExamples?.(), e === "story-documents" && n().storyDocuments?.refresh?.(), e === "memory-recall" && n().recall?.refresh?.();
-			let t = ++te;
-			R(D, e, !0), await pr(), t === te && U(D) === e && U(M)?.querySelector("button")?.focus();
+			te = document.activeElement, e === "examples" && n().refreshExamples?.(), e === "story-documents" && n().storyDocuments?.refresh?.(), e === "memory-recall" && n().recall?.refresh?.();
+			let t = ++ne;
+			R(D, e, !0), await pr(), t === ne && U(D) === e && U(ee)?.querySelector("button")?.focus();
 		}
 	}
-	function ue() {
-		te++, R(D, ""), ee?.focus({ preventScroll: !0 });
+	function de() {
+		ne++, R(D, ""), te?.focus({ preventScroll: !0 });
 	}
-	async function de(e) {
-		let t = te;
+	async function fe(e) {
+		let t = ne;
 		try {
 			let r = await n().openExample?.(e);
-			return r === !0 && t === te && U(D) === "examples" && ue(), r === !0;
+			return r === !0 && t === ne && U(D) === "examples" && de(), r === !0;
 		} catch {
 			return !1;
 		}
 	}
-	function fe(e) {
+	function pe(e) {
 		if (e.stopPropagation(), e.key === "Escape") e.preventDefault(), n().portalManager?.close?.();
 		else if (e.key === "Tab") {
 			let t = [...e.currentTarget.querySelectorAll("button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), summary, [tabindex=\"0\"]")], n = t[0], r = t.at(-1);
 			e.shiftKey && document.activeElement === n && (e.preventDefault(), r?.focus()), !e.shiftKey && document.activeElement === r && (e.preventDefault(), n?.focus());
 		}
 	}
-	function pe(e) {
-		if (e.stopPropagation(), e.key === "Escape" && (e.preventDefault(), e.stopPropagation(), ue()), e.key === "Tab") {
-			let t = [...U(M).querySelectorAll("a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex=\"0\"]")], n = t[0], r = t.at(-1);
+	function me(e) {
+		if (e.stopPropagation(), e.key === "Escape" && (e.preventDefault(), e.stopPropagation(), de()), e.key === "Tab") {
+			let t = [...U(ee).querySelectorAll("a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex=\"0\"]")], n = t[0], r = t.at(-1);
 			e.shiftKey && document.activeElement === n && (e.preventDefault(), r?.focus()), !e.shiftKey && document.activeElement === r && (e.preventDefault(), n?.focus());
 		}
 	}
@@ -8579,53 +8582,53 @@ function ld(e, t) {
 		let n = new t(e);
 		return n.observe(s), n.observe(a), e(), () => n.disconnect();
 	});
-	var me = {
+	var he = {
 		getParts: d,
 		updateActions: f,
 		update: p,
 		renameGraphView: m,
 		focusCommentTitle: h,
-		revealPreview: se
-	}, he = cd();
-	let ge, _e;
-	var ve = z(he);
+		revealPreview: ce
+	}, ge = cd();
+	let _e, ve;
+	var ye = z(ge);
 	{
 		let e = /* @__PURE__ */ I(() => ({
 			previewOpen: !U(b),
 			shelfOpen: U(S)
 		}));
-		ji(Fa(ve, {
+		ji(Fa(ye, {
 			get state() {
 				return U(r);
 			},
 			get actions() {
 				return n();
 			},
-			local: le,
+			local: ue,
 			get panels() {
 				return U(e);
 			}
 		}), (e) => l = e, () => l);
 	}
-	var ye = V(ve, 2), be = z(ye), xe = z(be);
-	let Se, Ce;
-	var we = z(xe), Te = V(z(we)), Ee = z(Te, !0);
-	F(Te), F(we);
-	var De = V(we, 2), N = z(De);
+	var be = V(ye, 2), xe = z(be), Se = z(xe);
+	let Ce, we;
+	var Te = z(Se), Ee = V(z(Te)), De = z(Ee, !0);
+	F(Ee), F(Te);
+	var N = V(Te, 2), Oe = z(N);
 	{
 		let e = /* @__PURE__ */ I(() => U(r).outputPreview ?? null);
-		pc(N, {
+		pc(Oe, {
 			get view() {
 				return U(e);
 			},
 			get actions() {
 				return n().outputPreview;
 			},
-			collapse: () => oe(!0)
+			collapse: () => se(!0)
 		});
 	}
-	F(De), F(xe);
-	var Oe = V(xe, 2), P = (e) => {
+	F(N), F(Se);
+	var P = V(Se, 2), ke = (e) => {
 		{
 			let t = /* @__PURE__ */ I(() => Math.min(U(y), U(x)));
 			La(e, {
@@ -8635,18 +8638,18 @@ function ld(e, t) {
 				get max() {
 					return U(x);
 				},
-				start: ae,
+				start: oe,
 				change: (e) => {
-					R(y, e, !0), ie();
+					R(y, e, !0), ae();
 				}
 			});
 		}
 	};
-	Y(Oe, (e) => {
-		U(b) || e(P);
+	Y(P, (e) => {
+		U(b) || e(ke);
 	});
-	var ke = V(Oe, 2);
-	ji(Ya(ke, {
+	var Ae = V(P, 2);
+	ji(Ya(Ae, {
 		get views() {
 			return U(r).graphViews;
 		},
@@ -8655,10 +8658,10 @@ function ld(e, t) {
 		},
 		panelId: "pc-workspace-graph"
 	}), (e) => u = e, () => u);
-	var Ae = V(ke, 2);
+	var Me = V(Ae, 2);
 	{
 		let e = /* @__PURE__ */ I(() => U(r).graphViews?.active);
-		eo(Ae, {
+		eo(Me, {
 			get view() {
 				return U(e);
 			},
@@ -8667,10 +8670,10 @@ function ld(e, t) {
 			}
 		});
 	}
-	var Me = V(Ae, 2), Ne = z(Me), Pe = z(Ne);
+	var Ne = V(Me, 2), Pe = z(Ne), Fe = z(Pe);
 	{
 		let e = /* @__PURE__ */ I(() => U(r).runMeter ?? null);
-		Dc(Pe, {
+		Dc(Fe, {
 			get view() {
 				return U(e);
 			},
@@ -8679,20 +8682,23 @@ function ld(e, t) {
 			}
 		});
 	}
-	F(Ne);
-	var Fe = V(Ne, 2);
-	ji(Fe, (e) => o = e, () => o);
-	var Ie = V(Fe, 2), Le = (e) => {
+	F(Pe);
+	var Ie = V(Pe, 2);
+	ji(Ie, (e) => o = e, () => o);
+	var Le = V(Ie, 2), Re = (e) => {
 		var t = id(), n = z(t, !0);
 		F(t), H(() => J(n, U(r).nativeDiagnostic)), q(e, t);
 	};
-	Y(Ie, (e) => {
-		U(r).nativeDiagnostic && e(Le);
+	Y(Le, (e) => {
+		U(r).nativeDiagnostic && e(Re);
 	});
-	var Re = V(Ie, 2);
-	ji(hu(z(Re), {
+	var ze = V(Le, 2);
+	ji(hu(z(ze), {
 		get view() {
 			return U(r).workflow;
+		},
+		get insertionContextKey() {
+			return U(A);
 		},
 		get choices() {
 			return U(r).nativeChoices;
@@ -8706,8 +8712,8 @@ function ld(e, t) {
 		get readOnly() {
 			return U(r).readOnly;
 		}
-	}), (e) => re = e, () => re), F(Re), F(Me), F(be), ji(be, (e) => s = e, () => s);
-	var ze = V(be, 2), Be = (e) => {
+	}), (e) => ie = e, () => ie), F(ze), F(Ne), F(xe), ji(xe, (e) => s = e, () => s);
+	var Be = V(xe, 2), Ve = (e) => {
 		var t = Ir();
 		Gr(B(t), () => U(r).graphViews?.active.key ?? U(r).graphId, (e) => {
 			za(e, {
@@ -8717,18 +8723,18 @@ function ld(e, t) {
 				get max() {
 					return U(w);
 				},
-				start: ae,
+				start: oe,
 				preview: (e) => R(C, e, !0),
 				change: E
 			});
 		}), q(e, t);
 	};
-	Y(ze, (e) => {
-		U(r).inspectorOpen && e(Be);
+	Y(Be, (e) => {
+		U(r).inspectorOpen && e(Ve);
 	});
-	var Ve = V(ze, 2), We = z(Ve), Ge = V(z(We));
-	F(We);
-	var Ke = V(We, 2), qe = (e) => {
+	var We = V(Be, 2), Ge = z(We), Ke = V(z(Ge));
+	F(Ge);
+	var qe = V(Ge, 2), Je = (e) => {
 		let t = /* @__PURE__ */ I(() => U(r).commentDetails);
 		Ys(e, {
 			get comment() {
@@ -8738,13 +8744,13 @@ function ld(e, t) {
 			onCommand: (e) => n().commentDetails?.command(U(t).selection, e)
 		});
 	};
-	Y(Ke, (e) => {
-		U(r).commentDetails && e(qe);
+	Y(qe, (e) => {
+		U(r).commentDetails && e(Je);
 	});
-	var Je = V(Ke, 2), Ye = z(Je);
+	var Ye = V(qe, 2), Xe = z(Ye);
 	{
 		let e = /* @__PURE__ */ I(() => U(r).commentDetails ? null : U(r).nodeDetails ?? null);
-		Ks(Ye, {
+		Ks(Xe, {
 			get view() {
 				return U(e);
 			},
@@ -8753,8 +8759,8 @@ function ld(e, t) {
 			}
 		});
 	}
-	F(Je), F(Ve), ji(Ve, (e) => c = e, () => c), F(ye), ji(ye, (e) => a = e, () => a);
-	var Xe = V(ye, 2), Ze = (e) => {
+	F(Ye), F(We), ji(We, (e) => c = e, () => c), F(be), ji(be, (e) => a = e, () => a);
+	var Ze = V(be, 2), Qe = (e) => {
 		var t = od(), i = z(t);
 		let a;
 		var o = z(i), s = z(o), c = z(s, !0);
@@ -8773,17 +8779,17 @@ function ld(e, t) {
 					return n().refreshExamples;
 				},
 				get scrollTop() {
-					return U(ne);
+					return U(re);
 				},
-				scroll: (e) => R(ne, e, !0),
-				open: de
+				scroll: (e) => R(re, e, !0),
+				open: fe
 			});
 		}, p = (e) => {
 			{
 				let t = /* @__PURE__ */ I(() => U(r).recall ?? null), i = /* @__PURE__ */ I(() => ({
 					...n().recall,
 					reveal: (e) => {
-						ue(), n().recall?.reveal(e);
+						de(), n().recall?.reveal(e);
 					}
 				}));
 				El(e, {
@@ -8814,7 +8820,7 @@ function ld(e, t) {
 					get actions() {
 						return n().storyDocuments;
 					},
-					close: ue
+					close: de
 				});
 			}
 		}, h = (e) => {
@@ -8841,10 +8847,10 @@ function ld(e, t) {
 					return rd.version;
 				},
 				get referenceUrl() {
-					return U(A);
+					return U(j);
 				},
 				get guideUrl() {
-					return U(j);
+					return U(M);
 				}
 			});
 		}, _ = (e) => {
@@ -8853,15 +8859,15 @@ function ld(e, t) {
 		};
 		Y(d, (e) => {
 			U(D) === "examples" ? e(f) : U(D) === "memory-recall" ? e(p, 1) : U(D) === "story-documents" ? e(m, 2) : U(D) === "run-details" ? e(h, 3) : U(D) === "help" ? e(_, -1) : e(g, 4);
-		}), F(i), ji(i, (e) => R(M, e), () => U(M)), F(t), H(() => {
+		}), F(i), ji(i, (e) => R(ee, e), () => U(ee)), F(t), H(() => {
 			a = di(i, 1, "pc-workspace-dialog svelte-1dr9aew", null, a, { "pc-examples-dialog": U(D) === "examples" }), Q(i, "aria-label", U(O)), J(c, U(O)), Q(l, "aria-label", U(D) === "memory-recall" ? "Close" : "Close panel"), J(u, U(D) === "memory-recall" ? "Close" : "×");
-		}), G("keydown", i, pe), W("paste", i, (e) => e.stopPropagation()), G("click", l, ue), q(e, t);
+		}), G("keydown", i, me), W("paste", i, (e) => e.stopPropagation()), G("click", l, de), q(e, t);
 	};
-	Y(Xe, (e) => {
-		U(D) && e(Ze);
+	Y(Ze, (e) => {
+		U(D) && e(Qe);
 	});
-	var Qe = V(Xe, 2);
-	Kl(Qe, {
+	var $e = V(Ze, 2);
+	Kl($e, {
 		get view() {
 			return U(r).nativeSearch;
 		},
@@ -8869,8 +8875,8 @@ function ld(e, t) {
 			return n().nativeSearch;
 		}
 	});
-	var $e = V(Qe, 2);
-	Xl($e, {
+	var et = V($e, 2);
+	Xl(et, {
 		get view() {
 			return U(r).nativePinMenu;
 		},
@@ -8878,7 +8884,7 @@ function ld(e, t) {
 			return n().nativePinMenu;
 		}
 	});
-	var et = V($e, 2), tt = (e) => {
+	var tt = V(et, 2), nt = (e) => {
 		var t = sd(), i = z(t);
 		Kc(z(i), {
 			get view() {
@@ -8887,12 +8893,12 @@ function ld(e, t) {
 			get actions() {
 				return n().portalManager;
 			}
-		}), F(i), F(t), G("keydown", i, fe), W("paste", i, (e) => e.stopPropagation()), q(e, t);
+		}), F(i), F(t), G("keydown", i, pe), W("paste", i, (e) => e.stopPropagation()), q(e, t);
 	};
-	Y(et, (e) => {
-		U(r).portalManager && e(tt);
+	Y(tt, (e) => {
+		U(r).portalManager && e(nt);
 	});
-	var nt = V(et, 2), rt = (e) => {
+	var rt = V(tt, 2), it = (e) => {
 		Nl(e, {
 			get view() {
 				return U(r).configureNode;
@@ -8902,10 +8908,10 @@ function ld(e, t) {
 			}
 		});
 	};
-	Y(nt, (e) => {
-		U(r).configureNode && e(rt);
+	Y(rt, (e) => {
+		U(r).configureNode && e(it);
 	});
-	var it = V(nt, 2), at = (e) => {
+	var at = V(rt, 2), ot = (e) => {
 		Xc(e, {
 			get view() {
 				return U(r).subgraphSave;
@@ -8915,10 +8921,10 @@ function ld(e, t) {
 			}
 		});
 	};
-	Y(it, (e) => {
-		U(r).subgraphSave && e(at);
+	Y(at, (e) => {
+		U(r).subgraphSave && e(ot);
 	});
-	var ot = V(it, 2), st = (e) => {
+	var st = V(at, 2), ct = (e) => {
 		Ku(e, {
 			get view() {
 				return U(r).importReview;
@@ -8928,10 +8934,10 @@ function ld(e, t) {
 			}
 		});
 	};
-	Y(ot, (e) => {
-		U(r).importReview && e(st);
+	Y(st, (e) => {
+		U(r).importReview && e(ct);
 	});
-	var ct = V(ot, 2), lt = (e) => {
+	var lt = V(st, 2), ut = (e) => {
 		{
 			let t = /* @__PURE__ */ I(() => U(r).document?.native ?? !1);
 			Ll(e, {
@@ -8947,11 +8953,11 @@ function ld(e, t) {
 			});
 		}
 	};
-	return Y(ct, (e) => {
-		U(r).documentPrompt && e(lt);
-	}), F(he), ji(he, (e) => i = e, () => i), H((e) => {
-		ge = di(he, 1, "pc-root pc-native-workspace svelte-1dr9aew", null, ge, { "pc-native-flat": U(r).nativeFlatCanvas }), _e = pi(he, "", _e, { "--pc-details-width": `${U(T)}px` }), Se = di(xe, 1, "pc-preview-pane", null, Se, { "pc-preview-collapsed": U(b) }), Ce = pi(xe, "", Ce, e), Q(Te, "aria-label", U(b) ? "Expand preview" : "Collapse preview"), Q(Te, "title", U(b) ? "Expand preview" : "Collapse preview"), Q(Te, "aria-expanded", !U(b)), J(Ee, U(b) ? "▾" : "▴"), Q(De, "hidden", U(b)), Q(Re, "hidden", !U(S)), Q(Ve, "hidden", !U(r).inspectorOpen), Q(Je, "hidden", !!U(r).commentDetails);
-	}, [() => ({ "--pc-preview-height": `${Math.min(U(y), U(x))}px` })]), G("click", Te, () => oe(!U(b))), G("click", Ge, () => n().command("inspector")), q(e, he), Ue(me);
+	return Y(lt, (e) => {
+		U(r).documentPrompt && e(ut);
+	}), F(ge), ji(ge, (e) => i = e, () => i), H((e) => {
+		_e = di(ge, 1, "pc-root pc-native-workspace svelte-1dr9aew", null, _e, { "pc-native-flat": U(r).nativeFlatCanvas }), ve = pi(ge, "", ve, { "--pc-details-width": `${U(T)}px` }), Ce = di(Se, 1, "pc-preview-pane", null, Ce, { "pc-preview-collapsed": U(b) }), we = pi(Se, "", we, e), Q(Ee, "aria-label", U(b) ? "Expand preview" : "Collapse preview"), Q(Ee, "title", U(b) ? "Expand preview" : "Collapse preview"), Q(Ee, "aria-expanded", !U(b)), J(De, U(b) ? "▾" : "▴"), Q(N, "hidden", U(b)), Q(ze, "hidden", !U(S)), Q(We, "hidden", !U(r).inspectorOpen), Q(Ye, "hidden", !!U(r).commentDetails);
+	}, [() => ({ "--pc-preview-height": `${Math.min(U(y), U(x))}px` })]), G("click", Ee, () => se(!U(b))), G("click", Ke, () => n().command("inspector")), q(e, ge), Ue(he);
 }
 Tr(["click", "keydown"]);
 //#endregion

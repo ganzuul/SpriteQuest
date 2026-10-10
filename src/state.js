@@ -41,6 +41,22 @@ function checkRegistry(value) {
     return entries && Object.values(entries).every(safeWorkflowData);
 }
 
+/** Preserve sparse historical entries without reading accessors or cloning originals. */
+function recoveryArray(value) {
+    try {
+        if (!Array.isArray(value) || Object.getPrototypeOf(value) !== Array.prototype) return null;
+        const descriptors = Object.getOwnPropertyDescriptors(value), length = descriptors.length.value;
+        const result = new Array(length);
+        for (const key of Reflect.ownKeys(descriptors)) {
+            if (key === 'length') continue;
+            const descriptor = descriptors[key], index = typeof key === 'string' ? Number(key) : NaN;
+            if (typeof key !== 'string' || !Number.isInteger(index) || index < 0 || index >= length || String(index) !== key || !descriptor.enumerable || !Object.hasOwn(descriptor, 'value')) return null;
+            Object.defineProperty(result, key, { value: descriptor.value, enumerable: true, writable: true, configurable: true });
+        }
+        return result;
+    } catch { return null; }
+}
+
 function legacyRecord(value) {
     try {
         if (!plain(value)) return null;
@@ -53,7 +69,7 @@ function checkSettings(value) {
     if (saved) for (const [key, item] of Object.entries(saved)) if (!['graphs', 'activeGraphId', 'nativeBindings', 'subgraphLibrary', 'workspaceViews', 'migrationRecovery', 'recoveryDraft', 'archivedWorkflows'].includes(key)) metadata[key] = item;
     if (!saved || !safeWorkflowData(metadata) || ![1, 2].includes(saved.schema) || typeof saved.enabled !== 'boolean' || !plain(saved.ui) || !library || !checkRegistry(library.definitions ?? {}) || !safeWorkflowData(Object.fromEntries(Object.entries(library).filter(([key]) => key !== 'definitions')))) throw new Error('Lattice settings must contain plain-data preferences and a current reusable subgraph shelf.');
     if (Object.hasOwn(saved, 'workflowMode')) throw new Error('Lattice settings contain an unsupported workflow mode.');
-    if (saved.schema === 2 && !Array.isArray(saved.migrationRecovery)) throw new Error('Lattice migration recovery must remain independently enumerable.');
+    if (saved.schema === 2 && !recoveryArray(saved.migrationRecovery)) throw new Error('Lattice migration recovery must remain independently enumerable.');
     checkArchivedWorkflows(saved.archivedWorkflows);
     return saved;
 }
@@ -125,7 +141,7 @@ function migrateSettings(value, saved) {
 
 /** Plan cold recovery changes without cloning unreadable historical originals. */
 function prepareFastRetirement(saved) {
-    let next = saved, archive = saved.archivedWorkflows, recovery = saved.migrationRecovery;
+    let next = saved, archive = saved.archivedWorkflows, recovery = recoveryArray(saved.migrationRecovery);
     const replace = (field, value) => { if (next === saved) next = { ...saved }; next[field] = value; };
     const archiveItem = (field, key, item) => {
         const previous = archive?.[field]?.[key];
@@ -150,7 +166,7 @@ function prepareFastRetirement(saved) {
             const ids = new Set(recovery.map(entry => dataRecord(entry)?.id));
             let id = 'retired-recovery-draft', suffix = 1;
             while (ids.has(id)) id = 'retired-recovery-draft-' + suffix++;
-            recovery = [...recovery, { id, name: draft.graph.name || 'Retired recovery draft', issue: 'Retired model calls remain available for recovery export only.', original: saved.recoveryDraft }];
+            recovery.push({ id, name: draft.graph.name || 'Retired recovery draft', issue: 'Retired model calls remain available for recovery export only.', original: saved.recoveryDraft });
             replace('migrationRecovery', recovery);
         }
         replace('recoveryDraft', null); replace('enabled', false);
