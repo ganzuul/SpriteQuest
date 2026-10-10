@@ -2,39 +2,9 @@ import { computeDefinitionIdentity, definitionRefKey } from '../src/workflow/def
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {registerHooks} from 'node:module';
-import {createNativeWorkflowController} from '../src/workflow/host.js?v=0.27.0';
-import {createChatDocumentCatalog} from '../src/workflow/document-catalog.js?v=0.27.0';
+import {actorHostFixture as fixture,mara,elias} from './helpers/native-actor-host-fixture.mjs';
+import {recallHostFixture as recallFixture} from './helpers/native-recall-host-fixture.mjs';
 import {operationDefaults} from '../src/workflow/catalog.js?v=0.27.0';
-const pause=()=>new Promise(r=>setTimeout(r,5));
-const mara='character:mara.png',elias='character:elias.png';
-function graphFor(mode='direction'){
- const nodes={},wires={};const node=(id,operation,settings={})=>nodes[id]={id,type:'workflow',...operationDefaults(operation),...settings};const wire=(id,from,fromPort,to,toPort)=>wires[id]={id,route:'wire',from,fromPort,to,toPort};
- node('send','on-send');node('generate','generate-reply',{budgetTokens:4096});node('review','review-publish');wire('send','send','activation','generate','activation');wire('review','generate','draft','review','draft');
- node('scene','scene-context',{visibilityMode:'public',includeCharacter:false});node('castPrompt','text',{text:'Return actual participating actors with context.source identity and exact quoted chat evidence.'});node('cast','model-call',{outputKind:'data'});wire('castPrompt','castPrompt','out','cast','prompt');wire('castContext','scene','out','cast','context');
- for(const [id,actorId]of [['mara',mara],['elias',elias]]){node(id,'scene-presence',{actorId});wire(id+'Presence','cast','out',id,'in');}
- if(mode==='direction'){
-  node('direction','character-direction',{actorId:mara,systemPrompt:'Mara alone should hesitate and consider the sea.'});wire('present','mara','out','direction','presence');wire('guidance','direction','out','generate','guidance');
- }else{
-  delete nodes.scene;delete wires.castContext;nodes.cast.phase='post';nodes.castPrompt.phase='post';nodes.mara.phase='post';nodes.elias.phase='post';
-  node('scopeText','text',{text:JSON.stringify({sourceId:'authored',revision:'authored',sceneId:'Story-2',visibility:'public'}),phase:'post'});node('scope','json-decode',{phase:'post'});node('source','draft-event-source');wire('scopeText','scopeText','out','scope','in');wire('draft','generate','draft','source','in');wire('scope','scope','out','source','scope');wire('castSource','source','out','cast','data');
-  for(const [id,actorId]of [['mara',mara],['elias',elias]]){
-   node(id+'Context','actor-context',{actorId,phase:'post'});wire(id+'ContextPresence',id,'out',id+'Context','presence');
-   node(id+'Read','read-file',{targetId:id+'.md',actorScope:'presence',actorId,phase:'post'});wire(id+'ReadPresence',id,'out',id+'Read','presence');
-   node(id+'Prompt','text',{text:'Reflect privately for '+actorId+'.',phase:'post'});node(id+'Reflect','model-call',{instructions:'Reflect privately for '+actorId+'.',phase:'post'});wire(id+'ReflectPrompt',id+'Read','text',id+'Reflect','prompt');wire(id+'ReflectData',id+'Read','document',id+'Reflect','data');wire(id+'ActorContext',id+'Context','out',id+'Reflect','context');
-   node(id+'Write','write-file',{actorScope:'presence',actorId,mode:'append'});wire(id+'WritePresence',id,'out',id+'Write','presence');wire(id+'Reference',id+'Read','reference',id+'Write','reference');wire(id+'Reflection',id+'Reflect','out',id+'Write','text');
-  }
- }
- return {id:'actor-story',name:'Actor story',schema:3,runtime:2,mode:'native-unified',nodes,wires,definitions:{},portals:{}};
-}
-function fixture(mode='direction',options={}){
- const graph=graphFor(mode),listeners=new Map(),results=[],requests=[];let busy=false,user='default-user';
- const c={chatId:'Story-2',characterId:0,groupId:null,characters:[{avatar:'mara.png',data:{name:'Mara',description:'PRIVATE SEA memory',visibility:{kind:'actor-private',actorId:mara}}},{avatar:'elias.png',data:{name:'Elias',description:'PRIVATE FIRE memory',visibility:{kind:'actor-private',actorId:elias}}}],chat:[{mes:options.chatText??'Mara and Elias meet by the door.',is_user:true,extra:{}}],chatMetadata:{},extensionPrompts:{},eventTypes:Object.fromEntries(['GENERATION_STARTED','GENERATION_STOPPED','GENERATION_ENDED','MESSAGE_RECEIVED','MESSAGE_SENT','CHAT_CHANGED','MESSAGE_EDITED','MESSAGE_UPDATED','MESSAGE_DELETED','MESSAGE_SWIPED','MESSAGE_SWIPE_DELETED'].map(n=>[n,n]))};
- c.eventSource={on(name,fn){const bucket=listeners.get(name)??[];bucket.push(fn);listeners.set(name,bucket);},removeListener(name,fn){listeners.set(name,(listeners.get(name)??[]).filter(v=>v!==fn));},async emit(name,...args){for(const fn of listeners.get(name)??[])await fn(...args);}};c.setExtensionPrompt=(key,value)=>{c.extensionPrompts[key]={value};};c.saveChat=async()=>{};c.updateMessageBlock=async()=>{};c.swipe={refresh:async()=>{}};
- const catalog=createChatDocumentCatalog({getContext:()=>c,getUserId:()=>user});for(const [id,actorId,content]of [['mara',mara,'PRIVATE SEA reflection'],['elias',elias,'PRIVATE FIRE reflection']])assert.equal(catalog.define({targetId:id+'.md',name:id,format:'markdown',content,visibility:{kind:'actor-private',actorId}}).ok,true);
- const controller=(options.controllerFactory??createNativeWorkflowController)({context:()=>{options.onContext?.(c);return c;},getGraph:phase=>phase==='unified'?graph:undefined,isEnabled:()=>true,userId:()=>user,isBusy:()=>busy,documentCatalog:catalog,countTokens:async text=>{await options.onCount?.(text,c);return {tokens:Math.ceil(text.length/4)};},resolveBinding:()=>({ok:true,data:{profileId:'fixed',model:'test'}}),request:async request=>{requests.push(request);const material=JSON.parse(request.messages.at(-1).content);await options.onRequest?.(request,material,c);const override=options.modelOutput?.(material,c);if(override!==undefined)return {ok:true,data:{text:typeof override==='string'?override:JSON.stringify(override),finish:'stop'}};if(material.context?.source?.actorId===undefined&&material.context?.source||material.data?.watch==='draft'){const s=material.context?.source??material.data;return {ok:true,data:{text:JSON.stringify({sceneId:s.sceneId,sourceId:s.sourceId,revision:s.revision,actors:[{actorId:mara,status:'present',evidence:s.watch==='draft'?s.text:c.chat[0].mes},{actorId:elias,status:'present',evidence:s.watch==='draft'?'Mara and Elias kiss by the door.':'Mara and Elias meet by the door.'}]}),finish:'stop'}};}return {ok:true,data:{text:material.request?.includes('FIRE')?'Elias considers the fire.':'Mara considers the sea.',finish:'stop'}};},persistenceVerifier:{saveAndVerify:async selection=>{await options.onVerify?.(selection,c);return {ok:true,data:{acknowledged:true}};}},onEvent:options.onEvent,onResult:value=>results.push(value),syncMesToSwipe(index){const m=c.chat[index];m.swipes[m.swipe_id]=m.mes;return true;},syncSwipeToMes(index,swipeId){const m=c.chat[index];m.swipe_id=swipeId;m.mes=m.swipes[swipeId];Object.assign(m,structuredClone(m.swipe_info[swipeId]));return true;}});controller.subscribe();
- return {c,graph,controller,catalog,requests,results,setUser:v=>user=v,async start(){busy=true;await c.eventSource.emit('GENERATION_STARTED','normal',{},false);return controller.beforeGenerate(c.chat.map(m=>({...m})),8192,()=>{},'normal');},async complete(){const now=new Date().toISOString(),reply=options.replyText??'Mara and Elias kiss by the door.';c.chat.push({mes:reply,is_user:false,extra:{},gen_started:now,gen_finished:now,swipe_id:0,swipes:[reply],swipe_info:[{gen_started:now,gen_finished:now,extra:{}}]});await c.eventSource.emit('MESSAGE_RECEIVED',c.chat.length-1,'normal');busy=false;await c.eventSource.emit('GENERATION_ENDED',c.chat.length);for(let i=0;i<100&&!results.length;i++)await pause();return results.at(-1);}};
-}
-
 function addCompose(f, nested = false) {
     const node = (id, settings) => f.graph.nodes[id] = { id, type: 'workflow', ...operationDefaults('compose'), outputKind: 'guidance', ...settings };
     const wire = (id, from, fromPort, to, toPort) => f.graph.wires[id] = { id, route: 'wire', from, fromPort, to, toPort };
@@ -107,28 +77,6 @@ test('disabled nested Character Direction omits guidance without actor discovery
         assert.ok(Object.values(f.c.extensionPrompts).some(p => p.value === 'Public weather.'));
     } finally { f.controller.dispose(); }
 });
-
-function recallGraph(options={}) {
- const nodes={},wires={};const node=(id,operation,settings={})=>nodes[id]={id,type:'workflow',...operationDefaults(operation),...settings};
- const wire=(id,from,fromPort,to,toPort)=>wires[id]={id,route:'wire',from,fromPort,to,toPort};
- node('send','on-send');node('generate','generate-reply',{budgetTokens:4096});node('review','review-publish');wire('activation','send','activation','generate','activation');wire('draft','generate','draft','review','draft');
- node('hotkey','hotkey-arm',{actorId:'character:0',memorySetId:'moments',consumeOn:options.consumeOn??'accepted',target:options.target??'both',uses:options.uses??'next-match'});
- node('scene','scene-context',{includeCharacter:false,visibilityMode:'public'});node('prompt','text',{text:'Return actual participating actors with sceneId, sourceId, revision copied from context.source and evidence quoted from chat.'});node('cast','model-call',{outputKind:'data'});node('presence','scene-presence',{actorId:'character:0'});
- wire('prompt','prompt','out','cast','prompt');wire('context','scene','out','cast','context');wire('cast','cast','out','presence','in');
- node('read','read-file',{targetId:'moments.json'});node('decode','json-decode');wire('json','read','text','decode','in');
- node('recall','recall',{actorId:'character:0',memorySetId:'moments',activation:options.activation??'armed'});wire('records','decode','out','recall','records');wire('presence','presence','out','recall','presence');wire('guidance','recall','out','generate','guidance');
- return {id:'recall-story',name:'Recall story',schema:3,runtime:2,mode:'native-unified',nodes,wires,portals:{},definitions:{}};
-}
-function recallFixture(options={}) {
- const graph=recallGraph(options),listeners=new Map(),results=[],registrations=[];let busy=false,user='default-user',requests=0;
- const c={chatId:'story',characterId:0,groupId:null,characters:[{data:{name:'Mara'}}],chat:[{mes:'Mara waits at the door.',is_user:true,extra:{}}],chatMetadata:{},extensionPrompts:{},eventTypes:Object.fromEntries(['GENERATION_STARTED','GENERATION_STOPPED','GENERATION_ENDED','MESSAGE_RECEIVED','MESSAGE_SENT','CHAT_CHANGED','MESSAGE_EDITED','MESSAGE_UPDATED','MESSAGE_DELETED','MESSAGE_SWIPED','MESSAGE_SWIPE_DELETED'].map(name=>[name,name]))};
- c.eventSource={on(name,fn){const bucket=listeners.get(name)??[];bucket.push(fn);listeners.set(name,bucket);},removeListener(name,fn){listeners.set(name,(listeners.get(name)??[]).filter(value=>value!==fn));},async emit(name,...args){for(const fn of listeners.get(name)??[])await fn(...args);}};
- c.setExtensionPrompt=(key,value)=>{c.extensionPrompts[key]={value};options.onPrompt?.(value,c);};c.saveChat=async()=>{};c.updateMessageBlock=async()=>{};c.swipe={refresh:async()=>{}};
- const catalog=createChatDocumentCatalog({getContext:()=>c,getUserId:()=>user});assert.equal(catalog.define({targetId:'moments.json',name:'Moments',format:'json',content:JSON.stringify([{id:'m1',actorId:'character:0',text:'PRIVATE harbor memory',tags:['harbor']}]),visibility:{kind:'actor-private',actorId:'character:0'}}).ok,true);
- const controller=createNativeWorkflowController({context:()=>c,getGraph:phase=>phase==='unified'?graph:undefined,isEnabled:()=>options.isEnabled?.()??true,userId:()=>user,isBusy:()=>busy,documentCatalog:catalog,countTokens:async text=>{await options.onCount?.(text,c);return {tokens:Math.ceil(text.length/4)};},resolveBinding:()=>({ok:true,data:{profileId:'fixed',model:'test'}}),request:async request=>{requests++;const material=JSON.parse(request.messages.at(-1).content);await options.onModel?.(material,c);const s=material.context?.source??material.data;const output=options.modelOutput?.(material)??{sceneId:s.sceneId??'story',sourceId:s.sourceId??'manual-source',revision:s.revision??'manual-revision',actors:[{actorId:'character:0',status:'present',evidence:'Mara waits at the door.'}]};return {ok:true,data:{text:JSON.stringify(output),finish:'stop'}};},registerRecallHotkey:entry=>{const captured={...entry,disposed:false};registrations.push(captured);return {ok:true,data:{dispose:()=>{captured.disposed=true;}}};},persistenceVerifier:{saveAndVerify:async()=>({ok:true,data:{acknowledged:true}})},onResult:value=>results.push(value),syncMesToSwipe(index){const m=c.chat[index];m.swipes[m.swipe_id]=m.mes;return true;},syncSwipeToMes(index,swipeId){const m=c.chat[index];m.swipe_id=swipeId;m.mes=m.swipes[swipeId];Object.assign(m,structuredClone(m.swipe_info[swipeId]));return true;}});
- controller.subscribe();
- return {c,graph,controller,catalog,results,registrations,requests:()=>requests,setUser:value=>{user=value;},async start(type='normal'){busy=true;await c.eventSource.emit('GENERATION_STARTED',type,{},false);return controller.beforeGenerate(c.chat.map(message=>({...message})),8192,()=>{},type);},async complete(type='normal'){const now=new Date().toISOString();if(type==='normal')c.chat.push({mes:'Native reply.',is_user:false,extra:{},gen_started:now,gen_finished:now,swipe_id:0,swipes:['Native reply.'],swipe_info:[{gen_started:now,gen_finished:now,extra:{}}]});else{const m=c.chat.at(-1);Object.assign(m,{mes:'Native swipe.',gen_started:now,gen_finished:now});m.swipes.push(m.mes);m.swipe_info.push({gen_started:now,gen_finished:now,extra:{}});}await c.eventSource.emit('MESSAGE_RECEIVED',c.chat.length-1,type);busy=false;await c.eventSource.emit('GENERATION_ENDED',c.chat.length);for(let i=0;i<60&&!results.length;i++)await pause();return results.at(-1);}};
-}
 
 test('root Recall composes with public guidance and consumes only the accepted native reply', async () => {
     const f = recallFixture();
@@ -285,4 +233,83 @@ test('Compose and Generate retain independent rendered budgets in native executi
             assert.equal(Object.values(f.c.extensionPrompts).some(p => p.value), false);
         } finally { f.controller.dispose(); }
     }
+});
+
+
+function presenceFileSystem(f, enabled, readPhase = 'post') {
+    delete f.graph.nodes.direction; delete f.graph.wires.present; delete f.graph.wires.guidance;
+    for (const id of Object.keys(f.graph.nodes)) if (id.startsWith('elias') || id.startsWith('mara') && id !== 'mara') delete f.graph.nodes[id];
+    for (const [id, wire] of Object.entries(f.graph.wires)) if (!f.graph.nodes[wire.from] || !f.graph.nodes[wire.to]) delete f.graph.wires[id];
+    const node = (id, operation, settings = {}) => ({ id, type: 'workflow', ...operationDefaults(operation), ...settings });
+    const wire = (id, from, fromPort, to, toPort) => ({ id, route: 'wire', from, fromPort, to, toPort });
+    const body = { schema: 3, runtime: 2, mode: 'native-unified', nodes: {
+        presence: { id: 'presence', type: 'subgraph-input', interfacePortId: 'presence' },
+        read: node('read', 'read-file', { targetId: 'mara.md', actorScope: 'presence', actorId: mara, phase: readPhase }),
+        note: node('note', 'text', { text: 'Scoped file note.', phase: 'post' }),
+        write: node('write', 'write-file', { mode: 'append', actorScope: 'presence', actorId: mara }),
+    }, wires: {
+        readPresence: wire('readPresence', 'presence', 'out', 'read', 'presence'),
+        writePresence: wire('writePresence', 'presence', 'out', 'write', 'presence'),
+        reference: wire('reference', 'read', 'reference', 'write', 'reference'),
+        note: wire('note', 'note', 'out', 'write', 'text'),
+    } };
+    const identity = computeDefinitionIdentity({ id: 'presence-files', version: 1, name: 'Presence files', parameters: [], body, interface: [
+        { id: 'presence', label: 'Presence', kind: 'data', direction: 'input', required: true, cardinality: 'one', boundaryNodeId: 'presence' },
+    ] }); assert.equal(identity.ok, true, JSON.stringify(identity.error));
+    const definition = { ...identity.data.materializedDefinition, semanticHash: identity.data.semanticHash };
+    f.graph.definitions[definitionRefKey(definition)] = definition;
+    f.graph.nodes.files = { id: 'files', type: 'subgraph', enabled, definition: { id: definition.id, version: definition.version, semanticHash: definition.semanticHash } };
+    f.graph.wires.systemPresence = wire('systemPresence', 'mara', 'out', 'files', 'presence');
+}
+
+test('nested presence files alone start the Main scene session and disabled files skip discovery and effects', async () => {
+    for (const enabled of [true, false]) {
+        let verified = 0;
+        const f = fixture('files', { onVerify() { verified++; } }); presenceFileSystem(f, enabled);
+        if (!enabled) f.c.characterId = 99; // Any actor discovery would now fail.
+        try {
+            const authored = [...Object.values(f.graph.nodes), ...Object.values(Object.values(f.graph.definitions)[0].body.nodes)];
+            assert.equal(authored.some(node => ['character-direction', 'actor-context', 'recall', 'hotkey-arm', 'prompted-memory'].includes(node.operation)), false);
+            const ready = await f.start(); assert.equal(ready.ok, true, JSON.stringify(ready.error));
+            assert.equal(f.requests.length, 0);
+            const result = await f.complete(); assert.equal(result.ok, true, JSON.stringify(result.error));
+            assert.equal(f.requests.length, enabled ? 1 : 0);
+            if (enabled) {
+                const source = JSON.parse(f.requests[0].messages.at(-1).content).data;
+                assert.equal(typeof source.sourceId, 'string'); assert.ok(source.sourceId);
+                assert.equal(typeof source.revision, 'string'); assert.ok(source.revision);
+                assert.equal(source.sceneId, 'Story-2'); assert.equal(source.watch, 'draft');
+                assert.equal(source.text, f.c.chat.at(-1).mes);
+            }
+            for (const operation of ['read-file', 'write-file']) {
+                const unit = result.recording.units.find(unit => unit.operation === operation);
+                if (enabled) assert.equal(unit.status, 'completed');
+                else assert.ok(['not-run', 'skipped'].includes(unit.status), operation + ' must not execute');
+            }
+            assert.equal(f.c.chatMetadata.latticeDocuments, undefined); assert.equal(verified, 0);
+            const accepted = await f.controller.apply(result.reviewHandles[0]); assert.equal(accepted.ok, true, JSON.stringify(accepted.error));
+            if (enabled) {
+                assert.equal(accepted.settlement.status, 'settled'); assert.equal(verified, 1);
+                const content = f.c.chatMetadata.latticeDocuments['default-user']['mara.md'].content;
+                assert.ok(content.includes('PRIVATE SEA reflection')); assert.ok(content.includes('Scoped file note.'));
+            } else { assert.equal(verified, 0); assert.equal(f.c.chatMetadata.latticeDocuments, undefined); }
+            assert.equal(Object.values(f.c.extensionPrompts).some(prompt => prompt.value), false);
+            assert.equal(f.c.chat.at(-1).mes.includes('PRIVATE SEA'), false);
+        } finally { f.controller.dispose(); }
+    }
+});
+
+
+test('nested presence files reject pre-reply presence for a write after native completion', async () => {
+    let verified = 0;
+    const f = fixture('direction', { onVerify() { verified++; } }); presenceFileSystem(f, true, 'pre');
+    try {
+        const ready = await f.start(); assert.equal(ready.ok, true, JSON.stringify(ready.error));
+        assert.equal(f.requests.length, 1);
+        const result = await f.complete(); assert.equal(result.ok, false);
+        assert.equal(result.error.code, 'ACTOR_PRESENCE_UNVERIFIED'); assert.equal(result.error.nodeId, 'write');
+        assert.equal(result.reviewHandles.length, 0); assert.equal(verified, 0);
+        assert.equal(f.c.chatMetadata.latticeDocuments, undefined);
+        assert.equal(Object.values(f.c.extensionPrompts).some(prompt => prompt.value), false);
+    } finally { f.controller.dispose(); }
 });
