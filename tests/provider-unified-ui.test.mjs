@@ -1,10 +1,11 @@
+import { withNativeBoundary } from './helpers/workflow-fixtures.mjs';
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { prepareWorkflowProjection, projectPreparedWorkflow } from '../src/ui/workflow-surface.js?v=0.26.0';
-import { prepareWorkspaceViews, projectWorkspacePanels, projectNodeProfiles } from '../src/ui/workspace-preparation.js?v=0.26.0';
-import { createGraphViewSession } from '../src/ui/graph-view-session.js?v=0.26.0';
-const api = await import('../src/ui/provider-settings.js?v=0.26.0').catch(() => ({}));
-const graph = (controls = {}) => ({id:'provider-ui',name:'Provider UI',schema:3,runtime:2,mode:'native-pre',roles:{},nodes:{source:{id:'source',type:'workflow',operation:'compose',sections:[{name:'scene',text:'A scene.'}],outputKind:'text'},fast:{id:'fast',type:'workflow',operation:'fast-decision',inputKind:'text',fastConnectionId:'jev',...controls},render:{id:'render',type:'workflow',operation:'compose',mode:'template',outputKind:'guidance',template:'Decision: {{data:/answers}}'},guidance:{id:'guidance',type:'workflow',operation:'guidance'}},wires:{wire:{id:'wire',route:'wire',from:'source',fromPort:'out',to:'fast',toPort:'in'},data:{id:'data',route:'wire',from:'fast',fromPort:'out',to:'render',toPort:'data'},publish:{id:'publish',route:'wire',from:'render',fromPort:'out',to:'guidance',toPort:'in'}},portals:{},definitions:{},groups:{}});
+import { prepareWorkflowProjection, projectPreparedWorkflow } from '../src/ui/workflow-surface.js?v=0.27.0';
+import { prepareWorkspaceViews, projectWorkspacePanels, projectNodeProfiles } from '../src/ui/workspace-preparation.js?v=0.27.0';
+import { createGraphViewSession } from '../src/ui/graph-view-session.js?v=0.27.0';
+const api = await import('../src/ui/provider-settings.js?v=0.27.0').catch(() => ({}));
+const graph = (controls = {}) => withNativeBoundary({id:'provider-ui',name:'Provider UI',schema:3,runtime:2,mode:'native-unified',roles:{},nodes:{source:{id:'source',type:'workflow',operation:'compose',sections:[{name:'scene',text:'A scene.'}],outputKind:'text'},fast:{id:'fast',type:'workflow',operation:'fast-decision',inputKind:'text',fastConnectionId:'jev',...controls},render:{id:'render',type:'workflow',operation:'compose',mode:'template',outputKind:'guidance',template:'Decision: {{data:/answers}}'},guidance:{id:'guidance',type:'workflow',operation:'guidance'}},wires:{wire:{id:'wire',route:'wire',from:'source',fromPort:'out',to:'fast',toPort:'in'},data:{id:'data',route:'wire',from:'fast',fromPort:'out',to:'render',toPort:'data'},publish:{id:'publish',route:'wire',from:'render',fromPort:'out',to:'guidance',toPort:'in'}},portals:{},definitions:{},groups:{}}, 'guidance');
 const project = (root, options = {}) => projectPreparedWorkflow(prepareWorkflowProjection(root, options));
 const failure = code => ({ok:false,error:{code,message:'Primary unavailable'}});
 
@@ -65,7 +66,7 @@ test('stale provider settings scope rejects credentials before any mutation',asy
 
 
 test('unified Details show editable stages for both-phase tools and fixed lifecycle stages',async()=>{
- const {starterGraph}=await import('../src/workflow/starters.js?v=0.26.0');const root=starterGraph('unified-basic');root.nodes.noteText={id:'noteText',type:'workflow',operation:'compose',phase:'post',sections:[{name:'text',text:'Notes'}],outputKind:'text'};
+ const {starterGraph}=await import('../src/workflow/starters.js?v=0.27.0');const root=starterGraph('unified-basic');root.nodes.noteText={id:'noteText',type:'workflow',operation:'compose',phase:'post',sections:[{name:'text',text:'Notes'}],outputKind:'text'};
  const prepared=prepareWorkspaceViews(root);assert.equal(prepared.ok,true,JSON.stringify(prepared));const session=createGraphViewSession({root,activationId:'stages',...prepared.data}).data;
  const details=id=>projectWorkspacePanels(session.readEditor(),projectPreparedWorkflow(prepared.data.workflow,{selectedId:id}),{},'r1',null,null).nodeDetails;
  assert.equal(details('noteText').phase,'post');assert.equal(details('noteText').phaseEditable,true);assert.equal(details('generate-reply').phaseEditable,false);
@@ -74,7 +75,7 @@ test('unified Details show editable stages for both-phase tools and fixed lifecy
 
 test('workflow projection describes the open document without legacy assignment authority',()=>{
  const root=graph();const view=project(root,{settings:{nativeBindings:{workflowGraphId:'unified',preGraphId:root.id}}});
- assert.equal(view.graphId,root.id);assert.equal(view.phase,'pre');assert.equal(Object.hasOwn(view,'assigned'),false);
+ assert.equal(view.graphId,root.id);assert.equal(view.phase,'unified');assert.equal(Object.hasOwn(view,'assigned'),false);
  const unassigned=project(root,{settings:{nativeBindings:{workflowGraphId:null,preGraphId:root.id}}});
  assert.equal(Object.hasOwn(unassigned,'assigned'),false);assert.deepEqual(unassigned.issues,view.issues);
 });
@@ -87,7 +88,7 @@ test('provider settings do not claim a superseded save applied successfully',asy
 
 
 test('inferred response stage is shared by compiled inventory, graph card and editable Details',async()=>{
- const {starterGraph}=await import('../src/workflow/starters.js?v=0.26.0');const root=starterGraph('unified-basic');
+ const {starterGraph}=await import('../src/workflow/starters.js?v=0.27.0');const root=starterGraph('unified-basic');
  root.nodes.text={id:'text',type:'workflow',operation:'draft-text'};root.nodes.decision={id:'decision',type:'workflow',operation:'decision',inputKind:'text'};
  root.wires.text={id:'text',route:'wire',from:'generate-reply',fromPort:'draft',to:'text',toPort:'draft'};root.wires.decision={id:'decision',route:'wire',from:'text',fromPort:'out',to:'decision',toPort:'in'};
  const before=structuredClone(root);const prepared=prepareWorkspaceViews(root,{resolveBinding:()=>({ok:true,data:{profileId:'judge',model:'text'}})});assert.equal(prepared.ok,true,JSON.stringify(prepared));

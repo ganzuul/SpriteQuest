@@ -1,15 +1,15 @@
 /** Current Lattice host facade. SillyTavern owns native reply generation. */
-import { ctx, safe, settings, activeWorkflow, onWorkflowActivated, documentSession} from './state.js?v=0.26.0';
-import { validateWorkflow } from './workflow/contracts.js?v=0.26.0';
-import { createNativeWorkflowController } from './workflow/host.js?v=0.26.0';
-import { bindingStatus } from './workflow/connections.js?v=0.26.0';
-import { createFastRegistry } from './workflow/fast-registry.js?v=0.26.0';
-import { createFastHostBridge } from './workflow/fast-host.js?v=0.26.0';
-import { createChatDocumentCatalog } from './workflow/document-catalog.js?v=0.26.0';
-import { createRecallShortcutRegistry } from './ui/recall-shortcuts.js?v=0.26.0';
-import { createNativePersistenceVerifier } from './workflow/native-persistence.js?v=0.26.0';
-export { runWorkflow, workflowSignature } from './workflow/runtime.js?v=0.26.0';
-export { createNativeWorkflowController, snapshotContext, snapshotReply } from './workflow/host.js?v=0.26.0';
+import { ctx, safe, settings, activeWorkflow, onWorkflowActivated, documentSession} from './state.js?v=0.27.0';
+import { validateWorkflow } from './workflow/contracts.js?v=0.27.0';
+import { createNativeWorkflowController } from './workflow/host.js?v=0.27.0';
+import { bindingStatus } from './workflow/connections.js?v=0.27.0';
+import { createFastRegistry } from './workflow/fast-registry.js?v=0.27.0';
+import { createFastHostBridge } from './workflow/fast-host.js?v=0.27.0';
+import { createChatDocumentCatalog } from './workflow/document-catalog.js?v=0.27.0';
+import { createRecallShortcutRegistry } from './ui/recall-shortcuts.js?v=0.27.0';
+import { createNativePersistenceVerifier } from './workflow/native-persistence.js?v=0.27.0';
+export { runWorkflow, workflowSignature } from './workflow/runtime.js?v=0.27.0';
+export { createNativeWorkflowController, snapshotContext, snapshotReply } from './workflow/host.js?v=0.27.0';
 
 let controller, helpers, userHelpers, nativeUserReader, initialization, fastRegistry, fastBridge, documentCatalog, persistenceVerifier, recallShortcuts, recallEvents;
 const fastSettingsKey = 'lattice_fast_connections';
@@ -47,18 +47,13 @@ export const fastConnectionPreview = node => getFastBridge().preview(node);
 export function callCount(graph) { const checked = validateWorkflow(graph); return checked.ok ? checked.data.callBound : 0; }
 /** Send follows the one open document; Enable Lattice remains a separate host preference. */
 export function sendWorkflowState() {
-    const current = activeWorkflow(), mode = safe(() => Object.getOwnPropertyDescriptor(current ?? {}, 'mode')?.value), unified = mode === 'native-unified';
-    const checked = current ? validateWorkflow(current, unified ? {} : { phase: 'pre' }) : null;
-    const graph = checked?.ok && ['native-unified', 'native-pre'].includes(mode) ? current : null;
-    if (unified) return { automatic: !!graph,
-        armLabel: 'Enable open workflow on Send',
-        armedText: graph ? '"' + graph.name + '" runs one unified workflow across preparation, SillyTavern generation and reply review (maximum ' + checked.data.callBound + ' auxiliary requests). SillyTavern builds its normal prompt.' : 'The open workflow cannot run: ' + (checked?.error?.message ?? 'Open a valid unified workflow.') + ' SillyTavern builds its normal prompt.',
-        offText: 'Lattice is off. Enable it to run the open workflow on Send.',
-    };
+    const current = activeWorkflow(), mode = safe(() => Object.getOwnPropertyDescriptor(current ?? {}, 'mode')?.value);
+    const checked = current && mode === 'native-unified' ? validateWorkflow(current) : null;
+    const graph = checked?.ok ? current : null;
     return { automatic: !!graph,
-        armLabel: 'Enable open workflow on Send',
-        armedText: graph ? '"' + graph.name + '" adds guidance before Send (maximum ' + checked.data.callBound + ' auxiliary requests). SillyTavern builds its normal prompt. Post repair remains manual.' : mode === 'native-post' ? 'The open legacy post workflow runs manually with Run and review. SillyTavern builds its normal prompt.' : 'The open workflow cannot run on Send: ' + (checked?.error?.message ?? 'Open a unified workflow or legacy pre workflow.') + ' SillyTavern builds its normal prompt.',
-        offText: 'Lattice is off. SillyTavern builds its normal prompt. Post repair requires manual Run and review.',
+        enableLabel: 'Enable Lattice',
+        enabledText: graph ? '"' + graph.name + '" runs one unified workflow across preparation, SillyTavern generation and reply review (maximum ' + checked.data.callBound + ' auxiliary requests). SillyTavern builds its normal prompt.' : 'The open workflow cannot run: ' + (checked?.error?.message ?? 'Open a valid unified workflow.') + ' SillyTavern builds its normal prompt.',
+        offText: 'Lattice is off. Enable it to run the open unified workflow on Send.',
     };
 }
 export function getNativeWorkflowController() {
@@ -68,7 +63,7 @@ export function getNativeWorkflowController() {
         registerRecallHotkey: request => { recallShortcuts ??= createRecallShortcutRegistry(globalThis.document,{changed:()=>safe(()=>globalThis.document.dispatchEvent(new CustomEvent('pc-recall-state')))}); return recallShortcuts.register(request); },
         context: ctx, userId: currentUser, transportUserId, documentCatalog: getStoryDocumentCatalog(), persistenceVerifier: getNativePersistenceVerifier(),
         isEnabled: () => settings().enabled === true,
-        getGraph: phase => { const graph = activeWorkflow(); return safe(() => Object.getOwnPropertyDescriptor(graph ?? {}, 'mode')?.value) === 'native-' + phase ? graph : null; },
+        getGraph: () => { const graph = activeWorkflow(); return safe(() => Object.getOwnPropertyDescriptor(graph ?? {}, 'mode')?.value) === 'native-unified' ? graph : null; },
         isBusy: () => !helpers || helpers.isGenerating(),
         syncMesToSwipe: (...args) => helpers?.syncMesToSwipe(...args), syncSwipeToMes: (...args) => helpers?.syncSwipeToMes(...args),
         resolveFastBinding: node => getFastBridge().resolve(node), fastBindingSummary: binding => getFastBridge().summary(binding),
@@ -80,7 +75,7 @@ export function getNativeWorkflowController() {
     controller.subscribeRecall(() => safe(() => globalThis.document?.dispatchEvent(new CustomEvent('pc-recall-state'))));
     return controller;
 }
-/** Public host helpers are imported independently so missing user support cannot disable legacy review. */
+/** Public host helpers are imported independently so missing user support cannot disable reviewed workflows. */
 export function initializeNativeWorkflowController() {
     const current = getNativeWorkflowController(); current.subscribe();
     if(!recallEvents&&globalThis.document?.addEventListener){recallEvents=true;globalThis.document.addEventListener('pc-state',()=>current.syncRecall());}

@@ -1,6 +1,6 @@
-import { safeWorkflowData, validateNamedGraphStructure } from './graph-validation.js?v=0.26.0';
-import { resolveWorkflow } from './resolve.js?v=0.26.0';
-export { safeWorkflowData } from './graph-validation.js?v=0.26.0';
+import { safeWorkflowData, validateNamedGraphStructure } from './graph-validation.js?v=0.27.0';
+import { resolveWorkflow } from './resolve.js?v=0.27.0';
+export { safeWorkflowData } from './graph-validation.js?v=0.27.0';
 const fail = (code, message) => ({ ok: false, error: { code, message } });
 const record = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 function plainDescriptors(value, limit = 20000) {
@@ -31,6 +31,7 @@ export function validateGraphStructure(graph) {
 export function validateWorkflow(graph, { phase } = {}) {
     const validation = validateGraphStructure(graph);
     if (!validation.ok) return validation;
+    if (graph.mode !== 'native-unified') return fail('WRONG_PHASE', 'Executable root workflows require native-unified. Stage-specific bodies are reusable definitions only.');
     if (phase && graph.mode !== 'native-' + phase) return fail('WRONG_PHASE', 'The workflow operation does not support this phase.');
     return resolveWorkflow(graph);
 }

@@ -12,7 +12,8 @@ import { viewIdentityKey } from '../src/ui/view-state.js';
 import { definitionRefKey } from '../src/workflow/definition-data.js';
 import { computeDefinitionIdentity } from '../src/workflow/definitions.js';
 import { exportWorkflow, exportSubgraph, parseWorkflow, parseSubgraph } from '../src/workflow/packages.js';
-import { createLibraryWorkflow, createLibrarySubgraph } from '../src/workflow/library/subgraphs.js';
+import { fixtureLibraryWorkflow as createLibraryWorkflow } from './helpers/workflow-fixtures.mjs';
+import { createLibrarySubgraph } from '../src/workflow/library/subgraphs.js';
 
 const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true });
 globalThis.window = dom.window;

@@ -1,0 +1,439 @@
+{
+  "kind": "lattice-workflow",
+  "schema": 2,
+  "minRuntime": 2,
+  "graph": {
+    "id": "remastered-lesson-09",
+    "name": "9. Show a travel card only when there is a destination",
+    "description": "Conditionally add a travel card while preserving an ordinary Draft when no destination is authored.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\n\nOpen Show a travel card only when there is a destination and inspect the named pins.\nEdit the authored destination; empty string chooses the no route.\nCondition controls Branch; the optional card reaches Join after the base Draft.\nMissing destination is unresolved and deliberately holds Join; inspect Branch.unresolved.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 0 auxiliary model requests; one ordinary native generation.\nCheckpoints:\nBranch.yes: A nonempty destination produces a card; no destination skips the optional contribution.",
+    "schema": 3,
+    "runtime": 2,
+    "mode": "native-unified",
+    "nodes": {
+      "send": {
+        "id": "send",
+        "type": "workflow",
+        "operation": "on-send",
+        "operationVersion": 1,
+        "title": "On Send",
+        "enabled": true,
+        "x": 100,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-0",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "On Send"
+      },
+      "generate": {
+        "id": "generate",
+        "type": "workflow",
+        "operation": "generate-reply",
+        "operationVersion": 1,
+        "title": "Generate Reply · SillyTavern",
+        "enabled": true,
+        "x": 460,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-1",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Generate Reply · SillyTavern",
+        "budgetTokens": 768
+      },
+      "review": {
+        "id": "review",
+        "type": "workflow",
+        "operation": "review-publish",
+        "operationVersion": 1,
+        "title": "Review / Publish",
+        "enabled": true,
+        "x": 2260,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-6",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Review / Publish"
+      },
+      "route-text": {
+        "id": "route-text",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 100,
+        "y": 560,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-0",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "pre",
+        "alias": "Text · authored input",
+        "text": "{\"destination\":\"North Harbor\",\"landmark\":\"the dark lighthouse\"}"
+      },
+      "route": {
+        "id": "route",
+        "type": "workflow",
+        "operation": "json-decode",
+        "operationVersion": 1,
+        "title": "JSON Decode",
+        "enabled": true,
+        "x": 460,
+        "y": 560,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-1",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "pre",
+        "alias": "JSON Decode",
+        "mode": "parse",
+        "schema": ""
+      },
+      "has-destination": {
+        "id": "has-destination",
+        "type": "workflow",
+        "operation": "condition",
+        "operationVersion": 1,
+        "title": "Condition",
+        "enabled": true,
+        "x": 820,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-2",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Condition",
+        "path": [
+          "destination"
+        ],
+        "operator": "nonempty",
+        "value": true
+      },
+      "travel-route": {
+        "id": "travel-route",
+        "type": "workflow",
+        "operation": "branch",
+        "operationVersion": 1,
+        "title": "Branch",
+        "enabled": true,
+        "x": 1180,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-3",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "artifactKind": "text",
+        "phase": "post",
+        "alias": "Branch"
+      },
+      "notes": {
+        "id": "notes",
+        "type": "workflow",
+        "operation": "compose",
+        "operationVersion": 1,
+        "title": "Compose",
+        "enabled": true,
+        "x": 820,
+        "y": 560,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-2",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "post",
+        "alias": "Compose",
+        "mode": "template",
+        "outputKind": "text",
+        "template": "<details><summary>Condition, Branch and Join</summary>\n{{data:}}\n</details>",
+        "sections": [],
+        "separator": "\n\n"
+      },
+      "append": {
+        "id": "append",
+        "type": "workflow",
+        "operation": "append",
+        "operationVersion": 1,
+        "title": "Append",
+        "enabled": true,
+        "x": 1540,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-4",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Append",
+        "sectionId": "lesson-09",
+        "separator": "\n\n"
+      },
+      "draft-join": {
+        "id": "draft-join",
+        "type": "workflow",
+        "operation": "join",
+        "operationVersion": 1,
+        "title": "Join",
+        "enabled": true,
+        "x": 1900,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-5",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "artifactKind": "draft",
+        "phase": "post",
+        "alias": "Join",
+        "inputs": [
+          {
+            "id": "base",
+            "label": "Base",
+            "required": true
+          },
+          {
+            "id": "optional",
+            "label": "Optional",
+            "required": false
+          }
+        ],
+        "selection": "last"
+      },
+      "lesson-note": {
+        "id": "lesson-note",
+        "type": "note",
+        "title": "Lesson instructions",
+        "enabled": true,
+        "x": 100,
+        "y": 0,
+        "w": 900,
+        "h": 180,
+        "content": "Conditionally add a travel card while preserving an ordinary Draft when no destination is authored.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\n\nOpen Show a travel card only when there is a destination and inspect the named pins.\nEdit the authored destination; empty string chooses the no route.\nCondition controls Branch; the optional card reaches Join after the base Draft.\nMissing destination is unresolved and deliberately holds Join; inspect Branch.unresolved.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 0 auxiliary model requests; one ordinary native generation.\nCheckpoints:\nBranch.yes: A nonempty destination produces a card; no destination skips the optional contribution.",
+        "commentFrame": true,
+        "moveContents": false
+      }
+    },
+    "wires": {
+      "edge-1": {
+        "id": "edge-1",
+        "route": "wire",
+        "from": "send",
+        "fromPort": "activation",
+        "to": "generate",
+        "toPort": "activation"
+      },
+      "edge-2": {
+        "id": "edge-2",
+        "route": "wire",
+        "from": "route-text",
+        "fromPort": "out",
+        "to": "route",
+        "toPort": "in"
+      },
+      "edge-3": {
+        "id": "edge-3",
+        "route": "wire",
+        "from": "route",
+        "fromPort": "out",
+        "to": "has-destination",
+        "toPort": "in"
+      },
+      "edge-4": {
+        "id": "edge-4",
+        "route": "wire",
+        "from": "has-destination",
+        "fromPort": "out",
+        "to": "travel-route",
+        "toPort": "condition"
+      },
+      "edge-5": {
+        "id": "edge-5",
+        "route": "wire",
+        "from": "route",
+        "fromPort": "out",
+        "to": "notes",
+        "toPort": "data"
+      },
+      "edge-6": {
+        "id": "edge-6",
+        "route": "wire",
+        "from": "generate",
+        "fromPort": "draft",
+        "to": "append",
+        "toPort": "draft"
+      },
+      "edge-8": {
+        "id": "edge-8",
+        "route": "wire",
+        "from": "notes",
+        "fromPort": "out",
+        "to": "travel-route",
+        "toPort": "in"
+      },
+      "edge-9": {
+        "id": "edge-9",
+        "route": "wire",
+        "from": "travel-route",
+        "fromPort": "yes",
+        "to": "append",
+        "toPort": "section"
+      },
+      "edge-10": {
+        "id": "edge-10",
+        "route": "wire",
+        "from": "generate",
+        "fromPort": "draft",
+        "to": "draft-join",
+        "toPort": "base"
+      },
+      "edge-11": {
+        "id": "edge-11",
+        "route": "wire",
+        "from": "append",
+        "fromPort": "out",
+        "to": "draft-join",
+        "toPort": "optional"
+      },
+      "edge-12": {
+        "id": "edge-12",
+        "route": "wire",
+        "from": "draft-join",
+        "fromPort": "out",
+        "to": "review",
+        "toPort": "draft"
+      }
+    },
+    "groups": {
+      "stage-0": {
+        "id": "stage-0",
+        "title": "Preparation / processing",
+        "description": "Stage 0. Wires determine execution; folding is presentation only.",
+        "x": 75,
+        "y": 190,
+        "w": 350,
+        "h": 605,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "send",
+          "route-text"
+        ]
+      },
+      "stage-1": {
+        "id": "stage-1",
+        "title": "Native generation",
+        "description": "Stage 1. Wires determine execution; folding is presentation only.",
+        "x": 435,
+        "y": 190,
+        "w": 350,
+        "h": 605,
+        "color": "#284e67",
+        "collapsed": false,
+        "members": [
+          "generate",
+          "route"
+        ]
+      },
+      "stage-2": {
+        "id": "stage-2",
+        "title": "Preparation / processing",
+        "description": "Stage 2. Wires determine execution; folding is presentation only.",
+        "x": 795,
+        "y": 190,
+        "w": 350,
+        "h": 605,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "has-destination",
+          "notes"
+        ]
+      },
+      "stage-3": {
+        "id": "stage-3",
+        "title": "Response processing",
+        "description": "Stage 3. Wires determine execution; folding is presentation only.",
+        "x": 1155,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "travel-route"
+        ]
+      },
+      "stage-4": {
+        "id": "stage-4",
+        "title": "Preparation / processing",
+        "description": "Stage 4. Wires determine execution; folding is presentation only.",
+        "x": 1515,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "append"
+        ]
+      },
+      "stage-5": {
+        "id": "stage-5",
+        "title": "Response processing",
+        "description": "Stage 5. Wires determine execution; folding is presentation only.",
+        "x": 1875,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "draft-join"
+        ]
+      },
+      "stage-6": {
+        "id": "stage-6",
+        "title": "Review / accepted staging",
+        "description": "Stage 6. Wires determine execution; folding is presentation only.",
+        "x": 2235,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "review"
+        ]
+      }
+    },
+    "roles": {},
+    "portals": {},
+    "definitions": {},
+    "template": {
+      "id": "lesson-09",
+      "version": 1
+    },
+    "view": {
+      "x": 0,
+      "y": 0,
+      "zoom": 0.65
+    }
+  }
+}

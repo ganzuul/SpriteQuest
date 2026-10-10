@@ -38,10 +38,10 @@ test('unsaved workflow prompt applies the shared replacement choice',async()=>{
  try{assert.equal(f.host.querySelector('select'),null);button(f.host,"Don't Save").click();flushSync();assert.deepEqual(chosen,['discard']);}finally{await f.close();}
 });
 
-test('actual Graph menu runs the open unified workflow and Tools opens Fast connections',async()=>{
+test('actual Graph menu exposes diagnostic controls and Tools opens Fast connections',async()=>{
  const commands=[],local=[];const state={graphId:'unified',enabled:false,inspectorOpen:true,history:{undo:false,redo:false},selectionCount:0,rootWorkflow:{phase:'unified',busy:false,issues:[]}};
  const f=await fixture('WorkspaceMenus',{state,actions:{command:name=>commands.push(name)},local:name=>local.push(name)});
- try{assert.equal(button(f.host,'Workflows'),undefined);button(f.host,'Graph').click();await tick();flushSync();const run=button(f.host,'Run workflow');assert.ok(run);run.click();flushSync();assert.deepEqual(commands,['run-workflow']);button(f.host,'Tools').click();await tick();flushSync();const setup=button(f.host,'Fast connections…');assert.ok(setup);setup.click();flushSync();assert.deepEqual(local,['fast-connections']);}finally{await f.close();}
+ try{assert.equal(button(f.host,'Workflows'),undefined);button(f.host,'Graph').click();await tick();flushSync();assert.equal(button(f.host,'Run workflow'),undefined);assert.deepEqual(commands,[]);button(f.host,'Tools').click();await tick();flushSync();const setup=button(f.host,'Fast connections…');assert.ok(setup);setup.click();flushSync();assert.deepEqual(local,['fast-connections']);}finally{await f.close();}
 });
 
 

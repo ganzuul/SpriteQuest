@@ -1,36 +1,34 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { installMock } from './mock.js';
-import * as S from '../src/state.js?v=0.26.0';
-import * as H from '../src/history.js?v=0.26.0';
-import { sendWorkflowState } from '../src/run.js?v=0.26.0';
-import { starterGraph } from '../src/workflow/starters.js?v=0.26.0';
+import * as S from '../src/state.js?v=0.27.0';
+import * as H from '../src/history.js?v=0.27.0';
+import { sendWorkflowState } from '../src/run.js?v=0.27.0';
+import { starterGraph } from '../src/workflow/starters.js?v=0.27.0';
 
-test('Send follows the active document mode while activation preserves Arm', () => {
+test('Send follows the active unified document while replacement preserves Enable Lattice', () => {
     installMock();
-    assert.equal(typeof S.activateWorkflow, 'function', 'central document activation is available');
     const value = S.settings(), current = starterGraph('unified-basic');
     S.activateWorkflow(current);
-    assert.equal(S.activeWorkflow(), current);
-    assert.equal(value.enabled, false);
+    assert.equal(S.activeWorkflow(), current);assert.equal(value.enabled, false);
     assert.equal(sendWorkflowState().automatic, true);
     value.enabled = true;
-    S.activateWorkflow(starterGraph('literal-cleanup'));
-    assert.equal(sendWorkflowState().automatic, false, 'legacy post documents are manual');
-    assert.equal(value.enabled, true, 'replacement cannot change the Arm preference');
-    S.activateWorkflow(starterGraph('structured-guidance'));
-    assert.equal(sendWorkflowState().automatic, true, 'legacy pre guidance still follows Send');
+    const next = starterGraph('unified-basic');next.name = 'Next unified document';
+    S.activateWorkflow(next);
+    assert.equal(sendWorkflowState().automatic, true);assert.equal(value.enabled, true);
+    assert.equal(S.activateWorkflow({ id: next.id, schema: 3, runtime: 2, mode: 'native-post', nodes: {}, wires: {} }).ok, false);
+    assert.equal(S.activeWorkflow(), next);assert.equal(value.enabled, true);
 });
 
 test('reopening the same graph identity resets history and invalidates activation captures', () => {
     installMock();
     assert.equal(typeof S.activateWorkflow, 'function', 'central document activation is available');
-    const first = starterGraph('structured-guidance');
+    const first = starterGraph('unified-basic');
     S.activateWorkflow(first);
     const token = S.documentSession.capture();
     first.name = 'Edited first file'; H.noteChange(first); H.flush(first);
     assert.ok(H.peek(first).undo);
-    const second = starterGraph('structured-guidance'); second.id = first.id;
+    const second = starterGraph('unified-basic'); second.id = first.id;
     S.activateWorkflow(second, { clean: true });
     assert.equal(S.documentSession.stillCurrent(token), false);
     assert.deepEqual(H.peek(second), { undo: null, redo: null });
@@ -40,7 +38,7 @@ test('reopening the same graph identity resets history and invalidates activatio
 });
 
 test('legacy recovery admits each document independently and preserves originals and views', () => {
-    const graph = starterGraph('structured-guidance'), malformed = { id: 'broken', schema: 1, nodes: {}, wires: {} };
+    const graph = starterGraph('unified-basic'), malformed = { id: 'broken', schema: 1, nodes: {}, wires: {} };
     const views = { version: 1, workflowId: graph.id, activeKey: JSON.stringify(['root', graph.id]), views: [{ identity: { kind: 'root', workflowId: graph.id }, open: true, camera: { x: 19, y: 12, zoom: 1.5 }, selection: { primary: null, multi: [] }, inspector: { item: null, section: '', open: true }, nodePresentation: {} }] };
     const c = installMock({ settings: { graphs: { [graph.id]: graph, broken: malformed }, activeGraphId: graph.id, workspaceViews: { [graph.id]: views }, enabled: true, ui: { remember: 'preference' } } });
     assert.equal(typeof S.recoveredWorkflows, 'function', 'migration recovery is independently enumerable');
@@ -61,7 +59,7 @@ test('legacy recovery admits each document independently and preserves originals
 test('a single recovery draft stores authored work without its native file handle or runtime result', () => {
     installMock();
     assert.equal(typeof S.activateWorkflow, 'function', 'central document activation is available');
-    const graph = starterGraph('structured-guidance'), handle = { name: 'private.json', createWritable() {} };
+    const graph = starterGraph('unified-basic'), handle = { name: 'private.json', createWritable() {} };
     S.activateWorkflow(graph, { source: { name: 'private.json', handle }, clean: true });
     graph.recording = { secret: 'runtime-only' }; graph.name = 'Authored change'; S.touchGraph(graph);
     const recovery = S.settings().recoveryDraft;
@@ -84,7 +82,7 @@ test('malformed legacy graph accessors remain recoverable without evaluating the
 
 test('an unreadable legacy table entry does not hide independently valid documents or views', () => {
     let reads = 0;
-    const graph = starterGraph('structured-guidance'), graphs = { [graph.id]: graph };
+    const graph = starterGraph('unified-basic'), graphs = { [graph.id]: graph };
     Object.defineProperty(graphs, 'blocked', { enumerable: true, get() { reads++; throw new Error('never read'); } });
     const views = { [graph.id]: { version: 999, workflowId: graph.id, views: [] } };
     installMock({ settings: { graphs, activeGraphId: graph.id, workspaceViews: views } });
@@ -101,7 +99,7 @@ test('an unreadable legacy table entry does not hide independently valid documen
 test('public state imports share one exact active document and lifecycle across versioned module URLs', async () => {
     installMock();
     const publicState = await import('../src/state.js'), publicHistory = await import('../src/history.js');
-    const root = starterGraph('structured-guidance'); S.activateWorkflow(root);
+    const root = starterGraph('unified-basic'); S.activateWorkflow(root);
     assert.equal(publicState.activeWorkflow(), root);
     const token = S.documentSession.capture(); let observed, touched;
     const unsubscribe = S.onWorkflowActivated(event => { observed = event.graph; });
@@ -110,7 +108,7 @@ test('public state imports share one exact active document and lifecycle across 
         publicState.touchGraph(root); assert.equal(touched, root, 'public touch reaches versioned subscribers');
         root.name = 'First version'; publicHistory.noteChange(root); publicHistory.flush(root);
         assert.ok(publicHistory.peek(root).undo);
-        const replacement = starterGraph('structured-guidance'); replacement.id = root.id;
+        const replacement = starterGraph('unified-basic'); replacement.id = root.id;
         publicState.activateWorkflow(replacement);
         assert.equal(S.activeWorkflow(), replacement); assert.equal(observed, replacement);
         assert.equal(S.documentSession.stillCurrent(token), false);
@@ -119,7 +117,7 @@ test('public state imports share one exact active document and lifecycle across 
 });
 
 test('a corrupted recovery draft view preserves its graph and original view data without blocking document commands', () => {
-    const graph = starterGraph('structured-guidance'), workspaceViews = { version: 1, workflowId: graph.id, views: 'corrupt' };
+    const graph = starterGraph('unified-basic'), workspaceViews = { version: 1, workflowId: graph.id, views: 'corrupt' };
     installMock({ settings: { recoveryDraft: { graph, workspaceViews } } });
     S.settings();
     assert.doesNotThrow(() => S.documentSession.snapshot());
@@ -145,7 +143,7 @@ test('legacy presentations remain recoverable when their graph entry is absent o
 
 test('reactivating the same document object revokes presentation receipts from its previous history', () => {
     installMock();
-    const graph = starterGraph('structured-guidance'); S.activateWorkflow(graph);
+    const graph = starterGraph('unified-basic'); S.activateWorkflow(graph);
     const snapshot = () => JSON.stringify(Object.fromEntries(H.GRAPH_DOCUMENT_FIELDS.filter(key => Object.hasOwn(graph, key)).map(key => [key, graph[key]])));
     const receipt = H.capturePresentationStep(graph), beforeState = snapshot();
     S.activateWorkflow(graph);

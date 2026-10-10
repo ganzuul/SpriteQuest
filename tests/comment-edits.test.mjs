@@ -8,7 +8,7 @@ import { captureGraphEditContext, commitPreparedGraph } from '../src/workflow/tr
 import * as comments from '../src/workflow/comment-edits.js';
 
 const frame = () => ({ id: 'frame', type: 'note', commentFrame: true, moveContents: true, title: 'Comment', content: 'Line one\nLine two', color: '#637d89', x: 0, y: 0, w: 500, h: 400 });
-const root = () => ({ id: 'comment-edit-root', schema: 3, runtime: 2, mode: 'native-pre', nodes: {
+const root = () => ({ id: 'comment-edit-root', schema: 3, runtime: 2, mode: 'native-unified', nodes: {
     source: { id: 'source', type: 'workflow', operation: 'scene-context', x: 20, y: 80 },
     work: { id: 'work', type: 'workflow', operation: 'smart-compactor', x: 300, y: 80 },
 }, wires: { edge: { id: 'edge', route: 'wire', from: 'source', fromPort: 'out', to: 'work', toPort: 'in' } }, groups: {}, portals: {}, roles: {}, definitions: {} });

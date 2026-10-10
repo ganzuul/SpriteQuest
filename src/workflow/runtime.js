@@ -1,31 +1,31 @@
-import { preserveArtifactPrivacy } from './artifact-privacy.js?v=0.26.0';
-import { compileIterationHelper, executeCompiledIteration } from './iteration-helpers.js?v=0.26.0';
-import { LIFECYCLE_OPERATIONS, executeLifecycleNode } from './operations/lifecycle-nodes.js?v=0.26.0';
-import { FILE_OPERATIONS, executeFileNode } from './operations/file-nodes.js?v=0.26.0';
-import { TIME_OPERATIONS, executeTimeNode } from './operations/time-nodes.js?v=0.26.0';
-import { EVENT_OPERATIONS, executeEvent } from './operations/event-nodes.js?v=0.26.0';
-import { RANDOM_OPERATIONS, executeRandom } from './operations/random-outcomes.js?v=0.26.0';
-import { COLLECTION_OPERATIONS, executeCollection } from './operations/collection-nodes.js?v=0.26.0';
-import { applyTextModifiers } from './modifiers.js?v=0.26.0';
-import { operationFor } from './catalog.js?v=0.26.0';
-import { cloneWorkflowDocument } from './document.js?v=0.26.0';
-import { resolveWorkflow } from './resolve.js?v=0.26.0';
-import { compactContext, formatContext } from './compactor.js?v=0.26.0';
-import { scanDraft, repairDraft, validatePatches } from './repair.js?v=0.26.0';
-import { graphSemanticSignature } from './ports.js?v=0.26.0';
-import { executePrimitive, PRIMITIVE_OPERATIONS } from './operations/nodes.js?v=0.26.0';
-import { executeInput, INPUT_OPERATIONS } from './operations/input-nodes.js?v=0.26.0';
-import { executeContextJoin } from './operations/context-join.js?v=0.26.0';
-import { executeControl, CONTROL_OPERATIONS } from './operations/control-nodes.js?v=0.26.0';
-import { executeDecision, DECISION_OPERATIONS } from './operations/decision-nodes.js?v=0.26.0';
-import { executeModelNode, MODEL_OPERATIONS } from './operations/model-nodes.js?v=0.26.0';
-import { prepareFastDecisionRequest, validateFastDecisionResponse } from './decision.js?v=0.26.0';
-import { executeTranspose, TRANSPOSE_OPERATIONS } from './operations/transpose-nodes.js?v=0.26.0';
-import { cleanupDraft, CLEANUP_MODES } from './operations/prose-cleanup.js?v=0.26.0';
-import { executeIntrospection } from './introspection/nodes.js?v=0.26.0';
-import { INTROSPECTION_NATIVE_OPERATIONS, projectIntrospectionNode } from './introspection/native.js?v=0.26.0';
-import { admitRunPlan, createRunRecorder } from './recording.js?v=0.26.0';
-import { addressKey, freeze, own, plain, parseRunPlan, safeBinding, safeError, safeIteration, safeUsage, boundedText } from './record-data.js?v=0.26.0';
+import { preserveArtifactPrivacy } from './artifact-privacy.js?v=0.27.0';
+import { compileIterationHelper, executeCompiledIteration } from './iteration-helpers.js?v=0.27.0';
+import { LIFECYCLE_OPERATIONS, executeLifecycleNode } from './operations/lifecycle-nodes.js?v=0.27.0';
+import { FILE_OPERATIONS, executeFileNode } from './operations/file-nodes.js?v=0.27.0';
+import { TIME_OPERATIONS, executeTimeNode } from './operations/time-nodes.js?v=0.27.0';
+import { EVENT_OPERATIONS, executeEvent } from './operations/event-nodes.js?v=0.27.0';
+import { RANDOM_OPERATIONS, executeRandom } from './operations/random-outcomes.js?v=0.27.0';
+import { COLLECTION_OPERATIONS, executeCollection } from './operations/collection-nodes.js?v=0.27.0';
+import { applyTextModifiers } from './modifiers.js?v=0.27.0';
+import { operationFor } from './catalog.js?v=0.27.0';
+import { cloneWorkflowDocument } from './document.js?v=0.27.0';
+import { resolveWorkflow } from './resolve.js?v=0.27.0';
+import { compactContext, formatContext } from './compactor.js?v=0.27.0';
+import { scanDraft, repairDraft, validatePatches } from './repair.js?v=0.27.0';
+import { graphSemanticSignature } from './ports.js?v=0.27.0';
+import { executePrimitive, PRIMITIVE_OPERATIONS } from './operations/nodes.js?v=0.27.0';
+import { executeInput, INPUT_OPERATIONS } from './operations/input-nodes.js?v=0.27.0';
+import { executeContextJoin } from './operations/context-join.js?v=0.27.0';
+import { executeControl, CONTROL_OPERATIONS } from './operations/control-nodes.js?v=0.27.0';
+import { executeDecision, DECISION_OPERATIONS } from './operations/decision-nodes.js?v=0.27.0';
+import { executeModelNode, MODEL_OPERATIONS } from './operations/model-nodes.js?v=0.27.0';
+import { prepareFastDecisionRequest, validateFastDecisionResponse } from './decision.js?v=0.27.0';
+import { executeTranspose, TRANSPOSE_OPERATIONS } from './operations/transpose-nodes.js?v=0.27.0';
+import { cleanupDraft, CLEANUP_MODES } from './operations/prose-cleanup.js?v=0.27.0';
+import { executeIntrospection } from './introspection/nodes.js?v=0.27.0';
+import { INTROSPECTION_NATIVE_OPERATIONS, projectIntrospectionNode } from './introspection/native.js?v=0.27.0';
+import { admitRunPlan, createRunRecorder } from './recording.js?v=0.27.0';
+import { addressKey, freeze, own, plain, parseRunPlan, safeBinding, safeError, safeIteration, safeUsage, boundedText } from './record-data.js?v=0.27.0';
 
 /** Execution identity shared by the host and UI. Canvas presentation never invalidates work. */
 export const workflowSignature = graphSemanticSignature;
@@ -40,6 +40,7 @@ const observe = (observer,...args) => { try { const pending=observer?.(...args);
 
 function planWorkflow(graph,ports) {
     const normalized=cloneWorkflowDocument(graph);if(!normalized.ok)return normalized;
+    if(normalized.data.mode!=='native-unified')return failure('WRONG_PHASE','Only unified workflow roots can execute.');
     if(ports.phase && normalized.data.mode!=='native-'+ports.phase)return failure('WRONG_PHASE','The workflow operation does not support this phase.');
     const resolved=resolveWorkflow(normalized.data,ports.target===undefined?{}:{target:ports.target});return resolved.ok?{...resolved,graph:normalized.data}:resolved;
 }
@@ -182,15 +183,6 @@ async function executeWorkflow(original,ports,hooks={}) {
             emit(duringExecution?'node-binding':'node-phase',{address:unit.address,...(duringExecution?{}:{phase:'binding'}),binding:summarizeBinding(binding,node,op)});
             return resolved;
         };
-        // Unconditional legacy plans retain fixed-model preflight before any source
-        // effects. Controls and owned host outputs can deactivate nodes, so those
-        // plans (and unified plans) bind only after actual input activation.
-        const legacyPreflight=['native-pre','native-post'].includes(prepared.graph.mode)&&!hooks.executeHostOperation&&nodes.every(unit=>!Object.hasOwn(CONTROL_OPERATIONS,unit.node.operation)&&!operationFor(unit.node,{phase:unit.phase,mode:prepared.graph.mode}).hostOperation);
-        if(legacyPreflight)for(const unit of nodes){
-            const op=operationFor(unit.node,{phase:unit.phase,mode:prepared.graph.mode});
-            if(stopped())return finish(failure('ABORTED','Workflow was stopped.',unit.node.id));
-            if(unit.requestBound&&op.modelRole&&!(op.requestCapability==='typed-decision'&&op.fallbackModelRole)){const bound=await bindUnit(unit,op);if(!bound.ok)return finish(bound);}
-        }
         const nativeBoundary=mode==='root'&&prepared.graph.mode==='native-unified'?nodes.find(unit=>operationFor(unit.node,{phase:unit.phase,mode:prepared.graph.mode}).nativeBoundary):undefined;
         const getRequestBindings=()=>Object.freeze([...requestBindings.values()].map(entry=>Object.freeze({...entry,address:freezeArtifact(structuredClone(entry.address))})));
         let unresolved=false;
@@ -212,7 +204,7 @@ async function executeWorkflow(original,ports,hooks={}) {
                 for(const port of unit.outputPorts){outputStates.set(artifactKey({...unit.address,portId:port.id}),state);recorder.capture({address:unit.address,direction:'output',portId:port.id,state});}
                 unitStates.set(key,state);emit('node-settled',{address:unit.address,status,reason:state.reason});continue;
             }
-            const lazyBinding=(!legacyPreflight||op.requestCapability==='typed-decision'&&!!op.fallbackModelRole)&&(Object.hasOwn(MODEL_OPERATIONS,node.operation)||Object.hasOwn(DECISION_OPERATIONS,node.operation)||Object.hasOwn(EVENT_OPERATIONS,node.operation)||Object.hasOwn(RANDOM_OPERATIONS,node.operation));
+            const lazyBinding=(Object.hasOwn(MODEL_OPERATIONS,node.operation)||Object.hasOwn(DECISION_OPERATIONS,node.operation)||Object.hasOwn(EVENT_OPERATIONS,node.operation)||Object.hasOwn(RANDOM_OPERATIONS,node.operation));
             if(unit.requestBound&&op.modelRole&&!bindings.has(key)&&!lazyBinding){const bound=await bindUnit(unit,op);if(!bound.ok)return finish(bound);binding=bound.data;}
             emit('node-phase',{address:unit.address,phase:'executing'});observe(ports.onStage,freezeArtifact(structuredClone(node)),unit.address);
             const authorizeInputs=async(selectedNode,selectedInputs,address,capability)=>{

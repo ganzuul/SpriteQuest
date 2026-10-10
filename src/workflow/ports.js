@@ -1,8 +1,8 @@
-import { safeWorkflowData, validateGraphStructure } from './contracts.js?v=0.26.0';
-import { cloneWorkflowDocument } from './document.js?v=0.26.0';
-import { operationFor, describeOperation, semanticControlsForNode, phaseForNode } from './catalog.js?v=0.26.0';
-import { INTROSPECTION_NATIVE_OPERATIONS, introspectionDefaults } from './introspection/native.js?v=0.26.0';
-export { portsForNode } from './catalog.js?v=0.26.0';
+import { safeWorkflowData, validateGraphStructure } from './contracts.js?v=0.27.0';
+import { cloneWorkflowDocument } from './document.js?v=0.27.0';
+import { operationFor, describeOperation, semanticControlsForNode, phaseForNode } from './catalog.js?v=0.27.0';
+import { INTROSPECTION_NATIVE_OPERATIONS, introspectionDefaults } from './introspection/native.js?v=0.27.0';
+export { portsForNode } from './catalog.js?v=0.27.0';
 
 const fail = (code, message) => ({ ok: false, error: { code, message } });
 const endpoint = value => value && typeof value === 'object' && !Array.isArray(value) && typeof value.nodeId === 'string' && typeof value.portId === 'string';

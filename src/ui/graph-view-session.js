@@ -1,4 +1,4 @@
-import { createViewState, viewIdentityKey } from './view-state.js?v=0.26.0';
+import { createViewState, viewIdentityKey } from './view-state.js?v=0.27.0';
 
 const fail = (code, message) => ({ ok: false, error: { code, message } });
 const freeze = value => {

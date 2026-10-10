@@ -5,6 +5,7 @@ import { computeDefinitionIdentity, definitionRefKey, nodeBindingOverrideKey } f
 import { resolveWorkflow } from '../src/workflow/resolve.js';
 import { exportWorkflow, parseWorkflow } from '../src/workflow/packages.js';
 import { runWorkflow } from '../src/workflow/runtime.js';
+import {withNativeBoundary} from './helpers/workflow-fixtures.mjs';
 
 const role = { profileId: 'role-profile', model: 'role-model' };
 const profiles = Object.fromEntries(['role', 'node', 'inner', 'outer'].map(name => [`${name}-profile`, {
@@ -41,7 +42,7 @@ function definition(id, work, roles = { Analysis: role }) {
 }
 
 function root(branches, definitions = {}) {
-    const graph = { id: 'root', schema: 3, runtime: 2, mode: 'native-pre', roles: { Analysis: role },
+    const graph = { id: 'root', schema: 3, runtime: 2, mode: 'native-unified', roles: { Analysis: role },
         nodes: { source: { id: 'source', type: 'workflow', operation: 'scene-context' } }, wires: {}, definitions };
     for (const branch of branches) {
         const outputId = `${branch.id}-output`;
@@ -50,7 +51,9 @@ function root(branches, definitions = {}) {
         graph.wires[`${branch.id}-input`] = wire(`${branch.id}-input`, 'source', 'out', branch.id, branch.type === 'subgraph' ? 'input' : 'in');
         graph.wires[outputId] = wire(outputId, branch.id, branch.type === 'subgraph' ? 'output' : 'out', outputId, 'in');
     }
-    return graph;
+    graph.nodes.joined={id:'joined',type:'workflow',operation:'join',artifactKind:'guidance',inputs:branches.map(branch=>({id:branch.id,label:branch.id,required:true}))};
+    for(const branch of branches)graph.wires['joined-'+branch.id]=wire('joined-'+branch.id,branch.id+'-output','out','joined',branch.id);
+    return withNativeBoundary(graph,'joined');
 }
 
 function nested(innerBinding = {}, outerBinding = undefined) {
@@ -67,6 +70,7 @@ function nested(innerBinding = {}, outerBinding = undefined) {
 async function execute(graph) {
     const before = structuredClone(graph), addresses = new WeakMap(), requests = [];
     const result = await runWorkflow(graph, {
+        target:{workflowId:graph.id,instancePath:[],nodeId:'joined',portId:'out'},
         snapshot: () => ({ kind: 'context', messages: [{ id: 'scene', role: 'user', text: 'What happens next?', source: 'chat' }] }),
         countTokens: async text => ({ tokens: Math.ceil(text.length / 4), method: 'fixture' }),
         resolveBinding: (node, bindingGraph, address) => {

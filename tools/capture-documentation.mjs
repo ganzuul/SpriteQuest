@@ -48,6 +48,7 @@ try {
             evidence.blockedRequests.push(request.method() + ' ' + url.href);
             return route.abort();
         }
+        if (url.pathname === '/scripts/user.js') return route.fulfill({contentType:'text/javascript',body:"export const getCurrentUserHandle=()=> 'default-user';"});
         if (url.pathname === '/script.js') return route.fulfill({ contentType: 'text/javascript', body: `
             const context = () => globalThis.SillyTavern.getContext();
             export const isGenerating = () => false;
@@ -66,16 +67,18 @@ try {
         await page.waitForFunction(() => !!window.canvasHarness);
         const id = await page.evaluate(async kind => {
             const h = window.canvasHarness, v = h.version;
-            const { starterGraph } = await import('/src/workflow/starters.js?v=' + v);
+            const { fixtureGraph } = await import('/tests/helpers/workflow-fixtures.mjs');
             const { validateGraphStructure } = await import('/src/workflow/contracts.js?v=' + v);
-            const graph = starterGraph(kind === 'subgraph' ? 'literal-cleanup' : kind === 'branching' ? 'native-guidance' : kind);
+            const graph = fixtureGraph(kind === 'subgraph' ? 'literal-cleanup' : kind === 'branching' ? 'native-guidance' : kind);
+            // Diagnostic authoring fixtures need no native continuation. Owned review below uses the full starter.
+            if(kind!=='unified-basic'){for(const id of ['on-send','generate-reply','review-publish'])delete graph.nodes[id];for(const [id,wire]of Object.entries(graph.wires))if(!graph.nodes[wire.from]||!graph.nodes[wire.to])delete graph.wires[id];}
             // Layout and writing material are fixture data; UI and execution are unchanged.
             const ids = kind === 'subgraph' || kind === 'literal-cleanup'
                 ? ['reply-snapshot', 'text-rules', 'validate-patches', 'review-gate', 'apply-reply']
                 : ['compose-json', 'json-decode', 'select-fields', 'compose-guidance', 'guidance'];
             if (kind === 'native-guidance' || kind === 'branching') {
-                for (const [i, node] of Object.values(graph.nodes).entries()) Object.assign(node, { x: 180 + i * 300, y: 160 });
-            } else for (const [i, nodeId] of ids.entries()) Object.assign(graph.nodes[nodeId], { x: 180 + i * 250, y: 160 });
+                for (const [i, node] of Object.values(graph.nodes).entries()) Object.assign(node, { x: 180 + i * (kind==='unified-basic'?420:300), y: 160 });
+            } else for (const [i, nodeId] of (kind==='unified-basic'?Object.keys(graph.nodes):ids).entries()) Object.assign(graph.nodes[nodeId], { x: 180 + i * 300, y: 160 });
             if (kind === 'structured-guidance') {
                 graph.nodes['compose-json'].sections = [{ name: 'Scene', text: JSON.stringify({ direction: 'A tense reunion at the harbor.', constraint: 'Leave the decision to board the ship to the user.', tone: 'Restrained, with concrete sensory detail.' }, null, 2) }];
                 graph.nodes['select-fields'].fields.push({ name: 'tone', path: ['tone'] });
@@ -100,28 +103,26 @@ try {
                 const { operationDefaults } = await import('/src/workflow/catalog.js?v=' + v);
                 graph.id = 'context-assembly'; graph.name = 'Context assembly'; graph.schema = 3; graph.runtime = 2; graph.portals = {}; graph.definitions = {};
                 graph.nodes['smart-compactor'].method = 'select';
-                graph.nodes['recent-context'] = { ...operationDefaults('scene-context'), id: 'recent-context', type: 'workflow', operationVersion: 1, enabled: true, x: 180, y: 380, recentMessages: 2, includeCharacter: false };
-                graph.nodes['context-join'] = { ...operationDefaults('context-join'), id: 'context-join', type: 'workflow', operationVersion: 1, enabled: true, x: 680, y: 260 };
+                graph.nodes['recent-context'] = { ...operationDefaults('scene-context'), id: 'recent-context', type: 'workflow', operationVersion: 1, phase:'pre', enabled: true, x: 180, y: 380, recentMessages: 2, includeCharacter: false };
+                graph.nodes['context-join'] = { ...operationDefaults('context-join'), id: 'context-join', type: 'workflow', operationVersion: 1, phase:'pre', enabled: true, x: 680, y: 260 };
                 Object.assign(graph.nodes['scene-context'], { x: 180, y: 140 });
                 Object.assign(graph.nodes['smart-compactor'], { x: 430, y: 140 });
                 Object.assign(graph.nodes['response-plan'], { x: 930, y: 260 });
                 Object.assign(graph.nodes.guidance, { x: 1180, y: 260 });
-                graph.wires = Object.fromEntries([
+                graph.wires = { ...Object.fromEntries(Object.entries(graph.wires).filter(([id])=>['activation','draft','native-guidance'].includes(id))), ...Object.fromEntries([
                     ['context', 'scene-context', 'out', 'smart-compactor', 'in'],
                     ['selected', 'smart-compactor', 'out', 'context-join', 'context-1'],
                     ['recent', 'recent-context', 'out', 'context-join', 'context-2'],
                     ['plan', 'context-join', 'out', 'response-plan', 'in'],
                     ['publish', 'response-plan', 'out', 'guidance', 'in'],
-                ].map(([id, from, fromPort, to, toPort]) => [id, { id, route: 'wire', from, fromPort, to, toPort }]));
+                ].map(([id, from, fromPort, to, toPort]) => [id, { id, route: 'wire', from, fromPort, to, toPort }])) };
             }
             const checked = validateGraphStructure(graph);
             if (!checked.ok) throw new Error(JSON.stringify(checked.error));
-            h.S.settings().graphs[graph.id] = graph;
-            h.S.save(); h.UI.refreshIfOpen();
+            await h.activate(graph);
             if (!['native-guidance', 'branching'].includes(kind)) await (await import('/src/run.js?v=' + v)).initializeNativeWorkflowController();
             return graph.id;
         }, kind);
-        await page.getByRole('combobox', { name: 'Workflow', exact: true }).selectOption(id);
         await page.evaluate(async () => { await window.canvasHarness.settle(); window.canvasHarness.canvas.fit(); await window.canvasHarness.settle(); await document.fonts.ready; });
         if (await page.getByRole('button', { name: 'Toggle inspector' }).getAttribute('aria-pressed') !== 'true') await page.getByRole('button', { name: 'Toggle inspector' }).click();
         await page.evaluate(() => window.canvasHarness.settle());
@@ -208,8 +209,9 @@ try {
         const group = page.locator('.pc-node-details ' + selector);
         if (!await group.evaluate(element => element.open)) await group.locator(':scope > summary').click();
     }
-    async function run() {
-        await page.locator('.pc-root-run').click();
+    async function run(nodeId) {
+        await select(nodeId);
+        await page.locator('[data-run-here]').click();
         await page.locator('.pc-run-meter-label').filter({ hasText: 'Completed' }).waitFor();
         const result = await page.evaluate(async () => {
             const h = window.canvasHarness, value = (await import('/src/run.js?v=' + h.version)).getNativeWorkflowController().lastResult();
@@ -219,7 +221,7 @@ try {
         evidence.runs.push(result);
     }
     await activate('structured-guidance');
-    await run();
+    await run('compose-guidance');
     await select('compose-guidance');
     await shot('workspace-overview');
     await operationControls();
@@ -241,25 +243,37 @@ try {
     await page.getByRole('menuitem', { name: 'Add node…', exact: true }).click();
     await shot('node-search');
     await page.keyboard.press('Escape');
-    if (await page.evaluate(() => window.canvasHarness.S.activeWorkflow().id) !== 'structured-guidance') throw new Error('Opening did not activate the current pre workflow document.');
     await activate('literal-cleanup');
-    await run();
+    await run('validate-patches');
     await select('text-rules');
     await page.getByLabel('Rule 1 pattern', { exact: true }).waitFor({ state: 'visible' });
     await operationControls();
     await shot('text-rules-details', '.pc-inspector');
     await shot('text-rules-graph');
-    const terminal = page.getByRole('combobox', { name: 'Preview output', exact: true });
-    const terminalValue = await terminal.locator('option').evaluateAll(options => options.find(option => option.textContent.startsWith('Apply Reply · Host result'))?.value);
-    if (!terminalValue) throw new Error('Apply Reply terminal missing from actual preview choices.');
-    await terminal.selectOption(terminalValue);
-    await shot('review-candidate');
-    if (!await page.locator('[data-preview-apply]').isEnabled()) throw new Error('Real review action is unavailable.');
-    await page.locator('.pc-run-meter').click();
-    await shot('run-details', '.pc-workspace-dialog');
-    await page.getByRole('button', { name: 'Close panel', exact: true }).click();
+    await activate('unified-basic');
+    await page.getByRole('checkbox',{name:'Enable Lattice',exact:true}).check();
+    await page.evaluate(async()=>{
+        const h=window.canvasHarness,c=h.context;
+        Object.assign(c,{chatId:'documentation-unified',characterId:0,groupId:null,characters:[{avatar:'mara.png',data:{name:'Mara'}}],saveChat:async()=>{},updateMessageBlock:async()=>{},swipe:{refresh:async()=>{}}});
+        c.chat.splice(0,c.chat.length,{mes:'Describe the harbor reunion.',is_user:true,extra:{}});
+        const controller=(await import('/src/run.js?v='+h.version)).getNativeWorkflowController();
+        await c.eventSource.emit(c.eventTypes.GENERATION_STARTED,'normal',{},false);
+        const ready=await controller.beforeGenerate(c.chat,8192,()=>{},'normal');if(!ready.ok||!ready.awaitingNative)throw Error(JSON.stringify(ready));
+        const text='Mara watched the departing ship, keeping her decision to herself.',now=new Date().toISOString(),index=c.chat.length;
+        c.chat.push({mes:text,is_user:false,swipe_id:0,swipes:[text],swipe_info:[{extra:{},gen_started:now,gen_finished:now}],extra:{},gen_started:now,gen_finished:now});
+        await c.eventSource.emit(c.eventTypes.MESSAGE_RECEIVED,index,'normal');await c.eventSource.emit(c.eventTypes.GENERATION_ENDED,c.chat.length);
+    });
+    await page.locator('.pc-run-meter-label').filter({hasText:'Completed'}).waitFor();
+    await select('review-publish');
+    const terminal=page.getByRole('combobox',{name:'Preview output',exact:true});
+    const terminalValue=await terminal.locator('option').evaluateAll(options=>options.find(option=>option.textContent.startsWith('Review / Publish · Host result'))?.value);
+    if(!terminalValue)throw Error('Review / Publish result missing from actual preview choices.');
+    await terminal.selectOption(terminalValue);await shot('review-candidate');
+    if(!await page.locator('[data-preview-apply]').isEnabled())throw Error('Owned native review action is unavailable.');
+    await page.locator('.pc-run-meter').click();await shot('run-details','.pc-workspace-dialog');
+    await page.getByRole('button',{name:'Close panel',exact:true}).click();
     await activate('subgraph');
-    await run();
+    await run('validate-patches');
     await select('text-rules');
     await shot('subgraph-instance');
     await subgraphCommand('text-rules', 'Add to Subgraphs');

@@ -1,5 +1,5 @@
-import { cloneJsonValue } from './operations/json-data.js?v=0.26.0';
-import { prepareFastDecisionRequest, validateFastDecisionResponse } from './decision.js?v=0.26.0';
+import { cloneJsonValue } from './operations/json-data.js?v=0.27.0';
+import { prepareFastDecisionRequest, validateFastDecisionResponse } from './decision.js?v=0.27.0';
 const fail = (code,message) => ({ ok: false, error: { code,message } });
 const captured = new WeakMap();
 /** The trusted host increments this synchronous epoch for every config/secret mutation. */

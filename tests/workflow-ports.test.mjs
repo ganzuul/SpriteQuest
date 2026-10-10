@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import * as contracts from '../src/workflow/contracts.js';
 import * as catalog from '../src/workflow/catalog.js';
 
-const fixture = () => ({ id: 'root', schema: 3, runtime: 2, mode: 'native-pre', nodes: {
+const fixture = () => ({ id: 'root', schema: 3, runtime: 2, mode: 'native-unified', nodes: {
     source: { id: 'source', type: 'workflow', operation: 'scene-context' },
     compact: { id: 'compact', type: 'workflow', operation: 'smart-compactor' },
     other: { id: 'other', type: 'workflow', operation: 'smart-compactor', enabled: false },
@@ -20,7 +20,7 @@ assert.equal(contracts.isWorkflowGraph({ get schema() { getterCalls++; return 3;
 assert.equal(getterCalls, 0);
 assert.equal(typeof catalog.portsForNode, 'function');
 assert.deepEqual(catalog.portsForNode(fixture(), fixture().nodes.source).map(p => [p.id, p.direction, p.kind]), [['out', 'output', 'context']]);
-assert.deepEqual(catalog.portsForNode(fixture(), { type: 'workflow', operation: 'guidance' }).map(p => p.id), ['in']);
+assert.deepEqual(catalog.portsForNode(fixture(), { type: 'workflow', operation: 'guidance' }).map(p => p.id), ['in', 'out']);
 const { cloneWorkflowDocument } = await import('../src/workflow/document.js');
 const original = fixture(), before = structuredClone(original);
 const normalized = cloneWorkflowDocument(original);
@@ -53,7 +53,7 @@ assert.equal(contracts.validateGraphStructure(rerouted).ok, true);
 assert.equal(catalog.operationFor(rerouted.nodes.r).requestBound, 0);
 assert.deepEqual(catalog.portsForNode(rerouted, rerouted.nodes.r).map(p => p.kind), ['context', 'context']);
 rerouted.nodes.r.phase = 'post';
-assert.equal(contracts.validateGraphStructure(rerouted).error.code, 'WRONG_PHASE');
+assert.equal(contracts.validateGraphStructure(rerouted).error.code, 'INVALID_STAGE_DEPENDENCY');
 rerouted.nodes.r.phase = 'pre';
 rerouted.nodes.r.artifactKind = 'imaginary';
 assert.equal(contracts.validateGraphStructure(rerouted).ok, false);

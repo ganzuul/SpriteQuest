@@ -1,9 +1,9 @@
 /** Validated reusable Lattice subgraphs; persistence never edits placed snapshots. */
-import { settings, save } from './state.js?v=0.26.0';
-import { cloneDefinitionData, computeDefinitionIdentity, definitionRefKey } from './workflow/definitions.js?v=0.26.0';
-import { selectSubgraphClosure } from './workflow/packages.js?v=0.26.0';
-import { validateGraphStructure } from './workflow/contracts.js?v=0.26.0';
-import { installDefinition, createRevision, removeLibraryEntry } from './workflow/definition-library.js?v=0.26.0';
+import { settings, save } from './state.js?v=0.27.0';
+import { cloneDefinitionData, computeDefinitionIdentity, definitionRefKey } from './workflow/definitions.js?v=0.27.0';
+import { selectSubgraphClosure } from './workflow/packages.js?v=0.27.0';
+import { validateGraphStructure } from './workflow/contracts.js?v=0.27.0';
+import { installDefinition, createRevision, removeLibraryEntry } from './workflow/definition-library.js?v=0.27.0';
 const subgraphCaches = new WeakMap();
 const libraryFailure = (code, message) => Object.freeze({ ok: false, error: Object.freeze({ code, message }) });
 const record = value => value && typeof value === 'object' && !Array.isArray(value);
@@ -28,7 +28,7 @@ export function loadSubgraphLibrary() {
         const library = copied.data;
         if (!record(library) || Object.keys(library).some(key => !['definitions', 'entries'].includes(key)) || !record(library.definitions) || library.entries !== undefined && !record(library.entries)) result = libraryFailure('DEFINITION_DATA', 'Expected saved definitions and optional shelf entries.');
         else {
-            const checked = validateGraphStructure({ schema: 3, runtime: 2, mode: 'native-pre', nodes: {}, wires: {}, definitions: library.definitions });
+            const checked = validateGraphStructure({ schema: 3, runtime: 2, mode: 'native-unified', nodes: {}, wires: {}, definitions: library.definitions });
             result = checked.ok ? Object.freeze({ ok: true, data: library }) : libraryFailure(checked.error.code, checked.error.message);
             if (result.ok && library.entries !== undefined && Object.entries(library.entries).some(([id, ref]) => !safeId(id) || !record(ref)
                 || Object.keys(ref).length !== 3 || Object.keys(ref).some(key => !['id', 'version', 'semanticHash'].includes(key)) || ref.id !== id

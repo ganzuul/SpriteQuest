@@ -1,4 +1,4 @@
-import {recallActivationLabel,recallUseLabel,recallConsumeLabel,recallTargetLabel} from '../workflow/recall-labels.js?v=0.26.0';
+import {recallActivationLabel,recallUseLabel,recallConsumeLabel,recallTargetLabel} from '../workflow/recall-labels.js?v=0.27.0';
 const intersects=(a,b)=>a==='both'||b==='both'||a===b;
 const policy=node=>JSON.stringify([node.actorId,node.memorySetId,node.target??'both',node.uses??'next-match',node.consumeOn??'accepted']);
 const unique=values=>[...new Set(values)];

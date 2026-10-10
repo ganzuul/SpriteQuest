@@ -2,12 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { installMock } from './mock.js';
-import { starterGraph } from '../src/workflow/starters.js?v=0.26.0';
-import { prepareWorkflowProjection, projectPreparedWorkflow } from '../src/ui/workflow-surface.js?v=0.26.0';
-import { createWorkflowDocumentController } from '../src/ui/document-controller.js?v=0.26.0';
-import { serializeWorkflowDocument } from '../src/workflow/document-file.js?v=0.26.0';
+import { starterGraph } from '../src/workflow/starters.js?v=0.27.0';
+import { prepareWorkflowProjection, projectPreparedWorkflow } from '../src/ui/workflow-surface.js?v=0.27.0';
+import { createWorkflowDocumentController } from '../src/ui/document-controller.js?v=0.27.0';
+import { serializeWorkflowDocument } from '../src/workflow/document-file.js?v=0.27.0';
 installMock();
-const S = await import('../src/state.js?v=0.26.0');
+const S = await import('../src/state.js?v=0.27.0');
 const ok = data => ({ ok: true, data });
 function fixture() {
     const original = S.createGraph('Current graph');
@@ -59,7 +59,7 @@ test('public activation refreshes the cached current workflow preparation', asyn
     const source = await readFile(new URL('../src/ui/controller.js', import.meta.url), 'utf8');
     const start = source.indexOf('function refreshWorkflowPreparation('), end = source.indexOf('\n}', start) + 2;
     assert.ok(start >= 0);
-    const first = starterGraph('native-guidance'), second = starterGraph('unified-basic'); second.name = 'New current workflow';
+    const first = starterGraph('unified-basic'), second = starterGraph('unified-basic'); second.name = 'New current workflow';
     S.activateWorkflow(first, { clean: true });
     const env = { current: first, workspacePrepared: { workflow: prepareWorkflowProjection(first) }, workspaceInputs: () => ({}), prepareWorkflowProjection };
     const refresh = Function('env', 'with(env){' + source.slice(start, end) + ';return refreshWorkflowPreparation;}')(env);

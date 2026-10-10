@@ -1,6 +1,6 @@
-import { ACTIVE_PROFILE_ID } from './model-profiles.js?v=0.26.0';
-import { validateNodeModifiers } from './modifiers.js?v=0.26.0';
-import { ARTIFACT_KINDS, operationFor, portsForNode, semanticControlsForNode, phaseForNode } from './catalog.js?v=0.26.0';
+import { ACTIVE_PROFILE_ID } from './model-profiles.js?v=0.27.0';
+import { validateNodeModifiers } from './modifiers.js?v=0.27.0';
+import { ARTIFACT_KINDS, operationFor, portsForNode, semanticControlsForNode, phaseForNode } from './catalog.js?v=0.27.0';
 
 const fail = (code, message) => ({ ok: false, error: { code, message } });
 const record = value => value !== null && typeof value === 'object' && !Array.isArray(value);

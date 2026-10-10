@@ -8,7 +8,7 @@ async function launch(page, phase = 'pre') {
         const c = window.canvasHarness.context;
         Object.assign(c, { chatId: 'input-browser', characterId: 1, groupId: null });
         c.chat.splice(0, c.chat.length, { mes: 'Continue.', is_user: true }, { mes: 'Reply fixture.', is_user: false, swipe_id: 0, swipes: ['Reply fixture.'], swipe_info: [{ extra: {} }], extra: {} });
-        await window.canvasHarness.activate({ id: 'input-sources-' + phase, name: 'Input sources', schema: 3, runtime: 2, mode: 'native-' + phase, roles: {}, nodes: {}, wires: {}, groups: {}, portals: {}, definitions: {}, view: { x: 0, y: 0, zoom: 1 } });
+        await window.canvasHarness.activate({ id: 'input-sources-' + phase, name: 'Input sources', schema: 3, runtime: 2, mode: 'native-unified', roles: {}, nodes: {}, wires: {}, groups: {}, portals: {}, definitions: {}, view: { x: 0, y: 0, zoom: 1 } });
         await (await import('/src/run.js?v=' + window.canvasHarness.version)).initializeNativeWorkflowController();
     }, phase);
 }
@@ -29,6 +29,8 @@ async function choose(page, operation) {
 for (const phase of ['pre', 'post']) test(`${phase} File Input stores an undoable portable UTF-8 snapshot and replaces it from Details`, async ({ page }) => {
     await launch(page, phase);
     const id = await choose(page, 'file-input');
+    await page.getByLabel('Workflow stage', { exact: true }).selectOption(phase);
+    expect(await page.evaluate(id => window.canvasHarness.graph.nodes[id].phase, id)).toBe(phase);
     await expect(page.getByLabel('Choose file', { exact: true })).toBeVisible();
     await expect(page.getByLabel('Content', { exact: true })).toHaveCount(0);
     await expect(page.getByLabel('File name', { exact: true })).toHaveCount(0);

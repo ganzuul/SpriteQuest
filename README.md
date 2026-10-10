@@ -4,7 +4,7 @@
 
 LATTICE turns a writing process into a system you can build, inspect, and reuse. Connect context sources, model operations, text transformations, structured data, and review steps in a node graph. Package a useful process as a subgraph, edit its body in a graph tab, and compose it into a larger workflow.
 
-It runs inside SillyTavern. A unified workflow prepares guidance, uses it for the ordinary SillyTavern generation, then processes the completed reply in the same graph. Auxiliary models can revise prose, extract scene records or enrich notes. Review the final result before Apply creates a new swipe and accepts its staged consequences. Legacy pre/post tools remain available.
+It runs inside SillyTavern. A unified workflow prepares guidance, uses it for the ordinary SillyTavern generation, then processes the completed reply in the same graph. Auxiliary models can revise prose, extract scene records or enrich notes. Review the final result before Apply creates a new swipe and accepts its staged consequences.
 
 ![LATTICE workspace with a structured writing brief flowing through JSON Decode, Select Fields, Compose, and Guidance](docs/images/workspace-overview.png)
 
@@ -19,7 +19,7 @@ It runs inside SillyTavern. A unified workflow prepares guidance, uses it for th
 - **Actor memory and state:** reflect on supplied evidence, express optional behavior guidance, internalize settled events, and track deterministic consequences.
 - **Reusable writing tools:** wrap a sequence in a subgraph with named inputs and outputs, then use it in other workflows.
 
-These are combinations of the shipped tools. **File → Open examples…** offers unified story flows alongside the original roleplay lessons. Examples include prose-and-notes chains, item effects, story-time triggers, generic progression and scoped actor memory. Each opens as an editable copy with its own setup instructions. The workflow JSON examples below also explore individual capabilities.
+These are combinations of the shipped tools. **File → Open examples…** offers [30 numbered unified lessons](docs/examples.md), searchable by goal or node technique and filterable by difficulty. Lessons include prose-and-notes chains, item effects, story-time triggers, generic progression and scoped actor memory. Each opens as an editable copy with its own setup instructions. The workflow JSON examples below also explore individual capabilities.
 
 ## Key features
 
@@ -34,7 +34,7 @@ These are combinations of the shipped tools. **File → Open examples…** offer
 | **One native workflow** | Connect preparation to Generate Reply, process its owned Draft, and review the result in one graph. |
 | **Typed decisions and branches** | Use Decision or configured Jev/Laya Fast Decision with explicit confidence gates, skipped paths and unresolved policies. |
 | **Workflow Data and accepted effects** | Read authorized logical targets, project append/keyed updates, and settle file/clock/outcome consequences with the chosen reviewed result. |
-| **Scoped character context and Recall** | Process present actors separately and queue selected-actor memories through visible controls or shortcuts. |
+| **Scoped character context and Recall** | Process present actors separately and queue selected-actor memories through canvas controls or shortcuts. |
 | **Recorded previews** | Inspect inputs and outputs, follow selection, pin an artifact, or run only a selected output's dependencies. |
 | **Execution visibility** | See node states, expanded subgraph stages, request bounds, actual calls, and failures. |
 | **Portals and reroutes** | Keep a large graph readable while preserving its dependencies. |
@@ -67,9 +67,9 @@ Repair also offers Inspect, Contextual Cleanup and Strict Avoidance modes using 
 
 The shelf and contextual search offer one entry per operation. Choose variants in **Details**: Reflect's Character/Recall/Scene modes, JSON Decode's Parse/Check modes, Reroute's Artifact kind, and the other operation controls. Introspection modes and generic State progression/time-decay use these controls. The Subgraphs shelf shows the latest explicitly saved entry for each reusable item; placed copies retain their exact saved contents.
 
-New Transpose nodes accept and return **Text** in either graph phase. Choose **Input type → Draft** in an After reply graph to produce source-bound Patches for validation and review. Existing saved nodes without an Input type setting retain their Draft behavior. See the [reference library guide](docs/lattice-reference-library.md) for reference inputs and independent mode/scope controls.
+New Transpose nodes accept and return **Text** in either graph phase. Choose **Input type → Draft** in the Response stage to produce source-bound Patches for validation and review. Existing saved nodes without an Input type setting retain their Draft behavior. See the [reference library guide](docs/lattice-reference-library.md) for reference inputs and independent mode/scope controls.
 
-Memory is root-only; Commit is a Post/response terminal. Legacy post tools may settle it on a successful full root Run; unified effects wait for the chosen accepted root result. Run to here records a preview without writing. Memory uses the active chat and character, including a required selected actor in group chats. See the [Introspection guide](docs/introspection-package.md) for evidence, controls and persistence limits.
+Memory is root-only; Commit is a Response terminal. Its effects wait for the chosen accepted Review / Publish result. Run to here records a preview without writing. Memory uses the active chat and character, including a required selected actor in group chats. See the [Introspection guide](docs/introspection-package.md) for evidence, controls and persistence limits.
 
 ## Reuse a process, inspect its internals
 
@@ -83,7 +83,7 @@ Select processing nodes, right-click, and choose **Create Subgraph**. The editor
 
 1. In SillyTavern, open **Extensions → Install extension**.
 2. Enter `https://github.com/MentallyQuill/Lattice`, leaving the branch field blank to install `main`.
-3. Install, then reload SillyTavern. Open LATTICE from its logo on the left of the chat bar or with `/lattice`. Fresh launch opens **Unified story workflow**, with Lattice disabled. Existing installations restore their recovery draft; previous workflows remain available through **File → Recover previous workflows**.
+3. Install, then reload SillyTavern. Open LATTICE from its logo on the left of the chat bar or with `/lattice`. Fresh launch opens **Unified story workflow**, with Lattice disabled. Existing installations restore their unified recovery draft; previous unified documents remain available through **File → Recover previous workflows**.
 4. Keep the starter open, select **Enable Lattice**, and Send a player message in SillyTavern. The starter makes no auxiliary calls and exposes its completed native Draft for review.
 5. Select **Review / Publish · Host result** in Preview, inspect it, and Apply or Reject. For a richer pipeline, open a unified example and configure its model nodes, For Each helper roles and required workflow data documents before the next Send.
 
@@ -93,27 +93,19 @@ The [unified workflow guide](docs/unified-workflows.md) walks through applying a
 
 Opening a unified example makes an independent editable copy the active document. It makes no model request and does not change **Enable Lattice**. Set each auxiliary model’s local Connection profile in Details; configure For Each’s **Helper model bindings** separately. **Tools → Workflow Data…** authorizes logical JSON/text targets, and **Tools → Fast connections…** configures typed Jev/Laya endpoints. Local connection IDs and credentials are excluded from portable exports.
 
-Legacy **Before reply (Pre)** workflows still prepare bounded guidance, while **After reply (Post)** workflows remain manual tools for a completed reply. Send follows the open Pre or unified document when **Enable Lattice** is selected; Post tools use manual **Run**. Previous saved graphs remain available through **File → Recover previous workflows**. Migration is explicit reuse in a new unified copy, with no automatic converter.
+Saved unified documents retain their content and recovery draft. Earlier unified example IDs remain installable while the visible picker shows the 30 new lessons. Saved pre/post roots are retired. On upgrade, LATTICE preserves their original graphs, bindings and active selection in a cold recovery archive, then opens a disabled unified starter when needed. **File → Export archived workflows…** downloads the archive as JSON. Archived roots cannot execute or import as current workflows, and recovery makes no model requests. Rebuild useful operations in a new unified graph; there is no automatic converter.
 
-Open the following technical examples as JSON with **File → Open workflow…**:
+Open a current workflow from **File → Open examples…**, or its JSON with **File → Open workflow…**:
 
-| Starter | What it demonstrates | Maximum auxiliary calls |
-| --- | --- | ---: |
-| [Structured guidance](workflows/structured-guidance.json) | JSON → selected fields → composed writing brief | 0 |
-| [Literal cleanup](workflows/literal-cleanup.json) | Deterministic reply edits with validation and review | 0 |
-| [Scene guidance](workflows/native-guidance.json) | Context compaction and model-assisted scene direction | 2 |
-| [Reviewed AI De-slop](workflows/reviewed-de-slop.json) | Configured pattern scanning and reviewed model repair | 1 |
-| [Scene Compass](examples/library/workflows/scene-compass.json) | Reusable context selection and scene direction | 1 |
-| [Literal phrase cleanup](examples/library/workflows/literal-cleanup.json) | Reusable phrase repair with review | 1 |
-| [Formatting cleanup](examples/library/workflows/formatting-cleanup.json) | Reusable deterministic line-ending cleanup | 0 |
-| [Prose cleanup](examples/library/workflows/prose-cleanup.json) | Reusable category-based cleanup | 1 |
-| [Reflect and express](examples/introspection/native/reflect-and-express.json) | Focus → character reflection → behavior guidance | 1 Analysis |
-| [Internalize and commit](examples/introspection/native/internalize-and-commit.json) | Settled events → experience proposal → root memory commit | 1 Analysis |
-| [Consequence clock](examples/introspection/native/consequence-clock.json) | Distinct settled events → deterministic track → root memory commit | 0 |
+| Example | What it demonstrates |
+| --- | --- |
+| [12 · Plan, write, polish, and annotate one reply](examples/remastered/12-plan-write-polish-and-annotate-one-reply.lattice.json) | Guidance, owned native Draft, prose revision and notes |
+| [17 · Record only the scene you accept](examples/remastered/17-record-only-the-scene-you-accept.lattice.json) | Accepted same-target document projection and duplicate identity handling |
+| [21 · Give one present character their own direction](examples/remastered/21-give-one-present-character-their-own-direction.lattice.json) | Presence-verified actor-private direction |
+| [25 · Award experience from confirmed progress](examples/remastered/25-award-experience-from-confirmed-progress.lattice.json) | Evidence-backed deterministic progression |
+| [26 · Recall a memory with a hotkey or a story trigger](examples/remastered/26-recall-a-memory-with-a-hotkey-or-a-story-trigger.lattice.json) | Scoped Recall with visible queue controls |
 
-The technical legacy examples above remain useful for bounded manual inspection. Structured guidance needs no connection profile; Literal cleanup needs a completed text reply. A manual model-backed run can spend tokens; an enabled Send runs guidance again. Reply application requires a fresh, fully reviewed root result.
-
-The two legacy Post Introspection starters write actor memory on a successful full Run. The host checks current evidence and store version before writing and records idempotency receipts. SillyTavern's public metadata save wrapper returns no durability acknowledgment: Preview reports **Memory updated; save unconfirmed** when the local update succeeds but the save is unconfirmed. Confirm refreshed metadata before another commit.
+Five pinned stage-specific subgraph definitions remain available as reusable processing tools. Their bodies retain their own stage contracts; complete executable roots are unified. Run to here records diagnostics without publishing guidance, creating Apply authority or settling memory.
 
 ![LATTICE showing a completed cleanup workflow and its original and revised text in the candidate artifact](docs/images/review-candidate.png)
 
@@ -124,10 +116,10 @@ The two legacy Post Introspection starters write actor memory on a successful fu
 - [Operator's manual](docs/operators-manual.md) — screenshot-guided workspace, graph editing, subgraphs, Details, Preview, and execution.
 - [Node reference](docs/node-reference.md) — every available operation, its artifacts, controls, and connection examples.
 - [Connections and comments](docs/connection-comments.md) — smooth connections, workflow annotations, and comment editing shortcuts.
-- [Quick start](docs/lattice-workspace.md) — your first two workflows without model calls.
+- [Quick start](docs/lattice-workspace.md) — open the zero-auxiliary-call starter, enable Lattice, Send and review.
 - [Unified workflows](docs/unified-workflows.md) — story setup, one-graph Send/Apply, decisions, actor context, documents, Recall, clocks and migration.
-- [Model connections and host integration](docs/native-workflows.md) — local profiles, token budgets, legacy tools, reply review, supported routes, and troubleshooting.
-- [Introspection](docs/introspection-package.md) — native starters, original Introspection modes, scoped memory and package APIs.
+- [Model connections and host integration](docs/native-workflows.md) — local profiles, token budgets, reply review, supported routes, and troubleshooting.
+- [Introspection](docs/introspection-package.md) — Introspection modes, scoped memory and package APIs.
 - [Development guide](docs/development.md) — build tools and reproducible documentation captures.
 
 Screenshots illustrate the editor and existing example tools on a local demonstration host with synthetic writing material; captions identify their demonstrated workflows. The demonstrated completed workflows make no provider requests.

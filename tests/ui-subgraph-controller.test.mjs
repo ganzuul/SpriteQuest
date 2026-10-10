@@ -2,19 +2,19 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readFile } from 'node:fs/promises';
 import { JSDOM } from 'jsdom';
-import { operationFor } from '../src/workflow/catalog.js?v=0.26.0';
-import { isCommentFrame } from '../src/canvas/comment-frames.js?v=0.26.0';
-import { prepareCreateFromSelection } from '../src/workflow/composition.js?v=0.26.0';
-import { prepareOwnedDefinitionMetadataEdit } from '../src/workflow/definition-library.js?v=0.26.0';
-import { prepareWorkspaceViews, projectEditorDraw } from '../src/ui/workspace-preparation.js?v=0.26.0';
-import { createGraphViewSession } from '../src/ui/graph-view-session.js?v=0.26.0';
-import { captureGraphEditContext, commitPreparedGraph } from '../src/workflow/transactions.js?v=0.26.0';
-import { definitionRefKey } from '../src/workflow/definition-data.js?v=0.26.0';
-import * as H from '../src/history.js?v=0.26.0';
-import { captureRelocatedSubgraphViews, restoreSubgraphViews } from '../src/ui/subgraph-view-state.js?v=0.26.0';
-import { showContextMenu } from '../src/ui/context-menu.js?v=0.26.0';
-import { readNodePresentation } from '../src/ui/node-palette.js?v=0.26.0';
-import { projectPreparedWorkflow } from '../src/ui/workflow-surface.js?v=0.26.0';
+import { operationFor } from '../src/workflow/catalog.js?v=0.27.0';
+import { isCommentFrame } from '../src/canvas/comment-frames.js?v=0.27.0';
+import { prepareCreateFromSelection } from '../src/workflow/composition.js?v=0.27.0';
+import { prepareOwnedDefinitionMetadataEdit } from '../src/workflow/definition-library.js?v=0.27.0';
+import { prepareWorkspaceViews, projectEditorDraw } from '../src/ui/workspace-preparation.js?v=0.27.0';
+import { createGraphViewSession } from '../src/ui/graph-view-session.js?v=0.27.0';
+import { captureGraphEditContext, commitPreparedGraph } from '../src/workflow/transactions.js?v=0.27.0';
+import { definitionRefKey } from '../src/workflow/definition-data.js?v=0.27.0';
+import * as H from '../src/history.js?v=0.27.0';
+import { captureRelocatedSubgraphViews, restoreSubgraphViews } from '../src/ui/subgraph-view-state.js?v=0.27.0';
+import { showContextMenu } from '../src/ui/context-menu.js?v=0.27.0';
+import { readNodePresentation } from '../src/ui/node-palette.js?v=0.27.0';
+import { projectPreparedWorkflow } from '../src/ui/workflow-surface.js?v=0.27.0';
 
 const source = await readFile(new URL('../src/ui/controller.js', import.meta.url), 'utf8');
 function actual(name, env) {
@@ -26,7 +26,7 @@ function actual(name, env) {
 }
 let sequence = 0;
 function fixture(mutator = null) {
-    const graph = { id: 'subgraph-editor-' + ++sequence, schema: 3, runtime: 2, mode: 'native-pre', definitions: {}, groups: {}, portals: {}, roles: {}, nodes: {
+    const graph = { id: 'subgraph-editor-' + ++sequence, schema: 3, runtime: 2, mode: 'native-unified', definitions: {}, groups: {}, portals: {}, roles: {}, nodes: {
         source: { id: 'source', type: 'workflow', operation: 'scene-context', x: 0, y: 40 },
         first: { id: 'first', type: 'workflow', operation: 'smart-compactor', method: 'select', x: 300, y: 40 },
         second: { id: 'second', type: 'workflow', operation: 'smart-compactor', method: 'select', x: 600, y: 40 },
@@ -61,7 +61,7 @@ function fixture(mutator = null) {
     env.navigateGraphView = (action, ...args) => { assert.equal(session[action](...args).ok, true); refresh(); };
     env.activateEditorDraw = refresh;
     env.showSettings = selection => { env.canvas.select(selection); };
-    for (const name of ['captureEditor', 'editorCurrent', 'scopeCommand', 'commitCaptured', 'detailCapture', 'commentDocumentState', 'queueSubgraphPresentation', 'createSubgraph', 'boundaryForNode', 'focusBoundaryLabel', 'editSubgraphInterface', 'addSubgraphBoundary']) env[name] = actual(name, env);
+    for (const name of ['captureEditor', 'editorCurrent', 'scopeCommand', 'commitCaptured', 'detailCapture', 'commentDocumentState', 'queueSubgraphPresentation', 'createSubgraph', 'boundaryForNode', 'focusBoundaryLabel', 'editSubgraphInterface']) env[name] = actual(name, env);
     H.track(graph);
     const selection = nodeId => ({ selectionKey: JSON.stringify([session.readEditor().view.key, nodeId]), revision: session.readEditContext().sessionId + ':0', address: { workflowId: graph.id, instancePath: session.readEditor().view.identity.instancePath ?? [], nodeId } });
     return { graph, session, env, refresh, selection, commits: () => commits, fits: () => fits };
@@ -96,27 +96,15 @@ test('creation carries the visible frame and collapse state of a selected group'
     assert.deepEqual(group.frame, { x: 320, y: 100, w: 660, h: 180 });
 });
 
-test('boundary edits change real interface labels and adding selects another usable typed pin', () => {
+test('boundary details update real interface labels and reject stale or unrelated ports', () => {
     const f = fixture(); assert.equal(f.env.createSubgraph(['first', 'second']).ok, true);
-    let editor = f.session.readEditor(), port = editor.prepared.interface.find(port => port.direction === 'input');
+    const editor = f.session.readEditor(), port = editor.prepared.interface.find(port => port.direction === 'input');
     const captured = f.selection(port.boundaryNodeId);
     assert.equal(f.env.editSubgraphInterface(captured, { kind: 'update', id: port.id, label: 'Context to clean', artifactKind: port.kind, required: port.required }).ok, true);
     assert.equal(f.session.readEditor().prepared.interface.find(item => item.id === port.id).label, 'Context to clean');
-    const count = f.session.readEditor().prepared.interface.length;
-    assert.equal(f.env.addSubgraphBoundary('input', port.boundaryNodeId).ok, true);
-    editor = f.session.readEditor(); assert.equal(editor.prepared.interface.length, count + 1);
-    const newPort = editor.prepared.interface.find(item => item.boundaryNodeId === f.env.canvas.selection.id);
-    assert.equal(newPort.direction, 'input'); assert.equal(newPort.kind, port.kind); assert.equal(newPort.required, false);
-    assert.equal(f.env.editSubgraphInterface(captured, { kind: 'remove', id: port.id }).ok, false, 'old captured revision cannot remove a changed boundary');
-    const other = editor.prepared.interface.find(item => item.direction === 'output');
-    assert.equal(f.env.editSubgraphInterface(f.selection(newPort.boundaryNodeId), { kind: 'update', id: other.id, label: 'Wrong port', artifactKind: other.kind, required: false }).ok, false, 'details capture cannot edit a different boundary');
-});
-
-test('empty child interface can gain input/output ports; root and read-only bodies reject boundary authoring', () => {
-    const f = fixture(); assert.equal(f.env.addSubgraphBoundary('input').ok, false);
-    assert.equal(f.env.createSubgraph(['first', 'second']).ok, true);
-    const before = structuredClone(f.graph); f.session.deactivate();
-    assert.equal(f.env.addSubgraphBoundary('output').ok, false); assert.deepEqual(f.graph, before);
+    assert.equal(f.env.editSubgraphInterface(captured, { kind: 'remove', id: port.id }).ok, false);
+    const current = f.session.readEditor(), other = current.prepared.interface.find(item => item.direction === 'output');
+    assert.equal(f.env.editSubgraphInterface(f.selection(port.boundaryNodeId), { kind: 'update', id: other.id, label: 'Wrong port', artifactKind: other.kind, required: false }).ok, false);
 });
 
 function conversionMenu(f, nodeId) {
@@ -132,7 +120,7 @@ function conversionMenu(f, nodeId) {
 }
 
 for (const mode of ['read', 'recall', 'commit']) test(`Memory ${mode} cannot be offered for subgraph extraction`, () => {
-    const f = fixture(graph => Object.assign(graph, { mode: mode === 'commit' ? 'native-post' : 'native-pre', wires: {}, nodes: {
+    const f = fixture(graph => Object.assign(graph, { mode: 'native-unified', wires: {}, nodes: {
         memory: { id: 'memory', type: 'workflow', operation: 'memory', operationVersion: 1, mode, ...(mode === 'commit' ? { idempotencyKey: 'extract-test' } : {}) },
     } }));
     const menu = conversionMenu(f, 'memory');

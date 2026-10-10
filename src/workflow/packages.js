@@ -1,7 +1,7 @@
-import { ACTIVE_PROFILE_ID } from './model-profiles.js?v=0.26.0';
-import { safeWorkflowData, validateGraphStructure } from './contracts.js?v=0.26.0';
-import { OPERATIONS, operationFor, phaseForNode } from './catalog.js?v=0.26.0';
-import { cloneDefinitionData, computeDefinitionIdentity, definitionRefKey, inspectDefinitionMetadata, validateDefinition } from './definitions.js?v=0.26.0';
+import { ACTIVE_PROFILE_ID } from './model-profiles.js?v=0.27.0';
+import { safeWorkflowData, validateGraphStructure } from './contracts.js?v=0.27.0';
+import { OPERATIONS, operationFor, phaseForNode } from './catalog.js?v=0.27.0';
+import { cloneDefinitionData, computeDefinitionIdentity, definitionRefKey, inspectDefinitionMetadata, validateDefinition } from './definitions.js?v=0.27.0';
 const limit = 2000000;
 const fail = (code, message) => ({ ok: false, error: { code, message } });
 const pick = (value, keys) => Object.fromEntries(keys.filter(key => Object.hasOwn(value, key)).map(key => [key, value[key]]));
@@ -46,7 +46,9 @@ function portableProjection(snapshots) {
         },
         parameters(node) {
             return Object.fromEntries(instanceParameterTargets(node, snapshots).map(parameter => [parameter.id,
-                parameter.target?.operation === 'for-each' && parameter.controlId === 'roleOverrides' ? portableBindings(parameter.value)
+                parameter.target?.operation === 'fast-decision' && ['fastConnectionId', 'fallbackProfileId'].includes(parameter.controlId) ? ''
+                    : parameter.target?.operation === 'fast-decision' && parameter.controlId === 'fallbackEnabled' ? false
+                    : parameter.target?.operation === 'for-each' && parameter.controlId === 'roleOverrides' ? portableBindings(parameter.value)
                     : parameter.target?.operation === 'for-each' && parameter.controlId === 'helper' ? context.reference(parameter.value) : parameter.value,
             ]));
         },
@@ -80,6 +82,11 @@ function portableNativeDocument(graph, context) {
     ])]));
     for (const [id, node] of Object.entries(copy.nodes)) {
         if (Object.hasOwn(node, 'profileId') && node.profileId !== ACTIVE_PROFILE_ID) node.profileId = null;
+        if (node.type === 'workflow' && node.operation === 'fast-decision') {
+            node.fastConnectionId = '';
+            node.fallbackProfileId = '';
+            node.fallbackEnabled = false;
+        }
         if (node.type === 'workflow' && node.operation === 'for-each') {
             if (Object.hasOwn(node, 'roleOverrides')) node.roleOverrides = portableBindings(node.roleOverrides);
             if (Object.hasOwn(node, 'helper')) node.helper = context.reference(node.helper);
@@ -127,6 +134,12 @@ export function exportWorkflow(graph) {
 }
 /** Parsing and preflight are pure; settings change only after caller acceptance. */
 export function parseWorkflow(json) {
+    const parsed = parseWorkflowFragment(json);
+    if (parsed.ok && parsed.data.mode !== 'native-unified') return fail('WRONG_PHASE', 'Root workflow imports require a unified workflow. Retired originals are recovery data only.');
+    return parsed;
+}
+/** Clipboard fragments from pinned stage bodies carry no root execution authority. */
+export function parseWorkflowFragment(json) {
     if (typeof json !== 'string' || json.length > limit || new TextEncoder().encode(json).byteLength > limit) return fail('MALFORMED_WORKFLOW', 'Workflow JSON must be at most 2,000,000 UTF-8 bytes.');
     let envelope;
     try { envelope = JSON.parse(json); } catch { return { ok: false, error: { code: 'INVALID_JSON', message: 'That is not valid workflow JSON.' } }; }

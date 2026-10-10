@@ -1,20 +1,20 @@
-import { ACTIVE_PROFILE_ID } from './model-profiles.js?v=0.26.0';
-import { RECALL_OPERATIONS, describeRecallNode } from './operations/recall-nodes.js?v=0.26.0';
-import { LIFECYCLE_OPERATIONS, describeLifecycleNode } from './operations/lifecycle-nodes.js?v=0.26.0';
-import { FILE_OPERATIONS, describeFileNode } from './operations/file-nodes.js?v=0.26.0';
-import { TIME_OPERATIONS, describeTimeNode } from './operations/time-nodes.js?v=0.26.0';
-import { EVENT_OPERATIONS, describeEvent } from './operations/event-nodes.js?v=0.26.0';
-import { RANDOM_OPERATIONS, describeRandom } from './operations/random-outcomes.js?v=0.26.0';
-import { COLLECTION_OPERATIONS, describeCollection } from './operations/collection-nodes.js?v=0.26.0';
-import { PRIMITIVE_OPERATIONS, describePrimitive } from './operations/nodes.js?v=0.26.0';
-import { describeContextJoin } from './operations/context-join.js?v=0.26.0';
-import { TRANSPOSE_OPERATIONS, describeTranspose } from './operations/transpose-nodes.js?v=0.26.0';
-import { CLEANUP_MODES, validateCleanupSettings } from './operations/prose-cleanup.js?v=0.26.0';
-import { INTROSPECTION_NATIVE_OPERATIONS, describeNativeIntrospection, introspectionDefaults } from './introspection/native.js?v=0.26.0';
-import { INPUT_OPERATIONS, describeInput } from './operations/input-nodes.js?v=0.26.0';
-import { CONTROL_OPERATIONS, describeControl } from './operations/control-nodes.js?v=0.26.0';
-import { DECISION_OPERATIONS, describeDecision } from './operations/decision-nodes.js?v=0.26.0';
-import { MODEL_OPERATIONS, describeModelNode } from './operations/model-nodes.js?v=0.26.0';
+import { ACTIVE_PROFILE_ID } from './model-profiles.js?v=0.27.0';
+import { RECALL_OPERATIONS, describeRecallNode } from './operations/recall-nodes.js?v=0.27.0';
+import { LIFECYCLE_OPERATIONS, describeLifecycleNode } from './operations/lifecycle-nodes.js?v=0.27.0';
+import { FILE_OPERATIONS, describeFileNode } from './operations/file-nodes.js?v=0.27.0';
+import { TIME_OPERATIONS, describeTimeNode } from './operations/time-nodes.js?v=0.27.0';
+import { EVENT_OPERATIONS, describeEvent } from './operations/event-nodes.js?v=0.27.0';
+import { RANDOM_OPERATIONS, describeRandom } from './operations/random-outcomes.js?v=0.27.0';
+import { COLLECTION_OPERATIONS, describeCollection } from './operations/collection-nodes.js?v=0.27.0';
+import { PRIMITIVE_OPERATIONS, describePrimitive } from './operations/nodes.js?v=0.27.0';
+import { describeContextJoin } from './operations/context-join.js?v=0.27.0';
+import { TRANSPOSE_OPERATIONS, describeTranspose } from './operations/transpose-nodes.js?v=0.27.0';
+import { CLEANUP_MODES, validateCleanupSettings } from './operations/prose-cleanup.js?v=0.27.0';
+import { INTROSPECTION_NATIVE_OPERATIONS, describeNativeIntrospection, introspectionDefaults } from './introspection/native.js?v=0.27.0';
+import { INPUT_OPERATIONS, describeInput } from './operations/input-nodes.js?v=0.27.0';
+import { CONTROL_OPERATIONS, describeControl } from './operations/control-nodes.js?v=0.27.0';
+import { DECISION_OPERATIONS, describeDecision } from './operations/decision-nodes.js?v=0.27.0';
+import { MODEL_OPERATIONS, describeModelNode } from './operations/model-nodes.js?v=0.27.0';
 
 /** Native operation metadata. Artifact flow, rather than canvas placement, defines execution. */
 export const FAMILIES = ['Input', 'Shaping', 'Surface', 'Transpose', 'Introspection', 'Derive', 'Events', 'Collections', 'Randomness', 'Recall', 'Output'];

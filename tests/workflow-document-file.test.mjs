@@ -10,6 +10,13 @@ const raw = { id: 'body', version: 1, name: 'Local body', interface: [], paramet
 const identity = must(computeDefinitionIdentity(raw)), def = { ...identity.materializedDefinition, semanticHash: identity.semanticHash };
 const graph = { id: 'root', name: 'Authoring', description: 'Preserved', schema: 3, runtime: 2, mode: 'native-unified', nodes: { wrapper: { id: 'wrapper', type: 'subgraph', definition: { id: def.id, version: def.version, semanticHash: def.semanticHash }, parameterOverrides: { value: 'override' }, roleOverrides: { author: { profileId: 'local-override', model: null } }, nodeBindingOverrides: { '[[],"text"]': { profileId: 'local-node', model: 'chosen' } }, localCopy: { definitionId: 'body' }, presentation: { alias: 'Wrapper', compact: true } }, note: { id: 'note', type: 'note', content: 'Note', commentFrame: { x: 1, y: 2, w: 3, h: 4 }, moveContents: true } }, wires: {}, groups: {}, roles: { writer: { profileId: 'local-root', model: 'model' } }, definitions: { [definitionRefKey(def)]: def }, localDefinitionOwners: [{ instancePath: ['wrapper'], definitionId: 'body' }] };
 const views = { version: 1, workflowId: 'root', activeKey: '["root","root"]', views: [{ identity: { kind: 'root', workflowId: 'root' }, open: true, camera: { x: 1, y: 2, zoom: 1 }, selection: { primary: null, multi: [] }, inspector: { item: null, section: '', open: true }, nodePresentation: {} }] };
+for (const mode of ['native-pre', 'native-post']) {
+    const retired = { id: 'retired', name: 'Old workflow', schema: 3, runtime: 2, mode, nodes: {}, wires: {} };
+    const json = JSON.stringify({ kind: 'lattice-document', schema: 1, minRuntime: 2, graph: retired });
+    assert.equal(parseWorkflowDocument(json).ok, false, 'editable documents cannot reopen retired roots');
+    assert.equal(parseWorkflowDocument(json).error.code, 'WRONG_PHASE');
+    assert.equal(serializeWorkflowDocument(retired).ok, false, 'retired roots remain export-only recovery data');
+}
 const json = must(serializeWorkflowDocument(graph, views)).json, envelope = JSON.parse(json);
 assert.deepEqual([envelope.kind, envelope.schema, envelope.minRuntime], ['lattice-document', 1, 2]);
 const parsed = must(parseWorkflowDocument(json));

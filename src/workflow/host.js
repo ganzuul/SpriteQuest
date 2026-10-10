@@ -1,24 +1,24 @@
-import { runWorkflowForHost, freezeArtifact, workflowSignature } from './runtime.js?v=0.26.0';
-import { resolveBinding, requestModel, bindingStatus, bindingSummary } from './connections.js?v=0.26.0';
-import { addressKey, safeError } from './record-data.js?v=0.26.0';
-import { cloneWorkflowDocument } from './document.js?v=0.26.0';
-import { projectIntrospectionNode } from './introspection/native.js?v=0.26.0';
-import { executeIntrospection } from './introspection/nodes.js?v=0.26.0';
-import { parseRecord } from './introspection/contracts.js?v=0.26.0';
-import { artifactVisibility, preserveArtifactPrivacy, validVisibilityMetadata } from './artifact-privacy.js?v=0.26.0';
-import { createAcceptedNativeSettlement, createNativeFileSession, validateNativeFileEvidence } from './native-settlement.js?v=0.26.0';
-import { createChatDocumentCatalog } from './document-catalog.js?v=0.26.0';
-import { createNativePersistenceVerifier } from './native-persistence.js?v=0.26.0';
-import { createNativeDraftEvidenceRegistry } from './native-draft-evidence.js?v=0.26.0';
-import { createNativeActorContext } from './native-actor-context.js?v=0.26.0';
-import { createNativeRecallController } from './native-recall.js?v=0.26.0';
-import { createNativeStoryState, createNativeOutcomeCache } from './native-story-state.js?v=0.26.0';
-import { executeTimeNode } from './operations/time-nodes.js?v=0.26.0';
-import { executeRandom } from './operations/random-outcomes.js?v=0.26.0';
-import { executeFileNode } from './operations/file-nodes.js?v=0.26.0';
-import { snapshotDraft, readDraftBody } from './draft-revisions.js?v=0.26.0';
-import { snapshotPromptSource, promptSourceFingerprint } from './prompt-source.js?v=0.26.0';
-import { createNativeMemoryAdapter, nativeMemoryFingerprint, nativeMemoryScope, nativeVisibility } from './introspection/host-memory.js?v=0.26.0';
+import { runWorkflowForHost, freezeArtifact, workflowSignature } from './runtime.js?v=0.27.0';
+import { resolveBinding, requestModel, bindingStatus, bindingSummary } from './connections.js?v=0.27.0';
+import { addressKey, safeError } from './record-data.js?v=0.27.0';
+import { cloneWorkflowDocument } from './document.js?v=0.27.0';
+import { projectIntrospectionNode } from './introspection/native.js?v=0.27.0';
+import { executeIntrospection } from './introspection/nodes.js?v=0.27.0';
+import { parseRecord } from './introspection/contracts.js?v=0.27.0';
+import { artifactVisibility, preserveArtifactPrivacy, validVisibilityMetadata } from './artifact-privacy.js?v=0.27.0';
+import { createAcceptedNativeSettlement, createNativeFileSession, validateNativeFileEvidence } from './native-settlement.js?v=0.27.0';
+import { createChatDocumentCatalog } from './document-catalog.js?v=0.27.0';
+import { createNativePersistenceVerifier } from './native-persistence.js?v=0.27.0';
+import { createNativeDraftEvidenceRegistry } from './native-draft-evidence.js?v=0.27.0';
+import { createNativeActorContext } from './native-actor-context.js?v=0.27.0';
+import { createNativeRecallController } from './native-recall.js?v=0.27.0';
+import { createNativeStoryState, createNativeOutcomeCache } from './native-story-state.js?v=0.27.0';
+import { executeTimeNode } from './operations/time-nodes.js?v=0.27.0';
+import { executeRandom } from './operations/random-outcomes.js?v=0.27.0';
+import { executeFileNode } from './operations/file-nodes.js?v=0.27.0';
+import { snapshotDraft, readDraftBody } from './draft-revisions.js?v=0.27.0';
+import { snapshotPromptSource, promptSourceFingerprint } from './prompt-source.js?v=0.27.0';
+import { createNativeMemoryAdapter, nativeMemoryFingerprint, nativeMemoryScope, nativeVisibility } from './introspection/host-memory.js?v=0.27.0';
 
 // Internal review seam: observations contain no authority or retained payload values.
 const retentionInspectors=new WeakMap();
@@ -204,7 +204,9 @@ export function createNativeWorkflowController(ports) {
         const revision=replyRevision(m);
         return (stopped.get(m) ?? []).some(record=>record.revision.swipeId===revision.swipeId && (record.failedStarted!==null?record.failedStarted===revision.started:same(record.revision,revision)));
     };
-    const notify=(value,run=null)=>{
+    const notify=(value,run=null,owner=run)=>{
+        // Replaced documents cannot publish late diagnostics into the current document's cache.
+        if(owner && typeof ports.getDocumentToken==='function' && owner.documentToken!==ports.getDocumentToken())return freezeArtifact({...value,reviewHandles:[],superseded:true});
         const previous=result;
         if(!value.recording && previous?.recording) {
             // A failed attempt has no run identity. Preserve the old diagnostic separately.
@@ -214,7 +216,7 @@ export function createNativeWorkflowController(ports) {
             return failure;
         }
         result=freezeArtifact(value);
-        const origin=run?.native && run.graph ? Object.freeze({graph:run.originalGraph,graphId:run.graph.id,graphName:run.graph.name,signature:run.signature,phase:run.unified?'unified':'pre',kind:'send',runId:run.runId}) : null;
+        const origin=run?.native && run.graph ? Object.freeze({graph:run.originalGraph,documentToken:run.documentToken,graphId:run.graph.id,graphName:run.graph.name,signature:run.signature,phase:run.unified?'unified':'pre',kind:'send',runId:run.runId}) : null;
         if(origin)automaticResult=Object.freeze({result,origin});
         else if(result.recording && automaticResult?.result.recording && automaticResult.result.recording!==result.recording) {
             const prior=automaticResult.result;
@@ -260,7 +262,7 @@ export function createNativeWorkflowController(ports) {
         }
         return {ok:true};
     };
-    const fresh=(run)=>run.epoch===epoch && !run.controller.signal.aborted && same(run.identity,identity(context())) && run.signature===workflowSignature(run.originalGraph) && userFresh(run) && (!run.native || (ports.isEnabled?.() !== false && ports.getGraph?.(run.unified?'unified':'pre')===run.originalGraph));
+    const fresh=(run)=>run.epoch===epoch && (typeof ports.getDocumentToken!=='function' || run.documentToken===ports.getDocumentToken()) && !run.controller.signal.aborted && same(run.identity,identity(context())) && run.signature===workflowSignature(run.originalGraph) && userFresh(run) && (!run.native || (ports.isEnabled?.() !== false && ports.getGraph?.('unified')===run.originalGraph));
     const userFresh=run=>!run.unified&&!run.hostUnified || run.userId===ports.userId?.();
     const promptFresh = run => [...(run.promptSources?.values() ?? [])].every(entry => {
         const current = promptSourceFingerprint(context(), entry.node);
@@ -275,7 +277,7 @@ export function createNativeWorkflowController(ports) {
     const sourceFresh=run=>playerSourceFresh(run) && memoryFresh(run) && promptFresh(run) && [...(run.pendingSources?.values()??[])].every(validSource) && [...(run.sceneSources??[])].every(entry=>entry.text!==null && sourceText(entry.chat)===entry.text && (entry.characterVisibility===undefined || (entry.characterVisibility!==null && characterVisibility(context())===entry.characterVisibility)) && (entry.characterSnapshots??[]).every(captured=>characterText(snapshotContext(context(),{chat:entry.chat,node:captured.node}))===captured.text));
     const start=(graph,native=false,abortPrimary=null,target)=>{
         cancel('Superseded by a new workflow');
-        const run={epoch,runId:token(),controller:new AbortController(),originalGraph:graph,native,abortPrimary,pending:true,target,mode:target===undefined?'root':'target',pendingSources:new Map(),sceneSources:[],promptSources:new Map(),bindingContexts:new Map(),modelAddresses:new WeakMap(),modelScopes:new Map(),bindingChecks:[],reviewHandles:[],memoryTerminals:new Map(),memoryIntents:new Map(),memorySession:null,memoryCommit:null,invalidMemoryEvidence:false,fileSession:null,fileSessions:new Map(),fileReferences:new WeakMap(),actorContext:null,actorMemorySessions:new Map(),stagedFiles:[],retainResources:false,resourcesReleased:false};
+        const run={epoch,runId:token(),controller:new AbortController(),originalGraph:graph,documentToken:ports.getDocumentToken?.(),native,abortPrimary,pending:true,target,mode:target===undefined?'root':'target',pendingSources:new Map(),sceneSources:[],promptSources:new Map(),bindingContexts:new Map(),modelAddresses:new WeakMap(),modelScopes:new Map(),bindingChecks:[],reviewHandles:[],memoryTerminals:new Map(),memoryIntents:new Map(),memorySession:null,invalidMemoryEvidence:false,fileSession:null,fileSessions:new Map(),fileReferences:new WeakMap(),actorContext:null,actorMemorySessions:new Map(),stagedFiles:[],retainResources:false,resourcesReleased:false};
         active=run;return run;
     };
     function prepareRun(run,plan,controls,options) {
@@ -367,7 +369,8 @@ export function createNativeWorkflowController(ports) {
             return result;
         };
         const result=preserveArtifactPrivacy(await executeIntrospection(settings,inputs,{...boundedPorts,...(session?{memory:{read:consumeMemory('read'),recall:consumeMemory('recall')}}:{})}),inputs);
-        if(run.hostUnified&&result.ok&&settings.operation==='memory'&&['read','recall'].includes(settings.mode)&&memoryReads.some(read=>same(read.artifact?.value,result.artifact?.value))&&artifactVisibility(result.artifact).kind==='actor-private'){const scoped=scopedActors(run);if(!scoped.ok)return scoped;const grant=scoped.data.authorizeSelectedActor();if(!grant.ok)return grant;const retained=scoped.data.captureScopedResult(result,grant.data.grant);if(!retained.ok)return retained;}
+        const implicitStateRead=settings.operation==='state'&&settings.mode==='value'&&!inputs.state;
+        if(run.hostUnified&&result.ok&&(settings.operation==='memory'&&['read','recall'].includes(settings.mode)||implicitStateRead)&&memoryReads.some(read=>same(read.artifact?.value,result.artifact?.value))&&artifactVisibility(result.artifact).kind==='actor-private'){const scoped=scopedActors(run);if(!scoped.ok)return scoped;const grant=scoped.data.authorizeSelectedActor();if(!grant.ok)return grant;const retained=scoped.data.captureScopedResult(result,grant.data.grant);if(!retained.ok)return retained;}
         if(run.recallCaptured&&result.ok&&settings.operation==='memory'&&['read','recall'].includes(settings.mode)&&memoryReads.some(read=>same(read.artifact?.value,result.artifact?.value))){const parsed=parseRecord(result.artifact);if(parsed.ok){const captured=recall.capture(run,result,{kind:'memory',recordValue:parsed.data.payload.episodes??[],fresh:()=>fresh(run)&&nativePrefixFresh(run)&&session.readFresh().ok});if(!captured.ok)return captured;}}
         if(result.ok && settings.operation==='memory' && settings.mode==='commit' && run.memoryTerminals.has(addressKey(address)))run.memoryIntents.set(addressKey(address),structuredClone(result.artifact));
         return result;
@@ -419,21 +422,6 @@ export function createNativeWorkflowController(ports) {
             }
         }
         if(memoryOutputs.length!==run.memoryTerminals.size)return fail('INVALID_MEMORY_TERMINAL','The compiled Memory Commit terminal did not provide its exact intent.');
-        if(run.native && !run.unified) {
-            if(run.invalidMemoryEvidence && transport.terminals.some(output=>output.artifact?.kind==='guidance'))return fail('STALE_MEMORY_EVIDENCE','Selected memory evidence changed or no longer exists. Reconcile the stored history before publishing guidance.');
-            const c=context();
-            try {
-                if(typeof c.setExtensionPrompt!=='function')throw new Error('Prompt setter unavailable');
-                for(const output of transport.terminals) {
-                    if(output.artifact?.kind!=='guidance')continue;
-                    const key=PREFIX+addressKey(output.terminal.address);keys.add(key);
-                    c.setExtensionPrompt(key,output.artifact.text,1,0,false,0);
-                    if(c.extensionPrompts && c.extensionPrompts[key]?.value!==output.artifact.text)throw new Error('Prompt not accepted');
-                    if(!fresh(run)||!sourceFresh(run)||!bindingFresh(run).ok)throw new Error('Source changed during publication');
-                }
-                run.published=true;run.pending=false;return {ok:true};
-            } catch {clear();return fail('GUIDANCE_UNAVAILABLE','Native guidance could not be installed; the native reply remains available.');}
-        }
         for(const output of transport.terminals) {
             if(output.artifact?.kind!=='candidate')continue;
             const source=run.pendingSources.get(output.artifact.source?.token);if(!source)return fail('STALE_CANDIDATE','The candidate source is no longer available.');
@@ -464,13 +452,6 @@ export function createNativeWorkflowController(ports) {
             }
             run.retainResources=true;return {ok:true};
         }
-        for(const output of memoryOutputs) {
-            if(!fresh(run)||!sourceFresh(run)||!bindingFresh(run).ok)return fail('STALE_SOURCE','The workflow source changed before memory settlement.');
-            const scoped=scopedMemory(run);if(!scoped.ok)return scoped;
-            const committed=await scoped.data.memory.commit(output.artifact,{root:true,preview:false,dryRun:false});
-            if(!committed.ok)return committed;
-            run.memoryCommit={applied:committed.data.applied,acknowledged:committed.data.acknowledged,version:committed.data.version};
-        }
         return {ok:true};
     }
     // Exact normalized engine inputs and bindings remain private to this run. A graph
@@ -480,9 +461,9 @@ export function createNativeWorkflowController(ports) {
         if(stopped())return fail('ABORTED','The auxiliary request scope has closed.');
         if(!fresh(run)||!sourceFresh(run)||run.unified&&!nativePrefixFresh(run))return fail('STALE_SOURCE','The captured source changed before auxiliary dispatch.');
         const scoped=scopedActors(run);if(!scoped.ok)return scoped;
-        const event=scoped.data.authorizeEventInputs(payload.node,payload.inputs);
-        const checked=event.ok?scoped.data.authorizeModelInputs(payload.inputs):event;
-        if(!checked.ok)return checked;
+        const checked=scoped.data.authorizeModelInputs(payload.inputs);if(!checked.ok)return checked;
+        // Data authorization can run host callbacks; validate captured event authority last.
+        const event=scoped.data.authorizeEventInputs(payload.node,payload.inputs);if(!event.ok)return event;
         if(stopped())return fail('ABORTED','The auxiliary request scope has closed.');
         if(!fresh(run)||!sourceFresh(run)||run.unified&&!nativePrefixFresh(run))return fail('STALE_SOURCE','The captured source changed before auxiliary dispatch.');
         return stopped()?fail('ABORTED','The auxiliary request scope has closed.'):checked;
@@ -544,7 +525,7 @@ export function createNativeWorkflowController(ports) {
         finally {delete run.cancel;run.bindingContexts.clear();run.modelScopes.clear();run.modelAddresses=new WeakMap();if(!run.retainResources)releaseRun(run);}
         if(!value.ok||run.mode==='target') {releaseRun(run);run.pendingSources.clear();run.sceneSources.length=0;run.promptSources.clear();run.bindingChecks=[];for(const [id,entry]of candidates)if(entry.run===run)candidates.delete(id);for(const [id,entry]of sources)if(entry.run===run)sources.delete(id);if(run.native)clear();}
         else run.pendingSources.clear();
-        const publicValue=freezeArtifact({...value,...(run.memoryCommit?{memoryCommit:run.memoryCommit}:{}),reviewHandles:value.ok?run.reviewHandles:[]});
+        const publicValue=freezeArtifact({...value,reviewHandles:value.ok?run.reviewHandles:[]});
         run.publicResult=publicValue;
         return publicValue;
     }
@@ -750,11 +731,6 @@ export function createNativeWorkflowController(ports) {
         if(!ready.ok) {const final=await completion;return {...final,fallback:'native'};}
         return ready;
     }
-    async function runPre(graph,options={}) {
-        const run=start(graph),value=await execute(run,{phase:'pre',onEvent:options.onEvent});
-        if(active===run) {active=null;return notify(value);}
-        return value;
-    }
     async function beforeGenerate(chat,_contextSize,abort,type='normal') {
         clear();type=type||'normal';
         if(generation.aborted) {abort?.(true);return notify(fail('ABORTED','The native generation was stopped before workflow preparation.'));}
@@ -762,32 +738,16 @@ export function createNativeWorkflowController(ports) {
         if(ports.isEnabled?.()===false)return {ok:true,skipped:true};
         const unified=ports.getGraph?.('unified');
         if(Object.getOwnPropertyDescriptor(unified??{},'mode')?.value==='native-unified')return beforeUnified(unified,chat,abort,type);
-        const graph=ports.getGraph?.('pre');if(!graph)return {ok:true,skipped:true};
-        if(active?.native) {cancel('Overlapping native generation');abort?.(true);return notify(fail('OVERLAPPING_GENERATION','Overlapping native requests are unsupported; send again when settled.'));}
-        const run=start(graph,true,abort),value=await execute(run,{phase:'pre',chat});
-        if(active!==run)return value;
-        if(/^STALE/.test(value.error?.code??'')){cancel('Source changed during preparation');return value;}
-        if(value.error?.code==='INTERNAL_TOOL_CONTINUATION'){active=null;return {ok:true,skipped:true,reason:'internal-tool-continuation'};}
-        if(!value.ok) {
-            active=null;
-            if(value.error.code==='ABORTED'){run.abortPrimary?.(true);run.abortPrimary=null;return notify(value,run);}
-            return notify({...value,fallback:'native'},run);
-        }
-        return notify({...value,published:run.published===true},run);
-    }
-    async function runPost(graph,messageIndex,options={}) {
-        const run=start(graph),value=await execute(run,{phase:'post',messageIndex,onEvent:options.onEvent});
-        if(active===run){active=null;return notify(value);}
-        return value;
+        return {ok:true,skipped:true};
     }
     async function runTarget(graph,target,{messageIndex,onEvent}={}) {
         // Admit before replacing run authority or consulting the host. Runtime owns
         // the bounded malformed result, including getter-free version metadata.
         const admitted=cloneWorkflowDocument(graph);
-        if(!admitted.ok)return notify(await runWorkflowForHost(graph,{target}));
-        const run=start(graph,false,null,target),phase=admitted.data.mode==='native-unified'?undefined:admitted.data.mode.slice(7);
-        const value=await execute(run,{phase,messageIndex,onEvent});
-        if(active===run){active=null;return notify(value);}
+        if(!admitted.ok){const owner={documentToken:ports.getDocumentToken?.()};return notify(await runWorkflowForHost(graph,{target}),null,owner);}
+        const run=start(graph,false,null,target);
+        const value=await execute(run,{messageIndex,onEvent});
+        if(active===run){active=null;return notify(value,run);}
         return value;
     }
     function validSource(entry) {
@@ -817,13 +777,13 @@ export function createNativeWorkflowController(ports) {
     }
     async function apply(selector) {
         const entry=candidateEntry(selector);if(!entry?.settlement)return publishCandidate(selector);
-        if(!acceptedSourceFresh(entry))return notify(fail('STALE_SOURCE','The accepted reply or its captured scope changed.'));
+        if(!acceptedSourceFresh(entry))return notify(fail('STALE_SOURCE','The accepted reply or its captured scope changed.'),null,entry.run);
         if(entry.settlementResult?.status==='settled')return entry.applied;
-        const settled=await entry.settlement.accept(entry.finalDraft);if(!settled.ok)return notify(settled);
+        const settled=await entry.settlement.accept(entry.finalDraft);if(!settled.ok)return notify(settled,null,entry.run);
         entry.settlementResult=settled.data;
         entry.applied=freezeArtifact({...entry.applied,settlement:settled.data});
         if(settled.data.status==='settled')entry.settlement.release();
-        return notify(entry.applied);
+        return notify(entry.applied,null,entry.run);
     }
     function settlementStatus(selector) {const entry=candidateEntry(selector);if(!entry?.settlement)return fail('SETTLEMENT_UNAVAILABLE','This review has no retained consequence bundle.');return entry.settlementResult?{ok:true,data:entry.settlementResult}:entry.settlement.inspect();}
     function retryPersistence(selector) {const entry=candidateEntry(selector);return entry?.settlementResult?.status==='partial'?apply(selector):Promise.resolve(fail('PERSISTENCE_RECOVERY_UNAVAILABLE','Only failed targets in a partially settled accepted review may retry persistence.'));}
@@ -833,13 +793,13 @@ export function createNativeWorkflowController(ports) {
         if(!entry)return notify(fail('STALE_CANDIDATE','This candidate is no longer available; run the workflow again.'));
         if(entry.applied) {
             if(fresh(entry.run) && bindingFresh(entry.run).ok && context().chat?.[entry.source.messageIndex]===entry.message && entry.message.mes===candidate.text && entry.message.swipe_id===entry.applied.swipeId)return entry.applied;
-            return notify(fail('STALE_CANDIDATE','The applied revision is no longer the selected reply.'));
+            return notify(fail('STALE_CANDIDATE','The applied revision is no longer the selected reply.'),null,entry.run);
         }
         if(applying)return fail('BUSY','A reply application is already in progress.');
-        const effective=bindingFresh(entry.run);if(!effective.ok)return notify(effective);
-        if(!validSource(entry))return notify(fail('STALE_SOURCE','The chat, reply, swipe, or prompt source changed. Run the workflow again.'));
+        const effective=bindingFresh(entry.run);if(!effective.ok)return notify(effective,null,entry.run);
+        if(!validSource(entry))return notify(fail('STALE_SOURCE','The chat, reply, swipe, or prompt source changed. Run the workflow again.'),null,entry.run);
         const c=context(),m=entry.message,index=entry.source.messageIndex;
-        if(typeof c.saveChat!=='function' || typeof c.updateMessageBlock!=='function' || typeof c.swipe?.refresh!=='function' || typeof ports.syncMesToSwipe!=='function' || typeof ports.syncSwipeToMes!=='function')return notify(fail('APPLY_UNAVAILABLE','Required native save, display or swipe synchronization APIs are unavailable.'));
+        if(typeof c.saveChat!=='function' || typeof c.updateMessageBlock!=='function' || typeof c.swipe?.refresh!=='function' || typeof ports.syncMesToSwipe!=='function' || typeof ports.syncSwipeToMes!=='function')return notify(fail('APPLY_UNAVAILABLE','Required native save, display or swipe synchronization APIs are unavailable.'),null,entry.run);
         const backup=structuredClone(m); let mutated=false,saveAttempted=false;
         applying=true;
         try {
@@ -880,10 +840,10 @@ export function createNativeWorkflowController(ports) {
             if(saved===false || saved?.ok===false || !stillApplied())throw new Error('Save failed or source changed');
             entry.applied=freezeArtifact({...entry.run.publicResult,ok:true,appliedLocally:true,saveAttempted:true,persistence:'unverified',swipeId});
             for(const [id,sibling]of candidates)if(sibling!==entry&&sibling.source.token===entry.source.token)candidates.delete(id);
-            return notify(entry.applied);
+            return notify(entry.applied,null,entry.run);
         } catch {
             if(mutated) {for(const key of Object.keys(m))delete m[key];Object.assign(m,backup);try{if(context().chat===entry.chat && same(identity(context()),entry.run.identity)){await c.updateMessageBlock(index,m);await c.swipe.refresh(true,false);}}catch{/* Report detectable failure even if refresh fails. */}}
-            return notify({...fail('APPLY_FAILED','The revision could not be applied; the original local message was restored.'),appliedLocally:false,saveAttempted,persistence:saveAttempted?'unverified':'not-attempted'});
+            return notify({...fail('APPLY_FAILED','The revision could not be applied; the original local message was restored.'),appliedLocally:false,saveAttempted,persistence:saveAttempted?'unverified':'not-attempted'},null,entry.run);
         } finally {applying=false;}
     }
     function subscribe() {
@@ -931,7 +891,7 @@ export function createNativeWorkflowController(ports) {
         unsubscribe=()=>{cancel('Controller disposed');for(const [event,fn]of subscriptions)(c.eventSource.removeListener ?? c.eventSource.off)?.call(c.eventSource,event,fn);unsubscribe=null;recall.dispose();};
         return unsubscribe;
     }
-    const controller={beforeGenerate,runPre,runPost,runTarget,apply,reject,syncRecall:recall.sync,statusRecall:recall.status,queueRecall:recall.queue,cancelRecall:recall.cancel,captureRecall:recall.captureQueueCommand,changeRecallQueues:recall.changeQueues,resetRecallDocument:recall.resetDocument,subscribeRecall:recall.subscribe,settlementStatus,retryPersistence,candidateStatus,cancel,lastResult:()=>result,lastAutomaticResult:()=>automaticResult,subscribe,dispose:()=>{if(unsubscribe)unsubscribe();else recall.dispose();}};
+    const controller={beforeGenerate,runTarget,apply,reject,syncRecall:recall.sync,statusRecall:recall.status,queueRecall:recall.queue,cancelRecall:recall.cancel,captureRecall:recall.captureQueueCommand,changeRecallQueues:recall.changeQueues,resetRecallDocument:recall.resetDocument,subscribeRecall:recall.subscribe,settlementStatus,retryPersistence,candidateStatus,cancel,lastResult:()=>result,lastAutomaticResult:()=>automaticResult,subscribe,dispose:()=>{if(unsubscribe)unsubscribe();else recall.dispose();}};
     retentionInspectors.set(controller,()=>{
         const runs=new Set([active,...[...sources.values(),...candidates.values()].map(entry=>entry.run)].filter(Boolean));
         const recordings=new Set([result?.recording,automaticResult?.result.recording,...[...runs].map(run=>run.publicResult?.recording),...[...candidates.values()].map(entry=>entry.applied?.recording)].filter(Boolean));

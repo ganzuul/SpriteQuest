@@ -1,12 +1,12 @@
-import { safeWorkflowData } from './contracts.js?v=0.26.0';
-import { cloneWorkflowDocument } from './document.js?v=0.26.0';
-import { operationFor } from './catalog.js?v=0.26.0';
-import { definitionRefKey, nodeBindingOverrideKey } from './definition-data.js?v=0.26.0';
-import { inspectExpandedGraph, inspectDefinitionGraph } from './graph-validation.js?v=0.26.0';
-import { compositionIds, samePath, pathStartsWith } from './composition-edit.js?v=0.26.0';
-import { materializeInstanceControls } from './composition-transform.js?v=0.26.0';
-import { exportWorkflow, parseWorkflow, selectSubgraphClosure } from './packages.js?v=0.26.0';
-import { prepareWorkflowInsertion } from './insertion.js?v=0.26.0';
+import { safeWorkflowData } from './contracts.js?v=0.27.0';
+import { cloneWorkflowDocument } from './document.js?v=0.27.0';
+import { operationFor, phaseForNode } from './catalog.js?v=0.27.0';
+import { definitionRefKey, nodeBindingOverrideKey } from './definition-data.js?v=0.27.0';
+import { inspectExpandedGraph, inspectDefinitionGraph } from './graph-validation.js?v=0.27.0';
+import { compositionIds, samePath, pathStartsWith } from './composition-edit.js?v=0.27.0';
+import { materializeInstanceControls } from './composition-transform.js?v=0.27.0';
+import { exportWorkflow, parseWorkflowFragment, selectSubgraphClosure } from './packages.js?v=0.27.0';
+import { prepareWorkflowInsertion } from './insertion.js?v=0.27.0';
 
 const fail = (message, code = 'INVALID_CLIPBOARD') => ({ ok: false, error: { code, message } });
 
@@ -98,7 +98,7 @@ export function readClip(textOrEnvelope) {
     let text;
     try { text = typeof textOrEnvelope === 'string' ? textOrEnvelope : JSON.stringify(textOrEnvelope); }
     catch { return fail('Expected portable clipboard JSON.'); }
-    const parsed = parseWorkflow(text); if (!parsed.ok) return parsed;
+    const parsed = parseWorkflowFragment(text); if (!parsed.ok) return parsed;
     try { return { ok: true, data: exportWorkflow(parsed.data) }; }
     catch (error) { return fail(error.message); }
 }
@@ -106,5 +106,16 @@ export function readClip(textOrEnvelope) {
 /** Prepare a detached insertion for a single captured edit and undo transaction. */
 export function prepareClipPaste(destination, envelope, options = {}) {
     const clip = readClip(envelope); if (!clip.ok) return clip;
+    const target = cloneWorkflowDocument(destination); if (!target.ok) return target;
+    let rootView = false;
+    try {
+        const property = Object.getOwnPropertyDescriptor(options, 'viewPath');
+        rootView = !property || Object.hasOwn(property, 'value') && Array.isArray(property.value) && property.value.length === 0;
+    } catch { return fail('Expected plain insertion options.'); }
+    if (target.data.mode === 'native-unified' && rootView && ['native-pre', 'native-post'].includes(clip.data.graph.mode)) {
+        const graph = clip.data.graph;
+        for (const node of Object.values(graph.nodes)) if (node.type === 'workflow') node.phase = phaseForNode(graph, node);
+        graph.mode = 'native-unified';
+    }
     return prepareWorkflowInsertion(destination, clip.data.graph, options);
 }

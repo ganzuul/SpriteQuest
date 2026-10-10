@@ -2,7 +2,7 @@
 export function installMock({ prompts = [], chat = [], settings = {} } = {}) {
     const legacy = ['graphs', 'activeGraphId', 'nativeBindings', 'workspaceViews'].some(key => Object.hasOwn(settings, key));
     const workflowSettings = legacy
-        ? { schema: 1, enabled: false, graphs: {}, activeGraphId: null, nativeBindings: { preGraphId: null, postGraphId: null }, subgraphLibrary: { definitions: {} }, ui: {}, ...settings }
+        ? { schema: 1, enabled: false, graphs: {}, activeGraphId: null, nativeBindings: { workflowGraphId: null }, subgraphLibrary: { definitions: {} }, ui: {}, ...settings }
         : { schema: 2, enabled: false, recoveryDraft: null, migrationRecovery: [], subgraphLibrary: { definitions: {} }, ui: {}, ...settings };
     const c = {
         extensionSettings: { lattice: workflowSettings },

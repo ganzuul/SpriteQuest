@@ -267,7 +267,7 @@ test('effective wrapper contents survive editable body changes and explicit shel
     await page.waitForFunction(() => !!window.canvasHarness);
     await page.evaluate(async () => {
         const h = window.canvasHarness, { effectiveInstanceWorkflow } = await import('/tests/fixtures/workflow-effective-instance.mjs');
-        const root = effectiveInstanceWorkflow();
+        const root = effectiveInstanceWorkflow(); root.mode = 'native-unified';
         root.nodes.one.nodeBindingOverrides = { '[[],"compact"]': { model: null } };
         await h.activate(root); await h.view({ x: 160, y: 50, zoom: 0.85 });
     });

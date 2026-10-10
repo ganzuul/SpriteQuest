@@ -9,7 +9,7 @@ async function setup(page, readOnly = false) {
             import('/src/ui/native-wire-bridge.js?v=' + version),
             import('/src/ui/native-search-catalog.js?v=' + version), import('/src/workflow/connection-edits.js?v=' + version), import('/src/workflow/transactions.js?v=' + version),
         ]);
-        const root = { id: 'native-canvas-browser', schema: 3, runtime: 2, mode: 'native-pre', nodes: {
+        const root = { id: 'native-canvas-browser', schema: 3, runtime: 2, mode: 'native-unified', nodes: {
             source: { id: 'source', type: 'workflow', operation: 'scene-context', x: 30, y: 30 },
             first: { id: 'first', type: 'workflow', operation: 'smart-compactor', x: 350, y: 30 },
         }, wires: {}, groups: {}, portals: {}, definitions: {}, view: { x: 93, y: 47, zoom: .73 } };
@@ -148,11 +148,12 @@ test('actual activated direct wire double click inserts a typed Reroute through 
     const events = await page.evaluate(() => window.canvasPointerEvents);
     expect(events.find(event => event.type === 'dblclick'), JSON.stringify(events)).toMatchObject({ wireId: 'a', targetIsHost: false });
     await expect.poll(() => page.evaluate(id => Object.values(window.canvasHarness.S.activeWorkflow().nodes).filter(node => node.operation === 'reroute').length, id)).toBe(1);
-    const result = await page.evaluate(id => {
+    const result = await page.evaluate(async id => {
+        const { phaseForNode } = await import('/src/workflow/catalog.js');
         const root = window.canvasHarness.S.activeWorkflow(), node = Object.values(root.nodes).find(node => node.operation === 'reroute');
-        return { node, first: root.wires.a, second: Object.values(root.wires).find(wire => wire.from === node.id), count: Object.keys(root.wires).length };
+        return { node, phase: phaseForNode(root, node), first: root.wires.a, second: Object.values(root.wires).find(wire => wire.from === node.id), count: Object.keys(root.wires).length };
     }, id);
-    expect(result).toMatchObject({ node: { artifactKind: 'context', phase: 'pre', compact: true }, first: { from: 'source', fromPort: 'out', to: result.node.id, toPort: 'in' },
+    expect(result).toMatchObject({ node: { artifactKind: 'context', compact: true }, phase: 'pre', first: { from: 'source', fromPort: 'out', to: result.node.id, toPort: 'in' },
         second: { from: result.node.id, fromPort: 'out', to: 'first/path', toPort: 'scene' }, count: 5 });
     await expect(page.locator(`.pc-node-native[data-id="${result.node.id}"]`)).toHaveCount(1);
     expect(await page.evaluate(() => window.canvasHarness.canvas.hasContentGesture())).toBe(false);

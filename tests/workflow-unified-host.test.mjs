@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-const lifecycle = await import('../src/workflow/operations/lifecycle-nodes.js?v=0.26.0').catch(() => ({}));
-const revisions = await import('../src/workflow/draft-revisions.js?v=0.26.0');
+const lifecycle = await import('../src/workflow/operations/lifecycle-nodes.js?v=0.27.0').catch(() => ({}));
+const revisions = await import('../src/workflow/draft-revisions.js?v=0.27.0');
 
 test('native lifecycle descriptors expose activation and distinct reply metadata ports', () => {
     assert.equal(typeof lifecycle.describeLifecycleNode, 'function');
@@ -29,7 +29,7 @@ test('Review/Publish converts only a checked Draft lineage into a root-source ca
     assert.equal((await lifecycle.executeLifecycleNode({ id: 'publish', operation: 'review-publish' }, { draft: native }, { phase: 'post', root: true, rootMode: 'native-unified' })).ok, true);
 });
 
-const { createNativeWorkflowController } = await import('../src/workflow/host.js?v=0.26.0');
+const { createNativeWorkflowController } = await import('../src/workflow/host.js?v=0.27.0');
 const nextTurn = () => new Promise(resolve => setTimeout(resolve, 10));
 function unifiedGraph({ guidance = false, revise = true } = {}) {
     const nodes = { send: { id: 'send', type: 'workflow', operation: 'on-send' }, generate: { id: 'generate', type: 'workflow', operation: 'generate-reply' }, review: { id: 'review', type: 'workflow', operation: 'review-publish' } };
@@ -413,4 +413,33 @@ test('source and user mutation from the prompt setter revoke guidance before nat
         assert.equal(result.awaitingNative, undefined); assert.deepEqual(result.reviewHandles, []);
         assert.equal(Object.values(f.c.extensionPrompts).every(value => !value.value), true);
     }
+});
+
+
+test('Send skips a legacy Pre assignment without resolving or publishing it', async () => {
+    const legacy = { id: 'retired-pre', schema: 3, runtime: 2, mode: 'native-pre', nodes: {
+        text: { id: 'text', type: 'workflow', operation: 'compose', outputKind: 'guidance', sections: [{ name: 'direction', text: 'Retired guidance.' }] },
+        guidance: { id: 'guidance', type: 'workflow', operation: 'guidance' }
+    }, wires: { guide: { id: 'guide', route: 'wire', from: 'text', fromPort: 'out', to: 'guidance', toPort: 'in' } }, definitions: {}, portals: {} };
+    const c = { chatId: 'story', characterId: 0, groupId: null, chat: [{ is_user: true, mes: 'Continue.' }], extensionPrompts: { 'lattice:guidance:old': { value: 'Expired' }, other: { value: 'Keep' } } };
+    c.setExtensionPrompt = (key, value) => { c.extensionPrompts[key] = { value }; };
+    let legacyReads = 0, effects = 0;
+    const controller = createNativeWorkflowController({ context: () => c, isEnabled: () => true, getGraph: phase => { if (phase === 'pre') { legacyReads++; return legacy; } }, countTokens: () => { effects++; return { tokens: 1 }; }, resolveBinding: () => { effects++; }, request: () => { effects++; } });
+    const result = await controller.beforeGenerate(c.chat, 8192, () => {}, 'normal');
+    assert.equal(result.ok, true); assert.equal(result.skipped, true);
+    assert.equal(legacyReads, 0); assert.equal(effects, 0);
+    assert.equal(c.extensionPrompts['lattice:guidance:old'].value, ''); assert.equal(c.extensionPrompts.other.value, 'Keep');
+    assert.equal(Object.values(c.extensionPrompts).some(entry => entry.value === 'Retired guidance.'), false);
+});
+
+test('identical document replacement cannot publish a late automatic result over a fresh Send',async()=>{
+    const graph=unifiedGraph();let owner={},release,started;
+    const waiting=new Promise(resolve=>started=resolve);let calls=0;
+    const f=nativeFixture(graph,{ports:{getDocumentToken:()=>owner},request:async()=>{if(++calls===1){started();await new Promise(resolve=>release=resolve);}return {ok:true,data:{text:'Revised reply.',finish:'stop'}};}});
+    await f.start();addReply(f);await f.c.eventSource.emit('MESSAGE_RECEIVED',1,'normal');f.setBusy(false);await f.c.eventSource.emit('GENERATION_ENDED',2);await waiting;
+    owner={};f.controller.cancel('Workflow document replaced');await nextTurn();assert.equal(f.results.length,0,'Replaced document results never notify the current document');
+    f.c.chat.push({mes:'Continue.',is_user:true,extra:{}});await f.start();addReply(f);await f.c.eventSource.emit('MESSAGE_RECEIVED',3,'normal');f.setBusy(false);await f.c.eventSource.emit('GENERATION_ENDED',4);
+    const fresh=await settled(f),automatic=f.controller.lastAutomaticResult();assert.equal(fresh.ok,true);assert.equal(automatic.origin.documentToken,owner);
+    release();await nextTurn();assert.equal(f.controller.lastAutomaticResult(),automatic);assert.equal(f.results.length,1);
+    assert.equal(f.controller.candidateStatus(fresh.reviewHandles[0]).ok,true);
 });

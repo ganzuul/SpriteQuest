@@ -1,0 +1,607 @@
+{
+  "kind": "lattice-workflow",
+  "schema": 2,
+  "minRuntime": 2,
+  "graph": {
+    "id": "remastered-lesson-18",
+    "name": "18. Let existing memories shape the next reply",
+    "description": "Read genuine actor memory, reflect and express private portrayal Guidance; internalize only already settled events and stage accepted Commit.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nSelect native Rowan and replace character:rowan.png consistently with the selected loaded actor identity. Use actual existing native memory state/episodes/events; imported files cannot create native private authority.\n\nOpen Let existing memories shape the next reply and inspect the named pins.\nInspect Read state, Recall episodes and the event record provenance.\nExpress renders private hints deterministically; Collect retains their typed Guidance as private Data for the verified Character Direction native producer.\nPost Memory Read captures the exact just-generated native event evidence; Internalize remains a pending proposal and default transaction-derived Commit settles only on accepted review.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: At most 4 auxiliary requests: Reflect, current participation interpretation, Character Direction and post Internalize. Express behavior and native Memory read/recall/commit are deterministic. One ordinary native generation.\nCheckpoints:\nInternalize.out: A private proposal descends from genuine settled memory events; rejection leaves memory unchanged.",
+    "schema": 3,
+    "runtime": 2,
+    "mode": "native-unified",
+    "nodes": {
+      "send": {
+        "id": "send",
+        "type": "workflow",
+        "operation": "on-send",
+        "operationVersion": 1,
+        "title": "On Send",
+        "enabled": true,
+        "x": 100,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-0",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "On Send"
+      },
+      "generate": {
+        "id": "generate",
+        "type": "workflow",
+        "operation": "generate-reply",
+        "operationVersion": 1,
+        "title": "Generate Reply · SillyTavern",
+        "enabled": true,
+        "x": 1900,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-5",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Generate Reply · SillyTavern",
+        "budgetTokens": 768
+      },
+      "review": {
+        "id": "review",
+        "type": "workflow",
+        "operation": "review-publish",
+        "operationVersion": 1,
+        "title": "Review / Publish",
+        "enabled": true,
+        "x": 2260,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-6",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Review / Publish"
+      },
+      "context": {
+        "id": "context",
+        "type": "workflow",
+        "operation": "scene-context",
+        "title": "Scene Context",
+        "enabled": true,
+        "x": 100,
+        "y": 560,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-0",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Scene Context · public observations",
+        "recentMessages": 12,
+        "includeCharacter": false,
+        "visibilityMode": "public"
+      },
+      "state": {
+        "id": "state",
+        "type": "workflow",
+        "operation": "memory",
+        "operationVersion": 1,
+        "title": "Memory",
+        "enabled": true,
+        "x": 100,
+        "y": 880,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-0",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Memory",
+        "mode": "read",
+        "view": "state"
+      },
+      "episodes": {
+        "id": "episodes",
+        "type": "workflow",
+        "operation": "memory",
+        "operationVersion": 1,
+        "title": "Memory",
+        "enabled": true,
+        "x": 100,
+        "y": 1200,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-0",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Memory",
+        "mode": "recall",
+        "query": "current scene",
+        "limit": 4
+      },
+      "settled": {
+        "id": "settled",
+        "type": "workflow",
+        "operation": "memory",
+        "operationVersion": 1,
+        "title": "Memory",
+        "enabled": true,
+        "x": 100,
+        "y": 1520,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-0",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "post",
+        "alias": "Memory",
+        "mode": "read",
+        "view": "events"
+      },
+      "reflect": {
+        "id": "reflect",
+        "type": "workflow",
+        "operation": "reflect",
+        "operationVersion": 1,
+        "title": "Reflect",
+        "enabled": true,
+        "x": 460,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-1",
+        "profileId": "lattice:active-sillytavern",
+        "model": null,
+        "modelRole": "Analysis",
+        "alias": "Reflect",
+        "mode": "character",
+        "maxTokens": 2048,
+        "instructions": "Treat private state as this selected actor’s perspective. Preserve uncertainty and observed facts."
+      },
+      "express": {
+        "id": "express",
+        "type": "workflow",
+        "operation": "express",
+        "operationVersion": 1,
+        "title": "Express",
+        "enabled": true,
+        "x": 820,
+        "y": 240,
+        "w": 300,
+        "h": 260,
+        "inGroup": "stage-2",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Express",
+        "mode": "behavior",
+        "maxTokens": 2048,
+        "instructions": "Offer restrained portrayal hints for this selected actor; never decide the player action."
+      },
+      "express-material": {
+        "id": "express-material",
+        "type": "workflow",
+        "operation": "collect",
+        "operationVersion": 1,
+        "title": "Collect",
+        "enabled": true,
+        "x": 1180,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-3",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "artifactKind": "guidance",
+        "alias": "Collect",
+        "inputs": [
+          {
+            "id": "behavior",
+            "label": "Private deterministic behavior hints",
+            "required": true
+          }
+        ]
+      },
+      "cast-request": {
+        "id": "cast-request",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 100,
+        "y": 1840,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-0",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "pre",
+        "alias": "Text",
+        "text": "Return exactly {sceneId,sourceId,revision,actors:[{actorId,status,evidence}]}. Copy identity from context.source. Check only character:rowan.png. Present requires exact current scene quote and actual participation, not name mention, remembered actor, card text or offscreen speculation. Status is present, absent or unresolved."
+      },
+      "cast": {
+        "id": "cast",
+        "type": "workflow",
+        "operation": "model-call",
+        "operationVersion": 1,
+        "title": "Model Call",
+        "enabled": true,
+        "x": 460,
+        "y": 560,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-1",
+        "profileId": "lattice:active-sillytavern",
+        "model": null,
+        "modelRole": "Prose",
+        "phase": "pre",
+        "alias": "Model Call",
+        "instructions": "Interpret genuine scene participation from the unchanged supplied source; copy its IDs and evidence exactly.",
+        "outputKind": "data",
+        "schema": "",
+        "maxTokens": 2048
+      },
+      "cast-presence-0": {
+        "id": "cast-presence-0",
+        "type": "workflow",
+        "operation": "scene-presence",
+        "operationVersion": 1,
+        "title": "Scene Presence",
+        "enabled": true,
+        "x": 820,
+        "y": 560,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-2",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "pre",
+        "alias": "Scene Presence",
+        "actorId": "character:rowan.png"
+      },
+      "memory-direction": {
+        "id": "memory-direction",
+        "type": "workflow",
+        "operation": "character-direction",
+        "operationVersion": 1,
+        "title": "Character Direction",
+        "enabled": true,
+        "x": 1540,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-4",
+        "profileId": "lattice:active-sillytavern",
+        "model": null,
+        "modelRole": "characterDirection",
+        "alias": "Character Direction",
+        "actorId": "character:rowan.png",
+        "systemPrompt": "Use only the supplied private Express behavior hints and genuine authorized actor context for restrained NPC portrayal. Reflection is an interpretation, not a settled fact. Do not choose player actions or reveal private records publicly.",
+        "maxTokens": 1024
+      },
+      "internalize": {
+        "id": "internalize",
+        "type": "workflow",
+        "operation": "internalize",
+        "operationVersion": 1,
+        "title": "Internalize",
+        "enabled": true,
+        "x": 460,
+        "y": 880,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-1",
+        "profileId": "lattice:active-sillytavern",
+        "model": null,
+        "modelRole": "Analysis",
+        "phase": "post",
+        "alias": "Internalize",
+        "mode": "experience",
+        "maxTokens": 2048,
+        "instructions": "Propose updates only from genuine settled events supplied by Memory Read. Empty or unsettled evidence grants no new history."
+      },
+      "commit": {
+        "id": "commit",
+        "type": "workflow",
+        "operation": "memory",
+        "operationVersion": 1,
+        "title": "Memory",
+        "enabled": true,
+        "x": 820,
+        "y": 880,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-2",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Memory",
+        "mode": "commit",
+        "idempotencyKey": "lattice-memory-commit"
+      },
+      "lesson-note": {
+        "id": "lesson-note",
+        "type": "note",
+        "title": "Lesson instructions",
+        "enabled": true,
+        "x": 100,
+        "y": 0,
+        "w": 900,
+        "h": 180,
+        "content": "Read genuine actor memory, reflect and express private portrayal Guidance; internalize only already settled events and stage accepted Commit.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nSelect native Rowan and replace character:rowan.png consistently with the selected loaded actor identity. Use actual existing native memory state/episodes/events; imported files cannot create native private authority.\n\nOpen Let existing memories shape the next reply and inspect the named pins.\nInspect Read state, Recall episodes and the event record provenance.\nExpress renders private hints deterministically; Collect retains their typed Guidance as private Data for the verified Character Direction native producer.\nPost Memory Read captures the exact just-generated native event evidence; Internalize remains a pending proposal and default transaction-derived Commit settles only on accepted review.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: At most 4 auxiliary requests: Reflect, current participation interpretation, Character Direction and post Internalize. Express behavior and native Memory read/recall/commit are deterministic. One ordinary native generation.\nCheckpoints:\nInternalize.out: A private proposal descends from genuine settled memory events; rejection leaves memory unchanged.",
+        "commentFrame": true,
+        "moveContents": false
+      }
+    },
+    "wires": {
+      "edge-1": {
+        "id": "edge-1",
+        "route": "wire",
+        "from": "send",
+        "fromPort": "activation",
+        "to": "generate",
+        "toPort": "activation"
+      },
+      "edge-2": {
+        "id": "edge-2",
+        "route": "wire",
+        "from": "context",
+        "fromPort": "out",
+        "to": "reflect",
+        "toPort": "context"
+      },
+      "edge-3": {
+        "id": "edge-3",
+        "route": "wire",
+        "from": "state",
+        "fromPort": "out",
+        "to": "reflect",
+        "toPort": "state"
+      },
+      "edge-4": {
+        "id": "edge-4",
+        "route": "wire",
+        "from": "episodes",
+        "fromPort": "out",
+        "to": "reflect",
+        "toPort": "episodes"
+      },
+      "edge-5": {
+        "id": "edge-5",
+        "route": "wire",
+        "from": "reflect",
+        "fromPort": "out",
+        "to": "express",
+        "toPort": "assessment"
+      },
+      "edge-6": {
+        "id": "edge-6",
+        "route": "wire",
+        "from": "express",
+        "fromPort": "out",
+        "to": "express-material",
+        "toPort": "behavior"
+      },
+      "edge-7": {
+        "id": "edge-7",
+        "route": "wire",
+        "from": "cast-request",
+        "fromPort": "out",
+        "to": "cast",
+        "toPort": "prompt"
+      },
+      "edge-8": {
+        "id": "edge-8",
+        "route": "wire",
+        "from": "context",
+        "fromPort": "out",
+        "to": "cast",
+        "toPort": "context"
+      },
+      "edge-9": {
+        "id": "edge-9",
+        "route": "wire",
+        "from": "cast",
+        "fromPort": "out",
+        "to": "cast-presence-0",
+        "toPort": "in"
+      },
+      "edge-10": {
+        "id": "edge-10",
+        "route": "wire",
+        "from": "cast-presence-0",
+        "fromPort": "out",
+        "to": "memory-direction",
+        "toPort": "presence"
+      },
+      "edge-11": {
+        "id": "edge-11",
+        "route": "wire",
+        "from": "express-material",
+        "fromPort": "out",
+        "to": "memory-direction",
+        "toPort": "data"
+      },
+      "edge-12": {
+        "id": "edge-12",
+        "route": "wire",
+        "from": "memory-direction",
+        "fromPort": "out",
+        "to": "generate",
+        "toPort": "guidance"
+      },
+      "edge-13": {
+        "id": "edge-13",
+        "route": "wire",
+        "from": "state",
+        "fromPort": "out",
+        "to": "internalize",
+        "toPort": "state"
+      },
+      "edge-14": {
+        "id": "edge-14",
+        "route": "wire",
+        "from": "settled",
+        "fromPort": "out",
+        "to": "internalize",
+        "toPort": "events"
+      },
+      "edge-15": {
+        "id": "edge-15",
+        "route": "wire",
+        "from": "internalize",
+        "fromPort": "out",
+        "to": "commit",
+        "toPort": "proposal"
+      },
+      "edge-16": {
+        "id": "edge-16",
+        "route": "wire",
+        "from": "generate",
+        "fromPort": "draft",
+        "to": "review",
+        "toPort": "draft"
+      }
+    },
+    "groups": {
+      "stage-0": {
+        "id": "stage-0",
+        "title": "Preparation / processing",
+        "description": "Stage 0. Wires determine execution; folding is presentation only.",
+        "x": 75,
+        "y": 190,
+        "w": 350,
+        "h": 1885,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "send",
+          "context",
+          "state",
+          "episodes",
+          "settled",
+          "cast-request"
+        ]
+      },
+      "stage-1": {
+        "id": "stage-1",
+        "title": "Preparation / processing",
+        "description": "Stage 1. Wires determine execution; folding is presentation only.",
+        "x": 435,
+        "y": 190,
+        "w": 350,
+        "h": 925,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "reflect",
+          "cast",
+          "internalize"
+        ]
+      },
+      "stage-2": {
+        "id": "stage-2",
+        "title": "Preparation / processing",
+        "description": "Stage 2. Wires determine execution; folding is presentation only.",
+        "x": 795,
+        "y": 190,
+        "w": 350,
+        "h": 925,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "express",
+          "cast-presence-0",
+          "commit"
+        ]
+      },
+      "stage-3": {
+        "id": "stage-3",
+        "title": "Preparation / processing",
+        "description": "Stage 3. Wires determine execution; folding is presentation only.",
+        "x": 1155,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "express-material"
+        ]
+      },
+      "stage-4": {
+        "id": "stage-4",
+        "title": "Preparation / processing",
+        "description": "Stage 4. Wires determine execution; folding is presentation only.",
+        "x": 1515,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "memory-direction"
+        ]
+      },
+      "stage-5": {
+        "id": "stage-5",
+        "title": "Native generation",
+        "description": "Stage 5. Wires determine execution; folding is presentation only.",
+        "x": 1875,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#284e67",
+        "collapsed": false,
+        "members": [
+          "generate"
+        ]
+      },
+      "stage-6": {
+        "id": "stage-6",
+        "title": "Review / accepted staging",
+        "description": "Stage 6. Wires determine execution; folding is presentation only.",
+        "x": 2235,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "review"
+        ]
+      }
+    },
+    "roles": {
+      "Analysis": {
+        "model": null,
+        "profileId": "lattice:active-sillytavern"
+      },
+      "Prose": {
+        "model": null,
+        "profileId": "lattice:active-sillytavern"
+      },
+      "characterDirection": {
+        "model": null,
+        "profileId": "lattice:active-sillytavern"
+      }
+    },
+    "portals": {},
+    "definitions": {},
+    "template": {
+      "id": "lesson-18",
+      "version": 1
+    },
+    "view": {
+      "x": 0,
+      "y": 0,
+      "zoom": 0.65
+    }
+  }
+}

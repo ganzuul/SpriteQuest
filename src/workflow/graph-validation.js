@@ -1,7 +1,7 @@
-import { validateNodeModifiers } from './modifiers.js?v=0.26.0';
-import { ARTIFACT_KINDS, operationFor, describeOperation, portsForNode, phaseForNode } from './catalog.js?v=0.26.0';
-import { cloneDefinitionData, computeDefinitionIdentity, definitionRefKey, inspectDefinitionMetadata, describeExposedParameter, nodeBindingOverrideKey, artifactAddressKey } from './definition-data.js?v=0.26.0';
-import { samePath, safeId } from './composition-edit.js?v=0.26.0';
+import { validateNodeModifiers } from './modifiers.js?v=0.27.0';
+import { ARTIFACT_KINDS, operationFor, describeOperation, portsForNode, phaseForNode } from './catalog.js?v=0.27.0';
+import { cloneDefinitionData, computeDefinitionIdentity, definitionRefKey, inspectDefinitionMetadata, describeExposedParameter, nodeBindingOverrideKey, artifactAddressKey } from './definition-data.js?v=0.27.0';
+import { samePath, safeId } from './composition-edit.js?v=0.27.0';
 
 const record = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 const idText = value => typeof value === 'string' && value.length > 0;

@@ -1,10 +1,10 @@
-import { listWorkflowExampleResults } from '../workflow/examples.js?v=0.26.0';
-import { prepareWorkspaceViews } from './workspace-preparation.js?v=0.26.0';
-import { nodeCards } from '../canvas/presentation.js?v=0.26.0';
-import { isCommentFrame } from '../canvas/comment-frames.js?v=0.26.0';
-import { buildConnectionRoute } from '../canvas/connection-route.js?v=0.26.0';
+import { listWorkflowExampleResults } from '../workflow/examples.js?v=0.27.0';
+import { prepareWorkspaceViews } from './workspace-preparation.js?v=0.27.0';
+import { nodeCards } from '../canvas/presentation.js?v=0.27.0';
+import { isCommentFrame } from '../canvas/comment-frames.js?v=0.27.0';
+import { buildConnectionRoute } from '../canvas/connection-route.js?v=0.27.0';
 
-const PRESENTATION_REVISION = 2;
+const PRESENTATION_REVISION = 3;
 let cacheKey = '', cachedTiles;
 const freeze = value => {
     if (value && typeof value === 'object' && !Object.isFrozen(value)) {
@@ -20,7 +20,7 @@ export function projectWorkflowExamples() {
     const key = JSON.stringify([PRESENTATION_REVISION, examples]);
     if (key === cacheKey) return cachedTiles;
     const tiles = examples.map(example => {
-        const tile = { id: example.id, number: example.number, title: example.title, goal: example.goal };
+        const tile = { id: example.id, number: example.number, title: example.title, goal: example.goal, lesson: example.lesson };
         if (!example.result.ok) return { ...tile, thumbnail: null, issue: example.result.error.message || 'This example package is invalid.' };
         try { return { ...tile, thumbnail: projectThumbnail(example.result.data), issue: '' }; }
         catch (error) { return { ...tile, thumbnail: null, issue: error instanceof Error ? error.message : 'This example preview is unavailable.' }; }
@@ -49,7 +49,16 @@ function projectThumbnail(graph) {
         };
     });
     const byId = new Map(nodes.map(node => [node.id, node]));
-    const points = [...nodes, ...comments].flatMap(node => [{ x: node.x, y: node.y }, { x: node.x + node.w, y: node.y + node.h }]);
+    const groups = Object.values(drawing.groups ?? {}).map(group => {
+        const members = [...nodes, ...comments].filter(node => drawing.nodes[node.id].inGroup === group.id);
+        if (!members.length) return { id: group.id, title: group.title || 'Group', ...(group.frame ?? { x: group.x ?? 0, y: group.y ?? 0, w: group.w || 260, h: 140 }) };
+        const x = Math.min(...members.map(node => node.x)) - 24, y = Math.min(...members.map(node => node.y)) - 48;
+        const right = Math.max(...members.map(node => node.x + node.w)) + 24, bottom = Math.max(...members.map(node => node.y + node.h)) + 24;
+        const frame = group.frame;
+        const left = frame ? Math.min(frame.x, x) : x, top = frame ? Math.min(frame.y, y) : y;
+        return { id: group.id, title: group.title || 'Group', x: left, y: top, w: Math.max(frame ? frame.x + frame.w : right, right) - left, h: Math.max(frame ? frame.y + frame.h : bottom, bottom) - top };
+    });
+    const points = [...nodes, ...comments, ...groups].flatMap(node => [{ x: node.x, y: node.y }, { x: node.x + node.w, y: node.y + node.h }]);
     const wires = Object.values(drawing.wires).map(wire => {
         const from = byId.get(wire.from)?.ports.find(port => port.dir === 'out' && port.port === wire.fromPort);
         const to = byId.get(wire.to)?.ports.find(port => port.dir === 'in' && port.port === wire.toPort);
@@ -61,5 +70,5 @@ function projectThumbnail(graph) {
     });
     const left = Math.min(...points.map(point => point.x)), top = Math.min(...points.map(point => point.y));
     const right = Math.max(...points.map(point => point.x)), bottom = Math.max(...points.map(point => point.y));
-    return { bounds: { x: left - 24, y: top - 24, w: right - left + 48, h: bottom - top + 48 }, nodes, wires, comments };
+    return { bounds: { x: left - 24, y: top - 24, w: right - left + 48, h: bottom - top + 48 }, nodes, wires, comments, groups };
 }

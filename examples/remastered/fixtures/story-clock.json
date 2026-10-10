@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "clockId": "story-clock",
+  "calendarId": "campaign-days",
+  "revision": 1,
+  "absoluteMinute": 780,
+  "dayLengthMinutes": 1440,
+  "settledTimeEventIds": []
+}

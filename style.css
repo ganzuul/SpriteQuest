@@ -1,4 +1,4 @@
-@import url('./dist/lattice.css?v=0.26.0');
+@import url('./dist/lattice.css?v=0.27.0');
 
 /* Current Lattice workspace. Explicit themes may replace these color roles. */
 :root {
@@ -195,7 +195,6 @@
 .pc-th-text { width: 100%; font-family: monospace; font-size: 0.8em; }
 .pc-th-btns { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
 .pc-th-btn { margin: 0 !important; }
-.pc-settings-sub { margin: 10px 0 4px; }
 .pc-theme-pop {
     position: absolute; top: 52px; right: 12px; z-index: 40; width: min(380px, calc(100vw - 24px));
     max-height: calc(100% - 70px); overflow-y: auto; padding: 10px 12px 12px;
@@ -375,6 +374,7 @@
 .pc-document-name { min-width: 0; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pc-document-status { color: var(--pc-muted); font-size: .9em; overflow-wrap: anywhere; }
 .pc-root-workflow-status { font-size: .82em; color: var(--pc-muted); margin-right: auto; }
+.pc-root .pc-root-stop { color: var(--pc-accent); border-color: var(--pc-accent); }
 :root[data-pc-own="1"] .pc-root .pc-pane-toggle.pc-on { color: var(--pc-accent); border-color: var(--pc-accent); background: color-mix(in srgb, var(--pc-accent) 12%, var(--pc-block)); }
 .pc-root button.pc-btn:focus-visible { outline-color: var(--pc-accent); }
 :root .pc-root .pc-node { border-radius: 4px; box-shadow: inset 0 1px 0 #ffffff09, inset 0 -1px 0 #0004; }
@@ -536,9 +536,6 @@
 .pc-context-menu [data-tone="danger"] > .pc-context-icon { color: var(--pc-menu-red); }
 .pc-context-menu [role="separator"] { margin: 5px 8px; border: 0; border-top: 1px solid var(--pc-menu-rule); }
 @media (pointer: coarse) { .pc-root .pc-context-menu .pc-context-item { min-height: 44px; } }
-.pc-workflow-starter { padding: 10px; margin: 8px 0; border: 1px solid var(--pc-border); border-radius: 4px; }
-.pc-workflow-starter p { margin: 6px 0; }
-.pc-workflow-starter small { display: block; color: var(--pc-muted); margin-bottom: 8px; }
 .pc-workflow-bar { background: var(--pc-panel-solid); border-bottom: 1px solid var(--pc-border); font-size: 12px; }
 .pc-brand img { filter: brightness(0) invert(1); }
 .pc-root .pc-canvas-host { width: 100%; height: 100%; }

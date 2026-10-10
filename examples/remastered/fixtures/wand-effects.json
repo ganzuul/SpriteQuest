@@ -1,0 +1,18 @@
+{
+  "libraryId": "wand-effects",
+  "revision": "r1",
+  "itemId": "broken-wand",
+  "effects": [
+    {
+      "id": "sparks",
+      "kind": "fixed",
+      "weight": 80,
+      "description": "Blue sparks replace the spell."
+    },
+    {
+      "id": "wild",
+      "kind": "generate",
+      "weight": 20
+    }
+  ]
+}

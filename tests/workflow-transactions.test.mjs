@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { starterGraph } from '../src/workflow/starters.js';
+import { fixtureGraph as starterGraph } from './helpers/workflow-fixtures.mjs';
 import { prepareWorkflowInsertion } from '../src/workflow/insertion.js';
 import { prepareDisconnection } from '../src/workflow/ports.js';
 import { captureGraphEditContext, commitPreparedGraph } from '../src/workflow/transactions.js';
-import * as H from '../src/history.js?v=0.26.0';
+import * as H from '../src/history.js?v=0.27.0';
 
 let nextRoot = 0;
 test('document changes during async file reading cannot be accepted by preparing afterward', () => {
@@ -39,7 +39,7 @@ test('accepted insertion preserves view and selection and creates exactly one re
     assert.equal(result.ok, true);
     assert.equal(result.data.changed, true);
     assert.equal(result.data.semanticChanged, true);
-    assert.equal(Object.keys(root.nodes).length, 8);
+    assert.equal(Object.keys(root.nodes).length, 14);
     assert.equal(root.view, view);
     assert.equal(root.selection, selection);
     assert.ok(H.undo(root));
@@ -49,7 +49,7 @@ test('accepted insertion preserves view and selection and creates exactly one re
     assert.equal(root.view, view);
     assert.equal(H.undo(root), null);
     assert.ok(H.redo(root));
-    assert.equal(Object.keys(root.nodes).length, 8);
+    assert.equal(Object.keys(root.nodes).length, 14);
     assert.equal(root.schema, 3);
     assert.equal(H.redo(root), null);
     prepared.candidate.nodes[prepared.added.nodes[0]].title = 'Changed after commit';
@@ -99,7 +99,7 @@ test('a batch publishes history once after its entire document is installed', ()
     const result = commitPreparedGraph(root, prepared);
     unsubscribe();
     assert.equal(result.ok, true);
-    assert.deepEqual(observed, [8]);
+    assert.deepEqual(observed, [14]);
 });
 
 test('context callbacks fail closed, tokens are private and successful commits cannot be replayed', () => {
@@ -161,7 +161,7 @@ test('no-op leaves pending history untouched; insertion flushes earlier typing a
     const insertion = prepareWorkflowInsertion(root, starterGraph('native-guidance')).data;
     assert.equal(commitPreparedGraph(root, { ...insertion, context }).ok, true);
     assert.ok(H.undo(root));
-    assert.equal(Object.keys(root.nodes).length, 4);
+    assert.equal(Object.keys(root.nodes).length, 7);
     assert.equal(root.nodes['response-plan'].instructions, 'typed before import');
     assert.ok(H.undo(root));
     assert.notEqual(root.nodes['response-plan'].instructions, 'typed before import');

@@ -10,7 +10,6 @@
 {#if view}
     <header><h3>Run details</h3><span class="pc-run-status" data-status={view.status}>{statusLabel(view.status)}</span></header>
     <div class="pc-run-summary"><p>{view.completedCount} of {view.executableCount} stages complete</p><p>{view.actualCalls} of {view.callBound} requests</p><p>Elapsed: {duration(view.elapsedMs)}</p></div>
-    {#if view.memoryStatus}<p class="pc-run-memory" role="status">{view.memoryStatus}</p>{/if}
     {#if view.issue}<p class="pc-run-error">{view.issue}</p>{/if}
     {#if !view.rows.length}<p class="pc-run-empty">No execution plan has been recorded.</p>{/if}
     <ol class="pc-run-rows">
@@ -25,7 +24,7 @@
     {/each}
     </ol>
 {:else}
-    <p class="pc-run-empty">Run a workflow to inspect its processing stages.</p>
+    <p class="pc-run-empty">Enable Lattice and Send with the open workflow, or use Run to here to inspect its processing stages.</p>
 {/if}
 </section>
 
@@ -34,7 +33,6 @@
     header { display: flex; align-items: center; justify-content: space-between; gap: 10px; border-bottom: 1px solid var(--pc-border); padding-bottom: 9px; } h3 { margin: 0; font-size: 14px; }
     .pc-run-status { font-size: 10px; color: var(--pc-muted); white-space: nowrap; } .pc-run-status[data-status='running'], .pc-run-status[data-status='cancelling'] { color: var(--SmartThemeQuoteColor, #e18a24); } .pc-run-status[data-status='failed'], .pc-run-status[data-status='invalid'] { color: #e58d94; } .pc-run-status[data-status='completed'] { color: #a4c2ad; } .pc-run-status[data-status='stale'] { color: #c4ad7b; } .pc-run-status[data-status='blocked'] { color: #c497a0; }
     .pc-run-summary { display: flex; flex-wrap: wrap; gap: 5px 16px; margin: 10px 0; color: var(--pc-muted); font-size: 11px; } .pc-run-summary p { margin: 0; }
-    .pc-run-memory { margin: 8px 0; color: var(--pc-text); font-size: 11px; }
     .pc-run-rows { margin: 12px 0 0; padding: 0; list-style: none; } li { min-width: 0; padding: 8px 9px; margin-bottom: 6px; border: 1px solid var(--pc-border); border-radius: 4px; background: var(--pc-control); box-shadow: inset 0 1px #0004; }
     li[data-status='running'], li[data-status='cancelling'] { border-color: var(--SmartThemeQuoteColor, #e18a24); } li[data-status='failed'] { border-color: #a44d59; background: #1a1b1c; } li[data-status='blocked'], li[data-status='not-run'] { background: #181a1b55; }
     .pc-run-row-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; } button { min-width: 0; border: 0; background: none; padding: 2px 0; color: var(--pc-text); font: inherit; font-size: 12px; text-align: left; cursor: pointer; overflow-wrap: anywhere; } button span { margin-right: 5px; color: var(--pc-muted); } button:hover:not(:disabled) { color: var(--SmartThemeQuoteColor, #e18a24); } button:focus-visible { outline: 2px solid var(--SmartThemeQuoteColor, #e18a24); outline-offset: 2px; border-radius: 2px; } button:disabled { cursor: default; }

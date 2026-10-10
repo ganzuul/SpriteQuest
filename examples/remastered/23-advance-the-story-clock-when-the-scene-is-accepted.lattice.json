@@ -1,0 +1,373 @@
+{
+  "kind": "lattice-workflow",
+  "schema": 2,
+  "minRuntime": 2,
+  "graph": {
+    "id": "remastered-lesson-23",
+    "name": "23. Advance the story clock when the scene is accepted",
+    "description": "Project an explicit forward story duration from a real Story Clock and commit only on accepted review.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nCreate/authorize Story Clock Workflow Data story-clock with calendarId campaign-days, dayLengthMinutes 1440, accepted absoluteMinute and positive revision.\n\nOpen Advance the story clock when the scene is accepted and inspect the named pins.\nEdit the sixty-minute authored proposal only to an actually agreed duration.\nInspect previous/effective clock, report and remainder. Reject leaves the accepted clock untouched.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 0 auxiliary model requests; one ordinary native generation.\nCheckpoints:\nClock Commit.receipt: Clock settlement is pending; Apply advances the genuine accepted clock once.",
+    "schema": 3,
+    "runtime": 2,
+    "mode": "native-unified",
+    "nodes": {
+      "send": {
+        "id": "send",
+        "type": "workflow",
+        "operation": "on-send",
+        "operationVersion": 1,
+        "title": "On Send",
+        "enabled": true,
+        "x": 100,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-0",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "On Send"
+      },
+      "generate": {
+        "id": "generate",
+        "type": "workflow",
+        "operation": "generate-reply",
+        "operationVersion": 1,
+        "title": "Generate Reply · SillyTavern",
+        "enabled": true,
+        "x": 1540,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-4",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Generate Reply · SillyTavern",
+        "budgetTokens": 768
+      },
+      "review": {
+        "id": "review",
+        "type": "workflow",
+        "operation": "review-publish",
+        "operationVersion": 1,
+        "title": "Review / Publish",
+        "enabled": true,
+        "x": 1900,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-5",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Review / Publish"
+      },
+      "clock": {
+        "id": "clock",
+        "type": "workflow",
+        "operation": "story-clock",
+        "operationVersion": 1,
+        "title": "Story Clock",
+        "enabled": true,
+        "x": 100,
+        "y": 560,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-0",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Story Clock",
+        "clockId": "story-clock",
+        "calendarId": "campaign-days"
+      },
+      "duration-text": {
+        "id": "duration-text",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 100,
+        "y": 880,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-0",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "pre",
+        "alias": "Text · authored input",
+        "text": "{\"kind\":\"duration\",\"minutes\":60,\"evidence\":{\"kind\":\"authored-rule\",\"origin\":\"agreed-hour-of-travel\"}}"
+      },
+      "duration": {
+        "id": "duration",
+        "type": "workflow",
+        "operation": "json-decode",
+        "operationVersion": 1,
+        "title": "JSON Decode",
+        "enabled": true,
+        "x": 460,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-1",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "pre",
+        "alias": "JSON Decode",
+        "mode": "parse",
+        "schema": ""
+      },
+      "advance": {
+        "id": "advance",
+        "type": "workflow",
+        "operation": "advance-time",
+        "operationVersion": 1,
+        "title": "Advance Time",
+        "enabled": true,
+        "x": 820,
+        "y": 240,
+        "w": 300,
+        "h": 228,
+        "inGroup": "stage-2",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Advance Time",
+        "policy": "catch-up",
+        "schedules": [],
+        "limit": 16,
+        "consumedIds": []
+      },
+      "guidance": {
+        "id": "guidance",
+        "type": "workflow",
+        "operation": "compose",
+        "operationVersion": 1,
+        "title": "Compose",
+        "enabled": true,
+        "x": 1180,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-3",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Compose",
+        "mode": "template",
+        "outputKind": "guidance",
+        "template": "Continue the scene after this explicit agreed travel duration. Story minutes are independent of message count and wall time.\n{{data:}}",
+        "sections": [],
+        "separator": "\n\n"
+      },
+      "commit-clock": {
+        "id": "commit-clock",
+        "type": "workflow",
+        "operation": "commit-clock",
+        "operationVersion": 1,
+        "title": "Clock Commit",
+        "enabled": true,
+        "x": 1180,
+        "y": 560,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-3",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Clock Commit"
+      },
+      "lesson-note": {
+        "id": "lesson-note",
+        "type": "note",
+        "title": "Lesson instructions",
+        "enabled": true,
+        "x": 100,
+        "y": 0,
+        "w": 900,
+        "h": 180,
+        "content": "Project an explicit forward story duration from a real Story Clock and commit only on accepted review.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nCreate/authorize Story Clock Workflow Data story-clock with calendarId campaign-days, dayLengthMinutes 1440, accepted absoluteMinute and positive revision.\n\nOpen Advance the story clock when the scene is accepted and inspect the named pins.\nEdit the sixty-minute authored proposal only to an actually agreed duration.\nInspect previous/effective clock, report and remainder. Reject leaves the accepted clock untouched.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 0 auxiliary model requests; one ordinary native generation.\nCheckpoints:\nClock Commit.receipt: Clock settlement is pending; Apply advances the genuine accepted clock once.",
+        "commentFrame": true,
+        "moveContents": false
+      }
+    },
+    "wires": {
+      "edge-1": {
+        "id": "edge-1",
+        "route": "wire",
+        "from": "send",
+        "fromPort": "activation",
+        "to": "generate",
+        "toPort": "activation"
+      },
+      "edge-2": {
+        "id": "edge-2",
+        "route": "wire",
+        "from": "duration-text",
+        "fromPort": "out",
+        "to": "duration",
+        "toPort": "in"
+      },
+      "edge-3": {
+        "id": "edge-3",
+        "route": "wire",
+        "from": "clock",
+        "fromPort": "out",
+        "to": "advance",
+        "toPort": "clock"
+      },
+      "edge-4": {
+        "id": "edge-4",
+        "route": "wire",
+        "from": "duration",
+        "fromPort": "out",
+        "to": "advance",
+        "toPort": "proposal"
+      },
+      "edge-5": {
+        "id": "edge-5",
+        "route": "wire",
+        "from": "advance",
+        "fromPort": "report",
+        "to": "guidance",
+        "toPort": "data"
+      },
+      "edge-6": {
+        "id": "edge-6",
+        "route": "wire",
+        "from": "guidance",
+        "fromPort": "out",
+        "to": "generate",
+        "toPort": "guidance"
+      },
+      "edge-7": {
+        "id": "edge-7",
+        "route": "wire",
+        "from": "advance",
+        "fromPort": "report",
+        "to": "commit-clock",
+        "toPort": "projection"
+      },
+      "edge-8": {
+        "id": "edge-8",
+        "route": "wire",
+        "from": "advance",
+        "fromPort": "occurrences",
+        "to": "commit-clock",
+        "toPort": "occurrences"
+      },
+      "edge-9": {
+        "id": "edge-9",
+        "route": "wire",
+        "from": "generate",
+        "fromPort": "draft",
+        "to": "review",
+        "toPort": "draft"
+      }
+    },
+    "groups": {
+      "stage-0": {
+        "id": "stage-0",
+        "title": "Preparation / processing",
+        "description": "Stage 0. Wires determine execution; folding is presentation only.",
+        "x": 75,
+        "y": 190,
+        "w": 350,
+        "h": 925,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "send",
+          "clock",
+          "duration-text"
+        ]
+      },
+      "stage-1": {
+        "id": "stage-1",
+        "title": "Preparation / processing",
+        "description": "Stage 1. Wires determine execution; folding is presentation only.",
+        "x": 435,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "duration"
+        ]
+      },
+      "stage-2": {
+        "id": "stage-2",
+        "title": "Preparation / processing",
+        "description": "Stage 2. Wires determine execution; folding is presentation only.",
+        "x": 795,
+        "y": 190,
+        "w": 350,
+        "h": 303,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "advance"
+        ]
+      },
+      "stage-3": {
+        "id": "stage-3",
+        "title": "Review / accepted staging",
+        "description": "Stage 3. Wires determine execution; folding is presentation only.",
+        "x": 1155,
+        "y": 190,
+        "w": 350,
+        "h": 605,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "guidance",
+          "commit-clock"
+        ]
+      },
+      "stage-4": {
+        "id": "stage-4",
+        "title": "Native generation",
+        "description": "Stage 4. Wires determine execution; folding is presentation only.",
+        "x": 1515,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#284e67",
+        "collapsed": false,
+        "members": [
+          "generate"
+        ]
+      },
+      "stage-5": {
+        "id": "stage-5",
+        "title": "Review / accepted staging",
+        "description": "Stage 5. Wires determine execution; folding is presentation only.",
+        "x": 1875,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "review"
+        ]
+      }
+    },
+    "roles": {},
+    "portals": {},
+    "definitions": {},
+    "template": {
+      "id": "lesson-23",
+      "version": 1
+    },
+    "view": {
+      "x": 0,
+      "y": 0,
+      "zoom": 0.65
+    }
+  }
+}

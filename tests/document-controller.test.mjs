@@ -69,3 +69,41 @@ test('Recent, examples, recovery and New use the same replacement guard',async()
         assert.equal(f.prompts.length,1);assert.equal(f.session.current(),root);assert.equal(f.activations.length,0);
     }
 });
+
+test('retired recovery candidates preserve a dirty document before any discard or save prompt',async()=>{
+    for (const mode of ['native-pre','native-post']) {
+        const f=fixture(),root=f.session.current(),source=f.session.source(),token=f.session.capture();
+        root.name='edited';
+        f.env.recovery=()=>[{id:'old',name:'Old',graph:{...graph('old'),mode}}];
+        const result=await f.controller.recover('old');
+        assert.equal(result.ok,false);assert.equal(result.error.code,'WRONG_PHASE');
+        assert.equal(f.session.current(),root);assert.equal(f.session.source(),source);
+        assert.equal(f.session.stillCurrent(token),true);assert.equal(f.session.dirty(),true);
+        assert.equal(f.prompts.length,0);assert.equal(f.writes.length,0);assert.equal(f.activations.length,0);
+    }
+});
+
+test('recovery menu offers only unified documents while original diagnostics remain available',()=>{
+    const f=fixture();
+    f.env.recovery=()=>[
+        {id:'retired',name:'Retired',graph:{...graph('retired'),mode:'native-pre'}},
+        {id:'broken',name:'Broken',issue:'Unreadable original'},
+        {id:'supported',name:'Supported',graph:graph('supported'),issue:'Presentation reset'},
+    ];
+    assert.deepEqual(f.controller.view().recovery,[{id:'supported',name:'Supported',issue:'Presentation reset'}]);
+    assert.equal(f.env.recovery().length,3);
+});
+
+test('Open and Recent reject retired editable files before prompting for a dirty replacement',async()=>{
+    for (const action of [c=>c.open(),c=>c.recent('old')]) for (const mode of ['native-pre','native-post']) {
+        const f=fixture(),root=f.session.current(),token=f.session.capture(),source=f.session.source();
+        root.name='edited';
+        const retired = {...graph('retired'),mode};
+        const file=()=>Promise.resolve(ok({text:JSON.stringify({kind:'lattice-document',schema:1,minRuntime:2,graph:retired}),source:{name:'old.json'}}));
+        f.files.open=file;f.files.readRecent=file;
+        const result=await action(f.controller);
+        assert.equal(result.ok,false);assert.equal(result.error.code,'WRONG_PHASE');
+        assert.equal(f.session.current(),root);assert.equal(f.session.source(),source);assert.equal(f.session.stillCurrent(token),true);
+        assert.equal(f.prompts.length,0);assert.equal(f.writes.length,0);assert.equal(f.activations.length,0);
+    }
+});

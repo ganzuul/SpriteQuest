@@ -7,18 +7,16 @@ async function openRecordedFields(page) {
     const graphId = await page.evaluate(async () => {
         const h = window.canvasHarness;
         const version = (await (await fetch('/manifest.json')).json()).version;
-        const { starterGraph } = await import('/src/workflow/starters.js?v=' + version);
+        const { fixtureGraph: starterGraph } = await import('/tests/helpers/workflow-fixtures.mjs');
         const graph = starterGraph('structured-guidance');
         await h.activate(graph);
         return graph.id;
     });
 
     await page.evaluate(() => window.canvasHarness.settle());
-    await rootCommand(page);
+    await page.evaluate(()=>window.canvasHarness.canvas.select({kind:'node',id:'select-fields'}));
+    await page.locator('.pc-output-preview [data-run-here]').click();
     await expect(page.locator('.pc-run-meter-label')).toHaveText('Completed');
-    await page.getByRole('button', { name: 'Graph', exact: true }).click();
-    await page.getByRole('menuitem', { name: 'Fit to view', exact: true }).click();
-    await page.locator('.pc-node-native[data-id="select-fields"] .pc-native-heading').click();
     await expect(page.locator('.pc-output-preview [role="tabpanel"] pre')).toContainText('A quiet conversation.');
     return graphId;
 }

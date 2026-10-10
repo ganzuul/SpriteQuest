@@ -4,17 +4,18 @@ Build writing processes from typed operations, inspect their intermediate result
 
 | Guide | Start here when you want to… |
 | --- | --- |
-| [Quick start](lattice-workspace.md) | Open the unified starter, enable Lattice, Send and review; explore zero-auxiliary-call legacy tools |
+| [Quick start](lattice-workspace.md) | Open the unified starter, enable Lattice, Send and review; inspect outputs without accepting effects |
+| [Thirty example workflows](examples.md) | Choose a lesson, configure fixtures, and follow accepted effects |
 | [Unified workflows](unified-workflows.md) | Apply an example to a story, chain models and decisions, configure documents/Recall, track story time and migrate a copy |
 | [Operator's manual](operators-manual.md) | Learn the editor, shelf, Details, Preview, execution, tabs, and subgraphs through screenshots |
 | [Node reference](node-reference.md) | Find every available node's artifacts, controls, model requirements, and connection examples |
 | [Reference tools and workflow library](lattice-reference-library.md) | Use Transpose, cleanup modes and reusable context/cleanup recipes |
 | [Connections and workflow comments](connection-comments.md) | Follow connections and label, annotate, move, and resize workflow sections |
-| [Model connections and host integration](native-workflows.md) | Bind local profiles, inspect provider limits, run legacy tools, review replies and troubleshoot |
+| [Model connections and host integration](native-workflows.md) | Bind local profiles, inspect provider limits, review replies and troubleshoot |
 | [Development guide](development.md) | Build the extension and reproduce documentation screenshots |
-| [Introspection](introspection-package.md) | Use original Introspection modes, actor memory starters, scoped records and package APIs |
+| [Introspection](introspection-package.md) | Use original Introspection modes, scoped actor memory, scoped records and package APIs |
 
-The [repository README](../README.md) introduces capabilities and starter workflows. Existing screenshots illustrate the editor and the named legacy/example workflows. Development research and execution records in the research/superpowers directories are historical working material, not the operator reference.
+The [repository README](../README.md) introduces capabilities and starter workflows. Screenshots illustrate unified publication and synthetic diagnostic authoring fixtures. Development research and execution records in the research/superpowers directories are historical working material, not the operator reference.
 
 ## Workflow design records
 

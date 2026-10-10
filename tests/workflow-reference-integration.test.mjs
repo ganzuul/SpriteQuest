@@ -3,16 +3,16 @@ import test from 'node:test';
 import { describeOperation, operationDefaults } from '../src/workflow/catalog.js';
 import { validateGraphStructure } from '../src/workflow/contracts.js';
 import { graphSemanticSignature, prepareNodeControlChange } from '../src/workflow/ports.js';
-import { runWorkflow } from '../src/workflow/runtime.js';
+import { runWorkflow as executeWorkflow } from '../src/workflow/runtime.js';
+const runWorkflow=(graph,ports)=>executeWorkflow(graph,{target:{kind:'terminal',address:{workflowId:graph.id,instancePath:[],nodeId:'apply'}},...ports});
 import { createNativeWorkflowController } from '../src/workflow/host.js';
 import { exportWorkflow, parseWorkflow } from '../src/workflow/packages.js';
 import { prepareNativeSearchCatalog, resolveNativeSearchChoice } from '../src/ui/native-search-catalog.js';
-import { STARTERS, starterGraph, installStarter } from '../src/workflow/starters.js';
 import { resolveWorkflow } from '../src/workflow/resolve.js';
 
 const node = (id, operation, controls = {}) => ({ id, type: 'workflow', operation, operationVersion: 1, ...controls });
 const wire = (id, from, to, toPort = 'in') => ({ id, route: 'wire', from, fromPort: 'out', to, toPort });
-const graph = (nodes, wires = {}, phase = 'post') => ({ id: 'reference-integration', schema: 3, runtime: 2, mode: 'native-' + phase, nodes, wires, definitions: {}, portals: {}, roles: {} });
+const graph = (nodes, wires = {}, phase = 'post') => ({ id: 'reference-integration', schema: 3, runtime: 2, mode: 'native-unified', nodes:Object.fromEntries(Object.entries(nodes).map(([id,value])=>[id,{...value,phase}])), wires, definitions: {}, portals: {}, roles: {} });
 const draft = text => ({ kind: 'draft', text, source: { chatId: 'fixture', messageIndex: 4, swipeId: 0, originalText: text, token: 'private-source-token' } });
 const countTokens = async text => ({ tokens: Math.ceil(text.length / 4) });
 function flow(operation, controls = {}, reference = 'Plain sentences.') {
@@ -33,7 +33,7 @@ test('legacy Draft Transpose is post-only with checked reference kinds, controls
         assert.equal(post.data.descriptor.modelRole, bound ? 'Prose' : null);
         assert.equal(post.data.ports.find(p => p.id === 'reference').kind, bound ? 'text' : 'data');
         assert.equal(post.data.ports.find(p => p.id === 'out').kind, 'patches');
-        assert.equal(describeOperation(graph({}, {}, 'pre'), n).ok, false);
+        assert.equal(describeOperation(graph({}, {}, 'pre'), {...n,phase:'pre'}).ok, false);
     }
     const transfer = node('t', 'style-transfer', { referenceKind: 'data' });
     assert.equal(describeOperation(graph({ t: transfer }), transfer).data.ports.find(p => p.id === 'reference').kind, 'data');
@@ -57,7 +57,7 @@ test('reference kind rewiring is atomic and all semantic controls invalidate exe
 });
 
 test('canonical Transpose uses Text in either phase while legacy presets retain Draft behavior', () => {
-    const scope = phase => ({ schema: 3, runtime: 2, mode: 'native-' + phase, workflowId: 'fixture', viewPath: [], inDefinition: false });
+    const scope = phase => ({ schema: 3, runtime: 2, mode: 'native-' + phase, workflowId: 'fixture', viewPath: ['helper'], inDefinition: true });
     const post = prepareNativeSearchCatalog(scope('post')).data;
     for (const phase of ['pre', 'post']) {
         const catalog = prepareNativeSearchCatalog(scope(phase)).data;
@@ -67,7 +67,7 @@ test('canonical Transpose uses Text in either phase while legacy presets retain 
             assert.ok(catalog.choices.some(choice => choice.id === id), id);
             const packet = resolveNativeSearchChoice(catalog, id);
             assert.equal(packet.controls.inputKind, 'text');
-            const described = describeOperation(graph({}, {}, phase), node('change', operation, packet.controls));
+            const described = describeOperation(graph({}, {}, phase), node('change', operation, {...packet.controls,phase}));
             assert.equal(described.ok, true, JSON.stringify(described));
             assert.equal(described.data.ports.find(port => port.id === 'in').kind, 'text');
             assert.equal(described.data.ports.find(port => port.id === 'out').kind, 'text');
@@ -168,23 +168,9 @@ test('the host rejects changed Transpose controls before granting an Apply handl
         resolveBinding: () => ({ ok: true, data: { profileId: 'fixed', model: 'fixture' } }),
         request: async () => { g.nodes.change.instructions = 'Changed during request'; return { ok: true, data: { text: 'Lean prose.', finish: 'stop' } }; },
     });
-    const result = await controller.runPost(g);
+    const result = await controller.runTarget(g,{kind:'terminal',address:{workflowId:g.id,instancePath:[],nodeId:'apply'}});
     assert.equal(result.ok, false, JSON.stringify(result));
     assert.equal(result.error.code, 'STALE_SOURCE');
     assert.equal(result.reviewHandles.length, 0);
     assert.equal(message.mes, 'Old prose.');
-});
-
-test('reference library workflows are explicit independent installations with verified call bounds', () => {
-    for (const [id, bound] of [['scene-compass', 1], ['library-literal-cleanup', 1], ['formatting-cleanup', 0], ['prose-cleanup', 1]]) {
-        assert.ok(STARTERS.some(starter => starter.id === id), id);
-        const g = starterGraph(id), resolved = resolveWorkflow(g);
-        assert.equal(resolved.ok, true, JSON.stringify(resolved));
-        assert.equal(resolved.data.callBound, bound, id);
-        assert.equal(parseWorkflow(JSON.stringify(exportWorkflow(g))).ok, true);
-        const first = installStarter(id), second = installStarter(id);
-        assert.notEqual(first.id, second.id);
-        assert.equal(resolveWorkflow(first).ok, true);
-        assert.equal(resolveWorkflow(second).ok, true);
-    }
 });

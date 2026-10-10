@@ -1,7 +1,7 @@
-import {OPERATIONS,operationDefaults,describeOperation} from '../workflow/catalog.js?v=0.26.0';
-import {cloneDefinitionData,definitionRefKey} from '../workflow/definition-data.js?v=0.26.0';
-import {inspectDefinitionGraph} from '../workflow/graph-validation.js?v=0.26.0';
-import {freeze} from '../workflow/record-data.js?v=0.26.0';
+import {OPERATIONS,operationDefaults,describeOperation} from '../workflow/catalog.js?v=0.27.0';
+import {cloneDefinitionData,definitionRefKey} from '../workflow/definition-data.js?v=0.27.0';
+import {inspectDefinitionGraph} from '../workflow/graph-validation.js?v=0.27.0';
+import {freeze} from '../workflow/record-data.js?v=0.27.0';
 const fail=(code,message)=>({ok:false,error:{code,message}});
 const pin=(id,kind,direction,required=false,label=id)=>({id,label,kind,direction,required,cardinality:'one'});
 const input=(id,kind='data',required=true,label=id)=>pin(id,kind,'input',required,label),output=(id,kind='data',label=id)=>pin(id,kind,'output',false,label);
@@ -11,7 +11,7 @@ const factories={
  'time-trigger':()=>[input('previous','data',true,'Previous Story Clock'),input('destination','data',true,'Projected Story Clock'),input('consumed','data',false,'Settled occurrence IDs (optional)'),output('occurrences','data','Ordered due events'),output('report','data','Time trigger report')],
  'for-each':controls=>[input('in'),input('state','data',controls.mode==='projected-state'),output('out'),output('state')],
  'scene-presence':()=>[input('in'),output('out')],
- 'character-direction':()=>[input('presence'),output('out','guidance')],
+ 'character-direction':()=>[input('presence'),input('data','data',false),output('out','guidance')],
  'actor-context':()=>[input('presence'),output('out','context')],
  'prompted-memory':()=>[input('presence'),input('event'),output('out')],
  'item-mention-trigger':()=>[input('source'),input('entities'),input('state','data',false),output('out'),output('state')],
@@ -24,10 +24,10 @@ const factories={
 /** Discovery only: accurate declared pins, with no manufactured executable settings or identities. */
 export function deferredNodeDescription(operation,controls={}){const factory=factories[operation],base=OPERATIONS[operation];return factory&&base?{descriptor:base,ports:factory({...base.defaults,...controls})}:null;}
 export const nodeNeedsConfiguration=operation=>Object.hasOwn(factories,operation);
-/** Explicit configuration starts from the current effective stage; fixed operations and legacy containers lock it. */
-export function configuredCreationStage(operation,mode,effectivePhase){
- const declared=OPERATIONS[operation]?.phase,legacy=mode==='native-pre'||mode==='native-post';
- return {phase:legacy?mode.slice(7):['pre','post'].includes(declared)?declared:effectivePhase==='post'?'post':'pre',phaseLocked:legacy||['pre','post'].includes(declared)};
+/** Explicit configuration starts from the current effective stage; fixed operations and stage-specific helper containers lock it. */
+export function configuredCreationStage(operation,mode,effectivePhase,inDefinition=false){
+ const declared=OPERATIONS[operation]?.phase,containerStage=inDefinition&&['native-pre','native-post'].includes(mode)?mode.slice(7):null;
+ return {phase:containerStage??(['pre','post'].includes(declared)?declared:effectivePhase==='post'?'post':'pre'),phaseLocked:!!containerStage||['pre','post'].includes(declared)};
 }
 export function iterationHelperChoices(root){
  const choices=[];for(const [key,definition] of Object.entries(root?.definitions??{})){const checked=inspectDefinitionGraph(definition,root.definitions);if(!checked.ok)continue;const ports=checked.data.interface;if(!ports.some(port=>port.id==='item'&&port.direction==='input'&&port.kind==='data'&&port.required===true)||!ports.some(port=>port.id==='result'&&port.direction==='output'&&port.kind==='data')||ports.some(port=>port.kind!=='data'||!['item','result','projectedState','nextState'].includes(port.id)||['item','projectedState'].includes(port.id)!==(port.direction==='input')))continue;choices.push({key,label:definition.name,ref:checked.data.ref,stateful:ports.some(port=>port.id==='projectedState'&&port.direction==='input')&&ports.some(port=>port.id==='nextState'&&port.direction==='output')});}return freeze(choices);

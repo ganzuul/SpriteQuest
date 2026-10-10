@@ -1,0 +1,670 @@
+{
+  "kind": "lattice-workflow",
+  "schema": 2,
+  "minRuntime": 2,
+  "graph": {
+    "id": "remastered-lesson-24",
+    "name": "24. Make curses and routines happen on schedule",
+    "description": "Project a finite duration through midnight, daily 14:00 and an origin-anchored eight-hour recurrence; preserve interrupts and consumed identities.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nAuthorize story-clock as in lesson23. midnight=0, 14:00=840, eight hours=480 anchored at origin0.\n\nOpen Make curses and routines happen on schedule and inspect the named pins.\nDefault interrupt stops at the first due boundary and reports a remaining duration.\nSwitch to catch-up only to enumerate all due events within limit12.\nStory Clock consumed identities prevent duplicate due events on accepted replay; no wall-clock timer is used.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 0 auxiliary model requests; one ordinary native generation.\nCheckpoints:\nAdvance Time.remainder: The explicit unprocessed duration survives an interrupt.\nCollection.out: Three genuine Time Triggers supply finite ordered occurrences for accepted settlement.",
+    "schema": 3,
+    "runtime": 2,
+    "mode": "native-unified",
+    "nodes": {
+      "send": {
+        "id": "send",
+        "type": "workflow",
+        "operation": "on-send",
+        "operationVersion": 1,
+        "title": "On Send",
+        "enabled": true,
+        "x": 100,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-0",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "On Send"
+      },
+      "generate": {
+        "id": "generate",
+        "type": "workflow",
+        "operation": "generate-reply",
+        "operationVersion": 1,
+        "title": "Generate Reply · SillyTavern",
+        "enabled": true,
+        "x": 2620,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-7",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Generate Reply · SillyTavern",
+        "budgetTokens": 768
+      },
+      "review": {
+        "id": "review",
+        "type": "workflow",
+        "operation": "review-publish",
+        "operationVersion": 1,
+        "title": "Review / Publish",
+        "enabled": true,
+        "x": 2980,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-8",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Review / Publish"
+      },
+      "clock": {
+        "id": "clock",
+        "type": "workflow",
+        "operation": "story-clock",
+        "operationVersion": 1,
+        "title": "Story Clock",
+        "enabled": true,
+        "x": 100,
+        "y": 560,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-0",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Story Clock",
+        "clockId": "story-clock",
+        "calendarId": "campaign-days"
+      },
+      "duration-text": {
+        "id": "duration-text",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 100,
+        "y": 880,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-0",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "pre",
+        "alias": "Text · authored input",
+        "text": "{\"kind\":\"duration\",\"minutes\":1500,\"evidence\":{\"kind\":\"authored-rule\",\"origin\":\"agreed-rest\"}}"
+      },
+      "duration": {
+        "id": "duration",
+        "type": "workflow",
+        "operation": "json-decode",
+        "operationVersion": 1,
+        "title": "JSON Decode",
+        "enabled": true,
+        "x": 460,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-1",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "pre",
+        "alias": "JSON Decode",
+        "mode": "parse",
+        "schema": ""
+      },
+      "advance": {
+        "id": "advance",
+        "type": "workflow",
+        "operation": "advance-time",
+        "operationVersion": 1,
+        "title": "Advance Time",
+        "enabled": true,
+        "x": 820,
+        "y": 240,
+        "w": 300,
+        "h": 228,
+        "inGroup": "stage-2",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Advance Time",
+        "policy": "interrupt",
+        "schedules": [
+          {
+            "scheduleId": "midnight-curse",
+            "revision": 1,
+            "kind": "daily",
+            "minuteOfDay": 0
+          },
+          {
+            "scheduleId": "daily-routine",
+            "revision": 1,
+            "kind": "daily",
+            "minuteOfDay": 840
+          },
+          {
+            "scheduleId": "eight-hour-pulse",
+            "revision": 1,
+            "kind": "interval",
+            "anchorMinute": 0,
+            "intervalMinutes": 480
+          }
+        ],
+        "limit": 12,
+        "consumedIds": []
+      },
+      "due": {
+        "id": "due",
+        "type": "workflow",
+        "operation": "collect",
+        "operationVersion": 1,
+        "title": "Collect",
+        "enabled": true,
+        "x": 1540,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-4",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "artifactKind": "data",
+        "alias": "Collect",
+        "inputs": [
+          {
+            "id": "schedule-0",
+            "label": "midnight-curse",
+            "required": true
+          },
+          {
+            "id": "schedule-1",
+            "label": "daily-routine",
+            "required": true
+          },
+          {
+            "id": "schedule-2",
+            "label": "eight-hour-pulse",
+            "required": true
+          }
+        ]
+      },
+      "trigger-0": {
+        "id": "trigger-0",
+        "type": "workflow",
+        "operation": "time-trigger",
+        "operationVersion": 1,
+        "title": "Time Trigger",
+        "enabled": true,
+        "x": 1180,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-3",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Time Trigger",
+        "mode": "daily",
+        "scheduleId": "midnight-curse",
+        "scheduleRevision": 1,
+        "clockId": "story-clock",
+        "calendarId": "campaign-days",
+        "minuteOfDay": 0,
+        "anchorMinute": 0,
+        "intervalMinutes": 480,
+        "dueMinute": 0,
+        "order": 0,
+        "metadata": {},
+        "limit": 12,
+        "consumedIds": []
+      },
+      "trigger-1": {
+        "id": "trigger-1",
+        "type": "workflow",
+        "operation": "time-trigger",
+        "operationVersion": 1,
+        "title": "Time Trigger",
+        "enabled": true,
+        "x": 1180,
+        "y": 560,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-3",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Time Trigger",
+        "mode": "daily",
+        "scheduleId": "daily-routine",
+        "scheduleRevision": 1,
+        "clockId": "story-clock",
+        "calendarId": "campaign-days",
+        "minuteOfDay": 840,
+        "anchorMinute": 0,
+        "intervalMinutes": 480,
+        "dueMinute": 0,
+        "order": 0,
+        "metadata": {},
+        "limit": 12,
+        "consumedIds": []
+      },
+      "trigger-2": {
+        "id": "trigger-2",
+        "type": "workflow",
+        "operation": "time-trigger",
+        "operationVersion": 1,
+        "title": "Time Trigger",
+        "enabled": true,
+        "x": 1180,
+        "y": 880,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-3",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Time Trigger",
+        "mode": "interval",
+        "scheduleId": "eight-hour-pulse",
+        "scheduleRevision": 1,
+        "clockId": "story-clock",
+        "calendarId": "campaign-days",
+        "minuteOfDay": 840,
+        "anchorMinute": 0,
+        "intervalMinutes": 480,
+        "dueMinute": 0,
+        "order": 0,
+        "metadata": {},
+        "limit": 12,
+        "consumedIds": []
+      },
+      "due-events": {
+        "id": "due-events",
+        "type": "workflow",
+        "operation": "collection",
+        "operationVersion": 1,
+        "title": "Collection",
+        "enabled": true,
+        "x": 1900,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-5",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Collection",
+        "mode": "flatten",
+        "collectionPath": [],
+        "fieldPath": [],
+        "value": "",
+        "operator": "equals",
+        "missingPolicy": "hold",
+        "thresholds": "[]",
+        "mergePolicy": "keep-all",
+        "identityPath": [
+          "id"
+        ]
+      },
+      "guidance": {
+        "id": "guidance",
+        "type": "workflow",
+        "operation": "compose",
+        "operationVersion": 1,
+        "title": "Compose",
+        "enabled": true,
+        "x": 2260,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-6",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Compose",
+        "mode": "template",
+        "outputKind": "guidance",
+        "template": "Apply only these due scheduled occurrences at the effective interruption point. Do not spend the unprocessed remainder or choose the player response.\n{{data:}}",
+        "sections": [],
+        "separator": "\n\n"
+      },
+      "commit-clock": {
+        "id": "commit-clock",
+        "type": "workflow",
+        "operation": "commit-clock",
+        "operationVersion": 1,
+        "title": "Clock Commit",
+        "enabled": true,
+        "x": 1180,
+        "y": 1200,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-3",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Clock Commit"
+      },
+      "lesson-note": {
+        "id": "lesson-note",
+        "type": "note",
+        "title": "Lesson instructions",
+        "enabled": true,
+        "x": 100,
+        "y": 0,
+        "w": 900,
+        "h": 180,
+        "content": "Project a finite duration through midnight, daily 14:00 and an origin-anchored eight-hour recurrence; preserve interrupts and consumed identities.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nAuthorize story-clock as in lesson23. midnight=0, 14:00=840, eight hours=480 anchored at origin0.\n\nOpen Make curses and routines happen on schedule and inspect the named pins.\nDefault interrupt stops at the first due boundary and reports a remaining duration.\nSwitch to catch-up only to enumerate all due events within limit12.\nStory Clock consumed identities prevent duplicate due events on accepted replay; no wall-clock timer is used.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 0 auxiliary model requests; one ordinary native generation.\nCheckpoints:\nAdvance Time.remainder: The explicit unprocessed duration survives an interrupt.\nCollection.out: Three genuine Time Triggers supply finite ordered occurrences for accepted settlement.",
+        "commentFrame": true,
+        "moveContents": false
+      }
+    },
+    "wires": {
+      "edge-1": {
+        "id": "edge-1",
+        "route": "wire",
+        "from": "send",
+        "fromPort": "activation",
+        "to": "generate",
+        "toPort": "activation"
+      },
+      "edge-2": {
+        "id": "edge-2",
+        "route": "wire",
+        "from": "duration-text",
+        "fromPort": "out",
+        "to": "duration",
+        "toPort": "in"
+      },
+      "edge-3": {
+        "id": "edge-3",
+        "route": "wire",
+        "from": "clock",
+        "fromPort": "out",
+        "to": "advance",
+        "toPort": "clock"
+      },
+      "edge-4": {
+        "id": "edge-4",
+        "route": "wire",
+        "from": "duration",
+        "fromPort": "out",
+        "to": "advance",
+        "toPort": "proposal"
+      },
+      "edge-5": {
+        "id": "edge-5",
+        "route": "wire",
+        "from": "clock",
+        "fromPort": "out",
+        "to": "trigger-0",
+        "toPort": "previous"
+      },
+      "edge-6": {
+        "id": "edge-6",
+        "route": "wire",
+        "from": "advance",
+        "fromPort": "clock",
+        "to": "trigger-0",
+        "toPort": "destination"
+      },
+      "edge-7": {
+        "id": "edge-7",
+        "route": "wire",
+        "from": "trigger-0",
+        "fromPort": "occurrences",
+        "to": "due",
+        "toPort": "schedule-0"
+      },
+      "edge-8": {
+        "id": "edge-8",
+        "route": "wire",
+        "from": "clock",
+        "fromPort": "out",
+        "to": "trigger-1",
+        "toPort": "previous"
+      },
+      "edge-9": {
+        "id": "edge-9",
+        "route": "wire",
+        "from": "advance",
+        "fromPort": "clock",
+        "to": "trigger-1",
+        "toPort": "destination"
+      },
+      "edge-10": {
+        "id": "edge-10",
+        "route": "wire",
+        "from": "trigger-1",
+        "fromPort": "occurrences",
+        "to": "due",
+        "toPort": "schedule-1"
+      },
+      "edge-11": {
+        "id": "edge-11",
+        "route": "wire",
+        "from": "clock",
+        "fromPort": "out",
+        "to": "trigger-2",
+        "toPort": "previous"
+      },
+      "edge-12": {
+        "id": "edge-12",
+        "route": "wire",
+        "from": "advance",
+        "fromPort": "clock",
+        "to": "trigger-2",
+        "toPort": "destination"
+      },
+      "edge-13": {
+        "id": "edge-13",
+        "route": "wire",
+        "from": "trigger-2",
+        "fromPort": "occurrences",
+        "to": "due",
+        "toPort": "schedule-2"
+      },
+      "edge-14": {
+        "id": "edge-14",
+        "route": "wire",
+        "from": "due",
+        "fromPort": "out",
+        "to": "due-events",
+        "toPort": "in"
+      },
+      "edge-15": {
+        "id": "edge-15",
+        "route": "wire",
+        "from": "due-events",
+        "fromPort": "out",
+        "to": "guidance",
+        "toPort": "data"
+      },
+      "edge-16": {
+        "id": "edge-16",
+        "route": "wire",
+        "from": "guidance",
+        "fromPort": "out",
+        "to": "generate",
+        "toPort": "guidance"
+      },
+      "edge-17": {
+        "id": "edge-17",
+        "route": "wire",
+        "from": "advance",
+        "fromPort": "report",
+        "to": "commit-clock",
+        "toPort": "projection"
+      },
+      "edge-18": {
+        "id": "edge-18",
+        "route": "wire",
+        "from": "advance",
+        "fromPort": "occurrences",
+        "to": "commit-clock",
+        "toPort": "occurrences"
+      },
+      "edge-19": {
+        "id": "edge-19",
+        "route": "wire",
+        "from": "generate",
+        "fromPort": "draft",
+        "to": "review",
+        "toPort": "draft"
+      }
+    },
+    "groups": {
+      "stage-0": {
+        "id": "stage-0",
+        "title": "Preparation / processing",
+        "description": "Stage 0. Wires determine execution; folding is presentation only.",
+        "x": 75,
+        "y": 190,
+        "w": 350,
+        "h": 925,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "send",
+          "clock",
+          "duration-text"
+        ]
+      },
+      "stage-1": {
+        "id": "stage-1",
+        "title": "Preparation / processing",
+        "description": "Stage 1. Wires determine execution; folding is presentation only.",
+        "x": 435,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "duration"
+        ]
+      },
+      "stage-2": {
+        "id": "stage-2",
+        "title": "Preparation / processing",
+        "description": "Stage 2. Wires determine execution; folding is presentation only.",
+        "x": 795,
+        "y": 190,
+        "w": 350,
+        "h": 303,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "advance"
+        ]
+      },
+      "stage-3": {
+        "id": "stage-3",
+        "title": "Review / accepted staging",
+        "description": "Stage 3. Wires determine execution; folding is presentation only.",
+        "x": 1155,
+        "y": 190,
+        "w": 350,
+        "h": 1245,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "trigger-0",
+          "trigger-1",
+          "trigger-2",
+          "commit-clock"
+        ]
+      },
+      "stage-4": {
+        "id": "stage-4",
+        "title": "Preparation / processing",
+        "description": "Stage 4. Wires determine execution; folding is presentation only.",
+        "x": 1515,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "due"
+        ]
+      },
+      "stage-5": {
+        "id": "stage-5",
+        "title": "Preparation / processing",
+        "description": "Stage 5. Wires determine execution; folding is presentation only.",
+        "x": 1875,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "due-events"
+        ]
+      },
+      "stage-6": {
+        "id": "stage-6",
+        "title": "Preparation / processing",
+        "description": "Stage 6. Wires determine execution; folding is presentation only.",
+        "x": 2235,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "guidance"
+        ]
+      },
+      "stage-7": {
+        "id": "stage-7",
+        "title": "Native generation",
+        "description": "Stage 7. Wires determine execution; folding is presentation only.",
+        "x": 2595,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#284e67",
+        "collapsed": false,
+        "members": [
+          "generate"
+        ]
+      },
+      "stage-8": {
+        "id": "stage-8",
+        "title": "Review / accepted staging",
+        "description": "Stage 8. Wires determine execution; folding is presentation only.",
+        "x": 2955,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "review"
+        ]
+      }
+    },
+    "roles": {},
+    "portals": {},
+    "definitions": {},
+    "template": {
+      "id": "lesson-24",
+      "version": 1
+    },
+    "view": {
+      "x": 0,
+      "y": 0,
+      "zoom": 0.65
+    }
+  }
+}

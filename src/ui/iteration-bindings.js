@@ -1,8 +1,8 @@
-import {inspectPinnedDefinitionIdentity,cloneDefinitionData,definitionRefKey,nodeBindingOverrideKey} from '../workflow/definition-data.js?v=0.26.0';
-import {inspectDefinitionGraph} from '../workflow/graph-validation.js?v=0.26.0';
-import {definitionChain} from '../workflow/composition-edit.js?v=0.26.0';
-import {operationFor} from '../workflow/catalog.js?v=0.26.0';
-import {validIterationRoleOverrides} from '../workflow/operations/control-nodes.js?v=0.26.0';
+import {inspectPinnedDefinitionIdentity,cloneDefinitionData,definitionRefKey,nodeBindingOverrideKey} from '../workflow/definition-data.js?v=0.27.0';
+import {inspectDefinitionGraph} from '../workflow/graph-validation.js?v=0.27.0';
+import {definitionChain} from '../workflow/composition-edit.js?v=0.27.0';
+import {operationFor} from '../workflow/catalog.js?v=0.27.0';
+import {validIterationRoleOverrides} from '../workflow/operations/control-nodes.js?v=0.27.0';
 const fail=(code,message)=>({ok:false,error:{code,message}});
 const merge=(base,extra)=>{const next=structuredClone(base??{});for(const [role,binding]of Object.entries(extra??{}))next[role]={...(next[role]??{}),...binding};return next;};
 /** Bounded metadata inspection only; never resolve connections or execute a helper. */

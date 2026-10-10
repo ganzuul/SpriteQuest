@@ -6,7 +6,7 @@ import { join, resolve, relative, isAbsolute } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { compile } from 'svelte/compiler';
 import { JSDOM } from 'jsdom';
-import { prepareNativeSearchCatalog, filterNativeSearchChoices } from '../src/ui/native-search-catalog.js?v=0.26.0';
+import { prepareNativeSearchCatalog, filterNativeSearchChoices } from '../src/ui/native-search-catalog.js?v=0.27.0';
 const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true });
 globalThis.window = dom.window; globalThis.document = dom.window.document;
 for (const key of ['Node', 'Element', 'Text', 'Comment', 'Document', 'HTMLElement', 'HTMLButtonElement', 'HTMLInputElement', 'HTMLMediaElement', 'MutationObserver']) Object.defineProperty(globalThis, key, { configurable: true, value: dom.window[key] });
@@ -161,7 +161,7 @@ test('search starts with an accessible input and outside presses dismiss anywher
 });
 
 test('real cached purpose, shortcode and known operation alias terms independently filter the source-compiled popup', async () => {
-    const catalog = prepareNativeSearchCatalog({ schema: 3, runtime: 2, mode: 'native-pre', workflowId: 'query-root', viewPath: [], inDefinition: false }).data;
+    const catalog = prepareNativeSearchCatalog({ schema: 3, runtime: 2, mode: 'native-unified', workflowId: 'query-root', viewPath: [], inDefinition: false }).data;
     const cached = filterNativeSearchChoices(catalog, { origin: { dir: 'out', kind: 'context' }, contextSensitive: true });
     const item = cached.find(choice => choice.id === 'operation:smart-compactor'), calls = [];
     const fields = { label: item.label, family: item.family, purpose: item.purpose, shortcode: item.shortcode, searchAliases: item.searchAliases.join(' ') };

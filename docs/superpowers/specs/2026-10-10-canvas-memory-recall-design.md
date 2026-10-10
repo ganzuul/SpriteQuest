@@ -2,7 +2,7 @@
 
 Date: 2026-10-10.
 
-Status: design and worktree integration approved by the user; implemented on `codex/canvas-memory-recall`. Validation is recorded in the companion plan.
+Status: approved, implemented and validated on `codex/canvas-memory-recall` with the 0.27 baseline. Final verification is recorded in the companion plan.
 
 Companion: [Implementation plan](../plans/2026-10-10-canvas-memory-recall.md).
 
@@ -26,7 +26,7 @@ The user approved Enable Lattice, Memory recall, Recall Shortcut, Queue recall, 
 
 ## Baseline and integration
 
-Current main is `d047477`, version `0.26.0`. Recall was introduced in `05d18ce`; its source still matches the unification, workflow-files, and legacy-removal worktrees after line-ending normalization.
+At design time, main was `d047477`, version `0.26.0`. Integration now reconciles main `7d1c0cf`, version `0.27.0`, with explicit user approval. Retired Pre/Post roots remain archive/export-only; the active unified document owns Send. The thirty-lesson curriculum and local model defaults are retained. Recall was introduced in `05d18ce`; at the design audit, its source matched the unification, workflow-files, and legacy-removal worktrees after line-ending normalization.
 
 The workflow-files worktree changes native graph lookup from assigned graph IDs to `activeWorkflow()`. Its `documentSession.capture()` provides an exact activation token; opening the same graph again produces a new token. Its menu already supports submenus. This feature must be implemented after that lifecycle is integrated. Do not add a second assigned-workflow execution path to accommodate the older checkout.
 

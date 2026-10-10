@@ -78,3 +78,28 @@ test('an external file edit blocks Save and preserves the active draft',async({p
     await expect(page.locator('.pc-document-status')).toContainText('Save As');
     expect(await page.evaluate(()=>({draft:window.canvasHarness.graph.description,disk:JSON.parse(documentDisk.text).graph.description,writes:documentDisk.writes}))).toEqual({draft:'Local unsaved work',disk:'External work',writes:1});
 });
+
+
+test('retired editable roots cannot replace a dirty unified document through Open or Recent',async({page})=>{
+    await launch(page); await saveAs(page); await edit(page,'Keep this unified draft');
+    await page.evaluate(()=>{const h=window.canvasHarness;window.retirementGuard={graph:h.graph,token:h.S.documentSession.capture(),text:JSON.stringify(h.graph)};});
+    const prompt=page.getByRole('dialog',{name:'Save workflow changes?',exact:true});
+    for(const mode of ['native-pre','native-post']){
+        await page.evaluate(mode=>{const file=JSON.parse(documentDisk.text);file.graph.mode=mode;documentDisk.text=JSON.stringify(file);documentDisk.version++;},mode);
+        for(const command of ['open','recent']){
+            const count=await page.evaluate(()=>window.canvasHarness.toasts.length);
+            if(command==='open') await fileCommand(page,/^Open workflow/);
+            else{
+                await page.getByRole('button',{name:'File',exact:true}).click();
+                await page.getByRole('menuitem',{name:'Open Recent',exact:true}).click();
+                await page.getByRole('menuitem',{name:'Canvas.workflow.json',exact:true}).click();
+            }
+            await expect.poll(()=>page.evaluate(()=>window.canvasHarness.toasts.length)).toBeGreaterThan(count);
+            expect(await page.evaluate(()=>window.canvasHarness.toasts.at(-1).message)).toMatch(/retired|unified/i);
+            await expect(prompt).toHaveCount(0);
+            await expect(page.locator('.pc-document-name')).toHaveText('Canvas.workflow.json');
+            await expect(page.locator('.pc-document-status')).toContainText('Modified');
+            expect(await page.evaluate(()=>{const h=window.canvasHarness,g=window.retirementGuard;return {same:h.graph===g.graph,current:h.S.documentSession.stillCurrent(g.token),unchanged:JSON.stringify(h.graph)===g.text,writes:documentDisk.writes,calls:h.providerCalls()};})).toEqual({same:true,current:true,unchanged:true,writes:1,calls:0});
+        }
+    }
+});

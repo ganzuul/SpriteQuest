@@ -1,7 +1,7 @@
-import { commitGraphDocument, GRAPH_DOCUMENT_FIELDS } from '../history.js?v=0.26.0';
-import { graphDocumentSignature, graphSemanticSignature } from './ports.js?v=0.26.0';
-import { safeWorkflowData, validateGraphStructure } from './contracts.js?v=0.26.0';
-import { definitionChain, ownsDefinitionPath } from './composition-edit.js?v=0.26.0';
+import { commitGraphDocument, GRAPH_DOCUMENT_FIELDS } from '../history.js?v=0.27.0';
+import { graphDocumentSignature, graphSemanticSignature } from './ports.js?v=0.27.0';
+import { safeWorkflowData, validateGraphStructure } from './contracts.js?v=0.27.0';
+import { definitionChain, ownsDefinitionPath } from './composition-edit.js?v=0.27.0';
 
 const contexts = new WeakMap();
 const fail = (code, message) => ({ ok: false, error: { code, message } });

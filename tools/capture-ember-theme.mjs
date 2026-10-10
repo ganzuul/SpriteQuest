@@ -32,6 +32,7 @@ try{
         const request=route.request(),url=new URL(request.url());
         if(['data:','blob:'].includes(url.protocol))return route.continue();
         if(url.origin!==base||!['GET','HEAD'].includes(request.method())){evidence.blockedRequests.push(request.method()+' '+url.href);return route.abort('blockedbyclient');}
+        if(url.pathname==='/scripts/user.js')return route.fulfill({contentType:'text/javascript',body:"export const getCurrentUserHandle=()=> 'default-user';"});
         if(url.pathname==='/script.js')return route.fulfill({contentType:'text/javascript',body:`
             const context=()=>globalThis.SillyTavern.getContext();export const isGenerating=()=>false;
             export function syncMesToSwipe(i){const m=context().chat[i];m.swipe_info[m.swipe_id]={extra:structuredClone(m.extra||{})};return true;}
@@ -45,16 +46,16 @@ try{
     const ids=await openEmber(page,{url:base+'/tests/browser/harness.html'});
     evidence.fresh=await measureEmber(page);assertEmber(evidence.fresh);assert(responses.has('/dist/lattice-ui.js'),'The actual production UI bundle was not loaded.');
     const authored=evidence.fresh.graphBytes;
-    await page.locator('.pc-root-run').click();await page.waitForFunction(()=>document.querySelector('.pc-run-meter-label')?.textContent.trim()==='Completed');
+    await page.evaluate(async id=>{const h=window.canvasHarness;h.canvas.select({kind:'node',id});await h.settle();},ids.guidanceCompose);await page.locator('[data-run-here]').click();await page.waitForFunction(()=>document.querySelector('.pc-run-meter-label')?.textContent.trim()==='Completed');
     evidence.run=await page.evaluate(async()=>{const h=window.canvasHarness,result=(await import('/src/run.js?v='+h.version)).getNativeWorkflowController().lastResult();return {ok:result.ok,mode:result.mode,actualCalls:result.actualCalls,providerCalls:h.providerCalls()};});
-    assert(evidence.run.ok&&evidence.run.mode==='root'&&evidence.run.actualCalls===0&&evidence.run.providerCalls===0,'Fresh Structured guidance did not complete with zero provider calls.');
+    assert(evidence.run.ok&&evidence.run.mode==='target'&&evidence.run.actualCalls===0&&evidence.run.providerCalls===0,'Unified structured composition target did not complete with zero provider calls.');
     await page.locator('.pc-node-native[data-id="'+ids.guidanceCompose+'"] .pc-native-heading').click();
     evidence.workspaceFrame=await page.evaluate(async firstId=>{
         const h=window.canvasHarness;await h.settle();
         const rect=element=>{const r=element.getBoundingClientRect();return {left:r.left,top:r.top,right:r.right,bottom:r.bottom,width:r.width,height:r.height};};
         const canvas=rect(h.canvas.host),shelf=rect(document.querySelector('.pc-node-shelf')),viewport=rect(h.canvas.viewport),previous={...h.canvas.view};
         const cards=[...document.querySelectorAll('.pc-node-native')];
-        if(cards.length!==5||Object.keys(h.graph.nodes).length!==5||!Number.isFinite(previous.zoom)||previous.zoom<=0)throw Error('Full Ember reference needs the actual five-card fresh chain and a finite camera.');
+        if(cards.length!==Object.keys(h.graph.nodes).length||!Number.isFinite(previous.zoom)||previous.zoom<=0)throw Error('Full Ember reference needs the actual unified fixture and a finite camera.');
         const boxes=cards.map(card=>({id:card.dataset.id,...rect(card)}));
         const left=Math.min(...boxes.map(box=>box.left)),top=Math.min(...boxes.map(box=>box.top)),right=Math.max(...boxes.map(box=>box.right)),bottom=Math.max(...boxes.map(box=>box.bottom));
         // Frame the measured cards beside the floating shelf using the existing
@@ -70,7 +71,7 @@ try{
         return {canvas:rect(h.canvas.host),shelf:rect(document.querySelector('.pc-node-shelf')),available,previous,view:{...h.canvas.view},graphBounds,cards:cards.map(card=>({id:card.dataset.id,...rect(card)})),firstId};
     },ids.firstCompose);
     const frame=evidence.workspaceFrame;
-    assert(frame.cards.length===5,'The full Ember reference lost a card.');
+    assert(frame.cards.length===Object.keys(JSON.parse(authored).nodes).length,'The full Ember reference lost a card.');
     for(const card of frame.cards)assert(card.left>=frame.canvas.left+16&&card.top>=frame.canvas.top+16&&card.right<=frame.canvas.right-16&&card.bottom<=frame.canvas.bottom-16,card.id+' must be complete inside the actual canvas.');
     const firstCard=frame.cards.find(card=>card.id===frame.firstId);
     assert(firstCard&&firstCard.left>=frame.shelf.right+16,'The first Compose card must clear the floating shelf.');
@@ -86,7 +87,7 @@ try{
     assert(clip.x>=canvas.x&&clip.y>=canvas.y&&clip.x+clip.width<=canvas.x+canvas.width&&clip.y+clip.height<=canvas.y+canvas.height,'The enlarged reference must contain both complete cards inside the actual canvas.');
     await image('ember-nodes',{clip});
     await page.evaluate(id=>{const h=window.canvasHarness;h.graph.nodes[id].sections[0].text='{broken';h.S.save();h.UI.refreshIfOpen();},ids.firstCompose);await page.evaluate(()=>window.canvasHarness.settle());
-    await page.locator('.pc-root-run').click();await page.waitForFunction(()=>document.querySelector('.pc-run-meter-label')?.textContent.trim()==='Failed');
+    await page.evaluate(async id=>{const h=window.canvasHarness;h.canvas.select({kind:'node',id});await h.settle();},ids.guidanceCompose);await page.locator('[data-run-here]').click();await page.waitForFunction(()=>document.querySelector('.pc-run-meter-label')?.textContent.trim()==='Failed');
     await page.locator('.pc-node-native[data-id="'+ids.jsonDecode+'"] .pc-native-heading').click();evidence.failure=await measureEmber(page);
     const failed=evidence.failure.nodes.find(node=>node.id===ids.jsonDecode);assert(failed.classes.includes('pc-trace-failed')&&failed.classes.includes('pc-selected'),'Actual invalid JSON did not produce a selected failed card.');assertColor(failed.border,evidence.failure.roles.error,'failure priority');assert(hasOuterRing(failed.shadow,evidence.failure.roles.error)&&!hasOuterRing(failed.shadow,approvedEmber.settings.tokens.SmartThemeQuoteColor),'Failure must retain its error ring above selection.');assert(Number(failed.heading.opacity)<1&&failed.heading.filter.includes('grayscale'),'Failed interior must remain dimmed and grayscale.');assert(evidence.failure.providerCalls===0,'Failure capture attempted a provider call.');
     await image('ember-selected-failure');

@@ -1,53 +1,53 @@
-import {createRecallCommands} from './recall-commands.js?v=0.26.0';
-import {projectRecallView} from './recall-projection.js?v=0.26.0';
-import { prepareIterationBindingOverride } from './iteration-bindings.js?v=0.26.0';
-import { createStoryDocumentSetup } from './story-document-setup.js?v=0.26.0';
-import { createConfiguredNodeSession, configuredCreationStage, nodeNeedsConfiguration, iterationHelperChoices } from './configured-node-creation.js?v=0.26.0';
-import { checkFastSettingsScope, fastSettingsPersistence, saveFastConnection } from './provider-settings.js?v=0.26.0';
-import { resolveBinding } from '../workflow/connections.js?v=0.26.0';
-import { activeModelMetadata } from '../workflow/model-profiles.js?v=0.26.0';
-import { readNodeProfileMetadata, nodeProfileMetadataKey } from './node-profile-preparation.js?v=0.26.0';
-import * as workflowRuntime from '../run.js?v=0.26.0';
-import { workflowSignature } from '../workflow/runtime.js?v=0.26.0';
-import { installWorkflowExample } from '../workflow/examples.js?v=0.26.0';
-import { projectWorkflowExamples } from './example-catalog.js?v=0.26.0';
-import { OPERATIONS, operationFor, portsForNode } from '../workflow/catalog.js?v=0.26.0';
-import { validateNodeModifiers } from '../workflow/modifiers.js?v=0.26.0';
-import { isWorkflowGraph } from '../workflow/contracts.js?v=0.26.0';
-import { parseWorkflowInsertionFile, prepareWorkflowInsertion } from '../workflow/insertion.js?v=0.26.0';
-import { captureGraphEditContext } from '../workflow/transactions.js?v=0.26.0';
-import { viewIdentityKey } from './view-state.js?v=0.26.0';
-import { createGraphViewSession } from './graph-view-session.js?v=0.26.0';
-import { prepareNativeNodeEdit, prepareQualifiedScopeEdit, makeLocalCopy, materializeInstanceDefinition, prepareOwnedDefinitionMetadataEdit } from '../workflow/definition-library.js?v=0.26.0';
-import { prepareSubgraphNodeDeletion } from '../workflow/subgraph-authoring.js?v=0.26.0';
-import { prepareNativeConnectionEdit } from '../workflow/connection-edits.js?v=0.26.0';
-import { prepareCommentEdit } from '../workflow/comment-edits.js?v=0.26.0';
-import { createCommentFrame, containedCommentNodes, fitCommentFrame, isCommentFrame } from '../canvas/comment-frames.js?v=0.26.0';
-import { captureCommentPresentation, applyCommentPresentation, applyCommentGroupPresentation } from './comment-presentation.js?v=0.26.0';
-import { captureRelocatedSubgraphViews, refreshRelocatedSubgraphViews, restoreSubgraphViews } from './subgraph-view-state.js?v=0.26.0';
-import { preparePortalRename, prepareCreateFromSelection, prepareUnpack, prepareQualifiedPortalEdit } from '../workflow/composition.js?v=0.26.0';
-import { prepareGraphCandidate } from '../workflow/prepared-graph-edit.js?v=0.26.0';
-import { definitionRefKey } from '../workflow/definition-data.js?v=0.26.0';
-import { exportSubgraph } from '../workflow/packages.js?v=0.26.0';
-import { makeClip, makeDefinitionClip, readClip, prepareClipPaste } from '../workflow/clipboard.js?v=0.26.0';
-import { prepareNativeSearchCatalog, resolveNativeSearchChoice } from './native-search-catalog.js?v=0.26.0';
-import { createNativeWireBridge } from './native-wire-bridge.js?v=0.26.0';
-import { readNodePresentation } from './node-palette.js?v=0.26.0';
-import { showContextMenu } from './context-menu.js?v=0.26.0';
-import { createWorkflowDocumentController } from './document-controller.js?v=0.26.0';
-import { createWorkflowFileAccess } from './workflow-file-access.js?v=0.26.0';
-import { readTextFile } from './file-input.js?v=0.26.0';
-import { prepareWorkspaceViews, prepareLibraryViews, projectEditorDraw, initialWorkspaceCamera, projectWorkspacePanels, projectNodeProfiles } from './workspace-preparation.js?v=0.26.0';
-import { prepareWorkflowProjection, projectPreparedWorkflow, createWorkflowSession } from './workflow-surface.js?v=0.26.0';
-import { ctx, safe, settings, save, activeWorkflow, activateWorkflow, documentSession, activeWorkspaceViews, setActiveWorkspaceViews, recoveredWorkflows, retainRecoveryWorkflows, onWorkflowActivated, createGraph, touchGraph, commitGraphEdit, stepGraphHistory, exportGraph, onGraphTouched, groupMembers } from '../state.js?v=0.26.0';
-import { applyTheme } from '../theme.js?v=0.26.0';
-import { renderThemeEditor } from '../theme-editor.js?v=0.26.0';
-import * as H from '../history.js?v=0.26.0';
-import * as L from '../library.js?v=0.26.0';
-import { Canvas } from '../canvas.js?v=0.26.0';
-import { createWorkbench } from './workbench.js?v=0.26.0';
-import { nodeCard } from '../canvas/presentation.js?v=0.26.0';
-import { measureNodeCard } from '../../dist/lattice-ui.js?v=0.26.0';
+import {createRecallCommands} from './recall-commands.js?v=0.27.0';
+import {projectRecallView} from './recall-projection.js?v=0.27.0';
+import { prepareIterationBindingOverride } from './iteration-bindings.js?v=0.27.0';
+import { createStoryDocumentSetup } from './story-document-setup.js?v=0.27.0';
+import { createConfiguredNodeSession, configuredCreationStage, nodeNeedsConfiguration, iterationHelperChoices } from './configured-node-creation.js?v=0.27.0';
+import { checkFastSettingsScope, fastSettingsPersistence, saveFastConnection } from './provider-settings.js?v=0.27.0';
+import { resolveBinding } from '../workflow/connections.js?v=0.27.0';
+import { activeModelMetadata } from '../workflow/model-profiles.js?v=0.27.0';
+import { readNodeProfileMetadata, nodeProfileMetadataKey } from './node-profile-preparation.js?v=0.27.0';
+import * as workflowRuntime from '../run.js?v=0.27.0';
+import { workflowSignature } from '../workflow/runtime.js?v=0.27.0';
+import { installWorkflowExample } from '../workflow/examples.js?v=0.27.0';
+import { projectWorkflowExamples } from './example-catalog.js?v=0.27.0';
+import { OPERATIONS, operationFor, portsForNode } from '../workflow/catalog.js?v=0.27.0';
+import { validateNodeModifiers } from '../workflow/modifiers.js?v=0.27.0';
+import { isWorkflowGraph } from '../workflow/contracts.js?v=0.27.0';
+import { parseWorkflowInsertionFile, prepareWorkflowInsertion } from '../workflow/insertion.js?v=0.27.0';
+import { captureGraphEditContext } from '../workflow/transactions.js?v=0.27.0';
+import { viewIdentityKey } from './view-state.js?v=0.27.0';
+import { createGraphViewSession } from './graph-view-session.js?v=0.27.0';
+import { prepareNativeNodeEdit, prepareQualifiedScopeEdit, makeLocalCopy, materializeInstanceDefinition, prepareOwnedDefinitionMetadataEdit } from '../workflow/definition-library.js?v=0.27.0';
+import { prepareSubgraphNodeDeletion } from '../workflow/subgraph-authoring.js?v=0.27.0';
+import { prepareNativeConnectionEdit } from '../workflow/connection-edits.js?v=0.27.0';
+import { prepareCommentEdit } from '../workflow/comment-edits.js?v=0.27.0';
+import { createCommentFrame, containedCommentNodes, fitCommentFrame, isCommentFrame } from '../canvas/comment-frames.js?v=0.27.0';
+import { captureCommentPresentation, applyCommentPresentation, applyCommentGroupPresentation } from './comment-presentation.js?v=0.27.0';
+import { captureRelocatedSubgraphViews, refreshRelocatedSubgraphViews, restoreSubgraphViews } from './subgraph-view-state.js?v=0.27.0';
+import { preparePortalRename, prepareCreateFromSelection, prepareUnpack, prepareQualifiedPortalEdit } from '../workflow/composition.js?v=0.27.0';
+import { prepareGraphCandidate } from '../workflow/prepared-graph-edit.js?v=0.27.0';
+import { definitionRefKey } from '../workflow/definition-data.js?v=0.27.0';
+import { exportSubgraph } from '../workflow/packages.js?v=0.27.0';
+import { makeClip, makeDefinitionClip, readClip, prepareClipPaste } from '../workflow/clipboard.js?v=0.27.0';
+import { prepareNativeSearchCatalog, resolveNativeSearchChoice } from './native-search-catalog.js?v=0.27.0';
+import { createNativeWireBridge } from './native-wire-bridge.js?v=0.27.0';
+import { readNodePresentation } from './node-palette.js?v=0.27.0';
+import { showContextMenu } from './context-menu.js?v=0.27.0';
+import { createWorkflowDocumentController } from './document-controller.js?v=0.27.0';
+import { createWorkflowFileAccess } from './workflow-file-access.js?v=0.27.0';
+import { readTextFile } from './file-input.js?v=0.27.0';
+import { prepareWorkspaceViews, prepareLibraryViews, projectEditorDraw, initialWorkspaceCamera, projectWorkspacePanels, projectNodeProfiles } from './workspace-preparation.js?v=0.27.0';
+import { prepareWorkflowProjection, projectPreparedWorkflow, createWorkflowSession } from './workflow-surface.js?v=0.27.0';
+import { ctx, safe, settings, save, activeWorkflow, activateWorkflow, documentSession, activeWorkspaceViews, setActiveWorkspaceViews, recoveredWorkflows, retainRecoveryWorkflows, onWorkflowActivated, createGraph, touchGraph, commitGraphEdit, stepGraphHistory, exportGraph, exportArchivedWorkflows, onGraphTouched, groupMembers } from '../state.js?v=0.27.0';
+import { applyTheme } from '../theme.js?v=0.27.0';
+import { renderThemeEditor } from '../theme-editor.js?v=0.27.0';
+import * as H from '../history.js?v=0.27.0';
+import * as L from '../library.js?v=0.27.0';
+import { Canvas } from '../canvas.js?v=0.27.0';
+import { createWorkbench } from './workbench.js?v=0.27.0';
+import { nodeCard } from '../canvas/presentation.js?v=0.27.0';
+import { measureNodeCard } from '../../dist/lattice-ui.js?v=0.27.0';
 
 let workbench = null;
 let root = null;
@@ -89,10 +89,6 @@ export const el = (tag, cls, text) => {
     return n;
 };
 
-export function escapeHtml(s) {
-    return String(s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
-}
-
 export function toast(msg, type = 'info') {
     const t = safe(() => globalThis.toastr);
     if (t) t[type === 'error' ? 'error' : type === 'success' ? 'success' : 'info'](msg, 'Lattice');
@@ -128,7 +124,7 @@ export function profiles() {
 let workflowRevision = null, nodeProfileInputsKey = null;
 let workflowProjection = null, workflowProjectionGraph = null;
 let workflowState = { result: null, busy: false, status: '', applyIssue: '' };
-const workflowSession = createWorkflowSession({ runtime: () => workflowRuntime.getNativeWorkflowController?.(), rootCurrent: () => current, runEpoch: () => rootRunEpoch, active: isOpen, changed: state => {
+const workflowSession = createWorkflowSession({ runtime: () => workflowRuntime.getNativeWorkflowController?.(), rootCurrent: () => current, runEpoch: () => rootRunEpoch, documentToken: () => documentSession.capture(), active: isOpen, changed: state => {
     const authorityChanged = state.result !== workflowState.result || state.reviewHandles !== workflowState.reviewHandles;
     workflowState = state;
     if (isOpen() && !documentTransition) { if (authorityChanged) refreshWorkflowPreparation(); updateWorkflowProjection(); }
@@ -343,8 +339,8 @@ function samePreviewTerminal(first, second) {
 function currentRootPreviewTerminal(target) {
     const editor = graphViews?.readEditor();
     return isOpen() && editor?.view.identity.kind === 'root' && !editor.readOnly && editor.view.identity.workflowId === current?.id
-        && current?.mode === 'native-post' && target?.kind === 'terminal' && target.address?.workflowId === current.id && Array.isArray(target.address.instancePath) && !target.address.instancePath.length
-        && current.nodes[target.address.nodeId]?.type === 'workflow' && current.nodes[target.address.nodeId].operation === 'apply-reply'
+        && current?.mode === 'native-unified' && target?.kind === 'terminal' && target.address?.workflowId === current.id && Array.isArray(target.address.instancePath) && !target.address.instancePath.length
+        && current.nodes[target.address.nodeId]?.type === 'workflow' && current.nodes[target.address.nodeId].operation === 'review-publish'
         && workspacePrepared?.previewChoices.some(choice => samePreviewTerminal(choice.target, target));
 }
 function currentPreviewHandle(selector) {
@@ -425,7 +421,6 @@ const workflowActions = {
     presentNode,
     run: () => graphViews ? workflowSession.run() : toast('The current workflow is unavailable.', 'error'),
     apply: selector => applyPreviewReview(selector), reject: () => workflowSession.reject(),
-    async addNode(operation, at = null) { const token = captureEditor(); if (!token.ok) return token; const prepared = await requestNodeCreation(token.data, { kind: 'create', operation }, at, true); return prepared?.error?.code === 'NODE_CONFIGURATION_CANCELLED' ? prepared : commitNodeCreation(token.data, prepared); },
 };
 function defaultNodeSpot() {
     const rect = canvas.host.getBoundingClientRect(), zoom = canvas.view.zoom || 1;
@@ -441,9 +436,10 @@ function defaultNodeSpot() {
 }
 export function isOpen() { return !!root && root.classList.contains('pc-open'); }
 export function open() {
+    const wasOpen = isOpen();
     build(); root.classList.add('pc-open'); document.addEventListener('pc-native-result', receiveAutomaticWorkflow);
     safe(() => applyTheme()); current = activeWorkflow(); ensureDocumentCommands();
-    setCanvasGraph(); renderAll();
+    setCanvasGraph({ cancelRun: wasOpen }); renderAll();
 }
 export function close() {
     cancelConfiguredNode();
@@ -456,12 +452,15 @@ export function close() {
     nativeWireBridge?.cancel('view-close'); root?.classList.remove('pc-open');
 }
 export function toggle() { isOpen() ? close() : open(); }
-function setCanvasGraph() {
+function setCanvasGraph({ cancelRun = true } = {}) {
     cancelConfiguredNode();
     chooseDocumentPrompt('cancel');
     canvas?.cancelGesture(); persistGraphViews(true); const initializeCamera = !activeWorkspaceViews() && (!current.view || current.view.x === 0 && current.view.y === 0 && current.view.zoom === 1);
     graphViews?.deactivate(); graphViews = null; workspacePrepared = null; editorDraw = null; rootRunEpoch++;
-    documentTransition = true; workflowSession.cancel('Workflow graph changed'); documentTransition = false;
+    documentTransition = true;
+    workflowSession.syncDocument();
+    if (cancelRun) workflowSession.cancel('Workflow graph changed');
+    documentTransition = false;
     uiEpoch++; selected = null; selectedKind = null; pinnedPreview = null; selectedPreview = null;
     canvas?.cancelGesture(); nativeWireBridge?.cancel('root-change'); cancelImportReview();
     pendingSubgraphSave = null;
@@ -472,7 +471,7 @@ function setCanvasGraph() {
         else workspaceIssue = created.error.message;
     }
     if (!graphViews) {
-        canvas.setGraph({ schema: 3, runtime: 2, mode: 'native-pre', nodes: {}, wires: {}, groups: {}, nativeCards: {}, view: { x: 0, y: 0, zoom: 1 } });
+        canvas.setGraph({ schema: 3, runtime: 2, mode: 'native-unified', nodes: {}, wires: {}, groups: {}, nativeCards: {}, view: { x: 0, y: 0, zoom: 1 } });
         workbench.update({ nativeDiagnostic: workspaceIssue || 'This workflow could not be opened. Import a current Lattice workflow.' });
     }
     workflowRevision = isWorkflowGraph(current) ? workflowSignature(current) : null; receiveAutomaticWorkflow();
@@ -499,14 +498,14 @@ function build() {
         command(name) {
             if (name.startsWith('open-recent:')) return ensureDocumentCommands().recent(name.slice(12));
             if (name.startsWith('recover-workflow:')) return ensureDocumentCommands().recover(name.slice(17));
-            const commands = { new: onNewGraph, rename: onRenameGraph, save: onSaveGraph, 'save-as': () => onSaveGraph(true), 'download-document': onSaveGraph, 'clear-recent': () => ensureDocumentCommands().clearRecent(), 'open-workflow': onImportGraph, 'import-into-graph': onImportIntoGraph, export: onExportGraph, undo: doUndo, redo: doRedo,
+            const commands = { new: onNewGraph, rename: onRenameGraph, save: onSaveGraph, 'save-as': () => onSaveGraph(true), 'download-document': onSaveGraph, 'clear-recent': () => ensureDocumentCommands().clearRecent(), 'open-workflow': onImportGraph, 'import-into-graph': onImportIntoGraph, export: onExportGraph, 'export-archived-workflows': onExportArchivedWorkflows, undo: doUndo, redo: doRedo,
                 fit: () => canvas.fit(), 'fit-selection': () => canvas.fitSelection(), copy: () => copySelection(), cut: () => copySelection(true), paste: pasteFromClipboard,
                 'delete-selection': () => canvas.deleteSelection(), 'run-workflow': workflowActions.run, 'stop-workflow': () => workflowSession.cancel('Stopped by user'),
                 theme: toggleThemePopover, inspector: togglePane, 'reveal-inspector': () => { if (root.classList.contains('pc-details-hidden')) togglePane(); }, close };
             return commands[name]?.();
         },
         mode: mode => canvas.setMode(mode), zoom: factor => { const rect = canvas.host.getBoundingClientRect(); canvas.zoomBy(factor, rect.left + rect.width / 2, rect.top + rect.height / 2); }, fitSelection: () => canvas.fitSelection(),
-        resizeStart: () => canvas?.cancelGesture(), resizeDetails, addNode: workflowActions.addNode,
+        resizeStart: () => canvas?.cancelGesture(), resizeDetails,
         graphViewActions, nodeDetails: nodeDetailsActions, commentDetails: commentDetailsActions, outputPreview: outputPreviewActions, runDetails: runDetailsActions,
         chooseNative: chooseNativeNode, managePortals: () => openPortalManager(), shelfSubgraph: shelfSubgraphAction,
         subgraphSave: { close() { pendingSubgraphSave = null; workbench.update({ subgraphSave: null }); }, save: saveSubgraphToShelf },
@@ -515,7 +514,10 @@ function build() {
         acceptImport: acceptImportReview, cancelImport: cancelImportReview, prepareImportAgain,
     });
     root = workbench.root; hookHistory();
-    onWorkflowActivated(({ graph }) => { if (isOpen()) { current = graph; setCanvasGraph(); renderAll(); } });
+    onWorkflowActivated(({ graph }) => {
+        documentTransition = true; workflowSession.syncDocument(); documentTransition = false;
+        if (isOpen()) { current = graph; setCanvasGraph(); renderAll(); }
+    });
     documentSession.subscribe(() => renderDocumentState());
     const nativeContext = ctx();
     for (const name of ['CHAT_CHANGED', 'MESSAGE_EDITED', 'MESSAGE_UPDATED', 'MESSAGE_DELETED', 'MESSAGE_SWIPED', 'MESSAGE_SENT', 'GENERATION_STARTED', 'GENERATION_ENDED', 'GENERATION_STOPPED']) {
@@ -649,7 +651,7 @@ function pasteOnCanvas(value, at = canvas.pointer ?? null, existingToken = null)
     const captured = existingToken ? { ok: editorCurrent(existingToken), data: existingToken } : captureEditor(); if (!captured.ok || !value) return false;
     const decoded = readClip(value); let prepared;
     if (decoded.ok) prepared = prepareClipPaste(current, decoded.data, { at: at ?? defaultNodeSpot(), viewPath: scopeCommand(captured.data).viewPath });
-    else if (typeof value === 'string' && value.trim() && !/^[\[{]/.test(value.trim())) prepared = prepareNativeConnectionEdit(current, { kind: 'create', operation: 'compose', controls: { sections: [{ name: 'pasted_text', text: value }], outputKind: current.mode === 'native-pre' ? 'guidance' : 'text' }, graphPoint: at ?? defaultNodeSpot(), ...scopeCommand(captured.data) });
+    else if (typeof value === 'string' && value.trim() && !/^[\[{]/.test(value.trim())) prepared = prepareNativeConnectionEdit(current, { kind: 'create', operation: 'compose', controls: { sections: [{ name: 'pasted_text', text: value }], outputKind: 'text' }, graphPoint: at ?? defaultNodeSpot(), ...scopeCommand(captured.data) });
     else { toast(decoded.error.message, 'error'); return false; }
     const committed = commitCaptured(captured.data, prepared); if (committed.ok && prepared.ok) { const ids = prepared.data.added?.nodes ?? []; if (ids.length === 1) canvas.select({ kind: 'node', id: ids[0] }); else if (ids.length) canvas.setMulti(ids); } return committed.ok;
 }
@@ -796,7 +798,7 @@ function doRedo() { restoreGraphHistory('redo', 'Redid'); }
 
 function renderDocumentState() {
     if (!workbench) return;
-    workbench.update({ document: ensureDocumentCommands().view(), graphId: current?.id ?? '', enabled: !!settings().enabled });
+    workbench.update({ document: ensureDocumentCommands().view(), graphId: current?.id ?? '', enabled: !!settings().enabled, hasArchivedWorkflows: Object.keys(settings().archivedWorkflows?.graphs ?? {}).length > 0 });
 }
 
 function renderStatus() { safe(() => document.dispatchEvent(new CustomEvent('pc-state'))); workbench.update({ enabled: !!settings().enabled }); refreshRecallOverview(); }
@@ -879,6 +881,14 @@ function onRenameGraph() {
 
 
 
+function onExportArchivedWorkflows() {
+    try {
+        const json = exportArchivedWorkflows();
+        if (!json) return false;
+        downloadGraphViewJSON(json, 'lattice-archived-workflows.json');
+        return true;
+    } catch (error) { toast(error?.message || 'Archived workflows could not be exported.', 'error'); return false; }
+}
 function onExportGraph() {
     try {
         const json = exportGraph(current);
@@ -1007,7 +1017,7 @@ function canCreateSubgraph(nodeIds) {
     return nodeIds.length > 0 && nodeIds.every(id => {
         const candidate = editorDraw.nodes[id];
         if (!candidate || ['subgraph-input', 'subgraph-output'].includes(candidate.type) || (['scene-context', 'reply-snapshot', 'guidance', 'apply-reply'].includes(candidate.operation) || operationFor(candidate)?.rootOnly)) return false;
-        const operation = operationFor(candidate, { phase: editorDraw.mode.slice(7) });
+        const operation = operationFor(candidate, { mode: editorDraw.mode, phase: candidate.phase ?? editorDraw.nativeCards?.[id]?.phase });
         return !operation?.rootOnly && (!operation?.requiresStateInDefinition || Object.values(editorDraw.wires).some(wire => wire.to === id && wire.toPort === 'state'));
     });
 }
@@ -1420,7 +1430,6 @@ function handleCommentHistory(graph, event) {
 }
 function prepareScopeMutation(token, mutate) { return prepareQualifiedScopeEdit(current, scopeCommand(token), mutate); }
 function prepareNode(rootGraph, command) { return prepareNativeNodeEdit(rootGraph, command); }
-function commitNativeNode(command) { const captured = captureEditor(); if (!captured.ok) return captured; return commitCaptured(captured.data, prepareNode(current, { ...command, ...scopeCommand(captured.data) })); }
 function detailCapture(selection, presentation = false) {
     const captured = captureEditor(presentation); if (!captured.ok) return captured;
     const editor = graphViews.readEditor(), actualRevision = graphViews.readEditContext().sessionId + ':' + workspaceRevision;
@@ -1558,7 +1567,7 @@ function requestNodeCreation(capture, command, at = null, shelf = false) {
     const editor = graphViews.readEditor(), origin = command.connection?.origin;
     const originCard = origin ? editorDraw?.nativeCards[origin.nodeId] : null;
     const originPort = originCard?.ports.find(port => port.port === origin.portId);
-    const stage = configuredCreationStage(command.operation, editor.prepared.savedGraph.mode, originCard?.phase ?? editorDraw?.nativeCards[selected?.id]?.phase);
+    const stage = configuredCreationStage(command.operation, editor.prepared.savedGraph.mode, originCard?.phase ?? editorDraw?.nativeCards[selected?.id]?.phase, editor.view.identity.kind === 'instance');
     let targets = [], documentScopeKey;
     if (['read-file', 'story-clock', 'commit-outcomes'].includes(command.operation)) {
         const captured = workflowRuntime.getStoryDocumentCatalog?.()?.capture();

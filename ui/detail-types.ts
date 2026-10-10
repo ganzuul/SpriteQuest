@@ -94,6 +94,6 @@ export interface DetailRunRow {
 }
 export interface RunDetailsView {
     runId: string; status: string; elapsedMs: number | null; actualCalls: number; callBound: number;
-    completedCount: number; executableCount: number; rows: DetailRunRow[]; issue?: string; memoryStatus?: string;
+    completedCount: number; executableCount: number; rows: DetailRunRow[]; issue?: string;
 }
 export interface RunDetailsActions { jump?: (runId: string, address: DetailNodeAddress) => void; }

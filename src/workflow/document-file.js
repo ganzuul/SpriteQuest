@@ -1,8 +1,8 @@
-import { safeWorkflowData, validateGraphStructure } from './contracts.js?v=0.26.0';
-import { OPERATIONS, operationFor, phaseForNode } from './catalog.js?v=0.26.0';
-import { introspectionDefaults } from './introspection/native.js?v=0.26.0';
-import { parseWorkflow } from './packages.js?v=0.26.0';
-import { createViewState } from '../ui/view-state.js?v=0.26.0';
+import { safeWorkflowData, validateGraphStructure } from './contracts.js?v=0.27.0';
+import { OPERATIONS, operationFor, phaseForNode } from './catalog.js?v=0.27.0';
+import { introspectionDefaults } from './introspection/native.js?v=0.27.0';
+import { parseWorkflow } from './packages.js?v=0.27.0';
+import { createViewState } from '../ui/view-state.js?v=0.27.0';
 
 const LIMIT = 2000000;
 const fail = (code, message) => ({ ok: false, error: { code, message } });
@@ -128,6 +128,7 @@ export function serializeWorkflowDocument(graph, workspaceViews = null) {
         const projected = structuredClone(projectedData), views = structuredClone(viewData);
         const validation = validateGraphStructure(projected);
         if (!validation.ok) return validation;
+        if (projected.mode !== 'native-unified') return fail('WRONG_PHASE', 'Editable workflow documents require a unified root. Retired originals are recovery data only.');
         if (views && views.workflowId !== projected.id) return fail('VIEW_DATA', 'Workspace presentation belongs to a different workflow.');
         if (views) {
             const navigation = new Map();

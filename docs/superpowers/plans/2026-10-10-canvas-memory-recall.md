@@ -34,7 +34,7 @@ Retain the spec's serialized compatibility discriminants and schema/version valu
 
 Planning checkout: `F:/git/SillyCanvas`, main `d047477`, `0.26.0`. The user subsequently approved integration in an isolated worktree.
 
-At execution, inspect `git status`, active artifacts/worktrees, and current instructions. Use the worktree skill to obtain an isolated implementation checkout. Start from a reviewed baseline that includes the workflow-files active-document lifecycle (`activeWorkflow`, `documentSession.capture/stillCurrent`, activation cancellation). If absent, resolve that integration before Task 1; do not implement an assigned-graph fallback. Adapt to integrated legacy-removal/profile cleanup rather than reverting it. No merge, push, release, or deployment is part of this plan.
+At execution, inspect `git status`, active artifacts/worktrees, and current instructions. Use the worktree skill to obtain an isolated implementation checkout. Start from a reviewed baseline that includes the workflow-files active-document lifecycle (`activeWorkflow`, `documentSession.capture/stillCurrent`, activation cancellation). If absent, resolve that integration before Task 1; do not implement an assigned-graph fallback. Adapt to integrated legacy-removal/profile cleanup rather than reverting it. The user subsequently approved reconciling main 0.27 into the feature worktree. Merging the feature into main, pushing, releasing, and deployment remain outside this plan.
 
 | Unit | Files and responsibility |
 | --- | --- |
@@ -177,11 +177,11 @@ Add keyboard regression: open Node menu with a selected node, press Delete, Spac
 
 **Interfaces:** current operator documentation names only supported product controls and links to the renamed Recall Shortcut section. Existing schema/operation values still round-trip unchanged. Generated artifacts come from their normal tools, not manual edits.
 
-- [ ] **Step 1: Extend compatibility/installation/documentation checks before editing guides.** Pin old portable input parsing and serialization with unchanged `hotkey-arm`/activation/use values but new display titles; ensure friendly enum labels and zero restored queue state. Assert local workflow save and exported packages contain no runtime status/capture objects. Use existing installed-import, package, active-document and documentation checks rather than a duplicate serializer suite.
+- [x] **Step 1: Extend compatibility/installation/documentation checks before editing guides.** Pin old portable input parsing and serialization with unchanged `hotkey-arm`/activation/use values but new display titles; ensure friendly enum labels and zero restored queue state. Assert local workflow save and exported packages contain no runtime status/capture objects. Use existing installed-import, package, active-document and documentation checks rather than a duplicate serializer suite.
 
-- [ ] **Step 2: Update the current guides, descriptor references, example text and generated assets.** Fix heading anchors and links for Recall Shortcut/Memory recall. Teach canvas Queue/Cancel first, then Details/overview; explain automatic activation, shared memory-set grouping, target/repetition/consumption and disabled state. Search current product text for the retired wording; inspect each match, excluding only serialized compatibility constants, historical records, intentional fixtures, and this specification/plan. Do not substitute inside identifiers/semantic hashes.
+- [x] **Step 2: Update the current guides, descriptor references, example text and generated assets.** Fix heading anchors and links for Recall Shortcut/Memory recall. Teach canvas Queue/Cancel first, then Details/overview; explain automatic activation, shared memory-set grouping, target/repetition/consumption and disabled state. Search current product text for the retired wording; inspect each match, excluding only serialized compatibility constants, historical records, intentional fixtures, and this specification/plan. Do not substitute inside identifiers/semantic hashes.
 
-- [ ] **Step 3: Run final integrated checks.**
+- [x] **Step 3: Run final integrated checks.**
 
 ```powershell
 npm run test
@@ -195,9 +195,9 @@ npm run test:browser
 
 Expected: every required gate succeeds with no new skipped tests. If sandbox child spawning fails, use the approved execution environment or individual Node suites with `--test-isolation=none` and run the equivalent complete gate; document the actual command/result instead of claiming a blocked full runner passed. No paid provider or live chat write is required.
 
-- [ ] **Step 4: Inspect rendered shipped UI, with screenshots.** Cover normal and compact Recall/Shortcut nodes; zoom 1, overview transition, and minimum .25; current light/dark/custom themes; narrow viewport; keyboard badge/menu use and coarse-pointer sizing. Inspect green queued, amber reserved, amber awaiting acceptance, shared multi-selection, conflicts, and disabled states. Verify badges avoid pins/profile/alias and remain recognizable without changing node geometry. Fix issues and rerun the affected checks before completion.
+- [x] **Step 4: Inspect rendered shipped UI, with screenshots.** Cover normal and compact Recall/Shortcut nodes; zoom 1, overview transition, and minimum .25; current light/dark/custom themes; narrow viewport; keyboard badge/menu use and coarse-pointer sizing. Inspect green queued, amber reserved, amber awaiting acceptance, shared multi-selection, conflicts, and disabled states. Verify badges avoid pins/profile/alias and remain recognizable without changing node geometry. Fix issues and rerun the affected checks before completion.
 
-- [ ] **Step 5: Review the integrated diff against every spec acceptance criterion, then commit exact documentation/generated/verification changes.** Record test counts, gate outputs, visual captures, and any genuine limitations in the implementation handoff. No claim of completion while a required gate or acceptance criterion remains unresolved.
+- [x] **Step 5: Review the integrated diff against every spec acceptance criterion, then commit exact documentation/generated/verification changes.** Record test counts, gate outputs, visual captures, and any genuine limitations in the implementation handoff. No claim of completion while a required gate or acceptance criterion remains unresolved.
 
 ## Plan self-review and execution handoff
 
@@ -205,7 +205,7 @@ Coverage: Task 1 owns runtime identity/atomicity/lifecycle/notifications; Task 2
 
 Recommended execution method: Native implementation in one isolated checkout, with independent integrated review. These tasks share runtime/view/controller contracts; keeping their integration in one implementer's context reduces coordination risk. Subagent-driven execution remains available if the user prefers per-task independent review.
 
-Review the spec and this plan, then choose Native or Subagent-driven execution before product implementation. The current approval authorized creating these reviewable documents only.
+The user approved implementation in a managed worktree, then explicitly approved reconciling the advanced 0.27 baseline. Native integration uses independently owned state, documentation, and regression reconciliation, followed by independent review.
 
 
 ## Integration record
@@ -218,4 +218,29 @@ Implementation worktree: `C:/Users/Keptin/.codex/worktrees/canvas-memory-recall/
 - Review corrections: exact-token cleanup releases inactive/unretained reservations without restoring spent uses; all-node captures have an explicit root scope; local Details/context sections require the root view; pending icons have separate markers and fitted theme colors.
 - Example regeneration pins portable teaching recipes to their explicit model-role bindings, preserving their control settings and definition identities while updating prose.
 
-Validation results are added after the final suite completes. No merge, push, release or deployment is included.
+Validation completed on 2026-10-10. The user approved merging main `7d1c0cf` (0.27) into this feature worktree and resolving conflicts. Main remains unchanged; no feature merge into main, push, release or deployment is included.
+
+0.27 reconciliation retains unified-only execution, archive/export-only retired roots, the thirty-lesson curriculum, portable Fast Decision selector cleanup, actor/memory provenance and authorization ordering. Active document sessions/files and canvas recall are layered onto that baseline. New regressions reject retired editable files, schema-2 recovery drafts, direct activation, Open Recent and Recover before changing a dirty document or its authority. All module cache URLs use 0.27.0.
+
+## Final validation
+
+All required gates pass on the reconciled 0.27 worktree:
+
+| Gate | Evidence |
+| --- | --- |
+| `npm run test` | 256/256 test files passed in the final complete rerun |
+| Playwright, CI, port 4189, two workers | 287/287 passed in a complete final run |
+| Final document ownership and delayed-save suites | 127/127 host/session cases passed; settlement 15/15 also passed under the repository's preloaded test host |
+| `npm run check:types` | 0 errors, 0 warnings |
+| `npm run build` | Production assets rebuilt; 173 modules |
+| `npm run check:assets` | 505 versioned imports; self-contained Svelte UI; one native domain graph |
+| Documentation checker | 11 guides, 227 local links, 75 operations, 20 screenshots |
+| `npm run smoke:install` | 149 requests; no errors or missing assets; zero API/provider calls |
+
+Visual inspection covers the current dark theme, a custom light theme, a narrow viewport, normal/compact cards and minimum zoom .25. Queued and pending badges, selection actions, keyboard access and stale captures pass real browser tests. Touch targets measure 44 × 44 at normal zoom; minimum painted glyphs measure 10 × 10. Runtime-only status updates preserve geometry, gestures, drafts, focus, authoring history and document cleanliness.
+
+Independent review found no remaining issues after the exact-document fixes. Document activation clears old run diagnostics even for the identical graph object; late old-document model completions and acceptance saves cannot replace a newer Send's result. Reopening the canvas preserves review authority for a fresh Send completed while closed.
+
+The complete Node gate was rerun after correcting an obsolete fixture's constructor setup for `tools/node-test-host.mjs`; no new tests are skipped. Earlier fixture failures and the document-boundary regressions are resolved. Verification uses local host/provider fixtures and performs no live provider call or chat write. Detailed output and visual captures remain in `.superpowers/sdd/2026-10-10-canvas-memory-recall/` in this worktree.
+
+See the [0.27 integration record](2026-10-10-recall-main-027-integration.md) for baseline preservation and scope. Keep the managed worktree for review; no feature merge into main, push, release or deployment was performed.

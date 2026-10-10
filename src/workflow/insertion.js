@@ -1,15 +1,15 @@
-import { ACTIVE_PROFILE_ID } from './model-profiles.js?v=0.26.0';
-import { safeWorkflowData, validateGraphStructure } from './contracts.js?v=0.26.0';
-import { cloneWorkflowDocument } from './document.js?v=0.26.0';
-import { operationFor } from './catalog.js?v=0.26.0';
-import { graphDocumentSignature, graphSemanticSignature } from './ports.js?v=0.26.0';
-import { parseWorkflow } from './packages.js?v=0.26.0';
-import { inspectExpandedGraph } from './graph-validation.js?v=0.26.0';
-import { definitionRefKey, nodeBindingOverrideKey } from './definition-data.js?v=0.26.0';
-import { definitionChain, ownsDefinitionPath, pathStartsWith } from './composition-edit.js?v=0.26.0';
-import { prepareLocalDefinitionEdit } from './definition-library.js?v=0.26.0';
-import { prepareImportedDefinitionPins } from './definition-insertion.js?v=0.26.0';
-import { isCommentFrame } from '../canvas/comment-frames.js?v=0.26.0';
+import { ACTIVE_PROFILE_ID } from './model-profiles.js?v=0.27.0';
+import { safeWorkflowData, validateGraphStructure } from './contracts.js?v=0.27.0';
+import { cloneWorkflowDocument } from './document.js?v=0.27.0';
+import { operationFor } from './catalog.js?v=0.27.0';
+import { graphDocumentSignature, graphSemanticSignature } from './ports.js?v=0.27.0';
+import { parseWorkflow } from './packages.js?v=0.27.0';
+import { inspectExpandedGraph } from './graph-validation.js?v=0.27.0';
+import { definitionRefKey, nodeBindingOverrideKey } from './definition-data.js?v=0.27.0';
+import { definitionChain, ownsDefinitionPath, pathStartsWith } from './composition-edit.js?v=0.27.0';
+import { prepareLocalDefinitionEdit } from './definition-library.js?v=0.27.0';
+import { prepareImportedDefinitionPins } from './definition-insertion.js?v=0.27.0';
+import { isCommentFrame } from '../canvas/comment-frames.js?v=0.27.0';
 
 const fail = (code, message) => ({ ok: false, error: { code, message } });
 
@@ -69,8 +69,8 @@ export function prepareWorkflowInsertion(destination, imported, options = {}) {
         if (!target.ok) return target;
         if (!source.ok) return source;
         if (viewPath.length && !ownsDefinitionPath(target.data, viewPath)) return fail('READ_ONLY_VIEW', 'Make an explicit local copy of the containing view before insertion.');
-        if (target.data.mode !== source.data.mode) return fail('MODE_MISMATCH', 'Open this workflow separately: its phase differs.');
         const containingDefinition = viewPath.length ? definitionChain(target.data, viewPath).at(-1).definition : null;
+        if ((containingDefinition?.body.mode ?? target.data.mode) !== source.data.mode) return fail('MODE_MISMATCH', 'Paste a fragment compatible with the containing stage.');
         for (const graph of [containingDefinition?.body ?? target.data, source.data]) {
             const items = [...Object.values(graph.nodes), ...Object.values(graph.groups ?? {})];
             const boxes = [...items, ...items.filter(item => item.frame !== undefined).map(item => item.frame)];

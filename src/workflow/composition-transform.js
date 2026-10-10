@@ -1,9 +1,9 @@
-import { safeWorkflowData, validateGraphStructure } from './contracts.js?v=0.26.0';
-import { portsForNode, operationFor } from './catalog.js?v=0.26.0';
-import { computeDefinitionIdentity, definitionRefKey, nodeBindingOverrideKey } from './definition-data.js?v=0.26.0';
-import { inspectExpandedGraph } from './graph-validation.js?v=0.26.0';
-import { prepareGraphCandidate } from './prepared-graph-edit.js?v=0.26.0';
-import { compositionIds, definitionChain, ownershipEntries, ownsDefinitionPath, samePath, pathStartsWith, safeId, prunePrivateSnapshots } from './composition-edit.js?v=0.26.0';
+import { safeWorkflowData, validateGraphStructure } from './contracts.js?v=0.27.0';
+import { portsForNode, operationFor } from './catalog.js?v=0.27.0';
+import { computeDefinitionIdentity, definitionRefKey, nodeBindingOverrideKey } from './definition-data.js?v=0.27.0';
+import { inspectExpandedGraph } from './graph-validation.js?v=0.27.0';
+import { prepareGraphCandidate } from './prepared-graph-edit.js?v=0.27.0';
+import { compositionIds, definitionChain, ownershipEntries, ownsDefinitionPath, samePath, pathStartsWith, safeId, prunePrivateSnapshots } from './composition-edit.js?v=0.27.0';
 
 const fail = (code, message) => ({ ok: false, error: { code, message } });
 const reference = definition => ({ id: definition.id, version: definition.version, semanticHash: definition.semanticHash });
@@ -225,9 +225,14 @@ export function prepareUnpack(root, command) {
         if (!enabled) node.enabled = false;
         const boundary = definition.interface.find(port => port.boundaryNodeId === oldId);
         if (boundary) {
-            node.type = 'workflow'; node.operation = 'reroute'; node.operationVersion = 1; node.phase = scope.mode.slice(7); node.artifactKind = boundary.kind; delete node.interfacePortId;
+            const mapping = expanded.data.boundaryMappings.find(item => samePath(item.boundary.instancePath, instancePath) && item.boundary.nodeId === oldId);
+            const producer = mapping?.source && expanded.data.primitives.find(unit => samePath(unit.address.instancePath, mapping.source.instancePath) && unit.address.nodeId === mapping.source.nodeId);
+            node.type = 'workflow'; node.operation = 'reroute'; node.operationVersion = 1;
+            node.phase = materialized.mode === 'native-unified' ? producer?.phase ?? 'pre' : materialized.mode.slice(7);
+            node.artifactKind = boundary.kind; delete node.interfacePortId;
             generatedReroutes.push({ nodeId: id, interfacePortId: boundary.id, direction: boundary.direction, kind: boundary.kind });
         } else if (node.type === 'workflow') {
+            if (scope.mode === 'native-unified') node.phase = expanded.data.primitives.find(unit => samePath(unit.address.instancePath, instancePath) && unit.address.nodeId === oldId).phase;
             const inherited = parentRoles[node.modelRole] ?? {};
             if (['profileId', 'model'].some(field => node[field] === null && inherited[field] != null)) {
                 const sourceRole = node.modelRole ?? operationFor(node).modelRole ?? 'Binding';

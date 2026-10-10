@@ -1,6 +1,6 @@
-import { advanceStoryClock, enumerateScheduledOccurrences, resolveTimeAdvance } from '../story-time.js?v=0.26.0';
-import { cloneJsonValue, stringifyJsonValue } from './json-data.js?v=0.26.0';
-import { freeze } from '../record-data.js?v=0.26.0';
+import { advanceStoryClock, enumerateScheduledOccurrences, resolveTimeAdvance } from '../story-time.js?v=0.27.0';
+import { cloneJsonValue, stringifyJsonValue } from './json-data.js?v=0.27.0';
+import { freeze } from '../record-data.js?v=0.27.0';
 
 const fail = (code, message) => ({ ok: false, error: { code, message } });
 const plain = value => value !== null && typeof value === 'object' && !Array.isArray(value) && [Object.prototype, null].includes(Object.getPrototypeOf(value));

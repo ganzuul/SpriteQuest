@@ -1,0 +1,202 @@
+{
+  "kind": "lattice-workflow",
+  "schema": 2,
+  "minRuntime": 2,
+  "graph": {
+    "id": "remastered-lesson-07",
+    "name": "7. Let a second model polish the narration",
+    "description": "Apply pre-generation direction, then revise only narration while preserving protected literals.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nBind Prose to Active SillyTavern or a chosen local model.\n\nOpen Let a second model polish the narration and inspect the named pins.\nCompare the native Draft with the narration-only revision before Apply.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 1 auxiliary Revise Draft request after one ordinary native generation.\nCheckpoints:\nRevise Draft · narration pass.out: Narration changes; dialogue and the protected literal remain unchanged.",
+    "schema": 3,
+    "runtime": 2,
+    "mode": "native-unified",
+    "nodes": {
+      "send": {
+        "id": "send",
+        "type": "workflow",
+        "operation": "on-send",
+        "operationVersion": 1,
+        "title": "On Send",
+        "enabled": true,
+        "x": 100,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "On Send"
+      },
+      "generate": {
+        "id": "generate",
+        "type": "workflow",
+        "operation": "generate-reply",
+        "operationVersion": 1,
+        "title": "Generate Reply · SillyTavern",
+        "enabled": true,
+        "x": 820,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Generate Reply · SillyTavern",
+        "budgetTokens": 768
+      },
+      "review": {
+        "id": "review",
+        "type": "workflow",
+        "operation": "review-publish",
+        "operationVersion": 1,
+        "title": "Review / Publish",
+        "enabled": true,
+        "x": 1540,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Review / Publish"
+      },
+      "direction": {
+        "id": "direction",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 100,
+        "y": 560,
+        "w": 300,
+        "h": 210,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Text",
+        "text": "Describe the scene through concrete sounds and movement; preserve dialogue and player agency."
+      },
+      "guidance": {
+        "id": "guidance",
+        "type": "workflow",
+        "operation": "compose",
+        "operationVersion": 1,
+        "title": "Compose",
+        "enabled": true,
+        "x": 460,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Compose",
+        "mode": "join",
+        "outputKind": "guidance",
+        "template": "",
+        "sections": [
+          {
+            "name": "Material",
+            "text": ""
+          }
+        ],
+        "separator": "\n\n"
+      },
+      "polish": {
+        "id": "polish",
+        "type": "workflow",
+        "operation": "revise-draft",
+        "operationVersion": 1,
+        "title": "Revise Draft",
+        "enabled": true,
+        "x": 1180,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "profileId": "lattice:active-sillytavern",
+        "model": null,
+        "modelRole": "Prose",
+        "alias": "Revise Draft · narration pass",
+        "instructions": "Tighten repetition and sentence rhythm. Preserve facts, chronology, all dialogue and North Harbor exactly.",
+        "scope": "narration",
+        "protectedLiterals": [
+          "North Harbor"
+        ],
+        "maxTokens": 2048
+      },
+      "lesson-note": {
+        "id": "lesson-note",
+        "type": "note",
+        "title": "Lesson instructions",
+        "enabled": true,
+        "x": 100,
+        "y": 0,
+        "w": 900,
+        "h": 180,
+        "content": "Apply pre-generation direction, then revise only narration while preserving protected literals.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nBind Prose to Active SillyTavern or a chosen local model.\n\nOpen Let a second model polish the narration and inspect the named pins.\nCompare the native Draft with the narration-only revision before Apply.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 1 auxiliary Revise Draft request after one ordinary native generation.\nCheckpoints:\nRevise Draft · narration pass.out: Narration changes; dialogue and the protected literal remain unchanged.",
+        "commentFrame": true,
+        "moveContents": false
+      }
+    },
+    "wires": {
+      "edge-1": {
+        "id": "edge-1",
+        "route": "wire",
+        "from": "send",
+        "fromPort": "activation",
+        "to": "generate",
+        "toPort": "activation"
+      },
+      "edge-2": {
+        "id": "edge-2",
+        "route": "wire",
+        "from": "direction",
+        "fromPort": "out",
+        "to": "guidance",
+        "toPort": "section.Material"
+      },
+      "edge-3": {
+        "id": "edge-3",
+        "route": "wire",
+        "from": "guidance",
+        "fromPort": "out",
+        "to": "generate",
+        "toPort": "guidance"
+      },
+      "edge-4": {
+        "id": "edge-4",
+        "route": "wire",
+        "from": "generate",
+        "fromPort": "draft",
+        "to": "polish",
+        "toPort": "draft"
+      },
+      "edge-5": {
+        "id": "edge-5",
+        "route": "wire",
+        "from": "polish",
+        "fromPort": "out",
+        "to": "review",
+        "toPort": "draft"
+      }
+    },
+    "groups": {},
+    "roles": {
+      "Prose": {
+        "model": null,
+        "profileId": "lattice:active-sillytavern"
+      }
+    },
+    "portals": {},
+    "definitions": {},
+    "template": {
+      "id": "lesson-07",
+      "version": 1
+    },
+    "view": {
+      "x": 0,
+      "y": 0,
+      "zoom": 0.65
+    }
+  }
+}

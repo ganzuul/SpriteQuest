@@ -1,0 +1,350 @@
+{
+  "kind": "lattice-workflow",
+  "schema": 2,
+  "minRuntime": 2,
+  "graph": {
+    "id": "remastered-lesson-15",
+    "name": "15. Keep useful context within a budget",
+    "description": "Join two public context windows and retain selected recent/protected material under a token budget.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\n\nOpen Keep useful context within a budget and inspect the named pins.\nInspect Context Join source identity/deduplication and Smart Compactor omissions.\nSelection makes no auxiliary call; compress is an optional exercise with one additional call.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: Default select: 1 auxiliary Response Plan request. Compress exercise: up to 2. One ordinary native generation.\nCheckpoints:\nSmart Compactor.out: Recent messages and protected lantern material are retained; omissions remain reported.",
+    "schema": 3,
+    "runtime": 2,
+    "mode": "native-unified",
+    "nodes": {
+      "send": {
+        "id": "send",
+        "type": "workflow",
+        "operation": "on-send",
+        "operationVersion": 1,
+        "title": "On Send",
+        "enabled": true,
+        "x": 100,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-0",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "On Send"
+      },
+      "generate": {
+        "id": "generate",
+        "type": "workflow",
+        "operation": "generate-reply",
+        "operationVersion": 1,
+        "title": "Generate Reply · SillyTavern",
+        "enabled": true,
+        "x": 1540,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-4",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Generate Reply · SillyTavern",
+        "budgetTokens": 768
+      },
+      "review": {
+        "id": "review",
+        "type": "workflow",
+        "operation": "review-publish",
+        "operationVersion": 1,
+        "title": "Review / Publish",
+        "enabled": true,
+        "x": 1900,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-5",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Review / Publish"
+      },
+      "recent": {
+        "id": "recent",
+        "type": "workflow",
+        "operation": "scene-context",
+        "title": "Scene Context",
+        "enabled": true,
+        "x": 100,
+        "y": 560,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-0",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Scene Context",
+        "recentMessages": 3,
+        "includeCharacter": false,
+        "visibilityMode": "public"
+      },
+      "wider": {
+        "id": "wider",
+        "type": "workflow",
+        "operation": "scene-context",
+        "title": "Scene Context",
+        "enabled": true,
+        "x": 100,
+        "y": 880,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-0",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Scene Context",
+        "recentMessages": 12,
+        "includeCharacter": false,
+        "visibilityMode": "public"
+      },
+      "join-context": {
+        "id": "join-context",
+        "type": "workflow",
+        "operation": "context-join",
+        "operationVersion": 1,
+        "title": "Context Join",
+        "enabled": true,
+        "x": 460,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-1",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Context Join",
+        "inputs": [
+          {
+            "id": "context-1",
+            "label": "Context 1"
+          },
+          {
+            "id": "context-2",
+            "label": "Context 2"
+          }
+        ]
+      },
+      "compact": {
+        "id": "compact",
+        "type": "workflow",
+        "operation": "smart-compactor",
+        "title": "Smart Compactor",
+        "enabled": true,
+        "x": 820,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-2",
+        "profileId": "lattice:active-sillytavern",
+        "model": null,
+        "modelRole": "Analysis",
+        "alias": "Smart Compactor",
+        "targetTokens": 700,
+        "purpose": "Keep the immediate public obstacle and protected lantern reference.",
+        "method": "select",
+        "keepRecent": 2,
+        "pins": [
+          "lantern"
+        ],
+        "maxTokens": 1024
+      },
+      "plan": {
+        "id": "plan",
+        "type": "workflow",
+        "operation": "response-plan",
+        "title": "Response Plan",
+        "enabled": true,
+        "x": 1180,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-3",
+        "profileId": "lattice:active-sillytavern",
+        "model": null,
+        "modelRole": "Analysis",
+        "alias": "Response Plan",
+        "instructions": "Plan from retained material only; respect omissions and missing facts.",
+        "maxTokens": 768
+      },
+      "lesson-note": {
+        "id": "lesson-note",
+        "type": "note",
+        "title": "Lesson instructions",
+        "enabled": true,
+        "x": 100,
+        "y": 0,
+        "w": 900,
+        "h": 180,
+        "content": "Join two public context windows and retain selected recent/protected material under a token budget.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\n\nOpen Keep useful context within a budget and inspect the named pins.\nInspect Context Join source identity/deduplication and Smart Compactor omissions.\nSelection makes no auxiliary call; compress is an optional exercise with one additional call.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: Default select: 1 auxiliary Response Plan request. Compress exercise: up to 2. One ordinary native generation.\nCheckpoints:\nSmart Compactor.out: Recent messages and protected lantern material are retained; omissions remain reported.",
+        "commentFrame": true,
+        "moveContents": false
+      }
+    },
+    "wires": {
+      "edge-1": {
+        "id": "edge-1",
+        "route": "wire",
+        "from": "send",
+        "fromPort": "activation",
+        "to": "generate",
+        "toPort": "activation"
+      },
+      "edge-2": {
+        "id": "edge-2",
+        "route": "wire",
+        "from": "recent",
+        "fromPort": "out",
+        "to": "join-context",
+        "toPort": "context-1"
+      },
+      "edge-3": {
+        "id": "edge-3",
+        "route": "wire",
+        "from": "wider",
+        "fromPort": "out",
+        "to": "join-context",
+        "toPort": "context-2"
+      },
+      "edge-4": {
+        "id": "edge-4",
+        "route": "wire",
+        "from": "join-context",
+        "fromPort": "out",
+        "to": "compact",
+        "toPort": "in"
+      },
+      "edge-5": {
+        "id": "edge-5",
+        "route": "wire",
+        "from": "compact",
+        "fromPort": "out",
+        "to": "plan",
+        "toPort": "in"
+      },
+      "edge-6": {
+        "id": "edge-6",
+        "route": "wire",
+        "from": "plan",
+        "fromPort": "out",
+        "to": "generate",
+        "toPort": "guidance"
+      },
+      "edge-7": {
+        "id": "edge-7",
+        "route": "wire",
+        "from": "generate",
+        "fromPort": "draft",
+        "to": "review",
+        "toPort": "draft"
+      }
+    },
+    "groups": {
+      "stage-0": {
+        "id": "stage-0",
+        "title": "Preparation / processing",
+        "description": "Stage 0. Wires determine execution; folding is presentation only.",
+        "x": 75,
+        "y": 190,
+        "w": 350,
+        "h": 925,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "send",
+          "recent",
+          "wider"
+        ]
+      },
+      "stage-1": {
+        "id": "stage-1",
+        "title": "Preparation / processing",
+        "description": "Stage 1. Wires determine execution; folding is presentation only.",
+        "x": 435,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "join-context"
+        ]
+      },
+      "stage-2": {
+        "id": "stage-2",
+        "title": "Preparation / processing",
+        "description": "Stage 2. Wires determine execution; folding is presentation only.",
+        "x": 795,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "compact"
+        ]
+      },
+      "stage-3": {
+        "id": "stage-3",
+        "title": "Preparation / processing",
+        "description": "Stage 3. Wires determine execution; folding is presentation only.",
+        "x": 1155,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "plan"
+        ]
+      },
+      "stage-4": {
+        "id": "stage-4",
+        "title": "Native generation",
+        "description": "Stage 4. Wires determine execution; folding is presentation only.",
+        "x": 1515,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#284e67",
+        "collapsed": false,
+        "members": [
+          "generate"
+        ]
+      },
+      "stage-5": {
+        "id": "stage-5",
+        "title": "Review / accepted staging",
+        "description": "Stage 5. Wires determine execution; folding is presentation only.",
+        "x": 1875,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "review"
+        ]
+      }
+    },
+    "roles": {
+      "Analysis": {
+        "model": null,
+        "profileId": "lattice:active-sillytavern"
+      }
+    },
+    "portals": {},
+    "definitions": {},
+    "template": {
+      "id": "lesson-15",
+      "version": 1
+    },
+    "view": {
+      "x": 0,
+      "y": 0,
+      "zoom": 0.65
+    }
+  }
+}

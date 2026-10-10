@@ -137,7 +137,7 @@ test('overview keeps compact identity, groups, comments and keyboard access to r
     await openCanvas(page);
     await page.evaluate(async () => {
         const h = window.canvasHarness;
-        const { starterGraph } = await import('/src/workflow/starters.js?v=' + h.version);
+        const { fixtureGraph: starterGraph } = await import('/tests/helpers/workflow-fixtures.mjs');
         const graph = starterGraph('native-guidance'); graph.id = 'lod-mixed';
         graph.nodes['scene-context'].presentation = { compact: true, alias: 'Scene source' };
         const member = graph.nodes['smart-compactor']; member.inGroup = 'group';
@@ -152,7 +152,7 @@ test('overview keeps compact identity, groups, comments and keyboard access to r
     await expect(page.getByRole('button', { name: 'Open group', exact: true })).toHaveCSS('visibility', 'visible');
     await expect(page.locator('.pc-comment-notes')).toHaveCSS('visibility', 'visible');
     await expect(page.locator('.pc-node-native[data-id="ordinary"] .pc-node-body')).toHaveCSS('visibility', 'hidden');
-    const terminal = page.locator('.pc-node-native[data-id="guidance"]'), button = terminal.locator('.pc-host-result');
+    const terminal = page.locator('.pc-node-native[data-id="review-publish"]'), button = terminal.locator('.pc-host-result');
     await expect(button).toHaveCSS('visibility', 'hidden');
     await terminal.focus(); await expect(button).toHaveCSS('visibility', 'visible');
     await page.keyboard.press('Tab'); await expect(button).toBeFocused();

@@ -1,0 +1,164 @@
+{
+  "kind": "lattice-workflow",
+  "schema": 2,
+  "minRuntime": 2,
+  "graph": {
+    "id": "remastered-lesson-03",
+    "name": "3. Give the planner only the context it needs",
+    "description": "Select a small public scene window and observe what the planner omits.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nBind Analysis to Active SillyTavern or a configured local model.\n\nOpen Give the planner only the context it needs and inspect the named pins.\nInspect the Scene Context omission report for older/restricted material.\nCompare the four-message context with the resulting one-beat plan.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 1 auxiliary Response Plan request; one ordinary native generation; no retries.\nCheckpoints:\nScene Context · public window.out: Public recent context and omissions exclude restricted host material.\nResponse Plan · bounded public plan.out: One public next-beat plan reaches native Guidance.",
+    "schema": 3,
+    "runtime": 2,
+    "mode": "native-unified",
+    "nodes": {
+      "send": {
+        "id": "send",
+        "type": "workflow",
+        "operation": "on-send",
+        "operationVersion": 1,
+        "title": "On Send",
+        "enabled": true,
+        "x": 100,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "On Send"
+      },
+      "generate": {
+        "id": "generate",
+        "type": "workflow",
+        "operation": "generate-reply",
+        "operationVersion": 1,
+        "title": "Generate Reply · SillyTavern",
+        "enabled": true,
+        "x": 820,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Generate Reply · SillyTavern",
+        "budgetTokens": 768
+      },
+      "review": {
+        "id": "review",
+        "type": "workflow",
+        "operation": "review-publish",
+        "operationVersion": 1,
+        "title": "Review / Publish",
+        "enabled": true,
+        "x": 1180,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Review / Publish"
+      },
+      "scene": {
+        "id": "scene",
+        "type": "workflow",
+        "operation": "scene-context",
+        "title": "Scene Context",
+        "enabled": true,
+        "x": 100,
+        "y": 560,
+        "w": 300,
+        "h": 210,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Scene Context · public window",
+        "recentMessages": 4,
+        "includeCharacter": false,
+        "visibilityMode": "public"
+      },
+      "plan": {
+        "id": "plan",
+        "type": "workflow",
+        "operation": "response-plan",
+        "title": "Response Plan",
+        "enabled": true,
+        "x": 460,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "profileId": "lattice:active-sillytavern",
+        "model": null,
+        "modelRole": "Analysis",
+        "alias": "Response Plan · bounded public plan",
+        "instructions": "Plan one next scene beat from only the public recent messages. Name what remains unknown; do not infer private motives.",
+        "maxTokens": 768
+      },
+      "lesson-note": {
+        "id": "lesson-note",
+        "type": "note",
+        "title": "Lesson instructions",
+        "enabled": true,
+        "x": 100,
+        "y": 0,
+        "w": 900,
+        "h": 180,
+        "content": "Select a small public scene window and observe what the planner omits.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\nBind Analysis to Active SillyTavern or a configured local model.\n\nOpen Give the planner only the context it needs and inspect the named pins.\nInspect the Scene Context omission report for older/restricted material.\nCompare the four-message context with the resulting one-beat plan.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: 1 auxiliary Response Plan request; one ordinary native generation; no retries.\nCheckpoints:\nScene Context · public window.out: Public recent context and omissions exclude restricted host material.\nResponse Plan · bounded public plan.out: One public next-beat plan reaches native Guidance.",
+        "commentFrame": true,
+        "moveContents": false
+      }
+    },
+    "wires": {
+      "edge-1": {
+        "id": "edge-1",
+        "route": "wire",
+        "from": "send",
+        "fromPort": "activation",
+        "to": "generate",
+        "toPort": "activation"
+      },
+      "edge-2": {
+        "id": "edge-2",
+        "route": "wire",
+        "from": "scene",
+        "fromPort": "out",
+        "to": "plan",
+        "toPort": "in"
+      },
+      "edge-3": {
+        "id": "edge-3",
+        "route": "wire",
+        "from": "plan",
+        "fromPort": "out",
+        "to": "generate",
+        "toPort": "guidance"
+      },
+      "edge-4": {
+        "id": "edge-4",
+        "route": "wire",
+        "from": "generate",
+        "fromPort": "draft",
+        "to": "review",
+        "toPort": "draft"
+      }
+    },
+    "groups": {},
+    "roles": {
+      "Analysis": {
+        "model": null,
+        "profileId": "lattice:active-sillytavern"
+      }
+    },
+    "portals": {},
+    "definitions": {},
+    "template": {
+      "id": "lesson-03",
+      "version": 1
+    },
+    "view": {
+      "x": 0,
+      "y": 0,
+      "zoom": 0.65
+    }
+  }
+}

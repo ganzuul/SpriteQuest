@@ -1,6 +1,6 @@
 # Reference tools and reusable workflows
 
-Transpose applies an example or convention to Text or a completed reply Draft. New nodes accept and return Text in either phase. Draft edits produce source-bound Patches and follow Validate Patches → Review Gate → explicit Apply Reply. Installing a workflow does not assign it to a phase or enable it.
+Transpose applies an example or convention to Text or a completed reply Draft. New nodes accept and return Text in either phase. Draft edits produce source-bound Patches for validation and candidate diagnostics. Publishing an owned final Draft requires Review / Publish in a unified root. Opening a workflow makes it the active document without a model request or changing **Enable Lattice**.
 
 ## Transpose
 
@@ -10,7 +10,7 @@ Transpose applies an example or convention to Text or a completed reply Draft. N
 | Format Transfer | Text or Draft, example Text or Data template; optional Context | Text or Patches | At most 1 Prose |
 | Terminology Map | Text or Draft, Data glossary | Text or Patches | 0 |
 
-The Transpose family opens directly to these three nodes. Choose **Input type → Text** for Text → Text, or **Input type → Draft** in an After reply graph for Draft → Patches. New shelf/search nodes default to Text; existing saved nodes without Input type retain Draft behavior. Text transformations can run in Before reply or After reply graphs and inside reusable subgraphs. Host reply sources and application nodes retain their own context restrictions.
+The Transpose family opens directly to these three nodes. Choose **Input type → Text** for Text → Text, or **Input type → Draft** in the Response stage for Draft → Patches. New shelf/search nodes default to Text; existing saved nodes without Input type retain Draft behavior. Text transformations can run in Preparation or Response stages and inside reusable subgraphs. Host reply sources and application nodes retain their own context restrictions.
 
 Style modes are narration, character voice, rhythm and register, selected in Details. Narration is the default editing scope. To target dialogue, choose **Mode → Character voice** and **Scope → Dialogue** separately. Changing Mode keeps the current Scope. Mode, Scope, Strength, instructions and protected wording are independent controls.
 
@@ -48,7 +48,7 @@ The prose writer receives selected typed policies and optional Context. Preservi
 
 Packages in [examples/library/subgraphs](../examples/library/subgraphs/) illustrate reusable typed interfaces. Save a wrapper through **Add to Subgraphs** and insert saved definitions from the Subgraphs shelf. Definitions have verified identities and pinned dependencies; the shelf shows the latest explicitly saved entry for each reusable item. Model bindings remain unresolved until configured. Reusable bodies contain neither root sources nor Apply authority.
 
-The workflow starter picker offers Scene Compass, Literal phrase cleanup, Formatting cleanup and Prose cleanup. Complete files are in [examples/library/workflows](../examples/library/workflows/). Context Lens is a utility without a standalone Guidance workflow. The existing Literal cleanup starter remains a separate deterministic Text Rules example.
+The five canonical definitions remain available for reuse and inspection. Their pinned bodies retain pre/post stage contracts; standalone library root wrappers have been retired. Choose a current unified recipe, place compatible processing in its intended stage, and retain Review / Publish as the root publication authority.
 
 Literal Cleanup defaults to `the words hung in the air`, `the tension was palpable`, and `something unreadable`, in narration. Formatting Cleanup defaults to CRLF -> LF with explicit whole scope; supplied permissions and protected wording still narrow it. Prose Cleanup defaults to contextual/narration. Inspect changes before accepting them.
 
@@ -58,4 +58,4 @@ Pattern Scan now narrows supplied permissions and retains upstream protections/e
 
 The category editor accepts source category IDs, one per line. See [the canonical policy](../data/ai-slop-policy.json) for labels and entries. Source wording is data. The browser policy module is generated from the JSON and checked for equality by tests.
 
-The **Introspection** family is available alongside these tools. Its [three native starters](introspection-package.md#native-workflow-examples) cover character reflection and behavior guidance, experience internalization, and a deterministic consequence clock. Memory access stays in the root graph; reusable State bodies need an explicit snapshot input.
+The **Introspection** family is available alongside these tools. Its [package guide](introspection-package.md#native-workflow-examples) covers character reflection, experience internalization and deterministic tracks in current unified workflows. Memory access stays in the root graph; reusable State bodies need an explicit snapshot input.

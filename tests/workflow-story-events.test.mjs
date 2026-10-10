@@ -1,6 +1,6 @@
 import { describeRandom } from '../src/workflow/operations/random-outcomes.js';
 import { describeCollection } from '../src/workflow/operations/collection-nodes.js';
-import { appendDraftSections } from '../src/workflow/draft-revisions.js?v=0.26.0';
+import { appendDraftSections } from '../src/workflow/draft-revisions.js?v=0.27.0';
 import { applyProgressionEvents } from '../src/workflow/progression.js';
 import { executeEvent, describeEvent } from '../src/workflow/operations/event-nodes.js';
 import assert from 'node:assert/strict';
@@ -70,8 +70,8 @@ test('Character Direction calls only a present actor with that actors private co
     assert.equal(present.ok, true, JSON.stringify(present.error));
     let requests = 0, contextReads = 0;
     const execution = {
-        actorContext: async actorId => { contextReads++; assert.equal(actorId, 'mara'); return { ok: true, data: { scope: { actorId, sceneId: 'scene-42' }, visibility: 'actor-private', context: { visibleScene: 'Mara holds the wand.', privateFeeling: 'Mara fears the flame.' }, memories: [] } }; },
-        request: async options => { requests++; assert.equal(options.messages[0].role, 'system'); assert.equal(options.messages[0].content.includes('Dry practical advice'), true); assert.equal(options.messages[1].content.includes('Mara fears the flame.'), true); return { ok: true, data: { text: 'Mara recommends sheltering the flame.', finish: 'stop' } }; },
+        actorContext: async (actorId,request) => { contextReads++; assert.equal(actorId, 'mara'); assert.equal(Object.hasOwn(request,'data'),false); return { ok: true, data: { scope: { actorId, sceneId: 'scene-42' }, visibility: 'actor-private', context: { visibleScene: 'Mara holds the wand.', privateFeeling: 'Mara fears the flame.' }, memories: [] } }; },
+        request: async options => { requests++; assert.equal(options.messages[0].role, 'system'); assert.equal(options.messages[0].content.includes('Dry practical advice'), true); assert.equal(options.messages[1].content.includes('Mara fears the flame.'), true); assert.equal(Object.hasOwn(JSON.parse(options.messages[1].content),'data'),false); return { ok: true, data: { text: 'Mara recommends sheltering the flame.', finish: 'stop' } }; },
     };
     const direction = await executeEvent({ operation: 'character-direction', actorId: 'mara', systemPrompt: 'Dry practical advice.' }, { presence: present.artifact }, execution);
     assert.equal(direction.ok, true, JSON.stringify(direction.error));
@@ -319,4 +319,47 @@ test('literal word boundaries inspect supplementary Unicode code points on both 
     assert.equal(supplementary.ok,true,JSON.stringify(supplementary.error));
     assert.equal(supplementary.data.events.length,1);
     assert.equal(supplementary.data.events[0].evidence.text,'𐐀');
+});
+test('Character Direction optional Data is included with the same actor context in its single request',async()=>{
+    const node={operation:'character-direction',actorId:'mara',systemPrompt:'Let projected trust shape Mara’s manner.'};
+    const descriptor=describeEvent(node);assert.equal(descriptor.ok,true,JSON.stringify(descriptor.error));
+    assert.deepEqual(descriptor.data.ports.filter(port=>port.direction==='input').map(port=>[port.id,port.kind,port.required]),[['presence','data',true],['data','data',false]]);
+    const presence={kind:'data',value:{schemaVersion:1,recordType:'scene-presence',sceneId:'scene-42',sourceId:'scene-source',revision:'r1',actorId:'mara',status:'present'}};
+    const projected={kind:'data',value:{trust:.85,affection:.75}};let reads=0,calls=0;
+    const result=await executeEvent(node,{presence,data:projected},{actorContext(actorId,request,exactPresence){reads++;assert.equal(exactPresence,presence);assert.equal(request.data,projected);return {ok:true,data:{scope:{actorId,sceneId:'scene-42'},visibility:'actor-private',context:{privateFeeling:'Mara fears the sea.'},memories:[]}};},request:async request=>{calls++;const payload=JSON.parse(request.messages[1].content);assert.deepEqual(payload.data,{trust:.85,affection:.75});assert.equal(payload.scope.actorId,'mara');assert.equal(payload.context.privateFeeling,'Mara fears the sea.');assert.ok(request.messages[0].content.includes('projected trust'));return {ok:true,data:{text:'Mara softens her wary manner.',finish:'stop'}};}});
+    assert.equal(result.ok,true,JSON.stringify(result.error));assert.equal(reads,1);assert.equal(calls,1);assert.equal(result.artifact.text,'Mara softens her wary manner.');assert.equal(result.artifact.visibility,'actor-private');assert.equal(result.artifact.acceptance,'pending');assert.equal(result.artifact.scope.actorId,'mara');assert.equal(result.reports[0].actualCalls,1);
+});
+
+for(const [name,value,visibility]of [
+    ['hidden',{secret:'hidden'},{kind:'hidden'}],
+    ['mixed actors',[{visibility:'actor-private',actorId:'mara',secret:'sea'},{visibility:'actor-private',actorId:'elias',secret:'fire'}],{kind:'public'}],
+    ['another actor',{secret:'fire'},{kind:'actor-private',actorId:'elias'}],
+])test('Character Direction rejects '+name+' Data before actor or model dispatch',async()=>{
+    const presence={kind:'data',value:{schemaVersion:1,recordType:'scene-presence',sceneId:'scene-42',sourceId:'scene-source',revision:'r1',actorId:'mara',status:'present'}};let reads=0,calls=0;
+    const result=await executeEvent({operation:'character-direction',actorId:'mara'},{presence,data:{kind:'data',value,visibility}},{actorContext(){reads++;throw Error('unsafe actor dispatch');},request:async()=>{calls++;throw Error('unsafe model dispatch');}});
+    assert.equal(result.ok,false);assert.equal(result.error.code,'ACTOR_MODEL_SCOPE');assert.equal(reads,0);assert.equal(calls,0);assert.equal(result.artifact,undefined);
+});
+
+test('Character Direction optional Data respects absent actors and both input freshness checks',async()=>{
+    const node={operation:'character-direction',actorId:'mara'},base={schemaVersion:1,recordType:'scene-presence',sceneId:'scene-42',sourceId:'scene-source',revision:'r1',actorId:'mara'};
+    let reads=0,calls=0;const absent=await executeEvent(node,{presence:{kind:'data',value:{...base,status:'absent'}},data:{kind:'data',value:{trust:.85}}},{actorContext(){reads++;throw Error('absent');},request:async()=>{calls++;throw Error('absent');}});
+    assert.equal(absent.ok,true,JSON.stringify(absent.error));assert.equal(absent.outputStates.out.status,'skipped');assert.equal(reads,0);assert.equal(calls,0);
+    for(const changedDuring of ['context','model']){
+        const inputs={presence:{kind:'data',value:{...base,status:'present'}},data:{kind:'data',value:{trust:.85}}};calls=0;
+        const result=await executeEvent(node,inputs,{actorContext(){if(changedDuring==='context')inputs.data.value.trust=.1;return {ok:true,data:{scope:{actorId:'mara',sceneId:'scene-42'},visibility:'actor-private',context:{}}};},request:async()=>{calls++;inputs.data.value.trust=.1;return {ok:true,data:{text:'Changed trust.',finish:'stop'}};}});
+        assert.equal(result.ok,false,changedDuring);assert.equal(result.error.code,'STALE_INPUT',changedDuring);assert.equal(result.artifact,undefined);assert.equal(calls,changedDuring==='context'?0:1);
+    }
+});
+
+test('Character Direction admits the genuine private State projection envelope without stripping proposal metadata',async()=>{
+ const {executeProgressionState}=await import('../src/workflow/operations/progression-nodes.js');
+ const actorId='mara',presence={kind:'data',value:{schemaVersion:1,recordType:'scene-presence',sceneId:'scene-42',sourceId:'scene-source',revision:'r1',actorId,status:'present'}};
+ const projected=await executeProgressionState({mode:'progression'},{state:{kind:'data',value:{values:[{key:'trust',value:.5,min:0,max:1,subjectId:actorId,actorId,visibility:'actor-private'}],ledger:[]}},events:{kind:'data',value:[]},rules:{kind:'data',value:{ruleSetId:'relationship-rules',revision:1,rules:[]}}});
+ assert.equal(projected.ok,true,JSON.stringify(projected.error));let calls=0;
+ const result=await executeEvent({operation:'character-direction',actorId},{presence,data:projected.artifact},{actorContext(selected,request){assert.equal(request.data,projected.artifact);assert.equal(request.data.status,'proposed');assert.equal(request.data.acceptance,'pending');return {ok:true,data:{scope:{actorId:selected,sceneId:'scene-42'},visibility:'actor-private',context:{}}};},request:async request=>{calls++;assert.equal(JSON.parse(request.messages[1].content).data.values[0].value,.5);return {ok:true,data:{text:'Mara remains careful.',finish:'stop'}};}});
+ assert.equal(result.ok,true,JSON.stringify(result.error));assert.equal(calls,1);assert.equal(result.artifact.acceptance,'pending');assert.equal(result.artifact.scope.actorId,actorId);
+ for(const metadata of [{status:'committed'},{acceptance:'accepted'},{authority:'authored-grant'}]){
+  let reads=0;const denied=await executeEvent({operation:'character-direction',actorId},{presence,data:{...projected.artifact,...metadata}},{actorContext(){reads++;throw Error('invalid metadata');}});
+  assert.equal(denied.ok,false);assert.equal(denied.error.code,'INVALID_INPUT');assert.equal(reads,0);
+ }
 });

@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 test('native body dragging uses eight screen pixels and preserves group membership and cancellation', async ({ page }) => {
     await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
     await page.evaluate(async () => {
-        const { starterGraph } = await import('/src/workflow/starters.js?v=' + window.canvasHarness.version);
+        const { fixtureGraph: starterGraph } = await import('/tests/helpers/workflow-fixtures.mjs');
         const h = window.canvasHarness, graph = starterGraph('native-guidance');
         graph.groups.blanket = { id: 'blanket', title: 'Blanket', collapsed: false, frame: { x: 60, y: 90, w: 300, h: 300 } };
         await h.activate(graph); await h.view({ x: 220, y: 0, zoom: .8 });

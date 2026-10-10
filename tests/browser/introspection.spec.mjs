@@ -4,14 +4,17 @@ import { chooseControl, controlValue, openDetailGroup } from './details-helpers.
 async function launch(page, phase = 'pre') {
     await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
     await page.evaluate(async phase => {
-        await window.canvasHarness.activate({ id: 'introspection-browser-' + phase, name: 'Introspection authoring', schema: 3, runtime: 2, mode: 'native-' + phase, roles: {}, nodes: {}, wires: {}, groups: {}, portals: {}, definitions: {}, view: { x: 0, y: 0, zoom: 1 } });
+        window.introspectionStage=phase;
+        await window.canvasHarness.activate({ id: 'introspection-browser-' + phase, name: 'Introspection authoring', schema: 3, runtime: 2, mode: 'native-unified', roles: {}, nodes: {}, wires: {}, groups: {}, portals: {}, definitions: {}, view: { x: 0, y: 0, zoom: 1 } });
     }, phase);
 }
 async function choose(page, operation) {
     await page.locator('[data-family="Introspection"]').click();
     await page.locator(`[data-shelf-choice="operation:${operation}"]`).click();
     const id = await page.evaluate(operation => Object.values(window.canvasHarness.graph.nodes).find(node => node.operation === operation).id, operation);
-    await select(page, id); return id;
+    await select(page, id);
+    await page.getByLabel('Workflow stage',{exact:true}).selectOption(await page.evaluate(()=>window.introspectionStage));
+    return id;
 }
 async function select(page, id) {
     await page.evaluate(async id => { const h = window.canvasHarness, node = h.graph.nodes[id]; await h.view({ x: 280 - node.x, y: 80 - node.y, zoom: 1 }); }, id);
@@ -58,11 +61,12 @@ for (const phase of ['pre', 'post']) test(`${phase} production picker and Detail
     await page.evaluate(async ({ reflection, context, memory }) => {
         const h = window.canvasHarness, root = structuredClone(h.graph);
         Object.assign(root.nodes[memory], { x: 200, y: 80 }); Object.assign(root.nodes[context], { x: 200, y: 300 }); Object.assign(root.nodes[reflection], { x: 650, y: 100 });
-        await h.activate(root); await h.view({ x: 0, y: 0, zoom: 0.8 });
+        await h.activate(root);h.canvas.select({kind:'node',id:memory});await h.view({ x: 0, y: 0, zoom: 0.8 });
     }, { reflection, context, memory });
     await connect(page, memory, 'out', reflection, 'context');
     expect(await page.evaluate(() => Object.keys(window.canvasHarness.graph.wires).length)).toBe(0);
     await page.keyboard.press('Escape');
+    await expect(page.locator('.pc-root')).toHaveClass(/pc-open/);
     await connect(page, memory, 'out', reflection, 'state');
     await expect.poll(() => page.evaluate(() => Object.keys(window.canvasHarness.graph.wires).length)).toBe(1);
     await connect(page, context, 'out', reflection, 'context');
@@ -77,7 +81,7 @@ for (const phase of ['pre', 'post']) test(`${phase} production picker and Detail
     expect(roundtrip.pins).toEqual(['known fact', 'protected name']); expect(roundtrip.query).toBe('last promise');
 });
 
-test('actual State Details saves fractional curve settings and JSON maps; post Memory Commit remains a terminal', async ({ page }) => {
+test('actual State Details saves fractional curve settings and JSON maps; Response Memory Commit keeps its staged proposal input', async ({ page }) => {
     await launch(page, 'post');
     const state = await choose(page, 'state');
     await chooseControl(page, 'Mode', 'curve');

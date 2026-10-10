@@ -1,0 +1,3 @@
+# Same explicit library identity settings as the JSON exercise
+80 | Blue sparks replace the spell.
+20 | @generate:wild

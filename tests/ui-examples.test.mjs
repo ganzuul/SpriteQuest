@@ -18,15 +18,15 @@ function fixture() {
     }; return { session, original, notices, companions, activations, prompts, env, controller: createWorkflowDocumentController(env) };
 }
 test('catalog failure leaves the workspace available and a retry restores its tiles', async () => {
-    const updates = [], notices = [], tiles = [{ id: 'scene-brief-basics', title: 'Make a scene brief' }]; let fail = true;
+    const updates = [], notices = [], tiles = [{ id: 'lesson-01', title: '1. Follow a reply from Send to Review' }]; let fail = true;
     const env = { projectWorkflowExamples() { if (fail) throw new Error('Broken catalog'); return tiles; }, workbench: { update: value => updates.push(value) }, toast: (message, type) => notices.push({ message, type }) };
     const refresh = await controllerFunction('refreshExampleCatalog', env); assert.equal(refresh(), false); assert.match(updates.at(-1).examplesIssue, /Broken catalog/); assert.equal(notices.at(-1).type, 'error');
     fail = false; assert.equal(refresh(), true); assert.deepEqual(updates.at(-1), { examples: tiles, examplesIssue: '' });
 });
 test('bundled example opens a detached unsaved document and keeps native recents separate', async () => {
-    const f = fixture(), before = structuredClone(f.original); assert.equal((await f.controller.example('scene-brief-basics')).ok, true);
-    assert.notEqual(f.session.current().id, f.original.id); assert.equal(f.session.current().name, 'Make a scene brief'); assert.equal(f.session.source(), null); assert.equal(f.session.dirty(), true); assert.deepEqual(f.original, before);
-    assert.equal(Object.values(f.session.current().nodes).filter(node => node.type === 'workflow').length, 2); assert.deepEqual(f.controller.view().recents, []); assert.deepEqual(f.companions, []);
+    const f = fixture(), before = structuredClone(f.original); assert.equal((await f.controller.example('lesson-01')).ok, true);
+    assert.notEqual(f.session.current().id, f.original.id); assert.equal(f.session.current().name, '1. Follow a reply from Send to Review'); assert.equal(f.session.source(), null); assert.equal(f.session.dirty(), true); assert.deepEqual(f.original, before);
+    assert.equal(Object.values(f.session.current().nodes).filter(node => node.type === 'workflow').length, 3); assert.deepEqual(f.controller.view().recents, []); assert.deepEqual(f.companions, []);
 });
 test('unavailable and throwing example loads preserve drafts without opening the discard guard', async () => {
     for (const load of [installWorkflowExample, () => { throw new Error('Broken example'); }]) {
@@ -36,14 +36,14 @@ test('unavailable and throwing example loads preserve drafts without opening the
     }
 });
 test('example companions are retained only after the replacement guard accepts the primary document', async () => {
-    const f = fixture(); f.original.description = 'Dirty'; f.env.prompt = async () => { f.prompts.push(true); return 'cancel'; };
-    assert.equal((await f.controller.example('continuity-and-voice')).ok, false); assert.equal(f.session.current(), f.original); assert.deepEqual(f.companions, []);
-    f.env.prompt = async () => { f.prompts.push(true); return 'discard'; }; assert.equal((await f.controller.example('continuity-and-voice')).ok, true); assert.equal(f.companions.length, 1);
+    const f = fixture(); f.env.examples = () => ({ ok: true, data: { graph: graph('example'), companions: [graph('helper')] } }); f.original.description = 'Dirty'; f.env.prompt = async () => { f.prompts.push(true); return 'cancel'; };
+    assert.equal((await f.controller.example('lesson-13')).ok, false); assert.equal(f.session.current(), f.original); assert.deepEqual(f.companions, []);
+    f.env.prompt = async () => { f.prompts.push(true); return 'discard'; }; assert.equal((await f.controller.example('lesson-13')).ok, true); assert.equal(f.companions.length, 1);
     assert.notEqual(f.companions[0].id, f.session.current().id); assert.equal(f.session.source(), null); assert.equal(f.session.dirty(), true); assert.deepEqual(f.controller.view().recents, []); assert.equal(f.prompts.length, 2);
 });
 test('stale example results cannot install their primary document or retain companions', async () => {
-    const f = fixture(); let finish; f.env.examples = () => new Promise(resolve => { finish = resolve; }); const pending = f.controller.example('continuity-and-voice'), other = graph('other');
-    f.session.activate(other, { clean: true }); finish(installWorkflowExample('continuity-and-voice')); await pending;
+    const f = fixture(); let finish; f.env.examples = () => new Promise(resolve => { finish = resolve; }); const pending = f.controller.example('lesson-13'), other = graph('other');
+    f.session.activate(other, { clean: true }); finish(installWorkflowExample('lesson-13')); await pending;
     assert.equal(f.session.current(), other); assert.deepEqual(f.activations, []); assert.deepEqual(f.companions, []);
 });
 test('example fitting remains attached to the opened root when a child tab is entered before layout settles', async () => {
@@ -51,6 +51,6 @@ test('example fitting remains attached to the opened root when a child tab is en
         const f = fixture(), frames = []; let fitted = 0, kind = 'root';
         const env = { current: f.original, uiEpoch: 1, ensureDocumentCommands: () => f.controller, requestAnimationFrame: callback => frames.push(callback), stillEditing: (value, epoch) => env.current === value && env.uiEpoch === epoch, graphViews: { readEditor: () => ({ view: { identity: { kind } } }) }, canvas: { fit() { fitted++; } } };
         f.env.activate = (value, options) => { f.session.activate(value, options); env.current = value; env.uiEpoch++; };
-        assert.equal(await (await controllerFunction('onOpenExample', env))('scene-brief-basics'), true); if (enterChild) kind = 'instance'; while (frames.length) frames.shift()(); assert.equal(fitted, enterChild ? 0 : 1);
+        assert.equal(await (await controllerFunction('onOpenExample', env))('lesson-01'), true); if (enterChild) kind = 'instance'; while (frames.length) frames.shift()(); assert.equal(fitted, enterChild ? 0 : 1);
     }
 });

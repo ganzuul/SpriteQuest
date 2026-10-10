@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { exportWorkflow, parseWorkflow } from '../src/workflow/packages.js';
-const graph = { id: 'g', schema: 3, runtime: 2, mode: 'native-pre', roles: { Analysis: { profileId: 'private-profile', model: 'model-name' } }, nodes: {
+const graph = { id: 'g', schema: 3, runtime: 2, mode: 'native-unified', roles: { Analysis: { profileId: 'private-profile', model: 'model-name' } }, nodes: {
     source: { id: 'source', type: 'workflow', operation: 'scene-context', profileId: 'local-profile' },
 }, wires: {}, groups: {}, portals: {}, definitions: {} };
 let exported;

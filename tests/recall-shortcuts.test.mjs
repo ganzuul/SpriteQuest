@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
-const module=await import('../src/ui/recall-shortcuts.js?v=0.26.0').catch(()=>({}));
+const module=await import('../src/ui/recall-shortcuts.js?v=0.27.0').catch(()=>({}));
 function document(){const listeners=new Map();return {activeElement:null,addEventListener(type,handler){listeners.set(type,handler);},removeEventListener(type,handler){if(listeners.get(type)===handler)listeners.delete(type);},press(extra={}){let prevented=false;listeners.get('keydown')?.({code:'KeyR',ctrlKey:true,shiftKey:true,altKey:false,metaKey:false,repeat:false,isComposing:false,defaultPrevented:false,target:{tagName:'DIV'},composedPath:()=>[],preventDefault(){prevented=true;},...extra});return prevented;},listeners};}
 const request=onPress=>({scope:{userId:'default-user',chatId:'Story-2',workflowId:'workflow',actorId:'character:mara.png'},nodeId:'arm',hotkey:{code:'KeyR',ctrl:true,shift:true,alt:false,meta:false},onPress});
 test('actual DOM registry runs one exact shortcut, reports a change and removes its listener',()=>{assert.equal(typeof module.createRecallShortcutRegistry,'function');const d=document();let armed=0,changed=0;const registry=module.createRecallShortcutRegistry(d,{changed:()=>changed++});const registered=registry.register(request(()=>{armed++;return {ok:true};}));assert.equal(registered.ok,true);assert.equal(d.press(),true);assert.equal(armed,1);assert.equal(changed,1);registered.data.dispose();assert.equal(d.press(),false);assert.equal(d.listeners.size,0);});

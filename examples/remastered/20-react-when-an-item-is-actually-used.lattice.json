@@ -1,0 +1,801 @@
+{
+  "kind": "lattice-workflow",
+  "schema": 2,
+  "minRuntime": 2,
+  "graph": {
+    "id": "remastered-lesson-20",
+    "name": "20. React when an item is actually used",
+    "description": "Confirm ordered player item uses and transfers, resolve the actual holder, and guide consequences before generation.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\naccepted-item-holders contains {\"signal-lantern\":\"character:rowan.png\"} only when this is established accepted ownership. Replace avatar IDs for this story.\n\nOpen React when an item is actually used and inspect the named pins.\nTrace the new real player message through extraction and bounded confirmation.\nCurrent Holder applies intervening confirmed transfers in order; mention alone does not establish use.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: At most 4 auxiliary requests: 1 Item Use Trigger extraction + up to 3 Decision confirmations; one ordinary native generation.\nCheckpoints:\nCurrent Holder.events: Confirmed uses receive actual holder IDs after ordered transfers.",
+    "schema": 3,
+    "runtime": 2,
+    "mode": "native-unified",
+    "nodes": {
+      "send": {
+        "id": "send",
+        "type": "workflow",
+        "operation": "on-send",
+        "operationVersion": 1,
+        "title": "On Send",
+        "enabled": true,
+        "x": 100,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-0",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "On Send"
+      },
+      "generate": {
+        "id": "generate",
+        "type": "workflow",
+        "operation": "generate-reply",
+        "operationVersion": 1,
+        "title": "Generate Reply · SillyTavern",
+        "enabled": true,
+        "x": 2980,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-8",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Generate Reply · SillyTavern",
+        "budgetTokens": 768
+      },
+      "review": {
+        "id": "review",
+        "type": "workflow",
+        "operation": "review-publish",
+        "operationVersion": 1,
+        "title": "Review / Publish",
+        "enabled": true,
+        "x": 3340,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-9",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Review / Publish"
+      },
+      "player": {
+        "id": "player",
+        "type": "workflow",
+        "operation": "player-event-source",
+        "operationVersion": 1,
+        "title": "Player Event Source",
+        "enabled": true,
+        "x": 100,
+        "y": 560,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-0",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Player Event Source"
+      },
+      "entities-text": {
+        "id": "entities-text",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 100,
+        "y": 880,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-0",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "pre",
+        "alias": "Text · authored input",
+        "text": "{\"actorIds\":[\"character:rowan.png\",\"character:iris.png\"],\"itemIds\":[\"signal-lantern\"]}"
+      },
+      "entities": {
+        "id": "entities",
+        "type": "workflow",
+        "operation": "json-decode",
+        "operationVersion": 1,
+        "title": "JSON Decode",
+        "enabled": true,
+        "x": 460,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-1",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "pre",
+        "alias": "JSON Decode",
+        "mode": "parse",
+        "schema": ""
+      },
+      "events": {
+        "id": "events",
+        "type": "workflow",
+        "operation": "item-use-trigger",
+        "operationVersion": 1,
+        "title": "Item Use Trigger",
+        "enabled": true,
+        "x": 820,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-2",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "pre",
+        "alias": "Item Use Trigger",
+        "itemId": "signal-lantern",
+        "mode": "extract",
+        "watch": "player-message",
+        "instructions": "Extract at most three actual uses/transfers in source order; exclude mere mentions.",
+        "maxTokens": 2048
+      },
+      "confirm-each": {
+        "id": "confirm-each",
+        "type": "workflow",
+        "operation": "for-each",
+        "operationVersion": 1,
+        "title": "For Each",
+        "enabled": true,
+        "x": 1180,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-3",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "pre",
+        "alias": "For Each",
+        "helper": {
+          "id": "remastered-lesson-20-confirmation",
+          "version": 1,
+          "semanticHash": "sha256:2d1e276acf38bfe69341e879b4db199560a6ffc417b7641442dbf7d1f569d74e"
+        },
+        "limit": 3,
+        "requestBoundPerIteration": 1,
+        "mode": "map",
+        "roleOverrides": {
+          "decision": {
+            "profileId": "lattice:active-sillytavern"
+          }
+        }
+      },
+      "confirmed": {
+        "id": "confirmed",
+        "type": "workflow",
+        "operation": "collection",
+        "operationVersion": 1,
+        "title": "Collection",
+        "enabled": true,
+        "x": 1540,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-4",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "pre",
+        "alias": "Collection",
+        "mode": "flatten",
+        "collectionPath": [],
+        "fieldPath": [],
+        "value": "",
+        "operator": "equals",
+        "missingPolicy": "hold",
+        "thresholds": "[]",
+        "mergePolicy": "keep-all",
+        "identityPath": [
+          "id"
+        ]
+      },
+      "holders-file": {
+        "id": "holders-file",
+        "type": "workflow",
+        "operation": "read-file",
+        "operationVersion": 1,
+        "title": "Read File",
+        "enabled": true,
+        "x": 100,
+        "y": 1200,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-0",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Read File · authorized live target",
+        "targetId": "accepted-item-holders",
+        "schema": "",
+        "columns": [],
+        "actorScope": "selected",
+        "actorId": ""
+      },
+      "holders": {
+        "id": "holders",
+        "type": "workflow",
+        "operation": "json-decode",
+        "operationVersion": 1,
+        "title": "JSON Decode",
+        "enabled": true,
+        "x": 460,
+        "y": 560,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-1",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "phase": "pre",
+        "alias": "JSON Decode",
+        "mode": "parse",
+        "schema": ""
+      },
+      "holder": {
+        "id": "holder",
+        "type": "workflow",
+        "operation": "current-holder",
+        "operationVersion": 1,
+        "title": "Current Holder",
+        "enabled": true,
+        "x": 1900,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-5",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Current Holder"
+      },
+      "actual-uses": {
+        "id": "actual-uses",
+        "type": "workflow",
+        "operation": "collection",
+        "operationVersion": 1,
+        "title": "Collection",
+        "enabled": true,
+        "x": 2260,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-6",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Collection",
+        "mode": "filter",
+        "collectionPath": [],
+        "fieldPath": [
+          "eventType"
+        ],
+        "value": "item-used",
+        "operator": "equals",
+        "missingPolicy": "hold",
+        "thresholds": "[]",
+        "mergePolicy": "keep-all",
+        "identityPath": [
+          "id"
+        ]
+      },
+      "guidance": {
+        "id": "guidance",
+        "type": "workflow",
+        "operation": "compose",
+        "operationVersion": 1,
+        "title": "Compose",
+        "enabled": true,
+        "x": 2620,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "inGroup": "stage-7",
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Compose",
+        "mode": "template",
+        "outputKind": "guidance",
+        "template": "Resolve the supplied ordered confirmed signal-lantern uses for their actual holders. Do not invent another use or choose the player’s next action.\n{{data:}}",
+        "sections": [],
+        "separator": "\n\n"
+      },
+      "lesson-note": {
+        "id": "lesson-note",
+        "type": "note",
+        "title": "Lesson instructions",
+        "enabled": true,
+        "x": 100,
+        "y": 0,
+        "w": 900,
+        "h": 180,
+        "content": "Confirm ordered player item uses and transfers, resolve the actual holder, and guide consequences before generation.\n\nOpen this independent unified workflow document and enable Lattice before Send. Ordinary generation uses Active SillyTavern.\naccepted-item-holders contains {\"signal-lantern\":\"character:rowan.png\"} only when this is established accepted ownership. Replace avatar IDs for this story.\n\nOpen React when an item is actually used and inspect the named pins.\nTrace the new real player message through extraction and bounded confirmation.\nCurrent Holder applies intervening confirmed transfers in order; mention alone does not establish use.\nSend in a disposable story, inspect checkpoints, then explicitly Apply or Reject. Preview never publishes or settles proposals.\n\nCalls: At most 4 auxiliary requests: 1 Item Use Trigger extraction + up to 3 Decision confirmations; one ordinary native generation.\nCheckpoints:\nCurrent Holder.events: Confirmed uses receive actual holder IDs after ordered transfers.",
+        "commentFrame": true,
+        "moveContents": false
+      }
+    },
+    "wires": {
+      "edge-1": {
+        "id": "edge-1",
+        "route": "wire",
+        "from": "send",
+        "fromPort": "activation",
+        "to": "generate",
+        "toPort": "activation"
+      },
+      "edge-2": {
+        "id": "edge-2",
+        "route": "wire",
+        "from": "entities-text",
+        "fromPort": "out",
+        "to": "entities",
+        "toPort": "in"
+      },
+      "edge-3": {
+        "id": "edge-3",
+        "route": "wire",
+        "from": "player",
+        "fromPort": "out",
+        "to": "events",
+        "toPort": "source"
+      },
+      "edge-4": {
+        "id": "edge-4",
+        "route": "wire",
+        "from": "entities",
+        "fromPort": "out",
+        "to": "events",
+        "toPort": "entities"
+      },
+      "edge-5": {
+        "id": "edge-5",
+        "route": "wire",
+        "from": "events",
+        "fromPort": "out",
+        "to": "confirm-each",
+        "toPort": "in"
+      },
+      "edge-6": {
+        "id": "edge-6",
+        "route": "wire",
+        "from": "confirm-each",
+        "fromPort": "out",
+        "to": "confirmed",
+        "toPort": "in"
+      },
+      "edge-7": {
+        "id": "edge-7",
+        "route": "wire",
+        "from": "holders-file",
+        "fromPort": "text",
+        "to": "holders",
+        "toPort": "in"
+      },
+      "edge-8": {
+        "id": "edge-8",
+        "route": "wire",
+        "from": "confirmed",
+        "fromPort": "out",
+        "to": "holder",
+        "toPort": "events"
+      },
+      "edge-9": {
+        "id": "edge-9",
+        "route": "wire",
+        "from": "holders",
+        "fromPort": "out",
+        "to": "holder",
+        "toPort": "holders"
+      },
+      "edge-10": {
+        "id": "edge-10",
+        "route": "wire",
+        "from": "holder",
+        "fromPort": "events",
+        "to": "actual-uses",
+        "toPort": "in"
+      },
+      "edge-11": {
+        "id": "edge-11",
+        "route": "wire",
+        "from": "actual-uses",
+        "fromPort": "out",
+        "to": "guidance",
+        "toPort": "data"
+      },
+      "edge-12": {
+        "id": "edge-12",
+        "route": "wire",
+        "from": "guidance",
+        "fromPort": "out",
+        "to": "generate",
+        "toPort": "guidance"
+      },
+      "edge-13": {
+        "id": "edge-13",
+        "route": "wire",
+        "from": "generate",
+        "fromPort": "draft",
+        "to": "review",
+        "toPort": "draft"
+      }
+    },
+    "groups": {
+      "stage-0": {
+        "id": "stage-0",
+        "title": "Preparation / processing",
+        "description": "Stage 0. Wires determine execution; folding is presentation only.",
+        "x": 75,
+        "y": 190,
+        "w": 350,
+        "h": 1245,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "send",
+          "player",
+          "entities-text",
+          "holders-file"
+        ]
+      },
+      "stage-1": {
+        "id": "stage-1",
+        "title": "Preparation / processing",
+        "description": "Stage 1. Wires determine execution; folding is presentation only.",
+        "x": 435,
+        "y": 190,
+        "w": 350,
+        "h": 605,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "entities",
+          "holders"
+        ]
+      },
+      "stage-2": {
+        "id": "stage-2",
+        "title": "Preparation / processing",
+        "description": "Stage 2. Wires determine execution; folding is presentation only.",
+        "x": 795,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "events"
+        ]
+      },
+      "stage-3": {
+        "id": "stage-3",
+        "title": "Preparation / processing",
+        "description": "Stage 3. Wires determine execution; folding is presentation only.",
+        "x": 1155,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "confirm-each"
+        ]
+      },
+      "stage-4": {
+        "id": "stage-4",
+        "title": "Preparation / processing",
+        "description": "Stage 4. Wires determine execution; folding is presentation only.",
+        "x": 1515,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "confirmed"
+        ]
+      },
+      "stage-5": {
+        "id": "stage-5",
+        "title": "Preparation / processing",
+        "description": "Stage 5. Wires determine execution; folding is presentation only.",
+        "x": 1875,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "holder"
+        ]
+      },
+      "stage-6": {
+        "id": "stage-6",
+        "title": "Preparation / processing",
+        "description": "Stage 6. Wires determine execution; folding is presentation only.",
+        "x": 2235,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "actual-uses"
+        ]
+      },
+      "stage-7": {
+        "id": "stage-7",
+        "title": "Preparation / processing",
+        "description": "Stage 7. Wires determine execution; folding is presentation only.",
+        "x": 2595,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "guidance"
+        ]
+      },
+      "stage-8": {
+        "id": "stage-8",
+        "title": "Native generation",
+        "description": "Stage 8. Wires determine execution; folding is presentation only.",
+        "x": 2955,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#284e67",
+        "collapsed": false,
+        "members": [
+          "generate"
+        ]
+      },
+      "stage-9": {
+        "id": "stage-9",
+        "title": "Review / accepted staging",
+        "description": "Stage 9. Wires determine execution; folding is presentation only.",
+        "x": 3315,
+        "y": 190,
+        "w": 350,
+        "h": 285,
+        "color": "#57416e",
+        "collapsed": false,
+        "members": [
+          "review"
+        ]
+      }
+    },
+    "roles": {},
+    "portals": {},
+    "definitions": {
+      "[\"remastered-lesson-20-confirmation\",1,\"sha256:2d1e276acf38bfe69341e879b4db199560a6ffc417b7641442dbf7d1f569d74e\"]": {
+        "id": "remastered-lesson-20-confirmation",
+        "version": 1,
+        "semanticHash": "sha256:2d1e276acf38bfe69341e879b4db199560a6ffc417b7641442dbf7d1f569d74e",
+        "name": "Confirm one exact occurrence",
+        "description": "Pure processor: no host sources, publication, private grants or settlement. Inspect the typed interface and exposed controls.",
+        "interface": [
+          {
+            "id": "item",
+            "label": "Item",
+            "direction": "input",
+            "kind": "data",
+            "required": true,
+            "cardinality": "one",
+            "boundaryNodeId": "item"
+          },
+          {
+            "id": "result",
+            "label": "Result",
+            "direction": "output",
+            "kind": "data",
+            "required": false,
+            "cardinality": "one",
+            "boundaryNodeId": "result"
+          }
+        ],
+        "parameters": [],
+        "body": {
+          "id": "lesson-20-confirmation-body",
+          "schema": 3,
+          "runtime": 2,
+          "mode": "native-unified",
+          "nodes": {
+            "item": {
+              "id": "item",
+              "type": "subgraph-input",
+              "enabled": true,
+              "x": 100,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "interfacePortId": "item"
+            },
+            "result": {
+              "id": "result",
+              "type": "subgraph-output",
+              "enabled": true,
+              "x": 1540,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "interfacePortId": "result"
+            },
+            "decision": {
+              "id": "decision",
+              "type": "workflow",
+              "operation": "decision",
+              "operationVersion": 1,
+              "title": "Decision",
+              "enabled": true,
+              "x": 460,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "profileId": "lattice:active-sillytavern",
+              "model": null,
+              "modelRole": "decision",
+              "alias": "Decision",
+              "inputKind": "data",
+              "questions": {
+                "actual": {
+                  "type": "noul",
+                  "instructions": "Does this exact candidate evidence establish an actual completed action now? Reject plans, negation, threats, recollection and ambiguous grammar."
+                }
+              },
+              "maxTokens": 2048
+            },
+            "acceptance": {
+              "id": "acceptance",
+              "type": "workflow",
+              "operation": "select-fields",
+              "operationVersion": 1,
+              "title": "Select Fields",
+              "enabled": true,
+              "x": 820,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "alias": "Select Fields",
+              "fields": [
+                {
+                  "name": "accepted",
+                  "path": [
+                    "answers",
+                    "actual",
+                    "accepted"
+                  ]
+                }
+              ]
+            },
+            "single-record": {
+              "id": "single-record",
+              "type": "workflow",
+              "operation": "format",
+              "operationVersion": 1,
+              "title": "Format",
+              "enabled": true,
+              "x": 460,
+              "y": 560,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "alias": "Format",
+              "inputMode": "records",
+              "format": "json",
+              "mapping": "preserve",
+              "fields": [],
+              "schema": "",
+              "columns": [],
+              "separator": "\n",
+              "trailingSeparator": false
+            },
+            "confirm": {
+              "id": "confirm",
+              "type": "workflow",
+              "operation": "confirm-events",
+              "operationVersion": 1,
+              "title": "Confirm Events",
+              "enabled": true,
+              "x": 1180,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "alias": "Confirm Events",
+              "mode": "single-gate"
+            }
+          },
+          "wires": {
+            "edge-1": {
+              "id": "edge-1",
+              "route": "wire",
+              "from": "item",
+              "fromPort": "out",
+              "to": "decision",
+              "toPort": "in"
+            },
+            "edge-2": {
+              "id": "edge-2",
+              "route": "wire",
+              "from": "decision",
+              "fromPort": "out",
+              "to": "acceptance",
+              "toPort": "in"
+            },
+            "edge-3": {
+              "id": "edge-3",
+              "route": "wire",
+              "from": "item",
+              "fromPort": "out",
+              "to": "single-record",
+              "toPort": "in"
+            },
+            "edge-4": {
+              "id": "edge-4",
+              "route": "wire",
+              "from": "single-record",
+              "fromPort": "records",
+              "to": "confirm",
+              "toPort": "events"
+            },
+            "edge-5": {
+              "id": "edge-5",
+              "route": "wire",
+              "from": "acceptance",
+              "fromPort": "out",
+              "to": "confirm",
+              "toPort": "decisions"
+            },
+            "edge-6": {
+              "id": "edge-6",
+              "route": "wire",
+              "from": "confirm",
+              "fromPort": "out",
+              "to": "result",
+              "toPort": "in"
+            }
+          },
+          "groups": {},
+          "roles": {
+            "decision": {
+              "model": null,
+              "profileId": "lattice:active-sillytavern"
+            }
+          },
+          "portals": {},
+          "definitions": {}
+        }
+      }
+    },
+    "template": {
+      "id": "lesson-20",
+      "version": 1
+    },
+    "view": {
+      "x": 0,
+      "y": 0,
+      "zoom": 0.65
+    }
+  }
+}

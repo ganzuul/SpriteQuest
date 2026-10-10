@@ -40,11 +40,14 @@ export async function openEmber(page, { url='/tests/browser/harness.html', token
     const ids=await page.evaluate(async()=>{
         const h=window.canvasHarness,g=h.graph,s=h.S.settings();
         const {validateWorkflow}=await import('/src/workflow/contracts.js?v='+h.version),fresh=validateWorkflow(g);
-        if(!h.freshSettingsAbsent||g.name!=='Unified story workflow'||g.template?.id!=='unified-basic'||g.mode!=='native-unified'||g.schema!==3||g.runtime!==2||s.enabled!==false||Object.hasOwn(s,'graphs')||Object.hasOwn(s,'nativeBindings')||h.providerCalls()!==0||!fresh.ok||fresh.data.callBound!==0)throw Error('Ember must first verify the actual fresh unified, disabled, zero-call default.');
-        // The approved theme fixture covers five cards, all original semantic
-        // pins and four wires. Activate the public starter after checking startup.
-        const {starterGraph}=await import('/src/workflow/starters.js?v='+h.version);
-        await h.activate(starterGraph('structured-guidance'));
+        if(!h.freshSettingsAbsent||g.name!=='Unified story workflow'||g.template?.id!=='unified-basic'||g.mode!=='native-unified'||g.schema!==3||g.runtime!==2||s.enabled!==false||Object.hasOwn(s,'nativeBindings')||h.providerCalls()!==0||!fresh.ok||fresh.data.callBound!==0)throw Error('Ember must first verify the actual fresh unified, disabled, unassigned, zero-call default.');
+        // Keep the original five-card diagnostic path and its four semantic wires
+        // inside a unified authoring root after checking actual fresh startup.
+        const { fixtureGraph: starterGraph }=await import('/tests/helpers/workflow-fixtures.mjs');
+        const graph=starterGraph('structured-guidance');
+        for(const id of ['on-send','generate-reply','review-publish'])delete graph.nodes[id];
+        for(const id of ['activation','draft','native-guidance'])delete graph.wires[id];
+        await h.activate(graph);
         const nodes=Object.values(h.graph.nodes);
         return {firstCompose:nodes.find(n=>n.operation==='compose'&&n.sections?.some(s=>s.name==='Scene')).id,jsonDecode:nodes.find(n=>n.operation==='json-decode').id,guidanceCompose:nodes.find(n=>n.operation==='compose'&&n.outputKind==='guidance').id};
     });

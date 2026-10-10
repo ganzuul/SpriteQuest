@@ -1,12 +1,12 @@
-import { isWorkflowGraph } from './workflow/contracts.js?v=0.26.0';
-import { graphPoint, zoomAt, zoomTo, wheelFactor } from './canvas/camera.js?v=0.26.0';
-import { createFrameScheduler } from './canvas/frame.js?v=0.26.0';
-import { selectionMode, rectangle, intersects, combineSelection } from './canvas/selection.js?v=0.26.0';
-import { createGeometryCache, indexIncidentWires } from './canvas/geometry.js?v=0.26.0';
-import { nodeCards, preparedCardFor } from './canvas/presentation.js?v=0.26.0';
-import { buildConnectionRoute, buildDragConnectionRoute } from './canvas/connection-route.js?v=0.26.0';
-import { isCommentFrame, containedCommentNodes } from './canvas/comment-frames.js?v=0.26.0';
-import { mountCanvas } from '../dist/lattice-ui.js?v=0.26.0';
+import { isWorkflowGraph } from './workflow/contracts.js?v=0.27.0';
+import { graphPoint, zoomAt, zoomTo, wheelFactor } from './canvas/camera.js?v=0.27.0';
+import { createFrameScheduler } from './canvas/frame.js?v=0.27.0';
+import { selectionMode, rectangle, intersects, combineSelection } from './canvas/selection.js?v=0.27.0';
+import { createGeometryCache, indexIncidentWires } from './canvas/geometry.js?v=0.27.0';
+import { nodeCards, preparedCardFor } from './canvas/presentation.js?v=0.27.0';
+import { buildConnectionRoute, buildDragConnectionRoute } from './canvas/connection-route.js?v=0.27.0';
+import { isCommentFrame, containedCommentNodes } from './canvas/comment-frames.js?v=0.27.0';
+import { mountCanvas } from '../dist/lattice-ui.js?v=0.27.0';
 const groupMembers = (graph, id) => Object.values(graph?.nodes ?? {}).filter(node => node.inGroup === id);
 const groupOf = (graph, node) => node && graph?.groups?.[node.inGroup];
 const inNodeProfile = event => event.target?.closest?.('.pc-node-profile');
@@ -254,7 +254,7 @@ export class Canvas {
         this.hooks.onViewCommit?.();
     }
 
-    fit({ avoidShelf = false } = {}) {
+    fit({ avoidShelf = true } = {}) {
         this.#finishZoom(false);
         const boxes = Object.values(this.graph?.nodes ?? {}).filter(n => !this.#folded(n)).map(n => ({ x: n.x, y: n.y, w: this.widthOf(n), h: this.heightOf(n) || 160 }));
         for (const g of Object.values(this.graph?.groups ?? {})) {
@@ -278,7 +278,8 @@ export class Canvas {
             ? Math.min(Math.max(0, rect.width - 80), Math.max(0, shelfRect.right - rect.left + 24)) : 0;
         const width = rect.width - leftInset;
         const height = rect.height - topInset;
-        const zoom = Math.max(0.25, Math.min(1.2, Math.min(width / (maxX - minX), height / (maxY - minY))));
+        // A complete graph overview may need to zoom below the ordinary interaction floor.
+        const zoom = Math.max(0.05, Math.min(1.2, Math.min(width / (maxX - minX), height / (maxY - minY))));
         const v = this.view;
         v.zoom = zoom;
         v.x = leftInset - minX * zoom + (width - (maxX - minX) * zoom) / 2;

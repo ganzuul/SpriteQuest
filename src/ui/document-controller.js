@@ -1,4 +1,4 @@
-import { parseWorkflowDocument, serializeWorkflowDocument } from '../workflow/document-file.js?v=0.26.0';
+import { parseWorkflowDocument, serializeWorkflowDocument } from '../workflow/document-file.js?v=0.27.0';
 
 const cancelled = () => ({ok:false,cancelled:true});
 const failure = message => ({ok:false,error:{message}});
@@ -54,8 +54,9 @@ export function createWorkflowDocumentController(env) {
             const result=await candidatePromise;
             if (!current()) return cancelled();
             if (!result.ok) return error(result);
+            const next=result.data, admitted=serializeWorkflowDocument(next.graph,next.workspaceViews ?? null);
+            if (!admitted.ok) return error(admitted);
             if (!await guard(token) || !current()) return cancelled();
-            const next=result.data;
             const activated=env.activate(next.graph,{source:next.source ?? null,workspaceViews:next.workspaceViews ?? null,clean});
             if (activated?.ok===false) return error(activated);
             if (next.companions?.length) env.retainCompanions?.(next.companions);
@@ -81,6 +82,6 @@ export function createWorkflowDocumentController(env) {
             return entry?.graph ? {ok:true,data:{graph:structuredClone(entry.graph),workspaceViews:entry.workspaceViews,source:{kind:'recovery',name:entry.name}}} : failure(entry?.issue || 'This previous workflow is unavailable.');
         }),
         async clearRecent() {try {const result=await files.clearRecent();if (result?.ok===false) return error(result);changed();return {ok:true};}catch(cause){return error(failure(cause?.message || 'Recent files could not be cleared.'));}},
-        view:()=>{const recent=files.recents();return {name:session.source()?.name || 'Untitled',dirty:session.dirty(),busy:replacing || saving,native:files.native,status:[status,storageWarning].filter(Boolean).join(' '),recents:Array.isArray(recent)?recent:recent?.data ?? [],recovery:env.recovery().map(({id,name,issue})=>({id,name,issue}))};},
+        view:()=>{const recent=files.recents();return {name:session.source()?.name || 'Untitled',dirty:session.dirty(),busy:replacing || saving,native:files.native,status:[status,storageWarning].filter(Boolean).join(' '),recents:Array.isArray(recent)?recent:recent?.data ?? [],recovery:env.recovery().filter(entry=>entry.graph?.mode==='native-unified').map(({id,name,issue})=>({id,name,issue}))};},
     };
 }

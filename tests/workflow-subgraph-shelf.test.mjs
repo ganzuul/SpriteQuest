@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { installMock } from './mock.js';
 import { siblingWorkflow } from './fixtures/workflow-prepared-fixture.mjs';
 import { computeDefinitionIdentity, definitionRefKey } from '../src/workflow/definitions.js';
-import * as shelf from '../src/library.js?v=0.26.0';
+import * as shelf from '../src/library.js?v=0.27.0';
+import * as S from '../src/state.js?v=0.27.0';
 
 const ref = definition => ({ id: definition.id, version: definition.version, semanticHash: definition.semanticHash });
 const definition = () => Object.values(siblingWorkflow().definitions)[0];
@@ -11,6 +12,7 @@ const finalize = draft => { const identity = computeDefinitionIdentity(draft); a
 
 test('explicit shelf saves advance one visible head without editing placed snapshots', () => {
     const graph = siblingWorkflow(), before = structuredClone(graph), host = installMock({ settings: { graphs: { [graph.id]: graph } } });
+    S.settings(); // Complete preference migration before counting shelf persistence.
     let saves = 0; host.saveSettingsDebounced = () => saves++;
     const draft = structuredClone(definition()); draft.id = 'saved-plan';
     const first = shelf.saveSubgraphDefinition(draft);

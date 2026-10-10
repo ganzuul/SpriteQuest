@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { installMock } from './mock.js';
-import { starterGraph } from '../src/workflow/starters.js';
+import { fixtureGraph as starterGraph } from './helpers/workflow-fixtures.mjs';
 import { workflowSignature, runWorkflow } from '../src/workflow/runtime.js';
 installMock();
 const v = JSON.parse((await import('node:fs')).readFileSync(new URL('../manifest.json', import.meta.url))).version;
@@ -10,6 +10,6 @@ const blanket = S.createBlanket(graph, -20, 100, { w: 400, h: 300, title: 'Notes
 assert.equal(blanket.collapsed, false); assert.deepEqual(blanket.frame, { x: -20, y: 100, w: 400, h: 300 }); assert.deepEqual(S.groupMembers(graph, blanket.id), []);
 graph.nodes['compose-json'].inGroup = blanket.id; graph.nodes['select-fields'].inGroup = blanket.id; blanket.collapsed = true;
 assert.equal(workflowSignature(graph), before, 'group placement and folding do not change executable identity');
-const result = await runWorkflow(graph, { countTokens: async text => ({ tokens: Math.ceil(text.length / 4), method: 'fixture' }), request() { throw Error('zero-request workflow cannot dispatch'); } });
+const result = await runWorkflow(graph, { target: { workflowId: graph.id, instancePath: [], nodeId: 'guidance', portId: 'out' }, countTokens: async text => ({ tokens: Math.ceil(text.length / 4), method: 'fixture' }), request() { throw Error('zero-request workflow cannot dispatch'); } });
 assert.equal(result.ok, true); assert.equal(result.actualCalls, 0); assert.equal(result.recording.status, 'completed');
 S.ungroup(graph, blanket.id); assert.equal(graph.nodes['compose-json'].inGroup, undefined); assert.equal(workflowSignature(graph), before); console.log('blankets: ok');

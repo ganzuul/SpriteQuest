@@ -1,10 +1,11 @@
-import { UNIFIED_WORKFLOW_EXAMPLE_DATA } from './unified-example-data.js?v=0.26.0';
-import { WORKFLOW_EXAMPLE_DATA } from './example-data.js?v=0.26.0';
-import { parseWorkflow } from './packages.js?v=0.26.0';
-import { cloneWorkflowDocument } from './document.js?v=0.26.0';
-import { validateWorkflow } from './contracts.js?v=0.26.0';
+import { REMASTERED_WORKFLOW_EXAMPLE_DATA } from './remastered-example-data.js?v=0.27.0';
+import { UNIFIED_WORKFLOW_EXAMPLE_DATA } from './unified-example-data.js?v=0.27.0';
+import { parseWorkflow } from './packages.js?v=0.27.0';
+import { cloneWorkflowDocument } from './document.js?v=0.27.0';
+import { validateWorkflow } from './contracts.js?v=0.27.0';
 
-const ALL_WORKFLOW_EXAMPLES = [...WORKFLOW_EXAMPLE_DATA,...UNIFIED_WORKFLOW_EXAMPLE_DATA];
+const ALL_WORKFLOW_EXAMPLES = [...REMASTERED_WORKFLOW_EXAMPLE_DATA, ...UNIFIED_WORKFLOW_EXAMPLE_DATA];
+const lessonMetadata = lesson => lesson ? structuredClone(lesson) : undefined;
 let sequence = 0;
 const fail = (code, message) => ({ ok: false, error: { code, message } });
 function admitExamplePackages(entry) {
@@ -57,10 +58,10 @@ function independentCopy(source) {
 
 /** Read independent primary graph data from the local portable example catalog. */
 export function listWorkflowExamples() {
-    return ALL_WORKFLOW_EXAMPLES.map(({ id, number, title, goal, packages }) => {
+    return REMASTERED_WORKFLOW_EXAMPLE_DATA.map(({ id, number, title, goal, lesson, packages }) => {
         const parsed = parseWorkflow(JSON.stringify(packages[0]));
         if (!parsed.ok) throw new Error(`${title}: ${parsed.error.message}`);
-        return { id, number, title, goal, graph: parsed.data };
+        return { id, number, title, goal, lesson: lessonMetadata(lesson), graph: parsed.data };
     });
 }
 
@@ -69,9 +70,9 @@ export function listWorkflowExamples() {
  * @returns {import('./examples').WorkflowExampleResult[]}
  */
 export function listWorkflowExampleResults() {
-    return ALL_WORKFLOW_EXAMPLES.map(entry => {
+    return REMASTERED_WORKFLOW_EXAMPLE_DATA.map(entry => {
         const { id, number, title, goal } = entry, admitted = admitExamplePackages(entry);
-        return { id, number, title, goal, result: admitted.ok ? { ok: true, data: admitted.data[0] } : admitted };
+        return { id, number, title, goal, lesson: lessonMetadata(entry.lesson), result: admitted.ok ? { ok: true, data: admitted.data[0] } : admitted };
     });
 }
 

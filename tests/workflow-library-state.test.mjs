@@ -1,16 +1,17 @@
 import assert from 'node:assert/strict';
 import { installMock } from './mock.js';
-import { starterGraph } from '../src/workflow/starters.js';
+import { fixtureGraph as starterGraph } from './helpers/workflow-fixtures.mjs';
 import { cloneWorkflowDocument } from '../src/workflow/document.js';
 import { prepareCreateFromSelection } from '../src/workflow/composition.js';
 import { definitionRefKey } from '../src/workflow/definitions.js';
 import { resolveWorkflow } from '../src/workflow/resolve.js';
-import * as S from '../src/state.js?v=0.26.0';
-import * as L from '../src/library.js?v=0.26.0';
+import * as S from '../src/state.js?v=0.27.0';
+import * as L from '../src/library.js?v=0.27.0';
 
 const root = prepareCreateFromSelection(cloneWorkflowDocument(starterGraph('native-guidance')).data, { nodeIds: ['smart-compactor'], definitionId: 'stored-definition', name: 'Stored definition' }).data.candidate;
 const snapshot = Object.values(root.definitions)[0];
 const host = installMock({ settings: { graphs: { [root.id]: root }, library: { folders: [{ id: 'prompts', name: 'Prompts' }], prompts: [{ id: 'legacy', content: 'Keep' }] } } });
+S.settings(); // Finish the one-time preference migration before measuring library writes.
 let saves = 0, touches = 0;
 host.saveSettingsDebounced = () => saves++;
 const unlisten = S.onGraphTouched(() => touches++), before = structuredClone(root);

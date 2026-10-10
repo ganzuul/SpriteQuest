@@ -26,6 +26,6 @@ test('installed host smoke permits necessary host reads and excludes real story 
 test('served production modules are limited to the verified dependency closure', async () => {
     const modules = await productionModules();
     assert.ok(modules.size > 1 && modules.size < 200);
-    assert.match(modules.get('http://127.0.0.1:8000/__lattice-unified-host-test/src/workflow/host.js?v=0.26.0'), /export function createNativeWorkflowController/);
+    assert.match(modules.get('http://127.0.0.1:8000/__lattice-unified-host-test/src/workflow/host.js?v=0.27.0'), /export function createNativeWorkflowController/);
     for (const path of ['src/state.js', 'tools/smoke-unified-host.mjs', 'src/workflow/not-real.js', 'src/workflow/host.js?secret=value', 'src/workflow/host.js#fragment', '../script.js', 'src/workflow/%68ost.js']) assert.throws(() => modules.get('http://127.0.0.1:8000/__lattice-unified-host-test/' + path));
 });

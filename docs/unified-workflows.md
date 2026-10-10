@@ -2,14 +2,14 @@
 
 [Documentation](README.md) · [Quick start](lattice-workspace.md) · [Node reference](node-reference.md) · [Model connections](native-workflows.md)
 
-A unified workflow prepares guidance, waits for SillyTavern to generate its ordinary reply, and then processes that reply in the same graph. You work in one open workflow document. Preparation and response remain useful stages inside it; they no longer require switching between two graphs.
+A unified workflow prepares guidance, waits for SillyTavern to generate its ordinary reply, and then processes that reply in the same graph. You work in one open unified workflow document. Preparation and response remain useful stages inside it; they no longer require switching between two graphs.
 
 The normal SillyTavern connection writes the main reply. Other model nodes have their own connections and can plan, judge, revise, extract or enrich material. Their outputs become graph artifacts that you can inspect before applying the final result.
 
 ## Apply an example to Story-2
 
 1. In SillyTavern, select **default-user**, open **Story-2**, and select the character who will produce the native reply. User, chat and character selection determine the workflow's live sources and private stores.
-2. Open LATTICE beside the chat's Send button, or enter `/lattice`. A fresh workspace starts with **Unified story workflow** and Lattice disabled. Existing installations restore their recovery draft; older workflows are available through **File → Recover previous workflows**.
+2. Open LATTICE beside the chat's Send button, or enter `/lattice`. A fresh workspace starts with **Unified story workflow** and Lattice disabled. Existing installations restore their unified recovery draft; previous unified documents are available through **File → Recover previous workflows**. Retired pre/post roots move to the cold archive described below.
 3. Choose **File → Open examples…**. Open a unified example whose goal fits your story. Each opening makes an independent editable copy the active document; it makes no model request and does not change **Enable Lattice**. The example's description contains its setup and inspection instructions.
 4. Adapt its literal instructions, actor/item identities, schemas and document targets. Example names and actors are authored demonstration material. A loaded character's canonical ID is normally `character:<avatar filename>`; a display name alone is not a live actor identity.
 5. Choose every ordinary text-model node’s connection in its grey profile bar or **Details → Connection profile**. Use **Active SillyTavern model** to follow the current host connection/model, or choose a saved Connection Manager profile for a fixed connection. Leave **Model mode → Use profile model** unless that particular node needs an explicit model identifier. Configure any **For Each → Helper model bindings** as well; assigning the extraction node's profile does not assign its confirmation helper.
@@ -20,21 +20,23 @@ The normal SillyTavern connection writes the main reply. Other model nodes have 
 
 Apply creates a new assistant swipe and preserves the native original. It then settles the effects associated with that exact reviewed root result. Reject leaves the original and does not accept its pending file, clock, random-outcome or accepted-policy Recall effects. A completed candidate is still a proposal until you apply it.
 
-Use **Run to here** to inspect supported preparation or source operations without accepting changes. A full unified workflow containing Generate Reply needs an owned SillyTavern generation; a manual Run does not secretly start another main reply. Legacy pre/post tools still support their existing explicit Run behavior.
+Use **Run to here** to inspect supported preparation or source operations without accepting changes. Full execution needs the owned SillyTavern generation; Run to here does not start another main reply.
+
+See [Thirty example workflows](examples.md) for the numbered curriculum and safe setup.
 
 ## Pick a concrete starting flow
 
-For the guidance/prose/items idea, open **Guide, revise and annotate a scene**. Edit its literal Compose guidance for Story-2, then choose local profiles on **Revise Draft**, **Extract** and **Enrich**. The native reply still uses SillyTavern’s active main connection. Revise Draft polishes narration, Extract keeps source-quoted items, Enrich adds labeled suggestions, and Render Notes → Append adds the expandable section. Inspect the final body and notes together before Apply.
+For the guidance/prose/items idea, open **Plan, write, polish, and annotate one reply**. Edit its literal Compose guidance for Story-2, then choose local profiles on **Revise Draft**, **Extract** and **Enrich**. The native reply still uses SillyTavern’s active main connection. Revise Draft polishes narration, Extract keeps source-quoted items, Enrich adds labeled suggestions, and Render Notes → Append adds the expandable section. Inspect the final body and notes together before Apply.
 
 | Example title in the picker | What to configure first |
 | --- | --- |
-| **A broken wand with a genuinely wild branch** | Current player-use entities, checked effect library, accepted outcome target and For Each confirmation/effectAuthor roles. |
-| **A separate prompt for the character in this scene** | Loaded canonical actor identity, source-backed participation and the Character Direction connection/system prompt. |
-| **An item recalls a memory for its actual holder** | Item aliases/entities, confirmed ordered holder state and that actor’s private document/Prompted Memory branch. |
-| **A kiss leaves two separate private memories** | Both actors’ actual IDs, the configured typed Fast connection/gate, explicit permission to author both reflections, separate Actor Context models and private targets. |
-| **Recall private moments on a hotkey or scene trigger** | Selected actor, authorized record set, matching Recall/Recall Shortcut memory-set IDs and the visible queue policy. |
-| **A soul-stealing sword levels up at 100** | Canonical soul list, confirmed kill identities, projected count/threshold and authorized keyed write. |
-| **Slow-burn directed relationship pacing** | Directed actor scope, authored progression/decay rules, effective story clock and private state target. |
+| **The broken wand: stable randomness with a wild branch** | Current player-use entities, checked effect library, accepted outcome target and For Each confirmation/effectAuthor roles. |
+| **Give one present character their own direction** | Loaded canonical actor identity, source-backed participation and the Character Direction connection/system prompt. |
+| **Let an item remind its actual holder** | Item aliases/entities, confirmed ordered holder state and that actor’s private document/Prompted Memory branch. |
+| **One kiss, two private perspectives** | Both actors’ actual IDs, the configured typed Fast connection/gate, explicit permission to author both reflections, separate Actor Context models and private targets. |
+| **Recall a memory with a hotkey or a story trigger** | Selected actor, authorized record set, matching Recall/Recall Shortcut memory-set IDs and the visible queue policy. |
+| **The soul-stealing sword: an event ledger and a threshold** | Canonical soul list, confirmed kill identities, projected count/threshold and authorized keyed write. |
+| **A relationship that changes slowly over weeks** | Directed actor scope, authored progression/decay rules, effective story clock and private state target. |
 
 The picker’s description supplies the exact initial target shape and helper setup for each copy. Adapt its demonstration identities deliberately rather than treating the sample cast as your live Story-2 actors.
 
@@ -116,11 +118,11 @@ Wire the branch to a selected terminal. Prompted Memory needs both genuine live 
 
 A source-backed interpretation of the current scene provides a bounded cast with canonical actor IDs and quoted participation evidence. **Scene Presence** projects one actor's present/absent/unresolved status. Literal or imported cast labels do not authorize native access to a character's private data.
 
-Connect the exact verified presence to **Character Direction** to apply a separate `systemPrompt` only when that character is present. Absence skips its model call; unresolved participation holds it. The request receives that actor's authorized card fields, scene context and stored memories. Its output is actor-private Guidance. Generate Reply accepts that exact live guidance only for the currently selected native actor.
+Connect the exact verified presence to **Character Direction** to apply a separate `systemPrompt` only when that character is present. Absence skips its model call; unresolved participation holds it. The request receives that actor's authorized card fields, scene context and stored memories. Its optional **Data** input can add projected bounded State or file values that are public or authorized by that same exact actor grant; another actor's private data or mixed scopes hold before the request. The separate system prompt remains literal. Its output is actor-private Guidance. Generate Reply accepts that exact live guidance only for the currently selected native actor. A generic private Model Call → Compose branch does not authorize private native Guidance.
 
 Use **Actor Context** for a character's own Model Call. It makes no request and returns authorized card/context/memory material with actor-private visibility. Two present loaded actors can have separate Actor Context branches, separate model requests and separate private file targets. Do not join their private inputs into a common request or append their reflections to public scene notes. Public Scene Context can supply observable narrative to a general model; the default actor-perspective Scene Context is not a substitute for a grant-backed Actor Context.
 
-A paired memorable-moment workflow can confirm an actual kiss in the completed body, gate it, then request one reflection per actor. The published kiss example defaults `reflection-authorship-text.allowModelAuthoredFeelings` to `false`: both private reflection calls and writes are skipped while ordinary reply review remains available. Set it to `true` only with explicit author permission to portray both actors’ private feelings, especially a player-controlled character. Configure each Read File and Write to File with **Actor scope → presence**, that actor's canonical ID, and its exact Scene Presence input. Keep each actor's records and model Context on its own leg. Each saved record keeps `sceneSummary` as the exact canonical kiss quote and `sceneEvidence` as its source/span. `reflection` and Recall-compatible `text` contain model-authored interpretation, explicitly marked by `reflectionOrigin: "model-authored"`; stable `id`, `eventId` and `sourceRefs` come from the canonical evidence. Both staged writes can belong to the same reviewed root result. If the second target conflicts after the first was saved, the first remains confirmed and retry resumes the remaining persistence work.
+The **One kiss, two private perspectives** lesson confirms actual shared kiss evidence and uses a configured typed Confidence Gate before requesting private reflections. Missing kiss evidence deliberately holds with no Review handle or reflection writes; rejected and unresolved confidence skip reflection while preserving the ordinary reviewed Draft. An unresolved metric remains explicit rather than accepted. Both actors must be genuinely present before either reflection; absence skips both private legs and unresolved participation holds. Separate `rowan-permission-text` and `iris-permission-text` values default `allowModelAuthoredReflection` to `false`; permit each independently only with explicit author permission, especially for a player-controlled character. Configure each Read File and Write to File with **Actor scope → presence**, that actor's canonical ID, and its exact Scene Presence input. Keep each actor's records and model Context on its own leg. Each saved record keeps `sharedQuote` and `sceneEvidence` as exact canonical shared evidence. `reflection` and Recall-compatible `text` contain private model-authored interpretation, marked by `reflectionOrigin: "model-authored"`; its stable `id` comes from the canonical event. Both staged writes can belong to the same reviewed root result. Each file has its own receipt: if one persistence leg fails after the other is saved, inspect the confirmed partial result and supported retry rather than assuming an atomic rollback.
 
 Native generation currently has one selected actor. Actor Context allows separate present-actor processing; it does not authorize another actor's private direction as the selected actor's native guidance. Group generation and automatic multi-character native prompting are not implied by a public cast list.
 
@@ -163,7 +165,7 @@ An unknown save outcome is different from a retryable failure. **PERSISTENCE_UNK
 
 State and projection receipts shown before Apply remain proposed diagnostics. Accepted file content uses the schema you authored. A generic JSON writer does not automatically promote every nested `acceptance: "pending"` string in an arbitrary document to canonical truth; author the canonical event/state shape deliberately and consult the accepted effect receipt.
 
-Legacy Memory Commit retains its documented immediate full-root Post settlement. Unified memory effects join the accepted root result. Review the workflow mode before treating a full Run as a harmless memory preview.
+Memory Commit stages its effects for the accepted root Review / Publish result. Diagnostic execution never settles memory.
 
 ## Story time: midnight, 14:00 and eight-hour intervals
 
@@ -223,30 +225,34 @@ Queue recall from the right-click menu on a matching Recall or Recall Shortcut n
 | Successful completion | Spend only after the full workflow completes successfully. Later rejection does not refund it. |
 | Accepted result | Spend when the reviewed candidate is accepted. Stop, failure and Reject release the pending reservation without spending it. |
 
+Shortcuts use physical key codes, such as Control+Shift+R. Letter and digit shortcuts require Control, Alt or Meta; function keys also work. They skip typing in inputs, textareas, selects or editable text, composition, key repeat and focused menus. Duplicate active combinations require different keys.
+
 Matching Shortcuts must agree on target, repetition and consumption settings. Different physical keys can share a request. A Recall without a matching Shortcut explains how to add one. Automatic-only Recall nodes are excluded from manual queue actions. For independently requested retrieval selections, use different memory-set IDs; the first successful matching Recall supplies the selection for a given generation.
 
 Queues are private ephemeral session state. They are excluded from workflow files, exports, settings, Undo and modified-file status. Changing the semantic graph or opening/replacing a document revokes obsolete queues and shortcuts, even if the replacement has identical contents. Switching user/chat/actor hides unrelated queues; returning to the same unchanged document and scope may reveal an unspent request. Disabling Lattice hides active badges and makes controls unavailable; re-enabling the same document may reveal an unspent queue.
 
+Native Recall serves the selected native actor. Other present actors can have independent Actor Context/private file branches, but their Recall cannot supply private guidance for the selected actor. Recall guidance and diagnostic selections stay actor-private; Render Notes does not declassify them.
+
 ## Move an existing pre/post setup
 
-Saved **native-pre** and **native-post** workflows can be opened through **File → Open workflow…** or recovered through **File → Recover previous workflows**. With Lattice enabled, Send uses the open Pre or unified document. An open Post document remains a manual **Run** tool. Separate Pre/Post assignments no longer select the host pipeline.
+Saved native-pre and native-post roots are retired. Migration preserves their original graphs, bindings and active selection in a cold archive. Existing unified documents remain available as recovery drafts. If the previous active document is retired, Lattice opens a unified document or starter with integration disabled. Archived roots cannot execute, open as current documents, or import into current workflows.
 
-There is no automatic legacy converter. Create a new unified workflow or open an updated example, then reuse suitable operations or pinned subgraphs explicitly:
+**File → Export archived workflows…** downloads the recovery archive as JSON. This recovery action makes no model requests and does not convert the contents. Preserve that download while rebuilding a needed process in a new unified workflow or updated example:
 
-1. Keep preparation Context/Text/Guidance logic upstream of Generate Reply.
-2. Replace the legacy host Guidance terminal with a wire to Generate Reply's guidance pin.
-3. Replace a latest-reply Snapshot dependency with the owned Generate Reply Draft where the response process needs this generation's reply.
-4. Keep compatible patch validation where useful, or use Revise Draft for direct source-bound Draft revisions. End the final Draft in Review / Publish.
-5. Keep native sources, Memory, file references, Recall, clocks and publication at the root when their contracts require it. Reusable pure processing belongs in subgraphs.
-6. Rebind local model and helper connections, authorize documents, inspect the graph, then keep the new unified document open and enable Lattice.
+1. Place preparation Context/Text/Guidance logic upstream of Generate Reply and set explicit stages.
+2. Wire bounded Guidance into Generate Reply's guidance pin.
+3. Use the owned Generate Reply Draft for processing this generation's response.
+4. End the final Draft in Review / Publish. Patch tools retain diagnostic utility but do not grant publication authority.
+5. Keep native sources, Memory, file references, Recall, clocks and publication at the root where required. Stage-specific reusable processing definitions remain pinned.
+6. Rebind local model/helper connections, authorize documents, inspect supported outputs with Run to here, then keep the unified document open and select **Enable Lattice**.
 
-Imports and exports preserve pinned definition identities and supported saved controls. Adding a fragment is a reviewed edit with phase/type checks, not an implicit conversion between workflow modes. Preserve the original legacy graph while adapting a copy.
+Current imports preserve pinned identities and controls; additive imports use stage/type checks. There is no automatic converter or production compatibility starter for a retired root.
 
 ## When a run holds
 
 | Symptom | Check |
 | --- | --- |
-| A unified Run cannot generate | Start with ordinary SillyTavern Send after opening and enabling Lattice; manual Run to here only tests supported dependencies. |
+| A unified Run cannot generate | Start with ordinary SillyTavern Send with the configured document open and Lattice enabled; manual Run to here only tests supported dependencies. |
 | A model branch has no usable connection | Configure that node and each selected For Each helper role; inspect the effective profile/model and explicit nested overrides. |
 | Fast Decision cannot connect | Verify the typed connection/model, full endpoint and session credential; a text profile is not a SystemOne capability. |
 | A condition is unresolved | Inspect the missing path, null Decision answer or confidence middle range; wire an explicit unresolved policy. |

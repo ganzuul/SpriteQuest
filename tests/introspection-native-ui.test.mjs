@@ -6,16 +6,16 @@ import { join, resolve, relative, isAbsolute } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { compiled } from './helpers/svelte-compile.mjs';
 import { JSDOM } from 'jsdom';
-import { prepareNativeSearchCatalog, filterNativeSearchChoices, resolveNativeSearchChoice } from '../src/ui/native-search-catalog.js?v=0.26.0';
-import { FAMILY_PALETTE, paletteForOperation } from '../src/ui/node-palette.js?v=0.26.0';
-import { prepareWorkspaceViews, projectWorkspacePanels } from '../src/ui/workspace-preparation.js?v=0.26.0';
-import { createGraphViewSession } from '../src/ui/graph-view-session.js?v=0.26.0';
-import { createWorkflowSession, projectPreparedWorkflow } from '../src/ui/workflow-surface.js?v=0.26.0';
-import { prepareNodeControlChange } from '../src/workflow/ports.js?v=0.26.0';
-import { exportWorkflow, parseWorkflow } from '../src/workflow/packages.js?v=0.26.0';
-import { runWorkflow } from '../src/workflow/runtime.js?v=0.26.0';
+import { prepareNativeSearchCatalog, filterNativeSearchChoices, resolveNativeSearchChoice } from '../src/ui/native-search-catalog.js?v=0.27.0';
+import { FAMILY_PALETTE, paletteForOperation } from '../src/ui/node-palette.js?v=0.27.0';
+import { prepareWorkspaceViews, projectWorkspacePanels } from '../src/ui/workspace-preparation.js?v=0.27.0';
+import { createGraphViewSession } from '../src/ui/graph-view-session.js?v=0.27.0';
+import { createWorkflowSession, projectPreparedWorkflow } from '../src/ui/workflow-surface.js?v=0.27.0';
+import { prepareNodeControlChange } from '../src/workflow/ports.js?v=0.27.0';
+import { exportWorkflow, parseWorkflow } from '../src/workflow/packages.js?v=0.27.0';
+import { runWorkflow } from '../src/workflow/runtime.js?v=0.27.0';
 import { state as actorState } from './fixtures/introspection.mjs';
-import { createNativeWorkflowController } from '../src/workflow/host.js?v=0.26.0';
+import { createNativeWorkflowController } from '../src/workflow/host.js?v=0.27.0';
 
 const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true });
 globalThis.window = dom.window; globalThis.document = dom.window.document;
@@ -35,7 +35,7 @@ async function fixture(view, actions, name = 'NodeDetails') {
     } catch (error) { await close(); throw error; }
 }
 const scope = mode => ({ schema: 3, runtime: 2, mode, workflowId: 'introspection-ui', viewPath: [], inDefinition: false });
-const graph = (operation, controls = {}) => ({ id: 'introspection-ui', schema: 3, runtime: 2, mode: 'native-pre', nodes: { work: { id: 'work', type: 'workflow', operation, operationVersion: 1, ...controls } }, wires: {}, roles: {}, groups: {}, definitions: {}, portals: {} });
+const graph = (operation, controls = {}) => ({ id: 'introspection-ui', schema: 3, runtime: 2, mode: 'native-unified', nodes: { work: { id: 'work', type: 'workflow', operation, operationVersion: 1, ...controls } }, wires: {}, roles: {}, groups: {}, definitions: {}, portals: {} });
 function details(root, revision = 'revision1') {
     const prepared = prepareWorkspaceViews(root); assert.equal(prepared.ok, true, JSON.stringify(prepared));
     const session = createGraphViewSession({ root, activationId: 'introspection-ui', ...prepared.data }); assert.equal(session.ok, true, JSON.stringify(session));
@@ -50,8 +50,8 @@ const settle = async () => { await tick(); flushSync(); };
 
 test('native picker discovers all six Introspection tools and phase-safe mode choices', () => {
     assert.ok(FAMILY_PALETTE.some(item => item.name === 'Introspection'));
-    for (const phase of ['pre', 'post']) {
-        const prepared = prepareNativeSearchCatalog(scope('native-' + phase)); assert.equal(prepared.ok, true, JSON.stringify(prepared));
+    for (const phase of ['pre']) {
+        const prepared = prepareNativeSearchCatalog(scope('native-unified')); assert.equal(prepared.ok, true, JSON.stringify(prepared));
         const catalog = prepared.data;
         for (const [operation, title] of [['reflect', 'Reflect'], ['internalize', 'Internalize'], ['express', 'Express'], ['context', 'Context'], ['memory', 'Memory'], ['state', 'State']]) {
             const choice = filterNativeSearchChoices(catalog, { query: title }).find(item => item.id === 'operation:' + operation);
@@ -64,7 +64,7 @@ test('native picker discovers all six Introspection tools and phase-safe mode ch
             assert.ok(resolveNativeSearchChoice(catalog, 'operation:' + id), id);
             assert.equal(catalog.choices.some(item => item.id === 'operation:' + id), false);
         }
-        assert.equal(!!resolveNativeSearchChoice(catalog, 'operation:memory:commit'), phase === 'post');
+        assert.equal(!!resolveNativeSearchChoice(catalog, 'operation:memory:commit'), true);
         const inner = prepareNativeSearchCatalog({ ...scope('native-' + phase), viewPath: ['child'], inDefinition: true }); assert.equal(inner.ok, true);
         assert.equal(inner.data.choices.some(item => item.id === 'operation:memory:commit'), false);
     }
@@ -72,10 +72,10 @@ test('native picker discovers all six Introspection tools and phase-safe mode ch
 
 test('prepared workflow discovery marks both-phase Introspection entries compatible in the containing phase', () => {
     for (const phase of ['pre', 'post']) {
-        const root = { ...graph('state'), mode: 'native-' + phase }, prepared = prepareWorkspaceViews(root); assert.equal(prepared.ok, true, JSON.stringify(prepared));
+        const root = graph('state', {phase}), prepared = prepareWorkspaceViews(root); assert.equal(prepared.ok, true, JSON.stringify(prepared));
         const workflow = projectPreparedWorkflow(prepared.data.workflow), family = workflow.families.find(item => item.name === 'Introspection');
         assert.ok(family); assert.equal(family.operations.length, 6);
-        for (const entry of family.operations) { assert.equal(entry.compatible, true, entry.id); assert.equal(entry.phase, phase, entry.id); }
+        for (const entry of family.operations) { assert.equal(entry.compatible, true, entry.id); assert.equal(entry.phase, 'unified', entry.id); }
     }
 });
 
@@ -152,35 +152,14 @@ test('actual recorded Introspection output displays the record payload in the se
     } finally { await f.close(); }
 });
 
-for (const acknowledged of [true, false]) test(`host memory settlement ${acknowledged ? 'acknowledgement' : 'uncertainty'} survives the session and is visible in Run Details and Preview`, async () => {
-    const root = { ...graph('state', { mode: 'value', updates: { confidence: 0.6 } }), mode: 'native-post' };
-    root.nodes.commit = { id: 'commit', type: 'workflow', operation: 'memory', operationVersion: 1, mode: 'commit', idempotencyKey: 'test-settlement' };
-    root.wires.proposal = { id: 'proposal', route: 'wire', from: 'work', fromPort: 'out', to: 'commit', toPort: 'proposal' };
-    const context = { chatId: 'memory-ui', characterId: 0, groupId: null, characters: [{ avatar: 'alice.png' }], chatMetadata: {}, chat: [{ is_user: true, mes: 'A promise was made.', send_date: 1 }], saveMetadata: async () => acknowledged ? true : undefined };
-    const controller = createNativeWorkflowController({ context: () => context, isBusy: () => false });
-    let state;
-    const session = createWorkflowSession({ runtime: () => controller, current: () => root, epoch: () => 0, active: () => true, changed: snapshot => { state = snapshot; } });
-    const response = await session.run(); assert.equal(response.ok, true, JSON.stringify(response.error));
-    assert.deepEqual(session.result().memoryCommit, { applied: true, acknowledged, version: 1 });
-    const prepared = prepareWorkspaceViews(root, { result: session.result() }); assert.equal(prepared.ok, true, JSON.stringify(prepared));
-    const editor = createGraphViewSession({ root, activationId: 'memory-ui', ...prepared.data }).data;
-    const target = { kind: 'terminal', address: { workflowId: root.id, instancePath: [], nodeId: 'commit' } };
-    const workflow = projectPreparedWorkflow(prepared.data.workflow, { selectedId: 'commit', selectedTarget: target });
-    const panels = projectWorkspacePanels(editor.readEditor(), workflow, state, 'settled1', target, null);
-    const message = acknowledged ? /Memory saved.*version 1/ : /Memory updated; save unconfirmed.*version 1/;
-    const run = await fixture(panels.runDetails, {}, 'RunDetails'), preview = await fixture(panels.outputPreview, {}, 'OutputPreview');
-    try { assert.match(run.host.textContent, message); assert.match(preview.host.textContent, message); }
-    finally { await run.close(); await preview.close(); }
-});
-
-test('prepared memory status copies only display fields and does not invoke metadata getters', async () => {
+test('prepared accepted settlement status copies only display fields and does not invoke metadata getters', async () => {
     const root = graph('state'), target = { workflowId: root.id, instancePath: [], nodeId: 'work', portId: 'out' };
     const result = await runWorkflow(root, { target, memory: { read: async () => ({ ok: true, artifact: actorState() }) } }); assert.equal(result.ok, true, JSON.stringify(result.error));
-    const commit = { applied: true, acknowledged: false, version: 1, service: { commit() { assert.fail('Display cannot invoke a memory service'); } } };
-    const prepared = prepareWorkspaceViews(root, { result: { ...result, memoryCommit: commit } }); assert.equal(prepared.ok, true);
-    const shown = projectPreparedWorkflow(prepared.data.workflow, { selectedTarget: target }); assert.deepEqual(shown.result.memoryCommit, { applied: true, acknowledged: false, version: 1 }); assert.ok(Object.isFrozen(shown.result.memoryCommit));
+    const commit = { status: 'save-unverified', published: true, receipts: [{intentId:'one',targetId:'memory',status:'save-unverified'}], service: { commit() { assert.fail('Display cannot invoke a memory service'); } } };
+    const prepared = prepareWorkspaceViews(root, { result: { ...result, settlement: commit } }); assert.equal(prepared.ok, true);
+    const shown = projectPreparedWorkflow(prepared.data.workflow, { selectedTarget: target }); assert.deepEqual(shown.result.settlement, {status:'save-unverified',published:true,receipts:[{intentId:'one',targetId:'memory',status:'save-unverified'}]}); assert.ok(Object.isFrozen(shown.result.settlement));
     let reads = 0;
-    Object.defineProperty(commit, 'acknowledged', { get() { reads++; return true; } });
-    const trapped = prepareWorkspaceViews(root, { result: { ...result, memoryCommit: commit } }); assert.equal(trapped.ok, true);
-    assert.equal(projectPreparedWorkflow(trapped.data.workflow, { selectedTarget: target }).result.memoryCommit, undefined); assert.equal(reads, 0);
+    Object.defineProperty(commit, 'published', { get() { reads++; return true; } });
+    const trapped = prepareWorkspaceViews(root, { result: { ...result, settlement: commit } }); assert.equal(trapped.ok, true);
+    assert.equal(projectPreparedWorkflow(trapped.data.workflow, { selectedTarget: target }).result.settlement, undefined); assert.equal(reads, 0);
 });

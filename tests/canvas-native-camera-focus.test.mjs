@@ -10,7 +10,7 @@ import { fixture, mouse, dom, version } from './canvas-fixture.mjs';
 for (const key of ['Node', 'Element', 'Text', 'Comment', 'Document', 'HTMLMediaElement', 'HTMLButtonElement', 'HTMLInputElement', 'HTMLSelectElement', 'MutationObserver']) Object.defineProperty(globalThis, key, { configurable: true, value: dom.window[key] });
 const clientURL = new URL('../node_modules/svelte/src/index-client.js', import.meta.url).href;
 const { mount, unmount, flushSync, tick } = await import(clientURL);
-const { starterGraph } = await import(`../src/workflow/starters.js?v=${version}`);
+const { fixtureGraph: starterGraph } = await import('./helpers/workflow-fixtures.mjs');
 const { cloneWorkflowDocument } = await import(`../src/workflow/document.js?v=${version}`);
 const { createGraphViewSession } = await import(`../src/ui/graph-view-session.js?v=${version}`);
 const { projectPreparedWorkflow } = await import(`../src/ui/workflow-surface.js?v=${version}`);

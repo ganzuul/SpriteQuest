@@ -6,15 +6,15 @@ import { join, resolve, relative, isAbsolute } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { compile } from 'svelte/compiler';
 import { JSDOM } from 'jsdom';
-import { starterGraph } from '../src/workflow/starters.js?v=0.26.0';
-import { cloneWorkflowDocument } from '../src/workflow/document.js?v=0.26.0';
-import { computeDefinitionIdentity, definitionRefKey } from '../src/workflow/definitions.js?v=0.26.0';
-import { createNativeWorkflowController } from '../src/workflow/host.js?v=0.26.0';
-import { createWorkflowSession, prepareWorkflowProjection, projectPreparedWorkflow } from '../src/ui/workflow-surface.js?v=0.26.0';
-import { createGraphViewSession } from '../src/ui/graph-view-session.js?v=0.26.0';
-import { prepareWorkspaceViews, prepareLibraryViews, projectWorkspacePanels } from '../src/ui/workspace-preparation.js?v=0.26.0';
-import {projectRecallView} from '../src/ui/recall-projection.js?v=0.26.0';
-import { readNodePresentation } from '../src/ui/node-palette.js?v=0.26.0';
+import { starterGraph } from '../src/workflow/starters.js?v=0.27.0';
+import { cloneWorkflowDocument } from '../src/workflow/document.js?v=0.27.0';
+import { computeDefinitionIdentity, definitionRefKey } from '../src/workflow/definitions.js?v=0.27.0';
+import { createNativeWorkflowController } from '../src/workflow/host.js?v=0.27.0';
+import { createWorkflowSession, prepareWorkflowProjection, projectPreparedWorkflow } from '../src/ui/workflow-surface.js?v=0.27.0';
+import { createGraphViewSession } from '../src/ui/graph-view-session.js?v=0.27.0';
+import { prepareWorkspaceViews, prepareLibraryViews, projectWorkspacePanels } from '../src/ui/workspace-preparation.js?v=0.27.0';
+import {projectRecallView} from '../src/ui/recall-projection.js?v=0.27.0';
+import { readNodePresentation } from '../src/ui/node-palette.js?v=0.27.0';
 
 const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true });
 globalThis.window = dom.window; globalThis.document = dom.window.document;
@@ -61,26 +61,37 @@ function childDefinition() {
     return { ...checked.data.materializedDefinition, semanticHash: checked.data.semanticHash };
 }
 function adapter(schema = 3, suppliedRoot = null) {
-    const saved = starterGraph('reviewed-de-slop'); saved.nodes.repair.mode = 'scan';
+    const saved = starterGraph('unified-basic');
     const root = suppliedRoot ?? (schema === 3 ? cloneWorkflowDocument(saved).data : saved), definition = childDefinition();
-    if (schema === 3 && root.mode === 'native-post') {
+    if (schema === 3 && root.mode === 'native-unified') {
         root.definitions[definitionRefKey(definition)] = definition;
         root.nodes.inspection = { id: 'inspection', type: 'subgraph', definition: { id: definition.id, version: definition.version, semanticHash: definition.semanticHash }, parameterOverrides: {}, roleOverrides: {}, nodeBindingOverrides: {} };
     }
     const message = { mes: 'We delve.\n雪', is_user: false, swipe_id: 0, swipes: ['We delve.\n雪'], swipe_info: [{ extra: {}, gen_started: 1, gen_finished: 2 }], extra: {}, gen_started: 1, gen_finished: 2 };
-    const counters = { requests: 0, checks: 0, apply: 0, saves: 0, cancel: 0 };
+    const counters = { requests: 0, checks: 0, apply: 0, saves: 0, cancel: 0, reject: 0 };
     const context = { chatId: 'review', characterId: 1, groupId: null, chat: [{ mes: 'Hello', is_user: true }, message], extensionPrompts: {}, setExtensionPrompt(key, value) { this.extensionPrompts[key] = { value }; }, saveChat: async () => { counters.saves++; }, updateMessageBlock: async () => {}, swipe: { refresh: async () => {} } };
-    const host = createNativeWorkflowController({ context: () => context, getGraph: () => root, isEnabled: () => true, isBusy: () => false, countTokens: async text => ({ tokens: Math.ceil(text.length / 4), method: 'fixture' }), resolveBinding: () => { throw new Error('A scan-only run must not resolve bindings'); }, request: async () => { counters.requests++; throw new Error('A scan-only run must not request a model'); }, syncMesToSwipe: index => { const item = context.chat[index]; item.swipes[item.swipe_id] = item.mes; return true; }, syncSwipeToMes: (index, id) => { const item = context.chat[index]; item.swipe_id = id; item.mes = item.swipes[id]; Object.assign(item, structuredClone(item.swipe_info[id])); return true; } });
-    const runtime = { ...host, candidateStatus(candidate) { counters.checks++; return host.candidateStatus(candidate); }, async apply(candidate) { counters.apply++; return host.apply(candidate); }, cancel(reason) { counters.cancel++; host.cancel(reason); } };
+    const listeners = new Map(); let nativeBusy = false;
+    context.eventTypes = Object.fromEntries(['GENERATION_STARTED', 'GENERATION_ENDED', 'MESSAGE_RECEIVED'].map(name => [name, name]));
+    context.eventSource = { on(name, fn) { const bucket = listeners.get(name) ?? []; bucket.push(fn); listeners.set(name, bucket); }, removeListener() {}, async emit(name, ...args) { for (const fn of listeners.get(name) ?? []) await fn(...args); } };
+    const host = createNativeWorkflowController({ context: () => context, userId: () => 'review-user', getGraph: () => root, isEnabled: () => true, isBusy: () => nativeBusy, countTokens: async text => ({ tokens: Math.ceil(text.length / 4), method: 'fixture' }), resolveBinding: () => { throw new Error('A scan-only run must not resolve bindings'); }, request: async () => { counters.requests++; throw new Error('A scan-only run must not request a model'); }, syncMesToSwipe: index => { const item = context.chat[index]; item.swipes[item.swipe_id] = item.mes; return true; }, syncSwipeToMes: (index, id) => { const item = context.chat[index]; item.swipe_id = id; item.mes = item.swipes[id]; Object.assign(item, structuredClone(item.swipe_info[id])); return true; } });
+    host.subscribe();
+    const runtime = { ...host, candidateStatus(candidate) { counters.checks++; return host.candidateStatus(candidate); }, async apply(candidate) { counters.apply++; return host.apply(candidate); }, cancel(reason) { counters.cancel++; host.cancel(reason); }, reject(selector) { counters.reject++; return host.reject(selector); } };
     const prepared = prepareWorkspaceViews(root, { candidateStatus: candidate => runtime.candidateStatus(candidate) }); assert.equal(prepared.ok, true, JSON.stringify(prepared));
     const library = prepareLibraryViews(root.id, { [definitionRefKey(definition)]: definition }); assert.equal(library.ok, true, JSON.stringify(library));
     prepared.data.navigation.push(...library.data.navigation); prepared.data.preparedViews.push(...library.data.preparedViews);
     const graphViews = createGraphViewSession({ root, activationId: 'preview-review-' + schema, ...prepared.data }).data; assert.ok(graphViews);
-    const env = { workflowRuntime: { getNativeWorkflowController: () => runtime }, current: root, graphViews, workspacePrepared: prepared.data, rootRunEpoch: 1, workspaceRevision: 1, uiEpoch: 1, editorCaptures: new WeakMap(), workspaceIssue: '', selectedPreview: null, pinnedPreview: null, selectedKind: 'node', selected: root.nodes['apply-reply'], workflowProjection: null, workflowProjectionGraph: null, workflowState: { result: null, reviewHandles: [], busy: false, availability: 'current', applyIssue: '' }, canvas: null, recallDetailsView: null, recallSelectionIds: () => [], projectRecallView, canvasTraceRows: null, editorDraw: null, isOpen: () => true, settings: () => ({}), projectPreparedWorkflow, projectWorkspacePanels, workbench: { update(value) { env.panels = value; } } };
+    const env = { workflowRuntime: { getNativeWorkflowController: () => runtime }, current: root, graphViews, workspacePrepared: prepared.data, rootRunEpoch: 1, workspaceRevision: 1, uiEpoch: 1, editorCaptures: new WeakMap(), workspaceIssue: '', selectedPreview: null, pinnedPreview: null, selectedKind: 'node', selected: root.nodes['review-publish'], workflowProjection: null, workflowProjectionGraph: null, workflowState: { result: null, reviewHandles: [], busy: false, availability: 'current', applyIssue: '' }, canvas: null, recallDetailsView: null, recallSelectionIds: () => [], projectRecallView, canvasTraceRows: null, editorDraw: null, isOpen: () => true, settings: () => ({}), projectPreparedWorkflow, projectWorkspacePanels, workbench: { update(value) { env.panels = value; } } };
     for (const name of ['recallSetupView', 'captureEditor', 'editorCurrent', 'samePreviewTerminal', 'currentRootPreviewTerminal', 'currentPreviewHandle', 'applyPreviewReview', 'rejectPreviewReview', 'workflowView', 'updateWorkflowProjection']) { const fn = controllerFunction(name, env); if (fn) env[name] = fn; }
     env.workflowSession = createWorkflowSession({ runtime: () => runtime, rootCurrent: () => env.current, runEpoch: () => env.rootRunEpoch, active: () => env.isOpen(), changed(state) { const authorityChanged = state.result !== env.workflowState.result || state.reviewHandles !== env.workflowState.reviewHandles; env.workflowState = state; if (authorityChanged) env.workspacePrepared.workflow = prepareWorkflowProjection(env.current, { ...(prepared.data.planner ? { planner: prepared.data.planner } : {}), result: state.result, candidateStatus: candidate => runtime.candidateStatus(candidate) }); env.updateWorkflowProjection(); } });
     const actions = controllerActions(env);
-    return { root, env, actions, graphViews, runtime, counters, context, message, definition, run: () => env.workflowSession.run(), refresh: () => env.updateWorkflowProjection(), terminal: { kind: 'terminal', address: { workflowId: root.id, instancePath: [], nodeId: 'apply-reply' } } };
+    return { root, env, actions, graphViews, runtime, counters, context, message, definition, run: async () => {
+        context.chat.pop(); nativeBusy = true; await context.eventSource.emit('GENERATION_STARTED', 'normal', {}, false);
+        const started = await runtime.beforeGenerate(context.chat, 8192, () => {}, 'normal'); assert.equal(started.ok, true, JSON.stringify(started.error));
+        const now = new Date().toISOString(); message.gen_started = now; message.gen_finished = now; message.swipe_info[0].gen_started = now; message.swipe_info[0].gen_finished = now;
+        context.chat.push(message); await context.eventSource.emit('MESSAGE_RECEIVED', 1, 'normal'); nativeBusy = false; await context.eventSource.emit('GENERATION_ENDED', 2);
+        for (let attempts = 0; attempts < 50 && !runtime.lastAutomaticResult(); attempts++) await new Promise(resolve => setTimeout(resolve, 5));
+        const record = runtime.lastAutomaticResult(); assert.ok(record); env.workflowSession.receiveAutomatic(record); return record.result;
+    }, refresh: () => env.updateWorkflowProjection(), terminal: { kind: 'terminal', address: { workflowId: root.id, instancePath: [], nodeId: 'review-publish' } } };
 }
 
 // Real zero-call host results flow through the actual controller, cached projector and compiled leaf.
@@ -93,8 +104,8 @@ test('current preview preserves final host source freshness checks after review 
 
 test('current pinned root terminal keeps its actual handle across node selection and never applies from child or library views', async () => {
     const f = adapter(3); await f.run(); assert.equal(f.env.workflowState.result.ok, true, JSON.stringify(f.env.workflowState.result.error));
-    const handle = f.env.workflowState.reviewHandles.find(handle => handle.terminal.address.nodeId === 'apply-reply'); assert.ok(handle);
-    f.env.pinnedPreview = structuredClone(f.terminal); f.env.selectedPreview = null; f.env.selected = f.root.nodes['pattern-scan']; f.refresh();
+    const handle = f.env.workflowState.reviewHandles.find(handle => handle.terminal.address.nodeId === 'review-publish'); assert.ok(handle);
+    f.env.pinnedPreview = structuredClone(f.terminal); f.env.selectedPreview = null; f.env.selected = f.root.nodes['generate-reply']; f.refresh();
     assert.deepEqual(f.env.workflowProjection.result.selectedReviewHandle, handle, 'review must use the effective pinned terminal rather than the newly selected node output');
     const leaf = await previewFixture(f.env.panels.outputPreview, f.actions);
     try {
@@ -103,7 +114,7 @@ test('current pinned root terminal keeps its actual handle across node selection
         assert.equal(f.graphViews.openInstance(['inspection']).ok, true); f.refresh(); leaf.update(f.env.panels.outputPreview); assert.equal(f.env.panels.outputPreview.review, null); await f.actions.apply(structuredClone(handle)); f.actions.reject(structuredClone(handle)); assert.equal(f.counters.checks, checks); assert.equal(f.counters.cancel, cancelled);
         assert.equal(f.graphViews.openLibrary(f.root.nodes.inspection.definition).ok, true); f.refresh(); assert.equal(f.env.panels.outputPreview.review, null, 'library DTO must not expose a root review selector'); await f.actions.apply(handle); assert.equal(f.counters.checks, checks);
         f.graphViews.focusView(f.graphViews.project().graphViews.tabs[0].key); f.refresh(); leaf.update(f.env.panels.outputPreview); assert.equal(leaf.host.querySelector('[data-preview-apply]').disabled, false); assert.deepEqual(f.env.panels.outputPreview.review.selector, handle);
-        const copied = structuredClone(handle); copied.terminal.address.nodeId = 'repair'; await f.actions.apply(copied); assert.equal(f.counters.checks, checks); assert.deepEqual(f.env.workflowState.reviewHandles[0], handle);
+        const copied = structuredClone(handle); copied.terminal.address.nodeId = 'generate-reply'; await f.actions.apply(copied); assert.equal(f.counters.checks, checks); assert.deepEqual(f.env.workflowState.reviewHandles[0], handle);
         f.env.workflowSession.invalidate('Superseded run'); f.refresh(); await f.actions.apply(handle); assert.equal(f.counters.apply, 0); assert.equal(f.counters.requests, 0);
     } finally { await leaf.close(); }
 });
@@ -139,14 +150,39 @@ test('the actual workspace opens examples without host work', async () => {
     } finally { await mounted.close(); }
 });
 
-test('actual automatic zero-call Send provenance remains visible without exposing schema3 payload diagnostics', async () => {
-    const f = adapter(3, starterGraph('structured-guidance'));
-    const sent = await f.runtime.beforeGenerate(f.context.chat, 8192, () => {}, 'normal'); assert.equal(sent.ok, true, JSON.stringify(sent.error));
+test('actual automatic zero-call unified Send provenance remains visible without payload diagnostics', async () => {
+    const f = adapter(); await f.run();
     const record = f.runtime.lastAutomaticResult(); assert.equal(record.origin.graph, f.root); assert.equal(record.origin.kind, 'send');
-    f.env.workflowSession.receiveAutomatic(record);
-    const view = f.env.panels.outputPreview; assert.match(view.statusDetail, /Automatic Send.*pre phase/); assert.equal(view.review, null); assert.ok(view.sections.length);
-    assert.ok(view.sections.every(section => !['findings', 'changes', 'reports', 'calls'].includes(section.id)), 'schema3 retains only its existing bounded artifacts');
+    const view = f.env.panels.outputPreview; assert.match(view.statusDetail, /Automatic Send.*unified workflow/); assert.ok(view.sections.length);
+    assert.ok(view.sections.every(section => !['findings', 'changes', 'reports', 'calls'].includes(section.id)));
     const leaf = await previewFixture(view, f.actions);
-    try { assert.match(leaf.host.textContent, /Automatic Send.*pre phase/); assert.equal(leaf.host.querySelector('[data-preview-apply]'), null); assert.equal(f.counters.requests, 0); }
+    try { assert.match(leaf.host.textContent, /Automatic Send.*unified workflow/); assert.equal(leaf.host.querySelector('[data-preview-apply]').disabled, false); assert.equal(f.counters.requests, 0); }
     finally { await leaf.close(); }
+});
+
+test('Apply routes the authenticated current unified Review / Publish handle to native publication', async () => {
+    const f = adapter(); await f.run();
+    const selector = structuredClone(f.env.panels.outputPreview.review.selector);
+    await f.actions.apply(selector);
+    assert.equal(f.counters.apply, 1); assert.equal(f.counters.saves, 1);
+    assert.deepEqual(f.message.swipes, ['We delve.\n雪', 'We delve.\n雪']);
+    assert.equal(f.env.workflowState.reviewHandles.length, 0);
+});
+
+
+test('Reject releases the current unified candidate and preserves the native reply', async () => {
+    const f = adapter(); await f.run();
+    const selector = structuredClone(f.env.panels.outputPreview.review.selector), before = structuredClone(f.message);
+    f.actions.reject(selector);
+    assert.equal(f.counters.reject, 1); assert.equal(f.runtime.candidateStatus(selector).ok, false);
+    assert.deepEqual(f.message, before); assert.equal(f.counters.saves, 0); assert.equal(f.env.workflowState.reviewHandles.length, 0);
+});
+
+test('forged selector identities and noncurrent results cannot invoke Apply or Reject', async () => {
+    const f = adapter(); await f.run(); const handle = f.env.panels.outputPreview.review.selector;
+    const forged = [ { ...handle, handleId: 'forged' }, { ...handle, runId: 'forged' }, { ...handle, terminal: { ...handle.terminal, address: { ...handle.terminal.address, nodeId: 'generate-reply' } } } ];
+    for (const selector of forged) { await f.actions.apply(selector); f.actions.reject(selector); }
+    f.env.workflowState.result = { ...f.env.workflowState.result };
+    await f.actions.apply(handle); f.actions.reject(handle);
+    assert.equal(f.counters.apply, 0); assert.equal(f.counters.reject, 0); assert.equal(f.counters.saves, 0);
 });

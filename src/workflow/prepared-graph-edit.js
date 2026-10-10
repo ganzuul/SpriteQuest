@@ -1,5 +1,5 @@
-import { validateGraphStructure } from './contracts.js?v=0.26.0';
-import { graphSemanticSignature, graphDocumentSignature } from './ports.js?v=0.26.0';
+import { validateGraphStructure } from './contracts.js?v=0.27.0';
+import { graphSemanticSignature, graphDocumentSignature } from './ports.js?v=0.27.0';
 
 /** Pure dual-precondition boundary shared by composition and immutable definition revisions. */
 export function prepareGraphCandidate(original, candidate, addedEdgeIds = [], removedEdgeIds = []) {

@@ -1,16 +1,16 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { fixture, mouse, dom } from './canvas-fixture.mjs';
-import { nodeCard } from '../src/canvas/presentation.js?v=0.26.0';
-import { createNativeWireBridge } from '../src/ui/native-wire-bridge.js?v=0.26.0';
-import { prepareNativeSearchCatalog } from '../src/ui/native-search-catalog.js?v=0.26.0';
+import { nodeCard } from '../src/canvas/presentation.js?v=0.27.0';
+import { createNativeWireBridge } from '../src/ui/native-wire-bridge.js?v=0.27.0';
+import { prepareNativeSearchCatalog } from '../src/ui/native-search-catalog.js?v=0.27.0';
 import { prepareNativeConnectionEdit } from '../src/workflow/connection-edits.js';
 import { captureGraphEditContext, commitPreparedGraph } from '../src/workflow/transactions.js';
 
 const settle = async () => { for (let i = 0; i < 10; i++) await Promise.resolve(); };
 let sequence = 0;
 function nativeFixture(options = {}) {
-    const root = { id: 'canvas-native-' + ++sequence, schema: 3, runtime: 2, mode: 'native-pre', nodes: {
+    const root = { id: 'canvas-native-' + ++sequence, schema: 3, runtime: 2, mode: 'native-unified', nodes: {
         source: { id: 'source', type: 'workflow', operation: 'scene-context', x: 20, y: 30 },
         first: { id: 'first', type: 'workflow', operation: 'smart-compactor', x: 320, y: 30 },
         second: { id: 'second', type: 'workflow', operation: 'smart-compactor', x: 600, y: 30 },

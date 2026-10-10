@@ -22,7 +22,7 @@ test('a settings-free launch opens the current disabled zero-request workflow', 
     await expect(page.locator('.pc-node-output,.pc-port-key,.pc-port-stage,.pc-tok')).toHaveCount(0);
     await expect(page.getByLabel('Workflow mode',{exact:true})).toHaveCount(0);
     const before=await page.evaluate(()=>JSON.stringify(window.canvasHarness.graph));
-    await rootCommand(page); await expect(page.locator('.pc-root')).toContainText('Enable this open workflow, then Send in SillyTavern.');
+    await expect(page.locator('.pc-root-run')).toHaveCount(0); await expect(page.locator('.pc-root-stop')).toHaveCount(0);
     await expect(page.locator('.pc-run-meter-label')).toHaveText('Not run');
     expect(await page.evaluate(()=>JSON.stringify(window.canvasHarness.graph))).toBe(before);
     expect(await page.evaluate(()=>window.canvasHarness.providerCalls())).toBe(0);

@@ -6,7 +6,7 @@ import { createWorkflowDocumentSession } from '../src/ui/document-session.js';
 import { createWorkflowFileAccess } from '../src/ui/workflow-file-access.js';
 import { createGraphViewSession } from '../src/ui/graph-view-session.js';
 import { prepareWorkspaceViews } from '../src/ui/workspace-preparation.js';
-import { createLibraryWorkflow } from '../src/workflow/library/subgraphs.js';
+import { fixtureLibraryWorkflow as createLibraryWorkflow } from './helpers/workflow-fixtures.mjs';
 import { makeLocalCopy } from '../src/workflow/definition-library.js';
 import { serializeWorkflowDocument, parseWorkflowDocument } from '../src/workflow/document-file.js';
 import { exportWorkflow, parseWorkflow } from '../src/workflow/packages.js';
@@ -102,4 +102,14 @@ test('portable Export from a child tab receives the root graph and strips bindin
     const exported = accepted(parseWorkflow(await f.downloads[0].blob.text())); assert.equal(exported.id, root.id); assert.deepEqual(Object.keys(exported.nodes).sort(), Object.keys(root.nodes).sort());
     assert.equal(exported.roles.Analysis.profileId, null); assert.equal(exported.localDefinitionOwners, undefined); assert.equal(JSON.stringify(exported).includes('local-nested-profile'), false);
     assert.deepEqual(root, before); assert.equal(views.readEditor().view.key, activeKey); f.later.forEach(callback => callback()); assert.deepEqual(f.revoked, ['blob:workflow-0']);
+});
+
+
+test('archive recovery downloads the portable root API result and ignores an empty archive', async () => {
+    const downloads = [], json = JSON.stringify({ kind: 'lattice-workflow-archive', schema: 1, graphs: { retired: { mode: 'native-pre' } } });
+    let available = json;
+    const env = { exportArchivedWorkflows: () => available, downloadGraphViewJSON: (...args) => downloads.push(args), toast() { assert.fail('No archive error'); } };
+    const run = await controllerFunction('onExportArchivedWorkflows', env);
+    assert.equal(run(), true); assert.deepEqual(downloads, [[json, 'lattice-archived-workflows.json']]);
+    available = null; assert.equal(run(), false); assert.equal(downloads.length, 1);
 });

@@ -4,7 +4,7 @@
 
 LATTICE is a workspace for designing writing processes as connected, inspectable systems. A workflow can prepare context, assemble structured direction, transform text, propose edits, and expose a reviewed result. Subgraphs let you turn a useful sequence into a reusable tool.
 
-This manual follows the 0.26.0 interface. Screenshots use synthetic writing material on the local demonstration host. Completed demonstrations are deterministic and make zero model calls. Model planning screenshots show configuration before a model connection is bound.
+This manual follows the 0.27.0 interface. Screenshots use synthetic writing material on the local demonstration host. Completed demonstrations are deterministic and make zero model calls. Model planning screenshots show configuration before a model connection is bound.
 
 ## Contents
 
@@ -25,12 +25,12 @@ This manual follows the 0.26.0 interface. Screenshots use synthetic writing mate
 
 ![LATTICE workspace showing a structured guidance workflow, recorded output, node shelf, and selected Compose settings](images/workspace-overview.png)
 
-*Structured guidance after a successful Run. The selected Compose receives Data and emits Guidance; the preview displays the recorded artifact.*
+*Structured composition after a successful Run to here. The selected Compose receives Data and emits Guidance; the preview displays the recorded artifact.*
 
 | Area | Use it for |
 | --- | --- |
 | Menu bar | File operations, editing, graph navigation, node discovery, memory recall, and tools |
-| Workflow bar | Open document name and status, undo/redo, Run/Stop, Details, and Enable Lattice |
+| Workflow bar | Open document name and status, undo/redo, Stop while busy, Details, and Enable Lattice |
 | Preview above the graph | Inspect a recorded output and its artifact tabs; pin it or follow selection |
 | Graph tabs | Switch between the root **Graph 1** and opened subgraph bodies |
 | Graph editor | Arrange nodes and connect typed input/output pins |
@@ -38,33 +38,33 @@ This manual follows the 0.26.0 interface. Screenshots use synthetic writing mate
 | Details on the right | Configure the selected node, its presentation, and any model binding |
 | Run meter at bottom left | Open execution details and expanded subgraph stages |
 
-The workflow bar reports the open document’s name, modified/saved status, phase and request bound. Opening or editing a document does not change **Enable Lattice** or make a provider request. Send uses the open root document when Lattice is enabled.
+The workflow bar reports the open document’s name, modified/saved status and request bound. Opening or editing a document does not change **Enable Lattice** or make a provider request. Send uses the open root document when Lattice is enabled.
 
 Use **Tools → Theme and colours** to choose Ember, Lattice, Ash, Graphite, Slate, Obsidian, Harbor or Signal, or customize the selected theme. Ember follows SillyTavern's panel, text, controls and quote accent. Harbor uses blue and amber; Signal uses high contrast grayscale. Both add pin shapes and wire patterns, with a visible type-cue legend in the picker.
 
-**Enable Lattice** enables host integration for the open Pre or unified document. A unified workflow starts through ordinary SillyTavern **Send**, prepares guidance, and resumes from its owned completed reply. Supported **Run to here** paths preview dependencies without accepting effects; a full unified graph containing Generate Reply requires that owned native generation. Legacy tools retain manual **Run**: a guidance run previews its result, and a later Send executes the open Pre workflow again when Lattice is enabled. Reviewed reply editing needs an explicit Apply action.
+**Enable Lattice** enables host integration for the open unified document. A unified workflow starts through ordinary SillyTavern **Send**, prepares guidance, and resumes from its owned completed reply. Supported **Run to here** paths preview dependencies without accepting effects; a full unified graph containing Generate Reply requires that owned native generation. Reviewed reply editing needs an explicit Apply action.
 
-**Unified** keeps Preparation and Response stages in one graph around a single **Generate Reply · SillyTavern** boundary. Choose **File → Open workflow…**, enable Lattice, then Send normally. Inspect **Review / Publish · Host result** in Preview and Apply to add a new swipe preserving the original and accept its staged effects. Opening a workflow makes it the active document without changing **Enable Lattice**.
+**Unified** keeps Preparation and Response stages in one graph around a single **Generate Reply · SillyTavern** boundary. Open the desired unified document, select **Enable Lattice**, then Send normally. Inspect **Review / Publish · Host result** in Preview and Apply to add a new swipe preserving the original and accept its staged effects. Opening a workflow makes it the active document without changing **Enable Lattice**.
 
-Legacy **Before reply (Pre)** graphs prepare guidance before normal Send; legacy **After reply (Post)** graphs work manually from a completed reply. There is no separate phase assignment. Running a reply repair does not itself change the reply. Text transformations can run in either stage; reply-specific sources and outputs still require their matching host context. The [unified guide](unified-workflows.md#apply-an-example-to-story-2) gives the actual Story-2/default-user setup.
+Executable roots are unified. Retained shared tools have Preparation/Response stage requirements, and their intermediate outputs remain diagnostics. Text transformations can run in either stage; reply-specific sources and outputs still require their matching host context. The [unified guide](unified-workflows.md#apply-an-example-to-story-2) gives the actual Story-2/default-user setup.
 
 ## Start from a working example
 
 1. Open the LATTICE logo on the left of the chat bar or type `/lattice`.
 2. Choose **File → Open examples…**, immediately below **Open workflow…**.
-3. Choose **Build a brief from JSON** (lesson 3). The picker closes and its independent, editable copy becomes the current workflow.
-4. Click **Run**. This lesson needs no model connection or existing reply.
-5. Select nodes in turn to inspect the source Text, decoded Data, selected fields, and composed Guidance.
+3. Choose **12 · Plan, write, polish, and annotate one reply**. The picker closes and its independent, editable copy becomes the current workflow.
+4. Configure Revise Draft, Extract and Enrich in Details. Keep the document open, select **Enable Lattice**, and Send normally.
+5. Select recorded nodes to inspect guidance, the owned Draft, revision and notes before applying Review / Publish.
 
-![Open examples picker with canvas thumbnails and the first nine lessons, including Build a brief from JSON](images/examples-picker.png)
+![Thirty-lesson examples browser with goal search and difficulty filters](images/examples-curriculum.png)
 
-*Choose a named tile to open its native workflow immediately. Build a brief from JSON is the third lesson.*
+*Choose a lesson to inspect its setup, checkpoints and call budget, then open its independent unified workflow.*
 
-The picker contains unified story workflows and legacy learning examples. Opening a tile creates a fresh copy as the active document. Unified examples keep their preparation and response in one workflow. Legacy Pre/Post companions validate together and remain available through **File → Recover previous workflows**. Replacing a modified document offers **Save**, **Don't Save**, or **Cancel**. Opening makes no model request and preserves the current **Enable Lattice** setting.
+The picker contains [30 numbered unified lessons](examples.md), with goal/technique search, difficulty filters and lesson details. Opening a tile creates a fresh copy every time. Each lesson keeps its preparation and response in one workflow. The copy replaces the active document after guarding modified work. Opening makes no provider request and preserves the **Enable Lattice** setting; earlier unified documents can be recovered through the File menu.
 
-New ordinary text-model nodes and canonical legacy starters select **Active SillyTavern model**, which follows your configured host connection and model. Inspect an ordinary model node’s grey profile bar or **Details → Connection profile**; choose a saved profile when that node needs a fixed connection. The connection’s model is the default; a node model override is optional. Imported unified recipes can have unassigned local connections, including For Each helper roles, so follow their setup instructions. Configure the open unified example before enabling Lattice and using Send; inspect legacy tools with manual Run before enabling their host integration. Pending Node Details text, model override mode/value, and boundary drafts survive browsing and returning to their qualified node; invalid JSON still requires correction before Save.
+New ordinary text-model nodes select **Active SillyTavern model**, which follows your configured host connection and model. Inspect an ordinary model node’s grey profile bar or **Details → Connection profile**; choose a saved profile when that node needs a fixed connection. The connection’s model is the default; a node model override is optional. Imported unified recipes can have unassigned local connections, including For Each helper roles, so follow their setup instructions. Configure the open unified example before enabling Lattice and using Send. Run to here inspects supported outputs without acceptance. Pending Node Details text, model override mode/value, and boundary drafts survive browsing and returning to their qualified node; invalid JSON still requires correction before Save.
 
-The [quick start](lattice-workspace.md) walks through changing a brief and trying Literal cleanup. Scene guidance and Reviewed AI De-slop use auxiliary model operations; their canonical starters follow **Active SillyTavern model**, and each node can instead use a saved profile selected in its bar or Details.
+The [quick start](lattice-workspace.md) walks through the zero-auxiliary-call unified starter and diagnostic authoring. Choose a saved profile in each model node when it needs a fixed connection.
 
 There are three useful scales of work:
 
@@ -102,7 +102,7 @@ In Harbor and Signal, **Context** is a filled circle, **Text** a ring, **Data** 
 
 *An authored Context assembly graph. One branch selects broader context, another provides recent messages, and Context Join combines them before planning.*
 
-Connections define dependency order; card positions are your visual organization. Context Join consumes its declared input slots in order, deduplicates identical source identities, and reports conflicts or reintroduced material. In this screenshot, the Response Plan has no Analysis binding yet, so the full Run is unavailable. The selected Context Join's **Run to here** has a zero-call bound.
+Connections define dependency order; card positions are your visual organization. Context Join consumes its declared input slots in order, deduplicates identical source identities, and reports conflicts or reintroduced material. In this screenshot, the Response Plan has no Analysis binding yet, so its model-backed output is unavailable. The selected Context Join's **Run to here** has a zero-call bound.
 
 ## Navigate and edit the graph
 
@@ -152,7 +152,7 @@ Constraint: {{data:/constraint}}
 Tone: {{data:/tone}}
 ```
 
-The original starter supplies direction and constraint. Add a tone field to its JSON source, map it in Select Fields, then add the tone placeholder to the final Compose. Missing paths produce an issue rather than incomplete output. See [Compose](node-reference.md#compose) and [Select Fields](node-reference.md#select-fields) for exact formats.
+The synthetic composition fixture supplies direction and constraint. Add a tone field to a JSON source, map it in Select Fields, then add the tone placeholder to the final Compose. Missing paths produce an issue rather than incomplete output. See [Compose](node-reference.md#compose) and [Select Fields](node-reference.md#select-fields) for exact formats.
 
 ### Deterministic editorial rules
 
@@ -166,13 +166,13 @@ Draft mode produces Patches for the reply-review pipeline. Text mode produces Te
 
 New **Style Transfer**, **Format Transfer** and **Terminology Map** nodes use **Input type → Text** and return Text in either graph phase. Connect a Text source such as Compose, plus a reference: Text or Data for Style/Format Transfer, and a Data glossary for Terminology Map. Style/Format Transfer can also receive Context. They make at most one Prose request; Terminology Map makes none.
 
-To edit a completed reply, choose **Input type → Draft** in an After reply graph, connect Reply Snapshot, and route the resulting Patches through Validate Patches → Review Gate → Apply Reply. Saved Transpose nodes that omit Input type retain this Draft form. Mode, Scope, Strength and Protected literals are independent: for dialogue characterization, choose **Style Transfer → Mode → Character voice** and **Scope → Dialogue** separately. Changing Mode preserves the current Scope. See [Transpose](node-reference.md#transpose) for the full controls.
+To edit a completed reply, choose **Input type → Draft** in the Response stage, connect a source-bound Draft, and route Patches through validation for candidate diagnostics. Publication requires a final owned Draft ending in Review / Publish. Saved Transpose nodes that omit Input type retain this Draft form. Mode, Scope, Strength and Protected literals are independent: for dialogue characterization, choose **Style Transfer → Mode → Character voice** and **Scope → Dialogue** separately. Changing Mode preserves the current Scope. See [Transpose](node-reference.md#transpose) for the full controls.
 
 ### Context and model controls
 
 ![Scene guidance graph with Scene Context, Smart Compactor, Response Plan, and Guidance](images/scene-planning-graph.png)
 
-*The Scene guidance starter separates context preparation from the planning request and the final guidance budget.*
+*This synthetic scene-guidance fixture separates context preparation from the planning request and the final guidance budget.*
 
 Smart Compactor lets you choose selection or model-backed compression, a target context budget, recent messages to preserve, and exact protected literals. Response Plan has operation instructions and a completion cap.
 
@@ -184,11 +184,11 @@ Each ordinary text-model node has a grey connection bar below its card and small
 
 **For Each → Helper model bindings** configures the exact pinned helper’s ordinary text-model roles separately; explicit nested bindings retain precedence. **Fast Decision** instead uses its explicit typed connection in **Tools → Fast connections…** and its node connection selector, with authored thresholds and opt-in fallback. The ordinary Active/Saved profile picker does not convert a chat model into a Jev/Laya typed endpoint.
 
-After configuration, keep the Pre or unified document open and select **Enable Lattice**, then Send normally. Post documents use manual **Run** and review.
+After configuration, keep the unified document open and select **Enable Lattice**, then Send normally.
 
 ## Run and inspect results
 
-For a legacy/manual tool, click **Run** to execute the root. For a unified graph containing Generate Reply, use ordinary SillyTavern **Send** after opening the workflow and enabling Lattice; supported **Run to here** previews remain diagnostic. The toolbar becomes **Stop** while busy. The bottom-left meter records completion or failure; click it for node-level details, including expanded stages within subgraphs.
+Use ordinary SillyTavern **Send** with the configured unified document open and Lattice enabled. Supported **Run to here** previews execute only selected dependencies and remain diagnostic. The toolbar becomes **Stop** while busy. The bottom-left meter records completion or failure; click it for node-level details, including expanded stages within subgraphs.
 
 ![Run details showing a completed five-stage deterministic workflow and zero requests](images/run-details.png)
 
@@ -212,23 +212,21 @@ Changing an operation setting or a connection cancels active work and makes prev
 
 ## Review a proposed reply edit
 
-A unified workflow records its final **Review / Publish · Host result** after the owned native Send and response processing. Select that root result in Preview, compare the original and candidate, and Apply or Reject. Apply preserves the original swipe and accepts only that result’s staged effects. The following steps cover the legacy manual repair tools.
+A unified workflow records **Review / Publish · Host result** after its owned native Send and response processing.
 
-1. Wait for the latest assistant reply to finish. The supported target is a completed text-only reply.
-2. Run **Literal cleanup** or a configured **Reviewed AI De-slop** workflow.
-3. In Preview, select **Apply Reply · Host result** after the full root Run.
-4. Read the original, candidate, findings, and changes in the available artifact tabs.
+1. Configure the response processing and final Review / Publish Draft input.
+2. Keep the configured unified document open, select **Enable Lattice**, and Send normally.
+3. After completion, select **Review / Publish · Host result** in Preview.
+4. Compare the original, candidate, notes, findings and changes.
 5. Choose **Apply reviewed candidate** or **Reject candidate**.
 
-![Completed Literal cleanup preview with the root candidate and explicit Apply and Reject controls](images/review-candidate.png)
+![Owned unified reply result with explicit Apply and Reject controls](images/review-candidate.png)
 
-*The candidate artifact contains both `original` and revised `text`. Selecting this root terminal exposes the review actions.*
+*The root Review / Publish result owns application. Apply preserves the native original as a swipe and accepts only this result's staged effects.*
 
-Literal cleanup records a structured candidate with `original` and `text`; the AI repair example records separate original/candidate text tabs. Text Rules, Validate Patches, Review Gate, and subgraph outputs are useful intermediate diagnostics, but the root Host result owns application.
+Text Rules, Validate Patches, Review Gate, Apply Reply and subgraph outputs retain useful intermediate diagnostics. Run to here never creates Apply authority. Source edits, chat/actor/swipe changes, starting generation or changing workflow semantics can invalidate a result; use a fresh owned Send.
 
-Apply rechecks the chat/message/swipe and source text, then creates a new swipe preserving the original. Switching source, editing the reply, starting generation, or changing workflow semantics can invalidate a candidate. Run again against the current source if Apply becomes unavailable.
-
-Local application and durable saving are reported separately. The host save wrapper does not positively acknowledge persistence. Other extensions may already have processed the original reply; edit/swipe events do not prove their memory was re-extracted. See [reply review limits](native-workflows.md#review-a-reply-repair).
+Local application and durable saving are reported separately. A resolving host save wrapper does not positively acknowledge disk persistence. See [reply review limits](native-workflows.md#review-a-reply-repair).
 
 ## Reuse a process with subgraphs
 
@@ -236,11 +234,11 @@ A subgraph packages operations behind named, typed inputs/outputs. Nested subgra
 
 ### Place and open a reusable tool
 
-Choose a saved definition from **Subgraphs → Library** to insert a copy into the current editable graph. The supplied [Literal cleanup subgraph JSON](../workflows/subgraphs/literal-cleanup.json) illustrates a Draft → Patches interface. Connect its Draft input from Reply Snapshot and its Patches output into Validate Patches.
+Choose a saved definition from **Subgraphs → Library** to insert a copy into the current editable graph. The supplied [Literal cleanup subgraph JSON](../workflows/subgraphs/literal-cleanup.json) illustrates a Draft → Patches interface. Connect a compatible source-bound Draft and route its Patches into validation for diagnostic inspection.
 
 ![Literal cleanup subgraph instance connected between Reply Snapshot and Validate Patches in a parent workflow](images/subgraph-instance.png)
 
-*The wrapper exposes Draft → Patches. Validation, Review Gate, and Apply Reply remain visible in the parent.*
+*The wrapper exposes Draft → Patches. Validation and candidate inspection remain visible in the parent; publication requires Review / Publish.*
 
 Double-click the wrapper to open its body in a graph tab. **Graph 1** remains the root. Breadcrumbs show where you are; each instance keeps its own camera, selection, and presentation, even if several use the same definition.
 
@@ -248,7 +246,7 @@ Double-click the wrapper to open its body in a graph tab. **Graph 1** remains th
 
 *A pinned body opens read-only. You can inspect its ports, settings, and recorded execution without modifying the shared definition.*
 
-Closing a tab hides that view. Use **Graph view actions** to reopen it. Switching tabs does not stop a root run, and the toolbar Run action still belongs to the root workflow.
+Closing a tab hides that view. Use **Graph view actions** to reopen it. Switching tabs does not stop a root run, and Stop still controls the active root run.
 
 ### Edit one instance
 
@@ -262,7 +260,7 @@ Click an input or output block to rename the port, change its artifact type, or 
 
 ![Subgraph input selected with its port settings and ordinary Delete action in Details](images/subgraph-interface.png)
 
-Workflow input/output operations such as Scene Context, Reply Snapshot, Guidance, and Apply Reply stay in the root graph. Select the processing nodes between them to create a subgraph. Existing boundary blocks remain in their containing subgraph.
+Native source, Memory and publication operations remain at the root where their contracts require it. Select the processing nodes between them to create a subgraph. Existing boundary blocks remain in their containing subgraph.
 
 Right-click a wrapper and choose **Add to Subgraphs** to save it for reuse. Name it and choose **Save new subgraph** or explicitly update an existing shelf entry. Editing a body does not automatically save it. Updates affect future insertions; existing placed copies keep their exact contents. Right-click a saved entry in the shelf to **Delete** it or **Open saved definition** for inspection. Deleting a shelf entry preserves placed copies. **Export subgraph** on a wrapper downloads its portable JSON package.
 
@@ -282,16 +280,17 @@ The open document is an editable draft. Committed edits and workspace views are 
 
 | Action | Result |
 | --- | --- |
-| File → New workflow | Offer Save, Don’t Save, or Cancel for modified work, then open an Untitled workflow |
+| File → New workflow | Offer Save, Don't Save, or Cancel for modified work, then open an Untitled workflow |
 | File → Open workflow… | Validate the chosen JSON file, guard modified work, then replace the active document |
 | File → Open Recent | Reopen a previously accessed file; the browser may request permission again |
 | File → Open examples… | Open an independent editable example copy |
-| File → Recover previous workflows | Open a retained earlier workflow or example companion as an unsaved draft |
+| File → Recover previous workflows | Open a retained earlier unified workflow as an unsaved draft |
 | File → Save workflow | Write the editable document to its current file, or choose a location on its first save |
 | File → Save As… | Choose another file and make it the document’s save destination |
 | File → Download JSON… | Download an editable document copy when direct file access is unavailable |
 | File → Import into graph… | Review an additive insertion into the active graph |
-| File → Export workflow JSON… | Download a portable sharing package with pinned definitions |
+| File → Export workflow JSON… | Download a portable unified sharing package with pinned definitions |
+| File → Export archived workflows… | Download retired pre/post roots, original bindings and active selection as recovery JSON |
 | File → Close workspace | Close the editor while retaining the active recovery draft and workspace views |
 | Wrapper → Export subgraph | Download an individual reusable definition |
 | Wrapper → Add to Subgraphs; shelf entry → Delete | Save reusable definitions and remove shelf entries |
@@ -302,9 +301,11 @@ Direct file saving and Open Recent require a browser with supported file access.
 
 Other browsers offer **Download JSON…** instead of direct Save and Save As. A download cannot confirm that the file reached disk, so the draft stays modified. If you choose **Download JSON** in a replacement prompt, the JSON copy downloads and the document stays open; choose **Don't Save** when you are ready to switch.
 
-An additive import requires matching phases, assigns fresh node identities, and preserves internal connections and relative layout. Review role requirements, terminal changes, and request bounds before accepting the insertion. Import itself does not run or enable the workflow.
+An additive import requires matching stage contracts, assigns fresh node identities, and preserves internal connections and relative layout. Review role requirements, terminal changes, and request bounds before accepting the insertion. Import itself does not run or enable the workflow.
 
 Save and Download JSON retain local connection bindings and supported workspace views in an editable `lattice-document` file; credentials and runtime queues are excluded. Export downloads a portable `.workflow.json` sharing package and strips local saved-profile IDs. Recipients rebind fixed connections before running. **Active SillyTavern model** remains portable in nodes, roles and occurrence overrides, following the recipient’s configured host connection and model. Both file formats open through **File → Open workflow…** and carry pinned definitions. Unsupported versions, dangling connections, incompatible artifacts, or cycles produce validation issues.
+
+Retired pre/post roots remain in a cold archive and cannot open as current documents, execute, or import into current workflows. **File → Export archived workflows…** downloads their originals for recovery. Rebuild needed logic in a new unified graph with explicit stages; archive recovery makes no requests and performs no automatic conversion.
 
 ## Develop your own writing system
 
@@ -315,11 +316,11 @@ Start from the material and result you need, then choose the operations between 
 | Reusable scene brief | JSON source → JSON Decode → Select Fields → Compose → Guidance | Required fields, template output, final guidance budget |
 | Protected context preparation | Scene Context → Smart Compactor → Response Plan → Guidance | Preservation report, pins, planned direction, call caps |
 | Combined context branches | Context sources → optional selection → Context Join → Response Plan | Duplicate/conflicting identities and reintroduction reports |
-| Deterministic editorial cleanup | Reply Snapshot → Text Rules → Validate Patches → Review Gate → Apply Reply | Exact replacements and source freshness |
-| Model-assisted editorial repair | Reply Snapshot → Pattern Scan → Repair → Validate Patches → Review Gate → Apply Reply | Selected spans, protected wording, candidate and model trace |
+| Deterministic editorial cleanup | Reply Snapshot → Text Rules → Validate Patches → Review Gate → Apply Reply diagnostics | Exact replacements and source freshness |
+| Model-assisted editorial repair | Reply Snapshot → Pattern Scan → Repair → Validate Patches → Review Gate → Apply Reply diagnostics | Selected spans, protected wording, candidate and model trace |
 | Shared editorial tool | Draft → cleanup subgraph → Patches, with review in the parent | Interface, editable body settings, pinned contents, parent review path |
 
-The first, fourth, and fifth compositions ship as starter examples; Scene guidance supplies the second. Context assembly and subgraph composition demonstrate how the same tools combine beyond those starters.
+These are processing patterns to author within a unified root. Preparation guidance reaches Generate Reply through a wire; candidate patch pipelines remain diagnostics. Publishing a result requires an owned final Draft and Review / Publish.
 
 The current operations provide one owned native generation, auxiliary Model Call, bounded host context, text/data processing, planning, scoped actor memory, workflow data document mutations and reply review. Arbitrary tool execution, unrestricted filesystem access and image/audio workflows are not implied by the graph editor. Build with the [available node contracts](node-reference.md) and [unified workflow guide](unified-workflows.md).
 
