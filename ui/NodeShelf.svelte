@@ -4,7 +4,7 @@
     import type { WorkflowView } from './types';
     type ShelfChoice = { id: string; label: string; family: string; phase: string; shortcode?: string; purpose?: string; searchAliases?: readonly string[]; disabledReason?: string; definitionRef?: { id: string; version: number; semanticHash: string } };
     type ClientPoint = { x: number; y: number };
-    let { view, add, choices, choose, shelfSubgraph, readOnly = false }: { view?: WorkflowView; add: (id: string, at?: ClientPoint) => void; choices?: readonly ShelfChoice[]; choose?: (id: string, at?: ClientPoint) => void; shelfSubgraph?: (id: string, action: 'delete' | 'open') => void; readOnly?: boolean } = $props();
+    let { view, choices = [], choose, shelfSubgraph, readOnly = false }: { view?: WorkflowView; choices?: readonly ShelfChoice[]; choose?: (id: string, at?: ClientPoint) => void; shelfSubgraph?: (id: string, action: 'delete' | 'open') => void; readOnly?: boolean } = $props();
     let shelf: HTMLElement;
     let menuPanel = $state<HTMLDivElement>(null!);
     let family = $state(''), search = $state(false), query = $state('');
@@ -16,7 +16,7 @@
     let subgraphAnchor: HTMLButtonElement | null = null;
     const names = FAMILY_PALETTE.map(item => item.name);
     const familyColor = (name: string) => FAMILY_PALETTE.find(item => item.name === name)?.color;
-    type Entry = { id: string; title: string; compatible: boolean; phase: string; family: string; shortcode: string; icon: string; group?: string; purpose?: string; searchAliases?: readonly string[]; disabledReason?: string; catalog?: boolean; definitionRef?: { id: string; version: number; semanticHash: string } };
+    type Entry = { id: string; title: string; compatible: boolean; phase: string; family: string; shortcode: string; icon: string; group?: string; purpose?: string; searchAliases?: readonly string[]; disabledReason?: string; definitionRef?: { id: string; version: number; semanticHash: string } };
     let gesture: { entry: Entry; pointerId: number; button: HTMLButtonElement; start: ClientPoint; point: ClientPoint } | null = null;
     let holdTimer: ReturnType<typeof setTimeout> | null = null;
     let suppressedButton: HTMLButtonElement | null = null;
@@ -64,30 +64,25 @@
         select(entry);
     }
     function entries(name = family): Entry[] {
-        if (choices !== undefined) {
-            const canonical = new Map<string, { choice: ShelfChoice; aliases: string[] }>();
-            for (const choice of choices.filter(entry => entry.family === name)) {
-                const operation = choice.id.startsWith('operation:') ? choice.id.split(':')[1] : '';
-                const key = operation ? 'operation:' + operation : choice.id;
-                const previous = canonical.get(key);
-                const aliases = [choice.label, choice.id, choice.purpose ?? '', choice.shortcode ?? '', ...(choice.searchAliases ?? [])];
-                if (!previous) canonical.set(key, { choice, aliases });
-                else {
-                    previous.aliases.push(...aliases);
-                    if (choice.id === key) previous.choice = choice;
-                }
+        const canonical = new Map<string, { choice: ShelfChoice; aliases: string[] }>();
+        for (const choice of choices.filter(entry => entry.family === name)) {
+            const operation = choice.id.startsWith('operation:') ? choice.id.split(':')[1] : '';
+            const key = operation ? 'operation:' + operation : choice.id;
+            const previous = canonical.get(key);
+            const aliases = [choice.label, choice.id, choice.purpose ?? '', choice.shortcode ?? '', ...(choice.searchAliases ?? [])];
+            if (!previous) canonical.set(key, { choice, aliases });
+            else {
+                previous.aliases.push(...aliases);
+                if (choice.id === key) previous.choice = choice;
             }
-            return [...canonical.values()].map(({ choice, aliases }) => {
-                const operation = choice.id.startsWith('operation:') ? choice.id.split(':')[1] : '';
-                const metadata = paletteForOperation(operation);
-                const title = operation ? choice.label.split(' · ')[0] : choice.label;
-                const boundary = choice.id.startsWith('boundary:');
-                return { ...choice, title, compatible: !choice.disabledReason && !!choose, catalog: true, shortcode: operation ? metadata.shortcode || choice.shortcode || '' : choice.shortcode ?? metadata.shortcode, group: name === 'Subgraphs' ? boundary ? 'Interface' : 'Library' : undefined, icon: name === 'Subgraphs' ? boundary ? PALETTE_GROUPS.Routing.icon : PALETTE_GROUPS.Library.icon : metadata.icon, searchAliases: aliases };
-            });
         }
-        const data = view?.families.find(entry => entry.name === name);
-        if (!data) return [];
-        return data.operations.filter(entry => name !== 'Surface' || !['pattern-scan', 'validate-patches'].includes(entry.id)).map(entry => ({ ...entry, ...paletteForOperation(entry.id), family: name }));
+        return [...canonical.values()].map(({ choice, aliases }) => {
+            const operation = choice.id.startsWith('operation:') ? choice.id.split(':')[1] : '';
+            const metadata = paletteForOperation(operation);
+            const title = operation ? choice.label.split(' · ')[0] : choice.label;
+            const boundary = choice.id.startsWith('boundary:');
+            return { ...choice, title, compatible: !choice.disabledReason && !!choose, shortcode: operation ? metadata.shortcode || choice.shortcode || '' : choice.shortcode ?? metadata.shortcode, group: name === 'Subgraphs' ? boundary ? 'Interface' : 'Library' : undefined, icon: name === 'Subgraphs' ? boundary ? PALETTE_GROUPS.Routing.icon : PALETTE_GROUPS.Library.icon : metadata.icon, searchAliases: aliases };
+        });
     }
     function closeSubgraph(restore = false) { subgraphMenu = null; if (restore) subgraphAnchor?.focus({ preventScroll: true }); }
     function close(restore = false) { endGesture(); opening++; family = ''; search = false; closeSubgraph(); if (restore) anchor?.focus({ preventScroll: true }); }
@@ -126,8 +121,8 @@
         const current = entries(entry.family).find(item => item.id === entry.id);
         if (!current?.compatible || readOnly) return;
         close(true);
-        if (at) { if (current.catalog) choose?.(current.id, at); else add(current.id, at); }
-        else if (current.catalog) choose?.(current.id); else add(current.id);
+        if (at) choose?.(current.id, at);
+        else choose?.(current.id);
     }
     async function openSubgraph(button: HTMLButtonElement, point?: { x: number; y: number }) {
         const entry = entries('Subgraphs').find(item => item.id === button.dataset.shelfChoice);

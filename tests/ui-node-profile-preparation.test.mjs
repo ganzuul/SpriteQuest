@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { starterGraph } from '../src/workflow/starters.js?v=0.26.0';
+import { fixtureGraph as starterGraph } from './helpers/workflow-fixtures.mjs';
 import { createGraphViewSession } from '../src/ui/graph-view-session.js?v=0.26.0';
 import { projectPreparedWorkflow } from '../src/ui/workflow-surface.js?v=0.26.0';
 import { prepareNativeConnectionEdit } from '../src/workflow/connection-edits.js?v=0.26.0';

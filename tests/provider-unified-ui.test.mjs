@@ -1,24 +1,11 @@
+import { withNativeBoundary } from './helpers/workflow-fixtures.mjs';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { prepareWorkflowProjection, projectPreparedWorkflow } from '../src/ui/workflow-surface.js?v=0.26.0';
 import { prepareWorkspaceViews, projectWorkspacePanels } from '../src/ui/workspace-preparation.js?v=0.26.0';
 import { createGraphViewSession } from '../src/ui/graph-view-session.js?v=0.26.0';
-const api = await import('../src/ui/provider-settings.js?v=0.26.0').catch(() => ({}));
-const graph = () => ({id:'provider-ui',name:'Provider UI',schema:3,runtime:2,mode:'native-pre',roles:{},nodes:{source:{id:'source',type:'workflow',operation:'text',text:'A scene.'},decide:{id:'decide',type:'workflow',operation:'decision',inputKind:'text'},render:{id:'render',type:'workflow',operation:'compose',mode:'template',outputKind:'guidance',template:'Decision: {{data:/answers}}'},guidance:{id:'guidance',type:'workflow',operation:'guidance'}},wires:{wire:{id:'wire',route:'wire',from:'source',fromPort:'out',to:'decide',toPort:'in'},data:{id:'data',route:'wire',from:'decide',fromPort:'out',to:'render',toPort:'data'},publish:{id:'publish',route:'wire',from:'render',fromPort:'out',to:'guidance',toPort:'in'}},portals:{},definitions:{},groups:{}});
+const graph = () => withNativeBoundary({id:'provider-ui',name:'Provider UI',schema:3,runtime:2,mode:'native-unified',roles:{},nodes:{source:{id:'source',type:'workflow',operation:'compose',sections:[{name:'scene',text:'A scene.'}],outputKind:'text'},decide:{id:'decide',type:'workflow',operation:'decision',inputKind:'text'},render:{id:'render',type:'workflow',operation:'compose',mode:'template',outputKind:'guidance',template:'Decision: {{data:/answers}}'},guidance:{id:'guidance',type:'workflow',operation:'guidance'}},wires:{wire:{id:'wire',route:'wire',from:'source',fromPort:'out',to:'decide',toPort:'in'},data:{id:'data',route:'wire',from:'decide',fromPort:'out',to:'render',toPort:'data'},publish:{id:'publish',route:'wire',from:'render',fromPort:'out',to:'guidance',toPort:'in'}},portals:{},definitions:{},groups:{}}, 'guidance');
 const project = (root, options = {}) => projectPreparedWorkflow(prepareWorkflowProjection(root, options));
-
-test('unified assignment and creation use dedicated workflow storage while legacy phases stay explicit', () => {
- assert.equal(typeof api.workflowBindingKey,'function');
- assert.equal(api.workflowBindingKey('native-unified'),'workflowGraphId');
- assert.equal(api.workflowBindingKey('native-pre'),'preGraphId');
- assert.equal(api.workflowBindingKey('native-post'),'postGraphId');
- assert.equal(api.workflowBindingKey('garbage'),null);
- assert.equal(api.workflowBindingKey('constructor'),null);
- assert.equal(api.workflowBindingKey('toString'),null);
- assert.equal(api.workflowCreationPhase(),'unified');
- assert.equal(api.workflowCreationPhase('post'),'post');
- assert.equal(api.workflowCreationPhase('garbage'),null);
-});
 
 test('unified Details show editable stages for both-phase tools and fixed lifecycle stages',async()=>{
  const {starterGraph}=await import('../src/workflow/starters.js?v=0.26.0');const root=starterGraph('unified-basic');root.nodes.noteText={id:'noteText',type:'workflow',operation:'compose',phase:'post',sections:[{name:'text',text:'Notes'}],outputKind:'text'};
@@ -28,10 +15,11 @@ test('unified Details show editable stages for both-phase tools and fixed lifecy
 });
 
 
-test('unified assignment takes precedence over a remembered legacy phase binding',()=>{
+test('unified assignment ignores retired binding fields',()=>{
  const root=graph();const view=project(root,{settings:{nativeBindings:{workflowGraphId:'unified',preGraphId:root.id}}});
  assert.equal(view.assigned,false);
- assert.equal(project(root,{settings:{nativeBindings:{workflowGraphId:null,preGraphId:root.id}}}).assigned,true);
+ assert.equal(project(root,{settings:{nativeBindings:{workflowGraphId:root.id}}}).assigned,true);
+ assert.equal(project(root,{settings:{nativeBindings:{workflowGraphId:null,preGraphId:root.id}}}).assigned,false);
 });
 
 

@@ -2,9 +2,10 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { makeRecord } from '../src/workflow/introspection/contracts.js';
 import { advanceState } from '../src/workflow/introspection/context-state.js';
-import { createNativeWorkflowController } from '../src/workflow/host.js';
+import { createNativeWorkflowController,snapshotContext } from '../src/workflow/host.js';
+import {executeIntrospection} from '../src/workflow/introspection/nodes.js';
 import { operationDefaults } from '../src/workflow/catalog.js';
-import { starterGraph } from '../src/workflow/starters.js';
+import {nativeFixture,reviewGraph} from './helpers/native-workflow-fixture.mjs';
 
 let createNativeMemoryAdapter;
 try { ({ createNativeMemoryAdapter } = await import('../src/workflow/introspection/host-memory.js')); } catch (error) { if (error.code !== 'ERR_MODULE_NOT_FOUND') throw error; }
@@ -129,73 +130,47 @@ test('group chats require an actual host-selected actor and unfinished content i
 });
 
 function nativeGraph() {
-    const node = (id, operation, controls = {}) => ({ ...operationDefaults(operation, controls.mode ? { mode: controls.mode } : {}), id, type: 'workflow', x: 0, y: 0, ...controls });
-    return { id: 'memory-native', name: 'Memory track', schema: 3, runtime: 2, mode: 'native-post', roles: {}, groups: {}, portals: {}, definitions: {},
+    const node = (id, operation, controls = {}) => ({ ...operationDefaults(operation, controls.mode ? { mode: controls.mode } : {}), id, type: 'workflow', phase:'post', x: 0, y: 0, ...controls });
+    return { id: 'memory-native', name: 'Memory track', schema: 3, runtime: 2, mode: 'native-unified', roles: {}, groups: {}, portals: {}, definitions: {},
         nodes: { state: node('state', 'memory'), events: node('events', 'memory', { view: 'events' }), track: node('track', 'state', { mode: 'track' }), commit: node('commit', 'memory', { mode: 'commit' }) },
         wires: { state: { id: 'state', route: 'wire', from: 'state', fromPort: 'out', to: 'track', toPort: 'state' }, events: { id: 'events', route: 'wire', from: 'events', fromPort: 'out', to: 'track', toPort: 'events' }, commit: { id: 'commit', route: 'wire', from: 'track', fromPort: 'out', to: 'commit', toPort: 'proposal' } } };
 }
-test('a successful full native post run settles exactly its compiled memory terminal', async () => {
-    const f = fixture(); const graph = nativeGraph(); const controller = createNativeWorkflowController({ context: () => f.c, isBusy: () => false });
-    const result = await controller.runPost(graph);
-    assert.equal(result.ok, true, JSON.stringify(result.error));
-    assert.deepEqual(result.memoryCommit, { applied: true, acknowledged: true, version: 1 });
-    assert.equal(f.writes(), 1);
-    const again = await controller.runPost(graph); assert.equal(again.ok, true, JSON.stringify(again.error)); assert.equal(again.memoryCommit.version, 2);
-    assert.equal(f.c.chatMetadata.latticeIntrospection['native-chat']['character:alice.png'].state.value.payload.tracks.consequences.count, 2);
-});
 test('native target execution returns the intent and never persists it', async () => {
-    const f = fixture(); const graph = nativeGraph(); const controller = createNativeWorkflowController({ context: () => f.c, isBusy: () => false });
+    const f = fixture(); const graph = nativeGraph(); const controller = createNativeWorkflowController({ context: () => f.c, userId:()=> 'default-user', isBusy: () => false });
     const result = await controller.runTarget(graph, { kind: 'terminal', address: { workflowId: graph.id, instancePath: [], nodeId: 'commit' } });
     assert.equal(result.ok, true, JSON.stringify(result.error)); assert.equal(f.writes(), 0); assert.equal(result.memoryCommit, undefined);
 });
 test('a failed independent native branch prevents every memory terminal from settling', async () => {
     const f = fixture(); const graph = nativeGraph();
-    const repair = starterGraph('reviewed-de-slop'); repair.nodes['pattern-scan'].rules = ['Alice'];
+    f.c.chat[1].swipe_info=[{extra:structuredClone(f.c.chat[1].extra),gen_started:2,gen_finished:3}];
+    const repair = reviewGraph();
     Object.assign(graph.nodes, repair.nodes); Object.assign(graph.wires, repair.wires); graph.roles = repair.roles; graph.groups = repair.groups;
     let requests = 0;
-    const controller = createNativeWorkflowController({ context: () => f.c, isBusy: () => false, countTokens: async () => ({ tokens: 10 }), resolveBinding: () => ({ ok: true, data: { profileId: 'fixture', model: 'fixture' } }), request: async () => { requests++; return { ok: false, error: { code: 'REQUEST_FAILED', message: 'Synthetic branch failure' } }; } });
-    const result = await controller.runPost(graph); assert.equal(result.ok, false); assert.equal(f.writes(), 0);
+    const native = nativeFixture(graph,{context:f.c,request:async()=>{requests++;return {ok:false,error:{code:'REQUEST_FAILED',message:'Synthetic branch failure'}};}});
+    const result = await native.generate(graph); assert.equal(result.ok, false); assert.equal(f.writes(), 0);
     assert.equal(requests, 1, JSON.stringify(result.error));
 });
 test('stopping the native controller while selected evidence is pending cannot save late', async () => {
-    const f = fixture(); const graph = nativeGraph(); const controller = createNativeWorkflowController({ context: () => f.c, isBusy: () => false });
+    const f = fixture(); const graph = nativeGraph(); const controller = createNativeWorkflowController({ context: () => f.c, userId:()=> 'default-user', isBusy: () => false });
     const original = globalThis.crypto.subtle.digest.bind(globalThis.crypto.subtle); const entered = deferred(); const release = deferred(); let pause = true;
     globalThis.crypto.subtle.digest = async (...args) => { if (pause) { pause = false; entered.resolve(); await release.promise; } return original(...args); };
     try {
-        const pending = controller.runPost(graph); await entered.promise; controller.cancel('stop'); release.resolve();
+        const pending = controller.runTarget(graph,{kind:'terminal',address:{workflowId:graph.id,instancePath:[],nodeId:'commit'}}); const early=await Promise.race([entered.promise.then(()=>null),pending]);assert.equal(early,null,JSON.stringify(early?.error)); controller.cancel('stop'); release.resolve();
         const result = await pending; assert.equal(result.ok, false); assert.equal(f.writes(), 0);
     } finally { globalThis.crypto.subtle.digest = original; release.resolve(); }
 });
-test('native successful local memory application reports an unconfirmed save separately', async () => {
-    const f = fixture(); f.c.saveMetadata = async () => undefined;
-    const controller = createNativeWorkflowController({ context: () => f.c, isBusy: () => false });
-    const result = await controller.runPost(nativeGraph());
-    assert.equal(result.ok, true, JSON.stringify(result.error)); assert.deepEqual(result.memoryCommit, { applied: true, acknowledged: false, version: 1 });
-    f.c.chat.push({ is_user: true, mes: 'Another settled turn.', send_date: 4 });
-    const next = await controller.runPost(nativeGraph());
-    assert.equal(next.ok, true, JSON.stringify(next.error)); assert.deepEqual(next.memoryCommit, { applied: true, acknowledged: false, version: 2 });
-});
-test('stateless native Reflect receives the current scoped store and fixed model binding', async () => {
-    const f = fixture(); const make = (id, operation, controls = {}) => ({ ...operationDefaults(operation), id, type: 'workflow', x: 0, y: 0, ...controls });
-    const graph = { ...nativeGraph(), id: 'native-reflect', mode: 'native-pre', nodes: { scene: make('scene', 'scene-context'), reflect: make('reflect', 'reflect'), express: make('express', 'express'), guidance: make('guidance', 'guidance') },
-        wires: { scene: { id: 'scene', route: 'wire', from: 'scene', fromPort: 'out', to: 'reflect', toPort: 'context' }, reflect: { id: 'reflect', route: 'wire', from: 'reflect', fromPort: 'out', to: 'express', toPort: 'assessment' }, express: { id: 'express', route: 'wire', from: 'express', fromPort: 'out', to: 'guidance', toPort: 'in' } } };
-    graph.nodes.perspective = { ...operationDefaults('context', { mode: 'perspective' }), id: 'perspective', type: 'workflow', x: 0, y: 0 };
-    graph.wires.scene.to = 'perspective';
-    graph.wires.perspective = { id: 'perspective', route: 'wire', from: 'perspective', fromPort: 'out', to: 'reflect', toPort: 'context' };
-    let transmitted;
-    const controller = createNativeWorkflowController({ context: () => f.c, isBusy: () => false, countTokens: async () => ({ tokens: 12 }), resolveBinding: () => ({ ok: true, data: { profileId: 'fixture-analysis', model: 'fixture-model' } }), request: async request => {
-        transmitted = request;
-        return { ok: true, data: { finish: 'stop', text: JSON.stringify({ brief: 'An apology was accepted.', appraisals: [], conflicts: [], recalls: [], sceneChanges: [], behaviorHints: ['Answer calmly.'], attentionHints: [], recalledEpisodeIds: [] }) } };
-    } });
-    const result = await controller.runPre(graph); assert.equal(result.ok, true, JSON.stringify(result.error)); assert.equal(result.actualCalls, 1); assert.equal(f.writes(), 0);
-    assert.deepEqual(transmitted.binding, { profileId: 'fixture-analysis', model: 'fixture-model' });
-    const prompt = JSON.parse(transmitted.messages[1].content); assert.deepEqual(prompt.state.scope, { chatId: 'one', actorId: 'character:alice.png' }); assert.deepEqual(prompt.state.store, { id: 'native-chat', version: 0 });
+test('stateless Reflect diagnostics receive the current native scoped store in one bounded request',async()=>{
+ const f=fixture(),captured=f.capture(),identity=await captured.readIdentity();assert.equal(identity.ok,true);let transmitted;
+ const binding={profileId:'fixture-analysis',model:'fixture-model'},context=snapshotContext(f.c,{node:{visibilityMode:'public'}});
+ const result=await executeIntrospection({type:'workflow',operation:'reflect',operationVersion:1,mode:'character',maxTokens:2048,instructions:''},{context},{...identity.data,binding,request:async request=>{transmitted=request;return {ok:true,data:{finish:'stop',text:JSON.stringify({brief:'An apology was accepted.',appraisals:[],conflicts:[],recalls:[],sceneChanges:[],behaviorHints:['Answer calmly.'],attentionHints:[],recalledEpisodeIds:[]})}};}});
+ assert.equal(result.ok,true,JSON.stringify(result.error));assert.equal(result.reports.find(report=>report.code==='INTROSPECTION_EXECUTION').requests,1);assert.equal(f.writes(),0);
+ assert.equal(transmitted.maxTokens,2048);const prompt=JSON.parse(transmitted.messages[1].content);assert.deepEqual(prompt.state.scope,{chatId:'one',actorId:'character:alice.png'});assert.deepEqual(prompt.state.store,{id:'native-chat',version:0});
 });
 function perspectiveGraph() {
-    return { ...nativeGraph(), id: 'host-perspective', mode: 'native-pre', nodes: { scene: { ...operationDefaults('scene-context'), id: 'scene', type: 'workflow', x: 0, y: 0 }, perspective: { ...operationDefaults('context', { mode: 'perspective' }), id: 'perspective', type: 'workflow', x: 0, y: 0 } }, wires: { perspective: { id: 'perspective', route: 'wire', from: 'scene', fromPort: 'out', to: 'perspective', toPort: 'context' } } };
+    return { ...nativeGraph(), id: 'host-perspective', mode: 'native-unified', nodes: { scene: { ...operationDefaults('scene-context'), id: 'scene', type: 'workflow', x: 0, y: 0 }, perspective: { ...operationDefaults('context', { mode: 'perspective' }), id: 'perspective', type: 'workflow', x: 0, y: 0 } }, wires: { perspective: { id: 'perspective', route: 'wire', from: 'scene', fromPort: 'out', to: 'perspective', toPort: 'context' } } };
 }
 async function projectNativePerspective(f) {
-    const graph = perspectiveGraph(); const controller = createNativeWorkflowController({ context: () => f.c, isBusy: () => false });
+    const graph = perspectiveGraph(); const controller = createNativeWorkflowController({ context: () => f.c, userId:()=> 'default-user', isBusy: () => false });
     const result = await controller.runTarget(graph, { workflowId: graph.id, instancePath: [], nodeId: 'perspective', portId: 'out' });
     return { result, artifact: result.recording?.artifacts.find(entry => entry.value?.provenance?.operation === 'introspection-context')?.value };
 }
@@ -215,7 +190,7 @@ test('native Perspective fails closed without a trusted current actor', async ()
     const { result } = await projectNativePerspective(f); assert.equal(result.ok, false); assert.equal(result.error.code, 'ACTOR_REQUIRED'); assert.equal(f.writes(), 0);
 });
 for (const source of ['chat', 'character', 'character-after-text-only']) for (const replacement of ['revoked', 'accessor']) {
-    test(`native ${source} visibility ${replacement} during Reflect rejects late guidance without reading accessors`, async () => {
+    test(`native ${source} visibility ${replacement} during awaited Perspective diagnostics rejects late output without reading accessors`, async () => {
         const f = fixture(); f.c.characters[0].data = { description: 'Public selected character description.' };
         f.c.extensionPrompts = {}; f.c.setExtensionPrompt = (key, value) => { f.c.extensionPrompts[key] = { value }; };
         const graph = perspectiveGraph();
@@ -227,11 +202,11 @@ for (const source of ['chat', 'character', 'character-after-text-only']) for (co
             graph.wires['assemble-chat'] = { id: 'assemble-chat', route: 'wire', from: 'scene', fromPort: 'out', to: 'assemble', toPort: 'in1' };
             graph.wires['assemble-character'] = { id: 'assemble-character', route: 'wire', from: 'scene-character', fromPort: 'out', to: 'assemble', toPort: 'in2' };
         }
-        for (const [id, operation] of [['reflect', 'reflect'], ['express', 'express'], ['guidance', 'guidance']]) graph.nodes[id] = { ...operationDefaults(operation), id, type: 'workflow', x: 0, y: 0 };
-        for (const [id, from, to, toPort] of [['reflect', 'perspective', 'reflect', 'context'], ['express', 'reflect', 'express', 'assessment'], ['guidance', 'express', 'guidance', 'in']]) graph.wires[id] = { id, route: 'wire', from, fromPort: 'out', to, toPort };
+        graph.nodes.awaited={...operationDefaults('smart-compactor'),id:'awaited',type:'workflow',method:'select',targetTokens:1200,keepRecent:0};
+        graph.wires.awaited={id:'awaited',route:'wire',from:'perspective',fromPort:'out',to:'awaited',toPort:'in'};
         const entered = deferred(), release = deferred(); let visibilityReads = 0; const sceneIncludes = [];
-        const controller = createNativeWorkflowController({ context: () => f.c, isBusy: () => false, getGraph: () => graph, isEnabled: () => true, onStage: node => { if (node.operation === 'scene-context') sceneIncludes.push(node.includeCharacter !== false); }, countTokens: async () => ({ tokens: 12 }), resolveBinding: () => ({ ok: true, data: { profileId: 'fixture', model: 'fixture' } }), request: async () => { entered.resolve(); await release.promise; return { ok: true, data: { finish: 'stop', text: JSON.stringify({ brief: 'Public context reflection.', appraisals: [], conflicts: [], recalls: [], sceneChanges: [], behaviorHints: ['Answer calmly.'], attentionHints: [], recalledEpisodeIds: [] }) } }; } });
-        const pending = controller.beforeGenerate(f.c.chat, 8192, () => {}, 'normal'); await entered.promise;
+        const controller = createNativeWorkflowController({ context: () => f.c, userId:()=> 'default-user', isBusy: () => false, getGraph: () => graph, isEnabled: () => true, onStage: node => { if (node.operation === 'scene-context') sceneIncludes.push(node.includeCharacter !== false); }, countTokens:async()=>{entered.resolve();await release.promise;return {tokens:12,method:'fixture'};}, resolveBinding: () => ({ ok: true, data: { profileId: 'fixture', model: 'fixture' } }), request: async () => { entered.resolve(); await release.promise; return { ok: true, data: { finish: 'stop', text: JSON.stringify({ brief: 'Public context reflection.', appraisals: [], conflicts: [], recalls: [], sceneChanges: [], behaviorHints: ['Answer calmly.'], attentionHints: [], recalledEpisodeIds: [] }) } }; } });
+        const pending = controller.runTarget(graph,{workflowId:graph.id,instancePath:[],nodeId:'awaited',portId:'out'});const early=await Promise.race([entered.promise.then(()=>null),pending]);assert.ok(early===null,JSON.stringify(early?.error));
         if (source === 'character-after-text-only') assert.deepEqual(sceneIncludes, [false, true]);
         const material = source === 'chat' ? f.c.chat[0] : f.c.characters[0].data;
         if (replacement === 'revoked') material.visibleTo = ['character:bob.png'];
@@ -245,7 +220,7 @@ for (const sameGeneration of [false, true]) {
     test(`native Memory Events ${sameGeneration ? 'exclude the selected stopped generation' : 'retain a completed selected generation when an older stopped processor remains'}`, async () => {
         const f = fixture(); const graph = nativeGraph();
         f.c.streamingProcessor = { messageId: 1, isFinished: false, isStopped: true, timeStarted: sameGeneration ? 2 : 1, abortController: new AbortController() };
-        const controller = createNativeWorkflowController({ context: () => f.c, isBusy: () => false });
+        const controller = createNativeWorkflowController({ context: () => f.c, userId:()=> 'default-user', isBusy: () => false });
         const result = await controller.runTarget(graph, { workflowId: graph.id, instancePath: [], nodeId: 'events', portId: 'out' }); assert.equal(result.ok, true, JSON.stringify(result.error));
         const material = result.recording.artifacts.find(entry => entry.value?.value?.recordType === 'events').value.value.payload.events;
         assert.deepEqual(material.map(event => event.text), sameGeneration ? [f.c.chat[0].mes] : f.c.chat.map(message => message.mes)); assert.equal(f.writes(), 0);

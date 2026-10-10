@@ -10,7 +10,7 @@ import { captureGraphEditContext, commitPreparedGraph } from '../src/workflow/tr
 const settle = async () => { for (let i = 0; i < 10; i++) await Promise.resolve(); };
 let sequence = 0;
 function nativeFixture(options = {}) {
-    const root = { id: 'canvas-native-' + ++sequence, schema: 3, runtime: 2, mode: 'native-pre', nodes: {
+    const root = { id: 'canvas-native-' + ++sequence, schema: 3, runtime: 2, mode: 'native-unified', nodes: {
         source: { id: 'source', type: 'workflow', operation: 'scene-context', x: 20, y: 30 },
         first: { id: 'first', type: 'workflow', operation: 'smart-compactor', x: 320, y: 30 },
         second: { id: 'second', type: 'workflow', operation: 'smart-compactor', x: 600, y: 30 },

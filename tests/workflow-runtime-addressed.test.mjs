@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { runWorkflow } from '../src/workflow/runtime.js';
+import { runWorkflow as runEngine } from '../src/workflow/runtime.js';
 import { computeDefinitionIdentity, definitionRefKey } from '../src/workflow/definitions.js';
 import { expandRecordAddress } from '../src/workflow/record-data.js';
-import { starterGraph } from '../src/workflow/starters.js';
+import { fixtureGraph as starterGraph } from './helpers/workflow-fixtures.mjs';
+const runWorkflow=(graph,ports={})=>runEngine(graph,{...(graph.nodes?.joined?{target:{workflowId:graph.id,instancePath:[],nodeId:'joined',portId:'out'}}:graph.nodes?.guidance?{target:{workflowId:graph.id,instancePath:[],nodeId:'guidance',portId:'out'}}:{}),...ports});
 import { cloneWorkflowDocument } from '../src/workflow/document.js';
 import { Worker } from 'node:worker_threads';
 import { validateWorkflow } from '../src/workflow/contracts.js';
@@ -24,11 +25,11 @@ function siblings() {
     const definition={...identity.data.materializedDefinition,semanticHash:identity.data.semanticHash};
     const ref={id:definition.id,version:definition.version,semanticHash:definition.semanticHash};
     const instance=id=>({id,type:'subgraph',definition:ref,parameterOverrides:{},roleOverrides:{},nodeBindingOverrides:{}});
-    return {id:'root',schema:3,runtime:2,mode:'native-pre',nodes:{
+    return {id:'root',schema:3,runtime:2,mode:'native-unified',nodes:{
         source:{id:'source',type:'workflow',operation:'scene-context'},
         'first/path':instance('first/path'),second:instance('second'),
-        one:{id:'one',type:'workflow',operation:'guidance'},two:{id:'two',type:'workflow',operation:'guidance'},
-    },wires:{a:direct('a','source','out','first/path','scene'),b:direct('b','first/path','proposal','one','in'),c:direct('c','source','out','second','scene'),d:direct('d','second','proposal','two','in')},definitions:{[definitionRefKey(definition)]:definition},portals:{}};
+        one:{id:'one',type:'workflow',operation:'guidance'},two:{id:'two',type:'workflow',operation:'guidance'},joined:{id:'joined',type:'workflow',operation:'join',artifactKind:'guidance',inputs:[{id:'one',label:'One',required:true},{id:'two',label:'Two',required:true}]},send:{id:'send',type:'workflow',operation:'on-send'},generate:{id:'generate',type:'workflow',operation:'generate-reply'},review:{id:'review',type:'workflow',operation:'review-publish'},
+    },wires:{a:direct('a','source','out','first/path','scene'),b:direct('b','first/path','proposal','one','in'),c:direct('c','source','out','second','scene'),d:direct('d','second','proposal','two','in'),j1:direct('j1','one','out','joined','one'),j2:direct('j2','two','out','joined','two'),activation:direct('activation','send','activation','generate','activation'),guide:direct('guide','joined','out','generate','guidance'),reply:direct('reply','generate','draft','review','draft')},definitions:{[definitionRefKey(definition)]:definition},portals:{}};
 }
 test('one addressed executor shares the source and root signal while preserving sibling binding identities',async()=>{
     const graph=siblings(), controller=new AbortController(), events=[], bindings=[], requests=[];let snapshots=0;
@@ -42,7 +43,7 @@ test('one addressed executor shares the source and root signal while preserving 
     assert.ok(bindings.every(binding=>!Object.isFrozen(binding)),'adapter-owned binding identities stay private and mutable');
     assert.ok(requests.every(request=>request.signal===controller.signal));
     assert.ok(!('artifact' in result)&&!('outputs' in result)&&!('calls' in result)&&!('trace' in result)&&!('reports' in result));
-    assert.equal(result.recording.terminals.length,2);assert.equal(result.recording.status,'completed');
+    assert.equal(result.recording.terminals.length,0);assert.equal(result.recording.units.filter(unit=>unit.operation==='guidance'&&unit.status==='completed').length,2);assert.equal(result.recording.status,'completed');
     const work=result.recording.units.filter(unit=>expandRecordAddress(result.recording,unit.address).nodeId==='work');assert.equal(work.length,2);assert.ok(work.every(unit=>unit.attempts===1));
     assert.deepEqual(events.map(event=>event.seq),events.map((_,index)=>index+1));assert.ok(events.every(Object.isFrozen));assert.equal(events.at(-1).type,'run-settled');
     assert.ok(!JSON.stringify(result.recording).includes('privateEndpoint'));assert.ok(!JSON.stringify(events).includes('messages'));
@@ -85,7 +86,7 @@ test('public native request bounds include resolved schema3 and host transport s
     assert.equal(facade.callCount(siblings()),2);assert.equal('runWorkflowForHost' in facade,false);
 });
 test('target closure excludes unrelated completeness and bindings but whole-graph cycles still reject',async()=>{
-    const graph=siblings();delete graph.nodes.one;delete graph.nodes.two;delete graph.wires.b;delete graph.wires.d;
+    const graph=siblings();delete graph.nodes.one;delete graph.nodes.two;delete graph.wires.b;delete graph.wires.d;for(const id of ['joined','send','generate','review'])delete graph.nodes[id];for(const id of ['j1','j2','activation','guide','reply'])delete graph.wires[id];
     graph.nodes.unfinished={id:'unfinished',type:'workflow',operation:'response-plan'};
     let snapshots=0,bindings=0,requests=0;
     const ports={countTokens,snapshot:()=>{snapshots++;return context;},resolveBinding:()=>{bindings++;return {ok:true,data:{profileId:'fixture',model:'fixture'}};},request:async()=>{requests++;return {ok:true,data:{text:'Target proposal',finish:'stop'}};}};
@@ -113,13 +114,13 @@ test('cancellation after tokenization reserves no attempt and late provider outp
 });
 test('Compose, Text Rules, JSON Decode and Select Fields run through named edges with zero requests',async()=>{
     const node=(id,operation,controls={})=>({id,type:'workflow',operation,...controls});
-    const graph={id:'tools',schema:3,runtime:2,mode:'native-post',nodes:{source:node('source','compose',{sections:[{name:'json',text:'{"value":"old","ignored":1}'}]}),rules:node('rules','text-rules',{rules:[{kind:'literal',pattern:'old',replacement:'new'}]}),decode:node('decode','json-decode'),pick:node('pick','select-fields',{fields:[{name:'selected',path:['value']}]}),unfinished:node('unfinished','repair')},wires:{a:direct('a','source','out','rules','in'),b:direct('b','rules','out','decode','in'),c:direct('c','decode','out','pick','in')},portals:{},definitions:{}};
+    const graph={id:'tools',schema:3,runtime:2,mode:'native-unified',nodes:{source:node('source','compose',{sections:[{name:'json',text:'{"value":"old","ignored":1}'}]}),rules:node('rules','text-rules',{rules:[{kind:'literal',pattern:'old',replacement:'new'}]}),decode:node('decode','json-decode'),pick:node('pick','select-fields',{fields:[{name:'selected',path:['value']}]}),unfinished:node('unfinished','repair')},wires:{a:direct('a','source','out','rules','in'),b:direct('b','rules','out','decode','in'),c:direct('c','decode','out','pick','in')},portals:{},definitions:{}};
     let effects=0,workers=0,termination;const handlers=new Map();
     const result=await runWorkflow(graph,{target:{workflowId:graph.id,instancePath:[],nodeId:'pick',portId:'out'},snapshot:()=>{effects++;},resolveBinding:()=>{effects++;},request:()=>{effects++;},countTokens:()=>{effects++;},createWorker(){workers++;const resource=new Worker(new URL('./fixtures/text-rules-node-worker.mjs',import.meta.url));return {addEventListener(type,fn){const handler=type==='message'?data=>{if(!data?.fixtureStarted)fn({data});}:error=>fn({error});handlers.set(fn,handler);resource.on(type,handler);},removeEventListener(type,fn){resource.off(type,handlers.get(fn));handlers.delete(fn);},postMessage(data){resource.postMessage(data);},terminate(){termination=resource.terminate();return termination;}};}});
     assert.equal(result.ok,true,JSON.stringify(result.error));assert.equal(result.callBound,0);assert.equal(result.actualCalls,0);assert.equal(effects,0);assert.equal(workers,1);await termination;assert.equal(handlers.size,0);assert.ok(result.recording.artifacts.some(entry=>entry.value?.value?.selected==='new'));assert.equal(result.recording.units.filter(unit=>unit.status==='completed').length,4);
 });
 test('Context Join records actual ordered input pins in the same zero-request plan',async()=>{
-    const graph={id:'joined',schema:3,runtime:2,mode:'native-pre',nodes:{source:{id:'source',type:'workflow',operation:'scene-context'},join:{id:'join',type:'workflow',operation:'context-join',inputs:[{id:'left/path',label:'Left'},{id:'right|path',label:'Right'}]}},wires:{a:direct('a','source','out','join','left/path'),b:direct('b','source','out','join','right|path')},portals:{},definitions:{}};let snapshots=0,effects=0;
+    const graph={id:'joined',schema:3,runtime:2,mode:'native-unified',nodes:{source:{id:'source',type:'workflow',operation:'scene-context'},join:{id:'join',type:'workflow',operation:'context-join',inputs:[{id:'left/path',label:'Left'},{id:'right|path',label:'Right'}]}},wires:{a:direct('a','source','out','join','left/path'),b:direct('b','source','out','join','right|path')},portals:{},definitions:{}};let snapshots=0,effects=0;
     const result=await runWorkflow(graph,{target:{workflowId:graph.id,instancePath:[],nodeId:'join',portId:'out'},snapshot:()=>{snapshots++;return context;},resolveBinding:()=>{effects++;},request:()=>{effects++;}});
     assert.equal(result.ok,true,JSON.stringify(result.error));assert.equal(snapshots,1);assert.equal(effects,0);assert.equal(result.actualCalls,0);assert.ok(result.recording.artifacts.some(entry=>entry.value?.source?.operation==='context-join'));assert.equal(result.recording.units.filter(unit=>unit.status==='completed').length,2);
 });
@@ -132,7 +133,7 @@ test('metadata admission failure and previews precede all source, binding, token
     assert.equal(result.error.code,'RUN_METADATA_LIMIT');assert.equal(result.recording.plan,null);assert.equal(result.recording.status,'invalid');assert.equal(effects,0);
 });
 test('the public complete execution gate resolves only current named-pin documents',()=>{
-    const expanded=validateWorkflow(siblings(),{phase:'pre'});assert.equal(expanded.ok,true,JSON.stringify(expanded.error));assert.equal(expanded.data.callBound,2);assert.equal(expanded.data.primitives.filter(unit=>unit.included).length,5);
-    const legacy=validateWorkflow(starterGraph('native-guidance'),{phase:'pre'});assert.equal(legacy.ok,true);assert.deepEqual(legacy.data.primitives.map(unit=>unit.address.nodeId),['scene-context','smart-compactor','response-plan','guidance']);
+    const expanded=validateWorkflow(siblings());assert.equal(expanded.ok,true,JSON.stringify(expanded.error));assert.equal(expanded.data.callBound,2);assert.equal(expanded.data.primitives.filter(unit=>unit.included).length,9);
+    const current=validateWorkflow(starterGraph('native-guidance'));assert.equal(current.ok,true);assert.equal(current.data.primitives.filter(unit=>unit.node.operation==='response-plan').length,1);
     assert.equal(validateWorkflow(siblings(),{phase:'post'}).error.code,'WRONG_PHASE');
 });

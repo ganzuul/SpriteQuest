@@ -122,3 +122,17 @@ Do not remove visible Arm, assignment/request-bound feedback, Stop, the run mete
 Validation for implementation should cover root and pinned-occurrence edits, reset/inheritance, helper precedence, undo/redo, unavailable profiles, portable import/export, conditional model modes, keyboard isolation, theme rendering and unified Send/Review ownership. Keep paid-provider calls unnecessary for those checks.
 
 This audit used three independent read-only source inspections, repository searches, comparison of main/follow-up sources, and three pure in-memory binding/export/identity probes. No product files, saved settings, credentials or live chats were changed. No full regression/build/browser run was performed for this documentation-only audit. Source links refer to the inspected baselines; the two preexisting audit documents were left untouched.
+
+## Implementation follow-up — 2026-10-10
+
+The approved cleanup is implemented on `codex/profile-ui-cleanup`, based on current local main, the verified profile/theme follow-up, and the completed legacy-removal snapshot.
+
+- The canvas picker is the ordinary connection selector. Details retains advanced model overrides, role diagnostics and direct inheritance reset. For Each reports field-specific helper precedence and disables ineffective controls.
+- Fast Decision, its manager, transport, settings actions and dedicated feature suites are removed. The paired-kiss example uses ordinary Decision while preserving true/false/unresolved acceptance and reviewed private effects. Existing `lattice_fast_connections` settings remain inert for recovery; the installed product has no readers or writers.
+- Pre/Post executable roots, duplicate Examples access, Details command overflow, unused secondary UI/projections and old catalogs are retired. Global portal management is in Graph; contextual pin actions, Arm/Stop, Run to here, review, undo and normal SillyTavern generation remain.
+- Saved retired roots and Fast helpers move atomically to bounded, non-executable recovery storage. Original documents and pins remain intact locally; library dependency closures are copied without removing ordinary live helpers. File exposes archive download for graph or library-only recovery data, and downloaded binding selectors are scrubbed.
+- Current guides, the generated examples, distribution and affected documentation screenshots are updated. Historical design records remain historical records.
+
+Independent runtime/recovery, recipe, UI and integration reviews found no remaining material issues after fixes. Regression coverage includes exposed helper references, qualified connection parameters, preserved null containers, read-only atomicity, mixed retirement, empty legacy settings, Active preservation and unaffected ordinary assignments.
+
+Final verification: all 233 unit-test files passed. The full browser run passed 281 of 282 cases; its one obsolete duplicate-Examples-menu assertion was corrected and the affected case passed a fresh isolated rerun. Types report zero errors and warnings. Build, assets, ten current guides, installation smoke and five refreshed screenshot captures passed; screenshot inspection caught and corrected the remaining Details connection-selection message. All checks used synthetic/local data with no paid provider calls or live chat changes. The branch and attached worktree are preserved for review.

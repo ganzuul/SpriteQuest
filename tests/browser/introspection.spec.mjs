@@ -4,14 +4,17 @@ import { chooseControl, controlValue, openDetailGroup } from './details-helpers.
 async function launch(page, phase = 'pre') {
     await page.goto('/tests/browser/harness.html'); await page.waitForFunction(() => !!window.canvasHarness);
     await page.evaluate(async phase => {
-        await window.canvasHarness.activate({ id: 'introspection-browser-' + phase, name: 'Introspection authoring', schema: 3, runtime: 2, mode: 'native-' + phase, roles: {}, nodes: {}, wires: {}, groups: {}, portals: {}, definitions: {}, view: { x: 0, y: 0, zoom: 1 } });
+        window.introspectionStage=phase;
+        await window.canvasHarness.activate({ id: 'introspection-browser-' + phase, name: 'Introspection authoring', schema: 3, runtime: 2, mode: 'native-unified', roles: {}, nodes: {}, wires: {}, groups: {}, portals: {}, definitions: {}, view: { x: 0, y: 0, zoom: 1 } });
     }, phase);
 }
 async function choose(page, operation) {
     await page.locator('[data-family="Introspection"]').click();
     await page.locator(`[data-shelf-choice="operation:${operation}"]`).click();
     const id = await page.evaluate(operation => Object.values(window.canvasHarness.graph.nodes).find(node => node.operation === operation).id, operation);
-    await select(page, id); return id;
+    await select(page, id);
+    await page.getByLabel('Workflow stage',{exact:true}).selectOption(await page.evaluate(()=>window.introspectionStage));
+    return id;
 }
 async function select(page, id) {
     await page.evaluate(async id => { const h = window.canvasHarness, node = h.graph.nodes[id]; await h.view({ x: 280 - node.x, y: 80 - node.y, zoom: 1 }); }, id);
@@ -77,7 +80,7 @@ for (const phase of ['pre', 'post']) test(`${phase} production picker and Detail
     expect(roundtrip.pins).toEqual(['known fact', 'protected name']); expect(roundtrip.query).toBe('last promise');
 });
 
-test('actual State Details saves fractional curve settings and JSON maps; post Memory Commit remains a terminal', async ({ page }) => {
+test('actual State Details saves fractional curve settings and JSON maps; Response Memory Commit keeps its staged proposal input', async ({ page }) => {
     await launch(page, 'post');
     const state = await choose(page, 'state');
     await chooseControl(page, 'Mode', 'curve');

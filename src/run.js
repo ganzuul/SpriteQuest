@@ -26,19 +26,13 @@ export const storyDocumentState = () => getStoryDocumentCatalog().snapshot();
 export function callCount(graph) { const checked = validateWorkflow(graph); return checked.ok ? checked.data.callBound : 0; }
 /** Send follows its assigned workflow independently of the open editor tab. */
 export function sendWorkflowState() {
-    const value = settings(), unifiedId = value.nativeBindings.workflowGraphId;
-    const assigned = value.graphs[unifiedId ?? value.nativeBindings.preGraphId], unified = unifiedId !== undefined && unifiedId !== null;
-    const checked = assigned ? validateWorkflow(assigned, unified ? {} : { phase: 'pre' }) : null;
-    const graph = checked?.ok && (!unified || assigned.mode === 'native-unified') ? assigned : null;
-    if (unified) return { automatic: !!graph,
+    const value = settings(), assigned = value.graphs[value.nativeBindings.workflowGraphId];
+    const checked = assigned ? validateWorkflow(assigned) : null;
+    const graph = checked?.ok && assigned.mode === 'native-unified' ? assigned : null;
+    return { automatic: !!graph,
         armLabel: graph ? 'Enable unified workflow on Send' : 'Enable workflows (assign a unified workflow)',
         armedText: graph ? '"' + graph.name + '" runs one unified workflow across preparation, SillyTavern generation and reply review (maximum ' + checked.data.callBound + ' auxiliary requests). SillyTavern builds its normal prompt.' : 'The assigned unified workflow cannot run: ' + (checked?.error?.message ?? 'Assign a valid unified workflow.') + ' SillyTavern builds its normal prompt.',
         offText: 'Lattice is off. Enable it to run the assigned unified workflow on Send.',
-    };
-    return { automatic: !!graph,
-        armLabel: graph ? 'Enable guidance before Send' : 'Enable workflows (assign a unified workflow or legacy pre phase)',
-        armedText: graph ? '"' + graph.name + '" adds guidance before Send (maximum ' + checked.data.callBound + ' auxiliary requests). SillyTavern builds its normal prompt. Post repair remains manual.' : assigned ? 'The assigned workflow cannot run: ' + checked.error.message + ' SillyTavern builds its normal prompt.' : 'No pre workflow is assigned. Assign a unified workflow for preparation and reply review. Post repair is manual via Run and review. SillyTavern builds its normal prompt.',
-        offText: 'Lattice is off. SillyTavern builds its normal prompt. Post repair requires manual Run and review.',
     };
 }
 export function getNativeWorkflowController() {
@@ -46,7 +40,7 @@ export function getNativeWorkflowController() {
         registerRecallHotkey: request => { recallShortcuts ??= createRecallShortcutRegistry(globalThis.document,{changed:()=>safe(()=>globalThis.document.dispatchEvent(new CustomEvent('pc-recall-state')))}); return recallShortcuts.register(request); },
         context: ctx, userId: currentUser, transportUserId, documentCatalog: getStoryDocumentCatalog(), persistenceVerifier: getNativePersistenceVerifier(),
         isEnabled: () => settings().enabled === true,
-        getGraph: phase => settings().graphs[settings().nativeBindings[phase === 'unified' ? 'workflowGraphId' : phase === 'pre' ? 'preGraphId' : 'postGraphId']],
+        getGraph: () => settings().graphs[settings().nativeBindings.workflowGraphId],
         isBusy: () => !helpers || helpers.isGenerating(),
         syncMesToSwipe: (...args) => helpers?.syncMesToSwipe(...args), syncSwipeToMes: (...args) => helpers?.syncSwipeToMes(...args),
         bindingStatus,
@@ -54,7 +48,7 @@ export function getNativeWorkflowController() {
         onResult: (result, origin) => { if (!result.ok) safe(() => globalThis.toastr?.warning(result.error.message, 'Lattice workflow')); if (origin) safe(() => globalThis.document?.dispatchEvent(new CustomEvent('pc-native-result'))); },
     });
 }
-/** Public host helpers are imported independently so missing user support cannot disable legacy review. */
+/** Public host helpers are imported independently so missing user support cannot disable reviewed workflows. */
 export function initializeNativeWorkflowController() {
     const current = getNativeWorkflowController(); current.subscribe();
     if(!recallEvents&&globalThis.document?.addEventListener){recallEvents=true;globalThis.document.addEventListener('pc-state',()=>current.syncRecall());}

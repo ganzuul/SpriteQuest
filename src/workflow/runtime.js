@@ -39,6 +39,7 @@ const observe = (observer,...args) => { try { const pending=observer?.(...args);
 
 function planWorkflow(graph,ports) {
     const normalized=cloneWorkflowDocument(graph);if(!normalized.ok)return normalized;
+    if(normalized.data.mode!=='native-unified')return failure('WRONG_PHASE','Only unified workflow roots can execute.');
     if(ports.phase && normalized.data.mode!=='native-'+ports.phase)return failure('WRONG_PHASE','The workflow operation does not support this phase.');
     const resolved=resolveWorkflow(normalized.data,ports.target===undefined?{}:{target:ports.target});return resolved.ok?{...resolved,graph:normalized.data}:resolved;
 }
@@ -180,15 +181,6 @@ async function executeWorkflow(original,ports,hooks={}) {
             emit(duringExecution?'node-binding':'node-phase',{address:unit.address,...(duringExecution?{}:{phase:'binding'}),binding:summarizeBinding(binding,node,op)});
             return resolved;
         };
-        // Unconditional legacy plans retain fixed-model preflight before any source
-        // effects. Controls and owned host outputs can deactivate nodes, so those
-        // plans (and unified plans) bind only after actual input activation.
-        const legacyPreflight=['native-pre','native-post'].includes(prepared.graph.mode)&&!hooks.executeHostOperation&&nodes.every(unit=>!Object.hasOwn(CONTROL_OPERATIONS,unit.node.operation)&&!operationFor(unit.node,{phase:unit.phase,mode:prepared.graph.mode}).hostOperation);
-        if(legacyPreflight)for(const unit of nodes){
-            const op=operationFor(unit.node,{phase:unit.phase,mode:prepared.graph.mode});
-            if(stopped())return finish(failure('ABORTED','Workflow was stopped.',unit.node.id));
-            if(unit.requestBound&&op.modelRole){const bound=await bindUnit(unit,op);if(!bound.ok)return finish(bound);}
-        }
         const nativeBoundary=mode==='root'&&prepared.graph.mode==='native-unified'?nodes.find(unit=>operationFor(unit.node,{phase:unit.phase,mode:prepared.graph.mode}).nativeBoundary):undefined;
         const getRequestBindings=()=>Object.freeze([...requestBindings.values()].map(entry=>Object.freeze({...entry,address:freezeArtifact(structuredClone(entry.address))})));
         let unresolved=false;
@@ -210,7 +202,7 @@ async function executeWorkflow(original,ports,hooks={}) {
                 for(const port of unit.outputPorts){outputStates.set(artifactKey({...unit.address,portId:port.id}),state);recorder.capture({address:unit.address,direction:'output',portId:port.id,state});}
                 unitStates.set(key,state);emit('node-settled',{address:unit.address,status,reason:state.reason});continue;
             }
-            const lazyBinding=!legacyPreflight&&(Object.hasOwn(MODEL_OPERATIONS,node.operation)||Object.hasOwn(DECISION_OPERATIONS,node.operation)||Object.hasOwn(EVENT_OPERATIONS,node.operation)||Object.hasOwn(RANDOM_OPERATIONS,node.operation));
+            const lazyBinding=(Object.hasOwn(MODEL_OPERATIONS,node.operation)||Object.hasOwn(DECISION_OPERATIONS,node.operation)||Object.hasOwn(EVENT_OPERATIONS,node.operation)||Object.hasOwn(RANDOM_OPERATIONS,node.operation));
             if(unit.requestBound&&op.modelRole&&!bindings.has(key)&&!lazyBinding){const bound=await bindUnit(unit,op);if(!bound.ok)return finish(bound);binding=bound.data;}
             emit('node-phase',{address:unit.address,phase:'executing'});observe(ports.onStage,freezeArtifact(structuredClone(node)),unit.address);
             const authorizeInputs=async(selectedNode,selectedInputs,address,capability)=>{

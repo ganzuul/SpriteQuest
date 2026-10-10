@@ -129,6 +129,8 @@ test('Text transfer cancellation suppresses late output with at most one request
 test('Text Transpose chains to another Text operation with bounded model calls and no snapshot or host writes', async () => {
     for (const operation of operations) for (const phase of ['pre', 'post']) {
         const g = contentFlow(operation, phase), binding = { profileId: 'fixture-profile', model: 'fixture-model' };
+        g.mode = 'native-unified';
+        for (const node of Object.values(g.nodes)) node.phase = phase;
         assert.equal(validateGraphStructure(g).ok, true, JSON.stringify(validateGraphStructure(g).error));
         let requests = 0, bindings = 0, hostEffects = 0;
         const result = await runWorkflow(g, {

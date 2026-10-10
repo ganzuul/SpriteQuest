@@ -257,7 +257,7 @@ export function createNativeWorkflowController(ports) {
         }
         return {ok:true};
     };
-    const fresh=(run)=>run.epoch===epoch && !run.controller.signal.aborted && same(run.identity,identity(context())) && run.signature===workflowSignature(run.originalGraph) && userFresh(run) && (!run.native || (ports.isEnabled?.() !== false && ports.getGraph?.(run.unified?'unified':'pre')===run.originalGraph));
+    const fresh=(run)=>run.epoch===epoch && !run.controller.signal.aborted && same(run.identity,identity(context())) && run.signature===workflowSignature(run.originalGraph) && userFresh(run) && (!run.native || (ports.isEnabled?.() !== false && ports.getGraph?.('unified')===run.originalGraph));
     const userFresh=run=>!run.unified&&!run.hostUnified || run.userId===ports.userId?.();
     const promptFresh = run => [...(run.promptSources?.values() ?? [])].every(entry => {
         const current = promptSourceFingerprint(context(), entry.node);
@@ -272,7 +272,7 @@ export function createNativeWorkflowController(ports) {
     const sourceFresh=run=>playerSourceFresh(run) && memoryFresh(run) && promptFresh(run) && [...(run.pendingSources?.values()??[])].every(validSource) && [...(run.sceneSources??[])].every(entry=>entry.text!==null && sourceText(entry.chat)===entry.text && (entry.characterVisibility===undefined || (entry.characterVisibility!==null && characterVisibility(context())===entry.characterVisibility)) && (entry.characterSnapshots??[]).every(captured=>characterText(snapshotContext(context(),{chat:entry.chat,node:captured.node}))===captured.text));
     const start=(graph,native=false,abortPrimary=null,target)=>{
         cancel('Superseded by a new workflow');
-        const run={epoch,runId:token(),controller:new AbortController(),originalGraph:graph,native,abortPrimary,pending:true,target,mode:target===undefined?'root':'target',pendingSources:new Map(),sceneSources:[],promptSources:new Map(),bindingContexts:new Map(),modelAddresses:new WeakMap(),modelScopes:new Map(),bindingChecks:[],reviewHandles:[],memoryTerminals:new Map(),memoryIntents:new Map(),memorySession:null,memoryCommit:null,invalidMemoryEvidence:false,fileSession:null,fileSessions:new Map(),fileReferences:new WeakMap(),actorContext:null,actorMemorySessions:new Map(),stagedFiles:[],retainResources:false,resourcesReleased:false};
+        const run={epoch,runId:token(),controller:new AbortController(),originalGraph:graph,native,abortPrimary,pending:true,target,mode:target===undefined?'root':'target',pendingSources:new Map(),sceneSources:[],promptSources:new Map(),bindingContexts:new Map(),modelAddresses:new WeakMap(),modelScopes:new Map(),bindingChecks:[],reviewHandles:[],memoryTerminals:new Map(),memoryIntents:new Map(),memorySession:null,invalidMemoryEvidence:false,fileSession:null,fileSessions:new Map(),fileReferences:new WeakMap(),actorContext:null,actorMemorySessions:new Map(),stagedFiles:[],retainResources:false,resourcesReleased:false};
         active=run;return run;
     };
     function prepareRun(run,plan,controls,options) {
@@ -364,7 +364,8 @@ export function createNativeWorkflowController(ports) {
             return result;
         };
         const result=preserveArtifactPrivacy(await executeIntrospection(settings,inputs,{...boundedPorts,...(session?{memory:{read:consumeMemory('read'),recall:consumeMemory('recall')}}:{})}),inputs);
-        if(run.hostUnified&&result.ok&&settings.operation==='memory'&&['read','recall'].includes(settings.mode)&&memoryReads.some(read=>same(read.artifact?.value,result.artifact?.value))&&artifactVisibility(result.artifact).kind==='actor-private'){const scoped=scopedActors(run);if(!scoped.ok)return scoped;const grant=scoped.data.authorizeSelectedActor();if(!grant.ok)return grant;const retained=scoped.data.captureScopedResult(result,grant.data.grant);if(!retained.ok)return retained;}
+        const implicitStateRead=settings.operation==='state'&&settings.mode==='value'&&!inputs.state;
+        if(run.hostUnified&&result.ok&&(settings.operation==='memory'&&['read','recall'].includes(settings.mode)||implicitStateRead)&&memoryReads.some(read=>same(read.artifact?.value,result.artifact?.value))&&artifactVisibility(result.artifact).kind==='actor-private'){const scoped=scopedActors(run);if(!scoped.ok)return scoped;const grant=scoped.data.authorizeSelectedActor();if(!grant.ok)return grant;const retained=scoped.data.captureScopedResult(result,grant.data.grant);if(!retained.ok)return retained;}
         if(run.recallCaptured&&result.ok&&settings.operation==='memory'&&['read','recall'].includes(settings.mode)&&memoryReads.some(read=>same(read.artifact?.value,result.artifact?.value))){const parsed=parseRecord(result.artifact);if(parsed.ok){const captured=recall.capture(run,result,{kind:'memory',recordValue:parsed.data.payload.episodes??[],fresh:()=>fresh(run)&&nativePrefixFresh(run)&&session.readFresh().ok});if(!captured.ok)return captured;}}
         if(result.ok && settings.operation==='memory' && settings.mode==='commit' && run.memoryTerminals.has(addressKey(address)))run.memoryIntents.set(addressKey(address),structuredClone(result.artifact));
         return result;
@@ -416,21 +417,6 @@ export function createNativeWorkflowController(ports) {
             }
         }
         if(memoryOutputs.length!==run.memoryTerminals.size)return fail('INVALID_MEMORY_TERMINAL','The compiled Memory Commit terminal did not provide its exact intent.');
-        if(run.native && !run.unified) {
-            if(run.invalidMemoryEvidence && transport.terminals.some(output=>output.artifact?.kind==='guidance'))return fail('STALE_MEMORY_EVIDENCE','Selected memory evidence changed or no longer exists. Reconcile the stored history before publishing guidance.');
-            const c=context();
-            try {
-                if(typeof c.setExtensionPrompt!=='function')throw new Error('Prompt setter unavailable');
-                for(const output of transport.terminals) {
-                    if(output.artifact?.kind!=='guidance')continue;
-                    const key=PREFIX+addressKey(output.terminal.address);keys.add(key);
-                    c.setExtensionPrompt(key,output.artifact.text,1,0,false,0);
-                    if(c.extensionPrompts && c.extensionPrompts[key]?.value!==output.artifact.text)throw new Error('Prompt not accepted');
-                    if(!fresh(run)||!sourceFresh(run)||!bindingFresh(run).ok)throw new Error('Source changed during publication');
-                }
-                run.published=true;run.pending=false;return {ok:true};
-            } catch {clear();return fail('GUIDANCE_UNAVAILABLE','Native guidance could not be installed; the native reply remains available.');}
-        }
         for(const output of transport.terminals) {
             if(output.artifact?.kind!=='candidate')continue;
             const source=run.pendingSources.get(output.artifact.source?.token);if(!source)return fail('STALE_CANDIDATE','The candidate source is no longer available.');
@@ -460,13 +446,6 @@ export function createNativeWorkflowController(ports) {
                     commit:async()=>{const committed=await run.memorySession.memory.commit(intent,{root:true,preview:false,dryRun:false});return committed.ok?{ok:true,data:{status:committed.data.acknowledged?'confirmed':'save-unverified',applied:committed.data.applied,acknowledged:committed.data.acknowledged,version:committed.data.version}}:committed;}});if(!staged.ok)return staged;
             }
             run.retainResources=true;return {ok:true};
-        }
-        for(const output of memoryOutputs) {
-            if(!fresh(run)||!sourceFresh(run)||!bindingFresh(run).ok)return fail('STALE_SOURCE','The workflow source changed before memory settlement.');
-            const scoped=scopedMemory(run);if(!scoped.ok)return scoped;
-            const committed=await scoped.data.memory.commit(output.artifact,{root:true,preview:false,dryRun:false});
-            if(!committed.ok)return committed;
-            run.memoryCommit={applied:committed.data.applied,acknowledged:committed.data.acknowledged,version:committed.data.version};
         }
         return {ok:true};
     }
@@ -536,7 +515,7 @@ export function createNativeWorkflowController(ports) {
         finally {delete run.cancel;run.bindingContexts.clear();run.modelScopes.clear();run.modelAddresses=new WeakMap();if(!run.retainResources)releaseRun(run);}
         if(!value.ok||run.mode==='target') {releaseRun(run);run.pendingSources.clear();run.sceneSources.length=0;run.promptSources.clear();run.bindingChecks=[];for(const [id,entry]of candidates)if(entry.run===run)candidates.delete(id);for(const [id,entry]of sources)if(entry.run===run)sources.delete(id);if(run.native)clear();}
         else run.pendingSources.clear();
-        const publicValue=freezeArtifact({...value,...(run.memoryCommit?{memoryCommit:run.memoryCommit}:{}),reviewHandles:value.ok?run.reviewHandles:[]});
+        const publicValue=freezeArtifact({...value,reviewHandles:value.ok?run.reviewHandles:[]});
         run.publicResult=publicValue;
         return publicValue;
     }
@@ -742,11 +721,6 @@ export function createNativeWorkflowController(ports) {
         if(!ready.ok) {const final=await completion;return {...final,fallback:'native'};}
         return ready;
     }
-    async function runPre(graph,options={}) {
-        const run=start(graph),value=await execute(run,{phase:'pre',onEvent:options.onEvent});
-        if(active===run) {active=null;return notify(value);}
-        return value;
-    }
     async function beforeGenerate(chat,_contextSize,abort,type='normal') {
         clear();type=type||'normal';
         if(generation.aborted) {abort?.(true);return notify(fail('ABORTED','The native generation was stopped before workflow preparation.'));}
@@ -754,31 +728,15 @@ export function createNativeWorkflowController(ports) {
         if(ports.isEnabled?.()===false)return {ok:true,skipped:true};
         const unified=ports.getGraph?.('unified');
         if(Object.getOwnPropertyDescriptor(unified??{},'mode')?.value==='native-unified')return beforeUnified(unified,chat,abort,type);
-        const graph=ports.getGraph?.('pre');if(!graph)return {ok:true,skipped:true};
-        if(active?.native) {cancel('Overlapping native generation');abort?.(true);return notify(fail('OVERLAPPING_GENERATION','Overlapping native requests are unsupported; send again when settled.'));}
-        const run=start(graph,true,abort),value=await execute(run,{phase:'pre',chat});
-        if(active!==run)return value;
-        if(/^STALE/.test(value.error?.code??'')){cancel('Source changed during preparation');return value;}
-        if(value.error?.code==='INTERNAL_TOOL_CONTINUATION'){active=null;return {ok:true,skipped:true,reason:'internal-tool-continuation'};}
-        if(!value.ok) {
-            active=null;
-            if(value.error.code==='ABORTED'){run.abortPrimary?.(true);run.abortPrimary=null;return notify(value,run);}
-            return notify({...value,fallback:'native'},run);
-        }
-        return notify({...value,published:run.published===true},run);
-    }
-    async function runPost(graph,messageIndex,options={}) {
-        const run=start(graph),value=await execute(run,{phase:'post',messageIndex,onEvent:options.onEvent});
-        if(active===run){active=null;return notify(value);}
-        return value;
+        return {ok:true,skipped:true};
     }
     async function runTarget(graph,target,{messageIndex,onEvent}={}) {
         // Admit before replacing run authority or consulting the host. Runtime owns
         // the bounded malformed result, including getter-free version metadata.
         const admitted=cloneWorkflowDocument(graph);
         if(!admitted.ok)return notify(await runWorkflowForHost(graph,{target}));
-        const run=start(graph,false,null,target),phase=admitted.data.mode==='native-unified'?undefined:admitted.data.mode.slice(7);
-        const value=await execute(run,{phase,messageIndex,onEvent});
+        const run=start(graph,false,null,target);
+        const value=await execute(run,{messageIndex,onEvent});
         if(active===run){active=null;return notify(value);}
         return value;
     }
@@ -923,7 +881,7 @@ export function createNativeWorkflowController(ports) {
         unsubscribe=()=>{cancel('Controller disposed');for(const [event,fn]of subscriptions)(c.eventSource.removeListener ?? c.eventSource.off)?.call(c.eventSource,event,fn);unsubscribe=null;recall.dispose();};
         return unsubscribe;
     }
-    const controller={beforeGenerate,runPre,runPost,runTarget,apply,reject,syncRecall:recall.sync,statusRecall:recall.status,armRecall:recall.arm,disarmRecall:recall.disarm,settlementStatus,retryPersistence,candidateStatus,cancel,lastResult:()=>result,lastAutomaticResult:()=>automaticResult,subscribe,dispose:()=>{if(unsubscribe)unsubscribe();else recall.dispose();}};
+    const controller={beforeGenerate,runTarget,apply,reject,syncRecall:recall.sync,statusRecall:recall.status,armRecall:recall.arm,disarmRecall:recall.disarm,settlementStatus,retryPersistence,candidateStatus,cancel,lastResult:()=>result,lastAutomaticResult:()=>automaticResult,subscribe,dispose:()=>{if(unsubscribe)unsubscribe();else recall.dispose();}};
     retentionInspectors.set(controller,()=>{
         const runs=new Set([active,...[...sources.values(),...candidates.values()].map(entry=>entry.run)].filter(Boolean));
         const recordings=new Set([result?.recording,automaticResult?.result.recording,...[...runs].map(run=>run.publicResult?.recording),...[...candidates.values()].map(entry=>entry.applied?.recording)].filter(Boolean));

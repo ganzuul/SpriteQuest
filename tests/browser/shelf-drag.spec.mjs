@@ -4,7 +4,7 @@ async function launch(page) {
     await page.goto('/tests/browser/harness.html');
     await page.waitForFunction(() => !!window.canvasHarness);
     await page.evaluate(async () => {
-        await window.canvasHarness.activate({ id: 'shelf-drag', name: 'Shelf drag', schema: 3, runtime: 2, mode: 'native-pre', roles: {}, nodes: {}, wires: {}, groups: {}, portals: {}, definitions: {}, view: { x: 0, y: 0, zoom: 1 } });
+        await window.canvasHarness.activate({ id: 'shelf-drag', name: 'Shelf drag', schema: 3, runtime: 2, mode: 'native-unified', roles: {}, nodes: {}, wires: {}, groups: {}, portals: {}, definitions: {}, view: { x: 0, y: 0, zoom: 1 } });
         await window.canvasHarness.view({ x: -240, y: 90, zoom: 1.5 });
     });
 }

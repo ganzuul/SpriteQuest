@@ -4,7 +4,7 @@ async function setup(page) {
     await page.goto('/tests/browser/harness.html');
     await page.waitForFunction(()=>!!window.canvasHarness);
     await page.evaluate(async()=>{
-        const h=window.canvasHarness, {starterGraph}=await import('/src/workflow/starters.js?v='+h.version);
+        const h=window.canvasHarness, { fixtureGraph: starterGraph }=await import('/tests/helpers/workflow-fixtures.mjs');
         await h.activate(starterGraph('structured-guidance'));
         h.canvas.select({kind:'node',id:'compose-json'}); await h.settle();
     });
@@ -75,12 +75,12 @@ for(const theme of ['lattice','ash']) for(const state of ['model','curve','reado
     test(`narrow ${state} details remain legible in ${theme}`,async({page},testInfo)=>{
         await setup(page);
         await page.evaluate(async({state,theme})=>{
-            const h=window.canvasHarness, {starterGraph}=await import('/src/workflow/starters.js?v='+h.version), {operationDefaults}=await import('/src/workflow/catalog.js?v='+h.version);
+            const h=window.canvasHarness, { fixtureGraph: starterGraph }=await import('/tests/helpers/workflow-fixtures.mjs'), {operationDefaults}=await import('/src/workflow/catalog.js?v='+h.version);
             if(state==='model') {
                 const graph=starterGraph('native-guidance'); graph.nodes['response-plan'].enabled=false;
                 await h.activate(graph); h.canvas.select({kind:'node',id:'response-plan'});
             } else if(state==='curve') {
-                const graph={id:'visual-curve',name:'State curve',schema:3,runtime:2,mode:'native-post',roles:{},nodes:{curve:{...operationDefaults('state',{mode:'curve'}),id:'curve',type:'workflow',operation:'state',operationVersion:1,x:100,y:100}},wires:{},groups:{},portals:{},definitions:{},view:{x:0,y:0,zoom:1}};
+                const graph={id:'visual-curve',name:'State curve',schema:3,runtime:2,mode:'native-unified',roles:{},nodes:{curve:{...operationDefaults('state',{mode:'curve'}),id:'curve',type:'workflow',operation:'state',operationVersion:1,x:100,y:100}},wires:{},groups:{},portals:{},definitions:{},view:{x:0,y:0,zoom:1}};
                 await h.activate(graph); h.canvas.select({kind:'node',id:'curve'});
             } else {
                 const {effectiveInstanceWorkflow}=await import('/tests/fixtures/workflow-effective-instance.mjs');

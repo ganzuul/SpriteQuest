@@ -6,7 +6,7 @@ async function openNativeWorkspace(page, starter = 'structured-guidance') {
     const graphId = await page.evaluate(async starter => {
         const h = window.canvasHarness;
         const version = (await (await fetch('/manifest.json')).json()).version;
-        const { starterGraph } = await import('/src/workflow/starters.js?v=' + version);
+        const { fixtureGraph: starterGraph } = await import('/tests/helpers/workflow-fixtures.mjs');
         const graph = starterGraph(starter);
         h.S.settings().graphs[graph.id] = graph;
         h.S.save(); h.UI.refreshIfOpen();
@@ -118,7 +118,13 @@ test('approved floating shelf retains an aligned canonical node menu and quiet s
     }
     expect(rows.family.font).toBe('14px');
     for (const row of rows.choices) expect(row.font).toBe('14px');
-    expect(Math.abs(rows.choices[0].center - rows.family.center)).toBeLessThanOrEqual(1);
+    const area = await page.locator('.pc-canvas-area').boundingBox();
+    expect(drawer.y).toBeGreaterThanOrEqual(area.y + 4);
+    expect(drawer.y + drawer.height).toBeLessThanOrEqual(area.y + area.height - 4);
+    if (Math.abs(rows.choices[0].center - rows.family.center) > 1) {
+        // The complete unified family stays inside the canvas when it is too tall to align.
+        expect(Math.abs(drawer.y + drawer.height - (area.y + area.height - 5))).toBeLessThanOrEqual(1);
+    }
     const codes = await menu.locator('small').allTextContents();
     expect(codes.some(code => code.trim().length > 0)).toBe(true);
 });
@@ -134,7 +140,8 @@ test('a selected failed native node keeps its red ring and dimmed interior', asy
     await page.evaluate(() => window.canvasHarness.settle());
     const failed = page.locator('.pc-node-native[data-id="json-decode"]');
     const before = await failed.boundingBox();
-    await page.locator('.pc-root-run').click();
+    await page.evaluate(() => window.canvasHarness.canvas.select({ kind: 'node', id: 'guidance' }));
+    await page.locator('.pc-output-preview [data-run-here]').click();
     await expect(failed).toHaveClass(/pc-trace-failed/);
     await expect(page.locator('.pc-node-native.pc-trace-blocked').first()).toBeVisible();
     await failed.locator('.pc-native-heading').click();

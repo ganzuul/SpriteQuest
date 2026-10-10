@@ -34,21 +34,22 @@ function checkRegistry(value) {
     return entries && Object.values(entries).every(safeWorkflowData);
 }
 
-function checkSettings(value, { allowRetiredFast = false } = {}) {
+function checkSettings(value, { allowRetired = false } = {}) {
     const saved = dataRecord(value), metadata = {}, graphs = dataRecord(saved?.graphs), library = dataRecord(saved?.subgraphLibrary);
     if (saved) for (const [key, item] of Object.entries(saved)) if (!['graphs', 'subgraphLibrary', 'workspaceViews', 'archivedWorkflows'].includes(key)) metadata[key] = item;
     if (!saved || !safeWorkflowData(metadata) || saved.schema !== 1 || typeof saved.enabled !== 'boolean' || !graphs || !plain(saved.nativeBindings) || !plain(saved.ui) || !library || !checkRegistry(library.definitions ?? {}) || !safeWorkflowData(Object.fromEntries(Object.entries(library).filter(([key]) => key !== 'definitions'))) || !checkRegistry(saved.workspaceViews ?? {})) throw new Error('Lattice settings must be a current plain-data document (schema 1).');
     if (Object.hasOwn(saved, 'workflowMode')) throw new Error('Lattice settings contain an unsupported workflow mode.');
     const checkedGraphs = {};
     for (const [id, graph] of Object.entries(graphs)) {
-        const checked = allowRetiredFast && containsRetiredModelCall(graph) ? cloneArchivedWorkflow(graph) : cloneWorkflowDocument(graph);
+        const checked = allowRetired && containsRetiredModelCall(graph) ? cloneArchivedWorkflow(graph) : cloneWorkflowDocument(graph);
         if (!checked.ok || checked.data.id !== id) throw new Error('Lattice workflow document ' + id + ' is invalid: ' + (checked.error?.message ?? 'unsupported identity'));
+        if (!allowRetired && checked.data.mode !== 'native-unified') throw new Error('Lattice active workflows must use the unified workflow mode.');
         checkedGraphs[id] = checked.data;
     }
     if (saved.activeGraphId !== null && !Object.hasOwn(graphs, saved.activeGraphId)) throw new Error('Lattice settings refer to an unavailable active workflow.');
-    for (const [phase, field] of [['pre', 'preGraphId'], ['post', 'postGraphId'], ['unified', 'workflowGraphId']]) {
+    for (const [phase, field] of (allowRetired ? [['pre', 'preGraphId'], ['post', 'postGraphId'], ['unified', 'workflowGraphId']] : [['unified', 'workflowGraphId']])) {
         const id = saved.nativeBindings[field];
-        if (phase === 'unified' && id === undefined) continue; // Legacy settings remain independently assigned.
+        if (allowRetired && id === undefined) continue;
         if (id !== null && (typeof id !== 'string' || checkedGraphs[id]?.mode !== 'native-' + phase)) throw new Error('Lattice ' + phase + ' binding does not identify a current workflow.');
     }
     if (saved.archivedWorkflows !== undefined) {
@@ -58,10 +59,11 @@ function checkSettings(value, { allowRetiredFast = false } = {}) {
     }
 }
 
-function archiveFastWorkflows(value) {
-    const retired = Object.entries(value.graphs).filter(([, graph]) => containsRetiredModelCall(graph));
+/** Retire roots and Fast helpers in one atomic settings replacement. */
+function archiveRetiredWorkflows(value) {
+    const retired = Object.entries(value.graphs).filter(([, graph]) => ['native-pre', 'native-post'].includes(graph.mode) || containsRetiredModelCall(graph));
     const libraryKeys = retiredLibraryKeys(value.subgraphLibrary.definitions);
-    if (!retired.length && !libraryKeys.size) return false;
+    if (!retired.length && !libraryKeys.size && Object.keys(value.nativeBindings).length === 1 && Object.hasOwn(value.nativeBindings, 'workflowGraphId')) return false;
     const next = structuredClone(value), archive = next.archivedWorkflows ?? { schema: 1, graphs: {}, bindings: structuredClone(value.nativeBindings), activeGraphId: value.activeGraphId };
     for (const [id, graph] of retired) {
         if (Object.hasOwn(archive.graphs, id) && JSON.stringify(archive.graphs[id]) !== JSON.stringify(graph)) throw new Error('Lattice archived workflow identity conflicts with an existing original.');
@@ -78,12 +80,13 @@ function archiveFastWorkflows(value) {
         for (const key of libraryKeys) delete next.subgraphLibrary.definitions[key];
         for (const [id, ref] of Object.entries(next.subgraphLibrary.entries ?? {})) if (libraryKeys.has(definitionRefKey(ref))) { archive.entries[id] = ref; delete next.subgraphLibrary.entries[id]; }
     }
-    next.archivedWorkflows = archive;
+    if (retired.length || libraryKeys.size) next.archivedWorkflows = archive;
     if (!Object.keys(next.graphs).length) installStarter('unified-basic', next);
-    if (!Object.hasOwn(next.graphs, next.activeGraphId)) next.activeGraphId = Object.keys(next.graphs)[0];
-    if (value.nativeBindings.workflowGraphId && next.nativeBindings.workflowGraphId === null || value.nativeBindings.preGraphId && next.nativeBindings.preGraphId === null) next.enabled = false;
+    if (!Object.hasOwn(next.graphs, next.activeGraphId)) next.activeGraphId = next.nativeBindings.workflowGraphId ?? Object.keys(next.graphs)[0];
+    next.nativeBindings = { workflowGraphId: next.nativeBindings.workflowGraphId ?? null };
+    if (next.nativeBindings.workflowGraphId === null) next.enabled = false;
     checkSettings(next);
-    const changedKeys = ['graphs', 'subgraphLibrary', 'nativeBindings', 'activeGraphId', 'enabled', 'archivedWorkflows'];
+    const changedKeys = ['nativeBindings', 'enabled', ...(retired.length || !Object.keys(value.graphs).length ? ['graphs', 'activeGraphId'] : []), ...(libraryKeys.size ? ['subgraphLibrary'] : []), ...(retired.length || libraryKeys.size ? ['archivedWorkflows'] : [])];
     for (const key of changedKeys) {
         const descriptor = Object.getOwnPropertyDescriptor(value, key);
         if (descriptor ? descriptor.writable !== true : !Object.isExtensible(value)) throw new Error('Lattice settings are read-only; retired workflows were not changed.');
@@ -98,7 +101,7 @@ export function settings() {
     if (!plain(root)) throw new Error('Lattice: getContext() exposed no extension settings.');
     const property = Object.getOwnPropertyDescriptor(root, MODULE);
     if (!property) {
-        const value = { schema: 1, enabled: false, graphs: {}, activeGraphId: null, nativeBindings: { workflowGraphId: null, preGraphId: null, postGraphId: null }, subgraphLibrary: { definitions: {} }, ui: {} };
+        const value = { schema: 1, enabled: false, graphs: {}, activeGraphId: null, nativeBindings: { workflowGraphId: null }, subgraphLibrary: { definitions: {} }, ui: {} };
         const graph = installStarter('unified-basic', value);
         value.activeGraphId = graph.id;
         checkSettings(value);
@@ -107,21 +110,21 @@ export function settings() {
     }
     if (!('value' in property)) throw new Error('Lattice settings must not contain an accessor.');
     const value = property.value;
-    if (!admitted.has(value)) { checkSettings(value, { allowRetiredFast: true }); const changed = archiveFastWorkflows(value); checkSettings(value); admitted.add(value); if (changed) save(); }
+    if (!admitted.has(value)) { checkSettings(value, { allowRetired: true }); const changed = archiveRetiredWorkflows(value); checkSettings(value); admitted.add(value); if (changed) save(); }
     return value;
 }
 export function save() { safe(() => ctx().saveSettingsDebounced()); }
 
 /** An empty current authoring document; terminals and connections are explicit. */
-export function blankGraph(name = 'Untitled', phase = 'unified') {
-    return { id: uid('g'), name, description: '', schema: 3, runtime: 2, mode: phase === 'unified' ? 'native-unified' : phase === 'post' ? 'native-post' : 'native-pre', createdAt: Date.now(), updatedAt: Date.now(), nodes: {}, wires: {}, portals: {}, definitions: {}, groups: {}, roles: {}, view: { x: 0, y: 0, zoom: 1 } };
+export function blankGraph(name = 'Untitled') {
+    return { id: uid('g'), name, description: '', schema: 3, runtime: 2, mode: 'native-unified', createdAt: Date.now(), updatedAt: Date.now(), nodes: {}, wires: {}, portals: {}, definitions: {}, groups: {}, roles: {}, view: { x: 0, y: 0, zoom: 1 } };
 }
 export function allGraphs() { return Object.values(settings().graphs).sort((a, b) => a.name.localeCompare(b.name)); }
 export function getGraph(id) { return settings().graphs[id] ?? null; }
 export function resolveGraph() { const graph = getGraph(settings().activeGraphId); return { graph, source: graph ? 'active' : 'none' }; }
-export function createGraph(name, phase = 'unified') {
-    const graph = blankGraph(name || 'Untitled', phase);
-    if (phase === 'unified') { const starter = starterGraph('unified-basic'); Object.assign(graph, { nodes: starter.nodes, wires: starter.wires }); }
+export function createGraph(name) {
+    const graph = blankGraph(name || 'Untitled');
+    const starter = starterGraph('unified-basic'); Object.assign(graph, { nodes: starter.nodes, wires: starter.wires });
     settings().graphs[graph.id] = graph; save(); return graph;
 }
 export function duplicateGraph(id, name) {
@@ -132,7 +135,7 @@ export function duplicateGraph(id, name) {
 export function deleteGraph(id) {
     const value = settings(); if (!Object.hasOwn(value.graphs, id)) return;
     delete value.graphs[id];
-    for (const field of ['workflowGraphId', 'preGraphId', 'postGraphId']) if (value.nativeBindings[field] === id) value.nativeBindings[field] = null;
+    if (value.nativeBindings.workflowGraphId === id) value.nativeBindings.workflowGraphId = null;
     if (!Object.keys(value.graphs).length) { const graph = blankGraph(); value.graphs[graph.id] = graph; }
     if (value.activeGraphId === id) value.activeGraphId = Object.keys(value.graphs)[0];
     save();

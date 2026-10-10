@@ -413,3 +413,20 @@ test('source and user mutation from the prompt setter revoke guidance before nat
         assert.equal(Object.values(f.c.extensionPrompts).every(value => !value.value), true);
     }
 });
+
+
+test('Send skips a legacy Pre assignment without resolving or publishing it', async () => {
+    const legacy = { id: 'retired-pre', schema: 3, runtime: 2, mode: 'native-pre', nodes: {
+        text: { id: 'text', type: 'workflow', operation: 'compose', outputKind: 'guidance', sections: [{ name: 'direction', text: 'Retired guidance.' }] },
+        guidance: { id: 'guidance', type: 'workflow', operation: 'guidance' }
+    }, wires: { guide: { id: 'guide', route: 'wire', from: 'text', fromPort: 'out', to: 'guidance', toPort: 'in' } }, definitions: {}, portals: {} };
+    const c = { chatId: 'story', characterId: 0, groupId: null, chat: [{ is_user: true, mes: 'Continue.' }], extensionPrompts: { 'lattice:guidance:old': { value: 'Expired' }, other: { value: 'Keep' } } };
+    c.setExtensionPrompt = (key, value) => { c.extensionPrompts[key] = { value }; };
+    let legacyReads = 0, effects = 0;
+    const controller = createNativeWorkflowController({ context: () => c, isEnabled: () => true, getGraph: phase => { if (phase === 'pre') { legacyReads++; return legacy; } }, countTokens: () => { effects++; return { tokens: 1 }; }, resolveBinding: () => { effects++; }, request: () => { effects++; } });
+    const result = await controller.beforeGenerate(c.chat, 8192, () => {}, 'normal');
+    assert.equal(result.ok, true); assert.equal(result.skipped, true);
+    assert.equal(legacyReads, 0); assert.equal(effects, 0);
+    assert.equal(c.extensionPrompts['lattice:guidance:old'].value, ''); assert.equal(c.extensionPrompts.other.value, 'Keep');
+    assert.equal(Object.values(c.extensionPrompts).some(entry => entry.value === 'Retired guidance.'), false);
+});

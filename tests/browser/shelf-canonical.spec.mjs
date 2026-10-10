@@ -5,11 +5,11 @@ async function launch(page, phase) {
     await page.goto('/tests/browser/harness.html');
     await page.waitForFunction(() => !!window.canvasHarness);
     await page.evaluate(async phase => {
-        await window.canvasHarness.activate({ id: 'canonical-shelf-' + phase, name: 'Canonical shelf', schema: 3, runtime: 2, mode: 'native-' + phase, roles: {}, nodes: {}, wires: {}, groups: {}, portals: {}, definitions: {}, view: { x: 0, y: 0, zoom: 1 } });
+        await window.canvasHarness.activate({ id: 'canonical-shelf-' + phase, name: 'Canonical shelf', schema: 3, runtime: 2, mode: 'native-unified', roles: {}, nodes: {}, wires: {}, groups: {}, portals: {}, definitions: {}, view: { x: 0, y: 0, zoom: 1 } });
     }, phase);
 }
 
-async function choose(page, family, operation) {
+async function choose(page, family, operation, phase) {
     await page.locator(`[data-family="${family}"]`).click();
     await page.locator(`[data-shelf-choice="operation:${operation}"]`).click();
     const id = await page.evaluate(operation => Object.values(window.canvasHarness.graph.nodes).find(node => node.operation === operation).id, operation);
@@ -18,6 +18,10 @@ async function choose(page, family, operation) {
         await h.view({ x: 280 - node.x, y: 80 - node.y, zoom: 1 });
     }, id);
     await page.locator(`.pc-node[data-id="${id}"]`).click();
+    if (['memory', 'json-decode'].includes(operation)) {
+        await page.getByLabel('Workflow stage', { exact: true }).selectOption(phase);
+        await expect.poll(() => page.evaluate(id => window.canvasHarness.graph.nodes[id].phase, id)).toBe(phase);
+    }
     return id;
 }
 
@@ -34,13 +38,13 @@ test('flat family shelf exposes one canonical node and Details changes its mode 
         await expect(page.locator('.pc-leaf-menu')).toHaveCount(0);
         await page.keyboard.press('Escape');
 
-        await choose(page, 'Introspection', 'memory');
+        await choose(page, 'Introspection', 'memory', phase);
         await expect(page.getByRole('radiogroup', { name: 'Mode', exact: true }).getByRole('radio', { name: 'commit', exact: true })).toHaveCount(phase === 'post' ? 1 : 0);
 
         await page.locator('[data-family="Derive"]').click();
         await expect(page.locator('[data-shelf-choice^="operation:json-decode"]')).toHaveCount(1);
         await page.keyboard.press('Escape');
-        const json = await choose(page, 'Derive', 'json-decode');
+        const json = await choose(page, 'Derive', 'json-decode', phase);
         await expect.poll(() => controlValue(page, 'Mode')).toBe('parse');
         await chooseControl(page, 'Mode', 'check');
         await expect.poll(() => page.evaluate(id => window.canvasHarness.graph.nodes[id].mode, json)).toBe('check');
@@ -54,7 +58,7 @@ test('flat family shelf exposes one canonical node and Details changes its mode 
         await page.locator('[data-family="Shaping"]').click();
         await expect(page.locator('[data-shelf-choice^="operation:reroute"]')).toHaveCount(1);
         await page.keyboard.press('Escape');
-        const reroute = await choose(page, 'Shaping', 'reroute');
+        const reroute = await choose(page, 'Shaping', 'reroute', phase);
         await chooseControl(page, 'Artifact kind', 'data');
         await expect.poll(() => page.evaluate(id => window.canvasHarness.graph.nodes[id].artifactKind, reroute)).toBe('data');
         await expect(page.locator(`.pc-node[data-id="${reroute}"] .pc-port[data-dir="in"]`)).toHaveAttribute('data-kind', 'data');

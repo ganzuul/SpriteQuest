@@ -1,4 +1,3 @@
-import {workflowCreationPhase} from '../src/ui/provider-settings.js';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readFile } from 'node:fs/promises';
@@ -6,7 +5,7 @@ import { installMock } from './mock.js';
 import * as S from '../src/state.js';
 import { createGraphViewSession } from '../src/ui/graph-view-session.js';
 import { prepareWorkspaceViews } from '../src/ui/workspace-preparation.js';
-import { createLibraryWorkflow } from '../src/workflow/library/subgraphs.js';
+import { fixtureLibraryWorkflow as createLibraryWorkflow } from './helpers/workflow-fixtures.mjs';
 import { parseWorkflow } from '../src/workflow/packages.js';
 
 const accepted = result => { assert.equal(result.ok, true, JSON.stringify(result.error)); return result.data; };
@@ -30,7 +29,7 @@ async function installSaveTracking(env) {
 
 async function openEnvironment(file) {
     const original = { ...S.blankGraph('Original workflow'), id: 'original' };
-    const stored = { schema: 1, enabled: false, activeGraphId: original.id, graphs: { original }, nativeBindings: { preGraphId: null, postGraphId: null }, subgraphLibrary: { definitions: {} }, ui: {} };
+    const stored = { schema: 1, enabled: false, activeGraphId: original.id, graphs: { original }, nativeBindings: { workflowGraphId: null }, subgraphLibrary: { definitions: {} }, ui: {} };
     const notices = [], changes = [];
     let change;
     const input = { files: file ? [file] : [], addEventListener(event, listener) { assert.equal(event, 'change'); change = listener; }, click() {} };
@@ -123,7 +122,7 @@ async function saveEnvironment() {
     graph.id = 'local-save-root'; graph.name = 'Local workflow';
     const stored = S.settings();
     stored.graphs[graph.id] = graph; stored.activeGraphId = graph.id;
-    stored.nativeBindings.preGraphId = graph.id; stored.enabled = true;
+    stored.nativeBindings.workflowGraphId = graph.id; stored.enabled = true;
     graph.roles.Analysis = { profileId: 'local-profile', model: 'role-model' };
     const bound = Object.values(graph.nodes).find(node => node.type === 'workflow');
     bound.profileId = 'node-profile'; bound.model = 'node-model';
@@ -154,7 +153,7 @@ test('Save persists full local settings and retained views before reporting a ho
     const pending = fixture.save();
     assert.deepEqual(fixture.notices, [], 'feedback waits for a returned host promise');
     assert.deepEqual(requested.graphs['local-save-root'], before);
-    assert.deepEqual(requested.nativeBindings, { preGraphId: 'local-save-root', postGraphId: null });
+    assert.deepEqual(requested.nativeBindings, { workflowGraphId: 'local-save-root' });
     assert.equal(requested.enabled, true);
     assert.equal(requested.activeGraphId, 'local-save-root');
     const views = requested.workspaceViews['local-save-root'];
@@ -283,7 +282,7 @@ async function newEnvironment() {
     const changes = [];
     host.saveSettingsDebounced = () => changes.push('save');
     const env = {
-        ...S, workflowCreationPhase, current: original, uiEpoch: 1, canvas: null, pendingNewWorkflow: null,
+        ...S, current: original, uiEpoch: 1, canvas: null, pendingNewWorkflow: null,
         workbench: { update() {} },
         setCanvasGraph: () => changes.push('canvas'), renderAll: () => changes.push('render'),
     };
@@ -317,8 +316,12 @@ test('New activates an untitled unified workflow without requesting a name', asy
     assert.deepEqual(fixture.changes, ['save', 'save', 'canvas', 'render']);
 });
 
-test('archived workflow export downloads the recovery copy and handles an empty archive without changing a workflow',async()=>{
- const calls=[],env={exportArchivedWorkflows:()=>'{"kind":"lattice-workflow-archive"}',downloadGraphViewJSON:(...args)=>calls.push(args),toast:(...args)=>calls.push(args)};
- const exportArchive=await controllerFunction('onExportArchivedWorkflows',env);assert.equal(exportArchive(),true);assert.deepEqual(calls[0],['{"kind":"lattice-workflow-archive"}','lattice-archived-workflows.json']);
- calls.length=0;env.exportArchivedWorkflows=()=>null;assert.equal(exportArchive(),false);assert.equal(calls.some(call=>call[1]==='lattice-archived-workflows.json'),false);
+
+test('archive recovery downloads the portable root API result and ignores an empty archive', async () => {
+    const downloads = [], json = JSON.stringify({ kind: 'lattice-workflow-archive', schema: 1, graphs: { retired: { mode: 'native-pre' } } });
+    let available = json;
+    const env = { exportArchivedWorkflows: () => available, downloadGraphViewJSON: (...args) => downloads.push(args), toast() { assert.fail('No archive error'); } };
+    const run = await controllerFunction('onExportArchivedWorkflows', env);
+    assert.equal(run(), true); assert.deepEqual(downloads, [[json, 'lattice-archived-workflows.json']]);
+    available = null; assert.equal(run(), false); assert.equal(downloads.length, 1);
 });

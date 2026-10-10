@@ -17,15 +17,15 @@ const button=(host,label)=>[...host.querySelectorAll('button')].find(element=>el
 
 
 
-test('unsaved workflow prompt defaults to unified and can explicitly choose a legacy phase',async()=>{
- let chosen;const f=await fixture('NewWorkflowPrompt',{view:{name:'Story',phase:'unified'},actions:{choose(choice,phase){chosen={choice,phase};}}});
- try{const select=f.host.querySelector('[aria-label="New workflow type"]');assert.ok(select);assert.equal(select.value,'unified');input(f.host,'New workflow type','post','change');button(f.host,'Discard').click();flushSync();assert.deepEqual(chosen,{choice:'discard',phase:'post'});}finally{await f.close();}
+test('unsaved workflow prompt offers save discard cancel without a root phase payload',async()=>{
+ let chosen;const f=await fixture('NewWorkflowPrompt',{view:{name:'Story'},actions:{choose(...args){chosen=args;}}});
+ try{assert.equal(f.host.querySelector('select'),null);button(f.host,'Discard').click();flushSync();assert.deepEqual(chosen,['discard']);}finally{await f.close();}
 });
 
 test('actual Workflows menu offers unified assignment',async()=>{
  const commands=[],local=[];const state={graphs:[],graphId:'unified',armed:false,inspectorOpen:true,history:{undo:false,redo:false},selectionCount:0,rootWorkflow:{phase:'unified',assigned:false,busy:false,issues:[]}};
  const f=await fixture('WorkspaceMenus',{state,actions:{command:name=>commands.push(name)},local:name=>local.push(name)});
- try{button(f.host,'Workflows').click();await tick();flushSync();const assign=button(f.host,'Assign unified workflow');assert.ok(assign);assign.click();flushSync();assert.deepEqual(commands,['assign-workflow-phase']);}finally{await f.close();}
+ try{button(f.host,'Workflows').click();await tick();flushSync();const assign=button(f.host,'Assign unified workflow');assert.ok(assign);assign.click();flushSync();assert.deepEqual(commands,['assign-workflow']);}finally{await f.close();}
 });
 
 

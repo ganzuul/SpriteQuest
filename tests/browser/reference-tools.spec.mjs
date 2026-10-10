@@ -5,13 +5,14 @@ async function launch(page, phase = 'post') {
     await page.goto('/tests/browser/harness.html');
     await page.waitForFunction(() => !!window.canvasHarness);
     await page.evaluate(async phase => {
-        await window.canvasHarness.activate({ id: 'reference-tools-ui-' + phase, name: 'Reference tools', schema: 3, runtime: 2, mode: 'native-' + phase, roles: {}, nodes: {}, wires: {}, groups: {}, portals: {}, definitions: {}, view: { x: 0, y: 0, zoom: 1 } });
+        window.referenceStage=phase;
+        await window.canvasHarness.activate({ id: 'reference-tools-ui-' + phase, name: 'Reference tools', schema: 3, runtime: 2, mode: 'native-unified', roles: {}, nodes: {}, wires: {}, groups: {}, portals: {}, definitions: {}, view: { x: 0, y: 0, zoom: 1 } });
     }, phase);
 }
 async function insert(page, family, operation) {
     await page.locator(`[data-family="${family}"]`).click();
     await page.locator(`[data-shelf-choice="operation:${operation}"]`).click();
-    const id = await page.evaluate(operation => Object.values(window.canvasHarness.graph.nodes).find(node => node.operation === operation).id, operation);
+    const id = await page.evaluate(operation => {const h=window.canvasHarness,node=Object.values(h.graph.nodes).find(node=>node.operation===operation);node.phase=window.referenceStage;h.S.touchGraph(h.graph);h.UI.refreshIfOpen();return node.id;}, operation);
     await page.evaluate(async id => { const h = window.canvasHarness, node = h.graph.nodes[id]; await h.view({ x: 280 - node.x, y: 80 - node.y, zoom: 1 }); }, id);
     await page.locator(`.pc-node[data-id="${id}"] .pc-native-heading`).click();
     return id;
@@ -80,7 +81,8 @@ for (const phase of ['pre', 'post']) test(`${phase} canonical Style and Format T
         await expect(page.locator(`.pc-node[data-id="${id}"] .pc-port[data-dir="in"][data-port="in"]`)).toHaveAttribute('data-kind', 'text');
         await expect(page.locator(`.pc-node[data-id="${id}"] .pc-port[data-dir="out"][data-port="out"]`)).toHaveAttribute('data-kind', 'text');
         expect(await page.evaluate(id => window.canvasHarness.graph.nodes[id].inputKind, id)).toBe('text');
-        if (phase === 'pre') await expect(page.getByLabel('Input type', { exact: true }).locator('option[value="draft"], input[type="radio"][value="draft"]')).toHaveCount(0);
+        expect(await page.evaluate(id => window.canvasHarness.graph.nodes[id].phase, id)).toBe(phase);
+        if (phase === 'pre') await expect(page.getByLabel('Input type', {exact:true}).locator('option[value="draft"]')).toHaveCount(0);
         if (operation === 'style-transfer') {
             await chooseControl(page, 'Mode', 'rhythm');
             await expect.poll(() => page.evaluate(id => window.canvasHarness.graph.nodes[id].mode, id)).toBe('rhythm');
@@ -98,7 +100,7 @@ test('pre Text Terminology Map feeds downstream Text Rules and produces guidance
         const h = window.canvasHarness, { operationDefaults } = await import('/src/workflow/catalog.js?v=' + h.version);
         const node = (id, operation, x, y, controls = {}) => ({ ...operationDefaults(operation), id, type: 'workflow', operation, operationVersion: 1, x, y, ...controls });
         const wire = (id, from, to, toPort = 'in') => ({ id, route: 'wire', from, fromPort: 'out', to, toPort });
-        const graph = { id: 'pre-text-terminology', name: 'Pre Text terminology', schema: 3, runtime: 2, mode: 'native-pre', roles: {}, groups: {}, portals: {}, definitions: {}, view: { x: 0, y: 0, zoom: 0.65 },
+        const graph = { id: 'pre-text-terminology', name: 'Pre Text terminology', schema: 3, runtime: 2, mode: 'native-unified', roles: {}, groups: {}, portals: {}, definitions: {}, view: { x: 0, y: 0, zoom: 0.65 },
             nodes: {
                 source: node('source', 'compose', 20, 450, { sections: [{ name: 'Text', text: 'Captain waits.' }] }),
                 json: node('json', 'compose', 20, 60, { sections: [{ name: 'JSON', text: '{"entries":[{"from":"Captain","to":"Commander"}]}' }] }),
@@ -117,18 +119,19 @@ test('pre Text Terminology Map feeds downstream Text Rules and produces guidance
     });
     await expect(page.locator('.pc-port[data-node="map"][data-dir="out"][data-port="out"]')).toHaveAttribute('data-kind', 'text');
     await expect(page.locator('.pc-port[data-node="rules"][data-dir="in"][data-port="in"]')).toHaveAttribute('data-kind', 'text');
-    await page.locator('.pc-root-run').click();
+    await page.evaluate(() => window.canvasHarness.canvas.select({kind:'node',id:'publish'}));
+    await page.locator('.pc-output-preview [data-run-here]').click();
     await expect(page.locator('.pc-run-meter-label')).toHaveText('Completed');
     const result = await runResult(page);
     expect(result).toMatchObject({ ok: true, actualCalls: 0, callBound: 0 });
     expect(result.recording.artifacts.filter(entry => entry.value?.kind === 'text').map(entry => entry.value.text)).toEqual(expect.arrayContaining(['Commander waits.', 'Admiral waits.']));
     expect(result.recording.artifacts.some(entry => entry.value?.kind === 'guidance' && entry.value.text === 'Admiral waits.')).toBe(true);
-    expect(result.recording.terminals).toHaveLength(1);
+    expect(result.recording.terminals).toHaveLength(0);
     expect(await page.evaluate(() => window.canvasHarness.providerCalls())).toBe(0);
     expect(requests.every(url => new URL(url).hostname === '127.0.0.1')).toBe(true);
 });
 
-test('saved post Terminology Map without inputKind retains Draft patches and review candidate behavior', async ({ page }) => {
+test('saved Terminology Map without inputKind retains Draft patches and diagnostic candidate behavior', async ({ page }) => {
     await page.route('**/script.js', route => route.fulfill({ contentType: 'text/javascript', body: `
         const context = () => globalThis.SillyTavern.getContext();
         export const isGenerating = () => false;
@@ -140,7 +143,7 @@ test('saved post Terminology Map without inputKind retains Draft patches and rev
         const h = window.canvasHarness, { exportWorkflow, parseWorkflow } = await import('/src/workflow/packages.js?v=' + h.version);
         const node = (id, operation, x, y, controls = {}) => ({ id, type: 'workflow', operation, operationVersion: 1, x, y, ...controls });
         const wire = (id, from, to, toPort = 'in') => ({ id, route: 'wire', from, fromPort: 'out', to, toPort });
-        const graph = { id: 'legacy-draft-terminology', name: 'Saved Draft terminology', schema: 3, runtime: 2, mode: 'native-post', roles: {}, groups: {}, portals: {}, definitions: {}, view: { x: 0, y: 0, zoom: 0.65 },
+        const graph = { id: 'legacy-draft-terminology', name: 'Saved Draft terminology', schema: 3, runtime: 2, mode: 'native-unified', roles: {}, groups: {}, portals: {}, definitions: {}, view: { x: 0, y: 0, zoom: 0.65 },
             nodes: {
                 source: node('source', 'reply-snapshot', 20, 450),
                 json: node('json', 'compose', 20, 60, { sections: [{ name: 'JSON', text: '{"entries":[{"from":"Captain","to":"Commander"}]}' }] }),
@@ -160,12 +163,14 @@ test('saved post Terminology Map without inputKind retains Draft patches and rev
     });
     await expect(page.locator('.pc-port[data-node="map"][data-dir="in"][data-port="in"]')).toHaveAttribute('data-kind', 'draft');
     await expect(page.locator('.pc-port[data-node="map"][data-dir="out"][data-port="out"]')).toHaveAttribute('data-kind', 'patches');
-    await page.locator('.pc-root-run').click();
+    await page.evaluate(() => window.canvasHarness.canvas.select({kind:'node',id:'apply'}));
+    await page.locator('.pc-output-preview [data-run-here]').click();
     await expect(page.locator('.pc-run-meter-label')).toHaveText('Completed');
     const result = await runResult(page);
     expect(result).toMatchObject({ ok: true, actualCalls: 0, callBound: 0 });
     expect(result.recording.artifacts.some(entry => entry.value?.kind === 'candidate' && entry.value.text === 'Commander waits.' && entry.value.original === 'Captain waits.')).toBe(true);
     expect(result.recording.terminals).toHaveLength(1);
+    await expect(page.getByRole('button', {name:'Apply reviewed candidate',exact:true})).toHaveCount(0);
     expect(await page.evaluate(() => window.canvasHarness.context.chat.at(-1).mes)).toBe('Captain waits.');
     expect(await page.evaluate(() => window.canvasHarness.providerCalls())).toBe(0);
 });

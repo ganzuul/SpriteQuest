@@ -92,7 +92,7 @@ function boot() {
         const context = ctx(); settings(); void initializeNativeWorkflowController();
         globalThis.addEventListener?.('unload', () => getNativeWorkflowController().dispose(), { once: true });
         const snapshot = () => {
-            const value = settings(), ids = [value.activeGraphId, value.nativeBindings.preGraphId, value.nativeBindings.postGraphId], graphs = ids.map(id => value.graphs[id]);
+            const value = settings(), ids = [value.activeGraphId, value.nativeBindings.workflowGraphId], graphs = ids.map(id => value.graphs[id]);
             return { graphs, signature: JSON.stringify([value.enabled, ids, graphs.map(graph => graph ? workflowSignature(graph) : null)]) };
         };
         let previous = snapshot();

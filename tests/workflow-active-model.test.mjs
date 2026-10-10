@@ -82,7 +82,7 @@ test('active metadata is authenticated and safe summaries carry no captured sett
 });
 
 const draft = profileId => ({id:'definition',version:1,name:'Plan',interface:[],parameters:[],body:{schema:3,runtime:2,mode:'native-pre',nodes:{plan:{id:'plan',type:'workflow',operation:'response-plan',profileId}},wires:{},roles:{Analysis:{profileId}}}});
-const graph = profileId => ({id:'root',schema:3,runtime:2,mode:'native-pre',nodes:{plan:{id:'plan',type:'workflow',operation:'response-plan',profileId}},wires:{},roles:{Analysis:{profileId}},definitions:{}});
+const graph = profileId => ({id:'root',schema:3,runtime:2,mode:'native-unified',nodes:{plan:{id:'plan',type:'workflow',operation:'response-plan',profileId}},wires:{},roles:{Analysis:{profileId}},definitions:{}});
 test('portable active identity survives workflow export and import while local profile identities are stripped',()=>{
     const exported=exportWorkflow(graph(active));assert.equal(exported.graph.nodes.plan.profileId,active);assert.equal(exported.graph.roles.Analysis.profileId,active);
     assert.equal(parseWorkflow(JSON.stringify(exported)).data.nodes.plan.profileId,active);
@@ -100,21 +100,21 @@ test('active display metadata resolves host model without exposing settings or r
 });
 
 import { createNativeWorkflowController } from '../src/workflow/host.js';
-import { starterGraph } from '../src/workflow/starters.js';
+import {reviewGraph,nativeFixture} from './helpers/native-workflow-fixture.mjs';
 function activeController() {
-    const graph=starterGraph('reviewed-de-slop'),context=chatHost();
-    Object.assign(context,{chatId:'chat',characterId:1,groupId:null,chat:[{mes:'Hello',is_user:true},{mes:'We delve.',is_user:false,swipe_id:0,swipes:['We delve.'],gen_started:1,gen_finished:2}],extensionPrompts:{}});
-    context.ChatCompletionService.sendRequest=async()=>complete('{"patches":[{"index":0,"replacement":"explore"}]}');
-    return {graph,context,controller:createNativeWorkflowController({context:()=>({...context}),countTokens:async text=>({tokens:Math.ceil(text.length/4),method:'fixture'})})};
+    const graph=reviewGraph(),context=chatHost();graph.nodes.repair.profileId=active;
+    Object.assign(context,{chatId:'chat',characterId:1,groupId:null,characters:[{avatar:'other.png'},{avatar:'fixture.png'}],chat:[{mes:'Hello',is_user:true},{mes:'We delve.',is_user:false,swipe_id:0,swipes:['We delve.'],swipe_info:[{extra:{},gen_started:1,gen_finished:2}],extra:{},gen_started:1,gen_finished:2}],extensionPrompts:{}});
+    context.ChatCompletionService.sendRequest=async()=>complete('We explore.');
+    const f=nativeFixture(graph,{context,contextReader:()=>({...context}),nativeBinding:true});return {graph,context,controller:f.controller,run:()=>f.generate(graph)};
 }
 test('host request adapter rechecks a freshly captured main API before transmitting',async()=>{
-    const {graph,context,controller}=activeController();let sent=false;
+    const {graph,context,controller,run}=activeController();let sent=false;
     context.ChatCompletionService.presetToGeneratePayload=async(_preset,_override,payload)=>{context.mainApi='legacy';return payload;};
     context.ChatCompletionService.sendRequest=async()=>{sent=true;return complete('unsafe');};
-    const result=await controller.runPost(graph);assert.equal(result.error.code,'BINDING_CHANGED');assert.equal(sent,false);assert.deepEqual(result.reviewHandles,[]);
+    const result=await run();assert.equal(result.error.code,'BINDING_CHANGED');assert.equal(sent,false);assert.deepEqual(result.reviewHandles,[]);
 });
 for(const [label,mutate] of [['sampler',c=>{c.chatCompletionSettings.temperature=0.6;}],['model',c=>{c.chatCompletionSettings.nanogpt_model='changed';}],['API',c=>{c.mainApi='legacy';}]]) test(`settled active candidates reject changed host ${label}`,async()=>{
-    const {graph,context,controller}=activeController(),result=await controller.runPost(graph);assert.equal(result.ok,true,JSON.stringify(result.error));
+    const {graph,context,controller,run}=activeController(),result=await run();assert.equal(result.ok,true,JSON.stringify(result.error));
     assert.equal(result.reviewHandles.length,1);assert.equal(controller.candidateStatus(result.reviewHandles[0]).ok,true);
     mutate(context);assert.equal(controller.candidateStatus(result.reviewHandles[0]).error.code,'BINDING_CHANGED');
     assert.equal((await controller.apply(result.reviewHandles[0])).error.code,'BINDING_CHANGED');assert.equal(context.chat.at(-1).mes,'We delve.');
@@ -183,8 +183,8 @@ for(const [api,field,value] of [['openai','custom_stopping_strings','["CHANGED"]
     assert.equal((await requestModel({binding:bound.data,messages,maxTokens:10},()=>({...context}))).error?.code,'BINDING_CHANGED');assert.equal(sent,false);
 });
 for(const [field,value] of [['custom_stopping_strings','["CHANGED"]'],['custom_stopping_strings_macro',true]]) test(`settled active candidate rejects changed public ${field}`,async()=>{
-    const {graph,context,controller}=activeController();context.powerUserSettings={custom_stopping_strings:'["END"]',custom_stopping_strings_macro:false};
-    const result=await controller.runPost(graph);assert.equal(result.ok,true,JSON.stringify(result.error));
+    const {graph,context,controller,run}=activeController();context.powerUserSettings={custom_stopping_strings:'["END"]',custom_stopping_strings_macro:false};
+    const result=await run();assert.equal(result.ok,true,JSON.stringify(result.error));
     assert.equal(controller.candidateStatus(result.reviewHandles[0]).ok,true);context.powerUserSettings[field]=value;
     assert.equal(controller.candidateStatus(result.reviewHandles[0]).error?.code,'BINDING_CHANGED');
 });

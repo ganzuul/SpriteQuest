@@ -20,7 +20,7 @@ function fastGraph(id = 'saved-fast') {
     graph.nodes.fast = { id: 'fast', type: 'workflow', operation: 'fast-decision', operationVersion: 1, phase: 'pre', inputKind: 'text', fastConnectionId: 'local-fast', questions: { event: { type: 'noul', instructions: 'Did the event occur?' } } };
     return graph;
 }
-const saved = graph => ({ schema: 1, enabled: true, graphs: { [graph.id]: graph }, activeGraphId: graph.id, nativeBindings: { workflowGraphId: graph.id, preGraphId: null, postGraphId: null }, subgraphLibrary: { definitions: {} }, ui: {} });
+const saved = graph => ({ schema: 1, enabled: true, graphs: { [graph.id]: graph }, activeGraphId: graph.id, nativeBindings: { workflowGraphId: graph.id }, subgraphLibrary: { definitions: {} }, ui: {} });
 
 test('cold export scrubs qualified exposed connection controls while preserving similarly shaped story data', () => {
     const pin = id => ({ id, version: 1, semanticHash: 'sha256:' + id.slice(0, 1).repeat(64) });
@@ -126,9 +126,40 @@ test('a mixed workspace preserves unrelated assignment and remains stable after 
     assert.deepEqual(reload.state.settings(), current); assert.equal(reload.saves(), 0);
 });
 
+test('stage and Fast retirement share one atomic migration and preserve both originals', async () => {
+    const fast = fastGraph(), old = { id: 'old-pre', schema: 3, runtime: 2, mode: 'native-pre', nodes: { text: { id: 'text', type: 'workflow', operation: 'text', text: 'Keep this.' } }, wires: {} };
+    const value = saved(fast); value.graphs[old.id] = old;
+    value.nativeBindings.preGraphId = old.id; value.nativeBindings.postGraphId = null;
+    const host = await stateFor(value), current = host.state.settings();
+    assert.deepEqual(current.archivedWorkflows.graphs, { [fast.id]: fast, [old.id]: old });
+    assert.deepEqual(current.archivedWorkflows.bindings, { workflowGraphId: fast.id, preGraphId: old.id, postGraphId: null });
+    assert.deepEqual(current.nativeBindings, { workflowGraphId: null });
+    assert.equal(current.enabled, false); assert.equal(host.saves(), 1);
+});
+
+test('empty legacy settings retain the starter created during unified assignment migration', async () => {
+    const value = saved(starterGraph('unified-basic'));
+    value.graphs = {}; value.activeGraphId = null; value.nativeBindings = { preGraphId: null, postGraphId: null };
+    const host = await stateFor(value), current = host.state.settings();
+    assert.equal(Object.keys(current.graphs).length, 1);
+    assert.equal(current.graphs[current.activeGraphId].mode, 'native-unified');
+    assert.deepEqual(current.nativeBindings, { workflowGraphId: null });
+    assert.equal(current.enabled, false); assert.equal(host.saves(), 1);
+});
+
+test('a read-only library prevents a mixed retirement before any graph or assignment changes', async () => {
+    const graph = fastGraph(), value = saved(graph), definition = { id: 'saved-helper', version: 1, semanticHash: 'sha256:' + 'a'.repeat(64), body: { nodes: { fast: graph.nodes.fast } } };
+    value.subgraphLibrary.definitions[definitionRefKey(definition)] = definition;
+    const before = structuredClone(value);
+    Object.defineProperty(value, 'subgraphLibrary', { enumerable: true, writable: false, value: value.subgraphLibrary });
+    const host = await stateFor(value);
+    assert.throws(() => host.state.settings(), /read.only/i);
+    assert.deepEqual(value, before); assert.equal(host.saves(), 0);
+});
+
 test('unsafe or read-only recovery inputs reject before getters, authored data changes or saving', async () => {
     const value = saved(fastGraph()), before = structuredClone(value);
-    Object.defineProperty(value, 'subgraphLibrary', { enumerable: true, writable: false, value: value.subgraphLibrary });
+    Object.defineProperty(value, 'graphs', { enumerable: true, writable: false, value: value.graphs });
     const host = await stateFor(value);
     assert.throws(() => host.state.settings(), /read.only/i);
     assert.deepEqual(value, before); assert.equal(host.saves(), 0);

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as planning from '../src/workflow/resolve.js?v=0.26.0';
 import { prepareCompositionViews } from '../src/workflow/composition-views.js';
-import { starterGraph } from '../src/workflow/starters.js';
+import { fixtureGraph as starterGraph } from './helpers/workflow-fixtures.mjs';
 import { cloneWorkflowDocument } from '../src/workflow/document.js';
 import { siblingWorkflow,nestedWorkflow } from './fixtures/workflow-prepared-fixture.mjs';
 
@@ -11,7 +11,7 @@ const target=(graph,nodeId,portId='out')=>({workflowId:graph.id,instancePath:[],
 test('prepared summaries share one checked inventory and preserve the full resolver closure',()=>{
     assert.equal(typeof planning.prepareWorkflowPlanner,'function');
     const root=graph3(),before=structuredClone(root),prepared=planning.prepareWorkflowPlanner(root);assert.equal(prepared.ok,true);
-    for(const choice of [undefined,target(root,'scene-context'),target(root,'response-plan'),{kind:'terminal',address:{workflowId:root.id,instancePath:[],nodeId:'guidance'}}]) {
+    for(const choice of [undefined,target(root,'scene-context'),target(root,'response-plan'),target(root,'guidance')]) {
         const summary=prepared.data.summarize(choice),full=planning.resolveWorkflow(root,choice===undefined?{}:{target:choice});
         assert.equal(summary.ok,full.ok);assert.equal(summary.data.callBound,full.data.callBound);assert.deepEqual(summary.data.requiredBindingAddresses,full.data.primitives.filter(unit=>unit.included&&unit.requestBound).map(unit=>unit.address));
         assert.ok(!('primitives' in summary.data));assert.ok(summary.data.requiredBindingAddresses.every(address=>prepared.data.inventory.primitives.some(unit=>unit.address===address)));
@@ -25,12 +25,14 @@ test('prepared summaries share one checked inventory and preserve the full resol
 test('nested boundary and primitive summaries preserve the exact shared resolver mapping',()=>{
     const root=nestedWorkflow(),prepared=planning.prepareWorkflowPlanner(root);assert.equal(prepared.ok,true,JSON.stringify(prepared.error));
     for(const target of [undefined,{workflowId:root.id,instancePath:[],nodeId:'first/path',portId:'proposal'},{workflowId:root.id,instancePath:['first/path'],nodeId:'work',portId:'proposal'},{workflowId:root.id,instancePath:['first/path','work'],nodeId:'work',portId:'out'}]) {
-        const summary=prepared.data.summarize(target),full=planning.resolveWorkflow(root,target===undefined?{}:{target});assert.equal(summary.ok,full.ok);assert.equal(summary.data.callBound,full.data.callBound);assert.deepEqual(summary.data.requiredBindingAddresses,full.data.primitives.filter(unit=>unit.included&&unit.requestBound).map(unit=>unit.address));
+        const summary=prepared.data.summarize(target),full=planning.resolveWorkflow(root,target===undefined?{}:{target});assert.equal(summary.ok,full.ok);
+        if(!summary.ok){assert.deepEqual(summary.error,full.error);continue;}
+        assert.equal(summary.data.callBound,full.data.callBound);assert.deepEqual(summary.data.requiredBindingAddresses,full.data.primitives.filter(unit=>unit.included&&unit.requestBound).map(unit=>unit.address));
     }
     const views=prepareCompositionViews(root,prepared.data);assert.equal(views.data.views.length,4);assert.equal(prepareCompositionViews(root,prepared.data),views);
 });
 test('unfinished roots retain inventory while target completeness stays local and cycles stay global',()=>{
-    assert.equal(typeof planning.prepareWorkflowPlanner,'function');const root=graph3();delete root.nodes.guidance;delete root.wires['wire-3'];
+    assert.equal(typeof planning.prepareWorkflowPlanner,'function');const root=graph3();delete root.nodes['review-publish'];delete root.wires.draft;
     // Use a valid pre-phase request operation with its input deliberately unconnected.
     root.nodes.unfinished={id:'unfinished',type:'workflow',operation:'response-plan'};
     const prepared=planning.prepareWorkflowPlanner(root);assert.equal(prepared.ok,true);assert.equal(prepared.data.summarize().error.code,'MISSING_TERMINAL');assert.equal(prepared.data.summarize(target(root,'response-plan')).ok,true);assert.equal(prepared.data.summarize(target(root,'unfinished')).error.code,'MISSING_INPUT');

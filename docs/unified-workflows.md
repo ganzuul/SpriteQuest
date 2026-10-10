@@ -20,7 +20,7 @@ The normal SillyTavern connection writes the main reply. Other model nodes have 
 
 Apply creates a new assistant swipe and preserves the native original. It then settles the effects associated with that exact reviewed root result. Reject leaves the original and does not accept its pending file, clock, random-outcome or accepted-policy Recall effects. A completed candidate is still a proposal until you apply it.
 
-Use **Run to here** to inspect supported preparation or source operations without accepting changes. A full unified workflow containing Generate Reply needs an owned SillyTavern generation; a manual Run does not secretly start another main reply. Legacy pre/post tools still support their existing explicit Run behavior.
+Use **Run to here** to inspect supported preparation or source operations without accepting changes. A full unified workflow containing Generate Reply needs an owned SillyTavern generation; a manual Run does not secretly start another main reply.
 
 ## Pick a concrete starting flow
 
@@ -155,7 +155,7 @@ An unknown save outcome is different from a retryable failure. **PERSISTENCE_UNK
 
 State and projection receipts shown before Apply remain proposed diagnostics. Accepted file content uses the schema you authored. A generic JSON writer does not automatically promote every nested `acceptance: "pending"` string in an arbitrary document to canonical truth; author the canonical event/state shape deliberately and consult the accepted effect receipt.
 
-Legacy Memory Commit retains its documented immediate full-root Post settlement. Unified memory effects join the accepted root result. Review the workflow mode before treating a full Run as a harmless memory preview.
+Memory Commit stages its effects for the accepted root Review / Publish result. Diagnostic execution never settles memory.
 
 ## Story time: midnight, 14:00 and eight-hour intervals
 
@@ -221,18 +221,18 @@ Native Recall currently serves the selected native actor. Multiple present actor
 
 ## Move an existing pre/post setup
 
-Saved **native-pre** and **native-post** workflows remain available. **Workflows → New legacy pre workflow / New legacy post workflow** creates explicit tools, and the assigned legacy phase keeps its existing behavior. Selecting a legacy assignment replaces the unified host assignment; separate assignments are not a way to stack a second host generation pipeline on top of the unified workflow.
+Saved native-pre and native-post roots are retired. Migration preserves their original graphs, bindings and active selection in a cold archive: `settings.archivedWorkflows = { schema: 1, graphs, bindings, activeGraphId }`. When the active selection was retired, the workspace opens a disabled, unassigned unified starter. Archived roots cannot execute, become assigned or import as current workflows.
 
-There is no automatic legacy converter. Create a new unified workflow or open an updated example, then reuse suitable operations or pinned subgraphs explicitly:
+**File → Export archived workflows…** downloads the recovery archive as JSON. This recovery action makes no model requests and does not convert the contents. Preserve that download while rebuilding a needed process in a new unified workflow or updated example:
 
-1. Keep preparation Context/Text/Guidance logic upstream of Generate Reply.
-2. Replace the legacy host Guidance terminal with a wire to Generate Reply's guidance pin.
-3. Replace a latest-reply Snapshot dependency with the owned Generate Reply Draft where the response process needs this generation's reply.
-4. Keep compatible patch validation where useful, or use Revise Draft for direct source-bound Draft revisions. End the final Draft in Review / Publish.
-5. Keep native sources, Memory, file references, Recall, clocks and publication at the root when their contracts require it. Reusable pure processing belongs in subgraphs.
-6. Rebind local model and helper connections, authorize documents, inspect the graph, then assign and Arm it.
+1. Place preparation Context/Text/Guidance logic upstream of Generate Reply and set explicit stages.
+2. Wire bounded Guidance into Generate Reply's guidance pin.
+3. Use the owned Generate Reply Draft for processing this generation's response.
+4. End the final Draft in Review / Publish. Patch tools retain diagnostic utility but do not grant publication authority.
+5. Keep native sources, Memory, file references, Recall, clocks and publication at the root where required. Stage-specific reusable processing definitions remain pinned.
+6. Rebind local model/helper connections, authorize documents, inspect supported outputs with Run to here, then assign and Arm.
 
-Imports and exports preserve pinned definition identities and supported saved controls. Adding a fragment is a reviewed edit with phase/type checks, not an implicit conversion between workflow modes. Preserve the original legacy graph while adapting a copy.
+Current imports preserve pinned identities and controls; additive imports use stage/type checks. There is no automatic converter or production compatibility starter for a retired root.
 
 ## When a run holds
 

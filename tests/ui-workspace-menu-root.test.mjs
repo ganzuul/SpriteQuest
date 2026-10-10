@@ -35,7 +35,7 @@ const harness = await compiled('WorkspaceMenuHarness', `<script>import Menus fro
 const settle = async () => { flushSync(); await tick(); flushSync(); };
 const click = async element => { assert.ok(element); element.click(); await settle(); };
 let sequence = 0;
-const guidance = () => { const root = cloneWorkflowDocument(starterGraph('native-guidance')).data; root.id = 'menu-root-' + ++sequence; return root; };
+const guidance = () => { const root = cloneWorkflowDocument(starterGraph('unified-basic')).data; root.id = 'menu-root-' + ++sequence; return root; };
 function prepare(root, validBindings = true) {
     let bindings = 0;
     const result = prepareWorkspaceViews(root, { resolveBinding: () => { bindings++; return validBindings ? { ok: true, data: { profileId: 'cached', model: 'cached-model' } } : { ok: false, error: { message: 'The current root needs its model connection.' } }; } });
@@ -46,65 +46,58 @@ const state = (workflow, rootWorkflow) => ({ workflow, ...(rootWorkflow === unde
 async function fixture(initial, command = () => {}) {
     const host = document.createElement('div'); document.body.append(host);
     const mounted = mount(harness.component, { target: host, props: { initial, actions: { command } } }); await settle();
-    const menu = () => host.querySelector('[role="menu"][aria-label="Workflows"]');
+    const menu = () => host.querySelector('[role="menu"]');
     const item = label => [...menu().querySelectorAll('[role="menuitem"]')].find(element => element.textContent.trim() === label);
-    return { host, item, async open() { if (!menu()) await click(host.querySelector('[data-menu="Workflows"]')); }, async update(next) { mounted.update(next); await settle(); }, async close() { await unmount(mounted); host.remove(); } };
+    return { host, item, async open(name = 'Workflows') { if (!menu()) await click(host.querySelector('[data-menu="' + name + '"]')); }, async update(next) { mounted.update(next); await settle(); }, async close() { await unmount(mounted); host.remove(); } };
 }
-test('a deleted genuine pinned output cannot disable the valid current root Run menu', async () => {
-    const root = guidance(); root.nodes.scratch = { id: 'scratch', type: 'workflow', operation: 'compose', outputKind: 'text', sections: [{ name: 'note', text: 'Temporary preview' }] };
-    const initial = prepare(root), pinned = projectPreparedWorkflow(initial.token).targets.find(target => target.nodeId === 'scratch'); assert.ok(pinned);
-    const calls = [], f = await fixture(state(projectPreparedWorkflow(initial.token, { selectedTarget: pinned, pinnedPreview: pinned }), projectPreparedWorkflow(initial.token)), command => calls.push(command));
-    try {
-        await f.open(); assert.equal(f.item('Run workflow').disabled, false);
-        delete root.nodes.scratch;
-        const current = prepare(root), rootView = projectPreparedWorkflow(current.token), targetView = projectPreparedWorkflow(current.token, { selectedTarget: pinned, pinnedPreview: pinned });
-        assert.equal(rootView.issues.length, 0); assert.ok(targetView.issues.length); const count = current.bindingCount();
-        await f.update(state(targetView, rootView));
-        assert.equal(f.item('Run workflow').disabled, false, 'Run belongs to the valid root, not the removed pinned output');
-        await click(f.item('Run workflow')); assert.deepEqual(calls, ['run-workflow']); assert.equal(current.bindingCount(), count);
-    } finally { await f.close(); }
-});
-test('a valid deterministic target cannot enable Run for the current unbound root', async () => {
-    const root = guidance(), prepared = prepare(root, false), rootView = projectPreparedWorkflow(prepared.token);
-    const sceneId = Object.values(root.nodes).find(node => node.operation === 'scene-context').id;
-    const target = rootView.targets.find(target => target.nodeId === sceneId); assert.ok(target);
-    const targetView = projectPreparedWorkflow(prepared.token, { selectedTarget: target, pinnedPreview: target });
-    assert.ok(rootView.issues.length); assert.equal(targetView.issues.length, 0); const count = prepared.bindingCount(), calls = [];
-    const f = await fixture(state(targetView, rootView), command => calls.push(command));
-    try {
-        await f.open(); assert.equal(f.item('Run workflow').disabled, true, 'the actual current root binding issue must govern Run');
-        await click(f.item('Run workflow')); assert.deepEqual(calls, []); assert.equal(prepared.bindingCount(), count);
-        assert.equal(f.item('Stop workflow').disabled, true);
-    } finally { await f.close(); }
-});
-test('an actual busy root session governs Stop while the selected projection is idle', async () => {
-    const root = guidance(), prepared = prepare(root), idle = projectPreparedWorkflow(prepared.token);
-    let release, sessionState, cancelled = 0, runs = 0;
-    const session = createWorkflowSession({ rootCurrent: () => root, runEpoch: () => 1, active: () => true, changed: next => { sessionState = next; }, runtime: () => ({ runPre: async actual => { assert.equal(actual, root); runs++; return new Promise(resolve => { release = resolve; }); }, cancel: () => { cancelled++; } }) });
-    const running = session.run(); assert.equal(sessionState.busy, true);
-    const current = projectPreparedWorkflow(prepared.token, sessionState), calls = [];
-    const f = await fixture(state(idle, current), command => { calls.push(command); if (command === 'stop-workflow') session.cancel(); });
-    try {
-        await f.open(); assert.equal(f.item('Run workflow').disabled, true); assert.equal(f.item('Stop workflow').disabled, false);
-        await click(f.item('Stop workflow')); assert.deepEqual(calls, ['stop-workflow']); assert.equal(cancelled, 1); assert.equal(runs, 1);
-        await f.update(state(idle, projectPreparedWorkflow(prepared.token, sessionState))); await f.open();
-        assert.equal(f.item('Stop workflow').disabled, true); assert.equal(f.item('Run workflow').disabled, false);
-    } finally { release({ ok: false, error: { message: 'Run cancelled.' } }); await running; await f.close(); }
-});
-test('a missing current workflow keeps root Run disabled', async () => {
-    const f = await fixture({ history: {undo:false,redo:false}, selectionCount:0, selectionActions:{} });
-    try { await f.open(); assert.equal(f.item('Run workflow').disabled, true); assert.equal(f.item('Stop workflow').disabled, true); } finally { await f.close(); }
+test('a removed pinned output does not disable assignment of the current unified root', async () => {
+    const root = guidance(); root.nodes.scratch = { id: 'scratch', type: 'workflow', operation: 'compose', outputKind: 'text', sections: [] };
+    const first = prepare(root), pinned = projectPreparedWorkflow(first.token).targets.find(target => target.nodeId === 'scratch');
+    delete root.nodes.scratch; const current = prepare(root), rootView = projectPreparedWorkflow(current.token), selected = projectPreparedWorkflow(current.token, { selectedTarget: pinned, pinnedPreview: pinned });
+    assert.ok(selected.issues.length); const count = current.bindingCount(), calls = [], f = await fixture(state(selected, rootView), command => calls.push(command));
+    try { await f.open(); assert.equal(f.item('Assign unified workflow').disabled, false); await click(f.item('Assign unified workflow')); assert.deepEqual(calls, ['assign-workflow']); assert.equal(current.bindingCount(), count); }
+    finally { await f.close(); }
 });
 
-test('legacy phase assignment remains available in Workflows without a setup panel', async () => {
-    const root = guidance(), prepared = prepare(root), calls = [];
+test('a busy target session governs Stop while the selected projection is idle', async () => {
+    const root = guidance(), prepared = prepare(root), idle = projectPreparedWorkflow(prepared.token);
+    let release, sessionState, cancelled = 0, runs = 0;
+    const session = createWorkflowSession({ rootCurrent: () => root, runEpoch: () => 1, active: () => true, changed: next => { sessionState = next; }, runtime: () => ({ runTarget: async actual => { assert.equal(actual, root); runs++; return new Promise(resolve => { release = resolve; }); }, cancel: () => { cancelled++; } }) });
+    const running = session.run({ target: { workflowId: root.id, instancePath: [], nodeId: 'on-send', portId: 'activation' } }); assert.equal(sessionState.busy, true);
+    const calls = [], f = await fixture(state(idle, projectPreparedWorkflow(prepared.token, sessionState)), command => { calls.push(command); if (command === 'stop-workflow') session.cancel(); });
+    try {
+        await f.open(); assert.equal(f.item('Stop workflow').disabled, false); assert.equal(f.item('Assign unified workflow').disabled, true);
+        await click(f.item('Stop workflow')); assert.deepEqual(calls, ['stop-workflow']); assert.equal(cancelled, 1); assert.equal(runs, 1);
+        await f.update(state(idle, projectPreparedWorkflow(prepared.token, sessionState))); await f.open(); assert.equal(f.item('Stop workflow').disabled, true);
+    } finally { release({ ok: false, error: { message: 'Run cancelled.' } }); await running; await f.close(); }
+});
+
+test('an unavailable workflow keeps Stop disabled and exposes no assignment', async () => {
+    const f = await fixture({ history: { undo: false, redo: false }, selectionCount: 0, selectionActions: {} });
+    try { await f.open(); assert.equal(f.item('Stop workflow').disabled, true); assert.equal(f.item('Assign unified workflow'), undefined); } finally { await f.close(); }
+});
+
+test('unified Workflows menu offers assignment and Stop without legacy creation or root Run', async () => {
+    const root = starterGraph('unified-basic'), prepared = prepare(root), calls = [];
     const f = await fixture(state(projectPreparedWorkflow(prepared.token)), command => calls.push(command));
     try {
         await f.open();
-        await click(f.item('Assign legacy pre phase'));
-        assert.deepEqual(calls, ['assign-workflow-phase']);
-        await f.update(state({ ...projectPreparedWorkflow(prepared.token), phase: 'post', assigned: true }));
-        await f.open();
-        assert.equal(f.item('Assigned to legacy post phase').disabled, true);
+        assert.equal(f.item('Run workflow'), undefined);
+        assert.equal(f.item('New legacy pre workflow'), undefined);
+        assert.equal(f.item('New legacy post workflow'), undefined);
+        assert.equal(f.item('Stop workflow').disabled, true);
+        await click(f.item('Assign unified workflow'));
+        assert.deepEqual(calls, ['assign-workflow']);
+    } finally { await f.close(); }
+});
+
+
+test('File offers archived workflow export only when recoverable originals exist', async () => {
+    const root = starterGraph('unified-basic'), view = state(projectPreparedWorkflow(prepare(root).token)), calls = [];
+    const f = await fixture(view, command => calls.push(command));
+    try {
+        await f.open('File'); assert.equal(f.item('Export archived workflows…'), undefined);
+        await f.update({ ...view, hasArchivedWorkflows: true });
+        await click(f.item('Export archived workflows…')); assert.deepEqual(calls, ['export-archived-workflows']);
     } finally { await f.close(); }
 });

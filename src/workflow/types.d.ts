@@ -262,7 +262,7 @@ export type BoundedWorkflowRunResult = BoundedRunData & { schema: 3; runtime: 2;
 /** A failed factory can return no recording; consumers preserve their prior bounded record. */
 export interface WorkflowPreparationFailure { schema?: number; runtime?: number; mode: 'root' | 'target'; runId?: string; ok: false; callBound: number; actualCalls: number; error: WorkflowError; recording?: never; }
 export type WorkflowRunResult = BoundedWorkflowRunResult | WorkflowPreparationFailure;
-export type HostWorkflowRunResult = WorkflowRunResult & { reviewHandles?: TerminalReviewHandle[]; published?: boolean; fallback?: 'native'; memoryCommit?: { applied: boolean; acknowledged: boolean; version: number }; };
+export type HostWorkflowRunResult = WorkflowRunResult & { reviewHandles?: TerminalReviewHandle[]; published?: boolean; fallback?: 'native'; };
 export interface WorkflowRunOptions {
     target?: WorkflowTarget; onEvent?: (event: RunEvent) => unknown; runId?: string;
     clock?: { now(): number; monotonic(): number }; phase?: WorkflowRunPhase; signal?: AbortSignal; preview?: boolean; dryRun?: boolean;

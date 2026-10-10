@@ -6,7 +6,7 @@ async function openRecordedFields(page) {
     const graphId = await page.evaluate(async () => {
         const h = window.canvasHarness;
         const version = (await (await fetch('/manifest.json')).json()).version;
-        const { starterGraph } = await import('/src/workflow/starters.js?v=' + version);
+        const { fixtureGraph: starterGraph } = await import('/tests/helpers/workflow-fixtures.mjs');
         const graph = starterGraph('structured-guidance');
         h.S.settings().graphs[graph.id] = graph;
         h.S.save(); h.UI.refreshIfOpen();
@@ -14,9 +14,9 @@ async function openRecordedFields(page) {
     });
     await page.getByRole('combobox', { name: 'Workflow', exact: true }).selectOption(graphId);
     await page.evaluate(() => window.canvasHarness.settle());
-    await page.locator('.pc-root-run').click();
-    await expect(page.locator('.pc-run-meter-label')).toHaveText('Completed');
     await page.locator('.pc-node-native[data-id="select-fields"] .pc-native-heading').click();
+    await page.locator('.pc-output-preview [data-run-here]').click();
+    await expect(page.locator('.pc-run-meter-label')).toHaveText('Completed');
     await expect(page.locator('.pc-output-preview [role="tabpanel"] pre')).toContainText('A quiet conversation.');
     return graphId;
 }

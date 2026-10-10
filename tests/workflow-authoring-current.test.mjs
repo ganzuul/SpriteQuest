@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { validateWorkflow } from '../src/workflow/contracts.js';
+import { validateWorkflow, validateGraphStructure } from '../src/workflow/contracts.js';
+import { fixtureGraph } from './helpers/workflow-fixtures.mjs';
 import { exportWorkflow } from '../src/workflow/packages.js';
 import { STARTERS, starterGraph, installStarter } from '../src/workflow/starters.js';
 import { prepareCreateFromSelection, prepareUnpack } from '../src/workflow/composition.js';
@@ -8,7 +9,7 @@ import { computeDefinitionIdentity, definitionRefKey } from '../src/workflow/def
 import { siblingWorkflow } from './fixtures/workflow-prepared-fixture.mjs';
 
 test('portable named wires and visual groups have only current authoring metadata', () => {
-    const source = starterGraph('native-guidance');
+    const source = fixtureGraph('native-guidance');
     source.groups.visual = { id: 'visual', members: ['smart-compactor', 'response-plan'], collapsed: true,
         component: { id: 'retired-component', version: 99 }, entry: 'missing', exit: {}, enabled: 'retired' };
     source.nodes['smart-compactor'].inGroup = source.nodes['response-plan'].inGroup = 'visual';
@@ -30,7 +31,7 @@ test('all starters preserve collapsed visual formation without retired group or 
             assert.equal(validateWorkflow(document).ok, true);
         }
     }
-    const graph = starterGraph('reviewed-de-slop'); assert.equal(graph.groups['ai-de-slop'].collapsed, true);
+    const graph = fixtureGraph('reviewed-de-slop'); assert.equal(graph.groups['ai-de-slop'].collapsed, true);
     assert.deepEqual(graph.groups['ai-de-slop'].members, ['pattern-scan', 'repair', 'validate-patches']);
 });
 
@@ -46,5 +47,5 @@ test('unpack retains inner visual membership and assigns only ungrouped children
     const { candidate, identityMap } = result.data, work = candidate.nodes[identityMap.nodes.work];
     assert.equal(work.inGroup, identityMap.groups.inner); assert.notEqual(work.enabled, false);
     assert.deepEqual(candidate.groups.outer.members.sort(), [identityMap.nodes.entry, identityMap.nodes.exit].sort());
-    assert.equal(validateWorkflow(candidate).ok, true); assert.deepEqual(source, before);
+    assert.equal(validateGraphStructure(candidate).ok, true); assert.deepEqual(source, before);
 });

@@ -1,6 +1,8 @@
+import {executeIntrospection} from '../../src/workflow/introspection/nodes.js';
 import assert from 'node:assert/strict';
 import { Worker as ThreadWorker } from 'node:worker_threads';
-import { WORKFLOW_EXAMPLE_DATA } from '../../src/workflow/example-data.js';
+import { operationDefaults } from '../../src/workflow/catalog.js?v=0.26.0';
+import { withNativeBoundary } from './workflow-fixtures.mjs';
 import { parseWorkflow } from '../../src/workflow/packages.js';
 import { createNativeWorkflowController } from '../../src/workflow/host.js';
 import { createNativeMemoryAdapter } from '../../src/workflow/introspection/host-memory.js';
@@ -8,20 +10,26 @@ import { makeRecord } from '../../src/workflow/introspection/contracts.js';
 // Match host.js's module URL: binding authentication is held in its WeakMap.
 import { bindingStatus } from '../../src/workflow/connections.js?v=0.26.0';
 
-// Read every companion package: the public primary-graph listing omits seven phases.
-export const examplePhases = WORKFLOW_EXAMPLE_DATA.flatMap(entry => entry.packages.map(pack => ({
-    id: entry.id, number: entry.number, phase: pack.graph.mode.slice(7), graphId: pack.graph.id,
-})));
-export function accepted(result) {
-    assert.equal(result.ok, true, JSON.stringify(result.error));
-    return result;
-}
-export function graphBy(id, phase) {
-    const entry = WORKFLOW_EXAMPLE_DATA.find(entry => entry.id === id || entry.number === id);
-    assert.ok(entry, `Unknown example ${id}`);
-    const pack = entry.packages.find(pack => phase === undefined || pack.graph.mode === `native-${phase}`);
-    assert.ok(pack, `Missing ${phase} package for ${entry.id}`);
-    return accepted(parseWorkflow(JSON.stringify(pack))).data;
+export function accepted(result) { assert.equal(result.ok,true,JSON.stringify(result.error));return result; }
+// Minimal unified fixtures for consumed evidence and identity-only memory lookup.
+export function graphBy(id) {
+    const graph={id:'consumed-memory-'+id,name:'Consumed memory fixture',schema:3,runtime:2,mode:'native-unified',nodes:{},wires:{},roles:{Analysis:{profileId:null,model:null}},definitions:{},groups:{},portals:{}};
+    const add=(id,operation,controls={})=>graph.nodes[id]={...operationDefaults(operation,controls.mode?{mode:controls.mode}:{}),...controls,profileId:null,id,type:'workflow',operationVersion:1,phase:'pre',x:0,y:0};
+    const wire=(id,from,to,toPort='in')=>graph.wires[id]={id,route:'wire',from,fromPort:'out',to,toPort};
+    if(id===21){
+        add('pre-recall','memory',{mode:'recall',query:'ferry',limit:4});
+        add('pre-compose','compose',{mode:'template',outputKind:'guidance',template:'Actor episodes: {{data:/payload/episodes}}',sections:[]});
+        add('pre-output','guidance',{budgetTokens:768});
+        wire('wire-1','pre-recall','pre-compose','data');wire('wire-2','pre-compose','pre-output');
+        return withNativeBoundary(graph,'pre-output');
+    }
+    if(id===18){
+        add('pre-scene','scene-context',{recentMessages:1,includeCharacter:false,visibilityMode:'public'});add('pre-state','memory',{mode:'read',view:'state'});
+        add('pre-reflect','reflect',{mode:'character',instructions:'Appraise supplied evidence while preserving player choice.'});add('pre-express','express',{mode:'behavior'});add('pre-guidance','guidance');
+        wire('wire-1','pre-scene','pre-reflect','context');wire('wire-2','pre-state','pre-reflect','state');wire('wire-3','pre-reflect','pre-express','assessment');wire('wire-4','pre-express','pre-guidance');
+        return withNativeBoundary(graph,'pre-guidance');
+    }
+    throw Error('Unknown consumed-memory fixture.');
 }
 export function bindFixtureRoles(graph) {
     graph.roles.Analysis = { profileId: 'fixtureAnalysis', model: 'fixture-model' };
@@ -67,6 +75,8 @@ export function createExampleFixture(graph, options = {}) {
         completedMessage(options.text ?? 'Mira waits at the closed ferry gate.'),
     ];
     const chat = supplied.map((item, index) => typeof item === 'string' ? completedMessage(item, index, index % 2 === 0) : structuredClone(item));
+    chat.push(completedMessage('Continue.',chat.length,true));
+    const listeners=new Map();
     const character = { avatar: 'mira.png', name: 'Mira', ...options.character };
     const requests = [], stages = [], events = [], requestErrors = [];
     const context = {
@@ -81,8 +91,10 @@ export function createExampleFixture(graph, options = {}) {
         updateMessageBlock: async () => {}, swipe: { refresh: async () => {} },
     };
     const countTokens = options.tokenCount ?? (async text => ({ tokens: Math.ceil(text.length / 4), method: 'example-fixture' }));
+    context.eventTypes={GENERATION_STARTED:'GENERATION_STARTED',GENERATION_STOPPED:'GENERATION_STOPPED',GENERATION_ENDED:'GENERATION_ENDED'};
+    context.eventSource={on(name,fn){listeners.set(name,fn);},removeListener(name){listeners.delete(name);},async emit(name,...args){await listeners.get(name)?.(...args);}};
     const controller = createNativeWorkflowController({
-        context: () => context, getGraph: () => currentGraph, isEnabled: () => true, isBusy: () => false, countTokens,
+        context: () => context, getGraph: () => currentGraph, isEnabled: () => true, isBusy: () => false, userId: () => 'default-user', countTokens,
         onStage(node, address) { stage = { node, address }; stages.push(stage); options.onStage?.(node, address); },
         onEvent(event) { events.push(event); options.onEvent?.(event); },
         request: async input => {
@@ -97,14 +109,21 @@ export function createExampleFixture(graph, options = {}) {
         syncMesToSwipe(index) { const m = context.chat[index]; m.swipes[m.swipe_id] = m.mes; return true; },
         syncSwipeToMes(index, id) { const m = context.chat[index]; m.swipe_id = id; m.mes = m.swipes[id]; Object.assign(m, structuredClone(m.swipe_info[id])); return true; },
     });
+    controller.subscribe();
     const f = {
         controller, context, graph, requests, stages, events, requestErrors, countTokens,
+        async reflectIdentity() {
+            const adapter=createNativeMemoryAdapter({context:()=>context}),captured=adapter.capture({signal:new AbortController().signal,isCurrent:()=>true});if(!captured.ok)return captured;const session=captured.data;
+            try{const identity=await session.readIdentity();if(!identity.ok)return identity;
+                return await executeIntrospection({type:'workflow',operation:'reflect',operationVersion:1,mode:'character'}, {context:{kind:'context',messages:[{id:'current',role:'user',text:context.chat.at(-1).mes}]}}, {root:true,...identity.data,request:async input=>{requests.push(input);return requestPort(input);}});
+            }finally{session.release();}
+        },
         get message() { return context.chat.at(-1); },
         memorySaves: () => memorySaves, chatSaves: () => chatSaves,
         setRequest(request) { requestPort = request; },
         setGraph(next) { currentGraph = bindFixtureRoles(next); f.graph = next; return next; },
-        async pre(next = f.graph) { f.setGraph(next); return controller.beforeGenerate(context.chat, 8192, () => {}); },
-        async post(next = f.graph) { f.setGraph(next); return controller.runPost(next); },
+        async pre(next = f.graph) { f.setGraph(next); await context.eventSource.emit('GENERATION_STARTED','normal',{},false); return controller.beforeGenerate(context.chat,8192,()=>{}); },
+
         append(text, isUser = false) { const m = completedMessage(text, context.chat.length, isUser); context.chat.push(m); return m; },
     };
     return f;
@@ -151,11 +170,6 @@ export function verifyRun(f, result, expectedCalls) {
     assert.equal(result.recording.status, 'completed');
     return result;
 }
-export function assertPhaseCoverage(executed, first, last) {
-    const expected = examplePhases.filter(entry => entry.number >= first && entry.number <= last).map(entry => entry.graphId).sort();
-    assert.deepEqual([...executed].sort(), expected);
-}
-
 export class BrowserWorker {
     constructor(url) {
         this.worker = new ThreadWorker(new URL('../fixtures/text-rules-node-worker.mjs', import.meta.url), { workerData: { entryURL: url.href } });

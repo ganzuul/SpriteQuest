@@ -127,6 +127,12 @@ export function exportWorkflow(graph) {
 }
 /** Parsing and preflight are pure; settings change only after caller acceptance. */
 export function parseWorkflow(json) {
+    const parsed = parseWorkflowFragment(json);
+    if (parsed.ok && parsed.data.mode !== 'native-unified') return fail('WRONG_PHASE', 'Root workflow imports require a unified workflow. Retired originals are recovery data only.');
+    return parsed;
+}
+/** Clipboard fragments from pinned stage bodies carry no root execution authority. */
+export function parseWorkflowFragment(json) {
     if (typeof json !== 'string' || json.length > limit || new TextEncoder().encode(json).byteLength > limit) return fail('MALFORMED_WORKFLOW', 'Workflow JSON must be at most 2,000,000 UTF-8 bytes.');
     let envelope;
     try { envelope = JSON.parse(json); } catch { return { ok: false, error: { code: 'INVALID_JSON', message: 'That is not valid workflow JSON.' } }; }

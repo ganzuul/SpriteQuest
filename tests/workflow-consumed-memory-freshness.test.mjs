@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createNativeMemoryAdapter } from '../src/workflow/introspection/host-memory.js';
 import {
     graphBy, createExampleFixture, seedMemory, sourceRefs, upsert, guidance, response, reflection,
-} from './helpers/workflow-example-fixtures.mjs';
+} from './helpers/consumed-memory-fixtures.mjs';
 
 const promise = 'Sol promised to bring the ferry before dawn.';
 
@@ -18,32 +18,36 @@ async function implicitStateFixture() {
     return fixture;
 }
 
-test('implicit State Value rejects invalidated consumed evidence before native publication', async () => {
+test('implicit State Value inspection retains invalidated consumed evidence and native reads report its stale source', async () => {
     const fixture = await implicitStateFixture();
     fixture.context.chat[0].mes = 'Sol refused to bring the ferry before dawn.';
     const metadata = structuredClone(fixture.context.chatMetadata);
     const saves = fixture.memorySaves();
 
-    const result = await fixture.pre();
+    const result = await fixture.controller.runTarget(fixture.graph,{workflowId:fixture.graph.id,instancePath:[],nodeId:'pre-recall',portId:'out'});
 
-    assert.equal(result.ok, false, 'An edited settled source cannot publish its old promise');
-    assert.equal(result.error.code, 'STALE_MEMORY_EVIDENCE');
+    assert.equal(result.ok,true,JSON.stringify(result.error));
+    assert.deepEqual(result.reviewHandles,[]);
+    const adapter=createNativeMemoryAdapter({context:()=>fixture.context}),captured=adapter.capture({signal:new AbortController().signal,isCurrent:()=>true});
+    assert.equal(captured.ok,true);
+    try{const read=await captured.data.memory.read({view:'state'});assert.equal(read.ok,true);assert.ok(read.reports.some(report=>report.code==='INVALIDATED_SOURCES'&&report.sourceRefs.length));}finally{captured.data.release();}
     assert.equal(guidance(fixture.context), '');
     assert.deepEqual(fixture.context.chatMetadata, metadata);
     assert.equal(fixture.memorySaves(), saves);
     assert.equal(fixture.requests.length, 0);
 });
 
-test('implicit State Value publishes unchanged supported memory', async () => {
+test('implicit State Value target records unchanged supported memory without publication', async () => {
     const fixture = await implicitStateFixture();
     const metadata = structuredClone(fixture.context.chatMetadata);
     const saves = fixture.memorySaves();
 
-    const result = await fixture.pre();
+    const result = await fixture.controller.runTarget(fixture.graph,{workflowId:fixture.graph.id,instancePath:[],nodeId:'pre-recall',portId:'out'});
 
     assert.equal(result.ok, true, JSON.stringify(result.error));
-    assert.equal(result.published, true);
-    assert.ok(guidance(fixture.context).includes(promise));
+    assert.deepEqual(result.reviewHandles, []);
+    assert.equal(guidance(fixture.context),'');
+    assert.ok(result.recording.artifacts.some(artifact=>JSON.stringify(artifact.value).includes(promise)));
     assert.deepEqual(fixture.context.chatMetadata, metadata);
     assert.equal(fixture.memorySaves(), saves);
     assert.equal(fixture.requests.length, 0);
@@ -74,17 +78,17 @@ test('Reflect identity-only lookup does not consume unrelated invalidated stored
     const metadata = structuredClone(fixture.context.chatMetadata);
     const saves = fixture.memorySaves();
 
-    const result = await fixture.pre();
+    const result = await fixture.reflectIdentity();
 
     assert.equal(result.ok, true, JSON.stringify(result.error));
-    assert.equal(result.published, true);
-    assert.equal(guidance(fixture.context), hint);
+    assert.deepEqual(result.artifact.value.payload.behaviorHints,[hint]);
+    assert.equal(guidance(fixture.context), '');
     assert.deepEqual(fixture.context.chatMetadata, metadata);
     assert.equal(fixture.memorySaves(), saves);
     assert.equal(fixture.requests.length, 1);
 });
 
-test('Reflect identity-only lookup ignores an omitted history edit during execution', async () => {
+test('Reflect identity-only target lookup ignores an omitted history edit during execution', async () => {
     const archived = 'Unused archived exchange.';
     const edited = 'Edited unused archived exchange.';
     const hint = 'Possibility: wait for the player.';
@@ -106,11 +110,11 @@ test('Reflect identity-only lookup ignores an omitted history edit during execut
         return original(...args);
     };
     try {
-        const result = await fixture.controller.beforeGenerate(fixture.context.chat.slice(-1), 8192, () => {});
+        const result = await fixture.reflectIdentity();
 
         assert.equal(result.ok, true, JSON.stringify(result.error));
-        assert.equal(result.published, true);
-        assert.equal(guidance(fixture.context), hint);
+        assert.deepEqual(result.artifact.value.payload.behaviorHints,[hint]);
+        assert.equal(guidance(fixture.context), '');
         assert.equal(fixture.context.chat[0].mes, edited);
         assert.equal(fixture.requests.length, 1);
         assert.equal(fixture.memorySaves(), 0);
@@ -130,7 +134,7 @@ for (const [name, mutate] of [
         const metadata = structuredClone(fixture.context.chatMetadata);
         const saves = fixture.memorySaves();
 
-        const result = await fixture.pre();
+        const result = await fixture.reflectIdentity();
 
         assert.equal(result.ok, false);
         assert.equal(guidance(fixture.context), '');

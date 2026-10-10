@@ -79,7 +79,9 @@ function portableBindings(table) {
 }
 function portableValue(value, controlId, target) {
     if (target?.operation === 'for-each' && controlId === 'roleOverrides') { portableBindings(value); return value; }
-    if (target?.type === 'workflow' && ['profileId', 'fastConnectionId', 'fallbackProfileId'].includes(controlId) && value !== ACTIVE_PROFILE_ID) return null;
+    if (target?.operation === 'fast-decision' && ['fastConnectionId', 'fallbackProfileId'].includes(controlId)) return '';
+    if (target?.operation === 'fast-decision' && controlId === 'fallbackEnabled') return false;
+    if (target?.type === 'workflow' && controlId === 'profileId' && value !== ACTIVE_PROFILE_ID) return null;
     return value;
 }
 function portableScope(graph, snapshots) {
@@ -88,6 +90,7 @@ function portableScope(graph, snapshots) {
         if (Object.hasOwn(node, 'profileId') && node.profileId !== ACTIVE_PROFILE_ID) node.profileId = null;
         if (Object.hasOwn(node, 'fastConnectionId')) node.fastConnectionId = '';
         if (Object.hasOwn(node, 'fallbackProfileId')) node.fallbackProfileId = '';
+        if (node.operation === 'fast-decision' && Object.hasOwn(node, 'fallbackEnabled')) node.fallbackEnabled = false;
         portableBindings(node.roleOverrides); portableBindings(node.nodeBindingOverrides);
         for (const override of exposedOverrides(node, snapshots)) node.parameterOverrides[override.id] = portableValue(override.value, override.controlId, override.target);
     }
