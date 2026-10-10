@@ -39,6 +39,27 @@ export function prepareAddSystem(root, input) {
         for (const port of definition.interface.filter(p => p.direction === 'input' && p.required))
             if (!Object.hasOwn(c.inputs, port.id))
                 return fail('REQUIRED_INPUT', 'Bind required system input ' + port.label + '.');
+        // Connection gestures accept either direction; explicit authoring commands do not.
+        const checkBinding = (portId, rootEndpoint, direction) => {
+            const boundary = definition.interface.find(port => port.id === portId && port.direction === direction);
+            if (!boundary) return fail('INVALID_BINDING', 'Choose a declared system ' + direction + ' port.');
+            const rootNode = root.nodes[rootEndpoint.nodeId];
+            const rootPort = rootNode && portsForNode(root, rootNode).find(port => port.id === rootEndpoint.portId);
+            const rootDirection = direction === 'input' ? 'output' : 'input';
+            if (!rootPort || rootPort.direction !== rootDirection)
+                return fail('INVALID_BINDING', 'Choose a Main ' + rootDirection + ' for the system ' + direction + '.');
+            if (rootPort.kind !== boundary.kind)
+                return fail('ARTIFACT_KIND', 'The Main endpoint must match the declared system port kind.');
+            return { ok: true, data: null };
+        };
+        for (const [portId, source] of Object.entries(c.inputs)) {
+            const valid = checkBinding(portId, source, 'input');
+            if (!valid.ok) return valid;
+        }
+        for (const output of c.outputs) {
+            const valid = checkBinding(output.outputPortId, output.destination, 'output');
+            if (!valid.ok) return valid;
+        }
         const inserted = prepareNativeConnectionEdit(root, { kind: 'create-instance', definition, snapshots: closure.data.definitions, graphPoint: c.graphPoint });
         if (!inserted.ok)
             return inserted;

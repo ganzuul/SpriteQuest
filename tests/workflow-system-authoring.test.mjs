@@ -129,3 +129,43 @@ test('atomic Add system transaction undoes the complete closure, rejects stale d
 test('ambiguous compatible source and merge choices carry distinct visible labels',()=>{
  const graph=root();graph.nodes.first=node('first','text',{text:'First'});graph.nodes.second=node('second','text',{text:'Second'});graph.nodes.inner=node('inner','compose',{outputKind:'guidance'});graph.nodes.outer=node('outer','compose',{outputKind:'guidance',sections:[{name:'inner',text:'',kind:'guidance'}]});graph.wires.inner=wire('inner','inner','out','outer','section.inner');graph.wires.guidance=wire('guidance','outer','out','generate','guidance');const projected=api.projectSystemAuthoring(graph,[{definition:helper(),snapshots:{}}]);assert.equal(projected.ok,true);const pins=projected.data.pins.filter(p=>['first','second'].includes(p.nodeId)&&p.direction==='output');assert.equal(new Set(pins.map(p=>p.label)).size,2);assert.equal(new Set(projected.data.destinations.map(d=>d.label)).size,2);
 });
+
+test('explicit system bindings reject reversed, unknown, wrong-direction and wrong-kind endpoints without changing Main', () => {
+    const draft = structuredClone(helper());
+    delete draft.semanticHash;
+    draft.interface.push({ id: 'incoming', label: 'Incoming Guidance', direction: 'input', kind: 'guidance', required: false, cardinality: 'one', boundaryNodeId: 'input' });
+    draft.body.nodes.input = { id: 'input', type: 'subgraph-input', interfacePortId: 'incoming' };
+    const checked = computeDefinitionIdentity(draft);
+    assert.equal(checked.ok, true, JSON.stringify(checked));
+    const definition = { ...checked.data.materializedDefinition, semanticHash: checked.data.semanticHash };
+    const graph = root();
+    graph.nodes.source = node('source', 'compose', { outputKind: 'guidance' });
+    graph.nodes.text = node('text', 'text', { text: 'Different kind' });
+    graph.nodes.target = node('target', 'compose', { sections: [{ name: 'text', text: '' }] });
+    const before = structuredClone(graph);
+    const input = (port, source) => command(definition, { guidance: undefined, inputs: { [port]: source } });
+    const output = (port, destination) => command(definition, { guidance: undefined, outputs: [{ outputPortId: port, destination }] });
+    const cases = [
+        ['input cannot name an output boundary', input('guidance', { nodeId: 'generate', portId: 'guidance' })],
+        ['output cannot name an input boundary', output('incoming', { nodeId: 'source', portId: 'out' })],
+        ['unknown input boundary', input('absent', { nodeId: 'source', portId: 'out' })],
+        ['unknown output boundary', output('absent', { nodeId: 'generate', portId: 'guidance' })],
+        ['unknown input source node', input('incoming', { nodeId: 'absent', portId: 'out' })],
+        ['unknown output destination node', output('guidance', { nodeId: 'absent', portId: 'guidance' })],
+        ['unknown input source port', input('incoming', { nodeId: 'source', portId: 'absent' })],
+        ['unknown output destination port', output('guidance', { nodeId: 'generate', portId: 'absent' })],
+        ['input source must be a Main output', input('incoming', { nodeId: 'generate', portId: 'guidance' })],
+        ['output destination must be a Main input', output('guidance', { nodeId: 'source', portId: 'out' })],
+        ['input kind must match declared boundary', input('incoming', { nodeId: 'text', portId: 'out' })],
+        ['output kind must match declared boundary', output('guidance', { nodeId: 'target', portId: 'section.text' })],
+    ];
+    const accepted = [];
+    for (const [label, malformed] of cases) {
+        if (api.prepareAddSystem(graph, malformed).ok) accepted.push(label);
+        assert.deepEqual(graph, before, label + ' must leave Main unchanged');
+    }
+    assert.deepEqual(accepted, [], 'every malformed binding must be rejected');
+    const valid = api.prepareAddSystem(graph, command(definition, { guidance: undefined, inputs: { incoming: { nodeId: 'source', portId: 'out' } }, outputs: [{ outputPortId: 'guidance', destination: { nodeId: 'generate', portId: 'guidance' } }] }));
+    assert.equal(valid.ok, true, JSON.stringify(valid));
+    assert.deepEqual(graph, before, 'valid preparation also leaves Main unchanged');
+});
