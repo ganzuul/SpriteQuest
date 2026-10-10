@@ -1,3 +1,5 @@
+import {createRecallCommands} from './recall-commands.js?v=0.26.0';
+import {projectRecallView} from './recall-projection.js?v=0.26.0';
 import { prepareIterationBindingOverride } from './iteration-bindings.js?v=0.26.0';
 import { createStoryDocumentSetup } from './story-document-setup.js?v=0.26.0';
 import { createConfiguredNodeSession, configuredCreationStage, nodeNeedsConfiguration, iterationHelperChoices } from './configured-node-creation.js?v=0.26.0';
@@ -188,11 +190,20 @@ const fastConnectionsActions = {
         } catch { return { ok: false, error: { code: 'FAST_SETTINGS_FAILED', message: 'The session key could not be cleared.' } }; }
     },
 };
+let recallProjection = null, refreshingRecall = false, recallDetailsView = null;
+function recallSelectionIds(){return canvas?.multi.size?[...canvas.multi]:canvas?.selection?.kind==='node'?[canvas.selection.id]:[];}
 function recallSetupView(){
-    try{const response=workflowRuntime.getNativeWorkflowController?.()?.syncRecall?.();return response?.ok===true?{...response.data,nodes:response.data.shortcuts}:{scope:null,nodes:[],issue:response?.error?.message??'Recall state is unavailable.'};}catch{return {scope:null,nodes:[],issue:'Recall state is unavailable.'};}
+ let response;try{response=workflowRuntime.getNativeWorkflowController?.()?.syncRecall?.();}catch{}
+ const status=response?.ok?response.data:null;
+ recallProjection=projectRecallView({rootGraph:current,status,enabled:!!settings().enabled,issue:response?.error?.message??'',nodeIds:recallSelectionIds(),viewKind:graphViews?.readEditor().view.identity.kind??'root'});
+ canvas?.setRecallStatus(Object.fromEntries(Object.entries(recallProjection.nodes).flatMap(([id,node])=>node.badge?[[id,node.badge]]:[])));
+ return recallProjection;
 }
-function refreshRecallOverview(){const view=recallSetupView();workbench?.update({recall:view});return view;}
-const recallActions={refresh:refreshRecallOverview,queue(nodeId){const result=workflowRuntime.getNativeWorkflowController?.()?.queueRecall?.(nodeId);refreshRecallOverview();return result??{ok:false,error:{code:'RECALL_UNAVAILABLE',message:'Recall is unavailable.'}};},cancel(nodeId){const result=workflowRuntime.getNativeWorkflowController?.()?.cancelRecall?.(nodeId);refreshRecallOverview();return result??{ok:false,error:{code:'RECALL_UNAVAILABLE',message:'Recall is unavailable.'}};}};
+function refreshRecallOverview(){if(refreshingRecall)return;refreshingRecall=true;try{const view=recallSetupView();if(recallDetailsView)recallDetailsView={...recallDetailsView,recall:recallProjection?.nodes[recallDetailsView.address.nodeId]};workbench?.update({recall:view,...(recallDetailsView?{nodeDetails:recallDetailsView}:{})});return view;}finally{refreshingRecall=false;}}
+function recallUiContext(){if(!isOpen()||!graphViews||!recallProjection)return null;return {editorToken:graphViews.readEditContext().sessionId+':'+graphViews.readEditor().view.key,documentToken:documentSession.capture(),selectionEpoch,viewKind:graphViews.readEditor().view.identity.kind,projection:recallProjection};}
+const recallCommands=createRecallCommands({readContext:recallUiContext,isContextCurrent:captured=>{const now=recallUiContext();return !!now&&now.editorToken===captured.editorToken&&now.documentToken===captured.documentToken&&now.selectionEpoch===captured.selectionEpoch;},captureRecall:()=>workflowRuntime.getNativeWorkflowController?.()?.captureRecall?.(),changeRecallQueues:(capture,request)=>workflowRuntime.getNativeWorkflowController?.()?.changeRecallQueues?.(capture,request),openDetails:openRecallDetails,changed:refreshRecallOverview});
+function captureRecallActions(nodeIds,scope='selected'){const captured=recallCommands.capture(nodeIds,scope);return {queue:()=>captured.ok?recallCommands.change(captured.data,'queue'):captured,cancel:()=>captured.ok?recallCommands.change(captured.data,'cancel'):captured};}
+const recallActions={refresh:refreshRecallOverview,capture:captureRecallActions,reportIssue:message=>toast(message,'error'),change(nodeIds,action,scope='selected'){const result=captureRecallActions(nodeIds,scope)[action]();if(!result.ok)toast(result.error.message,'error');return result;},reveal:openRecallDetails};
 function workspaceInputs() { const snapshot = fastSetupView(), context = ctx(), hostProfiles = profiles(); nodeProfileInputsKey = nodeProfileMetadataKey(context, hostProfiles); return { settings: settings(), profiles: readNodeProfileMetadata(context, hostProfiles), activeModel: activeModelMetadata(context), fastConnections: snapshot.connections, result: workflowState.result, resolveBinding: (node, graph) => resolveBinding(node, graph, ctx()), resolveFastBinding: node => workflowRuntime.fastConnectionPreview?.(node) ?? { ok: false, error: { code: 'SERVICE_UNAVAILABLE', message: 'Fast Decision is unavailable for the active user.' } }, candidateStatus: candidate => workflowRuntime.getNativeWorkflowController?.()?.candidateStatus?.(candidate) }; }
 function refreshWorkflowPreparation() {
     if (!current || !workspacePrepared) return;
@@ -367,9 +378,12 @@ function updateWorkflowProjection() {
     const revision = graphViews ? graphViews.readEditContext().sessionId + ':' + workspaceRevision : String(uiEpoch);
     const rootWorkflow = projectPreparedWorkflow(workspacePrepared?.workflow,workflowState);
     if (canvas && graphViews) canvas.setNodeProfiles?.(projectNodeProfiles(graphViews.readEditor(), view, revision));
+    const recall = recallSetupView();
     const panels = graphViews ? projectWorkspacePanels(graphViews.readEditor(), view, workflowState, revision, selectedPreview, pinnedPreview, rootWorkflow, workspacePrepared.idleRunRows, workspacePrepared.previewChoices) : {};
+    recallDetailsView=panels.nodeDetails&&graphViews.readEditor().view.identity.kind==='root'&&recallProjection?.nodes[panels.nodeDetails.address.nodeId]?{...panels.nodeDetails,recall:recallProjection.nodes[panels.nodeDetails.address.nodeId]}:null;
+    if(recallDetailsView)panels.nodeDetails=recallDetailsView;
     if (canvas && graphViews && editorDraw && canvasTraceRows!==view.rows) { canvasTraceRows=view.rows;const traces = []; const visit = rows => { for (const row of rows ?? []) { traces.push({ id: row.address.nodeId, status: row.status }); } }; if(graphViews.readEditor().view.identity.kind!=='library')visit(view.rows); canvas.setTrace(traces); }
-    workbench?.update({ workflow: view, rootWorkflow, recall: recallSetupView(), ...panels, nativeDiagnostic: workspaceIssue, nativeFlatCanvas: !settings().ui?.theme?.style?.grid });
+    workbench?.update({ workflow: view, rootWorkflow, recall, ...panels, nativeDiagnostic: workspaceIssue, nativeFlatCanvas: !settings().ui?.theme?.style?.grid });
 }
 function prepareGroupPresentation() {
     const captured = captureEditor(true); if (!captured.ok) return null;
@@ -530,6 +544,7 @@ function build() {
         onOpen(node) { if (graphViews && node.type === 'subgraph') { const editor = graphViews.readEditor(); return editor.view.identity.kind === 'library' ? navigateGraphView('openLibrary', node.definition) : navigateGraphView('openInstance', [...(editor.view.identity.instancePath ?? []), node.id]); } showSettings({ kind: 'node', id: node.id }); },
         onToast: message => toast(message, 'error'), onReveal: showSettings,
         onHostResult(node) { showSettings({ kind: 'node', id: node.id }); workbench.revealPreview(); },
+        onRecallDetails: openRecallDetails,
         onContextMenu: onCanvasMenu,
         onEmptyContextMenu(payload) {
             if (graphViews?.readEditor().view.identity.kind !== 'instance' && !canvas.multi.size) return false;
@@ -680,6 +695,12 @@ function updateSelectionCount() {
     const copy = picked.length > 0 && picked.every(copyable), canDelete = selection?.kind === 'wire' ? !!graph?.wires[selection.id] : selection?.kind === 'group' ? !!graph?.groups?.[selection.id] : picked.length > 0 && picked.every(id => !!graph?.nodes[id]);
     workbench.update({ selectionCount: canvas?.multi.size || (selection?.kind === 'node' ? 1 : 0), selectionActions: { copy, cut: copy && !editor?.readOnly, delete: canDelete && !editor?.readOnly } });
 }
+function openRecallDetails(nodeId) {
+    if (!current?.nodes[nodeId] || !graphViews || !canvas) return;
+    if (graphViews.readEditor().view.identity.kind !== 'root') navigateGraphView('focusView',graphViews.project().graphViews.tabs[0].key);
+    canvas.setMulti([]); showSettings({kind:'node',id:nodeId}); canvas.fitSelection();
+    requestAnimationFrame(()=>workbench.parts.inspector.querySelector('.pc-recall-details')?.scrollIntoView({block:'nearest'}));
+}
 function showSettings(selection) { if (root.classList.contains('pc-details-hidden')) togglePane(); canvas.select(selection); const inspector = workbench.parts.inspector; inspector.scrollTop = 0; inspector.classList.add('pc-flash'); requestAnimationFrame(revealNarrowDetails); setTimeout(() => inspector.classList.remove('pc-flash'), 400); }
 function touch() { touchGraph(current); refreshWorkspaceDocument(); }
 function renderAll() {
@@ -778,7 +799,7 @@ function renderDocumentState() {
     workbench.update({ document: ensureDocumentCommands().view(), graphId: current?.id ?? '', enabled: !!settings().enabled });
 }
 
-function renderStatus() { safe(() => document.dispatchEvent(new CustomEvent('pc-state'))); workbench.update({ enabled: !!settings().enabled }); }
+function renderStatus() { safe(() => document.dispatchEvent(new CustomEvent('pc-state'))); workbench.update({ enabled: !!settings().enabled }); refreshRecallOverview(); }
 async function onNewGraph() {
     canvas?.cancelGesture();
     return ensureDocumentCommands().newDocument();
@@ -1055,6 +1076,12 @@ function onCanvasMenu({ event, node, wire, at, group = null, several = null }) {
         section([entry('copy', 'Copy', 'copy', () => copySelection(), false, 'Ctrl C'), entry('cut', 'Cut', 'cut', () => copySelection(true), readOnly, 'Ctrl X')]);
     }
     if (node && !several && !isCommentFrame(node)) section(canvasPreviewMenuItems(node, captured.data));
+    const recallIds=several??(node?[node.id]:[]),recallNodes=editor.view.identity.kind==='root'?recallIds.filter(id=>recallProjection?.nodes[id]):[];
+    if(recallNodes.length){const view=projectRecallView({rootGraph:current,status:workflowRuntime.getNativeWorkflowController?.()?.statusRecall?.()?.data??null,enabled:!!settings().enabled,nodeIds:recallIds,viewKind:editor.view.identity.kind});const scope=view.commands.selected,actions=captureRecallActions(recallIds),plural=!!several;
+        const label=(verb,ids)=>plural&&ids.length?verb+' for '+ids.length+' '+(ids.length===1?'node':'nodes'):verb;
+        const hint=(count,reason)=>count?count+' '+(count===1?'memory set':'memory sets'):reason;
+        section([entry('queue-recall',label('Queue recall',scope.queueNodeIds),'run',()=>{const result=actions.queue();if(!result.ok)toast(result.error.message,'error');},!scope.queueNodeIds.length,'',{hint:hint(scope.queueMemorySetCount,scope.queueReason)}),entry('cancel-recall',label('Cancel recall',scope.cancelNodeIds),'stop',()=>{const result=actions.cancel();if(!result.ok)toast(result.error.message,'error');},!scope.cancelNodeIds.length,'',{hint:hint(scope.cancelMemorySetCount,scope.cancelReason)}),...(!plural?[entry('recall-settings','Recall settings…','details',()=>openRecallDetails(node.id))]:[])]);
+    }
     if (node?.type === 'subgraph' && !several) section([
         entry('open-subgraph', 'Open subgraph', 'open', () => editor.view.identity.kind === 'library' ? subgraphWrapperAction(node.id, 'open') : graphViewActions.openInstance([...(editor.view.identity.instancePath ?? []), node.id]), false, '', { tone: 'subgraph' }),
         entry('save-subgraph', 'Add to Subgraphs', 'save', () => openSubgraphSave(node.id), false, '', { tone: 'subgraph' }),
@@ -1431,6 +1458,9 @@ const commentDetailsActions = {
     command(selection, command) { const captured = detailCapture(selection); return captured.ok ? commentCommand(captured.data, selection.address.nodeId, command) : captured; },
 };
 const nodeDetailsActions = {
+    queueRecall(selection){const captured=detailCapture(selection,true);return captured.ok?recallActions.change([selection.address.nodeId],'queue'):captured;},
+    cancelRecall(selection){const captured=detailCapture(selection,true);return captured.ok?recallActions.change([selection.address.nodeId],'cancel'):captured;},
+    revealRecallShortcut:nodeId=>openRecallDetails(nodeId),
     editHelperBinding(selection,role,field,mode,value) { return editIterationHelperBinding(selection,role,field,mode,value); },
     openFastConnections() { workbench?.update({ fastConnectionsActive: true }); },
     editPhase(selection, phase) {

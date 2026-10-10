@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onDestroy, untrack } from 'svelte';
     import DetailControlEditor from './DetailControl.svelte';
+    import RecallDetails from './RecallDetails.svelte';
     import ModifierStack from './ModifierStack.svelte';
     import type { DetailBindingMode, DetailControl, DetailEditResponse, DetailModifier, DetailSelection, NodeDetailsActions, NodeDetailsView } from './detail-types';
     let { view, actions = {}, idPrefix = 'pc-node-details' }: { view: NodeDetailsView | null; actions?: NodeDetailsActions; idPrefix?: string } = $props();
@@ -345,6 +346,7 @@
         </div></details>{/if}
     </header>
     {#if view.phaseEditable}<label>Workflow stage<select aria-label="Workflow stage" value={view.phase} disabled={view.readOnly || !actions.editPhase} onchange={event => { const phase = event.currentTarget.value as 'pre' | 'post'; void perform('phase', false, captured => actions.editPhase!(captured, phase)); }}><option value="pre">Preparation · before Generate Reply</option><option value="post">Response · after Generate Reply</option></select></label>{#if errors.phase}<p role="alert" class="pc-detail-error">{errors.phase}</p>{/if}{/if}
+    {#if view.recall}<RecallDetails view={view.recall} actions={{queue:()=>actions.queueRecall?.(selection(view!))??{ok:false,error:{code:'RECALL_UNAVAILABLE',message:'Memory recall is unavailable.'}},cancel:()=>actions.cancelRecall?.(selection(view!))??{ok:false,error:{code:'RECALL_UNAVAILABLE',message:'Memory recall is unavailable.'}},revealShortcut:actions.revealRecallShortcut}} />{/if}
     {#if view.operation === 'fast-decision'}<p><button type="button" onclick={() => actions.openFastConnections?.()} disabled={!actions.openFastConnections}>Configure Fast connections…</button></p>{/if}
     {#if view.readOnly || !view.enabled}<p class="pc-detail-state">{#if view.readOnly}<span>Read-only body</span>{/if}{#if !view.enabled}<span class="pc-detail-blocked">Blocks run · Disabled</span>{/if}</p>{/if}
     {#if errors.alias}<p class="pc-detail-error" role="alert">{errors.alias}</p>{/if}

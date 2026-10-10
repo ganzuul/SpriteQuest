@@ -18,6 +18,7 @@ import { createConfiguredNodeSession } from '../src/ui/configured-node-creation.
 const groupId = 'ai-de-slop';
 const controllerText = await readFile(new URL('../src/ui/controller.js', import.meta.url), 'utf8');
 function controllerFunction(name, env) {
+    env.recallProjection ??= {nodes:{}}; env.recallSetupView ??= () => null;
     env.activeEditRoot ??= () => env.current;
     env.createConfiguredNodeSession ??= createConfiguredNodeSession;
     env.cancelConfiguredNode ??= () => {};

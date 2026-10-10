@@ -19,7 +19,7 @@ after(async () => {
 const settle = async () => { flushSync(); await tick(); flushSync(); };
 const click = async element => { assert.ok(element, 'the command is visible'); element.click(); await settle(); };
 const key = async (element, value, options = {}) => { element.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: value, bubbles: true, cancelable: true, ...options })); await settle(); };
-const state = document => ({ graphId: 'root', armed: false, inspectorOpen: false, history: { undo: false, redo: false, undoTitle: '', redoTitle: '', note: '', showNote: false }, camera: { x: 0, y: 0, zoom: 1, mode: 'select' }, selectionCount: 0, document });
+const state = document => ({ graphId: 'root', enabled: false, inspectorOpen: false, history: { undo: false, redo: false, undoTitle: '', redoTitle: '', note: '', showNote: false }, camera: { x: 0, y: 0, zoom: 1, mode: 'select' }, selectionCount: 0, document });
 let sequence = 0;
 async function fixture(name, initial, actions = {}, local = () => {}, valueProp = 'state', extraProps = {}) {
     const leaf = await compiled(name, directory);

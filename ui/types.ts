@@ -1,3 +1,4 @@
+import type {RecallBadgeView,RecallProjection,RecallActions} from './recall-types';
 import type { StoryDocumentsView, StoryDocumentsActions, ConfigureNodeView, ConfigureNodeActions } from './storage-setup-types';
 import type { FastConnectionsView, FastConnectionsActions } from './fast-connections-types';
 import type { GraphViews, GraphViewActions } from './view-types';
@@ -8,10 +9,10 @@ import type { NodeSearchView, NodeSearchActions, PinMenuView, PinMenuActions, Se
 import type { DetailSelection, DetailEditResponse } from './detail-types';
 import type { CommentFrameData, CommentPatch, CommentCommand } from './comment-types';
 export interface Port { id: string; className: string; dir: 'in' | 'out'; side: 'left' | 'right'; port: string; title: string; label: string; row: number; kind: string }
-export interface NodeCardData { id: string; x: number; y: number; w: number; type: string; className: string; title: string; titleHint: string; label: string; iconPath: string; body: string | null; ports: Port[]; compact: boolean; hostResult: boolean; enabled: boolean; modifierSummary?: { count: number; labels: readonly string[]; text: string }; boundary?: { direction: 'input' | 'output'; editable: boolean }; off?: boolean; offHint?: string }
+export interface NodeCardData { id: string; x: number; y: number; w: number; type: string; className: string; title: string; titleHint: string; label: string; iconPath: string; body: string | null; ports: Port[]; compact: boolean; hostResult: boolean; enabled: boolean; modifierSummary?: { count: number; labels: readonly string[]; text: string }; boundary?: { direction: 'input' | 'output'; editable: boolean }; recall?: RecallBadgeView; off?: boolean; offHint?: string }
 export interface GroupCardData { id: string; collapsed: boolean; x: number; y: number; w: number; h?: number; className: string; title: string; body: string; count: string }
 export interface WireData { kind?: string; id: string; d: string; className: string; label: { x: number; y: number; text: string; className: string; anchor?: string; id?: string; title?: string } }
-export interface CanvasActions { hostResult: (id: string) => void; hoverPin: (pin: { nodeId: string; dir: string; port: string } | null) => void; group: (id: string, action: 'open' | 'collapse') => void; editProfile?: (selection: DetailSelection, value: string) => DetailEditResponse; refreshProfiles?: (selection: DetailSelection) => unknown }
+export interface CanvasActions { openRecallDetails?: (nodeId:string)=>void; hostResult: (id: string) => void; hoverPin: (pin: { nodeId: string; dir: string; port: string } | null) => void; group: (id: string, action: 'open' | 'collapse') => void; editProfile?: (selection: DetailSelection, value: string) => DetailEditResponse; refreshProfiles?: (selection: DetailSelection) => unknown }
 export interface PositionUpdate { id: string; x: number; y: number; w?: number; h?: number }
 export interface HistoryView { undo: boolean; redo: boolean; undoTitle: string; redoTitle: string; note: string; showNote: boolean }
 export interface ImportReviewView {
@@ -36,12 +37,6 @@ export interface WorkflowExampleWire { id: string; d: string; kind: string; from
 export interface WorkflowExampleComment { id: string; x: number; y: number; w: number; h: number; title: string; content: string; color: string }
 export interface WorkflowExampleThumbnail { bounds: { x: number; y: number; w: number; h: number }; nodes: WorkflowExampleNode[]; wires: WorkflowExampleWire[]; comments: WorkflowExampleComment[] }
 export interface WorkflowExampleTile { id: string; number: number; title: string; goal: string; thumbnail: WorkflowExampleThumbnail | null; issue: string }
-export interface RecallOverviewView {
-    scope: {userId:string;chatId:string;workflowId:string;actorId:string} | null;
-    nodes: {nodeId:string;actorId:string;memorySetId:string;hotkey:{code:string;ctrl:boolean;alt:boolean;shift:boolean;meta:boolean};target:string;uses:string;consumeOn:string;queued:boolean;remaining:{reply:boolean;swipe:boolean};pendingCount:number}[];
-    issue?:string;
-}
-export interface RecallOverviewActions {refresh():void;queue(nodeId:string):DetailEditResponse;cancel(nodeId:string):DetailEditResponse;}
 export interface WorkbenchView {
     graphId: string; enabled: boolean; inspectorOpen: boolean; detailsWidth?: number;
     document?: WorkflowDocumentView;
@@ -55,7 +50,7 @@ export interface WorkbenchView {
     importReview?: ImportReviewView | null;
     documentPrompt?: DocumentPromptView | null;
     fastConnections?: FastConnectionsView; fastConnectionsActive?: boolean;
-    recall?: RecallOverviewView;
+    recall?: RecallProjection;
     storyDocuments?: StoryDocumentsView; configureNode?: ConfigureNodeView | null;
     examples?: readonly WorkflowExampleTile[];
     examplesIssue?: string;
@@ -74,7 +69,7 @@ export interface WorkbenchActions {
     acceptImport?: () => void; cancelImport?: () => void; prepareImportAgain?: () => void;
     documentPrompt?: DocumentPromptActions;
     fastConnections?: FastConnectionsActions;
-    recall?: RecallOverviewActions;
+    recall?: RecallActions;
     storyDocuments?: StoryDocumentsActions; configureNode?: ConfigureNodeActions;
     openExample?: (id: string) => boolean | Promise<boolean>;
     refreshExamples?: () => boolean | void;

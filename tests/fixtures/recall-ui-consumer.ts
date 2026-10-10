@@ -1,0 +1,10 @@
+import {projectRecallView} from '../../src/ui/recall-projection';
+import {createRecallCommands} from '../../src/ui/recall-commands';
+import {createNativeRecallController} from '../../src/workflow/native-recall';
+import {executeRecallNode} from '../../src/workflow/operations/recall-nodes';
+import type {RecallContext,RecallProjection} from '../../ui/recall-types';
+const runtime=createNativeRecallController({getActive:()=>null});
+const view:RecallProjection=projectRecallView({rootGraph:null,status:null,enabled:false,nodeIds:[],viewKind:'root'});
+const context:RecallContext={editorToken:{},documentToken:{},selectionEpoch:0,viewKind:'root',projection:view};
+const commands=createRecallCommands({readContext:()=>context,isContextCurrent:()=>true,captureRecall:()=>runtime.captureQueueCommand(),changeRecallQueues:(capture,request)=>runtime.changeQueues(capture,request),changed(){},openDetails(){}});
+commands.capture(['node'],'all');executeRecallNode({},{});

@@ -5,7 +5,7 @@
 </script>
 
 <!-- svelte-ignore a11y_no_noninteractive_tabindex (Cards are keyboard focus stops that reveal named pins and actions in overview.) -->
-<div class={card.className} data-id={card.id} title={card.offHint} role="group" tabindex="0" aria-label={`${card.label}: ${card.title}`} style:left={`${card.x}px`} style:top={`${card.y}px`}>
+<div class={card.className} class:pc-recall-capable={card.label==='Recall'||card.label==='Recall Shortcut'} data-id={card.id} title={card.offHint} role="group" tabindex="0" aria-label={`${card.label}: ${card.title}`} style:left={`${card.x}px`} style:top={`${card.y}px`}>
     <div class="pc-native-heading"><svg class="pc-native-icon" viewBox="0 0 24 24" aria-hidden="true"><path d={card.iconPath} /></svg><span class="pc-node-title" title={card.titleHint}>{card.title}</span>{#if card.modifierSummary}<span class="pc-modifier-badge" title={card.modifierSummary.text} aria-label={card.modifierSummary.text}>+{card.modifierSummary.count}</span>{/if}</div>
     <div class="pc-native-pins">
         {#each card.ports as port (port.id)}
@@ -17,6 +17,10 @@
     </div>
     {#if card.type === 'note'}<div class="pc-node-body">{card.body}</div>{/if}
     {#if card.compact}<span class="pc-native-alias" title={card.titleHint}>{card.title}</span>{/if}
+    {#if card.label==='Recall'||card.label==='Recall Shortcut'}<div class="pc-recall-status-space" aria-hidden="true"></div>{/if}
+    {#if card.recall}<button type="button" class="pc-node-recall-status" data-recall-state={card.recall.state} title={card.recall.tooltip} aria-label={card.recall.ariaLabel} onpointerdown={stop} onmousedown={stop} oncontextmenu={stop} onkeydown={stop} onclick={(event)=>{stop(event);actions.openRecallDetails?.(card.id);}}>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5a8 8 0 1 1-3 6M3 4v6h6M12 7v5l3 2" />{#if card.recall.state==='generation'}<path class="pc-recall-marker" d="M17 18h5M19.5 15.5v5" />{:else if card.recall.state==='acceptance'}<path class="pc-recall-marker" d="m16 18 3 3 4-6" />{/if}</svg>
+    </button>{/if}
     {#if card.hostResult}<button type="button" class="pc-node-action pc-host-result" aria-label="Preview host result" onmousedown={stop} onclick={(event) => { stop(event); actions.hostResult(card.id); }}><i class="fa-solid fa-eye" aria-hidden="true"></i> Host result</button>{/if}
 </div>
 

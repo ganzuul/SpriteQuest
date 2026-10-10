@@ -18,6 +18,7 @@ import { projectPreparedWorkflow } from '../src/ui/workflow-surface.js?v=0.26.0'
 
 const source = await readFile(new URL('../src/ui/controller.js', import.meta.url), 'utf8');
 function actual(name, env) {
+    env.recallProjection ??= {nodes:{}}; env.recallSetupView ??= () => null;
     const start = source.indexOf('function ' + name + '(');
     assert.ok(start >= 0, 'Actual controller function ' + name);
     const end = source.indexOf('\n}', start) + 2;

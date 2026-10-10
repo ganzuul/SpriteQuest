@@ -675,3 +675,16 @@
 :root[data-pc-preset="signal"] .pc-root .pc-example-preview .pc-example-comment rect { stroke: var(--pc-muted) !important; }
 :root[data-pc-preset="signal"] .pc-root .pc-run-details button:hover:not(:disabled),
 :root[data-pc-preset="signal"] .pc-root .pc-run-details :focus-visible { color: var(--pc-text); outline-color: var(--pc-accent); }
+
+/* Runtime recall status is absolute; it never changes card or wire geometry. */
+.pc-root { --pc-recall-ready: var(--pc-recall-ready-fit, #8fc878); --pc-recall-pending: var(--pc-warn, #efc266); }
+:root .pc-root .pc-node-recall-status { position:absolute; right:4px; bottom:3px; width:24px; height:24px; min-height:0; padding:4px; border:0; border-radius:4px; color:var(--pc-recall-ready); background:var(--pc-panel); cursor:pointer; z-index:2; }
+:root .pc-root .pc-node-recall-status[data-recall-state="generation"], :root .pc-root .pc-node-recall-status[data-recall-state="acceptance"] { color:var(--pc-recall-pending); }
+.pc-node-recall-status svg { width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; transform:scale(var(--pc-recall-scale,1)); transform-origin:bottom right; }
+.pc-node-recall-status .pc-recall-marker { stroke-width:3; }
+.pc-node-recall-status:focus-visible { outline:2px solid currentColor; outline-offset:2px; }
+:root .pc-root .pc-node-compact .pc-node-recall-status { right:2px; bottom:2px; width:24px; height:24px; padding:4px; }
+@media(pointer:coarse) { :root .pc-root .pc-node-recall-status, :root .pc-root .pc-node-compact .pc-node-recall-status { width:44px; height:44px; padding:14px; } }
+
+.pc-recall-status-space { height:26px; pointer-events:none; }
+@media(pointer:coarse) { .pc-recall-status-space { height:46px; } }
