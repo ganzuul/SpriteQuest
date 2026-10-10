@@ -33,7 +33,7 @@ These are combinations of the shipped tools. **File → Open examples…** offer
 | **Per-operation model connections** | Choose each model node’s connection profile and model in Details without switching SillyTavern’s main connection; For Each exposes its pinned helper’s role selectors too. |
 | **One native workflow** | Connect preparation to Generate Reply, process its owned Draft, and review the result in one graph. |
 | **Typed decisions and branches** | Use ordinary Decision with explicit accepted, rejected and unresolved routes; Confidence Gate handles authored numeric policies. |
-| **Workflow Data and accepted effects** | Read authorized logical targets, project append/keyed updates, and settle file/clock/outcome consequences with the chosen reviewed result. |
+| **Workflow Data and accepted effects** | Read authorized logical targets within Main or static system bodies, then accept file/clock/outcome consequences with Main's reviewed result. |
 | **Scoped character context and Recall** | Process present actors separately and queue selected-actor memories through canvas controls or shortcuts. |
 | **Recorded previews** | Inspect inputs and outputs, follow selection, pin an artifact, or run only a selected output's dependencies. |
 | **Execution visibility** | See node states, expanded subgraph stages, request bounds, actual calls, and failures. |
@@ -71,9 +71,17 @@ New Transpose nodes accept and return **Text** in either graph phase. Choose **I
 
 Memory is root-only; Commit is a Response terminal. Its effects wait for the chosen accepted Review / Publish result. Run to here records a preview without writing. Memory uses the active chat and character, including a required selected actor in group chats. See the [Introspection guide](docs/introspection-package.md) for evidence, controls and persistence limits.
 
+Memory, Recall and Recall Shortcut keep their root-only contracts. Stateful static systems can contain Read File, Write to File, Story Clock, Clock Commit and Outcome Commit; this does not make those host operations legal inside For Each helpers.
+
 ## Reuse a process, inspect its internals
 
 Select processing nodes, right-click, and choose **Create Subgraph**. The editor opens their body in a new editable tab, creates and wires typed input/output boundaries, and reconnects the parent workflow through the new subgraph block. Click a boundary to edit its port in Details. Add Input and Output nodes from the Subgraphs shelf; they are enabled inside editable subgraphs. Save a wrapper with **Add to Subgraphs**, then explicitly create or update a shelf entry. Placed copies retain their saved contents. Undo restores the original nodes and connections in one step.
+
+Use **Workflow → Add system…** to add a saved reusable subgraph to Main, including while a body tab is open. Choose its typed sources and destinations, preview the connections, then add an editable copy with one Undo step. A preparation Guidance output can join an existing Compose Guidance merge or create one when Generate Reply's guidance input is empty. A state-only system can participate through its staged terminals.
+
+Select a system wrapper and use **Details → Run this system** to enable or skip its whole body. Connections determine what runs and what influences the reply. Opening, switching or closing body tabs only changes your view. Main keeps the one On Send, Generate Reply and Review / Publish; Apply accepts this result's staged system effects.
+
+Compose sections accept Text or original Guidance in authored order. Set an optional section's **Skipped source → Omit section** to leave out an inactive contribution. **Token budget** can cap the complete rendered result; overflow holds without truncating it. Preview shows the exact recorded composition.
 
 ![LATTICE subgraph body open in a second graph tab, showing Draft and Patches boundaries around Text Rules](docs/images/subgraph-tab.png)
 
@@ -87,6 +95,8 @@ Select processing nodes, right-click, and choose **Create Subgraph**. The editor
 4. Keep the starter open, select **Enable Lattice**, and Send a player message in SillyTavern. The starter makes no auxiliary calls and exposes its completed native Draft for review.
 5. Select **Review / Publish · Host result** in Preview, inspect it, and Apply or Reject. For a richer pipeline, open a unified example and configure its model nodes, For Each helper roles and required workflow data documents before the next Send.
 New Story Clock, Read File and Outcome Commit nodes have automatic Workflow Data presets.
+
+Systems share the default Chat clock. Default notes and outcomes inside each system have stable separate sources; explicit named targets remain shared when you choose the same target. Apply reports each save separately. Several system saves and reply publication are not one atomic disk transaction.
 
 For updates, use **Manage Extensions**, then reload. Installation, import, and editing do not make model calls.
 
@@ -107,6 +117,7 @@ Open a current workflow from **File → Open examples…**, or its JSON with **F
 | [21 · Give one present character their own direction](examples/remastered/21-give-one-present-character-their-own-direction.lattice.json) | Presence-verified actor-private direction |
 | [25 · Award experience from confirmed progress](examples/remastered/25-award-experience-from-confirmed-progress.lattice.json) | Evidence-backed deterministic progression |
 | [26 · Recall a memory with a hotkey or a story trigger](examples/remastered/26-recall-a-memory-with-a-hotkey-or-a-story-trigger.lattice.json) | Scoped Recall with visible queue controls |
+| [Wand, weather and relationship](examples/unified/unified-combined-systems.json) | Three editable systems, one ordered native guidance injection and Apply-only state; [setup](docs/combined-system-example.md) |
 
 Five pinned stage-specific subgraph definitions remain available as reusable processing tools. Their bodies retain their own stage contracts; complete executable roots are unified. Run to here records diagnostics without publishing guidance, creating Apply authority or settling memory.
 

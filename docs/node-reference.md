@@ -32,7 +32,7 @@ Model calls below are maximum auxiliary calls **per execution of that operation*
 | Shaping | [Smart Compactor](#smart-compactor) | Pre | Context → Context | 0–1 |
 | Shaping | [Context Join](#context-join) | Pre | Context × 2–16 → Context | 0 |
 | Shaping | [Response Plan](#response-plan) | Pre | Context → Guidance | 1 |
-| Shaping | [Compose](#compose) | Both | Optional Data/Text sections → Text or Guidance | 0 |
+| Shaping | [Compose](#compose) | Both | Optional Data + typed Text/Guidance sections → Text or Guidance | 0 |
 | Shaping | [Reroute](#reroute) | Both | Same artifact in and out | 0 |
 | Surface | [Text Rules](#text-rules) | Both; Draft in Post | Text → Text, or Draft → Patches | 0 |
 | Surface | [Repair](#repair) | Post | Draft → Patches | 0–1 |
@@ -79,21 +79,21 @@ Model calls below are maximum auxiliary calls **per execution of that operation*
 | Events | [Actor Context](#actor-context) | Both; root | Exact presence → authorized private Context | 0 |
 | Events | [Character Direction](#character-direction) | Both | Exact presence + optional Data → private Guidance | 0–1 |
 | Events | [Prompted Memory](#prompted-memory) | Both | Presence + actual holder event → private proposal | 0–1 |
-| Input | [Read File](#read-file) | Both; root | Authorized target + optional presence → Text/document/reference | 0 |
+| Input | [Read File](#read-file) | Both; root or static system body | Authorized target + optional presence → Text/document/reference | 0 |
 | Shaping | [Format](#format) | Both | Records/raw JSON → checked Data/serialized Text | 0 |
 | Shaping | [Project Document](#project-document) | Both | Serialized source + mutation → projected Text/Data/receipt | 0 |
-| Output | [Write to File](#write-to-file) | Response/Post; root | Live reference + mutation → staged projection/receipt | 0 |
+| Output | [Write to File](#write-to-file) | Response/Post; root or static system body | Live reference + mutation → staged projection/receipt | 0 |
 | Collections | [Collection](#collection) | Both | Data + optional Other/Match → derived Data | 0 |
 | Randomness | [Effect Library](#effect-library) | Both | Data/JSON/plain Text → checked library | 0 |
 | Randomness | [Random Pick](#random-pick) | Both | Confirmed events + library/saved → stable selections | 0 |
 | Randomness | [Saved Outcome](#saved-outcome) | Both | Event + ledger → retained outcome | 0 |
 | Randomness | [Effect Author](#effect-author) | Both | Generated selection + optional Data → proposed effect | 1 |
 | Randomness | [Stage Outcome](#stage-outcome) | Both | Outcome + explicit novelty → resolved outcome | 0 |
-| Output | [Outcome Commit](#outcome-commit) | Response; root | Resolved outcomes → staging receipt | 0 |
-| Input | [Story Clock](#story-clock) | Both; root | Accepted target → clock Data | 0 |
+| Output | [Outcome Commit](#outcome-commit) | Response; root or static system body | Resolved outcomes → staging receipt | 0 |
+| Input | [Story Clock](#story-clock) | Both; root or static system body | Accepted target → clock Data | 0 |
 | Shaping | [Advance Time](#advance-time) | Both | Clock + proposal/schedules → clock/events/remainder/report | 0 |
 | Derive | [Time Trigger](#time-trigger) | Both | Previous/destination clocks → due events/report | 0 |
-| Output | [Clock Commit](#clock-commit) | Response; root | Retained time projection → staged receipt | 0 |
+| Output | [Clock Commit](#clock-commit) | Response; root or static system body | Retained time projection → staged receipt | 0 |
 | Recall | [Recall](#recall) | Both; root | Authorized records/presence/trigger → private Guidance/report | 0 |
 | Recall | [Recall Shortcut](#recall-shortcut) | Both; root | Configured policy → descriptive recall proposal | 0 |
 
@@ -190,10 +190,17 @@ Build text from named sections or a template. Compose can also produce Guidance 
 | Mode | `join` concatenates sections; `template` resolves explicit placeholders |
 | Output | `text` or `guidance` |
 | Template | Text with `{{section:Name}}` and `{{data:/path}}` placeholders |
-| Sections | JSON records with unique identifier names and fallback text |
+| Sections | Named records with fallback Text, Kind, Required input and Skipped source policy |
+| Token budget | Integer 0–8192; 0 adds no Compose cap; overflow holds without truncation |
 | Separator | Text placed between joined sections; default is a blank line |
 
-Each section creates a named Text input, whose connected value overrides its fallback. The optional **Data** input supplies JSON pointer values to the template. A Compose node with literal sections can be a source with no incoming connection.
+Each section creates a named input whose **Kind** is **Text** or **Guidance**. Completed connected material overrides its fallback Text. Sections retain their authored order. **Required input** requires a connection and follows skipped/unresolved dependency rules; uncertainty is never treated as a fallback. Optional unconnected sections use their fallback. For a connected skipped source, **Skipped source → Use fallback text** keeps the fallback; **Omit section** removes it from join output and substitutes an empty value in `{{section:Name}}` templates.
+
+Existing sections remain optional Text with fallback behavior. The pin stays `section.Name`, so saved templates and connections keep their identifiers. JSON section records use `name`, `text`, optional `kind` (`text`/`guidance`), `required` and `onSkipped` (`fallback`/`omit`). The optional **Data** input still supplies JSON pointer values. It is not a required eligibility gate: if a data-producing branch may skip, use a required typed path before a data-dependent template.
+
+Compose Guidance can combine original public contributions and authentic current-selected-actor Character Direction or Recall Guidance. It preserves each contribution's identity and visibility; all original private contributions must still be authorized when the native prompt is supplied. Generic private Text/Data, copied labels and another actor's private output cannot acquire that permission through Compose.
+
+**Token budget** measures the complete rendered output with the configured tokenizer. A nonzero cap holds on overflow and leaves instructions intact. Generate Reply still enforces its final guidance budget. The recorded Preview contains the exact composed text; reports identify ordered contribution statuses and the measured total when capped.
 
 ```text
 Direction: {{data:/direction}}
@@ -421,11 +428,19 @@ Expose a source-bound Candidate diagnostic in the root recording. The shared ope
 
 | Structural node | Purpose | Settings and behavior |
 | --- | --- | --- |
-| **Subgraph instance** | Use a pinned reusable definition as one node | Interface pins, exposed parameter overrides, role/node binding overrides; call bound comes from the expanded body |
+| **Subgraph instance** | Use a pinned reusable definition as one node | Interface pins, exposed parameter overrides, role/node binding overrides, Run this system; call bound comes from the expanded body |
 | **Input boundary** | Bring an interface input into the body | Typed output corresponding to an exposed input |
 | **Output boundary** | Return a body result through the interface | Typed input corresponding to an exposed output |
 
 Boundary nodes belong to the subgraph interface. Click one to edit its name, type, and required setting in Details. Add or delete boundaries like ordinary nodes; deleting a boundary also removes its attached parent and body connections. Pinned definitions open read-only. Right-click a wrapper and choose **Make editable copy** for private body edits. Use **Add to Subgraphs** to explicitly save a new shelf entry or update an existing one; placed copies keep their saved contents.
+
+A static system body may read authorized files and clocks and stage file, clock or outcome effects. It may span Preparation and Response within the same unified run. Main owns native generation and the final Review / Publish. **Workflow → Add system…** inserts an editable saved body with explicit typed bindings and a reviewed Guidance merge or state-only terminals. Its connections determine participation; body tabs are views.
+
+**Details → Run this system** off skips the wrapper and every descendant, including reads, auxiliary models, terminal effects and default provisioning. Optional Guidance consumers can omit the skipped output; required consumers retain their normal skipped-input behavior.
+
+The shared default Chat clock remains one timeline. Default notes/outcomes inside each instance resolve to stable separate sources for that workflow and full instance path. Explicit author-selected targets keep their chosen identity. Reading a target and writing through its exact live reference remains required. Multiple staged writes to the same target are rejected; there is no implicit last-writer-wins.
+
+Memory, Recall, Recall Shortcut, native lifecycle/source operations and other root-only operations keep their existing limits. Static host operations are not legal inside For Each helpers.
 
 The supplied [Literal cleanup subgraph](../workflows/subgraphs/literal-cleanup.json) exposes Draft → Patches and a Rules parameter. Keep native sources and final application/review authority in the parent. Draft→Patches tools retain validation and candidate diagnostics; publication requires an owned Draft ending in Review / Publish. See [the manual's subgraph walkthrough](operators-manual.md#reuse-a-process-with-subgraphs).
 
@@ -505,7 +520,7 @@ These four nodes belong to a native-unified **root** workflow. They cannot be hi
 
 **Both stages; bounded helper calls.** Required array Data and, in **projected-state** mode, required explicit state Data. Outputs: result array Data and projected state Data. Controls: exact pinned Helper, Limit (1–128), Request bound per iteration (0–16), Mode (`map`/`projected-state`). The total bound is their product; nested helpers share the run's finite budget and bounded nesting.
 
-Choose an existing pinned Data item/result helper in **Configure node**. **Details → Helper model bindings** offers the actual helper's text role selectors, selected-profile model default and custom model overrides, including recursive roles. Explicit nested/primitive choices, including Active or a fixed helper-node profile, win over an outer role override and are reported. Inspect which calls an override can affect before changing it. Root-only host authority operations are not iteration helper bodies. The collection is processed in deterministic order; over-limit or invalid helper paths hold before partial effects. Portable exports omit local saved-profile IDs, which must be selected locally after import. The **Active SillyTavern model** selection remains portable and follows the recipient’s host connection. See [model binding behavior](unified-workflows.md#choose-a-different-model-for-each-job).
+Choose an existing pinned Data item/result helper in **Configure node**. **Details → Helper model bindings** offers the actual helper's text role selectors, selected-profile model default and custom model overrides, including recursive roles. Explicit nested/primitive choices, including Active or a fixed helper-node profile, win over an outer role override and are reported. Inspect which calls an override can affect before changing it. Host file, clock, outcome, native source/publication and private authority operations are not iteration helper bodies. The stateful operations available to static systems do not become permitted For Each helper operations. The collection is processed in deterministic order; over-limit or invalid helper paths hold before partial effects. Portable exports omit local saved-profile IDs, which must be selected locally after import. The **Active SillyTavern model** selection remains portable and follows the recipient’s host connection. See [model binding behavior](unified-workflows.md#choose-a-different-model-for-each-job).
 
 ## Events and actors
 
@@ -553,7 +568,7 @@ Choose an existing pinned Data item/result helper in **Configure node**. **Detai
 
 ### Read File
 
-**Both stages; root only; zero calls.** Reads an authorized logical workflow data target in the active user/chat, producing serialized `text`, parsed `document` Data and exact live `reference` Data. Controls: Authorized target, optional Schema/CSV columns, Actor scope (`selected`/`presence`) and Present actor identity. Presence scope adds required exact live presence Data for the configured actor. Selected scope uses the native actor and no authored actor ID. It is distinct from File Input's portable imported snapshot. Authorize targets in **Workflow → Configure → Workflow Data…**; no arbitrary OS paths are exposed.
+**Both stages; root or static system body; zero calls.** Reads an authorized logical workflow data target in the active user/chat, producing serialized `text`, parsed `document` Data and exact live `reference` Data. Controls: Authorized target, optional Schema/CSV columns, Actor scope (`selected`/`presence`) and Present actor identity. Presence scope adds required exact live presence Data for the configured actor. Selected scope uses the native actor and no authored actor ID. It is distinct from File Input's portable imported snapshot. Authorize targets in **Workflow → Configure → Workflow Data…**; no arbitrary OS paths are exposed.
 
 ### Format
 
@@ -565,7 +580,7 @@ Choose an existing pinned Data item/result helper in **Configure node**. **Detai
 
 ### Write to File
 
-**Response/Post terminal; root only; zero calls.** Required exact Read File reference plus records Data or serialized Text according to Mutation; optional canonical evidence; outputs projected document and staging receipt. Presence actor scope adds required exact actor presence. Controls: Mutation (`append`, `add`, `add-unique`, `upsert`, `update-fields`, `replace`), Collection JSON Pointer, Missing collection (`error`/`create`), Identity field, Upsert merge/replace policy, Updated fields, Schema/CSV columns and separator policies.
+**Response/Post terminal; root or static system body; zero calls.** Required exact Read File reference plus records Data or serialized Text according to Mutation; optional canonical evidence; outputs projected document and staging receipt. Presence actor scope adds required exact actor presence. Controls: Mutation (`append`, `add`, `add-unique`, `upsert`, `update-fields`, `replace`), Collection JSON Pointer, Missing collection (`error`/`create`), Identity field, Upsert merge/replace policy, Updated fields, Schema/CSV columns and separator policies.
 
 Append is Text/Markdown concatenation; JSON uses structured collection mutation. JSON keyed modes need explicit identities; update-fields permits only named fields of existing records. JSON Lines and CSV support Add/Replace. Replace validates the complete destination content before staging. A copied or differently scoped reference cannot authorize a write. In a unified run, this terminal stages an effect for the exact reviewed root's Apply; target previews and failures do not write. Multi-target writes report confirmed partial results and unknown-save barriers honestly. See [document setup](unified-workflows.md#authorize-workflow-data-and-preserve-its-structure).
 
@@ -611,13 +626,15 @@ Paths are arrays of keys for structured values. The separate Write collection pa
 
 ### Outcome Commit
 
-**Response terminal; root only; zero calls.** Required resolved outcomes Data, configured authorized JSON **Target ID**, staging receipt output. Joins the accepted root effect bundle. Preview/failed/rejected runs do not save it; accepted replay is idempotent. See lesson 27, **The broken wand: stable randomness with a wild branch**, in the [thirty-lesson guide](examples.md) for actual player-use extraction, fixed/wild paths, one native generation and outcome persistence.
+**Response terminal; root or static system body; zero calls.** Required resolved outcomes Data, configured authorized JSON **Target ID**, staging receipt output. Joins the accepted root effect bundle. Preview/failed/rejected runs do not save it; accepted replay is idempotent. See lesson 27, **The broken wand: stable randomness with a wild branch**, in the [thirty-lesson guide](examples.md) for actual player-use extraction, fixed/wild paths, one native generation and outcome persistence.
+
+When used inside a system, this terminal stages its proposal for Main's exact accepted review. Preview, Run to here, failure, Reject and Cancel do not settle it. Repeated Apply does not rerun models, redraw outcomes or repeat confirmed saves; each effect's persistence is reported independently.
 
 ## Story time
 
 ### Story Clock
 
-**Both stages; root only; zero calls.** No inputs; returns the accepted clock Data for **Accepted clock identity**, with optional expected Calendar identity. Authorize its JSON target and use Workflow Data's clock template. A valid native clock has an explicit calendar, nonnegative integer absolute minute, positive revision and day length. It tracks story time, not real time or message count.
+**Both stages; root or static system body; zero calls.** No inputs; returns the accepted clock Data for **Accepted clock identity**, with optional expected Calendar identity. Authorize its JSON target and use Workflow Data's clock template. A valid native clock has an explicit calendar, nonnegative integer absolute minute, positive revision and day length. It tracks story time, not real time or message count.
 
 ### Advance Time
 
@@ -629,7 +646,9 @@ Paths are arrays of keys for structured values. The separate Write collection pa
 
 ### Clock Commit
 
-**Response terminal; root only; zero calls.** Required genuine retained Advance Time report, optional additional checked due occurrences, receipt output. Stages accepted clock movement and consumed due IDs through the native host. Literal/copied reports cannot acquire write authority. The original clock version and source must still be fresh at acceptance. See [time and remainders](unified-workflows.md#story-time-midnight-1400-and-eight-hour-intervals).
+**Response terminal; root or static system body; zero calls.** Required genuine retained Advance Time report, optional additional checked due occurrences, receipt output. Stages accepted clock movement and consumed due IDs through the native host. Literal/copied reports cannot acquire write authority. The original clock version and source must still be fresh at acceptance. See [time and remainders](unified-workflows.md#story-time-midnight-1400-and-eight-hour-intervals).
+
+When used inside a system, this terminal stages its proposal for Main's exact accepted review. Preview, Run to here, failure, Reject and Cancel do not settle it. Repeated Apply does not rerun models, redraw outcomes or repeat confirmed saves; each effect's persistence is reported independently.
 
 ## Recall
 

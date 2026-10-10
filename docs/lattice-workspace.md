@@ -36,6 +36,20 @@ Select the node to customize it in Details. **Starting values** controls the clo
 
 Nodes selecting the same clock share its saved timeline. Separate clocks advance independently; they do not synchronize automatically. Initial values only seed data that has not been saved yet, so editing them preserves existing saved time, notes and outcomes. **Workflow → Configure → Workflow Data…** remains available for custom target management.
 
+## Add a reusable system
+
+Choose **Workflow → Add system…**, select a **Saved system**, and bind its required typed inputs. Optional inputs can remain **Unused**. Choose explicit output destinations; for a preparation Guidance output, select an existing Main Compose Guidance merge or **Create Compose Guidance → Generate Reply** when its guidance input is empty. A state-only body can stage its authorized effects without adding prompt text.
+
+Select **Preview connections**, inspect the proposed bindings, then **Add system**. An editable body opens in a tab, and one Undo removes the whole addition. The command targets Main even while you are viewing a body.
+
+Select the wrapper and use **Details → Run this system** to include or skip its entire body. Connections determine what runs; opening or closing its tab only changes the view. Main still owns one native reply and one Review / Publish. Apply accepts this reviewed result's staged proposals. Preview, Run to here, Reject and Stop settle none; each accepted save has its own receipt.
+
+For multiple Guidance contributions, set Compose section **Kind → Guidance** and optional **Skipped source → Omit section**. Section order controls the composed order. **Token budget** caps the complete rendered composition; 0 adds no cap, and overflow holds without shortening it. Preview displays the exact recorded output. Generate Reply still applies its final guidance budget.
+
+The default Chat clock is shared between systems. Default notes and outcomes inside separate instances use stable separate sources; explicit named targets keep their chosen sharing. Keep one final writer for a shared target. Memory, Recall and Recall Shortcut remain at Main, and For Each helpers keep their existing host-operation restrictions.
+
+Open the [combined systems setup](combined-system-example.md) for a direct-file example with fixed wand effects, an agreed eight-hour rain crossing and private relationship state. It is separate from the 30 numbered lessons. Saving the editable document retains Main, the body definitions and your open tabs.
+
 ## Build and inspect a brief
 
 Add a Preparation-stage Compose Text source, JSON Decode, Select Fields and Compose Guidance. Connect the selected fields to the final Compose's Data pin, then connect Guidance to Generate Reply's guidance pin. In the source JSON, supply direction, constraint and an optional tone. Use template placeholders such as `{{data:/direction}}`.

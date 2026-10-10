@@ -126,7 +126,7 @@ Right-click a node for grouped editing, preview, organization, and presentation 
 
 Recall and Recall Shortcut nodes have contextual **Queue recall** and **Cancel recall** actions, including counted actions for a selection. Matching nodes share one request per memory set. A green recall-with-clock badge shows a queued request; amber shows a reservation or a result awaiting acceptance. Click the badge to open **Details → Memory recall**, where you can inspect its policy and matching nodes. **Node → Memory recall** provides selected/all-node commands and the grouped overview, including from a subgraph tab. Queues are runtime state: Queue and Cancel do not edit the document, add Undo entries, or start a generation. Automatic Recall keeps its authored conditions.
 
-Operation controls follow the node's current mode. Disable remains in the graph menu: a disabled operation blocks validation; disconnecting an optional input can instead select its fallback. Required inputs must stay connected. Duplicate and Delete are in the node's secondary commands and right-click menu.
+Operation controls follow the node's current mode. A disabled primitive retains its existing validation behavior. A subgraph wrapper instead offers **Run this system**: turning it off skips the whole system and its outputs. Optional consumers can omit those outputs; required inputs must retain legal connections. Duplicate and Delete remain in the secondary commands and right-click menu.
 
 Text Rules, selected fields, Compose sections, Context Join slots, State values and phase durations use row editors. **Edit JSON** exposes the same draft for precise or unsupported shapes. Pattern Scan retains its distinct phrase-rule JSON editor. **Save …** validates the complete candidate; unfinished JSON remains a draft across node and graph switching. Inherited values are explained when they differ from the saved setting.
 
@@ -146,15 +146,23 @@ Open **Advanced** to choose another compatible source or use **+** beside the so
 
 Nodes using the same clock source share its saved timeline. Prefer one Story Clock output connected to the nodes that need that time, and one final Clock Commit for that source in an accepted run. Choose a separate clock source for an independent timeline; separate clocks do not synchronize automatically. Time advances through explicit workflow proposals and accepted clock commits.
 
-**Tools → Workflow Data…** remains the place to manage custom logical targets. Imported examples that deliberately name custom targets still need an authorized compatible source; choose one in the node’s Advanced settings or manage the target through Tools. Random Pick’s optional outcomes source can stay disabled when no saved outcomes are needed. Write to File uses the live reference from Read File, and Clock Commit uses the captured clock projection, so neither needs its own destination setup.
+The default Chat clock is shared through Main and its static systems. Default Chat notes and Chat outcomes within a system resolve to separate stable sources for that workflow and instance path. Choose an explicit common target when sharing is intentional. Only active selected operations provision their defaults; a skipped system does not create its unused data. Keep one final clock writer for a shared timeline. Two staged writers for one target are rejected.
+
+**Workflow → Configure → Workflow Data…** remains the place to manage custom logical targets. Imported examples that deliberately name custom targets still need an authorized compatible source; choose one in the node’s Advanced settings or manage the target through Tools. Random Pick’s optional outcomes source can stay disabled when no saved outcomes are needed. Write to File uses the live reference from Read File, and Clock Commit uses the captured clock projection, so neither needs its own destination setup.
 
 ### Structured composition
 
-Compose has join/template modes, Text/Guidance output, named sections, a separator, and template placeholders. The Structured guidance example connects Select Fields to Compose's **Data** pin.
+Compose has join/template modes, Text/Guidance output, named sections, a separator, and template placeholders.
+
+In **Sections**, each row has **Kind → Text / Guidance**, **Required input** and **Skipped source → Use fallback text / Omit section**. Use Guidance for original system Guidance outputs. Leave a section optional and select Omit section when an inactive system should contribute nothing. Unconnected optional sections still use their Text fallback; unresolved required inputs hold instead of silently using it. Join and template composition keep the section order; an omitted template section is empty.
+
+**Token budget** is a cap on the whole rendered output, from 0 to 8192; 0 adds no Compose cap. Overflow holds without shortening the instructions. Generate Reply applies its final guidance budget too. Inspect the exact recorded result in Preview and its ordered contribution statuses before Send or Apply.
+
+Original private Guidance keeps its actor/currentness checks after merging. Formatting private Text/Data or changing a visibility label does not make it authorized native guidance. The Structured guidance example connects Select Fields to Compose's **Data** pin.
 
 ![Compose details showing template mode, Guidance output, template placeholders, and section editing](images/compose-details.png)
 
-*This template maps structured fields into a writing brief. Sections can also have their own connected Text inputs.*
+*This template maps structured fields into a writing brief. Sections can also receive connected Text or original Guidance inputs.*
 
 The screenshot's brief uses:
 
@@ -240,9 +248,25 @@ Text Rules, Validate Patches, Review Gate, Apply Reply and subgraph outputs reta
 
 Local application and durable saving are reported separately. A resolving host save wrapper does not positively acknowledge disk persistence. See [reply review limits](native-workflows.md#review-a-reply-repair).
 
+A system's Read File, Write to File, Story Clock, Clock Commit and Outcome Commit use Main's current authorized sources. Main's Apply accepts their proposals with the chosen owned result. Preview, Run to here, Reject and Stop settle none. File/clock/outcome saves report separate receipts; publishing a reply and saving several targets are not one atomic disk transaction. Repeated Apply does not redraw or request models again.
+
+Memory, Recall and Recall Shortcut remain root-only, as do the native lifecycle and source operations whose contracts require Main. Static stateful system support does not broaden For Each helper authority.
+
 ## Reuse a process with subgraphs
 
 A subgraph packages operations behind named, typed inputs/outputs. Nested subgraphs let you compose a larger process without placing every primitive in the parent editor.
+
+### Add a system to Main
+
+Choose **Workflow → Add system…** to compose a saved reusable body into the unified root. The command targets Main even while you are viewing an instance tab. Save your own wrapper with **Add to Subgraphs** first if it is not yet on the shelf.
+
+1. Choose **Saved system**. Bind each required typed input to a compatible source; optional inputs can remain **Unused**.
+2. Adjust exposed **JSON override** settings if needed. Empty fields use the saved value.
+3. For prompt influence, choose **Optional reply guidance → Guidance output** and **Main merge destination**. Use an existing Compose Guidance merge or **Create Compose Guidance → Generate Reply** when that generator input is empty. Occupied input pins are not replaced; choose a legal merge or free destination explicitly.
+4. Bind other used outputs to explicit compatible destinations. A state-only body can participate through its staged terminals without prompt text.
+5. Select **Preview connections**, inspect **Connection preview**, then **Add system**. Its editable body opens in a tab. One Undo removes the whole addition and its new connections.
+
+Connections determine execution and reply influence. Select the wrapper and turn **Details → Run this system** off to skip the whole body, including its reads, models, default data and effects. A disabled system's optional Guidance contribution can be omitted. Required consumers keep their ordinary skipped-input behavior. Closing the body tab hides the view; it does not disable its wired system.
 
 ### Place and open a reusable tool
 
@@ -315,7 +339,9 @@ Other browsers offer **Download JSON…** instead of direct Save and Save As. A 
 
 An additive import requires matching stage contracts, assigns fresh node identities, and preserves internal connections and relative layout. Review role requirements, terminal changes, and request bounds before accepting the insertion. Import itself does not run or enable the workflow.
 
-Save and Download JSON retain local connection bindings and supported workspace views in an editable `lattice-document` file; credentials and runtime queues are excluded. Export downloads a portable `.workflow.json` sharing package and strips local saved-profile IDs. Recipients rebind fixed connections before running. **Active SillyTavern model** remains portable in nodes, roles and occurrence overrides, following the recipient’s configured host connection and model. Both file formats open through **File → Open workflow…** and carry pinned definitions. Unsupported versions, dangling connections, incompatible artifacts, or cycles produce validation issues.
+Save and Download JSON retain local connection bindings and supported workspace views in an editable `lattice-document` file; credentials and runtime queues are excluded. Export downloads a portable `.workflow.json` sharing package and strips local saved-profile IDs. Recipients rebind fixed connections before running. **Active SillyTavern model** remains portable in nodes, roles and occurrence overrides, following the recipient’s configured host connection and model. Both file formats open through **File → Open workflow…** and carry pinned definitions.
+
+Editable Save/Open retains the complete Main graph, definitions, overrides and open body tabs. Portable export retains composition and its pinned definition closure. Opening or closing tabs is navigation and does not change what executes. Unsupported versions, dangling connections, incompatible artifacts, or cycles produce validation issues.
 
 Retired pre/post roots remain in a cold archive and cannot open as current documents, execute, or import into current workflows. **File → Export archived workflows…** downloads their originals for recovery. Rebuild needed logic in a new unified graph with explicit stages; archive recovery makes no requests and performs no automatic conversion.
 

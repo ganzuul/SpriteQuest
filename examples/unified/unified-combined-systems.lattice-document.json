@@ -1,0 +1,3099 @@
+{
+  "kind": "lattice-document",
+  "schema": 1,
+  "minRuntime": 2,
+  "graph": {
+    "id": "combined-editable-systems",
+    "name": "Wand, weather and relationship",
+    "description": "One native reply combines a fixed wand effect and agreed eight-hour rain while staging Rowan toward Iris private state.",
+    "schema": 3,
+    "runtime": 2,
+    "mode": "native-unified",
+    "nodes": {
+      "send": {
+        "id": "send",
+        "type": "workflow",
+        "operation": "on-send",
+        "operationVersion": 1,
+        "enabled": true,
+        "inGroup": "stage-0",
+        "title": "On Send",
+        "alias": "On Send",
+        "x": 100,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "profileId": null,
+        "model": null,
+        "modelRole": null
+      },
+      "generate": {
+        "id": "generate",
+        "type": "workflow",
+        "operation": "generate-reply",
+        "operationVersion": 1,
+        "enabled": true,
+        "inGroup": "stage-3",
+        "title": "Generate Reply · SillyTavern",
+        "alias": "Generate Reply · SillyTavern",
+        "x": 1180,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "budgetTokens": 768
+      },
+      "review": {
+        "id": "review",
+        "type": "workflow",
+        "operation": "review-publish",
+        "operationVersion": 1,
+        "enabled": true,
+        "inGroup": "stage-4",
+        "title": "Review / Publish",
+        "alias": "Review / Publish",
+        "x": 1540,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "profileId": null,
+        "model": null,
+        "modelRole": null
+      },
+      "player": {
+        "id": "player",
+        "type": "workflow",
+        "operation": "player-event-source",
+        "operationVersion": 1,
+        "enabled": true,
+        "inGroup": "stage-0",
+        "title": "Player Event Source",
+        "alias": "Player Event Source",
+        "x": 100,
+        "y": 560,
+        "w": 300,
+        "h": 210,
+        "profileId": null,
+        "model": null,
+        "modelRole": null
+      },
+      "clock": {
+        "id": "clock",
+        "type": "workflow",
+        "operation": "story-clock",
+        "operationVersion": 1,
+        "enabled": true,
+        "inGroup": "stage-0",
+        "title": "Story Clock",
+        "alias": "Story Clock",
+        "x": 100,
+        "y": 880,
+        "w": 300,
+        "h": 210,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "clockId": "lattice-default-clock",
+        "calendarId": "story-calendar"
+      },
+      "compose": {
+        "id": "compose",
+        "type": "workflow",
+        "operation": "compose",
+        "operationVersion": 1,
+        "enabled": true,
+        "inGroup": "stage-2",
+        "title": "Compose",
+        "alias": "Compose",
+        "x": 820,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "mode": "join",
+        "outputKind": "guidance",
+        "template": "",
+        "sections": [
+          {
+            "name": "Wand",
+            "text": "",
+            "kind": "guidance",
+            "required": false,
+            "onSkipped": "omit"
+          },
+          {
+            "name": "Weather",
+            "text": "",
+            "kind": "guidance",
+            "required": false,
+            "onSkipped": "omit"
+          }
+        ],
+        "separator": "\n\n",
+        "budgetTokens": 0
+      },
+      "wand": {
+        "id": "wand",
+        "type": "subgraph",
+        "inGroup": "stage-1",
+        "x": 460,
+        "y": 240,
+        "w": 300,
+        "h": 210,
+        "definition": {
+          "id": "combined-wand",
+          "version": 2,
+          "semanticHash": "sha256:7c7d88c06702badb9f489c297832ca06cbb04d6987ef0be403616d9c0483eb77"
+        },
+        "parameterOverrides": {},
+        "roleOverrides": {},
+        "nodeBindingOverrides": {},
+        "localCopy": {
+          "definitionId": "combined-wand"
+        }
+      },
+      "weather": {
+        "id": "weather",
+        "type": "subgraph",
+        "inGroup": "stage-1",
+        "x": 460,
+        "y": 560,
+        "w": 300,
+        "h": 210,
+        "definition": {
+          "id": "combined-weather",
+          "version": 2,
+          "semanticHash": "sha256:6e669a5cebd4ea40bc79266ba66e1726add898cf666af9648668f6b45852702c"
+        },
+        "parameterOverrides": {},
+        "roleOverrides": {},
+        "nodeBindingOverrides": {},
+        "localCopy": {
+          "definitionId": "combined-weather"
+        }
+      },
+      "relationship": {
+        "id": "relationship",
+        "type": "subgraph",
+        "inGroup": "stage-1",
+        "x": 460,
+        "y": 880,
+        "w": 300,
+        "h": 210,
+        "definition": {
+          "id": "combined-relationship",
+          "version": 2,
+          "semanticHash": "sha256:0103676c3426a3ef93f5c2a2332155fccabf7a98c4c7256ec6e889fa1539ceb0"
+        },
+        "parameterOverrides": {},
+        "roleOverrides": {},
+        "nodeBindingOverrides": {},
+        "localCopy": {
+          "definitionId": "combined-relationship"
+        }
+      }
+    },
+    "wires": {
+      "edge-1": {
+        "id": "edge-1",
+        "route": "wire",
+        "from": "send",
+        "fromPort": "activation",
+        "to": "generate",
+        "toPort": "activation"
+      },
+      "edge-2": {
+        "id": "edge-2",
+        "route": "wire",
+        "from": "compose",
+        "fromPort": "out",
+        "to": "generate",
+        "toPort": "guidance"
+      },
+      "edge-3": {
+        "id": "edge-3",
+        "route": "wire",
+        "from": "generate",
+        "fromPort": "draft",
+        "to": "review",
+        "toPort": "draft"
+      },
+      "edge-5": {
+        "id": "edge-5",
+        "route": "wire",
+        "from": "player",
+        "fromPort": "out",
+        "to": "wand",
+        "toPort": "input-1"
+      },
+      "edge-25": {
+        "id": "edge-25",
+        "route": "wire",
+        "from": "wand",
+        "fromPort": "output-1",
+        "to": "compose",
+        "toPort": "section.Wand"
+      },
+      "edge-27": {
+        "id": "edge-27",
+        "route": "wire",
+        "from": "clock",
+        "fromPort": "out",
+        "to": "weather",
+        "toPort": "input-1"
+      },
+      "edge-39": {
+        "id": "edge-39",
+        "route": "wire",
+        "from": "weather",
+        "fromPort": "output-1",
+        "to": "compose",
+        "toPort": "section.Weather"
+      },
+      "edge-42": {
+        "id": "edge-42",
+        "route": "wire",
+        "from": "player",
+        "fromPort": "out",
+        "to": "relationship",
+        "toPort": "input-1"
+      },
+      "edge-52": {
+        "id": "edge-52",
+        "route": "wire",
+        "from": "clock",
+        "fromPort": "out",
+        "to": "relationship",
+        "toPort": "input-2"
+      }
+    },
+    "groups": {
+      "stage-0": {
+        "id": "stage-0",
+        "title": "Preparation / processing",
+        "description": "Stage 0. Wires determine execution; folding is presentation only.",
+        "color": "#57416e",
+        "members": [
+          "send",
+          "player",
+          "clock"
+        ],
+        "collapsed": false,
+        "x": 75,
+        "y": 190,
+        "w": 350,
+        "h": 925
+      },
+      "stage-1": {
+        "id": "stage-1",
+        "title": "Preparation / processing",
+        "description": "Stage 1. Wires determine execution; folding is presentation only.",
+        "color": "#57416e",
+        "members": [
+          "wand",
+          "weather",
+          "relationship"
+        ],
+        "collapsed": false,
+        "x": 435,
+        "y": 190,
+        "w": 350,
+        "h": 925
+      },
+      "stage-2": {
+        "id": "stage-2",
+        "title": "Preparation / processing",
+        "description": "Stage 2. Wires determine execution; folding is presentation only.",
+        "color": "#57416e",
+        "members": [
+          "compose"
+        ],
+        "collapsed": false,
+        "x": 795,
+        "y": 190,
+        "w": 350,
+        "h": 285
+      },
+      "stage-3": {
+        "id": "stage-3",
+        "title": "Native generation",
+        "description": "Stage 3. Wires determine execution; folding is presentation only.",
+        "color": "#284e67",
+        "members": [
+          "generate"
+        ],
+        "collapsed": false,
+        "x": 1155,
+        "y": 190,
+        "w": 350,
+        "h": 285
+      },
+      "stage-4": {
+        "id": "stage-4",
+        "title": "Review / accepted staging",
+        "description": "Stage 4. Wires determine execution; folding is presentation only.",
+        "color": "#57416e",
+        "members": [
+          "review"
+        ],
+        "collapsed": false,
+        "x": 1515,
+        "y": 190,
+        "w": 350,
+        "h": 285
+      }
+    },
+    "roles": {
+      "Prose": {
+        "profileId": "lattice:active-sillytavern",
+        "model": null
+      }
+    },
+    "portals": {},
+    "definitions": {
+      "[\"remastered-lesson-27-confirmation\",1,\"sha256:2d1e276acf38bfe69341e879b4db199560a6ffc417b7641442dbf7d1f569d74e\"]": {
+        "id": "remastered-lesson-27-confirmation",
+        "version": 1,
+        "semanticHash": "sha256:2d1e276acf38bfe69341e879b4db199560a6ffc417b7641442dbf7d1f569d74e",
+        "name": "Confirm one exact occurrence",
+        "description": "Pure processor: no host sources, publication, private grants or settlement. Inspect the typed interface and exposed controls.",
+        "interface": [
+          {
+            "id": "item",
+            "label": "Item",
+            "direction": "input",
+            "kind": "data",
+            "required": true,
+            "cardinality": "one",
+            "boundaryNodeId": "item"
+          },
+          {
+            "id": "result",
+            "label": "Result",
+            "direction": "output",
+            "kind": "data",
+            "required": false,
+            "cardinality": "one",
+            "boundaryNodeId": "result"
+          }
+        ],
+        "parameters": [],
+        "body": {
+          "id": "lesson-27-confirmation-body",
+          "schema": 3,
+          "runtime": 2,
+          "mode": "native-unified",
+          "nodes": {
+            "item": {
+              "id": "item",
+              "type": "subgraph-input",
+              "enabled": true,
+              "x": 100,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "interfacePortId": "item"
+            },
+            "result": {
+              "id": "result",
+              "type": "subgraph-output",
+              "enabled": true,
+              "x": 1540,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "interfacePortId": "result"
+            },
+            "decision": {
+              "id": "decision",
+              "type": "workflow",
+              "operation": "decision",
+              "operationVersion": 1,
+              "enabled": true,
+              "title": "Decision",
+              "alias": "Decision",
+              "x": 460,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "profileId": "lattice:active-sillytavern",
+              "model": null,
+              "modelRole": "decision",
+              "inputKind": "data",
+              "questions": {
+                "actual": {
+                  "type": "noul",
+                  "instructions": "Does this exact candidate evidence establish an actual completed action now? Reject plans, negation, threats, recollection and ambiguous grammar."
+                }
+              },
+              "maxTokens": 2048
+            },
+            "acceptance": {
+              "id": "acceptance",
+              "type": "workflow",
+              "operation": "select-fields",
+              "operationVersion": 1,
+              "enabled": true,
+              "title": "Select Fields",
+              "alias": "Select Fields",
+              "x": 820,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "fields": [
+                {
+                  "name": "accepted",
+                  "path": [
+                    "answers",
+                    "actual",
+                    "accepted"
+                  ]
+                }
+              ]
+            },
+            "single-record": {
+              "id": "single-record",
+              "type": "workflow",
+              "operation": "format",
+              "operationVersion": 1,
+              "enabled": true,
+              "title": "Format",
+              "alias": "Format",
+              "x": 460,
+              "y": 560,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "inputMode": "records",
+              "format": "json",
+              "mapping": "preserve",
+              "fields": [],
+              "schema": "",
+              "columns": [],
+              "separator": "\n",
+              "trailingSeparator": false
+            },
+            "confirm": {
+              "id": "confirm",
+              "type": "workflow",
+              "operation": "confirm-events",
+              "operationVersion": 1,
+              "enabled": true,
+              "title": "Confirm Events",
+              "alias": "Confirm Events",
+              "x": 1180,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "mode": "single-gate"
+            }
+          },
+          "wires": {
+            "edge-1": {
+              "id": "edge-1",
+              "route": "wire",
+              "from": "item",
+              "fromPort": "out",
+              "to": "decision",
+              "toPort": "in"
+            },
+            "edge-2": {
+              "id": "edge-2",
+              "route": "wire",
+              "from": "decision",
+              "fromPort": "out",
+              "to": "acceptance",
+              "toPort": "in"
+            },
+            "edge-3": {
+              "id": "edge-3",
+              "route": "wire",
+              "from": "item",
+              "fromPort": "out",
+              "to": "single-record",
+              "toPort": "in"
+            },
+            "edge-4": {
+              "id": "edge-4",
+              "route": "wire",
+              "from": "single-record",
+              "fromPort": "records",
+              "to": "confirm",
+              "toPort": "events"
+            },
+            "edge-5": {
+              "id": "edge-5",
+              "route": "wire",
+              "from": "acceptance",
+              "fromPort": "out",
+              "to": "confirm",
+              "toPort": "decisions"
+            },
+            "edge-6": {
+              "id": "edge-6",
+              "route": "wire",
+              "from": "confirm",
+              "fromPort": "out",
+              "to": "result",
+              "toPort": "in"
+            }
+          },
+          "groups": {},
+          "roles": {
+            "decision": {
+              "profileId": "lattice:active-sillytavern",
+              "model": null
+            }
+          },
+          "portals": {},
+          "definitions": {}
+        }
+      },
+      "[\"remastered-lesson-30-confirmation\",1,\"sha256:2d1e276acf38bfe69341e879b4db199560a6ffc417b7641442dbf7d1f569d74e\"]": {
+        "id": "remastered-lesson-30-confirmation",
+        "version": 1,
+        "semanticHash": "sha256:2d1e276acf38bfe69341e879b4db199560a6ffc417b7641442dbf7d1f569d74e",
+        "name": "Confirm one exact occurrence",
+        "description": "Pure processor: no host sources, publication, private grants or settlement. Inspect the typed interface and exposed controls.",
+        "interface": [
+          {
+            "id": "item",
+            "label": "Item",
+            "direction": "input",
+            "kind": "data",
+            "required": true,
+            "cardinality": "one",
+            "boundaryNodeId": "item"
+          },
+          {
+            "id": "result",
+            "label": "Result",
+            "direction": "output",
+            "kind": "data",
+            "required": false,
+            "cardinality": "one",
+            "boundaryNodeId": "result"
+          }
+        ],
+        "parameters": [],
+        "body": {
+          "id": "lesson-30-confirmation-body",
+          "schema": 3,
+          "runtime": 2,
+          "mode": "native-unified",
+          "nodes": {
+            "item": {
+              "id": "item",
+              "type": "subgraph-input",
+              "enabled": true,
+              "x": 100,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "interfacePortId": "item"
+            },
+            "result": {
+              "id": "result",
+              "type": "subgraph-output",
+              "enabled": true,
+              "x": 1540,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "interfacePortId": "result"
+            },
+            "decision": {
+              "id": "decision",
+              "type": "workflow",
+              "operation": "decision",
+              "operationVersion": 1,
+              "enabled": true,
+              "title": "Decision",
+              "alias": "Decision",
+              "x": 460,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "profileId": "lattice:active-sillytavern",
+              "model": null,
+              "modelRole": "decision",
+              "inputKind": "data",
+              "questions": {
+                "actual": {
+                  "type": "noul",
+                  "instructions": "Does this exact candidate evidence establish an actual completed action now? Reject plans, negation, threats, recollection and ambiguous grammar."
+                }
+              },
+              "maxTokens": 2048
+            },
+            "acceptance": {
+              "id": "acceptance",
+              "type": "workflow",
+              "operation": "select-fields",
+              "operationVersion": 1,
+              "enabled": true,
+              "title": "Select Fields",
+              "alias": "Select Fields",
+              "x": 820,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "fields": [
+                {
+                  "name": "accepted",
+                  "path": [
+                    "answers",
+                    "actual",
+                    "accepted"
+                  ]
+                }
+              ]
+            },
+            "single-record": {
+              "id": "single-record",
+              "type": "workflow",
+              "operation": "format",
+              "operationVersion": 1,
+              "enabled": true,
+              "title": "Format",
+              "alias": "Format",
+              "x": 460,
+              "y": 560,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "inputMode": "records",
+              "format": "json",
+              "mapping": "preserve",
+              "fields": [],
+              "schema": "",
+              "columns": [],
+              "separator": "\n",
+              "trailingSeparator": false
+            },
+            "confirm": {
+              "id": "confirm",
+              "type": "workflow",
+              "operation": "confirm-events",
+              "operationVersion": 1,
+              "enabled": true,
+              "title": "Confirm Events",
+              "alias": "Confirm Events",
+              "x": 1180,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "mode": "single-gate"
+            }
+          },
+          "wires": {
+            "edge-1": {
+              "id": "edge-1",
+              "route": "wire",
+              "from": "item",
+              "fromPort": "out",
+              "to": "decision",
+              "toPort": "in"
+            },
+            "edge-2": {
+              "id": "edge-2",
+              "route": "wire",
+              "from": "decision",
+              "fromPort": "out",
+              "to": "acceptance",
+              "toPort": "in"
+            },
+            "edge-3": {
+              "id": "edge-3",
+              "route": "wire",
+              "from": "item",
+              "fromPort": "out",
+              "to": "single-record",
+              "toPort": "in"
+            },
+            "edge-4": {
+              "id": "edge-4",
+              "route": "wire",
+              "from": "single-record",
+              "fromPort": "records",
+              "to": "confirm",
+              "toPort": "events"
+            },
+            "edge-5": {
+              "id": "edge-5",
+              "route": "wire",
+              "from": "acceptance",
+              "fromPort": "out",
+              "to": "confirm",
+              "toPort": "decisions"
+            },
+            "edge-6": {
+              "id": "edge-6",
+              "route": "wire",
+              "from": "confirm",
+              "fromPort": "out",
+              "to": "result",
+              "toPort": "in"
+            }
+          },
+          "groups": {},
+          "roles": {
+            "decision": {
+              "profileId": "lattice:active-sillytavern",
+              "model": null
+            }
+          },
+          "portals": {},
+          "definitions": {}
+        }
+      },
+      "[\"combined-wand\",2,\"sha256:7c7d88c06702badb9f489c297832ca06cbb04d6987ef0be403616d9c0483eb77\"]": {
+        "id": "combined-wand",
+        "version": 2,
+        "semanticHash": "sha256:7c7d88c06702badb9f489c297832ca06cbb04d6987ef0be403616d9c0483eb77",
+        "name": "Broken wand",
+        "interface": [
+          {
+            "id": "input-1",
+            "label": "source",
+            "direction": "input",
+            "kind": "data",
+            "required": true,
+            "cardinality": "one",
+            "boundaryNodeId": "boundary-input-1"
+          },
+          {
+            "id": "output-1",
+            "label": "Output",
+            "direction": "output",
+            "kind": "guidance",
+            "required": false,
+            "cardinality": "one",
+            "boundaryNodeId": "boundary-output-1"
+          }
+        ],
+        "parameters": [],
+        "body": {
+          "schema": 3,
+          "runtime": 2,
+          "mode": "native-unified",
+          "nodes": {
+            "wand-entities-text": {
+              "id": "wand-entities-text",
+              "type": "workflow",
+              "operation": "text",
+              "operationVersion": 1,
+              "enabled": true,
+              "inGroup": "stage-0",
+              "title": "Text",
+              "alias": "Text · authored input",
+              "x": 100,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "phase": "pre",
+              "text": "{\"actorIds\":[\"character:rowan.png\",\"character:iris.png\"],\"itemIds\":[\"broken-wand\"]}"
+            },
+            "wand-entities": {
+              "id": "wand-entities",
+              "type": "workflow",
+              "operation": "json-decode",
+              "operationVersion": 1,
+              "enabled": true,
+              "inGroup": "stage-1",
+              "title": "JSON Decode",
+              "alias": "JSON Decode",
+              "x": 460,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "phase": "pre",
+              "mode": "parse",
+              "schema": ""
+            },
+            "wand-events": {
+              "id": "wand-events",
+              "type": "workflow",
+              "operation": "item-use-trigger",
+              "operationVersion": 1,
+              "enabled": true,
+              "inGroup": "stage-2",
+              "title": "Item Use Trigger",
+              "alias": "Item Use Trigger",
+              "x": 820,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": "eventExtract",
+              "phase": "pre",
+              "itemId": "broken-wand",
+              "mode": "extract",
+              "watch": "player-message",
+              "instructions": "At most one actual use. Exact unchanged source evidence is required.",
+              "maxTokens": 2048
+            },
+            "wand-confirm-each": {
+              "id": "wand-confirm-each",
+              "type": "workflow",
+              "operation": "for-each",
+              "operationVersion": 1,
+              "enabled": true,
+              "inGroup": "stage-3",
+              "title": "For Each",
+              "alias": "For Each",
+              "x": 1180,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "phase": "pre",
+              "helper": {
+                "id": "remastered-lesson-27-confirmation",
+                "version": 1,
+                "semanticHash": "sha256:2d1e276acf38bfe69341e879b4db199560a6ffc417b7641442dbf7d1f569d74e"
+              },
+              "limit": 1,
+              "requestBoundPerIteration": 1,
+              "mode": "map",
+              "roleOverrides": {
+                "decision": {
+                  "profileId": "lattice:active-sillytavern"
+                }
+              }
+            },
+            "wand-confirmed": {
+              "id": "wand-confirmed",
+              "type": "workflow",
+              "operation": "collection",
+              "operationVersion": 1,
+              "enabled": true,
+              "inGroup": "stage-4",
+              "title": "Collection",
+              "alias": "Collection",
+              "x": 1540,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "phase": "pre",
+              "mode": "flatten",
+              "collectionPath": [],
+              "fieldPath": [],
+              "value": "",
+              "operator": "equals",
+              "missingPolicy": "hold",
+              "thresholds": "[]",
+              "mergePolicy": "keep-all",
+              "identityPath": [
+                "id"
+              ]
+            },
+            "wand-holders-file": {
+              "id": "wand-holders-file",
+              "type": "workflow",
+              "operation": "read-file",
+              "operationVersion": 1,
+              "enabled": true,
+              "inGroup": "stage-0",
+              "title": "Read File",
+              "alias": "Read File · authorized live target",
+              "x": 100,
+              "y": 560,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "targetId": "wand-holders",
+              "schema": "",
+              "columns": []
+            },
+            "wand-holders": {
+              "id": "wand-holders",
+              "type": "workflow",
+              "operation": "json-decode",
+              "operationVersion": 1,
+              "enabled": true,
+              "inGroup": "stage-1",
+              "title": "JSON Decode",
+              "alias": "JSON Decode",
+              "x": 460,
+              "y": 560,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "phase": "pre",
+              "mode": "parse",
+              "schema": ""
+            },
+            "wand-holder": {
+              "id": "wand-holder",
+              "type": "workflow",
+              "operation": "current-holder",
+              "operationVersion": 1,
+              "enabled": true,
+              "inGroup": "stage-5",
+              "title": "Current Holder",
+              "alias": "Current Holder",
+              "x": 1900,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null
+            },
+            "wand-actual-uses": {
+              "id": "wand-actual-uses",
+              "type": "workflow",
+              "operation": "collection",
+              "operationVersion": 1,
+              "enabled": true,
+              "inGroup": "stage-6",
+              "title": "Collection",
+              "alias": "Collection",
+              "x": 2260,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "mode": "filter",
+              "collectionPath": [],
+              "fieldPath": [
+                "eventType"
+              ],
+              "value": "item-used",
+              "operator": "equals",
+              "missingPolicy": "hold",
+              "thresholds": "[]",
+              "mergePolicy": "keep-all",
+              "identityPath": [
+                "id"
+              ]
+            },
+            "wand-use-count": {
+              "id": "wand-use-count",
+              "type": "workflow",
+              "operation": "collection",
+              "operationVersion": 1,
+              "enabled": true,
+              "inGroup": "stage-7",
+              "title": "Collection",
+              "alias": "Collection",
+              "x": 2620,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "mode": "count",
+              "collectionPath": [],
+              "fieldPath": [],
+              "value": "",
+              "operator": "equals",
+              "missingPolicy": "hold",
+              "thresholds": "[]",
+              "mergePolicy": "keep-all",
+              "identityPath": [
+                "id"
+              ]
+            },
+            "wand-has-use": {
+              "id": "wand-has-use",
+              "type": "workflow",
+              "operation": "condition",
+              "operationVersion": 1,
+              "enabled": true,
+              "inGroup": "stage-8",
+              "title": "Condition",
+              "alias": "Condition",
+              "x": 2980,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "path": [],
+              "operator": "greater-than",
+              "value": 0
+            },
+            "wand-eligible-use": {
+              "id": "wand-eligible-use",
+              "type": "workflow",
+              "operation": "branch",
+              "operationVersion": 1,
+              "enabled": true,
+              "inGroup": "stage-9",
+              "title": "Branch",
+              "alias": "Branch",
+              "x": 3340,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "artifactKind": "data"
+            },
+            "wand-library-file": {
+              "id": "wand-library-file",
+              "type": "workflow",
+              "operation": "read-file",
+              "operationVersion": 1,
+              "enabled": true,
+              "inGroup": "stage-0",
+              "title": "Read File",
+              "alias": "Read File",
+              "x": 100,
+              "y": 880,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "targetId": "wand-effects",
+              "schema": "",
+              "columns": []
+            },
+            "wand-library": {
+              "id": "wand-library",
+              "type": "workflow",
+              "operation": "parse-effect-library",
+              "operationVersion": 1,
+              "enabled": true,
+              "inGroup": "stage-1",
+              "title": "Effect Library",
+              "alias": "Effect Library",
+              "x": 460,
+              "y": 880,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "format": "json",
+              "libraryId": "wand-effects",
+              "revision": "r1",
+              "itemId": "broken-wand",
+              "mechanicalPolicy": "narrative-only"
+            },
+            "wand-saved-file": {
+              "id": "wand-saved-file",
+              "type": "workflow",
+              "operation": "read-file",
+              "operationVersion": 1,
+              "enabled": true,
+              "inGroup": "stage-0",
+              "title": "Read File",
+              "alias": "Read File · authorized live target",
+              "x": 100,
+              "y": 1200,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "targetId": "wand-outcomes",
+              "schema": "",
+              "columns": []
+            },
+            "wand-saved": {
+              "id": "wand-saved",
+              "type": "workflow",
+              "operation": "json-decode",
+              "operationVersion": 1,
+              "enabled": true,
+              "inGroup": "stage-1",
+              "title": "JSON Decode",
+              "alias": "JSON Decode",
+              "x": 460,
+              "y": 1200,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "phase": "pre",
+              "mode": "parse",
+              "schema": ""
+            },
+            "wand-pick": {
+              "id": "wand-pick",
+              "type": "workflow",
+              "operation": "random-pick",
+              "operationVersion": 1,
+              "enabled": true,
+              "inGroup": "stage-10",
+              "title": "Random Pick",
+              "alias": "Random Pick",
+              "x": 3700,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "rerollPolicy": "reuse",
+              "rerollId": "",
+              "ledgerId": "wand-outcomes"
+            },
+            "wand-guidance-material": {
+              "id": "wand-guidance-material",
+              "type": "workflow",
+              "operation": "format",
+              "operationVersion": 1,
+              "enabled": true,
+              "inGroup": "stage-11",
+              "title": "Format",
+              "alias": "Format",
+              "x": 4060,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "inputMode": "records",
+              "format": "json",
+              "mapping": "preserve",
+              "fields": [],
+              "schema": "",
+              "columns": [],
+              "separator": "\n",
+              "trailingSeparator": false
+            },
+            "wand-guidance": {
+              "id": "wand-guidance",
+              "type": "workflow",
+              "operation": "compose",
+              "operationVersion": 1,
+              "enabled": true,
+              "inGroup": "stage-12",
+              "title": "Compose",
+              "alias": "Compose",
+              "x": 4420,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "mode": "template",
+              "outputKind": "guidance",
+              "template": "Narrate only this actual wand use using its frozen fixed effect and confirmed holder. Do not reroll or invent another use.\n{{section:Material}}",
+              "sections": [
+                {
+                  "name": "Material",
+                  "text": "",
+                  "kind": "text",
+                  "required": true,
+                  "onSkipped": "omit"
+                }
+              ],
+              "separator": "\n\n"
+            },
+            "wand-outcome-commit": {
+              "id": "wand-outcome-commit",
+              "type": "workflow",
+              "operation": "commit-outcomes",
+              "operationVersion": 1,
+              "enabled": true,
+              "inGroup": "stage-11",
+              "title": "Outcome Commit",
+              "alias": "Outcome Commit",
+              "x": 4060,
+              "y": 560,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "targetId": "wand-outcomes"
+            },
+            "boundary-input-1": {
+              "id": "boundary-input-1",
+              "type": "subgraph-input",
+              "inGroup": "stage-0",
+              "x": 100,
+              "y": 1520,
+              "w": 300,
+              "h": 210,
+              "interfacePortId": "input-1"
+            },
+            "boundary-output-1": {
+              "id": "boundary-output-1",
+              "type": "subgraph-output",
+              "inGroup": "stage-13",
+              "x": 4780,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "interfacePortId": "output-1"
+            }
+          },
+          "wires": {
+            "edge-4": {
+              "id": "edge-4",
+              "route": "wire",
+              "from": "wand-entities-text",
+              "fromPort": "out",
+              "to": "wand-entities",
+              "toPort": "in"
+            },
+            "edge-62": {
+              "id": "edge-62",
+              "route": "wire",
+              "from": "boundary-input-1",
+              "fromPort": "out",
+              "to": "wand-events",
+              "toPort": "source"
+            },
+            "edge-6": {
+              "id": "edge-6",
+              "route": "wire",
+              "from": "wand-entities",
+              "fromPort": "out",
+              "to": "wand-events",
+              "toPort": "entities"
+            },
+            "edge-7": {
+              "id": "edge-7",
+              "route": "wire",
+              "from": "wand-events",
+              "fromPort": "out",
+              "to": "wand-confirm-each",
+              "toPort": "in"
+            },
+            "edge-8": {
+              "id": "edge-8",
+              "route": "wire",
+              "from": "wand-confirm-each",
+              "fromPort": "out",
+              "to": "wand-confirmed",
+              "toPort": "in"
+            },
+            "edge-9": {
+              "id": "edge-9",
+              "route": "wire",
+              "from": "wand-holders-file",
+              "fromPort": "text",
+              "to": "wand-holders",
+              "toPort": "in"
+            },
+            "edge-10": {
+              "id": "edge-10",
+              "route": "wire",
+              "from": "wand-confirmed",
+              "fromPort": "out",
+              "to": "wand-holder",
+              "toPort": "events"
+            },
+            "edge-11": {
+              "id": "edge-11",
+              "route": "wire",
+              "from": "wand-holders",
+              "fromPort": "out",
+              "to": "wand-holder",
+              "toPort": "holders"
+            },
+            "edge-12": {
+              "id": "edge-12",
+              "route": "wire",
+              "from": "wand-holder",
+              "fromPort": "events",
+              "to": "wand-actual-uses",
+              "toPort": "in"
+            },
+            "edge-13": {
+              "id": "edge-13",
+              "route": "wire",
+              "from": "wand-actual-uses",
+              "fromPort": "out",
+              "to": "wand-use-count",
+              "toPort": "in"
+            },
+            "edge-14": {
+              "id": "edge-14",
+              "route": "wire",
+              "from": "wand-use-count",
+              "fromPort": "out",
+              "to": "wand-has-use",
+              "toPort": "in"
+            },
+            "edge-15": {
+              "id": "edge-15",
+              "route": "wire",
+              "from": "wand-actual-uses",
+              "fromPort": "out",
+              "to": "wand-eligible-use",
+              "toPort": "in"
+            },
+            "edge-16": {
+              "id": "edge-16",
+              "route": "wire",
+              "from": "wand-has-use",
+              "fromPort": "out",
+              "to": "wand-eligible-use",
+              "toPort": "condition"
+            },
+            "edge-17": {
+              "id": "edge-17",
+              "route": "wire",
+              "from": "wand-library-file",
+              "fromPort": "text",
+              "to": "wand-library",
+              "toPort": "in"
+            },
+            "edge-18": {
+              "id": "edge-18",
+              "route": "wire",
+              "from": "wand-saved-file",
+              "fromPort": "text",
+              "to": "wand-saved",
+              "toPort": "in"
+            },
+            "edge-19": {
+              "id": "edge-19",
+              "route": "wire",
+              "from": "wand-eligible-use",
+              "fromPort": "yes",
+              "to": "wand-pick",
+              "toPort": "events"
+            },
+            "edge-20": {
+              "id": "edge-20",
+              "route": "wire",
+              "from": "wand-library",
+              "fromPort": "out",
+              "to": "wand-pick",
+              "toPort": "library"
+            },
+            "edge-21": {
+              "id": "edge-21",
+              "route": "wire",
+              "from": "wand-saved",
+              "fromPort": "out",
+              "to": "wand-pick",
+              "toPort": "saved"
+            },
+            "edge-22": {
+              "id": "edge-22",
+              "route": "wire",
+              "from": "wand-pick",
+              "fromPort": "out",
+              "to": "wand-guidance-material",
+              "toPort": "in"
+            },
+            "edge-23": {
+              "id": "edge-23",
+              "route": "wire",
+              "from": "wand-guidance-material",
+              "fromPort": "text",
+              "to": "wand-guidance",
+              "toPort": "section.Material"
+            },
+            "edge-24": {
+              "id": "edge-24",
+              "route": "wire",
+              "from": "wand-pick",
+              "fromPort": "out",
+              "to": "wand-outcome-commit",
+              "toPort": "outcomes"
+            },
+            "edge-63": {
+              "id": "edge-63",
+              "route": "wire",
+              "from": "wand-guidance",
+              "fromPort": "out",
+              "to": "boundary-output-1",
+              "toPort": "in"
+            }
+          },
+          "groups": {
+            "stage-0": {
+              "id": "stage-0",
+              "title": "Preparation / processing",
+              "description": "Stage 0. Wires determine execution; folding is presentation only.",
+              "color": "#57416e",
+              "members": [
+                "wand-entities-text",
+                "wand-holders-file",
+                "wand-library-file",
+                "wand-saved-file",
+                "boundary-input-1"
+              ],
+              "collapsed": false,
+              "x": 75,
+              "y": 190,
+              "w": 350,
+              "h": 1565
+            },
+            "stage-1": {
+              "id": "stage-1",
+              "title": "Preparation / processing",
+              "description": "Stage 1. Wires determine execution; folding is presentation only.",
+              "color": "#57416e",
+              "members": [
+                "wand-entities",
+                "wand-holders",
+                "wand-library",
+                "wand-saved"
+              ],
+              "collapsed": false,
+              "x": 435,
+              "y": 190,
+              "w": 350,
+              "h": 1245
+            },
+            "stage-2": {
+              "id": "stage-2",
+              "title": "Preparation / processing",
+              "description": "Stage 2. Wires determine execution; folding is presentation only.",
+              "color": "#57416e",
+              "members": [
+                "wand-events"
+              ],
+              "collapsed": false,
+              "x": 795,
+              "y": 190,
+              "w": 350,
+              "h": 285
+            },
+            "stage-3": {
+              "id": "stage-3",
+              "title": "Preparation / processing",
+              "description": "Stage 3. Wires determine execution; folding is presentation only.",
+              "color": "#57416e",
+              "members": [
+                "wand-confirm-each"
+              ],
+              "collapsed": false,
+              "x": 1155,
+              "y": 190,
+              "w": 350,
+              "h": 285
+            },
+            "stage-4": {
+              "id": "stage-4",
+              "title": "Preparation / processing",
+              "description": "Stage 4. Wires determine execution; folding is presentation only.",
+              "color": "#57416e",
+              "members": [
+                "wand-confirmed"
+              ],
+              "collapsed": false,
+              "x": 1515,
+              "y": 190,
+              "w": 350,
+              "h": 285
+            },
+            "stage-5": {
+              "id": "stage-5",
+              "title": "Preparation / processing",
+              "description": "Stage 5. Wires determine execution; folding is presentation only.",
+              "color": "#57416e",
+              "members": [
+                "wand-holder"
+              ],
+              "collapsed": false,
+              "x": 1875,
+              "y": 190,
+              "w": 350,
+              "h": 285
+            },
+            "stage-6": {
+              "id": "stage-6",
+              "title": "Preparation / processing",
+              "description": "Stage 6. Wires determine execution; folding is presentation only.",
+              "color": "#57416e",
+              "members": [
+                "wand-actual-uses"
+              ],
+              "collapsed": false,
+              "x": 2235,
+              "y": 190,
+              "w": 350,
+              "h": 285
+            },
+            "stage-7": {
+              "id": "stage-7",
+              "title": "Preparation / processing",
+              "description": "Stage 7. Wires determine execution; folding is presentation only.",
+              "color": "#57416e",
+              "members": [
+                "wand-use-count"
+              ],
+              "collapsed": false,
+              "x": 2595,
+              "y": 190,
+              "w": 350,
+              "h": 285
+            },
+            "stage-8": {
+              "id": "stage-8",
+              "title": "Preparation / processing",
+              "description": "Stage 8. Wires determine execution; folding is presentation only.",
+              "color": "#57416e",
+              "members": [
+                "wand-has-use"
+              ],
+              "collapsed": false,
+              "x": 2955,
+              "y": 190,
+              "w": 350,
+              "h": 285
+            },
+            "stage-9": {
+              "id": "stage-9",
+              "title": "Preparation / processing",
+              "description": "Stage 9. Wires determine execution; folding is presentation only.",
+              "color": "#57416e",
+              "members": [
+                "wand-eligible-use"
+              ],
+              "collapsed": false,
+              "x": 3315,
+              "y": 190,
+              "w": 350,
+              "h": 285
+            },
+            "stage-10": {
+              "id": "stage-10",
+              "title": "Preparation / processing",
+              "description": "Stage 10. Wires determine execution; folding is presentation only.",
+              "color": "#57416e",
+              "members": [
+                "wand-pick"
+              ],
+              "collapsed": false,
+              "x": 3675,
+              "y": 190,
+              "w": 350,
+              "h": 285
+            },
+            "stage-11": {
+              "id": "stage-11",
+              "title": "Review / accepted staging",
+              "description": "Stage 11. Wires determine execution; folding is presentation only.",
+              "color": "#57416e",
+              "members": [
+                "wand-guidance-material",
+                "wand-outcome-commit"
+              ],
+              "collapsed": false,
+              "x": 4035,
+              "y": 190,
+              "w": 350,
+              "h": 605
+            },
+            "stage-12": {
+              "id": "stage-12",
+              "title": "Preparation / processing",
+              "description": "Stage 12. Wires determine execution; folding is presentation only.",
+              "color": "#57416e",
+              "members": [
+                "wand-guidance"
+              ],
+              "collapsed": false,
+              "x": 4395,
+              "y": 190,
+              "w": 350,
+              "h": 285
+            },
+            "stage-13": {
+              "id": "stage-13",
+              "title": "Preparation / processing",
+              "description": "Stage 13. Wires determine execution; folding is presentation only.",
+              "color": "#57416e",
+              "members": [
+                "boundary-output-1"
+              ],
+              "collapsed": false,
+              "x": 4755,
+              "y": 190,
+              "w": 350,
+              "h": 285
+            }
+          },
+          "roles": {},
+          "portals": {}
+        }
+      },
+      "[\"combined-weather\",2,\"sha256:6e669a5cebd4ea40bc79266ba66e1726add898cf666af9648668f6b45852702c\"]": {
+        "id": "combined-weather",
+        "version": 2,
+        "semanticHash": "sha256:6e669a5cebd4ea40bc79266ba66e1726add898cf666af9648668f6b45852702c",
+        "name": "Eight-hour rain",
+        "interface": [
+          {
+            "id": "input-1",
+            "label": "Previous Story Clock",
+            "direction": "input",
+            "kind": "data",
+            "required": true,
+            "cardinality": "one",
+            "boundaryNodeId": "boundary-input-5"
+          },
+          {
+            "id": "output-1",
+            "label": "Output",
+            "direction": "output",
+            "kind": "guidance",
+            "required": false,
+            "cardinality": "one",
+            "boundaryNodeId": "boundary-output-15"
+          }
+        ],
+        "parameters": [],
+        "body": {
+          "schema": 3,
+          "runtime": 2,
+          "mode": "native-unified",
+          "nodes": {
+            "weather-duration-text": {
+              "id": "weather-duration-text",
+              "type": "workflow",
+              "operation": "text",
+              "operationVersion": 1,
+              "enabled": true,
+              "inGroup": "stage-0",
+              "title": "Text",
+              "alias": "Text · authored input",
+              "x": 100,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "phase": "pre",
+              "text": "{\"kind\":\"duration\",\"minutes\":480,\"evidence\":{\"kind\":\"authored-rule\",\"origin\":\"agreed-eight-hour-wait\"}}"
+            },
+            "weather-duration": {
+              "id": "weather-duration",
+              "type": "workflow",
+              "operation": "json-decode",
+              "operationVersion": 1,
+              "enabled": true,
+              "inGroup": "stage-1",
+              "title": "JSON Decode",
+              "alias": "JSON Decode",
+              "x": 460,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "phase": "pre",
+              "mode": "parse",
+              "schema": ""
+            },
+            "weather-advance": {
+              "id": "weather-advance",
+              "type": "workflow",
+              "operation": "advance-time",
+              "operationVersion": 1,
+              "enabled": true,
+              "inGroup": "stage-2",
+              "title": "Advance Time",
+              "alias": "Advance Time",
+              "x": 820,
+              "y": 240,
+              "w": 300,
+              "h": 228,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "policy": "interrupt",
+              "schedules": [
+                {
+                  "scheduleId": "eight-hour-rain",
+                  "revision": 1,
+                  "kind": "interval",
+                  "anchorMinute": 0,
+                  "intervalMinutes": 480
+                }
+              ],
+              "limit": 1,
+              "consumedIds": []
+            },
+            "weather-trigger": {
+              "id": "weather-trigger",
+              "type": "workflow",
+              "operation": "time-trigger",
+              "operationVersion": 1,
+              "enabled": true,
+              "inGroup": "stage-3",
+              "title": "Time Trigger",
+              "alias": "Time Trigger",
+              "x": 1180,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "mode": "interval",
+              "scheduleId": "eight-hour-rain",
+              "scheduleRevision": 1,
+              "clockId": "lattice-default-clock",
+              "calendarId": "story-calendar",
+              "minuteOfDay": 840,
+              "anchorMinute": 0,
+              "intervalMinutes": 480,
+              "dueMinute": 0,
+              "order": 0,
+              "metadata": {},
+              "limit": 1,
+              "consumedIds": []
+            },
+            "weather-due-count": {
+              "id": "weather-due-count",
+              "type": "workflow",
+              "operation": "collection",
+              "operationVersion": 1,
+              "enabled": true,
+              "inGroup": "stage-4",
+              "title": "Collection",
+              "alias": "Collection",
+              "x": 1540,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "mode": "count",
+              "collectionPath": [],
+              "fieldPath": [],
+              "value": "",
+              "operator": "equals",
+              "missingPolicy": "hold",
+              "thresholds": "[]",
+              "mergePolicy": "keep-all",
+              "identityPath": [
+                "id"
+              ]
+            },
+            "weather-has-due": {
+              "id": "weather-has-due",
+              "type": "workflow",
+              "operation": "condition",
+              "operationVersion": 1,
+              "enabled": true,
+              "inGroup": "stage-5",
+              "title": "Condition",
+              "alias": "Condition",
+              "x": 1900,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "path": [],
+              "operator": "greater-than",
+              "value": 0
+            },
+            "weather-due": {
+              "id": "weather-due",
+              "type": "workflow",
+              "operation": "branch",
+              "operationVersion": 1,
+              "enabled": true,
+              "inGroup": "stage-6",
+              "title": "Branch",
+              "alias": "Branch",
+              "x": 2260,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "artifactKind": "data"
+            },
+            "weather-guidance-material": {
+              "id": "weather-guidance-material",
+              "type": "workflow",
+              "operation": "format",
+              "operationVersion": 1,
+              "enabled": true,
+              "inGroup": "stage-7",
+              "title": "Format",
+              "alias": "Format",
+              "x": 2620,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "inputMode": "records",
+              "format": "json",
+              "mapping": "preserve",
+              "fields": [],
+              "schema": "",
+              "columns": [],
+              "separator": "\n",
+              "trailingSeparator": false
+            },
+            "weather-guidance": {
+              "id": "weather-guidance",
+              "type": "workflow",
+              "operation": "compose",
+              "operationVersion": 1,
+              "enabled": true,
+              "inGroup": "stage-8",
+              "title": "Compose",
+              "alias": "Compose",
+              "x": 2980,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "mode": "template",
+              "outputKind": "guidance",
+              "template": "The rain begins at the supplied due time after the agreed eight-hour wait. Do not invent more elapsed time, change player choices, or claim rain lasts forever.\n{{section:Material}}",
+              "sections": [
+                {
+                  "name": "Material",
+                  "text": "",
+                  "kind": "text",
+                  "required": true,
+                  "onSkipped": "omit"
+                }
+              ],
+              "separator": "\n\n"
+            },
+            "weather-commit-clock": {
+              "id": "weather-commit-clock",
+              "type": "workflow",
+              "operation": "commit-clock",
+              "operationVersion": 1,
+              "enabled": true,
+              "inGroup": "stage-3",
+              "title": "Clock Commit",
+              "alias": "Clock Commit",
+              "x": 1180,
+              "y": 560,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null
+            },
+            "boundary-input-5": {
+              "id": "boundary-input-5",
+              "type": "subgraph-input",
+              "inGroup": "stage-0",
+              "x": 100,
+              "y": 560,
+              "w": 300,
+              "h": 210,
+              "interfacePortId": "input-1"
+            },
+            "boundary-output-15": {
+              "id": "boundary-output-15",
+              "type": "subgraph-output",
+              "inGroup": "stage-9",
+              "x": 3340,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "interfacePortId": "output-1"
+            }
+          },
+          "wires": {
+            "edge-26": {
+              "id": "edge-26",
+              "route": "wire",
+              "from": "weather-duration-text",
+              "fromPort": "out",
+              "to": "weather-duration",
+              "toPort": "in"
+            },
+            "edge-80": {
+              "id": "edge-80",
+              "route": "wire",
+              "from": "boundary-input-5",
+              "fromPort": "out",
+              "to": "weather-advance",
+              "toPort": "clock"
+            },
+            "edge-28": {
+              "id": "edge-28",
+              "route": "wire",
+              "from": "weather-duration",
+              "fromPort": "out",
+              "to": "weather-advance",
+              "toPort": "proposal"
+            },
+            "edge-81": {
+              "id": "edge-81",
+              "route": "wire",
+              "from": "boundary-input-5",
+              "fromPort": "out",
+              "to": "weather-trigger",
+              "toPort": "previous"
+            },
+            "edge-30": {
+              "id": "edge-30",
+              "route": "wire",
+              "from": "weather-advance",
+              "fromPort": "clock",
+              "to": "weather-trigger",
+              "toPort": "destination"
+            },
+            "edge-31": {
+              "id": "edge-31",
+              "route": "wire",
+              "from": "weather-trigger",
+              "fromPort": "occurrences",
+              "to": "weather-due-count",
+              "toPort": "in"
+            },
+            "edge-32": {
+              "id": "edge-32",
+              "route": "wire",
+              "from": "weather-due-count",
+              "fromPort": "out",
+              "to": "weather-has-due",
+              "toPort": "in"
+            },
+            "edge-33": {
+              "id": "edge-33",
+              "route": "wire",
+              "from": "weather-trigger",
+              "fromPort": "occurrences",
+              "to": "weather-due",
+              "toPort": "in"
+            },
+            "edge-34": {
+              "id": "edge-34",
+              "route": "wire",
+              "from": "weather-has-due",
+              "fromPort": "out",
+              "to": "weather-due",
+              "toPort": "condition"
+            },
+            "edge-35": {
+              "id": "edge-35",
+              "route": "wire",
+              "from": "weather-due",
+              "fromPort": "yes",
+              "to": "weather-guidance-material",
+              "toPort": "in"
+            },
+            "edge-36": {
+              "id": "edge-36",
+              "route": "wire",
+              "from": "weather-guidance-material",
+              "fromPort": "text",
+              "to": "weather-guidance",
+              "toPort": "section.Material"
+            },
+            "edge-37": {
+              "id": "edge-37",
+              "route": "wire",
+              "from": "weather-advance",
+              "fromPort": "report",
+              "to": "weather-commit-clock",
+              "toPort": "projection"
+            },
+            "edge-38": {
+              "id": "edge-38",
+              "route": "wire",
+              "from": "weather-advance",
+              "fromPort": "occurrences",
+              "to": "weather-commit-clock",
+              "toPort": "occurrences"
+            },
+            "edge-82": {
+              "id": "edge-82",
+              "route": "wire",
+              "from": "weather-guidance",
+              "fromPort": "out",
+              "to": "boundary-output-15",
+              "toPort": "in"
+            }
+          },
+          "groups": {
+            "stage-0": {
+              "id": "stage-0",
+              "title": "Preparation / processing",
+              "description": "Stage 0. Wires determine execution; folding is presentation only.",
+              "color": "#57416e",
+              "members": [
+                "weather-duration-text",
+                "boundary-input-5"
+              ],
+              "collapsed": false,
+              "x": 75,
+              "y": 190,
+              "w": 350,
+              "h": 605
+            },
+            "stage-1": {
+              "id": "stage-1",
+              "title": "Preparation / processing",
+              "description": "Stage 1. Wires determine execution; folding is presentation only.",
+              "color": "#57416e",
+              "members": [
+                "weather-duration"
+              ],
+              "collapsed": false,
+              "x": 435,
+              "y": 190,
+              "w": 350,
+              "h": 285
+            },
+            "stage-2": {
+              "id": "stage-2",
+              "title": "Preparation / processing",
+              "description": "Stage 2. Wires determine execution; folding is presentation only.",
+              "color": "#57416e",
+              "members": [
+                "weather-advance"
+              ],
+              "collapsed": false,
+              "x": 795,
+              "y": 190,
+              "w": 350,
+              "h": 303
+            },
+            "stage-3": {
+              "id": "stage-3",
+              "title": "Review / accepted staging",
+              "description": "Stage 3. Wires determine execution; folding is presentation only.",
+              "color": "#57416e",
+              "members": [
+                "weather-trigger",
+                "weather-commit-clock"
+              ],
+              "collapsed": false,
+              "x": 1155,
+              "y": 190,
+              "w": 350,
+              "h": 605
+            },
+            "stage-4": {
+              "id": "stage-4",
+              "title": "Preparation / processing",
+              "description": "Stage 4. Wires determine execution; folding is presentation only.",
+              "color": "#57416e",
+              "members": [
+                "weather-due-count"
+              ],
+              "collapsed": false,
+              "x": 1515,
+              "y": 190,
+              "w": 350,
+              "h": 285
+            },
+            "stage-5": {
+              "id": "stage-5",
+              "title": "Preparation / processing",
+              "description": "Stage 5. Wires determine execution; folding is presentation only.",
+              "color": "#57416e",
+              "members": [
+                "weather-has-due"
+              ],
+              "collapsed": false,
+              "x": 1875,
+              "y": 190,
+              "w": 350,
+              "h": 285
+            },
+            "stage-6": {
+              "id": "stage-6",
+              "title": "Preparation / processing",
+              "description": "Stage 6. Wires determine execution; folding is presentation only.",
+              "color": "#57416e",
+              "members": [
+                "weather-due"
+              ],
+              "collapsed": false,
+              "x": 2235,
+              "y": 190,
+              "w": 350,
+              "h": 285
+            },
+            "stage-7": {
+              "id": "stage-7",
+              "title": "Preparation / processing",
+              "description": "Stage 7. Wires determine execution; folding is presentation only.",
+              "color": "#57416e",
+              "members": [
+                "weather-guidance-material"
+              ],
+              "collapsed": false,
+              "x": 2595,
+              "y": 190,
+              "w": 350,
+              "h": 285
+            },
+            "stage-8": {
+              "id": "stage-8",
+              "title": "Preparation / processing",
+              "description": "Stage 8. Wires determine execution; folding is presentation only.",
+              "color": "#57416e",
+              "members": [
+                "weather-guidance"
+              ],
+              "collapsed": false,
+              "x": 2955,
+              "y": 190,
+              "w": 350,
+              "h": 285
+            },
+            "stage-9": {
+              "id": "stage-9",
+              "title": "Preparation / processing",
+              "description": "Stage 9. Wires determine execution; folding is presentation only.",
+              "color": "#57416e",
+              "members": [
+                "boundary-output-15"
+              ],
+              "collapsed": false,
+              "x": 3315,
+              "y": 190,
+              "w": 350,
+              "h": 285
+            }
+          },
+          "roles": {},
+          "portals": {}
+        }
+      },
+      "[\"combined-relationship\",2,\"sha256:0103676c3426a3ef93f5c2a2332155fccabf7a98c4c7256ec6e889fa1539ceb0\"]": {
+        "id": "combined-relationship",
+        "version": 2,
+        "semanticHash": "sha256:0103676c3426a3ef93f5c2a2332155fccabf7a98c4c7256ec6e889fa1539ceb0",
+        "name": "Rowan toward Iris",
+        "interface": [
+          {
+            "id": "input-1",
+            "label": "Evidence",
+            "direction": "input",
+            "kind": "data",
+            "required": true,
+            "cardinality": "one",
+            "boundaryNodeId": "boundary-input-10"
+          },
+          {
+            "id": "input-2",
+            "label": "Effective Story Clock",
+            "direction": "input",
+            "kind": "data",
+            "required": true,
+            "cardinality": "one",
+            "boundaryNodeId": "boundary-input-11"
+          }
+        ],
+        "parameters": [],
+        "body": {
+          "schema": 3,
+          "runtime": 2,
+          "mode": "native-unified",
+          "nodes": {
+            "relationship-entities-text": {
+              "id": "relationship-entities-text",
+              "type": "workflow",
+              "operation": "text",
+              "operationVersion": 1,
+              "enabled": true,
+              "inGroup": "stage-0",
+              "title": "Text",
+              "alias": "Text · authored input",
+              "x": 100,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "phase": "pre",
+              "text": "{\"actorIds\":[\"character:rowan.png\",\"character:iris.png\"],\"itemIds\":[]}"
+            },
+            "relationship-entities": {
+              "id": "relationship-entities",
+              "type": "workflow",
+              "operation": "json-decode",
+              "operationVersion": 1,
+              "enabled": true,
+              "inGroup": "stage-1",
+              "title": "JSON Decode",
+              "alias": "JSON Decode",
+              "x": 460,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "phase": "pre",
+              "mode": "parse",
+              "schema": ""
+            },
+            "relationship-candidate-request": {
+              "id": "relationship-candidate-request",
+              "type": "workflow",
+              "operation": "text",
+              "operationVersion": 1,
+              "enabled": true,
+              "inGroup": "stage-0",
+              "title": "Text",
+              "alias": "Text",
+              "x": 100,
+              "y": 560,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "phase": "pre",
+              "text": "Return exactly a raw JSON array of {eventType,actorId,objectId only when relevant,position:{start,end},semantics}. Copy exact UTF-16 evidence spans from supplied source.text. Use only supplied canonical actor IDs character:rowan.png, character:iris.png. Target eventType scene-action. Distinguish actual, mentioned, planned, threatened, recalled, proposed, uncertain. At most one genuinely completed supportive interaction by Rowan toward Iris."
+            },
+            "relationship-candidates": {
+              "id": "relationship-candidates",
+              "type": "workflow",
+              "operation": "model-call",
+              "operationVersion": 1,
+              "enabled": true,
+              "inGroup": "stage-1",
+              "title": "Model Call",
+              "alias": "Model Call",
+              "x": 460,
+              "y": 560,
+              "w": 300,
+              "h": 210,
+              "profileId": "lattice:active-sillytavern",
+              "model": null,
+              "modelRole": "Prose",
+              "phase": "pre",
+              "instructions": "Extract candidates only; never confirm or fabricate evidence.",
+              "outputKind": "data",
+              "schema": "",
+              "maxTokens": 2048
+            },
+            "relationship-events": {
+              "id": "relationship-events",
+              "type": "workflow",
+              "operation": "event-normalize",
+              "operationVersion": 1,
+              "enabled": true,
+              "inGroup": "stage-2",
+              "title": "Event Normalize",
+              "alias": "Event Normalize",
+              "x": 820,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "phase": "pre",
+              "mode": "candidates",
+              "eventType": "",
+              "absoluteMinute": -1
+            },
+            "relationship-confirm-each": {
+              "id": "relationship-confirm-each",
+              "type": "workflow",
+              "operation": "for-each",
+              "operationVersion": 1,
+              "enabled": true,
+              "inGroup": "stage-3",
+              "title": "For Each",
+              "alias": "For Each",
+              "x": 1180,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "phase": "pre",
+              "helper": {
+                "id": "remastered-lesson-30-confirmation",
+                "version": 1,
+                "semanticHash": "sha256:2d1e276acf38bfe69341e879b4db199560a6ffc417b7641442dbf7d1f569d74e"
+              },
+              "limit": 1,
+              "requestBoundPerIteration": 1,
+              "mode": "map",
+              "roleOverrides": {
+                "decision": {
+                  "profileId": "lattice:active-sillytavern"
+                }
+              }
+            },
+            "relationship-confirmed": {
+              "id": "relationship-confirmed",
+              "type": "workflow",
+              "operation": "collection",
+              "operationVersion": 1,
+              "enabled": true,
+              "inGroup": "stage-4",
+              "title": "Collection",
+              "alias": "Collection",
+              "x": 1540,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "phase": "pre",
+              "mode": "flatten",
+              "collectionPath": [],
+              "fieldPath": [],
+              "value": "",
+              "operator": "equals",
+              "missingPolicy": "hold",
+              "thresholds": "[]",
+              "mergePolicy": "keep-all",
+              "identityPath": [
+                "id"
+              ]
+            },
+            "relationship-relationship-state-file": {
+              "id": "relationship-relationship-state-file",
+              "type": "workflow",
+              "operation": "read-file",
+              "operationVersion": 1,
+              "enabled": true,
+              "inGroup": "stage-0",
+              "title": "Read File",
+              "alias": "Read File · authorized live target",
+              "x": 100,
+              "y": 880,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "targetId": "rowan-relationship",
+              "schema": "",
+              "columns": []
+            },
+            "relationship-relationship-state": {
+              "id": "relationship-relationship-state",
+              "type": "workflow",
+              "operation": "json-decode",
+              "operationVersion": 1,
+              "enabled": true,
+              "inGroup": "stage-1",
+              "title": "JSON Decode",
+              "alias": "JSON Decode",
+              "x": 460,
+              "y": 880,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "phase": "pre",
+              "mode": "parse",
+              "schema": ""
+            },
+            "relationship-decay-rules-text": {
+              "id": "relationship-decay-rules-text",
+              "type": "workflow",
+              "operation": "text",
+              "operationVersion": 1,
+              "enabled": true,
+              "inGroup": "stage-0",
+              "title": "Text",
+              "alias": "Text · authored input",
+              "x": 100,
+              "y": 1200,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "phase": "pre",
+              "text": "[{\"decayId\":\"trust-eases\",\"revision\":1,\"targetKey\":\"rowan-toward-iris-trust\",\"subjectId\":\"character:rowan.png\",\"objectId\":\"character:iris.png\",\"baseline\":0,\"unitsPerMinute\":0.0000992063492063492,\"min\":0,\"max\":10,\"initialMinute\":0},{\"decayId\":\"desire-eases\",\"revision\":1,\"targetKey\":\"rowan-toward-iris-desire\",\"subjectId\":\"character:rowan.png\",\"objectId\":\"character:iris.png\",\"baseline\":0,\"unitsPerMinute\":0.0000248015873015873,\"min\":0,\"max\":10,\"initialMinute\":0},{\"decayId\":\"tension-eases\",\"revision\":1,\"targetKey\":\"rowan-toward-iris-tension\",\"subjectId\":\"character:rowan.png\",\"objectId\":\"character:iris.png\",\"baseline\":0,\"unitsPerMinute\":0.0000992063492063492,\"min\":0,\"max\":10,\"initialMinute\":0},{\"decayId\":\"excitement-eases\",\"revision\":1,\"targetKey\":\"rowan-toward-iris-excitement\",\"subjectId\":\"character:rowan.png\",\"objectId\":\"character:iris.png\",\"baseline\":0,\"unitsPerMinute\":0.0020833333333333333,\"min\":0,\"max\":10,\"initialMinute\":0}]"
+            },
+            "relationship-decay-rules": {
+              "id": "relationship-decay-rules",
+              "type": "workflow",
+              "operation": "json-decode",
+              "operationVersion": 1,
+              "enabled": true,
+              "inGroup": "stage-1",
+              "title": "JSON Decode",
+              "alias": "JSON Decode",
+              "x": 460,
+              "y": 1200,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "phase": "pre",
+              "mode": "parse",
+              "schema": ""
+            },
+            "relationship-decay": {
+              "id": "relationship-decay",
+              "type": "workflow",
+              "operation": "state",
+              "operationVersion": 1,
+              "enabled": true,
+              "inGroup": "stage-2",
+              "title": "State",
+              "alias": "State",
+              "x": 820,
+              "y": 560,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "mode": "time-decay"
+            },
+            "relationship-relationship-rules-text": {
+              "id": "relationship-relationship-rules-text",
+              "type": "workflow",
+              "operation": "text",
+              "operationVersion": 1,
+              "enabled": true,
+              "inGroup": "stage-0",
+              "title": "Text",
+              "alias": "Text · authored input",
+              "x": 100,
+              "y": 1520,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "phase": "pre",
+              "text": "{\"ruleSetId\":\"slow-relationship\",\"revision\":1,\"dayLengthMinutes\":1440,\"rules\":[{\"ruleId\":\"trust-support\",\"eventType\":\"supportive-interaction\",\"targetKey\":\"rowan-toward-iris-trust\",\"subjectId\":\"character:rowan.png\",\"objectId\":\"character:iris.png\",\"identityFields\":[\"occurrenceId\"],\"mode\":\"add\",\"amount\":1,\"min\":0,\"max\":10,\"positiveSceneCap\":1,\"positiveDayCap\":1,\"cooldownMinutes\":1440,\"diminishingFactors\":[1,0.5,0.25],\"zeroDeltaPolicy\":\"consume\",\"repeatOnZero\":false,\"cooldownOnZero\":false},{\"ruleId\":\"desire-support\",\"eventType\":\"supportive-interaction\",\"targetKey\":\"rowan-toward-iris-desire\",\"subjectId\":\"character:rowan.png\",\"objectId\":\"character:iris.png\",\"identityFields\":[\"occurrenceId\"],\"mode\":\"add\",\"amount\":0.1,\"min\":0,\"max\":10,\"positiveSceneCap\":0.1,\"positiveDayCap\":0.2,\"cooldownMinutes\":1440,\"diminishingFactors\":[1,0.5,0.25],\"zeroDeltaPolicy\":\"consume\",\"repeatOnZero\":false,\"cooldownOnZero\":false},{\"ruleId\":\"tension-support\",\"eventType\":\"supportive-interaction\",\"targetKey\":\"rowan-toward-iris-tension\",\"subjectId\":\"character:rowan.png\",\"objectId\":\"character:iris.png\",\"identityFields\":[\"occurrenceId\"],\"mode\":\"add\",\"amount\":-0.25,\"min\":0,\"max\":10,\"positiveSceneCap\":0,\"positiveDayCap\":0,\"cooldownMinutes\":720,\"diminishingFactors\":[1,0.5,0.25],\"zeroDeltaPolicy\":\"consume\",\"repeatOnZero\":false,\"cooldownOnZero\":false},{\"ruleId\":\"excitement-support\",\"eventType\":\"supportive-interaction\",\"targetKey\":\"rowan-toward-iris-excitement\",\"subjectId\":\"character:rowan.png\",\"objectId\":\"character:iris.png\",\"identityFields\":[\"occurrenceId\"],\"mode\":\"add\",\"amount\":0.5,\"min\":0,\"max\":10,\"positiveSceneCap\":0.5,\"positiveDayCap\":1,\"cooldownMinutes\":120,\"diminishingFactors\":[1,0.5,0.25],\"zeroDeltaPolicy\":\"consume\",\"repeatOnZero\":false,\"cooldownOnZero\":false}]}"
+            },
+            "relationship-relationship-rules": {
+              "id": "relationship-relationship-rules",
+              "type": "workflow",
+              "operation": "json-decode",
+              "operationVersion": 1,
+              "enabled": true,
+              "inGroup": "stage-1",
+              "title": "JSON Decode",
+              "alias": "JSON Decode",
+              "x": 460,
+              "y": 1520,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "phase": "pre",
+              "mode": "parse",
+              "schema": ""
+            },
+            "relationship-interaction-events": {
+              "id": "relationship-interaction-events",
+              "type": "workflow",
+              "operation": "event-normalize",
+              "operationVersion": 1,
+              "enabled": true,
+              "inGroup": "stage-5",
+              "title": "Event Normalize",
+              "alias": "Event Normalize",
+              "x": 1900,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "mode": "progression",
+              "eventType": "supportive-interaction",
+              "absoluteMinute": -1
+            },
+            "relationship-relationship": {
+              "id": "relationship-relationship",
+              "type": "workflow",
+              "operation": "state",
+              "operationVersion": 1,
+              "enabled": true,
+              "inGroup": "stage-6",
+              "title": "State",
+              "alias": "State",
+              "x": 2260,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "mode": "progression"
+            },
+            "relationship-save-format": {
+              "id": "relationship-save-format",
+              "type": "workflow",
+              "operation": "format",
+              "operationVersion": 1,
+              "enabled": true,
+              "inGroup": "stage-7",
+              "title": "Format",
+              "alias": "Format",
+              "x": 2620,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "phase": "post",
+              "inputMode": "records",
+              "format": "json",
+              "jsonShape": "single",
+              "mapping": "preserve",
+              "fields": [],
+              "schema": "",
+              "columns": [],
+              "separator": "\n",
+              "trailingSeparator": false
+            },
+            "relationship-save": {
+              "id": "relationship-save",
+              "type": "workflow",
+              "operation": "write-file",
+              "operationVersion": 1,
+              "enabled": true,
+              "inGroup": "stage-8",
+              "title": "Write to File",
+              "alias": "Write to File",
+              "x": 2980,
+              "y": 240,
+              "w": 300,
+              "h": 210,
+              "profileId": null,
+              "model": null,
+              "modelRole": null,
+              "mode": "replace",
+              "collectionPath": "",
+              "missingPath": "error",
+              "key": "id",
+              "fieldPolicy": "merge",
+              "fields": [],
+              "schema": "",
+              "columns": [],
+              "separator": "\n",
+              "emptyPolicy": "omit",
+              "trailingSeparator": false
+            },
+            "boundary-input-10": {
+              "id": "boundary-input-10",
+              "type": "subgraph-input",
+              "inGroup": "stage-0",
+              "x": 100,
+              "y": 1840,
+              "w": 300,
+              "h": 210,
+              "interfacePortId": "input-1"
+            },
+            "boundary-input-11": {
+              "id": "boundary-input-11",
+              "type": "subgraph-input",
+              "inGroup": "stage-0",
+              "x": 100,
+              "y": 2160,
+              "w": 300,
+              "h": 210,
+              "interfacePortId": "input-2"
+            }
+          },
+          "wires": {
+            "edge-40": {
+              "id": "edge-40",
+              "route": "wire",
+              "from": "relationship-entities-text",
+              "fromPort": "out",
+              "to": "relationship-entities",
+              "toPort": "in"
+            },
+            "edge-41": {
+              "id": "edge-41",
+              "route": "wire",
+              "from": "relationship-candidate-request",
+              "fromPort": "out",
+              "to": "relationship-candidates",
+              "toPort": "prompt"
+            },
+            "edge-29": {
+              "id": "edge-29",
+              "route": "wire",
+              "from": "boundary-input-10",
+              "fromPort": "out",
+              "to": "relationship-candidates",
+              "toPort": "data"
+            },
+            "edge-94": {
+              "id": "edge-94",
+              "route": "wire",
+              "from": "boundary-input-10",
+              "fromPort": "out",
+              "to": "relationship-events",
+              "toPort": "source"
+            },
+            "edge-44": {
+              "id": "edge-44",
+              "route": "wire",
+              "from": "relationship-entities",
+              "fromPort": "out",
+              "to": "relationship-events",
+              "toPort": "entities"
+            },
+            "edge-45": {
+              "id": "edge-45",
+              "route": "wire",
+              "from": "relationship-candidates",
+              "fromPort": "out",
+              "to": "relationship-events",
+              "toPort": "candidates"
+            },
+            "edge-46": {
+              "id": "edge-46",
+              "route": "wire",
+              "from": "relationship-events",
+              "fromPort": "out",
+              "to": "relationship-confirm-each",
+              "toPort": "in"
+            },
+            "edge-47": {
+              "id": "edge-47",
+              "route": "wire",
+              "from": "relationship-confirm-each",
+              "fromPort": "out",
+              "to": "relationship-confirmed",
+              "toPort": "in"
+            },
+            "edge-48": {
+              "id": "edge-48",
+              "route": "wire",
+              "from": "relationship-relationship-state-file",
+              "fromPort": "text",
+              "to": "relationship-relationship-state",
+              "toPort": "in"
+            },
+            "edge-49": {
+              "id": "edge-49",
+              "route": "wire",
+              "from": "relationship-decay-rules-text",
+              "fromPort": "out",
+              "to": "relationship-decay-rules",
+              "toPort": "in"
+            },
+            "edge-50": {
+              "id": "edge-50",
+              "route": "wire",
+              "from": "relationship-relationship-state",
+              "fromPort": "out",
+              "to": "relationship-decay",
+              "toPort": "state"
+            },
+            "edge-51": {
+              "id": "edge-51",
+              "route": "wire",
+              "from": "relationship-decay-rules",
+              "fromPort": "out",
+              "to": "relationship-decay",
+              "toPort": "rules"
+            },
+            "edge-95": {
+              "id": "edge-95",
+              "route": "wire",
+              "from": "boundary-input-11",
+              "fromPort": "out",
+              "to": "relationship-decay",
+              "toPort": "clock"
+            },
+            "edge-53": {
+              "id": "edge-53",
+              "route": "wire",
+              "from": "relationship-relationship-rules-text",
+              "fromPort": "out",
+              "to": "relationship-relationship-rules",
+              "toPort": "in"
+            },
+            "edge-54": {
+              "id": "edge-54",
+              "route": "wire",
+              "from": "relationship-confirmed",
+              "fromPort": "out",
+              "to": "relationship-interaction-events",
+              "toPort": "events"
+            },
+            "edge-96": {
+              "id": "edge-96",
+              "route": "wire",
+              "from": "boundary-input-11",
+              "fromPort": "out",
+              "to": "relationship-interaction-events",
+              "toPort": "clock"
+            },
+            "edge-56": {
+              "id": "edge-56",
+              "route": "wire",
+              "from": "relationship-decay",
+              "fromPort": "out",
+              "to": "relationship-relationship",
+              "toPort": "state"
+            },
+            "edge-57": {
+              "id": "edge-57",
+              "route": "wire",
+              "from": "relationship-relationship-rules",
+              "fromPort": "out",
+              "to": "relationship-relationship",
+              "toPort": "rules"
+            },
+            "edge-58": {
+              "id": "edge-58",
+              "route": "wire",
+              "from": "relationship-interaction-events",
+              "fromPort": "out",
+              "to": "relationship-relationship",
+              "toPort": "events"
+            },
+            "edge-59": {
+              "id": "edge-59",
+              "route": "wire",
+              "from": "relationship-relationship",
+              "fromPort": "out",
+              "to": "relationship-save-format",
+              "toPort": "in"
+            },
+            "edge-60": {
+              "id": "edge-60",
+              "route": "wire",
+              "from": "relationship-relationship-state-file",
+              "fromPort": "reference",
+              "to": "relationship-save",
+              "toPort": "reference"
+            },
+            "edge-61": {
+              "id": "edge-61",
+              "route": "wire",
+              "from": "relationship-save-format",
+              "fromPort": "text",
+              "to": "relationship-save",
+              "toPort": "text"
+            }
+          },
+          "groups": {
+            "stage-0": {
+              "id": "stage-0",
+              "title": "Preparation / processing",
+              "description": "Stage 0. Wires determine execution; folding is presentation only.",
+              "color": "#57416e",
+              "members": [
+                "relationship-entities-text",
+                "relationship-candidate-request",
+                "relationship-relationship-state-file",
+                "relationship-decay-rules-text",
+                "relationship-relationship-rules-text",
+                "boundary-input-10",
+                "boundary-input-11"
+              ],
+              "collapsed": false,
+              "x": 75,
+              "y": 190,
+              "w": 350,
+              "h": 2205
+            },
+            "stage-1": {
+              "id": "stage-1",
+              "title": "Preparation / processing",
+              "description": "Stage 1. Wires determine execution; folding is presentation only.",
+              "color": "#57416e",
+              "members": [
+                "relationship-entities",
+                "relationship-candidates",
+                "relationship-relationship-state",
+                "relationship-decay-rules",
+                "relationship-relationship-rules"
+              ],
+              "collapsed": false,
+              "x": 435,
+              "y": 190,
+              "w": 350,
+              "h": 1565
+            },
+            "stage-2": {
+              "id": "stage-2",
+              "title": "Preparation / processing",
+              "description": "Stage 2. Wires determine execution; folding is presentation only.",
+              "color": "#57416e",
+              "members": [
+                "relationship-events",
+                "relationship-decay"
+              ],
+              "collapsed": false,
+              "x": 795,
+              "y": 190,
+              "w": 350,
+              "h": 605
+            },
+            "stage-3": {
+              "id": "stage-3",
+              "title": "Preparation / processing",
+              "description": "Stage 3. Wires determine execution; folding is presentation only.",
+              "color": "#57416e",
+              "members": [
+                "relationship-confirm-each"
+              ],
+              "collapsed": false,
+              "x": 1155,
+              "y": 190,
+              "w": 350,
+              "h": 285
+            },
+            "stage-4": {
+              "id": "stage-4",
+              "title": "Preparation / processing",
+              "description": "Stage 4. Wires determine execution; folding is presentation only.",
+              "color": "#57416e",
+              "members": [
+                "relationship-confirmed"
+              ],
+              "collapsed": false,
+              "x": 1515,
+              "y": 190,
+              "w": 350,
+              "h": 285
+            },
+            "stage-5": {
+              "id": "stage-5",
+              "title": "Preparation / processing",
+              "description": "Stage 5. Wires determine execution; folding is presentation only.",
+              "color": "#57416e",
+              "members": [
+                "relationship-interaction-events"
+              ],
+              "collapsed": false,
+              "x": 1875,
+              "y": 190,
+              "w": 350,
+              "h": 285
+            },
+            "stage-6": {
+              "id": "stage-6",
+              "title": "Preparation / processing",
+              "description": "Stage 6. Wires determine execution; folding is presentation only.",
+              "color": "#57416e",
+              "members": [
+                "relationship-relationship"
+              ],
+              "collapsed": false,
+              "x": 2235,
+              "y": 190,
+              "w": 350,
+              "h": 285
+            },
+            "stage-7": {
+              "id": "stage-7",
+              "title": "Response processing",
+              "description": "Stage 7. Wires determine execution; folding is presentation only.",
+              "color": "#57416e",
+              "members": [
+                "relationship-save-format"
+              ],
+              "collapsed": false,
+              "x": 2595,
+              "y": 190,
+              "w": 350,
+              "h": 285
+            },
+            "stage-8": {
+              "id": "stage-8",
+              "title": "Review / accepted staging",
+              "description": "Stage 8. Wires determine execution; folding is presentation only.",
+              "color": "#57416e",
+              "members": [
+                "relationship-save"
+              ],
+              "collapsed": false,
+              "x": 2955,
+              "y": 190,
+              "w": 350,
+              "h": 285
+            }
+          },
+          "roles": {},
+          "portals": {}
+        }
+      }
+    },
+    "localDefinitionOwners": [
+      {
+        "instancePath": [
+          "wand"
+        ],
+        "definitionId": "combined-wand"
+      },
+      {
+        "instancePath": [
+          "weather"
+        ],
+        "definitionId": "combined-weather"
+      },
+      {
+        "instancePath": [
+          "relationship"
+        ],
+        "definitionId": "combined-relationship"
+      }
+    ]
+  },
+  "workspaceViews": {
+    "version": 1,
+    "workflowId": "combined-editable-systems",
+    "activeKey": "[\"root\",\"combined-editable-systems\"]",
+    "views": [
+      {
+        "identity": {
+          "kind": "root",
+          "workflowId": "combined-editable-systems"
+        },
+        "open": true,
+        "camera": {
+          "x": 0,
+          "y": 0,
+          "zoom": 1
+        },
+        "selection": {
+          "primary": null,
+          "multi": []
+        },
+        "inspector": {
+          "item": null,
+          "section": "",
+          "open": true
+        },
+        "nodePresentation": {}
+      },
+      {
+        "identity": {
+          "kind": "instance",
+          "workflowId": "combined-editable-systems",
+          "instancePath": [
+            "wand"
+          ]
+        },
+        "open": true,
+        "camera": {
+          "x": 0,
+          "y": 0,
+          "zoom": 1
+        },
+        "selection": {
+          "primary": null,
+          "multi": []
+        },
+        "inspector": {
+          "item": null,
+          "section": "",
+          "open": true
+        },
+        "nodePresentation": {}
+      },
+      {
+        "identity": {
+          "kind": "instance",
+          "workflowId": "combined-editable-systems",
+          "instancePath": [
+            "weather"
+          ]
+        },
+        "open": true,
+        "camera": {
+          "x": 0,
+          "y": 0,
+          "zoom": 1
+        },
+        "selection": {
+          "primary": null,
+          "multi": []
+        },
+        "inspector": {
+          "item": null,
+          "section": "",
+          "open": true
+        },
+        "nodePresentation": {}
+      },
+      {
+        "identity": {
+          "kind": "instance",
+          "workflowId": "combined-editable-systems",
+          "instancePath": [
+            "relationship"
+          ]
+        },
+        "open": true,
+        "camera": {
+          "x": 0,
+          "y": 0,
+          "zoom": 1
+        },
+        "selection": {
+          "primary": null,
+          "multi": []
+        },
+        "inspector": {
+          "item": null,
+          "section": "",
+          "open": true
+        },
+        "nodePresentation": {}
+      }
+    ]
+  }
+}
