@@ -19,7 +19,7 @@ for(const width of [1024,736,360,320])for(const dpr of [1,1.25,2])test('settings
         expect(actual.graph.w).toBeGreaterThan(100);expect(actual.graph.h).toBeGreaterThan(140);expect(actual.graph.radius).toBe('4px');expect(actual.graph.border).toBe(actual.accent);
         // The selected tab overlaps the frame by one CSS pixel; its painted bridge covers the frame border at every DPR.
         expect(actual.tab.bottom-actual.graph.y).toBeCloseTo(1,3);
-        expect(actual.join).toMatchObject({position:'absolute',bottom:'-1px',height:'3px',background:actual.tab.background});
+        expect(actual.join).toMatchObject({position:'absolute',bottom:'0px',height:'1px',background:actual.tab.background});
         expect(actual.join.background).toBe(actual.canvas.background);expect(actual.join.paintTop).toBeLessThanOrEqual(actual.graph.y);expect(actual.join.paintBottom).toBeGreaterThanOrEqual(actual.graph.y+1);
         expect(actual.menus).toHaveLength(8);for(const menu of actual.menus)expect(menu).toEqual({border:'0px',background:'rgba(0, 0, 0, 0)'});
         expect(actual.pins.length).toBeGreaterThan(0);for(const pin of actual.pins){expect(pin.position).toBe('absolute');expect(pin.width).toBe('7px');expect(pin.height).toBe('7px');expect(Math.abs(pin.y-pin.labelY)).toBeLessThanOrEqual(1);expect(Math.abs((pin.dir==='in'?pin.x-pin.cardLeft:pin.cardRight-pin.x)-12*pin.zoom)).toBeLessThanOrEqual(1);if(pin.dir==='in')expect(pin.x).toBeLessThan(pin.labelX);else expect(pin.x).toBeGreaterThan(pin.labelRight);}

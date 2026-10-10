@@ -42,6 +42,28 @@ function swatches(colors) {
     return row;
 }
 
+function accessibilityLegend() {
+    const legend = make('div', 'pc-th-accessibility');
+    legend.append(make('strong', '', 'Accessible type cues'));
+    legend.append(make('div', 'pc-hint', 'Labels and pin shapes identify every type.'));
+    const kinds = make('ul', 'pc-th-kind-legend');
+    for (const [kind, label, shape] of [
+        ['context', 'Context', 'filled circle'], ['text', 'Text', 'ring'],
+        ['data', 'Data', 'square'], ['guidance', 'Guidance', 'diamond'],
+        ['draft', 'Draft', 'pentagon'], ['findings', 'Findings', 'triangle'],
+        ['patches', 'Patches', 'hexagon'], ['candidate', 'Candidate', 'plus'],
+    ]) {
+        const item = make('li');
+        const cue = make('span', 'pc-th-pin-cue');
+        cue.dataset.kind = kind;
+        cue.setAttribute('aria-hidden', 'true');
+        item.append(cue, make('span', '', `${label}: ${shape}`));
+        kinds.append(item);
+    }
+    legend.append(kinds, make('div', 'pc-hint', 'Text wires are solid; data dashed; guidance dotted; other types use distinct patterns. Wire type labels remain available.'));
+    return legend;
+}
+
 /** The colour a role has right now on screen, for roles the theme leaves to SillyTavern. */
 function onScreen(role) {
     const v = safe(() => getComputedStyle(document.documentElement).getPropertyValue(`--pc-${role}`).trim());
@@ -83,6 +105,7 @@ function draw(box) {
     }
     box.append(presets);
     box.append(make('div', 'pc-hint', T.PRESETS[theme.preset].note));
+    if (T.PRESETS[theme.preset].accessible) box.append(accessibilityLegend());
 
     // the look: shape, font, canvas, wires...
     const look = make('details', 'pc-th-look');
@@ -136,7 +159,11 @@ function draw(box) {
         }
     }
 
-    const warnings = T.themeWarnings(theme.colors);
+    // Signal deliberately uses the same meaning colors. Advice still applies
+    // to changed roles, and text/background contrast is always checked.
+    const warnings = T.themeWarnings(theme.colors).filter(warning =>
+        warning.kind !== 'similar' || theme.preset !== 'signal'
+        || warning.roles.some(role => Object.hasOwn(theme.custom, role)));
     if (warnings.length) {
         const w = make('div', 'pc-th-warnings');
         for (const x of warnings) w.append(make('div', 'pc-th-warning', x.text));

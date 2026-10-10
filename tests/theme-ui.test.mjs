@@ -21,18 +21,25 @@ const prop = (k) => root.style.getPropertyValue(`--pc-${k}`);
 const box = document.getElementById('drawer');
 E.renderThemeEditor(box);
 const names = [...box.querySelectorAll('.pc-th-preset .pc-th-name')].map(n => n.textContent);
-for (const want of ['Ember', 'Lattice', 'SillyTavern', 'Midnight', 'Blueprint', 'Parchment', 'Neon', 'Terminal', 'Petal']) assert.ok(names.includes(want), want);
+assert.deepEqual(names, ['Ember', 'Lattice', 'Ash', 'Graphite', 'Slate', 'Obsidian', 'Harbor', 'Signal'], 'The picker exposes exactly the eight approved presets');
 assert.ok(box.querySelector('.pc-th-preset.pc-on').textContent.includes('Ember'), 'Fresh settings select the approved Ember preset');
 assert.equal(box.querySelectorAll('.pc-th-preset')[0].querySelectorAll('.pc-th-swatch').length, T.ROLES.filter(role => role.group === 'meaning').length, 'swatches preview current selection and feedback colors');
 
-// choose Blueprint
-[...box.querySelectorAll('.pc-th-preset')].find(b => b.textContent.includes('Blueprint')).click();
-assert.equal(T.currentTheme().preset, 'blueprint');
-assert.equal(prop('panel'), T.PRESETS['blueprint'].colors.panel);
-assert.equal(prop('warn'), T.PRESETS['blueprint'].colors.warn);
+// Every approved preset is selectable and stored by the existing editor.
+for (const [key, name] of [['ember', 'Ember'], ['lattice', 'Lattice'], ['ash', 'Ash'], ['graphite', 'Graphite'], ['slate', 'Slate'], ['obsidian', 'Obsidian'], ['harbor', 'Harbor'], ['signal', 'Signal']]) {
+    [...box.querySelectorAll('.pc-th-preset')].find(b => b.querySelector('.pc-th-name').textContent === name).click();
+    assert.equal(T.currentTheme().preset, key);
+    assert.equal(c.extensionSettings.lattice.ui.theme.preset, key, `${name} selection is persisted`);
+}
+[...box.querySelectorAll('.pc-th-preset')].find(b => b.textContent.includes('Ash')).click();
+assert.equal(T.currentTheme().preset, 'ash');
+assert.equal(prop('panel'), T.PRESETS.ash.colors.panel);
+assert.equal(prop('warn'), T.PRESETS.ash.colors.warn);
 assert.ok([...box.querySelectorAll('.pc-th-preset.pc-on')].length === 1);
 
-// the look is on the page: Blueprint is sharp, mono, a grid, right-angled wires
+// Intentional look choices still apply independently of the preset palette.
+for (const [part, value] of [['shape', 'sharp'], ['font', 'mono'], ['grid', 'lines'], ['wires', 'angled']]) T.setStyle(part, value);
+E.renderThemeEditor(box);
 assert.equal(root.dataset.pcShape, 'sharp');
 assert.equal(root.dataset.pcWires, 'angled');
 assert.equal(root.dataset.pcGrid, 'lines');
@@ -43,22 +50,27 @@ box.querySelector('.pc-th-look').open = true;
 const shapeSel = [...box.querySelectorAll('.pc-th-look-select')].find(s => [...s.options].some(o => o.value === 'soft'));
 shapeSel.value = 'soft'; shapeSel.dispatchEvent(new dom.window.Event('change'));
 assert.equal(root.dataset.pcShape, 'soft');
-assert.match(box.querySelector('.pc-th-look summary').textContent, /1 changed/);
+assert.match(box.querySelector('.pc-th-look summary').textContent, /4 changed/);
 T.setStyle('shape', null);
 
-// Petal is light: text on colour pills flips to white
-[...box.querySelectorAll('.pc-th-preset')].find(b => b.textContent.includes('Petal')).click();
+// A custom light surface still flips text on colour pills to white.
+T.setColor('panel', '#fff4f8');
+T.setColor('block', '#ffffff');
+T.setColor('text', '#3d2230');
+T.setColor('muted', '#70505d');
+E.renderThemeEditor(box);
 assert.equal(root.dataset.pcLight, '1');
 assert.equal(prop('on-accent'), '#ffffff');
 
 // customise: pick a colour, see it live, get a look-alike warning, reset it
+[...box.querySelectorAll('.pc-th-preset')].find(b => b.textContent.includes('Lattice')).click();
 box.querySelector('.pc-th-custom').open = true;
 const row = [...box.querySelectorAll('.pc-th-row')].find(r => r.textContent.includes('Warnings'));
 const input = row.querySelector('input[type=color]');
-input.value = T.PRESETS['petal'].colors.flow;               // same as Flow
+input.value = T.PRESETS.lattice.colors.flow;               // same as Selection accent
 input.dispatchEvent(new dom.window.Event('input'));
 input.dispatchEvent(new dom.window.Event('change'));
-assert.equal(T.currentTheme().custom.warn, T.PRESETS['petal'].colors.flow);
+assert.equal(T.currentTheme().custom.warn, T.PRESETS.lattice.colors.flow);
 assert.ok(box.querySelector('.pc-th-custom').open, 'stays open while editing');
 assert.match(box.querySelector('.pc-th-warnings').textContent, /very close/);
 assert.match(box.querySelector('.pc-th-custom summary').textContent, /1 changed/);
@@ -74,11 +86,11 @@ box.querySelector('.pc-th-share').open = true;
 await new Promise(r => setTimeout(r, 10));
 const shared = box.querySelector('.pc-th-text').value;
 assert.match(shared, /latticeTheme/);
-T.setPreset('midnight');
+T.setPreset('obsidian');
 E.renderThemeEditor(box);
 box.querySelector('.pc-th-text').value = shared;
 [...box.querySelectorAll('.pc-th-btn')].find(b => b.textContent === 'Use pasted theme').click();
-assert.equal(T.currentTheme().preset, 'petal');
+assert.equal(T.currentTheme().preset, 'lattice');
 assert.equal(T.currentTheme().custom.error, '#123456');
 assert.match(box.querySelector('.pc-th-msg').textContent, /Now using/);
 
@@ -90,9 +102,9 @@ await new Promise(r => setTimeout(r, 10));
 [...document.querySelectorAll('.pc-workspace-menu-panel button')].find(button => button.textContent.includes('Theme and colours')).click();
 const pop = document.querySelector('.pc-theme-pop');
 assert.ok(pop?.querySelector('.pc-th-preset'), 'popover shows the editor');
-[...pop.querySelectorAll('.pc-th-preset')].find(b => b.textContent.includes('Parchment')).click();
-assert.equal(T.currentTheme().preset, 'parchment');
-assert.ok(box.querySelector('.pc-th-preset.pc-on').textContent.includes('Parchment'), 'the drawer editor follows');
+[...pop.querySelectorAll('.pc-th-preset')].find(b => b.textContent.includes('Slate')).click();
+assert.equal(T.currentTheme().preset, 'slate');
+assert.ok(box.querySelector('.pc-th-preset.pc-on').textContent.includes('Slate'), 'the drawer editor follows');
 document.body.dispatchEvent(new dom.window.MouseEvent('mousedown', { bubbles: true }));
 assert.equal(document.querySelector('.pc-theme-pop'), null, 'closes on a click outside');
 console.log('theme-ui: ok');

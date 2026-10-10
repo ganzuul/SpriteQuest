@@ -7,7 +7,7 @@ test('approved Dark Lite Ember uses fill-only alpha and consistent family colors
     await openEmber(page);const initial=await measureEmber(page);assertEmber(initial);
     expect(initial.nodes).toHaveLength(5);expect(initial.shelf.find(row=>row.family==='Transpose').disabled).toBe(false);
     const before=initial.graphBytes,hostSheet=initial.hostSheet;
-    for(let update=0;update<3;update++)await page.evaluate(async()=>{const h=window.canvasHarness,theme=await import('/src/theme.js?v='+h.version);theme.setPreset('parchment');theme.setPreset('ember');h.UI.refreshIfOpen();await h.settle();});
+    for(let update=0;update<3;update++)await page.evaluate(async()=>{const h=window.canvasHarness,theme=await import('/src/theme.js?v='+h.version);theme.setPreset('ash');theme.setPreset('ember');h.UI.refreshIfOpen();await h.settle();});
     const repeated=await measureEmber(page);assertEmber(repeated);expect(repeated.hostSheet).toBe(hostSheet);expect(repeated.graphBytes).toBe(before);
     expect(repeated.nodes.map(node=>[node.heading.color,node.pins.map(pin=>pin.dot)])).toEqual(initial.nodes.map(node=>[node.heading.color,node.pins.map(pin=>pin.dot)]));
     expect(repeated.wires).toEqual(initial.wires);expect(errors).toEqual([]);

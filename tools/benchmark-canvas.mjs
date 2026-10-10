@@ -37,7 +37,7 @@ const metrics = async () => Object.fromEntries((await session.send('Performance.
 const rows = [];
 try {
     await page.goto(`http://127.0.0.1:${server.address().port}`); await page.waitForFunction(() => !!window.bench);
-    for (const size of process.argv.includes('--quick') ? [100, 250] : [25, 100, 250]) for (const theme of ['ember', 'parchment', 'neon']) for (const zoom of [1, 2.2]) for (const mode of ['zoom', 'pan', 'multi-drag']) {
+    for (const size of process.argv.includes('--quick') ? [100, 250] : [25, 100, 250]) for (const theme of ['ember', 'ash', 'signal']) for (const zoom of [1, 2.2]) for (const mode of ['zoom', 'pan', 'multi-drag']) {
         const setup = await page.evaluate(async ({ size, theme, zoom, mode }) => {
             const b = window.bench, c = b.canvas; c.cancelGesture(); b.theme.setPreset(theme);
             const graph = { id: 'benchmark', name: 'Benchmark', schema:3,runtime:2,mode:'native-pre',roles:{},portals:{},definitions:{},nodes: {}, wires: {}, groups: {}, view: { x: 40, y: 40, zoom } };

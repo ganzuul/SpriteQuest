@@ -10,7 +10,9 @@ Install from `https://github.com/MentallyQuill/Lattice` in SillyTavern's **Exten
 
 Fresh launch opens **Structured guidance**, with workflows disabled and no phase assigned. Use **Workflows → Workflow examples…** to install another copy or a different example. Opening, installing, or importing makes no provider request.
 
-The default **Ember** theme follows SillyTavern's panel, text, control and quote colors, with a neutral canvas and translucent node fills. Use **Tools → Theme and colours** to choose another theme or customize it.
+The default **Ember** theme follows SillyTavern's panel, text, control and quote colors, with a neutral canvas and translucent node fills. **Tools → Theme and colours** offers eight themes: Ember, Lattice, Ash, Graphite, Slate, Obsidian, Harbor and Signal. Choose one or customize its colors and look.
+
+**Harbor** uses blue and amber, while **Signal** uses high contrast grayscale. Both identify connection types with labels, distinct pin shapes and wire patterns. Their visible picker legend explains the cues; example thumbnails use the same shapes and patterns.
 
 ## Build and inspect a brief
 

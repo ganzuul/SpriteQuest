@@ -1,6 +1,16 @@
 <script lang="ts">
     import { onMount } from 'svelte';
     import type { WorkflowExampleTile } from './types';
+    const PIN_CUES: Record<string, string> = {
+        context: 'M -4,0 a 4,4 0 1,0 8,0 a 4,4 0 1,0 -8,0',
+        text: 'M -3.4,0 a 3.4,3.4 0 1,0 6.8,0 a 3.4,3.4 0 1,0 -6.8,0',
+        data: 'M -4,-4 H 4 V 4 H -4 Z',
+        guidance: 'M 0,-5 L 5,0 L 0,5 L -5,0 Z',
+        draft: 'M 0,-5 L 4.76,-1.55 L 2.94,4.05 L -2.94,4.05 L -4.76,-1.55 Z',
+        findings: 'M 0,-5 L 4.33,3 L -4.33,3 Z',
+        patches: 'M -2.5,-4.33 L 2.5,-4.33 L 5,0 L 2.5,4.33 L -2.5,4.33 L -5,0 Z',
+        candidate: 'M -1.5,-5 H 1.5 V -1.5 H 5 V 1.5 H 1.5 V 5 H -1.5 V 1.5 H -5 V -1.5 H -1.5 Z',
+    };
     let { examples = [], issue = '', retry, scrollTop = 0, scroll, open }: { examples?: readonly WorkflowExampleTile[]; issue?: string; retry?: () => boolean | void; scrollTop?: number; scroll: (top: number) => void; open: (id: string) => boolean | Promise<boolean> } = $props();
     let grid: HTMLDivElement;
     let opening = $state('');
@@ -32,7 +42,8 @@
                         <svg x={node.x + 8} y={node.y + 7} width="16" height="16" viewBox="0 0 24 24"><path class="pc-example-icon" d={node.iconPath} /></svg>
                         <text class="pc-example-node-title" x={node.x + 28} y={node.y + 20} textLength={node.title.length * 6 > node.w - 36 ? node.w - 36 : undefined} lengthAdjust="spacingAndGlyphs">{node.title}</text>
                         {#each node.ports as pin (pin.id)}
-                            <circle data-kind={pin.kind} cx={pin.x} cy={pin.y} r="4" />
+                            <circle class="pc-example-pin-dot" data-kind={pin.kind} cx={pin.x} cy={pin.y} r="4" />
+                            <path class="pc-example-pin-cue" data-kind={pin.kind} transform={`translate(${pin.x} ${pin.y})`} d={PIN_CUES[pin.kind] ?? PIN_CUES.context} />
                             <text class="pc-example-pin-label" x={pin.x + (pin.dir === 'in' ? 9 : -9)} y={pin.y + 4} text-anchor={pin.dir === 'in' ? 'start' : 'end'}>{pin.label}</text>
                         {/each}
                     </g>
@@ -67,12 +78,13 @@
     .pc-example-comment rect { fill: color-mix(in srgb, var(--pc-panel-solid) 45%, transparent); stroke-width: 2; }
     .pc-example-comment text { fill: var(--pc-muted); }
     .pc-example-preview circle { fill: var(--pc-pin-color, #72adc0); }
-    .pc-example-preview [data-kind="context"] { --pc-pin-color: #72adc0; }
-    .pc-example-preview [data-kind="guidance"] { --pc-pin-color: #c190be; }
-    .pc-example-preview [data-kind="draft"] { --pc-pin-color: #92c9ad; }
-    .pc-example-preview [data-kind="findings"], .pc-example-preview [data-kind="patches"] { --pc-pin-color: #b65b9e; }
-    .pc-example-preview [data-kind="candidate"] { --pc-pin-color: #cca56d; }
-    .pc-example-preview [data-kind="text"] { --pc-pin-color: #a5bfa0; }
-    .pc-example-preview [data-kind="data"] { --pc-pin-color: #7e9bc5; }
+    .pc-example-preview [data-kind="context"] { --pc-pin-color: var(--pc-kind-context, #72adc0); }
+    .pc-example-preview [data-kind="guidance"] { --pc-pin-color: var(--pc-kind-guidance, #c190be); }
+    .pc-example-preview [data-kind="draft"] { --pc-pin-color: var(--pc-kind-draft, #92c9ad); }
+    .pc-example-preview [data-kind="findings"] { --pc-pin-color: var(--pc-kind-findings, #b65b9e); }
+    .pc-example-preview [data-kind="patches"] { --pc-pin-color: var(--pc-kind-patches, #b65b9e); }
+    .pc-example-preview [data-kind="candidate"] { --pc-pin-color: var(--pc-kind-candidate, #cca56d); }
+    .pc-example-preview [data-kind="text"] { --pc-pin-color: var(--pc-kind-text, #a5bfa0); }
+    .pc-example-preview [data-kind="data"] { --pc-pin-color: var(--pc-kind-data, #7e9bc5); }
     @media (max-width: 620px) { .pc-examples-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 </style>

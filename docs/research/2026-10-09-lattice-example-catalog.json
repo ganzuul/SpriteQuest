@@ -3,7 +3,7 @@
   "version": 2,
   "date": "2026-10-09",
   "status": "Delivered compact picker: 30 lessons, 37 validated native phase packages and six embedded definitions; portable files in examples/roleplay/ and bundled runtime data",
-  "callNote": "Maximum auxiliary calls per phase, excluding the ordinary host reply. Extension bounds are proposed budgets, not measured runtime bounds.",
+  "callNote": "Maximum auxiliary calls per phase, excluding the ordinary host reply. Extension bounds are proposed budgets, not measured runtime bounds.\n\nOutput tokens includes visible text and any reasoning tokens counted by the provider. A truncated result is discarded; inspect the error, then manually raise the cap and rerun. No automatic retry occurs.",
   "memoryEffectNote": "All actor-memory variants write on a successful full Post root Run without a review-click. Report local update and save acknowledgment separately; do not claim durable saving when unconfirmed.",
   "presentation": {
     "revision": 3,
@@ -402,7 +402,7 @@
       "title": "Build a brief from JSON",
       "goal": "Keep a few scene facts in an editable JSON source and render a stable instruction from named fields.",
       "graph": [
-        "Compose JSON → JSON Decode",
+        "Text JSON · Trim → Unwrap fence → JSON Decode",
         "Select Fields · named facts",
         "Compose Guidance → Guidance"
       ],
@@ -415,11 +415,10 @@
         }
       ],
       "controls": [
-        "Ferry gate · editable facts → Mode",
-        "Ferry gate · editable facts → Output",
-        "Ferry gate · editable facts → Template",
-        "Ferry gate · editable facts → Sections",
-        "Ferry gate · editable facts → Separator",
+        "Ferry gate · editable facts → Text",
+        "Ferry gate · editable facts → Trim · Edges",
+        "Ferry gate · editable facts → Unwrap fence · Enabled",
+        "Ferry gate · editable facts → Modifier order",
         "Check the scene-fact shape → Mode",
         "Check the scene-fact shape → Schema",
         "Name the template fields → Fields",
@@ -445,31 +444,41 @@
         "afterLabel": "Guidance",
         "after": "At the ferry gate, preserve the obstacle: closed for inspection. Mira may respond. Leave the player free to wait or ask Mira about the delay."
       },
-      "lesson": "Introduce Text → Data parsing, bounded schema, named selection, an optional fallback and JSON-pointer templates without a model.",
+      "lesson": "Introduce an editable Text source with ordered Trim → Unwrap fence modifiers, then Text → Data parsing, bounded schema, named selection, an optional fallback and JSON-pointer templates without a model.",
       "tryChanging": [
         "Change obstacle in the JSON source and compare the rendered brief without changing a model prompt.",
-        "Remove openChoice to see the explicit fallback; remove place to see required-field validation stop the run."
+        "Remove openChoice to see the explicit fallback; remove place to see required-field validation stop the run.",
+        "Disable Unwrap fence and inspect INVALID_JSON at JSON Decode; re-enable it and compare Raw output, Output and the ordered modifier trace."
       ],
       "nodeDetails": [
         {
           "key": "json",
-          "operation": "compose",
+          "operation": "text",
           "phase": "Pre",
           "alias": "Ferry gate · editable facts",
-          "purpose": "Keep reference facts in one visible Text source.",
+          "purpose": "Keep editable reference facts in a Text source; clean its padded Markdown fence with ordered node-local modifiers.",
           "settings": {
-            "mode": "join",
-            "outputKind": "text",
-            "template": "",
-            "sections": [
+            "text": "  \n```json\n{\"place\":\"ferry gate\",\"obstacle\":\"closed for inspection\",\"npc\":\"Mira\",\"openChoice\":\"wait or ask Mira about the delay\"}\n```\n  ",
+            "modifiers": [
               {
-                "name": "Facts",
-                "text": "{\"place\":\"ferry gate\",\"obstacle\":\"closed for inspection\",\"npc\":\"Mira\",\"openChoice\":\"wait or ask Mira about the delay\"}"
+                "id": "trim-json-padding",
+                "type": "trim",
+                "version": 1,
+                "enabled": true,
+                "settings": {
+                  "edges": "both"
+                }
+              },
+              {
+                "id": "unwrap-json-fence",
+                "type": "unwrap-fence",
+                "version": 1,
+                "enabled": true,
+                "settings": {}
               }
-            ],
-            "separator": "\n\n"
+            ]
           },
-          "inspect": "Inspect raw JSON Text. Editing this source changes the example, not live memory."
+          "inspect": "Compare Raw output, Output and Modifier trace. Trim both edges runs before Unwrap fence; JSON Decode receives the unwrapped raw JSON. Disabling Unwrap fence produces INVALID_JSON, not published guidance. Editing this source never seeds live memory."
         },
         {
           "key": "decode",
@@ -554,7 +563,7 @@
       "annotations": [
         {
           "title": "Inspect each artifact",
-          "text": "json → decode → fields; fields.out → render.data; render.out → publish.in. Schema is raw JSON text. No calls or live-state writes."
+          "text": "json (Text with Trim → Unwrap fence) → decode → fields; fields.out → render.data; render.out → publish.in. Schema is raw JSON text. Inspect raw/modified Text and its trace. No calls or live-state writes."
         }
       ],
       "number": 3,
@@ -579,13 +588,13 @@
           "nodes": [
             {
               "id": "json",
-              "label": "Compose",
+              "label": "Text",
               "alias": "Ferry gate · editable facts",
               "x": 24,
               "y": 46,
-              "family": "shaping",
+              "family": "input",
               "output": "text-pin",
-              "operation": "compose"
+              "operation": "text"
             },
             {
               "id": "decode",
@@ -690,7 +699,7 @@
         }
       ],
       "graph": [
-        "Compose glossary JSON → JSON Decode + Reply Snapshot",
+        "Text glossary JSON → JSON Decode + Reply Snapshot",
         "Terminology Map",
         "Validate Patches",
         "Review Gate",
@@ -704,11 +713,7 @@
         "after": "The envoy returned to Grayhaven carrying a sunstone."
       },
       "controls": [
-        "Grayhaven and sunstone · JSON canon → Mode",
-        "Grayhaven and sunstone · JSON canon → Output",
-        "Grayhaven and sunstone · JSON canon → Template",
-        "Grayhaven and sunstone · JSON canon → Sections",
-        "Grayhaven and sunstone · JSON canon → Separator",
+        "Grayhaven and sunstone · JSON canon → Text",
         "Check literal glossary entries → Mode",
         "Check literal glossary entries → Schema",
         "Canonicalize terms, keep artwork → Input type",
@@ -740,23 +745,14 @@
         },
         {
           "key": "glossary",
-          "operation": "compose",
+          "operation": "text",
           "phase": "Post",
           "alias": "Grayhaven and sunstone · JSON canon",
           "purpose": "Supply two approved literal canon pairs.",
           "settings": {
-            "mode": "join",
-            "outputKind": "text",
-            "template": "",
-            "sections": [
-              {
-                "name": "GlossaryJSON",
-                "text": "{\"entries\":[{\"from\":\"Greyhaven\",\"to\":\"Grayhaven\"},{\"from\":\"sun stone\",\"to\":\"sunstone\"}]}"
-              }
-            ],
-            "separator": "\n\n"
+            "text": "{\"entries\":[{\"from\":\"Greyhaven\",\"to\":\"Grayhaven\"},{\"from\":\"sun stone\",\"to\":\"sunstone\"}]}"
           },
-          "inspect": "Review from/to decisions; keep artwork exception in protections."
+          "inspect": "Edit the Text control to review the from/to decisions; keep the artwork exception in protections. JSON Decode receives this literal source unchanged."
         },
         {
           "key": "decode",
@@ -853,13 +849,13 @@
             },
             {
               "id": "glossary",
-              "label": "Compose",
+              "label": "Text",
               "alias": "Grayhaven and sunstone · JSON canon",
               "x": 24,
               "y": 168,
-              "family": "shaping",
+              "family": "input",
               "output": "text-pin",
-              "operation": "compose"
+              "operation": "text"
             },
             {
               "id": "decode",
@@ -1066,10 +1062,10 @@
           "alias": "Tessa acts; Rowan chooses",
           "purpose": "Turn selected Context into optional Guidance about an NPC-owned action and a clear stopping point.",
           "settings": {
-            "maxTokens": 420,
-            "instructions": "Plan the next checkpoint beat. Tessa is the NPC; the player owns Rowan. Produce short labeled directions: NPC action, Player boundary, Stop. Tessa may repeat the question, inspect the broken seal, or lower her own barrier. Choose one supported action. Leave Rowan's answer, intent, feelings, consent and next movement unwritten. An unanswered demand is not agreement. Stop after Tessa creates a concrete opportunity for Rowan to respond. Do not add evidence explaining the broken seal."
+            "maxTokens": 2048,
+            "instructions": "Plan the next checkpoint beat. Tessa is the NPC; the player owns Rowan. Produce short labeled directions: NPC action, Player boundary, Stop. Tessa may repeat the question, inspect the broken seal, or lower her own barrier. Choose one supported action. Leave Rowan's answer, intent, feelings, consent and next movement unwritten. An unanswered demand is not agreement. Stop after Tessa creates a concrete opportunity for Rowan to respond. Do not add evidence explaining the broken seal. Unspecified current staging is unknown. Do not presuppose the barrier's state, current relative positions, or new existing props. Phrase any new NPC movement explicitly as an optional proposal."
           },
-          "inspect": "Expect a proposed Tessa action and an open Rowan response. Check that the plan never supplies Rowan's dialogue or treats an interpretation as an established fact."
+          "inspect": "Expect a proposed Tessa action and an open Rowan response. Check that the plan never supplies Rowan's dialogue or treats an interpretation as an established fact.\n\nOutput tokens includes visible text and any reasoning tokens counted by the provider. A truncated result is discarded; inspect the error, then manually raise the cap and rerun. No automatic retry occurs."
         },
         {
           "key": "pre-guidance",
@@ -1281,10 +1277,10 @@
           "alias": "A condition, then an opening",
           "purpose": "Produce one forward beat from an unresolved hook rather than a list of unrelated complications.",
           "settings": {
-            "maxTokens": 480,
-            "instructions": "Use the locked-chest scene. Sol wants his stolen map returned and controls his chest. Suggest one short causal next beat: he offers a condition for opening it, or explains what evidence would satisfy him if the offer was already made. Label Existing hook, NPC initiative, Open response. Refer only to supplied facts. Do not introduce an attack, stranger, timer, secret contents or recovered map. The player owns Rowan's acceptance and action. Move one step, then stop with a specific question or offer Rowan can answer."
+            "maxTokens": 2048,
+            "instructions": "Use the locked-chest scene. Sol wants his stolen map returned and controls his chest. Suggest one short causal next beat: he offers a condition for opening it, or explains what evidence would satisfy him if the offer was already made. Label Existing hook, NPC initiative, Open response. Refer only to supplied facts. Do not introduce an attack, stranger, timer, secret contents or recovered map. The player owns Rowan's acceptance and action. Move one step, then stop with a specific question or offer Rowan can answer. Label any newly proposed bargain as optional; never present it as an already-existing offer or bargain."
           },
-          "inspect": "Expect a condition connected to the map and an unanswered offer. A proposed condition is not a settled transaction or newly discovered chest content."
+          "inspect": "Expect a condition connected to the map and an unanswered offer. A proposed condition is not a settled transaction or newly discovered chest content.\n\nOutput tokens includes visible text and any reasoning tokens counted by the provider. A truncated result is discarded; inspect the error, then manually raise the cap and rerun. No automatic retry occurs."
         },
         {
           "key": "pre-guidance",
@@ -1498,10 +1494,10 @@
           "alias": "One readable approach",
           "purpose": "Generate Guidance for a legible NPC action while leaving the player's defense and the outcome unresolved.",
           "settings": {
-            "maxTokens": 480,
+            "maxTokens": 2048,
             "instructions": "Plan one visible action beat for NPC attacker Rook. Begin from Rook at the door and Mira behind the heavy table, with the exit to Mira's left. Label Start positions, Approach, Obstacle, Stop. Show Rook's approach before any proposed contact; retain the table as an obstacle unless supplied evidence says it moved. Do not teleport either actor, assume reach around the table, resolve a hit, or invent a dodge. The player controls Mira's movement and response. Stop before her defense and before an attack outcome. Flag unclear distance instead of supplying measurements."
           },
-          "inspect": "Expect a causal approach and an explicit unresolved outcome. Check obstacle continuity; the plan is model-assisted prose, not a physics or hit-resolution engine."
+          "inspect": "Expect a causal approach and an explicit unresolved outcome. Check obstacle continuity; the plan is model-assisted prose, not a physics or hit-resolution engine.\n\nOutput tokens includes visible text and any reasoning tokens counted by the provider. A truncated result is discarded; inspect the error, then manually raise the cap and rerun. No automatic retry occurs."
         },
         {
           "key": "pre-guidance",
@@ -1712,10 +1708,10 @@
           "alias": "Mira and Sol take the beat",
           "purpose": "Produce a focal-cast Guidance plan rather than requiring each present character to deliver a line.",
           "settings": {
-            "maxTokens": 520,
-            "instructions": "Plan the debt-table response with at most two speaking NPCs: Mira and Sol, if both have a reason to speak. Label Focal exchange, Ambient presence, Player boundary. Give the debt question the spotlight; do not force a round-robin response. Keep Rin sorting papers, Kesh holding the lamp and Oren watching the door only where those supplied actions help orientation. Do not invent opinions or secret knowledge for them. Leave Rowan's dialogue, feelings and next choice to the player. Do not settle repayment unless present evidence already does."
+        "maxTokens": 4096,
+        "instructions": "Plan the debt-table response with at most two speaking NPCs: Mira and Sol, if both have a reason to speak. Label Focal exchange, Ambient presence, Player boundary. Give the debt question the spotlight; do not force a round-robin response. Keep Rin sorting papers, Kesh holding the lamp and Oren watching the door only where those supplied actions help orientation. Do not invent opinions or secret knowledge for them. Leave Rowan's dialogue, feelings and next choice to the player. Do not settle repayment unless present evidence already does. Keep the final plan within 180 words."
           },
-          "inspect": "Expect one focal exchange and selective ambient presence. Check cast continuity and whether the plan invents an opinion just to include an idle character."
+      "inspect": "Expect one focal exchange and selective ambient presence. Check cast continuity and whether the plan invents an opinion just to include an idle character.\n\nOutput tokens includes visible text and any reasoning tokens counted by the provider. A truncated result is discarded; inspect the error, then manually raise the cap and rerun. No automatic retry occurs. The 4096-token completion cap includes provider reasoning; the final plan targets 180 words, and Guidance independently enforces its 400-token budget."
         },
         {
           "key": "pre-guidance",
@@ -1942,13 +1938,13 @@
             "scope": "whole",
             "strength": "balanced",
             "instructions": "Trim scaffolding and duplication. Retain door observation, slow turn, wait, sequence and unresolved latch. Aim for rough reduction; never force a count or imply the door opens.",
-            "maxTokens": 640,
+            "maxTokens": 8192,
             "protectedLiterals": [
               "slowly",
               "latch"
             ]
           },
-          "inspect": "Check all three actions and protected slowly/latch."
+          "inspect": "Check all three actions and protected slowly/latch.\n\nOutput tokens includes visible text and any reasoning tokens counted by the provider. A truncated result is discarded; inspect the error, then manually raise the cap and rerun. No automatic retry occurs."
         },
         {
           "key": "validate",
@@ -2227,13 +2223,13 @@
             "scope": "narration",
             "strength": "light",
             "instructions": "Ground atmosphere in supplied rain/window using one concrete sound. Preserve facts, actions and quoted speech. Add no event, sensation or unsupplied thought.",
-            "maxTokens": 768,
+            "maxTokens": 2048,
             "protectedLiterals": [
               "Mira",
               "Sol"
             ]
           },
-          "inspect": "Dialogue stays exact; window stays cracked; inspect authorized windows."
+          "inspect": "Dialogue stays exact; window stays cracked; inspect authorized windows.\n\nOutput tokens includes visible text and any reasoning tokens counted by the provider. A truncated result is discarded; inspect the error, then manually raise the cap and rerun. No automatic retry occurs."
         },
         {
           "key": "validate",
@@ -2534,12 +2530,12 @@
             "scope": "dialogue",
             "strength": "light",
             "instructions": "Make the line spoken to companions. Retain flooded road and required delay with the same certainty. Add no time estimate, alternative route or feeling. Preserve narration.",
-            "maxTokens": 640,
+            "maxTokens": 2048,
             "protectedLiterals": [
               "Tessa"
             ]
           },
-          "inspect": "Both obstacle and delay survive; narration stays exact."
+          "inspect": "Both obstacle and delay survive; narration stays exact.\n\nOutput tokens includes visible text and any reasoning tokens counted by the provider. A truncated result is discarded; inspect the error, then manually raise the cap and rerun. No automatic retry occurs."
         },
         {
           "key": "validate",
@@ -2840,12 +2836,12 @@
             "scope": "dialogue",
             "strength": "balanced",
             "instructions": "Use Rin's practical cadence. Keep disagreement and unsafe bridge, meaning and certainty. Add no joke, threat, catchphrase or cause. Preserve narration exactly.",
-            "maxTokens": 640,
+            "maxTokens": 2048,
             "protectedLiterals": [
               "Rin"
             ]
           },
-          "inspect": "Lantern, boots and near-bank narration stay exact."
+          "inspect": "Lantern, boots and near-bank narration stay exact.\n\nOutput tokens includes visible text and any reasoning tokens counted by the provider. A truncated result is discarded; inspect the error, then manually raise the cap and rerun. No automatic retry occurs."
         },
         {
           "key": "validate",
@@ -3146,13 +3142,13 @@
             "scope": "narration",
             "strength": "light",
             "instructions": "Separate recognition and putting-down through syntax/sentence breaks only. Keep envelope unopened and Later speech exact. Add no reason, feeling, reaction or event.",
-            "maxTokens": 640,
+            "maxTokens": 8192,
             "protectedLiterals": [
               "envelope",
               "unopened"
             ]
           },
-          "inspect": "Identify every edit as source-grounded wording or syntax."
+          "inspect": "Identify every edit as source-grounded wording or syntax.\n\nOutput tokens includes visible text and any reasoning tokens counted by the provider. A truncated result is discarded; inspect the error, then manually raise the cap and rerun. No automatic retry occurs."
         },
         {
           "key": "validate",
@@ -3453,14 +3449,14 @@
             "scope": "narration",
             "strength": "light",
             "instructions": "Lead with cold latch against Jon's hand. Retain doorway position and Mira's corridor location; keep speech exact. Add no thought, hidden fact, first-person voice or consent.",
-            "maxTokens": 768,
+            "maxTokens": 8192,
             "protectedLiterals": [
               "Jon",
               "Mira",
               "corridor"
             ]
           },
-          "inspect": "No new beliefs, consent or offscreen facts; dialogue stays exact."
+          "inspect": "No new beliefs, consent or offscreen facts; dialogue stays exact.\n\nOutput tokens includes visible text and any reasoning tokens counted by the provider. A truncated result is discarded; inspect the error, then manually raise the cap and rerun. No automatic retry occurs."
         },
         {
           "key": "validate",
@@ -3671,7 +3667,7 @@
         }
       ],
       "graph": [
-        "Reply Snapshot + Compose format reference",
+        "Reply Snapshot + Text format reference",
         "Format Transfer · whole scope",
         "Validate Patches",
         "Review Gate",
@@ -3685,11 +3681,7 @@
         "after": "INT. KITCHEN — NIGHT\nMira closes the door.\nMIRA: They're here."
       },
       "controls": [
-        "Kitchen screenplay template · JSON → Mode",
-        "Kitchen screenplay template · JSON → Output",
-        "Kitchen screenplay template · JSON → Template",
-        "Kitchen screenplay template · JSON → Sections",
-        "Kitchen screenplay template · JSON → Separator",
+        "Kitchen screenplay template · JSON → Text",
         "Check screenplay reference shape → Mode",
         "Check screenplay reference shape → Schema",
         "Recast as kitchen screenplay → Input type",
@@ -3723,23 +3715,14 @@
         },
         {
           "key": "template",
-          "operation": "compose",
+          "operation": "text",
           "phase": "Post",
           "alias": "Kitchen screenplay template · JSON",
           "purpose": "Supply raw screenplay-reference JSON.",
           "settings": {
-            "mode": "join",
-            "outputKind": "text",
-            "template": "",
-            "sections": [
-              {
-                "name": "FormatJSON",
-                "text": "{\"layout\":\"INT. KITCHEN — NIGHT\\n[action in present tense]\\nMIRA: [supplied dialogue]\",\"rules\":[\"Keep supplied action/speech; normalize heading/speaker casing.\",\"Omit absent fields; invent no location, time, speaker or action.\"],\"requiredContent\":[\"night\",\"kitchen\",\"Mira\",\"closes the door\",\"They're here\"]}"
-              }
-            ],
-            "separator": "\n\n"
+            "text": "{\"layout\":\"INT. KITCHEN — NIGHT\\n[action in present tense]\\nMIRA: [supplied dialogue]\",\"rules\":[\"Keep supplied action/speech; normalize heading/speaker casing.\",\"Omit absent fields; invent no location, time, speaker or action.\"],\"requiredContent\":[\"night\",\"kitchen\",\"Mira\",\"closes the door\",\"They're here\"]}"
           },
-          "inspect": "No fences; bracket labels describe slots and must not appear in output."
+          "inspect": "Edit raw JSON in the Text control, without fences. Bracket labels describe slots and must not appear in output."
         },
         {
           "key": "decode",
@@ -3764,13 +3747,13 @@
             "referenceKind": "data",
             "scope": "whole",
             "strength": "balanced",
-            "instructions": "Use one heading, present-tense action and MIRA: speech. Preserve They're here and closing door. Omit unknown fields; add no arrival, camera direction, stage business or speaker.",
-            "maxTokens": 768,
+            "instructions": "Use one heading, present-tense action and MIRA: speech. Preserve They're here and closing door. Omit unknown fields; add no arrival, camera direction, stage business or speaker. Keep MIRA: and its supplied dialogue on the same line, exactly MIRA: [supplied dialogue].",
+            "maxTokens": 2048,
             "protectedLiterals": [
               "They're here"
             ]
           },
-          "inspect": "Expect heading, closing action and MIRA: They're here; no arrival."
+          "inspect": "Expect heading, closing action and MIRA: They're here; no arrival.\n\nOutput tokens includes visible text and any reasoning tokens counted by the provider. A truncated result is discarded; inspect the error, then manually raise the cap and rerun. No automatic retry occurs."
         },
         {
           "key": "validate",
@@ -3850,13 +3833,13 @@
             },
             {
               "id": "template",
-              "label": "Compose",
+              "label": "Text",
               "alias": "Kitchen screenplay template · JSON",
               "x": 24,
               "y": 168,
-              "family": "shaping",
+              "family": "input",
               "output": "text-pin",
-              "operation": "compose"
+              "operation": "text"
             },
             {
               "id": "decode",
@@ -4001,7 +3984,7 @@
         }
       ],
       "graph": [
-        "Compose feature-specific references + Reply Snapshot",
+        "Text feature references → Compose blend + Reply Snapshot",
         "Style Transfer",
         "Validate Patches",
         "Review Gate",
@@ -4015,16 +3998,8 @@
         "after": "She waited at the gate. The wind had teeth."
       },
       "controls": [
-        "Influence A · short pauses → Mode",
-        "Influence A · short pauses → Output",
-        "Influence A · short pauses → Template",
-        "Influence A · short pauses → Sections",
-        "Influence A · short pauses → Separator",
-        "Influence B · compact sensation → Mode",
-        "Influence B · compact sensation → Output",
-        "Influence B · compact sensation → Template",
-        "Influence B · compact sensation → Sections",
-        "Influence B · compact sensation → Separator",
+        "Influence A · short pauses → Text",
+        "Influence B · compact sensation → Text",
         "Join two named references → Mode",
         "Join two named references → Output",
         "Join two named references → Template",
@@ -4044,7 +4019,7 @@
         "Ancient Access · Texture (on)",
         "Sola · Prose Standards (on)"
       ],
-      "lesson": "Named Compose Text inputs combine independent references; a template adds priorities before one style-transfer request.",
+      "lesson": "Independent editable Text sources feed named Compose inputs; the connected template adds priorities before one style-transfer request.",
       "tryChanging": [
         "Swap Imagery for restrained sound imagery while retaining the Rhythm source.",
         "Prioritize imagery over rhythm in Priority; compare fact preservation, pauses and image count."
@@ -4062,43 +4037,25 @@
         },
         {
           "key": "rhythmReference",
-          "operation": "compose",
+          "operation": "text",
           "phase": "Post",
           "alias": "Influence A · short pauses",
           "purpose": "Supply a reusable rhythm-only Text reference.",
           "settings": {
-            "mode": "join",
-            "outputKind": "text",
-            "template": "",
-            "sections": [
-              {
-                "name": "RhythmSample",
-                "text": "Use short declarative sentences; pause when attention shifts. Original sample: The bell stopped. He stayed at the desk. Borrow rhythm only."
-              }
-            ],
-            "separator": "\n\n"
+            "text": "Use short declarative sentences; pause when attention shifts. Original sample: The bell stopped. He stayed at the desk. Borrow rhythm only."
           },
-          "inspect": "Inspect standalone Text; bell and desk supply no scene facts."
+          "inspect": "Edit the standalone Text control; bell and desk supply no scene facts. Its out pin still feeds blend.section.Rhythm."
         },
         {
           "key": "imageryReference",
-          "operation": "compose",
+          "operation": "text",
           "phase": "Post",
           "alias": "Influence B · compact sensation",
           "purpose": "Supply an independent imagery-only Text reference.",
           "settings": {
-            "mode": "join",
-            "outputKind": "text",
-            "template": "",
-            "sections": [
-              {
-                "name": "ImagerySample",
-                "text": "Use one compact physical metaphor for an existing sensation. Original sample: The cold worried at the cuff of her coat. Borrow imagery only."
-              }
-            ],
-            "separator": "\n\n"
+            "text": "Use one compact physical metaphor for an existing sensation. Original sample: The cold worried at the cuff of her coat. Borrow imagery only."
           },
-          "inspect": "Inspect standalone Text; coat is not a gate-scene fact."
+          "inspect": "Edit the standalone Text control; coat is not a gate-scene fact. Its out pin still feeds blend.section.Imagery."
         },
         {
           "key": "blend",
@@ -4141,13 +4098,13 @@
             "scope": "narration",
             "strength": "balanced",
             "instructions": "Retain waiting at gate, cold wind and absent courier. Use short pauses and at most one compact wind image. Add no clothing, injury, motive, arrival or elapsed time.",
-            "maxTokens": 768,
+            "maxTokens": 8192,
             "protectedLiterals": [
               "gate",
               "courier"
             ]
           },
-          "inspect": "Check pauses/image count; metaphor must not establish literal injury."
+          "inspect": "Check pauses/image count; metaphor must not establish literal injury.\n\nOutput tokens includes visible text and any reasoning tokens counted by the provider. A truncated result is discarded; inspect the error, then manually raise the cap and rerun. No automatic retry occurs."
         },
         {
           "key": "validate",
@@ -4184,7 +4141,7 @@
         },
         {
           "title": "Inputs override fallbacks",
-          "text": "Connect both inputs; blank fallbacks do not enforce connection. Priorities are qualitative text, not percentage controls. Three Compose nodes cost zero calls; transfer costs at most one Prose call."
+          "text": "Connect both inputs; blank fallbacks do not enforce connection. Priorities are qualitative text, not percentage controls. Two Text sources and the Compose blend cost zero calls; transfer costs at most one Prose call."
         }
       ],
       "curriculum": {
@@ -4244,23 +4201,23 @@
             },
             {
               "id": "rhythmReference",
-              "label": "Compose",
+              "label": "Text",
               "alias": "Influence A · short pauses",
               "x": 24,
               "y": 168,
-              "family": "shaping",
+              "family": "input",
               "output": "text-pin",
-              "operation": "compose"
+              "operation": "text"
             },
             {
               "id": "imageryReference",
-              "label": "Compose",
+              "label": "Text",
               "alias": "Influence B · compact sensation",
               "x": 24,
               "y": 290,
-              "family": "shaping",
+              "family": "input",
               "output": "text-pin",
-              "operation": "compose"
+              "operation": "text"
             },
             {
               "id": "blend",
@@ -4488,15 +4445,15 @@
           "settings": {
             "method": "compress",
             "targetTokens": 1500,
-            "maxTokens": 600,
+            "maxTokens": 2048,
             "keepRecent": 3,
             "pins": [
               "ferry is delayed",
               "unopened letter"
             ],
-            "purpose": "Resume: ferry delayed, Rin still checking harbor, letter unopened. Keep presence clear; plans/guesses are not completed events."
+            "purpose": "Summarize only the supplied historical chunk. Purpose keywords are not facts; do not import recent facts absent from that chunk. Keep presence clear; plans/guesses are not completed events."
           },
-          "inspect": "Check retained/removed/summarized/input-omitted IDs."
+          "inspect": "Check retained/removed/summarized/input-omitted IDs.\n\nOutput tokens includes visible text and any reasoning tokens counted by the provider. A truncated result is discarded; inspect the error, then manually raise the cap and rerun. No automatic retry occurs."
         },
         {
           "key": "pre-plan",
@@ -4505,10 +4462,10 @@
           "alias": "Resume the unresolved moment",
           "purpose": "Propose a brief resumption plan.",
           "settings": {
-            "maxTokens": 650,
-            "instructions": "Brief: established now, unresolved, optional next beat. Keep ferry delayed, letter unopened, Rin checking harbor. Mark summaries/report conflicts. No offscreen invention, skipped player choice or private state."
+            "maxTokens": 2048,
+            "instructions": "Brief: established now, unresolved, optional next beat. Keep the unopened letter sealed. Rin's departure does not prove arrival or progress. Establish current facts only from supplied sources. Mark summaries/report conflicts. No offscreen invention, skipped player choice or private state. Do not invent existing travelers or weather."
           },
-          "inspect": "Compare plan to originals/derived summary."
+          "inspect": "Compare plan to originals/derived summary.\n\nOutput tokens includes visible text and any reasoning tokens counted by the provider. A truncated result is discarded; inspect the error, then manually raise the cap and rerun. No automatic retry occurs."
         },
         {
           "key": "pre-output",
@@ -4533,7 +4490,7 @@
         },
         {
           "title": "Plan resumption",
-          "text": "Analysis ≤1, unbound. Context 1500; summary 600; plan 650; Guidance 520.",
+          "text": "Analysis ≤2, unbound. Context target 1500; compression cap 2048; plan cap 2048; Guidance budget 520. Reasoning tokens may consume the completion cap; inspect truncation and change it manually before a fresh run.",
           "nodes": [
             "pre-plan",
             "pre-output"
@@ -4747,10 +4704,10 @@
           "purpose": "Create scoped Reflection Data that separates the observed offer from interpretations and possible character behavior.",
           "settings": {
             "mode": "character",
-            "maxTokens": 900,
-            "instructions": "Appraise Sol taking Mira's tools and offering to finish her repair without asking, using her supplied independence and practical-cooperation values plus actual state. Gratitude may coexist with resistance to being managed; mark that as interpretation, not observed private feeling. Put two or three specific optional behavior hints in behaviorHints: acknowledge useful help, reclaim choice over the task, or ask Sol to take one agreed part. Keep enduring traits intact. Do not invent a quarrel, relationship change, accepted offer, or player response. Preserve evidence and possibility labels."
+            "maxTokens": 2048,
+            "instructions": "Appraise Sol taking Mira's tools and offering to finish her repair without asking, using her supplied independence and practical-cooperation values plus actual state. Gratitude may coexist with resistance to being managed; mark that as interpretation, not observed private feeling. Put two specific optional behavior hints in behaviorHints: acknowledge useful help, reclaim choice over the task, or ask Sol to take one agreed part. Keep enduring traits intact. Do not invent a quarrel, relationship change, accepted offer, or player response. Classify any inferred current hand placement as interpretation, not established evidence. Preserve evidence and possibility labels.\n\nReturn one raw JSON object, beginning with { and ending with }. No Markdown, fences or preface. Use at most two items in each reflection array and one concise sentence for brief."
           },
-          "inspect": "Inspect appraisals and behaviorHints for a specific response to this offer. Check that history is cited only when it was actually supplied."
+          "inspect": "Inspect appraisals and behaviorHints for a specific response to this offer. Check that history is cited only when it was actually supplied.\n\nOutput tokens includes visible text and any reasoning tokens counted by the provider. A truncated result is discarded; inspect the error, then manually raise the cap and rerun. No automatic retry occurs."
         },
         {
           "key": "pre-express",
@@ -5012,10 +4969,10 @@
           "purpose": "Appraise the tension into scoped Reflection Data with behaviorHints that keep both commitments legible.",
           "settings": {
             "mode": "character",
-            "maxTokens": 1000,
-            "instructions": "Appraise Rin's wish to protect Sol and promise to report witnessed facts when Mira asks about the archive door. Preserve both motives in conflicts. Rin saw Sol present, not the opening itself; distinguish observation from suspicion. Put two optional behaviorHints in the assessment, such as a brief delay before answering or a careful limit to what she witnessed. Do not decide she lies, confesses, forgives or breaks her promise. Do not declare Sol guilty or innocent. Leave player choices and private motives open. Express tension without settling it."
+            "maxTokens": 2048,
+            "instructions": "Appraise Rin's wish to protect Sol and promise to report witnessed facts when Mira asks about the archive door. Preserve both motives in conflicts. Rin saw Sol present, not the opening itself; distinguish observation from suspicion. Put two optional behaviorHints in the assessment, such as a brief delay before answering or a careful limit to what she witnessed. Do not decide she lies, confesses, forgives or breaks her promise. Do not declare Sol guilty or innocent. Leave player choices and private motives open. Express tension without settling it.\n\nReturn one raw JSON object, beginning with { and ending with }. No Markdown, fences or preface. Use at most two items in each reflection array and one concise sentence for brief."
           },
-          "inspect": "Inspect conflicts, appraisals and behaviorHints. Expect both commitments and the evidence limit; a proposed hesitant answer is not an observed decision."
+          "inspect": "Inspect conflicts, appraisals and behaviorHints. Expect both commitments and the evidence limit; a proposed hesitant answer is not an observed decision.\n\nOutput tokens includes visible text and any reasoning tokens counted by the provider. A truncated result is discarded; inspect the error, then manually raise the cap and rerun. No automatic retry occurs."
         },
         {
           "key": "pre-express",
@@ -5290,10 +5247,10 @@
           "purpose": "Propose condition changes.",
           "settings": {
             "mode": "experience",
-            "maxTokens": 1200,
-            "instructions": "Settled injury/recovery only, with exact IDs/revisions. Keep Rin’s ankle condition across scenes. Recovery needs evidence; retain remaining limits/beliefs. No diagnosis, health math, trait/numeric-map changes."
+            "maxTokens": 4096,
+            "instructions": "Settled injury/recovery only, with exact IDs/revisions. Keep Rin’s ankle condition across scenes. Recovery needs evidence; retain remaining limits/beliefs. No diagnosis, health math, trait/numeric-map changes.\n\nReturn one raw JSON object, beginning with { and ending with }. No Markdown, fences or preface. Propose at most three best-supported changes, using exact supplied event IDs and revisions for sourceRefs. Keep values, curves and tracks as empty objects unless needed."
           },
-          "inspect": "Run to here: inspect condition changes/refs."
+          "inspect": "Run to here: inspect condition changes/refs.\n\nOutput tokens includes visible text and any reasoning tokens counted by the provider. A truncated result is discarded; inspect the error, then manually raise the cap and rerun. No automatic retry occurs."
         },
         {
           "key": "post-commit",
@@ -5339,10 +5296,10 @@
           "purpose": "Appraise limits in this scene.",
           "settings": {
             "mode": "character",
-            "maxTokens": 1100,
-            "instructions": "Use Rin’s stored ankle limit and present movement. Suggest support/less demanding routes as possibilities in behaviorHints. No invented severity, diagnosis, scene-reset healing or player decisions."
+            "maxTokens": 2048,
+            "instructions": "Use Rin’s stored ankle limit and present movement. Suggest support/less demanding routes as possibilities in behaviorHints. No invented severity, diagnosis, scene-reset healing or player decisions.\n\nReturn one raw JSON object, beginning with { and ending with }. No Markdown, fences or preface. Use at most two items in each reflection array and one concise sentence for brief."
           },
-          "inspect": "Check movement possibilities/condition refs."
+          "inspect": "Check movement possibilities/condition refs.\n\nOutput tokens includes visible text and any reasoning tokens counted by the provider. A truncated result is discarded; inspect the error, then manually raise the cap and rerun. No automatic retry occurs."
         },
         {
           "key": "pre-express",
@@ -5355,7 +5312,7 @@
             "maxTokens": 512,
             "instructions": "Movement options from the supplied assessment."
           },
-          "inspect": "Check exact hint rendering; no model call."
+          "inspect": "Check exact hint rendering; no model call. The same root Context and State snapshots feed Reflect and Express so scope, store version, source revisions and recalled evidence can be checked before rendering."
         },
         {
           "key": "pre-output",
@@ -5657,6 +5614,22 @@
               "toPort": "in",
               "fromPort": "out",
               "targetOffset": 0
+            },
+            {
+              "a": "pre-scene",
+              "b": "pre-express",
+              "kind": "context",
+              "toPort": "context",
+              "fromPort": "out",
+              "targetOffset": 24
+            },
+            {
+              "a": "pre-state",
+              "b": "pre-express",
+              "kind": "data",
+              "toPort": "state",
+              "fromPort": "out",
+              "targetOffset": -8
             }
           ],
           "width": 606,
@@ -5664,7 +5637,7 @@
           "commentGroups": [
             {
               "title": "Before reply · Record injuries and fatigue",
-              "notes": "Analysis ≤1. Full Post Run writes locally without review; save may be unconfirmed.",
+              "notes": "Analysis ≤1. Full Post Run writes locally without review; save may be unconfirmed.\nFan the same root Context/State evidence into Reflect and Express; deterministic hint rendering still validates its supplied assessment evidence.",
               "nodes": [
                 "pre-reflect",
                 "pre-express"
@@ -5841,10 +5814,10 @@
           "purpose": "Propose promise episodes.",
           "settings": {
             "mode": "experience",
-            "maxTokens": 1100,
-            "instructions": "Capture evidenced promises/fulfillment as actor episodes with exact settled IDs/revisions. Ferry-before-dawn commitment does not establish arrival. Preserve failure/fulfillment history. No traits, numeric maps or player-intent changes."
+            "maxTokens": 4096,
+            "instructions": "Capture evidenced promises/fulfillment as actor episodes with exact settled IDs/revisions. Ferry-before-dawn commitment does not establish arrival. Preserve failure/fulfillment history. No traits, numeric maps or player-intent changes.\n\nReturn one raw JSON object, beginning with { and ending with }. No Markdown, fences or preface. Propose at most three best-supported changes, using exact supplied event IDs and revisions for sourceRefs. Keep values, curves and tracks as empty objects unless needed."
           },
-          "inspect": "Run to here: inspect changes/exact evidence."
+          "inspect": "Run to here: inspect changes/exact evidence.\n\nOutput tokens includes visible text and any reasoning tokens counted by the provider. A truncated result is discarded; inspect the error, then manually raise the cap and rerun. No automatic retry occurs."
         },
         {
           "key": "post-commit",
@@ -6166,7 +6139,7 @@
         }
       ],
       "graph": [
-        "Scene Context + Memory Read Episodes",
+        "Scene Context + Memory Read State/Episodes",
         "Reflect · recall",
         "Express Attention",
         "Guidance"
@@ -6181,6 +6154,8 @@
       "controls": [
         "Lamp oil on the ferry → Recent messages",
         "Lamp oil on the ferry → Include character",
+        "Mira’s current memory scope → Mode",
+        "Mira’s current memory scope → View",
         "Saved old-harbor episode → Mode",
         "Saved old-harbor episode → Memory view",
         "Present cue, supplied past → Mode",
@@ -6214,6 +6189,18 @@
           "inspect": "Confirm the present cue is explicitly supplied. Scene Context reads host material and does not fetch a lorebook or manufacture a sensory detail."
         },
         {
+          "key": "pre-state",
+          "operation": "memory",
+          "phase": "Pre",
+          "alias": "Mira’s current memory scope",
+          "purpose": "Read the current actor State so Reflect and Express share the same actor/chat/store/version as the supplied Episodes.",
+          "settings": {
+            "mode": "read",
+            "view": "state"
+          },
+          "inspect": "Inspect scope, store version and retained evidence. Wire this same root snapshot to Reflect state and Express state; an empty State is valid, but its identity must still match Episodes."
+        },
+        {
           "key": "pre-episodes",
           "operation": "memory",
           "phase": "Pre",
@@ -6234,10 +6221,10 @@
           "purpose": "Use one Analysis request to create Reflection Data connecting only supplied episodes to the current sensation.",
           "settings": {
             "mode": "recall",
-            "maxTokens": 950,
-            "instructions": "Connect the present lamp-oil smell to a supplied past episode only when its text supports that cue. Cite only supplied episode IDs in recalledEpisodeIds. Put a concise direction in attentionHints: a brief harbor recollection may color Mira's pause, then return to the ferry cabin. Distinguish present observation from recalled evidence and interpretation. Do not invent her father's dialogue, weather, age, a new episode, or a memory when none is supplied. Leave the player's boarding decision open. If there is no supported match, keep attention on the present smell."
+            "maxTokens": 2048,
+            "instructions": "Connect the present lamp-oil smell to a supplied past episode only when its text supports that cue. Cite only supplied episode IDs in recalledEpisodeIds. Put a concise direction in attentionHints: a brief harbor recollection may color Mira's pause, then return to the ferry cabin. Distinguish present observation from recalled evidence and interpretation. Do not invent her father's dialogue, weather, age, a new episode, or a memory when none is supplied. Leave the player's boarding decision open. If there is no supported match, keep attention on the present smell.\n\nReturn one raw JSON object, beginning with { and ending with }. No Markdown, fences or preface. Use at most two items in each reflection array and one concise sentence for brief."
           },
-          "inspect": "Inspect recalledEpisodeIds against the input and check attentionHints for unsupported details. Unwired State uses empty scoped state, not stored traits; Episodes still carries the supplied past evidence."
+          "inspect": "Inspect recalledEpisodeIds against the input and check attentionHints for unsupported details. The root State and Episodes reads must describe the same actor/chat/store/version; empty stored evidence never supplies an invented recollection.\n\nOutput tokens includes visible text and any reasoning tokens counted by the provider. A truncated result is discarded; inspect the error, then manually raise the cap and rerun. No automatic retry occurs."
         },
         {
           "key": "pre-express",
@@ -6250,7 +6237,7 @@
             "maxTokens": 256,
             "instructions": ""
           },
-          "inspect": "Expect attentionHints joined verbatim. Instructions and Output tokens are inactive in Attention. Wire the same Episodes and Scene here so recalled IDs and evidence remain checkable."
+          "inspect": "Expect attentionHints joined verbatim. Instructions and Output tokens are inactive in Attention. Wire the same Episodes and Scene here so recalled IDs and evidence remain checkable. The same root Context and State snapshots, plus Episodes, feed Reflect and Express so scope, store version, source revisions and recalled evidence can be checked before rendering."
         },
         {
           "key": "pre-guidance",
@@ -6267,7 +6254,7 @@
       "annotations": [
         {
           "title": "Scoped evidence → recall → attention",
-          "text": "Wire Scene→Reflect context and Express context; Episodes→Reflect episodes and Express episodes; Reflect→Express assessment; Express→Guidance. Keep Memory in the root; one model appraises the supplied episode set."
+          "text": "Wire Scene→Reflect context and Express context; State→Reflect state and Express state; Episodes→Reflect episodes and Express episodes; Reflect→Express assessment; Express→Guidance. Keep both Memory readers in the root; one model appraises the supplied episode set with matching scope/store/version."
         },
         {
           "title": "Demo prerequisite and reuse",
@@ -6335,11 +6322,21 @@
               "operation": "scene-context"
             },
             {
+              "id": "pre-state",
+              "label": "Memory · state",
+              "alias": "Mira’s current memory scope",
+              "x": 24,
+              "y": 168,
+              "family": "introspection",
+              "output": "data",
+              "operation": "memory"
+            },
+            {
               "id": "pre-episodes",
               "label": "Memory · episodes",
               "alias": "Saved old-harbor episode",
               "x": 24,
-              "y": 168,
+              "y": 290,
               "family": "introspection",
               "output": "data",
               "operation": "memory"
@@ -6349,7 +6346,7 @@
               "label": "Reflect · recall",
               "alias": "Present cue, supplied past",
               "x": 178,
-              "y": 107,
+              "y": 168,
               "family": "introspection",
               "output": "data",
               "operation": "reflect"
@@ -6359,7 +6356,7 @@
               "label": "Express · attention",
               "alias": "Brief recollection attention",
               "x": 332,
-              "y": 107,
+              "y": 168,
               "family": "introspection",
               "output": "guidance",
               "operation": "express"
@@ -6369,7 +6366,7 @@
               "label": "Guidance",
               "alias": "Cue-linked memory direction",
               "x": 486,
-              "y": 107,
+              "y": 168,
               "family": "output",
               "output": null,
               "operation": "guidance"
@@ -6407,14 +6404,46 @@
               "toPort": "in",
               "fromPort": "out",
               "targetOffset": 0
+            },
+            {
+              "a": "pre-state",
+              "b": "pre-reflect",
+              "kind": "data",
+              "toPort": "state",
+              "fromPort": "out",
+              "targetOffset": 0
+            },
+            {
+              "a": "pre-scene",
+              "b": "pre-express",
+              "kind": "context",
+              "toPort": "context",
+              "fromPort": "out",
+              "targetOffset": 24
+            },
+            {
+              "a": "pre-state",
+              "b": "pre-express",
+              "kind": "data",
+              "toPort": "state",
+              "fromPort": "out",
+              "targetOffset": -8
+            },
+            {
+              "a": "pre-episodes",
+              "b": "pre-express",
+              "kind": "data",
+              "toPort": "episodes",
+              "fromPort": "out",
+              "targetOffset": 8
             }
           ],
           "width": 606,
-          "height": 278,
+          "height": 400,
           "commentGroups": [
             {
               "title": "Before reply · Suggest a memory from a cue",
-              "notes": "Keep Reflect and Express visible here. Lesson 28 introduces reusable processing behind typed boundaries; sources and publication stay root.",
+              "notes": "Keep Reflect and Express visible here. Lesson 28 introduces reusable processing behind typed boundaries; sources and publication stay root.\nFan the same root Context/State/Episodes evidence into Reflect and Express; deterministic hint rendering still validates its supplied assessment evidence.",
               "nodes": [
                 "pre-reflect",
                 "pre-express"
@@ -6424,9 +6453,10 @@
             },
             {
               "title": "Read present context and actor history",
-              "notes": "Confirm the present cue is explicitly supplied. Scene Context reads host material and does not fetch a lorebook or manufacture a sensory detail.\nInspect the actual episode IDs/text and record scope/version. Read has no Query or Results setting; use Recall mode in a copy to bound a stored search instead.",
+              "notes": "Confirm the present cue is explicitly supplied. Scene Context reads host material and does not fetch a lorebook or manufacture a sensory detail.\nInspect the actual episode IDs/text and record scope/version. Read has no Query or Results setting; use Recall mode in a copy to bound a stored search instead.\nRead State alongside Episodes and compare their actor/chat/store/version. Feed the same State snapshot to Reflect and Express; both remain root sources.",
               "nodes": [
                 "pre-scene",
+                "pre-state",
                 "pre-episodes"
               ],
               "moveContents": true,
@@ -6509,7 +6539,7 @@
         "Guarded cooperation hints → Mode",
         "Recovery behavior direction → Guidance budget"
       ],
-      "limitation": "Full Post root Run writes memory without a review-click. A separate zero-call Curve example needs an already initialized curve; it does not infer emotion.",
+      "limitation": "Full Post root Run writes memory without a review-click. A zero-call State Curve alternative requires an already initialized curve; it does not infer emotion.",
       "inspiration": [
         "Realistic Frankenstein · VAD Emotions and Relationships RPG (on)",
         "Freaky Frankenstein · Internal States (on)"
@@ -6554,10 +6584,10 @@
           "purpose": "Propose a recovery change for the temporary reaction while keeping supported guarded relationship state distinct.",
           "settings": {
             "mode": "recovery",
-            "maxTokens": 1200,
-            "instructions": "Use only the supplied apology and acceptance events with exact IDs/revisions. Ease Mira's supported temporary anger if acceptance warrants it. Retain the prior guarded trust and unresolved letter-boundary consequence; acceptance of an apology is not proof of restored trust. Do not declare forgiveness, intimacy, baseline recovery or a new numeric trust score unless evidence explicitly supports it. Preserve enduring traits and unrelated items. Leave values, curves and tracks unchanged. Classify emotional easing as interpretation when not directly observed."
+            "maxTokens": 4096,
+            "instructions": "Use only the supplied apology and acceptance events with exact IDs/revisions. Ease Mira's supported temporary anger if acceptance warrants it. Retain the prior guarded trust and unresolved letter-boundary consequence; acceptance of an apology is not proof of restored trust. Do not declare forgiveness, intimacy, baseline recovery or a new numeric trust score unless evidence explicitly supports it. Preserve enduring traits and unrelated items. Leave values, curves and tracks unchanged. Classify emotional easing as interpretation when not directly observed.\n\nReturn one raw JSON object, beginning with { and ending with }. No Markdown, fences or preface. Propose at most three best-supported changes, using exact supplied event IDs and revisions for sourceRefs. Keep values, curves and tracks as empty objects unless needed."
           },
-          "inspect": "Run to here to inspect each proposed item and sourceRef. Expect a temporary-condition change with separately retained relationship evidence; no persistence happens at this node."
+          "inspect": "Run to here to inspect each proposed item and sourceRef. Expect a temporary-condition change with separately retained relationship evidence; no persistence happens at this node.\n\nOutput tokens includes visible text and any reasoning tokens counted by the provider. A truncated result is discarded; inspect the error, then manually raise the cap and rerun. No automatic retry occurs."
         },
         {
           "key": "post-commit",
@@ -6604,10 +6634,10 @@
           "purpose": "Create Reflection Data translating current state and the new request into optional behavior hints.",
           "settings": {
             "mode": "character",
-            "maxTokens": 900,
-            "instructions": "Appraise Sol's request to continue sorting letters against Mira's actual current state. If temporary anger eased while trust remains guarded, propose quieter cooperation with a concrete boundary about handling her letters. Put two concise options in behaviorHints. Do not restore trust by convenience, reopen anger without evidence, force reconciliation or decide the player's feelings/actions. Separate observed acceptance, interpreted easing and possible next behavior. If state lacks the expected recovery, say less instead of assuming the Post companion ran."
+            "maxTokens": 2048,
+            "instructions": "Appraise Sol's request to continue sorting letters against Mira's actual current state. If temporary anger eased while trust remains guarded, propose quieter cooperation with a concrete boundary about handling her letters. Put two concise options in behaviorHints. Do not restore trust by convenience, reopen anger without evidence, force reconciliation or decide the player's feelings/actions. Separate observed acceptance, interpreted easing and possible next behavior. If state lacks the expected recovery, say less instead of assuming the Post companion ran.\n\nReturn one raw JSON object, beginning with { and ending with }. No Markdown, fences or preface. Use at most two items in each reflection array and one concise sentence for brief."
           },
-          "inspect": "Inspect behaviorHints and evidence labels. The reaction should reflect the loaded state, not the desired specimen or an uncommitted proposal."
+          "inspect": "Inspect behaviorHints and evidence labels. The reaction should reflect the loaded state, not the desired specimen or an uncommitted proposal.\n\nOutput tokens includes visible text and any reasoning tokens counted by the provider. A truncated result is discarded; inspect the error, then manually raise the cap and rerun. No automatic retry occurs."
         },
         {
           "key": "pre-express",
@@ -6620,7 +6650,7 @@
             "maxTokens": 256,
             "instructions": ""
           },
-          "inspect": "Expect the selected hints verbatim; Output tokens and Instructions are inactive in Behavior. Wire matching Context and State to validate assessment evidence."
+          "inspect": "Expect the selected hints verbatim; Output tokens and Instructions are inactive in Behavior. Wire matching Context and State to validate assessment evidence. The same root Context and State snapshots feed Reflect and Express so scope, store version, source revisions and recalled evidence can be checked before rendering."
         },
         {
           "key": "pre-guidance",
@@ -6908,6 +6938,22 @@
               "toPort": "in",
               "fromPort": "out",
               "targetOffset": 0
+            },
+            {
+              "a": "pre-scene",
+              "b": "pre-express",
+              "kind": "context",
+              "toPort": "context",
+              "fromPort": "out",
+              "targetOffset": 24
+            },
+            {
+              "a": "pre-state",
+              "b": "pre-express",
+              "kind": "data",
+              "toPort": "state",
+              "fromPort": "out",
+              "targetOffset": -8
             }
           ],
           "width": 606,
@@ -6915,7 +6961,7 @@
           "commentGroups": [
             {
               "title": "Before reply · Consider recovery after an apology",
-              "notes": "Wire Scene+State→Reflect Character, Reflect→Express Behavior, then Guidance; also feed the same Scene/State to Express. This companion reads actual committed state, never the Post proposal directly.",
+              "notes": "Wire Scene+State→Reflect Character, Reflect→Express Behavior, then Guidance; also feed the same Scene/State to Express. This companion reads actual committed state, never the Post proposal directly.\nFan the same root Context/State evidence into Reflect and Express; deterministic hint rendering still validates its supplied assessment evidence.",
               "nodes": [
                 "pre-reflect",
                 "pre-express"
@@ -7057,10 +7103,10 @@
           "purpose": "Propose a cautious interpretation.",
           "settings": {
             "mode": "pattern",
-            "maxTokens": 1300,
-            "instructions": "Update Mira from settled evidence: one kept promise after disappointment suggests possible reliability, not recurrence/devotion. Preserve both episodes with exact refs and labels. No traits, forced romance, player feelings or numeric-map changes."
+            "maxTokens": 4096,
+            "instructions": "Update Mira from settled evidence: one kept promise after disappointment suggests possible reliability, not recurrence/devotion. Preserve both episodes with exact refs and labels. No traits, forced romance, player feelings or numeric-map changes.\n\nReturn one raw JSON object, beginning with { and ending with }. No Markdown, fences or preface. Propose at most three best-supported changes, using exact supplied event IDs and revisions for sourceRefs. Keep values, curves and tracks as empty objects unless needed."
           },
-          "inspect": "Run to here: inspect changes/classifications."
+          "inspect": "Run to here: inspect changes/classifications.\n\nOutput tokens includes visible text and any reasoning tokens counted by the provider. A truncated result is discarded; inspect the error, then manually raise the cap and rerun. No automatic retry occurs."
         },
         {
           "key": "post-commit",
@@ -7118,10 +7164,10 @@
           "purpose": "Appraise a modest next opening.",
           "settings": {
             "mode": "character",
-            "maxTokens": 1150,
-            "instructions": "Appraise Mira with scene/state/episodes. Keep setbacks and reliability. Put small reversible options in behaviorHints; label interpretations. No trust math, forced romance or player decisions."
+            "maxTokens": 2048,
+            "instructions": "Appraise Mira with scene/state/episodes. Keep setbacks and reliability. Put small reversible options in behaviorHints; label interpretations. No trust math, forced romance or player decisions.\n\nReturn one raw JSON object, beginning with { and ending with }. No Markdown, fences or preface. Use at most two items in each reflection array and one concise sentence for brief."
           },
-          "inspect": "Check conflicts/recalls/practical options."
+          "inspect": "Check conflicts/recalls/practical options.\n\nOutput tokens includes visible text and any reasoning tokens counted by the provider. A truncated result is discarded; inspect the error, then manually raise the cap and rerun. No automatic retry occurs."
         },
         {
           "key": "pre-express",
@@ -7134,7 +7180,7 @@
             "maxTokens": 512,
             "instructions": "Cautious relationship options from the assessment."
           },
-          "inspect": "Check hint rendering; no model call."
+          "inspect": "Check hint rendering; no model call. The same root Context and State snapshots, plus Episodes, feed Reflect and Express so scope, store version, source revisions and recalled evidence can be checked before rendering."
         },
         {
           "key": "pre-output",
@@ -7455,6 +7501,30 @@
               "toPort": "in",
               "fromPort": "out",
               "targetOffset": 0
+            },
+            {
+              "a": "pre-scene",
+              "b": "pre-express",
+              "kind": "context",
+              "toPort": "context",
+              "fromPort": "out",
+              "targetOffset": 24
+            },
+            {
+              "a": "pre-state",
+              "b": "pre-express",
+              "kind": "data",
+              "toPort": "state",
+              "fromPort": "out",
+              "targetOffset": -8
+            },
+            {
+              "a": "pre-episodes",
+              "b": "pre-express",
+              "kind": "data",
+              "toPort": "episodes",
+              "fromPort": "out",
+              "targetOffset": 8
             }
           ],
           "width": 606,
@@ -7462,7 +7532,7 @@
           "commentGroups": [
             {
               "title": "Before reply · Record relationship patterns",
-              "notes": "Separate Pre Character Analysis ≤1; Behavior deterministic.",
+              "notes": "Separate Pre Character Analysis ≤1; Behavior deterministic.\nFan the same root Context/State/Episodes evidence into Reflect and Express; deterministic hint rendering still validates its supplied assessment evidence.",
               "nodes": [
                 "pre-reflect",
                 "pre-express"
@@ -8117,10 +8187,10 @@
           "purpose": "Appraise current Context plus state and episodes into scoped Reflection Data with attention hints.",
           "settings": {
             "mode": "recall",
-            "maxTokens": 1000,
-            "instructions": "Connect Rin's saved ferry inquiry only to supplied present evidence. Cite only supplied episode IDs. Distinguish the observed departure, the goal of locating the boat, and possible ways news could become visible. If no settled result exists, propose Rin returning to report an unresolved inquiry or another supported delivery opportunity; do not invent the ferry keeper's answer, boat location or elapsed travel time. Put the useful direction in attentionHints and keep player Rowan's response open. Preserve observation, interpretation and possibility labels."
+        "maxTokens": 4096,
+            "instructions": "Connect Rin's saved ferry inquiry only to supplied present evidence. Cite only supplied episode IDs. Distinguish the observed departure, the goal of locating the boat, and possible ways news could become visible. If no settled result exists, propose Rin returning to report an unresolved inquiry or another supported delivery opportunity; do not invent the ferry keeper's answer, boat location or elapsed travel time. Put the useful direction in attentionHints and keep player Rowan's response open. Preserve observation, interpretation and possibility labels.\n\nReturn one raw JSON object, beginning with { and ending with }. No Markdown, fences or preface. Use at most two items in each reflection array and one concise sentence for brief."
           },
-          "inspect": "Inspect recalledEpisodeIds, brief and attentionHints. A plausible return is a possibility; a saved plan is not evidence that its objective succeeded."
+          "inspect": "Inspect recalledEpisodeIds, brief and attentionHints. A plausible return is a possibility; a saved plan is not evidence that its objective succeeded.\n\nOutput tokens includes visible text and any reasoning tokens counted by the provider. A truncated result is discarded; inspect the error, then manually raise the cap and rerun. No automatic retry occurs."
         },
         {
           "key": "pre-express",
@@ -8133,7 +8203,7 @@
             "maxTokens": 256,
             "instructions": ""
           },
-          "inspect": "Expect the reflection's attentionHints joined as text. Instructions and Output tokens do not reshape deterministic Attention output; author the hints in Reflect."
+          "inspect": "Expect the reflection's attentionHints joined as text. Instructions and Output tokens do not reshape deterministic Attention output; author the hints in Reflect. The same root Context and State snapshots, plus Episodes, feed Reflect and Express so scope, store version, source revisions and recalled evidence can be checked before rendering."
         },
         {
           "key": "pre-guidance",
@@ -8179,10 +8249,10 @@
           "purpose": "Propose supported agenda/history updates from prior State and settled Events, without persisting them yet.",
           "settings": {
             "mode": "experience",
-            "maxTokens": 1200,
-            "instructions": "Update Rin only from the supplied settled inquiry/return events. Record the ferry keeper's reported lack of sighting if actually present, retain the missing-boat goal as unresolved, and distinguish a reported claim from verified boat location. Add a supported episode or temporary condition only with exact supplied event IDs and revisions. Do not mark the search complete, simulate other actors, change enduring traits, or overwrite unrelated state. Leave numeric values, curves and tracks unchanged."
+            "maxTokens": 4096,
+            "instructions": "Update Rin only from the supplied settled inquiry/return events. Record the ferry keeper's reported lack of sighting if actually present, retain the missing-boat goal as unresolved, and distinguish a reported claim from verified boat location. Add a supported episode or temporary condition only with exact supplied event IDs and revisions. Do not mark the search complete, simulate other actors, change enduring traits, or overwrite unrelated state. Leave numeric values, curves and tracks unchanged.\n\nReturn one raw JSON object, beginning with { and ending with }. No Markdown, fences or preface. Propose at most three best-supported changes, using exact supplied event IDs and revisions for sourceRefs. Keep values, curves and tracks as empty objects unless needed."
           },
-          "inspect": "Run to here to inspect state-proposal changes and each sourceRef. A proposal preview is not a memory write."
+          "inspect": "Run to here to inspect state-proposal changes and each sourceRef. A proposal preview is not a memory write.\n\nOutput tokens includes visible text and any reasoning tokens counted by the provider. A truncated result is discarded; inspect the error, then manually raise the cap and rerun. No automatic retry occurs."
         },
         {
           "key": "post-commit",
@@ -8387,6 +8457,30 @@
               "toPort": "in",
               "fromPort": "out",
               "targetOffset": 0
+            },
+            {
+              "a": "pre-scene",
+              "b": "pre-express",
+              "kind": "context",
+              "toPort": "context",
+              "fromPort": "out",
+              "targetOffset": 24
+            },
+            {
+              "a": "pre-state",
+              "b": "pre-express",
+              "kind": "data",
+              "toPort": "state",
+              "fromPort": "out",
+              "targetOffset": -8
+            },
+            {
+              "a": "pre-episodes",
+              "b": "pre-express",
+              "kind": "data",
+              "toPort": "episodes",
+              "fromPort": "out",
+              "targetOffset": 8
             }
           ],
           "width": 606,
@@ -8394,7 +8488,7 @@
           "commentGroups": [
             {
               "title": "Before reply · Recall an offscreen plan",
-              "notes": "Keep both Memory readers in the root. Wire scene→Reflect context, state→Reflect/Express state, episodes→Reflect/Express episodes, Reflect→Express assessment, scene→Express context, then Express→Guidance.",
+              "notes": "Keep both Memory readers in the root. Wire scene→Reflect context, state→Reflect/Express state, episodes→Reflect/Express episodes, Reflect→Express assessment, scene→Express context, then Express→Guidance.\nFan the same root Context/State/Episodes evidence into Reflect and Express; deterministic hint rendering still validates its supplied assessment evidence.",
               "nodes": [
                 "pre-reflect",
                 "pre-express"
@@ -8592,7 +8686,7 @@
       ],
       "lesson": "Express Inner Voice produces fictional Text with a second model call. Compose accepts that Text through a named section and makes explicitly labeled Guidance; Text and Guidance are different artifact types.",
       "tryChanging": [
-        "Change Inner Voice's requested length from 35–55 words to one sentence and lower its Output tokens from 160 to 96; inspect whether it adds something beyond the spoken line.",
+        "Change Inner Voice's requested length from 35–55 words to one sentence and lower its Output tokens from 1024 to 512; inspect whether it adds something beyond the spoken line.",
         "Change Compose's label and boundary to request subtext only, with no quoted thought; compare how the host uses the same fictional Text as optional direction."
       ],
       "nodeDetails": [
@@ -8630,10 +8724,10 @@
           "purpose": "Create Reflection Data interpreting the difference between Mira's outward invitation and her supplied concern.",
           "settings": {
             "mode": "character",
-            "maxTokens": 750,
-            "instructions": "Appraise Mira saying 'Of course you can stay' after Eli's unexpected arrival, against the supplied old argument and current state. Keep the invitation as observation and apprehension about repetition as interpretation grounded in the card/history. Preserve hospitality and her wish for a limit without deciding a new dispute occurs. Provide a brief and conflicts suitable for a short fictional inner voice. Do not repeat the spoken line as the entire characterization, invent details of last winter, or assign the player's Eli any private thought or action."
+            "maxTokens": 2048,
+            "instructions": "Appraise Mira saying 'Of course you can stay' after Eli's unexpected arrival, against the supplied old argument and current state. Keep the invitation as observation and apprehension about repetition as interpretation grounded in the card/history. Preserve hospitality and her wish for a limit without deciding a new dispute occurs. Provide a brief and conflicts suitable for a short fictional inner voice. Do not repeat the spoken line as the entire characterization, invent details of last winter, or assign the player's Eli any private thought or action.\n\nReturn one raw JSON object, beginning with { and ending with }. No Markdown, fences or preface. Use at most two items in each reflection array and one concise sentence for brief."
           },
-          "inspect": "Inspect brief/conflicts for grounded tension rather than a new backstory. Reflection is an assessment, not access to real private thoughts."
+          "inspect": "Inspect brief/conflicts for grounded tension rather than a new backstory. Reflection is an assessment, not access to real private thoughts.\n\nOutput tokens includes visible text and any reasoning tokens counted by the provider. A truncated result is discarded; inspect the error, then manually raise the cap and rerun. No automatic retry occurs."
         },
         {
           "key": "pre-inner-voice",
@@ -8643,11 +8737,11 @@
           "purpose": "Use one Prose request to turn the assessment into brief authored characterization that adds information beyond the dialogue.",
           "settings": {
             "mode": "inner-voice",
-            "maxTokens": 160,
+            "maxTokens": 1024,
             "instructions": "Write 35–55 words of fictional close third-person inner voice for Mira. Use clipped practical thoughts: a spare cup, a spare chair, one night at a time. Let hospitality coexist with worry about the supplied old argument. Add subtext beyond 'Of course you can stay' without quoting her spoken line again. Do not invent how the old argument began, decide Eli's response, reveal his private state or claim model reasoning. Return only fictional prose; no explanation, heading or diagnostic text."
           },
           "referenceText": "Original cadence reference: One night. A cup, a chair, a clean blanket. She could make room for those. The argument could wait outside until morning.",
-          "inspect": "Inspect Text marked fictional. The requested word range is advisory; maxTokens caps the request. This is character writing, never hidden model reasoning."
+          "inspect": "Inspect Text marked fictional. The requested word range is advisory; maxTokens caps the request. This is character writing, never hidden model reasoning.\n\nOutput tokens includes visible text and any reasoning tokens counted by the provider. A truncated result is discarded; inspect the error, then manually raise the cap and rerun. No automatic retry occurs."
         },
         {
           "key": "pre-compose",
@@ -9027,10 +9121,10 @@
           "alias": "Respond at the ferry gate",
           "purpose": "Interpret selected evidence after the lens.",
           "settings": {
-            "instructions": "Use only selected evidence. Have Mira or the inspector take one small action concerning the closed gate or explain inspection. Keep the letter sealed. Leave player speech, decision and movement unassigned. Do not resolve the inspection merely to advance plot.",
-            "maxTokens": 512
+            "instructions": "Use only selected evidence. Have Mira or the inspector take one small action concerning the closed gate or explain inspection. Keep the letter sealed. Leave player speech, decision and movement unassigned. Do not resolve the inspection merely to advance plot. Establish current facts only from supplied evidence. Rin's departure does not establish harbor arrival, progress or current location. Do not invent inspection rules or obligations to inspect the sealed letter. Keep it unopened. Clearly label any newly proposed NPC action as optional.",
+            "maxTokens": 4096
           },
-          "inspect": "Inspect a short playable direction tied to retained evidence. This is the one Analysis call."
+          "inspect": "Inspect a short playable direction tied to retained evidence. This is the one Analysis call.\n\nOutput tokens includes visible text and any reasoning tokens counted by the provider. A truncated result is discarded; inspect the error, then manually raise the cap and rerun. No automatic retry occurs."
         },
         {
           "key": "publish",
@@ -9454,13 +9548,13 @@
           "purpose": "Place Context + State Data → Guidance processor.",
           "settings": {
             "parameterOverrides": {
-              "instructions": "Appraise Mira’s curiosity about the letter against her established promise not to break its seal. Use supplied context and state only. Keep identity, temporary feeling and relationship evidence distinct. Propose observable hesitation, a request for permission or an explanation; never treat an unobserved motive or the player’s answer as settled fact. Include a nonempty behaviorHints array with at least one evidence-backed, observable option so Behavior has useful Guidance to render.",
-              "maxTokens": 768
+              "instructions": "Appraise Mira’s curiosity about the letter against her established promise not to break its seal. Use supplied context and state only. Keep identity, temporary feeling and relationship evidence distinct. Propose observable hesitation, a request for permission or an explanation; never treat an unobserved motive or the player’s answer as settled fact. Include a nonempty behaviorHints array with at least one evidence-backed, observable option so Behavior has useful Guidance to render.\n\nReturn one raw JSON object, beginning with { and ending with }. No Markdown, fences or preface. Use at most two items in each reflection array and one concise sentence for brief.",
+              "maxTokens": 2048
             },
             "roleOverrides": {},
             "nodeBindingOverrides": {}
           },
-          "inspect": "Open the wrapper and inspect exposed instructions and cap. Analysis remains locally unresolved until bound.",
+          "inspect": "Open the wrapper and inspect exposed instructions and cap. Analysis remains locally unresolved until bound.\n\nOutput tokens includes visible text and any reasoning tokens counted by the provider. A truncated result is discarded; inspect the error, then manually raise the cap and rerun. No automatic retry occurs.",
           "definitionId": "example.character-reaction"
         },
         {
@@ -9507,10 +9601,10 @@
           "purpose": "Produce an evidence-linked character appraisal.",
           "settings": {
             "mode": "character",
-            "maxTokens": 768,
-            "instructions": "Appraise Mira’s curiosity about the letter against her established promise not to break its seal. Use supplied context and state only. Keep identity, temporary feeling and relationship evidence distinct. Propose observable hesitation, a request for permission or an explanation; never treat an unobserved motive or the player’s answer as settled fact. Include a nonempty behaviorHints array with at least one evidence-backed, observable option so Behavior has useful Guidance to render."
+            "maxTokens": 2048,
+            "instructions": "Appraise Mira’s curiosity about the letter against her established promise not to break its seal. Use supplied context and state only. Keep identity, temporary feeling and relationship evidence distinct. Propose observable hesitation, a request for permission or an explanation; never treat an unobserved motive or the player’s answer as settled fact. Include a nonempty behaviorHints array with at least one evidence-backed, observable option so Behavior has useful Guidance to render.\n\nReturn one raw JSON object, beginning with { and ending with }. No Markdown, fences or preface. Use at most two items in each reflection array and one concise sentence for brief."
           },
-          "inspect": "Inspect structured hints and source refs. This is fictional character assessment, not private model reasoning.",
+          "inspect": "Inspect structured hints and source refs. This is fictional character assessment, not private model reasoning.\n\nOutput tokens includes visible text and any reasoning tokens counted by the provider. A truncated result is discarded; inspect the error, then manually raise the cap and rerun. No automatic retry occurs.",
           "definitionId": "example.character-reaction"
         },
         {
@@ -9691,8 +9785,8 @@
                   "operationVersion": 1,
                   "title": "Appraise promise and curiosity",
                   "mode": "character",
-                  "maxTokens": 768,
-                  "instructions": "Appraise Mira’s curiosity about the letter against her established promise not to break its seal. Use supplied context and state only. Keep identity, temporary feeling and relationship evidence distinct. Propose observable hesitation, a request for permission or an explanation; never treat an unobserved motive or the player’s answer as settled fact. Include a nonempty behaviorHints array with at least one evidence-backed, observable option so Behavior has useful Guidance to render."
+                  "maxTokens": 2048,
+                  "instructions": "Appraise Mira’s curiosity about the letter against her established promise not to break its seal. Use supplied context and state only. Keep identity, temporary feeling and relationship evidence distinct. Propose observable hesitation, a request for permission or an explanation; never treat an unobserved motive or the player’s answer as settled fact. Include a nonempty behaviorHints array with at least one evidence-backed, observable option so Behavior has useful Guidance to render.\n\nReturn one raw JSON object, beginning with { and ending with }. No Markdown, fences or preface. Use at most two items in each reflection array and one concise sentence for brief."
                 },
                 "express": {
                   "id": "express",
@@ -9947,7 +10041,7 @@
         "Reflect Character + Reflect Scene · separate branches",
         "Two Compose Text renderers",
         "Compose Guidance → Guidance",
-        "Post companion: Snapshot + reference → Style Transfer → Validate → Review → Apply"
+        "Post companion: Snapshot + Text reference → Style Transfer → Validate → Review → Apply"
       ],
       "preview": {
         "type": "guidance",
@@ -9969,11 +10063,7 @@
         "Scene continuity → Appraisal completion cap",
         "Weave the two sections → Brief template",
         "Root writing brief → Guidance budget",
-        "Mira’s voice reference → Mode",
-        "Mira’s voice reference → Output",
-        "Mira’s voice reference → Template",
-        "Mira’s voice reference → Sections",
-        "Mira’s voice reference → Separator",
+        "Mira’s voice reference → Text",
         "Mira voice revision → Voice instructions",
         "Mira voice revision → Voice completion cap",
         "Mira voice revision → Voice strength",
@@ -10062,12 +10152,12 @@
           "purpose": "Reflect Data → Compose Text inside a reusable definition.",
           "settings": {
             "parameterOverrides": {
-              "appraisalTokens": 1000
+              "appraisalTokens": 2048
             },
             "roleOverrides": {},
             "nodeBindingOverrides": {}
           },
-          "inspect": "Open body: inspect reflect payload/refs, render Text, typed boundaries.",
+          "inspect": "Open body: inspect reflect payload/refs, render Text, typed boundaries.\n\nOutput tokens includes visible text and any reasoning tokens counted by the provider. A truncated result is discarded; inspect the error, then manually raise the cap and rerun. No automatic retry occurs.",
           "definitionId": "lattice.examples.continuity-character"
         },
         {
@@ -10078,12 +10168,12 @@
           "purpose": "Independent Reflect Data → Compose Text definition.",
           "settings": {
             "parameterOverrides": {
-              "appraisalTokens": 1000
+              "appraisalTokens": 4096
             },
             "roleOverrides": {},
             "nodeBindingOverrides": {}
           },
-          "inspect": "Open body: inspect sceneChanges, conflicts and render Text.",
+          "inspect": "Open body: inspect sceneChanges, conflicts and render Text.\n\nOutput tokens includes visible text and any reasoning tokens counted by the provider. A truncated result is discarded; inspect the error, then manually raise the cap and rerun. No automatic retry occurs.",
           "definitionId": "lattice.examples.continuity-scene"
         },
         {
@@ -10122,18 +10212,14 @@
         },
         {
           "key": "post-reference",
-          "operation": "compose",
+          "operation": "text",
           "phase": "Post",
           "alias": "Mira’s voice reference",
           "purpose": "Literal editable Text reference; no model call.",
           "settings": {
-            "mode": "template",
-            "outputKind": "text",
-            "template": "Mira: short concrete clauses; guarded understatement; direct questions when evidence is missing. Avoid repeated catchphrases or sudden warmth. Example: “You kept this one. Tell me what happens next.” Preserve all actions and commitments.",
-            "sections": [],
-            "separator": "\n\n"
+            "text": "Mira: short concrete clauses; guarded understatement; direct questions when evidence is missing. Avoid repeated catchphrases or sudden warmth. Example: “You kept this one. Tell me what happens next.” Preserve all actions and commitments."
           },
-          "inspect": "Check reference Text before voice request."
+          "inspect": "Edit the literal Text control and inspect its output before the voice request; the reference supplies voice features, never new actions or commitments."
         },
         {
           "key": "post-voice",
@@ -10143,13 +10229,13 @@
           "purpose": "Reusable Draft + Text reference → Patches; review stays root.",
           "settings": {
             "parameterOverrides": {
-              "voiceTokens": 1500,
+              "voiceTokens": 4096,
               "voiceStrength": "light"
             },
             "roleOverrides": {},
             "nodeBindingOverrides": {}
           },
-          "inspect": "Open body: inspect paired quotes, protected wording and source-bound Patches.",
+          "inspect": "Open body: inspect paired quotes, protected wording and source-bound Patches.\n\nOutput tokens includes visible text and any reasoning tokens counted by the provider. A truncated result is discarded; inspect the error, then manually raise the cap and rerun. No automatic retry occurs.",
           "definitionId": "lattice.examples.continuity-voice"
         },
         {
@@ -10247,10 +10333,10 @@
           "purpose": "Propose character Reflection Data with one Analysis call.",
           "settings": {
             "mode": "character",
-            "maxTokens": 1000,
-            "instructions": "Appraise Mira from supplied scene/state/episodes. Retain disappointment beside reliability; propose a small reversible opening in behaviorHints. Label interpretations, preserve player agency and never infer private state."
+            "maxTokens": 2048,
+            "instructions": "Appraise Mira from supplied scene/state/episodes. Retain disappointment beside reliability; propose a small reversible opening in behaviorHints. Label interpretations, preserve player agency and never infer private state. Rin's supplied departure or absence does not prove harbor arrival, progress, lateness or being overdue. The ferry delay does not establish an elapsed wait length.\n\nReturn one raw JSON object, beginning with { and ending with }. No Markdown, fences or preface. Use at most two items in each reflection array and one concise sentence for brief."
           },
-          "inspect": "Inspect brief, classifications, conflicts and recalledEpisodeIds.",
+          "inspect": "Inspect brief, classifications, conflicts and recalledEpisodeIds.\n\nOutput tokens includes visible text and any reasoning tokens counted by the provider. A truncated result is discarded; inspect the error, then manually raise the cap and rerun. No automatic retry occurs.",
           "definitionId": "lattice.examples.continuity-character",
           "nativeNodeId": "reflect"
         },
@@ -10359,10 +10445,10 @@
           "purpose": "Propose scene Reflection Data with one Analysis call.",
           "settings": {
             "mode": "scene",
-            "maxTokens": 1000,
-            "instructions": "Appraise observed scene pressures from supplied context; actor episodes are partial recollections, not world authority. Preserve ferry delay/unopened letter; do not assume Rin returned. Put changes/attention in corresponding arrays; report conflicts."
+            "maxTokens": 4096,
+            "instructions": "Appraise observed scene pressures from supplied context; actor episodes are partial recollections, not world authority. Preserve ferry delay/unopened letter; do not assume Rin returned. Put changes/attention in corresponding arrays; report conflicts. Rin's supplied departure or absence does not prove harbor arrival, progress, lateness or being overdue. The ferry delay does not establish an elapsed wait length.\n\nReturn one raw JSON object, beginning with { and ending with }. No Markdown, fences or preface. Use at most two items in each reflection array and one concise sentence for brief."
           },
-          "inspect": "Inspect brief, classifications, conflicts and recalledEpisodeIds.",
+          "inspect": "Inspect brief, classifications, conflicts and recalledEpisodeIds.\n\nOutput tokens includes visible text and any reasoning tokens counted by the provider. A truncated result is discarded; inspect the error, then manually raise the cap and rerun. No automatic retry occurs.",
           "definitionId": "lattice.examples.continuity-scene",
           "nativeNodeId": "reflect"
         },
@@ -10541,14 +10627,14 @@
             "mode": "character-voice",
             "scope": "dialogue",
             "strength": "light",
-            "maxTokens": 1500,
+            "maxTokens": 4096,
             "protectedLiterals": [
               "Mira",
               "Sol"
             ],
             "instructions": "Use the supplied voice brief only to shape paired quoted dialogue. Preserve speaker, facts, promises and uncertainty; no new action or player speech. Narration stays unchanged. Avoid catchphrase repetition."
           },
-          "inspect": "Inspect scope, protected literals and raw source-bound patches.",
+          "inspect": "Inspect scope, protected literals and raw source-bound patches.\n\nOutput tokens includes visible text and any reasoning tokens counted by the provider. A truncated result is discarded; inspect the error, then manually raise the cap and rerun. No automatic retry occurs.",
           "definitionId": "lattice.examples.continuity-voice",
           "nativeNodeId": "voice"
         },
@@ -10909,8 +10995,8 @@
                   "operationVersion": 1,
                   "title": "Guarded character appraisal",
                   "mode": "character",
-                  "maxTokens": 1000,
-                  "instructions": "Appraise Mira from supplied scene/state/episodes. Retain disappointment beside reliability; propose a small reversible opening in behaviorHints. Label interpretations, preserve player agency and never infer private state."
+                  "maxTokens": 2048,
+                  "instructions": "Appraise Mira from supplied scene/state/episodes. Retain disappointment beside reliability; propose a small reversible opening in behaviorHints. Label interpretations, preserve player agency and never infer private state. Rin's supplied departure or absence does not prove harbor arrival, progress, lateness or being overdue. The ferry delay does not establish an elapsed wait length.\n\nReturn one raw JSON object, beginning with { and ending with }. No Markdown, fences or preface. Use at most two items in each reflection array and one concise sentence for brief."
                 },
                 "render": {
                   "id": "render",
@@ -11147,8 +11233,8 @@
                   "operationVersion": 1,
                   "title": "Scene continuity appraisal",
                   "mode": "scene",
-                  "maxTokens": 1000,
-                  "instructions": "Appraise observed scene pressures from supplied context; actor episodes are partial recollections, not world authority. Preserve ferry delay/unopened letter; do not assume Rin returned. Put changes/attention in corresponding arrays; report conflicts."
+                  "maxTokens": 4096,
+                  "instructions": "Appraise observed scene pressures from supplied context; actor episodes are partial recollections, not world authority. Preserve ferry delay/unopened letter; do not assume Rin returned. Put changes/attention in corresponding arrays; report conflicts. Rin's supplied departure or absence does not prove harbor arrival, progress, lateness or being overdue. The ferry delay does not establish an elapsed wait length.\n\nReturn one raw JSON object, beginning with { and ending with }. No Markdown, fences or preface. Use at most two items in each reflection array and one concise sentence for brief."
                 },
                 "render": {
                   "id": "render",
@@ -11553,7 +11639,7 @@
                   "mode": "character-voice",
                   "scope": "dialogue",
                   "strength": "light",
-                  "maxTokens": 1500,
+                  "maxTokens": 4096,
                   "protectedLiterals": [
                     "Mira",
                     "Sol"
@@ -11814,13 +11900,13 @@
             },
             {
               "id": "post-reference",
-              "label": "Compose",
+              "label": "Text",
               "alias": "Mira’s voice reference",
               "x": 24,
               "y": 168,
-              "family": "shaping",
+              "family": "input",
               "output": "text-pin",
-              "operation": "compose"
+              "operation": "text"
             },
             {
               "id": "post-voice",

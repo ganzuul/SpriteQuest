@@ -6049,45 +6049,54 @@ br([
 ]);
 //#endregion
 //#region ui/ExamplesBrowser.svelte
-var Ac = /* @__PURE__ */ K("<button type=\"button\" class=\"pc-btn menu_button svelte-18p7ib8\">Retry</button>"), jc = /* @__PURE__ */ K("<div class=\"pc-examples-issue svelte-18p7ib8\" role=\"alert\"><span class=\"svelte-18p7ib8\"> </span><!></div>"), Mc = /* @__PURE__ */ kr("<g class=\"pc-example-comment svelte-18p7ib8\"><rect rx=\"4\" class=\"svelte-18p7ib8\"></rect><text class=\"svelte-18p7ib8\"> </text></g>"), Nc = /* @__PURE__ */ kr("<path class=\"pc-wire pc-wire-native svelte-18p7ib8\"></path>"), Pc = /* @__PURE__ */ kr("<circle r=\"4\" class=\"svelte-18p7ib8\"></circle><text class=\"pc-example-pin-label svelte-18p7ib8\"> </text>", 1), Fc = /* @__PURE__ */ kr("<g><rect class=\"pc-example-card svelte-18p7ib8\" rx=\"4\"></rect><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\"><path class=\"pc-example-icon svelte-18p7ib8\"></path></svg><text class=\"pc-example-node-title svelte-18p7ib8\" lengthAdjust=\"spacingAndGlyphs\"> </text><!></g>"), Ic = /* @__PURE__ */ kr("<svg class=\"pc-example-preview svelte-18p7ib8\" preserveAspectRatio=\"xMidYMid meet\" aria-hidden=\"true\" focusable=\"false\"><!><!><!></svg>"), Lc = /* @__PURE__ */ K("<span class=\"pc-example-unavailable-preview svelte-18p7ib8\"><strong class=\"svelte-18p7ib8\">Unavailable</strong><span class=\"svelte-18p7ib8\"> </span></span>"), Rc = /* @__PURE__ */ K("<button type=\"button\"><!> <span class=\"pc-example-title svelte-18p7ib8\"> </span></button>"), zc = /* @__PURE__ */ K("<!> <div class=\"pc-examples-grid svelte-18p7ib8\"></div>", 1);
+var Ac = /* @__PURE__ */ K("<button type=\"button\" class=\"pc-btn menu_button svelte-18p7ib8\">Retry</button>"), jc = /* @__PURE__ */ K("<div class=\"pc-examples-issue svelte-18p7ib8\" role=\"alert\"><span class=\"svelte-18p7ib8\"> </span><!></div>"), Mc = /* @__PURE__ */ kr("<g class=\"pc-example-comment svelte-18p7ib8\"><rect rx=\"4\" class=\"svelte-18p7ib8\"></rect><text class=\"svelte-18p7ib8\"> </text></g>"), Nc = /* @__PURE__ */ kr("<path class=\"pc-wire pc-wire-native svelte-18p7ib8\"></path>"), Pc = /* @__PURE__ */ kr("<circle class=\"pc-example-pin-dot svelte-18p7ib8\" r=\"4\"></circle><path class=\"pc-example-pin-cue svelte-18p7ib8\"></path><text class=\"pc-example-pin-label svelte-18p7ib8\"> </text>", 1), Fc = /* @__PURE__ */ kr("<g><rect class=\"pc-example-card svelte-18p7ib8\" rx=\"4\"></rect><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\"><path class=\"pc-example-icon svelte-18p7ib8\"></path></svg><text class=\"pc-example-node-title svelte-18p7ib8\" lengthAdjust=\"spacingAndGlyphs\"> </text><!></g>"), Ic = /* @__PURE__ */ kr("<svg class=\"pc-example-preview svelte-18p7ib8\" preserveAspectRatio=\"xMidYMid meet\" aria-hidden=\"true\" focusable=\"false\"><!><!><!></svg>"), Lc = /* @__PURE__ */ K("<span class=\"pc-example-unavailable-preview svelte-18p7ib8\"><strong class=\"svelte-18p7ib8\">Unavailable</strong><span class=\"svelte-18p7ib8\"> </span></span>"), Rc = /* @__PURE__ */ K("<button type=\"button\"><!> <span class=\"pc-example-title svelte-18p7ib8\"> </span></button>"), zc = /* @__PURE__ */ K("<!> <div class=\"pc-examples-grid svelte-18p7ib8\"></div>", 1);
 function Bc(e, t) {
 	Ue(t, !0);
-	let n = wi(t, "examples", 19, () => []), r = wi(t, "issue", 3, ""), i = wi(t, "scrollTop", 3, 0), a, o = /* @__PURE__ */ F("");
+	let n = {
+		context: "M -4,0 a 4,4 0 1,0 8,0 a 4,4 0 1,0 -8,0",
+		text: "M -3.4,0 a 3.4,3.4 0 1,0 6.8,0 a 3.4,3.4 0 1,0 -6.8,0",
+		data: "M -4,-4 H 4 V 4 H -4 Z",
+		guidance: "M 0,-5 L 5,0 L 0,5 L -5,0 Z",
+		draft: "M 0,-5 L 4.76,-1.55 L 2.94,4.05 L -2.94,4.05 L -4.76,-1.55 Z",
+		findings: "M 0,-5 L 4.33,3 L -4.33,3 Z",
+		patches: "M -2.5,-4.33 L 2.5,-4.33 L 5,0 L 2.5,4.33 L -2.5,4.33 L -5,0 Z",
+		candidate: "M -1.5,-5 H 1.5 V -1.5 H 5 V 1.5 H 1.5 V 5 H -1.5 V 1.5 H -5 V -1.5 H -1.5 Z"
+	}, r = wi(t, "examples", 19, () => []), i = wi(t, "issue", 3, ""), a = wi(t, "scrollTop", 3, 0), o, s = /* @__PURE__ */ F("");
 	Ti(() => {
-		a.scrollTop = i();
+		o.scrollTop = a();
 	});
-	async function s(e) {
-		if (!U(o)) {
-			I(o, e, !0);
+	async function c(e) {
+		if (!U(s)) {
+			I(s, e, !0);
 			try {
 				await t.open(e);
 			} finally {
-				I(o, "");
+				I(s, "");
 			}
 		}
 	}
-	var c = zc(), l = R(c), u = (e) => {
-		var n = jc(), i = L(n), a = L(i, !0);
-		M(i);
-		var o = z(i), s = (e) => {
+	var l = zc(), u = R(l), d = (e) => {
+		var n = jc(), r = L(n), a = L(r, !0);
+		M(r);
+		var o = z(r), s = (e) => {
 			var n = Ac();
 			G("click", n, () => t.retry?.()), q(e, n);
 		};
 		Y(o, (e) => {
 			t.retry && e(s);
-		}), M(n), B(() => J(a, r())), q(e, n);
+		}), M(n), B(() => J(a, i())), q(e, n);
 	};
-	Y(l, (e) => {
-		r() && e(u);
+	Y(u, (e) => {
+		i() && e(d);
 	});
-	var d = z(l, 2);
-	X(d, 21, n, (e) => e.id, (e, t) => {
-		let n = /* @__PURE__ */ N(() => U(t).thumbnail);
-		var r = Rc();
-		let i;
-		var a = L(r), c = (e) => {
-			var t = Ic(), r = L(t);
-			X(r, 17, () => U(n).comments, (e) => e.id, (e, t) => {
+	var f = z(u, 2);
+	X(f, 21, r, (e) => e.id, (e, t) => {
+		let r = /* @__PURE__ */ N(() => U(t).thumbnail);
+		var i = Rc();
+		let a;
+		var o = L(i), l = (e) => {
+			var t = Ic(), i = L(t);
+			X(i, 17, () => U(r).comments, (e) => e.id, (e, t) => {
 				var n = Mc(), r = L(n);
 				let i;
 				var a = z(r), o = L(a, !0);
@@ -6095,39 +6104,39 @@ function Bc(e, t) {
 					Q(n, "data-id", U(t).id), Q(r, "x", U(t).x), Q(r, "y", U(t).y), Q(r, "width", U(t).w), Q(r, "height", U(t).h), i = oi(r, "", i, { stroke: U(t).color }), Q(a, "x", U(t).x + 12), Q(a, "y", U(t).y + 24), J(o, U(t).title);
 				}), q(e, n);
 			});
-			var i = z(r);
-			X(i, 17, () => U(n).wires, (e) => e.id, (e, t) => {
+			var a = z(i);
+			X(a, 17, () => U(r).wires, (e) => e.id, (e, t) => {
 				var n = Nc();
 				B(() => {
 					Q(n, "data-kind", U(t).kind), Q(n, "data-id", U(t).id), Q(n, "d", U(t).d);
 				}), q(e, n);
-			}), X(z(i), 17, () => U(n).nodes, (e) => e.id, (e, t) => {
-				var n = Fc(), r = L(n), i = z(r), a = L(i);
-				M(i);
-				var o = z(i), s = L(o, !0);
-				M(o), X(z(o), 17, () => U(t).ports, (e) => e.id, (e, t) => {
-					var n = Pc(), r = R(n), i = z(r), a = L(i, !0);
-					M(i), B(() => {
-						Q(r, "data-kind", U(t).kind), Q(r, "cx", U(t).x), Q(r, "cy", U(t).y), Q(i, "x", U(t).x + (U(t).dir === "in" ? 9 : -9)), Q(i, "y", U(t).y + 4), Q(i, "text-anchor", U(t).dir === "in" ? "start" : "end"), J(a, U(t).label);
-					}), q(e, n);
-				}), M(n), B(() => {
-					ii(n, 0, Qr(U(t).className), "svelte-18p7ib8"), Q(n, "data-id", U(t).id), Q(r, "x", U(t).x), Q(r, "y", U(t).y), Q(r, "width", U(t).w), Q(r, "height", U(t).h), Q(i, "x", U(t).x + 8), Q(i, "y", U(t).y + 7), Q(a, "d", U(t).iconPath), Q(o, "x", U(t).x + 28), Q(o, "y", U(t).y + 20), Q(o, "textLength", U(t).title.length * 6 > U(t).w - 36 ? U(t).w - 36 : void 0), J(s, U(t).title);
-				}), q(e, n);
-			}), M(t), B(() => Q(t, "viewBox", `${U(n).bounds.x} ${U(n).bounds.y} ${U(n).bounds.w} ${U(n).bounds.h}`)), q(e, t);
-		}, l = (e) => {
+			}), X(z(a), 17, () => U(r).nodes, (e) => e.id, (e, t) => {
+				var r = Fc(), i = L(r), a = z(i), o = L(a);
+				M(a);
+				var s = z(a), c = L(s, !0);
+				M(s), X(z(s), 17, () => U(t).ports, (e) => e.id, (e, t) => {
+					var r = Pc(), i = R(r), a = z(i), o = z(a), s = L(o, !0);
+					M(o), B(() => {
+						Q(i, "data-kind", U(t).kind), Q(i, "cx", U(t).x), Q(i, "cy", U(t).y), Q(a, "data-kind", U(t).kind), Q(a, "transform", `translate(${U(t).x} ${U(t).y})`), Q(a, "d", n[U(t).kind] ?? n.context), Q(o, "x", U(t).x + (U(t).dir === "in" ? 9 : -9)), Q(o, "y", U(t).y + 4), Q(o, "text-anchor", U(t).dir === "in" ? "start" : "end"), J(s, U(t).label);
+					}), q(e, r);
+				}), M(r), B(() => {
+					ii(r, 0, Qr(U(t).className), "svelte-18p7ib8"), Q(r, "data-id", U(t).id), Q(i, "x", U(t).x), Q(i, "y", U(t).y), Q(i, "width", U(t).w), Q(i, "height", U(t).h), Q(a, "x", U(t).x + 8), Q(a, "y", U(t).y + 7), Q(o, "d", U(t).iconPath), Q(s, "x", U(t).x + 28), Q(s, "y", U(t).y + 20), Q(s, "textLength", U(t).title.length * 6 > U(t).w - 36 ? U(t).w - 36 : void 0), J(c, U(t).title);
+				}), q(e, r);
+			}), M(t), B(() => Q(t, "viewBox", `${U(r).bounds.x} ${U(r).bounds.y} ${U(r).bounds.w} ${U(r).bounds.h}`)), q(e, t);
+		}, u = (e) => {
 			var n = Lc(), r = z(L(n)), i = L(r, !0);
 			M(r), M(n), B(() => {
 				Q(r, "id", `pc-example-issue-${U(t).number}`), J(i, U(t).issue);
 			}), q(e, n);
 		};
-		Y(a, (e) => {
-			U(n) ? e(c) : e(l, -1);
+		Y(o, (e) => {
+			U(r) ? e(l) : e(u, -1);
 		});
-		var u = z(a, 2), d = L(u, !0);
-		M(u), M(r), B(() => {
-			i = ii(r, 1, "pc-example-tile svelte-18p7ib8", null, i, { "pc-example-unavailable": !U(n) }), Q(r, "aria-label", U(t).title), Q(r, "aria-describedby", U(t).issue ? `pc-example-issue-${U(t).number}` : void 0), Q(r, "title", U(t).issue || U(t).goal), r.disabled = !!U(o) || !U(n), J(d, U(t).title);
-		}), G("click", r, () => s(U(t).id)), q(e, r);
-	}), M(d), $(d, (e) => a = e, () => a), B(() => Q(d, "aria-busy", !!U(o))), W("scroll", d, () => t.scroll(a.scrollTop)), q(e, c), We();
+		var d = z(o, 2), f = L(d, !0);
+		M(d), M(i), B(() => {
+			a = ii(i, 1, "pc-example-tile svelte-18p7ib8", null, a, { "pc-example-unavailable": !U(r) }), Q(i, "aria-label", U(t).title), Q(i, "aria-describedby", U(t).issue ? `pc-example-issue-${U(t).number}` : void 0), Q(i, "title", U(t).issue || U(t).goal), i.disabled = !!U(s) || !U(r), J(f, U(t).title);
+		}), G("click", i, () => c(U(t).id)), q(e, i);
+	}), M(f), $(f, (e) => o = e, () => o), B(() => Q(f, "aria-busy", !!U(s))), W("scroll", f, () => t.scroll(o.scrollTop)), q(e, l), We();
 }
 br(["click"]);
 //#endregion

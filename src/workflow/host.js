@@ -18,6 +18,7 @@ const identity = c => ({chatId:c.getCurrentChatId?.() ?? c.chatId ?? null,charac
 const same = (a,b) => JSON.stringify(a) === JSON.stringify(b);
 const visibilityStamp = material => { const visibility=nativeVisibility(material);return visibility.ok?JSON.stringify(visibility.data):null; };
 const characterVisibility = c => visibilityStamp(c.characters?.[c.characterId]?.data ?? c.characters?.[c.characterId]);
+const characterText = snapshot => snapshot?.kind==='context' ? JSON.stringify(snapshot.messages.filter(message=>message.source==='character').map(({id,text})=>[id,text])) : null;
 const sourceText = chat => {
     const source=[];
     for(const m of chat??[]) {
@@ -163,10 +164,15 @@ export function createNativeWorkflowController(ports) {
         const current = promptSourceFingerprint(context(), entry.node);
         return current.ok && current.data === entry.fingerprint;
     });
-    const sourceFresh=run=>promptFresh(run) && [...(run.pendingSources?.values()??[])].every(validSource) && [...(run.sceneSources??[])].every(entry=>entry.text!==null && sourceText(entry.chat)===entry.text && (entry.characterVisibility===undefined || (entry.characterVisibility!==null && characterVisibility(context())===entry.characterVisibility)));
+    const memoryFresh=run=>{
+        if(!run.memorySession)return true;
+        try {return run.memorySession.readFresh().ok;}
+        catch {return false;}
+    };
+    const sourceFresh=run=>memoryFresh(run) && promptFresh(run) && [...(run.pendingSources?.values()??[])].every(validSource) && [...(run.sceneSources??[])].every(entry=>entry.text!==null && sourceText(entry.chat)===entry.text && (entry.characterVisibility===undefined || (entry.characterVisibility!==null && characterVisibility(context())===entry.characterVisibility)) && (entry.characterSnapshots??[]).every(captured=>characterText(snapshotContext(context(),{chat:entry.chat,node:captured.node}))===captured.text));
     const start=(graph,native=false,abortPrimary=null,target)=>{
         cancel('Superseded by a new workflow');
-        const run={epoch,runId:token(),controller:new AbortController(),originalGraph:graph,native,abortPrimary,pending:true,target,mode:target===undefined?'root':'target',pendingSources:new Map(),sceneSources:[],promptSources:new Map(),bindingContexts:new Map(),bindingChecks:[],reviewHandles:[],memoryTerminals:new Map(),memoryIntents:new Map(),memorySession:null,memoryCommit:null};
+        const run={epoch,runId:token(),controller:new AbortController(),originalGraph:graph,native,abortPrimary,pending:true,target,mode:target===undefined?'root':'target',pendingSources:new Map(),sceneSources:[],promptSources:new Map(),bindingContexts:new Map(),bindingChecks:[],reviewHandles:[],memoryTerminals:new Map(),memoryIntents:new Map(),memorySession:null,memoryCommit:null,invalidMemoryEvidence:false};
         active=run;return run;
     };
     function prepareRun(run,plan,controls,options) {
@@ -210,10 +216,22 @@ export function createNativeWorkflowController(ports) {
         if(!fresh(run))return fail('STALE_RUN','Workflow source changed before Introspection execution.');
         const {address,...boundedPorts}=operationPorts;
         if(settings.operation==='reflect' && !inputs.state) {
-            const base=await session.memory.read({view:'state'});if(!base.ok)return base;
-            boundedPorts.scope=base.artifact.value.scope;boundedPorts.store=base.artifact.value.store;
+            const base=await session.readIdentity();if(!base.ok)return base;
+            boundedPorts.scope=base.data.scope;boundedPorts.store=base.data.store;
         }
-        const result=await executeIntrospection(settings,inputs,{...boundedPorts,...(session?{memory:{read:session.memory.read,recall:session.memory.recall}}:{})});
+        const consumeMemory=method=>async options=>{
+            const result=await session.memory[method](options);
+            if(result.ok) {
+                const record=parseRecord(result.artifact);
+                if(record.ok) {
+                    // Reports describe all stored history; only refs selected into this output can taint guidance.
+                    const selected=new Set(record.data.sourceRefs.map(ref=>JSON.stringify([ref.id,ref.revision])));
+                    if(result.reports?.some(report=>report.code==='INVALIDATED_SOURCES' && report.sourceRefs?.some(ref=>selected.has(JSON.stringify([ref.id,ref.revision])))))run.invalidMemoryEvidence=true;
+                }
+            }
+            return result;
+        };
+        const result=await executeIntrospection(settings,inputs,{...boundedPorts,...(session?{memory:{read:consumeMemory('read'),recall:consumeMemory('recall')}}:{})});
         if(result.ok && settings.operation==='memory' && settings.mode==='commit' && run.memoryTerminals.has(addressKey(address)))run.memoryIntents.set(addressKey(address),structuredClone(result.artifact));
         return result;
     }
@@ -230,9 +248,14 @@ export function createNativeWorkflowController(ports) {
             const chat=options.chat??c.chat;
             let sceneSource=run.sceneSources.find(entry=>entry.chat===chat);
             if(!sceneSource){sceneSource={chat,text:sourceText(chat)};run.sceneSources.push(sceneSource);}
-            if(node.includeCharacter!==false && sceneSource.characterVisibility===undefined)sceneSource.characterVisibility=characterVisibility(c);
             const scope=nativeMemoryScope(c,ports.selectIntrospectionActor);
-            return snapshotContext(c,{chat,node,...(scope.ok?{visibilityActorId:scope.data.actorId}:{})});
+            const snapshot=snapshotContext(c,{chat,node,...(scope.ok?{visibilityActorId:scope.data.actorId}:{})});
+            if(node.includeCharacter!==false) {
+                if(sceneSource.characterVisibility===undefined)sceneSource.characterVisibility=characterVisibility(c);
+                // Recheck only effective bounded card text; omitted fields and unrelated metadata do not become sources.
+                (sceneSource.characterSnapshots??=[]).push({node:{recentMessages:node.recentMessages,includeCharacter:true},text:characterText(snapshot)});
+            }
+            return snapshot;
         }
         const snapshot=snapshotReply(c,options.messageIndex);
         if(snapshot.ok===false)return snapshot;
@@ -258,6 +281,7 @@ export function createNativeWorkflowController(ports) {
         }
         if(memoryOutputs.length!==run.memoryTerminals.size)return fail('INVALID_MEMORY_TERMINAL','The compiled Memory Commit terminal did not provide its exact intent.');
         if(run.native) {
+            if(run.invalidMemoryEvidence && transport.terminals.some(output=>output.artifact?.kind==='guidance'))return fail('STALE_MEMORY_EVIDENCE','Selected memory evidence changed or no longer exists. Reconcile the stored history before publishing guidance.');
             const c=context();
             try {
                 if(typeof c.setExtensionPrompt!=='function')throw new Error('Prompt setter unavailable');

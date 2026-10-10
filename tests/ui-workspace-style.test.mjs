@@ -139,6 +139,7 @@ test('shelf rows leave room for a thin vertical scrollbar without shrinking thei
 test('selected graph tab masks only its own canvas border without an extra right corner', () => {
     const selected = [...dom.window.document.styleSheets[1].cssRules].find(rule => rule.selectorText === '.pc-graph-tab::after');
     const foot = [...dom.window.document.styleSheets[1].cssRules].find(rule => rule.selectorText === '.pc-graph-tab::before');
-    assert.ok(selected); assert.equal(selected.style.right, '-1px'); assert.equal(selected.style.bottom, '-1px');
+    assert.ok(selected); assert.equal(selected.style.left, '0px'); assert.equal(selected.style.right, '0px'); assert.equal(selected.style.bottom, '0px');
+    assert.equal(selected.style.height, '1px'); assert.equal(selected.style.border, '0px', 'the mask must not extend the tab side borders');
     assert.equal(foot, undefined, 'the surplus corner painting must not remain');
 });

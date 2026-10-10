@@ -1,0 +1,584 @@
+{
+  "account": "lattice-examples-soak-20261009",
+  "model": "z-ai/glm-5.2:thinking",
+  "preset": "Wandlight-1.8",
+  "method": "Native execution replay of exactly matched recorded completions with installed SillyTavern token counting",
+  "generatedAt": "2026-10-10T03:50:04.944Z",
+  "additionalProviderRequests": 0,
+  "originalLedgerPreserved": true,
+  "phases": [
+    {
+      "number": 8,
+      "phase": "pre",
+      "revision": "reasoning-caps-v2",
+      "originalError": "GUIDANCE_OVERFLOW",
+      "status": "completed-recorded-output-replay",
+      "originalRequestAttempts": [
+        36
+      ],
+      "matchedLogicalRequests": 1,
+      "additionalProviderRequests": 0,
+      "tokenizerMethod": "sillytavern-openai:gpt-3.5-turbo:full=true",
+      "guidance": "---\n\n**Focal exchange: Mira / Sol — the debt question**\n\nMira addresses Rowan's question directly. Her answer should engage with whether she acknowledges the debt, deflects, or conditions repayment — but the scene must not resolve the obligation unless the supplied context already contains enough evidence to settle it. It doesn't. So Mira's response should open further pressure, not close it.\n\nSol may speak only if the debt question touches him directly enough to warrant it — e.g., if Mira's answer shifts burden back toward him, or if she invokes his name/role. If Sol speaks, he gets one line or reaction, not a counter-argument. The spotlight stays on the debt question, not on a debate between them.\n\n**Ambient presence**\n\n- Rin sorts papers — visible but not participating. No reaction beats that imply opinion.\n- Kesh holds the lamp — grounds the scene's light/source. No dialogue.\n- Oren watches the door — orients the room's tension toward outside interruption. No dialogue.\n\nThese three remain texture only. They do not lean in, exchange glances with coded meaning, or perform reactions that telegraph judgment.\n\n**Player boundary**\n\n- Rowan's next words, emotional read, and decision (press, accept, withdraw, redirect) belong to the player.\n- Mira and Sol may create pressure or reveal stance, but neither may decide for Rowan what he does next.\n- Repayment terms remain unsettled. No NPC may declare the matter closed.\n\n**Possible next beats (proposals only)**\n\n- Mira names a condition or asks a counter-question, returning weight to Rowan.\n- Mira deflects toward Sol, prompting a brief reaction from him.\n- Sol interjects unprompted if Mira's answer implicates him — one line, then silence.\n- The table goes quiet, leaving Rowan to break it.",
+      "guidanceTokens": 393,
+      "memoryAfter": {
+        "schemaVersion": 1,
+        "recordType": "actor-state",
+        "scope": {
+          "chatId": "soak-ensemble-focus-pre-reasoning-caps-v2-20261010032352170",
+          "actorId": "character:mira.png"
+        },
+        "store": {
+          "id": "native-chat",
+          "version": 0
+        },
+        "sourceRefs": [],
+        "payload": {
+          "traits": [],
+          "beliefs": [],
+          "goals": [],
+          "relationships": [],
+          "conflicts": [],
+          "conditions": [],
+          "episodes": [],
+          "values": {},
+          "curves": {},
+          "tracks": {}
+        }
+      },
+      "chatUnchanged": true,
+      "recording": {
+        "version": 1,
+        "runId": "037363e0-fd16-4ab3-86cf-e553397d72d9",
+        "lastSeq": 14,
+        "status": "completed",
+        "at": 1791604204989,
+        "elapsedMs": 34.1207,
+        "plan": {
+          "workflowId": 0,
+          "phase": "pre",
+          "mode": "root",
+          "callBound": 1
+        },
+        "identities": {
+          "strings": [
+            "example-ensemble-focus-pre",
+            "pre-scene",
+            "pre-focus",
+            "pre-plan",
+            "pre-guidance",
+            "out",
+            "context",
+            "in"
+          ],
+          "paths": [
+            null
+          ],
+          "addresses": [
+            [
+              0,
+              0,
+              1
+            ],
+            [
+              0,
+              0,
+              2
+            ],
+            [
+              0,
+              0,
+              3
+            ],
+            [
+              0,
+              0,
+              4
+            ]
+          ]
+        },
+        "units": [
+          {
+            "address": 0,
+            "included": true,
+            "dependencies": [],
+            "requestBound": 0,
+            "status": "completed",
+            "subphase": null,
+            "attempts": 0,
+            "startedAt": 10.311399999999992,
+            "settledAt": 12.674299999999988,
+            "durationMs": 2.3628999999999962,
+            "ports": [
+              {
+                "direction": "output",
+                "port": 5,
+                "artifact": 0
+              }
+            ],
+            "operation": "scene-context",
+            "label": "Five at the table",
+            "source": {
+              "phase": "pre",
+              "chatId": "soak-ensemble-focus-pre-reasoning-caps-v2-20261010032352170",
+              "characterId": 0,
+              "groupId": null
+            },
+            "binding": {},
+            "reports": [
+              {
+                "code": "BOUNDED_CONTEXT",
+                "message": "Visibility identifies public host material supplied to the selected actor; it does not establish in-world knowledge."
+              }
+            ]
+          },
+          {
+            "address": 1,
+            "included": true,
+            "dependencies": [
+              0
+            ],
+            "requestBound": 0,
+            "status": "completed",
+            "subphase": null,
+            "attempts": 0,
+            "startedAt": 12.910199999999975,
+            "settledAt": 22.603099999999984,
+            "durationMs": 9.692900000000009,
+            "ports": [
+              {
+                "direction": "input",
+                "port": 6,
+                "artifact": 0
+              },
+              {
+                "direction": "output",
+                "port": 5,
+                "artifact": 1
+              }
+            ],
+            "operation": "context",
+            "label": "Debt and cast presence",
+            "source": {
+              "phase": "pre",
+              "chatId": "soak-ensemble-focus-pre-reasoning-caps-v2-20261010032352170",
+              "characterId": 0,
+              "groupId": null
+            },
+            "binding": {},
+            "reports": [
+              {
+                "code": "CONTEXT_PRESERVATION"
+              },
+              {
+                "code": "COMPACTION",
+                "tokens": 94
+              },
+              {
+                "code": "INTROSPECTION_EXECUTION"
+              }
+            ]
+          },
+          {
+            "address": 2,
+            "included": true,
+            "dependencies": [
+              1
+            ],
+            "requestBound": 1,
+            "status": "completed",
+            "subphase": null,
+            "attempts": 1,
+            "startedAt": 22.665599999999984,
+            "settledAt": 29.303399999999982,
+            "durationMs": 6.637799999999999,
+            "ports": [
+              {
+                "direction": "input",
+                "port": 7,
+                "artifact": 1
+              },
+              {
+                "direction": "output",
+                "port": 5,
+                "artifact": 2
+              }
+            ],
+            "operation": "response-plan",
+            "label": "Mira and Sol take the beat",
+            "request": {
+              "attempt": 1,
+              "status": "completed",
+              "maxTokens": 2048,
+              "inputTokens": 247,
+              "startedAt": 25.148199999999974,
+              "durationMs": 3.319500000000005,
+              "finish": "stop",
+              "usage": {
+                "input_tokens": 249,
+                "total_tokens": 806,
+                "prompt_tokens": 249,
+                "completion_tokens": 557,
+                "reasoning_tokens": 175
+              }
+            },
+            "binding": {
+              "role": "Analysis",
+              "profileId": "6894a7a5-0a74-487b-ac6a-63fcb6c0b48f",
+              "model": "z-ai/glm-5.2:thinking",
+              "fingerprint": "4deea2a8-dc3d-49d6-9717-27865ea6f6f5"
+            },
+            "source": {
+              "phase": "pre",
+              "chatId": "soak-ensemble-focus-pre-reasoning-caps-v2-20261010032352170",
+              "characterId": 0,
+              "groupId": null
+            },
+            "reports": []
+          },
+          {
+            "address": 3,
+            "included": true,
+            "dependencies": [
+              2
+            ],
+            "requestBound": 0,
+            "status": "completed",
+            "subphase": null,
+            "attempts": 0,
+            "startedAt": 29.36669999999998,
+            "settledAt": 32.04929999999999,
+            "durationMs": 2.682600000000008,
+            "ports": [
+              {
+                "direction": "input",
+                "port": 7,
+                "artifact": 2
+              }
+            ],
+            "operation": "guidance",
+            "label": "Ensemble spotlight brief",
+            "binding": {},
+            "reports": [
+              {
+                "code": "GUIDANCE_BUDGET",
+                "tokens": 393
+              }
+            ]
+          }
+        ],
+        "hierarchy": [
+          {
+            "address": 0,
+            "kind": "primitive",
+            "included": true
+          },
+          {
+            "address": 1,
+            "kind": "primitive",
+            "included": true
+          },
+          {
+            "address": 2,
+            "kind": "primitive",
+            "included": true
+          },
+          {
+            "address": 3,
+            "kind": "primitive",
+            "included": true
+          }
+        ],
+        "terminals": [
+          {
+            "kind": "terminal",
+            "address": 3,
+            "artifact": 2
+          }
+        ],
+        "artifacts": [
+          {
+            "id": 0,
+            "origin": {
+              "address": 0,
+              "direction": "output",
+              "port": 5
+            },
+            "kind": "context",
+            "format": "structured",
+            "value": {
+              "kind": "context",
+              "messages": [
+                {
+                  "id": "character:name",
+                  "role": "system",
+                  "text": "Mira",
+                  "source": "character",
+                  "visibleTo": [
+                    "character:mira.png"
+                  ]
+                },
+                {
+                  "id": "character:description",
+                  "role": "system",
+                  "text": "Mira and Sol share the debt-table focal exchange.",
+                  "source": "character",
+                  "visibleTo": [
+                    "character:mira.png"
+                  ]
+                },
+                {
+                  "id": "chat:0",
+                  "role": "user",
+                  "text": "Mira, Sol, Rin, Kesh and Oren sit at the table. Rin sorts papers; Kesh holds the lamp; Oren watches the door.",
+                  "source": "chat",
+                  "visibleTo": [
+                    "character:mira.png"
+                  ]
+                },
+                {
+                  "id": "chat:1",
+                  "role": "assistant",
+                  "text": "Rowan asks Mira whether she will repay Sol's debt. Rowan owns his next response.",
+                  "source": "chat",
+                  "visibleTo": [
+                    "character:mira.png"
+                  ]
+                }
+              ],
+              "source": {
+                "phase": "pre",
+                "chatId": "soak-ensemble-focus-pre-reasoning-caps-v2-20261010032352170",
+                "characterId": 0,
+                "groupId": null
+              },
+              "report": {
+                "code": "BOUNDED_CONTEXT",
+                "omissions": [],
+                "limitCharacters": 100000,
+                "nativeLoreIncluded": false,
+                "message": "Visibility identifies public host material supplied to the selected actor; it does not establish in-world knowledge."
+              }
+            }
+          },
+          {
+            "id": 1,
+            "origin": {
+              "address": 1,
+              "direction": "output",
+              "port": 5
+            },
+            "kind": "context",
+            "format": "structured",
+            "value": {
+              "kind": "context",
+              "messages": [
+                {
+                  "id": "character:name",
+                  "role": "system",
+                  "text": "Mira",
+                  "source": "character",
+                  "visibleTo": [
+                    "character:mira.png"
+                  ]
+                },
+                {
+                  "id": "character:description",
+                  "role": "system",
+                  "text": "Mira and Sol share the debt-table focal exchange.",
+                  "source": "character",
+                  "visibleTo": [
+                    "character:mira.png"
+                  ]
+                },
+                {
+                  "id": "chat:0",
+                  "role": "user",
+                  "text": "Mira, Sol, Rin, Kesh and Oren sit at the table. Rin sorts papers; Kesh holds the lamp; Oren watches the door.",
+                  "source": "chat",
+                  "visibleTo": [
+                    "character:mira.png"
+                  ]
+                },
+                {
+                  "id": "chat:1",
+                  "role": "assistant",
+                  "text": "Rowan asks Mira whether she will repay Sol's debt. Rowan owns his next response.",
+                  "source": "chat",
+                  "visibleTo": [
+                    "character:mira.png"
+                  ]
+                }
+              ],
+              "source": {
+                "phase": "pre",
+                "chatId": "soak-ensemble-focus-pre-reasoning-caps-v2-20261010032352170",
+                "characterId": 0,
+                "groupId": null
+              },
+              "report": {
+                "code": "BOUNDED_CONTEXT",
+                "omissions": [],
+                "limitCharacters": 100000,
+                "nativeLoreIncluded": false,
+                "message": "Visibility identifies public host material supplied to the selected actor; it does not establish in-world knowledge."
+              },
+              "original": [
+                {
+                  "id": "character:name",
+                  "role": "system",
+                  "text": "Mira",
+                  "source": "character",
+                  "visibleTo": [
+                    "character:mira.png"
+                  ]
+                },
+                {
+                  "id": "character:description",
+                  "role": "system",
+                  "text": "Mira and Sol share the debt-table focal exchange.",
+                  "source": "character",
+                  "visibleTo": [
+                    "character:mira.png"
+                  ]
+                },
+                {
+                  "id": "chat:0",
+                  "role": "user",
+                  "text": "Mira, Sol, Rin, Kesh and Oren sit at the table. Rin sorts papers; Kesh holds the lamp; Oren watches the door.",
+                  "source": "chat",
+                  "visibleTo": [
+                    "character:mira.png"
+                  ]
+                },
+                {
+                  "id": "chat:1",
+                  "role": "assistant",
+                  "text": "Rowan asks Mira whether she will repay Sol's debt. Rowan owns his next response.",
+                  "source": "chat",
+                  "visibleTo": [
+                    "character:mira.png"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "id": 2,
+            "origin": {
+              "address": 2,
+              "direction": "output",
+              "port": 5
+            },
+            "kind": "guidance",
+            "format": "structured",
+            "value": {
+              "kind": "guidance",
+              "text": "---\n\n**Focal exchange: Mira / Sol — the debt question**\n\nMira addresses Rowan's question directly. Her answer should engage with whether she acknowledges the debt, deflects, or conditions repayment — but the scene must not resolve the obligation unless the supplied context already contains enough evidence to settle it. It doesn't. So Mira's response should open further pressure, not close it.\n\nSol may speak only if the debt question touches him directly enough to warrant it — e.g., if Mira's answer shifts burden back toward him, or if she invokes his name/role. If Sol speaks, he gets one line or reaction, not a counter-argument. The spotlight stays on the debt question, not on a debate between them.\n\n**Ambient presence**\n\n- Rin sorts papers — visible but not participating. No reaction beats that imply opinion.\n- Kesh holds the lamp — grounds the scene's light/source. No dialogue.\n- Oren watches the door — orients the room's tension toward outside interruption. No dialogue.\n\nThese three remain texture only. They do not lean in, exchange glances with coded meaning, or perform reactions that telegraph judgment.\n\n**Player boundary**\n\n- Rowan's next words, emotional read, and decision (press, accept, withdraw, redirect) belong to the player.\n- Mira and Sol may create pressure or reveal stance, but neither may decide for Rowan what he does next.\n- Repayment terms remain unsettled. No NPC may declare the matter closed.\n\n**Possible next beats (proposals only)**\n\n- Mira names a condition or asks a counter-question, returning weight to Rowan.\n- Mira deflects toward Sol, prompting a brief reaction from him.\n- Sol interjects unprompted if Mira's answer implicates him — one line, then silence.\n- The table goes quiet, leaving Rowan to break it.",
+              "context": {
+                "kind": "context",
+                "messages": [
+                  {
+                    "id": "character:name",
+                    "role": "system",
+                    "text": "Mira",
+                    "source": "character",
+                    "visibleTo": [
+                      "character:mira.png"
+                    ]
+                  },
+                  {
+                    "id": "character:description",
+                    "role": "system",
+                    "text": "Mira and Sol share the debt-table focal exchange.",
+                    "source": "character",
+                    "visibleTo": [
+                      "character:mira.png"
+                    ]
+                  },
+                  {
+                    "id": "chat:0",
+                    "role": "user",
+                    "text": "Mira, Sol, Rin, Kesh and Oren sit at the table. Rin sorts papers; Kesh holds the lamp; Oren watches the door.",
+                    "source": "chat",
+                    "visibleTo": [
+                      "character:mira.png"
+                    ]
+                  },
+                  {
+                    "id": "chat:1",
+                    "role": "assistant",
+                    "text": "Rowan asks Mira whether she will repay Sol's debt. Rowan owns his next response.",
+                    "source": "chat",
+                    "visibleTo": [
+                      "character:mira.png"
+                    ]
+                  }
+                ],
+                "source": {
+                  "phase": "pre",
+                  "chatId": "soak-ensemble-focus-pre-reasoning-caps-v2-20261010032352170",
+                  "characterId": 0,
+                  "groupId": null
+                },
+                "report": {
+                  "code": "BOUNDED_CONTEXT",
+                  "omissions": [],
+                  "limitCharacters": 100000,
+                  "nativeLoreIncluded": false,
+                  "message": "Visibility identifies public host material supplied to the selected actor; it does not establish in-world knowledge."
+                },
+                "original": [
+                  {
+                    "id": "character:name",
+                    "role": "system",
+                    "text": "Mira",
+                    "source": "character",
+                    "visibleTo": [
+                      "character:mira.png"
+                    ]
+                  },
+                  {
+                    "id": "character:description",
+                    "role": "system",
+                    "text": "Mira and Sol share the debt-table focal exchange.",
+                    "source": "character",
+                    "visibleTo": [
+                      "character:mira.png"
+                    ]
+                  },
+                  {
+                    "id": "chat:0",
+                    "role": "user",
+                    "text": "Mira, Sol, Rin, Kesh and Oren sit at the table. Rin sorts papers; Kesh holds the lamp; Oren watches the door.",
+                    "source": "chat",
+                    "visibleTo": [
+                      "character:mira.png"
+                    ]
+                  },
+                  {
+                    "id": "chat:1",
+                    "role": "assistant",
+                    "text": "Rowan asks Mira whether she will repay Sol's debt. Rowan owns his next response.",
+                    "source": "chat",
+                    "visibleTo": [
+                      "character:mira.png"
+                    ]
+                  }
+                ]
+              },
+              "derived": true
+            }
+          }
+        ],
+        "retention": {
+          "policy": "canonical-prefix",
+          "payloadAllowance": 3664650,
+          "pendingBytes": 7208,
+          "metadataAllowance": 524288,
+          "pendingMetadataBytes": 1145
+        }
+      }
+    }
+  ]
+}

@@ -47,8 +47,8 @@ test('host changes resolve from their original tokens and custom overrides remai
     T.setColor('panel', '#123456'); T.setColor('block', '#304050'); T.setColor('flow', '#f0a060');
     assert.equal(value('panel'), '#123456'); assert.equal(value('block'), '#304050'); assert.equal(value('flow'), '#f0a060'); assert.equal(value('accent'), '#f0a060');
     T.setStyle('grid', 'lines'); assert.equal(root.dataset.pcGrid, 'lines');
-    const exported = T.exportTheme('Custom Ember'); T.setPreset('parchment');
-    assert.equal(root.dataset.pcPreset, 'parchment'); assert.equal(value('panel'), T.PRESETS.parchment.colors.panel);
+    const exported = T.exportTheme('Custom Ember'); T.setPreset('ash');
+    assert.equal(root.dataset.pcPreset, 'ash'); assert.equal(value('panel'), T.PRESETS.ash.colors.panel);
     assert.equal(T.importTheme(exported).ok, true); assert.equal(T.currentTheme().preset, 'ember'); assert.equal(value('panel'), '#123456'); assert.equal(root.dataset.pcGrid, 'lines');
     T.setColor('panel', null); assert.equal(T.currentTheme().colors.panel, '#18232c'); assert.match(value('panel'), /^var\(--SmartThemeBlurTintColor,/);
     T.setPreset('ember'); assert.equal(value('block'), approved.settings.nodeOverride); assert.equal(root.dataset.pcGrid, 'none');

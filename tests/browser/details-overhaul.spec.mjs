@@ -60,7 +60,7 @@ test('real JSON Decode schema saves as text and survives history',async({page})=
     await expect(schema).toHaveValue(value);
 });
 
-for(const theme of ['lattice','parchment']) for(const width of [220,258,520]) {
+for(const theme of ['lattice','ash']) for(const width of [220,258,520]) {
     test(`details layout is readable at ${width}px in ${theme}`,async({page},testInfo)=>{
         await setup(page);
         await page.evaluate(async({theme,width})=>{const h=window.canvasHarness,t=await import('/src/theme.js?v='+h.version);t.setPreset(theme);await h.settle();document.querySelector('.pc-native-workspace').style.setProperty('--pc-details-width',width+'px');},{theme,width});
@@ -71,7 +71,7 @@ for(const theme of ['lattice','parchment']) for(const width of [220,258,520]) {
     });
 }
 
-for(const theme of ['lattice','parchment']) for(const state of ['model','curve','readonly']) {
+for(const theme of ['lattice','ash']) for(const state of ['model','curve','readonly']) {
     test(`narrow ${state} details remain legible in ${theme}`,async({page},testInfo)=>{
         await setup(page);
         await page.evaluate(async({state,theme})=>{

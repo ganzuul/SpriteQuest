@@ -85,7 +85,7 @@ test('shorter-reply example makes one bounded Prose request and leaves applicati
     const original = 'After taking a moment to look at the door, she reached out her hand and slowly turned the handle. She waited for the latch to click.';
     const candidate = 'She looked at the door, slowly turned the handle, and waited for the latch to click.';
     const f = fixture(graph, original, async request => {
-        assert.equal(request.maxTokens, 640);
+        assert.equal(request.maxTokens, 8192);
         const supplied = JSON.parse(request.messages[1].content);
         assert.equal(supplied.original, original);
         assert.ok(supplied.reference);

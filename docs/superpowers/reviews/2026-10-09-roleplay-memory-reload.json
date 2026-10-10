@@ -1,0 +1,567 @@
+{
+  "account": "lattice-examples-soak-20261009",
+  "model": "z-ai/glm-5.2:thinking",
+  "method": "Reload actual persisted soak-account Post chat metadata into native zero-call Pre workflow, without fixture reseeding",
+  "generatedAt": "2026-10-10T03:58:10.750Z",
+  "additionalProviderRequests": 0,
+  "pairs": [
+    {
+      "number": 21,
+      "postRevision": "reasoning-caps-v2",
+      "postAcknowledgedVersion": 1,
+      "status": "completed-persisted-post-to-pre-reload",
+      "file": "F:\\SillyTavern\\SillyTavern\\data\\lattice-examples-soak-20261009\\chats\\mira\\soak-promise-callback-post-reasoning-caps-v2-20261010032352170.jsonl",
+      "extraSeedWrites": 0,
+      "additionalProviderRequests": 0,
+      "logicalModelRequests": 0,
+      "chatUnchanged": true,
+      "memoryUnchanged": true,
+      "guidance": "Saved topic: ferry\nActor episodes: [{\"id\":\"episode:ferry-promise-before-dawn\",\"text\":\"Mira was asked whether she would bring the ferry before dawn, and she promised to bring it; the ferry's actual arrival before dawn remains unresolved, with neither fulfillment nor failure established yet.\",\"classification\":\"observation\",\"sourceRefs\":[{\"id\":\"chat:0\",\"revision\":\"7194f96ba9e1af58f1bd46fa0155fef23062467bc93eefd2d816eb629ad3f65d\"},{\"id\":\"chat:1\",\"revision\":\"b7167b92011210bcb5ed26a17a5b49fdbdac2dab4451f5744c47480e6c8b69ec\"}]}]\nUse relevant promises as commitments, not completed arrivals. Empty list: add no remembered promise. Preserve uncertainty and player choice.",
+      "recording": {
+        "version": 1,
+        "runId": "08334de2-a703-46bc-82d3-687bac9e40e0",
+        "lastSeq": 8,
+        "status": "completed",
+        "at": 1791604690792,
+        "elapsedMs": 21.72970000000001,
+        "plan": {
+          "workflowId": 0,
+          "phase": "pre",
+          "mode": "root",
+          "callBound": 0
+        },
+        "identities": {
+          "strings": [
+            "example-promise-callback-pre",
+            "pre-recall",
+            "pre-compose",
+            "pre-output",
+            "out",
+            "data",
+            "in"
+          ],
+          "paths": [
+            null
+          ],
+          "addresses": [
+            [
+              0,
+              0,
+              1
+            ],
+            [
+              0,
+              0,
+              2
+            ],
+            [
+              0,
+              0,
+              3
+            ]
+          ]
+        },
+        "units": [
+          {
+            "address": 0,
+            "included": true,
+            "dependencies": [],
+            "requestBound": 0,
+            "status": "completed",
+            "subphase": null,
+            "attempts": 0,
+            "startedAt": 7.408100000000019,
+            "settledAt": 15.10080000000002,
+            "durationMs": 7.692700000000002,
+            "ports": [
+              {
+                "direction": "output",
+                "port": 4,
+                "artifact": 0
+              }
+            ],
+            "operation": "memory",
+            "label": "Ferry promise episodes",
+            "binding": {},
+            "reports": [
+              {
+                "code": "INTROSPECTION_EXECUTION"
+              }
+            ]
+          },
+          {
+            "address": 1,
+            "included": true,
+            "dependencies": [
+              0
+            ],
+            "requestBound": 0,
+            "status": "completed",
+            "subphase": null,
+            "attempts": 0,
+            "startedAt": 15.395700000000005,
+            "settledAt": 16.77170000000001,
+            "durationMs": 1.3760000000000048,
+            "ports": [
+              {
+                "direction": "input",
+                "port": 5,
+                "artifact": 0
+              },
+              {
+                "direction": "output",
+                "port": 4,
+                "artifact": 1
+              }
+            ],
+            "operation": "compose",
+            "label": "Promise is still a commitment",
+            "binding": {},
+            "reports": []
+          },
+          {
+            "address": 2,
+            "included": true,
+            "dependencies": [
+              1
+            ],
+            "requestBound": 0,
+            "status": "completed",
+            "subphase": null,
+            "attempts": 0,
+            "startedAt": 16.88730000000001,
+            "settledAt": 20.42270000000002,
+            "durationMs": 3.53540000000001,
+            "ports": [
+              {
+                "direction": "input",
+                "port": 6,
+                "artifact": 1
+              }
+            ],
+            "operation": "guidance",
+            "label": "Ferry callback brief",
+            "binding": {},
+            "reports": [
+              {
+                "code": "GUIDANCE_BUDGET",
+                "tokens": 190
+              }
+            ]
+          }
+        ],
+        "hierarchy": [
+          {
+            "address": 0,
+            "kind": "primitive",
+            "included": true
+          },
+          {
+            "address": 1,
+            "kind": "primitive",
+            "included": true
+          },
+          {
+            "address": 2,
+            "kind": "primitive",
+            "included": true
+          }
+        ],
+        "terminals": [
+          {
+            "kind": "terminal",
+            "address": 2,
+            "artifact": 1
+          }
+        ],
+        "artifacts": [
+          {
+            "id": 0,
+            "origin": {
+              "address": 0,
+              "direction": "output",
+              "port": 4
+            },
+            "kind": "data",
+            "format": "structured",
+            "value": {
+              "kind": "data",
+              "value": {
+                "schemaVersion": 1,
+                "recordType": "episodes",
+                "scope": {
+                  "chatId": "soak-promise-callback-post-reasoning-caps-v2-20261010032352170",
+                  "actorId": "character:mira.png"
+                },
+                "store": {
+                  "id": "native-chat",
+                  "version": 1
+                },
+                "sourceRefs": [
+                  {
+                    "id": "chat:0",
+                    "revision": "7194f96ba9e1af58f1bd46fa0155fef23062467bc93eefd2d816eb629ad3f65d"
+                  },
+                  {
+                    "id": "chat:1",
+                    "revision": "b7167b92011210bcb5ed26a17a5b49fdbdac2dab4451f5744c47480e6c8b69ec"
+                  }
+                ],
+                "payload": {
+                  "episodes": [
+                    {
+                      "id": "episode:ferry-promise-before-dawn",
+                      "text": "Mira was asked whether she would bring the ferry before dawn, and she promised to bring it; the ferry's actual arrival before dawn remains unresolved, with neither fulfillment nor failure established yet.",
+                      "classification": "observation",
+                      "sourceRefs": [
+                        {
+                          "id": "chat:0",
+                          "revision": "7194f96ba9e1af58f1bd46fa0155fef23062467bc93eefd2d816eb629ad3f65d"
+                        },
+                        {
+                          "id": "chat:1",
+                          "revision": "b7167b92011210bcb5ed26a17a5b49fdbdac2dab4451f5744c47480e6c8b69ec"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "id": 1,
+            "origin": {
+              "address": 1,
+              "direction": "output",
+              "port": 4
+            },
+            "kind": "guidance",
+            "format": "structured",
+            "value": {
+              "kind": "guidance",
+              "text": "Saved topic: ferry\nActor episodes: [{\"id\":\"episode:ferry-promise-before-dawn\",\"text\":\"Mira was asked whether she would bring the ferry before dawn, and she promised to bring it; the ferry's actual arrival before dawn remains unresolved, with neither fulfillment nor failure established yet.\",\"classification\":\"observation\",\"sourceRefs\":[{\"id\":\"chat:0\",\"revision\":\"7194f96ba9e1af58f1bd46fa0155fef23062467bc93eefd2d816eb629ad3f65d\"},{\"id\":\"chat:1\",\"revision\":\"b7167b92011210bcb5ed26a17a5b49fdbdac2dab4451f5744c47480e6c8b69ec\"}]}]\nUse relevant promises as commitments, not completed arrivals. Empty list: add no remembered promise. Preserve uncertainty and player choice."
+            }
+          }
+        ],
+        "retention": {
+          "policy": "canonical-prefix",
+          "payloadAllowance": 3665885,
+          "pendingBytes": 2279,
+          "metadataAllowance": 524288,
+          "pendingMetadataBytes": 268
+        }
+      }
+    },
+    {
+      "number": 25,
+      "postRevision": "baseline",
+      "postAcknowledgedVersion": 1,
+      "status": "completed-persisted-post-to-pre-reload",
+      "file": "F:\\SillyTavern\\SillyTavern\\data\\lattice-examples-soak-20261009\\chats\\mira\\soak-consequence-clock-post-20261010032352170.jsonl",
+      "extraSeedWrites": 0,
+      "additionalProviderRequests": 0,
+      "logicalModelRequests": 0,
+      "chatUnchanged": true,
+      "memoryUnchanged": true,
+      "guidance": "Harbor-pressure: 2 distinct eligible public messages.\nIDs: [\"chat:0\",\"chat:1\"]\nPacing context only: no proof of theft, elapsed time or suspicion. Consequences need established circumstances; leave player response open.",
+      "recording": {
+        "version": 1,
+        "runId": "5c3ad3e2-3c17-43c8-89af-392b022013d7",
+        "lastSeq": 10,
+        "status": "completed",
+        "at": 1791604690815,
+        "elapsedMs": 14.221499999999992,
+        "plan": {
+          "workflowId": 0,
+          "phase": "pre",
+          "mode": "root",
+          "callBound": 0
+        },
+        "identities": {
+          "strings": [
+            "example-consequence-clock-pre",
+            "pre-state",
+            "pre-fields",
+            "pre-compose",
+            "pre-output",
+            "out",
+            "in",
+            "data"
+          ],
+          "paths": [
+            null
+          ],
+          "addresses": [
+            [
+              0,
+              0,
+              1
+            ],
+            [
+              0,
+              0,
+              2
+            ],
+            [
+              0,
+              0,
+              3
+            ],
+            [
+              0,
+              0,
+              4
+            ]
+          ]
+        },
+        "units": [
+          {
+            "address": 0,
+            "included": true,
+            "dependencies": [],
+            "requestBound": 0,
+            "status": "completed",
+            "subphase": null,
+            "attempts": 0,
+            "startedAt": 5.268499999999989,
+            "settledAt": 8.499200000000002,
+            "durationMs": 3.230700000000013,
+            "ports": [
+              {
+                "direction": "output",
+                "port": 5,
+                "artifact": 0
+              }
+            ],
+            "operation": "memory",
+            "label": "Read the current clock",
+            "binding": {},
+            "reports": [
+              {
+                "code": "INTROSPECTION_EXECUTION"
+              }
+            ]
+          },
+          {
+            "address": 1,
+            "included": true,
+            "dependencies": [
+              0
+            ],
+            "requestBound": 0,
+            "status": "completed",
+            "subphase": null,
+            "attempts": 0,
+            "startedAt": 8.610600000000005,
+            "settledAt": 9.303699999999992,
+            "durationMs": 0.693099999999987,
+            "ports": [
+              {
+                "direction": "input",
+                "port": 6,
+                "artifact": 0
+              },
+              {
+                "direction": "output",
+                "port": 5,
+                "artifact": 1
+              }
+            ],
+            "operation": "select-fields",
+            "label": "Clock count and counted IDs",
+            "binding": {},
+            "reports": []
+          },
+          {
+            "address": 2,
+            "included": true,
+            "dependencies": [
+              1
+            ],
+            "requestBound": 0,
+            "status": "completed",
+            "subphase": null,
+            "attempts": 0,
+            "startedAt": 9.390699999999981,
+            "settledAt": 9.853899999999982,
+            "durationMs": 0.4632000000000005,
+            "ports": [
+              {
+                "direction": "input",
+                "port": 7,
+                "artifact": 1
+              },
+              {
+                "direction": "output",
+                "port": 5,
+                "artifact": 2
+              }
+            ],
+            "operation": "compose",
+            "label": "Pressure without event invention",
+            "binding": {},
+            "reports": []
+          },
+          {
+            "address": 3,
+            "included": true,
+            "dependencies": [
+              2
+            ],
+            "requestBound": 0,
+            "status": "completed",
+            "subphase": null,
+            "attempts": 0,
+            "startedAt": 9.891099999999994,
+            "settledAt": 13.163700000000006,
+            "durationMs": 3.2726000000000113,
+            "ports": [
+              {
+                "direction": "input",
+                "port": 6,
+                "artifact": 2
+              }
+            ],
+            "operation": "guidance",
+            "label": "Bounded clock brief",
+            "binding": {},
+            "reports": [
+              {
+                "code": "GUIDANCE_BUDGET",
+                "tokens": 54
+              }
+            ]
+          }
+        ],
+        "hierarchy": [
+          {
+            "address": 0,
+            "kind": "primitive",
+            "included": true
+          },
+          {
+            "address": 1,
+            "kind": "primitive",
+            "included": true
+          },
+          {
+            "address": 2,
+            "kind": "primitive",
+            "included": true
+          },
+          {
+            "address": 3,
+            "kind": "primitive",
+            "included": true
+          }
+        ],
+        "terminals": [
+          {
+            "kind": "terminal",
+            "address": 3,
+            "artifact": 2
+          }
+        ],
+        "artifacts": [
+          {
+            "id": 0,
+            "origin": {
+              "address": 0,
+              "direction": "output",
+              "port": 5
+            },
+            "kind": "data",
+            "format": "structured",
+            "value": {
+              "kind": "data",
+              "value": {
+                "schemaVersion": 1,
+                "recordType": "actor-state",
+                "scope": {
+                  "chatId": "soak-consequence-clock-post-20261010032352170",
+                  "actorId": "character:mira.png"
+                },
+                "store": {
+                  "id": "native-chat",
+                  "version": 1
+                },
+                "sourceRefs": [
+                  {
+                    "id": "chat:0",
+                    "revision": "8212a672c73b824af05d3794fb83316d4177db0bb8b35f85514625d808d93369"
+                  },
+                  {
+                    "id": "chat:1",
+                    "revision": "845716db52801f1fbb9b91d38b2fc318bf897c83db7783584b9a04e672fa36c3"
+                  }
+                ],
+                "payload": {
+                  "traits": [],
+                  "beliefs": [],
+                  "goals": [],
+                  "relationships": [],
+                  "conflicts": [],
+                  "conditions": [],
+                  "episodes": [],
+                  "values": {},
+                  "curves": {},
+                  "tracks": {
+                    "harbor-pressure": {
+                      "eventIds": [
+                        "chat:0",
+                        "chat:1"
+                      ],
+                      "count": 2
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": 1,
+            "origin": {
+              "address": 1,
+              "direction": "output",
+              "port": 5
+            },
+            "kind": "data",
+            "format": "structured",
+            "value": {
+              "kind": "data",
+              "value": {
+                "count": 2,
+                "eventIds": [
+                  "chat:0",
+                  "chat:1"
+                ]
+              }
+            }
+          },
+          {
+            "id": 2,
+            "origin": {
+              "address": 2,
+              "direction": "output",
+              "port": 5
+            },
+            "kind": "guidance",
+            "format": "structured",
+            "value": {
+              "kind": "guidance",
+              "text": "Harbor-pressure: 2 distinct eligible public messages.\nIDs: [\"chat:0\",\"chat:1\"]\nPacing context only: no proof of theft, elapsed time or suspicion. Consequences need established circumstances; leave player response open."
+            }
+          }
+        ],
+        "retention": {
+          "policy": "canonical-prefix",
+          "payloadAllowance": 3664648,
+          "pendingBytes": 1849,
+          "metadataAllowance": 524288,
+          "pendingMetadataBytes": 332
+        }
+      }
+    }
+  ]
+}

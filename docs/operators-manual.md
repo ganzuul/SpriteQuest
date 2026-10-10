@@ -40,6 +40,8 @@ This manual follows the 0.26.0 interface. Screenshots use synthetic writing mate
 
 The workflow bar reports phase, assignment, request bound, and autosave. Selecting a graph or editing it does not arm it or make a provider request.
 
+Use **Tools → Theme and colours** to choose Ember, Lattice, Ash, Graphite, Slate, Obsidian, Harbor or Signal, or customize the selected theme. Ember follows SillyTavern's panel, text, controls and quote accent. Harbor uses blue and amber; Signal uses high contrast grayscale. Both add pin shapes and wire patterns, with a visible type-cue legend in the picker.
+
 **Run** explicitly executes the root workflow. **Arm** enables configured host integration. A manual guidance run previews its result; a normal Send with assigned and armed guidance executes that workflow again. Reviewed reply editing needs its own explicit Apply action.
 
 **Before reply (Pre)** means the workflow can prepare guidance before SillyTavern writes its reply. Assign and arm it when you want a normal Send to run the graph and add that guidance. **After reply (Post)** means a graph can work from a completed reply: run a repair graph manually, review its proposed result, then choose Apply. Running a reply repair does not itself change the reply. Text transformations can run in either phase; reply-specific sources and review/application nodes require their matching host context.
@@ -89,6 +91,8 @@ Choose **Node → Add node…**, double-click empty graph space, or right-click 
 To make a connection, drag an **output pin on the right** onto a compatible **input pin on the left**. Alternatively, drag from a pin into empty graph space to create a connected node. Keep **Context sensitive** enabled to narrow the choices. If the new node has several compatible pins, select the intended pin.
 
 Each input accepts one binding; an output can feed several consumers. Colors and labels identify artifact kinds, and validation rejects incompatible connections. A Draft carries source identity for a revision; Text and Data serve different purposes. Use JSON Decode to convert JSON Text to Data, and Compose to turn selected Data into a brief.
+
+In Harbor and Signal, **Context** is a filled circle, **Text** a ring, **Data** a square, **Guidance** a diamond, **Draft** a pentagon, **Findings** a triangle, **Patches** a hexagon and **Candidate** a plus. Text wires are solid, Data wires dashed and Guidance wires dotted; the other types use distinct patterns. Pin labels and wire type labels remain available, and example thumbnails use these same cues. Signal's matching selection, warning and error colors are intentional; custom text and background colors still receive contrast warnings.
 
 ### Branch and rejoin material
 

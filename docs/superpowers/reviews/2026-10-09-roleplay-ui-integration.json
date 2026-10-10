@@ -1,0 +1,23 @@
+{
+  "account": "lattice-examples-soak-20261009",
+  "connection": "nanogpt z-ai/glm-5.2:thinking - Wandlight-1.8",
+  "example": 3,
+  "workflow": "Build a brief from JSON",
+  "transport": "SillyTavern ordinary Send through the browser UI",
+  "syntheticCharacter": "Mira — Lattice Examples Soak",
+  "maxOutputTokens": 1024,
+  "auxiliaryCalls": 0,
+  "reservedRequests": 1,
+  "status": "completed",
+  "input": "I stay by the closed gate and ask Mira what is causing the delay. I leave the sealed letter alone.",
+  "notes": "One ordinary model request is reserved against the current 64-request soak limit. No retries. Real Wandlight prompts remain present. All story material is synthetic.",
+  "actualRequests": 1,
+  "model": "z-ai/glm-5.2:thinking",
+  "api": "nanogpt",
+  "output": "*October 9, 2026 | Time: 9:20 PM | Ferry Gate, South Bank | Overcast, wind picking up*\n\nMira shifted her weight to her other foot. The letter's wax seal caught the light from the overhead lamp as she tucked it deeper into her coat pocket.\n\n\"Inspection,\" she said. \"The hinges. One of them cracked last week — well, not cracked, but the bolt seating looked off. Ferrymaster noticed it this morning.\" She pulled her collar tighter against the wind. \"Could be an hour. Could be less if Wren doesn't find anything else wrong with it.\"\n\nA gust pushed through the gate's iron bars, carrying river-smell and the sound of someone working metal somewhere on the other side. Two small taps, a pause, then two more.\n\nLattice Examples Soak stood by the gate, not reaching for the letter, not moving toward the shelter. Mira noticed that. Noticed too the way they kept their hands occupied — both visible, both still, as if stillness itself were the point.\n\n\"Wren's thorough,\" she added, watching the gate rather than the person beside her. \"Thorough and slow. But the ferry's not going anywhere with the gate like this, so.\"\n\nShe glanced toward the shelter — a stone overhang with a bench beneath it, built for exactly this kind of wait. The lamp inside it still worked. Mostly.\n\n\"There's room if you want to sit. Wind's only going to get worse before it gets better.\"",
+  "generatedAt": "2026-10-10T03:21:04.351Z",
+  "usageStatus": "not-reported-in-native-chat",
+  "nativeEvidence": "Lattice displayed Automatic Send · pre phase · Build a brief from JSON; Completed 5 of 5 stages, 0 of 0 auxiliary requests.",
+  "observations": "The reply retained the closed inspection gate and sealed letter, explained a plausible delay, and offered shelter without choosing the player’s next response. It added permitted fictional inspection details; this is a sampled observation, not a guaranteed compliance check.",
+  "finalAccountState": "Lattice disarmed after the single integration request."
+}

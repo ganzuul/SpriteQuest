@@ -167,7 +167,18 @@
     .pc-native-diagnostic { position: absolute; top: 10px; left: 12px; right: 12px; z-index: 10; margin: 0; padding: 8px 10px; border: 1px solid #b55c64; border-radius: 2px; background: var(--pc-panel); color: #e9a4aa; font-size: 12px; }
     .pc-native-workspace.pc-native-workspace :global(.pc-graph-tab[aria-selected="true"]) { color: var(--pc-flow); border-color: var(--pc-flow); background: var(--pc-canvas); }
     .pc-native-workspace :global(.pc-graph-tab-list) { padding: 0 6px 3px 0; margin-bottom: -3px; }
-    .pc-native-workspace :global(.pc-graph-tab[aria-selected="true"]::after) { background: var(--pc-canvas); border-color: var(--pc-flow); }
+    .pc-native-workspace :global(.pc-graph-tab[aria-selected="true"]::after) { background: var(--pc-canvas); }
+    /* Round the lower shoulders into one continuous frame stroke. */
+    .pc-native-workspace :global(.pc-graph-tab-active) { z-index: 1; }
+    .pc-native-workspace :global(.pc-graph-tab-active::before),
+    .pc-native-workspace :global(.pc-graph-tab-active::after) { content: ''; position: absolute; bottom: -1px; width: 5px; height: 5px; pointer-events: none; z-index: 1; }
+    .pc-native-workspace :global(.pc-graph-tab-active::before) { left: -4px; background: radial-gradient(circle at 0 0, transparent 4px, var(--pc-flow) 4px 5px, var(--pc-canvas) 5px); }
+    .pc-native-workspace :global(.pc-graph-tab-active::after) { right: -4px; background: radial-gradient(circle at 100% 0, transparent 4px, var(--pc-flow) 4px 5px, var(--pc-canvas) 5px); }
+    .pc-native-workspace :global(.pc-graph-tab-active:first-child::before) { display: none; }
+    /* The first tab continues the frame's left edge without a rounded notch. */
+    .pc-native-workspace :global(.pc-graph-tabs:has(.pc-graph-tab-item:first-child.pc-graph-tab-active) + :is(.pc-canvas-area, .pc-graph-location)),
+    .pc-native-workspace :global(.pc-graph-tabs:has(.pc-graph-tab-item:first-child.pc-graph-tab-active) + .pc-canvas-area .pc-canvas-host),
+    .pc-native-workspace :global(.pc-graph-tabs:has(.pc-graph-tab-item:first-child.pc-graph-tab-active) + .pc-canvas-area::after) { border-top-left-radius: 0; }
     .pc-native-workspace :global(.pc-graph-location) { flex: 0 0 auto; border-color: var(--pc-flow); background: var(--pc-canvas); }
     .pc-native-workspace :global(.pc-canvas-host) { border-radius: 4px; }
     .pc-native-workspace :global(.pc-inspector) { box-sizing: border-box; flex-basis: var(--pc-details-width, 258px); width: var(--pc-details-width, 258px); padding: 0; position: static; }

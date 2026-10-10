@@ -16,6 +16,13 @@ const INTERNALIZE_MODES = {
 };
 const REFLECTION_SCHEMA = 'Payload keys: brief (string); appraisals, conflicts, recalls, sceneChanges, behaviorHints, attentionHints (string arrays); recalledEpisodeIds (supplied episode ID array). Strings must be at most 4096 characters; arrays at most 64 entries. Do not output the record envelope or sourceRefs.';
 const PROPOSAL_SCHEMA = 'Payload keys: changes (at most 32 entries), values, curves, tracks (maps, default empty). Each change is {op:"upsert",collection,item:{id,text,classification,sourceRefs:[{id,revision}]}} or {op:"remove",collection,id}. Permitted collections: beliefs, goals, relationships, conflicts, conditions, episodes. classification is observation, interpretation or possibility. Item text must be at most 4096 characters and IDs at most 128. Prefer leaving values, curves and tracks empty; preserve their deterministic state unless the supplied instructions require a bounded update. Do not output the record envelope.';
+const COMPLETION_FAILURE_MESSAGES = Object.freeze({
+    TRUNCATED_OUTPUT: 'The response reached its completion limit.',
+    COMPLETION_UNVERIFIED: 'The response has no verified complete text result.',
+    EMPTY_OUTPUT: 'The response is empty.',
+    OUTPUT_LIMIT: 'The response exceeds the bounded output limit.',
+    ABORTED: 'The operation was stopped; discard its late response.',
+});
 function parseSettings(settings, modes) {
     const parsed = ownData(settings);
     if (!parsed.ok || !parsed.data || typeof parsed.data !== 'object' || Array.isArray(parsed.data)) return null;
@@ -47,6 +54,10 @@ function sceneScope(context, scope) {
 }
 function completed(response) {
     const parsed = ownData(response);
+    if (parsed.ok && parsed.data?.ok === false) {
+        const code = parsed.data.error?.code;
+        if (typeof code === 'string' && Object.hasOwn(COMPLETION_FAILURE_MESSAGES, code)) return failure(code, COMPLETION_FAILURE_MESSAGES[code]);
+    }
     if (!parsed.ok || !parsed.data || parsed.data.ok !== true || !parsed.data.data || typeof parsed.data.data !== 'object') return failure('REQUEST_FAILED', 'Analysis request returned no valid result; no retry was made.');
     const data = parsed.data.data;
     const reason = typeof data.finish === 'string' ? data.finish.toLowerCase() : '';

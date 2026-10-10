@@ -15,6 +15,7 @@ export const ROLES = [
     { key: 'error', label: 'Errors and switched-off blocks', group: 'meaning' },
 ];
 const MEANING = ROLES.filter(r => r.group === 'meaning').map(r => r.key);
+const PIN_KINDS = ['context', 'guidance', 'draft', 'findings', 'patches', 'text', 'data', 'candidate'];
 
 /**
  * The look of a theme, apart from its colours. Each is a small choice, set on
@@ -41,8 +42,8 @@ const RADII = { sharp: [2, 1, 3], rounded: [4, 3, 4], soft: [16, 10, 999] };
 const WEIGHTS = { thin: [1, 1.6], normal: [1, 2.5], bold: [2, 3.5] };
 
 /**
- * Built-in themes. "SillyTavern" leaves the surfaces to your SillyTavern
- * theme; the others set everything, and each has a look of its own.
+ * Built-in themes. Ember inherits selected SillyTavern tokens; the other
+ * palettes use the approved comparison surfaces.
  */
 export const PRESETS = {
     ember: {
@@ -55,75 +56,39 @@ export const PRESETS = {
         style: { ...DEFAULT_STYLE },
         colors: { panel: '#202220', block: '#191b19', canvas: '#292a28', border: '#41433e', text: '#e7e8e4', muted: '#aaa99e', flow: '#ffb554', warn: '#e3c341', error: '#e57676' },
     },
-    sillytavern: {
-        name: 'SillyTavern',
-        note: 'Follows your SillyTavern theme for backgrounds, text and font.',
+    ash: {
+        name: 'Ash', note: 'Medium neutral gray surfaces and warm selection accents.',
         style: { ...DEFAULT_STYLE },
-        colors: {
-            muted: '#9aa0a6',
-            flow: '#7ab7ff',
-            warn: '#f0c36a', error: '#e08f8f',
-        },
+        colors: { panel: '#343434', block: '#292929', canvas: '#454545', border: '#646464', text: '#f0f0ec', muted: '#bfc0ba', flow: '#e18a24', warn: '#e3c341', error: '#e57676' },
     },
-    midnight: {
-        name: 'Midnight',
-        note: 'Clean modern dark. Deep shadows, a dot grid, clear bright signals.',
-        style: { shape: 'rounded', font: 'sans', grid: 'dots', wires: 'curved', weight: 'normal', header: 'tint', depth: 'deep' },
-        colors: {
-            panel: '#0d1015', block: '#171c24', canvas: '#0a0d11', border: '#2a313c', text: '#dfe4ea', muted: '#8b949e',
-            flow: '#58a6ff',
-            warn: '#e3c341', error: '#f85149',
-        },
+    graphite: {
+        name: 'Graphite', note: 'Warm charcoal with raised cards.',
+        style: { ...DEFAULT_STYLE },
+        colors: { panel: '#242422', block: '#32322e', canvas: '#20201f', border: '#50504a', text: '#e9e9e2', muted: '#b2b2a8', flow: '#e18a24', warn: '#e3c341', error: '#e57676' },
     },
-    blueprint: {
-        name: 'Blueprint',
-        note: 'Drafting paper: calm navy, a faint grid, chalk-white wires, sharp outlines and typewriter labels.',
-        style: { shape: 'sharp', font: 'mono', grid: 'lines', wires: 'angled', weight: 'normal', header: 'tint', depth: 'flat' },
-        colors: {
-            panel: '#11263d', block: '#142d48', canvas: '#1c3b5b', border: '#5a7da2', text: '#e9eff6', muted: '#9fb3c9',
-            flow: '#f3f6fa',
-            warn: '#e6e089', error: '#f0928f',
-        },
+    slate: {
+        name: 'Slate', note: 'Cool steel surfaces with warm selection accents.',
+        style: { ...DEFAULT_STYLE },
+        colors: { panel: '#262c34', block: '#2b323b', canvas: '#1e2329', border: '#4b5563', text: '#e5eaf0', muted: '#b0bac6', flow: '#e18a24', warn: '#e3c341', error: '#e57676' },
     },
-    parchment: {
-        name: 'Parchment',
-        note: 'A light storybook page: cream paper, ink-brown lines, a book serif and coloured chapter headers.',
-        style: { shape: 'rounded', font: 'serif', grid: 'paper', wires: 'curved', weight: 'normal', header: 'strip', depth: 'soft' },
-        colors: {
-            panel: '#efe3c8', block: '#fbf5e4', canvas: '#f3e8cf', border: '#b99c6f', text: '#3a2918', muted: '#7d6547',
-            flow: '#2f5d8a',
-            warn: '#8a6a00', error: '#a8322a',
-        },
+    obsidian: {
+        name: 'Obsidian', note: 'Near black surfaces and clear, warm signals.',
+        style: { ...DEFAULT_STYLE },
+        colors: { panel: '#121417', block: '#1b1e23', canvas: '#08090b', border: '#343a42', text: '#e4e7eb', muted: '#a5abb4', flow: '#e18a24', warn: '#e3c341', error: '#e57676' },
     },
-    neon: {
-        name: 'Neon',
-        note: 'Black and violet with glowing wires and edges, bold lines and coloured headers.',
-        style: { shape: 'soft', font: 'sans', grid: 'lines', wires: 'curved', weight: 'bold', header: 'strip', depth: 'glow' },
-        colors: {
-            panel: '#0a0612', block: '#140c24', canvas: '#07040d', border: '#3d2670', text: '#f4ecff', muted: '#a592cc',
-            flow: '#00e5ff',
-            warn: '#fff04d', error: '#ff3d6e',
-        },
+    harbor: {
+        name: 'Harbor', note: 'Blue and amber with distinct pin shapes and patterned wires for colorblind-friendly connections.',
+        accessible: true,
+        style: { ...DEFAULT_STYLE },
+        colors: { panel: '#17232d', block: '#233340', canvas: '#0e1820', border: '#657988', text: '#f2f5f7', muted: '#b9c8d2', flow: '#e69f00', warn: '#f0e442', error: '#ffb4a2' },
+        pins: { context: '#f0e442', guidance: '#cc79a7', draft: '#7fd8c5', findings: '#ff9f70', patches: '#ffffff', text: '#e69f00', data: '#56b4e9', candidate: '#cbd5e1' },
     },
-    terminal: {
-        name: 'Terminal',
-        note: 'Green phosphor on black: typewriter text, square boxes, scanlines and right-angled wires.',
-        style: { shape: 'sharp', font: 'mono', grid: 'scan', wires: 'angled', weight: 'normal', header: 'tint', depth: 'flat' },
-        colors: {
-            panel: '#040804', block: '#091109', canvas: '#030603', border: '#1f6a2c', text: '#8dff9c', muted: '#4fa35c',
-            flow: '#3dff6b',
-            warn: '#fff23d', error: '#ff4d4d',
-        },
-    },
-    petal: {
-        name: 'Petal',
-        note: 'Soft and light: rosy paper, round shapes, a friendly font and coloured headers.',
-        style: { shape: 'soft', font: 'round', grid: 'dots', wires: 'curved', weight: 'normal', header: 'strip', depth: 'soft' },
-        colors: {
-            panel: '#fff4f8', block: '#ffffff', canvas: '#ffeaf2', border: '#efb9cc', text: '#3d2230', muted: '#8e6477',
-            flow: '#2563eb',
-            warn: '#a16207', error: '#be123c',
-        },
+    signal: {
+        name: 'Signal', note: 'High contrast grayscale with distinct pin shapes and patterned wires for colorblind-friendly connections.',
+        accessible: true,
+        style: { ...DEFAULT_STYLE },
+        colors: { panel: '#151515', block: '#262626', canvas: '#080808', border: '#929292', text: '#ffffff', muted: '#d0d0d0', flow: '#ffffff', warn: '#ffffff', error: '#ffffff' },
+        pins: { context: '#f2f2f2', guidance: '#f2f2f2', draft: '#f2f2f2', findings: '#f2f2f2', patches: '#f2f2f2', text: '#f2f2f2', data: '#f2f2f2', candidate: '#f2f2f2' },
     },
 };
 
@@ -183,17 +148,30 @@ export function distance(a, b) {
     return Math.hypot(l1 - l2, a1 - a2, b1 - b2);
 }
 
-/** Darken or lighten a colour, keeping its hue, until it reads against a background. */
+/** Darken or lighten a colour, keeping its hue, until it reads against every background. */
 export function fitContrast(color, bg, target = 3) {
-    if (contrast(color, bg) >= target) return color;
-    const darker = luminance(bg) > 0.4;
-    let c = { ...color };
-    for (let i = 0; i < 24 && contrast(c, bg) < target; i++) {
-        c = darker
-            ? { r: c.r * 0.9, g: c.g * 0.9, b: c.b * 0.9 }
-            : { r: c.r + (255 - c.r) * 0.12, g: c.g + (255 - c.g) * 0.12, b: c.b + (255 - c.b) * 0.12 };
+    const backgrounds = Array.isArray(bg) ? bg : [bg];
+    const score = c => Math.min(...backgrounds.map(surface => contrast(c, surface)));
+    let best = color, bestScore = score(color);
+    if (bestScore >= target) return color;
+    const black = { r: 0, g: 0, b: 0 }, white = { r: 255, g: 255, b: 255 };
+    const darker = score(black) > score(white);
+    for (const darken of [darker, !darker]) {
+        let c = { ...color };
+        for (let i = 0; i < 24; i++) {
+            c = darken
+                ? { r: c.r * 0.9, g: c.g * 0.9, b: c.b * 0.9 }
+                : { r: c.r + (255 - c.r) * 0.12, g: c.g + (255 - c.g) * 0.12, b: c.b + (255 - c.b) * 0.12 };
+            const candidate = { r: Math.round(c.r), g: Math.round(c.g), b: Math.round(c.b) };
+            const ratio = score(candidate);
+            if (ratio >= target) return candidate;
+            if (ratio > bestScore) { best = candidate; bestScore = ratio; }
+        }
+        const endpoint = darken ? black : white, ratio = score(endpoint);
+        if (ratio >= target) return endpoint;
+        if (ratio > bestScore) { best = endpoint; bestScore = ratio; }
     }
-    return c;
+    return best;
 }
 
 /* ------------------------------------------------------------------ */
@@ -205,7 +183,7 @@ function store() {
     ui.theme ??= { preset: DEFAULT_PRESET, colors: {}, style: {} };
     ui.theme.colors ??= {};
     ui.theme.style ??= {};
-    if (!PRESETS[ui.theme.preset]) ui.theme.preset = DEFAULT_PRESET;
+    if (!Object.hasOwn(PRESETS, ui.theme.preset)) ui.theme.preset = DEFAULT_PRESET;
     return ui.theme;
 }
 
@@ -229,7 +207,7 @@ export function currentTheme() {
 
 export function setPreset(key, { keepCustom = false } = {}) {
     const t = store();
-    t.preset = PRESETS[key] ? key : DEFAULT_PRESET;
+    t.preset = Object.hasOwn(PRESETS, key) ? key : DEFAULT_PRESET;
     if (!keepCustom) { t.colors = {}; t.style = {}; }
     save();
     applyTheme();
@@ -254,9 +232,7 @@ export function setStyle(part, value) {
 }
 
 /**
- * What the surfaces actually look like right now. For the SillyTavern preset
- * they come from your SillyTavern theme, so they have to be measured rather
- * than read from the theme.
+ * Composite translucent surfaces over the page to measure what is visible.
  */
 function measuredSurfaces(colors) {
     const doc = globalThis.document;
@@ -269,7 +245,8 @@ function measuredSurfaces(colors) {
     const base = page && page.a > 0 ? page : parseColor('#202024');
     const panel = over(probe('panel', 'rgba(20,20,24,0.97)') ?? parseColor('#141418'), base);
     const block = over(probe('block', 'rgba(40,40,48,0.96)') ?? parseColor('#282830'), panel);
-    return { panel, block };
+    const canvas = over(probe('canvas', '#202024') ?? parseColor('#202024'), base);
+    return { panel, block, canvas };
 }
 
 /**
@@ -284,12 +261,14 @@ export function applyTheme() {
     const root = doc.documentElement.style;
     const data = doc.documentElement.dataset;
     data.pcPreset = preset;
+    data.pcAccessible = PRESETS[preset].accessible ? '1' : '0';
+    for (const kind of PIN_KINDS) root.removeProperty('--pc-kind-' + kind);
 
     // The look: data attributes for style.css, and a few sizes as variables.
     for (const part of Object.keys(STYLE_OPTIONS)) data[`pc${part[0].toUpperCase()}${part.slice(1)}`] = style[part];
     // A theme with its own surfaces also styles SillyTavern's buttons and
     // fields inside the panel, which otherwise keep SillyTavern's colours.
-    data.pcOwn = preset === 'sillytavern' && !colors.panel ? '0' : '1';
+    data.pcOwn = '1';
     const [r, rSm, rChip] = RADII[style.shape] ?? RADII.rounded;
     root.setProperty('--pc-r', `${r}px`);
     root.setProperty('--pc-r-sm', `${rSm}px`);
@@ -313,7 +292,7 @@ export function applyTheme() {
         root.setProperty('--pc-control', 'var(--SmartThemeBotMesBlurTintColor, rgba(30, 30, 30, 0.9))');
     }
 
-    const { panel, block } = measuredSurfaces(colors);
+    const { panel, block, canvas } = measuredSurfaces(colors);
     const light = luminance(panel) > 0.4;
     // Menus and popovers need a solid background. When the panel colour comes
     // from SillyTavern it is often see-through, so use what it looks like.
@@ -325,10 +304,13 @@ export function applyTheme() {
         if (preset === 'ember' && key === 'flow' && !Object.hasOwn(custom, key)) continue;
         const c = parseColor(colors[key]);
         if (!c) continue;
-        // Worst case of the two backgrounds these colours sit on.
-        const bg = contrast(c, panel) < contrast(c, block) ? panel : block;
-        const fitted = fitContrast(c, bg, 3);
+        const fitted = fitContrast(c, [panel, block], 3);
         if (fitted !== c) root.setProperty(`--pc-${key}`, toHex(fitted));
+    }
+    for (const [kind, color] of Object.entries(PRESETS[preset].pins ?? {})) {
+        const c = parseColor(color);
+        const fitted = fitContrast(c, [block, canvas], 3);
+        root.setProperty('--pc-kind-' + kind, fitted === c ? color : toHex(fitted));
     }
     if (preset === 'lattice' && !currentTheme().custom.flow) {
         const quote = safe(() => getComputedStyle(doc.documentElement).getPropertyValue('--SmartThemeQuoteColor').trim());
@@ -392,7 +374,7 @@ export function importTheme(text) {
     }
     const t = store();
     const base = o.base;
-    t.preset = PRESETS[base] ? base : DEFAULT_PRESET;
+    t.preset = Object.hasOwn(PRESETS, base) ? base : DEFAULT_PRESET;
     t.colors = colors;
     t.style = style;
     save();

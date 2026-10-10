@@ -618,7 +618,7 @@ test('an imported native graph with omitted role records can bind its required r
 test('narrow workflow inspection and review remain opaque during selection feedback', async ({ page }) => {
     await reviewFixture(page);
     await page.setViewportSize({ width: 760, height: 1000 });
-    for (const theme of ['midnight', 'parchment']) {
+    for (const theme of ['obsidian', 'ash']) {
         await page.evaluate(async theme => (await import('/src/theme.js?v=' + window.canvasHarness.version)).setPreset(theme), theme);
         await inspectOperation(page, 'pattern-scan');
         const opacity = await page.locator('.pc-inspector').evaluate(inspector => {
@@ -650,7 +650,7 @@ test('narrow workflow inspection and review remain opaque during selection feedb
 test('narrow toolbar exposes readable labeled pane and theme controls', async ({ page }) => {
     await reviewFixture(page);
     await page.setViewportSize({ width: 760, height: 1000 });
-    for (const theme of ['midnight', 'parchment']) {
+    for (const theme of ['obsidian', 'ash']) {
         await page.evaluate(async theme => (await import('/src/theme.js?v=' + window.canvasHarness.version)).setPreset(theme), theme);
         await expect(page.locator('.pc-details-heading').getByRole('button', { name: 'Subgraphs', exact: true })).toHaveCount(0);
         await expect(page.getByRole('button', { name: 'Toggle inspector', exact: true }).getByText('Details', { exact: true })).toBeVisible();

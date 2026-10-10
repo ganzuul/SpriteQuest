@@ -1,5 +1,5 @@
 import { createChatMetadataBackend, createMemoryService } from './memory.js?v=0.26.0';
-import { fail, makeRecord, ownData, parseRecord, validateEvidence } from './contracts.js?v=0.26.0';
+import { fail, freeze, makeRecord, ownData, parseRecord, validateEvidence } from './contracts.js?v=0.26.0';
 
 const good = data => ({ ok: true, data });
 const id = value => typeof value === 'string' && value.trim().length > 0 && value.length <= 128 && !['__proto__', 'prototype', 'constructor'].includes(value);
@@ -62,6 +62,37 @@ export function createNativeMemoryAdapter({ context, selectActor, isSettled, sto
         if (aborted(authority.signal)) return fail('CANCELLED', 'Memory commit was cancelled before persistence.');
         if (authority.isCurrent?.() === false || context().chat !== authority.chat) return fail('STALE_SOURCE', 'The workflow or chat source changed before memory persistence.');
         return checkScope(authority.scope);
+    };
+    const refineHistoricalReports = async (authority, result) => {
+        if (!result.ok || !result.reports?.some(report => report.code === 'INVALIDATED_SOURCES')) return result;
+        const checked = checkAuthority(authority); if (!checked.ok) return checked;
+        try {
+            // The model event window stays bounded. Missing historical refs are checked
+            // against their exact native index and revision without exporting older text.
+            const chat = context().chat;
+            const refs = [...new Map(result.reports.filter(report => report.code === 'INVALIDATED_SOURCES').flatMap(report => report.sourceRefs).map(ref => [JSON.stringify([ref.id, ref.revision]), ref])).values()];
+            const sources = refs.map(ref => {
+                const match = /^chat:(0|[1-9]\d*)$/.exec(ref.id), index = match ? Number(match[1]) : NaN;
+                if (!Number.isSafeInteger(index)) return null;
+                const descriptor = selected(context(), index, isSettled, authority.scope.actorId);
+                return descriptor ? { index, message: chat?.[index], descriptor } : null;
+            });
+            const revisions = await Promise.all(sources.map(source => source ? nativeMemoryFingerprint(source.descriptor) : null));
+            const current = context(), verified = new Set();
+            const record = parseRecord(result.artifact), selectedRefs = new Set(record.ok ? record.data.sourceRefs.map(ref => JSON.stringify([ref.id, ref.revision])) : []);
+            for (let index = 0; index < refs.length; index++) {
+                const source = sources[index], ref = refs[index];
+                if (source && revisions[index] === ref.revision && current.chat === chat && current.chat?.[source.index] === source.message && selected(current, source.index, isSettled, authority.scope.actorId) === source.descriptor) {
+                    const key = JSON.stringify([ref.id, ref.revision]); verified.add(key);
+                    if (selectedRefs.has(key) && !authority.readSources.has(key)) authority.readSources.set(key, source);
+                }
+            }
+            return { ...result, reports: result.reports.flatMap(report => {
+                if (report.code !== 'INVALIDATED_SOURCES') return [report];
+                const sourceRefs = report.sourceRefs.filter(ref => !verified.has(JSON.stringify([ref.id, ref.revision])));
+                return sourceRefs.length ? [freeze({ ...report, sourceRefs })] : [];
+            }) };
+        } catch { return fail('INVALID_MEMORY_CONTEXT', 'Historical memory evidence could not be inspected.'); }
     };
 
     function createSlot(scope) {
@@ -175,13 +206,37 @@ export function createNativeMemoryAdapter({ context, selectActor, isSettled, sto
         try {
             const scope = currentScope(); if (!scope.ok) return scope;
             if (!id(storeId)) return fail('INVALID_MEMORY_CONFIG', 'Native memory store identity is invalid.');
-            const authority = { scope: scope.data, signal: signal ?? new AbortController().signal, isCurrent, chat: context().chat };
+            const authority = { scope: scope.data, signal: signal ?? new AbortController().signal, isCurrent, chat: context().chat, readSources: new Map() };
             const checked = checkAuthority(authority); if (!checked.ok) return checked;
             const key = JSON.stringify([storeId, scope.data.chatId, scope.data.actorId]);
             let slot = slots.get(key); if (!slot) { slot = createSlot(scope.data); slots.set(key, slot); }
+            const retainReadSources = result => {
+                if (!result.ok) return result;
+                const record = parseRecord(result.artifact); if (!record.ok) return record;
+                for (const ref of record.data.sourceRefs) {
+                    const key = JSON.stringify([ref.id, ref.revision]), source = slot.sources.get(key);
+                    if (source && !authority.readSources.has(key)) authority.readSources.set(key, { index: source.index, message: source.message, descriptor: source.descriptor });
+                }
+                return result;
+            };
+            const readFresh = () => {
+                try {
+                    const checked = checkAuthority(authority); if (!checked.ok) return checked;
+                    const c = context();
+                    return [...authority.readSources.values()].every(source => c.chat?.[source.index] === source.message && selected(c, source.index, isSettled, authority.scope.actorId) === source.descriptor)
+                        ? good(undefined) : fail('STALE_SOURCE', 'Selected memory evidence changed after it was read.');
+                } catch { return fail('STALE_SOURCE', 'Selected memory evidence could not be rechecked.'); }
+            };
+            const readIdentity = async () => {
+                // Reflect's empty-state fallback uses scope/store only, so unused history is not a read source.
+                const before = checkAuthority(authority); if (!before.ok) return before;
+                const result = await slot.backend.load();
+                const after = checkAuthority(authority); if (!after.ok) return after;
+                return result.ok ? good(freeze({ scope: result.data.state.value.scope, store: result.data.state.value.store })) : result;
+            };
             const memory = {
-                read: async settings => { const before = checkAuthority(authority); if (!before.ok) return before; const result = await slot.service.read(settings); const after = checkAuthority(authority); return after.ok ? result : after; },
-                recall: async settings => { const before = checkAuthority(authority); if (!before.ok) return before; const result = await slot.service.recall(settings); const after = checkAuthority(authority); return after.ok ? result : after; },
+                read: async settings => { const before = checkAuthority(authority); if (!before.ok) return before; const result = await refineHistoricalReports(authority, await slot.service.read(settings)); const after = checkAuthority(authority); return after.ok ? retainReadSources(result) : after; },
+                recall: async settings => { const before = checkAuthority(authority); if (!before.ok) return before; const result = await refineHistoricalReports(authority, await slot.service.recall(settings)); const after = checkAuthority(authority); return after.ok ? retainReadSources(result) : after; },
                 commit: (intent, flags = {}) => {
                     const checked = checkAuthority(authority); if (!checked.ok) return Promise.resolve(checked);
                     const record = parseRecord(intent, 'commit-intent'); if (!record.ok) return Promise.resolve(record);
@@ -190,7 +245,7 @@ export function createNativeMemoryAdapter({ context, selectActor, isSettled, sto
                     return slot.service.commit(intent, { ...flags, signal: authority.signal });
                 },
             };
-            return good({ scope: scope.data, storeId, memory, release:()=>{slot.sources.clear();authorities.delete(authority.signal);} });
+            return good({ scope: scope.data, storeId, memory, readFresh, readIdentity, release:()=>{slot.sources.clear();authority.readSources.clear();authorities.delete(authority.signal);} });
         } catch { return fail('INVALID_MEMORY_CONTEXT', 'Native memory authority could not be captured.'); }
     }
     return Object.freeze({ capture });

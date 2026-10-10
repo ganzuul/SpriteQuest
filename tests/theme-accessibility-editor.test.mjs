@@ -1,0 +1,122 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { JSDOM } from 'jsdom';
+import { readFileSync } from 'node:fs';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join, resolve, relative, isAbsolute } from 'node:path';
+import { compiled } from './helpers/svelte-compile.mjs';
+
+const dom = new JSDOM('<body><div id="editor"></div></body>', { pretendToBeVisual: true });
+Object.assign(globalThis, {
+    window: dom.window, document: dom.window.document,
+    CustomEvent: dom.window.CustomEvent, getComputedStyle: dom.window.getComputedStyle,
+});
+for (const key of ['Node', 'Element', 'Text', 'Comment', 'Document', 'HTMLElement', 'HTMLDivElement', 'HTMLButtonElement', 'HTMLInputElement', 'HTMLMediaElement', 'MutationObserver', 'SVGElement']) {
+    Object.defineProperty(globalThis, key, { configurable: true, value: dom.window[key] });
+}
+const { installMock } = await import('./mock.js');
+installMock({ settings: { graphs: {} } });
+const version = JSON.parse(readFileSync(new URL('../manifest.json', import.meta.url))).version;
+const T = await import(`../src/theme.js?v=${version}`);
+const { renderThemeEditor } = await import(`../src/theme-editor.js?v=${version}`);
+const box = document.getElementById('editor');
+
+test('an accessible preset explains pin shapes and wire patterns beside the picker', () => {
+    for (const preset of ['harbor', 'signal']) {
+        T.setPreset(preset);
+        renderThemeEditor(box);
+        const legend = box.querySelector('.pc-th-accessibility');
+        assert.ok(legend, 'The selected accessible preset has a visible legend outside collapsed colour controls');
+        assert.equal(legend.closest('details'), null);
+        assert.match(legend.textContent, /labels/i);
+        for (const cue of [
+            'Context: filled circle', 'Text: ring', 'Data: square', 'Guidance: diamond',
+            'Draft: pentagon', 'Findings: triangle', 'Patches: hexagon', 'Candidate: plus',
+        ]) assert.ok(legend.textContent.includes(cue), cue);
+        assert.match(legend.textContent, /Text wires are solid/i);
+        assert.match(legend.textContent, /data dashed/i);
+        assert.match(legend.textContent, /guidance dotted/i);
+        assert.match(legend.textContent, /other types use distinct patterns/i);
+    }
+    T.setPreset('lattice');
+    renderThemeEditor(box);
+    assert.equal(box.querySelector('.pc-th-accessibility'), null, 'Ordinary themes do not offer cues they do not use');
+});
+
+test('Signal accepts its shared meaning colors while still warning about unreadable custom text', () => {
+    T.setPreset('signal');
+    renderThemeEditor(box);
+    assert.doesNotMatch(box.querySelector('.pc-th-custom').textContent, /very close|hard to tell apart/i);
+    const textRow = [...box.querySelectorAll('.pc-th-row')].find(row => row.querySelector('.pc-th-label').textContent === 'Text');
+    const input = textRow.querySelector('input');
+    input.value = '#151515';
+    input.dispatchEvent(new dom.window.Event('input'));
+    input.dispatchEvent(new dom.window.Event('change'));
+    assert.match(box.querySelector('.pc-th-warnings').textContent, /text is hard to read on the panel background/i);
+    assert.doesNotMatch(box.querySelector('.pc-th-warnings').textContent, /very close|hard to tell apart/i);
+    const warningRow = [...box.querySelectorAll('.pc-th-row')].find(row => row.querySelector('.pc-th-label').textContent === 'Warnings and skipped blocks');
+    const warningInput = warningRow.querySelector('input');
+    warningInput.value = '#fefefe';
+    warningInput.dispatchEvent(new dom.window.Event('input'));
+    warningInput.dispatchEvent(new dom.window.Event('change'));
+    assert.equal(box.querySelector('.pc-th-warnings').textContent.match(/very close/g)?.length, 2, 'Changed meaning roles receive advice while the inherited matching pair stays intentional');
+});
+
+async function withPreview(check) {
+    const directory = await mkdtemp(join(tmpdir(), 'lattice-theme-preview-'));
+    const host = document.createElement('div');
+    document.body.append(host);
+    const { mount, unmount, flushSync, tick } = await import(new URL('../node_modules/svelte/src/index-client.js', import.meta.url).href);
+    const kinds = ['context', 'text', 'data', 'guidance', 'draft', 'findings', 'patches', 'candidate'];
+    const ports = kinds.map((kind, index) => ({ id: kind, port: kind, dir: 'in', kind, label: `${kind} input`, optional: false, x: 10, y: 32 + index * 18 }));
+    const example = {
+        id: 'typed-cues', number: 1, title: 'Typed preview', goal: 'Inspect named pin cues', issue: '',
+        thumbnail: {
+            bounds: { x: 0, y: 0, w: 260, h: 200 }, comments: [], wires: [],
+            nodes: [{ id: 'node', x: 0, y: 0, w: 260, h: 200, title: 'All types', className: 'pc-node-native', iconPath: 'M 2,2 L 8,8', body: null, ports }],
+        },
+    };
+    let instance;
+    try {
+        const { component } = await compiled('ExamplesBrowser', directory);
+        instance = mount(component, { target: host, props: { examples: [example], scroll() {}, open() {} } });
+        flushSync();
+        await tick();
+        await check(host, ports);
+    } finally {
+        if (instance) await unmount(instance);
+        host.remove();
+        const absolute = resolve(directory), scope = relative(resolve(tmpdir()), absolute);
+        assert.ok(scope && !scope.startsWith('..') && !isAbsolute(scope) && scope.startsWith('lattice-theme-preview-'));
+        await rm(absolute, { recursive: true, force: true });
+    }
+}
+
+test('example thumbnails offer distinct cue geometry at each named pin position', async () => {
+    await withPreview((host, ports) => {
+        const cues = [...host.querySelectorAll('.pc-example-pin-cue')];
+        assert.equal(cues.length, 8, 'Every named type has an accessible pin shape in its thumbnail');
+        assert.equal(new Set(cues.map(cue => cue.getAttribute('d'))).size, 8, 'The eight typed cues have different geometry');
+        for (const pin of ports) {
+            const cue = host.querySelector(`.pc-example-pin-cue[data-kind="${pin.kind}"]`);
+            assert.equal(cue.getAttribute('transform'), `translate(${pin.x} ${pin.y})`, 'Cue geometry remains at its authored pin position');
+            assert.ok(host.textContent.includes(pin.label), `${pin.kind} keeps its visible label`);
+        }
+        assert.equal(host.querySelectorAll('.pc-example-pin-dot').length, 8, 'Ordinary themes retain their original circle preview');
+    });
+});
+
+test('example pin colors consume typed theme tokens with their ordinary color fallbacks', async () => {
+    await withPreview(host => {
+        for (const [kind, expected] of [
+            ['context', 'var(--pc-kind-context, #72adc0)'], ['text', 'var(--pc-kind-text, #a5bfa0)'],
+            ['data', 'var(--pc-kind-data, #7e9bc5)'], ['guidance', 'var(--pc-kind-guidance, #c190be)'],
+            ['draft', 'var(--pc-kind-draft, #92c9ad)'], ['findings', 'var(--pc-kind-findings, #b65b9e)'],
+            ['patches', 'var(--pc-kind-patches, #b65b9e)'], ['candidate', 'var(--pc-kind-candidate, #cca56d)'],
+        ]) {
+            const dot = host.querySelector(`.pc-example-pin-dot[data-kind="${kind}"]`);
+            assert.equal(getComputedStyle(dot).getPropertyValue('--pc-pin-color').replace(/\s+/g, ''), expected.replace(/\s+/g, ''), `${kind} inherits its preset pin color`);
+        }
+    });
+});
