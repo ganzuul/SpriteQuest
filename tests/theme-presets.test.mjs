@@ -12,6 +12,19 @@ const T = await import(`../src/theme.js?v=${version}`);
 const root = document.documentElement;
 const value = key => root.style.getPropertyValue('--pc-' + key);
 
+for (const [preset, role] of [['ember', 'error'], ['signal', 'text']]) {
+    test(`malformed saved ${preset} ${role} color keeps menu presentation available`, () => {
+        T.setPreset(preset);
+        context.extensionSettings.lattice.ui.theme.colors[role] = 'invalid-saved-color';
+        assert.doesNotThrow(() => T.applyTheme());
+        for (const tone of ['blue', 'yellow', 'green', 'purple', 'teal', 'red']) {
+            const color = T.parseColor(value('workspace-icon-' + tone));
+            assert.ok(color, tone);
+            assert.ok(T.contrast(color, T.parseColor(T.PRESETS[preset].colors.panel)) >= 3, tone);
+        }
+    });
+}
+
 test('selecting Ash applies the approved medium gray surfaces', () => {
     T.setPreset('ash');
     assert.equal(T.currentTheme().preset, 'ash');

@@ -61,13 +61,40 @@ Final verification covers **263/263 Node test files and all 326 browser cases wi
 
 Browser fixture updates preserve the original functional assertions. In particular, the compactor test now exercises select/compress explicitly and confirms its independently chosen connection survives mode changes; import acceptance still revokes the pending run and late authority. Current overview and shelf documentation screenshots were visually inspected.
 
+## Source confirmation and menu repairs
+
+After publication, the user requested a fresh source-by-source confirmation and reported dropdown rendering and heading-spacing defects, then requested icon colors from the original Gaea 2 references. Three independent audits compared all nine source tips and their useful dirty content with Main, beyond ancestry alone. Recall/document lifecycle, Details behavior, profile retirement, data defaults, typed routing, shelf appearance and all 30 curriculum lesson identities remain accounted for. The workflow-files archive retains superseded source implementations and the unique consumed-Escape change remains integrated. Ten original archives, nine source checkouts, the original evidence hashes and preserved Main-local files were verified again.
+
+The confirmation found a Help omission: its modern inline dialog bypassed the original project-guide/reference links and reset-layout instructions. These are restored alongside the modern File, Workflow and Recall guidance. Browser checks verify both link destinations, their focus cycle, unchanged graph content and zero provider calls.
+
+The dropdown defects were already present in the original `4933a7e` menu worktree; they were not caused by a lost merge. The reference chat is **Improve Lattice dropdown menus**, `01a1267c-f07f-7580-ab84-e7f2fab54f76`. Its eight Gaea 2 screenshots and approved menu captures were inspected directly.
+
+- Every row rendered a `<kbd>`, even with no shortcut, and left host keycap paint intact. Shortcut text now has a scoped reset; rows without shortcuts use an empty decorative grid placeholder. Plain text, aligned rails and submenu carets survive hostile host keyboard CSS.
+- Fixed 68/64px heading widths produced text gaps ranging from 26.1 to 49.8px at desktop width and wrapped Help at 360px. Content-based widths, a 44px minimum, 12px side padding normally and 10px on small screens give 28px desktop gaps and 24–25.8px at 360px. All six headings fit the narrow row; coarse-pointer targets remain at least 44×44px. This intentionally updates the original fixed-width spacing decision in response to the user's correction.
+- Command-specific icon colors follow Gaea's selective pattern: yellow creation/comments, blue saving/configuration/help, green execution/reset, purple structural tools/Recall/options, teal workflow data and red deletion/stopping/cancellation. Ordinary editing icons remain neutral. Only decorative icons receive this metadata; labels, shortcut text, carets, check states and command ownership retain their behavior. Disabled icons remain muted. Theme application fits colors to both idle and hovered menu surfaces with at least 3:1 contrast, and Signal keeps a monochrome presentation.
+
+A fresh complete run on published `0f74c4f` passed **263/263 Node files and 326/326 browser cases in a single run** (`.tmp/integration-confirm-node.log`, `.tmp/integration-confirm-browser.log`). Help repairs then passed four affected browser cases and five Node files. New failing browser regressions reproduced both reported dropdown/spacing defects and the missing icon colors before implementation; the three new cases passed after rebuilding.
+
+The complete suites then passed **263/263 Node files and 329/329 browser cases in one fresh run** with the Help, shortcut, heading and icon repairs included. Independent review found two edge cases in the new palette: malformed historical Error/Text colors could throw, and hovering an enabled red icon on a custom `#4a4a4a` panel reduced contrast to 2.475:1. Both were reproduced before fixing. Built-in color fallbacks now tolerate malformed saved values, and palette fitting includes the composited 9% text hover overlay. After those safeguards, **11/11 affected Node files and 64/64 affected browser cases passed**, including actual hovered-row contrast on all eight presets and three custom light/gray surfaces. No tests were skipped.
+
+| Confirmation check | Result | Evidence |
+| --- | --- | --- |
+| Complete Node and browser suites with UI repairs | 263/263 files; 329/329 cases | `.tmp/integration-confirm-final-node.log`, `.tmp/integration-confirm-final-browser.log` |
+| Final theme/menu/Help/shortcut follow-up | 11/11 Node files; 64/64 browser cases | `.tmp/integration-confirm-followup-node.log`, `.tmp/integration-confirm-followup-browser.log` |
+| Final types/build/assets | 0 errors, 0 warnings; 180 modules; 521 imports | `.tmp/integration-confirm-types.log`, `.tmp/integration-confirm-build.log`, `.tmp/integration-confirm-assets.log` |
+| Fresh isolated installation | 0 errors, missing assets, API requests or provider calls | `.tmp/integration-confirm-smoke.log` |
+| Documentation links/catalog | 11 documents, 225 links, 74 operations, 20 screenshots | `.tmp/integration-confirm-doc-check.log` |
+| Source preservation | Ten archives and nine unchanged source checkouts | `.tmp/integration-confirm-preservation.log` |
+
+Final visual captures, including host keycap CSS, are under `.tmp/integration-confirm-menu-visuals/`: File, View, Graph and Workflow dropdowns, desktop headers and a 360px layout. These were visually compared with the original reference. No known actionable source omission remains in the reviewed scope. All original worktrees and recovery evidence remain available for user testing. Automated checks do not replace testing the real operating-system pickers, host theme, provider and Send lifecycle.
+
 ## Recovery and retained worktrees
 
 Recovery directory: `F:/git/SillyCanvas/.tmp/integration-preservation-2026-10-10/`.
 
 - Ten complete TAR snapshots: original primary checkout and all nine linked sources. Includes tracked, untracked and useful ignored evidence; excludes Git administration and installed dependencies.
 - `manifest.json`, separate completed shelf manifest, and per-checkout file SHA-256 manifests. `verification.json` records archive/member/file integrity, exact source tips and unchanged source state. All ten archives and nine linked sources verified.
-- Verified complete `all-refs.bundle` plus shelf-era bundle. Final publication produces `all-refs-final.bundle` containing the integrated Main and retained source refs, with its SHA-256 recorded in `handoff.json`.
+- Verified complete `all-refs.bundle` plus shelf-era bundle. Initial publication produced `all-refs-final.bundle` containing the integrated Main and retained source refs. The later confirmation preserves that bundle and the initial handoff, and records its repair commit, fresh evidence and `all-refs-confirmed.bundle` hash in `confirmation.json` and the updated `handoff.json`.
 - Four original colliding audit/plan files retained under `primary-collisions/docs/`; original primary content also remains in its TAR. Original wire prototypes remain in `work/`.
 - All source branch refs and all nine checkouts remain available during user testing. No worktree removal, branch deletion or force push is authorized by this handoff.
 

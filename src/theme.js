@@ -302,6 +302,13 @@ export function applyTheme() {
 
     // Keep the recall status green readable on custom and host-derived surfaces.
     root.setProperty('--pc-recall-ready-fit', toHex(fitContrast(parseColor('#8fc878'), [panel, block], 3)));
+    // Gaea-style action colors belong to icons; keep idle and hovered rows readable.
+    const menuText = parseColor(colors.text) ?? parseColor(PRESETS[preset].colors.text);
+    const menuHover = over({ ...menuText, a: (menuText.a ?? 1) * 0.09 }, panel);
+    for (const [tone, color] of Object.entries({ blue: '#56b4e9', yellow: '#e3c341', green: '#8fc878', purple: '#b49af2', teal: '#7fd8c5', red: colors.error })) {
+        const base = parseColor(preset === 'signal' ? colors.text : color) ?? parseColor(PRESETS[preset].colors[preset === 'signal' ? 'text' : 'error']);
+        root.setProperty('--pc-workspace-icon-' + tone, toHex(fitContrast(base, [panel, menuHover], 3)));
+    }
     for (const key of MEANING) {
         if (preset === 'ember' && key === 'flow' && !Object.hasOwn(custom, key)) continue;
         const c = parseColor(colors[key]);

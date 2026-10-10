@@ -134,10 +134,10 @@
 {#snippet rows(entries: WorkspaceMenuItem[], nested: boolean)}
     {#each entries as entry}
         <button type="button" class="pc-workspace-menu-item" role={entry.kind==='radio'?'menuitemradio':entry.kind==='check'?'menuitemcheckbox':'menuitem'} title={entry.title} aria-label={entry.label} aria-disabled={!!entry.disabled} aria-checked={entry.kind?!!entry.checked:undefined} aria-haspopup={entry.children?'menu':undefined} aria-expanded={entry.children?child===entry:undefined} aria-controls={entry.children && child===entry?'pc-workspace-submenu':undefined} data-command={entry.command} data-tone={entry.tone} tabindex="-1" disabled={entry.disabled} onclick={(event)=>choose(entry,event.currentTarget)} onpointerenter={(event)=>{if(!nested){if(entry.children)openChild(entry,event.currentTarget);else child=null;}}}>
-            <span class="pc-workspace-menu-icon" aria-hidden="true">{#if entry.icon && menuIconPaths[entry.icon as keyof typeof menuIconPaths]}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d={menuIconPaths[entry.icon as keyof typeof menuIconPaths]} /></svg>{/if}</span>
+            <span class="pc-workspace-menu-icon" data-icon-tone={entry.iconTone} aria-hidden="true">{#if entry.icon && menuIconPaths[entry.icon as keyof typeof menuIconPaths]}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d={menuIconPaths[entry.icon as keyof typeof menuIconPaths]} /></svg>{/if}</span>
             <span class="pc-workspace-menu-state" aria-hidden="true">{entry.checked?(entry.kind==='radio'?'●':'✓'):''}</span>
             <span class="pc-workspace-menu-label">{entry.label}</span>
-            <kbd aria-hidden="true">{entry.shortcut ?? ''}</kbd>
+            {#if entry.shortcut}<kbd class="pc-workspace-menu-shortcut" aria-hidden="true">{entry.shortcut}</kbd>{:else}<span class="pc-workspace-menu-shortcut" aria-hidden="true"></span>{/if}
             <span class="pc-workspace-menu-caret" aria-hidden="true">{entry.children?'›':''}</span>
         </button>
     {/each}

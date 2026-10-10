@@ -11,9 +11,9 @@ test('host buttons cannot box or fill idle flat workspace menus', () => {
     assert.doesNotMatch(css, /:root\[data-pc-own="1"\] \.pc-root button\s*[{,]/, 'Theme rules must target boxed controls rather than every component button.');
     assert.equal(style('.pc-flat-menu').borderTopWidth, '0px');
     assert.equal(style('.pc-flat-menu').backgroundColor, 'rgba(0, 0, 0, 0)');
-    assert.equal(style('.pc-flat-menu').paddingLeft, '7px');
     assert.equal(style('.pc-workspace-menu-panel button').borderTopWidth, '0px');
     assert.equal(style('.pc-workspace-menu-panel button').backgroundColor, 'rgba(0, 0, 0, 0)');
+    assert.equal(style('.pc-workspace-menu-panel button').paddingLeft, '7px');
 });
 test('named pin hit areas anchor to their label rows at the side of the card', () => {
     assert.equal(style('.pc-native-row').position, 'relative');

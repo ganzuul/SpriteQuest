@@ -1,8 +1,18 @@
 import type { WorkbenchView } from './types';
 export interface WorkspaceMenuPanels { previewOpen: boolean; shelfOpen: boolean }
-export interface WorkspaceMenuItem { label: string; command: string; icon?: string; shortcut?: string; title?: string; disabled?: boolean; kind?: 'check' | 'radio'; checked?: boolean; children?: WorkspaceMenuItem[]; tone?: 'danger' }
+export type WorkspaceMenuIconTone = 'blue' | 'yellow' | 'green' | 'purple' | 'teal' | 'red';
+export interface WorkspaceMenuItem { label: string; command: string; icon?: string; iconTone?: WorkspaceMenuIconTone; shortcut?: string; title?: string; disabled?: boolean; kind?: 'check' | 'radio'; checked?: boolean; children?: WorkspaceMenuItem[]; tone?: 'danger' }
 export interface WorkspaceMenu { name: string; groups: WorkspaceMenuItem[][] }
-const row = (label: string, command: string, icon = '', disabled = false, shortcut = ''): WorkspaceMenuItem => ({ label, command, icon, disabled, shortcut });
+// Color follows the action: shared glyphs such as Add also serve neutral zoom controls.
+const iconTones: Record<string, WorkspaceMenuIconTone> = {
+ new: 'yellow', save: 'blue', 'save-as': 'blue', 'download-document': 'blue', export: 'blue', 'export-archived-workflows': 'blue',
+ 'delete-selection': 'red', 'reset-layout': 'green', theme: 'purple', 'add-node': 'blue', 'details-selection': 'blue',
+ 'create-subgraph': 'purple', 'save-subgraph': 'blue', 'comment-selection': 'yellow', 'add-comment': 'yellow', 'manage-portals': 'purple',
+ 'validate-workflow': 'green', 'review-host-result': 'blue', 'stop-workflow': 'red', 'run-preview': 'green', configure: 'blue',
+ 'story-documents': 'teal', 'memory-recall-menu': 'purple', 'recall-queue-selected': 'green', 'recall-queue-all': 'green',
+ 'recall-cancel-selected': 'red', 'recall-cancel-all': 'red', 'memory-recall': 'purple', help: 'blue',
+};
+const row = (label: string, command: string, icon = '', disabled = false, shortcut = ''): WorkspaceMenuItem => ({ label, command, icon, iconTone: iconTones[command], disabled, shortcut });
 const check = (label: string, command: string, checked: boolean, disabled = false, kind: 'check' | 'radio' = 'check'): WorkspaceMenuItem => ({ label, command, checked, disabled, kind });
 export function workspaceMenus(view: WorkbenchView, panels: WorkspaceMenuPanels = {previewOpen:true,shelfOpen:true}): WorkspaceMenu[] {
  const c: Partial<NonNullable<WorkbenchView["menuCapabilities"]>> = view.menuCapabilities ?? {}; const root = view.rootWorkflow ?? view.workflow, preview = view.outputPreview;
@@ -37,8 +47,8 @@ export function workspaceMenus(view: WorkbenchView, panels: WorkspaceMenuPanels 
   [check('Enable Lattice','enable-workflow',!!view.enabled,!root)],
   [row('Validate workflow','validate-workflow','check',!root),row('Review host result','review-host-result','details',!root?.nodes?.some(node=>node.terminal)),row('Stop workflow','stop-workflow','stop',!c.stop)],
   [row('Run to current output','run-preview','run',!preview?.runHere?.enabled || !!preview?.busy || busy),row('Run details…','run-details','details',!view.runDetails)],
-  [{label:'Configure',command:'configure',icon:'details',children:[row('Workflow Data…','story-documents','library')]}],
-  [{label:'Memory recall',command:'memory-recall-menu',icon:'arm',children:[row('Queue recall for selected nodes','recall-queue-selected','add',!selectedRecall?.queueNodeIds.length),row('Cancel recall for selected nodes','recall-cancel-selected','clear',!selectedRecall?.cancelNodeIds.length),row('Queue recall for all eligible nodes','recall-queue-all','add',!allRecall?.queueNodeIds.length),row('Cancel all queued recall','recall-cancel-all','clear',!allRecall?.cancelNodeIds.length),row('Memory recall overview…','memory-recall','details')]}]
+  [{...row('Configure','configure','details'),children:[row('Workflow Data…','story-documents','library')]}],
+  [{...row('Memory recall','memory-recall-menu','arm'),children:[row('Queue recall for selected nodes','recall-queue-selected','add',!selectedRecall?.queueNodeIds.length),row('Cancel recall for selected nodes','recall-cancel-selected','clear',!selectedRecall?.cancelNodeIds.length),row('Queue recall for all eligible nodes','recall-queue-all','add',!allRecall?.queueNodeIds.length),row('Cancel all queued recall','recall-cancel-all','clear',!allRecall?.cancelNodeIds.length),row('Memory recall overview…','memory-recall','details')]}]
  ]},
  {name:'Help',groups:[[row('Workspace guide','help','help'),row('Node reference','node-reference','library'),row('Keyboard shortcuts','shortcuts','keyboard')],[row('About Lattice','about','info')]]}
  ];
