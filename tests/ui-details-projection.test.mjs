@@ -23,6 +23,17 @@ test('JSON Decode schema projects the actual stored JSON text contract', () => {
     assert.equal(typeof schema.value, 'string');
 });
 
+test('document-backed node details offer node-local presets instead of raw target controls', () => {
+    const root = { id: 'data-details', schema: 3, runtime: 2, mode: 'native-unified', roles: {}, nodes: { clock: { id: 'clock', type: 'workflow', operation: 'story-clock', phase: 'post', calendarId: 'journey' } }, wires: {} };
+    const panel = details(root, 'clock');
+    assert.equal(panel.workflowData.name, 'Chat clock');
+    assert.equal(panel.workflowData.targetId, 'lattice-default-clock');
+    assert.equal(panel.controls.some(control => ['clockId', 'calendarId'].includes(control.key)), false);
+    assert.equal(panel.workflowData.expectedCalendar, 'journey');
+    assert.equal(panel.phase, 'post');
+    assert.equal(panel.workflowData.available, false);
+});
+
 test('Compose shows controls for its active mode and suppresses identical provenance', () => {
     const root = starterGraph('structured-guidance');
     const compose = root.nodes['compose-json'];

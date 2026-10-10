@@ -3,6 +3,7 @@
     import DetailControlEditor from './DetailControl.svelte';
     import RecallDetails from './RecallDetails.svelte';
     import ModifierStack from './ModifierStack.svelte';
+    import WorkflowData from './WorkflowData.svelte';
     import type { DetailBindingMode, DetailControl, DetailEditResponse, DetailModifier, DetailSelection, NodeDetailsActions, NodeDetailsView } from './detail-types';
     let { view, actions = {}, idPrefix = 'pc-node-details' }: { view: NodeDetailsView | null; actions?: NodeDetailsActions; idPrefix?: string } = $props();
     type LocalDraft = { text: string; error: string; pending: boolean; editor?: DetailControl['editor']; representation?: 'json-text' | 'json-value'; artifactKind?: string; required?: boolean; boundaryId?: string; boundaryDirection?: 'input' | 'output'; modifierType?: string; helperKey?:string };
@@ -348,6 +349,7 @@
         </fieldset>
     {/if}
     {#if !view.boundary}
+        {#if view.workflowData}<WorkflowData model={view.workflowData} selection={selection(view)} {actions} disabled={view.readOnly} idPrefix={idPrefix + '-workflow-data'} />{/if}
         <fieldset class="pc-detail-group pc-detail-main" data-operation-controls>
             {#if view.fileInput}
                 <div data-file-input-controls>
@@ -416,9 +418,9 @@
 {/snippet}
 
 <style>
-    .pc-node-details { box-sizing: border-box; flex: 1; display: flex; flex-direction: column; min-width: 0; width: 100%; color: var(--pc-text); font: inherit; font-size: 12px; padding: 10px; }
+    .pc-node-details { --pc-r-sm: 4px; box-sizing: border-box; flex: 1; display: flex; flex-direction: column; min-width: 0; width: 100%; color: var(--pc-text); font: inherit; font-size: 12px; padding: 10px; }
     .pc-node-details :global(.pc-modifiers) { margin-top: auto; padding-top: 12px; }
-    header { display: flex; gap: 7px; align-items: start; padding-bottom: 10px; border-bottom: 1px solid var(--pc-border); }
+    header { display: flex; gap: 7px; align-items: start; padding: 7px; border: 1px solid var(--pc-border); border-radius: 4px; background: var(--pc-field); }
     header svg { width: 21px; height: 21px; margin-top: 5px; flex: none; fill: none; stroke: var(--pc-detail-family); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
     .pc-detail-identity { min-width: 0; flex: 1; } .pc-detail-identity .pc-detail-name { font-weight: 600; font-size: 14px; margin: 0 0 2px !important; border-color: transparent !important; background: transparent !important; padding: 3px !important; }
     .pc-detail-name:hover:not(:disabled), .pc-detail-name:focus { border-color: var(--pc-border) !important; background: var(--pc-field) !important; }
@@ -427,9 +429,9 @@
     .pc-detail-group { min-width: 0; margin: 10px 0 0; padding: 9px 0 0; border: 0; border-top-width: 1px; border-top-style: solid; border-top-color: var(--pc-border); border-radius: 0; background: transparent; box-shadow: none; }
     .pc-detail-main { margin-top: 0; border-top-color: transparent; padding-top: 2px; }
     legend { padding: 0 5px; color: var(--pc-muted); font-size: 11px; } label { display: block; margin: 8px 0; color: var(--pc-text); font-size: 11px; }
-    input:not([type='checkbox']), select { display: block; width: 100%; min-width: 0; box-sizing: border-box; margin-top: 4px; min-height: 28px; padding: 5px 7px; border: 1px solid var(--pc-border); border-radius: 2px; background: var(--pc-field); color: var(--pc-text); font: inherit; }
+    input:not([type='checkbox']), select { display: block; width: 100%; min-width: 0; box-sizing: border-box; margin-top: 4px; min-height: 28px; padding: 5px 7px; border: 1px solid var(--pc-border); border-radius: 4px; background: var(--pc-field); color: var(--pc-text); font: inherit; }
     input[type='checkbox'] { accent-color: var(--pc-accent); }
-    .pc-detail-check { display: flex; align-items: center; gap: 6px; } button { min-height: 27px; padding: 4px 8px; border: 1px solid var(--pc-border); border-radius: 2px; background: var(--pc-control); color: var(--pc-text); font: inherit; font-size: 11px; cursor: pointer; }
+    .pc-detail-check { display: flex; align-items: center; gap: 6px; } button { min-height: 27px; padding: 4px 8px; border: 1px solid var(--pc-border); border-radius: 4px; background: var(--pc-control); color: var(--pc-text); font: inherit; font-size: 11px; cursor: pointer; }
     button:hover:not(:disabled) { background: color-mix(in srgb, var(--pc-text) 10%, var(--pc-control)); } :is(button, input, select):focus-visible { outline: 2px solid var(--pc-accent); outline-offset: 1px; }
     :disabled { opacity: .55; cursor: default; } .pc-detail-error { color: var(--pc-error); font-size: 11px; overflow-wrap: anywhere; }
     .pc-detail-port { display: flex; justify-content: space-between; gap: 8px; margin: 8px 0; font-size: 11px; } summary { cursor: pointer; font-size: 11px; color: var(--pc-muted); overflow-wrap: anywhere; }

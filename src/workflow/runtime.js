@@ -160,13 +160,14 @@ async function executeWorkflow(original,ports,hooks={}) {
         emit('plan',{plan:safePlan});
         if(stopped())return finish(failure('ABORTED','Workflow was stopped.'));
         const nodes=plan.primitives.filter(unit=>unit.included);
+        const workflowDataNodes=[];
         // Validate every selected real helper before any source or model effect, even for an empty collection.
         if(typeof ports.iterateHelper!=='function')for(const unit of nodes)if(unit.node.operation==='for-each') {
             const compiled=compileIterationHelper(prepared.graph,{helper:unit.node.helper,mode:unit.node.mode??'map',phase:unit.phase,address:unit.address,requestBoundPerIteration:unit.node.requestBoundPerIteration??0});
-            if(!compiled.ok)return finish(compiled);helperPrograms.set(addressKey(unit.address),compiled.data.token);
+            if(!compiled.ok)return finish(compiled);helperPrograms.set(addressKey(unit.address),compiled.data.token);workflowDataNodes.push(...compiled.data.workflowDataNodes);
         }
         if(ports.dryRun||ports.preview)return finish({ok:true,preview:true});
-        const preparation=await hooks.prepare?.(plan,{cancel,originalGraphSnapshot});if(preparation?.ok===false)return finish(preparation);
+        const preparation=await hooks.prepare?.(plan,{cancel,originalGraphSnapshot,workflowDataNodes:freezeArtifact(workflowDataNodes)});if(preparation?.ok===false)return finish(preparation);
         const bindingGraph={...prepared.graph,roles:{}};
         const summarizeBinding=(binding,node,op)=>safeBinding(ports.bindingSummary?.(binding)??{role:node.modelRole??op.modelRole,profileId:binding?.profileId,model:binding?.model,capability:op.requestCapability});
         const bindUnit=async(unit,op,duringExecution=false)=>{

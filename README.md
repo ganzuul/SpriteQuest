@@ -86,12 +86,15 @@ Select processing nodes, right-click, and choose **Create Subgraph**. The editor
 3. Install, then reload SillyTavern. Open LATTICE from its logo on the left of the chat bar or with `/lattice`. Fresh launch opens **Unified story workflow**, with Lattice disabled. Existing installations restore their unified recovery draft; previous unified documents remain available through **File → Recover previous workflows**.
 4. Keep the starter open, select **Enable Lattice**, and Send a player message in SillyTavern. The starter makes no auxiliary calls and exposes its completed native Draft for review.
 5. Select **Review / Publish · Host result** in Preview, inspect it, and Apply or Reject. For a richer pipeline, open a unified example and configure its model nodes, For Each helper roles and required workflow data documents before the next Send.
+New Story Clock, Read File and Outcome Commit nodes have automatic Workflow Data presets.
 
 For updates, use **Manage Extensions**, then reload. Installation, import, and editing do not make model calls.
 
 The [unified workflow guide](docs/unified-workflows.md) walks through applying an example to **Story-2 on default-user**, chaining different models, using Decision, recording private moments, queueing recall and managing accepted effects. A full unified native generation starts with ordinary Send; supported **Run to here** paths inspect without acceptance.
 
 Opening a unified example makes an independent editable copy the active document. It makes no model request and does not change **Enable Lattice**. Choose each auxiliary model’s connection on its node bar; Details provides advanced model settings; configure For Each’s **Helper model bindings** separately. **Tools → Workflow Data…** authorizes logical JSON/text targets. Local connection IDs and credentials are excluded from portable exports.
+
+Adjust a node’s **Details → Starting values** or initial content, and use **Advanced** for its source, Format and Visibility. Nodes using the same clock share saved time; create a separate clock with **+** for an independent timeline. Changing initial values preserves existing saved time and document content. **Tools → Workflow Data…** remains available for managing custom targets, including those named by imported examples. Local connection IDs and credentials are excluded from portable exports.
 
 Saved unified documents retain their content and recovery draft. Earlier unified example IDs remain installable while the visible picker shows the 30 new lessons. Saved pre/post roots are retired. On upgrade, LATTICE preserves their original graphs, bindings and active selection in a cold recovery archive, then opens a disabled unified starter when needed. **File → Export archived workflows…** downloads the archive as JSON. Archived roots cannot execute or import as current workflows, and recovery makes no model requests. Rebuild useful operations in a new unified graph; there is no automatic converter.
 

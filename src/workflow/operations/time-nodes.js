@@ -1,6 +1,7 @@
 import { advanceStoryClock, enumerateScheduledOccurrences, resolveTimeAdvance } from '../story-time.js?v=0.27.0';
 import { cloneJsonValue, stringifyJsonValue } from './json-data.js?v=0.27.0';
 import { freeze } from '../record-data.js?v=0.27.0';
+import { workflowDataPresetFor } from '../workflow-data-defaults.js?v=0.27.0';
 
 const fail = (code, message) => ({ ok: false, error: { code, message } });
 const plain = value => value !== null && typeof value === 'object' && !Array.isArray(value) && [Object.prototype, null].includes(Object.getPrototypeOf(value));
@@ -27,7 +28,7 @@ const registration = (id, title, controlDescriptors, extra = {}) => ({
 export const TIME_OPERATIONS = {
     'commit-clock': registration('commit-clock','Clock Commit',{}, {family:'Output',phase:'post',rootOnly:true,hostOperation:true,terminal:true}),
     'story-clock': registration('story-clock', 'Story Clock', {
-        clockId: stringControl('Accepted clock identity'), calendarId: stringControl('Expected calendar (optional)'),
+        clockId: stringControl('Clock', workflowDataPresetFor('story-clock').targetId), calendarId: stringControl('Expected calendar (optional)'),
     }, { input: null, rootOnly: true, hostOperation: true }),
     'time-trigger': registration('time-trigger', 'Time Trigger', {
         mode: { type: 'enum', label: 'Schedule mode', default: 'daily', values: ['daily', 'interval', 'delay'] },
@@ -61,7 +62,7 @@ function resolve(node, options = {}) {
     for (const key of base.controls) {
         const checked = cloneJsonValue(own(node, key, base.defaults[key]));
         if (!checked.ok) return fail('INVALID_SETTINGS', 'Time controls require bounded own JSON.');
-        settings[key] = checked.data.value;
+        settings[key] = operation === 'story-clock' && key === 'clockId' && checked.data.value === '' ? base.defaults.clockId : checked.data.value;
         const control = base.controlDescriptors[key];
         const value = settings[key];
         if (control.type === 'string' && (typeof value !== 'string' || value.length > control.maxLength)
@@ -148,7 +149,7 @@ function projectAdvance(settings, inputs) {
     if (inputs.schedules && settings.schedules.length) return fail('AMBIGUOUS_SCHEDULES', 'Use either connected schedules or authored schedules, not both.');
     const schedules = Object.hasOwn(inputs, 'schedules') ? inputs.schedules.value : settings.schedules;
     const consumed = Object.hasOwn(inputs, 'consumed') ? inputs.consumed.value : [];
-    if (!Array.isArray(consumed)) return fail('INVALID_OPTIONS', 'The settled occurrence ledger must be an explicit array.');
+    if (!Array.isArray(consumed)) return fail('INVALID_OPTIONS', 'Settled occurrence IDs must be an explicit array.');
     const result = resolveTimeAdvance(inputs.clock.value, inputs.proposal.value, schedules, { policy: settings.policy, limit: settings.limit, consumedIds: [...settings.consumedIds, ...consumed] });
     if (!result.ok) return result;
     const { clock, occurrences, ...report } = result.data;
@@ -171,7 +172,7 @@ function projectTrigger(settings, inputs) {
         ...(settings.mode === 'daily' ? { minuteOfDay: settings.minuteOfDay } : settings.mode === 'interval' ? { anchorMinute: settings.anchorMinute, intervalMinutes: settings.intervalMinutes } : { dueMinute: settings.dueMinute }),
     };
     const consumed = Object.hasOwn(inputs, 'consumed') ? inputs.consumed.value : [];
-    if (!Array.isArray(consumed)) return fail('INVALID_OPTIONS', 'The settled occurrence ledger must be an explicit array.');
+    if (!Array.isArray(consumed)) return fail('INVALID_OPTIONS', 'Settled occurrence IDs must be an explicit array.');
     const result = enumerateScheduledOccurrences(clock, next.absoluteMinute, [schedule], { limit: settings.limit, consumedIds: [...settings.consumedIds, ...consumed] });
     if (!result.ok) return result;
     return outputResult('time-trigger', {
@@ -221,7 +222,7 @@ export async function executeTimeNode(node, inputs, local = {}) {
             if (typeof stage !== 'function') return fail('HOST_OPERATION_REQUIRED','Clock Commit requires a trusted accepted-state host.');
             let staged; try { staged = await stage(inputs.projection.value,inputs.occurrences?.value); } catch { return fail('CLOCK_COMMIT_FAILED','The clock projection could not be staged.'); }
             if (isStopped(signal)) return fail('ABORTED','Clock staging was stopped.');
-            if (staged?.ok !== true) return fail('CLOCK_COMMIT_FAILED','The captured time projection could not be staged; verify its clock and accepted ledger.');
+            if (staged?.ok !== true) return fail('CLOCK_COMMIT_FAILED','The captured time projection could not be staged; verify its clock and accepted occurrence history.');
             const checked = cloneJsonValue(staged.data);
             if (!checked.ok) return fail('CLOCK_COMMIT_FAILED','Clock staging requires a bounded descriptive receipt.');
             const receipt=dataArtifact(checked.data.value,visibilityFor(admitted.data));

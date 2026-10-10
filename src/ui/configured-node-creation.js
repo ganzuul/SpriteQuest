@@ -2,6 +2,7 @@ import {OPERATIONS,operationDefaults,describeOperation} from '../workflow/catalo
 import {cloneDefinitionData,definitionRefKey} from '../workflow/definition-data.js?v=0.27.0';
 import {inspectDefinitionGraph} from '../workflow/graph-validation.js?v=0.27.0';
 import {freeze} from '../workflow/record-data.js?v=0.27.0';
+import {workflowDataPresetFor} from '../workflow/workflow-data-defaults.js?v=0.27.0';
 const fail=(code,message)=>({ok:false,error:{code,message}});
 const pin=(id,kind,direction,required=false,label=id)=>({id,label,kind,direction,required,cardinality:'one'});
 const input=(id,kind='data',required=true,label=id)=>pin(id,kind,'input',required,label),output=(id,kind='data',label=id)=>pin(id,kind,'output',false,label);
@@ -23,7 +24,13 @@ const factories={
 };
 /** Discovery only: accurate declared pins, with no manufactured executable settings or identities. */
 export function deferredNodeDescription(operation,controls={}){const factory=factories[operation],base=OPERATIONS[operation];return factory&&base?{descriptor:base,ports:factory({...base.defaults,...controls})}:null;}
-export const nodeNeedsConfiguration=operation=>Object.hasOwn(factories,operation);
+export function nodeNeedsConfiguration(operation,controls={}){
+ if(!Object.hasOwn(factories,operation))return false;
+ const preset=workflowDataPresetFor(operation),checked=cloneDefinitionData(controls),base=OPERATIONS[operation];
+ if(!preset||!checked.ok||!controls||Array.isArray(controls)||typeof controls!=='object'||Object.keys(controls).some(key=>!base.controls.includes(key)))return true;
+ const node={type:'workflow',...operationDefaults(operation),...checked.data};
+ return node[preset.controlKey]!==preset.targetId||!describeOperation({schema:3,runtime:2,mode:'native-unified'},node).ok;
+}
 /** Explicit configuration starts from the current effective stage; fixed operations and stage-specific helper containers lock it. */
 export function configuredCreationStage(operation,mode,effectivePhase,inDefinition=false){
  const declared=OPERATIONS[operation]?.phase,containerStage=inDefinition&&['native-pre','native-post'].includes(mode)?mode.slice(7):null;
@@ -35,7 +42,8 @@ export function iterationHelperChoices(root){
 export function validateConfiguredNodeControls(operation,text,options){
  try{if(typeof text!=='string'||text.length>200000)return fail('INVALID_CONFIGURATION','Controls must be a bounded JSON object.');const raw=JSON.parse(text),checked=cloneDefinitionData(raw),base=OPERATIONS[operation];if(!checked.ok||!base||!raw||Array.isArray(raw)||typeof raw!=='object'||Object.keys(raw).some(key=>!base.controls.includes(key)))return fail('INVALID_CONFIGURATION','Use only declared node controls in the JSON object.');
   const controls=checked.data,node={type:'workflow',...operationDefaults(operation),...controls,phase:options.phase},described=describeOperation({schema:3,runtime:2,mode:'native-unified'},node);if(!described.ok)return fail('INVALID_CONFIGURATION','Complete the required identities and settings using the declared node controls.');
-  if(operation==='read-file'&&!options.targets.some(target=>target.targetId===node.targetId)||['story-clock','commit-outcomes'].includes(operation)&&!options.targets.some(target=>target.targetId===(operation==='story-clock'?node.clockId:node.targetId)&&target.format==='json'))return fail('DOCUMENT_NOT_AUTHORIZED','Select an actual authorized workflow data target.');
+  const preset=workflowDataPresetFor(operation),automatic=preset&&node[preset.controlKey]===preset.targetId;
+  if(!automatic&&(operation==='read-file'&&!options.targets.some(target=>target.targetId===node.targetId)||['story-clock','commit-outcomes'].includes(operation)&&!options.targets.some(target=>target.targetId===(operation==='story-clock'?node.clockId:node.targetId)&&target.format==='json')))return fail('DOCUMENT_NOT_AUTHORIZED','Select an actual authorized workflow data target.');
   if(operation==='for-each'&&(!options.helpers.some(helper=>definitionRefKey(helper.ref)===definitionRefKey(node.helper)&&(node.mode!=='projected-state'||helper.stateful))))return fail('INVALID_ITERATION_HELPER','Choose an exact bundled Data helper compatible with the iteration mode.');
   return {ok:true,data:{controls,ports:described.data.ports}};
  }catch{return fail('INVALID_CONFIGURATION','Use valid bounded JSON controls; identities remain logical values.');}

@@ -486,7 +486,9 @@ test('unified configured creation uses a real stage and leaves neutral nodes dep
   const edit=accepted(prepare(graph,{kind:'create',operation,controls,...(phase?{phase}:{}),graphPoint:{x:10,y:20}}),graph),added=edit.candidate.nodes[edit.addedNodeIds[0]];
   assert.equal(added.phase,phase);assert.notEqual(added.phase,'unified');assert.ok(portsForNode(edit.candidate,added).length);
  }
- assert.equal(prepare(graph,{kind:'create',operation:'read-file',graphPoint:{x:0,y:0}}).ok,false,'configuration cannot be replaced by a fake target');
+ const automatic=accepted(prepare(graph,{kind:'create',operation:'read-file',graphPoint:{x:0,y:0}}),graph);
+ assert.equal(automatic.candidate.nodes[automatic.addedNodeIds[0]].targetId,'lattice-default-notes','Read File has a real scoped automatic preset');
+ assert.equal(prepare(graph,{kind:'create',operation:'read-file',controls:{targetId:null},graphPoint:{x:0,y:0}}).ok,false,'Malformed explicit targets remain invalid');
  assert.equal(prepare(graph,{kind:'create',operation:'on-send',phase:'post',graphPoint:{x:0,y:0}}).ok,false,'fixed preparation node cannot become a response node');
 });
 test('configured Item Use Trigger extraction starts with the active SillyTavern model', () => {

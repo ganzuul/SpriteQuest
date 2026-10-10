@@ -2,6 +2,8 @@ import {createRecallCommands} from './recall-commands.js?v=0.27.0';
 import {projectRecallView} from './recall-projection.js?v=0.27.0';
 import { prepareIterationBindingOverride } from './iteration-bindings.js?v=0.27.0';
 import { createStoryDocumentSetup } from './story-document-setup.js?v=0.27.0';
+import { createWorkflowDataSetup } from './workflow-data-setup.js?v=0.27.0';
+import { workflowDataPresetFor } from '../workflow/workflow-data-defaults.js?v=0.27.0';
 import { createConfiguredNodeSession, configuredCreationStage, nodeNeedsConfiguration, iterationHelperChoices } from './configured-node-creation.js?v=0.27.0';
 import { resolveBinding } from '../workflow/connections.js?v=0.27.0';
 import { activeModelMetadata } from '../workflow/model-profiles.js?v=0.27.0';
@@ -65,7 +67,7 @@ let nativeGroupPresenter = null, detachedClip = null, workspaceIssue = '';
 let pendingSubgraphSave = null;
 let pendingDocumentPrompt = null;
 let workflowFiles = null, documentCommands = null, fileStorageIssue = '';
-let storyDocumentSetup = null, pendingConfiguredNode = null;
+let storyDocumentSetup = null, nodeWorkflowDataSetup = null, pendingConfiguredNode = null;
 const nodeDocumentCaptures = new Map(), nodeCreationScopes = new WeakMap();
 const editorCaptures = new WeakMap();
 const commentCaptures = new WeakMap(), commentPresentationEffects = new WeakMap(), pendingCommentPresentation = new WeakMap();
@@ -134,6 +136,14 @@ function storySetup() {
     if (!catalog) return null;
     return storyDocumentSetup ??= createStoryDocumentSetup(catalog);
 }
+function workflowDataSetup() {
+    const catalog = workflowRuntime.getStoryDocumentCatalog?.();
+    if (!catalog) return null;
+    return nodeWorkflowDataSetup ??= createWorkflowDataSetup(catalog, { getStored: (scope, targetId) => {
+        const ownValue = (object, key) => Object.getOwnPropertyDescriptor(object ?? {}, key)?.value;
+        return ownValue(ownValue(ownValue(ctx().chatMetadata, 'latticeDocuments'), scope.userId), targetId);
+    } });
+}
 function refreshStoryDocuments(notice = '') {
     const snapshot = storySetup()?.snapshot();
     workbench?.update({ storyDocuments: snapshot?.ok ? { ...snapshot.data, notice } : { key: '', revision: '', scope: { userId: '', chatId: '' }, documents: [], issue: 'Workflow Data requires an active user and chat.' } });
@@ -164,7 +174,7 @@ function recallUiContext(){if(!isOpen()||!graphViews||!recallProjection)return n
 const recallCommands=createRecallCommands({readContext:recallUiContext,isContextCurrent:captured=>{const now=recallUiContext();return !!now&&now.editorToken===captured.editorToken&&now.documentToken===captured.documentToken&&now.selectionEpoch===captured.selectionEpoch;},captureRecall:()=>workflowRuntime.getNativeWorkflowController?.()?.captureRecall?.(),changeRecallQueues:(capture,request)=>workflowRuntime.getNativeWorkflowController?.()?.changeRecallQueues?.(capture,request),openDetails:openRecallDetails,changed:refreshRecallOverview});
 function captureRecallActions(nodeIds,scope='selected'){const captured=recallCommands.capture(nodeIds,scope);return {queue:()=>captured.ok?recallCommands.change(captured.data,'queue'):captured,cancel:()=>captured.ok?recallCommands.change(captured.data,'cancel'):captured};}
 const recallActions={refresh:refreshRecallOverview,capture:captureRecallActions,reportIssue:message=>toast(message,'error'),change(nodeIds,action,scope='selected'){const result=captureRecallActions(nodeIds,scope)[action]();if(!result.ok)toast(result.error.message,'error');return result;},reveal:openRecallDetails};
-function workspaceInputs() { const context = ctx(), hostProfiles = profiles(); nodeProfileInputsKey = nodeProfileMetadataKey(context, hostProfiles); return { settings: settings(), profiles: readNodeProfileMetadata(context, hostProfiles), activeModel: activeModelMetadata(context), result: workflowState.result, resolveBinding: (node, graph) => resolveBinding(node, graph, ctx()), candidateStatus: candidate => workflowRuntime.getNativeWorkflowController?.()?.candidateStatus?.(candidate) }; }
+function workspaceInputs() { const context = ctx(), hostProfiles = profiles(); nodeProfileInputsKey = nodeProfileMetadataKey(context, hostProfiles); return { settings: settings(), profiles: readNodeProfileMetadata(context, hostProfiles), activeModel: activeModelMetadata(context), workflowData: workflowDataSetup()?.snapshot() ?? { available: false, key: '', documents: [] }, result: workflowState.result, resolveBinding: (node, graph) => resolveBinding(node, graph, ctx()), candidateStatus: candidate => workflowRuntime.getNativeWorkflowController?.()?.candidateStatus?.(candidate) }; }
 function refreshWorkflowPreparation() {
     if (!current || !workspacePrepared) return;
     workspacePrepared.workflow = prepareWorkflowProjection(current, { ...workspaceInputs(), ...(workspacePrepared.planner ? { planner: workspacePrepared.planner } : {}) });
@@ -1435,6 +1445,57 @@ const nodeDetailsActions = {
     queueRecall(selection){const captured=detailCapture(selection,true);return captured.ok?recallActions.change([selection.address.nodeId],'queue'):captured;},
     cancelRecall(selection){const captured=detailCapture(selection,true);return captured.ok?recallActions.change([selection.address.nodeId],'cancel'):captured;},
     revealRecallShortcut:nodeId=>openRecallDetails(nodeId),
+    loadWorkflowData(selection, key) {
+        const captured = detailCapture(selection); if (!captured.ok) return captured;
+        const node = graphViews.readEditor().prepared.effectiveNodes[selection.address.nodeId], preset = workflowDataPresetFor(node?.operation);
+        return preset ? workflowDataSetup()?.load(key, node.operation, node[preset.controlKey] || preset.targetId) ?? { ok: false, error: { code: 'DOCUMENT_SETUP_UNAVAILABLE', message: 'Open an active chat to adjust initial values.' } } : { ok: false, error: { code: 'INVALID_WORKFLOW_DATA', message: 'Select a node that uses Workflow Data.' } };
+    },
+    async saveWorkflowData(selection, key, definition) {
+        const captured = detailCapture(selection); if (!captured.ok) return captured;
+        const node = graphViews.readEditor().prepared.effectiveNodes[selection.address.nodeId], preset = workflowDataPresetFor(node?.operation);
+        if (!preset) return { ok: false, error: { code: 'INVALID_WORKFLOW_DATA', message: 'Select a node that uses Workflow Data.' } };
+        const result = await workflowDataSetup()?.save(key, node.operation, node[preset.controlKey] || preset.targetId, definition);
+        if (!result) return { ok: false, error: { code: 'DOCUMENT_SETUP_UNAVAILABLE', message: 'Open an active chat to adjust initial values.' } };
+        if (result.ok) {
+            if (!editorCurrent(captured.data)) return { ok: false, error: { code: 'STALE_CONTEXT', message: 'The graph view changed. Prepare this edit again.' } };
+            workflowSession.cancel('Workflow Data initial values changed'); refreshWorkflowPreparation(); updateWorkflowProjection();
+        }
+        return result;
+    },
+    async saveWorkflowDataVisibility(selection, key, visibility) {
+        const captured = detailCapture(selection); if (!captured.ok) return captured;
+        const node = graphViews.readEditor().prepared.effectiveNodes[selection.address.nodeId], preset = workflowDataPresetFor(node?.operation);
+        if (!preset) return { ok: false, error: { code: 'INVALID_WORKFLOW_DATA', message: 'Select a node that uses Workflow Data.' } };
+        const result = await workflowDataSetup()?.saveVisibility(key, node.operation, node[preset.controlKey] || preset.targetId, visibility);
+        if (!result) return { ok: false, error: { code: 'DOCUMENT_SETUP_UNAVAILABLE', message: 'Open an active chat to adjust visibility.' } };
+        if (result.ok) {
+            if (!editorCurrent(captured.data)) return { ok: false, error: { code: 'STALE_CONTEXT', message: 'The graph view changed. Prepare this edit again.' } };
+            workflowSession.cancel('Workflow Data visibility changed'); refreshWorkflowPreparation(); updateWorkflowProjection();
+        }
+        return result;
+    },
+    async createWorkflowData(selection, key, options) {
+        const captured = detailCapture(selection); if (!captured.ok) return captured;
+        const node = graphViews.readEditor().prepared.effectiveNodes[selection.address.nodeId], preset = workflowDataPresetFor(node?.operation);
+        if (!preset || options?.kind !== preset.kind) return { ok: false, error: { code: 'INVALID_WORKFLOW_DATA', message: 'Choose a compatible data source for this node.' } };
+        const result = await workflowDataSetup()?.create(key, node.operation, options);
+        if (!result) return { ok: false, error: { code: 'DOCUMENT_SETUP_UNAVAILABLE', message: 'Open an active chat to create a separate data source.' } };
+        if (!result.ok) return result;
+        if (!editorCurrent(captured.data)) return { ok: false, error: { code: 'STALE_CONTEXT', message: 'The graph view changed. Prepare this edit again.' } };
+        const stillSelected = detailCapture(selection); if (!stillSelected.ok) return stillSelected;
+        const committed = commitCaptured(captured.data, prepareNode(current, { ...scopeCommand(captured.data), kind: 'controls', nodeId: selection.address.nodeId, controls: { [preset.controlKey]: result.data.definition.targetId } }));
+        refreshWorkflowPreparation(); updateWorkflowProjection();
+        return committed.ok ? result : committed;
+    },
+    bindWorkflowData(selection, key, targetId) {
+        const captured = detailCapture(selection); if (!captured.ok) return captured;
+        const node = graphViews.readEditor().prepared.effectiveNodes[selection.address.nodeId], preset = workflowDataPresetFor(node?.operation), setup = workflowDataSetup();
+        if (!preset || !setup) return { ok: false, error: { code: 'DOCUMENT_SETUP_UNAVAILABLE', message: 'Workflow Data settings are unavailable.' } };
+        const checked = setup.checkBinding(key, node.operation, targetId); if (!checked.ok) return checked;
+        const prepared = prepareNode(current, { ...scopeCommand(captured.data), kind: 'controls', nodeId: selection.address.nodeId, controls: { [preset.controlKey]: targetId } });
+        const stillCurrent = setup.checkBinding(key, node.operation, targetId); if (!stillCurrent.ok) return stillCurrent;
+        return commitCaptured(captured.data, prepared);
+    },
     editHelperBinding(selection,role,field,mode,value) { return editIterationHelperBinding(selection,role,field,mode,value); },
     editPhase(selection, phase) {
         const captured = detailCapture(selection); if (!captured.ok) return captured;
@@ -1522,8 +1583,14 @@ function commitNodeCreation(capture, prepared) {
     return commitCaptured(capture, prepared);
 }
 function requestNodeCreation(capture, command, at = null, shelf = false) {
-    if (command.kind !== 'create' || !nodeNeedsConfiguration(command.operation)) {
+    if (command.kind !== 'create' || !nodeNeedsConfiguration(command.operation, command.controls)) {
         const { requiresConfiguration, ...plain } = command;
+        if (command.kind === 'create') {
+            if (!editorCurrent(capture)) return { ok: false, error: { code: 'STALE_CONTEXT', message: 'The graph view changed.' } };
+            const editor = graphViews.readEditor(), origin = command.connection?.origin;
+            const originCard = origin ? editorDraw?.nativeCards[origin.nodeId] : null;
+            if (['read-file', 'story-clock', 'commit-outcomes'].includes(command.operation)) plain.phase = configuredCreationStage(command.operation, editor.prepared.savedGraph.mode, originCard?.phase ?? editorDraw?.nativeCards[selected?.id]?.phase, editor.view.identity.kind === 'instance').phase;
+        }
         return shelf ? prepareShelfNodeCreation(capture, plain, at) : prepareNativeCreation(capture, plain);
     }
     if (!editorCurrent(capture)) return { ok: false, error: { code: 'STALE_CONTEXT', message: 'The graph view changed.' } };

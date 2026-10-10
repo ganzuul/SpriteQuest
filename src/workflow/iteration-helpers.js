@@ -8,6 +8,7 @@ import {own,plain,freeze,nodeAddress} from './record-data.js?v=0.27.0';
 import {cloneJsonValue} from './operations/json-data.js?v=0.27.0';
 import {artifactVisibility,preserveArtifactPrivacy,validVisibilityMetadata} from './artifact-privacy.js?v=0.27.0';
 import {applyTextModifiers} from './modifiers.js?v=0.27.0';
+import {workflowDataPresetFor} from './workflow-data-defaults.js?v=0.27.0';
 
 const programs=new WeakMap(),MOUNT='iteration-helper',ITEM_TEXT='iteration-item-text',ITEM_DATA='iteration-item-data',STATE_TEXT='iteration-state-text',STATE_DATA='iteration-state-data';
 const fail=(code,message)=>({ok:false,error:{code,message}});
@@ -64,8 +65,19 @@ export function compileIterationHelper(root,options) {
         if(!compiled.ok)return compiled;
         if(at.instancePath.length+2+compiled.data.maxRelativeDepth>8)return fail('ITERATION_DEPTH','Qualified iteration helper addresses exceed depth 8.');
         const token=Object.freeze({});programs.set(token,compiled.data);
-        return {ok:true,data:freeze({token,description:{helper:compiled.data.ref,phase:settings.phase,mode:settings.mode,requestBound:compiled.data.requestBound,unitCount:compiled.data.units.filter(unit=>unit.address.instancePath.length).length}})};
+        return {ok:true,data:freeze({token,workflowDataNodes:workflowDataBindings(compiled.data),description:{helper:compiled.data.ref,phase:settings.phase,mode:settings.mode,requestBound:compiled.data.requestBound,unitCount:compiled.data.units.filter(unit=>unit.address.instancePath.length).length}})};
     }catch{return fail('INVALID_ITERATION_SETTINGS','The iteration helper could not be compiled from bounded own data.');}
+}
+/** Detached logical bindings from included units; compiler tokens and host authority stay private. */
+function workflowDataBindings(program) {
+    const bindings=[];
+    for(const unit of program.units){
+        const preset=workflowDataPresetFor(unit.node.operation),target=preset&&unit.node[preset.controlKey];
+        if(preset&&typeof target==='string'&&target!=='')bindings.push({operation:unit.node.operation,[preset.controlKey]:target});
+        const nested=program.nested.get(nodeAddressKey(unit.address));
+        if(nested)bindings.push(...workflowDataBindings(nested));
+    }
+    return bindings;
 }
 function compile(graph,settings,active,work) {
     if(++work.count>1000)return fail('ITERATION_GRAPH_LIMIT','Iteration helper compilation exceeds its bounded graph limit.');

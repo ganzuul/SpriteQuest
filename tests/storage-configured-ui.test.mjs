@@ -11,9 +11,34 @@ function storageFixture(saveMetadata){let user='default-user';const context={cha
 
 test('required-configuration nodes remain discoverable without valid placeholder controls',()=>{
  const prepared=prepareNativeSearchCatalog(scope);assert.equal(prepared.ok,true);
- for(const operation of ['read-file','story-clock','time-trigger','for-each','prompted-memory','item-mention-trigger','item-use-trigger','scene-presence','character-direction','parse-effect-library','recall','hotkey-arm']){const choice=prepared.data.choices.find(item=>item.id==='operation:'+operation);assert.ok(choice,operation);assert.equal(choice.requiresConfiguration,true);const command=resolveNativeSearchChoice(prepared.data,choice.id);assert.equal(command.requiresConfiguration,true);assert.equal(describeOperation(scope,{type:'workflow',...operationDefaults(operation)}).ok,false);}
+ for(const operation of ['time-trigger','for-each','prompted-memory','item-mention-trigger','item-use-trigger','scene-presence','character-direction','parse-effect-library','recall','hotkey-arm']){const choice=prepared.data.choices.find(item=>item.id==='operation:'+operation);assert.ok(choice,operation);assert.equal(choice.requiresConfiguration,true);const command=resolveNativeSearchChoice(prepared.data,choice.id);assert.equal(command.requiresConfiguration,true);assert.equal(describeOperation(scope,{type:'workflow',...operationDefaults(operation)}).ok,false);}
  const read=matchNativeSearchPorts(prepared.data,'operation:read-file',{kind:'data',dir:'in'});assert.deepEqual(read.map(pin=>pin.portId),['document','reference']);
  const each=matchNativeSearchPorts(prepared.data,'operation:for-each',{kind:'data',dir:'out'});assert.deepEqual(each.map(pin=>pin.portId),['in','state']);
+});
+
+test('document-backed nodes can be created from search with usable automatic defaults and no setup catalog',async()=>{
+ const {prepareNativeConnectionEdit}=await import('../src/workflow/connection-edits.js?v=0.27.0');
+ const graph={id:'automatic-data',schema:3,runtime:2,mode:'native-unified',nodes:{},wires:{},definitions:{},portals:{}},prepared=prepareNativeSearchCatalog(scope);
+ for(const [operation,key,targetId] of [['read-file','targetId','lattice-default-notes'],['story-clock','clockId','lattice-default-clock'],['commit-outcomes','targetId','lattice-default-outcomes']]){
+  assert.equal(config.nodeNeedsConfiguration(operation),false,operation+' must add immediately');
+  const choice=prepared.data.choices.find(item=>item.id==='operation:'+operation),command=resolveNativeSearchChoice(prepared.data,choice.id);
+  assert.equal(choice.requiresConfiguration,undefined);assert.equal(command.requiresConfiguration,undefined);
+  const created=prepareNativeConnectionEdit(graph,{kind:'create',...command,graphPoint:{x:20,y:30},phase:'post'});assert.equal(created.ok,true,JSON.stringify(created));
+  const node=created.data.candidate.nodes[created.data.addedNodeIds[0]];assert.equal(node[key],targetId);assert.equal(describeOperation(scope,node).ok,true);
+  assert.equal(config.validateConfiguredNodeControls(operation,'{}',{phase:'post',targets:[],helpers:[]}).ok,true);
+ }
+});
+
+test('automatic node creation retains explicit target and control validation',()=>{
+ const options={phase:'post',targets:[{targetId:'custom.json',format:'json'}],helpers:[]};
+ for(const [operation,key] of [['read-file','targetId'],['story-clock','clockId'],['commit-outcomes','targetId']]){
+  assert.equal(config.nodeNeedsConfiguration(operation,{[key]:'custom.json'}),true);
+  assert.equal(config.nodeNeedsConfiguration(operation,{[key]:''}),true);
+  assert.equal(config.validateConfiguredNodeControls(operation,JSON.stringify({[key]:''}),options).ok,false);
+  assert.equal(config.validateConfiguredNodeControls(operation,JSON.stringify({[key]:'unconfigured.json'}),options).error.code,'DOCUMENT_NOT_AUTHORIZED');
+ }
+ assert.equal(config.nodeNeedsConfiguration('read-file',{schema:'not valid JSON'}),true);
+ assert.equal(config.validateConfiguredNodeControls('read-file','{"schema":"not valid JSON"}',options).ok,false);
 });
 
 test('story setup lists redacted summaries and explicitly loads templates before editing',()=>{
@@ -38,7 +63,7 @@ test('story setup rejects changed scope after an awaited verified save',async()=
 
 test('configured creation authorizes selected logical targets and keeps strict required settings',()=>{
  assert.equal(typeof config.validateConfiguredNodeControls,'function');const options={phase:'post',targets:[{targetId:'souls.json',format:'json'}],helpers:[]};
- assert.equal(config.validateConfiguredNodeControls('read-file','{"targetId":"souls.json"}',options).ok,true);assert.equal(config.validateConfiguredNodeControls('read-file','{"targetId":"../outside"}',options).ok,false);assert.equal(config.validateConfiguredNodeControls('read-file','{}',options).ok,false);assert.equal(config.validateConfiguredNodeControls('item-mention-trigger','{"actorId":"mara","itemId":"wand","aliases":["broken wand"]}',options).ok,true);assert.equal(config.validateConfiguredNodeControls('scene-presence','{"actorId":"mara","undeclared":true}',options).ok,false);
+ assert.equal(config.validateConfiguredNodeControls('read-file','{"targetId":"souls.json"}',options).ok,true);assert.equal(config.validateConfiguredNodeControls('read-file','{"targetId":"../outside"}',options).ok,false);assert.equal(config.validateConfiguredNodeControls('read-file','{"targetId":""}',options).ok,false);assert.equal(config.validateConfiguredNodeControls('item-mention-trigger','{"actorId":"mara","itemId":"wand","aliases":["broken wand"]}',options).ok,true);assert.equal(config.validateConfiguredNodeControls('scene-presence','{"actorId":"mara","undeclared":true}',options).ok,false);
 });
 
 test('configured creation sessions preserve exact capture and cancel without prepare or commit',async()=>{
@@ -69,7 +94,7 @@ test('configured creation resolves a real strict graph candidate only after vali
  const graph={id:'configured',schema:3,runtime:2,mode:'native-unified',nodes:{},wires:{},definitions:{},portals:{}},before=structuredClone(graph),capture={};
  const session=config.createConfiguredNodeSession({isCurrent:()=>true,prepare:(token,command)=>prepareNativeConnectionEdit(graph,{...command,graphPoint:{x:20,y:30}})});
  const opened=session.open(capture,{kind:'create',operation:'read-file',requiresConfiguration:true},{phase:'post',targets:[{targetId:'souls.json',format:'json'}],helpers:[]});
- assert.equal(session.apply(opened.view.key,'{}','post').ok,false);assert.deepEqual(graph,before);
+ assert.equal(session.apply(opened.view.key,'{"targetId":""}','post').ok,false);assert.deepEqual(graph,before);
  assert.equal(session.apply(opened.view.key,'{"targetId":"souls.json"}','post').ok,true);const prepared=await opened.result;assert.equal(prepared.ok,true,JSON.stringify(prepared));const node=prepared.data.candidate.nodes[prepared.data.addedNodeIds[0]];assert.equal(node.targetId,'souls.json');assert.equal(node.phase,'post');assert.equal(node.requiresConfiguration,undefined);assert.deepEqual(graph,before);
 });
 
@@ -114,7 +139,7 @@ test('cancelled configuration cannot prepare or clear a replacement at any autho
  }
 });
 
-test('Outcome Commit is discoverable only in the response stage and requires an actual authorized JSON target',()=>{
- const unified=prepareNativeSearchCatalog(scope).data,choice=unified.choices.find(item=>item.id==='operation:commit-outcomes');assert.ok(choice);assert.equal(choice.requiresConfiguration,true);assert.equal(choice.phase,'post');assert.equal(prepareNativeSearchCatalog({...scope,mode:'native-pre'}).ok,false);
+test('Outcome Commit automatic defaults stay response-only and custom targets require authorized JSON',()=>{
+ const unified=prepareNativeSearchCatalog(scope).data,choice=unified.choices.find(item=>item.id==='operation:commit-outcomes');assert.ok(choice);assert.equal(choice.requiresConfiguration,undefined);assert.equal(choice.phase,'post');assert.equal(prepareNativeSearchCatalog({...scope,mode:'native-pre'}).ok,false);
  const options={phase:'post',targets:[{targetId:'outcomes.json',format:'json'},{targetId:'notes.txt',format:'text'}],helpers:[]};assert.equal(config.validateConfiguredNodeControls('commit-outcomes','{"targetId":"outcomes.json"}',options).ok,true);assert.equal(config.validateConfiguredNodeControls('commit-outcomes','{"targetId":"notes.txt"}',options).ok,false);assert.equal(config.validateConfiguredNodeControls('commit-outcomes','{"targetId":"missing.json"}',options).ok,false);
 });

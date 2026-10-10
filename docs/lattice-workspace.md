@@ -22,9 +22,17 @@ The starter is **On Send → Generate Reply · SillyTavern → Review / Publish*
 2. Keep the starter open, then select **Enable Lattice**.
 3. Send a player message normally. The starter waits for that generation's completed Draft and records its review result.
 4. Select **Review / Publish · Host result** in Preview. Compare the original and candidate. **Apply reviewed candidate** preserves the original as a swipe and publishes the chosen result; **Reject candidate** leaves it alone.
-5. Open a recipe to add preparation, prose editing or notes. Configure ordinary model nodes and For Each helper roles in Details before sending. Authorize required document targets in **Tools → Workflow Data…**.
+5. Open a recipe to add preparation, prose editing or notes. Configure ordinary model nodes and For Each helper roles in Details before sending. Automatic Story Clock, Read File and Outcome Commit defaults need no setup. Authorize custom document targets in **Tools → Workflow Data…**.
 
 Full execution starts with the native generation owned by Send. Stop cancels active work. **Run to here** previews a selected output's supported dependencies without accepting effects or publishing guidance.
+
+### Use automatic Workflow Data
+
+Add **Story Clock** to use **Chat clock**, starting on Day 1 at 00:00 with a 24-hour day. **Read File** uses empty plain-text **Chat notes**, and **Outcome Commit** uses an empty JSON **Chat outcomes** list. The unified workflow supplies the referenced defaults for the active user/chat when they are needed. You can add and connect these nodes without visiting a setup dialog.
+
+Select the node to customize it in Details. **Starting values** controls the clock’s starting day, time and hours per day; the other nodes offer initial content or outcomes. Open **Advanced** to choose a shared source, create a separate one with **+**, and adjust **Format** or **Visibility**. Visibility has Public, Hidden and Actor private buttons; the private option also needs its actor ID. Clock and outcomes data keep their required JSON format, while notes offer the supported document formats. Use **Save settings** to apply your changes.
+
+Nodes selecting the same clock share its saved timeline. Separate clocks advance independently; they do not synchronize automatically. Initial values only seed data that has not been saved yet, so editing them preserves existing saved time, notes and outcomes. **Tools → Workflow Data…** remains available for custom target management.
 
 ## Build and inspect a brief
 

@@ -38,12 +38,31 @@ export interface DetailHelperBindings {
     helperKey:string; editable:boolean; issue?:string;
     roles:{role:string;label:string;profile:DetailBindingField;model:DetailBindingField;effective:string;source:string;caveat?:string}[];
 }
+export type WorkflowDataKind = 'clock' | 'notes' | 'outcomes';
+export type WorkflowDataFormat = 'json' | 'jsonl' | 'csv' | 'text' | 'markdown';
+export type WorkflowDataVisibility = { kind: 'public' | 'hidden' } | { kind: 'actor-private'; actorId: string };
+export interface WorkflowDataDefinition {
+    targetId: string; name: string; format: WorkflowDataFormat; content: string;
+    visibility: WorkflowDataVisibility; columns?: string[];
+}
+export interface WorkflowDataView {
+    kind: WorkflowDataKind; controlKey: string; targetId: string; name: string;
+    format: WorkflowDataFormat; visibility: WorkflowDataVisibility;
+    sources: { value: string; label: string }[]; available: boolean; editable: boolean; key: string;
+    definition?: WorkflowDataDefinition; issue?: string; notice?: string; expectedCalendar?: string;
+}
+export interface WorkflowDataCreate {
+    name: string; kind: WorkflowDataKind; format?: WorkflowDataFormat; visibility?: WorkflowDataVisibility;
+    calendarId?: string; absoluteMinute?: number; dayLengthMinutes?: number;
+}
+export type WorkflowDataResponse = { ok: true; data?: { definition?: WorkflowDataDefinition; message?: string } } | { ok: false; error: DetailError };
 export interface NodeDetailsView extends DetailSelection {
     recall?: RecallNodeStatus;
     title: string; canonicalTitle: string; iconPath: string; family: string; phase: string;
     operation?: string; familyColor?: string; phaseEditable?: boolean;
     alias: string; compact: boolean; enabled: boolean; readOnly: boolean; canPresent: boolean;
     controls: DetailControl[]; model: DetailModelBinding | null; helperBindings?: DetailHelperBindings | null;
+    workflowData?: WorkflowDataView | null;
     modifiers?: { items: DetailModifier[]; options: DetailModifierOption[]; editable: boolean; outputPortId: string } | null;
     fileInput?: { fileName: string; loaded: boolean };
     boundary?: { id: string; label: string; direction: 'input' | 'output'; kind: string; required: boolean; kinds: string[] };
@@ -54,6 +73,11 @@ export interface NodeDetailsActions {
     queueRecall?:(selection:DetailSelection)=>DetailEditResponse;
     cancelRecall?:(selection:DetailSelection)=>DetailEditResponse;
     revealRecallShortcut?:(nodeId:string)=>void;
+    loadWorkflowData?: (selection: DetailSelection, key: string) => WorkflowDataResponse | Promise<WorkflowDataResponse>;
+    saveWorkflowData?: (selection: DetailSelection, key: string, definition: WorkflowDataDefinition) => WorkflowDataResponse | Promise<WorkflowDataResponse>;
+    saveWorkflowDataVisibility?: (selection: DetailSelection, key: string, visibility: WorkflowDataVisibility) => WorkflowDataResponse | Promise<WorkflowDataResponse>;
+    createWorkflowData?: (selection: DetailSelection, key: string, options: WorkflowDataCreate) => WorkflowDataResponse | Promise<WorkflowDataResponse>;
+    bindWorkflowData?: (selection: DetailSelection, key: string, targetId: string) => DetailEditResponse;
     editPhase?: (selection: DetailSelection, phase: 'pre' | 'post') => DetailEditResponse;
     loadFile?: (selection: DetailSelection, file: File) => DetailEditResponse;
     present?: (selection: DetailSelection, field: 'alias' | 'compact', value: string | boolean) => DetailEditResponse;
