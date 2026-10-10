@@ -1,5 +1,5 @@
 /** Current Lattice documents and settings. SillyTavern owns its normal prompt. */
-import { installStarter } from './workflow/starters.js?v=0.26.0';
+import { installStarter, starterGraph } from './workflow/starters.js?v=0.26.0';
 import { exportWorkflow, parseWorkflow } from './workflow/packages.js?v=0.26.0';
 import { safeWorkflowData, validateGraphStructure } from './workflow/contracts.js?v=0.26.0';
 import { cloneWorkflowDocument } from './workflow/document.js?v=0.26.0';
@@ -44,8 +44,9 @@ function checkSettings(value) {
         checkedGraphs[id] = checked.data;
     }
     if (saved.activeGraphId !== null && !Object.hasOwn(graphs, saved.activeGraphId)) throw new Error('Lattice settings refer to an unavailable active workflow.');
-    for (const [phase, field] of [['pre', 'preGraphId'], ['post', 'postGraphId']]) {
+    for (const [phase, field] of [['pre', 'preGraphId'], ['post', 'postGraphId'], ['unified', 'workflowGraphId']]) {
         const id = saved.nativeBindings[field];
+        if (phase === 'unified' && id === undefined) continue; // Legacy settings remain independently assigned.
         if (id !== null && (typeof id !== 'string' || checkedGraphs[id]?.mode !== 'native-' + phase)) throw new Error('Lattice ' + phase + ' binding does not identify a current workflow.');
     }
 }
@@ -56,8 +57,8 @@ export function settings() {
     if (!plain(root)) throw new Error('Lattice: getContext() exposed no extension settings.');
     const property = Object.getOwnPropertyDescriptor(root, MODULE);
     if (!property) {
-        const value = { schema: 1, enabled: false, graphs: {}, activeGraphId: null, nativeBindings: { preGraphId: null, postGraphId: null }, subgraphLibrary: { definitions: {} }, ui: {} };
-        const graph = installStarter('structured-guidance', value);
+        const value = { schema: 1, enabled: false, graphs: {}, activeGraphId: null, nativeBindings: { workflowGraphId: null, preGraphId: null, postGraphId: null }, subgraphLibrary: { definitions: {} }, ui: {} };
+        const graph = installStarter('unified-basic', value);
         value.activeGraphId = graph.id;
         checkSettings(value);
         root[MODULE] = value; admitted.add(value);
@@ -71,14 +72,16 @@ export function settings() {
 export function save() { safe(() => ctx().saveSettingsDebounced()); }
 
 /** An empty current authoring document; terminals and connections are explicit. */
-export function blankGraph(name = 'Untitled', phase = 'pre') {
-    return { id: uid('g'), name, description: '', schema: 3, runtime: 2, mode: phase === 'post' ? 'native-post' : 'native-pre', createdAt: Date.now(), updatedAt: Date.now(), nodes: {}, wires: {}, portals: {}, definitions: {}, groups: {}, roles: {}, view: { x: 0, y: 0, zoom: 1 } };
+export function blankGraph(name = 'Untitled', phase = 'unified') {
+    return { id: uid('g'), name, description: '', schema: 3, runtime: 2, mode: phase === 'unified' ? 'native-unified' : phase === 'post' ? 'native-post' : 'native-pre', createdAt: Date.now(), updatedAt: Date.now(), nodes: {}, wires: {}, portals: {}, definitions: {}, groups: {}, roles: {}, view: { x: 0, y: 0, zoom: 1 } };
 }
 export function allGraphs() { return Object.values(settings().graphs).sort((a, b) => a.name.localeCompare(b.name)); }
 export function getGraph(id) { return settings().graphs[id] ?? null; }
 export function resolveGraph() { const graph = getGraph(settings().activeGraphId); return { graph, source: graph ? 'active' : 'none' }; }
-export function createGraph(name, phase = 'pre') {
-    const graph = blankGraph(name || 'Untitled', phase); settings().graphs[graph.id] = graph; save(); return graph;
+export function createGraph(name, phase = 'unified') {
+    const graph = blankGraph(name || 'Untitled', phase);
+    if (phase === 'unified') { const starter = starterGraph('unified-basic'); Object.assign(graph, { nodes: starter.nodes, wires: starter.wires }); }
+    settings().graphs[graph.id] = graph; save(); return graph;
 }
 export function duplicateGraph(id, name) {
     const source = getGraph(id); if (!source) return null;
@@ -88,7 +91,7 @@ export function duplicateGraph(id, name) {
 export function deleteGraph(id) {
     const value = settings(); if (!Object.hasOwn(value.graphs, id)) return;
     delete value.graphs[id];
-    for (const field of ['preGraphId', 'postGraphId']) if (value.nativeBindings[field] === id) value.nativeBindings[field] = null;
+    for (const field of ['workflowGraphId', 'preGraphId', 'postGraphId']) if (value.nativeBindings[field] === id) value.nativeBindings[field] = null;
     if (!Object.keys(value.graphs).length) { const graph = blankGraph(); value.graphs[graph.id] = graph; }
     if (value.activeGraphId === id) value.activeGraphId = Object.keys(value.graphs)[0];
     save();
