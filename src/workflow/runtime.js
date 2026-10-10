@@ -1,3 +1,4 @@
+import { isScopedSystemOperation } from './system-capabilities.js?v=0.27.0';
 import { preserveArtifactPrivacy } from './artifact-privacy.js?v=0.27.0';
 import { compileIterationHelper, executeCompiledIteration } from './iteration-helpers.js?v=0.27.0';
 import { LIFECYCLE_OPERATIONS, executeLifecycleNode } from './operations/lifecycle-nodes.js?v=0.27.0';
@@ -46,7 +47,7 @@ function planWorkflow(graph,ports) {
 async function executeNode(node,inputs,op,local) {
     const input=inputs.in;
     if(op.hostOperation||local.executeHostOperation&&['scene-context','reply-snapshot','prompt-source'].includes(node.operation)) {
-        if(!local.root||!local.executeHostOperation)return failure('HOST_OPERATION_REQUIRED','This operation requires its owned root host adapter.',node.id);
+        if(!local.root&&!isScopedSystemOperation(node)||!local.executeHostOperation)return failure('HOST_OPERATION_REQUIRED','This operation requires its owned root host adapter.',node.id);
         return local.executeHostOperation(node,inputs,{phase:local.phase,rootMode:local.rootMode,root:local.root,address:local.address,inputStates:local.inputStates,request:local.request,getRequestBindings:local.getRequestBindings,...(local.signal?{signal:local.signal}:{})});
     }
     if(Object.hasOwn(LIFECYCLE_OPERATIONS,node.operation))return executeLifecycleNode(node,inputs,local);
@@ -162,7 +163,7 @@ async function executeWorkflow(original,ports,hooks={}) {
         const nodes=plan.primitives.filter(unit=>unit.included);
         const workflowDataNodes=[];
         // Validate every selected real helper before any source or model effect, even for an empty collection.
-        if(typeof ports.iterateHelper!=='function')for(const unit of nodes)if(unit.node.operation==='for-each') {
+        if(typeof ports.iterateHelper!=='function')for(const unit of nodes)if(!unit.systemDisabled&&unit.node.operation==='for-each') {
             const compiled=compileIterationHelper(prepared.graph,{helper:unit.node.helper,mode:unit.node.mode??'map',phase:unit.phase,address:unit.address,requestBoundPerIteration:unit.node.requestBoundPerIteration??0});
             if(!compiled.ok)return finish(compiled);helperPrograms.set(addressKey(unit.address),compiled.data.token);workflowDataNodes.push(...compiled.data.workflowDataNodes);
         }
@@ -182,7 +183,7 @@ async function executeWorkflow(original,ports,hooks={}) {
             emit(duringExecution?'node-binding':'node-phase',{address:unit.address,...(duringExecution?{}:{phase:'binding'}),binding:summarizeBinding(binding,node,op)});
             return resolved;
         };
-        const nativeBoundary=mode==='root'&&prepared.graph.mode==='native-unified'?nodes.find(unit=>operationFor(unit.node,{phase:unit.phase,mode:prepared.graph.mode}).nativeBoundary):undefined;
+        const nativeBoundary=mode==='root'&&prepared.graph.mode==='native-unified'?nodes.find(unit=>operationFor(unit.node,{phase:unit.phase,mode:prepared.graph.mode})?.nativeBoundary):undefined;
         const getRequestBindings=()=>Object.freeze([...requestBindings.values()].map(entry=>Object.freeze({...entry,address:freezeArtifact(structuredClone(entry.address))})));
         let unresolved=false;
         for(const unit of nodes) {
@@ -199,7 +200,7 @@ async function executeWorkflow(original,ports,hooks={}) {
             else if(unit===nativeBoundary)stageState=unit.dependencies.map(at=>unitStates.get(addressKey(at))).find(state=>state?.status==='unresolved');
             const held=stageState?.status==='unresolved'?stageState:Object.values(inputStates).find(state=>state.status==='unresolved');
             const skipped=stageState?.status==='skipped'||unit.inputPorts.some(port=>port.required&&inputStates[port.id]?.status==='skipped');
-            if(held||skipped){const status=held?'unresolved':'skipped',state={status,reason:held?.reason??stageState?.reason??{code:'INPUT_SKIPPED',message:'A required branch input was skipped.'}};if(held)unresolved=true;
+            if(unit.systemDisabled||held||skipped){const status=unit.systemDisabled?'skipped':held?'unresolved':'skipped',state={status,reason:unit.systemDisabled?{code:'SYSTEM_DISABLED',message:'The enclosing system is disabled.'}:held?.reason??stageState?.reason??{code:'INPUT_SKIPPED',message:'A required branch input was skipped.'}};if(held&&!unit.systemDisabled)unresolved=true;
                 for(const port of unit.outputPorts){outputStates.set(artifactKey({...unit.address,portId:port.id}),state);recorder.capture({address:unit.address,direction:'output',portId:port.id,state});}
                 unitStates.set(key,state);emit('node-settled',{address:unit.address,status,reason:state.reason});continue;
             }

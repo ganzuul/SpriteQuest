@@ -46,9 +46,9 @@ export function workflowDataKind(definition) {
 }
 
 /** Install missing referenced defaults before any file session captures catalog authority. */
-export function ensureWorkflowDataDefaults({ catalog, graph, scope, context, isCurrent }) {
+export function ensureWorkflowDataDefaults({ catalog, graph, defaults = [], scope, context, isCurrent }) {
     try {
-        const required = new Map();
+        const required = new Map(defaults.map(preset => [preset.targetId, preset]));
         for (const node of Object.values(own(graph, 'nodes') ?? {})) {
             const operation = own(node, 'operation'), preset = workflowDataPresetFor(operation);
             if (!preset) continue;

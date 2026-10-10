@@ -1,3 +1,4 @@
+import { isScopedSystemOperation } from './system-capabilities.js?v=0.27.0';
 import { validateNodeModifiers } from './modifiers.js?v=0.27.0';
 import { ARTIFACT_KINDS, operationFor, describeOperation, portsForNode, phaseForNode } from './catalog.js?v=0.27.0';
 import { cloneDefinitionData, computeDefinitionIdentity, definitionRefKey, inspectDefinitionMetadata, describeExposedParameter, nodeBindingOverrideKey, artifactAddressKey } from './definition-data.js?v=0.27.0';
@@ -87,7 +88,7 @@ function inspectScope(graph, { definition, snapshots = {} } = {}) {
         const operation = described.data.descriptor;
         if (node.operationVersion !== undefined && node.operationVersion !== 1) return fail('UNKNOWN_OPERATION', 'Unknown operation or version.', id);
         if (operation.phase !== phaseForNode(graph, node)) return fail('WRONG_PHASE', 'An operation does not support the containing phase.', id);
-        if (definition && (operation.rootOnly || ['scene-context', 'reply-snapshot', 'guidance', 'apply-reply'].includes(operation.id))) return fail('ROOT_ONLY_OPERATION', 'Root-only operations cannot appear in reusable definitions.', id);
+        if (definition && (operation.rootOnly && !isScopedSystemOperation(node) || ['scene-context', 'reply-snapshot', 'guidance', 'apply-reply'].includes(operation.id))) return fail('ROOT_ONLY_OPERATION', 'Root-only operations cannot appear in reusable definitions.', id);
         if (definition && operation.requiresStateInDefinition && !wires.some(wire => wire?.to === id && wire.toPort === 'state')) return fail('ROOT_ONLY_OPERATION', 'State inside a reusable definition requires an explicit snapshot input.', id);
         if (operation.id === 'memory' && operation.terminal && node.enabled !== false && ++memoryCommits > 1) return fail('MULTIPLE_MEMORY_COMMITS', 'A root workflow supports one Memory Commit terminal.', id);
         if (!bindingValid(node) || node.modelRole !== undefined && node.modelRole !== null && typeof node.modelRole !== 'string') return fail('INVALID_SETTINGS', 'Invalid model binding.', id);
@@ -325,7 +326,7 @@ export function inspectExpandedGraph(graph) {
 
 function expandChecked(root, snapshots, rootDefinition) {
     const workflowId = typeof root.id === 'string' ? root.id : 'root';
-    const primitives = [], hierarchy = [], instances = [], scopes = [], boundaryMappings = [], edges = [], virtual = new Set(), blocked = new Set();
+    const primitives = [], hierarchy = [], instances = [], scopes = [], boundaryMappings = [], edges = [], unresolvedEdges = [], virtual = new Set(), blocked = new Set();
     const pins = new Map(), incoming = new Map(), outputSources = new Map(), stageCapabilities = new Map();
     let nodeCount = 0, wireCount = 0;
     const address = (path, nodeId, portId) => ({ workflowId, instancePath: [...path], nodeId, ...(portId === undefined ? {} : { portId }) });
@@ -336,6 +337,7 @@ function expandChecked(root, snapshots, rootDefinition) {
         incoming.set(key, { from, to, provenance });
         return { ok: true, data: null };
     };
+    const inactiveOutputs = [];
     const visit = (saved, path, definition, contexts = [], ancestorEnabled = true, inheritedRoles = {}) => {
         if (path.length > 8) return fail('DEFINITION_DEPTH', 'Instance nesting exceeds depth 8.');
         nodeCount += Object.keys(saved.nodes ?? {}).length; wireCount += Object.keys(saved.wires ?? {}).length;
@@ -383,11 +385,11 @@ function expandChecked(root, snapshots, rootDefinition) {
             for (const port of ports) {
                 const pinAddress = { ...at, portId: port.id };
                 addPin(pinAddress, port, !operation);
-                if (!enabled && !operation) blocked.add(artifactAddressKey(pinAddress));
+                if (ancestorEnabled && node.enabled === false && node.type !== 'subgraph' && !operation) blocked.add(artifactAddressKey(pinAddress));
             }
             if (operation) {
                 const requestBound = typeof operation.requestBound === 'function' ? operation.requestBound(node) : operation.requestBound;
-                const unit = { address: at, node, phase: operation.phase, enabled, requestBound, inputPorts: ports.filter(port => port.direction === 'input'), outputPorts: ports.filter(port => port.direction === 'output'), terminal: operation.terminal };
+                const unit = { address: at, node, phase: operation.phase, enabled, systemDisabled: !ancestorEnabled, requestBound: ancestorEnabled ? requestBound : 0, inputPorts: ports.filter(port => port.direction === 'input'), outputPorts: ports.filter(port => port.direction === 'output'), terminal: operation.terminal };
                 // A pinned legacy phase remains an explicit stage contract. Only an
                 // undeclared, compatible unified operation can inherit a later stage.
                 if (root.mode === 'native-unified') stageCapabilities.set(nodeAddressKey(at), {
@@ -395,6 +397,8 @@ function expandChecked(root, snapshots, rootDefinition) {
                     inferPost: graph.mode === 'native-unified' && node.phase === undefined && phaseForNode({ ...graph, mode: 'native-post' }, node) === 'post' && !!operationFor(node, { phase: 'post', mode: 'native-unified' }),
                 });
                 primitives.push(unit); hierarchy.push({ address: at, kind: 'primitive', ...(parent ? { parent } : {}) });
+            } else if (!ancestorEnabled && node.type === 'subgraph-output') {
+                inactiveOutputs.push({ address: at, node, ports, parent, phase: graph.mode === 'native-post' ? 'post' : 'pre' });
             } else if (node.type === 'subgraph') {
                 instances.push({ instancePath: [...path, node.id], definition: node.definition });
                 hierarchy.push({ address: at, kind: 'instance', ...(parent ? { parent } : {}) });
@@ -417,6 +421,15 @@ function expandChecked(root, snapshots, rootDefinition) {
     };
     const visited = visit(root, [], rootDefinition);
     if (!visited.ok) return visited;
+    // A disabled, unfinished exposed output still publishes skipped state. These
+    // execution records are derived from ancestor participation, never graph fields.
+    for (const output of inactiveOutputs) {
+        const key = artifactAddressKey({ ...output.address, portId: 'in' });
+        if (incoming.has(key)) continue;
+        virtual.delete(key);
+        primitives.push({ address: output.address, node: { ...output.node, operation: 'subgraph-output' }, phase: output.phase, enabled: false, systemDisabled: true, requestBound: 0, inputPorts: [], outputPorts: output.ports.map(port => ({ ...port, direction: 'output' })), terminal: false });
+        hierarchy.push({ address: output.address, kind: 'primitive', parent: output.parent });
+    }
     const active = new Set();
     const sourceFor = at => {
         const key = artifactAddressKey(at);
@@ -435,6 +448,7 @@ function expandChecked(root, snapshots, rootDefinition) {
             if (!edge) continue;
             const from = sourceFor(edge.from);
             if (from) edges.push({ from, to, provenance: edge.provenance, disabled: blocked.has(artifactAddressKey(edge.from)) });
+            else if (boundaryMappings.some(mapping => mapping.direction === 'output' && artifactAddressKey({ ...mapping.instance, portId: mapping.portId }) === artifactAddressKey(edge.from))) unresolvedEdges.push({ from: edge.from, to });
         }
         for (const mapping of boundaryMappings) {
             const at = { ...mapping.instance, portId: mapping.portId };
@@ -459,5 +473,5 @@ function expandChecked(root, snapshots, rootDefinition) {
         if (!stageCapabilities.get(key)?.inferPost) return fail('INVALID_STAGE_DEPENDENCY', 'Preparation cannot consume native reply or Post-stage output. Move a compatible node to Post or remove the reverse dependency.', unit.node.id);
         unit.phase = 'post';
     }
-    return { ok: true, data: { workflowId, phase: root.mode.slice(7), primitives: ordered, edges, hierarchy, instances, scopes, boundaryMappings, pins: [...pins.values()], nodeCount, wireCount } };
+    return { ok: true, data: { workflowId, phase: root.mode.slice(7), primitives: ordered, edges, unresolvedEdges, hierarchy, instances, scopes, boundaryMappings, pins: [...pins.values()], nodeCount, wireCount } };
 }

@@ -1,3 +1,4 @@
+import { resolveSystemNode } from './system-capabilities.js?v=0.27.0';
 import { inspectExpandedGraph, nodeAddressKey, safeWorkflowData } from './graph-validation.js?v=0.27.0';
 import { artifactAddressKey } from './definition-data.js?v=0.27.0';
 import { operationFor } from './catalog.js?v=0.27.0';
@@ -49,11 +50,13 @@ function selectClosure(index, target) {
         starts = terminals.map(terminal => byKey.get(nodeAddressKey(terminal.address)));
     }
     const included = new Set();
-    const visit = unit => { const key = nodeAddressKey(unit.address); if (included.has(key)) return; included.add(key); for (const at of dependencies.get(key)) visit(byKey.get(nodeAddressKey(at))); };
+    const visit = unit => { const key = nodeAddressKey(unit.address); if (included.has(key)) return; included.add(key); if (unit.systemDisabled) return; for (const at of dependencies.get(key)) visit(byKey.get(nodeAddressKey(at))); };
     starts.forEach(visit);
-    const containsIncluded = instance => plan.primitives.some(unit => included.has(nodeAddressKey(unit.address)) && unit.address.instancePath.length > instance.instancePath.length && instance.instancePath.every((id, i) => unit.address.instancePath[i] === id) && unit.address.instancePath[instance.instancePath.length] === instance.nodeId);
-    for (const mapping of plan.boundaryMappings) if (target === undefined && mapping.direction === 'input' && mapping.required && containsIncluded(mapping.instance) && !mapping.source) return fail('MISSING_INPUT', 'Connect the required instance input.', mapping.instance);
+    for (const edge of plan.unresolvedEdges ?? []) if (included.has(nodeAddressKey(edge.to)) && !byKey.get(nodeAddressKey(edge.to)).systemDisabled) return fail('MISSING_INPUT', 'Connect the selected system output producer.', index.mappings.get(artifactAddressKey(edge.from))?.instance ?? edge.from);
+    const containsIncluded = (instance, activeOnly = false) => plan.primitives.some(unit => (!activeOnly || !unit.systemDisabled) && included.has(nodeAddressKey(unit.address)) && unit.address.instancePath.length > instance.instancePath.length && instance.instancePath.every((id, i) => unit.address.instancePath[i] === id) && unit.address.instancePath[instance.instancePath.length] === instance.nodeId);
+    for (const mapping of plan.boundaryMappings) if (target === undefined && mapping.direction === 'input' && mapping.required && containsIncluded(mapping.instance, true) && !mapping.source) return fail('MISSING_INPUT', 'Connect the required instance input.', mapping.instance);
     for (const unit of plan.primitives) if (included.has(nodeAddressKey(unit.address))) {
+        if (unit.systemDisabled) continue;
         if (!unit.enabled || index.disabled.has(nodeAddressKey(unit.address))) return fail('DISABLED_OPERATION', 'A selected dependency is disabled.', unit.address);
         for (const port of unit.inputPorts) if (port.required && !index.incoming.has(artifactAddressKey({ ...unit.address, portId: port.id }))) return fail('MISSING_INPUT', 'Connect the required input artifact.', unit.address);
     }
@@ -100,7 +103,10 @@ export function resolveWorkflow(root, options = {}) {
     const expanded = inspectExpandedGraph(root); if (!expanded.ok) return expanded;
     const index = indexExpansion(expanded.data), selection = selectClosure(index, options.target); if (!selection.ok) return selection;
     const { plan, terminals } = index, { included, containsIncluded, resolvedTarget, callBound, ordered, dependencies } = selection.data, target = options.target;
-    const primitives = ordered.map(unit => ({ ...unit, included: included.has(nodeAddressKey(unit.address)), dependencies: dependencies.get(nodeAddressKey(unit.address)) }));
+    const primitives = ordered.map(unit => {
+        const resolved = resolveSystemNode(unit.node, unit.address).data;
+        return { ...unit, node: resolved.node, systemDefaults: unit.systemDisabled ? [] : resolved.defaults, included: included.has(nodeAddressKey(unit.address)), dependencies: dependencies.get(nodeAddressKey(unit.address)) };
+    });
     const hierarchy = plan.hierarchy.map(entry => ({ ...entry, included: entry.kind === 'primitive' ? included.has(nodeAddressKey(entry.address)) : containsIncluded(entry.address) }));
     return { ok: true, data: {
         workflowId: plan.workflowId, phase: plan.phase, mode: target === undefined ? 'root' : 'target', primitives, edges: plan.edges, hierarchy, boundaryMappings: plan.boundaryMappings,

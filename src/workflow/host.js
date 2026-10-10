@@ -1,3 +1,4 @@
+import { isScopedSystemOperation } from './system-capabilities.js?v=0.27.0';
 import { runWorkflowForHost, freezeArtifact, workflowSignature } from './runtime.js?v=0.27.0';
 import { resolveBinding, requestModel, bindingStatus, bindingSummary } from './connections.js?v=0.27.0';
 import { addressKey, safeError } from './record-data.js?v=0.27.0';
@@ -287,7 +288,8 @@ export function createNativeWorkflowController(ports) {
         run.cancel=controls.cancel;
         const captured=controls.originalGraphSnapshot;
         run.graph={id:captured.id,name:captured.name,schema:captured.schema,runtime:captured.runtime,mode:captured.mode};
-        run.workflowDataNodes=Object.fromEntries([...plan.primitives.filter(unit=>unit.included).map(unit=>unit.node),...(controls.workflowDataNodes??[])].map((node,index)=>[index,node]));
+        run.workflowDataDefaults=plan.primitives.filter(unit=>unit.included&&!unit.systemDisabled).flatMap(unit=>unit.systemDefaults??[]);
+        run.workflowDataNodes=Object.fromEntries([...plan.primitives.filter(unit=>unit.included&&!unit.systemDisabled).map(unit=>unit.node),...(controls.workflowDataNodes??[])].map((node,index)=>[index,node]));
         run.signature=workflowSignature(captured);run.identity=identity(context());run.hostUnified=captured.mode==='native-unified';if(run.hostUnified&&!run.unified)run.userId=ports.userId?.();
         if(run.unified){
             const selected=plan.primitives.filter(unit=>unit.included);
@@ -596,7 +598,7 @@ export function createNativeWorkflowController(ports) {
         }else{if(run.fileSession)return {ok:true,data:run.fileSession};const actor=nativeMemoryScope(context(),ports.selectIntrospectionActor);actorId=actor.ok?actor.data.actorId:undefined;}
         const live=()=>fresh(run)&&(!run.unified||nativePrefixFresh(run))&&(!run.effectEntry||acceptedSourceFresh(run.effectEntry)&&sourceFresh(run))&&(!actorGrant||actors.checkActorGrant(actorGrant).ok);
         if(!run.workflowDataDefaultsPrepared){
-            const prepared=ensureWorkflowDataDefaults({catalog:documentCatalog,graph:{nodes:run.workflowDataNodes},scope:{userId:run.userId,chatId:run.identity.chatId},context,isCurrent:live});
+            const prepared=ensureWorkflowDataDefaults({catalog:documentCatalog,graph:{nodes:run.workflowDataNodes},defaults:run.workflowDataDefaults,scope:{userId:run.userId,chatId:run.identity.chatId},context,isCurrent:live});
             if(!prepared.ok)return prepared;
             run.workflowDataDefaultsPrepared=true;
         }
@@ -627,6 +629,7 @@ export function createNativeWorkflowController(ports) {
         return {ok:true,data:run.storySession};
     }
     async function nativeOperation(run,node,inputs,operationPorts,options) {
+        if(operationPorts.root!==true&&!isScopedSystemOperation(node))return fail('HOST_OPERATION_REQUIRED','Nested operations require the trusted static system capability.');
         if(!fresh(run) || run.unified&&!nativePrefixFresh(run))return fail('STALE_RUN','Native workflow source changed.');
         if(['on-send','generate-reply'].includes(node.operation)&&(!run.native||!run.unified))return fail('NATIVE_OWNER_MISSING','Native activation requires its owned generation event.');
         if(node.operation==='on-send') {
@@ -697,8 +700,8 @@ export function createNativeWorkflowController(ports) {
         if(['recall','hotkey-arm'].includes(node.operation)){if(!run.unified||run.mode==='target')return {ok:true,outputStates:Object.fromEntries((node.operation==='recall'?['out','records','report']:['proposal']).map(id=>[id,{status:'skipped',reason:{code:'RECALL_PREVIEW_NO_ACTIVATION',message:'Recall activates only on an owned ordinary Send or generated swipe.'}}])),reports:[]};const result=await recall.execute(run,node,inputs,{phase:operationPorts.phase,address:operationPorts.address,countTokens:ports.countTokens});if(result.ok&&artifactVisibility(result.outputs).kind==='actor-private'){const scoped=scopedActors(run);if(!scoped.ok)return scoped;const grant=scoped.data.authorizeSelectedActor();if(!grant.ok)return grant;const retained=scoped.data.captureScopedResult(result,grant.data.grant);if(!retained.ok)return retained;}return result;}
         if(['story-clock','commit-clock','commit-outcomes'].includes(node.operation)){
             const state=await scopedStoryState(run);if(!state.ok)return state;
-            if(node.operation==='commit-outcomes')return executeRandom(node,inputs,{phase:operationPorts.phase,root:true,signal:run.controller.signal,stageNativeOutcomes:state.data.stageOutcomes});
-            const result=await executeTimeNode(node,inputs,{phase:operationPorts.phase,root:true,signal:run.controller.signal,readStoryClock:state.data.readClock,stageStoryClock:state.data.stageClock});
+            if(node.operation==='commit-outcomes')return executeRandom(node,inputs,{phase:operationPorts.phase,root:true,signal:run.controller.signal,stageNativeOutcomes:(target,values)=>state.data.stageOutcomes(target,values,operationPorts.address)});
+            const result=await executeTimeNode(node,inputs,{phase:operationPorts.phase,root:true,signal:run.controller.signal,readStoryClock:state.data.readClock,stageStoryClock:(report,occurrences)=>state.data.stageClock(report,occurrences,operationPorts.address)});
             if(result.ok&&node.operation==='story-clock'){const registered=state.data.registerClock(result.outputs.out.value,result.outputs.out.value.clockId);if(!registered.ok)return registered;}
             return result;
         }
@@ -708,7 +711,7 @@ export function createNativeWorkflowController(ports) {
             const captured=scopedFiles(run,scopeRequest);if(!captured.ok)return captured;
             if(node.operation==='write-file'&&inputs.evidence!==undefined){const state=await scopedStoryState(run);if(!state.ok)return state;}
             const files=captured.data;
-            let read;const result=await executeFileNode(node,inputs,{phase:operationPorts.phase,root:true,signal:run.controller.signal,authorizeActorFileScope:({actorId,presence,reference})=>{if(actorId!==files.actorId||presence!==files.presence||reference&&run.fileReferences.get(reference)!==files)return fail('ACTOR_FILE_SCOPE_MISMATCH','The present-actor file capture changed.');const scoped=scopedActors(run);if(!scoped.ok)return scoped;const checked=scoped.data.checkActorGrant(files.actorGrant);return checked.ok?{ok:true,data:{actorId}}:checked;},files:{read:async target=>{const visibility=files.visibility(target);if(!visibility.ok)return visibility;read=await files.store.read(target);if(read.ok)run.fileReferences.set(read.data.fileRef,files);return read;},prepare:files.store.prepare},fileVisibility:({reference})=>files.visibility(reference.targetId),authorizeFileWrite:({reference})=>{const mark=files.visibility(reference.targetId);return mark.ok?{ok:true,data:{destinationVisibility:mark.data}}:mark;},createIntentId:files.intentId,stageFileIntent:files.stage});
+            let read;const result=await executeFileNode(node,inputs,{phase:operationPorts.phase,root:true,signal:run.controller.signal,authorizeActorFileScope:({actorId,presence,reference})=>{if(actorId!==files.actorId||presence!==files.presence||reference&&run.fileReferences.get(reference)!==files)return fail('ACTOR_FILE_SCOPE_MISMATCH','The present-actor file capture changed.');const scoped=scopedActors(run);if(!scoped.ok)return scoped;const checked=scoped.data.checkActorGrant(files.actorGrant);return checked.ok?{ok:true,data:{actorId}}:checked;},files:{read:async target=>{const visibility=files.visibility(target);if(!visibility.ok)return visibility;read=await files.store.read(target);if(read.ok)run.fileReferences.set(read.data.fileRef,files);return read;},prepare:files.store.prepare},fileVisibility:({reference})=>files.visibility(reference.targetId),authorizeFileWrite:({reference})=>{const mark=files.visibility(reference.targetId);return mark.ok?{ok:true,data:{destinationVisibility:mark.data}}:mark;},createIntentId:(producer,evidence)=>files.intentId(producer,evidence,operationPorts.address),stageFileIntent:files.stage});
             if(node.operation==='read-file'&&result.ok&&artifactVisibility(result.outputs).kind==='actor-private'){const scoped=scopedActors(run);if(!scoped.ok)return scoped;const selected=files.actorGrant?{ok:true,data:{grant:files.actorGrant,scope:{actorId:files.actorId}}}:scoped.data.authorizeSelectedActor();if(!selected.ok)return selected;if(selected.data.scope.actorId!==files.actorId)return fail('ACTOR_FILE_SCOPE_MISMATCH','The private file belongs to a changed native actor.');const retained=scoped.data.captureScopedResult(result,selected.data.grant);if(!retained.ok)return retained;}
             if(run.recallCaptured&&node.operation==='read-file'&&result.ok&&read?.ok&&result.outputs?.reference?.value===read.data.fileRef){const snapshot=read.data.snapshot;let recordValue;try{recordValue=JSON.parse(snapshot.content);}catch{}const originalStored=context().chatMetadata?.latticeDocuments?.[run.userId]?.[snapshot.targetId],storedFingerprint=originalStored===undefined?null:JSON.stringify(originalStored);const captured=recall.capture(run,result,{kind:'file',recordValue,fresh:()=>fresh(run)&&nativePrefixFresh(run)&&files.visibility(snapshot.targetId).ok&&(context().chatMetadata?.latticeDocuments?.[run.userId]?.[snapshot.targetId]===undefined?null:JSON.stringify(context().chatMetadata.latticeDocuments[run.userId][snapshot.targetId]))===storedFingerprint});if(!captured.ok)return captured;}
             return result;

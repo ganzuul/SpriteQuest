@@ -114,6 +114,7 @@ export interface RunPlan {
     units: RunUnit[]; hierarchy: RunHierarchyEntry[]; terminals: TerminalTarget[]; callBound: number;
 }
 export interface ResolvedPrimitive {
+    systemDefaults?: import('./workflow-data-defaults').WorkflowDataPreset[]; systemDisabled?: boolean;
     address: NodeAddress; node: NativeNode; phase: WorkflowPhase; enabled: boolean; terminal: boolean; included: boolean;
     inputPorts: PortDescriptor[]; outputPorts: PortDescriptor[]; requestBound: number; dependencies: NodeAddress[];
 }
@@ -181,7 +182,7 @@ export interface OperationExecutionContext {
     inputStates: Readonly<Record<string, PortState>>; signal?: AbortSignal;
     request: import('./operations/control-nodes').IterationRequest;
 }
-/** Trusted root transport only; public execution never obtains this capability. */
+/** Trusted root host transport with static system delegation; public execution never obtains this capability. */
 export interface HostOperationExecutionContext extends OperationExecutionContext {
     /** Detached current request references; exact binding identities remain private host authority. */
     getRequestBindings(): ReadonlyArray<Readonly<{ address: NodeAddress; binding: Binding; capability: 'text-completion'; role: string; iteration?: IterationProvenance }>>;

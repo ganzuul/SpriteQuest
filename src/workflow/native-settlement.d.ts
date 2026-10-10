@@ -1,4 +1,4 @@
-import type { Result } from './types';
+import type { Result, NodeAddress } from './types';
 import type { DraftArtifact } from './draft-revisions';
 import type { StorageScope, FileStore } from './file-store';
 import type { ChatDocumentCatalog, DocumentVisibility } from './document-catalog';
@@ -17,7 +17,7 @@ export function validateNativeFileEvidence(raw:unknown,body:string,originalBody?
 export interface NativeFileSession {
     store:FileStore;
     visibility(targetId:string):Result<DocumentVisibility>;
-    intentId(node:{id:string},evidence:unknown[]):Promise<Result<string>>;
+    intentId(node:{id:string},evidence:unknown[],address?:NodeAddress):Promise<Result<string>>;
     stage(prepared:{handle:Parameters<FileStore['preflight']>[0];plan:{targetId:string}},evidence:unknown[]):ReturnType<NativeSettlement['stage']>;
     release():void;
 }
