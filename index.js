@@ -44,7 +44,7 @@ function addSendbarButton() {
     if (existing) { if (existing.parentElement !== bar) bar.append(existing); paintSendbar(); return true; }
     const button = document.createElement('button');
     button.id = 'pc-sendbar'; button.className = 'pc-chat-launcher interactable'; button.type = 'button'; button.setAttribute('aria-label', 'Open Lattice');
-    const logo = document.createElement('img'); logo.src = logoUrl; logo.alt = ''; logo.draggable = false; logo.setAttribute('aria-hidden', 'true'); button.append(logo);
+    const logo = document.createElement('span'); logo.className = 'pc-chat-launcher-icon'; logo.style.setProperty('--pc-launcher-logo', `url("${logoUrl}")`); logo.setAttribute('aria-hidden', 'true'); button.append(logo);
     button.addEventListener('click', () => UI.open());
     button.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); UI.open(); } });
     button.addEventListener('contextmenu', event => {

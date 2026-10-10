@@ -54,18 +54,18 @@ export function createChatDocumentCatalog(ports){
         bump();metadata.latticeDocumentCatalog=updated;documents=next;signature=JSON.stringify(next);
         return good({scope:{...captured.scope},documents:Object.values(next).map(({content,...summary})=>summary)});
     };
-    const snapshot=()=>{try{refresh();return good({scope:{...scope},documents:Object.values(documents).map(({content,...summary})=>summary)});}catch{return fail('DOCUMENT_CATALOG_UNAVAILABLE','Story document setup requires the active user and chat.');}};
+    const snapshot=()=>{try{refresh();return good({scope:{...scope},documents:Object.values(documents).map(({content,...summary})=>summary)});}catch{return fail('DOCUMENT_CATALOG_UNAVAILABLE','Workflow Data setup requires the active user and chat.');}};
     // A captured mutation starts with the original lease authority, before any host callback.
-    const staleMutation=()=>fail('STALE_DOCUMENT_SCOPE','Story document scope or catalog changed before this mutation.');
+    const staleMutation=()=>fail('STALE_DOCUMENT_SCOPE','Workflow Data scope or catalog changed before this mutation.');
     const unauthorizedLease=()=>fail('DOCUMENT_LEASE_UNAUTHORIZED','Use the exact live lease captured by this document catalog.');
     const defineValue=(raw,expected)=>{
         let captured=expected;
         try {
             refresh();if(captured)checkAuthority(captured);else captured=authority();
             const value=definition(raw);checkAuthority(captured);
-            if(!Object.hasOwn(documents,value.targetId)&&Object.keys(documents).length>=128)return fail('DOCUMENT_CATALOG_LIMIT','At most 128 story document targets are supported.');
+            if(!Object.hasOwn(documents,value.targetId)&&Object.keys(documents).length>=128)return fail('DOCUMENT_CATALOG_LIMIT','At most 128 workflow data targets are supported.');
             const storedRoot=own(metadata,'latticeDocuments'),storedUser=plain(storedRoot)?own(storedRoot,captured.scope.userId):null,stored=plain(storedUser)?own(storedUser,value.targetId):null;
-            if(stored&&own(stored,'format')!==value.format)return fail('FILE_FORMAT_LOCKED','An existing story document retains its stored format. Choose a new target to convert formats.');
+            if(stored&&own(stored,'format')!==value.format)return fail('FILE_FORMAT_LOCKED','An existing workflow data document retains its stored format. Choose a new target to convert formats.');
             checkAuthority(captured);
             return install({...documents,[value.targetId]:{...value,revision:globalThis.crypto.randomUUID()}},captured);
         }catch(error){return expected&&(error===staleAuthority||sequence!==expected.sequence)?staleMutation():fail('INVALID_DOCUMENT_DEFINITION','Use a named logical target, a valid format/template and an explicit public, hidden or actor-private scope.');}
@@ -74,18 +74,18 @@ export function createChatDocumentCatalog(ports){
         let captured=expected;
         try {
             refresh();if(captured)checkAuthority(captured);else captured=authority();
-            if(!target(targetId)||!Object.hasOwn(documents,targetId))return fail('FILE_NOT_AUTHORIZED','Select an authorized story document.');
+            if(!target(targetId)||!Object.hasOwn(documents,targetId))return fail('FILE_NOT_AUTHORIZED','Select an authorized workflow data document.');
             const next={...documents};delete next[targetId];checkAuthority(captured);return install(next,captured);
-        }catch(error){return expected&&(error===staleAuthority||sequence!==expected.sequence)?staleMutation():fail('DOCUMENT_CATALOG_UNAVAILABLE','Story document authorization could not be updated.');}
+        }catch(error){return expected&&(error===staleAuthority||sequence!==expected.sequence)?staleMutation():fail('DOCUMENT_CATALOG_UNAVAILABLE','Workflow Data authorization could not be updated.');}
     };
     return Object.freeze({snapshot,
-        definition(targetId){try{refresh();return target(targetId)&&Object.hasOwn(documents,targetId)?good({...documents[targetId]}):fail('FILE_NOT_AUTHORIZED','Select a story document created for this user and chat.');}catch{return fail('DOCUMENT_CATALOG_UNAVAILABLE','Story document settings are unavailable.');}},
+        definition(targetId){try{refresh();return target(targetId)&&Object.hasOwn(documents,targetId)?good({...documents[targetId]}):fail('FILE_NOT_AUTHORIZED','Select a workflow data document created for this user and chat.');}catch{return fail('DOCUMENT_CATALOG_UNAVAILABLE','Workflow Data settings are unavailable.');}},
         define(raw){return defineValue(raw);},
         remove(targetId){return removeValue(targetId);},
         defineCaptured(lease,raw){const captured=leases.get(lease);return captured?defineValue(raw,captured):unauthorizedLease();},
         removeCaptured(lease,targetId){const captured=leases.get(lease);return captured?removeValue(targetId,captured):unauthorizedLease();},
-        capture(){try{refresh();const captured=authority(),capturedScope=freeze({...scope}),capturedDocuments=freeze(Object.values(documents).map(item=>clone(item)));const lease=Object.freeze({scope:capturedScope,documents:capturedDocuments,isCurrent:()=>{try{refresh();checkAuthority(captured);return true;}catch{return false;}}});leases.set(lease,captured);return {ok:true,data:lease};}catch{return fail('DOCUMENT_CATALOG_UNAVAILABLE','Story document settings could not be captured.');}},
-        async save(){try{refresh();const expected=sequence;if(typeof methods.saveMetadata!=='function')return fail('CONFIG_SAVE_UNAVAILABLE','A host metadata save method is required.');const result=await methods.saveMetadata();refresh();if(sequence!==expected)return fail('STALE_DOCUMENT_SCOPE','Story document scope changed during its save.');return good({appliedLocally:true,saveAttempted:true,acknowledged:result===true||plain(result)&&Object.getOwnPropertyDescriptor(result,'ok')?.value===true});}catch{return fail('CONFIG_SAVE_FAILED','Story document settings remain local; the host save could not be verified.');}},
+        capture(){try{refresh();const captured=authority(),capturedScope=freeze({...scope}),capturedDocuments=freeze(Object.values(documents).map(item=>clone(item)));const lease=Object.freeze({scope:capturedScope,documents:capturedDocuments,isCurrent:()=>{try{refresh();checkAuthority(captured);return true;}catch{return false;}}});leases.set(lease,captured);return {ok:true,data:lease};}catch{return fail('DOCUMENT_CATALOG_UNAVAILABLE','Workflow Data settings could not be captured.');}},
+        async save(){try{refresh();const expected=sequence;if(typeof methods.saveMetadata!=='function')return fail('CONFIG_SAVE_UNAVAILABLE','A host metadata save method is required.');const result=await methods.saveMetadata();refresh();if(sequence!==expected)return fail('STALE_DOCUMENT_SCOPE','Workflow Data scope changed during its save.');return good({appliedLocally:true,saveAttempted:true,acknowledged:result===true||plain(result)&&Object.getOwnPropertyDescriptor(result,'ok')?.value===true});}catch{return fail('CONFIG_SAVE_FAILED','Workflow Data settings remain local; the host save could not be verified.');}},
         revision(){refresh();return boot+':'+sequence;},
     });
 }

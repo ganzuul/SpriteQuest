@@ -27,8 +27,9 @@ test('chat launcher uses the Lattice logo on the left without submitting or gene
     assert.equal(button.tagName, 'BUTTON'); assert.equal(button.type, 'button');
     assert.equal(button.getAttribute('aria-label'), 'Open Lattice');
     assert.equal(button.classList.contains('fa-diagram-project'), false);
-    assert.match(button.querySelector('img').src, /\/assets\/lattice-logo\.svg$/);
-    assert.equal(button.querySelector('img').alt, '');
+    const icon = button.querySelector('.pc-chat-launcher-icon');
+    assert.match(icon.style.getPropertyValue('--pc-launcher-logo'), /\/assets\/lattice-logo\.svg"\)$/);
+    assert.equal(icon.getAttribute('aria-hidden'), 'true');
     let submits = 0; f.env.document.querySelector('form').addEventListener('submit', event => { event.preventDefault(); submits++; });
     button.click(); assert.equal(f.opens(), 1); assert.equal(submits, 0);
     button.dispatchEvent(new f.dom.window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));

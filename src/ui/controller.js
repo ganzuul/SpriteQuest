@@ -139,19 +139,19 @@ function storySetup() {
 }
 function refreshStoryDocuments(notice = '') {
     const snapshot = storySetup()?.snapshot();
-    workbench?.update({ storyDocuments: snapshot?.ok ? { ...snapshot.data, notice } : { key: '', revision: '', scope: { userId: '', chatId: '' }, documents: [], issue: 'Story documents require an active user and chat.' } });
+    workbench?.update({ storyDocuments: snapshot?.ok ? { ...snapshot.data, notice } : { key: '', revision: '', scope: { userId: '', chatId: '' }, documents: [], issue: 'Workflow Data requires an active user and chat.' } });
 }
 function storyDocumentsChanged(result) {
     if (!result.ok) return result;
-    workflowSession.cancel('Story document authorization changed');
+    workflowSession.cancel('Workflow Data authorization changed');
     refreshWorkflowPreparation(); updateWorkflowProjection(); refreshStoryDocuments(result.data.message);
     return result;
 }
 const storyDocumentsActions = {
     refresh: () => refreshStoryDocuments(),
-    load(key, targetId) { return storySetup()?.load(key, targetId) ?? { ok: false, error: { code: 'DOCUMENT_SETUP_UNAVAILABLE', message: 'Story document setup is unavailable.' } }; },
-    async save(key, definition) { const setup = storySetup(); return setup ? storyDocumentsChanged(await setup.save(key, definition)) : { ok: false, error: { code: 'DOCUMENT_SETUP_UNAVAILABLE', message: 'Story document setup is unavailable.' } }; },
-    async remove(key, targetId) { const setup = storySetup(); return setup ? storyDocumentsChanged(await setup.remove(key, targetId)) : { ok: false, error: { code: 'DOCUMENT_SETUP_UNAVAILABLE', message: 'Story document setup is unavailable.' } }; },
+    load(key, targetId) { return storySetup()?.load(key, targetId) ?? { ok: false, error: { code: 'DOCUMENT_SETUP_UNAVAILABLE', message: 'Workflow Data setup is unavailable.' } }; },
+    async save(key, definition) { const setup = storySetup(); return setup ? storyDocumentsChanged(await setup.save(key, definition)) : { ok: false, error: { code: 'DOCUMENT_SETUP_UNAVAILABLE', message: 'Workflow Data setup is unavailable.' } }; },
+    async remove(key, targetId) { const setup = storySetup(); return setup ? storyDocumentsChanged(await setup.remove(key, targetId)) : { ok: false, error: { code: 'DOCUMENT_SETUP_UNAVAILABLE', message: 'Workflow Data setup is unavailable.' } }; },
 };
 function fastSetupView() {
     try {
@@ -1600,7 +1600,7 @@ function cancelConfiguredNode(key = pendingConfiguredNode?.key) {
 }
 function commitNodeCreation(capture, prepared) {
     const documentLease = prepared?.ok && nodeCreationScopes.get(prepared.data);
-    if (documentLease && !documentLease.isCurrent()) return { ok: false, error: { code: 'STALE_DOCUMENT_SETUP', message: 'Story document authorization changed before node creation. Reopen configuration.' } };
+    if (documentLease && !documentLease.isCurrent()) return { ok: false, error: { code: 'STALE_DOCUMENT_SETUP', message: 'Workflow Data authorization changed before node creation. Reopen configuration.' } };
     return commitCaptured(capture, prepared);
 }
 function requestNodeCreation(capture, command, at = null, shelf = false) {
@@ -1617,7 +1617,7 @@ function requestNodeCreation(capture, command, at = null, shelf = false) {
     let targets = [], documentScopeKey;
     if (['read-file', 'story-clock', 'commit-outcomes'].includes(command.operation)) {
         const captured = workflowRuntime.getStoryDocumentCatalog?.()?.capture();
-        if (!captured?.ok) return { ok: false, error: { code: 'DOCUMENT_SETUP_UNAVAILABLE', message: 'Open an active chat and authorize a target in Tools › Story documents before creating this node.' } };
+        if (!captured?.ok) return { ok: false, error: { code: 'DOCUMENT_SETUP_UNAVAILABLE', message: 'Open an active chat and authorize a target in Tools › Workflow Data before creating this node.' } };
         documentScopeKey = globalThis.crypto.randomUUID(); nodeDocumentCaptures.set(documentScopeKey, captured.data);
         targets = captured.data.documents.map(({ content, ...summary }) => summary);
     }

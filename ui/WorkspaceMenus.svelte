@@ -19,7 +19,7 @@
             case 'Node': return [item('Add node…', 'add-node'), item('Inspect selection', 'reveal-inspector')];
             case 'Preview': return [item('Show preview', 'show-preview'), item('Collapse preview', 'collapse-preview')];
             case 'Workflows': return [item('Workflow examples…', 'examples'), item('New legacy pre workflow', 'new-pre'), item('New legacy post workflow', 'new-post'), ...(rootWorkflow && ['unified', 'pre', 'post'].includes(rootWorkflow.phase) ? [item(rootWorkflow.phase === 'unified' ? rootWorkflow.assigned ? 'Unified workflow assigned' : 'Assign unified workflow' : rootWorkflow.assigned ? 'Assigned to legacy ' + rootWorkflow.phase + ' phase' : 'Assign legacy ' + rootWorkflow.phase + ' phase', 'assign-workflow-phase', '', rootWorkflow.assigned || rootWorkflow.busy)] : []), item('Run workflow', 'run-workflow', '', !rootWorkflow || !!rootWorkflow?.busy || !!rootWorkflow?.issues.length), item('Stop workflow', 'stop-workflow', '', !rootWorkflow?.busy)];
-            case 'Tools': return [item('Recall arms…', 'recall-arms'), item('Story documents…', 'story-documents'), item('Fast connections…', 'fast-connections'), item('Theme and colours', 'theme'), item('Toggle inspector', 'inspector')];
+            case 'Tools': return [item('Recall arms…', 'recall-arms'), item('Workflow Data…', 'story-documents'), item('Fast connections…', 'fast-connections'), item('Theme and colours', 'theme'), item('Toggle inspector', 'inspector')];
             default: return [item('Workspace guide', 'help')];
         }
     }
