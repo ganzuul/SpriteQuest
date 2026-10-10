@@ -1,5 +1,5 @@
 /*! Svelte runtime: Copyright (c) 2016-2025 Svelte Contributors. MIT license; see THIRD_PARTY_NOTICES.md. */
-//#region ../../node_modules/svelte/src/internal/shared/utils.js
+//#region node_modules/svelte/src/internal/shared/utils.js
 var e = Array.isArray, t = Array.prototype.indexOf, n = Array.prototype.includes, r = Array.from, i = Object.defineProperty, a = Object.getOwnPropertyDescriptor, o = Object.getOwnPropertyDescriptors, s = Object.prototype, c = Array.prototype, l = Object.getPrototypeOf, u = Object.isExtensible, d = () => {};
 function f(e) {
 	for (var t = 0; t < e.length; t++) e[t]();
@@ -29,7 +29,7 @@ function se(e) {
 	throw Error("https://svelte.dev/e/lifecycle_outside_component");
 }
 //#endregion
-//#region ../../node_modules/svelte/src/internal/client/errors.js
+//#region node_modules/svelte/src/internal/client/errors.js
 function ce() {
 	throw Error("https://svelte.dev/e/async_derived_orphan");
 }
@@ -64,7 +64,7 @@ function ve() {
 	throw Error("https://svelte.dev/e/svelte_boundary_reset_onerror");
 }
 //#endregion
-//#region ../../node_modules/svelte/src/constants.js
+//#region node_modules/svelte/src/constants.js
 var ye = {}, be = Symbol("uninitialized"), xe = "http://www.w3.org/1999/xhtml", Se = "http://www.w3.org/2000/svg", Ce = "http://www.w3.org/1998/Math/MathML";
 function we() {
 	console.warn("https://svelte.dev/e/derived_inert");
@@ -79,7 +79,7 @@ function De() {
 	console.warn("https://svelte.dev/e/svelte_boundary_reset_noop");
 }
 //#endregion
-//#region ../../node_modules/svelte/src/internal/client/dom/hydration.js
+//#region node_modules/svelte/src/internal/client/dom/hydration.js
 var N = !1;
 function Oe(e) {
 	N = e;
@@ -122,7 +122,7 @@ function Ne(e) {
 	return e.data;
 }
 //#endregion
-//#region ../../node_modules/svelte/src/internal/client/reactivity/equality.js
+//#region node_modules/svelte/src/internal/client/reactivity/equality.js
 function Pe(e) {
 	return e === this.v;
 }
@@ -133,7 +133,7 @@ function Ie(e) {
 	return !Fe(e, this.v);
 }
 //#endregion
-//#region ../../node_modules/svelte/src/internal/shared/clone.js
+//#region node_modules/svelte/src/internal/shared/clone.js
 var Le = [];
 function Re(e, t = !1, n = !1) {
 	return ze(e, /* @__PURE__ */ new Map(), "", Le, null, n);
@@ -169,7 +169,7 @@ function ze(t, n, r, i, a = null, o = !1) {
 	}
 }
 //#endregion
-//#region ../../node_modules/svelte/src/internal/client/context.js
+//#region node_modules/svelte/src/internal/client/context.js
 var Be = null;
 function Ve(e) {
 	Be = e;
@@ -198,7 +198,7 @@ function We() {
 	return !0;
 }
 //#endregion
-//#region ../../node_modules/svelte/src/internal/client/dom/task.js
+//#region node_modules/svelte/src/internal/client/dom/task.js
 var Ge = [];
 function Ke() {
 	var e = Ge;
@@ -240,7 +240,7 @@ function Xe(e, t) {
 	}
 }
 //#endregion
-//#region ../../node_modules/svelte/src/internal/client/reactivity/status.js
+//#region node_modules/svelte/src/internal/client/reactivity/status.js
 var Ze = ~(g | _ | h);
 function Qe(e, t) {
 	e.f = e.f & Ze | t;
@@ -249,7 +249,7 @@ function $e(e) {
 	e.f & 512 || e.deps === null ? Qe(e, h) : Qe(e, _);
 }
 //#endregion
-//#region ../../node_modules/svelte/src/internal/client/reactivity/utils.js
+//#region node_modules/svelte/src/internal/client/reactivity/utils.js
 function et(e) {
 	if (e !== null) for (let t of e) t.f & 2 && t.f & 65536 && (t.f ^= E, et(t.deps));
 }
@@ -257,7 +257,7 @@ function tt(e, t, n) {
 	e.f & 2048 ? t.add(e) : e.f & 4096 && n.add(e), et(e.deps), Qe(e, h);
 }
 //#endregion
-//#region ../../node_modules/svelte/src/internal/client/reactivity/store.js
+//#region node_modules/svelte/src/internal/client/reactivity/store.js
 var nt = !1;
 function rt(e) {
 	var t = nt;
@@ -268,7 +268,7 @@ function rt(e) {
 	}
 }
 //#endregion
-//#region ../../node_modules/svelte/src/internal/client/dom/elements/misc.js
+//#region node_modules/svelte/src/internal/client/dom/elements/misc.js
 function it(e) {
 	N && /* @__PURE__ */ dn(e) !== null && pn(e);
 }
@@ -281,7 +281,7 @@ function ot() {
 	}, { capture: !0 }));
 }
 //#endregion
-//#region ../../node_modules/svelte/src/internal/client/dom/elements/bindings/shared.js
+//#region node_modules/svelte/src/internal/client/dom/elements/bindings/shared.js
 function st(e) {
 	var t = Gn, n = Jn;
 	qn(null), Yn(null);
@@ -299,7 +299,7 @@ function ct(e, t, n, r = n) {
 	} : () => r(!0), ot();
 }
 //#endregion
-//#region ../../node_modules/svelte/src/reactivity/create-subscriber.js
+//#region node_modules/svelte/src/reactivity/create-subscriber.js
 function lt(e) {
 	let t = 0, n = Jt(0), r;
 	return () => {
@@ -311,7 +311,7 @@ function lt(e) {
 	};
 }
 //#endregion
-//#region ../../node_modules/svelte/src/internal/client/dom/blocks/boundary.js
+//#region node_modules/svelte/src/internal/client/dom/blocks/boundary.js
 var ut = S | C;
 function dt(e, t, n, r) {
 	new ft(e, t, n, r);
@@ -480,7 +480,7 @@ var ft = class {
 	}
 };
 //#endregion
-//#region ../../node_modules/svelte/src/internal/client/reactivity/async.js
+//#region node_modules/svelte/src/internal/client/reactivity/async.js
 function pt(e, t, n, r) {
 	let i = We() ? _t : bt;
 	var a = e.filter((e) => !e.settled), o = t.map(i);
@@ -625,7 +625,7 @@ function Tt(e) {
 	if (e.effects !== null) for (let t of e.effects) t.teardown && t.fn !== null && fr(t);
 }
 //#endregion
-//#region ../../node_modules/svelte/src/internal/client/reactivity/batch.js
+//#region node_modules/svelte/src/internal/client/reactivity/batch.js
 var Et = null, Dt = null, Ot = null, kt = null, At = null, jt = !1, Mt = !1, Nt = null, Pt = null, Ft = 0, It = 1, Lt = class e {
 	id = It++;
 	#e = !1;
@@ -918,7 +918,7 @@ function Wt(e) {
 	for (var t = e.first; t !== null;) Wt(t), t = t.next;
 }
 //#endregion
-//#region ../../node_modules/svelte/src/internal/client/reactivity/sources.js
+//#region node_modules/svelte/src/internal/client/reactivity/sources.js
 var Gt = /* @__PURE__ */ new Set(), Kt = /* @__PURE__ */ new Map(), qt = !1;
 function Jt(e, t) {
 	return {
@@ -1165,7 +1165,7 @@ function gn(e) {
 	for (; t !== null && t.nodeType === 3;) t.remove(), e.nodeValue += t.nodeValue, t = e.nextSibling;
 }
 //#endregion
-//#region ../../node_modules/svelte/src/internal/client/reactivity/effects.js
+//#region node_modules/svelte/src/internal/client/reactivity/effects.js
 function _n(e) {
 	Jn === null && (Gn === null && fe(e), de()), Un && ue(e);
 }
@@ -1353,7 +1353,7 @@ function Bn(e, t) {
 	}
 }
 //#endregion
-//#region ../../node_modules/svelte/src/internal/client/legacy.js
+//#region node_modules/svelte/src/internal/client/legacy.js
 var Vn = null, Hn = !1, Un = !1;
 function Wn(e) {
 	Un = e;
@@ -1542,7 +1542,7 @@ function br(e) {
 	return yr.includes(e);
 }
 //#endregion
-//#region ../../node_modules/svelte/src/internal/client/dom/elements/events.js
+//#region node_modules/svelte/src/internal/client/dom/elements/events.js
 var xr = Symbol("events"), Sr = /* @__PURE__ */ new Set(), Cr = /* @__PURE__ */ new Set();
 function wr(e, t, n, r = {}) {
 	function i(e) {
@@ -1617,7 +1617,7 @@ function Or(e) {
 	}
 }
 //#endregion
-//#region ../../node_modules/svelte/src/internal/client/dom/reconciler.js
+//#region node_modules/svelte/src/internal/client/dom/reconciler.js
 var kr = globalThis?.window?.trustedTypes && /* @__PURE__ */ globalThis.window.trustedTypes.createPolicy("svelte-trusted-html", { createHTML: (e) => e });
 function Ar(e) {
 	return kr?.createHTML(e) ?? e;
@@ -1627,7 +1627,7 @@ function jr(e) {
 	return t.innerHTML = Ar(e.replaceAll("<!>", "<!---->")), t.content;
 }
 //#endregion
-//#region ../../node_modules/svelte/src/internal/client/dom/template.js
+//#region node_modules/svelte/src/internal/client/dom/template.js
 function Mr(e, t) {
 	var n = Jn;
 	n.nodes === null && (n.nodes = {
@@ -1748,7 +1748,7 @@ function Hr(e, t) {
 	return n ? (Vr.delete(e), n(t)) : Promise.resolve();
 }
 //#endregion
-//#region ../../node_modules/svelte/src/internal/client/dom/blocks/branches.js
+//#region node_modules/svelte/src/internal/client/dom/blocks/branches.js
 var Ur = class {
 	anchor;
 	#e = /* @__PURE__ */ new Map();
@@ -1812,7 +1812,7 @@ var Ur = class {
 	}
 };
 //#endregion
-//#region ../../node_modules/svelte/src/internal/client/dom/blocks/if.js
+//#region node_modules/svelte/src/internal/client/dom/blocks/if.js
 function Y(e, t, n = !1) {
 	var r;
 	N && (r = P, Ae());
@@ -1836,7 +1836,7 @@ function Y(e, t, n = !1) {
 	}, a);
 }
 //#endregion
-//#region ../../node_modules/svelte/src/internal/client/dom/blocks/key.js
+//#region node_modules/svelte/src/internal/client/dom/blocks/key.js
 var Wr = Symbol("NaN");
 function Gr(e, t, n) {
 	N && Ae();
@@ -1847,7 +1847,7 @@ function Gr(e, t, n) {
 	});
 }
 //#endregion
-//#region ../../node_modules/svelte/src/internal/client/dom/blocks/each.js
+//#region node_modules/svelte/src/internal/client/dom/blocks/each.js
 function Kr(e, t) {
 	return t;
 }
@@ -2035,7 +2035,7 @@ function ti(e, t, n = !1, r = !1, i = !1, a = !1) {
 	});
 }
 //#endregion
-//#region ../../node_modules/svelte/src/internal/client/dom/elements/actions.js
+//#region node_modules/svelte/src/internal/client/dom/elements/actions.js
 function ni(e, t, n) {
 	Tn(() => {
 		var r = gr(() => t(e, n?.()) || {});
@@ -2050,7 +2050,7 @@ function ni(e, t, n) {
 	});
 }
 //#endregion
-//#region ../../node_modules/clsx/dist/clsx.mjs
+//#region node_modules/clsx/dist/clsx.mjs
 function ri(e) {
 	var t, n, r = "";
 	if (typeof e == "string" || typeof e == "number") r += e;
@@ -2067,7 +2067,7 @@ function ii() {
 	return r;
 }
 //#endregion
-//#region ../../node_modules/svelte/src/internal/shared/attributes.js
+//#region node_modules/svelte/src/internal/shared/attributes.js
 function ai(e) {
 	return typeof e == "object" ? ii(e) : e ?? "";
 }
@@ -2126,7 +2126,7 @@ function ui(e, t) {
 	return e == null ? null : String(e);
 }
 //#endregion
-//#region ../../node_modules/svelte/src/internal/client/dom/elements/class.js
+//#region node_modules/svelte/src/internal/client/dom/elements/class.js
 function di(e, t, n, r, i, a) {
 	var o = e[te];
 	if (N || o !== n || o === void 0) {
@@ -2139,7 +2139,7 @@ function di(e, t, n, r, i, a) {
 	return a;
 }
 //#endregion
-//#region ../../node_modules/svelte/src/internal/client/dom/elements/style.js
+//#region node_modules/svelte/src/internal/client/dom/elements/style.js
 function fi(e, t = {}, n, r) {
 	for (var i in n) {
 		var a = n[i];
@@ -2155,7 +2155,7 @@ function pi(e, t, n, r) {
 	return r;
 }
 //#endregion
-//#region ../../node_modules/svelte/src/internal/client/dom/elements/bindings/select.js
+//#region node_modules/svelte/src/internal/client/dom/elements/bindings/select.js
 function mi(t, n, r = !1) {
 	if (t.multiple) {
 		if (n == null) return;
@@ -2209,7 +2209,7 @@ function _i(e) {
 	return "__value" in e ? e.__value : e.value;
 }
 //#endregion
-//#region ../../node_modules/svelte/src/internal/client/dom/elements/attributes.js
+//#region node_modules/svelte/src/internal/client/dom/elements/attributes.js
 var vi = Symbol("is custom element"), yi = Symbol("is html"), bi = oe ? "link" : "LINK", xi = oe ? "progress" : "PROGRESS";
 function Z(e) {
 	if (N) {
@@ -2258,7 +2258,7 @@ function Ei(e) {
 	return n;
 }
 //#endregion
-//#region ../../node_modules/svelte/src/internal/client/dom/elements/bindings/input.js
+//#region node_modules/svelte/src/internal/client/dom/elements/bindings/input.js
 function Di(e, t, n = t) {
 	var r = /* @__PURE__ */ new WeakSet();
 	ct(e, "input", async (i) => {
@@ -2287,7 +2287,7 @@ function ki(e) {
 	return e === "" ? null : +e;
 }
 //#endregion
-//#region ../../node_modules/svelte/src/internal/client/dom/elements/bindings/this.js
+//#region node_modules/svelte/src/internal/client/dom/elements/bindings/this.js
 function Ai(e, t) {
 	return e === t || e?.[A] === t;
 }
@@ -2312,7 +2312,7 @@ function ji(e = {}, t, n, r) {
 	}), e;
 }
 //#endregion
-//#region ../../node_modules/svelte/src/internal/client/reactivity/props.js
+//#region node_modules/svelte/src/internal/client/reactivity/props.js
 function Mi(e, t, n, r) {
 	var i = !0, o = !!(n & 8), s = !!(n & 16), c = r, l = !0, u = void 0, d = () => s && i ? (u ??= /* @__PURE__ */ _t(r), U(u)) : (l && (l = !1, c = s ? gr(r) : r), c);
 	let f;
@@ -2357,7 +2357,7 @@ function Pi(e) {
 	Be === null && se("onDestroy"), Ni(() => () => gr(e));
 }
 //#endregion
-//#region ../../node_modules/svelte/src/internal/disclose-version.js
+//#region node_modules/svelte/src/internal/disclose-version.js
 typeof window < "u" && ((window.__svelte ??= {}).v ??= /* @__PURE__ */ new Set()).add("5");
 //#endregion
 //#region src/ui/artifact-glyph.js
@@ -2969,7 +2969,7 @@ function Sa(e, t = {
 						title: e.issue
 					}))
 				}],
-				[...s?.native ? [$("Save workflow", "save", "save", s.busy, "Ctrl S"), $("Save As…", "save-as", "save", s.busy, "Ctrl Shift S")] : [$("Download JSON…", "download-document", "save", !!s?.busy, "Ctrl S")], $("Rename workflow…", "rename", "rename", !r)],
+				[...s?.native ? [$("Save workflow", "save", "save", s.busy, "Ctrl S"), $("Save As…", "save-as", "save", s.busy, "Ctrl Shift S")] : [$("Save As…", "download-document", "save", !!s?.busy, "Ctrl S")], $("Rename workflow…", "rename", "rename", !r)],
 				[
 					$("Import into graph…", "import-into-graph", "open", a),
 					$("Export workflow JSON…", "export", "export", !r),
@@ -7045,7 +7045,7 @@ function Il(e, t) {
 Tr(["click", "change"]);
 //#endregion
 //#region ui/DocumentPrompt.svelte
-var Ll = /* @__PURE__ */ K("<p class=\"svelte-ppe66w\">Save your changes before continuing, or continue without saving.</p>"), Rl = /* @__PURE__ */ K("<p class=\"svelte-ppe66w\">Download a JSON copy and save it using your browser. To switch documents after downloading, repeat the action and choose Don't Save.</p>"), zl = /* @__PURE__ */ K("<div class=\"pc-workspace-overlay\"><div class=\"pc-workspace-dialog pc-document-prompt svelte-ppe66w\" role=\"dialog\" aria-modal=\"true\" aria-label=\"Save workflow changes?\" tabindex=\"-1\"><h2 class=\"svelte-ppe66w\">Save workflow changes?</h2> <p class=\"svelte-ppe66w\"><strong class=\"svelte-ppe66w\"> </strong> has unsaved changes.</p> <!> <footer class=\"svelte-ppe66w\"><button type=\"button\" class=\"svelte-ppe66w\"> </button><button type=\"button\" class=\"svelte-ppe66w\">Don't Save</button><button type=\"button\" class=\"svelte-ppe66w\">Cancel</button></footer></div></div>");
+var Ll = /* @__PURE__ */ K("<p class=\"svelte-ppe66w\">Save your changes before continuing, or continue without saving.</p>"), Rl = /* @__PURE__ */ K("<p class=\"svelte-ppe66w\">Save a JSON copy of this workflow. To switch documents after saving, repeat the action and choose Don't Save.</p>"), zl = /* @__PURE__ */ K("<div class=\"pc-workspace-overlay\"><div class=\"pc-workspace-dialog pc-document-prompt svelte-ppe66w\" role=\"dialog\" aria-modal=\"true\" aria-label=\"Save workflow changes?\" tabindex=\"-1\"><h2 class=\"svelte-ppe66w\">Save workflow changes?</h2> <p class=\"svelte-ppe66w\"><strong class=\"svelte-ppe66w\"> </strong> has unsaved changes.</p> <!> <footer class=\"svelte-ppe66w\"><button type=\"button\" class=\"svelte-ppe66w\"> </button><button type=\"button\" class=\"svelte-ppe66w\">Don't Save</button><button type=\"button\" class=\"svelte-ppe66w\">Cancel</button></footer></div></div>");
 function Bl(e, t) {
 	He(t, !0);
 	let n = Mi(t, "native", 3, !0), r, i;
@@ -7073,7 +7073,7 @@ function Bl(e, t) {
 	F(h);
 	var _ = V(h), v = V(_);
 	ji(v, (e) => i = e, () => i), F(m), F(s), ji(s, (e) => r = e, () => r), F(o), H(() => {
-		J(u, t.view.name), J(g, n() ? "Save" : "Download JSON");
+		J(u, t.view.name), J(g, n() ? "Save" : "Save As…");
 	}), W("keydown", s, a, !0), W("paste", s, (e) => e.stopPropagation(), !0), G("click", h, () => t.actions?.choose("save")), G("click", _, () => t.actions?.choose("discard")), G("click", v, () => t.actions?.choose("cancel")), q(e, o), Ue();
 }
 Tr(["click"]);
@@ -8448,7 +8448,7 @@ var od = {
 	homePage: "https://github.com/MentallyQuill/Lattice",
 	auto_update: !1,
 	description: "Build named-pin workflows for optional scene guidance and reviewed reply repairs in SillyTavern, with per-node model connections."
-}, sd = /* @__PURE__ */ K("<p class=\"pc-native-diagnostic svelte-1dr9aew\" role=\"alert\"> </p>"), cd = /* @__PURE__ */ K("<p>Browse node families on the floating shelf. Middle mouse pans the graph; the wheel zooms around the pointer. Use the dividers or their arrow keys to resize Preview and Details. View controls panel visibility; View › Reset panel layout restores the default layout.</p><p>Open examples from File to start a workflow document. A unified workflow's preparation stage feeds Generate Reply, and its response stage reshapes the captured Draft before Review and Publish. Choose each model node's connection with the bar under it. Details contains advanced model overrides and inheritance settings. Enable Lattice runs the open document for Send in SillyTavern. Run to here tests supported nodes; Workflow › Stop workflow cancels the current run. Retired pre and post workflows remain available only for archived export.</p><p>File › New workflow, Open workflow, Open Recent and Open examples replace the open document after offering Save, Don't Save or Cancel for unsaved changes. Save writes the current file; Save As chooses a destination. Browsers without native saving offer Download JSON. Export workflow JSON makes a portable sharing copy without local connections. Import into graph reviews a compatible fragment before one undoable insertion. Recover previous workflows opens unified documents preserved from earlier settings. File › Export archived workflows preserves retired originals for reference. Recovery drafts remain available in SillyTavern, while the filename and document status describe the current file.</p><p>Select nodes and right-click Create Subgraph to open their connected body in a new tab. Double-click a subgraph to open it. Add Input and Output nodes from the Subgraphs shelf inside an editable subgraph, then name and configure their ports in Details.</p><p>Right-click a subgraph block and choose Add to Subgraphs to save it for reuse. Right-click a saved shelf entry to delete it. Saving updates the shelf only when you choose to save; existing placed copies stay unchanged. Portals connect pins through named references. Preview artifact tabs show results for the selected node; Run to here checks the request bound before running. Apply reviews the fresh result against the full root workflow.</p><p><a target=\"_blank\" rel=\"noreferrer\" class=\"svelte-1dr9aew\">Open the project guide</a> · <a target=\"_blank\" rel=\"noreferrer\" class=\"svelte-1dr9aew\">Node reference</a></p>", 1), ld = /* @__PURE__ */ K("<div class=\"pc-workspace-overlay\"><div role=\"dialog\" tabindex=\"-1\" aria-modal=\"true\"><header class=\"svelte-1dr9aew\"><h2 class=\"svelte-1dr9aew\"> </h2><button type=\"button\" class=\"pc-btn menu_button\"> </button></header> <!></div></div>"), ud = /* @__PURE__ */ K("<div class=\"pc-workspace-overlay\"><div class=\"pc-manager-dialog svelte-1dr9aew\" role=\"dialog\" tabindex=\"-1\" aria-modal=\"true\" aria-label=\"Manage portals\"><!></div></div>"), dd = /* @__PURE__ */ K("<div role=\"dialog\" aria-modal=\"true\" aria-label=\"Lattice\" data-pc-workbench=\"svelte\"><!> <div class=\"pc-body\" role=\"region\" aria-label=\"Workspace panels\" tabindex=\"0\"><div class=\"pc-stage\"><section aria-label=\"Output preview\"><header class=\"pc-preview-pane-head\"><strong>Preview</strong><button type=\"button\" class=\"pc-btn menu_button\"> </button></header> <div class=\"pc-preview-content\"><!></div></section> <!> <!> <!> <div class=\"pc-canvas-area\" id=\"pc-workspace-graph\" role=\"tabpanel\"><div class=\"pc-workspace-run svelte-1dr9aew\"><!></div> <div class=\"pc-canvas-host\" aria-label=\"Node canvas\"></div> <!> <div><!></div></div></div> <!> <div class=\"pc-inspector pc-workspace-details svelte-1dr9aew\"><header class=\"pc-details-heading svelte-1dr9aew\"><strong class=\"svelte-1dr9aew\">Details</strong><button type=\"button\" aria-label=\"Close Details\" title=\"Close Details\">×</button></header> <!> <div class=\"pc-node-details-holder svelte-1dr9aew\"><!></div></div></div> <!> <!> <!> <!> <!> <!> <!> <!></div>");
+}, sd = /* @__PURE__ */ K("<p class=\"pc-native-diagnostic svelte-1dr9aew\" role=\"alert\"> </p>"), cd = /* @__PURE__ */ K("<p>Browse node families on the floating shelf. Middle mouse pans the graph; the wheel zooms around the pointer. Use the dividers or their arrow keys to resize Preview and Details. View controls panel visibility; View › Reset panel layout restores the default layout.</p><p>Open examples from File to start a workflow document. A unified workflow's preparation stage feeds Generate Reply, and its response stage reshapes the captured Draft before Review and Publish. Choose each model node's connection with the bar under it. Details contains advanced model overrides and inheritance settings. Enable Lattice runs the open document for Send in SillyTavern. Run to here tests supported nodes; Workflow › Stop workflow cancels the current run. Retired pre and post workflows remain available only for archived export.</p><p>File › New workflow, Open workflow, Open Recent and Open examples replace the open document after offering Save, Don't Save or Cancel for unsaved changes. Save writes the current file; Save As chooses a destination. Save As creates a JSON copy when direct file saving is unavailable. Export workflow JSON makes a portable sharing copy without local connections. Import into graph reviews a compatible fragment before one undoable insertion. Recover previous workflows opens unified documents preserved from earlier settings. File › Export archived workflows preserves retired originals for reference. Recovery drafts remain available in SillyTavern, while the filename and document status describe the current file.</p><p>Select nodes and right-click Create Subgraph to open their connected body in a new tab. Double-click a subgraph to open it. Add Input and Output nodes from the Subgraphs shelf inside an editable subgraph, then name and configure their ports in Details.</p><p>Right-click a subgraph block and choose Add to Subgraphs to save it for reuse. Right-click a saved shelf entry to delete it. Saving updates the shelf only when you choose to save; existing placed copies stay unchanged. Portals connect pins through named references. Preview artifact tabs show results for the selected node; Run to here checks the request bound before running. Apply reviews the fresh result against the full root workflow.</p><p><a target=\"_blank\" rel=\"noreferrer\" class=\"svelte-1dr9aew\">Open the project guide</a> · <a target=\"_blank\" rel=\"noreferrer\" class=\"svelte-1dr9aew\">Node reference</a></p>", 1), ld = /* @__PURE__ */ K("<div class=\"pc-workspace-overlay\"><div role=\"dialog\" tabindex=\"-1\" aria-modal=\"true\"><header class=\"svelte-1dr9aew\"><h2 class=\"svelte-1dr9aew\"> </h2><button type=\"button\" class=\"pc-btn menu_button\"> </button></header> <!></div></div>"), ud = /* @__PURE__ */ K("<div class=\"pc-workspace-overlay\"><div class=\"pc-manager-dialog svelte-1dr9aew\" role=\"dialog\" tabindex=\"-1\" aria-modal=\"true\" aria-label=\"Manage portals\"><!></div></div>"), dd = /* @__PURE__ */ K("<div role=\"dialog\" aria-modal=\"true\" aria-label=\"Lattice\" data-pc-workbench=\"svelte\"><!> <div class=\"pc-body\" role=\"region\" aria-label=\"Workspace panels\" tabindex=\"0\"><div class=\"pc-stage\"><section aria-label=\"Output preview\"><header class=\"pc-preview-pane-head\"><strong>Preview</strong><button type=\"button\" class=\"pc-btn menu_button\"> </button></header> <div class=\"pc-preview-content\"><!></div></section> <!> <!> <!> <div class=\"pc-canvas-area\" id=\"pc-workspace-graph\" role=\"tabpanel\"><div class=\"pc-workspace-run svelte-1dr9aew\"><!></div> <div class=\"pc-canvas-host\" aria-label=\"Node canvas\"></div> <!> <div><!></div></div></div> <!> <div class=\"pc-inspector pc-workspace-details svelte-1dr9aew\"><header class=\"pc-details-heading svelte-1dr9aew\"><strong class=\"svelte-1dr9aew\">Details</strong><button type=\"button\" aria-label=\"Close Details\" title=\"Close Details\">×</button></header> <!> <div class=\"pc-node-details-holder svelte-1dr9aew\"><!></div></div></div> <!> <!> <!> <!> <!> <!> <!> <!></div>");
 function fd(e, t) {
 	He(t, !0);
 	let n = Mi(t, "actions", 7), r = /* @__PURE__ */ L({

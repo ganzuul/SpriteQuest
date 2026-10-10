@@ -23,7 +23,7 @@ export function createWorkflowDocumentController(env) {
             if (!result.data.downloaded) {
                 session.markSaved(token,snapshot,result.data.source);
                 report('Saved '+(result.data.source?.name || 'workflow')+'.','success');
-            } else report('Downloaded a JSON copy. Saving it to disk is handled by your browser.','info');
+            } else report('Saving a JSON copy. Your draft stays open.','info');
             return {ok:true,data:{...result.data,snapshot}};
         } catch (cause) {return session.stillCurrent(token) ? error(failure(cause?.message || 'The workflow could not be saved.')) : cancelled();}
         finally {saving=false;changed();}
@@ -39,7 +39,7 @@ export function createWorkflowDocumentController(env) {
         if (choice!=='save') return false;
         const result=await save(false,true);
         if (!result.ok || !session.stillCurrent(token)) return false;
-        if (result.data.downloaded) {report('The JSON copy was downloaded. Choose Don’t Save when you are ready to switch documents.','info');return false;}
+        if (result.data.downloaded) {report('Finish saving the JSON copy, then choose Don’t Save when you are ready to switch documents.','info');return false;}
         if (session.snapshot()!==result.data.snapshot) {report('New changes arrived while saving. Save them before switching documents.','info');return false;}
         return true;
     }

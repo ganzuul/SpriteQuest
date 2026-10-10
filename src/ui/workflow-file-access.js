@@ -137,7 +137,7 @@ export function createWorkflowFileAccess(options = {}) {
             if (typeof text !== 'string' || new TextEncoder().encode(text).byteLength > LIMIT) return fail('MALFORMED_WORKFLOW', 'Workflow JSON must be at most 2,000,000 UTF-8 bytes.');
             if (!native || downloadCopy) {
                 try { const result = await download(text, suggestedName); return result?.ok === false ? result : { ok: true, data: { source, downloaded: true } }; }
-                catch (cause) { return cause?.name === 'AbortError' ? cancelled() : fail('FILE_DOWNLOAD_FAILED', 'The workflow JSON copy could not be downloaded.'); }
+                catch (cause) { return cause?.name === 'AbortError' ? cancelled() : fail('FILE_DOWNLOAD_FAILED', 'The workflow JSON copy could not be saved.'); }
             }
             let writer, handle, sameFile = !saveAs && source?.kind === 'native' && typeof source.handle?.getFile === 'function';
             try {

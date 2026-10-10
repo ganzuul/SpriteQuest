@@ -40,7 +40,7 @@ import { createWorkflowFileAccess } from './workflow-file-access.js?v=0.27.0';
 import { readTextFile } from './file-input.js?v=0.27.0';
 import { prepareWorkspaceViews, prepareLibraryViews, projectEditorDraw, initialWorkspaceCamera, projectWorkspacePanels, projectNodeProfiles } from './workspace-preparation.js?v=0.27.0';
 import { prepareWorkflowProjection, projectPreparedWorkflow, createWorkflowSession } from './workflow-surface.js?v=0.27.0';
-import { ctx, safe, settings, save, activeWorkflow, activateWorkflow, documentSession, activeWorkspaceViews, setActiveWorkspaceViews, recoveredWorkflows, retainRecoveryWorkflows, onWorkflowActivated, createGraph, touchGraph, commitGraphEdit, stepGraphHistory, exportGraph, exportArchivedWorkflows, onGraphTouched, groupMembers } from '../state.js?v=0.27.0';
+import { ctx, safe, settings, save, activeWorkflow, activateWorkflow, documentSession, activeWorkspaceViews, setActiveWorkspaceViews, recoveredWorkflows, retainRecoveryWorkflows, onWorkflowActivated, blankGraph, touchGraph, commitGraphEdit, stepGraphHistory, exportGraph, exportArchivedWorkflows, onGraphTouched, groupMembers } from '../state.js?v=0.27.0';
 import { applyTheme } from '../theme.js?v=0.27.0';
 import { renderThemeEditor } from '../theme-editor.js?v=0.27.0';
 import * as H from '../history.js?v=0.27.0';
@@ -1837,7 +1837,7 @@ function ensureDocumentCommands() {
     if (documentCommands) return documentCommands;
     workflowFiles ??= createWorkflowFileAccess({ onChange: () => { if (documentCommands) renderDocumentState(); }, onWarning: message => { fileStorageIssue = message; documentCommands?.storageIssue(message); } });
     documentCommands = createWorkflowDocumentController({
-        session: documentSession, files: workflowFiles, create: () => createGraph('Untitled workflow'),
+        session: documentSession, files: workflowFiles, create: () => blankGraph('Untitled workflow'),
         examples: id => installWorkflowExample(id), recovery: recoveredWorkflows, retainCompanions: retainRecoveryWorkflows,
         views() { canvas?.cancelGesture(); persistGraphViews(true); return activeWorkspaceViews(); },
         prompt: requestDocumentChoice,

@@ -10,7 +10,7 @@ Install from `https://github.com/MentallyQuill/Lattice` in SillyTavern's **Exten
 
 Fresh launch opens **Unified story workflow**, with Lattice disabled. Existing installations restore their unified recovery draft; previous unified documents are available through **File → Recover previous workflows**. **File → Open examples…** offers [30 numbered unified lessons](examples.md), searchable by goal or technique and filterable by difficulty. Opening a lesson creates an independent editable active document. Opening and importing make no provider request and do not change **Enable Lattice**.
 
-Use **File → Save workflow** or **Save As…** to save the editable document to disk. Browsers without direct file access offer **Download JSON…** instead. A recovery draft retains committed work across reloads; it does not save the file on disk. **Open Recent** reopens previously accessed files in supported browsers. See [save, import, and share](operators-manual.md#save-import-and-share) for modified-document prompts and recovery.
+Use **File → Save workflow** or **Save As…** to save the editable document to disk. Browsers without direct file access offer **Save As…** to save a JSON copy; the document stays modified because Lattice cannot confirm that the browser finished saving it to disk. A recovery draft retains committed work across reloads; it does not save the file on disk. **Open Recent** reopens previously accessed files in supported browsers. See [save, import, and share](operators-manual.md#save-import-and-share) for modified-document prompts and recovery.
 
 The menu bar contains **File**, **Edit**, **View**, **Graph**, **Workflow** and **Help**. Use **Graph → Add node…** to search for nodes and subgraphs, and **View → Fit graph** or **Fit selection** to recover your position. Press **F** to fit and center the selection in one action; with nothing selected, it fits the graph.
 
@@ -56,6 +56,6 @@ See [reply review](native-workflows.md#review-a-reply-repair) and the [unified g
 
 ## Recover an older setup
 
-Retired pre/post roots are preserved in a cold archive. **File → Export archived workflows** downloads their original graphs, bindings and active selection for recovery. They cannot execute or import as current roots. Rebuild useful logic in a new unified graph with explicit Preparation/Response stages and Review / Publish. There is no automatic conversion or model request during recovery.
+Retired pre/post roots are preserved in a cold archive. **File → Export archived workflows** saves a copy of their original graphs, bindings and active selection for recovery. They cannot execute or import as current roots. Rebuild useful logic in a new unified graph with explicit Preparation/Response stages and Review / Publish. There is no automatic conversion or model request during recovery.
 
 Read the [operator's manual](operators-manual.md) to connect pins, open subgraph tabs, customize instances and inspect recorded outputs.

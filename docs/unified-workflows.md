@@ -82,7 +82,7 @@ Portable exports omit local saved-profile identifiers and credentials, including
 
 Use **Select Fields** to expose `answers.<id>.accepted`, then **Branch** or **Confirm Events** to preserve its true, false or null meaning. An unresolved answer does not establish acceptance. **Confidence Gate** remains available for an authored numeric metric, with explicit acceptance and rejection thresholds and an unresolved middle range. A score or successful request alone does not permit a state write; follow the confirmed-event and accepted-effect path.
 
-Retired Fast workflows and reusable helpers remain available through File’s archived recovery download. They cannot become executable documents. Recovery exports remove local connection selectors while preserving authored identities and pins.
+Retired Fast workflows and reusable helpers remain available through File’s archived recovery export. They cannot become executable documents. Recovery exports remove local connection selectors while preserving authored identities and pins.
 
 ## Triggers need a source and an event policy
 
@@ -235,7 +235,7 @@ Native Recall serves the selected native actor. Other present actors can have in
 
 Saved native-pre and native-post roots are retired. Migration preserves their original graphs, bindings and active selection in a cold archive. Existing unified documents remain available as recovery drafts. If the previous active document is retired, Lattice opens a unified document or starter with integration disabled. Archived roots cannot execute, open as current documents, or import into current workflows.
 
-**File → Export archived workflows** downloads the recovery archive as JSON. This recovery action makes no model requests and does not convert the contents. Preserve that download while rebuilding a needed process in a new unified workflow or updated example:
+**File → Export archived workflows** saves a copy of the recovery archive as JSON. This recovery action makes no model requests and does not convert the contents. Preserve that saved copy while rebuilding a needed process in a new unified workflow or updated example:
 
 1. Place preparation Context/Text/Guidance logic upstream of Generate Reply and set explicit stages.
 2. Wire bounded Guidance into Generate Reply's guidance pin.

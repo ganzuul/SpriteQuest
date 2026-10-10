@@ -44,13 +44,13 @@ test('native File commands own document creation opening and saving', async () =
     } finally { await f.close(); }
 });
 
-test('fallback File offers a JSON download without promising same-file saving', async () => {
+test('fallback File offers Save As without promising same-file saving', async () => {
     const commands = [];
     const f = await fixture('WorkspaceMenus', state({ name: 'Untitled', dirty: true, busy: false, native: false, recents: [], recovery: [] }), { command: command => commands.push(command) });
     try {
         await f.open();
-        assert.equal(f.item('Save workflow'), undefined); assert.equal(f.item('Save As…'), undefined);
-        await click(f.item('Download JSON…')); assert.deepEqual(commands, ['download-document']);
+        assert.equal(f.item('Save workflow'), undefined);
+        await click(f.item('Save As…')); assert.deepEqual(commands, ['download-document']);
     } finally { await f.close(); }
 });
 
@@ -118,12 +118,12 @@ test('shared unsaved-changes prompt offers Save Dont Save and Cancel with trappe
     } finally { document.removeEventListener('keydown', background); await f.close(); assert.equal(document.activeElement, anchor); anchor.remove(); }
 });
 
-test('fallback unsaved prompt explains downloading a copy before explicitly switching documents', async () => {
+test('fallback unsaved prompt explains saving a copy before explicitly switching documents', async () => {
     const choices = [], f = await fixture('DocumentPrompt', { name: 'scene.json' }, { choose: choice => choices.push(choice) }, () => {}, 'view', { native: false });
     try {
         const buttons = [...f.host.querySelectorAll('button')]; assert.equal(buttons.some(button => button.textContent === 'Save'), false);
-        assert.match(f.host.textContent, /browser.*repeat the action.*Don't Save/s);
-        await click(buttons.find(button => button.textContent === 'Download JSON')); assert.deepEqual(choices, ['save']);
+        assert.match(f.host.textContent, /Save a JSON copy.*repeat the action.*Don't Save/s);
+        await click(buttons.find(button => button.textContent === 'Save As…')); assert.deepEqual(choices, ['save']);
     } finally { await f.close(); }
 });
 

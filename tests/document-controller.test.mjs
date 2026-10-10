@@ -54,9 +54,9 @@ test('Save As adopts its source only on successful write',async()=>{
     const f=fixture();f.session.current().name='edited';await f.controller.save(true);
     assert.equal(f.writes.length,1);assert.equal(f.writes[0].options.saveAs,true);assert.equal(f.session.source().name,'saved.json');assert.equal(f.session.dirty(),false);
 });
-test('download feedback does not claim disk saving or clear the native save checkpoint',async()=>{
+test('fallback save feedback does not claim disk saving or clear the native save checkpoint',async()=>{
     const f=fixture();f.files.native=false;f.session.current().name='edited';f.files.save=async()=>ok({source:null,downloaded:true});await f.controller.save();
-    assert.equal(f.session.dirty(),true);assert.match(f.notices.at(-1),/download/i);assert.doesNotMatch(f.notices.at(-1),/^Saved/);
+    assert.equal(f.session.dirty(),true);assert.match(f.notices.at(-1),/Saving a JSON copy/);assert.doesNotMatch(f.notices.at(-1),/^Saved/);
 });
 test('a browser download cannot authorize discarding the unsaved document',async()=>{
     const f=fixture(),root=f.session.current();root.name='edited';f.files.native=false;

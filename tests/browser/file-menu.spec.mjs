@@ -37,14 +37,14 @@ test('fallback Open uses the system JSON picker and replaces the current documen
     await expect(page.getByLabel('Workflow', { exact: true })).toHaveCount(0);
 });
 
-test('fallback Download JSON preserves local bindings and camera without declaring a disk save', async ({ page }) => {
+test('fallback Save As preserves local bindings and camera without declaring a disk save', async ({ page }) => {
     await load(page);
     const expected = await page.evaluate(async () => {
         const h = window.canvasHarness; h.graph.roles.Analysis = { profileId: 'local-profile', model: 'local-model' };
         h.S.touchGraph(h.graph); h.UI.refreshIfOpen(); await h.settle(); await h.view({ x: 321, y: 87, zoom: .8 });
         return { id: h.graph.id, camera: { ...h.canvas.view } };
     });
-    const [download] = await Promise.all([page.waitForEvent('download'), menu(page, 'Download JSON…')]);
+    const [download] = await Promise.all([page.waitForEvent('download'), menu(page, 'Save As…')]);
     const file = await downloaded(download); expect(file).toMatchObject({ kind: 'lattice-document', schema: 1, minRuntime: 2 });
     expect(file.graph.roles.Analysis).toEqual({ profileId: 'local-profile', model: 'local-model' });
     expect(file.workspaceViews.views.find(view => view.identity.kind === 'root').camera).toEqual(expected.camera);
@@ -63,11 +63,13 @@ test('portable export removes local connection references and Open accepts that 
     expect(await page.evaluate(() => window.canvasHarness.graph.id)).toBe(file.graph.id);
 });
 
-test('New opens a detached unified starter and preserves Enable Lattice', async ({ page }) => {
+test('New opens a blank unified canvas and preserves Enable Lattice', async ({ page }) => {
     await load(page); const before = await snapshot(page); await menu(page, 'New workflow');
     await expect.poll(() => page.evaluate(() => window.canvasHarness.graph.id)).not.toBe(before.graph.id);
     const after = await snapshot(page); expect(after.graph.name).toBe('Untitled workflow');
-    expect(after.graph.mode).toBe('native-unified'); expect(Object.values(after.graph.nodes).map(node => node.operation)).toEqual(['on-send','generate-reply','review-publish']);
+    expect(after.graph.mode).toBe('native-unified'); expect(after.graph.nodes).toEqual({}); expect(after.graph.wires).toEqual({});
+    await expect(page.locator('.pc-node-native')).toHaveCount(0);
+    await expect(page.getByRole('dialog', { name: 'Lattice', exact: true }).getByRole('dialog')).toHaveCount(0);
     expect(after.enabled).toBe(before.enabled); expect(after.recovery).toEqual(before.recovery);
 });
 
@@ -88,24 +90,24 @@ test('Cancel and Escape preserve edited content and camera through the shared Ne
     await expect(prompt(page)).toHaveCount(0); expect(await snapshot(page)).toEqual(before);
 });
 
-test('guard Download JSON retains the edited document until an explicit Dont Save choice', async ({ page }) => {
+test('guard Save As retains the edited document until an explicit Dont Save choice', async ({ page }) => {
     await load(page); await edit(page, 'Save these workflow edits'); const before = await snapshot(page); await menu(page, 'New workflow');
-    const [download] = await Promise.all([page.waitForEvent('download'), prompt(page).getByRole('button', { name: 'Download JSON', exact: true }).click()]);
+    const [download] = await Promise.all([page.waitForEvent('download'), prompt(page).getByRole('button', { name: 'Save As…', exact: true }).click()]);
     const file = await downloaded(download); expect(file.graph.id).toBe(before.graph.id); expect(file.graph.description).toBe('Save these workflow edits');
     expect(await snapshot(page)).toEqual(before); expect(await page.evaluate(() => window.canvasHarness.S.documentSession.dirty())).toBe(true);
     await menu(page, 'New workflow'); await discard(page);
     await expect.poll(() => page.evaluate(() => window.canvasHarness.graph.id)).not.toBe(before.graph.id);
 });
 
-test('Dont Save opens New without downloading the old document', async ({ page }) => {
+test('Dont Save opens New without saving the old document', async ({ page }) => {
     await load(page); const downloads = []; page.on('download', value => downloads.push(value)); await edit(page); const before = await snapshot(page);
     await menu(page, 'New workflow'); await discard(page);
     await expect.poll(() => page.evaluate(() => window.canvasHarness.graph.id)).not.toBe(before.graph.id); expect(downloads).toEqual([]);
 });
 
-test('a failed guard download keeps current work and reports the failure', async ({ page }) => {
-    await load(page); await edit(page); await page.evaluate(() => { URL.createObjectURL = () => { throw new Error('Save download failed'); }; });
-    const before = await snapshot(page); await menu(page, 'New workflow'); await prompt(page).getByRole('button', { name: 'Download JSON', exact: true }).click();
+test('a failed guard save keeps current work and reports the failure', async ({ page }) => {
+    await load(page); await edit(page); await page.evaluate(() => { URL.createObjectURL = () => { throw new Error('Save failed'); }; });
+    const before = await snapshot(page); await menu(page, 'New workflow'); await prompt(page).getByRole('button', { name: 'Save As…', exact: true }).click();
     await expect.poll(() => page.evaluate(() => window.canvasHarness.toasts.at(-1).type)).toBe('error'); expect(await snapshot(page)).toEqual(before);
     await menu(page, 'New workflow'); await expect(prompt(page)).toBeVisible(); await page.keyboard.press('Escape');
 });
@@ -118,7 +120,7 @@ test('the document guard blocks canvas shortcuts and traps forward and backward 
     expect(await snapshot(page)).toEqual(before); await page.keyboard.press('Tab');
     expect(await prompt(page).evaluate(element => element.contains(document.activeElement))).toBe(true);
     await prompt(page).focus(); await page.keyboard.press('Shift+Tab'); await expect(prompt(page).getByRole('button',{name:'Cancel',exact:true})).toBeFocused();
-    await page.keyboard.press('Tab'); await expect(prompt(page).getByRole('button',{name:'Download JSON',exact:true})).toBeFocused(); await page.keyboard.press('Escape');
+    await page.keyboard.press('Tab'); await expect(prompt(page).getByRole('button',{name:'Save As…',exact:true})).toBeFocused(); await page.keyboard.press('Escape');
 });
 
 test('cancelled fallback pickers preserve the document and produce no import review', async ({ page }) => {

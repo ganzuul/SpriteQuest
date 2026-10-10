@@ -66,7 +66,7 @@ Current [remastered examples](../examples/remastered/) are portable schema-3/run
 
 Five stage-specific [library subgraphs](../examples/library/subgraphs/) remain reusable processing definitions. Their pre/post body contracts do not make a standalone executable root. Unsupported roots, package versions, dependencies, cycles and incompatible wires fail before settings change.
 
-Retired roots live in a cold recovery archive containing their original graphs, bindings and active selection. **File → Export archived workflows** downloads it as JSON; it cannot execute or import as a current workflow. Rebuild needed logic in a new unified graph. Recovery performs no conversion or model requests.
+Retired roots live in a cold recovery archive containing their original graphs, bindings and active selection. **File → Export archived workflows** saves a copy as JSON; it cannot execute or import as a current workflow. Rebuild needed logic in a new unified graph. Recovery performs no conversion or model requests.
 
 ## Costs, limits, and troubleshooting
 

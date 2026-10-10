@@ -274,7 +274,7 @@ Click an input or output block to rename the port, change its artifact type, or 
 
 Native source, Memory and publication operations remain at the root where their contracts require it. Select the processing nodes between them to create a subgraph. Existing boundary blocks remain in their containing subgraph.
 
-Right-click a wrapper and choose **Add to Subgraphs** to save it for reuse. Name it and choose **Save new subgraph** or explicitly update an existing shelf entry. Editing a body does not automatically save it. Updates affect future insertions; existing placed copies keep their exact contents. Right-click a saved entry in the shelf to **Delete** it or **Open saved definition** for inspection. Deleting a shelf entry preserves placed copies. **Export subgraph** on a wrapper downloads its portable JSON package.
+Right-click a wrapper and choose **Add to Subgraphs** to save it for reuse. Name it and choose **Save new subgraph** or explicitly update an existing shelf entry. Editing a body does not automatically save it. Updates affect future insertions; existing placed copies keep their exact contents. Right-click a saved entry in the shelf to **Delete** it or **Open saved definition** for inspection. Deleting a shelf entry preserves placed copies. **Export subgraph** on a wrapper saves a portable JSON copy.
 
 ![Compact Save subgraph dialog with a name and explicit new or update choice](images/subgraph-save.png)
 
@@ -292,32 +292,31 @@ The open document is an editable draft. Committed edits and workspace views are 
 
 | Action | Result |
 | --- | --- |
-| File → New workflow | Offer Save, Don't Save, or Cancel for modified work, then open an Untitled workflow |
+| File → New workflow | Guard modified work, then open an Untitled workflow |
 | File → Open workflow… | Validate the chosen JSON file, guard modified work, then replace the active document |
 | File → Open Recent | Reopen a previously accessed file; the browser may request permission again |
 | File → Open examples… | Open an independent editable example copy |
 | File → Recover previous workflows | Open a retained earlier unified workflow as an unsaved draft |
 | File → Save workflow | Write the editable document to its current file, or choose a location on its first save |
-| File → Save As… | Choose another file and make it the document’s save destination |
-| File → Download JSON… | Download an editable document copy when direct file access is unavailable |
+| File → Save As… | Choose another file as the save destination where direct file access is supported; otherwise save an editable JSON copy |
 | File → Import into graph… | Review an additive insertion into the active graph |
-| File → Export workflow JSON… | Download a portable unified sharing package with pinned definitions |
-| File → Export archived workflows… | Download retired pre/post roots, original bindings and active selection as recovery JSON |
+| File → Export workflow JSON… | Save a portable unified workflow copy with pinned definitions |
+| File → Export archived workflows… | Save a recovery JSON copy of retired pre/post roots, original bindings and active selection |
 | File → Close workspace | Close the editor while retaining the active recovery draft and workspace views |
-| Wrapper → Export subgraph | Download an individual reusable definition |
+| Wrapper → Export subgraph | Save a portable copy of an individual reusable definition |
 | Wrapper → Add to Subgraphs; shelf entry → Delete | Save reusable definitions and remove shelf entries |
 
-Before New, Open, Open Recent, opening an example, or recovery replaces modified work, **Save** must complete successfully, **Don't Save** continues without writing the current file, and **Cancel** keeps the current canvas. A cancelled picker or failed validation also preserves the current document. **Modified** tracks committed authoring edits; camera movement, tab navigation and runtime recall queues do not dirty the file.
+Before New, Open, Open Recent, opening an example, or recovery replaces modified work, Lattice offers a save choice, **Don't Save**, or **Cancel**. With direct file access, **Save** must complete successfully before the document is replaced. **Don't Save** continues without writing the current file, and **Cancel** keeps the current canvas. A cancelled picker or failed validation also preserves the current document. **Modified** tracks committed authoring edits; camera movement, tab navigation and runtime recall queues do not dirty the file.
 
 Direct file saving and Open Recent require a browser with supported file access. **Save** checks whether the file changed outside Lattice and asks you to use **Save As** rather than overwrite those changes. A denied permission, cancelled picker or failed write leaves the draft open and modified. **Clear Recent** removes only the recent-file list; it does not delete files. The list is local to this browser and origin.
 
-Other browsers offer **Download JSON…** instead of direct Save and Save As. A download cannot confirm that the file reached disk, so the draft stays modified. If you choose **Download JSON** in a replacement prompt, the JSON copy downloads and the document stays open; choose **Don't Save** when you are ready to switch.
+Other browsers offer **Save As…** to save a JSON copy through the browser. Lattice cannot confirm that the browser finished saving the file to disk, so the draft stays modified. Choosing **Save As…** in a replacement prompt gives the browser the JSON copy and keeps the current document open. To switch documents after saving, repeat the action and choose **Don't Save**.
 
 An additive import requires matching stage contracts, assigns fresh node identities, and preserves internal connections and relative layout. Review role requirements, terminal changes, and request bounds before accepting the insertion. Import itself does not run or enable the workflow.
 
-Save and Download JSON retain local connection bindings and supported workspace views in an editable `lattice-document` file; credentials and runtime queues are excluded. Export downloads a portable `.workflow.json` sharing package and strips local saved-profile IDs. Recipients rebind fixed connections before running. **Active SillyTavern model** remains portable in nodes, roles and occurrence overrides, following the recipient’s configured host connection and model. Both file formats open through **File → Open workflow…** and carry pinned definitions. Unsupported versions, dangling connections, incompatible artifacts, or cycles produce validation issues.
+Save and Save As retain local connection bindings and supported workspace views in an editable `lattice-document` file; credentials and runtime queues are excluded. Export saves a portable `.workflow.json` copy for sharing and strips local saved-profile IDs. Recipients rebind fixed connections before running. **Active SillyTavern model** remains portable in nodes, roles and occurrence overrides, following the recipient’s configured host connection and model. Both file formats open through **File → Open workflow…** and carry pinned definitions. Unsupported versions, dangling connections, incompatible artifacts, or cycles produce validation issues.
 
-Retired pre/post roots remain in a cold archive and cannot open as current documents, execute, or import into current workflows. **File → Export archived workflows…** downloads their originals for recovery. Rebuild needed logic in a new unified graph with explicit stages; archive recovery makes no requests and performs no automatic conversion.
+Retired pre/post roots remain in a cold archive and cannot open as current documents, execute, or import into current workflows. **File → Export archived workflows…** saves a copy of their originals for recovery. Rebuild needed logic in a new unified graph with explicit stages; archive recovery makes no requests and performs no automatic conversion.
 
 ## Develop your own writing system
 
