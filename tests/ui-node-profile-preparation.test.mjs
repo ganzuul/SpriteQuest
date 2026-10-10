@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { starterGraph } from '../src/workflow/starters.js?v=0.26.0';
 import { createGraphViewSession } from '../src/ui/graph-view-session.js?v=0.26.0';
 import { projectPreparedWorkflow } from '../src/ui/workflow-surface.js?v=0.26.0';
+import { prepareNativeConnectionEdit } from '../src/workflow/connection-edits.js?v=0.26.0';
 import * as api from '../src/ui/workspace-preparation.js?v=0.26.0';
 const activeId = 'lattice:active-sillytavern';
 const profiles = [{ id: 'saved', name: 'Reasoning connection', api: 'openai', apiLabel: 'OpenAI', model: 'profile-model', endpoint: 'private-url', provider: 'private-route', secret: 'private-key' }];
@@ -76,4 +77,57 @@ test('imported wand helpers can select Active with no saved profiles and library
  for(const role of roles)assert.deepEqual(role.profile.options,[{value:activeId,label:'Active SillyTavern model'}]);
  const library=api.prepareLibraryViews(root.id,root.definitions);assert.equal(library.ok,true);
  for(const view of library.data.preparedViews)for(const bindings of Object.values(view.drawBase.iterationBindings??{}))for(const role of bindings.roles)assert.deepEqual(role.profile.options,[{value:activeId,label:'Active SillyTavern model'}]);
+});
+
+test('unified creation projects active profiles on every current text model operation and conditional mode', () => {
+    let root = { id: 'unified-profile-catalog', schema: 3, runtime: 2, mode: 'native-unified', nodes: {}, wires: {}, portals: {}, definitions: {} };
+    const cases = [
+        ['smart-compactor', { method: 'compress' }, 'pre'], ['response-plan', {}, 'pre'],
+        ...['repair', 'contextual', 'strict'].map(mode => ['repair', { mode }, 'post']),
+        ...['narration', 'character-voice', 'rhythm', 'register'].map(mode => ['style-transfer', { mode }, 'post']),
+        ['style-transfer', { inputKind: 'text' }, 'pre'], ['format-transfer', {}, 'post'], ['format-transfer', { inputKind: 'text' }, 'pre'],
+        ...['character', 'recall', 'scene'].map(mode => ['reflect', { mode }, 'pre']),
+        ...['experience', 'pattern', 'recovery'].map(mode => ['internalize', { mode }, 'pre']),
+        ['express', { mode: 'inner-voice' }, 'pre'], ['context', { mode: 'focus', method: 'compress' }, 'pre'],
+        ['decision', {}, 'pre'], ['model-call', {}, 'pre'], ['model-call', { outputKind: 'data' }, 'pre'], ['enrich', {}, 'pre'],
+        ['extract', { mode: 'model' }, 'post'], ['extract', { mode: 'model', inputKind: 'text' }, 'pre'], ['revise-draft', {}, 'post'],
+        ...['recall', 'create', 'recall-or-create'].map(mode => ['prompted-memory', { actorId: 'character:mara', mode }, 'pre']),
+        ['character-direction', { actorId: 'character:mara' }, 'pre'], ['item-use-trigger', { itemId: 'wand', mode: 'extract' }, 'post'],
+        ['effect-author', {}, 'pre'],
+    ];
+    const addedIds = cases.map(([operation, controls, phase], index) => {
+        const created = prepareNativeConnectionEdit(root, { kind: 'create', operation, controls, phase, graphPoint: { x: index * 100, y: 0 } });
+        assert.equal(created.ok, true, operation + ':' + JSON.stringify(controls) + ' ' + JSON.stringify(created.error));
+        root = created.data.candidate;
+        const id = created.data.addedNodeIds[0];
+        assert.equal(root.nodes[id].profileId, activeId, operation + ':' + JSON.stringify(controls));
+        return id;
+    });
+    const rows = fixture(root).rows();
+    assert.deepEqual(rows.map(row => row.id).sort(), [...addedIds].sort());
+    for (const row of rows) {
+        assert.equal(row.value, activeId); assert.equal(row.label, 'Active SillyTavern model'); assert.equal(row.model, 'host-model');
+        assert.equal(row.options[0].value, activeId); assert.equal(row.editable, true);
+        assert.deepEqual(row.selection.address, { workflowId: root.id, instancePath: [], nodeId: row.id });
+    }
+});
+
+test('unified deterministic modes and host operations omit profile bars while typed decisions keep their own connection control', () => {
+    let root = { id: 'unified-profile-free', schema: 3, runtime: 2, mode: 'native-unified', nodes: {}, wires: {}, portals: {}, definitions: {} };
+    for (const [operation, controls, phase] of [
+        ['smart-compactor', { method: 'select' }, 'pre'], ['repair', { mode: 'scan' }, 'post'], ['repair', { mode: 'inspect' }, 'post'],
+        ['express', { mode: 'behavior' }, 'pre'], ['express', { mode: 'attention' }, 'pre'],
+        ['context', { mode: 'assemble' }, 'pre'], ['context', { mode: 'perspective', actorId: 'character:mara' }, 'pre'], ['context', { mode: 'focus', method: 'select' }, 'pre'],
+        ['extract', { mode: 'literal' }, 'post'], ['extract', { mode: 'literal', inputKind: 'text' }, 'pre'],
+        ['item-use-trigger', { itemId: 'wand', mode: 'candidates' }, 'post'],
+        ['fast-decision', {}, 'pre'], ['fast-decision', { fallbackEnabled: true, fallbackProfileId: 'saved', fallbackAllowedCodes: ['REQUEST_FAILED'] }, 'pre'],
+        ['on-send', {}, 'pre'], ['draft-event-source', {}, 'post'], ['review-publish', {}, 'post'],
+        ['read-file', { targetId: 'story-notes' }, 'pre'], ['story-clock', { clockId: 'story-clock' }, 'pre'],
+        ['time-trigger', { scheduleId: 'curse' }, 'post'], ['state', { mode: 'value' }, 'pre'],
+    ]) {
+        const created = prepareNativeConnectionEdit(root, { kind: 'create', operation, controls, phase, graphPoint: { x: 0, y: 0 } });
+        assert.equal(created.ok, true, operation + ':' + JSON.stringify(controls) + ' ' + JSON.stringify(created.error));
+        root = created.data.candidate;
+    }
+    assert.deepEqual(fixture(root).rows(), []);
 });

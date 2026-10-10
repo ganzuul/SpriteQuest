@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import { validateGraphStructure } from '../src/workflow/contracts.js';
 import { graphDocumentSignature, graphSemanticSignature } from '../src/workflow/ports.js';
 import { portsForNode } from '../src/workflow/catalog.js';
+import { ACTIVE_PROFILE_ID } from '../src/workflow/model-profiles.js';
 import { computeDefinitionIdentity, definitionRefKey } from '../src/workflow/definitions.js';
 import { makeLocalCopy } from '../src/workflow/definition-library.js';
 import { captureGraphEditContext, commitPreparedGraph } from '../src/workflow/transactions.js';
@@ -487,6 +488,37 @@ test('unified configured creation uses a real stage and leaves neutral nodes dep
  }
  assert.equal(prepare(graph,{kind:'create',operation:'read-file',graphPoint:{x:0,y:0}}).ok,false,'configuration cannot be replaced by a fake target');
  assert.equal(prepare(graph,{kind:'create',operation:'on-send',phase:'post',graphPoint:{x:0,y:0}}).ok,false,'fixed preparation node cannot become a response node');
+});
+test('configured Item Use Trigger extraction starts with the active SillyTavern model', () => {
+    const graph = { id: 'configured-event-model', schema: 3, runtime: 2, mode: 'native-unified', nodes: {}, wires: {}, portals: {}, definitions: {} };
+    const edit = accepted(prepare(graph, { kind: 'create', operation: 'item-use-trigger', controls: { itemId: 'wand', mode: 'extract' }, phase: 'post', graphPoint: { x: 10, y: 20 } }), graph);
+    const added = edit.candidate.nodes[edit.addedNodeIds[0]];
+    assert.equal(added.mode, 'extract');
+    assert.equal(added.modelRole, 'eventExtract');
+    assert.equal(added.profileId, ACTIVE_PROFILE_ID);
+});
+test('Context focus creation admits only its mode controls and defaults compression to the active model', () => {
+    const graph = { id: 'configured-context-model', schema: 3, runtime: 2, mode: 'native-unified', nodes: {}, wires: {}, portals: {}, definitions: {} };
+    const command = { kind: 'create', operation: 'context', controls: { mode: 'focus', method: 'compress' }, graphPoint: { x: 10, y: 20 } };
+    const edit = accepted(prepare(graph, command), graph), added = edit.candidate.nodes[edit.addedNodeIds[0]];
+    assert.equal(added.mode, 'focus'); assert.equal(added.method, 'compress');
+    assert.equal(added.modelRole, 'Analysis'); assert.equal(added.profileId, ACTIVE_PROFILE_ID);
+    assert.equal(added.inputCount, undefined, 'defaults from assemble do not leak into focus');
+    assert.equal(prepare(graph, { ...command, controls: { ...command.controls, inputCount: 3 } }).error.code, 'INVALID_SETTINGS');
+});
+test('configured Introspection creation selects its effective role without binding deterministic or typed nodes', () => {
+    const graph = { id: 'configured-model-modes', schema: 3, runtime: 2, mode: 'native-unified', nodes: {}, wires: {}, portals: {}, definitions: {} };
+    for (const [operation, controls, role, profileId] of [
+        ['express', { mode: 'inner-voice' }, 'Prose', ACTIVE_PROFILE_ID],
+        ['express', { mode: 'behavior' }, null, null],
+        ['context', { mode: 'focus', method: 'select' }, null, null],
+        ['item-use-trigger', { itemId: 'wand', mode: 'candidates' }, null, null],
+        ['fast-decision', {}, 'fastDecision', null],
+    ]) {
+        const edit = accepted(prepare(graph, { kind: 'create', operation, controls, graphPoint: { x: 10, y: 20 } }), graph), added = edit.candidate.nodes[edit.addedNodeIds[0]];
+        assert.equal(added.modelRole, role, operation + ':' + controls.mode);
+        assert.equal(added.profileId, profileId, operation + ':' + controls.mode);
+    }
 });
 test('inserting a reroute in a unified Post wire preserves dependency-derived stage',()=>{
  const graph={id:'unified-route',schema:3,runtime:2,mode:'native-unified',nodes:{source:{id:'source',type:'workflow',operation:'text',text:'post',phase:'post'},compose:{id:'compose',type:'workflow',operation:'compose',sections:[{name:'body',text:''}]}},wires:{edge:{id:'edge',route:'wire',from:'source',fromPort:'out',to:'compose',toPort:'section.body'}},portals:{},definitions:{}};

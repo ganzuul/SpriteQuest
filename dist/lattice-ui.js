@@ -2515,9 +2515,9 @@ function na(e, t) {
 	let n = /* @__PURE__ */ L(!1), r = /* @__PURE__ */ L(""), i = /* @__PURE__ */ L(0), a = /* @__PURE__ */ L(""), o = /* @__PURE__ */ L(!1), s = -1, c = 0, l = !1, u = /* @__PURE__ */ L(35), d, f, p = /* @__PURE__ */ L(void 0), m = /* @__PURE__ */ L(void 0), h = (e) => e.stopPropagation();
 	function g(e) {
 		let t = (e) => {
-			ne(e);
+			j(e);
 		}, n = (t) => {
-			t.detail !== e && k();
+			t.detail !== e && A();
 		}, r = (t) => {
 			l && !e.contains(t.target) && (c++, l = !1);
 		}, i = [
@@ -2536,29 +2536,29 @@ function na(e, t) {
 			for (let t of i) e.removeEventListener(t, h);
 		} };
 	}
-	let _ = /* @__PURE__ */ F(() => U(r).toLocaleLowerCase().trim().split(/\s+/).filter(Boolean)), v = /* @__PURE__ */ F(() => [...t.row.options.filter((e) => e.active), ...t.row.options.filter((e) => !e.active && U(_).every((t) => `${e.label} ${e.apiLabel} ${e.model}`.toLocaleLowerCase().includes(t)))]), y = /* @__PURE__ */ F(() => Math.max(1, Math.min(330, t.row.visibleBounds.w - 16))), b = /* @__PURE__ */ F(() => Math.max(t.row.visibleBounds.x + 8, Math.min(t.row.x, t.row.visibleBounds.x + t.row.visibleBounds.w - U(y) - 8)) - t.row.x), x = /* @__PURE__ */ F(() => t.row.h + t.row.clearance + 7), S = /* @__PURE__ */ F(() => t.row.visibleBounds.y + t.row.visibleBounds.h - (t.row.y + U(x) + U(u) + 6) - 8), C = /* @__PURE__ */ F(() => t.row.y + U(x) - t.row.visibleBounds.y - 14), w = /* @__PURE__ */ F(() => U(S) < 130 && U(C) > U(S)), T = /* @__PURE__ */ F(() => Math.max(U(C), U(S)) < 78), E = /* @__PURE__ */ F(() => Math.max(0, Math.min(244, (U(T) ? t.row.visibleBounds.h - 16 : U(w) ? U(C) : U(S)) - 54))), D = /* @__PURE__ */ F(() => t.row.visibleBounds.y + 8 - t.row.y - U(x)), O = (e) => `${t.row.id}-profile-option-${e}`;
-	function k(e = !1, t = !1) {
+	let _ = /* @__PURE__ */ F(() => U(r).toLocaleLowerCase().trim().split(/\s+/).filter(Boolean)), v = /* @__PURE__ */ F(() => [...t.row.options.filter((e) => e.active), ...t.row.options.filter((e) => !e.active && U(_).every((t) => `${e.label} ${e.apiLabel} ${e.model}`.toLocaleLowerCase().includes(t)))]), y = /* @__PURE__ */ F(() => Math.max(1, Math.min(330, t.row.visibleBounds.w - 16))), b = /* @__PURE__ */ F(() => Math.max(t.row.visibleBounds.x + 8, Math.min(t.row.x, t.row.visibleBounds.x + t.row.visibleBounds.w - U(y) - 8)) - t.row.x), x = /* @__PURE__ */ F(() => t.row.h + t.row.clearance + 7), S = /* @__PURE__ */ F(() => t.row.visibleBounds.y + t.row.visibleBounds.h - (t.row.y + U(x) + U(u) + 6) - 8), C = /* @__PURE__ */ F(() => t.row.y + U(x) - t.row.visibleBounds.y - 14), w = /* @__PURE__ */ F(() => U(S) < 130 && U(C) > U(S)), T = /* @__PURE__ */ F(() => Math.max(U(C), U(S)) < 78), E = /* @__PURE__ */ F(() => Math.max(0, U(T) ? t.row.visibleBounds.h - 16 : U(w) ? U(C) : U(S))), D = /* @__PURE__ */ F(() => Math.max(0, Math.min(244, U(E) - 54))), O = /* @__PURE__ */ F(() => t.row.visibleBounds.y + 8 - t.row.y - U(x)), k = (e) => `${t.row.id}-profile-option-${e}`;
+	function A(e = !1, t = !1) {
 		t || (c++, l = !1), R(n, !1), R(r, ""), R(a, ""), R(o, !1), e && f?.focus({ preventScroll: !0 });
 	}
-	async function A() {
+	async function ee() {
 		if (!t.row.editable) return;
 		let e = t.row.selection.selectionKey;
 		if (await t.refreshProfiles?.(t.row.selection), !t.row.editable || !d?.isConnected || t.row.selection.selectionKey !== e) return;
 		let c = f.getBoundingClientRect(), l = c.width > 0 && t.row.w > 0 ? c.width / t.row.w : 1;
 		R(u, c.height > 0 ? c.height / l : 35, !0), window.dispatchEvent(new CustomEvent("pc-node-profile-open", { detail: d })), s = t.row.authorityVersion, R(r, ""), R(a, ""), R(o, !1), R(i, Math.max(0, U(v).findIndex((e) => e.value === t.row.value)), !0), R(n, !0), await dr(), U(n) && (U(p)?.focus({ preventScroll: !0 }), U(m) && (U(m).scrollTop = 0));
 	}
-	function ee() {
+	function te() {
 		let e = U(v).find((e) => e.active);
 		R(i, !U(_).length || e && U(_).every((t) => e.label.toLocaleLowerCase().includes(t)) ? 0 : U(v).length > 1 ? 1 : -1, !0), U(m) && (U(m).scrollTop = 0);
 	}
-	async function te(e) {
+	async function ne(e) {
 		if (!U(n) || !t.row.editable || U(o) || t.row.authorityVersion !== s || !t.editProfile) return;
 		let r = s, i = t.row.selection, u = c;
 		R(o, !0), R(a, ""), l = !0;
 		try {
 			let o = await t.editProfile(i, e.value);
 			if (o.ok) {
-				c === u && d?.isConnected && t.row.selection.selectionKey === i.selectionKey && JSON.stringify(t.row.selection.address) === JSON.stringify(i.address) && (!U(n) || s === r) && k(!0);
+				c === u && d?.isConnected && t.row.selection.selectionKey === i.selectionKey && JSON.stringify(t.row.selection.address) === JSON.stringify(i.address) && (!U(n) || s === r) && A(!0);
 				return;
 			}
 			if (!U(n) || t.row.authorityVersion !== r) return;
@@ -2569,39 +2569,39 @@ function na(e, t) {
 			t.row.authorityVersion === r && R(o, !1), c === u && (l = !1);
 		}
 	}
-	async function ne(e) {
-		h(e), U(n) ? e.key === "Escape" ? (e.preventDefault(), k(!0)) : e.key === "ArrowDown" || e.key === "ArrowUp" ? (e.preventDefault(), R(i, Math.max(0, Math.min(U(v).length - 1, U(i) + (e.key === "ArrowDown" ? 1 : -1))), !0), await dr(), U(m)?.querySelector(".is-active")?.scrollIntoView?.({ block: "nearest" }), U(p)?.focus({ preventScroll: !0 })) : e.key === "Enter" && e.target === U(p) && (e.preventDefault(), U(v)[U(i)] && await te(U(v)[U(i)])) : [
+	async function j(e) {
+		h(e), U(n) ? e.key === "Escape" ? (e.preventDefault(), A(!0)) : e.key === "ArrowDown" || e.key === "ArrowUp" ? (e.preventDefault(), R(i, Math.max(0, Math.min(U(v).length - 1, U(i) + (e.key === "ArrowDown" ? 1 : -1))), !0), await dr(), U(m)?.querySelector(".is-active")?.scrollIntoView?.({ block: "nearest" }), U(p)?.focus({ preventScroll: !0 })) : e.key === "Enter" && e.target === U(p) && (e.preventDefault(), U(v)[U(i)] && await ne(U(v)[U(i)])) : [
 			"ArrowDown",
 			"ArrowUp",
 			"Enter",
 			" "
-		].includes(e.key) && (e.preventDefault(), await A());
+		].includes(e.key) && (e.preventDefault(), await ee());
 	}
-	function j(e) {
+	function re(e) {
 		e.preventDefault(), h(e), U(m) && (U(m).scrollTop += e.deltaY * (e.deltaMode === 1 ? 18 : e.deltaMode === 2 ? U(m).clientHeight : 1));
 	}
 	bn(() => {
-		U(n) && (t.row.authorityVersion !== s || !t.row.editable) && k(!1, !0);
+		U(n) && (t.row.authorityVersion !== s || !t.row.editable) && A(!1, !0);
 	});
-	var re = ta();
+	var ie = ta();
 	W("pointerdown", nn, (e) => {
-		(U(n) || l) && !d.contains(e.target) && k();
+		(U(n) || l) && !d.contains(e.target) && A();
 	});
-	let ie;
-	var ae = z(re), oe = (e) => {
+	let ae;
+	var oe = z(ie), se = (e) => {
 		var n = Xi(), r = z(n, !0);
 		P(n), H(() => {
 			Q(n, "title", t.row.model), J(r, t.row.model);
 		}), q(e, n);
 	};
-	Y(ae, (e) => {
-		t.row.model && e(oe);
+	Y(oe, (e) => {
+		t.row.model && e(se);
 	});
-	var se = V(ae, 2);
-	let ce;
-	var le = z(se), ue = V(z(le)), de = z(ue, !0);
-	P(ue), Ae(), P(le), $(le, (e) => f = e, () => f);
-	var fe = V(le, 2), pe = (e) => {
+	var ce = V(oe, 2);
+	let le;
+	var ue = z(ce), de = V(z(ue)), fe = z(de, !0);
+	P(de), Ae(), P(ue), $(ue, (e) => f = e, () => f);
+	var pe = V(ue, 2), me = (e) => {
 		var n = ea();
 		let s;
 		var c = z(n), l = V(z(c));
@@ -2622,7 +2622,7 @@ function na(e, t) {
 				U(n).value === t.row.value && e(h);
 			}), P(p), P(a), H((e, c) => {
 				Q(a, "id", e), s = ci(a, 1, "profile-option svelte-jdmiua", null, s, { "is-active": U(r) === U(i) }), Q(a, "aria-selected", U(n).value === t.row.value), a.disabled = U(o), Q(l, "title", U(n).label), J(u, U(n).label), J(f, c);
-			}, [() => O(U(r)), () => U(n).active ? "Follows SillyTavern’s current model" : [U(n).apiLabel, U(n).model].filter(Boolean).join(" · ")]), G("click", a, () => te(U(n))), q(e, a);
+			}, [() => k(U(r)), () => U(n).active ? "Follows SillyTavern’s current model" : [U(n).apiLabel, U(n).model].filter(Boolean).join(" · ")]), G("click", a, () => ne(U(n))), q(e, a);
 		}), P(d), $(d, (e) => R(m, e), () => U(m));
 		var h = V(d, 2), g = (e) => {
 			var t = $i(), n = z(t, !0);
@@ -2633,22 +2633,23 @@ function na(e, t) {
 		}), P(n), H((e) => {
 			s = ui(n, "", s, {
 				width: `${U(y)}px`,
+				"max-height": `${U(E)}px`,
 				left: `${U(b)}px`,
-				top: U(T) ? `${U(D)}px` : U(w) ? "auto" : `${U(u) + 6}px`,
+				top: U(T) ? `${U(O)}px` : U(w) ? "auto" : `${U(u) + 6}px`,
 				bottom: !U(T) && U(w) ? `${U(u) + 6}px` : "auto"
-			}), Q(l, "aria-controls", `${t.row.id}-profile-list`), Q(l, "aria-activedescendant", e), Q(d, "id", `${t.row.id}-profile-list`), f = ui(d, "", f, { "max-height": `${U(E)}px` });
-		}, [() => U(i) >= 0 && U(v).length ? O(U(i)) : void 0]), G("input", l, ee), wi(l, () => U(r), (e) => R(r, e)), W("wheel", d, j), q(e, n);
+			}), Q(l, "aria-controls", `${t.row.id}-profile-list`), Q(l, "aria-activedescendant", e), Q(d, "id", `${t.row.id}-profile-list`), f = ui(d, "", f, { "max-height": `${U(D)}px` });
+		}, [() => U(i) >= 0 && U(v).length ? k(U(i)) : void 0]), G("input", l, te), wi(l, () => U(r), (e) => R(r, e)), W("wheel", d, re), q(e, n);
 	};
-	Y(fe, (e) => {
-		U(n) && e(pe);
-	}), P(se), P(re), $(re, (e) => d = e, () => d), $r(re, (e) => g?.(e)), H(() => {
-		Q(re, "data-id", t.row.id), ie = ui(re, "", ie, {
+	Y(pe, (e) => {
+		U(n) && e(me);
+	}), P(ce), P(ie), $(ie, (e) => d = e, () => d), $r(ie, (e) => g?.(e)), H(() => {
+		Q(ie, "data-id", t.row.id), ae = ui(ie, "", ae, {
 			left: `${t.row.x}px`,
 			top: `${t.row.y}px`,
 			width: `${t.row.w}px`,
 			"z-index": U(n) ? 20 : 2
-		}), ce = ui(se, "", ce, { top: `${U(x)}px` }), Q(le, "title", t.row.label), Q(le, "aria-label", `Connection profile: ${t.row.label}`), Q(le, "aria-expanded", U(n)), le.disabled = !t.row.editable, J(de, t.row.label);
-	}), W("wheel", re, h), G("click", le, () => U(n) ? k() : A()), q(e, re), He();
+		}), le = ui(ce, "", le, { top: `${U(x)}px` }), Q(ue, "title", t.row.label), Q(ue, "aria-label", `Connection profile: ${t.row.label}`), Q(ue, "aria-expanded", U(n)), ue.disabled = !t.row.editable, J(fe, t.row.label);
+	}), W("wheel", ie, h), G("click", ue, () => U(n) ? A() : ee()), q(e, ie), He();
 }
 Cr(["click", "input"]);
 //#endregion
