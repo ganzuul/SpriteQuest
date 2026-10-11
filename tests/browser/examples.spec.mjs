@@ -204,7 +204,7 @@ test('one malformed primary stays as a disabled diagnostic tile while other exam
     const invalid = dialog.getByRole('button', { name: 'Follow a reply from Send to Review', exact: true });
     await expect(invalid).toBeDisabled();
     await expect(invalid).toContainText('Unavailable');
-    await expect(invalid).toHaveAccessibleDescription(/unknown workflow operation/i);
+    await expect(invalid).toHaveAccessibleDescription(/node type or version is not supported/i);
     await expect(dialog.locator('.pc-example-tile:not(:disabled)')).toHaveCount(exampleCount-1);
     expect(await page.evaluate(() => window.canvasHarness.S.activeWorkflow().id)).toBe(beforeId);
     await dialog.getByRole('button', { name: 'Give this scene one clear direction', exact: true }).click();
@@ -224,7 +224,10 @@ test('catalog-wide loading failure preserves the workspace and Retry restores th
         return h.S.activeWorkflow().id;
     });
     const dialog = await openExamples(page);
-    await expect(dialog.getByRole('alert')).toHaveText('The example catalog is temporarily unavailable.Retry');
+    const diagnostic = dialog.locator('.pc-examples-issue .pc-diagnostic[data-severity="error"]');
+    await expect(diagnostic.locator(':scope > p')).toContainText('Lattice could not complete this action.');
+    await expect(diagnostic).not.toContainText('The example catalog is temporarily unavailable.');
+    await expect(diagnostic.locator('details')).toHaveCount(0);
     await expect(page.getByRole('dialog', { name: 'Lattice', exact: true })).toBeVisible();
     expect(await page.evaluate(() => window.canvasHarness.S.activeWorkflow().id)).toBe(beforeId);
     await page.evaluate(async () => {
@@ -233,8 +236,8 @@ test('catalog-wide loading failure preserves the workspace and Retry restores th
         Object.defineProperty(WORKFLOW_EXAMPLE_DATA[0], 'title', window.exampleCatalogTitleDescriptor);
         delete window.exampleCatalogTitleDescriptor;
     });
-    await dialog.getByRole('button', { name: 'Retry', exact: true }).click();
-    await expect(dialog.getByRole('alert')).toHaveCount(0);
+    await dialog.getByRole('button', { name: 'Reload examples', exact: true }).click();
+    await expect(dialog.locator('.pc-examples-issue .pc-diagnostic')).toHaveCount(0);
     await expect(dialog.locator('.pc-example-tile:not(:disabled)')).toHaveCount(exampleCount);
     await dialog.getByRole('button', { name: 'Follow a reply from Send to Review', exact: true }).click();
     await finishExampleChoice(page);

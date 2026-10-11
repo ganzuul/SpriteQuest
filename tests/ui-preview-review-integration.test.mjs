@@ -40,10 +40,7 @@ async function previewFixture(initial, actions) {
     const directory = await mkdtemp(join(tmpdir(), 'lattice-preview-review-')), host = document.createElement('div'); document.body.append(host);
     let mounted;
     async function compiled(name, source) {
-        const output = compile(source, { filename: name + '.svelte', generate: 'client', css: 'injected' });
-        assert.deepEqual(output.warnings.filter(warning => warning.code.startsWith('a11y')), []);
-        const code = output.js.code.replace(/(['"])(svelte(?:\/[^'"]*)?)\1/g, (_, quote, specifier) => JSON.stringify(specifier === 'svelte' ? clientURL : import.meta.resolve(specifier)));
-        const path = join(directory, name + '.mjs'); await writeFile(path, code); return path;
+        return (await compileComponent(name, directory, source)).path;
     }
     async function close() {
         if (mounted) await unmount(mounted); host.remove();

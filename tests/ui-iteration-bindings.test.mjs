@@ -4,6 +4,8 @@ import {mkdtemp,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join,resolve,relative,isAbsolute} from 'node:path';
 import {compiled} from './helpers/svelte-compile.mjs';
+import {presentDiagnostic} from '../src/ui/diagnostics.js';
+import {prepareIterationBindings} from '../src/ui/iteration-bindings.js?v=0.27.0';
 import {JSDOM} from 'jsdom';
 const dom=new JSDOM('<!doctype html><body></body>',{pretendToBeVisual:true});globalThis.window=dom.window;globalThis.document=dom.window.document;
 for(const key of ['Node','Element','Text','Comment','Document','HTMLElement','HTMLMediaElement','HTMLButtonElement','HTMLInputElement','HTMLSelectElement','MutationObserver'])Object.defineProperty(globalThis,key,{configurable:true,value:dom.window[key]});
@@ -18,6 +20,25 @@ async function fixture(initial,actions={}){
 const change=(element,value)=>{assert.ok(element,'Expected the friendly helper role selector');element.value=value;element.dispatchEvent(new dom.window.Event('change',{bubbles:true}));flushSync();};
 const input=(element,value)=>{assert.ok(element);element.value=value;element.dispatchEvent(new dom.window.Event('input',{bubbles:true}));flushSync();};
 const settle=async()=>{await tick();flushSync();};
+test('missing pinned helper projection preserves its stable diagnostic without changing bindings',()=>{
+ const node={helper:{id:'missing-helper',version:1,semanticHash:'sha256:'+'0'.repeat(64)},roleOverrides:{}},before=structuredClone(node);
+ const result=prepareIterationBindings(node,{});
+ assert.deepEqual(result.roles,[]);assert.match(result.issue,/exact saved definition/);
+ assert.equal(result.issueDiagnostic?.severity,'error');assert.equal(result.issueDiagnostic?.technical?.code,'MISSING_DEFINITION');
+ assert.match(result.issueDiagnostic?.message,/includes its pinned definition/);assert.deepEqual(node,before);
+});
+test('helper binding diagnostics retain support codes in collapsed details and current edit guards',async()=>{
+ const initial=view(),calls=[],diagnostic=presentDiagnostic({code:'MISSING_DEFINITION',message:'Helper pin is missing.'});
+ initial.helperBindings.issue=diagnostic.message;initial.helperBindings.issueDiagnostic=diagnostic;
+ const f=await fixture(initial,{editHelperBinding:(...args)=>{calls.push(args);return {ok:true};}});
+ try{
+  const notice=f.host.querySelector('[data-diagnostic]');assert.equal(notice?.dataset.severity,'error');assert.match(notice.textContent,/exact saved definition/);
+  const disclosure=notice.querySelector('details');assert.ok(disclosure,'helper support code has a technical disclosure');assert.equal(disclosure.open,false);assert.match(disclosure.textContent,/MISSING_DEFINITION/);assert.equal(f.host.querySelectorAll('[data-diagnostic]').length,1);assert.deepEqual(calls,[],'presenting a helper failure performs no edit');
+  const readonly=view({revision:'r2',readOnly:true});readonly.helperBindings={...initial.helperBindings,editable:false};f.update(readonly);await settle();
+  const profile=f.host.querySelector('[aria-label="decision connection profile"]');assert.equal(profile.disabled,true);change(profile,'chosen');await settle();assert.deepEqual(calls,[],'raw events cannot bypass current helper edit guards');
+  f.update(view({selectionKey:'other',revision:'r3',address:{workflowId:'root',instancePath:[],nodeId:'other'}}));await settle();assert.equal(f.host.querySelector('[data-diagnostic]'),null,'the helper notice follows the current selection');
+ }finally{await f.close();}
+});
 test('actual Details component authors separate helper profiles and optional custom models through captured selections',async()=>{
  const initial=view(),calls=[],f=await fixture(initial,{editHelperBinding:(...args)=>{calls.push(args);return {ok:true};}});
  try{

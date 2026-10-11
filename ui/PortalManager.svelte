@@ -1,4 +1,5 @@
 <script lang="ts">
+    import DiagnosticMessage from './DiagnosticMessage.svelte';
     import { onDestroy } from 'svelte';
     import type { ManagerCapture, ManagerEndpoint, ManagerResponse, ManagerScope, PortalManagerActions, PortalManagerView } from './manager-types';
     let { view, actions = {} }: { view: PortalManagerView | null; actions?: PortalManagerActions } = $props();
@@ -69,8 +70,8 @@
             </details>
         {/if}
         {#if view.conversion}<details open><summary>Convert to portal</summary><p class="pc-note">{view.conversion.label}</p><div class="pc-actions"><button type="button" data-portal-convert disabled={!permitted('convert') || !!pending || (view.conversion.kind === 'wire' ? !actions.convertWire : !actions.convertOutput)} onclick={() => { const value = view?.conversion; if (value?.kind === 'wire' && actions.convertWire) void perform('convert', permitted('convert'), captured => actions.convertWire!(captured, value.edgeId)); else if (value?.kind === 'output' && actions.convertOutput) void perform('convert', permitted('convert'), captured => actions.convertOutput!(captured, endpoint(value.endpoint))); }}>Convert {view.conversion.kind === 'wire' ? 'wire' : 'output'}</button></div></details>{/if}
-        {#if view.issue}<p class="pc-error">{view.issue}</p>{/if}
-        {#if error}<p class="pc-error" role="alert">{error}</p>{/if}
+        {#if view.issue}<div class="pc-error"><DiagnosticMessage issue={view.issue} /></div>{/if}
+        {#if error}<div class="pc-error"><DiagnosticMessage issue={error} /></div>{/if}
         {#if pending}<p class="pc-note" role="status">Preparing change…</p>{/if}
     {:else}<p class="pc-note">Open a graph to manage its portals.</p>{/if}
 </section>

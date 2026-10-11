@@ -14,6 +14,8 @@ import { modifierTypes, modifierSummary, applyTextModifiers } from '../workflow/
 import { addressKey, boundedText, RENDERED_TEXT_BYTES } from '../workflow/record-data.js?v=0.27.0';
 import { prepareNodeProfileOptions } from './node-profile-preparation.js?v=0.27.0';
 import { projectWorkflowData } from './workflow-data-setup.js?v=0.27.0';
+import { presentDiagnostic, presentDiagnostics } from './diagnostics.js?v=0.27.0';
+import { previewDiagnostics } from './preview-diagnostics.js?v=0.27.0';
 const rootIdentity = root => ({ kind: 'root', workflowId: root.id });
 /** First activation favors readable named cards; users can pan or explicitly Fit. */
 export function initialWorkspaceCamera(node, { width, shelf, meter } = {}) {
@@ -160,6 +162,7 @@ export function projectWorkspacePanels(editor, workflow, state, revision, select
         ...(workflowData ? { workflowData } : {}),
         modifiers: modifierView(saved, metadata, !(editor.readOnly || library)),
         ports: metadata.ports.map(port => ({ id: port.port, label: port.label, direction: port.dir === 'in' ? 'input' : 'output', kind: port.kind })), issues: [] } : null;
+    if (nodeDetails?.model && effective?.issueDiagnostic) nodeDetails.model.issueDiagnostic = effective.issueDiagnostic;
     const choices = library ? [] : previewChoices ?? previewChoicesFor(editor.prepared, workflow.targets);
     const target = pinnedPreview || selectedTarget, selectedKey = choices.find(choice => targetKey(choice.target) === targetKey(target))?.key ?? '';
     const result = workflow.result, sections = result ? result.sections.map((section,i) => ({ id: String(i), label: section.kind, ...section })) : [];
@@ -174,11 +177,24 @@ export function projectWorkspacePanels(editor, workflow, state, revision, select
         }
     }
     const selector = editor?.view.identity.kind === 'root' ? result?.selectedReviewHandle ?? null : null;
+    const presentationState = previewDiagnostics({ workflow, state, target, selectedKey, sections, library, enabled: state.enabled ?? workflow.enabled, title: choices.find(choice => choice.key === selectedKey)?.label || 'Output preview' });
     const outputPreview = { sourceKey: revision, title: 'Output preview', statusDetail: state.status || '', status: !library && target && !selectedKey ? 'removed' : !result ? 'not-run' : state.availability === 'current' ? 'current' : 'stale', choices, selectedKey, pinned: !!pinnedPreview, followSelection: !pinnedPreview, sections: library || target && !selectedKey ? [] : sections, issues: library ? ['Library inspection is read-only and has no runtime output.'] : workflow.issues, busy: state.busy, settlement: library ? null : result?.settlement ?? null, runHere: library || !selectedKey ? null : { enabled: !state.busy && !workflow.targetSummary?.issues?.length, callBound: workflow.targetSummary?.callBound ?? workflow.callBound, issue: workflow.targetSummary?.issues?.join(' ') }, review: selector ? { selector, canApply: result.applyAvailable, persistOnly: result.persistOnly, fresh: !result.applyIssue && state.availability === 'current', selectedRootTerminal: editor?.view.identity.kind === 'root' && target?.kind === 'terminal' && !target.address.instancePath.length, mode: 'root', issue: result.applyIssue } : null };
+    Object.assign(outputPreview, { diagnostics: presentationState.diagnostics, emptyMessage: presentationState.emptyMessage, statusDetail: presentationState.statusDetail, historyNotice: presentationState.historyNotice });
+    if (outputPreview.runHere) outputPreview.runHere.reason = presentationState.runReason;
+    if (outputPreview.review) outputPreview.review.reason = state.busy ? 'Wait for the current run to finish.' : outputPreview.review.issue ? presentDiagnostic(outputPreview.review.issue).message : !outputPreview.review.fresh ? 'This result is out of date. Create a fresh review before applying it.' : '';
     const rowSource = state.runState || state.recording, rows = rootWorkflow.rows?.length ? rootWorkflow.rows : idleRunRows, flat = [];
-    const visit = (items, depth) => { for (const row of items) { flat.push({ key: JSON.stringify(row.address), address: row.address, title: readNodePresentation(row.node).alias || (typeof row.node?.title === 'string' ? row.node.title : '') || row.node?.operation || row.address.nodeId, kind: row.kind, depth, status: row.status, subphase: row.subphase, durationMs: row.durationMs ?? null, attempts: row.attempts ?? 0, callBound: row.requestBound ?? 0, usage: row.request?.usage ?? null, issue: row.error?.message }); visit(row.children ?? [],depth+1); } }; visit(rows,0);
+    const visit = (items, depth) => {
+        for (const row of items) {
+            const title = readNodePresentation(row.node).alias || (typeof row.node?.title === 'string' ? row.node.title : '') || row.node?.operation || row.address.nodeId;
+            flat.push({ key: JSON.stringify(row.address), address: row.address, title, kind: row.kind, depth, status: row.status, subphase: row.subphase, durationMs: row.durationMs ?? null, attempts: row.attempts ?? 0, callBound: row.requestBound ?? 0, usage: row.request?.usage ?? null, issue: row.error?.message,
+                ...(row.error ? { diagnostics: [presentDiagnostic({ ...row.error, address: row.address }, { nodeTitle: title, operation: row.node?.operation })] } : {}) });
+            visit(row.children ?? [], depth + 1);
+        }
+    };
+    visit(rows, 0);
     const executableCount = rows.reduce((sum,row) => sum+row.executableCount,0), completedCount = rows.reduce((sum,row) => sum+row.completedCount,0), status = state.busy ? rowSource?.status || 'running' : rowSource?.status || (result ? result.ok ? 'completed' : 'failed' : 'not-run');
     const runDetails = { runId: rowSource?.runId || '', status, elapsedMs: rowSource?.elapsedMs ?? null, actualCalls: state.busy ? flat.filter(row=>row.kind==='primitive').reduce((sum,row)=>sum+row.attempts,0) : rootWorkflow.result?.actualCalls ?? flat.filter(row=>row.kind==='primitive').reduce((sum,row)=>sum+row.attempts,0), callBound: rowSource?.plan?.callBound ?? rootWorkflow.result?.callBound ?? rootWorkflow.callBound, completedCount, executableCount, rows: flat, issue: state.preparationError?.message || result?.error || '' };
+    runDetails.diagnostics = state.preparationError ? presentDiagnostics([state.preparationError]) : rootWorkflow.result?.errorDiagnostic ? [rootWorkflow.result.errorDiagnostic] : presentDiagnostics(runDetails.issue ? [runDetails.issue] : []);
     const runMeter = { ...runDetails, rows: rows.map(row => ({ id: JSON.stringify(row.address), title: row.address.nodeId, status: row.status, executableCount: row.executableCount, completedCount: row.completedCount })) };
     return { nodeDetails, commentDetails, outputPreview, runDetails, runMeter };
 }

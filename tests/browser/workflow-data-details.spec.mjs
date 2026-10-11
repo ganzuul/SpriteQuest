@@ -25,7 +25,7 @@ async function launch(page){
 
 async function select(page,id){await page.evaluate(async id=>{const h=window.canvasHarness;h.canvas.select({kind:'node',id});await h.settle();},id);}
 async function advanced(page){const group=data(page).locator('[data-workflow-advanced]');if(!await group.evaluate(element=>element.open))await group.locator('summary').click();return group;}
-async function save(page){const persisted=page.waitForResponse(response=>response.url().endsWith('/api/chats/get')&&response.request().method()==='POST');await data(page).getByRole('button',{name:'Save settings',exact:true}).click();await persisted;await expect(data(page).locator('[data-save-workflow-data]')).toBeDisabled();await expect(data(page).getByRole('alert')).toHaveCount(0);}
+async function save(page){const persisted=page.waitForResponse(response=>response.url().endsWith('/api/chats/get')&&response.request().method()==='POST');await data(page).getByRole('button',{name:'Save settings',exact:true}).click();await persisted;await expect(data(page).locator('[data-save-workflow-data]')).toBeDisabled();await expect(data(page).locator('.pc-diagnostic[data-severity="error"]')).toHaveCount(0);}
 async function definition(page,id){return page.evaluate(({userId,id})=>structuredClone(window.canvasHarness.context.chatMetadata.latticeDocumentCatalog?.[userId]?.documents[id]),{userId,id});}
 
 test('actual clock settings preserve saved time while visibility, starting values and shared source bindings change',async({page})=>{

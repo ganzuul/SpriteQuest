@@ -28,7 +28,8 @@ export async function compiled(name, directory, source, sourceURL = new URL('../
         if (!dependencyURL.pathname.endsWith('.ts')) dependencyURL.pathname += '.ts';
         const dependencyPath = join(directory, dependencyURL.pathname.split('/').at(-1).replace(/\.ts$/, '.mjs'));
         const dependencySource = await readFile(dependencyURL, 'utf8');
-        const dependency = transpileModule(dependencySource, { compilerOptions: { module: ModuleKind.ESNext, target: ScriptTarget.ESNext } }).outputText;
+        const dependency = transpileModule(dependencySource, { compilerOptions: { module: ModuleKind.ESNext, target: ScriptTarget.ESNext } }).outputText
+            .replace(/(['"])(\.\.?\/[^'"]+)\1/g, (_, quote, specifier) => JSON.stringify(new URL(specifier, dependencyURL).href));
         await writeFile(dependencyPath, dependency);
         code = code.replaceAll(match[0], 'from ' + JSON.stringify(pathToFileURL(dependencyPath).href));
     }

@@ -27,7 +27,7 @@ test('cancelled guard preserves source, graph and draft',async()=>{
 });
 test('failed native save does not proceed from a dirty document',async()=>{
     const f=fixture(),root=f.session.current();root.name='edited';f.env.prompt=async()=> 'save';f.files.save=async()=>({ok:false,error:{message:'Disk full'}});
-    await f.controller.newDocument();assert.equal(f.session.current(),root);assert.equal(f.session.dirty(),true);assert.equal(f.notices.at(-1),'Disk full');
+    await f.controller.newDocument();assert.equal(f.session.current(),root);assert.equal(f.session.dirty(),true);assert.doesNotMatch(f.notices.at(-1),/Disk full/);assert.match(f.notices.at(-1),/could not|couldn’t|unable/i);
 });
 test('edits arriving while Save is pending stay dirty and block replacement',async()=>{
     const f=fixture(),root=f.session.current();root.name='first edit';f.env.prompt=async()=> 'save';let finish;

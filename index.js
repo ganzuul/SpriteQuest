@@ -4,6 +4,7 @@ import { getNativeWorkflowController, initializeNativeWorkflowController, workfl
 import * as UI from './src/ui.js?v=0.27.0';
 import { applyTheme } from './src/theme.js?v=0.27.0';
 import { renderThemeEditor } from './src/theme-editor.js?v=0.27.0';
+import { presentDiagnostic } from './src/ui/diagnostics.js?v=0.27.0';
 const logoUrl = new URL('./assets/lattice-logo.svg', import.meta.url).href;
 
 globalThis.latticeGenerationInterceptor = async (chat, contextSize, abort, type) => {
@@ -114,7 +115,8 @@ function boot() {
         console.log('[' + MODULE + '] ready');
     } catch (error) {
         console.error('[Lattice] failed to start', error);
-        safe(() => globalThis.toastr?.error(error.message, 'Lattice could not open'));
+        const issue = presentDiagnostic(error, { action: 'open Lattice' });
+        safe(() => globalThis.toastr?.[issue.severity]?.(issue.message, 'Lattice could not open'));
     }
 }
 if (globalThis.SillyTavern?.getContext) boot();

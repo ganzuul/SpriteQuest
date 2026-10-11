@@ -67,7 +67,7 @@ test('profile controls contain wheel and keys, dismiss outside, and retain faile
         assert.equal(env.canvas.hasContentGesture(), false); assert.equal(context, 0); assert.equal(opened, 0);
         env.host.addEventListener('keydown', () => bubbled++); await key(root.querySelector('input'), 'Delete'); assert.equal(bubbled, 0);
         await key(root.querySelector('input'), 'ArrowDown'); await key(root.querySelector('input'), 'Enter');
-        assert.equal(root.querySelector('[role="alert"]').textContent, 'Selection changed'); assert.ok(root.querySelector('.profile-menu'));
+        assert.equal(root.querySelector('[data-diagnostic]').dataset.severity, 'error'); assert.ok(root.querySelector('.profile-menu'));
         await key(root.querySelector('input'), 'Escape'); assert.equal(root.querySelector('.profile-menu'), null);
         await open(env); document.body.dispatchEvent(new dom.window.MouseEvent('pointerdown', { bubbles: true })); await settle(); assert.equal(root.querySelector('.profile-menu'), null);
     } finally { await env.canvas.destroy(); }

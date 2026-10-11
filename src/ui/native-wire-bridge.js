@@ -1,10 +1,11 @@
 import { transitionNativeGesture } from '../canvas/native-gestures.js?v=0.27.0';
 import { cloneDefinitionData } from '../workflow/definitions.js?v=0.27.0';
 import { isNativeSearchCatalog, filterNativeSearchChoices, matchNativeSearchPorts, resolveNativeSearchChoice } from './native-search-catalog.js?v=0.27.0';
+import { diagnosticText } from './diagnostics.js?v=0.27.0';
 
 const freshCancellation = new Set(['escape', 'pointercancel', 'blur', 'view-change', 'dismiss-search', 'cancel']);
 const endpoint = pin => ({ nodeId: pin.nodeId, portId: pin.portId });
-const message = result => String(result?.error?.message ?? 'The graph edit was rejected.').slice(0, 2048);
+const message = result => diagnosticText(result?.error, { action: 'edit this connection' });
 const rejected = reason => ({ ok: false, error: { code: 'INVALID_GESTURE', message: reason } });
 const freeze = value => {
     if (value && typeof value === 'object' && !Object.isFrozen(value)) { for (const child of Object.values(value)) freeze(child); Object.freeze(value); }

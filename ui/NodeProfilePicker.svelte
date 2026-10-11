@@ -1,4 +1,5 @@
 <script lang="ts">
+    import DiagnosticMessage from './DiagnosticMessage.svelte';
     import { tick } from 'svelte';
     import type { NodeProfileData, NodeProfileOption, EditNodeProfile } from './node-profile-types';
     let { row, editProfile, refreshProfiles }: { row: NodeProfileData; editProfile?: EditNodeProfile; refreshProfiles?: (selection: NodeProfileData['selection']) => unknown } = $props();
@@ -73,7 +74,7 @@
                 return;
             }
             if (!opened || row.authorityVersion !== version) return;
-            error = result.error.message;
+            error = result.error.code + ': ' + result.error.message;
         } catch (failure) {
             if (opened && row.authorityVersion === version) error = failure instanceof Error ? failure.message : 'Could not change connection profile';
         } finally { if (row.authorityVersion === version) pending = false; if (focusVersion === ownedFocus) editFocusPending = false; }
@@ -113,9 +114,10 @@
                         <button type="button" role="option" id={optionId(index)} class="profile-option" class:is-active={index === active} aria-selected={option.value === row.value} disabled={pending} onclick={() => commit(option)}>
                             <span class="profile-option-copy"><span class="profile-name" title={option.label}>{option.label}</span><span class="profile-meta">{option.active ? 'Follows SillyTavern’s current model' : [option.apiLabel, option.model].filter(Boolean).join(' · ')}</span></span><span class="profile-check">{#if option.value === row.value}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg>{/if}</span>
                         </button>
+                    {:else}<p class="profile-empty">{query.trim() ? 'No connection profiles match. Clear the search to see available profiles.' : 'No connection profiles are available. Add one in SillyTavern’s Connection Manager.'}</p>
                     {/each}
                 </div>
-                {#if error}<div class="profile-error" role="alert">{error}</div>{/if}
+                {#if error}<div class="profile-error"><DiagnosticMessage issue={error} /></div>{/if}
             </div>
         {/if}
     </div>
@@ -150,5 +152,6 @@
     .profile-option-copy { min-width:0; flex:1; } .profile-name { display:block; overflow-wrap:anywhere; } .profile-meta { display:block; margin-top:3px; color:var(--pc-muted); font-size:11px; overflow-wrap:anywhere; }
     .profile-check { width:14px; min-height:17px; flex:0 0 14px; margin-top:2px; } .profile-check svg { width:14px; height:14px; }
     .profile-error { flex:0 1 auto; min-height:0; max-height:84px; overflow-y:auto; overflow-wrap:anywhere; padding:8px 12px; color:var(--pc-error); font-size:12px; }
+    .profile-empty { padding: 8px 12px; color: var(--pc-muted); font-size: 12px; line-height: 1.5; }
     @media(pointer:coarse) { .profile-bar,.profile-option { min-height:44px; } }
 </style>

@@ -23,7 +23,7 @@
     <div class="pc-workspace-dialog pc-document-prompt" role="dialog" aria-modal="true" aria-label="Save workflow changes?" tabindex="-1" bind:this={dialog} onkeydowncapture={keys} onpastecapture={event => event.stopPropagation()}>
         <h2>Save workflow changes?</h2>
         <p><strong>{view.name}</strong> has unsaved changes.</p>
-        {#if native}<p>Save your changes before continuing, or continue without saving.</p>{:else}<p>Save a JSON copy of this workflow. To switch documents after saving, repeat the action and choose Don't Save.</p>{/if}
+        {#if native}<p>Save keeps these changes in the current file. Don't Save continues and discards the unsaved changes to this document. Cancel keeps this document open.</p>{:else}<p>Save As creates a JSON copy of this workflow. To switch documents after saving, repeat the action and choose Don't Save. Don't Save discards unsaved changes; Cancel keeps this document open.</p>{/if}
         <footer><button type="button" onclick={() => actions?.choose('save')}>{native ? 'Save' : 'Save As…'}</button><button type="button" onclick={() => actions?.choose('discard')}>Don't Save</button><button type="button" bind:this={cancelButton} onclick={() => actions?.choose('cancel')}>Cancel</button></footer>
     </div>
 </div>

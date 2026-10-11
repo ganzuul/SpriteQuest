@@ -189,9 +189,10 @@
         {#each shown as entry, index (entry.family + entry.id)}
             {@const insertionDisabled = !entry.compatible || readOnly}
             {@const hasActions = !!entry.definitionRef && !!shelfSubgraph}
+            {@const reason = readOnly ? hasActions ? 'This graph is read-only. Right-click for subgraph actions.' : 'This graph is read-only.' : entry.disabledReason || (!entry.compatible ? 'Choose a graph in the ' + entry.phase + ' stage to add this node.' : '')}
             {#if !search && entry.group && shown[index - 1]?.group !== entry.group}<div class="pc-shelf-group" role="presentation" data-shelf-group={entry.group}>{entry.group}</div>{/if}
-            <button type="button" role="menuitem" data-shelf-choice={entry.id} data-insertion-disabled={insertionDisabled} style:--pc-family={familyColor(entry.family)} disabled={insertionDisabled && !hasActions} aria-disabled={insertionDisabled && !hasActions} aria-haspopup={hasActions ? 'menu' : undefined} title={readOnly ? hasActions ? 'This graph is read-only. Right-click for subgraph actions.' : 'This graph is read-only.' : entry.disabledReason || (entry.compatible ? entry.purpose || 'Add ' + entry.title : 'Requires the ' + entry.phase + ' phase')} onpointerdown={(event) => pointerDown(event, entry)} onlostpointercapture={() => endGesture()} onclick={(event) => clickEntry(event, entry)}><svg class="pc-leaf-icon" viewBox="0 0 24 24" aria-hidden="true"><path d={entry.icon} /></svg><span class="pc-catalog-name">{entry.title}</span><small>{entry.shortcode}</small></button>
-        {/each}
+            <button type="button" role="menuitem" data-shelf-choice={entry.id} data-insertion-disabled={insertionDisabled} style:--pc-family={familyColor(entry.family)} disabled={insertionDisabled && !hasActions} aria-disabled={insertionDisabled && !hasActions} aria-haspopup={hasActions ? 'menu' : undefined} title={reason || entry.purpose || 'Add ' + entry.title} onpointerdown={(event) => pointerDown(event, entry)} onlostpointercapture={() => endGesture()} onclick={(event) => clickEntry(event, entry)}><svg class="pc-leaf-icon" viewBox="0 0 24 24" aria-hidden="true"><path d={entry.icon} /></svg><span class="pc-catalog-name">{entry.title}{#if reason}<span class="pc-shelf-reason">{reason}</span>{/if}</span><small>{entry.shortcode}</small></button>
+        {:else}<p class="pc-shelf-empty">{search ? 'No nodes match your search. Try another name or clear the search.' : 'No nodes are available in this family for the current graph.'}</p>{/each}
     </div>
 {/if}
 {#if subgraphMenu}
@@ -202,6 +203,8 @@
 {/if}
 {#if dragPreview}<div class="pc-shelf-drag-preview" aria-hidden="true" style:--pc-family={familyColor(dragPreview.family)} style:left={`${dragPreview.x + 12}px`} style:top={`${dragPreview.y + 12}px`}>{dragPreview.title}</div>{/if}
 <style>
+    .pc-shelf-reason { display: block; white-space: normal; font-size: 10px; line-height: 1.4; font-weight: normal; color: var(--pc-muted, #a1a59b); }
+    .pc-shelf-empty { margin: 8px; color: var(--pc-muted, #a1a59b); font-size: 11px; line-height: 1.5; }
     .pc-shelf-group { padding: 5.6px 7.2px 2.4px; color: #a0aaa6; font-size: 8px; }
     .pc-shelf-subgraph-menu { z-index: 40; min-width: 136px; }
     [aria-disabled="true"] { opacity: .5; }

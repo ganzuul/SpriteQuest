@@ -1,7 +1,8 @@
 import type { WorkbenchView } from './types';
+import { diagnosticText } from '../src/ui/diagnostics.js';
 export interface WorkspaceMenuPanels { previewOpen: boolean; shelfOpen: boolean }
 export type WorkspaceMenuIconTone = 'blue' | 'yellow' | 'green' | 'purple' | 'teal' | 'red';
-export interface WorkspaceMenuItem { label: string; command: string; icon?: string; iconTone?: WorkspaceMenuIconTone; shortcut?: string; title?: string; disabled?: boolean; kind?: 'check' | 'radio'; checked?: boolean; children?: WorkspaceMenuItem[]; tone?: 'danger' }
+export interface WorkspaceMenuItem { label: string; command: string; icon?: string; iconTone?: WorkspaceMenuIconTone; shortcut?: string; title?: string; reason?: string; disabled?: boolean; kind?: 'check' | 'radio'; checked?: boolean; children?: WorkspaceMenuItem[]; tone?: 'danger' }
 export interface WorkspaceMenu { name: string; groups: WorkspaceMenuItem[][] }
 // Color follows the action: shared glyphs such as Add also serve neutral zoom controls.
 const iconTones: Record<string, WorkspaceMenuIconTone> = {
@@ -21,7 +22,7 @@ export function workspaceMenus(view: WorkbenchView, panels: WorkspaceMenuPanels 
  return [
  {name:'File',groups:[
   [row('New workflow','new','add',!!document?.busy,'Ctrl N'),row('Open workflow…','open-workflow','open',!!document?.busy,'Ctrl O'),{...row('Open Recent','recent-menu','open',!document?.native || !document.recents.length || document.busy),children:[...(document?.recents ?? []).map(file=>row(file.name,'open-recent:'+file.id,'open')),{...row('Clear Recent','clear-recent','clear'),title:'Files stay on disk; only this recent list is cleared.'}]},row('Open examples…','examples','library',!!document?.busy)],
-  [{...row('Recover previous workflows','recovery-menu','library',!document?.recovery.length || document.busy),children:(document?.recovery ?? []).map(file=>({...row(file.name,'recover-workflow:'+file.id,'open'),title:file.issue}))}],
+  [{...row('Recover previous workflows','recovery-menu','library',!document?.recovery.length || document.busy),children:(document?.recovery ?? []).map(file=>({...row(file.name,'recover-workflow:'+file.id,'open'),reason:file.issue ? diagnosticText(file.issue) : undefined}))}],
   [...(document?.native ? [row('Save workflow','save','save',document.busy,'Ctrl S'),row('Save As…','save-as','save',document.busy,'Ctrl Shift S')] : [row('Save As…','download-document','save',!!document?.busy,'Ctrl S')]),row('Rename workflow…','rename','rename',!root)],
   [row('Import into graph…','import-into-graph','open',readOnly),row('Export workflow JSON…','export','export',!root),...(view.hasArchivedWorkflows ? [row('Export archived workflows','export-archived-workflows','export')] : [])],
   [row('Close workspace','close','close')]
@@ -46,9 +47,9 @@ export function workspaceMenus(view: WorkbenchView, panels: WorkspaceMenuPanels 
  {name:'Workflow',groups:[
   [check('Enable Lattice','enable-workflow',!!view.enabled,!root)],
   [row('Validate workflow','validate-workflow','check',!root),row('Review host result','review-host-result','details',!root?.nodes?.some(node=>node.terminal)),row('Stop workflow','stop-workflow','stop',!c.stop)],
-  [row('Run to current output','run-preview','run',!preview?.runHere?.enabled || !!preview?.busy || busy),row('Run details…','run-details','details',!view.runDetails)],
+  [{...row('Run to current output','run-preview','run',!preview?.runHere?.enabled || !!preview?.busy || busy),reason:preview?.busy || busy ? 'Wait for the current run to finish.' : preview?.runHere?.reason ?? (!preview?.selectedKey ? 'Select a node output to preview first.' : undefined)},row('Run details…','run-details','details',!view.runDetails)],
   [{...row('Configure','configure','details'),children:[row('Workflow Data…','story-documents','library')]}],
-  [{...row('Memory recall','memory-recall-menu','arm'),children:[row('Queue recall for selected nodes','recall-queue-selected','add',!selectedRecall?.queueNodeIds.length),row('Cancel recall for selected nodes','recall-cancel-selected','clear',!selectedRecall?.cancelNodeIds.length),row('Queue recall for all eligible nodes','recall-queue-all','add',!allRecall?.queueNodeIds.length),row('Cancel all queued recall','recall-cancel-all','clear',!allRecall?.cancelNodeIds.length),row('Memory recall overview…','memory-recall','details')]}]
+  [{...row('Memory recall','memory-recall-menu','arm'),children:[{...row('Queue recall for selected nodes','recall-queue-selected','add',!selectedRecall?.queueNodeIds.length),reason:!selectedRecall?.queueNodeIds.length ? selectedRecall?.queueReason || 'Select an eligible Recall node first.' : undefined},{...row('Cancel recall for selected nodes','recall-cancel-selected','clear',!selectedRecall?.cancelNodeIds.length),reason:!selectedRecall?.cancelNodeIds.length ? selectedRecall?.cancelReason || 'Select a node with queued recall first.' : undefined},{...row('Queue recall for all eligible nodes','recall-queue-all','add',!allRecall?.queueNodeIds.length),reason:!allRecall?.queueNodeIds.length ? allRecall?.queueReason || 'No Recall nodes are eligible to queue.' : undefined},{...row('Cancel all queued recall','recall-cancel-all','clear',!allRecall?.cancelNodeIds.length),reason:!allRecall?.cancelNodeIds.length ? allRecall?.cancelReason || 'No recall is queued to cancel.' : undefined},row('Memory recall overview…','memory-recall','details')]}]
  ]},
  {name:'Help',groups:[[row('Workspace guide','help','help'),row('Node reference','node-reference','library'),row('Keyboard shortcuts','shortcuts','keyboard')],[row('About Lattice','about','info')]]}
  ];

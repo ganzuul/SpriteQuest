@@ -91,6 +91,7 @@ function selectClosure(index, target) {
         }
     }
     return { ok: true, data: { included, containsIncluded, resolvedTarget, ordered, dependencies: effectiveDependencies,
+        requiresNativeGeneration: selected.some(unit => ['on-send', 'generate-reply'].includes(unit.node.operation)),
         callBound: selected.reduce((sum, unit) => sum + unit.requestBound, 0),
         requiredBindingAddresses: selected.filter(unit => unit.requestBound > 0).map(unit => unit.address) } };
 }
@@ -119,7 +120,7 @@ export function prepareWorkflowPlanner(root) {
     const inventory = freeze({ workflowId: index.plan.workflowId, phase: index.plan.phase, primitives: index.plan.primitives, pins: index.plan.pins, hierarchy: index.plan.hierarchy, terminals: index.terminals });
     const planner = Object.freeze({ inventory, summarize(target) {
         const selection = selectClosure(index, target); if (!selection.ok) return freeze(selection);
-        return freeze({ ok: true, data: { callBound: selection.data.callBound, requiredBindingAddresses: selection.data.requiredBindingAddresses } });
+        return freeze({ ok: true, data: { callBound: selection.data.callBound, requiredBindingAddresses: selection.data.requiredBindingAddresses, requiresNativeGeneration: selection.data.requiresNativeGeneration } });
     } });
     planners.set(planner, { root, checked }); return { ok: true, data: planner };
 }

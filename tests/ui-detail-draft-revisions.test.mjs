@@ -68,12 +68,12 @@ test('an invalid JSON draft and error survive an unrelated saved checkbox revisi
     try {
         const textarea = editor(f);
         input(textarea, '{"phrase":'); save(f).click(); flushSync();
-        assert.equal(textarea.getAttribute('aria-invalid'), 'true'); assert.match(f.host.querySelector('[role="alert"]').textContent, /valid JSON/);
+        assert.equal(textarea.getAttribute('aria-invalid'), 'true'); assert.match(f.host.querySelector('[data-diagnostic]').textContent, /valid JSON/);
         assert.deepEqual(f.edits, [], 'invalid JSON never dispatches a saved-field edit');
         toggleCase(f); await settle();
         assert.equal(editor(f), textarea, 'the mounted editor remains connected');
         assert.equal(editor(f).value, '{"phrase":', 'unrelated saved revision must retain invalid unsaved text');
-        assert.equal(editor(f).getAttribute('aria-invalid'), 'true'); assert.match(f.host.querySelector('[role="alert"]').textContent, /valid JSON/);
+        assert.equal(editor(f).getAttribute('aria-invalid'), 'true'); assert.match(f.host.querySelector('[data-diagnostic]').textContent, /valid JSON/);
         assert.equal(f.graph().nodes.scan.caseSensitive, false); assert.deepEqual(f.graph().nodes.scan.rules, savedRules);
         assert.equal(f.graph().nodes.scan.model, 'portable-model'); assert.deepEqual(f.graph().nodes.scan.presentation, { alias: 'Saved wording' });
         assert.deepEqual(f.edits, [{ key: 'caseSensitive', value: false }]);
@@ -91,7 +91,7 @@ test('invalid JSON drafts survive changing roots and returning without saving ei
         f.update(node(f.graph(), { revision: 'revision2' }));
         assert.equal(editor(f).value, '{"phrase":');
         assert.equal(editor(f).getAttribute('aria-invalid'), 'true');
-        assert.match(f.host.querySelector('[role="alert"]').textContent, /valid JSON/);
+        assert.match(f.host.querySelector('[data-diagnostic]').textContent, /valid JSON/);
         save(f).click(); await settle();
         assert.deepEqual(f.edits, [], 'returning to invalid text never publishes a control edit');
         assert.deepEqual(f.graph().nodes.scan.rules, savedRules);
@@ -114,7 +114,7 @@ test('unmounting the inspector expires its private cached drafts before a fresh 
         assert.notEqual(f.host.querySelector('.pc-node-details'), previousInspector, 'this is a new instance from the same imported component module');
         assert.equal(editor(f).value, JSON.stringify(savedRules, null, 2));
         assert.equal(editor(f).getAttribute('aria-invalid'), 'false');
-        assert.equal(f.host.querySelector('[role="alert"]'), null);
+        assert.equal(f.host.querySelector('[data-diagnostic]'), null);
         f.update(node(undefined, { address: { ...address, workflowId: 'other-root' } }));
         assert.equal(editor(f).value, JSON.stringify(savedRules, null, 2), 'the other qualified cached draft is also private to the destroyed instance');
         assert.deepEqual(edits, [], 'destroying and mounting inspectors never publishes unsaved edits');
@@ -153,7 +153,7 @@ for (const nextAddress of [
             pending[0]({ ok: true }); await settle();
             assert.equal(editor(f).value, '["first draft"]'); assert.equal(save(f).disabled, true, 'old completion cannot release the newer save');
             pending[1]({ ok: false, error: { code: 'CURRENT', message: 'Current root rejected this draft' } }); await settle();
-            assert.match(f.host.textContent, /Current root rejected/); assert.equal(save(f).disabled, false);
+            assert.equal(f.host.querySelector('[data-diagnostic]').dataset.severity, 'error'); assert.equal(save(f).disabled, false);
             assert.deepEqual(captures.map(capture => capture.address), [address, address]);
             f.update(node(undefined, { address: nextAddress })); assert.equal(editor(f).value, '["separate draft"]');
         } finally { await f.close(); }
@@ -195,7 +195,7 @@ for (const oldResult of [{ ok: true }, { ok: false, error: { code: 'OLD_REVISION
             pending[0](oldResult); await settle();
             assert.equal(editor(f).value, '["second"]'); assert.equal(save(f).disabled, true); assert.doesNotMatch(f.host.textContent, /Obsolete validation failure/);
             pending[1]({ ok: false, error: { code: 'CURRENT', message: 'Current validation failure' } }); await settle();
-            assert.equal(editor(f).value, '["second"]'); assert.equal(save(f).disabled, false); assert.match(f.host.querySelector('[role="alert"]').textContent, /Current validation failure/);
+            assert.equal(editor(f).value, '["second"]'); assert.equal(save(f).disabled, false); assert.equal(f.host.querySelector('[data-diagnostic]').dataset.severity, 'error');
         } finally { await f.close(); }
     });
 }

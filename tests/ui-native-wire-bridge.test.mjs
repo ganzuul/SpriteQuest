@@ -142,7 +142,7 @@ test('wrong root/path pins reject before preparation and a nonexistent qualified
     begin(env, pin(env.root, 'source')); move(env, pin(env.root, 'first', 'in', 'context', 'in', ['child']));
     assert.equal(env.counts.prepare, 0); assert.equal(env.bridge.project().gesture.feedback.compatible, false);
     const child = setup(fixture(), { viewPath: ['instance'] }); begin(child, pin(child.root, 'first', 'out', 'context', 'out', ['instance']));
-    assert.equal(child.counts.capture, 1); assert.equal(child.counts.prepare, 0); assert.equal(child.counts.commit, 0); assert.equal(child.bridge.hasContentGesture(), false); assert.match(child.bridge.project().feedback, /qualified.*view.*does not exist/i);
+    assert.equal(child.counts.capture, 1); assert.equal(child.counts.prepare, 0); assert.equal(child.counts.commit, 0); assert.equal(child.bridge.hasContentGesture(), false); assert.match(child.bridge.project().feedback, /view.*unavailable/i);
 });
 
 test('compatible duplicate drops clear the draft without commit/history and invalid cycle retains original bindings', async () => {

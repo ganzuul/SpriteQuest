@@ -2,6 +2,7 @@ import { runWorkflowForHost, freezeArtifact, workflowSignature } from './runtime
 import { resolveBinding, requestModel, bindingStatus, bindingSummary } from './connections.js?v=0.27.0';
 import { addressKey, safeError } from './record-data.js?v=0.27.0';
 import { cloneWorkflowDocument } from './document.js?v=0.27.0';
+import { resolveWorkflow } from './resolve.js?v=0.27.0';
 import { projectIntrospectionNode } from './introspection/native.js?v=0.27.0';
 import { executeIntrospection } from './introspection/nodes.js?v=0.27.0';
 import { parseRecord } from './introspection/contracts.js?v=0.27.0';
@@ -749,6 +750,14 @@ export function createNativeWorkflowController(ports) {
         // the bounded malformed result, including getter-free version metadata.
         const admitted=cloneWorkflowDocument(graph);
         if(!admitted.ok){const owner={documentToken:ports.getDocumentToken?.()};return notify(await runWorkflowForHost(graph,{target}),null,owner);}
+        // Manual previews cannot own SillyTavern's generation. Check the entire
+        // dependency path before starting a run or dispatching auxiliary work.
+        const planned=resolveWorkflow(admitted.data,{target});
+        if(planned.ok&&planned.data.primitives.some(unit=>unit.included&&['on-send','generate-reply'].includes(unit.node.operation))){
+            const source=planned.data.primitives.find(unit=>unit.included&&['on-send','generate-reply'].includes(unit.node.operation));
+            const owner={documentToken:ports.getDocumentToken?.()};
+            return notify(freezeArtifact({ok:false,mode:'target',schema:admitted.data.schema,runtime:admitted.data.runtime,actualCalls:0,callBound:planned.data.callBound,reviewHandles:[],error:{code:'NATIVE_OWNER_MISSING',message:'This step starts when you send a message. Enable Lattice, then send a message in SillyTavern to run this workflow.',nodeId:source.address.nodeId,address:source.address}}),null,owner);
+        }
         const run=start(graph,false,null,target);
         const value=await execute(run,{messageIndex,onEvent});
         if(active===run){active=null;return notify(value,run);}

@@ -1,11 +1,14 @@
 <script lang="ts">
+    import DiagnosticMessage from './DiagnosticMessage.svelte';
+    import { presentDiagnostics } from '../src/ui/diagnostics.js';
     import type { WorkflowView } from './types';
     let { panel, workflow, version, referenceUrl, guideUrl }: { panel: string; workflow?: WorkflowView; version: string; referenceUrl: string; guideUrl: string } = $props();
+    let diagnostics = $derived(workflow?.diagnostics ?? presentDiagnostics(workflow?.issues ?? []));
 </script>
 {#if panel === 'validate-workflow'}
     {#if workflow}
         <p>Root workflow: <strong>{workflow.name}</strong> · {workflow.phase} · maximum {workflow.callBound} model requests.</p>
-        {#if workflow.issues.length}<ul>{#each workflow.issues as issue}<li>{issue}</li>{/each}</ul>
+        {#if diagnostics.length}<ul>{#each diagnostics as diagnostic (diagnostic.id)}<li><DiagnosticMessage {diagnostic} /></li>{/each}</ul>
         {:else}<p role="status">No validation issues found.</p>{/if}
         <p>Validation checks the current workflow without running it. Diagnostic previews and Apply recheck their inputs when used.</p>
     {:else}<p>Workflow validation is unavailable.</p>{/if}

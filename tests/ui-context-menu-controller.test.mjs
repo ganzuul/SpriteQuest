@@ -5,6 +5,7 @@ import { prepareWorkspaceViews, projectEditorDraw } from '../src/ui/workspace-pr
 import { createGraphViewSession } from '../src/ui/graph-view-session.js?v=0.27.0';
 import { projectPreparedWorkflow } from '../src/ui/workflow-surface.js?v=0.27.0';
 import { siblingWorkflow, twoOutputWorkflow } from './fixtures/workflow-prepared-fixture.mjs';
+import { diagnosticText } from '../src/ui/diagnostics.js?v=0.27.0';
 
 const source = await readFile(new URL('../src/ui/controller.js', import.meta.url), 'utf8');
 function actual(name, env) {
@@ -22,7 +23,7 @@ function fixture(graph = siblingWorkflow(), path = ['second']) {
     if (path.length) assert.equal(session.openInstance(path).ok, true);
     const env = { current: graph, graphViews: session, workspacePrepared: prepared.data, editorDraw: projectEditorDraw(session.readEditor()),
         workspaceRevision: 0, workflowState: { busy: false }, pinnedPreview: null, selectedPreview: null,
-        editorCaptures: new WeakMap(), isOpen: () => true, activeEditRoot: () => graph, projectPreparedWorkflow,
+        editorCaptures: new WeakMap(), isOpen: () => true, activeEditRoot: () => graph, projectPreparedWorkflow, diagnosticText,
         workflowRuntime: { getNativeWorkflowController: () => ({ activity: () => null }) },
         updateWorkflowProjection() {}, workbench: { revealPreview() {} }, applyPreviewReview() {}, rejectPreviewReview() {},
     };

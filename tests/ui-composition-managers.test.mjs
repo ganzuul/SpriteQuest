@@ -1,25 +1,17 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { readFile, mkdtemp, writeFile, rm } from 'node:fs/promises';
+import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve, relative, isAbsolute } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { compile } from 'svelte/compiler';
 import { JSDOM } from 'jsdom';
+import { compiled } from './helpers/svelte-compile.mjs';
 
 const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true });
 globalThis.window = dom.window; globalThis.document = dom.window.document;
 for (const key of ['Node', 'Element', 'Text', 'Comment', 'Document', 'HTMLElement', 'HTMLButtonElement', 'HTMLInputElement', 'HTMLSelectElement', 'MutationObserver']) Object.defineProperty(globalThis, key, { configurable: true, value: dom.window[key] });
 const clientURL = new URL('../node_modules/svelte/src/index-client.js', import.meta.url).href;
 const { mount, unmount, flushSync, tick } = await import(clientURL);
-async function compiled(name, directory, source) {
-    source ??= await readFile(new URL('../ui/' + name + '.svelte', import.meta.url), 'utf8');
-    const output = compile(source, { filename: name + '.svelte', generate: 'client', css: 'injected' });
-    assert.deepEqual(output.warnings.filter(warning => warning.code.startsWith('a11y')), []);
-    const code = output.js.code.replace(/(['"])(svelte(?:\/[^'"]*)?)\1/g, (_, quote, specifier) => JSON.stringify(specifier === 'svelte' ? clientURL : import.meta.resolve(specifier)));
-    const path = join(directory, name + '.mjs'); await writeFile(path, code);
-    return { path, component: (await import(pathToFileURL(path).href)).default };
-}
 async function fixture(name, view, actions, reactive = false) {
     const directory = await mkdtemp(join(tmpdir(), 'lattice-composition-panels-'));
     const host = document.createElement('div'); document.body.append(host); let mounted;
@@ -101,10 +93,11 @@ test('async validation errors remain scoped to the exact graph and unchanged loc
     const pending = [], captures = [], p = portal(), f = await fixture('PortalManager', p, { rename: (captured) => { captures.push(captured); return new Promise(resolve => pending.push(resolve)); } });
     try {
         input(f.host.querySelector('[aria-label="Portal name"]'), 'First'); f.host.querySelector('[data-portal-rename]').click();
-        input(f.host.querySelector('[aria-label="Portal name"]'), 'Second'); pending.shift()({ ok: false, error: { code: 'OLD', message: 'Old draft error' } }); await tick(); flushSync(); assert.doesNotMatch(f.host.textContent, /Old draft error/); assert.equal(f.host.querySelector('[aria-label="Portal name"]').value, 'Second');
+        input(f.host.querySelector('[aria-label="Portal name"]'), 'Second'); pending.shift()({ ok: false, error: { code: 'OLD', message: 'Old draft error' } }); await tick(); flushSync(); assert.equal(f.host.querySelector('[data-diagnostic]'), null, 'obsolete draft errors are not presented'); assert.equal(f.host.querySelector('[aria-label="Portal name"]').value, 'Second');
         f.host.querySelector('[data-portal-rename]').click(); const sibling = { ...p, scope: { ...scope, instancePath: ['outer', 'sibling'] } }; f.update(sibling);
-        pending.shift()({ ok: false, error: { code: 'OLD', message: 'Wrong scope error' } }); await tick(); flushSync(); assert.doesNotMatch(f.host.textContent, /Wrong scope error/); assert.deepEqual(captures[1], capture(p));
-        input(f.host.querySelector('[aria-label="Portal name"]'), 'Current'); f.host.querySelector('[data-portal-rename]').click(); pending.shift()({ ok: false, error: { code: 'CURRENT', message: 'Current rejection' } }); await tick(); flushSync(); assert.match(f.host.textContent, /Current rejection/);
+        pending.shift()({ ok: false, error: { code: 'OLD', message: 'Wrong scope error' } }); await tick(); flushSync(); assert.equal(f.host.querySelector('[data-diagnostic]'), null, 'errors from the previous scope are not presented'); assert.deepEqual(captures[1], capture(p));
+        input(f.host.querySelector('[aria-label="Portal name"]'), 'Current'); f.host.querySelector('[data-portal-rename]').click(); pending.shift()({ ok: false, error: { code: 'CURRENT', message: 'Current rejection' } }); await tick(); flushSync();
+        const diagnostic = f.host.querySelector('[data-diagnostic]'); assert.equal(diagnostic?.dataset.severity, 'error'); assert.match(diagnostic.querySelector('details').textContent, /CURRENT/); assert.equal(diagnostic.querySelector('details').open, false); assert.equal(f.host.querySelector('[aria-label="Portal name"]').value, 'Current');
         f.update({ ...sibling, canPresent: false }); clickRaw(f.host.querySelector('[data-portal-rename]')); assert.equal(pending.length, 0);
     } finally { await f.close(); }
 });

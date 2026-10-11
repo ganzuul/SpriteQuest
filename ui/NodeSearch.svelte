@@ -76,9 +76,9 @@
     <div class="pc-search-results" id={uid + '-results'} role="listbox" aria-label={view.mode === 'ports' ? 'Compatible ports' : 'Nodes and subgraphs'}>
         {#each items as item (itemId(item))}
             <button type="button" class="pc-search-result" role="option" aria-selected={selected === item} id={uid + '-item-' + items.indexOf(item)} data-choice={'id' in item ? item.id : undefined} data-port={'portId' in item ? item.portId : undefined} disabled={blocked(item)} title={'disabledReason' in item ? item.disabledReason : undefined} onclick={() => choose(item)} onfocus={() => { const index = enabled.indexOf(item); if (index >= 0) active = index; }}>
-                <span>{item.label || itemId(item)}</span>{' '}<span class="pc-family" style:color={'family' in item ? familyColor(item.family) : undefined}>{'family' in item ? item.family : item.kind}</span>
+                <span>{item.label || itemId(item)}{#if 'disabledReason' in item && item.disabledReason}<small style="display:block;white-space:normal">{item.disabledReason}</small>{/if}</span>{' '}<span class="pc-family" style:color={'family' in item ? familyColor(item.family) : undefined}>{'family' in item ? item.family : item.kind}</span>
             </button>
-        {:else}<p class="pc-empty">No nodes match.</p>{/each}
+        {:else}<p class="pc-empty">{view.mode === 'ports' ? 'This node has no compatible ports for this connection.' : view.contextSensitive && view.origin ? 'No compatible nodes match. Clear the search or turn off Context sensitive to browse all nodes.' : query.trim() ? 'No nodes match your search. Try another name or clear the search.' : 'No nodes are available in this view.'}</p>{/each}
     </div>
     {#if view.feedback}<p class="pc-feedback" role="status">{view.feedback}</p>{/if}
 </div>

@@ -172,12 +172,12 @@ test('editing imported structured scan rules preserves findings and metadata and
     await editor.fill('{"phrase":');
     await details(page).getByRole('button', { name: 'Save Rules', exact: true }).click();
     await expect(editor).toHaveAttribute('aria-invalid', 'true');
-    await expect(details(page).getByRole('alert')).toContainText('Enter valid JSON before saving.');
+    await expect(details(page).locator('.pc-diagnostic[data-severity="error"]')).toContainText('Enter valid JSON before saving.');
     expect((await read()).node.rules).toEqual(saved);
     await page.getByLabel('Case sensitive', { exact: true }).uncheck();
     await expect(editor).toHaveValue('{"phrase":');
     await expect(editor).toHaveAttribute('aria-invalid', 'true');
-    await expect(details(page).getByRole('alert')).toContainText('Enter valid JSON before saving.');
+    await expect(details(page).locator('.pc-diagnostic[data-severity="error"]')).toContainText('Enter valid JSON before saving.');
     expect((await read()).node.rules).toEqual(saved);
     await saveRules(page, ['ordinary phrase', { phrase: 'delve', note: 'retained' }]);
     await expect(editor).toHaveAttribute('aria-invalid', 'false');
@@ -389,8 +389,8 @@ test('a real reviewed run requires Apply and preserves the original swipe', asyn
     await expectRequests(page, 1, 1);
     await candidateText(page, 'We explore.');
     expect(await page.evaluate(() => window.canvasHarness.context.chat.at(-1).mes)).toBe('We delve.');
-    await page.getByRole('button', { name: 'Apply reviewed candidate', exact: true }).click();
-    await expect(page.getByText('Candidate applied in memory. Save durability is unconfirmed.', { exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Apply reviewed reply', exact: true }).click();
+    await expect(page.getByText('Reply applied locally. Saving is unconfirmed.', { exact: true })).toBeVisible();
     expect(await page.evaluate(() => window.canvasHarness.context.chat.at(-1).swipes)).toEqual(['We delve.', 'We explore.']);
     expect(await page.evaluate(() => window.workflowSaveAttempts)).toBe(1);
     expect(await page.evaluate(() => window.workflowRequests.length)).toBe(1);
@@ -398,12 +398,12 @@ test('a real reviewed run requires Apply and preserves the original swipe', asyn
 test('an external reply edit disables Apply and a rejected candidate preserves the original', async ({ page }) => {
     await reviewFixture(page);
     await runRoot(page);
-    const apply = page.getByRole('button', { name: 'Apply reviewed candidate', exact: true });
+    const apply = page.getByRole('button', { name: 'Apply reviewed reply', exact: true });
     await expect(apply).toBeEnabled();
     await page.evaluate(async () => { const c = window.canvasHarness.context; c.chat.at(-1).mes = 'External edit.'; await c.eventSource.emit(c.eventTypes.MESSAGE_EDITED, c.chat.length - 1); });
     await expect(apply).toBeDisabled();
-    await expect(page.getByText(/candidate is no longer available|chat, reply or swipe changed/)).toBeVisible();
-    await page.getByRole('button', { name: 'Reject candidate', exact: true }).click();
+    await expect(preview(page).locator('.pc-diagnostic > p').filter({ hasText: /no longer available|chat, reply, swipe, or prompt changed/ })).toBeVisible();
+    await page.getByRole('button', { name: 'Reject reply', exact: true }).click();
     expect(await page.evaluate(() => window.canvasHarness.context.chat.at(-1).mes)).toBe('External edit.');
     expect(await page.evaluate(() => window.workflowSaveAttempts || 0)).toBe(0);
 });
@@ -420,7 +420,7 @@ test('switching graph or closing cancels a delayed run and ignores its late resu
     await installWorkflow(page, 'Scene guidance');
     expect(await page.evaluate(() => window.workflowSignal.aborted)).toBe(true);
     await page.evaluate(async () => { window.finishWorkflowRequest({ choices: [{ message: { content: '{"patches":[{"index":0,"replacement":"late"}]}' }, finish_reason: 'stop' }] }); await window.canvasHarness.settle(); });
-    await expect(page.getByRole('button', { name: 'Apply reviewed candidate', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Apply reviewed reply', exact: true })).toHaveCount(0);
     expect(await page.evaluate(() => window.canvasHarness.context.chat.at(-1).mes)).toBe('We delve.');
     await installWorkflow(page, 'Reviewed AI De-slop');
     await fixtureRole(page, 'Prose', 'prose');
@@ -431,14 +431,14 @@ test('switching graph or closing cancels a delayed run and ignores its late resu
     await page.getByRole('button', { name: 'Close canvas', exact: true }).click();
     expect(await page.evaluate(() => window.workflowSignal.aborted)).toBe(true);
     await page.evaluate(async () => { window.finishWorkflowRequest({ choices: [{ message: { content: '{"patches":[{"index":0,"replacement":"late"}]}' }, finish_reason: 'stop' }] }); window.canvasHarness.UI.open(); await window.canvasHarness.settle(); });
-    await expect(page.getByRole('button', { name: 'Apply reviewed candidate', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Apply reviewed reply', exact: true })).toHaveCount(0);
 });
 test('Run to here stays diagnostic and actual Send retains addressed request evidence', async ({ page }) => {
     await reviewFixture(page);
     await inspectOperation(page, 'reply-snapshot');
     await page.locator('.pc-output-preview [data-run-here]').click();
     await expectRequests(page,0,0);
-    await expect(page.getByRole('button',{name:'Apply reviewed candidate',exact:true})).toHaveCount(0);
+    await expect(page.getByRole('button',{name:'Apply reviewed reply',exact:true})).toHaveCount(0);
     const target = await page.evaluate(async () => {
         const h=window.canvasHarness,r=(await import('/src/run.js?v='+h.version)).getNativeWorkflowController().lastResult();
         return {ok:r.ok,mode:r.mode,calls:r.actualCalls,raw:('calls' in r)||('artifact' in r)||('reports' in r)};
@@ -455,11 +455,11 @@ test('document replacement expires automatic Send evidence and reopening permits
     await reviewFixture(page); await runRoot(page); await candidateText(page,'We explore.');
     const opened = await page.evaluate(()=>{window.reviewDocument=window.canvasHarness.graph;return window.reviewDocument.id;});
     await installWorkflow(page,'Scene guidance');
-    await expect(page.getByRole('button',{name:'Apply reviewed candidate',exact:true})).toHaveCount(0);
+    await expect(page.getByRole('button',{name:'Apply reviewed reply',exact:true})).toHaveCount(0);
     await page.evaluate(async()=>window.canvasHarness.activate(window.reviewDocument));
     await selectTerminal(page,'review-publish',false);
     await expect(preview(page)).not.toContainText('We explore.');
-    await expect(page.getByRole('button',{name:'Apply reviewed candidate',exact:true})).toHaveCount(0);
+    await expect(page.getByRole('button',{name:'Apply reviewed reply',exact:true})).toHaveCount(0);
     await page.getByRole('button',{name:'Close canvas',exact:true}).click();
     await page.evaluate(async()=>{const h=window.canvasHarness,c=h.context;window.previousAutomaticRunId=(await import('/src/run.js?v='+h.version)).getNativeWorkflowController().lastAutomaticResult()?.result.runId;if(!c.chat.at(-1)?.is_user)c.chat.push({mes:'Continue.',is_user:true,extra:{}});await c.eventSource.emit(c.eventTypes.GENERATION_STARTED,'normal',{},false);const ready=await window.latticeGenerationInterceptor(c.chat,8192,()=>{},'normal');if(!ready.ok||!ready.awaitingNative)throw Error(JSON.stringify(ready));const now=new Date().toISOString(),index=c.chat.length;c.chat.push({mes:'We delve.',is_user:false,swipe_id:0,swipes:['We delve.'],swipe_info:[{extra:{},gen_started:now,gen_finished:now}],extra:{},gen_started:now,gen_finished:now});await c.eventSource.emit(c.eventTypes.MESSAGE_RECEIVED,index,'normal');await c.eventSource.emit(c.eventTypes.GENERATION_ENDED,c.chat.length);});
     await expect(page.locator('.pc-root')).not.toHaveClass(/pc-open/);
@@ -493,10 +493,10 @@ test('review controls and comparison stay usable in a narrow viewport', async ({
     await runRoot(page);
     await expect((await artifact(page, 'candidate')).locator('pre')).toContainText('We delve.');
     await candidateText(page, 'We explore.');
-    await expect(page.getByRole('button', { name: 'Apply reviewed candidate', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Apply reviewed reply', exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-    await page.getByRole('button', { name: 'Reject candidate', exact: true }).click();
-    await expect(page.getByText('Candidate rejected. Original reply preserved.', { exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Reject reply', exact: true }).click();
+    await expect(page.getByText('Proposed reply rejected. Original reply preserved.', { exact: true })).toBeVisible();
 });
 
 
@@ -544,7 +544,7 @@ test('the native canvas provides a keyboard-accessible duplicate action', async 
 test('native camera pan and zoom preserve the focused editor without domain work', async ({ page }) => {
     await reviewFixture(page);
     await runRoot(page);
-    await expect(page.getByRole('button', { name: 'Apply reviewed candidate', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Apply reviewed reply', exact: true })).toBeVisible();
     await inspectOperation(page, 'repair');
     await page.getByLabel('Instructions', { exact: true }).focus();
     const measured = await page.evaluate(async () => {
@@ -572,19 +572,19 @@ test('native camera pan and zoom preserve the focused editor without domain work
     const title = await page.locator('.pc-node-title').filter({ hasText: /^Reply Snapshot$/ }).boundingBox();
     await page.mouse.move(title.x + 20, title.y + 8); await page.mouse.down();
     await page.mouse.move(title.x + 60, title.y + 28, { steps: 4 }); await page.mouse.up();
-    await expect(page.getByRole('button', { name: 'Apply reviewed candidate', exact: true })).toBeEnabled();
+    await expect(page.getByRole('button', { name: 'Apply reviewed reply', exact: true })).toBeEnabled();
     expect(await page.evaluate(async () => { const controller = (await import('/src/run.js?v=' + window.canvasHarness.version)).getNativeWorkflowController(); return controller.candidateStatus(controller.lastResult().reviewHandles[0]).ok; })).toBe(true);
     await inspectOperation(page, 'repair');
     await page.getByLabel('Instructions', { exact: true }).fill('A semantic operation edit.');
     await page.getByLabel('Instructions', { exact: true }).press('Tab');
-    await expect(page.getByRole('button', { name: 'Apply reviewed candidate', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Apply reviewed reply', exact: true })).toHaveCount(0);
 });
 
 test('native presentation undo preserves reviewed authority while semantic undo and redo revoke it', async ({ page }) => {
     await reviewFixture(page);
     await page.evaluate(() => { const h = window.canvasHarness; h.H.flush(h.graph); });
     await runRoot(page);
-    const apply = page.getByRole('button', { name: 'Apply reviewed candidate', exact: true });
+    const apply = page.getByRole('button', { name: 'Apply reviewed reply', exact: true });
     await expect(apply).toBeEnabled();
     await page.evaluate(async () => {
         const h = window.canvasHarness, runtime = (await import('/src/run.js?v=' + window.canvasHarness.version)).getNativeWorkflowController();
@@ -631,7 +631,7 @@ test('accepted semantic additive import cancels a root request and history canno
     expect(await page.evaluate(() => window.importRequestSignal.aborted)).toBe(true);
     expect(await page.evaluate(async () => (await import('/src/workflow/ports.js?v=' + window.canvasHarness.version)).graphSemanticSignature(window.canvasHarness.graph))).not.toBe(before.signature);
     await page.evaluate(async () => { window.importPendingRequest({ choices: [{ message: { content: '{"patches":[{"index":0,"replacement":"late"}]}' }, finish_reason: 'stop' }] }); await window.canvasHarness.settle(); });
-    const apply = page.getByRole('button', { name: 'Apply reviewed candidate', exact: true });
+    const apply = page.getByRole('button', { name: 'Apply reviewed reply', exact: true });
     await expect(apply).toHaveCount(0);
     expect(await page.evaluate(() => Object.keys(window.canvasHarness.graph.nodes).length)).toBe(before.nodes + 1);
     await canvasHistory(page, 'Control+z'); await expect(apply).toHaveCount(0);
@@ -685,7 +685,7 @@ test('narrow workflow inspection and review remain opaque during selection feedb
     await details(page).getByRole('button', { name: 'Save Rules', exact: true }).click();
     expect(await page.evaluate(() => Object.values(window.canvasHarness.graph.nodes).find(node => node.operation === 'pattern-scan').rules)).toEqual(['delve']);
     await runRoot(page);
-    await expect(page.getByRole('button', { name: 'Apply reviewed candidate', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Apply reviewed reply', exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 

@@ -46,7 +46,7 @@ test('Expected calendar edits the Story Clock declared validation control withou
         assert.deepEqual(edits, [[selection, 'calendarId', 'campaign-calendar']]);
         assert.equal(f.host.querySelector('[aria-label="Initial calendar name"]').value, 'story-calendar');
         assert.equal(JSON.parse(definition.content).calendarId, 'story-calendar');
-        assert.equal(f.host.querySelector('[role="alert"]'), null);
+        assert.equal(f.host.querySelector('[data-diagnostic]'), null);
     } finally { await f.close(); }
 });
 

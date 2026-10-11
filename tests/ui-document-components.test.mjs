@@ -9,7 +9,7 @@ import { compiled } from './helpers/svelte-compile.mjs';
 
 const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true });
 globalThis.window = dom.window; globalThis.document = dom.window.document;
-for (const key of ['Node', 'Element', 'Text', 'Comment', 'Document', 'HTMLElement', 'HTMLButtonElement', 'HTMLInputElement', 'HTMLSelectElement', 'MutationObserver']) Object.defineProperty(globalThis, key, { configurable: true, value: dom.window[key] });
+for (const key of ['Node', 'Element', 'Text', 'Comment', 'Document', 'HTMLElement', 'HTMLButtonElement', 'HTMLInputElement', 'HTMLSelectElement', 'HTMLMediaElement', 'MutationObserver']) Object.defineProperty(globalThis, key, { configurable: true, value: dom.window[key] });
 const { mount, unmount, flushSync, tick } = await import(new URL('../node_modules/svelte/src/index-client.js', import.meta.url).href);
 const directory = await mkdtemp(join(tmpdir(), 'lattice-document-components-'));
 after(async () => {
@@ -74,12 +74,15 @@ test('Open Recent supports nested keyboard navigation and clearing just the rece
 
 test('migration recovery remains separately selectable when native recent files are unavailable', async () => {
     const commands = [];
-    const f = await fixture('WorkspaceMenus', state({ name: 'Untitled', dirty: false, busy: false, native: false, recents: [], recovery: [{ id: 'legacy', name: 'Old scene' }, { id: 'damaged', name: 'Unreadable scene', issue: 'This stored workflow needs repair.' }] }), { command: command => commands.push(command) });
+    const f = await fixture('WorkspaceMenus', state({ name: 'Untitled', dirty: false, busy: false, native: false, recents: [], recovery: [{ id: 'legacy', name: 'Old scene' }, { id: 'damaged', name: 'Unreadable scene', issue: 'The previous workspace presentation is unreadable.' }] }), { command: command => commands.push(command) });
     try {
         await f.open(); assert.equal(f.item('Open Recent').disabled, true);
         await click(f.item('Recover previous workflows'));
         assert.equal(f.menu('Open Recent options'), null); assert.ok(f.menu('Recover previous workflows options'));
-        const damaged = f.item('Unreadable scene', 'Recover previous workflows options'); assert.equal(damaged.disabled, false); assert.match(damaged.title, /needs repair/);
+        const damaged = f.item('Unreadable scene', 'Recover previous workflows options'); assert.equal(damaged.disabled, false);
+        const descriptionId = damaged.getAttribute('aria-describedby'); assert.ok(descriptionId, 'the recovery explanation is associated with the command');
+        const description = [...damaged.querySelectorAll('small')].find(element => element.id === descriptionId); assert.ok(description, 'the recovery explanation is visible within the submenu');
+        assert.match(description.textContent, /presentation|layout|appearance/i); assert.match(description.textContent, /restore|recover|open/i);
         await click(damaged); assert.deepEqual(commands, ['recover-workflow:damaged']);
         await f.open(); await click(f.item('Recover previous workflows')); await click(f.item('Old scene', 'Recover previous workflows options')); assert.deepEqual(commands, ['recover-workflow:damaged', 'recover-workflow:legacy']);
         assert.equal(f.menu('File'), null);
@@ -122,7 +125,7 @@ test('fallback unsaved prompt explains saving a copy before explicitly switching
     const choices = [], f = await fixture('DocumentPrompt', { name: 'scene.json' }, { choose: choice => choices.push(choice) }, () => {}, 'view', { native: false });
     try {
         const buttons = [...f.host.querySelectorAll('button')]; assert.equal(buttons.some(button => button.textContent === 'Save'), false);
-        assert.match(f.host.textContent, /Save a JSON copy.*repeat the action.*Don't Save/s);
+        assert.match(f.host.textContent, /Save As.*JSON copy.*repeat the action.*Don't Save/s);
         await click(buttons.find(button => button.textContent === 'Save As…')); assert.deepEqual(choices, ['save']);
     } finally { await f.close(); }
 });

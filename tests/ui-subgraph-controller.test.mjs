@@ -15,6 +15,7 @@ import { captureRelocatedSubgraphViews, restoreSubgraphViews } from '../src/ui/s
 import { showContextMenu } from '../src/ui/context-menu.js?v=0.27.0';
 import { readNodePresentation } from '../src/ui/node-palette.js?v=0.27.0';
 import { projectPreparedWorkflow } from '../src/ui/workflow-surface.js?v=0.27.0';
+import { diagnosticText } from '../src/ui/diagnostics.js?v=0.27.0';
 
 const source = await readFile(new URL('../src/ui/controller.js', import.meta.url), 'utf8');
 function actual(name, env) {
@@ -112,10 +113,10 @@ function conversionMenu(f, nodeId) {
     Object.assign(f.env, { document, window: dom.window, root: document.querySelector('main'), isCommentFrame, operationFor,
         el(tag, cls, text) { const element = document.createElement(tag); if (cls) element.className = cls; if (text !== undefined) element.textContent = text; return element; },
         canCreateSubgraph: (...args) => actual('canCreateSubgraph', f.env)(...args),
-        canvasPreviewMenuItems: (...args) => actual('canvasPreviewMenuItems', f.env)(...args), showContextMenu, readNodePresentation, projectPreparedWorkflow,
+        canvasPreviewMenuItems: (...args) => actual('canvasPreviewMenuItems', f.env)(...args), showContextMenu, readNodePresentation, projectPreparedWorkflow, diagnosticText,
     });
     actual('onCanvasMenu', f.env)({ event: { clientX: 20, clientY: 20 }, node: f.env.editorDraw.nodes[nodeId], at: { x: 0, y: 0 } });
-    const item = [...document.querySelectorAll('[role="menuitem"]')].find(button => button.textContent === 'Create subgraph');
+    const item = document.querySelector('[data-command="create-subgraph"]');
     assert.ok(item); return { item, close: () => dom.window.close() };
 }
 

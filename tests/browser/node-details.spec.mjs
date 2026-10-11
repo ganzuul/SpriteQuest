@@ -55,7 +55,7 @@ test('invalid JSON is retained after switching roots and returning to the qualif
     await expect(editor).toHaveValue('{"unfinished":');
     await expect(editor).toHaveAttribute('aria-invalid', 'true');
     await details(page).getByRole('button', { name: 'Save Sections', exact: true }).click();
-    await expect(details(page).getByRole('alert')).toContainText('Enter valid JSON');
+    await expect(details(page).locator('.pc-diagnostic[data-severity="error"]')).toContainText('Enter valid JSON');
     expect(await page.evaluate(() => window.canvasHarness.graph.nodes.n0.sections)).toEqual(before);
     expect(await page.evaluate(() => window.canvasHarness.providerCalls())).toBe(0);
 });
@@ -71,7 +71,7 @@ test('comment inspection preserves an invalid node draft for the mounted workspa
     await selectCompose(page);
     await expect(editor).toHaveValue('{"unfinished":');
     await expect(editor).toHaveAttribute('aria-invalid', 'true');
-    await expect(details(page).getByRole('alert')).toContainText('Enter valid JSON');
+    await expect(details(page).locator('.pc-diagnostic[data-severity="error"]')).toContainText('Enter valid JSON');
     const mountedInspector = await details(page).elementHandle();
     await page.getByRole('button', { name: 'Close canvas', exact: true }).click();
     await expect(details(page)).toBeHidden();

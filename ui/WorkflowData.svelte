@@ -1,4 +1,5 @@
 <script lang="ts">
+    import DiagnosticMessage from './DiagnosticMessage.svelte';
     import { onDestroy, untrack } from 'svelte';
     import type { DetailSelection, NodeDetailsActions, WorkflowDataCreate, WorkflowDataDefinition, WorkflowDataFormat, WorkflowDataResponse, WorkflowDataView, WorkflowDataVisibility } from './detail-types';
     let { model, selection, actions = {}, disabled = false, idPrefix = 'pc-workflow-data' }: { model: WorkflowDataView; selection: DetailSelection; actions?: NodeDetailsActions; disabled?: boolean; idPrefix?: string } = $props();
@@ -83,7 +84,7 @@
         try {
             const result = await action(captured, key);
             if (!alive || request !== generation || source !== identityFor() || selection.revision !== captured.revision) return;
-            if (!result.ok) { failure = result.error.message; return; }
+            if (!result.ok) { failure = result.error.code + ': ' + result.error.message; return; }
             if (kind === 'load') {
                 if (!result.data?.definition) { failure = 'The initial template could not be loaded.'; return; }
                 install(result.data.definition);
@@ -167,8 +168,8 @@
     </details>
     <div class="pc-wd-actions pc-wd-save"><button type="button" data-save-workflow-data disabled={!saveAllowed} onclick={save}>{pending === 'save' ? 'Saving…' : 'Save settings'}</button></div>
     {#if !model.available}<p class="pc-wd-help">Open an active chat to save initial settings.</p>{/if}
-    {#if model.issue}<p class="pc-wd-help">{model.issue}</p>{/if}
-    {#if failure}<p class="pc-wd-error" role="alert">{failure}</p>{/if}
+    {#if model.issue}<div class="pc-wd-help"><DiagnosticMessage issue={model.issue} /></div>{/if}
+    {#if failure}<div class="pc-wd-error"><DiagnosticMessage issue={failure} /></div>{/if}
     {#if notice || !dirty && model.notice}<p class="pc-wd-help" role="status">{notice || model.notice}</p>{/if}
 </div>
 

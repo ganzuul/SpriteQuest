@@ -3,6 +3,7 @@ import {inspectDefinitionGraph} from '../workflow/graph-validation.js?v=0.27.0';
 import {definitionChain} from '../workflow/composition-edit.js?v=0.27.0';
 import {operationFor} from '../workflow/catalog.js?v=0.27.0';
 import {validIterationRoleOverrides} from '../workflow/operations/control-nodes.js?v=0.27.0';
+import {diagnosticText,presentDiagnostic} from './diagnostics.js?v=0.27.0';
 const fail=(code,message)=>({ok:false,error:{code,message}});
 const merge=(base,extra)=>{const next=structuredClone(base??{});for(const [role,binding]of Object.entries(extra??{}))next[role]={...(next[role]??{}),...binding};return next;};
 /** Bounded metadata inspection only; never resolve connections or execute a helper. */
@@ -47,7 +48,7 @@ export function inspectIterationTextRoles(helper,definitions,inheritedRoles={},r
 }
 export function prepareIterationBindings(node,definitions,profiles=[],inheritedRoles={}) {
     const checked=inspectIterationTextRoles(node.helper,definitions,inheritedRoles,node.roleOverrides??{});
-    if(!checked.ok)return {helperKey:definitionRefKey(node.helper),roles:[],issue:checked.error.message};
+    if(!checked.ok)return {helperKey:definitionRefKey(node.helper),roles:[],issue:diagnosticText(checked.error,{operation:'iteration'}),issueDiagnostic:presentDiagnostic(checked.error,{operation:'iteration'})};
     const field=(binding,key)=>({mode:Object.hasOwn(binding,key)?binding[key]===null?'block':'override':'inherit',value:binding[key]??null,allowedModes:[{value:'inherit',label:key==='model'?'Use helper model':'Use helper connection'},{value:'override',label:'Override'},...(key==='model'?[{value:'block',label:'Use profile model'}]:[])]});
     return {helperKey:definitionRefKey(node.helper),roles:checked.data.map(row=>{
         const saved=node.roleOverrides?.[row.role]??{},total=row.calls.length;

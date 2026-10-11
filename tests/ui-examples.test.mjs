@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { createWorkflowDocumentController } from '../src/ui/document-controller.js';
 import { createWorkflowDocumentSession } from '../src/ui/document-session.js';
 import { installWorkflowExample } from '../src/workflow/examples.js';
+import { diagnosticText, presentDiagnostic } from '../src/ui/diagnostics.js?v=0.27.0';
 const graph = id => ({ id, name: id, schema: 3, runtime: 2, mode: 'native-unified', nodes: {}, wires: {}, groups: {}, roles: {}, portals: {}, definitions: {} });
 async function controllerFunction(name, env) {
     const source = await readFile(new URL('../src/ui/controller.js', import.meta.url), 'utf8'); let start = source.indexOf('function ' + name + '(');
@@ -19,8 +20,12 @@ function fixture() {
 }
 test('catalog failure leaves the workspace available and a retry restores its tiles', async () => {
     const updates = [], notices = [], tiles = [{ id: 'lesson-01', title: '1. Follow a reply from Send to Review' }]; let fail = true;
-    const env = { projectWorkflowExamples() { if (fail) throw new Error('Broken catalog'); return tiles; }, workbench: { update: value => updates.push(value) }, toast: (message, type) => notices.push({ message, type }) };
-    const refresh = await controllerFunction('refreshExampleCatalog', env); assert.equal(refresh(), false); assert.match(updates.at(-1).examplesIssue, /Broken catalog/); assert.equal(notices.at(-1).type, 'error');
+    const env = { projectWorkflowExamples() { if (fail) throw new Error('Broken catalog: private example contents'); return tiles; }, workbench: { update: value => updates.push(value) }, diagnosticText, presentDiagnostic, safe: fn => fn(),
+        globalThis: { toastr: { error: message => notices.push({ message, type: 'error' }) } } };
+    env.toast = await controllerFunction('toast', env);
+    const refresh = await controllerFunction('refreshExampleCatalog', env); assert.equal(refresh(), false);
+    assert.match(updates.at(-1).examplesIssue, /Lattice could not complete this action/); assert.doesNotMatch(updates.at(-1).examplesIssue, /Broken catalog|private example contents/);
+    assert.equal(notices.at(-1).type, 'error'); assert.match(notices.at(-1).message, /Lattice could not complete this action/); assert.doesNotMatch(notices.at(-1).message, /Broken catalog|private example contents/);
     fail = false; assert.equal(refresh(), true); assert.deepEqual(updates.at(-1), { examples: tiles, examplesIssue: '' });
 });
 test('bundled example opens a detached unsaved document and keeps native recents separate', async () => {

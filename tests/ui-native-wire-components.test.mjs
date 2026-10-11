@@ -90,7 +90,9 @@ test('NodeSearch explicit port chooser selects a real port and context/readonly 
 test('standalone search hides context control and empty results/feedback remain visible', async () => {
     await mounted('NodeSearch', searchView({ origin: null, choices: [], feedback: 'The view changed.' }), {}, async host => {
         assert.equal(host.querySelector('input[type="checkbox"]'), null);
-        assert.match(host.textContent, /No nodes match/); assert.match(host.textContent, /The view changed/);
+        assert.match(host.querySelector('.pc-empty').textContent, /No nodes are available in this view/); assert.match(host.querySelector('.pc-feedback').textContent, /The view changed/);
+        const input = host.querySelector('input[type="search"]'); input.value = 'missing'; input.dispatchEvent(new dom.window.Event('input', { bubbles: true })); flushSync();
+        assert.match(host.querySelector('.pc-empty').textContent, /No nodes match your search/); assert.match(host.querySelector('.pc-feedback').textContent, /The view changed/);
     });
 });
 

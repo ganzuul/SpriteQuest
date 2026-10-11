@@ -228,7 +228,7 @@ test('a rejected profile edit keeps its error and scrollable list inside a short
     });
     await bar(page).click();
     await picker(page).getByRole('option').first().click();
-    await expect(picker(page).getByRole('alert')).toBeVisible();
+    await expect(picker(page).locator('.pc-diagnostic[data-severity="error"]')).toBeVisible();
     const menu = await picker(page).locator('.profile-menu').boundingBox();
     const canvas = await page.locator('.pc-canvas-host').boundingBox();
     expect(menu.y).toBeGreaterThanOrEqual(canvas.y);

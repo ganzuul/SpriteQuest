@@ -1,4 +1,5 @@
 <script lang="ts">
+    import DiagnosticMessage from './DiagnosticMessage.svelte';
     import { onMount, tick } from 'svelte';
     import type { SubgraphSaveView, SubgraphSaveActions } from './types';
     let { view, actions }: { view: SubgraphSaveView; actions?: SubgraphSaveActions } = $props();
@@ -17,7 +18,7 @@
         if (!actions || !name.trim() || pending || (targetId && !view.entries.some(entry => entry.id === targetId))) return;
         const captured = view.key, request = ++generation; pending = true; failure = '';
         try { await actions.save(captured, name, targetId || null); }
-        catch { if (view.key === captured && request === generation) failure = 'The subgraph could not be saved. Please try again.'; }
+        catch { if (view.key === captured && request === generation) failure = 'The subgraph could not be saved. Check the current settings before trying the edit again.'; }
         finally { if (view.key === captured && request === generation) pending = false; }
     }
     function keys(event: KeyboardEvent) {
@@ -37,7 +38,7 @@
             <label>Name<input aria-label="Subgraph name" maxlength="80" bind:value={name} /></label>
             <label>Save as<select aria-label="Save as" bind:value={targetId}><option value="">Save new subgraph</option>{#each view.entries as entry (entry.id)}<option value={entry.id}>Update {entry.name}</option>{/each}</select></label>
             <p>Edits stay local until you save. Existing placed copies stay unchanged.</p>
-            {#if view.error || failure}<p class="pc-save-error" role="alert">{view.error || failure}</p>{/if}
+            {#if view.error || failure}<div class="pc-save-error"><DiagnosticMessage issue={view.error || failure} /></div>{/if}
             <footer><button type="button" onclick={() => actions?.close()}>Cancel</button><button type="submit" data-save-subgraph disabled={!actions || !name.trim() || pending}>{pending ? 'Saving…' : 'Save'}</button></footer>
         </form>
     </div>

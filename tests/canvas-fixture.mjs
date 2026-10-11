@@ -6,7 +6,7 @@ import { join, resolve, relative, isAbsolute } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { registerHooks } from 'node:module';
 import { after } from 'node:test';
-import { compile } from 'svelte/compiler';
+import { compiled } from './helpers/svelte-compile.mjs';
 export const dom = new JSDOM('<body><div id="canvas"></div></body>', { pretendToBeVisual: true });
 Object.assign(globalThis, { window: dom.window, document: dom.window.document, HTMLElement: dom.window.HTMLElement, CustomEvent: dom.window.CustomEvent, CSS: { escape: value => value }, getComputedStyle: dom.window.getComputedStyle });
 for (const key of ['Node', 'Element', 'Text', 'Comment', 'Document', 'HTMLDivElement', 'HTMLMediaElement', 'HTMLButtonElement', 'HTMLInputElement', 'HTMLSelectElement', 'SVGElement', 'MutationObserver']) if (!(key in globalThis)) Object.defineProperty(globalThis, key, { configurable: true, get: () => globalThis.window?.[key] });
@@ -17,13 +17,7 @@ export const version = JSON.parse(readFileSync(new URL('../manifest.json', impor
 // Compile only the current Canvas components. Focused renderer tests do not depend on a stale full UI bundle.
 const directory = await mkdtemp(join(tmpdir(), 'lattice-canvas-components-'));
 const clientURL = new URL('../node_modules/svelte/src/index-client.js', import.meta.url).href;
-for (const name of ['ArtifactPin', 'NodeCard', 'GroupCard', 'WireLayer', 'CommentFrame', 'NodeProfilePicker', 'CanvasLayer']) {
-    const sourceURL = new URL(`../ui/${name}.svelte`, import.meta.url);
-    const source = await readFile(sourceURL, 'utf8');
-    const output = compile(source, { filename: `${name}.svelte`, generate: 'client', css: 'injected' });
-    const code = output.js.code.replace(/(['"])(svelte(?:\/[^'" ]*)?)\1/g, (_, quote, specifier) => JSON.stringify(specifier === 'svelte' ? clientURL : import.meta.resolve(specifier))).replace(/(['"])(\.\.?\/[^'"]+)\1/g, (_, quote, specifier) => JSON.stringify(specifier.endsWith('.svelte') ? specifier.replace(/\.svelte$/, '.mjs') : new URL(specifier, sourceURL).href));
-    await writeFile(join(directory, `${name}.mjs`), code);
-}
+await compiled('CanvasLayer', directory);
 const entry = `import {mount,unmount,flushSync} from ${JSON.stringify(clientURL)}; import CanvasLayer from './CanvasLayer.mjs';
 export function mountCanvas(target,actions) { const component=mount(CanvasLayer,{target,props:{actions}}); flushSync(); return { ...component.getLayers(), setComments:(comments,actions)=>flushSync(()=>component.setComments(comments,actions)), setNodes:nodes=>flushSync(()=>component.setNodes(nodes)), setRecallStatus:status=>flushSync(()=>component.setRecallStatus(status)), setNodeProfiles:rows=>flushSync(()=>component.setNodeProfiles(rows)), setGroups:groups=>flushSync(()=>component.setGroups(groups)), setWires:(wires,bounds,ghost)=>flushSync(()=>component.setWires(wires,bounds,ghost)), setPositions:(nodes,groups)=>flushSync(()=>component.setPositions(nodes,groups)), destroy:()=>unmount(component) }; }`;
 await writeFile(join(directory, 'entry.mjs'), entry);

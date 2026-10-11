@@ -44,7 +44,15 @@ test('validation and Help show current data and documentation without running or
     const report = page.getByRole('dialog', {name:'Workflow validation',exact:true});
     await expect(report).toContainText(before.name);
     await expect(report).toContainText('maximum 0 model requests');
-    await expect(report).toContainText('Add Review / Publish to finish the workflow.');
+    const diagnostic = report.locator('[data-diagnostic][data-severity="error"]');
+    await expect(diagnostic.locator(':scope > p')).toHaveText('Add Review / Publish to finish a unified workflow, or a stage output to finish a helper.');
+    const technical = diagnostic.locator('details');
+    await expect(technical).not.toHaveAttribute('open', '');
+    await expect(technical.locator('code')).toBeHidden();
+    await technical.locator('summary').focus();
+    await page.keyboard.press('Enter');
+    await expect(technical).toHaveAttribute('open', '');
+    await expect(technical.locator('code')).toHaveText('MISSING_TERMINAL');
     await page.keyboard.press('Escape');
     await menubar.getByRole('menuitem', {name:'Help',exact:true}).click();
     await page.getByRole('menuitem', {name:'About Lattice',exact:true}).click();

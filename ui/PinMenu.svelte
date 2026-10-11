@@ -2,6 +2,7 @@
     import { tick } from 'svelte';
     import type { PinMenuActions, PinMenuEntry, PinMenuView } from './native-wire-types';
     let { view = null, actions = {} }: { view?: PinMenuView | null; actions?: PinMenuActions } = $props();
+    const uid = $props.id();
     let popup = $state<HTMLDivElement>();
     let left = $state(8), top = $state(8);
     let opened: string | number | undefined;
@@ -42,7 +43,7 @@
 <div class="pc-pin-menu" role="dialog" aria-label="Pin actions" aria-modal="false" tabindex="-1" bind:this={popup} onkeydown={keydown} style:left="{left}px" style:top="{top}px">
     <div class="pc-menu-head"><h2>{view.title}</h2><button type="button" aria-label="Close pin actions" onclick={() => actions.dismiss?.()}>Close</button></div>
     <p class="pc-kind">{view.kind}{view.readOnly ? ' · Read only' : ''}</p>
-    {#each view.entries as entry (entry.id)}<button type="button" class="pc-pin-action" data-entry={entry.id} disabled={blocked(entry)} title={entry.reason} onclick={() => pick(entry)}>{entry.label}</button>{:else}<p class="pc-empty">No attached links.</p>{/each}
+    {#each view.entries as entry (entry.id)}<button type="button" class="pc-pin-action" data-entry={entry.id} disabled={blocked(entry)} aria-describedby={entry.reason ? uid + '-reason-' + entry.id : undefined} onclick={() => pick(entry)}>{entry.label}</button>{#if entry.reason}<p class="pc-kind" id={uid + '-reason-' + entry.id}>{entry.reason}</p>{/if}{:else}<p class="pc-empty">No attached links.</p>{/each}
 </div>
 {/if}
 

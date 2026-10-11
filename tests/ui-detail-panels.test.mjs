@@ -304,7 +304,7 @@ test('JSON drafts preserve connected pins on complete-candidate rejection and ra
         input(f.host.querySelector('[aria-label="Sections"]'), '{broken'); f.host.querySelector('[data-save-control="sections"]').click(); flushSync();
         assert.equal(values.length, 0); assert.match(f.host.textContent, /valid JSON/);
         input(f.host.querySelector('[aria-label="Sections"]'), '[]'); f.host.querySelector('[data-save-control="sections"]').click(); await tick(); flushSync();
-        assert.deepEqual(values, [[]]); assert.match(f.host.querySelector('[role="alert"]').textContent, /port|endpoint/i);
+        assert.deepEqual(values, [[]]); assert.match(f.host.querySelector('[data-diagnostic]').textContent, /port|endpoint/i);
         assert.equal(f.host.querySelector('[aria-label="Sections"]').value, '[]'); assert.deepEqual(graph, before, 'rejected draft cannot mutate source graph, bindings or connected pins');
         const text = '  {"type":"object","required":["name"]}  ';
         f.update(node({ revision: 'schema-revision', canonicalTitle: 'JSON Decode', controls: [{ key: 'schema', label: 'Schema', editor: 'json', representation: 'json-text', allowEmpty: true, value: '' }] }));
@@ -340,7 +340,7 @@ test('preview requires an explicit matching root terminal and never turns record
     try {
         const apply = () => f.host.querySelector('[data-preview-apply]');
         assert.equal(apply().disabled, true, 'multiple terminals require explicit selection');
-        assert.match(f.host.textContent, /Truncated diagnostic/);
+        assert.match(f.host.textContent, /display limit does not mean the model stopped early/);
         change(f.host.querySelector('[aria-label="Preview output"]'), 'applyB'); assert.deepEqual(selections[0], ['source-one', 'applyB', terminal('applyB')]);
         f.update(preview({ selectedKey: 'applyB' })); assert.equal(apply().disabled, true, 'selected terminal must match the opaque handle');
         f.update(preview({ selectedKey: 'applyA' })); assert.equal(apply().disabled, false); apply().click(); assert.deepEqual(applied, [selector('applyA')]); assert.equal('text' in applied[0], false);
@@ -401,7 +401,7 @@ test('recording preview preserves actual output addresses, artifact kinds and re
     const f = await fixture('OutputPreview', preview({ choices, selectedKey: 'data', review: null, sections: [{ id: 'data', label: 'Output', kind: 'data', format: 'json-prefix-text', text: '{"value":"partial', truncated: true }, { id: 'missing', label: 'Input', kind: 'text', format: 'omitted', text: 'Artifact omitted: recording-byte-limit', truncated: false }] }), { pin: (...args) => calls.push(['pin', ...args]), follow: () => calls.push(['follow']), runHere: (...args) => calls.push(['run', ...args]), select: (...args) => calls.push(['select', ...args]) });
     try {
         assert.equal(calls.length, 0); assert.equal(f.host.querySelector('[data-preview-apply]'), null);
-        assert.equal(f.host.querySelector('[data-artifact-kind="data"] pre').textContent, '{"value":"partial'); assert.match(f.host.textContent, /JSON prefix shown as text/); assert.match(f.host.textContent, /Artifact omitted/);
+        assert.equal(f.host.querySelector('[data-artifact-kind="data"] pre').textContent, '{"value":"partial'); assert.match(f.host.textContent, /JSON prefix is shown as text/); assert.ok(f.host.querySelector('[data-diagnostic]'));
         f.host.querySelector('button[aria-pressed="false"]').click(); assert.deepEqual(calls[0], ['pin', 'source-one', output]);
         f.update(preview({ choices, selectedKey: 'data', review: null, pinned: true, followSelection: false, status: 'removed', statusDetail: 'Pinned source was removed. Recording preserved.' }));
         assert.match(f.host.textContent, /Source removed/); assert.match(f.host.textContent, /Recording preserved/); assert.equal(f.host.querySelector('[data-run-here]').disabled, true);
@@ -415,7 +415,7 @@ test('reject addresses the explicitly selected terminal rather than an unrelated
     const rejected = [];
     const f = await fixture('OutputPreview', preview({ selectedKey: 'applyB' }), { reject: value => rejected.push(value) });
     try {
-        const button = () => [...f.host.querySelectorAll('button')].find(button => button.textContent === 'Reject candidate');
+        const button = () => [...f.host.querySelectorAll('button')].find(button => button.textContent === 'Reject reply');
         assert.equal(button().disabled, true); button().click(); assert.equal(rejected.length, 0);
         f.update(preview({ selectedKey: 'applyA', status: 'stale' })); assert.equal(button().disabled, false); button().click(); assert.deepEqual(rejected, [selector('applyA')]);
     } finally { await f.close(); }
@@ -470,7 +470,7 @@ test('advanced model settings start collapsed and retain optional model drafts',
         group.open=true;change(f.host.querySelector('[aria-label="Model mode"]'), 'override');
         assert.equal(edits.length, 0); assert.equal(group.open, true, 'the opened advanced panel keeps its staged override editor visible');
         f.update(node({ revision: 'issue', model: { ...model, issue: 'Choose a connection to run.' } }));
-        assert.equal(group.open, true); assert.match(f.host.querySelector('[role="alert"]').textContent, /Choose a connection to run/);
+        assert.equal(group.open, true); assert.match(f.host.querySelector('[data-diagnostic]').textContent, /Choose a connection to run/);
     } finally { await f.close(); }
 });
 
@@ -542,10 +542,10 @@ test('modifier validation errors and drafts survive unrelated revisions and qual
     try {
         input(f.host.querySelector('[aria-label="Wrap Prefix"]'), 'Unsaved'); f.host.querySelector('[aria-label="Save Wrap settings"]').click();
         pending[0]({ ok: false, error: { code: 'INVALID', message: 'Rejected complete stack' } }); await tick(); flushSync();
-        assert.match(f.host.textContent, /Rejected complete stack/);
-        f.update(modifierView(items, { revision: 'unrelated' })); assert.equal(f.host.querySelector('[aria-label="Wrap Prefix"]').value, 'Unsaved'); assert.match(f.host.textContent, /Rejected complete stack/);
+        assert.equal(f.host.querySelector('[data-diagnostic]').dataset.severity, 'error');
+        f.update(modifierView(items, { revision: 'unrelated' })); assert.equal(f.host.querySelector('[aria-label="Wrap Prefix"]').value, 'Unsaved'); assert.equal(f.host.querySelector('[data-diagnostic]').dataset.severity, 'error');
         f.update(modifierView(items, { address: { ...address, workflowId: 'other-root' } })); assert.equal(f.host.querySelector('[aria-label="Wrap Prefix"]').value, '<');
-        f.update(modifierView(items, { revision: 'return' })); assert.equal(f.host.querySelector('[aria-label="Wrap Prefix"]').value, 'Unsaved'); assert.match(f.host.textContent, /Rejected complete stack/);
+        f.update(modifierView(items, { revision: 'return' })); assert.equal(f.host.querySelector('[aria-label="Wrap Prefix"]').value, 'Unsaved'); assert.equal(f.host.querySelector('[data-diagnostic]').dataset.severity, 'error');
         f.host.querySelector('[aria-label="Save Wrap settings"]').click(); input(f.host.querySelector('[aria-label="Wrap Prefix"]'), 'Newer');
         pending[1](success()); await tick(); flushSync();
         assert.equal(f.host.querySelector('[aria-label="Wrap Prefix"]').value, 'Newer');
@@ -593,7 +593,7 @@ test('structured row and raw views share parent Save validation and keep invalid
         f.host.querySelector('[data-save-control="sections"]').click(); await tick(); flushSync(); assert.deepEqual(values, [[{ name: 'intro', text: 'New text' }]]);
         f.host.querySelector('[aria-label="Edit Sections as JSON"]').click(); flushSync();
         input(f.host.querySelector('[aria-label="Sections"]'), '{unfinished'); f.host.querySelector('[data-save-control="sections"]').click(); flushSync();
-        assert.equal(values.length, 1); assert.equal(f.host.querySelector('[aria-label="Sections"]').getAttribute('aria-invalid'), 'true'); assert.match(f.host.querySelector('[role="alert"]').textContent, /valid JSON/);
+        assert.equal(values.length, 1); assert.equal(f.host.querySelector('[aria-label="Sections"]').getAttribute('aria-invalid'), 'true'); assert.match(f.host.querySelector('[data-diagnostic]').textContent, /valid JSON/);
         f.update(node({ controls, revision: 'unrelated' })); assert.equal(f.host.querySelector('[aria-label="Sections"]').value, '{unfinished'); assert.equal(f.host.querySelector('[aria-label="Sections"]').getAttribute('aria-invalid'), 'true');
         f.update(node({ controls, revision: 'read-only', readOnly: true })); input(f.host.querySelector('[aria-label="Sections"]'), '[]'); f.host.querySelector('[data-save-control="sections"]').dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true })); assert.equal(values.length, 1);
     } finally { await f.close(); }
@@ -718,7 +718,7 @@ for (const changeWhilePending of ['newer-draft', 'qualified-return', 'editor-con
             assert.equal(f.host.querySelector('[aria-label="Words"]').value, expected);
             if (changeWhilePending === 'newer-save') {
                 pending[1]({ ok: false, error: { code: 'LATEST', message: 'Latest validation failure' } }); await tick(); flushSync();
-                assert.match(f.host.textContent, /Latest validation failure/); assert.equal(f.host.querySelector('[aria-label="Words"]').value, '["After"]', 'the older acknowledgment did not erase the newer pending save');
+                assert.equal(f.host.querySelector('[data-diagnostic]').dataset.severity, 'error'); assert.equal(f.host.querySelector('[aria-label="Words"]').value, '["After"]', 'the older acknowledgment did not erase the newer pending save');
             } else if (changeWhilePending !== 'editor-contract') {
                 f.update(node({ revision: 'undo-control', controls: [control] }));
                 assert.equal(f.host.querySelector('[aria-label="Words"]').value, expected, 'a stale acknowledgment cannot erase a later draft or a draft restored on a new visit');
@@ -740,7 +740,7 @@ test('an older modifier settings acknowledgment cannot release a newer pending S
         pending[0](success()); await tick(); flushSync();
         assert.equal(f.host.querySelector('[aria-label="Save Wrap settings"]').disabled, true, 'the older success must not release the latest validation');
         pending[1]({ ok: false, error: { code: 'LATEST', message: 'Latest modifier failure' } }); await tick(); flushSync();
-        assert.match(f.host.textContent, /Latest modifier failure/); assert.match(f.host.textContent, /Unsaved/); assert.equal(f.host.querySelector('[aria-label="Wrap Prefix"]').value, '[');
+        assert.equal(f.host.querySelector('[data-diagnostic]').dataset.severity, 'error'); assert.match(f.host.textContent, /Unsaved/); assert.equal(f.host.querySelector('[aria-label="Wrap Prefix"]').value, '[');
     } finally { await f.close(); }
 });
 
@@ -764,13 +764,13 @@ test('model binding issues remain visible outside collapsed advanced settings an
         const group = f.host.querySelector('[data-model-controls]');
         assert.equal(group.open, false);
         assert.equal(group.querySelector('summary').textContent,'Advanced model settings');
-        assert.equal(f.host.textContent.split(issue).length - 1, 1, 'the detailed binding failure must appear only once');
-        assert.equal(f.host.querySelector('[role="alert"]').textContent, issue);
+        assert.equal(f.host.querySelectorAll('[data-diagnostic]').length, 1, 'the detailed binding failure must appear only once');
+        assert.equal(f.host.querySelector('[data-diagnostic]').dataset.severity, 'error');
         assert.doesNotMatch(group.textContent, /Effective connection:/, 'the identical effective failure is omitted after trimming');
         assert.match(group.textContent, /Inherited from Analysis/);
         f.update(node({ revision: 'distinct-effective', controls: [], model: { ...model, effective: 'Reasoner · saved-model' } }));
         assert.match(group.textContent, /Effective connection: Reasoner · saved-model/, 'an effective binding distinct from the issue remains useful');
-        assert.equal(f.host.textContent.split(issue).length - 1, 1);
+        assert.equal(f.host.querySelectorAll('[data-diagnostic]').length, 1);
         assert.equal(group.querySelector('summary').textContent,'Advanced model settings');
     } finally { await f.close(); }
 });

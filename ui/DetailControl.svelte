@@ -1,4 +1,5 @@
 <script lang="ts">
+    import DiagnosticMessage from './DiagnosticMessage.svelte';
     import StructuredControl from './StructuredControl.svelte';
     import type { DetailControl } from './detail-types';
     let { control, text, error = '', disabled = false, pending = false, idPrefix, ontext, onvalue, onnumber, onsave }: {
@@ -39,7 +40,7 @@
     {#if control.editor === 'json' || control.editor === 'lines'}<button type="button" data-save-control={control.key} disabled={disabled || pending} onclick={() => { if (!disabled && !pending) onsave(); }}>{pending ? 'Validating…' : 'Save ' + control.label}</button>{/if}
     {#if control.help}<small>{control.help}</small>{/if}
     {#if control.exposureNote}<small>{control.exposureNote}</small>{:else if provenance()}<small>{provenance()} · Effective: {control.effective}</small>{/if}
-    {#if error}<p id={idPrefix + '-error'} class="pc-detail-error" role="alert">{error}</p>{/if}
+    {#if error}<div id={idPrefix + '-error'} class="pc-detail-error"><DiagnosticMessage issue={error} context={{ inputLabel: control.label }} /></div>{/if}
 </div>
 
 <style>
@@ -48,7 +49,7 @@
     input:not([type='checkbox']), select, textarea { width: 100%; min-width: 0; box-sizing: border-box; margin-top: 4px; min-height: 28px; padding: 5px 7px; border: 1px solid var(--pc-border); border-radius: 4px; background: var(--pc-field); color: var(--pc-text); font: inherit; }
     textarea { display: block; min-height: 88px; resize: vertical; line-height: 1.5; }
     .pc-control-number { display: grid; grid-template-columns: minmax(0, 1fr) minmax(58px, 38%); align-items: center; gap: 3px 8px; }
-    .pc-control-number input { margin-top: 0; padding-right: 2px; } .pc-control-number :is(small, p) { grid-column: 1 / -1; }
+    .pc-control-number input { margin-top: 0; padding-right: 2px; } .pc-control-number :is(small, .pc-detail-error) { grid-column: 1 / -1; }
     .pc-control-segments { display: flex; margin-top: 4px; gap: 0; min-width: 0; padding: 3px; border-radius: 4px; background: var(--pc-field); }
     .pc-control-segments label { position: relative; flex: 1; min-width: 0; text-align: center; }
     .pc-control-segments input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }

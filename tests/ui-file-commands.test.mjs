@@ -10,6 +10,7 @@ import { fixtureLibraryWorkflow as createLibraryWorkflow } from './helpers/workf
 import { makeLocalCopy } from '../src/workflow/definition-library.js';
 import { serializeWorkflowDocument, parseWorkflowDocument } from '../src/workflow/document-file.js';
 import { exportWorkflow, parseWorkflow } from '../src/workflow/packages.js';
+import { presentDiagnostic } from '../src/ui/diagnostics.js?v=0.27.0';
 
 const accepted = result => { assert.equal(result.ok, true, JSON.stringify(result.error)); return result.data; };
 const graph = id => ({ id, name: id, schema: 3, runtime: 2, mode: 'native-unified', nodes: {}, wires: {}, groups: {}, roles: {}, portals: {}, definitions: {} });
@@ -85,15 +86,17 @@ async function exportEnvironment(root = graph('whole-root')) {
     const blobs = new Map(), downloads = [], revoked = [], later = [], notices = [];
     const env = { current: root, Blob, exportGraph: value => JSON.stringify(exportWorkflow(value)),
         URL: { createObjectURL(blob) { const url = 'blob:workflow-' + blobs.size; blobs.set(url, blob); return url; }, revokeObjectURL: url => revoked.push(url) },
-        setTimeout: callback => later.push(callback), document: { createElement(tag) { assert.equal(tag, 'a'); return { click() { downloads.push({ file: this.download, blob: blobs.get(this.href) }); } }; } }, toast: (message, type) => notices.push({ message, type }),
-    }; env.downloadGraphViewJSON = await controllerFunction('downloadGraphViewJSON', env); return { env, downloads, revoked, later, notices, export: await controllerFunction('onExportGraph', env) };
+        setTimeout: callback => later.push(callback), document: { createElement(tag) { assert.equal(tag, 'a'); return { click() { downloads.push({ file: this.download, blob: blobs.get(this.href) }); } }; } }, presentDiagnostic, safe: fn => fn(),
+        globalThis: { toastr: { error: message => notices.push({ message, type: 'error' }) } },
+    }; env.toast = await controllerFunction('toast', env); env.downloadGraphViewJSON = await controllerFunction('downloadGraphViewJSON', env); return { env, downloads, revoked, later, notices, export: await controllerFunction('onExportGraph', env) };
 }
 test('portable Export reports an unavailable workflow without downloading null', async () => {
     const f = await exportEnvironment(); f.env.exportGraph = () => null; assert.equal(f.export(), false); assert.equal(f.notices[0].type, 'error'); assert.deepEqual(f.downloads, []);
 });
 test('portable Export reports failed download clicks and still defers object URL cleanup', async () => {
-    const f = await exportEnvironment(); f.env.document.createElement = () => ({ click() { throw new Error('Download failed'); } });
-    assert.equal(f.export(), false); assert.deepEqual(f.notices, [{ message: 'Download failed', type: 'error' }]); assert.deepEqual(f.revoked, []); assert.equal(f.later.length, 1); f.later[0](); assert.deepEqual(f.revoked, ['blob:workflow-0']);
+    const f = await exportEnvironment(); f.env.document.createElement = () => ({ click() { throw new Error('Download failed: private workflow contents'); } });
+    assert.equal(f.export(), false); assert.equal(f.notices.length, 1); assert.equal(f.notices[0].type, 'error'); assert.match(f.notices[0].message, /Lattice could not complete this action/); assert.doesNotMatch(f.notices[0].message, /Download failed|private workflow contents/);
+    assert.deepEqual(f.downloads, []); assert.deepEqual(f.revoked, []); assert.equal(f.later.length, 1); f.later[0](); assert.deepEqual(f.revoked, ['blob:workflow-0']);
 });
 test('portable Export from a child tab receives the root graph and strips bindings and ownership without changing local work', async () => {
     const { root, views } = localWorkspace(), before = structuredClone(root), activeKey = views.readEditor().view.key, f = await exportEnvironment(root); f.env.graphViews = views;

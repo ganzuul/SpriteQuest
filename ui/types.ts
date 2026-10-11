@@ -77,12 +77,14 @@ export interface WorkbenchActions {
 }
 
 
-export interface WorkflowNodeView { id: string; title: string; canonicalTitle: string; alias: string; compact: boolean; operation: string; family: string; phase: string; input: string; output: string; terminal: boolean; modelRole: string | null; profileId: string; model: string; effective: string; enabled: boolean }
+export interface WorkflowNodeView { id: string; title: string; canonicalTitle: string; alias: string; compact: boolean; operation: string; family: string; phase: string; input: string; output: string; terminal: boolean; modelRole: string | null; profileId: string; model: string; effective: string; enabled: boolean; issue?: string; issueDiagnostic?: import('./diagnostic-types').DiagnosticView }
 export interface WorkflowAddress { workflowId: string; instancePath: string[]; nodeId: string }
 export type WorkflowTarget = (WorkflowAddress & { portId: string }) | { kind: 'terminal'; address: WorkflowAddress };
 export interface WorkflowReviewSelector { handleId: string; runId: string; terminal: { kind: 'terminal'; address: WorkflowAddress } }
-export interface WorkflowBoundedResultView { kind: 'bounded'; ok: boolean; error: string; actualCalls: number; callBound: number; runId?: string; sections: { kind: string; format: string; text: string; truncated: boolean }[]; previewTarget?: WorkflowTarget | null; tokenMethods: string[]; applyAvailable: boolean; selectedReviewHandle?: WorkflowReviewSelector | null; applyIssue: string }
+export interface WorkflowBoundedResultView { kind: 'bounded'; ok: boolean; error: string; errorDiagnostic?: import('./diagnostic-types').DiagnosticView; applyDiagnostic?: import('./diagnostic-types').DiagnosticView; previewStatus?: string | null; actualCalls: number; callBound: number; runId?: string; sections: { kind: string; format: string; text: string; truncated: boolean }[]; previewTarget?: WorkflowTarget | null; tokenMethods: string[]; applyAvailable: boolean; selectedReviewHandle?: WorkflowReviewSelector | null; applyIssue: string }
 export interface WorkflowView {
+    diagnostics?: import('./diagnostic-types').DiagnosticView[];
+    enabled?: boolean;
     graphId: string; name: string; phase: string; selectedId: string | null;
     profiles: { id: string; name: string }[];
     families: { name: string; description: string; operations: { id: string; title: string; phase: string; compatible: boolean }[] }[];

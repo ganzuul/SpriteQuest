@@ -1,4 +1,5 @@
 <script lang="ts">
+    import DiagnosticMessage from './DiagnosticMessage.svelte';
     import type { DetailModifier, DetailModifierOption } from './detail-types';
     type ModifierDraft = { settings: Record<string, unknown>; error: string; pending: boolean; dirty: boolean };
     let { items, options, disabled, busy, drafts, error, idPrefix, onquick, onadd, onenable, onremove, onmove, ondraft, onsave }: {
@@ -53,12 +54,12 @@
                     {/each}
                     <button type="button" aria-label={'Save ' + label + ' settings'} disabled={disabled || !!local?.pending || !local?.dirty} onclick={() => { if (!disabled && !local?.pending && local?.dirty) onsave(item.id); }}>{local?.pending ? 'Validating…' : 'Save settings'}</button>
                 </details>{/if}
-                {#if local?.error}<p class="pc-modifier-error" role="alert">{local.error}</p>{/if}
+                {#if local?.error}<div class="pc-modifier-error"><DiagnosticMessage issue={local.error} /></div>{/if}
             </div>
         {/each}
     </div>{/if}
     {#if busy}<small role="status">Validating modifiers…</small>{/if}
-    {#if error}<p class="pc-modifier-error" role="alert">{error}</p>{/if}
+    {#if error}<div class="pc-modifier-error"><DiagnosticMessage issue={error} /></div>{/if}
 </section>
 
 <style>

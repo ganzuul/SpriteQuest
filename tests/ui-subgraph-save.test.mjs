@@ -4,7 +4,7 @@ import { readFile, mkdtemp, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve, relative, isAbsolute } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { compile } from 'svelte/compiler';
+import { compiled as compileComponent } from './helpers/svelte-compile.mjs';
 import { JSDOM } from 'jsdom';
 
 const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true });
@@ -20,10 +20,7 @@ const initial = { key: 'save/local-1', name: 'Cleanup', targetId: 'saved-cleanup
 async function fixture(view, actions) {
     const directory = await mkdtemp(join(tmpdir(), 'lattice-subgraph-save-')), host = document.createElement('div'); document.body.append(host); let instance;
     async function compiled(name, source) {
-        const result = compile(source, { filename: name + '.svelte', generate: 'client', css: 'injected' });
-        assert.deepEqual(result.warnings.filter(warning => warning.code.startsWith('a11y')), []);
-        const file = join(directory, name + '.mjs'), code = result.js.code.replace(/(['"])(svelte(?:\/[^'"]*)?)\1/g, (_, quote, specifier) => JSON.stringify(specifier === 'svelte' ? client : import.meta.resolve(specifier)));
-        await writeFile(file, code); return file;
+        return (await compileComponent(name, directory, source)).path;
     }
     const cleanup = async () => { if (instance) await unmount(instance); host.remove(); const scope = relative(resolve(tmpdir()), resolve(directory)); assert.ok(scope && !scope.startsWith('..') && !isAbsolute(scope)); await rm(directory, { recursive: true, force: true }); };
     try {
@@ -55,7 +52,7 @@ test('save dialog owns modal keys, preserves failed drafts and resets captures f
         f.host.addEventListener('keydown', event => bubbled.push(event.key));
         const dialog = f.host.querySelector('[role="dialog"]'), name = f.host.querySelector('[aria-label="Subgraph name"]');
         input(name, 'Draft'); await f.update({ ...initial, error: 'Cannot save disconnected required output.' });
-        assert.equal(name.value, 'Draft'); assert.match(f.host.querySelector('[role="alert"]').textContent, /Cannot save/);
+        assert.equal(name.value, 'Draft'); assert.ok(f.host.querySelector('[data-diagnostic]')); assert.equal(f.host.querySelector('[role="alert"]'), null, 'persistent diagnostics avoid duplicate live announcements');
         dialog.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true })); flushSync();
         assert.deepEqual(calls, ['close']); assert.deepEqual(bubbled, []);
         const first = f.host.querySelector('[aria-label="Close save subgraph"]'), last = f.host.querySelector('[data-save-subgraph]');
