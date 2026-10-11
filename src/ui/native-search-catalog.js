@@ -1,3 +1,4 @@
+import { isScopedSystemOperation } from '../workflow/system-capabilities.js?v=0.27.0';
 import { deferredNodeDescription } from './configured-node-creation.js?v=0.27.0';
 import { ARTIFACT_KINDS, FAMILIES, OPERATIONS, describeOperation, operationDefaults } from '../workflow/catalog.js?v=0.27.0';
 import { cloneDefinitionData, definitionRefKey } from '../workflow/definitions.js?v=0.27.0';
@@ -103,7 +104,7 @@ export function prepareNativeSearchCatalog(scope, options = {}) {
         || ['checkedLibraryEntries', 'checkedLibraryClosures'].some(key => settings[key] !== undefined && !Array.isArray(settings[key]))) return fail('Expected the checked schema-3 scope and local shelf metadata.');
     const phase = input.mode.slice(7), choices = [], commands = new Map();
     const addOperation = (operation, variant, label, controls, artifactKind) => {
-        if (input.inDefinition && (rootOnly.has(operation) || OPERATIONS[operation].rootOnly)) return;
+        if (input.inDefinition && (rootOnly.has(operation) || OPERATIONS[operation].rootOnly && !isScopedSystemOperation({type:'workflow',operation}))) return;
         if (operation === 'reroute' && !artifactKind) artifactKind = 'text';
         if (OPERATIONS[operation].family === 'Transpose' && !variant) controls = { inputKind: 'text', ...controls };
         let description = describeOperation(input, { type: 'workflow', ...operationDefaults(operation, { mode: controls?.mode }), ...controls,

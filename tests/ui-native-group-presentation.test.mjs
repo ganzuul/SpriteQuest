@@ -15,6 +15,7 @@ import * as H from '../src/history.js?v=0.27.0';
 import {projectRecallView} from '../src/ui/recall-projection.js?v=0.27.0';
 import { readNodePresentation } from '../src/ui/node-palette.js?v=0.27.0';
 import { viewIdentityKey } from '../src/ui/view-state.js?v=0.27.0';
+import { restoreSystemViews } from '../src/ui/system-authoring-views.js?v=0.27.0';
 import { createConfiguredNodeSession } from '../src/ui/configured-node-creation.js?v=0.27.0';
 import { isCommentFrame } from '../src/canvas/comment-frames.js?v=0.27.0';
 import { operationFor } from '../src/workflow/catalog.js?v=0.27.0';
@@ -31,11 +32,14 @@ function controllerFunction(name, env) {
     env.viewIdentityKey ??= viewIdentityKey;
     env.pendingCommentPresentation ??= new WeakMap();
     env.pendingSubgraphPresentation ??= new WeakMap();
+    env.pendingSystemPresentation ??= new WeakMap(); env.restoreSystemViews ??= restoreSystemViews;
+    env.documentTransition ??= false; env.workflowState ??= { busy: false }; env.workflowRuntime ??= {};
     env.isCommentFrame ??= isCommentFrame;
     env.operationFor ??= operationFor;
     env.groupMembers ??= groupMembers;
     if (name !== 'applyPendingCommentPresentation') env.applyPendingCommentPresentation ??= controllerFunction('applyPendingCommentPresentation', env);
-    if (name === 'activateEditorDraw') env.applyPendingSubgraphPresentation ??= controllerFunction('applyPendingSubgraphPresentation', env);
+    if (name === 'activateEditorDraw') { env.applyPendingSubgraphPresentation ??= controllerFunction('applyPendingSubgraphPresentation', env); env.applyPendingSystemPresentation ??= controllerFunction('applyPendingSystemPresentation', env); }
+    if (name === 'selectionMenuCapabilities') env.rootSystemWritable ??= controllerFunction('rootSystemWritable', env);
     const start = controllerText.indexOf('function ' + name + '('); if (start < 0) return null;
     const next = controllerText.indexOf('\nfunction ', start + 1);
     return Function('env', 'with(env){' + controllerText.slice(start, next < 0 ? undefined : next) + ';return ' + name + ';}')(env);

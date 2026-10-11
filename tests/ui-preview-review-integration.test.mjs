@@ -27,6 +27,8 @@ function controllerFunction(name, env) {
     env.recallProjection ??= {nodes:{}}; env.recallSetupView ??= () => null;
     env.activeEditRoot ??= () => env.current;
     env.readNodePresentation ??= readNodePresentation;
+    env.documentTransition ??= false;
+    if (name === 'selectionMenuCapabilities') env.rootSystemWritable ??= controllerFunction('rootSystemWritable', env);
     const start = controllerText.indexOf('function ' + name + '(');
     if (start < 0) return null;
     const end = controllerText.indexOf('\nfunction ', start + 1);

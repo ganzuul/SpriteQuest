@@ -151,3 +151,23 @@ test('incompatible clocks and mismatched destinations are rejected before metada
     assert.equal((await setup.save(key, 'story-clock', 'lattice-default-clock', { ...wrong, targetId: 'lattice-default-clock' })).ok, false);
     assert.equal(context.chatMetadata.latticeDocumentCatalog, undefined);
 });
+
+
+test('addressed reserved notes and outcomes load and seed sibling defaults without changing Main', async () => {
+ const {resolveSystemNode}=await import('../src/workflow/system-capabilities.js');const f=fixture();
+ f.catalog.define({targetId:'lattice-default-notes',name:'Main notes',format:'text',content:'Main unchanged',visibility:{kind:'public'}});const original=f.catalog.snapshot().data;
+ for(const operation of ['read-file','commit-outcomes'])for(const instance of ['one','two']){
+  const address={workflowId:'main',instancePath:[instance],nodeId:'data'},resolved=resolveSystemNode({id:'data',type:'workflow',operation},address).data;
+  const targetId=resolved.defaults[0].targetId,key=f.setup.snapshot().key,beforeLoad=f.catalog.snapshot().data;
+  const loaded=f.setup.load(key,operation,targetId,true,address);assert.equal(loaded.ok,true,JSON.stringify(loaded.error));assert.equal(loaded.data.definition.targetId,targetId);
+  assert.deepEqual(f.catalog.snapshot().data,beforeLoad,'load never provisions');
+  const definition={...loaded.data.definition,content:operation==='read-file'?instance+' edited':'[]',visibility:{kind:'actor-private',actorId:'actor-'+instance}};
+  assert.equal((await f.setup.save(key,operation,targetId,definition,true,address)).ok,true);
+  const before=f.catalog.capture().data.documents;assert.equal((await f.setup.saveVisibility(f.setup.snapshot().key,operation,targetId,{kind:'public'},address)).ok,true);
+  assert.equal(f.catalog.definition(targetId).data.content,definition.content);assert.equal(f.catalog.definition('lattice-default-notes').data.content,'Main unchanged');
+  assert.equal(before.filter(d=>d.targetId!==targetId).every(d=>JSON.stringify(d)===JSON.stringify(f.catalog.definition(d.targetId).data)),true);
+ }
+ const address={workflowId:'main',instancePath:['one'],nodeId:'data'};assert.equal(f.setup.load(f.setup.snapshot().key,'read-file','lattice-system-notes-forged',true,address).ok,false);
+ const custom={targetId:'shared',name:'Shared',format:'text',content:'Shared value',visibility:{kind:'public'}};f.catalog.define(custom);assert.equal(f.setup.load(f.setup.snapshot().key,'read-file','shared',true,address).data.definition.content,'Shared value');
+ assert.equal(f.setup.load(f.setup.snapshot().key,'story-clock','lattice-default-clock',true,address).data.definition.targetId,'lattice-default-clock');
+});

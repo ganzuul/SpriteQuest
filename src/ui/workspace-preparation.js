@@ -1,3 +1,4 @@
+import { resolveSystemNode } from '../workflow/system-capabilities.js?v=0.27.0';
 import {recallControlLabel} from '../workflow/recall-labels.js?v=0.27.0';
 import { preparedViewContentIdentity } from './graph-view-session.js?v=0.27.0';
 import { prepareIterationBindings } from './iteration-bindings.js?v=0.27.0';
@@ -43,6 +44,10 @@ export function prepareWorkspaceViews(root, options = {}) {
         const identity = view.instancePath.length ? { kind: 'instance', workflowId: root.id, instancePath: [...view.instancePath] } : rootIdentity(root);
         const wrapper = view.instancePath.length ? definitionChain(root, view.instancePath).at(-1) : null;
         if (wrapper) navigation.push({ identity, label: (readNodePresentation(wrapper.node).alias || (typeof wrapper.node.title === 'string' ? wrapper.node.title : '') || wrapper.definition.name || view.instancePath.at(-1)).slice(0, 256), readOnly: !view.editable });
+        const effectiveNodes = Object.fromEntries(Object.entries(view.effectiveNodes).map(([id, node]) => {
+            const resolved = resolveSystemNode(node, { workflowId: root.id, instancePath: view.instancePath, nodeId: id });
+            return [id, resolved.ok ? resolved.data.node : node];
+        }));
         const drawBase = prepareEditorDrawBase(view, root.definitions, nodeId => primitivePhases.get(addressKey({ workflowId: root.id, instancePath: view.instancePath, nodeId })));
         // Saved primitive null means inheritance; only an explicit enclosing
         // instance null map blocks it. Cache that source distinction with the view.
@@ -67,7 +72,7 @@ export function prepareWorkspaceViews(root, options = {}) {
             const role = node.modelRole ?? drawBase.nativeCards[node.id]?.modelRole;
             if (Object.keys(binding).length || chain.some(owner => Object.keys(owner.node.roleOverrides?.[role] ?? {}).some(key => ['profileId','model'].includes(key) && !node[key]))) drawBase.instanceBindingSources[node.id] = true;
         }
-        return { identity, ...(view.definitionRef ? { definitionRef: view.definitionRef } : {}), readOnly: !view.editable, savedGraph: view.savedGraph, effectiveNodes: view.effectiveNodes, interface: view.interface, ports: view.ports, drawBase };
+        return { identity, ...(view.definitionRef ? { definitionRef: view.definitionRef } : {}), readOnly: !view.editable, savedGraph: view.savedGraph, effectiveNodes, interface: view.interface, ports: view.ports, drawBase };
     });
     const inventory=planner.inventory;
     const idleRunRows=projectRunRows({plan:{workflowId:root.id,hierarchy:inventory.hierarchy},nodes:inventory.primitives.map(unit=>({...unit,included:unit.enabled!==false,status:'not-run',attempts:0,durationMs:null,request:null}))});
@@ -181,7 +186,7 @@ export function projectWorkspacePanels(editor, workflow, state, revision, select
     if (!authored || dependencies.some((value, index) => value !== authored.dependencies[index])) {
         const produced = (() => {
             const fileInput = saved?.operation === 'file-input' ? { fileName: typeof saved.fileName === 'string' ? saved.fileName : '', loaded: saved.loaded === true } : null;
-            const workflowData = saved ? projectWorkflowData(editor.prepared.effectiveNodes[selectedId] ?? saved, workflow.workflowData ?? {}, !(editor.readOnly || library)) : null;
+            const workflowData = saved ? projectWorkflowData(editor.prepared.effectiveNodes[selectedId] ?? saved, workflow.workflowData ?? {}, !(editor.readOnly || library), library ? undefined : address) : null;
             let fieldCache = immutableScope ? authoredFieldCaches.get(contentIdentity) : null;
             if (!fieldCache) { fieldCache = new Map(); if (immutableScope) authoredFieldCaches.set(contentIdentity, fieldCache); }
             const fieldKey = JSON.stringify([selectedId, workflowData?.controlKey]);
@@ -224,7 +229,7 @@ export function projectWorkspacePanels(editor, workflow, state, revision, select
             const interfacePort = metadata?.boundary ? editor.prepared.interface.find(port => port.id === saved?.interfacePortId && port.boundaryNodeId === selectedId) : null;
             const boundary = interfacePort ? { id: interfacePort.id, label: interfacePort.label, direction: interfacePort.direction, kind: interfacePort.kind, required: interfacePort.required, kinds: [...ARTIFACT_KINDS] } : null;
             const commentDetails = isCommentFrame(saved) ? { selection, comment: { id: saved.id, x: saved.x, y: saved.y, w: saved.w, h: saved.h, title: saved.title ?? 'Comment', content: saved.content ?? '', color: saved.color ?? '#637d89', moveContents: saved.moveContents !== false, selected: true, readOnly: editor.readOnly || library } } : null;
-            const nodeDetails = saved && metadata && !commentDetails ? { ...selection, title: boundary?.label ?? (presentation.alias || (typeof saved.title === 'string' ? saved.title : metadata.canonicalTitle)), canonicalTitle: metadata.canonicalTitle, operation: saved.operation, iconPath: metadata.iconPath, family: metadata.family, familyColor: metadata.familyColor, phase: effective?.phase ?? phaseForNode(graph,saved) ?? metadata.phase ?? graph.mode.slice(7), phaseEditable: graph.mode === 'native-unified' && OPERATIONS[saved.operation]?.phase === 'both', alias: presentation.alias, compact: presentation.compact, enabled: saved.enabled !== false, readOnly: editor.readOnly || library, canPresent: true, controls, ...(fileInput ? { fileInput } : {}), ...(boundary ? { boundary } : {}),
+            const nodeDetails = saved && metadata && !commentDetails ? { ...selection, title: boundary?.label ?? (presentation.alias || (typeof saved.title === 'string' ? saved.title : metadata.canonicalTitle)), canonicalTitle: metadata.canonicalTitle, operation: saved.operation, system: saved.type === 'subgraph', iconPath: metadata.iconPath, family: metadata.family, familyColor: metadata.familyColor, phase: effective?.phase ?? phaseForNode(graph,saved) ?? metadata.phase ?? graph.mode.slice(7), phaseEditable: graph.mode === 'native-unified' && OPERATIONS[saved.operation]?.phase === 'both', alias: presentation.alias, compact: presentation.compact, enabled: saved.enabled !== false, readOnly: editor.readOnly || library, canPresent: true, controls, ...(fileInput ? { fileInput } : {}), ...(boundary ? { boundary } : {}),
                 model: metadata.modelRole && (effective?.effective !== 'No model call' || saved.model || saved.profileId || Object.keys(editor?.prepared.drawBase.bindingBlocks?.[selectedId] ?? {}).length) ? { role: saved.modelRole ?? metadata.modelRole, roleEditable: true, editable: !library, profileDefaultModel: editor.prepared.drawBase.profileDefaultModels?.[selectedId] ?? !!saved.profileId, profile: field('profileId', workflow.profiles.map(profile => ({ value: profile.id, label: profile.name }))), model: field('model'), effective: effective?.effective || (library ? [editor.prepared.effectiveNodes[selectedId]?.profileId ?? graph.roles?.[saved.modelRole ?? metadata.modelRole]?.profileId,editor.prepared.effectiveNodes[selectedId]?.model ?? graph.roles?.[saved.modelRole ?? metadata.modelRole]?.model].filter(Boolean).join(' · ') : ''), source: editor.prepared.drawBase.instanceBindingSources?.[selectedId] ? 'Containing instance override' : saved.profileId || saved.model ? 'Node override' : 'Inherited from ' + (saved.modelRole ?? metadata.modelRole), ...(effective?.issue ? {issue: effective.issue} : {}) } : null,
                 helperBindings: saved.operation === 'for-each' ? { ...editor.prepared.drawBase.iterationBindings?.[selectedId], editable: !(editor.readOnly || library) } : null,
                 ...(workflowData ? { workflowData } : {}),

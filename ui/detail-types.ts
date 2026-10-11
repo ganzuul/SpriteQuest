@@ -60,7 +60,7 @@ export interface NodeDetailsView extends DetailSelection {
     editorContractKey?: string;
     recall?: RecallNodeStatus;
     title: string; canonicalTitle: string; iconPath: string; family: string; phase: string;
-    operation?: string; familyColor?: string; phaseEditable?: boolean;
+    system?: boolean; operation?: string; familyColor?: string; phaseEditable?: boolean;
     alias: string; compact: boolean; enabled: boolean; readOnly: boolean; canPresent: boolean;
     controls: DetailControl[]; model: DetailModelBinding | null; helperBindings?: DetailHelperBindings | null;
     workflowData?: WorkflowDataView | null;

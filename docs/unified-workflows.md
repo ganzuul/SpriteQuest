@@ -64,6 +64,20 @@ Wires determine dependencies. A preparation label on an independent node does no
 
 Nodes usable in either stage expose **Stage → Preparation / Response** in Details. Those settings place an operation around the generation boundary within the same workflow document. Conditions and branch outcomes distinguish **completed**, **skipped** and **unresolved**. A skipped optional contribution can be omitted by Join; an unresolved required contribution holds its dependents rather than treating uncertainty as false.
 
+## Combine editable systems in one Main
+
+Keep one **On Send → Generate Reply → Review / Publish** in Main. Package the item's effect, weather rules and relationship state as separate static bodies. **Workflow → Add system…** chooses a saved body, binds its typed inputs and destinations, previews the connections and adds an editable instance. It targets Main even when a body tab is focused. For a preparation Guidance output, choose an existing Compose Guidance merge or create one when the generator's guidance input is empty. Occupied destination pins require an explicit choice and are not replaced automatically. A state-only system can stage effects without contributing prompt text.
+
+Main's Compose can receive original Guidance sections in the order you authored. Each row's **Kind**, **Required input** and **Skipped source** control the contract. Choose optional Guidance with **Omit section** for a system that may skip. A completed source overrides the Text fallback; an unconnected optional source keeps it. Skipped optional sources may omit or fall back, while required and unresolved paths retain their dependency rules. In template mode, an omitted `{{section:Name}}` is empty.
+
+**Token budget** can cap the complete composition; 0 adds no Compose cap. Overflow holds without truncation, and Generate Reply still checks its final budget. Preview records the exact rendered text and reports ordered contributions. Original selected-actor Character Direction or Recall Guidance retains its live authorization after merging. Private Text/Data or copied labels cannot obtain that permission through Compose.
+
+Connections govern execution. Body tabs retain your editing view, not a separate story attachment or generation. **Details → Run this system** on the wrapper controls the entire body; off skips its reads, model calls, effects and default provisioning. Closing its tab leaves the connected system active. Save/Open retains Main, definitions, overrides and open tabs; portable export retains the same composition and pinned closure.
+
+Read File, Write to File, Story Clock, Clock Commit and Outcome Commit can run inside these static bodies. Their live target references, selected/present actor scope and source checks still apply. Memory, Recall, Recall Shortcut and native lifecycle/source operations keep their root-only contracts. For Each helpers do not gain those host operations.
+
+Try the [combined wand, weather and relationship example](combined-system-example.md). It uses one shared source clock, public item/weather guidance and state-only private relationship progression. Its agreed eight-hour wait is an authored story action. It stages three independent saves on Apply; Reject, Cancel and Preview retain their initial data. This direct-file example is separate from the thirty numbered lessons.
+
 ## Choose a different model for each job
 
 Ordinary model operations can follow **Active SillyTavern model** or use a fixed local Connection Manager profile. Configure Model Call, Decision, Revise Draft, Extract, Enrich, Character Direction and other model-backed nodes independently. New ordinary text-model nodes select the active option; existing fixed and inherited bindings remain. The grey bar below a model node opens a searchable picker: keywords match a saved profile’s name, API label and model, while the active option stays first. Details provides collapsed advanced model settings for overrides, role provenance, errors and reset. A fixed profile supplies its provider route, sampler preset and model; the active option follows the host’s configured route/model at request time. LATTICE does not switch SillyTavern’s active main connection globally.
@@ -122,6 +136,8 @@ Native generation currently has one selected actor. Actor Context allows separat
 
 New **Story Clock**, **Read File** and **Outcome Commit** nodes need no prior Workflow Data setup. They select **Chat clock**, empty plain-text **Chat notes** and an empty JSON **Chat outcomes** list respectively. A unified run makes only its referenced presets available in the active user/chat. Adjust initial values or content in the node’s Details, and open **Advanced** for its source, Format and Visibility. Clock and outcomes sources keep their required JSON format. Existing saved content is retained when settings change.
 
+The default Chat clock is shared across Main and systems. Default notes and outcomes inside each system have stable separate sources for that workflow and full instance path; explicit named targets keep the selected shared identity. A disabled system does not provision its unused defaults. Connect one accepted clock to all bodies that need it and keep one final writer for that source. Two staged writes to one target are rejected.
+
 **Workflow → Configure → Workflow Data…** manages custom logical targets for the actual user and chat, including named recipe targets. A target such as `souls.json` is a scoped workflow data document identifier, not an arbitrary operating-system file path. Canonical document content lives in LATTICE's chat metadata store.
 
 For a custom target, create an authorization with a unique target ID, display name, format, visibility and initial template. Formats are **JSON**, **JSON Lines**, **CSV**, **Plain text** and **Markdown**. CSV needs declared columns. Actor-private authorization also needs its canonical actor ID. Hidden documents cannot be exposed to public model/notes branches by changing a graph label.
@@ -154,6 +170,8 @@ During a unified Send, File, Clock Commit, Outcome Commit and accepted-policy Re
 Apply checks the original message/swipe, current user/chat/actor, graph signature, file references and applicable versions. It preserves the original native swipe and applies the chosen revision once. Chat changes, foreign edits, source swipe changes, canceled generations or changed private card/visibility labels can invalidate the proposal. Read again and regenerate rather than reusing stale private data.
 
 Persistence is reported per effect. Publication and several stores are not one atomic disk transaction. If one confirmed target saves and a later target fails or conflicts, Preview records the partial result. A supported retry of that accepted bundle resumes its unconfirmed persistence steps without requesting models again, publishing another swipe or rewriting an already confirmed target.
+
+The same acceptance rule covers proposals retained inside static systems. Apply uses Main's exact reviewed result, then confirms each file, clock and outcome target independently. Repeated Apply adds no model requests, random draws or already-confirmed saves.
 
 An unknown save outcome is different from a retryable failure. **PERSISTENCE_UNKNOWN**, **save unconfirmed** or an unknown receipt holds later affected writes until fresh confirmed metadata reconciles the receipt. Do not turn an ambiguous save into a duplicate event by changing an idempotency key. The native host verifies freshly loaded metadata where available; a save wrapper resolving by itself is not a positive durability acknowledgment.
 
@@ -241,7 +259,7 @@ Saved native-pre and native-post roots are retired. Migration preserves their or
 2. Wire bounded Guidance into Generate Reply's guidance pin.
 3. Use the owned Generate Reply Draft for processing this generation's response.
 4. End the final Draft in Review / Publish. Patch tools retain diagnostic utility but do not grant publication authority.
-5. Keep native sources, Memory, file references, Recall, clocks and publication at the root where required. Stage-specific reusable processing definitions remain pinned.
+5. Keep native sources, publication, Memory, Recall and Recall Shortcut at the root where required. Authorized Read File, Write to File, Story Clock, Clock Commit and Outcome Commit may live in static bodies; For Each keeps its restricted helper contract.
 6. Rebind local model/helper connections, authorize documents, inspect supported outputs with Run to here, then keep the unified document open and select **Enable Lattice**.
 
 Current imports preserve pinned identities and controls; additive imports use stage/type checks. There is no automatic converter or production compatibility starter for a retired root.

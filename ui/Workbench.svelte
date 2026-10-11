@@ -11,6 +11,7 @@
     import RunDetails from './RunDetails.svelte';
     import RunMeter from './RunMeter.svelte';
     import PortalManager from './PortalManager.svelte';
+    import AddSystem from './AddSystem.svelte';
     import SubgraphSave from './SubgraphSave.svelte';
     import StoryDocuments from './StoryDocuments.svelte';
     import RecallOverview from './RecallOverview.svelte';
@@ -166,6 +167,7 @@
     <PinMenu view={view.nativePinMenu} actions={actions.nativePinMenu} />
     {#if view.portalManager}<div class="pc-workspace-overlay"><div class="pc-manager-dialog" role="dialog" tabindex="-1" aria-modal="true" aria-label="Manage portals" onkeydown={managerKeys} onpaste={(event) => event.stopPropagation()}><PortalManager view={view.portalManager} actions={actions.portalManager} /></div></div>{/if}
     {#if view.configureNode}<ConfigureNode view={view.configureNode} actions={actions.configureNode} />{/if}
+    {#if view.addSystem && actions.addSystem}<AddSystem view={view.addSystem} actions={actions.addSystem} />{/if}
     {#if view.subgraphSave}<SubgraphSave view={view.subgraphSave} actions={actions.subgraphSave} />{/if}
     {#if view.importReview}<ImportReview view={view.importReview} {actions} />{/if}
     {#if view.documentPrompt}<DocumentPrompt view={view.documentPrompt} actions={actions.documentPrompt} native={view.document?.native ?? false} />{/if}

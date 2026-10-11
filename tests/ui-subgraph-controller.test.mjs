@@ -6,7 +6,7 @@ import { operationFor } from '../src/workflow/catalog.js?v=0.27.0';
 import { isCommentFrame } from '../src/canvas/comment-frames.js?v=0.27.0';
 import { prepareCreateFromSelection } from '../src/workflow/composition.js?v=0.27.0';
 import { prepareOwnedDefinitionMetadataEdit } from '../src/workflow/definition-library.js?v=0.27.0';
-import { prepareWorkspaceViews, projectEditorDraw } from '../src/ui/workspace-preparation.js?v=0.27.0';
+import { prepareWorkspaceViews, prepareLibraryViews, projectEditorDraw } from '../src/ui/workspace-preparation.js?v=0.27.0';
 import { createGraphViewSession } from '../src/ui/graph-view-session.js?v=0.27.0';
 import { captureGraphEditContext, commitPreparedGraph } from '../src/workflow/transactions.js?v=0.27.0';
 import { definitionRefKey } from '../src/workflow/definition-data.js?v=0.27.0';
@@ -143,4 +143,17 @@ test('State with an explicit snapshot remains available for subgraph extraction'
     assert.equal(menu.item.disabled, false); menu.close();
     assert.equal(f.env.createSubgraph(['state'], 'Explicit State').ok, true);
     assert.equal(f.commits(), 1);
+});
+
+test('Add system starts from a pinned child, commits once to Main, and rejects changed origin before mutation',async()=>{
+ const system=await import('../src/workflow/system-authoring.js');const views=await import('../src/ui/system-authoring-views.js');const {viewIdentityKey}=await import('../src/ui/view-state.js');
+ const f=fixture(graph=>{graph.nodes.send={id:'send',type:'workflow',operation:'on-send'};graph.nodes.generate={id:'generate',type:'workflow',operation:'generate-reply'};graph.nodes.review={id:'review',type:'workflow',operation:'review-publish'};graph.wires.send={id:'send',route:'wire',from:'send',fromPort:'activation',to:'generate',toPort:'activation'};graph.wires.review={id:'review',route:'wire',from:'generate',fromPort:'draft',to:'review',toPort:'draft'};});
+ const extracted=prepareCreateFromSelection(f.graph,{nodeIds:['first'],definitionId:'saved-helper',name:'Helper'});assert.equal(extracted.ok,true,JSON.stringify(extracted));const wrapper=extracted.data.candidate.nodes[extracted.data.instanceId],definition=extracted.data.candidate.definitions[definitionRefKey(wrapper.definition)];
+ f.graph.definitions=structuredClone(extracted.data.candidate.definitions);f.graph.nodes.origin={...structuredClone(wrapper),id:'origin'};f.refresh();f.session.openInstance(['origin']);const before=structuredClone(f.graph);
+ Object.assign(f.env,system,views,{viewIdentityKey,pendingAddSystem:null,libraryRevision:0,workspaceInputs:()=>({}),rootSystemWritable:()=>true,prepareWorkspaceViews,prepareLibraryViews,L:{getSubgraphShelfEntries:()=>({ok:true,data:[definition]}),loadSubgraphLibrary:()=>({ok:true,data:{definitions:f.graph.definitions}})},systemPresentationEffects:new WeakMap(),pendingSystemPresentation:new WeakMap()});
+ for(const name of ['systemShelfCurrent','prepareSystemWorkspace','openAddSystem','previewAddSystem','submitAddSystem','handleSystemHistory','applyPendingSystemPresentation'])f.env[name]=actual(name,f.env);
+ assert.equal(f.env.openAddSystem().ok,true);const key=f.env.pendingAddSystem.key,port=definition.interface.find(p=>p.direction==='input');const draft={choiceKey:definitionRefKey(definition),inputs:{[port.id]:{nodeId:'source',portId:'out'}},outputs:[],parameterOverrides:{}};
+ assert.equal(f.env.previewAddSystem(key,draft).ok,true);assert.equal(f.env.submitAddSystem(key).ok,true);assert.equal(f.commits(),1);assert.equal(Object.values(f.graph.nodes).filter(n=>n.type==='subgraph').length,2);assert.notEqual(f.session.readEditor().view.identity.instancePath[0],'origin');
+ const insertedId=f.session.readEditor().view.identity.instancePath[0];const stopHistory=H.onHistoryChange((graph,event)=>{if(graph===f.graph)f.env.handleSystemHistory(graph,event);});assert.ok(H.undo(f.graph));f.refresh();f.env.applyPendingSystemPresentation();assert.deepEqual(f.graph,before);assert.deepEqual(f.session.readEditor().view.identity.instancePath,['origin']);assert.ok(H.redo(f.graph));f.refresh();f.env.applyPendingSystemPresentation();assert.deepEqual(f.session.readEditor().view.identity.instancePath,[insertedId]);
+ f.session.openInstance(['origin']);assert.equal(f.env.openAddSystem().ok,true);const pending=f.env.pendingAddSystem;assert.equal(f.env.previewAddSystem(pending.key,draft).ok,true);f.session.focusView(f.session.project().graphViews.tabs[0].key);const changed=structuredClone(f.graph);assert.equal(f.env.submitAddSystem(pending.key).ok,false);assert.deepEqual(f.graph,changed);assert.ok(before.nodes.origin);f.session.openInstance(['origin']);assert.equal(f.env.openAddSystem().ok,true);const libraryPending=f.env.pendingAddSystem;assert.equal(f.env.previewAddSystem(libraryPending.key,draft).ok,true);f.env.L.loadSubgraphLibrary=()=>({ok:true,data:{definitions:{}}});assert.equal(f.env.submitAddSystem(libraryPending.key).ok,false);assert.deepEqual(f.graph,changed);
 });

@@ -203,3 +203,40 @@ test('single-line identifiers get compact fields without shrinking prose control
     assert.equal(details(root,'curve').controls.find(control=>control.key==='curveId').singleLine,true);
     assert.equal(details(starterGraph('native-guidance'),'response-plan').controls.find(control=>control.key==='instructions').singleLine,undefined);
 });
+
+
+test('cached system Details retains skipped-system controls and addressed data defaults', () => {
+    const identity = computeDefinitionIdentity({ id: 'system-details', version: 1, name: 'Notes system', interface: [], parameters: [], body: { schema: 3, runtime: 2, mode: 'native-unified', nodes: { read: { id: 'read', type: 'workflow', operation: 'read-file' } }, wires: {} } });
+    assert.equal(identity.ok, true, JSON.stringify(identity.error));
+    const definition = { ...identity.data.materializedDefinition, semanticHash: identity.data.semanticHash };
+    const root = { id: 'system-main', schema: 3, runtime: 2, mode: 'native-unified', nodes: { system: { id: 'system', type: 'subgraph', definition: { id: definition.id, version: 1, semanticHash: definition.semanticHash }, enabled: false } }, wires: {}, definitions: { [definitionRefKey(definition)]: definition } };
+    const before = structuredClone(root), prepared = prepareWorkspaceViews(root); assert.equal(prepared.ok, true, JSON.stringify(prepared.error));
+    const session = createGraphViewSession({ root, activationId: 'system-details', ...prepared.data }).data;
+    const workflow = projectPreparedWorkflow(prepared.data.workflow, { selectedId: 'system' });
+    const first = projectWorkspacePanels(session.readEditor(), workflow, {}, 'one', null, null).nodeDetails;
+    assert.equal(first.system, true); assert.equal(first.enabled, false); assert.equal(first.readOnly, false);
+    const next = projectWorkspacePanels(session.readEditor(), workflow, { busy: true }, 'two', null, null).nodeDetails;
+    assert.equal(next.editorContractKey, first.editorContractKey); assert.equal(next.controls, first.controls);
+    session.openInstance(['system']);
+    const childWorkflow = projectPreparedWorkflow(prepared.data.workflow, { selectedId: 'read', viewPath: ['system'] });
+    const child = projectWorkspacePanels(session.readEditor(), childWorkflow, {}, 'child', null, null).nodeDetails;
+    const expectedTarget = session.readEditor().prepared.effectiveNodes.read.targetId;
+    assert.equal(child.workflowData.targetId, expectedTarget);
+    assert.equal(child.workflowData.definition.targetId, expectedTarget);
+    assert.equal(child.workflowData.issue, undefined);
+    assert.equal(Object.isFrozen(child.workflowData), true); assert.deepEqual(root, before);
+});
+
+test('cached Compose Details includes token budget and typed section schema without rebuilding on runtime changes', () => {
+    const root = starterGraph('structured-guidance'); root.nodes['compose-json'].budgetTokens = 200;
+    const prepared = prepareWorkspaceViews(root); assert.equal(prepared.ok, true, JSON.stringify(prepared.error));
+    const session = createGraphViewSession({ root, activationId: 'compose-budget', ...prepared.data }).data;
+    const workflow = projectPreparedWorkflow(prepared.data.workflow, { selectedId: 'compose-json' });
+    const first = projectWorkspacePanels(session.readEditor(), workflow, {}, 'one', null, null).nodeDetails;
+    const budget = first.controls.find(control => control.key === 'budgetTokens');
+    assert.ok(budget); assert.equal(budget.value, 200); assert.equal(budget.min, 0); assert.equal(budget.max, 8192);
+    assert.equal(first.controls.find(control => control.key === 'sections').structured, 'sections');
+    const next = projectWorkspacePanels(session.readEditor(), workflow, { busy: true }, 'two', null, null).nodeDetails;
+    assert.equal(next.controls, first.controls); assert.equal(next.editorContractKey, first.editorContractKey);
+    assert.equal(Object.isFrozen(next.controls), true);
+});

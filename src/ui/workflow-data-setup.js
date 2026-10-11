@@ -1,3 +1,4 @@
+import { resolveSystemNode } from '../workflow/system-capabilities.js?v=0.27.0';
 import { createStoryDocumentSetup } from './story-document-setup.js?v=0.27.0';
 import { workflowDataPresetFor, workflowDataKind } from '../workflow/workflow-data-defaults.js?v=0.27.0';
 import { advanceStoryClock } from '../workflow/story-time.js?v=0.27.0';
@@ -10,6 +11,19 @@ const definitionOf = preset => {
     const { targetId, name, format, content, visibility, columns } = preset;
     return { targetId, name, format, content, visibility, ...(columns ? { columns } : {}) };
 };
+
+// Only exact resolver-derived reserved identities may seed a missing instance default.
+// A matching-looking portable target name is never sufficient.
+function addressedPreset(operation, targetId, address) {
+    const preset = workflowDataPresetFor(operation); if (!preset) return null;
+    const candidates = operation === 'read-file' ? ['read-file','commit-outcomes','story-clock'].map(workflowDataPresetFor) : [preset];
+    for (const candidate of candidates) {
+        const resolved = address ? resolveSystemNode({ id: address.nodeId, type: 'workflow', operation, [preset.controlKey]: candidate.targetId }, address) : null;
+        const effective = address ? resolved?.ok ? resolved.data.defaults.find(item => item.kind === candidate.kind) : null : candidate;
+        if (effective?.targetId === targetId) return { ...effective, controlKey: preset.controlKey, ...(address?.instancePath.length && effective.kind !== 'clock' ? { name: 'System ' + effective.kind } : {}) };
+    }
+    return null;
+}
 
 /** Retains settings authority; detached panel DTOs never contain canonical data. */
 export function createWorkflowDataSetup(catalog, ports = {}) {
@@ -40,31 +54,32 @@ export function createWorkflowDataSetup(catalog, ports = {}) {
         owner = { key: view.data.key, documents };
         return freeze({ available: true, key: owner.key, documents, definitions, ...(notice ? { notice: { targetId: notice.targetId, message: notice.message } } : {}) });
     };
-    const checkBinding = (key, operation, targetId) => {
+    const checkBinding = (key, operation, targetId, address) => {
         const preset = workflowDataPresetFor(operation);
         if (!preset) return fail('INVALID_WORKFLOW_DATA', 'This node does not use Workflow Data.');
         if (!owner && !key && (targetId === preset.targetId || operation === 'random-pick' && targetId === '')) return { ok: true };
         if (!current(key)) return stale();
         if (operation === 'random-pick' && targetId === '') return { ok: true };
         const document = owner.documents.find(item => item.targetId === targetId);
-        if (!document && targetId === preset.targetId || document && (preset.kind === 'notes' || document.kind === preset.kind)) return { ok: true };
+        if (!document && addressedPreset(operation, targetId, address) || document && (preset.kind === 'notes' || document.kind === preset.kind)) return { ok: true };
         return fail('INCOMPATIBLE_WORKFLOW_DATA', 'Choose a compatible data source for this node.');
     };
-    const load = (key, operation, targetId, expose = true) => {
-        const checked = checkBinding(key, operation, targetId); if (!checked.ok) return checked;
+    const load = (key, operation, targetId, expose = true, address) => {
+        const checked = checkBinding(key, operation, targetId, address); if (!checked.ok) return checked;
         if (!current(key)) return stale();
         const preset = workflowDataPresetFor(operation);
-        if (targetId === preset.targetId && !owner.documents.some(item => item.targetId === targetId)) return { ok: true, data: { definition: freeze(definitionOf(preset)) } };
+        const reserved = addressedPreset(operation, targetId, address);
+        if (reserved && !owner.documents.some(item => item.targetId === targetId)) return { ok: true, data: { definition: freeze(definitionOf(reserved)) } };
         const loaded = settings.load(key, targetId);
         if (loaded.ok && !compatible(preset.kind, loaded.data.definition)) return fail('INCOMPATIBLE_WORKFLOW_DATA', 'This source has no compatible initial template. Create a separate source for new initial values.');
         if (loaded.ok && expose) { const definition = definitionOf(loaded.data.definition); known.set(targetId, { signature: JSON.stringify(definition), definition }); }
         return loaded;
     };
-    const save = async (key, operation, targetId, definition, expose = true) => {
+    const save = async (key, operation, targetId, definition, expose = true, address) => {
         if (!current(key)) return stale();
         const preset = workflowDataPresetFor(operation);
         if (!preset || definition?.targetId !== targetId || !compatible(preset.kind, definition)) return fail('INCOMPATIBLE_WORKFLOW_DATA', 'The initial values must match this node’s data source.');
-        const remember = expose || known.has(targetId) || !owner.documents.some(document => document.targetId === targetId) && targetId === preset.targetId;
+        const remember = expose || known.has(targetId) || !owner.documents.some(document => document.targetId === targetId) && !!addressedPreset(operation, targetId, address);
         const originalScope = knownScope;
         const result = await settings.save(key, definition);
         if (result.ok) {
@@ -78,10 +93,10 @@ export function createWorkflowDataSetup(catalog, ports = {}) {
         }
         return result;
     };
-    const saveVisibility = async (key, operation, targetId, visibility) => {
-        const loaded = load(key, operation, targetId, false); if (!loaded.ok) return loaded;
+    const saveVisibility = async (key, operation, targetId, visibility, address) => {
+        const loaded = load(key, operation, targetId, false, address); if (!loaded.ok) return loaded;
         const { revision, ...definition } = loaded.data.definition;
-        return save(key, operation, targetId, { ...definition, visibility }, false);
+        return save(key, operation, targetId, { ...definition, visibility }, false, address);
     };
     const create = async (key, operation, options) => {
         if (!current(key)) return stale();
@@ -106,10 +121,10 @@ export function createWorkflowDataSetup(catalog, ports = {}) {
 }
 
 /** Plain per-node display projection from a prepared catalog summary. */
-export function projectWorkflowData(node, state = {}, editable = true) {
+export function projectWorkflowData(node, state = {}, editable = true, address) {
     const preset = workflowDataPresetFor(node?.operation);
     if (!preset || node.operation === 'random-pick' && !node.ledgerId) return null;
-    const targetId = node[preset.controlKey] || preset.targetId;
+    const targetId = node[preset.controlKey] || preset.targetId, reserved = addressedPreset(node.operation, targetId, address);
     const knownDefinition = state.definitions && Object.hasOwn(state.definitions, targetId) ? state.definitions[targetId] : null;
     const documents = state.documents ?? [], selected = documents.find(item => item.targetId === targetId);
     const builtIn = documents.find(item => item.targetId === preset.targetId);
@@ -118,11 +133,11 @@ export function projectWorkflowData(node, state = {}, editable = true) {
         ...(!builtIn ? [{ value: preset.targetId, label: preset.name }] : []),
         ...documents.filter(item => preset.kind === 'notes' ? item.kind !== null : item.kind === preset.kind).map(item => ({ value: item.targetId, label: item.name })),
     ];
-    if (!sources.some(source => source.value === targetId)) sources.push({ value: targetId, label: selected?.name ?? 'Unavailable source' });
-    return freeze({ kind: preset.kind, controlKey: preset.controlKey, targetId, name: selected?.name ?? (targetId === preset.targetId ? preset.name : targetId), format: selected?.format ?? preset.format, visibility: selected?.visibility ?? preset.visibility, sources, available: state.available === true, editable, key: state.key ?? '',
-        ...(knownDefinition ? { definition: knownDefinition } : !selected && targetId === preset.targetId ? { definition: definitionOf(preset) } : {}),
+    if (!sources.some(source => source.value === targetId)) sources.push({ value: targetId, label: selected?.name ?? reserved?.name ?? 'Unavailable source' });
+    return freeze({ kind: preset.kind, controlKey: preset.controlKey, targetId, name: selected?.name ?? (reserved ? reserved.name : targetId), format: selected?.format ?? preset.format, visibility: selected?.visibility ?? preset.visibility, sources, available: state.available === true, editable, key: state.key ?? '',
+        ...(knownDefinition ? { definition: knownDefinition } : !selected && reserved ? { definition: definitionOf(reserved) } : {}),
         ...(state.notice?.targetId === targetId ? { notice: state.notice.message } : {}),
         ...(node.operation === 'story-clock' ? { expectedCalendar: node.calendarId ?? '' } : {}),
-        ...(selected && (preset.kind === 'notes' ? selected.kind === null : selected.kind !== preset.kind) ? { issue: 'This data source is incompatible with the node. Choose another source or create a separate one.' } : !selected && targetId !== preset.targetId ? { issue: 'This data source is unavailable in the active chat. Choose another source.' } : {}),
+        ...(selected && (preset.kind === 'notes' ? selected.kind === null : selected.kind !== preset.kind) ? { issue: 'This data source is incompatible with the node. Choose another source or create a separate one.' } : !selected && !reserved ? { issue: 'This data source is unavailable in the active chat. Choose another source.' } : {}),
     });
 }

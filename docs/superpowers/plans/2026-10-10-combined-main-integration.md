@@ -6,7 +6,7 @@
 
 **Authorization:** The user explicitly requested committing and pushing Main and previously approved execution without further approval asks.
 
-**Architecture:** Reuse this managed isolated checkout on codex/integrate-all-2026-10-10. Start from committed Main source816dc84, merge performance48ccf87, systems99f63a7 and diagnostics3f7339c sequentially. Regenerate distribution assets from combined source. Existing feature tips already in Main retain their later fixes; archived superseded File deltas remain preserved.
+**Architecture:** Reuse this managed isolated checkout on codex/integrate-all-2026-10-10. Start from committed Main source `816dc84`, merge performance `48ccf87`, systems `99f63a7` and diagnostics `3f7339c` sequentially. Regenerate distribution assets from combined source. Existing feature tips already in Main retain their later fixes; archived superseded File deltas remain preserved.
 
 **Tech stack:** Node24, locked Svelte5/Vite8/Playwright/TypeScript toolchain; no dependency change.
 
@@ -31,10 +31,10 @@
 
 ## Steps
 
-- [x] Inventory all13 checkouts, verify GitHub Main/authentication, audit unique source intent and preserve dirty bytes/ref history.
+- [x] Inventory all 13 checkouts, verify GitHub Main/authentication, audit unique source intent and preserve dirty bytes/ref history.
 - [x] Commit Main and diagnostics source snapshots on named refs; preserve archived File dirty source.
-- [ ] Merge performance into current Main source; reconcile routing/controller/lifecycle intent and validate focused checks.
-- [ ] Merge system subgraphs into checked planner/transaction/projection contracts; validate disabled/scoped/Compose/acceptance tests.
+- [x] Merge performance into current Main source; reconcile routing/controller/lifecycle intent and validate focused checks.
+- [x] Merge system subgraphs into checked planner/transaction/projection contracts; validate disabled/scoped/Compose/acceptance tests.
 - [ ] Merge diagnostics into immutable Details/lazy target/current Run-to-Here paths; retain verification logs and validate message/preflight/draft checks.
 - [ ] Rebuild; run full isolated unit suite, types, assets, fresh-server full browser suite, installation smoke and documentation checks. Fix regressions with focused failing evidence; repeat affected checks after changes.
 - [ ] Independently review the combined diff, source accounting and material authority/behavior boundaries.

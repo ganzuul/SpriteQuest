@@ -105,6 +105,7 @@ function consumeEditedBinding(original, prepared, command) {
 
 function applyNativeNodeEdit(context, command) {
     const node = Object.hasOwn(context.scope.nodes, command.nodeId) && context.scope.nodes[command.nodeId];
+    if (command.kind === 'enabled' && node?.type === 'subgraph') { node.enabled = command.value; return { ok: true, data: {} }; }
     if (['parameter-override', 'binding-override'].includes(command.kind)) {
         if (node?.type !== 'subgraph') return fail('INVALID_INSTANCE', 'Expected an actual local wrapper.');
         if (!exactRef(command.expectedInstanceRef, node.definition)) return fail('STALE_DEFINITION', 'The selected wrapper pin changed.');

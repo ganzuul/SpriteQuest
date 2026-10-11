@@ -1,5 +1,6 @@
 import { freeze } from '../record-data.js?v=0.27.0';
 import { preserveArtifactPrivacy, validVisibilityMetadata } from '../artifact-privacy.js?v=0.27.0';
+import { resolveComposeContributions } from '../compose-guidance.js?v=0.27.0';
 import { composeText } from './compose.js?v=0.27.0';
 import { selectFields } from './select-fields.js?v=0.27.0';
 import { cloneJsonValue } from './json-data.js?v=0.27.0';
@@ -17,8 +18,8 @@ const registration = (id, title, family, input, output, defaults, controlDescrip
 /** Static integration metadata; effective mode and phase are resolved by describePrimitive. */
 export const PRIMITIVE_OPERATIONS = {
     compose: registration('compose', 'Compose', 'Shaping', null, 'text',
-        { mode: 'join', outputKind: 'text', template: '', sections: [], separator: '\n\n' },
-        [enumControl('mode', 'Mode', ['join', 'template']), enumControl('outputKind', 'Output', ['text', 'guidance']), textControl('template', 'Template'), jsonControl('sections', 'Sections'), textControl('separator', 'Separator')]),
+        { mode: 'join', outputKind: 'text', template: '', sections: [], separator: '\n\n', budgetTokens: 0 },
+        [enumControl('mode', 'Mode', ['join', 'template']), enumControl('outputKind', 'Output', ['text', 'guidance']), textControl('template', 'Template'), jsonControl('sections', 'Sections'), textControl('separator', 'Separator'), { key: 'budgetTokens', label: 'Token budget', type: 'integer', minimum: 0, maximum: 8192 }]),
     'text-rules': registration('text-rules', 'Text Rules', 'Surface', 'text', 'text',
         { inputKind: 'text', mode: 'replace', rules: [], separator: '\n', scope: 'authorized', protectedLiterals: [] },
         [enumControl('inputKind', 'Input', ['text', 'draft']), enumControl('mode', 'Mode', ['replace', 'extract']), jsonControl('rules', 'Rules'), textControl('separator', 'Separator'), enumControl('scope', 'Draft scope', ['authorized', 'whole', 'narration', 'dialogue']), jsonControl('protectedLiterals', 'Protected Draft wording')]),
@@ -62,9 +63,10 @@ function validateSettings(operation, settings) {
     const invalid = () => failure('INVALID_SETTINGS', 'Use supported primitive controls and bounded values.');
     if (operation === 'compose') {
         if (!['join', 'template'].includes(settings.mode) || !['text', 'guidance'].includes(settings.outputKind) || typeof settings.template !== 'string' || settings.template.length > 100000) return invalid();
+        if (!Number.isSafeInteger(settings.budgetTokens) || settings.budgetTokens < 0 || settings.budgetTokens > 8192) return invalid();
         // Read sections through descriptors; validation must never run a section getter.
-        settings.sections = ownArray(settings.sections, 64, section => ownRecord(section, ['name', 'text']));
-        const checked = composeText({ template: '', sections: settings.sections, separator: settings.separator });
+        settings.sections = ownArray(settings.sections, 64, section => { const parsed = ownRecord(section, ['name', 'text', 'kind', 'required', 'onSkipped']); if (!['text', 'guidance'].includes(ownValue(parsed, 'kind', 'text')) || typeof (ownValue(parsed, 'required', false)) !== 'boolean' || !['fallback', 'omit'].includes(ownValue(parsed, 'onSkipped', 'fallback'))) throw new Error('Invalid section controls.'); return parsed; });
+        const checked = composeText({ template: '', sections: settings.sections.map(({ name, text }) => ({ name, text })), separator: settings.separator });
         if (!checked.ok) return checked;
     } else if (operation === 'text-rules') {
         if (!['text', 'draft'].includes(settings.inputKind) || !['replace', 'extract'].includes(settings.mode) || typeof settings.separator !== 'string' || settings.separator.length > 100000) return invalid();
@@ -117,7 +119,7 @@ function resolvePrimitive(node, options = {}) {
         const descriptor = { ...base, phase, input, output };
         let ports;
         if (operation === 'compose') {
-            ports = [port('data', 'Data', 'input', 'data'), ...settings.sections.map(section => port('section.' + section.name, section.name, 'input', 'text'))];
+            ports = [port('data', 'Data', 'input', 'data'), ...settings.sections.map(section => port('section.' + section.name, section.name, 'input', section.kind ?? 'text', section.required ?? false))];
         } else ports = [port('in', 'Input', 'input', input, true)];
         ports.push(port('out', 'Output', 'output', output));
         return { ok: true, data: { descriptor, ports, settings } };
@@ -139,7 +141,7 @@ function validateInputs(namedInputs, ports) {
         if (!expected) return failure('UNSUPPORTED_INPUT', 'Unsupported or stale input: ' + key);
         const artifact = ownRecord(inputs[key], undefined, true);
         if (!Object.hasOwn(artifact, 'kind') || artifact.kind !== expected.kind) return failure('INVALID_INPUT', 'Input ' + key + ' requires ' + expected.kind + '.');
-        if (expected.kind === 'text' && (!Object.hasOwn(artifact, 'text') || typeof artifact.text !== 'string' || artifact.text.length > 100000)) return failure('INVALID_INPUT', 'Text input must contain at most 100,000 UTF-16 units.');
+        if (['text', 'guidance'].includes(expected.kind) && (!Object.hasOwn(artifact, 'text') || typeof artifact.text !== 'string' || artifact.text.length > 100000)) return failure('INVALID_INPUT', 'Text input must contain at most 100,000 UTF-16 units.');
         if (expected.kind === 'data') {
             if (!Object.hasOwn(artifact, 'value')) return failure('INVALID_INPUT', 'Data input requires an own value.');
             const cloned = cloneJsonValue(artifact.value);
@@ -154,10 +156,10 @@ function validateInputs(namedInputs, ports) {
 
 function adapterExecution(execution) {
     try {
-        const options = ownRecord(execution, ['phase', 'signal', 'createWorker', 'timeoutMs']);
-        if ((options.createWorker !== undefined && typeof options.createWorker !== 'function') || (options.signal !== undefined && !(options.signal instanceof AbortSignal)) || (Object.hasOwn(options, 'timeoutMs') && (!Number.isSafeInteger(options.timeoutMs) || options.timeoutMs < 100 || options.timeoutMs > 2000))) throw new Error('Invalid execution option.');
+        const options = ownRecord(execution, ['phase', 'signal', 'createWorker', 'timeoutMs', 'inputStates', 'countTokens']);
+        if ((options.countTokens !== undefined && typeof options.countTokens !== 'function') || (options.createWorker !== undefined && typeof options.createWorker !== 'function') || (options.signal !== undefined && !(options.signal instanceof AbortSignal)) || (Object.hasOwn(options, 'timeoutMs') && (!Number.isSafeInteger(options.timeoutMs) || options.timeoutMs < 100 || options.timeoutMs > 2000))) throw new Error('Invalid execution option.');
         return { ok: true, data: { options } };
-    } catch { return failure('INVALID_EXECUTION', 'Use phase, AbortSignal, createWorker and an integer 100..2,000 ms timeout.'); }
+    } catch { return failure('INVALID_EXECUTION', 'Use phase, inputStates, countTokens, AbortSignal, createWorker and an integer 100..2,000 ms timeout.'); }
 }
 
 /** Execute a deterministic primitive and wrap its successful value in a native artifact. */
@@ -169,6 +171,8 @@ async function executePrimitiveRaw(node, namedInputs, execution = {}) {
         const result = resolvePrimitive(node, { phase: executionOptions.phase });
         if (!result.ok) return result;
         const { descriptor, settings, ports } = result.data;
+        const plan = descriptor.id === 'compose' ? resolveComposeContributions(settings, namedInputs, executionOptions.inputStates ?? {}) : null;
+        if (plan && !plan.ok) return plan;
         const checkedInputs = validateInputs(namedInputs, ports);
         if (!checkedInputs.ok) return checkedInputs;
         const { inputs } = checkedInputs.data;
@@ -189,14 +193,24 @@ async function executePrimitiveRaw(node, namedInputs, execution = {}) {
         }
         if (descriptor.id !== 'compose') return failure('UNKNOWN_OPERATION', 'Primitive is not implemented.');
         const options = {
-            sections: settings.sections.map(section => ({ name: section.name, text: Object.hasOwn(inputs, 'section.' + section.name) ? inputs['section.' + section.name].text : section.text })),
+            sections: plan.data.sections,
             separator: settings.separator,
         };
         if (settings.mode === 'template') options.template = settings.template;
         if (Object.hasOwn(inputs, 'data')) options.data = inputs.data.value;
         const composed = composeText(options);
         if (!composed.ok) return composed;
-        return { ok: true, artifact: { kind: descriptor.output, text: composed.data.text }, reports: composed.data.report };
+        let budgetReport = [];
+        if (settings.budgetTokens > 0) {
+            if (typeof executionOptions.countTokens !== 'function') return failure('TOKENIZER_REQUIRED', 'A tokenizer is required for a Compose token budget.');
+            let measured; try { measured = await executionOptions.countTokens(composed.data.text); } catch { return failure('TOKEN_COUNT_FAILED', 'Compose could not measure the rendered text.'); }
+            if (executionOptions.signal?.aborted) return failure('ABORTED', 'Compose was stopped.');
+            let tokens; try { tokens = ownValue(ownRecord(measured), 'tokens'); } catch { return failure('TOKEN_COUNT_FAILED', 'Compose tokenizer returned an invalid count.'); }
+            if (!Number.isSafeInteger(tokens) || tokens < 0) return failure('TOKEN_COUNT_FAILED', 'Compose tokenizer returned an invalid count.');
+            if (tokens > settings.budgetTokens) return failure('COMPOSE_OVERFLOW', 'Rendered Compose output exceeds its token budget.');
+            budgetReport = [{ code: 'COMPOSE_BUDGET', tokens, budget: settings.budgetTokens }];
+        }
+        return { ok: true, artifact: { kind: descriptor.output, text: composed.data.text }, reports: [...(settings.sections.some(section => ['kind', 'required', 'onSkipped'].some(key => Object.hasOwn(section, key))) || Object.keys(executionOptions.inputStates ?? {}).length ? plan.data.contributions : composed.data.report), ...budgetReport] };
     } catch { return failure('INVALID_INPUTS', 'Use named inputs with own data properties.'); }
 }
 

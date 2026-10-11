@@ -67,6 +67,6 @@ function presentNodeCard(node, prepared, { selection, multi = new Set(), trace }
         ...(prepared.modifierSummary?.count ? {modifierSummary:prepared.modifierSummary} : {}),
         ...(prepared.boundary ? { boundary: { ...prepared.boundary } } : {}),
         enabled: node.enabled !== false,
-        offHint: node.enabled === false ? 'Disabled operations block workflow preflight.' : undefined,
+        offHint: node.enabled === false ? node.type === 'subgraph' ? 'This system and its outputs are skipped.' : 'Disabled operations block workflow preflight.' : undefined,
     };
 }

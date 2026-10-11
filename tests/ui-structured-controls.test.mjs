@@ -231,3 +231,31 @@ test('typed row draft updates avoid serializing and reparsing the whole structur
         assert.deepEqual(JSON.parse(f.host.querySelector('[aria-label="sections"]').value), f.read().typed);
     }, { control: { typedMode: true } });
 });
+
+test('section rows expose Guidance, required and skipped policy through raw and typed drafts', async () => {
+    const initial = '[{"name":"Guide","text":"fallback","kind":"guidance","required":false,"onSkipped":"omit"},{"name":"Text","text":"literal"}]';
+    for (const typedMode of [false, true]) await fixture('sections', initial, async f => {
+        const originalParse = JSON.parse, originalStringify = JSON.stringify;
+        let parses = 0, encodes = 0;
+        if (typedMode) {
+            JSON.parse = function(...args) { parses++; return originalParse.apply(this, args); };
+            JSON.stringify = function(...args) { encodes++; return originalStringify.apply(this, args); };
+        }
+        try {
+            input(f.host, 'Section 1 kind', 'text', 'change');
+            input(f.host, 'Section 1 required', true, 'change');
+            input(f.host, 'Section 1 skipped source', 'fallback', 'change');
+            click(f.host, 'Move section 1 down');
+            if (typedMode) {
+                assert.equal(parses, 0, 'System section inputs never parse the parent JSON');
+                assert.equal(encodes, 0, 'System section inputs never serialize the parent JSON');
+            }
+        } finally { JSON.parse = originalParse; JSON.stringify = originalStringify; }
+        const result = typedMode ? f.read().typed : JSON.parse(f.read().text);
+        assert.deepEqual(result, [{ name: 'Text', text: 'literal' }, { name: 'Guide', text: 'fallback', kind: 'text', required: true, onSkipped: 'fallback' }]);
+        if (typedMode) {
+            click(f.host, 'Edit sections as JSON');
+            assert.deepEqual(JSON.parse(f.host.querySelector('[aria-label="sections"]').value), result);
+        }
+    }, { control: { typedMode } });
+});

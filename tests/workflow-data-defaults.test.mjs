@@ -242,7 +242,8 @@ test('a bound Random Pick in a pinned subgraph provisions its referenced preset 
     const f = unifiedRecipeHost(g, { playerText });
     const result = await f.controller.runTarget(g, { workflowId: g.id, instancePath: [], nodeId: 'pick', portId: 'out' });
     assert.equal(result.ok, true, JSON.stringify(result.error));
-    assert.deepEqual(f.catalog.snapshot().data.documents.map(doc => doc.targetId), ['lattice-default-outcomes']);
+    assert.equal(f.catalog.snapshot().data.documents.length, 1);
+    assert.match(f.catalog.snapshot().data.documents[0].targetId, /^lattice-system-outcomes-/);
     assert.equal(f.saves(), 0);
     assert.equal(f.c.chatMetadata.latticeDocuments, undefined);
 });

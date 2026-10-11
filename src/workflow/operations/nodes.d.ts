@@ -1,4 +1,5 @@
-import type { ComposeSection } from './compose.js';
+import type { ComposeSourceSection } from '../compose-guidance.js';
+import type { PortState } from '../types';
 import type { JsonValue, OperationError, SchemaFinding } from './json-data.js';
 import type { FieldSelection } from './select-fields.js';
 import type { DraftRulePatches, RuleDraft, TextRule, TextRuleFinding, TextRuleWorker } from './text-rules.js';
@@ -8,7 +9,8 @@ export type PrimitivePhase = 'pre' | 'post';
 export type PrimitiveKind = 'text' | 'data' | 'guidance' | 'draft' | 'patches';
 export type PrimitiveControl =
     | { key: string; label: string; type: 'enum'; options: string[] }
-    | { key: string; label: string; type: 'text' | 'json' };
+    | { key: string; label: string; type: 'text' | 'json' }
+    | { key: string; label: string; type: 'integer'; minimum: number; maximum: number };
 export interface PrimitiveDescriptor {
     id: PrimitiveId;
     title: string;
@@ -38,12 +40,14 @@ interface NodeEnvelope {
     [key: string]: unknown;
 }
 export type PrimitiveNode =
-    | (NodeEnvelope & { operation: 'compose'; mode?: 'join' | 'template'; outputKind?: 'text' | 'guidance'; template?: string; sections?: ComposeSection[]; separator?: string })
+    | (NodeEnvelope & { operation: 'compose'; mode?: 'join' | 'template'; outputKind?: 'text' | 'guidance'; template?: string; sections?: ComposeSourceSection[]; separator?: string; budgetTokens?: number })
     | (NodeEnvelope & { operation: 'text-rules'; inputKind?: 'text' | 'draft'; mode?: 'replace' | 'extract'; rules?: TextRule[]; separator?: string; scope?: 'authorized' | 'whole' | 'narration' | 'dialogue'; protectedLiterals?: string[] })
     | (NodeEnvelope & { operation: 'json-decode'; mode?: 'parse' | 'check'; /** Raw JSON text; empty means no schema. */ schema?: string })
     | (NodeEnvelope & { operation: 'select-fields'; fields?: FieldSelection[] });
 export interface PrimitiveExecution {
     phase?: PrimitivePhase;
+    inputStates?: Readonly<Record<string, PortState>>;
+    countTokens?: (text: string) => Promise<{ tokens: number }> | { tokens: number };
     signal?: AbortSignal;
     /** Public adapter option, mapped internally to the Text Rules engine's workerFactory. */
     createWorker?: () => TextRuleWorker;
@@ -53,7 +57,7 @@ export interface PrimitiveExecution {
 export type TextArtifact = { kind: 'text'; text: string };
 export type DataArtifact = { kind: 'data'; value: JsonValue };
 export type GuidanceArtifact = { kind: 'guidance'; text: string };
-export type PrimitiveInputArtifact = TextArtifact | DataArtifact | RuleDraft;
+export type PrimitiveInputArtifact = TextArtifact | GuidanceArtifact | DataArtifact | RuleDraft;
 export type PrimitiveArtifact = TextArtifact | DataArtifact | GuidanceArtifact | DraftRulePatches;
 export type PrimitiveReport = TextRuleFinding | SchemaFinding | Record<string, unknown>;
 export type PrimitiveFailure = { ok: false; error: OperationError };
