@@ -2,3 +2,4 @@
 *.txt -text -diff
 *.json -text
 *.cpuprofile -text -diff
+.gitattributes -text

@@ -4,8 +4,8 @@
   "files": [
     {
       "path": ".gitattributes",
-      "bytes": 105,
-      "sha256": "db4cc772342f56ad6ee770fa51e8cd957f8eee2d65b727af35332c0d4db7c96f"
+      "bytes": 126,
+      "sha256": "eeff4fd00692cc3a2a90911fca0360f8f4c835f67ccaa48a03dc9c6e9547999a"
     },
     {
       "path": "controller-fixture-green.txt",
