@@ -57,4 +57,4 @@ The [verification manifest](../../research/artifacts/combined-main-integration/f
 
 This small unthrottled synthetic-host sample supplements the earlier matched stress/motion cohorts. Settled time ends at the second animation frame; it is a paint-opportunity estimate, not INP. Motion was not rerun in this smoke check, and the prior acceptance limitations remain explicit.
 
-Publication keeps the preserved branches and checkouts, fast-forwards Main to the verified integration, and uses a normal push. GitHub and local/origin equality are checked after publication.
+The integration was normally pushed to Main at `d5e76773d8cae11259829e03015b2641ac5571e3`. GitHub, primary Main and origin/Main matched exactly, divergence was zero, the primary checkout was clean, and its 623-import asset check passed. The [publication confirmation](../../research/artifacts/combined-main-integration/publication-confirmation.json) records that check. This final receipt is a documentation-only followup; the verified runtime and distribution bytes remain unchanged. Every source branch, checkout and recovery archive is retained.

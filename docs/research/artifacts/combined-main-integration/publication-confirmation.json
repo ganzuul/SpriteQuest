@@ -1,0 +1,17 @@
+{
+  "integrationPublicationCommit": "d5e76773d8cae11259829e03015b2641ac5571e3",
+  "verifiedGitHubMain": "d5e76773d8cae11259829e03015b2641ac5571e3",
+  "verifiedPrimaryMain": "d5e76773d8cae11259829e03015b2641ac5571e3",
+  "verifiedOriginMain": "d5e76773d8cae11259829e03015b2641ac5571e3",
+  "localOriginDivergence": {
+    "ahead": 0,
+    "behind": 0
+  },
+  "primaryCheckoutClean": true,
+  "primaryAssets": {
+    "status": "passed",
+    "versionedLocalImports": 623
+  },
+  "verifiedAt": "2026-10-11T02:11:58.783Z",
+  "receipt": "This documentation-only receipt follows publication; runtime and distribution remain the exact verified5f801fb source."
+}

@@ -41,4 +41,4 @@
 - [x] Rebuild; run full isolated unit suite, types, assets, fresh-server full browser suite, installation smoke and documentation checks. Fix regressions with focused failing evidence; repeat affected checks after changes.
 - [x] Independently review the combined diff, source accounting and material authority/behavior boundaries.
 - [x] Record integration decisions, exact source/build/evidence hashes and fresh check results. Confirm every included source tip is reachable and preserved source content remains accounted for.
-- [ ] Recheck Main/source/remote state, fast-forward local Main to the verified candidate, normally push Main, and verify GitHub SHA and local/origin equality.
+- [x] Recheck Main/source/remote state, fast-forward local Main to the verified candidate, normally push Main, and verify GitHub SHA and local/origin equality.

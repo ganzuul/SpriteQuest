@@ -103,5 +103,7 @@
     "blocked": 0,
     "scope": "Synthetic disabled host; second-rAF settled estimate, not INP or full acceptance cohort.",
     "path": "latency-smoke/editor-latency-results.json"
-  }
+  },
+  "integrationPublicationCommit": "d5e76773d8cae11259829e03015b2641ac5571e3",
+  "publicationConfirmed": true
 }

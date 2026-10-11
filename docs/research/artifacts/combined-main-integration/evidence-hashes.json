@@ -64,8 +64,8 @@
     },
     {
       "path": "final-verification.json",
-      "bytes": 2463,
-      "sha256": "4b1ba5d015b1c5c42ac3118a95b774b172179ce944518a5750ff0a9dd5a27375"
+      "bytes": 2573,
+      "sha256": "c9039c9c04343929a16c00ac785b1ef7cf9fcb6ccc64fdab8bf5256c874fbc9b"
     },
     {
       "path": "guide-lazy-green.txt",
@@ -121,6 +121,11 @@
       "path": "latency-smoke/shelf-create-250.cpuprofile",
       "bytes": 105443,
       "sha256": "54cd52435a496ff59d8d232f44ae746e8c05825bfe8f4c8c87b5fd6b45314bff"
+    },
+    {
+      "path": "publication-confirmation.json",
+      "bytes": 646,
+      "sha256": "15b1b70f1d7db4bb1262548b47b2bcc43b84362166d692e610e4da8f855986e2"
     }
   ]
 }
