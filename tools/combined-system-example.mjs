@@ -92,3 +92,6 @@ export function combinedWorkspaceViews(graph){
  must(views.focusView(JSON.stringify(['root',graph.id])),'Focus Main');return must(views.serialize(),'Workspace views');
 }
 export function editableCombinedExample(){const graph=buildCombinedExample();return must(serializeWorkflowDocument(graph,combinedWorkspaceViews(graph)),'Editable combined example').json;}
+
+/** Git checkout line endings are the only tolerated reproduction difference. */
+export const normalizeExampleCheckout = text => text.replaceAll('\r\n', '\n');

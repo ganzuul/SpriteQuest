@@ -1,5 +1,5 @@
 import { prepareAddSystem, projectSystemAuthoring } from '../workflow/system-authoring.js?v=0.27.0';
-import { preflightSystemViews, captureSystemPresentation, refreshSystemPresentation, restoreSystemViews } from './system-authoring-views.js?v=0.27.0';
+import { vacantSystemPoint, preflightSystemViews, captureSystemPresentation, refreshSystemPresentation, restoreSystemViews } from './system-authoring-views.js?v=0.27.0';
 import {createRecallCommands} from './recall-commands.js?v=0.27.0';
 import {projectRecallView} from './recall-projection.js?v=0.27.0';
 import { prepareIterationBindingOverride } from './iteration-bindings.js?v=0.27.0';
@@ -1535,13 +1535,13 @@ const nodeDetailsActions = {
     loadWorkflowData(selection, key) {
         const captured = detailCapture(selection); if (!captured.ok) return captured;
         const node = graphViews.readEditor().prepared.effectiveNodes[selection.address.nodeId], preset = workflowDataPresetFor(node?.operation);
-        return preset ? workflowDataSetup()?.load(key, node.operation, node[preset.controlKey] || preset.targetId) ?? { ok: false, error: { code: 'DOCUMENT_SETUP_UNAVAILABLE', message: 'Open an active chat to adjust initial values.' } } : { ok: false, error: { code: 'INVALID_WORKFLOW_DATA', message: 'Select a node that uses Workflow Data.' } };
+        return preset ? workflowDataSetup()?.load(key, node.operation, node[preset.controlKey] || preset.targetId, true, selection.address) ?? { ok: false, error: { code: 'DOCUMENT_SETUP_UNAVAILABLE', message: 'Open an active chat to adjust initial values.' } } : { ok: false, error: { code: 'INVALID_WORKFLOW_DATA', message: 'Select a node that uses Workflow Data.' } };
     },
     async saveWorkflowData(selection, key, definition) {
         const captured = detailCapture(selection); if (!captured.ok) return captured;
         const node = graphViews.readEditor().prepared.effectiveNodes[selection.address.nodeId], preset = workflowDataPresetFor(node?.operation);
         if (!preset) return { ok: false, error: { code: 'INVALID_WORKFLOW_DATA', message: 'Select a node that uses Workflow Data.' } };
-        const result = await workflowDataSetup()?.save(key, node.operation, node[preset.controlKey] || preset.targetId, definition);
+        const result = await workflowDataSetup()?.save(key, node.operation, node[preset.controlKey] || preset.targetId, definition, true, selection.address);
         if (!result) return { ok: false, error: { code: 'DOCUMENT_SETUP_UNAVAILABLE', message: 'Open an active chat to adjust initial values.' } };
         if (result.ok) {
             if (!editorCurrent(captured.data)) return { ok: false, error: { code: 'STALE_CONTEXT', message: 'The graph view changed. Prepare this edit again.' } };
@@ -1553,7 +1553,7 @@ const nodeDetailsActions = {
         const captured = detailCapture(selection); if (!captured.ok) return captured;
         const node = graphViews.readEditor().prepared.effectiveNodes[selection.address.nodeId], preset = workflowDataPresetFor(node?.operation);
         if (!preset) return { ok: false, error: { code: 'INVALID_WORKFLOW_DATA', message: 'Select a node that uses Workflow Data.' } };
-        const result = await workflowDataSetup()?.saveVisibility(key, node.operation, node[preset.controlKey] || preset.targetId, visibility);
+        const result = await workflowDataSetup()?.saveVisibility(key, node.operation, node[preset.controlKey] || preset.targetId, visibility, selection.address);
         if (!result) return { ok: false, error: { code: 'DOCUMENT_SETUP_UNAVAILABLE', message: 'Open an active chat to adjust visibility.' } };
         if (result.ok) {
             if (!editorCurrent(captured.data)) return { ok: false, error: { code: 'STALE_CONTEXT', message: 'The graph view changed. Prepare this edit again.' } };
@@ -1873,7 +1873,7 @@ function previewAddSystem(key, draft) {
     if (!pending || pending.key !== key || !editorCurrent(pending.origin) || pending.libraryRevision !== libraryRevision || !systemShelfCurrent(pending)) return { ok: false, error: { code: 'STALE_CONTEXT', message: 'The graph view or saved library changed. Reopen Add system.' } };
     pending.prepared = null;
     const choice = pending.picker.choices.find(item => item.key === draft.choiceKey); if (!choice) return { ok: false, error: { code: 'INVALID_DEFINITION', message: 'Choose the captured saved system revision.' } };
-    const prepared = prepareAddSystem(current, { definition: choice.definition, snapshots: choice.snapshots, graphPoint: { x: 120, y: 100 }, inputs: draft.inputs, outputs: draft.outputs, parameterOverrides: draft.parameterOverrides, ...(draft.guidance ? { guidance: draft.guidance } : {}) }); if (!prepared.ok) return prepared;
+    const prepared = prepareAddSystem(current, { definition: choice.definition, snapshots: choice.snapshots, graphPoint: vacantSystemPoint(current), inputs: draft.inputs, outputs: draft.outputs, parameterOverrides: draft.parameterOverrides, ...(draft.guidance ? { guidance: draft.guidance } : {}) }); if (!prepared.ok) return prepared;
     const views = prepareSystemWorkspace(prepared.data.candidate); if (!views.ok) return views;
     const before = graphViews.serialize(); if (!before.ok) return before;
     const preflight = preflightSystemViews(prepared.data.candidate, views.data, before.data, prepared.data.instanceId); if (!preflight.ok) return preflight;

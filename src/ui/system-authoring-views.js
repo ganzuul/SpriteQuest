@@ -1,3 +1,4 @@
+import { portsForNode } from '../workflow/catalog.js?v=0.27.0';
 import { createGraphViewSession } from './graph-view-session.js?v=0.27.0';
 import { viewIdentityKey } from './view-state.js?v=0.27.0';
 const fail = message => ({ ok: false, error: { code: 'VIEW_DATA', message } });
@@ -48,4 +49,15 @@ export function restoreSystemViews(session, snapshots, activeKey) {
         }
     }
     return session.focusView(activeKey);
+}
+
+/** Reserve a wrapper and optional adjacent Compose in deterministic vacant Main space. */
+export function vacantSystemPoint(root) {
+    // Main may be hidden behind a child tab, so its geometry cannot use the
+    // active canvas cache. Reserve conservative named-pin height from root DTOs.
+    const bottom = Object.values(root.nodes ?? {}).map(node => {
+        const ports = portsForNode(root, node), rows = Math.max(ports.filter(p => p.direction === 'input').length, ports.filter(p => p.direction === 'output').length);
+        return (node.y ?? 0) + Math.max(node.h ?? 180, 120 + rows * 32) + 24;
+    });
+    return { x: 120, y: Math.max(100, ...bottom) };
 }

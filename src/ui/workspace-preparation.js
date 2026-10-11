@@ -1,3 +1,4 @@
+import { resolveSystemNode } from '../workflow/system-capabilities.js?v=0.27.0';
 import {recallControlLabel} from '../workflow/recall-labels.js?v=0.27.0';
 import { prepareIterationBindings } from './iteration-bindings.js?v=0.27.0';
 import { inspectDefinitionGraph } from '../workflow/graph-validation.js?v=0.27.0';
@@ -36,6 +37,10 @@ export function prepareWorkspaceViews(root, options = {}) {
         const identity = view.instancePath.length ? { kind: 'instance', workflowId: root.id, instancePath: [...view.instancePath] } : rootIdentity(root);
         const wrapper = view.instancePath.length ? definitionChain(root, view.instancePath).at(-1) : null;
         if (wrapper) navigation.push({ identity, label: (readNodePresentation(wrapper.node).alias || (typeof wrapper.node.title === 'string' ? wrapper.node.title : '') || wrapper.definition.name || view.instancePath.at(-1)).slice(0, 256), readOnly: !view.editable });
+        const effectiveNodes = Object.fromEntries(Object.entries(view.effectiveNodes).map(([id, node]) => {
+            const resolved = resolveSystemNode(node, { workflowId: root.id, instancePath: view.instancePath, nodeId: id });
+            return [id, resolved.ok ? resolved.data.node : node];
+        }));
         const drawBase = prepareEditorDrawBase(view, root.definitions, nodeId => primitivePhases.get(addressKey({ workflowId: root.id, instancePath: view.instancePath, nodeId })));
         // Saved primitive null means inheritance; only an explicit enclosing
         // instance null map blocks it. Cache that source distinction with the view.
@@ -60,7 +65,7 @@ export function prepareWorkspaceViews(root, options = {}) {
             const role = node.modelRole ?? drawBase.nativeCards[node.id]?.modelRole;
             if (Object.keys(binding).length || chain.some(owner => Object.keys(owner.node.roleOverrides?.[role] ?? {}).some(key => ['profileId','model'].includes(key) && !node[key]))) drawBase.instanceBindingSources[node.id] = true;
         }
-        return { identity, ...(view.definitionRef ? { definitionRef: view.definitionRef } : {}), readOnly: !view.editable, savedGraph: view.savedGraph, effectiveNodes: view.effectiveNodes, interface: view.interface, ports: view.ports, drawBase };
+        return { identity, ...(view.definitionRef ? { definitionRef: view.definitionRef } : {}), readOnly: !view.editable, savedGraph: view.savedGraph, effectiveNodes, interface: view.interface, ports: view.ports, drawBase };
     });
     const inventory=planner.inventory;
     const idleRunRows=projectRunRows({plan:{workflowId:root.id,hierarchy:inventory.hierarchy},nodes:inventory.primitives.map(unit=>({...unit,included:unit.enabled!==false,status:'not-run',attempts:0,durationMs:null,request:null}))});
@@ -120,7 +125,7 @@ export function projectWorkspacePanels(editor, workflow, state, revision, select
     const address = library ? {kind:'library',definitionRef:editor.prepared.definitionRef,nodeId:selectedId} : { workflowId: workflow.graphId, instancePath: [...path], nodeId: selectedId };
     const presentation = readNodePresentation(saved, editor?.view.nodePresentation[selectedId]);
     const fileInput = saved?.operation === 'file-input' ? { fileName: typeof saved.fileName === 'string' ? saved.fileName : '', loaded: saved.loaded === true } : null;
-    const workflowData = saved ? projectWorkflowData(editor.prepared.effectiveNodes[selectedId] ?? saved, workflow.workflowData ?? {}, !(editor.readOnly || library)) : null;
+    const workflowData = saved ? projectWorkflowData(editor.prepared.effectiveNodes[selectedId] ?? saved, workflow.workflowData ?? {}, !(editor.readOnly || library), library ? undefined : address) : null;
     const controls = metadata ? Object.entries(metadata.controlDescriptors).filter(([key, descriptor]) => {
         if (workflowData && (key === workflowData.controlKey || saved.operation === 'story-clock' && key === 'calendarId')) return false;
         if (key === 'roleOverrides' && saved.operation === 'for-each' || descriptor.hidden || fileInput && ['fileName', 'content', 'loaded'].includes(key)) return false;

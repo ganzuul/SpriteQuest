@@ -68,7 +68,14 @@ async function executeNode(node,inputs,op,local) {
     if(Object.hasOwn(DECISION_OPERATIONS,node.operation))return executeDecision(node,inputs,local);
     if(Object.hasOwn(CONTROL_OPERATIONS,node.operation))return executeControl(node,inputs,local);
     if(node.operation!=='prompt-source' && Object.hasOwn(INPUT_OPERATIONS,node.operation))return executeInput(node,{phase:local.phase});
-    if(Object.hasOwn(PRIMITIVE_OPERATIONS,node.operation))return executePrimitive(node,inputs,{phase:local.phase,...(local.inputStates?{inputStates:local.inputStates}:{}),...(local.countTokens?{countTokens:local.countTokens}:{}),...(local.signal?{signal:local.signal}:{}),...(local.createWorker?{createWorker:local.createWorker}:{}),...(local.timeoutMs!==undefined?{timeoutMs:local.timeoutMs}:{})});
+    if(Object.hasOwn(PRIMITIVE_OPERATIONS,node.operation)) {
+        // Compose's cap/report measures the same deterministic final Text rendering
+        // emitted by both the root and iteration modifier pipelines. Guidance stays exact.
+        const countTokens = local.countTokens && node.operation === 'compose' && node.modifiers?.length
+            ? text => { const final = applyTextModifiers(text, node.modifiers); if (!final.ok) throw new Error('Invalid final Compose text.'); return local.countTokens(final.data.text); }
+            : local.countTokens;
+        return executePrimitive(node,inputs,{phase:local.phase,...(local.inputStates?{inputStates:local.inputStates}:{}),...(countTokens?{countTokens}:{}),...(local.signal?{signal:local.signal}:{}),...(local.createWorker?{createWorker:local.createWorker}:{}),...(local.timeoutMs!==undefined?{timeoutMs:local.timeoutMs}:{})});
+    }
     if(node.operation==='context-join')return executeContextJoin(node,inputs);
     if(Object.hasOwn(TRANSPOSE_OPERATIONS,node.operation))return executeTranspose(node,inputs,{phase:local.phase,request:local.request,countTokens:local.countTokens,binding:local.binding,...(local.signal?{signal:local.signal}:{})});
     if(Object.hasOwn(INTROSPECTION_NATIVE_OPERATIONS,node.operation)) {

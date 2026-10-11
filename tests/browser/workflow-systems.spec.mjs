@@ -74,3 +74,13 @@ test('Add system from pinned child previews an effective template merge, support
     await page.screenshot({ path: '.tmp/workflow-systems/screenshots/system-enabled-final.png' });
     expect(await page.evaluate(() => window.canvasHarness.providerCalls())).toBe(0);
 });
+
+
+test('two successive Add system commands from child tabs place separate vacant Main wrappers',async({page})=>{
+ await setup(page);await page.locator('.pc-node[data-id="origin"] .pc-native-heading').dblclick();
+ for(let i=0;i<2;i++){await openAdd(page);await preview(page);await page.getByRole('button',{name:'Add system',exact:true}).click();await expect(page.getByRole('dialog',{name:'Add system',exact:true})).toHaveCount(0);}
+ await page.locator('.pc-graph-tabs [role="tab"]').first().click();
+ const boxes=await page.locator('.pc-node.pc-node-subgraph').evaluateAll(nodes=>nodes.map(node=>{const b=node.getBoundingClientRect();return {id:node.dataset.id,x:b.x,y:b.y,right:b.right,bottom:b.bottom};}));expect(boxes).toHaveLength(3);
+ for(let i=0;i<boxes.length;i++)for(let j=i+1;j<boxes.length;j++){const a=boxes[i],b=boxes[j];expect(a.right<=b.x||a.x>=b.right||a.bottom<=b.y||a.y>=b.bottom).toBe(true);}
+ await page.screenshot({path:'.tmp/workflow-systems/screenshots/repeated-add-system-main.png'});expect(await page.evaluate(()=>window.canvasHarness.providerCalls())).toBe(0);
+});

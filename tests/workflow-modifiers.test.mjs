@@ -195,3 +195,26 @@ test('modifier setting edits during a subsequent run preserve the previous recor
     assert.equal(state.availability,'current');edited=true;await session.run({target});
     assert.equal(state.recording,prior);assert.equal(state.availability,'stale');assert.equal(state.busy,false);
 });
+
+
+test('Compose caps the final modified output before releasing any downstream consumer', async () => {
+ const graph=graphOf({source:{id:'source',type:'workflow',operation:'compose',sections:[{name:'a',text:'x'}],budgetTokens:1,modifiers:[modifier('wrap',{prefix:'0123456789',suffix:''})]},consumer:{id:'consumer',type:'workflow',operation:'compose',sections:[{name:'a',text:'',required:true}]}});
+ graph.wires.edge={id:'edge',route:'wire',from:'source',fromPort:'out',to:'consumer',toPort:'section.a'};
+ const measured=[];const result=await runWorkflow(graph,{target:{...target,nodeId:'consumer'},countTokens:text=>{measured.push(text);return {tokens:text.length};}});
+ assert.equal(result.ok,false);assert.equal(result.error.code,'COMPOSE_OVERFLOW');assert.deepEqual(measured,['0123456789x']);
+ assert.equal(result.recording.units.find(unit=>result.recording.identities.strings[result.recording.identities.addresses[unit.address][2]]==='consumer').attempts,0);
+});
+test('Compose final counts cover expansion, shrinkage, no-op and zero budget without misleading raw counts', async () => {
+ for(const [text,modifiers,budget,final] of [['x',[modifier('wrap',{prefix:'[',suffix:']'})],3,'[x]'],['x',[modifier('wrap',{prefix:'[',suffix:']'})],4,'[x]'],['  x  ',[modifier('trim',{edges:'both'})],1,'x'],['x',[modifier('trim',{edges:'both'})],1,'x'],['x',[modifier('wrap',{prefix:'long',suffix:''})],0,'longx']]){
+  const graph=graphOf({source:{id:'source',type:'workflow',operation:'compose',sections:[{name:'a',text}],budgetTokens:budget,modifiers}}),seen=[];
+  const result=await runWorkflow(graph,{target,countTokens:value=>{seen.push(value);return {tokens:value.length};}});assert.equal(result.ok,true,JSON.stringify(result.error));
+  const unit=result.recording.units.find(a=>result.recording.identities.strings[result.recording.identities.addresses[a.address][2]]==='source'),artifact=result.recording.artifacts[unit.ports.find(p=>p.direction==='output').artifact];assert.equal(artifact.value.text,final);
+  assert.deepEqual(seen,budget?[final]:[]);assert.deepEqual(unit.reports?.filter(r=>r.code==='COMPOSE_BUDGET')??[],budget?[{code:'COMPOSE_BUDGET',tokens:final.length}]:[]);
+ }
+});
+test('Compose final tokenizer failure and cancellation never release modified output', async () => {
+ for(const cancelled of [false,true]){const abort=new AbortController(),graph=graphOf({source:{id:'source',type:'workflow',operation:'compose',sections:[{name:'a',text:'x'}],budgetTokens:20,modifiers:[modifier('wrap',{prefix:'[',suffix:']'})]}});
+  const result=await runWorkflow(graph,{target,signal:abort.signal,countTokens:text=>{assert.equal(text,'[x]');if(cancelled){abort.abort();return {tokens:3};}throw Error('tokenizer unavailable');}});
+  assert.equal(result.ok,false);assert.equal(result.error.code,cancelled?'ABORTED':'TOKEN_COUNT_FAILED');assert.equal(result.recording.units.some(unit=>unit.ports.some(port=>port.direction==='output'&&port.artifact!==null)),false);
+ }
+});

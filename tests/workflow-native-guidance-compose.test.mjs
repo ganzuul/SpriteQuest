@@ -313,3 +313,14 @@ test('nested presence files reject pre-reply presence for a write after native c
         assert.equal(Object.values(f.c.extensionPrompts).some(prompt => prompt.value), false);
     } finally { f.controller.dispose(); }
 });
+
+
+test('private aggregate authorization admits exact depth and occurrence bounds and rejects one over', async () => {
+ const {createNativeGuidanceComposition}=await import('../src/workflow/native-guidance-compose.js');const registry=createNativeGuidanceComposition(),visibility=Object.freeze({kind:'actor-private',actorId:mara}),leaf=Object.freeze({kind:'guidance',text:'',visibility});
+ const compose=originals=>{const sections=originals.map((_,i)=>({name:'s'+i,text:'',kind:'guidance'})),node={id:'bounded',type:'workflow',...operationDefaults('compose'),outputKind:'guidance',separator:'',sections},artifact=Object.freeze({kind:'guidance',text:'',visibility}),inputs=Object.fromEntries(originals.map((a,i)=>['section.s'+i,a]));assert.equal(registry.retain({node,artifact,inputs,portId:'out'}).ok,true);return artifact;};
+ let exact=leaf;for(let i=0;i<32;i++)exact=compose([exact]);let calls=0;assert.equal(registry.authorize(exact,()=>{calls++;return {ok:true};}).ok,true);assert.equal(calls,1);
+ assert.equal(registry.authorize(compose([exact]),()=>({ok:true})).ok,false);
+ const branch=compose(Array(63).fill(leaf)),short=compose(Array(62).fill(leaf));calls=0;
+ assert.equal(registry.authorize(compose([...Array(63).fill(branch),short]),()=>{calls++;return {ok:true};}).ok,true);assert.equal(calls,4031);
+ assert.equal(registry.authorize(compose(Array(64).fill(branch)),()=>({ok:true})).ok,false);
+});

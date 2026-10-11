@@ -407,3 +407,17 @@ test('unified workspace keeps effective node stages and prepares ordinary Decisi
     assert.equal(details.phase,'pre');assert.equal(details.model.profile.value,'ordinary');
     const drawing=api.projectEditorDraw(session.readEditor());assert.equal(drawing.nativeCards.decision.canonicalTitle,'Decision');assert.equal(drawing.nativeCards['reply-snapshot'].ports[0].kind,'draft');
 });
+
+
+test('system data projection uses execution addresses without changing authored controls or pins', async () => {
+ const {computeDefinitionIdentity}=await import('../src/workflow/definition-data.js');const {resolveWorkflow}=await import('../src/workflow/resolve.js');
+ const identity=computeDefinitionIdentity({id:'addressed-data',version:1,name:'Data',parameters:[],interface:[],body:{schema:3,runtime:2,mode:'native-unified',nodes:{read:{id:'read',type:'workflow',operation:'read-file'},outcomes:{id:'outcomes',type:'workflow',operation:'commit-outcomes'},clock:{id:'clock',type:'workflow',operation:'story-clock'}},wires:{}}});assert.equal(identity.ok,true,JSON.stringify(identity.error));
+ const definition={...identity.data.materializedDefinition,semanticHash:identity.data.semanticHash},root={id:'addressed-main',schema:3,runtime:2,mode:'native-unified',nodes:Object.fromEntries(['one','two'].map(id=>[id,{id,type:'subgraph',definition:{id:definition.id,version:1,semanticHash:definition.semanticHash},enabled:false}])),wires:{},definitions:{[definitionRefKey(definition)]:definition}};
+ const original=structuredClone(root),prepared=api.prepareWorkspaceViews(root);assert.equal(prepared.ok,true,JSON.stringify(prepared.error));
+ const {resolveSystemNode}=await import('../src/workflow/system-capabilities.js');
+ for(const path of [['one'],['two']]){const view=prepared.data.preparedViews.find(v=>JSON.stringify(v.identity.instancePath)===JSON.stringify(path));
+  for(const id of ['read','outcomes','clock']){const expected=resolveSystemNode(definition.body.nodes[id],{workflowId:root.id,instancePath:path,nodeId:id}).data.node;const control=id==='clock'?'clockId':'targetId';assert.equal(view.effectiveNodes[id][control],expected[control]);}
+  const {projectWorkflowData}=await import('../src/ui/workflow-data-setup.js');const panel=projectWorkflowData(view.effectiveNodes.read,{available:true,documents:[]},true,{workflowId:root.id,instancePath:path,nodeId:'read'});assert.equal(panel.targetId,view.effectiveNodes.read.targetId);assert.equal(panel.definition.targetId,panel.targetId);assert.equal(panel.issue,undefined);
+ }
+ assert.notEqual(prepared.data.preparedViews[1].effectiveNodes.read.targetId,prepared.data.preparedViews[2].effectiveNodes.read.targetId);assert.deepEqual(root,original);assert.equal(computeDefinitionIdentity(definition).data.semanticHash,identity.data.semanticHash);
+});

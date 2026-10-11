@@ -91,9 +91,10 @@ test('public preview and native Run to here never publish or settle combined eff
 });
 function openedViews(graph){const navigation=['wand','weather','relationship'].map(id=>({identity:{kind:'instance',workflowId:graph.id,instancePath:[id]},label:id}));const views=createViewState({workflowId:graph.id,navigation});assert.ok(views);for(const id of ['wand','weather','relationship'])assert.equal(views.openInstance([id]).ok,true);return views;}
 test('portable definitions and editable document round trip without acquiring file rights; closed tabs preserve execution',async()=>{
+ const {normalizeExampleCheckout}=await import('../tools/combined-system-example.mjs');const sample='{\"value\":1}\n';assert.equal(normalizeExampleCheckout(sample),sample);assert.equal(normalizeExampleCheckout(sample.replaceAll('\n','\r\n')),sample);assert.notEqual(normalizeExampleCheckout(sample.replace('1','2')),sample);
  const graph=buildCombinedExample(),portable=exportWorkflow(graph);const parsed=parseWorkflow(JSON.stringify(portable));assert.equal(parsed.ok,true,JSON.stringify(parsed.error));
- assert.equal(await readFile(new URL('../examples/unified/unified-combined-systems.json',import.meta.url),'utf8'),JSON.stringify(portable,null,2)+'\n');
- assert.equal(await readFile(new URL('../examples/unified/unified-combined-systems.lattice-document.json',import.meta.url),'utf8'),editableCombinedExample()+'\n');
+ assert.equal(normalizeExampleCheckout(await readFile(new URL('../examples/unified/unified-combined-systems.json',import.meta.url),'utf8')),JSON.stringify(portable,null,2)+'\n');
+ assert.equal(normalizeExampleCheckout(await readFile(new URL('../examples/unified/unified-combined-systems.lattice-document.json',import.meta.url),'utf8')),editableCombinedExample()+'\n');
  assert.deepEqual(buildCombinedExample(),buildCombinedExample());
  for(const d of Object.values(parsed.data.definitions))assert.equal(validateDefinition(d,parsed.data.definitions).ok,true,d.id);
  for(const g of [parsed.data,...Object.values(parsed.data.definitions).map(d=>d.body)])for(const n of Object.values(g.nodes))if(n.type==='workflow')assert.equal(n.operationVersion,1);

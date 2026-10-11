@@ -42,3 +42,9 @@ test('system open preflight rejects exhausted retained-view budget without chang
     assert.equal(result.error.code, 'VIEW_LIMIT');
     assert.deepEqual(session.serialize().data, before);
 });
+
+
+test('successive system additions use deterministic vacant root space including a new merge slot', () => {
+ assert.equal(typeof api.vacantSystemPoint,'function');const graph={nodes:{old:{id:'old',x:120,y:100,w:300,h:180}}};const first=api.vacantSystemPoint(graph);graph.nodes.one={id:'one',...first,w:300,h:180};graph.nodes.merge={id:'merge',x:first.x+360,y:first.y,w:300,h:180};const second=api.vacantSystemPoint(graph);assert.notDeepEqual(second,first);assert.deepEqual(api.vacantSystemPoint(graph),second);
+ for(const node of Object.values(graph.nodes))assert.ok(second.x+684<=node.x||second.x>=node.x+(node.w??300)+24||second.y+204<=node.y||second.y>=node.y+(node.h??180)+24);
+});

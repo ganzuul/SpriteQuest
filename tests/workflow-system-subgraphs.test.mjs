@@ -301,3 +301,15 @@ for (const nested of [false, true]) test(`disabled ${nested ? 'ancestor of a pas
     assert.equal(f.calls(), 0); assert.equal(f.saves(), 0); assert.deepEqual(f.catalog.snapshot().data.documents, []);
     f.controller.dispose();
 });
+
+
+test('explicit addressed setup is read by that system while viewing disabled siblings never provisions', async () => {
+ const {createWorkflowDataSetup}=await import('../src/ui/workflow-data-setup.js'),{prepareWorkspaceViews}=await import('../src/ui/workspace-preparation.js');
+ const graph=main(system({read:node('read','read-file')}),['one','two']),before=structuredClone(graph),f=unifiedRecipeHost(graph,{documents:[{targetId:'lattice-default-notes',name:'Main',format:'text',content:'Main untouched',visibility:{kind:'public'}}]});
+ try {graph.nodes.two.enabled=false;const prepared=prepareWorkspaceViews(graph);assert.equal(prepared.ok,true);assert.equal(f.catalog.snapshot().data.documents.length,1);assert.equal(f.calls(),0);
+  const setup=createWorkflowDataSetup(f.catalog),address={workflowId:graph.id,instancePath:['one'],nodeId:'read'},targetId=prepared.data.preparedViews.find(v=>v.identity.instancePath?.[0]==='one').effectiveNodes.read.targetId,key=setup.snapshot().key;
+  const loaded=setup.load(key,'read-file',targetId,true,address);assert.equal(loaded.ok,true,JSON.stringify(loaded.error));assert.equal((await setup.save(key,'read-file',targetId,{...loaded.data.definition,format:'markdown',content:'Edited system initial value'},true,address)).ok,true);
+  const result=await f.controller.runTarget(graph,target('one'));assert.equal(result.ok,true,JSON.stringify(result.error));assert.ok(result.recording.artifacts.some(a=>a.value?.text==='Edited system initial value'));
+  assert.equal(f.catalog.definition('lattice-default-notes').data.content,'Main untouched');assert.equal(f.catalog.snapshot().data.documents.length,2);assert.deepEqual(graph.definitions,before.definitions);assert.equal(Object.hasOwn(graph.definitions[definitionRefKey(graph.nodes.one.definition)].body.nodes.read,'targetId'),true);assert.equal(graph.definitions[definitionRefKey(graph.nodes.one.definition)].body.nodes.read.targetId,'lattice-default-notes');
+ } finally {f.controller.dispose();}
+});
