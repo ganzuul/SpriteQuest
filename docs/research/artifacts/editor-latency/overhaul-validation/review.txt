@@ -1,0 +1,11 @@
+# Independent source review record
+
+The independent performance reviewer approved the e842042 follow-up diff with no actionable findings. Scope included checked historical display tokens, root/context admission, notifications on exceptional finalization, observer mutation and activation, selection/focus painting and retained scene publication. Earlier full implementation review was also approved after material integration findings were fixed and verified.
+
+Read-only final profile review found the remaining cost in full graph admission, canonical fingerprints, workspace preparation and post-commit reconciliation. Inclusive times overlap and are not plain latency samples.
+
+A read-only plan audit recorded stamp/coordinate-patch/coordinator substitutions, deferred checkpoint/general recovery caches and global Workbench batching. Final report/provenance review is recorded separately when complete.
+
+Final independent report/provenance review: all 30 action rows and 12 motion rows match the raw results;600 plain actions/60 plain gestures per full cohort,44 intervals per gesture, and all 3 supplemental release medians/maxima match. The single failed final gesture is 250-node zoom repeat 3, frameP95=33.2ms. All 33 artifact hashes and report links passed. Root clarified the initial 3-sample baseline versus matched 20-sample Main cohort, applied the plan wording corrections, and refreshed final document/artifact hashes before commit.
+
+Reviewer final approval: no material discrepancies. Root additionally discloses the supplemental 250-node drag frame failure and reports interval counts over25ms for primary and supplemental cohorts; release acceptance remains separate. Final artifact/document hashes are refreshed.

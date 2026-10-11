@@ -1,0 +1,13 @@
+
+> lattice@0.27.0 build
+> vite build
+
+vite v8.2.2 building client environment for production...
+transforming...
+✓ 181 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/lattice.css     62.18 kB │ gzip:  10.67 kB
+dist/lattice-ui.js  377.50 kB │ gzip: 101.22 kB
+
+✓ built in 918ms

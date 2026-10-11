@@ -1,0 +1,4 @@
+warning: in the working copy of 'src/canvas.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/ui/controller.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'tests/canvas-retained-scene.test.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'tests/ui-shelf-placement.test.mjs', LF will be replaced by CRLF the next time Git touches it
