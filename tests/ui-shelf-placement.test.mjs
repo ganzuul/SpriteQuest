@@ -6,7 +6,6 @@ import { prepareNativeConnectionEdit } from '../src/workflow/connection-edits.js
 import { checkedCandidateArtifacts } from '../src/workflow/checked-candidate.js?v=0.27.0';
 import { captureGraphEditContext, commitPreparedGraph } from '../src/workflow/transactions.js?v=0.27.0';
 import * as preparation from '../src/ui/workspace-preparation.js?v=0.27.0';
-import { nodeCard } from '../src/canvas/presentation.js?v=0.27.0';
 import * as history from '../src/history.js?v=0.27.0';
 
 test('actual shelf placement measures only the new checked card and commits final coordinates once', async () => {
@@ -18,7 +17,8 @@ test('actual shelf placement measures only the new checked card and commits fina
     let measured, cancellations = 0;
     const env = {
         prepareNativeCreation: (_, command) => prepareNativeConnectionEdit(root, {...command,viewPath:[]}),
-        prepareNodePlacement: preparation.prepareNodePlacement, checkedCandidateArtifacts, nodeCard,
+        prepareNodePlacementCard: preparation.prepareNodePlacementCard, checkedCandidateArtifacts,
+        prepareNodePlacement: () => assert.fail('Admitted shelf measurement must not repeat raw-root admission'),
         prepareWorkspaceViews: () => assert.fail('Placement must not prepare workflow, run, profile and all-card projections'),
         workspaceInputs: () => assert.fail('Placement must not consult host binding preparation'),
         scopeCommand: () => ({viewPath:[]}),

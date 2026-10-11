@@ -438,9 +438,14 @@ function finishGraphDocumentEdit(graph, summary, hooks) {
         const property = Object.getOwnPropertyDescriptor(graph, 'updatedAt');
         if (property?.writable || !property && Object.isExtensible(graph)) graph.updatedAt = Date.now();
         save();
-    } finally { recovery = finishRecoveryBatch(checkedArtifacts); }
-    if (!recovery.ok) safe(() => hooks.onRecoveryIssue?.(recovery.error));
-    for (const fn of touchListeners) safe(() => fn(graph, { history: false, semanticChanged: summary.semanticChanged }));
+    } finally {
+        try { recovery = finishRecoveryBatch(checkedArtifacts); }
+        finally {
+            if (recovery && !recovery.ok) safe(() => hooks.onRecoveryIssue?.(recovery.error));
+            // The authored edit is already accepted, even if a host boundary throws.
+            for (const fn of touchListeners) safe(() => fn(graph, { history: false, semanticChanged: summary.semanticChanged }));
+        }
+    }
     return recovery;
 }
 export function commitGraphEdit(graph, prepared, hooks = {}) {

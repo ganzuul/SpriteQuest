@@ -192,3 +192,60 @@ test('explicit replacement cancellation rolls back pan and selection without sce
     const counts=countWork(canvas),before=[selections,multis,commits];assert.equal(canvas.cancelGesture('view-change',{render:false}),true);
     assert.equal(counts.renders,0);assert.equal(counts.wires,0);assert.deepEqual(graph.view,beforeView);assert.equal(canvas.selection.id,'b');assert.ok(selections>before[0]);assert.ok(multis>before[1]);assert.ok(commits>before[2]);assert.equal(canvas.pan,null);await canvas.destroy();
 });
+
+test('steady drag frames skip unchanged focus and selection DOM scans while retaining highlights', async () => {
+    const {canvas,host}=fixture(),{mouse}=await import('./canvas-fixture.mjs');
+    const card=host.querySelector('.pc-node[data-id="a"]'),pin=card.querySelector('.pc-port'),path=host.querySelector('.pc-wire-native');
+    mouse(card,'mousedown',80,80);pin.dispatchEvent(new window.MouseEvent('mouseenter'));mouse(window,'mousemove',100,100);canvas.frames.flush();
+    const scans=[];for(const layer of [canvas.nodeLayer,canvas.commentLayer,canvas.svg]) {const query=layer.querySelectorAll.bind(layer);layer.querySelectorAll=selector=>{scans.push(selector);return query(selector);};}
+    const before=path.getAttribute('d'),stringify=JSON.stringify;let serializations=0;
+    try {JSON.stringify=(...args)=>{serializations++;return stringify(...args);};for(let i=0;i<12;i++){mouse(window,'mousemove',110+i*4,110+i*3);canvas.frames.flush();}} finally {JSON.stringify=stringify;}
+    assert.equal(serializations,0);assert.deepEqual(scans,[]);assert.notEqual(path.getAttribute('d'),before);assert.ok(card.classList.contains('pc-selected'));assert.ok(pin.classList.contains('pc-pin-highlight'));assert.ok(path.classList.contains('pc-wire-feeds'));
+    canvas.cancelGesture();assert.equal(card.style.left,'50px');await canvas.destroy();
+});
+
+test('repeated identical coordinate publications omit unchanged settled wire DTO batches', async () => {
+    const {canvas,graph}=fixture();const wire=canvas.wireViews.get('edge');let publications=0;const publish=canvas.layer.setPositions;canvas.layer.setPositions=(nodes,groups,scene)=>{if(scene?.wires)publications++;return publish(nodes,groups,scene);};
+    for(let i=0;i<5;i++)canvas.setPositions([{id:'a',x:graph.nodes.a.x,y:graph.nodes.a.y}]);
+    assert.equal(publications,0);assert.equal(canvas.wireViews.get('edge'),wire);await canvas.destroy();
+});
+
+test('focus qualification restores hover and selected endpoints after structural changes and clears them on cancellation', async () => {
+    const {canvas,graph,host}=fixture();const pin=()=>host.querySelector('.pc-port[data-node="a"][data-dir="out"]'),path=()=>host.querySelector('.pc-wire-native');
+    pin().dispatchEvent(new window.MouseEvent('mouseenter'));assert.ok(path().classList.contains('pc-wire-feeds'));
+    graph.nodes.a.enabled=false;canvas.render();assert.ok(path().classList.contains('pc-wire-off'));assert.ok(path().classList.contains('pc-wire-feeds'));assert.ok(pin().classList.contains('pc-pin-highlight'));
+    pin().dispatchEvent(new window.MouseEvent('mouseleave'));assert.ok(!path().classList.contains('pc-wire-feeds'));canvas.select({kind:'wire',id:'edge'});assert.ok(path().classList.contains('pc-selected'));assert.ok(pin().classList.contains('pc-pin-highlight'));
+    canvas.updateNativeWire({gesture:{kind:'drag',origin:{nodeId:'a',dir:'out',portId:'out'},target:{nodeId:'b',dir:'in',portId:'in'},ghost:{x:350,y:74},feedback:{compatible:true}}});canvas.frames.flush();
+    const target=host.querySelector('.pc-port[data-node="b"][data-dir="in"]');assert.ok(target.classList.contains('pc-pin-compatible'));
+    canvas.updateNativeWire({gesture:{kind:'drag',origin:{nodeId:'a',dir:'out',portId:'out'},target:{nodeId:'b',dir:'in',portId:'in'},ghost:{x:350,y:74},feedback:{compatible:false}}});canvas.frames.flush();assert.ok(target.classList.contains('pc-pin-invalid'));assert.ok(!target.classList.contains('pc-pin-compatible'));
+    canvas.updateNativeWire({gesture:{kind:'idle'}});canvas.frames.flush();assert.ok(!target.classList.contains('pc-pin-target'));assert.ok(pin().classList.contains('pc-pin-highlight'));
+    canvas.select({kind:'node',id:'b'});assert.ok(!pin().classList.contains('pc-pin-highlight'));assert.ok(!path().classList.contains('pc-selected'));
+    await canvas.destroy();
+});
+
+test('selected wire focus survives the next route class publication and later deselection', async () => {
+    const {canvas,host}=fixture();const path=host.querySelector('.pc-wire-native'),pin=host.querySelector('.pc-port[data-node="a"]');
+    canvas.select({kind:'wire',id:'edge'});assert.ok(path.classList.contains('pc-wire-feeds'));canvas.setPositions([{id:'a',x:90,y:80}]);
+    assert.ok(path.classList.contains('pc-selected'));assert.ok(path.classList.contains('pc-wire-feeds'));assert.ok(pin.classList.contains('pc-pin-highlight'));
+    canvas.select({kind:'node',id:'a'});canvas.setPositions([{id:'a',x:100,y:90}]);assert.ok(!path.classList.contains('pc-selected'));assert.ok(!path.classList.contains('pc-wire-feeds'));await canvas.destroy();
+});
+
+test('wire hover, mode and LOD qualify paint once, then steady coordinate updates skip scans', async () => {
+    const {canvas,host}=fixture();const hit=host.querySelector('.pc-wire-hit'),path=host.querySelector('.pc-wire-native');let scans=0;
+    for(const layer of [canvas.nodeLayer,canvas.commentLayer,canvas.svg]) {const query=layer.querySelectorAll.bind(layer);layer.querySelectorAll=selector=>{scans++;return query(selector);};}
+    hit.dispatchEvent(new window.MouseEvent('pointerover',{bubbles:true}));assert.ok(path.classList.contains('pc-wire-feeds'));assert.ok(scans>0);scans=0;
+    hit.dispatchEvent(new window.MouseEvent('pointerover',{bubbles:true}));canvas.setPositions([{id:'a',x:90,y:80}]);assert.equal(scans,0);
+    hit.dispatchEvent(new window.MouseEvent('pointerout',{bubbles:true}));assert.ok(!path.classList.contains('pc-wire-feeds'));assert.ok(scans>0);scans=0;
+    canvas.setMode('pan');assert.ok(scans>0);scans=0;canvas.setMode('pan');canvas.setPositions([{id:'a',x:95,y:80}]);assert.equal(scans,0);
+    canvas.view.zoom=.25;canvas.applyTransform();canvas.setPositions([{id:'a',x:100,y:80}]);assert.ok(scans>0);scans=0;canvas.setPositions([{id:'a',x:105,y:80}]);assert.equal(scans,0);await canvas.destroy();
+});
+
+test('fold remount restores highlighted pins and replaced views clear old hover focus', async () => {
+    const {canvas,graph,host}=fixture();const first=host.querySelector('.pc-port[data-node="a"]');first.dispatchEvent(new window.MouseEvent('mouseenter'));
+    graph.groups.fold={id:'fold',collapsed:true};graph.nodes.a.inGroup='fold';canvas.render();assert.equal(host.querySelector('.pc-port[data-node="a"]'),null);
+    graph.groups.fold.collapsed=false;canvas.render();const mounted=host.querySelector('.pc-port[data-node="a"]');assert.notEqual(mounted,first);assert.ok(mounted.classList.contains('pc-pin-highlight'));assert.ok(host.querySelector('.pc-wire-native').classList.contains('pc-wire-feeds'));
+    canvas.setGraph(structuredClone(graph),{viewKey:'new-activation:root'});assert.ok(!host.querySelector('.pc-port[data-node="a"]').classList.contains('pc-pin-highlight'));
+    // JSDOM has no intrinsic card sizes after the qualified geometry reset.
+    for(const node of Object.values(graph.nodes))canvas.geometry.measure(node.id,160,48,graph.nativeCards[node.id].ports.map(p=>({id:p.port,direction:p.dir,x:p.dir==='in'?0:160,y:24,side:p.side,kind:p.kind})));
+    canvas.setPositions([{id:'a',x:50,y:50}]);assert.ok(!host.querySelector('.pc-wire-native').classList.contains('pc-wire-feeds'));await canvas.destroy();
+});

@@ -4,11 +4,13 @@ import { prepareIterationBindings } from './iteration-bindings.js?v=0.27.0';
 import { prepareDefinitionRegistry, inspectPreparedDefinition } from '../workflow/graph-validation.js?v=0.27.0';
 import { projectRunRows } from '../workflow/run-state.js?v=0.27.0';
 import { definitionRefKey, nodeBindingOverrideKey } from '../workflow/definition-data.js?v=0.27.0';
+import { inspectGraphArtifacts } from '../workflow/graph-artifacts.js?v=0.27.0';
+import { nodeCard } from '../canvas/presentation.js?v=0.27.0';
 import { prepareWorkflowPlanner } from '../workflow/resolve.js?v=0.27.0';
 import { prepareCompositionViews } from '../workflow/composition-views.js?v=0.27.0';
 import { prepareWorkflowProjection, projectPreparedWorkflow } from './workflow-surface.js?v=0.27.0';
 import { ARTIFACT_KINDS, OPERATIONS, operationFor, portsForNode, phaseForNode } from '../workflow/catalog.js?v=0.27.0';
-import { definitionChain } from '../workflow/composition-edit.js?v=0.27.0';
+import { definitionChain, ownsDefinitionPath } from '../workflow/composition-edit.js?v=0.27.0';
 import { FAMILY_PALETTE, paletteForOperation, readNodePresentation } from './node-palette.js?v=0.27.0';
 import { isCommentFrame } from '../canvas/comment-frames.js?v=0.27.0';
 import { modifierTypes, modifierSummary, applyTextModifiers } from '../workflow/modifiers.js?v=0.27.0';
@@ -85,6 +87,29 @@ export function prepareNodePlacement(root, { nodeId, viewPath = [], artifacts } 
     const graph = prepareEditorDrawBase(view, root.definitions, () => unit?.phase, nodeId);
     if (!graph.nativeCards[nodeId]) return invalid();
     return { ok: true, data: { graph, node: graph.nodes[nodeId] } };
+}
+/** Measure one card from an exact privately owned snapshot and its paired expansion.
+ * Historical tokens intentionally describe their admitted content, never a current
+ * raw document. The detached display DTO grants no editing or execution authority.
+ * @param {object} artifacts Exact token returned by prepareGraphArtifacts.
+ * @param {{nodeId: string, viewPath?: string[]}} options
+ * @returns {import('../workflow/types').Result<import('../../ui/types').NodeCardData>}
+ */
+export function prepareNodePlacementCard(artifacts, { nodeId, viewPath = [] } = {}) {
+    const owned = inspectGraphArtifacts(artifacts);
+    if (!owned) return { ok: false, error: { code: 'INVALID_GRAPH_ARTIFACTS', message: 'Use checked artifacts for this exact document content.' } };
+    const invalid = () => ({ ok: false, error: { code: 'NODE_PLACEMENT', message: 'Choose an existing node in an admitted editor view.' } });
+    if (typeof nodeId !== 'string' || !nodeId || !Array.isArray(viewPath) || !viewPath.every(id => typeof id === 'string' && id)) return invalid();
+    const samePath = path => path.length === viewPath.length && path.every((id, index) => id === viewPath[index]);
+    const scope = owned.checked.data.scopes.find(scope => samePath(scope.instancePath));
+    if (!scope || !Object.hasOwn(scope.graph.nodes, nodeId)) return invalid();
+    const root = owned.snapshot;
+    const definition = viewPath.length ? definitionChain(root, viewPath).at(-1).definition : null;
+    const view = { savedGraph: definition?.body ?? root, effectiveNodes: scope.graph.nodes, interface: definition?.interface ?? [], editable: !viewPath.length || ownsDefinitionPath(root, viewPath) };
+    const unit = owned.checked.data.primitives.find(unit => unit.address.nodeId === nodeId && samePath(unit.address.instancePath));
+    const graph = prepareEditorDrawBase(view, root.definitions, () => unit?.phase, nodeId, true);
+    if (!graph.nativeCards[nodeId]) return invalid();
+    return { ok: true, data: structuredClone(nodeCard(graph.nodes[nodeId], { graph })) };
 }
 /** Cheap detached drawing overlay; never a saved body or full-root commit candidate. */
 export function projectEditorDraw(editor, { canvasOnly = false } = {}) {
@@ -260,11 +285,14 @@ export function projectWorkspacePanels(editor, workflow, state, revision, select
     return { nodeDetails, commentDetails, outputPreview, runDetails, runMeter };
 }
 
-function prepareEditorDrawBase(view, snapshots, compiledPhase = () => undefined, onlyNodeId) {
+function prepareEditorDrawBase(view, snapshots, compiledPhase = () => undefined, onlyNodeId, cardOnly = false) {
         // Clone effective nodes once; authored nodes were previously copied only
         // to be discarded. Measurement prepares metadata for its one node.
         const nodes = onlyNodeId === undefined ? view.effectiveNodes : { [onlyNodeId]: view.effectiveNodes[onlyNodeId] };
-        const drawBase = structuredClone({ ...view.savedGraph, nodes });
+        // Token-only card measurement needs no wires, roles, groups or definitions
+        // in its drawing DTO; catalog metadata still sees the full owned scope.
+        const source = cardOnly ? { schema: view.savedGraph.schema, runtime: view.savedGraph.runtime, mode: view.savedGraph.mode, nodes } : { ...view.savedGraph, nodes };
+        const drawBase = structuredClone(source);
         drawBase.groups ??= {}; drawBase.wires ??= {}; drawBase.nativeCards = {};
         const metadata = { ...view.savedGraph, definitions: snapshots, interface: view.interface };
         let index = 0;
@@ -291,12 +319,12 @@ function prepareEditorDrawBase(view, snapshots, compiledPhase = () => undefined,
             const family = operation?.family || 'Subgraphs', palette = FAMILY_PALETTE.find(item => item.name === family), discovery = paletteForOperation(node.operation);
             drawBase.nativeCards[node.id] = { canonicalTitle: title, ...(phase || operation?.phase ? { phase: phase ?? operation.phase } : {}), ...(operation?.requestCapability ? { requestCapability: operation.requestCapability } : {}), family, familyColor: palette?.color || '#a3aa99', iconPath: wrapper ? palette?.icon : boundary ? paletteForOperation(node.type).icon : discovery.icon,
                 body: wrapper ? 'Open the pinned subgraph' : boundary ? 'Definition interface' : operation.title,
-                hostResult: !!operation?.terminal, modifierSummary: modifierSummary(node.modifiers ?? []), controlDescriptors: structuredClone(operation?.controlDescriptors ?? {}), defaults: structuredClone(operation?.defaults ?? {}), modelRole: operation?.modelRole ?? null,
+                hostResult: !!operation?.terminal, modifierSummary: modifierSummary(node.modifiers ?? []), ...(cardOnly ? {} : { controlDescriptors: structuredClone(operation?.controlDescriptors ?? {}), defaults: structuredClone(operation?.defaults ?? {}) }), modelRole: operation?.modelRole ?? null,
                 ...(interfacePort ? { boundary: { direction: interfacePort.direction, editable: view.editable === true } } : {}),
                 ports: actualPorts.map(port => { const dir = port.direction === 'input' ? 'in' : 'out'; return { id: `${dir}:${port.id}`, port: port.id, dir, side: dir === 'in' ? 'left' : 'right', row: ++rows[dir], kind: port.kind, label: port.label, className: `pc-port pc-port-${dir}`, title: `${port.label}: ${port.kind}` }; }) };
         }
 
-    drawBase.nativeAttachments = prepareEndpointAttachments(drawBase);
+    if (!cardOnly) drawBase.nativeAttachments = prepareEndpointAttachments(drawBase);
     return drawBase;
 }
 /** Build endpoint navigation once per scope; pins never rescan the wire table. */

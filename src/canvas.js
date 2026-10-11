@@ -10,6 +10,8 @@ import { retainSlots, cardLayoutKey } from './canvas/retained-scene.js?v=0.27.0'
 import { mountCanvas } from '../dist/lattice-ui.js?v=0.27.0';
 const groupOf = (graph, node) => node && graph?.groups?.[node.inGroup];
 const inNodeProfile = event => event.target?.closest?.('.pc-node-profile');
+const samePaintValues = (previous, next) => previous && previous.length === next.length && next.every((value, index) => value === previous[index]);
+const samePaintMembers = (previous, next) => previous && previous.size === next.size && [...next].every(id => previous.has(id));
 
 // Prepared cards expand catalog metadata beyond the authoring budget. Keep this
 // draw-only traversal bounded independently; authoring admission stays unchanged.
@@ -70,9 +72,9 @@ export class Canvas {
         this.nodeElements = new Map();
         this.layoutKeys = new Map(); this.dirtyGeometry = new Set(); this.observerSizes = new Map();
         this.cardSlots = new Map(); this.groupSlots = new Map(); this.commentSlots = new Map();
-        this.layoutEpoch = 0; this.geometryEpoch = 0;
+        this.layoutEpoch = 0; this.geometryEpoch = 0; this.paintRevision = 0;
         this.incident = new Map();
-        this.wireViews = new Map();
+        this.wireViews = new Map(); this.publishedWireClasses = new Map();
         this.eventController = new window.AbortController();
         host.classList.add('pc-canvas');
         host.tabIndex = 0;
@@ -163,7 +165,7 @@ export class Canvas {
         const detailScopeKey = options.viewKey ?? legacyScopeKey;
         if (detailScopeKey !== this.detailScopeKey) {
             this.trace = null; this.layer.setVisualStatus({}); this.hoverPin = null; this.hoverWire = null;
-            this.geometry.clear(); this.wireViews.clear(); this.layoutKeys.clear(); this.dirtyGeometry.clear();
+            this.geometry.clear(); this.wireViews.clear(); this.publishedWireClasses.clear(); this.layoutKeys.clear(); this.dirtyGeometry.clear();
             this.cardSlots.clear(); this.groupSlots.clear(); this.commentSlots.clear();
             this.geometryEpoch++; this.resizeObserver?.disconnect();
             this.resizeObserver = this.createResizeObserver?.();
@@ -218,7 +220,7 @@ export class Canvas {
         // touching their intrinsic sizes and cached named-pin geometry.
         const detail = this.host.dataset.pcDetail;
         const next = v.zoom < .5 || detail === 'overview' && v.zoom < .6 ? 'overview' : 'full';
-        if (detail !== next) this.host.dataset.pcDetail = next;
+        if (detail !== next) { this.host.dataset.pcDetail = next; this.paintRevision++; }
         this.host.style.setProperty('--pc-recall-scale', String(Math.max(1, 0.625 / v.zoom)));
         this.viewport.style.transform = `translate(${v.x}px, ${v.y}px) scale(${v.zoom})`;
         // The canvas background moves and scales with the graph. Each theme
@@ -351,6 +353,14 @@ export class Canvas {
         const pin = this.hoverPin;
         const gesture = this.nativeWireView?.gesture;
         const active = gesture && gesture.kind !== 'idle' ? gesture : null;
+        // Motion changes routes, not focus. Compare only paint inputs before touching DOM.
+        // Snapshot scalar pin fields so even an in-place bridge update is detected.
+        const pinFields = value => [value?.nodeId, value?.dir, value?.portId ?? value?.port];
+        const values = [this.paintRevision, this.detailScopeKey, this.mode, this.host.dataset.pcDetail,
+            ...pinFields(pin), ...pinFields(active?.origin), ...pinFields(active?.target),
+            active?.kind, active?.feedback?.compatible, this.hoverWire, this.selection?.kind, this.selection?.id];
+        if (samePaintValues(this.focusPaint?.values, values) && samePaintMembers(this.focusPaint?.wireMulti, this.wireMulti)) return;
+        this.focusPaint = {values, wireMulti:new Set(this.wireMulti)};
         const pinKey = value => value && JSON.stringify([value.nodeId, value.dir, value.portId ?? value.port]);
         const pins = new Set([pinKey(pin), pinKey(active?.origin)].filter(Boolean));
         const targetKey = pinKey(active?.target);
@@ -407,6 +417,7 @@ export class Canvas {
             this.layoutKeys.set(card.id, key);
         }
         const cards = retainSlots(all.filter(card => !this.#folded(this.graph.nodes[card.id])).sort((a,b) => (a.y-b.y)||(a.x-b.x)), this.cardSlots);
+        this.paintRevision++; // Card, group and port publications may replace classes or keyed children.
         const draw = this.graph, comments = Object.values(draw.nodes).filter(isCommentFrame);
         const capture = comments.length && this.#canEdit() ? this.hooks.captureCommentEdit?.() : null;
         const current = id => this.graph === draw && isCommentFrame(draw.nodes[id]);
@@ -548,6 +559,10 @@ export class Canvas {
     }
 
     #paintSelection() {
+        const values = [this.paintRevision, this.detailScopeKey, this.mode, this.host.dataset.pcDetail, this.selection?.kind, this.selection?.id];
+        if (samePaintValues(this.selectionPaint?.values, values) && samePaintMembers(this.selectionPaint?.multi, this.multi)
+            && samePaintMembers(this.selectionPaint?.wireMulti, this.wireMulti)) { this.#applyFocus(); return; }
+        this.selectionPaint = {values, multi:new Set(this.multi), wireMulti:new Set(this.wireMulti)};
         for (const el of this.nodeLayer.querySelectorAll('.pc-node[data-id]')) el.classList.toggle('pc-selected', this.selection?.kind === 'node' && this.selection.id === el.dataset.id);
         for (const el of this.nodeLayer.querySelectorAll('.pc-node-group, .pc-group-frame')) el.classList.toggle('pc-selected', this.selection?.kind === 'group' && this.selection.id === el.dataset.group);
         this.#paintMulti();
@@ -598,6 +613,7 @@ export class Canvas {
     setMode(mode) {
         this.mode = mode === 'pan' ? 'pan' : 'select';
         this.host.classList.toggle('pc-pan-mode', this.mode === 'pan');
+        if (this.graph) this.#paintSelection();
         if (this.graph) this.hooks.onView?.({ ...this.view, mode: this.mode });
     }
 
@@ -774,11 +790,12 @@ export class Canvas {
         const visible = affected ? null : new Set(), bounds = affected ? { ...this.wireBounds } : { w: 4000, h: 4000 };
         const nodes = affected ? [...changedNodes].map(id => this.graph.nodes[id]).filter(Boolean) : Object.values(this.graph.nodes);
         for (const n of nodes) { bounds.w = Math.max(bounds.w, n.x + 800); bounds.h = Math.max(bounds.h, n.y + 800); }
+        let wiresChanged = false, wirePaintChanged = false;
         const wires = affected ? [...affected].map(id => this.graph.wires[id]).filter(Boolean) : Object.values(this.graph.wires);
         for (const wire of wires) {
             if (!wire.from || !wire.fromPort || !wire.to || !wire.toPort) continue;
             const from = this.endpoint(wire.from, 'out', wire.fromPort), to = this.endpoint(wire.to, 'in', wire.toPort);
-            if (!from || !to || this.#folded(this.graph.nodes[wire.from]) || this.#folded(this.graph.nodes[wire.to])) { this.wireViews.delete(wire.id); continue; }
+            if (!from || !to || this.#folded(this.graph.nodes[wire.from]) || this.#folded(this.graph.nodes[wire.to])) { if (this.wireViews.delete(wire.id)) wiresChanged = wirePaintChanged = true; this.publishedWireClasses.delete(wire.id); continue; }
             visible?.add(wire.id);
             const off = [wire.from, wire.to].some(id => this.graph.nodes[id]?.enabled === false);
             const selected = this.selection?.kind === 'wire' && this.selection.id === wire.id || this.wireMulti.has(wire.id);
@@ -786,15 +803,25 @@ export class Canvas {
             const next = { id: wire.id, kind: from.kind, d: route.d,
                 className: 'pc-wire pc-wire-native' + (off ? ' pc-wire-off' : '') + (selected ? ' pc-selected' : ''),
                 label: { ...route.label, text: from.kind, className: 'pc-wire-label' } };
-            if (JSON.stringify(this.wireViews.get(wire.id)) !== JSON.stringify(next)) this.wireViews.set(wire.id, next);
+            const previous = this.wireViews.get(wire.id);
+            if (!previous || this.publishedWireClasses.get(wire.id) !== next.className || previous.d !== next.d || previous.kind !== next.kind || previous.className !== next.className
+                || previous.label.x !== next.label.x || previous.label.y !== next.label.y || previous.label.text !== next.label.text) {
+                this.wireViews.set(wire.id, next); wiresChanged = true;
+                if (!previous || this.publishedWireClasses.get(wire.id) !== next.className) wirePaintChanged = true;
+                this.publishedWireClasses.set(wire.id, next.className);
+            }
         }
-        if (visible) for (const id of this.wireViews.keys()) if (!visible.has(id)) this.wireViews.delete(id);
+        if (visible) for (const id of this.wireViews.keys()) if (!visible.has(id)) { this.wireViews.delete(id); this.publishedWireClasses.delete(id); wiresChanged = wirePaintChanged = true; }
         this.wireBounds = bounds;
-        const publishedWires = [...this.wireViews.values()], ghost = this.#wirePreview();
-        if (positions) this.layer.setPositions(positions, [], {...scene, wires:publishedWires, bounds, ghost});
-        else if (scene) this.layer.applyScene({...scene, wires:publishedWires, bounds, ghost});
-        else this.layer.setWires(publishedWires, bounds, ghost);
-        this.#applyFocus();
+        const ghost = this.#wirePreview();
+        const publication = {...scene, bounds, ghost};
+        // Keep the settled wire array out of coordinate batches when routes are unchanged.
+        if (!affected || wiresChanged) publication.wires = [...this.wireViews.values()];
+        if (positions) this.layer.setPositions(positions, [], publication);
+        else if (scene) this.layer.applyScene(publication);
+        else this.layer.setWires([...this.wireViews.values()], bounds, ghost);
+        if (wirePaintChanged) this.paintRevision++;
+        this.#paintSelection();
     }
 
     #drawWirePreview() {
@@ -820,7 +847,6 @@ export class Canvas {
         const d = this.drag; if (!d) return;
         const ids = d.id ? [d.id] : d.several.map(([id]) => id);
         this.#renderPositions(ids, (d.groups ?? []).map(group => 'group:' + group.id));
-        this.#paintSelection();
     }
 
     #renderPositions(ids, groups = []) {

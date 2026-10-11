@@ -39,7 +39,7 @@ import { showContextMenu } from './context-menu.js?v=0.27.0';
 import { createWorkflowDocumentController } from './document-controller.js?v=0.27.0';
 import { createWorkflowFileAccess } from './workflow-file-access.js?v=0.27.0';
 import { readTextFile } from './file-input.js?v=0.27.0';
-import { prepareWorkspaceViews, prepareNodePlacement, prepareLibraryViews, projectEditorDraw, initialWorkspaceCamera, projectWorkspacePanels, projectNodeProfiles } from './workspace-preparation.js?v=0.27.0';
+import { prepareWorkspaceViews, prepareNodePlacementCard, prepareLibraryViews, projectEditorDraw, initialWorkspaceCamera, projectWorkspacePanels, projectNodeProfiles } from './workspace-preparation.js?v=0.27.0';
 import { prepareWorkflowProjection, projectPreparedWorkflow, createWorkflowSession } from './workflow-surface.js?v=0.27.0';
 import { ctx, safe, settings, save, activeWorkflow, activateWorkflow, documentSession, activeWorkspaceViews, setActiveWorkspaceViews, recoveredWorkflows, retainRecoveryWorkflows, onWorkflowActivated, onRecoveryIssue, createGraph, touchGraph, commitGraphEdit, stepGraphHistory, exportGraph, exportArchivedWorkflows, onGraphTouched, groupMembers } from '../state.js?v=0.27.0';
 import { applyTheme } from '../theme.js?v=0.27.0';
@@ -48,7 +48,6 @@ import * as H from '../history.js?v=0.27.0';
 import * as L from '../library.js?v=0.27.0';
 import { Canvas } from '../canvas.js?v=0.27.0';
 import { createWorkbench } from './workbench.js?v=0.27.0';
-import { nodeCard } from '../canvas/presentation.js?v=0.27.0';
 import { measureNodeCard } from '../../dist/lattice-ui.js?v=0.27.0';
 
 let workbench = null;
@@ -68,6 +67,9 @@ let nativeGroupPresenter = null, detachedClip = null, workspaceIssue = '';
 let pendingSubgraphSave = null;
 let workflowActivityUnsubscribe = null;
 let pendingDocumentPrompt = null;
+// The final graph-touch notification renders dirty state after owned reconciliation.
+// Defer only its intermediate view event for this exact document activation.
+let documentRenderReconciliation = null;
 let workflowFiles = null, documentCommands = null, fileStorageIssue = '';
 let storyDocumentSetup = null, nodeWorkflowDataSetup = null, pendingConfiguredNode = null;
 const nodeDocumentCaptures = new Map(), nodeCreationScopes = new WeakMap();
@@ -83,7 +85,15 @@ const graphDocumentHooks = {
         workflowRevision = isWorkflowGraph(graph) ? workflowSignature(graph) : null;
         documentTransition = true; workflowSession.cancel('Workflow document changed'); documentTransition = false;
     },
-    reconcileViews(graph, summary) { if (graph === current) reconcileWorkspaceDocument(summary); graphEditAdapter?.reconcileViews?.(graph, summary); },
+    reconcileViews(graph, summary) {
+        if (graph === current) {
+            const previous = documentRenderReconciliation;
+            documentRenderReconciliation = { graph, captured: documentSession.capture() };
+            try { reconcileWorkspaceDocument(summary); }
+            finally { documentRenderReconciliation = previous; }
+        }
+        graphEditAdapter?.reconcileViews?.(graph, summary);
+    },
 };
 export const el = (tag, cls, text) => {
     const n = document.createElement(tag);
@@ -541,7 +551,11 @@ function build() {
         documentTransition = true; workflowSession.syncDocument(); documentTransition = false;
         if (isOpen()) { current = graph; setCanvasGraph(); renderAll(); }
     });
-    documentSession.subscribe(() => renderDocumentState()); installRecoveryLifecycle();
+    documentSession.subscribe(event => {
+        const pending = documentRenderReconciliation;
+        if (event.type === 'views' && event.graph === pending?.graph && documentSession.stillCurrent(pending.captured)) return;
+        renderDocumentState();
+    }); installRecoveryLifecycle();
     const nativeContext = ctx();
     for (const name of ['CHAT_CHANGED', 'MESSAGE_EDITED', 'MESSAGE_UPDATED', 'MESSAGE_DELETED', 'MESSAGE_SWIPED', 'MESSAGE_SENT', 'GENERATION_STARTED', 'GENERATION_ENDED', 'GENERATION_STOPPED']) {
         if (nativeContext.eventTypes?.[name]) nativeContext.eventSource?.on?.(nativeContext.eventTypes[name], () => { if (isOpen()) { workflowSession.refreshFreshness(); if (name === 'CHAT_CHANGED') { cancelConfiguredNode(); refreshStoryDocuments(); } } });
@@ -1758,10 +1772,9 @@ function prepareShelfNodeCreation(capture, command, at = null) {
     if (!provisional.ok) return provisional;
     const path = scopeCommand(capture).viewPath;
     const id = provisional.data.addedBoundaryNodeId ?? provisional.data.addedNodeIds?.[0];
-    const placement = prepareNodePlacement(provisional.data.candidate, { nodeId: id, viewPath: path, artifacts: checkedCandidateArtifacts(provisional.data.checkedCandidate) });
+    const placement = prepareNodePlacementCard(checkedCandidateArtifacts(provisional.data.checkedCandidate), { nodeId: id, viewPath: path });
     if (!placement.ok) return placement;
-    const { graph, node } = placement.data;
-    const size = measureNodeCard(canvas.nodeLayer, nodeCard(node, { graph })), rect = canvas.host.getBoundingClientRect();
+    const size = measureNodeCard(canvas.nodeLayer, placement.data), rect = canvas.host.getBoundingClientRect();
     const origin = canvas.toGraph(rect.left + (rect.width - size.width) / 2, rect.top + (rect.height - size.height) / 2);
     // Reprepare private definitions so their content pins include the final coordinates.
     return prepareNativeCreation(capture, { ...command, graphPoint: origin });
