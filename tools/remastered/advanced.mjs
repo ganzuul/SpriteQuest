@@ -226,7 +226,7 @@ export function advanced() {
         r.connect('player', 'out', 'recall', 'source');
         r.connect('recall', 'out', 'generate', 'guidance');
         r.requirements = ['Select native Rowan; replace canonical avatar ID. Authorize actor-private JSON rowan-moments with accepted Recall-compatible {id,actorId,text} records.'];
-        r.steps = ['Recall Shortcut configures Ctrl+Shift+R; use Queue recall on a relevant node, Node → Memory recall, or the shortcut before an owned generation. Preview never queues recall.', 'Use target reply/swipe/both deliberately; this default one-per-type consumes only on Apply.', 'The keyword watches real player text; rejected or stopped replies retain the queued recall request.'];
+        r.steps = ['Recall Shortcut configures Ctrl+Shift+M; use Queue recall on a relevant node, Node → Memory recall, or the shortcut before an owned generation. Preview never queues recall.', 'Use target reply/swipe/both deliberately; this default one-per-type consumes only on Apply.', 'The keyword watches real player text; rejected or stopped replies retain the queued recall request.'];
         r.budget = '1 auxiliary cast interpretation; Recall tokenization and accepted activation settlement make no model requests. One ordinary native generation.';
         r.check('recall', 'report', 'Selected accepted records retain provenance, private scope and pending consumption.');
         entries.push(r.finish());

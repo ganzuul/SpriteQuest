@@ -40,7 +40,8 @@ function fixture(mutator = null) {
     const prepared = prepareWorkspaceViews(graph); assert.equal(prepared.ok, true, JSON.stringify(prepared));
     const session = createGraphViewSession({ root: graph, activationId: 'subgraph-' + sequence, ...prepared.data }).data;
     let commits = 0, fits = 0;
-    const env = { current: graph, graphViews: session, workspacePrepared: prepared.data, workflowState: { busy: false }, pinnedPreview: null, editorDraw: projectEditorDraw(session.readEditor()), editorCaptures: new WeakMap(), workspaceRevision: 0,
+    const env = { current: graph, graphViews: session, workspacePrepared: prepared.data, workflowState: { busy: false }, pinnedPreview: null, selectedPreview: null, editorDraw: projectEditorDraw(session.readEditor()), editorCaptures: new WeakMap(), workspaceRevision: 0,
+        workflowRuntime: { getNativeWorkflowController: () => null },
         isOpen: () => true, activeEditRoot: () => graph, readGraphEditContext: () => session.readEditContext(), captureGraphEditContext,
         prepareCreateFromSelection, prepareOwnedDefinitionMetadataEdit, definitionRefKey, crypto: globalThis.crypto,
         captureRelocatedSubgraphViews, restoreSubgraphViews, H, subgraphPresentationEffects: new WeakMap(), pendingSubgraphPresentation: new WeakMap(), viewIdentityKey: view => JSON.stringify(view),

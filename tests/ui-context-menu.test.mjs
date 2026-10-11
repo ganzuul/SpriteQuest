@@ -52,6 +52,46 @@ test('keyboard navigation skips disabled items and dispatches the focused comman
     } finally { f.close(); }
 });
 
+test('a menu shortcut dispatches its command from a submenu and dismisses every menu', () => {
+    const f = fixture(), commands = [];
+    try {
+        f.show({ items: [
+            { label: 'Details', action: () => commands.push('details') },
+            { label: 'Pin preview', children: [{ label: 'Output', action: () => commands.push('pin') }] },
+            { label: 'Run to here', matchesShortcut: event => event.key === 'r', action: () => commands.push('run') },
+        ] });
+        f.item('Pin preview').focus(); f.key(f.item('Pin preview'), 'ArrowRight');
+        f.document.activeElement.dispatchEvent(new f.dom.window.KeyboardEvent('keydown', { key: 'r', bubbles: true, cancelable: true }));
+        assert.deepEqual(commands, ['run']);
+        assert.equal(f.root.querySelectorAll('[role="menu"]').length, 0);
+    } finally { f.close(); }
+});
+
+test('prevented, repeated, disabled and stale menu shortcuts cannot dispatch the focused command', () => {
+    const f = fixture(), commands = [];
+    let current = true;
+    try {
+        const items = disabled => [
+            { label: 'Details', action: () => commands.push('details') },
+            { label: 'Run to here', disabled, matchesShortcut: event => event.key === 'r', action: () => commands.push('run') },
+        ];
+        const press = (repeat, prevented = false) => {
+            const event = new f.dom.window.KeyboardEvent('keydown', { key: 'r', repeat, bubbles: true, cancelable: true });
+            if (prevented) event.preventDefault();
+            f.document.activeElement.dispatchEvent(event);
+        };
+        f.show({ items: items(false) }); press(false, true);
+        assert.deepEqual(commands, []);
+        f.show({ items: items(false) }); press(true);
+        assert.deepEqual(commands, []);
+        f.show({ items: items(true) }); press(false);
+        assert.deepEqual(commands, []);
+        f.show({ items: items(false), isCurrent: () => current }); current = false; press(false);
+        assert.deepEqual(commands, []);
+        assert.equal(f.root.querySelector('[role="menu"]'), null);
+    } finally { f.close(); }
+});
+
 // Escape must return focus to its invoking surface; other dismissals must not steal it.
 test('Escape dismisses the menu and restores captured or supplied focus', () => {
     const f = fixture();

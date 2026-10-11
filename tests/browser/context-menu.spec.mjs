@@ -164,7 +164,7 @@ test('Pin preview follows the clicked Compose output and Run to here executes on
     expect(await snapshot(page)).toEqual(before);
 });
 
-test('multi-output subgraph commands choose a qualified output instead of silently using the first', async ({ page }) => {
+test('multi-output Run to here directly runs the pinned output and advertises R', async ({ page }) => {
     await setup(page);
     await page.evaluate(async () => {
         const h = window.canvasHarness;
@@ -179,10 +179,13 @@ test('multi-output subgraph commands choose a qualified output instead of silent
     const wanted = { workflowId: 'two-output-root', instancePath: [], nodeId: 'wrapper', portId: 'second' };
     const choice = page.locator('.pc-output-preview').getByRole('combobox', { name: 'Preview output', exact: true });
     expect(JSON.parse(await choice.inputValue())).toEqual(wanted);
+    const before = await snapshot(page);
+    const history = await page.evaluate(() => window.canvasHarness.H.peek(window.canvasHarness.graph));
     await heading(page, 'wrapper').click({ button: 'right' });
-    await expect(action(page, 'Run to here')).toHaveAttribute('aria-haspopup', 'menu');
-    await action(page, 'Run to here').click();
-    await page.getByRole('menuitem', { name: 'Second', exact: true }).click();
+    const runHere = action(page, 'Run to here');
+    await expect(runHere).not.toHaveAttribute('aria-haspopup', 'menu');
+    await expect(runHere.locator('.pc-context-shortcut')).toHaveText('R');
+    await runHere.click();
     await expect(page.locator('.pc-run-meter-label')).toHaveText('Completed');
     const result = await lastRun(page);
     expect(result.ok).toBe(true); expect(result.calls).toBe(0); expect(result.providerCalls).toBe(0);
@@ -191,6 +194,47 @@ test('multi-output subgraph commands choose a qualified output instead of silent
     expect(result.included).toEqual([{ workflowId: 'two-output-root', instancePath: ['wrapper'], nodeId: 'beta' }]);
     await expect(page.locator('.pc-output-preview [role="tabpanel"] pre')).toContainText('Beta');
     await expect(page.locator('.pc-output-preview [role="tabpanel"] pre')).not.toContainText('Alpha');
+    expect(await snapshot(page)).toEqual(before);
+    expect(await page.evaluate(() => window.canvasHarness.H.peek(window.canvasHarness.graph))).toEqual(history);
+});
+
+test('multi-output Run to here preserves an unpinned output chosen in Preview', async ({ page }) => {
+    await setup(page);
+    await page.evaluate(async () => {
+        const h = window.canvasHarness;
+        const { twoOutputWorkflow } = await import('/tests/fixtures/workflow-prepared-fixture.mjs');
+        await h.activate(twoOutputWorkflow()); await h.view({ x: 180, y: 0, zoom: .8 });
+    });
+    await heading(page, 'wrapper').click();
+    const wanted = { workflowId: 'two-output-root', instancePath: [], nodeId: 'wrapper', portId: 'second' };
+    const choice = page.locator('.pc-output-preview').getByRole('combobox', { name: 'Preview output', exact: true });
+    await choice.selectOption(JSON.stringify(wanted));
+    await expect(page.locator('.pc-output-preview footer')).not.toContainText('Pinned');
+    await heading(page, 'wrapper').click({ button: 'right' });
+    await action(page, 'Run to here').click();
+    await expect(page.locator('.pc-run-meter-label')).toHaveText('Completed');
+    const result = await lastRun(page);
+    expect(result.target).toEqual(wanted);
+    expect(result.resolvedTarget).toEqual({ workflowId: 'two-output-root', instancePath: ['wrapper'], nodeId: 'beta', portId: 'out' });
+    expect(result.included).toEqual([{ workflowId: 'two-output-root', instancePath: ['wrapper'], nodeId: 'beta' }]);
+});
+
+test('multi-output Run to here directly uses the primary output before choosing a Preview output', async ({ page }) => {
+    await setup(page);
+    await page.evaluate(async () => {
+        const h = window.canvasHarness;
+        const { twoOutputWorkflow } = await import('/tests/fixtures/workflow-prepared-fixture.mjs');
+        await h.activate(twoOutputWorkflow()); await h.view({ x: 180, y: 0, zoom: .8 });
+    });
+    await heading(page, 'wrapper').click({ button: 'right' });
+    await action(page, 'Run to here').click();
+    await expect(page.locator('.pc-run-meter-label')).toHaveText('Completed');
+    const result = await lastRun(page);
+    expect(result.target).toEqual({ workflowId: 'two-output-root', instancePath: [], nodeId: 'wrapper', portId: 'first' });
+    expect(result.resolvedTarget).toEqual({ workflowId: 'two-output-root', instancePath: ['wrapper'], nodeId: 'alpha', portId: 'out' });
+    expect(result.included).toEqual([{ workflowId: 'two-output-root', instancePath: ['wrapper'], nodeId: 'alpha' }]);
+    await expect(page.locator('.pc-output-preview [role="tabpanel"] pre')).toContainText('Alpha');
+    await expect(page.locator('.pc-output-preview [role="tabpanel"] pre')).not.toContainText('Beta');
 });
 
 test('host keyboard styling cannot add shortcut badges or expand the context-menu rows', async ({ page }) => {

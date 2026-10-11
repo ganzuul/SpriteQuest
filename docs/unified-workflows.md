@@ -223,7 +223,7 @@ Queue recall from the right-click menu on a matching Recall or Recall Shortcut n
 | Successful completion | Spend only after the full workflow completes successfully. Later rejection does not refund it. |
 | Accepted result | Spend when the reviewed candidate is accepted. Stop, failure and Reject release the pending reservation without spending it. |
 
-Shortcuts use physical key codes, such as Control+Shift+R. Letter and digit shortcuts require Control, Alt or Meta; function keys also work. They skip typing in inputs, textareas, selects or editable text, composition, key repeat and focused menus. Duplicate active combinations require different keys.
+Recall Shortcuts default to Control+Shift+M and use physical key codes. Letter and digit shortcuts require Control, Alt or Meta; function keys also work. R and every modified R combination are reserved for Run to here. Shortcuts skip typing in inputs, textareas, selects or editable text, composition, key repeat and focused menus. Duplicate active combinations require different keys.
 
 Matching Shortcuts must agree on target, repetition and consumption settings. Different physical keys can share a request. A Recall without a matching Shortcut explains how to add one. Automatic-only Recall nodes are excluded from manual queue actions. For independently requested retrieval selections, use different memory-set IDs; the first successful matching Recall supplies the selection for a given generation.
 

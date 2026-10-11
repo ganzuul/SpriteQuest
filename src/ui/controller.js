@@ -562,6 +562,12 @@ function build() {
         if (!isOpen()) return; const mod = event.ctrlKey || event.metaKey, key = event.key.toLowerCase();
         if (mod && !event.altKey && ['n', 'o', 's'].includes(key)) { event.preventDefault(); if (!event.repeat) { if (key === 'n') onNewGraph(); else if (key === 'o') onImportGraph(); else onSaveGraph(event.shiftKey); } return; }
         if (typing()) return;
+        if (key === 'r' && !mod && !event.shiftKey && !event.altKey && !event.repeat && !event.defaultPrevented && selectedKind === 'node') {
+            const captured = captureEditor(true);
+            const run = captured.ok && canvasPreviewMenuItems(selected, captured.data).find(item => item.id === 'run-to-here');
+            if (run && !run.disabled) { event.preventDefault(); run.action(); }
+            return;
+        }
         if (event.key === 'Escape') { if (event.defaultPrevented) return; event.preventDefault(); if (canvas.cancelGesture()) return; if (canvas.selection || canvas.multi.size) { canvas.setMulti([]); canvas.select(null); } else close(); return; }
         if (event.key === 'F2' && selectedKind === 'node') { event.preventDefault(); focusAlias(selected); return; }
         if (key === 'f' && !mod && !event.altKey && !event.repeat) { event.preventDefault(); canvas.fitSelection(); return; }
@@ -1089,17 +1095,19 @@ function canvasPreviewMenuItems(node, token) {
     const labelFor = target => target.kind === 'terminal' ? 'Host result' : ports.find(port => port.dir === 'out' && port.port === target.portId)?.label || target.portId;
     const summaryFor = target => projectPreparedWorkflow(workspacePrepared.workflow, { ...workflowState, viewPath: path, selectedId: node.id, selectedTarget: target, pinnedPreview: null }).targetSummary;
     const currentKey = () => editorCurrent(token) && sourceKey === graphViews.readEditContext().sessionId + ':' + workspaceRevision;
-    const runs = choices.map(choice => {
-        const target = structuredClone(choice.target), summary = summaryFor(target);
-        return { id: 'run-to-here', label: choices.length > 1 ? labelFor(target) : 'Run to here', icon: 'run', tone: 'preview',
-            disabled: !!workflowState.busy || !!summary.issues.length,
-            hint: workflowState.busy ? 'A workflow is already running.' : summary.issues.join(' ') || `Run this output and its dependencies. Maximum auxiliary calls: ${summary.callBound}.`,
-            action: () => {
-                if (!currentKey() || workflowState.busy || summaryFor(target).issues.length) return;
-                outputPreviewActions.select(sourceKey, choice.key, target);
-                workbench.revealPreview(); outputPreviewActions.runHere(sourceKey, target);
-            } };
-    });
+    const choiceFor = target => choices.find(choice => JSON.stringify(choice.target) === JSON.stringify(target));
+    const choice = choiceFor(pinnedPreview) ?? choiceFor(selectedPreview) ?? choices[0];
+    const target = structuredClone(choice.target), summary = summaryFor(target);
+    const busy = () => !!workflowState.busy || !!workflowRuntime.getNativeWorkflowController?.()?.activity?.()?.busy;
+    const run = { id: 'run-to-here', label: 'Run to here', icon: 'run', tone: 'preview', shortcut: 'R',
+        matchesShortcut: event => event.key.toLowerCase() === 'r' && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey,
+        disabled: busy() || !!summary.issues.length,
+        hint: busy() ? 'A workflow is already running.' : summary.issues.join(' ') || `Run ${labelFor(target)} and its dependencies. Maximum auxiliary calls: ${summary.callBound}.`,
+        action: () => {
+            if (!currentKey() || busy() || summaryFor(target).issues.length) return;
+            outputPreviewActions.select(sourceKey, choice.key, target);
+            workbench.revealPreview(); outputPreviewActions.runHere(sourceKey, target);
+        } };
     const pins = choices.map(choice => {
         const target = structuredClone(choice.target), pinned = JSON.stringify(pinnedPreview) === JSON.stringify(target);
         return { id: 'pin-preview', label: choices.length > 1 ? labelFor(target) : pinned ? 'Unpin preview' : 'Pin preview', icon: 'pin', tone: 'preview', checked: pinned, action: () => {
@@ -1109,16 +1117,18 @@ function canvasPreviewMenuItems(node, token) {
             workbench.revealPreview();
         } };
     });
-    return choices.length > 1 ? [
-        { id: 'run-to-here', label: 'Run to here', icon: 'run', tone: 'preview', disabled: runs.every(item => item.disabled), children: runs },
+    return [run, ...(choices.length > 1 ? [
         { id: 'pin-preview', label: 'Pin preview', icon: 'pin', tone: 'preview', children: pins },
-    ] : [...runs, ...pins];
+    ] : pins)];
 }
 function onCanvasMenu({ event, node, wire, at, group = null, several = null }) {
     if (several?.length) canvas.setMulti(several);
     else if (node || group || wire) {
-        canvas.setMulti([]);
-        canvas.select({ kind: node ? 'node' : group ? 'group' : 'wire', id: node?.id ?? group?.id ?? wire.id });
+        const pick = { kind: node ? 'node' : group ? 'group' : 'wire', id: node?.id ?? group?.id ?? wire.id };
+        if (!node || canvas.multi.size > 1 || canvas.selection?.kind !== 'node' || canvas.selection?.id !== node.id) {
+            canvas.setMulti([]);
+            canvas.select(pick);
+        }
     }
     const captured = captureEditor(true); if (!captured.ok) return;
     const editor = graphViews.readEditor(), readOnly = editor.readOnly, items = [];

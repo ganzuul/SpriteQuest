@@ -1,0 +1,81 @@
+{
+  "kind": "lattice-workflow",
+  "schema": 2,
+  "minRuntime": 2,
+  "graph": {
+    "id": "workshop-compose-scene-brief",
+    "name": "Compose example · a scene brief",
+    "description": "Text supplies Direction. Compose joins it with the saved Boundary text and outputs Guidance. Connect the output to your existing Generate Reply.",
+    "schema": 3,
+    "runtime": 2,
+    "mode": "native-pre",
+    "nodes": {
+      "direction": {
+        "id": "direction",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 0,
+        "y": 0,
+        "w": 220,
+        "h": 210,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Text · scene direction",
+        "text": "Describe the dark lighthouse and one sound from the water."
+      },
+      "guidance": {
+        "id": "guidance",
+        "type": "workflow",
+        "operation": "compose",
+        "operationVersion": 1,
+        "title": "Compose",
+        "enabled": true,
+        "x": 25,
+        "y": 100,
+        "w": 220,
+        "h": 210,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Compose",
+        "mode": "join",
+        "outputKind": "guidance",
+        "template": "",
+        "sections": [
+          {
+            "name": "Direction",
+            "text": ""
+          },
+          {
+            "name": "Boundary",
+            "text": "Leave the player's next action to them."
+          }
+        ],
+        "separator": "\n\n"
+      }
+    },
+    "wires": {
+      "edge-2": {
+        "id": "edge-2",
+        "route": "wire",
+        "from": "direction",
+        "fromPort": "out",
+        "to": "guidance",
+        "toPort": "section.Direction"
+      }
+    },
+    "groups": {},
+    "roles": {},
+    "portals": {},
+    "definitions": {},
+    "view": {
+      "x": 0,
+      "y": 0,
+      "zoom": 0.65
+    }
+  }
+}

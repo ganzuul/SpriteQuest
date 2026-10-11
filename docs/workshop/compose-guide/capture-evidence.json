@@ -1,0 +1,24 @@
+{
+  "status": "passed",
+  "screenshots": [
+    {
+      "name": "compose-output",
+      "selector": ".pc-preview-pane",
+      "path": "F:\\git\\SillyCanvas\\docs\\workshop\\compose-guide\\compose-output.png"
+    },
+    {
+      "name": "compose-details",
+      "selector": ".pc-inspector",
+      "path": "F:\\git\\SillyCanvas\\docs\\workshop\\compose-guide\\compose-details.png"
+    }
+  ],
+  "graphChecks": [],
+  "runs": [
+    {
+      "ok": true,
+      "calls": 0
+    }
+  ],
+  "errors": [],
+  "blockedRequests": []
+}

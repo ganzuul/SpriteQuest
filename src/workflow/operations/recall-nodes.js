@@ -9,7 +9,7 @@ const exact=(value,keys,required=keys)=>plain(value)&&Object.keys(value).every(k
 const canonical=value=>{const result=stringifyJsonValue(value);return result.ok?result.data.text:null;};
 const pin=(id,kind,direction,required=false)=>({id,label:id,kind,direction,required,cardinality:'one'});
 const control=(type,value,extra={})=>({type,default:value,...extra});
-const hotkey={code:'KeyR',ctrl:true,alt:false,shift:true,meta:false};
+const hotkey={code:'KeyM',ctrl:true,alt:false,shift:true,meta:false};
 const common={actorId:'',memorySetId:'',target:'both'};
 const commonControls={actorId:control('string','',{maxLength:256}),memorySetId:control('string','',{maxLength:256}),target:control('enum','both',{values:['reply','swipe','both']})};
 const registration=(id,title,defaults,controls,output)=>({id,title,family:'Recall',phase:'both',minimumSchema:3,minimumRuntime:2,operationVersion:1,input:'data',output,defaults,controls:Object.keys(defaults),controlDescriptors:controls,requestBound:0,modelRole:null,terminal:false,dynamicPorts:true,rootOnly:true,hostOperation:true});

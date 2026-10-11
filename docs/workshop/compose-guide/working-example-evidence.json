@@ -1,0 +1,191 @@
+{
+  "status": "passed",
+  "generatedAtUtc": "2026-10-11T00:30:30.756Z",
+  "command": "node .tmp/verify-compose-working-example.mjs",
+  "scope": {
+    "runtime": "real local workflow runtime and operations",
+    "host": "synthetic On Send activation and synthetic Generate Reply Draft",
+    "providersContacted": false,
+    "realSillyTavernSendExecuted": false,
+    "realChatPublished": false,
+    "productionFilesChanged": false
+  },
+  "source": {
+    "path": "docs/workshop/compose-guide/compose-example.lattice.json",
+    "sha256": "3f1aa2b297b4a82d1a3ea7c641e57a5fa38a367a71d3b0f1e1fbee1a89338765",
+    "nodeCount": 5,
+    "wireCount": 4,
+    "executableValidationPassed": true
+  },
+  "expectedGuidance": {
+    "path": "docs/workshop/compose-guide/recorded-output.json",
+    "sha256": "c1e7d5be47b58ef781d892bf305553a4feaad5f1fcacd771205c9ff06ff380b3",
+    "artifact": {
+      "kind": "guidance",
+      "text": "Describe the dark lighthouse and one sound from the water.\n\nLeave the player's next action to them."
+    }
+  },
+  "fullWorkflowRun": {
+    "runId": "compose-workshop-full-synthetic-host",
+    "status": "completed",
+    "mode": "root",
+    "hostOperations": [
+      {
+        "nodeId": "send",
+        "operation": "on-send"
+      },
+      {
+        "nodeId": "generate",
+        "operation": "generate-reply"
+      }
+    ],
+    "syntheticNativeGenerations": 1,
+    "auxiliaryModelCallBound": 0,
+    "actualAuxiliaryModelCalls": 0,
+    "providerRequests": 0,
+    "composeOutput": {
+      "kind": "guidance",
+      "text": "Describe the dark lighthouse and one sound from the water.\n\nLeave the player's next action to them."
+    },
+    "generateReplyReceivedExactGuidance": true,
+    "completedNodes": [
+      {
+        "nodeId": "send",
+        "operation": "on-send",
+        "status": "completed"
+      },
+      {
+        "nodeId": "direction",
+        "operation": "text",
+        "status": "completed"
+      },
+      {
+        "nodeId": "guidance",
+        "operation": "compose",
+        "status": "completed"
+      },
+      {
+        "nodeId": "generate",
+        "operation": "generate-reply",
+        "status": "completed"
+      },
+      {
+        "nodeId": "review",
+        "operation": "review-publish",
+        "status": "completed"
+      }
+    ],
+    "settlement": {
+      "count": 1,
+      "terminalNodeId": "review",
+      "operation": "review-publish",
+      "artifactKind": "candidate",
+      "reviewRequired": true,
+      "receivedSyntheticDraft": true,
+      "lineageIncludesReviewPublish": true,
+      "syntheticDraftText": "Synthetic host reply: the dark lighthouse stands above the sound of waves."
+    }
+  },
+  "guidedMerge": {
+    "starter": "unified-basic",
+    "executableValidationPassed": true,
+    "addedNodes": [
+      "import-1",
+      "import-2"
+    ],
+    "addedInternalWires": [
+      "import-3"
+    ],
+    "addedGuidanceWires": [
+      "edge-1"
+    ],
+    "identityMap": {
+      "nodes": {
+        "direction": "import-1",
+        "guidance": "import-2"
+      },
+      "wires": {
+        "edge-2": "import-3"
+      },
+      "groups": {},
+      "portals": {},
+      "definitions": {},
+      "roles": {}
+    },
+    "starterUnchanged": true,
+    "existingLifecycleNodesUnchanged": true,
+    "freshNodeAndWireIds": true,
+    "freshRepeatedInsertionIds": true,
+    "singleCandidateUsesOriginalPreconditions": true,
+    "occupiedGuidanceRejected": {
+      "code": "AMBIGUOUS_INPUT",
+      "originalAndMergedGraphsUncommitted": true
+    },
+    "run": {
+      "runId": "compose-workshop-merged-synthetic-host",
+      "status": "completed",
+      "mode": "root",
+      "hostOperations": [
+        {
+          "nodeId": "on-send",
+          "operation": "on-send"
+        },
+        {
+          "nodeId": "generate-reply",
+          "operation": "generate-reply"
+        }
+      ],
+      "syntheticNativeGenerations": 1,
+      "auxiliaryModelCallBound": 0,
+      "actualAuxiliaryModelCalls": 0,
+      "providerRequests": 0,
+      "composeOutput": {
+        "kind": "guidance",
+        "text": "Describe the dark lighthouse and one sound from the water.\n\nLeave the player's next action to them."
+      },
+      "generateReplyReceivedExactGuidance": true,
+      "completedNodes": [
+        {
+          "nodeId": "on-send",
+          "operation": "on-send",
+          "status": "completed"
+        },
+        {
+          "nodeId": "import-1",
+          "operation": "text",
+          "status": "completed"
+        },
+        {
+          "nodeId": "import-2",
+          "operation": "compose",
+          "status": "completed"
+        },
+        {
+          "nodeId": "generate-reply",
+          "operation": "generate-reply",
+          "status": "completed"
+        },
+        {
+          "nodeId": "review-publish",
+          "operation": "review-publish",
+          "status": "completed"
+        }
+      ],
+      "settlement": {
+        "count": 1,
+        "terminalNodeId": "review-publish",
+        "operation": "review-publish",
+        "artifactKind": "candidate",
+        "reviewRequired": true,
+        "receivedSyntheticDraft": true,
+        "lineageIncludesReviewPublish": true,
+        "syntheticDraftText": "Synthetic host reply: the dark lighthouse stands above the sound of waves."
+      }
+    }
+  },
+  "limitations": [
+    "Native generation is synthetic; this verifies graph data flow and real Review / Publish operation, not a real SillyTavern Send.",
+    "The settlement hook verifies delivery of a reviewed candidate; it does not publish a chat reply or apply a host review.",
+    "The guided merge composes existing pure APIs; it does not implement or exercise a product import button or graph commit."
+  ]
+}

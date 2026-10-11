@@ -82,6 +82,13 @@ export function showContextMenu({ root, x, y, label = 'Context actions', items =
     };
     const keydown = (state, event) => {
         event.stopPropagation();
+        const shortcut = menus.flatMap(menu => menu.entries).find(entry => entry.item.matchesShortcut?.(event));
+        if (shortcut) {
+            if (event.defaultPrevented) return;
+            event.preventDefault();
+            if (!event.repeat) choose(shortcut);
+            return;
+        }
         if (event.key === 'Tab') { dismiss(); return; }
         if (event.key === 'Escape') {
             event.preventDefault();

@@ -4,6 +4,8 @@ import {OPERATIONS,operationDefaults,describeOperation} from '../src/workflow/ca
 import {validateGraphStructure} from '../src/workflow/contracts.js';
 import {runWorkflow} from '../src/workflow/runtime.js';
 const graph=()=>({id:'recall-root',name:'Recall root',schema:3,runtime:2,mode:'native-unified',nodes:{arm:{id:'arm',type:'workflow',...operationDefaults('hotkey-arm'),actorId:'mara',memorySetId:'mara-memories'}},wires:{},groups:{},portals:{},definitions:{},roles:{}});
+
+test('Recall Shortcut defaults to Ctrl+Shift+M',()=>{assert.deepEqual(operationDefaults('hotkey-arm').hotkey,{code:'KeyM',ctrl:true,alt:false,shift:true,meta:false});});
 test('Recall registers strict root host capabilities with stage-correct pins and portable settings',()=>{
  assert.equal(OPERATIONS.recall.rootOnly,true);assert.equal(OPERATIONS.recall.requestBound,0);assert.equal(OPERATIONS['hotkey-arm'].hostOperation,true);
  const g=graph();assert.equal(validateGraphStructure(g).ok,true);assert.deepEqual(describeOperation(g,g.nodes.arm).data.ports.map(p=>[p.id,p.kind,p.direction]),[['proposal','data','output']]);

@@ -1,0 +1,154 @@
+{
+  "kind": "lattice-workflow",
+  "schema": 2,
+  "minRuntime": 2,
+  "graph": {
+    "id": "workshop-compose-scene-brief",
+    "name": "Compose example · a scene brief",
+    "description": "Text supplies the Direction section. Compose adds a saved Boundary section and joins them with a blank line. Its Guidance output connects to Generate Reply. Run to here on Compose prepares the brief without generating a reply. The next ordinary SillyTavern Send uses this guidance when Lattice is enabled.",
+    "schema": 3,
+    "runtime": 2,
+    "mode": "native-unified",
+    "nodes": {
+      "send": {
+        "id": "send",
+        "type": "workflow",
+        "operation": "on-send",
+        "operationVersion": 1,
+        "title": "On Send",
+        "enabled": true,
+        "x": 640,
+        "y": 40,
+        "w": 220,
+        "h": 210,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "On Send"
+      },
+      "generate": {
+        "id": "generate",
+        "type": "workflow",
+        "operation": "generate-reply",
+        "operationVersion": 1,
+        "title": "Generate Reply · SillyTavern",
+        "enabled": true,
+        "x": 640,
+        "y": 260,
+        "w": 220,
+        "h": 210,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Generate Reply · SillyTavern",
+        "budgetTokens": 768
+      },
+      "review": {
+        "id": "review",
+        "type": "workflow",
+        "operation": "review-publish",
+        "operationVersion": 1,
+        "title": "Review / Publish",
+        "enabled": true,
+        "x": 970,
+        "y": 260,
+        "w": 220,
+        "h": 210,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Review / Publish"
+      },
+      "direction": {
+        "id": "direction",
+        "type": "workflow",
+        "operation": "text",
+        "operationVersion": 1,
+        "title": "Text",
+        "enabled": true,
+        "x": 100,
+        "y": 260,
+        "w": 220,
+        "h": 210,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Text · scene direction",
+        "text": "Describe the dark lighthouse and one sound from the water."
+      },
+      "guidance": {
+        "id": "guidance",
+        "type": "workflow",
+        "operation": "compose",
+        "operationVersion": 1,
+        "title": "Compose",
+        "enabled": true,
+        "x": 370,
+        "y": 260,
+        "w": 220,
+        "h": 210,
+        "profileId": null,
+        "model": null,
+        "modelRole": null,
+        "alias": "Compose",
+        "mode": "join",
+        "outputKind": "guidance",
+        "template": "",
+        "sections": [
+          {
+            "name": "Direction",
+            "text": ""
+          },
+          {
+            "name": "Boundary",
+            "text": "Leave the player's next action to them."
+          }
+        ],
+        "separator": "\n\n"
+      }
+    },
+    "wires": {
+      "edge-1": {
+        "id": "edge-1",
+        "route": "wire",
+        "from": "send",
+        "fromPort": "activation",
+        "to": "generate",
+        "toPort": "activation"
+      },
+      "edge-2": {
+        "id": "edge-2",
+        "route": "wire",
+        "from": "direction",
+        "fromPort": "out",
+        "to": "guidance",
+        "toPort": "section.Direction"
+      },
+      "edge-3": {
+        "id": "edge-3",
+        "route": "wire",
+        "from": "guidance",
+        "fromPort": "out",
+        "to": "generate",
+        "toPort": "guidance"
+      },
+      "edge-4": {
+        "id": "edge-4",
+        "route": "wire",
+        "from": "generate",
+        "fromPort": "draft",
+        "to": "review",
+        "toPort": "draft"
+      }
+    },
+    "groups": {},
+    "roles": {},
+    "portals": {},
+    "definitions": {},
+    "view": {
+      "x": 0,
+      "y": 0,
+      "zoom": 0.65
+    }
+  }
+}

@@ -54,6 +54,50 @@ test('a wrapper with several outputs pins the explicitly chosen port', () => {
     assert.deepEqual(f.env.pinnedPreview, { workflowId: 'two-output-root', instancePath: [], nodeId: 'wrapper', portId: 'second' });
 });
 
+test('Run to here is a direct action for the primary output of a multi-output node', () => {
+    const f = fixture(twoOutputWorkflow(), []);
+    let launched = null;
+    f.env.workflowSession = { run({ target }) { launched = target; } };
+    const run = f.env.canvasPreviewMenuItems(f.env.editorDraw.nodes.wrapper, f.token).find(item => item.id === 'run-to-here');
+    assert.equal(run.children, undefined);
+    assert.equal(run.shortcut, 'R');
+    run.action();
+    assert.deepEqual(launched, { workflowId: 'two-output-root', instancePath: [], nodeId: 'wrapper', portId: 'first' });
+});
+
+test('direct Run to here respects the node output chosen in Preview without running another node', () => {
+    const f = fixture(twoOutputWorkflow(), []);
+    let launched = null;
+    f.env.workflowSession = { run({ target }) { launched = target; } };
+    const wanted = { workflowId: 'two-output-root', instancePath: [], nodeId: 'wrapper', portId: 'second' };
+    f.env.selectedPreview = wanted;
+    f.env.pinnedPreview = { workflowId: 'two-output-root', instancePath: ['wrapper'], nodeId: 'alpha', portId: 'out' };
+    f.env.canvasPreviewMenuItems(f.env.editorDraw.nodes.wrapper, f.token).find(item => item.id === 'run-to-here').action();
+    assert.deepEqual(launched, wanted);
+    f.env.selectedPreview = f.env.pinnedPreview;
+    f.env.pinnedPreview = wanted;
+    f.env.canvasPreviewMenuItems(f.env.editorDraw.nodes.wrapper, f.token).find(item => item.id === 'run-to-here').action();
+    assert.deepEqual(launched, wanted);
+    f.env.selectedPreview = { workflowId: 'two-output-root', instancePath: ['wrapper'], nodeId: 'alpha', portId: 'out' };
+    f.env.pinnedPreview = { ...wanted, instancePath: ['other-instance'] };
+    f.env.canvasPreviewMenuItems(f.env.editorDraw.nodes.wrapper, f.token).find(item => item.id === 'run-to-here').action();
+    assert.deepEqual(launched, { ...wanted, portId: 'first' });
+});
+
+test('direct Run to here cannot dispatch after changing graph views or during native host activity', () => {
+    const f = fixture();
+    let launched = null;
+    f.env.workflowSession = { run({ target }) { launched = target; } };
+    const run = f.env.canvasPreviewMenuItems(f.env.editorDraw.nodes.work, f.token).find(item => item.id === 'run-to-here');
+    f.env.workflowRuntime.getNativeWorkflowController = () => ({ activity: () => ({ busy: true }) });
+    run.action();
+    assert.equal(launched, null);
+    f.env.workflowRuntime.getNativeWorkflowController = () => ({ activity: () => null });
+    f.session.focusView(f.session.project().graphViews.tabs[0].key);
+    run.action();
+    assert.equal(launched, null);
+});
+
 test('Run to here rechecks busy state before dispatching the captured qualified target', () => {
     const f = fixture();
     let launched = null;

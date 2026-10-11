@@ -26,6 +26,7 @@
         <tr><td>Comment selection / Add comment</td><td>C</td></tr>
         <tr><td>Fit and center selection</td><td>F</td></tr>
         <tr><td>Rename selection</td><td>F2</td></tr>
+        <tr><td>Run to selected node</td><td>R</td></tr>
         <tr><td>Pan / Zoom</td><td>Middle mouse / Wheel</td></tr>
         <tr><td>Dismiss a menu or panel</td><td>Escape</td></tr>
     </tbody></table>

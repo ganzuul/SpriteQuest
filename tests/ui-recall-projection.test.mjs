@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {projectRecallView} from '../src/ui/recall-projection.js';
-const shortcut=(id,extra={})=>({id,operation:'hotkey-arm',actorId:'mara',memorySetId:'moments',target:'both',uses:'next-match',consumeOn:'accepted',hotkey:{code:'KeyR',ctrl:true},...extra});
+const shortcut=(id,extra={})=>({id,operation:'hotkey-arm',actorId:'mara',memorySetId:'moments',target:'both',uses:'next-match',consumeOn:'accepted',hotkey:{code:'KeyM',ctrl:true,shift:true},...extra});
 const recall=(id,extra={})=>({id,operation:'recall',actorId:'mara',memorySetId:'moments',target:'both',activation:'armed',...extra});
 const graph={nodes:{a:shortcut('a'),b:recall('b'),c:recall('c'),unrelated:{id:'unrelated',operation:'text'}}};
 const status={scope:{actorId:'mara'},version:1,requests:[],shortcuts:[shortcut('a')]};
@@ -15,4 +15,4 @@ test('empty selection stays empty and unknown enums stay unavailable',()=>{asser
 test('child views exclude selected cards but retain root global actions and overview rows',()=>{for(const viewKind of ['instance','library']){const view=projectRecallView({...input,viewKind});assert.equal(view.commands.selected.queueNodeIds.length,0);assert.equal(view.commands.all.queueNodeIds.length,3);assert.equal(view.sets.length,1);assert.equal(view.nodes.a.badge,undefined);assert.equal(view.nodes.a.state,'unavailable');}});
 
 
-test('a Shortcut reports when no matching Recall consumes its queued memory set',()=>{const shortcut={id:'shortcut',operation:'hotkey-arm',actorId:'mara',memorySetId:'unused',target:'both',uses:'next-match',consumeOn:'accepted',hotkey:{code:'KeyR'}};const view=projectRecallView({rootGraph:{nodes:{shortcut}},enabled:true,status:{scope:{actorId:'mara'},shortcuts:[{...shortcut,nodeId:'shortcut'}],requests:[]}});assert.equal(view.nodes.shortcut.consumerCount,0);assert.equal(view.nodes.shortcut.queueAllowed,true);});
+test('a Shortcut reports when no matching Recall consumes its queued memory set',()=>{const shortcut={id:'shortcut',operation:'hotkey-arm',actorId:'mara',memorySetId:'unused',target:'both',uses:'next-match',consumeOn:'accepted',hotkey:{code:'KeyM'}};const view=projectRecallView({rootGraph:{nodes:{shortcut}},enabled:true,status:{scope:{actorId:'mara'},shortcuts:[{...shortcut,nodeId:'shortcut'}],requests:[]}});assert.equal(view.nodes.shortcut.consumerCount,0);assert.equal(view.nodes.shortcut.queueAllowed,true);});

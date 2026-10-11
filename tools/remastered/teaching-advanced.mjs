@@ -233,7 +233,7 @@ export const ADVANCED_TEACHING = {
         ],
         steps: [
             'Read the rowan-moments initial template. Confirm that the lighthouse-promise record belongs to Rowan and is the accepted text you intend to reuse.',
-            'Read Recall Shortcut settings: target both, uses one-per-type, consumeOn accepted. Queue recall on the relevant node, use Node → Memory recall, or press Ctrl+Shift+R before generating.',
+            'Read Recall Shortcut settings: target both, uses one-per-type, consumeOn accepted. Queue recall on the relevant node, use Node → Memory recall, or press Ctrl+Shift+M before generating.',
             'For the shortcut test, send: “Rowan walks along the harbor wall.” This avoids the lighthouse keyword. Inspect Recall.records, Recall.report and Generate Reply.guidance for the selected private record.',
             'Reject that reply and check that the queued recall remains available. Try again and Apply: the reply use should now be consumed, with the separate swipe use still available.',
             'Test the other trigger with “Rowan visits the lighthouse.” The actual player-message keyword can activate recall without a queued shortcut. Compare both reports; neither path edits the memory text.'

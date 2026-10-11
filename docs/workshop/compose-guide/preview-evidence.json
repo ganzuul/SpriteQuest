@@ -1,0 +1,330 @@
+{
+  "revision": 4,
+  "renderer": "production Svelte CanvasLayer",
+  "errors": [],
+  "widths": [
+    {
+      "viewport": 800,
+      "width": 672,
+      "height": 500,
+      "sectionWidth": 674,
+      "overflow": 0,
+      "nodes": [
+        {
+          "id": "send",
+          "visible": true,
+          "textSize": 11.932491987179487
+        },
+        {
+          "id": "generate",
+          "visible": true,
+          "textSize": 11.931052597580253
+        },
+        {
+          "id": "review",
+          "visible": true,
+          "textSize": 11.965930757068453
+        },
+        {
+          "id": "direction",
+          "visible": true,
+          "textSize": 11.917124767177153
+        },
+        {
+          "id": "guidance",
+          "visible": true,
+          "textSize": 11.962528429533306
+        }
+      ]
+    },
+    {
+      "viewport": 320,
+      "width": 268,
+      "height": 690,
+      "sectionWidth": 270,
+      "overflow": 0,
+      "nodes": [
+        {
+          "id": "send",
+          "visible": true,
+          "textSize": 12.14818396935096
+        },
+        {
+          "id": "generate",
+          "visible": true,
+          "textSize": 12.146719490971549
+        },
+        {
+          "id": "review",
+          "visible": true,
+          "textSize": 12.182230631510416
+        },
+        {
+          "id": "direction",
+          "visible": true,
+          "textSize": 12.13253925651904
+        },
+        {
+          "id": "guidance",
+          "visible": true,
+          "textSize": 12.178763941714639
+        }
+      ]
+    }
+  ],
+  "workingExample": {
+    "status": "passed",
+    "generatedAtUtc": "2026-10-11T00:23:39.463Z",
+    "command": "node .tmp/verify-compose-working-example.mjs",
+    "scope": {
+      "runtime": "real local workflow runtime and operations",
+      "host": "synthetic On Send activation and synthetic Generate Reply Draft",
+      "providersContacted": false,
+      "realSillyTavernSendExecuted": false,
+      "realChatPublished": false,
+      "productionFilesChanged": false
+    },
+    "source": {
+      "path": "docs/workshop/compose-guide/compose-example.lattice.json",
+      "sha256": "3f1aa2b297b4a82d1a3ea7c641e57a5fa38a367a71d3b0f1e1fbee1a89338765",
+      "nodeCount": 5,
+      "wireCount": 4,
+      "executableValidationPassed": true
+    },
+    "expectedGuidance": {
+      "path": "docs/workshop/compose-guide/recorded-output.json",
+      "sha256": "c1e7d5be47b58ef781d892bf305553a4feaad5f1fcacd771205c9ff06ff380b3",
+      "artifact": {
+        "kind": "guidance",
+        "text": "Describe the dark lighthouse and one sound from the water.\n\nLeave the player's next action to them."
+      }
+    },
+    "fullWorkflowRun": {
+      "runId": "compose-workshop-full-synthetic-host",
+      "status": "completed",
+      "mode": "root",
+      "hostOperations": [
+        {
+          "nodeId": "send",
+          "operation": "on-send"
+        },
+        {
+          "nodeId": "generate",
+          "operation": "generate-reply"
+        }
+      ],
+      "syntheticNativeGenerations": 1,
+      "auxiliaryModelCallBound": 0,
+      "actualAuxiliaryModelCalls": 0,
+      "providerRequests": 0,
+      "composeOutput": {
+        "kind": "guidance",
+        "text": "Describe the dark lighthouse and one sound from the water.\n\nLeave the player's next action to them."
+      },
+      "generateReplyReceivedExactGuidance": true,
+      "completedNodes": [
+        {
+          "nodeId": "send",
+          "operation": "on-send",
+          "status": "completed"
+        },
+        {
+          "nodeId": "direction",
+          "operation": "text",
+          "status": "completed"
+        },
+        {
+          "nodeId": "guidance",
+          "operation": "compose",
+          "status": "completed"
+        },
+        {
+          "nodeId": "generate",
+          "operation": "generate-reply",
+          "status": "completed"
+        },
+        {
+          "nodeId": "review",
+          "operation": "review-publish",
+          "status": "completed"
+        }
+      ],
+      "settlement": {
+        "count": 1,
+        "terminalNodeId": "review",
+        "operation": "review-publish",
+        "artifactKind": "candidate",
+        "reviewRequired": true,
+        "receivedSyntheticDraft": true,
+        "lineageIncludesReviewPublish": true,
+        "syntheticDraftText": "Synthetic host reply: the dark lighthouse stands above the sound of waves."
+      }
+    },
+    "guidedMerge": {
+      "starter": "unified-basic",
+      "executableValidationPassed": true,
+      "addedNodes": [
+        "import-1",
+        "import-2"
+      ],
+      "addedInternalWires": [
+        "import-3"
+      ],
+      "addedGuidanceWires": [
+        "edge-1"
+      ],
+      "identityMap": {
+        "nodes": {
+          "direction": "import-1",
+          "guidance": "import-2"
+        },
+        "wires": {
+          "edge-2": "import-3"
+        },
+        "groups": {},
+        "portals": {},
+        "definitions": {},
+        "roles": {}
+      },
+      "starterUnchanged": true,
+      "existingLifecycleNodesUnchanged": true,
+      "freshNodeAndWireIds": true,
+      "freshRepeatedInsertionIds": true,
+      "singleCandidateUsesOriginalPreconditions": true,
+      "occupiedGuidanceRejected": {
+        "code": "AMBIGUOUS_INPUT",
+        "originalAndMergedGraphsUncommitted": true
+      },
+      "run": {
+        "runId": "compose-workshop-merged-synthetic-host",
+        "status": "completed",
+        "mode": "root",
+        "hostOperations": [
+          {
+            "nodeId": "on-send",
+            "operation": "on-send"
+          },
+          {
+            "nodeId": "generate-reply",
+            "operation": "generate-reply"
+          }
+        ],
+        "syntheticNativeGenerations": 1,
+        "auxiliaryModelCallBound": 0,
+        "actualAuxiliaryModelCalls": 0,
+        "providerRequests": 0,
+        "composeOutput": {
+          "kind": "guidance",
+          "text": "Describe the dark lighthouse and one sound from the water.\n\nLeave the player's next action to them."
+        },
+        "generateReplyReceivedExactGuidance": true,
+        "completedNodes": [
+          {
+            "nodeId": "on-send",
+            "operation": "on-send",
+            "status": "completed"
+          },
+          {
+            "nodeId": "import-1",
+            "operation": "text",
+            "status": "completed"
+          },
+          {
+            "nodeId": "import-2",
+            "operation": "compose",
+            "status": "completed"
+          },
+          {
+            "nodeId": "generate-reply",
+            "operation": "generate-reply",
+            "status": "completed"
+          },
+          {
+            "nodeId": "review-publish",
+            "operation": "review-publish",
+            "status": "completed"
+          }
+        ],
+        "settlement": {
+          "count": 1,
+          "terminalNodeId": "review-publish",
+          "operation": "review-publish",
+          "artifactKind": "candidate",
+          "reviewRequired": true,
+          "receivedSyntheticDraft": true,
+          "lineageIncludesReviewPublish": true,
+          "syntheticDraftText": "Synthetic host reply: the dark lighthouse stands above the sound of waves."
+        }
+      }
+    },
+    "limitations": [
+      "Native generation is synthetic; this verifies graph data flow and real Review / Publish operation, not a real SillyTavern Send.",
+      "The settlement hook verifies delivery of a reviewed candidate; it does not publish a chat reply or apply a host review.",
+      "The guided merge composes existing pure APIs; it does not implement or exercise a product import button or graph commit."
+    ]
+  },
+  "theme": {
+    "background": "rgb(15, 15, 15)",
+    "image": "none",
+    "nodes": [
+      {
+        "id": "send",
+        "family": "input",
+        "background": "rgba(40, 40, 40, 0.75)",
+        "radius": "6px",
+        "heading": "rgb(150, 173, 82)"
+      },
+      {
+        "id": "generate",
+        "family": "input",
+        "background": "rgba(40, 40, 40, 0.75)",
+        "radius": "6px",
+        "heading": "rgb(150, 173, 82)"
+      },
+      {
+        "id": "review",
+        "family": "output",
+        "background": "rgba(40, 40, 40, 0.75)",
+        "radius": "6px",
+        "heading": "rgb(201, 109, 130)"
+      },
+      {
+        "id": "direction",
+        "family": "input",
+        "background": "rgba(40, 40, 40, 0.75)",
+        "radius": "6px",
+        "heading": "rgb(150, 173, 82)"
+      },
+      {
+        "id": "guidance",
+        "family": "shaping",
+        "background": "rgba(40, 40, 40, 0.75)",
+        "radius": "6px",
+        "heading": "rgb(88, 154, 171)"
+      }
+    ]
+  },
+  "wireAnchors": [
+    {
+      "id": "edge-1",
+      "startError": 0.000012236037976613307,
+      "endError": 0.000007110134450981819
+    },
+    {
+      "id": "edge-2",
+      "startError": 0.0000029408046605207345,
+      "endError": 0.000005269679751122827
+    },
+    {
+      "id": "edge-3",
+      "startError": 0.00000584892541582944,
+      "endError": 0.000008245923159186534
+    },
+    {
+      "id": "edge-4",
+      "startError": 0.000006786635771332045,
+      "endError": 0.000027378290629479664
+    }
+  ],
+  "interactions": "fixed real node, full lazy Svelte canvas, complete workflow, exact Ember theme, full section width, footer action only, wheel/pan, local guided merge, defaults, close and Escape passed"
+}
