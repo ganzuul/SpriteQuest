@@ -1,10 +1,11 @@
 <script lang="ts">
     import type { CommentCommand, CommentFrameData, CommentPatch } from './comment-types';
-    let { comment, readOnly = false, onPatch, onCommand }: {
+    let { comment, readOnly = false, onPatch, onCommand, openGuide }: {
         comment: CommentFrameData;
         readOnly?: boolean;
         onPatch: (patch: CommentPatch) => void;
         onCommand: (command: CommentCommand) => void;
+        openGuide?: () => void;
     } = $props();
     const locked = $derived(readOnly || comment.readOnly);
     const stop = (event: Event) => event.stopPropagation();
@@ -13,7 +14,7 @@
 </script>
 
 <section class="pc-comment-details" aria-label="Comment details">
-    <h3>Comment</h3>
+    <header><h3>Comment</h3>{#if openGuide}<button type="button" class="pc-comment-help" aria-label="Open Comment guide" title="Help with Comment" onclick={openGuide}>?</button>{/if}</header>
     {#if locked}<p class="pc-detail-meta">Read-only comment</p>{/if}
     <fieldset class="pc-detail-group" disabled={locked}>
         <legend>Comment</legend>
@@ -31,6 +32,8 @@
 </section>
 
 <style>
+    header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .pc-comment-help { width: 26px; height: 26px; border: 1px solid var(--pc-border); border-radius: 50%; background: transparent; color: var(--pc-muted); font: inherit; font-weight: 600; cursor: pointer; }
     .pc-comment-details { display: grid; gap: 12px; color: var(--pc-text, #e8e8e8); }
     h3, p { margin: 0; }
     .pc-detail-group { display: grid; gap: 10px; margin: 0; padding: 12px; border: 1px solid var(--pc-border, #777); border-radius: var(--pc-r-sm, 5px); }

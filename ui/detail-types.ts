@@ -1,5 +1,6 @@
 import type {RecallNodeStatus} from './recall-types';
 import type { ManagerInterfaceEdit } from './manager-types';
+import type { NodeCardData } from './types';
 
 /** Prepared plain display contracts. These panels never resolve graphs, bindings or authority. */
 export interface DetailNodeAddress { workflowId: string; instancePath: string[]; nodeId: string; }
@@ -57,6 +58,7 @@ export interface WorkflowDataCreate {
 }
 export type WorkflowDataResponse = { ok: true; data?: { definition?: WorkflowDataDefinition; message?: string } } | { ok: false; error: DetailError };
 export interface NodeDetailsView extends DetailSelection {
+    guideKey?: string; guideCard?: NodeCardData | null;
     recall?: RecallNodeStatus;
     title: string; canonicalTitle: string; iconPath: string; family: string; phase: string;
     operation?: string; familyColor?: string; phaseEditable?: boolean;

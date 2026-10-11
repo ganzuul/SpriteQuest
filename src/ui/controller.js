@@ -31,6 +31,9 @@ import { prepareGraphCandidate } from '../workflow/prepared-graph-edit.js?v=0.27
 import { definitionRefKey } from '../workflow/definition-data.js?v=0.27.0';
 import { exportSubgraph } from '../workflow/packages.js?v=0.27.0';
 import { makeClip, makeDefinitionClip, readClip, prepareClipPaste } from '../workflow/clipboard.js?v=0.27.0';
+import { getNodeGuideExample } from '../workflow/node-guide-examples.js?v=0.27.0';
+import { prepareNodeGuideInsertion } from '../workflow/node-guide-insertion.js?v=0.27.0';
+import { prepareNodeGuideScene } from './node-guide-scene.js?v=0.27.0';
 import { prepareNativeSearchCatalog, resolveNativeSearchChoice } from './native-search-catalog.js?v=0.27.0';
 import { createNativeWireBridge } from './native-wire-bridge.js?v=0.27.0';
 import { readNodePresentation } from './node-palette.js?v=0.27.0';
@@ -488,7 +491,7 @@ function build() {
         },
         mode: mode => canvas.setMode(mode), zoom: factor => { const rect = canvas.host.getBoundingClientRect(); canvas.zoomBy(factor, rect.left + rect.width / 2, rect.top + rect.height / 2); }, fitSelection: () => canvas.fitSelection(),
         resizeStart: () => canvas?.cancelGesture(), resizeDetails,
-        graphViewActions, nodeDetails: nodeDetailsActions, commentDetails: commentDetailsActions, outputPreview: outputPreviewActions, runDetails: runDetailsActions,
+        graphViewActions, nodeDetails: nodeDetailsActions, nodeGuide: nodeGuideActions, commentDetails: commentDetailsActions, outputPreview: outputPreviewActions, runDetails: runDetailsActions,
         chooseNative: chooseNativeNode, managePortals: () => openPortalManager(), shelfSubgraph: shelfSubgraphAction,
         subgraphSave: { close() { pendingSubgraphSave = null; workbench.update({ subgraphSave: null }); }, save: saveSubgraphToShelf },
         documentPrompt: { choose: chooseDocumentPrompt },
@@ -1530,6 +1533,39 @@ function editIterationHelperBinding(selection, role, field, mode, value) {
 const commentDetailsActions = {
     patch(selection, patch) { const captured = detailCapture(selection); return captured.ok ? commentPatch(captured.data, selection.address.nodeId, patch) : captured; },
     command(selection, command) { const captured = detailCapture(selection); return captured.ok ? commentCommand(captured.data, selection.address.nodeId, command) : captured; },
+};
+function prepareGuideExample(key) {
+    if (!isOpen() || !current || !graphViews) return {ok: false, error: {code: 'VIEW_INACTIVE', message: 'Open an editable canvas tab to add this example.'}};
+    if (workflowState.busy || workflowRuntime.getNativeWorkflowController?.()?.activity?.()?.busy) return {ok: false, error: {code: 'WORKFLOW_BUSY', message: 'Wait for the current run to finish before adding this example.'}};
+    const editor = graphViews.readEditor();
+    const example = getNodeGuideExample(key);
+    if (!example) return {ok: false, error: {code: 'EXAMPLE_UNAVAILABLE', message: 'This example is unavailable.'}};
+    return prepareNodeGuideInsertion(current, example, {viewPath: [...(editor.view.identity.instancePath ?? [])], readOnly: editor.readOnly || editor.view.identity.kind === 'library'});
+}
+const nodeGuideActions = {
+    example(key) {
+        const example = getNodeGuideExample(key);
+        if (!example) return {ok: false, error: {code: 'EXAMPLE_UNAVAILABLE', message: 'This example is unavailable.'}};
+        const prepared = prepareNodeGuideScene(example.graph, example.focus);
+        return prepared.ok ? {ok: true, data: {example, scene: prepared.data}} : prepared;
+    },
+    status(key) {
+        const prepared = prepareGuideExample(key);
+        return prepared.ok ? {enabled: true, reason: prepared.data.message ?? ''} : {enabled: false, reason: prepared.error.message};
+    },
+    add(key) {
+        canvas?.cancelGesture('guide-example');
+        const captured = captureEditor(); if (!captured.ok) return captured;
+        const prepared = prepareGuideExample(key);
+        if (!prepared.ok) return prepared;
+        const committed = commitCaptured(captured.data, prepared);
+        if (committed.ok) {
+            const ids = prepared.data.added?.nodes ?? [];
+            if (ids.length === 1) canvas.select({kind: 'node', id: ids[0]}); else if (ids.length) canvas.setMulti(ids);
+            if (ids.length) canvas.fitSelection();
+        }
+        return committed;
+    },
 };
 const nodeDetailsActions = {
     queueRecall(selection){const captured=detailCapture(selection,true);return captured.ok?recallActions.change([selection.address.nodeId],'queue'):captured;},

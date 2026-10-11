@@ -59,6 +59,7 @@ export interface WorkbenchView {
     menuCapabilities?: { inspect: boolean; rename: boolean; duplicate: boolean; group: boolean; ungroup: boolean; createSubgraph: boolean; saveSubgraph: boolean; comment: boolean; compact: boolean; compactChecked: boolean; fitSelection: boolean; hasSelection: boolean; stop: boolean };
 }
 export interface WorkbenchActions {
+    nodeGuide?: import('./node-guide-types').NodeGuideActions;
     logoUrl?: string;
     graphViewActions?: GraphViewActions; nodeDetails?: NodeDetailsActions; outputPreview?: OutputPreviewActions; runDetails?: RunDetailsActions;
     commentDetails?: { patch: (selection: DetailSelection, patch: CommentPatch) => DetailEditResponse; command: (selection: DetailSelection, command: CommentCommand) => DetailEditResponse };

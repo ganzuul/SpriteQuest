@@ -10,6 +10,7 @@ import { ARTIFACT_KINDS, OPERATIONS, operationFor, portsForNode, phaseForNode } 
 import { definitionChain } from '../workflow/composition-edit.js?v=0.27.0';
 import { FAMILY_PALETTE, paletteForOperation, readNodePresentation } from './node-palette.js?v=0.27.0';
 import { isCommentFrame } from '../canvas/comment-frames.js?v=0.27.0';
+import { nodeCard } from '../canvas/presentation.js?v=0.27.0';
 import { modifierTypes, modifierSummary, applyTextModifiers } from '../workflow/modifiers.js?v=0.27.0';
 import { addressKey, boundedText, RENDERED_TEXT_BYTES } from '../workflow/record-data.js?v=0.27.0';
 import { prepareNodeProfileOptions } from './node-profile-preparation.js?v=0.27.0';
@@ -150,7 +151,10 @@ export function projectWorkspacePanels(editor, workflow, state, revision, select
         const value = profileModelDefault ? null : saved?.[key] ?? null;
         return { mode: blocked ? 'block' : value ? 'override' : 'inherit', value, effectiveValue: editor.prepared.effectiveNodes[selectedId]?.[key] ?? null, allowedModes: blocked ? [...modes, { value: 'block', label: 'Blocked by instance' }] : modes, ...(options ? { options } : {}) };
     };
-    const selection = { selectionKey: JSON.stringify([editor?.view.key, selectedId]), revision, address };
+    const guideKey = saved?.type === 'workflow' ? saved.operation : isCommentFrame(saved) ? 'comment' : saved?.type;
+    const guideCard = saved && metadata && editor.prepared.drawBase.nodes?.[selectedId] && !isCommentFrame(saved)
+        ? structuredClone(nodeCard({ ...editor.prepared.drawBase.nodes[selectedId], presentation, x: 0, y: 0 }, { graph: editor.prepared.drawBase })) : null;
+    const selection = { selectionKey: JSON.stringify([editor?.view.key, selectedId]), revision, address, guideKey, guideCard };
     const interfacePort = metadata?.boundary ? editor.prepared.interface.find(port => port.id === saved?.interfacePortId && port.boundaryNodeId === selectedId) : null;
     const boundary = interfacePort ? { id: interfacePort.id, label: interfacePort.label, direction: interfacePort.direction, kind: interfacePort.kind, required: interfacePort.required, kinds: [...ARTIFACT_KINDS] } : null;
     const commentDetails = isCommentFrame(saved) ? { selection, comment: { id: saved.id, x: saved.x, y: saved.y, w: saved.w, h: saved.h, title: saved.title ?? 'Comment', content: saved.content ?? '', color: saved.color ?? '#637d89', moveContents: saved.moveContents !== false, selected: true, readOnly: editor.readOnly || library } } : null;

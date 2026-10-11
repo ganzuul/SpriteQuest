@@ -5,7 +5,7 @@
     import ModifierStack from './ModifierStack.svelte';
     import WorkflowData from './WorkflowData.svelte';
     import type { DetailBindingMode, DetailControl, DetailEditResponse, DetailModifier, DetailSelection, NodeDetailsActions, NodeDetailsView } from './detail-types';
-    let { view, actions = {}, idPrefix = 'pc-node-details' }: { view: NodeDetailsView | null; actions?: NodeDetailsActions; idPrefix?: string } = $props();
+    let { view, actions = {}, idPrefix = 'pc-node-details', openGuide }: { view: NodeDetailsView | null; actions?: NodeDetailsActions; idPrefix?: string; openGuide?: () => void } = $props();
     type LocalDraft = { text: string; error: string; pending: boolean; editor?: DetailControl['editor']; representation?: 'json-text' | 'json-value'; artifactKind?: string; required?: boolean; boundaryId?: string; boundaryDirection?: 'input' | 'output'; modifierType?: string; helperKey?:string };
     let drafts = $state<Record<string, LocalDraft>>({});
     let errors = $state<Record<string, string>>({});
@@ -334,6 +334,7 @@
             {#if !view.boundary && (view.alias || view.title || view.canonicalTitle) !== view.canonicalTitle}<small data-canonical-title>Canonical type: {view.canonicalTitle}</small>{/if}
             <small>{view.boundary ? 'Subgraph ' + view.boundary.direction : view.family + ' · ' + view.phase + ' phase'}</small>
         </div>
+        {#if openGuide}<button type="button" class="pc-node-guide-help" aria-label={`Open ${view.canonicalTitle} guide`} title={`Help with ${view.canonicalTitle}`} onclick={openGuide}>?</button>{/if}
     </header>
     {#if view.phaseEditable}<label>Workflow stage<select aria-label="Workflow stage" value={view.phase} disabled={view.readOnly || !actions.editPhase} onchange={event => { const phase = event.currentTarget.value as 'pre' | 'post'; void perform('phase', false, captured => actions.editPhase!(captured, phase)); }}><option value="pre">Preparation · before Generate Reply</option><option value="post">Response · after Generate Reply</option></select></label>{#if errors.phase}<p role="alert" class="pc-detail-error">{errors.phase}</p>{/if}{/if}
     {#if view.recall}<RecallDetails view={view.recall} actions={{queue:()=>actions.queueRecall?.(selection(view!))??{ok:false,error:{code:'RECALL_UNAVAILABLE',message:'Memory recall is unavailable.'}},cancel:()=>actions.cancelRecall?.(selection(view!))??{ok:false,error:{code:'RECALL_UNAVAILABLE',message:'Memory recall is unavailable.'}},revealShortcut:actions.revealRecallShortcut}} />{/if}
@@ -418,6 +419,9 @@
 {/snippet}
 
 <style>
+    .pc-node-guide-help { flex: none; align-self: center; width: 26px; height: 26px; border: 1px solid var(--pc-border); border-radius: 50%; background: transparent; color: var(--pc-muted); font: inherit; font-weight: 600; cursor: pointer; }
+    .pc-node-guide-help:hover { color: var(--pc-text); background: var(--pc-hover); }
+    .pc-node-guide-help:focus-visible { outline: 2px solid var(--pc-flow); outline-offset: 2px; }
     .pc-node-details { --pc-r-sm: 4px; box-sizing: border-box; flex: 1; display: flex; flex-direction: column; min-width: 0; width: 100%; color: var(--pc-text); font: inherit; font-size: 12px; padding: 10px; }
     .pc-node-details :global(.pc-modifiers) { margin-top: auto; padding-top: 12px; }
     header { display: flex; gap: 7px; align-items: start; padding: 7px; border: 1px solid var(--pc-border); border-radius: 4px; background: var(--pc-field); }

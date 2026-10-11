@@ -6,6 +6,8 @@
     import GraphTabs from './GraphTabs.svelte';
     import GraphBreadcrumbs from './GraphBreadcrumbs.svelte';
     import NodeDetails from './NodeDetails.svelte';
+    import NodeGuide from './NodeGuide.svelte';
+    import { projectNodeGuide, projectCommentGuide } from '../src/ui/node-guide.js';
     import CommentDetails from './CommentDetails.svelte';
     import OutputPreview from './OutputPreview.svelte';
     import RunDetails from './RunDetails.svelte';
@@ -50,7 +52,12 @@
     let detailsWidth = $derived(Math.max(220, Math.min(detailsMax, detailsDraft ?? view.detailsWidth ?? 258)));
     function commitDetails(width: number) { detailsDraft = null; view = { ...view, detailsWidth: width }; actions.resizeDetails?.(width); }
     let overlay = $state('');
+    let guideSelection = $state('');
+    const currentGuideSelection = $derived(view.commentDetails?.selection.selectionKey ?? view.nodeDetails?.selectionKey ?? '');
+    const nodeGuide = $derived(overlay === 'node-guide' ? view.commentDetails ? projectCommentGuide(view.commentDetails.comment) : projectNodeGuide(view.nodeDetails) : null);
+    $effect(() => { if (overlay === 'node-guide' && (guideSelection !== currentGuideSelection || !nodeGuide)) closeOverlay(); });
     const overlayTitle = $derived(({examples:'Examples', 'run-details':'Run details', 'story-documents':'Workflow Data', 'memory-recall':'Memory recall', 'validate-workflow':'Workflow validation', 'node-reference':'Node reference', shortcuts:'Keyboard shortcuts', about:'About Lattice'} as Record<string,string>)[overlay] ?? 'Workspace guide');
+    const dialogTitle = $derived(overlay === 'node-guide' && nodeGuide ? `${nodeGuide.title} guide` : overlayTitle);
     const rootWorkflow = $derived(view.rootWorkflow ?? view.workflow);
     const insertionContextKey = $derived(`${view.menuContextKey ?? ''}:${view.graphId}:${view.graphViews?.active.key ?? ''}:${view.graphViews?.viewEpoch ?? ''}`);
     const referenceUrl = $derived(actions.logoUrl ? new URL('../docs/node-reference.md', actions.logoUrl).href : '');
@@ -85,6 +92,7 @@
         else { overlayAnchor = document.activeElement as HTMLElement; if (command === 'examples') actions.refreshExamples?.(); if (command === 'story-documents') actions.storyDocuments?.refresh?.(); if (command === 'memory-recall') actions.recall?.refresh?.(); const epoch = ++overlayEpoch; overlay = command; await tick(); if (epoch === overlayEpoch && overlay === command) dialog?.querySelector<HTMLButtonElement>('button')?.focus(); }
     }
     function closeOverlay() { overlayEpoch++; overlay = ''; overlayAnchor?.focus({ preventScroll: true }); }
+    function openNodeGuide() { guideSelection = currentGuideSelection; void local('node-guide'); }
     async function openExample(id: string) {
         const epoch = overlayEpoch;
         try {
@@ -109,7 +117,7 @@
         event.stopPropagation();
         if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); closeOverlay(); }
         if (event.key === 'Tab') {
-            const elements = [...dialog.querySelectorAll<HTMLElement>('a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex="0"]')];
+            const elements = [...dialog.querySelectorAll<HTMLElement>('a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), summary, [tabindex="0"]')].filter(element => !element.closest('[inert]') && element.getClientRects().length > 0);
             const first = elements[0], last = elements.at(-1);
             if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
             if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
@@ -149,16 +157,18 @@
             <header class="pc-details-heading"><strong>Details</strong><button type="button" aria-label="Close Details" title="Close Details" onclick={() => actions.command('inspector')}>×</button></header>
             {#if view.commentDetails}
                 {@const details = view.commentDetails}
-                <CommentDetails comment={details.comment} onPatch={patch => actions.commentDetails?.patch(details.selection, patch)} onCommand={command => actions.commentDetails?.command(details.selection, command)} />
+                <CommentDetails comment={details.comment} openGuide={openNodeGuide} onPatch={patch => actions.commentDetails?.patch(details.selection, patch)} onCommand={command => actions.commentDetails?.command(details.selection, command)} />
             {/if}
-            <div class="pc-node-details-holder" hidden={!!view.commentDetails}><NodeDetails view={view.commentDetails ? null : view.nodeDetails ?? null} actions={actions.nodeDetails} /></div>
+            <div class="pc-node-details-holder" hidden={!!view.commentDetails}><NodeDetails view={view.commentDetails ? null : view.nodeDetails ?? null} actions={actions.nodeDetails} openGuide={openNodeGuide} /></div>
         </div>
     </div>
     {#if overlay}
         <div class="pc-workspace-overlay">
-            <div class="pc-workspace-dialog" class:pc-examples-dialog={overlay === 'examples'} role="dialog" tabindex="-1" aria-modal="true" aria-label={overlayTitle} bind:this={dialog} onkeydown={overlayKeys} onpaste={(event) => event.stopPropagation()}>
-                <header><h2>{overlayTitle}</h2><button type="button" class="pc-btn menu_button" aria-label={overlay==='memory-recall'?'Close':'Close panel'} onclick={closeOverlay}>{overlay==='memory-recall'?'Close':'×'}</button></header>
+            <div class="pc-workspace-dialog" class:pc-examples-dialog={overlay === 'examples'} class:pc-node-guide-dialog={overlay === 'node-guide'} role="dialog" tabindex="-1" aria-modal="true" aria-label={dialogTitle} bind:this={dialog} onkeydown={overlayKeys} onpaste={(event) => event.stopPropagation()}>
+                <header><h2>{dialogTitle}</h2><button type="button" class="pc-btn menu_button" aria-label={overlay==='memory-recall'?'Close':'Close panel'} onclick={closeOverlay}>{overlay==='memory-recall'?'Close':'×'}</button></header>
+                {#if overlay === 'node-guide' && nodeGuide}{#key guideSelection}<NodeGuide guide={nodeGuide} actions={actions.nodeGuide} contextKey={insertionContextKey + ':' + (view.nodeDetails?.revision ?? view.commentDetails?.selection.revision ?? '')} close={closeOverlay} />{/key}{:else}
                 {#if overlay === 'examples'}<ExamplesBrowser examples={view.examples} issue={view.examplesIssue} retry={actions.refreshExamples} scrollTop={examplesScroll} scroll={top => examplesScroll = top} open={openExample} />{:else if overlay === 'memory-recall'}<RecallOverview view={view.recall ?? null} actions={{...actions.recall!,reveal:(nodeId)=>{closeOverlay();actions.recall?.reveal(nodeId);}}} />{:else if overlay === 'story-documents'}<StoryDocuments view={view.storyDocuments ?? { key: '', revision: '', scope: { userId: '', chatId: '' }, documents: [], issue: 'Workflow Data setup is unavailable.' }} actions={actions.storyDocuments} close={closeOverlay} />{:else if overlay === 'run-details'}<RunDetails view={view.runDetails ?? null} actions={actions.runDetails} />{:else if overlay !== 'help'}<WorkspaceReport panel={overlay} workflow={rootWorkflow} version={manifest.version} {referenceUrl} {guideUrl} />{:else}<p>Browse node families on the floating shelf. Middle mouse pans the graph; the wheel zooms around the pointer. Use the dividers or their arrow keys to resize Preview and Details. View controls panel visibility; View › Reset panel layout restores the default layout.</p><p>Open examples from File to start a workflow document. A unified workflow's preparation stage feeds Generate Reply, and its response stage reshapes the captured Draft before Review and Publish. Choose each model node's connection with the bar under it. Details contains advanced model overrides and inheritance settings. Enable Lattice runs the open document for Send in SillyTavern. Run to here tests supported nodes; Workflow › Stop workflow cancels the current run. Retired pre and post workflows remain available only for archived export.</p><p>File › New workflow, Open workflow, Open Recent and Open examples replace the open document after offering Save, Don't Save or Cancel for unsaved changes. Save writes the current file; Save As chooses a destination. Save As creates a JSON copy when direct file saving is unavailable. Export workflow JSON makes a portable sharing copy without local connections. Import into graph reviews a compatible fragment before one undoable insertion. Recover previous workflows opens unified documents preserved from earlier settings. File › Export archived workflows preserves retired originals for reference. Recovery drafts remain available in SillyTavern, while the filename and document status describe the current file.</p><p>Select nodes and right-click Create Subgraph to open their connected body in a new tab. Double-click a subgraph to open it. Add Input and Output nodes from the Subgraphs shelf inside an editable subgraph, then name and configure their ports in Details.</p><p>Right-click a subgraph block and choose Add to Subgraphs to save it for reuse. Right-click a saved shelf entry to delete it. Saving updates the shelf only when you choose to save; existing placed copies stay unchanged. Portals connect pins through named references. Preview artifact tabs show results for the selected node; Run to here checks the request bound before running. Apply reviews the fresh result against the full root workflow.</p><p><a href={guideUrl} target="_blank" rel="noreferrer">Open the project guide</a> · <a href={referenceUrl} target="_blank" rel="noreferrer">Node reference</a></p>{/if}
+                {/if}
             </div>
         </div>
     {/if}
@@ -172,6 +182,9 @@
 </div>
 
 <style>
+    .pc-workspace-dialog.pc-node-guide-dialog { width: 660px; max-width: calc(100% - 24px); max-height: calc(100% - 24px); padding: 0; overflow: auto; background: var(--pc-panel-solid); border-radius: var(--pc-r-sm); }
+    .pc-node-guide-dialog > header { display: flex; align-items: center; justify-content: space-between; gap: 12px; position: sticky; top: 0; z-index: 2; margin: 0; padding: 12px 20px; background: var(--pc-panel-solid); border-bottom: 1px solid var(--pc-border); }
+    .pc-node-guide-dialog h2 { margin: 0; font-size: 17px; }
     .pc-workspace-dialog a { color: var(--pc-accent); }
     .pc-workspace-dialog.pc-examples-dialog { box-sizing: border-box; display: flex; flex-direction: column; width: 760px; height: 680px; max-width: calc(100% - 24px); max-height: calc(100% - 24px); padding: 0; overflow: hidden; border-radius: 4px; background: var(--pc-panel-solid); }
     .pc-examples-dialog > header { flex: none; height: 42px; box-sizing: border-box; padding: 7px 10px; margin: 0; border-bottom: 1px solid var(--pc-border); }
