@@ -1,0 +1,3 @@
+PASS workflow-node-guide-fixtures.test.mjs
+PASS workflow-node-guide-lazy-examples.test.mjs
+2/2 test files passed

@@ -1,0 +1,126 @@
+{
+  "runtimeSourceCommit": "5f801fb117030a10ca7e5daa9af76d1502933212",
+  "unitTestSourceCommit": "ebd83a1c49debb73d15e3e883e54b09098c3c6bb",
+  "files": [
+    {
+      "path": ".gitattributes",
+      "bytes": 105,
+      "sha256": "db4cc772342f56ad6ee770fa51e8cd957f8eee2d65b727af35332c0d4db7c96f"
+    },
+    {
+      "path": "controller-fixture-green.txt",
+      "bytes": 112,
+      "sha256": "999fdd57aac5310842098d5bc614fe682b26eda1e8ede4722a8572f38f2c7763"
+    },
+    {
+      "path": "final-assets.txt",
+      "bytes": 171,
+      "sha256": "d816834d665212b0712192f49e916a20a63b92c8b716dd475b31cb5d3dc2abdc"
+    },
+    {
+      "path": "final-browser.txt",
+      "bytes": 53781,
+      "sha256": "daee47a5e1d7d5c540c875ef479447e77494c2ba07c629a5b77c60493d7d6eda"
+    },
+    {
+      "path": "final-documentation.txt",
+      "bytes": 86,
+      "sha256": "4a3e8f84e48aacd43ed861420a6ae593826e74e866f7240e45a77950f5e97f8f"
+    },
+    {
+      "path": "final-extra-docs.json",
+      "bytes": 53,
+      "sha256": "8b22292549f0f4f3fa7ebf5edc468d01e9ee5eeb736106547e1e9c5d6c764372"
+    },
+    {
+      "path": "final-historical-and-branches.json",
+      "bytes": 187,
+      "sha256": "983a2970d4c7d6a70c13909754a5476f642a377bfa1aedec2d6231b06569d578"
+    },
+    {
+      "path": "final-install.txt",
+      "bytes": 487,
+      "sha256": "01d10fa559473d494d55aefc0379e408cd3402ed4a6557d996449df7e4b4ceda"
+    },
+    {
+      "path": "final-latency-smoke.txt",
+      "bytes": 10951,
+      "sha256": "41363f9f6f24ed5dc85bef16fc3a6b5e636a83706212330854d3c3b0e96ad8af"
+    },
+    {
+      "path": "final-source-accounting.json",
+      "bytes": 13828,
+      "sha256": "f5731840973712dd798bcab8bd56a224298c8e4f4a0a41dec56ac74e4fdfde4a"
+    },
+    {
+      "path": "final-types.txt",
+      "bytes": 264,
+      "sha256": "ec4012ca0e15f3c2e74da6b91783a16ef2c25528d5cbdc1fd46313d513e6c2d6"
+    },
+    {
+      "path": "final-unit.txt",
+      "bytes": 11556,
+      "sha256": "41fddd5e2b13b89952fcee3e69cf7c70a910ca7c3346afbaa0d61cdacf81d470"
+    },
+    {
+      "path": "final-verification.json",
+      "bytes": 2463,
+      "sha256": "4b1ba5d015b1c5c42ac3118a95b774b172179ce944518a5750ff0a9dd5a27375"
+    },
+    {
+      "path": "guide-lazy-green.txt",
+      "bytes": 116,
+      "sha256": "ecc3be02d398e258c6c467ef668889a8728f8ecfd806bfb04dc529052920878a"
+    },
+    {
+      "path": "guide-lazy-red.txt",
+      "bytes": 1005,
+      "sha256": "c0ce51addba00525c742a15df0eff9fd1d22f15c35b7b3a351c968ed56c5bba0"
+    },
+    {
+      "path": "guide-preparation-sample.json",
+      "bytes": 558,
+      "sha256": "e7dc08e9a2d05d4141cc918bf4d2e7d5d3c8851b0d3bcd2c5c405a6803317fbe"
+    },
+    {
+      "path": "guides-final-build.txt",
+      "bytes": 317,
+      "sha256": "491d7ded1d7861e776316e96e8a49729bd6c3f10cf6707235edfc5b21b1855da"
+    },
+    {
+      "path": "guides-focused-browser.txt",
+      "bytes": 3014,
+      "sha256": "4e11c4c50fdbafdd1bf572562e202f0c9b41f8cd12d41f648d1d9e91b1104cc0"
+    },
+    {
+      "path": "initial-unit.txt",
+      "bytes": 24268,
+      "sha256": "8f1214462f3ca83e651b1fe05d211ec608bf7cc2296e344200d853d3f7002873"
+    },
+    {
+      "path": "latency-smoke/connect-release-250.cpuprofile",
+      "bytes": 87312,
+      "sha256": "c0f1bd75dff6495e683e93e4f531713dfee5ca7760e3b34b18e7524a2ae210ff"
+    },
+    {
+      "path": "latency-smoke/detail-toggle-250.cpuprofile",
+      "bytes": 69964,
+      "sha256": "52acd98a4fa7191cccb2c7d78ac41b8166677719911f855d2a1106e58e4b4270"
+    },
+    {
+      "path": "latency-smoke/editor-latency-results.json",
+      "bytes": 62920,
+      "sha256": "ee0886c6d759097b72d3b3385892e4c273fa258b43aaa3a9e10fd305890e509e"
+    },
+    {
+      "path": "latency-smoke/editor-latency-source-manifest.json",
+      "bytes": 51222,
+      "sha256": "63ea8745695ad5f08b998e79f1c321b790cf478bec1879266d26ec6c83b8d6b3"
+    },
+    {
+      "path": "latency-smoke/shelf-create-250.cpuprofile",
+      "bytes": 105443,
+      "sha256": "54cd52435a496ff59d8d232f44ae746e8c05825bfe8f4c8c87b5fd6b45314bff"
+    }
+  ]
+}

@@ -39,4 +39,22 @@ Guide reconciliation places immutable preview cards in the authored Details cach
 
 Review also reproduced a native-preview incompatibility in the Repair, Validate Patches and Review Gate guides. Their independent manual branch now starts with Reply Snapshot, while native Send retains its ordinary Generate Reply → Review / Publish path. The recipes explain that a completed latest assistant reply is required. Public host regressions verify manual inspection makes zero model requests, saves, review handles or chat writes, and ordinary Send still works afterward. System Enabled and typed Compose section/skip/budget settings are described by the guides.
 
-Final combined verification, source accounting and publication results will be recorded here after all source is frozen.
+## Final source and checks
+
+The runtime and rebuilt distribution are frozen in `5f801fb117030a10ca7e5daa9af76d1502933212`. The full browser run passes **371/371 cases** in six minutes on a fresh isolated server (port4226, two workers). Svelte checking reports zero errors and warnings, 623 versioned local imports pass asset verification, installation without node_modules succeeds with zero model requests, and the main documentation check passes 11 documents, 229 links, 74 operations and 20 screenshots. The seven integration/audit/workshop documents have another 25 verified local links.
+
+The first full unit run passed 299 of 301 files and identified two controller-extraction fixtures missing the real new shared busy helper. Test-only commit `ebd83a1c49debb73d15e3e883e54b09098c3c6bb` adds that actual helper to both fixture dependency lists; their focused regressions pass. The complete fresh unit recheck passes **301/301 files**. Runtime and build bytes are unchanged by this correction.
+
+Independent final review reports no remaining material issue. All 13 current worktree tips and all 21 local branch tips are reachable from the integration. Independent preservation checks confirm 327 original file snapshots plus one deletion, all 38 completed guide source files, and 812 live/archive File source members. The original before-integration Git bundle and every existing checkout/ref are retained. The 52 latency artifact blobs in the guide merge remain identical to the preceding reviewed candidate, including the separately verified 33 historical measurement artifacts; all three diagnostic logs still match their recorded SHA-256 bytes.
+
+The [verification manifest](../../research/artifacts/combined-main-integration/final-verification.json), [source accounting](../../research/artifacts/combined-main-integration/final-source-accounting.json), and accompanying logs record tested source, build hashes and check output. The [performance overhaul audit](../../research/2026-10-10-lattice-performance-overhaul.md) retains the earlier matched latency and motion cohorts and their remaining target limitations. The final [latency smoke sample](../../research/artifacts/combined-main-integration/latency-smoke/editor-latency-results.json) completed five repeats per action at CPU rate1, with no provider calls, page errors or blocked requests. Median settled estimates (milliseconds) are:
+
+| Nodes | Details toggle | Place from shelf | Connect release |
+| --- | ---: | ---: | ---: |
+| 25 | 41 | 41 | 39 |
+| 100 | 94 | 108 | 91 |
+| 250 | 198 | 234 | 186 |
+
+This small unthrottled synthetic-host sample supplements the earlier matched stress/motion cohorts. Settled time ends at the second animation frame; it is a paint-opportunity estimate, not INP. Motion was not rerun in this smoke check, and the prior acceptance limitations remain explicit.
+
+Publication keeps the preserved branches and checkouts, fast-forwards Main to the verified integration, and uses a normal push. GitHub and local/origin equality are checked after publication.

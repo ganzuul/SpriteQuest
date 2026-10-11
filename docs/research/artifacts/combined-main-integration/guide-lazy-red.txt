@@ -1,0 +1,28 @@
+✖ opening one guide admits only its requested example, then returns detached cached copies (825.9925ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 830.2348
+
+✖ failing tests:
+
+test at tests\workflow-node-guide-lazy-examples.test.mjs:5:1
+✖ opening one guide admits only its requested example, then returns detached cached copies (825.9925ms)
+  AssertionError [ERR_ASSERTION]: Compose must not admit every unrelated curriculum graph
+  
+  30 !== 0
+  
+      at TestContext.<anonymous> (file:///C:/Users/Keptin/.codex/worktrees/lattice-performance-overhaul/SillyCanvas/tests/workflow-node-guide-lazy-examples.test.mjs:13:16)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 30,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

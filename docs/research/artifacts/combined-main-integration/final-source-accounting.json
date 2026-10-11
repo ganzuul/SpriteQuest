@@ -1,0 +1,187 @@
+{
+  "sourceCommit": "5f801fb117030a10ca7e5daa9af76d1502933212",
+  "allTipsReachable": true,
+  "sources": [
+    "816dc841e230e161af30316cfea4fc487e7c57b0",
+    "48ccf876a3c6bdb4b69b1ec84e29452f4b127cc5",
+    "99f63a79829a167a29a07299c2b247c0f692a121",
+    "3f7339c14392873b35698fbcbaff44aa7578adb8",
+    "7beac2038bc8981a51d41f2d2cbec9ac695043c5"
+  ],
+  "trees": [
+    {
+      "path": "F:/git/SillyCanvas",
+      "head": "7beac2038bc8981a51d41f2d2cbec9ac695043c5",
+      "branch": "refs/heads/codex/node-guides",
+      "status": ""
+    },
+    {
+      "path": "C:/Users/Keptin/.codex/worktrees/canvas-memory-recall/SillyCanvas",
+      "head": "fc281fe65895dc0c79e9ad2b7d6039cf58031fbb",
+      "branch": "refs/heads/codex/canvas-memory-recall",
+      "status": ""
+    },
+    {
+      "path": "C:/Users/Keptin/.codex/worktrees/compact-node-shelf/SillyCanvas",
+      "head": "50d28c18db8ba15753afa421d3946762056b1060",
+      "branch": "refs/heads/codex/compact-node-shelf",
+      "status": ""
+    },
+    {
+      "path": "C:/Users/Keptin/.codex/worktrees/consolidated-menus/SillyCanvas",
+      "head": "4933a7e7e9a3fcf8166e85a40de3d907825b9956",
+      "branch": "refs/heads/codex/consolidated-menus",
+      "status": ""
+    },
+    {
+      "path": "C:/Users/Keptin/.codex/worktrees/details-panel-overhaul/SillyCanvas",
+      "head": "1343e3ca8c8d9a339625dbd9a12c70b77dee1bfd",
+      "branch": "refs/heads/codex/details-panel-bevels",
+      "status": ""
+    },
+    {
+      "path": "C:/Users/Keptin/.codex/worktrees/lattice-performance-overhaul/SillyCanvas",
+      "head": "ebd83a1c49debb73d15e3e883e54b09098c3c6bb",
+      "branch": "refs/heads/codex/integrate-all-2026-10-10",
+      "status": "M docs/superpowers/plans/2026-10-10-combined-main-integration.md\n M docs/superpowers/reports/2026-10-10-combined-main-integration.md\n?? docs/research/artifacts/combined-main-integration/"
+    },
+    {
+      "path": "C:/Users/Keptin/.codex/worktrees/node-profile-dropdowns/SillyCanvas",
+      "head": "2486c4442098df5e0b0a8288a1e4136c461c4b00",
+      "branch": "refs/heads/codex/profile-ui-cleanup",
+      "status": ""
+    },
+    {
+      "path": "C:/Users/Keptin/.codex/worktrees/plain-language-messages/SillyCanvas",
+      "head": "3f7339c14392873b35698fbcbaff44aa7578adb8",
+      "branch": "refs/heads/codex/plain-language-diagnostics",
+      "status": ""
+    },
+    {
+      "path": "C:/Users/Keptin/.codex/worktrees/typed-pin-routing/SillyCanvas",
+      "head": "58f8a0380b41921302f50cca83bcc0046d787ea8",
+      "branch": "refs/heads/codex/typed-pin-routing",
+      "status": ""
+    },
+    {
+      "path": "C:/Users/Keptin/.codex/worktrees/workflow-data-node-defaults/SillyCanvas",
+      "head": "203335173169dae9a78106bed91c5f45a0daa1e5",
+      "branch": "refs/heads/codex/workflow-data-node-defaults",
+      "status": ""
+    },
+    {
+      "path": "C:/Users/Keptin/.codex/worktrees/workflow-files/SillyCanvas",
+      "head": "d807155fbc27d7a4784b729579068ad8527981c1",
+      "branch": "refs/heads/codex/workflow-files",
+      "status": "M README.md\n M dist/lattice-ui.js\n M dist/lattice.css\n M docs/lattice-workspace.md\n M docs/native-workflows.md\n M docs/operators-manual.md\n M docs/research/2026-10-09-lattice-example-catalog.json\n M docs/unified-workflows.md\n M examples/roleplay/anger-and-trust-post.json\n M examples/roleplay/anger-and-trust-pre.json\n M examples/roleplay/canonical-terminology-post.json\n M examples/roleplay/character-reaction-pre.json\n M examples/roleplay/character-reaction-subgraph-pre.json\n M examples/roleplay/character-voice-post.json\n M examples/roleplay/competing-motives-pre.json\n M examples/roleplay/concise-recast-post.json\n M examples/roleplay/configured-phrase-repair-post.json\n M examples/roleplay/consequence-clock-post.json\n M examples/roleplay/consequence-clock-pre.json\n M examples/roleplay/context-lens-subgraph-pre.json\n M examples/roleplay/continuity-and-voice-post.json\n M examples/roleplay/continuity-and-voice-pre.json\n M examples/roleplay/earned-trust-post.json\n M examples/roleplay/earned-trust-pre.json\n M examples/roleplay/emotional-pacing-post.json\n M examples/roleplay/ensemble-focus-pre.json\n M examples/roleplay/grounded-description-post.json\n M examples/roleplay/inner-voice-pre.json\n M examples/roleplay/legible-action-pre.json\n M examples/roleplay/limited-viewpoint-post.json\n M examples/roleplay/natural-dialogue-post.json\n M examples/roleplay/next-meaningful-beat-pre.json\n M examples/roleplay/offscreen-agenda-post.json\n M examples/roleplay/offscreen-agenda-pre.json\n M examples/roleplay/persistent-conditions-post.json\n M examples/roleplay/persistent-conditions-pre.json\n M examples/roleplay/player-agency-pre.json\n M examples/roleplay/promise-callback-post.json\n M examples/roleplay/promise-callback-pre.json\n M examples/roleplay/resume-brief-pre.json\n M examples/roleplay/scene-brief-basics-pre.json\n M examples/roleplay/screenplay-format-post.json\n M examples/roleplay/sensory-memory-pre.json\n M examples/roleplay/structured-brief-basics-pre.json\n M examples/roleplay/style-blend-post.json\n M examples/unified/unified-alternate-takes.json\n M examples/unified/unified-broken-wand.json\n M examples/unified/unified-campaign-callback.json\n M examples/unified/unified-character-specific-prompt.json\n M examples/unified/unified-clue-board.json\n M examples/unified/unified-combat-tactics.json\n M examples/unified/unified-continuity-warnings.json\n M examples/unified/unified-crafting-receipt.json\n M examples/unified/unified-curse-at-2pm.json\n M examples/unified/unified-dice-stakes.json\n M examples/unified/unified-directed-relationship.json\n M examples/unified/unified-downtime-factions.json\n M examples/unified/unified-eight-hour-curse.json\n M examples/unified/unified-emotional-subtext.json\n M examples/unified/unified-ensemble-perspectives.json\n M examples/unified/unified-exploration-map.json\n M examples/unified/unified-general-experience.json\n M examples/unified/unified-guidance-prose-notes.json\n M examples/unified/unified-hundred-souls.json\n M examples/unified/unified-inventory-discoveries.json\n M examples/unified/unified-item-triggered-memory.json\n M examples/unified/unified-midnight-bell.json\n M examples/unified/unified-mystery-evidence-board.json\n M examples/unified/unified-npc-promises.json\n M examples/unified/unified-paired-kiss-memories.json\n M examples/unified/unified-recall-memories.json\n M examples/unified/unified-scene-journal.json\n M examples/unified/unified-sign-translation.json\n M examples/unified/unified-solvable-puzzle.json\n M examples/unified/unified-story-documents.json\n M examples/unified/unified-travel-vignettes.json\n M index.js\n M playwright.config.mjs\n M src/history.js\n M src/run.js\n M src/state.js\n M src/ui/controller.js\n M src/ui/provider-settings.js\n M src/ui/workflow-surface.js\n M src/workflow/example-data.js\n M src/workflow/examples.d.ts\n M src/workflow/examples.js\n M src/workflow/starters.js\n M src/workflow/unified-example-data.js\n M style.css\n M tests/browser/accessible-themes.spec.mjs\n M tests/browser/canvas-native-bridge-integration.spec.mjs\n M tests/browser/comment-frames.spec.mjs\n M tests/browser/context-menu.spec.mjs\n M tests/browser/ember-fixture.mjs\n M tests/browser/ember-theme.spec.mjs\n M tests/browser/examples.spec.mjs\n M tests/browser/file-menu.spec.mjs\n M tests/browser/fresh-launch.spec.mjs\n M tests/browser/harness.js\n M tests/browser/import.spec.mjs\n M tests/browser/introspection.spec.mjs\n M tests/browser/lattice-visual.spec.mjs\n M tests/browser/node-connections.spec.mjs\n M tests/browser/node-details.spec.mjs\n M tests/browser/node-lod.spec.mjs\n M tests/browser/node-profile-dropdowns.spec.mjs\n M tests/browser/preview-fidelity.spec.mjs\n M tests/browser/reference-tools.spec.mjs\n M tests/browser/rendering.spec.mjs\n M tests/browser/smoke.spec.mjs\n M tests/browser/subgraph-authoring.spec.mjs\n M tests/browser/unified-authoring.spec.mjs\n M tests/browser/workflows.spec.mjs\n M tests/browser/workspace-integration.spec.mjs\n M tests/browser/workspace-interactions.spec.mjs\n M tests/browser/workspace.spec.mjs\n M tests/ember-theme.test.mjs\n M tests/introspection-native-starters.test.mjs\n M tests/lattice-startup.test.mjs\n M tests/mock.js\n M tests/provider-unified-components.test.mjs\n M tests/provider-unified-session.test.mjs\n M tests/provider-unified-ui.test.mjs\n M tests/ui-comment-controller.test.mjs\n M tests/ui-details-resize.test.mjs\n M tests/ui-examples.test.mjs\n M tests/ui-file-commands.test.mjs\n M tests/ui-graph-tabs.test.mjs\n M tests/ui-interaction-persistence.test.mjs\n M tests/ui-node-shelf.test.mjs\n M tests/ui-workflow-activation.test.mjs\n M tests/ui-workspace-menu-root.test.mjs\n M tests/ui-workspace-preparation.test.mjs\n M tests/workflow-controller-dispatch.test.mjs\n M tests/workflow-dispatch.test.mjs\n M tests/workflow-examples.test.mjs\n M tests/workflow-fast-facade.test.mjs\n M tests/workflow-reference-integration.test.mjs\n M tests/workflow-state-transactions.test.mjs\n M tests/workflow-ui.test.mjs\n M tests/workflow-unified-examples.test.mjs\n M tests/workflow-unified-settings.test.mjs\n M tests/workflow-workspace-starters.test.mjs\n M tools/build-roleplay-examples.mjs\n M tools/build-unified-examples.mjs\n M tools/capture-documentation.mjs\n M tools/capture-lattice-workspace.mjs\n M tools/smoke-install.mjs\n M ui/GraphTabs.svelte\n D ui/NewWorkflowPrompt.svelte\n M ui/NodeShelf.svelte\n M ui/Toolbar.svelte\n M ui/Workbench.svelte\n M ui/WorkspaceMenus.svelte\n M ui/types.ts\n M ui/view-types.ts\n?? docs/superpowers/handoffs/2026-10-10-workflow-files.md\n?? docs/superpowers/plans/2026-10-10-workflow-files.md\n?? docs/superpowers/specs/2026-10-10-workflow-files.md\n?? src/ui/document-controller.js\n?? src/ui/document-session.js\n?? src/ui/workflow-file-access.js\n?? src/workflow/document-file.js\n?? tests/browser/document-files.spec.mjs\n?? tests/browser/workflow-commands.mjs\n?? tests/canvas-controller-escape.test.mjs\n?? tests/document-controller.test.mjs\n?? tests/document-session.test.mjs\n?? tests/ui-document-components.test.mjs\n?? tests/workflow-active-document.test.mjs\n?? tests/workflow-current-send.test.mjs\n?? tests/workflow-detached-examples.test.mjs\n?? tests/workflow-document-file.test.mjs\n?? tests/workflow-file-access.test.mjs\n?? ui/DocumentPrompt.svelte"
+    },
+    {
+      "path": "C:/Users/Keptin/.codex/worktrees/workflow-system-subgraphs/SillyCanvas",
+      "head": "99f63a79829a167a29a07299c2b247c0f692a121",
+      "branch": "refs/heads/codex/workflow-system-subgraphs",
+      "status": ""
+    },
+    {
+      "path": "C:/Users/Keptin/.codex/worktrees/workflow-unification/SillyCanvas",
+      "head": "7d1c0cf8b474484622152b7b14b86cce51ed8822",
+      "branch": "refs/heads/codex/example-remaster",
+      "status": ""
+    }
+  ],
+  "independentPreservation": {
+    "originalFiles": 327,
+    "deletedFiles": 1,
+    "completedGuideFiles": 38,
+    "oldFileLiveAndTarFiles": 812,
+    "oldFileDirtyEntries": 176,
+    "allVerified": true
+  },
+  "integrationSourceCommit": "ebd83a1c49debb73d15e3e883e54b09098c3c6bb",
+  "runtimeSourceCommit": "5f801fb117030a10ca7e5daa9af76d1502933212",
+  "refs": [
+    {
+      "ref": "refs/heads/codex/canvas-memory-recall",
+      "sha": "fc281fe65895dc0c79e9ad2b7d6039cf58031fbb"
+    },
+    {
+      "ref": "refs/heads/codex/compact-node-shelf",
+      "sha": "50d28c18db8ba15753afa421d3946762056b1060"
+    },
+    {
+      "ref": "refs/heads/codex/consolidated-menus",
+      "sha": "4933a7e7e9a3fcf8166e85a40de3d907825b9956"
+    },
+    {
+      "ref": "refs/heads/codex/details-panel-bevels",
+      "sha": "1343e3ca8c8d9a339625dbd9a12c70b77dee1bfd"
+    },
+    {
+      "ref": "refs/heads/codex/details-panel-overhaul",
+      "sha": "4f9c570e9eabe076ad0949b6236dedac8035ceed"
+    },
+    {
+      "ref": "refs/heads/codex/example-remaster",
+      "sha": "7d1c0cf8b474484622152b7b14b86cce51ed8822"
+    },
+    {
+      "ref": "refs/heads/codex/integrate-all-2026-10-10",
+      "sha": "ebd83a1c49debb73d15e3e883e54b09098c3c6bb"
+    },
+    {
+      "ref": "refs/heads/codex/integrate-outstanding-2026-10-10",
+      "sha": "6d9d0cc6464f9048aa1921340f106c812968d6a0"
+    },
+    {
+      "ref": "refs/heads/codex/lattice-performance-overhaul",
+      "sha": "48ccf876a3c6bdb4b69b1ec84e29452f4b127cc5"
+    },
+    {
+      "ref": "refs/heads/codex/main-integration-source-2026-10-10",
+      "sha": "816dc841e230e161af30316cfea4fc487e7c57b0"
+    },
+    {
+      "ref": "refs/heads/codex/merge-details-panel-overhaul",
+      "sha": "5789a77e475f774dc8309abe018cae52f48287f9"
+    },
+    {
+      "ref": "refs/heads/codex/node-guides",
+      "sha": "7beac2038bc8981a51d41f2d2cbec9ac695043c5"
+    },
+    {
+      "ref": "refs/heads/codex/node-profile-dropdowns",
+      "sha": "f35eef80ca1a66c30a9ae485696149a163199ad8"
+    },
+    {
+      "ref": "refs/heads/codex/plain-language-diagnostics",
+      "sha": "3f7339c14392873b35698fbcbaff44aa7578adb8"
+    },
+    {
+      "ref": "refs/heads/codex/profile-ui-cleanup",
+      "sha": "2486c4442098df5e0b0a8288a1e4136c461c4b00"
+    },
+    {
+      "ref": "refs/heads/codex/typed-pin-routing",
+      "sha": "58f8a0380b41921302f50cca83bcc0046d787ea8"
+    },
+    {
+      "ref": "refs/heads/codex/workflow-data-node-defaults",
+      "sha": "203335173169dae9a78106bed91c5f45a0daa1e5"
+    },
+    {
+      "ref": "refs/heads/codex/workflow-files",
+      "sha": "d807155fbc27d7a4784b729579068ad8527981c1"
+    },
+    {
+      "ref": "refs/heads/codex/workflow-system-subgraphs",
+      "sha": "99f63a79829a167a29a07299c2b247c0f692a121"
+    },
+    {
+      "ref": "refs/heads/codex/workflow-unification",
+      "sha": "d807155fbc27d7a4784b729579068ad8527981c1"
+    },
+    {
+      "ref": "refs/heads/main",
+      "sha": "816dc841e230e161af30316cfea4fc487e7c57b0"
+    }
+  ]
+}

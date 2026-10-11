@@ -1,0 +1,107 @@
+{
+  "runtimeSourceCommit": "5f801fb117030a10ca7e5daa9af76d1502933212",
+  "unitTestSourceCommit": "ebd83a1c49debb73d15e3e883e54b09098c3c6bb",
+  "node": "24.16.0",
+  "platform": "win32",
+  "arch": "x64",
+  "build": {
+    "modules": 203,
+    "log": "guides-final-build.txt"
+  },
+  "types": {
+    "exit": 0,
+    "errors": 0,
+    "warnings": 0,
+    "log": "final-types.txt"
+  },
+  "assets": {
+    "exit": 0,
+    "imports": 623,
+    "log": "final-assets.txt"
+  },
+  "fullBrowser": {
+    "exit": 0,
+    "cases": 371,
+    "duration": "6.0m",
+    "port": 4226,
+    "workers": 2,
+    "CI": true,
+    "log": "final-browser.txt"
+  },
+  "focusedGuidesBrowser": {
+    "exit": 0,
+    "cases": 16,
+    "log": "guides-focused-browser.txt"
+  },
+  "install": {
+    "exit": 0,
+    "providerCalls": 0,
+    "log": "final-install.txt"
+  },
+  "documentation": {
+    "exit": 0,
+    "documents": 11,
+    "links": 229,
+    "operations": 74,
+    "screenshots": 20
+  },
+  "additionalDocs": {
+    "documents": 7,
+    "links": 25,
+    "missing": 0
+  },
+  "unitInitial": {
+    "exit": 1,
+    "passedFiles": 299,
+    "totalFiles": 301,
+    "issues": "Two controller-extraction fixtures omitted the actual shared guideInsertionIsBusy helper; test-only correction ebd83a1. Focused correction2/2 and final full recheck301/301 pass.",
+    "log": "initial-unit.txt"
+  },
+  "independentReview": {
+    "approved": true,
+    "remainingMaterialFindings": 0
+  },
+  "bundles": [
+    {
+      "path": "dist/lattice-ui.js",
+      "bytes": 549124,
+      "sha256": "4985df6b47558a63736e54cce7ec776f15044513bd94203415a36fe9f4e741f9"
+    },
+    {
+      "path": "dist/lattice.css",
+      "bytes": 68805,
+      "sha256": "78bda26a644ff5c0d48f43d5ca76cc669dae0b6a996f5b5545bf7fac708f6dd0"
+    }
+  ],
+  "unit": {
+    "exit": 0,
+    "files": 301,
+    "log": "final-unit.txt",
+    "testedCommit": "ebd83a1c49debb73d15e3e883e54b09098c3c6bb"
+  },
+  "completedAt": "2026-10-11T02:07:56.404Z",
+  "latencySmoke": {
+    "exit": 0,
+    "head": "ebd83a1c49debb73d15e3e883e54b09098c3c6bb",
+    "rates": [
+      1
+    ],
+    "sizes": [
+      25,
+      100,
+      250
+    ],
+    "repeats": 5,
+    "modes": [
+      "detail-toggle",
+      "shelf-create",
+      "connect-release"
+    ],
+    "motion": false,
+    "providerCalls": 0,
+    "errors": 0,
+    "blocked": 0,
+    "scope": "Synthetic disabled host; second-rAF settled estimate, not INP or full acceptance cohort.",
+    "path": "latency-smoke/editor-latency-results.json"
+  }
+}

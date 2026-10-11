@@ -1,0 +1,440 @@
+
+> lattice@0.27.0 test
+> node tools/test-all.mjs
+
+PASS artifact-glyph.test.mjs
+PASS blankets.test.mjs
+PASS bump-version.test.mjs
+PASS camera.test.mjs
+PASS canvas-blueprint-comments.test.mjs
+PASS canvas-center-selection.test.mjs
+PASS canvas-controller-escape.test.mjs
+PASS canvas-event-bursts.test.mjs
+PASS canvas-group-presentation.test.mjs
+PASS canvas-lifecycle.test.mjs
+PASS canvas-native-camera-focus.test.mjs
+PASS canvas-native-gestures.test.mjs
+PASS canvas-native-integration.test.mjs
+PASS canvas-native-prepared.test.mjs
+PASS canvas-performance.test.mjs
+PASS canvas-pin-feedback.test.mjs
+PASS canvas-prepared-only.test.mjs
+PASS canvas-presentation-batch.test.mjs
+PASS canvas-recall-status.test.mjs
+PASS canvas-render-slots.test.mjs
+PASS canvas-retained-scene.test.mjs
+PASS canvas-zoom.test.mjs
+PASS comment-components.test.mjs
+PASS comment-edits.test.mjs
+PASS comment-frames.test.mjs
+PASS comment-history-effects.test.mjs
+PASS comment-presentation.test.mjs
+PASS connection-drag-preview.test.mjs
+PASS connection-route.test.mjs
+PASS document-controller.test.mjs
+PASS document-session.test.mjs
+PASS editor-latency-options.test.mjs
+PASS ember-theme.test.mjs
+PASS frame.test.mjs
+PASS groups.test.mjs
+PASS history.test.mjs
+PASS introspection-analysis.test.mjs
+PASS introspection-completion-errors.test.mjs
+PASS introspection-context-state.test.mjs
+PASS introspection-contracts.test.mjs
+PASS introspection-memory.test.mjs
+PASS introspection-native-catalog.test.mjs
+PASS introspection-native-host.test.mjs
+PASS introspection-native-runtime.test.mjs
+PASS introspection-native-ui.test.mjs
+PASS introspection-nodes.test.mjs
+PASS introspection-types.test.mjs
+PASS lattice-installed-imports.test.mjs
+PASS lattice-launcher.test.mjs
+PASS lattice-startup.test.mjs
+PASS native-canvas-fixture.test.mjs
+PASS native-story-state.test.mjs
+PASS node-profile-picker.test.mjs
+PASS notes.test.mjs
+PASS provider-test-guard.test.mjs
+PASS provider-unified-components.test.mjs
+PASS provider-unified-session.test.mjs
+PASS provider-unified-ui.test.mjs
+PASS recall-labels.test.mjs
+PASS recall-shortcuts.test.mjs
+PASS recall-ui-types.test.mjs
+PASS selection-gestures.test.mjs
+PASS smoke-unified-host.test.mjs
+PASS state-document-notification.test.mjs
+PASS state-fast-document-retirement.test.mjs
+PASS state-recovery-lifecycle.test.mjs
+PASS storage-configured-components.test.mjs
+PASS storage-configured-controller.test.mjs
+PASS storage-configured-ui.test.mjs
+PASS theme-accessibility-editor.test.mjs
+PASS theme-presets.test.mjs
+PASS theme-ui.test.mjs
+PASS themes.test.mjs
+PASS ui-add-system-dialog.test.mjs
+PASS ui-boundary-projection.test.mjs
+PASS ui-canvas-draw-projection.test.mjs
+PASS ui-comment-controller.test.mjs
+PASS ui-composition-managers.test.mjs
+PASS ui-context-menu-controller.test.mjs
+PASS ui-context-menu.test.mjs
+PASS ui-coordinate-reconciliation.test.mjs
+PASS ui-detail-binding-drafts.test.mjs
+PASS ui-detail-draft-revisions.test.mjs
+PASS ui-detail-panels.test.mjs
+PASS ui-details-commands.test.mjs
+PASS ui-details-drafts.test.mjs
+PASS ui-details-projection.test.mjs
+PASS ui-details-resize.test.mjs
+PASS ui-diagnostic-boundaries.test.mjs
+PASS ui-diagnostic-message.test.mjs
+PASS ui-diagnostic-preflight.test.mjs
+PASS ui-diagnostics.test.mjs
+PASS ui-document-components.test.mjs
+PASS ui-example-catalog.test.mjs
+PASS ui-examples.test.mjs
+PASS ui-file-commands.test.mjs
+PASS ui-file-input.test.mjs
+PASS ui-graph-tabs.test.mjs
+PASS ui-graph-view-session.test.mjs
+PASS ui-initial-workspace-camera.test.mjs
+PASS ui-instance-node-bindings.test.mjs
+PASS ui-interaction-persistence.test.mjs
+PASS ui-iteration-bindings.test.mjs
+PASS ui-legacy-root-toolbar.test.mjs
+PASS ui-library-details.test.mjs
+FAIL ui-native-group-presentation.test.mjs
+✔ native ordinary Group Open DOM action and doubleclick reach presentation callbacks rather than the blanket native rejection (206.9549ms)
+✔ actual current group Open exposes saved members and real pins and persists only local folding across reload (94.7055ms)
+✔ same-ID ordinary groups stay local to actual root child and readonly library views and reject captured stale callbacks (132.4112ms)
+✔ optional group presentation restores current version1 views and rejects malformed unbounded patches atomically (14.7711ms)
+✔ ordinary native folding does not cancel or replace a bounded target while it remains pending (74.3387ms)
+✖ folding preserves current private handle ownership through the actual session and preview adapter (80.67ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 5
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 611.9417
+
+✖ failing tests:
+
+test at tests\ui-native-group-presentation.test.mjs:150:1
+✖ folding preserves current private handle ownership through the actual session and preview adapter (80.67ms)
+  ReferenceError: guideInsertionIsBusy is not defined
+      at Object.updateWorkflowProjection (eval at controllerFunction (file:///C:/Users/Keptin/.codex/worktrees/lattice-performance-overhaul/SillyCanvas/tests/ui-native-group-presentation.test.mjs:45:12), <anonymous>:16:75)
+      at changed (file:///C:/Users/Keptin/.codex/worktrees/lattice-performance-overhaul/SillyCanvas/tests/ui-native-group-presentation.test.mjs:163:19)
+      at publish (file:///C:/Users/Keptin/.codex/worktrees/lattice-performance-overhaul/SillyCanvas/src/ui/workflow-surface.js?v=0.27.0:260:27)
+      at Object.receiveAutomatic (file:///C:/Users/Keptin/.codex/worktrees/lattice-performance-overhaul/SillyCanvas/src/ui/workflow-surface.js?v=0.27.0:322:228)
+      at TestContext.<anonymous> (file:///C:/Users/Keptin/.codex/worktrees/lattice-performance-overhaul/SillyCanvas/tests/ui-native-group-presentation.test.mjs:166:65)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+
+
+
+PASS ui-native-only-workspace.test.mjs
+PASS ui-native-search-catalog.test.mjs
+PASS ui-native-wire-bridge.test.mjs
+PASS ui-native-wire-components.test.mjs
+PASS ui-node-guide-content.test.mjs
+PASS ui-node-guide-preview.test.mjs
+PASS ui-node-guide-projection.test.mjs
+PASS ui-node-guide-touch.test.mjs
+PASS ui-node-palette-icons.test.mjs
+PASS ui-node-placement.test.mjs
+PASS ui-node-profile-metadata.test.mjs
+PASS ui-node-profile-preparation.test.mjs
+PASS ui-node-shelf.test.mjs
+PASS ui-performance-authority.test.mjs
+PASS ui-portal-presentation.test.mjs
+FAIL ui-preview-review-integration.test.mjs
+✖ current preview preserves final host source freshness checks after review selection (108.0792ms)
+✖ current pinned root terminal keeps its actual handle across node selection and never applies from child or library views (40.8129ms)
+✖ the actual workspace opens examples without host work (34.4762ms)
+✖ actual automatic zero-call unified Send provenance remains visible without payload diagnostics (27.0549ms)
+✖ Apply routes the authenticated current unified Review / Publish handle to native publication (30.5292ms)
+✖ Reject releases the current unified candidate and preserves the native reply (31.3172ms)
+✖ forged selector identities and noncurrent results cannot invoke Apply or Reject (33.7446ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 0
+ℹ fail 7
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 311.8982
+
+✖ failing tests:
+
+test at tests\ui-preview-review-integration.test.mjs:98:1
+✖ current preview preserves final host source freshness checks after review selection (108.0792ms)
+  ReferenceError: guideInsertionIsBusy is not defined
+      at Object.updateWorkflowProjection (eval at controllerFunction (file:///C:/Users/Keptin/.codex/worktrees/lattice-performance-overhaul/SillyCanvas/tests/ui-preview-review-integration.test.mjs:35:12), <anonymous>:16:75)
+      at changed (file:///C:/Users/Keptin/.codex/worktrees/lattice-performance-overhaul/SillyCanvas/tests/ui-preview-review-integration.test.mjs:85:601)
+      at publish (file:///C:/Users/Keptin/.codex/worktrees/lattice-performance-overhaul/SillyCanvas/src/ui/workflow-surface.js?v=0.27.0:260:27)
+      at Object.receiveAutomatic (file:///C:/Users/Keptin/.codex/worktrees/lattice-performance-overhaul/SillyCanvas/src/ui/workflow-surface.js?v=0.27.0:322:228)
+      at Object.run (file:///C:/Users/Keptin/.codex/worktrees/lattice-performance-overhaul/SillyCanvas/tests/ui-preview-review-integration.test.mjs:93:94)
+      at async TestContext.<anonymous> (file:///C:/Users/Keptin/.codex/worktrees/lattice-performance-overhaul/SillyCanvas/tests/ui-preview-review-integration.test.mjs:99:26)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+
+test at tests\ui-preview-review-integration.test.mjs:105:1
+✖ current pinned root terminal keeps its actual handle across node selection and never applies from child or library views (40.8129ms)
+  ReferenceError: guideInsertionIsBusy is not defined
+      at Object.updateWorkflowProjection (eval at controllerFunction (file:///C:/Users/Keptin/.codex/worktrees/lattice-performance-overhaul/SillyCanvas/tests/ui-preview-review-integration.test.mjs:35:12), <anonymous>:16:75)
+      at changed (file:///C:/Users/Keptin/.codex/worktrees/lattice-performance-overhaul/SillyCanvas/tests/ui-preview-review-integration.test.mjs:85:601)
+      at publish (file:///C:/Users/Keptin/.codex/worktrees/lattice-performance-overhaul/SillyCanvas/src/ui/workflow-surface.js?v=0.27.0:260:27)
+      at Object.receiveAutomatic (file:///C:/Users/Keptin/.codex/worktrees/lattice-performance-overhaul/SillyCanvas/src/ui/workflow-surface.js?v=0.27.0:322:228)
+      at Object.run (file:///C:/Users/Keptin/.codex/worktrees/lattice-performance-overhaul/SillyCanvas/tests/ui-preview-review-integration.test.mjs:93:94)
+      at async TestContext.<anonymous> (file:///C:/Users/Keptin/.codex/worktrees/lattice-performance-overhaul/SillyCanvas/tests/ui-preview-review-integration.test.mjs:106:27)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+
+test at tests\ui-preview-review-integration.test.mjs:142:1
+✖ the actual workspace opens examples without host work (34.4762ms)
+  ReferenceError: guideInsertionIsBusy is not defined
+      at Object.updateWorkflowProjection (eval at controllerFunction (file:///C:/Users/Keptin/.codex/worktrees/lattice-performance-overhaul/SillyCanvas/tests/ui-preview-review-integration.test.mjs:35:12), <anonymous>:16:75)
+      at changed (file:///C:/Users/Keptin/.codex/worktrees/lattice-performance-overhaul/SillyCanvas/tests/ui-preview-review-integration.test.mjs:85:601)
+      at publish (file:///C:/Users/Keptin/.codex/worktrees/lattice-performance-overhaul/SillyCanvas/src/ui/workflow-surface.js?v=0.27.0:260:27)
+      at Object.receiveAutomatic (file:///C:/Users/Keptin/.codex/worktrees/lattice-performance-overhaul/SillyCanvas/src/ui/workflow-surface.js?v=0.27.0:322:228)
+      at Object.run (file:///C:/Users/Keptin/.codex/worktrees/lattice-performance-overhaul/SillyCanvas/tests/ui-preview-review-integration.test.mjs:93:94)
+      at async TestContext.<anonymous> (file:///C:/Users/Keptin/.codex/worktrees/lattice-performance-overhaul/SillyCanvas/tests/ui-preview-review-integration.test.mjs:143:26)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+
+test at tests\ui-preview-review-integration.test.mjs:153:1
+✖ actual automatic zero-call unified Send provenance remains visible without payload diagnostics (27.0549ms)
+  ReferenceError: guideInsertionIsBusy is not defined
+      at Object.updateWorkflowProjection (eval at controllerFunction (file:///C:/Users/Keptin/.codex/worktrees/lattice-performance-overhaul/SillyCanvas/tests/ui-preview-review-integration.test.mjs:35:12), <anonymous>:16:75)
+      at changed (file:///C:/Users/Keptin/.codex/worktrees/lattice-performance-overhaul/SillyCanvas/tests/ui-preview-review-integration.test.mjs:85:601)
+      at publish (file:///C:/Users/Keptin/.codex/worktrees/lattice-performance-overhaul/SillyCanvas/src/ui/workflow-surface.js?v=0.27.0:260:27)
+      at Object.receiveAutomatic (file:///C:/Users/Keptin/.codex/worktrees/lattice-performance-overhaul/SillyCanvas/src/ui/workflow-surface.js?v=0.27.0:322:228)
+      at Object.run (file:///C:/Users/Keptin/.codex/worktrees/lattice-performance-overhaul/SillyCanvas/tests/ui-preview-review-integration.test.mjs:93:94)
+      at async TestContext.<anonymous> (file:///C:/Users/Keptin/.codex/worktrees/lattice-performance-overhaul/SillyCanvas/tests/ui-preview-review-integration.test.mjs:154:26)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+
+test at tests\ui-preview-review-integration.test.mjs:163:1
+✖ Apply routes the authenticated current unified Review / Publish handle to native publication (30.5292ms)
+  ReferenceError: guideInsertionIsBusy is not defined
+      at Object.updateWorkflowProjection (eval at controllerFunction (file:///C:/Users/Keptin/.codex/worktrees/lattice-performance-overhaul/SillyCanvas/tests/ui-preview-review-integration.test.mjs:35:12), <anonymous>:16:75)
+      at changed (file:///C:/Users/Keptin/.codex/worktrees/lattice-performance-overhaul/SillyCanvas/tests/ui-preview-review-integration.test.mjs:85:601)
+      at publish (file:///C:/Users/Keptin/.codex/worktrees/lattice-performance-overhaul/SillyCanvas/src/ui/workflow-surface.js?v=0.27.0:260:27)
+      at Object.receiveAutomatic (file:///C:/Users/Keptin/.codex/worktrees/lattice-performance-overhaul/SillyCanvas/src/ui/workflow-surface.js?v=0.27.0:322:228)
+      at Object.run (file:///C:/Users/Keptin/.codex/worktrees/lattice-performance-overhaul/SillyCanvas/tests/ui-preview-review-integration.test.mjs:93:94)
+      at async TestContext.<anonymous> (file:///C:/Users/Keptin/.codex/worktrees/lattice-performance-overhaul/SillyCanvas/tests/ui-preview-review-integration.test.mjs:164:26)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+
+test at tests\ui-preview-review-integration.test.mjs:173:1
+✖ Reject releases the current unified candidate and preserves the native reply (31.3172ms)
+  ReferenceError: guideInsertionIsBusy is not defined
+      at Object.updateWorkflowProjection (eval at controllerFunction (file:///C:/Users/Keptin/.codex/worktrees/lattice-performance-overhaul/SillyCanvas/tests/ui-preview-review-integration.test.mjs:35:12), <anonymous>:16:75)
+      at changed (file:///C:/Users/Keptin/.codex/worktrees/lattice-performance-overhaul/SillyCanvas/tests/ui-preview-review-integration.test.mjs:85:601)
+      at publish (file:///C:/Users/Keptin/.codex/worktrees/lattice-performance-overhaul/SillyCanvas/src/ui/workflow-surface.js?v=0.27.0:260:27)
+      at Object.receiveAutomatic (file:///C:/Users/Keptin/.codex/worktrees/lattice-performance-overhaul/SillyCanvas/src/ui/workflow-surface.js?v=0.27.0:322:228)
+      at Object.run (file:///C:/Users/Keptin/.codex/worktrees/lattice-performance-overhaul/SillyCanvas/tests/ui-preview-review-integration.test.mjs:93:94)
+      at async TestContext.<anonymous> (file:///C:/Users/Keptin/.codex/worktrees/lattice-performance-overhaul/SillyCanvas/tests/ui-preview-review-integration.test.mjs:174:26)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+
+test at tests\ui-preview-review-integration.test.mjs:181:1
+✖ forged selector identities and noncurrent results cannot invoke Apply or Reject (33.7446ms)
+  ReferenceError: guideInsertionIsBusy is not defined
+      at Object.updateWorkflowProjection (eval at controllerFunction (file:///C:/Users/Keptin/.codex/worktrees/lattice-performance-overhaul/SillyCanvas/tests/ui-preview-review-integration.test.mjs:35:12), <anonymous>:16:75)
+      at changed (file:///C:/Users/Keptin/.codex/worktrees/lattice-performance-overhaul/SillyCanvas/tests/ui-preview-review-integration.test.mjs:85:601)
+      at publish (file:///C:/Users/Keptin/.codex/worktrees/lattice-performance-overhaul/SillyCanvas/src/ui/workflow-surface.js?v=0.27.0:260:27)
+      at Object.receiveAutomatic (file:///C:/Users/Keptin/.codex/worktrees/lattice-performance-overhaul/SillyCanvas/src/ui/workflow-surface.js?v=0.27.0:322:228)
+      at Object.run (file:///C:/Users/Keptin/.codex/worktrees/lattice-performance-overhaul/SillyCanvas/tests/ui-preview-review-integration.test.mjs:93:94)
+      at async TestContext.<anonymous> (file:///C:/Users/Keptin/.codex/worktrees/lattice-performance-overhaul/SillyCanvas/tests/ui-preview-review-integration.test.mjs:182:26)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+
+
+
+PASS ui-preview-tabs.test.mjs
+PASS ui-projection-performance.test.mjs
+PASS ui-recall-commands.test.mjs
+PASS ui-recall-details.test.mjs
+PASS ui-recall-overview.test.mjs
+PASS ui-recall-projection.test.mjs
+PASS ui-recovery-batching.test.mjs
+PASS ui-run-meter.test.mjs
+PASS ui-shelf-placement.test.mjs
+PASS ui-structured-controls-large.test.mjs
+PASS ui-structured-controls.test.mjs
+PASS ui-subgraph-controller.test.mjs
+PASS ui-subgraph-save.test.mjs
+PASS ui-subgraph-shelf-actions.test.mjs
+PASS ui-subgraph-view-state.test.mjs
+PASS ui-system-authoring-views.test.mjs
+PASS ui-view-state.test.mjs
+PASS ui-workflow-activation.test.mjs
+PASS ui-workflow-data-setup.test.mjs
+PASS ui-workspace-commands.test.mjs
+PASS ui-workspace-manager-projection.test.mjs
+PASS ui-workspace-menu-model.test.mjs
+PASS ui-workspace-menu-root.test.mjs
+PASS ui-workspace-preparation.test.mjs
+PASS ui-workspace-style.test.mjs
+PASS undo-ui.test.mjs
+PASS workflow-active-actor-freshness.test.mjs
+PASS workflow-active-document.test.mjs
+PASS workflow-active-model.test.mjs
+PASS workflow-artifact-privacy.test.mjs
+PASS workflow-authoring-current.test.mjs
+PASS workflow-binding-freshness.test.mjs
+PASS workflow-catalog-retirement.test.mjs
+PASS workflow-clipboard.test.mjs
+PASS workflow-collection-nodes.test.mjs
+PASS workflow-collection-projection.test.mjs
+PASS workflow-combined-systems.test.mjs
+PASS workflow-compactor.test.mjs
+PASS workflow-compose-guidance-contracts.test.mjs
+PASS workflow-compose.test.mjs
+PASS workflow-composition-edits.test.mjs
+PASS workflow-composition-insertion.test.mjs
+PASS workflow-composition.test.mjs
+PASS workflow-connection-edits.test.mjs
+PASS workflow-connections.test.mjs
+PASS workflow-consumed-memory-freshness.test.mjs
+PASS workflow-context-join.test.mjs
+PASS workflow-contracts.test.mjs
+PASS workflow-control-nodes.test.mjs
+PASS workflow-controller-dispatch.test.mjs
+PASS workflow-current-admission.test.mjs
+PASS workflow-current-send.test.mjs
+PASS workflow-data-components.test.mjs
+PASS workflow-data-defaults.test.mjs
+PASS workflow-decision.test.mjs
+PASS workflow-definition-display.test.mjs
+PASS workflow-definitions.test.mjs
+PASS workflow-detached-examples.test.mjs
+PASS workflow-dispatch.test.mjs
+PASS workflow-document-catalog.test.mjs
+PASS workflow-document-file.test.mjs
+PASS workflow-document-mutations.test.mjs
+PASS workflow-draft-revisions.test.mjs
+PASS workflow-editable-instance.test.mjs
+PASS workflow-engine-integration.test.mjs
+PASS workflow-event-clock.test.mjs
+PASS workflow-example-freshness.test.mjs
+PASS workflow-example-groups.test.mjs
+PASS workflow-fast-retirement.test.mjs
+PASS workflow-file-access.test.mjs
+PASS workflow-file-nodes.test.mjs
+PASS workflow-file-store.test.mjs
+PASS workflow-format-records.test.mjs
+PASS workflow-format-single-document.test.mjs
+PASS workflow-host-addressed.test.mjs
+PASS workflow-host.test.mjs
+PASS workflow-input-host.test.mjs
+PASS workflow-input-integration.test.mjs
+PASS workflow-input-nodes.test.mjs
+PASS workflow-insertion.test.mjs
+PASS workflow-instance-edits.test.mjs
+PASS workflow-iteration-bindings.test.mjs
+PASS workflow-iteration-helpers.test.mjs
+PASS workflow-iteration-runtime.test.mjs
+PASS workflow-json-data.test.mjs
+PASS workflow-json-decode.test.mjs
+PASS workflow-legacy-definition-identity.test.mjs
+PASS workflow-library-state.test.mjs
+PASS workflow-library-subgraphs.test.mjs
+PASS workflow-model-nodes.test.mjs
+PASS workflow-modifiers.test.mjs
+PASS workflow-native-actor-context.test.mjs
+PASS workflow-native-actor-host.test.mjs
+PASS workflow-native-draft-evidence.test.mjs
+PASS workflow-native-guidance-compose.test.mjs
+PASS workflow-native-outcomes.test.mjs
+PASS workflow-native-persistence.test.mjs
+PASS workflow-native-preflight.test.mjs
+PASS workflow-native-recall-provenance.test.mjs
+PASS workflow-native-recall.test.mjs
+PASS workflow-native-settlement-host.test.mjs
+PASS workflow-native-settlement-memory.test.mjs
+PASS workflow-native-settlement.test.mjs
+PASS workflow-native-stage-barrier.test.mjs
+PASS workflow-native-time.test.mjs
+PASS workflow-nested-shelf.test.mjs
+PASS workflow-node-bindings.test.mjs
+PASS workflow-node-guide-examples.test.mjs
+PASS workflow-node-guide-fixtures.test.mjs
+PASS workflow-node-guide-insertion.test.mjs
+PASS workflow-node-guide-lazy-examples.test.mjs
+PASS workflow-node-integration.test.mjs
+PASS workflow-owned-preparation.test.mjs
+PASS workflow-packages.test.mjs
+PASS workflow-parameter-bindings-portability.test.mjs
+PASS workflow-permission-scans.test.mjs
+PASS workflow-phase-control-edits.test.mjs
+PASS workflow-player-source.test.mjs
+PASS workflow-ports.test.mjs
+PASS workflow-preparation-work-counts.test.mjs
+PASS workflow-prepared-planning.test.mjs
+PASS workflow-prepared-systems.test.mjs
+PASS workflow-primitive-nodes.test.mjs
+PASS workflow-private-terminal.test.mjs
+PASS workflow-progression-nodes.test.mjs
+PASS workflow-progression.test.mjs
+PASS workflow-project-document.test.mjs
+PASS workflow-projection.test.mjs
+PASS workflow-prompt-source.test.mjs
+PASS workflow-prose-cleanup.test.mjs
+PASS workflow-public-context.test.mjs
+PASS workflow-qualified-manager-edits.test.mjs
+PASS workflow-qualified-transactions.test.mjs
+PASS workflow-random-outcomes.test.mjs
+PASS workflow-recall-nodes.test.mjs
+PASS workflow-recall-queue-batch.test.mjs
+PASS workflow-recall-registration.test.mjs
+PASS workflow-recall-state.test.mjs
+PASS workflow-recording.test.mjs
+PASS workflow-reference-draft.test.mjs
+PASS workflow-reference-integration.test.mjs
+PASS workflow-reference-transfer.test.mjs
+PASS workflow-remastered-authoring.test.mjs
+PASS workflow-remastered-execution.test.mjs
+PASS workflow-remastered-layout.test.mjs
+PASS workflow-remastered-progression.test.mjs
+PASS workflow-repair.test.mjs
+PASS workflow-reroute-controls.test.mjs
+PASS workflow-retirement.test.mjs
+PASS workflow-run-state.test.mjs
+PASS workflow-runtime-actor-hooks.test.mjs
+PASS workflow-runtime-addressed.test.mjs
+PASS workflow-runtime.test.mjs
+PASS workflow-scoped-examples.test.mjs
+PASS workflow-select-fields.test.mjs
+PASS workflow-session.test.mjs
+PASS workflow-slop-policies.test.mjs
+PASS workflow-staged-effects.test.mjs
+PASS workflow-state-transactions.test.mjs
+PASS workflow-story-events.test.mjs
+PASS workflow-story-flow-examples.test.mjs
+PASS workflow-story-time.test.mjs
+PASS workflow-subgraph-authoring.test.mjs
+PASS workflow-subgraph-shelf.test.mjs
+PASS workflow-system-authoring.test.mjs
+PASS workflow-system-subgraphs.test.mjs
+PASS workflow-terminology-map.test.mjs
+PASS workflow-text-rules.test.mjs
+PASS workflow-time-nodes.test.mjs
+PASS workflow-transactions.test.mjs
+PASS workflow-transpose-nodes.test.mjs
+PASS workflow-transpose-text.test.mjs
+PASS workflow-ui.test.mjs
+PASS workflow-unified-contracts.test.mjs
+PASS workflow-unified-examples.test.mjs
+PASS workflow-unified-host.test.mjs
+PASS workflow-unified-runtime.test.mjs
+PASS workflow-unified-settings.test.mjs
+PASS workflow-workspace-starters.test.mjs
+299/301 test files passed

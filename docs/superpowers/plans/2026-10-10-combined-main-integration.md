@@ -38,7 +38,7 @@
 - [x] Merge diagnostics into immutable Details/lazy target/current Run-to-Here paths; retain verification logs and validate message/preflight/draft checks.
 - [x] Detect and preserve concurrent Main node-guide work without mutating its active checkout.
 - [x] Commit and merge completed node-guide source, preserving cached guide cards, qualified overlay identity, busy-status refresh, and one-step example insertion.
-- [ ] Rebuild; run full isolated unit suite, types, assets, fresh-server full browser suite, installation smoke and documentation checks. Fix regressions with focused failing evidence; repeat affected checks after changes.
-- [ ] Independently review the combined diff, source accounting and material authority/behavior boundaries.
-- [ ] Record integration decisions, exact source/build/evidence hashes and fresh check results. Confirm every included source tip is reachable and preserved source content remains accounted for.
+- [x] Rebuild; run full isolated unit suite, types, assets, fresh-server full browser suite, installation smoke and documentation checks. Fix regressions with focused failing evidence; repeat affected checks after changes.
+- [x] Independently review the combined diff, source accounting and material authority/behavior boundaries.
+- [x] Record integration decisions, exact source/build/evidence hashes and fresh check results. Confirm every included source tip is reachable and preserved source content remains accounted for.
 - [ ] Recheck Main/source/remote state, fast-forward local Main to the verified candidate, normally push Main, and verify GitHub SHA and local/origin equality.

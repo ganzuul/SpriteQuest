@@ -1,0 +1,4 @@
+# Preserve recorded verification evidence bytes.
+*.txt -text -diff
+*.json -text
+*.cpuprofile -text -diff

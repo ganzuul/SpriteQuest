@@ -1,0 +1,18 @@
+{
+  "environment": "Node24.16.0 Windows x64; local diagnostic samples, separate cold module processes; no browser acceptance claim",
+  "before": {
+    "composeColdRegistryMs": 750.3573
+  },
+  "after": {
+    "composeColdRegistryMs": 13.3107,
+    "storyClockColdRegistryMs": 13.4467,
+    "composeCachedMs": 0.0318,
+    "storyClockCachedMs": 0.0443
+  },
+  "deterministicRegression": {
+    "composeBeforeUnrelatedEnvelopeAdmissions": 30,
+    "composeAfterUnrelatedEnvelopeAdmissions": 0,
+    "selectedLessonOnlyAdmission": true,
+    "detachedCopies": true
+  }
+}
