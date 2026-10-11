@@ -308,7 +308,7 @@ test('pending document prompt blocks node deletion shortcuts and Escape preserve
 test('comment commit and Undo Redo synchronously persist authored coordinate-overlay changes', () => {
     const f = fixture(), queued = new Map(); let ticket = 0, saves = 0;
     try {
-        Object.assign(f.env, { viewSaveTimer: null, setTimeout(callback) { queued.set(++ticket, callback); return ticket; }, clearTimeout(id) { queued.delete(id); }, save() { saves++; } });
+        Object.assign(f.env, { documentSession: { capture: () => f.root, stillCurrent: token => token === f.root }, viewSaveTimer: null, setTimeout(callback) { queued.set(++ticket, callback); return ticket; }, clearTimeout(id) { queued.delete(id); }, save() { saves++; } });
         f.env.persistGraphViews = controllerFunction('persistGraphViews', f.env);
         f.session.updateView({ nodePresentation: { source: { x: 100, y: 50, alias: 'Local source' }, outside: { x: 700, y: 200, alias: 'Retained' } } });
         f.env.activateEditorDraw(); f.env.persistGraphViews(true);

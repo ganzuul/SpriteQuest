@@ -1,0 +1,22 @@
+
+> lattice@0.27.0 smoke:install
+> node tools/smoke-install.mjs
+
+{
+  "apiRequests": 0,
+  "install": "C:\\Users\\Keptin\\AppData\\Local\\Temp\\lattice-install-DJ4RJV",
+  "nodeModules": false,
+  "developerUiSource": false,
+  "requests": 154,
+  "errors": [],
+  "missing": [],
+  "publicHelpers": true,
+  "mounted": true,
+  "sharedGraph": true,
+  "launchers": true,
+  "workbench": "svelte",
+  "fresh": true,
+  "providerCalls": 0,
+  "retiredPins": false,
+  "node": true
+}

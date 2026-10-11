@@ -1,3 +1,4 @@
+import { prepareGraphArtifacts, inspectGraphArtifacts, graphArtifactsFor } from './graph-artifacts.js?v=0.27.0';
 import { inspectExpandedGraph, nodeAddressKey, safeWorkflowData } from './graph-validation.js?v=0.27.0';
 import { artifactAddressKey } from './definition-data.js?v=0.27.0';
 import { operationFor } from './catalog.js?v=0.27.0';
@@ -113,18 +114,46 @@ export function resolveWorkflow(root, options = {}) {
     } };
 }
 /** Owned content preparation. Caller root is neither retained in public DTOs nor frozen. */
-export function prepareWorkflowPlanner(root) {
-    const checked = inspectExpandedGraph(root); if (!checked.ok) return checked;
+export function prepareWorkflowPlanner(root, artifacts) {
+    const prepared = artifacts === undefined ? prepareGraphArtifacts(root) : { ok: true, data: artifacts };
+    if (!prepared.ok) return prepared;
+    const admitted = artifacts === undefined ? { ok: true, data: inspectGraphArtifacts(prepared.data) } : graphArtifactsFor(root, artifacts);
+    if (!admitted.ok) return admitted;
+    const { checked, snapshot } = admitted.data;
     const index = indexExpansion(checked.data);
     const inventory = freeze({ workflowId: index.plan.workflowId, phase: index.plan.phase, primitives: index.plan.primitives, pins: index.plan.pins, hierarchy: index.plan.hierarchy, terminals: index.terminals });
+    // Keys come only from the finite admitted inventory, never arbitrary caller input.
+    const summaries = new Map();
+    const targetKey = target => {
+        if (target === undefined) return 'root';
+        if (!safeWorkflowData(target) || !target || typeof target !== 'object' || Array.isArray(target)) return null;
+        if (target.kind === 'terminal') {
+            if (!target.address || typeof target.address !== 'object' || target.address.portId !== undefined) return null;
+            const key = nodeAddressKey(target.address);
+            return index.byKey.get(key)?.terminal ? 'terminal:' + key : null;
+        }
+        if (target.kind !== undefined) return null;
+        const key = artifactAddressKey(target);
+        return index.pins.has(key) ? 'output:' + key : null;
+    };
     const planner = Object.freeze({ inventory, summarize(target) {
-        const selection = selectClosure(index, target); if (!selection.ok) return freeze(selection);
-        return freeze({ ok: true, data: { callBound: selection.data.callBound, requiredBindingAddresses: selection.data.requiredBindingAddresses } });
+        const key = targetKey(target);
+        if (key === null) return freeze(fail('INVALID_TARGET', 'Expected an actual output or tagged terminal target.'));
+        if (summaries.has(key)) return summaries.get(key);
+        const selection = selectClosure(index, target);
+        const result = freeze(selection.ok ? { ok: true, data: { callBound: selection.data.callBound, requiredBindingAddresses: selection.data.requiredBindingAddresses } } : selection);
+        summaries.set(key, result); return result;
     } });
-    planners.set(planner, { root, checked }); return { ok: true, data: planner };
+    planners.set(planner, { root, checked, snapshot }); return { ok: true, data: planner };
 }
 /** Module-internal brand boundary for the existing checked composition mapper. */
 export function preparedWorkflowExpansion(root, planner) {
     const owned = planners.get(planner);
     return owned?.root === root ? owned.checked : fail('INVALID_PREPARED_PLANNER', 'Use the prepared planner belonging to this exact workflow.');
+}
+
+/** Historical authored source paired with the exact owned planner expansion. */
+export function preparedWorkflowSource(root, planner) {
+    const owned = planners.get(planner);
+    return owned?.root === root ? owned.snapshot : null;
 }

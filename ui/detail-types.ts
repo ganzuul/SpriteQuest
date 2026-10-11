@@ -6,7 +6,7 @@ export interface DetailNodeAddress { workflowId: string; instancePath: string[];
 export interface DetailArtifactAddress extends DetailNodeAddress { portId: string; }
 export type DetailTarget = DetailArtifactAddress | { kind: 'terminal'; address: DetailNodeAddress };
 export interface DetailLibraryNode { kind: 'library'; definitionRef: { id: string; version: number; semanticHash: string }; nodeId: string; }
-export interface DetailSelection { selectionKey: string; revision: string; address: DetailNodeAddress | DetailLibraryNode; }
+export interface DetailSelection { documentNamespace?: string; selectionKey: string; revision: string; address: DetailNodeAddress | DetailLibraryNode; }
 export interface DetailError { code: string; message: string; }
 export type DetailEditResult = { ok: true } | { ok: false; error: DetailError };
 export type DetailEditResponse = DetailEditResult | Promise<DetailEditResult>;
@@ -57,6 +57,7 @@ export interface WorkflowDataCreate {
 }
 export type WorkflowDataResponse = { ok: true; data?: { definition?: WorkflowDataDefinition; message?: string } } | { ok: false; error: DetailError };
 export interface NodeDetailsView extends DetailSelection {
+    editorContractKey?: string;
     recall?: RecallNodeStatus;
     title: string; canonicalTitle: string; iconPath: string; family: string; phase: string;
     operation?: string; familyColor?: string; phaseEditable?: boolean;

@@ -1,4 +1,9 @@
+import { committedGraphChange } from '../workflow/transactions.js?v=0.27.0';
 import { createViewState, viewIdentityKey } from './view-state.js?v=0.27.0';
+
+const contentIdentities = new WeakMap();
+/** Stable selected authored content for privately admitted editor scopes only. */
+export const preparedViewContentIdentity = entry => contentIdentities.get(entry) ?? null;
 
 const fail = (code, message) => ({ ok: false, error: { code, message } });
 const freeze = value => {
@@ -48,7 +53,8 @@ function prepareCache(workflowId, navigation, preparedViews) {
             if (entry.readOnly !== undefined && entry.readOnly !== readOnly) throw new Error('Cached permission disagrees with navigation.');
             if (entry.identity.kind !== 'root' && (!record(ref) || Object.keys(ref).some(field => !['id', 'version', 'semanticHash'].includes(field)) || typeof ref.id !== 'string' || !ref.id || !Number.isSafeInteger(ref.version) || ref.version < 1 || typeof ref.semanticHash !== 'string' || !ref.semanticHash)) throw new Error('Expected an exact definition ref.');
             if (entry.identity.kind === 'library' && (ref.id !== entry.identity.definitionRef.id || ref.version !== entry.identity.definitionRef.version || ref.semanticHash !== entry.identity.definitionRef.semanticHash || entry.ports.some(port => Object.hasOwn(port, 'address')))) throw new Error('Library inspection cannot supply a runtime address.');
-            result.set(key, freeze({ ...entry, readOnly }));
+            const owned = freeze({ ...entry, readOnly });
+            contentIdentities.set(owned, Object.freeze({})); result.set(key, owned);
         }
         if (result.size !== permissions.size) throw new Error('The cache must cover complete navigation.');
         return { ok: true, data: result };
@@ -115,6 +121,33 @@ export function createGraphViewSession({ root, activationId, navigation = [], pr
             prepared = checked.data;
             if (invalidateEditor) views.invalidateContext();
             return { ok: true, data: readEditor() };
+        },
+        applyCommittedCoordinates(summary) {
+            if (!active || !rootCurrent()) return fail('VIEW_INACTIVE', 'The graph view session is closed.');
+            const change = committedGraphChange(root, summary), editor = readEditor();
+            if (change?.kind !== 'coordinates' || change.nodeIds.some(id => { const node = change.candidate.nodes[id]; return !Number.isFinite(node?.x) || !Number.isFinite(node?.y) || node.type === 'note' && node.commentFrame === true; }) || editor.view.identity.kind !== 'root' || editor.readOnly) return fail('VIEW_PATCH', 'Expected a current committed root coordinate change.');
+            const source = change.candidate, entry = editor.prepared;
+            const patch = (items, ids, authored, frame = false) => {
+                const next = { ...items };
+                for (const id of ids) {
+                    const item = { ...items[id] };
+                    for (const field of ['x', 'y', ...(frame ? ['frame'] : [])]) {
+                        if (Object.hasOwn(authored[id], field)) item[field] = frame && field === 'frame' ? freeze(cloneDTO(authored[id][field])) : authored[id][field];
+                        else delete item[field];
+                    }
+                    next[id] = Object.freeze(item);
+                }
+                return Object.freeze(next);
+            };
+            const nodes = patch(entry.savedGraph.nodes, change.nodeIds, source.nodes);
+            const groups = patch(entry.savedGraph.groups ?? {}, change.groupIds, source.groups ?? {}, true);
+            const updated = Object.freeze({ ...entry,
+                savedGraph: Object.freeze({ ...entry.savedGraph, nodes, groups }),
+                effectiveNodes: patch(entry.effectiveNodes, change.nodeIds, source.nodes),
+                drawBase: Object.freeze({ ...entry.drawBase, nodes: patch(entry.drawBase.nodes, change.nodeIds, source.nodes), groups }) });
+            contentIdentities.set(updated, contentIdentities.get(entry));
+            prepared = new Map(prepared); prepared.set(editor.view.key, updated); views.invalidateContext();
+            return { ok: true, data: change };
         },
         invalidateEditorContext: () => views.invalidateContext(),
         deactivate() { if (active) { active = false; views.invalidateContext(); } },

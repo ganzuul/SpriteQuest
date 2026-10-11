@@ -1,3 +1,4 @@
+import { freeze } from '../record-data.js?v=0.27.0';
 import { preserveArtifactPrivacy, validVisibilityMetadata } from '../artifact-privacy.js?v=0.27.0';
 import { composeText } from './compose.js?v=0.27.0';
 import { selectFields } from './select-fields.js?v=0.27.0';
@@ -26,6 +27,7 @@ export const PRIMITIVE_OPERATIONS = {
     'select-fields': registration('select-fields', 'Select Fields', 'Derive', 'data', 'data',
         { fields: [] }, [jsonControl('fields', 'Fields')]),
 };
+freeze(PRIMITIVE_OPERATIONS);
 const failure = (code, message) => ({ ok: false, error: { code, message } });
 function plainObject(value) {
     return value !== null && typeof value === 'object' && !Array.isArray(value) && [Object.prototype, null].includes(Object.getPrototypeOf(value));
@@ -100,7 +102,7 @@ function resolvePrimitive(node, options = {}) {
         const operation = ownValue(node, 'operation');
         if (typeof operation !== 'string' || !Object.hasOwn(PRIMITIVE_OPERATIONS, operation)) return failure('UNKNOWN_OPERATION', 'Unknown primitive operation.');
         const base = PRIMITIVE_OPERATIONS[operation];
-        const settings = Object.fromEntries(base.controls.map(key => [key, ownValue(node, key, structuredClone(base.defaults[key]))]));
+        const settings = Object.fromEntries(base.controls.map(key => [key, ownValue(node, key, base.defaults[key])]));
         const validated = validateSettings(operation, settings);
         if (!validated.ok) return validated;
         const fixedPhase = operation === 'compose' && settings.outputKind === 'guidance' ? 'pre' : operation === 'text-rules' && settings.inputKind === 'draft' ? 'post' : undefined;
@@ -112,7 +114,7 @@ function resolvePrimitive(node, options = {}) {
         if (operation === 'text-rules' && settings.inputKind === 'draft' && settings.mode === 'extract') return failure('INVALID_SETTINGS', 'Draft rules only support replace mode.');
         const input = operation === 'text-rules' ? settings.inputKind : operation === 'json-decode' ? settings.mode === 'check' ? 'data' : 'text' : base.input;
         const output = operation === 'compose' ? settings.outputKind : operation === 'text-rules' && input === 'draft' ? 'patches' : base.output;
-        const descriptor = { ...structuredClone(base), phase, input, output };
+        const descriptor = { ...base, phase, input, output };
         let ports;
         if (operation === 'compose') {
             ports = [port('data', 'Data', 'input', 'data'), ...settings.sections.map(section => port('section.' + section.name, section.name, 'input', 'text'))];

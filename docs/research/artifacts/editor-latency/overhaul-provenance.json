@@ -1,0 +1,396 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-10",
+  "branch": "codex/lattice-performance-overhaul",
+  "sourceCommit": "e8420427f196bcdae7aa16d5fe01eef59bde7a9c",
+  "mainBase": "143ec11cdd35c5478990198d51823f1076922bd7",
+  "finalBundleSha256": "478d4c66b7d33019af060400824344f95fe05a36c60351c09ac15677e4a1200c",
+  "mainRebuiltBundleSha256": "13034e7c7e7e3a1f0f609eb1ebae6c3f3d8389cfe72336c8f0af2424fc0132cd",
+  "finalBundleMatchesGitBlob": true,
+  "manifestChecks": {
+    "main": {
+      "files": 267,
+      "measurementFiles": 2,
+      "allCurrentBytesMatch": true
+    },
+    "final": {
+      "files": 270,
+      "measurementFiles": 2,
+      "allCurrentBytesMatch": true
+    },
+    "drag": {
+      "files": 270,
+      "measurementFiles": 2,
+      "allCurrentBytesMatch": true
+    }
+  },
+  "runtime": "v24.16.0",
+  "browser": "151.0.7922.34",
+  "hardware": {
+    "cpus": [
+      {
+        "model": "AMD Ryzen 7 5800X 8-Core Processor             ",
+        "speed": 3793
+      },
+      {
+        "model": "AMD Ryzen 7 5800X 8-Core Processor             ",
+        "speed": 3793
+      },
+      {
+        "model": "AMD Ryzen 7 5800X 8-Core Processor             ",
+        "speed": 3793
+      },
+      {
+        "model": "AMD Ryzen 7 5800X 8-Core Processor             ",
+        "speed": 3793
+      },
+      {
+        "model": "AMD Ryzen 7 5800X 8-Core Processor             ",
+        "speed": 3793
+      },
+      {
+        "model": "AMD Ryzen 7 5800X 8-Core Processor             ",
+        "speed": 3793
+      },
+      {
+        "model": "AMD Ryzen 7 5800X 8-Core Processor             ",
+        "speed": 3793
+      },
+      {
+        "model": "AMD Ryzen 7 5800X 8-Core Processor             ",
+        "speed": 3793
+      },
+      {
+        "model": "AMD Ryzen 7 5800X 8-Core Processor             ",
+        "speed": 3793
+      },
+      {
+        "model": "AMD Ryzen 7 5800X 8-Core Processor             ",
+        "speed": 3793
+      },
+      {
+        "model": "AMD Ryzen 7 5800X 8-Core Processor             ",
+        "speed": 3793
+      },
+      {
+        "model": "AMD Ryzen 7 5800X 8-Core Processor             ",
+        "speed": 3793
+      },
+      {
+        "model": "AMD Ryzen 7 5800X 8-Core Processor             ",
+        "speed": 3793
+      },
+      {
+        "model": "AMD Ryzen 7 5800X 8-Core Processor             ",
+        "speed": 3793
+      },
+      {
+        "model": "AMD Ryzen 7 5800X 8-Core Processor             ",
+        "speed": 3793
+      },
+      {
+        "model": "AMD Ryzen 7 5800X 8-Core Processor             ",
+        "speed": 3793
+      }
+    ],
+    "memoryBytes": 68626608128,
+    "platform": "win32",
+    "arch": "x64"
+  },
+  "viewport": {
+    "width": 1440,
+    "height": 1000
+  },
+  "gpu": [
+    {
+      "vendorId": 65535,
+      "deviceId": 65535,
+      "subSysId": 0,
+      "revision": 0,
+      "vendorString": "Google Inc. (Google)",
+      "deviceString": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver-5.0.0)",
+      "driverVendor": "SwANGLE",
+      "driverVersion": "5.0.0"
+    }
+  ],
+  "cohorts": [
+    {
+      "role": "matched-main",
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "C:\\Users\\Keptin\\.codex\\worktrees\\lattice-performance-overhaul\\SillyCanvas\\docs\\research\\artifacts\\editor-latency\\audit-editor-latency.mjs",
+        "--source=.tmp/performance-main-checkout",
+        "--sizes=25,100,250",
+        "--rates=1",
+        "--repeats=20",
+        "--motion-plain",
+        "--motion-repeats=5",
+        "--output=.tmp/performance-main-matched"
+      ],
+      "counts": {
+        "plainActionSamples": 600,
+        "instrumentedActionSamples": 30,
+        "plainGestures": 60,
+        "instrumentedGestures": 24,
+        "intervalsPerGesture": 44
+      },
+      "outputWrittenAt": "2026-10-10T23:34:06.389Z"
+    },
+    {
+      "role": "final",
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "C:\\Users\\Keptin\\.codex\\worktrees\\lattice-performance-overhaul\\SillyCanvas\\docs\\research\\artifacts\\editor-latency\\audit-editor-latency.mjs",
+        "--sizes=25,100,250",
+        "--rates=1",
+        "--repeats=20",
+        "--motion-plain",
+        "--motion-repeats=5",
+        "--output=.tmp/performance-overhaul-e842042"
+      ],
+      "counts": {
+        "plainActionSamples": 600,
+        "instrumentedActionSamples": 30,
+        "plainGestures": 60,
+        "instrumentedGestures": 24,
+        "intervalsPerGesture": 44
+      },
+      "outputWrittenAt": "2026-10-11T00:21:45.785Z"
+    },
+    {
+      "role": "drag-release",
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "C:\\Users\\Keptin\\.codex\\worktrees\\lattice-performance-overhaul\\SillyCanvas\\docs\\research\\artifacts\\editor-latency\\audit-editor-latency.mjs",
+        "--sizes=25,100,250",
+        "--rates=1",
+        "--repeats=2",
+        "--modes=selection",
+        "--motion-plain",
+        "--motion-modes=drag",
+        "--motion-repeats=20",
+        "--output=.tmp/performance-overhaul-drag-e842042"
+      ],
+      "counts": {
+        "plainActionSamples": 6,
+        "instrumentedActionSamples": 3,
+        "plainGestures": 60,
+        "instrumentedGestures": 6,
+        "intervalsPerGesture": 44
+      },
+      "outputWrittenAt": "2026-10-11T00:25:03.781Z"
+    }
+  ],
+  "guards": {
+    "errors": 0,
+    "blockedRequests": 0,
+    "providerCalls": 0
+  },
+  "verification": {
+    "unitFiles": "279/279",
+    "browserTests": "336/336",
+    "browserPort": 4210,
+    "workers": 2,
+    "types": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "assetImports": 544,
+    "buildAndFreshInstallSmoke": "pass",
+    "timingOverlapsTestsOrBuild": false
+  },
+  "limits": [
+    "Synthetic disabled host; authenticated SillyTavern unavailable at login",
+    "Second rAF settle estimates paint opportunity, not INP/pixels",
+    "SwiftShader does not establish physical GPU smoothness",
+    "Sequential matched configurations, not randomized interleaved samples; ambient machine load uncontrolled",
+    "Intermediate and final timings vary despite lower final work counts; all runs retained",
+    "Instrumented inclusive profile costs overlap; recursive clone calls are not full-document copy counts",
+    "Observed maxima are sample maxima; zoom host submission is not disk acknowledgment",
+    "Latency fixture has no groups/library/model profiles/large payloads; representative correctness tested separately"
+  ],
+  "normalization": {
+    "jsonAndCpuProfiles": "exact bytes",
+    "stdoutAndVerificationLogs": "CRLF normalized to LF",
+    "sourceHashes": "actual worktree bytes; text Git normalization may differ"
+  },
+  "documents": [
+    {
+      "path": "docs/research/2026-10-10-lattice-performance-overhaul.md",
+      "bytes": 20082,
+      "sha256": "a6c2ecd799a28f8a74fb63d7c7bdecf4daac95ceedfe4da85d080fda1c1d63a2"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-10-10-lattice-performance-overhaul.md",
+      "bytes": 18252,
+      "sha256": "59315220a51386ac1df9b16210c55a95c7bb480234969bb7c119a64d4f799783"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "docs/research/artifacts/editor-latency/main-matched-143ec11/connect-release-250.cpuprofile",
+      "bytes": 295735,
+      "sha256": "51b3b7da69166c78407e7b1d8675a1117c76d584741b343cae6401e395a6fff3"
+    },
+    {
+      "path": "docs/research/artifacts/editor-latency/main-matched-143ec11/detail-toggle-250.cpuprofile",
+      "bytes": 289853,
+      "sha256": "a3c6676e69dea2581b45b16d02d1daae408a91eb92f48cf217f83192bf03ec2f"
+    },
+    {
+      "path": "docs/research/artifacts/editor-latency/main-matched-143ec11/editor-latency-results.json",
+      "bytes": 895535,
+      "sha256": "769f9fe1dd062e7b0ece27a98e2526498d7990dfc7018970a058b6ce51dfee19"
+    },
+    {
+      "path": "docs/research/artifacts/editor-latency/main-matched-143ec11/editor-latency-source-manifest.json",
+      "bytes": 44521,
+      "sha256": "997d9843c725b30966ff8a19c42171059e7eb74c51f588088f0754827daa2f3a"
+    },
+    {
+      "path": "docs/research/artifacts/editor-latency/main-matched-143ec11/shelf-create-250.cpuprofile",
+      "bytes": 391289,
+      "sha256": "d3e87b1d56a68f8b8d9b3fb40f450ee079c19f19acba848635dbec5f3565d6c8"
+    },
+    {
+      "path": "docs/research/artifacts/editor-latency/main-matched-143ec11/stdout.txt",
+      "bytes": 110062,
+      "sha256": "5783dc982fb5cb86da6fe32c1f04f31844d1f9dd596da5617d488effeb5854c3"
+    },
+    {
+      "path": "docs/research/artifacts/editor-latency/overhaul-7b6d897/README.md",
+      "bytes": 392,
+      "sha256": "c917029b88b7ab53ff3cf82cef4dfaf5b493b6149d67e71b0df79a8fee39dacb"
+    },
+    {
+      "path": "docs/research/artifacts/editor-latency/overhaul-7b6d897/connect-release-250.cpuprofile",
+      "bytes": 88519,
+      "sha256": "1841b104435d890af44470c300ad55d081e8e3d38e733c2df4bfb4caa70129dd"
+    },
+    {
+      "path": "docs/research/artifacts/editor-latency/overhaul-7b6d897/detail-toggle-250.cpuprofile",
+      "bytes": 78994,
+      "sha256": "bb9aecfb74c3072f2637913a149f6e5f17d3ee785fc4b10737b223a9c7ee4de1"
+    },
+    {
+      "path": "docs/research/artifacts/editor-latency/overhaul-7b6d897/editor-latency-results.json",
+      "bytes": 889991,
+      "sha256": "89173ef5bc12273f0732b60925e4d3973d8c5ee4bd03051633f83fff8a3a93c5"
+    },
+    {
+      "path": "docs/research/artifacts/editor-latency/overhaul-7b6d897/editor-latency-source-manifest.json",
+      "bytes": 44987,
+      "sha256": "1d1092525fafb5814c7ca7732fd5dba8350d0db089bf8069892f8723cb98ecb0"
+    },
+    {
+      "path": "docs/research/artifacts/editor-latency/overhaul-7b6d897/shelf-create-250.cpuprofile",
+      "bytes": 142256,
+      "sha256": "d9d21306940e9ab7bd2cd1a027ad5128fbbba3ad30ec36d66d998d7c5584ad08"
+    },
+    {
+      "path": "docs/research/artifacts/editor-latency/overhaul-7b6d897/stdout.txt",
+      "bytes": 105368,
+      "sha256": "8bde19f52f9b428efca4755c1f6fd48462e7f12cfadad6d5332ca4b36aa8163b"
+    },
+    {
+      "path": "docs/research/artifacts/editor-latency/overhaul-final/README.md",
+      "bytes": 391,
+      "sha256": "49143a39d9aff783c1a8d693a4ad7c4d75275907e810d1e742e8c880c4fc2014"
+    },
+    {
+      "path": "docs/research/artifacts/editor-latency/overhaul-final/connect-release-250.cpuprofile",
+      "bytes": 82780,
+      "sha256": "62f19a618f369a83f17753080b1d69ca9ddb29b9c1b4e8d6d581e8c4bdf8b2b0"
+    },
+    {
+      "path": "docs/research/artifacts/editor-latency/overhaul-final/detail-toggle-250.cpuprofile",
+      "bytes": 81671,
+      "sha256": "fe64dc5bb5440499863a7a25d4e7c0da26cdf838b4910376dc39f58604b42dfc"
+    },
+    {
+      "path": "docs/research/artifacts/editor-latency/overhaul-final/editor-latency-results.json",
+      "bytes": 892429,
+      "sha256": "68a0ede70b84d5cdcf836a491dcc81e5c5eb3802790425052c47994cf683974b"
+    },
+    {
+      "path": "docs/research/artifacts/editor-latency/overhaul-final/editor-latency-source-manifest.json",
+      "bytes": 44987,
+      "sha256": "ba8a95da5fed6e2536b25b3a027afe0c074652781464e76ce69e62f9f84fb6aa"
+    },
+    {
+      "path": "docs/research/artifacts/editor-latency/overhaul-final/shelf-create-250.cpuprofile",
+      "bytes": 112316,
+      "sha256": "696fbf2453e3eb2f023c51ec001fdb2a5fd4fa5870a2702ba621e08b8cf50993"
+    },
+    {
+      "path": "docs/research/artifacts/editor-latency/overhaul-final/stdout.txt",
+      "bytes": 105745,
+      "sha256": "5aa56b29eafec09415cde3fe3ced9b4e28b2a8f68a587d2e39712e8dcdd5b6c8"
+    },
+    {
+      "path": "docs/research/artifacts/editor-latency/overhaul-drag-release/README.md",
+      "bytes": 380,
+      "sha256": "0649f7122a679ecb8cadc0fb99d29e332792f5402cc00e9f2d28c6ccbbdcba21"
+    },
+    {
+      "path": "docs/research/artifacts/editor-latency/overhaul-drag-release/editor-latency-results.json",
+      "bytes": 257944,
+      "sha256": "090748d2f561ec2ba1d976163e98f2a1c8e04722471e81ee538b5065261342ee"
+    },
+    {
+      "path": "docs/research/artifacts/editor-latency/overhaul-drag-release/editor-latency-source-manifest.json",
+      "bytes": 44987,
+      "sha256": "ba8a95da5fed6e2536b25b3a027afe0c074652781464e76ce69e62f9f84fb6aa"
+    },
+    {
+      "path": "docs/research/artifacts/editor-latency/overhaul-drag-release/stdout.txt",
+      "bytes": 59452,
+      "sha256": "295cfaba7747337acd05931620f2a13b5e3084f92d46cb30a3209e45bb323623"
+    },
+    {
+      "path": "docs/research/artifacts/editor-latency/overhaul-validation/README.md",
+      "bytes": 899,
+      "sha256": "d8af2f4002e1ba0086cf9be67b31d652216397aa16239b0d32ffd424f69abdc5"
+    },
+    {
+      "path": "docs/research/artifacts/editor-latency/overhaul-validation/assets.txt",
+      "bytes": 166,
+      "sha256": "a79ffe04861f7bb14f1dd3594e81045490f170a41f46fc8582b37d8e555bccf7"
+    },
+    {
+      "path": "docs/research/artifacts/editor-latency/overhaul-validation/browser.txt",
+      "bytes": 48578,
+      "sha256": "ac6cd40d78f7612010d8aa615f9db15ffedd60015d10c8667067f99df6143826"
+    },
+    {
+      "path": "docs/research/artifacts/editor-latency/overhaul-validation/build.txt",
+      "bytes": 304,
+      "sha256": "1f806cefe1519e4cb4d9256a418281e97f38ee95088dbae8be7f281b18592ebc"
+    },
+    {
+      "path": "docs/research/artifacts/editor-latency/overhaul-validation/diff-warnings.txt",
+      "bytes": 474,
+      "sha256": "c220a364d3395019d8e6419e8e8fb4652d57ca54f804ddf4ad2ebc8a9feee81f"
+    },
+    {
+      "path": "docs/research/artifacts/editor-latency/overhaul-validation/install.txt",
+      "bytes": 465,
+      "sha256": "4eb36b4363843e8a5242673f1a2b6c688e7b9fc197e6daa9d5717c2ac25cec7c"
+    },
+    {
+      "path": "docs/research/artifacts/editor-latency/overhaul-validation/review.txt",
+      "bytes": 1731,
+      "sha256": "427935fe0de114434344393614a6127b8b628ebc390c2d6cf060d8c06d51b859"
+    },
+    {
+      "path": "docs/research/artifacts/editor-latency/overhaul-validation/types.txt",
+      "bytes": 256,
+      "sha256": "eeae71f43e6f344b093f5e9c9217b1f151f78bd583617748281155acb5db1556"
+    },
+    {
+      "path": "docs/research/artifacts/editor-latency/overhaul-validation/unit.txt",
+      "bytes": 10375,
+      "sha256": "1ae03a9aa2ccd9d075865f93c6adf658c7f094626c7db2dbe6421a47a6aace60"
+    }
+  ]
+}

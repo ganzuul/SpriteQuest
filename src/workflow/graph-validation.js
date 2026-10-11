@@ -1,3 +1,4 @@
+import { freeze } from './record-data.js?v=0.27.0';
 import { validateNodeModifiers } from './modifiers.js?v=0.27.0';
 import { ARTIFACT_KINDS, operationFor, describeOperation, portsForNode, phaseForNode } from './catalog.js?v=0.27.0';
 import { cloneDefinitionData, computeDefinitionIdentity, definitionRefKey, inspectDefinitionMetadata, describeExposedParameter, nodeBindingOverrideKey, artifactAddressKey } from './definition-data.js?v=0.27.0';
@@ -62,6 +63,7 @@ function inspectScope(graph, { definition, snapshots = {} } = {}) {
         if (group.members !== undefined && (!Array.isArray(group.members) || group.members.some(member => !idText(member) || !Object.hasOwn(graph.nodes, member)) || new Set(group.members).size !== group.members.length)) return fail('INVALID_GROUP', 'Invalid group membership.');
         if (group.members && (group.members.some(member => graph.nodes[member]?.inGroup !== id) || nodes.some(node => node?.inGroup === id && !group.members.includes(node.id)))) return fail('INVALID_GROUP', 'Declared membership must agree with node membership.');
     }
+    const describedNodes = new Map();
     let memoryCommits = 0;
     for (const [id, node] of Object.entries(graph.nodes)) {
         if (!record(node) || !idText(id) || node.id !== id) return fail('MALFORMED_WORKFLOW', 'Invalid node identity.');
@@ -82,6 +84,7 @@ function inspectScope(graph, { definition, snapshots = {} } = {}) {
         }
         const described = describeOperation(graph, node);
         if (!described.ok) return { ...described, error: { ...described.error, nodeId: id } };
+        describedNodes.set(id, described.data);
         const modifiers=validateNodeModifiers(node,described.data.ports.filter(port=>port.direction==='output'));
         if(!modifiers.ok)return {...modifiers,error:{...modifiers.error,nodeId:id}};
         const operation = described.data.descriptor;
@@ -94,7 +97,9 @@ function inspectScope(graph, { definition, snapshots = {} } = {}) {
         for (const [key, descriptor] of Object.entries(operation.controlDescriptors)) if (!controlValid(node[key] === undefined ? descriptor.default : node[key], descriptor)) return fail('INVALID_SETTINGS', `Invalid ${key}.`, id);
         if (node.operation === 'validate-patches' && node.protectedLiterals !== undefined && (!Array.isArray(node.protectedLiterals) || node.protectedLiterals.some(value => typeof value !== 'string'))) return fail('INVALID_SETTINGS', 'Invalid protected literals.', id);
     }
-    const pin = (nodeId, portId, direction) => Object.hasOwn(graph.nodes, nodeId) ? portsForNode({ ...graph, definitions: snapshots, interface: definition?.interface }, graph.nodes[nodeId]).find(port => port.id === portId && port.direction === direction) : undefined;
+    const metadata = { ...graph, definitions: snapshots, interface: definition?.interface };
+    const ports = new Map(nodes.map(node => [node.id, describedNodes.get(node.id)?.ports ?? portsForNode(metadata, node)]));
+    const pin = (nodeId, portId, direction) => ports.get(nodeId)?.find(port => port.id === portId && port.direction === direction);
     for (const [id, portal] of Object.entries(graph.portals ?? {})) {
         if (!record(portal) || portal.id !== id || !idText(id) || typeof portal.label !== 'string' || !record(portal.source) || Object.keys(portal.source).some(key => !['nodeId', 'portId'].includes(key)) || !idText(portal.source.nodeId) || !idText(portal.source.portId) || !ARTIFACT_KINDS.includes(portal.kind)) return fail('INVALID_PORTAL', 'Invalid portal publisher metadata.');
         if (!Object.hasOwn(graph.nodes, portal.source.nodeId)) return fail('DANGLING_WIRE', 'A portal refers to a missing local node.');
@@ -119,16 +124,18 @@ function inspectScope(graph, { definition, snapshots = {} } = {}) {
         if (incoming.has(key)) return fail('AMBIGUOUS_INPUT', 'A named input accepts one binding.');
         incoming.add(key); resolved.push({ ...wire, from, fromPort });
     }
+    const predecessors = new Map(nodes.map(node => [node.id, []]));
+    for (const edge of resolved) predecessors.get(edge.to).push(edge.from);
     const visited = new Set(), active = new Set();
     const visit = id => {
         if (active.has(id)) return false;
         if (visited.has(id)) return true;
         active.add(id);
-        for (const edge of resolved) if (edge.to === id && !visit(edge.from)) return false;
+        for (const from of predecessors.get(id)) if (!visit(from)) return false;
         active.delete(id); visited.add(id); return true;
     };
     if (!nodes.some(node => node.type === 'subgraph') && nodes.some(node => !visit(node.id))) return fail('CYCLE', 'Resolved dependencies contain a cycle.');
-    return { ok: true, data: { graph, edges: resolved, nodeCount: nodes.length, wireCount: wires.length } };
+    return { ok: true, data: { graph, ports, describedNodes, edges: resolved, nodeCount: nodes.length, wireCount: wires.length } };
 }
 
 export function validateNamedGraphStructure(graph) {
@@ -190,6 +197,8 @@ function inspectInstance(node, snapshots) {
     return pin;
 }
 
+const ownedDefinitions = new WeakMap();
+
 /** Validate all bundled snapshots, including unused entries, before expanding any instance. */
 function inspectSnapshots(value) {
     const copied = cloneDefinitionData(value);
@@ -198,7 +207,8 @@ function inspectSnapshots(value) {
     if (!record(snapshots)) return fail('DEFINITION_REF', 'Expected a local snapshot table.');
     let nodes = 0, wires = 0;
     for (const [key, snapshot] of Object.entries(snapshots)) {
-        const metadata = inspectDefinitionMetadata(snapshot);
+        const retained = ownedDefinitions.get(value[key]);
+        const metadata = retained ? { ok: true } : inspectDefinitionMetadata(snapshot);
         if (!metadata.ok) return metadata;
         if (typeof snapshot.semanticHash !== 'string' || key !== definitionRefKey(snapshot)) return fail('DEFINITION_REF', 'Snapshot keys must match exact references.');
         nodes += Object.keys(snapshot.body.nodes).length; wires += Object.keys(snapshot.body.wires).length;
@@ -226,7 +236,8 @@ function inspectSnapshots(value) {
         if (!closure.ok) return closure;
     }
     const versions = new Map(), materialized = {};
-    for (const snapshot of Object.values(snapshots)) {
+    for (const [key, snapshot] of Object.entries(snapshots)) {
+        const retained = ownedDefinitions.get(value[key]);
         const scope = inspectScope(snapshot.body, { definition: snapshot, snapshots });
         if (!scope.ok) return scope;
         for (const parameter of snapshot.parameters) {
@@ -235,15 +246,17 @@ function inspectSnapshots(value) {
             const control = describeExposedParameter(target.data, parameter.target.controlId);
             if (!control.ok) return control;
         }
-        const identity = computeDefinitionIdentity(snapshot);
+        const identity = retained?.identity ?? computeDefinitionIdentity(snapshot);
         if (!identity.ok) return identity;
         const versionKey = JSON.stringify([snapshot.id, snapshot.version]);
         if (versions.has(versionKey) && versions.get(versionKey) !== identity.data.canonicalContent) return fail('DEFINITION_CONFLICT', 'The same ID/version has different canonical content.');
         versions.set(versionKey, identity.data.canonicalContent);
         if (identity.data.semanticHash !== snapshot.semanticHash) return fail('DEFINITION_HASH', 'Snapshot hash does not match its semantic content.');
-        materialized[definitionRefKey(snapshot)] = identity.data.materializedDefinition;
+        const owned = retained ? value[key] : freeze(identity.data.materializedDefinition);
+        if (!retained) ownedDefinitions.set(owned, { identity });
+        materialized[definitionRefKey(snapshot)] = owned;
     }
-    return { ok: true, data: Object.freeze(materialized) };
+    return { ok: true, data: freeze(materialized) };
 }
 
 /** Full bounded local and nested definition validation; no host/runtime effects.
@@ -270,37 +283,74 @@ function inspectDefinition(definition, snapshots, includeExpansion) {
         if (!b.ok) return b;
         if (a.data.canonicalContent !== b.data.canonicalContent) return fail('DEFINITION_CONFLICT', 'The supplied snapshot conflicts with its bundled copy.');
     }
-    const checked = inspectSnapshots({ ...snapshots, [key]: definition });
+    const prepared = prepareDefinitionRegistry({ ...snapshots, [key]: definition });
+    if (!prepared.ok) return prepared;
+    const inspected = inspectPreparedDefinition(prepared.data, definition);
+    if (!inspected.ok) return inspected;
+    if (includeExpansion) return structuredClone(inspected);
+    const { expansion, ...diagnostics } = inspected.data;
+    return { ok: true, data: diagnostics };
+}
+
+const preparedRegistries = new WeakMap();
+const registryTables = new WeakMap();
+/** Admit the complete combination once. Only owned immutable tables can bypass admission. */
+export function prepareDefinitionRegistry(snapshots) {
+    const retained = registryTables.get(snapshots);
+    if (retained) return { ok: true, data: retained };
+    if (!safeWorkflowData(snapshots) || !record(snapshots)) return fail('DEFINITION_DATA', 'Expected bounded plain definition data.');
+    const checked = inspectSnapshots(snapshots);
     if (!checked.ok) return checked;
-    const snapshot = checked.data[key];
-    let ownExpansion;
-    for (const item of Object.values(checked.data)) {
-        const expansion = expandChecked(item.body, checked.data, item);
-        if (!expansion.ok) return expansion;
-        if (definitionRefKey(item) === key) ownExpansion = expansion.data;
+    const expansions = new Map();
+    for (const [key, item] of Object.entries(checked.data)) {
+        const owned = ownedDefinitions.get(item);
+        const closure = [], seen = new Set();
+        const collect = snapshot => {
+            if (seen.has(snapshot)) return;
+            seen.add(snapshot); closure.push(snapshot);
+            for (const node of Object.values(snapshot.body.nodes)) if (node.type === 'subgraph') collect(checked.data[definitionRefKey(node.definition)]);
+        };
+        collect(item);
+        const retained = owned.expansion && owned.closure.length === closure.length && closure.every((snapshot, i) => snapshot === owned.closure[i]);
+        const expanded = retained ? { ok: true, data: owned.expansion } : expandChecked(item.body, checked.data, item);
+        if (!expanded.ok) return expanded;
+        const expansion = freeze(expanded.data);
+        owned.expansion = expansion; owned.closure = closure;
+        expansions.set(key, expansion);
     }
-    const parameterDescriptors = {};
+    const registry = freeze({ snapshots: checked.data });
+    preparedRegistries.set(registry, { expansions, inspections: new Map() });
+    registryTables.set(registry.snapshots, registry);
+    return { ok: true, data: registry };
+}
+/** Owned diagnostics are qualified by the whole registry, including local presentation/bindings. */
+export function inspectPreparedDefinition(registry, ref) {
+    const owned = preparedRegistries.get(registry);
+    if (!owned) return fail('INVALID_PREPARED_REGISTRY', 'Use an admitted definition registry.');
+    if (!safeWorkflowData(ref) || !record(ref)) return fail('DEFINITION_REF', 'Expected an exact definition reference.');
+    const key = definitionRefKey(ref), snapshot = registry.snapshots[key];
+    if (!snapshot) return fail('DEFINITION_REF', 'The exact definition is absent from the admitted registry.');
+    if (owned.inspections.has(key)) return owned.inspections.get(key);
+    const ownExpansion = owned.expansions.get(key), parameterDescriptors = {};
     for (const parameter of snapshot.parameters) {
         const unit = ownExpansion.primitives.find(unit => unit.address.nodeId === parameter.target.nodeId && JSON.stringify(unit.address.instancePath) === JSON.stringify(parameter.target.instancePath));
         const descriptor = describeExposedParameter(unit.node, parameter.target.controlId);
         if (!descriptor.ok) return descriptor;
         parameterDescriptors[parameter.id] = descriptor.data;
     }
-    return { ok: true, data: { ref: { id: snapshot.id, version: snapshot.version, semanticHash: snapshot.semanticHash }, definition: snapshot, interface: snapshot.interface, parameters: snapshot.parameters, parameterDescriptors, nodeCount: ownExpansion.nodeCount, wireCount: ownExpansion.wireCount, ...(includeExpansion ? { expansion: ownExpansion } : {}) } };
+    const result = freeze({ ok: true, data: { ref: { id: snapshot.id, version: snapshot.version, semanticHash: snapshot.semanticHash }, definition: snapshot, interface: snapshot.interface, parameters: snapshot.parameters, parameterDescriptors, nodeCount: ownExpansion.nodeCount, wireCount: ownExpansion.wireCount, expansion: ownExpansion } });
+    owned.inspections.set(key, result); return result;
 }
 
 /** Checked structural inventory shared by authoring validation and execution planning. */
 export function inspectExpandedGraph(graph) {
     if (!safeWorkflowData(graph) || !record(graph)) return fail('MALFORMED_WORKFLOW', 'Expected bounded plain workflow data.');
-    const checked = inspectSnapshots(graph.definitions ?? {});
-    if (!checked.ok) return checked;
+    const preparedRegistry = prepareDefinitionRegistry(graph.definitions ?? {});
+    if (!preparedRegistry.ok) return preparedRegistry;
+    const checked = { ok: true, data: preparedRegistry.data.snapshots };
     const scope = inspectScope(graph, { snapshots: checked.data });
     if (!scope.ok) return scope;
-    // Validate expanded topology for unused snapshots too; authoring cannot hide malicious bodies.
-    for (const snapshot of Object.values(checked.data)) {
-        const expanded = expandChecked(snapshot.body, checked.data, snapshot);
-        if (!expanded.ok) return expanded;
-    }
+    // Registry admission already checked expanded topology for every unused snapshot.
     const expanded = expandChecked(graph, checked.data);
     if (!expanded.ok) return expanded;
     const registry = graph.localDefinitionOwners ?? [];
@@ -349,9 +399,10 @@ function expandChecked(root, snapshots, rootDefinition) {
             graph.roles ??= {};
             for (const [role, binding] of Object.entries(localContext.node.roleOverrides ?? {})) graph.roles[role] = { ...(Object.hasOwn(graph.roles, role) ? graph.roles[role] : {}), ...binding };
         }
-        for (const node of Object.values(graph.nodes ?? {})) if (operationFor(node, { phase: phaseForNode(graph, node), mode: graph.mode })) {
+        for (const node of Object.values(graph.nodes ?? {})) {
             const operation = operationFor(node, { phase: phaseForNode(graph, node), mode: graph.mode });
-            for (const [id, descriptor] of Object.entries(operation.controlDescriptors)) if (node[id] === undefined && (operation.family !== 'Introspection' || Object.hasOwn(operation.defaults, id))) node[id] = structuredClone(descriptor.default);
+            if (!operation) continue;
+            for (const [id, descriptor] of Object.entries(operation.controlDescriptors)) if (node[id] === undefined && (operation.family !== 'Introspection' || Object.hasOwn(operation.defaults, id))) node[id] = descriptor.default !== null && typeof descriptor.default === 'object' ? structuredClone(descriptor.default) : descriptor.default;
             node.operationVersion ??= 1;
             node.modelRole ??= operation.modelRole;
             const explicitBinding = {};
@@ -377,9 +428,9 @@ function expandChecked(root, snapshots, rootDefinition) {
         const parent = path.length ? address(path.slice(0, -1), path.at(-1)) : undefined;
         for (const node of Object.values(graph.nodes)) {
             if (node.type === 'note') continue;
-            const at = address(path, node.id), operation = operationFor(node, { phase: phaseForNode(graph, node), mode: graph.mode });
+            const at = address(path, node.id), operation = scope.data.describedNodes.get(node.id)?.descriptor;
             const enabled = ancestorEnabled && node.enabled !== false;
-            const ports = portsForNode({ ...graph, definitions: snapshots, interface: definition?.interface }, node);
+            const ports = scope.data.ports.get(node.id);
             for (const port of ports) {
                 const pinAddress = { ...at, portId: port.id };
                 addPin(pinAddress, port, !operation);
@@ -442,19 +493,21 @@ function expandChecked(root, snapshots, rootDefinition) {
         }
     } catch { return fail('CYCLE', 'Expanded boundary dependencies contain a cycle.'); }
     const byKey = new Map(primitives.map(unit => [nodeAddressKey(unit.address), unit]));
+    const predecessors = new Map(primitives.map(unit => [nodeAddressKey(unit.address), []]));
+    for (const edge of edges) predecessors.get(nodeAddressKey(edge.to)).push(byKey.get(nodeAddressKey(edge.from)));
     const ordered = [], complete = new Set(), visiting = new Set();
     const order = unit => {
         const key = nodeAddressKey(unit.address);
         if (visiting.has(key)) return false;
         if (complete.has(key)) return true;
         visiting.add(key);
-        for (const edge of edges) if (nodeAddressKey(edge.to) === key && !order(byKey.get(nodeAddressKey(edge.from)))) return false;
+        for (const upstream of predecessors.get(key)) if (!order(upstream)) return false;
         visiting.delete(key); complete.add(key); ordered.push(unit); return true;
     };
     if (primitives.some(unit => !order(unit))) return fail('CYCLE', 'Expanded primitive dependencies contain a cycle.');
     if (root.mode === 'native-unified') for (const unit of ordered) {
         const key = nodeAddressKey(unit.address);
-        const receivesPost = edges.some(edge => nodeAddressKey(edge.to) === key && (byKey.get(nodeAddressKey(edge.from)).phase === 'post' || stageCapabilities.get(nodeAddressKey(edge.from))?.nativeBoundary));
+        const receivesPost = predecessors.get(key).some(upstream => upstream.phase === 'post' || stageCapabilities.get(nodeAddressKey(upstream.address))?.nativeBoundary);
         if (!receivesPost || unit.phase === 'post') continue;
         if (!stageCapabilities.get(key)?.inferPost) return fail('INVALID_STAGE_DEPENDENCY', 'Preparation cannot consume native reply or Post-stage output. Move a compatible node to Post or remove the reverse dependency.', unit.node.id);
         unit.phase = 'post';

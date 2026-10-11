@@ -31,7 +31,7 @@ const S = await import(`/src/state.js?v=${version}`);
 const { Canvas } = await import(`/src/canvas.js?v=${version}`);
 let canvas;
 const setGraph = Canvas.prototype.setGraph;
-Canvas.prototype.setGraph = function (graph) { canvas = this; return setGraph.call(this, graph); };
+Canvas.prototype.setGraph = function (graph, ...options) { canvas = this; return setGraph.call(this, graph, ...options); };
 const UI = await import(`/src/ui.js?v=${version}`);
 const H = await import(`/src/history.js?v=${version}`);
 const { operationDefaults } = await import(`/src/workflow/catalog.js?v=${version}`);

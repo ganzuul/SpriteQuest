@@ -47,6 +47,11 @@ function stack(g) {
 
 const notify = (g, event) => { for (const fn of listeners) { try { fn(g, event); } catch { /* ignore */ } } };
 
+/** Monotonic authored history and activation identity; reading never creates a stack. */
+export function graphHistoryStamp(graph) {
+    return Object.freeze({ generation: generations.get(graph), revision: stacks.get(graph)?.revision ?? 0 });
+}
+
 /** Start keeping history for a canvas, from how it is right now. */
 export function track(g) {
     if (g?.id) stack(g);

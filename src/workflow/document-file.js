@@ -1,3 +1,5 @@
+import { graphArtifactsFor } from './graph-artifacts.js?v=0.27.0';
+import { own } from './record-data.js?v=0.27.0';
 import { safeWorkflowData, validateGraphStructure } from './contracts.js?v=0.27.0';
 import { OPERATIONS, operationFor, phaseForNode } from './catalog.js?v=0.27.0';
 import { introspectionDefaults } from './introspection/native.js?v=0.27.0';
@@ -121,12 +123,14 @@ export function workflowDocumentSnapshot(graph, workspaceViews = null) {
 }
 
 /** Encode an editable local file without consulting settings or runtime state. */
-export function serializeWorkflowDocument(graph, workspaceViews = null) {
+export function serializeWorkflowDocument(graph, workspaceViews = null, options = {}) {
     try {
         const projectedData = projectGraph(graph), viewData = projectViews(workspaceViews);
         if (!safeWorkflowData(projectedData) || !safeWorkflowData(viewData)) return fail('MALFORMED_WORKFLOW', 'Expected bounded plain workflow authoring data without credentials.');
         const projected = structuredClone(projectedData), views = structuredClone(viewData);
-        const validation = validateGraphStructure(projected);
+        const checkedArtifacts = own(options, 'checkedArtifacts');
+        // Stripping any authored difference forces ordinary admission; tokens never bless a projection by identity.
+        const validation = checkedArtifacts && graphArtifactsFor(projected, checkedArtifacts).ok ? { ok: true } : validateGraphStructure(projected);
         if (!validation.ok) return validation;
         if (projected.mode !== 'native-unified') return fail('WRONG_PHASE', 'Editable workflow documents require a unified root. Retired originals are recovery data only.');
         if (views && views.workflowId !== projected.id) return fail('VIEW_DATA', 'Workspace presentation belongs to a different workflow.');
@@ -144,7 +148,7 @@ export function serializeWorkflowDocument(graph, workspaceViews = null) {
         const envelope = { kind: 'lattice-document', schema: 1, minRuntime: 2, graph: projected, ...(views ? { workspaceViews: views } : {}) };
         const json = JSON.stringify(envelope, null, 2);
         if (new TextEncoder().encode(json).byteLength > LIMIT) return fail('MALFORMED_WORKFLOW', 'Workflow JSON must be at most 2,000,000 UTF-8 bytes.');
-        return { ok: true, data: { json } };
+        return { ok: true, data: { json, recovery: { graph: projected, workspaceViews: views } } };
     } catch { return fail('MALFORMED_WORKFLOW', 'Malformed workflow authoring containers.'); }
 }
 

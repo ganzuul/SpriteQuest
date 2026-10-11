@@ -59,20 +59,20 @@ function resolve(node, phase) {
         if (typeof operation !== 'string' || !Object.hasOwn(TRANSPOSE_OPERATIONS, operation)) return failure('UNKNOWN_OPERATION', 'Unknown Transpose operation.');
         if (own(node, 'operationVersion', 1) !== 1) return failure('INVALID_VERSION', 'Transpose requires operation version 1.');
         const base = TRANSPOSE_OPERATIONS[operation];
-        const settings = Object.fromEntries(base.controls.map(key => [key, own(node, key, structuredClone(base.defaults[key]))]));
+        const settings = Object.fromEntries(base.controls.map(key => [key, own(node, key, base.defaults[key])]));
         validateControls(settings, base.controlDescriptors);
         const nodePhase = own(node, 'phase');
         const effectivePhase = phase ?? nodePhase ?? 'post';
         if (!['pre', 'post'].includes(effectivePhase) || nodePhase !== undefined && nodePhase !== effectivePhase || settings.inputKind === 'draft' && effectivePhase !== 'post') return failure('INVALID_PHASE', 'Draft Transpose requires post phase; Text requires a matching pre or post phase.');
         const output = settings.inputKind === 'text' ? 'text' : 'patches';
-        const descriptor = { ...structuredClone(base), phase: effectivePhase, input: settings.inputKind, output };
-        descriptor.defaults.inputKind = settings.inputKind;
-        descriptor.controlDescriptors.find(control => control.key === 'inputKind').options = effectivePhase === 'pre' ? ['text'] : ['draft', 'text'];
+        const descriptor = { ...base, phase: effectivePhase, input: settings.inputKind, output, defaults: { ...base.defaults, inputKind: settings.inputKind },
+            controlDescriptors: base.controlDescriptors.map(control => control.key === 'inputKind' ? { ...control, options: effectivePhase === 'pre' ? ['text'] : ['draft', 'text'] } : control) };
         const ports = [port('in', 'Input', 'input', settings.inputKind, true), port('reference', 'Reference', 'input', base.requestBound ? settings.referenceKind : 'data', true), ...(base.requestBound ? [port('context', 'Context', 'input', 'context')] : []), port('out', 'Output', 'output', output)];
         return { ok: true, data: { descriptor, ports, settings } };
     } catch { return failure('INVALID_SETTINGS', 'Declared node fields require own enumerable data.'); }
 }
-export function describeTranspose(node, options = {}) {
+/** Internal catalog projection: nested registration metadata stays producer-owned and immutable. */
+export function describeTransposeMetadata(node, options = {}) {
     let result;
     try {
         if (!plainRecord(options)) return failure('INVALID_SETTINGS', 'Description options must be a plain record.');
@@ -83,6 +83,13 @@ export function describeTranspose(node, options = {}) {
     return { ok: true, data: { descriptor, ports } };
 }
 
+
+/** Public descriptions remain detached mutable metadata, including nested defaults and controls. */
+export function describeTranspose(node, options = {}) {
+    const result = describeTransposeMetadata(node, options);
+    if (!result.ok) return result;
+    return { ok: true, data: { descriptor: structuredClone(result.data.descriptor), ports: result.data.ports } };
+}
 
 function validateInputs(namedInputs, ports) {
     if (!plainRecord(namedInputs)) return failure('INVALID_INPUTS', 'Named inputs must be a plain record.');

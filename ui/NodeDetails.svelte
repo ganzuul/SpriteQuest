@@ -6,7 +6,7 @@
     import WorkflowData from './WorkflowData.svelte';
     import type { DetailBindingMode, DetailControl, DetailEditResponse, DetailModifier, DetailSelection, NodeDetailsActions, NodeDetailsView } from './detail-types';
     let { view, actions = {}, idPrefix = 'pc-node-details' }: { view: NodeDetailsView | null; actions?: NodeDetailsActions; idPrefix?: string } = $props();
-    type LocalDraft = { text: string; error: string; pending: boolean; editor?: DetailControl['editor']; representation?: 'json-text' | 'json-value'; artifactKind?: string; required?: boolean; boundaryId?: string; boundaryDirection?: 'input' | 'output'; modifierType?: string; helperKey?:string };
+    type LocalDraft = { text: string; typedValue?: unknown; error: string; pending: boolean; editor?: DetailControl['editor']; representation?: 'json-text' | 'json-value'; artifactKind?: string; required?: boolean; boundaryId?: string; boundaryDirection?: 'input' | 'output'; modifierType?: string; helperKey?:string };
     let drafts = $state<Record<string, LocalDraft>>({});
     let errors = $state<Record<string, string>>({});
     let identity = '', revision = '', support = '';
@@ -17,7 +17,7 @@
     const modifierGenerations = new Map<string, number>();
     const draftGenerations = new Map<string, number>();
     // The mounted workspace inspector owns drafts; qualified nodes never share them.
-    const draftCache = new Map<string, typeof drafts>();
+    const draftCache = new Map<string, { contract: string; drafts: typeof drafts }>();
     const settledDrafts = (values: typeof drafts) => Object.fromEntries(Object.entries(values).map(([key, value]) => [key, { ...value, pending: false }]));
     function supportedDrafts(values: typeof drafts, node: NodeDetailsView | null) {
         if (!node) return {};
@@ -39,33 +39,45 @@
             return node.controls.some(control => control.key === key && control.editor === value.editor && control.representation === value.representation && (control.editor === 'json' || control.editor === 'lines')) ? [[key, value]] : [];
         }));
     }
-    const selectionIdentity = (node: DetailSelection) => JSON.stringify([node.selectionKey, 'kind' in node.address
+    const selectionIdentity = (node: DetailSelection) => JSON.stringify([node.documentNamespace ?? '', node.selectionKey, 'kind' in node.address
         ? [node.address.kind, node.address.definitionRef.id, node.address.definitionRef.version, node.address.definitionRef.semanticHash, node.address.nodeId]
         : [node.address.workflowId, node.address.instancePath, node.address.nodeId]]);
     let alive = true;
     onDestroy(() => { alive = false; requests.clear(); draftCache.clear(); draftGenerations.clear(); modifierGenerations.clear(); });
     $effect(() => {
         const next = view ? selectionIdentity(view) : '', nextRevision = view?.revision ?? '';
-        const nextSupport = JSON.stringify([view?.controls.map(control => [control.key, control.editor, control.representation]), view?.model?.profile.allowedModes, view?.model?.model.allowedModes, view?.model?.editable, view?.helperBindings && [view.helperBindings.helperKey,view.helperBindings.editable,view.helperBindings.roles.map(row=>[row.role,row.model.allowedModes])], view?.boundary && [view.boundary.id, view.boundary.direction, view.boundary.kinds], !!view?.fileInput, view?.modifiers && [view.modifiers.items.map(item => [item.id, item.type]).sort(([a], [b]) => a.localeCompare(b)), view.modifiers.options.map(option => [option.type, option.fields.map(field => [field.key, field.editor])]), view.modifiers.editable, view.readOnly]]);
+        const nextSupport = view?.editorContractKey ?? JSON.stringify([view?.controls.map(control => [control.key, control.editor, control.representation, control.allowEmpty, control.structured]), view?.model?.profile.allowedModes, view?.model?.model.allowedModes, view?.model?.editable, view?.helperBindings && [view.helperBindings.helperKey,view.helperBindings.editable,view.helperBindings.roles.map(row=>[row.role,row.model.allowedModes])], view?.boundary && [view.boundary.id, view.boundary.direction, view.boundary.kinds], !!view?.fileInput, view?.modifiers && [view.modifiers.items.map(item => [item.id, item.type]).sort(([a], [b]) => a.localeCompare(b)), view.modifiers.options.map(option => [option.type, option.fields.map(field => [field.key, field.editor])]), view.modifiers.editable, view.readOnly]]);
         const changedSelection = next !== identity;
         if (changedSelection || nextRevision !== revision || nextSupport !== support) {
             if (changedSelection || nextSupport !== support) { boundaryDraftSequence++; modifierEpoch++; }
             if (changedSelection) {
                 draftVisit++;
-                if (identity) draftCache.set(identity, untrack(() => settledDrafts(drafts)));
+                if (identity) draftCache.set(identity, { contract: support, drafts: untrack(() => settledDrafts(drafts)) });
+            }
+            const incompatible = !changedSelection && nextSupport !== support;
+            const retained = draftCache.get(next), changedContract = incompatible || !!retained && retained.contract !== nextSupport;
+            let restored = changedSelection ? retained?.drafts ?? {} : untrack(() => drafts);
+            if (changedContract) {
+                draftCache.delete(next);
+                // Boundary label/required fields keep the same contract when the allowed
+                // artifact kinds change. Revalidate only that field; other incompatible
+                // editor drafts must remain discarded when an old contract returns.
+                restored = restored.boundary ? supportedDrafts({ boundary: restored.boundary }, view) : {};
+                if (restored.boundary) nextDraftGeneration('boundary');
             }
             identity = next; revision = nextRevision; support = nextSupport; requests.clear(); sequence++; errors = {}; modifierBusy = false; modifierBusySequence++;
             // A revision expires writes, while unsaved text still belongs to this node.
-            drafts = supportedDrafts(changedSelection ? draftCache.get(next) ?? {} : untrack(() => drafts), view);
+            drafts = supportedDrafts(restored, view);
         }
     });
-    const selection = (node: NodeDetailsView): DetailSelection => ({ selectionKey: node.selectionKey, revision: node.revision, address: 'kind' in node.address ? { ...node.address, definitionRef: { ...node.address.definitionRef } } : { ...node.address, instancePath: [...node.address.instancePath] } });
+    const selection = (node: NodeDetailsView): DetailSelection => ({ ...(node.documentNamespace ? { documentNamespace: node.documentNamespace } : {}), selectionKey: node.selectionKey, revision: node.revision, address: 'kind' in node.address ? { ...node.address, definitionRef: { ...node.address.definitionRef } } : { ...node.address, instancePath: [...node.address.instancePath] } });
     const current = (captured: DetailSelection) => alive && !!view && view.selectionKey === captured.selectionKey && view.revision === captured.revision && selectionIdentity(view) === selectionIdentity(captured);
     function textFor(control: DetailControl) {
         if (control.editor === 'json') return control.representation === 'json-text' ? String(control.value ?? '') : JSON.stringify(control.value, null, 2);
         return control.editor === 'lines' && Array.isArray(control.value) ? control.value.join('\n') : String(control.value ?? '');
     }
     function draftContract(node: NodeDetailsView, key: string) {
+        if (node.editorContractKey) return node.editorContractKey + ':' + key;
         if(key.startsWith('["helper-binding",')){const tuple=JSON.parse(key);return node.helperBindings?.editable && node.helperBindings.roles.some(row=>row.role===tuple[1]) ? JSON.stringify(['helper-binding',node.helperBindings.helperKey,tuple[1],tuple[2]]) : null;}
         if (key === 'model') {
             const binding = node.model?.model;
@@ -116,8 +128,19 @@
         drafts = { ...drafts, [control.key]: { text, error: '', pending: false, editor: control.editor, representation: control.representation } };
         errors = { ...errors, [control.key]: '' };
     }
+    function draftValue(control: DetailControl, value: unknown) {
+        if (!view || view.readOnly) return;
+        nextDraftGeneration(control.key); requests.delete(control.key);
+        drafts = { ...drafts, [control.key]: { text: '', typedValue: value, error: '', pending: false, editor: control.editor, representation: control.representation } };
+        errors = { ...errors, [control.key]: '' };
+    }
     function save(control: DetailControl) {
         if (!view || view.readOnly || !actions.editControl) return;
+        if (control.structured && drafts[control.key]?.typedValue !== undefined) {
+            const value = $state.snapshot(drafts[control.key].typedValue);
+            void perform(control.key, false, captured => actions.editControl!(captured, control.key, value));
+            return;
+        }
         const text = drafts[control.key]?.text ?? textFor(control);
         let value: unknown = text;
         if (control.editor === 'json') {
@@ -284,14 +307,16 @@
             return result;
         });
     }
-    const controlGroups = () => {
+    const controlGroups = $derived.by(() => {
         const groups = new Map<string, DetailControl[]>();
         for (const control of view?.controls ?? []) {
             const name = control.group && control.group !== 'Main' ? control.group : control.advanced ? 'Advanced' : 'Main';
-            groups.set(name, [...(groups.get(name) ?? []), control]);
+            if (!groups.has(name)) groups.set(name, []);
+            groups.get(name)!.push(control);
         }
         return [...groups].sort(([a], [b]) => a === 'Main' ? -1 : b === 'Main' ? 1 : 0);
-    };
+    });
+    let mountedGroups = $state<Record<string, boolean>>({});
     const groupHasError = (controls: DetailControl[]) => controls.some(control => !!(drafts[control.key]?.error || errors[control.key]));
     function editName(value: string) {
         if (!view || view.boundary || !actions.present) return;
@@ -341,7 +366,7 @@
     {#if errors.alias}<p class="pc-detail-error" role="alert">{errors.alias}</p>{/if}
     {#if view.boundary}
         <fieldset class="pc-detail-group" data-boundary-controls><legend>Subgraph {view.boundary.direction}</legend>
-            <label>Type<select aria-label="Subgraph port type" value={boundaryValues().artifactKind} disabled={view.readOnly || !actions.editInterface} onchange={event => draftBoundary('artifactKind', event.currentTarget.value)}>{#each view.boundary.kinds as kind}<option value={kind}>{kind}</option>{/each}</select></label>
+            <label>Type<select aria-label="Subgraph port type" value={boundaryValues().artifactKind} disabled={view.readOnly || !actions.editInterface} onchange={event => draftBoundary('artifactKind', event.currentTarget.value)}>{#each view.boundary.kinds as kind (kind)}<option value={kind}>{kind}</option>{/each}</select></label>
             <label class="pc-detail-check"><input aria-label="Required subgraph port" type="checkbox" checked={boundaryValues().required} disabled={view.readOnly || !actions.editInterface} onchange={event => draftBoundary('required', event.currentTarget.checked)} /> Required</label>
             <div class="pc-detail-actions"><button type="button" data-save-boundary disabled={view.readOnly || !actions.editInterface || !boundaryValues().label.trim() || !!drafts.boundary?.pending} onclick={() => editBoundary()}>{drafts.boundary?.pending ? 'Validating…' : 'Save port'}</button></div>
             <small>Labels appear on the subgraph block. Disconnect incompatible connections before changing the type. Deleting this node removes its port and attached connections.</small>
@@ -361,13 +386,13 @@
                     {#if errors.fileInput}<p id={idPrefix + '-error-fileInput'} class="pc-detail-error" role="alert">{errors.fileInput}</p>{/if}
                 </div>
             {/if}
-            {#each controlGroups().filter(([group]) => group === 'Main') as [group, controls] (group)}
+            {#each controlGroups.filter(([group]) => group === 'Main') as [group, controls] (group)}
                 {#each controls as control (control.key)}{@render controlEditor(control)}{/each}
             {/each}
         </fieldset>
-        {#each controlGroups().filter(([group]) => group !== 'Main') as [group, controls] (group)}
-            <details class="pc-detail-group" data-control-group={group} open={groupHasError(controls)}><summary>{group}</summary>
-                {#each controls as control (control.key)}{@render controlEditor(control)}{/each}
+        {#each controlGroups.filter(([group]) => group !== 'Main') as [group, controls] (group)}
+            <details class="pc-detail-group" data-control-group={group} open={groupHasError(controls)}><summary onclick={() => { mountedGroups[group] = true; }}>{group}</summary>
+                {#if mountedGroups[group] || groupHasError(controls)}{#each controls as control (control.key)}{@render controlEditor(control)}{/each}{/if}
             </details>
         {/each}
     {/if}
@@ -414,7 +439,7 @@
 </section>
 
 {#snippet controlEditor(control: DetailControl)}
-    <DetailControlEditor {control} text={drafts[control.key]?.text ?? textFor(control)} error={drafts[control.key]?.error || errors[control.key] || ''} disabled={!!view?.readOnly || !actions.editControl} pending={!!drafts[control.key]?.pending} idPrefix={idPrefix + '-' + control.key} ontext={text => draft(control, text)} onvalue={value => editControl(control, value)} onnumber={input => editNumber(control, input)} onsave={() => save(control)} />
+    <DetailControlEditor {control} text={drafts[control.key]?.text ?? textFor(control)} error={drafts[control.key]?.error || errors[control.key] || ''} disabled={!!view?.readOnly || !actions.editControl} pending={!!drafts[control.key]?.pending} idPrefix={idPrefix + '-' + control.key} draftValue={drafts[control.key]?.typedValue} onDraft={value => draftValue(control, value)} ontext={text => draft(control, text)} onvalue={value => editControl(control, value)} onnumber={input => editNumber(control, input)} onsave={() => save(control)} />
 {/snippet}
 
 <style>

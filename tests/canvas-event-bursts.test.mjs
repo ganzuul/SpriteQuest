@@ -7,6 +7,8 @@ function countWork(canvas, host) {
     for (const [method, key] of [['setNodes', 'nodes'], ['setPositions', 'positions'], ['setWires', 'wires']]) {
         const call = canvas.layer[method]; canvas.layer[method] = (...args) => { counts[key]++; return call(...args); };
     }
+    const positions = canvas.layer.setPositions; canvas.layer.setPositions = (nodes, groups, scene) => { if (scene?.wires) counts.wires++; return positions(nodes, groups, scene); };
+    const publication = canvas.layer.applyScene; canvas.layer.applyScene = scene => { if (scene.nodes) counts.nodes++; if (scene.wires) counts.wires++; return publication(scene); };
     for (const [method, key] of [['measure', 'measure'], ['endpoint', 'endpoint']]) {
         const call = canvas.geometry[method].bind(canvas.geometry); canvas.geometry[method] = (...args) => { counts[key]++; return call(...args); };
     }

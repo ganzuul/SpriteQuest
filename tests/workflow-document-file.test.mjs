@@ -74,3 +74,11 @@ for (const envelope of [exportWorkflow(idless), { kind: 'lattice-document', sche
     assert.equal(must(parseWorkflowDocument(must(serializeWorkflowDocument(admitted)).json)).graph.id, admitted.id, 'the admitted identity remains stable through file saves and reopens');
 }
 console.log('workflow-document-file: ok');
+const recoveryInput = structuredClone(privateGraph), recoveryViews = structuredClone(privateViews);
+const recovered = must(serializeWorkflowDocument(recoveryInput, recoveryViews));
+assert.deepEqual(recovered.recovery, { graph: JSON.parse(recovered.json).graph, workspaceViews: JSON.parse(recovered.json).workspaceViews });
+recoveryInput.nodes.note.commentFrame.x = 999;
+recoveryViews.views[0].camera.x = 999;
+assert.equal(recovered.recovery.graph.nodes.note.commentFrame.x, 1, 'recovery is detached from nested authored data');
+assert.equal(recovered.recovery.workspaceViews.views[0].camera.x, 1, 'recovery is detached from camera data');
+assert.equal(must(serializeWorkflowDocument(graph)).recovery.workspaceViews, null);

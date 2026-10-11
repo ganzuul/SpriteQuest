@@ -3,7 +3,13 @@ import { workflowDocumentSnapshot } from '../workflow/document-file.js?v=0.27.0'
 /** One active document, exact activation identity and successful save checkpoint. */
 export function createWorkflowDocumentSession() {
     let graph = null, source = null, workspaceViews = null, checkpoint = null, token = null;
-    const listeners = new Set();
+    const listeners = new Set(), draftNamespaces = new WeakMap();
+    let namespaceSequence = 0;
+    const draftNamespace = () => {
+        if (!graph || typeof graph !== 'object') return null;
+        if (!draftNamespaces.has(graph)) draftNamespaces.set(graph, 'document-' + ++namespaceSequence);
+        return draftNamespaces.get(graph);
+    };
     const notify = type => { for (const listener of listeners) { try { listener({ type, graph, source }); } catch { /* A UI listener cannot invalidate document ownership. */ } } };
     const snapshot = (value = graph) => workflowDocumentSnapshot(value, value === graph ? workspaceViews : null);
     const session = {
@@ -18,6 +24,7 @@ export function createWorkflowDocumentSession() {
         source(next) { if (arguments.length) { source = next; notify('source'); } return source; },
         workspaceViews(next) { if (arguments.length) { workspaceViews = next; notify('views'); } return workspaceViews; },
         capture: () => token,
+        draftNamespace,
         stillCurrent: captured => !!captured && captured === token,
         snapshot,
         dirty: () => !!graph && (checkpoint === null || snapshot() !== checkpoint),

@@ -1,2 +1,5 @@
 # Preserve audit artifact bytes for recorded SHA-256 hashes.
 docs/research/artifacts/editor-latency/* text=auto eol=lf
+# Preserve exact generated browser bytes used in latency measurements.
+dist/lattice-ui.js -text
+dist/lattice.css -text

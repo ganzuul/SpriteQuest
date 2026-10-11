@@ -148,3 +148,43 @@ test('preview addresses are detached immutable DTOs and cannot rewrite recorded 
     assert.ok(text(stale).includes('Alpha'),'retained historical alias remains unchanged after route revision');assert.deepEqual(stale.result.previewTarget,canonical);assert.equal(stale.recording,recording);
     assert.equal(Object.isFrozen(root),false);assert.equal(Object.isFrozen(first),false);assert.equal(Object.isFrozen(first.instancePath),false);assert.equal(Object.isFrozen(canonical),false);assert.equal(Object.isFrozen(canonical.instancePath),false);assert.equal(Object.isFrozen(terminal.address),false);
 });
+
+function countRootExpansions(root, run) {
+    const clone = globalThis.structuredClone; let expansions = 0;
+    globalThis.structuredClone = function(value, ...options) {
+        // Count the real expansion's root clone, excluding document/snapshot clones.
+        if (value === root && /graph-validation\.js/.test(new Error().stack)) expansions++;
+        return clone(value, ...options);
+    };
+    try { return { result: run(), expansions }; }
+    finally { globalThis.structuredClone = clone; }
+}
+test('workflow projection shares one checked expansion and reuses current admitted content', async () => {
+    const { prepareGraphArtifacts } = await import('../src/workflow/graph-artifacts.js?v=0.27.0');
+    const root = graph3('structured-guidance');
+    const first = countRootExpansions(root, () => surface.prepareWorkflowProjection(root));
+    assert.equal(surface.projectPreparedWorkflow(first.result).nodes.some(node => node.id === 'compose-json'), true);
+    assert.equal(first.expansions, 1, 'cold projection expands the actual graph once');
+    const artifacts = prepareGraphArtifacts(root); assert.equal(artifacts.ok, true);
+    const planner = prepareWorkflowPlanner(root, artifacts.data); assert.equal(planner.ok, true);
+    const warm = countRootExpansions(root, () => surface.prepareWorkflowProjection(root, { planner: planner.data }));
+    assert.equal(warm.expansions, 0, 'matching checked projection never expands again');
+    assert.deepEqual(surface.projectPreparedWorkflow(warm.result).nodes, surface.projectPreparedWorkflow(first.result).nodes);
+    root.nodes['compose-json'].title = 'Raw authored change';
+    const changed = countRootExpansions(root, () => surface.prepareWorkflowProjection(root));
+    assert.equal(changed.expansions, 1, 'a valid raw mutation receives a fresh checked expansion');
+    assert.equal(surface.projectPreparedWorkflow(changed.result).nodes.find(node => node.id === 'compose-json').title, 'Raw authored change');
+    assert.equal(Object.isFrozen(root.nodes['compose-json']), false);
+});
+test('historical planner cannot bypass current raw validation or invoke getters before binding', () => {
+    const root = graph3('native-guidance'), planner = prepareWorkflowPlanner(root).data; let effects = 0;
+    const resolveBinding = () => { effects++; return { ok: true, data: { profileId: 'fixed', model: 'fixture' } }; };
+    root.nodes['response-plan'].operation = 'unknown-operation';
+    const invalid = surface.projectPreparedWorkflow(surface.prepareWorkflowProjection(root, { planner, resolveBinding }));
+    assert.ok(invalid.issues.length); assert.equal(invalid.nodes.length, 0); assert.equal(effects, 0);
+    root.nodes['response-plan'].operation = 'response-plan';
+    let reads = 0; Object.defineProperty(root.nodes['response-plan'], 'instructions', { enumerable: true, configurable: true, get() { reads++; throw Error('getter'); } });
+    const unsafe = surface.projectPreparedWorkflow(surface.prepareWorkflowProjection(root, { planner, resolveBinding }));
+    assert.ok(unsafe.issues.length); assert.equal(unsafe.nodes.length, 0); assert.equal(effects, 0); assert.equal(reads, 0);
+    assert.equal(Object.isFrozen(root), false);
+});

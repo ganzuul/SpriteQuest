@@ -11,9 +11,10 @@ import * as L from '../src/library.js?v=0.27.0';
 const root = prepareCreateFromSelection(cloneWorkflowDocument(starterGraph('native-guidance')).data, { nodeIds: ['smart-compactor'], definitionId: 'stored-definition', name: 'Stored definition' }).data.candidate;
 const snapshot = Object.values(root.definitions)[0];
 const host = installMock({ settings: { graphs: { [root.id]: root }, library: { folders: [{ id: 'prompts', name: 'Prompts' }], prompts: [{ id: 'legacy', content: 'Keep' }] } } });
-S.settings(); // Finish the one-time preference migration before measuring library writes.
 let saves = 0, touches = 0;
 host.saveSettingsDebounced = () => saves++;
+S.settings(); // Capture the host boundary and finish preference migration before measuring library writes.
+saves = 0;
 const unlisten = S.onGraphTouched(() => touches++), before = structuredClone(root);
 assert.equal(typeof L.loadSubgraphLibrary, 'function');
 assert.equal(L.getSubgraphLibrary().error.code, 'LIBRARY_NOT_LOADED');

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { openDetailGroup } from './details-helpers.mjs';
 
 async function setup(page) {
     await page.goto('/tests/browser/harness.html');
@@ -96,7 +97,8 @@ for(const theme of ['lattice','ash']) for(const state of ['model','curve','reado
             await expect(page.getByLabel('Instructions',{exact:true})).toBeDisabled();
             await expect(page.getByLabel('Node name',{exact:true})).toBeEnabled();
         } else if(state==='curve') {
-            await page.locator('.pc-node-details summary').filter({hasText:/^(Bounds|Phases)$/}).evaluateAll(elements=>elements.forEach(element=>element.parentElement.open=true));
+            await openDetailGroup(page, 'Bounds');
+            await openDetailGroup(page, 'Phases');
             await expect(page.getByLabel('Decay',{exact:true})).toBeVisible();
             await expect(page.getByLabel('Curve ID',{exact:true})).toHaveAttribute('type','text');
             await expect(page.getByRole('button',{name:'Edit Phase durations as JSON',exact:true})).toBeVisible();

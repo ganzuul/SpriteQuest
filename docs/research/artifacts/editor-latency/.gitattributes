@@ -1,0 +1,4 @@
+*.json -text
+*.mjs -text
+*.cpuprofile -text
+*.txt -text

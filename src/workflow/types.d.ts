@@ -128,6 +128,8 @@ export interface ResolvedPlan extends RunPlan {
 }
 export interface StructureDiagnostics { nodeCount: number; wireCount: number; }
 export interface PreparedGraphEdit {
+    /** Private one-shot candidate capability; cloning does not transfer admission. */
+    checkedCandidate?: object;
     candidate: NativeGraph3;
     changed: boolean;
     addedEdgeIds: string[];

@@ -448,8 +448,12 @@ test('primary controls precede collapsed purpose groups, and only changed proven
     ] }), { editControl: success });
     try {
         assert.equal(f.host.querySelector('[aria-label="Instructions"]').closest('details'), null);
-        const limits = f.host.querySelector('[aria-label="Count"]').closest('details');
+        const limits = f.host.querySelector('[data-control-group="Limits"]');
         assert.ok(limits); assert.equal(limits.open, false); assert.match(limits.querySelector('summary').textContent, /Limits/);
+        assert.equal(f.host.querySelector('[aria-label="Count"]'), null, 'collapsed advanced controls mount when opened');
+        limits.querySelector('summary').click(); flushSync(); await tick();
+        assert.equal(f.host.querySelector('[aria-label="Count"]').closest('details'), limits);
+        f.host.querySelector('[data-control-group="Advanced"] summary').click(); flushSync(); await tick();
         assert.equal(f.host.querySelector('[aria-label="Instructions"]').compareDocumentPosition(limits) & dom.window.Node.DOCUMENT_POSITION_FOLLOWING, dom.window.Node.DOCUMENT_POSITION_FOLLOWING);
         assert.doesNotMatch(f.host.textContent, /Effective: Write clearly|Saved setting/);
         assert.match(f.host.textContent, /Effective: 3/);
@@ -794,5 +798,27 @@ test('single-line identifiers commit compact text inputs, guard disabled events 
             assert.equal(multiline.value, value.replace(/\r/g, '\n'), 'line breaks remain visible instead of being stripped by a text input');
             assert.equal(edits.length, 1, 'switching editor shape never rewrites the saved identifier');
         }
+    } finally { await f.close(); }
+});
+
+test('producer contract capability changes preserve compatible boundary fields and expire old acknowledgments', async () => {
+    const pending = [], original = boundary({ editorContractKey: 'boundary-types-a' });
+    const f = await fixture('NodeDetails', original, { editInterface: () => new Promise(resolve => pending.push(resolve)) });
+    try {
+        input(f.host.querySelector('[aria-label="Node name"]'), 'Retained boundary');
+        change(f.host.querySelector('[aria-label="Subgraph port type"]'), 'text');
+        const required = f.host.querySelector('[aria-label="Required subgraph port"]'); required.checked = false;
+        required.dispatchEvent(new dom.window.Event('change', { bubbles: true })); flushSync();
+        f.host.querySelector('[data-save-boundary]').click(); flushSync();
+        f.update(boundary({ editorContractKey: 'boundary-types-b', revision: 'revision2', boundary: { ...original.boundary, kind: 'data', kinds: ['context', 'data'] } }));
+        assert.equal(f.host.querySelector('[aria-label="Node name"]').value, 'Retained boundary');
+        assert.equal(f.host.querySelector('[aria-label="Required subgraph port"]').checked, false);
+        assert.equal(f.host.querySelector('[aria-label="Subgraph port type"]').value, 'data');
+        f.update(boundary({ editorContractKey: 'boundary-types-a', revision: 'revision3' }));
+        assert.equal(f.host.querySelector('[aria-label="Subgraph port type"]').value, 'data', 'obsolete type does not resurface when the capability returns');
+        pending[0](success()); await tick(); flushSync();
+        assert.equal(f.host.querySelector('[aria-label="Node name"]').value, 'Retained boundary', 'an earlier contract acknowledgment stays expired when the contract returns');
+        f.update(boundary({ editorContractKey: 'replacement-port', revision: 'revision4', boundary: { ...original.boundary, id: 'replacement', direction: 'output', label: 'Replacement' } }));
+        assert.equal(f.host.querySelector('[aria-label="Node name"]').value, 'Replacement');
     } finally { await f.close(); }
 });

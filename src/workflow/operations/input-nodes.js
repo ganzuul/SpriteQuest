@@ -1,3 +1,4 @@
+import { freeze } from '../record-data.js?v=0.27.0';
 /** Source operations emit saved Text; host Prompt Source dispatch lives in the runtime. */
 const registration = (id, title, defaults, controlDescriptors, extra = {}) => ({
     id, title, family: 'Input', phase: 'both', operationVersion: 1,
@@ -20,6 +21,7 @@ export const INPUT_OPERATIONS = {
         form: { type: 'enum', label: 'Form', values: ['raw', 'resolved'], default: 'raw', help: 'Raw keeps the template. Resolved expands pure name and formatting macros; use Raw for structured text with braces or broader macro syntax.' },
     }, { rootOnly: true }),
 };
+freeze(INPUT_OPERATIONS);
 const failure = (code, message) => ({ ok: false, error: { code, message } });
 
 function plainObject(value) {
@@ -49,7 +51,7 @@ function resolveInput(node, options) {
         }
         if (base.id === 'prompt-source' && !settings.promptId.trim()) return failure('INVALID_SETTINGS', 'Prompt Source requires a nonblank stable prompt identifier.');
         return { ok: true, data: {
-            descriptor: { ...structuredClone(base), phase },
+            descriptor: { ...base, phase },
             ports: [{ id: 'out', label: 'Text', direction: 'output', kind: 'text', required: false, cardinality: 'one' }],
             settings,
         } };
