@@ -109,6 +109,8 @@ for (const [fixture, selectedId] of [['structured-guidance', 'compose-json'], ['
         const after = panel('after');
         assert.equal(after.nodeDetails.controls, before.nodeDetails.controls);
         assert.equal(after.nodeDetails.ports, before.nodeDetails.ports);
+        assert.ok(before.nodeDetails.guideCard);
+        assert.equal(after.nodeDetails.guideCard, before.nodeDetails.guideCard);
         assert.equal(after.nodeDetails.model, before.nodeDetails.model);
         if (selectedId === 'response-plan') assert.ok(after.nodeDetails.model, 'test exercises retained model binding data');
         assert.notEqual(after.nodeDetails, before.nodeDetails, 'write envelope advances independently of authored payloads');

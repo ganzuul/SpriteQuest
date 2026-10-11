@@ -30,6 +30,7 @@ These are combinations of the shipped tools. **File → Open examples…** offer
 | **Graph tabs** | Open subgraph bodies without losing your place in the parent workflow. Each instance retains its own view. |
 | **Node shelf and contextual search** | Open a family to choose an operation directly, search operations and subgraphs, or discover compatible nodes while connecting a pin. |
 | **Node details** | Edit operation controls, aliases, compact cards, and model bindings; inspect effective values and validation issues. |
+| **Node guides** | Open the **?** beside a node’s name in Details for plain-language instructions, settings explanations, and an example graph in your current theme. Add a compatible example to the current tab with one undoable action. |
 | **Per-operation model connections** | Choose each model node’s connection profile and model in Details without switching SillyTavern’s main connection; For Each exposes its pinned helper’s role selectors too. |
 | **One native workflow** | Connect preparation to Generate Reply, process its owned Draft, and review the result in one graph. |
 | **Typed decisions and branches** | Use ordinary Decision with explicit accepted, rejected and unresolved routes; Confidence Gate handles authored numeric policies. |

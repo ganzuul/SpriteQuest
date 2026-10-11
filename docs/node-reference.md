@@ -4,6 +4,8 @@
 
 This reference covers the registered reusable operations, their implemented modes, and the structural nodes used by subgraphs. A starter is a complete workflow built from operations; a subgraph is a reusable process with its own interface. Neither is an extra model engine.
 
+For an in-app explanation, select a node and click **?** beside its name in Details. The guide shows the current node, practical steps, and explanations of its visible settings. Expand **Example** to explore a complete graph rendered with the current canvas theme. **Add example to current tab** inserts a compatible example as one undoable edit. Each example lists the chat, model connection, or Workflow Data setup it needs. Examples that need sample files include copyable **Setup data**. Adding an example does not run it.
+
 ## Read the graph's types
 
 | Artifact | Carries |

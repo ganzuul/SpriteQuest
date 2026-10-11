@@ -6,7 +6,7 @@
 
 **Authorization:** The user explicitly requested committing and pushing Main and previously approved execution without further approval asks.
 
-**Architecture:** Reuse this managed isolated checkout on codex/integrate-all-2026-10-10. Start from committed Main source `816dc84`, merge performance `48ccf87`, systems `99f63a7` and diagnostics `3f7339c` sequentially. Regenerate distribution assets from combined source. Existing feature tips already in Main retain their later fixes; archived superseded File deltas remain preserved.
+**Architecture:** Reuse this managed isolated checkout on codex/integrate-all-2026-10-10. Start from committed Main source `816dc84`, merge performance `48ccf87`, systems `99f63a7` and diagnostics `3f7339c` sequentially. Regenerate distribution assets from combined source. A concurrent approved node-guide feature appeared in Main after inventory; preserve its completed exact source snapshot7beac203, then integrate it before publication. Existing feature tips already in Main retain their later fixes; archived superseded File deltas remain preserved.
 
 **Tech stack:** Node24, locked Svelte5/Vite8/Playwright/TypeScript toolchain; no dependency change.
 
@@ -36,6 +36,8 @@
 - [x] Merge performance into current Main source; reconcile routing/controller/lifecycle intent and validate focused checks.
 - [x] Merge system subgraphs into checked planner/transaction/projection contracts; validate disabled/scoped/Compose/acceptance tests.
 - [x] Merge diagnostics into immutable Details/lazy target/current Run-to-Here paths; retain verification logs and validate message/preflight/draft checks.
+- [x] Detect and preserve concurrent Main node-guide work without mutating its active checkout.
+- [x] Commit and merge completed node-guide source, preserving cached guide cards, qualified overlay identity, busy-status refresh, and one-step example insertion.
 - [ ] Rebuild; run full isolated unit suite, types, assets, fresh-server full browser suite, installation smoke and documentation checks. Fix regressions with focused failing evidence; repeat affected checks after changes.
 - [ ] Independently review the combined diff, source accounting and material authority/behavior boundaries.
 - [ ] Record integration decisions, exact source/build/evidence hashes and fresh check results. Confirm every included source tip is reachable and preserved source content remains accounted for.

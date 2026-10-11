@@ -6,7 +6,6 @@ import { prepareDefinitionRegistry, inspectPreparedDefinition } from '../workflo
 import { projectRunRows } from '../workflow/run-state.js?v=0.27.0';
 import { definitionRefKey, nodeBindingOverrideKey } from '../workflow/definition-data.js?v=0.27.0';
 import { inspectGraphArtifacts } from '../workflow/graph-artifacts.js?v=0.27.0';
-import { nodeCard } from '../canvas/presentation.js?v=0.27.0';
 import { prepareWorkflowPlanner } from '../workflow/resolve.js?v=0.27.0';
 import { prepareCompositionViews } from '../workflow/composition-views.js?v=0.27.0';
 import { prepareWorkflowProjection, projectPreparedWorkflow } from './workflow-surface.js?v=0.27.0';
@@ -14,6 +13,7 @@ import { ARTIFACT_KINDS, OPERATIONS, operationFor, portsForNode, phaseForNode } 
 import { definitionChain, ownsDefinitionPath } from '../workflow/composition-edit.js?v=0.27.0';
 import { FAMILY_PALETTE, paletteForOperation, readNodePresentation } from './node-palette.js?v=0.27.0';
 import { isCommentFrame } from '../canvas/comment-frames.js?v=0.27.0';
+import { nodeCard } from '../canvas/presentation.js?v=0.27.0';
 import { modifierTypes, modifierSummary, applyTextModifiers } from '../workflow/modifiers.js?v=0.27.0';
 import { addressKey, boundedText, RENDERED_TEXT_BYTES, freeze } from '../workflow/record-data.js?v=0.27.0';
 import { prepareNodeProfileOptions } from './node-profile-preparation.js?v=0.27.0';
@@ -227,11 +227,14 @@ export function projectWorkspacePanels(editor, workflow, state, revision, select
                 const value = profileModelDefault ? null : saved?.[key] ?? null;
                 return { mode: blocked ? 'block' : value ? 'override' : 'inherit', value, effectiveValue: editor.prepared.effectiveNodes[selectedId]?.[key] ?? null, allowedModes: blocked ? [...modes, { value: 'block', label: 'Blocked by instance' }] : modes, ...(options ? { options } : {}) };
             };
+            const guideKey = saved?.type === 'workflow' ? saved.operation : isCommentFrame(saved) ? 'comment' : saved?.type;
+            const guideCard = saved && metadata && editor.prepared.drawBase.nodes?.[selectedId] && !isCommentFrame(saved)
+                ? nodeCard({ ...editor.prepared.drawBase.nodes[selectedId], presentation, x: 0, y: 0 }, { graph: editor.prepared.drawBase }) : null;
             const selection = { selectionKey: JSON.stringify([editor?.view.key, selectedId]), revision, address };
             const interfacePort = metadata?.boundary ? editor.prepared.interface.find(port => port.id === saved?.interfacePortId && port.boundaryNodeId === selectedId) : null;
             const boundary = interfacePort ? { id: interfacePort.id, label: interfacePort.label, direction: interfacePort.direction, kind: interfacePort.kind, required: interfacePort.required, kinds: [...ARTIFACT_KINDS] } : null;
             const commentDetails = isCommentFrame(saved) ? { selection, comment: { id: saved.id, x: saved.x, y: saved.y, w: saved.w, h: saved.h, title: saved.title ?? 'Comment', content: saved.content ?? '', color: saved.color ?? '#637d89', moveContents: saved.moveContents !== false, selected: true, readOnly: editor.readOnly || library } } : null;
-            const nodeDetails = saved && metadata && !commentDetails ? { ...selection, title: boundary?.label ?? (presentation.alias || (typeof saved.title === 'string' ? saved.title : metadata.canonicalTitle)), canonicalTitle: metadata.canonicalTitle, operation: saved.operation, system: saved.type === 'subgraph', iconPath: metadata.iconPath, family: metadata.family, familyColor: metadata.familyColor, phase: effective?.phase ?? phaseForNode(graph,saved) ?? metadata.phase ?? graph.mode.slice(7), phaseEditable: graph.mode === 'native-unified' && OPERATIONS[saved.operation]?.phase === 'both', alias: presentation.alias, compact: presentation.compact, enabled: saved.enabled !== false, readOnly: editor.readOnly || library, canPresent: true, controls, ...(fileInput ? { fileInput } : {}), ...(boundary ? { boundary } : {}),
+            const nodeDetails = saved && metadata && !commentDetails ? { ...selection, guideKey, guideCard, title: boundary?.label ?? (presentation.alias || (typeof saved.title === 'string' ? saved.title : metadata.canonicalTitle)), canonicalTitle: metadata.canonicalTitle, operation: saved.operation, system: saved.type === 'subgraph', iconPath: metadata.iconPath, family: metadata.family, familyColor: metadata.familyColor, phase: effective?.phase ?? phaseForNode(graph,saved) ?? metadata.phase ?? graph.mode.slice(7), phaseEditable: graph.mode === 'native-unified' && OPERATIONS[saved.operation]?.phase === 'both', alias: presentation.alias, compact: presentation.compact, enabled: saved.enabled !== false, readOnly: editor.readOnly || library, canPresent: true, controls, ...(fileInput ? { fileInput } : {}), ...(boundary ? { boundary } : {}),
                 model: metadata.modelRole && (effective?.effective !== 'No model call' || saved.model || saved.profileId || Object.keys(editor?.prepared.drawBase.bindingBlocks?.[selectedId] ?? {}).length) ? { role: saved.modelRole ?? metadata.modelRole, roleEditable: true, editable: !library, profileDefaultModel: editor.prepared.drawBase.profileDefaultModels?.[selectedId] ?? !!saved.profileId, profile: field('profileId', workflow.profiles.map(profile => ({ value: profile.id, label: profile.name }))), model: field('model'), effective: effective?.effective || (library ? [editor.prepared.effectiveNodes[selectedId]?.profileId ?? graph.roles?.[saved.modelRole ?? metadata.modelRole]?.profileId,editor.prepared.effectiveNodes[selectedId]?.model ?? graph.roles?.[saved.modelRole ?? metadata.modelRole]?.model].filter(Boolean).join(' · ') : ''), source: editor.prepared.drawBase.instanceBindingSources?.[selectedId] ? 'Containing instance override' : saved.profileId || saved.model ? 'Node override' : 'Inherited from ' + (saved.modelRole ?? metadata.modelRole), ...(effective?.issue ? {issue: effective.issue} : {}) } : null,
                 helperBindings: saved.operation === 'for-each' ? { ...editor.prepared.drawBase.iterationBindings?.[selectedId], editable: !(editor.readOnly || library) } : null,
                 ...(workflowData ? { workflowData } : {}),

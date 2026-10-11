@@ -1,6 +1,6 @@
 # Node guide previews
 
-Workshop design, illustrated by Compose. Production integration is pending.
+Approved workshop design, illustrated by Compose. The production implementation now covers all 79 node types; the workshop files remain a record of the Compose prototype.
 
 ## Guide layout
 
@@ -8,7 +8,7 @@ Keep the help button in the selected node's Details header. Hover gives a short 
 
 **Settings and options** starts expanded. **Example** follows it and starts collapsed. The example uses the full section width and current theme. Render it through the actual production graph canvas with the complete five-node workflow from [compose-example.lattice.json](compose-example.lattice.json): On Send → Generate Reply → Review / Publish, plus Text → Compose → Generate Reply's Guidance input.
 
-Place **Add example to current tab** in the canvas footer. Omit zoom and Fit buttons, help and pan instructions, and zoom percentages. The workshop button demonstrates a merge into a local preview; it does not change an app tab.
+Place **Add example to current tab** in the canvas footer. Omit zoom and Fit buttons, help and pan instructions, and zoom percentages. The production button adds a compatible example to the active tab in one undoable edit. The archived workshop button demonstrates a merge into a local preview.
 
 ## Rendering
 

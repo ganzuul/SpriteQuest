@@ -39,7 +39,7 @@ export interface WorkflowExampleComment { id: string; x: number; y: number; w: n
 export interface WorkflowExampleThumbnail { bounds: { x: number; y: number; w: number; h: number }; nodes: WorkflowExampleNode[]; wires: WorkflowExampleWire[]; comments: WorkflowExampleComment[]; groups: { id: string; title: string; x: number; y: number; w: number; h: number }[] }
 export interface WorkflowExampleTile { id: string; number: number; title: string; goal: string; lesson?: WorkflowExampleLesson; thumbnail: WorkflowExampleThumbnail | null; issue: string }
 export interface WorkbenchView {
-    menuContextKey?: string;
+    menuContextKey?: string; guideInsertionBusy?: boolean;
     hasArchivedWorkflows?: boolean;
     graphId: string; enabled: boolean; inspectorOpen: boolean; detailsWidth?: number;
     document?: WorkflowDocumentView;
@@ -60,6 +60,7 @@ export interface WorkbenchView {
     menuCapabilities?: { addSystem?: boolean; inspect: boolean; rename: boolean; duplicate: boolean; group: boolean; ungroup: boolean; createSubgraph: boolean; saveSubgraph: boolean; comment: boolean; compact: boolean; compactChecked: boolean; fitSelection: boolean; hasSelection: boolean; stop: boolean };
 }
 export interface WorkbenchActions {
+    nodeGuide?: import('./node-guide-types').NodeGuideActions;
     logoUrl?: string;
     graphViewActions?: GraphViewActions; nodeDetails?: NodeDetailsActions; outputPreview?: OutputPreviewActions; runDetails?: RunDetailsActions;
     commentDetails?: { patch: (selection: DetailSelection, patch: CommentPatch) => DetailEditResponse; command: (selection: DetailSelection, command: CommentCommand) => DetailEditResponse };

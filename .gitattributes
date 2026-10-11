@@ -3,3 +3,7 @@ docs/research/artifacts/editor-latency/* text=auto eol=lf
 # Preserve exact generated browser bytes used in latency measurements.
 dist/lattice-ui.js -text
 dist/lattice.css -text
+
+# Keep embedded guide setup data identical to portable fixture files.
+examples/remastered/fixtures/*.txt text eol=lf
+examples/remastered/fixtures/*.json text eol=lf
