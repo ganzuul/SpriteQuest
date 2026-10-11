@@ -1,7 +1,9 @@
 <script lang="ts">
+    import DiagnosticMessage from './DiagnosticMessage.svelte';
     import { onMount } from 'svelte';
     import type { ImportReviewView, WorkbenchActions } from './types';
     let { view, actions }: { view: ImportReviewView; actions: WorkbenchActions } = $props();
+    const uid = $props.id();
     let dialog: HTMLDivElement;
     onMount(() => {
         const anchor = document.activeElement as HTMLElement;
@@ -31,7 +33,7 @@
         {:else if view.bindingReviewRequired}<p>Saved model metadata is present. Review local connections before running.</p>{/if}
         {#if view.terminals.length}<h3>Imported terminal effects</h3><ul>{#each view.terminals as terminal}<li>{terminal.title} · {terminal.operation}</li>{/each}</ul>{:else}<p>No imported terminal effects.</p>{/if}
         <p>Insertion keeps internal wiring and relative layout. Review the inserted nodes before running the workflow.</p>
-        {#if view.error}<p role="alert">{view.error}</p>{/if}
-        <footer><button type="button" class="pc-btn menu_button" onclick={() => actions.cancelImport?.()}>Cancel</button>{#if view.error}<button type="button" class="pc-btn menu_button" onclick={() => actions.prepareImportAgain?.()}>Prepare again</button>{/if}<button type="button" class="pc-btn menu_button pc-import-accept" disabled={!!view.error} onclick={() => actions.acceptImport?.()}>Insert into graph</button></footer>
+        {#if view.error}<div id={uid + '-error'}><DiagnosticMessage issue={view.error} /></div>{/if}
+        <footer><button type="button" class="pc-btn menu_button" onclick={() => actions.cancelImport?.()}>Cancel</button>{#if view.error}<button type="button" class="pc-btn menu_button" onclick={() => actions.prepareImportAgain?.()}>Prepare again</button>{/if}<button type="button" class="pc-btn menu_button pc-import-accept" aria-describedby={view.error ? uid + '-error' : undefined} disabled={!!view.error} onclick={() => actions.acceptImport?.()}>Insert into graph</button></footer>
     </div>
 </div>

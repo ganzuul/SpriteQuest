@@ -1,4 +1,5 @@
 <script lang="ts">
+    import DiagnosticMessage from './DiagnosticMessage.svelte';
     import { onMount, tick } from 'svelte';
     import Toolbar from './Toolbar.svelte';
     import PaneDivider from './PaneDivider.svelte';
@@ -141,7 +142,7 @@
             <div class="pc-canvas-area" id="pc-workspace-graph" role="tabpanel">
                 <div class="pc-workspace-run"><RunMeter view={view.runMeter ?? null} open={() => { overlay = 'run-details'; }} /></div>
                 <div class="pc-canvas-host" aria-label="Node canvas" bind:this={canvasHost}></div>
-                {#if view.nativeDiagnostic}<p class="pc-native-diagnostic" role="alert">{view.nativeDiagnostic}</p>{/if}
+                {#if view.nativeDiagnostic}<div class="pc-native-diagnostic"><DiagnosticMessage issue={view.nativeDiagnostic} /></div>{/if}
                 <div hidden={!shelfOpen}><NodeShelf view={view.workflow} {insertionContextKey} choices={view.nativeChoices} choose={actions.chooseNative} shelfSubgraph={actions.shelfSubgraph} readOnly={view.readOnly} bind:this={shelf} /></div>
             </div>
         </div>
@@ -192,7 +193,7 @@
     .pc-native-workspace :global(.pc-canvas-area) { border-color: var(--pc-flow); border-radius: 4px; box-shadow: inset 2px 2px 3px #00000070, inset -1px -1px 0 #ffffff20; overflow: visible; }
     .pc-native-workspace :global(.pc-canvas-area::after), .pc-native-workspace :global(.pc-preview-pane::after) { content: ""; position: absolute; inset: 1px; border-radius: 3px; box-shadow: inset 2px 2px 3px #00000070, inset -1px -1px 0 #ffffff20; pointer-events: none; z-index: 4; }
     .pc-native-workspace :global(.pc-graph-tabs) { padding: 0; }
-    .pc-native-diagnostic { position: absolute; top: 10px; left: 12px; right: 12px; z-index: 10; margin: 0; padding: 8px 10px; border: 1px solid #b55c64; border-radius: 2px; background: var(--pc-panel); color: #e9a4aa; font-size: 12px; }
+    .pc-native-diagnostic { position: absolute; top: 10px; left: 12px; right: 12px; z-index: 10; margin: 0; padding: 8px 10px; border: 1px solid var(--pc-border); border-radius: 2px; background: var(--pc-panel); font-size: 12px; }
     .pc-native-workspace.pc-native-workspace :global(.pc-graph-tab[aria-selected="true"]) { color: var(--pc-flow); border-color: var(--pc-flow); background: var(--pc-canvas); }
     .pc-native-workspace :global(.pc-graph-tab-list) { padding: 0 6px 3px 0; margin-bottom: -3px; }
     .pc-native-workspace :global(.pc-graph-tab[aria-selected="true"]::after) { background: var(--pc-canvas); }

@@ -35,7 +35,7 @@
 - [x] Commit Main and diagnostics source snapshots on named refs; preserve archived File dirty source.
 - [x] Merge performance into current Main source; reconcile routing/controller/lifecycle intent and validate focused checks.
 - [x] Merge system subgraphs into checked planner/transaction/projection contracts; validate disabled/scoped/Compose/acceptance tests.
-- [ ] Merge diagnostics into immutable Details/lazy target/current Run-to-Here paths; retain verification logs and validate message/preflight/draft checks.
+- [x] Merge diagnostics into immutable Details/lazy target/current Run-to-Here paths; retain verification logs and validate message/preflight/draft checks.
 - [ ] Rebuild; run full isolated unit suite, types, assets, fresh-server full browser suite, installation smoke and documentation checks. Fix regressions with focused failing evidence; repeat affected checks after changes.
 - [ ] Independently review the combined diff, source accounting and material authority/behavior boundaries.
 - [ ] Record integration decisions, exact source/build/evidence hashes and fresh check results. Confirm every included source tip is reachable and preserved source content remains accounted for.

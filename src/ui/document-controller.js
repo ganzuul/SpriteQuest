@@ -1,4 +1,5 @@
 import { parseWorkflowDocument, serializeWorkflowDocument } from '../workflow/document-file.js?v=0.27.0';
+import { diagnosticText, presentDiagnostic } from './diagnostics.js?v=0.27.0';
 
 const cancelled = () => ({ok:false,cancelled:true});
 const failure = message => ({ok:false,error:{message}});
@@ -9,7 +10,7 @@ export function createWorkflowDocumentController(env) {
     let replacing = false, saving = false, status = '', storageWarning = '', replacementEpoch = 0;
     const changed = () => env.changed?.();
     const report = (message,type='error') => {status=message;env.report?.(message,type);changed();};
-    const error = result => {if (!result?.cancelled) report(result?.error?.message || 'The document operation failed.');return result;};
+    const error = result => {if (!result?.cancelled) {const issue=presentDiagnostic(result?.error,{action:'update the workflow document'});status=issue.message;env.report?.(issue.message,issue.severity,result?.error);changed();}return result;};
     async function save(saveAs=false, insideReplacement=false) {
         if (saving || replacing && !insideReplacement) return cancelled();
         const graph=session.current();if (!graph) return error(failure('No workflow document is open.'));
@@ -25,7 +26,7 @@ export function createWorkflowDocumentController(env) {
                 report('Saved '+(result.data.source?.name || 'workflow')+'.','success');
             } else report('Saving a JSON copy. Your draft stays open.','info');
             return {ok:true,data:{...result.data,snapshot}};
-        } catch (cause) {return session.stillCurrent(token) ? error(failure(cause?.message || 'The workflow could not be saved.')) : cancelled();}
+        } catch {return session.stillCurrent(token) ? error(failure('The workflow save could not be completed. Your draft remains open.')) : cancelled();}
         finally {saving=false;changed();}
     }
     async function guard(token) {
@@ -61,7 +62,7 @@ export function createWorkflowDocumentController(env) {
             if (activated?.ok===false) return error(activated);
             if (next.companions?.length) env.retainCompanions?.(next.companions);
             status='';changed();return {ok:true,data:next};
-        } catch (cause) {return current() ? error(failure(cause?.message || 'The workflow could not be opened.')) : cancelled();}
+        } catch {return current() ? error(failure('The workflow could not be opened.')) : cancelled();}
         finally {replacing=false;changed();}
     }
     const read = async resultPromise => {
@@ -71,7 +72,7 @@ export function createWorkflowDocumentController(env) {
     };
     return {
         save,
-        storageIssue(message) {storageWarning=message;changed();},
+        storageIssue(message) {storageWarning=diagnosticText({code:'RECENT_STORAGE_FAILED',message});changed();},
         cancelReplacement() {replacementEpoch++;},
         newDocument:()=>replace(()=>({ok:true,data:{graph:env.create()}})),
         open:()=>replace(()=>read(files.open()),true),
@@ -81,7 +82,7 @@ export function createWorkflowDocumentController(env) {
             const entry=env.recovery().find(value=>value.id===id);
             return entry?.graph ? {ok:true,data:{graph:structuredClone(entry.graph),workspaceViews:entry.workspaceViews,source:{kind:'recovery',name:entry.name}}} : failure(entry?.issue || 'This previous workflow is unavailable.');
         }),
-        async clearRecent() {try {const result=await files.clearRecent();if (result?.ok===false) return error(result);changed();return {ok:true};}catch(cause){return error(failure(cause?.message || 'Recent files could not be cleared.'));}},
+        async clearRecent() {try {const result=await files.clearRecent();if (result?.ok===false) return error(result);changed();return {ok:true};}catch{return error({ok:false,error:{code:'RECENT_STORAGE_FAILED',message:'Recent files could not be cleared.'}});}},
         view:()=>{const recent=files.recents();return {name:session.source()?.name || 'Untitled',dirty:session.dirty(),busy:replacing || saving,native:files.native,status:[status,storageWarning].filter(Boolean).join(' '),recents:Array.isArray(recent)?recent:recent?.data ?? [],recovery:env.recovery().filter(entry=>entry.graph?.mode==='native-unified').map(({id,name,issue})=>({id,name,issue}))};},
     };
 }

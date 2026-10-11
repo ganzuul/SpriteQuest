@@ -6,6 +6,7 @@ import { bindingStatus } from './workflow/connections.js?v=0.27.0';
 import { createChatDocumentCatalog } from './workflow/document-catalog.js?v=0.27.0';
 import { createRecallShortcutRegistry } from './ui/recall-shortcuts.js?v=0.27.0';
 import { createNativePersistenceVerifier } from './workflow/native-persistence.js?v=0.27.0';
+import { diagnosticText, presentDiagnostic } from './ui/diagnostics.js?v=0.27.0';
 export { runWorkflow, workflowSignature } from './workflow/runtime.js?v=0.27.0';
 export { createNativeWorkflowController, snapshotContext, snapshotReply } from './workflow/host.js?v=0.27.0';
 
@@ -31,7 +32,7 @@ export function sendWorkflowState() {
     const graph = checked?.ok ? current : null;
     return { automatic: !!graph,
         enableLabel: 'Enable Lattice',
-        enabledText: graph ? '"' + graph.name + '" runs one unified workflow across preparation, SillyTavern generation and reply review (maximum ' + checked.data.callBound + ' auxiliary requests). SillyTavern builds its normal prompt.' : 'The open workflow cannot run: ' + (checked?.error?.message ?? 'Open a valid unified workflow.') + ' SillyTavern builds its normal prompt.',
+        enabledText: graph ? '"' + graph.name + '" runs one unified workflow across preparation, SillyTavern generation and reply review (maximum ' + checked.data.callBound + ' auxiliary requests). SillyTavern builds its normal prompt.' : 'The open workflow cannot run. ' + (checked?.error ? diagnosticText(checked.error, { action: 'run the open workflow' }) : 'Open a valid unified workflow.') + ' SillyTavern builds its normal prompt.',
         offText: 'Lattice is off. Enable it to run the open unified workflow on Send.',
     };
 }
@@ -47,7 +48,7 @@ export function getNativeWorkflowController() {
         syncMesToSwipe: (...args) => helpers?.syncMesToSwipe(...args), syncSwipeToMes: (...args) => helpers?.syncSwipeToMes(...args),
         bindingStatus,
         countTokens: async text => { const count = ctx().getTokenCountAsync; if (typeof count === 'function') { const tokens = await count(text); if (Number.isFinite(tokens) && tokens >= 0) return { tokens, method: 'host-tokenizer' }; } return { tokens: Math.ceil(text.length / 4), method: 'character-estimate' }; },
-        onResult: (result, origin) => { if (!result.ok) safe(() => globalThis.toastr?.warning(result.error.message, 'Lattice workflow')); if (origin) safe(() => globalThis.document?.dispatchEvent(new CustomEvent('pc-native-result'))); },
+        onResult: (result, origin) => { if (!result.ok) { const issue = presentDiagnostic(result.error, { action: 'run the workflow' }); safe(() => globalThis.toastr?.[issue.severity]?.(issue.message, 'Lattice workflow')); } if (origin) safe(() => globalThis.document?.dispatchEvent(new CustomEvent('pc-native-result'))); },
     });
     onWorkflowActivated(() => { controller.cancel('Workflow document replaced'); controller.resetRecallDocument(documentSession.capture()); });
     controller.subscribeRecall(() => safe(() => globalThis.document?.dispatchEvent(new CustomEvent('pc-recall-state'))));

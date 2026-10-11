@@ -169,3 +169,25 @@ test('explicit system bindings reject reversed, unknown, wrong-direction and wro
     assert.equal(valid.ok, true, JSON.stringify(valid));
     assert.deepEqual(graph, before, 'valid preparation also leaves Main unchanged');
 });
+
+test('Add system rejects root metadata and bound-node getters before evaluating them',async(t)=>{
+ const definition=helper();
+ for(const field of ['schema','runtime','mode','nodes','boundNode'])await t.test(field,()=>{
+  const graph=root(),holder=field==='boundNode'?graph.nodes:graph,key=field==='boundNode'?'generate':field,value=holder[key];let reads=0;
+  Object.defineProperty(holder,key,{enumerable:true,configurable:true,get(){reads++;return value;}});
+  const result=api.prepareAddSystem(graph,command(definition,{guidance:undefined,outputs:[{outputPortId:'guidance',destination:{nodeId:'generate',portId:'guidance'}}]}));
+  assert.equal(reads,0,field+' getter must not run during admission or binding checks');assert.equal(result.ok,false);
+ });
+});
+
+test('admitted Add system inspection preserves immutable artifacts and exact live-root commit ownership',async()=>{
+ const {prepareGraphArtifacts,inspectGraphArtifacts}=await import('../src/workflow/graph-artifacts.js?v=0.27.0');
+ const {captureGraphEditContext,commitPreparedGraph}=await import('../src/workflow/transactions.js?v=0.27.0');
+ const graph=root(),token=prepareGraphArtifacts(graph).data,owned=inspectGraphArtifacts(token),before=JSON.stringify(owned.snapshot);
+ const current=()=>({sessionId:'add-system-admission',viewPath:[],readOnly:false});
+ const captured=captureGraphEditContext(graph,current).data,edit=api.prepareAddSystem(graph,command(helper()));assert.equal(edit.ok,true,JSON.stringify(edit));
+ assert.equal(prepareGraphArtifacts(graph).data,token);assert.equal(JSON.stringify(owned.snapshot),before);assert.ok(Object.isFrozen(owned.snapshot));
+ const foreign=structuredClone(graph),foreignContext=captureGraphEditContext(foreign,current).data;
+ assert.equal(commitPreparedGraph(foreign,{...edit.data,context:foreignContext}).ok,false,'checked insertion belongs to the original live root');
+ assert.equal(commitPreparedGraph(graph,{...edit.data,context:captured}).ok,true,'inspecting a frozen snapshot must not rebind commit ownership');
+});

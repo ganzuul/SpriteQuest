@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { installMock } from './mock.js';
 installMock();
-const { createWorkflowSession }=await import('../src/ui/workflow-surface.js');
+const { createWorkflowSession, prepareWorkflowProjection, projectPreparedWorkflow }=await import('../src/ui/workflow-surface.js');
 const { fixtureGraph:starterGraph }=await import('./helpers/workflow-fixtures.mjs');
 const {reviewGraph}=await import('./helpers/native-workflow-fixture.mjs');
 const targetOf=root=>({workflowId:root.id,instancePath:[],nodeId:'compose-guidance',portId:'out'});
@@ -17,6 +17,17 @@ function runRecord(root,runId,status='completed') {
     recorder.accept({runId,seq:status==='cancelled'?3:2,at:3,elapsedMs:2,type:'run-settled',status});return recorder.finish();
 }
 const response=(recording,ok=true)=>freeze({schema:3,runtime:2,mode:'root',runId:recording.runId,ok,callBound:recording.plan.callBound,actualCalls:0,recording,reviewHandles:[],...(!ok?{error:{code:'ABORTED',message:'Stopped'}}:{})});
+
+test('session-adopted run failures retain only the safe node location for diagnostic navigation', () => {
+    const root = starterGraph('structured-guidance'), recording = runRecord(root, 'addressed-failure');
+    const address = { workflowId: root.id, instancePath: [], nodeId: 'compose-guidance' };
+    const session = createWorkflowSession({ runtime: () => ({}), current: () => root, epoch: () => 1, active: () => true, changed() {} });
+    session.receiveAutomatic(automatic(root, { ...response(recording, false), error: { code: 'REQUEST_FAILED', message: 'The provider request failed.', address, privateHandle: 'private-capability' } }));
+    assert.deepEqual(session.result().error.address, address);
+    const view = projectPreparedWorkflow(prepareWorkflowProjection(root, { result: session.result() }));
+    assert.deepEqual(view.result.errorDiagnostic.address, address);
+    assert.equal(JSON.stringify(session.result()).includes('private-capability'), false);
+});
 test('session preserves the exact prior recording during preparation and keeps a new record-free error separate',async()=>{
     const root=starterGraph('structured-guidance'),recording=runRecord(root,'first');let finish,state;
     const runtime={runTarget:()=>new Promise(resolve=>finish=resolve),cancel(){}};
@@ -99,17 +110,38 @@ function settlementSession(initial, retry) {
     let state,calls=0,retries=0,rejected=[];
     const runtime={runTarget:async()=>({...response(recording),reviewHandles:[handle]}),candidateStatus:()=>({ok:true,...(calls?{persistOnly:true,status:'partial'}:{})}),cancel(){},apply:async()=>{calls++;return {ok:true,appliedLocally:true,settlement:initial};},retryPersistence:async()=>{retries++;return {ok:true,appliedLocally:true,settlement:retry};},reject:selector=>{rejected.push(selector);return {ok:true};}};
     const session=createWorkflowSession({runtime:()=>runtime,current:()=>root,epoch:()=>1,active:()=>true,changed:value=>state=value});
-    return {session,handle,start:()=>session.receiveAutomatic(automatic(root,{...response(recording),reviewHandles:[handle]})),state:()=>state,calls:()=>calls,retries:()=>retries,rejected};
+    return {session,handle,runtime,start:()=>session.receiveAutomatic(automatic(root,{...response(recording),reviewHandles:[handle]})),state:()=>state,calls:()=>calls,retries:()=>retries,rejected};
 }
+
+test('stale review freshness retains a plain remedy and technical support code', async () => {
+    const f = settlementSession(settledReceipt('partial'));
+    await f.start();
+    f.runtime.candidateStatus = () => ({ ok: false, error: { code: 'STALE_SOURCE', message: 'The live source signature changed.' } });
+    f.session.refreshFreshness(f.handle);
+    assert.match(f.state().applyIssue, /changed|out of date/i);
+    assert.equal(f.state().applyDiagnostic.technical.code, 'STALE_SOURCE');
+    assert.equal(f.calls(), 0);
+});
+
+test('an interrupted failed-save retry preserves the accepted reply and does not offer blind retry', async () => {
+    const f = settlementSession(settledReceipt('partial'));
+    await f.start(); await f.session.apply(f.handle);
+    f.runtime.retryPersistence = async () => { throw Error('private backend material'); };
+    await f.session.apply(f.handle);
+    assert.match(f.state().status, /accepted reply remains.*could not be confirmed/i);
+    assert.doesNotMatch(f.state().status, /restored|private backend|retry failed/i);
+    assert.equal(f.state().reviewHandles.length, 0);
+    assert.equal(f.state().applyDiagnostic.severity, 'warning');
+});
 const settledReceipt=(status)=>({status,published:true,publication:{appliedLocally:true},receipts:[{intentId:'event',targetId:'file:souls',status:status==='partial'?'failed':status==='save-unverified'?'save-unverified':'confirmed',...(status==='partial'?{error:{code:'WRITE_FAILED',message:'Retry this target.'}}:{})}]});
 test('partial accepted consequence review retains its handle and retries only persistence',async()=>{
     const f=settlementSession(settledReceipt('partial'),settledReceipt('settled'));await f.start();await f.session.apply(f.handle);
-    assert.equal(f.state().availability,'current');assert.equal(f.state().reviewHandles.length,1);assert.equal(f.state().result.settlement.status,'partial');assert.match(f.state().status,/failed.*retry/i);
-    await f.session.apply(f.handle);assert.equal(f.calls(),1);assert.equal(f.retries(),1);assert.equal(f.state().reviewHandles.length,0);assert.equal(f.state().result.settlement.status,'settled');assert.match(f.state().status,/consequences.*saved/i);
+    assert.equal(f.state().availability,'current');assert.equal(f.state().reviewHandles.length,1);assert.equal(f.state().result.settlement.status,'partial');assert.match(f.state().status,/could not be saved.*Retry failed saves/i);
+    await f.session.apply(f.handle);assert.equal(f.calls(),1);assert.equal(f.retries(),1);assert.equal(f.state().reviewHandles.length,0);assert.equal(f.state().result.settlement.status,'settled');assert.match(f.state().status,/workflow data saved.*reply.*unconfirmed/i);
 });
 test('unverified accepted consequence saves are shown and do not expose retry authority',async()=>{
     const f=settlementSession({...settledReceipt('save-unverified'),publication:{appliedLocally:true,secret:'private material'},receipts:[{intentId:'event',targetId:'file:souls',status:'unknown',proposed:{secret:'private material'},handle:{secret:'capability'}}]});await f.start();await f.session.apply(f.handle);
-    assert.equal(f.state().reviewHandles.length,0);assert.equal(f.state().result.settlement.status,'save-unverified');assert.equal(f.state().result.settlement.receipts[0].status,'unknown');assert.match(f.state().status,/unconfirmed.*reconcil/i);assert.equal(JSON.stringify(f.state().result).includes('private material'),false);assert.equal(JSON.stringify(f.state().result).includes('capability'),false);
+    assert.equal(f.state().reviewHandles.length,0);assert.equal(f.state().result.settlement.status,'save-unverified');assert.equal(f.state().result.settlement.receipts[0].status,'unknown');assert.match(f.state().status,/unconfirmed.*Check.*before writing/i);assert.equal(JSON.stringify(f.state().result).includes('private material'),false);assert.equal(JSON.stringify(f.state().result).includes('capability'),false);
 });
 test('reject explicitly releases retained host consequence handles before clearing the review',async()=>{
     const f=settlementSession(settledReceipt('partial'));await f.start();f.session.reject();assert.deepEqual(f.rejected,[f.handle]);assert.equal(f.state().reviewHandles.length,0);assert.match(f.state().status,/Original reply preserved/);

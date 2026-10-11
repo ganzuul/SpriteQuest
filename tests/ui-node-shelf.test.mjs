@@ -35,6 +35,17 @@ test('a populated Transpose family opens and dispatches its checked creation cho
         assert.deepEqual(calls, ['operation:style-transfer']);
     });
 });
+
+test('disabled shelf choices expose their reason in visible text and an empty search offers guidance', async () => {
+    await fixture({ view: initial, choose() { assert.fail('disabled choice cannot insert'); } }, async (host, instance) => {
+        await click(host.querySelector('[data-family="Output"]'));
+        const blocked = host.querySelector('[data-shelf-choice="operation:apply-reply"]');
+        assert.equal(blocked.disabled, true); assert.match(blocked.textContent, /Unavailable in this helper stage/);
+        await instance.openSearch(); flushSync(); await tick(); flushSync();
+        const input = host.querySelector('input[aria-label="Search nodes"]'); input.value = 'no such node'; input.dispatchEvent(new dom.window.Event('input', { bubbles: true })); flushSync(); await tick();
+        assert.ok(host.querySelector('.pc-shelf-empty')?.textContent);
+    });
+});
 async function fixture(props, check) {
     props = { choices: initial.families.flatMap(family => family.operations.map(entry => ({ id: 'operation:' + entry.id, label: entry.title, family: family.name, phase: entry.phase, ...(entry.compatible ? {} : { disabledReason: 'Unavailable in this helper stage.' }) }))), ...props };
     const directory = await mkdtemp(join(tmpdir(), 'lattice-node-shelf-')), host = document.createElement('div');

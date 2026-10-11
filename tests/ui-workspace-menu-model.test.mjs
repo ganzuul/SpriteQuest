@@ -61,3 +61,13 @@ test('Workflow Add system availability follows root authoring capability from a 
  assert.equal(item({...base,menuCapabilities:{addSystem:true},rootWorkflow:{ownedBusy:true}},'Workflow','add-system').disabled,true);
  assert.equal(item({...base,menuCapabilities:{addSystem:false}},'Workflow','add-system').disabled,true);
 });
+
+test('menu models preserve disabled Run and Recall reasons for visible accessible descriptions',()=>{
+ const reason='Choose the required connection before running.';
+ const outputPreview={selectedKey:'choice',busy:false,runHere:{enabled:false,reason}};
+ assert.equal(item({...base,outputPreview},'Workflow','run-preview').reason,reason);
+ const commands={selected:{queueNodeIds:[],cancelNodeIds:[],queueReason:'Select an eligible Recall node.',cancelReason:'No selected recall is queued.'},all:{queueNodeIds:[],cancelNodeIds:[],queueReason:'No eligible Recall nodes.',cancelReason:'No recall is queued.'}};
+ const recall=item({...base,recall:{commands}},'Workflow','memory-recall-menu').children;
+ assert.equal(recall.find(entry=>entry.command==='recall-queue-selected').reason,commands.selected.queueReason);
+ assert.equal(recall.find(entry=>entry.command==='recall-cancel-all').reason,commands.all.cancelReason);
+});

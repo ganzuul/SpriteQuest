@@ -1,6 +1,7 @@
 import { cloneDefinitionData, definitionRefKey } from './definitions.js?v=0.27.0';
 import { prepareNativeConnectionEdit } from './connection-edits.js?v=0.27.0';
 import { makeLocalCopy, prepareNativeNodeEdit } from './definition-library.js?v=0.27.0';
+import { prepareGraphArtifacts, inspectGraphArtifacts } from './graph-artifacts.js?v=0.27.0';
 import { prepareGraphCandidate } from './prepared-graph-edit.js?v=0.27.0';
 import { compositionIds, safeId } from './composition-edit.js?v=0.27.0';
 import { selectSubgraphClosure } from './packages.js?v=0.27.0';
@@ -29,8 +30,11 @@ export function prepareAddSystem(root, input) {
         const parsedCommand = parsed(input);
         if (!parsedCommand.ok)
             return parsedCommand;
+        const admitted = prepareGraphArtifacts(root);
+        if (!admitted.ok) return admitted;
+        const original = inspectGraphArtifacts(admitted.data).snapshot;
         const c = parsedCommand.data;
-        if (root?.schema !== 3 || root.runtime !== 2 || root.mode !== 'native-unified')
+        if (original.schema !== 3 || original.runtime !== 2 || original.mode !== 'native-unified')
             return fail('WRONG_PHASE', 'Add systems to a unified Main workflow.');
         const closure = selectSubgraphClosure(c.definition, c.snapshots);
         if (!closure.ok)
@@ -43,8 +47,8 @@ export function prepareAddSystem(root, input) {
         const checkBinding = (portId, rootEndpoint, direction) => {
             const boundary = definition.interface.find(port => port.id === portId && port.direction === direction);
             if (!boundary) return fail('INVALID_BINDING', 'Choose a declared system ' + direction + ' port.');
-            const rootNode = root.nodes[rootEndpoint.nodeId];
-            const rootPort = rootNode && portsForNode(root, rootNode).find(port => port.id === rootEndpoint.portId);
+            const rootNode = original.nodes[rootEndpoint.nodeId];
+            const rootPort = rootNode && portsForNode(original, rootNode).find(port => port.id === rootEndpoint.portId);
             const rootDirection = direction === 'input' ? 'output' : 'input';
             if (!rootPort || rootPort.direction !== rootDirection)
                 return fail('INVALID_BINDING', 'Choose a Main ' + rootDirection + ' for the system ' + direction + '.');
@@ -141,9 +145,9 @@ export function prepareAddSystem(root, input) {
                 return fail('INEFFECTIVE_MERGE', 'The proposed Guidance merge no longer reaches Generate Reply.');
             preview.push({ kind: 'guidance', nodeId: composeId, sectionName });
         }
-        const addedEdgeIds = Object.keys(candidate.wires).filter(id => !Object.hasOwn(root.wires, id));
+        const addedEdgeIds = Object.keys(candidate.wires).filter(id => !Object.hasOwn(original.wires, id));
         const final = prepareGraphCandidate(root, candidate, addedEdgeIds);
-        return final.ok ? { ok: true, data: { ...final.data, viewPath: [], instanceId, addedNodeIds: Object.keys(candidate.nodes).filter(id => !Object.hasOwn(root.nodes, id)), addedDefinitionKeys: Object.keys(candidate.definitions).filter(key => !Object.hasOwn(root.definitions ?? {}, key)), preview } } : final;
+        return final.ok ? { ok: true, data: { ...final.data, viewPath: [], instanceId, addedNodeIds: Object.keys(candidate.nodes).filter(id => !Object.hasOwn(original.nodes, id)), addedDefinitionKeys: Object.keys(candidate.definitions).filter(key => !Object.hasOwn(original.definitions ?? {}, key)), preview } } : final;
     }
     catch {
         return fail('INVALID_COMMAND', 'Could not prepare the system insertion.');

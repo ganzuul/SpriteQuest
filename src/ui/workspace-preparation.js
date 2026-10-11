@@ -18,6 +18,8 @@ import { modifierTypes, modifierSummary, applyTextModifiers } from '../workflow/
 import { addressKey, boundedText, RENDERED_TEXT_BYTES, freeze } from '../workflow/record-data.js?v=0.27.0';
 import { prepareNodeProfileOptions } from './node-profile-preparation.js?v=0.27.0';
 import { projectWorkflowData } from './workflow-data-setup.js?v=0.27.0';
+import { presentDiagnostic, presentDiagnostics } from './diagnostics.js?v=0.27.0';
+import { previewDiagnostics } from './preview-diagnostics.js?v=0.27.0';
 const panelCaches = new WeakMap();
 const authoredFieldCaches = new WeakMap();
 const runPanelCaches = new WeakMap();
@@ -181,7 +183,7 @@ export function projectWorkspacePanels(editor, workflow, state, revision, select
     let cache = immutableScope ? panelCaches.get(contentIdentity) : null;
     if (!cache) { cache = new Map(); if (immutableScope) panelCaches.set(contentIdentity, cache); }
     const panelKey = JSON.stringify([selectedId, library, editor.readOnly, presentation.alias, presentation.compact]);
-    const dependencies = [effective, workflow.profiles, workflow.workflowData];
+    const dependencies = [effective, effective?.issueDiagnostic, workflow.profiles, workflow.workflowData];
     let authored = immutableScope ? cache.get(panelKey) : null;
     if (!authored || dependencies.some((value, index) => value !== authored.dependencies[index])) {
         const produced = (() => {
@@ -235,6 +237,7 @@ export function projectWorkspacePanels(editor, workflow, state, revision, select
                 ...(workflowData ? { workflowData } : {}),
                 modifiers: modifierView(saved, metadata, !(editor.readOnly || library)),
                 ports: fields.ports, issues: [] } : null;
+            if (nodeDetails?.model && effective?.issueDiagnostic) nodeDetails.model.issueDiagnostic = effective.issueDiagnostic;
             if (nodeDetails) nodeDetails.editorContractKey = detailsEditorContractKey(nodeDetails);
             return { nodeDetails, commentDetails, fields };
         })();
@@ -272,16 +275,22 @@ export function projectWorkspacePanels(editor, workflow, state, revision, select
     }
     const sections = sectionCache.sections;
     const selector = editor?.view.identity.kind === 'root' ? result?.selectedReviewHandle ?? null : null;
+    const presentationState = previewDiagnostics({ workflow, state, target, selectedKey, sections, library, enabled: state.enabled ?? workflow.enabled, title: choices.find(choice => choice.key === selectedKey)?.label || 'Output preview' });
     const outputPreview = { sourceKey: revision, title: 'Output preview', statusDetail: state.status || '', status: !library && target && !selectedKey ? 'removed' : !result ? 'not-run' : state.availability === 'current' ? 'current' : 'stale', choices, selectedKey, pinned: !!pinnedPreview, followSelection: !pinnedPreview, sections: library || target && !selectedKey ? noDisplayRows : sections, issues: library ? ['Library inspection is read-only and has no runtime output.'] : workflow.issues, busy: state.busy, settlement: library ? null : result?.settlement ?? null, runHere: library || !selectedKey ? null : { enabled: !state.busy && !workflow.targetSummary?.issues?.length, callBound: workflow.targetSummary?.callBound ?? workflow.callBound, issue: workflow.targetSummary?.issues?.join(' ') }, review: selector ? { selector, canApply: result.applyAvailable, persistOnly: result.persistOnly, fresh: !result.applyIssue && state.availability === 'current', selectedRootTerminal: editor?.view.identity.kind === 'root' && target?.kind === 'terminal' && !target.address.instancePath.length, mode: 'root', issue: result.applyIssue } : null };
+    Object.assign(outputPreview, { diagnostics: presentationState.diagnostics, emptyMessage: presentationState.emptyMessage, statusDetail: presentationState.statusDetail, historyNotice: presentationState.historyNotice });
+    if (outputPreview.runHere) outputPreview.runHere.reason = presentationState.runReason;
+    if (outputPreview.review) outputPreview.review.reason = state.busy ? 'Wait for the current run to finish.' : outputPreview.review.issue ? presentDiagnostic(outputPreview.review.issue).message : !outputPreview.review.fresh ? 'This result is out of date. Create a fresh review before applying it.' : '';
     const rowSource = state.runState || state.recording, rows = rootWorkflow.rows?.length ? rootWorkflow.rows : idleRunRows;
     let runCache = runPanelCaches.get(rows); if (!runCache) { runCache = []; runPanelCaches.set(rows, runCache); }
-    const runDependencies = [rowSource, state.busy, rootWorkflow.result?.actualCalls, rootWorkflow.result?.callBound, rootWorkflow.callBound, state.preparationError?.message, result?.ok, result?.error];
+    const preparationDiagnostic = state.preparationError ? presentDiagnostic(state.preparationError) : null;
+    const runDependencies = [rowSource, state.busy, rootWorkflow.result?.actualCalls, rootWorkflow.result?.callBound, rootWorkflow.callBound, JSON.stringify(preparationDiagnostic), rootWorkflow.result?.errorDiagnostic, result?.ok, result?.error];
     let run = Object.isFrozen(rows) && (!rowSource || Object.isFrozen(rowSource)) ? runCache.find(entry => runDependencies.every((value, index) => value === entry.dependencies[index])) : null;
     if (!run) {
         const flat = [];
-        const visit = (items, depth) => { for (const row of items) { flat.push({ key: JSON.stringify(row.address), address: row.address, title: readNodePresentation(row.node).alias || (typeof row.node?.title === 'string' ? row.node.title : '') || row.node?.operation || row.address.nodeId, kind: row.kind, depth, status: row.status, subphase: row.subphase, durationMs: row.durationMs ?? null, attempts: row.attempts ?? 0, callBound: row.requestBound ?? 0, usage: row.request?.usage ?? null, issue: row.error?.message }); visit(row.children ?? [],depth+1); } }; visit(rows,0);
+        const visit = (items, depth) => { for (const row of items) { flat.push({ key: JSON.stringify(row.address), address: row.address, title: readNodePresentation(row.node).alias || (typeof row.node?.title === 'string' ? row.node.title : '') || row.node?.operation || row.address.nodeId, kind: row.kind, depth, status: row.status, subphase: row.subphase, durationMs: row.durationMs ?? null, attempts: row.attempts ?? 0, callBound: row.requestBound ?? 0, usage: row.request?.usage ?? null, issue: row.error?.message, ...(row.error ? { diagnostics: [presentDiagnostic({ ...row.error, address: row.address }, { nodeTitle: readNodePresentation(row.node).alias || row.node?.title || row.node?.operation || row.address.nodeId, operation: row.node?.operation })] } : {}) }); visit(row.children ?? [],depth+1); } }; visit(rows,0);
         const executableCount = rows.reduce((sum,row) => sum+row.executableCount,0), completedCount = rows.reduce((sum,row) => sum+row.completedCount,0), status = state.busy ? rowSource?.status || 'running' : rowSource?.status || (result ? result.ok ? 'completed' : 'failed' : 'not-run');
         const runDetails = { runId: rowSource?.runId || '', status, elapsedMs: rowSource?.elapsedMs ?? null, actualCalls: state.busy ? flat.filter(row=>row.kind==='primitive').reduce((sum,row)=>sum+row.attempts,0) : rootWorkflow.result?.actualCalls ?? flat.filter(row=>row.kind==='primitive').reduce((sum,row)=>sum+row.attempts,0), callBound: rowSource?.plan?.callBound ?? rootWorkflow.result?.callBound ?? rootWorkflow.callBound, completedCount, executableCount, rows: flat, issue: state.preparationError?.message || result?.error || '' };
+        runDetails.diagnostics = preparationDiagnostic ? [preparationDiagnostic] : rootWorkflow.result?.errorDiagnostic ? [rootWorkflow.result.errorDiagnostic] : presentDiagnostics(runDetails.issue ? [runDetails.issue] : []);
         const runMeter = { ...runDetails, rows: rows.map(row => ({ id: JSON.stringify(row.address), title: row.address.nodeId, status: row.status, executableCount: row.executableCount, completedCount: row.completedCount })) };
         run = { ...freeze(structuredClone({ runDetails, runMeter })), dependencies: runDependencies };
         runCache.splice(0, runCache.length, run);

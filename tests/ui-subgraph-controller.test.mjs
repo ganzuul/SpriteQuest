@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import { readFile } from 'node:fs/promises';
 import { JSDOM } from 'jsdom';
 import { operationFor } from '../src/workflow/catalog.js?v=0.27.0';
+import { isScopedSystemOperation } from '../src/workflow/system-capabilities.js?v=0.27.0';
 import { isCommentFrame } from '../src/canvas/comment-frames.js?v=0.27.0';
 import { prepareCreateFromSelection } from '../src/workflow/composition.js?v=0.27.0';
 import { prepareOwnedDefinitionMetadataEdit } from '../src/workflow/definition-library.js?v=0.27.0';
@@ -15,6 +16,7 @@ import { captureRelocatedSubgraphViews, restoreSubgraphViews } from '../src/ui/s
 import { showContextMenu } from '../src/ui/context-menu.js?v=0.27.0';
 import { readNodePresentation } from '../src/ui/node-palette.js?v=0.27.0';
 import { projectPreparedWorkflow } from '../src/ui/workflow-surface.js?v=0.27.0';
+import { diagnosticText } from '../src/ui/diagnostics.js?v=0.27.0';
 
 const source = await readFile(new URL('../src/ui/controller.js', import.meta.url), 'utf8');
 function actual(name, env) {
@@ -110,13 +112,13 @@ test('boundary details update real interface labels and reject stale or unrelate
 
 function conversionMenu(f, nodeId) {
     const dom = new JSDOM('<main></main>'), document = dom.window.document;
-    Object.assign(f.env, { document, window: dom.window, root: document.querySelector('main'), isCommentFrame, operationFor,
+    Object.assign(f.env, { document, window: dom.window, root: document.querySelector('main'), isCommentFrame, operationFor, isScopedSystemOperation,
         el(tag, cls, text) { const element = document.createElement(tag); if (cls) element.className = cls; if (text !== undefined) element.textContent = text; return element; },
         canCreateSubgraph: (...args) => actual('canCreateSubgraph', f.env)(...args),
-        canvasPreviewMenuItems: (...args) => actual('canvasPreviewMenuItems', f.env)(...args), showContextMenu, readNodePresentation, projectPreparedWorkflow,
+        canvasPreviewMenuItems: (...args) => actual('canvasPreviewMenuItems', f.env)(...args), showContextMenu, readNodePresentation, projectPreparedWorkflow, diagnosticText,
     });
     actual('onCanvasMenu', f.env)({ event: { clientX: 20, clientY: 20 }, node: f.env.editorDraw.nodes[nodeId], at: { x: 0, y: 0 } });
-    const item = [...document.querySelectorAll('[role="menuitem"]')].find(button => button.textContent === 'Create subgraph');
+    const item = document.querySelector('[data-command="create-subgraph"]');
     assert.ok(item); return { item, close: () => dom.window.close() };
 }
 
@@ -156,4 +158,13 @@ test('Add system starts from a pinned child, commits once to Main, and rejects c
  assert.equal(f.env.previewAddSystem(key,draft).ok,true);assert.equal(f.env.submitAddSystem(key).ok,true);assert.equal(f.commits(),1);assert.equal(Object.values(f.graph.nodes).filter(n=>n.type==='subgraph').length,2);assert.notEqual(f.session.readEditor().view.identity.instancePath[0],'origin');
  const insertedId=f.session.readEditor().view.identity.instancePath[0];const stopHistory=H.onHistoryChange((graph,event)=>{if(graph===f.graph)f.env.handleSystemHistory(graph,event);});assert.ok(H.undo(f.graph));f.refresh();f.env.applyPendingSystemPresentation();assert.deepEqual(f.graph,before);assert.deepEqual(f.session.readEditor().view.identity.instancePath,['origin']);assert.ok(H.redo(f.graph));f.refresh();f.env.applyPendingSystemPresentation();assert.deepEqual(f.session.readEditor().view.identity.instancePath,[insertedId]);
  f.session.openInstance(['origin']);assert.equal(f.env.openAddSystem().ok,true);const pending=f.env.pendingAddSystem;assert.equal(f.env.previewAddSystem(pending.key,draft).ok,true);f.session.focusView(f.session.project().graphViews.tabs[0].key);const changed=structuredClone(f.graph);assert.equal(f.env.submitAddSystem(pending.key).ok,false);assert.deepEqual(f.graph,changed);assert.ok(before.nodes.origin);f.session.openInstance(['origin']);assert.equal(f.env.openAddSystem().ok,true);const libraryPending=f.env.pendingAddSystem;assert.equal(f.env.previewAddSystem(libraryPending.key,draft).ok,true);f.env.L.loadSubgraphLibrary=()=>({ok:true,data:{definitions:{}}});assert.equal(f.env.submitAddSystem(libraryPending.key).ok,false);assert.deepEqual(f.graph,changed);
+});
+
+for (const operation of ['read-file', 'write-file', 'story-clock', 'commit-clock', 'commit-outcomes']) test(operation + ' remains available for scoped system extraction', () => {
+    const f = fixture(graph => Object.assign(graph, { mode: 'native-unified', wires: {}, nodes: { scoped: { id: 'scoped', type: 'workflow', operation, operationVersion: 1 } } }));
+    const menu = conversionMenu(f, 'scoped');
+    try { assert.equal(menu.item.disabled, false); } finally { menu.close(); }
+    const result = f.env.createSubgraph(['scoped'], 'Scoped system');
+    assert.equal(result.ok, true, JSON.stringify(result.error));
+    assert.equal(f.commits(), 1);
 });

@@ -18,9 +18,11 @@ import { graphSemanticSignature } from '../src/workflow/ports.js?v=0.27.0';
 import { definitionRefKey } from '../src/workflow/definition-data.js?v=0.27.0';
 import { siblingWorkflow, nestedWorkflow } from './fixtures/workflow-prepared-fixture.mjs';
 import * as H from '../src/history.js?v=0.27.0';
+import { diagnosticText } from '../src/ui/diagnostics.js?v=0.27.0';
 
 const controllerText = await readFile(new URL('../src/ui/controller.js', import.meta.url), 'utf8');
 function controllerFunction(name, env) {
+    env.diagnosticText ??= diagnosticText;
     const start = controllerText.indexOf('function ' + name + '(');
     assert.ok(start >= 0, 'Actual controller function ' + name);
     const lineEnd = controllerText.indexOf('\n', start), firstLine = controllerText.slice(start, lineEnd).trim();

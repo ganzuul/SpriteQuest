@@ -3,6 +3,7 @@ import { prepareWorkspaceViews } from './workspace-preparation.js?v=0.27.0';
 import { nodeCards } from '../canvas/presentation.js?v=0.27.0';
 import { isCommentFrame } from '../canvas/comment-frames.js?v=0.27.0';
 import { buildConnectionRoute } from '../canvas/connection-route.js?v=0.27.0';
+import { diagnosticText } from './diagnostics.js?v=0.27.0';
 
 const PRESENTATION_REVISION = 3;
 let cacheKey = '', cachedTiles;
@@ -21,9 +22,9 @@ export function projectWorkflowExamples() {
     if (key === cacheKey) return cachedTiles;
     const tiles = examples.map(example => {
         const tile = { id: example.id, number: example.number, title: example.title, goal: example.goal, lesson: example.lesson };
-        if (!example.result.ok) return { ...tile, thumbnail: null, issue: example.result.error.message || 'This example package is invalid.' };
+        if (!example.result.ok) return { ...tile, thumbnail: null, issue: diagnosticText(example.result.error, { action: 'open this example' }) };
         try { return { ...tile, thumbnail: projectThumbnail(example.result.data), issue: '' }; }
-        catch (error) { return { ...tile, thumbnail: null, issue: error instanceof Error ? error.message : 'This example preview is unavailable.' }; }
+        catch (error) { return { ...tile, thumbnail: null, issue: diagnosticText(error, { action: 'preview this example' }) }; }
     });
     // Theme colors stay live CSS roles in the SVG; cached geometry serves every theme.
     cachedTiles = freeze(tiles); cacheKey = key;

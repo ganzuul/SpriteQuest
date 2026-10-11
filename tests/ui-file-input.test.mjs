@@ -144,7 +144,8 @@ test('a failed file load shows its error and permits another selection without c
     const f = await detailsFixture(fileDetails({ fileInput: { fileName: 'original.md', loaded: true } }), { loadFile() { return { ok: false, error: { code: 'FILE_INVALID_UTF8', message: 'Choose UTF-8 text.' } }; } });
     try {
         chooseFile(f.host.querySelector('input[type="file"]'), new File(['Text'], 'new.md')); await settle();
-        assert.match(f.host.querySelector('[role="alert"]').textContent, /FILE_INVALID_UTF8: Choose UTF-8 text/);
+        assert.equal(f.host.querySelector('[data-diagnostic] details code').textContent, 'FILE_INVALID_UTF8');
+        assert.equal(f.host.querySelector('[data-diagnostic] details').open, false);
         assert.match(f.host.textContent, /original\.md/); assert.equal(f.host.querySelector('input[type="file"]').disabled, false);
     } finally { await f.close(); }
 });

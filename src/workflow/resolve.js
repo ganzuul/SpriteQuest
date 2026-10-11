@@ -95,6 +95,7 @@ function selectClosure(index, target) {
         }
     }
     return { ok: true, data: { included, containsIncluded, resolvedTarget, ordered, dependencies: effectiveDependencies,
+        requiresNativeGeneration: selected.some(unit => ['on-send', 'generate-reply'].includes(unit.node.operation)),
         callBound: selected.reduce((sum, unit) => sum + unit.requestBound, 0),
         requiredBindingAddresses: selected.filter(unit => unit.requestBound > 0).map(unit => unit.address) } };
 }
@@ -147,7 +148,7 @@ export function prepareWorkflowPlanner(root, artifacts) {
         if (key === null) return freeze(fail('INVALID_TARGET', 'Expected an actual output or tagged terminal target.'));
         if (summaries.has(key)) return summaries.get(key);
         const selection = selectClosure(index, target);
-        const result = freeze(selection.ok ? { ok: true, data: { callBound: selection.data.callBound, requiredBindingAddresses: selection.data.requiredBindingAddresses } } : selection);
+        const result = freeze(selection.ok ? { ok: true, data: { callBound: selection.data.callBound, requiredBindingAddresses: selection.data.requiredBindingAddresses, requiresNativeGeneration: selection.data.requiresNativeGeneration } } : selection);
         summaries.set(key, result); return result;
     } });
     planners.set(planner, { root, checked, snapshot }); return { ok: true, data: planner };

@@ -252,8 +252,9 @@ for (const oldResult of [{ ok: true }, { ok: false, error: { code: 'OLD', messag
             pending[0](oldResult); await settle();
             assert.equal(editor(f, 'model').value, 'second'); assert.doesNotMatch(f.host.textContent, /Obsolete binding failure/);
             pending[1]({ ok: false, error: { code: 'CURRENT', message: 'Current binding failure' } }); await settle();
-            assert.match(f.host.querySelector('[role="alert"]').textContent, /Current binding failure/); assert.equal(editor(f, 'model').value, 'second');
-            f.update(plainView({ revision: 'revision3' })); assert.match(f.host.textContent, /Current binding failure/, 'the retained binding draft keeps its validation error');
+            assert.equal(f.host.querySelector('[data-diagnostic]').dataset.severity, 'error'); assert.equal(editor(f, 'model').value, 'second');
+            const diagnosticId = f.host.querySelector('[data-diagnostic]').dataset.diagnostic;
+            f.update(plainView({ revision: 'revision3' })); assert.equal(f.host.querySelector('[data-diagnostic]').dataset.diagnostic, diagnosticId, 'the retained binding draft keeps its validation error');
             input(editor(f, 'model'), 'third'); change(editor(f, 'model'), 'third');
             change(mode(f, 'model'), 'inherit'); assert.equal(editor(f, 'model'), null);
             pending[2](oldResult); await settle(); assert.equal(editor(f, 'model'), null); assert.doesNotMatch(f.host.textContent, /Obsolete binding failure|Current binding failure/);

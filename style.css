@@ -544,6 +544,8 @@
 .pc-root .pc-context-menu .pc-context-item:disabled { opacity: .4; cursor: default; }
 .pc-context-icon, .pc-context-chevron { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; color: var(--pc-menu-muted); }
 .pc-context-label { overflow-wrap: anywhere; }
+.pc-context-reason { grid-column: 2 / -1; color: var(--pc-menu-muted); font-size: 12px; line-height: 1.45; white-space: normal; overflow-wrap: anywhere; }
+.pc-root .pc-context-menu .pc-context-item:disabled:has(.pc-context-reason) { opacity: .75; }
 .pc-context-trailing { display: flex; align-items: center; gap: 8px; }
 /* SillyTavern styles kbd as raised keycaps; menu shortcuts are plain text. */
 .pc-root .pc-context-menu .pc-context-shortcut, .pc-root .pc-context-menu .pc-context-check { all: unset; color: var(--pc-menu-muted); white-space: nowrap; font: 400 12px/1.4 system-ui, sans-serif; }

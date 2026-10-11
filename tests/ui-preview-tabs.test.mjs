@@ -4,7 +4,7 @@ import { readFile, mkdtemp, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve, relative, isAbsolute } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { compile } from 'svelte/compiler';
+import { compiled as compileComponent } from './helpers/svelte-compile.mjs';
 import { JSDOM } from 'jsdom';
 
 const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true });
@@ -18,11 +18,7 @@ async function fixture(initial, actions = {}, collapse) {
     const host = document.createElement('div'); host.style.fontFamily = 'system-ui'; document.body.append(host);
     let mounted;
     async function compiled(name, source) {
-        const output = compile(source, { filename: name + '.svelte', generate: 'client', css: 'injected' });
-        assert.deepEqual(output.warnings.filter(warning => warning.code.startsWith('a11y')), []);
-        const code = output.js.code.replace(/(['"])(svelte(?:\/[^'"]*)?)\1/g, (_, quote, specifier) => JSON.stringify(specifier === 'svelte' ? clientURL : import.meta.resolve(specifier)));
-        const path = join(directory, name + '.mjs'); await writeFile(path, code);
-        return { path, component: (await import(pathToFileURL(path).href)).default };
+        return compileComponent(name, directory, source);
     }
     async function close() {
         if (mounted) await unmount(mounted);
@@ -89,7 +85,7 @@ test('tab selection resets with source or output identity and reconciles removed
         f.update(preview({ sections: [] }));
         assert.equal(f.host.querySelector('[role="tablist"]'), null);
         assert.equal(panel(f.host), null);
-        assert.match(f.host.textContent, /No recorded artifact/);
+        assert.match(f.host.textContent, /No output was kept/);
     } finally { await f.close(); }
 });
 

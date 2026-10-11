@@ -6,6 +6,7 @@
     import { menuIconPaths } from '../src/ui/menu-icons.js';
     let { state: view, actions, local, panels }: { state: WorkbenchView; actions: WorkbenchActions; local: (command: string) => void; panels?: WorkspaceMenuPanels } = $props();
     const menus = $derived(workspaceMenus(view, panels));
+    const uid = $props.id();
     let active = $state(''), rootFocus = $state(0);
     let nav: HTMLDivElement, panel = $state<HTMLDivElement | null>(null), childPanel = $state<HTMLDivElement | null>(null);
     let anchor: HTMLButtonElement | null = null, childAnchor: HTMLButtonElement | null = null;
@@ -56,7 +57,7 @@
         if (entry.children) { openChild(entry,button,true); return; }
         const command = entry.command; close(true);
         const recallAction = recallMenuActions[command];
-        if (recallAction) { Promise.resolve(recallAction()).then(result=>{if(!result.ok){actions.recall?.reportIssue(result.error.message);actions.recall?.refresh();}}); }
+        if (recallAction) { Promise.resolve(recallAction()).then(result=>{if(!result.ok){actions.recall?.reportIssue(result.error.code + ': ' + result.error.message);actions.recall?.refresh();}}).catch(()=>{actions.recall?.reportIssue('RECALL_UNAVAILABLE: Memory recall could not be updated.');actions.recall?.refresh();}); }
         else if (localMenuCommands.has(command)) local(command);
         else if (command === 'enable-workflow') actions.setEnabled(!view.enabled);
         else if (command === 'select-tool' || command === 'pan-tool') actions.mode(command === 'select-tool' ? 'select' : 'pan');
@@ -133,10 +134,10 @@
 </div>
 {#snippet rows(entries: WorkspaceMenuItem[], nested: boolean)}
     {#each entries as entry}
-        <button type="button" class="pc-workspace-menu-item" role={entry.kind==='radio'?'menuitemradio':entry.kind==='check'?'menuitemcheckbox':'menuitem'} title={entry.title} aria-label={entry.label} aria-disabled={!!entry.disabled} aria-checked={entry.kind?!!entry.checked:undefined} aria-haspopup={entry.children?'menu':undefined} aria-expanded={entry.children?child===entry:undefined} aria-controls={entry.children && child===entry?'pc-workspace-submenu':undefined} data-command={entry.command} data-tone={entry.tone} tabindex="-1" disabled={entry.disabled} onclick={(event)=>choose(entry,event.currentTarget)} onpointerenter={(event)=>{if(!nested){if(entry.children)openChild(entry,event.currentTarget);else child=null;}}}>
+        <button type="button" class="pc-workspace-menu-item" role={entry.kind==='radio'?'menuitemradio':entry.kind==='check'?'menuitemcheckbox':'menuitem'} title={entry.title} aria-label={entry.label} aria-describedby={entry.reason ? uid + '-reason-' + entry.command : undefined} aria-disabled={!!entry.disabled} aria-checked={entry.kind?!!entry.checked:undefined} aria-haspopup={entry.children?'menu':undefined} aria-expanded={entry.children?child===entry:undefined} aria-controls={entry.children && child===entry?'pc-workspace-submenu':undefined} data-command={entry.command} data-tone={entry.tone} tabindex="-1" disabled={entry.disabled} onclick={(event)=>choose(entry,event.currentTarget)} onpointerenter={(event)=>{if(!nested){if(entry.children)openChild(entry,event.currentTarget);else child=null;}}}>
             <span class="pc-workspace-menu-icon" data-icon-tone={entry.iconTone} aria-hidden="true">{#if entry.icon && menuIconPaths[entry.icon as keyof typeof menuIconPaths]}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d={menuIconPaths[entry.icon as keyof typeof menuIconPaths]} /></svg>{/if}</span>
             <span class="pc-workspace-menu-state" aria-hidden="true">{entry.checked?(entry.kind==='radio'?'●':'✓'):''}</span>
-            <span class="pc-workspace-menu-label">{entry.label}</span>
+            <span class="pc-workspace-menu-label">{entry.label}{#if entry.reason}<small id={uid + '-reason-' + entry.command} style="display:block;white-space:normal;font-size:11px;line-height:1.4">{entry.reason}</small>{/if}</span>
             {#if entry.shortcut}<kbd class="pc-workspace-menu-shortcut" aria-hidden="true">{entry.shortcut}</kbd>{:else}<span class="pc-workspace-menu-shortcut" aria-hidden="true"></span>{/if}
             <span class="pc-workspace-menu-caret" aria-hidden="true">{entry.children?'›':''}</span>
         </button>

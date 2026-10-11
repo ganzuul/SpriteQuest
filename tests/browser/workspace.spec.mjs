@@ -246,10 +246,18 @@ test('Run to here and Stop remain active while the preview divider resizes', asy
     expect(await page.evaluate(() => window.canvasHarness.S.settings().enabled)).toBe(false);
     await page.locator('.pc-root-stop').click();
     await expect(page.locator('.pc-root-stop')).toHaveCount(0);
+    await expect(page.locator('.pc-output-preview [data-run-here]')).toBeDisabled();
+    await expect(page.locator('.pc-output-preview [data-run-here]')).toHaveAccessibleDescription(/send a message in SillyTavern/i);
+    await page.evaluate(async () => {
+        const h = window.canvasHarness, id = Object.values(h.graph.nodes).find(node => node.operation === 'response-plan').id;
+        h.canvas.select({ kind: 'node', id });
+        await h.settle();
+    });
     await expect(page.locator('.pc-output-preview [data-run-here]')).toBeEnabled();
     await page.evaluate(() => window.finishShellRequest({ choices: [{ message: { content: 'Late synthetic guidance.' }, finish_reason: 'stop' }] }));
     await page.evaluate(() => window.canvasHarness.settle());
     await expect(page.getByText('Late synthetic guidance.', { exact: true })).toHaveCount(0);
+    expect(await page.evaluate(() => window.shellRequests)).toBe(1);
 });
 
 test('preview divider redistributes panes without changing the graph camera, selection or cards', async ({ page }) => {

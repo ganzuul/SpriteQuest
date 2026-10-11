@@ -1,4 +1,5 @@
 <script lang="ts">
+    import DiagnosticMessage from './DiagnosticMessage.svelte';
     import { onMount, tick } from 'svelte';
     import type { WorkflowExampleTile } from './types';
     import ArtifactPin from './ArtifactPin.svelte';
@@ -40,7 +41,7 @@
     }
 </script>
 
-{#if issue}<div class="pc-examples-issue" role="alert"><span>{issue}</span>{#if retry}<button type="button" class="pc-btn menu_button" onclick={() => retry?.()}>Retry</button>{/if}</div>{/if}
+{#if issue}<div class="pc-examples-issue"><DiagnosticMessage {issue} />{#if retry}<button type="button" class="pc-btn menu_button" onclick={() => retry?.()}>Reload examples</button>{/if}</div>{/if}
 <div class="pc-examples-filters">
     <label>Search lessons<input bind:this={searchInput} aria-label="Search lessons" type="search" placeholder="Goal, node or technique" bind:value={query} /></label>
     <label>Difficulty<select aria-label="Difficulty" bind:value={difficulty}><option value="">All difficulties</option>{#each difficulties as band}<option value={band}>{band}</option>{/each}</select></label>
@@ -61,15 +62,15 @@
                 <h4>Expected cases</h4><ul>{#each selected.lesson.cases as item}<li><strong>{item.when}</strong><span>{item.expect}</span></li>{/each}</ul>
                 <p><strong>Auxiliary call budget:</strong> {selected.lesson.callBudget}</p>
             {/if}
-            {#if selected.issue}<p class="pc-example-detail-issue" role="alert">{selected.issue}</p>{/if}
+            {#if selected.issue}<div id={`pc-example-issue-${selected.number}`}><DiagnosticMessage issue={selected.issue} /></div>{/if}
             <button type="button" class="pc-btn menu_button" disabled={!!opening || !selected.thumbnail} onclick={() => choose(selected.id)}>Open independent copy</button>
         </section>
     {/if}
-    {#if !filtered.length}<p class="pc-examples-empty">No lessons match your search and difficulty.</p>{/if}
+    {#if !filtered.length && !issue}<p class="pc-examples-empty">{query.trim() || difficulty ? 'No lessons match your search and difficulty. Clear a filter to see more lessons.' : 'No lessons are available yet. Reload examples to check again.'}</p>{/if}
     {#each filtered as example (example.id)}
         {@const preview = example.thumbnail}
         <article class="pc-example-entry">
-        <button type="button" class="pc-example-tile" class:pc-example-unavailable={!preview} aria-label={example.title} aria-describedby={example.issue ? `pc-example-issue-${example.number}` : undefined} title={example.issue || example.goal} disabled={!!opening || !preview} onclick={() => choose(example.id)}>
+        <button type="button" class="pc-example-tile" class:pc-example-unavailable={!preview} aria-label={example.title} aria-describedby={example.issue ? `pc-example-issue-${example.number}` : undefined} title={example.goal} disabled={!!opening || !preview} onclick={() => choose(example.id)}>
             {#if preview}
             <svg class="pc-example-preview" viewBox={`${preview.bounds.x} ${preview.bounds.y} ${preview.bounds.w} ${preview.bounds.h}`} preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false">
                 {#each preview.groups as group (group.id)}
@@ -97,11 +98,12 @@
                     </g>
                 {/each}
             </svg>
-            {:else}<span class="pc-example-unavailable-preview"><strong>Unavailable</strong><span id={`pc-example-issue-${example.number}`}>{example.issue}</span></span>{/if}
+            {:else}<span class="pc-example-unavailable-preview"><strong>Unavailable</strong><span>Open Lesson details for this example.</span></span>{/if}
             <span class="pc-example-title">{example.number}. {example.title}</span>
             {#if example.lesson}<span class="pc-example-band">{example.lesson.difficulty} · {example.lesson.focus}</span>{/if}
             <span class="pc-example-goal">{example.goal}</span>
         </button>
+        {#if example.issue && selectedId !== example.id}<div id={`pc-example-issue-${example.number}`}><DiagnosticMessage issue={example.issue} /></div>{/if}
         <button type="button" class="pc-example-details-button" data-example-id={example.id} aria-label={`Details for ${example.title}`} aria-expanded={selectedId === example.id} onclick={() => details(example.id)}>Lesson details</button>
         </article>
     {/each}
@@ -133,7 +135,7 @@
     @media (max-width: 620px) { .pc-examples-filters { flex-wrap: wrap; } .pc-examples-count { width: 100%; } }
 
     .pc-examples-issue { flex: none; display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-bottom: 1px solid var(--pc-border); color: var(--pc-warn); font-size: 12px; }
-    .pc-examples-issue span { flex: 1; }
+    .pc-examples-issue :global(.pc-diagnostic) { flex: 1; }
     .pc-examples-issue button { flex: none; padding: 3px 8px; }
     .pc-examples-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-content: start; gap: 8px; overflow: auto; min-height: 0; flex: 1; padding: 10px; scrollbar-gutter: stable; }
     .pc-example-tile { box-sizing: border-box; display: flex; flex-direction: column; min-width: 0; min-height: 190px; padding: 4px; border: 1px solid var(--pc-border); border-radius: 4px; color: var(--pc-text); background: var(--pc-block); text-align: left; cursor: pointer; }

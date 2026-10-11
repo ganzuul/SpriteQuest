@@ -1,4 +1,6 @@
 <script lang="ts">
+    import DiagnosticMessage from './DiagnosticMessage.svelte';
+    import { presentDiagnostics } from '../src/ui/diagnostics.js';
     import { onDestroy, untrack } from 'svelte';
     import DetailControlEditor from './DetailControl.svelte';
     import RecallDetails from './RecallDetails.svelte';
@@ -101,7 +103,7 @@
         if (drafts[key]) drafts = { ...drafts, [key]: { ...drafts[key], pending: true, error: '' } };
         let error = '', accepted = false;
         try { const result = await operation(captured); accepted = result.ok; if (!result.ok) error = result.error.code + ': ' + result.error.message; }
-        catch { error = 'The edit could not be accepted. Please try again.'; }
+        catch { error = 'The edit could not be accepted. Check the current settings before trying the edit again.'; }
         // A successful transaction may publish its revision before acknowledgment.
         // Expire only the submitted draft; later text, Saves and node visits keep theirs.
         if (accepted && generation !== null && drafts[key] && alive && view && draftVisit === visit && selectionIdentity(view) === selectionIdentity(captured) && draftGenerations.get(key) === generation && draftContract(view, key) === contract) {
@@ -360,18 +362,18 @@
             <small>{view.boundary ? 'Subgraph ' + view.boundary.direction : view.family + ' · ' + view.phase + ' phase'}</small>
         </div>
     </header>
-    {#if view.phaseEditable}<label>Workflow stage<select aria-label="Workflow stage" value={view.phase} disabled={view.readOnly || !actions.editPhase} onchange={event => { const phase = event.currentTarget.value as 'pre' | 'post'; void perform('phase', false, captured => actions.editPhase!(captured, phase)); }}><option value="pre">Preparation · before Generate Reply</option><option value="post">Response · after Generate Reply</option></select></label>{#if errors.phase}<p role="alert" class="pc-detail-error">{errors.phase}</p>{/if}{/if}
+    {#if view.phaseEditable}<label>Workflow stage<select aria-label="Workflow stage" value={view.phase} disabled={view.readOnly || !actions.editPhase} onchange={event => { const phase = event.currentTarget.value as 'pre' | 'post'; void perform('phase', false, captured => actions.editPhase!(captured, phase)); }}><option value="pre">Preparation · before Generate Reply</option><option value="post">Response · after Generate Reply</option></select></label>{#if errors.phase}<div class="pc-detail-error"><DiagnosticMessage issue={errors.phase} context={{ nodeTitle: view?.title }} /></div>{/if}{/if}
     {#if view.recall}<RecallDetails view={view.recall} actions={{queue:()=>actions.queueRecall?.(selection(view!))??{ok:false,error:{code:'RECALL_UNAVAILABLE',message:'Memory recall is unavailable.'}},cancel:()=>actions.cancelRecall?.(selection(view!))??{ok:false,error:{code:'RECALL_UNAVAILABLE',message:'Memory recall is unavailable.'}},revealShortcut:actions.revealRecallShortcut}} />{/if}
     {#if view.readOnly || !view.enabled}<p class="pc-detail-state">{#if view.readOnly}<span>Read-only body</span>{/if}{#if !view.enabled}<span class="pc-detail-blocked">{view.system ? 'System skipped' : 'Blocks run · Disabled'}</span>{/if}</p>{/if}
-    {#if view.system}<label><input type="checkbox" aria-label="Run this system" checked={view.enabled} disabled={view.readOnly || !actions.editField} onchange={event => { const enabled = event.currentTarget.checked; void perform('enabled', false, captured => actions.editField!(captured, 'enabled', enabled)); }} /> Run this system</label><small>When off, the whole system and its outputs are skipped. Optional Guidance sections can omit it.</small>{#if errors.enabled}<p role="alert">{errors.enabled}</p>{/if}{/if}
-    {#if errors.alias}<p class="pc-detail-error" role="alert">{errors.alias}</p>{/if}
+    {#if view.system}<label><input type="checkbox" aria-label="Run this system" checked={view.enabled} disabled={view.readOnly || !actions.editField} onchange={event => { const enabled = event.currentTarget.checked; void perform('enabled', false, captured => actions.editField!(captured, 'enabled', enabled)); }} /> Run this system</label><small>When off, the whole system and its outputs are skipped. Optional Guidance sections can omit it.</small>{#if errors.enabled}<div class="pc-detail-error"><DiagnosticMessage issue={errors.enabled} context={{ nodeTitle: view?.title }} /></div>{/if}{/if}
+    {#if errors.alias}<div class="pc-detail-error"><DiagnosticMessage issue={errors.alias} context={{ nodeTitle: view?.title }} /></div>{/if}
     {#if view.boundary}
         <fieldset class="pc-detail-group" data-boundary-controls><legend>Subgraph {view.boundary.direction}</legend>
             <label>Type<select aria-label="Subgraph port type" value={boundaryValues().artifactKind} disabled={view.readOnly || !actions.editInterface} onchange={event => draftBoundary('artifactKind', event.currentTarget.value)}>{#each view.boundary.kinds as kind (kind)}<option value={kind}>{kind}</option>{/each}</select></label>
             <label class="pc-detail-check"><input aria-label="Required subgraph port" type="checkbox" checked={boundaryValues().required} disabled={view.readOnly || !actions.editInterface} onchange={event => draftBoundary('required', event.currentTarget.checked)} /> Required</label>
             <div class="pc-detail-actions"><button type="button" data-save-boundary disabled={view.readOnly || !actions.editInterface || !boundaryValues().label.trim() || !!drafts.boundary?.pending} onclick={() => editBoundary()}>{drafts.boundary?.pending ? 'Validating…' : 'Save port'}</button></div>
             <small>Labels appear on the subgraph block. Disconnect incompatible connections before changing the type. Deleting this node removes its port and attached connections.</small>
-            {#if drafts.boundary?.error || errors.boundary}<p class="pc-detail-error" role="alert">{drafts.boundary?.error || errors.boundary}</p>{/if}
+            {#if drafts.boundary?.error || errors.boundary}<div class="pc-detail-error"><DiagnosticMessage issue={drafts.boundary?.error || errors.boundary} context={{ nodeTitle: view?.title }} /></div>{/if}
         </fieldset>
     {/if}
     {#if !view.boundary}
@@ -384,7 +386,7 @@
                     <small>The file's UTF-8 text is embedded in this workflow. Runs use the saved snapshot; replace the file to refresh it.</small>
                     <small>Choose a .txt, .md or .json file up to 400,000 bytes and 100,000 UTF-16 code units.</small>
                     {#if drafts.fileInput?.pending}<p role="status">Loading file…</p>{/if}
-                    {#if errors.fileInput}<p id={idPrefix + '-error-fileInput'} class="pc-detail-error" role="alert">{errors.fileInput}</p>{/if}
+                    {#if errors.fileInput}<div id={idPrefix + '-error-fileInput'} class="pc-detail-error"><DiagnosticMessage issue={errors.fileInput} context={{ nodeTitle: view?.title }} /></div>{/if}
                 </div>
             {/if}
             {#each controlGroups.filter(([group]) => group === 'Main') as [group, controls] (group)}
@@ -410,14 +412,14 @@
                     <label>Model mode<select aria-label={row.role+' model mode'} value={helperModelMode(row.role)} disabled={!canEditHelperField(row.role,'model')} onchange={event=>chooseHelperModelMode(row.role,event.currentTarget.value as DetailBindingMode)}>{#each row.model.allowedModes as option (option.value)}<option value={option.value}>{option.label}</option>{/each}</select></label>
                     {#if helperModelMode(row.role)==='override'}<label>Model identifier<input aria-label={row.role+' model identifier'} value={drafts[helperBindingKey(row.role,'model')]?.text??row.model.value??''} disabled={!canEditHelperField(row.role,'model')} oninput={event=>draftHelperModel(row.role,event.currentTarget.value)} onchange={event=>saveHelperModel(row.role,event.currentTarget.value)} /></label>{/if}
                     <small>Effective connection: {row.effective}</small><small>{row.source}</small>{#if row.caveat}<small>{row.caveat}</small>{/if}
-                    {#if errors[helperBindingKey(row.role,'profileId')] || errors[helperBindingKey(row.role,'model')]}<p class="pc-detail-error" role="alert">{errors[helperBindingKey(row.role,'profileId')] || errors[helperBindingKey(row.role,'model')]}</p>{/if}
+                    {#if errors[helperBindingKey(row.role,'profileId')] || errors[helperBindingKey(row.role,'model')]}<div class="pc-detail-error"><DiagnosticMessage issue={errors[helperBindingKey(row.role,'profileId')] || errors[helperBindingKey(row.role,'model')]} context={{ nodeTitle: view?.title }} /></div>{/if}
                 </fieldset>
             {/each}
-            {#if view.helperBindings.issue}<p class="pc-detail-error" role="alert">{view.helperBindings.issue}</p>{:else if !view.helperBindings.roles.length}<small>This helper has no text model calls to configure.</small>{/if}
+            {#if view.helperBindings.issueDiagnostic || view.helperBindings.issue}<div class="pc-detail-error"><DiagnosticMessage diagnostic={view.helperBindings.issueDiagnostic} issue={view.helperBindings.issue} context={{ nodeTitle: view?.title }} /></div>{:else if !view.helperBindings.roles.length}<small>This helper has no text model calls to configure.</small>{/if}
         </details>
     {/if}
     {#if view.model}
-        {#if view.model.issue}<p class="pc-detail-error" role="alert">{view.model.issue}</p>{/if}
+        {#if view.model.issueDiagnostic || view.model.issue}<div class="pc-detail-error"><DiagnosticMessage diagnostic={view.model.issueDiagnostic} issue={view.model.issue} context={{ nodeTitle: view?.title }} /></div>{/if}
         <details class="pc-detail-group" data-model-controls><summary>Advanced model settings</summary>
             <button type="button" data-reset-profile disabled={!canEditBinding() || view.model.profile.mode === 'inherit' || !view.model.profile.allowedModes.some(option => option.value === 'inherit')} onclick={() => editBinding('profileId', 'inherit', null)}>{view.readOnly ? 'Use definition connection' : 'Use inherited connection'}</button>
             <small>Choose a connection with the bar under this node. Reset removes this node's connection override.</small>
@@ -425,12 +427,12 @@
             {#if bindingMode('model') === 'override'}<label>Model identifier<input aria-label="Model identifier" value={bindingText('model')} disabled={!canEditBinding()} oninput={event => draftBinding('model', event.currentTarget.value)} onchange={event => saveBinding('model', event.currentTarget.value)} /></label>{/if}
             <label>Model role<input aria-label="Model role" value={view.model.role} disabled={view.readOnly || !view.model.roleEditable || !actions.editField} onchange={event => { const value = event.currentTarget.value; if (view?.model?.roleEditable && actions.editField) void perform('modelRole', false, captured => actions.editField!(captured, 'modelRole', value)); }} /></label>
             {#if !view.model.issue || view.model.effective.trim() !== view.model.issue.trim()}<small>Effective connection: {view.model.effective}</small>{/if}{#if view.model.source}<small>{view.model.source}</small>{/if}
-            {#if errors.modelRole || errors.profileId || drafts.model?.error || errors.model}<p class="pc-detail-error" role="alert">{errors.modelRole || errors.profileId || drafts.model?.error || errors.model}</p>{/if}
+            {#if errors.modelRole || errors.profileId || drafts.model?.error || errors.model}<div class="pc-detail-error"><DiagnosticMessage issue={errors.modelRole || errors.profileId || drafts.model?.error || errors.model} context={{ nodeTitle: view?.title }} /></div>{/if}
         </details>
     {/if}
     {#if view.ports.length}<details class="pc-detail-group"><summary>Inputs and outputs</summary>{#each view.ports as port (port.direction + ':' + port.id)}<p class="pc-detail-port">{port.direction === 'input' ? 'In' : 'Out'} · {port.label}<small>{port.kind}</small></p>{/each}</details>{/if}
     {#if view.status}<p role="status">{view.status}</p>{/if}
-    {#each view.issues ?? [] as issue}<p class="pc-detail-error" role="alert">{issue}</p>{/each}
+    {#each presentDiagnostics((view.issues ?? []).filter(issue => issue !== view?.model?.issue && issue !== view?.helperBindings?.issue), {nodeTitle: view.title}) as diagnostic (diagnostic.id)}<div class="pc-detail-error"><DiagnosticMessage {diagnostic} /></div>{/each}
     {#if view.modifiers}
         <ModifierStack items={view.modifiers.items} options={view.modifiers.options} disabled={!canEditModifiers()} busy={modifierBusy} drafts={modifierDrafts()} error={errors.modifiers || ''} {idPrefix} onquick={quickModifier} onadd={addModifier} onenable={enableModifier} onremove={removeModifier} onmove={moveModifier} ondraft={draftModifier} onsave={saveModifier} />
     {/if}

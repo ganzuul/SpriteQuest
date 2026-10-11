@@ -1,7 +1,13 @@
 <script lang="ts">
+    import DiagnosticMessage from './DiagnosticMessage.svelte';
+    import { presentDiagnostics } from '../src/ui/diagnostics.js';
     import type { DetailTarget, DetailReviewSelector, OutputPreviewActions, OutputPreviewView } from './detail-types';
     let { view, actions = {}, collapse }: { view: OutputPreviewView | null; actions?: OutputPreviewActions; collapse?: () => void } = $props();
     const previewId = $props.id();
+    let diagnostics = $derived.by(() => {
+        const items = view?.diagnostics ?? presentDiagnostics([view?.runHere?.issue, ...(view?.issues ?? []), view?.review?.issue].filter((issue): issue is string => !!issue), { nodeTitle: view?.title });
+        return items.filter((item, index) => items.findIndex(other => other.id === item.id) === index);
+    });
     let sectionScope = $derived(JSON.stringify([view?.sourceKey, view?.selectedKey]));
     let sectionChoice = $state<{ scope: string; id: string | null }>({ scope: '', id: null });
     let activeSection = $derived((sectionChoice.scope === sectionScope ? view?.sections.find(section => section.id === sectionChoice.id) : null) ?? view?.sections[0] ?? null);
@@ -28,6 +34,12 @@
     let selectedReview = $derived(!!(view && selected && view.review?.mode === 'root' && view.review.selectedRootTerminal && 'kind' in selected.target && selected.target.address.instancePath.length === 0 && addressKey(selected.target) === addressKey(view.review.selector.terminal)));
     let canApply = $derived(!!(view && view.status === 'current' && !view.busy && selectedReview && view.review?.fresh && view.review.canApply && actions.apply));
     let canReject = $derived(!!(view && !view.busy && selectedReview && actions.reject));
+    let runReason = $derived(!canRun ? view?.runHere?.reason || (view?.busy ? 'Wait for the current run to finish.' : !selected ? 'Choose an output before running.' : !actions.runHere ? 'Run to here is unavailable in this workspace.' : 'This output cannot run with the current workflow settings.') : undefined);
+    let applyReason = $derived(!canApply ? view?.review?.reason || (view?.busy ? 'Wait for the current run to finish.' : view?.status !== 'current' || !view?.review?.fresh ? 'Run this workflow again to review a current result.' : !selectedReview ? 'Select the root workflow’s reviewed reply to apply it.' : !actions.apply ? 'Apply is unavailable in this workspace.' : 'This reviewed reply cannot be applied with the current workflow settings.') : undefined);
+    let runDiagnosticIndex = $derived(diagnostics.findIndex(item => item.message === runReason));
+    let applyDiagnosticIndex = $derived(diagnostics.findIndex(item => item.message === applyReason));
+    let runDescription = $derived(runReason ? previewId + (runDiagnosticIndex >= 0 ? '-diagnostic-' + runDiagnosticIndex : '-run-reason') : undefined);
+    let applyDescription = $derived(applyReason ? previewId + (applyDiagnosticIndex >= 0 ? '-diagnostic-' + applyDiagnosticIndex : '-apply-reason') : undefined);
     function choose(key: string) {
         const choice = view?.choices.find(item => item.key === key);
         if (view && choice) actions.select?.(view.sourceKey, choice.key, copyTarget(choice.target));
@@ -60,36 +72,36 @@
             <div role="tabpanel" tabindex="0" onkeydowncapture={event => event.stopPropagation()} onpastecapture={event => event.stopPropagation()} id={previewId + '-panel'} aria-labelledby={tabId(section.id)}>
                 <article data-artifact-kind={section.kind}>
                     <div class="pc-preview-section-heading"><span>{section.label}</span><small>{section.kind}</small></div>
-                    {#if section.format === 'omitted'}<p class="pc-preview-note">{section.text}</p>
+                    {#if section.format === 'omitted'}<DiagnosticMessage issue={section.text} />
                     {:else}<pre>{section.text}</pre>{/if}
-                    {#if section.truncated}<small class="pc-preview-note">Truncated diagnostic{section.format === 'json-prefix-text' ? ' · JSON prefix shown as text' : ''}</small>{/if}
+                    {#if section.truncated}<small class="pc-preview-note">Only part of the recorded output is displayed here. This display limit does not mean the model stopped early.{section.format === 'json-prefix-text' ? ' The JSON prefix is shown as text.' : ''}</small>{/if}
                 </article>
             </div>
-        {:else}
-            <p class="pc-preview-empty">{view.status === 'not-run' ? 'Enable Lattice and Send with the open workflow, or use Run to here to inspect an output.' : 'No recorded artifact is available for this output.'}</p>
+        {:else if !diagnostics.length}
+            <p class="pc-preview-empty">{view.emptyMessage ?? (view.status === 'not-run' ? 'This output has not run yet. Use Run to here, or enable Lattice and send a message in SillyTavern.' : 'No output was kept for this step. Run it again if you need to inspect its result.')}</p>
         {/if}
         {#if view.settlement}
             <section aria-label="Accepted consequences" class="pc-preview-settlement">
                 <strong>Accepted consequences · {view.settlement.status === 'settled' ? 'Saved' : view.settlement.status === 'partial' ? 'Some targets failed' : 'Save confirmation needed'}</strong>
                 {#each view.settlement.receipts as receipt (receipt.intentId + ':' + receipt.targetId)}
-                    <p class="pc-preview-note">{receipt.targetId} · {receipt.status}{receipt.error ? ' · ' + receipt.error.message : ''}</p>
+                    <p class="pc-preview-note">{receipt.targetId} · {receipt.status === 'confirmed' || receipt.status === 'persisted' ? 'Saved' : receipt.status === 'failed' ? 'Save failed' : receipt.status === 'unknown' ? 'Save outcome unknown' : receipt.status === 'save-unverified' || receipt.status === 'unverified' ? 'Save not verified' : receipt.status === 'unchanged' ? 'Already current' : receipt.status}</p>
+                    {#if receipt.error}<DiagnosticMessage issue={receipt.error} context={{ operation: 'save', nodeTitle: receipt.targetId }} />{/if}
                 {/each}
             </section>
         {/if}
         {#if view.statusDetail}<p class="pc-preview-note">{view.statusDetail}</p>{/if}
+        {#if view.historyNotice}<p class="pc-preview-note">{view.historyNotice}</p>{/if}
         {#each view.sections.filter(section => section.id !== activeSection?.id && (section.format === 'omitted' || section.truncated)) as section (section.id)}
-            <p class="pc-preview-note">{section.label}: {section.format === 'omitted' ? section.text : 'Truncated diagnostic' + (section.format === 'json-prefix-text' ? ' · JSON prefix shown as text' : '')}</p>
+            {#if section.format === 'omitted'}<div class="pc-preview-note"><span>{section.label}</span><DiagnosticMessage issue={section.text} /></div>{:else}<p class="pc-preview-note">{section.label}: Only part of the recorded output is displayed here; this is a display limit.{section.format === 'json-prefix-text' ? ' The JSON prefix is shown as text.' : ''}</p>{/if}
         {/each}
-        {#if view.runHere?.issue}<p class="pc-preview-note">{view.runHere.issue}</p>{/if}
-        {#each view.issues as issue}<p class="pc-preview-error">{issue}</p>{/each}
-        {#if view.review?.issue}<p class="pc-preview-error">{view.review.issue}</p>{/if}
-        {#if view.review}<small class="pc-preview-note">{view.review.persistOnly ? 'Retry keeps the accepted reply and retries failed targets. No model request is made.' : 'Apply rechecks the source, connection and final evidence. Recorded preview text may be truncated.'}</small>{/if}
+        {#each diagnostics as diagnostic, index (diagnostic.id)}<div id={previewId + '-diagnostic-' + index}><DiagnosticMessage {diagnostic} reveal={actions.reveal} /></div>{/each}
+        {#if view.review}<small class="pc-preview-note">{view.review.persistOnly ? 'Retry keeps the accepted reply and retries only authorized targets whose saves failed. It makes no model request. Unknown or unverified saves cannot be retried here.' : 'Apply checks that the source, connection and reviewed reply are still current. The displayed preview may show only part of the recorded output.'}</small>{/if}
     </div>
     <footer>
         <span class="pc-preview-status" data-status={view.status}>{statusLabel(view.status)}</span>
         <span>{view.pinned ? 'Pinned preview' : view.followSelection ? 'Following selection' : 'Selection not followed'}</span>
-        {#if view.runHere}<button type="button" data-run-here title="Runs the selected output's dependencies. Results are diagnostic previews." disabled={!canRun} onclick={() => { if (view && selected && canRun) actions.runHere?.(view.sourceKey, copyTarget(selected.target)); }}>Run to here · maximum {view.runHere.callBound} {view.runHere.callBound === 1 ? 'request' : 'requests'}</button>{/if}
-        {#if view.review}<button type="button" data-preview-apply disabled={!canApply} onclick={() => { if (view?.review && canApply) actions.apply?.(copySelector(view.review.selector)); }}>{view.review.persistOnly ? 'Retry failed persistence' : 'Apply reviewed candidate'}</button><button type="button" disabled={!canReject} onclick={() => { if (view?.review && canReject) actions.reject?.(copySelector(view.review.selector)); }}>{view.review.persistOnly ? 'Close persistence review' : 'Reject candidate'}</button>{/if}
+        {#if view.runHere}<button type="button" data-run-here aria-describedby={runDescription} title="Runs the selected output's dependencies within the displayed request limit." disabled={!canRun} onclick={() => { if (view && selected && canRun) actions.runHere?.(view.sourceKey, copyTarget(selected.target)); }}>Run to here · maximum {view.runHere.callBound} {view.runHere.callBound === 1 ? 'request' : 'requests'}</button>{#if runReason && runDiagnosticIndex < 0}<p id={previewId + '-run-reason'} class="pc-preview-note">{runReason}</p>{/if}{/if}
+        {#if view.review}<button type="button" data-preview-apply aria-describedby={applyDescription} disabled={!canApply} onclick={() => { if (view?.review && canApply) actions.apply?.(copySelector(view.review.selector)); }}>{view.review.persistOnly ? 'Retry failed saves' : 'Apply reviewed reply'}</button>{#if applyReason && applyDiagnosticIndex < 0}<p id={previewId + '-apply-reason'} class="pc-preview-note">{applyReason}</p>{/if}<button type="button" disabled={!canReject} onclick={() => { if (view?.review && canReject) actions.reject?.(copySelector(view.review.selector)); }}>{view.review.persistOnly ? 'Close save review' : 'Reject reply'}</button>{/if}
     </footer>
 {:else}
     <p class="pc-preview-empty">Select a node output to inspect its recorded result.</p>
@@ -119,7 +131,6 @@
     pre { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; font-family: inherit; font-size: 12px; line-height: 1.55; }
     .pc-preview-note, .pc-preview-empty { margin: 0; color: var(--pc-muted, #a1a59b); font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
     .pc-preview-note { display: block; margin-top: 7px; }
-    .pc-preview-error { margin: 7px 0 0; color: #e08f8f; font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
     footer { flex: 0 0 auto; display: flex; flex-wrap: wrap; align-items: center; gap: 2px 10px; padding: 4px 10px; color: var(--pc-muted, #a1a59b); background: var(--pc-raised, #353632); }
     footer button { color: var(--pc-text, #deded9); }
     .pc-preview-status[data-status='stale'] { color: #c6ad75; } .pc-preview-status[data-status='removed'] { color: #e08f8f; }

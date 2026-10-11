@@ -175,6 +175,14 @@ export function showContextMenu({ root, x, y, label = 'Context actions', items =
                 trailing.append(svgIcon(document, 'M9 5l7 7-7 7', 'pc-context-chevron'));
             }
             if (trailing.children.length) button.append(trailing);
+            if (item.disabled && item.hint) {
+                const reason = document.createElement('span');
+                reason.id = element.id + '-reason-' + state.entries.length;
+                reason.className = 'pc-context-reason';
+                reason.textContent = item.hint;
+                button.setAttribute('aria-describedby', reason.id);
+                button.append(reason);
+            }
             const entry = { button, item, menu: state };
             state.entries.push(entry);
             listen(state, button, 'click', event => { event.stopPropagation(); choose(entry); });

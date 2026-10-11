@@ -170,7 +170,7 @@ test('saved Terminology Map without inputKind retains Draft patches and diagnost
     expect(result).toMatchObject({ ok: true, actualCalls: 0, callBound: 0 });
     expect(result.recording.artifacts.some(entry => entry.value?.kind === 'candidate' && entry.value.text === 'Commander waits.' && entry.value.original === 'Captain waits.')).toBe(true);
     expect(result.recording.terminals).toHaveLength(1);
-    await expect(page.getByRole('button', {name:'Apply reviewed candidate',exact:true})).toHaveCount(0);
+    await expect(page.getByRole('button', {name:'Apply reviewed reply',exact:true})).toHaveCount(0);
     expect(await page.evaluate(() => window.canvasHarness.context.chat.at(-1).mes)).toBe('Captain waits.');
     expect(await page.evaluate(() => window.canvasHarness.providerCalls())).toBe(0);
 });

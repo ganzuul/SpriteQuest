@@ -43,3 +43,15 @@ test('typed Compose budget edits retain integer controls and reject stale checke
  assert.equal(prepareNativeNodeEdit(root,{kind:'controls',viewPath:[],nodeId:'merge',controls:{budgetTokens:8193}}).ok,false);
  assert.equal(prepareNativeNodeEdit(root,{kind:'controls',viewPath:[],nodeId:'merge',controls:{sections:[{name:'system',text:'',kind:'text'}]}}).ok,false,'a typed Guidance wire cannot survive an incompatible section edit');
 });
+
+test('memoized native generation eligibility is target-local and historical',async()=>{
+ const {starterGraph}=await import('../src/workflow/starters.js?v=0.27.0');
+ const root=starterGraph('unified-basic');root.nodes.independent={id:'independent',type:'workflow',operation:'text',text:'Independent'};
+ const planner=prepareWorkflowPlanner(root).data;
+ const native={workflowId:root.id,instancePath:[],nodeId:'generate-reply',portId:'draft'},local={workflowId:root.id,instancePath:[],nodeId:'independent',portId:'out'};
+ const nativeSummary=planner.summarize(native),localSummary=planner.summarize(local);
+ assert.equal(nativeSummary.data.requiresNativeGeneration,true);assert.equal(localSummary.data.requiresNativeGeneration,false);
+ assert.equal(planner.summarize(native),nativeSummary);assert.equal(planner.summarize(local),localSummary);assert.ok(Object.isFrozen(nativeSummary.data));
+ delete root.nodes['generate-reply'];assert.equal(planner.summarize(native),nativeSummary);
+ assert.equal(prepareWorkflowPlanner(root).ok,false,'mutable roots still cross current structural validation');
+});

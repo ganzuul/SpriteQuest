@@ -78,7 +78,7 @@ test('a malformed primary retains its diagnostic tile while the other previews s
         assert.deepEqual(tiles.map(tile => tile.number), Array.from({ length: exampleCount }, (_, index) => index + 1));
         assert.equal(tiles[0].title, 'Follow a reply from Send to Review');
         assert.equal(tiles[0].thumbnail, null);
-        assert.match(tiles[0].issue, /operation|unsupported|unknown/i);
+        assert.match(tiles[0].issue, /node type|supported|workflow version/i);
         assert.ok(tiles.slice(1).every(tile => !tile.issue && tile.thumbnail.nodes.length));
     } finally { node.operation = operation; }
     const repaired = projectWorkflowExamples();

@@ -1,2 +1,2 @@
 # Retain exact historical verification evidence bytes.
-*.log -text
+*.log -text -diff

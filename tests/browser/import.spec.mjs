@@ -27,7 +27,7 @@ for(const change of ['body','read-only','session','path','root'])test('import re
         await page.evaluate(()=>window.canvasHarness.settle());
     }else{
         await review.getByRole('button',{name:'Insert into graph',exact:true}).click();
-        await expect(review.getByRole('alert')).toBeVisible();
+        await expect(review.locator('.pc-diagnostic[data-severity="error"]')).toBeVisible();
     }
     expect(await snapshot(page)).toEqual(before);expect(await page.evaluate(()=>window.canvasHarness.H.peek(window.canvasHarness.graph))).toEqual(history);
 });

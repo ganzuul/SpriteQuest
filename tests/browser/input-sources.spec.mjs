@@ -25,6 +25,16 @@ async function choose(page, operation) {
     const id = await page.evaluate(operation => Object.values(window.canvasHarness.graph.nodes).find(node => node.operation === operation).id, operation);
     await select(page, id); return id;
 }
+async function expectFileDiagnostic(page, message, code) {
+    const diagnostic = page.locator('[data-file-input-controls] .pc-diagnostic[data-severity="error"]');
+    await expect(diagnostic.locator(':scope > p')).toHaveText(message);
+    await expect(diagnostic.locator('strong')).toContainText('Error:');
+    const supportCode = diagnostic.locator('code'), disclosure = diagnostic.getByText('Technical details', { exact: true });
+    await expect(supportCode).toBeHidden();
+    await disclosure.focus(); await disclosure.press('Enter');
+    await expect(supportCode).toBeVisible(); await expect(supportCode).toHaveText(code);
+    await disclosure.press('Enter'); await expect(supportCode).toBeHidden();
+}
 
 for (const phase of ['pre', 'post']) test(`${phase} File Input stores an undoable portable UTF-8 snapshot and replaces it from Details`, async ({ page }) => {
     await launch(page, phase);
@@ -70,12 +80,12 @@ test('failed file loads display an error and leave the saved snapshot intact', a
     await page.getByLabel('Choose file', { exact: true }).setInputFiles({ name: 'saved.txt', mimeType: 'text/plain', buffer: Buffer.from('Saved text') });
     await expect(page.getByLabel('Replace file', { exact: true })).toBeEnabled();
     await page.getByLabel('Replace file', { exact: true }).setInputFiles({ name: 'bad.txt', mimeType: 'text/plain', buffer: Buffer.from([0xc3, 0x28]) });
-    await expect(page.locator('.pc-node-details [role="alert"]')).toContainText('FILE_INVALID_UTF8');
+    await expectFileDiagnostic(page, 'Choose a UTF-8 text file.', 'FILE_INVALID_UTF8');
     expect(await page.evaluate(id => {
         const n = window.canvasHarness.graph.nodes[id]; return { fileName: n.fileName, content: n.content, loaded: n.loaded };
     }, id)).toEqual({ fileName: 'saved.txt', content: 'Saved text', loaded: true });
     await page.getByLabel('Replace file', { exact: true }).setInputFiles({ name: 'too-large.txt', mimeType: 'text/plain', buffer: Buffer.alloc(400001, 65) });
-    await expect(page.locator('.pc-node-details [role="alert"]')).toContainText('FILE_TOO_LARGE');
+    await expectFileDiagnostic(page, 'Choose a file no larger than 400,000 bytes.', 'FILE_TOO_LARGE');
     expect(await page.evaluate(() => window.canvasHarness.providerCalls())).toBe(0);
 });
 
@@ -114,6 +124,6 @@ for (const returnToFile of [false, true]) test(returnToFile ? 'returning to the 
         const h = window.canvasHarness, file = h.graph.nodes[fileId];
         return { fileName: file.fileName, content: file.content, loaded: file.loaded, text: h.graph.nodes[textId].text };
     }, { fileId, textId })).toEqual({ fileName: '', content: '', loaded: false, text: '' });
-    await expect(page.locator('.pc-node-details [role="alert"]')).toHaveCount(0);
+    await expect(page.locator('[data-file-input-controls] .pc-diagnostic[data-severity="error"]')).toHaveCount(0);
     expect(await page.evaluate(() => window.canvasHarness.providerCalls())).toBe(0);
 });
