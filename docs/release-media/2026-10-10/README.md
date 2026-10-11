@@ -1,8 +1,8 @@
 # Lattice release media
 
-Six annotated PNGs, 1280 × 960, and a silent 20-second H.264 MP4 at 1280 × 960 / 30 fps.
+Six annotated PNGs, 1280 × 960, and a silent 35-second H.264 MP4 at 1280 × 960 / 30 fps.
 
-[Download the 20-second clip](https://raw.githubusercontent.com/MentallyQuill/Lattice/codex/release-media-2026-10-10/docs/release-media/2026-10-10/lattice-in-20-seconds.mp4) · [Workflow](broken-wand-50-50.lattice.json) · [Effect table](wand-effects.json) · [Example holder](wand-holders.json)
+[Download the editor walkthrough](https://raw.githubusercontent.com/MentallyQuill/Lattice/codex/release-media-2026-10-10/docs/release-media/2026-10-10/lattice-editor-walkthrough.mp4) · [Workflow](broken-wand-50-50.lattice.json) · [Effect table](wand-effects.json) · [Example holder](wand-holders.json)
 
 ## Images
 
@@ -22,10 +22,12 @@ Each image has its own direct link. Open an image to view or save the full PNG.
 
 ## Clip
 
-- 0–4 seconds: File → Open examples → load a shipped lesson.
-- 4–10 seconds: Search Text Rules and drag it from the shelf onto the canvas.
-- 10–14 seconds: Connect two pairs of compatible pins.
-- 14–20 seconds: Shift-select three nodes, create a subgraph, and return to the connected parent.
+- 0–8 seconds — Example Workflows: File → Open examples → load a shipped lesson.
+- 8–17 seconds — Node Shelf: Search Text Rules and drag it onto the canvas.
+- 17–24 seconds — Connecting Nodes: Connect two pairs of compatible pins.
+- 24–35 seconds — Subgraphs: Shift-select three nodes, create a subgraph, and return to the connected parent.
+
+Each section has a short label at the top of the screen, slower pointer movement, and pauses to show the result.
 
 ## Wand
 
